@@ -1,74 +1,199 @@
 import type { RecordEntry } from '@/domain/race/records'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
-import type { ProfileGoal } from '@/application/usecases/GetProfileData'
-import { wearStatus } from '@/domain/shoe/wearStatus'
-import { isRecentRecord } from '@/domain/ai/celebrationWindow'
-import { formatDate, formatDuration, formatKm, formatPace } from '@/lib/formatters'
-import { t } from '@/i18n'
+import type { ProfileGoal, ProfilePeriodStats } from '@/application/usecases/GetProfileData'
+import type { NextRaceSpotlight } from '@/application/usecases/GetGoalsData'
+import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 
-export interface HubRow {
-  key: 'records' | 'shoes' | 'athlete' | 'goals' | 'consistency' | 'settings'
-  href: string
-  title: string
-  status: string | null
-  tone?: 'warn'
+/** The Progress hub (H01, M12): every figure a tile draws, worked out once. */
+export interface ProgressHubView {
+  year: number
+  hero: {
+    km: number
+    goalKm: number | null
+    /** Against the same date last year; null without last year's runs. */
+    deltaKm: number | null
+    hours: number
+    runs: number
+    /** Cumulative km by day of the year, this year up to today. */
+    current: YearPoint[]
+    /** Last year up to the same day. */
+    previous: YearPoint[]
+    daysInYear: number
+  }
+  race: {
+    daysUntil: number
+    distance: string
+    date: string
+    predictedSeconds: number | null
+    targetSeconds: number | null
+  } | null
+  vo2max: {
+    value: number
+    delta: number | null
+    series: number[]
+    thresholdPaceSecPerKm: number | null
+    lthrBpm: number | null
+  } | null
+  records: { key: string; label: string; seconds: number; latest: boolean }[]
+  consistency: {
+    /** Twelve weeks, oldest first, Monday to Sunday: 0 none, 1-3 by km; null still to come. */
+    weeks: (number | null)[][]
+    activeDays: number
+    streakWeeks: number
+  }
+  shoes: { gearId: string; name: string; km: number; maxKm: number; warn: boolean }[]
+  allTime: {
+    km: number
+    runs: number
+    hours: number
+    since: string | null
+    years: { year: number; km: number }[]
+  }
+}
+
+export interface YearPoint {
+  day: number
+  km: number
 }
 
 export interface HubInput {
-  latestRecord: RecordEntry | null
-  shoes: ShoeStats[]
-  athlete: { lthrBpm?: number | null; thresholdPaceSecPerKm?: number | null }
-  latestVo2max: number | null
+  today: string
+  activities: ReadonlyArray<{ date: string; distanceKm: number }>
+  ytd: ProfilePeriodStats
+  prevYear: ProfilePeriodStats | null
+  allTime: ProfilePeriodStats
+  sinceDate: string | null
   goal: ProfileGoal | null
-  nextRaceDate: string | null
+  spotlight: NextRaceSpotlight | null
+  vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
+  athlete: { lthrBpm?: number | null; thresholdPaceSecPerKm?: number | null }
+  records: RecordEntry[]
   heatmapDays: HeatmapDay[]
-  now: Date
+  streakWeeks: number
+  shoes: ShoeStats[]
 }
 
-/**
- * Progress's rows and the live status line each carries. The page used to
- * repeat Athlete's VO₂max, VMA, LTHR and zones, bury Settings behind a gear
- * and put the 10K goal two taps deep; each sub-page is one row now.
- */
-export function progressHubRows(input: HubInput): HubRow[] {
-  const h = t.profile.hub
-  const record = input.latestRecord
-  const active = input.shoes.filter((shoe) => !shoe.retired)
-  const worn = active.filter((shoe) => wearStatus(shoe.wearPercent) === 'replace').length
-  const athlete = [
-    input.latestVo2max !== null ? `VO₂max ${Math.round(input.latestVo2max)}` : null,
-    input.athlete.lthrBpm ? `LTHR ${input.athlete.lthrBpm}` : null,
-    input.athlete.thresholdPaceSecPerKm ? h.threshold(formatPace(input.athlete.thresholdPaceSecPerKm)) : null,
-  ].filter(Boolean)
-  const goal = input.goal
-  const goalLine = [
-    goal && goal.goalYear.annualDistanceKm > 0
-      ? h.annual(formatKm(goal.totalDistanceKm), formatKm(goal.goalYear.annualDistanceKm))
-      : null,
-    input.nextRaceDate ? h.nextRace(formatDate(input.nextRaceDate, { style: 'bare' })) : null,
-  ].filter(Boolean)
-  const activeDays = input.heatmapDays.filter((day) => day.sessionCount > 0).length
+const HUB_RECORDS = ['1k', '5k', '10k', 'half']
+const VO2_WINDOW_DAYS = 90
+const HEAT_WEEKS = 12
+/** A shoe past this share of its limit reads amber. */
+export const SHOE_WARN_SHARE = 0.85
 
-  return [
-    {
-      key: 'records',
-      href: '/records',
-      title: h.records,
-      status: record && record.seconds !== null && record.date
-        ? h.recordLine(record.label, formatDuration(record.seconds), formatDate(record.date, { style: 'bare' }), isRecentRecord(record.date, input.now))
-        : h.noRecords,
+function dayOfYear(iso: string): number {
+  const d = Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)))
+  return Math.round((d - Date.UTC(Number(iso.slice(0, 4)), 0, 1)) / 86_400_000) + 1
+}
+
+/** Cumulative km through the year, one point a week and one for the last day. */
+export function cumulativeYear(activities: HubInput['activities'], year: number, throughDay: number): YearPoint[] {
+  const byDay = new Map<number, number>()
+  for (const a of activities) {
+    if (!a.date.startsWith(String(year))) continue
+    const day = dayOfYear(a.date.slice(0, 10))
+    if (day > throughDay) continue
+    byDay.set(day, (byDay.get(day) ?? 0) + a.distanceKm)
+  }
+  const points: YearPoint[] = [{ day: 0, km: 0 }]
+  let km = 0
+  for (let day = 1; day <= throughDay; day++) {
+    km += byDay.get(day) ?? 0
+    if (day % 7 === 0 || day === throughDay) points.push({ day, km: Math.round(km) })
+  }
+  return points
+}
+
+function heatLevel(km: number): number {
+  if (km <= 0) return 0
+  if (km < 8) return 1
+  if (km < 14) return 2
+  return 3
+}
+
+/** Twelve weeks to this one, a column per week. */
+export function heatWeeks(days: HeatmapDay[], today: string): (number | null)[][] {
+  const km = new Map(days.map((d) => [d.date, d.distanceKm]))
+  const monday = startOfWeek(new Date(`${today}T00:00:00`))
+  const first = addDays(monday, -7 * (HEAT_WEEKS - 1))
+  return Array.from({ length: HEAT_WEEKS }, (_, w) =>
+    Array.from({ length: 7 }, (_, d) => {
+      const date = isoDate(addDays(first, w * 7 + d))
+      return date > today ? null : heatLevel(km.get(date) ?? 0)
+    }),
+  )
+}
+
+export function progressHubView(input: HubInput): ProgressHubView {
+  const year = Number(input.today.slice(0, 4))
+  const today = dayOfYear(input.today)
+  const daysInYear = dayOfYear(`${year}-12-31`)
+
+  const spotlight = input.spotlight
+  const vo2Since = isoDate(addDays(new Date(`${input.today}T00:00:00`), -VO2_WINDOW_DAYS))
+  const vo2Window = input.vo2max.samples.filter((s) => s.date >= vo2Since && s.date <= input.today)
+  const vo2Value = input.vo2max.value ?? vo2Window.at(-1)?.vo2max ?? null
+
+  const records = HUB_RECORDS.map((key) => input.records.find((r) => r.key === key)).filter(
+    (r): r is RecordEntry & { seconds: number } => !!r && r.seconds !== null,
+  )
+  const latestDate = records.reduce<string | null>((max, r) => (r.date && (!max || r.date > max) ? r.date : max), null)
+
+  const firstYear = input.sinceDate ? Number(input.sinceDate.slice(0, 4)) : year
+  const yearKm = new Map<number, number>()
+  for (const a of input.activities) {
+    const y = Number(a.date.slice(0, 4))
+    yearKm.set(y, (yearKm.get(y) ?? 0) + a.distanceKm)
+  }
+
+  const twelveMonthsAgo = isoDate(addDays(new Date(`${input.today}T00:00:00`), -365))
+
+  return {
+    year,
+    hero: {
+      km: Math.round(input.ytd.distanceKm),
+      goalKm: input.goal && input.goal.goalYear.annualDistanceKm > 0 ? input.goal.goalYear.annualDistanceKm : null,
+      deltaKm: input.prevYear ? Math.round(input.ytd.distanceKm - input.prevYear.distanceKm) : null,
+      hours: Math.round(input.ytd.durationSeconds / 3600),
+      runs: input.ytd.sessionCount,
+      current: cumulativeYear(input.activities, year, today),
+      previous: input.prevYear ? cumulativeYear(input.activities, year - 1, today) : [],
+      daysInYear,
     },
-    {
-      key: 'shoes',
-      href: '/shoes',
-      title: h.shoes,
-      status: worn > 0 ? t.profile.shoes.needsReplacing(worn) : t.profile.shoes.pairs(active.length),
-      ...(worn > 0 ? { tone: 'warn' as const } : {}),
+    race: spotlight
+      ? {
+          daysUntil: spotlight.daysUntil,
+          distance: spotlight.race.distance,
+          date: spotlight.race.date,
+          predictedSeconds: spotlight.predictedSeconds,
+          targetSeconds: spotlight.race.targetSeconds ?? null,
+        }
+      : null,
+    vo2max:
+      vo2Value !== null
+        ? {
+            value: Math.round(vo2Value),
+            delta: vo2Window.length >= 2 ? Math.round(vo2Window.at(-1)!.vo2max - vo2Window[0]!.vo2max) : null,
+            series: vo2Window.map((s) => s.vo2max),
+            thresholdPaceSecPerKm: input.athlete.thresholdPaceSecPerKm ?? null,
+            lthrBpm: input.athlete.lthrBpm ?? null,
+          }
+        : null,
+    records: records.map((r) => ({ key: r.key, label: r.label, seconds: r.seconds, latest: r.date !== null && r.date === latestDate })),
+    consistency: {
+      weeks: heatWeeks(input.heatmapDays, input.today),
+      activeDays: input.heatmapDays.filter((d) => d.sessionCount > 0 && d.date > twelveMonthsAgo && d.date <= input.today).length,
+      streakWeeks: input.streakWeeks,
     },
-    { key: 'athlete', href: '/athlete', title: h.athlete, status: athlete.length ? athlete.join(' · ') : null },
-    { key: 'goals', href: '/goals', title: h.goals, status: goalLine.length ? goalLine.join(' · ') : h.noGoal },
-    { key: 'consistency', href: '/consistency', title: h.consistency, status: h.activeDays(activeDays) },
-    { key: 'settings', href: '/settings', title: h.settings, status: h.settingsLine },
-  ]
+    shoes: input.shoes
+      .filter((s) => !s.retired)
+      .sort((a, b) => b.totalKm - a.totalKm)
+      .map((s) => ({ gearId: s.gearId, name: s.name, km: Math.round(s.totalKm), maxKm: s.maxKm, warn: s.maxKm > 0 && s.totalKm >= s.maxKm * SHOE_WARN_SHARE })),
+    allTime: {
+      km: Math.round(input.allTime.distanceKm),
+      runs: input.allTime.sessionCount,
+      hours: Math.round(input.allTime.durationSeconds / 3600),
+      since: input.sinceDate,
+      years: Array.from({ length: year - firstYear + 1 }, (_, i) => firstYear + i).map((y) => ({ year: y, km: Math.round(yearKm.get(y) ?? 0) })),
+    },
+  }
 }

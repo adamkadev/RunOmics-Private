@@ -1,10 +1,13 @@
 import { getProfileData } from '@/application/usecases/GetProfileData'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
-import { getMostRecentRecord } from '@/application/usecases/GetRecords'
-import { getNextRace } from '@/application/usecases/GetNextRace'
+import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
+import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
+import { getRecords } from '@/application/usecases/GetRecords'
+import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { ProgressHub } from '@/components/profile/ProgressHub'
-import { progressHubRows } from '@/components/profile/progressHub'
+import { progressHubView } from '@/components/profile/progressHub'
 import { appTodayIso } from '@/lib/calendarDate'
 
 export const revalidate = 3600
@@ -12,18 +15,24 @@ export const revalidate = 3600
 export default async function ProfilePage() {
   const data = await getProfileData()
   const today = appTodayIso()
-  const nextRace = await getNextRace()
+  const goals = await getGoalsPageData()
 
-  const rows = progressHubRows({
-    latestRecord: getMostRecentRecord(data.records),
-    shoes: data.shoes,
-    athlete: { lthrBpm: data.athlete.lthrBpm, thresholdPaceSecPerKm: data.athlete.thresholdPaceSecPerKm },
-    latestVo2max: getLatestVO2max(),
+  const view = progressHubView({
+    today,
+    activities: getAllActivities(),
+    ytd: data.ytd,
+    prevYear: data.prevYear,
+    allTime: data.allTime,
+    sinceDate: data.hero.sinceDate,
     goal: data.goal,
-    nextRaceDate: nextRace?.date ?? null,
+    spotlight: goals.byYear[Number(today.slice(0, 4))]?.nextRaceSpotlight ?? null,
+    vo2max: { value: getLatestVO2max(), samples: getVo2maxSamples().days },
+    athlete: { lthrBpm: data.athlete.lthrBpm, thresholdPaceSecPerKm: data.athlete.thresholdPaceSecPerKm },
+    records: await getRecords(),
     heatmapDays: getHeatmapData(),
-    now: new Date(`${today}T12:00:00`),
+    streakWeeks: getWeeklyStreakData(new Date(`${today}T12:00:00`))?.currentWeeks ?? 0,
+    shoes: data.shoes,
   })
 
-  return <ProgressHub rows={rows} ytd={data.ytd} prevYear={data.prevYear} year={Number(today.slice(0, 4))} />
+  return <ProgressHub view={view} />
 }
