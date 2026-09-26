@@ -125,7 +125,7 @@ describe('WeekView progression card', () => {
     // M11: phase and week on the left, the race as "10K · D-n" on the right.
     const line = screen.getByTestId('phase-line').textContent ?? ''
     expect(line).toContain(t.plan.weekPurpose.weekOfTarget(1, 12))
-    expect(line).toMatch(/· D-\d+/)
+    expect(line).toMatch(/· D-\u2060?\d+/)
   })
 
   // H20: the race is on the phase line; the Races section is gone from Week.
@@ -247,13 +247,13 @@ describe('WeekView target race', () => {
   it('puts the coaching target race on the phase line as a countdown', () => {
     renderWeek({ coaching: overview() })
 
-    expect(screen.getByTestId('phase-line').textContent).toContain('D-39')
+    expect(screen.getByTestId('phase-line').textContent).toContain('D-\u206039')
   })
 
   it('keeps the Garmin race when there is no coaching', () => {
     renderWeek({ nextRace: { date: '2026-10-18', name: 'City Half', distance: '21K' } })
 
-    expect(screen.getByTestId('phase-line').textContent).toContain('21K · D-39')
+    expect(screen.getByTestId('phase-line').textContent).toContain('21K · D-\u206039')
   })
 })
 

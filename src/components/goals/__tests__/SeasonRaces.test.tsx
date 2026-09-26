@@ -61,7 +61,7 @@ describe('SeasonRaces', () => {
     expect(within(row).getByText('39:46')).toBeInTheDocument()
     expect(within(row).getByText(t.goals.predictedTag)).toBeInTheDocument()
     expect(row.textContent).toContain(t.goals.targetTime('40:30'))
-    expect(row.textContent).toContain('D-21')
+    expect(row.textContent).toContain('D-\u206021')
   })
 
   // R7d: the column is the prediction, labelled as one, and the half is "Half".

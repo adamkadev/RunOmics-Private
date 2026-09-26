@@ -32,7 +32,9 @@ export const HUE = {
   green600: '#16a34a',
   green700: '#15803d',
 
-  lime500: '#84cc16',
+  // The cadence line (v4.3.2): a grey sage, clear of Pace's blue.
+  cadenceDark: '#8fb3b0',
+  cadenceLight: '#4f7471',
 
   yellow500: '#eab308',
   amber400: '#fbbf24',

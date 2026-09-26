@@ -148,7 +148,7 @@
   --zone-3:                 #0e9f6e;
   --zone-4:                 #e8590c;
   --zone-5:                 #e03131;
-  --chart-cadence:          #0284c7;
+  --chart-cadence:          #4f7471;
   --chart-easy:             #0e9f6e;
   --chart-hard:             #ea580c;
   --chart-ground-contact:   #b87d0f;
@@ -228,7 +228,7 @@
   --zone-3:                 #4fe6a0;
   --zone-4:                 #ff9a57;
   --zone-5:                 #f0524f;
-  --chart-cadence:          #0ea5e9;
+  --chart-cadence:          #8fb3b0;
   --chart-easy:             #34d399;
   --chart-hard:             #fb923c;
   --chart-ground-contact:   #f59e0b;
@@ -283,6 +283,26 @@
   --glass-bg-nav:           #0b0c0c;
 }
 
+[data-accent="indigo"] {
+  --accent:             #4338ca;
+  --accent-foreground:  #ffffff;
+  --accent-text:        #4338ca;
+  --accent-hover:       color-mix(in oklab, #4338ca 88%, black);
+  --acc-soft:           color-mix(in oklab, #4338ca 20%, transparent);
+  --acc-line:           color-mix(in oklab, #4338ca 55%, transparent);
+  --ring:               color-mix(in oklab, #4338ca 35%, transparent);
+}
+
+.dark[data-accent="indigo"] {
+  --accent:             #8c9bff;
+  --accent-foreground:  #0e1238;
+  --accent-text:        #8c9bff;
+  --accent-hover:       color-mix(in oklab, #8c9bff 88%, white);
+  --acc-soft:           color-mix(in oklab, #8c9bff 20%, transparent);
+  --acc-line:           color-mix(in oklab, #8c9bff 55%, transparent);
+  --ring:               color-mix(in oklab, #8c9bff 70%, transparent);
+}
+
 [data-accent="teal"] {
   --accent:             #0e8468;
   --accent-foreground:  #ffffff;
@@ -301,26 +321,6 @@
   --acc-soft:           color-mix(in oklab, #2fd1a6 20%, transparent);
   --acc-line:           color-mix(in oklab, #2fd1a6 55%, transparent);
   --ring:               color-mix(in oklab, #2fd1a6 70%, transparent);
-}
-
-[data-accent="lime"] {
-  --accent:             #4d7c0f;
-  --accent-foreground:  #ffffff;
-  --accent-text:        #4d7c0f;
-  --accent-hover:       color-mix(in oklab, #4d7c0f 88%, black);
-  --acc-soft:           color-mix(in oklab, #4d7c0f 20%, transparent);
-  --acc-line:           color-mix(in oklab, #4d7c0f 55%, transparent);
-  --ring:               color-mix(in oklab, #4d7c0f 35%, transparent);
-}
-
-.dark[data-accent="lime"] {
-  --accent:             #c4f04a;
-  --accent-foreground:  #172300;
-  --accent-text:        #c4f04a;
-  --accent-hover:       color-mix(in oklab, #c4f04a 88%, white);
-  --acc-soft:           color-mix(in oklab, #c4f04a 20%, transparent);
-  --acc-line:           color-mix(in oklab, #c4f04a 55%, transparent);
-  --ring:               color-mix(in oklab, #c4f04a 70%, transparent);
 }
 
 [data-accent="pink"] {
@@ -537,7 +537,9 @@ body {
 body {
   color: var(--foreground);
   line-height: 1.625;
-  font-variant-numeric: tabular-nums;
+  /* No tabular figures on the body (v4.3.2): Inter's tnum gives the hyphen a
+     figure's width, so "Warm-up" and "D-64" drew as "Warm - up". Numbers that
+     line up in columns or tick in place say tabular-nums themselves. */
   overflow-x: hidden;
   -webkit-user-select: none;
   user-select: none;
@@ -584,6 +586,17 @@ h1 {
   min-height: 22px !important;
   min-width: 22px !important;
   border-radius: 11px !important;
+}
+/* The activity map's ⓘ: 12 px in from the right and bottom, above the
+   map's own layers, and clear of the home indicator in fullscreen (v4.3.2). */
+.activity-map .maplibregl-ctrl-bottom-right {
+  z-index: 20;
+}
+.activity-map .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+  margin: 0 12px 12px 0 !important;
+}
+.activity-map-fullscreen .maplibregl-ctrl-bottom-right {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 /* The collapsed attribution is a 22 pt ⓘ (H13, M9). */
 .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button {

@@ -2,6 +2,26 @@
 
 exports[`the generated accent blocks > paint the five v4.3 palettes 1`] = `
 {
+  "indigo": {
+    "dark": {
+      "--acc-line": "color-mix(in oklab, #8c9bff 55%, transparent)",
+      "--acc-soft": "color-mix(in oklab, #8c9bff 20%, transparent)",
+      "--accent": "#8c9bff",
+      "--accent-foreground": "#0e1238",
+      "--accent-hover": "color-mix(in oklab, #8c9bff 88%, white)",
+      "--accent-text": "#8c9bff",
+      "--ring": "color-mix(in oklab, #8c9bff 70%, transparent)",
+    },
+    "light": {
+      "--acc-line": "color-mix(in oklab, #4338ca 55%, transparent)",
+      "--acc-soft": "color-mix(in oklab, #4338ca 20%, transparent)",
+      "--accent": "#4338ca",
+      "--accent-foreground": "#ffffff",
+      "--accent-hover": "color-mix(in oklab, #4338ca 88%, black)",
+      "--accent-text": "#4338ca",
+      "--ring": "color-mix(in oklab, #4338ca 35%, transparent)",
+    },
+  },
   "lavender": {
     "dark": {
       "--acc-line": "color-mix(in oklab, #b48cf0 55%, transparent)",
@@ -20,26 +40,6 @@ exports[`the generated accent blocks > paint the five v4.3 palettes 1`] = `
       "--accent-hover": "color-mix(in oklab, #7c3aed 88%, black)",
       "--accent-text": "#7c3aed",
       "--ring": "color-mix(in oklab, #7c3aed 35%, transparent)",
-    },
-  },
-  "lime": {
-    "dark": {
-      "--acc-line": "color-mix(in oklab, #c4f04a 55%, transparent)",
-      "--acc-soft": "color-mix(in oklab, #c4f04a 20%, transparent)",
-      "--accent": "#c4f04a",
-      "--accent-foreground": "#172300",
-      "--accent-hover": "color-mix(in oklab, #c4f04a 88%, white)",
-      "--accent-text": "#c4f04a",
-      "--ring": "color-mix(in oklab, #c4f04a 70%, transparent)",
-    },
-    "light": {
-      "--acc-line": "color-mix(in oklab, #4d7c0f 55%, transparent)",
-      "--acc-soft": "color-mix(in oklab, #4d7c0f 20%, transparent)",
-      "--accent": "#4d7c0f",
-      "--accent-foreground": "#ffffff",
-      "--accent-hover": "color-mix(in oklab, #4d7c0f 88%, black)",
-      "--accent-text": "#4d7c0f",
-      "--ring": "color-mix(in oklab, #4d7c0f 35%, transparent)",
     },
   },
   "mono": {

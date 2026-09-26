@@ -83,6 +83,9 @@ const LaneChart = memo(function LaneChart({ lane, distanceKm, isLast }: { lane: 
           stroke={lane.color}
           strokeWidth={1.5}
           fill={`url(#stack-${lane.key})`}
+          // Pace's axis runs slow at the bottom: fill from the line toward
+          // the slow end, not up to the fast one (v4.3.2).
+          baseValue={lane.reversed ? Math.max(...lane.domain) : undefined}
           dot={false}
           activeDot={false}
           connectNulls={false}
