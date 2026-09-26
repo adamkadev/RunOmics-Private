@@ -947,28 +947,9 @@ export const en = {
       groundContact: 'Ground contact',
       vertOscillation: 'Vertical oscillation',
       vertRatio: 'Vertical ratio',
-      // Every delta is a sentence with its unit, measured against the named
-      // baseline: "+10 SLOWER" said neither what it was compared with nor in what.
-      vsBaseline: (weeks: number) => `vs your ${weeks}-week baseline`,
-      atHigh: (weeks: number) => `your ${weeks}-week high`,
-      atLow: (weeks: number) => `your ${weeks}-week low`,
+      vsBaselineShort: 'vs baseline',
+      level: 'level with baseline',
       ratioUnit: 'pt',
-      deltas: {
-        strideLength: { up: 'longer than baseline', down: 'shorter than baseline' },
-        groundContact: { up: 'longer contact', down: 'shorter contact' },
-        verticalOscillation: { up: 'more bounce', down: 'less bounce' },
-        verticalRatio: { up: 'less economical', down: 'more economical' },
-        level: 'level with your baseline',
-      },
-      form: {
-        // Cadence, named: "Form" is Today's TSB.
-        title: 'Cadence through the run',
-        faded: (km: string) => `Faded at ${km} km`,
-        held: 'Held',
-        definition:
-          'Held means cadence kept its level from the first kilometre to the last. Faded marks where it dropped and stayed down - the fade the decoupling figure reports, in your mechanics.',
-        summary: 'Cadence over the run, marked where it dropped away.',
-      },
     },
     charts: {
       heartRate: 'Heart Rate',
