@@ -16,8 +16,8 @@ function recorder() {
   const stack: { ty: number; state: typeof state }[] = []
   const log = (op: string) => (...args: unknown[]) => { ops.push({ op, args, fill: state.fillStyle, stroke: state.strokeStyle, font: state.font, ty }) }
   const ctx = {
-    ...Object.fromEntries(['fillRect', 'fillText', 'fill', 'stroke', 'arc', 'drawImage', 'moveTo', 'lineTo', 'rect', 'roundRect'].map((k) => [k, log(k)])),
-    beginPath() {}, clip() {}, closePath() {}, arcTo() {},
+    ...Object.fromEntries(['fillRect', 'fillText', 'fill', 'stroke', 'arc', 'ellipse', 'drawImage', 'moveTo', 'lineTo', 'rect', 'roundRect'].map((k) => [k, log(k)])),
+    beginPath() {}, clip() {}, closePath() {}, arcTo() {}, scale() {},
     save() { stack.push({ ty, state: { ...state } }) },
     restore() { const s = stack.pop()!; ty = s.ty; Object.assign(state, s.state) },
     translate(_x: number, y: number) { ty += y },
@@ -59,7 +59,7 @@ describe('drawShareCard', () => {
   })
 
   it('draws the same header and stat row on every design', () => {
-    const header = ['RUNOMICS', 'Strides 6 × 20s']
+    const header = ['RunOmics', 'Strides 6 × 20s']
     const stats = ['10.0', ' km', 'Distance', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR', '57:33', 'Time']
     for (const design of ['route', 'stats', 'photo'] as const) {
       const all = texts(draw({ design }))
