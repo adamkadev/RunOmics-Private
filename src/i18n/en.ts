@@ -254,7 +254,8 @@ export const en = {
   },
 
   settings: {
-    about: (version: string, commit: string) => `RunOmics v${version} · build ${commit}`,
+    about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
+    buildCopied: 'Build info copied',
     sections: {
       profile: 'Profile',
       appearance: 'Appearance',

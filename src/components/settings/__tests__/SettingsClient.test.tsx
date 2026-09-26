@@ -91,6 +91,22 @@ describe('SettingsClient owner gate', () => {
     expect(screen.getByText(t.settings.dataExport.signedOut(t.common.runs(12)))).toBeInTheDocument()
   })
 
+  // v4.8 2g: the build line ends the page signed out too, after Account.
+  it('ends on the build line signed in and signed out', async () => {
+    const { unmount } = renderSettings()
+    await screen.findByText(t.settings.auth.signIn)
+    const out = screen.getByTestId('build-info')
+    expect(out.textContent).toMatch(/^RunOmics /)
+    const account = screen.getByRole('heading', { name: t.settings.sections.account }).closest('section')!
+    expect(account.compareDocumentPosition(out) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    unmount()
+
+    mockUser = signedIn('owner@test.dev', { owner: true })
+    renderSettings()
+    await screen.findByTestId('notifications-form')
+    expect(screen.getByTestId('build-info').textContent).toMatch(/^RunOmics /)
+  })
+
   it('denies access to a signed-in account without the owner claim', async () => {
     mockUser = signedIn('someone-else@example.com')
     renderSettings()

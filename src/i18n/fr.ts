@@ -237,7 +237,8 @@ export const fr = {
   },
 
   settings: {
-    about: (version: string, commit: string) => `RunOmics v${version} · build ${commit}`,
+    about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
+    buildCopied: 'Infos de version copiées',
     sections: {
       profile: 'Profil',
       appearance: 'Apparence',
