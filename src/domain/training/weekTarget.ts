@@ -81,3 +81,12 @@ export function weekTarget(days: WeekTargetDay[], today: string, goalKm: number 
 function round1(km: number): number {
   return Math.round(km * 10) / 10
 }
+
+/**
+ * The week's one target: the plan's km (H04). Today ringed a 38 km goal (the
+ * annual goal's weekly share) beside the plan's 48, two answers to one
+ * question. The goal share stands in only when nothing is planned.
+ */
+export function weeklyTargetKm(target: Pick<WeekTarget, 'planKm' | 'goalKm'>): number | null {
+  return target.planKm ?? target.goalKm
+}

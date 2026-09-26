@@ -8,7 +8,7 @@ import { ACTIVITY_TYPES, isActivityType, type ActivitySummary, type ActivityType
 import { sessionZone, zoneColor } from '@/lib/colors'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
-import type { WeekTarget } from '@/domain/training/weekTarget'
+import { weeklyTargetKm, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { Pill } from '@/components/ui/Pill'
@@ -126,12 +126,11 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
   )
 }
 
-// The bar measures the week against the volume goal - the annual goal's weekly
-// share - and says so. It used to call that goal "planned", while Plan used the
-// same word for its own, larger total; the plan's total now sits beside it,
-// named as the plan.
-function WeekGoalProgress({ target }: { target: WeekTarget & { goalKm: number } }) {
-  const pct = Math.min(100, Math.round((target.ranKm / target.goalKm) * 100))
+// The bar measures the week against the plan's km, the one weekly target
+// Today and Plan read (weeklyTargetKm). It used to set a second, smaller
+// "weekly goal" beside the plan's own total (H04).
+function WeekTargetProgress({ target, targetKm }: { target: WeekTarget; targetKm: number }) {
+  const pct = Math.min(100, Math.round((target.ranKm / targetKm) * 100))
 
   return (
     <div className="mt-2">
@@ -139,8 +138,7 @@ function WeekGoalProgress({ target }: { target: WeekTarget & { goalKm: number } 
         <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-1 text-caption tabular-nums text-subtle">
-        {t.activities.weekGoal(formatWeekKm(target.ranKm), formatWeekKm(target.goalKm))}
-        {target.planKm !== null && <> · {t.activities.weekPlanTotal(formatWeekKm(target.planKm))}</>}
+        {t.activities.weekOfTarget(formatWeekKm(target.ranKm), formatWeekKm(targetKm))}
       </p>
     </div>
   )
@@ -554,8 +552,8 @@ export function ActivityListClient({
                         <span aria-hidden="true" style={{ width: '14px', flex: '0 0 auto' }} />
                       </div>
                     </div>
-                    {weekTarget && weekTarget.goalKm !== null && (
-                      <WeekGoalProgress target={{ ...weekTarget, goalKm: weekTarget.goalKm }} />
+                    {weekTarget && weeklyTargetKm(weekTarget) !== null && (
+                      <WeekTargetProgress target={weekTarget} targetKm={weeklyTargetKm(weekTarget)!} />
                     )}
                   </div>
                 ) : (

@@ -1,100 +1,49 @@
 'use client'
 
-import { formatKm } from '@/lib/formatters'
 import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
-import type { WeekTarget } from '@/domain/training/weekTarget'
+import { weeklyTargetKm, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { useCountUp } from '@/lib/useCountUp'
 import { useToday } from '@/lib/useToday'
 import { DayStateStrip } from '@/components/ui/DayStateStrip'
 import { dayStateCells } from '@/components/plan/dayStateCells'
 import { t } from '@/i18n'
 
-const RING_SIZE = 76
-const RING_STROKE = 7
-const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
-
 interface Props {
   data: WeeklyStreakData
-  /** This week against the volume goal and the plan - the same selector Plan and Activities read. */
+  /** This week against the plan - the same selector Plan and Activities read. */
   target: WeekTarget
   /** The date the page was prerendered on; see useToday. */
   today: string
 }
 
+/**
+ * The week in one line, "27.3 of 48 km · 3 of 5 sessions", over its days
+ * (M7). The ring and "5.5 km/day to hit 38" measured a second target.
+ */
 export function WeeklyStreakCard({ data, target, today: serverToday }: Props) {
   const s = t.dashboard.weeklyStreak
   const todayIso = useToday(serverToday)
-  const today = (new Date(`${todayIso}T00:00:00`).getDay() + 6) % 7
-
-  const goal = target.goalKm !== null ? { targetKm: target.goalKm, actualKm: target.ranKm } : null
-  const pct = goal ? Math.min(1, goal.actualKm / goal.targetKm) : 0
-  const animatedPct = useCountUp(pct * 100) / 100
-  const offset = RING_CIRCUMFERENCE * (1 - animatedPct)
-  const animatedActualKm = useCountUp(goal?.actualKm ?? 0)
-  const remaining = goal ? Math.max(0, Math.round(goal.targetKm - goal.actualKm)) : 0
-  // The ring's number is the volume goal, and the plan is a different total:
-  // naming both is what stops "6 of 23 km" here and "52 km" on Plan from
-  // reading as two answers to one question.
-  const goalLine = goal
-    ? [s.goalLabel, target.planKm !== null ? s.planHas(target.planSessions, formatWeekKm(target.planKm)) : null]
-        .filter(Boolean)
-        .join(' · ')
-    : null
-
-  // A sentence about the week is not the week. What is left to run, spread over
-  // the days left to run it in, is the number that decides today.
-  const daysLeft = 7 - today
-  const perDay = remaining > 0 && daysLeft > 0 ? remaining / daysLeft : 0
-
-  const headline = !goal
-    ? s.weeksInARow(Math.round(data.currentWeeks))
-    : remaining > 0 && daysLeft > 0
-      ? s.perDayToGoal(formatKm(perDay, 1), formatKm(goal.targetKm))
-      : remaining > 0
-        ? s.kmRemaining(remaining)
-        : s.goalReached
+  const targetKm = weeklyTargetKm(target)
 
   return (
-    <GlassSurface variant="card" className="px-4.5 py-3.5">
-      <div className="flex items-center gap-3.5">
-        {goal && (
-          <div className="relative shrink-0" style={{ width: RING_SIZE, height: RING_SIZE }}>
-            <svg width={RING_SIZE} height={RING_SIZE} className="-rotate-90">
-              <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_RADIUS} fill="none" strokeWidth={RING_STROKE} className="stroke-foreground/10" />
-              <circle
-                cx={RING_SIZE / 2}
-                cy={RING_SIZE / 2}
-                r={RING_RADIUS}
-                fill="none"
-                strokeWidth={RING_STROKE}
-                strokeLinecap="round"
-                style={{ stroke: 'var(--accent)' }}
-                strokeDasharray={RING_CIRCUMFERENCE}
-                strokeDashoffset={offset}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center px-1">
-              <span className="text-title2 font-extrabold leading-none tabular-nums text-foreground">
-                {Math.round(animatedActualKm)}
-              </span>
-              <span className="text-caption leading-tight text-muted-foreground">
-                {s.ringOf(Math.round(goal.targetKm))}
-              </span>
-            </div>
-          </div>
-        )}
-        <div className="min-w-0 flex-1 text-left">
-          <p className="text-subhead font-semibold text-foreground">{headline}</p>
-          {goalLine && <p className="mt-0.5 text-xs text-muted-foreground">{goalLine}</p>}
-        </div>
+    <GlassSurface variant="card" className="px-4.5 py-3.5" data-testid="week-card">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="min-w-0 text-foreground">
+          <span className="font-display text-title2 font-bold tabular-nums">{formatWeekKm(target.ranKm)}</span>
+          <span className="ml-1 text-footnote text-muted-foreground">
+            {targetKm !== null ? s.ofKm(formatWeekKm(targetKm)) : t.units.km}
+          </span>
+        </p>
+        <p className="shrink-0 text-footnote text-muted-foreground">
+          {target.planSessions > 0
+            ? s.sessionsOf(target.ranSessions, target.planSessions)
+            : s.weeksInARow(Math.round(data.currentWeeks))}
+        </p>
       </div>
 
       {/* The same state recipe as Plan's week: done, missed, still to come or
-          rest, in the session's intensity, today ringed. The old dots drew a
-          missed day and a rest day alike. */}
+          rest, in the session's intensity, today ringed. */}
       <div className="mt-3">
         <DayStateStrip variant="dots" days={dayStateCells(target.days, todayIso, 'initial')} />
       </div>

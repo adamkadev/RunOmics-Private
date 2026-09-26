@@ -11,19 +11,22 @@ function target(overrides: Partial<WeekTarget> = {}): WeekTarget {
 }
 
 describe('WeeklyStreakCard', () => {
-  // "6 of 23 km" here and "52 km" on Plan read as two answers to one question.
-  it('names the ring as the weekly goal and gives the plan its own total', () => {
+  // H04: one target, the plan's km. The ring measured a 23 km goal share
+  // beside the plan's 52.
+  it("reads the week against the plan's km, with its sessions", () => {
     render(<WeeklyStreakCard data={DATA} target={target()} today="2026-09-25" />)
 
     const s = t.dashboard.weeklyStreak
-    const line = `${s.goalLabel} · ${s.planHas(5, '52')}`
-    expect(screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === line)).toBeInTheDocument()
-    expect(screen.getByText(s.ringOf(23))).toBeInTheDocument()
+    const card = screen.getByTestId('week-card')
+    expect(card.textContent).toContain(s.ofKm('52'))
+    expect(card.textContent).toContain(s.sessionsOf(1, 5))
+    expect(card.textContent).not.toContain('23')
+    expect(card.querySelector('svg circle')).toBeNull()
   })
 
-  it('leaves the plan out of the line when nothing is planned', () => {
+  it('falls back to the goal share when nothing is planned', () => {
     render(<WeeklyStreakCard data={DATA} target={target({ planKm: null, planSessions: 0 })} today="2026-09-25" />)
 
-    expect(screen.getByText(t.dashboard.weeklyStreak.goalLabel)).toBeInTheDocument()
+    expect(screen.getByTestId('week-card').textContent).toContain(t.dashboard.weeklyStreak.ofKm('23'))
   })
 })
