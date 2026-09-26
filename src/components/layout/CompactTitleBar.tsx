@@ -20,6 +20,12 @@ const BAR_HEIGHT = 44
  *  shows: under it, not over it (v4.3.3). Unset, each strip keeps its own. */
 export const STICKY_TOP_VAR = '--sticky-top'
 
+/**
+ * A page 1-2 pt down is still at its top (v4.6 2b): a tab swap could leave
+ * that much behind, which showed the bar and faded the title a little.
+ */
+export const SCROLL_TOP_TOLERANCE = 2
+
 /** The line under the large title that fades as it scrolls up. */
 function subtitleOf(heading: HTMLElement): HTMLElement[] {
   const marked = [...(heading.parentElement?.querySelectorAll<HTMLElement>('[data-title-sub]') ?? [])]
@@ -75,11 +81,12 @@ export function CompactTitleBar() {
       // bar's height, so the bar waits for it to start going under the
       // status bar itself - the moment it would be cut.
       const headingTop = headingRest - window.scrollY
-      setShown(window.scrollY > 0 && headingTop < statusBar)
+      const atTop = window.scrollY <= SCROLL_TOP_TOLERANCE
+      setShown(!atTop && headingTop < statusBar)
       // The large title fades and lifts a little as it goes under the status
       // bar - no blur, no scale - and at the top it is plainly itself: a tab
       // swap that left it half-faded read as a blurred title (v4.6).
-      if (window.scrollY <= 0) {
+      if (atTop) {
         heading.style.opacity = '1'
         heading.style.transform = 'none'
         heading.style.filter = 'none'

@@ -13,6 +13,7 @@ import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { formatDateRange, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { PeriodControl } from './AnalyticsKit'
+import { SCROLL_TOP_TOLERANCE } from '@/components/layout/CompactTitleBar'
 import {
   LOAD_PERIODS,
   WEEK_PERIODS,
@@ -93,13 +94,22 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
       for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) docTop += n.offsetTop
       const target = Math.max(docTop - 12, 0)
       if (window.scrollY > target) window.scrollTo({ top: target, behavior: 'smooth' })
+      // Short of the tabs, a swap starts at the very top. A switched-to tab
+      // could be left 1-2 pt down, which on iOS is enough to set off the
+      // scroll-edge blur over the large title (v4.6 2b).
+      else if (window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'instant' })
     }
   }
 
-  // A tab swap changes the page under the title without a scroll: have the
-  // compact bar and the large title re-read where they are (v4.6).
+  // A tab swap changes the page under the title: once the new panel is in,
+  // settle a leftover sub-point offset back to 0, and have the compact bar
+  // and the large title re-read where they are.
   useEffect(() => {
-    window.dispatchEvent(new Event('scroll'))
+    const frame = requestAnimationFrame(() => {
+      if (window.scrollY > 0 && window.scrollY <= SCROLL_TOP_TOLERANCE) window.scrollTo({ top: 0, behavior: 'instant' })
+      window.dispatchEvent(new Event('scroll'))
+    })
+    return () => cancelAnimationFrame(frame)
   }, [tab])
 
   const analyticsTabs = useSegmentedTabs({ ids: TABS.map((item) => item.id), value: tab, onChange: selectTab })

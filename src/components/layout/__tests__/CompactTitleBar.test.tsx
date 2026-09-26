@@ -87,7 +87,14 @@ describe('CompactTitleBar', () => {
     expect(title.style.transform).toBe('none')
     expect(title.style.filter).toBe('none')
 
+    // Two points down is still the top: nothing moves yet.
     scrollY = 2
+    window.dispatchEvent(new Event('scroll'))
+    await flush()
+    expect(title.style.opacity).toBe('1')
+    expect(screen.getByTestId('compact-title-bar').hasAttribute('data-shown')).toBe(false)
+
+    scrollY = 3
     window.dispatchEvent(new Event('scroll'))
     await flush()
     expect(Number(title.style.opacity)).toBeLessThan(1)

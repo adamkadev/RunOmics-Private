@@ -198,12 +198,14 @@ describe('D3 Volume', () => {
   const plan = window.weeks.map((d, i) => ({ week: d, planKm: plans[i]!, planQuality: 2 }))
   const rows = weekRows(weeks, plan, window, TODAY)
 
-  it('counts weeks on plan at 90% of the plan, leaving the week under way out', () => {
+  it('counts weeks on plan at 90% of the plan, leaving the week under way out of the average', () => {
     const view = weeklyDistanceView(rows)!
     expect(view.last.km).toBe(27.3)
     expect(view.last.current).toBe(true)
     expect(view.avg).toBeCloseTo(kms.slice(0, 11).reduce((a, b) => a + b, 0) / 11)
-    expect(view.onPlan).toEqual({ hit: 11, of: 11 })
+    // v4.6: every week drawn with a plan line is in "of", this week too; it
+    // only counts as on plan once it has made it (27.3 of 48 hasn't).
+    expect(view.onPlan).toEqual({ hit: 11, of: 12 })
   })
 
   // v4.6: the rule applies to this week too, once it is past the share.
@@ -250,6 +252,7 @@ describe('D4 Intensity', () => {
     expect(view.weeks[1]).toEqual(['threshold', 'intervals'])
     expect(view.weeks[3]).toEqual(['threshold', 'intervals'])
     expect(view.planAsks).toBe(2)
+    expect(view.planned).toEqual([2, 2, 2, 2])
     expect(view.avg).toBe(1.3)
   })
 })
@@ -276,5 +279,21 @@ describe('the coach read (v4.6)', () => {
     const faster = predictions.map((p) => ({ ...p, delta: -p.delta! }))
     expect(coachRead({ easy: { now: 352, delta: -20 }, predictions: faster, efficiency: null, fitnessDelta: 0, ytdDelta: null })!.tone).toBe('positive')
     expect(coachRead({ easy: { now: 352, delta: 1 }, predictions: [], efficiency: null, fitnessDelta: 0, ytdDelta: null })!.tone).toBe('neutral')
+  })
+})
+
+describe('missed quality sessions (v4.6 item 4)', () => {
+  it('never shows more missed than the week planned, and none for a week without a plan', () => {
+    const window = weekWindow(TODAY, '4w')
+    const weeks = window.weeks.map((d) => week(d))
+    const plan = [
+      { week: window.weeks[0]!, planKm: null, planQuality: 3 },
+      { week: window.weeks[1]!, planKm: null, planQuality: 1 },
+    ]
+    const view = qualityView(weekRows(weeks, plan, window, TODAY), plan)!
+    expect(view.weeks.map((w) => w.filter((d) => d === 'missed').length)).toEqual([3, 1, 0, 0])
+    // The average carries its decimal, so a week of 3 doesn't read as "asks for 1".
+    expect(view.planAsks).toBe(2)
+    expect(view.planned).toEqual([3, 1, null, null])
   })
 })

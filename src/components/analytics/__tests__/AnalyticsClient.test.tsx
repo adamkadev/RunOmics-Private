@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { t } from '@/i18n'
@@ -201,6 +201,22 @@ describe('Analytics (v4.5)', () => {
     expect(longRun.hasAttribute('data-over')).toBe(true)
     expect(longRun.style.boxShadow).toBe('inset 0 0 0 2px var(--accent)')
     expect(screen.getByTestId('long-run-card').textContent).toContain('Jul')
+  })
+
+  // v4.6 2b: a tab switched to was left a point or two down, enough on iOS
+  // for the scroll-edge blur over the large title.
+  it('starts a switched-to tab at the very top', async () => {
+    await renderBoard()
+    const scrollTo = vi.fn()
+    vi.stubGlobal('scrollTo', scrollTo)
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 1 })
+    try {
+      await openTab(t.analytics.tabs.performance, 'predictions-card')
+      expect(scrollTo.mock.calls.some(([opts]) => (opts as ScrollToOptions).top === 0)).toBe(true)
+    } finally {
+      Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+      vi.unstubAllGlobals()
+    }
   })
 
   it('links the zone ranges instead of repeating the zone table', async () => {

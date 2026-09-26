@@ -129,16 +129,25 @@ function QualityCard({ rows, plan }: { rows: WeekRow[]; plan: PlanWeekInput[] })
   return (
     <Card testId="quality-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      <Headline size={24} value={formatKm(view.avg, 1)} note={`${s.avg}${view.planAsks !== null ? s.planAsks(view.planAsks) : s.perWeek}`} />
-      <div className="grid gap-[5px]" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }} data-testid="quality-dots">
-        {view.weeks.map((dots, i) => (
-          <div key={rows[i]!.week} className="flex flex-col items-center gap-1">
-            {dots.map((dot, j) => (
-              <span key={j} data-dot={dot} className="box-border block size-2.5 rounded-full" style={DOT_STYLE[dot]} />
-            ))}
-          </div>
-        ))}
-      </div>
+      <Headline
+        size={24}
+        value={formatKm(view.avg, 1)}
+        note={`${s.avg}${view.planAsks !== null ? s.planAsks(formatKm(view.planAsks, Number.isInteger(view.planAsks) ? 0 : 1)) : s.perWeek}`}
+      />
+      <ChartScrub
+        count={rows.length}
+        readout={(i) => s.readout(t.analytics.cards.scrubWeek(bare(rows[i]!.week)), view.weeks[i]!.filter((d) => d !== 'missed').length, view.planned[i] ?? null)}
+      >
+        <div className="grid gap-[5px]" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }} data-testid="quality-dots">
+          {view.weeks.map((dots, i) => (
+            <div key={rows[i]!.week} className="flex min-h-2.5 flex-col items-center gap-1">
+              {dots.map((dot, j) => (
+                <span key={j} data-dot={dot} className="box-border block size-2.5 rounded-full" style={DOT_STYLE[dot]} />
+              ))}
+            </div>
+          ))}
+        </div>
+      </ChartScrub>
       <Legend>
         <LegendItem swatch="dot" color="var(--zone-4)">{s.threshold}</LegendItem>
         <LegendItem swatch="dot" color="var(--zone-5)">{s.intervals}</LegendItem>
