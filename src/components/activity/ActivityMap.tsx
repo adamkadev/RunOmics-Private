@@ -6,7 +6,7 @@ import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
-import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS } from '@/lib/colors'
+import { MAP_COLORS, PACE_ROUTE_COLORS } from '@/lib/colors'
 import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
@@ -178,7 +178,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
             350, PACE_ROUTE_COLORS.steady,
             390, PACE_ROUTE_COLORS.easy,
             450, PACE_ROUTE_COLORS.recovery]
-        : CHART_COLORS.brand
+        : PACE_ROUTE_COLORS.easy
 
       map.on('load', () => {
         if (cancelled) return
@@ -207,7 +207,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
           paint: { 'line-color': lineColor, 'line-width': 4 },
         })
 
-        new mgl.Marker({ element: mkMarker(CHART_COLORS.brand) }).setLngLat(start).addTo(map)
+        new mgl.Marker({ element: mkMarker('var(--accent)') }).setLngLat(start).addTo(map)
 
         const total = segments.length
         const duration = 1800
@@ -270,8 +270,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     if (!coord) return
 
     if (!hoverMarkerRef.current) {
-      const el = mkMarker('white', CHART_COLORS.brand, 14)
-      el.style.border = `3px solid ${CHART_COLORS.brand}`
+      const el = mkMarker('white', 'var(--accent)', 14)
+      el.style.border = '3px solid var(--accent)'
       hoverMarkerRef.current = new mgl.Marker({ element: el }).setLngLat(coord).addTo(map)
     } else {
       hoverMarkerRef.current.setLngLat(coord)
@@ -283,9 +283,10 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
   const tree = (
     <div
       className={cn(
-        // The attribution ⓘ at the same 12 px inset as the chips.
-        'relative overflow-hidden rounded-xl [&_.maplibregl-ctrl-bottom-right_.maplibregl-ctrl]:m-3!',
-        isFullscreen && 'fixed inset-0 z-[9999] rounded-none',
+        // The attribution ⓘ sits 12 px in from the right and bottom, as the
+        // chips do (.activity-map in globals.css).
+        'activity-map relative overflow-hidden rounded-xl',
+        isFullscreen && 'activity-map-fullscreen fixed inset-0 z-[9999] rounded-none',
         className
       )}
     >

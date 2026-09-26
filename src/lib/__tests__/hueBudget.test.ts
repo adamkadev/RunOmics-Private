@@ -3,7 +3,7 @@ import { ACTIVITY_TYPES, type ActivityType } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_STYLE } from '@/components/activity/activityTypeStyle'
 import { CHART_COLORS, TRAINING_PLAN_PHASE_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
 import { ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT } from '@/lib/accent'
-import { HUE, rgbTriplet } from '@/lib/palette'
+import { rgbTriplet } from '@/lib/palette'
 import { TOKEN_BLOCKS } from '@/lib/themeTokens'
 
 // A chart colour that is a token reads as its value in each theme.
@@ -46,9 +46,14 @@ const TYPES = ACTIVITY_TYPES
 const typeHue = (type: ActivityType) => ACTIVITY_TYPE_STYLE[type].chartColor
 
 describe('activity type hue budget', () => {
-  it('spends at most five hue families across the seven types', () => {
-    const families = new Set(TYPES.map((type) => hueFamily(typeHue(type))))
-    expect([...families].sort()).toEqual(['amber', 'blue', 'green', 'orange', 'red'])
+  // v4.3.2: a type is drawn in its zone's token, so the types spend exactly
+  // the zones' families, in both themes.
+  it('spends the zone families, and no other, across the seven types', () => {
+    for (const block of THEME_BLOCKS) {
+      const families = new Set(TYPES.map((type) => hueFamily(block.tokens[typeHue(type).slice(4, -1)]!)))
+      const zones = new Set([2, 3, 4, 5].map((zone) => hueFamily(block.tokens[`--zone-${zone}`]!)))
+      expect([...families].sort(), block.comment).toEqual([...zones].sort())
+    }
   })
 
   it('stays out of the families that exist only as accent themes', () => {
@@ -59,23 +64,14 @@ describe('activity type hue budget', () => {
     // accent is orange, but orange is also `Threshold`, `atl` and
     // `unproductive`, and that predates this ramp.
     const accentOnly = ['violet', 'fuchsia']
-    for (const type of TYPES) expect(accentOnly, type).not.toContain(hueFamily(typeHue(type)))
+    for (const type of TYPES) for (const hex of resolved(typeHue(type))) expect(accentOnly, type).not.toContain(hueFamily(hex))
     expect(Object.values(ACCENT_SWATCHES_LIGHT)).not.toContain(typeHue('Anaerobic'))
     expect(Object.values(ACCENT_SWATCHES)).not.toContain(typeHue('Anaerobic'))
   })
 
-  it('groups the three zone-5 types into one family, deepening with effort', () => {
-    // EFFORT_ZONE_BY_TYPE puts VO2Max, Anaerobic and Sprint all in Z5, so they
-    // are three depths of one hue rather than three hues, and the lightest of
-    // them is the `--zone-5` token itself.
+  it('draws the three zone-5 types as the one zone-5 token', () => {
     const z5: ActivityType[] = ['VO2Max', 'Anaerobic', 'Sprint']
-    expect(new Set(z5.map((type) => hueFamily(typeHue(type))))).toEqual(new Set(['red']))
-    expect(typeHue('VO2Max')).toBe(HUE.roRed)
-
-    const brightness = (type: ActivityType) =>
-      rgbTriplet(typeHue(type)).reduce((sum, channel) => sum + channel, 0)
-    expect(brightness('VO2Max')).toBeGreaterThan(brightness('Anaerobic'))
-    expect(brightness('Anaerobic')).toBeGreaterThan(brightness('Sprint'))
+    for (const type of z5) expect(typeHue(type), type).toBe('var(--zone-5)')
   })
 })
 
@@ -108,7 +104,8 @@ describe('running-form metric hues', () => {
   // in one frame and a derived metric can share its parent's family for free.
   it('puts each derived metric in its parent hue family', () => {
     expect(hueFamily(CHART_COLORS.verticalRatio)).toBe(hueFamily(CHART_COLORS.verticalOscillation))
-    for (const cadence of resolved(CHART_COLORS.cadence)) expect(hueFamily(CHART_COLORS.strideLength)).toBe(hueFamily(cadence))
+    const stride = resolved(CHART_COLORS.strideLength)
+    resolved(CHART_COLORS.cadence).forEach((cadence, i) => expect(hueFamily(stride[i]!)).toBe(hueFamily(cadence)))
   })
 
   it('spends three hue families on the five form metrics', () => {

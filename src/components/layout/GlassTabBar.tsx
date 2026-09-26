@@ -45,19 +45,16 @@ export function GlassTabBar() {
             onClick={() => { if (!active) haptic('light') }}
             aria-current={active ? 'page' : undefined}
             className={cn(
-              'flex h-12 flex-1 items-center justify-center pt-1.5 transition-colors active:scale-95',
+              'flex h-12 flex-1 items-center justify-center pt-1.5 transition-colors duration-150 active:scale-95',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-xl',
-              active ? 'text-accent-text' : 'text-subtle'
+              active ? 'text-accent' : 'text-muted-foreground'
             )}
           >
-            {/* The active item sits in a soft accent pill (v4.3 --acc-soft). */}
-            <span
-              data-testid={active ? 'tab-active-pill' : undefined}
-              className="flex flex-col items-center gap-0.5 rounded-2xl px-3 py-1"
-              style={active ? { background: 'var(--acc-soft)' } : undefined}
-            >
+            {/* No pill (v4.3.2): the active tab is its icon and label in the
+                accent, both outline icons in either state. */}
+            <span data-testid={active ? 'tab-active' : undefined} className="flex flex-col items-center gap-0.5 px-3 py-1">
               <Icon size={22} strokeWidth={1.9} aria-hidden="true" />
-              <span className="text-caption font-semibold">
+              <span className={cn('text-caption', active ? 'font-semibold' : 'font-medium')}>
                 {label}
               </span>
             </span>

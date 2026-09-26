@@ -285,8 +285,8 @@ export const en = {
       title: 'Accent',
       options: {
         lavender: { label: 'Lavender' },
+        indigo:   { label: 'Indigo' },
         teal:     { label: 'Teal' },
-        lime:     { label: 'Lime' },
         pink:     { label: 'Pink' },
         mono:     { label: 'Mono' },
       },
@@ -1335,7 +1335,9 @@ export const en = {
   },
 
   nextRace: {
-    countdown: (days: number) => `D-${days}`,
+    // A word joiner after the hyphen keeps "D-64" on one line (v4.3.2); the
+    // font has no U+2011, which would draw from a fallback face.
+    countdown: (days: number) => `D-\u2060${days}`,
     today: 'Today',
     tomorrow: 'Tomorrow',
   },

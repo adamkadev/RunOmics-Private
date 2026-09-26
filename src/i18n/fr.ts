@@ -269,8 +269,8 @@ export const fr = {
       title: 'Accent',
       options: {
         lavender: { label: 'Lavande' },
+        indigo:   { label: 'Indigo' },
         teal:     { label: 'Sarcelle' },
-        lime:     { label: 'Citron vert' },
         pink:     { label: 'Rose' },
         mono:     { label: 'Mono' },
       },
@@ -1275,7 +1275,7 @@ export const fr = {
   },
 
   nextRace: {
-    countdown: (days: number) => `J-${days}`,
+    countdown: (days: number) => `J-\u2060${days}`,
     today: 'Aujourd’hui',
     tomorrow: 'Demain',
   },

@@ -26,7 +26,7 @@ export const CHART_COLORS = {
   groundContact:       'var(--chart-ground-contact)',
   verticalOscillation: c.rose500,
   verticalRatio:       c.rose600,
-  strideLength:        c.sky600,
+  strideLength:        'var(--chart-cadence)',
 
   easy:      'var(--chart-easy)',
   hard:      'var(--chart-hard)',
@@ -247,12 +247,17 @@ export const MAP_COLORS = {
   chipShadow:       `0 1px 4px ${ink(0.35)}`,
 } as const
 
+/**
+ * The route's pace ramp, fastest to slowest, in the zones' own hex (MapLibre
+ * paints a literal, not a token): Z5 to Z1, so a fast stretch of route is
+ * the colour of a hard session, and no lime or brand green is left (v4.3.2).
+ */
 export const PACE_ROUTE_COLORS = {
-  fast:      CHART_COLORS.hr,
-  tempo:     c.amber500,
-  steady:    c.lime500,
-  easy:      CHART_COLORS.brand,
-  recovery:  CHART_COLORS.pace,
+  fast:      c.zone5Dark,
+  tempo:     c.zone4Dark,
+  steady:    c.roEmeraldHi,
+  easy:      c.zone2Dark,
+  recovery:  c.roZone1,
 } as const
 
 export const HEAT_ROUTE_COLORS = {

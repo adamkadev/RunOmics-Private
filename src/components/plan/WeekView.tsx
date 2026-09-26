@@ -222,15 +222,19 @@ function WeekSessionRow({
         <span
           data-testid={isToday ? 'week-session-today-dot' : undefined}
           className={cn('shrink-0', isToday ? 'rounded-full' : 'rounded-[4px]')}
+          data-missed={state === 'missed' ? '' : undefined}
           style={{
             width: '8px',
             height: '8px',
-            background: isToday ? 'var(--accent)' : workout.type ? zoneColor(sessionZone(workout)) : 'var(--subtle-2)',
+            // A missed session is a hollow Z5 dot (v4.3.2): what was due, not run.
+            ...(state === 'missed' && !isToday
+              ? { background: 'transparent', border: `1.5px solid ${zoneColor(5)}` }
+              : { background: isToday ? 'var(--accent)' : workout.type ? zoneColor(sessionZone(workout)) : 'var(--subtle-2)' }),
             // Same divergence the bar's cap shows: the fill is what was
             // recorded, this ring is what was planned - without it, a title
             // that names one thing and a dot that colours another look like
             // a bug instead of the known Garmin-mismatch case.
-            boxShadow: !isToday && workout.plannedType ? `0 0 0 1.5px ${zoneColor(sessionZone({ type: workout.plannedType }))}` : undefined,
+            boxShadow: !isToday && state !== 'missed' && workout.plannedType ? `0 0 0 1.5px ${zoneColor(sessionZone({ type: workout.plannedType }))}` : undefined,
           }}
         />
         {weekday && (

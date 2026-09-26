@@ -31,11 +31,18 @@ describe('GlassTabBar', () => {
     }
   })
 
-  // v4.3: the active item sits in a soft accent pill.
-  it('puts the active tab in the soft accent pill', () => {
+  // v4.3.2: no pill in any state; the active tab is its icon and label in the accent.
+  it('colours only the active icon and label, with no pill', () => {
     render(<GlassTabBar />)
-    const pills = screen.queryAllByTestId('tab-active-pill')
-    expect(pills.length).toBeLessThanOrEqual(1)
-    for (const pill of pills) expect(pill.getAttribute('style')).toContain('--acc-soft')
+    const links = screen.getAllByRole('link')
+    const active = links.filter((link) => link.getAttribute('aria-current') === 'page')
+    expect(active).toHaveLength(1)
+    expect(active[0]!.className).toContain('text-accent')
+    expect(active[0]!.querySelector('span > span')!.className).toContain('font-semibold')
+    for (const link of links) {
+      expect(link.innerHTML).not.toContain('--acc-soft')
+      expect(link.innerHTML).not.toMatch(/bg-accent|rounded-2xl/)
+      if (link !== active[0]) expect(link.className).toContain('text-muted-foreground')
+    }
   })
 })

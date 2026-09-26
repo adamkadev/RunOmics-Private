@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { ACTIVITY_TYPES } from '@/domain/activity/types'
+import { sessionZone, zoneColor } from '@/lib/colors'
 import { ACTIVITY_TYPE_STYLE, activityTypeStyle } from '../activityTypeStyle'
 
 describe('ACTIVITY_TYPE_STYLE', () => {
@@ -7,11 +8,12 @@ describe('ACTIVITY_TYPE_STYLE', () => {
     expect(Object.keys(ACTIVITY_TYPE_STYLE)).toEqual([...ACTIVITY_TYPES])
   })
 
-  it('gives each type a distinct hex chart colour and an icon', () => {
-    const colors = ACTIVITY_TYPES.map((type) => ACTIVITY_TYPE_STYLE[type].chartColor)
-    for (const color of colors) expect(color).toMatch(/^#[0-9a-f]{6}$/i)
-    expect(new Set(colors).size).toBe(ACTIVITY_TYPES.length)
-    for (const type of ACTIVITY_TYPES) expect(ACTIVITY_TYPE_STYLE[type].icon, type).toBeTruthy()
+  // v4.3.2: a type is drawn in its session zone's token, never its own hex.
+  it("colours each type with its session zone's token, and gives it an icon", () => {
+    for (const type of ACTIVITY_TYPES) {
+      expect(ACTIVITY_TYPE_STYLE[type].chartColor, type).toBe(zoneColor(sessionZone({ type })))
+      expect(ACTIVITY_TYPE_STYLE[type].icon, type).toBeTruthy()
+    }
   })
 })
 

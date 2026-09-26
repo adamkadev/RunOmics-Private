@@ -11,12 +11,13 @@ import {
 
 describe('the v4.3 accents', () => {
   it('offers five palettes, lavender by default, no blue, orange, red or amber', () => {
-    expect(ACCENT_IDS).toEqual(['lavender', 'teal', 'lime', 'pink', 'mono'])
+    expect(ACCENT_IDS).toEqual(['lavender', 'indigo', 'teal', 'pink', 'mono'])
     expect(DEFAULT_ACCENT).toBe('lavender')
   })
 
   it('knows its own ids only', () => {
-    expect(isAccentId('lime')).toBe(true)
+    expect(isAccentId('indigo')).toBe(true)
+    expect(isAccentId('lime')).toBe(false)
     expect(isAccentId('performance')).toBe(false)
     expect(isAccentId(null)).toBe(false)
   })
@@ -25,6 +26,11 @@ describe('the v4.3 accents', () => {
 describe('reading a stored preference', () => {
   it('reads a palette id as itself', () => {
     expect(parseAccent('pink')).toBe('pink')
+  })
+
+  // v4.3.2: lime left the set; whoever picked it gets the default.
+  it('reads the retired lime as lavender', () => {
+    expect(parseAccent('lime')).toBe('lavender')
   })
 
   it('reads a pre-v4.3 accent as its nearest palette', () => {
@@ -53,11 +59,11 @@ describe('persistAccent', () => {
     window.addEventListener(ACCENT_CHANGE_EVENT, onChange)
     localStorage.setItem('runomics-accent-css', 'stale')
 
-    persistAccent('lime')
+    persistAccent('indigo')
 
-    expect(localStorage.getItem(ACCENT_STORAGE_KEY)).toBe('lime')
+    expect(localStorage.getItem(ACCENT_STORAGE_KEY)).toBe('indigo')
     expect(localStorage.getItem('runomics-accent-css')).toBeNull()
-    expect(document.documentElement.getAttribute('data-accent')).toBe('lime')
+    expect(document.documentElement.getAttribute('data-accent')).toBe('indigo')
     expect(onChange).toHaveBeenCalled()
     window.removeEventListener(ACCENT_CHANGE_EVENT, onChange)
   })

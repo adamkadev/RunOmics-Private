@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { NavigationHistoryProvider } from './NavigationHistory'
+import { CompactTitleBar } from './CompactTitleBar'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
 
@@ -104,6 +105,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <PageTransition>{children}</PageTransition>
           </div>
         </main>
+        {/* After <main>, so it paints over the content scrolled under it. */}
+        <CompactTitleBar />
       </div>
     </NavigationHistoryProvider>
   )
