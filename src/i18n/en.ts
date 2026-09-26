@@ -744,13 +744,12 @@ export const en = {
     thisWeek: 'This week',
     lastWeek: 'Last week',
     shoeFilter: { clear: 'Show runs in every shoe' },
-    weekStat: {
-      km: 'km',
-      runs: (n: number): string => (n === 1 ? 'run' : 'runs'),
-      easy: 'easy time',
-      noSplit: '—',
+    weekLine: {
+      ofKm: (target: string) => `/${target} km`,
+      runs: (n: number): string => (n === 1 ? '1 run' : `${n} runs`),
+      easy: (pct: number) => `${pct}% easy`,
     },
-    weekOfTarget: (done: string, target: string) => `${done} of ${target} km`,
+    mapButton: 'Map',
     sort: {
       label: 'Sort',
       date: 'Date',

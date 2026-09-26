@@ -1,9 +1,9 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Search, SearchX, ChevronDown, Map as MapIcon, X } from 'lucide-react'
-import { ActivityListCard } from './ActivityListCard'
+import { SearchX, ChevronDown, X } from 'lucide-react'
+import { ActivityThumbRow, ThumbRowDivider } from './ActivityThumbRow'
 import { ACTIVITY_TYPES, isActivityType, type ActivitySummary, type ActivityType } from '@/domain/activity/types'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
@@ -53,41 +53,43 @@ interface WeekRow extends WeekGroup<ActivitySummary> {
   shape: string
 }
 
-type WeekRowVariant = 'card' | 'header'
+const KM_STRONG = 'font-semibold text-foreground'
 
-// "This week" keeps the tinted card it always had - it is the one row that is
-// not just a header. Every other week row is now a plain divider between the
-// runs it groups, not a sibling of them, so its stats read quieter.
-function WeekStat({ value, label, variant }: { value: string; label: string; variant: WeekRowVariant }) {
-  if (variant === 'header') {
-    return (
-      <div className="text-right">
-        <div className="font-bold tabular-nums text-foreground" style={{ fontSize: '15px' }}>{value}</div>
-        <div className="whitespace-nowrap text-caption uppercase tracking-wide" style={{ color: 'var(--subtle-2)' }}>{label}</div>
-      </div>
-    )
-  }
+/** "27/48 km · 3 runs · 85% easy": the current week's header, one line (H08, M8). */
+function CurrentWeekLine({ group, ranKm, targetKm }: { group: WeekRow; ranKm: number; targetKm: number | null }) {
+  const w = t.activities.weekLine
   return (
-    <div className="text-right">
-      <div className="text-sm font-bold tabular-nums text-foreground">{value}</div>
-      <div className="whitespace-nowrap text-caption uppercase tracking-wide text-subtle">{label}</div>
-    </div>
+    <span className="shrink-0 text-footnote tabular-nums text-muted-foreground" data-testid="week-line">
+      <span className={KM_STRONG}>{formatRanKm(ranKm)}</span>
+      {targetKm !== null ? w.ofKm(formatWeekKm(targetKm)) : ` ${t.units.km}`}
+      {' · '}
+      {w.runs(group.items.length)}
+      {group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
+    </span>
   )
 }
 
-// Fixed columns, not a flex gap, so km/runs/easy line up from one week row to
-// the next instead of drifting with each value's own width.
-function WeekSummary({ group, variant = 'card' }: { group: WeekRow; variant?: WeekRowVariant }) {
+/** "45 km · 5 · 89%": a collapsed week's stats beside its dots. */
+function PastWeekLine({ group }: { group: WeekRow }) {
   return (
-    <div className="grid shrink-0" style={{ gridTemplateColumns: '38px 32px 46px', gap: '14px' }}>
-      <WeekStat value={String(Math.round(group.totalKm))} label={t.activities.weekStat.km} variant={variant} />
-      <WeekStat value={String(group.items.length)} label={t.activities.weekStat.runs(group.items.length)} variant={variant} />
-      <WeekStat
-        value={group.easyPct !== null ? `${group.easyPct}%` : t.activities.weekStat.noSplit}
-        label={t.activities.weekStat.easy}
-        variant={variant}
-      />
-    </div>
+    <span className="shrink-0 text-footnote tabular-nums text-muted-foreground">
+      <span className={KM_STRONG}>{Math.round(group.totalKm)}</span> {t.units.km} · {group.items.length}
+      {group.easyPct !== null && ` · ${group.easyPct}%`}
+    </span>
+  )
+}
+
+/** Runs as flat rows in one card, each with its route (H09, M8). */
+function ThumbRows({ items, efforts }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]> }) {
+  return (
+    <>
+      {items.map((a, i) => (
+        <Fragment key={a.id}>
+          {i > 0 && <ThumbRowDivider />}
+          <ActivityThumbRow activity={a} qualifiedEfforts={efforts[a.id]} withDay />
+        </Fragment>
+      ))}
+    </>
   )
 }
 
@@ -127,19 +129,12 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
 }
 
 // The bar measures the week against the plan's km, the one weekly target
-// Today and Plan read (weeklyTargetKm). It used to set a second, smaller
-// "weekly goal" beside the plan's own total (H04).
-function WeekTargetProgress({ target, targetKm }: { target: WeekTarget; targetKm: number }) {
-  const pct = Math.min(100, Math.round((target.ranKm / targetKm) * 100))
-
+// Today and Plan read (weeklyTargetKm).
+function WeekTargetBar({ ranKm, targetKm }: { ranKm: number; targetKm: number }) {
+  const pct = Math.min(100, Math.round((ranKm / targetKm) * 100))
   return (
-    <div className="mt-2">
-      <div className="h-1.5 overflow-hidden rounded-full" style={{ background: 'var(--track)' }}>
-        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
-      </div>
-      <p className="mt-1 text-caption tabular-nums text-subtle">
-        {t.activities.weekOfTarget(formatRanKm(target.ranKm), formatWeekKm(targetKm))}
-      </p>
+    <div className="mx-4 mb-2 h-1 overflow-hidden rounded-full" style={{ background: 'var(--track)' }} data-testid="week-target-bar">
+      <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
     </div>
   )
 }
@@ -360,6 +355,10 @@ export function ActivityListClient({
   // Before this week's first run its card is empty, so the latest runs would
   // otherwise all sit behind collapsed rows. The newest week that has any
   // starts open instead - under its own label, not the current card's.
+  // The current week reads the plan's selector, the same ran km and target
+  // Today and Plan show (H04).
+  const currentTargetKm = weekTarget ? weeklyTargetKm(weekTarget) : null
+  const currentRanKm = weekTarget?.ranKm ?? groups?.find((g) => g.isCurrent)?.totalKm ?? 0
   const openByDefault = groups?.[0]?.isCurrent && groups[0].items.length === 0 ? groups[1]?.key : undefined
 
   const loadMore = useCallback(() => {
@@ -412,10 +411,9 @@ export function ActivityListClient({
           <div className="flex shrink-0 items-start gap-2 pt-1">
             <Link
               href="/map"
-              aria-label={t.nav.items.heatmap}
-              className="flex h-9 w-9 items-center justify-center rounded-control border border-foreground/[0.12] bg-foreground/[0.06] text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
+              className="flex h-9 items-center justify-center rounded-control border border-foreground/[0.12] px-3 text-footnote text-foreground transition-colors hover:bg-foreground/[0.06]"
             >
-              <MapIcon size={16} />
+              {t.activities.mapButton}
             </Link>
             <SortDropdown
               options={SORT_OPTIONS}
@@ -431,13 +429,12 @@ export function ActivityListClient({
         </div>
 
         <div className="relative mt-3">
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle-2" />
           <input
             type="text"
             placeholder={t.activities.searchPlaceholder}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full rounded-[11px] bg-foreground/[0.05] pl-9 pr-3 text-sm text-foreground placeholder-subtle-2 focus:outline-none"
+            className="h-11 w-full rounded-[14px] bg-foreground/[0.05] px-3.5 text-subhead text-foreground placeholder-subtle-2 focus:outline-none"
           />
         </div>
       </div>
@@ -510,7 +507,7 @@ export function ActivityListClient({
           )}
         </GlassSurface>
       ) : groups ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {groups.map((g, i) => {
             // A toggle flips a week from its default, so for the week that
             // starts open, being in expandedWeeks means the reader closed it.
@@ -521,73 +518,52 @@ export function ActivityListClient({
               <div key={g.key}>
                 {year !== prevYear && <SectionDivider as="h2" className="px-1 pb-2 pt-1">{year}</SectionDivider>}
                 {g.isCurrent ? (
-                  <div
-                    className="sticky top-[max(var(--safe-top),8px)] z-10 rounded-xl border py-2.5 pl-3.5"
-                    style={{
-                      background: 'color-mix(in srgb, var(--accent) 8%, transparent)',
-                      borderColor: 'color-mix(in srgb, var(--accent) 22%, transparent)',
-                      paddingRight: '16px',
-                    }}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-bold text-foreground">{g.label}</div>
-                        {g.items.length > 0 && <WeekCompositionDots items={g.items} label={g.shape} />}
-                      </div>
-                      <div className="flex items-center" style={{ gap: '16px' }}>
-                        <WeekSummary group={g} />
-                        {/* No chevron on the current week - an equal-width spacer keeps its
-                            stat grid flush with the collapsible rows below, which do have one. */}
-                        <span aria-hidden="true" style={{ width: '14px', flex: '0 0 auto' }} />
-                      </div>
+                  <GlassSurface variant="card" className="overflow-hidden rounded-[22px]" data-testid="current-week">
+                    <div className="flex items-baseline justify-between gap-3 px-4 pt-3.5 pb-2.5">
+                      <span className="truncate font-display text-base font-semibold text-foreground">{g.label}</span>
+                      <CurrentWeekLine group={g} ranKm={currentRanKm} targetKm={currentTargetKm} />
                     </div>
-                    {weekTarget && weeklyTargetKm(weekTarget) !== null && (
-                      <WeekTargetProgress target={weekTarget} targetKm={weeklyTargetKm(weekTarget)!} />
-                    )}
-                  </div>
+                    {currentTargetKm !== null && <WeekTargetBar ranKm={currentRanKm} targetKm={currentTargetKm} />}
+                    <ThumbRows items={g.items} efforts={qualifiedEffortsByActivityId} />
+                    {g.items.length > 0 && <div className="h-1" />}
+                  </GlassSurface>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setExpandedWeeks((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(g.key)) next.delete(g.key)
-                        else next.add(g.key)
-                        return next
-                      })
-                    }
-                    className="flex w-full items-center gap-3 text-left"
-                    style={{ borderTop: '1px solid rgba(148,178,220,.14)', padding: '11px 16px 10px' }}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-bold text-muted-foreground" style={{ fontSize: '15px' }}>{g.label}</div>
-                      <WeekCompositionDots items={g.items} label={g.shape} />
-                    </div>
-                    <div className="flex items-center" style={{ gap: '16px' }}>
-                      <WeekSummary group={g} variant="header" />
-                      <span className="flex items-center justify-center" style={{ width: '14px', flex: '0 0 auto' }}>
-                        <ChevronDown size={14} className={cn('shrink-0 text-subtle transition-transform', isExpanded && 'rotate-180')} />
-                      </span>
-                    </div>
-                  </button>
-                )}
-                {isExpanded && g.items.length > 0 && (
-                  <div className="mt-2 space-y-2" style={{ marginLeft: '10px' }}>
-                    {g.items.map((a) => (
-                      <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
-                    ))}
-                  </div>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedWeeks((prev) => {
+                          const next = new Set(prev)
+                          if (next.has(g.key)) next.delete(g.key)
+                          else next.add(g.key)
+                          return next
+                        })
+                      }
+                      aria-expanded={isExpanded}
+                      className="flex w-full items-center gap-3 border-b border-border px-4 py-3.5 text-left"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-display text-base font-semibold text-foreground">{g.label}</div>
+                        <WeekCompositionDots items={g.items} label={g.shape} />
+                      </div>
+                      <PastWeekLine group={g} />
+                      <ChevronDown size={14} aria-hidden="true" className={cn('shrink-0 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
+                    </button>
+                    {isExpanded && g.items.length > 0 && (
+                      <GlassSurface variant="card" className="mt-2 overflow-hidden rounded-[22px] py-0.5">
+                        <ThumbRows items={g.items} efforts={qualifiedEffortsByActivityId} />
+                      </GlassSurface>
+                    )}
+                  </>
                 )}
               </div>
             )
           })}
         </div>
       ) : (
-        <div className="space-y-2">
-          {items.map((a) => (
-            <ActivityListCard key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
-          ))}
-        </div>
+        <GlassSurface variant="card" className="overflow-hidden rounded-[22px] py-0.5">
+          <ThumbRows items={items} efforts={qualifiedEffortsByActivityId} />
+        </GlassSurface>
       )}
 
       {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-1" />}

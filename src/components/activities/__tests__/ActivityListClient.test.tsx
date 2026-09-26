@@ -25,6 +25,7 @@ function run(id: string, date: string, distanceKm: number): ActivitySummary {
     hrZones: [],
     week: 0,
     elevationGain: null,
+    routeThumb: 'M10 10L40 40',
   }
 }
 
@@ -52,8 +53,9 @@ describe('the current week on /activities', () => {
     renderList([run('a', '2026-09-20', 25), run('b', '2026-09-13', 10)])
 
     expect(screen.getByText(t.activities.thisWeek)).toBeInTheDocument()
-    expect(screen.getByText(t.activities.weekOfTarget('0', '40'))).toBeInTheDocument()
-    expect(screen.queryByText(t.activities.weekOfTarget('25', '40'))).not.toBeInTheDocument()
+    const line = screen.getByTestId('week-line').textContent
+    expect(line).toContain(`0${t.activities.weekLine.ofKm('40')}`)
+    expect(line).not.toContain('25')
   })
 
   it('shows last week as an ordinary row, open until this week has a run', async () => {
@@ -72,8 +74,11 @@ describe('the current week on /activities', () => {
   it('counts this week toward its goal once it has a run', () => {
     renderList([run('c', '2026-09-22', 12), run('a', '2026-09-20', 25)])
 
-    expect(screen.getByText(t.activities.weekOfTarget('12', '40'))).toBeInTheDocument()
-    expect(screen.getByText('Run c')).toBeInTheDocument()
+    // H08, M8: one line, "12/40 km · 1 run · …", over the runs as flat rows.
+    expect(screen.getByTestId('week-line').textContent).toContain(`12${t.activities.weekLine.ofKm('40')} · ${t.activities.weekLine.runs(1)}`)
+    const card = screen.getByTestId('current-week')
+    expect(card).toContainElement(screen.getByText('Run c'))
+    expect(card.querySelector('[data-testid="route-thumb"]')).not.toBeNull()
   })
 })
 
@@ -92,7 +97,8 @@ describe('a type this build does not know', () => {
     renderList([{ ...run('h', '2026-09-22', 9), type: 'HillRepeats' as ActivityType }])
 
     expect(screen.getByText('Run h')).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: '1 hillrepeats' })).toBeInTheDocument()
+    const path = screen.getByTestId('route-thumb').querySelector('path')!
+    expect(path.getAttribute('stroke')).toBe('var(--zone-2)')
   })
 })
 
