@@ -123,11 +123,12 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
       </div>
 
       <Link href="/goals" className="block transition-transform active:scale-[0.99]" data-testid="year-hero">
-        <GlassSurface variant="card" className="rounded-[24px] px-4.5 py-4">
+        {/* Progress's one hero surface (v4.3): a 1.5 px accent border. */}
+        <GlassSurface variant="card" className="rounded-[22px] px-4.5 py-4" style={{ border: '1.5px solid var(--acc-line)' }}>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-caption font-semibold tracking-[0.12em] text-muted-foreground">{view.year}</span>
             {hero.deltaKm !== null && (
-              <span className={cn('text-footnote tabular-nums', hero.deltaKm >= 0 ? 'text-delta-good' : 'text-muted-foreground')}>
+              <span className="text-footnote tabular-nums text-muted-foreground">
                 {h.vsYear(formatDelta(hero.deltaKm), view.year - 1)}
               </span>
             )}
@@ -187,7 +188,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               <p className="flex items-baseline gap-1.5">
                 <span className="font-display text-title2 font-bold leading-none tabular-nums text-foreground">{vo2max.value}</span>
                 {vo2max.delta !== null && (
-                  <span className={cn('text-footnote tabular-nums', vo2max.delta > 0 ? 'text-delta-good' : 'text-muted-foreground')}>
+                  <span className="text-footnote tabular-nums text-muted-foreground">
                     {h.in90d(formatDelta(vo2max.delta))}
                   </span>
                 )}
@@ -210,7 +211,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               {records.map((r) => (
                 <div key={r.key} className="flex items-baseline justify-between gap-2 text-subhead">
                   <dt className="text-foreground">{r.label}</dt>
-                  <dd className={cn('font-bold tabular-nums', r.latest ? 'text-delta-good' : 'text-foreground')}>{formatDuration(r.seconds)}</dd>
+                  <dd className={cn('font-bold tabular-nums', r.latest ? 'text-accent-text' : 'text-foreground')}>{formatDuration(r.seconds)}</dd>
                 </div>
               ))}
             </dl>

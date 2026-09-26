@@ -127,9 +127,9 @@
   --map-attrib-fg:         rgba(255, 255, 255, 0.75);
 }
 
-/* ─── Light tokens - Nature (emerald, default) ────── */
+/* ─── Light tokens - Lavender (default) ───────────── */
 :root {
-  --status-bar:             #f4f5f4;
+  --status-bar:             #f3f4f4;
   --delta-good:             var(--accent-text);
   --delta-warn:             #c2560f;
   --metric-form:            #0f7a52;
@@ -137,7 +137,6 @@
   --metric-fatigue:         #c2560f;
   --destructive:            #d1453f;
   --tone-go:                #0f7a52;
-  --tone-caution:           #b45309;
   --tone-hold:              #c2560f;
   --status-peaking:         #7c3aed;
   --form-band-tired:        var(--delta-warn);
@@ -147,8 +146,8 @@
   --zone-1:                 #5f97b0;
   --zone-2:                 #3b82f6;
   --zone-3:                 #0e9f6e;
-  --zone-4:                 #ea580c;
-  --zone-5:                 #ef4444;
+  --zone-4:                 #e8590c;
+  --zone-5:                 #e03131;
   --chart-cadence:          #0284c7;
   --chart-easy:             #0e9f6e;
   --chart-hard:             #ea580c;
@@ -158,37 +157,38 @@
   --ro-accent-hi:           #14b886;
   --ro-ink:                 #0b1f17;
   --ro-blur:                18px;
-  --accent:                 #00a06e;
-  --accent-hover:           #2dbe88;
-  --accent-dark:            #00855b;
+  --accent:                 #7c3aed;
   --accent-foreground:      #ffffff;
-  --accent-subtle:          #edf8f2;
-  --accent-text:            #00855b;
-  --accent-on-dark:         #85d4ae;
-  --ring:                   rgba(0, 160, 110, 0.35);
-  --background:             #f4f5f4;
-  --canvas:                 #f4f5f4;
+  --accent-text:            #7c3aed;
+  --accent-hover:           color-mix(in oklab, #7c3aed 88%, black);
+  --acc-soft:               color-mix(in oklab, #7c3aed 20%, transparent);
+  --acc-line:               color-mix(in oklab, #7c3aed 55%, transparent);
+  --ring:                   color-mix(in oklab, #7c3aed 35%, transparent);
+  --background:             #f3f4f4;
+  --canvas:                 #f3f4f4;
   --card:                   #ffffff;
   --raised:                 #ffffff;
   --popover:                #ffffff;
-  --muted:                  #e9ebea;
-  --border:                 rgba(0, 0, 0, 0.06);
-  --divider:                rgba(0, 0, 0, 0.08);
-  --foreground:             #111413;
-  --muted-foreground:       #5e6663;
-  --subtle:                 #8a918e;
-  --subtle-2:               #8a918e;
-  --ro-text:                #111413;
-  --ro-text-2:              #5e6663;
-  --ro-text-3:              #8a918e;
-  --track:                  #e9ebea;
-  --thumb-bg:               #e9ebea;
-  --heat-empty:             #e9ebea;
+  --muted:                  #e6e8e8;
+  --border:                 #e4e6e6;
+  --divider:                #e4e6e6;
+  --foreground:             #111313;
+  --muted-foreground:       #6b7070;
+  --subtle:                 #8a8f8f;
+  --subtle-2:               #8a8f8f;
+  --ro-text:                #111313;
+  --ro-text-2:              #6b7070;
+  --ro-text-3:              #8a8f8f;
+  --track:                  #e8eaea;
+  --heat-empty:             #e8eaea;
+  --band:                   #c9cdcd;
+  --thumb-bg:               #e6e8e8;
   --tab-bar-bg:             #ffffff;
-  --tab-bar-hairline:       rgba(0, 0, 0, 0.08);
-  --segmented-track:        #e9ebea;
+  --tab-bar-hairline:       #e4e6e6;
+  --segmented-track:        #e6e8e8;
   --segmented-pill:         #ffffff;
   --segmented-pill-shadow:  0 1px 3px rgba(0, 0, 0, 0.1);
+  --tone-caution:           #b45309;
   --shadow-card:            none;
   --shadow-raised:          0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-hero:            none;
@@ -196,7 +196,7 @@
   --hero-glow:              transparent;
   --glass-sat:              1;
   --glass-bg:               #ffffff;
-  --glass-border:           rgba(0, 0, 0, 0.06);
+  --glass-border:           #e4e6e6;
   --glass-highlight:        transparent;
   --glass-shadow-float:     none;
   --glass-shadow-nav:       none;
@@ -206,9 +206,9 @@
   --glass-bg-nav:           #ffffff;
 }
 
-/* ─── Dark tokens - Nature (emerald, default) ─────── */
+/* ─── Dark tokens - Lavender (default) ────────────── */
 .dark {
-  --status-bar:             #0a0b0b;
+  --status-bar:             #0b0c0c;
   --delta-good:             var(--accent-text);
   --delta-warn:             #fb923c;
   --metric-form:            #34d399;
@@ -216,7 +216,6 @@
   --metric-fatigue:         #ff9a5a;
   --destructive:            #f87171;
   --tone-go:                #34d399;
-  --tone-caution:           #f5b700;
   --tone-hold:              #ff9a5a;
   --status-peaking:         #a78bfa;
   --form-band-tired:        var(--delta-warn);
@@ -224,149 +223,142 @@
   --form-band-fresh:        var(--delta-good);
   --form-band-very-fresh:   var(--tone-caution);
   --zone-1:                 #7fb2c9;
-  --zone-2:                 #7db8ff;
+  --zone-2:                 #7ab8ff;
   --zone-3:                 #4fe6a0;
-  --zone-4:                 #ff9a5a;
-  --zone-5:                 #ff7676;
+  --zone-4:                 #ff9a57;
+  --zone-5:                 #f0524f;
   --chart-cadence:          #0ea5e9;
   --chart-easy:             #34d399;
   --chart-hard:             #fb923c;
   --chart-ground-contact:   #f59e0b;
   --chart-brand:            #1ed787;
-  --accent:                 #2dbe88;
-  --accent-hover:           #85d4ae;
-  --accent-dark:            #00a06e;
-  --accent-foreground:      #00190d;
-  --accent-subtle:          rgba(45, 190, 136, 0.1);
-  --accent-text:            #85d4ae;
-  --accent-on-dark:         #85d4ae;
-  --ring:                   rgba(45, 190, 136, 0.7);
-  --background:             #0a0b0b;
-  --canvas:                 #0a0b0b;
-  --card:                   #141716;
-  --raised:                 #1b1f1e;
-  --popover:                #1b1f1e;
-  --muted:                  #1b1f1e;
-  --border:                 rgba(255, 255, 255, 0.06);
-  --divider:                rgba(255, 255, 255, 0.08);
-  --foreground:             #f2f4f3;
-  --muted-foreground:       #9ba3a0;
-  --subtle:                 #6b7370;
-  --subtle-2:               #6b7370;
-  --ro-text:                #f2f4f3;
-  --ro-text-2:              #9ba3a0;
-  --ro-text-3:              #6b7370;
-  --track:                  #1b1f1e;
-  --thumb-bg:               #1b1f1e;
-  --heat-empty:             #1b1f1e;
-  --tab-bar-bg:             #0a0b0b;
-  --tab-bar-hairline:       rgba(255, 255, 255, 0.08);
-  --segmented-track:        #1b1f1e;
-  --segmented-pill:         #2a302e;
+  --accent:                 #b48cf0;
+  --accent-foreground:      #1a0f2e;
+  --accent-text:            #b48cf0;
+  --accent-hover:           color-mix(in oklab, #b48cf0 88%, white);
+  --acc-soft:               color-mix(in oklab, #b48cf0 20%, transparent);
+  --acc-line:               color-mix(in oklab, #b48cf0 55%, transparent);
+  --ring:                   color-mix(in oklab, #b48cf0 70%, transparent);
+  --background:             #0b0c0c;
+  --canvas:                 #0b0c0c;
+  --card:                   #161818;
+  --raised:                 #1d2020;
+  --popover:                #1d2020;
+  --muted:                  #1d2020;
+  --border:                 #252828;
+  --divider:                #252828;
+  --foreground:             #f2f3f3;
+  --muted-foreground:       #9a9f9f;
+  --subtle:                 #6e7373;
+  --subtle-2:               #6e7373;
+  --ro-text:                #f2f3f3;
+  --ro-text-2:              #9a9f9f;
+  --ro-text-3:              #6e7373;
+  --track:                  #262a2a;
+  --heat-empty:             #262a2a;
+  --band:                   #3a3f3f;
+  --thumb-bg:               #1d2020;
+  --tab-bar-bg:             #0b0c0c;
+  --tab-bar-hairline:       #252828;
+  --segmented-track:        #1d2020;
+  --segmented-pill:         #1d2020;
   --segmented-pill-shadow:  none;
+  --tone-caution:           #f5b83d;
   --shadow-card:            none;
   --shadow-raised:          none;
   --shadow-hero:            none;
-  --hero-gradient:          #141716;
+  --hero-gradient:          #161818;
   --hero-glow:              transparent;
   --glass-sat:              1;
-  --glass-bg:               #141716;
-  --glass-border:           rgba(255, 255, 255, 0.06);
+  --glass-bg:               #161818;
+  --glass-border:           #252828;
   --glass-highlight:        transparent;
   --glass-shadow-float:     none;
   --glass-shadow-nav:       none;
-  --glass-fallback:         #141716;
-  --glass-row-bg:           #141716;
-  --glass-bg-sheet:         #141716;
-  --glass-bg-nav:           #0a0b0b;
+  --glass-fallback:         #161818;
+  --glass-row-bg:           #161818;
+  --glass-bg-sheet:         #161818;
+  --glass-bg-nav:           #0b0c0c;
 }
 
 [data-accent="teal"] {
-  --accent:             #009b9b;
-  --accent-hover:       #00baba;
-  --accent-dark:        #008181;
+  --accent:             #0f8a6e;
   --accent-foreground:  #ffffff;
-  --accent-subtle:      #ebf8f8;
-  --accent-text:        #008181;
-  --accent-on-dark:     #6ed4d4;
-  --ring:               rgba(0, 155, 155, 0.35);
+  --accent-text:        #0f8a6e;
+  --accent-hover:       color-mix(in oklab, #0f8a6e 88%, black);
+  --acc-soft:           color-mix(in oklab, #0f8a6e 20%, transparent);
+  --acc-line:           color-mix(in oklab, #0f8a6e 55%, transparent);
+  --ring:               color-mix(in oklab, #0f8a6e 35%, transparent);
 }
 
 .dark[data-accent="teal"] {
-  --accent:             #00baba;
-  --accent-hover:       #6ed4d4;
-  --accent-dark:        #009b9b;
-  --accent-foreground:  #001717;
-  --accent-subtle:      rgba(0, 186, 186, 0.1);
-  --accent-text:        #6ed4d4;
-  --accent-on-dark:     #6ed4d4;
-  --ring:               rgba(0, 186, 186, 0.7);
+  --accent:             #2fd1a6;
+  --accent-foreground:  #03201a;
+  --accent-text:        #2fd1a6;
+  --accent-hover:       color-mix(in oklab, #2fd1a6 88%, white);
+  --acc-soft:           color-mix(in oklab, #2fd1a6 20%, transparent);
+  --acc-line:           color-mix(in oklab, #2fd1a6 55%, transparent);
+  --ring:               color-mix(in oklab, #2fd1a6 70%, transparent);
 }
 
-[data-accent="performance"] {
-  --accent:             #3b82f6;
-  --accent-hover:       #6ca2fb;
-  --accent-dark:        #0866ea;
+[data-accent="lime"] {
+  --accent:             #4d7c0f;
   --accent-foreground:  #ffffff;
-  --accent-subtle:      #f0f6ff;
-  --accent-text:        #0866ea;
-  --accent-on-dark:     #9cc2ff;
-  --ring:               rgba(59, 130, 246, 0.35);
+  --accent-text:        #4d7c0f;
+  --accent-hover:       color-mix(in oklab, #4d7c0f 88%, black);
+  --acc-soft:           color-mix(in oklab, #4d7c0f 20%, transparent);
+  --acc-line:           color-mix(in oklab, #4d7c0f 55%, transparent);
+  --ring:               color-mix(in oklab, #4d7c0f 35%, transparent);
 }
 
-.dark[data-accent="performance"] {
-  --accent:             #6ca2fb;
-  --accent-hover:       #9cc2ff;
-  --accent-dark:        #3b82f6;
-  --accent-foreground:  #04122b;
-  --accent-subtle:      rgba(108, 162, 251, 0.1);
-  --accent-text:        #9cc2ff;
-  --accent-on-dark:     #9cc2ff;
-  --ring:               rgba(108, 162, 251, 0.7);
+.dark[data-accent="lime"] {
+  --accent:             #c4f04a;
+  --accent-foreground:  #172300;
+  --accent-text:        #c4f04a;
+  --accent-hover:       color-mix(in oklab, #c4f04a 88%, white);
+  --acc-soft:           color-mix(in oklab, #c4f04a 20%, transparent);
+  --acc-line:           color-mix(in oklab, #c4f04a 55%, transparent);
+  --ring:               color-mix(in oklab, #c4f04a 70%, transparent);
 }
 
-[data-accent="endurance"] {
-  --accent:             #a063e1;
-  --accent-hover:       #b68aeb;
-  --accent-dark:        #8d40d3;
+[data-accent="pink"] {
+  --accent:             #c2257a;
   --accent-foreground:  #ffffff;
-  --accent-subtle:      #f7f3fd;
-  --accent-text:        #8d40d3;
-  --accent-on-dark:     #ceb2f3;
-  --ring:               rgba(160, 99, 225, 0.35);
+  --accent-text:        #c2257a;
+  --accent-hover:       color-mix(in oklab, #c2257a 88%, black);
+  --acc-soft:           color-mix(in oklab, #c2257a 20%, transparent);
+  --acc-line:           color-mix(in oklab, #c2257a 55%, transparent);
+  --ring:               color-mix(in oklab, #c2257a 35%, transparent);
 }
 
-.dark[data-accent="endurance"] {
-  --accent:             #b68aeb;
-  --accent-hover:       #ceb2f3;
-  --accent-dark:        #a063e1;
-  --accent-foreground:  #180b27;
-  --accent-subtle:      rgba(182, 138, 235, 0.1);
-  --accent-text:        #ceb2f3;
-  --accent-on-dark:     #ceb2f3;
-  --ring:               rgba(182, 138, 235, 0.7);
+.dark[data-accent="pink"] {
+  --accent:             #ff7ac0;
+  --accent-foreground:  #2e0a1d;
+  --accent-text:        #ff7ac0;
+  --accent-hover:       color-mix(in oklab, #ff7ac0 88%, white);
+  --acc-soft:           color-mix(in oklab, #ff7ac0 20%, transparent);
+  --acc-line:           color-mix(in oklab, #ff7ac0 55%, transparent);
+  --ring:               color-mix(in oklab, #ff7ac0 70%, transparent);
 }
 
-[data-accent="silver"] {
-  --accent:             #7a889d;
-  --accent-hover:       #98a4b4;
-  --accent-dark:        #617289;
+[data-accent="mono"] {
+  --accent:             #141616;
   --accent-foreground:  #ffffff;
-  --accent-subtle:      #f4f5f7;
-  --accent-text:        #617289;
-  --accent-on-dark:     #b9c1cd;
-  --ring:               rgba(122, 136, 157, 0.35);
+  --accent-text:        #141616;
+  --accent-hover:       color-mix(in oklab, #141616 88%, black);
+  --acc-soft:           color-mix(in oklab, #141616 20%, transparent);
+  --acc-line:           color-mix(in oklab, #141616 55%, transparent);
+  --ring:               color-mix(in oklab, #141616 35%, transparent);
 }
 
-.dark[data-accent="silver"] {
-  --accent:             #98a4b4;
-  --accent-hover:       #b9c1cd;
-  --accent-dark:        #7a889d;
-  --accent-foreground:  #101318;
-  --accent-subtle:      rgba(152, 164, 180, 0.1);
-  --accent-text:        #b9c1cd;
-  --accent-on-dark:     #b9c1cd;
-  --ring:               rgba(152, 164, 180, 0.7);
+.dark[data-accent="mono"] {
+  --accent:             #f2f3f3;
+  --accent-foreground:  #0b0c0c;
+  --accent-text:        #f2f3f3;
+  --accent-hover:       color-mix(in oklab, #f2f3f3 88%, white);
+  --acc-soft:           color-mix(in oklab, #f2f3f3 20%, transparent);
+  --acc-line:           color-mix(in oklab, #f2f3f3 55%, transparent);
+  --ring:               color-mix(in oklab, #f2f3f3 70%, transparent);
 }
 
 /* ─── END GENERATED ─── */

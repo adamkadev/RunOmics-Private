@@ -268,19 +268,11 @@ export const fr = {
     accent: {
       title: 'Accent',
       options: {
-        nature:      { label: 'Vert' },
-        teal:        { label: 'Turquoise' },
-        performance: { label: 'Bleu' },
-        endurance:   { label: 'Violet' },
-        silver:      { label: 'Argent' },
-      },
-      custom: {
-        label: 'Personnalisé',
-        open: 'Teinte personnalisée',
-        close: 'Terminé',
-        reserved: 'Réservé aux blessures et aux alertes.',
-        hue: (degrees: number) => `Personnalisé · ${Math.round(degrees)}°`,
-        stop: (degrees: number) => `Teinte ${Math.round(degrees)} degrés`,
+        lavender: { label: 'Lavande' },
+        teal:     { label: 'Sarcelle' },
+        lime:     { label: 'Citron vert' },
+        pink:     { label: 'Rose' },
+        mono:     { label: 'Mono' },
       },
     },
     auth: {
@@ -1421,7 +1413,7 @@ export const fr = {
       loadDone: (load: number) => `Charge ${load} pts`,
       loadDefinition: 'Charge d’entraînement en points, d’après la FC et la durée (TRIMP).',
       sessionsCount: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
-      ranOfPlan: (ran: string, plan: string) => `${ran} sur ${plan} km`,
+      ranOfPlan: (ran: string, plan: string) => `${ran} / ${plan} km`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} sur ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} séance${sessions > 1 ? 's' : ''}`,
     },

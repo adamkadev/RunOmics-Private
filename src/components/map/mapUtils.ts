@@ -95,18 +95,17 @@ export function computeWorldTerritory(
 // something.
 export const MAP_CHIP_GEOMETRY = "flex h-[38px] items-center rounded-[12px] transition-colors";
 export const MAP_CHIP_STYLE = { padding: "0 11px", fontSize: "13.5px" } as const;
-// Neutral surfaces: a filter chip is the segmented control's language - track
-// when idle, the raised pill when set - in theme tokens, not fixed hex.
+// A filter chip is the segmented control's language: the track when idle,
+// a solid accent fill when set (v4.3), in theme tokens.
 export const MAP_CHIP_NEUTRAL = {
   background: "var(--segmented-track)",
   border: "1px solid var(--border)",
   color: "var(--muted-foreground)",
 } as const;
 export const MAP_CHIP_ACTIVE = {
-  background: "var(--segmented-pill)",
-  border: "1px solid var(--border)",
-  color: "var(--foreground)",
-  boxShadow: "var(--segmented-pill-shadow)",
+  background: "var(--accent)",
+  border: "1px solid transparent",
+  color: "var(--accent-foreground)",
 } as const;
 export const MAP_CHIP_COUNT_INK = "var(--subtle)";
 export const MAP_CHIP_CARET_INK = "var(--subtle)";

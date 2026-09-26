@@ -53,16 +53,17 @@ describe('DayStateStrip', () => {
     expect(container.textContent).not.toContain(t.sessionState.rest.toLowerCase())
   })
 
-  // M7: today still to run is a solid accent outline, not the dashed planned
-  // tile; no tile carries a glyph.
-  it('outlines today in the accent and draws no glyphs', () => {
+  // v4.3 A1: today still to run is a solid accent tile with its km; no other
+  // tile carries a glyph.
+  it('fills today with the accent and its km, and draws no other glyph', () => {
     const { container } = render(<DayStateStrip variant="dots" days={WEEK} />)
     const marks = [...container.querySelectorAll('li > span:first-child')]
 
-    expect(marks[2]!.className).toContain('border-accent')
-    expect(marks[2]!.className).not.toContain('state-planned')
+    expect(marks[2]!.className).toContain('bg-accent')
+    expect(marks[2]!.className).toContain('text-accent-foreground')
+    expect(marks[2]!.textContent).toBe('13')
     expect(marks.filter((m) => m.hasAttribute('data-today-outline'))).toHaveLength(1)
-    expect(marks.every((m) => m.textContent === '')).toBe(true)
+    expect(marks.filter((_, i) => i !== 2).every((m) => m.textContent === '')).toBe(true)
   })
 
   it('names each day and its state', () => {

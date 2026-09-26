@@ -10,11 +10,9 @@ import { ServiceWorkerRegistration } from '@/components/layout/ServiceWorkerRegi
 import { NoPinchZoom } from '@/components/layout/NoPinchZoom'
 import { t } from '@/i18n'
 import {
-  ACCENT_CSS_STORAGE_KEY,
   ACCENT_IDS,
   ACCENT_STORAGE_KEY,
-  CUSTOM_ACCENT_ID,
-  CUSTOM_ACCENT_STYLE_ID,
+  LEGACY_ACCENTS,
 } from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
 import { STATUS_BAR_COLOR } from '@/lib/themeTokens'
@@ -91,23 +89,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="h-full">
-        {/* A custom accent has no block in globals.css, so its generated CSS
-            rides along in storage and is injected here - before first paint,
-            and without shipping the OKLCH maths to the document head. */}
+        {/* The reader's accent before first paint. A pre-v4.3 id reads as its
+            nearest palette (LEGACY_ACCENTS); the default needs no attribute. */}
         <Script id="accent-init" strategy="beforeInteractive">
           {`try{
             var a=localStorage.getItem('${ACCENT_STORAGE_KEY}');
+            var legacy=${JSON.stringify(LEGACY_ACCENTS)};
+            if(a&&legacy[a])a=legacy[a];
             if(${JSON.stringify(ACCENT_IDS)}.indexOf(a)>0){
               document.documentElement.setAttribute('data-accent',a);
-            }else if(a&&a.indexOf('${CUSTOM_ACCENT_ID}:')===0){
-              var css=localStorage.getItem('${ACCENT_CSS_STORAGE_KEY}');
-              if(css){
-                var s=document.createElement('style');
-                s.id='${CUSTOM_ACCENT_STYLE_ID}';
-                s.textContent=css;
-                document.head.appendChild(s);
-                document.documentElement.setAttribute('data-accent','${CUSTOM_ACCENT_ID}');
-              }
             }
           }catch(e){}`}
         </Script>

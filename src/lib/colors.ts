@@ -148,10 +148,12 @@ export const TRAINING_METRIC_COLORS = {
 
 // A rising metric is not automatically good news: fatigue climbing is a warning,
 // fitness climbing is not. Each tile says which direction it wants.
+// Trend deltas are grey text (v4.3 --mu): the arrow says which way, and a
+// colour there read as a verdict. Never the accent, never orange.
 export const METRIC_DELTA_COLORS = {
-  good: 'var(--delta-good)',
-  warn: 'var(--delta-warn)',
-  flat: 'var(--subtle)',
+  good: 'var(--muted-foreground)',
+  warn: 'var(--muted-foreground)',
+  flat: 'var(--muted-foreground)',
 } as const
 
 export type MetricDeltaPolarity = 'up' | 'down'

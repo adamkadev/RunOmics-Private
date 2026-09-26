@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { dataPath } from '../dataPath'
 import type { Activity } from '@/domain/activity/types'
+import { displayTitle } from '@/domain/activity/title'
 
 // Keyed by directory because the workspace is resolved per call: a cache that
 // outlived a change of RUNOMICS_DATA_DIR would serve the other workspace.
@@ -20,6 +21,8 @@ function readActivities(dirPath: string): Activity[] {
 
   return months
     .flatMap((month) => readJsonOrThrow<{ activities: Activity[] }>(path.join(dirPath, `${month}.json`)).activities)
+    // One title everywhere the run is named: "3 × 7:00", not "3 x 7:00".
+    .map((a) => (a.description ? { ...a, description: displayTitle(a.description) } : a))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 }
 

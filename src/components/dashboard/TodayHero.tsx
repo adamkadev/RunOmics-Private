@@ -15,7 +15,7 @@ import { SessionStructureBar } from '@/components/plan/WorkoutStructure'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import { formatDelta } from '@/lib/formatters'
 import { todaySession } from './todaySession'
-import { READINESS_TONE_COLORS, TRAINING_STATUS_COLORS, sessionZone } from '@/lib/colors'
+import { READINESS_TONE_COLORS, sessionZone } from '@/lib/colors'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
@@ -79,14 +79,14 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, wa
     <GlassSurface
       variant="card"
       className="flex flex-col gap-3.5 overflow-hidden rounded-card-sm border p-5"
-      style={{ borderColor: `color-mix(in srgb, ${toneColor} 40%, transparent)` }}
+      style={{ borderColor: `color-mix(in srgb, ${toneColor} 45%, transparent)` }}
     >
       <div className="flex items-baseline justify-between gap-3">
         <span className={cn(EYEBROW_CLASS, 'inline-flex items-center')} style={{ color: toneColor }}>
           {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
         </span>
         {watchStatus && (
-          <span className="text-footnote font-semibold" style={{ color: TRAINING_STATUS_COLORS[watchStatus] }}>
+          <span className="text-footnote font-semibold text-foreground">
             {t.trainingStatus.status[watchStatus]}
           </span>
         )}

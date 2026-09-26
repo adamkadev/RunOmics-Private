@@ -2,8 +2,7 @@ import { cn } from '@/lib/utils'
 import type { ElementType, HTMLAttributes, ReactNode } from 'react'
 
 /**
- * `accent` is the one and only "selected" treatment - the neutral raised pill
- * of the segmented control (the name stays; the accent itself is for data).
+ * `accent` is the one and only "selected" treatment - a solid accent fill.
  * There used to be a second one (`active`, a neutral 14 % foreground tint) so
  * the Activities filter row and the profile period toggle read as selected in a
  * different language from the year and window pickers. `neutral` is everything
@@ -12,8 +11,8 @@ import type { ElementType, HTMLAttributes, ReactNode } from 'react'
 type PillVariant = 'accent' | 'neutral'
 
 const VARIANT_CLASS: Record<PillVariant, string> = {
-  // Selected: the segmented control's neutral pill (neutral surfaces).
-  accent:  'border border-transparent bg-[var(--segmented-pill)] text-foreground font-semibold shadow-[var(--segmented-pill-shadow)]',
+  // Selected: a solid accent fill with its ink (v4.3).
+  accent:  'border border-transparent bg-accent text-accent-foreground font-semibold',
   neutral: 'border border-[var(--divider)] bg-transparent text-muted-foreground hover:text-foreground',
 }
 

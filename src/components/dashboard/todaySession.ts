@@ -1,8 +1,8 @@
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { WeekDayState } from '@/domain/training/weekTarget'
-import { workoutSummary } from '@/components/plan/workoutSummary'
+import { paceLabel, workoutSummary } from '@/components/plan/workoutSummary'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
-import { formatClock, formatDistance, formatPace, formatPlannedKm } from '@/lib/formatters'
+import { formatDistance, formatPace, formatPlannedKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 export interface TodaySession {
@@ -44,16 +44,14 @@ export function todaySession(workout: HeroWorkoutView | null, activity: Activity
 
   if (workout && summary) {
     const planned = plannedKm(workout)
-    // The main pace only, as the hero's line (M7): the strides pace is on
-    // Plan's card, beside it, never merged into one range.
-    const mainPace = summary.paces[0]
     return {
       state: 'planned',
       title: workoutTitle!,
       detail: [
+        // Each pace by name, as Plan's card has it (v4.3 A1):
+        // "10 km · easy 5:30–6:24 · strides 3:35".
         planned ? `${planned} ${t.units.km}` : null,
-        workout.scheduledTime ? t.plan.timeOfDay[workout.scheduledTime] : null,
-        mainPace ? `${formatClock(mainPace.pace[0])}–${formatClock(mainPace.pace[1])} ${t.units.perKm}` : workout.target,
+        ...(summary.paces.length > 0 ? summary.paces.map(paceLabel) : [workout.target]),
       ].filter(Boolean).join(' · ') || null,
       // The session is on the plan, so the row goes to the plan.
       href: '/plan',

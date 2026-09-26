@@ -116,7 +116,7 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
       >
         <span
           aria-hidden="true"
-          className="flex size-8.5 items-center justify-center rounded-full bg-[var(--segmented-pill)] text-sm font-bold text-foreground shadow-[var(--segmented-pill-shadow)]"
+          className="flex size-8.5 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
         >
           {initials(displayName)}
         </span>
