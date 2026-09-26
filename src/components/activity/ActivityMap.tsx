@@ -6,7 +6,8 @@ import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
-import { MAP_COLORS, PACE_ROUTE_COLORS } from '@/lib/colors'
+import { MAP_COLORS, PACE_ROUTE_COLORS, PACE_ROUTE_STOPS } from '@/lib/colors'
+import { paceAtFraction } from '@/lib/paceRoute'
 import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
 import type { ShoeTag } from '@/domain/shoe/types'
 import { ShoePairTag } from '@/components/activities/ShoePairTag'
@@ -27,15 +28,7 @@ interface Props {
 
 function buildSegmentFeatures(route: [number, number][], paceSamples: number[] | null | undefined) {
   return route.slice(0, -1).map((coord, i) => {
-    let pace = 300
-    if (paceSamples && paceSamples.length > 1) {
-      const ratio = i / Math.max(route.length - 2, 1)
-      const sampleIdx = ratio * (paceSamples.length - 1)
-      const low = Math.floor(sampleIdx)
-      const high = Math.min(Math.ceil(sampleIdx), paceSamples.length - 1)
-      const t = sampleIdx - low
-      pace = (paceSamples[low] ?? pace) * (1 - t) + (paceSamples[high] ?? pace) * t
-    }
+    const pace = paceAtFraction(paceSamples, i / Math.max(route.length - 2, 1))
     const next = route[i + 1]!
     return {
       type: 'Feature' as const,
@@ -172,12 +165,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       const hasPace = !!(paceSamples && paceSamples.length > 1)
 
       const lineColor: any = hasPace
-        ? ['interpolate', ['linear'], ['get', 'pace'],
-            255, PACE_ROUTE_COLORS.fast,
-            300, PACE_ROUTE_COLORS.tempo,
-            350, PACE_ROUTE_COLORS.steady,
-            390, PACE_ROUTE_COLORS.easy,
-            450, PACE_ROUTE_COLORS.recovery]
+        ? ['interpolate', ['linear'], ['get', 'pace'], ...PACE_ROUTE_STOPS.flat()]
         : PACE_ROUTE_COLORS.easy
 
       map.on('load', () => {

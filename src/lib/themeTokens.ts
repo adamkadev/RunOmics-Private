@@ -18,6 +18,16 @@ export type TokenBlock = {
 const c = HUE
 
 /**
+ * Z1 to Z5 per mode, the values behind `--zone-1..5`: the share card paints
+ * on a canvas and cannot read a token, so it takes the same table.
+ */
+export const ZONE_HEX = {
+  // Every zone clears 3:1 on white; Z1, Z4 and Z5 are a step darker here.
+  light: [c.roZone1Light, c.blue500, c.roEmeraldDeep, c.zone4Light, c.zone5Light],
+  dark: [c.roZone1, c.zone2Dark, c.roEmeraldHi, c.zone4Dark, c.zone5Dark],
+} as const
+
+/**
  * Neutral surfaces, the same under every accent (Whoop / Runna / Strava):
  * colour is for data and the active state, never for a background, a card, a
  * border or a shadow. The accent blocks below carry the accent roles only.
@@ -214,11 +224,11 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
 
       // Every zone and chart line clears 3:1 on white; the three that did not
       // (Z1 2.3, Z4 2.9, Z5 2.6) are a step darker here, and only here.
-      '--zone-1': c.roZone1Light,
-      '--zone-2': c.blue500,
-      '--zone-3': c.roEmeraldDeep,
-      '--zone-4': c.zone4Light,
-      '--zone-5': c.zone5Light,
+      '--zone-1': ZONE_HEX.light[0],
+      '--zone-2': ZONE_HEX.light[1],
+      '--zone-3': ZONE_HEX.light[2],
+      '--zone-4': ZONE_HEX.light[3],
+      '--zone-5': ZONE_HEX.light[4],
       '--chart-cadence': c.cadenceLight,
       '--chart-easy': c.roEmeraldDeep,
       '--chart-hard': c.orange600,
@@ -269,11 +279,11 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--series-2': '#5a6060',
       '--series-3': '#6b7070',
 
-      '--zone-1': c.roZone1,
-      '--zone-2': c.zone2Dark,
-      '--zone-3': c.roEmeraldHi,
-      '--zone-4': c.zone4Dark,
-      '--zone-5': c.zone5Dark,
+      '--zone-1': ZONE_HEX.dark[0],
+      '--zone-2': ZONE_HEX.dark[1],
+      '--zone-3': ZONE_HEX.dark[2],
+      '--zone-4': ZONE_HEX.dark[3],
+      '--zone-5': ZONE_HEX.dark[4],
       '--chart-cadence': c.cadenceDark,
       '--chart-easy': c.emerald400,
       '--chart-hard': c.orange400,

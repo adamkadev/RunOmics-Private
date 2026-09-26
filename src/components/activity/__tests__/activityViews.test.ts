@@ -59,9 +59,9 @@ describe('activityDetailView', () => {
 })
 
 describe('shareActivity', () => {
-  it('carries the card and nothing of the streams', () => {
+  it('carries the card, the pace stream its route is coloured by and the zone times, nothing else', () => {
     expect(Object.keys(shareActivity(ACTIVITY)).sort()).toEqual(
-      ['avgHeartRate', 'date', 'dayOfWeek', 'description', 'distanceKm', 'durationSeconds', 'elevationGain', 'id', 'paceSecPerKm', 'route'].sort()
+      ['avgHeartRate', 'date', 'dayOfWeek', 'description', 'distanceKm', 'durationSeconds', 'elevationGain', 'hrZones', 'id', 'paceSamples', 'paceSecPerKm', 'route'].sort()
     )
   })
 })

@@ -152,28 +152,6 @@ export const HUE = {
   heroBase:      '#0a0f0c',
   mapMarkerRing: '#0b1220',
   sheetInk:      '#0e1612',
-  iosFill:       '#787880',
-
-  shareAuroraDark:   '#050d0a',
-  shareAuroraLight:  '#f0fdf8',
-  sharePulseDark:    '#040810',
-  sharePulseLight:   '#f8fafe',
-  shareTerrainDark:  '#040a06',
-  shareTerrainLight: '#f2faf4',
-  sharePrismDark:    '#060408',
-  sharePrismLight:   '#fafaf9',
-  shareMapDark:      '#09101a',
-  shareMapLight:     '#edf1f7',
-
-  shareMemoryDark1:  '#1c0c06',
-  shareMemoryDark2:  '#2e1610',
-  shareMemoryDark3:  '#12160a',
-  shareMemoryDark4:  '#060a05',
-  shareMemoryLight1: '#ffe4cc',
-  shareMemoryLight2: '#ffcba4',
-  shareMemoryLight3: '#a8c88a',
-  shareMemoryLight4: '#5c7a48',
-  shareMemoryHorizon: '#121c0a',
 } as const
 
 export type Hue = keyof typeof HUE
