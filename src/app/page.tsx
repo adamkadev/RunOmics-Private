@@ -18,7 +18,6 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
 import { BodyCard, latestRatedStatus } from '@/components/dashboard/BodyCard'
-import { LatestRecordRow } from '@/components/dashboard/LatestRecordRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { t } from '@/i18n'
@@ -80,10 +79,8 @@ export default async function DashboardPage() {
         </Link>
       )}
 
-      <LatestRecordRow record={mostRecentRecord} />
-
       <RecentActivities
-        activities={data.recentActivities.slice(0, 3)}
+        activities={data.recentActivities.slice(0, 2)}
         qualifiedEffortsByActivityId={qualifiedEffortsByActivityId}
       />
     </div>

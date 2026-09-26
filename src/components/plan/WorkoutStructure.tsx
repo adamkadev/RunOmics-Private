@@ -107,9 +107,13 @@ export function SessionStructureBar({
   zoneWord,
   zone,
   totalSeconds,
+  bare = false,
 }: {
   steps: WorkoutStep[]
   zoneWord: string | null
+  /** Today's hero (M7): every block full height and no caption, the title
+   *  above already names the reps. */
+  bare?: boolean
   /** The zone the session targets (RUN_TYPE_ZONE); Z2 when unknown. */
   zone: number | null
   totalSeconds: number
@@ -195,7 +199,7 @@ export function SessionStructureBar({
               style={{
                 flexGrow: weights[i],
                 flexBasis: 0,
-                height: isWork ? '22px' : '16px',
+                height: isWork || bare ? '22px' : '16px',
                 background: isWork ? workFill : step.kind === 'recovery' ? RECOVERY_FILL : EASE_FILL,
               }}
             >
@@ -208,7 +212,7 @@ export function SessionStructureBar({
           )
         })}
       </div>
-      {(warmup || cooldown || centerCaption) && (
+      {!bare && (warmup || cooldown || centerCaption) && (
         <div className="mt-1.5 grid grid-cols-3 items-center text-caption" style={{ color: 'var(--subtle-2)' }}>
           <span className="text-left">{warmup ? s.warmup : ''}</span>
           <span className="text-center">{centerCaption}</span>

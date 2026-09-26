@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import userEvent from '@testing-library/user-event'
+import { describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
-import { DashboardGreeting } from '../DashboardGreeting'
+import { DashboardGreeting, isSyncStale } from '../DashboardGreeting'
+
+const push = vi.fn()
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }))
 
 describe('DashboardGreeting', () => {
   // The avatar looked tappable and was a plain div.
@@ -13,5 +17,25 @@ describe('DashboardGreeting', () => {
     // The disc is 34 pt; hit-44 grows its target without growing the row.
     expect(link.className).toContain('hit-44')
     expect(link.className).toContain('size-8.5')
+  })
+
+  // H06: past 6 h the sync age is an amber pill that syncs on tap.
+  it('turns a sync older than 6 h into a tappable pill', async () => {
+    const lastSyncedAt = new Date(Date.now() - 23 * 3600_000).toISOString()
+    render(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
+
+    const pill = await screen.findByTestId('sync-pill')
+    expect(pill.textContent).toContain(t.dashboard.syncStatus.tapToSync)
+    expect(pill.getAttribute('style')).toContain('--tone-caution')
+
+    // Signed out: the tap goes to Settings, where the sync lives.
+    await userEvent.click(pill)
+    expect(push).toHaveBeenCalledWith('/settings')
+  })
+
+  it('keeps a fresh sync as plain text', () => {
+    const now = Date.parse('2026-09-26T08:00:00Z')
+    expect(isSyncStale('2026-09-26T03:00:00Z', now)).toBe(false)
+    expect(isSyncStale('2026-09-26T01:00:00Z', now)).toBe(true)
   })
 })

@@ -6,6 +6,7 @@ import { RefreshCw } from 'lucide-react'
 import type { User } from 'firebase/auth'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { authorizedFetch } from '@/lib/ownerFetch'
+import { clearStoredSince, readStoredSince, writeStoredSince } from '@/lib/syncSince'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -17,43 +18,6 @@ const POLL_INTERVAL_MS = 10_000
  * build. Past that the run is still going; it just finishes without us.
  */
 const POLL_CEILING_MS = 12 * 60_000
-
-/**
- * The one thing this card cannot lose by leaving the page: which sync it is
- * waiting on. `phase` is plain component state, gone the moment Settings
- * unmounts - and closing Settings mid-sync used to be the normal way to use
- * it, on a phone, while it fetched. Coming back showed idle with nothing to
- * suggest a sync was already running, which invited pressing the button again
- * and dispatching a second one. This is the one fact worth surviving that:
- * not the whole phase (a stale "Fetching…" is fine to rebuild from scratch),
- * just the timestamp a resumed poll needs to ask the right question again.
- */
-const STORAGE_KEY = 'runomics_sync_since'
-
-function readStoredSince(): string | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY)
-  } catch {
-    return null
-  }
-}
-
-function writeStoredSince(since: string): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, since)
-  } catch {
-    // Worst case, a page reload mid-sync shows idle again - the sync itself
-    // is unaffected, it just runs without a card watching it.
-  }
-}
-
-function clearStoredSince(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY)
-  } catch {
-    // Nothing to reclaim if this fails - the key can only ever hold one sync.
-  }
-}
 
 interface VerdictStatus {
   ready: boolean

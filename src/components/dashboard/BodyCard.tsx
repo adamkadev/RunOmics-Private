@@ -1,20 +1,12 @@
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
-import { formBand, type FormBand } from '@/domain/training/formBand'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { TRAINING_METRIC_COLORS, metricDeltaColor, type MetricDeltaPolarity } from '@/lib/colors'
 import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const TREND_THRESHOLD = 1
-
-const FORM_BAND_COLOR: Record<FormBand, string> = {
-  tired: 'var(--form-band-tired)',
-  neutral: 'var(--form-band-neutral)',
-  fresh: 'var(--form-band-fresh)',
-  veryFresh: 'var(--form-band-very-fresh)',
-}
 
 type Status = NonNullable<TrainingStatusDayBar['status']>
 
@@ -29,7 +21,6 @@ function Metric({
   label,
   value,
   color,
-  band,
   delta,
   days,
   goodWhen,
@@ -37,21 +28,15 @@ function Metric({
   label: string
   value: string
   color: string
-  band?: FormBand
   delta: number
   days: number
   goodWhen: MetricDeltaPolarity
 }) {
   return (
-    <div className="min-w-0">
-      <div className="text-caption text-subtle">{label}</div>
-      <div className="text-body font-bold tabular-nums" style={{ color }}>
+    <div className="flex min-w-0 flex-col gap-0.75">
+      <div className="text-caption text-muted-foreground">{label}</div>
+      <div className="font-display text-title2 font-bold leading-none tabular-nums" style={{ color }}>
         {value}
-        {band && (
-          <span className="ml-1 text-xs font-medium" style={{ color: FORM_BAND_COLOR[band] }}>
-            {t.formBand[band].toLowerCase()}
-          </span>
-        )}
       </div>
       <div className="text-caption tabular-nums" style={{ color: metricDeltaColor(delta, goodWhen, TREND_THRESHOLD) }}>
         {deltaLabel(delta, days)}
@@ -68,20 +53,18 @@ export function latestRatedStatus(days: TrainingStatusDayBar[]): Status | null {
 /**
  * Form / Fitness / Fatigue, and nothing else (H03, M7): the status word is
  * the hero's head now, and the 28-day strip and its "13 of 28 days" moved off
- * Today (the history is on Analytics). Form sits on a named band, and every
- * delta has an arrow and a window.
+ * Today (the history is on Analytics). Every delta has an arrow and a window.
  */
 export function BodyCard({ status }: { status: TrainingStatus | null }) {
   if (!status) return null
 
   return (
-    <GlassSurface variant="card" className="rounded-card-sm px-4.5 py-3.5" data-testid="body-card">
+    <GlassSurface variant="card" className="rounded-card-sm px-4.5 py-4" data-testid="body-card">
       <div className="grid grid-cols-3 gap-2">
         <Metric
           label={t.dashboard.trainingLoad.form}
           value={formatDelta(Math.round(status.tsbNow))}
           color={TRAINING_METRIC_COLORS.form}
-          band={formBand(status.tsbNow)}
           delta={status.tsbDelta}
           days={STATUS_DELTA_DAYS.form}
           goodWhen="up"

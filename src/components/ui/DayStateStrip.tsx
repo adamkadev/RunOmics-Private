@@ -49,31 +49,25 @@ function formatCellKm(km: number): string {
   return km < 10 && Math.round(km * 10) % 10 !== 0 ? km.toFixed(1) : String(Math.round(km))
 }
 
-function DotGlyph({ cell }: { cell: DayStateCell }) {
-  if (cell.state === 'done') return <span className="text-zone-ink">✓</span>
-  if (cell.state === 'missed') return <span className="text-muted-foreground">×</span>
-  if (cell.state === 'planned') {
-    return <span className="text-caption text-subtle">{cell.km !== null ? formatCellKm(cell.km) : '–'}</span>
-  }
-  return <span className="text-caption text-subtle">–</span>
-}
-
+/**
+ * Today's week (M7): tiles with no glyph, the colour and the shape carry it.
+ * Today, still to run, is a solid accent outline rather than the dashed
+ * planned one, so it can't be read as just another day to come.
+ */
 function Dots({ days }: { days: DayStateCell[] }) {
   return (
     <ul className="grid grid-cols-7 gap-1.5 text-center">
       {days.map((cell) => (
         <li key={cell.date} aria-label={cellName(cell)} className="flex flex-col items-center gap-1.25">
-          <span
-            aria-hidden="true"
-            className={cn(
-              'flex size-8.5 items-center justify-center rounded-control text-sm font-bold',
-              STATE_CLASS[cell.state],
-              cell.isToday && 'state-today',
-            )}
-            style={stateStyle(cell)}
-          >
-            <DotGlyph cell={cell} />
-          </span>
+          {cell.isToday && cell.state !== 'done' ? (
+            <span aria-hidden="true" data-today-outline className="block size-8.5 rounded-control border-2 border-accent" />
+          ) : (
+            <span
+              aria-hidden="true"
+              className={cn('block size-8.5 rounded-control', STATE_CLASS[cell.state], cell.isToday && 'state-today')}
+              style={stateStyle(cell)}
+            />
+          )}
           <span
             aria-hidden="true"
             className={cn('text-caption', cell.isToday ? 'font-bold text-accent-text' : 'font-medium text-subtle')}
