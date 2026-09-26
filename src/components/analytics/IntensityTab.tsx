@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { formatDate, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, Headline, Legend, LegendItem } from './AnalyticsKit'
+import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem } from './AnalyticsKit'
 import { easyHardView, qualityView, zonesView, type PlanWeekInput, type QualityDot, type WeekRow } from './analyticsView'
 import { weekLabels } from './VolumeTab'
 
@@ -77,20 +77,31 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
         readout={(i) => `${t.analytics.cards.scrubWeek(bare(rows[i]!.week))} · ${formatKm(view.weeks[i]!.hours.reduce((a, b) => a + b, 0), 1)} h`}
       >
         <div className="grid items-end" style={{ height: H, gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 5 }} data-testid="zone-bars">
-          {view.weeks.map((week, i) => (
-            <div key={rows[i]!.week} className="flex flex-col-reverse gap-px" style={{ height: H, opacity: week.current && live ? 0.55 : 1 }}>
-              {week.hours.map((h, z) => (
-                <div
-                  key={z}
-                  style={{
-                    height: Math.max(0, (h / view.yMax) * H - (h ? 1 : 0)),
-                    background: ZONE_COLOR[z],
-                    borderRadius: z === 0 ? '0 0 3px 3px' : 1,
-                  }}
-                />
-              ))}
-            </div>
-          ))}
+          {view.weeks.map((week, i) => {
+            const total = week.hours.reduce((sum, h) => sum + h, 0)
+            const current = week.current && live
+            return (
+              <div key={rows[i]!.week} className="flex flex-col justify-end" style={{ height: H }}>
+                {total > 0 ? (
+                  // Zone colours at full strength in every week; this week is
+                  // outlined, never faded (Z4 used to go brown at 55%).
+                  <div
+                    data-current={current ? '' : undefined}
+                    className="flex flex-col-reverse gap-px rounded-[3px]"
+                    style={current ? { outline: '2px solid var(--accent)', outlineOffset: 1 } : undefined}
+                  >
+                    {week.hours.map((h, z) =>
+                      h > 0 ? (
+                        <div key={z} style={{ height: Math.max(1, (h / view.yMax) * H - 1), background: ZONE_COLOR[z], borderRadius: z === 0 ? '0 0 3px 3px' : 1 }} />
+                      ) : null,
+                    )}
+                  </div>
+                ) : (
+                  <EmptyWeek />
+                )}
+              </div>
+            )
+          })}
         </div>
       </ChartScrub>
       <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />

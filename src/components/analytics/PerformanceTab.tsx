@@ -60,7 +60,7 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
     vo2 && {
       label: s.vo2max,
       value: vo2.value.toFixed(1),
-      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange90d : s.in90d(vo2.delta > 0 ? `+${vo2.delta}` : `${MINUS}${Math.abs(vo2.delta)}`),
+      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${vo2.delta}` : `${MINUS}${Math.abs(vo2.delta)}`),
     },
     threshold && { label: s.threshold, value: formatClock(threshold.now), note: shiftWords(threshold.delta) },
     easy && { label: s.easyPace, value: formatClock(easy.now), note: shiftWords(easy.delta) },
@@ -119,7 +119,7 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
       : null
   return (
     <Card testId="predictions-card">
-      <CardHead title={s.title} caption={s.caption(t.analytics.cards.period.short[period]!.replace(/(\d)([a-z])/, '$1 $2'))} about={s.about} />
+      <CardHead title={s.title} caption={s.caption(t.analytics.cards.period.caption[period]!)} about={s.about} />
       {(lead || goal) && <Sentence testId="predictions-sentence">{[lead, goal].filter(Boolean).join(' ')}</Sentence>}
       <div className="flex flex-col">
         {rows.map((row) => (
@@ -127,7 +127,14 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
             <span className="text-[14px] font-semibold text-foreground">{names[row.distance]}</span>
             <Spark values={thin(row.series)} />
             <span className="text-right font-display text-[16px] font-bold leading-none tabular-nums text-foreground">{formatDuration(Math.round(row.seconds))}</span>
-            <span className="text-right text-[12px] leading-tight text-muted-foreground">{shiftWords(row.delta) ?? ''}</span>
+            {/* Slower is the caution; faster stays quiet, not accent (v4.6). */}
+            <span
+              className="text-right text-[12px] leading-tight"
+              style={{ color: row.delta !== null && row.delta >= 1 ? 'var(--tone-caution)' : 'var(--muted-foreground)' }}
+              data-testid="prediction-delta"
+            >
+              {shiftWords(row.delta) ?? ''}
+            </span>
           </div>
         ))}
       </div>
@@ -218,7 +225,7 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   return (
     <Card testId="efficiency-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      <Headline value={view.now.toFixed(2)} note={view.delta4w !== null || view.delta6m !== null ? s.deltas(d(view.delta4w), d(view.delta6m)) : undefined} />
+      <Headline value={view.now.toFixed(2)} note={view.delta4w !== null || view.delta12w !== null ? s.deltas(d(view.delta4w), d(view.delta12w)) : undefined} />
       <Sentence>{sentence}</Sentence>
       <ChartScrub
         count={view.dates.length}
@@ -254,9 +261,6 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   )
 }
 
-/** Fifteen seconds a kilometre or more is a cost worth the ink. */
-const HEAT_INK_SEC = 15
-
 function HeatCostCard({ data }: { data: HeatImpactData | null }) {
   const s = t.analytics.cards.heatCost
   const view = heatView(data)
@@ -276,8 +280,10 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
                 <div
                   className="absolute inset-y-0 left-0 rounded-[4px]"
                   style={{
+                    // Bars are the neutral comparison grey; the best band, the
+                    // reference, is a short ink tick (v4.6: no accent here).
                     width: row.best ? 3 : `${(row.cost / view.scale) * 100}%`,
-                    background: row.best ? 'var(--accent)' : row.cost >= HEAT_INK_SEC ? 'var(--foreground)' : 'var(--series-3)',
+                    background: row.best ? 'var(--foreground)' : 'var(--series-2)',
                   }}
                 />
               )}

@@ -38,12 +38,19 @@ export function CompactTitleBar() {
   useEffect(() => {
     let frame = 0
     let heading: HTMLElement | null = null
+    // The large title's top edge at rest, in page coordinates.
+    let headingRest = 0
     // Each subtitle line with its top edge at rest, in page coordinates.
     let subtitles: { el: HTMLElement; restTop: number }[] = []
 
     const release = () => {
       for (const { el } of subtitles) el.style.opacity = ''
       subtitles = []
+      if (heading) {
+        heading.style.opacity = ''
+        heading.style.transform = ''
+        heading.style.filter = ''
+      }
     }
 
     const measure = () => {
@@ -54,6 +61,7 @@ export function CompactTitleBar() {
         heading = current
         setTitle(current?.textContent?.trim() || null)
         if (current) {
+          headingRest = current.getBoundingClientRect().top + window.scrollY
           subtitles = subtitleOf(current).map((el) => ({ el, restTop: el.getBoundingClientRect().top + window.scrollY }))
         }
       }
@@ -66,7 +74,24 @@ export function CompactTitleBar() {
       // The large title sits right under the status bar at rest, inside the
       // bar's height, so the bar waits for it to start going under the
       // status bar itself - the moment it would be cut.
-      setShown(window.scrollY > 0 && heading.getBoundingClientRect().top < statusBar)
+      const headingTop = headingRest - window.scrollY
+      setShown(window.scrollY > 0 && headingTop < statusBar)
+      // The large title fades and lifts a little as it goes under the status
+      // bar - no blur, no scale - and at the top it is plainly itself: a tab
+      // swap that left it half-faded read as a blurred title (v4.6).
+      if (window.scrollY <= 0) {
+        heading.style.opacity = '1'
+        heading.style.transform = 'none'
+        heading.style.filter = 'none'
+        // At rest is where "at rest" is read, should the page above it move.
+        headingRest = heading.getBoundingClientRect().top + window.scrollY
+      } else {
+        const travel = Math.max(1, headingRest - statusBar)
+        const f = Math.min(1, Math.max(0, (headingTop - statusBar) / travel))
+        heading.style.opacity = String(f)
+        heading.style.transform = `translateY(${((1 - f) * -4).toFixed(1)}px)`
+        heading.style.filter = 'none'
+      }
       // The subtitle fades with the scroll and is gone by the time its top
       // edge reaches the bar's divider, so no clipped glyphs show under it.
       for (const { el, restTop } of subtitles) {

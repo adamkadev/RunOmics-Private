@@ -14,14 +14,17 @@ import { median } from '@/lib/math'
  * old tiles said "+0:55 in 12 m" above a chart that said "slipped 1:10 in 6 m".
  */
 
-export type LoadPeriod = '4w' | '6m' | '1y'
-export type WeekPeriod = '4w' | '12w' | '1y'
+/** One set of periods on every tab (v4.6); Performance's 6m became 12w. */
+export type Period = '4w' | '12w' | '1y'
+export type LoadPeriod = Period
+export type WeekPeriod = Period
 
-export const LOAD_PERIODS: LoadPeriod[] = ['4w', '6m', '1y']
-export const WEEK_PERIODS: WeekPeriod[] = ['4w', '12w', '1y']
+export const PERIODS: Period[] = ['4w', '12w', '1y']
+export const LOAD_PERIODS = PERIODS
+export const WEEK_PERIODS = PERIODS
 
-const PERIOD_DAYS: Record<LoadPeriod, number> = { '4w': 28, '6m': 182, '1y': 364 }
-const PERIOD_WEEKS: Record<WeekPeriod, number> = { '4w': 4, '12w': 12, '1y': 52 }
+const PERIOD_DAYS: Record<Period, number> = { '4w': 28, '12w': 84, '1y': 364 }
+const PERIOD_WEEKS: Record<Period, number> = { '4w': 4, '12w': 12, '1y': 52 }
 
 export interface DayWindow {
   start: string
@@ -105,6 +108,9 @@ export interface YtdInput {
 
 // ─── D1 Load ───────────────────────────────────────────────────────────────
 
+/** 12 pt of a 110 pt chart. */
+const FORM_LABEL_CLEARANCE = 12 / 110
+
 export interface FormView {
   form: number
   band: FormBand
@@ -144,7 +150,8 @@ export function formView(load: LoadDay[], window: DayWindow): FormView | null {
     ctl: points.map((p) => p.ctl),
     atl: points.map((p) => p.atl),
     bars: barPoints.map((p) => ({ form: formOf(p), band: formBand(formOf(p)), date: p.date })),
-    yMax: Math.max(75, Math.ceil(peak / 25) * 25),
+    // The top label needs 12 pt clear of the lines on a 110 pt chart.
+    yMax: Math.max(75, Math.ceil(peak / (1 - FORM_LABEL_CLEARANCE) / 25) * 25),
     dates: points.map((p) => p.date),
   }
 }
@@ -240,7 +247,8 @@ export function riskRows(risk: LoadRiskPanel | null): RiskRow[] {
 
 // ─── D2 Performance ────────────────────────────────────────────────────────
 
-const VO2_WINDOW_DAYS = 90
+/** VO2max's change is read over 12 weeks, the Performance tab's default. */
+const VO2_WINDOW_DAYS = 84
 
 export interface Vo2View {
   value: number
@@ -336,7 +344,7 @@ export function predictionTrend(rows: PredictionRow[]): PredictionTrend | null {
 export interface EfficiencyView {
   now: number
   delta4w: number | null
-  delta6m: number | null
+  delta12w: number | null
   /** Heat-adjusted minus measured over the last four weeks: what heat costs. */
   heatCost: number | null
   trend: 'dipping' | 'rising' | 'steady'
@@ -355,14 +363,14 @@ export function efficiencyView(allWeeks: WeeklyTrendPoint[], windowWeeks: Weekly
   const now = block(0, 4)
   if (now === null) return null
   const prev4 = block(4, 8)
-  const prev26 = block(26, 30)
+  const prev12 = block(12, 16)
   const recent = upTo.slice(-4)
   const heat = mean(known(recent.map((w) => (w.efAdjusted !== null && w.ef !== null ? w.efAdjusted - w.ef : null))))
   const delta4w = prev4 === null ? null : round2(now - prev4)
   return {
     now: round2(now),
     delta4w,
-    delta6m: prev26 === null ? null : round2(now - prev26),
+    delta12w: prev12 === null ? null : round2(now - prev12),
     heatCost: heat === null ? null : round2(heat),
     trend: delta4w === null || Math.abs(delta4w) < EF_NOISE ? 'steady' : delta4w < 0 ? 'dipping' : 'rising',
     adjusted: windowWeeks.map(adjustedOf),
@@ -476,10 +484,17 @@ export interface WeeklyDistanceView {
   last: WeekRow
   avg: number | null
   onPlan: { hit: number; of: number } | null
+  /** Weeks in the window the plan said nothing about. */
+  withoutPlan: number
   yMax: number
 }
 
-export function weeklyDistanceView(rows: WeekRow[]): WeeklyDistanceView | null {
+/**
+ * `avgKm` is the app's one weekly average (domain/training/weeklyAverage),
+ * passed in while the window is the current one; a window further back reads
+ * its own finished weeks.
+ */
+export function weeklyDistanceView(rows: WeekRow[], avgKm: number | null = null): WeeklyDistanceView | null {
   const last = rows.at(-1)
   if (!last) return null
   // The week under way is not a week's distance yet, so it stays out of both.
@@ -488,8 +503,9 @@ export function weeklyDistanceView(rows: WeekRow[]): WeeklyDistanceView | null {
   const peak = Math.max(...rows.map((r) => Math.max(r.km, r.planKm ?? 0)), 10)
   return {
     last,
-    avg: done.length ? Math.round(mean(done.map((r) => r.km))!) : null,
+    avg: avgKm ?? (done.length ? mean(done.map((r) => r.km))! : null),
     onPlan: planned.length ? { hit: planned.filter((r) => r.km >= r.planKm! * ON_PLAN_SHARE).length, of: planned.length } : null,
+    withoutPlan: rows.filter((r) => r.planKm === null || r.planKm <= 0).length,
     yMax: Math.ceil(peak / 10) * 10,
   }
 }
@@ -511,7 +527,8 @@ export function longRunView(rows: WeekRow[]): LongRunView | null {
   if (!last || rows.every((r) => !r.point || r.point.longestKm === 0)) return null
   const bars = rows.map((r) => {
     const km = r.point?.longestKm ?? 0
-    return { km, over: !r.current && r.km > 0 && km / r.km > LONG_RUN_SHARE, current: r.current }
+    // The week under way counts too, once it is past the share (v4.6).
+    return { km, over: r.km > 0 && km / r.km > LONG_RUN_SHARE, current: r.current }
   })
   return {
     km: last.point?.longestKm ?? 0,
@@ -621,4 +638,59 @@ export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView
     avg: done.length ? Math.round((mean(done.map((r) => (r.point?.thresholdSessions ?? 0) + (r.point?.intervalSessions ?? 0))) ?? 0) * 10) / 10 : null,
     planAsks: planned.length ? Math.round(mean(planned)!) : null,
   }
+}
+
+// ─── Coach read (v4.6) ─────────────────────────────────────────────────────
+
+export type Trend = 'improving' | 'flat' | 'declining'
+
+export type CoachSignal =
+  | { key: 'easy'; trend: Trend; pace: number; delta: number }
+  | { key: 'predictions'; trend: Trend; slower: number; faster: number; count: number }
+  | { key: 'efficiency'; trend: Trend; value: number; delta: number }
+  | { key: 'volume'; trend: Trend; delta: number }
+
+export interface CoachReadView {
+  tone: 'positive' | 'neutral' | 'caution'
+  /** Fitness went up over the last four weeks. */
+  loadUp: boolean
+  signals: CoachSignal[]
+}
+
+/** Under two seconds a kilometre either way, easy pace held. */
+const EASY_NOISE_SEC = 2
+
+const trendOf = (delta: number, noise: number, lowerIsBetter: boolean): Trend =>
+  Math.abs(delta) < noise ? 'flat' : (delta < 0) === lowerIsBetter ? 'improving' : 'declining'
+
+/**
+ * The coach read, from the values the cards print (v4.6): the Pace trend's
+ * easy shift, the race predictions, aerobic efficiency and Year to date. The
+ * headline used to be hard-coded praise ("yielding real speed") above four
+ * slower predictions.
+ */
+export function coachRead(input: {
+  easy: PaceShift | null
+  predictions: PredictionRow[]
+  efficiency: EfficiencyView | null
+  fitnessDelta: number | null
+  ytdDelta: number | null
+}): CoachReadView | null {
+  const signals: CoachSignal[] = []
+  const { easy, predictions, efficiency } = input
+  if (easy && easy.delta !== null) signals.push({ key: 'easy', trend: trendOf(easy.delta, EASY_NOISE_SEC, true), pace: easy.now, delta: easy.delta })
+  const moved = known(predictions.map((r) => r.delta))
+  if (moved.length) {
+    const slower = moved.filter((d) => d >= PREDICTION_NOISE_SEC).length
+    const faster = moved.filter((d) => d <= -PREDICTION_NOISE_SEC).length
+    signals.push({ key: 'predictions', trend: slower > faster ? 'declining' : faster > slower ? 'improving' : 'flat', slower, faster, count: moved.length })
+  }
+  if (efficiency && efficiency.delta4w !== null) {
+    signals.push({ key: 'efficiency', trend: efficiency.trend === 'dipping' ? 'declining' : efficiency.trend === 'rising' ? 'improving' : 'flat', value: efficiency.now, delta: efficiency.delta4w })
+  }
+  if (input.ytdDelta !== null) signals.push({ key: 'volume', trend: trendOf(input.ytdDelta, 1, false), delta: input.ytdDelta })
+  const speed = signals.filter((s) => s.key !== 'volume')
+  if (!speed.length) return null
+  const score = speed.filter((s) => s.trend === 'improving').length - speed.filter((s) => s.trend === 'declining').length
+  return { tone: score > 0 ? 'positive' : score < 0 ? 'caution' : 'neutral', loadUp: (input.fitnessDelta ?? 0) > 0, signals }
 }

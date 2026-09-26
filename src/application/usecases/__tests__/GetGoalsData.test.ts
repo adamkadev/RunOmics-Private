@@ -40,7 +40,7 @@ describe('computeProjection', () => {
   })
 
   it('projects ahead when the recent weekly rate beats what is needed by >10%', () => {
-    const activities = Array.from({ length: 8 }, () => act('2024-06-01', 40))
+    const activities = Array.from({ length: 12 }, () => act('2024-06-01', 40))
     const result = computeProjection(activities, 2024, 500, goal(800))
     expect(result?.weeklyRate).toBe(40)
     expect(result?.status).toBe('ahead')
@@ -53,15 +53,19 @@ describe('computeProjection', () => {
   })
 
   it('marks status on_track when the rate roughly matches what is needed', () => {
-    const activities = Array.from({ length: 8 }, () => act('2024-06-20', 34.4))
+    const activities = Array.from({ length: 12 }, () => act('2024-06-20', 34.4))
     const result = computeProjection(activities, 2024, 100, goal(1000))
     expect(result?.status).toBe('on_track')
   })
 
-  it('only counts activities within the last 8 weeks for the rate', () => {
-    const old = act('2023-01-01', 1000)
-    const result = computeProjection([old], 2024, 100, goal(2000))
-    expect(result?.weeklyRate).toBe(0)
+  // v4.6: the app's one weekly average - the last 12 complete weeks, the
+  // week under way (from Monday Jul 1) left out.
+  it('reads the rate over the last 12 complete weeks only', () => {
+    const old = act('2024-04-07', 1000)
+    const thisWeek = act('2024-07-01', 1000)
+    const counted = act('2024-04-08', 120)
+    const result = computeProjection([old, thisWeek, counted], 2024, 100, goal(2000))
+    expect(result?.weeklyRate).toBe(10)
   })
 })
 

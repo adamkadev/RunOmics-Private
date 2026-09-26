@@ -1,8 +1,5 @@
 import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
 import { appTodayIso } from '@/lib/calendarDate'
-import { getYearComparison } from '@/application/usecases/GetYearComparison'
-import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
-import { getSeasonInsight } from '@/application/usecases/GetSeasonInsight'
 import { getVO2maxReadings } from '@/application/usecases/GetVO2maxHistory'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
@@ -15,6 +12,7 @@ import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { isRaceDistanceKey, type RaceDistanceKey } from '@/domain/race/distances'
 import { cumulativeYear } from '@/components/profile/progressHub'
+import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
 
@@ -32,9 +30,6 @@ export default async function AnalyticsPage() {
   const year = Number(today.slice(0, 4))
   const [data, trainingLoad, risk, goals] = await Promise.all([getAnalyticsData(), getTrainingLoad(), getLoadRiskPanel(), getGoalsPageData()])
 
-  const headline = getSeasonHeadline(data, getYearComparison())
-  const insight = headline ? await getSeasonInsight(headline) : null
-
   const activities = getActivitySummaries()
   const todayDay = dayOfYear(today)
   const hadLastYear = activities.some((a) => a.date.startsWith(String(year - 1)))
@@ -46,8 +41,6 @@ export default async function AnalyticsPage() {
     load: trainingLoad?.points.map(({ date, ctl, atl }) => ({ date, ctl, atl })) ?? [],
     status: getTrainingStatusHistory()?.points.map(({ date, status }) => ({ date, status })) ?? [],
     risk,
-    headline,
-    insight,
     weeks: data.weeklyTrends,
     plan: await loadPlanWeeks(getCoachingOverview(today)),
     vo2max: getVO2maxReadings(),
@@ -64,6 +57,7 @@ export default async function AnalyticsPage() {
           }
         : null,
     heat: getHeatImpact(),
+    weeklyAvgKm: weeklyAverageKm(activities, today),
     ytd: {
       year,
       daysInYear: daysIn(year),

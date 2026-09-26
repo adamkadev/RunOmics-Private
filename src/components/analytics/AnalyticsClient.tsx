@@ -1,12 +1,10 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
-import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
-import type { Insight } from '@/lib/gemini'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
@@ -57,8 +55,6 @@ export interface AnalyticsBoardData {
   load: LoadDay[]
   status: StatusDay[]
   risk: LoadRiskPanel | null
-  headline: SeasonHeadlineData | null
-  insight: Insight | null
   weeks: WeeklyTrendPoint[]
   plan: PlanWeekInput[]
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
@@ -67,6 +63,8 @@ export interface AnalyticsBoardData {
   race: GoalRaceInput | null
   heat: HeatImpactData | null
   ytd: YtdInput | null
+  /** The app's one weekly average: the last 12 complete weeks. */
+  weeklyAvgKm: number | null
 }
 
 interface TabWindow<P> {
@@ -76,7 +74,7 @@ interface TabWindow<P> {
 
 const DEFAULTS = {
   fitness: { period: '4w', offset: 0 } as TabWindow<LoadPeriod>,
-  performance: { period: '6m', offset: 0 } as TabWindow<LoadPeriod>,
+  performance: { period: '12w', offset: 0 } as TabWindow<LoadPeriod>,
   volume: { period: '12w', offset: 0 } as TabWindow<WeekPeriod>,
   health: { period: '12w', offset: 0 } as TabWindow<WeekPeriod>,
 }
@@ -97,6 +95,12 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
       if (window.scrollY > target) window.scrollTo({ top: target, behavior: 'smooth' })
     }
   }
+
+  // A tab swap changes the page under the title without a scroll: have the
+  // compact bar and the large title re-read where they are (v4.6).
+  useEffect(() => {
+    window.dispatchEvent(new Event('scroll'))
+  }, [tab])
 
   const analyticsTabs = useSegmentedTabs({ ids: TABS.map((item) => item.id), value: tab, onChange: selectTab })
 
@@ -159,7 +163,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
 
       <div {...analyticsTabs.panelProps} {...swipeHandlers}>
         {tab === 'fitness' && days && (
-          <LoadTab window={days} onShift={shift} load={data.load} status={data.status} risk={data.risk} headline={data.headline} insight={data.insight} />
+          <LoadTab window={days} onShift={shift} today={today} data={data} />
         )}
         {tab === 'performance' && days && (
           <PerformanceTab
@@ -175,7 +179,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             heat={data.heat}
           />
         )}
-        {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} today={today} />}
+        {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} today={today} weeklyAvgKm={data.weeklyAvgKm} />}
         {tab === 'health' && weeks && <IntensityTab rows={rows} live={weeks.live} onShift={shift} plan={data.plan} />}
       </div>
     </div>
