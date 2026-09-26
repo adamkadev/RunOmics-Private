@@ -67,4 +67,14 @@ describe('AppShell surface', () => {
     expect(container.querySelector('.aurora')).toBeNull()
     expect(queryByTestId('status-bar-blend')).toBeNull()
   })
+
+  // Without a fixed opaque bar at the top edge, iOS 26 blurs the top of the
+  // installed app over the page (owner report, twice).
+  it('keeps a flat, fixed bar at the top edge for iOS', () => {
+    const { getByTestId } = render(<AppShell>page</AppShell>)
+    const bar = getByTestId('top-edge-bar')
+    expect(bar.className).toContain('fixed')
+    expect(bar.className).toContain('top-0')
+    expect(bar.style.background).toBe('var(--background)')
+  })
 })
