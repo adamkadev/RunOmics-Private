@@ -386,7 +386,7 @@ export const en = {
 
   dashboard: {
     recentActivities: {
-      title: 'Recent Activities',
+      title: 'Recent',
     },
     trainingLoad: {
       title: 'Training Load',
@@ -400,12 +400,14 @@ export const en = {
     bodyCard: {
       deltaIn: (delta: string, days: number) => `${delta} in ${days} d`,
     },
-    latestRecord: 'Latest record',
     trainingStatusDays: {
       title: 'Training Status',
       titleToday: (title: string) => `${title} · today`,
     },
     syncStatus: {
+      tapToSync: 'tap to sync',
+      syncing: 'Syncing…',
+      failed: 'Sync failed · tap to retry',
       synced: (relative: string) => `Synced ${relative}`,
       justNow: 'just now',
       minutesAgo: (m: number) => `${m}m ago`,

@@ -370,7 +370,7 @@ export const fr = {
 
   dashboard: {
     recentActivities: {
-      title: 'Activités récentes',
+      title: 'Récentes',
     },
     trainingLoad: {
       title: 'Charge d’entraînement',
@@ -383,12 +383,14 @@ export const fr = {
     bodyCard: {
       deltaIn: (delta: string, days: number) => `${delta} en ${days} j`,
     },
-    latestRecord: 'Dernier record',
     trainingStatusDays: {
       title: 'Statut d’entraînement',
       titleToday: (title: string) => `${title} · aujourd’hui`,
     },
     syncStatus: {
+      tapToSync: 'actualiser',
+      syncing: 'Synchronisation…',
+      failed: 'Échec · toucher pour réessayer',
       synced: (relative: string) => `Synchronisé ${relative}`,
       justNow: 'à l’instant',
       minutesAgo: (m: number) => `il y a ${m} min`,

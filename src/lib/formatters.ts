@@ -209,6 +209,13 @@ export function formatDate(isoDate: string, options: DateFormatOptions = {}): st
   return stableSpaces(date.toLocaleDateString(t.locale, dateFields(options, showYear)))
 }
 
+/** "Thu", or "Thu 24" with the day: a list row under its week's heading. */
+export function formatWeekday(isoDate: string, withDay = false): string {
+  const date = atMidnight(isoDate.slice(0, 10))
+  const weekday = date.toLocaleDateString(t.locale, { weekday: 'short' }).replace(/\.$/, '')
+  return stableSpaces(withDay ? `${weekday} ${date.getDate()}` : weekday)
+}
+
 export function formatMonthShortYear(isoDate: string, options: DateFormatOptions = {}): string {
   const month = formatDate(isoDate, { ...options, precision: 'month', year: 'never' })
   return t.dates.monthShortYear(month, isoDate.slice(2, 4))

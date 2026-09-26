@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -70,56 +72,61 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, wa
   const verdict = aiVerdict ?? (status && tone ? readinessCopy(status, tone) : null)
   const session = todaySession(plannedWorkout, todayActivity)
 
+  const planned = session.state === 'planned' ? plannedWorkout : null
+
   // A thin border in the tone all round, not a thick left rule (H03, M7).
   return (
     <GlassSurface
       variant="card"
-      className="overflow-hidden rounded-card-sm border"
+      className="flex flex-col gap-3.5 overflow-hidden rounded-card-sm border p-5"
       style={{ borderColor: `color-mix(in srgb, ${toneColor} 45%, transparent)` }}
     >
-      <div className="px-4.5 pt-3.5 pb-3">
-        <div className="flex items-center justify-between gap-3">
-          <span
-            className={cn(EYEBROW_CLASS, 'inline-flex items-center')}
-            style={{ color: toneColor }}
-          >
-            {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
+      <div className="flex items-baseline justify-between gap-3">
+        <span className={cn(EYEBROW_CLASS, 'inline-flex items-center')} style={{ color: toneColor }}>
+          {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
+        </span>
+        {watchStatus && (
+          <span className="text-footnote font-semibold" style={{ color: TRAINING_STATUS_COLORS[watchStatus] }}>
+            {t.trainingStatus.status[watchStatus]}
           </span>
-          {watchStatus && (
-            <span className="text-footnote font-semibold" style={{ color: TRAINING_STATUS_COLORS[watchStatus] }}>
-              {t.trainingStatus.status[watchStatus]}
-            </span>
-          )}
-        </div>
-
-        {verdict && (
-          <>
-            <div className="mt-1.5 font-display text-title2 font-bold leading-[1.15] tracking-tight text-foreground">
-              {verdict.headline}
-            </div>
-          </>
         )}
       </div>
 
-      {/* The session leads with its state - planned, done or rest - and
-          planned against ran, under the insight rather than competing with it. */}
-      <SessionCard
-        state={session.state}
-        title={session.title}
-        detail={session.detail}
-        href={session.href}
-        className="border-t border-border px-4.5 py-2.5"
-      />
-      {/* The bar Plan draws for the same session, from the same steps. */}
-      {session.state === 'planned' && plannedWorkout?.duration && plannedWorkout.structure && (
-        <div className="px-4.5 pb-3.5" data-testid="today-structure-bar">
-          <SessionStructureBar
-            steps={plannedWorkout.structure}
-            zoneWord={plannedWorkout.type ? (EFFORT_ZONE_BY_TYPE[plannedWorkout.type] ?? null) : null}
-            zone={plannedWorkout.type ? sessionZone(plannedWorkout) : null}
-            totalSeconds={plannedWorkout.duration.seconds}
-          />
+      {verdict && (
+        <div className="-mt-1.5 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
+          {verdict.headline}
         </div>
+      )}
+
+      <div className="h-px bg-border" />
+
+      {planned ? (
+        // The session Plan shows for today, in Plan's words, then its bar.
+        <>
+          <Link href={session.href ?? '/plan'} data-testid="session-card" className="-mt-0.5 block transition-opacity active:opacity-70">
+            <span className="flex items-center justify-between gap-3">
+              <span className="min-w-0 truncate font-display text-[17px] font-semibold leading-tight text-foreground">
+                {session.title}
+              </span>
+              <ChevronRight size={18} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+            </span>
+            {session.detail && <span className="mt-1 block text-sm text-muted-foreground">{session.detail}</span>}
+          </Link>
+          {planned.duration && planned.structure && (
+            <div data-testid="today-structure-bar">
+              <SessionStructureBar
+                steps={planned.structure}
+                zoneWord={planned.type ? (EFFORT_ZONE_BY_TYPE[planned.type] ?? null) : null}
+                zone={planned.type ? sessionZone(planned) : null}
+                totalSeconds={planned.duration.seconds}
+                bare
+              />
+            </div>
+          )}
+        </>
+      ) : (
+        // Done, missed or rest: the state chip says which.
+        <SessionCard state={session.state} title={session.title} detail={session.detail} href={session.href} className="-my-1" />
       )}
     </GlassSurface>
   )

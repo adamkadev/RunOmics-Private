@@ -37,7 +37,7 @@ describe('BodyCard', () => {
   it('holds the three numbers and nothing else', () => {
     render(<BodyCard status={STATUS} />)
 
-    expect(screen.getByText(t.formBand.neutral.toLowerCase())).toBeInTheDocument()
+    expect(screen.queryByText(t.formBand.neutral.toLowerCase())).toBeNull()
     expect(screen.getByText(t.dashboard.trainingLoad.form)).toBeInTheDocument()
     expect(screen.getByText(t.trainingStatus.metrics.fitness)).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.trainingLoad.fatigue)).toBeInTheDocument()

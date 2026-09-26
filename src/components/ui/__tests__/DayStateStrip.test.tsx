@@ -40,12 +40,16 @@ describe('DayStateStrip', () => {
     expect(bars[3]!.className).toContain('state-rest')
   })
 
-  it('rings today with the accent, whatever its state', () => {
+  // M7: today still to run is a solid accent outline, not the dashed planned
+  // tile; no tile carries a glyph.
+  it('outlines today in the accent and draws no glyphs', () => {
     const { container } = render(<DayStateStrip variant="dots" days={WEEK} />)
     const marks = [...container.querySelectorAll('li > span:first-child')]
 
-    expect(marks[2]!.className).toContain('state-today')
-    expect(marks.filter((m) => m.className.includes('state-today'))).toHaveLength(1)
+    expect(marks[2]!.className).toContain('border-accent')
+    expect(marks[2]!.className).not.toContain('state-planned')
+    expect(marks.filter((m) => m.hasAttribute('data-today-outline'))).toHaveLength(1)
+    expect(marks.every((m) => m.textContent === '')).toBe(true)
   })
 
   it('names each day and its state', () => {
