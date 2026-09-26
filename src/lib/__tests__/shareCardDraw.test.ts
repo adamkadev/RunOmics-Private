@@ -16,8 +16,8 @@ function recorder() {
   const stack: { ty: number; state: typeof state }[] = []
   const log = (op: string) => (...args: unknown[]) => { ops.push({ op, args, fill: state.fillStyle, stroke: state.strokeStyle, font: state.font, ty }) }
   const ctx = {
-    ...Object.fromEntries(['fillRect', 'fillText', 'fill', 'stroke', 'arc', 'drawImage', 'moveTo', 'lineTo', 'rect', 'roundRect'].map((k) => [k, log(k)])),
-    beginPath() {}, clip() {}, closePath() {}, arcTo() {},
+    ...Object.fromEntries(['fillRect', 'fillText', 'fill', 'stroke', 'arc', 'ellipse', 'drawImage', 'moveTo', 'lineTo', 'rect', 'roundRect'].map((k) => [k, log(k)])),
+    beginPath() {}, clip() {}, closePath() {}, arcTo() {}, scale() {},
     save() { stack.push({ ty, state: { ...state } }) },
     restore() { const s = stack.pop()!; ty = s.ty; Object.assign(state, s.state) },
     translate(_x: number, y: number) { ty += y },
@@ -59,7 +59,7 @@ describe('drawShareCard', () => {
   })
 
   it('draws the same header and stat row on every design', () => {
-    const header = ['RUNOMICS', 'Strides 6 × 20s']
+    const header = ['RunOmics', 'Strides 6 × 20s']
     const stats = ['10.0', ' km', 'Distance', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR', '57:33', 'Time']
     for (const design of ['route', 'stats', 'photo'] as const) {
       const all = texts(draw({ design }))
@@ -69,12 +69,19 @@ describe('drawShareCard', () => {
     }
   })
 
-  it('keeps the accent to the eyebrow dot and the finish marker, off every unit and label', () => {
+  it('keeps the accent to the logo mark and the finish marker, off every unit and label', () => {
     const acc = curatedAccent('lavender').dark.acc
     const ops = draw({ design: 'route' })
     expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
-    const accentFills = ops.filter((o) => o.op === 'fill' && o.fill === acc)
-    expect(accentFills).toHaveLength(2)
+    // The finish is the one accent fill; the mark is three accent strokes.
+    expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
+    expect(ops.filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(3)
+  })
+
+  it('heads the card with the v5.2 lockup: three arcs of the small mark, then "RunOmics"', () => {
+    const ops = draw({ design: 'stats' })
+    expect(ops.filter((o) => o.op === 'ellipse')).toHaveLength(3)
+    expect(texts(ops)[0]).toBe('RunOmics')
   })
 
   it('starts white with a dark outline and finishes in the accent, as on the Activity map (v4.10)', () => {

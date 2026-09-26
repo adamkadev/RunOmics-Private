@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { formatDate, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem } from './AnalyticsKit'
+import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, THIS_WEEK_FILL, THIS_WEEK_OUTLINE } from './AnalyticsKit'
 import { easyHardView, qualityView, zonesView, type PlanWeekInput, type QualityDot, type WeekRow } from './analyticsView'
 import { weekLabels } from './VolumeTab'
 
@@ -92,12 +92,14 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
             return (
               <div key={rows[i]!.week} className="flex flex-col justify-end" style={{ height: H }}>
                 {total > 0 ? (
-                  // Zone colours at full strength in every week; this week is
-                  // outlined, never faded (Z4 used to go brown at 55%).
+                  // Zone colours at full strength in every week, never faded
+                  // (Z4 used to go brown at 55%). This week takes the one
+                  // "this week" mark around its stack: the 2 pt accent line over
+                  // the 15% wash, as on Volume (v4.8 §3).
                   <div
                     data-current={current ? '' : undefined}
                     className="flex flex-col-reverse gap-px rounded-[3px]"
-                    style={current ? { outline: '2px solid var(--accent)', outlineOffset: 1 } : undefined}
+                    style={current ? { background: THIS_WEEK_FILL, boxShadow: THIS_WEEK_OUTLINE, padding: 3, borderRadius: 4 } : undefined}
                   >
                     {week.hours.map((h, z) =>
                       h > 0 ? (

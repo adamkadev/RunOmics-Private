@@ -44,7 +44,11 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-capable': 'yes',
   },
   icons: {
-    icon: [{ url: '/icons/logo.svg', type: 'image/svg+xml' }],
+    icon: [
+      { url: '/icons/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icons/web-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/web-16.png', sizes: '16x16', type: 'image/png' },
+    ],
     apple: { url: '/icons/apple-touch-icon.png', sizes: '180x180' },
   },
   openGraph: {

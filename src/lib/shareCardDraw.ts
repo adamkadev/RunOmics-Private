@@ -2,6 +2,7 @@ import { shareCardSubtitle, shareCardTitle, shareStats, shareZones, type ShareAc
 import { HEADER_H, MIDDLE_H, W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
 import { projectRoute, type LngLat } from '@/lib/shareCardMap'
 import { paceAtFraction, paceRouteColor } from '@/lib/paceRoute'
+import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 
 type Ctx = CanvasRenderingContext2D
@@ -30,6 +31,8 @@ export interface ShareCardScene {
 }
 
 const PAD_X = 24
+/** The mark in the header lockup; small enough to take the 3-arc variant. */
+const LOCKUP_MARK = 16
 const RIGHT = W - PAD_X
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
@@ -73,19 +76,17 @@ function drawCover(ctx: Ctx, img: HTMLImageElement, w: number, h: number) {
   ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, 0, 0, w, h)
 }
 
-/** Eyebrow, title, date and place: the same on every design. */
+/** Lockup, title, date and place: the same on every design. */
 function drawHeader(ctx: Ctx, { activity, palette, fonts, place }: ShareCardScene) {
+  // The v5.2 lockup: the mark in the accent, then the wordmark in Space
+  // Grotesk 700 at -0.03em, 0.36x the mark's height apart.
   ctx.textAlign = 'left'
-  ctx.fillStyle = palette.acc
-  ctx.beginPath()
-  ctx.arc(PAD_X + 4, 31.5, 4, 0, Math.PI * 2)
-  ctx.fill()
-
-  ctx.font = `700 11px ${fonts.display}`
+  drawMark(ctx, PAD_X, 31.5 - LOCKUP_MARK / 2, LOCKUP_MARK, palette.acc)
+  ctx.font = `700 14px ${fonts.display}`
   ctx.fillStyle = palette.mu
   ctx.textBaseline = 'middle'
-  setSpacing(ctx, 11 * 0.16)
-  ctx.fillText('RUNOMICS', PAD_X + 15, 32)
+  setSpacing(ctx, -0.03 * 14)
+  ctx.fillText('RunOmics', PAD_X + LOCKUP_MARK * (1 + 0.36), 32)
   setSpacing(ctx, 0)
 
   ctx.textBaseline = 'alphabetic'
