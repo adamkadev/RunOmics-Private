@@ -21,7 +21,7 @@ import type { SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
 import { SimilarRuns } from './SimilarRuns'
 import { ActivityNotes } from './ActivityNotes'
 import { GlossaryTerm } from '@/components/ui/GlossaryTerm'
-import { activityPlanRow, type ActivityPlan } from './activityPlan'
+import type { ShoeTag } from '@/domain/shoe/types'
 import type { Insight } from '@/lib/gemini'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { t } from '@/i18n'
@@ -37,8 +37,8 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
   dynamicsBaseline: DynamicsBaseline | null
-  /** What the plan had that day, when it had something. */
-  plan?: ActivityPlan | null
+  /** The pair it was run in, as a chip on the map. */
+  shoe?: ShoeTag | null
   similarRuns?: SimilarRunsData | null
   /** Race result and achievements, drawn after the note and before the tabs. */
   extras?: ReactNode
@@ -92,7 +92,7 @@ export function ActivityDetailClient({
   qualifiedEfforts,
   aiVerdict,
   dynamicsBaseline,
-  plan = null,
+  shoe = null,
   similarRuns = null,
   extras,
   header,
@@ -120,7 +120,6 @@ export function ActivityDetailClient({
   const tab: TabId = isTabId(tabParam) && tabs.some((item) => item.id === tabParam) ? tabParam : 'overview'
   const setTab = (next: TabId) => setTabParam(next === 'overview' ? null : next)
   const detailTabs = useSegmentedTabs({ ids: tabs.map((item) => item.id), value: tab, onChange: setTab })
-  const planRow = plan ? activityPlanRow(activity, plan) : null
   const e = t.activity.effort
 
   return (
@@ -139,6 +138,8 @@ export function ActivityDetailClient({
                 route={activity.route}
                 paceSamples={activity.paceSamples}
                 weather={activity.weather}
+                activityType={activity.type}
+                shoe={shoe}
                 className="h-full w-full"
               />
             ) : (
@@ -148,9 +149,9 @@ export function ActivityDetailClient({
 
           <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 
-          {/* The verdict, the plan, and how it felt - the watch's RPE and the
-              note, the one thing here the user writes - in one card (H10). */}
-          <RunVerdict activity={activity} aiVerdict={aiVerdict} planRow={planRow}>
+          {/* The verdict and how it felt - the watch's RPE and the note, the
+              one thing here the user writes - in one card (H10). */}
+          <RunVerdict activity={activity} aiVerdict={aiVerdict}>
             {!activity.avgHeartRate && (
               <div className="pt-2.5">
                 <span className="rounded-full border border-[var(--tone-caution)]/40 px-2 py-px text-caption font-semibold uppercase tracking-[0.06em] text-[var(--tone-caution)]">

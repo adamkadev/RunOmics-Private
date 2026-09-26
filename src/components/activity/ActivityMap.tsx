@@ -7,8 +7,11 @@ import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { CHART_COLORS, MAP_COLORS, PACE_ROUTE_COLORS } from '@/lib/colors'
-import type { ActivityWeather } from '@/domain/activity/types'
-import { WeatherChips } from './WeatherChips'
+import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
+import type { ShoeTag } from '@/domain/shoe/types'
+import { ShoePairTag } from '@/components/activities/ShoePairTag'
+import { sessionZone, zoneColor } from '@/lib/colors'
+import { MAP_CHIP_CLASS, WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
 import { loadMapLibre, showPlaceLabelsAtAnyZoom } from '@/lib/maplibre'
 
@@ -17,6 +20,8 @@ interface Props {
   paceSamples?: number[] | null
   hoverFraction?: number | null
   weather?: ActivityWeather | null
+  activityType?: ActivityType | null
+  shoe?: ShoeTag | null
   className?: string
 }
 
@@ -53,7 +58,7 @@ function mkMarker(bg: string, border = 'white', size = 13) {
   return el
 }
 
-export default function ActivityMap({ route, paceSamples, hoverFraction, weather, className }: Props) {
+export default function ActivityMap({ route, paceSamples, hoverFraction, weather, activityType, shoe, className }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   // The element MapLibre draws into. Fullscreen portals the map to <body>,
   // which gives React a new host node; this one moves between hosts, so the
@@ -82,7 +87,15 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     const el = mapElRef.current
     if (!host || !el) return
     if (el.parentElement !== host) host.appendChild(el)
-    mapRef.current?.resize()
+    const map = mapRef.current
+    if (!map) return
+    map.resize()
+    // Leaving fullscreen puts the route back as the card first showed it: a
+    // pinch-zoom in fullscreen used to stay on the small map, with the route
+    // cut off at the card's edges.
+    if (!isFullscreen && boundsRef.current) {
+      map.fitBounds(boundsRef.current, { padding: 24, maxZoom: 15, animate: false })
+    }
   }, [isFullscreen])
 
   useEffect(() => {
@@ -257,16 +270,34 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     >
       <div ref={hostRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
 
-      {/* Weather only: the run type and the shoe are the page's title and
-          subtitle already, and four chips left the route a squiggle. */}
-      {weather && (
+      {/* The run's type and the weather on top, the shoe at the bottom:
+          the map says what the run was (the owner's preference). */}
+      {(weather || activityType) && (
         <div
           className={cn(
             'absolute left-2 right-14 z-10 flex flex-wrap items-center gap-1.5',
             isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
           )}
         >
-          <WeatherChips weather={weather} />
+          {activityType && (
+            <span className={MAP_CHIP_CLASS} data-testid="map-type-chip">
+              <span aria-hidden className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: zoneColor(sessionZone({ type: activityType })) }} />
+              {t.activityTypes[activityType]}
+            </span>
+          )}
+          {weather && <WeatherChips weather={weather} />}
+        </div>
+      )}
+
+      {shoe && (
+        <div
+          className={cn(
+            'pointer-events-none absolute left-2 z-10',
+            isFullscreen ? 'bottom-[max(env(safe-area-inset-bottom),8px)]' : 'bottom-2'
+          )}
+          data-testid="map-shoe-chip"
+        >
+          <ShoePairTag shoe={shoe} />
         </div>
       )}
 
