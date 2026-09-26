@@ -23,13 +23,14 @@ import { InfoButton } from '@/components/ui/GlossaryTerm'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { SessionStructureBar } from './WorkoutStructure'
 import { PlanPhaseTrack } from './PlanPhaseTrack'
+import { paceLabel, workoutSummary } from './workoutSummary'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { RaceFooter, type FooterRace } from './RaceFooter'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatDate, formatDateRange, formatDistance, formatPace, formatPlannedKm, formatRanKm } from '@/lib/formatters'
+import { formatDate, formatDateRange, formatDistance, formatDurationWords, formatPace, formatPlannedKm, formatRanKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
@@ -41,7 +42,6 @@ import {
 } from '@/components/coaching/presentation'
 import {
   coachWorkoutView,
-  formatPlanDuration,
   plannedWorkoutView,
   type PlanWorkoutView,
 } from './planWorkoutView'
@@ -73,11 +73,16 @@ function splitEffort(effort: string | null): { band: string | null; pace: string
 // is prescribed, not a control - there is nowhere for a tap to go, so this is
 // a plain div: no onClick, no chevron, no hover/press state.
 function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
-  const { band, pace } = splitEffort(workout.effort)
-  // band (the zone/type word, e.g. "Threshold") is dropped here - the title
-  // already names the session, so this line only adds what the title
-  // doesn't already say: how long, and at what pace.
-  const detail = [formatPlanDuration(workout.duration), pace ? t.plan.targetPace(pace) : null]
+  // The same reading as Today's hero (workoutSummary): the title, the
+  // duration and distance, then each pace by name - "easy 5:30–6:24 ·
+  // strides 3:35" - never one merged range (H02).
+  const summary = workoutSummary(workout)
+  const { band } = splitEffort(workout.effort)
+  const detail = [
+    summary.durationSeconds ? formatDurationWords(summary.durationSeconds) : null,
+    summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null,
+    ...summary.paces.map(paceLabel),
+  ]
     .filter(Boolean)
     .join(' · ') || t.plan.planned
   const zoneWord = band?.split(' ')[0] ?? null
@@ -91,7 +96,7 @@ function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
       <div className="flex items-center gap-3">
         <span className="min-w-0 flex-1">
           <span className="block truncate font-bold text-foreground" style={{ fontSize: '19px' }}>
-            {workout.title}
+            {summary.title}
           </span>
           <span className="block" style={{ fontSize: '13.5px', color: 'var(--muted-foreground)', marginTop: '6px', lineHeight: 1.5 }}>
             {detail}
@@ -432,10 +437,16 @@ export function WeekView({
         const coach = (byDateCoach?.get(d.date) ?? []).filter((v) => v.state !== 'cancelled')
         if (coach.length > 0) {
           const plan = byDatePlanned.get(d.date) ?? null
-          return coach.map((view) => ({ ...coachWorkoutView(view, trainingZones, coach.length === 1 ? plan : null), done: false }))
+          // Titled by workoutSummary, as the day card and Today title it.
+          return coach.map((view) => {
+            const planned = coachWorkoutView(view, trainingZones, coach.length === 1 ? plan : null)
+            return { ...planned, title: workoutSummary(planned).title, done: false }
+          })
         }
         const plan = byDatePlanned.get(d.date)
-        return plan ? [{ ...plannedWorkoutView(plan, trainingZones), done: false }] : []
+        if (!plan) return []
+        const planned = plannedWorkoutView(plan, trainingZones)
+        return [{ ...planned, title: workoutSummary(planned).title, done: false }]
       })
   }, [days, byDateCoach, byDatePlanned, trainingZones])
 

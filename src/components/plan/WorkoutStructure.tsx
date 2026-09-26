@@ -3,6 +3,7 @@ import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import { formatDurationWords, formatPaceRange } from '@/lib/formatters'
 import { WORKOUT_SEGMENT_COLORS, WORKOUT_SEGMENT_INK } from '@/lib/colors'
 import { t } from '@/i18n'
+import { findBody, repCaption } from './workoutSummary'
 
 const STEP_COLOR: Record<WorkoutStep['kind'], string> = WORKOUT_SEGMENT_COLORS
 
@@ -21,6 +22,9 @@ const STEP_HEIGHT: Record<WorkoutStep['kind'], string> = {
  * nothing the ten blocks do not already say.
  */
 const LABEL_MIN_SHARE = 0.07
+
+/** The narrowest a step draws, in minutes of bar. */
+const MIN_STEP_MINUTES = 0.35
 
 export function WorkoutStructureBars({
   steps,
@@ -91,19 +95,6 @@ function zoneFill(zone: number | null): string {
   return `var(--zone-${zone ?? 2})`
 }
 
-// A block this many times longer than the reps around it is the run's easy
-// body, not a work interval - "3 x 8min" (all equal) never qualifies, but a
-// 38-minute base pace ahead of five 20-second strides does.
-const BODY_RATIO = 3
-
-function findBody(efforts: WorkoutStep[]): WorkoutStep | null {
-  if (efforts.length < 2) return null
-  const sorted = [...efforts].sort((a, b) => b.minutes - a.minutes)
-  const longest = sorted[0]!
-  const restAvg = sorted.slice(1).reduce((sum, e) => sum + e.minutes, 0) / (sorted.length - 1)
-  return longest.minutes >= Math.max(restAvg * BODY_RATIO, restAvg + 3) ? longest : null
-}
-
 /**
  * The day card's own structure bar - continuous, or interval, drawn only from
  * steps the plan actually carries. Colour is the session's intensity (its
@@ -152,8 +143,6 @@ export function SessionStructureBar({
   const trimmedSteps = steps.length > 0 && steps[steps.length - 1]!.kind === 'recovery' ? steps.slice(0, -1) : steps
 
   const body = findBody(efforts)
-  const reps = body ? efforts.filter((e) => e !== body) : efforts
-  const recoveries = trimmedSteps.filter((st) => st.kind === 'recovery')
   const warmup = trimmedSteps.find((st) => st.kind === 'warmup')
   const cooldown = trimmedSteps.find((st) => st.kind === 'cooldown')
 
@@ -163,20 +152,17 @@ export function SessionStructureBar({
   // duration rather than drifting from rounding several short reps up to a
   // full minute apiece.
   const totalMinutes = Math.max(1, Math.round(totalSeconds / 60))
-  const otherMinutes = trimmedSteps
-    .filter((st) => st !== body)
-    .reduce((sum, st) => sum + Math.max(st.minutes, 1), 0)
-  const bodyWeight = body ? Math.max(1, totalMinutes - otherMinutes) : null
+  // Short steps keep their real length (a 20 s stride is a third of a
+  // minute), with a floor so each one still draws.
+  const width = (step: WorkoutStep) => Math.max((step.seconds ?? step.minutes * 60) / 60, MIN_STEP_MINUTES)
+  const otherMinutes = trimmedSteps.filter((st) => st !== body).reduce((sum, st) => sum + width(st), 0)
+  const bodyWeight = body ? Math.max(1, Math.round(totalMinutes - otherMinutes)) : null
 
-  const weights = trimmedSteps.map((step) => (step === body ? bodyWeight! : Math.max(step.minutes, 1)))
+  const weights = trimmedSteps.map((step) => (step === body ? bodyWeight! : width(step)))
   const s = t.plan.structure
-  const clock = (min: number) => `${min}:00`
-  const centerCaption =
-    reps.length > 0
-      ? recoveries.length > 0
-        ? `${reps.length} × ${clock(reps[0]!.minutes)} · ${clock(recoveries[0]!.minutes)} rec`
-        : `${reps.length} × ${clock(reps[0]!.minutes)}`
-      : ''
+  // The caption and the rep label come from the same steps as Today's and
+  // Plan's detail line (workoutSummary): a 20 s stride reads "20s", not "1:00".
+  const centerCaption = repCaption(trimmedSteps) ?? ''
 
   return (
     <div>
@@ -188,7 +174,7 @@ export function SessionStructureBar({
           const labelled = isWork && share >= LABEL_MIN_SHARE
 
           if (isBody) {
-            const bodyLabel = `${formatDurationWords(bodyWeight! * 60)}${zoneWord ? ` · ${zoneWord}` : ''}`
+            const bodyLabel = `${formatDurationWords(step.seconds ?? bodyWeight! * 60)}${zoneWord ? ` · ${zoneWord}` : ''}`
             return (
               <div
                 key={i}

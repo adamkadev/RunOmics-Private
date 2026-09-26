@@ -204,7 +204,8 @@ describe('WeekView coaching day cells and Today', () => {
     // The zone/type word ("Threshold") is deliberately left out of the meta
     // line - the title already names the session, so repeating it there was
     // the same fact stated twice on one card.
-    expect(row.textContent).toContain(t.plan.targetPace('4:25–4:30/km'))
+    // The work pace by name, from workoutSummary: the same reading Today prints.
+    expect(row.textContent).toContain(t.plan.session.targetPace('4:25–4:30'))
   })
 
   it('is a read-only card, not a control - no sheet opens on tap', async () => {

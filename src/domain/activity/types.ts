@@ -107,6 +107,8 @@ export type WorkoutStepKind = 'warmup' | 'effort' | 'recovery' | 'cooldown'
 export interface WorkoutStep {
   kind: WorkoutStepKind
   minutes: number
+  /** The exact length, where the plan gives one: a 20 s stride is not "1'". */
+  seconds?: number
   rep?: number
   paceSecPerKm?: [number, number]
 }

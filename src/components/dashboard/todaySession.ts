@@ -1,8 +1,8 @@
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { WeekDayState } from '@/domain/training/weekTarget'
-import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
+import { workoutSummary } from '@/components/plan/workoutSummary'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
-import { formatDistance, formatDurationWords, formatPace, formatPlannedKm } from '@/lib/formatters'
+import { formatClock, formatDistance, formatPace, formatPlannedKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 export interface TodaySession {
@@ -24,12 +24,10 @@ function plannedKm(workout: HeroWorkoutView | null): string | null {
  */
 export function todaySession(workout: HeroWorkoutView | null, activity: ActivitySummary | null): TodaySession {
   const s = t.dashboard.todayHero
-  const effort = workout
-    ? [workout.duration ? formatDurationWords(workout.duration.seconds) : null, workout.type ? EFFORT_ZONE_BY_TYPE[workout.type] : null]
-        .filter(Boolean)
-        .join(' ')
-    : ''
-  const workoutTitle = workout ? [workout.title, effort].filter(Boolean).join(' · ') : null
+  // The same reading of the session as Plan's card and the structure bar
+  // (workoutSummary), so the two screens cannot describe it differently.
+  const summary = workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }) : null
+  const workoutTitle = summary?.title ?? null
 
   if (activity) {
     const ran = activity.paceSecPerKm !== null
@@ -44,15 +42,18 @@ export function todaySession(workout: HeroWorkoutView | null, activity: Activity
     }
   }
 
-  if (workout) {
+  if (workout && summary) {
     const planned = plannedKm(workout)
+    // The main pace only, as the hero's line (M7): the strides pace is on
+    // Plan's card, beside it, never merged into one range.
+    const mainPace = summary.paces[0]
     return {
       state: 'planned',
       title: workoutTitle!,
       detail: [
         planned ? `${planned} ${t.units.km}` : null,
         workout.scheduledTime ? t.plan.timeOfDay[workout.scheduledTime] : null,
-        workout.target,
+        mainPace ? `${formatClock(mainPace.pace[0])}–${formatClock(mainPace.pace[1])} ${t.units.perKm}` : workout.target,
       ].filter(Boolean).join(' · ') || null,
       // The session is on the plan, so the row goes to the plan.
       href: '/plan',

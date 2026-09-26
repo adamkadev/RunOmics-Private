@@ -104,6 +104,8 @@ describe('heroWorkoutView', () => {
       distanceM: expect.any(Number),
       target: expect.any(String),
       activityId: 'activity-1',
+      // The steps, so the hero's bar and Plan's are drawn from the same session.
+      structure: expect.any(Array),
     })
     expect(JSON.stringify(hero)).not.toContain('cough')
   })
