@@ -87,9 +87,34 @@ const SESSION_TYPES = [
   { type: 'Base', weight: 45, paceMult: [1.25, 1.42], descriptions: ['Morning Run', 'Easy Run', 'Recovery Jog'] },
   { type: 'Tempo', weight: 15, paceMult: [1.05, 1.12], descriptions: ['Tempo Run'] },
   { type: 'Threshold', weight: 15, paceMult: [0.98, 1.03], descriptions: ['Threshold'] },
-  { type: 'VO2Max', weight: 10, paceMult: [0.86, 0.92], descriptions: ['Intervals'] },
-  { type: 'Sprint', weight: 5, paceMult: [0.75, 0.85], descriptions: ['Sprint Session'] },
+  // A session's average pace includes its recoveries, so the hard sessions
+  // average near threshold, never faster than the Z5 floor (G31).
+  { type: 'VO2Max', weight: 10, paceMult: [0.95, 1.02], descriptions: ['Intervals'] },
+  { type: 'Sprint', weight: 5, paceMult: [1.0, 1.1], descriptions: ['Sprint Session'] },
 ]
+
+// The zone model the app reads the fixture with (GetTrainingZones): Z5 pace
+// is 0.86-0.91 x threshold pace, so no run or best may be faster than this.
+export const Z5_PACE_FLOOR_SEC = Math.round(ATHLETE.thresholdPaceSecPerKm * 0.86)
+
+// Average heart rate per session type, inside the athlete's own zones
+// (hrZoneBoundsBpm are the lower bounds of Z1-Z5): easy runs in Z2, tempo in
+// Z3, threshold in Z4. It came from pace alone, which put a Threshold run at
+// 115 bpm, below Z1 (G31).
+const HR_BY_TYPE = {
+  Base: [146, 156],
+  Tempo: [161, 170],
+  Threshold: [172, 179],
+  VO2Max: [168, 177],
+  Sprint: [150, 162],
+}
+const RACE_HR = { '5k': 181, '10k': 178, half: 172, marathon: 164 }
+
+/** Shift a noisy series so it averages to the value it stands for. */
+function centered(series, mean) {
+  const avg = series.reduce((sum, v) => sum + v, 0) / series.length
+  return series.map((v) => round(v - avg + mean, 1))
+}
 
 const RACE_DISTANCES_KM = { '1k': 1, '5k': 5, '10k': 10, half: 21.0975, marathon: 42.195 }
 const RACE_BASELINE_10K_SEC = 2386
@@ -191,12 +216,12 @@ function buildActivities(rng, endDate) {
     }
 
     const durationSeconds = Math.round(distanceKm * paceSecPerKm)
-    const avgHeartRate = Math.round(
-      ATHLETE.restingHrBpm +
-        (ATHLETE.maxHrBpm - ATHLETE.restingHrBpm) * (1 - (paceSecPerKm - 150) / 200) * between(rng, 0.92, 1.0)
-    )
+    const avgHeartRate = isRaceDay
+      ? RACE_HR[raceKey] + Math.round(between(rng, -2, 2))
+      : Math.round(between(rng, HR_BY_TYPE[session.type][0], HR_BY_TYPE[session.type][1]))
 
     const hrZones = buildHrZones(rng, durationSeconds, session.type)
+    const cadenceSpm = round(between(rng, 168, 182), 1)
     const isAway = dayOffset >= awayStart && dayOffset < awayStart + AWAY_TRIP.days
     const route = generateRoute(rng, distanceKm, isAway ? ROUTE_CENTERS.away : ROUTE_CENTERS.home)
     const sampleLen = Math.max(20, Math.min(80, Math.round(distanceKm * 4)))
@@ -205,9 +230,10 @@ function buildActivities(rng, endDate) {
     if (isRaceDay) {
       bestEfforts[raceKey] = durationSeconds
     } else {
-      if (distanceKm >= 1) bestEfforts['1k'] = round(paceSecPerKm * between(rng, 0.88, 0.95), 1)
+      // A best is faster than the run's average, but never past the Z5 floor.
+      if (distanceKm >= 1) bestEfforts['1k'] = round(Math.max(Z5_PACE_FLOOR_SEC, paceSecPerKm * between(rng, 0.9, 0.96)), 1)
       if (distanceKm >= 5 && (session.type === 'Tempo' || session.type === 'Threshold')) {
-        bestEfforts['5k'] = round(paceSecPerKm * 5 * between(rng, 0.95, 1.0), 1)
+        bestEfforts['5k'] = round(Math.max(Z5_PACE_FLOOR_SEC * 5, paceSecPerKm * 5 * between(rng, 0.97, 1.0)), 1)
       }
     }
 
@@ -232,22 +258,37 @@ function buildActivities(rng, endDate) {
       elevationGain: round(between(rng, 10, 120), 1),
       aerTrainingEffect: round(between(rng, 1.5, 4.2), 1),
       anaTrainingEffect: round(between(rng, 0.3, 2.5), 1),
-      hrSamples: smoothSeries(rng, sampleLen, avgHeartRate, 4),
+      // Samples average to the recorded values, as a watch's do, so Charts and
+      // the stat row read the same run.
+      hrSamples: centered(smoothSeries(rng, sampleLen, avgHeartRate, 4), avgHeartRate),
       elevationProfile: smoothSeries(rng, sampleLen, 20, 3),
       calories: Math.round(distanceKm * 62),
-      cadenceSpm: round(between(rng, 168, 182), 1),
+      cadenceSpm,
       groundContactMs: round(between(rng, 230, 260), 1),
       verticalOscillationMm: round(between(rng, 75, 95), 1),
       verticalRatioPct: round(between(rng, 6.5, 8.5), 1),
       strideLengthM: round(1000 / paceSecPerKm / (170 / 60), 2),
       bestEfforts: Object.keys(bestEfforts).length ? bestEfforts : null,
-      paceSamples: smoothSeries(rng, sampleLen, paceSecPerKm, 8),
+      paceSamples: centered(smoothSeries(rng, sampleLen, paceSecPerKm, 8), paceSecPerKm),
       vo2maxGarmin: round(42 + progress * 8, 1),
       avgTemperature: Math.round(between(rng, 8, 24)),
-      cadenceSamples: smoothSeries(rng, sampleLen, 175, 3),
+      cadenceSamples: centered(smoothSeries(rng, sampleLen, cadenceSpm, 3), cadenceSpm),
       splits: session.type === 'VO2Max' || session.type === 'Threshold' ? buildSplits(rng, session.type, distanceKm, paceSecPerKm, avgHeartRate) : null,
       gearId,
-      weather: { tempC: round(between(rng, 8, 24), 1), humidityPct: Math.round(between(rng, 40, 85)), code: pick(rng, [0, 1, 2, 3, 61]) },
+      weather: (() => {
+        const tempC = round(between(rng, 8, 24), 1)
+        const humidityPct = Math.round(between(rng, 40, 85))
+        // Feels-like and wind, which the heat adjustment and the map's wind
+        // chip read; without them one printed nothing and the other NaN.
+        return {
+          tempC,
+          apparentTempC: round(tempC + (humidityPct - 60) * 0.05 + between(rng, -1, 1), 1),
+          humidityPct,
+          windKph: round(between(rng, 3, 22), 1),
+          windDirDeg: Math.round(between(rng, 0, 359)),
+          code: pick(rng, [0, 1, 2, 3, 61]),
+        }
+      })(),
     })
   }
 
@@ -270,8 +311,9 @@ function buildHrZones(rng, durationSeconds, type) {
       zone: i + 1,
       seconds: Math.max(0, seconds),
       percent: round(w * 100, 1),
-      minBpm: i === 0 ? 100 : bounds[i - 1],
-      maxBpm: i < bounds.length ? bounds[i] : null,
+      // hrZoneBoundsBpm holds each zone's lower bound, as Athlete & zones reads it.
+      minBpm: bounds[i],
+      maxBpm: i + 1 < bounds.length ? bounds[i + 1] - 1 : null,
     }
   })
 }
@@ -296,14 +338,23 @@ function buildSplits(rng, type, distanceKm, paceSecPerKm, avgHr) {
   ]
 }
 
-function buildTrainingStatusAndBalance(rng, activities) {
+function buildTrainingStatusAndBalance(rng, activities, endDate) {
   const days = {}
   const weeks = {}
   const statuses = ['productive', 'maintaining', 'peaking', 'recovery']
 
-  for (const a of activities) {
-    if (rng() < 0.3) continue
-    const status = pick(rng, statuses)
+  // The watch rates every day, not only the days with a run, and its verdict
+  // holds for days at a time: a status that changed at random on 70 % of
+  // run days read "3 of the last 28 days" (G31).
+  const first = activities[0]
+  const dates = []
+  if (first) {
+    for (let d = new Date(first.date + 'T00:00:00Z'); d <= endDate; d = addDays(d, 1)) dates.push(isoDate(d))
+  }
+  let status = statuses[0]
+  for (const [i, date] of dates.entries()) {
+    if (i % 4 === 0) status = rng() < 0.45 ? 'peaking' : pick(rng, statuses)
+    const a = { date }
     days[a.date] = {
       status,
       statusCode: statuses.indexOf(status) + 1,
@@ -442,18 +493,19 @@ function formatHms(totalSeconds) {
 }
 
 function buildTrainingPlan(endDate) {
-  const start = addDays(endDate, -14)
-  const end = addDays(endDate, 42)
+  // Nine weeks that end on the race (21 days out): base, build, peak, taper.
+  const race = addDays(endDate, 21)
+  const start = addDays(race, -62)
   return {
     planId: 10000001,
     name: 'Demo 10K Build',
     startDate: isoDate(start),
-    endDate: isoDate(end),
+    endDate: isoDate(race),
     phases: [
       { phase: 'BASE', startDate: isoDate(start), endDate: isoDate(addDays(start, 20)) },
       { phase: 'BUILD', startDate: isoDate(addDays(start, 21)), endDate: isoDate(addDays(start, 41)) },
-      { phase: 'PEAK', startDate: isoDate(addDays(start, 42)), endDate: isoDate(addDays(start, 49)) },
-      { phase: 'TAPER', startDate: isoDate(addDays(start, 50)), endDate: isoDate(end) },
+      { phase: 'PEAK', startDate: isoDate(addDays(start, 42)), endDate: isoDate(addDays(start, 55)) },
+      { phase: 'TAPER', startDate: isoDate(addDays(start, 56)), endDate: isoDate(race) },
     ],
   }
 }
@@ -469,7 +521,9 @@ function buildUpcomingRaces(endDate) {
 
 function buildPlannedWorkouts(rng, endDate) {
   const byYear = {}
-  const names = ['Threshold', 'Intervals', 'Long Run', 'Easy Run', 'Tempo']
+  // The name follows the type: "Threshold" typed VO2Max drew a Z5 bar under a
+  // Z4 title (G31).
+  const NAMES_BY_TYPE = { Base: ['Easy Run', 'Long Run'], Tempo: ['Tempo'], Threshold: ['Threshold'], VO2Max: ['Intervals'] }
   for (let i = -7; i <= 30; i++) {
     if (rng() < 0.55) continue
     const date = addDays(endDate, i)
@@ -477,8 +531,10 @@ function buildPlannedWorkouts(rng, endDate) {
     byYear[year] = byYear[year] ?? []
     byYear[year].push({
       date: isoDate(date),
-      name: pick(rng, names),
-      type: pick(rng, ['Base', 'Tempo', 'Threshold', 'VO2Max']),
+      ...(() => {
+        const type = pick(rng, ['Base', 'Tempo', 'Threshold', 'VO2Max'])
+        return { type, name: pick(rng, NAMES_BY_TYPE[type]) }
+      })(),
       distanceM: Math.round(between(rng, 6000, 16000)),
       durationSecs: Math.round(between(rng, 1800, 5400)),
       scheduledTime: pick(rng, ['Morning', 'Afternoon', 'Evening']),
@@ -486,6 +542,8 @@ function buildPlannedWorkouts(rng, endDate) {
   }
   return byYear
 }
+
+const MACROCYCLE_DAYS = 84
 
 function buildCoachingData(endDate, activities) {
   const latest = activities[activities.length - 1]
@@ -521,11 +579,15 @@ function buildCoachingData(endDate, activities) {
     },
     { kind: 'cooldown', target: { durationSeconds: 600 } },
   ]
+  // What the plan asked for, in the round numbers a plan uses; the run
+  // differs from it. A copy of the run made planned and ran always agree (G31).
+  const plannedMeters = latest ? Math.max(1, Math.round(latest.distanceKm)) * 1_000 : 8_000
+  const plannedSeconds = latest ? Math.max(1, Math.round(latest.durationSeconds / 300)) * 300 : 2_700
   const weeks = Array.from({ length: 4 }, (_, index) => {
     const weekStart = addDays(start, index * 7)
     const weekEnd = addDays(weekStart, 6) < targetDate ? addDays(weekStart, 6) : targetDate
     const first = index === 0 && latest
-      ? workout('demo-prescription-completed', new Date(latest.date + 'T00:00:00Z'), latest.type === 'Threshold' ? 'threshold' : 'easy', latest.description || 'Completed session', easyBlocks(Math.round(latest.distanceKm * 1_000)), latest.durationSeconds, Math.round(latest.distanceKm * 1_000))
+      ? workout('demo-prescription-completed', new Date(latest.date + 'T00:00:00Z'), latest.type === 'Threshold' ? 'threshold' : 'easy', latest.description || 'Completed session', easyBlocks(plannedMeters), plannedSeconds, plannedMeters)
       : workout(`demo-easy-${index}`, addDays(weekStart, 1), 'easy', 'Easy Run', easyBlocks(8_000), 2_700, 8_000)
     return {
       id: `demo-coaching-week-${index + 1}`,
@@ -545,6 +607,9 @@ function buildCoachingData(endDate, activities) {
     id: planId,
     revision: 1,
     status: 'active',
+    // The block is the last four weeks of a twelve-week build: three weeks out
+    // is peak, not "Base week 1 of 3" with Build and Peak still to come (G31).
+    macrocycleStartDate: isoDate(addDays(targetDate, -MACROCYCLE_DAYS)),
     block: {
       id: 'demo-coaching-block',
       name: 'Autumn 10K build',
@@ -608,9 +673,9 @@ function buildCoachingData(endDate, activities) {
     planRevision: 1,
     matchStatus: 'matched',
     comparison: {
-      plannedDistanceMeters: Math.round(latest.distanceKm * 1_000),
+      plannedDistanceMeters: plannedMeters,
       actualDistanceMeters: Math.round(latest.distanceKm * 1_000),
-      plannedDurationSeconds: latest.durationSeconds,
+      plannedDurationSeconds: plannedSeconds,
       actualDurationSeconds: latest.durationSeconds,
       ...(latest.paceSecPerKm ? { actualPaceSecPerKm: Math.round(latest.paceSecPerKm) } : {}),
       ...(latest.avgHeartRate ? { actualAvgHrBpm: latest.avgHeartRate } : {}),
@@ -657,7 +722,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
   const startDate = addDays(endDate, -totalDays)
 
   const activities = buildActivities(rng, endDate)
-  const { trainingStatus, trainingLoadBalance } = buildTrainingStatusAndBalance(rng, activities)
+  const { trainingStatus, trainingLoadBalance } = buildTrainingStatusAndBalance(rng, activities, endDate)
   const { vo2maxHistory, thresholdHistory } = buildVo2maxAndThresholdHistory(activities)
 
   const months = {}
