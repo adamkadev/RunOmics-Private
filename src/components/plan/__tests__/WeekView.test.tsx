@@ -311,14 +311,15 @@ describe('WeekView easy share', () => {
   it('reads a finished week by heart rate, as the activity list does', () => {
     renderPastWeek()
 
-    const summary = screen.getByTestId('week-summary').textContent
-    expect(summary).toContain(t.plan.weekSummary.easyOfTarget(50, 80))
-    expect(summary).not.toContain(t.plan.weekSummary.easyOfTarget(100, 80))
+    const s = t.plan.weekSummary
+    expect(screen.getByTestId('week-easy').textContent).toBe(`${s.easyDone(50)} · ${s.easyGuide(80)}`)
+    expect(screen.getByTestId('week-summary').textContent).not.toContain(s.easyDone(100))
   })
 
-  // G09: easy is Z1-Z2 time everywhere. A session still to run has no heart
-  // rate yet and counts at its type's zone for its planned time.
-  it('pools a week underway: zone time for runs, type zone for sessions ahead', () => {
+  // v4.8: the headline counts what was run, as Activities does; a session
+  // still to run counts, at its type's zone for its planned time, only in the
+  // projection beside it.
+  it('reads what was run, and what the week comes to if it goes to plan', () => {
     renderWeek({
       activities: [activity({ id: 'z', date: '2026-09-07', type: 'Tempo', durationSeconds: 1_800, hrZones: [
         { zone: 2, seconds: 900, percent: 50, minBpm: 0, maxBpm: null },
@@ -327,7 +328,8 @@ describe('WeekView easy share', () => {
       planned: [{ date: '2026-09-10', name: 'Easy', type: 'Base', distanceM: 8_000, durationSecs: 1_800 }],
     })
 
-    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.easyOfTarget(75, 80))
+    const s = t.plan.weekSummary
+    expect(screen.getByTestId('week-easy').textContent).toBe(`${s.easyDone(50)} · ${s.easyProjected(75)} · ${s.easyGuide(80)}`)
   })
 
   it('says nothing about easy time for runs without heart-rate zones', () => {
@@ -401,7 +403,9 @@ describe('the week summary in plain words', () => {
   it('writes the easy share as a sentence with its guide', () => {
     renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-10', name: 'Intervals', type: 'VO2Max', distanceM: 6_000, durationSecs: 1_800 }] })
 
-    expect(screen.getByTestId('week-summary')).toHaveTextContent(t.plan.weekSummary.easyOfTarget(0, 80))
+    const s = t.plan.weekSummary
+    // The tempo run has no zone time, so only the plan says anything yet.
+    expect(screen.getByTestId('week-easy').textContent).toBe(`${s.easyProjected(0)} · ${s.easyGuide(80)}`)
   })
 
   // "Load 19/297 pts" was never explained.

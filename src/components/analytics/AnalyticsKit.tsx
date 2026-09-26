@@ -162,7 +162,7 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
   }, [close])
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4" style={{ touchAction: 'none' }} role="dialog" aria-modal="true" aria-label={title}>
+    <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end sm:items-center sm:justify-center sm:p-4" style={{ touchAction: 'none' }} role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={close} />
       <div
         ref={trapRef}

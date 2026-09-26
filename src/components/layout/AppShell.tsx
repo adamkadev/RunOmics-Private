@@ -70,30 +70,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <NavigationHistoryProvider>
       <div className="min-h-screen">
         <ThemeSync />
+        {/* The one fixed element that touches the top edge (v4.8): iOS 26
+            takes the topmost fixed element at the top as the page's bar and
+            blurs what sits under it, and it keeps the zone of the tallest one
+            it has seen. The compact title bar (safe area + 44 pt) and the
+            fullscreen maps used to touch the edge too and left that zone
+            over the large title. So this strip is always mounted, always
+            opaque, exactly the status bar's height, and everything else that
+            is fixed starts under it. */}
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
-          style={{
-            height: 'var(--top-scrim)',
-            // The status bar's own colour, so content scrolled up passes
-            // under a strip that reads as part of the bar.
-            background: 'var(--status-bar)',
-          }}
-        />
-        {/* A solid bar at the page top, behind the page: iOS 26 draws its own
-            progressive blur over the top of a standalone web app unless a
-            fixed, opaque element touches the top edge, which it then treats
-            as the bar. <main> paints above it (it comes later and is
-            positioned), so it only ever shows as the flat page colour. */}
-        <div
-          aria-hidden
-          data-testid="top-edge-bar"
-          className="pointer-events-none fixed inset-x-0 top-0 h-12 lg:hidden"
-          style={{ background: 'var(--background)' }}
+          data-testid="status-strip"
+          className="pointer-events-none fixed inset-x-0 top-0 z-[10000] lg:hidden"
+          style={{ height: 'var(--safe-top)', background: 'var(--status-bar)' }}
         />
         <Sidebar />
         {/* Positioned, with no z-index: not a stacking context, which would
-            trap the maps' fullscreen overlays (z-50) under the top scrim. */}
+            trap the maps' fullscreen overlays (z-50) under other layers. */}
         <main className="relative min-h-screen lg:ml-[248px]">
           {/* pb-28 alone is the nav's own height with room to spare on a
               home-button phone, but it's a fixed 112px - on a notched device

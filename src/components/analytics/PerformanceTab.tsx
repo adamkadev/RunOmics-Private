@@ -27,14 +27,18 @@ import {
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
+/** A change in time, as the rows print it: "33 s", or "9:17" past a minute. */
+export function changeAmount(seconds: number): string {
+  const abs = Math.abs(Math.round(seconds))
+  return abs >= 60 ? formatDuration(abs) : t.analytics.cards.summary.secs(abs)
+}
+
 /** "9 s slower", "28 s faster", or "1:10 slower" once it is past a minute. */
 export function shiftWords(delta: number | null): string | null {
   const s = t.analytics.cards.summary
   if (delta === null) return null
-  const abs = Math.abs(Math.round(delta))
-  if (abs === 0) return s.same
-  const amount = abs >= 60 ? formatDuration(abs) : s.secs(abs)
-  return delta > 0 ? s.slower(amount) : s.faster(amount)
+  if (Math.round(delta) === 0) return s.same
+  return delta > 0 ? s.slower(changeAmount(delta)) : s.faster(changeAmount(delta))
 }
 
 /** Month initials under a weekly chart, or dates for a four-week one. */
@@ -108,7 +112,8 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
   const trend = predictionTrend(rows)
   const words = t.analytics.cards.period.words[period]!
   const who = s.count(trend?.count ?? rows.length)
-  const range = trend && 'lo' in trend ? (trend.unit === 'min' ? s.minutes(trend.lo, trend.hi) : s.seconds(trend.lo, trend.hi)) : ''
+  // Each end in the rows' own format: "33 s-9:17" (v4.8).
+  const range = trend && 'lo' in trend ? s.range(changeAmount(trend.lo), changeAmount(trend.hi)) : ''
   const lead =
     trend === null
       ? null

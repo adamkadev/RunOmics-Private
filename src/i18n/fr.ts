@@ -239,6 +239,7 @@ export const fr = {
   },
 
   settings: {
+    about: (version: string, commit: string) => `RunOmics v${version} · build ${commit}`,
     sections: {
       profile: 'Profil',
       appearance: 'Apparence',
@@ -568,8 +569,7 @@ export const fr = {
         mixed: (faster: number, of: number, period: string) => `${faster} sur ${of} ont progressé sur ${period}.`,
         offTarget: (distance: string, gap: string, target: string) => `Le ${distance} est à ${gap} de votre objectif de ${target}.`,
         onTarget: (distance: string, gap: string, target: string) => `Le ${distance} est ${gap} sous votre objectif de ${target}.`,
-        minutes: (lo: number, hi: number) => (lo === hi ? `${lo} min` : `${lo} à ${hi} min`),
-        seconds: (lo: number, hi: number) => (lo === hi ? `${lo} s` : `${lo} à ${hi} s`),
+        range: (lo: string, hi: string) => (lo === hi ? lo : `${lo} à ${hi}`),
         target: (distance: string) => `Objectif ${distance} : `,
         race: (distance: string) => `Course ${distance} : `,
       },
@@ -1678,6 +1678,9 @@ export const fr = {
     weekSummary: {
       missed: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
       easyOfTarget: (easy: number, target: number) => `${easy} % facile · objectif ${target} %`,
+      easyDone: (easy: number) => `${easy} % facile`,
+      easyProjected: (easy: number) => `${easy} % si la semaine suit le plan`,
+      easyGuide: (guide: number) => `repère ${guide} %`,
       aboutLoad: 'À propos de la charge de la semaine',
       loadOfPlan: (load: number, target: number) => `Charge ${load} sur ${target} pts prévus`,
       loadPlannedLine: (load: number) => `Charge ${load} pts prévus`,

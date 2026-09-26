@@ -62,11 +62,11 @@ const mondays = (n: number, last = '2026-09-21') =>
 
 describe('the tab windows', () => {
   it('ends the load window today and steps back a whole window per swipe', () => {
-    // v4.6: the same Monday-started weeks as the weekly tabs, ending today.
-    expect(dayWindow(TODAY, '4w')).toEqual({ start: '2026-08-31', end: TODAY, days: 27, live: true })
-    expect(dayWindow(TODAY, '4w', 1)).toMatchObject({ start: '2026-08-03', end: '2026-08-30', days: 28, live: false })
-    expect(dayWindow(TODAY, '12w').start).toBe(weekWindow(TODAY, '12w').start)
-    expect(dayWindow(TODAY, '12w').start).toBe('2026-07-06')
+    // v4.8: the last 28 / 84 / 365 days ending today.
+    expect(dayWindow(TODAY, '4w')).toEqual({ start: '2026-08-30', end: TODAY, days: 28, live: true })
+    expect(dayWindow(TODAY, '4w', 1)).toMatchObject({ start: '2026-08-02', end: '2026-08-29', days: 28, live: false })
+    expect(dayWindow(TODAY, '12w')).toMatchObject({ start: '2026-07-05', days: 84 })
+    expect(dayWindow(TODAY, '1y')).toMatchObject({ start: '2025-09-27', days: 365 })
   })
 
   it('ends the week window on the current week, Monday to Sunday', () => {
@@ -89,7 +89,7 @@ describe('D1 Load', () => {
     expect(view.form).toBe(-7)
     expect(view.band).toBe('neutral')
     expect(view.fitness).toBe(Math.round(last.ctl))
-    expect(view.bars).toHaveLength(27)
+    expect(view.bars).toHaveLength(28)
     expect(view.yMax).toBe(75)
   })
 
@@ -110,8 +110,9 @@ describe('D1 Load', () => {
     const view = statusView(days, dayWindow(TODAY, '4w'))!
     expect(view.current).toBe('productive')
     expect(view.count).toBe(14)
-    expect(view.days).toBe(27)
-    expect(view.cells).toHaveLength(27)
+    // "13 of the last 28 days", not 27 (v4.8).
+    expect(view.days).toBe(28)
+    expect(view.cells).toHaveLength(28)
     expect(view.totals.map((t) => t.status)).toEqual(['productive', 'overreaching', 'detraining', 'recovery'])
   })
 
@@ -157,7 +158,8 @@ describe('D2 Performance', () => {
       ['5k', 70],
       ['10k', 125],
     ])
-    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 1, hi: 2, unit: 'min', count: 2 })
+    // In seconds, printed like each row's change (v4.8).
+    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 70, hi: 125, count: 2 })
   })
 
   it('reads efficiency now against four weeks and six months back, and what heat costs', () => {

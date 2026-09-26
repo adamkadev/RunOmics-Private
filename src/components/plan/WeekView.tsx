@@ -281,19 +281,31 @@ function WeekSummaryLine({
   volume,
   missed,
   easyHard,
+  easyPlanned,
 }: {
   volume: string
   missed: number
+  /** What was run: the headline, as on Activities. */
   easyHard: EasyHardSplit | null
+  /** What was run plus what is still to come. */
+  easyPlanned: EasyHardSplit | null
 }) {
   const s = t.plan.weekSummary
+  const projected = easyPlanned && (!easyHard || easyPlanned.easy !== easyHard.easy) ? easyPlanned.easy : null
+  const easy = [easyHard && s.easyDone(easyHard.easy), projected !== null && s.easyProjected(projected), (easyHard || projected !== null) && s.easyGuide(EASY_SHARE_GUIDE)]
+    .filter((part): part is string => typeof part === 'string')
+    .join(' · ')
   return (
-    <div data-testid="week-summary" className="flex items-baseline justify-between gap-3 px-1">
-      <span className="min-w-0 text-subhead font-semibold text-foreground">
+    <div data-testid="week-summary" className="space-y-0.5 px-1">
+      <p className="text-subhead font-semibold text-foreground">
         {volume}
         {missed > 0 && <span className="text-footnote font-semibold text-delta-warn"> · {s.missed(missed)}</span>}
-      </span>
-      {easyHard && <span className="shrink-0 text-footnote text-muted-foreground">{s.easyOfTarget(easyHard.easy, EASY_SHARE_GUIDE)}</span>}
+      </p>
+      {easy && (
+        <p className="text-footnote text-muted-foreground" data-testid="week-easy">
+          {easy}
+        </p>
+      )}
     </div>
   )
 }
@@ -435,12 +447,19 @@ export function WeekView({
   // used to - silently dropped any completed day the plan didn't cover,
   // undercounting volume and sessions against what the strip and "this week"
   // list both show for the same week.
-  // Easy time is Z1-Z2 time, as on every other screen. A day run counts its
-  // recorded zone time; a session still to run counts at its type's zone for
-  // its planned duration, so a week underway pools the two.
+  // Easy time is Z1-Z2 time, as on every other screen. The headline counts
+  // what was run, as Activities does (v4.8: Plan said 92% beside Activities'
+  // 85%, from counting sessions still to run). The projection adds each
+  // session still to come, today on, at its type's zone for its planned
+  // duration; a day already missed counts in neither.
+  const weekEasyDone = useMemo(
+    (): EasyTimeSource[] => days.flatMap((d): EasyTimeSource[] => d.acts.map((a) => ({ hrZones: a.hrZones }))),
+    [days],
+  )
   const weekEasyTime = useMemo((): EasyTimeSource[] => {
     return days.flatMap((d): EasyTimeSource[] => {
       if (d.acts.length > 0) return d.acts.map((a) => ({ hrZones: a.hrZones }))
+      if (d.date < today) return []
       const coach = (byDateCoach?.get(d.date) ?? []).filter((v) => v.state !== 'cancelled')
       if (coach.length > 0) {
         return coach.map((view) => ({
@@ -452,7 +471,7 @@ export function WeekView({
       if (!plan) return []
       return [{ type: plan.type, seconds: plan.durationSecs ?? 0 }]
     })
-  }, [days, byDateCoach, byDatePlanned])
+  }, [days, byDateCoach, byDatePlanned, today])
 
   const coachPhaseRanges = useMemo(
     () => (coaching ? macrocyclePhaseRanges(coaching.plan) : []),
@@ -519,7 +538,8 @@ export function WeekView({
     () => weekTarget(weekPlanDays(days.map((d) => d.date), { byDate, byDatePlanned, byDateCoach: byDateCoach ?? new Map() }), today, null),
     [days, byDate, byDatePlanned, byDateCoach, today]
   )
-  const easyHard = easyShare(weekEasyTime)
+  const easyHard = easyShare(weekEasyDone)
+  const easyPlanned = easyShare(weekEasyTime)
 
   const dayEyebrow = selected.date === today ? `${t.plan.today} · ${formatDate(selected.date)}` : formatDate(selected.date)
 
@@ -605,6 +625,7 @@ export function WeekView({
         volume={weekVolumeLabel(target, firstDay.date > today && target.ranSessions === 0)}
         missed={target.missedSessions}
         easyHard={easyHard}
+        easyPlanned={easyPlanned}
       />
 
       <div className="space-y-3 px-1">

@@ -154,13 +154,14 @@ export function CompactTitleBar() {
         data-testid="compact-title-bar"
         data-shown={visible ? '' : undefined}
         aria-hidden="true"
-        // Hidden, the bar is not drawn at all, and shown it is fully opaque:
-        // iOS 26 takes the topmost fixed element touching the top edge as the
-        // page's bar, and a transparent one (opacity 0) brought its scroll-edge
-        // blur back over the status bar. Only the title fades in. Above the
-        // sticky tab strips (z-30), which move under it while it shows.
+        // It starts under the status strip and never touches the top edge
+        // (v4.8): iOS 26 takes the topmost fixed element at the top as the
+        // page's bar and kept the zone of this one (safe area + 44 pt) over
+        // the large title after it hid again. Shown, it is fully opaque; only
+        // the title fades in. Above the sticky tab strips (z-30), which move
+        // under it while it shows.
         className={cn(
-          'pointer-events-none fixed inset-x-0 top-0 z-40 items-end justify-center border-b lg:hidden',
+          'pointer-events-none fixed inset-x-0 z-40 items-end justify-center border-b lg:hidden',
           // A 12 pt fade under the divider: a line of text crossing it fades
           // out rather than leaving a cut glyph under the bar - the "₂" of
           // VO₂MAX hung below its capitals and stayed on its own.
@@ -168,8 +169,8 @@ export function CompactTitleBar() {
           visible ? 'flex' : 'hidden',
         )}
         style={{
-          height: `calc(var(--safe-top) + ${BAR_HEIGHT}px)`,
-          paddingTop: 'var(--safe-top)',
+          top: 'var(--safe-top)',
+          height: BAR_HEIGHT,
           background: 'var(--background)',
           borderColor: 'var(--divider)',
         }}

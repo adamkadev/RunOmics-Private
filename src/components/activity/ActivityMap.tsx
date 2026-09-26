@@ -285,7 +285,9 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         // The attribution ⓘ sits 12 px in from the right and bottom, as the
         // chips do (.activity-map in globals.css).
         'activity-map relative overflow-hidden rounded-xl',
-        isFullscreen && 'activity-map-fullscreen fixed inset-0 z-[9999] rounded-none',
+        // Under the status strip, never touching the top edge (v4.8): iOS
+        // kept the blur zone of a fullscreen map over the page's title.
+        isFullscreen && 'activity-map-fullscreen fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[9999] rounded-none',
         className
       )}
     >
@@ -301,7 +303,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
           data-testid="map-top-chips"
           className={cn(
             'pointer-events-none absolute left-3 right-16 z-10 flex flex-wrap items-center gap-2',
-            isFullscreen ? 'top-[max(env(safe-area-inset-top),12px)]' : 'top-3'
+            'top-3'
           )}
         >
           {activityType && (
@@ -331,7 +333,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         onClick={toggleFullscreen}
         className={cn(
           'glass-map-chip absolute right-3 z-20 flex h-11 w-11 items-center justify-center transition-opacity active:opacity-70',
-          isFullscreen ? 'top-[max(env(safe-area-inset-top),12px)]' : 'top-3'
+          'top-3'
         )}
         aria-label={isFullscreen ? t.activity.map.exitFullscreen : t.activity.map.fullscreen}
       >

@@ -13,7 +13,6 @@ import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { formatDateRange } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { PeriodControl } from './AnalyticsKit'
-import { SCROLL_TOP_TOLERANCE } from '@/components/layout/CompactTitleBar'
 import {
   LOAD_PERIODS,
   WEEK_PERIODS,
@@ -100,15 +99,10 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
     }
   }
 
-  // A tab swap changes the page under the title: once the new panel is in,
-  // settle a leftover sub-point offset back to 0, and have the compact bar
-  // and the large title re-read where they are.
+  // A tab swap changes the page under the title without a scroll: have the
+  // compact bar re-read where it is.
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
-      if (window.scrollY > 0 && window.scrollY <= SCROLL_TOP_TOLERANCE) window.scrollTo({ top: 0, behavior: 'instant' })
-      window.dispatchEvent(new Event('scroll'))
-    })
-    return () => cancelAnimationFrame(frame)
+    window.dispatchEvent(new Event('scroll'))
   }, [tab])
 
   const analyticsTabs = useSegmentedTabs({ ids: TABS.map((item) => item.id), value: tab, onChange: selectTab })
@@ -155,10 +149,8 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3 px-1">
         {/* The one large title, in the shell above the tabs; only the content
-            under the tabs changes on a switch. It is keyed by the tab so each
-            switch paints a fresh node: iOS kept a soft, stale raster of the
-            old one on every tab but the first (v4.6 2b). */}
-        <h1 key={tab} data-testid="analytics-title" className="shrink-0 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
+            under the tabs changes on a switch. */}
+        <h1 data-testid="analytics-title" className="shrink-0 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
           {t.analytics.title}
         </h1>
       </div>

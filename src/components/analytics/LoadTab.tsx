@@ -226,7 +226,7 @@ function StatusCard({ days, window, onShift }: { days: StatusDay[]; window: DayW
         {window.live ? s.sentenceToday(view.count, view.days) : s.sentenceOn(bare(window.end), view.count, view.days)}
       </Sentence>
       <ChartScrub count={cells.length} onShift={onShift} readout={(i) => `${bare(cells[i]!.date)} · ${cells[i]!.status ? names[cells[i]!.status!] : '–'}`}>
-        <div className="grid h-[22px] gap-0.5" style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }} data-testid="status-strip">
+        <div className="grid h-[22px] gap-0.5" style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }} data-testid="training-status-strip">
           {cells.map((cell, i) => (
             <div
               key={cell.date}

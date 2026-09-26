@@ -133,9 +133,9 @@ describe('Analytics (v4.5)', () => {
 
   it('widens every Load card with the period, and resets the range', async () => {
     await renderBoard()
-    expect(screen.getByTestId('status-strip').children).toHaveLength(27)
+    expect(screen.getByTestId('training-status-strip').children).toHaveLength(28)
     fireEvent.click(screen.getByRole('radio', { name: '12w' }))
-    expect(screen.getByTestId('status-strip').children.length).toBeLessThanOrEqual(10)
+    expect(screen.getByTestId('training-status-strip').children.length).toBeLessThanOrEqual(10)
     expect(screen.getByTestId('analytics-range').textContent).not.toBe('')
   })
 
@@ -208,15 +208,12 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('long-run-card').textContent).toContain('Jul')
   })
 
-  // v4.6 2b: one large title, in the shell, painted fresh on every switch
-  // and never styled at rest.
-  it('keeps one large title and paints it anew on a tab switch', async () => {
+  // One large title, in the shell above the tabs, never styled at rest.
+  it('keeps one large title above the tabs across a switch', async () => {
     await renderBoard()
-    const before = screen.getByTestId('analytics-title')
     await openTab(t.analytics.tabs.performance, 'predictions-card')
     expect(document.querySelectorAll('h1')).toHaveLength(1)
     const after = screen.getByTestId('analytics-title')
-    expect(after).not.toBe(before)
     expect(after.getAttribute('style')).toBeNull()
     // Above the tabs, outside the panel that changes.
     expect(screen.getByRole('tabpanel').contains(after)).toBe(false)
@@ -311,5 +308,15 @@ describe('the coach read wording (v4.6)', () => {
     const view = { tone: 'neutral' as const, loadUp: false, signals: [{ key: 'easy' as const, trend: 'flat' as const, pace: 352, delta: -1 }] }
     expect(coachText(view).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyFaster('5:52', 1))
     expect(coachText({ ...view, signals: [{ ...view.signals[0]!, delta: 0 }] }).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyLevel('5:52'))
+  })
+})
+
+describe('the race prediction range (v4.8)', () => {
+  // "All four slipped 1-9 min" above a 5K that lost 33 s.
+  it('prints each end the way its row prints its change', async () => {
+    const { changeAmount } = await import('../PerformanceTab')
+    const s = t.analytics.cards.predictions
+    expect(s.range(changeAmount(33), changeAmount(557))).toBe('33 s–9:17')
+    expect(s.slipped('All four', s.range(changeAmount(33), changeAmount(557)), '12 weeks')).toBe('All four slipped 33 s–9:17 over 12 weeks.')
   })
 })

@@ -8,6 +8,7 @@ import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { formatRelativeAgo } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { APP_VERSION, BUILD_COMMIT } from '@/lib/version'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { BackButton } from '@/components/ui/BackButton'
 import { Toast, useToast } from '@/components/ui/Toast'
@@ -167,6 +168,12 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body }: Pr
           {t.settings.auth.signOut}
         </button>
       </section>
+
+      {/* About: the version and the commit, so a device check can say which
+          build it was made on (v4.8). */}
+      <p className="px-1 text-center text-caption tabular-nums text-muted-foreground" data-testid="build-info">
+        {t.settings.about(APP_VERSION, BUILD_COMMIT)}
+      </p>
     </div>
   )
 }

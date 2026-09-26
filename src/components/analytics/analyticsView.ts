@@ -46,16 +46,19 @@ function day(iso: string): Date {
 }
 
 /** The period's window, `offset` whole windows back from today. */
+/** The day-by-day tabs' spans (v4.8): the last 28, 84 or 365 days. */
+const PERIOD_DAYS: Record<Period, number> = { '4w': 28, '12w': 84, '1y': 365 }
+
 /**
- * A day-by-day tab's window: the same weeks as the weekly tabs (v4.6), from
- * the Monday that starts them to today, so every tab's range line reads the
- * same "Jul 6 - Sep 26" for the same chip.
+ * A day-by-day tab's window (Load, Performance): the last 28, 84 or 365 days
+ * ending today, `offset` whole windows back. Monday-aligned weeks read "13 of
+ * the last 27 days" on a Saturday (v4.8); the week-based charts (Volume,
+ * Intensity) keep their Monday weeks.
  */
 export function dayWindow(today: string, period: LoadPeriod, offset = 0): DayWindow {
-  const weeks = weekWindow(today, period, offset)
-  const end = offset === 0 ? today : weeks.end
-  const days = Math.round((day(end).getTime() - day(weeks.start).getTime()) / 86_400_000) + 1
-  return { start: weeks.start, end, days, live: offset === 0 }
+  const days = PERIOD_DAYS[period]
+  const end = isoDate(addDays(day(today), -offset * days))
+  return { start: isoDate(addDays(day(end), -(days - 1))), end, days, live: offset === 0 }
 }
 
 export function weekWindow(today: string, period: WeekPeriod, offset = 0): WeekWindow {
@@ -328,7 +331,7 @@ export function predictionRows(days: PredictionDay[], window: DayWindow): Predic
 const PREDICTION_NOISE_SEC = 5
 
 export type PredictionTrend =
-  | { kind: 'slipped' | 'improved'; lo: number; hi: number; unit: 'min' | 's'; count: number }
+  | { kind: 'slipped' | 'improved'; lo: number; hi: number; count: number }
   | { kind: 'held'; count: number }
   | { kind: 'mixed'; faster: number; count: number }
 
@@ -341,9 +344,9 @@ export function predictionTrend(rows: PredictionRow[]): PredictionTrend | null {
   const faster = deltas.every((d) => d <= -PREDICTION_NOISE_SEC)
   if (!slower && !faster) return { kind: 'mixed', faster: deltas.filter((d) => d <= -PREDICTION_NOISE_SEC).length, count }
   const abs = deltas.map(Math.abs)
-  const inMinutes = Math.max(...abs) >= 60
-  const scale = (s: number) => (inMinutes ? Math.max(1, Math.round(s / 60)) : Math.round(s))
-  return { kind: slower ? 'slipped' : 'improved', lo: scale(Math.min(...abs)), hi: scale(Math.max(...abs)), unit: inMinutes ? 'min' : 's', count }
+  // Seconds, as each row prints its change: the card said "1-9 min" above a
+  // 5K that lost 33 s (v4.8).
+  return { kind: slower ? 'slipped' : 'improved', lo: Math.round(Math.min(...abs)), hi: Math.round(Math.max(...abs)), count }
 }
 
 export interface EfficiencyView {

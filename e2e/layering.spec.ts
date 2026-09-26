@@ -50,21 +50,24 @@ for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
 }
 
 // iOS 26 takes the topmost fixed element touching the top edge as the page's
-// bar and blurs content scrolling under a transparent one. So every fixed
-// element drawn at the top edge is opaque, at rest and once the page has
-// scrolled (the compact title bar appears then): an invisible one, at opacity
-// 0, brought the blur back over the status bar.
+// bar, blurs content under it, and keeps the zone of the tallest one it has
+// seen (v4.8). So one element touches the edge - the opaque status strip,
+// exactly the safe area tall - and everything else fixed starts under it:
+// the compact title bar that shows once the page has scrolled included. A
+// desktop browser has no safe area, so the test gives it a 59 pt one, as on a
+// 16-series phone.
 test.describe('on a phone', () => {
   // The top bars are phone-only (lg:hidden).
   test.use({ viewport: { width: 393, height: 852 } })
 
-  for (const route of ['/', '/plan']) {
-    test(`${route} keeps every fixed element at the top edge opaque`, async ({ page }) => {
+  for (const route of ['/', '/plan', '/analytics']) {
+    test(`${route} lets only the status strip touch the top edge`, async ({ page }) => {
       await page.goto(route)
+      await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
       for (const y of [0, 600]) {
         await page.evaluate((top) => window.scrollTo(0, top), y)
         await page.waitForTimeout(300)
-        const seeThrough = await page.evaluate(() => {
+        const atTop = await page.evaluate(() => {
           const alpha = (color: string) => {
             if (color === 'transparent') return 0
             const parts = color.match(/[\d.]+/g) ?? []
@@ -74,15 +77,24 @@ test.describe('on a phone', () => {
             .filter((el) => {
               const style = getComputedStyle(el)
               const box = el.getBoundingClientRect()
-              return style.position === 'fixed' && style.display !== 'none' && box.top <= 0 && box.height > 0
+              return style.position === 'fixed' && style.display !== 'none' && box.top <= 0 && box.bottom > 0 && box.height > 0
             })
-            .filter((el) => {
+            .map((el) => {
               const style = getComputedStyle(el)
-              return Number(style.opacity) < 1 || alpha(style.backgroundColor) < 1
+              return {
+                id: el.dataset.testid ?? el.className.slice(0, 60),
+                height: Math.round(el.getBoundingClientRect().height),
+                opaque: Number(style.opacity) === 1 && alpha(style.backgroundColor) === 1,
+              }
             })
-            .map((el) => el.dataset.testid ?? el.className.slice(0, 60))
         })
-        expect(seeThrough, `scrolled to ${y}`).toEqual([])
+        expect(atTop, `scrolled to ${y}`).toEqual([{ id: 'status-strip', height: 59, opaque: true }])
+      }
+      // Scrolled, the compact bar shows - under the strip, not over it.
+      if (route === '/analytics') {
+        const bar = await page.getByTestId('compact-title-bar').boundingBox()
+        expect(bar?.y).toBe(59)
+        expect(bar?.height).toBe(44)
       }
     })
   }
