@@ -1,0 +1,245 @@
+import { describe, expect, it } from 'vitest'
+import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
+import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
+import { addDays, isoDate } from '@/lib/calendarDate'
+import {
+  dayWindow,
+  easyHardView,
+  efficiencyView,
+  formView,
+  heatView,
+  longRunView,
+  paceShift,
+  predictionRows,
+  predictionTrend,
+  qualityView,
+  riskRows,
+  rpeView,
+  statusView,
+  vo2View,
+  weekRows,
+  weekWindow,
+  weeklyDistanceView,
+  zonesView,
+} from '../analyticsView'
+
+const TODAY = '2026-09-26' // a Saturday
+
+function week(date: string, over: Partial<WeeklyTrendPoint> = {}): WeeklyTrendPoint {
+  return {
+    date,
+    label: date,
+    distanceKm: 0,
+    sessionCount: 0,
+    easyPace: null,
+    hardPace: null,
+    ef: null,
+    efAdjusted: null,
+    apparentTempC: null,
+    easyAvgHr: null,
+    hardAvgHr: null,
+    cadenceSpm: null,
+    groundContactMs: null,
+    verticalOscillationMm: null,
+    verticalRatioPct: null,
+    strideLengthM: null,
+    avgRpe: null,
+    aer: null,
+    ana: null,
+    zoneSeconds: {},
+    longestKm: 0,
+    longestDate: null,
+    durationSeconds: 0,
+    thresholdSessions: 0,
+    intervalSessions: 0,
+    ...over,
+  }
+}
+
+const mondays = (n: number, last = '2026-09-21') =>
+  Array.from({ length: n }, (_, i) => isoDate(addDays(new Date(`${last}T00:00:00`), -(n - 1 - i) * 7)))
+
+describe('the tab windows', () => {
+  it('ends the load window today and steps back a whole window per swipe', () => {
+    expect(dayWindow(TODAY, '4w')).toEqual({ start: '2026-08-30', end: TODAY, days: 28, live: true })
+    expect(dayWindow(TODAY, '4w', 1)).toMatchObject({ start: '2026-08-02', end: '2026-08-29', live: false })
+    expect(dayWindow(TODAY, '6m').start).toBe('2026-03-29')
+  })
+
+  it('ends the week window on the current week, Monday to Sunday', () => {
+    const w = weekWindow(TODAY, '12w')
+    expect(w.weeks).toHaveLength(12)
+    expect(w.weeks.at(-1)).toBe('2026-09-21')
+    expect(w.start).toBe('2026-07-06')
+    expect(w.end).toBe('2026-09-27')
+    expect(weekWindow(TODAY, '4w', 1).weeks.at(-1)).toBe('2026-08-24')
+  })
+})
+
+describe('D1 Load', () => {
+  const load = Array.from({ length: 40 }, (_, i) => ({ date: isoDate(addDays(new Date('2026-08-18T00:00:00'), i)), ctl: 38 + i * 0.16, atl: 14 + i * 0.95 }))
+
+  it('prints Form as fitness minus fatigue rounded once, as Today does, with the window deltas', () => {
+    const view = formView(load, dayWindow(TODAY, '4w'))!
+    const last = load.at(-1)!
+    expect(view.form).toBe(Math.round(last.ctl - last.atl))
+    expect(view.form).toBe(-7)
+    expect(view.band).toBe('neutral')
+    expect(view.fitness).toBe(Math.round(last.ctl))
+    expect(view.bars).toHaveLength(28)
+    expect(view.yMax).toBe(75)
+  })
+
+  it('draws one bar a week beyond four weeks', () => {
+    const long = Array.from({ length: 200 }, (_, i) => ({ date: isoDate(addDays(new Date('2026-03-10T00:00:00'), i)), ctl: 40, atl: 40 }))
+    const view = formView(long, dayWindow(TODAY, '6m'))!
+    expect(view.bars.length).toBeGreaterThanOrEqual(26)
+    expect(view.bars.length).toBeLessThanOrEqual(28)
+  })
+
+  it("counts the current status's days over the window, and the rest by count", () => {
+    const days = [
+      ...Array.from({ length: 5 }, () => 'detraining' as const),
+      'recovery' as const,
+      ...Array.from({ length: 8 }, () => 'overreaching' as const),
+      ...Array.from({ length: 14 }, () => 'productive' as const),
+    ].map((status, i) => ({ date: isoDate(addDays(new Date('2026-08-30T00:00:00'), i)), status }))
+    const view = statusView(days, dayWindow(TODAY, '4w'))!
+    expect(view.current).toBe('productive')
+    expect(view.count).toBe(14)
+    expect(view.days).toBe(28)
+    expect(view.cells).toHaveLength(28)
+    expect(view.totals.map((t) => t.status)).toEqual(['productive', 'overreaching', 'detraining', 'recovery'])
+  })
+
+  it('marks a risk out of range amber, and beyond the alert limit Z5', () => {
+    const panel = { acwr: 1.13, monotony: 1.5, rampRate: 2.4 } as LoadRiskPanel
+    expect(riskRows(panel).map((r) => r.state)).toEqual(['ok', 'ok', 'ok'])
+    expect(riskRows({ ...panel, acwr: 1.4 }).find((r) => r.key === 'loadRatio')!.state).toBe('out')
+    expect(riskRows({ ...panel, acwr: 1.6 }).find((r) => r.key === 'loadRatio')!.state).toBe('alert')
+    expect(riskRows({ ...panel, rampRate: -6 }).find((r) => r.key === 'rampRate')!.state).toBe('out')
+    expect(riskRows({ ...panel, monotony: 2.3 }).find((r) => r.key === 'monotony')!.state).toBe('alert')
+    // Monotony's range starts at the scale's own end: no label there.
+    expect(riskRows(panel).find((r) => r.key === 'monotony')!.labelLo).toBe(false)
+  })
+})
+
+describe('D2 Performance', () => {
+  // The data bug: Load printed the last monthly average, Progress Garmin's latest.
+  it("reads Garmin's latest VO2max and its 90-day change, as Progress does", () => {
+    const samples = [
+      { date: '2026-06-01', vo2max: 57 },
+      { date: '2026-07-01', vo2max: 56 },
+      { date: '2026-09-20', vo2max: 55 },
+    ]
+    expect(vo2View(55, samples, TODAY)).toEqual({ value: 55, delta: -1 })
+    expect(vo2View(null, samples, TODAY)!.value).toBe(55)
+  })
+
+  it('works a pace shift out of medians at both ends of the window', () => {
+    const weeks = [380, 378, 376, 370, 360, 356, 352, 350].map((p, i) => week(mondays(8)[i]!, { easyPace: p }))
+    const shift = paceShift(weeks, (w) => w.easyPace)!
+    expect(shift.now).toBe(354)
+    expect(shift.delta).toBe(354 - 377)
+  })
+
+  it('reads every prediction delta over the same window', () => {
+    const days = [
+      { date: '2026-03-01', seconds: { '5k': 1100 } },
+      { date: '2026-04-01', seconds: { '5k': 1154, '10k': 2445 } },
+      { date: '2026-09-25', seconds: { '5k': 1224, '10k': 2570 } },
+    ]
+    const rows = predictionRows(days, dayWindow(TODAY, '6m'))
+    expect(rows.map((r) => [r.distance, r.delta])).toEqual([
+      ['5k', 70],
+      ['10k', 125],
+    ])
+    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 1, hi: 2, unit: 'min', count: 2 })
+  })
+
+  it('reads efficiency now against four weeks and six months back, and what heat costs', () => {
+    const all = mondays(30).map((d, i) => week(d, { ef: 1.1 + (i < 26 ? 0 : -0.04), efAdjusted: 1.12 + (i < 26 ? 0 : -0.03) }))
+    const view = efficiencyView(all, all.slice(-26), '2026-09-27')!
+    expect(view.now).toBe(1.09)
+    expect(view.delta4w).toBe(-0.03)
+    expect(view.heatCost).toBe(0.03)
+    expect(view.trend).toBe('dipping')
+  })
+
+  it('reads RPE over four weeks against the four before', () => {
+    const all = mondays(8).map((d, i) => week(d, { avgRpe: i < 4 ? 4 : 3.4 }))
+    expect(rpeView(all, '2026-09-27')).toEqual({ avg: 3.4, trend: 'easing', bars: [4, 4, 4, 4, 3.4, 3.4, 3.4, 3.4] })
+  })
+
+  // The copy bug: "about 13 s/km" above a table that said 11 s.
+  it('takes the heat range from the same bands the bars draw, with a gap for a band with too few runs', () => {
+    const view = heatView({
+      refHeartRate: 149,
+      bands: [
+        { id: 'cold', label: '', runCount: 9, avgApparentTempC: 2, paceAtRefHr: 372, costSecPerKm: 13 },
+        { id: 'cool', label: '', runCount: 40, avgApparentTempC: 10, paceAtRefHr: 359, costSecPerKm: 0 },
+        { id: 'warm', label: '', runCount: 12, avgApparentTempC: 22, paceAtRefHr: 376, costSecPerKm: 17 },
+        { id: 'hot', label: '', runCount: 10, avgApparentTempC: 28, paceAtRefHr: 370, costSecPerKm: 11 },
+      ],
+    })!
+    expect(view.warm).toEqual({ lo: 11, hi: 17 })
+    expect(view.rows.map((r) => r.id)).toEqual(['cold', 'cool', 'mild', 'warm', 'hot'])
+    expect(view.rows.find((r) => r.id === 'mild')!.pace).toBeNull()
+    expect(view.rows.find((r) => r.id === 'cool')!.best).toBe(true)
+  })
+})
+
+describe('D3 Volume', () => {
+  const window = weekWindow(TODAY, '12w')
+  const kms = [38, 42, 45, 40, 48, 52, 30, 44, 46, 41, 48, 27.3]
+  const plans = [40, 44, 46, 42, 48, 50, 32, 44, 46, 44, 48, 48]
+  const weeks = window.weeks.map((d, i) => week(d, { distanceKm: kms[i]!, longestKm: [12, 13, 17, 12, 16, 18, 12, 15, 15.5, 13, 16, 14.2][i]!, longestDate: d }))
+  const plan = window.weeks.map((d, i) => ({ week: d, planKm: plans[i]!, planQuality: 2 }))
+  const rows = weekRows(weeks, plan, window, TODAY)
+
+  it('counts weeks on plan at 90% of the plan, leaving the week under way out', () => {
+    const view = weeklyDistanceView(rows)!
+    expect(view.last.km).toBe(27.3)
+    expect(view.last.current).toBe(true)
+    expect(view.avg).toBe(Math.round(kms.slice(0, 11).reduce((a, b) => a + b, 0) / 11))
+    expect(view.onPlan).toEqual({ hit: 11, of: 11 })
+  })
+
+  it('flags a finished week whose long run is over 35% of it', () => {
+    const view = longRunView(rows)!
+    expect(view.km).toBe(14.2)
+    expect(view.share).toBe(52)
+    expect(view.bars.filter((b) => b.over)).toHaveLength(2)
+    expect(view.over).toBe(2)
+  })
+})
+
+describe('D4 Intensity', () => {
+  const window = weekWindow(TODAY, '4w')
+  const zones = (easy: number, mod: number, hard: number) => ({ 1: 0, 2: easy * 3600, 3: mod * 3600, 4: hard * 3600, 5: 0 })
+
+  it('splits easy from moderate and hard, and says when the middle is too big', () => {
+    const rows = weekRows(window.weeks.map((d) => week(d, { zoneSeconds: zones(8.4, 0.4, 1.2) })), [], window, TODAY)
+    expect(easyHardView(rows)).toMatchObject({ easyPct: 84, moderatePct: 4, hardPct: 12, status: 'inRange' })
+    const grey = weekRows(window.weeks.map((d) => week(d, { zoneSeconds: zones(7, 2, 1) })), [], window, TODAY)
+    expect(easyHardView(grey)!.status).toBe('tooModerate')
+  })
+
+  it("reads hard minutes over the finished weeks only", () => {
+    const rows = weekRows(window.weeks.map((d, i) => week(d, { zoneSeconds: zones(3 + i, 0.2, i === 3 ? 0 : 0.4) })), [], window, TODAY)
+    const view = zonesView(rows)!
+    expect(view.hard).toEqual({ lo: 25, hi: 25 })
+    expect(view.total).toBe('grew')
+  })
+
+  it("marks the plan's quality sessions not run as missed, never in the week under way", () => {
+    const weeks = window.weeks.map((d, i) => week(d, { thresholdSessions: 1, intervalSessions: i % 2 }))
+    const plan = window.weeks.map((d) => ({ week: d, planKm: null, planQuality: 2 }))
+    const view = qualityView(weekRows(weeks, plan, window, TODAY), plan)!
+    expect(view.weeks[0]).toEqual(['threshold', 'missed'])
+    expect(view.weeks[1]).toEqual(['threshold', 'intervals'])
+    expect(view.weeks[3]).toEqual(['threshold', 'intervals'])
+    expect(view.planAsks).toBe(2)
+    expect(view.avg).toBe(1.3)
+  })
+})

@@ -85,3 +85,9 @@ function monthlyFromActivities(): Vo2maxSample[] {
   }
   return [...byMonth.values()]
 }
+
+/** Garmin's latest VO2max and its daily readings: the pair Progress and Analytics both print. */
+export function getVO2maxReadings(): { value: number | null; samples: Vo2maxSample[] } {
+  const { days } = getVo2maxSamples()
+  return { value: getLatestVO2max(), samples: days.length > 0 ? days : dailyFromActivities() }
+}

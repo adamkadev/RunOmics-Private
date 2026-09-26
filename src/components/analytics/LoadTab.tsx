@@ -1,0 +1,293 @@
+'use client'
+
+import { useState } from 'react'
+import { ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react'
+import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
+import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
+import type { Insight } from '@/lib/gemini'
+import type { TrainingStatusType } from '@/domain/training/status'
+import type { FormBand } from '@/domain/training/formBand'
+import { formatDate, MINUS } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
+import { t } from '@/i18n'
+import { AxisLabels, Card, CardHead, ChartScrub, Legend, LegendItem, Sentence, Sheet, linePath } from './AnalyticsKit'
+import { formView, riskRows, statusView, type DayWindow, type LoadDay, type RiskRow, type StatusDay } from './analyticsView'
+
+/** Garmin's statuses as cells: the name stays ink, the cell carries the hue. */
+export const STATUS_COLOR: Record<TrainingStatusType, string> = {
+  productive: 'var(--zone-3)',
+  overreaching: 'var(--zone-5)',
+  detraining: 'var(--series-3)',
+  recovery: 'var(--zone-2)',
+  fresh: 'var(--zone-1)',
+  maintaining: 'var(--band)',
+  unproductive: 'var(--tone-caution)',
+}
+
+/** Form's strip: fresh Z2, neutral the band grey, tired amber. */
+export const FORM_FILL: Record<FormBand, string> = {
+  veryFresh: 'var(--form-band-fill-fresh)',
+  fresh: 'var(--form-band-fill-fresh)',
+  neutral: 'var(--form-band-fill-neutral)',
+  tired: 'var(--form-band-fill-tired)',
+}
+
+const signed = (n: number) => (n < 0 ? `${MINUS}${Math.abs(n)}` : n > 0 ? `+${n}` : '0')
+const arrow = (n: number) => (n > 0 ? `↑${n}` : n < 0 ? `↓${Math.abs(n)}` : '±0')
+const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
+
+/** Start, middle and end of a window, the end read as Today while it is. */
+export function windowLabels(dates: string[], live: boolean): string[] {
+  if (!dates.length) return []
+  const mid = dates[Math.floor((dates.length - 1) / 2)]!
+  return [bare(dates[0]!), bare(mid), live ? t.analytics.cards.today : bare(dates[dates.length - 1]!)]
+}
+
+function CoachRead({ headline, insight }: { headline: SeasonHeadlineData; insight: Insight | null }) {
+  const s = t.analytics.cards.coachRead
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-label={`${s.eyebrow}: ${s.open}`}
+        data-testid="coach-read"
+        className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-card border border-[var(--divider)] bg-card px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground">{s.eyebrow}</span>
+        <ChevronRight size={16} className="row-span-2 text-muted-foreground" aria-hidden />
+        <span className="font-display text-[16px] font-semibold leading-[1.3] text-foreground text-pretty">{insight?.headline ?? headline.title}</span>
+      </button>
+      {open && (
+        <Sheet title={s.sheetTitle} onClose={() => setOpen(false)}>
+          <ul className="flex flex-col gap-3">
+            {headline.bullets.map((bullet, i) => {
+              const Icon = bullet.tone === 'positive' ? ArrowUpRight : ArrowRight
+              return (
+                <li key={i} className="flex items-start gap-2.5 text-[15px] leading-snug text-foreground">
+                  <Icon size={16} strokeWidth={2.4} className="mt-0.5 shrink-0" style={{ color: bullet.tone === 'positive' ? 'var(--accent-text)' : 'var(--tone-caution)' }} aria-hidden />
+                  {insight?.bullets?.[i] ?? bullet.text}
+                </li>
+              )
+            })}
+          </ul>
+        </Sheet>
+      )}
+    </>
+  )
+}
+
+function FormCard({ load, window, onShift }: { load: LoadDay[]; window: DayWindow; onShift: (step: 1 | -1) => void }) {
+  const s = t.analytics.cards.form
+  const view = formView(load, window)
+  if (!view) return null
+  const W = 311
+  const H = 110
+  const bars = view.bars
+  return (
+    <Card testId="form-card">
+      <CardHead title={s.title} caption={s.caption} about={s.about} />
+      <div className="flex items-end gap-[18px]">
+        <div className="flex flex-col gap-1">
+          <span className="font-display text-[40px] font-bold leading-none tabular-nums text-foreground">{signed(view.form)}</span>
+          <span className="text-[13px] font-semibold text-foreground">
+            {t.formBand[view.band]} <span className="font-normal text-muted-foreground">· {s.range[view.band]}</span>
+          </span>
+        </div>
+        <div className="grid flex-1 grid-cols-2 gap-2 pb-0.5">
+          {[
+            { label: s.fitness, value: view.fitness, delta: view.fitnessDelta, swatch: 'line' as const, color: 'var(--foreground)' },
+            { label: s.fatigue, value: view.fatigue, delta: view.fatigueDelta, swatch: 'dash' as const, color: 'var(--muted-foreground)' },
+          ].map((m) => (
+            <div key={m.label} className="flex flex-col gap-[3px]">
+              <span className="text-[12px] text-muted-foreground">
+                <LegendItem swatch={m.swatch} color={m.color}>{m.label}</LegendItem>
+              </span>
+              <span className="font-display text-[18px] font-bold leading-none tabular-nums text-foreground">
+                {m.value} <span className="font-sans text-[12px] font-medium text-muted-foreground">{arrow(m.delta)}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <ChartScrub
+        count={view.dates.length}
+        mode="line"
+        onShift={onShift}
+        readout={(i) => `${bare(view.dates[i]!)} · ${s.fitness} ${Math.round(view.ctl[i]!)} · ${s.fatigue} ${Math.round(view.atl[i]!)}`}
+      >
+        <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
+          {[1, 2, 3].map((k) => (
+            <line key={k} x1="0" x2={W} y1={(H * k) / 3} y2={(H * k) / 3} stroke="var(--divider)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          ))}
+          <path d={linePath(view.atl, 0, view.yMax, W, H)} fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
+          <path d={linePath(view.ctl, 0, view.yMax, W, H)} fill="none" stroke="var(--foreground)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <span className="absolute -top-0.5 right-0 text-caption leading-none text-muted-foreground">{view.yMax}</span>
+      </ChartScrub>
+      <div className="flex flex-col gap-1">
+        <ChartScrub count={bars.length} onShift={onShift} readout={(i) => `${bare(bars[i]!.date)} · ${s.title} ${signed(bars[i]!.form)}`}>
+          <div className="relative flex h-11 gap-0.5 border-t border-dashed border-[var(--divider)]" data-testid="form-strip">
+            <div className="absolute inset-x-0 top-[22px] h-px bg-[var(--band)]" />
+            {bars.map((bar, i) => {
+              const h = Math.min(22, Math.abs(bar.form) * 0.8) || 1
+              const today = window.live && i === bars.length - 1
+              return (
+                <div key={bar.date} className="relative flex-1">
+                  <div
+                    data-band={bar.band}
+                    className="absolute inset-x-0 rounded-[1px]"
+                    style={{ top: bar.form >= 0 ? 22 - h : 22, height: h, background: FORM_FILL[bar.band], boxShadow: today ? '0 0 0 1.5px var(--foreground)' : undefined }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </ChartScrub>
+        <AxisLabels labels={windowLabels(view.dates, window.live)} />
+        <Legend className="gap-x-3 pt-1">
+          <LegendItem swatch="square" color={FORM_FILL.fresh}>{s.legend.fresh}</LegendItem>
+          <LegendItem swatch="square" color={FORM_FILL.neutral}>{s.legend.neutral}</LegendItem>
+          <LegendItem swatch="square" color={FORM_FILL.tired}>{s.legend.tired}</LegendItem>
+        </Legend>
+      </div>
+    </Card>
+  )
+}
+
+function StatusCard({ days, window, onShift }: { days: StatusDay[]; window: DayWindow; onShift: (step: 1 | -1) => void }) {
+  const s = t.analytics.cards.status
+  const names = t.trainingStatus.status
+  const view = statusView(days, window)
+  if (!view) return null
+  const cells = view.cells
+  return (
+    <Card testId="status-card">
+      <CardHead title={s.title} caption={s.caption} about={s.about} />
+      <Sentence>
+        <b>{names[view.current]}</b>
+        {window.live ? s.sentenceToday(view.count, view.days) : s.sentenceOn(bare(window.end), view.count, view.days)}
+      </Sentence>
+      <ChartScrub count={cells.length} onShift={onShift} readout={(i) => `${bare(cells[i]!.date)} · ${cells[i]!.status ? names[cells[i]!.status!] : '–'}`}>
+        <div className="grid h-[22px] gap-0.5" style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }} data-testid="status-strip">
+          {cells.map((cell, i) => (
+            <div
+              key={cell.date}
+              className="rounded-[3px]"
+              style={{
+                background: cell.status ? STATUS_COLOR[cell.status] : 'var(--track)',
+                boxShadow: window.live && i === cells.length - 1 ? '0 0 0 1.5px var(--foreground)' : undefined,
+              }}
+            />
+          ))}
+        </div>
+      </ChartScrub>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px] text-foreground">
+        {view.totals.map(({ status, days: n }) => (
+          <span key={status} className="flex justify-between gap-2">
+            <LegendItem swatch="square" color={STATUS_COLOR[status]}>{names[status]}</LegendItem>
+            <b className="tabular-nums">{s.days(n)}</b>
+          </span>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+const RISK_DECIMALS: Record<RiskRow['key'], number> = { loadRatio: 2, monotony: 1, rampRate: 1 }
+const RISK_INK: Record<RiskRow['state'], string> = { ok: 'var(--foreground)', out: 'var(--tone-caution)', alert: 'var(--zone-5)' }
+
+function riskValue(row: RiskRow): string {
+  const text = row.value.toFixed(RISK_DECIMALS[row.key])
+  if (row.key !== 'rampRate') return text
+  return row.value > 0 ? `+${text}` : row.value < 0 ? `${MINUS}${Math.abs(row.value).toFixed(1)}` : text
+}
+
+function edgeLabel(row: RiskRow, v: number): string {
+  if (row.key === 'loadRatio') return v.toFixed(1)
+  if (row.key === 'monotony') return v.toFixed(1)
+  return v > 0 ? `+${v}` : v < 0 ? `${MINUS}${Math.abs(v)}` : '0'
+}
+
+function RiskRowView({ row, risk }: { row: RiskRow; risk: LoadRiskPanel }) {
+  const s = t.analytics.cards.risk
+  const [formula, setFormula] = useState(false)
+  const pos = (v: number) => `${((Math.min(row.max, Math.max(row.min, v)) - row.min) / (row.max - row.min)) * 100}%`
+  const name = s[row.key]
+  const hint = row.key === 'loadRatio' ? s.loadRatioHint : row.key === 'monotony' ? s.monotonyHint : s.rampRateHint
+  const explain =
+    row.key === 'loadRatio'
+      ? risk.acute !== null && risk.chronic !== null
+        ? s.loadRatioFormula(risk.acute, risk.chronic)
+        : s.loadRatioFormulaLocal
+      : row.key === 'monotony'
+        ? s.monotonyFormula
+        : s.rampRateFormula
+  const ink = RISK_INK[row.state]
+  return (
+    <div className="flex flex-col gap-[7px]" data-testid={`risk-${row.key}`} data-state={row.state}>
+      <div className="flex items-baseline justify-between gap-3">
+        <button type="button" onClick={() => setFormula((v) => !v)} aria-expanded={formula} className="min-w-0 text-left text-[14px] font-semibold text-foreground">
+          {name} <span className="text-[12px] font-normal text-muted-foreground">{hint}</span>
+        </button>
+        <span className="font-display text-[18px] font-bold leading-none tabular-nums" style={{ color: ink }}>{riskValue(row)}</span>
+      </div>
+      {formula && <p className="text-[12px] leading-snug text-muted-foreground">{explain}</p>}
+      <div className="relative h-1.5 rounded-[3px] bg-[var(--track)]">
+        <div className="absolute inset-y-0 bg-[var(--band)]" style={{ left: pos(row.lo), width: `calc(${pos(row.hi)} - ${pos(row.lo)})` }} />
+        <div className="absolute -top-1 h-3.5 w-1 rounded-[2px]" style={{ left: `calc(${pos(row.value)} - 2px)`, background: ink }} data-testid="risk-marker" />
+      </div>
+      <div className="relative h-3 text-caption leading-none text-muted-foreground" aria-hidden>
+        {row.labelLo && <span className="absolute -translate-x-1/2" style={{ left: pos(row.lo) }}>{edgeLabel(row, row.lo)}</span>}
+        <span className="absolute -translate-x-1/2" style={{ left: pos(row.hi) }}>{edgeLabel(row, row.hi)}</span>
+      </div>
+    </div>
+  )
+}
+
+function RiskCard({ risk }: { risk: LoadRiskPanel | null }) {
+  const s = t.analytics.cards.risk
+  const rows = riskRows(risk)
+  if (!risk || !rows.length) return null
+  const ok = rows.filter((r) => r.state === 'ok').length
+  return (
+    <Card className="gap-3.5" testId="risk-card">
+      <CardHead
+        title={s.title}
+        about={s.about}
+        right={
+          <span className="shrink-0 text-[13px] font-semibold text-foreground">
+            {ok === rows.length && <span className="text-accent-text">✓ </span>}
+            {s.inRange(ok, rows.length)}
+          </span>
+        }
+      />
+      {rows.map((row) => (
+        <RiskRowView key={row.key} row={row} risk={risk} />
+      ))}
+    </Card>
+  )
+}
+
+export interface LoadTabProps {
+  window: DayWindow
+  onShift: (step: 1 | -1) => void
+  load: LoadDay[]
+  status: StatusDay[]
+  risk: LoadRiskPanel | null
+  headline: SeasonHeadlineData | null
+  insight: Insight | null
+}
+
+export function LoadTab({ window, onShift, load, status, risk, headline, insight }: LoadTabProps) {
+  return (
+    <div className={cn('flex flex-col gap-3')}>
+      {headline && <CoachRead headline={headline} insight={insight} />}
+      <FormCard load={load} window={window} onShift={onShift} />
+      <StatusCard days={status} window={window} onShift={onShift} />
+      <RiskCard risk={risk} />
+    </div>
+  )
+}

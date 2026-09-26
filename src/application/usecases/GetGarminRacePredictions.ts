@@ -10,6 +10,8 @@ export interface GarminRacePredictionPoint extends DatedPaces {
   '10k': number | null
   half: number | null
   marathon: number | null
+  /** The predicted times themselves, which the paces above are worked out from. */
+  seconds: Partial<Record<RaceDistanceKey, number>>
 }
 
 export interface GarminRacePredictionsData {
@@ -32,6 +34,7 @@ export function getGarminRacePredictions(): GarminRacePredictionsData | null {
     '10k': paceOf(day['10k'], '10k'),
     half: paceOf(day.half, 'half'),
     marathon: paceOf(day.marathon, 'marathon'),
+    seconds: Object.fromEntries(RACE_DISTANCES.flatMap((d) => (day[d] !== undefined ? [[d, day[d]]] : []))),
   }))
 
   const distances = RACE_DISTANCES.filter((d) => points.some((p) => p[d] !== null))
