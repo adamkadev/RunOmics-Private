@@ -13,7 +13,7 @@ import { ShoePairTag } from '@/components/activities/ShoePairTag'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { MAP_CHIP_CLASS, WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
-import { loadMapLibre, showPlaceLabelsAtAnyZoom } from '@/lib/maplibre'
+import { hidePoiLabels, loadMapLibre, showPlaceLabelsAtAnyZoom } from '@/lib/maplibre'
 
 interface Props {
   route: [number, number][]
@@ -45,6 +45,23 @@ function buildSegmentFeatures(route: [number, number][], paceSamples: number[] |
   })
 }
 
+/** The chips' inset from the map's edge, and the clear space kept between a
+ *  chip and the route (v4.3.1). */
+const CHIP_INSET = 12
+const ROUTE_CLEARANCE = 8
+const EDGE_PADDING = 24
+
+/**
+ * The route fitted inside what the chips leave free: the top chip rows and
+ * the shoe chip each push that edge in by their height plus 8 px, so no chip
+ * sits on the start or finish marker.
+ */
+export function routePadding(top: HTMLElement | null, bottom: HTMLElement | null) {
+  const clear = (el: HTMLElement | null) =>
+    el && el.offsetHeight > 0 ? Math.max(EDGE_PADDING, CHIP_INSET + el.offsetHeight + ROUTE_CLEARANCE) : EDGE_PADDING
+  return { top: clear(top), bottom: clear(bottom), left: EDGE_PADDING, right: EDGE_PADDING }
+}
+
 function mkMarker(bg: string, border = 'white', size = 13) {
   const el = document.createElement('div')
   Object.assign(el.style, {
@@ -71,6 +88,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
   const hoverMarkerRef = useRef<Marker | null>(null)
   const animFrameRef = useRef<number | null>(null)
   const boundsRef = useRef<LngLatBounds | null>(null)
+  const topChipsRef = useRef<HTMLDivElement>(null)
+  const shoeChipRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), [])
@@ -94,7 +113,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     // pinch-zoom in fullscreen used to stay on the small map, with the route
     // cut off at the card's edges.
     if (!isFullscreen && boundsRef.current) {
-      map.fitBounds(boundsRef.current, { padding: 24, maxZoom: 15, animate: false })
+      map.fitBounds(boundsRef.current, { padding: routePadding(topChipsRef.current, shoeChipRef.current), maxZoom: 15, animate: false })
     }
   }, [isFullscreen])
 
@@ -139,7 +158,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         container: mapEl,
         style: styleUrl,
         bounds,
-        fitBoundsOptions: { padding: 24, maxZoom: 15 },
+        fitBoundsOptions: { padding: routePadding(topChipsRef.current, shoeChipRef.current), maxZoom: 15 },
         attributionControl: false,
       })
       map.addControl(new mgl.AttributionControl({ compact: true }), 'bottom-right')
@@ -165,6 +184,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         if (cancelled) return
 
         showPlaceLabelsAtAnyZoom(map)
+        hidePoiLabels(map)
 
         map.addSource('route', {
           type: 'geojson',
@@ -263,7 +283,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
   const tree = (
     <div
       className={cn(
-        'relative overflow-hidden rounded-xl',
+        // The attribution ⓘ at the same 12 px inset as the chips.
+        'relative overflow-hidden rounded-xl [&_.maplibregl-ctrl-bottom-right_.maplibregl-ctrl]:m-3!',
         isFullscreen && 'fixed inset-0 z-[9999] rounded-none',
         className
       )}
@@ -271,12 +292,16 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       <div ref={hostRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
 
       {/* The run's type and the weather on top, the shoe at the bottom:
-          the map says what the run was (the owner's preference). */}
+          the map says what the run was (the owner's preference). The chips
+          wrap to a second row rather than run under the expand button:
+          12 px in, 8 px apart, clear of its 44 pt (v4.3.1). */}
       {(weather || activityType) && (
         <div
+          ref={topChipsRef}
+          data-testid="map-top-chips"
           className={cn(
-            'absolute left-2 right-14 z-10 flex flex-wrap items-center gap-1.5',
-            isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
+            'pointer-events-none absolute left-3 right-16 z-10 flex flex-wrap items-center gap-2',
+            isFullscreen ? 'top-[max(env(safe-area-inset-top),12px)]' : 'top-3'
           )}
         >
           {activityType && (
@@ -291,9 +316,10 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
 
       {shoe && (
         <div
+          ref={shoeChipRef}
           className={cn(
-            'pointer-events-none absolute left-2 z-10',
-            isFullscreen ? 'bottom-[max(env(safe-area-inset-bottom),8px)]' : 'bottom-2'
+            'pointer-events-none absolute left-3 right-12 z-10 flex',
+            isFullscreen ? 'bottom-[max(env(safe-area-inset-bottom),12px)]' : 'bottom-3'
           )}
           data-testid="map-shoe-chip"
         >
@@ -304,8 +330,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       <button
         onClick={toggleFullscreen}
         className={cn(
-          'glass-map-chip absolute right-2 z-10 flex h-11 w-11 items-center justify-center transition-opacity active:opacity-70',
-          isFullscreen ? 'top-[max(env(safe-area-inset-top),8px)]' : 'top-2'
+          'glass-map-chip absolute right-3 z-20 flex h-11 w-11 items-center justify-center transition-opacity active:opacity-70',
+          isFullscreen ? 'top-[max(env(safe-area-inset-top),12px)]' : 'top-3'
         )}
         aria-label={isFullscreen ? t.activity.map.exitFullscreen : t.activity.map.fullscreen}
       >

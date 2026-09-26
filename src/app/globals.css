@@ -181,6 +181,7 @@
   --ro-text-3:              #8a8f8f;
   --track:                  #e8eaea;
   --heat-empty:             #e8eaea;
+  --faint-strong:           #9aa0a0;
   --band:                   #c9cdcd;
   --thumb-bg:               #e6e8e8;
   --tab-bar-bg:             #ffffff;
@@ -256,6 +257,7 @@
   --ro-text-3:              #6e7373;
   --track:                  #262a2a;
   --heat-empty:             #262a2a;
+  --faint-strong:           #5a6060;
   --band:                   #3a3f3f;
   --thumb-bg:               #1d2020;
   --tab-bar-bg:             #0b0c0c;
@@ -282,13 +284,13 @@
 }
 
 [data-accent="teal"] {
-  --accent:             #0f8a6e;
+  --accent:             #0e8468;
   --accent-foreground:  #ffffff;
-  --accent-text:        #0f8a6e;
-  --accent-hover:       color-mix(in oklab, #0f8a6e 88%, black);
-  --acc-soft:           color-mix(in oklab, #0f8a6e 20%, transparent);
-  --acc-line:           color-mix(in oklab, #0f8a6e 55%, transparent);
-  --ring:               color-mix(in oklab, #0f8a6e 35%, transparent);
+  --accent-text:        #0e8468;
+  --accent-hover:       color-mix(in oklab, #0e8468 88%, black);
+  --acc-soft:           color-mix(in oklab, #0e8468 20%, transparent);
+  --acc-line:           color-mix(in oklab, #0e8468 55%, transparent);
+  --ring:               color-mix(in oklab, #0e8468 35%, transparent);
 }
 
 .dark[data-accent="teal"] {
@@ -389,6 +391,13 @@
 
 @utility state-rest {
   background: var(--track);
+}
+
+/* Plan's today bar and its legend swatch: the accent outline over a 15%
+   accent fill, so it still reads as a bar (v4.3.1). */
+@utility today-bar {
+  border: 2px solid var(--accent);
+  background: color-mix(in oklab, var(--accent) 15%, transparent);
 }
 
 @utility state-today {

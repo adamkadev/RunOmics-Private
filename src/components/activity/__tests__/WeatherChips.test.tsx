@@ -16,23 +16,20 @@ function weather(tempC: number): ActivityWeather {
 }
 
 describe('WeatherChips', () => {
-  it('bands the reading itself, not just the 12 px glyph', () => {
-    render(<WeatherChips weather={weather(33)} />)
-
-    const chip = screen.getByText('33°C')
-    expect(chip.className).toContain('text-red-600')
-    expect(chip.querySelector('svg')?.getAttribute('class') ?? '').not.toContain('text-red-600')
+  // v4.3.1: the reading is text ink at every temperature; amber is caution's.
+  it('prints the temperature in text ink, whatever the reading', () => {
+    for (const celsius of [0, 8, 15, 26, 33]) {
+      const { unmount } = render(<WeatherChips weather={weather(celsius)} />)
+      const chip = screen.getByText(`${celsius}°C`)
+      expect(chip.className).toContain('text-foreground')
+      expect(chip.className).not.toMatch(/text-(red|cyan|emerald|amber|orange|blue)-/)
+      unmount()
+    }
   })
 
-  it('moves the band with the temperature', () => {
-    render(<WeatherChips weather={weather(8)} />)
-    expect(screen.getByText('8°C').className).toContain('text-cyan-600')
-  })
-
-  it('keeps the temperate range off the accent, which the user can change', () => {
+  it('lets the wind chip give way under 390 pt', () => {
     render(<WeatherChips weather={weather(15)} />)
-    expect(screen.getByText('15°C').className).toContain('text-emerald-600')
-    expect(screen.getByText('15°C').className).not.toContain('accent')
+    expect(screen.getByTestId('map-wind-chip').className).toContain('max-[389px]:hidden')
   })
 
   it('keeps the wind chip out of the temperature ramp', () => {

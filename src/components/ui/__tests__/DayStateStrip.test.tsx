@@ -40,13 +40,13 @@ describe('DayStateStrip', () => {
     expect(bars[4]!.className).toContain('state-planned')
   })
 
-  // H19, M11: done is the run alone; today still to run is a solid accent
-  // outline, not dashed; a rest day is the stub with no word.
+  // H19, M11: done is the run alone; today still to run is the accent outline
+  // over a 15% accent wash (v4.3.1), not dashed; a rest day is the stub with no word.
   it('outlines today solid and caps no done day', () => {
     const { container } = render(<DayStateStrip variant="bars" days={[...WEEK, cell('2026-09-26', { state: 'done', km: 10.24 })]} />)
     const bars = [...container.querySelectorAll('button > span:nth-child(2)')]
 
-    expect(bars[2]!.className).toContain('border-accent')
+    expect(bars[2]!.className).toContain('today-bar')
     expect(bars[2]!.className).not.toContain('state-planned')
     expect(bars[1]!.children).toHaveLength(0)
     expect(container.textContent).toContain('10.2')

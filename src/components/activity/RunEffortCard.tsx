@@ -18,8 +18,9 @@ interface Props {
   onShowCharts?: () => void
 }
 
-/** Under this share a zone is left out of the header line. */
-const HEADER_MIN_PCT = 5
+/** Under this share a zone is left out of the bar and the line alike, so
+ *  every zone drawn has its label (v4.3.1): a 0.4% sliver had none. */
+const MIN_ZONE_PCT = 1
 
 const TE_LEVELS = [
   { max: 1.0, label: t.activity.trainingEffect.levels.noBenefit },
@@ -78,9 +79,8 @@ function Row({ term, label, value, word, tone, onClick, actionLabel }: {
  * definitions behind their ⓘ. Three cards and a sentence said the same.
  */
 export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: Props) {
-  const zones = [...hrZones].sort((a, b) => a.zone - b.zone).filter((z) => z.percent > 0)
+  const zones = [...hrZones].sort((a, b) => a.zone - b.zone).filter((z) => z.percent >= MIN_ZONE_PCT)
   const header = zones
-    .filter((z) => z.percent >= HEADER_MIN_PCT)
     .map((z) => `Z${z.zone} ${Math.round(z.percent)}`)
     .join(' · ')
   const hasEffect = scored(aer) || scored(ana)
@@ -106,7 +106,7 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
         <>
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-subhead text-foreground">{t.activity.zones.short}</span>
-            <span className="text-subhead tabular-nums text-muted-foreground">{header}</span>
+            <span className="text-right text-subhead tabular-nums text-muted-foreground">{header}</span>
           </div>
           <div className="mt-3 flex h-2.5 gap-1" data-testid="zone-stack">
             {zones.map((zone) => (

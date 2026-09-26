@@ -1173,10 +1173,10 @@ export const fr = {
       target: (time: string) => `objectif ${time}`,
       noRace: 'Aucune course prévue',
       in90d: (delta: string) => `${delta} en 90 j`,
-      thresholdLine: (pace: string | null, lthr: number | null) =>
-        [pace ? `seuil ${pace}` : null, lthr ? `LTHR ${lthr}` : null].filter(Boolean).join(' · '),
+      thresholdParts: (pace: string | null, lthr: number | null) =>
+        [pace ? `seuil ${pace}` : null, lthr ? `LTHR ${lthr}` : null].filter((part): part is string => part !== null),
       noRecords: 'Pas encore de record',
-      consistencyLine: (days: number, weeks: number) => `${days} jours en 12 mois · ${weeks} sem`,
+      consistencyParts: (days: number, weeks: number) => [`${days} jours`, `série ${weeks} sem`],
       since: (date: string) => `depuis ${date}`,
       hours: 'h',
       openYears: 'Kilomètres par année',

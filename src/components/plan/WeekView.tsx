@@ -195,11 +195,14 @@ function WeekSessionRow({
   state,
   onTap,
   isLast,
+  isToday = false,
 }: {
   workout: WeekRowItem
   state: WeekDayState
   onTap: () => void
   isLast: boolean
+  /** Today's row: an accent dot and an accent day label (v4.3.1). */
+  isToday?: boolean
 }) {
   const weekday = WEEKDAY_SHORT_INDEX[new Date(workout.date + 'T00:00:00').getDay()]
   const distanceKm = workout.distanceM ? workout.distanceM / 1000 : null
@@ -217,19 +220,24 @@ function WeekSessionRow({
     >
       <span className="flex min-w-0 items-center gap-2.5">
         <span
-          className="shrink-0 rounded-[4px]"
+          data-testid={isToday ? 'week-session-today-dot' : undefined}
+          className={cn('shrink-0', isToday ? 'rounded-full' : 'rounded-[4px]')}
           style={{
             width: '8px',
             height: '8px',
-            background: workout.type ? zoneColor(sessionZone(workout)) : 'var(--subtle-2)',
+            background: isToday ? 'var(--accent)' : workout.type ? zoneColor(sessionZone(workout)) : 'var(--subtle-2)',
             // Same divergence the bar's cap shows: the fill is what was
             // recorded, this ring is what was planned - without it, a title
             // that names one thing and a dot that colours another look like
             // a bug instead of the known Garmin-mismatch case.
-            boxShadow: workout.plannedType ? `0 0 0 1.5px ${zoneColor(sessionZone({ type: workout.plannedType }))}` : undefined,
+            boxShadow: !isToday && workout.plannedType ? `0 0 0 1.5px ${zoneColor(sessionZone({ type: workout.plannedType }))}` : undefined,
           }}
         />
-        {weekday && <span className="w-9 shrink-0 text-muted-foreground" style={{ fontSize: '15px' }}>{weekday}</span>}
+        {weekday && (
+          <span className={cn('w-9 shrink-0', isToday ? 'font-bold text-accent-text' : 'text-muted-foreground')} style={{ fontSize: '15px' }}>
+            {weekday}
+          </span>
+        )}
         <span className="truncate font-bold text-foreground" style={{ fontSize: '15px' }}>
           {workout.title}
         </span>
@@ -586,7 +594,7 @@ export function WeekView({
           selectedDate={selected.date}
           onSelect={selectDate}
         />
-        <DayStateLegend color="var(--zone-4)" />
+        <DayStateLegend />
       </div>
 
       <WeekSummaryLine
@@ -689,6 +697,7 @@ export function WeekView({
                 state={target.days.find((d) => d.date === workout.date)?.state ?? 'planned'}
                 onTap={() => selectDate(workout.date)}
                 isLast={i === thisWeekSessions.length - 1}
+                isToday={workout.date === today}
               />
             ))}
           </div>
