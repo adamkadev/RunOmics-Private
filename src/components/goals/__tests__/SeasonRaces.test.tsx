@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
-import { SeasonRaces, seasonRaceRows } from '@/components/goals/SeasonRaces'
+import { seasonRaceRows } from '@/components/goals/SeasonRaces'
+import { SeasonTimeline, yearFraction } from '@/components/goals/SeasonTimeline'
 import type { YearData, PbData } from '@/application/usecases/GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
 import { t } from '@/i18n'
@@ -41,29 +42,55 @@ function yearData(overrides: Partial<YearData> = {}): YearData {
   }
 }
 
-describe('SeasonRaces', () => {
-  it('puts upcoming races first, soonest first, then what is done', () => {
-    render(<SeasonRaces yearData={yearData()} today={TODAY} />)
-    const sections = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
-    expect(sections).toEqual([t.goals.upcoming, t.goals.doneHeading])
+const BLOCK = { startDate: '2026-07-24', raceDate: '2026-10-16', week: 9, weeks: 12 }
 
-    const upcoming = within(screen.getByTestId('season-upcoming')).getAllByTestId('race-scheduled')
-    expect(upcoming.map((row) => row.textContent)).toEqual([
-      expect.stringContaining('Harbor Lights 10K'),
-      expect.stringContaining('Autumn Trail Half'),
-    ])
-    expect(within(screen.getByTestId('season-done')).getByText('19:05')).toBeInTheDocument()
+describe('SeasonTimeline', () => {
+  // C3: newest first - what is ahead, then today, then what is done.
+  it('lists the races newest first with today between ahead and done', () => {
+    render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
+    const items = [...screen.getByTestId('season-card').querySelectorAll('li')].map((li) => li.getAttribute('data-testid'))
+    // One row per target distance: the half is scheduled again, so the 5K is the one done.
+    expect(items).toEqual(['timeline-upcoming', 'timeline-upcoming', 'timeline-today', 'timeline-done'])
+    const upcoming = screen.getAllByTestId('timeline-upcoming')
+    expect(upcoming[0]!.textContent).toContain('Autumn Trail Half')
+    expect(upcoming[1]!.textContent).toContain('Harbor Lights 10K')
   })
 
-  it('shows the Garmin prediction with its target and countdown, one row per race', () => {
-    render(<SeasonRaces yearData={yearData()} today={TODAY} />)
-    const row = screen.getAllByTestId('race-scheduled')[0]!
-    expect(within(row).getByText('39:46')).toBeInTheDocument()
-    expect(within(row).getByText(t.goals.predictedTag)).toBeInTheDocument()
-    expect(row.textContent).toContain(t.goals.targetTime('40:30'))
-    expect(row.textContent).toContain('D-\u206021')
+  it('gives the next race its countdown, target, block week and prediction', () => {
+    render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
+    const next = screen.getAllByTestId('timeline-upcoming')[1]!
+    expect(next.textContent).toContain('D-\u206021')
+    expect(next.textContent).toContain(t.goals.targetTime('40:30'))
+    expect(next.textContent).toContain(t.goals.season.blockWeek('10K', 9, 12))
+    expect(within(next).getByText('39:46')).toBeInTheDocument()
+    expect(within(next).getByText(t.goals.predictedTag)).toBeInTheDocument()
   })
 
+  it('states a done race against its target, in the accent when beaten', () => {
+    render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
+    const deltas = screen.getAllByTestId('timeline-delta')
+    expect(deltas.map((d) => d.textContent)).toEqual(['−0:25'])
+    for (const d of deltas) expect(d.className).toContain('text-accent-text')
+  })
+
+  it('draws the strip: races, the block band from its start to race day, and today', () => {
+    render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
+    expect(screen.getAllByTestId('season-marker-upcoming')).toHaveLength(2)
+    expect(screen.getAllByTestId('season-marker-done')).toHaveLength(1)
+    const band = screen.getByTestId('season-block')
+    expect(band.style.left).toBe(`${(yearFraction('2026-07-24', 2026) * 100).toFixed(2)}%`)
+  })
+
+  it('puts a race with no date in its own card, off the timeline', () => {
+    const data = yearData()
+    data.goals!.targets.push({ distance: 'Marathon', targetSeconds: null })
+    render(<SeasonTimeline yearData={data} today={TODAY} block={BLOCK} />)
+    expect(within(screen.getByTestId('season-no-date')).getByText(t.goals.season.noDate)).toBeInTheDocument()
+    expect(screen.getByTestId('season-card').textContent).not.toContain('Marathon')
+  })
+})
+
+describe('seasonRaceRows', () => {
   // R7d: the column is the prediction, labelled as one, and the half is "Half".
   it('prints the watch prediction as predicted, even where the best is faster', () => {
     const rows = seasonRaceRows(yearData(), TODAY)

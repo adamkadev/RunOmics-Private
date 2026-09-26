@@ -1,13 +1,10 @@
 'use client'
 
 import { DAY_MS } from '@/lib/calendarDate'
-import { Check } from 'lucide-react'
-import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { GoalTarget, YearData } from '@/application/usecases/GetGoalsData'
 import { DISTANCE_KEY } from '@/domain/activity/effort'
 import { formatCountdown, formatDate, formatDuration } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { shortDist } from './shortDistance'
 
@@ -25,6 +22,14 @@ export interface SeasonRaceRow {
   /** What the value is: a prediction or a finish. */
   valueSub: string
   achieved: boolean
+  /** The race day; null for a target with no date yet. */
+  date: string | null
+  /** "10K", "Half": the strip's label and the no-date row's name. */
+  short: string
+  targetSeconds: number | null
+  /** The prediction ahead of a race, the result after it. */
+  seconds: number | null
+  daysUntil: number | null
 }
 
 /** True when a race's name is just its distance restated ("10 km" for a 10K),
@@ -100,6 +105,11 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
               ? outcomeLine(result.entry.seconds, target.targetSeconds)
               : s.finish,
           achieved,
+          date: scheduledRace.date,
+          short: shortDist(target.distance),
+          targetSeconds: target.targetSeconds,
+          seconds: result?.entry.seconds ?? null,
+          daysUntil: null,
         }
       }
 
@@ -120,6 +130,11 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
         valueClassName: 'text-foreground',
         valueSub: predictedSeconds !== null ? predictedSub : s.predictedTag,
         achieved: false,
+        date: scheduledRace.date,
+        short: shortDist(target.distance),
+        targetSeconds: target.targetSeconds,
+        seconds: predictedSeconds,
+        daysUntil,
       }
     }
 
@@ -139,6 +154,11 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
         valueClassName: achieved ? STATUS.success.text : 'text-foreground',
         valueSub: target.targetSeconds !== null ? outcomeLine(pb.entry.seconds, target.targetSeconds) : s.finish,
         achieved,
+        date: pb.activity.date,
+        short: shortDist(target.distance),
+        targetSeconds: target.targetSeconds,
+        seconds: pb.entry.seconds,
+        daysUntil: null,
       }
     }
 
@@ -154,66 +174,11 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
       valueClassName: rawPredicted !== null ? 'text-muted-foreground' : 'text-subtle',
       valueSub: s.predictedTag,
       achieved: false,
+      date: null,
+      short: shortDist(target.distance),
+      targetSeconds: target.targetSeconds,
+      seconds: rawPredicted,
+      daysUntil: null,
     }
   })
-}
-
-function RaceRow({ row }: { row: SeasonRaceRow }) {
-  return (
-    <div className="flex min-h-14.5 items-center gap-3 border-t border-border py-2 first:border-t-0" data-testid={`race-${row.kind}`}>
-      <div className="min-w-0 flex-1">
-        <p className={cn('truncate text-body font-semibold', row.kind === 'open' ? 'text-muted-foreground' : 'text-foreground')}>
-          {row.title}
-        </p>
-        <p className="truncate text-xs text-muted-foreground">
-          {row.sub[0]}
-          {row.countdownText && (
-            <>
-              {' · '}
-              {/* Amber is the verdict on the next race only. */}
-              <span className={row.isNext ? STATUS.warning.text : undefined}>{row.countdownText}</span>
-            </>
-          )}
-          {row.sub.slice(1).map((part) => ` · ${part}`)}
-        </p>
-      </div>
-      <div className="shrink-0 text-right">
-        <p className={cn('text-base font-bold tabular-nums', row.valueClassName)}>
-          {row.value}
-          {row.achieved && <Check size={13} strokeWidth={3} className="ml-1 inline" />}
-        </p>
-        <p className={cn('text-caption', row.achieved ? STATUS.success.text : 'text-subtle')}>{row.valueSub}</p>
-      </div>
-    </div>
-  )
-}
-
-export function SeasonRaces({ yearData, today }: { yearData: YearData; today: string }) {
-  const rows = seasonRaceRows(yearData, today)
-  if (rows.length === 0) return null
-
-  // Soonest first; an undated target waits at the end of what is ahead.
-  const upcoming = rows.filter((row) => row.kind !== 'done').sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-  // Most recent result first.
-  const done = rows.filter((row) => row.kind === 'done').sort((a, b) => b.sortKey.localeCompare(a.sortKey))
-
-  return (
-    <div className="space-y-3">
-      {[
-        { key: 'upcoming', label: t.goals.upcoming, rows: upcoming },
-        { key: 'done', label: t.goals.doneHeading, rows: done },
-      ]
-        .filter((group) => group.rows.length > 0)
-        .map((group) => (
-          <section key={group.key} className="space-y-2" data-testid={`season-${group.key}`}>
-            <SectionDivider as="h2" className="px-1">{group.label}</SectionDivider>
-            <div className="glass-card rounded-card-sm px-4">
-              {group.rows.map((row) => (
-                <RaceRow key={row.distance} row={row} />
-              ))}
-            </div>
-          </section>
-        ))}
-    </div>
-  )
 }

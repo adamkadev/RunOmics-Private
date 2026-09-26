@@ -16,14 +16,23 @@ import { ThemeSegmented } from './ThemeSegmented'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { NotificationsForm } from './NotificationsForm'
 import { SyncNowCard } from './SyncNowCard'
+import { bodyMetrics } from '@/components/profile/ProfileAthleteStats'
+
+interface Body {
+  heightCm?: number
+  weightKg?: number
+  bmi?: number
+}
 
 interface Props {
   lastSyncedAt: string | null
   activityCount: number
   device?: SyncDevice
+  /** Height, weight and BMI from Garmin: moved here from Athlete (C2, v4.4). */
+  body?: Body
 }
 
-export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
+export function SettingsClient({ lastSyncedAt, activityCount, device, body }: Props) {
   const { user, isOwner, loading } = useOwnerAuth()
   const [signingIn, setSigningIn] = useState(false)
   const { toast, leaving, showToast } = useToast()
@@ -66,6 +75,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
       <div className="space-y-3">
         <SettingsHeader />
         <AppearanceSection />
+        <ProfileSection body={body} />
 
         {/* Signed out, the page still says where the data comes from and what
             signing in unlocks, instead of ending on a bare button. */}
@@ -135,6 +145,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
     <div className="space-y-3">
       <SettingsHeader />
       <AppearanceSection />
+      <ProfileSection body={body} />
 
       <section className="space-y-2">
         <SectionDivider as="h2" className="px-1">
@@ -180,6 +191,32 @@ function AppearanceSection() {
         <AccentPicker />
         <div className="my-3 h-px bg-foreground/[0.06]" />
         <ThemeSegmented />
+      </GlassSurface>
+    </section>
+  )
+}
+
+/** Height, weight and BMI, as Garmin has them: read-only rows. */
+function ProfileSection({ body }: { body?: Body }) {
+  const rows = body ? bodyMetrics(body) : []
+  if (rows.length === 0) return null
+  return (
+    <section className="space-y-2" data-testid="settings-profile">
+      <SectionDivider as="h2" className="px-1">
+        {t.settings.sections.profile}
+      </SectionDivider>
+      <GlassSurface variant="card" className="rounded-card-sm px-4">
+        <dl>
+          {rows.map((row) => (
+            <div key={row.label} className="flex min-h-12 items-center justify-between gap-3 border-t border-border first:border-t-0">
+              <dt className="text-body text-foreground">{row.label}</dt>
+              <dd className="font-semibold tabular-nums text-foreground">
+                {row.value}
+                {row.unit && <span className="ml-1 text-footnote font-medium text-muted-foreground">{row.unit}</span>}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </GlassSurface>
     </section>
   )

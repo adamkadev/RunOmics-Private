@@ -8,19 +8,24 @@ export type HeatmapDay = {
   sessionCount: number
   /** At least one run that day lasted 90 minutes or more. */
   longRun: boolean
+  /** The day's longest run, to open from a day cell (Consistency). */
+  activityId: string | null
 }
 
 export function getHeatmapData(): HeatmapDay[] {
   const activities = getAllActivities()
 
-  const map = new Map<string, { distanceKm: number; sessionCount: number; longRun: boolean }>()
+  const map = new Map<string, { distanceKm: number; sessionCount: number; longRun: boolean; activityId: string; longestKm: number }>()
   for (const a of activities) {
     const date = a.date.slice(0, 10)
-    const entry = map.get(date) ?? { distanceKm: 0, sessionCount: 0, longRun: false }
+    const entry = map.get(date)
+    const longest = !entry || a.distanceKm > entry.longestKm
     map.set(date, {
-      distanceKm: entry.distanceKm + a.distanceKm,
-      sessionCount: entry.sessionCount + 1,
-      longRun: entry.longRun || isLongRun(a),
+      distanceKm: (entry?.distanceKm ?? 0) + a.distanceKm,
+      sessionCount: (entry?.sessionCount ?? 0) + 1,
+      longRun: (entry?.longRun ?? false) || isLongRun(a),
+      activityId: longest ? a.id : entry!.activityId,
+      longestKm: longest ? a.distanceKm : entry!.longestKm,
     })
   }
 
@@ -43,6 +48,7 @@ export function getHeatmapData(): HeatmapDay[] {
       distanceKm: round(data?.distanceKm ?? 0),
       sessionCount: data?.sessionCount ?? 0,
       longRun: data?.longRun ?? false,
+      activityId: data?.activityId ?? null,
     })
     cursor.setDate(cursor.getDate() + 1)
   }

@@ -9,7 +9,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
-import { SeasonRaces } from './SeasonRaces'
+import { SeasonTimeline, type SeasonBlock } from './SeasonTimeline'
 import { shortDist } from './shortDistance'
 import { PROJECTION_TONE } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
@@ -19,9 +19,11 @@ import { t } from '@/i18n'
 interface Props {
   yearData: YearData
   today: string
+  /** The training block the next race closes, for the season strip. */
+  block?: SeasonBlock | null
 }
 
-export function YearView({ yearData, today }: Props) {
+export function YearView({ yearData, today, block = null }: Props) {
   const { goals, pbs, upcomingRaces, totalDistanceKm, projection, monthlyGoals } = yearData
 
   const annualDistanceKm = goals?.annualDistanceKm ?? 0
@@ -75,44 +77,36 @@ export function YearView({ yearData, today }: Props) {
               />
               {projectedPercent !== null && projection && (
                 <>
+                  {/* The tick alone: the sentence under the bar names it (C3). */}
                   <span
                     role="img"
                     aria-label={t.goals.projection.projected(formatKm(projection.projectedYearKm))}
                     className="absolute top-1/2 h-4 w-[2px] -translate-x-1/2 -translate-y-1/2 rounded-full"
                     style={{ left: `${projectedPercent}%`, background: 'var(--foreground)' }}
                   />
-                  <span
-                    aria-hidden
-                    className="absolute top-full mt-0.5 -translate-x-1/2 whitespace-nowrap text-caption leading-none"
-                    style={{ left: `${projectedPercent}%`, color: 'var(--subtle-2)' }}
-                  >
-                    {t.goals.projection.projectedTick}
-                  </span>
                 </>
               )}
             </div>
             {projection && (
-              <>
-                {/* The projection is the answer this card exists to give, so it is
-                    the headline under the bar, not a small top-right chip - the
-                    same shortfall no longer reads as two different severities. */}
-                <p className={cn('mt-2 text-[17px] font-bold', PROJECTION_TONE[projection.status])}>
-                  {t.goals.projection.projected(formatKm(projection.projectedYearKm))}
-                  {outcome && ` · ${outcome}`}
-                </p>
-                <p className="mt-0.5 text-caption text-subtle">
+              // The verdict is only its short first sentence, in its tone;
+              // what the goal needs follows in muted ink (C3, v4.4).
+              <p className="mt-2 text-body leading-snug" data-testid="projection-line">
+                <span className={cn('font-bold', PROJECTION_TONE[projection.status])} data-testid="projection-verdict">
+                  {t.goals.projection.verdict(t.goals.projection.projected(formatKm(projection.projectedYearKm)), outcome)}
+                </span>{' '}
+                <span className="text-muted-foreground">
                   {t.goals.projection.needsWeeklyDetail(
                     formatKm(projection.weeklyNeeded),
                     formatKm(projection.weeklyRate),
                   )}
-                </p>
-              </>
+                </span>
+              </p>
             )}
           </GlassSurface>
         </section>
       )}
 
-      {hasRaceDistanceCards && <SeasonRaces yearData={yearData} today={today} />}
+      {hasRaceDistanceCards && <SeasonTimeline yearData={yearData} today={today} block={block} />}
 
       {goals && monthlyGoals.length > 0 && (
         <MonthlyVolumeChart monthlyGoals={monthlyGoals} year={yearData.year} today={today} />

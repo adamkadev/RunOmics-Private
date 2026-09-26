@@ -42,9 +42,9 @@ const INPUT: HubInput = {
     { key: 'marathon', label: 'Marathon', seconds: 10_975, paceSecPerKm: 260, activityId: 'd', date: '2026-01-01', official: true },
   ],
   heatmapDays: [
-    { date: '2026-09-24', distanceKm: 8.6, sessionCount: 1, longRun: false },
-    { date: '2026-09-23', distanceKm: 10.2, sessionCount: 1, longRun: false },
-    { date: '2025-01-01', distanceKm: 10, sessionCount: 1, longRun: false },
+    { date: '2026-09-24', distanceKm: 8.6, sessionCount: 1, longRun: false, activityId: null },
+    { date: '2026-09-23', distanceKm: 10.2, sessionCount: 1, longRun: false, activityId: null },
+    { date: '2025-01-01', distanceKm: 10, sessionCount: 1, longRun: false, activityId: null },
   ],
   streakWeeks: 12,
   shoes: [shoe({ gearId: 'v', name: 'Vomero Plus', totalKm: 412 }), shoe({ gearId: 'p', name: 'Pegasus 41', totalKm: 702 }), shoe({ gearId: 'r', retired: true })],

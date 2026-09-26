@@ -6,7 +6,7 @@ import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import { formatClock as fmt, formatDurationWords } from '@/lib/formatters'
+import { formatClock as fmt, formatDurationCompact } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 type Bounds = [number, number, number, number, number]
@@ -18,6 +18,16 @@ const HIGH_INTENSITY_ZONES = [4, 5]
 
 /** Zone, pace, HR and time: one grid for the header and every row. */
 const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.625rem_2.75rem] items-center gap-1.5'
+
+/** The 10-15% hard-work target, as the two ticks over the bar: Z4-Z5 sit on
+ *  its right, so the Z3/Z4 edge should fall between 85% and 90%. */
+const TARGET_TICKS = [85, 90]
+
+/** "16′" under an hour, "1h44" over: the table's time column (C2). */
+function zoneTimeLabel(seconds: number): string {
+  const minutes = Math.round(seconds / 60)
+  return minutes < 60 ? `${minutes}′` : formatDurationCompact(seconds)
+}
 
 function defaultBounds(lthr: number): Bounds {
   return HR_PERCENTS.map((p) => Math.round(lthr * p)) as Bounds
@@ -39,10 +49,10 @@ interface Props {
 }
 
 /**
- * One zone table under one Week / 4 weeks toggle. Pace and HR used to stack
- * in a single cell with no HR label, and time read "0h09"; each is now its
- * own labelled column and time is written the way the rest of the app writes
- * it ("9 min").
+ * One zone table under one Week / 4 weeks toggle (C2, v4.4): the window's
+ * time and its Z4-Z5 share against the 10-15% target over one stacked Z1-Z5
+ * bar, then zone, pace, HR and time as tabular columns. The stacked bar
+ * replaced a progress bar per row.
  */
 export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZones }: Props) {
   const s = t.profile.trainingZones
@@ -73,7 +83,6 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
 
   const timeByZone = new Map(zoneTime.map((z) => [z.zone, z]))
   const windowTotal = totalSeconds(zoneTime)
-  const maxZoneSeconds = Math.max(0, ...zoneTime.map((z) => z.seconds))
 
   const highIntensitySeconds = HIGH_INTENSITY_ZONES.reduce(
     (sum, zone) => sum + (timeByZone.get(zone)?.seconds ?? 0),
@@ -81,23 +90,10 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
   )
   const highIntensityPct = windowTotal > 0 ? Math.round((highIntensitySeconds / windowTotal) * 100) : null
 
-  const totalLine =
-    windowTotal === 0
-      ? view === 'week'
-        ? s.noSessionsThisWeek
-        : s.noSessionsRecent
-      : view === 'week'
-        ? s.inZonesWeek(formatDurationWords(windowTotal))
-        : s.inZonesRecent(formatDurationWords(windowTotal))
-
-  const note =
-    windowTotal === 0
-      ? null
-      : isAutoFallback
-        ? s.emptyWeekFallback
-        : highIntensityPct !== null
-          ? s.highIntensityNote(highIntensityPct)
-          : null
+  const emptyLine = view === 'week' ? s.noSessionsThisWeek : s.noSessionsRecent
+  const stacked = [1, 2, 3, 4, 5]
+    .map((zone) => ({ zone, seconds: timeByZone.get(zone)?.seconds ?? 0 }))
+    .filter((z) => z.seconds > 0)
 
   return (
     <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5">
@@ -114,9 +110,50 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
         />
       </div>
 
-      <div {...tabs.panelProps} className="mt-2.5 outline-none">
+      <div {...tabs.panelProps} className="mt-3 outline-none">
+        {windowTotal === 0 ? (
+          <p className="text-footnote text-muted-foreground">{emptyLine}</p>
+        ) : (
+          <>
+            {/* The window's time, and its hard share against the target. */}
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="font-display text-title2 font-bold leading-none tabular-nums text-foreground" data-testid="zone-total">
+                {formatDurationCompact(windowTotal)}
+              </span>
+              {highIntensityPct !== null && (
+                <span className="text-footnote tabular-nums text-muted-foreground" data-testid="zone-hard-share">
+                  {s.hardShare(highIntensityPct)}
+                </span>
+              )}
+            </div>
+            {/* Z1 to Z5 as one stacked bar, 2 pt apart, with the target's two ticks. */}
+            <div className="relative mt-2" data-testid="zone-stack">
+              <div className="flex h-3.5 gap-0.5 overflow-hidden rounded-[4px]">
+                {stacked.map((z) => (
+                  <span
+                    key={z.zone}
+                    data-zone={z.zone}
+                    className="h-full"
+                    style={{ flexGrow: z.seconds, flexBasis: 0, background: `var(--zone-${z.zone})` }}
+                  />
+                ))}
+              </div>
+              {TARGET_TICKS.map((pct) => (
+                <span
+                  key={pct}
+                  aria-hidden
+                  data-testid="zone-target-tick"
+                  className="absolute -top-0.5 h-[18px] w-0.5 -translate-x-1/2 rounded-full bg-foreground"
+                  style={{ left: `${pct}%` }}
+                />
+              ))}
+            </div>
+            {isAutoFallback && <p className="mt-2 text-xs leading-snug text-subtle">{s.emptyWeekFallback}</p>}
+          </>
+        )}
+
         <div
-          className={`${ROW_GRID} text-caption font-semibold uppercase tracking-wide text-subtle`}
+          className={`${ROW_GRID} mt-4 border-b border-border pb-2 text-caption uppercase tracking-[0.06em] text-muted-foreground`}
           data-testid="zone-columns"
         >
           <span>{s.columnZone}</span>
@@ -127,9 +164,6 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
 
         {zones.map(({ zone, min, max, pace }) => {
           const seconds = timeByZone.get(zone)?.seconds ?? 0
-          const barPercent =
-            seconds >= 30 && maxZoneSeconds > 0 ? Math.max(4, Math.round((seconds / maxZoneSeconds) * 100)) : 0
-
           const paceLabel =
             zone === 1
               ? warmupPaceSecPerKm !== null
@@ -140,9 +174,9 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
                 : '-'
 
           return (
-            <div key={zone} className="border-t border-foreground/[0.08] py-2" data-testid={`zone-row-${zone}`}>
+            <div key={zone} className="border-b border-border py-2.5 last:border-b-0" data-testid={`zone-row-${zone}`}>
               <div className={`${ROW_GRID} text-footnote`}>
-                <span className="flex min-w-0 items-center gap-1.5 font-semibold text-foreground">
+                <span className="flex min-w-0 items-center gap-2 font-semibold text-foreground">
                   <span className="size-2 shrink-0 rounded-full" style={{ background: `var(--zone-${zone})` }} />
                   <span className="truncate">
                     {t.trainingZones.zoneNumber(zone)} {t.zoneLabels[zone]}
@@ -150,22 +184,11 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
                 </span>
                 <span className="tabular-nums text-foreground">{paceLabel}</span>
                 <span className="tabular-nums text-muted-foreground">{bpmRangeLabel(min, max)}</span>
-                <span className="text-right font-semibold tabular-nums text-foreground">
-                  {formatDurationWords(seconds)}
-                </span>
-              </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-sm bg-foreground/[0.08]">
-                <div
-                  className="h-full transition-all"
-                  style={{ width: `${barPercent}%`, background: `var(--zone-${zone})` }}
-                />
+                <span className="text-right font-bold tabular-nums text-foreground">{zoneTimeLabel(seconds)}</span>
               </div>
             </div>
           )
         })}
-
-        <p className="mt-1.5 text-xs text-muted-foreground">{totalLine}</p>
-        {note && <p className="mt-1 text-xs leading-snug text-subtle">{note}</p>}
       </div>
     </GlassSurface>
   )
