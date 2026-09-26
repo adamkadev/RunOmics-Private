@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { routePadding, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
-import { hideSymbolLabels, loadMapLibre } from '@/lib/maplibre'
+import { loadMapLibre, showPlaceLabelsOnly } from '@/lib/maplibre'
 
 export interface ShareCardMap {
   image: HTMLCanvasElement | null
@@ -76,8 +76,8 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     fadeDuration: 0,
   })
 
-  // No place or street names under the route, as on the Activity map (v4.9).
-  map.on('load', () => hideSymbolLabels(map))
+  // Town names, no streets or POIs, as on the Activity map (v4.8 2h).
+  map.on('load', () => showPlaceLabelsOnly(map))
 
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('basemap render timed out')), RENDER_TIMEOUT_MS))

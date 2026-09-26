@@ -33,7 +33,7 @@ vi.mock('@/lib/maplibre', () => {
   }
   return {
     loadMapLibre: async () => ({ Map: FakeMap, LngLatBounds: FakeBounds, AttributionControl: class {}, Marker: class {} }),
-    hideSymbolLabels: () => {},
+    showPlaceLabelsOnly: () => {},
   }
 })
 
@@ -82,10 +82,11 @@ describe('ActivityMap fullscreen', () => {
     expect(map!.fits).toBe(before + 1)
   })
 
-  it('shows the run type on top and the shoe at the bottom', async () => {
-    render(<ActivityMap route={ROUTE} activityType="Base" shoe={{ name: 'Vomero Plus', dotColor: '#fff' }} />)
+  it('keeps only the expand button on the map: no type, weather or shoe chips (v4.8 2h)', async () => {
+    render(<ActivityMap route={ROUTE} />)
 
-    expect(screen.getByTestId('map-type-chip').textContent).toBe(t.activityTypes.Base)
-    expect(screen.getByTestId('map-shoe-chip').textContent).toContain('Vomero Plus')
+    expect(screen.queryByTestId('map-top-chips')).toBeNull()
+    expect(screen.queryByTestId('map-shoe-chip')).toBeNull()
+    expect(screen.getByRole('button', { name: t.activity.map.fullscreen })).toBeInTheDocument()
   })
 })

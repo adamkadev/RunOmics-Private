@@ -8,21 +8,13 @@ import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { MAP_COLORS, PACE_ROUTE_COLORS, PACE_ROUTE_STOPS } from '@/lib/colors'
 import { paceAtFraction } from '@/lib/paceRoute'
-import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
-import type { ShoeTag } from '@/domain/shoe/types'
-import { ShoePairTag } from '@/components/activities/ShoePairTag'
-import { sessionZone, zoneColor } from '@/lib/colors'
-import { MAP_CHIP_CLASS, WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
-import { hideSymbolLabels, loadMapLibre } from '@/lib/maplibre'
+import { loadMapLibre, showPlaceLabelsOnly } from '@/lib/maplibre'
 
 interface Props {
   route: [number, number][]
   paceSamples?: number[] | null
   hoverFraction?: number | null
-  weather?: ActivityWeather | null
-  activityType?: ActivityType | null
-  shoe?: ShoeTag | null
   className?: string
 }
 
@@ -38,22 +30,12 @@ function buildSegmentFeatures(route: [number, number][], paceSamples: number[] |
   })
 }
 
-/** The chips' inset from the map's edge, and the clear space kept between a
- *  chip and the route (v4.3.1). */
-const CHIP_INSET = 12
-const ROUTE_CLEARANCE = 8
-const EDGE_PADDING = 24
-
 /**
- * The route fitted inside what the chips leave free: the top chip rows and
- * the shoe chip each push that edge in by their height plus 8 px, so no chip
- * sits on the start or finish marker.
+ * The route's room inside the map. Nothing sits on the map but the expand
+ * button and the attribution ⓘ in its corners (v4.8 2h), so the padding is
+ * even.
  */
-export function routePadding(top: HTMLElement | null, bottom: HTMLElement | null) {
-  const clear = (el: HTMLElement | null) =>
-    el && el.offsetHeight > 0 ? Math.max(EDGE_PADDING, CHIP_INSET + el.offsetHeight + ROUTE_CLEARANCE) : EDGE_PADDING
-  return { top: clear(top), bottom: clear(bottom), left: EDGE_PADDING, right: EDGE_PADDING }
-}
+export const ROUTE_EDGE_PADDING = 24
 
 function mkMarker(bg: string, border = 'white', size = 13) {
   const el = document.createElement('div')
@@ -68,7 +50,7 @@ function mkMarker(bg: string, border = 'white', size = 13) {
   return el
 }
 
-export default function ActivityMap({ route, paceSamples, hoverFraction, weather, activityType, shoe, className }: Props) {
+export default function ActivityMap({ route, paceSamples, hoverFraction, className }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   // The element MapLibre draws into. Fullscreen portals the map to <body>,
   // which gives React a new host node; this one moves between hosts, so the
@@ -81,8 +63,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
   const hoverMarkerRef = useRef<Marker | null>(null)
   const animFrameRef = useRef<number | null>(null)
   const boundsRef = useRef<LngLatBounds | null>(null)
-  const topChipsRef = useRef<HTMLDivElement>(null)
-  const shoeChipRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), [])
@@ -106,7 +86,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     // pinch-zoom in fullscreen used to stay on the small map, with the route
     // cut off at the card's edges.
     if (!isFullscreen && boundsRef.current) {
-      map.fitBounds(boundsRef.current, { padding: routePadding(topChipsRef.current, shoeChipRef.current), maxZoom: 15, animate: false })
+      map.fitBounds(boundsRef.current, { padding: ROUTE_EDGE_PADDING, maxZoom: 15, animate: false })
     }
   }, [isFullscreen])
 
@@ -151,7 +131,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         container: mapEl,
         style: styleUrl,
         bounds,
-        fitBoundsOptions: { padding: routePadding(topChipsRef.current, shoeChipRef.current), maxZoom: 15 },
+        fitBoundsOptions: { padding: ROUTE_EDGE_PADDING, maxZoom: 15 },
         attributionControl: false,
       })
       map.addControl(new mgl.AttributionControl({ compact: true }), 'bottom-right')
@@ -171,7 +151,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       map.on('load', () => {
         if (cancelled) return
 
-        hideSymbolLabels(map)
+        showPlaceLabelsOnly(map)
 
         map.addSource('route', {
           type: 'geojson',
@@ -281,42 +261,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
     >
       <div ref={hostRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
 
-      {/* The run's type and the weather on top, the shoe at the bottom:
-          the map says what the run was (the owner's preference). The chips
-          wrap to a second row rather than run under the expand button:
-          12 px in, 8 px apart, clear of its 44 pt (v4.3.1). */}
-      {(weather || activityType) && (
-        <div
-          ref={topChipsRef}
-          data-testid="map-top-chips"
-          className={cn(
-            'pointer-events-none absolute left-3 right-16 z-10 flex flex-wrap items-center gap-2',
-            'top-3'
-          )}
-        >
-          {activityType && (
-            <span className={MAP_CHIP_CLASS} data-testid="map-type-chip">
-              <span aria-hidden className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: zoneColor(sessionZone({ type: activityType })) }} />
-              {t.activityTypes[activityType]}
-            </span>
-          )}
-          {weather && <WeatherChips weather={weather} />}
-        </div>
-      )}
-
-      {shoe && (
-        <div
-          ref={shoeChipRef}
-          className={cn(
-            'pointer-events-none absolute left-3 right-12 z-10 flex',
-            isFullscreen ? 'bottom-[max(env(safe-area-inset-bottom),12px)]' : 'bottom-3'
-          )}
-          data-testid="map-shoe-chip"
-        >
-          <ShoePairTag shoe={shoe} />
-        </div>
-      )}
-
       <button
         onClick={toggleFullscreen}
         className={cn(
@@ -328,11 +272,6 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
 
-      {isFullscreen && (
-        <p className="pointer-events-none absolute bottom-8 left-3 z-10 text-caption text-white/60">
-          {t.activity.map.escToExit}
-        </p>
-      )}
     </div>
   )
 

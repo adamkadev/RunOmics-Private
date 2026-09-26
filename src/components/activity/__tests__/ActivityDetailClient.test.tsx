@@ -57,6 +57,33 @@ describe('ActivityDetailClient', () => {
     expect(at(t.activity.noteRow.label)).toBeLessThan(at(t.activity.tabs.overview))
   })
 
+  // v4.8 2h: the chips left the map for the verdict card.
+  it('reads Effort · Conditions · Shoe · Note in the verdict card', () => {
+    const weather = { tempC: 18, apparentTempC: 18, humidityPct: 60, windKph: 2, windDirDeg: 0, precipitationMm: 0, code: 0 }
+    render(
+      <ActivityDetailClient
+        activity={{ ...ACTIVITY, weather } as ActivityDetailView}
+        aiVerdict={null}
+        dynamicsBaseline={null}
+        shoe={{ name: 'Vomero Plus', dotColor: '#fff' }}
+      />,
+    )
+    const text = screen.getByTestId('run-verdict').textContent ?? ''
+    const at = (s: string) => text.indexOf(s)
+    expect(at(t.activity.effort.label)).toBeLessThan(at(t.activity.conditions.label))
+    expect(at(t.activity.conditions.label)).toBeLessThan(at(t.activity.shoe.label))
+    expect(at(t.activity.shoe.label)).toBeLessThan(at(t.activity.noteRow.label))
+    expect(screen.getByTestId('run-conditions').textContent).toContain('18°C · wind 2 km/h N')
+    expect(screen.getByTestId('run-shoe').textContent).toContain('Vomero Plus ›')
+  })
+
+  it('hides Conditions without weather and asks to add a shoe without one', () => {
+    renderDetail()
+    expect(screen.queryByTestId('run-conditions')).toBeNull()
+    expect(screen.getByTestId('run-shoe').textContent).toContain(`${t.activity.shoe.add} ›`)
+    expect(screen.getByTestId('run-shoe').getAttribute('href')).toBe('https://connect.garmin.com/modern/activity/a1')
+  })
+
   it('says RPE was not logged rather than inventing one', () => {
     renderDetail()
 

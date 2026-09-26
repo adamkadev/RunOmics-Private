@@ -10,28 +10,19 @@ const ActivityMapDynamic = dynamic(() => import('./ActivityMap'), {
   ),
 })
 
-import type { ActivityType, ActivityWeather } from '@/domain/activity/types'
-import type { ShoeTag } from '@/domain/shoe/types'
-
 interface Props {
   route: [number, number][]
   paceSamples?: number[] | null
   hoverFraction?: number | null
-  weather?: ActivityWeather | null
-  activityType?: ActivityType | null
-  shoe?: ShoeTag | null
   className?: string
 }
 
-export const ActivityMapClient = memo(function ActivityMapClient({ route, paceSamples, hoverFraction, weather, activityType, shoe, className }: Props) {
+export const ActivityMapClient = memo(function ActivityMapClient({ route, paceSamples, hoverFraction, className }: Props) {
   return (
     <ActivityMapDynamic
       route={route}
       paceSamples={paceSamples}
       hoverFraction={hoverFraction}
-      weather={weather}
-      activityType={activityType}
-      shoe={shoe}
       className={className}
     />
   )
