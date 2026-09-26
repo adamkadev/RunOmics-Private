@@ -7,6 +7,7 @@ import { sumDistanceKm } from '@/domain/activity/distance'
 import { AXIS_TICK_DATE, formatDate, monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
 import { DAY_MS, isoDate } from '@/lib/calendarDate'
+import { qualityKind } from '@/domain/training/qualitySession'
 
 export { easyHardShare }
 
@@ -60,6 +61,14 @@ export interface WeeklyTrendPoint {
   aer: number | null
   ana: number | null
   zoneSeconds: Record<number, number>
+  /** The week's longest run and the day it was run on (D3, v4.5). */
+  longestKm: number
+  longestDate: string | null
+  /** Moving time over every run of the week. */
+  durationSeconds: number
+  /** Quality sessions run that week, by kind (D4, v4.5). */
+  thresholdSessions: number
+  intervalSessions: number
 }
 
 export interface DistanceBracket {
@@ -282,10 +291,13 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
         for (const z of a.hrZones) zoneSeconds[z.zone] = (zoneSeconds[z.zone] ?? 0) + z.seconds
       }
 
+      const longest = acts.reduce<Activity | null>((max, a) => (!max || a.distanceKm > max.distanceKm ? a : max), null)
+
       return {
         date: monday,
         label: formatDate(monday, AXIS_TICK_DATE),
-        distanceKm: sumDistanceKm(acts),
+        // One decimal: the week under way reads "27.3 of 48", as Today's ring does.
+        distanceKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)),
         sessionCount: acts.length,
         easyPace: weightedPace(easy),
         hardPace: weightedPace(hard),
@@ -303,6 +315,11 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
         aer: avgField(acts, (a) => a.aerTrainingEffect),
         ana: avgField(acts, (a) => a.anaTrainingEffect),
         zoneSeconds,
+        longestKm: longest ? round(longest.distanceKm) : 0,
+        longestDate: longest?.date.slice(0, 10) ?? null,
+        durationSeconds: acts.reduce((s, a) => s + a.durationSeconds, 0),
+        thresholdSessions: acts.filter((a) => qualityKind(a.type) === 'threshold').length,
+        intervalSessions: acts.filter((a) => qualityKind(a.type) === 'intervals').length,
       }
     })
 }

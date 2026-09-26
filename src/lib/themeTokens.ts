@@ -199,6 +199,15 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--form-band-neutral': 'var(--muted-foreground)',
       '--form-band-fresh': 'var(--delta-good)',
       '--form-band-very-fresh': 'var(--tone-caution)',
+      // The Form strip's bars (D1, v4.5): fresh is Z2, neutral the band grey,
+      // tired amber - one colour per named band, on Analytics and Today alike.
+      '--form-band-fill-fresh': 'var(--zone-2)',
+      '--form-band-fill-neutral': 'var(--band)',
+      '--form-band-fill-tired': 'var(--tone-caution)',
+      // The comparison greys of v4.5's charts: a series set against the
+      // primary ink (last year, done weeks), and a quieter third.
+      '--series-2': '#b3b8b8',
+      '--series-3': '#9a9f9f',
 
       // Every zone and chart line clears 3:1 on white; the three that did not
       // (Z1 2.3, Z4 2.9, Z5 2.6) are a step darker here, and only here.
@@ -246,6 +255,15 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--form-band-neutral': 'var(--muted-foreground)',
       '--form-band-fresh': 'var(--delta-good)',
       '--form-band-very-fresh': 'var(--tone-caution)',
+      // The Form strip's bars (D1, v4.5): fresh is Z2, neutral the band grey,
+      // tired amber - one colour per named band, on Analytics and Today alike.
+      '--form-band-fill-fresh': 'var(--zone-2)',
+      '--form-band-fill-neutral': 'var(--band)',
+      '--form-band-fill-tired': 'var(--tone-caution)',
+      // The comparison greys of v4.5's charts: a series set against the
+      // primary ink (last year, done weeks), and a quieter third.
+      '--series-2': '#5a6060',
+      '--series-3': '#6b7070',
 
       '--zone-1': c.roZone1,
       '--zone-2': c.zone2Dark,

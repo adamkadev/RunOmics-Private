@@ -3,88 +3,84 @@ import { appTodayIso } from '@/lib/calendarDate'
 import { getYearComparison } from '@/application/usecases/GetYearComparison'
 import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
 import { getSeasonInsight } from '@/application/usecases/GetSeasonInsight'
-import { analyticsTabFacts } from '@/application/usecases/GetAnalyticsTabFacts'
-import { getAnalyticsTabInsights } from '@/application/usecases/GetAnalyticsTabInsights'
-import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import { getVO2maxSeries, getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
+import { getVO2maxReadings } from '@/application/usecases/GetVO2maxHistory'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
-import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
 import { getTrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
-import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getHeatImpact } from '@/application/usecases/GetHeatImpact'
-import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
-import { getVo2maxNorms } from '@/infrastructure/repositories/JsonVo2maxNormsRepository'
-import { vo2maxTopPercent } from '@/domain/athlete/vo2maxNorms'
-import { AnalyticsClient } from '@/components/analytics/AnalyticsClient'
+import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
+import { getActivitySummaries } from '@/application/usecases/GetActivities'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { isRaceDistanceKey, type RaceDistanceKey } from '@/domain/race/distances'
+import { cumulativeYear } from '@/components/profile/progressHub'
+import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
+import { loadPlanWeeks } from '../_data/loadPlanWeeks'
 
 export const revalidate = 3600
 
+function dayOfYear(iso: string): number {
+  const y = Number(iso.slice(0, 4))
+  return Math.round((Date.UTC(y, Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) - Date.UTC(y, 0, 1)) / 86_400_000) + 1
+}
+
+const daysIn = (year: number) => dayOfYear(`${year}-12-31`)
+
 export default async function AnalyticsPage() {
-  const [data, comparison, vo2maxHistory, trainingLoad, loadRisk] = await Promise.all([
-    getAnalyticsData(),
-    Promise.resolve(getYearComparison()),
-    Promise.resolve(getVO2maxSeries()),
-    getTrainingLoad(),
-    getLoadRiskPanel(),
-  ])
+  const today = appTodayIso()
+  const year = Number(today.slice(0, 4))
+  const [data, trainingLoad, risk, goals] = await Promise.all([getAnalyticsData(), getTrainingLoad(), getLoadRiskPanel(), getGoalsPageData()])
 
-  const loadBalance = getLoadBalance()
-  const statusHistory = getTrainingStatusHistory()
-  const racePredictions = getGarminRacePredictions()
-  const threshold = getThresholdHistory()
+  const headline = getSeasonHeadline(data, getYearComparison())
+  const insight = headline ? await getSeasonInsight(headline) : null
 
-  const seasonHeadline = getSeasonHeadline(data, comparison)
-  const seasonInsight = await getSeasonInsight(seasonHeadline)
+  const activities = getActivitySummaries()
+  const todayDay = dayOfYear(today)
+  const hadLastYear = activities.some((a) => a.date.startsWith(String(year - 1)))
+  const yearData = goals.byYear[year] ?? null
+  const spotlight = yearData?.nextRaceSpotlight ?? null
+  const goalKm = yearData?.goals && yearData.goals.annualDistanceKm > 0 ? yearData.goals.annualDistanceKm : null
 
-  const tabInsights = await getAnalyticsTabInsights(
-    analyticsTabFacts({
-      data,
-      status: await getTrainingStatus(),
-      load: trainingLoad,
-      loadRisk,
-      loadBalance,
-      threshold,
-      racePredictions,
-      vo2max: getLatestVO2max(),
-    })
-  )
+  const board: AnalyticsBoardData = {
+    load: trainingLoad?.points.map(({ date, ctl, atl }) => ({ date, ctl, atl })) ?? [],
+    status: getTrainingStatusHistory()?.points.map(({ date, status }) => ({ date, status })) ?? [],
+    risk,
+    headline,
+    insight,
+    weeks: data.weeklyTrends,
+    plan: await loadPlanWeeks(getCoachingOverview(today)),
+    vo2max: getVO2maxReadings(),
+    threshold:
+      getThresholdHistory()?.points.flatMap((p) => (p.thresholdPaceSecPerKm !== null ? [{ date: p.date, pace: p.thresholdPaceSecPerKm }] : [])) ?? [],
+    predictions: getGarminRacePredictions()?.points.map(({ date, seconds }) => ({ date, seconds })) ?? [],
+    race:
+      spotlight && isRaceDistanceKey(spotlight.race.distance.toLowerCase())
+        ? {
+            distance: spotlight.race.distance.toLowerCase() as RaceDistanceKey,
+            date: spotlight.race.date,
+            daysUntil: spotlight.daysUntil,
+            targetSeconds: spotlight.race.targetSeconds ?? null,
+          }
+        : null,
+    heat: getHeatImpact(),
+    ytd: {
+      year,
+      daysInYear: daysIn(year),
+      todayDay,
+      current: cumulativeYear(activities, year, todayDay),
+      previous: hadLastYear ? cumulativeYear(activities, year - 1, daysIn(year - 1)) : [],
+      previousToDate: hadLastYear ? (cumulativeYear(activities, year - 1, Math.min(todayDay, daysIn(year - 1))).at(-1)?.km ?? 0) : null,
+      goalKm,
+      projection: yearData?.projection
+        ? {
+            weeklyRate: yearData.projection.weeklyRate,
+            weeklyNeeded: yearData.projection.weeklyNeeded,
+            projectedYearKm: yearData.projection.projectedYearKm,
+          }
+        : null,
+    },
+  }
 
-  const athlete = getAthleteProfile()
-  const latestVO2max = getLatestVO2max()
-  const topPercent =
-    latestVO2max !== null && athlete.age !== undefined && athlete.sex
-      ? vo2maxTopPercent(latestVO2max, athlete.age, athlete.sex, getVo2maxNorms())
-      : null
-  // Both halves of the consistency ratio come from the same window, so they are
-  // read off one call: a stale denominator would quietly misreport the share.
-  const heatmap = getHeatmapData()
-  const activeDays = heatmap.filter((d) => d.distanceKm > 0).length
-  const heatImpact = getHeatImpact()
-
-  return (
-    <div className="space-y-6">
-      <AnalyticsClient
-        data={data}
-        comparison={comparison}
-        seasonHeadline={seasonHeadline}
-        seasonInsight={seasonInsight}
-        tabInsights={tabInsights}
-        vo2maxHistory={vo2maxHistory}
-        trainingLoad={trainingLoad}
-        loadRisk={loadRisk}
-        loadBalance={loadBalance}
-        statusHistory={statusHistory}
-        racePredictions={racePredictions}
-        threshold={threshold}
-        vo2maxTopPercent={topPercent}
-        activeDays={activeDays}
-        heatmapDays={heatmap.length}
-        heatImpact={heatImpact}
-        today={appTodayIso()}
-      />
-    </div>
-  )
+  return <AnalyticsClient data={board} today={today} />
 }

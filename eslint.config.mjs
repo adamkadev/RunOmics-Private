@@ -70,7 +70,6 @@ const boundaries = [
       'src/app/api/location-override/route.ts',
       'src/app/page.tsx',
       'src/app/activities/[[]id]/page.tsx',
-      'src/app/analytics/page.tsx',
       'src/app/athlete/page.tsx',
       'src/app/plan/page.tsx',
       'src/app/profile/page.tsx',

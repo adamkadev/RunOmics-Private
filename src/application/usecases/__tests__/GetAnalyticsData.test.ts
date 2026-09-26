@@ -203,10 +203,23 @@ describe('buildWeeklyTrends', () => {
       act({ date: '2024-06-10', distanceKm: 5 }),
     ])
 
-    expect(points[0]?.distanceKm).toBe(19)
+    // One decimal (v4.5): the week under way reads "18.6 of 48".
+    expect(points[0]?.distanceKm).toBe(18.6)
     expect(points[0]?.sessionCount).toBe(2)
     expect(points[1]?.distanceKm).toBe(5)
     expect(points[1]?.sessionCount).toBe(1)
+  })
+
+  it("keeps the week's long run and its quality sessions (D3, D4)", () => {
+    const [w] = buildWeeklyTrends([
+      act({ date: '2024-06-03', distanceKm: 10.4, type: 'Threshold' }),
+      act({ date: '2024-06-06', distanceKm: 8.2, type: 'VO2Max' }),
+      act({ date: '2024-06-09', distanceKm: 16.1, type: 'Base' }),
+    ])
+    expect(w?.longestKm).toBe(16.1)
+    expect(w?.longestDate).toBe('2024-06-09')
+    expect(w?.thresholdSessions).toBe(1)
+    expect(w?.intervalSessions).toBe(1)
   })
 
   it('is empty when there are no activities', () => {

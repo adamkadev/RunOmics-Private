@@ -26,6 +26,11 @@ function week(index: number, values: Partial<WeeklyTrendPoint>): WeeklyTrendPoin
     aer: null,
     ana: null,
     zoneSeconds: {},
+    longestKm: 0,
+    longestDate: null,
+    durationSeconds: 0,
+    thresholdSessions: 0,
+    intervalSessions: 0,
     ...values,
   }
 }
