@@ -44,7 +44,12 @@ describe('CompactTitleBar', () => {
     page(60, 0)
     render(<CompactTitleBar />, { container: document.body.appendChild(document.createElement('div')) })
     await flush()
-    expect(screen.getByTestId('compact-title-bar').hasAttribute('data-shown')).toBe(false)
+    const bar = screen.getByTestId('compact-title-bar')
+    expect(bar.hasAttribute('data-shown')).toBe(false)
+    // Not drawn at all rather than transparent: iOS 26 blurred the page under
+    // an invisible fixed bar at the top edge.
+    expect(bar.className).toContain('hidden')
+    expect(bar.className).not.toContain('opacity-0')
   })
 
   it('stays hidden with the title just below the status bar', async () => {
