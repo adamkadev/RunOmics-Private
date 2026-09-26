@@ -111,7 +111,22 @@ describe('ProfileHrZones table', () => {
     expect(screen.getByTestId('zone-hard-share').textContent).toBe(z.hardShare(100))
     const stack = screen.getByTestId('zone-stack')
     expect([...stack.querySelectorAll('[data-zone]')].map((el) => el.getAttribute('data-zone'))).toEqual(['4', '5'])
-    expect(screen.getAllByTestId('zone-target-tick').map((el) => el.style.left)).toEqual(['85%', '90%'])
+    // v4.4.1: the target is a bracket under the bar, over 85-90%; nothing on it.
+    const bracket = screen.getByTestId('zone-target-bracket')
+    expect([bracket.style.left, bracket.style.width]).toEqual(['85%', '5%'])
+    expect(screen.getByTestId('zone-target').textContent).toBe(z.target)
+    expect(stack.querySelector('[data-testid="zone-target-tick"]')).toBeNull()
+  })
+
+  // v4.4.1: a zone under 1% of the window is not drawn at all, not a sliver.
+  it('leaves a zone under 1% out of the bar', () => {
+    const withSliver = [
+      { zone: 2, seconds: 100 * 60, percent: 0 },
+      { zone: 5, seconds: 20, percent: 0 },
+    ]
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={withSliver} recentZoneTime={[]} />)
+    const zones = [...screen.getByTestId('zone-stack').querySelectorAll('[data-zone]')].map((el) => el.getAttribute('data-zone'))
+    expect(zones).toEqual(['2'])
   })
 
   it('has a single Week / 4 weeks toggle that switches the whole table', async () => {

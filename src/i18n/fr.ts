@@ -626,7 +626,7 @@ export const fr = {
       distance: {
         title: 'Répartition des distances',
         runs: (n: number) => `${n} sorties`,
-        kmTotal: (km: number) => `${km} km au total`,
+        kmTotal: (km: string) => `${km} km au total`,
         reading: (bracket: string, pct: number) => `La majorité des sorties (${pct}%) se situe dans la tranche ${bracket}.`,
         footnote: 'Toutes les sorties de la saison, regroupées par distance. L’intensité de la couleur reflète la fréquence relative.',
       },
@@ -1192,14 +1192,14 @@ export const fr = {
       whatItWasFor: {
         title: 'À quoi elle servait',
         summary: (hr: number) => `${hr} bpm moy.`,
-        keySessionPair: (percent: number) => `${percent}% de sa distance était en tempo ou en fractionné.`,
+        keySessionPair: (percent: number) => `${percent}% de sa distance était en tempo, seuil ou fractionné.`,
         easyPair: (percent: number) => `${percent}% de sa distance était de l’endurance fondamentale.`,
       },
       retiredHero: {
-        ranOut: (maxKm: number, weeks: number) => `A parcouru la quasi-totalité de ses ${maxKm} km en ${weeks} semaines.`,
-        ranOutFastest: (maxKm: number, weeks: number) =>
+        ranOut: (maxKm: string, weeks: number) => `A parcouru la quasi-totalité de ses ${maxKm} km en ${weeks} semaines.`,
+        ranOutFastest: (maxKm: string, weeks: number) =>
           `A parcouru la quasi-totalité de ses ${maxKm} km en ${weeks} semaines – la paire que tu as usée le plus vite.`,
-        retiredEarly: (percent: number, maxKm: number, weeks: number) =>
+        retiredEarly: (percent: number, maxKm: string, weeks: number) =>
           `Retraitée à ${percent}% d’une vie de ${maxKm} km, après ${weeks} semaines.`,
       },
     },
@@ -1272,6 +1272,7 @@ export const fr = {
       noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',
       noSessionsRecent: 'Aucune séance enregistrée sur ces 4 semaines.',
       emptyWeekFallback: 'Pas encore de séance cette semaine - affichage des 4 dernières semaines.',
+      target: 'cible',
       hardShare: (pct: number) => `Z4–Z5 ${pct}% · cible 10–15%`,
       highIntensityNote: (pct: number) =>
         `${pct}% de ton temps était en Z4–Z5, contre les 10–15% auxquels la plupart des semaines d’entraînement s’en tiennent.`,

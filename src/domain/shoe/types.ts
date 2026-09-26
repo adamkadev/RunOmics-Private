@@ -39,7 +39,8 @@ export function buildShoeRegistry(records: ShoeRecord[]): Record<string, ShoeInf
   return registry
 }
 
-export type ShoeTypeBucket = 'base' | 'tempo' | 'intervals'
+/** The type mix by zone, as the run dots draw it: Z2, Z3, Z4 and Z5 (v4.4.1). */
+export type ShoeTypeBucket = 'base' | 'tempo' | 'threshold' | 'intervals'
 
 export interface ShoeDetail {
   gearId: string

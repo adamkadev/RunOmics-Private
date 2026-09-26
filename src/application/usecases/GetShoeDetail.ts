@@ -14,13 +14,14 @@ function mean(values: (number | null)[]): number | null {
   return present.reduce((sum, v) => sum + v, 0) / present.length
 }
 
-// Tempo and Threshold are both sustained-effort sessions, and everything
-// harder than that (Sprint, Anaerobic, VO2Max) or a Race shares the
-// "intervals" bucket - the three-way split the shoe page's usage bar draws,
-// not the seven-way split ActivityType actually has.
+// One bucket per session zone, the colours the run dots wear (v4.4.1): Base
+// Z2, Tempo Z3, Threshold Z4, and everything harder (Sprint, Anaerobic,
+// VO2Max) or a Race Z5 as "intervals". Tempo and Threshold shared a bucket,
+// so a list of green Z3 dots sat under a bar with no green in it.
 function typeBucket(type: ActivityType): ShoeTypeBucket {
   if (type === 'Base') return 'base'
-  if (type === 'Tempo' || type === 'Threshold') return 'tempo'
+  if (type === 'Tempo') return 'tempo'
+  if (type === 'Threshold') return 'threshold'
   return 'intervals'
 }
 
@@ -45,16 +46,15 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
   // pair, matching how the rest of the app (TypeDistribution) already splits
   // a type mix - a count basis would let three short strides sessions and one
   // 30 km long run count the same.
-  const bucketDistance = { base: 0, tempo: 0, intervals: 0 }
+  const bucketDistance: Record<ShoeTypeBucket, number> = { base: 0, tempo: 0, threshold: 0, intervals: 0 }
   for (const a of activities) bucketDistance[typeBucket(a.type)] += a.distanceKm
-  const typeShare =
-    totalKm === 0
-      ? { base: 0, tempo: 0, intervals: 0 }
-      : {
-          base: Math.round((bucketDistance.base / totalKm) * 100),
-          tempo: Math.round((bucketDistance.tempo / totalKm) * 100),
-          intervals: Math.round((bucketDistance.intervals / totalKm) * 100),
-        }
+  const share = (bucket: ShoeTypeBucket) => (totalKm === 0 ? 0 : Math.round((bucketDistance[bucket] / totalKm) * 100))
+  const typeShare: Record<ShoeTypeBucket, number> = {
+    base: share('base'),
+    tempo: share('tempo'),
+    threshold: share('threshold'),
+    intervals: share('intervals'),
+  }
 
   return {
     gearId,

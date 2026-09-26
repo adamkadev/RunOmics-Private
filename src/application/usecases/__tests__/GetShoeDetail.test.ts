@@ -127,4 +127,18 @@ describe('getShoeDetail', () => {
       retired: false,
     })
   })
+
+  // v4.4.1: one bucket per session zone, so every run dot has its colour in the bar.
+  it('splits the distance by session zone: base, tempo, threshold, intervals', () => {
+    const typed = (type: Activity['type'], date: string, km: number) => ({ ...run('daily', date, km), type }) as Activity
+    getAllActivities.mockReturnValue([
+      typed('Base', '2026-07-01', 50),
+      typed('Tempo', '2026-07-02', 20),
+      typed('Threshold', '2026-07-03', 20),
+      typed('VO2Max', '2026-07-04', 5),
+      typed('Race', '2026-07-05', 5),
+    ])
+
+    expect(getShoeDetail('daily')!.typeShare).toEqual({ base: 50, tempo: 20, threshold: 20, intervals: 10 })
+  })
 })
