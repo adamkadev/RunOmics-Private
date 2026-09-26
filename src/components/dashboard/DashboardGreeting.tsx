@@ -21,21 +21,29 @@ function todayLine(): string {
   return new Date().toLocaleDateString(t.locale, { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-/** Past this the data is a day behind in practice: the pill turns amber. */
+/** Past this the sync age becomes a pill that offers a sync. */
 export const STALE_SYNC_MS = 6 * 3600_000
+
+/** Past this the data is a day behind: the pill turns amber (v4.3.4). */
+export const LATE_SYNC_MS = 24 * 3600_000
 
 export function isSyncStale(lastSyncedAt: string, now = Date.now()): boolean {
   return now - Date.parse(lastSyncedAt) > STALE_SYNC_MS
 }
 
+export function isSyncLate(lastSyncedAt: string, now = Date.now()): boolean {
+  return now - Date.parse(lastSyncedAt) > LATE_SYNC_MS
+}
+
 type SyncPhase = 'idle' | 'syncing' | 'failed'
 
 /**
- * "Synced 23h ago · tap to sync" as an amber pill (H06, M7). The owner's tap
+ * "Synced 23h ago · tap to sync" as a pill (H06, M7): muted ink on the
+ * segment grey, amber only once the data is a day old (v4.3.4). The owner's tap
  * dispatches the sync Settings runs, and Settings' card picks it up from the
  * stored start; anyone else is taken to Settings.
  */
-function StaleSyncPill({ ago }: { ago: string }) {
+function StaleSyncPill({ ago, late }: { ago: string; late: boolean }) {
   const s = t.dashboard.syncStatus
   const { user, isOwner } = useOwnerAuth()
   const router = useRouter()
@@ -64,7 +72,8 @@ function StaleSyncPill({ ago }: { ago: string }) {
       disabled={phase === 'syncing'}
       data-testid="sync-pill"
       className="min-w-0 truncate whitespace-nowrap rounded-full px-2 py-1 text-caption font-semibold transition-opacity active:opacity-70"
-      style={{ color: 'var(--tone-caution)', background: 'var(--segmented-track)' }}
+      data-late={late ? '' : undefined}
+      style={{ color: late ? 'var(--tone-caution)' : 'var(--muted-foreground)', background: 'var(--segmented-track)' }}
     >
       {phase === 'syncing' ? s.syncing : phase === 'failed' ? s.failed : `${s.synced(ago)} · ${s.tapToSync}`}
     </button>
@@ -105,7 +114,7 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
         {syncedLine ?? null}
         {!dateLine && !syncedLine ? ' ' : null}
         </p>
-        {stale && ago && <StaleSyncPill ago={ago} />}
+        {stale && ago && lastSyncedAt && <StaleSyncPill ago={ago} late={isSyncLate(lastSyncedAt)} />}
       </div>
       {/* It looked tappable and was a plain div. A link to Progress now: the
           34 pt disc, with a 44 pt hit area (hit-44) that doesn't take space. */}

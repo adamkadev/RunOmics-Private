@@ -5,7 +5,6 @@ import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
-import type { TrainingStatusType } from '@/domain/training/status'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
@@ -26,8 +25,6 @@ interface Props {
   plannedWorkout: HeroWorkoutView | null
   todayActivity: ActivitySummary | null
   aiVerdict: Insight | null
-  /** The watch's status for the latest rated day, in the card's head. */
-  watchStatus?: TrainingStatusType | null
 }
 
 function holdCopy(status: TrainingStatus): { headline: string; body: string } {
@@ -63,7 +60,7 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 // No race countdown here: the race is the plan's reason, not a daily number,
 // and the D-21 chip next to the verdict was noise in the morning read. The
 // countdown lives on Plan's race footer and on Goals.
-export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, watchStatus = null }: Props) {
+export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: Props) {
   if (!status && !plannedWorkout && !todayActivity) return null
 
   const s = t.dashboard.todayHero
@@ -81,16 +78,10 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, wa
       className="flex flex-col gap-3.5 overflow-hidden rounded-card-sm border p-5"
       style={{ borderColor: `color-mix(in srgb, ${toneColor} 45%, transparent)` }}
     >
-      <div className="flex items-baseline justify-between gap-3">
-        <span className={cn(EYEBROW_CLASS, 'inline-flex items-center')} style={{ color: toneColor }}>
-          {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
-        </span>
-        {watchStatus && (
-          <span className="text-footnote font-semibold text-foreground">
-            {t.trainingStatus.status[watchStatus]}
-          </span>
-        )}
-      </div>
+      {/* The watch's status moved under Form, in the Body card (v4.3.4). */}
+      <span className={cn(EYEBROW_CLASS, 'inline-flex items-center')} style={{ color: toneColor }}>
+        {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
+      </span>
 
       {verdict && (
         <div className="-mt-1.5 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">

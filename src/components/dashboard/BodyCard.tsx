@@ -23,12 +23,15 @@ function Metric({
   delta,
   days,
   goodWhen,
+  note,
 }: {
   label: string
   value: string
   delta: number
   days: number
   goodWhen: MetricDeltaPolarity
+  /** A word after the delta, in the same muted line: Form's watch status. */
+  note?: string | null
 }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.75">
@@ -36,8 +39,25 @@ function Metric({
       <div className="font-display text-title2 font-bold leading-none tabular-nums text-foreground">
         {value}
       </div>
-      <div className="text-caption tabular-nums" style={{ color: metricDeltaColor(delta, goodWhen, TREND_THRESHOLD) }}>
-        {deltaLabel(delta, days)}
+      {/* The note carries its " · " in front, pulled out by the row's
+          negative margin: wrapped onto its own line, its dot is clipped at
+          the edge, so neither line ends or starts on a dot. */}
+      <div className="overflow-hidden">
+        <div
+          className="-ml-2 flex flex-wrap text-caption tabular-nums"
+          style={{ color: metricDeltaColor(delta, goodWhen, TREND_THRESHOLD) }}
+        >
+          <span className="whitespace-nowrap">
+            <span aria-hidden="true" className="inline-block w-2" />
+            {deltaLabel(delta, days)}
+          </span>
+          {note && (
+            <span className="whitespace-nowrap" data-testid="watch-status">
+              <span aria-hidden="true" className="inline-block w-2 text-center">·</span>
+              {note}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -49,11 +69,11 @@ export function latestRatedStatus(days: TrainingStatusDayBar[]): Status | null {
 }
 
 /**
- * Form / Fitness / Fatigue, and nothing else (H03, M7): the status word is
- * the hero's head now, and the 28-day strip and its "13 of 28 days" moved off
+ * Form / Fitness / Fatigue, and nothing else (H03, M7): the watch's status
+ * word follows Form's delta (v4.3.4), and the 28-day strip and its "13 of 28 days" moved off
  * Today (the history is on Analytics). Every delta has an arrow and a window.
  */
-export function BodyCard({ status }: { status: TrainingStatus | null }) {
+export function BodyCard({ status, watchStatus = null }: { status: TrainingStatus | null; watchStatus?: Status | null }) {
   if (!status) return null
 
   return (
@@ -65,6 +85,7 @@ export function BodyCard({ status }: { status: TrainingStatus | null }) {
           delta={status.tsbDelta}
           days={STATUS_DELTA_DAYS.form}
           goodWhen="up"
+          note={watchStatus ? t.trainingStatus.status[watchStatus] : null}
         />
         <Metric
           label={t.trainingStatus.metrics.fitness}

@@ -68,10 +68,9 @@ export default async function DashboardPage() {
         plannedWorkout={todayWorkout && heroWorkoutView(todayWorkout)}
         todayActivity={todayActivity}
         aiVerdict={aiVerdict}
-        watchStatus={latestRatedStatus(trainingStatusDays)}
       />
 
-      <BodyCard status={trainingStatus} />
+      <BodyCard status={trainingStatus} watchStatus={latestRatedStatus(trainingStatusDays)} />
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
