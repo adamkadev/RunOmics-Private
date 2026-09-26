@@ -7,7 +7,8 @@ import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { getGarminRacePredictions } from './GetGarminRacePredictions'
 import { DISTANCE_KEY, getRecords } from './GetRecords'
 import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
-import { DAY_MS, addDays, startOfWeek } from '@/lib/calendarDate'
+import { DAY_MS, addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
+import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { round } from '@/lib/math'
 import type { PbEntry, GoalYear, UpcomingRace } from '@/domain/goals/types'
 
@@ -105,11 +106,8 @@ export function computeProjection(
 
   if (weeksElapsed < 4 || remainingWeeks <= 0) return null
 
-  const cutoff = new Date(now.getTime() - 56 * DAY_MS)
-  const recentKm = activities
-    .filter((a) => new Date(a.date + 'T00:00:00') >= cutoff)
-    .reduce((s, a) => s + a.distanceKm, 0)
-  const weeklyRate = round(recentKm / 8, 1)
+  // The app's one weekly average: the last 12 complete weeks (v4.6).
+  const weeklyRate = weeklyAverageKm(activities, isoDate(now))
 
   const weeklyNeeded = round((goal - totalDistanceKm) / remainingWeeks, 1)
   const projectedYearKm = Math.round(totalDistanceKm + weeklyRate * remainingWeeks)

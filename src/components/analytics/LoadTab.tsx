@@ -1,17 +1,31 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
-import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
-import type { Insight } from '@/lib/gemini'
 import type { TrainingStatusType } from '@/domain/training/status'
 import type { FormBand } from '@/domain/training/formBand'
-import { formatDate, MINUS } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
+import { formatClock, formatDate, formatDelta, formatDeltaFixed, MINUS } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { AxisLabels, Card, CardHead, ChartScrub, Legend, LegendItem, Sentence, Sheet, linePath } from './AnalyticsKit'
-import { formView, riskRows, statusView, type DayWindow, type LoadDay, type RiskRow, type StatusDay } from './analyticsView'
+import type { AnalyticsBoardData } from './AnalyticsClient'
+import {
+  coachRead,
+  dayWindow,
+  efficiencyView,
+  formView,
+  paceShift,
+  predictionRows,
+  riskRows,
+  statusView,
+  weeksIn,
+  type CoachReadView,
+  type DayWindow,
+  type LoadDay,
+  type RiskRow,
+  type StatusDay,
+  type Trend,
+} from './analyticsView'
 
 /** Garmin's statuses as cells: the name stays ink, the cell carries the hue. */
 export const STATUS_COLOR: Record<TrainingStatusType, string> = {
@@ -43,9 +57,43 @@ export function windowLabels(dates: string[], live: boolean): string[] {
   return [bare(dates[0]!), bare(mid), live ? t.analytics.cards.today : bare(dates[dates.length - 1]!)]
 }
 
-function CoachRead({ headline, insight }: { headline: SeasonHeadlineData; insight: Insight | null }) {
+/** What the coach read's sentences say, from the numbers the cards print. */
+export function coachText(view: CoachReadView): { headline: string; signals: { trend: Trend; text: string }[] } {
+  const s = t.analytics.cards.coachRead
+  const headline =
+    view.tone === 'positive' ? s.headline.positive : view.tone === 'neutral' ? s.headline.neutral : view.loadUp ? s.headline.cautionLoadUp : s.headline.caution
+  const signals = view.signals.map((signal) => {
+    switch (signal.key) {
+      case 'easy': {
+        const pace = formatClock(signal.pace)
+        const text = signal.trend === 'flat' ? s.easyLevel(pace) : signal.delta < 0 ? s.easyFaster(pace, Math.abs(signal.delta)) : s.easySlower(pace, signal.delta)
+        return { trend: signal.trend, text }
+      }
+      case 'predictions': {
+        const text =
+          signal.trend === 'declining' ? s.predictionsSlower(signal.slower, signal.count) : signal.trend === 'improving' ? s.predictionsFaster(signal.faster, signal.count) : s.predictionsHeld
+        return { trend: signal.trend, text }
+      }
+      case 'efficiency':
+        return { trend: signal.trend, text: s.efficiency(signal.value.toFixed(2), formatDeltaFixed(signal.delta, 2)) }
+      case 'volume':
+        return { trend: signal.trend, text: s.volume(formatDelta(Math.round(signal.delta))) }
+    }
+  })
+  return { headline, signals }
+}
+
+/** A trend's arrow: never the accent, because a trend delta is not "now" (v4.3 §3). */
+const TREND_ICON: Record<Trend, { Icon: typeof ArrowRight; color: string }> = {
+  improving: { Icon: ArrowUpRight, color: 'var(--muted-foreground)' },
+  flat: { Icon: ArrowRight, color: 'var(--muted-foreground)' },
+  declining: { Icon: ArrowDownRight, color: 'var(--tone-caution)' },
+}
+
+function CoachRead({ view }: { view: CoachReadView }) {
   const s = t.analytics.cards.coachRead
   const [open, setOpen] = useState(false)
+  const text = coachText(view)
   return (
     <>
       <button
@@ -54,21 +102,22 @@ function CoachRead({ headline, insight }: { headline: SeasonHeadlineData; insigh
         aria-haspopup="dialog"
         aria-label={`${s.eyebrow}: ${s.open}`}
         data-testid="coach-read"
+        data-tone={view.tone}
         className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-card border border-[var(--divider)] bg-card px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <span className="text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground">{s.eyebrow}</span>
         <ChevronRight size={16} className="row-span-2 text-muted-foreground" aria-hidden />
-        <span className="font-display text-[16px] font-semibold leading-[1.3] text-foreground text-pretty">{insight?.headline ?? headline.title}</span>
+        <span className="font-display text-[16px] font-semibold leading-[1.3] text-foreground text-pretty">{text.headline}</span>
       </button>
       {open && (
         <Sheet title={s.sheetTitle} onClose={() => setOpen(false)}>
           <ul className="flex flex-col gap-3">
-            {headline.bullets.map((bullet, i) => {
-              const Icon = bullet.tone === 'positive' ? ArrowUpRight : ArrowRight
+            {text.signals.map((signal, i) => {
+              const { Icon, color } = TREND_ICON[signal.trend]
               return (
-                <li key={i} className="flex items-start gap-2.5 text-[15px] leading-snug text-foreground">
-                  <Icon size={16} strokeWidth={2.4} className="mt-0.5 shrink-0" style={{ color: bullet.tone === 'positive' ? 'var(--accent-text)' : 'var(--tone-caution)' }} aria-hidden />
-                  {insight?.bullets?.[i] ?? bullet.text}
+                <li key={i} className="flex items-start gap-2.5 text-[15px] leading-snug text-foreground" data-trend={signal.trend}>
+                  <Icon size={16} strokeWidth={2.4} className="mt-0.5 shrink-0" style={{ color }} aria-hidden />
+                  {signal.text}
                 </li>
               )
             })}
@@ -274,20 +323,29 @@ function RiskCard({ risk }: { risk: LoadRiskPanel | null }) {
 export interface LoadTabProps {
   window: DayWindow
   onShift: (step: 1 | -1) => void
-  load: LoadDay[]
-  status: StatusDay[]
-  risk: LoadRiskPanel | null
-  headline: SeasonHeadlineData | null
-  insight: Insight | null
+  today: string
+  data: AnalyticsBoardData
 }
 
-export function LoadTab({ window, onShift, load, status, risk, headline, insight }: LoadTabProps) {
+export function LoadTab({ window, onShift, today, data }: LoadTabProps) {
+  // The coach read sums up the Performance and Volume cards at their
+  // defaults (12 weeks, today), from the very values they print.
+  const perf = dayWindow(today, '12w')
+  const perfWeeks = weeksIn(data.weeks, perf)
+  const ytd = data.ytd
+  const coach = coachRead({
+    easy: paceShift(perfWeeks, (w) => w.easyPace),
+    predictions: predictionRows(data.predictions, perf),
+    efficiency: efficiencyView(data.weeks, perfWeeks, perf.end),
+    fitnessDelta: formView(data.load, dayWindow(today, '4w'))?.fitnessDelta ?? null,
+    ytdDelta: ytd && ytd.previousToDate !== null ? (ytd.current.at(-1)?.km ?? 0) - ytd.previousToDate : null,
+  })
   return (
-    <div className={cn('flex flex-col gap-3')}>
-      {headline && <CoachRead headline={headline} insight={insight} />}
-      <FormCard load={load} window={window} onShift={onShift} />
-      <StatusCard days={status} window={window} onShift={onShift} />
-      <RiskCard risk={risk} />
+    <div className="flex flex-col gap-3">
+      {coach && <CoachRead view={coach} />}
+      <FormCard load={data.load} window={window} onShift={onShift} />
+      <StatusCard days={data.status} window={window} onShift={onShift} />
+      <RiskCard risk={data.risk} />
     </div>
   )
 }

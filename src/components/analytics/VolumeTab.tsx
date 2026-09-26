@@ -2,7 +2,7 @@
 
 import { formatDate, formatDelta, formatKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { AxisLabels, Card, CardHead, ChartScrub, Headline, Legend, LegendItem } from './AnalyticsKit'
+import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, THIS_WEEK_FILL, THIS_WEEK_OUTLINE } from './AnalyticsKit'
 import { longRunView, weeklyDistanceView, type WeekRow, type YtdInput } from './analyticsView'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
@@ -16,9 +16,9 @@ export function weekLabels(weeks: string[], live: boolean): string[] {
   return [...picks.map((i) => bare(weeks[i]!)), live ? t.analytics.cards.thisWeek : bare(weeks[n - 1]!)]
 }
 
-function WeeklyDistanceCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void }) {
+function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void; weeklyAvgKm: number | null }) {
   const s = t.analytics.cards.weekly
-  const view = weeklyDistanceView(rows)
+  const view = weeklyDistanceView(rows, live ? weeklyAvgKm : null)
   if (!view) return null
   const { last } = view
   const H = 120
@@ -46,6 +46,7 @@ function WeeklyDistanceCard({ rows, live, onShift }: { rows: WeekRow[]; live: bo
               {view.onPlan.hit} / {view.onPlan.of}
             </span>
             <span className="text-[12px] text-muted-foreground">{s.onPlan}</span>
+            {view.withoutPlan > 0 && <span className="text-[12px] text-muted-foreground" data-testid="weeks-without-plan">{s.withoutPlan(view.withoutPlan)}</span>}
           </div>
         )}
       </div>
@@ -63,15 +64,19 @@ function WeeklyDistanceCard({ rows, live, onShift }: { rows: WeekRow[]; live: bo
               {r.planKm !== null && (
                 <div className="absolute -inset-x-px z-[1] h-0.5 rounded-[1px] bg-foreground" style={{ bottom: (r.planKm / view.yMax) * H }} data-testid="plan-tick" />
               )}
-              <div
-                data-current={r.current && live ? '' : undefined}
-                className="rounded-[4px]"
-                style={{
-                  height: Math.max(r.km > 0 ? 2 : 0, (r.km / view.yMax) * H),
-                  background: r.current && live ? 'color-mix(in oklab, var(--accent) 15%, transparent)' : 'var(--series-2)',
-                  boxShadow: r.current && live ? 'inset 0 0 0 2px var(--accent)' : undefined,
-                }}
-              />
+              {r.km > 0 ? (
+                <div
+                  data-current={r.current && live ? '' : undefined}
+                  className="rounded-[4px]"
+                  style={{
+                    height: Math.max(2, (r.km / view.yMax) * H),
+                    background: r.current && live ? THIS_WEEK_FILL : 'var(--series-2)',
+                    boxShadow: r.current && live ? THIS_WEEK_OUTLINE : undefined,
+                  }}
+                />
+              ) : (
+                <EmptyWeek />
+              )}
             </div>
           ))}
         </div>
@@ -161,16 +166,27 @@ function LongRunCard({ rows, live, today, onShift }: { rows: WeekRow[]; live: bo
       <Headline size={24} value={`${formatRanKm(view.km)} ${t.units.km}`} note={dayName && view.share !== null ? s.share(dayName, view.share) : undefined} />
       <ChartScrub count={rows.length} onShift={onShift} readout={(i) => `${t.analytics.cards.scrubWeek(bare(rows[i]!.week))} · ${formatRanKm(view.bars[i]!.km)} ${t.units.km}`}>
         <div className="grid h-[50px] items-end" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 5 }} data-testid="long-run-bars">
-          {view.bars.map((bar, i) => (
-            <div
-              key={rows[i]!.week}
-              data-over={bar.over ? '' : undefined}
-              className="rounded-[3px]"
-              style={{ height: Math.max(bar.km > 0 ? 2 : 0, (bar.km / view.yMax) * 50), background: bar.over ? 'var(--tone-caution)' : bar.current && live ? 'var(--foreground)' : 'var(--band)' }}
-            />
-          ))}
+          {view.bars.map((bar, i) =>
+            bar.km > 0 ? (
+              <div
+                key={rows[i]!.week}
+                data-over={bar.over ? '' : undefined}
+                data-current={bar.current && live ? '' : undefined}
+                className="rounded-[3px]"
+                style={{
+                  height: Math.max(2, (bar.km / view.yMax) * 50),
+                  // Over the share is amber whichever week it is; this week keeps its outline.
+                  background: bar.over ? 'var(--tone-caution)' : bar.current && live ? THIS_WEEK_FILL : 'var(--band)',
+                  boxShadow: bar.current && live ? THIS_WEEK_OUTLINE : undefined,
+                }}
+              />
+            ) : (
+              <EmptyWeek key={rows[i]!.week} />
+            ),
+          )}
         </div>
       </ChartScrub>
+      <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
       <p className="text-[12px] text-muted-foreground">
         {s.rule}
         {s.over(view.over)}
@@ -185,12 +201,13 @@ export interface VolumeTabProps {
   onShift: (step: 1 | -1) => void
   ytd: YtdInput | null
   today: string
+  weeklyAvgKm: number | null
 }
 
-export function VolumeTab({ rows, live, onShift, ytd, today }: VolumeTabProps) {
+export function VolumeTab({ rows, live, onShift, ytd, today, weeklyAvgKm }: VolumeTabProps) {
   return (
     <div className="flex flex-col gap-3">
-      <WeeklyDistanceCard rows={rows} live={live} onShift={onShift} />
+      <WeeklyDistanceCard rows={rows} live={live} onShift={onShift} weeklyAvgKm={weeklyAvgKm} />
       {ytd && <YtdCard ytd={ytd} today={today} />}
       <LongRunCard rows={rows} live={live} today={today} onShift={onShift} />
     </div>

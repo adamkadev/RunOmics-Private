@@ -46,15 +46,21 @@ const data: AnalyticsBoardData = {
   load: Array.from({ length: 120 }, (_, i) => ({ date: day(119 - i), ctl: 40 + i * 0.03, atl: 45 })),
   status: Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), status: 'productive' as const })),
   risk: { acwr: 1.13, acute: 412, chronic: 365, acwrZone: 'safe', acwrSource: 'garmin', monotony: 1.5, monotonyZone: 'safe', strain: null, strainZone: null, rampRate: 2.4, rampRateZone: 'safe', daysOfHistory: 400 },
-  headline: { title: 'Fitter than early season.', bullets: [{ tone: 'positive', text: 'Easy pace 5:52, faster.' }] },
-  insight: null,
   weeks,
   plan: weeks.slice(-12).map((w) => ({ week: w.date, planKm: 44, planQuality: 2 })),
   vo2max: { value: 55, samples: [{ date: day(80), vo2max: 56 }, { date: day(2), vo2max: 55 }] },
   threshold: [{ date: day(300), pace: 254 }, { date: day(10), pace: 263 }],
   predictions: Array.from({ length: 200 }, (_, i) => ({ date: day(199 - i), seconds: { '5k': 1150 + i * 0.4, '10k': 2440 + i } })),
   race: { distance: '10k', date: '2026-11-29', daysUntil: 64, targetSeconds: 2400 },
-  heat: null,
+  heat: {
+    refHeartRate: 149,
+    bands: [
+      { id: 'cold', label: '', runCount: 9, avgApparentTempC: 2, paceAtRefHr: 372, costSecPerKm: 13 },
+      { id: 'cool', label: '', runCount: 40, avgApparentTempC: 10, paceAtRefHr: 359, costSecPerKm: 0 },
+      { id: 'warm', label: '', runCount: 12, avgApparentTempC: 22, paceAtRefHr: 376, costSecPerKm: 17 },
+    ],
+  },
+  weeklyAvgKm: 26.4,
   ytd: {
     year: 2026,
     daysInYear: 365,
@@ -88,14 +94,17 @@ describe('Analytics (v4.5)', () => {
     ])
   })
 
-  it('has one period control per tab: 4w/6m/1y on Load and Performance, 4w/12w/1y on Volume and Intensity', async () => {
+  // v4.6: one set of periods on every tab; Performance defaults to 12w.
+  it('has one period control per tab, 4w/12w/1y on all four', async () => {
     await renderBoard()
     const periods = () => within(screen.getByRole('radiogroup')).getAllByRole('radio').map((r) => r.textContent)
     expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
-    expect(periods()).toEqual(['4w', '6m', '1y'])
+    expect(periods()).toEqual(['4w', '12w', '1y'])
+    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4w')
     await openTab(t.analytics.tabs.performance, 'predictions-card')
-    expect(periods()).toEqual(['4w', '6m', '1y'])
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('6m')
+    expect(periods()).toEqual(['4w', '12w', '1y'])
+    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('12w')
+    expect(screen.getByTestId('predictions-card').textContent).toContain('change in 12 wk')
     await openTab(t.analytics.tabs.volume, 'weekly-card')
     expect(periods()).toEqual(['4w', '12w', '1y'])
     expect(screen.getByTestId('analytics-range').textContent).toMatch(/^12 weeks · /)
@@ -106,9 +115,16 @@ describe('Analytics (v4.5)', () => {
   it('shows the coach read on Load only, one sentence with its signals behind a tap', async () => {
     await renderBoard()
     const coach = screen.getByTestId('coach-read')
-    expect(coach.textContent).toContain('Fitter than early season.')
+    const s = t.analytics.cards.coachRead
+    // Easy pace got faster but the predictions got slower: neither praise nor alarm.
+    expect(coach.getAttribute('data-tone')).toBe('neutral')
+    expect(coach.textContent).toContain(s.headline.neutral)
     fireEvent.click(coach)
-    expect(screen.getByRole('dialog').textContent).toContain('Easy pace 5:52, faster.')
+    const sheet = screen.getByRole('dialog')
+    expect(sheet.textContent).toContain(s.predictionsSlower(2, 2))
+    expect(sheet.textContent).toContain(s.volume('+754'))
+    expect(sheet.querySelector('[data-trend="declining"] svg')!.getAttribute('style')).toContain('var(--tone-caution)')
+    expect(sheet.innerHTML).not.toContain('var(--accent')
     fireEvent.keyDown(document, { key: 'Escape' })
     await openTab(t.analytics.tabs.performance, 'predictions-card')
     expect(screen.queryByTestId('coach-read')).toBeNull()
@@ -117,7 +133,7 @@ describe('Analytics (v4.5)', () => {
   it('widens every Load card with the period, and resets the range', async () => {
     await renderBoard()
     expect(screen.getByTestId('status-strip').children).toHaveLength(28)
-    fireEvent.click(screen.getByRole('radio', { name: '6m' }))
+    fireEvent.click(screen.getByRole('radio', { name: '12w' }))
     expect(screen.getByTestId('status-strip').children.length).toBeLessThanOrEqual(10)
     expect(screen.getByTestId('analytics-range').textContent).not.toBe('')
   })
@@ -147,7 +163,28 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('predictions-sentence').textContent).toContain('off your 40:00 target')
     // VO2max as Progress prints it.
     expect(screen.getByTestId('performance-summary').textContent).toContain('55.0')
-    expect(screen.getByTestId('performance-summary').textContent).toContain('−1 in 90 d')
+    expect(screen.getByTestId('performance-summary').textContent).toContain('−1 in 12 wk')
+    // Slower is the caution colour; the goal race footer is the only amber besides.
+    for (const delta of screen.getAllByTestId('prediction-delta')) expect(delta.getAttribute('style')).toContain('var(--tone-caution)')
+  })
+
+  it('draws the prediction sparklines faster up', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.performance, 'predictions-card')
+    // The 5K got slower over the window, so its line ends lower (a larger y).
+    const d = screen.getByTestId('prediction-5k').querySelector('path')!.getAttribute('d')!
+    const ys = [...d.matchAll(/[ML][\d.]+,([\d.]+)/g)].map((m) => Number(m[1]))
+    expect(ys.at(-1)!).toBeGreaterThan(ys[0]!)
+  })
+
+  it('draws heat bars in the comparison grey with the best band in ink, and no accent', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.performance, 'heat-card')
+    const bar = (id: string) => screen.getByTestId(`heat-${id}`).querySelector<HTMLElement>('.absolute')!
+    expect(bar('cold').style.background).toBe('var(--series-2)')
+    expect(bar('warm').style.background).toBe('var(--series-2)')
+    expect(bar('cool').style.background).toBe('var(--foreground)')
+    expect(screen.getByTestId('heat-card').innerHTML).not.toContain('var(--accent)')
   })
 
   it('ticks the plan on each week and outlines the current one', async () => {
@@ -155,14 +192,25 @@ describe('Analytics (v4.5)', () => {
     await openTab(t.analytics.tabs.volume, 'weekly-card')
     expect(screen.getByTestId('weekly-bars').children).toHaveLength(12)
     expect(screen.getAllByTestId('plan-tick')).toHaveLength(12)
-    expect(document.querySelectorAll('[data-current]')).toHaveLength(1)
+    expect(screen.getByTestId('weekly-bars').querySelectorAll('[data-current]')).toHaveLength(1)
     expect(screen.getByTestId('ytd-footer').textContent).toContain('243 km short')
+    // The one weekly average, on both cards.
+    expect(screen.getByTestId('weekly-card').textContent).toContain('26km/wk avg')
+    // This week, flagged over 35% and still outlined, in the one "this week" style.
+    const longRun = screen.getByTestId('long-run-bars').lastElementChild as HTMLElement
+    expect(longRun.hasAttribute('data-over')).toBe(true)
+    expect(longRun.style.boxShadow).toBe('inset 0 0 0 2px var(--accent)')
+    expect(screen.getByTestId('long-run-card').textContent).toContain('Jul')
   })
 
   it('links the zone ranges instead of repeating the zone table', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.health, 'zones-card')
     expect(screen.getByTestId('zone-ranges-link').getAttribute('href')).toBe('/athlete')
+    // This week keeps full-strength zone colours and gets the accent outline.
+    const current = screen.getByTestId('zone-bars').querySelector<HTMLElement>('[data-current]')!
+    expect(current.style.outline).toContain('var(--accent)')
+    expect(screen.getByTestId('zone-bars').innerHTML).not.toContain('opacity')
   })
 })
 
@@ -193,5 +241,25 @@ describe('the French tab names', () => {
     expect(fr.analytics.cards.risk.title).toBe('Risque de blessure')
     expect(fr.analytics.cards.risk.loadRatio).toBe('Ratio de charge')
     expect(fr.analytics.cards.heatCost.title).toBe('Coût de la chaleur')
+  })
+})
+
+describe('a week with nothing run (v4.6)', () => {
+  it('draws a baseline stub in Weekly distance, Long run and Time in zones', async () => {
+    const { VolumeTab } = await import('../VolumeTab')
+    const { IntensityTab } = await import('../IntensityTab')
+    const { weekRows, weekWindow } = await import('../analyticsView')
+    const window = weekWindow(TODAY, '4w')
+    const weeksWithGap = window.weeks.map((d, i) => (i === 1 ? { ...week(d, i), distanceKm: 0, longestKm: 0, zoneSeconds: {} } : week(d, i)))
+    const rows = weekRows(weeksWithGap, [], window, TODAY)
+    render(
+      <>
+        <VolumeTab rows={rows} live onShift={() => {}} ytd={null} today={TODAY} weeklyAvgKm={null} />
+        <IntensityTab rows={rows} live onShift={() => {}} plan={[]} />
+      </>,
+    )
+    expect(within(screen.getByTestId('weekly-bars')).getAllByTestId('empty-week')).toHaveLength(1)
+    expect(within(screen.getByTestId('long-run-bars')).getAllByTestId('empty-week')).toHaveLength(1)
+    expect(within(screen.getByTestId('zone-bars')).getAllByTestId('empty-week')).toHaveLength(1)
   })
 })

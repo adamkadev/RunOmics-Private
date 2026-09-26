@@ -3,6 +3,7 @@ import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import {
+  coachRead,
   dayWindow,
   easyHardView,
   efficiencyView,
@@ -63,7 +64,7 @@ describe('the tab windows', () => {
   it('ends the load window today and steps back a whole window per swipe', () => {
     expect(dayWindow(TODAY, '4w')).toEqual({ start: '2026-08-30', end: TODAY, days: 28, live: true })
     expect(dayWindow(TODAY, '4w', 1)).toMatchObject({ start: '2026-08-02', end: '2026-08-29', live: false })
-    expect(dayWindow(TODAY, '6m').start).toBe('2026-03-29')
+    expect(dayWindow(TODAY, '12w').start).toBe('2026-07-05')
   })
 
   it('ends the week window on the current week, Monday to Sunday', () => {
@@ -92,9 +93,9 @@ describe('D1 Load', () => {
 
   it('draws one bar a week beyond four weeks', () => {
     const long = Array.from({ length: 200 }, (_, i) => ({ date: isoDate(addDays(new Date('2026-03-10T00:00:00'), i)), ctl: 40, atl: 40 }))
-    const view = formView(long, dayWindow(TODAY, '6m'))!
-    expect(view.bars.length).toBeGreaterThanOrEqual(26)
-    expect(view.bars.length).toBeLessThanOrEqual(28)
+    const view = formView(long, dayWindow(TODAY, '12w'))!
+    expect(view.bars.length).toBeGreaterThanOrEqual(12)
+    expect(view.bars.length).toBeLessThanOrEqual(13)
   })
 
   it("counts the current status's days over the window, and the rest by count", () => {
@@ -129,7 +130,7 @@ describe('D2 Performance', () => {
   it("reads Garmin's latest VO2max and its 90-day change, as Progress does", () => {
     const samples = [
       { date: '2026-06-01', vo2max: 57 },
-      { date: '2026-07-01', vo2max: 56 },
+      { date: '2026-07-10', vo2max: 56 },
       { date: '2026-09-20', vo2max: 55 },
     ]
     expect(vo2View(55, samples, TODAY)).toEqual({ value: 55, delta: -1 })
@@ -145,11 +146,11 @@ describe('D2 Performance', () => {
 
   it('reads every prediction delta over the same window', () => {
     const days = [
-      { date: '2026-03-01', seconds: { '5k': 1100 } },
-      { date: '2026-04-01', seconds: { '5k': 1154, '10k': 2445 } },
+      { date: '2026-06-01', seconds: { '5k': 1100 } },
+      { date: '2026-07-10', seconds: { '5k': 1154, '10k': 2445 } },
       { date: '2026-09-25', seconds: { '5k': 1224, '10k': 2570 } },
     ]
-    const rows = predictionRows(days, dayWindow(TODAY, '6m'))
+    const rows = predictionRows(days, dayWindow(TODAY, '12w'))
     expect(rows.map((r) => [r.distance, r.delta])).toEqual([
       ['5k', 70],
       ['10k', 125],
@@ -201,16 +202,25 @@ describe('D3 Volume', () => {
     const view = weeklyDistanceView(rows)!
     expect(view.last.km).toBe(27.3)
     expect(view.last.current).toBe(true)
-    expect(view.avg).toBe(Math.round(kms.slice(0, 11).reduce((a, b) => a + b, 0) / 11))
+    expect(view.avg).toBeCloseTo(kms.slice(0, 11).reduce((a, b) => a + b, 0) / 11)
     expect(view.onPlan).toEqual({ hit: 11, of: 11 })
   })
 
-  it('flags a finished week whose long run is over 35% of it', () => {
+  // v4.6: the rule applies to this week too, once it is past the share.
+  it('flags every week whose long run is over 35% of it, this week included', () => {
     const view = longRunView(rows)!
     expect(view.km).toBe(14.2)
     expect(view.share).toBe(52)
-    expect(view.bars.filter((b) => b.over)).toHaveLength(2)
-    expect(view.over).toBe(2)
+    expect(view.bars.filter((b) => b.over)).toHaveLength(3)
+    expect(view.bars.at(-1)).toMatchObject({ over: true, current: true })
+    expect(view.over).toBe(3)
+  })
+
+  it('takes the weekly average it is given while the window is the current one', () => {
+    expect(weeklyDistanceView(rows, 26.4)!.avg).toBe(26.4)
+    expect(weeklyDistanceView(rows)!.withoutPlan).toBe(0)
+    const sparse = weekRows(weeks, plan.slice(0, 8), window, TODAY)
+    expect(weeklyDistanceView(sparse)!.withoutPlan).toBe(4)
   })
 })
 
@@ -241,5 +251,30 @@ describe('D4 Intensity', () => {
     expect(view.weeks[3]).toEqual(['threshold', 'intervals'])
     expect(view.planAsks).toBe(2)
     expect(view.avg).toBe(1.3)
+  })
+})
+
+describe('the coach read (v4.6)', () => {
+  const easy = { now: 352, delta: 13 }
+  const predictions = [
+    { distance: '5k' as const, seconds: 1224, delta: 61, series: [] },
+    { distance: '10k' as const, seconds: 2570, delta: 96, series: [] },
+  ]
+
+  it('reads caution, never praise, when speed went the other way', () => {
+    const view = coachRead({ easy, predictions, efficiency: null, fitnessDelta: 6, ytdDelta: 754 })!
+    expect(view.tone).toBe('caution')
+    expect(view.loadUp).toBe(true)
+    expect(view.signals.map((s) => [s.key, s.trend])).toEqual([
+      ['easy', 'declining'],
+      ['predictions', 'declining'],
+      ['volume', 'improving'],
+    ])
+  })
+
+  it('reads positive when the speed signals improve, neutral when they are flat', () => {
+    const faster = predictions.map((p) => ({ ...p, delta: -p.delta! }))
+    expect(coachRead({ easy: { now: 352, delta: -20 }, predictions: faster, efficiency: null, fitnessDelta: 0, ytdDelta: null })!.tone).toBe('positive')
+    expect(coachRead({ easy: { now: 352, delta: 1 }, predictions: [], efficiency: null, fitnessDelta: 0, ytdDelta: null })!.tone).toBe('neutral')
   })
 })

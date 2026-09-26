@@ -320,3 +320,16 @@ export function ChartScrub({
     </div>
   )
 }
+
+/**
+ * The one "this week" mark on a weekly bar (v4.6): a 2 pt accent outline over
+ * a 15% accent wash, as Plan draws today. Weekly distance, Long run and Time in
+ * zones all use it.
+ */
+export const THIS_WEEK_FILL = 'color-mix(in oklab, var(--accent) 15%, transparent)'
+export const THIS_WEEK_OUTLINE = 'inset 0 0 0 2px var(--accent)'
+
+/** A week with nothing run: a 2 pt stub on the baseline, so it reads as a zero, not as no data. */
+export function EmptyWeek() {
+  return <div aria-hidden data-testid="empty-week" className="h-0.5 rounded-[1px] bg-[var(--band)]" />
+}

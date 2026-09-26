@@ -77,6 +77,30 @@ describe('CompactTitleBar', () => {
     expect(bar.className).not.toContain('opacity-0')
   })
 
+  // v4.6: the large title read as blurred after a tab swap. At the top it is
+  // plainly itself; going under the bar it fades and lifts, never blurs.
+  it('keeps the large title crisp at the top and only fades it on the way up', async () => {
+    const at = page(STATUS_BAR + 4, 0)
+    await mount(at)
+    const title = document.querySelector('h1')!
+    expect(title.style.opacity).toBe('1')
+    expect(title.style.transform).toBe('none')
+    expect(title.style.filter).toBe('none')
+
+    scrollY = 2
+    window.dispatchEvent(new Event('scroll'))
+    await flush()
+    expect(Number(title.style.opacity)).toBeLessThan(1)
+    expect(title.style.filter).toBe('none')
+    expect(title.style.transform).toMatch(/^translateY\(/)
+
+    scrollY = 0
+    window.dispatchEvent(new Event('scroll'))
+    await flush()
+    expect(title.style.opacity).toBe('1')
+    expect(title.style.transform).toBe('none')
+  })
+
   it('stays hidden with the title just below the status bar', async () => {
     await mount(page(STATUS_BAR + 24, 20))
     expect(screen.getByTestId('compact-title-bar').hasAttribute('data-shown')).toBe(false)
