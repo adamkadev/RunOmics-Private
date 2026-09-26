@@ -82,6 +82,7 @@ export const fr = {
     groundContact: { term: 'Temps de contact', definition: 'Le temps que chaque pied reste au sol à chaque pas. Plus court, la foulée est en général plus réactive.' },
     verticalOscillation: { term: 'Oscillation verticale', definition: 'De combien le corps monte et descend à chaque pas : le rebond.' },
     verticalRatio: { term: 'Rapport vertical', definition: 'Le rebond rapporté à la longueur de foulée. Plus bas, moins d’effort part vers le haut pour chaque mètre gagné.' },
+    decoupling: { term: 'Découplage', definition: 'La dérive du cardio par rapport à l’allure entre la première et la seconde moitié. Moins de 5 % : une sortie stable.' },
   },
 
   consistency: {
@@ -832,6 +833,8 @@ export const fr = {
       deviceNote: (distance: string, duration: string) => `Montre : ${distance} en ${duration}`,
     },
     decoupling: {
+      held: 'Tenu',
+      faded: 'Décroché',
       title: 'Découplage aérobie',
       stable: 'Tenu',
       drifting: 'Dérive',
@@ -871,6 +874,7 @@ export const fr = {
     zones: {
       title: 'Temps en zones FC',
       noData: 'Pas de données de zones FC',
+      short: 'Zones FC',
       mostIn: (zone: number, pct: number) => `surtout en Z${zone} · ${pct} %`,
     },
     trainingEffect: {

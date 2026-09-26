@@ -1,7 +1,6 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { ChevronLeft } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
@@ -10,10 +9,8 @@ import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaselin
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
 import { RunVerdict } from './RunVerdict'
-import { ZoneBar } from './ZoneBar'
+import { RunEffortCard } from './RunEffortCard'
 import { KmSplits } from './KmSplits'
-import { TrainingEffect } from './TrainingEffect'
-import { AerobicDecoupling } from './AerobicDecoupling'
 import { BestEfforts } from './BestEfforts'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
@@ -45,10 +42,8 @@ interface Props {
   similarRuns?: SimilarRunsData | null
   /** Race result and achievements, drawn after the note and before the tabs. */
   extras?: ReactNode
-  /** Back and share, title and subtitle: drawn on Overview only. */
+  /** Back and share, title and subtitle: the same on every tab. */
   header?: ReactNode
-  /** "Threshold · Fri, Sep 25": the one line the other tabs keep above them. */
-  compactTitle?: string
 }
 
 const TAB_IDS = ['overview', 'intervals', 'charts', 'dynamics'] as const
@@ -101,7 +96,6 @@ export function ActivityDetailClient({
   similarRuns = null,
   extras,
   header,
-  compactTitle,
 }: Props) {
   // The tab lives in ?tab=, so going back from Charts or Dynamics lands on it
   // again rather than on Overview.
@@ -132,11 +126,11 @@ export function ActivityDetailClient({
   return (
     <>
       {/* The run itself - map, numbers, verdict, how it felt - heads Overview.
-          The other tabs keep one line of it, so their first chart is not
-          pushed below the fold by a page that repeats above each of them. */}
-      {tab === 'overview' || !compactTitle ? (
+          '← Activities', share, then the big title and date on every tab
+          (H16): the compact chevron header was a second design. */}
+      {header}
+      {tab === 'overview' && (
         <>
-          {header}
           {/* About a quarter of the screen, fitted to the route: the v4 strip
               (F04) left the route a squiggle under four chips. */}
           <div className="h-[210px] overflow-hidden rounded-card-sm border border-border">
@@ -179,16 +173,6 @@ export function ActivityDetailClient({
 
           {extras}
         </>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setTab('overview')}
-          data-testid="compact-header"
-          className="flex min-h-11 items-center gap-1.5 text-left font-display text-title3 font-bold text-foreground"
-        >
-          <ChevronLeft size={20} strokeWidth={2.4} aria-hidden="true" />
-          <span className="truncate">{compactTitle}</span>
-        </button>
       )}
 
       {tabs.length > 1 && (
@@ -208,15 +192,14 @@ export function ActivityDetailClient({
       <div {...(tabs.length > 1 ? detailTabs.panelProps : {})} className="space-y-5">
       {tab === 'overview' && (
         <>
-          {activity.hrZones.length > 0 && (
-            <ZoneBar hrZones={activity.hrZones} />
-          )}
-          {similarRuns && <SimilarRuns data={similarRuns} />}
-          <TrainingEffect aer={activity.aerTrainingEffect} ana={activity.anaTrainingEffect} />
-          <AerobicDecoupling
+          <RunEffortCard
+            hrZones={activity.hrZones}
+            aer={activity.aerTrainingEffect}
+            ana={activity.anaTrainingEffect}
             decoupling={aerobicDecoupling(activity)}
             onShowCharts={hasCharts ? () => setTab('charts') : undefined}
           />
+          {similarRuns && <SimilarRuns data={similarRuns} />}
           {activity.bestEfforts && (
             <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
           )}

@@ -129,7 +129,6 @@ export default async function ActivityDetailPage({
             </div>
           </>
         }
-        compactTitle={`${activity.description || t.activity.runTitle(activity.dayOfWeek)} · ${formatDate(activity.date)}`}
         dynamicsBaseline={getDynamicsBaseline(activity)}
         plan={plan}
         similarRuns={similarRuns}

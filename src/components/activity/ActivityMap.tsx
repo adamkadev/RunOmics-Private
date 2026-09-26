@@ -130,6 +130,11 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
         attributionControl: false,
       })
       map.addControl(new mgl.AttributionControl({ compact: true }), 'bottom-right')
+      // MapLibre opens a compact attribution until the first drag, over the
+      // route (H13). Start it as the ⓘ alone; a tap still expands it.
+      map.once('idle', () => {
+        mapEl.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show')
+      })
 
       const segments = buildSegmentFeatures(route, paceSamples)
       const hasPace = !!(paceSamples && paceSamples.length > 1)

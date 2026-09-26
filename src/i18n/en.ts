@@ -94,6 +94,7 @@ export const en = {
     groundContact: { term: 'Ground contact', definition: 'How long each foot stays on the ground per step. Shorter usually means a springier stride.' },
     verticalOscillation: { term: 'Vertical oscillation', definition: 'How far your body rises and falls with each step: the bounce.' },
     verticalRatio: { term: 'Vertical ratio', definition: 'Bounce as a share of stride length. Lower means less effort spent going up for each metre forward.' },
+    decoupling: { term: 'Decoupling', definition: 'How much heart rate drifted against pace from the first half to the second. Under 5% is a steady run.' },
   },
 
   // Every pace axis runs the same way (lib/chartAxis paceAxis).
@@ -852,6 +853,8 @@ export const en = {
       deviceNote: (distance: string, duration: string) => `Watch recorded ${distance} in ${duration}`,
     },
     decoupling: {
+      held: 'Held',
+      faded: 'Faded',
       title: 'Aerobic decoupling',
       stable: 'Held together',
       drifting: 'Faded',
@@ -894,6 +897,7 @@ export const en = {
       // The basis is in the name: these are heart-rate zones, not pace.
       title: 'Time in HR zones',
       noData: 'No HR zone data',
+      short: 'HR zones',
       mostIn: (zone: number, pct: number) => `most in Z${zone} · ${pct}%`,
     },
     trainingEffect: {
