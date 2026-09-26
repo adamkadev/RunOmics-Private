@@ -51,9 +51,10 @@ for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
 
 // iOS 26 takes the topmost fixed element touching the top edge as the page's
 // bar, blurs content under it, and keeps the zone of the tallest one it has
-// seen (v4.8). So one element touches the edge - the opaque status strip,
-// exactly the safe area tall - and everything else fixed starts under it:
-// the compact title bar that shows once the page has scrolled included. A
+// seen (v4.8). So only the shell's two touch the edge - the opaque status
+// strip and the flat bar behind the page, as when a device showed the title
+// sharp - and everything else fixed starts under the status bar: the compact
+// title bar that shows once the page has scrolled included. A
 // desktop browser has no safe area, so the test gives it a 59 pt one, as on a
 // 16-series phone.
 test.describe('on a phone', () => {
@@ -61,7 +62,7 @@ test.describe('on a phone', () => {
   test.use({ viewport: { width: 393, height: 852 } })
 
   for (const route of ['/', '/plan', '/analytics']) {
-    test(`${route} lets only the status strip touch the top edge`, async ({ page }) => {
+    test(`${route} lets only the shell's top bars touch the top edge`, async ({ page }) => {
       await page.goto(route)
       await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
       for (const y of [0, 600]) {
@@ -88,7 +89,10 @@ test.describe('on a phone', () => {
               }
             })
         })
-        expect(atTop, `scrolled to ${y}`).toEqual([{ id: 'status-strip', height: 59, opaque: true }])
+        expect(atTop, `scrolled to ${y}`).toEqual([
+          { id: 'status-strip', height: 63, opaque: true },
+          { id: 'top-edge-bar', height: 48, opaque: true },
+        ])
       }
       // Scrolled, the compact bar shows - under the strip, not over it.
       if (route === '/analytics') {
