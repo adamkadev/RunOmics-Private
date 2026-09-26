@@ -17,7 +17,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { weekTarget, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm, resolveDayType, resolvePlannedType, weekPlanDays } from './weekPlanDays'
 import { dayStateCells } from './dayStateCells'
-import { DayStateStrip } from '@/components/ui/DayStateStrip'
+import { DayStateLegend, DayStateStrip } from '@/components/ui/DayStateStrip'
 import { SessionStateChip } from '@/components/ui/SessionCard'
 import { InfoButton } from '@/components/ui/GlossaryTerm'
 import type { WeekDayState } from '@/domain/training/weekTarget'
@@ -629,6 +629,7 @@ export function WeekView({
           selectedDate={selected.date}
           onSelect={selectDate}
         />
+        <DayStateLegend color="var(--zone-4)" />
       </div>
 
       <WeekSummaryLine

@@ -442,3 +442,14 @@ describe('the week summary in plain words', () => {
     expect(screen.getByTestId('week-summary')).toHaveTextContent(t.plan.weekSummary.loadDefinition)
   })
 })
+
+describe('WeekView state legend', () => {
+  // Kept at the owner's request: the key to the bars' done, planned, missed and today shapes.
+  it('keys the week bars under them', () => {
+    renderWeek({ activities: [TEMPO] })
+    const legend = screen.getByTestId('day-state-legend')
+    for (const label of [t.sessionState.done, t.sessionState.planned, t.sessionState.missed, t.sessionState.today]) {
+      expect(legend.textContent).toContain(label)
+    }
+  })
+})
