@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils'
  * page's own background, with a hairline and a 12 pt fade into the content:
  * the glass fill let axis labels and "Stride length 1.06" read through the tab
  * labels, and blur can't be relied on (the reason the status bar went opaque).
+ * Its `top` reads --sticky-top first: while the compact title bar shows, the
+ * strip sits under it rather than over its title (v4.3.3).
  */
 export const StickyBar = forwardRef<HTMLDivElement, { top: string; className?: string; children: ReactNode }>(
   function StickyBar({ top, className, children }, ref) {

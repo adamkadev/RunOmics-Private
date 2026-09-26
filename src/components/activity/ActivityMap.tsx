@@ -13,7 +13,7 @@ import { ShoePairTag } from '@/components/activities/ShoePairTag'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { MAP_CHIP_CLASS, WeatherChips } from './WeatherChips'
 import { t } from '@/i18n'
-import { hidePoiLabels, loadMapLibre, showPlaceLabelsAtAnyZoom } from '@/lib/maplibre'
+import { hideSymbolLabels, loadMapLibre } from '@/lib/maplibre'
 
 interface Props {
   route: [number, number][]
@@ -183,8 +183,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, weather
       map.on('load', () => {
         if (cancelled) return
 
-        showPlaceLabelsAtAnyZoom(map)
-        hidePoiLabels(map)
+        hideSymbolLabels(map)
 
         map.addSource('route', {
           type: 'geojson',

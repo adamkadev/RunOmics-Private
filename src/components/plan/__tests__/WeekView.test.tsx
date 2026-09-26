@@ -417,12 +417,14 @@ describe('WeekView state legend', () => {
     }
   })
 
-  // v4.3.1: the swatches are the bars' shapes in neutral ink, today the accent.
+  // v4.3.1: the swatches are the bars' shapes, planned and missed in neutral ink, today the accent.
   it('draws each swatch in the shape its bar has', () => {
     renderWeek({ activities: [TEMPO] })
     const swatch = (key: string) => screen.getByTestId('day-state-legend').querySelector<HTMLElement>(`[data-legend-swatch="${key}"]`)!
-    expect(swatch('done').className).toContain('state-done')
-    expect(swatch('done').style.getPropertyValue('--state-color')).toBe('var(--faint-strong)')
+    // v4.3.3: done is a small Z2/Z4/Z2 stack, as the done bars are zone-coloured.
+    const doneBars = [...swatch('done').children] as HTMLElement[]
+    expect(doneBars.map((bar) => bar.style.getPropertyValue('--state-color'))).toEqual(['var(--zone-2)', 'var(--zone-4)', 'var(--zone-2)'])
+    for (const bar of doneBars) expect(bar.className).toContain('state-done')
     expect(swatch('planned').className).toContain('state-planned')
     expect(swatch('planned').style.getPropertyValue('--state-color')).toBe('var(--muted-foreground)')
     expect(swatch('missed').className).toContain('state-missed')

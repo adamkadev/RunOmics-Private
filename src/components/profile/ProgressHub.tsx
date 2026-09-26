@@ -235,7 +235,20 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               {records.map((r) => (
                 <div key={r.key} className="flex items-baseline justify-between gap-2 text-subhead">
                   <dt className="text-foreground">{r.label}</dt>
-                  <dd className={cn('font-bold tabular-nums', r.latest ? 'text-accent-text' : 'text-foreground')}>{formatDuration(r.seconds)}</dd>
+                  {/* The newest record says so in the accent, rather than an
+                      accented time that explained nothing (v4.3.3). */}
+                  <dd className="flex items-baseline gap-1.5 font-bold tabular-nums text-foreground">
+                    {r.latest && (
+                      <span
+                        data-testid="latest-record"
+                        aria-label={h.latestRecordLabel}
+                        className="text-caption font-bold text-accent-text"
+                      >
+                        {h.latestRecord}
+                      </span>
+                    )}
+                    {formatDuration(r.seconds)}
+                  </dd>
                 </div>
               ))}
             </dl>

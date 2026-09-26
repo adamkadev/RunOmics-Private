@@ -72,7 +72,7 @@ describe('one session colour across the week', () => {
     const types = [...RUNS.map((r) => r.type), ...PLANNED.map((p) => p.type)]
     const expected = new Set(types.map((type) => zoneColor(sessionZone({ type }))))
 
-    const barColors = [...container.querySelectorAll<HTMLElement>('[style*="--state-color"]:not([data-legend-swatch])')].map((el) =>
+    const barColors = [...container.querySelectorAll<HTMLElement>('[style*="--state-color"]:not([data-legend-swatch]):not([data-legend-swatch] *)')].map((el) =>
       el.style.getPropertyValue('--state-color'),
     )
     expect(barColors.length).toBeGreaterThanOrEqual(5)

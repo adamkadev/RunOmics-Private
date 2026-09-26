@@ -20,15 +20,15 @@ export function showPlaceLabelsAtAnyZoom(map: MapLibreMap): void {
   }
 }
 
-/** Points of interest are the style's, not the run's: their labels clipped at
- *  the card's edge ("ts") and sat under the chips (v4.3.1). */
-const POI_SOURCE_LAYERS = ['poi', 'poi_label', 'housenumber']
-
-export function hidePoiLabels(map: MapLibreMap): void {
+/**
+ * No labels on an activity's map (v4.3.3): place names, POIs and street
+ * names sat under the chips and the expand button ("Robertsau", "Bis…") and
+ * clipped at the card's edge. The route, its markers and the chips say where
+ * the run was; the share card and the heatmap keep their labels.
+ */
+export function hideSymbolLabels(map: MapLibreMap): void {
   for (const layer of map.getStyle().layers) {
-    if (layer.type !== 'symbol') continue
-    const sourceLayer = (layer as { 'source-layer'?: string })['source-layer']
-    if (sourceLayer && POI_SOURCE_LAYERS.includes(sourceLayer)) map.setLayoutProperty(layer.id, 'visibility', 'none')
+    if (layer.type === 'symbol') map.setLayoutProperty(layer.id, 'visibility', 'none')
   }
 }
 
