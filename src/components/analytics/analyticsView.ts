@@ -497,9 +497,11 @@ export interface WeeklyDistanceView {
 export function weeklyDistanceView(rows: WeekRow[], avgKm: number | null = null): WeeklyDistanceView | null {
   const last = rows.at(-1)
   if (!last) return null
-  // The week under way is not a week's distance yet, so it stays out of both.
+  // The week under way is not a week's distance yet, so it stays out of the
+  // average. It does count against its plan (v4.6: every week the chart draws
+  // a plan line on is in "of"), on plan only once it has already made it.
   const done = rows.filter((r) => !r.current)
-  const planned = done.filter((r) => r.planKm !== null && r.planKm > 0)
+  const planned = rows.filter((r) => r.planKm !== null && r.planKm > 0)
   const peak = Math.max(...rows.map((r) => Math.max(r.km, r.planKm ?? 0)), 10)
   return {
     last,
@@ -615,6 +617,8 @@ export interface QualityView {
   weeks: QualityDot[][]
   avg: number | null
   planAsks: number | null
+  /** What the plan had each week, for the readout; null for a week without one. */
+  planned: (number | null)[]
 }
 
 export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView | null {
@@ -636,7 +640,10 @@ export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView
   return {
     weeks,
     avg: done.length ? Math.round((mean(done.map((r) => (r.point?.thresholdSessions ?? 0) + (r.point?.intervalSessions ?? 0))) ?? 0) * 10) / 10 : null,
-    planAsks: planned.length ? Math.round(mean(planned)!) : null,
+    // One decimal: plans ran from 1 to 3 a week, and a rounded "1" read as
+    // every week's plan beside a week that had 3 (v4.6 item 4).
+    planAsks: planned.length ? Math.round(mean(planned)! * 10) / 10 : null,
+    planned: rows.map((r) => planByWeek.get(r.week) ?? null),
   }
 }
 
