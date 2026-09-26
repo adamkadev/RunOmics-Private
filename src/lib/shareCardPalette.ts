@@ -1,25 +1,54 @@
-import { ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, type AccentId } from '@/lib/accent'
-import { rgbTriplet } from '@/lib/palette'
+import { curatedAccent, type AccentId } from '@/lib/accentScale'
+import { MAP_COLORS } from '@/lib/colors'
+import { SURFACES, ZONE_HEX } from '@/lib/themeTokens'
 
 export type ThemeMode = 'light' | 'dark'
-export type ShareDesign = 'aurora' | 'pulse' | 'terrain' | 'prism' | 'route' | 'map' | 'memory'
-export const SHARE_DESIGNS: ShareDesign[] = ['aurora', 'pulse', 'terrain', 'prism', 'route', 'map', 'memory']
 
+/**
+ * Three middles in one frame (v4.9): the route on its map, the run's time in
+ * zones (the fallback without GPS, treadmill runs included), or a photo.
+ */
+export type ShareDesign = 'route' | 'stats' | 'photo'
+export const SHARE_DESIGNS: readonly ShareDesign[] = ['route', 'stats', 'photo']
+
+/** The card, 390 x 693: header, middle, stat row. Only the middle changes. */
 export const W = 390
 export const H = 693
+export const HEADER_H = 136
+export const MIDDLE_H = 400
+export const STATS_H = H - HEADER_H - MIDDLE_H
 
-// A card on a dark canvas takes the accent's fill; on a light canvas it takes
-// the deeper text tone, which is the relationship the hand-built table had.
-const CANVAS_ACCENT_HEX: Record<AccentId, { dark: string; light: string }> = Object.fromEntries(
-  (Object.keys(ACCENT_SWATCHES) as AccentId[]).map((id) => [
-    id,
-    { dark: ACCENT_SWATCHES[id], light: ACCENT_SWATCHES_LIGHT[id] },
-  ]),
-) as Record<AccentId, { dark: string; light: string }>
+/** The app's tokens for one theme and accent, as a canvas can take them. */
+export interface SharePalette {
+  /** --background: the whole card, header and stat row alike. */
+  bg: string
+  /** --line: the Stats middle's rules. */
+  line: string
+  /** --foreground */
+  tx: string
+  /** --muted-foreground: eyebrow, date, units, labels. */
+  mu: string
+  /** --track: the zone bars' track and the empty photo frame. */
+  fa: string
+  /** --accent: the eyebrow's dot and the start marker, nothing else. */
+  acc: string
+  zones: readonly string[]
+  /** ActivityMap's route casing and marker ring. */
+  casing: string
+  ring: string
+}
 
-export const ACCENT_RGB = Object.fromEntries(
-  Object.entries(CANVAS_ACCENT_HEX).map(([id, { dark, light }]) => [
-    id,
-    { dark: rgbTriplet(dark), light: rgbTriplet(light) },
-  ]),
-) as Record<AccentId, { dark: [number, number, number]; light: [number, number, number] }>
+export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
+  const s = SURFACES[mode]
+  return {
+    bg: s.background,
+    line: s.line,
+    tx: s.text,
+    mu: s.text2,
+    fa: s.faint,
+    acc: curatedAccent(accent)[mode].acc,
+    zones: ZONE_HEX[mode],
+    casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
+    ring: MAP_COLORS.markerRingLight,
+  }
+}

@@ -47,6 +47,8 @@ const SHARE_FIELDS = [
   'avgHeartRate',
   'elevationGain',
   'route',
+  'paceSamples',
+  'hrZones',
 ] as const satisfies readonly (keyof ShareActivity)[]
 
 /** The map, stats, tabs and charts of the activity detail. */

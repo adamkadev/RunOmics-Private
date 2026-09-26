@@ -244,35 +244,23 @@ export const PACE_ROUTE_COLORS = {
   recovery:  c.roZone1,
 } as const
 
+/**
+ * The ramp's stops, seconds per km to colour: the map interpolates between
+ * them, and the share card, which draws on a canvas, does the same.
+ */
+export const PACE_ROUTE_STOPS: readonly (readonly [pace: number, color: string])[] = [
+  [255, PACE_ROUTE_COLORS.fast],
+  [300, PACE_ROUTE_COLORS.tempo],
+  [350, PACE_ROUTE_COLORS.steady],
+  [390, PACE_ROUTE_COLORS.easy],
+  [450, PACE_ROUTE_COLORS.recovery],
+]
+
 export const HEAT_ROUTE_COLORS = {
   rare:     CHART_COLORS.pace,
   seldom:   CHART_COLORS.efficiency,
   often:    CHART_COLORS.verticalOscillation,
   frequent: CHART_COLORS.hr,
-} as const
-
-export const SHARE_BACKDROPS = {
-  aurora:  [c.shareAuroraLight,  c.shareAuroraDark],
-  pulse:   [c.sharePulseLight,   c.sharePulseDark],
-  terrain: [c.shareTerrainLight, c.shareTerrainDark],
-  prism:   [c.sharePrismLight,   c.sharePrismDark],
-  map:     [c.shareMapLight,     c.shareMapDark],
-} as const
-
-export const SHARE_CARD_COLORS = {
-  routeStart: c.green500,
-  routeFinish: c.red500,
-  mapLabelPlateDark:  withAlpha(c.shareMapDark, 0.76),
-  mapLabelPlateLight: withAlpha(c.shareMapLight, 0.76),
-  mapPillDark:  withAlpha(c.shareMapDark, 0.84),
-  mapPillLight: paper(0.88),
-  memoryDark:  [c.shareMemoryDark1, c.shareMemoryDark2, c.shareMemoryDark3, c.shareMemoryDark4] as const,
-  memoryLight: [c.shareMemoryLight1, c.shareMemoryLight2, c.shareMemoryLight3, c.shareMemoryLight4] as const,
-  memoryHorizonLight: withAlpha(c.shareMemoryHorizon, 0.48),
-  toggleOff: withAlpha(c.iosFill, 0.22),
-  thumbRingAlpha: 0.33,
-  onAccent: white,
-  customWheel: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)',
 } as const
 
 export const BOOT_COLORS = {
