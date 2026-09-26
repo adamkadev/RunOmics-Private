@@ -971,14 +971,12 @@ export const fr = {
     splits: {
       perKmTitle: 'Splits par kilomètre',
       continuous: 'course continue',
-      spreadSummary: (kind: string, fastKm: number, fastPace: string, slowKm: number, slowPace: string, spread: number) =>
-        `${kind} : km le plus rapide ${fastKm} (${fastPace}), le plus lent ${slowKm} (${slowPace}), ${spread} s/km d’écart.`,
+      spreadShort: (kind: string, spread: number) => `${kind} · ${spread} s d’écart`,
       spreadKind: { even: 'Sortie régulière', negative: 'Negative split', faded: 'Fin en baisse', uneven: 'Irrégulière' },
       partialKm: (km: string) => `${km} final`,
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
-      bandLabel: (range: string) => `plage ${range}/km`,
-      colFaster: 'plus rapide →',
-      recoveryLine: (duration: string, km: string) => `récup ${duration} · ${km} km`,
+      bandLabel: (range: string) => `plage ${range}`,
+      recoveryAvg: 'Récup moyenne',
       // The set's summary at the top of its card: three numbers, no sentence (H14).
       inBandLabel: 'dans la zone',
       spread: 'écart',
@@ -1002,7 +1000,7 @@ export const fr = {
         interval_active:   'Intervalle',
         interval_rest:     'Repos',
         interval_recovery: 'Récupération',
-        interval_cooldown: 'Repos',
+        interval_cooldown: 'Retour au calme',
         lap:               'Tour',
       } as Record<string, string>,
     },

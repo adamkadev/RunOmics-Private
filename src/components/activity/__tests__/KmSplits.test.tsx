@@ -120,7 +120,7 @@ describe('KmSplits on a continuous run', () => {
   it('derives per-kilometre splits instead of one interval row that restates the total', () => {
     render(<KmSplits activity={continuous} />)
 
-    expect(screen.getByText(t.activity.splits.continuous)).toBeInTheDocument()
+    expect(screen.getByTestId('split-spread')).toBeInTheDocument()
     expect(screen.getByText(t.activity.splits.perKmTitle)).toBeInTheDocument()
     expect(screen.queryByText(t.activity.splits.intervalTypes.lap!)).not.toBeInTheDocument()
     expect(screen.getByText('5')).toBeInTheDocument()
@@ -158,7 +158,8 @@ describe('per-km splits', () => {
 
     expect(screen.getByText(t.activity.splits.cols.speed)).toBeInTheDocument()
     expect(screen.getByText(t.activity.splits.cols.vsAvg)).toBeInTheDocument()
-    expect(screen.getByText(/s\/km spread/)).toBeInTheDocument()
+    // The spread is the header's qualifier, not a sentence.
+    expect(screen.getByTestId('split-spread').textContent).toMatch(/ s spread$/)
   })
 
   // G14: with a 4:10 total, a 4:04 km read -5 because the unrounded paces

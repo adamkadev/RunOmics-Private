@@ -999,15 +999,12 @@ export const en = {
       lapTitle: 'Laps',
       perKmTitle: 'Kilometre splits',
       continuous: 'continuous run',
-      // One line on how even the run was, from the full kilometres.
-      spreadSummary: (kind: string, fastKm: number, fastPace: string, slowKm: number, slowPace: string, spread: number) =>
-        `${kind}: fastest km ${fastKm} (${fastPace}), slowest km ${slowKm} (${slowPace}), a ${spread} s/km spread.`,
+      spreadShort: (kind: string, spread: number) => `${kind} · ${spread} s spread`,
       spreadKind: { even: 'Even run', negative: 'Negative split', faded: 'Faded', uneven: 'Uneven' },
       partialKm: (km: string) => `final ${km}`,
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
-      bandLabel: (range: string) => `band ${range}/km`,
-      colFaster: 'faster →',
-      recoveryLine: (duration: string, km: string) => `rec ${duration} · ${km} km`,
+      bandLabel: (range: string) => `band ${range}`,
+      recoveryAvg: 'Recovery avg',
       // The set's summary at the top of its card: three numbers, no sentence (H14).
       inBandLabel: 'in band',
       spread: 'spread',
@@ -1025,11 +1022,11 @@ export const en = {
         total: 'Total',
       },
       intervalTypes: {
-        interval_warmup:   'Warmup',
+        interval_warmup:   'Warm-up',
         interval_active:   'Interval',
         interval_rest:     'Rest',
         interval_recovery: 'Recovery',
-        interval_cooldown: 'Cooldown',
+        interval_cooldown: 'Cool-down',
         lap:               'Lap',
       } as Record<string, string>,
     },

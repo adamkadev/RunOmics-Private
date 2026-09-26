@@ -17,6 +17,23 @@ export interface Rep {
   recovery: RepRecovery | null
 }
 
+/**
+ * The recoveries as one row (H15): their total time over their total
+ * distance, and heart rate weighted by time. Null without a recovery.
+ */
+export function recoveryAverage(reps: Rep[]): { paceSecPerKm: number | null; avgHr: number | null } | null {
+  const recs = reps.map((r) => r.recovery).filter((r): r is RepRecovery => r !== null)
+  if (recs.length === 0) return null
+  const seconds = recs.reduce((sum, r) => sum + r.durationSec, 0)
+  const metres = recs.reduce((sum, r) => sum + r.distanceM, 0)
+  const withHr = recs.filter((r) => r.avgHr !== null)
+  const hrSeconds = withHr.reduce((sum, r) => sum + r.durationSec, 0)
+  return {
+    paceSecPerKm: metres > 0 ? Math.round((seconds / metres) * 1000) : null,
+    avgHr: hrSeconds > 0 ? Math.round(withHr.reduce((sum, r) => sum + r.avgHr! * r.durationSec, 0) / hrSeconds) : null,
+  }
+}
+
 export interface RepSet {
   reps: Rep[]
   warmup: ActivitySplit | null
