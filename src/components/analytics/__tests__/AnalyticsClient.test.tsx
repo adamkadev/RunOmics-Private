@@ -239,9 +239,11 @@ describe('Analytics (v4.5)', () => {
     await renderBoard()
     await openTab(t.analytics.tabs.health, 'zones-card')
     expect(screen.getByTestId('zone-ranges-link').getAttribute('href')).toBe('/athlete')
-    // This week keeps full-strength zone colours and gets the accent outline.
+    // This week keeps full-strength zone colours and takes the one "this week"
+    // mark used on Volume: the 2 pt accent line over the 15% wash (v4.8 §3).
     const current = screen.getByTestId('zone-bars').querySelector<HTMLElement>('[data-current]')!
-    expect(current.style.outline).toContain('var(--accent)')
+    expect(current.style.boxShadow).toBe('inset 0 0 0 2px var(--accent)')
+    expect(current.style.background).toContain('15%')
     expect(screen.getByTestId('zone-bars').innerHTML).not.toContain('opacity')
   })
 })

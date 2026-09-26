@@ -69,12 +69,19 @@ describe('drawShareCard', () => {
     }
   })
 
-  it('keeps the accent to the eyebrow dot and the finish marker, off every unit and label', () => {
+  it('keeps the accent to the logo mark and the finish marker, off every unit and label', () => {
     const acc = curatedAccent('lavender').dark.acc
     const ops = draw({ design: 'route' })
     expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
-    const accentFills = ops.filter((o) => o.op === 'fill' && o.fill === acc)
-    expect(accentFills).toHaveLength(2)
+    // The finish is the one accent fill; the mark is three accent strokes.
+    expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
+    expect(ops.filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(3)
+  })
+
+  it('heads the card with the v5.2 lockup: three arcs of the small mark, then "RunOmics"', () => {
+    const ops = draw({ design: 'stats' })
+    expect(ops.filter((o) => o.op === 'ellipse')).toHaveLength(3)
+    expect(texts(ops)[0]).toBe('RunOmics')
   })
 
   it('starts white with a dark outline and finishes in the accent, as on the Activity map (v4.10)', () => {
