@@ -15,7 +15,9 @@ import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { BackButton } from '@/components/ui/BackButton'
 import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { STATUS } from '@/lib/statusColors'
-import { runTypeColor } from '@/lib/colors'
+import { sessionZone, zoneColor } from '@/lib/colors'
+import type { ActivityType } from '@/domain/activity/types'
+import Link from 'next/link'
 import { shoeWearCopy } from '@/components/shoes/shoeWear'
 import { WearBar } from '@/components/shoes/WearBar'
 import { formatDateRange, formatKm, formatMonthShortYear, formatPace } from '@/lib/formatters'
@@ -33,20 +35,28 @@ const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
   replace: { bar: STATUS.danger.dot,  text: STATUS.danger.text },
 }
 
-// Base/Tempo/Intervals takes its three colours from RUN_TYPE_ZONE, the ramp
-// the plan and the lists use, so the usage bar reads as the same intensity
-// scale: Z2 for base, Z3 for tempo, Z5 for intervals.
-const TYPE_SHARE_COLOR: Record<ShoeTypeBucket, string> = {
-  base: runTypeColor('Base'),
-  tempo: runTypeColor('Tempo'),
-  intervals: runTypeColor('Anaerobic'),
+// Each bucket takes the zone of the session it mostly holds, through
+// sessionZone(): the tempo bucket also holds threshold runs, and on a pair
+// that ran more threshold than tempo it read Z3 green over Z4 work (G29).
+function bucketType(bucket: ShoeTypeBucket, activities: { type: ActivityType }[]): ActivityType {
+  if (bucket === 'base') return 'Base'
+  if (bucket === 'intervals') return 'Anaerobic'
+  const threshold = activities.filter((a) => a.type === 'Threshold').length
+  const tempo = activities.filter((a) => a.type === 'Tempo').length
+  return threshold > tempo ? 'Threshold' : 'Tempo'
 }
 
-function typeShareLabel(bucket: ShoeTypeBucket): string {
-  if (bucket === 'base') return t.activityTypes.Base
-  if (bucket === 'tempo') return t.activityTypes.Tempo
-  return t.shoes.detail.typeShareLabels.intervals
+function typeShareColor(bucket: ShoeTypeBucket, activities: { type: ActivityType }[]): string {
+  return zoneColor(sessionZone({ type: bucketType(bucket, activities) }))
 }
+
+function typeShareLabel(bucket: ShoeTypeBucket, activities: { type: ActivityType }[]): string {
+  if (bucket === 'intervals') return t.shoes.detail.typeShareLabels.intervals
+  return t.activityTypes[bucketType(bucket, activities)]
+}
+
+/** Runs listed on the page; the rest are one link away, in Activities. */
+const RECENT_RUNS = 5
 
 function verdictBody(status: 'watch' | 'replace', weeksRemaining: number | null): string {
   const v = t.shoes.detail.verdict
@@ -273,15 +283,15 @@ export default async function ShoeDetailPage({
           {typeShareEntries.map((entry) => (
             <span
               key={entry.bucket}
-              style={{ width: `${entry.percent}%`, backgroundColor: TYPE_SHARE_COLOR[entry.bucket] }}
+              style={{ width: `${entry.percent}%`, backgroundColor: typeShareColor(entry.bucket, shoe.activities) }}
             />
           ))}
         </div>
         <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 text-caption text-subtle">
           {typeShareEntries.map((entry) => (
             <span key={entry.bucket} className="flex items-center gap-1">
-              <span aria-hidden className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: TYPE_SHARE_COLOR[entry.bucket] }} />
-              {typeShareLabel(entry.bucket)} {entry.percent}%
+              <span aria-hidden className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: typeShareColor(entry.bucket, shoe.activities) }} />
+              {typeShareLabel(entry.bucket, shoe.activities)} {entry.percent}%
             </span>
           ))}
         </div>
@@ -292,8 +302,10 @@ export default async function ShoeDetailPage({
       <div className="space-y-3">
         <div className="flex items-baseline justify-between gap-2">
           <SectionDivider>{shoe.retired ? d.activitiesTitleRetired : d.activitiesTitleActive}</SectionDivider>
-          {shoe.activities.length > 0 && (
-            <span className="shrink-0 text-caption text-subtle">{d.allActivitiesCount(shoe.activities.length)}</span>
+          {shoe.activities.length > RECENT_RUNS && (
+            <Link href={`/activities?shoe=${shoe.gearId}`} className="shrink-0 text-caption font-semibold text-accent-text">
+              {d.allActivitiesCount(shoe.activities.length)} ›
+            </Link>
           )}
         </div>
         {shoe.activities.length === 0 ? (
@@ -302,7 +314,7 @@ export default async function ShoeDetailPage({
           </GlassSurface>
         ) : (
           <div className="space-y-2">
-            {shoe.activities.map((activity) => (
+            {shoe.activities.slice(0, RECENT_RUNS).map((activity) => (
               <ActivityListCard key={activity.id} activity={activity} />
             ))}
           </div>

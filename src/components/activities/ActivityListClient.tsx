@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Search, SearchX, ChevronDown, Map as MapIcon } from 'lucide-react'
+import { Search, SearchX, ChevronDown, Map as MapIcon, X } from 'lucide-react'
 import { ActivityListCard } from './ActivityListCard'
 import { ACTIVITY_TYPES, isActivityType, type ActivitySummary, type ActivityType } from '@/domain/activity/types'
 import { sessionZone, zoneColor } from '@/lib/colors'
@@ -17,6 +17,8 @@ import { easyShare } from '@/domain/activity/easyShare'
 import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
 import { formatDateRange, formatKm } from '@/lib/formatters'
+import { SectionDivider } from '@/components/ui/SectionLabel'
+import { useUrlParam } from '@/lib/useUrlParam'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
 import { useToday } from '@/lib/useToday'
@@ -61,14 +63,14 @@ function WeekStat({ value, label, variant }: { value: string; label: string; var
     return (
       <div className="text-right">
         <div className="font-bold tabular-nums text-foreground" style={{ fontSize: '15px' }}>{value}</div>
-        <div className="text-caption uppercase tracking-wide" style={{ color: 'var(--subtle-2)' }}>{label}</div>
+        <div className="whitespace-nowrap text-caption uppercase tracking-wide" style={{ color: 'var(--subtle-2)' }}>{label}</div>
       </div>
     )
   }
   return (
     <div className="text-right">
       <div className="text-sm font-bold tabular-nums text-foreground">{value}</div>
-      <div className="text-caption uppercase tracking-wide text-subtle">{label}</div>
+      <div className="whitespace-nowrap text-caption uppercase tracking-wide text-subtle">{label}</div>
     </div>
   )
 }
@@ -161,7 +163,9 @@ function weekRows(groups: WeekGroup<ActivitySummary>[], currentWeekStart: string
   const lastWeekStart = isoDate(addDays(new Date(currentWeekStart + 'T00:00:00'), -7))
 
   return groups.map((group) => {
-    const range = formatDateRange(group.key, isoDate(addDays(new Date(group.key + 'T00:00:00'), 6)))
+    // No year in the row: it truncated to "Dec 29, 2025 – J…". The year is a
+    // section header above the weeks it covers (G22).
+    const range = formatDateRange(group.key, isoDate(addDays(new Date(group.key + 'T00:00:00'), 6)), { year: 'never' })
     return {
       ...group,
       label: group.key === currentWeekStart ? t.activities.thisWeek : group.key === lastWeekStart ? t.activities.lastWeek : range,
@@ -201,6 +205,7 @@ function readStoredFilters(): StoredFilters | null {
 
 async function fetchActivities(params: {
   type: ActivityType | null
+  gearId: string | null
   search: string
   sortBy: ActivitySortKey
   sortOrder: ActivitySortOrder
@@ -213,6 +218,7 @@ async function fetchActivities(params: {
     limit: String(PAGE_SIZE),
   })
   if (params.type) qs.set('type', params.type)
+  if (params.gearId) qs.set('gear', params.gearId)
   if (params.search.trim()) qs.set('search', params.search.trim())
 
   const res = await fetch(`/api/activities?${qs}`)
@@ -228,6 +234,8 @@ interface Props {
   qualifiedEffortsByActivityId?: Record<string, QualifiedEffort[]>
   /** The date the page was prerendered on; see useToday. */
   today: string
+  /** Shoe names by gear id, to name the ?shoe= filter. */
+  shoeNames?: Record<string, string>
 }
 
 export function ActivityListClient({
@@ -237,9 +245,12 @@ export function ActivityListClient({
   totalCount,
   qualifiedEffortsByActivityId = {},
   today: serverToday,
+  shoeNames = {},
 }: Props) {
   const today = useToday(serverToday)
   const [search, setSearch] = useState('')
+  // ?shoe= narrows the list to one pair; it is the shoe page's way in.
+  const [gearId, setGearId] = useUrlParam('shoe')
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null)
   const [sortBy, setSortBy] = useState<ActivitySortKey>('date')
   const [sortOrder, setSortOrder] = useState<ActivitySortOrder>('desc')
@@ -320,7 +331,7 @@ export function ActivityListClient({
     }
     const seq = ++requestSeq.current
     setIsPending(true)
-    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: 0 })
+    fetchActivities({ type: selectedType, gearId, search: debouncedSearch, sortBy, sortOrder, offset: 0 })
       .then((result) => {
         if (seq !== requestSeq.current) return
         setIsPending(false)
@@ -331,14 +342,14 @@ export function ActivityListClient({
         if (seq !== requestSeq.current) return
         setIsPending(false)
       })
-  }, [selectedType, debouncedSearch, sortBy, sortOrder])
+  }, [selectedType, gearId, debouncedSearch, sortBy, sortOrder])
 
   const hasMore = nextOffset !== null
-  const hasActiveFilter = selectedType !== null || search.trim() !== ''
+  const hasActiveFilter = selectedType !== null || gearId !== null || search.trim() !== ''
   const currentWeekStart = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
   // `items` answers the filter the last request was made with, which is the
   // debounced search rather than the half-typed one.
-  const itemsAreFiltered = selectedType !== null || debouncedSearch.trim() !== ''
+  const itemsAreFiltered = selectedType !== null || gearId !== null || debouncedSearch.trim() !== ''
   const groups = useMemo(() => {
     if (sortBy !== 'date') return null
     const grouped = groupByWeek(items, currentWeekStart)
@@ -357,7 +368,7 @@ export function ActivityListClient({
     if (nextOffset === null || loadingMore) return
     setLoadingMore(true)
     const seq = requestSeq.current
-    fetchActivities({ type: selectedType, search: debouncedSearch, sortBy, sortOrder, offset: nextOffset })
+    fetchActivities({ type: selectedType, gearId, search: debouncedSearch, sortBy, sortOrder, offset: nextOffset })
       .then((result) => {
         setLoadingMore(false)
         if (seq !== requestSeq.current) return
@@ -365,7 +376,7 @@ export function ActivityListClient({
         setNextOffset(result.nextOffset)
       })
       .catch(() => setLoadingMore(false))
-  }, [nextOffset, loadingMore, selectedType, debouncedSearch, sortBy, sortOrder])
+  }, [nextOffset, loadingMore, selectedType, gearId, debouncedSearch, sortBy, sortOrder])
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -384,6 +395,7 @@ export function ActivityListClient({
 
   function resetFilters() {
     setSelectedType(null)
+    setGearId(null)
     setSearch('')
   }
 
@@ -457,7 +469,7 @@ export function ActivityListClient({
                 className={cn('h-9 py-0 text-footnote font-semibold', active ? 'px-4' : 'px-2.5')}
                 onClick={() => setSelectedType(active ? null : type)}
               >
-                {t.plan.typeShort[type]}
+                {t.activityTypes[type] ?? type}
               </Pill>
             )
           })}
@@ -470,6 +482,15 @@ export function ActivityListClient({
           />
         )}
       </div>
+
+      {gearId && (
+        <div className="px-1">
+          <Pill as="button" variant="accent" className="h-9 gap-1.5 py-0 text-footnote font-semibold" onClick={() => setGearId(null)} aria-label={t.activities.shoeFilter.clear}>
+            {shoeNames[gearId] ?? gearId}
+            <X size={14} aria-hidden="true" />
+          </Pill>
+        </div>
+      )}
 
       {isPending ? (
         <div className="flex justify-center py-10">
@@ -492,12 +513,26 @@ export function ActivityListClient({
         </GlassSurface>
       ) : groups ? (
         <div className="space-y-3">
-          {groups.map((g) => {
+          {/* What the week dots are, once, above the weeks they sit in (G22). */}
+          <p className="flex items-center gap-3 px-1 text-caption text-subtle" data-testid="dot-legend">
+            <span className="flex items-center gap-1.5">
+              <span aria-hidden="true" className="size-[7px] rounded-[4px]" style={{ background: zoneColor(2) }} />
+              {t.activities.dotLegend.run}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span aria-hidden="true" className="size-[7px] rounded-[4px]" style={{ border: `1.5px solid ${zoneColor(sessionZone({ type: 'Race' }))}` }} />
+              {t.activities.dotLegend.race}
+            </span>
+          </p>
+          {groups.map((g, i) => {
             // A toggle flips a week from its default, so for the week that
             // starts open, being in expandedWeeks means the reader closed it.
             const isExpanded = g.isCurrent || expandedWeeks.has(g.key) !== (g.key === openByDefault)
+            const year = g.key.slice(0, 4)
+            const prevYear = i > 0 ? groups[i - 1]!.key.slice(0, 4) : today.slice(0, 4)
             return (
               <div key={g.key}>
+                {year !== prevYear && <SectionDivider as="h2" className="px-1 pb-2 pt-1">{year}</SectionDivider>}
                 {g.isCurrent ? (
                   <div
                     className="sticky top-[max(var(--safe-top),8px)] z-10 rounded-xl border py-2.5 pl-3.5"

@@ -4,6 +4,7 @@ import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { loadWeekTarget } from '@/app/_data/loadWeekTarget'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 import { appTodayIso } from '@/lib/calendarDate'
+import { getShoeStats } from '@/application/usecases/GetShoeStats'
 
 export const revalidate = 3600
 
@@ -21,6 +22,7 @@ export default async function ActivitiesPage() {
       totalCount={total}
       qualifiedEffortsByActivityId={qualifiedEffortsByActivityId}
       today={today}
+      shoeNames={Object.fromEntries(getShoeStats().map((shoe) => [shoe.gearId, shoe.name]))}
     />
   )
 }
