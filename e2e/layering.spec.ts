@@ -46,3 +46,42 @@ for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
     expect(surface.token).toMatch(/^#(0b0c0c|f3f4f4)$/)
   })
 }
+
+// iOS 26 takes the topmost fixed element touching the top edge as the page's
+// bar and blurs content scrolling under a transparent one. So every fixed
+// element drawn at the top edge is opaque, at rest and once the page has
+// scrolled (the compact title bar appears then): an invisible one, at opacity
+// 0, brought the blur back over the status bar.
+test.describe('on a phone', () => {
+  // The top bars are phone-only (lg:hidden).
+  test.use({ viewport: { width: 393, height: 852 } })
+
+  for (const route of ['/', '/plan']) {
+    test(`${route} keeps every fixed element at the top edge opaque`, async ({ page }) => {
+      await page.goto(route)
+      for (const y of [0, 600]) {
+        await page.evaluate((top) => window.scrollTo(0, top), y)
+        await page.waitForTimeout(300)
+        const seeThrough = await page.evaluate(() => {
+          const alpha = (color: string) => {
+            if (color === 'transparent') return 0
+            const parts = color.match(/[\d.]+/g) ?? []
+            return parts.length === 4 ? Number(parts[3]) : 1
+          }
+          return [...document.querySelectorAll<HTMLElement>('body *')]
+            .filter((el) => {
+              const style = getComputedStyle(el)
+              const box = el.getBoundingClientRect()
+              return style.position === 'fixed' && style.display !== 'none' && box.top <= 0 && box.height > 0
+            })
+            .filter((el) => {
+              const style = getComputedStyle(el)
+              return Number(style.opacity) < 1 || alpha(style.backgroundColor) < 1
+            })
+            .map((el) => el.dataset.testid ?? el.className.slice(0, 60))
+        })
+        expect(seeThrough, `scrolled to ${y}`).toEqual([])
+      }
+    })
+  }
+})
