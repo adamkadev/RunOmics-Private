@@ -52,8 +52,8 @@ describe('the current week on /activities', () => {
     renderList([run('a', '2026-09-20', 25), run('b', '2026-09-13', 10)])
 
     expect(screen.getByText(t.activities.thisWeek)).toBeInTheDocument()
-    expect(screen.getByText(t.activities.weekGoal('0', '40'))).toBeInTheDocument()
-    expect(screen.queryByText(t.activities.weekGoal('25', '40'))).not.toBeInTheDocument()
+    expect(screen.getByText(t.activities.weekOfTarget('0', '40'))).toBeInTheDocument()
+    expect(screen.queryByText(t.activities.weekOfTarget('25', '40'))).not.toBeInTheDocument()
   })
 
   it('shows last week as an ordinary row, open until this week has a run', async () => {
@@ -72,7 +72,7 @@ describe('the current week on /activities', () => {
   it('counts this week toward its goal once it has a run', () => {
     renderList([run('c', '2026-09-22', 12), run('a', '2026-09-20', 25)])
 
-    expect(screen.getByText(t.activities.weekGoal('12', '40'))).toBeInTheDocument()
+    expect(screen.getByText(t.activities.weekOfTarget('12', '40'))).toBeInTheDocument()
     expect(screen.getByText('Run c')).toBeInTheDocument()
   })
 })

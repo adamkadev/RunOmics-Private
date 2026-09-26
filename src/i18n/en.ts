@@ -444,15 +444,8 @@ export const en = {
     },
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} week streak`,
-      kmRemaining: (km: number) => `${km} km to this week's goal`,
-      perDayToGoal: (perDay: string, target: string) => `${perDay} km/day to hit ${target}`,
-      ringOf: (target: number) => `of ${target} km`,
-      // The ring's target is the annual goal's weekly share, and says so; the
-      // plan's own total sits beside it, named, so the two never pass for one.
-      goalLabel: 'Weekly goal',
-      planHas: (sessions: number, km: string) => `plan has ${sessions} session${sessions !== 1 ? 's' : ''}, ${km}\u00a0km`,
-
-      goalReached: 'Weekly goal reached',
+      ofKm: (target: string) => `of ${target} km`,
+      sessionsOf: (done: number, planned: number) => `${done} of ${planned} session${planned !== 1 ? 's' : ''}`,
     },
     celebration: {
       eyebrow: 'New personal record',
@@ -757,8 +750,7 @@ export const en = {
       easy: 'easy time',
       noSplit: '—',
     },
-    weekGoal: (done: string, goal: string) => `${done} of ${goal} km · weekly goal`,
-    weekPlanTotal: (km: string) => `plan ${km} km`,
+    weekOfTarget: (done: string, target: string) => `${done} of ${target} km`,
     sort: {
       label: 'Sort',
       date: 'Date',

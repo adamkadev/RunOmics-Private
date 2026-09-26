@@ -427,13 +427,8 @@ export const fr = {
     },
     weeklyStreak: {
       weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
-      kmRemaining: (km: number) => `Plus que ${km} km pour boucler la semaine`,
-      perDayToGoal: (perDay: string, target: string) => `${perDay} km/jour pour atteindre ${target}`,
-      ringOf: (target: number) => `sur ${target} km`,
-      goalLabel: 'Objectif hebdo',
-      planHas: (sessions: number, km: string) => `le plan compte ${sessions} séance${sessions > 1 ? 's' : ''}, ${km}\u00a0km`,
-
-      goalReached: 'Objectif hebdomadaire atteint',
+      ofKm: (target: string) => `sur ${target} km`,
+      sessionsOf: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} sur ${planned}`,
     },
     celebration: {
       eyebrow: 'Nouveau record personnel',
@@ -737,8 +732,7 @@ export const fr = {
       easy: 'temps facile',
       noSplit: '—',
     },
-    weekGoal: (done: string, goal: string) => `${done} sur ${goal} km · objectif hebdo`,
-    weekPlanTotal: (km: string) => `plan ${km} km`,
+    weekOfTarget: (done: string, target: string) => `${done} sur ${target} km`,
     sort: {
       label: 'Trier',
       date: 'Date',
