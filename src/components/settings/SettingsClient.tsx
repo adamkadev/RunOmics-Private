@@ -123,7 +123,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device }: Props) {
         <p className="text-center text-sm text-muted-foreground">{t.settings.auth.accessDenied}</p>
         <button
           onClick={handleSignOut}
-          className="rounded-lg border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-red-400 hover:text-red-500 dark:hover:border-red-500 dark:hover:text-red-400"
+          className="rounded-lg border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
         >
           {t.settings.auth.switchAccount}
         </button>

@@ -94,7 +94,7 @@ export function SegmentedTabs<T extends string | number>({
     <div
       {...tabs.listProps}
       aria-label={label}
-      className={cn('flex shrink-0 gap-1 rounded-full border border-foreground/10 bg-foreground/[0.07] p-1', fill && 'w-full', className)}
+      className={cn('flex shrink-0 gap-1 rounded-full bg-[var(--segmented-track)] p-1', fill && 'w-full', className)}
     >
       {items.map((item) => {
         const props = tabs.tabProps(item.id)
@@ -110,7 +110,11 @@ export function SegmentedTabs<T extends string | number>({
               // "Performance" touching its pill edge to edge (G21).
               fill && 'min-w-0 flex-auto px-3',
               tabClassName,
-              props['aria-selected'] ? 'bg-accent text-accent-foreground' : 'text-subtle hover:text-foreground'
+              // Selected is a neutral pill, not an accent fill: the accent is for
+              // data and the bottom tab bar's active item.
+              props['aria-selected']
+                ? 'bg-[var(--segmented-pill)] text-foreground shadow-[var(--segmented-pill-shadow)]'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             <span className="truncate">{item.label}</span>

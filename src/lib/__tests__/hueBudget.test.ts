@@ -4,6 +4,14 @@ import { ACTIVITY_TYPE_STYLE } from '@/components/activity/activityTypeStyle'
 import { CHART_COLORS, TRAINING_PLAN_PHASE_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
 import { ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT } from '@/lib/accent'
 import { HUE, rgbTriplet } from '@/lib/palette'
+import { TOKEN_BLOCKS } from '@/lib/themeTokens'
+
+// A chart colour that is a token reads as its value in each theme.
+const THEME_BLOCKS = TOKEN_BLOCKS.filter((b) => b.comment?.startsWith('Light tokens') || b.comment?.startsWith('Dark tokens'))
+function resolved(value: string): string[] {
+  const name = value.match(/^var\((--[\w-]+)\)$/)?.[1]
+  return name ? THEME_BLOCKS.map((b) => b.tokens[name]!) : [value]
+}
 
 /**
  * A hue family, named off the HSL hue angle. Two colours in the same family
@@ -100,7 +108,7 @@ describe('running-form metric hues', () => {
   // in one frame and a derived metric can share its parent's family for free.
   it('puts each derived metric in its parent hue family', () => {
     expect(hueFamily(CHART_COLORS.verticalRatio)).toBe(hueFamily(CHART_COLORS.verticalOscillation))
-    expect(hueFamily(CHART_COLORS.strideLength)).toBe(hueFamily(CHART_COLORS.cadence))
+    for (const cadence of resolved(CHART_COLORS.cadence)) expect(hueFamily(CHART_COLORS.strideLength)).toBe(hueFamily(cadence))
   })
 
   it('spends three hue families on the five form metrics', () => {
@@ -110,7 +118,7 @@ describe('running-form metric hues', () => {
       CHART_COLORS.verticalOscillation,
       CHART_COLORS.verticalRatio,
       CHART_COLORS.strideLength,
-    ].map(hueFamily))
+    ].flatMap(resolved).map(hueFamily))
     expect(families.size).toBe(3)
   })
 })

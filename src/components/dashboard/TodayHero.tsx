@@ -79,7 +79,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, wa
     <GlassSurface
       variant="card"
       className="flex flex-col gap-3.5 overflow-hidden rounded-card-sm border p-5"
-      style={{ borderColor: `color-mix(in srgb, ${toneColor} 45%, transparent)` }}
+      style={{ borderColor: `color-mix(in srgb, ${toneColor} 40%, transparent)` }}
     >
       <div className="flex items-baseline justify-between gap-3">
         <span className={cn(EYEBROW_CLASS, 'inline-flex items-center')} style={{ color: toneColor }}>

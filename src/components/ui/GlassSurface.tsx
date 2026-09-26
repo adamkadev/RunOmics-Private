@@ -6,7 +6,7 @@ type GlassVariant = 'card' | 'chrome' | 'nav' | 'sheet' | 'chip' | 'hero'
 
 const VARIANT_CLASS: Record<GlassVariant, string> = {
   card: 'glass-card',
-  chrome: 'glass-nav',
+  chrome: 'glass-chrome',
   nav: 'glass-nav',
   sheet: 'glass-sheet',
   chip: 'glass-chip',

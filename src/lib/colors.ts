@@ -13,7 +13,9 @@ export const CHART_COLORS = {
   hrEasy:        c.red300,
   pace:          c.blue500,
   elevation:     c.roRust,
-  cadence:       c.sky500,
+  // Lines that fail 3:1 on white take a darker step in light mode through
+  // their token; the others are the same hex in both themes.
+  cadence:       'var(--chart-cadence)',
   efficiency:    c.violet500,
 
   // The five running-form metrics are never drawn together - RunningFormChart
@@ -21,18 +23,19 @@ export const CHART_COLORS = {
   // family instead of buying a new one: vertical ratio is oscillation over
   // stride, and stride length is the other half of cadence. That retires
   // fuchsia and teal from the app, and both fills carry white text better.
-  groundContact:       c.amber500,
+  groundContact:       'var(--chart-ground-contact)',
   verticalOscillation: c.rose500,
   verticalRatio:       c.rose600,
   strideLength:        c.sky600,
 
-  easy:      c.emerald400,
-  hard:      c.orange400,
+  easy:      'var(--chart-easy)',
+  hard:      'var(--chart-hard)',
 
   axisTick:        c.roInkInv2,
-  referenceLine:   c.gray200,
+  // Grid and reference lines are the divider (neutral surfaces).
+  referenceLine:   'var(--divider)',
   referenceTarget: c.roInkInv3,
-  tooltipCursor:   withAlpha(c.roInkInv2, 0.12),
+  tooltipCursor:   'var(--divider)',
 } as const
 
 export const TRAINING_STATUS_COLORS: Record<string, string> = {
@@ -228,29 +231,8 @@ export const WORKOUT_SEGMENT_INK = {
   effort: c.roInk,
 } as const
 
-export const WORKOUT_SHEET_COLORS = {
-  base: withAlpha(c.sheetInk, 0.82),
-  baseTinted: withAlpha(c.sheetInk, 0.88),
-  border: paper(0.08),
-  handle: paper(0.2),
-  iconWell: paper(0.07),
-  iconFallback: c.gray400,
-  // `chipFill` is the type chip's tint. It replaces a `${typeColor}22` hex
-  // append (0x22/255 = 13 %) so the whole sheet states its alphas one way;
-  // `border` (0.27) is the same value the old `${typeColor}44` produced.
-  tint: { fill: 0.12, border: 0.27, handle: 0.33, iconWell: 0.1, chipFill: 0.13 },
-} as const
-
 export const CELEBRATION_COLORS = {
   confetti: [c.green400, c.amber400, c.cyan300, c.pink400] as const,
-  burst:    `radial-gradient(circle, ${c.green500}, ${c.green700})`,
-  burstGlow: `0 0 50px ${withAlpha(c.green500, 0.5)}`,
-} as const
-
-export const BRAND_TINTS = {
-  headlineBorder: withAlpha(c.roEmerald, 0.32),
-  headlineFill: `linear-gradient(158deg, ${withAlpha(c.roEmerald, 0.11)}, ${withAlpha(c.roEmerald, 0.02)})`,
-  footerFill: `linear-gradient(155deg, ${withAlpha(c.roEmerald, 0.08)}, transparent)`,
 } as const
 
 export const MAP_COLORS = {
@@ -303,25 +285,13 @@ export const SHARE_CARD_COLORS = {
 } as const
 
 export const BOOT_COLORS = {
-  background: c.performanceBgDark,
+  background: '#0a0b0b',
   foreground: c.gray200,
   actionBg: c.emerald500,
   actionFg: c.performanceBgDark,
   logo: c.emerald400,
 } as const
 
-const DISTANCE_TINTS = [
-  { match: /marathon/i, overlay: 'from-orange-500/35', text: 'text-orange-400' },
-  { match: /half|semi/i, overlay: 'from-emerald-500/35', text: 'text-emerald-400' },
-  { match: /10\s*k/i, overlay: 'from-blue-500/35', text: 'text-blue-400' },
-  { match: /5\s*k/i, overlay: 'from-violet-500/35', text: 'text-violet-400' },
-  { match: /1\s*k\b|mile/i, overlay: 'from-rose-500/35', text: 'text-rose-400' },
-] as const
-
-export function raceDistanceTint(distance: string): { overlay: string; text: string } {
-  const found = DISTANCE_TINTS.find((d) => d.match.test(distance))
-  return found ?? { overlay: 'from-accent/35', text: 'text-accent-text' }
-}
 
 /** Bands a temperature onto the text-grade `600 / dark:400` ramp the rest of the
  *  app uses for semantic ink (see STATUS in statusColors.ts). It colours the

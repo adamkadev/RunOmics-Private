@@ -37,7 +37,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
     <TooltipCard label={p.label}>
       <p className="text-sm text-blue-500 dark:text-blue-400">{t.dashboard.trainingLoad.fitness} {Math.round(p.ctl)}</p>
       <p className="text-sm text-orange-500 dark:text-orange-400">{t.dashboard.trainingLoad.fatigue} {Math.round(p.atl)}</p>
-      <p className="text-sm text-emerald-600 dark:text-emerald-400">{t.dashboard.trainingLoad.form} {Math.round(p.tsb)}</p>
+      <p className="text-sm text-[var(--metric-form)]">{t.dashboard.trainingLoad.form} {Math.round(p.tsb)}</p>
     </TooltipCard>
   )
 }

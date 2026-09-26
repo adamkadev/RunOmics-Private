@@ -95,18 +95,21 @@ export function computeWorldTerritory(
 // something.
 export const MAP_CHIP_GEOMETRY = "flex h-[38px] items-center rounded-[12px] transition-colors";
 export const MAP_CHIP_STYLE = { padding: "0 11px", fontSize: "13.5px" } as const;
+// Neutral surfaces: a filter chip is the segmented control's language - track
+// when idle, the raised pill when set - in theme tokens, not fixed hex.
 export const MAP_CHIP_NEUTRAL = {
-  background: "rgba(148,178,220,.07)",
-  border: "1px solid rgba(148,178,220,.14)",
-  color: "#b9c4cf",
+  background: "var(--segmented-track)",
+  border: "1px solid var(--border)",
+  color: "var(--muted-foreground)",
 } as const;
 export const MAP_CHIP_ACTIVE = {
-  background: "rgba(90,151,245,.16)",
-  border: "1px solid rgba(90,151,245,.32)",
-  color: "#9cc4ff",
+  background: "var(--segmented-pill)",
+  border: "1px solid var(--border)",
+  color: "var(--foreground)",
+  boxShadow: "var(--segmented-pill-shadow)",
 } as const;
-export const MAP_CHIP_COUNT_INK = "#7d8896";
-export const MAP_CHIP_CARET_INK = "#7d8896";
+export const MAP_CHIP_COUNT_INK = "var(--subtle)";
+export const MAP_CHIP_CARET_INK = "var(--subtle)";
 
 export function coordLabel(c: RouteCluster): string {
   const lat = `${Math.abs(c.center[1]).toFixed(1)}${c.center[1] >= 0 ? "°N" : "°S"}`;

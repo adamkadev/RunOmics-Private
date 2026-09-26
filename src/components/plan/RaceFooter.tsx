@@ -14,8 +14,8 @@ const ROLE_LABEL = { primary: t.plan.raceFooter.primaryTarget, tune_up: t.plan.r
 
 const DISTANCE_ONLY = /^\s*\d+(?:[.,]\d+)?\s*(?:k|km|m|mi|miles?)\s*$/i
 
-const NEXT_CHIP_FILL = '#f5b13d'
-const NEXT_CHIP_INK = '#091020'
+const NEXT_CHIP_FILL = 'var(--tone-caution)'
+const NEXT_CHIP_INK = 'var(--zone-ink)'
 // Derived straight from --foreground rather than the muted/subtle tokens -
 // on white this chip was a pale-grey outline around pale-grey text, quiet
 // enough to disappear; it can stay quieter than the amber "next" chip

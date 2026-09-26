@@ -96,7 +96,7 @@ export function NotesSheet({
                 {draft.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent-text"
+                    className="inline-flex items-center gap-1 rounded-full bg-[var(--segmented-track)] px-2.5 py-0.5 text-xs font-medium text-accent-text"
                   >
                     {tag}
                     <button

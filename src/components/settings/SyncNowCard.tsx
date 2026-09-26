@@ -160,8 +160,8 @@ export function SyncNowCard({ user, pollIntervalMs = POLL_INTERVAL_MS }: { user:
   return (
     <GlassSurface variant="card" className="p-5">
       <div className="flex items-center gap-3.5">
-        <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.14]">
-          <RefreshCw size={18} className={cn('text-accent', running && 'animate-spin')} />
+        <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-[var(--segmented-track)]">
+          <RefreshCw size={18} className={cn('text-muted-foreground', running && 'animate-spin')} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">{s.title}</p>

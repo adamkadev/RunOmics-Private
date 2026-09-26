@@ -6,7 +6,6 @@ const route = vi.hoisted(() => ({ pathname: '/activities' }))
 
 vi.mock('next/navigation', () => ({ usePathname: () => route.pathname }))
 vi.mock('../Sidebar', () => ({ Sidebar: () => null }))
-vi.mock('../Aurora', () => ({ Aurora: () => null }))
 vi.mock('../ThemeSync', () => ({ ThemeSync: () => null }))
 vi.mock('../PageTransition', () => ({ PageTransition: ({ children }: { children: React.ReactNode }) => <>{children}</> }))
 vi.mock('../NavigationHistory', () => ({ NavigationHistoryProvider: ({ children }: { children: React.ReactNode }) => <>{children}</> }))
@@ -61,11 +60,11 @@ describe('AppShell scroll memory', () => {
   })
 })
 
-describe('AppShell status bar blend', () => {
-  // The installed app's status bar is a fixed neutral (it can't follow the
-  // accent), so the page top starts in that colour and fades into the page.
-  it('fades the page top from the status bar colour', () => {
-    const { getByTestId } = render(<AppShell>page</AppShell>)
-    expect(getByTestId('status-bar-blend').style.background).toContain('var(--status-bar)')
+describe('AppShell surface', () => {
+  // Neutral surfaces: the page is one flat colour, no aurora and no fade.
+  it('draws no aurora and no gradient over the page top', () => {
+    const { container, queryByTestId } = render(<AppShell>page</AppShell>)
+    expect(container.querySelector('.aurora')).toBeNull()
+    expect(queryByTestId('status-bar-blend')).toBeNull()
   })
 })

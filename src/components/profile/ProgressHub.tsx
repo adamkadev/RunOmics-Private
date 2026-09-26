@@ -68,7 +68,7 @@ function Sparkline({ values }: { values: number[] }) {
   )
 }
 
-const HEAT_FILL = ['var(--track)', 'color-mix(in srgb, var(--accent) 40%, transparent)', 'color-mix(in srgb, var(--accent) 70%, transparent)', 'var(--accent)']
+const HEAT_FILL = ['var(--heat-empty)', 'color-mix(in srgb, var(--accent) 40%, transparent)', 'color-mix(in srgb, var(--accent) 70%, transparent)', 'var(--accent)']
 
 function Heatmap({ weeks }: { weeks: (number | null)[][] }) {
   return (

@@ -67,21 +67,21 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user }: Pr
     <GlassSurface variant="card" className="p-5">
       {lastSyncedAt && (
         <div className="flex items-center gap-3.5">
-          <div className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-accent/[0.14]">
+          <div className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-[var(--segmented-track)]">
             <svg
               role="img"
               viewBox="0 0 24 24"
               width={19}
               height={19}
               fill="currentColor"
-              className="text-accent"
+              className="text-foreground"
             >
               <title>{s.dataSource.garmin}</title>
               <path d={siGarmin.path} />
             </svg>
             <span
               className="absolute -bottom-px -right-px h-2 w-2 rounded-full bg-accent ring-2 ring-card"
-              style={{ boxShadow: '0 0 8px var(--accent)', animation: 'pulse-ring 2s ease-in-out infinite' }}
+              style={{ animation: 'pulse-ring 2s ease-in-out infinite' }}
             />
           </div>
           <div className="min-w-0 flex-1">

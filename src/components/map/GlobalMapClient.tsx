@@ -231,8 +231,8 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
       <div
         className="absolute inset-x-0 top-0 z-10 flex items-start gap-2 px-3 pb-2.5"
         style={{
-          background: "rgba(9,16,32,.92)",
-          borderBottom: "1px solid rgba(148,178,220,.12)",
+          background: "var(--raised)",
+          borderBottom: "1px solid var(--divider)",
           paddingTop: isFullscreen ? "max(env(safe-area-inset-top), 12px)" : "12px",
         }}
       >
@@ -263,7 +263,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-y-0 right-0 w-[26px]"
-              style={{ background: "linear-gradient(90deg, transparent, rgba(9,16,32,.92) 80%)" }}
+              style={{ background: "linear-gradient(90deg, transparent, var(--raised) 80%)" }}
             />
           )}
         </div>
@@ -274,7 +274,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           <button
             onClick={() => setIsFullscreen(false)}
             aria-label={t.pages.map.exitFullscreen}
-            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] transition-colors hover:bg-white/10"
+            className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] transition-colors hover:bg-foreground/[0.06]"
             style={{ ...MAP_CHIP_NEUTRAL }}
           >
             <Minimize size={16} />
@@ -343,8 +343,8 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
 
       <div
         style={{
-          background: "#0d1420",
-          borderTop: "1px solid rgba(148,178,220,.12)",
+          background: "var(--raised)",
+          borderTop: "1px solid var(--divider)",
           padding: "7px 11px",
         }}
       >

@@ -39,7 +39,7 @@ export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
             <span className="text-sm font-bold tabular-nums tracking-tight text-foreground">{formatDuration(seconds)}</span>
             {km !== 1 && <span className="truncate text-caption tabular-nums text-subtle">{formatPace(Math.round(seconds / km))}</span>}
             {rank != null && (
-              <span className="ml-auto shrink-0 rounded-full bg-amber-100 px-1.5 text-caption font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+              <span className="ml-auto shrink-0 rounded-full bg-[var(--segmented-track)] text-[var(--tone-caution)] px-1.5 text-caption font-bold">
                 {rank === 1 ? s.prBadge : s.rankBadge(rank)}
               </span>
             )}

@@ -77,7 +77,7 @@ export function Sidebar() {
                   'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   active
-                    ? 'bg-accent/[0.12] font-semibold text-accent-text'
+                    ? 'font-semibold text-accent-text'
                     : 'text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground'
                 )}
               >

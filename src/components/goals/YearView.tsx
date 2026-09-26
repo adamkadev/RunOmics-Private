@@ -11,7 +11,6 @@ import { StatusPill } from '@/components/ui/StatusPill'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { SeasonRaces } from './SeasonRaces'
 import { shortDist } from './shortDistance'
-import { raceDistanceTint } from '@/lib/colors'
 import { PROJECTION_TONE } from '@/lib/statusColors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -127,14 +126,13 @@ export function YearView({ yearData, today }: Props) {
             </SectionDivider>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {pbs.map(({ entry, activity }) => {
-                const tint = raceDistanceTint(entry.distance)
                 return (
                   <Link
                     key={entry.activityId}
                     href={`/activities/${entry.activityId}`}
                     className="glass-card group relative overflow-hidden rounded-card-sm transition-shadow hover:shadow-lg"
                   >
-                    <div className={cn('flex h-24 items-center bg-gradient-to-br to-transparent px-5', tint.overlay)}>
+                    <div className="flex h-24 items-center border-b border-border px-5">
                       <span className="text-3xl font-black text-foreground">
                         {shortDist(entry.distance)}
                       </span>

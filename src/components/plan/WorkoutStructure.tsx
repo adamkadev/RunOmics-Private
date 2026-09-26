@@ -258,9 +258,9 @@ export function WorkoutStepList({ steps, type }: { steps: WorkoutStep[]; type?: 
     <div className="space-y-1.5">
       {rows.map((row, i) => (
         <div key={i} className="flex items-center justify-between gap-2 text-xs">
-          <span className={row.accent ? 'font-semibold text-white' : 'text-white/70'}>{row.label}</span>
+          <span className={row.accent ? 'font-semibold text-foreground' : 'text-muted-foreground'}>{row.label}</span>
           {row.minutes !== null && (
-            <span className="shrink-0 tabular-nums text-white/50">{s.min(row.minutes)}</span>
+            <span className="shrink-0 tabular-nums text-subtle">{s.min(row.minutes)}</span>
           )}
         </div>
       ))}

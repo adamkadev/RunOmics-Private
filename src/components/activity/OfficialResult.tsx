@@ -20,8 +20,8 @@ export function OfficialResult({ result, garminDistanceKm, garminDurationSeconds
     <GlassSurface variant="card" className="p-4">
       <h3 className="mb-3 text-sm font-semibold text-foreground/80">{s.title}</h3>
       <div className="flex items-center gap-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-amber-100 dark:bg-amber-900/30">
-          <Flag size={15} className="text-amber-600 dark:text-amber-400" />
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-[var(--segmented-track)]">
+          <Flag size={15} className="text-[var(--tone-caution)]" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground">
@@ -45,12 +45,12 @@ export function OfficialResult({ result, garminDistanceKm, garminDurationSeconds
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {isPersonalBest && (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-caption font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+            <span className="rounded-full bg-[var(--segmented-track)] text-[var(--tone-caution)] px-2 py-0.5 text-caption font-bold">
               {t.activity.bestEfforts.prBadge}
             </span>
           )}
           {percentile !== null && (
-            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-caption font-bold text-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+            <span className="rounded-full bg-[var(--segmented-track)] px-2 py-0.5 text-caption font-bold text-muted-foreground">
               {s.topPercent(percentile)}
             </span>
           )}
