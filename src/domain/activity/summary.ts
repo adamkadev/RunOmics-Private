@@ -1,3 +1,4 @@
+import { activityRouteThumb } from './routeThumb'
 import type { Activity, ActivitySummary } from './types'
 
 export function toActivitySummary(a: Activity): ActivitySummary {
@@ -16,5 +17,6 @@ export function toActivitySummary(a: Activity): ActivitySummary {
     hrZones: a.hrZones,
     week: a.week,
     elevationGain: a.elevationGain,
+    routeThumb: activityRouteThumb(a),
   }
 }

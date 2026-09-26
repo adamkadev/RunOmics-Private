@@ -167,6 +167,7 @@
   --form-band-fresh:       var(--delta-good);
   --form-band-very-fresh:  var(--tone-caution);
   --track:                 rgba(11, 31, 23, 0.07);
+  --thumb-bg:              rgba(11, 31, 23, 0.06);
   --zone-1:                #7fb2c9;
   --zone-2:                #3b82f6;
   --zone-3:                #0e9f6e;
@@ -235,6 +236,7 @@
   --form-band-fresh:       var(--delta-good);
   --form-band-very-fresh:  var(--tone-caution);
   --track:                 rgba(255, 255, 255, 0.08);
+  --thumb-bg:              rgba(0, 0, 0, 0.32);
   --zone-1:                #7fb2c9;
   --zone-2:                #7db8ff;
   --zone-3:                #4fe6a0;

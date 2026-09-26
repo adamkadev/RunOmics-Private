@@ -50,6 +50,7 @@ describe('toActivitySummary', () => {
       paceSecPerKm: 294,
       avgHeartRate: 148,
       rpe: 4,
+      routeThumb: expect.stringMatching(/^M/),
       hrZones: activity.hrZones,
     })
   })

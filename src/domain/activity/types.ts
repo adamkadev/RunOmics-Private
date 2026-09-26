@@ -100,7 +100,10 @@ export type ActivitySummary = Pick<
   | 'hrZones'
   | 'week'
   | 'elevationGain'
->
+> & {
+  /** The route as a 56 pt SVG path, null for a treadmill run (routeThumb). */
+  routeThumb?: string | null
+}
 
 export type WorkoutStepKind = 'warmup' | 'effort' | 'recovery' | 'cooldown'
 
