@@ -310,7 +310,8 @@ function RiskCard({ risk }: { risk: LoadRiskPanel | null }) {
         about={s.about}
         right={
           <span className="shrink-0 text-[13px] font-semibold text-foreground">
-            {ok === rows.length && <span className="text-accent-text">✓ </span>}
+            {/* The accent is for "now" markers only (v4.6). */}
+            {ok === rows.length && <span className="text-muted-foreground">✓ </span>}
             {s.inRange(ok, rows.length)}
           </span>
         }

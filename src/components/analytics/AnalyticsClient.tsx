@@ -10,7 +10,7 @@ import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
 import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
-import { formatDateRange, formatKm } from '@/lib/formatters'
+import { formatDateRange } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { PeriodControl } from './AnalyticsKit'
 import { SCROLL_TOP_TOLERANCE } from '@/components/layout/CompactTitleBar'
@@ -18,7 +18,6 @@ import {
   LOAD_PERIODS,
   WEEK_PERIODS,
   dayWindow,
-  easyHardView,
   weekRows,
   weekWindow,
   type GoalRaceInput,
@@ -147,12 +146,10 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   }
 
   const rows = weeks ? weekRows(data.weeks, data.plan, weeks, today) : []
-  const s = t.analytics.cards.period
-  const rangeLabel = days
-    ? formatDateRange(days.start, days.end)
-    : tab === 'volume'
-      ? `${s.weeks(rows.length)} · ${formatDateRange(weeks!.start, weeks!.end)}`
-      : `${s.weeks(rows.length)} · ${s.hours(formatKm((easyHardView(rows)?.totalSec ?? 0) / 3600))}`
+  // One range line on every tab (v4.6): first Monday to today, or to the
+  // window's last Sunday once swiped back. The chip already says "12w".
+  const range = days ?? weeks!
+  const rangeLabel = formatDateRange(range.start, range.live ? today : range.end)
 
   return (
     <div className="space-y-3">

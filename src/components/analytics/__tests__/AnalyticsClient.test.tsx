@@ -107,7 +107,8 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('predictions-card').textContent).toContain('change in 12 wk')
     await openTab(t.analytics.tabs.volume, 'weekly-card')
     expect(periods()).toEqual(['4w', '12w', '1y'])
-    expect(screen.getByTestId('analytics-range').textContent).toMatch(/^12 weeks · /)
+    // One range line on every tab: first Monday to today, no "12 weeks ·".
+    expect(screen.getByTestId('analytics-range').textContent).toMatch(/^Jul 6 – Sep 26$/)
     await openTab(t.analytics.tabs.health, 'easy-hard-card')
     expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
   })
@@ -132,7 +133,7 @@ describe('Analytics (v4.5)', () => {
 
   it('widens every Load card with the period, and resets the range', async () => {
     await renderBoard()
-    expect(screen.getByTestId('status-strip').children).toHaveLength(28)
+    expect(screen.getByTestId('status-strip').children).toHaveLength(27)
     fireEvent.click(screen.getByRole('radio', { name: '12w' }))
     expect(screen.getByTestId('status-strip').children.length).toBeLessThanOrEqual(10)
     expect(screen.getByTestId('analytics-range').textContent).not.toBe('')
