@@ -2,62 +2,48 @@
 
 import { useEffect, useState } from 'react'
 import type { ShareActivity } from '@/lib/shareCardStats'
+import { t } from '@/i18n'
 
-export function useShareCardGeocode(activity: ShareActivity): {
-  locationName: string | null
-  streetLabels: string[]
-} {
+interface NominatimAddress {
+  city?: string
+  town?: string
+  village?: string
+  municipality?: string
+  suburb?: string
+}
+
+/** The town a run started in, for the card's "Sat, Sep 26 · Hoenheim". */
+export function placeName(address: NominatimAddress | undefined): string | null {
+  if (!address) return null
+  return address.city ?? address.town ?? address.village ?? address.municipality ?? address.suburb ?? null
+}
+
+export function useShareCardGeocode(activity: ShareActivity): { locationName: string | null } {
+  const cacheKey = `ro_place_${activity.id}`
   const [locationName, setLocationName] = useState<string | null>(() => {
-    try { return sessionStorage.getItem(`ro_geocode_${activity.id}`) } catch { return null }
-  })
-  const [streetLabels, setStreetLabels] = useState<string[]>(() => {
-    try {
-      const cached = sessionStorage.getItem(`ro_geocode_${activity.id}_roads`)
-      return cached ? (JSON.parse(cached) as string[]) : []
-    } catch { return [] }
+    try { return sessionStorage.getItem(cacheKey) } catch { return null }
   })
 
   useEffect(() => {
-    if (locationName !== null && streetLabels.length > 0) return
-    if (!activity.route || activity.route.length < 1) return
-    const route = activity.route
-    const cacheKey = `ro_geocode_${activity.id}`
-    const last = route.length - 1
-    const indices = [...new Set(
-      [0, 0.2, 0.4, 0.6, 0.8, 1].map((f) => Math.round(f * last))
-    )]
-    Promise.allSettled(
-      indices.map(idx => {
-        const [lng, lat] = route[idx] ?? [0, 0]
-        return fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=16`,
-          { headers: { 'Accept-Language': 'fr', 'User-Agent': 'RunOmics/1.0' } }
-        ).then(res => res.json()) as Promise<{ address?: Record<string, string> }>
+    if (locationName !== null) return
+    const start = activity.route?.[0]
+    if (!start) return
+    const [lng, lat] = start
+    let alive = true
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=12`,
+      { headers: { 'Accept-Language': t.locale, 'User-Agent': 'RunOmics/1.0' } },
+    )
+      .then((res) => res.json() as Promise<{ address?: NominatimAddress }>)
+      .then((body) => {
+        const place = placeName(body.address)
+        if (!place || !alive) return
+        try { sessionStorage.setItem(cacheKey, place) } catch {}
+        setLocationName(place)
       })
-    ).then(results => {
-      const roads: string[] = []
-      let cityName: string | null = null
-      for (const r of results) {
-        if (r.status !== 'fulfilled') continue
-        const addr = r.value.address ?? {}
-        const road = addr.road ?? addr.pedestrian ?? addr.path ?? null
-        if (road && !roads.includes(road)) roads.push(road)
-        if (!cityName) {
-          const suburb = addr.suburb ?? addr.neighbourhood
-          const city = addr.city ?? addr.town ?? addr.village
-          cityName = suburb ? `${suburb}, ${city}` : (city ?? null)
-        }
-      }
-      if (roads.length > 0) {
-        try { sessionStorage.setItem(`${cacheKey}_roads`, JSON.stringify(roads)) } catch {}
-        setStreetLabels(roads)
-      }
-      if (cityName) {
-        try { sessionStorage.setItem(cacheKey, cityName) } catch {}
-        setLocationName(cityName)
-      }
-    })
-  }, [activity.id, activity.route, locationName, streetLabels.length])
+      .catch(() => {})
+    return () => { alive = false }
+  }, [activity.route, cacheKey, locationName])
 
-  return { locationName, streetLabels }
+  return { locationName }
 }

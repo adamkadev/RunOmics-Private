@@ -1,64 +1,52 @@
 import type { ShareActivity } from '@/lib/shareCardStats'
-import type { AccentId } from '@/lib/accent'
-import { ACCENT_RGB, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
-import { drawTheme, drawBranding, drawDataOverlay, drawRouteOverlay } from '@/lib/shareCardDraw'
-import { rgbTriplet } from '@/lib/palette'
+import type { AccentId } from '@/lib/accentScale'
+import { W, H, sharePalette, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
+import { drawShareCard, FALLBACK_FONTS, type ShareFonts } from '@/lib/shareCardDraw'
 
 export {
-  SHARE_DESIGNS, W, H,
-  ACCENT_RGB,
+  SHARE_DESIGNS, W, H, HEADER_H, MIDDLE_H, STATS_H,
   type ShareDesign, type ThemeMode,
 } from '@/lib/shareCardPalette'
-export { loadImage, drawTheme, drawBranding, drawDataOverlay } from '@/lib/shareCardDraw'
+export { loadImage } from '@/lib/shareCardDraw'
 
 export interface RenderOptions {
   activity: ShareActivity
   design: ShareDesign
   accent: AccentId
   theme: ThemeMode
-  showStats: boolean
-  showMap: boolean
   photoImage?: HTMLImageElement | null
-  gpsRoute?: [number, number][] | null
   locationName?: string | null
-  streetLabels?: string[]
-  customAccentHex?: string
   mapImage?: HTMLCanvasElement | null
   mapPoints?: [number, number][] | null
-  mapFailed?: boolean
+  fonts?: ShareFonts
 }
 
-export { rgbTriplet as hexToRgb }
+/**
+ * The app's own font stacks, read off the page: next/font names the families,
+ * so the card can only learn them from the variables it sets.
+ */
+export function pageFonts(): ShareFonts {
+  if (typeof document === 'undefined' || !document.body) return FALLBACK_FONTS
+  const display = getComputedStyle(document.body).getPropertyValue('--font-space-grotesk').trim()
+  return display ? { ...FALLBACK_FONTS, display: `${display}, ${FALLBACK_FONTS.display}` } : FALLBACK_FONTS
+}
 
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
-  const { activity, design, accent, theme, showStats, showMap, photoImage, gpsRoute, locationName, streetLabels, customAccentHex, mapImage, mapPoints, mapFailed } = options
-  const dark = theme === 'dark'
   canvas.width = W * scale
   canvas.height = H * scale
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   if (scale !== 1) ctx.scale(scale, scale)
-
-  const [r, g, b] = customAccentHex ? rgbTriplet(customAccentHex) : ACCENT_RGB[accent][dark ? 'dark' : 'light']
-
-  const routeForTheme = design === 'map' ? (showMap ? gpsRoute : null) : gpsRoute
-  drawTheme(ctx, design, W, H, r, g, b, dark, {
-    gpsRoute: routeForTheme,
-    photoImg: photoImage,
-    locationName,
-    distanceKm: activity.distanceKm,
-    streetLabels,
-    mapImage,
-    mapPoints,
-    mapFailed,
+  drawShareCard(ctx, {
+    activity: options.activity,
+    design: options.design,
+    palette: sharePalette(options.accent, options.theme),
+    fonts: options.fonts ?? pageFonts(),
+    place: options.locationName,
+    photo: options.photoImage,
+    mapImage: options.mapImage,
+    mapPoints: options.mapPoints,
   })
-
-  if (showMap && design === 'memory' && gpsRoute && gpsRoute.length > 1) {
-    drawRouteOverlay(ctx, W, H, gpsRoute, r, g, b, dark)
-  }
-
-  drawBranding(ctx, W, H, dark)
-  if (showStats) drawDataOverlay(ctx, W, H, dark, r, g, b, activity, design)
 }
 
 export function shareCardFileName(activity: ShareActivity, design: ShareDesign): string {

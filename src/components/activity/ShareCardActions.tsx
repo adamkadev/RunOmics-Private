@@ -1,71 +1,58 @@
 'use client'
 
 import { Check, Copy, Download, Share2 } from 'lucide-react'
-import { SHARE_CARD_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 
 interface Props {
   canShareFiles: boolean
   canCopyImage: boolean
-  accentHex: string
   copyState: 'idle' | 'copied'
   onShare: () => void
   onSave: () => void
   onCopy: () => void
 }
 
-export function ShareCardActions({ canShareFiles, canCopyImage, accentHex, copyState, onShare, onSave, onCopy }: Props) {
+const BUTTON = {
+  height: 50, borderRadius: 14, fontSize: 16,
+  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+} as const
+
+/**
+ * One row (v4.9): Share, or Download where the browser can't share a file,
+ * in the accent with its own ink; Copy beside it where images can be copied,
+ * neutral, and still neutral once it says Copied.
+ */
+export function ShareCardActions({ canShareFiles, canCopyImage, copyState, onShare, onSave, onCopy }: Props) {
+  const copied = copyState === 'copied'
   return (
     <div
-      className="grid shrink-0 gap-2.5"
+      className="grid shrink-0"
       style={{
-        gridTemplateColumns: canCopyImage ? '1fr 1fr' : '1fr',
-        padding: '12px 16px',
-        paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+        gridTemplateColumns: canCopyImage ? 'minmax(0, 1fr) auto' : 'minmax(0, 1fr)',
+        gap: 10,
+        padding: '12px 20px',
+        paddingBottom: 'max(20px, var(--safe-bottom))',
       }}
     >
-      {canShareFiles ? (
-        <button
-          onClick={onShare}
-          style={{
-            height: 46, borderRadius: 14, border: 'none',
-            background: accentHex, color: SHARE_CARD_COLORS.onAccent,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            fontSize: 13, fontWeight: 800, cursor: 'pointer',
-          }}
-        >
-          <Share2 size={15} />
-          {t.activity.shareMenu.share}
-        </button>
-      ) : (
-        <button
-          onClick={onSave}
-          style={{
-            height: 46, borderRadius: 14, border: '1px solid var(--glass-border)',
-            background: 'color-mix(in srgb, var(--ro-text) 9%, transparent)', color: 'var(--ro-text-2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            fontSize: 13, fontWeight: 700, cursor: 'pointer',
-          }}
-        >
-          <Download size={15} />
-          {t.activity.shareMenu.download}
-        </button>
-      )}
+      <button
+        onClick={canShareFiles ? onShare : onSave}
+        style={{ ...BUTTON, fontWeight: 700, background: 'var(--accent)', color: 'var(--accent-foreground)' }}
+      >
+        {canShareFiles ? <Share2 size={17} /> : <Download size={17} />}
+        {canShareFiles ? t.activity.shareMenu.share : t.activity.shareMenu.download}
+      </button>
 
       {canCopyImage && (
         <button
           onClick={onCopy}
+          aria-live="polite"
           style={{
-            height: 46, borderRadius: 14, border: '1px solid var(--glass-border)',
-            background: 'color-mix(in srgb, var(--ro-text) 9%, transparent)',
-            color: copyState === 'copied' ? accentHex : 'var(--ro-text-2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            fontSize: 13, fontWeight: 700, cursor: 'pointer',
-            transition: 'color 0.2s',
+            ...BUTTON, fontWeight: 600, padding: '0 20px',
+            background: 'var(--muted)', border: '1px solid var(--border)', color: 'var(--foreground)',
           }}
         >
-          {copyState === 'copied' ? <Check size={15} /> : <Copy size={15} />}
-          {copyState === 'copied' ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}
+          {copied ? <Check size={17} /> : <Copy size={17} />}
+          {copied ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}
         </button>
       )}
     </div>

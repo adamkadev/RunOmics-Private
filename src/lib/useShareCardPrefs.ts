@@ -1,42 +1,34 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { SHARE_DESIGNS, hexToRgb, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
-import { ACCENT_SWATCHES, accentSwatchColor, type AccentId } from '@/lib/accent'
-import { useAccent } from '@/lib/useAccent'
+import type { ShareDesign, ThemeMode } from '@/lib/shareCard'
 
-export type ShareAccent = AccentId | 'custom'
+export const SHARE_THEME_KEY = 'ro_shareTheme'
 
-function readLocalStorage(key: string, fallback: string): string {
-  try { return localStorage.getItem(key) ?? fallback } catch { return fallback }
+function storedTheme(): ThemeMode | null {
+  try {
+    const v = localStorage.getItem(SHARE_THEME_KEY)
+    return v === 'light' || v === 'dark' ? v : null
+  } catch { return null }
 }
 
-export function useShareCardPrefs(appTheme: ThemeMode) {
-  const [selectedDesign, setSelectedDesign] = useState<ShareDesign>(SHARE_DESIGNS[0] ?? 'aurora')
-  const appAccent = useAccent()
-  // The card opens on the accent the app is wearing.
-  const [shareAccent, setShareAccent] = useState<ShareAccent>(() => appAccent)
-  const [customHex, setCustomHex] = useState<string>(() =>
-    readLocalStorage('ro_shareCustomHex', accentSwatchColor(appAccent))
-  )
-  const [lightMode, setLightMode] = useState<boolean>(() =>
-    readLocalStorage('ro_shareLightMode', 'false') === 'true'
-  )
+/**
+ * The sheet's two choices. The design opens on Route, or on Stats when the
+ * run has no route; the background opens on the app's theme until the reader
+ * picks one, and is remembered after that. The accent is the app's (v4.9).
+ */
+export function useShareCardPrefs(appTheme: ThemeMode, hasRoute: boolean) {
+  const [design, setDesign] = useState<ShareDesign>(hasRoute ? 'route' : 'stats')
+  const [chosenTheme, setChosenTheme] = useState<ThemeMode | null>(storedTheme)
 
-  useEffect(() => { try { localStorage.setItem('ro_shareCustomHex', customHex) } catch {} }, [customHex])
-  useEffect(() => { try { localStorage.setItem('ro_shareLightMode', String(lightMode)) } catch {} }, [lightMode])
-
-  const effectiveAccent: AccentId = shareAccent === 'custom' ? appAccent : shareAccent
-  const customAccentHex: string | undefined = shareAccent === 'custom' ? customHex : undefined
-  const customRgb: [number, number, number] | undefined = shareAccent === 'custom' ? hexToRgb(customHex) : undefined
-  const shareAccentHex = shareAccent === 'custom' ? customHex : ACCENT_SWATCHES[shareAccent]
-  const shareTheme: ThemeMode = lightMode ? 'light' : appTheme
+  useEffect(() => {
+    if (!chosenTheme) return
+    try { localStorage.setItem(SHARE_THEME_KEY, chosenTheme) } catch {}
+  }, [chosenTheme])
 
   return {
-    selectedDesign, setSelectedDesign,
-    shareAccent, setShareAccent,
-    customHex, setCustomHex,
-    lightMode, setLightMode,
-    effectiveAccent, customAccentHex, customRgb, shareAccentHex, shareTheme,
+    design, setDesign,
+    theme: chosenTheme ?? appTheme,
+    setTheme: setChosenTheme,
   }
 }

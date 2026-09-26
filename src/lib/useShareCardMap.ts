@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { maptilerStyleUrl } from '@/lib/maptiler'
 import { routePadding, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
-import { loadMapLibre, showPlaceLabelsAtAnyZoom } from '@/lib/maplibre'
+import { hideSymbolLabels, loadMapLibre } from '@/lib/maplibre'
 
 export interface ShareCardMap {
   image: HTMLCanvasElement | null
@@ -25,7 +25,8 @@ export interface ShareCardMapOptions {
   enabled?: boolean
 }
 
-const PIXEL_RATIO = 2
+// The export is 1080 px wide, about 2.8x the card: 3 keeps the map sharp in it.
+const PIXEL_RATIO = 3
 
 const RENDER_TIMEOUT_MS = 15_000
 
@@ -75,7 +76,8 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     fadeDuration: 0,
   })
 
-  map.on('load', () => showPlaceLabelsAtAnyZoom(map))
+  // No place or street names under the route, as on the Activity map (v4.9).
+  map.on('load', () => hideSymbolLabels(map))
 
   const timeout = new Promise<never>((_, reject) =>
     setTimeout(() => reject(new Error('basemap render timed out')), RENDER_TIMEOUT_MS))
