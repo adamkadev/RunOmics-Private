@@ -129,6 +129,7 @@ export const en = {
     coachInsight: 'Coach insight',
     onPlan: 'On plan',
     plannedLine: (km: string) => `Planned ${km} km`,
+    kmPlanned: (km: string) => `${km} km planned`,
     plannedType: (type: string) => `Planned ${type}`,
     ranLine: (km: string, time: string) => `Ran ${km} km · ${time}`,
   },
@@ -397,9 +398,7 @@ export const en = {
     },
     // Training status and Form / Fitness / Fatigue, one card on Today.
     bodyCard: {
-      daysOfLast: (days: number, total: number) => `${days} of the last ${total} days`,
       deltaIn: (delta: string, days: number) => `${delta} in ${days} d`,
-      openHistory: 'Training status history',
     },
     latestRecord: 'Latest record',
     trainingStatusDays: {
@@ -742,7 +741,6 @@ export const en = {
     endOfList: 'That\'s all',
     thisWeek: 'This week',
     lastWeek: 'Last week',
-    dotLegend: { run: 'one dot per run, in its zone colour', race: 'race' },
     shoeFilter: { clear: 'Show runs in every shoe' },
     weekStat: {
       km: 'km',
@@ -817,7 +815,7 @@ export const en = {
     // Read-only: RPE comes from the watch, and the note is the one thing on an
     // activity the user writes.
     effort: {
-      label: 'Effort (RPE)',
+      label: 'Effort',
       value: (rpe: number, label: string) => `${rpe} · ${label}`,
       notLogged: 'not logged on the watch',
     },
@@ -866,7 +864,6 @@ export const en = {
     },
     dataQuality: {
       estimated: 'Estimated',
-      noHr: 'No heart-rate data - zones and load are estimated from pace.',
     },
     similarRuns: {
       summary: (n: number, rank: number) =>
@@ -1006,27 +1003,10 @@ export const en = {
       bandLabel: (range: string) => `band ${range}/km`,
       colFaster: 'faster →',
       recoveryLine: (duration: string, km: string) => `rec ${duration} · ${km} km`,
-      acrossTheSet: 'Across the set',
-      drift: {
-        down: (bpm: number) => `heart rate came down ${bpm} bpm`,
-        flat: 'heart rate sat flat',
-        up: (bpm: number) => `heart rate climbed ${bpm} bpm`,
-        unknown: 'heart rate went unrecorded',
-      },
-      spread: 'pace spread',
-      inBand: (inBand: number, total: number) => `${inBand}/${total} in band`,
-      repHrDrift: 'Rep HR drift',
-      recoveryPace: 'Recovery pace',
-      reading: {
-        repsBuilt: (total: number, first: string, last: string, drift: string) =>
-          `${total} reps tightening from ${first} to ${last}/km, and ${drift} across the set - this one was built, not held.`,
-        repsHeld: (inBand: number, total: number, drift: string) =>
-          `${inBand} of ${total} reps landed inside the band and ${drift} across the set - this was a repeatable effort.`,
-        repsHeldRecoveriesSlowed: (inBand: number, total: number, first: string, last: string) =>
-          `${inBand} of ${total} reps stayed in the band while the recoveries slowed from ${first} to ${last}/km - the fatigue landed between the reps, not inside them.`,
-        repsFaded: (inBand: number, total: number, spread: number) =>
-          `Only ${inBand} of ${total} reps landed inside the band, ${spread}s apart from fastest to slowest - the work drifted as the set went on.`,
-      },
+      // The set's summary at the top of its card: three numbers, no sentence (H14).
+      inBandLabel: 'in band',
+      spread: 'spread',
+      hrDrift: 'HR drift',
       cols: {
         km: 'Km',
         step: '#',
@@ -1508,8 +1488,7 @@ export const en = {
     },
     weekSummary: {
       missed: (n: number) => `${n} missed`,
-      easyPlanned: (easy: number, guide: number) => `${easy}% easy time, counting sessions still to run (guide ${guide}%)`,
-      easyRecorded: (easy: number, guide: number) => `${easy}% easy time (guide ${guide}%)`,
+      easyOfTarget: (easy: number, target: number) => `${easy}% easy · ${target}% target`,
       aboutLoad: 'About the week\'s load',
       loadOfPlan: (load: number, target: number) => `Load ${load} of ${target} pts planned`,
       loadPlannedLine: (load: number) => `Load ${load} pts planned`,
@@ -1517,7 +1496,7 @@ export const en = {
       loadDefinition: 'Training load in points, from heart rate and duration (TRIMP).',
       sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
       ranOfPlan: (ran: string, plan: string) => `${ran} of ${plan} km`,
-      sessionsOfPlan: (ran: number, plan: number) => `${ran} of ${plan} session${plan !== 1 ? 's' : ''}`,
+      sessionsOfPlan: (ran: number, plan: number) => `${ran} of ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} session${sessions !== 1 ? 's' : ''}`,
     },
     plannedVsRecorded: (planned: string, recorded: string) => `planned ${planned} · recorded ${recorded}`,
@@ -1541,9 +1520,9 @@ export const en = {
       upcoming: 'Upcoming week',
       prePlan: 'Pre-plan',
       planPhase: {
-        base: 'Base phase',
-        build: 'Build phase',
-        peak: 'Peak phase',
+        base: 'Base',
+        build: 'Build',
+        peak: 'Peak',
         taper: 'Taper',
         raceDay: 'Race day',
       },

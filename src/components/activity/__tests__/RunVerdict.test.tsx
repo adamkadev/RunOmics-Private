@@ -16,18 +16,20 @@ const activity = {
 } as Activity
 
 describe('RunVerdict', () => {
-  it('falls back to the derived verdict when no AI insight exists', () => {
+  it('falls back to the derived headline when no AI insight exists', () => {
     render(<RunVerdict activity={activity} aiVerdict={null} />)
 
-    expect(screen.getByText(t.activity.verdict.title)).toBeInTheDocument()
-    expect(screen.getByText(t.activity.verdict.effortClause(t.rpeLabels[7] ?? '', 7))).toBeInTheDocument()
+    expect(screen.getByTestId('run-verdict').textContent).toContain(t.activityTypes.Threshold)
+    expect(screen.queryByText(t.activity.verdict.title)).toBeNull()
   })
 
-  it('prefers the AI headline and body when one exists', () => {
+  // H10: the headline only - no paragraph and no "Coach insight" label.
+  it('shows the AI headline only', () => {
     render(<RunVerdict activity={activity} aiVerdict={{ headline: 'Strong threshold', body: 'Held the range.' }} />)
 
     expect(screen.getByText('Strong threshold')).toBeInTheDocument()
-    expect(screen.getByText('Held the range.')).toBeInTheDocument()
+    expect(screen.queryByText('Held the range.')).toBeNull()
+    expect(screen.queryByText(t.sessionCard.coachInsight)).toBeNull()
   })
 
   it('carries no coach evaluation, outcome or planned-versus-actual comparison', () => {

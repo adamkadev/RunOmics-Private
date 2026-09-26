@@ -9,7 +9,6 @@ import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay 
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { sessionTitle } from './sessionTitle'
 import type { HrBounds } from '@/domain/training/trimp'
-import { summarizeWeek, summarizePlannedWeek } from '@/domain/training/weekSummary'
 import { EASY_SHARE_GUIDE, easyShare, type EasyHardSplit, type EasyTimeSource } from '@/domain/activity/easyShare'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
@@ -19,18 +18,18 @@ import { formatWeekKm, resolveDayType, resolvePlannedType, weekPlanDays } from '
 import { dayStateCells } from './dayStateCells'
 import { DayStateLegend, DayStateStrip } from '@/components/ui/DayStateStrip'
 import { SessionStateChip } from '@/components/ui/SessionCard'
-import { InfoButton } from '@/components/ui/GlossaryTerm'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { SessionStructureBar } from './WorkoutStructure'
 import { PlanPhaseTrack } from './PlanPhaseTrack'
 import { paceLabel, workoutSummary } from './workoutSummary'
 import { PeriodNav } from '@/components/ui/PeriodNav'
-import { RaceFooter, type FooterRace } from './RaceFooter'
+import type { FooterRace } from './RaceFooter'
+import { shortDist } from '@/components/goals/shortDistance'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import { weeksInPlan, type PlanSpan } from '@/domain/training/planProgress'
+import type { PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatDate, formatDateRange, formatDistance, formatDurationWords, formatPace, formatPlannedKm, formatRanKm } from '@/lib/formatters'
+import { formatCountdown, formatDate, formatDateRange, formatDistance, formatDurationWords, formatPace, formatPlannedKm, formatRanKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
@@ -186,28 +185,24 @@ const ROW_STATE_CLASS: Partial<Record<WeekDayState, string>> = {
 // a stack of two-line cards - three sessions used to cost ~190px and their
 // distances never lined up. The dot reads RUN_TYPE_ZONE, the same map
 // the strip's bars use, so the two read as one vocabulary.
-// Each row names its state in words too - done, missed or still planned - so
-// a missed session reads as missed in the list as well as in the strip.
+// A done row carries a check and a missed one the word, so a missed session
+// reads as missed in the list as well as in the strip.
 function WeekSessionRow({
   workout,
   state,
-  plannedKm,
   onTap,
   isLast,
 }: {
   workout: WeekRowItem
   state: WeekDayState
-  plannedKm: number | null
   onTap: () => void
   isLast: boolean
 }) {
   const weekday = WEEKDAY_SHORT_INDEX[new Date(workout.date + 'T00:00:00').getDay()]
   const distanceKm = workout.distanceM ? workout.distanceM / 1000 : null
-  const kmLabel = distanceKm === null
-    ? null
-    : state === 'done' && plannedKm !== null
-      ? `${formatRanKm(distanceKm)} / ${formatPlannedKm(plannedKm)} ${t.units.km}`
-      : `${formatWeekKm(distanceKm)} ${t.units.km}`
+  // The distance and a check, so the title has room (H20): "8.51 ✓", not
+  // "8.51 / 8 km ✓ Done" beside a title cut to "Threshold 3 × …".
+  const kmLabel = distanceKm === null ? null : state === 'done' ? formatRanKm(distanceKm) : formatWeekKm(distanceKm)
 
   return (
     <button
@@ -231,16 +226,19 @@ function WeekSessionRow({
             boxShadow: workout.plannedType ? `0 0 0 1.5px ${zoneColor(sessionZone({ type: workout.plannedType }))}` : undefined,
           }}
         />
+        {weekday && <span className="w-9 shrink-0 text-muted-foreground" style={{ fontSize: '15px' }}>{weekday}</span>}
         <span className="truncate font-bold text-foreground" style={{ fontSize: '15px' }}>
-          {[weekday, workout.title].filter(Boolean).join(' · ')}
+          {workout.title}
         </span>
       </span>
       <span className="flex shrink-0 items-center gap-2.5">
         <span className="text-sm text-muted-foreground">{kmLabel}</span>
-        {ROW_STATE_CLASS[state] && (
-          <span className={cn('min-w-16 text-right text-xs font-semibold', ROW_STATE_CLASS[state])}>
-            {state === 'done' ? `✓ ${t.sessionState.done}` : t.sessionState[state]}
-          </span>
+        {state === 'done' ? (
+          <span className={cn('w-4 text-right text-sm font-semibold', ROW_STATE_CLASS.done)} aria-label={t.sessionState.done}>✓</span>
+        ) : state === 'missed' ? (
+          <span className={cn('text-right text-xs font-semibold', ROW_STATE_CLASS.missed)}>{t.sessionState.missed}</span>
+        ) : (
+          <span className="w-4" aria-hidden="true" />
         )}
       </span>
     </button>
@@ -261,60 +259,26 @@ function weekVolumeLabel(target: WeekTarget, notStarted: boolean): string {
   return `${s.ranOfPlan(formatRanKm(target.ranKm), formatWeekKm(target.planKm))} · ${s.sessionsOfPlan(target.ranSessions, target.planSessions)}`
 }
 
+// One line (M11): the volume on the left, the easy share on the right, as
+// "92% easy · 80% target". The load behind an (i) and the long easy sentence
+// are gone (H20).
 function WeekSummaryLine({
   volume,
   missed,
-  load,
-  loadTarget,
-  loadIsPlanned,
   easyHard,
-  easyHardIsPlanned,
 }: {
   volume: string
   missed: number
-  load: number
-  loadTarget: number | null
-  loadIsPlanned: boolean
   easyHard: EasyHardSplit | null
-  easyHardIsPlanned: boolean
 }) {
   const s = t.plan.weekSummary
-  const [loadOpen, setLoadOpen] = useState(false)
-  // A target next to a completed load of exactly 0 reads as "nothing
-  // happened" even on a week with real sessions logged - usually a week
-  // whose activities carry no HR data, so TRIMP has nothing to compute from.
-  // The planned-load case is the one 0 that's honestly a target, not a gap.
-  const hasTarget = loadTarget !== null && loadTarget > 0 && (loadIsPlanned || load > 0)
-  const overTarget = hasTarget && load > loadTarget
-  const loadLine = loadIsPlanned
-    ? s.loadPlannedLine(load)
-    : hasTarget
-      ? s.loadOfPlan(load, loadTarget!)
-      : s.loadDone(load)
-
-  // Plain words: "0/100 easy planned" read as 0 of 100 km, and "Load 19/297
-  // pts" was never explained - the load now sits behind the info button with
-  // what it is.
   return (
-    <div data-testid="week-summary" className="px-1">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-subhead font-semibold text-foreground">{volume}</span>
-        <InfoButton open={loadOpen} onToggle={() => setLoadOpen((v) => !v)} label={s.aboutLoad} />
-      </div>
-      {(missed > 0 || easyHard) && (
-        <p className="mt-0.5 text-footnote text-muted-foreground">
-          {missed > 0 && <span className="font-semibold text-delta-warn">{s.missed(missed)}</span>}
-          {missed > 0 && easyHard && ' · '}
-          {easyHard && (easyHardIsPlanned ? s.easyPlanned(easyHard.easy, EASY_SHARE_GUIDE) : s.easyRecorded(easyHard.easy, EASY_SHARE_GUIDE))}
-        </p>
-      )}
-      {loadOpen && (
-        <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
-          <span className={cn('font-semibold', overTarget ? 'text-delta-warn' : 'text-foreground')}>{loadLine}</span>
-          {' · '}
-          {s.loadDefinition}
-        </p>
-      )}
+    <div data-testid="week-summary" className="flex items-baseline justify-between gap-3 px-1">
+      <span className="min-w-0 text-subhead font-semibold text-foreground">
+        {volume}
+        {missed > 0 && <span className="text-footnote font-semibold text-delta-warn"> · {s.missed(missed)}</span>}
+      </span>
+      {easyHard && <span className="shrink-0 text-footnote text-muted-foreground">{s.easyOfTarget(easyHard.easy, EASY_SHARE_GUIDE)}</span>}
     </div>
   )
 }
@@ -347,7 +311,6 @@ export function WeekView({
   byDateCoach,
   coaching = null,
   onSelectDate,
-  hrBounds,
   today,
   atPresent,
   onToday,
@@ -357,7 +320,6 @@ export function WeekView({
   planPhaseRanges,
   nextRace,
   trainingZones = null,
-  planSpan = null,
   initialSelectedDate,
 }: Props) {
   const days: Day[] = useMemo(
@@ -450,18 +412,7 @@ export function WeekView({
       })
   }, [days, byDateCoach, byDatePlanned, trainingZones])
 
-  const weekActs = useMemo(() => days.flatMap((d) => d.acts), [days])
-  const summary = useMemo(() => summarizeWeek(weekActs, hrBounds), [weekActs, hrBounds])
 
-  // Garmin's own plan is the only source with a load estimate, so it still
-  // backs the load target denominator - but it's a partial view of the week
-  // whenever a coach is active (only key sessions tend to sync back to it),
-  // so volume/session-count/intensity below are read from the coach
-  // prescriptions first, falling back to Garmin's plan only on days without one.
-  const planned = useMemo(() => {
-    const workouts = days.map((d) => byDatePlanned.get(d.date)).filter((p) => p !== undefined)
-    return workouts.length ? summarizePlannedWeek(workouts) : null
-  }, [days, byDatePlanned])
 
   // Same priority as resolveDayType and the strip: a day that was actually
   // run counts as what was run, regardless of whether a coach/Garmin entry
@@ -505,9 +456,9 @@ export function WeekView({
   // the block looked like the same week.
   const targetWeek = coaching ? macrocycleWeek(coaching.plan, firstDay.date) : null
 
-  const { footerRaces, footerSpan } = useMemo(() => {
+  const { footerRaces } = useMemo(() => {
     if (!coaching) {
-      return { footerRaces: nextRace ? [{ race: nextRace }] : [], footerSpan: planSpan ?? null }
+      return { footerRaces: nextRace ? [{ race: nextRace }] : [] }
     }
     const { targetEvent, tuneUpEvents, block } = coaching.plan
     const toRace = (event: typeof targetEvent): FooterRace => ({
@@ -522,14 +473,14 @@ export function WeekView({
       blockEndsHere: event.date === block.endDate,
     })
     const upcoming = [targetEvent, ...(tuneUpEvents ?? [])].filter((event) => event.date >= today)
-    return { footerRaces: upcoming.map(toRace), footerSpan: null }
-  }, [coaching, nextRace, planSpan, today])
-  // The race the block builds to, in the subtitle (R2), so the week says what
-  // it is for without scrolling to the footer.
+    return { footerRaces: upcoming.map(toRace) }
+  }, [coaching, nextRace, today])
+  // The race the block builds to, on the phase line as "10K · D-64" (H20):
+  // the Races section at the foot of the week is gone.
   const nextFooterRace = footerRaces.find((r) => r.race.date >= today)?.race ?? null
-  const raceLabel = nextFooterRace ? t.plan.weekPurpose.raceOn(formatDate(nextFooterRace.date, { style: 'bare' })) : null
-
-  const footerWeeks = useMemo(() => weeksInPlan(footerSpan, today), [footerSpan, today])
+  const raceLabel = nextFooterRace
+    ? `${shortDist(nextFooterRace.distance) || nextFooterRace.name} · ${formatCountdown(Math.round((Date.parse(nextFooterRace.date) - Date.parse(today)) / 86_400_000))}`
+    : null
 
   const weekOver = lastDay.date < today
   const isCurrentWeek = !weekOver && firstDay.date <= today
@@ -553,28 +504,20 @@ export function WeekView({
     () => weekTarget(weekPlanDays(days.map((d) => d.date), { byDate, byDatePlanned, byDateCoach: byDateCoach ?? new Map() }), today, null),
     [days, byDate, byDatePlanned, byDateCoach, today]
   )
-  const easyHardIsPlanned = !weekOver
   const easyHard = easyShare(weekEasyTime)
-
-  // Garmin's load is retrospective (completed-so-far against a weekly
-  // target), which is honest for a week already underway but reads as a
-  // meaningless "0" for a week that hasn't happened yet - a future week
-  // states the plan's own prescribed load instead, with no "completed"
-  // half to divide it by.
-  const isFutureWeek = firstDay.date > today
-  const loadIsPlanned = isFutureWeek && planned !== null
-  const load = loadIsPlanned ? planned!.estimatedLoad : summary.totalTrimp
-  const loadTarget = loadIsPlanned ? null : (planned?.estimatedLoad ?? null)
 
   const dayEyebrow = selected.date === today ? `${t.plan.today} · ${formatDate(selected.date)}` : formatDate(selected.date)
 
   return (
     <div className="space-y-3">
       <div className="px-1">
-        {(phaseLabel || weekOfLabel || fallbackLabel) && (
-          <p className="text-footnote font-semibold text-muted-foreground">
-            {[phaseLabel, weekOfLabel, raceLabel].filter(Boolean).join(' · ') || fallbackLabel}
-          </p>
+        {(phaseLabel || weekOfLabel || fallbackLabel || raceLabel) && (
+          <div className="flex items-baseline justify-between gap-3" data-testid="phase-line">
+            <p className="min-w-0 text-footnote font-semibold text-muted-foreground">
+              {[phaseLabel, weekOfLabel].filter(Boolean).join(' · ') || fallbackLabel}
+            </p>
+            {raceLabel && <p className="shrink-0 text-footnote font-bold" style={{ color: 'var(--tone-caution)' }}>{raceLabel}</p>}
+          </div>
         )}
         {/* The displayed week's own range, not the real `today` - the track
             otherwise always lit whichever phase covers the actual current
@@ -646,11 +589,7 @@ export function WeekView({
       <WeekSummaryLine
         volume={weekVolumeLabel(target, firstDay.date > today && target.ranSessions === 0)}
         missed={target.missedSessions}
-        load={load}
-        loadTarget={loadTarget}
-        loadIsPlanned={loadIsPlanned}
         easyHard={easyHard}
-        easyHardIsPlanned={easyHardIsPlanned}
       />
 
       <div className="space-y-3 px-1">
@@ -746,7 +685,6 @@ export function WeekView({
                 key={workout.key}
                 workout={workout}
                 state={target.days.find((d) => d.date === workout.date)?.state ?? 'planned'}
-                plannedKm={target.days.find((d) => d.date === workout.date)?.plannedKm ?? null}
                 onTap={() => selectDate(workout.date)}
                 isLast={i === thisWeekSessions.length - 1}
               />
@@ -754,19 +692,6 @@ export function WeekView({
           </div>
         </div>
       )}
-
-      {footerRaces.length > 0 && (
-        <div className="px-1">
-          <SectionDivider as="p" className="mb-2.5 flex items-center justify-between gap-2">
-            <span>{t.plan.races}</span>
-            {footerWeeks && (
-              <span>{t.plan.raceFooter.weeksIn(footerWeeks.done, footerWeeks.total)} {t.plan.raceFooter.weeksInLabel}</span>
-            )}
-          </SectionDivider>
-          <RaceFooter races={footerRaces} today={today} />
-        </div>
-      )}
-
     </div>
   )
 }

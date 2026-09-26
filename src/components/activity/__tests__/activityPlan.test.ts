@@ -10,6 +10,7 @@ describe('activityPlanRow', () => {
       chipLabel: `✓ ${t.sessionCard.onPlan}`,
       title: `${t.sessionCard.plannedLine('6')} · 25 min Z4`,
       detail: `${t.sessionCard.ranLine('6.11', '25:24')} · +0.11 ${t.units.km}`,
+      summary: `${t.sessionCard.kmPlanned('6')} · +0.11 ${t.units.km}`,
     })
   })
 

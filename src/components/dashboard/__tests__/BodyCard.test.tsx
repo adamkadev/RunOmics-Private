@@ -1,9 +1,9 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { t } from '@/i18n'
-import { BodyCard, deltaLabel, statusLegend } from '../BodyCard'
+import { BodyCard, deltaLabel, latestRatedStatus } from '../BodyCard'
 
 const STATUS = { tsbNow: 2, tsbDelta: 10, ctl: 11, ctlDelta: 3, ctlDeltaShown: 1, atl: 9, atlDelta: -9 } as unknown as TrainingStatus
 
@@ -14,14 +14,11 @@ function days(pattern: string): TrainingStatusDayBar[] {
 
 const WEEKS = days('mmfrpmffffrmpmmfmfmpmrmfmrff')
 
-describe('statusLegend', () => {
-  it('counts the days of each status, most first', () => {
-    expect(statusLegend(WEEKS)).toEqual([
-      { status: 'maintaining', days: 11 },
-      { status: 'fresh', days: 10 },
-      { status: 'recovery', days: 4 },
-      { status: 'productive', days: 3 },
-    ])
+describe('latestRatedStatus', () => {
+  it('reads the latest day the watch rated', () => {
+    expect(latestRatedStatus(WEEKS)).toBe('fresh')
+    expect(latestRatedStatus([...WEEKS, { date: '2026-09-29', status: null }])).toBe('fresh')
+    expect(latestRatedStatus([])).toBeNull()
   })
 })
 
@@ -35,42 +32,17 @@ describe('deltaLabel', () => {
 })
 
 describe('BodyCard', () => {
-  // No legend under the strip (v4.1 G32): the status word and colour carry it.
-  it('reads the strip without a tap: status and its day count, with no legend', () => {
-    render(<BodyCard status={STATUS} days={WEEKS} />)
-
-    expect(screen.getByText(t.trainingStatus.status.fresh)).toBeInTheDocument()
-    expect(screen.getByText(t.dashboard.bodyCard.daysOfLast(10, 28))).toBeInTheDocument()
-    expect(screen.queryByText(new RegExp(`${t.trainingStatus.status.maintaining} 11`))).not.toBeInTheDocument()
-  })
-
-  // 28 buttons of about 23 x 16 pt needed 28 taps to decode.
-  it('makes the whole strip one target that opens the history', () => {
-    render(<BodyCard status={STATUS} days={WEEKS} />)
-
-    const link = screen.getByRole('link', { name: t.dashboard.bodyCard.openHistory })
-    expect(link).toHaveAttribute('href', '/analytics')
-    expect(within(link).queryAllByRole('button')).toHaveLength(0)
-  })
-
-  it('places Form on a named band and keeps Fitness and Fatigue beside it', () => {
-    render(<BodyCard status={STATUS} days={WEEKS} />)
+  // H03: Form, Fitness and Fatigue only; the status word is the hero's head
+  // and the 28-day strip is off Today.
+  it('holds the three numbers and nothing else', () => {
+    render(<BodyCard status={STATUS} />)
 
     expect(screen.getByText(t.formBand.neutral.toLowerCase())).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.trainingLoad.form)).toBeInTheDocument()
     expect(screen.getByText(t.trainingStatus.metrics.fitness)).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.trainingLoad.fatigue)).toBeInTheDocument()
-    // R1: one 7-day window for all three; Fitness read "in 14 d" beside the others.
     expect(screen.getByText(t.dashboard.bodyCard.deltaIn('↑1', 7))).toBeInTheDocument()
-    expect(screen.queryByText(/in 14 d/)).toBeNull()
-  })
-})
-
-describe('BodyCard definitions', () => {
-  // TSB, CTL and ATL had no definition on Today.
-  it('explains Form, Fitness and Fatigue behind one (i)', () => {
-    render(<BodyCard status={STATUS} days={WEEKS} />)
-
-    expect(screen.getByRole('button', { name: t.glossary.aboutThese })).toBeInTheDocument()
+    expect(screen.queryByRole('link')).toBeNull()
+    expect(screen.getByTestId('body-card').textContent).not.toMatch(/of the last/)
   })
 })

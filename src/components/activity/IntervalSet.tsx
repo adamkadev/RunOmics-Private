@@ -1,7 +1,7 @@
 'use client'
 
 import type { ActivitySplit } from '@/domain/activity/types'
-import { type RepSet, type Track, trackDomain, trackPosition, setVerdict } from '@/domain/activity/repSet'
+import { type RepSet, type Track, trackDomain, trackPosition } from '@/domain/activity/repSet'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardHead } from '@/components/ui/ChartCard'
 import { STATUS } from '@/lib/statusColors'
@@ -17,13 +17,6 @@ const ROW = 'grid w-full items-center gap-x-2 grid-cols-[1.25rem_1fr_3rem_2.25re
 
 function km(distanceM: number): string {
   return (distanceM / 1000).toFixed(2)
-}
-
-function driftClause(drift: number | null): string {
-  const d = t.activity.splits.drift
-  if (drift === null) return d.unknown
-  if (drift < 0) return d.down(Math.abs(drift))
-  return drift === 0 ? d.flat : d.up(drift)
 }
 
 function EdgeRow({ split, label }: { split: ActivitySplit; label: string }) {
@@ -93,7 +86,6 @@ function RepBar({ pace, track, band, standing }: { pace: number | null; track: T
 
 export function IntervalSet({ set }: Props) {
   const s = t.activity.splits
-  const verdict = setVerdict(set)
   const inBandAll = set.band !== null && set.inBand === set.reps.length
   const track = trackDomain(set)
   const band = set.band
@@ -111,6 +103,37 @@ export function IntervalSet({ set }: Props) {
             )
           }
         />
+
+        {/* The set in three numbers, at the top, with no sentence: "Only 3 of
+            3 reps landed inside the band" contradicted the 3/3 it sat under
+            (H14). */}
+        <div className="mb-3 grid grid-cols-3 gap-3 border-b border-border pb-3" data-testid="set-summary">
+          {band && (
+            <div>
+              <p className={cn('font-display text-title3 font-bold tabular-nums', inBandAll ? STATUS.success.text : STATUS.warning.text)}>
+                {set.inBand}/{set.reps.length}
+              </p>
+              <p className="text-caption text-subtle">{s.inBandLabel}</p>
+            </div>
+          )}
+          <div>
+            <p className="font-display text-title3 font-bold tabular-nums text-foreground">
+              {set.spreadSecPerKm ?? '—'} <span className="text-footnote font-normal">{t.units.sec}</span>
+            </p>
+            <p className="text-caption text-subtle">{s.spread}</p>
+          </div>
+          <div>
+            <p
+              className={cn(
+                'font-display text-title3 font-bold tabular-nums',
+                set.hrDriftBpm === null || set.hrDriftBpm <= 0 ? 'text-foreground' : STATUS.warning.text,
+              )}
+            >
+              {set.hrDriftBpm === null ? '—' : formatDelta(set.hrDriftBpm)}
+            </p>
+            <p className="text-caption text-subtle">{s.hrDrift}</p>
+          </div>
+        </div>
 
         <div className="w-full space-y-0.5">
           <div className={`${ROW} pb-1.5 text-caption font-semibold uppercase tracking-wide text-subtle`}>
@@ -160,60 +183,6 @@ export function IntervalSet({ set }: Props) {
         </div>
       </GlassSurface>
 
-      <GlassSurface variant="card" className="p-5">
-        <ChartCardHead title={s.acrossTheSet} className="mb-2" />
-        <div className="grid grid-cols-3 gap-3">
-          <div>
-            <p className="text-base font-extrabold tabular-nums text-foreground">
-              {set.spreadSecPerKm ?? '-'} <span className="text-xs font-normal text-subtle">{t.units.sec}</span>
-            </p>
-            <p className="text-caption text-subtle">{s.spread}</p>
-            {band && (
-              <p className={cn('text-caption font-semibold', inBandAll ? STATUS.success.text : STATUS.warning.text)}>
-                {s.inBand(set.inBand, set.reps.length)}
-              </p>
-            )}
-          </div>
-          <div>
-            <p
-              className={cn(
-                'text-base font-extrabold tabular-nums',
-                set.hrDriftBpm === null ? 'text-foreground' : set.hrDriftBpm > 0 ? STATUS.warning.text : STATUS.success.text,
-              )}
-            >
-              {set.hrDriftBpm === null ? '-' : formatDelta(set.hrDriftBpm)}{' '}
-              <span className="text-xs font-normal text-subtle">{t.units.bpm}</span>
-            </p>
-            <p className="text-caption text-subtle">{s.repHrDrift}</p>
-          </div>
-          <div>
-            <p className="text-base font-extrabold tabular-nums text-foreground">
-              {set.meanRecoverySecPerKm !== null ? formatClock(set.meanRecoverySecPerKm) : '-'}{' '}
-              <span className="text-xs font-normal text-subtle">{t.units.perKm}</span>
-            </p>
-            <p className="text-caption text-subtle">{s.recoveryPace}</p>
-          </div>
-        </div>
-        <p className="mt-3 text-caption text-subtle">
-          {verdict === 'repsBuilt'
-            ? s.reading.repsBuilt(
-                set.reps.length,
-                formatClock(set.reps[0]!.paceSecPerKm ?? 0),
-                formatClock(set.reps[set.reps.length - 1]!.paceSecPerKm ?? 0),
-                driftClause(set.hrDriftBpm),
-              )
-            : verdict === 'repsHeldRecoveriesSlowed' && set.firstRecoverySecPerKm && set.lastRecoverySecPerKm
-              ? s.reading.repsHeldRecoveriesSlowed(
-                  set.inBand,
-                  set.reps.length,
-                  formatClock(set.firstRecoverySecPerKm),
-                  formatClock(set.lastRecoverySecPerKm),
-                )
-              : verdict === 'repsHeld'
-                ? s.reading.repsHeld(set.inBand, set.reps.length, driftClause(set.hrDriftBpm))
-                : s.reading.repsFaded(set.inBand, set.reps.length, set.spreadSecPerKm ?? 0)}
-        </p>
-      </GlassSurface>
     </>
   )
 }

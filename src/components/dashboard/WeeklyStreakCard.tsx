@@ -3,6 +3,7 @@
 import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { weeklyTargetKm, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm } from '@/components/plan/weekPlanDays'
+import { formatRanKm } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { useToday } from '@/lib/useToday'
 import { DayStateStrip } from '@/components/ui/DayStateStrip'
@@ -30,7 +31,7 @@ export function WeeklyStreakCard({ data, target, today: serverToday }: Props) {
     <GlassSurface variant="card" className="px-4.5 py-3.5" data-testid="week-card">
       <div className="flex items-baseline justify-between gap-3">
         <p className="min-w-0 text-foreground">
-          <span className="font-display text-title2 font-bold tabular-nums">{formatWeekKm(target.ranKm)}</span>
+          <span className="font-display text-title2 font-bold tabular-nums">{formatRanKm(target.ranKm)}</span>
           <span className="ml-1 text-footnote text-muted-foreground">
             {targetKm !== null ? s.ofKm(formatWeekKm(targetKm)) : t.units.km}
           </span>

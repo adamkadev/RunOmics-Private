@@ -94,7 +94,8 @@ describe('one session colour across the week', () => {
 })
 
 describe('planned km from the plan (G04)', () => {
-  it('writes a done row as ran / planned, the planned value from the plan', () => {
+  // H20: a done row is the distance run and a check; the plan is on the day card.
+  it('writes a done row as the distance run and a check', () => {
     const byDate = new Map<string, ActivitySummary[]>([
       ['2026-09-10', [activity({ id: 'long', date: '2026-09-10', type: 'VO2Max', distanceKm: 12.4 })]],
     ])
@@ -114,6 +115,8 @@ describe('planned km from the plan (G04)', () => {
       />,
     )
     const row = screen.getAllByTestId(/^week-session-/).find((r) => r.textContent?.includes('12.4'))!
-    expect(row.textContent).toContain(`12.4 / 10 ${t.units.km}`)
+    expect(row.textContent).toContain('12.4')
+    expect(row.textContent).not.toContain('/ 10')
+    expect(row.textContent).toContain('✓')
   })
 })

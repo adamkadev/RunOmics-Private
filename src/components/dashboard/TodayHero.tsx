@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
+import type { TrainingStatusType } from '@/domain/training/status'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
@@ -12,7 +13,7 @@ import { SessionStructureBar } from '@/components/plan/WorkoutStructure'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import { formatDelta } from '@/lib/formatters'
 import { todaySession } from './todaySession'
-import { READINESS_TONE_COLORS, sessionZone } from '@/lib/colors'
+import { READINESS_TONE_COLORS, TRAINING_STATUS_COLORS, sessionZone } from '@/lib/colors'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
@@ -23,6 +24,8 @@ interface Props {
   plannedWorkout: HeroWorkoutView | null
   todayActivity: ActivitySummary | null
   aiVerdict: Insight | null
+  /** The watch's status for the latest rated day, in the card's head. */
+  watchStatus?: TrainingStatusType | null
 }
 
 function holdCopy(status: TrainingStatus): { headline: string; body: string } {
@@ -58,7 +61,7 @@ function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline:
 // No race countdown here: the race is the plan's reason, not a daily number,
 // and the D-21 chip next to the verdict was noise in the morning read. The
 // countdown lives on Plan's race footer and on Goals.
-export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: Props) {
+export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, watchStatus = null }: Props) {
   if (!status && !plannedWorkout && !todayActivity) return null
 
   const s = t.dashboard.todayHero
@@ -67,15 +70,12 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: 
   const verdict = aiVerdict ?? (status && tone ? readinessCopy(status, tone) : null)
   const session = todaySession(plannedWorkout, todayActivity)
 
-  // The standard card surface, on tokens: it was a fixed navy (#101a2c) with
-  // its own borders, a dark island on the teal canvas and in light mode. The
-  // left rule stays the caution amber whatever the tone, so an ordinary
-  // elevated-fatigue day does not read as an alarm.
+  // A thin border in the tone all round, not a thick left rule (H03, M7).
   return (
     <GlassSurface
       variant="card"
-      className="overflow-hidden rounded-card-sm border-l-[3px]"
-      style={{ borderLeftColor: 'var(--tone-caution)' }}
+      className="overflow-hidden rounded-card-sm border"
+      style={{ borderColor: `color-mix(in srgb, ${toneColor} 45%, transparent)` }}
     >
       <div className="px-4.5 pt-3.5 pb-3">
         <div className="flex items-center justify-between gap-3">
@@ -85,7 +85,11 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: 
           >
             {tone ? s.eyebrowByTone[tone] : s.eyebrowByTone.go}
           </span>
-          {aiVerdict && <span className="text-caption text-subtle">{t.sessionCard.coachInsight}</span>}
+          {watchStatus && (
+            <span className="text-footnote font-semibold" style={{ color: TRAINING_STATUS_COLORS[watchStatus] }}>
+              {t.trainingStatus.status[watchStatus]}
+            </span>
+          )}
         </div>
 
         {verdict && (
@@ -93,7 +97,6 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: 
             <div className="mt-1.5 font-display text-title2 font-bold leading-[1.15] tracking-tight text-foreground">
               {verdict.headline}
             </div>
-            <div className="mt-1.25 text-footnote leading-snug text-muted-foreground">{verdict.body}</div>
           </>
         )}
       </div>

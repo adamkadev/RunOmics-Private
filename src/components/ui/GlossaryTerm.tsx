@@ -65,8 +65,12 @@ export function GlossaryTerm({ term, children, className }: { term: GlossaryKey;
 
   return (
     <span className={cn('inline', className)}>
-      {children ?? name}
-      <InfoButton open={open} onToggle={() => setOpen((v) => !v)} label={t.glossary.about(name)} controls={id} className="ml-0.5 -my-0.5" />
+      {/* The label and its (i) never part: the (i) wrapped onto a line of its
+          own under "Effort (RPE)" and every Dynamics label (H11). */}
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+        {children ?? name}
+        <InfoButton open={open} onToggle={() => setOpen((v) => !v)} label={t.glossary.about(name)} controls={id} className="-my-0.5" />
+      </span>
       {open && (
         <span id={id} role="note" className="mt-1 block text-xs font-normal normal-case leading-snug tracking-normal text-subtle">
           {glossaryDefinition(term)}

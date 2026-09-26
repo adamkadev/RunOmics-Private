@@ -112,6 +112,7 @@ export const fr = {
     coachInsight: 'Analyse du coach',
     onPlan: 'Conforme au plan',
     plannedLine: (km: string) => `Prévu ${km} km`,
+    kmPlanned: (km: string) => `${km} km prévus`,
     plannedType: (type: string) => `Prévu ${type}`,
     ranLine: (km: string, time: string) => `Couru ${km} km · ${time}`,
   },
@@ -380,9 +381,7 @@ export const fr = {
         'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
     },
     bodyCard: {
-      daysOfLast: (days: number, total: number) => `${days} des ${total} derniers jours`,
       deltaIn: (delta: string, days: number) => `${delta} en ${days} j`,
-      openHistory: 'Historique du statut d’entraînement',
     },
     latestRecord: 'Dernier record',
     trainingStatusDays: {
@@ -724,7 +723,6 @@ export const fr = {
     endOfList: 'C’est tout',
     thisWeek: 'Cette semaine',
     lastWeek: 'Semaine dernière',
-    dotLegend: { run: 'un point par sortie, couleur de sa zone', race: 'course' },
     shoeFilter: { clear: 'Afficher les sorties de toutes les chaussures' },
     weekStat: {
       km: 'km',
@@ -797,7 +795,7 @@ export const fr = {
       effortClause: (rpeLabel: string, rpe: number) => `Effort ressenti : ${rpeLabel} (RPE ${rpe}).`,
     },
     effort: {
-      label: 'Effort (RPE)',
+      label: 'Effort',
       value: (rpe: number, label: string) => `${rpe} · ${label}`,
       notLogged: 'non saisi sur la montre',
     },
@@ -846,7 +844,6 @@ export const fr = {
     },
     dataQuality: {
       estimated: 'Estimé',
-      noHr: 'Pas de fréquence cardiaque - zones et charge estimées depuis l’allure.',
     },
     similarRuns: {
       summary: (n: number, rank: number) =>
@@ -977,27 +974,10 @@ export const fr = {
       bandLabel: (range: string) => `plage ${range}/km`,
       colFaster: 'plus rapide →',
       recoveryLine: (duration: string, km: string) => `récup ${duration} · ${km} km`,
-      acrossTheSet: 'Sur la série',
-      drift: {
-        down: (bpm: number) => `la FC a baissé de ${bpm} bpm`,
-        flat: 'la FC est restée stable',
-        up: (bpm: number) => `la FC a grimpé de ${bpm} bpm`,
-        unknown: "la FC n'a pas été enregistrée",
-      },
-      spread: "écart d'allure",
-      inBand: (inBand: number, total: number) => `${inBand}/${total} dans la plage`,
-      repHrDrift: 'Dérive FC',
-      recoveryPace: 'Allure de récup',
-      reading: {
-        repsBuilt: (total: number, first: string, last: string, drift: string) =>
-          `${total} répétitions qui accélèrent de ${first} à ${last}/km, et ${drift} sur la série - elle a monté en puissance plutôt que tenu.`,
-        repsHeld: (inBand: number, total: number, drift: string) =>
-          `${inBand} répétitions sur ${total} sont tombées dans la plage et ${drift} sur la série - un effort reproductible.`,
-        repsHeldRecoveriesSlowed: (inBand: number, total: number, first: string, last: string) =>
-          `${inBand} répétitions sur ${total} sont restées dans la plage pendant que les récupérations ralentissaient de ${first} à ${last}/km - la fatigue est passée entre les répétitions, pas dedans.`,
-        repsFaded: (inBand: number, total: number, spread: number) =>
-          `Seulement ${inBand} répétitions sur ${total} dans la plage, ${spread}s d'écart entre la plus rapide et la plus lente - le travail a dérivé au fil de la série.`,
-      },
+      // The set's summary at the top of its card: three numbers, no sentence (H14).
+      inBandLabel: 'dans la zone',
+      spread: 'écart',
+      hrDrift: 'dérive FC',
       title: 'Intervalles',
       lapTitle: 'Tours',
       cols: {
@@ -1444,8 +1424,7 @@ export const fr = {
     },
     weekSummary: {
       missed: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
-      easyPlanned: (easy: number, guide: number) => `${easy} % de temps facile, séances à venir comprises (repère ${guide} %)`,
-      easyRecorded: (easy: number, guide: number) => `${easy} % de temps facile (repère ${guide} %)`,
+      easyOfTarget: (easy: number, target: number) => `${easy} % facile · objectif ${target} %`,
       aboutLoad: 'À propos de la charge de la semaine',
       loadOfPlan: (load: number, target: number) => `Charge ${load} sur ${target} pts prévus`,
       loadPlannedLine: (load: number) => `Charge ${load} pts prévus`,
@@ -1453,7 +1432,7 @@ export const fr = {
       loadDefinition: 'Charge d’entraînement en points, d’après la FC et la durée (TRIMP).',
       sessionsCount: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
       ranOfPlan: (ran: string, plan: string) => `${ran} sur ${plan} km`,
-      sessionsOfPlan: (ran: number, plan: number) => `${ran} sur ${plan} séance${plan > 1 ? 's' : ''}`,
+      sessionsOfPlan: (ran: number, plan: number) => `${ran} sur ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} séance${sessions > 1 ? 's' : ''}`,
     },
     plannedVsRecorded: (planned: string, recorded: string) => `prévu ${planned} · réalisé ${recorded}`,
@@ -1477,9 +1456,9 @@ export const fr = {
       upcoming: 'Semaine à venir',
       prePlan: 'Avant le plan',
       planPhase: {
-        base: 'Phase de base',
-        build: 'Phase de développement',
-        peak: 'Phase de pic',
+        base: 'Base',
+        build: 'Développement',
+        peak: 'Pic',
         taper: 'Affûtage',
         raceDay: 'Jour de course',
       },

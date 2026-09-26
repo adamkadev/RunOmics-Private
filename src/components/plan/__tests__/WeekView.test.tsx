@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { buildCoachingOverview, type CoachingOverview, type PrescriptionView } from '@/application/coaching/GetCoachingView'
@@ -92,26 +92,13 @@ function renderWeek(options: {
   )
 }
 
-// The load sits behind the summary's info button.
-async function expectLoad(load: string) {
-  const info = screen.getByRole('button', { name: t.plan.weekSummary.aboutLoad })
-  if (info.getAttribute('aria-expanded') !== 'true') await userEvent.click(info)
-  await waitFor(() => {
-    expect(screen.getByTestId('week-summary').textContent).toContain(load)
-  })
-}
-
 describe('WeekView weekly metrics', () => {
-  it('reports Garmin activity metrics for a week with no coaching', async () => {
-    renderWeek({ activities: [TEMPO, RACE] })
-
-    await expectLoad('141')
-  })
-
-  it('keeps those same metrics when a coaching block covers the week', async () => {
+  // H20: one line - volume left, easy share right - and no load (i).
+  it('reads the week in one line, with no load behind an info button', () => {
     renderWeek({ activities: [TEMPO, RACE], coaching: overview() })
 
-    await expectLoad('141')
+    expect(screen.getByTestId('week-summary')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: t.plan.weekSummary.aboutLoad })).toBeNull()
   })
 
   it('shows the completed activities and the coach prescription side by side', () => {
@@ -133,20 +120,19 @@ describe('WeekView progression card', () => {
   })
 
   it('counts the week toward the primary target in the macrocycle card', () => {
-    const { container } = renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
-
-    // R2: phase, week and the race the block builds to, on one line.
-    const subtitle = container.querySelector('p.text-footnote')?.textContent ?? ''
-    expect(subtitle).toContain(t.plan.weekPurpose.weekOfTarget(1, 12))
-    expect(subtitle).toMatch(new RegExp(t.plan.weekPurpose.raceOn('.+')))
-  })
-
-  it('leaves the macrocycle progress out of the race card', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
-    const footer = screen.getByTestId('race-footer')
-    expect(footer.textContent).not.toContain(t.plan.weekPurpose.weekOfTarget(1, 12))
-    expect(footer.textContent).not.toContain(t.plan.raceFooter.weeksInLabel)
+    // M11: phase and week on the left, the race as "10K · D-n" on the right.
+    const line = screen.getByTestId('phase-line').textContent ?? ''
+    expect(line).toContain(t.plan.weekPurpose.weekOfTarget(1, 12))
+    expect(line).toMatch(/· D-\d+/)
+  })
+
+  // H20: the race is on the phase line; the Races section is gone from Week.
+  it('draws no Races section under the week', () => {
+    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
+
+    expect(screen.queryByTestId('race-footer')).toBeNull()
   })
 
   it('keeps the Garmin phase track when there is no coaching', () => {
@@ -157,8 +143,8 @@ describe('WeekView progression card', () => {
       ],
     })
 
-    expect(screen.getByText(t.plan.phaseTrack.base)).toBeInTheDocument()
-    expect(screen.getByText(t.plan.phaseTrack.build)).toBeInTheDocument()
+    expect(screen.getAllByText(t.plan.phaseTrack.base).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(t.plan.phaseTrack.build).length).toBeGreaterThan(0)
   })
 
   it('adds no coaching header, block name or generated copy', () => {
@@ -257,42 +243,17 @@ describe('WeekView coaching day cells and Today', () => {
 })
 
 describe('WeekView target race', () => {
-  it('uses the coaching target event in the existing compact card', () => {
+  // H20: the race rides on the phase line as its distance and a countdown.
+  it('puts the coaching target race on the phase line as a countdown', () => {
     renderWeek({ coaching: overview() })
 
-    expect(screen.getByText('Autumn 10K')).toBeInTheDocument()
-  })
-
-  it('names each race by its role, keeping the primary target clear', () => {
-    const coaching = overview({ coachingPlan: blockPlan() })
-    renderWeek({ coaching })
-
-    const footer = screen.getByTestId('race-footer')
-    expect(footer.textContent).toContain(t.plan.raceFooter.primaryTarget)
-  })
-
-  it('counts days, not block progress, for each listed race, in the same shape Today uses', () => {
-    renderWeek({ coaching: overview() })
-
-    expect(screen.getByText(t.nextRace.countdown(39))).toBeInTheDocument()
-  })
-
-  it('keeps the countdown in its own tier instead of letting the block status replace it', () => {
-    const base = plan()
-    const onBlockEnd: CoachingPlan = { ...base, targetEvent: { ...base.targetEvent, date: base.block.endDate } }
-    renderWeek({ coaching: overview({ coachingPlan: onBlockEnd }) })
-
-    // 2026-09-09 -> 2026-10-04.
-    const countdown = screen.getByText(t.nextRace.countdown(25))
-    expect(countdown.className).toContain('rounded-full')
-    // The block status is a separate fact from the countdown, so both render.
-    expect(screen.getByTestId('race-footer').textContent).toContain(t.plan.raceFooter.blockEndsHere)
+    expect(screen.getByTestId('phase-line').textContent).toContain('D-39')
   })
 
   it('keeps the Garmin race when there is no coaching', () => {
     renderWeek({ nextRace: { date: '2026-10-18', name: 'City Half', distance: '21K' } })
 
-    expect(screen.getByText(/City Half/)).toBeInTheDocument()
+    expect(screen.getByTestId('phase-line').textContent).toContain('21K · D-39')
   })
 })
 
@@ -300,7 +261,6 @@ describe('WeekView without coaching', () => {
   it('keeps the original layout and adds no coaching placeholders', () => {
     renderWeek({ activities: [TEMPO, RACE], planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] })
 
-    expect(screen.getByRole('button', { name: t.plan.weekSummary.aboutLoad })).toBeInTheDocument()
     expect(screen.queryByTestId('coach-decision-row')).not.toBeInTheDocument()
     expect(screen.queryByTestId('coach-calendar-2026-09-09')).not.toBeInTheDocument()
   })
@@ -352,8 +312,8 @@ describe('WeekView easy share', () => {
     renderPastWeek()
 
     const summary = screen.getByTestId('week-summary').textContent
-    expect(summary).toContain(t.plan.weekSummary.easyRecorded(50, 80))
-    expect(summary).not.toContain(t.plan.weekSummary.easyRecorded(100, 80))
+    expect(summary).toContain(t.plan.weekSummary.easyOfTarget(50, 80))
+    expect(summary).not.toContain(t.plan.weekSummary.easyOfTarget(100, 80))
   })
 
   // G09: easy is Z1-Z2 time everywhere. A session still to run has no heart
@@ -367,7 +327,7 @@ describe('WeekView easy share', () => {
       planned: [{ date: '2026-09-10', name: 'Easy', type: 'Base', distanceM: 8_000, durationSecs: 1_800 }],
     })
 
-    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.easyPlanned(75, 80))
+    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.easyOfTarget(75, 80))
   })
 
   it('says nothing about easy time for runs without heart-rate zones', () => {
@@ -417,12 +377,13 @@ describe('missed sessions', () => {
     expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.missed(2))
   })
 
-  it('names each row missed, done or still planned', () => {
+  // H20: a check for done, the word only where it is news - missed.
+  it('marks done with a check and names only a missed session', () => {
     renderWeek({ planned, activities: [TEMPO] })
 
-    expect(within(screen.getByTestId('week-session-done:2026-09-07')).getByText(`✓ ${t.sessionState.done}`)).toBeInTheDocument()
+    expect(within(screen.getByTestId('week-session-done:2026-09-07')).getByLabelText(t.sessionState.done)).toBeInTheDocument()
     expect(within(screen.getByTestId('week-session-garmin:2026-09-08:Tempo')).getByText(t.sessionState.missed)).toBeInTheDocument()
-    expect(within(screen.getByTestId('week-session-garmin:2026-09-11:Long')).getByText(t.sessionState.planned)).toBeInTheDocument()
+    expect(within(screen.getByTestId('week-session-garmin:2026-09-11:Long')).queryByText(t.sessionState.planned)).toBeNull()
   })
 })
 
@@ -431,17 +392,10 @@ describe('the week summary in plain words', () => {
   it('writes the easy share as a sentence with its guide', () => {
     renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-10', name: 'Intervals', type: 'VO2Max', distanceM: 6_000, durationSecs: 1_800 }] })
 
-    expect(screen.getByTestId('week-summary')).toHaveTextContent(t.plan.weekSummary.easyPlanned(0, 80))
+    expect(screen.getByTestId('week-summary')).toHaveTextContent(t.plan.weekSummary.easyOfTarget(0, 80))
   })
 
   // "Load 19/297 pts" was never explained.
-  it('keeps the load behind an info button, with what it is', async () => {
-    renderWeek({ activities: [TEMPO, RACE] })
-    expect(screen.getByTestId('week-summary')).not.toHaveTextContent(t.plan.weekSummary.loadDefinition)
-
-    await userEvent.click(screen.getByRole('button', { name: t.plan.weekSummary.aboutLoad }))
-    expect(screen.getByTestId('week-summary')).toHaveTextContent(t.plan.weekSummary.loadDefinition)
-  })
 })
 
 describe('WeekView state legend', () => {

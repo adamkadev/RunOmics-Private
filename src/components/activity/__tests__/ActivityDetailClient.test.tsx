@@ -38,13 +38,21 @@ describe('ActivityDetailClient', () => {
 
   // Similar runs and the map filled the first screen; the run's own stats,
   // RPE and note were on the second or on none.
+  // H10: verdict, plan, effort and note in one card, then the tabs.
   it('orders the run first: stats, verdict with plan, effort and note, then tabs', () => {
+    renderDetail()
+    const card = screen.getByTestId('run-verdict')
+    expect(card.textContent).toContain(t.sessionCard.onPlan)
+    expect(card.textContent).toContain(t.activity.effort.label)
+    expect(card.textContent).toContain(t.activity.noteRow.label)
+  })
+
+  it('keeps the run in reading order', () => {
     const { container } = renderDetail()
     const text = container.textContent ?? ''
     const at = (s: string) => text.indexOf(s)
 
-    expect(at(t.activity.stats.distance)).toBeLessThan(at(t.activity.verdict.title))
-    expect(at(t.activity.verdict.title)).toBeLessThan(at(t.sessionCard.onPlan))
+    expect(at(t.activity.stats.distance)).toBeLessThan(at(t.sessionCard.onPlan))
     expect(at(t.sessionCard.onPlan)).toBeLessThan(at(t.activity.effort.label))
     expect(at(t.activity.effort.label)).toBeLessThan(at(t.activity.noteRow.label))
     expect(at(t.activity.noteRow.label)).toBeLessThan(at(t.activity.tabs.overview))

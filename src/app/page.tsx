@@ -17,7 +17,7 @@ import { loadWeekTarget } from '@/app/_data/loadWeekTarget'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
-import { BodyCard } from '@/components/dashboard/BodyCard'
+import { BodyCard, latestRatedStatus } from '@/components/dashboard/BodyCard'
 import { LatestRecordRow } from '@/components/dashboard/LatestRecordRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
@@ -69,9 +69,10 @@ export default async function DashboardPage() {
         plannedWorkout={todayWorkout && heroWorkoutView(todayWorkout)}
         todayActivity={todayActivity}
         aiVerdict={aiVerdict}
+        watchStatus={latestRatedStatus(trainingStatusDays)}
       />
 
-      <BodyCard status={trainingStatus} days={trainingStatusDays} />
+      <BodyCard status={trainingStatus} />
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
