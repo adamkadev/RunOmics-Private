@@ -1,15 +1,13 @@
 import { test, expect } from './fixtures'
 
-// The app's background (.aurora) is a fixed, opaque layer between <body>'s own
-// colour and the page. Text it paints over is gone for the reader and still
-// passes toBeVisible(), so this asks the browser what is on top: at the centre
-// of every piece of text in the page it must be the page, never the
-// background - and the background, in turn, must be above <body>. It runs
-// after the page transition, because the stacking context that animation adds
-// while it plays once hid the whole problem - pages drew, then vanished as it
-// ended.
+// The page is one flat colour (neutral surfaces): no background layer between
+// <body> and the page. This asks the browser what is on top at the centre of
+// every piece of text in the page - it must be the page itself - and that the
+// body paints the theme's flat background, with no gradient. It runs after
+// the page transition, because the stacking context that animation adds
+// while it plays once hid a layering problem.
 for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
-  test(`${route} is drawn above the app's background`, async ({ page }) => {
+  test(`${route} draws its text on top, on a flat background`, async ({ page }) => {
     await page.goto(route)
     await page.waitForFunction(() => {
       const wrapper = document.querySelector('main .animate-fade-up')
@@ -17,37 +15,34 @@ for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
     })
 
     const covered = await page.evaluate(() => {
-      const background = document.querySelector<HTMLElement>('.aurora')
-      if (!background) return ['no .aurora element']
-      // It ignores the pointer, so hit-testing would look straight through it.
-      background.style.pointerEvents = 'auto'
+      const main = document.querySelector('main')!
       const hidden: string[] = []
-      for (const el of document.querySelectorAll('main *')) {
+      for (const el of main.querySelectorAll('*')) {
         const hasText = [...el.childNodes].some((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim())
         if (!hasText) continue
         const box = el.getBoundingClientRect()
         const y = box.top + box.height / 2
-        if (box.width === 0 || y < 0 || y > innerHeight) continue
+        // Clear of the fixed top scrim and the tab bar, which sit over the
+        // page on purpose while it scrolls.
+        if (box.width === 0 || y < 80 || y > innerHeight - 120) continue
         const hit = document.elementFromPoint(box.left + box.width / 2, y)
-        if (hit && background.contains(hit)) hidden.push(el.textContent!.trim().slice(0, 40))
+        if (hit && !main.contains(hit)) hidden.push(el.textContent!.trim().slice(0, 40))
       }
-      background.style.pointerEvents = ''
       return hidden
     })
-
     expect(covered).toEqual([])
 
-    // And the background is not itself hidden: it must paint above <body>'s
-    // own background colour. At a negative z-index it sat under it, and the
-    // app lost its gradient.
-    const stack = await page.evaluate(() => {
-      const background = document.querySelector<HTMLElement>('.aurora')!
-      background.style.pointerEvents = 'auto'
-      const order = document.elementsFromPoint(innerWidth / 2, innerHeight / 2)
-      background.style.pointerEvents = ''
-      return { background: order.indexOf(background), body: order.indexOf(document.body) }
+    const surface = await page.evaluate(() => {
+      const body = getComputedStyle(document.body)
+      return {
+        image: body.backgroundImage,
+        color: body.backgroundColor,
+        token: getComputedStyle(document.documentElement).getPropertyValue('--background').trim(),
+        aurora: document.querySelector('.aurora') !== null,
+      }
     })
-    expect(stack.background).toBeGreaterThanOrEqual(0)
-    expect(stack.background).toBeLessThan(stack.body)
+    expect(surface.aurora).toBe(false)
+    expect(surface.image).toBe('none')
+    expect(surface.token).toMatch(/^#(0a0b0b|f4f5f4)$/)
   })
 }
