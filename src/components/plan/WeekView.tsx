@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import { SectionDivider } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
 import { sessionZone, zoneColor } from '@/lib/colors'
@@ -71,7 +70,7 @@ function splitEffort(effort: string | null): { band: string | null; pace: string
 // A planned session with no logged activity is a read-only statement of what
 // is prescribed, not a control - there is nowhere for a tap to go, so this is
 // a plain div: no onClick, no chevron, no hover/press state.
-function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
+function PlannedWorkoutRow({ workout, eyebrow }: { workout: PlanWorkoutView; eyebrow?: string }) {
   // The same reading as Today's hero (workoutSummary): the title, the
   // duration and distance, then each pace by name - "easy 5:30–6:24 ·
   // strides 3:35" - never one merged range (H02).
@@ -92,6 +91,8 @@ function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
       data-testid={`plan-workout-row-${workout.key}`}
       className="w-full rounded-2xl p-3.5"
     >
+      {/* The day heads its own card, as on a run's card (M11). */}
+      {eyebrow && <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-accent-text">{eyebrow}</p>}
       <div className="flex items-center gap-3">
         <span className="min-w-0 flex-1">
           <span className="block truncate font-bold text-foreground" style={{ fontSize: '19px' }}>
@@ -593,9 +594,11 @@ export function WeekView({
       />
 
       <div className="space-y-3 px-1">
-        {/* A run's card carries the day as its own eyebrow, on the line of its
-            Done chip (R2); a plan or a rest day keeps it above. */}
-        {selected.acts.length === 0 && <p className="text-xs font-bold uppercase tracking-wide text-accent-text">{dayEyebrow}</p>}
+        {/* A run's or a plan's card carries the day as its own eyebrow (R2,
+            M11); a rest day keeps it above. */}
+        {selected.acts.length === 0 && selectedWorkouts.length === 0 && (
+          <p className="text-xs font-bold uppercase tracking-wide text-accent-text">{dayEyebrow}</p>
+        )}
 
         {selected.acts.length > 0 ? (
           <div className="space-y-2">
@@ -665,8 +668,8 @@ export function WeekView({
           </div>
         ) : selectedWorkouts.length > 0 ? (
           <div className="space-y-2">
-            {selectedWorkouts.map((workout) => (
-              <PlannedWorkoutRow key={workout.key} workout={workout} />
+            {selectedWorkouts.map((workout, i) => (
+              <PlannedWorkoutRow key={workout.key} workout={workout} eyebrow={i === 0 ? dayEyebrow : undefined} />
             ))}
           </div>
         ) : (
@@ -675,10 +678,7 @@ export function WeekView({
       </div>
 
       {thisWeekSessions.length > 0 && (
-        <div className="px-1">
-          <SectionDivider as="p" className="mb-2.5 flex items-center gap-2">
-            {t.plan.weekPurpose.thisWeek}
-          </SectionDivider>
+        <div className="px-1" data-testid="week-sessions">
           <div>
             {thisWeekSessions.map((workout, i) => (
               <WeekSessionRow

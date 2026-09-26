@@ -1363,11 +1363,7 @@ export const fr = {
       `${sessions} séance${sessions > 1 ? 's' : ''} · ${ranKm} km courus · ${plannedKm} prévus`,
     weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
     switcher: { week: 'Semaine', month: 'Mois' },
-    weekFooter: {
-      ran: (km: number) => `${km} km courus`,
-      planned: (km: number) => `${km} km prévus`,
-      ranOfPlanned: (ran: number, planned: number) => `${ran} sur ${planned} km`,
-    },
+    weekFooter: (ran: number, planned: number) => (planned > 0 ? `${ran} / ${planned} km` : `${ran} km`),
     restDay: 'Repos',
     planned: 'Prévu',
     easyEffortLabel: 'EF',

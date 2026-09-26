@@ -22,8 +22,6 @@ export interface DayStateCell {
   /** Planned km on a day still to run, run km on a day run. */
   km: number | null
   isToday: boolean
-  /** A run that differs from what was planned: the planned intensity, as a cap. */
-  plannedColor?: string
   /** What the day holds, in words, for its accessible name. */
   detail?: string
   testId?: string
@@ -47,6 +45,12 @@ function cellName(cell: DayStateCell): string {
 
 function formatCellKm(km: number): string {
   return km < 10 && Math.round(km * 10) % 10 !== 0 ? km.toFixed(1) : String(Math.round(km))
+}
+
+/** A run day's own km, to the tenth: "10.2", not the planned "10" (M11). */
+function formatRunKm(km: number): string {
+  const tenth = Math.round(km * 10) / 10
+  return Number.isInteger(tenth) ? String(tenth) : tenth.toFixed(1)
 }
 
 /**
@@ -111,32 +115,32 @@ function Bars({
             data-testid={cell.testId}
             className={cn(
               'flex h-full flex-col items-stretch justify-end gap-1 rounded-control px-0.5 pb-0.5 transition-transform active:scale-95',
-              selected && 'bg-foreground/[0.06]',
+              selected && !cell.isToday && 'bg-foreground/[0.06]',
             )}
           >
             <span
               className={cn(
                 'text-center text-xs font-semibold',
-                cell.state === 'missed' ? 'text-delta-warn' : rest ? 'text-subtle' : 'text-foreground',
+                cell.state === 'missed' ? 'text-delta-warn' : cell.isToday && cell.state !== 'done' ? 'text-accent-text' : 'text-foreground',
               )}
             >
-              {rest ? t.sessionState.rest.toLowerCase() : cell.km !== null ? formatCellKm(cell.km) : '–'}
+              {/* A rest day is the stub alone (M11). */}
+              {rest ? '' : cell.km === null ? '–' : cell.state === 'done' ? formatRunKm(cell.km) : formatCellKm(cell.km)}
             </span>
-            <span
-              className={cn(
-                'relative block overflow-hidden',
-                rest ? 'rounded-[3px]' : 'rounded-lg',
-                STATE_CLASS[cell.state],
-                cell.isToday && 'state-today',
-              )}
-              style={{ height, ...stateStyle(cell) }}
-            >
-              {/* Run as something other than what was planned: the fill is what
-                  happened, this cap is what was supposed to. */}
-              {cell.plannedColor && cell.state === 'done' && (
-                <span className="absolute inset-x-0 top-0 block h-0.75" style={{ background: cell.plannedColor }} />
-              )}
-            </span>
+            {/* Done is the run alone, no planned cap (H19); today still to run
+                is a solid accent outline, not the dashed planned one. */}
+            {cell.isToday && cell.state !== 'done' && !rest ? (
+              <span
+                data-today-outline
+                className="block rounded-lg border-2 border-accent"
+                style={{ height }}
+              />
+            ) : (
+              <span
+                className={cn('block', rest ? 'rounded-[3px]' : 'rounded-lg', STATE_CLASS[cell.state], cell.isToday && 'state-today')}
+                style={{ height, ...stateStyle(cell) }}
+              />
+            )}
             <span
               className={cn(
                 'text-center text-xs',

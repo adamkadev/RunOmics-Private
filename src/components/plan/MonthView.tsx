@@ -294,13 +294,9 @@ export function MonthView({
               0
             )
             const weekValue = realCells.length === 0 ? null : rowIsPast ? weekRan : weekPlanned
-            // The week underway reads ran of planned, "6 of 52 km" (G27): it
-            // said "52 km planned" with the 6 already run nowhere.
-            const footer = rowIsPast
-              ? t.plan.weekFooter.ran(weekRan)
-              : containsToday
-                ? t.plan.weekFooter.ranOfPlanned(weekRan, weekPlanned)
-                : t.plan.weekFooter.planned(weekPlanned)
+            // One format for every week, "27 / 48 km" (H21): past, current
+            // and future weeks read "14 km run", "27 of 48 km", "20 km planned".
+            const footer = t.plan.weekFooter(weekRan, weekPlanned)
 
             return (
               <div key={rowIndex}>
