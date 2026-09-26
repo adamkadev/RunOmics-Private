@@ -4,12 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
 import ActivityMap from '../ActivityMap'
 
-const maps = vi.hoisted(() => ({ built: [] as { container: HTMLElement; resizes: number }[] }))
+const maps = vi.hoisted(() => ({ built: [] as { container: HTMLElement; resizes: number; fits: number }[] }))
 
 vi.mock('@/lib/maplibre', () => {
   class FakeMap {
     container: HTMLElement
     resizes = 0
+    fits = 0
     constructor(options: { container: HTMLElement }) {
       this.container = options.container
       maps.built.push(this)
@@ -20,6 +21,9 @@ vi.mock('@/lib/maplibre', () => {
     remove() {}
     resize() {
       this.resizes += 1
+    }
+    fitBounds() {
+      this.fits += 1
     }
   }
   class FakeBounds {
@@ -60,5 +64,28 @@ describe('ActivityMap fullscreen', () => {
     const [map] = maps.built
     expect(map!.resizes).toBeGreaterThanOrEqual(2)
     expect(screen.getByRole('img', { name: t.activity.map.routeMap }).contains(map!.container)).toBe(true)
+  })
+
+  // Owner report: a pinch-zoom in fullscreen stayed on the card after exit.
+  it('fits the route again on leaving fullscreen', async () => {
+    const user = userEvent.setup()
+    render(<ActivityMap route={ROUTE} />)
+    await waitFor(() => expect(maps.built).toHaveLength(1))
+    // The route's bounds are set once the map is built.
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    await user.click(screen.getByRole('button', { name: t.activity.map.fullscreen }))
+    const [map] = maps.built
+    const before = map!.fits
+    await user.click(screen.getByRole('button', { name: t.activity.map.exitFullscreen }))
+
+    expect(map!.fits).toBe(before + 1)
+  })
+
+  it('shows the run type on top and the shoe at the bottom', async () => {
+    render(<ActivityMap route={ROUTE} activityType="Base" shoe={{ name: 'Vomero Plus', dotColor: '#fff' }} />)
+
+    expect(screen.getByTestId('map-type-chip').textContent).toBe(t.activityTypes.Base)
+    expect(screen.getByTestId('map-shoe-chip').textContent).toContain('Vomero Plus')
   })
 })

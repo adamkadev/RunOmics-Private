@@ -28,7 +28,6 @@ function renderDetail() {
       activity={ACTIVITY}
       aiVerdict={null}
       dynamicsBaseline={null}
-      plan={{ title: 'Threshold', type: 'Threshold', distanceM: 6_000, durationSeconds: 1_500 }}
     />,
   )
 }
@@ -38,11 +37,12 @@ describe('ActivityDetailClient', () => {
 
   // Similar runs and the map filled the first screen; the run's own stats,
   // RPE and note were on the second or on none.
-  // H10: verdict, plan, effort and note in one card, then the tabs.
-  it('orders the run first: stats, verdict with plan, effort and note, then tabs', () => {
+  // H10: verdict, effort and note in one card, then the tabs. The planned-
+  // against-ran row is gone at the owner's request: it took space for nothing.
+  it('orders the run first: stats, verdict, effort and note, then tabs', () => {
     renderDetail()
     const card = screen.getByTestId('run-verdict')
-    expect(card.textContent).toContain(t.sessionCard.onPlan)
+    expect(card.textContent).not.toContain(t.sessionCard.onPlan)
     expect(card.textContent).toContain(t.activity.effort.label)
     expect(card.textContent).toContain(t.activity.noteRow.label)
   })
@@ -52,8 +52,7 @@ describe('ActivityDetailClient', () => {
     const text = container.textContent ?? ''
     const at = (s: string) => text.indexOf(s)
 
-    expect(at(t.activity.stats.distance)).toBeLessThan(at(t.sessionCard.onPlan))
-    expect(at(t.sessionCard.onPlan)).toBeLessThan(at(t.activity.effort.label))
+    expect(at(t.activity.stats.distance)).toBeLessThan(at(t.activity.effort.label))
     expect(at(t.activity.effort.label)).toBeLessThan(at(t.activity.noteRow.label))
     expect(at(t.activity.noteRow.label)).toBeLessThan(at(t.activity.tabs.overview))
   })
