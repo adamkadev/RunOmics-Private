@@ -62,9 +62,11 @@ const mondays = (n: number, last = '2026-09-21') =>
 
 describe('the tab windows', () => {
   it('ends the load window today and steps back a whole window per swipe', () => {
-    expect(dayWindow(TODAY, '4w')).toEqual({ start: '2026-08-30', end: TODAY, days: 28, live: true })
-    expect(dayWindow(TODAY, '4w', 1)).toMatchObject({ start: '2026-08-02', end: '2026-08-29', live: false })
-    expect(dayWindow(TODAY, '12w').start).toBe('2026-07-05')
+    // v4.6: the same Monday-started weeks as the weekly tabs, ending today.
+    expect(dayWindow(TODAY, '4w')).toEqual({ start: '2026-08-31', end: TODAY, days: 27, live: true })
+    expect(dayWindow(TODAY, '4w', 1)).toMatchObject({ start: '2026-08-03', end: '2026-08-30', days: 28, live: false })
+    expect(dayWindow(TODAY, '12w').start).toBe(weekWindow(TODAY, '12w').start)
+    expect(dayWindow(TODAY, '12w').start).toBe('2026-07-06')
   })
 
   it('ends the week window on the current week, Monday to Sunday', () => {
@@ -87,7 +89,7 @@ describe('D1 Load', () => {
     expect(view.form).toBe(-7)
     expect(view.band).toBe('neutral')
     expect(view.fitness).toBe(Math.round(last.ctl))
-    expect(view.bars).toHaveLength(28)
+    expect(view.bars).toHaveLength(27)
     expect(view.yMax).toBe(75)
   })
 
@@ -108,8 +110,8 @@ describe('D1 Load', () => {
     const view = statusView(days, dayWindow(TODAY, '4w'))!
     expect(view.current).toBe('productive')
     expect(view.count).toBe(14)
-    expect(view.days).toBe(28)
-    expect(view.cells).toHaveLength(28)
+    expect(view.days).toBe(27)
+    expect(view.cells).toHaveLength(27)
     expect(view.totals.map((t) => t.status)).toEqual(['productive', 'overreaching', 'detraining', 'recovery'])
   })
 
@@ -295,5 +297,23 @@ describe('missed quality sessions (v4.6 item 4)', () => {
     // The average carries its decimal, so a week of 3 doesn't read as "asks for 1".
     expect(view.planAsks).toBe(2)
     expect(view.planned).toEqual([3, 1, null, null])
+  })
+})
+
+describe('the Time in zones sentence (v4.6)', () => {
+  it('reads a dip and a return as a recovery, not as a drop', () => {
+    const window = weekWindow(TODAY, '12w')
+    const hours = [4, 4.2, 3.8, 4, 4.4, 3.9, 4.1, 0, 1.2, 4.6, 4.8, 2]
+    const weeks = window.weeks.map((d, i) => week(d, { zoneSeconds: { 2: hours[i]! * 3600 } }))
+    const view = zonesView(weekRows(weeks, [], window, TODAY))!
+    expect(view.total).toBe('recovered')
+    expect(view.recoveredAfter).toBe(window.weeks[7])
+    expect(view.totalHours).toBeCloseTo(hours.reduce((a, b) => a + b, 0))
+  })
+
+  it('still reads a steady climb as grew', () => {
+    const window = weekWindow(TODAY, '12w')
+    const weeks = window.weeks.map((d, i) => week(d, { zoneSeconds: { 2: (2 + i * 0.3) * 3600 } }))
+    expect(zonesView(weekRows(weeks, [], window, TODAY))!.total).toBe('grew')
   })
 })

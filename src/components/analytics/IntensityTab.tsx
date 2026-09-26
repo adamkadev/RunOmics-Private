@@ -70,7 +70,16 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
   return (
     <Card testId="zones-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      {range && <BoldSentence parts={(narrow ? s.stayed : s.ranged)(range, s.total[view.total]!)} />}
+      {range && (
+        // Built from the weeks: a dip and a return reads as such, and the
+        // window's hours (moved here from the range line) close it.
+        <BoldSentence
+          parts={(narrow ? s.stayed : s.ranged)(
+            range,
+            `${view.total === 'recovered' ? s.recovered(bare(view.recoveredAfter!)) : s.total[view.total]!}${s.hours(formatKm(view.totalHours))}`,
+          )}
+        />
+      )}
       <ChartScrub
         count={rows.length}
         onShift={onShift}

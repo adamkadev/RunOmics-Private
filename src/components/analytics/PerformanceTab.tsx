@@ -141,7 +141,8 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
       {race && (
         <span className="text-[12px] text-muted-foreground">
           {race.targetSeconds ? s.target(names[race.distance]!) : s.race(names[race.distance]!)}
-          <span className="font-bold text-[var(--tone-caution)]">
+          {/* A date, not a warning: ink, not amber (v4.6). */}
+          <span className="font-bold text-foreground">
             {bare(race.date)} · {formatCountdown(race.daysUntil)}
           </span>
         </span>

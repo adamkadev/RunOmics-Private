@@ -23,7 +23,6 @@ export const PERIODS: Period[] = ['4w', '12w', '1y']
 export const LOAD_PERIODS = PERIODS
 export const WEEK_PERIODS = PERIODS
 
-const PERIOD_DAYS: Record<Period, number> = { '4w': 28, '12w': 84, '1y': 364 }
 const PERIOD_WEEKS: Record<Period, number> = { '4w': 4, '12w': 12, '1y': 52 }
 
 export interface DayWindow {
@@ -47,10 +46,16 @@ function day(iso: string): Date {
 }
 
 /** The period's window, `offset` whole windows back from today. */
+/**
+ * A day-by-day tab's window: the same weeks as the weekly tabs (v4.6), from
+ * the Monday that starts them to today, so every tab's range line reads the
+ * same "Jul 6 - Sep 26" for the same chip.
+ */
 export function dayWindow(today: string, period: LoadPeriod, offset = 0): DayWindow {
-  const days = PERIOD_DAYS[period]
-  const end = isoDate(addDays(day(today), -offset * days))
-  return { start: isoDate(addDays(day(end), -(days - 1))), end, days, live: offset === 0 }
+  const weeks = weekWindow(today, period, offset)
+  const end = offset === 0 ? today : weeks.end
+  const days = Math.round((day(end).getTime() - day(weeks.start).getTime()) / 86_400_000) + 1
+  return { start: weeks.start, end, days, live: offset === 0 }
 }
 
 export function weekWindow(today: string, period: WeekPeriod, offset = 0): WeekWindow {
@@ -586,7 +591,11 @@ export interface ZonesView {
   /** Hours per zone (Z1-Z5), a row a week. */
   weeks: { hours: number[]; current: boolean }[]
   hard: { lo: number; hi: number } | null
-  total: 'grew' | 'dropped' | 'held'
+  total: 'grew' | 'dropped' | 'held' | 'recovered'
+  /** The low week total time came back from, when it did. */
+  recoveredAfter: string | null
+  /** Hours over the window, the week under way included. */
+  totalHours: number
   yMax: number
 }
 
@@ -599,6 +608,14 @@ export function zonesView(rows: WeekRow[]): ZonesView | null {
   const done = rows.map((r, i) => ({ r, i })).filter(({ r }) => !r.current)
   const hardMin = done.map(({ i }) => (weeks[i]!.hours[3]! + weeks[i]!.hours[4]!) * 60)
   const doneTotals = done.map(({ i }) => totals[i]!)
+  // A dip and a return (a week off, then back to full weeks) is neither
+  // "grew" nor "dropped": halves averaged over it said "dropped" beside
+  // three of the highest weeks (v4.6).
+  const trough = doneTotals.length >= 4 ? doneTotals.slice(1, -1).reduce((lo, v, k) => (v < doneTotals[lo]! ? k + 1 : lo), 1) : -1
+  const before = trough > 0 ? mean(doneTotals.slice(0, trough)) : null
+  // Back to full weeks by the end - a lighter week of coming back is normal.
+  const after = trough > 0 && trough < doneTotals.length - 2 ? mean(doneTotals.slice(-2)) : null
+  const recovered = before !== null && after !== null && before > 0 && doneTotals[trough]! < before * 0.5 && after >= before * 0.9
   const half = Math.floor(doneTotals.length / 2)
   const first = mean(doneTotals.slice(0, half))
   const second = mean(doneTotals.slice(-half))
@@ -606,7 +623,9 @@ export function zonesView(rows: WeekRow[]): ZonesView | null {
   return {
     weeks,
     hard: hardMin.length ? { lo: roundTo5(Math.min(...hardMin)), hi: roundTo5(Math.max(...hardMin)) } : null,
-    total: change >= 0.1 ? 'grew' : change <= -0.1 ? 'dropped' : 'held',
+    total: recovered ? 'recovered' : change >= 0.1 ? 'grew' : change <= -0.1 ? 'dropped' : 'held',
+    recoveredAfter: recovered ? rows[done[trough]!.i]!.week : null,
+    totalHours: totals.reduce((a, b) => a + b, 0),
     yMax: Math.max(1, Math.ceil(Math.max(...totals))),
   }
 }
