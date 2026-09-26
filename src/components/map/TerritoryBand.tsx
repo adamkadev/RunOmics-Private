@@ -1,7 +1,7 @@
+import { cn } from '@/lib/utils'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 
-const ACCENT_ON_DARK = 'var(--accent-on-dark)'
 
 interface Stat {
   value: string
@@ -22,19 +22,19 @@ export function TerritoryBand({ eyebrow, headline, primaryStat, secondaryStat }:
   return (
     <GlassSurface variant="hero" className="flex flex-col gap-3.5">
       <div>
-        <p className={EYEBROW_CLASS} style={{ color: ACCENT_ON_DARK }}>
+        <p className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>
           {eyebrow}
         </p>
-        <p className="mt-2 font-display text-base font-bold leading-snug text-white">{headline}</p>
+        <p className="mt-2 font-display text-base font-bold leading-snug text-foreground">{headline}</p>
       </div>
       <div className="flex gap-6">
         <div>
-          <div className="font-display text-lg font-bold tabular-nums text-white">{primaryStat.value}</div>
-          <div className="text-caption text-white/60">{primaryStat.label}</div>
+          <div className="font-display text-lg font-bold tabular-nums text-foreground">{primaryStat.value}</div>
+          <div className="text-caption text-muted-foreground">{primaryStat.label}</div>
         </div>
         <div>
-          <div className="font-display text-lg font-bold tabular-nums text-white">{secondaryStat.value}</div>
-          <div className="text-caption text-white/60">{secondaryStat.label}</div>
+          <div className="font-display text-lg font-bold tabular-nums text-foreground">{secondaryStat.value}</div>
+          <div className="text-caption text-muted-foreground">{secondaryStat.label}</div>
         </div>
       </div>
     </GlassSurface>

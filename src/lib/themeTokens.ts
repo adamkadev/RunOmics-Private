@@ -1,4 +1,4 @@
-import { HUE, black, ink, paper, white, withAlpha } from './palette'
+import { HUE, ink, paper, white, withAlpha } from './palette'
 import {
   AURORA_2_HUE_OFFSET,
   CURATED_ACCENTS,
@@ -15,7 +15,7 @@ import {
  * dark at launch, so it can't follow the accent: it is a neutral close to
  * every accent's background, and the page top fades from it (--status-bar).
  */
-export const STATUS_BAR_COLOR = { light: '#eef1f4', dark: '#05070a' } as const
+export const STATUS_BAR_COLOR = { light: '#f4f5f4', dark: '#0a0b0b' } as const
 
 export type TokenBlock = {
   selector: string
@@ -25,29 +25,89 @@ export type TokenBlock = {
 
 const c = HUE
 
-const glassLight = {
-  '--glass-sat': '1.4',
-  '--glass-bg': paper(0.62),
-  // Ink at 10 %: white at 0.7 was white on white over the aurora, about 1.1:1.
-  '--glass-border': withAlpha(c.inkLight, 0.1),
-  '--glass-highlight': paper(0.9),
-  '--glass-shadow-float': `0 18px 40px -24px ${withAlpha(c.natureShadow, 0.35)}`,
-  '--glass-shadow-nav': `0 16px 36px -20px ${withAlpha(c.natureShadow, 0.35)}`,
-  '--glass-fallback': paper(0.96),
-  '--glass-row-bg': paper(0.5),
-  '--glass-bg-sheet': paper(0.94),
-}
+/**
+ * Neutral surfaces, the same under every accent (Whoop / Runna / Strava):
+ * colour is for data and the active state, never for a background, a card, a
+ * border or a shadow. The accent blocks below carry the accent roles only.
+ */
+export const SURFACES = {
+  light: {
+    background: '#f4f5f4',
+    card: '#ffffff',
+    raised: '#ffffff',
+    border: 'rgba(0, 0, 0, 0.06)',
+    divider: 'rgba(0, 0, 0, 0.08)',
+    text: '#111413',
+    text2: '#5e6663',
+    text3: '#8a918e',
+    tabBar: '#ffffff',
+    hairline: 'rgba(0, 0, 0, 0.08)',
+    segTrack: '#e9ebea',
+    segPill: '#ffffff',
+    heatEmpty: '#e9ebea',
+    shadowRaised: '0 1px 3px rgba(0, 0, 0, 0.06)',
+  },
+  dark: {
+    background: '#0a0b0b',
+    card: '#141716',
+    raised: '#1b1f1e',
+    border: 'rgba(255, 255, 255, 0.06)',
+    divider: 'rgba(255, 255, 255, 0.08)',
+    text: '#f2f4f3',
+    text2: '#9ba3a0',
+    text3: '#6b7370',
+    tabBar: '#0a0b0b',
+    hairline: 'rgba(255, 255, 255, 0.08)',
+    segTrack: '#1b1f1e',
+    segPill: '#2a302e',
+    heatEmpty: '#1b1f1e',
+    shadowRaised: 'none',
+  },
+} as const
 
-const glassDark = {
-  '--glass-sat': '1.4',
-  '--glass-bg': paper(0.03),
-  '--glass-border': paper(0.07),
-  '--glass-highlight': paper(0.05),
-  '--glass-shadow-float': `0 24px 50px -26px ${ink(0.7)}`,
-  '--glass-shadow-nav': `0 16px 36px -18px ${ink(0.8)}`,
-  '--glass-fallback': c.natureCardDark,
-  '--glass-row-bg': paper(0.03),
-  '--glass-bg-sheet': withAlpha(c.natureBgDark, 0.92),
+function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
+  const n = SURFACES[mode]
+  return {
+    '--background': n.background,
+    // Flat: the page is one colour, no gradient and no aurora.
+    '--canvas': n.background,
+    '--card': n.card,
+    '--raised': n.raised,
+    '--popover': n.raised,
+    '--muted': n.segTrack,
+    '--border': n.border,
+    '--divider': n.divider,
+    '--foreground': n.text,
+    '--muted-foreground': n.text2,
+    '--subtle': n.text3,
+    '--subtle-2': n.text3,
+    '--ro-text': n.text,
+    '--ro-text-2': n.text2,
+    '--ro-text-3': n.text3,
+    '--track': n.segTrack,
+    '--thumb-bg': n.segTrack,
+    '--heat-empty': n.heatEmpty,
+    '--tab-bar-bg': n.tabBar,
+    '--tab-bar-hairline': n.hairline,
+    '--segmented-track': n.segTrack,
+    '--segmented-pill': n.segPill,
+    '--segmented-pill-shadow': mode === 'light' ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
+    '--shadow-card': 'none',
+    '--shadow-raised': n.shadowRaised,
+    '--shadow-hero': 'none',
+    '--hero-gradient': n.card,
+    '--hero-glow': 'transparent',
+    '--glass-sat': '1',
+    '--glass-bg': n.card,
+    '--glass-border': n.border,
+    '--glass-highlight': 'transparent',
+    '--glass-shadow-float': 'none',
+    '--glass-shadow-nav': 'none',
+    '--glass-fallback': n.card,
+    '--glass-row-bg': n.card,
+    '--glass-bg-sheet': n.card,
+    '--glass-bg-nav': n.tabBar,
+  }
 }
 
 /**
@@ -76,15 +136,6 @@ export function accentTokens(
       '--accent-text': l('accentText'),
       '--accent-on-dark': d('accentText'),
       '--ring': withAlpha(l('accent'), 0.35),
-      '--hero-gradient': `linear-gradient(150deg, ${l('heroFrom')}, ${l('heroVia')} 70%, ${l('heroTo')})`,
-      '--hero-glow': 'transparent',
-      '--aurora-1': l('aurora1'),
-      '--aurora-2': l('aurora2'),
-      '--background': l('background'),
-      '--canvas': `linear-gradient(155deg, ${l('canvasTop')} 0%, ${l('background')} 100%)`,
-      // The tab bar is the page's own background, nearly opaque: at 0.72 white
-      // headings scrolled under it read through the labels.
-      '--glass-bg-nav': withAlpha(l('background'), 0.92),
     }
   }
 
@@ -97,26 +148,10 @@ export function accentTokens(
     '--accent-text': d('accentText'),
     '--accent-on-dark': d('accentText'),
     '--ring': withAlpha(d('accent'), 0.7),
-    '--hero-gradient': `linear-gradient(155deg, ${withAlpha(d('accent'), 0.3)}, ${withAlpha(d('accent'), 0.1)} 55%, ${withAlpha(d('accent'), 0.03)})`,
-    '--hero-glow': withAlpha(d('accent'), 0.28),
-    '--aurora-1': d('aurora1'),
-    '--aurora-2': d('aurora2'),
-    '--background': d('background'),
-    '--canvas': `linear-gradient(155deg, ${d('canvasTop')} 0%, ${d('background')} 100%)`,
-    // Was a fixed Nature black at 0.6: content ghosted through the labels, and
-    // on teal the bar sat on the canvas as a different colour.
-    '--glass-bg-nav': withAlpha(d('background'), 0.9),
   }
 }
 
 const NATURE = curatedAccent('nature')
-
-export const ACCENT_BACKGROUNDS: Record<string, [light: string, dark: string]> = Object.fromEntries(
-  CURATED_ACCENTS.map((accent) => [
-    accent.id,
-    [accentTokens(accent, 'light')['--background']!, accentTokens(accent, 'dark')['--background']!] as [string, string],
-  ]),
-)
 
 function accentBlocks(accent: CuratedAccent): TokenBlock[] {
   return [
@@ -142,14 +177,6 @@ export function customAccentCss(hue: number): string {
     rule(`[data-accent="${CUSTOM_ACCENT_ID}"]`, accentTokens(accent, 'light')),
     rule(`.dark[data-accent="${CUSTOM_ACCENT_ID}"]`, accentTokens(accent, 'dark')),
   ].join('')
-}
-
-const PAGE_AURORAS: Record<string, [string, string, number, number, number, number]> = {
-  goals:     [c.roEmeraldDeep, c.roViolet,      0.45, 0.32, 0.2,  0.14],
-  records:   [c.roViolet,      c.roEmeraldDeep, 0.42, 0.34, 0.18, 0.15],
-  shoes:     [c.roOrange,      c.roEmeraldDeep, 0.38, 0.34, 0.16, 0.15],
-  settings:  [c.roPink,        c.roViolet,      0.34, 0.28, 0.14, 0.12],
-  analytics: [c.roBlue,        c.roEmeraldDeep, 0.42, 0.32, 0.18, 0.14],
 }
 
 export const TOKEN_BLOCKS: TokenBlock[] = [
@@ -187,11 +214,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--scrim-strong': ink(0.6),
       '--track-on-dark': paper(0.08),
       '--track-on-dark-strong': paper(0.18),
-      '--accent-gradient': `linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 74%, ${black}))`,
       '--shadow-toggle': `0 2px 6px ${ink(0.28)}`,
       '--shadow-modal': `0 8px 32px ${ink(0.55)}, 0 2px 8px ${ink(0.35)}`,
       '--shadow-thumb': `0 4px 12px ${ink(0.45)}`,
-      '--shadow-hero': `0 10px 30px -12px ${ink(0.5)}`,
       '--map-attrib-bg': ink(0.5),
       '--map-attrib-fg': paper(0.75),
     },
@@ -201,19 +226,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     comment: 'Light tokens - Nature (emerald, default)',
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.light,
-      '--shadow-card': `0 1px 3px 0 ${ink(0.06)}, 0 4px 16px -4px ${ink(0.09)}`,
 
-      '--card': white,
-      // Tooltips and other floating surfaces: always opaque, so a series or
-      // a reference label can't show through the value they carry.
-      '--popover': white,
-      '--muted': c.slate100,
-      '--border': c.slate200,
-      '--foreground': c.inkLight,
-      '--muted-foreground': c.inkLight2,
-      '--subtle': c.inkLight3,
-      '--subtle-2': c.inkLight4,
-      '--delta-good': c.semGreenLight,
+      // Positive deltas are the accent's to paint (neutral surfaces).
+      '--delta-good': 'var(--accent-text)',
       '--delta-warn': c.semOrangeLight,
       '--metric-form': c.semGreenLight,
       '--metric-fitness': c.semBlueLight,
@@ -230,33 +245,32 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--form-band-neutral': 'var(--muted-foreground)',
       '--form-band-fresh': 'var(--delta-good)',
       '--form-band-very-fresh': 'var(--tone-caution)',
-      '--track': withAlpha(c.roInk, 0.07),
-      '--thumb-bg': withAlpha(c.roInk, 0.06),
 
-      '--zone-1': c.roZone1,
+      // Every zone and chart line clears 3:1 on white; the three that did not
+      // (Z1 2.3, Z4 2.9, Z5 2.6) are a step darker here, and only here.
+      '--zone-1': c.roZone1Light,
       '--zone-2': c.blue500,
       '--zone-3': c.roEmeraldDeep,
-      '--zone-4': c.roOrange,
-      '--zone-5': c.roRed,
+      '--zone-4': c.orange600,
+      '--zone-5': c.red500,
+      '--chart-cadence': c.sky600,
+      '--chart-easy': c.roEmeraldDeep,
+      '--chart-hard': c.orange600,
+      '--chart-ground-contact': c.amberLine,
+      '--chart-brand': c.roEmeraldDeep,
 
       '--ro-accent': c.roEmeraldDeep,
       '--ro-accent-hi': c.roEmeraldLift,
       '--ro-ink': c.roInk,
       '--ro-blur': '18px',
-      '--ro-text': c.inkLight,
-      '--ro-text-2': c.inkLight2,
-      '--ro-text-3': c.inkLight3,
 
-      '--aurora-1-opacity': '0.65',
-      '--aurora-2-opacity': '0.6',
-      '--aurora-blur': '28px',
 
       // Nature is the accent the base block carries, so it takes its accent
       // roles from the same generator as every other accent rather than from a
       // second, hand-tuned set - a swatch has to paint the theme it selects.
       ...accentTokens(NATURE, 'light'),
 
-      ...glassLight,
+      ...surfaceTokens('light'),
     },
   },
   {
@@ -264,19 +278,8 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     comment: 'Dark tokens - Nature (emerald, default)',
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.dark,
-      '--shadow-card': `0 1px 2px 0 ${ink(0.35)}, 0 4px 16px -4px ${ink(0.7)}, inset 0 1px 0 0 ${paper(0.06)}`,
 
-      '--card': c.natureCardDark,
-      // Lifted off each accent's own background, and opaque: --muted is a 5 %
-      // wash, which is what let the Half line cross "Half: 1:27:54".
-      '--popover': `color-mix(in srgb, var(--background), ${white} 9%)`,
-      '--muted': paper(0.05),
-      '--border': paper(0.07),
-      '--foreground': c.inkDark,
-      '--muted-foreground': c.inkDark2,
-      '--subtle': c.inkDark3,
-      '--subtle-2': c.inkDark4,
-      '--delta-good': c.emerald400,
+      '--delta-good': 'var(--accent-text)',
       '--delta-warn': c.orange400,
       '--metric-form': c.emerald400,
       '--metric-fitness': c.roBlueHi,
@@ -292,45 +295,24 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--form-band-neutral': 'var(--muted-foreground)',
       '--form-band-fresh': 'var(--delta-good)',
       '--form-band-very-fresh': 'var(--tone-caution)',
-      '--track': paper(0.08),
-      '--thumb-bg': 'rgba(0, 0, 0, 0.32)',
 
       '--zone-1': c.roZone1,
       '--zone-2': c.roBlueHi,
       '--zone-3': c.roEmeraldHi,
       '--zone-4': c.roOrangeHi,
       '--zone-5': c.roRed,
+      '--chart-cadence': c.sky500,
+      '--chart-easy': c.emerald400,
+      '--chart-hard': c.orange400,
+      '--chart-ground-contact': c.amber500,
+      '--chart-brand': c.roEmerald,
 
-      '--ro-text': c.inkDark,
-      '--ro-text-2': c.inkDark2,
-      '--ro-text-3': c.inkDark3,
 
-      '--aurora-1-opacity': '0.16',
-      '--aurora-2-opacity': '0.12',
-      '--aurora-blur': '30px',
 
       ...accentTokens(NATURE, 'dark'),
 
-      ...glassDark,
+      ...surfaceTokens('dark'),
     },
   },
   ...CURATED_ACCENTS.filter((accent) => accent.id !== NATURE.id).flatMap(accentBlocks),
-  ...Object.entries(PAGE_AURORAS).flatMap(([page, [a1, a2, lo1, lo2, do1, do2]]): TokenBlock[] => [
-    {
-      selector: `[data-page-aurora="${page}"]`,
-      tokens: {
-        '--aurora-1': a1,
-        '--aurora-2': a2,
-        '--aurora-1-opacity': String(lo1),
-        '--aurora-2-opacity': String(lo2),
-      },
-    },
-    {
-      selector: `.dark [data-page-aurora="${page}"]`,
-      tokens: {
-        '--aurora-1-opacity': String(do1),
-        '--aurora-2-opacity': String(do2),
-      },
-    },
-  ]),
 ]

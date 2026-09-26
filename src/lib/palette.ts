@@ -37,6 +37,8 @@ export const HUE = {
   yellow500: '#eab308',
   amber400: '#fbbf24',
   amber500: '#f59e0b',
+  // Amber a step darker for light-mode lines: 3.5:1 on white, still amber.
+  amberLine: '#b87d0f',
   amber700: '#b45309',
 
   orange400: '#fb923c',
@@ -99,6 +101,8 @@ export const HUE = {
   // logged", so a dominant Z1 read as an empty bar. A desaturated step below
   // Z2's blue keeps the Z1→Z5 ramp reading as rising intensity in both themes.
   roZone1:   '#7fb2c9',
+  // Z1 a step darker for light mode: 3.2:1 on white, where #7fb2c9 is 2.3.
+  roZone1Light: '#5f97b0',
 
   /**
    * The ink ramp, one per theme rather than one inverted. Dark-mode greys read

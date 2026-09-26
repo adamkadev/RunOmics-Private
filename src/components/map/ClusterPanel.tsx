@@ -80,7 +80,7 @@ export function ClusterPanel({ clusters, names, stats, selectedIdx, onSelect, wo
                 aria-current={i === selectedIdx}
                 className={[
                   "flex w-full flex-col gap-0.5 px-3 py-3 text-left transition-colors hover:bg-muted",
-                  i === selectedIdx ? "bg-accent/10" : "",
+                  i === selectedIdx ? "bg-[var(--segmented-track)]" : "",
                 ].join(" ")}
               >
                 <span

@@ -21,7 +21,7 @@ const PACE_STEP = 15
 const COLOR: Record<RaceDistanceKey, string> = {
   '5k': CHART_COLORS.efficiency,
   '10k': CHART_COLORS.pace,
-  half: CHART_COLORS.brand,
+  half: 'var(--chart-brand)',
   marathon: CHART_COLORS.atl,
 }
 

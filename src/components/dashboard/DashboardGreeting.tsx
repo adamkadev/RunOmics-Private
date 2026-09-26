@@ -64,7 +64,7 @@ function StaleSyncPill({ ago }: { ago: string }) {
       disabled={phase === 'syncing'}
       data-testid="sync-pill"
       className="min-w-0 truncate whitespace-nowrap rounded-full px-2 py-1 text-caption font-semibold transition-opacity active:opacity-70"
-      style={{ color: 'var(--tone-caution)', background: 'color-mix(in srgb, var(--tone-caution) 12%, transparent)' }}
+      style={{ color: 'var(--tone-caution)', background: 'var(--segmented-track)' }}
     >
       {phase === 'syncing' ? s.syncing : phase === 'failed' ? s.failed : `${s.synced(ago)} · ${s.tapToSync}`}
     </button>
@@ -116,8 +116,7 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
       >
         <span
           aria-hidden="true"
-          className="flex size-8.5 items-center justify-center rounded-full text-sm font-bold text-accent-foreground"
-          style={{ background: 'var(--accent-gradient)' }}
+          className="flex size-8.5 items-center justify-center rounded-full bg-[var(--segmented-pill)] text-sm font-bold text-foreground shadow-[var(--segmented-pill-shadow)]"
         >
           {initials(displayName)}
         </span>

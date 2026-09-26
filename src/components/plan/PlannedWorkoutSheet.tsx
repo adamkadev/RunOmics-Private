@@ -11,8 +11,6 @@ import { WorkoutStructureBars, WorkoutStepList } from './WorkoutStructure'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
-import { WORKOUT_SHEET_COLORS as SHEET } from '@/lib/colors'
-import { withAlpha } from '@/lib/palette'
 import { t } from '@/i18n'
 
 interface Props {
@@ -55,21 +53,20 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
       <div
         ref={trapRef}
         className="relative w-full animate-sheet-up sm:max-w-sm sm:rounded-card-sm"
+        // A neutral raised sheet: the type's colour is on its icon and chip
+        // text, not washed over the surface (neutral surfaces).
         style={{
-          background: typeColor
-            ? `linear-gradient(160deg, ${withAlpha(typeColor, SHEET.tint.fill)} 0%, ${SHEET.baseTinted} 55%)`
-            : SHEET.base,
-          backdropFilter: 'blur(28px)',
-          WebkitBackdropFilter: 'blur(28px)',
+          background: 'var(--raised)',
+          boxShadow: 'var(--shadow-modal)',
           borderRadius: '22px 22px 20px 20px',
-          border: `1px solid ${typeColor ? withAlpha(typeColor, SHEET.tint.border) : SHEET.border}`,
+          border: '1px solid var(--border)',
           ...sheetStyle,
         }}
       >
         <div className="flex justify-center pt-3 pb-1" {...handleProps}>
           <div
             className="h-1 w-9 rounded-full"
-            style={{ background: typeColor ? withAlpha(typeColor, SHEET.tint.handle) : SHEET.handle }}
+            style={{ background: 'var(--divider)' }}
           />
         </div>
 
@@ -77,12 +74,12 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           <div className="mb-4 flex items-start gap-3">
             <span
               className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: typeColor ? withAlpha(typeColor, SHEET.tint.iconWell) : SHEET.iconWell }}
+              style={{ background: 'var(--segmented-track)' }}
             >
-              <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: SHEET.iconFallback }} />
+              <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: typeColor ?? 'var(--muted-foreground)' }} />
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold leading-snug text-white">
+              <h2 className="text-base font-bold leading-snug text-foreground">
                 {workout.title}
               </h2>
             </div>
@@ -91,46 +88,39 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
           {(workout.scheduledTime || workout.type || durationLabel || distanceKm) && (
             <div className="mb-4 flex flex-wrap gap-2">
               {workout.scheduledTime && (
-                <Pill variant="onDark">{t.plan.timeOfDay[workout.scheduledTime]}</Pill>
+                <Pill variant="neutral">{t.plan.timeOfDay[workout.scheduledTime]}</Pill>
               )}
               {workout.type && typeColor && (
                 // The type chip is the one chip in the row where the hue is the
                 // message and not decoration, so it keeps the identity colour
                 // as ink over the shared geometry.
-                <Pill
-                  variant="onDark"
-                  style={{
-                    background: withAlpha(typeColor, SHEET.tint.chipFill),
-                    color: typeColor,
-                    borderColor: withAlpha(typeColor, SHEET.tint.border),
-                  }}
-                >
+                <Pill style={{ color: typeColor }}>
                   {t.activityTypes[workout.type as ActivityType]}
                 </Pill>
               )}
-              {durationLabel && <Pill variant="onDark">{durationLabel}</Pill>}
-              {distanceKm && <Pill variant="onDark">{distanceKm} {t.units.km}</Pill>}
+              {durationLabel && <Pill variant="neutral">{durationLabel}</Pill>}
+              {distanceKm && <Pill variant="neutral">{distanceKm} {t.units.km}</Pill>}
             </div>
           )}
 
           {workout.target && (
-            <p className="mb-3 text-sm font-semibold tabular-nums text-white/85">{workout.target}</p>
+            <p className="mb-3 text-sm font-semibold tabular-nums text-foreground">{workout.target}</p>
           )}
 
           {(workout.description || workout.notes.length > 0) && (
             <div className="mb-4 space-y-1.5">
               {workout.description && (
-                <p className="text-xs leading-relaxed text-white/60">{workout.description}</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">{workout.description}</p>
               )}
               {workout.notes.map((note, i) => (
-                <p key={i} className="text-xs leading-relaxed text-white/60">{note}</p>
+                <p key={i} className="text-xs leading-relaxed text-muted-foreground">{note}</p>
               ))}
             </div>
           )}
 
           {structure && (
             <div className="mb-4">
-              <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-white/30">
+              <p className="mb-2 text-caption font-semibold uppercase tracking-wide text-subtle">
                 {t.plan.structure.title}
               </p>
               {structure.length > 1 && (
@@ -146,7 +136,7 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
             </div>
           )}
 
-          <p className="text-caption font-semibold uppercase tracking-wide text-white/30">
+          <p className="text-caption font-semibold uppercase tracking-wide text-subtle">
             {workout.statusLabel}
           </p>
         </div>

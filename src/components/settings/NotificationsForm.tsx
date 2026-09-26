@@ -50,7 +50,7 @@ function Toggle({ enabled, busy, onToggle }: {
       className={cn(
         'relative h-5 w-9 shrink-0 rounded-full p-0 transition-colors disabled:opacity-40',
         'after:absolute after:-inset-[10px] after:content-[""]',
-        enabled ? 'bg-accent' : 'bg-white/[0.12]'
+        enabled ? 'bg-accent' : 'bg-[var(--segmented-track)]'
       )}
     >
       <span

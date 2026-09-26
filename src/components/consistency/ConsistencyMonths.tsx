@@ -5,7 +5,7 @@ import { t } from '@/i18n'
 
 /** Track, half accent, full accent: three steps a glance can separate. */
 const LEVEL_CLASS: Record<DayLevel, string> = {
-  rest: 'bg-foreground/[0.08]',
+  rest: 'bg-[var(--heat-empty)]',
   run: 'bg-accent/50',
   long: 'bg-accent',
 }

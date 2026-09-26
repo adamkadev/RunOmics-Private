@@ -22,7 +22,7 @@ export function ThemeSegmented() {
   return (
     <div className="flex items-center justify-between gap-3">
       <h3 className="text-body font-semibold text-foreground">{s.themeLabel}</h3>
-      <div className="flex gap-1 rounded-full bg-foreground/[0.04] p-1" role="group" aria-label={s.themeLabel}>
+      <div className="flex gap-1 rounded-full bg-[var(--segmented-track)] p-1" role="group" aria-label={s.themeLabel}>
         {OPTIONS.map(({ value, label }) => (
           <button
             key={value}
@@ -31,7 +31,7 @@ export function ThemeSegmented() {
             aria-pressed={current === value}
             className={cn(
               'min-h-[44px] rounded-full px-3.5 text-xs font-semibold transition-colors',
-              current === value ? 'bg-accent text-accent-foreground' : 'text-foreground/55'
+              current === value ? 'bg-[var(--segmented-pill)] text-foreground shadow-[var(--segmented-pill-shadow)]' : 'text-muted-foreground'
             )}
           >
             {label()}

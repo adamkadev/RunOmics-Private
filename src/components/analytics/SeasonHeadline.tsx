@@ -1,7 +1,6 @@
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { ArrowUpRight, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { BRAND_TINTS } from '@/lib/colors'
 import type { SeasonHeadlineData } from '@/application/usecases/GetSeasonHeadline'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
@@ -13,13 +12,7 @@ interface Props {
 
 export function SeasonHeadline({ data, aiTake }: Props) {
   return (
-    <div
-      className="rounded-[20px] border p-4 text-center"
-      style={{
-        borderColor: BRAND_TINTS.headlineBorder,
-        background: BRAND_TINTS.headlineFill,
-      }}
-    >
+    <div className="glass-card rounded-[20px] p-4 text-center">
       <div className={cn(EYEBROW_CLASS, 'mb-2 text-accent-text')}>
         {t.analytics.seasonHeadline.eyebrow}
       </div>
@@ -37,7 +30,7 @@ export function SeasonHeadline({ data, aiTake }: Props) {
               <Icon
                 size={14}
                 strokeWidth={2.4}
-                className={cn('shrink-0', bullet.tone === 'positive' ? 'text-accent' : 'text-amber-500')}
+                className={cn('shrink-0', bullet.tone === 'positive' ? 'text-accent' : 'text-[var(--tone-caution)]')}
               />
               {aiTake?.bullets?.[i] ?? bullet.text}
             </li>

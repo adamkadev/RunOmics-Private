@@ -124,7 +124,7 @@ function RestDayCard({ next }: { next: { weekday: string; title: string } | null
   return (
     <div
       className="w-full rounded-2xl p-3.5"
-      style={{ border: '1px dashed rgba(148,178,220,.2)' }}
+      style={{ border: '1px dashed var(--divider)' }}
     >
       <div className="font-bold text-muted-foreground" style={{ fontSize: '16px' }}>{t.plan.restCard.title}</div>
       <div className="mt-1" style={{ fontSize: '13px', color: 'var(--subtle)' }}>
@@ -211,7 +211,7 @@ function WeekSessionRow({
       onClick={onTap}
       data-testid={`week-session-${workout.key}`}
       className="flex w-full items-center justify-between gap-3 text-left"
-      style={{ padding: '13px 2px', borderBottom: isLast ? undefined : '1px solid rgba(148,178,220,.1)' }}
+      style={{ padding: '13px 2px', borderBottom: isLast ? undefined : '1px solid var(--divider)' }}
     >
       <span className="flex min-w-0 items-center gap-2.5">
         <span

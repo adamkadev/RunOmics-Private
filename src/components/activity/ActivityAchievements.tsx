@@ -31,10 +31,10 @@ export function ActivityAchievements({ bestEfforts, qualifiedEfforts }: Props) {
               <span
                 className={cn(
                   'flex h-8 w-8 shrink-0 items-center justify-center rounded-control',
-                  effort.rank === 1 ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-zinc-100 dark:bg-zinc-800/60'
+                  'bg-[var(--segmented-track)]'
                 )}
               >
-                <Icon size={15} className={effort.rank === 1 ? 'text-amber-600 dark:text-amber-400' : 'text-zinc-500 dark:text-zinc-400'} />
+                <Icon size={15} className={effort.rank === 1 ? 'text-[var(--tone-caution)]' : 'text-muted-foreground'} />
               </span>
               <div className="min-w-0 flex-1">
                 <span className="text-sm font-semibold text-foreground">{effort.label}</span>
@@ -42,7 +42,7 @@ export function ActivityAchievements({ bestEfforts, qualifiedEfforts }: Props) {
                   {formatDuration(Math.round(seconds))}{km ? ` · ${formatPace(Math.round(seconds / km))}` : ''}
                 </span>
               </div>
-              <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-caption font-bold text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+              <span className="shrink-0 rounded-full bg-[var(--segmented-track)] text-[var(--tone-caution)] px-2 py-0.5 text-caption font-bold">
                 {effort.rank === 1 ? s.prBadge : s.rankBadge(effort.rank)}
               </span>
             </div>

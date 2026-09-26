@@ -56,7 +56,7 @@ describe('ShoesGrid', () => {
     )
 
     expect(screen.getByText(t.shoes.kmLeft('396')).className).toContain('text-muted-foreground')
-    expect(screen.getByText(t.shoes.kmLeft('50')).className).toContain('amber')
+    expect(screen.getByText(t.shoes.kmLeft('50')).className).toContain('--tone-caution')
   })
 
   it('orders the pairs most worn first, each with a bar sized to its wear', () => {

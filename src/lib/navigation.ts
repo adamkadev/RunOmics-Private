@@ -58,8 +58,3 @@ export function activeNavHref(pathname: string, navHrefs: readonly string[]): st
   return parent && navHrefs.includes(parent) ? parent : null
 }
 
-const PAGE_AURORA_BASES = ['/goals', '/records', '/shoes', '/settings', '/analytics'] as const
-
-export function getPageAuroraKey(pathname: string): (typeof PAGE_AURORA_BASES)[number] | undefined {
-  return PAGE_AURORA_BASES.find((base) => pathname === base || pathname.startsWith(`${base}/`))
-}

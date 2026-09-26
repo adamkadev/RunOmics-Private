@@ -10,7 +10,7 @@ import {
   heatColorExpression,
   heatWidthExpression,
 } from "./mapUtils";
-import { MAP_COLORS } from "@/lib/colors";
+import { CHART_COLORS, MAP_COLORS } from "@/lib/colors";
 import { loadMapLibre } from "@/lib/maplibre";
 import { t } from "@/i18n";
 
@@ -42,8 +42,8 @@ function mkClusterMarker(count: number, radius: number, name: string, label: str
     width: `${size}px`,
     height: `${size}px`,
     borderRadius: "50%",
-    backgroundColor: "#3b82f6",
-    border: "2px solid rgba(255,255,255,.28)",
+    backgroundColor: CHART_COLORS.pace,
+    border: "2px solid var(--raised)",
     boxShadow: MAP_COLORS.markerShadow,
     display: "flex",
     alignItems: "center",
@@ -62,8 +62,8 @@ function mkClusterMarker(count: number, radius: number, name: string, label: str
       fontSize: "11px",
       fontWeight: "700",
       lineHeight: "1.1",
-      color: "#e9eff7",
-      textShadow: "0 1px 3px #05090f",
+      color: "var(--foreground)",
+      textShadow: "0 1px 3px var(--background)",
       maxWidth: `${Math.max(size + 24, 64)}px`,
       overflow: "hidden",
       textOverflow: "ellipsis",

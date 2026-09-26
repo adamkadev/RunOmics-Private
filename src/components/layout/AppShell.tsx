@@ -5,9 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Sidebar } from './Sidebar'
 import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
-import { Aurora } from './Aurora'
 import { NavigationHistoryProvider } from './NavigationHistory'
-import { getPageAuroraKey } from '@/lib/navigation'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
 
@@ -69,8 +67,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <NavigationHistoryProvider>
-      <div className="min-h-screen" data-page-aurora={getPageAuroraKey(pathname)}>
-        <Aurora />
+      <div className="min-h-screen">
         <ThemeSync />
         <div
           aria-hidden
@@ -82,20 +79,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             background: 'var(--status-bar)',
           }}
         />
-        {/* Behind the page: the opaque status bar's fixed neutral, fading
-            into the accent's background glow, so bar and page meet without
-            an edge whatever the accent. */}
-        <div
-          aria-hidden
-          data-testid="status-bar-blend"
-          className="pointer-events-none fixed inset-x-0 top-0 h-12 lg:hidden"
-          style={{ background: 'linear-gradient(to bottom, var(--status-bar), transparent)' }}
-        />
         <Sidebar />
-        {/* Positioned, with no z-index: that paints the page after the fixed
-            .aurora background in the same layer - above it - without making
-            <main> a stacking context, which would trap the maps' fullscreen
-            overlays (z-50) under the top scrim again. */}
+        {/* Positioned, with no z-index: not a stacking context, which would
+            trap the maps' fullscreen overlays (z-50) under the top scrim. */}
         <main className="relative min-h-screen lg:ml-[248px]">
           {/* pb-28 alone is the nav's own height with room to spare on a
               home-button phone, but it's a fixed 112px - on a notched device

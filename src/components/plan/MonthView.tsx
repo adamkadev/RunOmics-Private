@@ -261,7 +261,7 @@ export function MonthView({
             type="button"
             onClick={onToday}
             className={cn('hit-44 shrink-0 rounded-full font-semibold', TODAY_INK)}
-            style={{ fontSize: '12.5px', border: '1px solid color-mix(in srgb, var(--accent) 45%, transparent)', padding: '5px 12px' }}
+            style={{ fontSize: '12.5px', border: '1px solid var(--divider)', padding: '5px 12px' }}
           >
             {t.plan.today}
           </button>
@@ -312,7 +312,7 @@ export function MonthView({
                       !cell
                         ? { background: PAD_BG }
                         : cell.date === today
-                          ? { background: 'color-mix(in srgb, var(--accent) 8%, transparent)', border: '1.5px solid var(--accent)' }
+                          ? { border: '1.5px solid var(--accent)' }
                           : undefined
                     }
                   >

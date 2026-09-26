@@ -20,15 +20,6 @@ const ACCENT_TOKEN_NAMES = [
   '--accent-text',
   '--accent-on-dark',
   '--ring',
-  '--hero-gradient',
-  '--hero-glow',
-  '--aurora-1',
-  '--aurora-2',
-  '--background',
-  '--canvas',
-  // The tab bar is the page background made nearly opaque, so it follows the
-  // accent's background rather than sitting on it as a second colour.
-  '--glass-bg-nav',
 ]
 
 const SEMANTIC_PREFIXES = ['--metric-', '--zone-', '--delta-', '--destructive', '--color-missed']
@@ -138,22 +129,25 @@ describe('the generated block for every stop on the wheel', () => {
   })
 })
 
-describe('the tab bar surface', () => {
-  const alpha = (value: string) => Number(value.match(/rgba\([^)]*,\s*([\d.]+)\)$/)?.[1])
+describe('neutral surfaces', () => {
+  // Colour is for data and the active state: every accent shares one set of
+  // surfaces, flat, and paints none of them.
+  const SURFACE_TOKENS = ['--background', '--canvas', '--card', '--raised', '--border', '--divider', '--glass-bg', '--glass-bg-nav', '--hero-gradient']
 
-  // At 0.6 in dark, headings scrolled under the bar read through its labels.
-  it('is the accent background at 0.9 in dark and 0.92 in light', () => {
-    for (const accent of CURATED_ACCENTS) {
-      expect(alpha(accentTokens(accent, 'dark')['--glass-bg-nav']!), accent.id).toBe(0.9)
-      expect(alpha(accentTokens(accent, 'light')['--glass-bg-nav']!), accent.id).toBe(0.92)
+  it('lets no accent block set a surface', () => {
+    for (const block of TOKEN_BLOCKS.filter((b) => b.selector.includes('data-accent'))) {
+      for (const name of SURFACE_TOKENS) expect(block.tokens[name], `${block.selector} ${name}`).toBeUndefined()
     }
   })
-})
 
-describe('the light glass border', () => {
-  // White at 0.7 on a white card over the aurora measured about 1.1:1.
-  it('is ink at 10 %, not white', () => {
-    const light = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Light tokens'))!
-    expect(light.tokens['--glass-border']).toBe('rgba(17, 27, 40, 0.1)')
+  it('draws the spec surfaces, flat, in both modes', () => {
+    const light = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Light tokens'))!.tokens
+    const dark = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Dark tokens'))!.tokens
+    expect([dark['--background'], dark['--card'], dark['--raised'], dark['--segmented-pill']]).toEqual(['#0a0b0b', '#141716', '#1b1f1e', '#2a302e'])
+    expect([light['--background'], light['--card'], light['--segmented-track']]).toEqual(['#f4f5f4', '#ffffff', '#e9ebea'])
+    for (const tokens of [light, dark]) {
+      expect(tokens['--canvas']).toBe(tokens['--background'])
+      for (const value of Object.values(tokens)) expect(value).not.toMatch(/gradient\(/)
+    }
   })
 })

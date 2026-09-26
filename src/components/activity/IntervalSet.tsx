@@ -64,7 +64,7 @@ function RepTrack({ pace, track, band, standing }: { pace: number | null; track:
         <span
           aria-hidden="true"
           data-testid="rep-band"
-          className="absolute inset-y-0 bg-accent/25"
+          className="absolute inset-y-0 bg-foreground/[0.16]"
           style={{ left: `${bandStart}%`, width: `${Math.max(bandEnd - bandStart, 1)}%` }}
         />
       )}

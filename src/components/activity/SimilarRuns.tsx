@@ -92,7 +92,7 @@ function RunRow({ run, bestPace }: { run: SimilarRun; bestPace: number }) {
   )
 
   if (run.isCurrent) {
-    return <li className="flex items-center gap-2.5 rounded-control bg-accent-subtle px-2 py-1.5">{content}</li>
+    return <li className="flex items-center gap-2.5 rounded-control bg-[var(--segmented-track)] px-2 py-1.5">{content}</li>
   }
 
   return (

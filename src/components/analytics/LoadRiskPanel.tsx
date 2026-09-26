@@ -17,24 +17,24 @@ const ZONE_TONE: Record<RiskZone, StatusTone> = {
 }
 
 const ZONE_TEXT: Record<RiskZone, string> = {
-  low: 'text-blue-600 dark:text-blue-400',
+  low: 'text-[var(--metric-fitness)]',
   safe: 'text-foreground',
-  caution: 'text-amber-600 dark:text-amber-400',
-  risk: 'text-red-600 dark:text-red-400',
+  caution: 'text-[var(--tone-caution)]',
+  risk: 'text-destructive',
 }
 
 const BAND_ACTIVE: Record<RiskZone, string> = {
-  low: 'bg-blue-500',
-  safe: 'bg-green-500',
-  caution: 'bg-amber-500',
-  risk: 'bg-red-500',
+  low: 'bg-[var(--metric-fitness)]',
+  safe: 'bg-[var(--tone-go)]',
+  caution: 'bg-[var(--tone-caution)]',
+  risk: 'bg-destructive',
 }
 
 const BAND_DIM: Record<RiskZone, string> = {
-  low: 'bg-blue-500/20',
-  safe: 'bg-green-500/20',
-  caution: 'bg-amber-500/25',
-  risk: 'bg-red-500/25',
+  low: 'bg-[var(--metric-fitness)]/20',
+  safe: 'bg-[var(--tone-go)]/20',
+  caution: 'bg-[var(--tone-caution)]/25',
+  risk: 'bg-destructive/25',
 }
 
 const ZONE_SEVERITY: Record<RiskZone, number> = { low: 0, safe: 0, caution: 1, risk: 2 }

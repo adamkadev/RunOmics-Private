@@ -27,4 +27,4 @@ export function cardClass({
   )
 }
 
-export const tooltipSurfaceClass = 'rounded-lg border border-border bg-[var(--popover)] px-2.5 py-2 text-xs shadow-md'
+export const tooltipSurfaceClass = 'rounded-lg border border-border bg-[var(--popover)] px-2.5 py-2 text-xs shadow-[var(--shadow-raised)]'

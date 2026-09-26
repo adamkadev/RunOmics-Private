@@ -82,7 +82,7 @@ export function ChartRangeChips({
   onChange: (range: ChartRange) => void
 }) {
   return (
-    <div className="flex gap-0.5 rounded-full bg-foreground/[0.06] p-0.5">
+    <div className="flex gap-0.5 rounded-full bg-[var(--segmented-track)] p-0.5">
       {CHART_RANGES.map((r) => (
         <button
           key={r}
@@ -91,7 +91,7 @@ export function ChartRangeChips({
             'hit-44 rounded-full px-2.5 py-1 text-xs font-semibold transition-all active:scale-95',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             r === value
-              ? 'bg-accent text-accent-foreground shadow-sm'
+              ? 'bg-[var(--segmented-pill)] text-foreground shadow-[var(--segmented-pill-shadow)]'
               : 'text-muted-foreground hover:text-foreground',
           )}
         >

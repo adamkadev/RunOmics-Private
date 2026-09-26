@@ -39,13 +39,13 @@ function GaugeRow({ bucket }: { bucket: LoadBalanceBucket }) {
       <span className="min-w-0 truncate text-xs font-medium text-muted-foreground">{s.buckets[bucket.id]}</span>
 
       <div
-        className="relative h-1.5 rounded-full bg-foreground/[0.10]"
+        className="relative h-1.5 rounded-full bg-[var(--track)]"
         role="img"
         aria-label={rangeLabel}
         title={rangeLabel}
       >
         <div
-          className="absolute inset-y-0 rounded-full bg-emerald-500/35"
+          className="absolute inset-y-0 rounded-full bg-[var(--tone-go)]/35"
           style={{ left: `${targetStart}%`, width: `${targetEnd - targetStart}%` }}
         />
         <div
