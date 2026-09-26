@@ -5,6 +5,7 @@ const PARENT_SECTION: Record<string, string> = {
   '/shoes': '/profile',
   '/athlete': '/profile',
   '/consistency': '/profile',
+  '/all-time': '/profile',
   '/goals': '/profile',
   '/settings': '/profile',
   '/milestones': '/profile',
@@ -27,6 +28,7 @@ const SECTION_LABELS: Record<string, string> = {
   '/shoes': t.pages.shoes.title,
   '/athlete': t.pages.athlete.title,
   '/consistency': t.pages.consistency.title,
+  '/all-time': t.allTime.title,
   '/goals': t.goals.title,
 }
 

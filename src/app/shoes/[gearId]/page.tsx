@@ -1,26 +1,22 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { SectionDivider, EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { getShoeDetail, type ShoeTypeBucket } from '@/application/usecases/GetShoeDetail'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeVerdictInsight } from '@/application/usecases/GetShoeVerdictInsight'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import { wearOutlook, weeksInRotation, type WearStatus } from '@/domain/shoe/wearStatus'
-import { ActivityListCard } from '@/components/activities/ActivityListCard'
-import { BrandIcon } from '@/components/shoes/BrandIcon'
 import { HERO_SURFACE } from '@/components/shoes/ShoesGrid'
-import { StatusPill } from '@/components/ui/StatusPill'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { BackButton } from '@/components/ui/BackButton'
-import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { STATUS } from '@/lib/statusColors'
 import { sessionZone, zoneColor } from '@/lib/colors'
+import { GARMIN_GEAR_URL } from '@/components/shoes/shoeWear'
 import type { ActivityType } from '@/domain/activity/types'
 import Link from 'next/link'
 import { shoeWearCopy } from '@/components/shoes/shoeWear'
 import { WearBar } from '@/components/shoes/WearBar'
-import { formatDateRange, formatKm, formatMonthShortYear, formatPace } from '@/lib/formatters'
+import { formatClock, formatDate, formatDateRange, formatDistance, formatKm, formatMonthShortYear } from '@/lib/formatters'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -35,22 +31,25 @@ const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
   replace: { bar: STATUS.danger.dot,  text: STATUS.danger.text },
 }
 
-// Each bucket takes the zone of the session it mostly holds, through
-// sessionZone(): the tempo bucket also holds threshold runs, and on a pair
-// that ran more threshold than tempo it read Z3 green over Z4 work (G29).
+// The type mix wears the activity-type colours, so it matches the run dots
+// everywhere (C5, v4.4b): easy the Z2 blue, tempo and threshold Z4, the
+// intervals, VO2 and race bucket Z5.
+const BUCKET_COLOR: Record<ShoeTypeBucket, string> = {
+  base: zoneColor(2),
+  tempo: zoneColor(4),
+  intervals: zoneColor(5),
+}
+
 function bucketType(bucket: ShoeTypeBucket, activities: { type: ActivityType }[]): ActivityType {
   if (bucket === 'base') return 'Base'
   if (bucket === 'intervals') return 'Anaerobic'
   const threshold = activities.filter((a) => a.type === 'Threshold').length
   const tempo = activities.filter((a) => a.type === 'Tempo').length
-  return threshold > tempo ? 'Threshold' : 'Tempo'
-}
-
-function typeShareColor(bucket: ShoeTypeBucket, activities: { type: ActivityType }[]): string {
-  return zoneColor(sessionZone({ type: bucketType(bucket, activities) }))
+  return threshold >= tempo ? 'Threshold' : 'Tempo'
 }
 
 function typeShareLabel(bucket: ShoeTypeBucket, activities: { type: ActivityType }[]): string {
+  if (bucket === 'base') return t.shoes.easy
   if (bucket === 'intervals') return t.shoes.detail.typeShareLabels.intervals
   return t.activityTypes[bucketType(bucket, activities)]
 }
@@ -64,8 +63,6 @@ function verdictBody(status: 'watch' | 'replace', weeksRemaining: number | null)
   const action = status === 'replace' ? v.replaceNow : v.planReplacement
   return `${v.weeksLeft(weeksRemaining)} ${action}`
 }
-
-const STAT_VALUE_CLASS = 'text-subhead font-bold text-foreground'
 
 export async function generateMetadata({
   params,
@@ -91,6 +88,11 @@ export async function generateStaticParams() {
  * computed during render is also the one that drifts between a prerender and a
  * rehydrate.
  */
+/** "Mar 2026": when a pair came into rotation, for its eyebrow. */
+function formatMonthYear(iso: string): string {
+  return formatDate(iso, { precision: 'month', year: 'always' })
+}
+
 function projectedRunOutMonth(weeksRemaining: number, now = new Date()): string {
   return formatMonthShortYear(isoDate(addDays(now, weeksRemaining * 7)))
 }
@@ -151,30 +153,6 @@ export default async function ShoeDetailPage({
 
   const era = shoe.firstUsedDate && lastWornDate ? formatDateRange(shoe.firstUsedDate, lastWornDate, { precision: 'month' }) : null
 
-  const stats: Metric[] = [
-    { value: <AnimatedValue value={shoe.activities.length} />, label: d.stats.activities, valueClassName: STAT_VALUE_CLASS },
-    {
-      // Always one decimal here, unlike formatDistance's two-under-10 rule:
-      // an average is already a rounded fact, so "9.26 km" reads like false
-      // precision that "9.3 km" doesn't.
-      value: avgRunKm !== null ? avgRunKm.toFixed(1) : '-',
-      unit: avgRunKm !== null ? t.units.km : undefined,
-      label: d.stats.avgRun,
-      valueClassName: STAT_VALUE_CLASS,
-    },
-    { value: <AnimatedValue value={shoe.kmPerWeek} decimals={0} />, label: d.stats.kmPerWeek, valueClassName: STAT_VALUE_CLASS },
-    shoe.retired
-      ? {
-          value: shoe.avgPaceSecPerKm !== null ? formatPace(shoe.avgPaceSecPerKm) : '-',
-          label: d.stats.avgPace,
-          valueClassName: STAT_VALUE_CLASS,
-        }
-      : {
-          value: shoe.firstUsedDate ? formatMonthShortYear(shoe.firstUsedDate) : '-',
-          label: d.stats.firstRun,
-          valueClassName: STAT_VALUE_CLASS,
-        },
-  ]
 
   const aiTake =
     status === 'ok' || shoe.retired
@@ -193,22 +171,6 @@ export default async function ShoeDetailPage({
     ] as const
   ).filter((entry) => entry.percent >= TYPE_SHARE_FLOOR)
 
-  // The bar only ever shows three names - if any run in here is something
-  // other than a plain Base or Tempo session, one of those three buckets is
-  // quietly standing in for a type it never names.
-  const typeShareIsGrouped = shoe.activities.some((a) => a.type !== 'Base' && a.type !== 'Tempo')
-
-  // A retired pair's stat row already has "Avg pace" - this line only earns
-  // its place by adding the one figure the row doesn't, so it drops pace and
-  // keeps only HR. An active pair's stat row has no pace cell, so it keeps both.
-  const usageSummary = shoe.retired
-    ? shoe.avgHeartRate !== null
-      ? d.whatItWasFor.summary(shoe.avgHeartRate)
-      : null
-    : shoe.avgPaceSecPerKm !== null && shoe.avgHeartRate !== null
-      ? d.whatYouRunIn.summary(formatPace(shoe.avgPaceSecPerKm), shoe.avgHeartRate)
-      : null
-
   // One threshold check, not a taxonomy: a pair either leans hard toward
   // quality work, leans toward easy miles, or says nothing distinctive.
   const keySessionShare = shoe.typeShare.tempo + shoe.typeShare.intervals
@@ -220,47 +182,84 @@ export default async function ShoeDetailPage({
         : null
     : null
 
+  const s = t.shoes
+  const runs = shoe.activities.slice(0, RECENT_RUNS)
+  const heroStats = [
+    [String(shoe.activities.length), s.heroStats.runs],
+    [avgRunKm !== null ? avgRunKm.toFixed(1) : '–', s.heroStats.kmAvg],
+    [shoe.avgPaceSecPerKm !== null ? formatClock(shoe.avgPaceSecPerKm) : '–', s.heroStats.pace],
+    [shoe.avgHeartRate !== null ? String(Math.round(shoe.avgHeartRate)) : '–', s.heroStats.bpm],
+  ]
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <BackButton label={d.back} fallbackHref="/shoes" />
-        <div className="flex items-center gap-2">
-          <BrandIcon brand={shoe.brand} size={16} />
-          <SectionDivider>{shoe.brand}</SectionDivider>
-          {shoe.retired && <StatusPill tone="zinc">{t.shoes.retired}</StatusPill>}
+        <div className="flex items-center justify-between gap-3">
+          <BackButton label={d.back} fallbackHref="/shoes" className="mb-0" />
+          {!shoe.retired && (
+            <a
+              href={GARMIN_GEAR_URL}
+              target="_blank"
+              rel="noreferrer"
+              aria-label={s.editLabel}
+              className="flex h-11 items-center px-1 text-body font-bold text-muted-foreground transition-opacity active:opacity-70"
+            >
+              {s.edit}
+            </a>
+          )}
+        </div>
+        <div className="mt-1 flex items-center gap-2">
+          <p className="text-caption uppercase tracking-[0.08em] text-muted-foreground" data-testid="shoe-eyebrow">
+            {!shoe.retired && shoe.firstUsedDate ? s.since(shoe.brand, formatMonthYear(shoe.firstUsedDate)) : shoe.brand}
+          </p>
+          {shoe.retired && (
+            <span className="rounded-md bg-[var(--segmented-track)] px-2 py-0.5 text-caption font-semibold text-muted-foreground">{s.retired}</span>
+          )}
         </div>
         <h1 className="text-display text-foreground">{shoe.name}</h1>
       </div>
 
-      {/* Km left is the hero, not a "Good / 62%" status row - the band already
-          lives in the bar's colour, and the ratio is a quiet caption under it. */}
-      {!shoe.retired && (
-        <GlassSurface variant="card" className="p-5">
-          <p className={cn('font-display text-display font-bold', style.text)}>{wear.exact}</p>
-          <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={style.bar} className="mt-2.5" />
-          <p className="mt-2.5 text-xs text-subtle">{wear.ratio}</p>
-          {runOutSentence && <p className="mt-2.5 text-footnote leading-snug text-muted-foreground">{runOutSentence}</p>}
-        </GlassSurface>
-      )}
-
-      {/* A retired shoe has no future to project, so its hero is the life it
-          already lived - a total and an era, never a bar stuck at 100%. */}
-      {shoe.retired && (
-        <GlassSurface variant="card" className="p-5">
-          <p className="font-display text-display font-bold text-foreground">
-            {formatKm(shoe.totalKm)}
-            <span className="ml-1 text-body font-semibold text-muted-foreground">{t.units.km}</span>
-          </p>
-          {era && <p className="mt-1 text-caption text-subtle">{era}</p>}
-          <p className="mt-2.5 text-footnote leading-snug text-muted-foreground">
-            {reallyRanOut
-              ? isFastestRetirement
-                ? d.retiredHero.ranOutFastest(shoe.maxKm, weeksWorn)
-                : d.retiredHero.ranOut(shoe.maxKm, weeksWorn)
-              : d.retiredHero.retiredEarly(Math.round(wearRatio * 100), shoe.maxKm, weeksWorn)}
-          </p>
-        </GlassSurface>
-      )}
+      {/* One hero: where the pair is in its life, and its four numbers. */}
+      <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="shoe-hero">
+        {shoe.retired ? (
+          <>
+            <p className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-display text-title1 font-bold leading-none tabular-nums text-foreground">{formatKm(shoe.totalKm)}</span>
+              <span className="text-body text-muted-foreground">{t.units.km}{era ? ` · ${era}` : ''}</span>
+            </p>
+            <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} retired className="mt-3" />
+            <p className="mt-2.5 text-footnote leading-snug text-muted-foreground">
+              {reallyRanOut
+                ? isFastestRetirement
+                  ? d.retiredHero.ranOutFastest(shoe.maxKm, weeksWorn)
+                  : d.retiredHero.ranOut(shoe.maxKm, weeksWorn)
+                : d.retiredHero.retiredEarly(Math.round(wearRatio * 100), shoe.maxKm, weeksWorn)}
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="flex items-baseline gap-2">
+                <span className="font-display text-title1 font-bold leading-none tabular-nums text-foreground">{formatKm(shoe.totalKm)}</span>
+                <span className="text-body text-muted-foreground">{s.ofLimit(formatKm(shoe.maxKm))}</span>
+              </p>
+              <span className={cn('shrink-0 font-display text-body font-bold tabular-nums', wear.over ? style.text : 'text-foreground')}>
+                {wear.over ? wear.short : s.left(formatKm(kmLeft))}
+              </span>
+            </div>
+            <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} className="mt-3" />
+            {runOutSentence && <p className="mt-2.5 text-footnote leading-snug text-muted-foreground">{runOutSentence}</p>}
+          </>
+        )}
+        <div className="mt-3.5 grid grid-cols-4 gap-2 border-t border-border pt-3" data-testid="shoe-hero-stats">
+          {heroStats.map(([value, label]) => (
+            <div key={label} className="min-w-0">
+              <p className="font-display text-body font-bold leading-none tabular-nums text-foreground">{value}</p>
+              <p className="mt-1 truncate text-caption text-muted-foreground">{label}</p>
+            </div>
+          ))}
+        </div>
+      </GlassSurface>
 
       {!shoe.retired && status !== 'ok' && (
         <div className="rounded-2xl border p-4" style={HERO_SURFACE[status]}>
@@ -274,52 +273,64 @@ export default async function ShoeDetailPage({
         </div>
       )}
 
-      <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
+      {typeShareEntries.length > 0 && (
+        <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="shoe-type-mix">
+          <h2 className="font-display text-body font-bold text-foreground">{shoe.retired ? d.whatItWasFor.title : d.whatYouRunIn.title}</h2>
+          <div className="mt-3 flex h-2.5 gap-0.5 overflow-hidden rounded-full">
+            {typeShareEntries.map((entry) => (
+              <span key={entry.bucket} data-bucket={entry.bucket} className="h-full" style={{ flexGrow: entry.percent, flexBasis: 0, background: BUCKET_COLOR[entry.bucket] }} />
+            ))}
+          </div>
+          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-footnote font-semibold text-foreground">
+            {typeShareEntries.map((entry) => (
+              <span key={entry.bucket} className="flex items-center gap-1.5">
+                <span aria-hidden className="size-2 rounded-full" style={{ background: BUCKET_COLOR[entry.bucket] }} />
+                {typeShareLabel(entry.bucket, shoe.activities)} {entry.percent}%
+              </span>
+            ))}
+          </div>
+          {usageInsight && <p className="mt-2 text-footnote leading-snug text-muted-foreground">{usageInsight}</p>}
+          <p className="mt-2 text-caption text-muted-foreground">{s.typeMixCaption}</p>
+        </GlassSurface>
+      )}
 
-      <div className="space-y-2.5">
-        <SectionDivider>{shoe.retired ? d.whatItWasFor.title : d.whatYouRunIn.title}</SectionDivider>
-        {usageSummary && <p className="px-1 text-footnote font-medium text-foreground">{usageSummary}</p>}
-        <div className="flex h-2 overflow-hidden rounded-full bg-foreground/[0.08]">
-          {typeShareEntries.map((entry) => (
-            <span
-              key={entry.bucket}
-              style={{ width: `${entry.percent}%`, backgroundColor: typeShareColor(entry.bucket, shoe.activities) }}
-            />
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-x-3 gap-y-1 px-1 text-caption text-subtle">
-          {typeShareEntries.map((entry) => (
-            <span key={entry.bucket} className="flex items-center gap-1">
-              <span aria-hidden className="h-2 w-2 rounded-[2px]" style={{ backgroundColor: typeShareColor(entry.bucket, shoe.activities) }} />
-              {typeShareLabel(entry.bucket, shoe.activities)} {entry.percent}%
-            </span>
-          ))}
-        </div>
-        {usageInsight && <p className="px-1 text-caption leading-snug text-foreground/75">{usageInsight}</p>}
-        {typeShareIsGrouped && <p className="px-1 text-caption text-subtle-2">{d.typeShareGrouped}</p>}
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-baseline justify-between gap-2">
-          <SectionDivider>{shoe.retired ? d.activitiesTitleRetired : d.activitiesTitleActive}</SectionDivider>
+      <section className="space-y-2">
+        <div className="flex items-baseline justify-between gap-2 px-1">
+          <h2 className="font-display text-body font-bold text-foreground">{shoe.retired ? s.lastRuns : d.activitiesTitleActive}</h2>
           {shoe.activities.length > RECENT_RUNS && (
-            <Link href={`/activities?shoe=${shoe.gearId}`} className="shrink-0 text-caption font-semibold text-accent-text">
-              {d.allActivitiesCount(shoe.activities.length)} ›
+            <Link href={`/activities?shoe=${shoe.gearId}`} className="shrink-0 text-footnote font-bold text-accent-text">
+              {d.allActivitiesCount(shoe.activities.length)} →
             </Link>
           )}
         </div>
-        {shoe.activities.length === 0 ? (
+        {runs.length === 0 ? (
           <GlassSurface variant="card" className="rounded-card-sm border-dashed py-10 text-center">
             <p className="text-sm text-subtle">{d.empty}</p>
           </GlassSurface>
         ) : (
-          <div className="space-y-2">
-            {shoe.activities.slice(0, RECENT_RUNS).map((activity) => (
-              <ActivityListCard key={activity.id} activity={activity} />
+          <GlassSurface variant="card" className="divide-y divide-border overflow-hidden rounded-card-sm" data-testid="shoe-runs">
+            {runs.map((a) => (
+              <Link key={a.id} href={`/activities/${a.id}`} className="flex items-center gap-3 px-4 py-3">
+                <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: zoneColor(sessionZone(a)) }} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-display text-body font-bold text-foreground">{a.description || t.activity.runTitle(a.dayOfWeek)}</span>
+                  <span className="block truncate text-footnote text-muted-foreground">
+                    {[formatDate(a.date), a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null].filter(Boolean).join(' · ')}
+                  </span>
+                </span>
+                <span className="shrink-0 text-right">
+                  <span className="block font-display text-body font-bold tabular-nums text-foreground">
+                    {formatDistance(a.distanceKm)} {t.units.km}
+                  </span>
+                  {a.paceSecPerKm !== null && (
+                    <span className="block text-footnote tabular-nums text-muted-foreground">{formatClock(a.paceSecPerKm)}</span>
+                  )}
+                </span>
+              </Link>
             ))}
-          </div>
+          </GlassSurface>
         )}
-      </div>
+      </section>
     </div>
   )
 }

@@ -26,6 +26,7 @@ export const ROUTES: RouteSpec[] = [
   { path: '/profile', name: 'profile' },
   { path: '/athlete', name: 'athlete' },
   { path: '/consistency', name: 'consistency' },
+  { path: '/all-time', name: 'all-time' },
   { path: '/settings', name: 'settings' },
   { path: '/no-such-page', name: 'not-found' },
 ]
