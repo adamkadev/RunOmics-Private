@@ -1,7 +1,7 @@
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { zoneDistribution, recentZoneDistribution } from '@/application/usecases/GetAnalyticsData'
-import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
+import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { appTodayIso, isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
@@ -21,7 +21,7 @@ export default async function AthletePage() {
   return (
     <AthleteClient
       athlete={athletePageView(athlete)}
-      latestVo2max={getLatestVO2max()}
+      vo2Grade={getVo2Grade()}
       weeklyZoneTime={weeklyZoneTime}
       recentZoneTime={recentZoneTime}
       paceZones={await getTrainingZones()}

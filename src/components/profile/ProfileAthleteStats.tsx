@@ -19,17 +19,19 @@ function available(metrics: MetricData[]): AvailableMetric[] {
   return metrics.filter((metric): metric is AvailableMetric => metric.value !== undefined)
 }
 
-/** The four numbers a session is built from, under their plain names. */
-export function keyMetrics(athlete: AthletePageView, latestVo2max: number | null): AvailableMetric[] {
+/**
+ * The four numbers under the grade hero (v5.3): VMA, fitness age, threshold
+ * HR and threshold pace. VO₂max left the grid for the grade card above it.
+ */
+export function keyMetrics(athlete: AthletePageView): AvailableMetric[] {
   const a = t.settings.athlete
   return available([
-    {
-      label: a.vo2max,
-      glossary: 'vo2max',
-      unit: t.units.mlKgMin,
-      value: latestVo2max !== null ? latestVo2max.toFixed(1) : undefined,
-    },
     { label: a.vma, glossary: 'vma', unit: t.units.kmh, value: athlete.vmaKmh },
+    {
+      label: a.fitnessAge,
+      unit: athlete.age !== undefined ? a.ofAge(athlete.age) : '',
+      value: athlete.fitnessAgeYrs !== undefined ? Math.round(athlete.fitnessAgeYrs) : undefined,
+    },
     { label: a.thresholdHr, glossary: 'lthr', unit: t.units.bpm, value: athlete.lthrBpm },
     {
       label: a.thresholdPace,
@@ -45,8 +47,8 @@ export function keyMetrics(athlete: AthletePageView, latestVo2max: number | null
  * (C2, v4.4), replacing four separate cards. Each label opens its definition
  * on a tap; there is no (i) on the card.
  */
-export function AthleteKeyNumbers({ athlete, latestVo2max }: { athlete: AthletePageView; latestVo2max: number | null }) {
-  const tiles = keyMetrics(athlete, latestVo2max)
+export function AthleteKeyNumbers({ athlete }: { athlete: AthletePageView }) {
+  const tiles = keyMetrics(athlete)
   if (tiles.length === 0) return null
 
   return (
@@ -73,28 +75,19 @@ export function AthleteKeyNumbers({ athlete, latestVo2max }: { athlete: AthleteP
 }
 
 /**
- * Heart and body as one compact row (C2): resting HR, max HR and fitness age
- * against the real age ("20 of 29"). Height, weight and BMI live in Settings
- * > Profile, and the check badges, which read as pass or fail, are gone.
+ * Heart as one compact row: resting and max HR (v5.3; fitness age moved up
+ * into the grid). Height, weight and BMI live in Settings > Profile.
  */
 export function AthleteDetails({ athlete }: { athlete: AthletePageView }) {
   const a = t.settings.athlete
   const cells: { key: string; label: string; value: number; note?: string }[] = []
   if (athlete.restingHrBpm !== undefined) cells.push({ key: 'resting', label: a.restingHr, value: athlete.restingHrBpm })
   if (athlete.maxHrBpm !== undefined) cells.push({ key: 'max', label: a.maxHr, value: athlete.maxHrBpm })
-  if (athlete.fitnessAgeYrs !== undefined) {
-    cells.push({
-      key: 'fitnessAge',
-      label: a.fitnessAge,
-      value: Math.round(athlete.fitnessAgeYrs),
-      note: athlete.age !== undefined ? a.ofAge(athlete.age) : undefined,
-    })
-  }
   if (cells.length === 0) return null
 
   return (
     <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5" data-testid="athlete-details">
-      <dl className="grid grid-cols-3 gap-2">
+      <dl className="grid grid-cols-2 gap-2">
         {cells.map((cell) => (
           <div key={cell.key} className="min-w-0">
             <dt className="text-footnote text-muted-foreground">{cell.label}</dt>

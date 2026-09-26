@@ -24,6 +24,8 @@ export interface ShareCardScene {
   palette: SharePalette
   fonts: ShareFonts
   place?: string | null
+  /** "VO₂max A−" in the header's corner, when the athlete turns it on (v5.3). */
+  gradeBadge?: string | null
   photo?: HTMLImageElement | null
   /** The basemap for the middle, labels off, and the route projected onto it. */
   mapImage?: HTMLCanvasElement | null
@@ -77,7 +79,8 @@ function drawCover(ctx: Ctx, img: HTMLImageElement, w: number, h: number) {
 }
 
 /** Lockup, title, date and place: the same on every design. */
-function drawHeader(ctx: Ctx, { activity, palette, fonts, place }: ShareCardScene) {
+function drawHeader(ctx: Ctx, scene: ShareCardScene) {
+  const { activity, palette, fonts, place } = scene
   // The v5.2 lockup: the mark in the accent, then the wordmark in Space
   // Grotesk 700 at -0.03em, 0.36x the mark's height apart.
   ctx.textAlign = 'left'
@@ -88,6 +91,19 @@ function drawHeader(ctx: Ctx, { activity, palette, fonts, place }: ShareCardScen
   setSpacing(ctx, -0.03 * 14)
   ctx.fillText('RunOmics', PAD_X + LOCKUP_MARK * (1 + 0.36), 32)
   setSpacing(ctx, 0)
+
+  if (scene.gradeBadge) {
+    // A neutral pill in ink, the grade's own colours: never the accent.
+    ctx.font = `700 12px ${fonts.display}`
+    const w = ctx.measureText(scene.gradeBadge).width + 20
+    ctx.fillStyle = palette.seg
+    roundRect(ctx, RIGHT - w, 20, w, 24, 12)
+    ctx.fill()
+    ctx.fillStyle = palette.tx
+    ctx.textAlign = 'center'
+    ctx.fillText(scene.gradeBadge, RIGHT - w / 2, 32)
+    ctx.textAlign = 'left'
+  }
 
   ctx.textBaseline = 'alphabetic'
   ctx.font = `700 30px ${fonts.display}`

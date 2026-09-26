@@ -6,19 +6,21 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { BackButton } from '@/components/ui/BackButton'
 import { AthleteDetails, AthleteKeyNumbers } from './ProfileAthleteStats'
 import { ProfileHrZones } from './ProfileHrZones'
+import { Vo2GradeCard } from './Vo2GradeCard'
+import type { Vo2GradeView } from '@/application/usecases/GetVo2Grade'
 import { formatRelativeAgo } from '@/lib/formatters'
 import { useMounted } from '@/lib/useMounted'
 import { t } from '@/i18n'
 
 interface Props {
   athlete: AthletePageView
-  latestVo2max: number | null
+  vo2Grade: Vo2GradeView | null
   weeklyZoneTime: ZoneShare[]
   recentZoneTime: ZoneShare[]
   paceZones: TrainingZonesData | null
 }
 
-export function AthleteClient({ athlete, latestVo2max, weeklyZoneTime, recentZoneTime, paceZones }: Props) {
+export function AthleteClient({ athlete, vo2Grade, weeklyZoneTime, recentZoneTime, paceZones }: Props) {
   const p = t.pages.athlete
   // The sync's age is read from the browser's clock after mount: worked out on
   // the server it is as old as the cached page, and the two differ - React #418.
@@ -33,7 +35,8 @@ export function AthleteClient({ athlete, latestVo2max, weeklyZoneTime, recentZon
         <p className="mt-1 text-footnote text-muted-foreground">{source}</p>
       </div>
 
-      <AthleteKeyNumbers athlete={athlete} latestVo2max={latestVo2max} />
+      {vo2Grade && <Vo2GradeCard view={vo2Grade} />}
+      <AthleteKeyNumbers athlete={athlete} />
       <ProfileHrZones
         athlete={athlete}
         weeklyZoneTime={weeklyZoneTime}

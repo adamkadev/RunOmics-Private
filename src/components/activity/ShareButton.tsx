@@ -12,9 +12,11 @@ const ShareCardModal = dynamic(() => import('./ShareCardModal').then((m) => m.Sh
 
 interface Props {
   activity: ShareActivity
+  /** The current VO₂max grade, offered as an optional badge on the card. */
+  vo2Grade?: string | null
 }
 
-export function ShareButton({ activity }: Props) {
+export function ShareButton({ activity, vo2Grade = null }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [canShareFiles] = useState(
     () => typeof window !== 'undefined' && typeof navigator.share === 'function' && typeof navigator.canShare === 'function'
@@ -36,6 +38,7 @@ export function ShareButton({ activity }: Props) {
       {isOpen && (
         <ShareCardModal
           activity={activity}
+          vo2Grade={vo2Grade}
           canShareFiles={canShareFiles}
           canCopyImage={canCopyImage}
           onClose={() => setIsOpen(false)}
