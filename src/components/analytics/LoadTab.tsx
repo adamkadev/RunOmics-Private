@@ -66,7 +66,9 @@ export function coachText(view: CoachReadView): { headline: string; signals: { t
     switch (signal.key) {
       case 'easy': {
         const pace = formatClock(signal.pace)
-        const text = signal.trend === 'flat' ? s.easyLevel(pace) : signal.delta < 0 ? s.easyFaster(pace, Math.abs(signal.delta)) : s.easySlower(pace, signal.delta)
+        // The Easy pace tile's own words: "1 s faster" is 1 s faster here too,
+        // even where the arrow calls a second flat.
+        const text = signal.delta === 0 ? s.easyLevel(pace) : signal.delta < 0 ? s.easyFaster(pace, Math.abs(signal.delta)) : s.easySlower(pace, signal.delta)
         return { trend: signal.trend, text }
       }
       case 'predictions': {

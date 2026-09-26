@@ -21,8 +21,16 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     setPrevPathname(pathname)
   }
 
+  // Once its entry animation has run, the wrapper carries no animation at
+  // all: nothing above a page's large title stays animated (v4.6 2b).
   return (
-    <div key={pathname} className={className}>
+    <div
+      key={pathname}
+      className={className || undefined}
+      onAnimationEnd={(e) => {
+        if (e.target === e.currentTarget) setClassName('')
+      }}
+    >
       {children}
     </div>
   )

@@ -83,29 +83,26 @@ describe('CompactTitleBar', () => {
     const at = page(STATUS_BAR + 4, 0)
     await mount(at)
     const title = document.querySelector('h1')!
-    expect(title.style.opacity).toBe('1')
-    expect(title.style.transform).toBe('none')
-    expect(title.style.filter).toBe('none')
+    expect(title.getAttribute('style') ?? '').toBe('')
 
     // Two points down is still the top: nothing moves yet.
     scrollY = 2
     window.dispatchEvent(new Event('scroll'))
     await flush()
-    expect(title.style.opacity).toBe('1')
+    expect(title.getAttribute('style') ?? '').toBe('')
     expect(screen.getByTestId('compact-title-bar').hasAttribute('data-shown')).toBe(false)
 
     scrollY = 3
     window.dispatchEvent(new Event('scroll'))
     await flush()
     expect(Number(title.style.opacity)).toBeLessThan(1)
-    expect(title.style.filter).toBe('none')
+    expect(title.style.filter).toBe('')
     expect(title.style.transform).toMatch(/^translateY\(/)
 
     scrollY = 0
     window.dispatchEvent(new Event('scroll'))
     await flush()
-    expect(title.style.opacity).toBe('1')
-    expect(title.style.transform).toBe('none')
+    expect(title.getAttribute('style') ?? '').toBe('')
   })
 
   it('stays hidden with the title just below the status bar', async () => {
