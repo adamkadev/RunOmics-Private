@@ -61,6 +61,8 @@ describe('CompactTitleBar', () => {
     expect(bar.hasAttribute('data-shown')).toBe(true)
     expect(bar.textContent).toBe('Plan')
     expect(bar.querySelector('span')!.className).toContain('text-[17px]')
+    // Text crossing the divider fades out under it instead of showing cut.
+    expect(bar.className).toContain('after:bg-gradient-to-b')
   })
 
   // At rest the large title sits under the status bar, inside the bar's

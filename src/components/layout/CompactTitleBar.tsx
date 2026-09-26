@@ -128,6 +128,10 @@ export function CompactTitleBar() {
         // sticky tab strips (z-30), which move under it while it shows.
         className={cn(
           'pointer-events-none fixed inset-x-0 top-0 z-40 items-end justify-center border-b lg:hidden',
+          // A 12 pt fade under the divider: a line of text crossing it fades
+          // out rather than leaving a cut glyph under the bar - the "₂" of
+          // VO₂MAX hung below its capitals and stayed on its own.
+          "after:pointer-events-none after:absolute after:inset-x-0 after:top-[calc(100%+1px)] after:h-3 after:bg-gradient-to-b after:from-background after:to-transparent after:content-['']",
           visible ? 'flex' : 'hidden',
         )}
         style={{
