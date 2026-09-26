@@ -726,13 +726,12 @@ export const fr = {
     thisWeek: 'Cette semaine',
     lastWeek: 'Semaine dernière',
     shoeFilter: { clear: 'Afficher les sorties de toutes les chaussures' },
-    weekStat: {
-      km: 'km',
-      runs: (n: number): string => (n === 1 ? 'sortie' : 'sorties'),
-      easy: 'temps facile',
-      noSplit: '—',
+    weekLine: {
+      ofKm: (target: string) => `/${target} km`,
+      runs: (n: number): string => (n === 1 ? '1 sortie' : `${n} sorties`),
+      easy: (pct: number) => `${pct} % facile`,
     },
-    weekOfTarget: (done: string, target: string) => `${done} sur ${target} km`,
+    mapButton: 'Carte',
     sort: {
       label: 'Trier',
       date: 'Date',
