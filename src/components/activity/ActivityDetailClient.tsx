@@ -177,7 +177,7 @@ export function ActivityDetailClient({
       )}
 
       {tabs.length > 1 && (
-        <StickyBar top="var(--top-scrim)" className="mb-3">
+        <StickyBar top="var(--sticky-top, var(--top-scrim))" className="mb-3">
           <SegmentedTabs
             tabs={detailTabs}
             items={tabs}

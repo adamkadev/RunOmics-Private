@@ -178,7 +178,7 @@ export function AnalyticsClient({
       </div>
 
       {active && (
-        <StickyBar ref={tabsRef} top="max(var(--safe-top), 8px)">
+        <StickyBar ref={tabsRef} top="var(--sticky-top, max(var(--safe-top), 8px))">
           {/* The shared switch, not a row of separate bordered pills: one recipe
               and one height for every segmented control in the app. */}
           <SegmentedTabs

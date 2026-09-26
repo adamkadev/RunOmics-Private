@@ -181,7 +181,6 @@
   --ro-text-3:              #8a8f8f;
   --track:                  #e8eaea;
   --heat-empty:             #e8eaea;
-  --faint-strong:           #9aa0a0;
   --band:                   #c9cdcd;
   --thumb-bg:               #e6e8e8;
   --tab-bar-bg:             #ffffff;
@@ -257,7 +256,6 @@
   --ro-text-3:              #6e7373;
   --track:                  #262a2a;
   --heat-empty:             #262a2a;
-  --faint-strong:           #5a6060;
   --band:                   #3a3f3f;
   --thumb-bg:               #1d2020;
   --tab-bar-bg:             #0b0c0c;
@@ -597,6 +595,30 @@ h1 {
 }
 .activity-map-fullscreen .maplibregl-ctrl-bottom-right {
   padding-bottom: env(safe-area-inset-bottom);
+}
+/* Collapsed, it is one 24 pt circle with the ⓘ centred (v4.3.3): MapLibre's
+   padding for the text it hides made a 46 x 26 box and cut the icon at its
+   right edge. Tapped open, MapLibre's own layout takes over again. */
+.activity-map .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) {
+  box-sizing: border-box !important;
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+.activity-map .maplibregl-ctrl-attrib.maplibregl-compact:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-inner {
+  display: none !important;
+}
+.activity-map .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button {
+  top: 0 !important;
+  right: 0 !important;
+  width: 24px !important;
+  height: 24px !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
 }
 /* The collapsed attribution is a 22 pt ⓘ (H13, M9). */
 .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button {

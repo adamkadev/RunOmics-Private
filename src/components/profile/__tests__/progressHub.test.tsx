@@ -125,4 +125,14 @@ describe('ProgressHub', () => {
     expect(screen.getByTestId('consistency-footer').textContent).toMatch(/\d+ days/)
     expect(screen.getByTestId('consistency-footer').textContent).toMatch(/\d+ wk streak/)
   })
+
+  // v4.3.3: the newest record carries a "PR" in the accent; its time is text ink.
+  it('marks the newest record with a PR label, not an accented time', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} />)
+    const labels = screen.getAllByTestId('latest-record')
+    expect(labels).toHaveLength(1)
+    expect(labels[0]!.textContent).toBe(t.profile.hub.latestRecord)
+    expect(labels[0]!.className).toContain('text-accent-text')
+    expect(labels[0]!.parentElement!.className).toContain('text-foreground')
+  })
 })

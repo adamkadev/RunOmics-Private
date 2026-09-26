@@ -1215,6 +1215,9 @@ export const en = {
     hub: {
       runs: 'runs',
       records: 'Records',
+      // The record set most recently, marked (v4.3.3).
+      latestRecord: 'PR',
+      latestRecordLabel: 'most recent record',
       shoes: 'Shoes',
       consistency: 'Consistency',
       settings: 'Settings',

@@ -173,21 +173,44 @@ export function DayStateStrip(
   )
 }
 
+/** Done's swatch: three small bars in Z2, Z4, Z2, as the done bars wear
+ *  their session's zone (v4.3.3) - a grey square matched none of them. */
+function DoneSwatch() {
+  const bars: { zone: number; height: number }[] = [
+    { zone: 2, height: 8 },
+    { zone: 4, height: 12 },
+    { zone: 2, height: 10 },
+  ]
+  return (
+    <span aria-hidden="true" data-legend-swatch="done" className="flex h-3 items-end gap-px">
+      {bars.map((bar, i) => (
+        <span
+          key={i}
+          className="state-done block w-[3px] rounded-[1px]"
+          style={{ height: bar.height, '--state-color': `var(--zone-${bar.zone})` } as CSSProperties}
+        />
+      ))}
+    </span>
+  )
+}
+
 /** The key under Plan's week bars: which shape is which state. Kept at the
- *  owner's request when v4.1 removed the other legends. Neutral swatches in
- *  the bars' own shapes (v4.3.1): done solid, planned dashed, missed hatched,
- *  today the accent outline - the zone colours are the bars' to carry. */
+ *  owner's request when v4.1 removed the other legends. The swatches are the
+ *  bars' shapes: done a small zone-coloured stack, planned dashed and missed
+ *  hatched in neutral ink, today the accent outline. */
 export function DayStateLegend() {
-  const done = { '--state-color': 'var(--faint-strong)' } as CSSProperties
   const muted = { '--state-color': 'var(--muted-foreground)' } as CSSProperties
   const items: { key: string; label: string; className: string; style?: CSSProperties }[] = [
-    { key: 'done', label: t.sessionState.done, className: 'state-done rounded-[3px]', style: done },
     { key: 'planned', label: t.sessionState.planned, className: 'state-planned rounded-[3px]', style: muted },
     { key: 'missed', label: t.sessionState.missed, className: 'state-missed rounded-[3px]', style: muted },
     { key: 'today', label: t.sessionState.today, className: 'today-bar rounded-[3px]' },
   ]
   return (
     <div data-testid="day-state-legend" className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-caption text-muted-foreground">
+      <span className="flex items-center gap-1.25">
+        <DoneSwatch />
+        {t.sessionState.done}
+      </span>
       {items.map((item) => (
         <span key={item.key} className="flex items-center gap-1.25">
           <span aria-hidden="true" data-legend-swatch={item.key} className={cn('block size-3', item.className)} style={item.style} />

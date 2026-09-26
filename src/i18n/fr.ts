@@ -1158,6 +1158,9 @@ export const fr = {
     hub: {
       runs: 'sorties',
       records: 'Records',
+      // The record set most recently, marked (v4.3.3).
+      latestRecord: 'RP',
+      latestRecordLabel: 'record le plus récent',
       shoes: 'Chaussures',
       consistency: 'Régularité',
       settings: 'Réglages',
