@@ -15,6 +15,8 @@ export interface ActivityPlanRow {
   chipLabel: string
   title: string
   detail: string
+  /** The one line beside the chip on the verdict card: "8 km planned · +0.28 km" (M9). */
+  summary: string
 }
 
 /** "+0.11 km" / "−1.2 km"; nothing when the run matched the plan to 10 m. */
@@ -48,6 +50,11 @@ export function activityPlanRow(
       t.sessionCard.ranLine(formatDistance(activity.distanceKm), formatDuration(activity.durationSeconds)),
       // The difference against the plan, from the plan's own distance: when
       // the planned value mirrored the run, "On plan" could never fail.
+      plan.distanceM ? kmDifference(activity.distanceKm - plan.distanceM / 1000) : null,
+      diverged ? t.plan.plannedVsRecorded(t.activityTypes[plan.type!], t.activityTypes[activity.type]) : null,
+    ].filter(Boolean).join(' · '),
+    summary: [
+      km ? t.sessionCard.kmPlanned(km) : plan.title,
       plan.distanceM ? kmDifference(activity.distanceKm - plan.distanceM / 1000) : null,
       diverged ? t.plan.plannedVsRecorded(t.activityTypes[plan.type!], t.activityTypes[activity.type]) : null,
     ].filter(Boolean).join(' · '),

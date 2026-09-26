@@ -18,7 +18,21 @@ describe('TodayHero', () => {
 
     expect(card.className).toContain('glass-card')
     expect(card.getAttribute('style')).not.toMatch(/#101a2c|rgba\(148,\s*178,\s*220/)
-    expect(card.style.borderLeftColor).toBe('var(--tone-caution)')
+    // H03: a thin border in the tone all round, not a thick left rule.
+    expect(card.className).not.toContain('border-l-[3px]')
+    expect(card.style.borderColor).toContain('color-mix')
+  })
+
+  // H03: the status word in the head, and no sentence under the headline.
+  it('puts the watch status in the head and drops the body sentence', () => {
+    render(
+      <TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={{ headline: 'Steady day.', body: 'Keep it moderate.' }} watchStatus="productive" />,
+    )
+
+    expect(screen.getByText(t.trainingStatus.status.productive)).toBeInTheDocument()
+    expect(screen.getByText('Steady day.')).toBeInTheDocument()
+    expect(screen.queryByText('Keep it moderate.')).toBeNull()
+    expect(screen.queryByText(t.sessionCard.coachInsight)).toBeNull()
   })
 
   // The footer showed a finished run's "6.11 km · 25 min" with no state, so it
@@ -38,7 +52,6 @@ describe('TodayHero', () => {
     expect(row).toHaveTextContent('Threshold')
     expect(row).toHaveTextContent(`${t.sessionCard.ranAt('6.11', '4:10 /km')} · ${t.sessionCard.plannedKm('6')}`)
     expect(row.getAttribute('href')).toBe('/activities/a1')
-    expect(screen.getByText(t.sessionCard.coachInsight)).toBeInTheDocument()
   })
 
   it('keeps the offline copy when the AI insight is missing', () => {

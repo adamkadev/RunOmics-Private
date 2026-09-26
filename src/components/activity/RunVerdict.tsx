@@ -1,7 +1,8 @@
 import type { ActivityDetailView } from './activityViews'
 import { runVerdictTone } from '@/domain/activity/runVerdict'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { SessionCard } from '@/components/ui/SessionCard'
+import type { ReactNode } from 'react'
+import { SessionStateChip } from '@/components/ui/SessionCard'
 import { STATUS } from '@/lib/statusColors'
 import type { Insight } from '@/lib/gemini'
 import { cn } from '@/lib/utils'
@@ -19,41 +20,30 @@ interface Props {
   aiVerdict: Insight | null
   /** Planned against ran, when the plan had a session that day. */
   planRow?: ActivityPlanRow | null
+  /** How it felt - effort and the note - under a divider in the same card. */
+  children?: ReactNode
 }
 
 /**
- * The AI run verdict (or its offline fallback), with the "vs plan" row under
- * it: what the coach makes of the run, and how it compares with the plan, in
- * one card straight after the run's own numbers.
+ * The verdict as its headline only, then the plan, effort and note in the
+ * same card (H10, M9). The paragraph and the "Coach insight" label are gone;
+ * the headline is the verdict.
  */
-export function RunVerdict({ activity, aiVerdict, planRow }: Props) {
+export function RunVerdict({ activity, aiVerdict, planRow, children }: Props) {
   const v = t.activity.verdict
   const tone = runVerdictTone(activity)
-
   const headline = aiVerdict?.headline ?? v.headline[tone](t.activityTypes[activity.type])
-  const body =
-    aiVerdict?.body ??
-    (activity.rpe !== null ? v.effortClause(t.rpeLabels[activity.rpe] ?? '', activity.rpe) : null)
 
   return (
-    <GlassSurface variant="card" className="overflow-hidden rounded-card-sm">
-      <div className="px-4 pt-3 pb-2.5">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-caption font-semibold uppercase tracking-[0.06em] text-subtle">{v.title}</h2>
-          {aiVerdict && <span className="text-caption text-subtle">{t.sessionCard.coachInsight}</span>}
-        </div>
-        <p className={cn('mt-1 font-display text-lg font-semibold leading-tight', TONE_TEXT_CLASS[tone])}>{headline}</p>
-        {body && <p className="mt-1 text-footnote leading-snug text-muted-foreground">{body}</p>}
-      </div>
+    <GlassSurface variant="card" className="overflow-hidden rounded-card-sm px-4" data-testid="run-verdict">
+      <p className={cn('pt-3.5 font-display text-title3 font-bold leading-tight', TONE_TEXT_CLASS[tone])}>{headline}</p>
       {planRow && (
-        <SessionCard
-          state="done"
-          chipLabel={planRow.chipLabel}
-          title={planRow.title}
-          detail={planRow.detail}
-          className="border-t border-border px-4 py-2.5"
-        />
+        <div className="flex items-center gap-2.5 pb-3 pt-2.5">
+          <SessionStateChip state="done" label={planRow.chipLabel} />
+          <span className="min-w-0 text-footnote text-muted-foreground">{planRow.summary}</span>
+        </div>
       )}
+      {children && <div className={cn('border-t border-border', !planRow && 'mt-3')}>{children}</div>}
     </GlassSurface>
   )
 }

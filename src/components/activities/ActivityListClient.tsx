@@ -16,7 +16,7 @@ import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyShare } from '@/domain/activity/easyShare'
 import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
-import { formatDateRange, formatKm } from '@/lib/formatters'
+import { formatDateRange, formatKm, formatRanKm } from '@/lib/formatters'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { useUrlParam } from '@/lib/useUrlParam'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
@@ -138,7 +138,7 @@ function WeekTargetProgress({ target, targetKm }: { target: WeekTarget; targetKm
         <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-1 text-caption tabular-nums text-subtle">
-        {t.activities.weekOfTarget(formatWeekKm(target.ranKm), formatWeekKm(targetKm))}
+        {t.activities.weekOfTarget(formatRanKm(target.ranKm), formatWeekKm(targetKm))}
       </p>
     </div>
   )
@@ -511,17 +511,6 @@ export function ActivityListClient({
         </GlassSurface>
       ) : groups ? (
         <div className="space-y-3">
-          {/* What the week dots are, once, above the weeks they sit in (G22). */}
-          <p className="flex items-center gap-3 px-1 text-caption text-subtle" data-testid="dot-legend">
-            <span className="flex items-center gap-1.5">
-              <span aria-hidden="true" className="size-[7px] rounded-[4px]" style={{ background: zoneColor(2) }} />
-              {t.activities.dotLegend.run}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span aria-hidden="true" className="size-[7px] rounded-[4px]" style={{ border: `1.5px solid ${zoneColor(sessionZone({ type: 'Race' }))}` }} />
-              {t.activities.dotLegend.race}
-            </span>
-          </p>
           {groups.map((g, i) => {
             // A toggle flips a week from its default, so for the week that
             // starts open, being in expandedWeeks means the reader closed it.

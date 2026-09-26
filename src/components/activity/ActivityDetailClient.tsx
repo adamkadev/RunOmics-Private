@@ -16,7 +16,6 @@ import { TrainingEffect } from './TrainingEffect'
 import { AerobicDecoupling } from './AerobicDecoupling'
 import { BestEfforts } from './BestEfforts'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
@@ -155,21 +154,17 @@ export function ActivityDetailClient({
 
           <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
 
-          <RunVerdict activity={activity} aiVerdict={aiVerdict} planRow={planRow} />
-
-          {!activity.avgHeartRate && (
-            <p className="flex items-center justify-center gap-2 text-caption text-subtle-2">
-              <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.1] px-2 py-px text-caption font-semibold uppercase tracking-[0.06em] text-amber-600 dark:text-amber-400">
-                {t.activity.dataQuality.estimated}
-              </span>
-              {t.activity.dataQuality.noHr}
-            </p>
-          )}
-
-          {/* How it felt: the watch's RPE, read-only, and the note - the one thing
-              on an activity the user writes. */}
-          <GlassSurface variant="card" className="rounded-card-sm px-4">
-            <div className="flex min-h-11 items-center justify-between gap-3 border-b border-border text-sm">
+          {/* The verdict, the plan, and how it felt - the watch's RPE and the
+              note, the one thing here the user writes - in one card (H10). */}
+          <RunVerdict activity={activity} aiVerdict={aiVerdict} planRow={planRow}>
+            {!activity.avgHeartRate && (
+              <div className="pt-2.5">
+                <span className="rounded-full border border-amber-500/30 bg-amber-500/[0.1] px-2 py-px text-caption font-semibold uppercase tracking-[0.06em] text-amber-600 dark:text-amber-400">
+                  {t.activity.dataQuality.estimated}
+                </span>
+              </div>
+            )}
+            <div className="flex min-h-11 items-center justify-between gap-3 text-sm">
               <span className="font-semibold text-foreground">
                 <GlossaryTerm term="rpe">{e.label}</GlossaryTerm>
               </span>
@@ -180,7 +175,7 @@ export function ActivityDetailClient({
               )}
             </div>
             <ActivityNotes activityId={activity.id} />
-          </GlassSurface>
+          </RunVerdict>
 
           {extras}
         </>
