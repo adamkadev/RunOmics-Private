@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Timer, ChevronRight } from 'lucide-react'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { MINUS, formatDuration, formatClock } from '@/lib/formatters'
-import { CHART_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 import type { ActivitySplit, SplitLap } from '@/domain/activity/types'
 import type { ActivityDetailView } from './activityViews'
@@ -109,7 +108,7 @@ function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; split
             </span>
             <span className="font-semibold tabular-nums text-foreground">{formatClock(split.paceSecPerKm)}</span>
             <span className="block h-2 overflow-hidden rounded-full" style={{ background: 'var(--track)' }} aria-hidden="true">
-              <span className="block h-full rounded-full" style={{ width: `${width(speeds[i]!)}%`, background: CHART_COLORS.pace }} />
+              <span className="block h-full rounded-full" style={{ width: `${width(speeds[i]!)}%`, background: 'var(--zone-2)' }} />
             </span>
             <span className="text-right font-semibold tabular-nums text-muted-foreground">
               {signedSeconds(delta)}

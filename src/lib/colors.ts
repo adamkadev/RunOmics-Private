@@ -295,20 +295,6 @@ export const BOOT_COLORS = {
 } as const
 
 
-/** Bands a temperature onto the text-grade `600 / dark:400` ramp the rest of the
- *  app uses for semantic ink (see STATUS in statusColors.ts). It colours the
- *  reading itself, not just a glyph, so the levels have to survive light mode. */
-export function temperatureColor(celsius: number): string {
-  if (celsius < 5)  return 'text-blue-600 dark:text-blue-400'
-  if (celsius < 12) return 'text-cyan-600 dark:text-cyan-400'
-  // Not the accent: this band sits mid-ramp between cyan and amber, so on a
-  // violet or teal accent the ramp stopped reading as one scale.
-  if (celsius < 18) return 'text-emerald-600 dark:text-emerald-400'
-  if (celsius < 24) return 'text-amber-600 dark:text-amber-400'
-  if (celsius < 30) return 'text-orange-600 dark:text-orange-400'
-  return 'text-red-600 dark:text-red-400'
-}
-
 export const TEMP_BAND_COLORS = {
   cold:      c.blue400,
   cool:      c.emerald400,

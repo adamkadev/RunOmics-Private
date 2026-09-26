@@ -10,6 +10,28 @@ import type { ProgressHubView, YearPoint } from './progressHub'
 const TITLE = 'font-display text-subhead font-semibold text-foreground'
 const MUTED = 'text-footnote text-muted-foreground'
 
+/**
+ * A tile's footer, "203 days · 4 wk streak": each segment stays whole, so a
+ * narrow tile breaks between them, never inside one (v4.3.1), at 13 px. Each
+ * segment carries its " · " in front and the row is pulled left by that
+ * width: the segment that starts a line has its dot clipped at the tile's
+ * edge, so a wrapped line neither ends nor starts on a dot.
+ */
+function FooterLine({ parts, className, testId }: { parts: string[]; className?: string; testId?: string }) {
+  return (
+    <div className={cn('overflow-hidden', className)}>
+      <p className="-ml-2 flex flex-wrap text-[13px] leading-snug text-muted-foreground" data-testid={testId}>
+        {parts.map((part) => (
+          <span key={part} className="whitespace-nowrap">
+            <span aria-hidden="true" className="inline-block w-2 text-center">·</span>
+            {part}
+          </span>
+        ))}
+      </p>
+    </div>
+  )
+}
+
 /** A tile that opens its sub-page: a title with a chevron, then its figure. */
 function Tile({ href, title, className, children, testId }: { href: string; title: string; className?: string; children: ReactNode; testId?: string }) {
   return (
@@ -196,9 +218,11 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               <div className="mt-2">
                 <Sparkline values={vo2max.series} />
               </div>
-              <p className={cn('mt-1.5', MUTED)}>
-                {h.thresholdLine(vo2max.thresholdPaceSecPerKm ? formatPace(vo2max.thresholdPaceSecPerKm).replace(' /km', '') : null, vo2max.lthrBpm)}
-              </p>
+              <FooterLine
+                className="mt-1.5"
+                testId="vo2-footer"
+                parts={h.thresholdParts(vo2max.thresholdPaceSecPerKm ? formatPace(vo2max.thresholdPaceSecPerKm).replace(' /km', '') : null, vo2max.lthrBpm)}
+              />
             </>
           ) : (
             <p className={MUTED}>–</p>
@@ -222,7 +246,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
 
         <Tile href="/consistency" title={h.consistency} testId="consistency-tile">
           <Heatmap weeks={consistency.weeks} />
-          <p className={cn('mt-2', MUTED)}>{h.consistencyLine(consistency.activeDays, consistency.streakWeeks)}</p>
+          <FooterLine className="mt-2" testId="consistency-footer" parts={h.consistencyParts(consistency.activeDays, consistency.streakWeeks)} />
         </Tile>
       </div>
 

@@ -13,7 +13,6 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import type { ActivityWeather } from '@/domain/activity/types'
 import { compassPoint, weatherCondition, type WeatherCondition } from '@/domain/activity/weather'
-import { temperatureColor } from '@/lib/colors'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -45,15 +44,17 @@ export function WeatherChips({ weather }: { weather: ActivityWeather }) {
   return (
     <>
       <div
-        className={cn(MAP_CHIP_CLASS, temperatureColor(weather.tempC))}
+        // The reading in text ink: amber is caution's and race's (v4.3.1).
+        className={cn(MAP_CHIP_CLASS, 'text-foreground')}
         aria-label={condition ? `${w.conditions[condition]}, ${temperature}` : undefined}
       >
         <Icon size={12} />
         {temperature}
       </div>
-      {/* No wind reading, no chip: it printed "NaN km/h N". */}
+      {/* No wind reading, no chip: it printed "NaN km/h N". Under 390 pt the
+          wind is the chip that gives way (v4.3.1). */}
       {Number.isFinite(weather.windKph) && (
-        <div className={MAP_CHIP_CLASS} aria-label={w.wind}>
+        <div className={cn(MAP_CHIP_CLASS, 'max-[389px]:hidden')} aria-label={w.wind} data-testid="map-wind-chip">
           <Wind size={12} className="text-subtle" />
           {Math.round(weather.windKph)} {t.units.kmh}
           {Number.isFinite(weather.windDirDeg) && ` ${w.compass[compassPoint(weather.windDirDeg)]}`}

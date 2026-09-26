@@ -385,6 +385,15 @@ describe('missed sessions', () => {
     expect(within(screen.getByTestId('week-session-garmin:2026-09-08:Tempo')).getByText(t.sessionState.missed)).toBeInTheDocument()
     expect(within(screen.getByTestId('week-session-garmin:2026-09-11:Long')).queryByText(t.sessionState.planned)).toBeNull()
   })
+
+  // v4.3.1: today's row wears an 8 px accent dot and an accent day label.
+  it('marks today in the list with the accent', () => {
+    renderWeek({ planned: [...planned, { date: TODAY, name: 'Easy', distanceM: 8_000 }] as PlannedWorkout[] })
+    const dots = screen.getAllByTestId('week-session-today-dot')
+    expect(dots).toHaveLength(1)
+    expect(dots[0]!.style.background).toBe('var(--accent)')
+    expect(dots[0]!.parentElement!.querySelector('.text-accent-text')).not.toBeNull()
+  })
 })
 
 describe('the week summary in plain words', () => {
@@ -406,5 +415,18 @@ describe('WeekView state legend', () => {
     for (const label of [t.sessionState.done, t.sessionState.planned, t.sessionState.missed, t.sessionState.today]) {
       expect(legend.textContent).toContain(label)
     }
+  })
+
+  // v4.3.1: the swatches are the bars' shapes in neutral ink, today the accent.
+  it('draws each swatch in the shape its bar has', () => {
+    renderWeek({ activities: [TEMPO] })
+    const swatch = (key: string) => screen.getByTestId('day-state-legend').querySelector<HTMLElement>(`[data-legend-swatch="${key}"]`)!
+    expect(swatch('done').className).toContain('state-done')
+    expect(swatch('done').style.getPropertyValue('--state-color')).toBe('var(--faint-strong)')
+    expect(swatch('planned').className).toContain('state-planned')
+    expect(swatch('planned').style.getPropertyValue('--state-color')).toBe('var(--muted-foreground)')
+    expect(swatch('missed').className).toContain('state-missed')
+    expect(swatch('missed').style.getPropertyValue('--state-color')).toBe('var(--muted-foreground)')
+    expect(swatch('today').className).toContain('today-bar')
   })
 })

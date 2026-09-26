@@ -135,13 +135,10 @@ function Bars({
               {rest ? '' : cell.km === null ? '–' : cell.state === 'done' ? formatRunKm(cell.km) : formatCellKm(cell.km)}
             </span>
             {/* Done is the run alone, no planned cap (H19); today still to run
-                is a solid accent outline, not the dashed planned one. */}
+                is an accent outline and wash, not the dashed planned one. */}
             {cell.isToday && cell.state !== 'done' && !rest ? (
-              <span
-                data-today-outline
-                className="block rounded-lg border-2 border-accent"
-                style={{ height }}
-              />
+              // The accent outline over a 15% accent fill, so it still reads as a bar (v4.3.1).
+              <span data-today-outline className="today-bar block rounded-lg" style={{ height }} />
             ) : (
               <span
                 className={cn('block', rest ? 'rounded-[3px]' : 'rounded-lg', STATE_CLASS[cell.state], cell.isToday && 'state-today')}
@@ -176,20 +173,23 @@ export function DayStateStrip(
 }
 
 /** The key under Plan's week bars: which shape is which state. Kept at the
- *  owner's request when v4.1 removed the other legends. */
-export function DayStateLegend({ color }: { color: string }) {
-  const swatch = { '--state-color': color } as CSSProperties
-  const items: { key: string; label: string; className: string }[] = [
-    { key: 'done', label: t.sessionState.done, className: 'state-done rounded-[3px]' },
-    { key: 'planned', label: t.sessionState.planned, className: 'state-planned rounded-[3px]' },
-    { key: 'missed', label: t.sessionState.missed, className: 'state-missed rounded-[3px]' },
-    { key: 'today', label: t.sessionState.today, className: 'rounded-full border-2 border-accent' },
+ *  owner's request when v4.1 removed the other legends. Neutral swatches in
+ *  the bars' own shapes (v4.3.1): done solid, planned dashed, missed hatched,
+ *  today the accent outline - the zone colours are the bars' to carry. */
+export function DayStateLegend() {
+  const done = { '--state-color': 'var(--faint-strong)' } as CSSProperties
+  const muted = { '--state-color': 'var(--muted-foreground)' } as CSSProperties
+  const items: { key: string; label: string; className: string; style?: CSSProperties }[] = [
+    { key: 'done', label: t.sessionState.done, className: 'state-done rounded-[3px]', style: done },
+    { key: 'planned', label: t.sessionState.planned, className: 'state-planned rounded-[3px]', style: muted },
+    { key: 'missed', label: t.sessionState.missed, className: 'state-missed rounded-[3px]', style: muted },
+    { key: 'today', label: t.sessionState.today, className: 'today-bar rounded-[3px]' },
   ]
   return (
     <div data-testid="day-state-legend" className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-caption text-muted-foreground">
       {items.map((item) => (
         <span key={item.key} className="flex items-center gap-1.25">
-          <span aria-hidden="true" className={cn('block size-3', item.className)} style={swatch} />
+          <span aria-hidden="true" data-legend-swatch={item.key} className={cn('block size-3', item.className)} style={item.style} />
           {item.label}
         </span>
       ))}

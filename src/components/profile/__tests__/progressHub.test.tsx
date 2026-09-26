@@ -112,4 +112,17 @@ describe('ProgressHub', () => {
     expect(screen.getByTestId('race-tile').textContent).toContain('42:10')
     expect(screen.getByTestId('year-bars').children).toHaveLength(5)
   })
+
+  // v4.3.1: the footers are whole segments that wrap between, never inside.
+  it('keeps each footer segment whole', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} />)
+    for (const id of ['consistency-footer', 'vo2-footer']) {
+      const footer = screen.queryByTestId(id)
+      if (!footer) continue
+      expect(footer.children.length).toBeGreaterThan(0)
+      for (const segment of footer.children) expect(segment.className).toContain('whitespace-nowrap')
+    }
+    expect(screen.getByTestId('consistency-footer').textContent).toMatch(/\d+ days/)
+    expect(screen.getByTestId('consistency-footer').textContent).toMatch(/\d+ wk streak/)
+  })
 })

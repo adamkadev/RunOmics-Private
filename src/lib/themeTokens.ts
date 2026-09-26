@@ -34,6 +34,7 @@ export const SURFACES = {
     tabBar: '#ffffff',
     seg: '#e6e8e8',
     faint: '#e8eaea',
+    faintStrong: '#9aa0a0',
     band: '#c9cdcd',
     amber: '#b45309',
     shadowRaised: '0 1px 3px rgba(0, 0, 0, 0.06)',
@@ -49,6 +50,7 @@ export const SURFACES = {
     tabBar: '#0b0c0c',
     seg: '#1d2020',
     faint: '#262a2a',
+    faintStrong: '#5a6060',
     band: '#3a3f3f',
     amber: '#f5b83d',
     shadowRaised: 'none',
@@ -78,6 +80,8 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     // Empty tracks, rest days and empty heatmap cells (--fa).
     '--track': n.faint,
     '--heat-empty': n.faint,
+    // A done swatch with no zone behind it: Plan's legend (--fa-strong).
+    '--faint-strong': n.faintStrong,
     // The interval band and recovery reps.
     '--band': n.band,
     '--thumb-bg': n.seg,

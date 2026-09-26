@@ -20,6 +20,18 @@ export function showPlaceLabelsAtAnyZoom(map: MapLibreMap): void {
   }
 }
 
+/** Points of interest are the style's, not the run's: their labels clipped at
+ *  the card's edge ("ts") and sat under the chips (v4.3.1). */
+const POI_SOURCE_LAYERS = ['poi', 'poi_label', 'housenumber']
+
+export function hidePoiLabels(map: MapLibreMap): void {
+  for (const layer of map.getStyle().layers) {
+    if (layer.type !== 'symbol') continue
+    const sourceLayer = (layer as { 'source-layer'?: string })['source-layer']
+    if (sourceLayer && POI_SOURCE_LAYERS.includes(sourceLayer)) map.setLayoutProperty(layer.id, 'visibility', 'none')
+  }
+}
+
 let workerConfigured = false
 
 export async function loadMapLibre(): Promise<MapLibre> {

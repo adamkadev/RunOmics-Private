@@ -1230,10 +1230,11 @@ export const en = {
       target: (time: string) => `target ${time}`,
       noRace: 'No race planned',
       in90d: (delta: string) => `${delta} in 90 d`,
-      thresholdLine: (pace: string | null, lthr: number | null) =>
-        [pace ? `threshold ${pace}` : null, lthr ? `LTHR ${lthr}` : null].filter(Boolean).join(' · '),
+      // The footers as segments, each kept whole on the line (v4.3.1).
+      thresholdParts: (pace: string | null, lthr: number | null) =>
+        [pace ? `threshold ${pace}` : null, lthr ? `LTHR ${lthr}` : null].filter((part): part is string => part !== null),
       noRecords: 'No records yet',
-      consistencyLine: (days: number, weeks: number) => `${days} days in 12 months · ${weeks} wk`,
+      consistencyParts: (days: number, weeks: number) => [`${days} days`, `${weeks} wk streak`],
       since: (date: string) => `since ${date}`,
       hours: 'h',
       openYears: 'Kilometres by year',
