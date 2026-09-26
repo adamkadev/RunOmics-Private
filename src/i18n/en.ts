@@ -101,10 +101,13 @@ export const en = {
   // The rolling year as month rows (/consistency).
   consistency: {
     activeDays: 'Active days',
-    shareOfDays: 'Share of days',
+    share: 'Share',
+    streak: 'Streak',
+    streakValue: (weeks: number) => `${weeks} wk`,
     levels: { rest: 'Rest', run: 'Run', long: 'Long run' },
-    monthSummary: (month: string, active: number, long: number) =>
-      `${month}: ${active} active day${active === 1 ? '' : 's'}, ${long} long run${long === 1 ? '' : 's'}`,
+    today: 'Today',
+    monthSummary: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'}`,
+    restDay: (date: string) => `${date} · Rest day`,
     empty: 'No runs in the last 12 months yet.',
   },
 
@@ -253,6 +256,7 @@ export const en = {
 
   settings: {
     sections: {
+      profile: 'Profile',
       appearance: 'Appearance',
       data: 'Data',
       account: 'Account',
@@ -313,6 +317,8 @@ export const en = {
       weight: 'Weight',
       height: 'Height',
       fitnessAge: 'Fitness age',
+      // Fitness age against the real age: "20 of 29" (C2, v4.4).
+      ofAge: (age: number) => `of ${age}`,
       achievableFitnessAge: 'Potential',
       bmi: 'BMI',
       fitnessAgeBand: {
@@ -1043,7 +1049,9 @@ export const en = {
       projectedTick: 'proj.',
       shortBy: (km: string) => `${km} short`,
       overBy: (km: string) => `${km} over`,
-      needsWeeklyDetail: (needed: string, current: string) => `Needs ${needed} km/wk — currently running ${current}`,
+      needsWeeklyDetail: (needed: string, current: string) => `Needs ${needed} km/wk, running ${current}.`,
+      // "Projected 1,757 km · 243 short.": the verdict alone, in its tone.
+      verdict: (projected: string, outcome: string | null) => `${projected}${outcome ? ` · ${outcome}` : ''}.`,
     },
     monthlyVolume: {
       title: 'Monthly volume',
@@ -1060,6 +1068,14 @@ export const en = {
       daysIn: (month: string, days: number) => `${month} is ${days} day${days === 1 ? '' : 's'} in`,
       proRata: (actual: number, target: number) => `${actual} of a pro-rata ${target} km`,
       proRataCaption: (days: number) => `pro-rata · ${days} day${days === 1 ? '' : 's'} in`,
+    },
+    // C3, v4.4: the season strip and timeline.
+    season: {
+      title: 'Season',
+      today: 'Today',
+      todayOn: (date: string) => `TODAY · ${date}`,
+      blockWeek: (race: string, week: number, weeks: number) => `${race} block wk ${week} of ${weeks}`,
+      noDate: 'No date yet',
     },
     history: {
       title: 'Past Years',
@@ -1273,13 +1289,14 @@ export const en = {
       fourWeeks: '4 weeks',
       columnZone: 'Zone',
       columnPace: 'Pace /km',
-      columnHr: 'HR bpm',
+      columnHr: 'HR',
       columnTime: 'Time',
       inZonesWeek: (duration: string) => `${duration} in zones this week`,
       inZonesRecent: (duration: string) => `${duration} in zones over the last 4 weeks`,
       noSessionsThisWeek: 'No sessions logged yet.',
       noSessionsRecent: 'No sessions logged in these 4 weeks.',
       emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
+      hardShare: (pct: number) => `Z4–Z5 ${pct}% · target 10–15%`,
       highIntensityNote: (pct: number) =>
         // No phase in the sentence (G17): it named a build block during a base week.
         `${pct}% of your time was Z4–Z5, against the 10–15% most training weeks keep it to.`,

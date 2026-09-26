@@ -6,6 +6,7 @@ import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { useToday } from '@/lib/useToday'
 import { YearView } from './YearView'
+import type { SeasonBlock } from './SeasonTimeline'
 import { GoalsHistory } from './GoalsHistory'
 import { t } from '@/i18n'
 
@@ -13,9 +14,10 @@ interface Props {
   data: GoalsPageData
   /** The date the page was prerendered on; see useToday. */
   today: string
+  block?: SeasonBlock | null
 }
 
-export function GoalsClient({ data, today: serverToday }: Props) {
+export function GoalsClient({ data, today: serverToday, block = null }: Props) {
   const today = useToday(serverToday)
   const { years, byYear, history } = data
   const [selectedYear, setSelectedYear] = useState(years[0])
@@ -45,7 +47,7 @@ export function GoalsClient({ data, today: serverToday }: Props) {
 
       <div {...(hasYearTabs ? yearTabs.panelProps : {})}>
         {yearData ? (
-          <YearView key={yearData.year} yearData={yearData} today={today} />
+          <YearView key={yearData.year} yearData={yearData} today={today} block={block} />
         ) : (
           <GlassSurface variant="card" className="rounded-2xl py-12 text-center">
             <p className="text-sm text-subtle">{t.goals.empty}</p>

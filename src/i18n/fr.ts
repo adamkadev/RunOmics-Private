@@ -87,10 +87,13 @@ export const fr = {
 
   consistency: {
     activeDays: 'Jours actifs',
-    shareOfDays: 'Part des jours',
+    share: 'Part',
+    streak: 'Série',
+    streakValue: (weeks: number) => `${weeks} sem`,
     levels: { rest: 'Repos', run: 'Sortie', long: 'Sortie longue' },
-    monthSummary: (month: string, active: number, long: number) =>
-      `${month} : ${active} jour${active > 1 ? 's' : ''} actif${active > 1 ? 's' : ''}, ${long} sortie${long > 1 ? 's' : ''} longue${long > 1 ? 's' : ''}`,
+    today: "Aujourd'hui",
+    monthSummary: (month: string, active: number) => `${month} : ${active} jour${active > 1 ? 's' : ''} actif${active > 1 ? 's' : ''}`,
+    restDay: (date: string) => `${date} · Jour de repos`,
     empty: 'Aucune sortie sur les 12 derniers mois pour le moment.',
   },
 
@@ -237,6 +240,7 @@ export const fr = {
 
   settings: {
     sections: {
+      profile: 'Profil',
       appearance: 'Apparence',
       data: 'Données',
       account: 'Compte',
@@ -297,6 +301,8 @@ export const fr = {
       weight: 'Poids',
       height: 'Taille',
       fitnessAge: 'Âge de forme',
+      // Fitness age against the real age: "20 of 29" (C2, v4.4).
+      ofAge: (age: number) => `sur ${age}`,
       achievableFitnessAge: 'Potentiel',
       bmi: 'IMC',
       fitnessAgeBand: {
@@ -1019,7 +1025,8 @@ export const fr = {
       projectedTick: 'proj.',
       shortBy: (km: string) => `${km} de retard`,
       overBy: (km: string) => `${km} d’avance`,
-      needsWeeklyDetail: (needed: string, current: string) => `Besoin de ${needed} km/sem — rythme actuel ${current}`,
+      needsWeeklyDetail: (needed: string, current: string) => `Besoin de ${needed} km/sem, rythme actuel ${current}.`,
+      verdict: (projected: string, outcome: string | null) => `${projected}${outcome ? ` · ${outcome}` : ''}.`,
     },
     monthlyVolume: {
       title: 'Volume mensuel',
@@ -1036,6 +1043,13 @@ export const fr = {
       daysIn: (month: string, days: number) => `${month} compte ${days} jour${days === 1 ? '' : 's'}`,
       proRata: (actual: number, target: number) => `${actual} sur un objectif au prorata de ${target} km`,
       proRataCaption: (days: number) => `prorata · ${days} jour${days === 1 ? '' : 's'}`,
+    },
+    season: {
+      title: 'Saison',
+      today: "Aujourd'hui",
+      todayOn: (date: string) => `AUJOURD'HUI · ${date}`,
+      blockWeek: (race: string, week: number, weeks: number) => `bloc ${race} sem ${week} sur ${weeks}`,
+      noDate: 'Pas encore de date',
     },
     history: {
       title: 'Années passées',
@@ -1214,13 +1228,14 @@ export const fr = {
       fourWeeks: '4 semaines',
       columnZone: 'Zone',
       columnPace: 'Allure /km',
-      columnHr: 'FC bpm',
+      columnHr: 'FC',
       columnTime: 'Temps',
       inZonesWeek: (duration: string) => `${duration} en zones cette semaine`,
       inZonesRecent: (duration: string) => `${duration} en zones sur les 4 dernières semaines`,
       noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',
       noSessionsRecent: 'Aucune séance enregistrée sur ces 4 semaines.',
       emptyWeekFallback: 'Pas encore de séance cette semaine - affichage des 4 dernières semaines.',
+      hardShare: (pct: number) => `Z4–Z5 ${pct}% · cible 10–15%`,
       highIntensityNote: (pct: number) =>
         `${pct}% de ton temps était en Z4–Z5, contre les 10–15% auxquels la plupart des semaines d’entraînement s’en tiennent.`,
     },

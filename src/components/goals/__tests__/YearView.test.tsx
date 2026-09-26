@@ -59,14 +59,18 @@ describe('YearView annual goal card', () => {
     const marker = container.querySelector<HTMLElement>('[aria-label*="1,705"]')
     expect(marker).not.toBeNull()
     expect(marker!.style.left).toBe('85.25%')
-    expect(screen.getByText(p.projectedTick)).toBeInTheDocument()
+    // C3: no "proj." label under it; the sentence below names the projection.
+    expect(screen.queryByText(p.projectedTick)).toBeNull()
   })
 
   it('names the projection as the headline under the bar, in the shortfall tone', () => {
     const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
 
-    const headline = screen.getByText(`${p.projected('1,705')} · ${p.shortBy('295')}`)
+    // C3: only the short verdict is in the tone; the need follows muted.
+    const headline = screen.getByTestId('projection-verdict')
+    expect(headline.textContent).toBe(`${p.projected('1,705')} · ${p.shortBy('295')}.`)
     expect(headline.className).toContain(STATUS.warning.text)
+    expect(screen.getByTestId('projection-line').textContent).toContain(p.needsWeeklyDetail('29', '25'))
     // No small top-right chip repeating the same verdict a second time.
     expect(container.textContent).not.toContain(p.status.behind)
   })

@@ -58,10 +58,43 @@ export function InfoButton({
  * A term with its definition behind an (i). Form, CTL, ATL, VMA, LTHR, RPE and
  * the training effects were explained on some charts and nowhere else.
  */
-export function GlossaryTerm({ term, children, className }: { term: GlossaryKey; children?: ReactNode; className?: string }) {
+export function GlossaryTerm({
+  term,
+  children,
+  className,
+  quiet = false,
+}: {
+  term: GlossaryKey
+  children?: ReactNode
+  className?: string
+  /** No (i): the label itself opens the definition on a tap (C2, v4.4). */
+  quiet?: boolean
+}) {
   const [open, setOpen] = useState(false)
   const id = useId()
   const name = t.glossary[term].term
+
+  if (quiet) {
+    return (
+      <span className={cn('inline', className)}>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls={open ? id : undefined}
+          aria-label={t.glossary.about(name)}
+          className="hit-44 inline text-left [text-transform:inherit]"
+        >
+          {children ?? name}
+        </button>
+        {open && (
+          <span id={id} role="note" className="mt-1 block text-xs font-normal normal-case leading-snug tracking-normal text-subtle">
+            {glossaryDefinition(term)}
+          </span>
+        )}
+      </span>
+    )
+  }
 
   return (
     <span className={cn('inline', className)}>

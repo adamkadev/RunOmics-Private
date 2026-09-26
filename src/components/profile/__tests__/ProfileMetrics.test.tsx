@@ -54,25 +54,36 @@ describe('capability-driven athlete metrics', () => {
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })
 
-  it('lists heart and body context in one list: Fitness age, potential and BMI', () => {
+  // C2, v4.4: heart and body is one compact row; fitness age reads against
+  // the real age, with no check badge; BMI and potential are not here.
+  it('shows heart and body as one row: resting HR, max HR, fitness age of age', () => {
     render(
       <AthleteDetails
         athlete={{
           restingHrBpm: 44,
-          age: 21,
-          fitnessAgeYrs: 22.3,
+          maxHrBpm: 201,
+          age: 29,
+          fitnessAgeYrs: 20.3,
           achievableFitnessAgeYrs: 18,
           bmi: 20.5,
         }}
       />
     )
 
-    expect(screen.getByText(a.restingHr)).toBeInTheDocument()
-    expect(screen.getByText(a.fitnessAge)).toBeInTheDocument()
-    expect(screen.getByText(a.achievableFitnessAge)).toBeInTheDocument()
-    expect(screen.getByText(a.bmi)).toBeInTheDocument()
-    expect(screen.getByText('20.5')).toBeInTheDocument()
-    expect(screen.queryByText(a.maxHr)).not.toBeInTheDocument()
+    const row = screen.getByTestId('athlete-details')
+    expect(within(row).getByText(a.restingHr)).toBeInTheDocument()
+    expect(within(row).getByText(a.maxHr)).toBeInTheDocument()
+    expect(row.textContent).toContain(`20${a.ofAge(29)}`)
+    expect(screen.queryByText(a.achievableFitnessAge)).not.toBeInTheDocument()
+    expect(screen.queryByText(a.bmi)).not.toBeInTheDocument()
+    expect(row.querySelector('svg')).toBeNull()
+  })
+
+  // C2: one card, 2 x 2, the labels open their definitions.
+  it('puts the four key numbers in one card, 2 x 2', () => {
+    render(<AthleteKeyNumbers athlete={{ vmaKmh: 17.5, lthrBpm: 172, thresholdPaceSecPerKm: 258 }} latestVo2max={50} />)
+    expect(screen.getAllByTestId('athlete-key-numbers')).toHaveLength(1)
+    expect(screen.getAllByTestId('athlete-key-number')).toHaveLength(4)
   })
 })
 
@@ -91,13 +102,16 @@ describe('ProfileHrZones table', () => {
     }
   })
 
-  it('writes time as "9 min", not "0h09", and totals the week under the table', () => {
-    const { container } = render(
-      <ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />
-    )
-    expect(within(screen.getByTestId('zone-row-4')).getByText(`9 ${t.units.min}`)).toBeInTheDocument()
-    expect(container.textContent).not.toContain('0h09')
-    expect(screen.getByText(z.inZonesWeek(`14 ${t.units.min}`))).toBeInTheDocument()
+  // C2: time is "9′" under an hour, "2h05" over; the window's total and its
+  // Z4-Z5 share sit over one stacked bar with the target's two ticks.
+  it('writes time compactly and puts the total and the hard share over a stacked bar', () => {
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
+    expect(within(screen.getByTestId('zone-row-4')).getByText('9′')).toBeInTheDocument()
+    expect(screen.getByTestId('zone-total').textContent).toBe(`0${t.units.hour}14`)
+    expect(screen.getByTestId('zone-hard-share').textContent).toBe(z.hardShare(100))
+    const stack = screen.getByTestId('zone-stack')
+    expect([...stack.querySelectorAll('[data-zone]')].map((el) => el.getAttribute('data-zone'))).toEqual(['4', '5'])
+    expect(screen.getAllByTestId('zone-target-tick').map((el) => el.style.left)).toEqual(['85%', '90%'])
   })
 
   it('has a single Week / 4 weeks toggle that switches the whole table', async () => {
@@ -105,8 +119,8 @@ describe('ProfileHrZones table', () => {
     expect(screen.getAllByRole('tablist')).toHaveLength(1)
 
     await userEvent.click(screen.getByRole('tab', { name: z.fourWeeks }))
-    expect(screen.getByText(z.inZonesRecent(`2${t.units.hour}05`))).toBeInTheDocument()
-    expect(within(screen.getByTestId('zone-row-4')).getByText(`0 ${t.units.min}`)).toBeInTheDocument()
+    expect(screen.getByTestId('zone-total').textContent).toBe(`2${t.units.hour}05`)
+    expect(within(screen.getByTestId('zone-row-4')).getByText('0′')).toBeInTheDocument()
   })
 
   it('falls back to the last 4 weeks when this week is empty, and says so', () => {

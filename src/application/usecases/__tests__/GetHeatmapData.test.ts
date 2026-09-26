@@ -7,7 +7,7 @@ vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllA
 const { getHeatmapData } = await import('../GetHeatmapData')
 
 const activity = (date: string, distanceKm = 10, durationSeconds = 3000): Activity =>
-  ({ date, distanceKm, durationSeconds }) as Activity
+  ({ id: `${date}-${distanceKm}`, date, distanceKm, durationSeconds }) as Activity
 
 function grid(activities: Activity[] = []) {
   getAllActivities.mockReturnValue(activities)
@@ -38,7 +38,7 @@ describe('getHeatmapData', () => {
   })
 
   it('fills a day without a run with zeroes rather than dropping it', () => {
-    expect(grid()[100]).toEqual({ date: A_DAY_IN_WINDOW, distanceKm: 0, sessionCount: 0, longRun: false })
+    expect(grid()[100]).toEqual({ date: A_DAY_IN_WINDOW, distanceKm: 0, sessionCount: 0, longRun: false, activityId: null })
   })
 
   it('adds up every session run on the same day', () => {
@@ -53,6 +53,8 @@ describe('getHeatmapData', () => {
       distanceKm: 16.3,
       sessionCount: 3,
       longRun: false,
+      // The day's longest run, which Consistency's day cell opens.
+      activityId: `${A_DAY_IN_WINDOW}-8.2`,
     })
   })
 

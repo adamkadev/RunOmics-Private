@@ -1,83 +1,114 @@
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
-import { formatDate, formatDateRange, formatMonthShortYear } from '@/lib/formatters'
+import { formatDate, formatDateRange } from '@/lib/formatters'
+import { t } from '@/i18n'
 
-/** Three levels a phone can tell apart; `null` is a day outside the window. */
-export type DayLevel = 'rest' | 'run' | 'long'
+/**
+ * A day as the grid draws it: rest, run or long run; `future` for the rest of
+ * the current month; `none` for a day the data doesn't reach.
+ */
+export type DayState = 'rest' | 'run' | 'long' | 'future' | 'none'
+
+export interface ConsistencyCell {
+  date: string
+  state: DayState
+  today: boolean
+  /** The day's longest run, which a tap opens. */
+  activityId: string | null
+}
 
 export interface ConsistencyMonth {
   /** YYYY-MM */
   key: string
-  label: string
-  /** Long month and year, for the row's accessible name. */
+  /** The month's initial, over its column. */
+  initial: string
+  /** Long month and year, for the column's accessible name. */
   fullLabel: string
-  /** One per calendar day of the month, index 0 = the 1st. */
-  cells: { date: string; level: DayLevel | null }[]
+  /** January is the year's first column, set in text ink. */
+  startsYear: boolean
+  /** 31 rows, day 1 first; `null` where the month has no such day (Feb 30). */
+  cells: (ConsistencyCell | null)[]
   activeDays: number
-  longRuns: number
 }
 
 export interface ConsistencyView {
   months: ConsistencyMonth[]
   activeDays: number
+  /** Days in the window up to today. */
   windowDays: number
   /** Share of the window's days with a run, 0–100. */
   sharePct: number
+  streakWeeks: number
   range: string | null
 }
+
+export const MONTHS_SHOWN = 12
+export const ROWS = 31
+/** The rows that carry a day number. */
+export const LABELLED_ROWS = [1, 8, 15, 22, 29]
 
 function daysInMonth(year: number, month: number): number {
   return new Date(Date.UTC(year, month, 0)).getUTCDate()
 }
 
-function levelOf(day: HeatmapDay): DayLevel {
+function monthKeyBack(todayIso: string, back: number): string {
+  const [year, month] = todayIso.split('-').map(Number) as [number, number]
+  const d = new Date(Date.UTC(year, month - 1 - back, 1))
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+function stateOf(day: HeatmapDay): DayState {
   if (day.sessionCount === 0) return 'rest'
   return day.longRun ? 'long' : 'run'
 }
 
 /**
- * The rolling year as one row per month and one cell per day, portrait-sized:
- * the 53 × 7 grid drew each day at about 5 pt with two blues that read as one.
- * A month the window only partly covers leaves the days outside it blank
- * rather than drawing them as rest.
+ * The rolling year as twelve month columns, oldest on the left, and 31 day
+ * rows (C1, v4.4): each month is a column a thumb can follow down, and a
+ * short month leaves its missing days out rather than drawing them as rest.
+ * The current month is partial: the days after today are outlined, still
+ * to come.
  */
-export function consistencyMonths(days: HeatmapDay[]): ConsistencyView {
-  const dated = days.filter((day) => day.date)
-  const byDate = new Map(dated.map((day) => [day.date, day]))
-  const monthKeys = [...new Set(dated.map((day) => day.date.slice(0, 7)))].sort()
+export function consistencyMonths(days: HeatmapDay[], today: string, streakWeeks = 0): ConsistencyView {
+  const byDate = new Map(days.filter((day) => day.date).map((day) => [day.date, day]))
+  const narrow = new Intl.DateTimeFormat(t.locale, { month: 'narrow', timeZone: 'UTC' })
 
-  const months = monthKeys.map((key): ConsistencyMonth => {
-    const [year, month] = key.split('-').map(Number) as [number, number]
-    const cells = Array.from({ length: daysInMonth(year, month) }, (_, i) => {
-      const date = `${key}-${String(i + 1).padStart(2, '0')}`
-      const day = byDate.get(date)
-      return { date, level: day ? levelOf(day) : null }
-    })
-    return {
-      key,
-      label: formatDate(`${key}-01`, { precision: 'month', year: 'never' }),
-      fullLabel: formatDate(`${key}-01`, { precision: 'month', year: 'always' }),
-      cells,
-      activeDays: cells.filter((cell) => cell.level === 'run' || cell.level === 'long').length,
-      longRuns: cells.filter((cell) => cell.level === 'long').length,
-    }
-  })
+  const months = Array.from({ length: MONTHS_SHOWN }, (_, i) => monthKeyBack(today, MONTHS_SHOWN - 1 - i)).map(
+    (key): ConsistencyMonth => {
+      const [year, month] = key.split('-').map(Number) as [number, number]
+      const length = daysInMonth(year, month)
+      const cells = Array.from({ length: ROWS }, (_, i): ConsistencyCell | null => {
+        if (i >= length) return null
+        const date = `${key}-${String(i + 1).padStart(2, '0')}`
+        if (date > today) return { date, state: 'future', today: false, activityId: null }
+        const day = byDate.get(date)
+        return {
+          date,
+          state: day ? stateOf(day) : 'none',
+          today: date === today,
+          activityId: day?.activityId ?? null,
+        }
+      })
+      return {
+        key,
+        initial: narrow.format(new Date(Date.UTC(year, month - 1, 1))),
+        fullLabel: formatDate(`${key}-01`, { precision: 'month', year: 'always' }),
+        startsYear: month === 1,
+        cells,
+        activeDays: cells.filter((cell) => cell?.state === 'run' || cell?.state === 'long').length,
+      }
+    },
+  )
 
-  // The first and last rows can be the same month a year apart: the older one
-  // carries its year so the two never read as one.
-  const lastLabel = months[months.length - 1]?.label
-  for (const month of months.slice(0, -1)) {
-    if (month.label === lastLabel) month.label = formatMonthShortYear(`${month.key}-01`)
-  }
-
-  const activeDays = dated.filter((day) => day.sessionCount > 0).length
-  const first = dated[0]?.date
-  const last = dated[dated.length - 1]?.date
+  const counted = months.flatMap((month) => month.cells).filter((cell): cell is ConsistencyCell => !!cell && (cell.state === 'rest' || cell.state === 'run' || cell.state === 'long'))
+  const activeDays = counted.filter((cell) => cell.state !== 'rest').length
+  const first = months[0]!.key
 
   return {
     months,
     activeDays,
-    windowDays: dated.length,
-    sharePct: dated.length > 0 ? Math.round((activeDays / dated.length) * 100) : 0,
-    range: first && last ? formatDateRange(first, last, { precision: 'month', year: 'always' }) : null,
+    windowDays: counted.length,
+    sharePct: counted.length > 0 ? Math.round((activeDays / counted.length) * 100) : 0,
+    streakWeeks,
+    range: activeDays > 0 ? formatDateRange(`${first}-01`, today, { precision: 'month', year: 'always' }) : null,
   }
 }

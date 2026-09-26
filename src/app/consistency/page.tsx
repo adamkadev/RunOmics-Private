@@ -1,4 +1,6 @@
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
+import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
+import { appTodayIso } from '@/lib/calendarDate'
 import { ConsistencyMonths } from '@/components/consistency/ConsistencyMonths'
 import { consistencyMonths } from '@/components/consistency/consistencyMonths'
 import { BackButton } from '@/components/ui/BackButton'
@@ -7,9 +9,11 @@ import { t } from '@/i18n'
 export const revalidate = 3600
 
 // Consistency is its own Progress page, reached from the hub: the rolling
-// year as one row per month, a size a phone can read.
+// year as twelve month columns of days (C1, v4.4).
 export default function ConsistencyPage() {
-  const view = consistencyMonths(getHeatmapData())
+  const today = appTodayIso()
+  const streak = getWeeklyStreakData(new Date(`${today}T12:00:00`))?.currentWeeks ?? 0
+  const view = consistencyMonths(getHeatmapData(), today, streak)
   const p = t.pages.consistency
   return (
     <div className="space-y-3">
