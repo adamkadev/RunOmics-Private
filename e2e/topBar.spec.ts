@@ -8,6 +8,23 @@ import type { Page } from '@playwright/test'
 test.use({ viewport: { width: 393, height: 852 } })
 
 async function textUnderTheBar(page: Page): Promise<string[]> {
+  // After the page transition, as the layering spec does: scrolled while the
+  // page still animated in, the midpoint was taken from a shorter page and
+  // the text sampled while it was still moving.
+  await page.waitForFunction(() => {
+    const wrapper = document.querySelector('main .animate-fade-up')
+    return !wrapper || wrapper.getAnimations().length === 0
+  })
+  // And once the page stops growing, so the midpoint is the page's own.
+  let height = -1
+  await expect
+    .poll(async () => {
+      const now = await page.evaluate(() => document.documentElement.scrollHeight)
+      const steady = now === height
+      height = now
+      return steady
+    }, { intervals: [150] })
+    .toBe(true)
   await page.evaluate(() => {
     const mid = (document.documentElement.scrollHeight - innerHeight) / 2
     window.scrollTo(0, Math.max(0, mid))

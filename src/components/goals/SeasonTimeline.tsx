@@ -143,7 +143,8 @@ function TimelineRow({ row, block, last }: { row: SeasonRaceRow; block: SeasonBl
         <Marker kind={upcoming ? 'upcoming' : 'done'} />
         {!last && <span aria-hidden className="mt-1 w-0.5 flex-1 rounded-full bg-border" />}
       </div>
-      <div className="flex min-w-0 flex-1 items-start justify-between gap-3 pb-4">
+      {/* The gap before the next row; the last row ends on the card's own padding. */}
+      <div className={cn('flex min-w-0 flex-1 items-start justify-between gap-3', !last && 'pb-4')}>
         <div className="min-w-0">
           <p className="text-caption font-bold tracking-[0.06em]" style={{ color: upcoming ? AMBER : 'var(--muted-foreground)' }}>
             {eyebrow}
@@ -201,7 +202,7 @@ export function SeasonTimeline({ yearData, today, block }: { yearData: YearData;
                   <Marker kind="today" />
                   {past.length > 0 && <span aria-hidden className="mt-2 w-0.5 flex-1 rounded-full bg-border" />}
                 </div>
-                <p className="pb-4 text-caption font-bold tracking-[0.06em] text-foreground">
+                <p className={cn('text-caption font-bold tracking-[0.06em] text-foreground', past.length > 0 && 'pb-4')}>
                   {s.season.todayOn(formatDate(today, { style: 'bare', year: 'never' }).toUpperCase())}
                 </p>
               </li>

@@ -90,6 +90,17 @@ describe('SeasonTimeline', () => {
   })
 })
 
+describe('SeasonTimeline spacing', () => {
+  // The last row ended on its gap to a next row, doubling the card's bottom padding.
+  it('gives every row but the last the gap before the next', () => {
+    render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
+    const rows = [...screen.getByTestId('season-card').querySelectorAll('li')]
+    const gap = (li: Element) => li.lastElementChild!.className.includes('pb-4')
+    expect(rows.slice(0, -1).every(gap)).toBe(true)
+    expect(gap(rows.at(-1)!)).toBe(false)
+  })
+})
+
 describe('seasonRaceRows', () => {
   // R7d: the column is the prediction, labelled as one, and the half is "Half".
   it('prints the watch prediction as predicted, even where the best is faster', () => {
