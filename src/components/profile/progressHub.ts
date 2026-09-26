@@ -75,7 +75,8 @@ export interface HubInput {
 }
 
 const HUB_RECORDS = ['1k', '5k', '10k', 'half']
-const VO2_WINDOW_DAYS = 90
+/** 12 weeks, as Analytics reads VO2max's change (v4.7). */
+const VO2_WINDOW_DAYS = 84
 const HEAT_WEEKS = 12
 /** A shoe past this share of its limit reads amber. */
 export const SHOE_WARN_SHARE = 0.85

@@ -60,11 +60,11 @@ export function Sentence({ children, className, testId }: { children: ReactNode;
 }
 
 /** A sentence written as [before, bold, after]. */
-export function BoldSentence({ parts, className }: { parts: readonly [string, string, string]; className?: string }) {
+export function BoldSentence({ parts, className, boldColor }: { parts: readonly [string, string, string]; className?: string; boldColor?: string }) {
   return (
     <Sentence className={className}>
       {parts[0]}
-      <b>{parts[1]}</b>
+      <b style={boldColor ? { color: boldColor } : undefined}>{parts[1]}</b>
       {parts[2]}
     </Sentence>
   )

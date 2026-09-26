@@ -185,6 +185,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       // Positive deltas are the accent's to paint (neutral surfaces).
       '--delta-good': 'var(--accent-text)',
       '--delta-warn': c.semOrangeLight,
+      // An improving delta, and only that (v4.7): never a fill, bar, border or
+      // big value, and a green apart from Z3 and the Productive status.
+      '--good': '#15803d',
       '--metric-form': c.semGreenLight,
       '--metric-fitness': c.semBlueLight,
       '--metric-fatigue': c.semOrangeLight,
@@ -242,6 +245,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
 
       '--delta-good': 'var(--accent-text)',
       '--delta-warn': c.orange400,
+      '--good': '#5bd68a',
       '--metric-form': c.emerald400,
       '--metric-fitness': c.roBlueHi,
       '--metric-fatigue': c.roOrangeHi,

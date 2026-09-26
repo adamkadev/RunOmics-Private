@@ -146,23 +146,7 @@ export const TRAINING_METRIC_COLORS = {
   fatigue: 'var(--metric-fatigue)',
 } as const
 
-// A rising metric is not automatically good news: fatigue climbing is a warning,
-// fitness climbing is not. Each tile says which direction it wants.
-// Trend deltas are grey text (v4.3 --mu): the arrow says which way, and a
-// colour there read as a verdict. Never the accent, never orange.
-export const METRIC_DELTA_COLORS = {
-  good: 'var(--muted-foreground)',
-  warn: 'var(--muted-foreground)',
-  flat: 'var(--muted-foreground)',
-} as const
-
-export type MetricDeltaPolarity = 'up' | 'down'
-
-export function metricDeltaColor(delta: number, goodWhen: MetricDeltaPolarity, threshold: number): string {
-  if (Math.abs(delta) <= threshold) return METRIC_DELTA_COLORS.flat
-  const rising = delta > 0
-  return rising === (goodWhen === 'up') ? METRIC_DELTA_COLORS.good : METRIC_DELTA_COLORS.warn
-}
+// Trend deltas are coloured by what they mean: lib/deltaTone (v4.7).
 
 // The hero's readiness tone, as tokens: each theme takes its own text-grade
 // step, where the fixed hexes this replaced were dark-mode colours in both.
