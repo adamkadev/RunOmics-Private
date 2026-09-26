@@ -1,11 +1,10 @@
 'use client'
 
 import type { ActivitySplit } from '@/domain/activity/types'
-import { type RepSet, type Track, trackDomain, trackPosition } from '@/domain/activity/repSet'
+import { type RepSet, type Track, recoveryAverage, trackDomain, trackPosition } from '@/domain/activity/repSet'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { ChartCardHead } from '@/components/ui/ChartCard'
 import { STATUS } from '@/lib/statusColors'
-import { formatClock, formatDuration, formatDelta } from '@/lib/formatters'
+import { formatClock, formatDelta } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -13,39 +12,35 @@ interface Props {
   set: RepSet
 }
 
-const ROW = 'grid w-full items-center gap-x-2 grid-cols-[1.25rem_1fr_3rem_2.25rem]'
+const ROW = 'grid w-full items-center gap-x-2.5 grid-cols-[1.375rem_minmax(0,1fr)_3rem_2.25rem]'
+const MUTED_CELL = 'text-right tabular-nums text-muted-foreground'
 
 function km(distanceM: number): string {
   return (distanceM / 1000).toFixed(2)
 }
 
-function EdgeRow({ split, label }: { split: ActivitySplit; label: string }) {
-  const pace = split.distanceM > 0 ? Math.round((split.durationSec / split.distanceM) * 1000) : null
+function paceOf(split: ActivitySplit): number | null {
+  return split.distanceM > 0 ? Math.round((split.durationSec / split.distanceM) * 1000) : null
+}
+
+/** Warm-up, the recoveries and the cool-down: one quiet row each. */
+function QuietRow({ label, pace, hr }: { label: string; pace: number | null; hr: number | null }) {
   return (
-    <div className={`${ROW} rounded-md px-1 py-1.5`}>
-      <span className="text-xs text-subtle-2">·</span>
-      <span className="truncate text-xs text-subtle">
-        {label} · {formatDuration(split.durationSec)} · {km(split.distanceM)} {t.units.km}
-      </span>
-      <span className="text-xs tabular-nums text-subtle">{pace ? formatClock(pace) : '-'}</span>
-      <span className="text-xs tabular-nums text-subtle">{split.avgHr ?? '-'}</span>
+    <div className={cn(ROW, 'min-h-6 text-subhead')}>
+      <span className="text-subtle-2">·</span>
+      <span className="truncate text-muted-foreground">{label}</span>
+      <span className={MUTED_CELL}>{pace ? formatClock(pace) : '–'}</span>
+      <span className={MUTED_CELL}>{hr ?? '–'}</span>
     </div>
   )
 }
 
 type RepStanding = 'faster' | 'inBand' | 'slower'
 
-/** Overshooting the band is the best a rep can do, so it gets its own ink. */
-const FILL_CLASS: Record<RepStanding, string> = {
-  faster: 'bg-sky-500',
+const TICK_CLASS: Record<RepStanding, string> = {
+  faster: 'bg-accent',
   inBand: 'bg-accent',
-  slower: 'bg-foreground/30',
-}
-
-const PACE_TEXT_CLASS: Record<RepStanding, string> = {
-  faster: 'text-sky-600 dark:text-sky-400',
-  inBand: 'text-foreground',
-  slower: 'text-subtle',
+  slower: 'bg-muted-foreground',
 }
 
 function standingOf(pace: number | null, band: RepSet['band']): RepStanding {
@@ -54,135 +49,113 @@ function standingOf(pace: number | null, band: RepSet['band']): RepStanding {
   return pace <= band.max ? 'inBand' : 'slower'
 }
 
-function RepBar({ pace, track, band, standing }: { pace: number | null; track: Track; band: RepSet['band']; standing: RepStanding }) {
-  const fill = pace !== null ? trackPosition(pace, track) * 100 : 0
+/**
+ * The rep on a track (H15): the band is the shaded zone, the rep's pace a
+ * tick - faster to the right. A filled bar read as a score out of 100.
+ */
+function RepTrack({ pace, track, band, standing }: { pace: number | null; track: Track; band: RepSet['band']; standing: RepStanding }) {
+  const at = pace !== null ? trackPosition(pace, track) * 100 : null
   const bandStart = band ? trackPosition(band.max, track) * 100 : null
   const bandEnd = band ? trackPosition(band.min, track) * 100 : null
 
   return (
-    <span className="relative block h-1.5 w-full overflow-hidden rounded-full bg-foreground/[0.06]">
+    <span className="relative block h-2 w-full rounded-full bg-[var(--track)]" data-testid="rep-track">
       {bandStart !== null && bandEnd !== null && (
         <span
           aria-hidden="true"
-          className="absolute inset-y-0 bg-accent/20"
+          data-testid="rep-band"
+          className="absolute inset-y-0 bg-accent/25"
           style={{ left: `${bandStart}%`, width: `${Math.max(bandEnd - bandStart, 1)}%` }}
         />
       )}
-      <span
-        aria-hidden="true"
-        className={cn('absolute inset-y-0 left-0 rounded-full', FILL_CLASS[standing])}
-        style={{ width: `${fill}%` }}
-      />
-      {pace !== null && (
+      {at !== null && (
         <span
           aria-hidden="true"
-          className={cn('absolute inset-y-0 w-0.5 rounded-full', FILL_CLASS[standing])}
-          style={{ left: `calc(${fill}% - 1px)` }}
+          data-testid="rep-tick"
+          className={cn('absolute -top-[3px] -bottom-[3px] w-1 rounded-sm', TICK_CLASS[standing])}
+          style={{ left: `calc(${Math.min(Math.max(at, 0), 100)}% - 2px)` }}
         />
       )}
     </span>
   )
 }
 
+/**
+ * The set per M10: three numbers, then warm-up, a track per rep, the
+ * recoveries as one average row, and the cool-down, in one card.
+ */
 export function IntervalSet({ set }: Props) {
   const s = t.activity.splits
   const inBandAll = set.band !== null && set.inBand === set.reps.length
   const track = trackDomain(set)
   const band = set.band
+  const recovery = recoveryAverage(set.reps)
+  const warmupLabel = s.intervalTypes.interval_warmup ?? ''
+  const cooldownLabel = s.intervalTypes.interval_cooldown ?? ''
 
   return (
-    <>
-      <GlassSurface variant="card" className="p-5">
-        <ChartCardHead
-          title={s.repSetLabel(set.reps.length, formatClock(set.repDurationSec))}
-          controls={
-            band && (
-              <span className="text-xs text-subtle">
-                {s.bandLabel(`${formatClock(band.min)}-${formatClock(band.max)}`)}
+    <GlassSurface variant="card" className="flex flex-col gap-3 rounded-[22px] px-4.5 py-4" data-testid="interval-set">
+      {/* The set in three numbers, at the top, with no sentence (H14). */}
+      <div className="grid grid-cols-3 gap-2" data-testid="set-summary">
+        {band && (
+          <div className="flex flex-col gap-0.75">
+            <p className={cn('font-display text-title3 font-bold leading-none tabular-nums', inBandAll ? STATUS.success.text : STATUS.warning.text)}>
+              {set.inBand}/{set.reps.length}
+            </p>
+            <p className="text-caption text-muted-foreground">{s.inBandLabel}</p>
+          </div>
+        )}
+        <div className="flex flex-col gap-0.75">
+          <p className="font-display text-title3 font-bold leading-none tabular-nums text-foreground">
+            {set.spreadSecPerKm ?? '—'} <span className="text-footnote font-normal">{t.units.sec}</span>
+          </p>
+          <p className="text-caption text-muted-foreground">{s.spread}</p>
+        </div>
+        <div className="flex flex-col gap-0.75">
+          <p
+            className={cn(
+              'font-display text-title3 font-bold leading-none tabular-nums',
+              set.hrDriftBpm === null || set.hrDriftBpm <= 0 ? 'text-foreground' : STATUS.warning.text,
+            )}
+          >
+            {set.hrDriftBpm === null ? '—' : formatDelta(set.hrDriftBpm)}
+          </p>
+          <p className="text-caption text-muted-foreground">{s.hrDrift}</p>
+        </div>
+      </div>
+
+      <div className="h-px bg-border" />
+
+      <div className="flex flex-col gap-2">
+        <div className={cn(ROW, 'text-caption text-subtle-2')}>
+          <span>{s.cols.step}</span>
+          <span className="truncate" data-testid="band-header">
+            {band ? s.bandLabel(`${formatClock(band.min)}–${formatClock(band.max)}`) : ''}
+          </span>
+          <span className="text-right uppercase">{s.cols.pace}</span>
+          <span className="text-right uppercase">{s.cols.hr}</span>
+        </div>
+
+        {set.warmup && <QuietRow label={`${warmupLabel} ${km(set.warmup.distanceM)} ${t.units.km}`} pace={paceOf(set.warmup)} hr={set.warmup.avgHr} />}
+
+        {set.reps.map((rep) => {
+          const standing = standingOf(rep.paceSecPerKm, band)
+          return (
+            <div key={rep.number} className={cn(ROW, 'min-h-6 text-subhead')} data-testid="rep-row">
+              <span className="tabular-nums text-foreground">{rep.number}</span>
+              {track ? <RepTrack pace={rep.paceSecPerKm} track={track} band={band} standing={standing} /> : <span />}
+              <span className={cn('text-right font-bold tabular-nums', standing === 'slower' ? 'text-muted-foreground' : 'text-foreground')}>
+                {rep.paceSecPerKm ? formatClock(rep.paceSecPerKm) : '–'}
               </span>
-            )
-          }
-        />
-
-        {/* The set in three numbers, at the top, with no sentence: "Only 3 of
-            3 reps landed inside the band" contradicted the 3/3 it sat under
-            (H14). */}
-        <div className="mb-3 grid grid-cols-3 gap-3 border-b border-border pb-3" data-testid="set-summary">
-          {band && (
-            <div>
-              <p className={cn('font-display text-title3 font-bold tabular-nums', inBandAll ? STATUS.success.text : STATUS.warning.text)}>
-                {set.inBand}/{set.reps.length}
-              </p>
-              <p className="text-caption text-subtle">{s.inBandLabel}</p>
+              <span className="text-right tabular-nums text-foreground">{rep.avgHr ?? '–'}</span>
             </div>
-          )}
-          <div>
-            <p className="font-display text-title3 font-bold tabular-nums text-foreground">
-              {set.spreadSecPerKm ?? '—'} <span className="text-footnote font-normal">{t.units.sec}</span>
-            </p>
-            <p className="text-caption text-subtle">{s.spread}</p>
-          </div>
-          <div>
-            <p
-              className={cn(
-                'font-display text-title3 font-bold tabular-nums',
-                set.hrDriftBpm === null || set.hrDriftBpm <= 0 ? 'text-foreground' : STATUS.warning.text,
-              )}
-            >
-              {set.hrDriftBpm === null ? '—' : formatDelta(set.hrDriftBpm)}
-            </p>
-            <p className="text-caption text-subtle">{s.hrDrift}</p>
-          </div>
-        </div>
+          )
+        })}
 
-        <div className="w-full space-y-0.5">
-          <div className={`${ROW} pb-1.5 text-caption font-semibold uppercase tracking-wide text-subtle`}>
-            <span className="truncate">{s.cols.step}</span>
-            <span className="truncate">{s.colFaster}</span>
-            <span className="truncate">{s.cols.pace}</span>
-            <span className="truncate">{s.cols.hr}</span>
-          </div>
+        {recovery && <QuietRow label={s.recoveryAvg} pace={recovery.paceSecPerKm} hr={recovery.avgHr} />}
 
-          {set.warmup && <EdgeRow split={set.warmup} label={s.intervalTypes.interval_warmup ?? ''} />}
-
-          {set.reps.map((rep) => {
-            const standing = standingOf(rep.paceSecPerKm, band)
-
-            return (
-              <div key={rep.number}>
-                <div className={`${ROW} rounded-md px-1 py-1.5`}>
-                  <span className="text-xs font-semibold tabular-nums text-foreground/60">{rep.number}</span>
-                  {track ? (
-                    <RepBar pace={rep.paceSecPerKm} track={track} band={band} standing={standing} />
-                  ) : (
-                    <span />
-                  )}
-                  <span className={cn('text-xs font-semibold tabular-nums', PACE_TEXT_CLASS[standing])}>
-                    {rep.paceSecPerKm ? formatClock(rep.paceSecPerKm) : '-'}
-                  </span>
-                  <span className="text-xs tabular-nums">{rep.avgHr ?? '-'}</span>
-                </div>
-
-                {rep.recovery && (
-                  <div className={`${ROW} px-1 pb-1.5`}>
-                    <span />
-                    <span className="truncate text-caption text-subtle-2">
-                      {s.recoveryLine(formatDuration(rep.recovery.durationSec), km(rep.recovery.distanceM))}
-                    </span>
-                    <span className="text-caption tabular-nums text-subtle-2">
-                      {rep.recovery.paceSecPerKm ? formatClock(rep.recovery.paceSecPerKm) : ''}
-                    </span>
-                    <span className="text-caption tabular-nums text-subtle-2">{rep.recovery.avgHr ?? ''}</span>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-
-          {set.cooldown && <EdgeRow split={set.cooldown} label={s.intervalTypes.interval_cooldown ?? ''} />}
-        </div>
-      </GlassSurface>
-
-    </>
+        {set.cooldown && <QuietRow label={`${cooldownLabel} ${km(set.cooldown.distanceM)} ${t.units.km}`} pace={paceOf(set.cooldown)} hr={set.cooldown.avgHr} />}
+      </div>
+    </GlassSurface>
   )
 }

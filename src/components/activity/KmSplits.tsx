@@ -60,7 +60,7 @@ function signedSeconds(delta: number): string {
 
 /**
  * A continuous run's kilometres, compared with each other: a speed bar per km
- * and its gap to the run average, under a one-line summary of the spread. The
+ * and its gap to the run average, under the spread as the header's qualifier. The
  * tab used to say "no interval structure recorded" and list pace and HR with
  * nothing that compared one km with another.
  */
@@ -86,20 +86,12 @@ function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; split
     <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5">
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="text-subhead font-semibold text-foreground">{sp.perKmTitle}</h3>
-        <span className="text-xs text-muted-foreground">{sp.continuous}</span>
+        {/* The spread as a qualifier, not a sentence: the rows show the
+            fastest and slowest km themselves. */}
+        <span className="text-xs text-muted-foreground" data-testid="split-spread">
+          {spread ? sp.spreadShort(sp.spreadKind[spread.kind], spread.spread) : sp.continuous}
+        </span>
       </div>
-      {spread && (
-        <p className="mt-1 text-footnote text-muted-foreground">
-          {sp.spreadSummary(
-            sp.spreadKind[spread.kind],
-            spread.fastest.km,
-            formatClock(spread.fastest.paceSecPerKm),
-            spread.slowest.km,
-            formatClock(spread.slowest.paceSecPerKm),
-            spread.spread,
-          )}
-        </p>
-      )}
 
       <div className={`${rowCls} mt-3 whitespace-nowrap text-caption font-semibold uppercase tracking-[0.06em] text-subtle`}>
         <span>{sp.cols.km}</span>
