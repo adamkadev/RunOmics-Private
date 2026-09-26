@@ -254,15 +254,18 @@ export function MonthView({
             <ChevronRight size={16} />
           </button>
         </div>
-        <button
-          type="button"
-          onClick={onToday}
-          disabled={atPresent}
-          className={cn('hit-44 shrink-0 rounded-full font-semibold disabled:opacity-40', TODAY_INK)}
-          style={{ fontSize: '12.5px', border: '1px solid color-mix(in srgb, var(--accent) 45%, transparent)', padding: '5px 12px' }}
-        >
-          {t.plan.today}
-        </button>
+        {/* Hidden while today's month is on screen, full ink when it is a
+            way back: at 40 % it read as broken rather than as not needed. */}
+        {!atPresent && (
+          <button
+            type="button"
+            onClick={onToday}
+            className={cn('hit-44 shrink-0 rounded-full font-semibold', TODAY_INK)}
+            style={{ fontSize: '12.5px', border: '1px solid color-mix(in srgb, var(--accent) 45%, transparent)', padding: '5px 12px' }}
+          >
+            {t.plan.today}
+          </button>
+        )}
       </div>
 
       <p className="px-1 text-footnote text-muted-foreground">{t.plan.summary(sessionCount, ranKm, plannedKm)}</p>
@@ -285,15 +288,19 @@ export function MonthView({
             const realCells = row.filter((c): c is DayCellData => c !== null)
             const containsToday = realCells.some((c) => c.date === today)
             const rowIsPast = realCells.length > 0 && realCells.every((c) => c.date < today)
-            const weekValue =
-              realCells.length === 0
-                ? null
-                : rowIsPast
-                  ? round(realCells.reduce((s, c) => s + c.acts.reduce((sa, a) => sa + a.distanceKm, 0), 0), 0)
-                  : round(
-                      realCells.reduce((s, c) => s + (plannedInfoFor(c.date, byDatePlanned, byDateCoach)?.km ?? 0), 0),
-                      0
-                    )
+            const weekRan = round(realCells.reduce((s, c) => s + c.acts.reduce((sa, a) => sa + a.distanceKm, 0), 0), 0)
+            const weekPlanned = round(
+              realCells.reduce((s, c) => s + (plannedInfoFor(c.date, byDatePlanned, byDateCoach)?.km ?? 0), 0),
+              0
+            )
+            const weekValue = realCells.length === 0 ? null : rowIsPast ? weekRan : weekPlanned
+            // The week underway reads ran of planned, "6 of 52 km" (G27): it
+            // said "52 km planned" with the 6 already run nowhere.
+            const footer = rowIsPast
+              ? t.plan.weekFooter.ran(weekRan)
+              : containsToday
+                ? t.plan.weekFooter.ranOfPlanned(weekRan, weekPlanned)
+                : t.plan.weekFooter.planned(weekPlanned)
 
             return (
               <div key={rowIndex}>
@@ -331,7 +338,7 @@ export function MonthView({
                   className="px-1.5 py-0.5 text-right text-caption tabular-nums"
                   style={{ color: containsToday ? 'var(--muted-foreground)' : 'var(--subtle)' }}
                 >
-                  {rowIsPast ? t.plan.weekFooter.ran(weekValue) : t.plan.weekFooter.planned(weekValue)}
+                  {footer}
                 </p>
               )}
               </div>

@@ -11,10 +11,6 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600
 
-function Divider() {
-  return <span aria-hidden className="h-3 w-px bg-border" />
-}
-
 export default function MapPage() {
   const data = getMapShellData()
   const { years, totalCount, totalKm } = data
@@ -28,27 +24,13 @@ export default function MapPage() {
     <div className="flex h-[calc(100dvh-7rem-max(env(safe-area-inset-top),12px))] flex-col gap-3 lg:h-[calc(100dvh-2rem)]">
       <BackButton label={t.pages.map.back} fallbackHref="/activities" />
 
-      <div className="flex flex-wrap items-center gap-4 px-1">
-        <h1 className="text-sm font-semibold text-foreground">
-          {t.pages.map.title}
-        </h1>
-
-        <div
-          className="flex items-center gap-3 text-xs text-subtle"
-          aria-label={t.pages.map.title}
-        >
-          <span>{t.pages.map.routes(totalCount)}</span>
-
-          <Divider />
-
-          <span>
-            {totalKm.toLocaleString(t.locale)} {t.units.km}
-          </span>
-
-          <Divider />
-
-          <span>{yearLabel}</span>
-        </div>
+      {/* The page title every other screen uses, with its facts under it; it
+          was a 16 pt label off the title scale (G26). */}
+      <div>
+        <h1 className="text-display text-foreground">{t.pages.map.title}</h1>
+        <p className="mt-0.5 text-sm text-muted-foreground" aria-label={t.pages.map.title}>
+          {[t.pages.map.routes(totalCount), `${totalKm.toLocaleString(t.locale)} ${t.units.km}`, yearLabel].join(' · ')}
+        </p>
       </div>
 
       <GlobalMapWrapper data={data} />

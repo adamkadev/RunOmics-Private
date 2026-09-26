@@ -145,7 +145,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
                 <span className="flex min-w-0 items-center gap-1.5 font-semibold text-foreground">
                   <span className="size-2 shrink-0 rounded-full" style={{ background: `var(--zone-${zone})` }} />
                   <span className="truncate">
-                    {t.trainingZones.zoneNumber(zone)} {s.zoneNames[zone]}
+                    {t.trainingZones.zoneNumber(zone)} {t.zoneLabels[zone]}
                   </span>
                 </span>
                 <span className="tabular-nums text-foreground">{paceLabel}</span>

@@ -74,8 +74,14 @@ describe('MonthView wording and grid', () => {
     const footers = [...container.querySelectorAll('p.text-right')]
 
     expect(footers).toHaveLength(5)
-    expect(screen.getByText(t.plan.weekFooter.planned(10))).toBeInTheDocument()
+    // G27: the week underway reads ran of planned, not planned alone.
+    expect(screen.getByText(t.plan.weekFooter.ranOfPlanned(0, 10))).toBeInTheDocument()
     expect(screen.queryByText('WK')).not.toBeInTheDocument()
+  })
+
+  it('hides the Today button while today is in view', () => {
+    renderMonth()
+    expect(screen.queryByRole('button', { name: t.plan.today })).toBeNull()
   })
 
   // v4.1 G32: no legend card under the month; shapes and zone colour carry it.

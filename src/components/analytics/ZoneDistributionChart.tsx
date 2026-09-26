@@ -12,7 +12,7 @@ import { round } from '@/lib/math'
 import { easyShareOfZones } from '@/domain/activity/easyShare'
 import { t } from '@/i18n'
 
-const ZONE_LABELS = t.analytics.charts.zones.labels
+const ZONE_LABELS = t.zoneLabels
 
 function weekZoneSeconds(weeks: WeeklyTrendPoint[]): Record<number, number> {
   const seconds: Record<number, number> = {}
@@ -74,9 +74,11 @@ export function ZoneDistributionChart({ points }: { points: WeeklyTrendPoint[] }
       points={points}
       sample={false}
       reading={zoneReading}
-      value={(visible) => {
+      // Easy time for the window, from the same easyShare() Volume,
+      // Activities and Plan print (G09). `value` only shows on a sparse window.
+      legend={(visible) => {
         const share = easyShareOfZones(weekZoneSeconds(visible))
-        return share ? t.analytics.charts.zones.easyTime(share.easy) : null
+        return share ? <span className="text-footnote font-semibold text-foreground">{t.analytics.charts.zones.easyTime(share.easy)}</span> : null
       }}
     >
       {(visible) => {

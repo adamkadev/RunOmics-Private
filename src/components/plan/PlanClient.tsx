@@ -13,7 +13,6 @@ import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
-import { formatDate } from '@/lib/formatters'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 
@@ -91,8 +90,6 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
       ? isoDate(weekStart) === isoDate(startOfWeek(now))
       : year === now.getFullYear() && month === now.getMonth()
 
-  const subtitle =
-    mode === 'month' ? formatDate(isoDate(new Date(year, month, 1)), { precision: 'month', style: 'full' }) : null
 
   function shift(delta: number) {
     setFocusDate(null)
@@ -139,9 +136,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
             <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
               {t.pages.plan.title}
             </h1>
-            {subtitle && (
-              <p className="mt-0.5 text-footnote font-medium text-muted-foreground">{subtitle}</p>
-            )}
+            {/* No month subtitle: the navigator below names the month (G27). */}
           </div>
 
           <SegmentedTabs
