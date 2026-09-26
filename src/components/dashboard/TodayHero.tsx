@@ -8,9 +8,11 @@ import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SessionCard } from '@/components/ui/SessionCard'
+import { SessionStructureBar } from '@/components/plan/WorkoutStructure'
+import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
 import { formatDelta } from '@/lib/formatters'
 import { todaySession } from './todaySession'
-import { READINESS_TONE_COLORS } from '@/lib/colors'
+import { READINESS_TONE_COLORS, sessionZone } from '@/lib/colors'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
@@ -105,6 +107,17 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: 
         href={session.href}
         className="border-t border-border px-4.5 py-2.5"
       />
+      {/* The bar Plan draws for the same session, from the same steps. */}
+      {session.state === 'planned' && plannedWorkout?.duration && plannedWorkout.structure && (
+        <div className="px-4.5 pb-3.5" data-testid="today-structure-bar">
+          <SessionStructureBar
+            steps={plannedWorkout.structure}
+            zoneWord={plannedWorkout.type ? (EFFORT_ZONE_BY_TYPE[plannedWorkout.type] ?? null) : null}
+            zone={plannedWorkout.type ? sessionZone(plannedWorkout) : null}
+            totalSeconds={plannedWorkout.duration.seconds}
+          />
+        </div>
+      )}
     </GlassSurface>
   )
 }

@@ -7,11 +7,11 @@ const RUN: ActivitySummary = {
   id: 'a1', date: '2026-09-24', dayOfWeek: 'Thursday', type: 'Base', description: 'Easy run', comment: '',
   distanceKm: 8.58, durationSeconds: 3_060, paceSecPerKm: 355, avgHeartRate: 140, rpe: null, hrZones: [], week: 0, elevationGain: null,
 }
-const PLAN = { title: 'Threshold', type: 'Threshold' as const, duration: { seconds: 1_500, estimated: false }, distanceM: 6_000, activityId: null, target: null }
+const PLAN = { title: 'Threshold', type: 'Threshold' as const, duration: { seconds: 1_500, estimated: false }, distanceM: 6_000, activityId: null, target: null, structure: null }
 
 describe('todaySession', () => {
   it('is planned while the session is still to run, and goes to the plan', () => {
-    expect(todaySession(PLAN, null)).toEqual({ state: 'planned', title: 'Threshold · 25 min Z4', detail: `6 ${t.units.km}`, href: '/plan' })
+    expect(todaySession(PLAN, null)).toEqual({ state: 'planned', title: 'Threshold', detail: `6 ${t.units.km}`, href: '/plan' })
   })
 
   it('is done once a run is recorded, whether or not it was planned', () => {

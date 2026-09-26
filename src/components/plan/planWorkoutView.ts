@@ -141,7 +141,7 @@ export function coachWorkoutView(
   }
 }
 
-const HERO_FIELDS = ['title', 'type', 'duration', 'distanceM', 'scheduledTime', 'target', 'activityId'] as const satisfies readonly (keyof PlanWorkoutView)[]
+const HERO_FIELDS = ['title', 'type', 'duration', 'distanceM', 'scheduledTime', 'target', 'activityId', 'structure'] as const satisfies readonly (keyof PlanWorkoutView)[]
 
 /**
  * What the dashboard hero shows of today's session. The full view also holds

@@ -9,7 +9,7 @@ const RUN: ActivitySummary = {
   id: 'a1', date: '2026-09-24', dayOfWeek: 'Thursday', type: 'Threshold', description: 'Threshold', comment: '',
   distanceKm: 6.11, durationSeconds: 1_528, paceSecPerKm: 250, avgHeartRate: 160, rpe: null, hrZones: [], week: 0, elevationGain: null,
 }
-const PLAN = { title: 'Threshold', type: 'Threshold' as const, duration: { seconds: 1_500, estimated: false }, distanceM: 6_000, activityId: 'a1', target: null }
+const PLAN = { title: 'Threshold', type: 'Threshold' as const, duration: { seconds: 1_500, estimated: false }, distanceM: 6_000, activityId: 'a1', target: null, structure: null }
 
 describe('TodayHero', () => {
   it('draws on the card surface and tokens, not fixed hexes', () => {
@@ -35,7 +35,7 @@ describe('TodayHero', () => {
 
     const row = screen.getByTestId('session-card')
     expect(row).toHaveTextContent(`✓ ${t.sessionState.done}`)
-    expect(row).toHaveTextContent('Threshold · 25 min Z4')
+    expect(row).toHaveTextContent('Threshold')
     expect(row).toHaveTextContent(`${t.sessionCard.ranAt('6.11', '4:10 /km')} · ${t.sessionCard.plannedKm('6')}`)
     expect(row.getAttribute('href')).toBe('/activities/a1')
     expect(screen.getByText(t.sessionCard.coachInsight)).toBeInTheDocument()

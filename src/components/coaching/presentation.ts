@@ -188,7 +188,7 @@ export function prescriptionDistanceMeters(workout: Segmented & Pick<WorkoutPres
 }
 
 export function prescriptionStructure(workout: Segmented & Pick<WorkoutPrescription, 'totalDurationSeconds'>): WorkoutStep[] | null {
-  const steps: { kind: WorkoutStepKind; minutes: number | null; rep?: number; paceSecPerKm?: [number, number] }[] = []
+  const steps: { kind: WorkoutStepKind; minutes: number | null; seconds?: number; rep?: number; paceSecPerKm?: [number, number] }[] = []
 
   const drawable = eachSegment(workout, (target, kind, rep) => {
     const stepKind = STEP_KIND[kind]
@@ -197,6 +197,7 @@ export function prescriptionStructure(workout: Segmented & Pick<WorkoutPrescript
     steps.push({
       kind: stepKind,
       minutes: timed ? Math.max(1, Math.round(timed.seconds / 60)) : null,
+      ...(timed ? { seconds: Math.round(timed.seconds) } : {}),
       ...(rep !== undefined ? { rep } : {}),
       ...(target.paceSecPerKm ? { paceSecPerKm: [target.paceSecPerKm.min, target.paceSecPerKm.max] as [number, number] } : {}),
     })

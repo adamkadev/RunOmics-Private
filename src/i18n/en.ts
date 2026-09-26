@@ -1497,6 +1497,15 @@ export const en = {
     type: 'Type',
     races: 'Races',
     targetPace: (pace: string) => `target ${pace}`,
+    // One reading of a session for Today, Plan and the bar (workoutSummary).
+    session: {
+      stridesTitle: (bodyMin: number, reps: number, rep: string) => `Easy ${bodyMin} min + ${reps} × ${rep} strides`,
+      seconds: (s: number) => `${s}s`,
+      withRecovery: (reps: string, recovery: string) => `${reps} · ${recovery} rec`,
+      easyPace: (range: string) => `easy ${range}`,
+      stridesPace: (pace: string) => `strides ${pace}`,
+      targetPace: (range: string) => `target ${range}`,
+    },
     continuous: 'continuous',
     ranKm: (km: string) => `${km} km ran`,
     plannedKmLabel: (km: number) => `${km} km planned`,
