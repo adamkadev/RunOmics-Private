@@ -12,7 +12,6 @@ import { BackButton } from '@/components/ui/BackButton'
 import { STATUS } from '@/lib/statusColors'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { GARMIN_GEAR_URL } from '@/components/shoes/shoeWear'
-import type { ActivityType } from '@/domain/activity/types'
 import Link from 'next/link'
 import { shoeWearCopy } from '@/components/shoes/shoeWear'
 import { WearBar } from '@/components/shoes/WearBar'
@@ -31,27 +30,20 @@ const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
   replace: { bar: STATUS.danger.dot,  text: STATUS.danger.text },
 }
 
-// The type mix wears the activity-type colours, so it matches the run dots
-// everywhere (C5, v4.4b): easy the Z2 blue, tempo and threshold Z4, the
-// intervals, VO2 and race bucket Z5.
+// The type mix wears the activity-type colours, so every dot in the run list
+// has its colour in the bar and legend (v4.4.1): easy Z2, tempo Z3,
+// threshold Z4, and the intervals, VO2 and race bucket Z5.
 const BUCKET_COLOR: Record<ShoeTypeBucket, string> = {
   base: zoneColor(2),
-  tempo: zoneColor(4),
+  tempo: zoneColor(3),
+  threshold: zoneColor(4),
   intervals: zoneColor(5),
 }
 
-function bucketType(bucket: ShoeTypeBucket, activities: { type: ActivityType }[]): ActivityType {
-  if (bucket === 'base') return 'Base'
-  if (bucket === 'intervals') return 'Anaerobic'
-  const threshold = activities.filter((a) => a.type === 'Threshold').length
-  const tempo = activities.filter((a) => a.type === 'Tempo').length
-  return threshold >= tempo ? 'Threshold' : 'Tempo'
-}
-
-function typeShareLabel(bucket: ShoeTypeBucket, activities: { type: ActivityType }[]): string {
+function typeShareLabel(bucket: ShoeTypeBucket): string {
   if (bucket === 'base') return t.shoes.easy
   if (bucket === 'intervals') return t.shoes.detail.typeShareLabels.intervals
-  return t.activityTypes[bucketType(bucket, activities)]
+  return t.activityTypes[bucket === 'tempo' ? 'Tempo' : 'Threshold']
 }
 
 /** Runs listed on the page; the rest are one link away, in Activities. */
@@ -167,13 +159,14 @@ export default async function ShoeDetailPage({
     [
       { bucket: 'base', percent: shoe.typeShare.base },
       { bucket: 'tempo', percent: shoe.typeShare.tempo },
+      { bucket: 'threshold', percent: shoe.typeShare.threshold },
       { bucket: 'intervals', percent: shoe.typeShare.intervals },
     ] as const
   ).filter((entry) => entry.percent >= TYPE_SHARE_FLOOR)
 
   // One threshold check, not a taxonomy: a pair either leans hard toward
   // quality work, leans toward easy miles, or says nothing distinctive.
-  const keySessionShare = shoe.typeShare.tempo + shoe.typeShare.intervals
+  const keySessionShare = shoe.typeShare.tempo + shoe.typeShare.threshold + shoe.typeShare.intervals
   const usageInsight = shoe.retired
     ? keySessionShare > 50
       ? d.whatItWasFor.keySessionPair(keySessionShare)
@@ -231,9 +224,9 @@ export default async function ShoeDetailPage({
             <p className="mt-2.5 text-footnote leading-snug text-muted-foreground">
               {reallyRanOut
                 ? isFastestRetirement
-                  ? d.retiredHero.ranOutFastest(shoe.maxKm, weeksWorn)
-                  : d.retiredHero.ranOut(shoe.maxKm, weeksWorn)
-                : d.retiredHero.retiredEarly(Math.round(wearRatio * 100), shoe.maxKm, weeksWorn)}
+                  ? d.retiredHero.ranOutFastest(formatKm(shoe.maxKm), weeksWorn)
+                  : d.retiredHero.ranOut(formatKm(shoe.maxKm), weeksWorn)
+                : d.retiredHero.retiredEarly(Math.round(wearRatio * 100), formatKm(shoe.maxKm), weeksWorn)}
             </p>
           </>
         ) : (
@@ -285,7 +278,7 @@ export default async function ShoeDetailPage({
             {typeShareEntries.map((entry) => (
               <span key={entry.bucket} className="flex items-center gap-1.5">
                 <span aria-hidden className="size-2 rounded-full" style={{ background: BUCKET_COLOR[entry.bucket] }} />
-                {typeShareLabel(entry.bucket, shoe.activities)} {entry.percent}%
+                {typeShareLabel(entry.bucket)} {entry.percent}%
               </span>
             ))}
           </div>

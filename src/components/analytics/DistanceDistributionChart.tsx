@@ -1,5 +1,6 @@
 'use client'
 
+import { formatKm } from '@/lib/formatters'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts'
 import type { DistanceBracket } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
@@ -27,7 +28,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   return (
     <TooltipCard label={`${d.label} ${t.units.km}`}>
       <p className="text-sm font-semibold text-foreground">{t.common.runs(d.count)}</p>
-      <p className="text-xs text-subtle">{t.analytics.charts.distance.kmTotal(d.km)}</p>
+      <p className="text-xs text-subtle">{t.analytics.charts.distance.kmTotal(formatKm(d.km))}</p>
     </TooltipCard>
   )
 }

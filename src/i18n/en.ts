@@ -644,7 +644,7 @@ export const en = {
       distance: {
         title: 'Distance Distribution',
         runs: (n: number) => `${n} runs`,
-        kmTotal: (km: number) => `${km} km total`,
+        kmTotal: (km: string) => `${km} km total`,
         reading: (bracket: string, pct: number) => `Most runs (${pct}%) land in the ${bracket} bracket.`,
         footnote: 'Every run of the season, grouped by distance. Colour intensity reflects relative frequency.',
       },
@@ -1249,17 +1249,17 @@ export const en = {
         // No "your key-session pair" branding - that possessive reads as a
         // superlative ("the one pair that's for quality work"), and two
         // retired pairs can land on the same side of this same 50% line.
-        keySessionPair: (percent: number) => `${percent}% of its distance was tempo or intervals.`,
+        keySessionPair: (percent: number) => `${percent}% of its distance was tempo, threshold or intervals.`,
         easyPair: (percent: number) => `${percent}% of its distance was base running.`,
       },
       retiredHero: {
         // "Ran out" only means something for a pair that actually reached the
         // end of its life - one that was swapped out early gets the honest
         // percentage instead of a life it never finished.
-        ranOut: (maxKm: number, weeks: number) => `Ran nearly all of a ${maxKm} km life in ${weeks} weeks.`,
-        ranOutFastest: (maxKm: number, weeks: number) =>
+        ranOut: (maxKm: string, weeks: number) => `Ran nearly all of a ${maxKm} km life in ${weeks} weeks.`,
+        ranOutFastest: (maxKm: string, weeks: number) =>
           `Ran nearly all of a ${maxKm} km life in ${weeks} weeks – the fastest you've worn a pair through.`,
-        retiredEarly: (percent: number, maxKm: number, weeks: number) =>
+        retiredEarly: (percent: number, maxKm: string, weeks: number) =>
           `Retired at ${percent}% of a ${maxKm} km life, after ${weeks} weeks.`,
       },
     },
@@ -1335,6 +1335,7 @@ export const en = {
       noSessionsThisWeek: 'No sessions logged yet.',
       noSessionsRecent: 'No sessions logged in these 4 weeks.',
       emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
+      target: 'target',
       hardShare: (pct: number) => `Z4–Z5 ${pct}% · target 10–15%`,
       highIntensityNote: (pct: number) =>
         // No phase in the sentence (G17): it named a build block during a base week.

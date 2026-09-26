@@ -19,9 +19,13 @@ const HIGH_INTENSITY_ZONES = [4, 5]
 /** Zone, pace, HR and time: one grid for the header and every row. */
 const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.625rem_2.75rem] items-center gap-1.5'
 
-/** The 10-15% hard-work target, as the two ticks over the bar: Z4-Z5 sit on
- *  its right, so the Z3/Z4 edge should fall between 85% and 90%. */
-const TARGET_TICKS = [85, 90]
+/** The 10-15% hard-work target, as a bracket under the bar (v4.4.1): Z4-Z5
+ *  sit on its right, so the Z3/Z4 edge should fall between 85% and 90%.
+ *  Ticks on the bar itself read as zone borders. */
+const TARGET_SPAN = { from: 85, to: 90 }
+
+/** Under this share of the window a zone is not drawn, and leaves no gap. */
+const MIN_SEGMENT_SHARE = 0.01
 
 /** "16′" under an hour, "1h44" over: the table's time column (C2). */
 function zoneTimeLabel(seconds: number): string {
@@ -93,7 +97,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
   const emptyLine = view === 'week' ? s.noSessionsThisWeek : s.noSessionsRecent
   const stacked = [1, 2, 3, 4, 5]
     .map((zone) => ({ zone, seconds: timeByZone.get(zone)?.seconds ?? 0 }))
-    .filter((z) => z.seconds > 0)
+    .filter((z) => windowTotal > 0 && z.seconds / windowTotal >= MIN_SEGMENT_SHARE)
 
   return (
     <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5">
@@ -126,8 +130,8 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
                 </span>
               )}
             </div>
-            {/* Z1 to Z5 as one stacked bar, 2 pt apart, with the target's two ticks. */}
-            <div className="relative mt-2" data-testid="zone-stack">
+            {/* Z1 to Z5 as one stacked bar, 2 pt apart; nothing drawn on it. */}
+            <div className="mt-2" data-testid="zone-stack">
               <div className="flex h-3.5 gap-0.5 overflow-hidden rounded-[4px]">
                 {stacked.map((z) => (
                   <span
@@ -138,15 +142,21 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
                   />
                 ))}
               </div>
-              {TARGET_TICKS.map((pct) => (
+              {/* The target under the bar: a bracket over 85-90% of its width. */}
+              <div className="relative mt-1 h-5" data-testid="zone-target">
                 <span
-                  key={pct}
                   aria-hidden
-                  data-testid="zone-target-tick"
-                  className="absolute -top-0.5 h-[18px] w-0.5 -translate-x-1/2 rounded-full bg-foreground"
-                  style={{ left: `${pct}%` }}
+                  data-testid="zone-target-bracket"
+                  className="absolute top-0 h-1.5 rounded-b-[2px] border-x-2 border-b-2 border-muted-foreground"
+                  style={{ left: `${TARGET_SPAN.from}%`, width: `${TARGET_SPAN.to - TARGET_SPAN.from}%` }}
                 />
-              ))}
+                <span
+                  className="absolute top-2 -translate-x-1/2 text-caption leading-none text-muted-foreground"
+                  style={{ left: `${(TARGET_SPAN.from + TARGET_SPAN.to) / 2}%` }}
+                >
+                  {s.target}
+                </span>
+              </div>
             </div>
             {isAutoFallback && <p className="mt-2 text-xs leading-snug text-subtle">{s.emptyWeekFallback}</p>}
           </>
