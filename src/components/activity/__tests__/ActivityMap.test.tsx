@@ -16,6 +16,7 @@ vi.mock('@/lib/maplibre', () => {
     }
     addControl() {}
     on() {}
+    once() {}
     remove() {}
     resize() {
       this.resizes += 1

@@ -80,26 +80,14 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByRole('tab', { name: t.activity.tabs.intervals })).toHaveAttribute('aria-selected', 'true')
   })
 
-  // R5/R6: the title, map, stats, verdict and RPE card repeated above every
-  // tab, so the first chart started below the fold.
-  it('keeps one line of the run above the other tabs, and it leads back to Overview', () => {
+  // H16: one header - '← Activities', share, the big title - on every tab;
+  // the map, stats and verdict stay on Overview.
+  it('keeps the same header above every tab', () => {
     window.history.replaceState(null, '', '/activities/a1?tab=intervals')
-    render(
-      <ActivityDetailClient
-        activity={ACTIVITY}
-        aiVerdict={null}
-        dynamicsBaseline={null}
-        header={<h1>Threshold</h1>}
-        compactTitle="Threshold · Fri, Sep 25"
-      />,
-    )
+    render(<ActivityDetailClient activity={ACTIVITY} aiVerdict={null} dynamicsBaseline={null} header={<h1>Threshold</h1>} />)
 
-    expect(screen.queryByText(t.activity.effort.label)).toBeNull()
-    expect(screen.queryByRole('heading', { name: 'Threshold' })).toBeNull()
-
-    act(() => screen.getByTestId('compact-header').click())
-    expect(screen.getByRole('tab', { name: t.activity.tabs.overview })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.getByText(t.activity.effort.label)).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Threshold' })).toBeInTheDocument()
+    expect(screen.queryByText(t.activity.effort.label)).toBeNull()
+    expect(screen.queryByTestId('compact-header')).toBeNull()
   })
 })
