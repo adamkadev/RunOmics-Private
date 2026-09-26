@@ -7,6 +7,7 @@ import './globals.css'
 import { Providers } from './providers'
 import { AppShell } from '@/components/layout/AppShell'
 import { ServiceWorkerRegistration } from '@/components/layout/ServiceWorkerRegistration'
+import { NoPinchZoom } from '@/components/layout/NoPinchZoom'
 import { t } from '@/i18n'
 import {
   ACCENT_CSS_STORAGE_KEY,
@@ -67,6 +68,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  // No page zoom. Browsers that honour these stop here; iOS Safari ignores
+  // them, so NoPinchZoom cancels its pinch in the page.
+  maximumScale: 1,
+  userScalable: false,
   // Still `cover`, for the bottom inset the tab bar pads by.
   viewportFit: 'cover',
   // Fixed, never rewritten at runtime: iOS stores it at install, and a value
@@ -109,6 +114,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>
+        <NoPinchZoom />
         <ServiceWorkerRegistration />
         <Analytics />
         <SpeedInsights />
