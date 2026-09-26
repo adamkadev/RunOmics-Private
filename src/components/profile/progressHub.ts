@@ -48,7 +48,7 @@ export interface ProgressHubView {
     runs: number
     hours: number
     since: string | null
-    years: { year: number; km: number }[]
+    years: { year: number; km: number; runs: number; hours: number }[]
   }
 }
 
@@ -59,7 +59,7 @@ export interface YearPoint {
 
 export interface HubInput {
   today: string
-  activities: ReadonlyArray<{ date: string; distanceKm: number }>
+  activities: ReadonlyArray<{ date: string; distanceKm: number; durationSeconds?: number }>
   ytd: ProfilePeriodStats
   prevYear: ProfilePeriodStats | null
   allTime: ProfilePeriodStats
@@ -139,10 +139,11 @@ export function progressHubView(input: HubInput): ProgressHubView {
   const latestDate = records.reduce<string | null>((max, r) => (r.date && (!max || r.date > max) ? r.date : max), null)
 
   const firstYear = input.sinceDate ? Number(input.sinceDate.slice(0, 4)) : year
-  const yearKm = new Map<number, number>()
+  const yearKm = new Map<number, { km: number; runs: number; seconds: number }>()
   for (const a of input.activities) {
     const y = Number(a.date.slice(0, 4))
-    yearKm.set(y, (yearKm.get(y) ?? 0) + a.distanceKm)
+    const entry = yearKm.get(y) ?? { km: 0, runs: 0, seconds: 0 }
+    yearKm.set(y, { km: entry.km + a.distanceKm, runs: entry.runs + 1, seconds: entry.seconds + (a.durationSeconds ?? 0) })
   }
 
   const twelveMonthsAgo = isoDate(addDays(new Date(`${input.today}T00:00:00`), -365))
@@ -193,7 +194,10 @@ export function progressHubView(input: HubInput): ProgressHubView {
       runs: input.allTime.sessionCount,
       hours: Math.round(input.allTime.durationSeconds / 3600),
       since: input.sinceDate,
-      years: Array.from({ length: year - firstYear + 1 }, (_, i) => firstYear + i).map((y) => ({ year: y, km: Math.round(yearKm.get(y) ?? 0) })),
+      years: Array.from({ length: year - firstYear + 1 }, (_, i) => firstYear + i).map((y) => {
+        const entry = yearKm.get(y)
+        return { year: y, km: Math.round(entry?.km ?? 0), runs: entry?.runs ?? 0, hours: Math.round((entry?.seconds ?? 0) / 3600) }
+      }),
     },
   }
 }

@@ -24,12 +24,12 @@ function shoe(over: Partial<ShoeStats>): ShoeStats {
 }
 
 function barWidths(container: HTMLElement): string[] {
-  return Array.from(container.querySelectorAll<HTMLElement>('span[style]')).map((fill) => fill.style.width)
+  return Array.from(container.querySelectorAll<HTMLElement>('[data-testid="wear-fill"]')).map((fill) => fill.style.width)
 }
 
 describe('ShoesGrid', () => {
-  // G24: only one of the two worn-out pairs was flagged.
-  it('gives every pair past its limit its own "km over" chip', () => {
+  // C4, v4.4b: past the limit the bar is Z5 and the meta line says so.
+  it('flags every pair past its limit in its meta line and its bar', () => {
     render(
       <ShoesGrid
         shoes={[
@@ -40,23 +40,23 @@ describe('ShoesGrid', () => {
     )
 
     expect(screen.getAllByTestId('shoe-card')).toHaveLength(2)
-    expect(screen.getByText(t.shoes.kmOver('875'))).toBeInTheDocument()
-    expect(screen.getByText(t.shoes.kmOver('387'))).toBeInTheDocument()
-    expect(screen.getByText(t.shoes.limitLine('1,375', '500', 12))).toBeInTheDocument()
+    for (const meta of screen.getAllByTestId('shoe-meta')) expect(meta.textContent).toContain(t.shoes.overLimit)
+    for (const bar of screen.getAllByTestId('wear-bar')) expect(bar.getAttribute('data-tone')).toBe('over')
   })
 
-  it('reads a healthy pair neutrally and a pair near its limit in amber', () => {
+  it('shows km left in bold, and the bar turns amber from 80% of the limit', () => {
     render(
       <ShoesGrid
         shoes={[
           shoe({ gearId: 'a', totalKm: 604, wearPercent: 60 }),
-          shoe({ gearId: 'b', totalKm: 950, wearPercent: 95 }),
+          shoe({ gearId: 'b', totalKm: 850, wearPercent: 85 }),
         ]}
       />,
     )
 
-    expect(screen.getByText(t.shoes.kmLeft('396')).className).toContain('text-muted-foreground')
-    expect(screen.getByText(t.shoes.kmLeft('50')).className).toContain('--tone-caution')
+    const rows = screen.getAllByTestId('shoe-card')
+    expect(rows[0]!.textContent).toContain(`150 ${t.shoes.kmLeftShort}`)
+    expect(screen.getAllByTestId('wear-bar').map((bar) => bar.getAttribute('data-tone'))).toEqual(['near', 'ok'])
   })
 
   it('orders the pairs most worn first, each with a bar sized to its wear', () => {
@@ -72,20 +72,21 @@ describe('ShoesGrid', () => {
     expect(barWidths(container)).toEqual(['60.4%', '5.3%'])
   })
 
-  it('writes the context line the page gives, or when the pair last ran', () => {
+  it('writes km / limit, runs, last run and role in the meta line, and the page\'s context line', () => {
     const thisYear = new Date().getFullYear()
     render(
       <ShoesGrid
-        shoes={[shoe({ gearId: 'a', wearPercent: 90, totalKm: 900 }), shoe({ gearId: 'b', lastUsedDate: `${thisYear}-09-17` })]}
+        shoes={[shoe({ gearId: 'a', wearPercent: 90, totalKm: 900 }), shoe({ gearId: 'b', lastUsedDate: `${thisYear}-09-17`, mainType: 'Base' })]}
         insights={{ a: t.shoes.hero.usage(3, 6) }}
       />,
     )
 
     expect(screen.getByText(t.shoes.hero.usage(3, 6))).toBeInTheDocument()
-    expect(screen.getByText(t.shoes.lastRunSentence('Sep 17'))).toBeInTheDocument()
+    const meta = screen.getAllByTestId('shoe-meta')[1]!.textContent
+    expect(meta).toBe(`${t.shoes.kmOf('150', '1,000')} · ${t.shoes.runs(12)} · ${t.shoes.lastRun('Sep 17')} · ${t.shoes.roles.daily}`)
   })
 
-  it('lists a retired pair as a row with its era, runs and km, and no bar', () => {
+  it('lists a retired pair under its own label, with its era, runs and km, and no bar', () => {
     const { container } = render(
       <ShoesGrid
         shoes={[
@@ -103,16 +104,22 @@ describe('ShoesGrid', () => {
       />,
     )
 
-    expect(screen.getByText(t.shoes.retiredTitle('Cloudrun 3'))).toBeInTheDocument()
-    expect(screen.getByTestId('retired-row').textContent).toContain('9 runs · 92 km')
+    expect(screen.getByText(t.shoes.retiredSection(1))).toBeInTheDocument()
+    const row = screen.getByTestId('retired-row')
+    expect(row.textContent).toContain('Cloudrun 3')
+    expect(row.textContent).not.toContain(t.shoes.retiredTitle('Cloudrun 3'))
+    expect(row.textContent).toContain(t.shoes.runs(9))
+    expect(row.textContent).toContain('92 km')
     expect(barWidths(container)).toEqual([])
   })
 
-  it('opens the comparison from its row', () => {
+  it('opens the comparison from an outline card', () => {
     render(<ShoesGrid shoes={[shoe({})]} compare={<p>comparison</p>} />)
 
     expect(screen.getByText(t.shoes.comparison.title)).toBeInTheDocument()
     expect(screen.getByText(t.shoes.comparison.subtitle)).toBeInTheDocument()
-    expect(screen.getByText('comparison').closest('details')).not.toBeNull()
+    const card = screen.getByText('comparison').closest('details')!
+    expect(card.className).toContain('border')
+    expect(card.className).not.toContain('glass-card')
   })
 })

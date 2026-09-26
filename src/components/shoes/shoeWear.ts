@@ -1,4 +1,5 @@
 import { formatKm } from '@/lib/formatters'
+import type { ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
 
 /**
@@ -28,3 +29,35 @@ export function shoeWearCopy(shoe: { totalKm: number; maxKm: number }): {
     exact: over ? t.shoes.pastLimit(overBy, formatKm(limit)) : t.shoes.kmLeftExact(left),
   }
 }
+
+/** Where a pair is in its life, for the bar's colour (C4, v4.4b). */
+export type WearTone = 'ok' | 'near' | 'over'
+
+/** The share of the limit where the bar turns amber, and where its tick sits. */
+export const WEAR_NEAR_SHARE = 0.8
+
+export function wearTone(shoe: { totalKm: number; maxKm: number }): WearTone {
+  if (!(shoe.maxKm > 0)) return 'ok'
+  const share = shoe.totalKm / shoe.maxKm
+  return share > 1 ? 'over' : share >= WEAR_NEAR_SHARE ? 'near' : 'ok'
+}
+
+/** The accent under 80% of the limit, amber from 80 to 100%, Z5 past it. */
+export const WEAR_COLOR: Record<WearTone, string> = {
+  ok: 'var(--accent)',
+  near: 'var(--tone-caution)',
+  over: 'var(--zone-5)',
+}
+
+/** A pair's role, from the session it is worn for most. */
+export function shoeRole(type: ActivityType | null): string | null {
+  if (!type) return null
+  const r = t.shoes.roles
+  if (type === 'Base') return r.daily
+  if (type === 'Tempo' || type === 'Threshold') return r.workouts
+  if (type === 'Race') return r.races
+  return r.intervals
+}
+
+/** Pairs, limits and retirement are Garmin's: the list's Add and the detail's Edit open its gear page. */
+export const GARMIN_GEAR_URL = 'https://connect.garmin.com/modern/gear'

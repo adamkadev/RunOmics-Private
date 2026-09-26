@@ -70,7 +70,7 @@ describe('progressHubView', () => {
   })
 
   it('draws km by year from the first run to this year', () => {
-    expect(view.allTime.years).toEqual([
+    expect(view.allTime.years.map(({ year, km }) => ({ year, km }))).toEqual([
       { year: 2022, km: 95 }, { year: 2023, km: 0 }, { year: 2024, km: 0 }, { year: 2025, km: 640 }, { year: 2026, km: 1_394 },
     ])
     expect(view.vo2max).toMatchObject({ value: 55, delta: 2, series: [53, 54, 55] })
@@ -110,7 +110,12 @@ describe('ProgressHub', () => {
     expect(screen.getByRole('link', { name: t.profile.hub.settings }).getAttribute('href')).toBe('/settings')
     expect(screen.getByTestId('year-hero').textContent).toContain(t.profile.hub.vsYear('+754', 2025))
     expect(screen.getByTestId('race-tile').textContent).toContain('42:10')
-    expect(screen.getByTestId('year-bars').children).toHaveLength(5)
+    // C6: the All time card opens its page and shows this year and last as rows.
+    expect(screen.getByTestId('all-time').getAttribute('href')).toBe('/all-time')
+    expect(screen.getAllByTestId('year-row').map((row) => row.textContent)).toEqual([
+      expect.stringContaining('2026'),
+      expect.stringContaining('2025'),
+    ])
   })
 
   // v4.3.1: the footers are whole segments; v4.3.4: on one line, sized down

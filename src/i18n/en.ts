@@ -1086,7 +1086,46 @@ export const en = {
     },
   },
 
+  // C6, v4.4b: Progress > All time.
+  allTime: {
+    title: 'All time',
+    back: 'Progress',
+    subtitle: (since: string, months: number) => `Since ${since} · ${months} month${months === 1 ? '' : 's'}`,
+    km: 'km',
+    runs: 'runs',
+    hours: 'hours',
+    byYear: 'By year',
+    byYearUnits: 'km · runs · h',
+    partialYear: (year: number, month: string, months: number, currentMonths: number, currentYear: number) =>
+      `${year} started in ${month}: ${months} months vs ${currentMonths} in ${currentYear}.`,
+    monthly: 'Monthly km',
+    best: (month: string, km: string) => `best ${month} · ${km}`,
+    longestRun: 'Longest run',
+    biggestWeek: 'Biggest week',
+    yearLabel: (year: number, km: string, runs: number, hours: string) => `${year}: ${km} km, ${runs} runs, ${hours} h`,
+  },
+
   shoes: {
+    // C4-C5, v4.4b: the list, the detail hero and the type mix.
+    tracked: (km: string) => `${km} km tracked`,
+    add: 'Add',
+    addLabel: 'Add a pair in Garmin Connect',
+    edit: 'Edit',
+    editLabel: 'Edit limit, role or retire in Garmin Connect',
+    inRotation: (n: number) => `In rotation · ${n}`,
+    retiredSection: (n: number) => `Retired · ${n}`,
+    kmLeftShort: 'km left',
+    left: (km: string) => `${km} left`,
+    ofLimit: (limit: string) => `of ${limit} km`,
+    lastRun: (date: string) => `last ${date}`,
+    runs: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
+    overLimit: 'Over limit, consider retiring',
+    since: (brand: string, month: string) => `${brand} · since ${month}`,
+    roles: { daily: 'daily trainer', workouts: 'workouts', intervals: 'intervals', races: 'races' },
+    typeMixCaption: 'Share of distance · colours match activity types',
+    easy: 'Easy',
+    heroStats: { runs: 'runs', kmAvg: 'km avg', pace: 'avg /km', bpm: 'avg bpm' },
+    lastRuns: 'Last runs',
     neverUsed: 'Never used',
     // Both numbers arrive formatted (formatKm), so 1,375 has its separator.
     kmOf: (total: string, max: string) => `${total} / ${max} km`,
@@ -1119,7 +1158,7 @@ export const en = {
     },
     comparison: {
       title: 'Compare two pairs',
-      subtitle: 'Runs, distance, key sessions side by side',
+      subtitle: 'Pace, HR and session mix side by side',
       change: 'Change',
       changeLabel: 'Change which pairs are compared',
       pickHint: 'Pick two pairs — a new pick replaces the older one',

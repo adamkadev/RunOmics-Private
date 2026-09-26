@@ -2,15 +2,12 @@ import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
-import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
+import { wearStatus } from '@/domain/shoe/wearStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { BrandIcon } from '@/components/shoes/BrandIcon'
-import { STATUS } from '@/lib/statusColors'
 import { SHOE_WEAR_TINTS } from '@/lib/colors'
 import { formatDate, formatDateRange, formatKm } from '@/lib/formatters'
-import { shoeWearCopy } from './shoeWear'
+import { shoeRole, wearTone } from './shoeWear'
 import { WearBar } from './WearBar'
-import { StatusPill } from '@/components/ui/StatusPill'
 import { t } from '@/i18n'
 
 /** The pair most in need of replacing, for the one context line that needs the activity log. */
@@ -22,55 +19,48 @@ export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
   )
 }
 
-const WEAR_BAR: Record<WearStatus, string> = {
-  ok:      STATUS.success.dot,
-  watch:   STATUS.warning.dot,
-  replace: STATUS.danger.dot,
-}
-
-/** The shoe detail page's hero tint. */
+/** The shoe detail page's verdict tint. */
 export const HERO_SURFACE: Record<'watch' | 'replace', { background: string; borderColor: string }> = SHOE_WEAR_TINTS
 
-/**
- * The pair's state as its card's one chip: the overrun in red, a pair close
- * to its limit in amber, a healthy one neutral - `ok` asks for no decision,
- * so it spends no status hue.
- */
-function WearChip({ shoe }: { shoe: ShoeStats }) {
-  const wear = shoeWearCopy(shoe)
-  const status = wearStatus(shoe.wearPercent)
-  if (wear.over) return <StatusPill tone="red" className="shrink-0 font-semibold">{wear.short}</StatusPill>
-  if (status !== 'ok') return <StatusPill tone="amber" className="shrink-0 font-semibold">{wear.short}</StatusPill>
-  return <span className="shrink-0 text-footnote font-semibold tabular-nums text-muted-foreground">{wear.short}</span>
+const SECTION = 'px-1 text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground'
+
+/** "676 / 1,000 km · 73 runs · last Sep 24 · daily trainer", or the overrun. */
+export function shoeMeta(shoe: ShoeStats): string {
+  const s = t.shoes
+  if (wearTone(shoe) === 'over') return `${s.kmOf(formatKm(shoe.totalKm), formatKm(shoe.maxKm))} · ${s.overLimit}`
+  return [
+    s.kmOf(formatKm(shoe.totalKm), formatKm(shoe.maxKm)),
+    s.runs(shoe.sessionCount),
+    shoe.lastUsedDate ? s.lastRun(formatDate(shoe.lastUsedDate, { style: 'bare' })) : null,
+    shoeRole(shoe.mainType ?? null),
+  ]
+    .filter(Boolean)
+    .join(' · ')
 }
 
-function lastRunLine(shoe: ShoeStats): string | null {
-  return shoe.lastUsedDate ? t.shoes.lastRunSentence(formatDate(shoe.lastUsedDate, { style: 'bare' })) : null
-}
-
 /**
- * One card per pair in rotation, each with its own state. The old screen gave
- * the REPLACE hero to one pair, so a second pair 387 km past its limit sat in
- * the Active list with nothing asking for a decision.
+ * A pair in rotation, as one row of the shared card (C4, v4.4b): brand,
+ * model and km left, the wear bar, then what it has done and what it is for.
  */
-function ShoeCard({ shoe, context }: { shoe: ShoeStats; context: string | null }) {
-  const status = wearStatus(shoe.wearPercent)
+function RotationRow({ shoe, context }: { shoe: ShoeStats; context: string | null }) {
+  const left = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
+  const over = wearTone(shoe) === 'over'
   return (
-    <Link href={`/shoes/${shoe.gearId}`} className="block transition-transform active:scale-[0.99]" data-testid="shoe-card">
-      <GlassSurface variant="card" className="rounded-card-sm p-4">
-        <div className="flex items-center justify-between gap-3">
-          <span className="flex min-w-0 items-center gap-2">
-            <BrandIcon brand={shoe.brand} size={16} />
-            <span className="truncate font-display text-body font-bold text-foreground">{shoe.name}</span>
-          </span>
-          <WearChip shoe={shoe} />
+    <Link href={`/shoes/${shoe.gearId}`} className="block px-4 py-3.5 transition-colors active:bg-foreground/[0.04]" data-testid="shoe-card">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-caption uppercase tracking-[0.08em] text-muted-foreground">{shoe.brand}</p>
+          <p className="truncate font-display text-body font-bold text-foreground">{shoe.name}</p>
         </div>
-        <p className="mb-2.5 mt-0.5 text-footnote tabular-nums text-muted-foreground">
-          {t.shoes.limitLine(formatKm(shoe.totalKm), formatKm(shoe.maxKm), shoe.sessionCount)}
-        </p>
-        <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} fillClass={WEAR_BAR[status]} />
-        {context && <p className="mt-2.5 text-footnote text-foreground/80">{context}</p>}
-      </GlassSurface>
+        {!over && (
+          <p className="shrink-0 text-footnote text-muted-foreground">
+            <span className="font-display text-body font-bold tabular-nums text-foreground">{formatKm(left)}</span> {t.shoes.kmLeftShort}
+          </p>
+        )}
+      </div>
+      <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} className="mt-3" />
+      <p className="mt-2.5 text-footnote tabular-nums text-muted-foreground" data-testid="shoe-meta">{shoeMeta(shoe)}</p>
+      {context && <p className="mt-1 text-footnote text-foreground/80">{context}</p>}
     </Link>
   )
 }
@@ -81,19 +71,7 @@ function retiredSubline(shoe: ShoeStats): string {
     : shoe.lastUsedDate
       ? formatDate(shoe.lastUsedDate, { precision: 'month', style: 'bare' })
       : '-'
-  return t.shoes.retiredLife(era, shoe.sessionCount, formatKm(shoe.totalKm))
-}
-
-function Row({ title, subtitle }: { title: string; subtitle: string }) {
-  return (
-    <span className="flex min-h-14 items-center justify-between gap-3 py-2.5">
-      <span className="min-w-0">
-        <span className="block truncate text-body font-semibold text-foreground">{title}</span>
-        <span className="block truncate text-footnote text-muted-foreground">{subtitle}</span>
-      </span>
-      <ChevronRight size={18} className="shrink-0 text-subtle" aria-hidden="true" />
-    </span>
-  )
+  return `${era} · ${t.shoes.runs(shoe.sessionCount)}`
 }
 
 interface Props {
@@ -114,32 +92,56 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
   }
 
   const active = shoes.filter((shoe) => !shoe.retired).sort((a, b) => b.wearPercent - a.wearPercent)
-  const retired = shoes.filter((shoe) => shoe.retired)
+  // Newest retired first.
+  const retired = shoes
+    .filter((shoe) => shoe.retired)
+    .sort((a, b) => (b.lastUsedDate ?? '').localeCompare(a.lastUsedDate ?? ''))
 
   return (
-    <div className="space-y-3">
-      {active.map((shoe) => (
-        <ShoeCard key={shoe.gearId} shoe={shoe} context={insights[shoe.gearId] ?? lastRunLine(shoe)} />
-      ))}
+    <div className="space-y-5">
+      {active.length > 0 && (
+        <section className="space-y-2" data-testid="shoes-rotation">
+          <h2 className={SECTION}>{t.shoes.inRotation(active.length)}</h2>
+          <GlassSurface variant="card" className="divide-y divide-border overflow-hidden rounded-card-sm">
+            {active.map((shoe) => (
+              <RotationRow key={shoe.gearId} shoe={shoe} context={insights[shoe.gearId] ?? null} />
+            ))}
+          </GlassSurface>
+        </section>
+      )}
 
-      {(retired.length > 0 || compare) && (
-        <GlassSurface variant="card" className="rounded-card-sm px-4">
-          <div className="divide-y divide-border">
+      {retired.length > 0 && (
+        <section className="space-y-2" data-testid="shoes-retired">
+          <h2 className={SECTION}>{t.shoes.retiredSection(retired.length)}</h2>
+          <GlassSurface variant="card" className="divide-y divide-border overflow-hidden rounded-card-sm">
             {retired.map((shoe) => (
-              <Link key={shoe.gearId} href={`/shoes/${shoe.gearId}`} className="block" data-testid="retired-row">
-                <Row title={t.shoes.retiredTitle(shoe.name)} subtitle={retiredSubline(shoe)} />
+              <Link key={shoe.gearId} href={`/shoes/${shoe.gearId}`} className="flex min-h-15 items-center gap-3 px-4 py-3" data-testid="retired-row">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-display text-body font-bold text-foreground">{shoe.name}</span>
+                  <span className="block truncate text-footnote text-muted-foreground">{retiredSubline(shoe)}</span>
+                </span>
+                <span className="shrink-0 font-display text-body font-bold tabular-nums text-foreground">
+                  {formatKm(shoe.totalKm)} {t.units.km}
+                </span>
+                <ChevronRight size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
               </Link>
             ))}
-            {compare && (
-              <details className="group">
-                <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                  <Row title={t.shoes.comparison.title} subtitle={t.shoes.comparison.subtitle} />
-                </summary>
-                <div className="pb-3">{compare}</div>
-              </details>
-            )}
-          </div>
-        </GlassSurface>
+          </GlassSurface>
+        </section>
+      )}
+
+      {compare && (
+        // An outline, no fill: an action, not data.
+        <details className="group rounded-card-sm border border-border" data-testid="shoes-compare">
+          <summary className="flex min-h-15 cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-body font-bold text-foreground">{t.shoes.comparison.title}</span>
+              <span className="block truncate text-footnote text-muted-foreground">{t.shoes.comparison.subtitle}</span>
+            </span>
+            <ChevronRight size={16} className="shrink-0 text-muted-foreground transition-transform group-open:rotate-90" aria-hidden="true" />
+          </summary>
+          <div className="px-3 pb-3">{compare}</div>
+        </details>
       )}
     </div>
   )

@@ -5,7 +5,9 @@ import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
 import { ShoeComparison } from '@/components/shoes/ShoeComparison'
 import { BackButton } from '@/components/ui/BackButton'
 import { formatKm } from '@/lib/formatters'
+import { Plus } from 'lucide-react'
 import { t } from '@/i18n'
+import { GARMIN_GEAR_URL } from '@/components/shoes/shoeWear'
 
 const QUALITY_RUNS_WINDOW = 6
 
@@ -32,14 +34,25 @@ export default async function ShoesPage() {
     <div className="space-y-6">
       <div>
         <BackButton label={t.pages.shoes.back} fallbackHref="/profile" />
-        <h1 className="text-display text-foreground">{t.pages.shoes.title}</h1>
-        <p className="mt-0.5 text-sm text-muted-foreground">
-          {t.shoes.rotationSummary(
-            shoes.filter((shoe) => !shoe.retired).length,
-            shoes.filter((shoe) => shoe.retired).length,
-            formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0))
-          )}
-        </p>
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-display text-foreground">{t.pages.shoes.title}</h1>
+            <p className="mt-0.5 text-footnote text-muted-foreground">
+              {t.shoes.tracked(formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0)))}
+            </p>
+          </div>
+          {/* Pairs come from Garmin; adding one happens there. */}
+          <a
+            href={GARMIN_GEAR_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={t.shoes.addLabel}
+            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border px-4 text-footnote font-bold text-foreground transition-opacity active:opacity-70"
+          >
+            <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
+            {t.shoes.add}
+          </a>
+        </div>
       </div>
 
       <ShoesGrid

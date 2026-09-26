@@ -1,53 +1,43 @@
 import { cn } from '@/lib/utils'
+import { WEAR_COLOR, WEAR_NEAR_SHARE, wearTone } from './shoeWear'
 
 /**
- * A pair's wear against its limit, scaled to max(km, limit) so the overrun
- * shows: a tick marks the limit and the km past it are hatched. At 1,375 of
- * 500 km the bar used to stop at full and read "100%", hiding the one thing
- * worth knowing.
+ * A pair's wear against its limit (C4, v4.4b): a 6 pt bar in the accent
+ * under 80% of the limit, amber from 80 to 100%, Z5 past it, with a muted
+ * tick at 80%. Past the limit the bar is scaled to the km run, so the tick
+ * moves in and the overrun shows. A retired pair's bar is full and muted.
  */
 export function WearBar({
   totalKm,
   maxKm,
-  fillClass,
+  retired = false,
   className,
 }: {
   totalKm: number
   maxKm: number
-  /** The in-limit fill's colour class, from the wear status. */
-  fillClass: string
+  retired?: boolean
   className?: string
 }) {
   const scale = Math.max(totalKm, maxKm, 1)
-  const over = maxKm > 0 && totalKm > maxKm
-  const inShare = (Math.min(totalKm, maxKm > 0 ? maxKm : totalKm) / scale) * 100
+  const tone = wearTone({ totalKm, maxKm })
+  const fill = retired ? 100 : (totalKm / scale) * 100
+  const tick = maxKm > 0 && !retired ? ((maxKm * WEAR_NEAR_SHARE) / scale) * 100 : null
 
   return (
-    <div className={className}>
-      <div className="relative flex h-2.5 overflow-hidden rounded-full bg-foreground/[0.1]" data-testid="wear-bar">
+    <div className={cn('relative h-1.5 rounded-full bg-[var(--track)]', className)} data-testid="wear-bar" data-tone={retired ? 'retired' : tone}>
+      <span
+        className="absolute inset-y-0 left-0 rounded-full"
+        data-testid="wear-fill"
+        style={{ width: `${fill}%`, background: retired ? 'var(--muted-foreground)' : WEAR_COLOR[tone] }}
+      />
+      {tick !== null && (
         <span
-          className={cn('block h-full', over ? 'bg-subtle/55' : cn('rounded-full', fillClass))}
-          style={{ width: `${inShare}%` }}
+          aria-hidden
+          data-testid="wear-tick"
+          className="absolute -top-1 h-3.5 w-0.5 -translate-x-1/2 rounded-full bg-muted-foreground"
+          style={{ left: `${tick}%` }}
         />
-        {over && (
-          <>
-            <span
-              data-testid="wear-overrun"
-              className="block h-full flex-1"
-              style={{
-                background:
-                  'repeating-linear-gradient(135deg, var(--destructive) 0 3px, color-mix(in oklch, var(--destructive) 30%, transparent) 3px 6px)',
-              }}
-            />
-            <span
-              data-testid="wear-limit"
-              aria-hidden="true"
-              className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-foreground"
-              style={{ left: `${inShare}%` }}
-            />
-          </>
-        )}
-      </div>
+      )}
     </div>
   )
 }

@@ -6,6 +6,7 @@ import { formatCountdown, formatDate, formatDelta, formatDuration, formatKm, for
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { ProgressHubView, YearPoint } from './progressHub'
+import { YearRows } from './AllTime'
 
 const TITLE = 'font-display text-subhead font-semibold text-foreground'
 const MUTED = 'text-footnote text-muted-foreground'
@@ -137,7 +138,6 @@ export function raceShare(predicted: number, target: number): number {
 export function ProgressHub({ view }: { view: ProgressHubView }) {
   const h = t.profile.hub
   const { hero, race, vo2max, records, consistency, shoes, allTime } = view
-  const maxYearKm = Math.max(1, ...allTime.years.map((y) => y.km))
 
   return (
     <div className="space-y-3">
@@ -289,7 +289,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
         </Tile>
       )}
 
-      <Link href="/analytics" aria-label={h.openYears} className="block transition-transform active:scale-[0.99]" data-testid="all-time">
+      <Link href="/all-time" aria-label={h.openYears} className="block transition-transform active:scale-[0.99]" data-testid="all-time">
         <GlassSurface variant="card" className="rounded-[22px] px-4 py-3.5">
           <div className="flex items-center justify-between gap-2">
             <span className={TITLE}>{h.allTime}</span>
@@ -312,24 +312,9 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               </div>
             ))}
           </div>
-          <div className="mt-4 flex h-24 items-end gap-2" data-testid="year-bars">
-            {allTime.years.map((y) => {
-              const current = y.year === view.year
-              const previous = y.year === view.year - 1
-              return (
-                <div key={y.year} className="flex min-w-0 flex-1 flex-col items-center gap-1">
-                  <span className={cn('text-caption tabular-nums', current ? 'font-bold text-accent-text' : 'text-muted-foreground')}>{formatKm(y.km)}</span>
-                  <span
-                    className="block w-full rounded-md"
-                    style={{
-                      height: `${Math.max(6, Math.round((y.km / maxYearKm) * 56))}px`,
-                      background: current ? 'var(--accent)' : previous ? 'color-mix(in srgb, var(--muted-foreground) 60%, transparent)' : 'var(--track)',
-                    }}
-                  />
-                  <span className={cn('text-caption tabular-nums', current ? 'font-bold text-accent-text' : 'text-muted-foreground')}>{String(y.year).slice(2)}</span>
-                </div>
-              )
-            })}
+          {/* The All time page's By year rows, compact (C6), in place of two big bars. */}
+          <div className="mt-3.5">
+            <YearRows years={allTime.years.slice(-2)} currentYear={view.year} compact />
           </div>
         </GlassSurface>
       </Link>
