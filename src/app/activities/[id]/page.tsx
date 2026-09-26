@@ -16,6 +16,7 @@ import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
 import { sessionZone, zoneColor } from '@/lib/colors'
+import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -68,6 +69,8 @@ export default async function ActivityDetailPage({
   const officialResult = officialResultsByActivityId(getOfficialRaceResults()).get(id) ?? null
   const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
+  const grade = getVo2Grade()
+  const vo2GradeLetter = grade?.status === 'graded' ? grade.grade : null
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
 
   // After a run the page opens on the run: title with its date and type,
@@ -85,7 +88,7 @@ export default async function ActivityDetailPage({
                 own bottom margin used to push the share button off it. */}
             <div className="flex items-center justify-between gap-3">
               <BackButton label={t.activity.back} fallbackHref="/activities" className="mb-0" />
-              <ShareButton activity={shareActivity(activity)} />
+              <ShareButton activity={shareActivity(activity)} vo2Grade={vo2GradeLetter} />
             </div>
 
             <div>

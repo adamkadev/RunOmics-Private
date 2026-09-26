@@ -77,4 +77,15 @@ describe('ShareCardModal', () => {
     expect(sheet.style.background).toBe('var(--background)')
     expect(sheet.style.backdropFilter ?? '').toBe('')
   })
+
+  it('offers the VO₂max grade badge off by default, and only with a grade (v5.3)', async () => {
+    const { unmount } = open()
+    expect(screen.queryByTestId('share-grade-toggle')).toBeNull()
+    unmount()
+    render(<ShareCardModal activity={RUN} vo2Grade="A" canShareFiles canCopyImage onClose={() => {}} />)
+    const toggle = screen.getByTestId('share-grade-toggle')
+    expect(toggle.getAttribute('aria-checked')).toBe('false')
+    await userEvent.click(toggle)
+    expect(toggle.getAttribute('aria-checked')).toBe('true')
+  })
 })

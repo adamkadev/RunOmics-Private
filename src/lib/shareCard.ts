@@ -16,6 +16,7 @@ export interface RenderOptions {
   theme: ThemeMode
   photoImage?: HTMLImageElement | null
   locationName?: string | null
+  gradeBadge?: string | null
   mapImage?: HTMLCanvasElement | null
   mapPoints?: [number, number][] | null
   fonts?: ShareFonts
@@ -43,6 +44,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
     palette: sharePalette(options.accent, options.theme),
     fonts: options.fonts ?? pageFonts(),
     place: options.locationName,
+    gradeBadge: options.gradeBadge,
     photo: options.photoImage,
     mapImage: options.mapImage,
     mapPoints: options.mapPoints,

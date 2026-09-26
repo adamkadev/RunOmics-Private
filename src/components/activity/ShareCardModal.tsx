@@ -19,6 +19,8 @@ import { ShareCardActions } from '@/components/activity/ShareCardActions'
 
 interface Props {
   activity: ShareActivity
+  /** The current VO₂max grade, for the optional badge; null hides the option. */
+  vo2Grade?: string | null
   canShareFiles: boolean
   canCopyImage: boolean
   onClose: () => void
@@ -29,7 +31,7 @@ const PREVIEW_W = 242
 const PREVIEW_H = 430
 const SWIPE_PX = 40
 
-export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose }: Props) {
+export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCopyImage, onClose }: Props) {
   const { resolvedTheme } = useTheme()
   const appTheme: ThemeMode = resolvedTheme === 'light' ? 'light' : 'dark'
   const accent = useAccent()
@@ -50,6 +52,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
+  // Off by default (v5.3): the badge is the athlete's to add.
+  const [showGrade, setShowGrade] = useState(false)
   const [fontsReady, setFontsReady] = useState(0)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -85,10 +89,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     theme,
     photoImage,
     locationName,
+    gradeBadge: showGrade && vo2Grade ? t.vo2Grade.badge(vo2Grade) : null,
     mapImage,
     mapPoints,
     fonts: pageFonts(),
-  }), [activity, design, accent, theme, photoImage, locationName, mapImage, mapPoints])
+  }), [activity, design, accent, theme, photoImage, locationName, showGrade, vo2Grade, mapImage, mapPoints])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -252,6 +257,27 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                 ))}
               </div>
             </div>
+
+            {vo2Grade && (
+              <div className="flex items-center justify-between" style={{ padding: '2px' }}>
+                <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{t.vo2Grade.shareBadge}</span>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showGrade}
+                  aria-label={t.vo2Grade.shareBadge}
+                  onClick={() => setShowGrade((v) => !v)}
+                  className="relative shrink-0 rounded-full transition-colors"
+                  style={{ width: 51, height: 31, background: showGrade ? 'var(--foreground)' : 'var(--muted)' }}
+                  data-testid="share-grade-toggle"
+                >
+                  <span
+                    className="absolute top-[3px] rounded-full transition-[left]"
+                    style={{ width: 25, height: 25, left: showGrade ? 23 : 3, background: showGrade ? 'var(--background)' : 'var(--muted-foreground)' }}
+                  />
+                </button>
+              </div>
+            )}
 
             {design === 'photo' && (
               <div className="flex items-center justify-between" style={{ padding: '2px' }}>

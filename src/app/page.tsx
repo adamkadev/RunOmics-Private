@@ -10,6 +10,7 @@ import { getTodayInsight, todayInsightSession } from '@/application/usecases/Get
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
+import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { coachWorkoutView, heroWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
 import { appTodayIso } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
@@ -18,6 +19,7 @@ import { RecentActivities } from '@/components/dashboard/RecentActivities'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { TodayHero } from '@/components/dashboard/TodayHero'
 import { BodyCard, latestRatedStatus } from '@/components/dashboard/BodyCard'
+import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { t } from '@/i18n'
@@ -71,6 +73,7 @@ export default async function DashboardPage() {
       />
 
       <BodyCard status={trainingStatus} watchStatus={latestRatedStatus(trainingStatusDays)} />
+      <Vo2GradeTodayRow view={getVo2Grade(today)} />
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">

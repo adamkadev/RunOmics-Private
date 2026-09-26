@@ -46,6 +46,11 @@ export interface DeltaContext {
    * threshold; the load markers need it for their safe range.
    */
   value?: number
+  /**
+   * A tighter or looser neutral band for one screen: the VO₂max grade's
+   * 30-day change reads 0.3 as noise (v5.3) where the 12-week tiles use 0.5.
+   */
+  flatBelow?: number
 }
 
 const distanceToBand = (v: number) => (v < FORM_BAND.lo ? FORM_BAND.lo - v : v > FORM_BAND.hi ? v - FORM_BAND.hi : 0)
@@ -65,7 +70,7 @@ export function deltaTone(metric: DeltaMetric, delta: number | null | undefined,
       return now < before ? 'good' : now > before ? 'worse' : 'flat'
     }
     case 'vo2max':
-      return Math.abs(delta) < 0.5 ? 'flat' : delta > 0 ? 'good' : 'worse'
+      return Math.abs(delta) < (ctx.flatBelow ?? 0.5) ? 'flat' : delta > 0 ? 'good' : 'worse'
     // Seconds, positive when slower.
     case 'pace':
       return Math.abs(delta) < 3 ? 'flat' : delta < 0 ? 'good' : 'worse'

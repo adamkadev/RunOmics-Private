@@ -30,33 +30,32 @@ describe('capability-driven athlete metrics', () => {
   })
 
   it('omits an unavailable threshold pace tile instead of rendering a placeholder', () => {
-    render(<AthleteKeyNumbers athlete={{ vmaKmh: 15.2 }} latestVo2max={43} />)
+    render(<AthleteKeyNumbers athlete={{ vmaKmh: 15.2 }} />)
 
     expect(screen.getByText(a.vma)).toBeInTheDocument()
     expect(screen.queryByText(a.thresholdPace)).not.toBeInTheDocument()
     expect(screen.queryByText(t.profile.athlete.notSet)).not.toBeInTheDocument()
   })
 
-  it('shows the four key numbers at once, each under a glossary term, with no category toggle', () => {
+  // v5.3: VO₂max left the grid for the grade card; fitness age took its place.
+  it('shows VMA, fitness age, threshold HR and threshold pace, each labelled, with no category toggle', () => {
     render(
       <AthleteKeyNumbers
-        athlete={{ vmaKmh: 17.5, lthrBpm: 172, thresholdPaceSecPerKm: 258 }}
-        latestVo2max={50}
+        athlete={{ vmaKmh: 17.5, lthrBpm: 172, thresholdPaceSecPerKm: 258, fitnessAgeYrs: 20.3, age: 29 }}
       />
     )
 
-    for (const label of [a.vo2max, a.vma, a.thresholdHr, a.thresholdPace]) {
-      expect(screen.getByText(label)).toBeInTheDocument()
-    }
-    expect(screen.getByText('50.0')).toBeInTheDocument()
+    const labels = screen.getAllByTestId('athlete-key-number').map((tile) => tile.firstElementChild?.textContent)
+    expect(labels).toEqual([a.vma, a.fitnessAge, a.thresholdHr, a.thresholdPace])
+    expect(screen.queryByText(a.vo2max)).not.toBeInTheDocument()
     expect(screen.getByText('4:18')).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /^What is/ })).toHaveLength(4)
+    expect(screen.getByTestId('athlete-key-numbers').textContent).toContain(`20${a.ofAge(29)}`)
+    expect(screen.getAllByRole('button', { name: /^What is/ })).toHaveLength(3)
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })
 
-  // C2, v4.4: heart and body is one compact row; fitness age reads against
-  // the real age, with no check badge; BMI and potential are not here.
-  it('shows heart and body as one row: resting HR, max HR, fitness age of age', () => {
+  // v5.3: resting and max HR stay as they are; fitness age is in the grid now.
+  it('shows heart as one row: resting HR and max HR', () => {
     render(
       <AthleteDetails
         athlete={{
@@ -64,24 +63,23 @@ describe('capability-driven athlete metrics', () => {
           maxHrBpm: 201,
           age: 29,
           fitnessAgeYrs: 20.3,
-          achievableFitnessAgeYrs: 18,
+          achievableFitnessAge: 18,
           bmi: 20.5,
-        }}
+        } as never}
       />
     )
 
     const row = screen.getByTestId('athlete-details')
     expect(within(row).getByText(a.restingHr)).toBeInTheDocument()
     expect(within(row).getByText(a.maxHr)).toBeInTheDocument()
-    expect(row.textContent).toContain(`20${a.ofAge(29)}`)
-    expect(screen.queryByText(a.achievableFitnessAge)).not.toBeInTheDocument()
+    expect(within(row).queryByText(a.fitnessAge)).toBeNull()
     expect(screen.queryByText(a.bmi)).not.toBeInTheDocument()
     expect(row.querySelector('svg')).toBeNull()
   })
 
   // C2: one card, 2 x 2, the labels open their definitions.
   it('puts the four key numbers in one card, 2 x 2', () => {
-    render(<AthleteKeyNumbers athlete={{ vmaKmh: 17.5, lthrBpm: 172, thresholdPaceSecPerKm: 258 }} latestVo2max={50} />)
+    render(<AthleteKeyNumbers athlete={{ vmaKmh: 17.5, lthrBpm: 172, thresholdPaceSecPerKm: 258, fitnessAgeYrs: 20 }} />)
     expect(screen.getAllByTestId('athlete-key-numbers')).toHaveLength(1)
     expect(screen.getAllByTestId('athlete-key-number')).toHaveLength(4)
   })
