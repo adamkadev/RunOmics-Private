@@ -24,7 +24,6 @@ export function dayStateCells(
       color: zoneColor(sessionZone(day)),
       km: day.state === 'done' ? day.ranKm : day.plannedKm,
       isToday: day.date === today,
-      ...(day.plannedType ? { plannedColor: zoneColor(sessionZone({ type: day.plannedType })) } : {}),
     }
   })
 }

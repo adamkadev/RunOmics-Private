@@ -58,9 +58,9 @@ export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPha
           )
         })}
       </div>
-      {/* Sentence case, each name under the start of its own segment: mono
-          caps spread edge to edge sat under the wrong phases. */}
-      <div className="mt-1.5 flex gap-1 text-caption font-semibold">
+      {/* The phase line above names the current phase (M11): the names stay
+          for screen readers, off the screen. */}
+      <div className="sr-only">
         {ranges.map((r) => {
           const isPast = r.endDate < weekStart
           const isCurrent = !isPast && r.startDate <= weekEnd

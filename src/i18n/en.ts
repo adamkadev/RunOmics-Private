@@ -1422,11 +1422,7 @@ export const en = {
       `${sessions} session${sessions !== 1 ? 's' : ''} · ${ranKm} km run · ${plannedKm} planned`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
-    weekFooter: {
-      ran: (km: number) => `${km} km run`,
-      planned: (km: number) => `${km} km planned`,
-      ranOfPlanned: (ran: number, planned: number) => `${ran} of ${planned} km`,
-    },
+    weekFooter: (ran: number, planned: number) => (planned > 0 ? `${ran} / ${planned} km` : `${ran} km`),
     restDay: 'Rest',
     planned: 'Planned',
     easyEffortLabel: 'Z2 easy',

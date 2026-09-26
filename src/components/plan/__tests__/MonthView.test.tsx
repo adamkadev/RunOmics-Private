@@ -74,8 +74,9 @@ describe('MonthView wording and grid', () => {
     const footers = [...container.querySelectorAll('p.text-right')]
 
     expect(footers).toHaveLength(5)
-    // G27: the week underway reads ran of planned, not planned alone.
-    expect(screen.getByText(t.plan.weekFooter.ranOfPlanned(0, 10))).toBeInTheDocument()
+    // H21: one format for every week, "27 / 48 km".
+    expect(screen.getByText(t.plan.weekFooter(0, 10))).toBeInTheDocument()
+    for (const footer of footers) expect(footer.textContent).toMatch(/^\d+( \/ \d+)? km$/)
     expect(screen.queryByText('WK')).not.toBeInTheDocument()
   })
 
