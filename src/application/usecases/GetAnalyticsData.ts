@@ -197,12 +197,14 @@ export function adjustedEfficiencyFactor(activities: Activity[]): number | null 
 }
 
 const DISTANCE_BRACKETS = [
-  { label: '< 5 km',   min: 0,  max: 5  },
-  { label: '5–10 km',  min: 5,  max: 10 },
-  { label: '10–15 km', min: 10, max: 15 },
-  { label: '15–21 km', min: 15, max: 21 },
-  { label: '21–42 km', min: 21, max: 42 },
-  { label: '42+ km',   min: 42, max: Infinity },
+  // No unit in the bucket: "5–10 km" wrapped to two lines under its bar. The
+  // card head says km once (G19).
+  { label: '< 5',   min: 0,  max: 5  },
+  { label: '5–10',  min: 5,  max: 10 },
+  { label: '10–15', min: 10, max: 15 },
+  { label: '15–21', min: 15, max: 21 },
+  { label: '21–42', min: 21, max: 42 },
+  { label: '42+',   min: 42, max: Infinity },
 ]
 
 export function distanceDistribution(activities: Activity[]): DistanceBracket[] {

@@ -3,6 +3,7 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import type { MonthlyLongRuns } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { monthAxis } from '@/lib/chartAxis'
 import { useAccentUiColor } from '@/lib/useAccent'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
@@ -12,6 +13,8 @@ import { t } from '@/i18n'
 
 interface Props {
   data: MonthlyLongRuns[]
+  /** The year the card covers, named in its head. */
+  scope?: string
 }
 
 interface TooltipProps {
@@ -32,7 +35,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
-export function LongRunsChart({ data }: Props) {
+export function LongRunsChart({ data, scope }: Props) {
   const accentColor = useAccentUiColor()
   const nonZero = data.filter((d) => d.longestKm > 0)
   if (nonZero.length === 0) return null
@@ -45,7 +48,7 @@ export function LongRunsChart({ data }: Props) {
 
   return (
     <GlassSurface variant="card" className="p-5">
-      <ChartCardHead title={t.analytics.charts.longRuns.title} />
+      <ChartCardHead title={t.analytics.charts.longRuns.title} unit={scope} />
 
       <ChartReading>{explain}</ChartReading>
 
@@ -60,6 +63,7 @@ export function LongRunsChart({ data }: Props) {
             </defs>
             <XAxis
               dataKey="label"
+              {...monthAxis(data.length)}
               tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
               axisLine={false}
               tickLine={false}

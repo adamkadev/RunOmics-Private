@@ -49,3 +49,13 @@ describe('roundAxis', () => {
     expect(roundAxis([1, 2], Number.NaN)).toBeUndefined()
   })
 })
+
+describe('monthAxis', () => {
+  // G19: Recharts dropped AUG from the month axes.
+  it('keeps a tick on every month, shortened to its initial past six', async () => {
+    const { monthAxis } = await import('../chartAxis')
+    expect(monthAxis(9).interval).toBe(0)
+    expect(monthAxis(9).tickFormatter('AUG')).toBe('A')
+    expect(monthAxis(4).tickFormatter('AUG')).toBe('AUG')
+  })
+})

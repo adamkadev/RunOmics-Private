@@ -1,3 +1,4 @@
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 
 const ACCENT_ON_DARK = 'var(--accent-on-dark)'
@@ -21,7 +22,7 @@ export function TerritoryBand({ eyebrow, headline, primaryStat, secondaryStat }:
   return (
     <GlassSurface variant="hero" className="flex flex-col gap-3.5">
       <div>
-        <p className="font-mono text-caption font-bold uppercase tracking-[0.1em]" style={{ color: ACCENT_ON_DARK }}>
+        <p className={EYEBROW_CLASS} style={{ color: ACCENT_ON_DARK }}>
           {eyebrow}
         </p>
         <p className="mt-2 font-display text-base font-bold leading-snug text-white">{headline}</p>

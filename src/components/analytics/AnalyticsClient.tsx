@@ -175,15 +175,6 @@ export function AnalyticsClient({
           {t.analytics.title}
         </h1>
 
-        {tab === 'volume' && (
-          <YearSelector
-            years={years}
-            selected={isAll ? null : displayYear}
-            onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
-            allTimeLabel={t.analytics.allTimeChip}
-            className="min-w-0 justify-end"
-          />
-        )}
       </div>
 
       {active && (
@@ -196,7 +187,7 @@ export function AnalyticsClient({
             label={t.analytics.title}
             size="md"
             fill
-            tabClassName="px-1 text-footnote"
+            tabClassName="text-footnote sm:text-[15px]"
           />
         </StickyBar>
       )}
@@ -241,6 +232,18 @@ export function AnalyticsClient({
                 years={years}
                 byYear={byYear}
                 comparison={comparison}
+                // In the card it scopes, not the page header: the header grew
+                // chips on Volume only and shifted between tabs (G30).
+                yearControl={
+                  <YearSelector
+                    years={years}
+                    selected={isAll ? null : displayYear}
+                    onSelect={(y) => (y === null ? selectAllTime() : selectYear(y))}
+                    allTimeLabel={t.analytics.allTimeChip}
+                    className="min-w-0 justify-end"
+                  />
+                }
+                scope={isAll ? t.analytics.allTimeChip : displayYear !== null ? String(displayYear) : undefined}
               />
             )}
 

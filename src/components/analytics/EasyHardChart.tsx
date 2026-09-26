@@ -12,6 +12,7 @@ import {
 import type { MonthlyEasyHard } from '@/application/usecases/GetAnalyticsData'
 import { EASY_SHARE_GUIDE, type EasyHardSplit } from '@/domain/activity/easyShare'
 import { CHART_COLORS } from '@/lib/colors'
+import { monthAxis } from '@/lib/chartAxis'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { ChartCardHead, ChartReading } from '@/components/ui/ChartCard'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -24,6 +25,8 @@ interface Props {
    *  Activities and Plan print. A mean of the monthly shares read 47 % where
    *  the pooled time was 24 %. */
   share: EasyHardSplit | null
+  /** The year the card covers, named in its head. */
+  scope?: string
 }
 
 interface TooltipProps {
@@ -43,7 +46,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   )
 }
 
-export function EasyHardChart({ data, share }: Props) {
+export function EasyHardChart({ data, share, scope }: Props) {
   if (!share || !data.some((d) => d.easyPct !== null)) return null
 
   const ex = t.analytics.charts.easyHard.explains
@@ -59,6 +62,7 @@ export function EasyHardChart({ data, share }: Props) {
     <GlassSurface variant="card" className="p-5">
       <ChartCardHead
         title={t.analytics.charts.easyHard.title}
+        unit={scope}
         footnote={t.analytics.charts.easyHard.footnote}
       />
 
@@ -69,6 +73,7 @@ export function EasyHardChart({ data, share }: Props) {
           <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: -8 }}>
             <XAxis
               dataKey="label"
+              {...monthAxis(data.length)}
               tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
               axisLine={false}
               tickLine={false}

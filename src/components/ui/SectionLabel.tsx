@@ -2,6 +2,12 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 /**
+ * The one eyebrow recipe (G20): Inter caps at 600 and 0.06em. Tracked mono
+ * caps were a second recipe beside it; mono is for figures only.
+ */
+export const EYEBROW_CLASS = 'text-caption font-semibold uppercase tracking-[0.06em]'
+
+/**
  * The two label levels the app actually has. Before these existed the same job
  * was done by five inline uppercase recipes plus a CSS class, and three separate
  * title-case recipes, so the same card name changed casing between pages.
@@ -18,7 +24,7 @@ export function SectionDivider({
   className?: string
 }) {
   return (
-    <Tag className={cn('text-caption font-semibold uppercase tracking-wider text-muted-foreground', className)}>
+    <Tag className={cn(EYEBROW_CLASS, 'text-muted-foreground', className)}>
       {children}
     </Tag>
   )

@@ -135,16 +135,16 @@ describe('distanceDistribution', () => {
     const acts = [act({ distanceKm: 3 }), act({ distanceKm: 8 }), act({ distanceKm: 8 })]
     const result = distanceDistribution(acts)
     expect(result).toEqual([
-      { label: '< 5 km', count: 1, km: 3 },
-      { label: '5–10 km', count: 2, km: 16 },
+      { label: '< 5', count: 1, km: 3 },
+      { label: '5–10', count: 2, km: 16 },
     ])
   })
 
   it('treats the bracket upper bound as exclusive and the marathon+ bracket as open-ended', () => {
     const acts = [act({ distanceKm: 5 }), act({ distanceKm: 50 })]
     const result = distanceDistribution(acts)
-    expect(result.find((b) => b.label === '5–10 km')?.count).toBe(1)
-    expect(result.find((b) => b.label === '42+ km')?.count).toBe(1)
+    expect(result.find((b) => b.label === '5–10')?.count).toBe(1)
+    expect(result.find((b) => b.label === '42+')?.count).toBe(1)
   })
 })
 

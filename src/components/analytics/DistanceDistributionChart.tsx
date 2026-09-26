@@ -12,6 +12,8 @@ import { t } from '@/i18n'
 
 interface Props {
   data: DistanceBracket[]
+  /** The year the card covers, named in its head. */
+  scope?: string
 }
 
 interface TooltipProps {
@@ -23,17 +25,17 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   const d = payload?.[0]?.payload
   if (!active || !d) return null
   return (
-    <TooltipCard label={d.label}>
+    <TooltipCard label={`${d.label} ${t.units.km}`}>
       <p className="text-sm font-semibold text-foreground">{t.common.runs(d.count)}</p>
       <p className="text-xs text-subtle">{t.analytics.charts.distance.kmTotal(d.km)}</p>
     </TooltipCard>
   )
 }
 
-export function DistanceDistributionChart({ data }: Props) {
+export function DistanceDistributionChart({ data, scope }: Props) {
   const accentColor = useAccentUiColor()
   const max = Math.max(...data.map((d) => d.count))
-  const summary = `${t.analytics.charts.distance.title}: ${data.map((d) => `${d.label} ${t.common.runs(d.count)}`).join(', ')}`
+  const summary = `${t.analytics.charts.distance.title}: ${data.map((d) => `${d.label} ${t.units.km} ${t.common.runs(d.count)}`).join(', ')}`
   const totalCount = data.reduce((s, d) => s + d.count, 0)
   const top = data.reduce((a, b) => (b.count > a.count ? b : a))
   const reading = totalCount > 0
@@ -44,6 +46,7 @@ export function DistanceDistributionChart({ data }: Props) {
     <GlassSurface variant="card" className="p-5">
       <ChartCardHead
         title={t.analytics.charts.distance.title}
+        unit={scope ? `${t.units.km} · ${scope}` : t.units.km}
         footnote={t.analytics.charts.distance.footnote}
         controls={
           <span className="text-xs text-subtle">
