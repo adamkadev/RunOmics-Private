@@ -68,6 +68,17 @@ describe('queryActivities', () => {
     expect(ids(queryActivities({ type: 'Threshold' }).items)).toEqual(['threshold'])
   })
 
+  // G29: the shoe page links to Activities filtered to that pair.
+  it('keeps only the runs in the requested shoe', () => {
+    withHistory([
+      activity({ id: 'racer', gearId: 'g1' } as Partial<Activity>),
+      activity({ id: 'cloud', gearId: 'g2' } as Partial<Activity>),
+    ])
+
+    expect(ids(queryActivities({ gearId: 'g1' }).items)).toEqual(['racer'])
+    expect(queryActivities({ gearId: null }).total).toBe(2)
+  })
+
   it('keeps every type when none is asked for', () => {
     withHistory([activity({ id: 'a', type: 'Base' }), activity({ id: 'b', type: 'Race' })])
 

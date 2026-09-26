@@ -19,8 +19,10 @@ function activityLabel(activity: AdjacentActivity): string {
   return activity.description || t.activity.runTitle(activity.dayOfWeek)
 }
 
+// A missing side takes no room: the latest run showed Previous beside an
+// empty half (G23).
 function NavLink({ activity, direction }: { activity: AdjacentActivity | null; direction: 'prev' | 'next' }) {
-  if (!activity) return <div className="flex-1 px-4 py-3" aria-hidden="true" />
+  if (!activity) return null
 
   const isPrev = direction === 'prev'
   return (

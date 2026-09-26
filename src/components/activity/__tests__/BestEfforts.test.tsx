@@ -31,4 +31,13 @@ describe('BestEfforts', () => {
     expect(screen.getByText('20:38')).toBeInTheDocument()
     expect(screen.getByText('PR')).toBeInTheDocument()
   })
+
+  // G23: a grid, not a strip that cut the 5K off; the 1K time is its own pace.
+  it('lays efforts out in two columns and gives the 1K no pace', () => {
+    render(<BestEfforts bestEfforts={{ '1k': 223, '5k': 1205 }} qualifiedEfforts={[]} />)
+
+    expect(screen.getByTestId('best-efforts').className).toContain('grid-cols-2')
+    expect(screen.getAllByText(/\/km/)).toHaveLength(1)
+  })
 })
+

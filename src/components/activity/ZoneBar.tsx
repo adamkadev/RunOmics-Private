@@ -10,6 +10,8 @@ interface Props {
 
 /** Under this share a segment is too thin to carry its own percentage. */
 const LABEL_MIN_PCT = 12
+/** Under this share a segment is too thin for even its zone name. */
+const NAME_MIN_PCT = 6
 
 /**
  * Time in heart-rate zones as one stacked bar, Z1 to Z5, with the zone the run
@@ -50,8 +52,9 @@ export function ZoneBar({ hrZones }: Props) {
 
       <div className="mt-1.5 flex gap-0.5 text-caption tabular-nums text-muted-foreground" aria-hidden="true">
         {used.map((zone) => (
-          <span key={zone.zone} className="min-w-0 truncate" style={{ flexGrow: zone.percent, flexBasis: 0 }}>
-            Z{zone.zone}
+          <span key={zone.zone} className="min-w-0 overflow-hidden whitespace-nowrap" style={{ flexGrow: zone.percent, flexBasis: 0 }}>
+            {/* A sliver of a segment has no room for its name: it clipped to "Z". */}
+            {zone.percent >= NAME_MIN_PCT && `Z${zone.zone}`}
             {zone.percent >= LABEL_MIN_PCT && ` ${Math.round(zone.percent)}%`}
           </span>
         ))}

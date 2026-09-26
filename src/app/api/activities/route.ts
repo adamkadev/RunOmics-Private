@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
 
   const result = queryActivities({
     type,
+    gearId: params.get('gear'),
     search: params.get('search') ?? '',
     sortBy,
     sortOrder,
