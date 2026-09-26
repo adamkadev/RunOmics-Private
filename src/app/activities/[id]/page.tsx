@@ -15,6 +15,7 @@ import { OfficialResult } from '@/components/activity/OfficialResult'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
+import { sessionZone, zoneColor } from '@/lib/colors'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -69,9 +70,9 @@ export default async function ActivityDetailPage({
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
 
-  // After a run the page opens on the run: title, the map with its type,
-  // weather and shoe, its numbers, the verdict and how it felt, then the
-  // tabs. The header is handed to the client, which draws it on every tab.
+  // After a run the page opens on the run: title with its date and type,
+  // the map, its numbers, the verdict with effort, conditions, shoe and
+  // note, then the tabs. The header is handed to the client, which draws it on every tab.
   return (
     <div className="space-y-4">
       <ActivityDetailClient
@@ -91,8 +92,15 @@ export default async function ActivityDetailPage({
               <h1 className="text-display text-foreground">
                 {activity.description || t.activity.runTitle(activity.dayOfWeek)}
               </h1>
-              <p className="mt-1 text-footnote text-muted-foreground">
+              {/* The session type joins the date (v4.8 2h): a zone-colour dot
+                  and the label in text ink, no chip. */}
+              <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-footnote text-muted-foreground" data-testid="activity-subtitle">
                 {formatDate(activity.date)}
+                <span aria-hidden>·</span>
+                <span className="inline-flex items-center gap-1.5 text-foreground">
+                  <span aria-hidden className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: zoneColor(sessionZone({ type: activity.type })) }} />
+                  {t.activityTypes[activity.type]}
+                </span>
               </p>
               {activity.comment && (
                 <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>

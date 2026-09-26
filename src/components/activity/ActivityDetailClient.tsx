@@ -20,6 +20,7 @@ import { useUrlParam } from '@/lib/useUrlParam'
 import type { SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
 import { SimilarRuns } from './SimilarRuns'
 import { ActivityNotes } from './ActivityNotes'
+import { conditionsText, garminActivityUrl } from './runConditions'
 import { GlossaryTerm } from '@/components/ui/GlossaryTerm'
 import type { ShoeTag } from '@/domain/shoe/types'
 import type { Insight } from '@/lib/gemini'
@@ -37,7 +38,7 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
   dynamicsBaseline: DynamicsBaseline | null
-  /** The pair it was run in, as a chip on the map. */
+  /** The pair it was run in, as the Shoe row of the verdict card. */
   shoe?: ShoeTag | null
   similarRuns?: SimilarRunsData | null
   /** Race result and achievements, drawn after the note and before the tabs. */
@@ -137,9 +138,6 @@ export function ActivityDetailClient({
               <ActivityMapClient
                 route={activity.route}
                 paceSamples={activity.paceSamples}
-                weather={activity.weather}
-                activityType={activity.type}
-                shoe={shoe}
                 className="h-full w-full"
               />
             ) : (
@@ -169,6 +167,34 @@ export function ActivityDetailClient({
                 <span className="text-subtle">{e.notLogged}</span>
               )}
             </div>
+            {/* Effort · Conditions · Shoe · Note (v4.8 2h): the weather and the
+                pair explain effort and heart rate, so they sit with them
+                rather than on the map. */}
+            {activity.weather && (
+              <div className="flex min-h-11 items-center justify-between gap-3 text-sm" data-testid="run-conditions">
+                <span className="font-semibold text-foreground">{t.activity.conditions.label}</span>
+                <span className="text-foreground">{conditionsText(activity.weather)}</span>
+              </div>
+            )}
+            {/* The pair comes from Garmin, so it is set and changed there. */}
+            <a
+              href={garminActivityUrl(activity.id)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={shoe ? t.activity.shoe.changeInGarmin(shoe.name) : t.activity.shoe.addInGarmin}
+              className="flex min-h-11 items-center justify-between gap-3 text-sm"
+              data-testid="run-shoe"
+            >
+              <span className="font-semibold text-foreground">{t.activity.shoe.label}</span>
+              {shoe ? (
+                <span className="flex min-w-0 items-center gap-1.5 text-foreground">
+                  <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: shoe.dotColor }} />
+                  <span className="truncate">{shoe.name} ›</span>
+                </span>
+              ) : (
+                <span className="font-semibold text-accent-text">{t.activity.shoe.add} ›</span>
+              )}
+            </a>
             <ActivityNotes activityId={activity.id} />
           </RunVerdict>
 

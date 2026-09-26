@@ -1126,6 +1126,16 @@ export const en = {
         overreaching: 'Overreaching',
       },
     },
+    conditions: {
+      label: 'Conditions',
+      wind: (reading: string) => `wind ${reading}`,
+    },
+    shoe: {
+      label: 'Shoe',
+      add: 'Add',
+      changeInGarmin: (name: string) => `${name} - change in Garmin Connect`,
+      addInGarmin: 'Set the shoe in Garmin Connect',
+    },
     weather: {
       wind: 'Wind',
       conditions: {
@@ -1182,7 +1192,6 @@ export const en = {
     map: {
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
-      escToExit: 'Esc to exit',
       noTrace: 'GPS trace unavailable',
       noTraceHint: 'Available after Garmin sync',
       mapUnavailable: 'Map unavailable',
