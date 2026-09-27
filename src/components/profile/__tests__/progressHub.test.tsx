@@ -88,7 +88,10 @@ describe('the hub helpers', () => {
   it('lays out twelve weeks, nothing drawn past today', () => {
     const weeks = heatWeeks(INPUT.heatmapDays, '2026-09-26')
     expect(weeks).toHaveLength(12)
-    expect(weeks.at(-1)).toEqual([0, 0, 2, 2, 0, 0, null])
+    const rest = { state: 'rest', today: false }
+    const run = { state: 'run', today: false }
+    // The page's day states and today's outline (v5.5 R2), not km levels.
+    expect(weeks.at(-1)).toEqual([rest, rest, run, run, rest, { state: 'rest', today: true }, null])
   })
 
   it('fills the race bar a fifth less per 1% over the target', () => {
@@ -155,5 +158,24 @@ describe('one consistency count (v5.5 #9)', () => {
     const input = { ...INPUT, today: '2026-09-27', heatmapDays: edge }
     expect(progressHubView(input).consistency.activeDays).toBe(consistencyMonths(edge, '2026-09-27').activeDays)
     expect(progressHubView(input).consistency.activeDays).toBe(2)
+  })
+})
+
+describe('the accent stays off the data (v5.5 R2)', () => {
+  it('draws the year in ink with no fill or accent border, and the accent only on today', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} />)
+    const hero = screen.getByTestId('year-hero')
+    expect(hero.innerHTML).not.toContain('--acc-line')
+    expect(screen.getByTestId('current-line').getAttribute('stroke')).toBe('var(--foreground)')
+    expect(screen.getByTestId('year-chart').querySelector('[fill="var(--accent)"]')).toBeNull()
+    expect(screen.getByTestId('year-today').className).toContain('bg-accent')
+    expect(screen.getByTestId('vo2-sparkline').querySelector('path')!.getAttribute('stroke')).toBe('var(--foreground)')
+  })
+
+  it('fills the consistency card with the neutral scale', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} />)
+    const cells = [...screen.getByTestId('heatmap').querySelectorAll('span')]
+    expect(cells.some((c) => c.getAttribute('style')?.includes('accent') && !c.getAttribute('style')?.includes('box-shadow'))).toBe(false)
+    expect(cells.filter((c) => c.dataset.state === 'run').every((c) => c.getAttribute('style')?.includes('var(--band)'))).toBe(true)
   })
 })

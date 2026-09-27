@@ -2,25 +2,21 @@
 
 import { useState, type CSSProperties } from 'react'
 import Link from 'next/link'
-import { LABELLED_ROWS, ROWS, type ConsistencyCell, type ConsistencyView, type DayState } from './consistencyMonths'
+import { DAY_FILL, LABELLED_ROWS, ROWS, TODAY_OUTLINE, type ConsistencyCell, type ConsistencyView, type DayState } from './consistencyMonths'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-/**
- * A day's fill (C1, v4.4): rest the faint track, a run the accent mixed 55%
- * into the card, a long run the accent itself. Days still to come are an
- * outline, and today a ring in text ink.
- */
+/** A day's fill: the shared neutral scale (DAY_FILL); days to come are an outline. */
 const FILL: Record<DayState, CSSProperties> = {
-  rest: { background: 'var(--track)' },
-  run: { background: 'color-mix(in oklab, var(--accent) 55%, var(--card))' },
-  long: { background: 'var(--accent)' },
+  rest: { background: DAY_FILL.rest },
+  run: { background: DAY_FILL.run },
+  long: { background: DAY_FILL.long },
   future: { background: 'transparent', boxShadow: 'inset 0 0 0 1px var(--border)' },
   none: { background: 'transparent' },
 }
-const TODAY_RING = '0 0 0 1.5px var(--foreground)'
+const TODAY_RING = TODAY_OUTLINE
 
 const GRID = 'grid grid-cols-[16px_repeat(12,minmax(0,1fr))] gap-x-[3px]'
 

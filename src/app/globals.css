@@ -130,7 +130,7 @@
 /* ─── Light tokens - Teal (default) ───────────────── */
 :root {
   --status-bar:              #f3f4f4;
-  --delta-good:              var(--accent-text);
+  --delta-good:              var(--good);
   --delta-warn:              #c2560f;
   --good:                    #15803d;
   --metric-form:             #0f7a52;
@@ -215,7 +215,7 @@
 /* ─── Dark tokens - Teal (default) ────────────────── */
 .dark {
   --status-bar:              #0b0c0c;
-  --delta-good:              var(--accent-text);
+  --delta-good:              var(--good);
   --delta-warn:              #fb923c;
   --good:                    #5bd68a;
   --metric-form:             #34d399;

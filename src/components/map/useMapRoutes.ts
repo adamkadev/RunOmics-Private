@@ -83,7 +83,7 @@ export function useMapRoutes(
             source: "heat",
             layout: { "line-join": "round", "line-cap": "round" },
             paint: {
-              "line-color": heatColorExpression(maxCount) as never,
+              "line-color": heatColorExpression(maxCount, isDark ? "dark" : "light") as never,
               "line-width": heatWidthExpression(maxCount) as never,
               "line-opacity": 0.85,
             },
@@ -126,7 +126,7 @@ export function useMapRoutes(
 
     const { data: heat, maxCount } = buildHeatGeoJSON(routes, visibleIndices);
     if (map.getLayer("heat-line")) {
-      map.setPaintProperty("heat-line", "line-color", heatColorExpression(maxCount) as never);
+      map.setPaintProperty("heat-line", "line-color", heatColorExpression(maxCount, document.documentElement.classList.contains("dark") ? "dark" : "light") as never);
       map.setPaintProperty("heat-line", "line-width", heatWidthExpression(maxCount) as never);
     }
 

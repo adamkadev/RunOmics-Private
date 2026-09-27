@@ -114,10 +114,10 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     return {
       eyebrow,
       headline: place ? s.headline(territory.percentVolume, place, radius) : s.headlineHome(territory.percentVolume, radius),
+      // Two stats (v5.6 #5): "half of runs within" repeated the headline.
       stats: [
         { value: String(territory.routeCount), label: s.runsStat },
         { value: territory.km.toLocaleString(t.locale), label: s.kmStat },
-        { value: radius, label: s.radiusStat },
       ],
     };
   }, [clusters, selectedIdx, routeMeta, routes, filters, names, selectedType, selectedYear]);

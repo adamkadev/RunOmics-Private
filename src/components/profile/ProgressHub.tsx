@@ -6,7 +6,8 @@ import { formatCountdown, formatDate, formatDelta, formatDuration, formatKm, for
 import { cn } from '@/lib/utils'
 import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
-import type { ProgressHubView, YearPoint } from './progressHub'
+import type { HeatCell, ProgressHubView, YearPoint } from './progressHub'
+import { DAY_FILL, TODAY_OUTLINE } from '@/components/consistency/consistencyMonths'
 import { YearRows } from './AllTime'
 
 const TITLE = 'font-display text-subhead font-semibold text-foreground'
@@ -72,17 +73,27 @@ function YearChart({ hero }: { hero: ProgressHubView['hero'] }) {
   const y = (km: number) => CHART_H - (km / top) * (CHART_H - 6)
   const line = path(hero.current, x, y)
 
+  // Ink, no fill (v5.5 R2): the year is data. The accent only marks today.
   return (
-    <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="mt-3 h-[120px] w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="year-chart">
-      {hero.goalKm !== null && (
-        <line x1={0} y1={y(0)} x2={CHART_W} y2={y(hero.goalKm)} stroke="var(--muted-foreground)" strokeOpacity={0.6} strokeWidth={1.5} strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+    <div className="relative mt-3 h-[120px]">
+      <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="h-full w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="year-chart">
+        {hero.goalKm !== null && (
+          <line x1={0} y1={y(0)} x2={CHART_W} y2={y(hero.goalKm)} stroke="var(--muted-foreground)" strokeOpacity={0.6} strokeWidth={1.5} strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+        )}
+        {hero.previous.length > 1 && (
+          <path d={path(hero.previous, x, y)} fill="none" stroke="var(--band)" strokeWidth={2} vectorEffect="non-scaling-stroke" data-testid="previous-line" />
+        )}
+        <path d={line} fill="none" stroke="var(--foreground)" strokeWidth={2.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="current-line" />
+      </svg>
+      {last && (
+        <span
+          aria-hidden
+          data-testid="year-today"
+          className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent"
+          style={{ left: `${(x(last.day) / CHART_W) * 100}%`, top: `${(y(last.km) / CHART_H) * 100}%`, boxShadow: '0 0 0 2px var(--card)' }}
+        />
       )}
-      {last && <path d={`${line} L${x(last.day).toFixed(1)} ${CHART_H} L0 ${CHART_H} Z`} fill="var(--accent)" fillOpacity={0.18} />}
-      {hero.previous.length > 1 && (
-        <path d={path(hero.previous, x, y)} fill="none" stroke="var(--muted-foreground)" strokeWidth={2} vectorEffect="non-scaling-stroke" data-testid="previous-line" />
-      )}
-      <path d={line} fill="none" stroke="var(--accent)" strokeWidth={2.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-    </svg>
+    </div>
   )
 }
 
@@ -95,19 +106,22 @@ function Sparkline({ values }: { values: number[] }) {
     .join(' ')
   return (
     <svg viewBox="0 0 100 40" className="h-10 w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="vo2-sparkline">
-      <path d={d} fill="none" stroke="var(--metric-fitness)" strokeWidth={2} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      <path d={d} fill="none" stroke="var(--foreground)" strokeWidth={2} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
     </svg>
   )
 }
 
-const HEAT_FILL = ['var(--heat-empty)', 'color-mix(in srgb, var(--accent) 40%, transparent)', 'color-mix(in srgb, var(--accent) 70%, transparent)', 'var(--accent)']
-
-function Heatmap({ weeks }: { weeks: (number | null)[][] }) {
+function Heatmap({ weeks }: { weeks: HeatCell[][] }) {
   return (
     <div className="grid grid-flow-col grid-rows-7 gap-[3px]" aria-hidden="true" data-testid="heatmap">
       {weeks.flatMap((week, w) =>
-        week.map((level, d) => (
-          <span key={`${w}-${d}`} className="block aspect-square rounded-[2px]" style={{ background: level === null ? 'transparent' : HEAT_FILL[level] }} />
+        week.map((cell, d) => (
+          <span
+            key={`${w}-${d}`}
+            className="block aspect-square rounded-[2px]"
+            data-state={cell?.state}
+            style={cell ? { background: DAY_FILL[cell.state], boxShadow: cell.today ? TODAY_OUTLINE : undefined } : { background: 'transparent' }}
+          />
         )),
       )}
     </div>
@@ -154,8 +168,8 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
       </div>
 
       <Link href="/goals" className="block transition-transform active:scale-[0.99]" data-testid="year-hero">
-        {/* Progress's one hero surface (v4.3): a 1.5 px accent border. */}
-        <GlassSurface variant="card" className="rounded-[22px] px-4.5 py-4" style={{ border: '1.5px solid var(--acc-line)' }}>
+        {/* No accent border (v5.5 R2): the accent is for "now", not a surface. */}
+        <GlassSurface variant="card" className="rounded-[22px] px-4.5 py-4">
           <div className="flex items-baseline justify-between gap-3">
             <span className="text-caption font-semibold tracking-[0.12em] text-muted-foreground">{view.year}</span>
             {hero.deltaKm !== null && (
@@ -172,9 +186,9 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
           <YearChart hero={hero} />
           <div className={cn('mt-2 flex items-center justify-between gap-3', MUTED)}>
             <span className="flex items-center gap-3">
-              <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-accent" />{view.year}</span>
+              <span className="flex items-center gap-1"><span className="h-0.5 w-3 rounded-full bg-foreground" />{view.year}</span>
               {hero.previous.length > 1 && (
-                <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-muted-foreground" />{view.year - 1}</span>
+                <span className="flex items-center gap-1"><span className="h-0.5 w-3 rounded-full bg-[var(--band)]" />{view.year - 1}</span>
               )}
               {hero.goalKm !== null && <span>- - {h.goal}</span>}
             </span>
@@ -187,7 +201,8 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
         <Tile href="/goals" title={h.race} testId="race-tile">
           {race ? (
             <>
-              <p className="font-display text-title2 font-bold leading-none" style={{ color: 'var(--tone-caution)' }}>{formatCountdown(race.daysUntil)}</p>
+              {/* A date, not a warning: ink (R2). Only the gap to target is amber. */}
+              <p className="font-display text-title2 font-bold leading-none text-foreground">{formatCountdown(race.daysUntil)}</p>
               <p className={cn('mt-2', MUTED)}>{h.raceLine(race.distance, formatDate(race.date, { style: 'bare' }))}</p>
               {race.predictedSeconds !== null && (
                 <>
@@ -198,12 +213,17 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
                   {race.targetSeconds && (
                     <>
                       <div className="mt-1.5">
-                        <Bar
-                          share={raceShare(race.predictedSeconds, race.targetSeconds)}
-                          color={race.predictedSeconds <= race.targetSeconds ? 'var(--accent)' : 'var(--tone-caution)'}
-                        />
+                        <Bar share={raceShare(race.predictedSeconds, race.targetSeconds)} color="var(--foreground)" />
                       </div>
-                      <p className={cn('mt-1.5', MUTED)}>{h.target(formatDuration(race.targetSeconds))}</p>
+                      <p className={cn('mt-1.5', MUTED)} data-testid="race-target">
+                        {h.target(formatDuration(race.targetSeconds))}
+                        {race.predictedSeconds > race.targetSeconds && (
+                          <>
+                            {' · '}
+                            <b className="font-bold" style={{ color: 'var(--tone-caution)' }}>{h.off(formatDuration(race.predictedSeconds - race.targetSeconds))}</b>
+                          </>
+                        )}
+                      </p>
                     </>
                   )}
                 </>
@@ -285,7 +305,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
                     {s.km} / {s.maxKm} {t.units.km}
                   </span>
                 </div>
-                <Bar share={s.maxKm > 0 ? s.km / s.maxKm : 0} color={s.warn ? 'var(--tone-caution)' : 'var(--accent)'} />
+                <Bar share={s.maxKm > 0 ? s.km / s.maxKm : 0} color={s.warn ? 'var(--tone-caution)' : 'var(--foreground)'} />
               </div>
             ))}
           </div>

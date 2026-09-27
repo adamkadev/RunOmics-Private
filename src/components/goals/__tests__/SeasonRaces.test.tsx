@@ -66,11 +66,11 @@ describe('SeasonTimeline', () => {
     expect(within(next).getByText(t.goals.predictedTag)).toBeInTheDocument()
   })
 
-  it('states a done race against its target, in the accent when beaten', () => {
+  it('states a done race against its target, in --good when beaten (v5.5 #17)', () => {
     render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
     const deltas = screen.getAllByTestId('timeline-delta')
     expect(deltas.map((d) => d.textContent)).toEqual(['−0:25'])
-    for (const d of deltas) expect(d.className).toContain('text-accent-text')
+    for (const d of deltas) expect(d.className).toContain('text-[var(--good)]')
   })
 
   it('draws the strip: races, the block band from its start to race day, and today', () => {

@@ -8,6 +8,14 @@ import { t } from '@/i18n'
  */
 export type DayState = 'rest' | 'run' | 'long' | 'future' | 'none'
 
+/**
+ * The one consistency scale (v5.5 R2), on the Progress card and the page:
+ * neutral, because a day run is data and the accent is for "now". Rest the
+ * faint track, a run the band grey, a long run ink; today an accent outline.
+ */
+export const DAY_FILL = { rest: 'var(--track)', run: 'var(--band)', long: 'var(--foreground)' } as const
+export const TODAY_OUTLINE = '0 0 0 1.5px var(--accent)'
+
 export interface ConsistencyCell {
   date: string
   state: DayState

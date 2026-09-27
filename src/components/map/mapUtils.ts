@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection } from "geojson";
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import type { MapTerritory } from "@/application/usecases/GetMapTerritory";
-import { HEAT_ROUTE_COLORS } from "@/lib/colors";
+import { SURFACES } from "@/lib/themeTokens";
 import { routeCellKey } from "@/lib/routeMatch";
 import { distanceKm, median, round } from "@/lib/math";
 
@@ -121,6 +121,9 @@ export function coordLabel(c: RouteCluster): string {
   return `${lat} ${lon}`;
 }
 
+/** Consecutive points further apart than this are a lost fix, not a run. */
+export const MAX_GPS_STEP_M = 150;
+
 export function buildHeatGeoJSON(
   routes: [number, number][][],
   indices: number[],
@@ -149,6 +152,17 @@ export function buildHeatGeoJSON(
     for (let p = 1; p < coords.length; p++) {
       const point = coords[p]!;
       const count = cellCounts.get(routeCellKey(point[0], point[1])) ?? 1;
+      const prev = coords[p - 1]!;
+      // A GPS jump draws nothing (v5.6 #5): straight lines fanned out from the
+      // centre of Metz where the watch lost and regained its fix.
+      if (distanceKm(prev[0], prev[1], point[0], point[1]) * 1000 > MAX_GPS_STEP_M) {
+        if (runCoords.length > 1) {
+          features.push({ type: "Feature", properties: { count: runCount }, geometry: { type: "LineString", coordinates: runCoords } });
+        }
+        runCoords = [point];
+        runCount = count;
+        continue;
+      }
       if (count !== runCount) {
         runCoords.push(point);
         features.push({
@@ -174,12 +188,6 @@ export function buildHeatGeoJSON(
   return { data: { type: "FeatureCollection", features }, maxCount };
 }
 
-const HEAT_COLORS = [
-  HEAT_ROUTE_COLORS.rare,
-  HEAT_ROUTE_COLORS.seldom,
-  HEAT_ROUTE_COLORS.often,
-  HEAT_ROUTE_COLORS.frequent,
-];
 const HEAT_FRACTIONS = [0, 0.35, 0.65, 1];
 
 function heatBreakpoints(maxCount: number): number[] {
@@ -187,25 +195,29 @@ function heatBreakpoints(maxCount: number): number[] {
   return HEAT_FRACTIONS.map((frac) => Math.pow(base, frac));
 }
 
-export function heatColorExpression(maxCount: number): unknown[] {
+/**
+ * One neutral scale (v5.6 #5): band grey for a street run once, ink for the
+ * most run. The blue-purple-red ramp reused the Z2 and Z5 colours, so a blue
+ * street read as "easy". Frequency also widens the line.
+ */
+export function heatScale(mode: "dark" | "light"): { from: string; to: string } {
+  return { from: SURFACES[mode].band, to: SURFACES[mode].text };
+}
+
+export function heatColorExpression(maxCount: number, mode: "dark" | "light"): unknown[] {
   const bp = heatBreakpoints(maxCount);
-  const expr: unknown[] = ["interpolate", ["linear"], ["get", "count"]];
-  bp.forEach((b, i) => expr.push(b, HEAT_COLORS[i]));
-  return expr;
+  const { from, to } = heatScale(mode);
+  return ["interpolate", ["linear"], ["get", "count"], bp[0], from, bp[bp.length - 1], to];
 }
 
 export function heatWidthExpression(maxCount: number): unknown[] {
   const bp = heatBreakpoints(maxCount);
-  const widthsLow = [0.8, 1.2, 1.8, 2.6];
-  const widthsHigh = [1.4, 2.4, 3.8, 5];
+  const widthsLow = [0.8, 1.3, 2.1, 3];
+  const widthsHigh = [1.2, 2.4, 4, 5.5];
   const byCount = (widths: number[]): unknown[] => {
     const expr: unknown[] = ["interpolate", ["linear"], ["get", "count"]];
     bp.forEach((b, i) => expr.push(b, widths[i]));
     return expr;
   };
   return ["interpolate", ["linear"], ["zoom"], 9, byCount(widthsLow), 14, byCount(widthsHigh)];
-}
-
-export function heatLegendSwatches(): string[] {
-  return [...HEAT_COLORS];
 }

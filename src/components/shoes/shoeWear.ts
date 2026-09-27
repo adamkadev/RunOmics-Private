@@ -42,11 +42,14 @@ export function wearTone(shoe: { totalKm: number; maxKm: number }): WearTone {
   return share > 1 ? 'over' : share >= WEAR_NEAR_SHARE ? 'near' : 'ok'
 }
 
-/** The accent under 80% of the limit, amber from 80 to 100%, Z5 past it. */
+/**
+ * Ink until the retire tick, amber past it (v5.5 #15): wear is data, so it
+ * never takes the accent.
+ */
 export const WEAR_COLOR: Record<WearTone, string> = {
-  ok: 'var(--accent)',
+  ok: 'var(--foreground)',
   near: 'var(--tone-caution)',
-  over: 'var(--zone-5)',
+  over: 'var(--tone-caution)',
 }
 
 /** A pair's role, from the session it is worn for most. */

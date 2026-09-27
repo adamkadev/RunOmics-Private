@@ -157,16 +157,15 @@ export const READINESS_TONE_COLORS = {
 } as const
 
 
-// Fixed hues, not the user's accent theme: a month that hit or missed its
-// target is a volume verdict, not a brand colour, so both bar and icon read
-// the same regardless of which accent the user has picked. `behind` used to
-// be accent-independent red, which put it a severity grade above the annual
-// projection's amber "Behind" - the same shortfall read as two different
-// levels of alarm 400px apart on the same screen.
+// A month's volume is data (v5.5 #17): a month that hit its target is ink, a
+// short one amber, the month still running keeps its outline. Never the
+// accent, and no green or blue fills that read as zone colours.
+const INK = 'var(--foreground)'
+const AMB = 'var(--tone-caution)'
 export const GOAL_PACE_COLORS = {
-  ahead:   { bg: withAlpha(c.emerald400, 0.06), border: withAlpha(c.emerald400, 0.25), bar: c.emerald400 },
-  onTrack: { bg: withAlpha(c.roBlueMid, 0.1),   border: withAlpha(c.roBlueMid, 0.28), bar: c.roBlueHi },
-  behind:  { bg: withAlpha('#f5b13d', 0.06),    border: withAlpha('#f5b13d', 0.25),   bar: '#f5b13d' },
+  ahead:   { bg: `color-mix(in srgb, ${INK} 6%, transparent)`, border: `color-mix(in srgb, ${INK} 25%, transparent)`, bar: INK },
+  onTrack: { bg: `color-mix(in srgb, ${INK} 6%, transparent)`, border: `color-mix(in srgb, ${INK} 25%, transparent)`, bar: INK },
+  behind:  { bg: `color-mix(in srgb, ${AMB} 6%, transparent)`, border: `color-mix(in srgb, ${AMB} 25%, transparent)`, bar: AMB },
   pending: { bg: '',                            border: '',                           bar: 'var(--track-on-dark)' },
 } as const
 
@@ -255,13 +254,6 @@ export const PACE_ROUTE_STOPS: readonly (readonly [pace: number, color: string])
   [390, PACE_ROUTE_COLORS.easy],
   [450, PACE_ROUTE_COLORS.recovery],
 ]
-
-export const HEAT_ROUTE_COLORS = {
-  rare:     CHART_COLORS.pace,
-  seldom:   CHART_COLORS.efficiency,
-  often:    CHART_COLORS.verticalOscillation,
-  frequent: CHART_COLORS.hr,
-} as const
 
 export const BOOT_COLORS = {
   background: '#0a0b0b',

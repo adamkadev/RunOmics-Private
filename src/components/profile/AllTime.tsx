@@ -9,7 +9,7 @@ const TITLE = 'font-display text-body font-bold text-foreground'
 
 /**
  * One row per year with a bar scaled to the best year (C6, v4.4b): the
- * current year in the accent, its label too; past years in the band grey.
+ * current year in ink, its label too; past years in the band grey (v5.5 #16).
  * Bold km, then runs and hours. The Progress hub's All time card draws the
  * same rows, compact.
  */
@@ -27,12 +27,13 @@ export function YearRows({ years, currentYear, compact = false }: { years: AllTi
             aria-label={t.allTime.yearLabel(y.year, formatKm(y.km), y.runs, formatKm(y.hours))}
             data-testid="year-row"
           >
-            <span className={cn('font-display text-footnote font-bold tabular-nums', current ? 'text-accent-text' : 'text-muted-foreground')}>{y.year}</span>
+            {/* This year in ink, the others band grey (v5.5 #16): years are data. */}
+            <span className={cn('font-display text-footnote font-bold tabular-nums', current ? 'text-foreground' : 'text-muted-foreground')}>{y.year}</span>
             <span aria-hidden className="block h-2.5 overflow-hidden rounded-full bg-[var(--track)]">
               <span
                 className="block h-full rounded-full"
                 data-testid="year-bar"
-                style={{ width: `${(y.km / best) * 100}%`, background: current ? 'var(--accent)' : 'var(--band)' }}
+                style={{ width: `${(y.km / best) * 100}%`, background: current ? 'var(--foreground)' : 'var(--band)' }}
               />
             </span>
             <span className="text-right text-footnote tabular-nums text-muted-foreground" aria-hidden>
@@ -65,8 +66,8 @@ function Totals({ view }: { view: AllTimeView }) {
   )
 }
 
-/** Every month since the first run: past years grey, this year in the accent,
- *  the month still running a lighter accent. */
+/** Every month since the first run: past years band grey, this year ink, and
+ *  the month still running outlined in the accent, the one "now" (v5.5 #16). */
 function MonthlyBars({ view }: { view: AllTimeView }) {
   const a = t.allTime
   const best = Math.max(1, view.bestMonth?.km ?? 1)
@@ -85,11 +86,8 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
         {view.monthly.map((m) => {
           const style: CSSProperties = {
             height: `${Math.max(3, Math.round((m.km / best) * 96))}px`,
-            background: m.year !== view.currentYear
-              ? 'var(--band)'
-              : m.partial
-                ? 'color-mix(in oklab, var(--accent) 45%, var(--card))'
-                : 'var(--accent)',
+            background: m.year !== view.currentYear ? 'var(--band)' : 'var(--foreground)',
+            ...(m.partial ? { boxShadow: '0 0 0 1.5px var(--card), 0 0 0 3px var(--accent)' } : {}),
           }
           return <span key={m.key} data-testid="month-bar" data-month={m.key} className="block min-w-0 flex-1 rounded-[3px]" style={style} />
         })}

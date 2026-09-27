@@ -120,7 +120,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
     expect(finished.style.border).toBe('')
   })
 
-  it('draws behind in one hue the bar and the label share, and it is amber not red', () => {
+  it('draws behind in one hue the bar and the label share, and it is amber not red (v5.5 #17)', () => {
     const { container } = render(
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 40, status: 'behind', progress: null }]}
@@ -132,11 +132,11 @@ describe('MonthlyVolumeChart collapsed axis', () => {
     // #f5b13d, matching STATUS.warning which the behind icon and label now use -
     // a missed volume target is caution, the same severity as the annual
     // projection's amber "Behind", not the red the app reserves for injury risk.
-    expect(bar.style.background).toBe('rgb(245, 177, 61)')
+    expect(bar.style.background).toBe('var(--tone-caution)')
     expect(bar.style.background).not.toBe('rgb(239, 68, 68)')
   })
 
-  it('draws a hit month in a fixed green, not the user\'s accent theme', () => {
+  it('draws a hit month in ink, never the accent or a zone green (v5.5 #17)', () => {
     const { container } = render(
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 220, status: 'ahead', progress: null }]}
@@ -145,6 +145,6 @@ describe('MonthlyVolumeChart collapsed axis', () => {
       />,
     )
     const bar = container.querySelector<HTMLElement>('[title]')!
-    expect(bar.style.background).toBe('rgb(52, 211, 153)')
+    expect(bar.style.background).toBe('var(--foreground)')
   })
 })

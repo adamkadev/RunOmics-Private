@@ -17,7 +17,6 @@ export interface SeasonBlock {
   weeks: number
 }
 
-const AMBER = 'var(--tone-caution)'
 
 function utcDay(iso: string): number {
   return Date.parse(`${iso}T00:00:00Z`)
@@ -32,12 +31,12 @@ export function yearFraction(iso: string, year: number): number {
 
 const pct = (fraction: number) => `${(fraction * 100).toFixed(2)}%`
 
-/** A done race: a solid accent dot with its check. */
+/** A done race: a solid ink dot with its check (v5.5 #17: races are data, not "now"). */
 function DoneDot({ size = 16 }: { size?: number }) {
   return (
     <span
       aria-hidden
-      className="flex shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground"
+      className="flex shrink-0 items-center justify-center rounded-full bg-foreground text-background"
       style={{ width: size, height: size }}
     >
       <Check size={size - 6} strokeWidth={3.5} />
@@ -45,10 +44,10 @@ function DoneDot({ size = 16 }: { size?: number }) {
   )
 }
 
-/** A race still ahead: an amber ring. */
+/** A race still ahead: an ink ring. A date is not a warning (v5.5 #17). */
 function UpcomingRing({ size = 16 }: { size?: number }) {
   return (
-    <span aria-hidden className="block shrink-0 rounded-full bg-card" style={{ width: size, height: size, border: `2px solid ${AMBER}` }} />
+    <span aria-hidden className="block shrink-0 rounded-full bg-card" style={{ width: size, height: size, border: '2px solid var(--foreground)' }} />
   )
 }
 
@@ -75,8 +74,8 @@ function SeasonStrip({ year, today, rows, block }: { year: number; today: string
             ...line,
             left: pct(bandFrom),
             width: pct(Math.max(0, bandTo - bandFrom)),
-            background: `color-mix(in oklab, ${AMBER} 18%, transparent)`,
-            border: `1px solid color-mix(in oklab, ${AMBER} 45%, transparent)`,
+            // The block is a span of time: the faint track grey (v5.5 #17).
+            background: 'var(--track)',
           }}
         />
       )}
@@ -95,7 +94,7 @@ function SeasonStrip({ year, today, rows, block }: { year: number; today: string
           <span key={row.distance} data-testid={`season-marker-${upcoming ? 'upcoming' : 'done'}`}>
             <span
               className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-caption font-bold"
-              style={{ left: pct(at), color: upcoming ? AMBER : 'var(--foreground)' }}
+              style={{ left: pct(at), color: 'var(--foreground)' }}
             >
               {row.short}
             </span>
@@ -146,7 +145,7 @@ function TimelineRow({ row, block, last }: { row: SeasonRaceRow; block: SeasonBl
       {/* The gap before the next row; the last row ends on the card's own padding. */}
       <div className={cn('flex min-w-0 flex-1 items-start justify-between gap-3', !last && 'pb-4')}>
         <div className="min-w-0">
-          <p className="text-caption font-bold tracking-[0.06em]" style={{ color: upcoming ? AMBER : 'var(--muted-foreground)' }}>
+          <p className="text-caption font-bold tracking-[0.06em] text-muted-foreground">
             {eyebrow}
           </p>
           <p className="mt-0.5 truncate font-display text-body font-bold text-foreground">{row.title}</p>
@@ -158,7 +157,7 @@ function TimelineRow({ row, block, last }: { row: SeasonRaceRow; block: SeasonBl
             <p className="text-caption text-muted-foreground">{s.predictedTag}</p>
           ) : (
             delta !== null && (
-              <p className={cn('text-caption font-bold tabular-nums', delta <= 0 ? 'text-accent-text' : 'text-muted-foreground')} data-testid="timeline-delta">
+              <p className={cn('text-caption font-bold tabular-nums', delta <= 0 ? 'text-[var(--good)]' : 'text-muted-foreground')} data-testid="timeline-delta">
                 {formatSignedDuration(delta)}
               </p>
             )

@@ -192,8 +192,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.light,
 
-      // Positive deltas are the accent's to paint (neutral surfaces).
-      '--delta-good': 'var(--accent-text)',
+      // An improvement or a goal met reads --good, never the accent, which is
+      // for "now" only (v5.5 #17): "Reached · +116 km", "Achieved", Done.
+      '--delta-good': 'var(--good)',
       '--delta-warn': c.semOrangeLight,
       // An improving delta, and only that (v4.7): never a fill, bar, border or
       // big value, and a green apart from Z3 and the Productive status.
@@ -253,7 +254,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.dark,
 
-      '--delta-good': 'var(--accent-text)',
+      '--delta-good': 'var(--good)',
       '--delta-warn': c.orange400,
       '--good': '#5bd68a',
       '--metric-form': c.emerald400,
