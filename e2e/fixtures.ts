@@ -19,6 +19,10 @@ const EXPECTED_CONSOLE_NOISE: RegExp[] = [
   // NEXT_PUBLIC_MAPTILER_TOKEN is deliberately unset for e2e (see .env.e2e),
   // so tile requests are refused.
   /api\.maptiler\.com/i,
+  // The Activity header reverse-geocodes the run's start (useRunPlace); the
+  // e2e runner may have no route to OpenStreetMap, and the header then
+  // simply shows no place.
+  /nominatim\.openstreetmap\.org/i,
   // Vercel Analytics and Speed Insights load scripts only a Vercel deployment
   // serves; under `next start` they 404.
   /\/_vercel\/(insights|speed-insights)\/script\.js/,
