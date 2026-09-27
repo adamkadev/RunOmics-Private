@@ -18,6 +18,7 @@ from garmin.client import GarminClient
 from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
+from garmin.recovery_history import sync_recovery_history
 from garmin.training_plan import sync_training_plan
 from garmin.threshold_history import sync_threshold_history
 from garmin.training_status import sync_load_balance, sync_training_status
@@ -237,6 +238,7 @@ def _post_save_steps(client: GarminClient, store: JsonActivityStore) -> list[Ste
 
     return steps + [
         ("race predictions", lambda: sync_race_predictions(client)),
+        ("recovery history", lambda: sync_recovery_history(client)),
         ("load balance", lambda: sync_load_balance(client)),
         ("training plan", lambda: sync_training_plan(client)),
     ]

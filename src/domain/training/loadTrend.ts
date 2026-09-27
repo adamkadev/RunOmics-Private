@@ -1,0 +1,44 @@
+import { round } from '@/lib/math'
+
+/**
+ * The acute/chronic pair (v5.4): Garmin's 7-day and 28-day loads for one day.
+ * Load trend, Injury risk's Load ratio and the coach read all read this one
+ * series, so the ratio printed beside "333 ÷ 295" is the last point of the
+ * chart above it.
+ */
+export interface LoadPair {
+  date: string
+  acute: number
+  chronic: number
+}
+
+/** The safe ratio: 0.8-1.3 × chronic, the same band as Injury risk's bar. */
+export const SAFE_RATIO_LO = 0.8
+export const SAFE_RATIO_HI = 1.3
+
+interface StatusLoads {
+  date: string
+  acuteLoad?: number
+  chronicLoad?: number
+}
+
+/** Every day with both loads, oldest first, rounded as the cards print them. */
+export function loadPairs(days: StatusLoads[]): LoadPair[] {
+  return days
+    .filter((d) => Number.isFinite(d.acuteLoad) && Number.isFinite(d.chronicLoad) && d.chronicLoad! > 0)
+    .map((d) => ({ date: d.date, acute: Math.round(d.acuteLoad!), chronic: Math.round(d.chronicLoad!) }))
+    .sort((a, b) => a.date.localeCompare(b.date))
+}
+
+export function latestLoadPair(pairs: LoadPair[]): LoadPair | null {
+  return pairs.at(-1) ?? null
+}
+
+/** The day's safe range for acute load, in whole load points. */
+export function safeRange(chronic: number): { lo: number; hi: number } {
+  return { lo: Math.round(chronic * SAFE_RATIO_LO), hi: Math.round(chronic * SAFE_RATIO_HI) }
+}
+
+export function loadRatio(pair: LoadPair): number {
+  return round(pair.acute / pair.chronic, 2)
+}

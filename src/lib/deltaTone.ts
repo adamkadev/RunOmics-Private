@@ -19,6 +19,7 @@ export type DeltaMetric =
   | 'efficiency'
   | 'distance'
   | 'restingHr'
+  | 'hrv'
   | 'loadRatio'
   | 'rampRate'
 
@@ -88,7 +89,10 @@ export function deltaTone(metric: DeltaMetric, delta: number | null | undefined,
       return Math.abs(delta) / base < 0.02 ? 'flat' : delta > 0 ? 'good' : 'worse'
     }
     case 'restingHr':
-      return Math.abs(delta) < 1 ? 'flat' : delta < 0 ? 'good' : 'worse'
+      return Math.abs(delta) < (ctx.flatBelow ?? 1) ? 'flat' : delta < 0 ? 'good' : 'worse'
+    // Overnight HRV, ms: higher is recovering (v5.4, ±3 ms is no change).
+    case 'hrv':
+      return Math.abs(delta) < (ctx.flatBelow ?? 3) ? 'flat' : delta > 0 ? 'good' : 'worse'
     case 'loadRatio':
     case 'rampRate': {
       const range = SAFE_RANGE[metric]!

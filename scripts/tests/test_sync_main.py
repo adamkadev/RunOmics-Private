@@ -34,6 +34,7 @@ _STEP_RESULTS = {
     "sync_vo2max_history": 0,
     "sync_threshold_history": 0,
     "sync_race_predictions": 0,
+    "sync_recovery_history": 0,
     "sync_load_balance": False,
     "sync_training_plan": False,
 }

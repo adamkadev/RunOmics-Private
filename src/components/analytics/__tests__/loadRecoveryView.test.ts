@@ -1,0 +1,163 @@
+import { describe, expect, it, vi } from 'vitest'
+import { loadPairs, type LoadPair } from '@/domain/training/loadTrend'
+import { addDays, isoDate } from '@/lib/calendarDate'
+import { dayWindow } from '../analyticsView'
+import {
+  loadChange,
+  loadCoachHeadline,
+  loadTrendView,
+  loadTrendYMax,
+  recoveryView,
+  RECOVERY_MIN_NIGHTS,
+  type LoadTrendView,
+  type RecoveryView,
+} from '../loadRecoveryView'
+
+const TODAY = '2026-09-26'
+const day = (i: number) => isoDate(addDays(new Date(`${TODAY}T00:00:00`), -i))
+
+/** Status days as training_status.json stores them, newest last. */
+const STATUS_DAYS = Array.from({ length: 400 }, (_, i) => ({
+  date: day(399 - i),
+  status: 'productive',
+  acuteLoad: 280 + ((i * 7) % 60) + (i > 380 ? (i - 380) * 3 : 0),
+  chronicLoad: 295 + (i % 5),
+}))
+
+vi.mock('@/infrastructure/repositories/JsonTrainingStatusRepository', () => ({
+  getTrainingStatusDays: () => STATUS_DAYS,
+  getLatestTrainingStatusDay: () => STATUS_DAYS.at(-1),
+}))
+vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({
+  getAllActivities: () => [
+    { id: '2', date: `${TODAY}T07:00:00`, distanceKm: 10, durationSeconds: 3000, avgHeartRate: 150 },
+    { id: '1', date: `${day(399)}T07:00:00`, distanceKm: 10, durationSeconds: 3000, avgHeartRate: 150 },
+  ],
+}))
+vi.mock('@/infrastructure/repositories/JsonAthleteRepository', () => ({ getAthleteProfile: () => ({}) }))
+
+describe('one acute/chronic source (v5.4)', () => {
+  it("prints the Load ratio as the last acute ÷ chronic of Load trend", async () => {
+    const { getLoadRiskPanel } = await import('@/application/usecases/GetLoadRiskPanel')
+    const risk = await getLoadRiskPanel()
+    const pairs = loadPairs(STATUS_DAYS)
+    const view = loadTrendView(pairs, dayWindow(TODAY, '4w'), loadTrendYMax(pairs, TODAY))!
+
+    expect(risk!.acute).toBe(view.last.acute)
+    expect(risk!.chronic).toBe(view.last.chronic)
+    expect(risk!.acwr).toBe(Math.round((view.last.acute / view.last.chronic) * 100) / 100)
+    expect(risk!.acwr).toBe(view.ratio)
+  })
+})
+
+const pairs = (acute: (i: number) => number, chronic = 300, n = 120): LoadPair[] =>
+  Array.from({ length: n }, (_, i) => ({ date: day(n - 1 - i), acute: acute(i), chronic }))
+
+describe('loadTrendView', () => {
+  it('bands each day at 0.8-1.3 × chronic and reads today against it', () => {
+    const view = loadTrendView(pairs(() => 300), dayWindow(TODAY, '4w'), 480)!
+    expect(view.points).toHaveLength(28)
+    expect(view).toMatchObject({ acute: 300, lo: 240, hi: 390, state: 'in', ratio: 1 })
+    expect(view.points.every((p) => !p.out)).toBe(true)
+  })
+
+  it('marks the days outside the band and turns today above it', () => {
+    const view = loadTrendView(pairs((i) => (i === 100 ? 420 : i === 119 ? 400 : 300)), dayWindow(TODAY, '4w'), 480)!
+    expect(view.points.filter((p) => p.out).map((p) => p.acute)).toEqual([420, 400])
+    expect(view.state).toBe('above')
+  })
+
+  it('reads a year as weekly averages', () => {
+    const view = loadTrendView(pairs(() => 300, 300, 400), dayWindow(TODAY, '1y'), 480)!
+    expect(view.points.length).toBeGreaterThanOrEqual(52)
+    expect(view.points.length).toBeLessThanOrEqual(54)
+  })
+
+  it('is null without two days in the window', () => {
+    expect(loadTrendView([], dayWindow(TODAY, '4w'), 480)).toBeNull()
+  })
+})
+
+describe('loadChange', () => {
+  it('quotes the climb out of the last four weeks’ trough', () => {
+    const series = pairs((i) => (i === 109 ? 250 : i >= 110 ? 250 + (i - 109) * 8 : 300))
+    expect(loadChange(series, series.at(-1)!)).toEqual({ pct: 32, days: 10 })
+  })
+
+  it('quotes the drop from the peak when load is down', () => {
+    const series = pairs((i) => (i === 105 ? 400 : i > 105 ? 300 : 350))
+    expect(loadChange(series, series.at(-1)!)).toEqual({ pct: -25, days: 14 })
+  })
+})
+
+describe('loadChange out of a break', () => {
+  it('quotes nothing from a zero or past doubling', () => {
+    const fromZero = pairs((i) => (i < 105 ? 0 : 500))
+    expect(loadChange(fromZero, fromZero.at(-1)!)).toBeNull()
+    const tripled = pairs((i) => (i < 105 ? 150 : 500))
+    expect(loadChange(tripled, tripled.at(-1)!)).toBeNull()
+  })
+})
+
+describe('loadTrendYMax', () => {
+  it("holds one range per athlete, from the year's highest acute or safe edge", () => {
+    const series = pairs((i) => (i === 50 ? 420 : 300))
+    expect(loadTrendYMax(series, TODAY)).toBe(480)
+    expect(loadTrendYMax(series, TODAY) % 40).toBe(0)
+  })
+})
+
+const nights = (n: number, hrv: (i: number) => number | null, rhr: (i: number) => number | null = () => 46) =>
+  Array.from({ length: n }, (_, i) => ({ date: day(n - 1 - i), hrv: hrv(i), restingHr: rhr(i) }))
+const wobble = (i: number) => [0, 2, -1, 3, -2, 1, -3, 2][i % 8]!
+
+describe('recoveryView', () => {
+  it(`hides under ${RECOVERY_MIN_NIGHTS} HRV nights in the window`, () => {
+    const few = nights(90, (i) => (i < 84 ? null : 58))
+    expect(recoveryView(few, dayWindow(TODAY, '4w'))).toBeNull()
+  })
+
+  it('draws the baseline from the middle of the last 60 nights', () => {
+    const view = recoveryView(nights(90, (i) => 58 + wobble(i)), dayWindow(TODAY, '4w'))!
+    expect(view.hrv.lo).toBeGreaterThanOrEqual(55)
+    expect(view.hrv.hi).toBeLessThanOrEqual(61)
+    expect(view.out).toBe(false)
+  })
+
+  it('counts the low nights in a row and reads HRV down as worse, resting HR up as worse', () => {
+    const view = recoveryView(
+      nights(90, (i) => (i >= 87 ? 44 : 58 + wobble(i)), (i) => (i >= 88 ? 52 : 46 + (i % 3) - 1)),
+      dayWindow(TODAY, '4w'),
+    )!
+    expect(view.hrvLowStreak).toBe(3)
+    expect(view.hrv.side).toBe('low')
+    expect(view.hrv.tone).toBe('worse')
+    expect(view.restingHr!.side).toBe('high')
+    expect(view.restingHr!.tone).toBe('worse')
+    expect(view.out).toBe(true)
+  })
+
+  it('calls a change inside ±3 ms or ±2 bpm no real change', () => {
+    const view = recoveryView(nights(90, (i) => 58 + (i === 89 ? 2 : 0), (i) => 46 + (i === 89 ? 1 : 0)), dayWindow(TODAY, '4w'))!
+    expect(view.hrv.tone).toBe('flat')
+    expect(view.restingHr!.tone).toBe('flat')
+  })
+})
+
+describe('loadCoachHeadline', () => {
+  const load = (state: LoadTrendView['state'], pct = 18, days = 21) => ({ state, change: { pct, days } }) as LoadTrendView
+  const recovery = (out: boolean) => ({ out }) as RecoveryView
+
+  it('takes the first match: spike and dip, spike, dip, building', () => {
+    expect(loadCoachHeadline(load('above'), recovery(true))?.kind).toBe('spikeAndDip')
+    expect(loadCoachHeadline(load('above'), recovery(false))?.kind).toBe('spike')
+    expect(loadCoachHeadline(load('in'), recovery(true))?.kind).toBe('dip')
+    expect(loadCoachHeadline(load('in'), recovery(false))).toEqual({ kind: 'building', change: { pct: 18, days: 21 }, recovery: true })
+  })
+
+  it('leaves the speed headline when load is not up and nothing is out', () => {
+    expect(loadCoachHeadline(load('in', -4), null)).toBeNull()
+    expect(loadCoachHeadline(load('below', -30), recovery(false))).toBeNull()
+    expect(loadCoachHeadline(null, null)).toBeNull()
+  })
+})

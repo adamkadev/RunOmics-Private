@@ -6,6 +6,7 @@ import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 /**
@@ -108,6 +109,14 @@ export function LegendItem({ swatch, color, children }: { swatch: Swatch; color:
 
 export function Legend({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn('flex flex-wrap gap-x-3.5 gap-y-1.5 text-caption text-muted-foreground', className)}>{children}</div>
+}
+
+/** Start, middle and end of a window, the end read as Today while it is. */
+export function windowLabels(dates: string[], live: boolean): string[] {
+  if (!dates.length) return []
+  const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
+  const mid = dates[Math.floor((dates.length - 1) / 2)]!
+  return [bare(dates[0]!), bare(mid), live ? t.analytics.cards.today : bare(dates[dates.length - 1]!)]
 }
 
 /** Axis labels under a chart, spread end to end. */
