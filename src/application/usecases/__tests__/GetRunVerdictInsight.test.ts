@@ -1,14 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { Activity, PlannedWorkout } from '@/domain/activity/types'
+import type { CoachingPlan } from '@/domain/coaching/types'
+import { plan, workout as prescription } from '@/domain/coaching/__tests__/fixtures'
 import { runVerdictInsightHash } from '@/domain/ai/runVerdictInsight'
 
-const { getAllActivities, getAllPlannedWorkouts, readVerifiedInsight } = vi.hoisted(() => ({
+const { getAllActivities, getAllPlannedWorkouts, readVerifiedInsight, coaching } = vi.hoisted(() => ({
   getAllActivities: vi.fn(),
   getAllPlannedWorkouts: vi.fn(),
   readVerifiedInsight: vi.fn(),
+  coaching: { getCurrentPlan: vi.fn(), getArchivedPlans: vi.fn() },
 }))
 
 vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities }))
+vi.mock('@/infrastructure/repositories/JsonCoachingRepository', () => ({
+  JsonCoachingRepository: vi.fn(function JsonCoachingRepository() {
+    return coaching
+  }),
+}))
 vi.mock('@/infrastructure/repositories/JsonPlannedWorkoutRepository', () => ({ getAllPlannedWorkouts }))
 vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/infrastructure/repositories/FirestoreInsightsRepository')>()
@@ -47,9 +55,11 @@ const workout = (date: string, name = 'Threshold 3x8'): PlannedWorkout => ({
   durationSecs: 2700,
 })
 
-function withHistory(activities: Activity[], planned: PlannedWorkout[] = []) {
+function withHistory(activities: Activity[], planned: PlannedWorkout[] = [], plans: { current?: CoachingPlan | null; archived?: CoachingPlan[] } = {}) {
   getAllActivities.mockReturnValue(activities)
   getAllPlannedWorkouts.mockReturnValue(planned)
+  coaching.getCurrentPlan.mockReturnValue(plans.current ?? null)
+  coaching.getArchivedPlans.mockReturnValue(plans.archived ?? [])
 }
 
 describe('getRunVerdictContexts', () => {
@@ -100,6 +110,31 @@ describe('getRunVerdictContexts', () => {
 
     expect(getRunVerdictContexts()[0]?.history.runsInPast7Days).toBe(4)
     expect(getRunVerdictContexts()[0]?.history.daysSinceLastRun).toBe(2)
+  })
+
+  // v4.16.6: the coach's words are what set one session apart from the last of its kind.
+  it("attaches what the coaching plan wrote the session for, from an archived plan when it has been replaced", () => {
+    const current = plan({ id: 'current', weeks: [] })
+    const archived = plan({ id: 'archived', status: 'superseded' })
+    withHistory([activity('a', '2026-09-09'), activity('b', '2026-09-08')], [], { current, archived: [archived] })
+
+    const [planned, unplanned] = getRunVerdictContexts()
+    expect(planned?.intent).toEqual({ title: prescription().title, description: prescription().description, weekFocus: 'Threshold introduction' })
+    expect(unplanned?.intent).toBeNull()
+    expect(coaching.getCurrentPlan).toHaveBeenCalledTimes(1)
+    expect(coaching.getArchivedPlans).toHaveBeenCalledTimes(1)
+  })
+
+  it('still builds every context when a plan file cannot be read', () => {
+    withHistory([activity('a', '2026-09-09')])
+    coaching.getCurrentPlan.mockImplementation(() => {
+      throw new Error('current_plan.json: weeks must be an array')
+    })
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    expect(getRunVerdictContexts()[0]?.intent).toBeNull()
+    expect(error).toHaveBeenCalled()
+    error.mockRestore()
   })
 
   it('nothing to build from an athlete with no runs yet', () => {

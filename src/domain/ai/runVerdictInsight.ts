@@ -2,7 +2,8 @@ import { DAY_MS } from '@/lib/calendarDate'
 import type { Activity, ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
-import type { PreviousRun, RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
+import type { LongestRun, PreviousRun, PreviousSession, RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
+import type { SessionIntent } from '@/domain/coaching/sessionIntent'
 import { isLongSession } from '@/domain/activity/longRun'
 import { raceExecution } from '@/domain/activity/raceExecution'
 import { MIN_REP_SECONDS, repStats, sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
@@ -19,7 +20,7 @@ export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
  * runs inside the verdict horizon are written again on the next pass instead
  * of keeping copy from the old prompt (v4.16.4).
  */
-export const RUN_VERDICT_PROMPT_VERSION = 3
+export const RUN_VERDICT_PROMPT_VERSION = 4
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
@@ -66,6 +67,8 @@ export interface RunVerdictContext {
   official?: OfficialRaceResult | null
   /** The athlete's note: null when there is none, undefined when the notes could not be read. */
   note?: AthleteNote | null
+  /** What the coaching plan wrote this session for, when it planned one. */
+  intent?: SessionIntent | null
 }
 
 /**
@@ -151,6 +154,11 @@ function plannedReps(planned: PlannedWorkout | null): { quality: WorkoutStep[]; 
     quality: reps.filter((step) => stepSeconds(step) >= MIN_REP_SECONDS),
     strides: reps.filter((step) => stepSeconds(step) < MIN_REP_SECONDS),
   }
+}
+
+/** The kind a verdict is written for, which the pass groups earlier verdicts by. */
+export function runVerdictKind({ activity, planned }: Pick<RunVerdictContext, 'activity' | 'planned'>): RunKind {
+  return runKind(activity, planned, sessionExecution(activity))
 }
 
 export function runKind(activity: Activity, planned: PlannedWorkout | null, execution: SessionExecution): RunKind {
@@ -372,6 +380,72 @@ function noteLine(note: AthleteNote | null | undefined): string | null {
     : `- The athlete's tags on this run, printed on the card: ${tags}`
 }
 
+const INTENT_PROMPT_CHARS = 400
+
+/**
+ * The coach's words for this session and its week (v4.16.6). Without them a
+ * threshold session was judged on what every threshold session is judged on -
+ * reps on target, even, little drift - and every one read "Precise threshold
+ * control maintains target speed". The plan says what this one was for: a
+ * first measurement of the pace, the easy day after the reps, a long run kept
+ * inside its recent maximum.
+ */
+function intentLines(intent: SessionIntent): string[] {
+  const clip = (text: string) => text.trim().slice(0, INTENT_PROMPT_CHARS)
+  return [
+    `- What the coach wrote for this session: "${clip(intent.description)}"`,
+    intent.weekFocus.trim() ? `- What the plan's week is for: "${clip(intent.weekFocus)}"` : null,
+  ].filter((line) => line !== null)
+}
+
+const SESSION_WORD: Partial<Record<ActivityType, string>> = {
+  Tempo: 'tempo',
+  Threshold: 'threshold',
+  VO2Max: 'VO2max',
+  Anaerobic: 'anaerobic',
+  Sprint: 'sprint',
+}
+
+const REP_LENGTH_NOISE_SECONDS = 5
+
+const daysBefore = (days: number) => (days === 0 ? 'earlier the same day' : `${days} day${days === 1 ? '' : 's'} before`)
+
+/** Session to session, in words: how a block progresses - longer reps at the same pace - or slips. */
+function previousSessionLine(activity: Activity, last: PreviousSession): string | null {
+  const now = repStats(activity)
+  const word = SESSION_WORD[activity.type]
+  if (!now || !word) return null
+  const repDelta = now.reps - last.reps
+  const lengthDelta = now.secondsPerRep - last.secondsPerRep
+  const paceDelta = last.paceSecPerKm - now.paceSecPerKm
+  const hrDelta = now.avgHr !== null && last.avgHr !== null ? now.avgHr - last.avgHr : null
+  const length = Math.abs(lengthDelta) < 60 ? `${Math.abs(lengthDelta)} s` : `${formatClock(Math.abs(lengthDelta))} min`
+  const changes = [
+    repDelta === 0 ? 'as many reps' : `${Math.abs(repDelta)} ${repDelta > 0 ? 'more' : 'fewer'} rep${Math.abs(repDelta) === 1 ? '' : 's'}`,
+    Math.abs(lengthDelta) < REP_LENGTH_NOISE_SECONDS ? 'reps as long' : `reps ${length} ${lengthDelta > 0 ? 'longer' : 'shorter'}`,
+    Math.abs(paceDelta) < PACE_NOISE_SEC_PER_KM ? 'the same rep pace' : `${Math.abs(paceDelta)}s/km ${paceDelta > 0 ? 'quicker' : 'slower'}`,
+    hrDelta === null ? null : Math.abs(hrDelta) < HR_NOISE_BPM ? 'the same heart rate' : `${Math.abs(hrDelta)} bpm ${hrDelta > 0 ? 'higher' : 'lower'}`,
+  ].filter((part) => part !== null)
+  const then = `${last.reps} reps of ${formatClock(last.secondsPerRep)} at ${pace(last.paceSecPerKm)} /km${last.avgHr ? `, ${last.avgHr} bpm` : ''}`
+  return `- Against your last ${word} session, ${daysBefore(last.daysAgo)} (${then}): ${changes.join(', ')}`
+}
+
+/** Under half a kilometre past the longest run is the same distance, not a new longest. */
+const LONGER_BY_KM = 0.5
+
+/** A long run against the longest of the last three months, which the plan builds durability against. */
+function longestLine(activity: Activity, longest: LongestRun): string {
+  if (activity.distanceKm - longest.km >= LONGER_BY_KM) {
+    return longest.daysSinceAsLong === null
+      ? '- Longer than any earlier run on record'
+      : `- Your longest run in ${Math.round(longest.daysSinceAsLong / DAYS_PER_MONTH)} months`
+  }
+  const short = Math.round(longest.km - activity.distanceKm)
+  return short < 1
+    ? `- As long as your longest run of the last 3 months, ${daysBefore(longest.daysAgo)}`
+    : `- ${short} km short of your longest run of the last 3 months, ${daysBefore(longest.daysAgo)}`
+}
+
 function plannedLine(planned: PlannedWorkout): string {
   const minutes = planned.durationSecs ? `~${Math.round(planned.durationSecs / 60)} min` : null
 
@@ -424,7 +498,7 @@ function cadenceLine(runs: number, previous: PreviousRun): string {
 
 // ─── Facts, hash and prompt ────────────────────────────────────────────────
 
-function facts({ activity, history, planned, official }: RunVerdictContext) {
+function facts({ activity, history, planned, official, intent }: RunVerdictContext) {
   const execution = sessionExecution(activity)
   const kind = runKind(activity, planned, execution)
   const plan = plannedReps(planned)
@@ -475,6 +549,10 @@ function facts({ activity, history, planned, official }: RunVerdictContext) {
     runsInPast7Days: history.runsInPast7Days,
     daysSinceLastRun: history.daysSinceLastRun,
     previous: history.previous ? `${history.previous.daysAgo}:${history.previous.description || history.previous.type}` : null,
+    previousSession:
+      history.previousSession && judgedType(kind, activity) === activity.type ? previousSessionLine(activity, history.previousSession) : null,
+    longest: kind === 'long' && history.longest ? longestLine(activity, history.longest) : null,
+    intent: intent ? intentLines(intent).join('\n') : null,
   }
 }
 
@@ -509,8 +587,14 @@ export function repeatsEarlierVerdict(
   return written.some((earlier) => headlineKey(earlier.headline) === key) || shown.some((earlier) => opening(earlier.headline) === start)
 }
 
+/**
+ * "Say so on the strongest fact that shows it" (v4.16.4) picked the same fact
+ * for every good session of a kind - the spread for a threshold session, the
+ * zones for an easy run - and with it the same headline (v4.16.6).
+ */
 const TONE_RULES: Record<VerdictTone, string> = {
-  positive: 'The run did what this session is for. Say so on the strongest fact that shows it.',
+  positive:
+    'The run did what this session was for. Say it on what matters most about this run today, never on what is true of every good session of its kind.',
   neutral:
     'The run drifted from what this session is for - off its target, short of the plan, or harder or easier than asked - without doing harm. Say how, plainly, without forced praise.',
   caution: 'The effort overshot what this session is for. Name what it cost.',
@@ -518,28 +602,35 @@ const TONE_RULES: Record<VerdictTone, string> = {
 
 export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   systemInstruction(
-    'You are a running coach writing the verdict card for a single run an athlete just finished.',
-    'two or three measured facts behind the headline, in plain words',
+    'You are a running coach writing the verdict card for a single run an athlete just finished: what you would tell them about it once they stop.',
+    'one or two sentences on what the headline rests on, in plain words',
     RUN_VERDICT_LIMITS
   ),
   'Never contradict the tone you are given: it is the judgement the numbers support.',
   'Judge whether this run did its job. The days around it are context for judging it, never the subject, and never advise what to do next.',
   // v4.16.4: RPE and the conditions sit in the same card, right under the text.
   "The card already prints the distance, duration, average pace, average heart rate, perceived effort (RPE) and the conditions: never state those numbers. A difference against earlier runs or against the plan's target is fine (\"8s/km quicker\", \"inside the 4:22-4:28 target\"); repeating this run's own printed numbers is not.",
-  'What the job is depends on the session.',
+  // v4.16.6: the job is what every run of a kind is judged on; the verdict is what this one did with it.
+  "What the job is depends on the session. How a session is judged is not the verdict: when its job held, that is expected, and what sets this run apart is the story.",
   "An easy run's job is to stay easy: nearly all of it in zones 1-2. That is the default, not news: when it held, give it a few words at most, never the headline, and never mention an empty zone 4-5. Lead instead with what sets this run apart - its heart rate against earlier easy runs at the same pace, its drift, where it sat in the week (the day after a hard session, a second run that day), or conditions that cost something. Only when zone 3 or above crept in is the zone time the verdict. Pace is never the achievement on an easy day, and quicker is only good news when the heart rate did not rise with it. With strides, the easy running is what you judge; the strides only count as done.",
-  "A long run's job is time on feet at an easy effort: judge how the second half held, its heart rate drift and fade. Kilometre-to-kilometre pace spread is terrain, not execution.",
-  'A tempo or threshold session is judged on rep pace against its target, evenness across the reps and heart rate drift. Reps faster than the target are not a bonus: that is a harder session than asked. Reps on target at a lower effort than expected are good news, never a shortfall.',
-  'An interval session is judged on the reps completed and held at the target, and the fade from first to last.',
+  "A long run's job is time on feet at an easy effort: judge how the second half held, its heart rate drift and fade, and how far it went against the longest run of recent months. Kilometre-to-kilometre pace spread is terrain, not execution.",
+  'A tempo or threshold session is judged on rep pace against its target, evenness across the reps and heart rate drift. Reps faster than the target are not a bonus: that is a harder session than asked. Reps on target at a lower effort than expected are good news, never a shortfall. When they held, look past them: the change since the last session of its kind, the heart rate at that pace, the rep that was hardest, the place of the session in the plan.',
+  'An interval session is judged on the reps completed and held at the target, and the fade from first to last; when they held, the story is elsewhere, as for a threshold session.',
   "On a structured session the athlete's RPE covers the whole run, warm-up and cool-down included: judge the reps by their pace and heart rate, never by that number, and never call a session short of its intensity because of it.",
   'A race is judged on its pacing - an even or negative split is the skill - its result against earlier bests, and its placing.',
+  // v4.16.6: the coaching plan writes each session's purpose.
+  "When the coach's words for the session are given, they say what this particular session was for - a first measurement of a pace, easy running the day after the reps, a long run kept inside its recent maximum - and whether it did that is the verdict. Never quote them back.",
   'Lead with what this run makes the most of; never default to the comparison with earlier runs because it is there.',
   'When the effort sits outside the expected band, look for a cause in the other facts - heat, humidity, wind, elevation - and name it rather than assuming the athlete misjudged the session. Name the cause, never its number.',
   'When a planned session is given, judge what was run against what was asked, and say so plainly if they differ.',
   // v4.16.5: 23 Sep read "Precise threshold control" over the athlete's own note, "sick".
   "The athlete's note, when there is one, is what the numbers cannot tell you: never quote it back, it is printed on the card, but judge the run in its light. A session run sick, tired or sore is never written up as if nothing happened.",
-  // v5.5 #22, v5.6 #9: the body read "a textbook run locked in pure aerobic gains".
-  'Write the body as two or three measured facts, comma-separated or as two short sentences, like "3 reps within 1 s/km of each other, all inside the target, 4 bpm drift." or "Same pace as your recent easy runs at 6 bpm less, heart rate flat into the second half." Write as a coach talks to the athlete: no jargon (base, cardiac cost, aerobic engine), no praise words (textbook, rock-solid, locked in, on full display) and no claims about what the run builds.',
+  // v4.16.6: "Precise threshold control maintains target speed", "Controlled threshold pace delivered" - a label of adjectives
+  // and nouns fits every session of a kind, and a body of comma-separated numbers read the same under each.
+  'Write as a coach talks to the athlete, not as a report. The headline is a full sentence with a verb, something you would say to them once they stop - never a label of adjectives and nouns. If it would fit any other session of its kind, it is not this run\'s verdict yet.',
+  'The body gives the one or two facts the headline rests on and what they mean, as one or two plain sentences - never a list of numbers.',
+  'Vary the shape from one verdict to the next: a plain statement, a contrast, a comparison with last time, one moment of the run.',
+  'No jargon (base, cardiac cost, aerobic engine, execution), no praise words (textbook, rock-solid, precise, disciplined, dialled in, locked in, on full display, delivered) and no claims about what the run builds.',
 ].join(' ')
 
 export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdicts: string[]): string {
@@ -547,7 +638,9 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdic
   const f = facts(context)
 
   const past = [
+    f.previousSession,
     f.baseline,
+    f.longest,
     history.standing ? standingLine(history.standing.label, history.standing.daysSinceBetter) : null,
     history.previous ? cadenceLine(f.runsInPast7Days, history.previous) : null,
   ].filter((line) => line !== null)
@@ -577,6 +670,7 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdic
     f.execution,
     f.pacing,
     planned ? plannedLine(planned) : null,
+    f.intent,
     noteLine(context.note),
     ...(past.length ? ['', 'What came before it:', ...past] : []),
     avoidClause(recentVerdicts, 'otherRuns'),

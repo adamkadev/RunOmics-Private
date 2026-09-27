@@ -202,3 +202,56 @@ describe('effortStanding with official race results', () => {
       .toEqual(runHistory(tempo, [...history, tempo]).standing)
   })
 })
+
+// v4.16.6: what sets one session apart from the last of its kind.
+describe('previousSession', () => {
+  const reps = (count: number, seconds: number, pace: number, hr: number) =>
+    Array.from({ length: count }, () => ({ type: 'interval_active', durationSec: seconds, distanceM: (seconds / pace) * 1000, avgSpeedMs: 0, avgHr: hr, laps: [] }))
+  const session = (id: string, date: string, splits: unknown[], type: Activity['type'] = 'Threshold') =>
+    run({ id, date, type, splits } as Partial<Activity> & { id: string; date: string })
+
+  it('reads the last session of the same type rep for rep', () => {
+    const current = session('c', '2026-09-29', reps(3, 435, 265, 172))
+    const before = [session('a', '2026-09-16', reps(3, 400, 268, 175)), session('b', '2026-09-23', reps(3, 420, 265, 174))]
+
+    expect(runHistory(current, [current, ...before]).previousSession).toEqual({ reps: 3, secondsPerRep: 420, paceSecPerKm: 265, avgHr: 174, daysAgo: 6 })
+  })
+
+  it('has none for an easy run, a session of another type, or one without reps', () => {
+    const easy = run({ id: 'e', date: '2026-09-29' })
+    const current = session('c', '2026-09-29', reps(3, 435, 265, 172))
+    const tempo = session('t', '2026-09-23', reps(3, 420, 280, 165), 'Tempo')
+
+    expect(runHistory(easy, [easy, session('a', '2026-09-23', reps(3, 420, 265, 174))]).previousSession).toBeNull()
+    expect(runHistory(current, [current, tempo]).previousSession).toBeNull()
+    expect(runHistory(session('n', '2026-09-29', []), [current]).previousSession).toBeNull()
+  })
+})
+
+describe('longest', () => {
+  it('finds the longest run of the last 90 days, and how far back one as long as this goes', () => {
+    const current = run({ id: 'c', date: '2026-09-27', distanceKm: 14 })
+    const history = [
+      current,
+      run({ id: 'a', date: '2026-09-13', distanceKm: 12.7 }),
+      run({ id: 'b', date: '2026-09-20', distanceKm: 11.5 }),
+      run({ id: 'old', date: '2026-05-24', distanceKm: 21.1 }),
+    ]
+
+    expect(runHistory(current, history).longest).toEqual({ km: 12.7, daysAgo: 14, daysSinceAsLong: 126 })
+  })
+
+  it('leaves races out: a half marathon raced is no long run to measure one against', () => {
+    const current = run({ id: 'c', date: '2026-09-27', distanceKm: 14 })
+    const history = [current, run({ id: 'a', date: '2026-09-13', distanceKm: 12.7 }), run({ id: 'r', date: '2026-08-16', type: 'Race', distanceKm: 21.1 })]
+
+    expect(runHistory(current, history).longest).toEqual({ km: 12.7, daysAgo: 14, daysSinceAsLong: null })
+  })
+
+  it('has no longest without a run in the last 90 days, and no run as long when none was', () => {
+    const current = run({ id: 'c', date: '2026-09-27', distanceKm: 14 })
+
+    expect(runHistory(current, [current, run({ id: 'old', date: '2026-05-24', distanceKm: 21.1 })]).longest).toBeNull()
+    expect(runHistory(current, [current, run({ id: 'a', date: '2026-09-13' })]).longest?.daysSinceAsLong).toBeNull()
+  })
+})

@@ -8,6 +8,7 @@ import {
   repeatsEarlierVerdict,
   runVerdictInsightHash,
   runVerdictInsightPrompt,
+  runVerdictKind,
   runVerdictNoteKey,
   runVerdictSurface,
   verdictLines,
@@ -59,6 +60,20 @@ const MAX_ATTEMPTS_PER_SURFACE = 3
  * thirty of them, and a list that long leaves it no wording at all.
  */
 const AVOID_VERDICTS_SHOWN = 8
+
+/**
+ * Of those, how many are the latest verdicts of the same kind of session
+ * (v4.16.6). Newest first alone, a threshold session in a backfill was shown
+ * the easy runs written around it and none of the threshold verdicts before
+ * it, so each one came out as the last.
+ */
+const SAME_KIND_SHOWN = 5
+
+export function verdictsToShow(kind: string, avoid: VerdictPhrasing[]): VerdictPhrasing[] {
+  const same = avoid.filter((verdict) => verdict.kind === kind).slice(0, SAME_KIND_SHOWN)
+  const others = avoid.filter((verdict) => !same.includes(verdict)).slice(0, AVOID_VERDICTS_SHOWN - same.length)
+  return [...same, ...others]
+}
 
 function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
@@ -196,7 +211,7 @@ export function verdictQueue(
 export async function writeVerdicts(
   deps: InsightPassDeps,
   pending: RunVerdictContext[],
-  written: Insight[],
+  written: VerdictPhrasing[],
   phrasing: VerdictPhrasing[],
   pool: string[],
   notifyIds: ReadonlySet<string> = new Set()
@@ -206,9 +221,11 @@ export async function writeVerdicts(
 
   for (const context of pending) {
     const avoid = [...written].reverse().concat(phrasing)
+    const kind = runVerdictKind(context)
+    const shown = verdictsToShow(kind, avoid)
     const attempt = await generateFromPool(deps, pool, {
       systemInstruction: RUN_VERDICT_SYSTEM_INSTRUCTION,
-      prompt: runVerdictInsightPrompt(context, verdictLines(avoid.slice(0, AVOID_VERDICTS_SHOWN))),
+      prompt: runVerdictInsightPrompt(context, verdictLines(shown)),
       limits: RUN_VERDICT_LIMITS,
     })
     if (!attempt.ok) {
@@ -216,7 +233,7 @@ export async function writeVerdicts(
       if (!attempt.reserved) break
       continue
     }
-    if (repeatsEarlierVerdict(attempt.insight, avoid, avoid.slice(0, AVOID_VERDICTS_SHOWN))) {
+    if (repeatsEarlierVerdict(attempt.insight, avoid, shown)) {
       failures.push(`${context.activity.id} (${attempt.model}): repeated the headline "${attempt.insight.headline}"`)
       continue
     }
@@ -230,7 +247,7 @@ export async function writeVerdicts(
       context.note === undefined ? undefined : runVerdictNoteKey(context.note)
     )
     deps.revalidate(`/activities/${context.activity.id}`)
-    written.push(attempt.insight)
+    written.push({ headline: attempt.insight.headline, body: attempt.insight.body, kind })
     if (notifyIds.has(context.activity.id)) await notifyFreshVerdict(deps, attempt.insight)
   }
 
@@ -268,7 +285,7 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
   const queue = verdictQueue(await surfaces.runVerdicts(), cached, deps.now(), options.ignoreHorizon)
   const phrasing = await deps.insights.readVerdictPhrasing()
 
-  const written: Insight[] = []
+  const written: VerdictPhrasing[] = []
 
   const fresh = options.limit === 0 ? [] : queue.fresh.slice(0, FRESH_RUN_VERDICTS_PER_RUN)
 
@@ -288,7 +305,7 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
   )
 
   if (written.length) {
-    await deps.insights.saveVerdictPhrasing([...written, ...phrasing].map(({ headline, body }) => ({ headline, body })))
+    await deps.insights.saveVerdictPhrasing([...written, ...phrasing].map(({ headline, body, kind }) => ({ headline, body, ...(kind && { kind }) })))
   }
 
   return {

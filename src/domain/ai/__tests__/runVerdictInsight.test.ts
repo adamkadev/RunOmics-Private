@@ -7,6 +7,7 @@ import {
   RUN_VERDICT_SYSTEM_INSTRUCTION,
   runVerdictInsightHash as hashContext,
   runVerdictInsightPrompt,
+  runVerdictKind,
   verdictLines,
 } from '../runVerdictInsight'
 import { runHistory } from '@/domain/activity/runHistory'
@@ -373,10 +374,12 @@ describe('what the run was for (v4.16.4)', () => {
     expect(prompt).toContain('- Conditions, printed on the card: 16°C, wind 10 km/h. Not printed: feels like 14°C, humidity 55%')
   })
 
-  it("lets a verdict share another run's angle, never its wording", () => {
+  // v4.16.6: "the same angle is fine" had every threshold verdict lead on the reps' evenness.
+  it("keeps a verdict off another run's wording, opening, shape and lead fact", () => {
     const prompt = runVerdictInsightPrompt({ activity: run({}), history: runHistory(run({}), []), planned: null }, ['Easy and steady / 0 min in zone 4.'])
 
-    expect(prompt).toContain('never reuse their wording or open the same way, though the same angle is fine')
+    expect(prompt).toContain('Never reuse their wording, their opening words or their sentence shape, and lead on another fact')
+    expect(prompt).not.toContain('the same angle is fine')
   })
 })
 
@@ -484,5 +487,66 @@ describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
     expect(repeatsEarlierVerdict({ headline: 'Full zone control kept cardiac cost low' }, [], shown)).toBe(true)
     expect(repeatsEarlierVerdict({ headline: 'Full zone control kept cardiac cost low' }, shown)).toBe(false)
     expect(repeatsEarlierVerdict({ headline: 'Lower heart rate at the same pace' }, shown, shown)).toBe(false)
+  })
+})
+
+// v4.16.6: every threshold verdict read "Precise threshold control maintains target speed".
+describe('what sets this run apart (v4.16.6)', () => {
+  const rep = (seconds: number, pace: number, hr: number) => ({ type: 'interval_active', durationSec: seconds, distanceM: (seconds / pace) * 1000, avgSpeedMs: 0, avgHr: hr, laps: [] })
+  const threshold = (id: string, date: string, seconds: number, pace: number, hr: number) =>
+    run({ id, date, type: 'Threshold', splits: [rep(seconds, pace, hr), rep(seconds, pace, hr), rep(seconds, pace, hr)] as never })
+  const intent = {
+    title: 'Threshold 3 x 7:15',
+    description: 'Same pace as last week, longer repetitions.',
+    weekFocus: 'First full week of five runs.',
+  }
+
+  it("hands the model the coach's words for the session, and writes the verdict again when they change", () => {
+    const today = threshold('t', '2026-09-29', 435, 265, 172)
+    const context = { activity: today, history: runHistory(today, []), planned: null, intent }
+    const prompt = runVerdictInsightPrompt(context, [])
+
+    expect(prompt).toContain('- What the coach wrote for this session: "Same pace as last week, longer repetitions."')
+    expect(prompt).toContain('- What the plan\'s week is for: "First full week of five runs."')
+    expect(hashContext(context)).not.toBe(hashContext({ ...context, intent: null }))
+    expect(hashContext(context)).not.toBe(hashContext({ ...context, intent: { ...intent, description: 'Changed.' } }))
+    expect(runVerdictInsightPrompt({ ...context, intent: null }, [])).not.toContain('What the coach wrote')
+  })
+
+  it('holds a session against the last one of its kind, in words', () => {
+    const last = threshold('l', '2026-09-23', 420, 265, 174)
+    const today = threshold('t', '2026-09-29', 435, 264, 172)
+    const prompt = runVerdictInsightPrompt({ activity: today, history: runHistory(today, [today, last]), planned: null }, [])
+
+    expect(prompt).toContain('- Against your last threshold session, 6 days before (3 reps of 7:00 at 4:25 /km, 174 bpm): as many reps, reps 15 s longer, the same rep pace, the same heart rate')
+  })
+
+  it('holds a long run against the longest of the last three months', () => {
+    const long = (id: string, date: string, km: number) => run({ id, date, distanceKm: km, durationSeconds: 100 * 60 })
+    const longest = long('a', '2026-09-13', 16)
+    const lines = (today: Activity, before: Activity[]) =>
+      runVerdictInsightPrompt({ activity: today, history: runHistory(today, [today, ...before]), planned: null }, [])
+
+    expect(lines(long('t', '2026-09-27', 13), [longest])).toContain('- 3 km short of your longest run of the last 3 months, 14 days before')
+    expect(lines(long('t', '2026-09-27', 16.3), [longest])).toContain('- As long as your longest run of the last 3 months, 14 days before')
+    expect(lines(long('t', '2026-09-27', 18), [longest, long('o', '2026-05-24', 21)])).toContain('- Your longest run in 4 months')
+    expect(lines(long('t', '2026-09-27', 18), [longest])).toContain('- Longer than any earlier run on record')
+    expect(lines(run({ id: 'e', date: '2026-09-27' }), [longest])).not.toContain('longest run')
+  })
+
+  it('names the kind a verdict is written for, which the pass groups earlier verdicts by', () => {
+    expect(runVerdictKind({ activity: threshold('t', '2026-09-29', 435, 265, 172), planned: null })).toBe('threshold')
+    expect(runVerdictKind({ activity: run({ id: 'e', date: '2026-09-27' }), planned: null })).toBe('easy')
+  })
+
+  it('asks for a coach talking about this run, not the formula every good session of its kind fits', () => {
+    const easy = run({ rpe: 2 })
+    const prompt = runVerdictInsightPrompt({ activity: easy, history: runHistory(easy, []), planned: null }, [])
+
+    expect(prompt).toContain('Tone: positive. The run did what this session was for. Say it on what matters most about this run today, never on what is true of every good session of its kind.')
+    expect(prompt).not.toContain('strongest fact')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('never a label of adjectives and nouns')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('never a list of numbers')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).not.toContain('3 reps within 1 s/km of each other')
   })
 })

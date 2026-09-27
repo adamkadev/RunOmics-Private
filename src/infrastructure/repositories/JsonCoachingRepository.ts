@@ -63,6 +63,17 @@ export class JsonCoachingRepository implements CoachingRepository {
     writeJsonAtomic(path.join(dir, `${plan.id}.json`), parseCoachingPlan({ ...plan, status: 'superseded' }))
   }
 
+  /** The plans archivePlan kept, newest first: the only record of a finished block's sessions. */
+  getArchivedPlans(): CoachingPlan[] {
+    const dir = path.join(this.coachingDir, 'superseded')
+    if (!fs.existsSync(dir)) return []
+    return fs
+      .readdirSync(dir)
+      .filter((file) => file.endsWith('.json'))
+      .map((file) => parseCoachingPlan(readJson(path.join(dir, file)), path.join(dir, file)))
+      .sort((a, b) => b.provenance.createdAt.localeCompare(a.provenance.createdAt))
+  }
+
   getState(): CoachState | null {
     const filePath = path.join(this.coachingDir, 'coach_state.json')
     return fs.existsSync(filePath) ? parseCoachState(readJson(filePath), filePath) : null

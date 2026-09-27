@@ -108,16 +108,19 @@ export async function listCachedKeys(prefix: string): Promise<Map<string, Cached
 }
 
 const PHRASING_SURFACE = 'verdictPhrasing'
-const PHRASING_SIZE = 10
+/** Enough for the latest few of each kind of session, which the pass shows first (v4.16.6). */
+const PHRASING_SIZE = 40
 
 export interface VerdictPhrasing {
   headline: string
   body: string
+  /** The kind of session it was written for; absent on phrasing kept before v4.16.6. */
+  kind?: string
 }
 
 function isPhrasing(value: unknown): value is VerdictPhrasing {
   const entry = value as Partial<VerdictPhrasing> | null
-  return !!entry && typeof entry.headline === 'string' && typeof entry.body === 'string'
+  return !!entry && typeof entry.headline === 'string' && typeof entry.body === 'string' && (entry.kind === undefined || typeof entry.kind === 'string')
 }
 
 export async function readVerdictPhrasing(): Promise<VerdictPhrasing[]> {

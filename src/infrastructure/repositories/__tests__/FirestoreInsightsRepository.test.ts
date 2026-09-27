@@ -269,11 +269,21 @@ describe('verdict phrasing history', () => {
   })
 
   it('caps what it stores so the avoid clause cannot grow without bound', async () => {
-    const many = Array.from({ length: 14 }, (_, i) => ({ headline: `H${i}`, body: `B${i}` }))
+    const many = Array.from({ length: 44 }, (_, i) => ({ headline: `H${i}`, body: `B${i}` }))
 
     await saveVerdictPhrasing(many)
 
-    expect((set.mock.calls[0]![0] as { recent: unknown[] }).recent).toHaveLength(10)
+    expect((set.mock.calls[0]![0] as { recent: unknown[] }).recent).toHaveLength(40)
+  })
+
+  it('reads back the kind of session each verdict was written for, and drops a malformed one', async () => {
+    const recent = [
+      { headline: 'Kept', body: 'b', kind: 'threshold' },
+      { headline: 'Dropped', body: 'b', kind: 3 },
+    ]
+    get.mockResolvedValue({ exists: true, data: () => ({ recent }) })
+
+    expect(await readVerdictPhrasing()).toEqual([{ headline: 'Kept', body: 'b', kind: 'threshold' }])
   })
 
   it('reads back what a previous invocation wrote', async () => {

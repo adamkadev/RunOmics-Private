@@ -12,6 +12,7 @@ import {
   runSurface,
   shouldTryAnotherModel,
   verdictQueue,
+  verdictsToShow,
   writeVerdicts,
   type InsightPassDeps,
 } from '../insightPass'
@@ -447,6 +448,36 @@ describe('writeVerdicts', () => {
     const result = await writeVerdicts(deps({ generate: repeat }), [LAST_MONTH], [], phrasing, BACKFILL_POOL)
     expect(result.generated).toBe(0)
   })
+
+  // v4.16.6: a threshold session in a backfill saw only the easy runs written around it.
+  it('shows the latest verdicts of the same kind of session first', async () => {
+    const generate = writer()
+    const easy = Array.from({ length: 10 }, (_, i) => ({ headline: `Easy ${i}`, body: 'e', kind: 'easy' }))
+    const threshold = [
+      { headline: 'Threshold new', body: 't', kind: 'threshold' },
+      { headline: 'Threshold old', body: 't', kind: 'threshold' },
+    ]
+    const tempo = { ...LAST_MONTH, activity: { ...LAST_MONTH.activity, type: 'Threshold' as const } }
+
+    await writeVerdicts(deps({ generate }), [tempo], [], [...easy.slice(0, 5), ...threshold, ...easy.slice(5)], BACKFILL_POOL)
+
+    const prompt: string = generate.mock.calls[0]![0].prompt
+    const shown = prompt.slice(prompt.indexOf(': "') + 2).split('", "')
+    expect(shown).toHaveLength(8)
+    expect(shown.slice(0, 2)).toEqual(['"Threshold new / t', 'Threshold old / t'])
+    expect(shown[2]).toBe('Easy 0 / e')
+  })
+})
+
+describe('verdictsToShow', () => {
+  it('fills with the newest of other kinds once the same kind runs out, and caps the same kind at five', () => {
+    const verdicts = Array.from({ length: 12 }, (_, i) => ({ headline: `H${i}`, body: 'b', kind: i % 2 ? 'easy' : 'threshold' }))
+
+    const shown = verdictsToShow('threshold', verdicts).map((v) => v.headline)
+
+    expect(shown).toEqual(['H0', 'H2', 'H4', 'H6', 'H8', 'H1', 'H3', 'H5'])
+    expect(verdictsToShow('race', verdicts)).toHaveLength(8)
+  })
 })
 
 describe('runInsightPass', () => {
@@ -498,15 +529,15 @@ describe('runInsightPass', () => {
     expect(notify).toHaveBeenCalledWith({ headline: 'Verdict 1', body: 'Verdict 1, and why.' })
   })
 
-  it('writes the phrasing back once, newest first, as headline and body only', async () => {
+  it('writes the phrasing back once, newest first, as headline, body and the kind of session', async () => {
     const store = memoryInsights({}, [{ headline: 'Last night', body: 'An older verdict.' }])
 
     await runInsightPass(deps({ insights: store.insights }), surfaces({ runVerdicts: withRuns(JUST_RUN, LAST_MONTH) }), OPTIONS)
 
     expect(store.savedPhrasing).toEqual([
       [
-        { headline: 'Verdict 1', body: 'Verdict 1, and why.' },
-        { headline: 'Verdict 2', body: 'Verdict 2, and why.' },
+        { headline: 'Verdict 1', body: 'Verdict 1, and why.', kind: 'easy' },
+        { headline: 'Verdict 2', body: 'Verdict 2, and why.', kind: 'easy' },
         { headline: 'Last night', body: 'An older verdict.' },
       ],
     ])

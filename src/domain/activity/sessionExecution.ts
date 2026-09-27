@@ -114,11 +114,24 @@ export function sessionExecution(activity: Pick<Activity, 'splits'>): SessionExe
  * across them - so a threshold session is compared with earlier ones rep for
  * rep, not by a whole-run average that the warm-up and recoveries dilute.
  */
-export function repStats(activity: Pick<Activity, 'splits'>): { reps: number; paceSecPerKm: number; avgHr: number | null } | null {
+export interface RepStats {
+  reps: number
+  /** How long a rep lasted, on average: what a progression lengthens. */
+  secondsPerRep: number
+  paceSecPerKm: number
+  avgHr: number | null
+}
+
+export function repStats(activity: Pick<Activity, 'splits'>): RepStats | null {
   const reps = (activity.splits ?? []).filter((s) => s.type === 'interval_active' && s.durationSec >= MIN_REP_SECONDS && s.distanceM > 0)
   if (reps.length < 2) return null
   const seconds = reps.reduce((sum, s) => sum + s.durationSec, 0)
   const metres = reps.reduce((sum, s) => sum + s.distanceM, 0)
   const hr = average(reps.map((s) => s.avgHr).filter((h): h is number => h !== null))
-  return { reps: reps.length, paceSecPerKm: Math.round((seconds / metres) * 1000), avgHr: hr === null ? null : Math.round(hr) }
+  return {
+    reps: reps.length,
+    secondsPerRep: Math.round(seconds / reps.length),
+    paceSecPerKm: Math.round((seconds / metres) * 1000),
+    avgHr: hr === null ? null : Math.round(hr),
+  }
 }
