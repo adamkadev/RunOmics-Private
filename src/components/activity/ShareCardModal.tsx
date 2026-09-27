@@ -208,7 +208,7 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
             </div>
           </div>
 
-          <div className="flex flex-col" style={{ padding: '14px 20px 16px', gap: 12 }}>
+          <div className="flex flex-col" style={{ padding: '14px 20px 28px', gap: 12 }}>
             <div
               role="radiogroup"
               aria-label={s.designTitle}
@@ -236,6 +236,20 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
               ))}
             </div>
 
+            {/* Right under the picker (v5.5 #12): last in the list, it sat
+                behind the action buttons on a phone. */}
+            {design === 'photo' && (
+              <div className="flex items-center justify-between" style={{ padding: '2px' }}>
+                <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.photo}</span>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-foreground"
+                  style={{ fontSize: 14, fontWeight: 600, padding: '6px 2px' }}
+                >
+                  {photoImage ? s.changePhoto : s.choosePhoto}
+                </button>
+              </div>
+            )}
             <div className="flex items-center justify-between" style={{ padding: '2px' }}>
               <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.background}</span>
               <div role="radiogroup" aria-label={s.background} className="flex" style={{ padding: 3, borderRadius: 999, background: 'var(--muted)' }}>
@@ -279,18 +293,6 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
               </div>
             )}
 
-            {design === 'photo' && (
-              <div className="flex items-center justify-between" style={{ padding: '2px' }}>
-                <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.photo}</span>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-foreground"
-                  style={{ fontSize: 14, fontWeight: 600, padding: '6px 2px' }}
-                >
-                  {photoImage ? s.changePhoto : s.choosePhoto}
-                </button>
-              </div>
-            )}
           </div>
         </div>
 

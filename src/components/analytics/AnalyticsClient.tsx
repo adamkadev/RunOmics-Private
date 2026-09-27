@@ -91,18 +91,11 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   const tabsRef = useRef<HTMLDivElement>(null)
 
   function selectTab(id: TabId) {
+    // Every swap starts at the very top, and before the new tab paints (v5.5
+    // #1): scrolling back to the tabs left the page scrolled, and a page left
+    // even 1-2 pt down sets off iOS's scroll-edge blur over the large title.
+    if (window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'instant' })
     setTab(id)
-    const el = tabsRef.current
-    if (el) {
-      let docTop = 0
-      for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) docTop += n.offsetTop
-      const target = Math.max(docTop - 12, 0)
-      if (window.scrollY > target) window.scrollTo({ top: target, behavior: 'smooth' })
-      // Short of the tabs, a swap starts at the very top. A switched-to tab
-      // could be left 1-2 pt down, which on iOS is enough to set off the
-      // scroll-edge blur over the large title (v4.6 2b).
-      else if (window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'instant' })
-    }
   }
 
   // A tab swap changes the page under the title without a scroll: have the

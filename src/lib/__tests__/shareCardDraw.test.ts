@@ -100,9 +100,18 @@ describe('drawShareCard', () => {
     expect(ops.find((o) => o.op === 'drawImage')).toMatchObject({ args: [map, 0, 0, W, MIDDLE_H], ty: HEADER_H })
   })
 
-  it('shows time in zones on Stats, with the main zone and its share', () => {
+  it('leads Stats with the main zone as the number, then every zone (R3)', () => {
     const all = texts(draw({ design: 'stats' }))
-    expect(all).toEqual(expect.arrayContaining(['Time in zones', 'mostly Z2 · 80%', 'Z1', 'Z5', '40 min', '10 min', '0 min']))
+    expect(all).toEqual(expect.arrayContaining(['80%', 'in Z2', 'Z1', 'Z5', '40 min', '10 min', '0 min']))
+  })
+
+  it('draws an empty track, no coloured dot, for a zone under a minute (v5.5 #12)', () => {
+    const palette = sharePalette('lavender', 'dark')
+    const ops = draw({ design: 'stats', activity: { ...RUN, hrZones: [{ zone: 2, seconds: 2400 }, { zone: 4, seconds: 20 }] } })
+    expect(ops.some((o) => o.op === 'fill' && o.fill === palette.zones[3])).toBe(false)
+    const zero = ops.filter((o) => o.op === 'fillText' && o.args[0] === '0 min')
+    expect(zero.length).toBe(4)
+    expect(zero.every((o) => o.fill === palette.mu)).toBe(true)
   })
 
   it('says so on Stats when the run has no heart rate', () => {

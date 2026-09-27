@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { initials, formatRelativeAgo } from '@/lib/formatters'
@@ -96,10 +96,33 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
   const stale = ago !== null && lastSyncedAt ? isSyncStale(lastSyncedAt) : false
   const syncedLine = ago && !stale ? t.dashboard.syncStatus.synced(ago) : null
 
+  // The row fades as it scrolls under the status strip (v5.5 #3): the strip
+  // is only the safe area tall, and the avatar's lower edge showed under it
+  // as a sliver of accent. At the top it carries no inline style at all.
+  const rowRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const row = rowRef.current
+    if (!row) return
+    let frame = 0
+    const fade = () => {
+      frame = 0
+      const y = window.scrollY
+      if (y <= 0) row.style.removeProperty('opacity')
+      else row.style.opacity = String(Math.max(0, 1 - y / Math.max(1, row.offsetHeight)))
+    }
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(fade) }
+    fade()
+    window.addEventListener('scroll', schedule, { passive: true })
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', schedule)
+    }
+  }, [])
+
   return (
     // As tall as the 34 pt disc, not its 44 pt hit area: a 44 pt row put the
     // date line 5 pt lower than every other page's title.
-    <div className="flex h-8.5 items-center justify-between gap-3">
+    <div ref={rowRef} data-testid="today-header" className="flex h-8.5 items-center justify-between gap-3">
       {/* The greeting was the largest type on the screen and the only thing on it
           that is not about the running. What the date and the sync age say is
           worth one muted line; the verdict below is the headline. */}

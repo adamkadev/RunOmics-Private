@@ -702,3 +702,10 @@ h1 {
 .recharts-tooltip-wrapper {
   z-index: 20 !important;
 }
+
+/* A sheet's scrim stops under the status bar (it may not touch the top
+   edge, see AppShell), so the status strip dims itself while one is open
+   (v5.6 #3), matching the scrim's black 40 %. */
+html[data-sheet-open] [data-testid='status-strip'] {
+  box-shadow: inset 0 0 0 100vmax rgb(0 0 0 / 0.4);
+}
