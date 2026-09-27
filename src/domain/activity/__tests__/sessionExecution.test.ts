@@ -91,7 +91,7 @@ describe('sessionExecution', () => {
 
   it('averages the reps of a structured session for a rep-to-rep comparison', () => {
     const rep = (hr: number) => split('interval_active', 420, 1585, hr)
-    expect(repStats({ splits: [split('interval_warmup', 732, 2000, 147), rep(175), rep(178), rep(179)] })).toEqual({ reps: 3, paceSecPerKm: 265, avgHr: 177 })
+    expect(repStats({ splits: [split('interval_warmup', 732, 2000, 147), rep(175), rep(178), rep(179)] })).toEqual({ reps: 3, secondsPerRep: 420, paceSecPerKm: 265, avgHr: 177 })
     expect(repStats({ splits: [split('interval_active', 2963, 8500)] })).toBeNull()
   })
 

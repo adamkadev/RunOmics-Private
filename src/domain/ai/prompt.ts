@@ -33,13 +33,15 @@ export function systemInstruction(role: string, bodySpec: string, limits: Limits
 /**
  * What the model must not repeat (v4.16.4). A card's own earlier headlines
  * are its history, which it should not echo; other runs' verdicts are cards
- * around it, whose wording it must not reuse - but banning their angle too
- * left no angle once a backfill had written thirty of them.
+ * around it, whose wording it must not reuse. Their angle too, unless the run
+ * leaves no other (v4.16.6): "the same angle is fine" had every threshold
+ * verdict lead on the reps' evenness. Banning it outright left no angle once a
+ * backfill had written thirty verdicts; the pass shows only a few now.
  */
 export function avoidClause(recent: string[], source: 'thisCard' | 'otherRuns' = 'thisCard'): string {
   if (recent.length === 0) return ''
   const quoted = recent.map((line) => `"${line}"`).join(', ')
   return source === 'thisCard'
     ? `\nHeadlines this card has shown before, whose phrasing and sentence shape you must not reuse: ${quoted}.`
-    : `\nVerdicts already written for other runs: never reuse their wording or open the same way, though the same angle is fine when this run's facts call for it: ${quoted}.`
+    : `\nVerdicts already written for other runs, those of the same kind of session first: yours must not read like any of them. Never reuse their wording, their opening words or their sentence shape, and lead on another fact unless this run's facts leave no other: ${quoted}.`
 }

@@ -22,4 +22,6 @@ export interface CoachingRepository {
    * is what replacing meant before this existed.
    */
   archivePlan?(plan: CoachingPlan): void
+  /** The archived plans, newest first; optional for the same reason. */
+  getArchivedPlans?(): CoachingPlan[]
 }

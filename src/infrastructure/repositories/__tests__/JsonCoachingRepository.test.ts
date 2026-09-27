@@ -24,6 +24,19 @@ describe('JsonCoachingRepository', () => {
     expect(repository.getEvaluations()).toEqual([])
   })
 
+  it('reads the archived plans back newest first, and none when nothing was archived', () => {
+    expect(repository.getArchivedPlans()).toEqual([])
+    const first = plan({ id: 'first', provenance: { ...plan().provenance, createdAt: '2026-09-01T08:00:00.000Z' } })
+    const second = plan({ id: 'second', provenance: { ...plan().provenance, createdAt: '2026-09-20T08:00:00.000Z' } })
+    repository.archivePlan(first)
+    repository.archivePlan(second)
+
+    expect(repository.getArchivedPlans().map((archived) => [archived.id, archived.status])).toEqual([
+      ['second', 'superseded'],
+      ['first', 'superseded'],
+    ])
+  })
+
   it('round-trips the current plan and state', () => {
     const currentPlan = plan()
     const state: CoachState = {
