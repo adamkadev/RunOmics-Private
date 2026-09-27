@@ -1,6 +1,7 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
-import { getLatestTrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
+import { latestLoadPair, loadRatio } from '@/domain/training/loadTrend'
+import { getLoadPairs } from './GetLoadRecovery'
 import { buildTimeSeries, dailyTrimpByDate, type HrBounds } from './GetTrainingLoad'
 import { acwr } from './GetTrainingStatus'
 import { DAY_MS, addDays, isoDate } from '@/lib/calendarDate'
@@ -101,11 +102,12 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
   const daysOfHistory =
     Math.round((refDate.getTime() - new Date(earliest.date + 'T00:00:00').getTime()) / DAY_MS) + 1
 
-  // The Training status card prints Garmin's acute and chronic loads, so the
-  // ratio is worked out from that pair and its band from the ratio. Garmin's
-  // own acwr field disagreed with its loads (0.8 beside 412 and 295).
-  const garmin = getLatestTrainingStatusDay()
-  const pairAcwr = acwrFromPair(garmin?.acuteLoad, garmin?.chronicLoad)
+  // The ratio is worked out from Garmin's acute and chronic loads, the pair
+  // it is printed with and the last point of Load trend (v5.4): one series,
+  // so the chart and the ratio can't disagree. Garmin's own acwr field
+  // disagreed with its loads (0.8 beside 412 and 295).
+  const pair = latestLoadPair(getLoadPairs())
+  const pairAcwr = pair ? loadRatio(pair) : null
   const localAcwr = acwr(activities, refDate)
   const acwrValue = pairAcwr ?? localAcwr
   const acwrZoneValue = acwrZone(acwrValue)
@@ -141,8 +143,8 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
 
   return {
     acwr: acwrValue,
-    acute: pairAcwr !== null ? Math.round(garmin!.acuteLoad!) : null,
-    chronic: pairAcwr !== null ? Math.round(garmin!.chronicLoad!) : null,
+    acute: pair?.acute ?? null,
+    chronic: pair?.chronic ?? null,
     acwrZone: acwrZoneValue,
     acwrSource,
     monotony: monotonyValue,

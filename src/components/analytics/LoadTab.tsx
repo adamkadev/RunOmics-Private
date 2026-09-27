@@ -8,7 +8,9 @@ import type { FormBand } from '@/domain/training/formBand'
 import { formatClock, formatDate, formatDelta, formatDeltaFixed, MINUS } from '@/lib/formatters'
 import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
-import { AxisLabels, Card, CardHead, ChartScrub, Legend, LegendItem, Sentence, Sheet, linePath } from './AnalyticsKit'
+import { AxisLabels, Card, CardHead, ChartScrub, Legend, LegendItem, Sentence, Sheet, linePath, windowLabels } from './AnalyticsKit'
+import { LoadTrendCard, RecoveryCard } from './LoadRecoveryCards'
+import { loadCoachHeadline, loadTrendView, loadTrendYMax, recoveryView, type LoadCoachHeadline } from './loadRecoveryView'
 import type { AnalyticsBoardData } from './AnalyticsClient'
 import {
   coachRead,
@@ -51,18 +53,30 @@ const signed = (n: number) => (n < 0 ? `${MINUS}${Math.abs(n)}` : n > 0 ? `+${n}
 const arrow = (n: number) => (n > 0 ? `↑${n}` : n < 0 ? `↓${Math.abs(n)}` : '±0')
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
-/** Start, middle and end of a window, the end read as Today while it is. */
-export function windowLabels(dates: string[], live: boolean): string[] {
-  if (!dates.length) return []
-  const mid = dates[Math.floor((dates.length - 1) / 2)]!
-  return [bare(dates[0]!), bare(mid), live ? t.analytics.cards.today : bare(dates[dates.length - 1]!)]
-}
+export { windowLabels }
 
 /** What the coach read's sentences say, from the numbers the cards print. */
-export function coachText(view: CoachReadView): { headline: string; signals: { trend: Trend; text: string }[] } {
+/** The load headline's words (v5.4), first match of load and recovery. */
+export function loadHeadlineText(h: LoadCoachHeadline): string {
+  const s = t.analytics.cards.coachRead.load
+  const span = t.analytics.cards.loadTrend.span
+  switch (h.kind) {
+    case 'spikeAndDip':
+      return s.spikeAndDip
+    case 'spike':
+      return h.change ? s.spike(h.change.pct, span(h.change.days)) : s.spikeAbove
+    case 'dip':
+      return s.dip
+    case 'building':
+      return h.recovery ? s.building(h.change.pct, span(h.change.days)) : s.buildingLoad(h.change.pct, span(h.change.days))
+  }
+}
+
+export function coachText(view: CoachReadView, load: LoadCoachHeadline | null = null): { headline: string; signals: { trend: Trend; text: string }[] } {
   const s = t.analytics.cards.coachRead
-  const headline =
-    view.tone === 'positive' ? s.headline.positive : view.tone === 'neutral' ? s.headline.neutral : view.loadUp ? s.headline.cautionLoadUp : s.headline.caution
+  const headline = load
+    ? loadHeadlineText(load)
+    : view.tone === 'positive' ? s.headline.positive : view.tone === 'neutral' ? s.headline.neutral : view.loadUp ? s.headline.cautionLoadUp : s.headline.caution
   const signals = view.signals.map((signal) => {
     switch (signal.key) {
       case 'easy': {
@@ -93,10 +107,10 @@ const TREND_ICON: Record<Trend, { Icon: typeof ArrowRight; color: string }> = {
   declining: { Icon: ArrowDownRight, color: 'var(--tone-caution)' },
 }
 
-function CoachRead({ view }: { view: CoachReadView }) {
+function CoachRead({ view, load }: { view: CoachReadView; load: LoadCoachHeadline | null }) {
   const s = t.analytics.cards.coachRead
   const [open, setOpen] = useState(false)
-  const text = coachText(view)
+  const text = coachText(view, load)
   return (
     <>
       <button
@@ -106,6 +120,7 @@ function CoachRead({ view }: { view: CoachReadView }) {
         aria-label={`${s.eyebrow}: ${s.open}`}
         data-testid="coach-read"
         data-tone={view.tone}
+        data-load={load?.kind}
         className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-card border border-[var(--divider)] bg-card px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <span className="text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground">{s.eyebrow}</span>
@@ -271,7 +286,15 @@ function RiskRowView({ row, risk }: { row: RiskRow; risk: LoadRiskPanel }) {
   const [formula, setFormula] = useState(false)
   const pos = (v: number) => `${((Math.min(row.max, Math.max(row.min, v)) - row.min) / (row.max - row.min)) * 100}%`
   const name = s[row.key]
-  const hint = row.key === 'loadRatio' ? s.loadRatioHint : row.key === 'monotony' ? s.monotonyHint : s.rampRateHint
+  // The ratio prints its inputs, the last point of Load trend (v5.4).
+  const hint =
+    row.key === 'loadRatio'
+      ? risk.acute !== null && risk.chronic !== null
+        ? `${risk.acute} ÷ ${risk.chronic}`
+        : s.loadRatioHint
+      : row.key === 'monotony'
+        ? s.monotonyHint
+        : s.rampRateHint
   const explain =
     row.key === 'loadRatio'
       ? risk.acute !== null && risk.chronic !== null
@@ -285,7 +308,7 @@ function RiskRowView({ row, risk }: { row: RiskRow; risk: LoadRiskPanel }) {
     <div className="flex flex-col gap-[7px]" data-testid={`risk-${row.key}`} data-state={row.state}>
       <div className="flex items-baseline justify-between gap-3">
         <button type="button" onClick={() => setFormula((v) => !v)} aria-expanded={formula} className="min-w-0 text-left text-[14px] font-semibold text-foreground">
-          {name} <span className="text-[12px] font-normal text-muted-foreground">{hint}</span>
+          {name} <span className="text-[12px] font-normal tabular-nums text-muted-foreground" data-testid={row.key === 'loadRatio' ? 'load-ratio-inputs' : undefined}>{hint}</span>
         </button>
         <span className="font-display text-[18px] font-bold leading-none tabular-nums" style={{ color: ink }}>{riskValue(row)}</span>
       </div>
@@ -347,12 +370,18 @@ export function LoadTab({ window, onShift, today, data }: LoadTabProps) {
     fitnessDelta: formView(data.load, dayWindow(today, '4w'))?.fitnessDelta ?? null,
     ytdDelta: ytd && ytd.previousToDate !== null ? (ytd.current.at(-1)?.km ?? 0) - ytd.previousToDate : null,
   })
+  // Load trend, the Load ratio and the coach read share one acute/chronic
+  // series and one y range per athlete (v5.4).
+  const yMax = loadTrendYMax(data.loads, today)
+  const loadHeadline = loadCoachHeadline(loadTrendView(data.loads, window, yMax), recoveryView(data.recovery, window))
   return (
     <div className="flex flex-col gap-3">
-      {coach && <CoachRead view={coach} />}
+      {coach && <CoachRead view={coach} load={loadHeadline} />}
       <FormCard load={data.load} window={window} onShift={onShift} />
-      <StatusCard days={data.status} window={window} onShift={onShift} />
+      <LoadTrendCard pairs={data.loads} window={window} yMax={yMax} onShift={onShift} />
       <RiskCard risk={data.risk} />
+      <RecoveryCard nights={data.recovery} window={window} />
+      <StatusCard days={data.status} window={window} onShift={onShift} />
     </div>
   )
 }

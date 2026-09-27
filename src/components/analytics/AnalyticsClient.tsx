@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
+import type { LoadPair } from '@/domain/training/loadTrend'
+import type { RecoveryNight } from '@/domain/training/recovery'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
@@ -54,6 +56,10 @@ export interface AnalyticsBoardData {
   load: LoadDay[]
   status: StatusDay[]
   risk: LoadRiskPanel | null
+  /** Garmin's acute/chronic pair per day: Load trend and the Load ratio. */
+  loads: LoadPair[]
+  /** Overnight HRV and resting HR; empty until the recovery sync has run. */
+  recovery: RecoveryNight[]
   weeks: WeeklyTrendPoint[]
   plan: PlanWeekInput[]
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }

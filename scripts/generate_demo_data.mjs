@@ -715,6 +715,23 @@ function buildSyncMeta(endDate) {
   return { lastSyncedAt: endDate.toISOString() }
 }
 
+function buildRecoveryHistory(endDate) {
+  // Its own generator, so adding it moved no other demo number.
+  const rng = makeRng(SEED + 54)
+  const days = {}
+  for (let i = 364; i >= 0; i--) {
+    // A night in ten without the watch on.
+    if (rng() < 0.1) continue
+    const d = addDays(endDate, -i)
+    const season = Math.sin((i / 365) * Math.PI * 2)
+    days[isoDate(d)] = {
+      hrv: Math.round(58 + season * 3 + between(rng, -5, 5)),
+      restingHr: Math.round(46 - season + between(rng, -1.5, 1.5)),
+    }
+  }
+  return { days }
+}
+
 export function generateDemoDataset({ now = new Date() } = {}) {
   const rng = makeRng(SEED)
   const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
@@ -749,6 +766,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
     'threshold_history.json': thresholdHistory,
     'vo2max_history.json': vo2maxHistory,
     'vo2max_norms.json': GENERIC_VO2MAX_NORMS,
+    'recovery_history.json': buildRecoveryHistory(endDate),
     'race_predictions.json': buildRacePredictions(activities, startDate, totalDays),
     'upcoming_races.json': buildUpcomingRaces(endDate),
     'location-overrides.json': buildLocationOverrides(),

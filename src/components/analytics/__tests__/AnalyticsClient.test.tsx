@@ -45,6 +45,9 @@ const weeks = Array.from({ length: 60 }, (_, i) => week(isoDate(addDays(new Date
 const data: AnalyticsBoardData = {
   load: Array.from({ length: 120 }, (_, i) => ({ date: day(119 - i), ctl: 40 + i * 0.03, atl: 45 })),
   status: Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), status: 'productive' as const })),
+  // Flat at the risk card's pair: the load headline stays out of the way.
+  loads: Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), acute: 412, chronic: 365 })),
+  recovery: [],
   risk: { acwr: 1.13, acute: 412, chronic: 365, acwrZone: 'safe', acwrSource: 'garmin', monotony: 1.5, monotonyZone: 'safe', strain: null, strainZone: null, rampRate: 2.4, rampRateZone: 'safe', daysOfHistory: 400 },
   weeks,
   plan: weeks.slice(-12).map((w) => ({ week: w.date, planKm: 44, planQuality: 2 })),
@@ -328,5 +331,68 @@ describe('the race prediction range (v4.8)', () => {
     const s = t.analytics.cards.predictions
     expect(s.range(changeAmount(33), changeAmount(557))).toBe('33 s–9:17')
     expect(s.slipped('All four', s.range(changeAmount(33), changeAmount(557)), '12 weeks')).toBe('All four slipped 33 s–9:17 over 12 weeks.')
+  })
+})
+
+describe('Load trend and Recovery (v5.4)', () => {
+  const nights = (n: number, hrv: (i: number) => number, rhr: (i: number) => number) =>
+    Array.from({ length: n }, (_, i) => ({ date: day(n - 1 - i), hrv: hrv(i), restingHr: rhr(i) }))
+  const wobble = (i: number) => [0, 2, -1, 3, -2, 1, -3, 2][i % 8]!
+  const steady = nights(90, (i) => 58 + wobble(i), (i) => 46 + (i % 3) - 1)
+
+  async function renderWith(extra: Partial<AnalyticsBoardData>) {
+    render(<AnalyticsClient data={{ ...data, ...extra }} today={TODAY} />)
+    await screen.findByTestId('form-card')
+  }
+
+  it('orders the Load cards coach read, Form, Load trend, Injury risk, Recovery, Training status', async () => {
+    await renderWith({ recovery: steady })
+    const ids = [...document.querySelectorAll('[data-testid$="-card"], [data-testid="coach-read"]')].map((el) => el.getAttribute('data-testid'))
+    expect(ids).toEqual(['coach-read', 'form-card', 'load-trend-card', 'risk-card', 'recovery-card', 'status-card'])
+  })
+
+  it('prints the load ratio with its inputs, the last point of Load trend', async () => {
+    await renderWith({})
+    expect(screen.getByTestId('load-trend-value').textContent).toBe('412')
+    expect(screen.getByTestId('load-ratio-inputs').textContent).toBe('412 ÷ 365')
+  })
+
+  it('turns the headline amber above the safe range and marks the day', async () => {
+    const loads = Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), acute: i < 50 ? 360 : 360 + (i - 49) * 20, chronic: 365 }))
+    await renderWith({ loads })
+    const value = screen.getByTestId('load-trend-value')
+    expect(value.getAttribute('data-state')).toBe('above')
+    expect(value.getAttribute('style')).toContain('var(--tone-caution)')
+    expect(screen.getByTestId('today-dot').getAttribute('style')).toContain('var(--tone-caution)')
+    expect(screen.getAllByTestId('outside-dot').length).toBeGreaterThan(0)
+    expect(screen.getByTestId('coach-read').getAttribute('data-load')).toBe('spike')
+  })
+
+  it('hides Recovery under 7 nights of HRV, and never draws it empty', async () => {
+    await renderWith({ recovery: steady.slice(-6) })
+    expect(screen.queryByTestId('recovery-card')).toBeNull()
+  })
+
+  it('reads recovery inside the baseline with today in the accent', async () => {
+    await renderWith({ recovery: steady })
+    const card = screen.getByTestId('recovery-card')
+    expect(card.textContent).toContain(t.analytics.cards.recovery.bothInside[1])
+    expect(within(card).getAllByTestId('today-dot')[0]!.getAttribute('style')).toContain('var(--accent)')
+  })
+
+  it('says how many nights HRV has been low, and the coach read takes it into account', async () => {
+    const low = nights(90, (i) => (i >= 87 ? 44 : 58 + wobble(i)), (i) => (i >= 87 ? 51 : 46 + (i % 3) - 1))
+    await renderWith({ recovery: low })
+    const card = screen.getByTestId('recovery-card')
+    expect(card.textContent).toContain(t.analytics.cards.recovery.hrvLow(3))
+        expect(within(within(card).getByTestId('recovery-hrv')).getByText(/vs/).getAttribute('data-tone')).toBe('worse')
+    expect(screen.getByTestId('coach-read').getAttribute('data-load')).toBe('dip')
+  })
+
+  it('uses only the six v5.4 colours in the two cards', () => {
+    const source = readFileSync(path.join(__dirname, '../LoadRecoveryCards.tsx'), 'utf8')
+    const vars = new Set([...source.matchAll(/var\(--([a-z-]+)\)/g)].map((m) => m[1]))
+    expect([...vars].sort()).toEqual(['accent', 'card', 'foreground', 'muted-foreground', 'tone-caution', 'track'])
+    expect(source).not.toMatch(/#[0-9a-f]{3,6}\b/i)
   })
 })

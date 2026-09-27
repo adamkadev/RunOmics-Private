@@ -351,6 +351,21 @@ class GarminClient:
             },
         ).json()
 
+    # Garmin Connect's HRV status view reads the range endpoint; the per-night
+    # one is the fallback when a range is refused.
+    def get_hrv_range(self, start: str, end: str) -> dict[str, Any]:
+        return self._get(f"{self._base}/hrv-service/hrv/daily/{start}/{end}").json()
+
+    def get_hrv_night(self, day: str) -> dict[str, Any]:
+        return self._get(f"{self._base}/hrv-service/hrv/{day}").json()
+
+    # Metric 60 is the daily resting heart rate, over any date range.
+    def get_resting_hr_range(self, start: str, end: str) -> dict[str, Any]:
+        return self._get(
+            f"{self._base}/userstats-service/wellness/daily/{self.get_profile_uuid()}",
+            params={"fromDate": start, "untilDate": end, "metricId": 60},
+        ).json()
+
     def get_vo2max_norms(self) -> dict[str, Any]:
         return self._get(f"{_CONNECT_WEB}/web-data/vo2Max/VO2Max.json").json()
 

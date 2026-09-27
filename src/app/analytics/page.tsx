@@ -15,6 +15,7 @@ import { cumulativeYear } from '@/components/profile/progressHub'
 import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
+import { getLoadPairs, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
 
 export const revalidate = 3600
 
@@ -41,6 +42,8 @@ export default async function AnalyticsPage() {
     load: trainingLoad?.points.map(({ date, ctl, atl }) => ({ date, ctl, atl })) ?? [],
     status: getTrainingStatusHistory()?.points.map(({ date, status }) => ({ date, status })) ?? [],
     risk,
+    loads: getLoadPairs(),
+    recovery: getRecoveryHistory(),
     weeks: data.weeklyTrends,
     plan: await loadPlanWeeks(getCoachingOverview(today)),
     vo2max: getVO2maxReadings(),
