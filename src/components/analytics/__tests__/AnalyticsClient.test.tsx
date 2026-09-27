@@ -130,7 +130,7 @@ describe('Analytics (v4.5)', () => {
     const s = t.analytics.cards.coachRead
     // Easy pace got faster, but threshold and the predictions got slower:
     // Garmin's two estimates of one fitness share a vote, so it reads mixed
-    // and names each side (v4.16.3).
+    // and names each side (v4.16.4).
     expect(coach.getAttribute('data-tone')).toBe('neutral')
     expect(coach.textContent!.replace(s.eyebrow, '')).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
     fireEvent.click(coach)
@@ -333,7 +333,7 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
     expect(coachText(faster).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyFaster('5:52', 8))
   })
 
-  // v4.16.3: "threshold and race predictions haven't followed" was one fixed
+  // v4.16.4: "threshold and race predictions haven't followed" was one fixed
   // sentence, printed whichever reads had slipped.
   it('names only the reads that slipped', async () => {
     const { coachText } = await import('../LoadTab')
@@ -381,7 +381,7 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
   })
 })
 
-describe('the coach read under a load headline (v4.16.3)', () => {
+describe('the coach read under a load headline (v4.16.4)', () => {
   beforeAll(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(`${TODAY}T12:00:00`))

@@ -548,14 +548,14 @@ export const en = {
       thisWeek: 'This wk',
       scrubWeek: (date: string) => `Week of ${date}`,
       coachRead: {
-        // Every read is 12 weeks, whatever period the tab is set to (v4.16.3).
+        // Every read is 12 weeks, whatever period the tab is set to (v4.16.4).
         eyebrow: 'Coach read · 12 wk',
         label: 'Coach read',
         open: 'The signals behind it',
         headline: {
           positive: 'Your load is turning into speed.',
           positiveSteadyLoad: 'Speed has improved over the last 12 weeks.',
-          // Names only the reads that slipped (v4.16.3).
+          // Names only the reads that slipped (v4.16.4).
           cautionLoadUp: (slipped: string, plural: boolean) => `Load is up, but ${slipped} ${plural ? 'have' : 'has'} slipped.`,
           caution: 'Speed has slipped over the last 12 weeks.',
           neutral: 'Speed is holding steady over the last 12 weeks.',
@@ -587,7 +587,7 @@ export const en = {
         predictionsSlower: (n: number, of: number) => `${n} of ${of} race predictions slower than 12 weeks ago.`,
         predictionsFaster: (n: number, of: number) => `${n} of ${of} race predictions faster than 12 weeks ago.`,
         predictionsHeld: 'Race predictions held over 12 weeks.',
-        // The unit and what it means, not a bare "1.15" (v4.16.3).
+        // The unit and what it means, not a bare "1.15" (v4.16.4).
         efficiencyUp: (value: string, delta: string) => `Aerobic efficiency ${value} m per heartbeat, ${delta} in 12 weeks: more ground for each beat.`,
         efficiencyDown: (value: string, delta: string) => `Aerobic efficiency ${value} m per heartbeat, ${delta} in 12 weeks: less ground for each beat.`,
         efficiencyLevel: (value: string) => `Aerobic efficiency ${value} m per heartbeat, level with 12 weeks ago.`,

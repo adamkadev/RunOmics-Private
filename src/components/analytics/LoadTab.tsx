@@ -86,7 +86,7 @@ function named(keys: SpeedKey[]): { names: string; plural: boolean } {
 const capitalized = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /**
- * The headline the signals back (v4.16.3): it names only the reads that moved
+ * The headline the signals back (v4.16.4): it names only the reads that moved
  * the way it says. "Load is up, but threshold and race predictions haven't
  * followed" was one fixed sentence, printed whichever reads had slipped.
  */
@@ -183,7 +183,7 @@ function CoachRead({ view, load }: { view: CoachReadView; load: LoadCoachHeadlin
         className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-card border border-[var(--divider)] bg-card px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {/* The read's own 12 weeks on the card too: under a tab set to 4w, a
-            bare "Coach read" read as those 4 weeks (v4.16.3). */}
+            bare "Coach read" read as those 4 weeks (v4.16.4). */}
         <span className="text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground">{s.eyebrow}</span>
         <ChevronRight size={16} className="row-span-2 text-muted-foreground" aria-hidden />
         <span className="font-display text-[16px] font-semibold leading-[1.3] text-foreground text-pretty">{text.headline}</span>
@@ -191,7 +191,7 @@ function CoachRead({ view, load }: { view: CoachReadView; load: LoadCoachHeadlin
       {open && (
         // The sheet leads with the card's headline (v5.6 L1). A load headline
         // is not what the speed reads back, so their own headline heads them
-        // (v4.16.3): "Load jumped 30%" sat over six lines about pace.
+        // (v4.16.4): "Load jumped 30%" sat over six lines about pace.
         <Sheet title={text.headline} eyebrow={s.eyebrow} onClose={() => setOpen(false)}>
           {load && (
             <p className="mb-3 text-[15px] font-semibold leading-snug text-foreground" data-testid="coach-read-speed">
@@ -429,7 +429,7 @@ export interface LoadTabProps {
 export function LoadTab({ window, onShift, today, data }: LoadTabProps) {
   // The coach read sums up the Performance and Volume cards at their
   // defaults (12 weeks, today), from the very values they print - fitness
-  // over the same 12 weeks, since "Load is up" is set against them (v4.16.3).
+  // over the same 12 weeks, since "Load is up" is set against them (v4.16.4).
   const perf = dayWindow(today, '12w')
   const perfWeeks = weeksIn(data.weeks, perf)
   const fitness = formView(data.load, perf)

@@ -286,7 +286,7 @@ describe('the coach read (v4.6)', () => {
     expect(coachRead({ easy: { now: 352, delta: 1 }, predictions: [], efficiency: null, fitnessDelta: 0, ytd: null })!.tone).toBe('neutral')
   })
 
-  // v4.16.3: both are Garmin's estimate of one fitness. Counted twice, one slower
+  // v4.16.4: both are Garmin's estimate of one fitness. Counted twice, one slower
   // estimate outvoted faster easy runs on its own.
   it('gives threshold and the race predictions one vote between them', () => {
     const both = coachRead({ threshold: { now: 263, delta: 9 }, easy: { now: 352, delta: -10 }, predictions, efficiency: null, fitnessDelta: 11, ytd: null })!
@@ -301,7 +301,7 @@ describe('the coach read (v4.6)', () => {
     ])
   })
 
-  // v4.16.3: "2 s faster" in green beside an Easy pace tile that printed "same",
+  // v4.16.4: "2 s faster" in green beside an Easy pace tile that printed "same",
   // and -0.02 in amber on a card whose band calls 0.02 noise.
   it('calls a change on the edge of its card band level, as the card does', () => {
     const efficiency = (delta12w: number) => ({ now: 1.15, delta4w: 0, delta12w, heatCost: null, trend: 'steady' as const, adjusted: [], measured: [], dates: [] })
@@ -320,7 +320,7 @@ describe('the coach read (v4.6)', () => {
   })
 })
 
-describe('year over year (v4.16.3)', () => {
+describe('year over year (v4.16.4)', () => {
   const run = (date: string, distanceKm: number) => ({ date: `${date}T07:00:00`, distanceKm })
 
   it('compares from 1 January when last year is covered from the start', () => {

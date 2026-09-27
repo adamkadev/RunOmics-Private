@@ -81,7 +81,7 @@ export function deltaTone(metric: DeltaMetric, delta: number | null | undefined,
       return Math.abs(delta) < Math.max(noise, 1) ? 'flat' : delta < 0 ? 'good' : 'worse'
     }
     // m per heartbeat, printed to two decimals: up to 0.02 is week-to-week
-    // noise (v4.16.3). Compared as printed, in hundredths, so the colour always
+    // noise (v4.16.4). Compared as printed, in hundredths, so the colour always
     // agrees with the number beside it.
     case 'efficiency':
       return Math.round(Math.abs(delta) * 100) <= 2 ? 'flat' : delta > 0 ? 'good' : 'worse'

@@ -118,7 +118,7 @@ export interface YtdInput {
  * This year's distance against last year's over the same dates, both rounded
  * as the Year to date card prints them. From 1 January, unless the synced
  * history only starts later in last year: then both years count from that
- * date (`since`), so the months before it never read as growth (v4.16.3).
+ * date (`since`), so the months before it never read as growth (v4.16.4).
  */
 export interface YearOverYear {
   km: number
@@ -698,7 +698,7 @@ export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView
   }
 }
 
-// ─── Coach read (v4.6, v4.16.3) ────────────────────────────────────────────
+// ─── Coach read (v4.6, v4.16.4) ────────────────────────────────────────────
 
 export type Trend = 'improving' | 'flat' | 'declining'
 
@@ -723,7 +723,7 @@ export interface CoachReadView {
 }
 
 /**
- * Each arrow in the band its card colours the same number by (v4.16.3), so the
+ * Each arrow in the band its card colours the same number by (v4.16.4), so the
  * read never calls "2 s faster" an improvement beside an Easy pace tile that
  * prints it as the same.
  */
@@ -731,7 +731,7 @@ const TREND: Record<DeltaTone, Trend> = { good: 'improving', worse: 'declining',
 
 /**
  * Threshold pace and the race predictions are both Garmin's estimate of the
- * same fitness and move together, so they share one vote (v4.16.3): counted
+ * same fitness and move together, so they share one vote (v4.16.4): counted
  * twice, one slower estimate outvoted faster easy runs on its own.
  */
 function garminVote(threshold: Trend | undefined, predictions: Trend | undefined): Trend | undefined {

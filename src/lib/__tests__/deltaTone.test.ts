@@ -22,7 +22,7 @@ describe('deltaTone (v4.7)', () => {
     expect(deltaTone('vo2max', 0.4)).toBe('flat')
     expect(deltaTone('pace', -1)).toBe('flat')
     expect(deltaTone('efficiency', 0.005)).toBe('flat')
-    // Up to 0.02 as printed, so -0.015 (printed -0.02) is noise too (v4.16.3).
+    // Up to 0.02 as printed, so -0.015 (printed -0.02) is noise too (v4.16.4).
     expect(deltaTone('efficiency', -0.02)).toBe('flat')
     expect(deltaTone('efficiency', -0.015)).toBe('flat')
     expect(deltaTone('restingHr', 0.5)).toBe('flat')

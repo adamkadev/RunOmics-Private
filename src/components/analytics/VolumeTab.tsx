@@ -122,7 +122,7 @@ function YtdCard({ ytd, today }: { ytd: YtdInput; today: string }) {
             <span data-testid="ytd-delta">
               <span style={{ color: deltaColor('distance', vs.km - vs.lastYearKm, { value: vs.km }) }}>{formatDelta(vs.km - vs.lastYearKm)}</span>
               {/* A history that starts in the middle of last year is compared
-                  from that date in both years, and says so (v4.16.3). */}
+                  from that date in both years, and says so (v4.16.4). */}
               {vs.since ? s.vsSince('', bare(vs.since)) : s.vs('', t.dates.monthShortYear(bare(sameDate), sameDate.slice(2, 4)))}
             </span>
           ) : undefined
