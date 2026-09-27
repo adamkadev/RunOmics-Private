@@ -7,6 +7,7 @@ import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
+import { formBand } from '@/domain/training/formBand'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { SessionCard } from '@/components/ui/SessionCard'
@@ -87,6 +88,13 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: 
         <div className="-mt-1.5 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
           {verdict.headline}
         </div>
+      )}
+      {/* The reason in one muted line (v5.5 #19): the verdict says what to do,
+          this says why, from the Body card's own form. */}
+      {verdict && status && (
+        <p className="-mt-2 text-footnote text-muted-foreground" data-testid="today-reason">
+          {s.formReason(formatDelta(Math.round(status.tsbNow)), t.formBand[formBand(Math.round(status.tsbNow))].toLowerCase())}
+        </p>
       )}
 
       <div className="h-px bg-border" />

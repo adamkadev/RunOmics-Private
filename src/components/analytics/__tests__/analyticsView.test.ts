@@ -319,3 +319,13 @@ describe('the Time in zones sentence (v4.6)', () => {
     expect(zonesView(weekRows(weeks, [], window, TODAY))!.total).toBe('grew')
   })
 })
+
+describe('race prediction deltas on one line (v5.5 #21)', () => {
+  it('signs the change and keeps the unit short', async () => {
+    const { signedChange } = await import('../PerformanceTab')
+    expect(signedChange(33)).toBe('+33 s')
+    expect(signedChange(-70)).toBe('−1:10')
+    expect(signedChange(0.2)).toBe('0 s')
+    expect(signedChange(null)).toBeNull()
+  })
+})

@@ -177,7 +177,10 @@ function TimelineRow({ row, block, last }: { row: SeasonRaceRow; block: SeasonBl
 export function SeasonTimeline({ yearData, today, block }: { yearData: YearData; today: string; block: SeasonBlock | null }) {
   const rows = seasonRaceRows(yearData, today)
   const dated = rows.filter((row) => row.date !== null).sort((a, b) => b.date!.localeCompare(a.date!))
-  const open = rows.filter((row) => row.date === null)
+  // A past year has no "No date yet" (v5.5 #25): "10K · –" in 2025 is a race
+  // that can no longer be set, and its only time would be today's prediction.
+  const pastYear = Number(today.slice(0, 4)) > yearData.year
+  const open = pastYear ? [] : rows.filter((row) => row.date === null)
   if (rows.length === 0) return null
 
   const ahead = dated.filter((row) => row.kind === 'scheduled')

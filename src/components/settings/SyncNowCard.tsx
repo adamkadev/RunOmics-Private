@@ -4,10 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { RefreshCw } from 'lucide-react'
 import type { User } from 'firebase/auth'
-import { GlassSurface } from '@/components/ui/GlassSurface'
 import { authorizedFetch } from '@/lib/ownerFetch'
 import { clearStoredSince, readStoredSince, writeStoredSince } from '@/lib/syncSince'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const POLL_INTERVAL_MS = 10_000
@@ -54,11 +52,12 @@ function progressText(phase: Phase, s: typeof t.settings.sync): string | null {
 }
 
 /**
- * `pollIntervalMs` exists for the tests, which drive this loop on real timers
- * (see the test file for why fake ones deadlock `userEvent`) and would
- * otherwise each sit through a genuine ten-second wait.
+ * The Garmin sync, as state (v5.6 #6: it lives on the device row now, not a
+ * card of its own). `pollIntervalMs` exists for the tests, which drive this
+ * loop on real timers (see the test file for why fake ones deadlock
+ * `userEvent`) and would otherwise each sit through a genuine ten-second wait.
  */
-export function SyncNowCard({ user, pollIntervalMs = POLL_INTERVAL_MS }: { user: User; pollIntervalMs?: number }) {
+export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
   const [phase, setPhase] = useState<Phase>(() => (readStoredSince() ? { kind: 'waiting', synced: false } : { kind: 'idle' }))
   const cancelled = useRef(false)
 
@@ -153,60 +152,51 @@ export function SyncNowCard({ user, pollIntervalMs = POLL_INTERVAL_MS }: { user:
     await pollForVerdict(since, false)
   }
 
-  const s = t.settings.sync
   const running = phase.kind === 'starting' || phase.kind === 'waiting'
-  const progress = progressText(phase, s)
+  return { phase, running, progress: progressText(phase, t.settings.sync), handleSync }
+}
 
+export type SyncNow = ReturnType<typeof useSyncNow>
+
+/** The device row's action: "Sync now", spinning while the chain runs. */
+export function SyncNowButton({ sync }: { sync: SyncNow }) {
+  const s = t.settings.sync
   return (
-    <GlassSurface variant="card" className="p-5">
-      <div className="flex items-center gap-3.5">
-        <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-[var(--segmented-track)]">
-          <RefreshCw size={18} className={cn('text-muted-foreground', running && 'animate-spin')} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-foreground">{s.title}</p>
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-            {progress ?? s.subtitle}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={handleSync}
-          disabled={running}
-          className="shrink-0 text-footnote font-semibold text-accent-text transition-opacity active:opacity-60 disabled:opacity-40"
-        >
-          {running ? s.starting : s.action}
-        </button>
+    <button
+      type="button"
+      onClick={sync.handleSync}
+      disabled={sync.running}
+      className="flex shrink-0 items-center gap-1.5 text-footnote font-semibold text-accent-text transition-opacity active:opacity-60 disabled:opacity-40"
+    >
+      {sync.running && <RefreshCw size={14} className="animate-spin" aria-hidden />}
+      {sync.running ? s.starting : s.action}
+    </button>
+  )
+}
+
+/** What the last sync brought in: its verdict and a link to the run. */
+export function SyncVerdict({ sync }: { sync: SyncNow }) {
+  const s = t.settings.sync
+  const { phase } = sync
+  if (phase.kind !== 'done' || !phase.status.verdict) return null
+  return (
+    <>
+      <div className="my-4 h-px bg-foreground/[0.06]" />
+      <div>
+        <p className="text-sm font-semibold leading-snug text-foreground">{phase.status.verdict.headline}</p>
+        <p className="mt-1 text-caption leading-snug text-muted-foreground">{phase.status.verdict.body}</p>
+        {phase.status.activity && (
+          <Link
+            href={`/activities/${phase.status.activity.id}`}
+            className="mt-2.5 inline-flex items-center gap-2 text-footnote font-semibold text-accent-text transition-opacity active:opacity-60"
+          >
+            <span className="text-muted-foreground">
+              {phase.status.activity.distance} · {phase.status.activity.duration}
+            </span>
+            {s.viewRun}
+          </Link>
+        )}
       </div>
-
-      {phase.kind === 'done' && phase.status.verdict && (
-        <>
-          <div className="my-4 h-px bg-foreground/[0.06]" />
-          <div>
-            <p className="text-sm font-semibold leading-snug text-foreground">
-              {phase.status.verdict.headline}
-            </p>
-            <p className="mt-1 text-caption leading-snug text-muted-foreground">
-              {phase.status.verdict.body}
-            </p>
-            {phase.status.activity && (
-              <Link
-                href={`/activities/${phase.status.activity.id}`}
-                className="mt-2.5 inline-flex items-center gap-2 text-footnote font-semibold text-accent-text transition-opacity active:opacity-60"
-              >
-                <span className="text-muted-foreground">
-                  {phase.status.activity.distance} · {phase.status.activity.duration}
-                </span>
-                {s.viewRun}
-              </Link>
-            )}
-          </div>
-        </>
-      )}
-
-      {phase.kind === 'idle' && (
-        <p className="mt-3 text-caption leading-snug text-subtle">{s.takesAbout}</p>
-      )}
-    </GlassSurface>
+    </>
   )
 }

@@ -47,7 +47,6 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
               {view.onPlan.hit} / {view.onPlan.of}
             </span>
             <span className="text-[12px] text-muted-foreground">{s.onPlan}</span>
-            {view.withoutPlan > 0 && <span className="text-[12px] text-muted-foreground" data-testid="weeks-without-plan">{s.withoutPlan(view.withoutPlan)}</span>}
           </div>
         )}
       </div>
@@ -88,6 +87,10 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
         {hasPlan && <LegendItem swatch="line" color="var(--foreground)">{s.plan}</LegendItem>}
         {live && <LegendItem swatch="ring" color="var(--accent)">{s.current}</LegendItem>}
       </Legend>
+      {/* Under the chart, not a second line in the stat row (v5.5 #23). */}
+      {view.onPlan && view.withoutPlan > 0 && (
+        <p className="-mt-1 text-[12px] text-muted-foreground" data-testid="weeks-without-plan">{s.withoutPlan(view.withoutPlan)}</p>
+      )}
     </Card>
   )
 }

@@ -128,11 +128,15 @@ describe('Analytics (v4.5)', () => {
     await renderBoard()
     const coach = screen.getByTestId('coach-read')
     const s = t.analytics.cards.coachRead
-    // Easy pace got faster but the predictions got slower: neither praise nor alarm.
-    expect(coach.getAttribute('data-tone')).toBe('neutral')
-    expect(coach.textContent).toContain(s.headline.neutral)
+    // Easy pace got faster, but threshold and the predictions got slower.
+    expect(coach.getAttribute('data-tone')).toBe('caution')
+    expect([s.headline.caution, s.headline.cautionLoadUp]).toContain(coach.textContent!.replace(s.eyebrow, ''))
     fireEvent.click(coach)
     const sheet = screen.getByRole('dialog')
+    // The sheet backs its headline (v5.6 L1): the load fact first, then threshold.
+    const bullets = [...sheet.querySelectorAll('li')].map((li) => li.textContent)
+    expect(bullets[0]).toMatch(/^Fitness \d+, /)
+    expect(bullets[1]).toBe(s.thresholdSlower('4:23', 9))
     expect(sheet.textContent).toContain(s.predictionsSlower(2, 2))
     expect(sheet.textContent).toContain(s.volume('+754'))
     expect(sheet.querySelector('[data-trend="declining"] svg')!.getAttribute('style')).toContain('var(--tone-caution)')
@@ -314,13 +318,17 @@ describe('a week with nothing run (v4.6)', () => {
   })
 })
 
-describe('the coach read wording (v4.6)', () => {
-  // The Easy pace tile said "1 s faster" while the coach read said "level".
-  it('words the easy pace the way the Easy pace tile does', async () => {
+describe('the coach read wording (v4.6, v5.6 #3)', () => {
+  // "1 s faster" sat beside a flat arrow: inside the band it is level, in the
+  // coach read and on the Easy pace tile alike.
+  it('words a change inside the noise band as level, like the Easy pace tile', async () => {
     const { coachText } = await import('../LoadTab')
+    const { shiftWords } = await import('../PerformanceTab')
     const view = { tone: 'neutral' as const, loadUp: false, signals: [{ key: 'easy' as const, trend: 'flat' as const, pace: 352, delta: -1 }] }
-    expect(coachText(view).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyFaster('5:52', 1))
-    expect(coachText({ ...view, signals: [{ ...view.signals[0]!, delta: 0 }] }).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyLevel('5:52'))
+    expect(coachText(view).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyLevel('5:52'))
+    expect(shiftWords(-1, 3)).toBe(t.analytics.cards.summary.same)
+    const faster = { ...view, signals: [{ ...view.signals[0]!, trend: 'improving' as const, delta: -8 }] }
+    expect(coachText(faster).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyFaster('5:52', 8))
   })
 })
 

@@ -396,8 +396,8 @@ export const fr = {
           subtitle: 'Avertissement à 70 % et 90 % d’usure.',
         },
         races: {
-          title: 'Prédictions de course',
-          subtitle: 'Détection automatique de nouveaux RP potentiels.',
+          title: 'Records et prédictions',
+          subtitle: 'Quand une sortie bat un record ou fait bouger une prédiction.',
         },
       },
     },
@@ -433,6 +433,7 @@ export const fr = {
       daysAgo: (d: number) => `il y a ${d} j`,
     },
     todayHero: {
+      formReason: (form: string, band: string) => `Forme ${form} · ${band}`,
       eyebrowByTone: {
         go: 'Feu vert',
         caution: 'Prudence',
@@ -531,7 +532,7 @@ export const fr = {
         sheetTitle: 'Lecture du coach',
         headline: {
           positive: 'Votre charge se transforme en vitesse.',
-          cautionLoadUp: "La charge monte, mais la vitesse n'a pas encore suivi.",
+          cautionLoadUp: "La charge monte, mais le seuil et les prédictions de course n'ont pas encore suivi.",
           caution: 'La vitesse a reculé sur les 12 dernières semaines.',
           neutral: 'La vitesse est stable sur les 12 dernières semaines.',
         },
@@ -543,6 +544,11 @@ export const fr = {
           building: (pct: number, span: string) => `La charge est en hausse de ${pct} % en ${span} et la récupération tient. Continuez à construire.`,
           buildingLoad: (pct: number, span: string) => `La charge est en hausse de ${pct} % en ${span}. Continuez à construire.`,
         },
+        fitness: (value: number, delta: string) => `Forme physique ${value}, ${delta} en 4 semaines.`,
+        thresholdFaster: (pace: string, s: number) => `Seuil ${pace} /km, ${s} s plus rapide qu'il y a 12 semaines.`,
+        thresholdSlower: (pace: string, s: number) => `Seuil ${pace} /km, ${s} s plus lent qu'il y a 12 semaines.`,
+        thresholdLevel: (pace: string) => `Seuil ${pace} /km, stable par rapport à il y a 12 semaines.`,
+        sheetEyebrow: 'Coach · 12 sem.',
         easyFaster: (pace: string, s: number) => `Allure facile moyenne ${pace} /km, ${s} s plus rapide qu'il y a 12 semaines.`,
         easySlower: (pace: string, s: number) => `Allure facile moyenne ${pace} /km, ${s} s plus lente qu'il y a 12 semaines.`,
         easyLevel: (pace: string) => `Allure facile moyenne ${pace} /km, comme il y a 12 semaines.`,
