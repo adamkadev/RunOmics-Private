@@ -381,6 +381,16 @@ describe('Load trend and Recovery (v5.4)', () => {
     expect(screen.queryByTestId('recovery-card')).toBeNull()
   })
 
+  it('shows resting HR alone when the watch is never worn overnight', async () => {
+    await renderWith({ recovery: steady.map((n) => ({ ...n, hrv: null })) })
+    const card = screen.getByTestId('recovery-card')
+    expect(card.textContent).toContain(t.analytics.cards.recovery.captionDaily)
+    expect(card.textContent).toContain(t.analytics.cards.recovery.rhrInside[0].trim())
+    expect(within(card).queryByTestId('recovery-hrv')).toBeNull()
+    expect(within(card).queryByTestId('recovery-hrv-chart')).toBeNull()
+    expect(within(card).getByTestId('recovery-rhr-chart')).toBeTruthy()
+  })
+
   it('reads recovery inside the baseline with today in the accent', async () => {
     await renderWith({ recovery: steady })
     const card = screen.getByTestId('recovery-card')

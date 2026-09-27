@@ -94,3 +94,23 @@ class TestDownloadFit:
 
         with pytest.raises(zipfile.BadZipFile):
             client.download_fit("123")
+
+
+@pytest.mark.parametrize(
+    "method,args",
+    [("get_hrv_range", ("2025-09-28", "2025-10-25")), ("get_hrv_night", ("2025-09-28",)),
+     ("get_resting_hr_range", ("2025-09-28", "2025-10-25"))],
+)
+def test_a_body_less_no_data_answer_is_empty_not_a_decode_error(method, args):
+    # Garmin answers a period without HRV with 204 and no body. Reading it as
+    # JSON raised a JSONDecodeError that failed the recovery step every night.
+    client = _client(httpx.Response(204, content=b""))
+    client.get_profile_uuid = lambda: "uuid"
+
+    assert getattr(client, method)(*args) == {}
+
+
+def test_a_recovery_payload_is_still_read():
+    client = _client(httpx.Response(200, json={"hrvSummaries": []}))
+
+    assert client.get_hrv_range("2025-09-28", "2025-10-25") == {"hrvSummaries": []}
