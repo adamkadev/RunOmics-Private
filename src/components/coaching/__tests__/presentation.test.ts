@@ -52,3 +52,14 @@ describe('prescriptionDistanceMeters', () => {
     expect(prescriptionDistanceMeters(shapeless)).toBeNull()
   })
 })
+
+describe('macrocycleWeek on a Sunday start (v5.5 #8)', () => {
+  const plan = { macrocycleStartDate: '2026-09-06', block: { startDate: '2026-09-23' }, targetEvent: { date: '2026-11-29' } }
+
+  it('reads the same week on Plan (its Monday) and Goals (today)', async () => {
+    const { macrocycleWeek } = await import('../presentation')
+    expect(macrocycleWeek(plan as never, '2026-09-21')).toEqual({ done: 3, total: 12 })
+    expect(macrocycleWeek(plan as never, '2026-09-27')).toEqual({ done: 3, total: 12 })
+    expect(macrocycleWeek(plan as never, '2026-09-28')).toEqual({ done: 4, total: 12 })
+  })
+})

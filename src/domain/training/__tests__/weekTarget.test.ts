@@ -63,3 +63,24 @@ describe('weekDayState', () => {
     expect(weekDayState(day('2026-09-24', { ranKm: 5, runs: 1 }), TODAY)).toBe('done')
   })
 })
+
+describe('planned sessions done (v5.5 #7)', () => {
+  // Aug 17-23: two unplanned runs (Tue, Wed), both planned sessions (Sat,
+  // Sun) missed. It read "2 of 2 · 2 missed".
+  const week = [
+    day('2026-08-18', { ranKm: 10.95, runs: 1 }),
+    day('2026-08-19', { ranKm: 10.02, runs: 1 }),
+    day('2026-08-22', { plannedKm: 6.97, plannedSessions: 1 }),
+    day('2026-08-23', { plannedKm: 13.81, plannedSessions: 1 }),
+  ]
+
+  it('counts only the planned sessions run on their day, and the unplanned runs apart', () => {
+    const target = weekTarget(week, '2026-09-25', null)
+    expect(target).toMatchObject({ ranKm: 21, planKm: 20.8, planSessions: 2, plannedDone: 0, unplannedRuns: 2, missedSessions: 2 })
+  })
+
+  it('counts a planned day run as done, once', () => {
+    const target = weekTarget([day('2026-08-22', { ranKm: 7, runs: 2, plannedKm: 7, plannedSessions: 1 })], '2026-09-25', null)
+    expect(target).toMatchObject({ plannedDone: 1, unplannedRuns: 0 })
+  })
+})

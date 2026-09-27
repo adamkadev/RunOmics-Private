@@ -78,6 +78,25 @@ describe('loadTrendView', () => {
   })
 })
 
+describe('Load trend after a break (v5.5 #4)', () => {
+  // Two weeks off, then back: Garmin's acute load is 0 for the rest days.
+  const comeback = pairs((i) => (i < 96 ? 300 : i < 100 ? 0 : i < 110 ? 420 : 330), 300)
+
+  it('draws no warning on rest days, only on days with load outside the band', () => {
+    const view = loadTrendView(comeback, dayWindow(TODAY, '4w'), 480)!
+    const rest = view.points.filter((p) => p.acute === 0)
+    expect(rest.length).toBeGreaterThan(0)
+    expect(rest.every((p) => !p.out)).toBe(true)
+    expect(view.points.filter((p) => p.out).every((p) => p.acute === 420)).toBe(true)
+  })
+
+  it('counts the days that went over and names the last', () => {
+    const view = loadTrendView(comeback, dayWindow(TODAY, '4w'), 480)!
+    expect(view.state).toBe('in')
+    expect(view.over).toEqual({ days: 10, last: day(10) })
+  })
+})
+
 describe('loadChange', () => {
   it('quotes the climb out of the last four weeks’ trough', () => {
     const series = pairs((i) => (i === 109 ? 250 : i >= 110 ? 250 + (i - 109) * 8 : 300))
@@ -102,8 +121,10 @@ describe('loadChange out of a break', () => {
 describe('loadTrendYMax', () => {
   it("holds one range per athlete, from the year's highest acute or safe edge", () => {
     const series = pairs((i) => (i === 50 ? 420 : 300))
-    expect(loadTrendYMax(series, TODAY)).toBe(480)
-    expect(loadTrendYMax(series, TODAY) % 40).toBe(0)
+    // 420 is the peak; with room for the dot, three steps of 150.
+    expect(loadTrendYMax(series, TODAY)).toBe(450)
+    const view = loadTrendView(series, dayWindow(TODAY, '4w'), loadTrendYMax(series, TODAY))!
+    expect(view.ticks).toEqual([150, 300, 450])
   })
 })
 

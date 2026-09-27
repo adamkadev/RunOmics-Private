@@ -64,18 +64,22 @@ describe('sampleAt', () => {
 describe('lane summaries', () => {
   // Pace printed "avg 4:10 · best 4:14": the average came from the activity and
   // the best from the samples, so the best could read slower than the average.
-  it('takes avg and best from the same samples, so best is never slower', () => {
+  it("averages to the Overview's moving pace, and never prints a best slower than it", () => {
     const pace = [250, 240, 260, 245, 255, 250, 248, 252]
-    const lane = buildLanes({
-      distanceKm: 2, hrSamples: null, avgHr: null, paceSamples: pace, avgPaceSecPerKm: 230,
-      cadenceSamples: null, avgCadence: null, elevationProfile: null, elevationGain: null,
-    })[0]!
+    const lane = (avgPaceSecPerKm: number) =>
+      buildLanes({
+        distanceKm: 2, hrSamples: null, avgHr: null, paceSamples: pace, avgPaceSecPerKm,
+        cadenceSamples: null, avgCadence: null, elevationProfile: null, elevationGain: null,
+      })[0]!
 
-    expect(lane.unit).toBe(t.units.perKm)
-    expect(lane.reversed).toBe(true)
-    const [, avg, best] = lane.summary.match(/(\d+:\d+).*?(\d+:\d+)/)!
-    expect(best! <= avg!).toBe(true)
-    expect(lane.summary).not.toContain('3:50')
+    const even = lane(230)
+    expect(even.unit).toBe(t.units.perKm)
+    expect(even.reversed).toBe(true)
+    expect(even.average).toBe(230)
+    expect(even.summary).toBe(`${t.activity.charts.avg} 3:50`)
+
+    const usual = lane(251)
+    expect(usual.summary).toBe(`${t.activity.charts.avg} 4:11 · ${t.activity.charts.bestSmoothed} 4:00`)
   })
 
   it('reads the time into the run from the pace samples', () => {

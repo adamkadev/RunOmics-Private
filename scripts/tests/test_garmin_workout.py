@@ -269,3 +269,15 @@ class TestStepsDescriptor:
     def test_no_descriptor_without_an_effort_step(self):
         steps = [{"kind": "warmup", "minutes": 10}, {"kind": "cooldown", "minutes": 10}]
         assert steps_descriptor(steps) is None
+
+
+def test_a_stride_keeps_its_seconds():
+    from processing.garmin_workout import _expand_step
+
+    stride = {
+        "type": "ExecutableStepDTO",
+        "stepType": {"stepTypeKey": "interval"},
+        "endCondition": {"conditionTypeKey": "time"},
+        "endConditionValue": 15.0,
+    }
+    assert _expand_step(stride) == [{"kind": "effort", "minutes": 0, "seconds": 15}]
