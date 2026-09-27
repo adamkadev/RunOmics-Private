@@ -23,16 +23,15 @@ describe('TodayHero', () => {
     expect(card.style.borderColor).toContain('color-mix')
   })
 
-  // H03: no sentence under the headline. v4.3.4: the watch status left the
-  // head for the Body card.
-  it('keeps the watch status out of the head and drops the body sentence', () => {
+  // v4.3.4: the watch status left the head for the Body card.
+  it('keeps the watch status out of the head and reads the coach sentence under the headline', () => {
     render(
       <TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={{ headline: 'Steady day.', body: 'Keep it moderate.' }} />,
     )
 
     expect(screen.queryByText(t.trainingStatus.status.productive)).toBeNull()
     expect(screen.getByText('Steady day.')).toBeInTheDocument()
-    expect(screen.queryByText('Keep it moderate.')).toBeNull()
+    expect(screen.getByTestId('today-body').textContent).toBe('Keep it moderate.')
     expect(screen.queryByText(t.sessionCard.coachInsight)).toBeNull()
   })
 
@@ -72,8 +71,15 @@ describe('TodayHero', () => {
   })
 })
 
-describe('the reason under the verdict (v5.5 #19)', () => {
-  it('says why in one line, from the form the Body card shows', () => {
+describe('the line under the verdict', () => {
+  it('is the coach sentence when there is one, in place of the form line', () => {
+    const status = { tsbNow: -24, tsbDelta: -10, ctl: 48, atl: 73, loadTrend: 'maintaining' } as unknown as TrainingStatus
+    render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={{ headline: 'Solid 13 km banked', body: 'Rest and eat well.' } as never} />)
+    expect(screen.getByTestId('today-body').textContent).toBe('Rest and eat well.')
+    expect(screen.queryByTestId('today-reason')).toBeNull()
+  })
+
+  it('falls back to why in one line, from the form the Body card shows (v5.5 #19)', () => {
     const status = { tsbNow: -11, tsbDelta: -3, ctl: 45, atl: 56, loadTrend: 'maintaining' } as unknown as TrainingStatus
     render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={{ headline: "Keep today's long run easy", body: '' } as never} />)
     expect(screen.getByTestId('today-reason').textContent).toBe(t.dashboard.todayHero.formReason('−11', 'tired'))

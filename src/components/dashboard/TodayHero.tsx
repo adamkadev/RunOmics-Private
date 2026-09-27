@@ -89,9 +89,13 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict }: 
           {verdict.headline}
         </div>
       )}
-      {/* The reason in one muted line (v5.5 #19): the verdict says what to do,
-          this says why, from the Body card's own form. */}
-      {verdict && status && (
+      {/* The coach's own sentence under its headline. Without one, the reason
+          in one muted line (v5.5 #19), from the Body card's own form. */}
+      {aiVerdict?.body ? (
+        <p className="-mt-2 text-subhead leading-snug text-muted-foreground" data-testid="today-body">
+          {aiVerdict.body}
+        </p>
+      ) : verdict && status && (
         <p className="-mt-2 text-footnote text-muted-foreground" data-testid="today-reason">
           {s.formReason(formatDelta(Math.round(status.tsbNow)), t.formBand[formBand(Math.round(status.tsbNow))].toLowerCase())}
         </p>
