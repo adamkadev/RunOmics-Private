@@ -5,6 +5,7 @@ import type { ProfileGoal, ProfilePeriodStats } from '@/application/usecases/Get
 import type { NextRaceSpotlight } from '@/application/usecases/GetGoalsData'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { consistencyMonths } from '@/components/consistency/consistencyMonths'
+import { WEAR_NEAR_SHARE } from '@/components/shoes/shoeWear'
 
 /** The Progress hub (H01, M12): every figure a tile draws, worked out once. */
 export interface ProgressHubView {
@@ -39,7 +40,7 @@ export interface ProgressHubView {
   records: { key: string; label: string; seconds: number; latest: boolean }[]
   consistency: {
     /** Twelve weeks, oldest first, Monday to Sunday: 0 none, 1-3 by km; null still to come. */
-    weeks: (number | null)[][]
+    weeks: HeatCell[][]
     activeDays: number
     streakWeeks: number
   }
@@ -80,7 +81,8 @@ const HUB_RECORDS = ['1k', '5k', '10k', 'half']
 const VO2_WINDOW_DAYS = 84
 const HEAT_WEEKS = 12
 /** A shoe past this share of its limit reads amber. */
-export const SHOE_WARN_SHARE = 0.85
+/** The shoe bar turns amber at the same retire tick as Shoes (v5.5 #15). */
+export const SHOE_WARN_SHARE = WEAR_NEAR_SHARE
 
 function dayOfYear(iso: string): number {
   const d = Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)))
@@ -105,22 +107,20 @@ export function cumulativeYear(activities: HubInput['activities'], year: number,
   return points
 }
 
-function heatLevel(km: number): number {
-  if (km <= 0) return 0
-  if (km < 8) return 1
-  if (km < 14) return 2
-  return 3
-}
+export type HeatCell = { state: 'rest' | 'run' | 'long'; today: boolean } | null
 
-/** Twelve weeks to this one, a column per week. */
-export function heatWeeks(days: HeatmapDay[], today: string): (number | null)[][] {
-  const km = new Map(days.map((d) => [d.date, d.distanceKm]))
+/** Twelve weeks to this one, a column per week, in the page's day states. */
+export function heatWeeks(days: HeatmapDay[], today: string): HeatCell[][] {
+  const byDate = new Map(days.map((d) => [d.date, d]))
   const monday = startOfWeek(new Date(`${today}T00:00:00`))
   const first = addDays(monday, -7 * (HEAT_WEEKS - 1))
   return Array.from({ length: HEAT_WEEKS }, (_, w) =>
     Array.from({ length: 7 }, (_, d) => {
       const date = isoDate(addDays(first, w * 7 + d))
-      return date > today ? null : heatLevel(km.get(date) ?? 0)
+      if (date > today) return null
+      const day = byDate.get(date)
+      const state = !day || day.sessionCount === 0 ? 'rest' : day.longRun ? 'long' : 'run'
+      return { state, today: date === today }
     }),
   )
 }

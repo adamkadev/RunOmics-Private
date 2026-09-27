@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { cn } from '@/lib/utils'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import { formatDate, formatDistance, formatMonthShortYear, formatPace } from '@/lib/formatters'
 import { reverseGeocode } from '@/lib/reverseGeocode'
@@ -30,7 +31,7 @@ function Outline({ path }: { path: string }) {
   return (
     <svg
       viewBox={`-6 -6 ${OUTLINE_BOX + 12} ${OUTLINE_BOX + 12}`}
-      className="h-[38px] w-[30px] shrink-0 text-accent-text"
+      className="h-[38px] w-[30px] shrink-0 text-foreground"
       aria-hidden="true"
     >
       <path
@@ -62,10 +63,12 @@ function PaceTrail({ route }: { route: RecurringRoute }) {
 
   return (
     <div data-testid="pace-trail" className="flex h-8 min-w-0 flex-1 items-end justify-end gap-0.5" aria-hidden="true">
-      {runs.map((run) => (
+      {/* Band grey, the latest run in ink (v5.5 #14): the accent is for "now". */}
+      {runs.map((run, i) => (
         <span
           key={run.activityId}
-          className="min-w-px max-w-[5px] flex-1 rounded-full bg-accent/70"
+          data-latest={i === runs.length - 1 ? '' : undefined}
+          className={cn('min-w-px max-w-[5px] flex-1 rounded-full', i === runs.length - 1 ? 'bg-foreground' : 'bg-[var(--band)]')}
           style={{ height: `${20 + ((slowest - run.paceSecPerKm) / span) * 80}%` }}
         />
       ))}
@@ -143,7 +146,7 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
 
               <Link
                 href={`/activities/${route.bestActivityId}`}
-                className="mt-0.5 block truncate text-caption text-accent-text"
+                className="mt-0.5 block truncate text-caption text-muted-foreground"
               >
                 {places[route.id] && <span className="text-subtle">{places[route.id]} · </span>}
                 {formatPace(route.bestPaceSecPerKm)} · {compactDate(route.bestDate, thisYear)}

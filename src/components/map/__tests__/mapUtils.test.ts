@@ -79,9 +79,10 @@ describe('buildHeatGeoJSON', () => {
   })
 
   it('splits a route into separate features where run frequency changes', () => {
+    // ~70 m steps: anything past 150 m is now a GPS jump, not a run.
     const routes: [number, number][][] = [
-      [[7.6, 48.6], [7.7, 48.6], [7.8, 48.6], [7.9, 48.6]],
-      [[7.6, 48.6], [7.7, 48.6]],
+      [[7.6, 48.6], [7.601, 48.6], [7.602, 48.6], [7.603, 48.6]],
+      [[7.6, 48.6], [7.601, 48.6]],
     ]
     const { data, maxCount } = buildHeatGeoJSON(routes, [0, 1])
     expect(maxCount).toBe(2)
@@ -98,29 +99,50 @@ describe('buildHeatGeoJSON', () => {
   })
 })
 
-describe('heatColorExpression', () => {
-  it('scales stops to the observed max frequency', () => {
-    const expr = heatColorExpression(10)
-    expect(expr[0]).toBe('interpolate')
-    expect(expr[3]).toBe(1)
-    expect(expr[expr.length - 2]).toBe(10)
+describe('heatColorExpression (v5.6 #5)', () => {
+  it('runs one neutral scale, band grey to ink, up to the observed max', async () => {
+    const { SURFACES } = await import('@/lib/themeTokens')
+    for (const mode of ['dark', 'light'] as const) {
+      const expr = heatColorExpression(10, mode)
+      expect(expr.slice(0, 3)).toEqual(['interpolate', ['linear'], ['get', 'count']])
+      expect(expr[3]).toBe(1)
+      expect(expr[4]).toBe(SURFACES[mode].band)
+      expect(expr[5]).toBe(10)
+      expect(expr[6]).toBe(SURFACES[mode].text)
+    }
   })
 
-  it('spaces stops logarithmically so mid colours fall on low counts', () => {
-    const expr = heatColorExpression(100)
-    const secondStop = expr[5] as number
-    const thirdStop = expr[7] as number
-    expect(secondStop).toBeLessThan(10)
-    expect(thirdStop).toBeLessThan(30)
-    const stops = [expr[3], expr[5], expr[7], expr[9]] as number[]
-    expect(stops).toEqual([...stops].sort((a, b) => a - b))
-    expect(new Set(stops).size).toBe(4)
+  it('uses no zone hue', async () => {
+    const { ZONE_HEX } = await import('@/lib/themeTokens')
+    const colours = [heatColorExpression(50, 'dark'), heatColorExpression(50, 'light')].flat().filter((v) => typeof v === 'string')
+    for (const hex of Object.values(ZONE_HEX).flatMap((v) => (typeof v === 'string' ? [v] : Object.values(v)))) {
+      expect(colours).not.toContain(hex)
+    }
   })
 
-  it('stays valid (strictly ascending) with no overlaps', () => {
-    const stops = [1, 3, 5, 7].map((i) => heatColorExpression(1)[i] as number)
-    expect(stops).toEqual([...stops].sort((a, b) => a - b))
-    expect(new Set(stops).size).toBe(4)
+  it('stays a valid interpolation with a single run', () => {
+    const expr = heatColorExpression(1, 'dark')
+    expect(expr[5] as number).toBeGreaterThan(expr[3] as number)
+  })
+})
+
+describe('GPS jumps (v5.6 #5)', () => {
+  it('breaks the line at a step longer than 150 m, so no straight line fans out', () => {
+    // 50 m steps, then a 1.1 km jump, then 50 m steps again.
+    const step = 0.00045
+    const route: [number, number][] = [
+      [6.17, 49.11], [6.17 + step, 49.11], [6.17 + 2 * step, 49.11],
+      [6.19, 49.12], [6.19 + step, 49.12], [6.19 + 2 * step, 49.12],
+    ]
+    const { data } = buildHeatGeoJSON([route], [0])
+    for (const feature of data.features) {
+      const coords = (feature.geometry as unknown as { coordinates: [number, number][] }).coordinates
+      for (let i = 1; i < coords.length; i++) {
+        const [a, b] = [coords[i - 1]!, coords[i]!]
+        expect(Math.hypot((b[0] - a[0]) * 73_000, (b[1] - a[1]) * 111_000)).toBeLessThan(150)
+      }
+    }
+    expect(data.features.length).toBeGreaterThanOrEqual(2)
   })
 })
 

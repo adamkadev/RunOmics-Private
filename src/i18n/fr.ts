@@ -207,7 +207,7 @@ export const fr = {
     map: {
       title: 'Heatmap',
       back: 'Activités',
-      runs: (n: number) => `${n} sortie${n === 1 ? '' : 's'}`,
+      runs: (n: number) => `${n} avec GPS`,
       area: 'Zone',
       areas: 'Zones',
       areasSummary: (areas: number, runs: number) =>
@@ -1539,6 +1539,7 @@ export const fr = {
       raceLine: (distance: string, date: string) => `${distance} ${date}`,
       predicted: 'prédit',
       target: (time: string) => `objectif ${time}`,
+      off: (gap: string) => `${gap} d’écart`,
       noRace: 'Aucune course prévue',
       in12w: ' en 12 sem',
       thresholdParts: (pace: string | null, lthr: number | null) =>

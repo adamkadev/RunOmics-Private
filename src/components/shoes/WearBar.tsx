@@ -2,9 +2,8 @@ import { cn } from '@/lib/utils'
 import { WEAR_COLOR, WEAR_NEAR_SHARE, wearTone } from './shoeWear'
 
 /**
- * A pair's wear against its limit (C4, v4.4b): a 6 pt bar in the accent
- * under 80% of the limit, amber from 80 to 100%, Z5 past it, with a muted
- * tick at 80%. Past the limit the bar is scaled to the km run, so the tick
+ * A pair's wear against its limit (C4, v4.4b; v5.5 #15): a 6 pt bar in ink
+ * until the retire tick at 80% of the limit and amber past it. Past the limit the bar is scaled to the km run, so the tick
  * moves in and the overrun shows. A retired pair's bar is full and muted.
  */
 export function WearBar({

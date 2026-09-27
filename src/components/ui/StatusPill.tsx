@@ -22,7 +22,8 @@ export function StatusPill({ tone, className, children }: { tone: StatusTone; cl
   return (
     <span
       className={cn(
-        'inline-flex items-center whitespace-nowrap rounded-[7px] bg-[var(--segmented-track)] px-2 py-[3px] text-xs font-medium',
+        // On the faint track (v5.6 L2: the Done chip is --good on --fa).
+        'inline-flex items-center whitespace-nowrap rounded-[7px] bg-[var(--track)] px-2 py-[3px] text-xs font-medium',
         TONE_CLASS[tone],
         className
       )}

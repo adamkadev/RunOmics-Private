@@ -17,9 +17,9 @@ describe('WearBar', () => {
       unmount()
       return bg
     }
-    expect(fill(676)).toBe('var(--accent)')
+    expect(fill(676)).toBe('var(--foreground)')
     expect(fill(850)).toBe('var(--tone-caution)')
-    expect(fill(1200)).toBe('var(--zone-5)')
+    expect(fill(1200)).toBe('var(--tone-caution)')
   })
 
   it('ticks 80% of the limit, and moves the tick in once the pair is past it', () => {

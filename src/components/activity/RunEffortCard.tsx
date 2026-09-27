@@ -133,7 +133,8 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
               label={t.activity.trainingEffect.aerobic}
               value={aer.toFixed(1)}
               word={trainingEffectLevel(aer)}
-              tone={aer >= 1 ? STATUS.success.text : 'text-muted-foreground'}
+              // Garmin's label, not a delta: ink, never green or the accent (v5.5 #18).
+              tone={aer >= 1 ? 'text-foreground' : 'text-muted-foreground'}
             />
           )}
           {scored(ana) && (
@@ -142,7 +143,7 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
               label={t.activity.trainingEffect.anaerobic}
               value={ana.toFixed(1)}
               word={trainingEffectLevel(ana)}
-              tone={ana >= 1 ? STATUS.success.text : 'text-muted-foreground'}
+              tone={ana >= 1 ? 'text-foreground' : 'text-muted-foreground'}
             />
           )}
           {decouplingRow}

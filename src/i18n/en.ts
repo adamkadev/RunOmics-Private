@@ -224,7 +224,8 @@ export const en = {
     map: {
       title: 'Heatmap',
       back: 'Activities',
-      runs: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
+      // Only runs with a GPS track are on the map (v5.6 #5): 294 of 298.
+      runs: (n: number) => `${n} with GPS`,
       area: 'Area',
       areas: 'Areas',
       areasSummary: (areas: number, runs: number) =>
@@ -1601,6 +1602,7 @@ export const en = {
       raceLine: (distance: string, date: string) => `${distance} ${date}`,
       predicted: 'predicted',
       target: (time: string) => `target ${time}`,
+      off: (gap: string) => `${gap} off`,
       noRace: 'No race planned',
       in12w: ' in 12 wk',
       // The footers as segments, each kept whole on the line (v4.3.1).
