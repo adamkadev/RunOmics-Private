@@ -189,27 +189,36 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene) {
     return
   }
 
+  // R3 (v5.5): the main zone is the headline, and the rows spread over the
+  // middle so there are no empty bands above and below them.
   const ROW = 14
-  const GAP = 16
-  const TITLE = 17
-  const block = TITLE + 18 + zones.rows.length * ROW + (zones.rows.length - 1) * GAP
-  const top = (MIDDLE_H - block) / 2
+  const PAD_Y = 30
+  const HEAD = 34
+  const rowsTop = PAD_Y + HEAD + 24
+  const step = (MIDDLE_H - PAD_Y - rowsTop - ROW) / Math.max(1, zones.rows.length - 1)
+  const totalMinutes = Math.round(zones.rows.reduce((sum, r) => sum + r.seconds, 0) / 60)
 
-  ctx.textBaseline = 'middle'
+  ctx.textBaseline = 'alphabetic'
   ctx.textAlign = 'left'
-  ctx.font = `700 17px ${fonts.display}`
+  ctx.font = `700 34px ${fonts.display}`
   ctx.fillStyle = palette.tx
-  ctx.fillText(s.timeInZones, PAD_X, top + TITLE / 2)
+  const pct = `${zones.top.percent}%`
+  ctx.fillText(pct, PAD_X, PAD_Y + HEAD - 6)
+  const pctW = ctx.measureText(pct).width
+  ctx.font = `600 15px ${fonts.text}`
+  ctx.fillStyle = palette.mu
+  ctx.fillText(s.inZone(zones.top.zone), PAD_X + pctW + 8, PAD_Y + HEAD - 6)
   ctx.textAlign = 'right'
   ctx.font = `400 13px ${fonts.text}`
-  ctx.fillStyle = palette.mu
-  ctx.fillText(s.mostly(zones.top.zone, zones.top.percent), RIGHT, top + TITLE / 2)
+  ctx.fillText(s.minutes(totalMinutes), RIGHT, PAD_Y + HEAD - 6)
 
+  ctx.textBaseline = 'middle'
   const trackX = PAD_X + 28 + 12
   const trackW = RIGHT - 52 - 12 - trackX
   zones.rows.forEach((row, i) => {
-    const y = top + TITLE + 18 + i * (ROW + GAP)
+    const y = rowsTop + i * step
     const mid = y + ROW / 2
+    const minutes = Math.round(row.seconds / 60)
     ctx.textAlign = 'left'
     ctx.font = `600 13px ${fonts.text}`
     ctx.fillStyle = palette.tx
@@ -218,16 +227,17 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene) {
     ctx.fillStyle = palette.fa
     roundRect(ctx, trackX, y, trackW, ROW, ROW / 2)
     ctx.fill()
-    if (row.seconds > 0) {
+    // Under a minute reads "0 min": an empty track, never a coloured dot.
+    if (minutes > 0) {
       ctx.fillStyle = palette.zones[row.zone - 1] ?? palette.mu
       roundRect(ctx, trackX, y, Math.max(row.fill * trackW, ROW), ROW, ROW / 2)
       ctx.fill()
     }
 
     ctx.textAlign = 'right'
-    ctx.font = `400 13px ${fonts.text}`
-    ctx.fillStyle = palette.mu
-    ctx.fillText(s.minutes(Math.round(row.seconds / 60)), RIGHT, mid)
+    ctx.font = minutes > 0 ? `700 13px ${fonts.text}` : `400 13px ${fonts.text}`
+    ctx.fillStyle = minutes > 0 ? palette.tx : palette.mu
+    ctx.fillText(s.minutes(minutes), RIGHT, mid)
   })
 }
 

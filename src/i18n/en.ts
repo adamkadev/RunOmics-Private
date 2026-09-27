@@ -1093,6 +1093,7 @@ export const en = {
       },
       timeInZones: 'Time in zones',
       mostly: (zone: number, pct: number) => `mostly Z${zone} · ${pct}%`,
+      inZone: (zone: number) => `in Z${zone}`,
       minutes: (n: number) => `${n} min`,
       noZones: 'No heart-rate zones for this run',
       photo: 'Photo',
