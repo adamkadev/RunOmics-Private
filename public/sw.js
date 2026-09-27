@@ -3,7 +3,9 @@ const STATIC_CACHE = `runomics-static-${VERSION}`
 const PAGE_CACHE = `runomics-pages-${VERSION}`
 const CURRENT_CACHES = [STATIC_CACHE, PAGE_CACHE]
 
-const SHELL_URLS = ['/', '/manifest.json', '/icons/logo.svg', '/icons/apple-touch-icon.png']
+// Every file here must exist: cache.addAll fails the whole install on one 404,
+// and the old worker then keeps the app (4.12.0 deleted /icons/logo.svg).
+const SHELL_URLS = ['/', '/manifest.json', '/icons/favicon.svg', '/icons/apple-touch-icon.png']
 
 self.addEventListener('install', (event) => {
   if (isLocalDev) {

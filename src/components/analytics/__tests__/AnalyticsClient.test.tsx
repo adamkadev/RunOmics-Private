@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { t } from '@/i18n'
@@ -84,6 +84,14 @@ async function openTab(name: string, card: string) {
 }
 
 describe('Analytics (v4.5)', () => {
+  // The fixture is dated TODAY and the board reads the clock for "today":
+  // pinned, so the live window ends on the fixture's last day on any date.
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(`${TODAY}T12:00:00`))
+  })
+  afterAll(() => vi.useRealTimers())
+
   it('names its tabs in whole words', async () => {
     await renderBoard()
     expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
