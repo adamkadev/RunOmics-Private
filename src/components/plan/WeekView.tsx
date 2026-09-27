@@ -40,6 +40,7 @@ import {
 } from '@/components/coaching/presentation'
 import {
   coachWorkoutView,
+  doneDaySteps,
   plannedWorkoutView,
   type PlanWorkoutView,
 } from './planWorkoutView'
@@ -695,7 +696,7 @@ export function WeekView({
                 )}
                 <div className="mt-3.5">
                   <SessionStructureBar
-                    steps={[]}
+                    steps={doneDaySteps(a.type, coach, plan)}
                     zoneWord={zoneWord}
                     zone={sessionZone(a)}
                     totalSeconds={a.durationSeconds}

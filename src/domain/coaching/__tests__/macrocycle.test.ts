@@ -55,14 +55,17 @@ describe('macrocycle progress', () => {
     const next = NEXT_BLOCK()
 
     expect(next.block.startDate).toBe('2026-10-04')
-    expect(macrocycleWeek(next, '2026-10-04')).toEqual({ done: 5, total: 12 })
+    // Counted by the app's Mon-Sun week (v5.5 #8): Sunday Oct 4 closes week 4.
+    expect(macrocycleWeek(next, '2026-10-04')).toEqual({ done: 4, total: 12 })
+    expect(macrocycleWeek(next, '2026-10-05')).toEqual({ done: 5, total: 12 })
   })
 
   it('is unmoved by the rolling block boundaries themselves', () => {
     const shifted = blockPlan('2026-10-25', '2026-11-21', ['2026-10-25', '2026-11-01', '2026-11-08', '2026-11-15'])
 
     expect(shifted.macrocycleStartDate).toBe(MACROCYCLE_START)
-    expect(macrocycleWeek(shifted, '2026-10-25')).toEqual({ done: 8, total: 12 })
+    expect(macrocycleWeek(shifted, '2026-10-25')).toEqual({ done: 7, total: 12 })
+    expect(macrocycleWeek(shifted, '2026-10-26')).toEqual({ done: 8, total: 12 })
   })
 })
 
