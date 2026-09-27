@@ -226,12 +226,19 @@ function zoneMinutes(activity: Activity, zones: (zone: number) => boolean): numb
   return Math.round(activity.hrZones.filter((z) => zones(z.zone)).reduce((sum, z) => sum + z.seconds, 0) / 60)
 }
 
+/**
+ * An easy day belongs in zones 1-2: the share there is the measure, and zone 3
+ * - the grey zone an easy run drifts into - is what counts against it. "Little
+ * time above zone 3" let an easy run spend half its time in zone 3 (v4.16.4).
+ */
 function zonesLine(kind: RunKind, activity: Activity, hardMinutes: number | null): string | null {
   if (hardMinutes === null) return null
+  const easy = zoneMinutes(activity, (zone) => zone <= 2)
   const grey = zoneMinutes(activity, (zone) => zone === 3)
-  return EASY_KINDS.has(kind) && grey !== null
-    ? `- Time in zone 3: ${grey} min; in zone 4 or 5: ${hardMinutes} min`
-    : `- Time in zone 4 or 5: ${hardMinutes} min`
+  if (!EASY_KINDS.has(kind) || easy === null || grey === null) return `- Time in zones 4-5: ${hardMinutes} min`
+  const total = easy + grey + hardMinutes
+  const share = total > 0 ? ` (${Math.round((easy / total) * 100)}%)` : ''
+  return `- Time in zones 1-2: ${easy} min${share}; zone 3: ${grey} min; zones 4-5: ${hardMinutes} min`
 }
 
 /**
@@ -401,7 +408,7 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   // v4.16.4: RPE and the conditions sit in the same card, right under the text.
   "The card already prints the distance, duration, average pace, average heart rate, perceived effort (RPE) and the conditions: never state those numbers. A difference against earlier runs or against the plan's target is fine (\"8s/km quicker\", \"inside the 4:22-4:28 target\"); repeating this run's own printed numbers is not.",
   'What the job is depends on the session.',
-  "An easy run's job is to stay easy: little or no time above zone 3, a steady heart rate. Pace is never the achievement on an easy day, and quicker is only good news when the heart rate did not rise with it. With strides, the easy running is what you judge; the strides only count as done.",
+  "An easy run's job is to stay easy: nearly all of it in zones 1-2, little time in zone 3 and none in zones 4-5, with a steady heart rate. Pace is never the achievement on an easy day, and quicker is only good news when the heart rate did not rise with it. With strides, the easy running is what you judge; the strides only count as done.",
   "A long run's job is time on feet at an easy effort: judge how the second half held, its heart rate drift and fade. Kilometre-to-kilometre pace spread is terrain, not execution.",
   'A tempo or threshold session is judged on rep pace against its target, evenness across the reps and heart rate drift. Reps faster than the target are not a bonus: that is a harder session than asked.',
   'An interval session is judged on the reps completed and held at the target, and the fade from first to last.',
@@ -410,7 +417,7 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   'When the effort sits outside the expected band, look for a cause in the other facts - heat, humidity, wind, elevation - and name it rather than assuming the athlete misjudged the session. Name the cause, never its number.',
   'When a planned session is given, judge what was run against what was asked, and say so plainly if they differ.',
   // v5.5 #22, v5.6 #9: the body read "a textbook run locked in pure aerobic gains".
-  'Write the body as two or three measured facts, comma-separated or as two short sentences, like "3 reps within 1 s/km of each other, all inside the target, 4 bpm drift." or "Kept out of zone 4-5 the whole run, heart rate steady to the end." No praise words (textbook, rock-solid, locked in, on full display) and no claims about what the run builds.',
+  'Write the body as two or three measured facts, comma-separated or as two short sentences, like "3 reps within 1 s/km of each other, all inside the target, 4 bpm drift." or "All but 3 min in zones 1-2, heart rate steady to the end." No praise words (textbook, rock-solid, locked in, on full display) and no claims about what the run builds.',
 ].join(' ')
 
 export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdicts: string[]): string {

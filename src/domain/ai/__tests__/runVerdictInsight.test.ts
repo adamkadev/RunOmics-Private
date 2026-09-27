@@ -326,6 +326,19 @@ describe('what the run was for (v4.16.4)', () => {
     expect(prompt).toContain('- How it held:')
   })
 
+  // An easy day belongs in zones 1-2; "little time above zone 3" let half of
+  // one sit in zone 3.
+  it('measures an easy run by its time in zones 1-2, with zone 3 counting against it', () => {
+    const zone = (n: number, minutes: number) => ({ zone: n, seconds: minutes * 60, percent: 0, minBpm: 0 })
+    const easy = run({ id: 'z', date: '2026-09-27', durationSeconds: 73 * 60, hrZones: [zone(1, 21), zone(2, 49), zone(3, 3), zone(4, 0), zone(5, 0)] as never })
+
+    expect(verdict(easy, null)).toContain('- Time in zones 1-2: 70 min (96%); zone 3: 3 min; zones 4-5: 0 min')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('nearly all of it in zones 1-2, little time in zone 3 and none in zones 4-5')
+    expect(verdict({ ...thresholdRun([265, 265, 264]), hrZones: [zone(2, 29), zone(3, 6), zone(4, 16)] as never }, thresholdPlan)).toContain(
+      '- Time in zones 4-5: 16 min',
+    )
+  })
+
   it("takes a plan's 70-minute \"Long run\" as the long run it is", () => {
     const long = run({ id: 'l', date: '2026-09-27', durationSeconds: 73 * 60 })
     expect(verdict(long, { date: '2026-09-27', name: 'Long run', type: 'Base', durationSecs: 4082 })).toContain('- Session: a long run')
