@@ -11,7 +11,9 @@ test('heatmap puts the map first, the card under it, and nothing on the routes b
 
   const map = page.getByRole('img', { name: 'Heatmap' })
   const card = page.getByTestId('territory-card')
-  await expect(card).toContainText('half of runs within')
+  // Two stats, runs and km (v5.6 #5): "half of runs within" repeated the headline.
+  await expect(card).toContainText('km')
+  await expect(card).not.toContainText('half of runs within')
   const mapBox = (await map.boundingBox())!
   expect(Math.round(mapBox.height)).toBe(360)
   expect((await card.boundingBox())!.y).toBeGreaterThan(mapBox.y + mapBox.height)

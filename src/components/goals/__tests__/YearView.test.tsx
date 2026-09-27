@@ -37,7 +37,7 @@ const BEHIND: GoalProjection = {
 }
 
 describe('YearView annual goal card', () => {
-  it('fills with the accent regardless of projection status - the fill states progress, not a verdict', () => {
+  it('fills in ink regardless of projection status - the fill states progress, not a verdict (v5.5 #17)', () => {
     const onTrack: GoalProjection = {
       weeklyRate: 30,
       weeklyNeeded: 30,
@@ -48,9 +48,10 @@ describe('YearView annual goal card', () => {
     for (const projection of [BEHIND, onTrack]) {
       const { container } = render(<YearView yearData={yearData(projection)} today={TODAY} />)
       const fill = container.querySelector<HTMLElement>('.rounded-full.transition-all')
-      // A progress fill is the accent's job; amber would fire in January on a
-      // healthy year, and the verdict lives only in the projection headline.
-      expect(fill!.style.background).toBe('var(--accent)')
+      // The year's km is data, so ink (the accent is for "now"); amber would
+      // fire in January on a healthy year, and the verdict lives only in the
+      // projection headline.
+      expect(fill!.style.background).toBe('var(--foreground)')
     }
   })
 
