@@ -70,7 +70,7 @@ const data: AnalyticsBoardData = {
     todayDay: 269,
     current: [{ day: 0, km: 0 }, { day: 269, km: 1394 }],
     previous: [{ day: 0, km: 0 }, { day: 365, km: 1116 }],
-    previousToDate: 640,
+    vsLastYear: { km: 1394, lastYearKm: 640, since: null },
     goalKm: 2000,
     projection: { weeklyRate: 26, weeklyNeeded: 44, projectedYearKm: 1757 },
   },
@@ -128,14 +128,16 @@ describe('Analytics (v4.5)', () => {
     await renderBoard()
     const coach = screen.getByTestId('coach-read')
     const s = t.analytics.cards.coachRead
-    // Easy pace got faster, but threshold and the predictions got slower.
-    expect(coach.getAttribute('data-tone')).toBe('caution')
-    expect([s.headline.caution, s.headline.cautionLoadUp]).toContain(coach.textContent!.replace(s.eyebrow, ''))
+    // Easy pace got faster, but threshold and the predictions got slower:
+    // Garmin's two estimates of one fitness share a vote, so it reads mixed
+    // and names each side (v4.16.3).
+    expect(coach.getAttribute('data-tone')).toBe('neutral')
+    expect(coach.textContent!.replace(s.eyebrow, '')).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
     fireEvent.click(coach)
     const sheet = screen.getByRole('dialog')
     // The sheet backs its headline (v5.6 L1): the load fact first, then threshold.
     const bullets = [...sheet.querySelectorAll('li')].map((li) => li.textContent)
-    expect(bullets[0]).toMatch(/^Fitness \d+, /)
+    expect(bullets[0]).toMatch(/^Fitness \d+, \+\d+ in 12 weeks\.$/)
     expect(bullets[1]).toBe(s.thresholdSlower('4:23', 9))
     expect(sheet.textContent).toContain(s.predictionsSlower(2, 2))
     expect(sheet.textContent).toContain(s.volume('+754'))
@@ -329,6 +331,90 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
     expect(shiftWords(-1, 3)).toBe(t.analytics.cards.summary.same)
     const faster = { ...view, signals: [{ ...view.signals[0]!, trend: 'improving' as const, delta: -8 }] }
     expect(coachText(faster).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyFaster('5:52', 8))
+  })
+
+  // v4.16.3: "threshold and race predictions haven't followed" was one fixed
+  // sentence, printed whichever reads had slipped.
+  it('names only the reads that slipped', async () => {
+    const { coachText } = await import('../LoadTab')
+    const { coachRead } = await import('../analyticsView')
+    const s = t.analytics.cards.coachRead
+    const view = coachRead({
+      threshold: { now: 263, delta: -6 },
+      easy: { now: 352, delta: 1 },
+      predictions: [{ distance: '10k', seconds: 2570, delta: 40, series: [] }],
+      efficiency: { now: 1.12, delta4w: -0.01, delta12w: -0.03, heatCost: null, trend: 'steady', adjusted: [], measured: [], dates: [] },
+      fitness: 48,
+      fitnessDelta: 11,
+      ytd: null,
+    })!
+    expect(view.tone).toBe('caution')
+    expect(coachText(view).headline).toBe(s.headline.cautionLoadUp('race predictions and aerobic efficiency', true))
+    expect(coachText(view).headline).not.toContain('threshold')
+  })
+
+  it('never credits load for speed when load did not go up', async () => {
+    const { coachText } = await import('../LoadTab')
+    const s = t.analytics.cards.coachRead
+    const view = { tone: 'positive' as const, loadUp: false, signals: [{ key: 'easy' as const, trend: 'improving' as const, pace: 352, delta: -8 }] }
+    expect(coachText(view).headline).toBe(s.headline.positiveSteadyLoad)
+    expect(coachText({ ...view, loadUp: true }).headline).toBe(s.headline.positive)
+  })
+
+  it('gives aerobic efficiency its unit and what the change means', async () => {
+    const { coachText } = await import('../LoadTab')
+    const s = t.analytics.cards.coachRead
+    const efficiency = (trend: 'improving' | 'flat' | 'declining', delta: number) =>
+      coachText({ tone: 'neutral', loadUp: false, signals: [{ key: 'efficiency', trend, value: 1.15, delta }] }).signals[0]!.text
+    expect(efficiency('declining', -0.03)).toBe(s.efficiencyDown('1.15', '−0.03'))
+    expect(efficiency('declining', -0.03)).toContain('m per heartbeat')
+    expect(efficiency('flat', -0.02)).toBe(s.efficiencyLevel('1.15'))
+  })
+
+  it('says when last year only counts from the date the history starts', async () => {
+    const { coachText } = await import('../LoadTab')
+    const s = t.analytics.cards.coachRead
+    const volume = (since: string | null) =>
+      coachText({ tone: 'neutral', loadUp: false, signals: [{ key: 'volume', trend: 'improving', delta: 312, since }] }).signals[0]!.text
+    expect(volume(null)).toBe(s.volume('+312'))
+    expect(volume('2025-05-03')).toBe(s.volumeSince('+312', 'May 3'))
+  })
+})
+
+describe('the coach read under a load headline (v4.16.3)', () => {
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(`${TODAY}T12:00:00`))
+  })
+  afterAll(() => vi.useRealTimers())
+
+  // "Load jumped 30%" sat over six lines about pace that do not back it.
+  it('heads the speed lines with the headline they back', async () => {
+    const loads = Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), acute: i < 50 ? 360 : 360 + (i - 49) * 20, chronic: 365 }))
+    render(<AnalyticsClient data={{ ...data, loads }} today={TODAY} />)
+    const coach = await screen.findByTestId('coach-read')
+    expect(coach.getAttribute('data-load')).toBe('spike')
+    fireEvent.click(coach)
+    const s = t.analytics.cards.coachRead
+    expect(within(screen.getByRole('dialog')).getByTestId('coach-read-speed').textContent).toBe(
+      s.headline.mixed('Easy pace', false, 'threshold and race predictions', true),
+    )
+  })
+
+  it('shows no second headline when the card leads with the speed read', async () => {
+    render(<AnalyticsClient data={data} today={TODAY} />)
+    fireEvent.click(await screen.findByTestId('coach-read'))
+    expect(within(screen.getByRole('dialog')).queryByTestId('coach-read-speed')).toBeNull()
+  })
+
+  it('compares Year to date from where the history starts when that is partway through last year', async () => {
+    const ytd = { ...data.ytd!, vsLastYear: { km: 1020, lastYearKm: 708, since: '2025-05-03' } }
+    render(<AnalyticsClient data={{ ...data, ytd }} today={TODAY} />)
+    await screen.findByTestId('form-card')
+    await act(async () => screen.getByRole('tab', { name: t.analytics.tabs.volume }).click())
+    const card = await screen.findByTestId('ytd-card')
+    expect(within(card).getByTestId('ytd-delta').textContent).toBe(t.analytics.cards.ytd.vsSince('+312', 'May 3'))
+    expect(card.textContent).toContain(t.analytics.cards.ytd.captionSince)
   })
 })
 
