@@ -17,6 +17,7 @@ import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
+import { RunPlace } from '@/components/activity/RunPlace'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -104,6 +105,7 @@ export default async function ActivityDetailPage({
                   <span aria-hidden className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: zoneColor(sessionZone({ type: activity.type })) }} />
                   {t.activityTypes[activity.type]}
                 </span>
+                <RunPlace activityId={activity.id} start={activity.route?.[0] ?? null} />
               </p>
               {activity.comment && (
                 <p className="mt-1 text-sm text-muted-foreground">{activity.comment}</p>
