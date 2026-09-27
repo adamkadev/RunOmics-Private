@@ -26,8 +26,9 @@ const QUALITY_REP_SECONDS = 60
 /**
  * What kind of day today is, which the tone rules turn on (v4.16.4): "stay
  * moderate" is no advice for a rest day, and "ease off" none for a race.
- * Garmin's calendar calls every workout Base, a threshold session included,
- * so a plan with reps of a minute or more reads as quality whatever its type.
+ * A Garmin calendar entry's type is guessed from its name by the sync and
+ * falls back to Base for a name it cannot read, so a plan with reps of a
+ * minute or more reads as quality whatever its type says.
  */
 export function sessionKind(planned: PlannedWorkout | null): SessionKind {
   if (!planned) return 'rest'

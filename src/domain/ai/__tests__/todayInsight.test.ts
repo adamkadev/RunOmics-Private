@@ -98,7 +98,7 @@ describe('the kind of day (v4.16.4)', () => {
     expect(sessionKind(workout)).toBe('easy')
   })
 
-  // Garmin's calendar calls every workout Base, "Threshold 3 x 7:00" included.
+  // A name the sync cannot read is stored as Base, whatever the session is.
   it('reads a Garmin workout with reps of a minute or more as quality, and strides as an easy run', () => {
     const threshold = garmin('Threshold 3 x 7:00', [
       { kind: 'warmup', minutes: 12 },

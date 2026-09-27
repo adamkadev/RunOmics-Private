@@ -168,6 +168,8 @@ def write_planned_workouts(
         entry["scheduledTime"] = _bucket_scheduled_time(prior.get("scheduledTime", _DEFAULT_SCHEDULED_TIME))
         store.upsert(entry)
 
+    reclassified = _reclassify_base_entries(store)
+
     pruned = 0
     for stale_date in stale_candidates or ():
         if store.get(stale_date) is not None:
@@ -178,10 +180,30 @@ def write_planned_workouts(
     summary = f"  {written} planned workout(s) upserted ({store.count()} total in store)"
     if kept:
         summary += f", {kept} kept as stored (detail unavailable)"
+    if reclassified:
+        summary += f", {reclassified} re-typed from Base by name"
     if pruned:
         summary += f", {pruned} stale entr{'y' if pruned == 1 else 'ies'} removed"
     print(summary)
     return store
+
+
+def _reclassify_base_entries(store: PlannedWorkoutStore) -> int:
+    """Re-types every stored Base (or untyped) entry whose name the rules now
+    read as another type, across the whole history - not only the dates this
+    sync fetched. A prior type for the same name is kept as a correction, but
+    Base is also the fallback for a name the rules could not read, so without
+    this a coaching session named "Threshold 3 x 7:00" before the rules knew
+    English would stay Base for good."""
+    reclassified = 0
+    for entry in store.all_entries():
+        if entry.get("type") not in (None, "Base"):
+            continue
+        guessed = infer_planned_type(entry.get("name") or "")
+        if guessed != "Base":
+            store.upsert({**entry, "type": guessed})
+            reclassified += 1
+    return reclassified
 
 
 def prefer_planned_name(description: str, plan: dict) -> str | None:

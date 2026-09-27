@@ -8,6 +8,7 @@ from garmin_step_fixtures import (
     repeat_group as _repeat_group,
 )
 from processing.mapper import ActivityData
+from processing.planned_workout_type import infer_planned_type
 from repository.json_store import PlannedWorkoutStore
 from sync_workouts import (
     _DEFAULT_EASY_PACE_SEC_PER_KM,
@@ -823,6 +824,37 @@ class TestWritePlannedWorkouts:
         # what infer_planned_type would guess from the name alone.
         assert written["planned"][0]["type"] == "Tempo"
         assert written["planned"][0]["scheduledTime"] == "Morning"
+
+    def test_reads_the_coaching_plans_english_titles(self):
+        # The coaching plan pushes English titles to Garmin; "Threshold 3 x
+        # 7:00" fell through the French keywords to the Base fallback.
+        assert infer_planned_type("Threshold 3 x 7:00") == "Threshold"
+        assert infer_planned_type("VO2max 5 x 3:00") == "VO2Max"
+        assert infer_planned_type("Strides 6 x 20s") == "Base"
+        assert infer_planned_type("Long run") == "Base"
+
+    def test_retypes_a_stored_base_the_name_now_reads_across_the_whole_history(self, tmp_path):
+        # Stored Base by the old rules, outside this sync's window, same name:
+        # Base was the fallback, not a correction, so the name wins.
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert({"date": "2026-06-18", "name": "Threshold 3 x 7:00", "type": "Base", "scheduledTime": "Evening"})
+        prior.upsert({"date": "2026-06-20", "name": "Long run", "type": "Base", "scheduledTime": "Evening"})
+        prior.save()
+
+        write_planned_workouts([], store=PlannedWorkoutStore(tmp_path))
+
+        written = {e["date"]: e["type"] for e in json.loads((tmp_path / "2026.json").read_text())["planned"]}
+        assert written == {"2026-06-18": "Threshold", "2026-06-20": "Base"}
+
+    def test_still_keeps_a_type_corrected_by_hand(self, tmp_path):
+        # Only Base is re-read: a correction to any other type stands.
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert({"date": "2026-06-18", "name": "Threshold 3 x 7:00", "type": "Tempo", "scheduledTime": "Evening"})
+        prior.save()
+
+        write_planned_workouts([], store=PlannedWorkoutStore(tmp_path))
+
+        assert json.loads((tmp_path / "2026.json").read_text())["planned"][0]["type"] == "Tempo"
 
 
 def _activity(date: str, description: str) -> ActivityData:
