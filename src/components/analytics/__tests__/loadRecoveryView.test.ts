@@ -133,15 +133,29 @@ const nights = (n: number, hrv: (i: number) => number | null, rhr: (i: number) =
 const wobble = (i: number) => [0, 2, -1, 3, -2, 1, -3, 2][i % 8]!
 
 describe('recoveryView', () => {
-  it(`hides under ${RECOVERY_MIN_NIGHTS} HRV nights in the window`, () => {
-    const few = nights(90, (i) => (i < 84 ? null : 58))
+  it(`hides under ${RECOVERY_MIN_NIGHTS} days of either series in the window`, () => {
+    const few = nights(90, (i) => (i < 84 ? null : 58), (i) => (i < 84 ? null : 46))
     expect(recoveryView(few, dayWindow(TODAY, '4w'))).toBeNull()
+  })
+
+  it('reads resting HR alone for a watch never worn overnight', () => {
+    const view = recoveryView(nights(90, () => null, (i) => (i >= 88 ? 53 : 46 + (i % 3) - 1)), dayWindow(TODAY, '4w'))!
+    expect(view.hrv).toBeNull()
+    expect(view.hrvLowStreak).toBe(0)
+    expect(view.restingHr!.side).toBe('high')
+    expect(view.out).toBe(true)
+  })
+
+  it(`leaves HRV out under ${RECOVERY_MIN_NIGHTS} nights of it, keeping resting HR`, () => {
+    const view = recoveryView(nights(90, (i) => (i < 84 ? null : 58)), dayWindow(TODAY, '4w'))!
+    expect(view.hrv).toBeNull()
+    expect(view.restingHr).not.toBeNull()
   })
 
   it('draws the baseline from the middle of the last 60 nights', () => {
     const view = recoveryView(nights(90, (i) => 58 + wobble(i)), dayWindow(TODAY, '4w'))!
-    expect(view.hrv.lo).toBeGreaterThanOrEqual(55)
-    expect(view.hrv.hi).toBeLessThanOrEqual(61)
+    expect(view.hrv!.lo).toBeGreaterThanOrEqual(55)
+    expect(view.hrv!.hi).toBeLessThanOrEqual(61)
     expect(view.out).toBe(false)
   })
 
@@ -151,8 +165,8 @@ describe('recoveryView', () => {
       dayWindow(TODAY, '4w'),
     )!
     expect(view.hrvLowStreak).toBe(3)
-    expect(view.hrv.side).toBe('low')
-    expect(view.hrv.tone).toBe('worse')
+    expect(view.hrv!.side).toBe('low')
+    expect(view.hrv!.tone).toBe('worse')
     expect(view.restingHr!.side).toBe('high')
     expect(view.restingHr!.tone).toBe('worse')
     expect(view.out).toBe(true)
@@ -160,7 +174,7 @@ describe('recoveryView', () => {
 
   it('calls a change inside ±3 ms or ±2 bpm no real change', () => {
     const view = recoveryView(nights(90, (i) => 58 + (i === 89 ? 2 : 0), (i) => 46 + (i === 89 ? 1 : 0)), dayWindow(TODAY, '4w'))!
-    expect(view.hrv.tone).toBe('flat')
+    expect(view.hrv!.tone).toBe('flat')
     expect(view.restingHr!.tone).toBe('flat')
   })
 })

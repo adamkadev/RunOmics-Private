@@ -613,7 +613,8 @@ export const en = {
       recovery: {
         title: 'Recovery',
         caption: 'Garmin · overnight',
-        about: 'Overnight HRV and resting heart rate from your watch, each against your own baseline: the middle 80% of your last 60 nights. Higher HRV and lower resting HR mean you are recovering. The card shows once 7 nights in the period have HRV.',
+        captionDaily: 'Garmin · daily',
+        about: 'Overnight HRV and resting heart rate from your watch, each against your own baseline: the middle 80% of your last 60 nights. Higher HRV and lower resting HR mean you are recovering. Each shows once the period has 7 days of it. Without the watch on overnight there is no HRV, and resting HR comes from your quietest stretch of the day, so it reads a little higher.',
         hrv: 'HRV',
         restingHr: 'Resting HR',
         ms: 'ms',
@@ -623,6 +624,7 @@ export const en = {
         baseline: (lo: number, hi: number) => `baseline ${lo}–${hi}`,
         bothInside: ['Both ', 'inside your baseline', ". You're absorbing the load."] as [string, string, string],
         hrvInside: ['HRV ', 'inside your baseline', ". You're absorbing the load."] as [string, string, string],
+        rhrInside: ['Resting HR ', 'inside your baseline', ". You're absorbing the load."] as [string, string, string],
         hrvLead: 'HRV ',
         hrvLow: (n: number) => (n <= 1 ? 'below baseline last night' : `below baseline ${n} nights running`),
         hrvHigh: 'above baseline',

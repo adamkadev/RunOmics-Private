@@ -143,7 +143,11 @@ export function loadTrendView(pairs: LoadPair[], window: DayWindow, yMax: number
 
 // ─── Recovery ──────────────────────────────────────────────────────────────
 
-/** Under this many HRV nights in the window the card is hidden, never drawn empty. */
+/**
+ * Under this many days of a series in the window, that series is left out;
+ * with neither, the card is hidden, never drawn empty. A watch not worn
+ * overnight records no HRV at all, but still a daytime resting HR.
+ */
 export const RECOVERY_MIN_NIGHTS = 7
 /** The baseline is the athlete's own range over the last 60 nights. */
 export const BASELINE_NIGHTS = 60
@@ -169,7 +173,7 @@ export interface RecoverySeries {
 
 export interface RecoveryView {
   dates: string[]
-  hrv: RecoverySeries
+  hrv: RecoverySeries | null
   restingHr: RecoverySeries | null
   /** Nights in a row, up to last night, with HRV below baseline. */
   hrvLowStreak: number
@@ -248,23 +252,27 @@ function onDates(dates: string[], own: string[], s: RecoverySeries): RecoverySer
   }
 }
 
-export function recoveryView(nights: RecoveryNight[], window: DayWindow): RecoveryView | null {
-  const hrvNights = nights.filter((n) => n.hrv !== null && n.date >= window.start && n.date <= window.end)
-  if (hrvNights.length < RECOVERY_MIN_NIGHTS) return null
-  const hrv = series(nights, (n) => n.hrv, window, 'hrv', HRV_FLAT_MS)
-  if (!hrv) return null
-  const rhr = series(nights, (n) => n.restingHr, window, 'restingHr', RESTING_HR_FLAT_BPM)
+function enough(nights: RecoveryNight[], pick: (n: RecoveryNight) => number | null, window: DayWindow): boolean {
+  return nights.filter((n) => pick(n) !== null && n.date >= window.start && n.date <= window.end).length >= RECOVERY_MIN_NIGHTS
+}
 
-  const dates = [...new Set([...hrv.dates, ...(rhr?.dates ?? [])])].sort()
+export function recoveryView(nights: RecoveryNight[], window: DayWindow): RecoveryView | null {
+  const hrvOf = (n: RecoveryNight) => n.hrv
+  const rhrOf = (n: RecoveryNight) => n.restingHr
+  const hrv = enough(nights, hrvOf, window) ? series(nights, hrvOf, window, 'hrv', HRV_FLAT_MS) : null
+  const rhr = enough(nights, rhrOf, window) ? series(nights, rhrOf, window, 'restingHr', RESTING_HR_FLAT_BPM) : null
+  if (!hrv && !rhr) return null
+
+  const dates = [...new Set([...(hrv?.dates ?? []), ...(rhr?.dates ?? [])])].sort()
   let hrvLowStreak = 0
-  for (let i = hrv.raw.length - 1; i >= 0 && hrv.raw[i]!.v < hrv.series.lo; i--) hrvLowStreak++
+  if (hrv) for (let i = hrv.raw.length - 1; i >= 0 && hrv.raw[i]!.v < hrv.series.lo; i--) hrvLowStreak++
 
   return {
     dates,
-    hrv: onDates(dates, hrv.dates, hrv.series),
+    hrv: hrv ? onDates(dates, hrv.dates, hrv.series) : null,
     restingHr: rhr ? onDates(dates, rhr.dates, rhr.series) : null,
     hrvLowStreak,
-    out: hrv.series.side !== null || (rhr?.series.side ?? null) !== null,
+    out: (hrv?.series.side ?? null) !== null || (rhr?.series.side ?? null) !== null,
   }
 }
 

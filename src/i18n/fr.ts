@@ -592,7 +592,8 @@ export const fr = {
       recovery: {
         title: 'Récupération',
         caption: 'Garmin · nuit',
-        about: "La VFC nocturne et la fréquence cardiaque au repos de votre montre, chacune face à votre propre référence : les 80 % centraux de vos 60 dernières nuits. Une VFC plus haute et une FC au repos plus basse indiquent que vous récupérez. La carte s'affiche dès que 7 nuits de la période ont une VFC.",
+        captionDaily: 'Garmin · jour',
+        about: "La VFC nocturne et la fréquence cardiaque au repos de votre montre, chacune face à votre propre référence : les 80 % centraux de vos 60 dernières nuits. Une VFC plus haute et une FC au repos plus basse indiquent que vous récupérez. Chacune s'affiche dès que la période en compte 7 jours. Sans la montre la nuit, il n'y a pas de VFC, et la FC au repos vient du moment le plus calme de la journée : elle est donc un peu plus haute.",
         hrv: 'VFC',
         restingHr: 'FC au repos',
         ms: 'ms',
@@ -602,6 +603,7 @@ export const fr = {
         baseline: (lo: number, hi: number) => `référence ${lo}–${hi}`,
         bothInside: ['Les deux ', 'dans votre référence', '. Vous absorbez la charge.'] as [string, string, string],
         hrvInside: ['VFC ', 'dans votre référence', '. Vous absorbez la charge.'] as [string, string, string],
+        rhrInside: ['FC au repos ', 'dans votre référence', '. Vous absorbez la charge.'] as [string, string, string],
         hrvLead: 'VFC ',
         hrvLow: (n: number) => (n <= 1 ? 'sous la référence cette nuit' : `sous la référence ${n} nuits de suite`),
         hrvHigh: 'au-dessus de la référence',

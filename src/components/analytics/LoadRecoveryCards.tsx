@@ -162,9 +162,9 @@ function RecoveryStat({ label, unit, series, testId }: { label: string; unit: st
 function recoverySentence(view: RecoveryView): readonly [string, string, string] {
   const s = t.analytics.cards.recovery
   const { hrv, restingHr: rhr } = view
-  if (!view.out) return rhr ? s.bothInside : s.hrvInside
+  if (!view.out) return hrv && rhr ? s.bothInside : hrv ? s.hrvInside : s.rhrInside
   const rhrUp = rhr && rhr.delta !== null && rhr.delta > 0 ? rhr.delta : null
-  if (hrv.side) {
+  if (hrv?.side) {
     const and = !rhr?.side ? '' : rhr.side === 'high' ? (rhrUp ? s.andRhrUp(rhrUp) : s.andRhrHigh) : s.andRhrLow
     return [s.hrvLead, hrv.side === 'low' ? s.hrvLow(view.hrvLowStreak) : s.hrvHigh, `${and}${s.takeEasy}`]
   }
@@ -212,13 +212,15 @@ export function RecoveryCard({ nights, window }: { nights: RecoveryNight[]; wind
   if (!view) return null
   return (
     <Card testId="recovery-card">
-      <CardHead title={s.title} caption={s.caption} about={s.about} />
+      <CardHead title={s.title} caption={view.hrv ? s.caption : s.captionDaily} about={s.about} />
       <div className="grid grid-cols-2 gap-3">
-        <RecoveryStat label={s.hrv} unit={s.ms} series={view.hrv} testId="recovery-hrv" />
+        {view.hrv && <RecoveryStat label={s.hrv} unit={s.ms} series={view.hrv} testId="recovery-hrv" />}
         {view.restingHr && <RecoveryStat label={s.restingHr} unit={s.bpm} series={view.restingHr} testId="recovery-rhr" />}
       </div>
       <BoldSentence parts={recoverySentence(view)} />
-      <MiniChart label={s.hrv} unit={s.ms} series={view.hrv} dates={view.dates} height={64} live={window.live} testId="recovery-hrv-chart" />
+      {view.hrv && (
+        <MiniChart label={s.hrv} unit={s.ms} series={view.hrv} dates={view.dates} height={64} live={window.live} testId="recovery-hrv-chart" />
+      )}
       {view.restingHr && (
         <MiniChart label={s.restingHr} unit={s.bpm} series={view.restingHr} dates={view.dates} height={44} live={window.live} testId="recovery-rhr-chart" />
       )}
