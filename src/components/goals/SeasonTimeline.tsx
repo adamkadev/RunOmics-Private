@@ -177,7 +177,10 @@ function TimelineRow({ row, block, last }: { row: SeasonRaceRow; block: SeasonBl
 export function SeasonTimeline({ yearData, today, block }: { yearData: YearData; today: string; block: SeasonBlock | null }) {
   const rows = seasonRaceRows(yearData, today)
   const dated = rows.filter((row) => row.date !== null).sort((a, b) => b.date!.localeCompare(a.date!))
-  const open = rows.filter((row) => row.date === null)
+  // A past year keeps only the undated distances it has a time for (v5.5
+  // #25): "10K · –" in 2025 is a goal that can no longer be set.
+  const pastYear = Number(today.slice(0, 4)) > yearData.year
+  const open = rows.filter((row) => row.date === null && (!pastYear || row.seconds !== null))
   if (rows.length === 0) return null
 
   const ahead = dated.filter((row) => row.kind === 'scheduled')

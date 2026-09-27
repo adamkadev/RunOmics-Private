@@ -157,7 +157,7 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
   )
 }
 
-export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+export function Sheet({ title, eyebrow, onClose, children }: { title: string; eyebrow?: string; onClose: () => void; children: ReactNode }) {
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
   const trapRef = useFocusTrap<HTMLDivElement>()
   useScrollLock()
@@ -182,6 +182,7 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
           <div className="h-1 w-9 rounded-full" style={{ background: 'var(--divider)' }} />
         </div>
         <div className="px-5 pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 32px)' }}>
+          {eyebrow && <p className="mb-1.5 text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground">{eyebrow}</p>}
           <h2 className="mb-3 font-display text-[20px] font-bold text-foreground">{title}</h2>
           {children}
           <button type="button" onClick={close} className="mt-5 w-full rounded-full bg-[var(--segmented-track)] py-3 text-[15px] font-semibold text-foreground">

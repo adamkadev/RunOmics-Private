@@ -27,18 +27,33 @@ import {
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
+/** A pace change under this is no change: deltaTone's own band for pace. */
+const PACE_FLAT_SEC = 3
+
 /** A change in time, as the rows print it: "33 s", or "9:17" past a minute. */
 export function changeAmount(seconds: number): string {
   const abs = Math.abs(Math.round(seconds))
   return abs >= 60 ? formatDuration(abs) : t.analytics.cards.summary.secs(abs)
 }
 
-/** "9 s slower", "28 s faster", or "1:10 slower" once it is past a minute. */
-export function shiftWords(delta: number | null): string | null {
+/**
+ * "9 s slower", "28 s faster", or "1:10 slower" once it is past a minute.
+ * Inside `flatBelow` it is "no change" (v5.6 #3): a pace tile said "1 s
+ * faster" beside a muted, flat delta.
+ */
+export function shiftWords(delta: number | null, flatBelow = 1): string | null {
   const s = t.analytics.cards.summary
   if (delta === null) return null
-  if (Math.round(delta) === 0) return s.same
+  if (Math.abs(Math.round(delta)) < flatBelow) return s.same
   return delta > 0 ? s.slower(changeAmount(delta)) : s.faster(changeAmount(delta))
+}
+
+/** "+33 s", "−1:10", or "0 s": a signed change that fits its column. */
+export function signedChange(delta: number | null): string | null {
+  if (delta === null) return null
+  const r = Math.round(delta)
+  if (r === 0) return t.analytics.cards.summary.secs(0)
+  return `${r > 0 ? '+' : MINUS}${changeAmount(r)}`
 }
 
 /** Month initials under a weekly chart, or dates for a four-week one. */
@@ -69,8 +84,8 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
       suffix: vo2.delta ? s.in12wSuffix : '',
       color: deltaColor('vo2max', vo2.delta),
     },
-    threshold && { label: s.threshold, value: formatClock(threshold.now), note: shiftWords(threshold.delta), suffix: '', color: deltaColor('pace', threshold.delta) },
-    easy && { label: s.easyPace, value: formatClock(easy.now), note: shiftWords(easy.delta), suffix: '', color: deltaColor('pace', easy.delta) },
+    threshold && { label: s.threshold, value: formatClock(threshold.now), note: shiftWords(threshold.delta, PACE_FLAT_SEC), suffix: '', color: deltaColor('pace', threshold.delta) },
+    easy && { label: s.easyPace, value: formatClock(easy.now), note: shiftWords(easy.delta, PACE_FLAT_SEC), suffix: '', color: deltaColor('pace', easy.delta) },
   ].filter((c): c is { label: string; value: string; note: string | null; suffix: string; color: string } => !!c)
   if (!cells.length) return null
   return (
@@ -141,12 +156,14 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
             <Spark values={thin(row.series)} />
             <span className="text-right font-display text-[16px] font-bold leading-none tabular-nums text-foreground">{formatDuration(Math.round(row.seconds))}</span>
             {/* Slower is the caution; faster stays quiet, not accent (v4.6). */}
+            {/* One line, signed (v5.5 #21): "33 s / slower" wrapped, and the
+                header already says "change in 12 wk". */}
             <span
-              className="text-right text-[12px] leading-tight"
+              className="whitespace-nowrap text-right text-[12px] font-semibold leading-tight tabular-nums"
               style={{ color: deltaColor('race', row.delta, { value: row.seconds }) }}
               data-testid="prediction-delta"
             >
-              {shiftWords(row.delta) ?? ''}
+              {signedChange(row.delta) ?? ''}
             </span>
           </div>
         ))}

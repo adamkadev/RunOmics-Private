@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
-import { SyncNowCard } from '@/components/settings/SyncNowCard'
+import { DataSourceInfo } from '@/components/settings/DataSourceInfo'
 import { t } from '@/i18n'
 
 const STORAGE_KEY = 'runomics_sync_since'
@@ -38,7 +38,8 @@ function jsonResponse(body: unknown, ok = true) {
 }
 
 function renderCard(pollIntervalMs?: number) {
-  return render(<SyncNowCard user={USER} pollIntervalMs={pollIntervalMs} />)
+  // The sync lives on the Garmin card's device row (v5.6 #6).
+  return render(<DataSourceInfo lastSyncedAt={null} activityCount={0} user={USER} pollIntervalMs={pollIntervalMs} />)
 }
 
 /**
@@ -72,11 +73,13 @@ afterEach(async () => {
   vi.unstubAllGlobals()
 })
 
-describe('SyncNowCard', () => {
+describe('Sync now, on the Garmin card', () => {
   it('renders idle with nothing to resume', () => {
     renderCard()
     expect(screen.getByText(s.action)).toBeInTheDocument()
-    expect(screen.getByText(s.takesAbout)).toBeInTheDocument()
+    expect(screen.getByTestId('sync-line').textContent).toBe(s.subtitle)
+    // One Garmin card: the sync has no card of its own.
+    expect(screen.getAllByTestId('garmin-row')).toHaveLength(1)
   })
 
   it(

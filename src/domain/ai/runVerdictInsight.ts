@@ -133,7 +133,7 @@ const TONE_RULES: Record<VerdictTone, string> = {
 export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   systemInstruction(
     'You are a running coach writing the verdict card for a single run an athlete just finished.',
-    'one sentence on how the session held together and what it earned',
+    'the measured facts behind the headline, as a short list in plain words',
     RUN_VERDICT_LIMITS
   ),
   'Never contradict the tone you are given - it drives the color of the card.',
@@ -144,6 +144,8 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   'Several angles are open to you: how the effort held together, the comparison against what the athlete ran before, the conditions it was run in, what the plan asked for. Pick the one this particular run makes the most of - never default to the comparison because it is there.',
   'You may state a difference against those past runs ("8s/km quicker", "5 bpm lower", "your best 10K in 6 months"); what is banned is repeating the numbers of this run back.',
   'When a planned session is given, judge what was run against what was asked, and say so plainly if they differ.',
+  // v5.5 #22, v5.6 #9: the body read "a textbook run locked in pure aerobic gains".
+  'Write the body as two or three measured facts, comma-separated or as two short sentences, like "3 reps within 1 s/km of each other, 4 bpm drift, 17 min at threshold." or "Kept out of Z4-Z5 the whole run, at RPE 2." No praise words (textbook, rock-solid, locked in, on full display) and no claims about what the run builds.',
 ].join(' ')
 
 const PACE_NOISE_SEC_PER_KM = 3

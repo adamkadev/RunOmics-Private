@@ -69,12 +69,16 @@ function CurrentWeekLine({ group, ranKm, targetKm }: { group: WeekRow; ranKm: nu
   )
 }
 
-/** "45 km · 5 · 89%": a collapsed week's stats beside its dots. */
-function PastWeekLine({ group }: { group: WeekRow }) {
+/**
+ * "45 km · 5 runs · 89% easy" on the first collapsed week, which teaches the
+ * short "45 km · 5 · 89%" every week under it (v5.5 #24).
+ */
+function PastWeekLine({ group, long = false }: { group: WeekRow; long?: boolean }) {
+  const w = t.activities.weekLine
   return (
-    <span className="shrink-0 text-footnote tabular-nums text-muted-foreground">
-      <span className={KM_STRONG}>{Math.round(group.totalKm)}</span> {t.units.km} · {group.items.length}
-      {group.easyPct !== null && ` · ${group.easyPct}%`}
+    <span className="shrink-0 text-footnote tabular-nums text-muted-foreground" data-testid="past-week-line">
+      <span className={KM_STRONG}>{Math.round(group.totalKm)}</span> {t.units.km} · {long ? w.runs(group.items.length) : group.items.length}
+      {group.easyPct !== null && ` · ${long ? w.easy(group.easyPct) : `${group.easyPct}%`}`}
     </span>
   )
 }
@@ -352,6 +356,8 @@ export function ActivityListClient({
     const opensOnThisWeek = sortOrder === 'desc' && !itemsAreFiltered
     return weekRows(opensOnThisWeek ? withCurrentWeek(grouped, currentWeekStart) : grouped, currentWeekStart)
   }, [items, sortBy, sortOrder, itemsAreFiltered, currentWeekStart])
+  // The first collapsed week spells its stats out; the rest use the short form.
+  const firstPastWeek = groups?.find((g) => !g.isCurrent)?.key
   // Before this week's first run its card is empty, so the latest runs would
   // otherwise all sit behind collapsed rows. The newest week that has any
   // starts open instead - under its own label, not the current card's.
@@ -546,7 +552,7 @@ export function ActivityListClient({
                         <div className="truncate font-display text-base font-semibold text-foreground">{g.label}</div>
                         <WeekCompositionDots items={g.items} label={g.shape} />
                       </div>
-                      <PastWeekLine group={g} />
+                      <PastWeekLine group={g} long={g.key === firstPastWeek} />
                       <ChevronDown size={14} aria-hidden="true" className={cn('shrink-0 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
                     </button>
                     {isExpanded && g.items.length > 0 && (

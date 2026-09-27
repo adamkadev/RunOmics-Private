@@ -9,6 +9,7 @@ import { Toast, useToast } from '@/components/ui/Toast'
 import { saveFileWithFallback } from '@/lib/fileExport'
 import { authorizedFetch } from '@/lib/ownerFetch'
 import { formatDate, formatRelativeAgo } from '@/lib/formatters'
+import { SyncNowButton, SyncVerdict, useSyncNow } from './SyncNowCard'
 
 export interface SyncDevice {
   name?: string
@@ -19,11 +20,19 @@ interface Props {
   lastSyncedAt: string | null
   activityCount: number
   device?: SyncDevice
-  /** Needed for the export's ID token - the route is owner-only. */
+  /** Needed for the export's and the sync's ID token - both routes are owner-only. */
   user: User
+  /** For the tests; see useSyncNow. */
+  pollIntervalMs?: number
 }
 
-export function DataSourceInfo({ lastSyncedAt, activityCount, device, user }: Props) {
+/**
+ * The one Garmin card (v5.6 #6): the device, when it last synced, and "Sync
+ * now" on the same row, then export and the offline cache. The sync had a
+ * card of its own that repeated the device's.
+ */
+export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, pollIntervalMs }: Props) {
+  const sync = useSyncNow(user, pollIntervalMs)
   const [loading, setLoading] = useState(false)
   const [confirmingClear, setConfirmingClear] = useState(false)
   const { toast, leaving, showToast } = useToast()
@@ -65,40 +74,44 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user }: Pr
 
   return (
     <GlassSurface variant="card" className="p-5">
-      {lastSyncedAt && (
-        <div className="flex items-center gap-3.5">
-          <div className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-[var(--segmented-track)]">
-            <svg
-              role="img"
-              viewBox="0 0 24 24"
-              width={19}
-              height={19}
-              fill="currentColor"
-              className="text-foreground"
-            >
-              <title>{s.dataSource.garmin}</title>
-              <path d={siGarmin.path} />
-            </svg>
-            <span
-              className="absolute -bottom-px -right-px h-2 w-2 rounded-full bg-accent ring-2 ring-card"
-              style={{ animation: 'pulse-ring 2s ease-in-out infinite' }}
-            />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {device?.name ?? s.dataSource.connected(s.dataSource.garmin)}
-            </p>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {s.dataSource.lastSync} {formatRelativeAgo(lastSyncedAt)} · {t.common.runs(activityCount)}
-            </p>
-            {device?.name && provenance && (
-              <p className="mt-0.5 truncate text-caption text-subtle-2">{provenance}</p>
-            )}
-          </div>
+      <div className="flex items-center gap-3.5" data-testid="garmin-row">
+        <div className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-[var(--segmented-track)]">
+          <svg
+            role="img"
+            viewBox="0 0 24 24"
+            width={19}
+            height={19}
+            fill="currentColor"
+            className="text-foreground"
+          >
+            <title>{s.dataSource.garmin}</title>
+            <path d={siGarmin.path} />
+          </svg>
+          <span
+            className="absolute -bottom-px -right-px h-2 w-2 rounded-full bg-accent ring-2 ring-card"
+            style={{ animation: 'pulse-ring 2s ease-in-out infinite' }}
+          />
         </div>
-      )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-foreground">
+            {device?.name ?? s.dataSource.connected(s.dataSource.garmin)}
+          </p>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground" data-testid="sync-line">
+            {sync.progress ??
+              (lastSyncedAt
+                ? `${s.dataSource.lastSync} ${formatRelativeAgo(lastSyncedAt)} · ${t.common.runs(activityCount)}`
+                : s.sync.subtitle)}
+          </p>
+          {device?.name && provenance && (
+            <p className="mt-0.5 truncate text-caption text-subtle-2">{provenance}</p>
+          )}
+        </div>
+        <SyncNowButton sync={sync} />
+      </div>
 
-      {lastSyncedAt && <div className="my-4 h-px bg-foreground/[0.06]" />}
+      <SyncVerdict sync={sync} />
+
+      <div className="my-4 h-px bg-foreground/[0.06]" />
 
       <div className="space-y-2.5">
         <button

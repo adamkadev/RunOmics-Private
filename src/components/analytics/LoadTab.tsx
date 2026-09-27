@@ -6,7 +6,7 @@ import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import type { TrainingStatusType } from '@/domain/training/status'
 import type { FormBand } from '@/domain/training/formBand'
 import { formatClock, formatDate, formatDelta, formatDeltaFixed, MINUS } from '@/lib/formatters'
-import { deltaColor } from '@/lib/deltaTone'
+import { DELTA_TONE_COLOR, deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import { AxisLabels, Card, CardHead, ChartScrub, Legend, LegendItem, Sentence, Sheet, linePath, windowLabels } from './AnalyticsKit'
 import { LoadTrendCard, RecoveryCard } from './LoadRecoveryCards'
@@ -21,6 +21,7 @@ import {
   predictionRows,
   riskRows,
   statusView,
+  thresholdShift,
   weeksIn,
   type CoachReadView,
   type DayWindow,
@@ -79,11 +80,18 @@ export function coachText(view: CoachReadView, load: LoadCoachHeadline | null = 
     : view.tone === 'positive' ? s.headline.positive : view.tone === 'neutral' ? s.headline.neutral : view.loadUp ? s.headline.cautionLoadUp : s.headline.caution
   const signals = view.signals.map((signal) => {
     switch (signal.key) {
+      case 'fitness':
+        return { trend: signal.trend, text: s.fitness(Math.round(signal.value), formatDelta(Math.round(signal.delta))) }
+      case 'threshold': {
+        const pace = formatClock(signal.pace)
+        const text = signal.trend === 'flat' ? s.thresholdLevel(pace) : signal.delta < 0 ? s.thresholdFaster(pace, Math.abs(signal.delta)) : s.thresholdSlower(pace, signal.delta)
+        return { trend: signal.trend, text }
+      }
       case 'easy': {
         const pace = formatClock(signal.pace)
-        // The Easy pace tile's own words: "1 s faster" is 1 s faster here too,
-        // even where the arrow calls a second flat.
-        const text = signal.delta === 0 ? s.easyLevel(pace) : signal.delta < 0 ? s.easyFaster(pace, Math.abs(signal.delta)) : s.easySlower(pace, signal.delta)
+        // Inside the noise band it is level, in words and arrow alike (v5.6
+        // #3): "1 s faster" sat beside a flat arrow.
+        const text = signal.trend === 'flat' ? s.easyLevel(pace) : signal.delta < 0 ? s.easyFaster(pace, Math.abs(signal.delta)) : s.easySlower(pace, signal.delta)
         return { trend: signal.trend, text }
       }
       case 'predictions': {
@@ -100,11 +108,14 @@ export function coachText(view: CoachReadView, load: LoadCoachHeadline | null = 
   return { headline, signals }
 }
 
-/** A trend's arrow: never the accent, because a trend delta is not "now" (v4.3 §3). */
+/**
+ * A trend's arrow in the v4.7 colours (v5.6 #3): improving --good, level
+ * muted, worse amber. Never the accent, because a trend is not "now".
+ */
 const TREND_ICON: Record<Trend, { Icon: typeof ArrowRight; color: string }> = {
-  improving: { Icon: ArrowUpRight, color: 'var(--muted-foreground)' },
-  flat: { Icon: ArrowRight, color: 'var(--muted-foreground)' },
-  declining: { Icon: ArrowDownRight, color: 'var(--tone-caution)' },
+  improving: { Icon: ArrowUpRight, color: DELTA_TONE_COLOR.good },
+  flat: { Icon: ArrowRight, color: DELTA_TONE_COLOR.flat },
+  declining: { Icon: ArrowDownRight, color: DELTA_TONE_COLOR.worse },
 }
 
 function CoachRead({ view, load }: { view: CoachReadView; load: LoadCoachHeadline | null }) {
@@ -128,7 +139,8 @@ function CoachRead({ view, load }: { view: CoachReadView; load: LoadCoachHeadlin
         <span className="font-display text-[16px] font-semibold leading-[1.3] text-foreground text-pretty">{text.headline}</span>
       </button>
       {open && (
-        <Sheet title={s.sheetTitle} onClose={() => setOpen(false)}>
+        // The sheet leads with the headline it backs up (v5.6 L1).
+        <Sheet title={text.headline} eyebrow={s.sheetEyebrow} onClose={() => setOpen(false)}>
           <ul className="flex flex-col gap-3">
             {text.signals.map((signal, i) => {
               const { Icon, color } = TREND_ICON[signal.trend]
@@ -368,6 +380,8 @@ export function LoadTab({ window, onShift, today, data }: LoadTabProps) {
     predictions: predictionRows(data.predictions, perf),
     efficiency: efficiencyView(data.weeks, perfWeeks, perf.end),
     fitnessDelta: formView(data.load, dayWindow(today, '4w'))?.fitnessDelta ?? null,
+    fitness: formView(data.load, dayWindow(today, '4w'))?.fitness ?? null,
+    threshold: thresholdShift(data.threshold, perf),
     ytdDelta: ytd && ytd.previousToDate !== null ? (ytd.current.at(-1)?.km ?? 0) - ytd.previousToDate : null,
   })
   // Load trend, the Load ratio and the coach read share one acute/chronic

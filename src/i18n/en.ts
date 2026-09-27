@@ -413,9 +413,10 @@ export const en = {
           title: 'Shoe wear alerts',
           subtitle: 'Warning at 70% and 90% wear.',
         },
+        // The title says what the toggle does (v5.6 #6): the PR alert.
         races: {
-          title: 'Race predictions',
-          subtitle: 'Automatic detection of new potential PR.',
+          title: 'PRs and predictions',
+          subtitle: 'When a run sets a PR or moves a race prediction.',
         },
       },
     },
@@ -452,6 +453,7 @@ export const en = {
       daysAgo: (d: number) => `${d}d ago`,
     },
     todayHero: {
+      formReason: (form: string, band: string) => `Form ${form} · ${band}`,
       eyebrowByTone: {
         go: 'Green light',
         caution: 'Caution',
@@ -551,7 +553,7 @@ export const en = {
         sheetTitle: 'Coach read',
         headline: {
           positive: 'Your load is turning into speed.',
-          cautionLoadUp: "Load is up but speed hasn't followed yet.",
+          cautionLoadUp: "Load is up, but threshold and race predictions haven't followed yet.",
           caution: 'Speed has slipped over the last 12 weeks.',
           neutral: 'Speed is holding steady over the last 12 weeks.',
         },
@@ -563,6 +565,11 @@ export const en = {
           building: (pct: number, span: string) => `Load is up ${pct}% in ${span} and recovery is holding. Keep building.`,
           buildingLoad: (pct: number, span: string) => `Load is up ${pct}% in ${span}. Keep building.`,
         },
+        fitness: (value: number, delta: string) => `Fitness ${value}, ${delta} in 4 weeks.`,
+        thresholdFaster: (pace: string, s: number) => `Threshold ${pace} /km, ${s} s faster than 12 weeks ago.`,
+        thresholdSlower: (pace: string, s: number) => `Threshold ${pace} /km, ${s} s slower than 12 weeks ago.`,
+        thresholdLevel: (pace: string) => `Threshold ${pace} /km, level with 12 weeks ago.`,
+        sheetEyebrow: 'Coach read · 12 wk',
         easyFaster: (pace: string, s: number) => `Easy pace averaged ${pace} /km, ${s} s faster than 12 weeks ago.`,
         easySlower: (pace: string, s: number) => `Easy pace averaged ${pace} /km, ${s} s slower than 12 weeks ago.`,
         easyLevel: (pace: string) => `Easy pace averaged ${pace} /km, level with 12 weeks ago.`,

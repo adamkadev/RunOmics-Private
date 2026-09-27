@@ -50,7 +50,8 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-label={`${label}: ${activeLabel ?? ''}`}
-        className="flex h-9 shrink-0 items-center gap-1 rounded-control border border-foreground/[0.12] bg-foreground/[0.06] px-2.5 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/[0.10]"
+        // Outlined like the Map button beside it (v5.6 #8): one header style.
+        className="flex h-9 shrink-0 items-center gap-1 rounded-control border border-foreground/[0.12] px-3 text-footnote text-foreground transition-colors hover:bg-foreground/[0.06]"
       >
         {order === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
         {activeLabel}

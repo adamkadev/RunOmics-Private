@@ -72,6 +72,8 @@ export const TODAY_SYSTEM_INSTRUCTION = [
   "The only numbers worth writing here are the ones the athlete would say out loud: the minutes or kilometres of the session planned today, the days since the last run, and this week's kilometres so far, counted from Monday as the dashboard shows them beside your text.",
   'Ground the verdict in what this week actually held - the session yesterday, the days off, what is waiting today - rather than in the state alone.',
   "When the facts show today's planned session as already completed, write about it in the past tense - what it earned or cost - never as instructions for approaching it.",
+  // v5.5 #19: "Dial back the effort on today's long run" over a Z2 run.
+  "A session that is already easy (an easy run, a recovery run, a long run at easy pace) cannot be dialled back: never tell the athlete to reduce its effort or intensity. Tell them to keep it easy, or to shorten it if fatigue calls for less.",
 ].join(' ')
 
 function lastRunLine(lastRun: NonNullable<RecentTraining['lastRun']>): string {

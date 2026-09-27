@@ -674,6 +674,8 @@ export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView
 export type Trend = 'improving' | 'flat' | 'declining'
 
 export type CoachSignal =
+  | { key: 'fitness'; trend: Trend; value: number; delta: number }
+  | { key: 'threshold'; trend: Trend; pace: number; delta: number }
   | { key: 'easy'; trend: Trend; pace: number; delta: number }
   | { key: 'predictions'; trend: Trend; slower: number; faster: number; count: number }
   | { key: 'efficiency'; trend: Trend; value: number; delta: number }
@@ -698,15 +700,29 @@ const trendOf = (delta: number, noise: number, lowerIsBetter: boolean): Trend =>
  * headline used to be hard-coded praise ("yielding real speed") above four
  * slower predictions.
  */
+/** Under 3 s/km either way, threshold pace held (the Pace trend's own band). */
+const THRESHOLD_NOISE_SEC = 3
+
 export function coachRead(input: {
   easy: PaceShift | null
   predictions: PredictionRow[]
   efficiency: EfficiencyView | null
   fitnessDelta: number | null
+  /** Fitness now, for the load fact the headline is built on (v5.6 #3). */
+  fitness?: number | null
+  threshold?: PaceShift | null
   ytdDelta: number | null
 }): CoachReadView | null {
   const signals: CoachSignal[] = []
   const { easy, predictions, efficiency } = input
+  // The load fact first: the headline says "Load is up", so the sheet says by
+  // how much before anything else (v5.6 #3).
+  if (input.fitness != null && input.fitnessDelta !== null) {
+    signals.push({ key: 'fitness', trend: trendOf(input.fitnessDelta, 1, false), value: input.fitness, delta: input.fitnessDelta })
+  }
+  if (input.threshold && input.threshold.delta !== null) {
+    signals.push({ key: 'threshold', trend: trendOf(input.threshold.delta, THRESHOLD_NOISE_SEC, true), pace: input.threshold.now, delta: input.threshold.delta })
+  }
   if (easy && easy.delta !== null) signals.push({ key: 'easy', trend: trendOf(easy.delta, EASY_NOISE_SEC, true), pace: easy.now, delta: easy.delta })
   const moved = known(predictions.map((r) => r.delta))
   if (moved.length) {
@@ -718,7 +734,7 @@ export function coachRead(input: {
     signals.push({ key: 'efficiency', trend: efficiency.trend === 'dipping' ? 'declining' : efficiency.trend === 'rising' ? 'improving' : 'flat', value: efficiency.now, delta: efficiency.delta4w })
   }
   if (input.ytdDelta !== null) signals.push({ key: 'volume', trend: trendOf(input.ytdDelta, 1, false), delta: input.ytdDelta })
-  const speed = signals.filter((s) => s.key !== 'volume')
+  const speed = signals.filter((s) => s.key !== 'volume' && s.key !== 'fitness')
   if (!speed.length) return null
   const score = speed.filter((s) => s.trend === 'improving').length - speed.filter((s) => s.trend === 'declining').length
   return { tone: score > 0 ? 'positive' : score < 0 ? 'caution' : 'neutral', loadUp: (input.fitnessDelta ?? 0) > 0, signals }

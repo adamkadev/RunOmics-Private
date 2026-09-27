@@ -15,7 +15,6 @@ import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { NotificationsForm } from './NotificationsForm'
-import { SyncNowCard } from './SyncNowCard'
 import { BuildInfo } from './BuildInfo'
 import { bodyMetrics } from '@/components/profile/ProfileAthleteStats'
 
@@ -154,7 +153,6 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body }: Pr
           {t.settings.sections.data}
         </SectionDivider>
         <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} user={user} />
-        <SyncNowCard user={user} />
       </section>
 
       <section className="space-y-2">
