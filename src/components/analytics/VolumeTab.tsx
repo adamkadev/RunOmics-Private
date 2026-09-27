@@ -108,19 +108,22 @@ function YtdCard({ ytd, today }: { ytd: YtdInput; today: string }) {
   const path = (points: { day: number; km: number }[]) => points.map((p, i) => `${i ? 'L' : 'M'}${X(p.day).toFixed(1)},${Y(p.km).toFixed(1)}`).join('')
   const lastYear = ytd.year - 1
   const sameDate = `${lastYear}${today.slice(4)}`
+  const vs = ytd.vsLastYear
   const p = ytd.projection
   const goal = ytd.goalKm
   const months = [1, 4, 7, 10, 12].map((m) => formatDate(`2000-${String(m).padStart(2, '0')}-01`, { precision: 'month', year: 'never' }))
   return (
     <Card testId="ytd-card">
-      <CardHead title={s.title} caption={ytd.previousToDate !== null ? s.caption : undefined} about={s.about} />
+      <CardHead title={s.title} caption={vs ? (vs.since ? s.captionSince : s.caption) : undefined} about={s.about} />
       <Headline
         value={`${formatKm(km)} ${t.units.km}`}
         note={
-          ytd.previousToDate !== null ? (
+          vs ? (
             <span data-testid="ytd-delta">
-              <span style={{ color: deltaColor('distance', km - ytd.previousToDate, { value: km }) }}>{formatDelta(Math.round(km - ytd.previousToDate))}</span>
-              {s.vs('', t.dates.monthShortYear(bare(sameDate), sameDate.slice(2, 4)))}
+              <span style={{ color: deltaColor('distance', vs.km - vs.lastYearKm, { value: vs.km }) }}>{formatDelta(vs.km - vs.lastYearKm)}</span>
+              {/* A history that starts in the middle of last year is compared
+                  from that date in both years, and says so (v4.16.4). */}
+              {vs.since ? s.vsSince('', bare(vs.since)) : s.vs('', t.dates.monthShortYear(bare(sameDate), sameDate.slice(2, 4)))}
             </span>
           ) : undefined
         }

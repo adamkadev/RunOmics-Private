@@ -17,6 +17,7 @@ import {
   dayWindow,
   efficiencyView,
   formView,
+  isSpeedSignal,
   paceShift,
   predictionRows,
   riskRows,
@@ -27,6 +28,7 @@ import {
   type DayWindow,
   type LoadDay,
   type RiskRow,
+  type SpeedKey,
   type StatusDay,
   type Trend,
 } from './analyticsView'
@@ -56,7 +58,6 @@ const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
 export { windowLabels }
 
-/** What the coach read's sentences say, from the numbers the cards print. */
 /** The load headline's words (v5.4), first match of load and recovery. */
 export function loadHeadlineText(h: LoadCoachHeadline): string {
   const s = t.analytics.cards.coachRead.load
@@ -73,11 +74,52 @@ export function loadHeadlineText(h: LoadCoachHeadline): string {
   }
 }
 
-export function coachText(view: CoachReadView, load: LoadCoachHeadline | null = null): { headline: string; signals: { trend: Trend; text: string }[] } {
+/** The speed reads a headline names, joined as the locale lists them. */
+function named(keys: SpeedKey[]): { names: string; plural: boolean } {
+  const words = keys.map((key) => t.analytics.cards.coachRead.names[key])
+  return {
+    names: new Intl.ListFormat(t.locale, { style: 'long', type: 'conjunction' }).format(words.map((w) => w.word)),
+    plural: words.length > 1 || words.some((w) => w.plural),
+  }
+}
+
+const capitalized = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/**
+ * The headline the signals back (v4.16.4): it names only the reads that moved
+ * the way it says. "Load is up, but threshold and race predictions haven't
+ * followed" was one fixed sentence, printed whichever reads had slipped.
+ */
+function readHeadline(view: CoachReadView): string {
+  const s = t.analytics.cards.coachRead.headline
+  const speed = view.signals.filter(isSpeedSignal)
+  const improved = named(speed.filter((sig) => sig.trend === 'improving').map((sig) => sig.key))
+  const slipped = named(speed.filter((sig) => sig.trend === 'declining').map((sig) => sig.key))
+  switch (view.tone) {
+    case 'positive':
+      return view.loadUp ? s.positive : s.positiveSteadyLoad
+    case 'caution':
+      return view.loadUp ? s.cautionLoadUp(slipped.names, slipped.plural) : s.caution
+    case 'neutral':
+      // Level on one vote only because the reads moved both ways.
+      return improved.names && slipped.names
+        ? s.mixed(capitalized(improved.names), improved.plural, slipped.names, slipped.plural)
+        : s.neutral
+  }
+}
+
+/**
+ * What the coach read says, from the numbers the cards print. `headline` is
+ * what the card leads with - the load headline when one applies - and `read`
+ * the headline the signals back, which the sheet prints above them.
+ */
+export function coachText(
+  view: CoachReadView,
+  load: LoadCoachHeadline | null = null,
+): { headline: string; read: string; signals: { trend: Trend; text: string }[] } {
   const s = t.analytics.cards.coachRead
-  const headline = load
-    ? loadHeadlineText(load)
-    : view.tone === 'positive' ? s.headline.positive : view.tone === 'neutral' ? s.headline.neutral : view.loadUp ? s.headline.cautionLoadUp : s.headline.caution
+  const read = readHeadline(view)
+  const headline = load ? loadHeadlineText(load) : read
   const signals = view.signals.map((signal) => {
     switch (signal.key) {
       case 'fitness':
@@ -99,13 +141,19 @@ export function coachText(view: CoachReadView, load: LoadCoachHeadline | null = 
           signal.trend === 'declining' ? s.predictionsSlower(signal.slower, signal.count) : signal.trend === 'improving' ? s.predictionsFaster(signal.faster, signal.count) : s.predictionsHeld
         return { trend: signal.trend, text }
       }
-      case 'efficiency':
-        return { trend: signal.trend, text: s.efficiency(signal.value.toFixed(2), formatDeltaFixed(signal.delta, 2)) }
-      case 'volume':
-        return { trend: signal.trend, text: s.volume(formatDelta(Math.round(signal.delta))) }
+      case 'efficiency': {
+        const value = signal.value.toFixed(2)
+        const delta = formatDeltaFixed(signal.delta, 2)
+        const text = signal.trend === 'flat' ? s.efficiencyLevel(value) : signal.trend === 'improving' ? s.efficiencyUp(value, delta) : s.efficiencyDown(value, delta)
+        return { trend: signal.trend, text }
+      }
+      case 'volume': {
+        const delta = formatDelta(Math.round(signal.delta))
+        return { trend: signal.trend, text: signal.since ? s.volumeSince(delta, bare(signal.since)) : s.volume(delta) }
+      }
     }
   })
-  return { headline, signals }
+  return { headline, read, signals }
 }
 
 /**
@@ -128,19 +176,28 @@ function CoachRead({ view, load }: { view: CoachReadView; load: LoadCoachHeadlin
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        aria-label={`${s.eyebrow}: ${s.open}`}
+        aria-label={`${s.label}: ${s.open}`}
         data-testid="coach-read"
         data-tone={view.tone}
         data-load={load?.kind}
         className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-card border border-[var(--divider)] bg-card px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
+        {/* The read's own 12 weeks on the card too: under a tab set to 4w, a
+            bare "Coach read" read as those 4 weeks (v4.16.4). */}
         <span className="text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground">{s.eyebrow}</span>
         <ChevronRight size={16} className="row-span-2 text-muted-foreground" aria-hidden />
         <span className="font-display text-[16px] font-semibold leading-[1.3] text-foreground text-pretty">{text.headline}</span>
       </button>
       {open && (
-        // The sheet leads with the headline it backs up (v5.6 L1).
-        <Sheet title={text.headline} eyebrow={s.sheetEyebrow} onClose={() => setOpen(false)}>
+        // The sheet leads with the card's headline (v5.6 L1). A load headline
+        // is not what the speed reads back, so their own headline heads them
+        // (v4.16.4): "Load jumped 30%" sat over six lines about pace.
+        <Sheet title={text.headline} eyebrow={s.eyebrow} onClose={() => setOpen(false)}>
+          {load && (
+            <p className="mb-3 text-[15px] font-semibold leading-snug text-foreground" data-testid="coach-read-speed">
+              {text.read}
+            </p>
+          )}
           <ul className="flex flex-col gap-3">
             {text.signals.map((signal, i) => {
               const { Icon, color } = TREND_ICON[signal.trend]
@@ -371,18 +428,19 @@ export interface LoadTabProps {
 
 export function LoadTab({ window, onShift, today, data }: LoadTabProps) {
   // The coach read sums up the Performance and Volume cards at their
-  // defaults (12 weeks, today), from the very values they print.
+  // defaults (12 weeks, today), from the very values they print - fitness
+  // over the same 12 weeks, since "Load is up" is set against them (v4.16.4).
   const perf = dayWindow(today, '12w')
   const perfWeeks = weeksIn(data.weeks, perf)
-  const ytd = data.ytd
+  const fitness = formView(data.load, perf)
   const coach = coachRead({
     easy: paceShift(perfWeeks, (w) => w.easyPace),
     predictions: predictionRows(data.predictions, perf),
     efficiency: efficiencyView(data.weeks, perfWeeks, perf.end),
-    fitnessDelta: formView(data.load, dayWindow(today, '4w'))?.fitnessDelta ?? null,
-    fitness: formView(data.load, dayWindow(today, '4w'))?.fitness ?? null,
+    fitnessDelta: fitness?.fitnessDelta ?? null,
+    fitness: fitness?.fitness ?? null,
     threshold: thresholdShift(data.threshold, perf),
-    ytdDelta: ytd && ytd.previousToDate !== null ? (ytd.current.at(-1)?.km ?? 0) - ytd.previousToDate : null,
+    ytd: data.ytd?.vsLastYear ?? null,
   })
   // Load trend, the Load ratio and the coach read share one acute/chronic
   // series and one y range per athlete (v5.4).

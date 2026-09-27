@@ -2,7 +2,7 @@ import { DAY_MS } from '@/lib/calendarDate'
 import type { RecordEntry } from '@/domain/race/records'
 import { insightHash } from './insightHash'
 import { isRecentRecord } from './celebrationWindow'
-import { avoidClause, systemInstruction } from './prompt'
+import { avoidClause, CARD_PROMPT_VERSION, systemInstruction } from './prompt'
 import { formatClock } from '@/lib/formatters'
 
 export const PB_CELEBRATION_SURFACE = 'pbCelebration'
@@ -20,6 +20,7 @@ export interface PbCelebrationContext {
 
 function facts({ record, previous }: PbCelebrationContext) {
   return {
+    promptVersion: CARD_PROMPT_VERSION,
     key: record.key,
     label: record.label,
     seconds: record.seconds,
@@ -42,12 +43,22 @@ export const PB_CELEBRATION_SYSTEM_INSTRUCTION = [
     PB_CELEBRATION_LIMITS
   ),
   'The distance and the time are already printed in large type under your text: never state them.',
-  'The mark it replaced is not printed anywhere, so naming it - and how long it stood - is the one number worth writing.',
+  // v4.16.4: said unconditionally, it pushed the model to invent a mark for a first record.
+  'When the mark it replaced is given, it is not printed anywhere, so naming it - and how long it stood - is the one number worth writing. When none is given, this is the first time on record at this distance: say so, and never invent an earlier time.',
   'Be warm and direct, never breathless. No exclamation marks stacked up, no emoji.',
 ].join(' ')
 
 function daysBetween(from: string, to: string): number {
   return Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / DAY_MS)
+}
+
+const DAYS_PER_MONTH = 30.44
+
+/** "5 months", not "163 days" or the ISO date it was set on, for the model to copy. */
+function stoodFor(days: number): string {
+  if (days < 60) return `${days} day${days === 1 ? '' : 's'}`
+  const months = Math.round(days / DAYS_PER_MONTH)
+  return months < 24 ? `${months} months` : `${Math.round(days / 365)} years`
 }
 
 export function pbCelebrationInsightPrompt(context: PbCelebrationContext, recentHeadlines: string[]): string {
@@ -61,8 +72,8 @@ export function pbCelebrationInsightPrompt(context: PbCelebrationContext, recent
     f.seconds !== null ? `- Time: ${formatClock(f.seconds)}` : null,
     f.distanceKm ? `- Distance: ${f.distanceKm} km` : null,
     f.official ? `- Set in an official race${f.event ? `: ${f.event}` : ''}` : '- Set in training, not in a race',
-    previous ? `- The mark it replaces: ${formatClock(previous.seconds)}, set on ${previous.date}` : null,
-    previous && stoodDays !== null ? `- That mark had stood for ${stoodDays} days` : null,
+    previous ? `- The mark it replaces: ${formatClock(previous.seconds)}` : '- No earlier mark at this distance: a first record',
+    previous && stoodDays !== null ? `- That mark had stood for ${stoodFor(stoodDays)}` : null,
     previous && f.seconds !== null ? `- Taken off it: ${Math.round(previous.seconds - f.seconds)}s` : null,
     avoidClause(recentHeadlines),
   ]

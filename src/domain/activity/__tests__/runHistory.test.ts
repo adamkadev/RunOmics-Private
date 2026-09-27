@@ -28,6 +28,7 @@ describe('typeBaseline', () => {
       runs: 3,
       paceSecPerKm: 340,
       avgHr: 152,
+      measure: 'runs',
     })
   })
 
@@ -55,6 +56,35 @@ describe('typeBaseline', () => {
     const later = peers.map((peer, i) => ({ ...peer, id: `l${i}`, date: '2026-06-20' }))
 
     expect(runHistory(current, [current, ...later]).baseline).toBeNull()
+  })
+
+  // v4.16.4: like for like, or the comparison says nothing.
+  const reps = (pace: number, hr: number) =>
+    [0, 1, 2].map(() => ({ type: 'interval_active', durationSec: 420, distanceM: (420 / pace) * 1000, avgSpeedMs: 0, avgHr: hr, laps: [] }))
+  const threshold = (id: string, date: string, pace: number, hr: number) =>
+    run({ id, date, type: 'Threshold', paceSecPerKm: 333, splits: reps(pace, hr) } as Partial<Activity> & { id: string; date: string })
+
+  it('holds a threshold session against earlier threshold reps, not whole-run averages', () => {
+    const current = threshold('c', '2026-06-22', 265, 177)
+    const before = [threshold('t1', '2026-06-01', 271, 176), threshold('t2', '2026-06-08', 270, 178), threshold('t3', '2026-06-15', 269, 177)]
+
+    expect(runHistory(current, [current, ...before]).baseline).toEqual({ runs: 3, paceSecPerKm: 270, avgHr: 177, measure: 'reps' })
+  })
+
+  it('holds a long run against long runs only', () => {
+    const long = (id: string, date: string, pace: number) => run({ id, date, durationSeconds: 100 * 60, paceSecPerKm: pace, distanceKm: 16 })
+    const current = long('c', '2026-06-22', 350)
+
+    expect(runHistory(current, [current, ...peers]).baseline).toBeNull()
+    const longs = [long('l1', '2026-06-01', 352), long('l2', '2026-06-08', 356), long('l3', '2026-06-15', 354)]
+    expect(runHistory(current, [current, ...peers, ...longs]).baseline).toMatchObject({ runs: 3, measure: 'runs' })
+  })
+
+  it('has no average for a race, whose peers are other distances', () => {
+    const race = (id: string, date: string) => run({ id, date, type: 'Race' })
+    const current = race('c', '2026-06-22')
+
+    expect(runHistory(current, [current, race('r1', '2026-06-01'), race('r2', '2026-06-08'), race('r3', '2026-06-15')]).baseline).toBeNull()
   })
 })
 

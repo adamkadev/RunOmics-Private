@@ -12,7 +12,7 @@ describe('deltaTone (v4.7)', () => {
     expect(deltaTone('pace', -28)).toBe('good')
     expect(deltaTone('pace', 9)).toBe('worse')
     expect(deltaTone('efficiency', -0.03)).toBe('worse')
-    expect(deltaTone('efficiency', 0.02)).toBe('good')
+    expect(deltaTone('efficiency', 0.03)).toBe('good')
     expect(deltaTone('restingHr', -2)).toBe('good')
   })
 
@@ -22,6 +22,9 @@ describe('deltaTone (v4.7)', () => {
     expect(deltaTone('vo2max', 0.4)).toBe('flat')
     expect(deltaTone('pace', -1)).toBe('flat')
     expect(deltaTone('efficiency', 0.005)).toBe('flat')
+    // Up to 0.02 as printed, so -0.015 (printed -0.02) is noise too (v4.16.4).
+    expect(deltaTone('efficiency', -0.02)).toBe('flat')
+    expect(deltaTone('efficiency', -0.015)).toBe('flat')
     expect(deltaTone('restingHr', 0.5)).toBe('flat')
     // 0.5% of a race time; 2% of last year's distance.
     expect(deltaTone('race', 5, { value: 2570 })).toBe('flat')

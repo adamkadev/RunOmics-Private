@@ -4,6 +4,7 @@ import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import {
   coachRead,
+  yearOverYear,
   dayWindow,
   easyHardView,
   efficiencyView,
@@ -269,7 +270,7 @@ describe('the coach read (v4.6)', () => {
   ]
 
   it('reads caution, never praise, when speed went the other way', () => {
-    const view = coachRead({ easy, predictions, efficiency: null, fitnessDelta: 6, ytdDelta: 754 })!
+    const view = coachRead({ easy, predictions, efficiency: null, fitnessDelta: 6, ytd: { km: 1394, lastYearKm: 640, since: null } })!
     expect(view.tone).toBe('caution')
     expect(view.loadUp).toBe(true)
     expect(view.signals.map((s) => [s.key, s.trend])).toEqual([
@@ -281,8 +282,61 @@ describe('the coach read (v4.6)', () => {
 
   it('reads positive when the speed signals improve, neutral when they are flat', () => {
     const faster = predictions.map((p) => ({ ...p, delta: -p.delta! }))
-    expect(coachRead({ easy: { now: 352, delta: -20 }, predictions: faster, efficiency: null, fitnessDelta: 0, ytdDelta: null })!.tone).toBe('positive')
-    expect(coachRead({ easy: { now: 352, delta: 1 }, predictions: [], efficiency: null, fitnessDelta: 0, ytdDelta: null })!.tone).toBe('neutral')
+    expect(coachRead({ easy: { now: 352, delta: -20 }, predictions: faster, efficiency: null, fitnessDelta: 0, ytd: null })!.tone).toBe('positive')
+    expect(coachRead({ easy: { now: 352, delta: 1 }, predictions: [], efficiency: null, fitnessDelta: 0, ytd: null })!.tone).toBe('neutral')
+  })
+
+  // v4.16.4: both are Garmin's estimate of one fitness. Counted twice, one slower
+  // estimate outvoted faster easy runs on its own.
+  it('gives threshold and the race predictions one vote between them', () => {
+    const both = coachRead({ threshold: { now: 263, delta: 9 }, easy: { now: 352, delta: -10 }, predictions, efficiency: null, fitnessDelta: 11, ytd: null })!
+    expect(both.tone).toBe('neutral')
+    // Opposite ways, they cancel inside the vote rather than outvote anything.
+    const split = coachRead({ threshold: { now: 263, delta: -9 }, easy: { now: 352, delta: 13 }, predictions, efficiency: null, fitnessDelta: 11, ytd: null })!
+    expect(split.tone).toBe('caution')
+    expect(split.signals.map((sig) => [sig.key, sig.trend])).toEqual([
+      ['threshold', 'improving'],
+      ['easy', 'declining'],
+      ['predictions', 'declining'],
+    ])
+  })
+
+  // v4.16.4: "2 s faster" in green beside an Easy pace tile that printed "same",
+  // and -0.02 in amber on a card whose band calls 0.02 noise.
+  it('calls a change on the edge of its card band level, as the card does', () => {
+    const efficiency = (delta12w: number) => ({ now: 1.15, delta4w: 0, delta12w, heatCost: null, trend: 'steady' as const, adjusted: [], measured: [], dates: [] })
+    const trends = (easyDelta: number, efDelta: number) =>
+      coachRead({ easy: { now: 351, delta: easyDelta }, predictions: [], efficiency: efficiency(efDelta), fitnessDelta: 0, ytd: null })!.signals.map((sig) => sig.trend)
+    expect(trends(-2, -0.02)).toEqual(['flat', 'flat'])
+    expect(trends(-3, -0.03)).toEqual(['improving', 'declining'])
+  })
+
+  it('reads the volume line in the Year to date card\'s band, from its own dates', () => {
+    const volume = (ytd: { km: number; lastYearKm: number; since: string | null }) =>
+      coachRead({ easy: { now: 352, delta: 1 }, predictions: [], efficiency: null, fitnessDelta: 0, ytd })!.signals.find((sig) => sig.key === 'volume')
+    // Under 2% of last year's figure is the same year, as the card colours it.
+    expect(volume({ km: 1404, lastYearKm: 1394, since: null })).toEqual({ key: 'volume', trend: 'flat', delta: 10, since: null })
+    expect(volume({ km: 1020, lastYearKm: 708, since: '2025-05-03' })).toEqual({ key: 'volume', trend: 'improving', delta: 312, since: '2025-05-03' })
+  })
+})
+
+describe('year over year (v4.16.4)', () => {
+  const run = (date: string, distanceKm: number) => ({ date: `${date}T07:00:00`, distanceKm })
+
+  it('compares from 1 January when last year is covered from the start', () => {
+    const runs = [run('2024-12-30', 10), run('2025-02-01', 12), run('2025-09-20', 8), run('2025-10-01', 99), run('2026-01-05', 15), run('2026-09-26', 11)]
+    expect(yearOverYear(runs, TODAY)).toEqual({ km: 26, lastYearKm: 20, since: null })
+  })
+
+  // The history began in May 2025: January to April read as growth.
+  it('counts both years from the first synced run when it falls partway through last year', () => {
+    const runs = [run('2025-05-03', 10), run('2025-09-26', 5), run('2026-02-10', 40), run('2026-05-02', 7), run('2026-05-03', 9), run('2026-09-26', 11)]
+    expect(yearOverYear(runs, TODAY)).toEqual({ km: 20, lastYearKm: 15, since: '2025-05-03' })
+  })
+
+  it('has nothing to compare without a run last year', () => {
+    expect(yearOverYear([run('2024-06-01', 10), run('2026-03-01', 10)], TODAY)).toBeNull()
+    expect(yearOverYear([run('2026-03-01', 10)], TODAY)).toBeNull()
   })
 })
 

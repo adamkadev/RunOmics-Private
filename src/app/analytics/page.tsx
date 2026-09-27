@@ -14,6 +14,7 @@ import { isRaceDistanceKey, type RaceDistanceKey } from '@/domain/race/distances
 import { cumulativeYear } from '@/components/profile/progressHub'
 import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
+import { yearOverYear } from '@/components/analytics/analyticsView'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
 import { getLoadPairs, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
 
@@ -67,7 +68,7 @@ export default async function AnalyticsPage() {
       todayDay,
       current: cumulativeYear(activities, year, todayDay),
       previous: hadLastYear ? cumulativeYear(activities, year - 1, daysIn(year - 1)) : [],
-      previousToDate: hadLastYear ? (cumulativeYear(activities, year - 1, Math.min(todayDay, daysIn(year - 1))).at(-1)?.km ?? 0) : null,
+      vsLastYear: yearOverYear(activities, today),
       goalKm,
       projection: yearData?.projection
         ? {

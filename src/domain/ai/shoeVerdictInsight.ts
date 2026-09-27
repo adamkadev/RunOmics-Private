@@ -1,7 +1,7 @@
 import type { ShoeDetail } from '@/domain/shoe/types'
 import type { WearStatus } from '@/domain/shoe/wearStatus'
 import { insightHash } from './insightHash'
-import { avoidClause, systemInstruction } from './prompt'
+import { avoidClause, CARD_PROMPT_VERSION, systemInstruction } from './prompt'
 
 export const SHOE_VERDICT_PREFIX = 'shoeVerdict_'
 export const SHOE_VERDICT_LIMITS = { headline: 44, body: 130 }
@@ -21,6 +21,7 @@ const WEAR_STEP = 5
 
 function facts({ shoe, status, kmLeft, weeksRemaining }: ShoeVerdictContext) {
   return {
+    promptVersion: CARD_PROMPT_VERSION,
     name: shoe.name,
     status,
     wearBand: Math.round(shoe.wearPercent / WEAR_STEP) * WEAR_STEP,
@@ -44,7 +45,7 @@ export const SHOE_VERDICT_SYSTEM_INSTRUCTION = [
     'one sentence on when to replace them and what to do until then',
     SHOE_VERDICT_LIMITS
   ),
-  'The wear percentage, the kilometres run and the status label are already printed on the page: never restate them.',
+  'The wear percentage, the kilometres run, the kilometres left and the status label are already printed on the page: never restate them.',
   'Be practical. Never suggest a specific shoe model or a shop.',
 ].join(' ')
 
@@ -54,10 +55,13 @@ export function shoeVerdictInsightPrompt(context: ShoeVerdictContext, recentHead
   return [
     'Facts:',
     `- Wear status: ${f.status === 'replace' ? 'past its usable life' : 'approaching the end of its life'}`,
-    `- Kilometres left before the limit: ${f.kmLeft}`,
-    f.weeksRemaining !== null
-      ? `- At ${f.kmPerWeek} km a week, that is about ${f.weeksRemaining} weeks`
-      : '- Not enough recent mileage to project how long that lasts',
+    // v4.16.4: a pair past its limit read "0 km left, about 0 weeks".
+    f.kmLeft > 0 ? `- Kilometres left before the limit, printed on the page: ${f.kmLeft}` : '- Already past its kilometre limit',
+    f.kmLeft <= 0
+      ? null
+      : f.weeksRemaining !== null
+        ? `- At ${f.kmPerWeek} km a week, that is about ${f.weeksRemaining} week${f.weeksRemaining === 1 ? '' : 's'}`
+        : '- Not enough recent mileage to project how long that lasts',
     avoidClause(recentHeadlines),
   ]
     .filter((line) => line !== null)

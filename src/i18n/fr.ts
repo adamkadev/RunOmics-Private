@@ -527,14 +527,23 @@ export const fr = {
       thisWeek: 'Cette sem.',
       scrubWeek: (date: string) => `Semaine du ${date}`,
       coachRead: {
-        eyebrow: 'Lecture du coach',
+        eyebrow: 'Lecture du coach · 12 sem.',
+        label: 'Lecture du coach',
         open: 'Les signaux derrière',
-        sheetTitle: 'Lecture du coach',
         headline: {
           positive: 'Votre charge se transforme en vitesse.',
-          cautionLoadUp: "La charge monte, mais le seuil et les prédictions de course n'ont pas encore suivi.",
+          positiveSteadyLoad: 'La vitesse a progressé sur les 12 dernières semaines.',
+          cautionLoadUp: (slipped: string, plural: boolean) => `La charge monte, mais ${slipped} ${plural ? 'ont' : 'a'} reculé.`,
           caution: 'La vitesse a reculé sur les 12 dernières semaines.',
           neutral: 'La vitesse est stable sur les 12 dernières semaines.',
+          mixed: (improved: string, improvedPlural: boolean, slipped: string, slippedPlural: boolean) =>
+            `${improved} ${improvedPlural ? 'ont' : 'a'} progressé, mais ${slipped} ${slippedPlural ? 'ont' : 'a'} reculé.`,
+        },
+        names: {
+          threshold: { word: 'le seuil', plural: false },
+          easy: { word: "l'allure facile", plural: false },
+          predictions: { word: 'les prédictions de course', plural: true },
+          efficiency: { word: "l'efficacité aérobie", plural: false },
         },
         load: {
           spikeAndDip: 'La charge a bondi et la récupération fléchit. Prenez 2 jours faciles.',
@@ -544,19 +553,21 @@ export const fr = {
           building: (pct: number, span: string) => `La charge est en hausse de ${pct} % en ${span} et la récupération tient. Continuez à construire.`,
           buildingLoad: (pct: number, span: string) => `La charge est en hausse de ${pct} % en ${span}. Continuez à construire.`,
         },
-        fitness: (value: number, delta: string) => `Forme physique ${value}, ${delta} en 4 semaines.`,
+        fitness: (value: number, delta: string) => `Forme physique ${value}, ${delta} en 12 semaines.`,
         thresholdFaster: (pace: string, s: number) => `Seuil ${pace} /km, ${s} s plus rapide qu'il y a 12 semaines.`,
         thresholdSlower: (pace: string, s: number) => `Seuil ${pace} /km, ${s} s plus lent qu'il y a 12 semaines.`,
         thresholdLevel: (pace: string) => `Seuil ${pace} /km, stable par rapport à il y a 12 semaines.`,
-        sheetEyebrow: 'Coach · 12 sem.',
         easyFaster: (pace: string, s: number) => `Allure facile moyenne ${pace} /km, ${s} s plus rapide qu'il y a 12 semaines.`,
         easySlower: (pace: string, s: number) => `Allure facile moyenne ${pace} /km, ${s} s plus lente qu'il y a 12 semaines.`,
         easyLevel: (pace: string) => `Allure facile moyenne ${pace} /km, comme il y a 12 semaines.`,
         predictionsSlower: (n: number, of: number) => `${n} prédictions de course sur ${of} plus lentes qu'il y a 12 semaines.`,
         predictionsFaster: (n: number, of: number) => `${n} prédictions de course sur ${of} plus rapides qu'il y a 12 semaines.`,
         predictionsHeld: 'Prédictions de course stables sur 12 semaines.',
-        efficiency: (value: string, delta: string) => `Efficacité aérobie ${value}, ${delta} en 4 semaines.`,
+        efficiencyUp: (value: string, delta: string) => `Efficacité aérobie ${value} m par battement, ${delta} en 12 semaines : plus de distance à chaque battement.`,
+        efficiencyDown: (value: string, delta: string) => `Efficacité aérobie ${value} m par battement, ${delta} en 12 semaines : moins de distance à chaque battement.`,
+        efficiencyLevel: (value: string) => `Efficacité aérobie ${value} m par battement, comme il y a 12 semaines.`,
         volume: (delta: string) => `${delta} km par rapport à la même date l'an dernier.`,
+        volumeSince: (delta: string, since: string) => `${delta} km par rapport à l'an dernier aux mêmes dates, depuis le ${since}.`,
       },
       form: {
         title: 'Forme',
@@ -725,8 +736,10 @@ export const fr = {
       ytd: {
         title: "Depuis janvier",
         caption: 'même date',
-        about: "Votre distance cette année, face à l'an dernier à la même date et à la ligne droite vers votre objectif.",
+        captionSince: 'mêmes dates',
+        about: "Votre distance cette année, face à l'an dernier à la même date et à la ligne droite vers votre objectif. Si votre historique commence en cours d'année dernière, les deux années comptent à partir de cette date.",
         vs: (delta: string, date: string) => `${delta} vs ${date}`,
+        vsSince: (delta: string, since: string) => `${delta} vs l'an dernier, les deux depuis le ${since}`,
         goal: (km: string) => `objectif ${km}`,
         short: (km: string) => `${km} km de retard`,
         shortRest: (rate: string, needed: string) => ` au rythme actuel de ${rate} km/sem. L'objectif demande ${needed}.`,
@@ -992,17 +1005,6 @@ export const fr = {
         reading: (status: string, days: number, windowDays: number, latest: string | null) =>
           `${status} ${days} des ${windowDays} derniers jours${latest ? `, ${latest} aujourd’hui` : ', et aujourd’hui'}.`,
       },
-    },
-    seasonHeadline: {
-      eyebrow: 'Bilan de saison',
-      titlePositive: 'Plus en forme et plus efficace qu\'en début de saison.',
-      titleCaution: 'Un passage plus difficile qu\'en début de saison.',
-      titleMixed: 'Une saison en demi-teinte - des progrès par endroits, des baisses ailleurs.',
-      efficiency: (d: number) => `Efficacité aérobie ${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d)} - ${d > 0 ? 'plus' : 'moins'} de vitesse par battement`,
-      easyPace: (to: string, from: string, weeks: number) =>
-        `Allure facile ${to}, contre ${from} en moyenne sur les ${weeks} premières semaines de saison`,
-      volume: (pct: number, year: number) =>
-        `Volume ${pct > 0 ? 'en hausse de' : 'en baisse de'} ${Math.abs(pct)}% vs ${year}${pct < 0 ? ' - attention à la régularité' : ''}`,
     },
     yearOverYear: {
       title: 'Année sur année',

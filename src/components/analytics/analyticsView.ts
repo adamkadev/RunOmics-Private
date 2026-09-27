@@ -6,6 +6,7 @@ import { formBand, type FormBand } from '@/domain/training/formBand'
 import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { median } from '@/lib/math'
+import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
 
 /**
  * Analytics v4.5 (D1-D4): one question per tab, one answer per card. Every
@@ -108,10 +109,37 @@ export interface YtdInput {
   todayDay: number
   current: { day: number; km: number }[]
   previous: { day: number; km: number }[]
-  /** Last year's distance on today's date. */
-  previousToDate: number | null
+  vsLastYear: YearOverYear | null
   goalKm: number | null
   projection: { weeklyRate: number; weeklyNeeded: number; projectedYearKm: number } | null
+}
+
+/**
+ * This year's distance against last year's over the same dates, both rounded
+ * as the Year to date card prints them. From 1 January, unless the synced
+ * history only starts later in last year: then both years count from that
+ * date (`since`), so the months before it never read as growth (v4.16.4).
+ */
+export interface YearOverYear {
+  km: number
+  lastYearKm: number
+  since: string | null
+}
+
+export function yearOverYear(runs: { date: string; distanceKm: number }[], today: string): YearOverYear | null {
+  const year = Number(today.slice(0, 4))
+  const dated = runs.map((r) => ({ date: r.date.slice(0, 10), km: r.distanceKm })).filter((r) => r.date <= today)
+  if (!dated.some((r) => r.date.startsWith(String(year - 1)))) return null
+  const first = dated.reduce((min, r) => (r.date < min ? r.date : min), today)
+  const since = first > `${year - 1}-01-01` ? first : null
+  const from = since ? since.slice(5) : '01-01'
+  const kmBetween = (start: string, end: string) =>
+    Math.round(dated.reduce((sum, r) => (r.date >= start && r.date <= end ? sum + r.km : sum), 0))
+  return {
+    km: kmBetween(`${year}-${from}`, today),
+    lastYearKm: kmBetween(`${year - 1}-${from}`, `${year - 1}${today.slice(4, 10)}`),
+    since,
+  }
 }
 
 // ─── D1 Load ───────────────────────────────────────────────────────────────
@@ -361,8 +389,7 @@ export interface EfficiencyView {
   dates: string[]
 }
 
-/** A change under 0.02 m per beat is week-to-week noise. */
-const EF_NOISE = 0.02
+const EFFICIENCY_TREND: Record<DeltaTone, EfficiencyView['trend']> = { good: 'rising', worse: 'dipping', flat: 'steady' }
 
 export function efficiencyView(allWeeks: WeeklyTrendPoint[], windowWeeks: WeeklyTrendPoint[], end: string): EfficiencyView | null {
   const upTo = allWeeks.filter((w) => w.date <= end)
@@ -380,7 +407,9 @@ export function efficiencyView(allWeeks: WeeklyTrendPoint[], windowWeeks: Weekly
     delta4w,
     delta12w: prev12 === null ? null : round2(now - prev12),
     heatCost: heat === null ? null : round2(heat),
-    trend: delta4w === null || Math.abs(delta4w) < EF_NOISE ? 'steady' : delta4w < 0 ? 'dipping' : 'rising',
+    // The band the deltas beside it are coloured by, so the sentence never
+    // says "dipping" over a muted delta, or "steady" over an amber one.
+    trend: EFFICIENCY_TREND[deltaTone('efficiency', delta4w)],
     adjusted: windowWeeks.map(adjustedOf),
     measured: windowWeeks.map((w) => w.ef),
     dates: windowWeeks.map((w) => w.date),
@@ -669,7 +698,7 @@ export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView
   }
 }
 
-// ─── Coach read (v4.6) ─────────────────────────────────────────────────────
+// ─── Coach read (v4.6, v4.16.4) ────────────────────────────────────────────
 
 export type Trend = 'improving' | 'flat' | 'declining'
 
@@ -679,63 +708,83 @@ export type CoachSignal =
   | { key: 'easy'; trend: Trend; pace: number; delta: number }
   | { key: 'predictions'; trend: Trend; slower: number; faster: number; count: number }
   | { key: 'efficiency'; trend: Trend; value: number; delta: number }
-  | { key: 'volume'; trend: Trend; delta: number }
+  | { key: 'volume'; trend: Trend; delta: number; since: string | null }
+
+export type SpeedKey = Extract<CoachSignal['key'], 'threshold' | 'easy' | 'predictions' | 'efficiency'>
+
+export const isSpeedSignal = (s: CoachSignal): s is Extract<CoachSignal, { key: SpeedKey }> =>
+  s.key !== 'fitness' && s.key !== 'volume'
 
 export interface CoachReadView {
   tone: 'positive' | 'neutral' | 'caution'
-  /** Fitness went up over the last four weeks. */
+  /** Fitness went up over the same 12 weeks as the speed reads. */
   loadUp: boolean
   signals: CoachSignal[]
 }
 
-/** Under two seconds a kilometre either way, easy pace held. */
-const EASY_NOISE_SEC = 2
-
-const trendOf = (delta: number, noise: number, lowerIsBetter: boolean): Trend =>
-  Math.abs(delta) < noise ? 'flat' : (delta < 0) === lowerIsBetter ? 'improving' : 'declining'
+/**
+ * Each arrow in the band its card colours the same number by (v4.16.4), so the
+ * read never calls "2 s faster" an improvement beside an Easy pace tile that
+ * prints it as the same.
+ */
+const TREND: Record<DeltaTone, Trend> = { good: 'improving', worse: 'declining', flat: 'flat' }
 
 /**
- * The coach read, from the values the cards print (v4.6): the Pace trend's
- * easy shift, the race predictions, aerobic efficiency and Year to date. The
- * headline used to be hard-coded praise ("yielding real speed") above four
- * slower predictions.
+ * Threshold pace and the race predictions are both Garmin's estimate of the
+ * same fitness and move together, so they share one vote (v4.16.4): counted
+ * twice, one slower estimate outvoted faster easy runs on its own.
  */
-/** Under 3 s/km either way, threshold pace held (the Pace trend's own band). */
-const THRESHOLD_NOISE_SEC = 3
+function garminVote(threshold: Trend | undefined, predictions: Trend | undefined): Trend | undefined {
+  if (!threshold || !predictions) return threshold ?? predictions
+  if (threshold === predictions || predictions === 'flat') return threshold
+  return threshold === 'flat' ? predictions : 'flat'
+}
 
+/**
+ * The coach read, from the values the cards print (v4.6): threshold, the Pace
+ * trend's easy shift, the race predictions and aerobic efficiency, all over
+ * the same 12 weeks as the fitness it sets them against, then Year to date.
+ * The headline used to be hard-coded praise ("yielding real speed") above
+ * four slower predictions.
+ */
 export function coachRead(input: {
   easy: PaceShift | null
   predictions: PredictionRow[]
   efficiency: EfficiencyView | null
-  fitnessDelta: number | null
-  /** Fitness now, for the load fact the headline is built on (v5.6 #3). */
+  /** Fitness now and its change over the 12 weeks, for the load fact the headline is built on (v5.6 #3). */
   fitness?: number | null
+  fitnessDelta: number | null
   threshold?: PaceShift | null
-  ytdDelta: number | null
+  ytd: YearOverYear | null
 }): CoachReadView | null {
   const signals: CoachSignal[] = []
-  const { easy, predictions, efficiency } = input
+  const { easy, predictions, efficiency, threshold, ytd } = input
   // The load fact first: the headline says "Load is up", so the sheet says by
   // how much before anything else (v5.6 #3).
   if (input.fitness != null && input.fitnessDelta !== null) {
-    signals.push({ key: 'fitness', trend: trendOf(input.fitnessDelta, 1, false), value: input.fitness, delta: input.fitnessDelta })
+    signals.push({ key: 'fitness', trend: TREND[deltaTone('fitness', input.fitnessDelta)], value: input.fitness, delta: input.fitnessDelta })
   }
-  if (input.threshold && input.threshold.delta !== null) {
-    signals.push({ key: 'threshold', trend: trendOf(input.threshold.delta, THRESHOLD_NOISE_SEC, true), pace: input.threshold.now, delta: input.threshold.delta })
+  if (threshold && threshold.delta !== null) {
+    signals.push({ key: 'threshold', trend: TREND[deltaTone('pace', threshold.delta)], pace: threshold.now, delta: threshold.delta })
   }
-  if (easy && easy.delta !== null) signals.push({ key: 'easy', trend: trendOf(easy.delta, EASY_NOISE_SEC, true), pace: easy.now, delta: easy.delta })
+  if (easy && easy.delta !== null) signals.push({ key: 'easy', trend: TREND[deltaTone('pace', easy.delta)], pace: easy.now, delta: easy.delta })
   const moved = known(predictions.map((r) => r.delta))
   if (moved.length) {
     const slower = moved.filter((d) => d >= PREDICTION_NOISE_SEC).length
     const faster = moved.filter((d) => d <= -PREDICTION_NOISE_SEC).length
     signals.push({ key: 'predictions', trend: slower > faster ? 'declining' : faster > slower ? 'improving' : 'flat', slower, faster, count: moved.length })
   }
-  if (efficiency && efficiency.delta4w !== null) {
-    signals.push({ key: 'efficiency', trend: efficiency.trend === 'dipping' ? 'declining' : efficiency.trend === 'rising' ? 'improving' : 'flat', value: efficiency.now, delta: efficiency.delta4w })
+  if (efficiency && efficiency.delta12w !== null) {
+    signals.push({ key: 'efficiency', trend: TREND[deltaTone('efficiency', efficiency.delta12w)], value: efficiency.now, delta: efficiency.delta12w })
   }
-  if (input.ytdDelta !== null) signals.push({ key: 'volume', trend: trendOf(input.ytdDelta, 1, false), delta: input.ytdDelta })
-  const speed = signals.filter((s) => s.key !== 'volume' && s.key !== 'fitness')
+  if (ytd) {
+    const delta = ytd.km - ytd.lastYearKm
+    signals.push({ key: 'volume', trend: TREND[deltaTone('distance', delta, { value: ytd.km })], delta, since: ytd.since })
+  }
+  const speed = signals.filter(isSpeedSignal)
   if (!speed.length) return null
-  const score = speed.filter((s) => s.trend === 'improving').length - speed.filter((s) => s.trend === 'declining').length
+  const trendOf = (key: SpeedKey) => speed.find((s) => s.key === key)?.trend
+  const votes = [garminVote(trendOf('threshold'), trendOf('predictions')), trendOf('easy'), trendOf('efficiency')].filter((v): v is Trend => v !== undefined)
+  const score = votes.filter((v) => v === 'improving').length - votes.filter((v) => v === 'declining').length
   return { tone: score > 0 ? 'positive' : score < 0 ? 'caution' : 'neutral', loadUp: (input.fitnessDelta ?? 0) > 0, signals }
 }

@@ -8,12 +8,14 @@ from garmin_step_fixtures import (
     repeat_group as _repeat_group,
 )
 from processing.mapper import ActivityData
+from processing.planned_workout_type import infer_planned_type
 from repository.json_store import PlannedWorkoutStore
 from sync_workouts import (
     _DEFAULT_EASY_PACE_SEC_PER_KM,
     _WINDOW_FUTURE_DAYS,
     _WINDOW_PAST_DAYS,
     _build_entries,
+    _load_coach_workout_types,
     _load_easy_pace_sec_per_km,
     enrich_description_from_plan,
     fetch_planned_workouts,
@@ -374,6 +376,56 @@ class TestAdaptiveWorkoutFallback:
 
         assert entries[0]["durationSecs"] == 2880
         assert entries[0]["distanceM"] > 0
+
+
+class TestCoachingPlanTypes:
+    """A workout the coaching plan pushed to Garmin is typed by the plan, not
+    guessed from the free-text title the planner wrote for it (v4.16.4)."""
+
+    @staticmethod
+    def _coaching_dir(tmp_path):
+        coaching = tmp_path / "coaching"
+        (coaching / "superseded").mkdir(parents=True)
+        (coaching / "garmin-sync.json").write_text(json.dumps({"entries": [
+            {"prescriptionId": "plan-2:workout:1:1", "date": "2026-09-23", "garminWorkoutId": "1688054933"},
+            {"prescriptionId": "plan-1:workout:1:2", "date": "2026-09-17", "garminWorkoutId": "1688054900"},
+            {"prescriptionId": "plan-0:workout:1:1", "date": "2026-09-06", "garminWorkoutId": "1688054800"},
+        ]}))
+        def plan(workout_id, workout_type):
+            return json.dumps({"weeks": [{"workouts": [{"id": workout_id, "type": workout_type}]}]})
+
+        (coaching / "current_plan.json").write_text(plan("plan-2:workout:1:1", "threshold"))
+        (coaching / "superseded" / "plan-1.json").write_text(plan("plan-1:workout:1:2", "long_run"))
+        return tmp_path
+
+    def test_maps_each_pushed_workout_to_its_plan_type(self, tmp_path):
+        types = _load_coach_workout_types(self._coaching_dir(tmp_path))
+        # plan-0 is kept nowhere any more: that workout falls back to its name.
+        assert types == {"1688054933": "Threshold", "1688054900": "Base"}
+
+    def test_is_empty_without_a_coaching_plan_or_when_it_cannot_be_read(self, tmp_path):
+        assert _load_coach_workout_types(tmp_path) == {}
+        (tmp_path / "coaching").mkdir()
+        (tmp_path / "coaching" / "garmin-sync.json").write_text("{not json")
+        assert _load_coach_workout_types(tmp_path) == {}
+
+    def test_types_a_pushed_workout_by_the_plan_whatever_its_title(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        monkeypatch.setattr("sync_workouts._load_coach_workout_types", lambda: {"1688054933": "Threshold"})
+        detail = {"workoutName": "Session du jour", "sportType": {"sportTypeKey": "running"}, "workoutSegments": []}
+
+        entries = _build_entries(_FakeClient(detail), [("2026-09-23", "1688054933", "", False)])
+
+        assert entries[0]["type"] == "Threshold"
+
+    def test_no_title_overrides_the_plan(self, tmp_path):
+        # The plan called it a long run; the title mentions tempo.
+        write_planned_workouts(
+            [{"date": "2026-09-27", "name": "Long run with a tempo finish", "type": "Base"}],
+            store=PlannedWorkoutStore(tmp_path),
+        )
+
+        assert json.loads((tmp_path / "2026.json").read_text())["planned"][0]["type"] == "Base"
 
 
 class TestGarminSuppliedMetadata:
@@ -823,6 +875,37 @@ class TestWritePlannedWorkouts:
         # what infer_planned_type would guess from the name alone.
         assert written["planned"][0]["type"] == "Tempo"
         assert written["planned"][0]["scheduledTime"] == "Morning"
+
+    def test_reads_the_coaching_plans_english_titles(self):
+        # The coaching plan pushes English titles to Garmin; "Threshold 3 x
+        # 7:00" fell through the French keywords to the Base fallback.
+        assert infer_planned_type("Threshold 3 x 7:00") == "Threshold"
+        assert infer_planned_type("VO2max 5 x 3:00") == "VO2Max"
+        assert infer_planned_type("Strides 6 x 20s") == "Base"
+        assert infer_planned_type("Long run") == "Base"
+
+    def test_retypes_a_stored_base_the_name_now_reads_across_the_whole_history(self, tmp_path):
+        # Stored Base by the old rules, outside this sync's window, same name:
+        # Base was the fallback, not a correction, so the name wins.
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert({"date": "2026-06-18", "name": "Threshold 3 x 7:00", "type": "Base", "scheduledTime": "Evening"})
+        prior.upsert({"date": "2026-06-20", "name": "Long run", "type": "Base", "scheduledTime": "Evening"})
+        prior.save()
+
+        write_planned_workouts([], store=PlannedWorkoutStore(tmp_path))
+
+        written = {e["date"]: e["type"] for e in json.loads((tmp_path / "2026.json").read_text())["planned"]}
+        assert written == {"2026-06-18": "Threshold", "2026-06-20": "Base"}
+
+    def test_still_keeps_a_type_corrected_by_hand(self, tmp_path):
+        # Only Base is re-read: a correction to any other type stands.
+        prior = PlannedWorkoutStore(tmp_path)
+        prior.upsert({"date": "2026-06-18", "name": "Threshold 3 x 7:00", "type": "Tempo", "scheduledTime": "Evening"})
+        prior.save()
+
+        write_planned_workouts([], store=PlannedWorkoutStore(tmp_path))
+
+        assert json.loads((tmp_path / "2026.json").read_text())["planned"][0]["type"] == "Tempo"
 
 
 def _activity(date: str, description: str) -> ActivityData:

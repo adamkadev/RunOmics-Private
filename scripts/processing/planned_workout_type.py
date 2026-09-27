@@ -7,7 +7,9 @@ import re
 # exists yet (that's only known once the activity is completed and parsed from
 # the FIT file, see processing/activity_type.py). Checked in order, first match
 # wins; this athlete's French workout naming convention is the source of truth,
-# not the noisier post-hoc training-effect labels on completed activities.
+# not the noisier post-hoc training-effect labels on completed activities. The
+# coaching plan pushes its sessions to Garmin under English titles ("Threshold
+# 3 x 7:00"), which the French words alone left at the Base fallback.
 _SHORT_INTERVAL_TIME_RE = re.compile(r"\d+\s*['’′]\s*/\s*\d+\s*['’′]")
 _SHORT_REP_DISTANCE_RE = re.compile(r"\b(?:100|150|200|300|400)\s*m\b")
 _LADDER_RE = re.compile(r"\d+\s*m\s*/\s*\d+\s*m")
@@ -16,8 +18,10 @@ _KEYWORD_RULES: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"anaerob"), "Anaerobic"),
     (re.compile(r"sprint"), "Sprint"),
     (re.compile(r"\bvma\b"), "VO2Max"),
+    (re.compile(r"\bvo2"), "VO2Max"),
     (re.compile(r"allure"), "Threshold"),
     (re.compile(r"seuil"), "Threshold"),
+    (re.compile(r"threshold"), "Threshold"),
     (re.compile(r"tempo"), "Tempo"),
     (re.compile(r"progressi"), "Tempo"),
     (re.compile(r"\bbase\b"), "Base"),
@@ -113,6 +117,27 @@ def coach_type_word(name: str) -> str | None:
     # Check word + descriptor: "Seuil - 3x8@4:20" -> extract "Seuil"
     head = normalized.split(" - ", 1)[0].strip()
     return _COACH_TYPE_WORDS.get(head)
+
+
+# The coaching plan's workout types -> ActivityType, the same map as the
+# app's COACHING_TO_ACTIVITY_TYPE (src/domain/coaching/types.ts).
+_COACHING_TYPES: dict[str, str] = {
+    "easy": "Base",
+    "recovery": "Base",
+    "long_run": "Base",
+    "tempo": "Tempo",
+    "threshold": "Threshold",
+    "vo2max": "VO2Max",
+    "anaerobic": "Anaerobic",
+    "sprint": "Sprint",
+    "race": "Race",
+}
+
+
+def type_from_coaching_type(coaching_type: str | None) -> str | None:
+    """ActivityType for a coaching plan workout type, or None for none or one
+    we do not map."""
+    return _COACHING_TYPES.get(coaching_type or "")
 
 
 def type_from_training_effect_label(label: str | None) -> str | None:

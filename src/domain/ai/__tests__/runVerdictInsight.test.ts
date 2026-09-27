@@ -3,6 +3,7 @@ import {
   deservesVerdict,
   isFreshRun,
   repeatsEarlierVerdict,
+  RUN_VERDICT_SYSTEM_INSTRUCTION,
   runVerdictInsightHash as hashContext,
   runVerdictInsightPrompt,
   verdictLines,
@@ -233,5 +234,140 @@ describe('verdictLines', () => {
     expect(verdictLines([{ headline: 'Faster aerobic engine', body: 'Held drift to 8 bpm.' }])).toEqual([
       'Faster aerobic engine / Held drift to 8 bpm.',
     ])
+  })
+})
+
+describe('what the run was for (v4.16.4)', () => {
+  const split = (type: string, durationSec: number, distanceM: number, avgHr: number | null = null, laps: unknown[] = []) => ({
+    type,
+    durationSec,
+    distanceM,
+    avgSpeedMs: distanceM / durationSec,
+    avgHr,
+    laps,
+  })
+  const lap = (durationSec: number, avgHr: number) => ({ durationSec, distanceM: 1000, avgSpeedMs: 1000 / durationSec, avgHr })
+  const effortRep = (rep: number, minutes: number, band: [number, number], seconds?: number) => ({
+    kind: 'effort' as const,
+    minutes,
+    rep,
+    paceSecPerKm: band,
+    ...(seconds === undefined ? {} : { seconds }),
+  })
+
+  // 23 Sep: 3 x 7:00 at 4:25, 4:25, 4:24 against 4:22-4:28.
+  const thresholdPlan = {
+    date: '2026-09-23',
+    name: 'Threshold 3 x 7:00',
+    type: 'Threshold' as const,
+    durationSecs: 3236,
+    steps: [1, 2, 3].map((rep) => effortRep(rep, 7, [262, 268])),
+  }
+  const thresholdRun = (paces: number[], rpe = 7) =>
+    run({
+      id: 't',
+      date: '2026-09-23',
+      type: 'Threshold',
+      rpe,
+      durationSeconds: 3387,
+      distanceKm: 10.16,
+      paceSecPerKm: 333,
+      splits: [split('interval_warmup', 732, 2000, 147), ...paces.map((pace, i) => split('interval_active', 420, (420 / pace) * 1000, 175 + i))] as never,
+    })
+  const verdict = (activity: Activity, planned: typeof thresholdPlan | Record<string, unknown> | null) =>
+    runVerdictInsightPrompt({ activity, history: runHistory(activity, []), planned: planned as never }, [])
+
+  it('judges each rep against the plan target', () => {
+    const prompt = verdict(thresholdRun([265, 265, 264]), thresholdPlan)
+
+    expect(prompt).toContain('- Session: a threshold session')
+    expect(prompt).toContain('- Reps: 3 of 3 planned, at 4:25, 4:25, 4:24 /km against a 4:22-4:28 /km target: all 3 inside it')
+    expect(prompt).toContain('Tone: positive.')
+  })
+
+  it('reads reps run faster than the target as off it, whatever the RPE says', () => {
+    const prompt = verdict(thresholdRun([255, 254, 256]), thresholdPlan)
+
+    expect(prompt).toContain('against a 4:22-4:28 /km target: 3 faster')
+    expect(prompt).toContain('Tone: neutral.')
+  })
+
+  it('says so when the reps were never run', () => {
+    const easy = run({ id: 'e', date: '2026-09-23', rpe: 2, splits: [split('interval_active', 3000, 8600, 150, [lap(350, 148), lap(349, 149), lap(351, 150), lap(348, 151)])] as never })
+    const prompt = verdict(easy, thresholdPlan)
+
+    expect(prompt).toContain('- Reps: none recorded against 3 planned')
+    expect(prompt).toContain('Tone: neutral.')
+  })
+
+  // 26 Sep: an easy block and 6 x 20 s strides, which read as "7 reps".
+  it('judges a strides day as an easy run and counts the strides', () => {
+    const strides = run({
+      id: 's',
+      date: '2026-09-26',
+      rpe: 2,
+      splits: [
+        split('interval_active', 2963, 8500, 151, [lap(348, 148), lap(347, 150), lap(349, 151), lap(350, 153)]),
+        split('interval_active', 20, 96, 160),
+        split('interval_active', 20, 98, 165),
+      ] as never,
+    })
+    const plan = {
+      date: '2026-09-26',
+      name: 'Strides 6 x 20s',
+      type: 'Base',
+      steps: [{ kind: 'effort', minutes: 50 }, effortRep(1, 0, [215, 230], 20), effortRep(2, 0, [215, 230], 20)],
+    }
+    const prompt = verdict(strides, plan)
+
+    expect(prompt).toContain('- Session: an easy run with strides')
+    expect(prompt).toContain('- Strides: 2 of 2 planned, between 3:24 and 3:28 /km against a 3:35-3:50 /km target')
+    expect(prompt).not.toContain('- Reps:')
+    expect(prompt).toContain('- How it held:')
+  })
+
+  // An easy day belongs in zones 1-2; "little time above zone 3" let half of
+  // one sit in zone 3.
+  it('measures an easy run by its time in zones 1-2, with zone 3 counting against it', () => {
+    const zone = (n: number, minutes: number) => ({ zone: n, seconds: minutes * 60, percent: 0, minBpm: 0 })
+    const easy = run({ id: 'z', date: '2026-09-27', durationSeconds: 73 * 60, hrZones: [zone(1, 21), zone(2, 49), zone(3, 3), zone(4, 0), zone(5, 0)] as never })
+
+    expect(verdict(easy, null)).toContain('- Time in zones 1-2: 70 min (96%); zone 3: 3 min; zones 4-5: 0 min')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('nearly all of it in zones 1-2, little time in zone 3 and none in zones 4-5')
+    expect(verdict({ ...thresholdRun([265, 265, 264]), hrZones: [zone(2, 29), zone(3, 6), zone(4, 16)] as never }, thresholdPlan)).toContain(
+      '- Time in zones 4-5: 16 min',
+    )
+  })
+
+  // On LTHR zones a tempo effort sits in zone 3: there it is the work.
+  it('gives a tempo session its zone 3 time as well', () => {
+    const zone = (n: number, minutes: number) => ({ zone: n, seconds: minutes * 60, percent: 0, minBpm: 0 })
+    const tempo = run({ id: 'tp', date: '2026-07-07', type: 'Tempo', hrZones: [zone(2, 28), zone(3, 12), zone(4, 12), zone(5, 3)] as never })
+
+    expect(verdict(tempo, null)).toContain('- Time in zone 3: 12 min; zones 4-5: 15 min')
+  })
+
+  it("takes a plan's 70-minute \"Long run\" as the long run it is", () => {
+    const long = run({ id: 'l', date: '2026-09-27', durationSeconds: 73 * 60 })
+    expect(verdict(long, { date: '2026-09-27', name: 'Long run', type: 'Base', durationSecs: 4082 })).toContain('- Session: a long run')
+    expect(verdict(long, null)).toContain('- Session: an easy run')
+  })
+
+  it('keeps the numbers the card prints out of the copy, RPE and conditions included', () => {
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('perceived effort (RPE) and the conditions: never state those numbers')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).not.toContain('at RPE 2')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).not.toContain('drives the color')
+  })
+
+  it('gives the air temperature and wind the card prints, and the rest of the weather as a cause', () => {
+    const prompt = verdict(run({ id: 'w', date: '2026-09-27', weather }), null)
+
+    expect(prompt).toContain('- Conditions, printed on the card: 16°C, wind 10 km/h. Not printed: feels like 14°C, humidity 55%')
+  })
+
+  it("lets a verdict share another run's angle, never its wording", () => {
+    const prompt = runVerdictInsightPrompt({ activity: run({}), history: runHistory(run({}), []), planned: null }, ['Easy and steady / 0 min in zone 4.'])
+
+    expect(prompt).toContain('never reuse their wording or open the same way, though the same angle is fine')
   })
 })

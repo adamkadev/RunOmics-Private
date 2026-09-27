@@ -52,6 +52,13 @@ const FRESH_RUN_VERDICTS_PER_RUN = 3
 
 const MAX_ATTEMPTS_PER_SURFACE = 3
 
+/**
+ * How many earlier verdicts the model is shown, newest first. Every one is
+ * still checked for a repeated headline; a backfill used to hand the model
+ * thirty of them, and a list that long leaves it no wording at all.
+ */
+const AVOID_VERDICTS_SHOWN = 8
+
 function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
 }
@@ -120,7 +127,6 @@ export async function runSurface(deps: InsightPassDeps, job: SurfaceJob): Promis
     systemInstruction: job.systemInstruction,
     prompt: job.prompt(cached?.recentHeadlines ?? []),
     limits: job.limits,
-    ...(job.bulletCount === undefined ? {} : { bulletCount: job.bulletCount }),
   })
   if (!attempt.ok) return { generated: false, reason: attempt.reason }
 
@@ -194,10 +200,10 @@ export async function writeVerdicts(
   const failures: string[] = []
 
   for (const context of pending) {
-    const avoid = [...written, ...phrasing]
+    const avoid = [...written].reverse().concat(phrasing)
     const attempt = await generateFromPool(deps, pool, {
       systemInstruction: RUN_VERDICT_SYSTEM_INSTRUCTION,
-      prompt: runVerdictInsightPrompt(context, verdictLines(avoid)),
+      prompt: runVerdictInsightPrompt(context, verdictLines(avoid.slice(0, AVOID_VERDICTS_SHOWN))),
       limits: RUN_VERDICT_LIMITS,
     })
     if (!attempt.ok) {
@@ -265,8 +271,6 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
 
   const freshVerdicts = await writeVerdicts(deps, fresh, written, phrasing, MODEL_POOL, true)
   const today = await runPlan(deps, await surfaces.today())
-  const season = await runPlan(deps, await surfaces.season())
-  const analyticsTabs = await runPlans(deps, await surfaces.analyticsTabs())
   const pbCelebration = await runPlan(deps, await surfaces.pbCelebration(deps.now()))
   const shoeVerdicts = await runPlans(deps, surfaces.shoeVerdicts())
   const backfill = await writeVerdicts(
@@ -284,8 +288,6 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
   return {
     freshVerdicts,
     today,
-    season,
-    analyticsTabs,
     pbCelebration,
     shoeVerdicts,
     runVerdicts: {

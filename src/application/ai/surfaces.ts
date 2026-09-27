@@ -1,18 +1,8 @@
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getRunVerdictContexts } from '@/application/usecases/GetRunVerdictInsight'
-import { getAnalyticsData } from '@/application/usecases/GetAnalyticsData'
-import { getYearComparison } from '@/application/usecases/GetYearComparison'
-import { getSeasonHeadline } from '@/application/usecases/GetSeasonHeadline'
 import { getRecords, getMostRecentRecord, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
-import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
-import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
-import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
-import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
-import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
-import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
-import { analyticsTabFacts } from '@/application/usecases/GetAnalyticsTabFacts'
 import { buildTodayContext, todayInsightSession } from '@/application/usecases/GetTodayInsight'
 import { buildPbCelebrationContext } from '@/application/usecases/GetPbCelebrationInsight'
 import { wearOutlook } from '@/domain/shoe/wearStatus'
@@ -26,14 +16,6 @@ import {
   todayInsightHash,
   todayInsightPrompt,
 } from '@/domain/ai/todayInsight'
-import {
-  SEASON_LIMITS,
-  SEASON_SURFACE,
-  SEASON_SYSTEM_INSTRUCTION,
-  seasonInsightGuard,
-  seasonInsightHash,
-  seasonInsightPrompt,
-} from '@/domain/ai/seasonInsight'
 import {
   PB_CELEBRATION_LIMITS,
   PB_CELEBRATION_SURFACE,
@@ -51,14 +33,6 @@ import {
   shoeVerdictSurface,
   type ShoeVerdictContext,
 } from '@/domain/ai/shoeVerdictInsight'
-import {
-  ANALYTICS_TAB_IDS,
-  ANALYTICS_TAB_LIMITS,
-  analyticsTabInsightHash,
-  analyticsTabInsightPrompt,
-  analyticsTabSurface,
-  analyticsTabSystemInstruction,
-} from '@/domain/ai/analyticsTabInsight'
 
 /**
  * One card the insight pass may write: the document it lives in, what the
@@ -72,7 +46,6 @@ export interface SurfaceJob {
   hash: string
   guard?: string
   prompt: (recentHeadlines: string[]) => string
-  bulletCount?: number
   paths: string[]
 }
 
@@ -92,13 +65,15 @@ function once<T>(read: () => T): () => T {
 
 /**
  * Everything the insight pass writes about, built from the app's own data.
- * One instance per pass: training status, analytics and records are each
- * computed once here, where the surfaces used to compute them twice.
+ * One instance per pass: training status and records are each computed once
+ * here, where the surfaces used to compute them twice. Only cards a page
+ * displays: the season headline and the four Analytics tab cards went when
+ * v4.6 replaced them with the rule-based coach read, and stopped being
+ * written in v4.16.4.
  */
 export function insightSurfaces() {
   const records = once(getRecords)
   const status = once(getTrainingStatus)
-  const analytics = once(getAnalyticsData)
 
   return {
     async runVerdicts(): Promise<{ contexts: RunVerdictContext[]; recordActivityIds: ReadonlySet<string> }> {
@@ -123,51 +98,6 @@ export function insightSurfaces() {
         prompt: (recent) => todayInsightPrompt(context, recent),
         paths: ['/'],
       }
-    },
-
-    async season(): Promise<SurfacePlan> {
-      const data = getSeasonHeadline(await analytics(), getYearComparison())
-      if (!data) return 'no season reads'
-
-      return {
-        surface: SEASON_SURFACE,
-        limits: SEASON_LIMITS,
-        systemInstruction: SEASON_SYSTEM_INSTRUCTION,
-        hash: seasonInsightHash(data),
-        guard: seasonInsightGuard(data),
-        prompt: (recent) => seasonInsightPrompt(data, recent),
-        bulletCount: data.bullets.length,
-        paths: ['/analytics'],
-      }
-    },
-
-    async analyticsTabs(): Promise<Record<string, SurfacePlan>> {
-      const facts = analyticsTabFacts({
-        data: await analytics(),
-        status: await status(),
-        load: await getTrainingLoad(),
-        loadRisk: await getLoadRiskPanel(),
-        loadBalance: getLoadBalance(),
-        threshold: getThresholdHistory(),
-        racePredictions: getGarminRacePredictions(),
-        vo2max: getLatestVO2max(),
-      })
-
-      const plans: Record<string, SurfacePlan> = {}
-      for (const tab of ANALYTICS_TAB_IDS) {
-        const lines = facts[tab]
-        plans[tab] = lines.length
-          ? {
-              surface: analyticsTabSurface(tab),
-              limits: ANALYTICS_TAB_LIMITS,
-              systemInstruction: analyticsTabSystemInstruction(tab),
-              hash: analyticsTabInsightHash(tab, lines),
-              prompt: (recent) => analyticsTabInsightPrompt(lines, recent),
-              paths: ['/analytics'],
-            }
-          : 'no reads'
-      }
-      return plans
     },
 
     async pbCelebration(now: Date): Promise<SurfacePlan> {
