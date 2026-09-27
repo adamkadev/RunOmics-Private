@@ -26,7 +26,10 @@ export function GlassTabBar() {
   const haptic = useHaptic()
 
   return (
-    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-30 lg:hidden">
+    // Above the sticky strips (z-30), as the compact bar is at the top (v5.5
+    // #2): at the same z-index the later Overview/Splits control painted over
+    // the tab bar whenever it sat low on the screen.
+    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden">
       <div
         className={cn(
           'glass-nav flex items-center border-x-0 border-b-0 transition-transform duration-200 ease-out',

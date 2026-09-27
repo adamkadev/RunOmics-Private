@@ -70,7 +70,21 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
   const boundsRef = useRef<LngLatBounds | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
-  const toggleFullscreen = useCallback(() => setIsFullscreen(v => !v), [])
+  // Fullscreen takes the map out of the page, which moves the scroll under
+  // it; leaving puts the page back where it was, to the pixel (v5.5 #1): left
+  // 1-2 pt down, iOS blurs the header under the status bar.
+  const scrollBeforeFullscreen = useRef<number | null>(null)
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen((v) => {
+      if (!v) scrollBeforeFullscreen.current = window.scrollY
+      return !v
+    })
+  }, [])
+  useLayoutEffect(() => {
+    if (isFullscreen || scrollBeforeFullscreen.current === null) return
+    window.scrollTo({ top: scrollBeforeFullscreen.current, behavior: 'instant' })
+    scrollBeforeFullscreen.current = null
+  }, [isFullscreen])
 
   useEffect(() => {
     if (!isFullscreen) return
