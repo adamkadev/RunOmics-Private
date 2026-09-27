@@ -38,6 +38,7 @@ from processing.mapper import ActivityData
 from processing.planned_workout_type import (
     coach_type_word,
     infer_planned_type,
+    type_from_coaching_type,
     type_from_training_effect_label,
 )
 from repository.json_store import PlannedWorkoutStore
@@ -147,6 +148,9 @@ def write_planned_workouts(
     store = store if store is not None else PlannedWorkoutStore()
 
     written = kept = 0
+    # Typed by Garmin's label or the coaching plan before any guess: the
+    # name-based re-typing below leaves these alone.
+    typed_at_source = {entry["date"] for entry in planned if entry.get("type")}
     for entry in planned:
         if isinstance(entry, _Unresolved):
             # The detail did not load this time. What is on file is the last
@@ -168,7 +172,7 @@ def write_planned_workouts(
         entry["scheduledTime"] = _bucket_scheduled_time(prior.get("scheduledTime", _DEFAULT_SCHEDULED_TIME))
         store.upsert(entry)
 
-    reclassified = _reclassify_base_entries(store)
+    reclassified = _reclassify_base_entries(store, keep=typed_at_source)
 
     pruned = 0
     for stale_date in stale_candidates or ():
@@ -188,16 +192,18 @@ def write_planned_workouts(
     return store
 
 
-def _reclassify_base_entries(store: PlannedWorkoutStore) -> int:
+def _reclassify_base_entries(store: PlannedWorkoutStore, keep: set[str] | frozenset[str] = frozenset()) -> int:
     """Re-types every stored Base (or untyped) entry whose name the rules now
     read as another type, across the whole history - not only the dates this
     sync fetched. A prior type for the same name is kept as a correction, but
     Base is also the fallback for a name the rules could not read, so without
     this a coaching session named "Threshold 3 x 7:00" before the rules knew
-    English would stay Base for good."""
+    English would stay Base for good. `keep` holds the dates this sync typed
+    at the source - Garmin's own label or the coaching plan - which no name
+    overrides."""
     reclassified = 0
     for entry in store.all_entries():
-        if entry.get("type") not in (None, "Base"):
+        if entry.get("type") not in (None, "Base") or entry["date"] in keep:
             continue
         guessed = infer_planned_type(entry.get("name") or "")
         if guessed != "Base":
@@ -254,6 +260,44 @@ def _load_easy_pace_sec_per_km(data_dir: Path | None = None) -> float:
                 f"estimating distances at the default easy pace."
             )
     return _DEFAULT_EASY_PACE_SEC_PER_KM
+
+
+def _load_coach_workout_types(data_dir: Path | None = None) -> dict[str, str]:
+    """ActivityType of each Garmin workout the coaching plan pushed, keyed by
+    Garmin workout id. `coaching/garmin-sync.json` links a prescription to the
+    workout it became, and the plan (current or superseded) states the
+    prescription's type - so a session the plan pushed is typed by the plan,
+    not guessed from the free-text title the planner wrote for it."""
+    coaching = (data_dir or get_data_dir()) / "coaching"
+    sync_path = coaching / "garmin-sync.json"
+    if not sync_path.exists():
+        return {}
+    try:
+        entries = json.loads(sync_path.read_text(encoding="utf-8")).get("entries") or []
+        prescribed: dict[str, str] = {}
+        for plan_path in [coaching / "current_plan.json", *sorted((coaching / "superseded").glob("*.json"))]:
+            if not plan_path.exists():
+                continue
+            plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            for week in plan.get("weeks") or []:
+                for workout in week.get("workouts") or []:
+                    if workout.get("id") and workout.get("type"):
+                        prescribed.setdefault(workout["id"], workout["type"])
+    except Exception as exc:
+        # Only the type hangs on it, and the name-based guess still stands.
+        print(
+            f"  Warning: the coaching plan could not be read ({type(exc).__name__}: {exc}); "
+            f"typing planned workouts from their names."
+        )
+        return {}
+
+    types: dict[str, str] = {}
+    for entry in entries:
+        activity_type = type_from_coaching_type(prescribed.get(entry.get("prescriptionId") or ""))
+        workout_id = str(entry.get("garminWorkoutId") or "")
+        if activity_type and workout_id:
+            types[workout_id] = activity_type
+    return types
 
 
 def fetch_planned_workouts(
@@ -382,6 +426,7 @@ def _build_entries(
     details_cache: dict[str, dict | None] = {}
     planned: list[dict] = []
     easy_pace = _load_easy_pace_sec_per_km()
+    coach_types = _load_coach_workout_types()
     resolve_distance_duration = {
         True: resolve_adaptive_distance_duration,
         False: resolve_manual_distance_duration,
@@ -449,8 +494,9 @@ def _build_entries(
 
         # Garmin Coach's adaptive workouts state their own training-effect
         # target; that beats guessing the session type from a terse French
-        # name. Third-party plans (Kiprun etc.) carry no such label.
-        workout_type = type_from_training_effect_label(detail.get("trainingEffectLabel"))
+        # name. Third-party plans (Kiprun etc.) carry no such label. A workout
+        # the coaching plan pushed is typed by the plan (v4.16.4).
+        workout_type = type_from_training_effect_label(detail.get("trainingEffectLabel")) or coach_types.get(workout_id)
         if workout_type:
             entry["type"] = workout_type
 

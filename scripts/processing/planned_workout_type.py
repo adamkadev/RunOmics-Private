@@ -119,6 +119,27 @@ def coach_type_word(name: str) -> str | None:
     return _COACH_TYPE_WORDS.get(head)
 
 
+# The coaching plan's workout types -> ActivityType, the same map as the
+# app's COACHING_TO_ACTIVITY_TYPE (src/domain/coaching/types.ts).
+_COACHING_TYPES: dict[str, str] = {
+    "easy": "Base",
+    "recovery": "Base",
+    "long_run": "Base",
+    "tempo": "Tempo",
+    "threshold": "Threshold",
+    "vo2max": "VO2Max",
+    "anaerobic": "Anaerobic",
+    "sprint": "Sprint",
+    "race": "Race",
+}
+
+
+def type_from_coaching_type(coaching_type: str | None) -> str | None:
+    """ActivityType for a coaching plan workout type, or None for none or one
+    we do not map."""
+    return _COACHING_TYPES.get(coaching_type or "")
+
+
 def type_from_training_effect_label(label: str | None) -> str | None:
     """ActivityType for Garmin's own training-effect label, or None when there
     is no label or it isn't one we map - notably "INVALID", which Garmin Coach
