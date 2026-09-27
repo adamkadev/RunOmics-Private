@@ -119,3 +119,12 @@ describe('seasonRaceRows', () => {
     expect(five.valueSub).toBe(t.goals.beatenBy('0:25'))
   })
 })
+
+describe('a past year (v5.5 #25)', () => {
+  it('shows no undated distances: they can no longer be set', () => {
+    const data = yearData({ year: 2025, upcomingRaces: [], nextRaceSpotlight: null, pbs: [] })
+    data.goals!.targets.push({ distance: 'Marathon', targetSeconds: null })
+    render(<SeasonTimeline yearData={data} today="2026-09-27" block={null} />)
+    expect(screen.queryByTestId('season-no-date')).toBeNull()
+  })
+})

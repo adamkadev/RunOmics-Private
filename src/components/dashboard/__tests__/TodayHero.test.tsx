@@ -71,3 +71,11 @@ describe('TodayHero', () => {
     expect(container.textContent).not.toMatch(/D-\d+/)
   })
 })
+
+describe('the reason under the verdict (v5.5 #19)', () => {
+  it('says why in one line, from the form the Body card shows', () => {
+    const status = { tsbNow: -11, tsbDelta: -3, ctl: 45, atl: 56, loadTrend: 'maintaining' } as unknown as TrainingStatus
+    render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={{ headline: "Keep today's long run easy", body: '' } as never} />)
+    expect(screen.getByTestId('today-reason').textContent).toBe(t.dashboard.todayHero.formReason('−11', 'tired'))
+  })
+})
