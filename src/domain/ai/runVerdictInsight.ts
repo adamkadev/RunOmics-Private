@@ -207,21 +207,24 @@ function repAdherence(execution: SessionExecution, planned: WorkoutStep[]): RepA
  * on target at a lower effort than the band are fitness showing, not a
  * shortfall: "reps achieved at lower than target exertion" (v4.16.5).
  */
-function verdictTone(activity: Activity, kind: RunKind, reps: RepAdherence | null): VerdictTone {
+function verdictTone(activity: Activity, kind: RunKind, reps: RepAdherence | null, repsRun: boolean): VerdictTone {
   const judged = { ...activity, type: judgedType(kind, activity) }
   const tone = runVerdictTone(judged)
-  if (!reps) return tone
-  const onTarget = reps.done >= reps.planned && (reps.faster + reps.slower) * 2 <= reps.done
-  if (!onTarget) return tone === 'positive' ? 'neutral' : tone
   const easier = activity.rpe !== null && activity.rpe < expectedRpe(judged)[0]
-  return tone === 'neutral' && easier ? 'positive' : tone
+  if (reps) {
+    const onTarget = reps.done >= reps.planned && (reps.faster + reps.slower) * 2 <= reps.done
+    if (!onTarget) return tone === 'positive' ? 'neutral' : tone
+    return tone === 'neutral' && easier ? 'positive' : tone
+  }
+  // The athlete rates the whole session, warm-up and cool-down included: RPE 6
+  // around seven 60 s reps is no sign they were run soft, and read against the
+  // 8-10 of the reps alone it came back as "intensity fell short" (v4.16.5).
+  return QUALITY_KINDS.has(kind) && repsRun && tone === 'neutral' && easier ? 'positive' : tone
 }
+
+const QUALITY_KINDS: ReadonlySet<RunKind> = new Set(['tempo', 'threshold', 'intervals'])
 
 // ─── Fact lines ────────────────────────────────────────────────────────────
-
-function signed(value: number): string {
-  return value > 0 ? `+${value}` : String(value)
-}
 
 const pace = (secPerKm: number) => formatClock(secPerKm)
 const bandText = ([fast, slow]: Band) => `${pace(fast)}-${pace(slow)} /km`
@@ -242,19 +245,31 @@ function repsLine(reps: RepAdherence): string {
 const PACE_NOISE_SEC_PER_KM = 3
 const HR_NOISE_BPM = 3
 
+/**
+ * A change in words, never a sign: "-12s/km from first to last" - the last rep
+ * the quicker - was written up as "the pace faded by 12 s/km" (v4.16.5).
+ */
+function paceChange(secPerKm: number, than: string): string {
+  return Math.abs(secPerKm) < PACE_NOISE_SEC_PER_KM
+    ? `at the pace of ${than}`
+    : `${Math.abs(secPerKm)}s/km ${secPerKm > 0 ? 'slower' : 'quicker'} than ${than}`
+}
+
+function heartChange(bpm: number | null, when: string): string {
+  if (bpm === null) return ''
+  return Math.abs(bpm) < HR_NOISE_BPM ? `, heart rate level ${when}` : `, heart rate ${Math.abs(bpm)} bpm ${bpm > 0 ? 'higher' : 'lower'} ${when}`
+}
+
 function executionLine(execution: NonNullable<SessionExecution>, kind: RunKind): string {
-  const drift = execution.hrDriftBpm === null ? '' : `, heart rate ${signed(execution.hrDriftBpm)} bpm`
   if (execution.kind === 'intervals') {
-    return `- How the reps held: ${execution.spreadSecPerKm}s/km between the fastest and slowest, ${signed(execution.fadeSecPerKm)}s/km from first to last${drift ? `${drift} across them` : ''}`
+    return `- How the reps held: ${execution.spreadSecPerKm}s/km between the fastest and slowest, the last rep ${paceChange(execution.fadeSecPerKm, 'the first')}${heartChange(execution.hrDriftBpm, 'by the last rep')}`
   }
-  const halves =
-    Math.abs(execution.fadeSecPerKm) < PACE_NOISE_SEC_PER_KM
-      ? 'the second half at the pace of the first'
-      : `the second half ${Math.abs(execution.fadeSecPerKm)}s/km ${execution.fadeSecPerKm > 0 ? 'slower' : 'quicker'} than the first`
+  const drift = heartChange(execution.hrDriftBpm, 'in the second half')
+  const halves = `the second half ${paceChange(execution.fadeSecPerKm, 'the first')}`
   // Kilometre-to-kilometre spread on an easy day is terrain and traffic, not
   // execution; given as a fact, it came back as one ("22s/km spread") (v4.16.5).
   const spread = EASY_KINDS.has(kind) ? '' : `, ${execution.spreadSecPerKm}s/km between the fastest and slowest kilometre`
-  return `- How it held: ${halves}${drift ? `${drift} from the first half to the second` : ''}${spread}`
+  return `- How it held: ${halves}${drift}${spread}`
 }
 
 function stridesLine(execution: SessionExecution, planned: WorkoutStep[]): string | null {
@@ -270,8 +285,7 @@ function pacingLine(activity: Activity): string | null {
   if (!trend) return null
   const split = trend.positiveSplitSecPerKm
   const change = Math.abs(split) < PACE_NOISE_SEC_PER_KM ? 'the same pace' : `${Math.abs(split)}s/km ${split > 0 ? 'slower' : 'quicker'}`
-  const drift = trend.hrDriftBpm === null ? '' : `, heart rate ${signed(trend.hrDriftBpm)} bpm from first to last`
-  return `- Pacing: first full kilometre ${pace(trend.firstFullLapPaceSecPerKm)}, last ${pace(trend.lastFullLapPaceSecPerKm)} (${change})${drift}`
+  return `- Pacing: first full kilometre ${pace(trend.firstFullLapPaceSecPerKm)}, last ${pace(trend.lastFullLapPaceSecPerKm)} (${change})${heartChange(trend.hrDriftBpm, 'by the last kilometre')}`
 }
 
 const EASY_KINDS: ReadonlySet<RunKind> = new Set(['easy', 'long', 'strides'])
@@ -388,10 +402,23 @@ function placingLine(official: OfficialRaceResult | null | undefined): string | 
   return `- Finished ${official.overallPlace}${field}`
 }
 
+const COACH_TYPE_WORDS = /^(base|endurance|footing|r[ée]cup[ée]ration|recovery|tempo|seuil|threshold|vma|vo2 ?max|ana[ée]robique|anaerobic|sprint|vitesse)$/i
+
+const TYPE_LABEL: Record<ActivityType, string> = {
+  Base: 'an easy run',
+  Tempo: 'a tempo session',
+  Threshold: 'a threshold session',
+  VO2Max: 'an interval session',
+  Anaerobic: 'an interval session',
+  Sprint: 'a sprint session',
+  Race: 'a race',
+}
+
 function cadenceLine(runs: number, previous: PreviousRun): string {
   const when =
     previous.daysAgo === 0 ? 'earlier the same day' : `${previous.daysAgo} day${previous.daysAgo === 1 ? '' : 's'} before`
-  const what = previous.description ? `"${previous.description}"` : `a ${previous.type} run`
+  // Garmin Coach names a session by its type word alone: "was "Base"" is jargon.
+  const what = previous.description && !COACH_TYPE_WORDS.test(previous.description.trim()) ? `"${previous.description}"` : TYPE_LABEL[previous.type]
   return `- ${runs} run${runs === 1 ? '' : 's'} in the 7 days up to it; the previous one, ${when}, was ${what}`
 }
 
@@ -408,7 +435,7 @@ function facts({ activity, history, planned, official }: RunVerdictContext) {
 
   return {
     promptVersion: RUN_VERDICT_PROMPT_VERSION,
-    tone: verdictTone(activity, kind, reps),
+    tone: verdictTone(activity, kind, reps, execution?.kind === 'intervals'),
     kind,
     type: activity.type,
     distanceKm: Math.round(performance.distanceKm * 100) / 100,
@@ -431,7 +458,7 @@ function facts({ activity, history, planned, official }: RunVerdictContext) {
     windKph: recentWeather ? Math.round(recentWeather.windKph) : null,
     humidityPct: recentWeather ? Math.round(recentWeather.humidityPct) : null,
     execution: execution ? executionLine(execution, kind) : null,
-    reps: reps ? repsLine(reps) : null,
+    reps: reps ? repsLine(reps) : execution?.kind === 'intervals' && QUALITY_KINDS.has(kind) ? `- Reps: ${execution.reps}, at ${execution.repPaces.map(pace).join(', ')} /km` : null,
     strides: kind === 'strides' ? stridesLine(execution, plan.strides) : null,
     pacing: kind === 'race' ? pacingLine(activity) : null,
     zones: zonesLine(kind, activity, history.hardMinutes, reps),
@@ -504,6 +531,7 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   "A long run's job is time on feet at an easy effort: judge how the second half held, its heart rate drift and fade. Kilometre-to-kilometre pace spread is terrain, not execution.",
   'A tempo or threshold session is judged on rep pace against its target, evenness across the reps and heart rate drift. Reps faster than the target are not a bonus: that is a harder session than asked. Reps on target at a lower effort than expected are good news, never a shortfall.',
   'An interval session is judged on the reps completed and held at the target, and the fade from first to last.',
+  "On a structured session the athlete's RPE covers the whole run, warm-up and cool-down included: judge the reps by their pace and heart rate, never by that number, and never call a session short of its intensity because of it.",
   'A race is judged on its pacing - an even or negative split is the skill - its result against earlier bests, and its placing.',
   'Lead with what this run makes the most of; never default to the comparison with earlier runs because it is there.',
   'When the effort sits outside the expected band, look for a cause in the other facts - heat, humidity, wind, elevation - and name it rather than assuming the athlete misjudged the session. Name the cause, never its number.',
@@ -535,9 +563,11 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdic
     f.pace ? `- Pace: ${formatClock(f.pace)} /km` : null,
     placingLine(context.official),
     f.avgHr ? `- Average heart rate: ${f.avgHr} bpm` : null,
-    f.rpe !== null
-      ? `- Perceived effort (RPE 1-10): ${f.rpe}, against ${expectedRpe({ ...activity, type: judgedType(f.kind, activity) }).join(' to ')} expected for this session at this length`
-      : null,
+    f.rpe === null
+      ? null
+      : QUALITY_KINDS.has(f.kind)
+        ? `- Perceived effort for the whole session, warm-up and cool-down included (RPE 1-10, printed on the card): ${f.rpe}`
+        : `- Perceived effort (RPE 1-10, printed on the card): ${f.rpe}, against ${expectedRpe({ ...activity, type: judgedType(f.kind, activity) }).join(' to ')} expected for this session at this length`,
     f.aerTrainingEffect !== null ? `- Aerobic training effect (0-5): ${f.aerTrainingEffect}` : null,
     f.elevationGain ? `- Elevation gain: ${f.elevationGain} m` : null,
     conditionsLine(activity),

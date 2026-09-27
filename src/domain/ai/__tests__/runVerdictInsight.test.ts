@@ -398,7 +398,7 @@ describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
 
     expect(prompt).toContain('- Session: an easy run')
     expect(prompt).not.toContain('Tempo')
-    expect(prompt).toContain('- Perceived effort (RPE 1-10): 2, against 1 to 3 expected for this session at this length')
+    expect(prompt).toContain('- Perceived effort (RPE 1-10, printed on the card): 2, against 1 to 3 expected for this session at this length')
     expect(prompt).toContain('Tone: positive.')
   })
 
@@ -447,6 +447,36 @@ describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
     expect(runVerdictNoteKey({ note: '  ', tags: [] })).toBe('')
     expect(runVerdictNoteKey({ note: 'sick', tags: ['b', 'a'] })).toBe(runVerdictNoteKey({ note: 'sick ', tags: ['a', 'b'] }))
     expect(runVerdictNoteKey({ note: 'sick', tags: [] })).not.toBe(runVerdictNoteKey({ note: 'fine', tags: [] }))
+  })
+
+  // 7 Aug: seven 60 s reps, the last 12 s/km quicker than the first, read as
+  // "the pace faded by 12 s/km" from "-12s/km from first to last"; and RPE 6
+  // for the whole session read against the reps' 8-10 as "fell short".
+  it('says which way the reps went in words, and never judges them by the session RPE', () => {
+    const rep = (metres: number, hr: number) => ({ type: 'interval_active', durationSec: 60, distanceM: metres, avgSpeedMs: 0, avgHr: hr, laps: [] })
+    const anaerobic = run({
+      id: 'a',
+      date: '2026-08-07',
+      type: 'Anaerobic',
+      rpe: 6,
+      splits: [rep(281, 174), rep(307, 174), rep(298, 172), rep(298, 167)] as never,
+    })
+    const prompt = runVerdictInsightPrompt(context(anaerobic), [])
+
+    expect(prompt).toContain('the last rep 12s/km quicker than the first, heart rate 7 bpm lower by the last rep')
+    expect(prompt).not.toMatch(/-\d+s\/km/)
+    expect(prompt).toContain('- Perceived effort for the whole session, warm-up and cool-down included (RPE 1-10, printed on the card): 6')
+    expect(prompt).not.toContain('expected for this session')
+    expect(prompt).toContain('- Reps: 4, at 3:34, 3:15, 3:21, 3:21 /km')
+    expect(prompt).toContain('Tone: positive.')
+  })
+
+  it('never calls the run before it by a bare Garmin Coach type word', () => {
+    const before = run({ id: 'p', date: '2026-08-05', description: 'Base' } as Partial<Activity>)
+    const today = run({ id: 'c', date: '2026-08-07' })
+    const prompt = runVerdictInsightPrompt({ activity: today, history: runHistory(today, [today, before]), planned: null }, [])
+
+    expect(prompt).toContain('the previous one, 2 days before, was an easy run')
   })
 
   it('rejects a headline opening on the same two words as one the model was shown', () => {
