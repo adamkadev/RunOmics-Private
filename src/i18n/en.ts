@@ -1831,7 +1831,8 @@ export const en = {
       seconds: (s: number) => `${s}s`,
       withRecovery: (reps: string, recovery: string) => `${reps} · ${recovery} rec`,
       repsOnly: (n: number) => `${n} reps`,
-      easyPace: (range: string) => `easy ${range}`,
+      // The coach's own range, which can be narrower than the Z2 zone on purpose (v5.5 #10).
+      easyPace: (range: string) => `easy target ${range}`,
       stridesPace: (pace: string) => `strides ${pace}`,
       targetPace: (range: string) => `target ${range}`,
     },

@@ -1,4 +1,4 @@
-import { DAY_MS } from '@/lib/calendarDate'
+import { DAY_MS, isoDate, startOfWeek } from '@/lib/calendarDate'
 import type { PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { WorkoutStep, WorkoutStepKind } from '@/domain/activity/types'
@@ -36,10 +36,16 @@ export function macrocyclePhaseRanges(plan: MacrocycleSpan): PlanPhaseRange[] {
   return macrocyclePhases(macrocycleStart(plan), plan.targetEvent.date)
 }
 
-export function macrocycleWeek(plan: MacrocycleSpan, today: string): { done: number; total: number } | null {
+/**
+ * The block week a date falls in, counted by the Monday of its week (v5.5
+ * #8). Plan asked with the week's Monday and Goals with today, so on a Sunday
+ * start (Sep 6) the same week read "week 3" on Plan and "wk 4" on Goals.
+ */
+export function macrocycleWeek(plan: MacrocycleSpan, date: string): { done: number; total: number } | null {
   const start = macrocycleStart(plan)
   const total = Math.max(1, Math.round(daysBetween(start, plan.targetEvent.date) / 7))
-  const done = Math.floor(daysBetween(start, today) / 7) + 1
+  const monday = isoDate(startOfWeek(new Date(`${date}T00:00:00`)))
+  const done = Math.floor(daysBetween(start, monday) / 7) + 1
   return { done: Math.min(Math.max(done, 1), total), total }
 }
 

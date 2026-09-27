@@ -1763,7 +1763,7 @@ export const fr = {
       seconds: (s: number) => `${s} s`,
       withRecovery: (reps: string, recovery: string) => `${reps} · ${recovery} récup`,
       repsOnly: (n: number) => `${n} répétitions`,
-      easyPace: (range: string) => `facile ${range}`,
+      easyPace: (range: string) => `facile, cible ${range}`,
       stridesPace: (pace: string) => `accélérations ${pace}`,
       targetPace: (range: string) => `cible ${range}`,
     },

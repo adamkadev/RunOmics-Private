@@ -29,8 +29,20 @@ describe('getTrainingZones', () => {
     expect(result?.zones.map((z) => z.key)).toEqual(['easy', 'marathon', 'threshold', 'vo2max'])
 
     const threshold = result?.zones.find((z) => z.key === 'threshold')
-    expect(threshold?.paceMinSecPerKm).toBe(Math.round(240 * 0.98))
-    expect(threshold?.paceMaxSecPerKm).toBe(Math.round(240 * 1.02))
+    expect(threshold?.paceMinSecPerKm).toBe(Math.round(240 * 0.97))
+    expect(threshold?.paceMaxSecPerKm).toBe(Math.round(240 * 1.03) - 1)
+  })
+
+  // v5.5 #11: 3:59→4:18, 4:28→4:31 and 5:02→5:08 were gaps at a 4:23 threshold.
+  it.each([240, 263, 300, 331])('leaves no gap and no overlap between zones at a %i s threshold', async (threshold) => {
+    const { paceZones } = await import('../GetTrainingZones')
+    const zones = paceZones(threshold)
+    for (let i = 1; i < zones.length; i++) {
+      expect(zones[i]!.paceMinSecPerKm).toBe(zones[i - 1]!.paceMaxSecPerKm + 1)
+    }
+    const at = zones.find((z) => z.key === 'threshold')!
+    expect(threshold).toBeGreaterThanOrEqual(at.paceMinSecPerKm)
+    expect(threshold).toBeLessThanOrEqual(at.paceMaxSecPerKm)
   })
 
   it('zones get progressively faster from easy to vo2max', async () => {
