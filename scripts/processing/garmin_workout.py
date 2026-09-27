@@ -176,6 +176,11 @@ def _expand_step(step: dict, rep: int | None = None) -> list[dict]:
         return []
 
     entry: dict = {"kind": kind, "minutes": int(minutes + 0.5)}
+    # A stride is 15-20 s, which whole minutes round to 0 ("6 x 0s", v5.5 #7):
+    # a step off the minute keeps its seconds too.
+    seconds = round(minutes * 60)
+    if seconds % 60:
+        entry["seconds"] = seconds
     if rep is not None:
         entry["rep"] = rep
     pace = _step_pace_sec_per_km(step)

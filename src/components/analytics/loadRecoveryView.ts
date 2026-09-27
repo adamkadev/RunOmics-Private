@@ -35,6 +35,7 @@ export interface LoadTrendPoint {
   acute: number
   lo: number
   hi: number
+  /** Outside the band on a day with load; a day at 0 (a break) is rest, not a warning. */
   out: boolean
 }
 
@@ -55,7 +56,11 @@ export interface LoadTrendView {
   /** The Load ratio printed under Injury risk, from the same pair. */
   ratio: number
   change: LoadChange | null
+  /** Days before the last one that went over the band, and the latest of them. */
+  over: { days: number; last: string } | null
   yMax: number
+  /** Three grid lines, labelled on the right (v5.5 R1). */
+  ticks: number[]
 }
 
 const stateOf = (acute: number, lo: number, hi: number): LoadState => (acute > hi ? 'above' : acute < lo ? 'below' : 'in')
@@ -85,13 +90,21 @@ export function loadChange(pairs: LoadPair[], last: LoadPair): LoadChange | null
   return { pct, days: daysBetween(base.date, last.date) }
 }
 
-/** One y range per athlete: the year's highest acute load or safe edge, rounded up to 40. */
+const TICK_STEPS = [20, 25, 50, 100, 150, 200, 250, 300, 400, 500]
+
+/**
+ * One y range per athlete: the year's highest acute load or safe edge, with
+ * room for the today dot, split into three round grid steps (300 · 600 · 900).
+ */
 export function loadTrendYMax(pairs: LoadPair[], today: string): number {
   const from = isoDate(addDays(day(today), -364))
   const year = pairs.filter((p) => p.date >= from && p.date <= today)
-  const peak = Math.max(0, ...year.map((p) => Math.max(p.acute, safeRange(p.chronic).hi)))
-  return Math.max(80, Math.ceil((peak * 1.06) / 40) * 40)
+  const peak = Math.max(0, ...year.map((p) => Math.max(p.acute, safeRange(p.chronic).hi))) * 1.06
+  const step = TICK_STEPS.find((s) => s * 3 >= peak) ?? Math.ceil(peak / 3 / 100) * 100
+  return step * 3
 }
+
+export const loadTrendTicks = (yMax: number): number[] => [yMax / 3, (yMax * 2) / 3, yMax]
 
 export function loadTrendView(pairs: LoadPair[], window: DayWindow, yMax: number): LoadTrendView | null {
   const inWindow = pairs.filter((p) => p.date >= window.start && p.date <= window.end)
@@ -100,18 +113,19 @@ export function loadTrendView(pairs: LoadPair[], window: DayWindow, yMax: number
 
   const daily = inWindow.map((p) => {
     const { lo, hi } = safeRange(p.chronic)
-    return { date: p.date, acute: p.acute, lo, hi, out: p.acute < lo || p.acute > hi }
+    return { date: p.date, acute: p.acute, lo, hi, out: p.acute > 0 && (p.acute < lo || p.acute > hi) }
   })
   const points = weekly(window)
     ? byWeek(daily).map((week) => {
         const acute = Math.round(mean(week.map((p) => p.acute)))
         const lo = Math.round(mean(week.map((p) => p.lo)))
         const hi = Math.round(mean(week.map((p) => p.hi)))
-        return { date: week.at(-1)!.date, acute, lo, hi, out: acute < lo || acute > hi }
+        return { date: week.at(-1)!.date, acute, lo, hi, out: acute > 0 && (acute < lo || acute > hi) }
       })
     : daily
 
   const { lo, hi } = safeRange(last.chronic)
+  const overDays = daily.slice(0, -1).filter((p) => p.acute > p.hi)
   return {
     points,
     last,
@@ -121,7 +135,9 @@ export function loadTrendView(pairs: LoadPair[], window: DayWindow, yMax: number
     state: stateOf(last.acute, lo, hi),
     ratio: loadRatio(last),
     change: loadChange(pairs, last),
+    over: overDays.length ? { days: overDays.length, last: overDays.at(-1)!.date } : null,
     yMax,
+    ticks: loadTrendTicks(yMax),
   }
 }
 

@@ -1,6 +1,7 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { round } from '@/lib/math'
 import { isLongRun } from '@/domain/activity/longRun'
+import { addDays, appTodayIso, isoDate, startOfWeek } from '@/lib/calendarDate'
 
 export type HeatmapDay = {
   date: string
@@ -29,19 +30,14 @@ export function getHeatmapData(): HeatmapDay[] {
     })
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const from = new Date(today)
-  from.setDate(from.getDate() - 364)
-  const dayOfWeek = from.getDay()
-  const offsetToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-  from.setDate(from.getDate() + offsetToMonday)
+  // The app's calendar day, and local dates throughout: toISOString on a
+  // local midnight named the day before east of UTC.
+  const today = new Date(`${appTodayIso()}T00:00:00`)
+  const from = startOfWeek(addDays(today, -364))
 
   const days: HeatmapDay[] = []
-  const cursor = new Date(from)
-  while (cursor <= today) {
-    const date = cursor.toISOString().slice(0, 10)
+  for (let cursor = from; cursor <= today; cursor = addDays(cursor, 1)) {
+    const date = isoDate(cursor)
     const data = map.get(date)
     days.push({
       date,
@@ -50,7 +46,6 @@ export function getHeatmapData(): HeatmapDay[] {
       longRun: data?.longRun ?? false,
       activityId: data?.activityId ?? null,
     })
-    cursor.setDate(cursor.getDate() + 1)
   }
 
   return days

@@ -7,7 +7,7 @@ import { WeeklyStreakCard } from '../WeeklyStreakCard'
 const DATA = { currentWeeks: 3, longestWeeks: 5, weekDays: Array(7).fill(false), plannedDays: Array(7).fill(false) }
 
 function target(overrides: Partial<WeekTarget> = {}): WeekTarget {
-  return { ranKm: 6.1, ranSessions: 1, planKm: 52, planSessions: 5, missedSessions: 0, goalKm: 23, days: [], ...overrides }
+  return { ranKm: 6.1, ranSessions: 1, planKm: 52, planSessions: 5, plannedDone: 1, unplannedRuns: 0, missedSessions: 0, goalKm: 23, days: [], ...overrides }
 }
 
 describe('WeeklyStreakCard', () => {

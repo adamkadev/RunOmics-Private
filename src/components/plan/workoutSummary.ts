@@ -49,7 +49,9 @@ export function repCaption(steps: WorkoutStep[]): string | null {
   const body = findBody(efforts)
   const reps = body ? efforts.filter((e) => e !== body) : efforts
   const recovery = steps.find((s) => s.kind === 'recovery')
-  const rep = `${reps.length} × ${stepClock(stepSeconds(reps[0]!))}`
+  // A step synced before seconds were kept is 0 min: count it, don't print "0s".
+  const repSeconds = stepSeconds(reps[0]!)
+  const rep = repSeconds > 0 ? `${reps.length} × ${stepClock(repSeconds)}` : t.plan.session.repsOnly(reps.length)
   return recovery ? t.plan.session.withRecovery(rep, stepClock(stepSeconds(recovery))) : rep
 }
 

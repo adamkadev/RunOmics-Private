@@ -170,7 +170,13 @@ def parse_fit(content: bytes) -> ParsedFit:
         elevation_samples=elevation_samples,
         elevation_gain_m=round(record_ascent, 1),
         is_race=bool(messages.get("310")),
-        best_efforts=_best_efforts(dist_samples, time_samples),
+        # On the moving clock: a best effort can't include a stop the run's
+        # own (timer) duration leaves out (v5.5 #5: a 10K at 1:02:18 on a
+        # 56:27 run).
+        best_efforts=_best_efforts(
+            dist_samples,
+            _moving_clock(dist_samples, time_samples, _timer_pauses(messages.get("event_mesgs", []))),
+        ),
         pace_samples=_pace_samples(dist_samples, time_samples),
         vo2max_garmin=_extract_vo2max(messages),
         cadence_samples=cadence_samples,
@@ -422,6 +428,50 @@ def _pace_samples(dists: list[float], times: list[float]) -> list[float]:
                 out[i] = first_valid
             else:
                 break
+    return out
+
+
+_STOP_EVENTS = {"stop", "stop_all", "stop_disable", "stop_disable_all"}
+# Without timer events, a gap this long covering almost no ground is a stop.
+_PAUSE_GAP_S = 10.0
+_PAUSE_SPEED_MS = 0.5
+
+
+def _timer_pauses(events: list[dict]) -> list[tuple[float, float]]:
+    """The spans the timer was stopped, as (stop, restart) epoch seconds."""
+    pauses: list[tuple[float, float]] = []
+    stopped: float | None = None
+    timed = [e for e in events if e.get("event") == "timer" and isinstance(e.get("timestamp"), datetime)]
+    for event in sorted(timed, key=lambda e: e["timestamp"]):
+        ts = event["timestamp"].timestamp()
+        kind = event.get("event_type")
+        if kind in _STOP_EVENTS and stopped is None:
+            stopped = ts
+        elif kind == "start" and stopped is not None:
+            pauses.append((stopped, ts))
+            stopped = None
+    return pauses
+
+
+def _moving_clock(dists: list[float], times: list[float], pauses: list[tuple[float, float]]) -> list[float]:
+    """Record times with the stopped spans taken out, so they run on the timer.
+
+    Timer events are the watch's own record of a pause. A file without them
+    falls back to the record gaps: a long gap that covers almost no ground.
+    """
+    out: list[float] = []
+    offset = 0.0
+    k = 0
+    for i, t in enumerate(times):
+        if pauses:
+            while k < len(pauses) and pauses[k][1] <= t:
+                offset += pauses[k][1] - pauses[k][0]
+                k += 1
+        elif i:
+            dt = t - times[i - 1]
+            if dt > _PAUSE_GAP_S and (dists[i] - dists[i - 1]) / dt < _PAUSE_SPEED_MS:
+                offset += dt
+        out.append(t - offset)
     return out
 
 

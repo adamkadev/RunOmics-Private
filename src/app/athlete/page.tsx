@@ -3,6 +3,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { zoneDistribution, recentZoneDistribution } from '@/application/usecases/GetAnalyticsData'
 import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
+import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { appTodayIso, isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
 import { athletePageView } from '@/components/profile/athleteView'
@@ -25,6 +26,7 @@ export default async function AthletePage() {
       weeklyZoneTime={weeklyZoneTime}
       recentZoneTime={recentZoneTime}
       paceZones={await getTrainingZones()}
+      lastSyncedAt={getLastSyncedAt()}
     />
   )
 }

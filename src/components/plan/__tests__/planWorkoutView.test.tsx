@@ -315,3 +315,27 @@ describe('a Garmin planned workout is untouched by any of this', () => {
     expect(sheet.textContent).not.toContain('/km')
   })
 })
+
+describe('a done day draws the steps it was planned with (v5.6 #2)', () => {
+  const steps = [
+    { kind: 'warmup' as const, minutes: 12 },
+    { kind: 'effort' as const, minutes: 7, rep: 1 },
+    { kind: 'recovery' as const, minutes: 2, rep: 1 },
+    { kind: 'effort' as const, minutes: 7, rep: 2 },
+    { kind: 'recovery' as const, minutes: 2, rep: 2 },
+    { kind: 'effort' as const, minutes: 7, rep: 3 },
+    { kind: 'cooldown' as const, minutes: 10 },
+  ]
+  const garmin = { type: 'Threshold' as const, steps, name: 'Threshold 3 x 7:00', durationSecs: 3360 }
+
+  it("takes Garmin's steps when the run was the session it planned", async () => {
+    const { doneDaySteps } = await import('../planWorkoutView')
+    expect(doneDaySteps('Threshold', undefined, garmin)).toBe(steps)
+  })
+
+  it('stays continuous for a swapped day or no plan', async () => {
+    const { doneDaySteps } = await import('../planWorkoutView')
+    expect(doneDaySteps('Base', undefined, garmin)).toEqual([])
+    expect(doneDaySteps('Threshold', undefined, undefined)).toEqual([])
+  })
+})

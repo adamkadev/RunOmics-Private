@@ -392,7 +392,7 @@ describe('Load trend and Recovery (v5.4)', () => {
   it('uses only the six v5.4 colours in the two cards', () => {
     const source = readFileSync(path.join(__dirname, '../LoadRecoveryCards.tsx'), 'utf8')
     const vars = new Set([...source.matchAll(/var\(--([a-z-]+)\)/g)].map((m) => m[1]))
-    expect([...vars].sort()).toEqual(['accent', 'card', 'foreground', 'muted-foreground', 'tone-caution', 'track'])
+    expect([...vars].sort()).toEqual(['accent', 'card', 'divider', 'foreground', 'muted-foreground', 'tone-caution', 'track'])
     expect(source).not.toMatch(/#[0-9a-f]{3,6}\b/i)
   })
 })

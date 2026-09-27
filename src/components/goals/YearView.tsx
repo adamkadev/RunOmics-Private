@@ -6,7 +6,6 @@ import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { YearData } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatKm, formatPace } from '@/lib/formatters'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { AnimatedValue } from '@/components/ui/AnimatedValue'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { MonthlyVolumeChart } from './MonthlyVolumeChart'
 import { SeasonTimeline, type SeasonBlock } from './SeasonTimeline'
@@ -63,7 +62,8 @@ export function YearView({ yearData, today, block = null }: Props) {
             </SectionDivider>
             <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="text-3xl font-bold tracking-tight text-foreground">
-                <AnimatedValue value={totalDistanceKm} grouped />
+                {/* No count-up (v5.6 #1): a frame mid-way read 1,040 of a 1,116 year, beside "+116 km". */}
+                {formatKm(totalDistanceKm)}
               </span>
               <span className="text-sm text-subtle">{t.goals.ofKm(formatKm(annualDistanceKm))}</span>
               {reachedByKm !== null && (

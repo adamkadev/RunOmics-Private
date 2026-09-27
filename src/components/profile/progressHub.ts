@@ -4,6 +4,7 @@ import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import type { ProfileGoal, ProfilePeriodStats } from '@/application/usecases/GetProfileData'
 import type { NextRaceSpotlight } from '@/application/usecases/GetGoalsData'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
+import { consistencyMonths } from '@/components/consistency/consistencyMonths'
 
 /** The Progress hub (H01, M12): every figure a tile draws, worked out once. */
 export interface ProgressHubView {
@@ -147,7 +148,6 @@ export function progressHubView(input: HubInput): ProgressHubView {
     yearKm.set(y, { km: entry.km + a.distanceKm, runs: entry.runs + 1, seconds: entry.seconds + (a.durationSeconds ?? 0) })
   }
 
-  const twelveMonthsAgo = isoDate(addDays(new Date(`${input.today}T00:00:00`), -365))
 
   return {
     year,
@@ -183,7 +183,9 @@ export function progressHubView(input: HubInput): ProgressHubView {
     records: records.map((r) => ({ key: r.key, label: r.label, seconds: r.seconds, latest: r.date !== null && r.date === latestDate })),
     consistency: {
       weeks: heatWeeks(input.heatmapDays, input.today),
-      activeDays: input.heatmapDays.filter((d) => d.sessionCount > 0 && d.date > twelveMonthsAgo && d.date <= input.today).length,
+      // The Consistency page's own count (v5.5 #9): the card said 204 over a
+      // rolling 365 days, the page 202 over its twelve month columns.
+      activeDays: consistencyMonths(input.heatmapDays, input.today).activeDays,
       streakWeeks: input.streakWeeks,
     },
     shoes: input.shoes
