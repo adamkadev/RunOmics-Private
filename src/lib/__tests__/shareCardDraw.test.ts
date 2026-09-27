@@ -107,7 +107,7 @@ describe('drawShareCard', () => {
 
   it('draws an empty track, no coloured dot, for a zone under a minute (v5.5 #12)', () => {
     const palette = sharePalette('lavender', 'dark')
-    const ops = draw({ design: 'stats', activity: { ...RUN, hrZones: [{ zone: 2, seconds: 2400 }, { zone: 4, seconds: 20 }] } })
+    const ops = draw({ design: 'stats', activity: { ...RUN, hrZones: [{ zone: 2, seconds: 2400, percent: 99, minBpm: 120, maxBpm: 140 }, { zone: 4, seconds: 20, percent: 1, minBpm: 155, maxBpm: 170 }] } })
     expect(ops.some((o) => o.op === 'fill' && o.fill === palette.zones[3])).toBe(false)
     const zero = ops.filter((o) => o.op === 'fillText' && o.args[0] === '0 min')
     expect(zero.length).toBe(4)
