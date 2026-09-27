@@ -18,6 +18,7 @@ export interface CachedInsight extends Insight {
   generatedAt: string
   recentHeadlines?: string[]
   guard?: string
+  noteKey?: string
 }
 
 export interface InsightKey {
@@ -92,9 +93,18 @@ function surfaceRange(prefix: string) {
     .endAt(`${prefix}${ID_RANGE_END}`)
 }
 
-export async function listCachedHashes(prefix: string): Promise<Map<string, string>> {
-  const snapshot = await surfaceRange(prefix).select('hash').get()
-  return bySurface(snapshot.docs, prefix, (doc) => doc.get('hash') as string)
+/** What a stored card was written from: its facts hash, and for a run verdict the athlete's note. */
+export interface CachedKeys {
+  hash: string
+  noteKey?: string
+}
+
+export async function listCachedKeys(prefix: string): Promise<Map<string, CachedKeys>> {
+  const snapshot = await surfaceRange(prefix).select('hash', 'noteKey').get()
+  return bySurface(snapshot.docs, prefix, (doc) => {
+    const noteKey = doc.get('noteKey')
+    return { hash: doc.get('hash') as string, ...(typeof noteKey === 'string' && { noteKey }) }
+  })
 }
 
 const PHRASING_SURFACE = 'verdictPhrasing'
@@ -138,7 +148,8 @@ export async function saveCachedInsight(
   insight: Insight,
   hash: string,
   previous: CachedInsight | null,
-  guard?: string
+  guard?: string,
+  noteKey?: string
 ): Promise<void> {
   const recentHeadlines = [insight.headline, ...(previous?.recentHeadlines ?? [])].slice(0, HISTORY_SIZE)
 
@@ -149,6 +160,7 @@ export async function saveCachedInsight(
       ...insight,
       hash,
       ...(guard !== undefined && { guard }),
+      ...(noteKey !== undefined && { noteKey }),
       generatedAt: new Date().toISOString(),
       recentHeadlines,
     })

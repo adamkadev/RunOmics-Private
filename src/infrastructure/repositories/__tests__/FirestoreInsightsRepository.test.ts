@@ -20,7 +20,7 @@ const { get, set, doc, collectionGet, collection, orderBy, startAt, endAt, selec
 vi.mock('firebase-admin/firestore', () => ({ FieldPath: { documentId: () => '__name__' } }))
 vi.mock('@/lib/firebase-admin', () => ({ getAdminFirestore: () => ({ collection }) }))
 
-const { readVerifiedInsight, saveCachedInsight, listCachedHashes, servableInsight, readVerdictPhrasing, saveVerdictPhrasing } = await import(
+const { readVerifiedInsight, saveCachedInsight, listCachedKeys, servableInsight, readVerdictPhrasing, saveVerdictPhrasing } = await import(
   '../FirestoreInsightsRepository'
 )
 
@@ -121,18 +121,18 @@ describe('readVerifiedInsight', () => {
   })
 })
 
-describe('listCachedHashes', () => {
+describe('listCachedKeys', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     rangeGet.mockResolvedValue({ docs: [] })
   })
 
-  function hashDoc(id: string, hash: string) {
-    return { id, get: () => hash }
+  function hashDoc(id: string, hash: string, noteKey?: string) {
+    return { id, get: (field: string) => (field === 'hash' ? hash : field === 'noteKey' ? noteKey : undefined) }
   }
 
   it('asks Firestore only for the document-ID range the prefix covers', async () => {
-    await listCachedHashes('runVerdict_')
+    await listCachedKeys('runVerdict_')
 
     expect(orderBy).toHaveBeenCalledWith('__name__')
     expect(startAt).toHaveBeenCalledWith('runVerdict_')
@@ -140,30 +140,31 @@ describe('listCachedHashes', () => {
   })
 
   it('never falls back to scanning the whole collection', async () => {
-    await listCachedHashes('runVerdict_')
+    await listCachedKeys('runVerdict_')
 
     expect(collectionGet).not.toHaveBeenCalled()
   })
 
-  it('reads the hash field alone rather than whole documents', async () => {
-    await listCachedHashes('runVerdict_')
+  it('reads the hash and note key alone rather than whole documents', async () => {
+    await listCachedKeys('runVerdict_')
 
-    expect(select).toHaveBeenCalledWith('hash')
+    expect(select).toHaveBeenCalledWith('hash', 'noteKey')
   })
 
   it('keys the surfaces of the active locale without their prefix or suffix', async () => {
     rangeGet.mockResolvedValue({
       docs: [
-        hashDoc('runVerdict_a_en', 'hash-a'),
+        hashDoc('runVerdict_a_en', 'hash-a', 'note-a'),
         hashDoc('runVerdict_b_en', 'hash-b'),
         hashDoc('runVerdict_a_fr', 'hash-a-fr'),
       ],
     })
 
-    const hashes = await listCachedHashes('runVerdict_')
+    const keys = await listCachedKeys('runVerdict_')
 
-    expect([...hashes.keys()]).toEqual(['runVerdict_a', 'runVerdict_b'])
-    expect(hashes.get('runVerdict_a')).toBe('hash-a')
+    expect([...keys.keys()]).toEqual(['runVerdict_a', 'runVerdict_b'])
+    expect(keys.get('runVerdict_a')).toEqual({ hash: 'hash-a', noteKey: 'note-a' })
+    expect(keys.get('runVerdict_b')).toEqual({ hash: 'hash-b' })
   })
 })
 

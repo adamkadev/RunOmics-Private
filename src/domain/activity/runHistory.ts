@@ -26,12 +26,20 @@ export interface EffortStanding {
   daysSinceBetter: number | null
 }
 
+/** The run before this one: what an easy day came after is half its story. */
+export interface PreviousRun {
+  type: Activity['type']
+  description: string
+  daysAgo: number
+}
+
 export interface RunHistory {
   baseline: TypeBaseline | null
   standing: EffortStanding | null
   hardMinutes: number | null
   runsInPast7Days: number
   daysSinceLastRun: number | null
+  previous: PreviousRun | null
 }
 
 function dayNumber(date: string): number {
@@ -129,5 +137,6 @@ export function runHistory(activity: Activity, activities: Activity[], officialR
     hardMinutes: hardMinutes(activity),
     runsInPast7Days: before.filter((a) => day - dayNumber(a.date) < 7).length + 1,
     daysSinceLastRun: last ? day - dayNumber(last.date) : null,
+    previous: last ? { type: last.type, description: last.description ?? '', daysAgo: day - dayNumber(last.date) } : null,
   }
 }

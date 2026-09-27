@@ -2,7 +2,7 @@ import { DAY_MS } from '@/lib/calendarDate'
 import type { Activity, ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { expectedRpe, runVerdictTone } from '@/domain/activity/runVerdict'
-import type { RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
+import type { PreviousRun, RunHistory, TypeBaseline } from '@/domain/activity/runHistory'
 import { isLongSession } from '@/domain/activity/longRun'
 import { raceExecution } from '@/domain/activity/raceExecution'
 import { MIN_REP_SECONDS, repStats, sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
@@ -19,7 +19,7 @@ export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
  * runs inside the verdict horizon are written again on the next pass instead
  * of keeping copy from the old prompt (v4.16.4).
  */
-export const RUN_VERDICT_PROMPT_VERSION = 2
+export const RUN_VERDICT_PROMPT_VERSION = 3
 
 export function runVerdictSurface(activityId: string): string {
   return `${RUN_VERDICT_PREFIX}${activityId}`
@@ -53,12 +53,34 @@ function verdictTemperature(activity: Activity): number | null {
   return Math.round(activity.weather.apparentTempC)
 }
 
+/** The note and tags the athlete wrote on the run in the app. */
+export interface AthleteNote {
+  note: string
+  tags: string[]
+}
+
 export interface RunVerdictContext {
   activity: Activity
   history: RunHistory
   planned: PlannedWorkout | null
   official?: OfficialRaceResult | null
+  /** The athlete's note: null when there is none, undefined when the notes could not be read. */
+  note?: AthleteNote | null
 }
+
+/**
+ * The note a verdict was written with, stored beside it (v4.16.5). Kept out of
+ * the facts hash, which the activity page rebuilds on every render and which
+ * would then need a Firestore read of its own; the insight pass compares it
+ * instead, and writes the verdict again when the athlete adds "sick" to a
+ * session it had already judged.
+ */
+export function runVerdictNoteKey(note: AthleteNote | null): string {
+  if (!note || (!note.note.trim() && !note.tags.length)) return ''
+  return insightHash({ note: note.note.trim(), tags: [...note.tags].sort().join(',') })
+}
+
+const NOTE_PROMPT_CHARS = 300
 
 // ─── What the session was for ──────────────────────────────────────────────
 
@@ -87,6 +109,30 @@ const KIND_LABEL: Record<RunKind, string> = {
   threshold: 'a threshold session',
   intervals: 'an interval session',
   race: 'a race',
+}
+
+/**
+ * The type a run is judged as - what it was for - for its expected effort and
+ * the runs it is compared with. Never Garmin's training-effect label: that is
+ * the watch's estimate, and it called an easy run spent entirely in zones 1-2
+ * "Tempo", which the verdict then wrote up as "turned into a tempo session"
+ * (v4.16.5).
+ */
+function judgedType(kind: RunKind, activity: Activity): ActivityType {
+  switch (kind) {
+    case 'easy':
+    case 'long':
+    case 'strides':
+      return 'Base'
+    case 'tempo':
+      return 'Tempo'
+    case 'threshold':
+      return 'Threshold'
+    case 'race':
+      return 'Race'
+    case 'intervals':
+      return activity.type === 'VO2Max' || activity.type === 'Anaerobic' || activity.type === 'Sprint' ? activity.type : 'VO2Max'
+  }
 }
 
 const stepSeconds = (step: WorkoutStep) => step.seconds ?? step.minutes * 60
@@ -153,16 +199,22 @@ function repAdherence(execution: SessionExecution, planned: WorkoutStep[]): RepA
 }
 
 /**
- * The tone the numbers support. Perceived effort in its band is not the whole
- * story on a structured session: reps off the target, or fewer than planned,
- * are no "the session landed" whatever the RPE says. Reps faster than asked
- * count as off too - a threshold session run as VO2max is a harder day than
- * the plan wanted, not a better one.
+ * The tone the numbers support, with perceived effort read against what the
+ * run was for. It is not the whole story on a structured session: reps off
+ * the target, or fewer than planned, are no "the session landed" whatever the
+ * RPE says - and reps faster than asked count as off, a threshold session run
+ * as VO2max being a harder day than the plan wanted. The other way round, reps
+ * on target at a lower effort than the band are fitness showing, not a
+ * shortfall: "reps achieved at lower than target exertion" (v4.16.5).
  */
-function verdictTone(tone: VerdictTone, reps: RepAdherence | null): VerdictTone {
-  if (tone !== 'positive' || !reps) return tone
-  const off = reps.faster + reps.slower
-  return reps.done < reps.planned || off * 2 > reps.done ? 'neutral' : tone
+function verdictTone(activity: Activity, kind: RunKind, reps: RepAdherence | null): VerdictTone {
+  const judged = { ...activity, type: judgedType(kind, activity) }
+  const tone = runVerdictTone(judged)
+  if (!reps) return tone
+  const onTarget = reps.done >= reps.planned && (reps.faster + reps.slower) * 2 <= reps.done
+  if (!onTarget) return tone === 'positive' ? 'neutral' : tone
+  const easier = activity.rpe !== null && activity.rpe < expectedRpe(judged)[0]
+  return tone === 'neutral' && easier ? 'positive' : tone
 }
 
 // ─── Fact lines ────────────────────────────────────────────────────────────
@@ -190,7 +242,7 @@ function repsLine(reps: RepAdherence): string {
 const PACE_NOISE_SEC_PER_KM = 3
 const HR_NOISE_BPM = 3
 
-function executionLine(execution: NonNullable<SessionExecution>): string {
+function executionLine(execution: NonNullable<SessionExecution>, kind: RunKind): string {
   const drift = execution.hrDriftBpm === null ? '' : `, heart rate ${signed(execution.hrDriftBpm)} bpm`
   if (execution.kind === 'intervals') {
     return `- How the reps held: ${execution.spreadSecPerKm}s/km between the fastest and slowest, ${signed(execution.fadeSecPerKm)}s/km from first to last${drift ? `${drift} across them` : ''}`
@@ -199,7 +251,10 @@ function executionLine(execution: NonNullable<SessionExecution>): string {
     Math.abs(execution.fadeSecPerKm) < PACE_NOISE_SEC_PER_KM
       ? 'the second half at the pace of the first'
       : `the second half ${Math.abs(execution.fadeSecPerKm)}s/km ${execution.fadeSecPerKm > 0 ? 'slower' : 'quicker'} than the first`
-  return `- How it held: ${halves}${drift ? `${drift} from the first half to the second` : ''}, ${execution.spreadSecPerKm}s/km between the fastest and slowest kilometre`
+  // Kilometre-to-kilometre spread on an easy day is terrain and traffic, not
+  // execution; given as a fact, it came back as one ("22s/km spread") (v4.16.5).
+  const spread = EASY_KINDS.has(kind) ? '' : `, ${execution.spreadSecPerKm}s/km between the fastest and slowest kilometre`
+  return `- How it held: ${halves}${drift ? `${drift} from the first half to the second` : ''}${spread}`
 }
 
 function stridesLine(execution: SessionExecution, planned: WorkoutStep[]): string | null {
@@ -227,12 +282,18 @@ function zoneMinutes(activity: Activity, zones: (zone: number) => boolean): numb
 }
 
 /**
- * An easy day belongs in zones 1-2: the share there is the measure, and zone 3
- * - the grey zone an easy run drifts into - is what counts against it. "Little
- * time above zone 3" let an easy run spend half its time in zone 3 (v4.16.4).
+ * An easy day belongs in zones 1-2, and zone 3 - the grey zone an easy run
+ * drifts into - counts against it. When it held, that is the default and says
+ * so: handed over as the measure, it became every easy verdict's headline -
+ * "Full zone discipline protects the easy effort", "Strict zone control keeps
+ * the easy effort intact" - over "zero time in zones 4-5" (v4.16.5).
  */
-function zonesLine(kind: RunKind, activity: Activity, hardMinutes: number | null): string | null {
-  if (hardMinutes === null) return null
+const GREY_SHARE_ALLOWED = 0.1
+function zonesLine(kind: RunKind, activity: Activity, hardMinutes: number | null, reps: RepAdherence | null): string | null {
+  // Reps against their target say how hard a structured session was better
+  // than zone time does - and the zones themselves were set on another model
+  // before September, which counted 17 Sep's 175 bpm reps as zone 3 (v4.16.5).
+  if (hardMinutes === null || (reps && reps.done > 0)) return null
   const easy = zoneMinutes(activity, (zone) => zone <= 2)
   const grey = zoneMinutes(activity, (zone) => zone === 3)
   // On LTHR zones, tempo effort sits in zone 3 (about 89-94% of LTHR): for a
@@ -240,8 +301,11 @@ function zonesLine(kind: RunKind, activity: Activity, hardMinutes: number | null
   if (kind === 'tempo' && grey !== null) return `- Time in zone 3: ${grey} min; zones 4-5: ${hardMinutes} min`
   if (!EASY_KINDS.has(kind) || easy === null || grey === null) return `- Time in zones 4-5: ${hardMinutes} min`
   const total = easy + grey + hardMinutes
-  const share = total > 0 ? ` (${Math.round((easy / total) * 100)}%)` : ''
-  return `- Time in zones 1-2: ${easy} min${share}; zone 3: ${grey} min; zones 4-5: ${hardMinutes} min`
+  if (total === 0) return null
+  const share = Math.round((easy / total) * 100)
+  return grey <= total * GREY_SHARE_ALLOWED && hardMinutes <= 1
+    ? `- Zones: ${share}% in zones 1-2, as an easy run should be - the default, not news`
+    : `- Zones: ${share}% in zones 1-2, ${grey} min in zone 3, ${hardMinutes} min in zones 4-5 - more than an easy day should hold`
 }
 
 /**
@@ -285,6 +349,15 @@ function baselineLine(kind: RunKind, type: string, baseline: TypeBaseline, activ
   return `- ${baseline.measure === 'reps' ? 'Rep pace against' : 'Against'} ${reference}: ${[paceText, heart].filter((part) => part !== null).join(', ')}`
 }
 
+function noteLine(note: AthleteNote | null | undefined): string | null {
+  const text = note?.note.trim().slice(0, NOTE_PROMPT_CHARS) ?? ''
+  const tags = note?.tags.length ? note.tags.join(', ') : ''
+  if (!text && !tags) return null
+  return text
+    ? `- The athlete's own note on this run, printed on the card: "${text}"${tags ? ` (tags: ${tags})` : ''}`
+    : `- The athlete's tags on this run, printed on the card: ${tags}`
+}
+
 function plannedLine(planned: PlannedWorkout): string {
   const minutes = planned.durationSecs ? `~${Math.round(planned.durationSecs / 60)} min` : null
 
@@ -295,7 +368,10 @@ function plannedLine(planned: PlannedWorkout): string {
     return `- The plan asked for ${shape} that day`
   }
 
-  const detail = [planned.type, minutes].filter((part) => part !== null).join(', ')
+  // "Base" is Garmin's word for an easy session, and came back as jargon
+  // ("base running", "your recent base average") (v4.16.5).
+  const type = planned.type && planned.type !== 'Base' ? planned.type : null
+  const detail = [type, minutes].filter((part) => part !== null).join(', ')
   return `- The plan asked for "${planned.name}" that day${detail ? ` (${detail})` : ''}`
 }
 
@@ -312,12 +388,11 @@ function placingLine(official: OfficialRaceResult | null | undefined): string | 
   return `- Finished ${official.overallPlace}${field}`
 }
 
-function cadenceLine(runs: number, daysSinceLastRun: number): string {
-  const gap =
-    daysSinceLastRun === 0
-      ? 'a second run on the same day'
-      : `${daysSinceLastRun} day${daysSinceLastRun === 1 ? '' : 's'} after the previous one`
-  return `- ${runs} run${runs === 1 ? '' : 's'} in the 7 days up to it, ${gap}`
+function cadenceLine(runs: number, previous: PreviousRun): string {
+  const when =
+    previous.daysAgo === 0 ? 'earlier the same day' : `${previous.daysAgo} day${previous.daysAgo === 1 ? '' : 's'} before`
+  const what = previous.description ? `"${previous.description}"` : `a ${previous.type} run`
+  return `- ${runs} run${runs === 1 ? '' : 's'} in the 7 days up to it; the previous one, ${when}, was ${what}`
 }
 
 // ─── Facts, hash and prompt ────────────────────────────────────────────────
@@ -333,7 +408,7 @@ function facts({ activity, history, planned, official }: RunVerdictContext) {
 
   return {
     promptVersion: RUN_VERDICT_PROMPT_VERSION,
-    tone: verdictTone(runVerdictTone(activity), reps),
+    tone: verdictTone(activity, kind, reps),
     kind,
     type: activity.type,
     distanceKm: Math.round(performance.distanceKm * 100) / 100,
@@ -355,19 +430,24 @@ function facts({ activity, history, planned, official }: RunVerdictContext) {
     airTemperature: recentWeather ? Math.round(recentWeather.tempC) : null,
     windKph: recentWeather ? Math.round(recentWeather.windKph) : null,
     humidityPct: recentWeather ? Math.round(recentWeather.humidityPct) : null,
-    execution: execution ? executionLine(execution) : null,
+    execution: execution ? executionLine(execution, kind) : null,
     reps: reps ? repsLine(reps) : null,
     strides: kind === 'strides' ? stridesLine(execution, plan.strides) : null,
     pacing: kind === 'race' ? pacingLine(activity) : null,
-    zones: zonesLine(kind, activity, history.hardMinutes),
+    zones: zonesLine(kind, activity, history.hardMinutes, reps),
     planned: planned?.name ?? null,
     plannedType: planned?.type ?? null,
     plannedMinutes: planned?.durationSecs ? Math.round(planned.durationSecs / 60) : null,
-    baseline: history.baseline ? baselineLine(kind, activity.type, history.baseline, activity) : null,
+    // Earlier runs of the same Garmin type are only like for like when that
+    // type is what the run was for: an easy run Garmin called "Tempo" is no
+    // peer of the tempo sessions.
+    baseline:
+      history.baseline && judgedType(kind, activity) === activity.type ? baselineLine(kind, activity.type, history.baseline, activity) : null,
     standing: history.standing?.label ?? null,
     standingDays: history.standing?.daysSinceBetter ?? null,
     runsInPast7Days: history.runsInPast7Days,
     daysSinceLastRun: history.daysSinceLastRun,
+    previous: history.previous ? `${history.previous.daysAgo}:${history.previous.description || history.previous.type}` : null,
   }
 }
 
@@ -385,12 +465,21 @@ function headlineKey(headline: string): string {
   return headline.trim().toLowerCase().replace(/[.!?]+$/, '')
 }
 
+const opening = (headline: string) => headlineKey(headline).split(/\s+/).slice(0, 2).join(' ')
+
+/**
+ * A headline another verdict already used, or one opening on the same two
+ * words as a verdict the model was shown ("Full zone discipline...", "Full
+ * zone control..."): a lite model handed a list not to echo still echoes it.
+ */
 export function repeatsEarlierVerdict(
   candidate: Pick<WrittenVerdict, 'headline'>,
-  written: Pick<WrittenVerdict, 'headline'>[]
+  written: Pick<WrittenVerdict, 'headline'>[],
+  shown: Pick<WrittenVerdict, 'headline'>[] = []
 ): boolean {
   const key = headlineKey(candidate.headline)
-  return written.some((earlier) => headlineKey(earlier.headline) === key)
+  const start = opening(candidate.headline)
+  return written.some((earlier) => headlineKey(earlier.headline) === key) || shown.some((earlier) => opening(earlier.headline) === start)
 }
 
 const TONE_RULES: Record<VerdictTone, string> = {
@@ -411,16 +500,18 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   // v4.16.4: RPE and the conditions sit in the same card, right under the text.
   "The card already prints the distance, duration, average pace, average heart rate, perceived effort (RPE) and the conditions: never state those numbers. A difference against earlier runs or against the plan's target is fine (\"8s/km quicker\", \"inside the 4:22-4:28 target\"); repeating this run's own printed numbers is not.",
   'What the job is depends on the session.',
-  "An easy run's job is to stay easy: nearly all of it in zones 1-2, little time in zone 3 and none in zones 4-5, with a steady heart rate. Pace is never the achievement on an easy day, and quicker is only good news when the heart rate did not rise with it. With strides, the easy running is what you judge; the strides only count as done.",
+  "An easy run's job is to stay easy: nearly all of it in zones 1-2. That is the default, not news: when it held, give it a few words at most, never the headline, and never mention an empty zone 4-5. Lead instead with what sets this run apart - its heart rate against earlier easy runs at the same pace, its drift, where it sat in the week (the day after a hard session, a second run that day), or conditions that cost something. Only when zone 3 or above crept in is the zone time the verdict. Pace is never the achievement on an easy day, and quicker is only good news when the heart rate did not rise with it. With strides, the easy running is what you judge; the strides only count as done.",
   "A long run's job is time on feet at an easy effort: judge how the second half held, its heart rate drift and fade. Kilometre-to-kilometre pace spread is terrain, not execution.",
-  'A tempo or threshold session is judged on rep pace against its target, evenness across the reps and heart rate drift. Reps faster than the target are not a bonus: that is a harder session than asked.',
+  'A tempo or threshold session is judged on rep pace against its target, evenness across the reps and heart rate drift. Reps faster than the target are not a bonus: that is a harder session than asked. Reps on target at a lower effort than expected are good news, never a shortfall.',
   'An interval session is judged on the reps completed and held at the target, and the fade from first to last.',
   'A race is judged on its pacing - an even or negative split is the skill - its result against earlier bests, and its placing.',
   'Lead with what this run makes the most of; never default to the comparison with earlier runs because it is there.',
   'When the effort sits outside the expected band, look for a cause in the other facts - heat, humidity, wind, elevation - and name it rather than assuming the athlete misjudged the session. Name the cause, never its number.',
   'When a planned session is given, judge what was run against what was asked, and say so plainly if they differ.',
+  // v4.16.5: 23 Sep read "Precise threshold control" over the athlete's own note, "sick".
+  "The athlete's note, when there is one, is what the numbers cannot tell you: never quote it back, it is printed on the card, but judge the run in its light. A session run sick, tired or sore is never written up as if nothing happened.",
   // v5.5 #22, v5.6 #9: the body read "a textbook run locked in pure aerobic gains".
-  'Write the body as two or three measured facts, comma-separated or as two short sentences, like "3 reps within 1 s/km of each other, all inside the target, 4 bpm drift." or "All but 3 min in zones 1-2, heart rate steady to the end." No praise words (textbook, rock-solid, locked in, on full display) and no claims about what the run builds.',
+  'Write the body as two or three measured facts, comma-separated or as two short sentences, like "3 reps within 1 s/km of each other, all inside the target, 4 bpm drift." or "Same pace as your recent easy runs at 6 bpm less, heart rate flat into the second half." Write as a coach talks to the athlete: no jargon (base, cardiac cost, aerobic engine), no praise words (textbook, rock-solid, locked in, on full display) and no claims about what the run builds.',
 ].join(' ')
 
 export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdicts: string[]): string {
@@ -430,14 +521,14 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdic
   const past = [
     f.baseline,
     history.standing ? standingLine(history.standing.label, history.standing.daysSinceBetter) : null,
-    history.daysSinceLastRun !== null ? cadenceLine(f.runsInPast7Days, history.daysSinceLastRun) : null,
+    history.previous ? cadenceLine(f.runsInPast7Days, history.previous) : null,
   ].filter((line) => line !== null)
 
   return [
     `Tone: ${f.tone}. ${TONE_RULES[f.tone]}`,
     '',
     'Facts:',
-    `- Session: ${KIND_LABEL[f.kind]} (Garmin's training effect: ${f.type})`,
+    `- Session: ${KIND_LABEL[f.kind]}`,
     context.official
       ? `- Official result over the certified course: ${f.distanceKm} km in ${f.minutes} min (chip time)`
       : `- Distance: ${f.distanceKm} km in ${f.minutes} min`,
@@ -445,7 +536,7 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdic
     placingLine(context.official),
     f.avgHr ? `- Average heart rate: ${f.avgHr} bpm` : null,
     f.rpe !== null
-      ? `- Perceived effort (RPE 1-10): ${f.rpe}, against ${expectedRpe(activity).join(' to ')} expected for a ${f.type} of this length`
+      ? `- Perceived effort (RPE 1-10): ${f.rpe}, against ${expectedRpe({ ...activity, type: judgedType(f.kind, activity) }).join(' to ')} expected for this session at this length`
       : null,
     f.aerTrainingEffect !== null ? `- Aerobic training effect (0-5): ${f.aerTrainingEffect}` : null,
     f.elevationGain ? `- Elevation gain: ${f.elevationGain} m` : null,
@@ -456,6 +547,7 @@ export function runVerdictInsightPrompt(context: RunVerdictContext, recentVerdic
     f.execution,
     f.pacing,
     planned ? plannedLine(planned) : null,
+    noteLine(context.note),
     ...(past.length ? ['', 'What came before it:', ...past] : []),
     avoidClause(recentVerdicts, 'otherRuns'),
   ]

@@ -5,7 +5,7 @@ import { runInsightPass, type InsightPassDeps } from '@/application/ai/insightPa
 import { insightSurfaces } from '@/application/ai/surfaces'
 import {
   getCachedInsight,
-  listCachedHashes,
+  listCachedKeys,
   readVerdictPhrasing,
   saveCachedInsight,
   saveVerdictPhrasing,
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     const deps: InsightPassDeps = {
       spender: await openSpender(),
-      insights: { getCachedInsight, saveCachedInsight, listCachedHashes, readVerdictPhrasing, saveVerdictPhrasing },
+      insights: { getCachedInsight, saveCachedInsight, listCachedKeys, readVerdictPhrasing, saveVerdictPhrasing },
       generate: generateInsight,
       revalidate: (path) => revalidatePath(path),
       notify: (insight) => sendPushToAllDevices(insight.headline, insight.body),

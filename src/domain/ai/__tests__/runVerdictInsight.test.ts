@@ -3,6 +3,7 @@ import {
   deservesVerdict,
   isFreshRun,
   repeatsEarlierVerdict,
+  runVerdictNoteKey,
   RUN_VERDICT_SYSTEM_INSTRUCTION,
   runVerdictInsightHash as hashContext,
   runVerdictInsightPrompt,
@@ -332,11 +333,18 @@ describe('what the run was for (v4.16.4)', () => {
     const zone = (n: number, minutes: number) => ({ zone: n, seconds: minutes * 60, percent: 0, minBpm: 0 })
     const easy = run({ id: 'z', date: '2026-09-27', durationSeconds: 73 * 60, hrZones: [zone(1, 21), zone(2, 49), zone(3, 3), zone(4, 0), zone(5, 0)] as never })
 
-    expect(verdict(easy, null)).toContain('- Time in zones 1-2: 70 min (96%); zone 3: 3 min; zones 4-5: 0 min')
-    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('nearly all of it in zones 1-2, little time in zone 3 and none in zones 4-5')
-    expect(verdict({ ...thresholdRun([265, 265, 264]), hrZones: [zone(2, 29), zone(3, 6), zone(4, 16)] as never }, thresholdPlan)).toContain(
-      '- Time in zones 4-5: 16 min',
-    )
+    // v4.16.5: held, it is the default and says so - not the measure every
+    // easy verdict led with.
+    expect(verdict(easy, null)).toContain('- Zones: 96% in zones 1-2, as an easy run should be - the default, not news')
+    const grey = run({ id: 'g', date: '2026-09-27', hrZones: [zone(1, 20), zone(2, 25), zone(3, 25), zone(4, 2)] as never })
+    expect(verdict(grey, null)).toContain('- Zones: 63% in zones 1-2, 25 min in zone 3, 2 min in zones 4-5 - more than an easy day should hold')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('nearly all of it in zones 1-2. That is the default, not news')
+    // With its reps known, a structured session is read from them, not its zones (v4.16.5).
+    const withReps = verdict({ ...thresholdRun([265, 265, 264]), hrZones: [zone(2, 29), zone(3, 6), zone(4, 16)] as never }, thresholdPlan)
+    expect(withReps).not.toContain('zones 4-5')
+    expect(withReps).toContain('- Reps: 3 of 3 planned')
+    const unplanned = run({ id: 'u', date: '2026-09-23', type: 'Threshold', hrZones: [zone(2, 29), zone(3, 6), zone(4, 16)] as never })
+    expect(verdict(unplanned, null)).toContain('- Time in zones 4-5: 16 min')
   })
 
   // On LTHR zones a tempo effort sits in zone 3: there it is the work.
@@ -369,5 +377,82 @@ describe('what the run was for (v4.16.4)', () => {
     const prompt = runVerdictInsightPrompt({ activity: run({}), history: runHistory(run({}), []), planned: null }, ['Easy and steady / 0 min in zone 4.'])
 
     expect(prompt).toContain('never reuse their wording or open the same way, though the same angle is fine')
+  })
+})
+
+describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
+  const zone = (n: number, minutes: number) => ({ zone: n, seconds: minutes * 60, percent: 0, minBpm: 0 })
+  const lap = (durationSec: number, avgHr: number) => ({ durationSec, distanceM: 1000, avgSpeedMs: 1000 / durationSec, avgHr })
+  const steady = [{ type: 'interval_active', durationSec: 2040, distanceM: 6010, avgSpeedMs: 0, avgHr: 155, laps: [lap(346, 150), lap(344, 152), lap(340, 158), lap(339, 160)] }]
+  const context = (activity: Activity, planned: unknown = null, note?: { note: string; tags: string[] } | null) => ({
+    activity,
+    history: runHistory(activity, []),
+    planned: planned as never,
+    ...(note === undefined ? {} : { note }),
+  })
+
+  // 9 Sep: planned easy, all of it in zones 1-2 at RPE 2, and Garmin called it "Tempo".
+  it("never judges an easy run by Garmin's label for it", () => {
+    const easy = run({ id: 'e', date: '2026-09-09', type: 'Tempo', rpe: 2, hrZones: [zone(1, 11), zone(2, 23)] as never, splits: steady as never })
+    const prompt = runVerdictInsightPrompt(context(easy, { date: '2026-09-09', name: 'Easy Aerobic Run', type: 'Base' }), [])
+
+    expect(prompt).toContain('- Session: an easy run')
+    expect(prompt).not.toContain('Tempo')
+    expect(prompt).toContain('- Perceived effort (RPE 1-10): 2, against 1 to 3 expected for this session at this length')
+    expect(prompt).toContain('Tone: positive.')
+  })
+
+  it('leaves the kilometre spread out of an easy run, where it is terrain', () => {
+    const prompt = runVerdictInsightPrompt(context(run({ id: 's', date: '2026-09-22', splits: steady as never })), [])
+
+    expect(prompt).toContain('- How it held:')
+    expect(prompt).not.toContain('between the fastest and slowest kilometre')
+  })
+
+  // 17 Sep: all three reps on target at RPE 4, written up as "lower than target exertion".
+  it('reads reps on target at a lower effort than expected as good news', () => {
+    const rep = { type: 'interval_active', durationSec: 420, distanceM: 1585, avgSpeedMs: 0, avgHr: 176, laps: [] }
+    const threshold = run({ id: 't', date: '2026-09-17', type: 'Threshold', rpe: 4, splits: [rep, rep, rep] as never })
+    const plan = {
+      date: '2026-09-17',
+      name: 'Threshold 3 x 7:00',
+      type: 'Threshold',
+      steps: [1, 2, 3].map((r) => ({ kind: 'effort', minutes: 7, rep: r, paceSecPerKm: [262, 268] })),
+    }
+
+    expect(runVerdictInsightPrompt(context(threshold, plan), [])).toContain('Tone: positive.')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('Reps on target at a lower effort than expected are good news, never a shortfall.')
+  })
+
+  it('says what the run came after', () => {
+    const before = run({ id: 'p', date: '2026-09-23', type: 'Threshold', description: 'Threshold 3 x 7:00' } as Partial<Activity>)
+    const today = run({ id: 'c', date: '2026-09-24' })
+    const prompt = runVerdictInsightPrompt({ activity: today, history: runHistory(today, [today, before]), planned: null }, [])
+
+    expect(prompt).toContain('the previous one, 1 day before, was "Threshold 3 x 7:00"')
+  })
+
+  // 23 Sep: "Precise threshold control" over the athlete's own note, "sick".
+  it("hands the model the athlete's note, to judge the run in its light", () => {
+    const prompt = runVerdictInsightPrompt(context(run({ id: 'n', date: '2026-09-23' }), null, { note: 'sick', tags: [] }), [])
+
+    expect(prompt).toContain('- The athlete\'s own note on this run, printed on the card: "sick"')
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('A session run sick, tired or sore is never written up as if nothing happened.')
+  })
+
+  it('keys the note apart from the facts, so the activity page never needs it', () => {
+    const plain = run({ id: 'k', date: '2026-09-23' })
+    expect(hashContext(context(plain, null, { note: 'sick', tags: [] }))).toBe(hashContext(context(plain)))
+    expect(runVerdictNoteKey(null)).toBe('')
+    expect(runVerdictNoteKey({ note: '  ', tags: [] })).toBe('')
+    expect(runVerdictNoteKey({ note: 'sick', tags: ['b', 'a'] })).toBe(runVerdictNoteKey({ note: 'sick ', tags: ['a', 'b'] }))
+    expect(runVerdictNoteKey({ note: 'sick', tags: [] })).not.toBe(runVerdictNoteKey({ note: 'fine', tags: [] }))
+  })
+
+  it('rejects a headline opening on the same two words as one the model was shown', () => {
+    const shown = [{ headline: 'Full zone discipline protects the easy effort' }]
+    expect(repeatsEarlierVerdict({ headline: 'Full zone control kept cardiac cost low' }, [], shown)).toBe(true)
+    expect(repeatsEarlierVerdict({ headline: 'Full zone control kept cardiac cost low' }, shown)).toBe(false)
+    expect(repeatsEarlierVerdict({ headline: 'Lower heart rate at the same pace' }, shown, shown)).toBe(false)
   })
 })

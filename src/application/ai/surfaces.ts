@@ -2,6 +2,7 @@ import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getRunVerdictContexts } from '@/application/usecases/GetRunVerdictInsight'
 import { getRecords, getMostRecentRecord, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
+import { getActivityNotes } from '@/infrastructure/repositories/FirestoreActivityNoteRepository'
 import { getShoeDetail } from '@/application/usecases/GetShoeDetail'
 import { buildTodayContext, todayInsightSession } from '@/application/usecases/GetTodayInsight'
 import { buildPbCelebrationContext } from '@/application/usecases/GetPbCelebrationInsight'
@@ -76,10 +77,19 @@ export function insightSurfaces() {
   const status = once(getTrainingStatus)
 
   return {
+    /**
+     * Every run's context, with the athlete's note where there is one. A pass
+     * that cannot read the notes leaves them undefined - never an empty note,
+     * which would read as the athlete having written nothing (v4.16.5).
+     */
     async runVerdicts(): Promise<{ contexts: RunVerdictContext[]; recordActivityIds: ReadonlySet<string> }> {
+      const [notes, recordEfforts] = await Promise.all([getActivityNotes(), records()])
       return {
-        contexts: getRunVerdictContexts(),
-        recordActivityIds: new Set(Object.keys(getQualifiedEffortsByActivityId(await records()))),
+        contexts: getRunVerdictContexts().map((context) => ({
+          ...context,
+          note: notes.available ? (notes.notes.get(context.activity.id) ?? null) : undefined,
+        })),
+        recordActivityIds: new Set(Object.keys(getQualifiedEffortsByActivityId(recordEfforts))),
       }
     },
 

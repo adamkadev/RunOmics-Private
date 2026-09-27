@@ -8,12 +8,13 @@ import {
   repeatsEarlierVerdict,
   runVerdictInsightHash,
   runVerdictInsightPrompt,
+  runVerdictNoteKey,
   runVerdictSurface,
   verdictLines,
   type RunVerdictContext,
 } from '@/domain/ai/runVerdictInsight'
 import type * as InsightsRepository from '@/infrastructure/repositories/FirestoreInsightsRepository'
-import type { VerdictPhrasing } from '@/infrastructure/repositories/FirestoreInsightsRepository'
+import type { CachedKeys, VerdictPhrasing } from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import type { Spender } from '@/lib/aiSpend'
 import type { Insight, InsightRequest, InsightResult } from '@/lib/gemini'
 import type { InsightSurfaces, SurfaceJob, SurfacePlan } from './surfaces'
@@ -28,7 +29,7 @@ export interface InsightPassDeps {
   spender: Spender
   insights: Pick<
     typeof InsightsRepository,
-    'getCachedInsight' | 'saveCachedInsight' | 'listCachedHashes' | 'readVerdictPhrasing' | 'saveVerdictPhrasing'
+    'getCachedInsight' | 'saveCachedInsight' | 'listCachedKeys' | 'readVerdictPhrasing' | 'saveVerdictPhrasing'
   >
   generate: (request: InsightRequest) => Promise<InsightResult>
   revalidate: (path: string) => void
@@ -158,18 +159,22 @@ export interface VerdictQueue {
 }
 
 /**
- * The runs whose stored verdict is missing or was written from other facts,
- * split into the ones that just landed and the backlog.
+ * The runs whose stored verdict is missing, was written from other facts, or
+ * was written before the athlete's note said otherwise - split into the ones
+ * that just landed and the backlog. A verdict stored before notes were kept
+ * counts as written without one, so only the runs that have a note go again.
  */
 export function verdictQueue(
   source: { contexts: RunVerdictContext[]; recordActivityIds: ReadonlySet<string> },
-  cachedHashes: ReadonlyMap<string, string>,
+  cached: ReadonlyMap<string, CachedKeys>,
   now: Date,
   ignoreHorizon: boolean
 ): VerdictQueue {
-  const outstanding = source.contexts.filter(
-    (context) => cachedHashes.get(runVerdictSurface(context.activity.id)) !== runVerdictInsightHash(context)
-  )
+  const outstanding = source.contexts.filter((context) => {
+    const stored = cached.get(runVerdictSurface(context.activity.id))
+    if (stored?.hash !== runVerdictInsightHash(context)) return true
+    return context.note !== undefined && (stored.noteKey ?? '') !== runVerdictNoteKey(context.note)
+  })
   const eligible = ignoreHorizon
     ? outstanding
     : outstanding.filter((context) => deservesVerdict(context.activity, source.recordActivityIds, now))
@@ -194,7 +199,7 @@ export async function writeVerdicts(
   written: Insight[],
   phrasing: VerdictPhrasing[],
   pool: string[],
-  notify = false
+  notifyIds: ReadonlySet<string> = new Set()
 ) {
   const before = written.length
   const failures: string[] = []
@@ -211,7 +216,7 @@ export async function writeVerdicts(
       if (!attempt.reserved) break
       continue
     }
-    if (repeatsEarlierVerdict(attempt.insight, avoid)) {
+    if (repeatsEarlierVerdict(attempt.insight, avoid, avoid.slice(0, AVOID_VERDICTS_SHOWN))) {
       failures.push(`${context.activity.id} (${attempt.model}): repeated the headline "${attempt.insight.headline}"`)
       continue
     }
@@ -220,11 +225,13 @@ export async function writeVerdicts(
       runVerdictSurface(context.activity.id),
       attempt.insight,
       runVerdictInsightHash(context),
-      null
+      null,
+      undefined,
+      context.note === undefined ? undefined : runVerdictNoteKey(context.note)
     )
     deps.revalidate(`/activities/${context.activity.id}`)
     written.push(attempt.insight)
-    if (notify) await notifyFreshVerdict(deps, attempt.insight)
+    if (notifyIds.has(context.activity.id)) await notifyFreshVerdict(deps, attempt.insight)
   }
 
   return { generated: written.length - before, failures }
@@ -257,19 +264,18 @@ async function notifyFreshVerdict(deps: InsightPassDeps, insight: Insight): Prom
  * next pass picks up - every surface is keyed on the facts it was written from.
  */
 export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSurfaces, options: InsightPassOptions) {
-  const queue = verdictQueue(
-    await surfaces.runVerdicts(),
-    await deps.insights.listCachedHashes(RUN_VERDICT_PREFIX),
-    deps.now(),
-    options.ignoreHorizon
-  )
+  const cached = await deps.insights.listCachedKeys(RUN_VERDICT_PREFIX)
+  const queue = verdictQueue(await surfaces.runVerdicts(), cached, deps.now(), options.ignoreHorizon)
   const phrasing = await deps.insights.readVerdictPhrasing()
 
   const written: Insight[] = []
 
   const fresh = options.limit === 0 ? [] : queue.fresh.slice(0, FRESH_RUN_VERDICTS_PER_RUN)
 
-  const freshVerdicts = await writeVerdicts(deps, fresh, written, phrasing, MODEL_POOL, true)
+  // Only a run's first verdict is news: one written again after a prompt
+  // change or a new note is not worth a second push (v4.16.5).
+  const firstVerdicts = new Set(fresh.filter((c) => !cached.has(runVerdictSurface(c.activity.id))).map((c) => c.activity.id))
+  const freshVerdicts = await writeVerdicts(deps, fresh, written, phrasing, MODEL_POOL, firstVerdicts)
   const today = await runPlan(deps, await surfaces.today())
   const pbCelebration = await runPlan(deps, await surfaces.pbCelebration(deps.now()))
   const shoeVerdicts = await runPlans(deps, surfaces.shoeVerdicts())

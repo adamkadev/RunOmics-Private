@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BACKFILL_POOL, MODEL_POOL, dailyBudget, spendField } from '@/domain/ai/budget'
 import { runHistory } from '@/domain/activity/runHistory'
-import { runVerdictInsightHash, runVerdictSurface, type RunVerdictContext } from '@/domain/ai/runVerdictInsight'
+import { runVerdictInsightHash, runVerdictNoteKey, runVerdictSurface, type RunVerdictContext } from '@/domain/ai/runVerdictInsight'
 import type { Activity } from '@/domain/activity/types'
-import type { CachedInsight, VerdictPhrasing } from '@/infrastructure/repositories/FirestoreInsightsRepository'
+import type { CachedInsight, CachedKeys, VerdictPhrasing } from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import type { Spender } from '@/lib/aiSpend'
 import type { InsightRequest, InsightResult } from '@/lib/gemini'
 import {
@@ -62,17 +62,21 @@ function memoryInsights(stored: Record<string, Partial<CachedInsight>> = {}, phr
       { headline: 'Stored', body: 'Stored body.', hash: 'stored-hash', generatedAt: NOW.toISOString(), ...doc },
     ])
   )
-  const saved: { surface: string; headline: string; hash: string; previous: CachedInsight | null; guard?: string }[] = []
+  const saved: { surface: string; headline: string; hash: string; previous: CachedInsight | null; guard?: string; noteKey?: string }[] = []
   const savedPhrasing: VerdictPhrasing[][] = []
 
   const insights: InsightPassDeps['insights'] = {
     getCachedInsight: async (surface) => docs.get(surface) ?? null,
-    saveCachedInsight: async (surface, insight, hash, previous, guard) => {
-      saved.push({ surface, headline: insight.headline, hash, previous, ...(guard !== undefined && { guard }) })
-      docs.set(surface, { ...insight, hash, generatedAt: NOW.toISOString() })
+    saveCachedInsight: async (surface, insight, hash, previous, guard, noteKey) => {
+      saved.push({ surface, headline: insight.headline, hash, previous, ...(guard !== undefined && { guard }), ...(noteKey !== undefined && { noteKey }) })
+      docs.set(surface, { ...insight, hash, generatedAt: NOW.toISOString(), ...(noteKey !== undefined && { noteKey }) })
     },
-    listCachedHashes: async (prefix) =>
-      new Map([...docs].filter(([surface]) => surface.startsWith(prefix)).map(([surface, doc]) => [surface, doc.hash])),
+    listCachedKeys: async (prefix: string) =>
+      new Map(
+        [...docs]
+          .filter(([surface]) => surface.startsWith(prefix))
+          .map(([surface, doc]) => [surface, { hash: doc.hash, ...(doc.noteKey !== undefined && { noteKey: doc.noteKey }) }])
+      ),
     readVerdictPhrasing: async () => phrasing,
     saveVerdictPhrasing: async (recent) => {
       savedPhrasing.push(recent)
@@ -301,14 +305,31 @@ describe('verdictQueue', () => {
     const current = run('current', '2026-09-20')
     const stale = run('stale', '2026-09-21')
     const hashes = new Map([
-      [runVerdictSurface('current'), runVerdictInsightHash(current)],
-      [runVerdictSurface('stale'), 'facts-before-a-reprocess'],
+      [runVerdictSurface('current'), { hash: runVerdictInsightHash(current) }],
+      [runVerdictSurface('stale'), { hash: 'facts-before-a-reprocess' }],
     ])
 
     const queue = verdictQueue({ contexts: [current, stale, JUST_RUN], recordActivityIds: noRecords }, hashes, NOW, false)
 
     expect([...queue.fresh, ...queue.rest].map((c) => c.activity.id).sort()).toEqual(['just-run', 'stale'])
     expect(queue.outstanding).toBe(2)
+  })
+
+  // v4.16.5: the athlete wrote "sick" after the verdict was written.
+  it('queues a run again once its note changes, and only then', () => {
+    const noted = { ...LAST_MONTH, note: { note: 'sick', tags: [] } }
+    const plain = { ...JUST_RUN, note: null }
+    const stored = new Map<string, CachedKeys>([
+      [runVerdictSurface('last-month'), { hash: runVerdictInsightHash(noted) }],
+      [runVerdictSurface('just-run'), { hash: runVerdictInsightHash(plain) }],
+    ])
+
+    expect(verdictQueue({ contexts: [noted, plain], recordActivityIds: noRecords }, stored, NOW, false).outstanding).toBe(1)
+    const written = new Map<string, CachedKeys>([...stored, [runVerdictSurface('last-month'), { hash: runVerdictInsightHash(noted), noteKey: runVerdictNoteKey(noted.note) }]])
+    expect(verdictQueue({ contexts: [noted, plain], recordActivityIds: noRecords }, written, NOW, false).outstanding).toBe(0)
+    // A pass that could not read the notes never takes that for "no note".
+    const unread = { ...LAST_MONTH, note: undefined }
+    expect(verdictQueue({ contexts: [unread], recordActivityIds: noRecords }, written, NOW, false).outstanding).toBe(0)
   })
 
   it('leaves a run past the horizon out, unless it holds a record or the horizon is lifted', () => {
@@ -334,7 +355,7 @@ describe('writeVerdicts', () => {
     const notify = vi.fn(async () => {})
     const revalidate = vi.fn()
 
-    const result = await writeVerdicts(deps({ insights: store.insights, notify, revalidate }), [JUST_RUN], [], [], MODEL_POOL, true)
+    const result = await writeVerdicts(deps({ insights: store.insights, notify, revalidate }), [JUST_RUN], [], [], MODEL_POOL, new Set(['just-run']))
 
     expect(result).toEqual({ generated: 1, failures: [] })
     expect(store.saved).toEqual([
@@ -357,7 +378,7 @@ describe('writeVerdicts', () => {
     const generate = vi.fn().mockResolvedValue(ok('Held together.'))
     const phrasing = [{ headline: 'held together', body: 'An earlier night.' }]
 
-    const result = await writeVerdicts(deps({ insights: store.insights, generate }), [JUST_RUN], [], phrasing, MODEL_POOL, true)
+    const result = await writeVerdicts(deps({ insights: store.insights, generate }), [JUST_RUN], [], phrasing, MODEL_POOL, new Set(['just-run']))
 
     expect(result.generated).toBe(0)
     expect(result.failures).toEqual([`just-run (${BEST}): repeated the headline "Held together."`])
@@ -376,7 +397,7 @@ describe('writeVerdicts', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
     const notify = vi.fn().mockRejectedValueOnce(new Error('FCM is down')).mockResolvedValue(undefined)
 
-    const result = await writeVerdicts(deps({ notify }), [JUST_RUN, run('same-week', '2026-09-22')], [], [], MODEL_POOL, true)
+    const result = await writeVerdicts(deps({ notify }), [JUST_RUN, run('same-week', '2026-09-22')], [], [], MODEL_POOL, new Set(['just-run', 'same-week']))
 
     expect(result).toEqual({ generated: 2, failures: [] })
     expect(notify).toHaveBeenCalledTimes(2)
@@ -451,6 +472,17 @@ describe('runInsightPass', () => {
       'shoeVerdict_pegasus',
       'runVerdict_last-month',
     ])
+  })
+
+  // v4.16.5: the prompt-version rewrite pushed 26 and 27 Sep all over again.
+  it('pushes a fresh run only for its first verdict, never for one written again', async () => {
+    const notify = vi.fn(async () => {})
+    const store = memoryInsights({ [runVerdictSurface('just-run')]: { hash: 'written-by-an-older-prompt' } })
+
+    await runInsightPass(deps({ notify, insights: store.insights }), surfaces({ runVerdicts: withRuns(JUST_RUN) }), OPTIONS)
+
+    expect(store.saved.map((doc) => doc.surface)).toEqual([runVerdictSurface('just-run')])
+    expect(notify).not.toHaveBeenCalled()
   })
 
   it('pushes the fresh verdict and no other card', async () => {
