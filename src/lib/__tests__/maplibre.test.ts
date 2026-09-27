@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import { firstSymbolLayerId, isLegacyFilter, isPlaceLabelLayer, styleRunMapLabels, townsOnly } from '../maplibre'
+import { firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
 
 type Layer = { id: string; type: string; 'source-layer'?: string }
 
@@ -41,18 +41,13 @@ describe('styleRunMapLabels (v4.10)', () => {
     expect(layout.Water).toBeUndefined()
   })
 
-  it('shows towns at any zoom and neighbourhoods only from zoom 14', () => {
-    const { map, zooms } = fakeMap(layers)
+  // v4.13.1: on device the zoom gate and the class filter left the map with no
+  // names at all; towns, villages and quartiers all show, at any zoom.
+  it('shows every kind of place at any zoom, filtering none out', () => {
+    const { map, zooms, setFilters } = fakeMap(layers)
     styleRunMapLabels(map, COLORS)
-    expect(zooms.Town).toEqual([0, 24])
-    expect(zooms.Neighbourhood).toEqual([14, 24])
-  })
-
-  it('narrows a layer holding every kind of place to towns and villages', () => {
-    const { map, setFilters } = fakeMap(layers)
-    styleRunMapLabels(map, COLORS)
-    expect(setFilters['Place labels']).toEqual(['match', ['get', 'class'], ['city', 'town', 'village'], true, false])
-    expect(setFilters.Town).toBeUndefined()
+    expect(zooms).toEqual({ Town: [0, 24], Neighbourhood: [0, 24], 'Place labels': [0, 24] })
+    expect(setFilters).toEqual({})
   })
 
   it('makes every name collide, centred, muted, with a halo in the surface colour', () => {
@@ -66,17 +61,6 @@ describe('styleRunMapLabels (v4.10)', () => {
 })
 
 describe('the filter helpers', () => {
-  it('tells an old-style filter from an expression', () => {
-    expect(isLegacyFilter(['==', 'class', 'town'])).toBe(true)
-    expect(isLegacyFilter(['all', ['==', 'class', 'town']])).toBe(true)
-    expect(isLegacyFilter(['==', ['get', 'class'], 'town'])).toBe(false)
-  })
-
-  it('narrows in the syntax the layer already uses', () => {
-    expect(townsOnly(['==', 'rank', 1])).toEqual(['all', ['==', 'rank', 1], ['in', 'class', 'city', 'town', 'village']])
-    expect(townsOnly(['<=', ['get', 'rank'], 3])).toEqual(['all', ['<=', ['get', 'rank'], 3], ['match', ['get', 'class'], ['city', 'town', 'village'], true, false]])
-  })
-
   it('knows a place layer by its source layer or its id', () => {
     expect(isPlaceLabelLayer({ id: 'Village labels', type: 'symbol' })).toBe(true)
     expect(isPlaceLabelLayer({ id: 'Highway shield', type: 'symbol' })).toBe(false)
