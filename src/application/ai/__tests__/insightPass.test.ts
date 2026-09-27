@@ -144,8 +144,6 @@ function surfaces(overrides: Partial<InsightSurfaces> = {}): InsightSurfaces {
   return {
     runVerdicts: async () => ({ contexts: [], recordActivityIds: new Set<string>() }),
     today: async () => 'no training status',
-    season: async () => 'no season reads',
-    analyticsTabs: async () => ({ fitness: 'no reads' }),
     pbCelebration: async () => 'no fresh record',
     shoeVerdicts: () => ({}),
     ...overrides,
@@ -270,17 +268,15 @@ describe('runSurface', () => {
     expect(revalidate.mock.calls).toEqual([['/'], ['/analytics']])
   })
 
-  it('shows the model the headlines this card already used, and asks for its bullets', async () => {
+  it('shows the model the headlines this card already used', async () => {
     const generate = writer()
 
     await runSurface(
-      deps({ insights: memoryInsights({ season: { hash: 'old', recentHeadlines: ['A season of gains'] } }).insights, generate }),
-      job('season', { bulletCount: 3 })
+      deps({ insights: memoryInsights({ today: { hash: 'old', recentHeadlines: ['Fresh legs, easy day.'] } }).insights, generate }),
+      job('today')
     )
 
-    expect(generate).toHaveBeenCalledWith(
-      expect.objectContaining({ model: BEST, prompt: 'prompt for season\nA season of gains', bulletCount: 3 })
-    )
+    expect(generate).toHaveBeenCalledWith(expect.objectContaining({ model: BEST, prompt: 'prompt for today\nFresh legs, easy day.' }))
   })
 
   it('keeps the stored card when generation fails', async () => {
@@ -410,6 +406,7 @@ describe('writeVerdicts', () => {
     expect(result).toEqual({ generated: 1, failures: ['last-month: no time left in this invocation'] })
     expect(generate).toHaveBeenCalledTimes(1)
   })
+
 })
 
 describe('runInsightPass', () => {
@@ -424,8 +421,6 @@ describe('runInsightPass', () => {
       surfaces({
         runVerdicts: withRuns(LAST_MONTH, JUST_RUN),
         today: async () => job('today'),
-        season: async () => job('seasonHeadline'),
-        analyticsTabs: async () => ({ fitness: job('analyticsTab_fitness'), volume: 'no reads' }),
         shoeVerdicts: () => ({ pegasus: job('shoeVerdict_pegasus') }),
       }),
       OPTIONS
@@ -434,8 +429,6 @@ describe('runInsightPass', () => {
     expect(store.saved.map((doc) => doc.surface)).toEqual([
       'runVerdict_just-run',
       'today',
-      'seasonHeadline',
-      'analyticsTab_fitness',
       'shoeVerdict_pegasus',
       'runVerdict_last-month',
     ])
@@ -489,14 +482,14 @@ describe('runInsightPass', () => {
       surfaces({
         runVerdicts: withRuns(JUST_RUN, LAST_MONTH),
         today: async () => job('today'),
-        season: async () => job('seasonHeadline'),
+        shoeVerdicts: () => ({ pegasus: job('shoeVerdict_pegasus') }),
       }),
       OPTIONS
     )
 
     expect(report.freshVerdicts).toEqual({ generated: 1, failures: [] })
     expect(report.today).toEqual({ generated: true })
-    expect(report.season).toEqual({ generated: false, reason: 'no time left in this invocation' })
+    expect(report.shoeVerdicts).toEqual({ pegasus: 'no time left in this invocation' })
     expect(report.runVerdicts).toMatchObject({ generated: 0, failures: ['last-month: no time left in this invocation'] })
   })
 
@@ -509,7 +502,7 @@ describe('runInsightPass', () => {
     expect(report.pbCelebration).toEqual({ generated: false, reason: 'no fresh record' })
   })
 
-  it('answers with the report the route has always returned, less the week purpose no page shows', async () => {
+  it('answers with the report the route has always returned, less the cards no page shows', async () => {
     const { spender } = fakeSpender()
 
     const report = await runInsightPass(deps({ spender }), surfaces(), OPTIONS)
@@ -517,8 +510,6 @@ describe('runInsightPass', () => {
     expect(report).toEqual({
       freshVerdicts: { generated: 0, failures: [] },
       today: { generated: false, reason: 'no training status' },
-      season: { generated: false, reason: 'no season reads' },
-      analyticsTabs: { fitness: 'no reads' },
       pbCelebration: { generated: false, reason: 'no fresh record' },
       shoeVerdicts: {},
       runVerdicts: { outstanding: 0, eligible: 0, fresh: 0, rest: 0, generated: 0, failures: [] },

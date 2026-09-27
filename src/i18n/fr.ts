@@ -1006,17 +1006,6 @@ export const fr = {
           `${status} ${days} des ${windowDays} derniers jours${latest ? `, ${latest} aujourd’hui` : ', et aujourd’hui'}.`,
       },
     },
-    seasonHeadline: {
-      eyebrow: 'Bilan de saison',
-      titlePositive: 'Plus en forme et plus efficace qu\'en début de saison.',
-      titleCaution: 'Un passage plus difficile qu\'en début de saison.',
-      titleMixed: 'Une saison en demi-teinte - des progrès par endroits, des baisses ailleurs.',
-      efficiency: (d: number) => `Efficacité aérobie ${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d)} - ${d > 0 ? 'plus' : 'moins'} de vitesse par battement`,
-      easyPace: (to: string, from: string, weeks: number) =>
-        `Allure facile ${to}, contre ${from} en moyenne sur les ${weeks} premières semaines de saison`,
-      volume: (pct: number, year: number) =>
-        `Volume ${pct > 0 ? 'en hausse de' : 'en baisse de'} ${Math.abs(pct)}% vs ${year}${pct < 0 ? ' - attention à la régularité' : ''}`,
-    },
     yearOverYear: {
       title: 'Année sur année',
       toDate: (date: string) => `au ${date}`,

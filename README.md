@@ -137,7 +137,7 @@ NEXT_PUBLIC_LOCALE=en
 
 # Gemini API keys (optional). Get them at https://aistudio.google.com/apikey.
 #
-# GEMINI_API_KEY writes the verdicts and insight cards on Today, Analytics and
+# GEMINI_API_KEY writes the verdicts and insight cards on Today, the shoes and
 # each activity - without it every card falls back to its rules-based copy.
 # GEMINI_COACH_API_KEY is used only by the adaptive coach - a local CLI
 # (`npm run coach`) for now - from a separate Google project: coaching never
@@ -454,7 +454,7 @@ from your `.env.local` *except* `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
 | `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
 | `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](#date-handling) |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, Season, Analytics, run verdicts, PB celebration, shoe verdicts |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
 > `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: the adaptive coach is a local
@@ -987,9 +987,10 @@ transport layer would bill one model's ledger for another's call.
 
 **Two pools, sized from the demand.** Free-tier quotas are per model, and Flash and Flash Lite
 are not in the same league: Flash allows 20 requests a day, Lite 500. `MODEL_POOL` carries the
-surfaces a reader actually looks at — `today`, the season headline, the four
-analytics tabs, a PB celebration, a shoe verdict or two, and the verdicts for runs that just
-landed — which is about 8 calls a night and 14 at its worst. The five passes per night do not
+surfaces a reader actually looks at — `today`, a PB celebration, a shoe verdict or two, and
+the verdicts for runs that just landed — which is a few calls a night. (The season headline and
+the four Analytics tab cards were written here too until v4.16.4, long after v4.6 replaced them
+on the page with the rule-based coach read.) The five passes per night do not
 multiply that: once a surface's hash matches, the pass reports `unchanged` and spends nothing.
 Three Flash models give it 54, so it still runs at 2.6x its worst night after one of them is
 retired out from under us.
@@ -1052,12 +1053,9 @@ and stay blank all day whenever a generation pass failed. So a stale insight is 
 for 48h — *provided* its **guard** still holds. The guard hashes the facts the copy is rendered
 *beside* and must never contradict:
 
-- **Today's hero**: the tone badge and the "session done" checkbox. A `go` line under a red
-  badge, or "that was the window to use it" before the athlete has run, contradicts the card
-  around it.
-- **Season headline**: the bullet tones in order. Copy can outlive a drifted figure, but not a
-  list that changed shape or flipped sign under it — that pairs "you are gaining" with a caution
-  colour, or drops a bullet off the end.
+- **Today's hero**: the tone badge, the kind of day (rest, easy, quality, race) and whether a
+  run was logged today. A `go` line under a red badge, a rest-day line on race day, or "that was
+  the window to use it" before the athlete has run, contradicts the card around it.
 - **Shoe verdict**: the wear status. A pair drifting a few km deeper into the same status reads
   the same; one that has crossed into "replace" cannot keep yesterday's "they have a block left
   in them" under a red badge.
@@ -1103,9 +1101,7 @@ the route name and returned as a 500 the workflow run can surface, and the guard
 Thinking models put reasoning parts alongside the answer and not always last, so the response
 parser takes the first part that actually carries text.
 
-Insight surfaces are keyed per **analytics tab**, not per chart: one paragraph per theme is four
-cached documents, where one per chart and window would be dozens regenerated on every sync. Run
-verdicts are gated by `deservesVerdict` — generating one for every run ever synced spends the
+Run verdicts are gated by `deservesVerdict` — generating one for every run ever synced spends the
 day's quota on pages nobody opens. A run that already has a cached verdict keeps it either way.
 
 ### Charts and windowing

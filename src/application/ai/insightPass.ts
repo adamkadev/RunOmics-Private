@@ -120,7 +120,6 @@ export async function runSurface(deps: InsightPassDeps, job: SurfaceJob): Promis
     systemInstruction: job.systemInstruction,
     prompt: job.prompt(cached?.recentHeadlines ?? []),
     limits: job.limits,
-    ...(job.bulletCount === undefined ? {} : { bulletCount: job.bulletCount }),
   })
   if (!attempt.ok) return { generated: false, reason: attempt.reason }
 
@@ -265,8 +264,6 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
 
   const freshVerdicts = await writeVerdicts(deps, fresh, written, phrasing, MODEL_POOL, true)
   const today = await runPlan(deps, await surfaces.today())
-  const season = await runPlan(deps, await surfaces.season())
-  const analyticsTabs = await runPlans(deps, await surfaces.analyticsTabs())
   const pbCelebration = await runPlan(deps, await surfaces.pbCelebration(deps.now()))
   const shoeVerdicts = await runPlans(deps, surfaces.shoeVerdicts())
   const backfill = await writeVerdicts(
@@ -284,8 +281,6 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
   return {
     freshVerdicts,
     today,
-    season,
-    analyticsTabs,
     pbCelebration,
     shoeVerdicts,
     runVerdicts: {
