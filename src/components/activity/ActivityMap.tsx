@@ -20,6 +20,7 @@ import {
   markerImage,
   setRunFinish,
 } from '@/lib/runMapLayers'
+import { keepAttributionCollapsed } from '@/lib/mapAttribution'
 
 interface Props {
   route: [number, number][]
@@ -63,6 +64,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
   const hasToken = !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   const mapRef = useRef<MapLibreMap | null>(null)
   const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
+  const attribCleanupRef = useRef<(() => void) | null>(null)
   const hoverMarkerRef = useRef<Marker | null>(null)
   const animFrameRef = useRef<number | null>(null)
   const boundsRef = useRef<LngLatBounds | null>(null)
@@ -139,11 +141,10 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
         attributionControl: false,
       })
       map.addControl(new mgl.AttributionControl({ compact: true }), 'bottom-right')
-      // MapLibre opens a compact attribution until the first drag, over the
-      // route (H13). Start it as the ⓘ alone; a tap still expands it.
-      map.once('idle', () => {
-        mapEl.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show')
-      })
+      // MapLibre opens a compact attribution over the route (H13), and it can
+      // do so at any point of the load. Keep it as the ⓘ alone until tapped.
+      attribCleanupRef.current?.()
+      attribCleanupRef.current = keepAttributionCollapsed(mapEl)
 
       const segments = buildSegmentFeatures(route, paceSamples)
       const hasPace = !!(paceSamples && paceSamples.length > 1)
@@ -209,6 +210,8 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
     return () => {
       cancelled = true
       observer.disconnect()
+      attribCleanupRef.current?.()
+      attribCleanupRef.current = null
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       mapRef.current?.remove()
       mapRef.current = null
