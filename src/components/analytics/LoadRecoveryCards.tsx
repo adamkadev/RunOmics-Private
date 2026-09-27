@@ -27,6 +27,7 @@ const MUTED = 'var(--muted-foreground)'
 const BAND = 'var(--track)'
 const AMBER = 'var(--tone-caution)'
 const ACCENT = 'var(--accent)'
+const GRID = 'var(--divider)'
 
 const W = 311
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
@@ -63,9 +64,15 @@ function loadSentence(view: LoadTrendView): readonly [string, string, string] {
   const change = view.change
   if (view.state === 'below') return s.below
   if (view.state === 'above') return change && change.pct > 0 ? s.jumped(change.pct, s.span(change.days)) : s.above
-  if (!change) return s.inRange
-  if (Math.abs(change.pct) < 5) return s.steady
-  return change.pct > 0 ? s.upIn(change.pct, s.span(change.days)) : s.downIn(Math.abs(change.pct), s.span(change.days))
+  const parts =
+    !change ? s.inRange
+    : Math.abs(change.pct) < 5 ? s.steady
+    : change.pct > 0 ? s.upIn(change.pct, s.span(change.days))
+    : s.downIn(Math.abs(change.pct), s.span(change.days))
+  // In range today, but the window had days over: say so, so the amber dots
+  // under an "inside your safe range" sentence read as history (v5.5 R1).
+  if (!view.over) return parts
+  return [parts[0], parts[1], `${parts[2]}${s.wentOver(view.over.days, bare(view.over.last))}`]
 }
 
 export function LoadTrendCard({ pairs, window, yMax, onShift }: { pairs: LoadPair[]; window: DayWindow; yMax: number; onShift: (step: 1 | -1) => void }) {
@@ -97,8 +104,11 @@ export function LoadTrendCard({ pairs, window, yMax, onShift }: { pairs: LoadPai
         onShift={onShift}
         readout={(i) => s.readout(bare(points[i]!.date), points[i]!.acute, points[i]!.lo, points[i]!.hi)}
       >
-        <div className="relative" style={{ height: H }}>
+        <div className="relative mr-8" style={{ height: H }}>
           <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
+            {view.ticks.map((v) => (
+              <line key={v} x1="0" x2={W} y1={H - (v / yMax) * H} y2={H - (v / yMax) * H} stroke={GRID} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            ))}
             <path d={bandPath(points.map((p) => p.lo), points.map((p) => p.hi), 0, yMax, H)} fill={BAND} data-testid="safe-band" />
             <path d={linePath(points.map((p) => p.acute), 0, yMax, W, H)} fill="none" stroke={INK} strokeWidth="2" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
           </svg>
@@ -107,10 +117,21 @@ export function LoadTrendCard({ pairs, window, yMax, onShift }: { pairs: LoadPai
             if (today) return <Dot key={p.date} left={at(i, n)} top={heightPct(p.acute, 0, yMax)} color={out ? AMBER : ACCENT} today />
             return p.out ? <Dot key={p.date} left={at(i, n)} top={heightPct(p.acute, 0, yMax)} color={AMBER} /> : null
           })}
+          {view.ticks.map((v) => (
+            <span
+              key={v}
+              aria-hidden
+              data-testid="load-trend-tick"
+              className="absolute -right-8 w-7 -translate-y-1/2 text-right text-caption leading-none tabular-nums"
+              style={{ top: `${heightPct(v, 0, yMax)}%`, color: MUTED }}
+            >
+              {v}
+            </span>
+          ))}
         </div>
       </ChartScrub>
       <div className="flex flex-col gap-1.5">
-        <AxisLabels labels={windowLabels(points.map((p) => p.date), window.live)} />
+        <AxisLabels className="mr-8" labels={windowLabels(points.map((p) => p.date), window.live)} />
         <Legend className="gap-x-3 pt-1">
           <LegendItem swatch="line" color={INK}>{s.legend.acute}</LegendItem>
           <LegendItem swatch="square" color={BAND}>{s.legend.safe}</LegendItem>

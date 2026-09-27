@@ -579,6 +579,7 @@ export const fr = {
         jumped: (pct: number, span: string) => ['La charge a bondi de ', `${pct} % en ${span}`, ', au-dessus de votre zone sûre. Levez le pied 3 à 4 jours.'] as [string, string, string],
         above: ['La charge est ', 'au-dessus de votre zone sûre', '. Levez le pied 3 à 4 jours.'] as [string, string, string],
         below: ['La charge est ', 'sous votre zone sûre', '. La forme va commencer à baisser.'] as [string, string, string],
+        wentOver: (days: number, last: string) => (days === 1 ? ` Un jour au-dessus, le ${last}.` : ` ${days} jours au-dessus, le dernier le ${last}.`),
         legend: { acute: 'Charge aiguë', safe: 'Zone sûre', outside: 'Hors zone' },
         readout: (date: string, acute: number, lo: number, hi: number) => `${date} · ${acute} · zone sûre ${lo}–${hi}`,
       },

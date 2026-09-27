@@ -598,6 +598,7 @@ export const en = {
         jumped: (pct: number, span: string) => ['Load jumped ', `${pct}% in ${span}`, ', above your safe range. Ease off for 3–4 days.'] as [string, string, string],
         above: ['Load is ', 'above your safe range', '. Ease off for 3–4 days.'] as [string, string, string],
         below: ['Load is ', 'below your safe range', '. Fitness will start to slip.'] as [string, string, string],
+        wentOver: (days: number, last: string) => (days === 1 ? ` One day went over, on ${last}.` : ` ${days} days went over, the last on ${last}.`),
         legend: { acute: 'Acute load', safe: 'Safe range', outside: 'Outside' },
         readout: (date: string, acute: number, lo: number, hi: number) => `${date} · ${acute} · safe ${lo}–${hi}`,
       },
