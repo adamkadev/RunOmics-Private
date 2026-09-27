@@ -1,10 +1,11 @@
 import type { TrainingStatus } from '@/domain/training/status'
-import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
 import type { ReadinessTone } from '@/domain/training/readiness'
 import type { RecentTraining } from '@/domain/training/recentTraining'
+import { MIN_REP_SECONDS } from '@/domain/activity/sessionExecution'
 import { t } from '@/i18n'
 import { insightHash } from './insightHash'
-import { avoidClause, systemInstruction } from './prompt'
+import { avoidClause, CARD_PROMPT_VERSION, systemInstruction } from './prompt'
 
 export const TODAY_SURFACE = 'todayHero'
 export const TODAY_LIMITS = { headline: 52, body: 140 }
@@ -20,24 +21,24 @@ export type SessionKind = 'rest' | 'easy' | 'quality' | 'race'
 
 const QUALITY_TYPES: ReadonlySet<ActivityType> = new Set(['Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint'])
 
-/** A rep of a minute or more is a quality rep; 20 s strides on an easy run are not. */
-const QUALITY_REP_SECONDS = 60
-
 /**
  * What kind of day today is, which the tone rules turn on (v4.16.4): "stay
  * moderate" is no advice for a rest day, and "ease off" none for a race.
- * A Garmin calendar entry's type is guessed from its name by the sync and
- * falls back to Base for a name it cannot read, so a plan with reps of a
- * minute or more reads as quality whatever its type says.
+ * A Garmin calendar entry the coaching plan did not push is typed from its
+ * name, and falls back to Base for a name the sync cannot read, so a plan's
+ * reps decide when its type says Base.
  */
 export function sessionKind(planned: PlannedWorkout | null): SessionKind {
   if (!planned) return 'rest'
   if (planned.type === 'Race') return 'race'
   if (planned.type && QUALITY_TYPES.has(planned.type)) return 'quality'
-  const hasQualityRep = planned.steps?.some(
-    (step) => step.kind === 'effort' && step.rep !== undefined && (step.seconds ?? step.minutes * 60) >= QUALITY_REP_SECONDS
-  )
-  return hasQualityRep ? 'quality' : 'easy'
+  // Short reps beside a continuous block of running are strides on an easy
+  // day; with no such block they are the session - sprints.
+  const seconds = (step: WorkoutStep) => step.seconds ?? step.minutes * 60
+  const efforts = planned.steps?.filter((step) => step.kind === 'effort') ?? []
+  const reps = efforts.filter((step) => step.rep !== undefined)
+  const continuous = efforts.some((step) => step.rep === undefined && seconds(step) >= MIN_REP_SECONDS)
+  return reps.some((step) => seconds(step) >= MIN_REP_SECONDS) || (reps.length > 0 && !continuous) ? 'quality' : 'easy'
 }
 
 function ranToday(recent: RecentTraining): boolean {
@@ -47,6 +48,7 @@ function ranToday(recent: RecentTraining): boolean {
 function facts({ status, tone, plannedWorkout, recent }: TodayContext) {
   const kind = sessionKind(plannedWorkout)
   return {
+    promptVersion: CARD_PROMPT_VERSION,
     tone,
     kind,
     status: status.status,
@@ -178,7 +180,7 @@ export function todayInsightPrompt(context: TodayContext, recentHeadlines: strin
       ? null
       : `- Planned today, in the session card: ${f.planned}${f.plannedType && f.plannedType !== f.planned ? ` (${f.plannedType})` : ''}${f.plannedMinutes ? `, ~${f.plannedMinutes} min` : ''}`,
     f.completedToday ? '- This session has already been completed today' : null,
-    avoidClause(recentHeadlines),
+    avoidClause(recentHeadlines, 'thisCard'),
   ]
     .filter((line) => line !== null)
     .join('\n')

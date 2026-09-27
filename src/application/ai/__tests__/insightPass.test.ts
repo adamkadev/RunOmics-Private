@@ -407,6 +407,25 @@ describe('writeVerdicts', () => {
     expect(generate).toHaveBeenCalledTimes(1)
   })
 
+  // v4.16.4: a backfill handed the model thirty verdicts not to echo.
+  it('shows the model the eight newest verdicts, and still rejects a repeat of any of them', async () => {
+    const generate = writer()
+    const phrasing = Array.from({ length: 12 }, (_, i) => ({ headline: `Stored ${i}`, body: `Stored body ${i}.` }))
+    const written = [{ headline: 'Older in this pass', body: 'x' }, { headline: 'Newest in this pass', body: 'y' }]
+
+    await writeVerdicts(deps({ generate }), [LAST_MONTH], written, phrasing, BACKFILL_POOL)
+
+    const prompt: string = generate.mock.calls[0]![0].prompt
+    const shown = prompt.slice(prompt.indexOf(': "') + 2).split('", "')
+    expect(shown).toHaveLength(8)
+    expect(shown[0]).toBe('"Newest in this pass / y')
+    expect(prompt).toContain('Older in this pass / x')
+    expect(prompt).not.toContain('Stored 6 /')
+
+    const repeat = vi.fn().mockResolvedValue(ok('Stored 11'))
+    const result = await writeVerdicts(deps({ generate: repeat }), [LAST_MONTH], [], phrasing, BACKFILL_POOL)
+    expect(result.generated).toBe(0)
+  })
 })
 
 describe('runInsightPass', () => {

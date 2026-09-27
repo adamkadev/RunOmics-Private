@@ -1,6 +1,8 @@
 import { DAY_MS } from '@/lib/calendarDate'
 import type { Activity } from './types'
 import { EFFORTS } from './effort'
+import { isLongSession } from './longRun'
+import { repStats } from './sessionExecution'
 import { creditedEffortSeconds, officialResultsByActivityId, type OfficialRaceResult } from './raceResult'
 
 const BASELINE_LOOKBACK_DAYS = 90
@@ -15,6 +17,8 @@ export interface TypeBaseline {
   runs: number
   paceSecPerKm: number
   avgHr: number | null
+  /** What was averaged: whole runs, or the reps of structured sessions. */
+  measure: 'runs' | 'reps'
 }
 
 export interface EffortStanding {
@@ -34,12 +38,38 @@ function dayNumber(date: string): number {
   return Math.floor(new Date(date.slice(0, 10) + 'T00:00:00Z').getTime() / DAY_MS)
 }
 
-function typeBaseline(activity: Activity, before: Activity[], day: number): TypeBaseline | null {
-  const peers = before
-    .filter(
-      (a) => a.type === activity.type && a.distanceKm > 0 && day - dayNumber(a.date) <= BASELINE_LOOKBACK_DAYS
-    )
+/** Sessions whose reps are comparable from one to the next: a 7-minute threshold rep is, a 400 m and a 1 km VO2max rep are not. */
+const REP_BASELINE_TYPES: ReadonlySet<Activity['type']> = new Set(['Tempo', 'Threshold'])
+
+function recentPeers(activity: Activity, before: Activity[], day: number, alike: (a: Activity) => boolean): Activity[] {
+  return before
+    .filter((a) => a.type === activity.type && a.distanceKm > 0 && day - dayNumber(a.date) <= BASELINE_LOOKBACK_DAYS && alike(a))
     .slice(0, BASELINE_RUNS)
+}
+
+/**
+ * Earlier runs to hold this one against, like for like (v4.16.4): a threshold
+ * session against earlier threshold reps, not whole-run averages the warm-up
+ * and recoveries dilute; a long run against long runs; and no average for a
+ * race, whose peers are other distances.
+ */
+function typeBaseline(activity: Activity, before: Activity[], day: number): TypeBaseline | null {
+  if (activity.type === 'Race') return null
+
+  if (REP_BASELINE_TYPES.has(activity.type) && repStats(activity)) {
+    const reps = recentPeers(activity, before, day, (a) => repStats(a) !== null).map((a) => repStats(a)!)
+    if (reps.length < BASELINE_MIN_RUNS) return null
+    const heartRates = reps.map((r) => r.avgHr).filter((hr): hr is number => hr !== null)
+    return {
+      runs: reps.length,
+      paceSecPerKm: Math.round(reps.reduce((sum, r) => sum + r.paceSecPerKm, 0) / reps.length),
+      avgHr: heartRates.length ? Math.round(heartRates.reduce((sum, hr) => sum + hr, 0) / heartRates.length) : null,
+      measure: 'reps',
+    }
+  }
+
+  const long = isLongSession(activity)
+  const peers = recentPeers(activity, before, day, (a) => activity.type !== 'Base' || isLongSession(a) === long)
   if (peers.length < BASELINE_MIN_RUNS) return null
 
   const seconds = peers.reduce((sum, a) => sum + a.durationSeconds, 0)
@@ -50,6 +80,7 @@ function typeBaseline(activity: Activity, before: Activity[], day: number): Type
     runs: peers.length,
     paceSecPerKm: Math.round(seconds / km),
     avgHr: heartRates.length ? Math.round(heartRates.reduce((sum, hr) => sum + hr, 0) / heartRates.length) : null,
+    measure: 'runs',
   }
 }
 

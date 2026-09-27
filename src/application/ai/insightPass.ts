@@ -52,6 +52,13 @@ const FRESH_RUN_VERDICTS_PER_RUN = 3
 
 const MAX_ATTEMPTS_PER_SURFACE = 3
 
+/**
+ * How many earlier verdicts the model is shown, newest first. Every one is
+ * still checked for a repeated headline; a backfill used to hand the model
+ * thirty of them, and a list that long leaves it no wording at all.
+ */
+const AVOID_VERDICTS_SHOWN = 8
+
 function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
 }
@@ -193,10 +200,10 @@ export async function writeVerdicts(
   const failures: string[] = []
 
   for (const context of pending) {
-    const avoid = [...written, ...phrasing]
+    const avoid = [...written].reverse().concat(phrasing)
     const attempt = await generateFromPool(deps, pool, {
       systemInstruction: RUN_VERDICT_SYSTEM_INSTRUCTION,
-      prompt: runVerdictInsightPrompt(context, verdictLines(avoid)),
+      prompt: runVerdictInsightPrompt(context, verdictLines(avoid.slice(0, AVOID_VERDICTS_SHOWN))),
       limits: RUN_VERDICT_LIMITS,
     })
     if (!attempt.ok) {
