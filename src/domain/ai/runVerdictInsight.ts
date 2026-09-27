@@ -235,6 +235,9 @@ function zonesLine(kind: RunKind, activity: Activity, hardMinutes: number | null
   if (hardMinutes === null) return null
   const easy = zoneMinutes(activity, (zone) => zone <= 2)
   const grey = zoneMinutes(activity, (zone) => zone === 3)
+  // On LTHR zones, tempo effort sits in zone 3 (about 89-94% of LTHR): for a
+  // tempo session that is the work, not the grey zone.
+  if (kind === 'tempo' && grey !== null) return `- Time in zone 3: ${grey} min; zones 4-5: ${hardMinutes} min`
   if (!EASY_KINDS.has(kind) || easy === null || grey === null) return `- Time in zones 4-5: ${hardMinutes} min`
   const total = easy + grey + hardMinutes
   const share = total > 0 ? ` (${Math.round((easy / total) * 100)}%)` : ''

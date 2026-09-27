@@ -339,6 +339,14 @@ describe('what the run was for (v4.16.4)', () => {
     )
   })
 
+  // On LTHR zones a tempo effort sits in zone 3: there it is the work.
+  it('gives a tempo session its zone 3 time as well', () => {
+    const zone = (n: number, minutes: number) => ({ zone: n, seconds: minutes * 60, percent: 0, minBpm: 0 })
+    const tempo = run({ id: 'tp', date: '2026-07-07', type: 'Tempo', hrZones: [zone(2, 28), zone(3, 12), zone(4, 12), zone(5, 3)] as never })
+
+    expect(verdict(tempo, null)).toContain('- Time in zone 3: 12 min; zones 4-5: 15 min')
+  })
+
   it("takes a plan's 70-minute \"Long run\" as the long run it is", () => {
     const long = run({ id: 'l', date: '2026-09-27', durationSeconds: 73 * 60 })
     expect(verdict(long, { date: '2026-09-27', name: 'Long run', type: 'Base', durationSecs: 4082 })).toContain('- Session: a long run')
