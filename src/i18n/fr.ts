@@ -1244,6 +1244,7 @@ export const fr = {
       avg: 'moy',
       max: 'max',
       best: 'meilleure',
+      bestSmoothed: 'meilleure (30 s)',
       pace: 'Allure',
       elevation: 'Dénivelé',
       cadence: 'Cadence',
@@ -1761,6 +1762,7 @@ export const fr = {
       stridesTitle: (bodyMin: number, reps: number, rep: string) => `Facile ${bodyMin} min + ${reps} × ${rep} accélérations`,
       seconds: (s: number) => `${s} s`,
       withRecovery: (reps: string, recovery: string) => `${reps} · ${recovery} récup`,
+      repsOnly: (n: number) => `${n} répétitions`,
       easyPace: (range: string) => `facile ${range}`,
       stridesPace: (pace: string) => `accélérations ${pace}`,
       targetPace: (range: string) => `cible ${range}`,
@@ -1775,6 +1777,7 @@ export const fr = {
     },
     weekSummary: {
       missed: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
+      unplanned: (n: number) => `${n} hors plan`,
       easyOfTarget: (easy: number, target: number) => `${easy} % facile · objectif ${target} %`,
       easyDone: (easy: number) => `${easy} % facile`,
       easyProjected: (easy: number) => `${easy} % si la semaine suit le plan`,

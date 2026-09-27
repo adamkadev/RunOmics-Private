@@ -49,6 +49,14 @@ export interface WeekTarget {
   /** The plan's total, missed sessions included; null when nothing is planned. */
   planKm: number | null
   planSessions: number
+  /**
+   * Planned sessions that were run on their day (v5.5 #7). "2 of 2" used to
+   * count every run against the plan, so two unplanned runs beside two missed
+   * sessions read "2 of 2 · 2 missed".
+   */
+  plannedDone: number
+  /** Runs on a day the plan left empty. */
+  unplannedRuns: number
   missedSessions: number
   /** The annual goal's weekly share; null when there is no annual goal. */
   goalKm: number | null
@@ -70,6 +78,8 @@ export function weekTarget(days: WeekTargetDay[], today: string, goalKm: number 
     ranSessions: days.reduce((sum, d) => sum + d.runs, 0),
     planKm: planned.length > 0 ? round1(planned.reduce((sum, d) => sum + (d.plannedKm ?? 0), 0)) : null,
     planSessions: planned.reduce((sum, d) => sum + d.plannedSessions, 0),
+    plannedDone: planned.reduce((sum, d) => sum + Math.min(d.runs, d.plannedSessions), 0),
+    unplannedRuns: days.filter((d) => d.plannedSessions === 0).reduce((sum, d) => sum + d.runs, 0),
     missedSessions: days
       .filter((d, i) => states[i]!.state === 'missed')
       .reduce((sum, d) => sum + d.plannedSessions, 0),

@@ -271,7 +271,7 @@ function weekVolumeLabel(target: WeekTarget, notStarted: boolean): string {
   const s = t.plan.weekSummary
   if (target.planKm === null) return `${formatWeekKm(target.ranKm)} ${t.units.km} · ${s.sessionsCount(target.ranSessions)}`
   if (notStarted) return s.planOnly(formatWeekKm(target.planKm), target.planSessions)
-  return `${s.ranOfPlan(formatRanKm(target.ranKm), formatWeekKm(target.planKm))} · ${s.sessionsOfPlan(target.ranSessions, target.planSessions)}`
+  return `${s.ranOfPlan(formatRanKm(target.ranKm), formatWeekKm(target.planKm))} · ${s.sessionsOfPlan(target.plannedDone, target.planSessions)}`
 }
 
 // One line (M11): the volume on the left, the easy share on the right, as
@@ -280,11 +280,13 @@ function weekVolumeLabel(target: WeekTarget, notStarted: boolean): string {
 function WeekSummaryLine({
   volume,
   missed,
+  unplanned,
   easyHard,
   easyPlanned,
 }: {
   volume: string
   missed: number
+  unplanned: number
   /** What was run: the headline, as on Activities. */
   easyHard: EasyHardSplit | null
   /** What was run plus what is still to come. */
@@ -300,6 +302,7 @@ function WeekSummaryLine({
       <p className="text-subhead font-semibold text-foreground">
         {volume}
         {missed > 0 && <span className="text-footnote font-semibold text-delta-warn"> · {s.missed(missed)}</span>}
+        {unplanned > 0 && <span className="text-footnote font-medium text-muted-foreground"> · {s.unplanned(unplanned)}</span>}
       </p>
       {easy && (
         <p className="text-footnote text-muted-foreground" data-testid="week-easy">
@@ -624,6 +627,7 @@ export function WeekView({
       <WeekSummaryLine
         volume={weekVolumeLabel(target, firstDay.date > today && target.ranSessions === 0)}
         missed={target.missedSessions}
+        unplanned={target.planKm === null ? 0 : target.unplannedRuns}
         easyHard={easyHard}
         easyPlanned={easyPlanned}
       />

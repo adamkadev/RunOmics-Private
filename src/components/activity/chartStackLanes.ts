@@ -121,8 +121,18 @@ export function buildLanes(input: ChartStackInput): Lane[] {
       values,
       60,
       (v) => formatClock(Math.round(v)),
-      ({ average, min }) => `${c.avg} ${formatClock(Math.round(average))} · ${c.best} ${formatClock(Math.round(min))}`,
+      // "best" is the fastest 30 s window of the smoothed stream, so it says
+      // so: a 3:23 rep reads 4:23 smoothed (v5.6 #4).
+      ({ average, min }) =>
+        // Never a "best" slower than the average beside it: a smoothed stream
+        // can sit above an even run's moving pace, and then it's left out.
+        Math.round(min) < Math.round(average)
+          ? `${c.avg} ${formatClock(Math.round(average))} · ${c.bestSmoothed} ${formatClock(Math.round(min))}`
+          : `${c.avg} ${formatClock(Math.round(average))}`,
       paceAxis().reversed,
+      // The Overview's moving pace (v5.5 #6): the samples' plain mean read
+      // 5:38 beside the header's 5:33 for the same run.
+      input.avgPaceSecPerKm,
     )
   }
 

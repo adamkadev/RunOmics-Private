@@ -16,6 +16,8 @@ from processing import fit_parser
 from processing.fit_parser import (
     ParsedFit,
     _best_efforts,
+    _moving_clock,
+    _timer_pauses,
     _decimate,
     _extract_splits,
     _extract_vo2max,
@@ -391,3 +393,34 @@ class TestParseFitRobustness:
 
         assert not parse_fit(b"anything").has_data
         assert "IndexError: list index out of range" in capsys.readouterr().out
+
+
+class TestMovingClock:
+    """v5.5 #5: best efforts on the timer, never across a stop."""
+
+    def test_timer_pauses_come_out_of_the_clock(self):
+        from datetime import datetime, timezone
+
+        at = lambda s: datetime.fromtimestamp(s, tz=timezone.utc)  # noqa: E731
+        events = [
+            {"event": "timer", "event_type": "start", "timestamp": at(0)},
+            {"event": "timer", "event_type": "stop_all", "timestamp": at(100)},
+            {"event": "timer", "event_type": "start", "timestamp": at(460)},
+            {"event": "lap", "event_type": "marker", "timestamp": at(200)},
+        ]
+        pauses = _timer_pauses(events)
+        assert pauses == [(100.0, 460.0)]
+        assert _moving_clock([0, 300, 300, 600], [0, 100, 460, 560], pauses) == [0, 100, 100, 200]
+
+    def test_a_long_standstill_gap_counts_as_a_pause_without_events(self):
+        clock = _moving_clock([0, 300, 305, 605], [0, 100, 400, 500], [])
+        assert clock == [0, 100, 100, 200]
+
+    def test_a_best_effort_never_exceeds_the_moving_time(self):
+        # 10 km at 3 m/s with a six-minute stop at 5 km.
+        dists = [float(d) for d in range(0, 5001, 100)] + [float(d) for d in range(5000, 10_001, 100)]
+        times = [d / 3 for d in dists[:51]] + [d / 3 + 360 for d in dists[51:]]
+        moving = _moving_clock(dists, times, [])
+        effort = _best_efforts(dists, moving)["10k"]
+        assert effort <= moving[-1] - moving[0] + 0.1
+        assert abs(effort - 10_000 / 3) < 1

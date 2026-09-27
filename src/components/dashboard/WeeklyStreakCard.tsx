@@ -45,7 +45,7 @@ export function WeeklyStreakCard({ data, target, today: serverToday }: Props) {
         </p>
         <p className="shrink-0 text-footnote text-muted-foreground">
           {target.planSessions > 0
-            ? s.sessionsOf(target.ranSessions, target.planSessions)
+            ? s.sessionsOf(target.plannedDone, target.planSessions)
             : s.weeksInARow(Math.round(data.currentWeeks))}
         </p>
       </div>
