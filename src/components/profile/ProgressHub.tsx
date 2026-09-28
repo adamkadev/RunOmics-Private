@@ -1,137 +1,136 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { ChevronRight, Settings } from 'lucide-react'
-import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatCountdown, formatDate, formatDelta, formatDuration, formatKm, formatPace } from '@/lib/formatters'
+import { cardClass } from '@/components/ui/Card'
+import { Legend, LegendItem } from '@/components/ui/Legend'
+import { Stat, StatGrid, Unit } from '@/components/ui/Stat'
+import { formatDate, formatDelta, formatDuration, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
+import type { WearStatus } from '@/domain/shoe/wearStatus'
 import type { HeatCell, ProgressHubView, YearPoint } from './progressHub'
-import { DAY_FILL, TODAY_OUTLINE } from '@/components/consistency/consistencyMonths'
-import { YearRows } from './AllTime'
+import { levelStyle } from '@/components/consistency/consistencyMonths'
+import { shortDist } from '@/components/goals/shortDistance'
+import { WEAR_COLOR } from '@/components/shoes/shoeWear'
 
-const TITLE = 'font-display text-subhead font-semibold text-foreground'
-const MUTED = 'text-footnote text-muted-foreground'
+const TITLE = 'text-[15px] font-semibold text-foreground'
+/** A card that opens its page: the whole surface is the target. */
+const LINK_CARD = 'text-left transition-[border-color,transform] hover:border-[var(--line-2)] active:scale-[0.99]'
 
-/** Inter's average advance at this size, a little over, in ems per character. */
-const EM_PER_CHAR = 0.5
-
-/**
- * A tile's footer, "threshold 4:23 · LTHR 185": one line (v4.3.4), each
- * segment whole. At 13 px it wants ~158 px and a tile on a 393 pt phone
- * gives ~143, so the line is its own container and its size is the smaller
- * of 13 px and what its length fits in, never under the 11 px floor. The
- * first segment's dot is pulled out and clipped, so the line starts clean.
- */
-function FooterLine({ parts, className, testId }: { parts: string[]; className?: string; testId?: string }) {
-  const chars = parts.join(' · ').length
+/** A line of whole segments: it wraps between them, never inside one (v4.3.1). */
+function Segments({ parts, className, testId }: { parts: ReactNode[]; className?: string; testId?: string }) {
   return (
-    <div className={cn('overflow-hidden', className)} style={{ containerType: 'inline-size' }}>
-      <p
-        className="-ml-2 flex whitespace-nowrap leading-snug text-muted-foreground"
-        style={{ fontSize: `clamp(11px, calc(100cqw / ${(chars * EM_PER_CHAR).toFixed(1)}), 13px)` }}
-        data-testid={testId}
-      >
-        {parts.map((part) => (
-          <span key={part} className="whitespace-nowrap">
-            <span aria-hidden="true" className="inline-block w-2 text-center">·</span>
-            {part}
-          </span>
-        ))}
-      </p>
-    </div>
+    <p className={cn('flex flex-wrap gap-x-1 whitespace-nowrap text-xs text-muted-foreground', className)} data-testid={testId}>
+      {parts.map((part, i) => (
+        <span key={i} className="whitespace-nowrap">
+          {i > 0 && <span aria-hidden="true">· </span>}
+          {part}
+        </span>
+      ))}
+    </p>
   )
 }
 
-/** A tile that opens its sub-page: a title with a chevron, then its figure. */
-function Tile({ href, title, className, children, testId }: { href: string; title: string; className?: string; children: ReactNode; testId?: string }) {
+/** A tile that opens its sub-page: its title, a chevron or a caption, then its figure. */
+function Tile({ href, title, aside, className, children, testId }: { href: string; title: string; aside?: ReactNode; className?: string; children: ReactNode; testId?: string }) {
   return (
-    <Link href={href} data-testid={testId} className="block transition-transform active:scale-[0.99]">
-      <GlassSurface variant="card" className={cn('h-full rounded-[22px] px-4 py-3.5', className)}>
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <span className={TITLE}>{title}</span>
-          <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-subtle" />
-        </div>
-        {children}
-      </GlassSurface>
+    <Link href={href} data-testid={testId} className={cardClass({ className: cn('flex flex-col gap-2.5', LINK_CARD, className) })}>
+      <div className="flex items-center justify-between gap-2">
+        <span className={TITLE}>{title}</span>
+        {aside ?? <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />}
+      </div>
+      {children}
     </Link>
   )
 }
 
-const CHART_W = 300
-const CHART_H = 120
+/** A caption on the right of a card's title, with the chevron the card's link needs. */
+function Caption({ children }: { children: ReactNode }) {
+  return (
+    <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+      {children}
+      <ChevronRight size={14} aria-hidden="true" />
+    </span>
+  )
+}
+
+const CHART_W = 1000
+const CHART_H = 110
 
 function path(points: YearPoint[], x: (day: number) => number, y: (km: number) => number): string {
   return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.day).toFixed(1)} ${y(p.km).toFixed(1)}`).join(' ')
 }
 
-/** This year's km against last year's and the goal line (H01, M12). */
+/**
+ * This year's km against last year's and the goal (v4.17): the year is the
+ * athlete's own data, so the accent; last year is the neutral line-2, and
+ * the goal a dashed muted line.
+ */
 function YearChart({ hero }: { hero: ProgressHubView['hero'] }) {
   const last = hero.current.at(-1)
   const top = Math.max(hero.goalKm ?? 0, last?.km ?? 0, hero.previous.at(-1)?.km ?? 0, 1)
   const x = (day: number) => (day / hero.daysInYear) * CHART_W
-  const y = (km: number) => CHART_H - (km / top) * (CHART_H - 6)
-  const line = path(hero.current, x, y)
+  const y = (km: number) => CHART_H - 2 - (km / top) * (CHART_H - 10)
 
-  // Ink, no fill (v5.5 R2): the year is data. The accent only marks today.
   return (
-    <div className="relative mt-3 h-[120px]">
-      <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="h-full w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="year-chart">
-        {hero.goalKm !== null && (
-          <line x1={0} y1={y(0)} x2={CHART_W} y2={y(hero.goalKm)} stroke="var(--muted-foreground)" strokeOpacity={0.6} strokeWidth={1.5} strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
-        )}
-        {hero.previous.length > 1 && (
-          <path d={path(hero.previous, x, y)} fill="none" stroke="var(--band)" strokeWidth={2} vectorEffect="non-scaling-stroke" data-testid="previous-line" />
-        )}
-        <path d={line} fill="none" stroke="var(--foreground)" strokeWidth={2.5} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="current-line" />
-      </svg>
-      {last && (
-        <span
-          aria-hidden
-          data-testid="year-today"
-          className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent"
-          style={{ left: `${(x(last.day) / CHART_W) * 100}%`, top: `${(y(last.km) / CHART_H) * 100}%`, boxShadow: '0 0 0 2px var(--card)' }}
-        />
+    <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="block h-[110px] w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="year-chart">
+      {hero.goalKm !== null && (
+        <line x1={0} y1={y(0)} x2={CHART_W} y2={y(hero.goalKm)} stroke="var(--muted-foreground)" strokeWidth={1.2} strokeDasharray="4 5" vectorEffect="non-scaling-stroke" data-testid="goal-line" />
       )}
-    </div>
-  )
-}
-
-function Sparkline({ values }: { values: number[] }) {
-  if (values.length < 2) return <div className="h-10" />
-  const lo = Math.min(...values)
-  const hi = Math.max(...values)
-  const d = values
-    .map((v, i) => `${i === 0 ? 'M' : 'L'}${((i / (values.length - 1)) * 100).toFixed(1)} ${(36 - (hi > lo ? (v - lo) / (hi - lo) : 0.5) * 32).toFixed(1)}`)
-    .join(' ')
-  return (
-    <svg viewBox="0 0 100 40" className="h-10 w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="vo2-sparkline">
-      <path d={d} fill="none" stroke="var(--foreground)" strokeWidth={2} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      {hero.previous.length > 1 && (
+        <path d={path(hero.previous, x, y)} fill="none" stroke="var(--line-2)" strokeWidth={2} vectorEffect="non-scaling-stroke" data-testid="previous-line" />
+      )}
+      <path d={path(hero.current, x, y)} fill="none" stroke="var(--accent)" strokeWidth={2.4} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="current-line" />
     </svg>
   )
 }
 
-function Heatmap({ weeks }: { weeks: HeatCell[][] }) {
+function Sparkline({ values }: { values: number[] }) {
+  if (values.length < 2) return <div className="h-[50px]" />
+  const lo = Math.min(...values)
+  const hi = Math.max(...values)
+  const d = values
+    .map((v, i) => `${i === 0 ? 'M' : 'L'}${((i / (values.length - 1)) * 1000).toFixed(1)} ${(4 + (1 - (hi > lo ? (v - lo) / (hi - lo) : 0.5)) * 42).toFixed(1)}`)
+    .join(' ')
   return (
-    <div className="grid grid-flow-col grid-rows-7 gap-[3px]" aria-hidden="true" data-testid="heatmap">
-      {weeks.flatMap((week, w) =>
-        week.map((cell, d) => (
-          <span
-            key={`${w}-${d}`}
-            className="block aspect-square rounded-[2px]"
-            data-state={cell?.state}
-            style={cell ? { background: DAY_FILL[cell.state], boxShadow: cell.today ? TODAY_OUTLINE : undefined } : { background: 'transparent' }}
-          />
-        )),
-      )}
+    <svg viewBox="0 0 1000 50" className="block h-[50px] w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="vo2-sparkline">
+      <path d={d} fill="none" stroke="var(--foreground)" strokeWidth={1.8} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
+
+/** Twelve weeks as columns, Monday on top, with every other day named (v4.17). */
+function MiniCalendar({ weeks }: { weeks: HeatCell[][] }) {
+  const narrow = new Intl.DateTimeFormat(t.locale, { weekday: 'narrow', timeZone: 'UTC' })
+  return (
+    <div className="grid gap-[3px]" style={{ gridTemplateColumns: `14px repeat(${weeks.length}, minmax(0, 1fr))` }} aria-hidden="true" data-testid="heatmap">
+      {Array.from({ length: 7 }, (_, day) => [
+        <span key={`label-${day}`} className="flex items-center text-[9px] leading-none text-muted-foreground">
+          {/* 2024-01-01 was a Monday. */}
+          {day % 2 === 0 ? narrow.format(new Date(Date.UTC(2024, 0, 1 + day))) : ''}
+        </span>,
+        ...weeks.map((week, w) => {
+          const cell = week[day]!
+          return (
+            <span
+              key={`${w}-${day}`}
+              className="block aspect-square rounded-[3px]"
+              data-level={cell.future ? undefined : cell.level}
+              data-today={cell.today || undefined}
+              style={levelStyle(cell.level, { today: cell.today, future: cell.future })}
+            />
+          )
+        }),
+      ])}
     </div>
   )
 }
 
 function Bar({ share, color }: { share: number; color: string }) {
   return (
-    <div className="h-1.5 overflow-hidden rounded-full bg-[var(--track)]">
-      <div className="h-full rounded-full" style={{ width: `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%`, background: color }} />
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
+      <div className="h-full rounded-full" data-testid="bar-fill" style={{ width: `${Math.round(Math.min(1, Math.max(0, share)) * 1000) / 10}%`, background: color }} />
     </div>
   )
 }
@@ -145,84 +144,97 @@ export function raceShare(predicted: number, target: number): number {
   return Math.max(0.05, 1 - ((predicted - target) / target) * 5)
 }
 
+/** A shoe's bar and tag (v4.17): the accent while it has life, warn from Replace soon. */
+function shoeColor(status: WearStatus): string {
+  return WEAR_COLOR[status]
+}
+
 /**
- * Progress as a visual hub (H01, M12): the year against last year and the
- * goal, then Race, VO₂max, Records and Consistency tiles, the shoes, and all
- * time with its km by year. Every tile opens the sub-page it summarises.
+ * Progress as a visual hub (H01, M12; v4.17): the year against last year and
+ * the goal, then Next race, VO₂ max, Records and Consistency as a 2 x 2 grid
+ * whose tiles keep their own height, the shoes, and all time with its km by
+ * year. Every card opens the page it summarises.
  */
 export function ProgressHub({ view }: { view: ProgressHubView }) {
   const h = t.profile.hub
   const { hero, race, vo2max, records, consistency, shoes, allTime } = view
+  const raceGap = race?.predictedSeconds != null && race.targetSeconds ? race.predictedSeconds - race.targetSeconds : null
+  const raceTone = raceGap !== null && raceGap > 0 ? 'var(--warn)' : 'var(--pos)'
+  const days = h.consistencyDays(consistency.activeDays)
+  const streak = h.consistencyStreak(consistency.streakWeeks)
+  const bestYearKm = Math.max(1, ...allTime.years.slice(-2).map((y) => y.km))
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between px-1">
-        <h1 className="font-display text-title1 font-bold tracking-tight text-foreground">{t.nav.items.profile}</h1>
+    <div className="flex flex-col gap-3.5">
+      <header className="mb-1.5 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-display text-foreground">{t.nav.items.profile}</h1>
+          <p className="mt-1 text-sm text-muted-foreground" data-testid="progress-subtitle">
+            {h.season(view.year)}
+            {race && ` · ${h.raceIn(shortDist(race.distance), race.daysUntil)}`}
+          </p>
+        </div>
+        {/* Settings is a sidebar row on a wide screen; on a phone it is here. */}
         <Link
           href="/settings"
           aria-label={h.settings}
-          className="flex size-10 items-center justify-center rounded-full border border-border text-muted-foreground transition-transform active:scale-95"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-transform active:scale-95 lg:hidden"
         >
           <Settings size={18} aria-hidden="true" />
         </Link>
-      </div>
+      </header>
 
-      <Link href="/goals" className="block transition-transform active:scale-[0.99]" data-testid="year-hero">
-        {/* No accent border (v5.5 R2): the accent is for "now", not a surface. */}
-        <GlassSurface variant="card" className="rounded-[22px] px-4.5 py-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="text-caption font-semibold tracking-[0.12em] text-muted-foreground">{view.year}</span>
-            {hero.deltaKm !== null && (
-              <span className="text-footnote tabular-nums text-muted-foreground" data-testid="year-delta">
-                <span style={{ color: deltaColor('distance', hero.deltaKm, { value: hero.km }) }}>{h.vsYearDelta(formatDelta(hero.deltaKm))}</span>
-                {h.vsYearRest(view.year - 1)}
-              </span>
-            )}
-          </div>
-          <p className="mt-1.5 text-foreground">
-            <span className="font-display text-[40px] font-bold leading-none tabular-nums">{formatKm(hero.km)}</span>
-            <span className="ml-1.5 text-subhead text-muted-foreground">{hero.goalKm !== null ? h.ofGoal(formatKm(hero.goalKm)) : t.units.km}</span>
-          </p>
-          <YearChart hero={hero} />
-          <div className={cn('mt-2 flex items-center justify-between gap-3', MUTED)}>
-            <span className="flex items-center gap-3">
-              <span className="flex items-center gap-1"><span className="h-0.5 w-3 rounded-full bg-foreground" />{view.year}</span>
-              {hero.previous.length > 1 && (
-                <span className="flex items-center gap-1"><span className="h-0.5 w-3 rounded-full bg-[var(--band)]" />{view.year - 1}</span>
-              )}
-              {hero.goalKm !== null && <span>- - {h.goal}</span>}
+      <Link href="/goals" className={cardClass({ className: cn('flex flex-col gap-3', LINK_CARD) })} data-testid="year-hero">
+        <div className="flex items-baseline justify-between gap-3">
+          <span className={TITLE}>{h.yearTitle(view.year)}</span>
+          {hero.deltaKm !== null && (
+            // Coloured by what it means, against the km it is measured on.
+            <span className="text-right text-xs" data-testid="year-delta" style={{ color: deltaColor('distance', hero.deltaKm, { value: hero.compareKm ?? hero.km }) }}>
+              {h.vsYear(formatDelta(hero.deltaKm), view.year - 1)}
             </span>
-            <span className="tabular-nums">{h.hoursRuns(hero.hours, hero.runs)}</span>
-          </div>
-        </GlassSurface>
+          )}
+        </div>
+        <p className="text-[32px] font-semibold leading-none tracking-[-0.02em] text-foreground">
+          {formatKm(hero.km)}
+          <span className="ml-1.5 text-sm font-normal tracking-normal text-muted-foreground">
+            {hero.goalKm !== null ? h.ofGoal(formatKm(hero.goalKm)) : t.units.km}
+          </span>
+        </p>
+        <YearChart hero={hero} />
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+          <Legend>
+            <LegendItem swatch="line" color="var(--accent)">{view.year}</LegendItem>
+            {hero.previous.length > 1 && <LegendItem swatch="line" color="var(--line-2)">{view.year - 1}</LegendItem>}
+            {hero.goalKm !== null && <LegendItem swatch="dash" color="var(--muted-foreground)">{h.goal}</LegendItem>}
+          </Legend>
+          <span>{h.runsHours(hero.runs, hero.hours)}</span>
+        </div>
       </Link>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Tile href="/goals" title={h.race} testId="race-tile">
+      {/* The tiles keep their own height (v4.17): Records no longer stretches to Consistency's. */}
+      <div className="grid grid-cols-1 items-start gap-3.5 sm:grid-cols-2">
+        <Tile href="/goals" title={h.nextRace} testId="race-tile">
           {race ? (
             <>
-              {/* A date, not a warning: ink (R2). Only the gap to target is amber. */}
-              <p className="font-display text-title2 font-bold leading-none text-foreground">{formatCountdown(race.daysUntil)}</p>
-              <p className={cn('mt-2', MUTED)}>{h.raceLine(race.distance, formatDate(race.date, { style: 'bare' }))}</p>
+              <p className="text-[26px] font-semibold leading-tight text-foreground">
+                {Math.max(0, race.daysUntil)}
+                <Unit>{h.raceMeta(race.daysUntil, [shortDist(race.distance), race.name].filter(Boolean).join(' '), formatDate(race.date, { style: 'bare' }))}</Unit>
+              </p>
               {race.predictedSeconds !== null && (
                 <>
-                  <div className="mt-2 flex items-baseline justify-between text-footnote">
+                  <div className="flex items-baseline justify-between text-[13px]">
                     <span className="text-muted-foreground">{h.predicted}</span>
-                    <span className="font-bold tabular-nums text-foreground">{formatDuration(race.predictedSeconds)}</span>
+                    <span className="font-semibold text-foreground">{formatDuration(race.predictedSeconds)}</span>
                   </div>
-                  {race.targetSeconds && (
+                  {race.targetSeconds && raceGap !== null && (
                     <>
-                      <div className="mt-1.5">
-                        <Bar share={raceShare(race.predictedSeconds, race.targetSeconds)} color="var(--foreground)" />
-                      </div>
-                      <p className={cn('mt-1.5', MUTED)} data-testid="race-target">
+                      <Bar share={raceShare(race.predictedSeconds, race.targetSeconds)} color={raceTone} />
+                      <p className="text-xs text-muted-foreground" data-testid="race-target">
                         {h.target(formatDuration(race.targetSeconds))}
-                        {race.predictedSeconds > race.targetSeconds && (
-                          <>
-                            {' · '}
-                            <b className="font-bold" style={{ color: 'var(--tone-caution)' }}>{h.off(formatDuration(race.predictedSeconds - race.targetSeconds))}</b>
-                          </>
-                        )}
+                        {' · '}
+                        <b className="font-semibold" style={{ color: raceTone }}>
+                          {raceGap > 0 ? h.toFind(formatDuration(raceGap)) : h.underTarget(formatDuration(-raceGap))}
+                        </b>
                       </p>
                     </>
                   )}
@@ -230,52 +242,43 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               )}
             </>
           ) : (
-            <p className={MUTED}>{h.noRace}</p>
+            <p className="text-sm text-muted-foreground">{h.noRace}</p>
           )}
         </Tile>
 
         <Tile href="/athlete" title={h.vo2max} testId="vo2-tile">
           {vo2max ? (
             <>
-              <p className="flex items-baseline gap-1.5">
-                <span className="font-display text-title2 font-bold leading-none tabular-nums text-foreground">{vo2max.value}</span>
+              <p className="flex flex-wrap items-baseline gap-x-1.5">
+                <span className="text-[26px] font-semibold leading-tight text-foreground">{vo2max.value}</span>
                 {vo2max.delta !== null && (
-                  <span className="text-footnote tabular-nums text-muted-foreground" data-testid="vo2-delta">
-                    <span style={{ color: deltaColor('vo2max', vo2max.delta) }}>{formatDelta(vo2max.delta)}</span>
-                    {h.in12w}
+                  <span className="text-xs" data-testid="vo2-delta" style={{ color: deltaColor('vo2max', vo2max.delta) }}>
+                    {h.vo2Delta(formatDelta(vo2max.delta))}
                   </span>
                 )}
               </p>
-              <div className="mt-2">
-                <Sparkline values={vo2max.series} />
-              </div>
-              <FooterLine
-                className="mt-1.5"
+              <Sparkline values={vo2max.series} />
+              <Segments
                 testId="vo2-footer"
-                parts={h.thresholdParts(vo2max.thresholdPaceSecPerKm ? formatPace(vo2max.thresholdPaceSecPerKm).replace(' /km', '') : null, vo2max.lthrBpm)}
+                parts={h.thresholdParts(vo2max.thresholdPaceSecPerKm ? formatDuration(vo2max.thresholdPaceSecPerKm) : null, vo2max.lthrBpm)}
               />
             </>
           ) : (
-            <p className={MUTED}>–</p>
+            <p className="text-sm text-muted-foreground">–</p>
           )}
         </Tile>
 
-        <Tile href="/records" title={h.records} testId="records-tile">
+        <Tile href="/records" title={h.records} aside={<Caption>{h.recordsWhen}</Caption>} className="gap-1" testId="records-tile">
           {records.length > 0 ? (
-            <dl className="space-y-1">
+            <dl className="mt-1.5">
               {records.map((r) => (
-                <div key={r.key} className="flex items-baseline justify-between gap-2 text-subhead">
-                  <dt className="text-foreground">{r.label}</dt>
-                  {/* The newest record says so in the accent, rather than an
-                      accented time that explained nothing (v4.3.3). */}
-                  <dd className="flex items-baseline gap-1.5 font-bold tabular-nums text-foreground">
+                <div key={r.key} className="flex items-baseline justify-between gap-2 border-t border-border py-[9px] text-sm">
+                  <dt className="text-foreground">{h.recordLabels[r.key] ?? r.label}</dt>
+                  {/* The newest record says so in the accent; "new" only while it is (v4.17). */}
+                  <dd className="flex items-baseline gap-1.5 font-semibold text-foreground">
                     {r.latest && (
-                      <span
-                        data-testid="latest-record"
-                        aria-label={h.latestRecordLabel}
-                        className="text-caption font-bold text-accent-text"
-                      >
-                        {h.latestRecord}
+                      <span data-testid="latest-record" aria-label={h.latestRecordLabel} className="text-[10px] font-bold text-accent-text">
+                        {r.recent ? h.newRecord : h.latestRecord}
                       </span>
                     )}
                     {formatDuration(r.seconds)}
@@ -284,62 +287,79 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               ))}
             </dl>
           ) : (
-            <p className={MUTED}>{h.noRecords}</p>
+            <p className="text-sm text-muted-foreground">{h.noRecords}</p>
           )}
         </Tile>
 
         <Tile href="/consistency" title={h.consistency} testId="consistency-tile">
-          <Heatmap weeks={consistency.weeks} />
-          <FooterLine className="mt-2" testId="consistency-footer" parts={h.consistencyParts(consistency.activeDays, consistency.streakWeeks)} />
+          <MiniCalendar weeks={consistency.weeks} />
+          <Segments
+            testId="consistency-footer"
+            parts={[
+              h.consistencyWindow,
+              <>{days.lead}<b className="font-semibold text-foreground">{days.value}</b>{days.tail}</>,
+              <>{streak.lead}<b className="font-semibold text-foreground">{streak.value}</b>{streak.tail}</>,
+            ]}
+          />
         </Tile>
       </div>
 
       {shoes.length > 0 && (
-        <Tile href="/shoes" title={h.shoes} testId="shoes-tile">
-          <div className="space-y-2.5">
-            {shoes.map((s) => (
-              <div key={s.gearId}>
-                <div className="mb-1.5 flex items-baseline justify-between gap-2 text-subhead">
-                  <span className="truncate text-foreground">{s.name}</span>
-                  <span className="shrink-0 tabular-nums" style={{ color: s.warn ? 'var(--tone-caution)' : 'var(--muted-foreground)' }}>
-                    {s.km} / {s.maxKm} {t.units.km}
-                  </span>
-                </div>
-                <Bar share={s.maxKm > 0 ? s.km / s.maxKm : 0} color={s.warn ? 'var(--tone-caution)' : 'var(--foreground)'} />
-              </div>
-            ))}
+        <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="shoes-tile">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className={TITLE}>{h.shoes}</h2>
+            <Link href="/shoes" className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground" data-testid="shoes-all">
+              {h.allPairs}
+              <ChevronRight size={14} aria-hidden="true" />
+            </Link>
           </div>
-        </Tile>
+          {shoes.map((s) => (
+            <Link key={s.gearId} href={`/shoes/${s.gearId}`} className="flex flex-col gap-2 transition-opacity active:opacity-70" data-testid="shoe-row">
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="min-w-0 truncate text-foreground">
+                  {s.name}
+                  {s.status !== 'ok' && (
+                    <span className="ml-1.5 text-xs" style={{ color: shoeColor(s.status) }} data-testid="shoe-status">{t.shoes.status[s.status]}</span>
+                  )}
+                </span>
+                <span className="flex shrink-0 items-center gap-0.5 text-muted-foreground">
+                  <b className="font-semibold text-foreground">{formatKm(s.km)}</b>&nbsp;/ {formatKm(s.maxKm)} {t.units.km}
+                  <ChevronRight size={14} aria-hidden="true" />
+                </span>
+              </div>
+              <Bar share={s.maxKm > 0 ? s.km / s.maxKm : 0} color={shoeColor(s.status)} />
+            </Link>
+          ))}
+        </section>
       )}
 
-      <Link href="/all-time" aria-label={h.openYears} className="block transition-transform active:scale-[0.99]" data-testid="all-time">
-        <GlassSurface variant="card" className="rounded-[22px] px-4 py-3.5">
-          <div className="flex items-center justify-between gap-2">
-            <span className={TITLE}>{h.allTime}</span>
-            {allTime.since && (
-              <span className={cn('flex items-center gap-1', MUTED)}>
-                {h.since(formatDate(allTime.since, { precision: 'month', year: 'always' }))}
-                <ChevronRight size={14} aria-hidden="true" />
-              </span>
-            )}
-          </div>
-          <div className="mt-2.5 grid grid-cols-3 gap-2">
-            {[
-              [formatKm(allTime.km), t.units.km],
-              [String(allTime.runs), h.runs],
-              [formatKm(allTime.hours), h.hours],
-            ].map(([value, unit]) => (
-              <div key={unit}>
-                <p className="font-display text-title3 font-bold leading-none tabular-nums text-foreground">{value}</p>
-                <p className={cn('mt-1', MUTED)}>{unit}</p>
-              </div>
-            ))}
-          </div>
-          {/* The All time page's By year rows, compact (C6), in place of two big bars. */}
-          <div className="mt-3.5">
-            <YearRows years={allTime.years.slice(-2)} currentYear={view.year} compact />
-          </div>
-        </GlassSurface>
+      <Link href="/all-time" aria-label={h.openYears} className={cardClass({ className: cn('flex flex-col gap-3.5', LINK_CARD) })} data-testid="all-time">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className={TITLE}>{h.allTime}</span>
+          {allTime.since && <Caption>{h.since(formatDate(allTime.since, { precision: 'month', year: 'always' }))}</Caption>}
+        </div>
+        <StatGrid columns={3}>
+          <Stat label={h.distance} value={formatKm(allTime.km)} unit={t.units.km} valueStyle={{ fontSize: 24 }} />
+          <Stat label={h.runsLabel} value={allTime.runs} valueStyle={{ fontSize: 24 }} />
+          <Stat label={h.time} value={formatKm(allTime.hours)} unit={h.hours} valueStyle={{ fontSize: 24 }} />
+        </StatGrid>
+        {/* This year and last as rows (C6): this year the accent, last year line-2. */}
+        <ul className="flex flex-col gap-3 border-t border-border pt-3 text-[13px]" data-testid="year-rows">
+          {[...allTime.years.slice(-2)].reverse().map((y) => {
+            const current = y.year === view.year
+            return (
+              <li key={y.year} className="grid grid-cols-[44px_minmax(0,1fr)_150px] items-center gap-3" data-testid="year-row">
+                <span className={cn(current ? 'font-semibold text-foreground' : 'text-muted-foreground')}>{y.year}</span>
+                <span aria-hidden className="block h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                  <span className="block h-full rounded-full" data-testid="year-bar" style={{ width: `${(y.km / bestYearKm) * 100}%`, background: current ? 'var(--accent)' : 'var(--line-2)' }} />
+                </span>
+                <span className="text-right text-muted-foreground">
+                  <b className="font-semibold text-foreground">{formatKm(y.km)} {t.units.km}</b> · {t.common.runs(y.runs)}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
       </Link>
     </div>
   )

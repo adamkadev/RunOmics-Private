@@ -136,12 +136,22 @@ export const en = {
   // Every pace axis runs the same way (lib/chartAxis paceAxis).
   // The rolling year as month rows (/consistency).
   consistency: {
+    // v4.17: three stats, the year as week columns, then active days per month.
     activeDays: 'Active days',
-    share: 'Share',
-    streak: 'Streak',
-    streakValue: (weeks: number) => `${weeks} wk`,
-    levels: { rest: 'Rest', run: 'Run', long: 'Long run' },
+    ofDays: (days: number) => `of ${days}`,
+    share: 'Share of days',
+    vsPrior: (delta: string) => `${delta} pts vs prior 12 months`,
+    // A history that starts inside the year before is compared over what it covers.
+    vsRange: (delta: string, range: string) => `${delta} pts vs ${range}`,
+    streak: 'Current streak',
+    weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
+    best: (weeks: number) => `Best: ${weeks} week${weeks === 1 ? '' : 's'}`,
+    calendarTitle: 'Every day, last 12 months',
+    colourKey: 'colour = distance',
+    levels: { rest: 'Rest', long: 'Long run (15 km +)' },
     today: 'Today',
+    toCome: 'to come',
+    perMonth: 'Active days per month',
     monthSummary: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'}`,
     restDay: (date: string) => `${date} · Rest day`,
     empty: 'No runs in the last 12 months yet.',
@@ -1441,7 +1451,7 @@ export const en = {
     tracked: (km: string) => `${km} km tracked`,
     add: 'Add',
     addLabel: 'Add a pair in Garmin Connect',
-    edit: 'Edit',
+    edit: 'Edit shoe',
     editLabel: 'Edit limit, role or retire in Garmin Connect',
     inRotation: (n: number) => `In rotation · ${n}`,
     retiredSection: (n: number) => `Retired · ${n}`,
@@ -1453,9 +1463,9 @@ export const en = {
     overLimit: 'Over limit, consider retiring',
     since: (brand: string, month: string) => `${brand} · since ${month}`,
     roles: { daily: 'daily trainer', workouts: 'workouts', intervals: 'intervals', races: 'races' },
-    typeMixCaption: 'Share of distance · colours match activity types',
+    shareOfDistance: 'share of distance',
     easy: 'Easy',
-    heroStats: { runs: 'runs', kmAvg: 'km avg', pace: 'avg /km', bpm: 'avg bpm' },
+    heroStats: { runs: 'Runs', avgDistance: 'Avg distance', avgPace: 'Avg pace', avgHr: 'Avg heart rate' },
     lastRuns: 'Last runs',
     neverUsed: 'Never used',
     // Both numbers arrive formatted (formatKm), so 1,375 has its separator.
@@ -1532,7 +1542,9 @@ export const en = {
       },
     },
     detail: {
-      back: 'Shoes',
+      // A pair's page is under Progress, which lists the pairs (v4.17).
+      back: 'Progress',
+      retireFromWorkouts: (km: string) => `${km} km · retire from workouts`,
       stats: {
         distance: 'Distance',
         activities: 'Runs',
@@ -1599,35 +1611,50 @@ export const en = {
   profile: {
     // The hub: the year so far, then one row per sub-page with its status.
     hub: {
+      // v4.17: the header's season line, then the year card, four tiles, shoes and all time.
+      season: (year: number) => `Season ${year}`,
+      raceIn: (distance: string, days: number) =>
+        days <= 0 ? `${distance} today` : days === 1 ? `${distance} tomorrow` : `${distance} in ${days} days`,
+      yearTitle: (year: number) => `${year} distance`,
       runs: 'runs',
       records: 'Records',
-      // The record set most recently, marked (v4.3.3).
-      latestRecord: 'PR',
+      recordsWhen: 'all time',
+      recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Half marathon' } as Record<string, string>,
+      // The record set most recently, marked (v4.3.3); "new" only in its first weeks.
+      newRecord: 'NEW PR',
+      latestRecord: 'LATEST',
       latestRecordLabel: 'most recent record',
       shoes: 'Shoes',
+      allPairs: 'All pairs',
       consistency: 'Consistency',
       settings: 'Settings',
-      race: 'Race',
-      vo2max: 'VO₂max',
+      nextRace: 'Next race',
+      vo2max: 'VO₂ max',
       allTime: 'All time',
       vsYear: (delta: string, year: number) => `${delta} km vs ${year} to date`,
-      vsYearDelta: (delta: string) => `${delta} km`,
-      vsYearRest: (year: number) => ` vs ${year} to date`,
-      ofGoal: (km: string) => `/ ${km} km`,
-      goal: 'goal',
-      hoursRuns: (hours: number, runs: number) => `${hours} h · ${runs} runs`,
-      raceLine: (distance: string, date: string) => `${distance} ${date}`,
-      predicted: 'predicted',
-      target: (time: string) => `target ${time}`,
-      off: (gap: string) => `${gap} off`,
+      ofGoal: (km: string) => `of ${km} km`,
+      goal: 'Goal',
+      runsHours: (runs: number, hours: number) => `${runs} runs · ${hours} h`,
+      // "62 days · 10K Wintzenheim, Nov 29": the unit after the countdown.
+      raceMeta: (days: number, race: string, date: string) => `${days === 1 ? 'day' : 'days'} · ${race}, ${date}`,
+      predicted: 'Predicted',
+      target: (time: string) => `Target ${time}`,
+      toFind: (gap: string) => `${gap} to find`,
+      underTarget: (gap: string) => `${gap} under`,
       noRace: 'No race planned',
-      in12w: ' in 12 wk',
+      vo2Delta: (delta: string) => `${delta} in 12 weeks`,
       // The footers as segments, each kept whole on the line (v4.3.1).
       thresholdParts: (pace: string | null, lthr: number | null) =>
-        [pace ? `threshold ${pace}` : null, lthr ? `LTHR ${lthr}` : null].filter((part): part is string => part !== null),
+        [pace ? `Threshold ${pace} /km` : null, lthr ? `LTHR ${lthr} bpm` : null].filter((part): part is string => part !== null),
       noRecords: 'No records yet',
-      consistencyParts: (days: number, weeks: number) => [`${days} days`, `${weeks} wk streak`],
+      // "Last 12 weeks · 203 active days in 12 months · 4-week streak", the figures in ink.
+      consistencyWindow: 'Last 12 weeks',
+      consistencyDays: (days: number) => ({ lead: '', value: String(days), tail: ` active day${days === 1 ? '' : 's'} in 12 months` }),
+      consistencyStreak: (weeks: number) => ({ lead: '', value: `${weeks}-week`, tail: ' streak' }),
       since: (date: string) => `since ${date}`,
+      distance: 'Distance',
+      runsLabel: 'Runs',
+      time: 'Time',
       hours: 'h',
       openYears: 'Kilometres by year',
     },

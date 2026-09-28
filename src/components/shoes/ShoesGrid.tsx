@@ -4,9 +4,8 @@ import { ChevronRight } from 'lucide-react'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { wearStatus } from '@/domain/shoe/wearStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
-import { SHOE_WEAR_TINTS } from '@/lib/colors'
 import { formatDate, formatDateRange, formatKm } from '@/lib/formatters'
-import { shoeRole, wearTone } from './shoeWear'
+import { isPastLimit, shoeRole } from './shoeWear'
 import { WearBar } from './WearBar'
 import { t } from '@/i18n'
 
@@ -19,15 +18,12 @@ export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
   )
 }
 
-/** The shoe detail page's verdict tint. */
-export const HERO_SURFACE: Record<'watch' | 'replace', { background: string; borderColor: string }> = SHOE_WEAR_TINTS
-
 const SECTION = 'px-1 text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground'
 
 /** "676 / 1,000 km · 73 runs · last Sep 24 · daily trainer", or the overrun. */
 export function shoeMeta(shoe: ShoeStats): string {
   const s = t.shoes
-  if (wearTone(shoe) === 'over') return `${s.kmOf(formatKm(shoe.totalKm), formatKm(shoe.maxKm))} · ${s.overLimit}`
+  if (isPastLimit(shoe)) return `${s.kmOf(formatKm(shoe.totalKm), formatKm(shoe.maxKm))} · ${s.overLimit}`
   return [
     s.kmOf(formatKm(shoe.totalKm), formatKm(shoe.maxKm)),
     s.runs(shoe.sessionCount),
@@ -44,7 +40,7 @@ export function shoeMeta(shoe: ShoeStats): string {
  */
 function RotationRow({ shoe, context }: { shoe: ShoeStats; context: string | null }) {
   const left = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
-  const over = wearTone(shoe) === 'over'
+  const over = isPastLimit(shoe)
   return (
     <Link href={`/shoes/${shoe.gearId}`} className="block px-4 py-3.5 transition-colors active:bg-foreground/[0.04]" data-testid="shoe-card">
       <div className="flex items-start justify-between gap-3">
@@ -58,7 +54,7 @@ function RotationRow({ shoe, context }: { shoe: ShoeStats; context: string | nul
           </p>
         )}
       </div>
-      <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} className="mt-3" />
+      <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} tickKm={shoe.alertThresholdKm} className="mt-3" />
       <p className="mt-2.5 text-footnote tabular-nums text-muted-foreground" data-testid="shoe-meta">{shoeMeta(shoe)}</p>
       {context && <p className="mt-1 text-footnote text-foreground/80">{context}</p>}
     </Link>

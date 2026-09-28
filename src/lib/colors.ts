@@ -1,4 +1,4 @@
-import { HUE, ink, paper, white, withAlpha } from '@/lib/palette'
+import { HUE, ink, paper, white } from '@/lib/palette'
 import { isActivityType, type ActivityType } from '@/domain/activity/types'
 
 const c = HUE
@@ -186,17 +186,6 @@ export const SHOE_DOT_RAMP = [
   'var(--subtle)',
   'var(--subtle-2)',
 ] as const
-
-export const SHOE_WEAR_TINTS = {
-  watch: {
-    background: `linear-gradient(150deg, ${withAlpha(c.amber500, 0.16)}, ${withAlpha(c.amber500, 0.02)})`,
-    borderColor: withAlpha(c.amber500, 0.35),
-  },
-  replace: {
-    background: `linear-gradient(150deg, ${withAlpha(c.red500, 0.16)}, ${withAlpha(c.red500, 0.02)})`,
-    borderColor: withAlpha(c.red500, 0.35),
-  },
-} as const
 
 export const WORKOUT_SEGMENT_COLORS = {
   warmup:   paper(0.18),
