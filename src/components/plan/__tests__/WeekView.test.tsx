@@ -285,45 +285,10 @@ describe('WeekView without coaching', () => {
 })
 
 describe('WeekView easy share', () => {
-  // Two easy-type runs whose heart rate spent half their time above zone 2.
-  const zones = [
-    { zone: 2, seconds: 900, percent: 50, minBpm: 120, maxBpm: 145 },
-    { zone: 3, seconds: 900, percent: 50, minBpm: 146, maxBpm: 160 },
-  ]
-  const lastWeek = [
-    activity({ id: 'b1', date: '2026-08-31', type: 'Base', durationSeconds: 1_800, hrZones: zones }),
-    activity({ id: 'b2', date: '2026-09-02', type: 'Base', durationSeconds: 1_800, hrZones: zones }),
-  ]
-
-  function renderPastWeek() {
-    const byDate = new Map(lastWeek.map((a) => [a.date, [a]]))
-    return render(
-      <WeekView
-        weekStart={new Date(2026, 7, 31)}
-        byDate={byDate}
-        byDatePlanned={new Map()}
-        today={TODAY}
-        atPresent={false}
-        onToday={() => {}}
-        planPhaseRanges={[]}
-      />
-    )
-  }
-
-  // The session types said 100 % easy while the activity list, reading heart
-  // rate, said 50 % for the same week.
-  it('reads a finished week by heart rate, as the activity list does', () => {
-    renderPastWeek()
-
-    const s = t.plan.weekSummary
-    expect(screen.getByTestId('week-easy').textContent).toBe(`${s.easyDone(50)} · ${s.easyGuide(80)}`)
-    expect(screen.getByTestId('week-summary').textContent).not.toContain(s.easyDone(100))
-  })
-
-  // v4.8: the headline counts what was run, as Activities does; a session
-  // still to run counts, at its type's zone for its planned time, only in the
-  // projection beside it.
-  it('reads what was run, and what the week comes to if it goes to plan', () => {
+  // v4.17.1: the easy-time line under the stats ("100% if the week goes to
+  // plan · guide 80%") read as a second adherence figure beside the Plan
+  // adherence stat; the easy share lives on Activities and Analytics.
+  it('prints no easy-time line under the week stats', () => {
     renderWeek({
       activities: [activity({ id: 'z', date: '2026-09-07', type: 'Tempo', durationSeconds: 1_800, hrZones: [
         { zone: 2, seconds: 900, percent: 50, minBpm: 0, maxBpm: null },
@@ -332,18 +297,10 @@ describe('WeekView easy share', () => {
       planned: [{ date: '2026-09-10', name: 'Easy', type: 'Base', distanceM: 8_000, durationSecs: 1_800 }],
     })
 
-    const s = t.plan.weekSummary
-    expect(screen.getByTestId('week-easy').textContent).toBe(`${s.easyDone(50)} · ${s.easyProjected(75)} · ${s.easyGuide(80)}`)
-  })
-
-  it('says nothing about easy time for runs without heart-rate zones', () => {
-    renderWeek({ activities: [TEMPO, RACE] })
-
     expect(screen.queryByTestId('week-easy')).toBeNull()
-    expect(screen.getByTestId('week-summary').textContent).not.toContain(t.plan.weekSummary.easyGuide(80))
+    expect(screen.getByTestId('week-summary').textContent).not.toMatch(/guide|goes to plan/)
   })
 })
-
 
 /** A stat's value and its inline unit, read under its label. */
 function stat(label: string): { value: string; unit: string | null; meaning: HTMLElement | null } {
@@ -459,19 +416,6 @@ describe('missed sessions', () => {
     expect(days[0]!.className).toContain('text-accent-text')
     expect(days[0]!.nextElementSibling as HTMLElement).toHaveStyle({ background: 'var(--zone-2)' })
   })
-})
-
-describe('the week summary in plain words', () => {
-  // "0/100 easy planned" read as 0 of 100 km.
-  it('writes the easy share as a sentence with its guide', () => {
-    renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-10', name: 'Intervals', type: 'VO2Max', distanceM: 6_000, durationSecs: 1_800 }] })
-
-    const s = t.plan.weekSummary
-    // The tempo run has no zone time, so only the plan says anything yet.
-    expect(screen.getByTestId('week-easy').textContent).toBe(`${s.easyProjected(0)} · ${s.easyGuide(80)}`)
-  })
-
-  // "Load 19/297 pts" was never explained.
 })
 
 describe('WeekView state legend', () => {
