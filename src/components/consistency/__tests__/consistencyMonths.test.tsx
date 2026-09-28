@@ -30,7 +30,10 @@ describe('dayLevel', () => {
     expect(dayLevel({ distanceKm: 7.9, sessionCount: 1 })).toBe(1)
     expect(dayLevel({ distanceKm: 8, sessionCount: 1 })).toBe(2)
     expect(dayLevel({ distanceKm: 15, sessionCount: 2 })).toBe(3)
-    expect(LEVEL_FILL[0]).toBe('var(--surface-2)')
+    // v4.17.1: the rest fill and the two tints are per-theme tokens.
+    expect(LEVEL_FILL[0]).toBe('var(--level-rest)')
+    expect(LEVEL_FILL[1]).toBe('color-mix(in srgb, var(--accent) var(--level-low), transparent)')
+    expect(LEVEL_FILL[2]).toBe('color-mix(in srgb, var(--accent) var(--level-mid), transparent)')
     expect(LEVEL_FILL[3]).toBe('var(--accent)')
   })
 })
@@ -105,13 +108,16 @@ describe('ConsistencyMonths', () => {
     expect(screen.getAllByTestId('month-bar')).toHaveLength(12)
   })
 
-  // A month at or above the year's share is the full accent, one below it 40%.
-  it('draws the months that kept the year\'s share in the full accent', () => {
-    render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY)} />)
+  // v4.17.1: 16 active days or more is the full accent, fewer the ramp's lowest tint.
+  it('draws a month of 16 active days or more in the full accent', () => {
+    const sixteen = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`2026-09-${String(i + 1).padStart(2, '0')}`, 5]))
+    const fifteen = Object.fromEntries(Array.from({ length: 15 }, (_, i) => [`2026-08-${String(i + 1).padStart(2, '0')}`, 5]))
+    render(<ConsistencyMonths view={consistencyMonths(window('2025-09-22', TODAY, { ...fifteen, ...sixteen }), TODAY)} />)
     const bars = screen.getAllByTestId('month-bar')
     expect(bars.at(-1)!.dataset.strong).toBe('true')
-    expect(bars[0]!.dataset.strong).toBe('false')
     expect(bars.at(-1)!.style.background).toBe('var(--accent)')
+    expect(bars.at(-2)!.dataset.strong).toBe('false')
+    expect(bars.at(-2)!.style.background).toBe(LEVEL_FILL[1])
   })
 
   it('colours the change in the share by what it means', () => {

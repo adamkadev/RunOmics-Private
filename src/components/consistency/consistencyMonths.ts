@@ -18,16 +18,19 @@ export function dayLevel(day: Pick<HeatmapDay, 'distanceKm' | 'sessionCount'> | 
 }
 
 /**
- * The one consistency ramp, on the Progress card and this page (v4.17): a day
- * run is the athlete's own data, so it is the accent - 35%, 65%, full - on
- * the inset surface a rest day is.
+ * The one consistency ramp, on the Progress card, this page and its month
+ * bars (v4.17.1): a day run is the athlete's own data, so it is the accent -
+ * 35%, 65%, full in dark; 25%, 55%, full in light - on the rest fill.
  */
 export const LEVEL_FILL: Record<DayLevel, string> = {
-  0: 'var(--surface-2)',
-  1: 'color-mix(in srgb, var(--accent) 35%, transparent)',
-  2: 'color-mix(in srgb, var(--accent) 65%, transparent)',
+  0: 'var(--level-rest)',
+  1: 'color-mix(in srgb, var(--accent) var(--level-low), transparent)',
+  2: 'color-mix(in srgb, var(--accent) var(--level-mid), transparent)',
   3: 'var(--accent)',
 }
+
+/** A month with this many active days or more is the full accent; fewer, the ramp's lowest tint. */
+export const STRONG_MONTH_DAYS = 16
 
 /** Today, outlined in the accent a pixel off its cell. */
 export const TODAY_OUTLINE: CSSProperties = { outline: '1.5px solid var(--accent)', outlineOffset: 1 }

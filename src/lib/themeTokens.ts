@@ -245,6 +245,14 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     // weeks): line-2, and a quieter muted third.
     '--series-2': 'var(--line-2)',
     '--series-3': 'var(--muted-foreground)',
+    // The consistency ramp (v4.17.1): a rest day, then a day run as the
+    // accent at a share per step - 8 km, 15 km, full. The two lowest steps
+    // blurred on the pale ground, so light takes a lighter rest and a wider
+    // gap between them. Shares, not colours, so the mix follows the accent
+    // wherever a cell is drawn.
+    '--level-rest': mode === 'dark' ? 'var(--surface-2)' : '#eceeed',
+    '--level-low': mode === 'dark' ? '35%' : '25%',
+    '--level-mid': mode === 'dark' ? '65%' : '55%',
     // Ink for text on a zone fill (v4.17), per theme: white on the deeper
     // light-theme zones (4.4-5.6:1), the dark ink on the bright dark-theme
     // ones (5.2-6.2:1).

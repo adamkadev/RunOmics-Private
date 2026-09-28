@@ -256,8 +256,9 @@ describe('the accent marks the athlete\'s own data (v4.17)', () => {
   it('fills the consistency card on the accent ramp, today outlined', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     const cells = [...screen.getByTestId('heatmap').querySelectorAll<HTMLElement>('[data-level]')]
-    expect(cells.filter((c) => c.dataset.level === '2').every((c) => c.style.background.includes('var(--accent) 65%'))).toBe(true)
-    expect(cells.filter((c) => c.dataset.level === '0').every((c) => c.style.background === 'var(--surface-2)')).toBe(true)
+    // The Consistency page's ramp, per theme (v4.17.1).
+    expect(cells.filter((c) => c.dataset.level === '2').every((c) => c.style.background.includes('var(--accent) var(--level-mid)'))).toBe(true)
+    expect(cells.filter((c) => c.dataset.level === '0').every((c) => c.style.background === 'var(--level-rest)')).toBe(true)
     expect(screen.getByTestId('heatmap').querySelector<HTMLElement>('[data-today]')!.style.outline).toContain('var(--accent)')
   })
 })

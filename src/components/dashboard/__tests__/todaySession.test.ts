@@ -25,7 +25,7 @@ describe('todaySession', () => {
 
   // v4.17: a rest day says what comes after it, as Plan's rest card does.
   it('names the next session on a rest day', () => {
-    const next = { date: '2026-09-29', title: 'Threshold 3 x 7:15', km: '10' }
+    const next = { date: '2026-09-29', title: 'Threshold 3 x 7:15', km: '10', inDays: 1, kind: 'threshold' as const }
     expect(todaySession(null, null, next).detail).toBe(t.dashboard.todayHero.next(formatWeekday('2026-09-29'), 'Threshold 3 x 7:15', '10'))
     expect(todaySession(null, null, { ...next, km: null }).detail).toBe(t.dashboard.todayHero.next(formatWeekday('2026-09-29'), 'Threshold 3 x 7:15', null))
   })

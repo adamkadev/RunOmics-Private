@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
-import { LEVEL_FILL, TODAY_OUTLINE, dayName, levelStyle, type ConsistencyCell, type ConsistencyMonth, type ConsistencyView, type DayLevel } from './consistencyMonths'
+import { LEVEL_FILL, STRONG_MONTH_DAYS, TODAY_OUTLINE, dayName, levelStyle, type ConsistencyCell, type ConsistencyMonth, type ConsistencyView, type DayLevel } from './consistencyMonths'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid, type StatTone } from '@/components/ui/Stat'
 import { formatDate, formatDelta } from '@/lib/formatters'
@@ -80,15 +80,15 @@ function Swatch({ level }: { level: DayLevel }) {
   return <span aria-hidden className="size-3 shrink-0 rounded-[3px]" style={{ background: LEVEL_FILL[level] }} />
 }
 
-/** Active days a month; a month at or above the year's share is the full accent. */
-function MonthBars({ months, sharePct }: { months: ConsistencyMonth[]; sharePct: number }) {
+/** Active days a month (v4.17.1): 16 days or more is the full accent, fewer the ramp's lowest tint. */
+function MonthBars({ months }: { months: ConsistencyMonth[] }) {
   const c = t.consistency
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="consistency-counts">
       <h2 className={CARD_TITLE}>{c.perMonth}</h2>
       <div className="grid h-[110px] grid-cols-12 items-end gap-1.5 sm:gap-2">
         {months.map((month) => {
-          const strong = month.days > 0 && (month.activeDays / month.days) * 100 >= sharePct
+          const strong = month.activeDays >= STRONG_MONTH_DAYS
           return (
             <div key={month.key} className="flex h-full flex-col items-center justify-end gap-1" aria-label={c.monthSummary(month.fullLabel, month.activeDays)} role="img">
               <span className="text-xs font-semibold text-foreground" aria-hidden>{month.activeDays}</span>
@@ -99,7 +99,7 @@ function MonthBars({ months, sharePct }: { months: ConsistencyMonth[]; sharePct:
                 className="block w-full rounded-[5px_5px_2px_2px]"
                 style={{
                   height: `calc((100% - 20px) * ${month.activeDays / 31})`,
-                  background: strong ? 'var(--accent)' : 'color-mix(in srgb, var(--accent) 40%, transparent)',
+                  background: strong ? LEVEL_FILL[3] : LEVEL_FILL[1],
                 }}
               />
             </div>
@@ -186,7 +186,7 @@ export function ConsistencyMonths({ view }: { view: ConsistencyView }) {
         </div>
       </section>
 
-      <MonthBars months={view.months} sharePct={view.sharePct} />
+      <MonthBars months={view.months} />
     </div>
   )
 }
