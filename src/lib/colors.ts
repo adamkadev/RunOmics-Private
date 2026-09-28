@@ -255,11 +255,13 @@ export const PACE_ROUTE_STOPS: readonly (readonly [pace: number, color: string])
   [450, PACE_ROUTE_COLORS.recovery],
 ]
 
+// The last-resort error screen draws before any stylesheet: the v4.17 dark
+// ground and ink, and the default teal accent for its one action.
 export const BOOT_COLORS = {
-  background: '#0a0b0b',
-  foreground: c.gray200,
-  actionBg: c.emerald500,
-  actionFg: c.performanceBgDark,
+  background: '#0c0d0d',
+  foreground: '#f1f2f1',
+  actionBg: '#2dd4a7',
+  actionFg: '#07261d',
 } as const
 
 
