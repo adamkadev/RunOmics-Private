@@ -43,7 +43,7 @@ describe('TodayHero', () => {
         plannedWorkout={null}
         todayActivity={null}
         aiVerdict={null}
-        nextSession={{ date: '2026-09-29', title: 'Threshold 3 x 7:15', km: '10' }}
+        nextSession={{ date: '2026-09-29', title: 'Threshold 3 x 7:15', km: '10', inDays: 1, kind: 'threshold' }}
       />,
     )
 
@@ -108,9 +108,35 @@ describe('the line under the verdict', () => {
     expect(screen.queryByTestId('today-reason')).toBeNull()
   })
 
-  it('falls back to why in one line, from the form the Body card shows (v5.5 #19)', () => {
+  // v4.17.1: never the Form / Fitness / Fatigue row again, under a headline
+  // that already said it.
+  it('falls back to why and what it gives, with no figure from the stats row', () => {
     const status = { tsbNow: -11, tsbDelta: -3, ctl: 45, atl: 56, loadTrend: 'maintaining' } as unknown as TrainingStatus
-    render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={{ headline: "Keep today's long run easy", body: '' } as never} />)
-    expect(screen.getByTestId('today-reason').textContent).toBe(t.dashboard.todayHero.formReason('−11', 'tired'))
+    render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={{ headline: "Keep today's long run easy", body: '' } as never} yesterday="long_run" />)
+    const v = t.dashboard.todayHero.verdict
+    expect(screen.getByTestId('today-reason').textContent).toBe(`${v.yesterdayInLegs(v.kind.long_run)} ${v.gain.restSinksIn}`)
+    expect(screen.getByTestId('today-reason').textContent).not.toMatch(/\d/)
+  })
+})
+
+describe('the verdict without a written one (v4.17.1)', () => {
+  const tired = { tsbNow: -15, tsbDelta: 7, ctl: 47, atl: 62, atlDelta: 6, loadTrend: 'maintaining' } as unknown as TrainingStatus
+
+  it("reads a rest day after a long run as the prototype does: rest now, for Tuesday's threshold", () => {
+    render(
+      <TodayHero
+        status={tired}
+        plannedWorkout={null}
+        todayActivity={null}
+        aiVerdict={null}
+        yesterday="long_run"
+        nextSession={{ date: '2026-09-29', title: 'Threshold 3 x 7:15', km: '10', inDays: 1, kind: 'threshold' }}
+      />,
+    )
+    const v = t.dashboard.todayHero.verdict
+    expect(screen.getByText(v.headline.rest.hold)).toBeInTheDocument()
+    expect(screen.getByTestId('today-reason').textContent).toBe(`${v.yesterdayInLegs(v.kind.long_run)} ${v.gain.restPaysOff(v.tomorrow, v.kind.threshold)}`)
+    // Nothing the stats row prints: no form, fitness or fatigue figure.
+    expect(screen.getByTestId('today-hero').querySelector('[data-testid="today-reason"]')!.textContent).not.toMatch(/\d/)
   })
 })

@@ -12,7 +12,7 @@ import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { coachWorkoutView, heroWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
-import { appTodayIso } from '@/lib/calendarDate'
+import { addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { loadWeekTarget } from '@/app/_data/loadWeekTarget'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -23,6 +23,7 @@ import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { findNextSession } from '@/components/dashboard/nextSession'
+import { yesterdayKind } from '@/components/dashboard/todayVerdict'
 import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { t } from '@/i18n'
 
@@ -65,6 +66,10 @@ export default async function DashboardPage() {
   const plannedWorkouts = await getPlannedWorkouts()
   const coachWorkouts = coaching?.workouts ?? []
   const nextSession = findNextSession(today, coachWorkouts, plannedWorkouts, trainingZones)
+  // Yesterday's run, which the verdict reads: a hard one is still in the legs.
+  const yesterdayIso = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
+  const yesterdayPrescribed = coachWorkouts.find((w) => w.prescription.date === yesterdayIso && w.prescription.status !== 'cancelled')?.prescription.type ?? null
+  const yesterday = yesterdayKind(data.recentActivities.find((a) => a.date === yesterdayIso) ?? null, yesterdayPrescribed)
   const sessionKinds = plannedSessionKinds(weekTarget.days.map((day) => day.date), coachWorkouts, plannedWorkouts)
 
   return (
@@ -79,6 +84,7 @@ export default async function DashboardPage() {
         todayActivity={todayActivity}
         aiVerdict={aiVerdict}
         nextSession={nextSession}
+        yesterday={yesterday}
       />
 
       <BodyCard status={trainingStatus} watchStatus={latestRatedStatus(trainingStatusDays)} />

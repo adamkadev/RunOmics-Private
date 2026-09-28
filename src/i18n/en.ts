@@ -461,6 +461,9 @@ export const en = {
     // Training status and Form / Fitness / Fatigue, one card on Today.
     bodyCard: {
       deltaIn: (delta: string, days: number) => `${delta} in ${days} days`,
+      // Which way Form moved, before by how much (v4.17.1): "recovering, +7 in 7 days".
+      formTrend: { up: 'recovering', down: 'absorbing load', flat: 'steady' },
+      formMove: (trend: string, delta: string) => `${trend}, ${delta}`,
     },
     trainingStatusDays: {
       title: 'Training Status',
@@ -477,29 +480,70 @@ export const en = {
       daysAgo: (d: number) => `${d}d ago`,
     },
     todayHero: {
-      formReason: (form: string, band: string) => `Form ${form} · ${band}`,
       eyebrowByTone: {
         go: 'Green light',
         caution: 'Caution',
         hold: 'Hold back',
       },
-      readiness: {
-        go: {
-          headline: "You're fresh. Good day for quality.",
-          body: () => `Fatigue is trending down - the planned session is a go.`,
+      // The coach card without a written verdict (v4.17.1): what to do with
+      // today, then why and what it gives - never a figure the Form /
+      // Fitness / Fatigue row under it already prints.
+      verdict: {
+        headline: {
+          rest: { go: 'Rest day. Enjoy it.', caution: "Make today's rest count.", hold: "Take full advantage of today's rest." },
+          easy: { go: 'Fresh legs. Keep easy days easy.', caution: 'Steady day. Keep it easy.', hold: 'Keep today truly easy.' },
+          quality: { go: "You're fresh. Good day for quality.", caution: 'Run it, but keep it controlled.', hold: 'Go easier than planned today.' },
+          race: { go: "Race day. You're fresh for it.", caution: 'Race day. Start controlled.', hold: 'Race day. Start controlled.' },
+          done: { go: 'Session done. Nicely timed.', caution: 'Session done. Recover well.', hold: 'Session done. Now let it sink in.' },
         },
-        caution: {
-          headline: 'Steady day. Keep it moderate.',
-          body: (loadTrendLabel: string) => `Load is ${loadTrendLabel.toLowerCase()} and form is holding neutral - stay honest on easy days.`,
+        why: {
+          go: 'Fatigue has come down.',
+          caution: 'Fitness and fatigue are close to level.',
+          hold: 'Fatigue has run ahead of fitness.',
         },
-        hold: {
-          headline: 'Fatigue is ahead of fitness.',
-          headlineFormDown: 'Form is below your usual range.',
-          body: (fatigue: number, fitness: number, form: string, weekDelta: string) =>
-            `Fatigue ${fatigue} vs fitness ${fitness} · form ${form}, ${weekDelta} this week.`,
-          weekDown: (points: number) => `down ${points}`,
-          weekUp: (points: number) => `up ${points}`,
-          weekFlat: 'flat',
+        whyDone: {
+          go: '',
+          caution: '',
+          hold: 'You ran it on tired legs.',
+        },
+        yesterdayInLegs: (kind: string) => `Yesterday's ${kind} is still in your legs.`,
+        tomorrow: 'tomorrow',
+        // A session in a sentence: "Tuesday's threshold session".
+        kind: {
+          easy: 'easy run',
+          recovery: 'recovery run',
+          long_run: 'long run',
+          tempo: 'tempo run',
+          threshold: 'threshold session',
+          vo2max: 'VO₂ max session',
+          anaerobic: 'anaerobic session',
+          sprint: 'sprint session',
+          race: 'race',
+        },
+        gain: {
+          restPaysOff: (when: string, kind: string) => `Rest today pays off in ${when}'s ${kind}.`,
+          restFresh: (when: string, kind: string) => `It keeps you fresh for ${when}'s ${kind}.`,
+          restSinksIn: 'A day off is when the work turns into fitness.',
+          easyHold: 'Easy running helps you recover without adding load.',
+          easyLands: (when: string, kind: string) => `Keep it easy so ${when}'s ${kind} lands.`,
+          easySave: (when: string, kind: string) => `Save the freshness for ${when}'s ${kind}.`,
+          easySettle: 'Keeping it easy lets the load settle.',
+          easyGo: 'Easy days are what make the hard ones count.',
+          quality: {
+            go: 'Hit the planned paces: this is when the work counts most.',
+            caution: 'Hold the planned paces and skip any extra reps.',
+            hold: 'Cut the reps or swap it for an easy run: quality on tired legs rarely pays.',
+          },
+          race: {
+            go: 'This is what the training was for.',
+            caution: 'Start slower than you want and build into it.',
+            hold: 'Start slower than you want and build into it.',
+          },
+          done: {
+            go: 'You ran it fresh, when the work counts most.',
+            caution: 'An easy day next lets it land.',
+            hold: 'Sleep and an easy day next are what turn it into fitness.',
+          },
         },
       },
       restDay: 'Rest day',

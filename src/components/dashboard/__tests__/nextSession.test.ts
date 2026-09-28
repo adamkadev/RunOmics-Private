@@ -19,13 +19,14 @@ describe('findNextSession', () => {
   it("is the first day after today with a session, the coach's over Garmin's", () => {
     const garmin: PlannedWorkout[] = [{ date: '2026-09-30', name: 'Tempo', type: 'Tempo', distanceM: 8000 }]
     const next = findNextSession('2026-09-28', [view(prescription('2026-09-30', 'Recovery run', 9229))], garmin)
-    expect(next).toEqual({ date: '2026-09-30', title: 'Recovery run', km: '9' })
+    expect(next).toEqual({ date: '2026-09-30', title: 'Recovery run', km: '9', inDays: 2, kind: 'easy' })
   })
 
   it('skips a cancelled prescription and falls back to Garmin', () => {
     const garmin: PlannedWorkout[] = [{ date: '2026-09-29', name: 'Tempo', type: 'Tempo' }]
     const next = findNextSession('2026-09-28', [view(prescription('2026-09-29', 'Easy run', 8000), 'cancelled')], garmin)
-    expect(next).toMatchObject({ date: '2026-09-29', km: null })
+    // Garmin's type, in the coach's words.
+    expect(next).toMatchObject({ date: '2026-09-29', km: null, inDays: 1, kind: 'tempo' })
   })
 
   it('looks a week ahead, not today and not further', () => {

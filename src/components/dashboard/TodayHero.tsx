@@ -8,14 +8,13 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
-import { formBand } from '@/domain/training/formBand'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
 import { cardClass } from '@/components/ui/Card'
 import { VerdictBlock, VerdictEyebrow, type VerdictTone } from '@/components/ui/Verdict'
 import { SessionStructureBar } from '@/components/plan/WorkoutStructure'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
-import { formatDelta } from '@/lib/formatters'
 import { todaySession } from './todaySession'
+import { todayPlanOf, todayVerdict, type SessionKind } from './todayVerdict'
 import type { NextSession } from './nextSession'
 import { sessionZone } from '@/lib/colors'
 import type { Insight } from '@/lib/gemini'
@@ -35,36 +34,8 @@ interface Props {
   aiVerdict: Insight | null
   /** The next session on the plan, which a rest day names. */
   nextSession?: NextSession | null
-}
-
-function holdCopy(status: TrainingStatus): { headline: string; body: string } {
-  const r = t.dashboard.todayHero.readiness.hold
-  const fatigue = Math.round(status.atl)
-  const fitness = Math.round(status.ctl)
-  const form = Math.round(status.tsbNow)
-  const weekDelta = Math.round(status.tsbDelta)
-
-  return {
-    headline: fatigue > fitness ? r.headline : r.headlineFormDown,
-    body: r.body(
-      fatigue,
-      fitness,
-      formatDelta(form),
-      weekDelta < 0 ? r.weekDown(Math.abs(weekDelta)) : weekDelta > 0 ? r.weekUp(weekDelta) : r.weekFlat,
-    ),
-  }
-}
-
-function readinessCopy(status: TrainingStatus, tone: ReadinessTone): { headline: string; body: string } {
-  const r = t.dashboard.todayHero.readiness
-  switch (tone) {
-    case 'go':
-      return { headline: r.go.headline, body: r.go.body() }
-    case 'hold':
-      return holdCopy(status)
-    case 'caution':
-      return { headline: r.caution.headline, body: r.caution.body(t.trainingStatus.loadTrend[status.loadTrend]) }
-  }
+  /** Yesterday's run, when one was run: a hard one is still in the legs today. */
+  yesterday?: SessionKind | null
 }
 
 /** The state chip on the session row: a quiet pill, the state in words. */
@@ -85,25 +56,33 @@ function StateChip({ state }: { state: WeekDayState }) {
 // No race countdown here: the race is the plan's reason, not a daily number,
 // and the D-21 chip next to the verdict was noise in the morning read. The
 // countdown lives on Plan's race footer and on Goals.
-export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, nextSession = null }: Props) {
+export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, nextSession = null, yesterday = null }: Props) {
   if (!status && !plannedWorkout && !todayActivity) return null
 
   const s = t.dashboard.todayHero
   const readiness = status ? verdictTone(status) : 'go'
-  const verdict = aiVerdict ?? (status ? readinessCopy(status, readiness) : null)
   const session = todaySession(plannedWorkout, todayActivity, nextSession)
   const planned = session.state === 'planned' ? plannedWorkout : null
+  // Without a written verdict, one from today's plan, yesterday's run and
+  // the next session (v4.17.1): what to do, why, and what it gives.
+  const own = status
+    ? todayVerdict({
+        tone: readiness,
+        today: todayPlanOf(session.state, plannedWorkout?.type ?? null),
+        yesterday,
+        next: nextSession ? { date: nextSession.date, inDays: nextSession.inDays, kind: nextSession.kind } : null,
+      })
+    : null
+  const verdict = aiVerdict ?? own
   const tone = VERDICT_TONE[readiness]
   const eyebrow = s.eyebrowByTone[readiness]
 
-  // The coach's own sentence under its headline. Without one, the reason in
-  // one line (v5.5 #19), from the Form the stats below show.
+  // The coach's own sentence under its headline; without one, the why and
+  // what it gives. Neither repeats the Form / Fitness / Fatigue row below.
   const body: ReactNode = aiVerdict?.body ? (
     <span data-testid="today-body">{aiVerdict.body}</span>
-  ) : verdict && status ? (
-    <span data-testid="today-reason">
-      {s.formReason(formatDelta(Math.round(status.tsbNow)), t.formBand[formBand(Math.round(status.tsbNow))].toLowerCase())}
-    </span>
+  ) : own ? (
+    <span data-testid="today-reason">{own.body}</span>
   ) : null
 
   const row = (

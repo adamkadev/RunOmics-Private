@@ -435,6 +435,8 @@ export const fr = {
     },
     bodyCard: {
       deltaIn: (delta: string, days: number) => `${delta} en ${days} jours`,
+      formTrend: { up: 'en récupération', down: 'sous charge', flat: 'stable' },
+      formMove: (trend: string, delta: string) => `${trend}, ${delta}`,
     },
     trainingStatusDays: {
       title: 'Statut d’entraînement',
@@ -451,29 +453,67 @@ export const fr = {
       daysAgo: (d: number) => `il y a ${d} j`,
     },
     todayHero: {
-      formReason: (form: string, band: string) => `Forme ${form} · ${band}`,
       eyebrowByTone: {
         go: 'Feu vert',
         caution: 'Prudence',
         hold: 'Lever le pied',
       },
-      readiness: {
-        go: {
-          headline: 'Tu es frais. Bon jour pour de la qualité.',
-          body: () => `La fatigue baisse - la séance prévue est un feu vert.`,
+      verdict: {
+        headline: {
+          rest: { go: 'Jour de repos. Profites-en.', caution: 'Fais compter ce jour de repos.', hold: 'Profite pleinement du repos d’aujourd’hui.' },
+          easy: { go: 'Jambes fraîches. Garde le facile facile.', caution: 'Journée tranquille. Reste en facile.', hold: 'Reste vraiment en facile aujourd’hui.' },
+          quality: { go: 'Tu es frais. Bon jour pour la qualité.', caution: 'Fais-la, mais sous contrôle.', hold: 'Lève le pied sur la séance du jour.' },
+          race: { go: 'Jour de course. Tu es frais.', caution: 'Jour de course. Pars prudemment.', hold: 'Jour de course. Pars prudemment.' },
+          done: { go: 'Séance faite. Bien placée.', caution: 'Séance faite. Récupère bien.', hold: 'Séance faite. Laisse-la s’installer.' },
         },
-        caution: {
-          headline: 'Journée neutre. Reste modéré.',
-          body: (loadTrendLabel: string) => `La charge est en ${loadTrendLabel.toLowerCase()} et la forme est neutre - reste honnête sur les jours faciles.`,
+        why: {
+          go: 'La fatigue est redescendue.',
+          caution: 'Condition et fatigue sont presque à l’équilibre.',
+          hold: 'La fatigue a pris de l’avance sur la condition.',
         },
-        hold: {
-          headline: 'La fatigue dépasse la forme.',
-          headlineFormDown: 'La forme est sous ta plage habituelle.',
-          body: (fatigue: number, fitness: number, form: string, weekDelta: string) =>
-            `Fatigue ${fatigue} vs fitness ${fitness} · forme ${form}, ${weekDelta} cette semaine.`,
-          weekDown: (points: number) => `en baisse de ${points}`,
-          weekUp: (points: number) => `en hausse de ${points}`,
-          weekFlat: 'stable',
+        whyDone: {
+          go: '',
+          caution: '',
+          hold: 'Tu l’as courue les jambes fatiguées.',
+        },
+        yesterdayInLegs: (kind: string) => `${kind.charAt(0).toUpperCase()}${kind.slice(1)} d’hier est encore dans tes jambes.`,
+        tomorrow: 'demain',
+        // Une séance dans une phrase, avec son article : « la séance au seuil ».
+        kind: {
+          easy: 'la sortie facile',
+          recovery: 'le footing de récupération',
+          long_run: 'la sortie longue',
+          tempo: 'le tempo',
+          threshold: 'la séance au seuil',
+          vo2max: 'la séance VO₂ max',
+          anaerobic: 'la séance anaérobie',
+          sprint: 'la séance de sprints',
+          race: 'la course',
+        },
+        gain: {
+          restPaysOff: (when: string, kind: string) => `Te reposer aujourd’hui paiera ${when}, pour ${kind}.`,
+          restFresh: (when: string, kind: string) => `Tu resteras frais pour ${kind} ${when}.`,
+          restSinksIn: 'C’est au repos que le travail devient de la condition.',
+          easyHold: 'Courir facile aide à récupérer sans ajouter de charge.',
+          easyLands: (when: string, kind: string) => `Reste facile pour réussir ${kind} ${when}.`,
+          easySave: (when: string, kind: string) => `Garde ta fraîcheur pour ${kind} ${when}.`,
+          easySettle: 'Rester facile laisse la charge se poser.',
+          easyGo: 'Ce sont les jours faciles qui font compter les jours durs.',
+          quality: {
+            go: 'Tiens les allures prévues : c’est là que le travail compte le plus.',
+            caution: 'Tiens les allures prévues, sans répétitions en plus.',
+            hold: 'Réduis les répétitions ou passe en footing : la qualité sur des jambes fatiguées paie rarement.',
+          },
+          race: {
+            go: 'C’est pour ça que tu t’es entraîné.',
+            caution: 'Pars moins vite que tu le voudrais et monte en route.',
+            hold: 'Pars moins vite que tu le voudrais et monte en route.',
+          },
+          done: {
+            go: 'Tu l’as courue frais, au meilleur moment.',
+            caution: 'Une journée facile ensuite la laisse s’installer.',
+            hold: 'Le sommeil et une journée facile ensuite en font de la condition.',
+          },
         },
       },
       restDay: 'Jour de repos',

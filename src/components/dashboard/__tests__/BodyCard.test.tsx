@@ -71,10 +71,17 @@ describe('BodyCard', () => {
     const [form, , fatigue] = screen.getAllByTestId('metric-delta')
     expect(fatigue!.dataset.tone).toBe('warn')
     expect(fatigue!.parentElement!.className).toContain('text-[var(--warn)]')
-    // The band is the line's colour; Form climbing back toward neutral is good.
+    // v4.17.1: one meaning colour - the band's; which way Form moved is muted.
     const band = screen.getByTestId('form-band')
     expect(band.textContent).toBe(t.formBand.tired)
     expect(band.closest('.text-\\[var\\(--warn\\)\\]')).not.toBeNull()
-    expect(form!.dataset.tone).toBe('pos')
+    expect(form!.dataset.tone).toBe('muted')
+    expect(form!.className).toContain('text-muted-foreground')
+    expect(form!.textContent).toBe(`·${t.dashboard.bodyCard.formMove(t.dashboard.bodyCard.formTrend.up, t.dashboard.bodyCard.deltaIn('+7', 7))}`)
+  })
+
+  it('says which way Form moved in a word', () => {
+    render(<BodyCard status={{ ...STATUS, tsbNow: -4, tsbDelta: -5 }} />)
+    expect(screen.getAllByTestId('metric-delta')[0]!.textContent).toContain(t.dashboard.bodyCard.formTrend.down)
   })
 })

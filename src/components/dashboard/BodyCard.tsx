@@ -2,11 +2,10 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { cardClass } from '@/components/ui/Card'
-import { Stat, StatGrid, STAT_TONE_CLASS, type StatTone } from '@/components/ui/Stat'
+import { Stat, StatGrid, type StatTone } from '@/components/ui/Stat'
 import { deltaTone, type DeltaMetric, type DeltaTone } from '@/lib/deltaTone'
 import { formBand, type FormBand } from '@/domain/training/formBand'
 import { formatDelta } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 type Status = NonNullable<TrainingStatusDayBar['status']>
@@ -28,6 +27,13 @@ function deltaStatTone(metric: DeltaMetric, delta: number, current: number): Sta
   return DELTA_STAT_TONE[deltaTone(metric, delta, { value: current })]
 }
 
+/** Which way Form moved over its window, in a word: recovering, absorbing load, steady. */
+export function formTrend(delta: number): string {
+  const moved = Math.round(delta)
+  const w = t.dashboard.bodyCard.formTrend
+  return moved > 0 ? w.up : moved < 0 ? w.down : w.flat
+}
+
 /** The status the watch gave the latest rated day, for the hero's head. */
 export function latestRatedStatus(days: TrainingStatusDayBar[]): Status | null {
   return [...days].reverse().find((d) => d.status)?.status ?? null
@@ -36,14 +42,13 @@ export function latestRatedStatus(days: TrainingStatusDayBar[]): Status | null {
 /**
  * Form / Fitness / Fatigue, and nothing else (H03, M7), as the one stat
  * pattern (v4.17): the label, the number, and a line saying what it means.
- * Fitness and Fatigue say how they moved over their window; Form says its
- * band first, then how it moved, each in its own meaning's colour.
+ * Fitness and Fatigue say how they moved over their window, in that move's
+ * meaning; Form says its band in the band's, then how it moved, muted.
  */
 export function BodyCard({ status }: { status: TrainingStatus | null; watchStatus?: Status | null }) {
   if (!status) return null
   const form = Math.round(status.tsbNow)
   const band = formBand(form)
-  const formDeltaTone = deltaStatTone('form', status.tsbDelta, form)
   const fitnessTone = deltaStatTone('fitness', status.ctlDeltaShown, status.ctl)
   const fatigueTone = deltaStatTone('fatigue', status.atlDelta, status.atl)
 
@@ -66,9 +71,12 @@ export function BodyCard({ status }: { status: TrainingStatus | null; watchStatu
                 <span aria-hidden="true" className="inline-block w-3" />
                 {t.formBand[band]}
               </span>
-              <span className={cn('whitespace-nowrap', STAT_TONE_CLASS[formDeltaTone])} data-testid="metric-delta" data-tone={formDeltaTone}>
-                <span aria-hidden="true" className="inline-block w-3 text-center text-muted-foreground">·</span>
-                {deltaLabel(status.tsbDelta, STATUS_DELTA_DAYS.form)}
+              {/* One meaning colour a stat (v4.17.1): the band carries it,
+                  which way Form moved and by how much is a muted detail -
+                  "Tired" in warn beside "+7" in pos read as two verdicts. */}
+              <span className="whitespace-nowrap text-muted-foreground" data-testid="metric-delta" data-tone="muted">
+                <span aria-hidden="true" className="inline-block w-3 text-center">·</span>
+                {t.dashboard.bodyCard.formMove(formTrend(status.tsbDelta), deltaLabel(status.tsbDelta, STATUS_DELTA_DAYS.form))}
               </span>
             </span>
           }
