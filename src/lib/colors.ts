@@ -44,7 +44,7 @@ export const CHART_COLORS = {
 /**
  * Garmin's training statuses (v4.17): a status is good, caution or bad news,
  * so it reads the status tokens and never a zone - overreaching used to be
- * the Z5 pink a VO2max session is drawn in. Productive is pos and Peaking
+ * the Z5 red a VO2max session is drawn in. Productive is pos and Peaking
  * (the app's `fresh`) its lighter step, good news that is not building;
  * Unproductive, load that isn't turning into fitness, is caution; Overreaching
  * is neg. Maintaining and Detraining say neither and take the two neutral
