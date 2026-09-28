@@ -96,19 +96,20 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
   const stale = ago !== null && lastSyncedAt ? isSyncStale(lastSyncedAt) : false
   const syncedLine = ago && !stale ? t.dashboard.syncStatus.synced(ago) : null
 
-  // The row fades as it scrolls under the status strip (v5.5 #3): the strip
-  // is only the safe area tall, and the avatar's lower edge showed under it
-  // as a sliver of accent. At the top it carries no inline style at all.
-  const rowRef = useRef<HTMLDivElement>(null)
+  // The avatar fades as it scrolls under the status strip (v5.5 #3): the
+  // strip is only the safe area tall, and the disc's lower edge showed under
+  // it as a sliver of accent. The title and its line are the compact title
+  // bar's to fade, as on every page. At the top it carries no inline style.
+  const avatarRef = useRef<HTMLAnchorElement>(null)
   useEffect(() => {
-    const row = rowRef.current
-    if (!row) return
+    const avatar = avatarRef.current
+    if (!avatar) return
     let frame = 0
     const fade = () => {
       frame = 0
       const y = window.scrollY
-      if (y <= 0) row.style.removeProperty('opacity')
-      else row.style.opacity = String(Math.max(0, 1 - y / Math.max(1, row.offsetHeight)))
+      if (y <= 0) avatar.style.removeProperty('opacity')
+      else avatar.style.opacity = String(Math.max(0, 1 - y / Math.max(1, avatar.offsetHeight)))
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(fade) }
     fade()
@@ -120,28 +121,28 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
   }, [])
 
   return (
-    // As tall as the 34 pt disc, not its 44 pt hit area: a 44 pt row put the
-    // date line 5 pt lower than every other page's title.
-    <div ref={rowRef} data-testid="today-header" className="flex h-8.5 items-center justify-between gap-3">
-      {/* The greeting was the largest type on the screen and the only thing on it
-          that is not about the running. What the date and the sync age say is
-          worth one muted line; the verdict below is the headline. */}
-      <div className="flex min-w-0 items-center gap-2">
-        <p className={stale ? 'shrink-0 text-footnote text-muted-foreground' : 'min-w-0 truncate text-footnote text-muted-foreground'}>
-        {/* The date only exists after mount, so join the two parts rather than
-            printing a separator with nothing in front of it. */}
-        {/* capitalize only the date - applied to the whole line it turned
-            "synced 13h ago" into "Synced 13h Ago". */}
-        {dateLine ? <span className="capitalize">{dateLine}</span> : null}
-        {dateLine && syncedLine ? ' · ' : null}
-        {syncedLine ?? null}
-        {!dateLine && !syncedLine ? ' ' : null}
-        </p>
-        {stale && ago && lastSyncedAt && <StaleSyncPill ago={ago} late={isSyncLate(lastSyncedAt)} />}
+    // The page header every page has (v4.17): the H1, and the date and the
+    // sync age as its one muted line. The verdict below is still the news.
+    <header data-testid="today-header" className="mb-1.5 flex items-center justify-between gap-4">
+      <div className="flex min-w-0 flex-col gap-1">
+        <h1 className="text-display text-foreground">{t.pages.dashboard.title}</h1>
+        <div data-title-sub className="flex min-h-5 min-w-0 items-center gap-2">
+          <p className={stale ? 'shrink-0 text-sm text-muted-foreground' : 'min-w-0 truncate text-sm text-muted-foreground'}>
+            {/* The date only exists after mount, so join the two parts rather
+                than printing a separator with nothing in front of it. */}
+            {/* capitalize only the date - applied to the whole line it turned
+                "synced 13h ago" into "Synced 13h Ago". */}
+            {dateLine ? <span className="capitalize">{dateLine}</span> : null}
+            {dateLine && syncedLine ? ' · ' : null}
+            {syncedLine ?? null}
+          </p>
+          {stale && ago && lastSyncedAt && <StaleSyncPill ago={ago} late={isSyncLate(lastSyncedAt)} />}
+        </div>
       </div>
       {/* It looked tappable and was a plain div. A link to Progress now: the
           34 pt disc, with a 44 pt hit area (hit-44) that doesn't take space. */}
       <Link
+        ref={avatarRef}
         href="/profile"
         aria-label={t.nav.items.profile}
         className="hit-44 flex size-8.5 shrink-0 items-center justify-center rounded-full active:scale-95"
@@ -153,6 +154,6 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
           {initials(displayName)}
         </span>
       </Link>
-    </div>
+    </header>
   )
 }

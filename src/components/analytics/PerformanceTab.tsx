@@ -2,10 +2,12 @@
 
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
-import { formatClock, formatCountdown, formatDate, formatDeltaFixed, formatDuration, MINUS } from '@/lib/formatters'
-import { deltaColor } from '@/lib/deltaTone'
+import { formatClock, formatDate, formatDeltaFixed, formatDuration, MINUS } from '@/lib/formatters'
+import { deltaColor, deltaTone } from '@/lib/deltaTone'
+import { cardClass } from '@/components/ui/Card'
+import { Stat, StatGrid } from '@/components/ui/Stat'
 import { t } from '@/i18n'
-import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, Sentence, linePath } from './AnalyticsKit'
+import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, STAT_TONE, Sentence, linePath } from './AnalyticsKit'
 import {
   efficiencyView,
   heatView,
@@ -74,34 +76,36 @@ export function timeLabels(dates: string[]): string[] {
   return shown.filter((_, i) => i % step === 0)
 }
 
+/** The tab's stat row (v4.17): VO₂max, threshold and easy pace, each with what its change means. */
 function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null }) {
   const s = t.analytics.cards.summary
   const cells = [
     vo2 && {
       label: s.vo2max,
       value: vo2.value.toFixed(1),
-      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : vo2.delta > 0 ? `+${vo2.delta}` : `${MINUS}${Math.abs(vo2.delta)}`,
-      suffix: vo2.delta ? s.in12wSuffix : '',
-      color: deltaColor('vo2max', vo2.delta),
+      unit: undefined,
+      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${vo2.delta}` : `${MINUS}${Math.abs(vo2.delta)}`),
+      tone: STAT_TONE[deltaTone('vo2max', vo2.delta)],
     },
-    threshold && { label: s.threshold, value: formatClock(threshold.now), note: shiftWords(threshold.delta, PACE_FLAT_SEC), suffix: '', color: deltaColor('pace', threshold.delta) },
-    easy && { label: s.easyPace, value: formatClock(easy.now), note: shiftWords(easy.delta, PACE_FLAT_SEC), suffix: '', color: deltaColor('pace', easy.delta) },
-  ].filter((c): c is { label: string; value: string; note: string | null; suffix: string; color: string } => !!c)
+    threshold && { label: s.threshold, value: formatClock(threshold.now), unit: t.units.perKm, note: shiftWords(threshold.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', threshold.delta)] },
+    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: shiftWords(easy.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', easy.delta)] },
+  ].filter((c) => !!c)
   if (!cells.length) return null
   return (
-    <section className="grid rounded-card border border-[var(--divider)] bg-card" style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }} data-testid="performance-summary">
-      {cells.map((c, i) => (
-        <div key={c.label} className="flex flex-col gap-1 p-3.5" style={i < cells.length - 1 ? { borderRight: '1px solid var(--divider)' } : undefined}>
-          <span className="text-caption uppercase tracking-[0.08em] text-muted-foreground">{c.label}</span>
-          <span className="font-display text-[22px] font-bold leading-none tabular-nums text-foreground">{c.value}</span>
-          {c.note && (
-            <span className="text-caption text-muted-foreground" data-testid="summary-delta">
-              <span style={{ color: c.color }}>{c.note}</span>
-              {c.suffix}
-            </span>
-          )}
-        </div>
-      ))}
+    <section className={cardClass()} data-testid="performance-summary">
+      <StatGrid columns={cells.length} className="gap-3 sm:gap-4">
+        {cells.map((c) => (
+          <Stat
+            key={c.label}
+            size="lg"
+            label={c.label}
+            value={c.value}
+            unit={c.unit}
+            meaning={c.note && <span data-testid="summary-delta" data-tone={c.tone}>{c.note}</span>}
+            tone={c.tone}
+          />
+        ))}
+      </StatGrid>
     </section>
   )
 }
@@ -113,8 +117,8 @@ function Spark({ values }: { values: number[] }) {
   const pad = (max - min) * 0.3 || 1
   // Faster is up: a smaller time sits higher.
   return (
-    <svg width="100%" height="22" viewBox="0 0 100 22" preserveAspectRatio="none" className="block" aria-hidden>
-      <path d={linePath(values.map((v) => -v), -(max + pad), -(min - pad), 100, 22)} fill="none" stroke="var(--muted-foreground)" strokeWidth="1.6" vectorEffect="non-scaling-stroke" />
+    <svg width="100%" height="24" viewBox="0 0 1000 24" preserveAspectRatio="none" className="block" aria-hidden>
+      <path d={linePath(values.map((v) => -v), -(max + pad), -(min - pad), 1000, 24)} fill="none" stroke="var(--muted-foreground)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
     </svg>
   )
 }
@@ -146,64 +150,126 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
       ? (gap > 0 ? s.offTarget : s.onTarget)(names[race.distance]!, formatDuration(Math.round(Math.abs(gap))), formatDuration(race.targetSeconds))
       : null
   return (
-    <Card testId="predictions-card">
-      <CardHead title={s.title} caption={s.caption(t.analytics.cards.period.caption[period]!)} about={s.about} />
-      {(lead || goal) && <Sentence testId="predictions-sentence">{[lead, goal].filter(Boolean).join(' ')}</Sentence>}
-      <div className="flex flex-col">
+    <Card className="gap-2" testId="predictions-card">
+      <CardHead title={s.title} caption={s.caption(words)} about={s.about} />
+      {(lead || goal) && <Sentence className="mb-1.5" testId="predictions-sentence">{[lead, goal].filter(Boolean).join(' ')}</Sentence>}
+      {/* One grid for every row, each row a subgrid, so the time column
+          sizes to the widest time and the times align (v4.17.3): the
+          distance, a spacer, the sparkline right up against the time - no
+          600 px gap between them - and the time with its change. On a
+          phone the spacer goes and the row stays as it was. */}
+      <div className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-x-3 sm:grid-cols-[120px_1fr_minmax(0,360px)_auto] sm:gap-x-3.5" data-testid="predictions-grid">
         {rows.map((row) => (
-          <div key={row.distance} className="grid grid-cols-[62px_minmax(0,1fr)_70px_60px] items-center gap-2.5 border-t border-[var(--divider)] py-2.5" data-testid={`prediction-${row.distance}`}>
-            <span className="text-[14px] font-semibold text-foreground">{names[row.distance]}</span>
+          <div
+            key={row.distance}
+            className="col-span-3 grid grid-cols-subgrid items-center border-t border-border py-2.5 sm:col-span-4"
+            data-testid={`prediction-${row.distance}`}
+          >
+            <span className="text-sm font-medium text-foreground">{names[row.distance]}</span>
+            <span aria-hidden className="hidden sm:block" />
             <Spark values={thin(row.series)} />
-            <span className="text-right font-display text-[16px] font-bold leading-none tabular-nums text-foreground">{formatDuration(Math.round(row.seconds))}</span>
-            {/* Slower is the caution; faster stays quiet, not accent (v4.6). */}
-            {/* One line, signed (v5.5 #21): "33 s / slower" wrapped, and the
-                header already says "change in 12 wk". */}
-            <span
-              className="whitespace-nowrap text-right text-[12px] font-semibold leading-tight tabular-nums"
-              style={{ color: deltaColor('race', row.delta, { value: row.seconds }) }}
-              data-testid="prediction-delta"
-            >
-              {signedChange(row.delta) ?? ''}
+            <span className="flex items-baseline justify-end gap-3" data-testid="prediction-time">
+              <span className="min-w-[72px] text-right text-[15px] font-semibold leading-none text-foreground sm:min-w-0">{formatDuration(Math.round(row.seconds))}</span>
+              {/* Slower is the caution; faster is good news, by the one delta rule. */}
+              {/* One line, signed (v5.5 #21): "33 s / slower" wrapped, and the
+                  header already says "change in 12 weeks". A fixed width, so
+                  the times above and below line up. */}
+              <span
+                className="w-[52px] whitespace-nowrap text-right text-xs leading-tight sm:w-[60px]"
+                style={{ color: deltaColor('race', row.delta, { value: row.seconds }) }}
+                data-testid="prediction-delta"
+              >
+                {signedChange(row.delta) ?? ''}
+              </span>
             </span>
           </div>
         ))}
       </div>
       {race && (
-        <span className="text-[12px] text-muted-foreground">
-          {race.targetSeconds ? s.target(names[race.distance]!) : s.race(names[race.distance]!)}
-          {/* A date, not a warning: ink, not amber (v4.6). */}
-          <span className="font-bold text-foreground">
-            {bare(race.date)} · {formatCountdown(race.daysUntil)}
-          </span>
+        // A date, not a warning: muted, as every caption (v4.17).
+        <span className="pt-1.5 text-xs text-muted-foreground" data-testid="predictions-race">
+          {s.race(names[race.distance]!)}
+          {bare(race.date)} · {s.inDays(race.daysUntil)}
         </span>
       )}
     </Card>
   )
 }
 
-const PACE_STEP = 40
+/** The least air above and below the lines, in s/km; 5% of their range when that is more (v4.17.3). */
+export const PACE_PAD_MIN = 5
+const PACE_PAD_SHARE = 0.05
+/** The domain's limits land on a multiple of this many seconds. */
+const PACE_ROUND = 5
+const PACE_STEPS = [5, 10, 15, 20, 30, 60, 120]
+
+/**
+ * The pace chart's domain and its three y labels (v4.17.3): the drawn paces
+ * - the smoothed lines, not the raw weeks, whose outliers left the lines in
+ * the top half - with 5% of their range either side, at least 5 s/km,
+ * rounded out to 5 s; then three round paces inside, the widest step that
+ * keeps all three in. Faster is up.
+ */
+export function paceAxis(paces: readonly number[]): { lo: number; hi: number; ticks: [number, number, number] } {
+  const min = Math.min(...paces)
+  const max = Math.max(...paces)
+  const pad = Math.max(PACE_PAD_MIN, (max - min) * PACE_PAD_SHARE)
+  const lo = Math.floor((min - pad) / PACE_ROUND) * PACE_ROUND
+  const hi = Math.ceil((max + pad) / PACE_ROUND) * PACE_ROUND
+  const step = [...PACE_STEPS].reverse().find((k) => k <= (hi - lo) / 3) ?? PACE_STEPS[0]!
+  const mid = Math.round((lo + hi) / 2 / step) * step
+  return { lo, hi, ticks: [mid - step, mid, mid + step] }
+}
+
+/** A pace sentence part with its figure in bold, coloured by what the change means. */
+function PacePart({ parts, delta }: { parts: readonly [string, string, string]; delta: number | null }) {
+  return (
+    <>
+      {parts[0]}
+      <b style={delta === null ? undefined : { color: deltaColor('pace', delta) }}>{parts[1]}</b>
+      {parts[2]}
+    </>
+  )
+}
 
 function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPoint[]; easy: PaceShift | null; workout: PaceShift | null; onShift: (step: 1 | -1) => void }) {
   const s = t.analytics.cards.paceTrend
-  const paces = [...weeks.map((w) => w.easyPace), ...weeks.map((w) => w.hardPace)].filter((v): v is number => v !== null)
+  // The lines as drawn, so the domain fits what is on the chart.
+  const easyLine = smooth(weeks.map((w) => w.easyPace))
+  const hardLine = smooth(weeks.map((w) => w.hardPace))
+  const paces = [...easyLine, ...hardLine].filter((v): v is number => v !== null)
   if (!easy || paces.length < 2) return null
-  const lo = Math.floor(Math.min(...paces) / PACE_STEP) * PACE_STEP
-  const hi = Math.max(lo + PACE_STEP * 3, Math.ceil(Math.max(...paces) / PACE_STEP) * PACE_STEP)
-  const ticks = Array.from({ length: Math.round((hi - lo) / PACE_STEP) + 1 }, (_, i) => lo + i * PACE_STEP)
-  const W = 280
+  const { lo, hi, ticks } = paceAxis(paces)
+  const W = 1000
   const H = 120
+  // Faster is up: a pace's height from the top is its share of the way to the slowest.
+  const yOf = (pace: number) => (H * (pace - lo)) / (hi - lo)
   // Faster is up: the axis runs from the slowest pace at the bottom.
-  const path = (pick: (w: WeeklyTrendPoint) => number | null) => linePath(smooth(weeks.map(pick)).map((v) => (v === null ? null : -v)), -hi, -lo, W, H)
+  const path = (line: (number | null)[]) => linePath(line.map((v) => (v === null ? null : -v)), -hi, -lo, W, H)
   const shift = easy.delta === null || Math.abs(easy.delta) < 1 ? null : easy.delta
   const easyParts = shift === null ? s.easyHeld : shift < 0 ? s.easyFaster(`${Math.abs(shift)} s`) : s.easySlower(`${shift} s`)
   const wShift = workout?.delta ?? null
-  const workoutLine = wShift === null ? '' : Math.abs(wShift) < 5 ? s.workoutHeld : wShift < 0 ? s.workoutFaster(`${Math.abs(wShift)} s`) : s.workoutSlower(`${wShift} s`)
+  const wHeld = wShift !== null && Math.abs(wShift) < 5
+  const workoutParts = wShift === null ? null : wHeld ? s.workoutHeld : wShift < 0 ? s.workoutFaster(`${Math.abs(wShift)} s`) : s.workoutSlower(`${wShift} s`)
   return (
     <Card testId="pace-trend-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      <BoldSentence parts={[easyParts[0], easyParts[1], `${easyParts[2]}${workoutLine}`]} boldColor={shift === null ? undefined : deltaColor('pace', shift)} />
-      <div className="grid grid-cols-[minmax(0,1fr)_30px] gap-1.5">
+      <Sentence>
+        <PacePart parts={easyParts} delta={shift} />
+        {workoutParts && <PacePart parts={workoutParts} delta={wHeld ? null : wShift} />}
+      </Sentence>
+      {/* Three paces up the left (v4.17.2), outside the scrub so a touch
+          still reads the week under it; higher is faster. */}
+      <div className="flex gap-2">
+        <div className="relative w-8 shrink-0 text-[11px] leading-none text-muted-foreground" style={{ height: H }} aria-hidden data-testid="pace-axis">
+          {ticks.map((pace) => (
+            <span key={pace} className="absolute right-0 -translate-y-1/2" style={{ top: `${(yOf(pace) / H) * 100}%` }}>
+              {formatClock(pace)}
+            </span>
+          ))}
+        </div>
         <ChartScrub
+          className="min-w-0 flex-1"
           count={weeks.length}
           mode="line"
           onShift={onShift}
@@ -213,23 +279,25 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
           }}
         >
           <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
-            {ticks.map((_, i) => (
-              <line key={i} x1="0" x2={W} y1={(H * i) / (ticks.length - 1)} y2={(H * i) / (ticks.length - 1)} stroke="var(--divider)" vectorEffect="non-scaling-stroke" />
+            {ticks.map((pace) => (
+              <line key={pace} x1="0" x2={W} y1={yOf(pace)} y2={yOf(pace)} stroke="var(--divider)" vectorEffect="non-scaling-stroke" data-testid="pace-gridline" />
             ))}
-            <path d={path((w) => w.hardPace)} fill="none" stroke="var(--zone-4)" strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
-            <path d={path((w) => w.easyPace)} fill="none" stroke="var(--zone-2)" strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
+            {/* Workouts Z4, easy runs Z2: the two run types' own zones. */}
+            <path d={path(hardLine)} fill="none" stroke="var(--zone-4)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            <path d={path(easyLine)} fill="none" stroke="var(--zone-2)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
           </svg>
         </ChartScrub>
-        <div className="-my-[5px] flex flex-col justify-between text-caption leading-none text-muted-foreground" aria-hidden>
-          {ticks.map((tick) => (
-            <span key={tick}>{formatClock(tick)}</span>
-          ))}
-        </div>
       </div>
-      <AxisLabels labels={timeLabels(weeks.map((w) => w.date))} className="pr-9" />
-      <Legend className="gap-x-4 text-[12px]">
-        <LegendItem swatch="dot" color="var(--zone-2)"><span className="font-semibold text-foreground">{s.easy} {formatClock(easy.now)}</span></LegendItem>
-        {workout && <LegendItem swatch="dot" color="var(--zone-4)"><span className="font-semibold text-foreground">{s.workout} {formatClock(workout.now)}</span></LegendItem>}
+      <AxisLabels className="ml-10" labels={timeLabels(weeks.map((w) => w.date))} />
+      <Legend className="gap-x-4">
+        <LegendItem swatch="dot" color="var(--zone-2)">
+          {s.easy} <b className="font-semibold text-foreground">{formatClock(easy.now)}</b>
+        </LegendItem>
+        {workout && (
+          <LegendItem swatch="dot" color="var(--zone-4)">
+            {s.workout} <b className="font-semibold text-foreground">{formatClock(workout.now)}</b>
+          </LegendItem>
+        )}
       </Legend>
     </Card>
   )
@@ -243,8 +311,8 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   const values = [...view.adjusted, ...view.measured].filter((v): v is number => v !== null)
   const min = Math.min(...values) - 0.05
   const max = Math.max(...values) + 0.05
-  const W = 311
-  const H = 90
+  const W = 1000
+  const H = 80
   const d = (v: number | null) => (v === null ? '–' : formatDeltaFixed(v, 2))
   const sentence =
     view.trend === 'dipping'
@@ -261,9 +329,15 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
         note={
           view.delta4w !== null || view.delta12w !== null ? (
             <span data-testid="efficiency-deltas">
-              <span style={{ color: deltaColor('efficiency', view.delta4w) }}>{d(view.delta4w)}</span>
-              {s.in4w} · <span style={{ color: deltaColor('efficiency', view.delta12w) }}>{d(view.delta12w)}</span>
-              {s.in12w}
+              <span style={{ color: deltaColor('efficiency', view.delta4w) }}>
+                {d(view.delta4w)}
+                {s.in4w}
+              </span>
+              {' · '}
+              <span style={{ color: deltaColor('efficiency', view.delta12w) }}>
+                {d(view.delta12w)}
+                {s.in12w}
+              </span>
             </span>
           ) : undefined
         }
@@ -276,25 +350,23 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
         readout={(i) => [t.analytics.cards.scrubWeek(bare(view.dates[i]!)), view.adjusted[i] != null && `${s.adjusted} ${view.adjusted[i]!.toFixed(2)}`].filter(Boolean).join(' · ')}
       >
         <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
-          <line x1="0" x2={W} y1={H / 2} y2={H / 2} stroke="var(--divider)" vectorEffect="non-scaling-stroke" />
-          <line x1="0" x2={W} y1={H} y2={H} stroke="var(--divider)" vectorEffect="non-scaling-stroke" />
-          <path d={linePath(smooth(view.measured), min, max, W, H)} fill="none" stroke="var(--muted-foreground)" strokeWidth="1.6" strokeDasharray="4 3" vectorEffect="non-scaling-stroke" />
-          <path d={linePath(smooth(view.adjusted), min, max, W, H)} fill="none" stroke="var(--foreground)" strokeWidth="2.4" vectorEffect="non-scaling-stroke" />
+          <path d={linePath(smooth(view.measured), min, max, W, H)} fill="none" stroke="var(--muted-foreground)" strokeWidth="1.5" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
+          <path d={linePath(smooth(view.adjusted), min, max, W, H)} fill="none" stroke="var(--foreground)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
         </svg>
       </ChartScrub>
-      <Legend className="gap-x-4 text-[12px]">
+      <Legend className="gap-x-4">
         <LegendItem swatch="line" color="var(--foreground)">{s.adjusted}</LegendItem>
         <LegendItem swatch="dash" color="var(--muted-foreground)">{s.measured}</LegendItem>
       </Legend>
       {rpe && (
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 border-t border-[var(--divider)] pt-3" data-testid="rpe-row">
-          <div className="flex flex-col gap-[3px]">
-            <span className="text-[14px] font-semibold text-foreground">{s.rpe}</span>
-            <span className="text-[12px] text-muted-foreground">{s.rpeLine(rpe.avg.toFixed(1), s.rpeTrend[rpe.trend]!)}</span>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 border-t border-border pt-3" data-testid="rpe-row">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium text-foreground">{s.rpe}</span>
+            <span className="text-xs text-muted-foreground">{s.rpeLine(rpe.avg.toFixed(1), s.rpeTrend[rpe.trend]!)}</span>
           </div>
           <div className="flex h-[26px] items-end gap-[3px]" aria-hidden>
             {rpe.bars.map((v, i) => (
-              <div key={i} className="w-[7px] rounded-[2px]" style={{ height: v === null ? 2 : Math.max(2, (v / rpeMax) * 24), background: i === rpe.bars.length - 1 ? 'var(--foreground)' : 'var(--band)' }} />
+              <div key={i} className="w-[7px] rounded-[2px]" style={{ height: v === null ? 2 : Math.max(2, (v / rpeMax) * 24), background: i === rpe.bars.length - 1 ? 'var(--foreground)' : 'var(--line-2)' }} />
             ))}
           </div>
         </div>
@@ -303,6 +375,20 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   )
 }
 
+/** A heat loss past this many seconds a km is worth a caution; less stays muted. */
+export const HEAT_WARN_SEC = 10
+
+/** A band's colour by what its loss means: the best band pos, over 10 s warn, the rest muted. */
+export function heatColor(row: { best: boolean; cost: number | null }): string {
+  if (row.best) return 'var(--pos)'
+  return row.cost !== null && row.cost > HEAT_WARN_SEC ? 'var(--warn)' : 'var(--muted-foreground)'
+}
+
+/**
+ * Heat cost, redesigned (v4.17): each band's bar is the seconds a km it loses
+ * against your best temperature band at the same heart rate. The best band
+ * has no bar and reads "best" in pos.
+ */
 function HeatCostCard({ data }: { data: HeatImpactData | null }) {
   const s = t.analytics.cards.heatCost
   const view = heatView(data)
@@ -310,39 +396,39 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
   const labels = t.analytics.charts.heatImpact.bands
   const range = view.warm ? (view.warm.lo === view.warm.hi ? `${view.warm.hi}` : `${view.warm.lo}–${view.warm.hi}`) : null
   return (
-    <Card testId="heat-card">
+    <Card className="gap-2.5" testId="heat-card">
       <CardHead title={s.title} caption={s.caption(view.refHeartRate)} about={s.about} />
-      {view.warm === null ? <Sentence>{s.noWarm}</Sentence> : view.warm.hi < 5 ? <Sentence>{s.little}</Sentence> : <BoldSentence parts={s.lose(range!)} />}
-      <div className="flex flex-col gap-[9px]">
-        {view.rows.map((row) => (
-          <div key={row.id} className="grid grid-cols-[58px_minmax(0,1fr)_84px] items-center gap-2.5 text-[13px]" data-testid={`heat-${row.id}`}>
-            <span className="text-muted-foreground">{labels[row.id]?.replace('-', '–')}</span>
-            <div className="relative h-3.5 rounded-[4px] bg-[var(--track)]">
-              {row.cost !== null && (
-                <div
-                  className="absolute inset-y-0 left-0 rounded-[4px]"
-                  style={{
-                    // Bars are the neutral comparison grey; the best band, the
-                    // reference, is a short ink tick (v4.6: no accent here).
-                    width: row.best ? 3 : `${(row.cost / view.scale) * 100}%`,
-                    background: row.best ? 'var(--foreground)' : 'var(--series-2)',
-                  }}
-                />
-              )}
+      <div className="mb-1">
+        {view.warm === null ? <Sentence>{s.noWarm}</Sentence> : view.warm.hi < 5 ? <Sentence>{s.little}</Sentence> : <BoldSentence parts={s.lose(range!)} />}
+      </div>
+      <div className="flex flex-col gap-2.5">
+        {view.rows.map((row) => {
+          const color = heatColor(row)
+          return (
+            <div key={row.id} className="grid grid-cols-[60px_minmax(0,1fr)_96px] items-center gap-3 text-[13px] sm:grid-cols-[72px_minmax(0,1fr)_110px] sm:gap-3.5" data-testid={`heat-${row.id}`}>
+              <span className="whitespace-nowrap text-[var(--text-2)]">{labels[row.id]}</span>
+              <div className="h-2 rounded-full bg-[var(--surface-2)]">
+                {row.cost !== null && !row.best && (
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(1, row.cost / view.scale) * 100}%`, background: color }} data-testid="heat-bar" />
+                )}
+              </div>
+              <span className="whitespace-nowrap text-right">
+                {row.pace === null ? (
+                  <>
+                    <b className="font-semibold text-foreground">—</b> <span className="text-muted-foreground">{s.noRuns}</span>
+                  </>
+                ) : (
+                  <>
+                    <b className="font-semibold text-foreground">{formatClock(row.pace)}</b>{' '}
+                    <span style={{ color }} data-testid="heat-loss">
+                      {row.best ? s.best : s.plus(row.cost!)}
+                    </span>
+                  </>
+                )}
+              </span>
             </div>
-            <span className="text-right tabular-nums text-foreground">
-              {row.pace === null ? (
-                <>
-                  <b>—</b> <span className="text-muted-foreground">{s.noRuns}</span>
-                </>
-              ) : (
-                <>
-                  <b>{formatClock(row.pace)}</b> <span className="text-muted-foreground">{row.best ? s.best : s.plus(row.cost!)}</span>
-                </>
-              )}
-            </span>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </Card>
   )
@@ -366,7 +452,7 @@ export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, 
   const easy = paceShift(inWindow, (w) => w.easyPace)
   const workout = paceShift(inWindow, (w) => w.hardPace)
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3.5">
       <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} />
       <PredictionsCard days={predictions} window={window} period={period} race={window.live ? race : null} />
       <PaceTrendCard weeks={inWindow} easy={easy} workout={workout} onShift={onShift} />

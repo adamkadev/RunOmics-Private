@@ -1,21 +1,26 @@
 import type { Locator } from '@playwright/test'
 import { test, expect } from './fixtures'
 
-test('heatmap puts the map first, the card under it, and nothing on the routes but expand', async ({ page }) => {
+test('heatmap: title, chips, a 560 pt map with its legend and licence on it, the card under it (v4.17)', async ({ page }) => {
   await page.goto('/map')
   await expect(page.getByRole('heading', { name: 'Heatmap', exact: true })).toBeVisible()
+  await expect(page.getByText(/runs with GPS/)).toBeVisible()
+  // A top-level page on desktop: the sidebar holds it, nothing to go back to.
+  await expect(page.getByRole('button', { name: 'Activities' })).toBeHidden()
 
   await expect(page.getByText('Rare')).toBeVisible()
   await expect(page.getByText('Frequent')).toBeVisible()
+  await expect(page.getByTestId('map-attribution')).toContainText('OpenStreetMap')
   await expect(page.getByRole('button', { name: 'World view' })).toHaveCount(0)
 
   const map = page.getByRole('img', { name: 'Heatmap' })
   const card = page.getByTestId('territory-card')
-  // Two stats, runs and km (v5.6 #5): "half of runs within" repeated the headline.
-  await expect(card).toContainText('km')
-  await expect(card).not.toContainText('half of runs within')
+  // Runs, km and the median reach the sentence's ring is drawn at.
+  await expect(card).toContainText('ring')
+  await expect(card).toContainText('Median reach')
   const mapBox = (await map.boundingBox())!
-  expect(Math.round(mapBox.height)).toBe(360)
+  // 560 pt with its 1 pt border inside.
+  expect(Math.round(mapBox.height)).toBe(558)
   expect((await card.boundingBox())!.y).toBeGreaterThan(mapBox.y + mapBox.height)
 
   await page.getByRole('button', { name: 'Fullscreen' }).click()
@@ -27,8 +32,8 @@ test('heatmap puts the map first, the card under it, and nothing on the routes b
 test('heatmap area list switches the selected area', async ({ page }) => {
   await page.goto('/map')
 
-  // By its purpose, not its contents: the chip shows the selected zone and its
-  // route count, both of which are data, and the count lost its "runs" suffix.
+  // By its purpose, not its contents: the chip shows the selected zone's
+  // name, which is data.
   const zoneChip = page.getByRole('button', { name: /^Area:/ })
   await zoneChip.click()
 

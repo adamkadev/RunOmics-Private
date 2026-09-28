@@ -1,11 +1,7 @@
 import { DAY_MS } from '@/lib/calendarDate'
 import type { PlanPhaseRange, TrainingPlanPhase } from '@/application/usecases/GetTrainingPlan'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-
-const TRACK = 'color-mix(in srgb, var(--foreground) 8%, transparent)'
-// "You are here" is the accent. The phases used to wear their own hues, and
-// Base's was the fixed emerald that elsewhere means good news.
-const PROGRESS = 'var(--accent-text)'
 
 const PHASE_LABEL: Record<TrainingPlanPhase, string> = {
   base: t.plan.phaseTrack.base,
@@ -15,6 +11,10 @@ const PHASE_LABEL: Record<TrainingPlanPhase, string> = {
   raceDay: t.plan.phaseTrack.raceDay,
 }
 
+// The narrowest a segment draws, so a one-week race phase still holds its
+// name on a phone; the rest share the width by their length.
+const MIN_SEGMENT = '2.25rem'
+
 function days(from: string, to: string): number {
   return Math.max(
     1,
@@ -23,7 +23,11 @@ function days(from: string, to: string): number {
 }
 
 /**
- * Whether the week reads as "current" for this phase is a question about the
+ * The plan's phases as labelled segments sized by their length (v4.17): "Base
+ * · 5 wk", "Build · 4 wk". "You are here" is the accent - the current phase's
+ * fill and its label - and the phases wear no hues of their own.
+ *
+ * Whether the week reads as "current" for a phase is a question about the
  * whole displayed week, not one reference date - a phase that starts mid-week
  * (say Tuesday) still made the week's own header call that week "Base," so a
  * track anchored to Monday alone disagreed with its own header. A range is
@@ -35,46 +39,31 @@ export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPha
   if (ranges.length < 2) return null
 
   return (
-    <div className="mt-3.5">
-      <div className="flex items-center gap-1">
-        {ranges.map((r) => {
-          const color = PROGRESS
-          const isPast = r.endDate < weekStart
-          const isCurrent = !isPast && r.startDate <= weekEnd
-          const progress = isCurrent
-            ? Math.min(100, Math.max(0, (days(r.startDate, weekEnd) / days(r.startDate, r.endDate)) * 100))
-            : 0
-          const background = isPast
-            ? color
-            : isCurrent
-              ? `linear-gradient(90deg, ${color} ${progress}%, ${TRACK} ${progress}%)`
-              : TRACK
-          return (
-            <div
-              key={r.startDate}
-              className="h-[5px] rounded-[3px]"
-              style={{ flex: days(r.startDate, r.endDate), background }}
-            />
-          )
-        })}
-      </div>
-      {/* The phase line above names the current phase (M11): the names stay
-          for screen readers, off the screen. */}
-      <div className="sr-only">
-        {ranges.map((r) => {
-          const isPast = r.endDate < weekStart
-          const isCurrent = !isPast && r.startDate <= weekEnd
-          return (
-            <span
-              key={r.startDate}
-              className="min-w-0 truncate"
-              style={{ flex: days(r.startDate, r.endDate), color: isCurrent ? PROGRESS : 'var(--subtle)' }}
-            >
-              {PHASE_LABEL[r.phase]}
+    <div
+      data-testid="phase-track"
+      className="grid gap-1"
+      style={{ gridTemplateColumns: ranges.map((r) => `minmax(${MIN_SEGMENT}, ${days(r.startDate, r.endDate)}fr)`).join(' ') }}
+    >
+      {ranges.map((r) => {
+        const length = days(r.startDate, r.endDate)
+        const isPast = r.endDate < weekStart
+        const isCurrent = !isPast && r.startDate <= weekEnd
+        const progress = isPast ? 100 : isCurrent ? Math.min(100, Math.max(0, (days(r.startDate, weekEnd) / length) * 100)) : 0
+        // A one-week phase is its name alone, as the race week is.
+        const weeks = Math.round(length / 7)
+        return (
+          <div key={r.startDate} className="flex min-w-0 flex-col gap-1.5" data-current={isCurrent ? '' : undefined}>
+            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+              <div className="h-full bg-accent" style={{ width: `${progress}%` }} />
+            </div>
+            <span className={cn('truncate text-caption', isCurrent ? 'font-semibold text-accent-text' : 'text-muted-foreground')}>
+              <span>{PHASE_LABEL[r.phase]}</span>
+              {/* The lengths are for the desktop width; on a phone the names alone fit. */}
+              {weeks >= 2 && <span className="hidden sm:inline"> · {t.plan.phaseTrack.weeks(weeks)}</span>}
             </span>
-          )
-        })}
-      </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

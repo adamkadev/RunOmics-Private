@@ -6,7 +6,7 @@ import { ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import type { SimilarRun, SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { lineInterpolation } from '@/domain/timeWindow'
@@ -17,6 +17,9 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const LIST_MAX_ROWS = 4
+
+/** The athlete's own runs, so the line is the accent (v4.17); the record line stays neutral. */
+const ROUTE_LINE = 'var(--accent)'
 
 interface ChartPoint {
   id: string
@@ -35,7 +38,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   if (!active || !p) return null
   return (
     <TooltipCard label={p.label}>
-      <p className="text-sm" style={{ color: CHART_COLORS.pace }}>
+      <p className="text-sm text-accent-text">
         {formatPace(p.pace)}
       </p>
     </TooltipCard>
@@ -57,8 +60,8 @@ function RunDot({ cx, cy, payload, onSelect }: DotProps) {
       cx={cx}
       cy={cy}
       r={isCurrent ? 5.5 : 3.5}
-      fill={isCurrent ? CHART_COLORS.pace : 'var(--card)'}
-      stroke={CHART_COLORS.pace}
+      fill={isCurrent ? ROUTE_LINE : 'var(--card)'}
+      stroke={ROUTE_LINE}
       strokeWidth={2}
       onClick={isCurrent ? undefined : () => onSelect?.(id)}
       style={isCurrent ? undefined : { cursor: 'pointer' }}
@@ -92,14 +95,14 @@ function RunRow({ run, bestPace }: { run: SimilarRun; bestPace: number }) {
   )
 
   if (run.isCurrent) {
-    return <li className="flex items-center gap-2.5 rounded-control bg-[var(--segmented-track)] px-2 py-1.5">{content}</li>
+    return <li className="flex items-center gap-2.5 rounded-control bg-[var(--surface-2)] px-2 py-1.5">{content}</li>
   }
 
   return (
     <li>
       <Link
         href={`/activities/${run.id}`}
-        className="flex min-h-11 items-center gap-2.5 rounded-control px-2 py-1.5 transition-colors hover:bg-foreground/[0.04]"
+        className="flex min-h-11 items-center gap-2.5 rounded-control px-2 py-1.5 transition-colors hover:bg-[var(--surface-2)]"
       >
         {content}
       </Link>
@@ -135,15 +138,15 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
   // One row on Overview, opening to the chart and the ranking: the card used to
   // be the first thing after a run, which put other runs ahead of this one.
   return (
-    <GlassSurface variant="card" className="rounded-card-sm">
+    <section className={cardClass({ padding: 'none' })}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        className="flex min-h-11 w-full items-center justify-between gap-3 px-5 py-3.5 text-left"
       >
         <span className="min-w-0">
-          <span className="block text-sm font-semibold text-foreground">{s.rowTitle(data.currentRank, data.count)}</span>
+          <span className="block text-[15px] font-semibold text-foreground">{s.rowTitle(data.currentRank, data.count)}</span>
           <span className="block text-xs text-muted-foreground">
             {deltaSec <= 0 ? s.rowBest : s.rowDelta(deltaSec)}
           </span>
@@ -151,12 +154,12 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
         <ChevronRight
           size={16}
           aria-hidden="true"
-          className={cn('shrink-0 text-subtle transition-transform', open && 'rotate-90')}
+          className={cn('shrink-0 text-muted-foreground transition-transform', open && 'rotate-90')}
         />
       </button>
 
       {open && (
-        <div className="border-t border-border px-4 pb-4 pt-3">
+        <div className="border-t border-border px-5 pb-[18px] pt-3">
           <p className="mb-3 text-sm text-muted-foreground">{s.summary(data.count, data.currentRank)}</p>
 
           <ChartFigure summary={s.chartSummary(data.count, bestPaceLabel)}>
@@ -182,8 +185,8 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
                 <Line
                   type={lineInterpolation(chartData.length)}
                   dataKey="pace"
-                  stroke={CHART_COLORS.pace}
-                  strokeWidth={2.5}
+                  stroke={ROUTE_LINE}
+                  strokeWidth={2}
                   dot={<RunDot onSelect={(id) => router.push(`/activities/${id}`)} />}
                   isAnimationActive={false}
                 />
@@ -199,6 +202,6 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
           </ul>
         </div>
       )}
-    </GlassSurface>
+    </section>
   )
 }

@@ -7,7 +7,7 @@ import { t } from '@/i18n'
 
 type Ctx = CanvasRenderingContext2D
 
-/** The app's two families: Space Grotesk for titles and numbers, the system face for the rest. */
+/** The card's two stacks: the app's Geist for titles and numbers, the system face for the rest. */
 export interface ShareFonts {
   display: string
   text: string

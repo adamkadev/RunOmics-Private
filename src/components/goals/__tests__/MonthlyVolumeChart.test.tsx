@@ -98,7 +98,7 @@ describe('MonthlyVolumeChart collapsed axis', () => {
     expect(container.querySelectorAll('[data-testid="target-rule"]')).toHaveLength(THIS_MONTH)
   })
 
-  it('outlines the running month instead of filling it, and states how far into it we are', () => {
+  it('dashes the running month instead of filling it, and states how far into it we are', () => {
     const { container } = render(
       <MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} today={TODAY} />,
     )
@@ -113,14 +113,16 @@ describe('MonthlyVolumeChart collapsed axis', () => {
 
     const bars = Array.from(container.querySelectorAll<HTMLElement>('[title]'))
     const running = bars[bars.length - 1]!
-    expect(running.style.border).toMatch(/1px solid/)
+    expect(running.style.border).toMatch(/1px dashed/)
     expect(running.style.background).toMatch(/14%/)
 
     const finished = bars[0]!
     expect(finished.style.border).toBe('')
   })
 
-  it('draws behind in one hue the bar and the label share, and it is amber not red (v5.5 #17)', () => {
+  // v4.17: a month's km are the athlete's own data - the accent at or above
+  // its target, the accent at 40% below it, as the Analytics weekly bars.
+  it('draws a short month in the accent at 40%, never a status colour', () => {
     const { container } = render(
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 40, status: 'behind', progress: null }]}
@@ -129,14 +131,10 @@ describe('MonthlyVolumeChart collapsed axis', () => {
       />,
     )
     const bar = container.querySelector<HTMLElement>('[title]')!
-    // #f5b13d, matching STATUS.warning which the behind icon and label now use -
-    // a missed volume target is caution, the same severity as the annual
-    // projection's amber "Behind", not the red the app reserves for injury risk.
-    expect(bar.style.background).toBe('var(--tone-caution)')
-    expect(bar.style.background).not.toBe('rgb(239, 68, 68)')
+    expect(bar.style.background).toBe('color-mix(in srgb, var(--accent) 40%, transparent)')
   })
 
-  it('draws a hit month in ink, never the accent or a zone green (v5.5 #17)', () => {
+  it('draws a hit month in the full accent', () => {
     const { container } = render(
       <MonthlyVolumeChart
         monthlyGoals={[{ month: 1, targetKm: 165, actualKm: 220, status: 'ahead', progress: null }]}
@@ -145,6 +143,6 @@ describe('MonthlyVolumeChart collapsed axis', () => {
       />,
     )
     const bar = container.querySelector<HTMLElement>('[title]')!
-    expect(bar.style.background).toBe('var(--foreground)')
+    expect(bar.style.background).toBe('var(--accent)')
   })
 })

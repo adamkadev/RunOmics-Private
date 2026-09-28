@@ -1,10 +1,10 @@
 'use client'
 
-import type { CSSProperties } from 'react'
-import { Check } from 'lucide-react'
+import type { ReactNode } from 'react'
 import type { YearData } from '@/application/usecases/GetGoalsData'
-import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatDate, formatDuration, formatSignedDuration } from '@/lib/formatters'
+import { cardClass } from '@/components/ui/Card'
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { formatDate, formatDuration } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { seasonRaceRows, type SeasonRaceRow } from './SeasonRaces'
@@ -17,6 +17,7 @@ export interface SeasonBlock {
   weeks: number
 }
 
+const TITLE = 'text-[15px] font-semibold text-foreground'
 
 function utcDay(iso: string): number {
   return Date.parse(`${iso}T00:00:00Z`)
@@ -31,208 +32,156 @@ export function yearFraction(iso: string, year: number): number {
 
 const pct = (fraction: number) => `${(fraction * 100).toFixed(2)}%`
 
-/** A done race: a solid ink dot with its check (v5.5 #17: races are data, not "now"). */
-function DoneDot({ size = 16 }: { size?: number }) {
+/** A mark on the strip: its label over it, centred on its date. */
+function Mark({ at, label, labelClassName, children, testId }: { at: number; label: string; labelClassName?: string; children: ReactNode; testId?: string }) {
   return (
-    <span
-      aria-hidden
-      className="flex shrink-0 items-center justify-center rounded-full bg-foreground text-background"
-      style={{ width: size, height: size }}
-    >
-      <Check size={size - 6} strokeWidth={3.5} />
+    <span className="absolute top-0 flex -translate-x-1/2 flex-col items-center gap-1.5" style={{ left: pct(at) }} data-testid={testId}>
+      <span className={cn('whitespace-nowrap text-[11px] font-semibold leading-[14px] text-foreground', labelClassName)}>{label}</span>
+      {children}
     </span>
   )
 }
 
-/** A race still ahead: an ink ring. A date is not a warning (v5.5 #17). */
-function UpcomingRing({ size = 16 }: { size?: number }) {
-  return (
-    <span aria-hidden className="block shrink-0 rounded-full bg-card" style={{ width: size, height: size, border: '2px solid var(--foreground)' }} />
-  )
-}
-
-/** Jan-Dec as one strip: the year so far, today, the block and the races. */
-function SeasonStrip({ year, today, rows, block }: { year: number; today: string; rows: SeasonRaceRow[]; block: SeasonBlock | null }) {
+/**
+ * Jan-Dec as one strip (v4.17): the year so far in the accent to today, a
+ * race done in pos, one ahead an outlined circle.
+ */
+function SeasonStrip({ year, today, rows }: { year: number; today: string; rows: SeasonRaceRow[] }) {
   const thisYear = Number(today.slice(0, 4)) === year
   const done = today.slice(0, 4) > String(year) ? 1 : thisYear ? yearFraction(today, year) : 0
-  const initials = new Intl.DateTimeFormat(t.locale, { month: 'narrow', timeZone: 'UTC' })
-  const showBlock = block !== null && Number(block.raceDate.slice(0, 4)) === year
-  const bandFrom = showBlock ? yearFraction(block.startDate < `${year}-01-01` ? `${year}-01-01` : block.startDate, year) : 0
-  const bandTo = showBlock ? yearFraction(block.raceDate, year) : 0
+  const months = new Intl.DateTimeFormat(t.locale, { month: 'short', timeZone: 'UTC' })
 
-  const line: CSSProperties = { top: 30 }
   return (
-    <div className="relative mt-2 h-[62px]" data-testid="season-strip" aria-hidden>
-      {/* The track, and the year run so far. */}
-      <span className="absolute inset-x-0 h-0.5 -translate-y-1/2 rounded-full bg-border" style={line} />
-      <span className="absolute left-0 h-0.5 -translate-y-1/2 rounded-full bg-muted-foreground" style={{ ...line, width: pct(done) }} />
-      {showBlock && (
-        <span
-          data-testid="season-block"
-          className="absolute h-3.5 -translate-y-1/2 rounded-[4px]"
-          style={{
-            ...line,
-            left: pct(bandFrom),
-            width: pct(Math.max(0, bandTo - bandFrom)),
-            // The block is a span of time: the faint track grey (v5.5 #17).
-            background: 'var(--track)',
-          }}
-        />
-      )}
-      {thisYear && (
-        <>
-          <span className="absolute h-[18px] w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground" style={{ ...line, left: pct(done) }} />
-          <span className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-caption font-bold text-foreground" style={{ left: pct(done) }}>
-            {t.goals.season.today}
-          </span>
-        </>
-      )}
-      {rows.map((row) => {
-        const at = yearFraction(row.date!, year)
-        const upcoming = row.kind === 'scheduled'
-        return (
-          <span key={row.distance} data-testid={`season-marker-${upcoming ? 'upcoming' : 'done'}`}>
-            <span
-              className="absolute top-0 -translate-x-1/2 whitespace-nowrap text-caption font-bold"
-              style={{ left: pct(at), color: 'var(--foreground)' }}
-            >
-              {row.short}
-            </span>
-            <span className="absolute -translate-x-1/2 -translate-y-1/2" style={{ ...line, left: pct(at) }}>
-              {upcoming ? <UpcomingRing /> : <DoneDot />}
-            </span>
-          </span>
-        )
-      })}
-      {/* Month initials under the strip, each at its month's start. */}
-      {Array.from({ length: 12 }, (_, month) => (
-        <span
-          key={month}
-          className="absolute bottom-0 text-caption font-semibold leading-none text-muted-foreground"
-          style={{ left: pct(yearFraction(`${year}-${String(month + 1).padStart(2, '0')}-01`, year)) }}
-        >
-          {initials.format(new Date(Date.UTC(year, month, 1)))}
-        </span>
-      ))}
+    <div aria-hidden>
+      <div className="relative h-11" data-testid="season-strip">
+        <span className="absolute inset-x-0 top-[26px] h-0.5 rounded-full bg-[var(--line-2)]" />
+        <span className="absolute left-0 top-[26px] h-0.5 rounded-full bg-accent" style={{ width: pct(done) }} data-testid="season-done" />
+        {rows.map((row) => {
+          const upcoming = row.kind === 'scheduled'
+          return (
+            <Mark key={row.distance} at={yearFraction(row.date!, year)} label={row.short} testId={`season-marker-${upcoming ? 'upcoming' : 'done'}`}>
+              {upcoming ? (
+                <span className="box-border block size-3 rounded-full border-2 border-foreground bg-card" />
+              ) : (
+                <span className="block size-3 rounded-full bg-[var(--pos)]" />
+              )}
+            </Mark>
+          )
+        })}
+        {thisYear && (
+          <Mark at={done} label={t.goals.season.today} labelClassName="text-accent-text" testId="season-today">
+            <span className="block h-3.5 w-0.5 bg-accent" />
+          </Mark>
+        )}
+      </div>
+      <div className="mt-1 grid grid-cols-12 text-[11px] text-muted-foreground">
+        {Array.from({ length: 12 }, (_, month) => (
+          <span key={month} className="whitespace-nowrap">{months.format(new Date(Date.UTC(year, month, 1))).replace(/\.$/, '')}</span>
+        ))}
+      </div>
     </div>
   )
 }
 
-function Marker({ kind }: { kind: 'upcoming' | 'done' | 'today' }) {
-  if (kind === 'today') return <span aria-hidden className="mx-auto block h-0.5 w-3 rounded-full bg-foreground" />
-  return kind === 'upcoming' ? <UpcomingRing /> : <DoneDot />
+/** A time's meaning under it: the gap to target, coloured by what it means. */
+function outcome(row: SeasonRaceRow): { text: string; tone: 'pos' | 'warn' | 'muted' } {
+  const s = t.goals.season
+  const upcoming = row.kind === 'scheduled'
+  if (row.seconds === null || row.targetSeconds === null) return { text: upcoming ? t.goals.predictedTag : t.goals.finish, tone: 'muted' }
+  const gap = row.seconds - row.targetSeconds
+  if (upcoming) return gap > 0 ? { text: s.predictedOff(formatDuration(gap)), tone: 'warn' } : { text: s.predictedUnder(formatDuration(-gap)), tone: 'pos' }
+  return gap > 0 ? { text: s.overTarget(formatDuration(gap)), tone: 'warn' } : { text: s.underTarget(formatDuration(-gap)), tone: 'pos' }
 }
 
-/** One race in the timeline: date and countdown, name, target, and the time. */
-function TimelineRow({ row, block, last }: { row: SeasonRaceRow; block: SeasonBlock | null; last: boolean }) {
-  const s = t.goals
+const TONE_CLASS = { pos: 'text-[var(--pos)]', warn: 'text-[var(--warn)]', muted: 'text-muted-foreground' } as const
+
+/** One race: its date and countdown, name, target and plan week; its prediction or result. */
+function RaceRow({ row, block }: { row: SeasonRaceRow; block: SeasonBlock | null }) {
+  const s = t.goals.season
   const upcoming = row.kind === 'scheduled'
-  const date = formatDate(row.date!, { style: 'bare', year: 'never' }).toUpperCase()
-  const eyebrow = upcoming && row.countdownText ? `${date} · ${row.countdownText}` : date
+  const date = formatDate(row.date!, { style: 'bare', year: 'never' })
+  const when = upcoming ? (row.daysUntil !== null ? s.inDays(row.daysUntil) : null) : s.done
   const isBlockRace = upcoming && block !== null && block.raceDate === row.date
   const sub = [
-    row.targetSeconds !== null ? s.targetTime(formatDuration(row.targetSeconds)) : null,
-    isBlockRace ? s.season.blockWeek(row.short, block!.week, block!.weeks) : null,
+    row.targetSeconds !== null ? s.target(formatDuration(row.targetSeconds)) : null,
+    isBlockRace ? s.planWeek(block!.week, block!.weeks) : null,
   ].filter((part): part is string => part !== null)
-  const delta = !upcoming && row.seconds !== null && row.targetSeconds !== null ? row.seconds - row.targetSeconds : null
+  const result = outcome(row)
 
   return (
-    <li className="flex gap-3" data-testid={`timeline-${upcoming ? 'upcoming' : 'done'}`}>
-      <div className="flex w-4 shrink-0 flex-col items-center pt-0.5">
-        <Marker kind={upcoming ? 'upcoming' : 'done'} />
-        {!last && <span aria-hidden className="mt-1 w-0.5 flex-1 rounded-full bg-border" />}
+    <li className="flex items-start justify-between gap-4 border-t border-border py-3.5 last:pb-0" data-testid={`timeline-${upcoming ? 'upcoming' : 'done'}`}>
+      <div className="flex min-w-0 flex-col gap-[3px]">
+        <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{[date, when].filter(Boolean).join(' · ')}</span>
+        <span className="break-words text-[15px] font-semibold text-foreground text-pretty">{row.title}</span>
+        {sub.length > 0 && <span className="text-xs text-muted-foreground">{sub.join(' · ')}</span>}
       </div>
-      {/* The gap before the next row; the last row ends on the card's own padding. */}
-      <div className={cn('flex min-w-0 flex-1 items-start justify-between gap-3', !last && 'pb-4')}>
-        <div className="min-w-0">
-          <p className="text-caption font-bold tracking-[0.06em] text-muted-foreground">
-            {eyebrow}
-          </p>
-          <p className="mt-0.5 truncate font-display text-body font-bold text-foreground">{row.title}</p>
-          {sub.length > 0 && <p className="mt-0.5 text-footnote text-muted-foreground">{sub.join(' · ')}</p>}
-        </div>
-        <div className="shrink-0 text-right">
-          <p className="font-display text-body font-bold tabular-nums text-foreground">{row.seconds !== null ? formatDuration(row.seconds) : '–'}</p>
-          {upcoming ? (
-            <p className="text-caption text-muted-foreground">{s.predictedTag}</p>
-          ) : (
-            delta !== null && (
-              <p className={cn('text-caption font-bold tabular-nums', delta <= 0 ? 'text-[var(--good)]' : 'text-muted-foreground')} data-testid="timeline-delta">
-                {formatSignedDuration(delta)}
-              </p>
-            )
-          )}
-        </div>
+      <div className="flex shrink-0 flex-col items-end gap-[3px] text-right">
+        <span className="text-lg font-semibold text-foreground">{row.seconds !== null ? formatDuration(row.seconds) : '–'}</span>
+        <span className={cn('text-xs', TONE_CLASS[result.tone])} data-testid="timeline-delta" data-tone={result.tone}>
+          {result.text}
+        </span>
       </div>
     </li>
   )
 }
 
 /**
- * The season (C3, v4.4): Jan-Dec as a strip - the year so far, today, the
- * training block and the races on it - then the races as a timeline, newest
- * first, with today between what is ahead and what is done. A race with no
- * date yet has no place on either and gets its own card.
+ * The season (C3, v4.4; v4.17): Jan-Dec as a strip with today and the
+ * races on it, then the races as rows - what is ahead, next first, then
+ * what is done, most recent first - each with its prediction or result. A
+ * goal with no date has no place on either and gets its own card.
  */
 export function SeasonTimeline({ yearData, today, block }: { yearData: YearData; today: string; block: SeasonBlock | null }) {
   const rows = seasonRaceRows(yearData, today)
-  const dated = rows.filter((row) => row.date !== null).sort((a, b) => b.date!.localeCompare(a.date!))
-  // A past year has no "No date yet" (v5.5 #25): "10K · –" in 2025 is a race
+  const dated = rows.filter((row) => row.date !== null)
+  // A past year has no undated goals (v5.5 #25): "10K · –" in 2025 is a race
   // that can no longer be set, and its only time would be today's prediction.
   const pastYear = Number(today.slice(0, 4)) > yearData.year
   const open = pastYear ? [] : rows.filter((row) => row.date === null)
   if (rows.length === 0) return null
 
-  const ahead = dated.filter((row) => row.kind === 'scheduled')
-  const past = dated.filter((row) => row.kind === 'done')
-  const thisYear = Number(today.slice(0, 4)) === yearData.year
+  const ahead = dated.filter((row) => row.kind === 'scheduled').sort((a, b) => a.date!.localeCompare(b.date!))
+  const past = dated.filter((row) => row.kind === 'done').sort((a, b) => b.date!.localeCompare(a.date!))
   const s = t.goals
 
   return (
     <>
       {dated.length > 0 && (
-        <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="season-card">
-          <h2 className="font-display text-body font-bold text-foreground">{s.season.title}</h2>
-          <SeasonStrip year={yearData.year} today={today} rows={dated} block={block} />
-          <ol className="mt-4">
-            {ahead.map((row, i) => (
-              <TimelineRow key={row.distance} row={row} block={block} last={i === ahead.length - 1 && !thisYear && past.length === 0} />
-            ))}
-            {thisYear && (
-              <li className="flex gap-3" data-testid="timeline-today">
-                <div className="flex w-4 shrink-0 flex-col items-center pt-2">
-                  <Marker kind="today" />
-                  {past.length > 0 && <span aria-hidden className="mt-2 w-0.5 flex-1 rounded-full bg-border" />}
-                </div>
-                <p className={cn('text-caption font-bold tracking-[0.06em] text-foreground', past.length > 0 && 'pb-4')}>
-                  {s.season.todayOn(formatDate(today, { style: 'bare', year: 'never' }).toUpperCase())}
-                </p>
-              </li>
-            )}
-            {past.map((row, i) => (
-              <TimelineRow key={row.distance} row={row} block={block} last={i === past.length - 1} />
+        <section className={cardClass({ className: 'flex flex-col gap-4' })} data-testid="season-card">
+          <h2 className={TITLE}>{s.season.title}</h2>
+          <SeasonStrip year={yearData.year} today={today} rows={dated} />
+          <ol>
+            {[...ahead, ...past].map((row) => (
+              <RaceRow key={row.distance} row={row} block={block} />
             ))}
           </ol>
-        </GlassSurface>
+        </section>
       )}
 
       {open.length > 0 && (
-        <GlassSurface variant="card" className="rounded-card-sm px-4 pb-1 pt-3.5" data-testid="season-no-date">
-          <h2 className="text-caption uppercase tracking-[0.08em] text-muted-foreground">{s.season.noDate}</h2>
+        <section className={cardClass({ className: 'flex flex-col' })} data-testid="season-no-date">
+          <h2 className={cn(TITLE, 'pb-1.5')}>{s.season.noDate}</h2>
           <ul>
             {open.map((row) => (
-              <li key={row.distance} className="flex items-baseline justify-between gap-3 border-b border-border py-3 last:border-b-0">
-                <span className="min-w-0 truncate text-body">
-                  <span className="font-bold text-foreground">{row.short}</span>
-                  {row.targetSeconds !== null && (
-                    <span className="text-muted-foreground"> · {s.targetTime(formatDuration(row.targetSeconds))}</span>
+              <li key={row.distance} className="flex items-baseline justify-between gap-3 border-t border-border py-3 text-sm last:pb-0">
+                <span className="min-w-0 break-words text-pretty">
+                  <b className="font-semibold text-foreground">{row.short}</b>
+                  <span className="text-muted-foreground"> · {row.targetSeconds !== null ? s.targetTime(formatDuration(row.targetSeconds)) : s.season.noTarget}</span>
+                </span>
+                <span className="shrink-0">
+                  {row.seconds !== null ? (
+                    <>
+                      <span className="text-xs text-muted-foreground">{s.predictedTag}</span>{' '}
+                      <b className="font-semibold text-foreground">{formatDuration(row.seconds)}</b>
+                    </>
+                  ) : (
+                    <span className="text-muted-foreground">–</span>
                   )}
                 </span>
-                <span className="shrink-0 font-bold tabular-nums text-foreground">{row.seconds !== null ? formatDuration(row.seconds) : '–'}</span>
               </li>
             ))}
           </ul>
-        </GlassSurface>
+        </section>
       )}
     </>
   )

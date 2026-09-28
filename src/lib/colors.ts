@@ -1,13 +1,16 @@
-import { HUE, ink, paper, white, withAlpha } from '@/lib/palette'
+import { HUE, ink, white } from '@/lib/palette'
 import { isActivityType, type ActivityType } from '@/domain/activity/types'
+import type { TrainingStatusType } from '@/domain/training/status'
 
 const c = HUE
 
 export const CHART_COLORS = {
   brand:     c.roEmerald,
 
-  ctl:       c.blue500,
-  atl:       c.orange500,
+  // Fitness is the solid text line and fatigue the dashed muted one (v4.17):
+  // neutral series, never a hue that could read as a zone or a status.
+  ctl:       'var(--metric-fitness)',
+  atl:       'var(--metric-fatigue)',
 
   hr:            c.red500,
   hrEasy:        c.red300,
@@ -38,51 +41,23 @@ export const CHART_COLORS = {
   tooltipCursor:   'var(--divider)',
 } as const
 
-export const TRAINING_STATUS_COLORS: Record<string, string> = {
-  // Shown as "Peaking"; a token so each theme takes its own grade.
-  fresh:        'var(--status-peaking)',
-  productive:   c.emerald400,
-  // Holding fitness is good news, so it takes the deep step of `productive`'s
-  // green rather than the amber the rest of the app reserves for caution.
-  // `fresh` keeps violet: the only other rest-coloured tone in this map is
-  // `recovery`'s blue600, and any second blue lands within a few dE of it -
-  // that would trade one hue family for a distinction the legend needs.
-  maintaining:  c.emerald600,
-  recovery:     c.blue600,
-  unproductive: c.orange500,
-  detraining:   c.zinc400,
-  overreaching: c.red500,
-}
-
 /**
- * `peak` was `violet500`, the same hex as `TRAINING_STATUS_COLORS.fresh`, and
- * WeekPurposeBanner paints its headline from whichever of the two maps applies
- * - so one violet meant "fresh" above a phase track that used it for "peak".
- * Bronze keeps peak inside `taper`'s amber family a clear 25 dE away, and is
- * the best-contrasting entry in the map on both grounds.
+ * Garmin's training statuses (v4.17): a status is good, caution or bad news,
+ * so it reads the status tokens and never a zone - overreaching used to be
+ * the Z5 pink a VO2max session is drawn in. Productive is pos and Peaking
+ * (the app's `fresh`) its lighter step, good news that is not building;
+ * Unproductive, load that isn't turning into fitness, is caution; Overreaching
+ * is neg. Maintaining and Detraining say neither and take the two neutral
+ * greys, Detraining the fainter; Recovery, a rest state, is the recovery zone.
  */
-export const TRAINING_PLAN_PHASE_COLORS: Record<string, string> = {
-  base:    c.roEmerald,
-  build:   c.blue500,
-  peak:    c.amber700,
-  taper:   c.amber500,
-  raceDay: c.red500,
-}
-
-export const ZONE_COLORS: Record<number, string> = {
-  1: c.gray400,
-  2: c.blue400,
-  3: c.emerald400,
-  4: c.orange500,
-  5: c.red500,
-}
-
-export const ZONE_COLORS_DARK: Record<number, string> = {
-  1: paper(0.55),
-  2: c.roBlueHi,
-  3: c.roEmeraldHi,
-  4: c.roOrangeHi,
-  5: c.roRed,
+export const TRAINING_STATUS_COLORS: Record<TrainingStatusType, string> = {
+  productive:   'var(--pos)',
+  fresh:        'color-mix(in srgb, var(--pos) 50%, transparent)',
+  maintaining:  'var(--muted-foreground)',
+  recovery:     'var(--zone-1)',
+  unproductive: 'var(--warn)',
+  detraining:   'var(--line-2)',
+  overreaching: 'var(--neg)',
 }
 
 /**
@@ -157,18 +132,6 @@ export const READINESS_TONE_COLORS = {
 } as const
 
 
-// A month's volume is data (v5.5 #17): a month that hit its target is ink, a
-// short one amber, the month still running keeps its outline. Never the
-// accent, and no green or blue fills that read as zone colours.
-const INK = 'var(--foreground)'
-const AMB = 'var(--tone-caution)'
-export const GOAL_PACE_COLORS = {
-  ahead:   { bg: `color-mix(in srgb, ${INK} 6%, transparent)`, border: `color-mix(in srgb, ${INK} 25%, transparent)`, bar: INK },
-  onTrack: { bg: `color-mix(in srgb, ${INK} 6%, transparent)`, border: `color-mix(in srgb, ${INK} 25%, transparent)`, bar: INK },
-  behind:  { bg: `color-mix(in srgb, ${AMB} 6%, transparent)`, border: `color-mix(in srgb, ${AMB} 25%, transparent)`, bar: AMB },
-  pending: { bg: '',                            border: '',                           bar: 'var(--track-on-dark)' },
-} as const
-
 /**
  * The shoe dots are pair identity, not state: they say which column of the
  * comparison table a number belongs to, and which pair ran an activity. The old
@@ -187,33 +150,27 @@ export const SHOE_DOT_RAMP = [
   'var(--subtle-2)',
 ] as const
 
-export const SHOE_WEAR_TINTS = {
-  watch: {
-    background: `linear-gradient(150deg, ${withAlpha(c.amber500, 0.16)}, ${withAlpha(c.amber500, 0.02)})`,
-    borderColor: withAlpha(c.amber500, 0.35),
-  },
-  replace: {
-    background: `linear-gradient(150deg, ${withAlpha(c.red500, 0.16)}, ${withAlpha(c.red500, 0.02)})`,
-    borderColor: withAlpha(c.red500, 0.35),
-  },
-} as const
-
+/**
+ * A planned session's segments, as tokens (v4.17): warm-up and cool-down one
+ * neutral, the jog between reps Z1's tint, the work its zone - Z4 unless the
+ * bar is told the session's own. The work was a fixed amber and the recovery
+ * a fixed blue that said "easy" on every session, and the white-alpha ease
+ * vanished on a light card.
+ */
 export const WORKOUT_SEGMENT_COLORS = {
-  warmup:   paper(0.18),
-  effort:   c.roAmber,
-  recovery: c.blue500,
-  cooldown: paper(0.18),
+  warmup:   'color-mix(in srgb, var(--subtle) 32%, transparent)',
+  effort:   'var(--zone-4)',
+  recovery: 'color-mix(in srgb, var(--zone-1) 60%, transparent)',
+  cooldown: 'color-mix(in srgb, var(--subtle) 32%, transparent)',
 } as const
 
 /**
  * Ink for the duration labels that sit inside the structure bar. Only `effort`
  * is drawn at full height, so it is the only segment wide and tall enough to
- * carry text. `roAmber` is a light fill: white ink on it measures 1.80:1 where
- * `roInk` clears 9.5:1, and because the fill is a fixed hex rather than a theme
- * token the same ink holds in both themes.
+ * carry text, in the same zone ink the session bar writes on its fills.
  */
 export const WORKOUT_SEGMENT_INK = {
-  effort: c.roInk,
+  effort: 'var(--zone-ink)',
 } as const
 
 export const CELEBRATION_COLORS = {
@@ -255,11 +212,13 @@ export const PACE_ROUTE_STOPS: readonly (readonly [pace: number, color: string])
   [450, PACE_ROUTE_COLORS.recovery],
 ]
 
+// The last-resort error screen draws before any stylesheet: the v4.17 dark
+// ground and ink, and the default teal accent for its one action.
 export const BOOT_COLORS = {
-  background: '#0a0b0b',
-  foreground: c.gray200,
-  actionBg: c.emerald500,
-  actionFg: c.performanceBgDark,
+  background: '#0c0d0d',
+  foreground: '#f1f2f1',
+  actionBg: '#2dd4a7',
+  actionFg: '#07261d',
 } as const
 
 

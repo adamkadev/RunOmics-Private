@@ -78,7 +78,7 @@ export function BuildInfo({ onCopied }: { onCopied: () => void }) {
   return (
     <p
       data-testid="build-info"
-      className="select-none px-1 pt-2 text-center text-[13px] tabular-nums text-muted-foreground [-webkit-touch-callout:none]"
+      className="select-none px-1 pt-1.5 text-center text-xs tabular-nums text-subtle [-webkit-touch-callout:none]"
       onPointerDown={start}
       onPointerUp={cancel}
       onPointerLeave={cancel}

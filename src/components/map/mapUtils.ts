@@ -1,10 +1,7 @@
-import type { Feature, FeatureCollection } from "geojson";
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
-import type { MapTerritory } from "@/application/usecases/GetMapTerritory";
-import { SURFACES } from "@/lib/themeTokens";
-import { routeCellKey } from "@/lib/routeMatch";
 import { distanceKm, median, round } from "@/lib/math";
+import { t } from "@/i18n";
 
 export interface HeatFilters {
   year: string | null;
@@ -21,7 +18,14 @@ export function matchesFilters(meta: RouteMeta | undefined, filters: HeatFilters
 // The territory card follows whichever area is on the map, not a fixed
 // all-time home base - so it recomputes from the same filtered route set the
 // heatmap itself is drawing, scoped to the one cluster in view.
-export interface AreaTerritory extends MapTerritory {
+export interface AreaTerritory {
+  /** Where the area's runs start: the median start point, [lon, lat]. */
+  home: [number, number];
+  /** The area's share of all km under the filters. */
+  percentVolume: number;
+  /** Half the runs never go further than this from home. */
+  medianReachKm: number;
+  routeCount: number;
   /** The area's km under the filters: the numerator of percentVolume. */
   km: number;
 }
@@ -39,25 +43,40 @@ export function computeAreaTerritory(
   const totalKm = routeMeta.reduce((sum, m) => sum + (matchesFilters(m, filters) ? m.distanceKm : 0), 0);
   if (totalKm <= 0) return null;
 
-  const radii = clusterIndices
+  const traces = clusterIndices
     .map((i) => routes[i])
-    .filter((coords): coords is [number, number][] => !!coords && coords.length > 0)
-    .map((coords) => {
-      const lons = coords.map((c) => c[0]);
-      const lats = coords.map((c) => c[1]);
-      const cLon = (Math.min(...lons) + Math.max(...lons)) / 2;
-      const cLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-      return distanceKm(cLon, cLat, cluster.center[0], cluster.center[1]);
-    });
-  if (!radii.length) return null;
+    .filter((coords): coords is [number, number][] => !!coords && coords.length > 0);
+  if (!traces.length) return null;
+
+  // Home is where the runs start, not the middle of where they go (v4.17):
+  // a centre between two favourite loops can sit in a river.
+  const home: [number, number] = [median(traces.map((c) => c[0]![0])), median(traces.map((c) => c[0]![1]))];
+  // A run's reach is the furthest it got from home, so half the runs stay
+  // inside the median reach - the ring the map draws.
+  const reaches = traces.map((coords) =>
+    coords.reduce((far, [lon, lat]) => Math.max(far, distanceKm(lon, lat, home[0], home[1])), 0)
+  );
 
   return {
-    center: cluster.center,
+    home,
     percentVolume: round((clusterKm / totalKm) * 100, 0),
-    medianRadiusKm: round(median(radii), 1),
+    medianReachKm: round(median(reaches), 1),
     routeCount: clusterIndices.length,
     km: Math.round(clusterKm),
   };
+}
+
+/**
+ * The median reach as an upper bound: half the runs stay within it, so it
+ * rounds up - 1 for 0.6, 1.3 for 1.21 - and never reads 0. The ring is drawn
+ * at this radius, so the map and the sentence state the same distance.
+ */
+export function reachKm(km: number): number {
+  return km <= 1 ? 1 : Math.ceil(km * 10) / 10;
+}
+
+export function reachLabel(km: number): string {
+  return `${reachKm(km).toLocaleString(t.locale)} ${t.units.km}`;
 }
 
 export interface AreaRow {
@@ -93,27 +112,13 @@ export function areaRows(clusters: RouteCluster[], routeMeta: RouteMeta[], filte
 /** An area gets its own row in the list from this share of km; the rest fold into one. */
 export const OWN_ROW_SHARE = 10;
 
-// The area, type and year chips share one shape (v4.8). The area chip is
-// always set, so an accent there would mean nothing: it is neutral with the
-// name in text ink. Type and year take the accent only once they are set,
-// with an ✕ to clear them.
-export const MAP_CHIP_GEOMETRY = "flex h-[38px] items-center rounded-[12px] transition-colors";
-export const MAP_CHIP_STYLE = { padding: "0 12px", fontSize: "14px" } as const;
-export const MAP_CHIP_NEUTRAL = {
-  background: "var(--segmented-track)",
-  border: "1px solid var(--border)",
-  color: "var(--muted-foreground)",
-} as const;
-export const MAP_CHIP_AREA = { ...MAP_CHIP_NEUTRAL, color: "var(--foreground)" } as const;
-export const MAP_CHIP_ACTIVE = {
-  background: "var(--accent)",
-  border: "1px solid transparent",
-  color: "var(--accent-foreground)",
-} as const;
-/** An open menu outlines its chip in text ink. */
+// The area, type and year chips are the app's filter chips (v4.17): neutral
+// while unset, inverted once set. The area is always set.
+export const MAP_CHIP_GEOMETRY = "flex h-8 items-center rounded-full text-[13px] transition-colors";
+export const MAP_CHIP_PADDING = "0 12px";
+/** An open menu outlines its unset chip in text ink. */
 export const MAP_CHIP_OPEN_BORDER = "1px solid var(--foreground)";
-export const MAP_CHIP_COUNT_INK = "var(--muted-foreground)";
-export const MAP_CHIP_CARET_INK = "var(--muted-foreground)";
+export const MAP_CHIP_CARET_INK = "var(--subtle)";
 
 export function coordLabel(c: RouteCluster): string {
   const lat = `${Math.abs(c.center[1]).toFixed(1)}${c.center[1] >= 0 ? "°N" : "°S"}`;
@@ -124,100 +129,100 @@ export function coordLabel(c: RouteCluster): string {
 /** Consecutive points further apart than this are a lost fix, not a run. */
 export const MAX_GPS_STEP_M = 150;
 
-export function buildHeatGeoJSON(
-  routes: [number, number][][],
-  indices: number[],
-): { data: FeatureCollection; maxCount: number } {
-  const cellCounts = new Map<string, number>();
-
-  for (const i of indices) {
-    const coords = routes[i];
-    if (!coords || coords.length < 2) continue;
-    const seen = new Set<string>();
-    for (const [lon, lat] of coords) seen.add(routeCellKey(lon, lat));
-    for (const key of seen) cellCounts.set(key, (cellCounts.get(key) ?? 0) + 1);
-  }
-
-  let maxCount = 1;
-  for (const c of cellCounts.values()) if (c > maxCount) maxCount = c;
-
-  const features: Feature[] = [];
-  for (const i of indices) {
-    const coords = routes[i];
-    if (!coords || coords.length < 2) continue;
-
-    let runCoords: [number, number][] = [coords[0]!];
-    let runCount = cellCounts.get(routeCellKey(coords[0]![0], coords[0]![1])) ?? 1;
-
-    for (let p = 1; p < coords.length; p++) {
-      const point = coords[p]!;
-      const count = cellCounts.get(routeCellKey(point[0], point[1])) ?? 1;
-      const prev = coords[p - 1]!;
-      // A GPS jump draws nothing (v5.6 #5): straight lines fanned out from the
-      // centre of Metz where the watch lost and regained its fix.
-      if (distanceKm(prev[0], prev[1], point[0], point[1]) * 1000 > MAX_GPS_STEP_M) {
-        if (runCoords.length > 1) {
-          features.push({ type: "Feature", properties: { count: runCount }, geometry: { type: "LineString", coordinates: runCoords } });
-        }
-        runCoords = [point];
-        runCount = count;
-        continue;
-      }
-      if (count !== runCount) {
-        runCoords.push(point);
-        features.push({
-          type: "Feature",
-          properties: { count: runCount },
-          geometry: { type: "LineString", coordinates: runCoords },
-        });
-        runCoords = [point];
-        runCount = count;
-      } else {
-        runCoords.push(point);
-      }
-    }
-    if (runCoords.length > 1) {
-      features.push({
-        type: "Feature",
-        properties: { count: runCount },
-        geometry: { type: "LineString", coordinates: runCoords },
-      });
-    }
-  }
-
-  return { data: { type: "FeatureCollection", features }, maxCount };
+/** Web Mercator, 0 to 1 across the world: MapLibre's own projection. */
+export function mercatorX(lon: number): number {
+  return (lon + 180) / 360;
 }
 
-const HEAT_FRACTIONS = [0, 0.35, 0.65, 1];
-
-function heatBreakpoints(maxCount: number): number[] {
-  const base = Math.max(2, maxCount);
-  return HEAT_FRACTIONS.map((frac) => Math.pow(base, frac));
+export function mercatorY(lat: number): number {
+  return (180 - (180 / Math.PI) * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360))) / 360;
 }
 
 /**
- * One neutral scale (v5.6 #5): band grey for a street run once, ink for the
- * most run. The blue-purple-red ramp reused the Z2 and Z5 colours, so a blue
- * street read as "easy". Frequency also widens the line.
+ * Each run as one flat list of Mercator x, y pairs, ready to stroke. A GPS
+ * jump (v5.6 #5) is a NaN pair: the pen lifts there, so no straight line
+ * fans out where the watch lost its fix, and the run stays one stroke - a
+ * run that crosses itself never counts twice.
  */
-export function heatScale(mode: "dark" | "light"): { from: string; to: string } {
-  return { from: SURFACES[mode].band, to: SURFACES[mode].text };
+export function buildHeatTracks(routes: [number, number][][], indices: number[]): Float64Array[] {
+  const tracks: Float64Array[] = [];
+  for (const i of indices) {
+    const coords = routes[i];
+    if (!coords || coords.length < 2) continue;
+    const out: number[] = [];
+    for (let p = 0; p < coords.length; p++) {
+      const [lon, lat] = coords[p]!;
+      const prev = coords[p - 1];
+      if (prev && distanceKm(prev[0], prev[1], lon, lat) * 1000 > MAX_GPS_STEP_M) out.push(NaN, NaN);
+      out.push(mercatorX(lon), mercatorY(lat));
+    }
+    tracks.push(Float64Array.from(out));
+  }
+  return tracks;
 }
 
-export function heatColorExpression(maxCount: number, mode: "dark" | "light"): unknown[] {
-  const bp = heatBreakpoints(maxCount);
-  const { from, to } = heatScale(mode);
-  return ["interpolate", ["linear"], ["get", "count"], bp[0], from, bp[bp.length - 1], to];
+export interface HeatPass {
+  /** The stroke as a multiple of the line width. */
+  width: number;
+  color: string;
 }
 
-export function heatWidthExpression(maxCount: number): unknown[] {
-  const bp = heatBreakpoints(maxCount);
-  const widthsLow = [0.8, 1.3, 2.1, 3];
-  const widthsHigh = [1.2, 2.4, 4, 5.5];
-  const byCount = (widths: number[]): unknown[] => {
-    const expr: unknown[] = ["interpolate", ["linear"], ["get", "count"]];
-    bp.forEach((b, i) => expr.push(b, widths[i]));
-    return expr;
-  };
-  return ["interpolate", ["linear"], ["zoom"], 9, byCount(widthsLow), 14, byCount(widthsHigh)];
+/** `#rrggbb` at an alpha, as the canvas takes it. */
+export function rgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h.slice(0, 6), 16);
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
+/**
+ * How the tracks are drawn (v4.17): every run stroked twice in the accent - a
+ * wide faint glow and a thin core - because the tracks are the athlete's own
+ * data. Where runs overlap they build up: added light on dark, multiplied ink
+ * on light, so the most run streets burn brightest (dark) or deepest (light)
+ * with no count behind them.
+ */
+export const HEAT_STYLE = {
+  dark: {
+    composite: "lighter",
+    passes: [
+      { width: 4, alpha: 0.035 },
+      { width: 1, alpha: 0.16 },
+    ],
+  },
+  light: {
+    composite: "multiply",
+    passes: [
+      { width: 3, alpha: 0.05 },
+      { width: 1, alpha: 0.2 },
+    ],
+  },
+} as const satisfies Record<"dark" | "light", {
+  composite: GlobalCompositeOperation;
+  passes: readonly { width: number; alpha: number }[];
+}>;
+
+/** The two passes in the accent's colour. */
+export function heatPasses(mode: "dark" | "light", accent: string): HeatPass[] {
+  return HEAT_STYLE[mode].passes.map((pass) => ({ width: pass.width, color: rgba(accent, pass.alpha) }));
+}
+
+/**
+ * The core line's width in px at a MapLibre zoom (v4.17): 1.2 px out to
+ * zoom 12, 4 px from zoom 16, straight between.
+ */
+export function heatLineWidth(zoom: number): number {
+  const t = Math.min(1, Math.max(0, (zoom - 12) / 4));
+  return 1.2 + t * (4 - 1.2);
+}
+
+/** The home ring: a closed line `radiusKm` around `center`, [lon, lat]. */
+export function ringCoordinates(center: [number, number], radiusKm: number, steps = 96): [number, number][] {
+  const [lon, lat] = center;
+  const dLat = radiusKm / 111.32;
+  const dLon = radiusKm / (111.32 * Math.cos((lat * Math.PI) / 180));
+  const ring = Array.from({ length: steps }, (_, i) => {
+    const a = (i / steps) * Math.PI * 2;
+    return [lon + dLon * Math.cos(a), lat + dLat * Math.sin(a)] as [number, number];
+  });
+  return [...ring, ring[0]!];
 }

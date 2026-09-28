@@ -11,33 +11,39 @@ const OPTIONS = [
   { value: 'dark',   label: () => t.settings.appearance.dark   },
 ] as const
 
+/**
+ * Light / Auto / Dark as the quiet tabs (v4.17): the inset track with its
+ * line, the choice lifted onto the card surface in text ink. A choice, not
+ * a tablist - there is no panel - so the buttons are pressed or not. The
+ * row around it carries the label.
+ */
 export function ThemeSegmented() {
   const { theme, setTheme } = useTheme()
   const mounted = useMounted()
-  const s = t.settings.appearance
-
   const current = mounted ? theme : undefined
 
-  // Inline, as in R7f: the label and a compact control on one row.
   return (
-    <div className="flex items-center justify-between gap-3">
-      <h3 className="text-body font-semibold text-foreground">{s.themeLabel}</h3>
-      <div className="flex gap-1 rounded-full bg-[var(--segmented-track)] p-1" role="group" aria-label={s.themeLabel}>
-        {OPTIONS.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setTheme(value)}
-            aria-pressed={current === value}
-            className={cn(
-              'min-h-[44px] rounded-full px-3.5 text-xs font-semibold transition-colors',
-              current === value ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
-            )}
-          >
-            {label()}
-          </button>
-        ))}
-      </div>
+    <div
+      className="flex shrink-0 gap-0.5 rounded-[11px] border border-border bg-[var(--segmented-track)] p-[3px]"
+      role="group"
+      aria-label={t.settings.appearance.themeLabel}
+    >
+      {OPTIONS.map(({ value, label }) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setTheme(value)}
+          aria-pressed={current === value}
+          className={cn(
+            'hit-44 h-[30px] rounded-lg px-3.5 text-[13px] transition-colors',
+            current === value
+              ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
+              : 'font-medium text-muted-foreground hover:text-foreground'
+          )}
+        >
+          {label()}
+        </button>
+      ))}
     </div>
   )
 }

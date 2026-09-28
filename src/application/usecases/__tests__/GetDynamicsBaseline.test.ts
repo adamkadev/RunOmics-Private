@@ -28,7 +28,7 @@ describe('getDynamicsBaseline', () => {
       run('2026-08-21', { strideLengthM: 2.2, sport: 'cycling' }),
     )
 
-    expect(getDynamicsBaseline(run('2026-09-01'))?.strideLengthM).toEqual({ min: 0.96, median: 1.04, max: 1.14 })
+    expect(getDynamicsBaseline(run('2026-09-01'))?.strideLengthM).toMatchObject({ min: 0.96, median: 1.04, max: 1.14 })
   })
 
   it('takes the median of the eight weeks before the run', () => {
@@ -87,7 +87,20 @@ describe('getDynamicsBaseline', () => {
       median: 270,
       min: 260,
       max: 280,
+      low: 265,
+      high: 275,
     })
+  })
+
+  // v4.17: the band the Dynamics tab shades is the middle half of the runs.
+  it('carries the middle half of the runs as the baseline band', () => {
+    activities.push(
+      ...[250, 255, 260, 262, 270, 280, 300].map((ms, i) => run(`2026-08-0${i + 1}`, { groundContactMs: ms })),
+    )
+
+    const band = getDynamicsBaseline(run('2026-09-01'))?.groundContactMs
+    expect(band?.low).toBe(258)
+    expect(band?.high).toBe(275)
   })
 
   it('has no baseline at all from fewer than three runs', () => {

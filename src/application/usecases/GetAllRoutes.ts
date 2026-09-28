@@ -1,6 +1,7 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { ActivityType } from '@/domain/activity/types'
 import { distanceKm } from '@/lib/math'
+import { percentileBounds, type LngLatBounds } from '@/lib/routeFrame'
 
 export interface RouteMeta {
   id: string
@@ -17,7 +18,12 @@ export interface RouteCluster {
   routeCount: number
   totalKm: number
   center: [number, number]
-  bounds: { minLon: number; maxLon: number; minLat: number; maxLat: number }
+  bounds: LngLatBounds
+  /**
+   * What the map opens on (v4.17): the 4th to 96th percentile of the area's
+   * points, where `bounds` holds every one of them.
+   */
+  frame: LngLatBounds
   routeIndices: number[]
 }
 
@@ -101,14 +107,18 @@ export function getAllRoutes(): AllRoutesData {
 
   })
 
-  const unsorted: RouteCluster[] = acc.map((g, i) => ({
-    id: `${i}`,
-    routeCount: g.indices.length,
-    totalKm: Math.round(g.km),
-    center: g.center,
-    bounds: { minLon: g.minLon, maxLon: g.maxLon, minLat: g.minLat, maxLat: g.maxLat },
-    routeIndices: g.indices,
-  }))
+  const unsorted: RouteCluster[] = acc.map((g, i) => {
+    const bounds = { minLon: g.minLon, maxLon: g.maxLon, minLat: g.minLat, maxLat: g.maxLat }
+    return {
+      id: `${i}`,
+      routeCount: g.indices.length,
+      totalKm: Math.round(g.km),
+      center: g.center,
+      bounds,
+      frame: percentileBounds(g.indices.map((idx) => activities[idx]!.route!)) ?? bounds,
+      routeIndices: g.indices,
+    }
+  })
 
   // By km, the one share basis the page uses (v4.8): the busiest area comes
   // first and the page opens on it.

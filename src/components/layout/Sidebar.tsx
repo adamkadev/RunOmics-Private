@@ -49,66 +49,57 @@ export function Sidebar() {
   const pathname = usePathname()
   const currentHref = activeNavHref(pathname, NAV_HREFS)
 
+  // One row recipe for the six sections and Settings (v4.17): 40 px tall,
+  // an 18 px icon 12 px from its label; the section on screen takes the
+  // accent on its soft tint.
+  const row = (href: string, label: string, Icon: typeof Settings) => {
+    const active = currentHref === href
+    return (
+      <Link
+        key={href}
+        href={href}
+        aria-current={active ? 'page' : undefined}
+        className={cn(
+          'flex h-10 items-center gap-3 rounded-[9px] px-2.5 text-sm transition-colors',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          active
+            ? 'bg-[var(--accent-soft)] font-semibold text-accent-text'
+            : 'text-[var(--text-2)] hover:bg-[var(--surface-2)] hover:text-foreground'
+        )}
+      >
+        <Icon size={18} strokeWidth={active ? 2.1 : 1.8} />
+        {label}
+      </Link>
+    )
+  }
+
   return (
     <>
       <GlassSurface
         as="aside"
         variant="chrome"
-        className="fixed inset-y-3 left-3 z-20 hidden w-[220px] flex-col rounded-2xl lg:flex"
+        className="fixed inset-y-3 left-3 z-20 hidden w-[224px] flex-col rounded-2xl px-3 py-4 lg:flex"
       >
-        <Link href="/" className="flex h-16 shrink-0 items-center gap-2.5 px-5">
-          <HeaderMark size={22} />
-          <span className="text-lg font-bold tracking-tight text-foreground">
+        <Link href="/" className="flex shrink-0 items-center gap-2 border-b border-border px-2.5 pb-4 pt-1">
+          <HeaderMark size={20} />
+          <span className="text-[17px] font-bold tracking-[-0.01em] text-foreground">
             {t.brand.namePrefix}
             <span className="text-accent-text">{t.brand.nameSuffix}</span>
           </span>
         </Link>
 
-        <div className="mx-4 h-px shrink-0 bg-foreground/[0.08]" />
-
-        <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-            const active = currentHref === href
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  active
-                    ? 'font-semibold text-accent-text'
-                    : 'text-muted-foreground hover:bg-foreground/[0.07] hover:text-foreground'
-                )}
-              >
-                <Icon size={20} strokeWidth={active ? 2.2 : 1.8} />
-                {label}
-              </Link>
-            )
-          })}
+        <nav className="mt-3.5 flex flex-1 flex-col gap-0.5 overflow-y-auto">
+          {NAV_ITEMS.map(({ href, label, icon }) => row(href, label, icon))}
         </nav>
 
-        <div className="mx-4 h-px shrink-0 bg-foreground/[0.08]" />
-
-        <div className="flex shrink-0 items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
+        {/* Settings is a nav row of its own, pinned above the version and
+            the theme toggle (v4.17). */}
+        <div className="flex shrink-0 flex-col gap-0.5 border-t border-border pt-3">
+          {row('/settings', t.nav.items.settings, Settings)}
+          <div className="flex items-center justify-between px-2.5 pb-0.5 pt-2">
             <span className="text-xs text-subtle">{t.brand.version(APP_VERSION)}</span>
-            <Link
-              href="/settings"
-              className={cn(
-                'rounded-md p-1 transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                currentHref === '/settings'
-                  ? 'text-accent-text'
-                  : 'text-subtle hover:text-muted-foreground'
-              )}
-              aria-label={t.nav.items.settings}
-              title={t.nav.items.settings}
-            >
-              <Settings size={16} />
-            </Link>
+            <ThemeToggle compact />
           </div>
-          <ThemeToggle />
         </div>
       </GlassSurface>
       <GlassTabBar />

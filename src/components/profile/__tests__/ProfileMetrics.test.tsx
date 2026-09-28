@@ -77,11 +77,15 @@ describe('capability-driven athlete metrics', () => {
     expect(row.querySelector('svg')).toBeNull()
   })
 
-  // C2: one card, 2 x 2, the labels open their definitions.
-  it('puts the four key numbers in one card, 2 x 2', () => {
+  // C2: one card, the labels open their definitions; v4.17: a strip, 2 x 2 on a phone.
+  it('puts the four key numbers in one card, 2 x 2 on a phone and one row from sm', () => {
     render(<AthleteKeyNumbers athlete={{ vmaKmh: 17.5, lthrBpm: 172, thresholdPaceSecPerKm: 258, fitnessAgeYrs: 20 }} />)
     expect(screen.getAllByTestId('athlete-key-numbers')).toHaveLength(1)
     expect(screen.getAllByTestId('athlete-key-number')).toHaveLength(4)
+    const card = screen.getByTestId('athlete-key-numbers')
+    expect(card.className).toContain('grid-cols-2')
+    expect(card.className).toContain('sm:grid-cols-[repeat(var(--cells),minmax(0,1fr))]')
+    expect(card.style.getPropertyValue('--cells')).toBe('4')
   })
 })
 
@@ -100,20 +104,28 @@ describe('ProfileHrZones table', () => {
     }
   })
 
-  // C2: time is "9′" under an hour, "2h05" over; the window's total and its
-  // Z4-Z5 share sit over one stacked bar with the target's two ticks.
-  it('writes time compactly and puts the total and the hard share over a stacked bar', () => {
+  // v4.17: time is "9 min" under an hour, "2 h 05" over; the window's total
+  // and its Z4-Z5 share sit over one bar of zone segments, the share in warn
+  // outside the 10-15% target.
+  it('writes time with its units and puts the total and the hard share over the zone bar', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
-    expect(within(screen.getByTestId('zone-row-4')).getByText('9′')).toBeInTheDocument()
-    expect(screen.getByTestId('zone-total').textContent).toBe(`0${t.units.hour}14`)
-    expect(screen.getByTestId('zone-hard-share').textContent).toBe(z.hardShare(100))
+    expect(within(screen.getByTestId('zone-row-4')).getByText(`9 ${t.units.min}`)).toBeInTheDocument()
+    expect(screen.getByTestId('zone-total').textContent).toBe(`14${t.units.min}`)
+    const share = screen.getByTestId('zone-hard-share')
+    expect(share.textContent).toBe(z.hardShare(100))
+    expect(share.className).toContain('text-[var(--warn)]')
     const stack = screen.getByTestId('zone-stack')
     expect([...stack.querySelectorAll('[data-zone]')].map((el) => el.getAttribute('data-zone'))).toEqual(['4', '5'])
-    // v4.4.1: the target is a bracket under the bar, over 85-90%; nothing on it.
-    const bracket = screen.getByTestId('zone-target-bracket')
-    expect([bracket.style.left, bracket.style.width]).toEqual(['85%', '5%'])
-    expect(screen.getByTestId('zone-target').textContent).toBe(z.target)
-    expect(stack.querySelector('[data-testid="zone-target-tick"]')).toBeNull()
+  })
+
+  it('reads a hard share inside the target as good', () => {
+    const inTarget = [
+      { zone: 2, seconds: 88 * 60, percent: 0 },
+      { zone: 4, seconds: 12 * 60, percent: 0 },
+    ]
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={inTarget} recentZoneTime={[]} />)
+    expect(screen.getByTestId('zone-hard-share').className).toContain('text-[var(--pos)]')
+    expect(screen.getByTestId('zone-total').textContent).toBe(`1${t.units.hour} 40${t.units.min}`)
   })
 
   // v4.4.1: a zone under 1% of the window is not drawn at all, not a sliver.
@@ -132,8 +144,9 @@ describe('ProfileHrZones table', () => {
     expect(screen.getAllByRole('tablist')).toHaveLength(1)
 
     await userEvent.click(screen.getByRole('tab', { name: z.fourWeeks }))
-    expect(screen.getByTestId('zone-total').textContent).toBe(`2${t.units.hour}05`)
-    expect(within(screen.getByTestId('zone-row-4')).getByText('0′')).toBeInTheDocument()
+    expect(screen.getByTestId('zone-total').textContent).toBe(`2${t.units.hour} 5${t.units.min}`)
+    expect(within(screen.getByTestId('zone-row-2')).getByText(`2 ${t.units.hour} 05`)).toBeInTheDocument()
+    expect(within(screen.getByTestId('zone-row-4')).getByText(`0 ${t.units.min}`)).toBeInTheDocument()
   })
 
   it('falls back to the last 4 weeks when this week is empty, and says so', () => {

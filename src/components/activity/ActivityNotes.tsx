@@ -149,13 +149,15 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
         disabled={!canOpen}
         aria-haspopup={canOpen ? 'dialog' : undefined}
         data-testid="note-row"
-        className="flex min-h-11 w-full items-center justify-between gap-3 text-left text-sm disabled:cursor-default"
+        className="flex min-h-11 w-full items-center justify-between gap-3 border-t border-border text-left text-sm disabled:cursor-default"
       >
-        <span className="shrink-0 font-semibold text-foreground">{r.label}</span>
+        {/* A detail row (v4.17): the name muted, the value in ink; adding one
+            is an action, so it is the accent link. */}
+        <span className="shrink-0 text-muted-foreground">{r.label}</span>
         {hasNote ? (
-          <span className="min-w-0 truncate text-muted-foreground">{preview} ›</span>
+          <span className="min-w-0 truncate text-foreground">{preview} ›</span>
         ) : isOwner ? (
-          <span className="font-semibold text-accent-text">{r.add} ›</span>
+          <span className="font-medium text-accent-text">{r.add}</span>
         ) : (
           <span className="text-subtle">{r.none}</span>
         )}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ACTIVITY_TYPES, type ActivityType } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_STYLE } from '@/components/activity/activityTypeStyle'
-import { CHART_COLORS, TRAINING_PLAN_PHASE_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
+import { CHART_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
 import { ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT } from '@/lib/accent'
 import { rgbTriplet } from '@/lib/palette'
 import { TOKEN_BLOCKS } from '@/lib/themeTokens'
@@ -56,17 +56,14 @@ describe('activity type hue budget', () => {
     }
   })
 
-  it('stays out of the families that exist only as accent themes', () => {
-    // `Anaerobic` used to be violet600, which IS the endurance theme's
-    // `--accent-text`, so on that theme a type dot rendered as the accent.
-    // Violet and fuchsia are carried by nothing else in the app, so the ramp
-    // has no business in them. Orange is not on this list: the motivation
-    // accent is orange, but orange is also `Threshold`, `atl` and
-    // `unproductive`, and that predates this ramp.
-    const accentOnly = ['violet', 'fuchsia']
-    for (const type of TYPES) for (const hex of resolved(typeHue(type))) expect(accentOnly, type).not.toContain(hueFamily(hex))
-    expect(Object.values(ACCENT_SWATCHES_LIGHT)).not.toContain(typeHue('Anaerobic'))
-    expect(Object.values(ACCENT_SWATCHES)).not.toContain(typeHue('Anaerobic'))
+  it('never draws a type in the accent or a status colour (v4.17)', () => {
+    // A type is a category: its zone, and nothing that means "yours" or
+    // "good / caution / bad".
+    for (const type of TYPES) {
+      expect(typeHue(type), type).toMatch(/^var\(--zone-[1-5]\)$/)
+      expect(Object.values(ACCENT_SWATCHES_LIGHT)).not.toContain(typeHue(type))
+      expect(Object.values(ACCENT_SWATCHES)).not.toContain(typeHue(type))
+    }
   })
 
   it('draws the three zone-5 types as the one zone-5 token', () => {
@@ -75,27 +72,42 @@ describe('activity type hue budget', () => {
   })
 })
 
-describe('cross-map hue collisions', () => {
-  it('does not paint a training status and a plan phase the same violet', () => {
-    // WeekPurposeBanner takes its headline hue from TRAINING_STATUS_COLORS or
-    // from TRAINING_PLAN_PHASE_COLORS depending on the week it is describing,
-    // and PlanPhaseTrack renders the phase ramp directly below it - so one
-    // violet meaning both `fresh` and `peak` was two meanings on one screen.
-    expect(TRAINING_PLAN_PHASE_COLORS.peak).not.toBe(TRAINING_STATUS_COLORS.fresh)
-    expect(hueFamily(TRAINING_PLAN_PHASE_COLORS.peak!)).not.toBe('violet')
+describe('training status colours (v4.17)', () => {
+  const statuses = Object.entries(TRAINING_STATUS_COLORS)
+
+  it('reads a status off the status tokens, never a zone, Recovery aside', () => {
+    // Overreaching was the Z5 a VO2max session is drawn in: a status is good,
+    // caution or bad news, or a neutral grey, and never a category.
+    for (const [status, color] of statuses) {
+      if (status === 'recovery') continue
+      expect(color, status).not.toMatch(/--zone-/)
+      expect(color, status).toMatch(/var\(--(pos|warn|neg|line-2|muted-foreground)\)/)
+    }
   })
 
-  it('does not paint a training status in an activity type hue', () => {
-    // `maintaining` was yellow500, the Tempo hue: on the dashboard a yellow
-    // ribbon segment meant "holding fitness" while a yellow dot in the rows
-    // below it meant "that run was a tempo run".
-    const typeHues = new Set(TYPES.map(typeHue))
-    expect(typeHues.has(TRAINING_STATUS_COLORS.maintaining!)).toBe(false)
+  it('maps the handoff pairs: Productive pos, Overreaching neg, Detraining line-2, Recovery Z1', () => {
+    expect(TRAINING_STATUS_COLORS).toMatchObject({
+      productive: 'var(--pos)',
+      overreaching: 'var(--neg)',
+      detraining: 'var(--line-2)',
+      recovery: 'var(--zone-1)',
+    })
   })
 
-  it('keeps maintaining on the good-news green rather than the caution amber', () => {
-    expect(hueFamily(TRAINING_STATUS_COLORS.maintaining!))
-      .toBe(hueFamily(TRAINING_STATUS_COLORS.productive!))
+  it('keeps Unproductive on caution and Maintaining neutral, never good news', () => {
+    expect(TRAINING_STATUS_COLORS.unproductive).toBe('var(--warn)')
+    expect(TRAINING_STATUS_COLORS.maintaining).not.toMatch(/--(pos|warn|neg)/)
+  })
+
+  it('gives every status a colour of its own, so the strip and its legend tell them apart', () => {
+    const colors = statuses.map(([, color]) => color)
+    expect(new Set(colors).size).toBe(colors.length)
+  })
+
+  it('draws fitness and fatigue as the neutral text and muted series', () => {
+    // One value per theme block, light then dark.
+    expect(resolved(CHART_COLORS.ctl)).toEqual(['var(--foreground)', 'var(--foreground)'])
+    expect(resolved(CHART_COLORS.atl)).toEqual(['var(--muted-foreground)', 'var(--muted-foreground)'])
   })
 })
 

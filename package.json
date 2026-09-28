@@ -1,6 +1,6 @@
 {
   "name": "runomics",
-  "version": "4.16.6",
+  "version": "4.17.0",
   "private": true,
   "engines": {
     "node": ">=22"
@@ -9,6 +9,7 @@
     "prepare:data": "dotenv -e .env.local -- node scripts/prepare-data.mjs",
     "validate:data": "dotenv -e .env.local -- node --import tsx scripts/validate-data.ts",
     "maplibre:worker": "node scripts/copy-maplibre-worker.mjs",
+    "map:styles": "dotenv -e .env.local -- node --import tsx scripts/build-map-styles.ts",
     "predev": "npm run prepare:data && npm run maplibre:worker",
     "dev": "next dev",
     "prebuild": "npm run prepare:data && npm run validate:data && npm run maplibre:worker",

@@ -1,10 +1,11 @@
 import { ChevronRight } from 'lucide-react'
 import type { HrZone } from '@/domain/activity/types'
 import type { AerobicDecoupling } from '@/domain/activity/decoupling'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
-import { ZONE_COLOR_CLASSES } from '@/lib/colors'
-import { STATUS } from '@/lib/statusColors'
+import { Legend, LegendItem } from '@/components/ui/Legend'
+import { STAT_TONE_CLASS, type StatTone } from '@/components/ui/Stat'
+import { zoneColor, type SessionZone } from '@/lib/colors'
 import { formatDeltaFixed } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -18,123 +19,126 @@ interface Props {
   onShowCharts?: () => void
 }
 
-/** Under this share a zone is left out of the bar and the line alike, so
+/** Under this share a zone is left out of the bar and the legend alike, so
  *  every zone drawn has its label (v4.3.1): a 0.4% sliver had none. */
 const MIN_ZONE_PCT = 1
 
 const TE_LEVELS = [
-  { max: 1.0, label: t.activity.trainingEffect.levels.noBenefit },
-  { max: 2.0, label: t.activity.trainingEffect.levels.minor },
-  { max: 3.0, label: t.activity.trainingEffect.levels.maintaining },
-  { max: 4.0, label: t.activity.trainingEffect.levels.improving },
-  { max: 4.8, label: t.activity.trainingEffect.levels.highlyImproving },
-  { max: 5.1, label: t.activity.trainingEffect.levels.overreaching },
-]
+  { max: 1.0, label: t.activity.trainingEffect.levels.noBenefit, tone: 'muted' },
+  { max: 2.0, label: t.activity.trainingEffect.levels.minor, tone: 'muted' },
+  { max: 3.0, label: t.activity.trainingEffect.levels.maintaining, tone: 'muted' },
+  { max: 4.0, label: t.activity.trainingEffect.levels.improving, tone: 'pos' },
+  { max: 4.8, label: t.activity.trainingEffect.levels.highlyImproving, tone: 'pos' },
+  { max: 5.1, label: t.activity.trainingEffect.levels.overreaching, tone: 'warn' },
+] as const satisfies readonly { max: number; label: string; tone: StatTone }[]
+
+function level(value: number) {
+  return TE_LEVELS.find((l) => value < l.max) ?? TE_LEVELS[TE_LEVELS.length - 1]!
+}
 
 export function trainingEffectLevel(value: number): string {
-  return (TE_LEVELS.find((l) => value < l.max) ?? TE_LEVELS[TE_LEVELS.length - 1]!).label
+  return level(value).label
+}
+
+/**
+ * What a training effect means, as a colour (v4.17): improving is good news
+ * in pos, overreaching a caution in warn, and the rest - no benefit, minor,
+ * maintaining - is a note in muted.
+ */
+export function trainingEffectTone(value: number): StatTone {
+  return level(value).tone
 }
 
 function scored(value: number | null): value is number {
   return value != null && value > 0
 }
 
+/** A detail row (v4.17): the name in muted on the left, the value and its meaning on the right. */
 function Row({ term, label, value, word, tone, onClick, actionLabel }: {
   term: GlossaryKey
   label: string
   value: string
   word: string
-  tone: string
-  /** The value opens something (decoupling opens Charts): it gets a chevron. */
+  tone: StatTone
+  /** The value opens something (decoupling opens Charts). */
   onClick?: () => void
   actionLabel?: string
 }) {
   const reading = (
-    <>
-      <span className="font-display text-title3 font-bold tabular-nums leading-none">{value}</span>
-      <span className="text-footnote font-medium">{word}</span>
-      {onClick && <ChevronRight size={14} aria-hidden="true" className="self-center" />}
-    </>
+    <span className="flex items-baseline gap-1.5 whitespace-nowrap text-sm">
+      <b className="font-semibold text-foreground">{value}</b>
+      <span className={STAT_TONE_CLASS[tone]}>{word}</span>
+      {onClick && <ChevronRight size={14} aria-hidden="true" className="self-center text-muted-foreground" />}
+    </span>
   )
-  const readingClass = cn('flex items-baseline gap-1.5 whitespace-nowrap', tone)
   return (
-    <div className="flex min-h-11 items-center justify-between gap-3">
-      <span className="text-subhead text-foreground">
+    <div className="flex min-h-11 items-center justify-between gap-3 border-t border-border text-sm">
+      <span className="text-muted-foreground">
         <GlossaryTerm term={term}>{label}</GlossaryTerm>
       </span>
       {onClick ? (
         <button type="button" onClick={onClick} aria-label={actionLabel} className="flex min-h-11 items-center transition-opacity active:opacity-70">
-          <span className={readingClass}>{reading}</span>
+          {reading}
         </button>
       ) : (
-        <span className={readingClass}>{reading}</span>
+        reading
       )}
     </div>
   )
 }
 
 /**
- * How hard the run was, in one card (H12, M9): time in HR zones as a bar,
- * then aerobic effect and decoupling as rows - a value and one word each, the
- * definitions behind their ⓘ. Three cards and a sentence said the same.
+ * How hard the run was, in one card (H12, M9, v4.17): time in each HR zone
+ * as a bar with a labelled legend, then aerobic and anaerobic effect and
+ * decoupling as rows - a value and what it means, coloured by that meaning.
  */
 export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: Props) {
   const zones = [...hrZones].sort((a, b) => a.zone - b.zone).filter((z) => z.percent >= MIN_ZONE_PCT)
-  const header = zones
-    .map((z) => `Z${z.zone} ${Math.round(z.percent)}`)
-    .join(' · ')
   const hasEffect = scored(aer) || scored(ana)
   if (zones.length === 0 && !hasEffect && !decoupling) return null
 
   const d = t.activity.decoupling
   const decouplingHeld = decoupling ? decoupling.percent < 0 || decoupling.drift === 'stable' : true
-  const decouplingRow = decoupling && (
-    <Row
-      term="decoupling"
-      label={t.glossary.decoupling.term}
-      value={`${formatDeltaFixed(decoupling.percent, 1)}%`}
-      word={decouplingHeld ? d.held : d.faded}
-      tone={decouplingHeld ? STATUS.success.text : STATUS.warning.text}
-      onClick={onShowCharts}
-      actionLabel={d.seeInCharts}
-    />
-  )
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] px-4.5 py-4" data-testid="run-effort">
+    <section className={cardClass({ className: 'flex flex-col gap-3.5' })} data-testid="run-effort">
       {zones.length > 0 && (
         <>
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-subhead text-foreground">{t.activity.zones.short}</span>
-            <span className="text-right text-subhead tabular-nums text-muted-foreground">{header}</span>
+            <h3 className="text-[15px] font-semibold text-foreground">{t.activity.zones.short}</h3>
+            <span className="text-xs text-muted-foreground">{t.activity.zones.shareOfTime}</span>
           </div>
-          <div className="mt-3 flex h-2.5 gap-1" data-testid="zone-stack">
+          <div className="flex h-2.5 gap-[3px]" data-testid="zone-stack">
             {zones.map((zone) => (
               <span
                 key={zone.zone}
-                className={cn('h-full rounded-full', ZONE_COLOR_CLASSES[zone.zone]?.bg)}
-                style={{ flexGrow: zone.percent, flexBasis: 0 }}
+                className="h-full rounded-full"
+                style={{ flexGrow: zone.percent, flexBasis: 0, background: zoneColor(zone.zone as SessionZone) }}
               />
             ))}
           </div>
-          <ul className="sr-only">
+          <Legend className="gap-x-[18px]">
             {zones.map((zone) => (
-              <li key={zone.zone}>{`Z${zone.zone} · ${t.zoneLabels[zone.zone] ?? ''}: ${Math.round(zone.percent)}%`}</li>
+              <LegendItem key={zone.zone} swatch="square" color={zoneColor(zone.zone as SessionZone)}>
+                <span>
+                  {`Z${zone.zone} ${t.zoneLabels[zone.zone] ?? ''} `}
+                  <b className="font-semibold text-foreground">{Math.round(zone.percent)}%</b>
+                </span>
+              </LegendItem>
             ))}
-          </ul>
+          </Legend>
         </>
       )}
 
       {(hasEffect || decoupling) && (
-        <div className={cn(zones.length > 0 && 'mt-3.5 border-t border-border pt-1.5')}>
+        <div className={cn('flex flex-col', zones.length === 0 && '[&>div:first-child]:border-t-0')}>
           {scored(aer) && (
             <Row
               term="aerobicEffect"
               label={t.activity.trainingEffect.aerobic}
               value={aer.toFixed(1)}
               word={trainingEffectLevel(aer)}
-              // Garmin's label, not a delta: ink, never green or the accent (v5.5 #18).
-              tone={aer >= 1 ? 'text-foreground' : 'text-muted-foreground'}
+              tone={trainingEffectTone(aer)}
             />
           )}
           {scored(ana) && (
@@ -143,12 +147,22 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
               label={t.activity.trainingEffect.anaerobic}
               value={ana.toFixed(1)}
               word={trainingEffectLevel(ana)}
-              tone={ana >= 1 ? 'text-foreground' : 'text-muted-foreground'}
+              tone={trainingEffectTone(ana)}
             />
           )}
-          {decouplingRow}
+          {decoupling && (
+            <Row
+              term="decoupling"
+              label={t.glossary.decoupling.term}
+              value={`${formatDeltaFixed(decoupling.percent, 1)}%`}
+              word={decouplingHeld ? d.held : d.faded}
+              tone={decouplingHeld ? 'pos' : 'warn'}
+              onClick={onShowCharts}
+              actionLabel={d.seeInCharts}
+            />
+          )}
         </div>
       )}
-    </GlassSurface>
+    </section>
   )
 }

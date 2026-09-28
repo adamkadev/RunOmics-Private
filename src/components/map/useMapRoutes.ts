@@ -1,38 +1,143 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { FeatureCollection } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
-import { maptilerStyleUrl } from "@/lib/maptiler";
-import { buildHeatGeoJSON, heatColorExpression, heatWidthExpression } from "./mapUtils";
-import { firstSymbolLayerId, loadMapLibre, styleRunMapLabels } from "@/lib/maplibre";
-import { addEdgeFence } from "@/lib/runMapLayers";
+import { maptilerStyle } from "@/lib/maptiler";
+import { percentileBounds, type LngLatBounds } from "@/lib/routeFrame";
+import { firstSymbolLayerId, loadMapLibre } from "@/lib/maplibre";
+import { EDGE_FENCE_LAYER, EDGE_FENCE_SOURCE, addEdgeFence } from "@/lib/runMapLayers";
 import { SURFACES } from "@/lib/themeTokens";
+import { HEAT_LAYER, HEAT_SOURCE, addHeatLayer, type HeatLayer } from "./heatLayer";
+import { buildHeatTracks, ringCoordinates } from "./mapUtils";
 
-const REVEAL_STEPS = 16;
-const REVEAL_STEP_MS = 45;
+/** The routes' breathing room inside the map (v4.17). */
+export const FIT_PADDING = 36;
+const FIT_MAX_ZOOM = 14;
+const FIT_MS = 800;
 
-/** The routes' breathing room inside the map: 24 pt (v4.8), so an area isn't cut at the top. */
-export const FIT_PADDING = 24;
+const RING_SOURCE = "home-ring";
+const DOT_SOURCE = "home-dot";
+
+/** The ring around home: what the card's sentence names. */
+export interface HomeRing {
+  center: [number, number];
+  radiusKm: number;
+}
+
+const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
+
+function ringData(ring: HomeRing | null): { ring: FeatureCollection; dot: FeatureCollection } {
+  if (!ring) return { ring: EMPTY, dot: EMPTY };
+  return {
+    ring: {
+      type: "FeatureCollection",
+      features: [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: ringCoordinates(ring.center, ring.radiusKm) } }],
+    },
+    dot: {
+      type: "FeatureCollection",
+      features: [{ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: ring.center } }],
+    },
+  };
+}
+
+const boundsArray = (b: LngLatBounds): [[number, number], [number, number]] => [
+  [b.minLon, b.minLat],
+  [b.maxLon, b.maxLat],
+];
 
 export function useMapRoutes(
   data: MapShellData,
   routes: [number, number][][],
   selectedIdx: number,
   visibleIndices: number[],
+  ring: HomeRing | null,
 ) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const heatRef = useRef<HeatLayer | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   const { clusters } = data;
   const selected = clusters[selectedIdx];
 
+  // The view follows the runs on the map: the area's own frame until its
+  // routes arrive, then the frame of the ones the filters keep - the same
+  // box, until a filter narrows it.
+  const frame = useMemo(() => {
+    const loaded = visibleIndices.map((i) => routes[i]).filter((coords): coords is [number, number][] => !!coords);
+    return (loaded.length ? percentileBounds(loaded) : null) ?? selected?.frame ?? null;
+  }, [routes, visibleIndices, selected]);
+  const frameKey = frame ? [frame.minLon, frame.minLat, frame.maxLon, frame.maxLat].map((v) => v.toFixed(5)).join() : "";
+
+  // What the run layers draw, kept so a new style or accent can redraw it.
+  const tracksRef = useRef<Float64Array[]>([]);
+  const ringRef = useRef<HomeRing | null>(ring);
+
   useEffect(() => {
     if (!containerRef.current || !clusters.length) return;
     let cancelled = false;
+    let fenceCleanup: (() => void) | null = null;
+    const isDark = () => document.documentElement.classList.contains("dark");
+    const readAccent = () =>
+      getComputedStyle(containerRef.current ?? document.documentElement).getPropertyValue("--accent").trim() ||
+      SURFACES[isDark() ? "dark" : "light"].text;
 
-    async function initMap(isDark: boolean) {
+    function removeRunLayers(map: MapLibreMap) {
+      heatRef.current?.remove();
+      heatRef.current = null;
+      fenceCleanup?.();
+      fenceCleanup = null;
+      for (const id of [DOT_SOURCE, RING_SOURCE, HEAT_LAYER, EDGE_FENCE_LAYER]) if (map.getLayer(id)) map.removeLayer(id);
+      for (const id of [DOT_SOURCE, RING_SOURCE, HEAT_SOURCE, EDGE_FENCE_SOURCE]) if (map.getSource(id)) map.removeSource(id);
+    }
+
+    // The heat, the home ring and its dot, under the place names, in the
+    // accent: the athlete's own data. A new style wipes them, and a new
+    // accent repaints them, so both call this again with what is on screen.
+    function addRunLayers(map: MapLibreMap) {
+      removeRunLayers(map);
+      const accent = readAccent();
+      const firstSymbolId = firstSymbolLayerId(map);
+
+      heatRef.current = addHeatLayer(map, isDark() ? "dark" : "light", accent, firstSymbolId);
+      heatRef.current.setTracks(tracksRef.current, false);
+
+      const { ring: ringLine, dot } = ringData(ringRef.current);
+      map.addSource(RING_SOURCE, { type: "geojson", data: ringLine });
+      map.addLayer(
+        {
+          id: RING_SOURCE,
+          type: "line",
+          source: RING_SOURCE,
+          layout: { "line-join": "round", "line-cap": "round" },
+          // 4 px dashes, 6 px apart: the dash array counts line widths.
+          paint: { "line-color": accent, "line-width": 1.2, "line-opacity": 0.8, "line-dasharray": [4 / 1.2, 6 / 1.2] },
+        },
+        firstSymbolId,
+      );
+      map.addSource(DOT_SOURCE, { type: "geojson", data: dot });
+      map.addLayer(
+        {
+          id: DOT_SOURCE,
+          type: "circle",
+          source: DOT_SOURCE,
+          paint: {
+            // Home: the accent in a 2 px white ring, 10 px across.
+            "circle-radius": 3,
+            "circle-color": accent,
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#ffffff",
+          },
+        },
+        firstSymbolId,
+      );
+
+      fenceCleanup = addEdgeFence(map);
+    }
+
+    async function initMap() {
       const mgl = await loadMapLibre();
       if (cancelled) return;
 
@@ -42,130 +147,108 @@ export function useMapRoutes(
         return;
       }
 
-      mapRef.current?.remove();
-      mapRef.current = null;
-      setMapReady(false);
-
       const first = clusters[data.defaultClusterIdx];
       if (!first) return;
+      let dark = isDark();
+      let accent = readAccent();
       const map = new mgl.Map({
         container: containerRef.current!,
-        style: maptilerStyleUrl(isDark, token),
-        bounds: [
-          [first.bounds.minLon, first.bounds.minLat],
-          [first.bounds.maxLon, first.bounds.maxLat],
-        ],
-        fitBoundsOptions: { padding: FIT_PADDING, maxZoom: 14 },
-        // The licence-required attribution now lives in its own row below the
-        // map (GlobalMapClient), not as an in-map control - drawing both
-        // printed "© MapTiler" twice.
+        style: maptilerStyle(dark, token),
+        bounds: boundsArray(first.frame),
+        fitBoundsOptions: { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM },
+        // The licence-required attribution is the map's own line of text
+        // (GlobalMapClient), not an in-map control - drawing both printed
+        // "© MapTiler" twice.
         attributionControl: false,
+        // North stays up: the heat canvas is drawn for a flat, unrotated view.
+        dragRotate: false,
+        pitchWithRotate: false,
+        touchPitch: false,
+        maxPitch: 0,
       });
+      map.touchZoomRotate.disableRotation();
+      map.keyboard.disableRotation();
       mapRef.current = map;
 
-      map.on("load", () => {
+      // The first style and every one after it (v4.17): the camera stays,
+      // the run layers come back.
+      map.on("style.load", () => {
         if (cancelled) return;
-
-        // The Activity map's label rules (v4.10): towns over the heat lines
-        // with a halo, neighbourhoods from zoom 14, nothing cut at the edge.
-        const surface = SURFACES[isDark ? "dark" : "light"];
-        styleRunMapLabels(map, { halo: surface.card, town: surface.text2, neighbourhood: surface.text3 });
-        const firstSymbolId = firstSymbolLayerId(map);
-
-        const { data: heat, maxCount } = buildHeatGeoJSON(routes, first.routeIndices);
-
-        map.addSource("heat", { type: "geojson", data: heat });
-
-        map.addLayer(
-          {
-            id: "heat-line",
-            type: "line",
-            source: "heat",
-            layout: { "line-join": "round", "line-cap": "round" },
-            paint: {
-              "line-color": heatColorExpression(maxCount, isDark ? "dark" : "light") as never,
-              "line-width": heatWidthExpression(maxCount) as never,
-              "line-opacity": 0.85,
-            },
-          },
-          firstSymbolId,
-        );
-
-        addEdgeFence(map);
+        addRunLayers(map);
         setMapReady(true);
       });
+
+      // A theme swaps the whole style in place; an accent only repaints the
+      // run layers.
+      const observer = new MutationObserver(() => {
+        if (cancelled || !map.isStyleLoaded()) return;
+        if (isDark() !== dark) {
+          dark = isDark();
+          accent = readAccent();
+          removeRunLayers(map);
+          map.setStyle(maptilerStyle(dark, token), { diff: false });
+        } else if (readAccent() !== accent) {
+          accent = readAccent();
+          addRunLayers(map);
+        }
+      });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-accent"] });
+      stopObserving = () => observer.disconnect();
     }
 
-    initMap(document.documentElement.classList.contains("dark"));
-
-    const observer = new MutationObserver(() => {
-      if (!cancelled) initMap(document.documentElement.classList.contains("dark"));
-    });
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
+    let stopObserving: (() => void) | null = null;
+    initMap();
 
     return () => {
       cancelled = true;
-      observer.disconnect();
+      stopObserving?.();
+      heatRef.current?.remove();
+      heatRef.current = null;
+      fenceCleanup?.();
       mapRef.current?.remove();
       mapRef.current = null;
       setMapReady(false);
     };
-    // Building the map tears down and recreates the MapLibre instance, so it
-    // keys off `data` alone; the routes and clusters it reads are all
-    // derived from that same `data`.
+    // Building the map creates the MapLibre instance, so it keys off `data`
+    // alone; the routes and clusters it reads are all derived from that
+    // same `data`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   useEffect(() => {
-    const map = mapRef.current;
-    const source = map?.getSource("heat") as GeoJSONSource | undefined;
-    if (!mapReady || !map || !source) return;
-
-    const { data: heat, maxCount } = buildHeatGeoJSON(routes, visibleIndices);
-    if (map.getLayer("heat-line")) {
-      map.setPaintProperty("heat-line", "line-color", heatColorExpression(maxCount, document.documentElement.classList.contains("dark") ? "dark" : "light") as never);
-      map.setPaintProperty("heat-line", "line-width", heatWidthExpression(maxCount) as never);
-    }
-
-    const features = heat.features;
+    tracksRef.current = buildHeatTracks(routes, visibleIndices);
+    if (!mapReady) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reduceMotion || features.length === 0) {
-      source.setData(heat);
-      return;
-    }
-
-    let step = 0;
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    function reveal() {
-      step += 1;
-      const count = Math.ceil((features.length * step) / REVEAL_STEPS);
-      source!.setData({ type: "FeatureCollection", features: features.slice(0, count) });
-      if (step < REVEAL_STEPS) timeoutId = setTimeout(reveal, REVEAL_STEP_MS);
-    }
-    reveal();
-
-    return () => {
-      if (timeoutId !== null) clearTimeout(timeoutId);
-    };
+    heatRef.current?.setTracks(tracksRef.current, !reduceMotion);
   }, [visibleIndices, mapReady, routes]);
 
   useEffect(() => {
-    if (!mapReady || !mapRef.current || !selected) return;
-    mapRef.current.fitBounds(
-      [
-        [selected.bounds.minLon, selected.bounds.minLat],
-        [selected.bounds.maxLon, selected.bounds.maxLat],
-      ],
-      { padding: FIT_PADDING, maxZoom: 14, duration: 800 },
-    );
-    // `selected` is `routes[selectedIdx]`: keying off the index avoids
-    // re-flying the camera whenever the routes array is rebuilt unchanged.
+    ringRef.current = ring;
+    const map = mapRef.current;
+    if (!mapReady || !map) return;
+    const { ring: ringLine, dot } = ringData(ring);
+    (map.getSource(RING_SOURCE) as GeoJSONSource | undefined)?.setData(ringLine);
+    (map.getSource(DOT_SOURCE) as GeoJSONSource | undefined)?.setData(dot);
+  }, [ring, mapReady]);
+
+  // The first fit on a new map lands at once; later ones - another area, a
+  // filter - fly there. Keyed on the frame's numbers, so a routes array
+  // rebuilt unchanged doesn't move the camera.
+  const fittedOnce = useRef(false);
+  useEffect(() => {
+    if (!mapReady) {
+      fittedOnce.current = false;
+      return;
+    }
+    if (!mapRef.current || !frame) return;
+    mapRef.current.fitBounds(boundsArray(frame), {
+      padding: FIT_PADDING,
+      maxZoom: FIT_MAX_ZOOM,
+      duration: fittedOnce.current ? FIT_MS : 0,
+    });
+    fittedOnce.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIdx, mapReady]);
+  }, [frameKey, mapReady]);
 
   const resize = useCallback(() => {
     mapRef.current?.resize();

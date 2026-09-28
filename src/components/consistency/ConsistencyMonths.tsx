@@ -1,135 +1,195 @@
 'use client'
 
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
-import { DAY_FILL, LABELLED_ROWS, ROWS, TODAY_OUTLINE, type ConsistencyCell, type ConsistencyView, type DayState } from './consistencyMonths'
-import { GlassSurface } from '@/components/ui/GlassSurface'
-import { formatDate } from '@/lib/formatters'
+import { LEVEL_FILL, STRONG_MONTH_DAYS, TODAY_OUTLINE, dayName, levelStyle, type ConsistencyCell, type ConsistencyMonth, type ConsistencyView, type DayLevel } from './consistencyMonths'
+import { cardClass } from '@/components/ui/Card'
+import { Stat, StatGrid, type StatTone } from '@/components/ui/Stat'
+import { formatDate, formatDelta } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-/** A day's fill: the shared neutral scale (DAY_FILL); days to come are an outline. */
-const FILL: Record<DayState, CSSProperties> = {
-  rest: { background: DAY_FILL.rest },
-  run: { background: DAY_FILL.run },
-  long: { background: DAY_FILL.long },
-  future: { background: 'transparent', boxShadow: 'inset 0 0 0 1px var(--border)' },
-  none: { background: 'transparent' },
-}
-const TODAY_RING = TODAY_OUTLINE
+const CARD_TITLE = 'text-[15px] font-semibold text-foreground'
+/** The day names down the left, every other row (v4.17). */
+const DAY_LABEL_ROWS = [0, 2, 4, 6]
+/** The day labels stay put while the weeks scroll under them, the gap covered too. */
+const STICKY = 'sticky left-0 z-10 bg-card shadow-[4px_0_0_var(--card)]'
+/** Under a share-point change this small, the year before says nothing new. */
+const FLAT_PTS = 2
 
-const GRID = 'grid grid-cols-[16px_repeat(12,minmax(0,1fr))] gap-x-[3px]'
-
-function cellStyle(cell: ConsistencyCell): CSSProperties {
-  return { ...FILL[cell.state], ...(cell.today ? { boxShadow: TODAY_RING } : {}) }
+/** The week columns, 24 pt of day labels then one column a week. */
+function columns(weeks: number): CSSProperties {
+  return { gridTemplateColumns: `24px repeat(${weeks}, minmax(0, 1fr))` }
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
+function Day({ cell, onRest }: { cell: ConsistencyCell; onRest: (date: string) => void }) {
+  const box = 'block aspect-square w-full rounded-[3px]'
+  if (cell.state === 'none') return <span aria-hidden className={box} />
+  const style = levelStyle(cell.level, { today: cell.today, future: cell.state === 'future' })
+  const name = dayName(cell)
+  if (cell.state === 'run' && cell.activityId) {
+    return <Link href={`/activities/${cell.activityId}`} aria-label={name} title={name} className={box} style={style} data-state="run" data-level={cell.level} />
+  }
+  if (cell.state === 'rest') {
+    return <button type="button" aria-label={name} title={name} onClick={() => onRest(cell.date)} className={box} style={style} data-state="rest" />
+  }
+  return <span aria-hidden title={cell.state === 'future' ? undefined : name} className={box} style={style} data-state={cell.state} data-level={cell.level} />
+}
+
+/**
+ * Every day of the rolling year, GitHub-style (v4.17): a column a week,
+ * Monday on top, the months named over the columns they start. On a phone
+ * the grid keeps a legible cell and scrolls sideways, opened on today.
+ */
+function YearCalendar({ view, onRest }: { view: ConsistencyView; onRest: (date: string) => void }) {
+  const scroller = useRef<HTMLDivElement>(null)
+  const dayLabels = new Intl.DateTimeFormat(t.locale, { weekday: 'short', timeZone: 'UTC' })
+  // 2024-01-01 was a Monday.
+  const dayLabel = (row: number) => dayLabels.format(new Date(Date.UTC(2024, 0, 1 + row))).replace(/\.$/, '')
+
+  useEffect(() => {
+    const el = scroller.current
+    if (el) el.scrollLeft = el.scrollWidth
+  }, [])
+
   return (
-    <GlassSurface variant="card" className="rounded-card-sm px-3.5 py-3">
-      <div className="text-caption uppercase tracking-[0.08em] text-muted-foreground">{label}</div>
-      <div className="mt-1.5 font-display text-title2 font-bold leading-none tabular-nums text-foreground">{value}</div>
-    </GlassSurface>
+    <div ref={scroller} className="-mr-1 overflow-x-auto pb-1 pr-1 pt-0.5" data-testid="consistency-calendar">
+      <div className="min-w-[700px]">
+        <div className="mb-[3px] grid gap-x-[3px] text-caption text-muted-foreground" style={columns(view.weeks.length)} aria-hidden>
+          <span className={STICKY} />
+          {view.weeks.map((week) => (
+            <span key={week.start} data-testid="consistency-month" className="h-4 overflow-visible whitespace-nowrap leading-4">
+              {week.monthLabel ?? ''}
+            </span>
+          ))}
+        </div>
+        <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={columns(view.weeks.length)}>
+          {Array.from({ length: 7 }, (_, row) => (
+            <span key={`label-${row}`} aria-hidden className={cn(STICKY, 'flex items-center text-caption leading-none text-muted-foreground')}>
+              {DAY_LABEL_ROWS.includes(row) ? dayLabel(row) : ''}
+            </span>
+          ))}
+          {view.weeks.flatMap((week) => week.days.map((cell) => <Day key={cell.date} cell={cell} onRest={onRest} />))}
+        </div>
+      </div>
+    </div>
   )
 }
 
-function Day({ cell, onRest }: { cell: ConsistencyCell | null; onRest: (date: string) => void }) {
-  if (!cell) return <span aria-hidden className="block h-[9px]" />
-  const box = 'block h-[9px] w-full rounded-[2px]'
-  const name = `${formatDate(cell.date)}: ${t.consistency.levels[cell.state as 'rest' | 'run' | 'long'] ?? ''}`
-  if ((cell.state === 'run' || cell.state === 'long') && cell.activityId) {
-    return (
-      <Link href={`/activities/${cell.activityId}`} aria-label={name} className={box} style={cellStyle(cell)} data-state={cell.state} />
-    )
-  }
-  if (cell.state === 'rest') {
-    return <button type="button" aria-label={name} onClick={() => onRest(cell.date)} className={box} style={cellStyle(cell)} data-state="rest" />
-  }
-  return <span aria-hidden className={box} style={cellStyle(cell)} data-state={cell.state} />
+function Swatch({ level }: { level: DayLevel }) {
+  return <span aria-hidden className="size-3 shrink-0 rounded-[3px]" style={{ background: LEVEL_FILL[level] }} />
 }
 
+/** Active days a month (v4.17.1): 16 days or more is the full accent, fewer the ramp's lowest tint. */
+function MonthBars({ months }: { months: ConsistencyMonth[] }) {
+  const c = t.consistency
+  return (
+    <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="consistency-counts">
+      <h2 className={CARD_TITLE}>{c.perMonth}</h2>
+      <div className="grid h-[110px] grid-cols-12 items-end gap-1.5 sm:gap-2">
+        {months.map((month) => {
+          const strong = month.activeDays >= STRONG_MONTH_DAYS
+          return (
+            <div key={month.key} className="flex h-full flex-col items-center justify-end gap-1" aria-label={c.monthSummary(month.fullLabel, month.activeDays)} role="img">
+              <span className="text-xs font-semibold text-foreground" aria-hidden>{month.activeDays}</span>
+              <span
+                aria-hidden
+                data-testid="month-bar"
+                data-strong={strong}
+                className="block w-full rounded-[5px_5px_2px_2px]"
+                style={{
+                  height: `calc((100% - 20px) * ${month.activeDays / 31})`,
+                  background: strong ? LEVEL_FILL[3] : LEVEL_FILL[1],
+                }}
+              />
+            </div>
+          )
+        })}
+      </div>
+      <div className="grid grid-cols-12 gap-1.5 text-center text-[11px] text-muted-foreground sm:gap-2" aria-hidden>
+        {months.map((month) => (
+          <span key={month.key} className="whitespace-nowrap">{month.label}</span>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/**
+ * The Consistency page (v4.17): active days, their share against the year
+ * before and the streak; every day of the rolling year on the accent ramp;
+ * then the active days of each month.
+ */
 export function ConsistencyMonths({ view }: { view: ConsistencyView }) {
   const c = t.consistency
   const [restDay, setRestDay] = useState<string | null>(null)
 
   if (view.activeDays === 0) {
     return (
-      <GlassSurface variant="card" className="rounded-card-sm border-dashed py-10 text-center">
+      <section className={cardClass({ dashed: true, className: 'py-10 text-center' })}>
         <p className="text-sm text-subtle">{c.empty}</p>
-      </GlassSurface>
+      </section>
     )
   }
 
-  const legend: { key: string; label: string; style: CSSProperties }[] = [
-    { key: 'rest', label: c.levels.rest, style: FILL.rest },
-    { key: 'run', label: c.levels.run, style: FILL.run },
-    { key: 'long', label: c.levels.long, style: FILL.long },
-    { key: 'today', label: c.today, style: { boxShadow: 'inset 0 0 0 1.5px var(--foreground)' } },
-  ]
+  const prior = view.prior
+  // More of the days run is the good direction; fewer is a caution (v4.17).
+  const priorTone: StatTone = !prior || Math.abs(prior.deltaPts) < FLAT_PTS ? 'muted' : prior.deltaPts > 0 ? 'pos' : 'warn'
+  const priorLine = prior
+    ? prior.fullYear
+      ? c.vsPrior(formatDelta(prior.deltaPts))
+      : c.vsRange(formatDelta(prior.deltaPts), prior.range)
+    : null
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2">
-        <StatTile label={c.activeDays} value={String(view.activeDays)} />
-        <StatTile label={c.share} value={`${view.sharePct}%`} />
-        <StatTile label={c.streak} value={c.streakValue(view.streakWeeks)} />
-      </div>
+    <div className="flex flex-col gap-3.5">
+      <section className={cardClass()} data-testid="consistency-stats">
+        <StatGrid columns={3}>
+          {/* What the days are counted of (v4.17.2): the twelve months
+              from the first of the month, to today - "of 363" read as a
+              year that had lost two days. */}
+          <Stat size="lg" label={c.activeDays} value={view.activeDays} meaning={c.ofDays(view.windowDays, formatDate(view.windowStart, { style: 'bare', year: 'never' }))} />
+          <Stat
+            size="lg"
+            label={c.share}
+            value={`${view.sharePct}%`}
+            // The comparison wraps rather than clipping on a phone.
+            meaning={priorLine && <span className="whitespace-normal" data-testid="consistency-prior">{priorLine}</span>}
+            tone={priorTone}
+          />
+          <Stat
+            size="lg"
+            label={c.streak}
+            value={view.streakWeeks}
+            unit={c.weeks(view.streakWeeks)}
+            meaning={view.bestStreakWeeks ? c.best(view.bestStreakWeeks) : null}
+          />
+        </StatGrid>
+      </section>
 
-      <GlassSurface variant="card" className="rounded-card-sm px-3.5 py-3.5" data-testid="consistency-grid">
-        {/* Month initials over their columns; January in text ink marks the new year. */}
-        <div className={cn(GRID, 'mb-1.5')} aria-hidden>
-          <span />
-          {view.months.map((month) => (
-            <span
-              key={month.key}
-              data-testid="consistency-month"
-              className={cn('text-center text-caption font-bold', month.startsYear ? 'text-foreground' : 'text-muted-foreground')}
-            >
-              {month.initial}
-            </span>
-          ))}
+      <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="consistency-grid">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className={CARD_TITLE}>{c.calendarTitle}</h2>
+          <span className="shrink-0 text-xs text-muted-foreground">{c.colourKey}</span>
         </div>
 
-        <div className="flex flex-col gap-y-[3px]">
-          {Array.from({ length: ROWS }, (_, row) => (
-            <div key={row} className={GRID}>
-              <span aria-hidden className="text-right text-caption leading-[9px] text-muted-foreground" style={{ paddingRight: 3 }}>
-                {LABELLED_ROWS.includes(row + 1) ? row + 1 : ''}
-              </span>
-              {view.months.map((month) => (
-                <Day key={month.key} cell={month.cells[row] ?? null} onRest={setRestDay} />
-              ))}
-            </div>
-          ))}
-        </div>
+        <YearCalendar view={view} onRest={setRestDay} />
 
-        {/* Active days per month, under the grid. */}
-        <div className={cn(GRID, 'mt-2.5 border-t border-border pt-2')} data-testid="consistency-counts">
-          <span />
-          {view.months.map((month) => (
-            <span
-              key={month.key}
-              aria-label={c.monthSummary(month.fullLabel, month.activeDays)}
-              className="text-center text-caption font-bold tabular-nums text-foreground"
-            >
-              {month.activeDays}
-            </span>
-          ))}
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2 pt-1 text-xs text-muted-foreground" data-testid="consistency-legend">
+          <span>{c.levels.rest}</span>
+          {([0, 1, 2, 3] as const).map((level) => <Swatch key={level} level={level} />)}
+          <span>{c.levels.long}</span>
+          <span className="ml-3.5 flex items-center gap-1.5">
+            <span aria-hidden className="size-3 shrink-0 rounded-[3px]" style={TODAY_OUTLINE} />
+            {c.today}
+          </span>
+          <span aria-live="polite" className={cn('ml-auto min-h-4', !restDay && 'sr-only')} data-testid="consistency-rest-day">
+            {restDay ? c.restDay(formatDate(restDay)) : null}
+          </span>
         </div>
+      </section>
 
-        <p aria-live="polite" className="mt-2 min-h-4 text-caption text-muted-foreground" data-testid="consistency-rest-day">
-          {restDay ? c.restDay(formatDate(restDay)) : null}
-        </p>
-
-        <div className="mt-1 flex flex-wrap gap-x-3.5 gap-y-1 text-caption text-muted-foreground">
-          {legend.map((item) => (
-            <span key={item.key} className="flex items-center gap-1.5">
-              <span aria-hidden className="size-2.5 rounded-[2px]" style={item.style} />
-              {item.label}
-            </span>
-          ))}
-        </div>
-      </GlassSurface>
+      <MonthBars months={view.months} />
     </div>
   )
 }

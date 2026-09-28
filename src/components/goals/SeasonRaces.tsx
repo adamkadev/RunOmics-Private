@@ -7,6 +7,7 @@ import { formatCountdown, formatDate, formatDuration } from '@/lib/formatters'
 import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 import { shortDist } from './shortDistance'
+import { raceDisplayName } from './raceName'
 
 export interface SeasonRaceRow {
   distance: string
@@ -30,13 +31,6 @@ export interface SeasonRaceRow {
   /** The prediction ahead of a race, the result after it. */
   seconds: number | null
   daysUntil: number | null
-}
-
-/** True when a race's name is just its distance restated ("10 km" for a 10K),
- *  the placeholder Garmin fills in until a real event name is set. */
-function isPlaceholderRaceName(distance: string, name: string): boolean {
-  const normalize = (s: string) => s.toLowerCase().replace(/\bkm\b/g, 'k').replace(/[^a-z0-9]/g, '')
-  return normalize(name) === normalize(distance)
 }
 
 function outcomeLine(seconds: number, targetSeconds: number): string {
@@ -82,9 +76,7 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
     if (scheduledRace) {
       const raceDate = formatDate(scheduledRace.date, { style: 'bare' })
       const hasPassed = scheduledRace.date < today
-      const namePlaceholder = isPlaceholderRaceName(target.distance, scheduledRace.name)
-      const displayName = namePlaceholder && scheduledRace.location ? scheduledRace.location : scheduledRace.name
-      const title = `${shortDist(target.distance)} · ${displayName}`
+      const title = `${shortDist(target.distance)} · ${raceDisplayName({ ...scheduledRace, distance: target.distance })}`
 
       if (hasPassed) {
         const result =

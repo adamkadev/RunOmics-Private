@@ -1,12 +1,20 @@
 import { describe, it, expect } from 'vitest'
 import {
   matchesFilters,
-  buildHeatGeoJSON,
-  heatColorExpression,
+  buildHeatTracks,
+  mercatorX,
+  mercatorY,
+  HEAT_STYLE,
+  heatLineWidth,
+  heatPasses,
+  rgba,
+  reachKm,
+  ringCoordinates,
   areaRows,
   computeAreaTerritory,
   type HeatFilters,
 } from '../mapUtils'
+import { distanceKm } from '@/lib/math'
 import type { RouteCluster, RouteMeta } from '@/application/usecases/GetAllRoutes'
 
 const meta = (over: Partial<RouteMeta> = {}): RouteMeta => ({
@@ -47,102 +55,101 @@ describe('matchesFilters', () => {
   })
 })
 
-describe('buildHeatGeoJSON', () => {
-  it('counts a shared stretch as run twice, keeping the original coordinates', () => {
-    const routes: [number, number][][] = [
-      [[7.7, 48.6], [7.701, 48.6], [7.702, 48.6]],
-      [[7.7, 48.6], [7.701, 48.6], [7.702, 48.6]],
-    ]
-    const { data, maxCount } = buildHeatGeoJSON(routes, [0, 1])
-    expect(maxCount).toBe(2)
-    expect(data.features).toHaveLength(2)
-    for (const feat of data.features) {
-      expect(feat.properties?.count).toBe(2)
-      expect(feat.geometry).toEqual({
-        type: 'LineString',
-        coordinates: [[7.7, 48.6], [7.701, 48.6], [7.702, 48.6]],
-      })
-    }
+describe('buildHeatTracks (v4.17)', () => {
+  const pairs = (track: Float64Array) => Array.from({ length: track.length / 2 }, (_, i) => [track[2 * i]!, track[2 * i + 1]!])
+
+  it('turns each run into one list of Mercator x, y pairs', () => {
+    const routes: [number, number][][] = [[[0, 0], [0.001, 0]], [[7.7, 48.6], [7.701, 48.6]]]
+    const tracks = buildHeatTracks(routes, [0, 1])
+    expect(tracks).toHaveLength(2)
+    expect(pairs(tracks[0]!)[0]).toEqual([0.5, 0.5])
+    expect(tracks[1]![0]).toBeCloseTo(mercatorX(7.7), 12)
+    expect(tracks[1]![1]).toBeCloseTo(mercatorY(48.6), 12)
   })
 
-  it('gives opposite directions of the same stretch the same shared count', () => {
-    const routes: [number, number][][] = [
-      [[7.7, 48.6], [7.701, 48.6]],
-      [[7.701, 48.6], [7.7, 48.6]],
-    ]
-    const { data, maxCount } = buildHeatGeoJSON(routes, [0, 1])
-    expect(maxCount).toBe(2)
-    expect(data.features).toHaveLength(2)
-    for (const feat of data.features) {
-      expect(feat.properties?.count).toBe(2)
-    }
+  it('draws only the runs asked for, and none with fewer than two points', () => {
+    const routes: [number, number][][] = [[[7.7, 48.6]], [[7.7, 48.6], [7.701, 48.6]], [[7.7, 48.6], [7.701, 48.6]]]
+    expect(buildHeatTracks(routes, [0, 1])).toHaveLength(1)
   })
 
-  it('splits a route into separate features where run frequency changes', () => {
-    // ~70 m steps: anything past 150 m is now a GPS jump, not a run.
-    const routes: [number, number][][] = [
-      [[7.6, 48.6], [7.601, 48.6], [7.602, 48.6], [7.603, 48.6]],
-      [[7.6, 48.6], [7.601, 48.6]],
-    ]
-    const { data, maxCount } = buildHeatGeoJSON(routes, [0, 1])
-    expect(maxCount).toBe(2)
-    expect(data.features).toHaveLength(3)
-    const counts = data.features.map((f) => f.properties?.count).sort()
-    expect(counts).toEqual([1, 2, 2])
-  })
-
-  it('ignores routes with fewer than two points', () => {
-    const routes: [number, number][][] = [[[7.7, 48.6]]]
-    const { data, maxCount } = buildHeatGeoJSON(routes, [0])
-    expect(data.features).toHaveLength(0)
-    expect(maxCount).toBe(1)
-  })
-})
-
-describe('heatColorExpression (v5.6 #5)', () => {
-  it('runs one neutral scale, band grey to ink, up to the observed max', async () => {
-    const { SURFACES } = await import('@/lib/themeTokens')
-    for (const mode of ['dark', 'light'] as const) {
-      const expr = heatColorExpression(10, mode)
-      expect(expr.slice(0, 3)).toEqual(['interpolate', ['linear'], ['get', 'count']])
-      expect(expr[3]).toBe(1)
-      expect(expr[4]).toBe(SURFACES[mode].band)
-      expect(expr[5]).toBe(10)
-      expect(expr[6]).toBe(SURFACES[mode].text)
-    }
-  })
-
-  it('uses no zone hue', async () => {
-    const { ZONE_HEX } = await import('@/lib/themeTokens')
-    const colours = [heatColorExpression(50, 'dark'), heatColorExpression(50, 'light')].flat().filter((v) => typeof v === 'string')
-    for (const hex of Object.values(ZONE_HEX).flatMap((v) => (typeof v === 'string' ? [v] : Object.values(v)))) {
-      expect(colours).not.toContain(hex)
-    }
-  })
-
-  it('stays a valid interpolation with a single run', () => {
-    const expr = heatColorExpression(1, 'dark')
-    expect(expr[5] as number).toBeGreaterThan(expr[3] as number)
+  it('agrees with MapLibre on the projection: north is up and y grows south', () => {
+    expect(mercatorY(0)).toBeCloseTo(0.5, 12)
+    expect(mercatorY(48.6)).toBeLessThan(0.5)
+    expect(mercatorX(-180)).toBe(0)
+    expect(mercatorX(180)).toBe(1)
   })
 })
 
 describe('GPS jumps (v5.6 #5)', () => {
-  it('breaks the line at a step longer than 150 m, so no straight line fans out', () => {
+  it('lifts the pen at a step longer than 150 m, so no straight line fans out', () => {
     // 50 m steps, then a 1.1 km jump, then 50 m steps again.
     const step = 0.00045
     const route: [number, number][] = [
       [6.17, 49.11], [6.17 + step, 49.11], [6.17 + 2 * step, 49.11],
       [6.19, 49.12], [6.19 + step, 49.12], [6.19 + 2 * step, 49.12],
     ]
-    const { data } = buildHeatGeoJSON([route], [0])
-    for (const feature of data.features) {
-      const coords = (feature.geometry as unknown as { coordinates: [number, number][] }).coordinates
-      for (let i = 1; i < coords.length; i++) {
-        const [a, b] = [coords[i - 1]!, coords[i]!]
-        expect(Math.hypot((b[0] - a[0]) * 73_000, (b[1] - a[1]) * 111_000)).toBeLessThan(150)
-      }
+    const [track] = buildHeatTracks([route], [0])
+    const xs = Array.from({ length: track!.length / 2 }, (_, i) => track![2 * i]!)
+    // Six points and one break, and the break sits between the two stretches.
+    expect(xs).toHaveLength(7)
+    expect(xs.findIndex(Number.isNaN)).toBe(3)
+  })
+
+  it('keeps a run with no jump as one unbroken stroke', () => {
+    const [track] = buildHeatTracks([[[7.7, 48.6], [7.7005, 48.6], [7.701, 48.6]]], [0])
+    expect(Array.from(track!).some(Number.isNaN)).toBe(false)
+  })
+})
+
+describe('HEAT_STYLE (v4.17)', () => {
+  it('adds light on dark and multiplies ink on light, so overlaps build up', () => {
+    expect(HEAT_STYLE.dark.composite).toBe('lighter')
+    expect(HEAT_STYLE.light.composite).toBe('multiply')
+  })
+
+  it('draws a wide faint glow before a thin core, in both themes', () => {
+    for (const mode of ['dark', 'light'] as const) {
+      const [glow, core] = HEAT_STYLE[mode].passes
+      expect(glow!.width).toBeGreaterThan(core!.width)
+      expect(glow!.alpha).toBeLessThan(core!.alpha)
+      expect(core!.width).toBe(1)
     }
-    expect(data.features.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('draws the tracks in the accent: they are the athlete\'s own data', () => {
+    expect(heatPasses('dark', '#2dd4a7').map((p) => p.color)).toEqual(['rgba(45,212,167,0.035)', 'rgba(45,212,167,0.16)'])
+    expect(heatPasses('light', '#4457d6')[1]!.color).toBe('rgba(68,87,214,0.2)')
+  })
+
+  it('reads a short hex too', () => {
+    expect(rgba('#fff', 0.5)).toBe('rgba(255,255,255,0.5)')
+  })
+})
+
+describe('heatLineWidth (v4.17)', () => {
+  it('holds 1.2 px out to zoom 12, reaches 4 px at 16, straight between', () => {
+    expect(heatLineWidth(8)).toBe(1.2)
+    expect(heatLineWidth(12)).toBe(1.2)
+    expect(heatLineWidth(14)).toBeCloseTo(2.6, 10)
+    expect(heatLineWidth(16)).toBe(4)
+    expect(heatLineWidth(19)).toBe(4)
+  })
+})
+
+describe('reachKm', () => {
+  it('rounds the median reach up, never below 1 km', () => {
+    expect(reachKm(0.6)).toBe(1)
+    expect(reachKm(1.21)).toBe(1.3)
+    expect(reachKm(1.2)).toBe(1.2)
+  })
+})
+
+describe('ringCoordinates', () => {
+  it('closes a ring the given distance from home, east-west and north-south alike', () => {
+    const home: [number, number] = [7.75, 48.58]
+    const ring = ringCoordinates(home, 1.2)
+    expect(ring[0]).toEqual(ring.at(-1))
+    for (const [lon, lat] of ring) expect(distanceKm(lon, lat, home[0], home[1])).toBeCloseTo(1.2, 3)
   })
 })
 
@@ -152,6 +159,7 @@ const cluster = (id: string, routeIndices: number[]): RouteCluster => ({
   totalKm: 0,
   center: [0, 0],
   bounds: { minLon: 0, maxLon: 0, minLat: 0, maxLat: 0 },
+  frame: { minLon: 0, maxLon: 0, minLat: 0, maxLat: 0 },
   routeIndices,
 })
 
@@ -183,5 +191,27 @@ describe('computeAreaTerritory', () => {
     const routes: [number, number][][] = [[[0, 0], [0.001, 0.001]], [[1, 1], [1.001, 1.001]]]
     const territory = computeAreaTerritory(cluster('a', [0]), routeMeta, routes, { year: null, type: null })
     expect(territory).toMatchObject({ percentVolume: 75, km: 30, routeCount: 1 })
+  })
+
+  // Three runs from the same door: 1 km, 2 km and 5 km out, due east.
+  const east = (km: number): [number, number][] => [[7.75, 48.58], [7.75 + km / (111.32 * Math.cos((48.58 * Math.PI) / 180)), 48.58], [7.75, 48.58]]
+  const routeMeta = [meta(), meta(), meta({ year: '2025' })]
+  const routes = [east(1), east(2), east(5)]
+
+  it('puts home where the runs start and the reach at the median furthest point (v4.17)', () => {
+    const territory = computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, routes, { year: null, type: null })!
+    expect(territory.home).toEqual([7.75, 48.58])
+    // Half the runs - two of three - never go past 2 km.
+    expect(territory.medianReachKm).toBe(2)
+  })
+
+  it('reads the reach from the runs the filters keep', () => {
+    const territory = computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, routes, { year: '2025', type: null })!
+    expect(territory.medianReachKm).toBe(5)
+    expect(territory.routeCount).toBe(1)
+  })
+
+  it('has no card until the area\'s routes have arrived', () => {
+    expect(computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, [], { year: null, type: null })).toBeNull()
   })
 })

@@ -1,13 +1,14 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
 import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { PlanPeriodNav } from './PlanPeriodNav'
 import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
 import { plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
 import { t } from '@/i18n'
@@ -32,17 +33,24 @@ interface Props {
 
 const WEEKDAYS = t.plan.weekdays
 const ROW_HEIGHT = 58
-const PAD_BG = 'color-mix(in srgb, var(--foreground) 2%, transparent)'
-const RULE_BORDER = 'var(--border)'
-const PLANNED_INK = 'var(--subtle)'
-const RAN_INK = 'var(--foreground)'
-// "Today" and selection follow the accent. The today cell used to be ringed in
-// a fixed emerald, the colour Base, Form and "productive" also wear - with the
-// Nature accent the two became the same green with two meanings.
-const TODAY_INK = 'text-accent-text'
 // Seven day columns and nothing else: the 30 px week gutter clipped its
 // header at the edge; each week's total is a footer line under its row.
-const GRID_COLUMNS = 'repeat(7,1fr)'
+const GRID_COLUMNS = 'repeat(7,minmax(0,1fr))'
+
+/**
+ * A day's state, as the week chart draws it (v4.17): what was run is the
+ * accent's soft fill, a session still to come its type's zone at 12%, a
+ * missed one the negative status at 12%. Today is an accent outline on top
+ * of whichever it is.
+ */
+type CellState = 'done' | 'planned' | 'missed' | 'rest'
+
+const CELL_FILL: Record<CellState, string> = {
+  done: 'bg-[var(--accent-soft)]',
+  planned: 'bg-[color-mix(in_srgb,var(--cell-zone)_12%,transparent)]',
+  missed: 'bg-[color-mix(in_srgb,var(--neg)_12%,transparent)]',
+  rest: '',
+}
 
 interface DayCellData {
   day: number
@@ -87,32 +95,26 @@ function plannedInfoFor(
   return null
 }
 
-// A run with no plan behind it simply has no bar - the legend says so - where
-// an "extra" sub-label about 9 pt tall used to.
-function CellValue({ planned, ranKm, hasActs }: { planned: PlannedInfo | null; ranKm: number; hasActs: boolean }) {
+// A day's planned km over what it ran - "10 km" a plan, "8.5 km" bold a run.
+// A run with no plan behind it has only its own figure.
+function CellValue({ planned, ranKm, hasActs, missed }: { planned: PlannedInfo | null; ranKm: number; hasActs: boolean; missed: boolean }) {
   return (
-    <div className="mt-1 flex items-stretch" style={{ gap: '4px' }}>
+    <div className="mt-auto flex min-w-0 flex-col" style={{ lineHeight: 1.2 }}>
       {planned && (
-        <span
-          className="shrink-0 rounded-full"
-          style={{ width: '3px', background: zoneColor(sessionZone(planned)) }}
-        />
+        <span className={cn('truncate text-caption', missed ? 'font-medium text-[var(--neg)]' : 'text-[var(--text-2)]')}>
+          {Math.round(planned.km)} {t.units.km}
+        </span>
       )}
-      <div className="flex min-w-0 flex-col justify-center" style={{ lineHeight: 1.15 }}>
-        {planned && (
-          <span className="text-caption tabular-nums" style={{ color: PLANNED_INK }}>
-            {Math.round(planned.km)}
-          </span>
-        )}
-        {hasActs && (
-          <span className="text-caption font-bold tabular-nums" style={{ color: RAN_INK }}>
-            {ranKm.toFixed(1)}
-          </span>
-        )}
-      </div>
+      {hasActs && (
+        <span className="truncate text-caption font-semibold text-foreground">
+          {ranKm.toFixed(1)} {t.units.km}
+        </span>
+      )}
     </div>
   )
 }
+
+const CELL_BUTTON = 'flex h-full w-full flex-col items-start px-1.5 pb-1 pt-1.5 text-left transition-colors hover:bg-[var(--surface-2)]'
 
 // Same tap targets this pass found already correct, just carrying the new
 // single-value content: a completed day, or a coach-planned one, opens the
@@ -122,6 +124,7 @@ function DayCell({
   cell,
   isToday,
   planned,
+  missed,
   garminPlan,
   onSelectDay,
   onOpenSheet,
@@ -129,6 +132,7 @@ function DayCell({
   cell: DayCellData
   isToday: boolean
   planned: PlannedInfo | null
+  missed: boolean
   garminPlan: PlannedWorkout | null
   onSelectDay: (date: string) => void
   onOpenSheet: (workout: PlannedWorkout) => void
@@ -138,45 +142,32 @@ function DayCell({
   const dayNumber = (
     <p
       className="text-xs leading-none"
-      style={{ color: isToday ? 'var(--accent-text)' : 'var(--muted-foreground)', fontWeight: isToday ? 700 : 400 }}
+      style={{ color: isToday ? 'var(--accent-text)' : 'var(--muted-foreground)', fontWeight: isToday ? 600 : 400 }}
     >
       {cell.day}
     </p>
   )
+  const value = (planned || hasActs) && <CellValue planned={planned} ranKm={ranKm} hasActs={hasActs} missed={missed} />
 
   if (hasActs || planned?.source === 'coach') {
     return (
-      <button
-        type="button"
-        onClick={() => onSelectDay(cell.date)}
-        aria-label={formatDate(cell.date, { style: 'full' })}
-        className="flex h-full w-full flex-col items-start px-1 pt-1 text-left transition-colors hover:bg-foreground/[0.06]"
-      >
+      <button type="button" onClick={() => onSelectDay(cell.date)} aria-label={formatDate(cell.date, { style: 'full' })} className={CELL_BUTTON}>
         {dayNumber}
-        {(planned || hasActs) && <CellValue planned={planned} ranKm={ranKm} hasActs={hasActs} />}
+        {value}
       </button>
     )
   }
 
   if (planned?.source === 'garmin' && garminPlan) {
     return (
-      <button
-        type="button"
-        onClick={() => onOpenSheet(garminPlan)}
-        aria-label={formatDate(cell.date, { style: 'full' })}
-        className="flex h-full w-full flex-col items-start px-1 pt-1 text-left transition-colors hover:bg-foreground/[0.06]"
-      >
+      <button type="button" onClick={() => onOpenSheet(garminPlan)} aria-label={formatDate(cell.date, { style: 'full' })} className={CELL_BUTTON}>
         {dayNumber}
-        <CellValue planned={planned} ranKm={ranKm} hasActs={hasActs} />
+        {value}
       </button>
     )
   }
 
-  return (
-    <div className="flex h-full w-full flex-col items-start px-1 pt-1">
-      {dayNumber}
-    </div>
-  )
+  return <div className="flex h-full w-full flex-col items-start px-1.5 pt-1.5">{dayNumber}</div>
 }
 
 export function MonthView({
@@ -228,123 +219,88 @@ export function MonthView({
   }, [year, month, byDate, byDatePlanned, byDateCoach])
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onPrev}
-            aria-label={t.plan.prevPeriod}
-            className="hit-44 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] transition-colors hover:bg-foreground/[0.06]"
-            style={{ border: `1px solid ${RULE_BORDER}` }}
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <div className="text-center" style={{ width: '170px' }}>
-            <span className="font-display font-bold" style={{ fontSize: '19px' }}>{monthLabel}</span>
-          </div>
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={atPresent && !canGoForward}
-            aria-label={t.plan.nextPeriod}
-            className="hit-44 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] transition-colors hover:bg-foreground/[0.06] disabled:opacity-40"
-            style={{ border: `1px solid ${RULE_BORDER}` }}
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-        {/* Hidden while today's month is on screen, full ink when it is a
-            way back: at 40 % it read as broken rather than as not needed. */}
-        {!atPresent && (
-          <button
-            type="button"
-            onClick={onToday}
-            className={cn('hit-44 shrink-0 rounded-full font-semibold', TODAY_INK)}
-            style={{ fontSize: '12.5px', border: '1px solid var(--divider)', padding: '5px 12px' }}
-          >
-            {t.plan.today}
-          </button>
-        )}
+    <section className={cardClass({ padding: 'none', overflow: true })}>
+      <div className="px-5 pb-3.5 pt-4">
+        <PlanPeriodNav
+          label={monthLabel}
+          onPrev={onPrev}
+          onNext={onNext}
+          nextDisabled={atPresent && !canGoForward}
+          // Hidden while today's month is on screen.
+          onToday={atPresent ? null : onToday}
+        />
       </div>
 
-      <p className="px-1 text-footnote text-muted-foreground">{t.plan.summary(sessionCount, ranKm, plannedKm)}</p>
+      <div className="grid border-y border-border" style={{ gridTemplateColumns: GRID_COLUMNS }}>
+        {WEEKDAYS.map((d, i) => (
+          <div key={d} className={cn(EYEBROW_CLASS, 'py-2 text-center', i >= 5 ? 'text-subtle' : 'text-muted-foreground')}>
+            {d}
+          </div>
+        ))}
+      </div>
 
-      <GlassSurface variant="card" className="overflow-hidden rounded-card-sm">
-        <div className="grid border-b border-foreground/[0.08]" style={{ gridTemplateColumns: GRID_COLUMNS, gap: '2px' }}>
-          {WEEKDAYS.map((d, i) => (
-            <div
-              key={d}
-              className="py-2 text-center font-semibold uppercase tracking-[0.06em]"
-              style={{ fontSize: '11px', color: i >= 5 ? 'var(--subtle-2)' : 'var(--subtle)' }}
-            >
-              {d}
-            </div>
-          ))}
-        </div>
+      <div className="flex flex-col">
+        {rows.map((row, rowIndex) => {
+          const realCells = row.filter((c): c is DayCellData => c !== null)
+          const containsToday = realCells.some((c) => c.date === today)
+          const rowIsPast = realCells.length > 0 && realCells.every((c) => c.date < today)
+          const weekRan = round(realCells.reduce((s, c) => s + c.acts.reduce((sa, a) => sa + a.distanceKm, 0), 0), 0)
+          const weekPlanned = round(
+            realCells.reduce((s, c) => s + (plannedInfoFor(c.date, byDatePlanned, byDateCoach)?.km ?? 0), 0),
+            0
+          )
+          const weekValue = realCells.length === 0 ? null : rowIsPast ? weekRan : weekPlanned
+          // One format for every week, "27 / 48 km" (H21): past, current
+          // and future weeks read "14 km run", "27 of 48 km", "20 km planned".
+          const footer = t.plan.weekFooter(weekRan, weekPlanned)
 
-        <div className="flex flex-col" style={{ gap: '2px' }}>
-          {rows.map((row, rowIndex) => {
-            const realCells = row.filter((c): c is DayCellData => c !== null)
-            const containsToday = realCells.some((c) => c.date === today)
-            const rowIsPast = realCells.length > 0 && realCells.every((c) => c.date < today)
-            const weekRan = round(realCells.reduce((s, c) => s + c.acts.reduce((sa, a) => sa + a.distanceKm, 0), 0), 0)
-            const weekPlanned = round(
-              realCells.reduce((s, c) => s + (plannedInfoFor(c.date, byDatePlanned, byDateCoach)?.km ?? 0), 0),
-              0
-            )
-            const weekValue = realCells.length === 0 ? null : rowIsPast ? weekRan : weekPlanned
-            // One format for every week, "27 / 48 km" (H21): past, current
-            // and future weeks read "14 km run", "27 of 48 km", "20 km planned".
-            const footer = t.plan.weekFooter(weekRan, weekPlanned)
-
-            return (
-              <div key={rowIndex}>
-              <div
-                className="grid"
-                style={{ gridTemplateColumns: GRID_COLUMNS, gap: '2px', height: `${ROW_HEIGHT}px` }}
-              >
-                {row.map((cell, i) => (
-                  <div
-                    key={i}
-                    className="overflow-hidden border-b border-r border-foreground/[0.06] [&:nth-child(7n)]:border-r-0"
-                    style={
-                      !cell
-                        ? { background: PAD_BG }
-                        : cell.date === today
-                          ? { border: '1.5px solid var(--accent)' }
-                          : undefined
-                    }
-                  >
-                    {cell && (
+          return (
+            <div key={rowIndex} className="border-t border-border first:border-t-0">
+              <div className="grid" style={{ gridTemplateColumns: GRID_COLUMNS, height: `${ROW_HEIGHT}px` }}>
+                {row.map((cell, i) => {
+                  if (!cell) return <div key={i} className="border-r border-border bg-[var(--surface-2)] [&:nth-child(7n)]:border-r-0" />
+                  const planned = plannedInfoFor(cell.date, byDatePlanned, byDateCoach)
+                  const hasActs = cell.acts.length > 0
+                  const state: CellState = hasActs ? 'done' : planned ? (cell.date < today ? 'missed' : 'planned') : 'rest'
+                  const isToday = cell.date === today
+                  return (
+                    <div
+                      key={i}
+                      data-cell-state={state}
+                      className={cn('overflow-hidden border-r border-border [&:nth-child(7n)]:border-r-0', CELL_FILL[state])}
+                      style={{
+                        ...(state === 'planned' && planned ? ({ '--cell-zone': zoneColor(sessionZone(planned)) } as CSSProperties) : {}),
+                        ...(isToday ? { boxShadow: 'inset 0 0 0 2px var(--accent)' } : {}),
+                      }}
+                    >
                       <DayCell
                         cell={cell}
-                        isToday={cell.date === today}
-                        planned={plannedInfoFor(cell.date, byDatePlanned, byDateCoach)}
+                        isToday={isToday}
+                        planned={planned}
+                        missed={state === 'missed'}
                         garminPlan={byDatePlanned.get(cell.date) ?? null}
                         onSelectDay={onSelectDay}
                         onOpenSheet={(workout) => setSheetWorkout(plannedWorkoutView(workout))}
                       />
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  )
+                })}
               </div>
               {weekValue !== null && (
                 <p
-                  className="px-1.5 py-0.5 text-right text-caption tabular-nums"
-                  style={{ color: containsToday ? 'var(--muted-foreground)' : 'var(--subtle)' }}
+                  className={cn('px-2 py-1 text-right text-caption', containsToday ? 'text-[var(--text-2)]' : 'text-muted-foreground')}
                 >
                   {footer}
                 </p>
               )}
-              </div>
-            )
-          })}
-        </div>
-      </GlassSurface>
+            </div>
+          )
+        })}
+      </div>
 
+      <p className="border-t border-border px-5 py-3.5 text-[13px] text-muted-foreground">{t.plan.summary(sessionCount, ranKm, plannedKm)}</p>
 
       {sheetWorkout && <PlannedWorkoutSheet workout={sheetWorkout} onClose={() => setSheetWorkout(null)} />}
-    </div>
+    </section>
   )
 }

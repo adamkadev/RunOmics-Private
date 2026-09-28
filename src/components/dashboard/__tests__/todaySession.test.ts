@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { t } from '@/i18n'
+import { formatWeekday } from '@/lib/formatters'
 import { todaySession } from '../todaySession'
 
 const RUN: ActivitySummary = {
@@ -19,6 +20,13 @@ describe('todaySession', () => {
   })
 
   it('is a rest day with nothing planned or run', () => {
-    expect(todaySession(null, null)).toMatchObject({ state: 'rest', title: t.dashboard.todayHero.restDay })
+    expect(todaySession(null, null)).toMatchObject({ state: 'rest', title: t.dashboard.todayHero.restDay, detail: t.dashboard.todayHero.restDaySubtitle })
+  })
+
+  // v4.17: a rest day says what comes after it, as Plan's rest card does.
+  it('names the next session on a rest day', () => {
+    const next = { date: '2026-09-29', title: 'Threshold 3 x 7:15', km: '10', inDays: 1, kind: 'threshold' as const }
+    expect(todaySession(null, null, next).detail).toBe(t.dashboard.todayHero.next(formatWeekday('2026-09-29'), 'Threshold 3 x 7:15', '10'))
+    expect(todaySession(null, null, { ...next, km: null }).detail).toBe(t.dashboard.todayHero.next(formatWeekday('2026-09-29'), 'Threshold 3 x 7:15', null))
   })
 })

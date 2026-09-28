@@ -16,13 +16,14 @@ const ACCENT_TOKEN_NAMES = [
   '--accent-foreground',
   '--accent-text',
   '--accent-hover',
-  // v4.3: the tab bar's active pill, and the one hero card's border.
+  // v4.17: the active nav row and soft fills (--acc-soft is its old name).
+  '--accent-soft',
   '--acc-soft',
   '--acc-line',
   '--ring',
 ]
 
-const SEMANTIC_PREFIXES = ['--metric-', '--zone-', '--delta-', '--destructive', '--color-missed']
+const SEMANTIC_PREFIXES = ['--metric-', '--zone-', '--delta-', '--destructive', '--color-missed', '--pos', '--warn', '--neg']
 
 describe('what an accent may paint', () => {
   it('emits the accent roles and nothing else, in both modes', () => {
@@ -92,7 +93,7 @@ describe('markers that mean something do not move with the accent', () => {
 })
 
 describe('the generated accent blocks', () => {
-  it('paint the five v4.3 palettes', () => {
+  it('paint the five v4.17 palettes', () => {
     const curated = Object.fromEntries(
       CURATED_ACCENTS.map((accent) => [
         accent.id,
@@ -125,9 +126,18 @@ describe('neutral surfaces', () => {
   it('draws the spec surfaces, flat, in both modes', () => {
     const light = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Light tokens'))!.tokens
     const dark = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Dark tokens'))!.tokens
-    // The v4.3 table: --bg, --card, --seg, --line, --fa, --band, --amb.
-    expect([dark['--background'], dark['--card'], dark['--segmented-track'], dark['--border'], dark['--track'], dark['--band'], dark['--tone-caution']]).toEqual(['#0b0c0c', '#161818', '#1d2020', '#252828', '#262a2a', '#3a3f3f', '#f5b83d'])
-    expect([light['--background'], light['--card'], light['--segmented-track'], light['--border'], light['--track'], light['--band'], light['--tone-caution']]).toEqual(['#f3f4f4', '#ffffff', '#e6e8e8', '#e4e6e6', '#e8eaea', '#c9cdcd', '#b45309'])
+    // The v4.17 table: bg, surface, surface-2, line, line-2, text, text-2, muted, faint, warn.
+    const table = (t: Record<string, string>) =>
+      ['--background', '--card', '--surface-2', '--border', '--line-2', '--foreground', '--text-2', '--muted-foreground', '--subtle', '--warn'].map((k) => t[k])
+    expect(table(dark)).toEqual(['#0c0d0d', '#151616', '#1c1e1d', '#242726', '#303432', '#f1f2f1', '#bfc3c1', '#8a8f8d', '#5f6462', '#f2b544'])
+    expect(table(light)).toEqual(['#f3f4f3', '#ffffff', '#f0f1f0', '#e4e6e5', '#d3d6d4', '#141615', '#434846', '#6b706e', '#9aa09d', '#b26b00'])
+    // Tracks sit on surface-2, neutral bars on line-2, caution is warn.
+    for (const tokens of [light, dark]) {
+      expect(tokens['--segmented-track']).toBe(tokens['--surface-2'])
+      expect(tokens['--track']).toBe(tokens['--surface-2'])
+      expect(tokens['--band']).toBe(tokens['--line-2'])
+      expect(tokens['--tone-caution']).toBe(tokens['--warn'])
+    }
     for (const tokens of [light, dark]) {
       expect(tokens['--canvas']).toBe(tokens['--background'])
       for (const value of Object.values(tokens)) expect(value).not.toMatch(/gradient\(/)

@@ -8,17 +8,17 @@ function Tabs({ size }: { size?: 'sm' | 'md' }) {
 }
 
 describe('SegmentedTabs sizes', () => {
-  // Four recipes ranged from 36 to 48 pt; the sizes are 32 and 40, each with a
-  // 44 pt hit area.
-  it('draws sm at 32 and md at 40, with a 44 pt hit area either way', () => {
+  // Four recipes ranged from 36 to 48 pt; the sizes are 30 (small ranges)
+  // and 36 (page tabs), v4.17, each with a 44 pt hit area.
+  it('draws sm at 30 and md at 36, with a 44 pt hit area either way', () => {
     const { rerender } = render(<Tabs size="sm" />)
     for (const tab of screen.getAllByRole('tab')) {
-      expect(tab.className).toContain('h-8')
+      expect(tab.className).toContain('h-[30px]')
       expect(tab.className).toContain('hit-44')
     }
 
     rerender(<Tabs size="md" />)
-    for (const tab of screen.getAllByRole('tab')) expect(tab.className).toContain('h-10')
+    for (const tab of screen.getAllByRole('tab')) expect(tab.className).toContain('h-9')
   })
 
   it('stretches across the row when asked to fill', () => {

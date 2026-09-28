@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { t } from '@/i18n'
 import { ChartStack } from '../ChartStack'
 
 const streamCleanups = vi.hoisted(() => ({ count: 0 }))
@@ -17,7 +18,7 @@ vi.mock('@/domain/activity/cleanStream', async (importOriginal) => {
 
 const SAMPLES = Array.from({ length: 200 }, (_, i) => 140 + (i % 20))
 
-function renderStack() {
+function renderStack(onScrub?: (fraction: number | null) => void) {
   const result = render(
     <ChartStack
       distanceKm={10}
@@ -29,28 +30,61 @@ function renderStack() {
       avgCadence={null}
       elevationProfile={null}
       elevationGain={null}
+      onScrub={onScrub}
     />
   )
-  const rows = result.container.querySelector('.touch-pan-y') as HTMLDivElement
-  // jsdom lays nothing out; give the rows the width a phone would.
-  rows.getBoundingClientRect = () => ({ left: 0, right: 350, top: 0, bottom: 200, width: 350, height: 200, x: 0, y: 0, toJSON: () => ({}) })
-  return rows
+  const area = screen.getByTestId('chart-scrub') as HTMLDivElement
+  // jsdom lays nothing out; give the scrub area the width a phone would.
+  area.getBoundingClientRect = () => ({ left: 0, right: 350, top: 0, bottom: 200, width: 350, height: 200, x: 0, y: 0, toJSON: () => ({}) })
+  return { ...result, area }
 }
 
 describe('ChartStack scrub', () => {
   // Every pointer move used to rebuild all the lanes - a cleanup pass over
   // every sample of every stream - and re-render every chart.
-  it('moves the readout without rebuilding the lanes', async () => {
+  it('moves the reading without rebuilding the lanes', async () => {
     streamCleanups.count = 0
-    const rows = renderStack()
+    const { area } = renderStack()
     const afterMount = streamCleanups.count
     expect(afterMount).toBe(2)
 
-    fireEvent.pointerDown(rows, { clientX: 42, pointerId: 1 })
-    for (const x of [100, 150, 196]) fireEvent.pointerMove(rows, { clientX: x, pointerId: 1 })
+    fireEvent.pointerDown(area, { clientX: 42, pointerId: 1 })
+    for (const x of [100, 150, 196]) fireEvent.pointerMove(area, { clientX: x, pointerId: 1 })
 
-    // The fraction lands on the next frame: (196 - 42) / (342 - 42) of 10 km.
-    await waitFor(() => expect(screen.getByText(/5\.1 km/)).toBeInTheDocument())
+    // The fraction lands on the next frame, snapped to a sample: 196 / 350 of
+    // 10 km is sample 111 of 199.
+    await waitFor(() => expect(screen.getByTestId('scrub-header').textContent).toMatch(/^At 5\.58 km · \d+:\d\d elapsed$/))
     expect(streamCleanups.count).toBe(afterMount)
+  })
+
+  // v4.17: the reading sits beside each lane's name; no readout card.
+  it('reads each lane at the scrub point beside its name, and the map follows', async () => {
+    const onScrub = vi.fn()
+    const { area, unmount } = renderStack(onScrub)
+    expect(screen.getByTestId('scrub-header').textContent).toBe(t.activity.charts.scrubHint)
+
+    fireEvent.pointerMove(area, { clientX: 175, pointerId: 1, pointerType: 'mouse' })
+    await waitFor(() => expect(screen.getByTestId('lane-hr').textContent).toMatch(/\d+ bpm/))
+    expect(screen.getByTestId('lane-pace').textContent).toMatch(/\d:\d\d \/km/)
+    expect(onScrub).toHaveBeenLastCalledWith(Math.round(0.5 * 199) / 199)
+
+    // A mouse that leaves lets go; leaving the tab takes the marker off the map.
+    fireEvent.pointerLeave(area, { pointerId: 1, pointerType: 'mouse' })
+    await waitFor(() => expect(screen.getByTestId('scrub-header').textContent).toBe(t.activity.charts.scrubHint))
+    onScrub.mockClear()
+    unmount()
+    expect(onScrub).toHaveBeenCalledWith(null)
+  })
+
+  it('draws the smoothed line by default and the recorded one on Raw', () => {
+    streamCleanups.count = 0
+    renderStack()
+    const line = () => screen.getByTestId('lane-pace').querySelectorAll('path')[2]!.getAttribute('d')
+    const smoothed = line()
+
+    act(() => screen.getByRole('tab', { name: t.activity.charts.raw }).click())
+    expect(screen.getByRole('tab', { name: t.activity.charts.raw })).toHaveAttribute('aria-selected', 'true')
+    expect(line()).not.toBe(smoothed)
+    expect(streamCleanups.count).toBe(2)
   })
 })

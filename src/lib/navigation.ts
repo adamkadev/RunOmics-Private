@@ -1,5 +1,3 @@
-import { t } from '@/i18n'
-
 const PARENT_SECTION: Record<string, string> = {
   '/records': '/profile',
   '/shoes': '/profile',
@@ -14,26 +12,6 @@ const PARENT_SECTION: Record<string, string> = {
 
 function baseSegment(pathname: string): string {
   return `/${pathname.split('/')[1] ?? ''}`
-}
-
-const SECTION_LABELS: Record<string, string> = {
-  '/': t.nav.items.dashboard,
-  '/activities': t.nav.items.activities,
-  '/plan': t.nav.items.plan,
-  '/analytics': t.nav.items.analytics,
-  '/map': t.nav.items.heatmap,
-  '/profile': t.nav.items.profile,
-  '/settings': t.nav.items.settings,
-  '/records': t.pages.records.title,
-  '/shoes': t.pages.shoes.title,
-  '/athlete': t.pages.athlete.title,
-  '/consistency': t.pages.consistency.title,
-  '/all-time': t.allTime.title,
-  '/goals': t.goals.title,
-}
-
-export function sectionLabel(pathname: string): string | null {
-  return SECTION_LABELS[baseSegment(pathname)] ?? null
 }
 
 export interface NavigationOrigin {

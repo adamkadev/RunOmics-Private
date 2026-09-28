@@ -1,5 +1,7 @@
 import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import type { CSSProperties } from 'react'
+import { cardClass } from '@/components/ui/Card'
+import { Unit } from '@/components/ui/Stat'
 import { formatDuration } from '@/lib/formatters'
 import type { AthletePageView } from './athleteView'
 import { cn } from '@/lib/utils'
@@ -42,63 +44,66 @@ export function keyMetrics(athlete: AthletePageView): AvailableMetric[] {
   ])
 }
 
+/** A strip of cells in one card, a line between them (v4.17): 2 x 2 on a phone, one row from sm up. */
+function cellBorders(i: number): string {
+  return cn(i % 2 === 1 && 'border-l border-border', i >= 2 && 'border-t border-border sm:border-t-0', i > 0 && i % 2 === 0 && 'sm:border-l')
+}
+
 /**
- * The four key numbers in one card as a 2 x 2 grid with hairline dividers
- * (C2, v4.4), replacing four separate cards. Each label opens its definition
- * on a tap; there is no (i) on the card.
+ * The four key numbers as one strip (C2, v4.4; v4.17): a cell each, 24 pt
+ * values with their units inline. Each label opens its definition on a
+ * tap; there is no (i) on the card.
  */
 export function AthleteKeyNumbers({ athlete }: { athlete: AthletePageView }) {
   const tiles = keyMetrics(athlete)
   if (tiles.length === 0) return null
 
   return (
-    <GlassSurface variant="card" className="overflow-hidden rounded-card-sm" data-testid="athlete-key-numbers">
-      <div className={cn('grid', tiles.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}>
-        {tiles.map((tile, i) => (
-          <div
-            key={tile.label}
-            data-testid="athlete-key-number"
-            className={cn('px-4 py-3.5', i % 2 === 1 && 'border-l border-border', i >= 2 && 'border-t border-border')}
-          >
-            <div className="text-caption uppercase tracking-[0.08em] text-muted-foreground">
-              {tile.glossary ? <GlossaryTerm term={tile.glossary} quiet>{tile.label}</GlossaryTerm> : tile.label}
-            </div>
-            <div className="mt-1.5 font-display text-title2 font-bold leading-none tabular-nums text-foreground">
-              {tile.value}
-              <span className="ml-1.5 font-sans text-footnote font-medium text-muted-foreground">{tile.unit}</span>
-            </div>
+    <section
+      className={cardClass({ padding: 'none', overflow: true, className: cn('grid', tiles.length === 1 ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-[repeat(var(--cells),minmax(0,1fr))]') })}
+      style={{ '--cells': tiles.length } as CSSProperties}
+      data-testid="athlete-key-numbers"
+    >
+      {tiles.map((tile, i) => (
+        <div key={tile.label} data-testid="athlete-key-number" className={cn('flex min-w-0 flex-col gap-1 px-5 py-[18px]', cellBorders(i))}>
+          <div className="truncate text-xs text-muted-foreground">
+            {tile.glossary ? <GlossaryTerm term={tile.glossary} quiet>{tile.label}</GlossaryTerm> : tile.label}
           </div>
-        ))}
-      </div>
-    </GlassSurface>
+          <div className="truncate text-2xl font-semibold leading-tight text-foreground">
+            {tile.value}
+            {tile.unit && <Unit>{tile.unit}</Unit>}
+          </div>
+        </div>
+      ))}
+    </section>
   )
 }
 
 /**
- * Heart as one compact row: resting and max HR (v5.3; fitness age moved up
+ * Heart as one compact strip: resting and max HR (v5.3; fitness age moved up
  * into the grid). Height, weight and BMI live in Settings > Profile.
  */
 export function AthleteDetails({ athlete }: { athlete: AthletePageView }) {
   const a = t.settings.athlete
-  const cells: { key: string; label: string; value: number; note?: string }[] = []
+  const cells: { key: string; label: string; value: number }[] = []
   if (athlete.restingHrBpm !== undefined) cells.push({ key: 'resting', label: a.restingHr, value: athlete.restingHrBpm })
   if (athlete.maxHrBpm !== undefined) cells.push({ key: 'max', label: a.maxHr, value: athlete.maxHrBpm })
   if (cells.length === 0) return null
 
   return (
-    <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5" data-testid="athlete-details">
-      <dl className="grid grid-cols-2 gap-2">
-        {cells.map((cell) => (
-          <div key={cell.key} className="min-w-0">
-            <dt className="text-footnote text-muted-foreground">{cell.label}</dt>
-            <dd className="mt-1 font-display text-title3 font-bold leading-none tabular-nums text-foreground">
+    <section className={cardClass({ padding: 'none', overflow: true })} data-testid="athlete-details">
+      <dl className={cn('grid', cells.length === 1 ? 'grid-cols-1' : 'grid-cols-2')}>
+        {cells.map((cell, i) => (
+          <div key={cell.key} className={cn('flex min-w-0 flex-col gap-1 px-5 py-[18px]', i > 0 && 'border-l border-border')}>
+            <dt className="text-xs text-muted-foreground">{cell.label}</dt>
+            <dd className="text-2xl font-semibold leading-tight text-foreground">
               {cell.value}
-              {cell.note && <span className="ml-1 font-sans text-footnote font-medium text-muted-foreground">{cell.note}</span>}
+              <Unit>{t.units.bpm}</Unit>
             </dd>
           </div>
         ))}
       </dl>
-    </GlassSurface>
+    </section>
   )
 }
 

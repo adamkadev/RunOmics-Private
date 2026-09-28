@@ -76,14 +76,20 @@ describe('SettingsClient owner gate', () => {
     expect(screen.queryByTestId('notifications-form')).not.toBeInTheDocument()
   })
 
-  it('groups the page into Appearance, Data and Account, even signed out', async () => {
+  // v4.17: Appearance, Data and Notifications, even signed out; the theme comes first.
+  it('groups the page into Appearance, Data and Notifications, even signed out', async () => {
     renderSettings()
     await screen.findByText(t.settings.auth.signIn)
 
     const sections = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
-    expect(sections).toEqual([t.settings.sections.appearance, t.settings.sections.data, t.settings.sections.account])
-    // Where the runs come from, and what signing in unlocks.
-    expect(screen.getByText(t.settings.dataSource.garmin)).toBeInTheDocument()
+    expect(sections).toEqual([t.settings.sections.appearance, t.settings.sections.data, t.settings.sections.notifications])
+    const appearance = screen.getByTestId('settings-appearance').textContent!
+    expect(appearance.indexOf(t.settings.appearance.themeLabel)).toBeLessThan(appearance.indexOf(t.settings.accent.title))
+    // Where the runs come from, that it is live, and what signing in unlocks.
+    expect(screen.getByTestId('garmin-row').textContent).toContain(t.settings.dataSource.garmin)
+    expect(screen.getByTestId('garmin-connected').className).toContain('text-[var(--pos)]')
+    // The sync is the owner's: signed out there is no Sync now.
+    expect(screen.queryByText(t.settings.sync.action)).not.toBeInTheDocument()
     expect(screen.getAllByText(new RegExp(t.common.runs(12))).length).toBeGreaterThan(0)
     expect(screen.getByText(t.settings.auth.signInToManage)).toBeInTheDocument()
     // R7f: export is on the page signed out too, asking for the sign-in.
@@ -91,14 +97,14 @@ describe('SettingsClient owner gate', () => {
     expect(screen.getByText(t.settings.dataExport.signedOut(t.common.runs(12)))).toBeInTheDocument()
   })
 
-  // v4.8 2g: the build line ends the page signed out too, after Account.
+  // v4.8 2g: the build line ends the page signed out too, after the last group.
   it('ends on the build line signed in and signed out', async () => {
     const { unmount } = renderSettings()
     await screen.findByText(t.settings.auth.signIn)
     const out = screen.getByTestId('build-info')
     expect(out.textContent).toMatch(/^RunOmics /)
-    const account = screen.getByRole('heading', { name: t.settings.sections.account }).closest('section')!
-    expect(account.compareDocumentPosition(out) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const last = screen.getByRole('heading', { name: t.settings.sections.notifications }).closest('section')!
+    expect(last.compareDocumentPosition(out) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     unmount()
 
     mockUser = signedIn('owner@test.dev', { owner: true })
@@ -128,7 +134,8 @@ describe('SettingsClient owner gate', () => {
     renderSettings()
 
     expect(await screen.findByTestId('notifications-form')).toBeInTheDocument()
-    expect(screen.getByText(t.settings.auth.signOut)).toBeInTheDocument()
+    // v4.17: sign out is the outline (secondary) button.
+    expect(screen.getByText(t.settings.auth.signOut).className).toContain('border-[var(--line-2)]')
     expect(screen.queryByText(t.settings.auth.accessDenied)).not.toBeInTheDocument()
   })
 

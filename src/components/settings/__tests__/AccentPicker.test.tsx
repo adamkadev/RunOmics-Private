@@ -3,23 +3,19 @@ import { render, screen } from '@testing-library/react'
 import { AccentPicker } from '@/components/settings/AccentPicker'
 import { ACCENT_IDS } from '@/lib/accent'
 
-/** Tailwind gap step -> px, for the gap classes this row is allowed to use. */
-const GAP_PX: Record<string, number> = { 'gap-1.5': 6, 'gap-2': 8, 'gap-3': 12, 'gap-[13px]': 13 }
-
-/** Tailwind size step -> px, for the square classes a swatch is allowed to use. */
-const SIZE_PX: Record<string, number> = { 'h-11': 44, 'w-11': 44, 'h-12': 48, 'w-12': 48 }
+/** Tailwind gap step -> px, for the phone gap classes this row is allowed to use. */
+const GAP_PX: Record<string, number> = { 'gap-2.5': 10, 'gap-4': 16 }
 
 /**
  * Width available to the swatch row on the narrowest device we ship a splash
  * screen for (375px, scripts/generate-splash.mjs): 375 - 32 (main's px-4,
- * AppShell) - 40 (the card's p-5, SettingsClient) - 2 (1px glass border either
- * side, .glass-card in globals.css).
- *
- * The row reads its mobile-first classes here, which is the case that has to
- * fit: five circles at 44px with a 6px gap need 294px. The design's 48px and
- * 13px gap apply from `sm` up, where 353px is no longer a problem.
+ * AppShell) - 40 (the card's px-5, SettingsClient) - 2 (1px border either
+ * side). On a phone the row sits under its label, so it has the whole width.
  */
 const NARROWEST_ROW_PX = 375 - 32 - 40 - 2
+/** The visible swatch (v4.17), and the target every button keeps (hit-44). */
+const SWATCH_PX = 28
+const TARGET_PX = 44
 
 function swatchRow(): HTMLElement {
   const swatches = screen.getAllByRole('button')
@@ -40,25 +36,23 @@ describe('AccentPicker swatch row', () => {
     expect(swatchRow().classList.contains('flex-wrap')).toBe(false)
   })
 
-  it('fits every 44px target on one row at the narrowest supported width', () => {
+  // v4.17: 28 pt swatches, each with a 44 pt target; on a phone the row's gap
+  // spaces the targets so they never overlap, and the row still fits.
+  it('keeps every 44 pt target apart and on one row at the narrowest supported width', () => {
     render(<AccentPicker />)
     const row = swatchRow()
-
+    // The mobile-first gap (the sm: one is for a pointer).
     const gap = Object.keys(GAP_PX).find((c) => row.classList.contains(c))
-    expect(gap, `swatch row uses an unbudgeted gap: ${row.className}`).toBeDefined()
+    expect(gap, `swatch row uses an unbudgeted gap: ${row.className}`).toBe('gap-4')
 
-    const widths = screen.getAllByRole('button').map((b) => {
-      const size = Object.keys(SIZE_PX).find((c) => c.startsWith('w-') && b.classList.contains(c))
-      const height = Object.keys(SIZE_PX).find((c) => c.startsWith('h-') && b.classList.contains(c))
-      // The 44px HIG minimum the rest of Settings holds to (ThemeSegmented's
-      // min-h-[44px], .tap-target in globals.css).
-      expect(size && SIZE_PX[size]).toBeGreaterThanOrEqual(44)
-      expect(height && SIZE_PX[height]).toBeGreaterThanOrEqual(44)
-      return SIZE_PX[size!]!
-    })
+    for (const button of screen.getAllByRole('button')) {
+      expect(button.classList.contains('size-7')).toBe(true)
+      expect(button.classList.contains('hit-44')).toBe(true)
+    }
+    expect(SWATCH_PX + GAP_PX[gap!]!).toBeGreaterThanOrEqual(TARGET_PX)
 
-    const needed =
-      widths.reduce((sum, w) => sum + w, 0) + (widths.length - 1) * GAP_PX[gap!]!
+    const count = screen.getAllByRole('button').length
+    const needed = count * SWATCH_PX + (count - 1) * GAP_PX[gap!]! + (TARGET_PX - SWATCH_PX)
     expect(needed).toBeLessThanOrEqual(NARROWEST_ROW_PX)
   })
 })

@@ -2,7 +2,8 @@ import type { ActivitySummary } from '@/domain/activity/types'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { paceLabel, workoutSummary } from '@/components/plan/workoutSummary'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
-import { formatDistance, formatPace, formatPlannedKm } from '@/lib/formatters'
+import type { NextSession } from './nextSession'
+import { formatDistance, formatPace, formatPlannedKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 export interface TodaySession {
@@ -22,7 +23,11 @@ function plannedKm(workout: HeroWorkoutView | null): string | null {
  * listed a completed run's "6.11 km · 25 min" with no state, so at 7 am it
  * read like the prescription it had replaced.
  */
-export function todaySession(workout: HeroWorkoutView | null, activity: ActivitySummary | null): TodaySession {
+export function todaySession(
+  workout: HeroWorkoutView | null,
+  activity: ActivitySummary | null,
+  next: NextSession | null = null,
+): TodaySession {
   const s = t.dashboard.todayHero
   // The same reading of the session as Plan's card and the structure bar
   // (workoutSummary), so the two screens cannot describe it differently.
@@ -58,5 +63,10 @@ export function todaySession(workout: HeroWorkoutView | null, activity: Activity
     }
   }
 
-  return { state: 'rest', title: s.restDay, detail: s.restDaySubtitle }
+  // A rest day says what comes after it (v4.17), as Plan's rest card does.
+  return {
+    state: 'rest',
+    title: s.restDay,
+    detail: next ? s.next(formatWeekday(next.date), next.title, next.km) : s.restDaySubtitle,
+  }
 }

@@ -1,34 +1,29 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { getShoeDetail, type ShoeTypeBucket } from '@/application/usecases/GetShoeDetail'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeVerdictInsight } from '@/application/usecases/GetShoeVerdictInsight'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
-import { wearOutlook, weeksInRotation, type WearStatus } from '@/domain/shoe/wearStatus'
-import { HERO_SURFACE } from '@/components/shoes/ShoesGrid'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { wearOutlook, weeksInRotation } from '@/domain/shoe/wearStatus'
 import { BackButton } from '@/components/ui/BackButton'
-import { STATUS } from '@/lib/statusColors'
-import { sessionZone, zoneColor } from '@/lib/colors'
-import { GARMIN_GEAR_URL } from '@/components/shoes/shoeWear'
+import { cardClass } from '@/components/ui/Card'
+import { Stat } from '@/components/ui/Stat'
+import { TypeDot } from '@/components/ui/TypeDot'
+import { VerdictBlock, type VerdictTone } from '@/components/ui/Verdict'
+import { zoneColor } from '@/lib/colors'
 import Link from 'next/link'
-import { shoeWearCopy } from '@/components/shoes/shoeWear'
+import { GARMIN_GEAR_URL, WEAR_COLOR, shoeWearCopy } from '@/components/shoes/shoeWear'
 import { WearBar } from '@/components/shoes/WearBar'
 import { formatClock, formatDate, formatDateRange, formatDistance, formatKm, formatMonthShortYear } from '@/lib/formatters'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 export const revalidate = 3600
 
-// Mirrors WEAR_TEXT in ShoesGrid: `ok` reads neutral in text, while the filled
-// bar keeps the healthy green so the graphic still says "plenty left".
-const WEAR_STYLE: Record<WearStatus, { bar: string; text: string }> = {
-  ok:      { bar: STATUS.success.dot, text: 'text-muted-foreground' },
-  watch:   { bar: STATUS.warning.dot, text: STATUS.warning.text },
-  replace: { bar: STATUS.danger.dot,  text: STATUS.danger.text },
-}
+const TITLE = 'text-[15px] font-semibold text-foreground'
+
+/** Replace soon is a caution, Replace is bad (v4.17). */
+const VERDICT_TONE: Record<'watch' | 'replace', VerdictTone> = { watch: 'warn', replace: 'neg' }
 
 // The type mix wears the activity-type colours, so every dot in the run list
 // has its colour in the bar and legend (v4.4.1): easy Z2, tempo Z3,
@@ -104,7 +99,6 @@ export default async function ShoeDetailPage({
   const lastWornDate = shoe.activities[0]?.date ?? null
   const weeksWorn = weeksInRotation(shoe.firstUsedDate, lastWornDate)
   const avgRunKm = shoe.activities.length > 0 ? shoe.totalKm / shoe.activities.length : null
-  const style = WEAR_STYLE[status]
 
   // A projection past a year out is six runs extrapolated into noise, not
   // information - the sentence drops the date it can't actually back up and
@@ -177,51 +171,46 @@ export default async function ShoeDetailPage({
 
   const s = t.shoes
   const runs = shoe.activities.slice(0, RECENT_RUNS)
-  const heroStats = [
-    [String(shoe.activities.length), s.heroStats.runs],
-    [avgRunKm !== null ? avgRunKm.toFixed(1) : '–', s.heroStats.kmAvg],
-    [shoe.avgPaceSecPerKm !== null ? formatClock(shoe.avgPaceSecPerKm) : '–', s.heroStats.pace],
-    [shoe.avgHeartRate !== null ? String(Math.round(shoe.avgHeartRate)) : '–', s.heroStats.bpm],
-  ]
 
   return (
-    <div className="space-y-4">
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <BackButton label={d.back} fallbackHref="/shoes" className="mb-0" />
+    <div className="flex flex-col gap-3.5">
+      <header className="mb-1.5">
+        <BackButton label={d.back} fallbackHref="/profile" className="mb-3.5" />
+        <div className="flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="shoe-eyebrow">
+              {!shoe.retired && shoe.firstUsedDate ? s.since(shoe.brand, formatMonthYear(shoe.firstUsedDate)) : shoe.brand}
+              {shoe.retired && (
+                <span className="rounded-md bg-[var(--surface-2)] px-2 py-0.5 text-caption font-semibold text-muted-foreground">{s.retired}</span>
+              )}
+            </p>
+            <h1 className="mt-1 text-display text-foreground">{shoe.name}</h1>
+          </div>
+          {/* Limits, roles and retirement are Garmin's: Edit opens its gear page. */}
           {!shoe.retired && (
             <a
               href={GARMIN_GEAR_URL}
               target="_blank"
               rel="noreferrer"
               aria-label={s.editLabel}
-              className="flex h-11 items-center px-1 text-body font-bold text-muted-foreground transition-opacity active:opacity-70"
+              className="hit-44 inline-flex h-[34px] shrink-0 items-center rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
             >
               {s.edit}
             </a>
           )}
         </div>
-        <div className="mt-1 flex items-center gap-2">
-          <p className="text-caption uppercase tracking-[0.08em] text-muted-foreground" data-testid="shoe-eyebrow">
-            {!shoe.retired && shoe.firstUsedDate ? s.since(shoe.brand, formatMonthYear(shoe.firstUsedDate)) : shoe.brand}
-          </p>
-          {shoe.retired && (
-            <span className="rounded-md bg-[var(--segmented-track)] px-2 py-0.5 text-caption font-semibold text-muted-foreground">{s.retired}</span>
-          )}
-        </div>
-        <h1 className="text-display text-foreground">{shoe.name}</h1>
-      </div>
+      </header>
 
       {/* One hero: where the pair is in its life, and its four numbers. */}
-      <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="shoe-hero">
+      <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="shoe-hero">
         {shoe.retired ? (
           <>
-            <p className="flex flex-wrap items-baseline gap-x-2">
-              <span className="font-display text-title1 font-bold leading-none tabular-nums text-foreground">{formatKm(shoe.totalKm)}</span>
-              <span className="text-body text-muted-foreground">{t.units.km}{era ? ` · ${era}` : ''}</span>
+            <p className="text-[32px] font-semibold leading-none tracking-[-0.02em] text-foreground">
+              {formatKm(shoe.totalKm)}
+              <span className="ml-1.5 text-sm font-normal tracking-normal text-muted-foreground">{t.units.km}{era ? ` · ${era}` : ''}</span>
             </p>
-            <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} retired className="mt-3" />
-            <p className="mt-2.5 text-footnote leading-snug text-muted-foreground">
+            <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} retired size="md" />
+            <p className="text-xs leading-snug text-muted-foreground">
               {reallyRanOut
                 ? isFastestRetirement
                   ? d.retiredHero.ranOutFastest(formatKm(shoe.maxKm), weeksWorn)
@@ -232,96 +221,106 @@ export default async function ShoeDetailPage({
         ) : (
           <>
             <div className="flex items-baseline justify-between gap-3">
-              <p className="flex items-baseline gap-2">
-                <span className="font-display text-title1 font-bold leading-none tabular-nums text-foreground">{formatKm(shoe.totalKm)}</span>
-                <span className="text-body text-muted-foreground">{s.ofLimit(formatKm(shoe.maxKm))}</span>
+              <p className="text-[32px] font-semibold leading-none tracking-[-0.02em] text-foreground">
+                {formatKm(shoe.totalKm)}
+                <span className="ml-1.5 text-sm font-normal tracking-normal text-muted-foreground">{s.ofLimit(formatKm(shoe.maxKm))}</span>
               </p>
-              <span className={cn('shrink-0 font-display text-body font-bold tabular-nums', wear.over ? style.text : 'text-foreground')}>
-                {wear.over ? wear.short : s.left(formatKm(kmLeft))}
+              {/* Past the limit, the overrun is the news, in the wear's colour. */}
+              <span className="shrink-0 text-sm font-semibold text-foreground" style={wear.over ? { color: WEAR_COLOR[status] } : undefined} data-testid="shoe-left">
+                {wear.over ? wear.short : wear.exact}
               </span>
             </div>
-            <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} className="mt-3" />
-            {runOutSentence && <p className="mt-2.5 text-footnote leading-snug text-muted-foreground">{runOutSentence}</p>}
+            <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} tickKm={shoe.alertThresholdKm} size="md" />
+            <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs leading-snug text-muted-foreground">
+              <span>{runOutSentence}</span>
+              <span className="shrink-0" data-testid="shoe-retire-mark">{d.retireFromWorkouts(formatKm(shoe.alertThresholdKm))}</span>
+            </div>
           </>
         )}
-        <div className="mt-3.5 grid grid-cols-4 gap-2 border-t border-border pt-3" data-testid="shoe-hero-stats">
-          {heroStats.map(([value, label]) => (
-            <div key={label} className="min-w-0">
-              <p className="font-display text-body font-bold leading-none tabular-nums text-foreground">{value}</p>
-              <p className="mt-1 truncate text-caption text-muted-foreground">{label}</p>
-            </div>
-          ))}
+        <div className="mt-0.5 grid grid-cols-2 gap-4 border-t border-border pt-3.5 sm:grid-cols-4" data-testid="shoe-hero-stats">
+          <Stat label={s.heroStats.runs} value={shoe.activities.length} />
+          <Stat label={s.heroStats.avgDistance} value={avgRunKm !== null ? formatKm(avgRunKm, 1) : '–'} unit={avgRunKm !== null ? t.units.km : null} />
+          <Stat label={s.heroStats.avgPace} value={shoe.avgPaceSecPerKm !== null ? formatClock(shoe.avgPaceSecPerKm) : '–'} unit={shoe.avgPaceSecPerKm !== null ? t.units.perKm : null} />
+          <Stat label={s.heroStats.avgHr} value={shoe.avgHeartRate !== null ? Math.round(shoe.avgHeartRate) : '–'} unit={shoe.avgHeartRate !== null ? t.units.bpm : null} />
         </div>
-      </GlassSurface>
+      </section>
 
+      {/* The standard verdict (v4.17): a status eyebrow on a plain card, no tint. */}
       {!shoe.retired && status !== 'ok' && (
-        <div className="rounded-2xl border p-4" style={HERO_SURFACE[status]}>
-          <p className={cn(EYEBROW_CLASS, style.text)}>
-            {d.verdict.eyebrow(t.shoes.status[status])}
-          </p>
-          <p className="mt-2 font-display text-subhead font-bold leading-snug text-foreground">
-            {aiTake?.headline ?? verdictBody(status, weeksRemaining)}
-          </p>
-          {aiTake && <p className="mt-1 text-footnote leading-snug text-muted-foreground">{aiTake.body}</p>}
-        </div>
+        <section className={cardClass()} data-testid="shoe-verdict">
+          <VerdictBlock
+            tone={VERDICT_TONE[status]}
+            eyebrow={t.shoes.status[status]}
+            headline={aiTake?.headline ?? verdictBody(status, weeksRemaining)}
+            body={aiTake?.body}
+          />
+        </section>
       )}
 
       {typeShareEntries.length > 0 && (
-        <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="shoe-type-mix">
-          <h2 className="font-display text-body font-bold text-foreground">{shoe.retired ? d.whatItWasFor.title : d.whatYouRunIn.title}</h2>
-          <div className="mt-3 flex h-2.5 gap-0.5 overflow-hidden rounded-full">
+        <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="shoe-type-mix">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className={TITLE}>{shoe.retired ? d.whatItWasFor.title : d.whatYouRunIn.title}</h2>
+            <span className="shrink-0 text-xs text-muted-foreground">{s.shareOfDistance}</span>
+          </div>
+          {/* The session categories' zone colours (v4.4.1): each run dot below has its colour here. */}
+          <div className="flex h-2.5 gap-[3px]">
             {typeShareEntries.map((entry) => (
-              <span key={entry.bucket} data-bucket={entry.bucket} className="h-full" style={{ flexGrow: entry.percent, flexBasis: 0, background: BUCKET_COLOR[entry.bucket] }} />
+              <span key={entry.bucket} data-bucket={entry.bucket} className="h-full rounded-full" style={{ flexGrow: entry.percent, flexBasis: 0, background: BUCKET_COLOR[entry.bucket] }} />
             ))}
           </div>
-          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5 text-footnote font-semibold text-foreground">
+          <div className="flex flex-wrap gap-x-[18px] gap-y-1.5 text-xs text-muted-foreground">
             {typeShareEntries.map((entry) => (
               <span key={entry.bucket} className="flex items-center gap-1.5">
-                <span aria-hidden className="size-2 rounded-full" style={{ background: BUCKET_COLOR[entry.bucket] }} />
-                {typeShareLabel(entry.bucket)} {entry.percent}%
+                <span aria-hidden className="size-[7px] rounded-full" style={{ background: BUCKET_COLOR[entry.bucket] }} />
+                {typeShareLabel(entry.bucket)} <b className="font-semibold text-foreground">{entry.percent}%</b>
               </span>
             ))}
           </div>
-          {usageInsight && <p className="mt-2 text-footnote leading-snug text-muted-foreground">{usageInsight}</p>}
-          <p className="mt-2 text-caption text-muted-foreground">{s.typeMixCaption}</p>
-        </GlassSurface>
+          {usageInsight && <p className="text-[13px] leading-snug text-[var(--text-2)]">{usageInsight}</p>}
+        </section>
       )}
 
-      <section className="space-y-2">
-        <div className="flex items-baseline justify-between gap-2 px-1">
-          <h2 className="font-display text-body font-bold text-foreground">{shoe.retired ? s.lastRuns : d.activitiesTitleActive}</h2>
+      <section className="flex flex-col gap-2.5">
+        <div className="flex items-baseline justify-between gap-2 px-1 pt-2">
+          <h2 className={TITLE}>{shoe.retired ? s.lastRuns : d.activitiesTitleActive}</h2>
           {shoe.activities.length > RECENT_RUNS && (
-            <Link href={`/activities?shoe=${shoe.gearId}`} className="shrink-0 text-footnote font-bold text-accent-text">
+            <Link href={`/activities?shoe=${shoe.gearId}`} className="shrink-0 text-[13px] font-medium text-accent-text transition-opacity hover:opacity-80">
               {d.allActivitiesCount(shoe.activities.length)} →
             </Link>
           )}
         </div>
         {runs.length === 0 ? (
-          <GlassSurface variant="card" className="rounded-card-sm border-dashed py-10 text-center">
+          <section className={cardClass({ dashed: true, className: 'py-10 text-center' })}>
             <p className="text-sm text-subtle">{d.empty}</p>
-          </GlassSurface>
+          </section>
         ) : (
-          <GlassSurface variant="card" className="divide-y divide-border overflow-hidden rounded-card-sm" data-testid="shoe-runs">
+          <div className={cardClass({ padding: 'none', overflow: true })} data-testid="shoe-runs">
             {runs.map((a) => (
-              <Link key={a.id} href={`/activities/${a.id}`} className="flex items-center gap-3 px-4 py-3">
-                <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ background: zoneColor(sessionZone(a)) }} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-display text-body font-bold text-foreground">{a.description || t.activity.runTitle(a.dayOfWeek)}</span>
-                  <span className="block truncate text-footnote text-muted-foreground">
+              <Link
+                key={a.id}
+                href={`/activities/${a.id}`}
+                className="flex items-center gap-3 border-b border-border px-5 py-[13px] transition-colors last:border-b-0 hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)]"
+              >
+                <TypeDot type={a.type} size={8} />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="truncate text-sm font-semibold text-foreground">{a.description || t.activity.runTitle(a.dayOfWeek)}</span>
+                  <span className="truncate text-xs text-muted-foreground">
                     {[formatDate(a.date), a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null].filter(Boolean).join(' · ')}
                   </span>
                 </span>
-                <span className="shrink-0 text-right">
-                  <span className="block font-display text-body font-bold tabular-nums text-foreground">
-                    {formatDistance(a.distanceKm)} {t.units.km}
+                <span className="flex shrink-0 flex-col items-end gap-0.5">
+                  <span className="text-sm font-semibold text-foreground">
+                    {formatDistance(a.distanceKm)}
+                    <span className="ml-1 text-xs font-normal text-muted-foreground">{t.units.km}</span>
                   </span>
                   {a.paceSecPerKm !== null && (
-                    <span className="block text-footnote tabular-nums text-muted-foreground">{formatClock(a.paceSecPerKm)}</span>
+                    <span className="text-xs text-muted-foreground">{formatClock(a.paceSecPerKm)} {t.units.perKm}</span>
                   )}
                 </span>
               </Link>
             ))}
-          </GlassSurface>
+          </div>
         )}
       </section>
     </div>

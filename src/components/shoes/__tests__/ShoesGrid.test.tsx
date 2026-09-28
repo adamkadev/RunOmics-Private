@@ -28,7 +28,7 @@ function barWidths(container: HTMLElement): string[] {
 }
 
 describe('ShoesGrid', () => {
-  // C4, v4.4b: past the limit the bar is Z5 and the meta line says so.
+  // C4, v4.4b: past the limit the meta line says so; v4.17: the bar is neg.
   it('flags every pair past its limit in its meta line and its bar', () => {
     render(
       <ShoesGrid
@@ -41,22 +41,22 @@ describe('ShoesGrid', () => {
 
     expect(screen.getAllByTestId('shoe-card')).toHaveLength(2)
     for (const meta of screen.getAllByTestId('shoe-meta')) expect(meta.textContent).toContain(t.shoes.overLimit)
-    for (const bar of screen.getAllByTestId('wear-bar')) expect(bar.getAttribute('data-tone')).toBe('over')
+    for (const bar of screen.getAllByTestId('wear-bar')) expect(bar.getAttribute('data-tone')).toBe('replace')
   })
 
-  it('shows km left in bold, and the bar turns amber from 80% of the limit', () => {
+  it('shows km left in bold, and the bar turns warn at Replace soon, from 70% of the limit', () => {
     render(
       <ShoesGrid
         shoes={[
           shoe({ gearId: 'a', totalKm: 604, wearPercent: 60 }),
-          shoe({ gearId: 'b', totalKm: 850, wearPercent: 85 }),
+          shoe({ gearId: 'b', totalKm: 750, wearPercent: 75 }),
         ]}
       />,
     )
 
     const rows = screen.getAllByTestId('shoe-card')
-    expect(rows[0]!.textContent).toContain(`150 ${t.shoes.kmLeftShort}`)
-    expect(screen.getAllByTestId('wear-bar').map((bar) => bar.getAttribute('data-tone'))).toEqual(['near', 'ok'])
+    expect(rows[0]!.textContent).toContain(`250 ${t.shoes.kmLeftShort}`)
+    expect(screen.getAllByTestId('wear-bar').map((bar) => bar.getAttribute('data-tone'))).toEqual(['watch', 'ok'])
   })
 
   it('orders the pairs most worn first, each with a bar sized to its wear', () => {

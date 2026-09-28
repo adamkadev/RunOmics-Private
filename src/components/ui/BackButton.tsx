@@ -3,31 +3,36 @@
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { useNavigationOrigin } from '@/components/layout/NavigationHistory'
-import { sectionLabel } from '@/lib/navigation'
 import { cn } from '@/lib/utils'
 
 interface Props {
+  /** The parent page's name: what the link says, wherever the reader came from. */
   label: string
+  /** The parent page. */
   fallbackHref?: string
   className?: string
 }
 
+/**
+ * The link to a page's parent (v4.17): an activity to Activities, a detail
+ * under Progress to Progress. It names the parent, not the page before - a
+ * run opened from Today still reads "← Activities". Stepping back in history
+ * when the parent is the page just left keeps its scroll and its filters.
+ */
 export function BackButton({ label, fallbackHref = '/', className }: Props) {
   const router = useRouter()
   const origin = useNavigationOrigin()
-  const originLabel = origin ? sectionLabel(origin.path) : null
 
   return (
     <button
       onClick={() => {
-        if (!origin || !originLabel) router.push(fallbackHref)
-        else if (origin.isImmediate) router.back()
-        else router.push(origin.path)
+        if (origin?.isImmediate && origin.path.split('?')[0] === fallbackHref) router.back()
+        else router.push(fallbackHref)
       }}
       className={cn('mb-4 inline-flex items-center gap-1.5 text-subhead font-semibold text-muted-foreground transition-colors hover:text-foreground', className)}
     >
       <ArrowLeft size={16} strokeWidth={2.2} />
-      {originLabel ?? label}
+      {label}
     </button>
   )
 }

@@ -5,14 +5,14 @@ import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getTrainingStatusDaysBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
-import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
+import { getPlannedWorkouts, getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { getTodayInsight, todayInsightSession } from '@/application/usecases/GetTodayInsight'
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { coachWorkoutView, heroWorkoutView, plannedWorkoutView } from '@/components/plan/planWorkoutView'
-import { appTodayIso } from '@/lib/calendarDate'
+import { addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { loadWeekTarget } from '@/app/_data/loadWeekTarget'
 import { RecentActivities } from '@/components/dashboard/RecentActivities'
@@ -22,6 +22,9 @@ import { BodyCard, latestRatedStatus } from '@/components/dashboard/BodyCard'
 import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
+import { findNextSession } from '@/components/dashboard/nextSession'
+import { yesterdayKind } from '@/components/dashboard/todayVerdict'
+import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { t } from '@/i18n'
 
 export const revalidate = 3600
@@ -58,9 +61,19 @@ export default async function DashboardPage() {
   // goes into the insight instead of cancelling it.
   const aiVerdict = await getTodayInsight(trainingStatus, await todayInsightSession())
   const celebrationTake = await getPbCelebrationInsight(mostRecentRecord)
+  // What the rest of the plan holds: the session a rest day points to, and
+  // the name under each day of the week strip.
+  const plannedWorkouts = await getPlannedWorkouts()
+  const coachWorkouts = coaching?.workouts ?? []
+  const nextSession = findNextSession(today, coachWorkouts, plannedWorkouts, trainingZones)
+  // Yesterday's run, which the verdict reads: a hard one is still in the legs.
+  const yesterdayIso = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
+  const yesterdayPrescribed = coachWorkouts.find((w) => w.prescription.date === yesterdayIso && w.prescription.status !== 'cancelled')?.prescription.type ?? null
+  const yesterday = yesterdayKind(data.recentActivities.find((a) => a.date === yesterdayIso) ?? null, yesterdayPrescribed)
+  const sessionKinds = plannedSessionKinds(weekTarget.days.map((day) => day.date), coachWorkouts, plannedWorkouts)
 
   return (
-    <div className="space-y-3.5">
+    <div className="flex flex-col gap-3.5">
       <CelebrationOverlay record={mostRecentRecord} aiTake={celebrationTake} />
 
       <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} />
@@ -70,6 +83,8 @@ export default async function DashboardPage() {
         plannedWorkout={todayWorkout && heroWorkoutView(todayWorkout)}
         todayActivity={todayActivity}
         aiVerdict={aiVerdict}
+        nextSession={nextSession}
+        yesterday={yesterday}
       />
 
       <BodyCard status={trainingStatus} watchStatus={latestRatedStatus(trainingStatusDays)} />
@@ -77,7 +92,7 @@ export default async function DashboardPage() {
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
-          <WeeklyStreakCard data={weeklyStreak} target={weekTarget} today={today} />
+          <WeeklyStreakCard data={weeklyStreak} target={weekTarget} today={today} sessionKinds={sessionKinds} />
         </Link>
       )}
 

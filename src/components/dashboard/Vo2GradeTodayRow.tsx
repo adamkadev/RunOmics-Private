@@ -16,7 +16,7 @@ export function Vo2GradeTodayRow({ view }: { view: Vo2GradeView | null }) {
   const g = t.vo2Grade
   return (
     <Link href={VO2_GRADE_HREF} aria-label={g.open} className="block active:scale-[0.99]" data-testid="vo2-grade-today">
-      <GlassSurface variant="card" className="flex items-center gap-3 rounded-card-sm px-4 py-3">
+      <GlassSurface variant="card" className="flex items-center gap-3 px-4 py-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[var(--segmented-track)] font-display text-title3 font-bold text-foreground">
           {view.grade}
         </span>

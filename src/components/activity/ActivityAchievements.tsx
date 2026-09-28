@@ -1,7 +1,7 @@
 import { Trophy, Medal } from 'lucide-react'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDuration, formatPace } from '@/lib/formatters'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -18,8 +18,10 @@ export function ActivityAchievements({ bestEfforts, qualifiedEfforts }: Props) {
   const ranked = [...qualifiedEfforts].sort((a, b) => a.rank - b.rank)
 
   return (
-    <GlassSurface variant="card" className="p-4">
-      <h3 className="mb-3 text-sm font-semibold text-foreground/80">{t.activity.achievements.title}</h3>
+    // A record is good news, so it reads in pos (v4.17): the gold it wore
+    // was the caution colour.
+    <section className={cardClass({ className: 'flex flex-col gap-3' })}>
+      <h3 className="text-[15px] font-semibold text-foreground">{t.activity.achievements.title}</h3>
       <div className="flex flex-col gap-2.5">
         {ranked.map((effort) => {
           const seconds = bestEfforts[effort.key]
@@ -31,24 +33,24 @@ export function ActivityAchievements({ bestEfforts, qualifiedEfforts }: Props) {
               <span
                 className={cn(
                   'flex h-8 w-8 shrink-0 items-center justify-center rounded-control',
-                  'bg-[var(--segmented-track)]'
+                  'bg-[var(--surface-2)]'
                 )}
               >
-                <Icon size={15} className={effort.rank === 1 ? 'text-[var(--tone-caution)]' : 'text-muted-foreground'} />
+                <Icon size={15} className={effort.rank === 1 ? 'text-[var(--pos)]' : 'text-muted-foreground'} />
               </span>
               <div className="min-w-0 flex-1">
                 <span className="text-sm font-semibold text-foreground">{effort.label}</span>
-                <span className="ml-1.5 text-xs text-subtle">
+                <span className="ml-1.5 text-xs text-muted-foreground">
                   {formatDuration(Math.round(seconds))}{km ? ` · ${formatPace(Math.round(seconds / km))}` : ''}
                 </span>
               </div>
-              <span className="shrink-0 rounded-full bg-[var(--segmented-track)] text-[var(--tone-caution)] px-2 py-0.5 text-caption font-bold">
+              <span className={cn('shrink-0 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-caption font-semibold', effort.rank === 1 ? 'text-[var(--pos)]' : 'text-muted-foreground')}>
                 {effort.rank === 1 ? s.prBadge : s.rankBadge(effort.rank)}
               </span>
             </div>
           )
         })}
       </div>
-    </GlassSurface>
+    </section>
   )
 }

@@ -67,21 +67,29 @@ describe('sessionTitle', () => {
 })
 
 describe('one session colour across the week', () => {
-  it('colours every bar and list dot with zoneColor(sessionZone(session))', () => {
+  // v4.17: a session still to come is its type's zone, in the chart and the
+  // list alike; what was run is the accent in the chart - the athlete's own
+  // data - and keeps its type's dot in the list.
+  it('colours every planned bar and every list dot with zoneColor(sessionZone(session))', () => {
     const { container } = renderWeek()
-    const types = [...RUNS.map((r) => r.type), ...PLANNED.map((p) => p.type)]
-    const expected = new Set(types.map((type) => zoneColor(sessionZone({ type }))))
 
-    const barColors = [...container.querySelectorAll<HTMLElement>('[style*="--state-color"]:not([data-legend-swatch]):not([data-legend-swatch] *)')].map((el) =>
-      el.style.getPropertyValue('--state-color'),
-    )
-    expect(barColors.length).toBeGreaterThanOrEqual(5)
-    for (const color of barColors) expect(expected).toContain(color)
+    const planned = [...container.querySelectorAll<HTMLElement>('[data-bar-state="planned"]')]
+    expect(planned.map((bar) => bar.style.getPropertyValue('--bar-zone'))).toEqual(PLANNED.map((p) => zoneColor(sessionZone(p))))
 
-    for (const row of screen.getAllByTestId(/^week-session-/)) {
-      const dot = row.querySelector<HTMLElement>('span.rounded-\\[4px\\]')!
-      expect(expected).toContain(dot.style.background)
+    const done = [...container.querySelectorAll<HTMLElement>('[data-bar-state="done"]')]
+    expect(done).toHaveLength(RUNS.length)
+    for (const bar of done) {
+      expect(bar.className).toContain('bg-accent')
+      expect(bar.style.getPropertyValue('--bar-zone')).toBe('')
     }
+
+    const types = [...RUNS.map((r) => r.type), ...PLANNED.map((p) => p.type)]
+    const rows = screen.getAllByTestId(/^week-session-/)
+    expect(rows).toHaveLength(types.length)
+    rows.forEach((row, i) => {
+      const dot = row.querySelector<HTMLElement>('span.rounded-full')!
+      expect(dot.style.background).toBe(zoneColor(sessionZone({ type: types[i] })))
+    })
   })
 
   it('names the contradicting session after its type, not its label', () => {

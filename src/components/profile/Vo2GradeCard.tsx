@@ -1,12 +1,11 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import type { Vo2GradeView } from '@/application/usecases/GetVo2Grade'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { GlossaryTerm } from '@/components/ui/GlossaryTerm'
-import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { Unit } from '@/components/ui/Stat'
 import { deltaColor } from '@/lib/deltaTone'
-import { formatKm } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
+import { MINUS, PLUS_MINUS, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 export const VO2_GRADE_HREF = '/athlete/vo2max'
@@ -15,38 +14,55 @@ export const GRADE_DELTA_FLAT = 0.3
 
 const one = (n: number) => formatKm(n, 1)
 
-/** "↑0.8", "↓0.4", or "±0.2" when the change is inside the neutral band. */
+/** "+0.8", "−0.4", or "±0.2" when the change is inside the neutral band (v4.17: signed, as every delta). */
 export function gradeDelta(delta: number): string {
-  if (Math.abs(delta) < GRADE_DELTA_FLAT) return `±${one(Math.abs(delta))}`
-  return `${delta > 0 ? '↑' : '↓'}${one(Math.abs(delta))}`
+  if (Math.abs(delta) < GRADE_DELTA_FLAT) return `${PLUS_MINUS}${one(Math.abs(delta))}`
+  return `${delta > 0 ? '+' : MINUS}${one(Math.abs(delta))}`
 }
 
 /** "Men 20–29" with the (i) that says where the bands come from. */
 export function GradeBandLabel({ band }: { band: { sex: 'male' | 'female'; bracket: string } }) {
   return (
-    <span className="text-footnote text-muted-foreground" data-testid="grade-band">
+    <span className="text-xs text-muted-foreground" data-testid="grade-band">
       <GlossaryTerm term="vo2Grade">{t.vo2Grade.band(band.sex, band.bracket)}</GlossaryTerm>
     </span>
   )
 }
 
+/** The grade on its tile (v4.17): the accent on its soft tint, the athlete's own mark. */
+function GradeTile({ children, testId }: { children: string; testId?: string }) {
+  return (
+    <span
+      className="flex size-16 shrink-0 items-center justify-center rounded-[14px] bg-[var(--accent-soft)] text-[34px] font-bold leading-none text-accent-text"
+      data-testid={testId}
+      aria-hidden={testId ? undefined : true}
+    >
+      {children}
+    </span>
+  )
+}
+
+const TITLE = 'text-[15px] font-semibold text-foreground'
+
 /**
- * The grade hero on Athlete & zones (v5.3 G1, states in G4). The letter and
- * the value are ink, never the accent and never --good; the accent is only
- * the progress fill, which is data. A level-up says so in --good for three
- * days; a drop is muted, with its reason where one is known, never amber.
+ * The grade hero on Athlete & zones (v5.3 G1, states in G4; v4.17): the
+ * letter on an accent-soft tile, the value with its unit, the percentile in
+ * text-2 and the 30-day change coloured by what it means; the bar to the
+ * next grade in the accent, with the gap between its two ends. A level-up
+ * says so in pos for three days; a drop is muted, with its reason where one
+ * is known, never amber. The footer opens the ladder.
  */
 export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
   const g = t.vo2Grade
 
   if (view.status === 'calibrating') {
     return (
-      <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="vo2-grade-card">
-        <p className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{g.title}</p>
-        <div className="mt-3 flex items-center gap-4">
-          <span className="font-display text-[44px] font-bold leading-none text-foreground" aria-hidden>—</span>
+      <section className={cardClass({ className: 'flex flex-col gap-3.5' })} data-testid="vo2-grade-card">
+        <h2 className={TITLE}>{g.title}</h2>
+        <div className="flex items-center gap-[18px]">
+          <GradeTile>—</GradeTile>
           <div className="min-w-0">
-            <p className="text-subhead font-semibold text-foreground">
+            <p className="text-sm font-semibold text-foreground">
               {view.runsNeeded > 0 ? g.gradeIn(view.runsNeeded) : g.gradeAfter}
             </p>
             <div className="mt-2 flex flex-wrap gap-1" aria-label={g.calibrating} data-testid="grade-calibration">
@@ -54,13 +70,13 @@ export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
                 <span
                   key={i}
                   className="h-1.5 w-1.5 rounded-full"
-                  style={{ background: i < view.runs ? 'var(--foreground)' : 'var(--band)' }}
+                  style={{ background: i < view.runs ? 'var(--accent)' : 'var(--line-2)' }}
                 />
               ))}
             </div>
           </div>
         </div>
-      </GlassSurface>
+      </section>
     )
   }
 
@@ -68,39 +84,40 @@ export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
   const progress = next && floor !== null ? Math.min(1, Math.max(0, (value - floor) / (next.min - floor))) : null
 
   return (
-    <GlassSurface variant="card" className="overflow-hidden rounded-card-sm" data-testid="vo2-grade-card">
-      <div className="px-4 pt-4">
-        <div className="flex items-center justify-between gap-3">
-          <p className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{g.title}</p>
+    <section className={cardClass({ padding: 'none', overflow: true })} data-testid="vo2-grade-card">
+      <div className="flex flex-col gap-3.5 px-5 pb-4 pt-[18px]">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className={TITLE}>{g.title}</h2>
           <GradeBandLabel band={band} />
         </div>
 
-        <div className="mt-3 flex items-center gap-4">
-          <span className="font-display text-[44px] font-bold leading-none text-foreground" data-testid="grade-letter">{grade}</span>
-          <div className="min-w-0 space-y-0.5">
+        <div className="flex items-center gap-[18px]">
+          <GradeTile testId="grade-letter">{grade}</GradeTile>
+          <div className="flex min-w-0 flex-col gap-[3px]">
             {change?.kind === 'up' ? (
               <>
-                <p className="text-subhead font-semibold text-foreground">
-                  {g.newGrade} · <span className="text-[var(--good)]" data-testid="grade-up">{g.upFrom(change.from)}</span>
+                <p className="text-sm font-semibold text-foreground">
+                  {g.newGrade} · <span className="text-[var(--pos)]" data-testid="grade-up">{g.upFrom(change.from)}</span>
                 </p>
-                <p className="text-footnote text-muted-foreground">
-                  {one(value)} · {g.topForAgeInline(topPercent)}
+                <p className="text-[13px] text-[var(--text-2)]">
+                  {one(value)} {g.unit} · {g.topForAgeInline(topPercent)}
                 </p>
               </>
             ) : change?.kind === 'down' ? (
               <>
-                <p className="text-subhead font-semibold text-muted-foreground" data-testid="grade-down">{g.downFrom(change.from, change.daysOff)}</p>
-                <p className="text-footnote text-muted-foreground">{g.dropNote}</p>
+                <p className="text-sm font-semibold text-muted-foreground" data-testid="grade-down">{g.downFrom(change.from, change.daysOff)}</p>
+                <p className="text-[13px] text-[var(--text-2)]">{g.dropNote}</p>
               </>
             ) : (
               <>
-                <p className="font-display text-title3 font-bold leading-tight tabular-nums text-foreground">
-                  {one(value)} <span className="font-sans text-footnote font-medium text-muted-foreground">{g.unit}</span>
+                <p className="text-[22px] font-semibold leading-tight text-foreground">
+                  {one(value)}
+                  <Unit>{g.unit}</Unit>
                 </p>
-                <p className="text-footnote text-muted-foreground">{g.topForAge(topPercent)}</p>
+                <p className="text-[13px] text-[var(--text-2)]">{g.topForAge(topPercent)}</p>
                 {delta30 !== null && (
-                  <p className="text-footnote text-muted-foreground" data-testid="grade-delta">
-                    <span style={{ color: deltaColor('vo2max', delta30, { flatBelow: GRADE_DELTA_FLAT }) }}>{gradeDelta(delta30)}</span> {g.in30d}
+                  <p className="text-xs" data-testid="grade-delta" style={{ color: deltaColor('vo2max', delta30, { flatBelow: GRADE_DELTA_FLAT }) }}>
+                    {gradeDelta(delta30)} {g.in30d}
                   </p>
                 )}
               </>
@@ -109,13 +126,16 @@ export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
         </div>
 
         {next && floor !== null && progress !== null && (
-          <div className="mt-4" data-testid="grade-progress">
-            <div className="flex justify-between text-caption tabular-nums text-muted-foreground">
-              <span>{grade} · {one(floor)}</span>
-              <span>{next.grade} · {one(next.min)}</span>
-            </div>
-            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[var(--track)]">
+          <div className="flex flex-col gap-1.5" data-testid="grade-progress">
+            <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
               <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(progress * 100)}%` }} />
+            </div>
+            <div className="grid grid-cols-[1fr_auto_1fr] gap-2 text-xs text-muted-foreground">
+              <span>{grade} · {one(floor)}</span>
+              <span data-testid="grade-gap">
+                <b className="font-semibold text-foreground">{one(next.gap)}</b> {g.toGrade(next.grade)}
+              </span>
+              <span className="text-right">{next.grade} · {one(next.min)}</span>
             </div>
           </div>
         )}
@@ -124,21 +144,12 @@ export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
       <Link
         href={VO2_GRADE_HREF}
         aria-label={g.open}
-        className="mt-4 flex min-h-11 items-center justify-between gap-3 border-t border-border px-4 py-3 text-footnote text-foreground"
+        className="flex min-h-11 items-center justify-between gap-3 border-t border-border px-5 py-3 text-[13px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)]"
         data-testid="grade-footer"
       >
-        <span className="min-w-0">
-          {next ? (
-            <>
-              {g.toNext(one(next.gap), next.grade)}
-              {etaWeeks !== null && <span className="text-muted-foreground"> {g.eta(etaWeeks)}</span>}
-            </>
-          ) : (
-            g.topGrade
-          )}
-        </span>
-        <ChevronRight size={16} className="shrink-0 text-subtle" aria-hidden />
+        <span className="min-w-0">{next ? (etaWeeks !== null ? g.eta(etaWeeks) : g.ladder) : g.topGrade}</span>
+        <ChevronRight size={16} className="shrink-0 text-muted-foreground" aria-hidden />
       </Link>
-    </GlassSurface>
+    </section>
   )
 }

@@ -7,11 +7,23 @@ import { isRunningActivity } from '@/domain/training/trainingHistory'
 /**
  * A metric's own eight-week range. The median alone says whether this run sat
  * above or below usual; the range says whether that gap is unusual at all.
+ * The middle half of the runs (quartile to quartile) is the baseline band
+ * the Dynamics tab shades (v4.17).
  */
 export interface BaselineRange {
   median: number
   min: number
   max: number
+  low: number
+  high: number
+}
+
+/** The value a share of the way through the sorted runs, between neighbours. */
+function quantile(sorted: number[], q: number): number {
+  const at = (sorted.length - 1) * q
+  const below = Math.floor(at)
+  const above = Math.ceil(at)
+  return sorted[below]! + (sorted[above]! - sorted[below]!) * (at - below)
 }
 
 export interface DynamicsBaseline {
@@ -33,10 +45,13 @@ function rangeOf(
 ): BaselineRange | null {
   const values = runs.map(pick).filter((v): v is number => typeof v === 'number')
   if (values.length < MIN_RUNS) return null
+  const sorted = [...values].sort((a, b) => a - b)
   return {
     median: round(median(values), decimals),
-    min: round(Math.min(...values), decimals),
-    max: round(Math.max(...values), decimals),
+    min: round(sorted[0]!, decimals),
+    max: round(sorted[sorted.length - 1]!, decimals),
+    low: round(quantile(sorted, 0.25), decimals),
+    high: round(quantile(sorted, 0.75), decimals),
   }
 }
 

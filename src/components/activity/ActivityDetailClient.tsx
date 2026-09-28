@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
@@ -12,10 +12,14 @@ import { RunVerdict } from './RunVerdict'
 import { RunEffortCard } from './RunEffortCard'
 import { KmSplits } from './KmSplits'
 import { BestEfforts } from './BestEfforts'
+import type { ChartZones } from './chartStackLanes'
+import { createScrubChannel, useScrubFraction, type ScrubChannel } from './scrubChannel'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
+import { cardClass } from '@/components/ui/Card'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { Stat } from '@/components/ui/Stat'
 import { useUrlParam } from '@/lib/useUrlParam'
 import type { SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
 import { SimilarRuns } from './SimilarRuns'
@@ -24,11 +28,10 @@ import { conditionsText, garminActivityUrl } from './runConditions'
 import { GlossaryTerm } from '@/components/ui/GlossaryTerm'
 import type { ShoeTag } from '@/domain/shoe/types'
 import type { Insight } from '@/lib/gemini'
-import { MetricGrid, type Metric } from '@/components/ui/MetricGrid'
 import { t } from '@/i18n'
 
-// Both tabs are closed when the page loads and draw with Recharts, so each
-// loads the first time it is opened rather than with the page.
+// Both tabs are closed when the page loads, so each loads the first time it
+// is opened rather than with the page.
 const tabLoading = () => <ChartCardSkeleton />
 const ChartStack = dynamic(() => import('./ChartStack').then((m) => m.ChartStack), { loading: tabLoading })
 const RunningDynamics = dynamic(() => import('./RunningDynamics').then((m) => m.RunningDynamics), { loading: tabLoading })
@@ -41,10 +44,12 @@ interface Props {
   /** The pair it was run in, as the Shoe row of the verdict card. */
   shoe?: ShoeTag | null
   similarRuns?: SimilarRunsData | null
-  /** Race result and achievements, drawn after the note and before the tabs. */
+  /** Race result and achievements, at the head of Overview. */
   extras?: ReactNode
-  /** Back and share, title and subtitle: the same on every tab. */
+  /** Back, title, subtitle and share: the same on every tab. */
   header?: ReactNode
+  /** The athlete's zones, banded behind the Charts lanes. */
+  chartZones?: ChartZones | null
 }
 
 const TAB_IDS = ['overview', 'intervals', 'charts', 'dynamics'] as const
@@ -54,39 +59,36 @@ function isTabId(value: string | null): value is TabId {
   return value !== null && (TAB_IDS as readonly string[]).includes(value)
 }
 
-function buildPrimaryStats(activity: ActivityDetailView): Metric[] {
-  // MetricGrid has had a dedicated unit slot all along; this call site put the
-  // unit in the label instead, which is why duration was the one stat with none.
-  const stats: Metric[] = [
-    {
-      value: formatDistance(activity.distanceKm),
-      unit: t.units.km,
-      label: t.activity.stats.distance,
-    },
-    {
-      value: formatDuration(activity.durationSeconds),
-      label: t.activity.stats.duration,
-    },
+interface PrimaryStat {
+  label: string
+  value: string
+  unit?: string
+}
+
+function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
+  const s = t.activity.stats
+  const stats: PrimaryStat[] = [
+    { label: s.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
+    { label: s.duration, value: formatDuration(activity.durationSeconds) },
   ]
-
-  if (activity.paceSecPerKm) {
-    stats.push({
-      value: formatClock(activity.paceSecPerKm),
-      unit: t.units.perKm,
-      label: t.activity.stats.pace,
-    })
-  }
-
-  if (activity.avgHeartRate) {
-    stats.push({
-      value: `${activity.avgHeartRate}`,
-      unit: t.units.bpm,
-      label: t.activity.stats.avgHr,
-    })
-  }
-
+  if (activity.paceSecPerKm) stats.push({ label: s.pace, value: formatClock(activity.paceSecPerKm), unit: t.units.perKm })
+  if (activity.avgHeartRate) stats.push({ label: s.avgHr, value: `${activity.avgHeartRate}`, unit: t.units.bpm })
   return stats
 }
+
+/** "Very Easy" as "Very easy": the detail rows are in sentence case (v4.17). */
+function sentenceCase(label: string): string {
+  return label ? label.charAt(0) + label.slice(1).toLowerCase() : label
+}
+
+/** The map, with the Charts scrub's marker on it: only this re-renders while a finger drags. */
+function ScrubbedMap({ route, scrub }: { route: [number, number][]; scrub: ScrubChannel }) {
+  const fraction = useScrubFraction(scrub)
+  return <ActivityMapClient route={route} hoverFraction={fraction} className="h-full w-full rounded-none" />
+}
+
+/** A detail row of the verdict card: the name muted on the left, the value in ink on the right. */
+const ROW = 'flex min-h-11 items-center justify-between gap-3 border-t border-border text-sm'
 
 export function ActivityDetailClient({
   activity,
@@ -97,10 +99,12 @@ export function ActivityDetailClient({
   similarRuns = null,
   extras,
   header,
+  chartZones = null,
 }: Props) {
   // The tab lives in ?tab=, so going back from Charts or Dynamics lands on it
   // again rather than on Overview.
   const [tabParam, setTabParam] = useUrlParam('tab')
+  const [scrub] = useState(createScrubChannel)
   const stats = buildPrimaryStats(activity)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
   const hasCharts = hasSecondaryCharts || !!activity.hrSamples
@@ -125,131 +129,128 @@ export function ActivityDetailClient({
 
   return (
     <>
-      {/* The run itself - map, numbers, verdict, how it felt - heads Overview.
-          '← Activities', share, then the big title and date on every tab
-          (H16): the compact chevron header was a second design. */}
       {header}
+
+      {/* The route and its four numbers in one card, on every tab (v4.17):
+          the Charts scrub moves a marker along this route, so the map stays
+          above the charts. 320 pt tall, the route in the accent. */}
+      <section className={cardClass({ padding: 'none', overflow: true })} data-testid="run-map-card">
+        <div className="h-[260px] sm:h-[320px]">
+          {activity.route ? (
+            <ScrubbedMap route={activity.route} scrub={scrub} />
+          ) : (
+            <NoRouteMap className="h-full min-h-0 w-full rounded-none border-0" />
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-4 border-t border-border px-5 py-4 sm:grid-cols-4">
+          {stats.map((stat) => (
+            <Stat key={stat.label} label={stat.label} value={stat.value} unit={stat.unit} valueStyle={{ fontSize: 24 }} />
+          ))}
+        </div>
+      </section>
+
+      {/* The verdict and how it felt - the watch's RPE, the conditions, the
+          pair and the note, the one thing here the user writes - in one card
+          (H10), heading Overview; the other tabs go straight to their content. */}
       {tab === 'overview' && (
-        <>
-          {/* About a quarter of the screen, fitted to the route: the v4 strip
-              (F04) left the route a squiggle under four chips. */}
-          <div className="h-[210px] overflow-hidden rounded-card-sm border border-border">
-            {activity.route ? (
-              <ActivityMapClient
-                route={activity.route}
-                paceSamples={activity.paceSamples}
-                className="h-full w-full"
-              />
+        <RunVerdict activity={activity} aiVerdict={aiVerdict}>
+          {!activity.avgHeartRate && (
+            <div className={ROW}>
+              <span className="text-caption font-semibold uppercase tracking-[0.08em] text-[var(--warn)]">
+                {t.activity.dataQuality.estimated}
+              </span>
+            </div>
+          )}
+          <div className={ROW}>
+            <span className="text-muted-foreground">
+              <GlossaryTerm term="rpe">{e.label}</GlossaryTerm>
+            </span>
+            {activity.rpe !== null ? (
+              <span className="text-foreground">{e.value(activity.rpe, sentenceCase(t.rpeLabels[activity.rpe] ?? ''))}</span>
             ) : (
-              <NoRouteMap className="h-full min-h-0 w-full" />
+              <span className="text-subtle">{e.notLogged}</span>
             )}
           </div>
-
-          <MetricGrid metrics={stats} className="grid-cols-4 px-1 text-center" />
-
-          {/* The verdict and how it felt - the watch's RPE and the note, the
-              one thing here the user writes - in one card (H10). */}
-          <RunVerdict activity={activity} aiVerdict={aiVerdict}>
-            {!activity.avgHeartRate && (
-              <div className="pt-2.5">
-                <span className="rounded-full border border-[var(--tone-caution)]/40 px-2 py-px text-caption font-semibold uppercase tracking-[0.06em] text-[var(--tone-caution)]">
-                  {t.activity.dataQuality.estimated}
-                </span>
-              </div>
-            )}
-            <div className="flex min-h-11 items-center justify-between gap-3 text-sm">
-              <span className="font-semibold text-foreground">
-                <GlossaryTerm term="rpe">{e.label}</GlossaryTerm>
-              </span>
-              {activity.rpe !== null ? (
-                <span className="text-foreground">{e.value(activity.rpe, t.rpeLabels[activity.rpe] ?? '')}</span>
-              ) : (
-                <span className="text-subtle">{e.notLogged}</span>
-              )}
+          {/* Effort · Conditions · Shoe · Note (v4.8 2h): the weather and the
+              pair explain effort and heart rate, so they sit with them. */}
+          {activity.weather && (
+            <div className={ROW} data-testid="run-conditions">
+              <span className="text-muted-foreground">{t.activity.conditions.label}</span>
+              <span className="text-foreground">{conditionsText(activity.weather)}</span>
             </div>
-            {/* Effort · Conditions · Shoe · Note (v4.8 2h): the weather and the
-                pair explain effort and heart rate, so they sit with them
-                rather than on the map. */}
-            {activity.weather && (
-              <div className="flex min-h-11 items-center justify-between gap-3 text-sm" data-testid="run-conditions">
-                <span className="font-semibold text-foreground">{t.activity.conditions.label}</span>
-                <span className="text-foreground">{conditionsText(activity.weather)}</span>
-              </div>
+          )}
+          {/* The pair comes from Garmin, so it is set and changed there. */}
+          <a
+            href={garminActivityUrl(activity.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={shoe ? t.activity.shoe.changeInGarmin(shoe.name) : t.activity.shoe.addInGarmin}
+            className={ROW}
+            data-testid="run-shoe"
+          >
+            <span className="text-muted-foreground">{t.activity.shoe.label}</span>
+            {shoe ? (
+              <span className="min-w-0 truncate text-foreground">{shoe.name} ›</span>
+            ) : (
+              <span className="font-medium text-accent-text">{t.activity.shoe.add} ›</span>
             )}
-            {/* The pair comes from Garmin, so it is set and changed there. */}
-            <a
-              href={garminActivityUrl(activity.id)}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={shoe ? t.activity.shoe.changeInGarmin(shoe.name) : t.activity.shoe.addInGarmin}
-              className="flex min-h-11 items-center justify-between gap-3 text-sm"
-              data-testid="run-shoe"
-            >
-              <span className="font-semibold text-foreground">{t.activity.shoe.label}</span>
-              {shoe ? (
-                <span className="flex min-w-0 items-center gap-1.5 text-foreground">
-                  <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: shoe.dotColor }} />
-                  <span className="truncate">{shoe.name} ›</span>
-                </span>
-              ) : (
-                <span className="font-semibold text-accent-text">{t.activity.shoe.add} ›</span>
-              )}
-            </a>
-            <ActivityNotes activityId={activity.id} />
-          </RunVerdict>
-
-          {extras}
-        </>
+          </a>
+          <ActivityNotes activityId={activity.id} />
+        </RunVerdict>
       )}
 
       {tabs.length > 1 && (
-        <StickyBar top="var(--sticky-top, var(--top-scrim))" className="mb-3">
+        <StickyBar top="var(--sticky-top, var(--top-scrim))" className="-mb-2">
           <SegmentedTabs
             tabs={detailTabs}
             items={tabs}
             label={t.activity.tabs.groupLabel}
+            size="md"
             fill
-            tabClassName="h-9 text-footnote"
+            tabClassName="h-[34px] text-[13px]"
           />
         </StickyBar>
       )}
 
-      {/* space-y-5 is the page's own rhythm: the panel stands in for the
-          sections it holds, which used to be the page's direct children. */}
-      <div {...(tabs.length > 1 ? detailTabs.panelProps : {})} className="space-y-5">
-      {tab === 'overview' && (
-        <>
-          <RunEffortCard
-            hrZones={activity.hrZones}
-            aer={activity.aerTrainingEffect}
-            ana={activity.anaTrainingEffect}
-            decoupling={aerobicDecoupling(activity)}
-            onShowCharts={hasCharts ? () => setTab('charts') : undefined}
+      {/* The panel stands in for the cards it holds, 14 pt apart like the
+          page's own. */}
+      <div {...(tabs.length > 1 ? detailTabs.panelProps : {})} className="flex flex-col gap-3.5 outline-none">
+        {tab === 'overview' && (
+          <>
+            {extras}
+            <RunEffortCard
+              hrZones={activity.hrZones}
+              aer={activity.aerTrainingEffect}
+              ana={activity.anaTrainingEffect}
+              decoupling={aerobicDecoupling(activity)}
+              onShowCharts={hasCharts ? () => setTab('charts') : undefined}
+            />
+            {similarRuns && <SimilarRuns data={similarRuns} />}
+            {activity.bestEfforts && (
+              <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
+            )}
+          </>
+        )}
+
+        {tab === 'intervals' && <KmSplits activity={activity} />}
+
+        {tab === 'charts' && (
+          <ChartStack
+            distanceKm={activity.distanceKm}
+            hrSamples={activity.hrSamples}
+            avgHr={activity.avgHeartRate}
+            paceSamples={activity.paceSamples}
+            avgPaceSecPerKm={activity.paceSecPerKm}
+            cadenceSamples={activity.cadenceSamples}
+            avgCadence={activity.cadenceSpm}
+            elevationProfile={activity.elevationProfile}
+            elevationGain={activity.elevationGain}
+            zones={chartZones}
+            onScrub={scrub.set}
           />
-          {similarRuns && <SimilarRuns data={similarRuns} />}
-          {activity.bestEfforts && (
-            <BestEfforts bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
-          )}
-        </>
-      )}
+        )}
 
-      {tab === 'intervals' && <KmSplits activity={activity} />}
-
-      {tab === 'charts' && (
-        <ChartStack
-          distanceKm={activity.distanceKm}
-          hrSamples={activity.hrSamples}
-          avgHr={activity.avgHeartRate}
-          paceSamples={activity.paceSamples}
-          avgPaceSecPerKm={activity.paceSecPerKm}
-          cadenceSamples={activity.cadenceSamples}
-          avgCadence={activity.cadenceSpm}
-          elevationProfile={activity.elevationProfile}
-          elevationGain={activity.elevationGain}
-        />
-      )}
-
-      {tab === 'dynamics' && <RunningDynamics activity={activity} baseline={dynamicsBaseline} />}
+        {tab === 'dynamics' && <RunningDynamics activity={activity} baseline={dynamicsBaseline} />}
       </div>
     </>
   )

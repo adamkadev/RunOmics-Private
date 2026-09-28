@@ -127,7 +127,9 @@ describe('CompactTitleBar', () => {
     const at = page(STATUS_BAR + 4, 0)
     await mount(at)
     const subtitle = document.querySelector('p')!
-    expect(subtitle.style.opacity).toBe('1')
+    // At rest it carries no inline opacity at all (v4.17): one written before
+    // a client page hydrates was a hydration mismatch.
+    expect(subtitle.style.opacity).toBe('')
 
     scrollY = 2
     window.dispatchEvent(new Event('scroll'))

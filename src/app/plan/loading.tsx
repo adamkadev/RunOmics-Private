@@ -1,38 +1,55 @@
 import { Skeleton } from '@/components/ui/Skeleton'
+import { cardClass } from '@/components/ui/Card'
 
-function DaySkeleton() {
-  return (
-    <div className="glass-row rounded-lg p-2">
-      <Skeleton className="mb-2 h-3 w-5" />
-      <div className="space-y-1">
-        <Skeleton className="h-2.5 w-full rounded" />
-        <Skeleton className="h-2.5 w-3/4 rounded" />
-      </div>
-    </div>
-  )
-}
-
+// The week view's shape (v4.17): the header, the phase card, the week's
+// chart card and its session list, so the page does not jump on arrival.
 export default function PlanLoading() {
   return (
-    <div className="space-y-6">
-      <Skeleton className="h-8 w-32" />
-
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-8 rounded-lg" />
-        <Skeleton className="h-6 w-36" />
-        <Skeleton className="h-8 w-8 rounded-lg" />
+    <div className="flex flex-col gap-5">
+      <div className="flex items-end justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-8 w-24" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <Skeleton className="h-9 w-32 rounded-[11px]" />
       </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-          <div key={i} className="py-1 text-center">
-            <Skeleton className="mx-auto h-3 w-4" />
+      <div className="flex flex-col gap-3.5">
+        <div className={cardClass({ className: 'flex flex-col gap-2.5 py-4' })}>
+          <Skeleton className="h-4 w-40" />
+          <Skeleton className="h-1.5 w-full rounded-full" />
+        </div>
+
+        <div className={cardClass({ className: 'flex flex-col gap-4 pt-4' })}>
+          <div className="flex items-center justify-between">
+            <Skeleton className="size-[30px] rounded-lg" />
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="size-[30px] rounded-lg" />
           </div>
-        ))}
-      </div>
+          <div className="grid h-[150px] grid-cols-7 items-end gap-1.5 sm:gap-2.5">
+            {['h-[40%]', 'h-[70%]', 'h-[60%]', 'h-[70%]', 'h-2', 'h-[60%]', 'h-full'].map((height, i) => (
+              <Skeleton key={i} className={`w-full rounded-lg ${height}`} />
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-4 border-t border-border pt-3.5">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex flex-col gap-2">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-6 w-20" />
+              </div>
+            ))}
+          </div>
+        </div>
 
-      <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: 35 }).map((_, i) => <DaySkeleton key={i} />)}
+        <div className={cardClass({ padding: 'none', overflow: true })}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3 border-b border-border px-5 py-3.5 last:border-b-0">
+              <Skeleton className="h-3 w-8" />
+              <Skeleton className="h-4 flex-1" />
+              <Skeleton className="h-4 w-12" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

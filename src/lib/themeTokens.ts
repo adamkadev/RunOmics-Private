@@ -7,7 +7,7 @@ import { CURATED_ACCENTS, curatedAccent, type CuratedAccent } from './accentScal
  * dark at launch, so it can't follow the accent: it is a neutral close to
  * every accent's background, and the page top fades from it (--status-bar).
  */
-export const STATUS_BAR_COLOR = { light: '#f3f4f4', dark: '#0b0c0c' } as const
+export const STATUS_BAR_COLOR = { light: '#f3f4f3', dark: '#0c0d0d' } as const
 
 export type TokenBlock = {
   selector: string
@@ -18,13 +18,28 @@ export type TokenBlock = {
 const c = HUE
 
 /**
- * Z1 to Z5 per mode, the values behind `--zone-1..5`: the share card paints
- * on a canvas and cannot read a token, so it takes the same table.
+ * Z1 to Z5 per mode, the values behind `--zone-1..5` (v4.17): one intensity
+ * scale - recovery slate, easy blue, aerobic violet, threshold magenta, max
+ * pink - that also colours every session type (lib/colors TYPE_ZONE). It is
+ * a category scale only: status is --pos, --warn and --neg. The share card
+ * paints on a canvas and cannot read a token, so it takes the same table.
  */
 export const ZONE_HEX = {
-  // Every zone clears 3:1 on white; Z1, Z4 and Z5 are a step darker here.
-  light: [c.roZone1Light, c.blue500, c.roEmeraldDeep, c.zone4Light, c.zone5Light],
-  dark: [c.roZone1, c.zone2Dark, c.roEmeraldHi, c.zone4Dark, c.zone5Dark],
+  light: ['#61788f', '#2f74e0', '#6650dd', '#ae3cc2', '#d63a77'],
+  dark: ['#8397ab', '#5b9cf5', '#8f7cf7', '#d06be0', '#f0689e'],
+} as const
+
+/**
+ * Status, and only status (v4.17): good, caution, bad. Never a category - a
+ * session type, a zone - and a delta takes one by what it means, not by
+ * which way it moved: fatigue +6 is warn, fitness +4 is pos. Pos is a
+ * yellower green than the teal accent (v4.17.2): #1e8a4c beside #0f8a6a
+ * read as the athlete's own data. Light takes the deeper #357a1a, 5.3:1 on
+ * a card, so 12 px good-news text clears AA.
+ */
+export const STATUS_HEX = {
+  light: { pos: '#357a1a', warn: '#b26b00', neg: '#c8372d' },
+  dark: { pos: '#7bd64a', warn: '#f2b544', neg: '#f26b5b' },
 } as const
 
 /**
@@ -34,39 +49,49 @@ export const ZONE_HEX = {
  */
 export const SURFACES = {
   light: {
-    background: '#f3f4f4',
+    background: '#f3f4f3',
     card: '#ffffff',
     raised: '#ffffff',
-    line: '#e4e6e6',
-    text: '#111313',
-    text2: '#6b7070',
-    text3: '#8a8f8f',
+    line: '#e4e6e5',
+    // Outline buttons and neutral bars (v4.17 line-2).
+    line2: '#d3d6d4',
+    text: '#141615',
+    // Body and secondary text (v4.17 text-2).
+    body: '#434846',
+    // Labels and meta (v4.17 muted).
+    text2: '#6b706e',
+    // Version, disabled (v4.17 faint).
+    text3: '#9aa09d',
     tabBar: '#ffffff',
-    seg: '#e6e8e8',
-    faint: '#e8eaea',
-    band: '#c9cdcd',
-    amber: '#b45309',
+    // Tracks, inset tiles, the segmented control's ground (v4.17 surface-2).
+    seg: '#f0f1f0',
+    faint: '#f0f1f0',
+    band: '#d3d6d4',
+    amber: STATUS_HEX.light.warn,
     shadowRaised: '0 1px 3px rgba(0, 0, 0, 0.06)',
   },
   dark: {
-    background: '#0b0c0c',
-    card: '#161818',
-    raised: '#1d2020',
-    line: '#252828',
-    text: '#f2f3f3',
-    text2: '#9a9f9f',
-    text3: '#6e7373',
-    tabBar: '#0b0c0c',
-    seg: '#1d2020',
-    faint: '#262a2a',
-    band: '#3a3f3f',
-    amber: '#f5b83d',
+    background: '#0c0d0d',
+    card: '#151616',
+    raised: '#1c1e1d',
+    line: '#242726',
+    line2: '#303432',
+    text: '#f1f2f1',
+    body: '#bfc3c1',
+    text2: '#8a8f8d',
+    text3: '#5f6462',
+    tabBar: '#0c0d0d',
+    seg: '#1c1e1d',
+    faint: '#1c1e1d',
+    band: '#303432',
+    amber: STATUS_HEX.dark.warn,
     shadowRaised: 'none',
   },
 } as const
 
 function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
   const n = SURFACES[mode]
+  const status = STATUS_HEX[mode]
   return {
     '--background': n.background,
     // Flat: the page is one colour, no gradient and no aurora.
@@ -75,10 +100,14 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--raised': n.raised,
     '--popover': n.raised,
     '--muted': n.seg,
+    '--surface-2': n.seg,
     // One line colour for borders, dividers and chart grids (v4.3 --line).
     '--border': n.line,
     '--divider': n.line,
+    // A second, stronger line: outline buttons, neutral bars (v4.17).
+    '--line-2': n.line2,
     '--foreground': n.text,
+    '--text-2': n.body,
     '--muted-foreground': n.text2,
     '--subtle': n.text3,
     '--subtle-2': n.text3,
@@ -88,16 +117,20 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     // Empty tracks, rest days and empty heatmap cells (--fa).
     '--track': n.faint,
     '--heat-empty': n.faint,
-    // The interval band and recovery reps.
+    // Neutral bars and reference series.
     '--band': n.band,
     '--thumb-bg': n.seg,
     '--tab-bar-bg': n.tabBar,
     '--tab-bar-hairline': n.line,
+    // Quiet tabs (v4.17): the track is surface-2, the active tab the card.
     '--segmented-track': n.seg,
-    '--segmented-pill': n.raised,
-    '--segmented-pill-shadow': mode === 'light' ? '0 1px 3px rgba(0, 0, 0, 0.1)' : 'none',
-    // Caution and race only (--amb).
-    '--tone-caution': n.amber,
+    '--segmented-pill': n.card,
+    '--segmented-pill-shadow': '0 1px 2px rgba(0, 0, 0, 0.18)',
+    '--pos': status.pos,
+    '--warn': status.warn,
+    '--neg': status.neg,
+    // Caution and race only (--amb): the warn status.
+    '--tone-caution': status.warn,
     '--shadow-card': 'none',
     '--shadow-raised': n.shadowRaised,
     '--shadow-hero': 'none',
@@ -117,10 +150,54 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
 }
 
 /**
- * One accent block (v4.3): the palette's accent and its ink, and the two
- * derived tints - `--acc-soft` for the tab bar's active pill only, and
- * `--acc-line` for the one hero card per screen. Accent text uses
- * `--accent-text`, the accent itself, and only at 14 px bold and up.
+ * The basemap's colours (v4.17), per theme: greys only, so the athlete's
+ * tracks in the accent are the one colour on a map, and roads the only thing
+ * with real contrast. scripts/build-map-styles.ts bakes these into the styles
+ * kept in src/map/styles, so the map can't drift from the UI; labels and
+ * their halo are the UI's own muted, faint and ground.
+ */
+export const MAP_STYLE_COLORS = {
+  dark: {
+    background: '#111212',
+    land: '#141615',
+    water: '#0b0c0c',
+    waterway: '#0b0c0c',
+    building: '#171918',
+    roadMajor: '#2a2d2c',
+    roadMinor: '#1e2120',
+    roadCasing: '#171918',
+    path: '#232625',
+    rail: SURFACES.dark.line,
+    border: SURFACES.dark.line2,
+    placeLabel: SURFACES.dark.text2,
+    streetLabel: SURFACES.dark.text3,
+    halo: SURFACES.dark.background,
+  },
+  light: {
+    background: '#eef0ef',
+    land: '#e6eae7',
+    water: '#dce1df',
+    waterway: '#d3d9d6',
+    building: SURFACES.light.line,
+    roadMajor: '#ffffff',
+    roadMinor: '#f7f8f7',
+    roadCasing: SURFACES.light.line,
+    path: '#ffffff',
+    rail: SURFACES.light.line2,
+    border: SURFACES.light.line2,
+    placeLabel: SURFACES.light.text2,
+    streetLabel: SURFACES.light.text3,
+    halo: SURFACES.light.background,
+  },
+} as const
+
+export type MapStyleColors = { [K in keyof (typeof MAP_STYLE_COLORS)['dark']]: string }
+
+/**
+ * One accent block (v4.3, v4.17): the palette's accent and its ink, and the
+ * derived tints - `--accent-soft` (the accent at 1F alpha) for the active nav
+ * row and soft fills, `--acc-line` for an accent outline. Accent text uses
+ * `--accent-text`, the accent itself.
  */
 export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode: 'light' | 'dark'): Record<string, string> {
   const { acc, onAcc } = accent[mode]
@@ -129,9 +206,76 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
     '--accent-foreground': onAcc,
     '--accent-text': acc,
     '--accent-hover': `color-mix(in oklab, ${acc} 88%, ${mode === 'dark' ? 'white' : 'black'})`,
-    '--acc-soft': `color-mix(in oklab, ${acc} 20%, transparent)`,
+    '--accent-soft': `${acc}1f`,
+    '--acc-soft': `${acc}1f`,
     '--acc-line': `color-mix(in oklab, ${acc} 55%, transparent)`,
     '--ring': `color-mix(in oklab, ${acc} ${mode === 'dark' ? 70 : 35}%, transparent)`,
+  }
+}
+
+/**
+ * The roles the app names, each read off a status, a zone or a neutral
+ * (v4.17). Nothing here has a hue of its own: a type is its zone, good news
+ * is --pos, caution --warn, bad --neg, and a reference series is a grey.
+ */
+function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
+  return {
+    // A delta is coloured by what it means (v4.7, v4.17).
+    '--delta-good': 'var(--pos)',
+    '--delta-warn': 'var(--warn)',
+    '--good': 'var(--pos)',
+    '--destructive': 'var(--neg)',
+    // Fitness is the solid text line, fatigue the dashed muted one; form is
+    // drawn by its bands.
+    '--metric-form': 'var(--foreground)',
+    '--metric-fitness': 'var(--foreground)',
+    '--metric-fatigue': 'var(--muted-foreground)',
+    // The readiness tone on the Today hero's eyebrow: go is pos, hold warn.
+    '--tone-go': 'var(--pos)',
+    '--tone-hold': 'var(--warn)',
+    // Garmin's "peaking" status (the app's `fresh`): good news.
+    '--status-peaking': 'var(--pos)',
+    // Form's named bands (domain/training/formBand): fresh pos, neutral
+    // grey, tired warn - on Analytics and Today alike.
+    '--form-band-tired': 'var(--warn)',
+    '--form-band-neutral': 'var(--muted-foreground)',
+    '--form-band-fresh': 'var(--pos)',
+    '--form-band-very-fresh': 'var(--warn)',
+    '--form-band-fill-fresh': 'var(--pos)',
+    '--form-band-fill-neutral': 'var(--line-2)',
+    '--form-band-fill-tired': 'var(--warn)',
+    // Reference series set against the athlete's own (last year, done
+    // weeks): line-2, and a quieter muted third.
+    '--series-2': 'var(--line-2)',
+    '--series-3': 'var(--muted-foreground)',
+    // The consistency ramp (v4.17.1): a rest day, then a day run as the
+    // accent at a share per step - 8 km, 15 km, full. The two lowest steps
+    // blurred on the pale ground, so light takes a lighter rest and a wider
+    // gap between them. Shares, not colours, so the mix follows the accent
+    // wherever a cell is drawn.
+    '--level-rest': mode === 'dark' ? 'var(--surface-2)' : '#eceeed',
+    '--level-low': mode === 'dark' ? '35%' : '25%',
+    '--level-mid': mode === 'dark' ? '65%' : '55%',
+    // Ink for text on a zone fill (v4.17), per theme: white on the deeper
+    // light-theme zones (4.4-5.6:1), the dark ink on the bright dark-theme
+    // ones (5.2-6.2:1).
+    '--zone-ink': mode === 'dark' ? c.roInk : '#ffffff',
+    '--zone-1': ZONE_HEX[mode][0],
+    '--zone-2': ZONE_HEX[mode][1],
+    '--zone-3': ZONE_HEX[mode][2],
+    '--zone-4': ZONE_HEX[mode][3],
+    '--zone-5': ZONE_HEX[mode][4],
+    '--chart-cadence': mode === 'dark' ? c.cadenceDark : c.cadenceLight,
+    // Easy runs are Z2, workouts Z4, wherever the two are set side by side.
+    '--chart-easy': 'var(--zone-2)',
+    '--chart-hard': 'var(--zone-4)',
+    '--chart-ground-contact': mode === 'dark' ? c.amber500 : c.amberLine,
+    // The athlete's own data is the accent.
+    '--chart-brand': 'var(--accent)',
+    '--ro-accent': 'var(--accent)',
+    '--ro-accent-hi': 'var(--accent-hover)',
+    '--ro-ink': c.roInk,
+    '--ro-blur': '18px',
   }
 }
 
@@ -153,7 +297,8 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--blur-md': '18px',
       '--blur-lg': '28px',
       '--saturate': '1.6',
-      '--color-missed': c.roPink,
+      // A missed session is bad news: the neg status (v4.17).
+      '--color-missed': 'var(--neg)',
       '--safe-top': 'env(safe-area-inset-top, 0px)',
       // Where a page starts: 4 px under the status bar. The bar is opaque
       // (statusBarStyle 'default'), so the top inset is 0 in the installed
@@ -173,8 +318,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--state-line': '1.5px',
       '--state-hatch': '40%',
       '--state-ring': '2px',
-      // Ink for text on a zone fill: over 7:1 on Z3 and Z4 in both themes.
-      '--zone-ink': c.roInk,
       '--scrim': ink(0.25),
       '--scrim-strong': ink(0.6),
       '--track-on-dark': paper(0.08),
@@ -191,60 +334,9 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     comment: 'Light tokens - Teal (default)',
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.light,
-
-      // An improvement or a goal met reads --good, never the accent, which is
-      // for "now" only (v5.5 #17): "Reached · +116 km", "Achieved", Done.
-      '--delta-good': 'var(--good)',
-      '--delta-warn': c.semOrangeLight,
-      // An improving delta, and only that (v4.7): never a fill, bar, border or
-      // big value, and a green apart from Z3 and the Productive status.
-      '--good': '#15803d',
-      '--metric-form': c.semGreenLight,
-      '--metric-fitness': c.semBlueLight,
-      '--metric-fatigue': c.semOrangeLight,
-      '--destructive': c.semRedLight,
-      // The readiness tone on the Today hero's eyebrow and rule, text grade.
-      '--tone-go': c.semGreenLight,
-      '--tone-hold': c.semOrangeLight,
-      // Garmin's "peaking" status (the app's \`fresh\`), text grade per theme.
-      '--status-peaking': c.violet600,
-      // Form's named bands; the thresholds are domain/training/formBand.
-      '--form-band-tired': 'var(--delta-warn)',
-      '--form-band-neutral': 'var(--muted-foreground)',
-      '--form-band-fresh': 'var(--delta-good)',
-      '--form-band-very-fresh': 'var(--tone-caution)',
-      // The Form strip's bars (D1, v4.5): fresh is Z2, neutral the band grey,
-      // tired amber - one colour per named band, on Analytics and Today alike.
-      '--form-band-fill-fresh': 'var(--zone-2)',
-      '--form-band-fill-neutral': 'var(--band)',
-      '--form-band-fill-tired': 'var(--tone-caution)',
-      // The comparison greys of v4.5's charts: a series set against the
-      // primary ink (last year, done weeks), and a quieter third.
-      '--series-2': '#b3b8b8',
-      '--series-3': '#9a9f9f',
-
-      // Every zone and chart line clears 3:1 on white; the three that did not
-      // (Z1 2.3, Z4 2.9, Z5 2.6) are a step darker here, and only here.
-      '--zone-1': ZONE_HEX.light[0],
-      '--zone-2': ZONE_HEX.light[1],
-      '--zone-3': ZONE_HEX.light[2],
-      '--zone-4': ZONE_HEX.light[3],
-      '--zone-5': ZONE_HEX.light[4],
-      '--chart-cadence': c.cadenceLight,
-      '--chart-easy': c.roEmeraldDeep,
-      '--chart-hard': c.orange600,
-      '--chart-ground-contact': c.amberLine,
-      '--chart-brand': c.roEmeraldDeep,
-
-      '--ro-accent': c.roEmeraldDeep,
-      '--ro-accent-hi': c.roEmeraldLift,
-      '--ro-ink': c.roInk,
-      '--ro-blur': '18px',
-
-
+      ...semanticTokens('light'),
       // Teal is the default accent, so the base block carries it.
       ...accentTokens(DEFAULT, 'light'),
-
       ...surfaceTokens('light'),
     },
   },
@@ -253,48 +345,8 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     comment: 'Dark tokens - Teal (default)',
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.dark,
-
-      '--delta-good': 'var(--good)',
-      '--delta-warn': c.orange400,
-      '--good': '#5bd68a',
-      '--metric-form': c.emerald400,
-      '--metric-fitness': c.roBlueHi,
-      '--metric-fatigue': c.roOrangeHi,
-      '--destructive': c.red400,
-      '--tone-go': c.emerald400,
-      '--tone-hold': c.roOrangeHi,
-      // Garmin's "peaking" status (the app's \`fresh\`), text grade per theme.
-      '--status-peaking': c.violet400,
-      // Form's named bands; the thresholds are domain/training/formBand.
-      '--form-band-tired': 'var(--delta-warn)',
-      '--form-band-neutral': 'var(--muted-foreground)',
-      '--form-band-fresh': 'var(--delta-good)',
-      '--form-band-very-fresh': 'var(--tone-caution)',
-      // The Form strip's bars (D1, v4.5): fresh is Z2, neutral the band grey,
-      // tired amber - one colour per named band, on Analytics and Today alike.
-      '--form-band-fill-fresh': 'var(--zone-2)',
-      '--form-band-fill-neutral': 'var(--band)',
-      '--form-band-fill-tired': 'var(--tone-caution)',
-      // The comparison greys of v4.5's charts: a series set against the
-      // primary ink (last year, done weeks), and a quieter third.
-      '--series-2': '#5a6060',
-      '--series-3': '#6b7070',
-
-      '--zone-1': ZONE_HEX.dark[0],
-      '--zone-2': ZONE_HEX.dark[1],
-      '--zone-3': ZONE_HEX.dark[2],
-      '--zone-4': ZONE_HEX.dark[3],
-      '--zone-5': ZONE_HEX.dark[4],
-      '--chart-cadence': c.cadenceDark,
-      '--chart-easy': c.emerald400,
-      '--chart-hard': c.orange400,
-      '--chart-ground-contact': c.amber500,
-      '--chart-brand': c.roEmerald,
-
-
-
+      ...semanticTokens('dark'),
       ...accentTokens(DEFAULT, 'dark'),
-
       ...surfaceTokens('dark'),
     },
   },

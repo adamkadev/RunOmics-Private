@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ACCENT_IDS, ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, CURATED_ACCENTS, DEFAULT_ACCENT, type AccentId } from '@/lib/accent'
 import { TOKEN_BLOCKS } from '@/lib/themeTokens'
-import { SURFACES } from '@/lib/themeTokens'
+import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
 import { white } from '@/lib/palette'
 
 function luminance(hex: string): number {
@@ -101,12 +101,12 @@ describe('accent never collides with the danger signal', () => {
     expect(cases).toHaveLength(ACCENT_IDS.filter((id: AccentId) => id !== DEFAULT_ACCENT).length * 2)
   })
 
-  it.each(cases)('$mode accent "$id" is distinguishable from --destructive', ({ selector, base }) => {
+  // --destructive is var(--neg) since v4.17: the danger signal is the neg status.
+  it.each(cases)('$mode accent "$id" is distinguishable from --neg', ({ mode, selector, base }) => {
     const accent = resolved(selector, base, '--accent')
-    const destructive = resolved(selector, base, '--destructive')
     expect(accent, 'accent token').toBeDefined()
-    expect(destructive, 'destructive token').toBeDefined()
+    expect(resolved(selector, base, '--destructive')).toBe('var(--neg)')
 
-    expect(deltaE(accent!, destructive!)).toBeGreaterThanOrEqual(MIN_DELTA_E)
+    expect(deltaE(accent!, STATUS_HEX[mode as 'dark' | 'light'].neg)).toBeGreaterThanOrEqual(MIN_DELTA_E)
   })
 })

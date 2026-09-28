@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { activeNavHref, findOrigin, sectionLabel } from '../navigation'
-import { t } from '@/i18n'
+import { activeNavHref, findOrigin } from '../navigation'
 
 const SIDEBAR = ['/', '/activities', '/plan', '/analytics', '/map', '/profile', '/settings']
 const TAB_BAR = ['/', '/activities', '/plan', '/analytics', '/profile']
@@ -63,14 +62,3 @@ describe('findOrigin', () => {
   })
 })
 
-describe('sectionLabel', () => {
-  it('names the section a path belongs to', () => {
-    expect(sectionLabel('/records')).toBe(t.pages.records.title)
-    expect(sectionLabel('/activities/123')).toBe(t.nav.items.activities)
-    expect(sectionLabel('/')).toBe(t.nav.items.dashboard)
-  })
-
-  it('returns nothing for a path no section owns', () => {
-    expect(sectionLabel('/login')).toBeNull()
-  })
-})

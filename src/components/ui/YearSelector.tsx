@@ -52,7 +52,7 @@ export function YearSelector({
         <Pill
           key={y}
           as="button"
-          variant={y === selected && !activePeriodOption ? 'accent' : 'neutral'}
+          variant={y === selected && !activePeriodOption ? 'selected' : 'neutral'}
           onClick={() => onSelect(y)}
         >
           {y}
@@ -62,7 +62,7 @@ export function YearSelector({
       {allTimeLabel && (
         <Pill
           as="button"
-          variant={selected === null && !activePeriodOption ? 'accent' : 'neutral'}
+          variant={selected === null && !activePeriodOption ? 'selected' : 'neutral'}
           onClick={() => onSelect(null)}
         >
           {allTimeLabel}
@@ -79,7 +79,7 @@ export function YearSelector({
         <Pill
           key={p.weeks}
           as="button"
-          variant={p.weeks === activePeriod ? 'accent' : 'neutral'}
+          variant={p.weeks === activePeriod ? 'selected' : 'neutral'}
           onClick={() => onSelectPeriod?.(p.weeks)}
         >
           {p.label}

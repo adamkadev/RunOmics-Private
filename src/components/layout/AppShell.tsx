@@ -107,7 +107,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               a page whose last section lands right at the edge (e.g. Plan's
               race cards) can still finish behind the nav. Add the inset
               rather than assume the flat value already covers it. */}
-          <div className="mx-auto max-w-5xl px-4 pb-[calc(7rem+var(--safe-bottom))] pt-[var(--top-scrim)] sm:px-6 lg:pb-8 lg:pt-8">
+          {/* Content up to 1120 pt wide, centred, 36 pt from the top and 32 at
+              the sides on desktop (v4.17). */}
+          <div className="mx-auto max-w-5xl px-4 pb-[calc(7rem+var(--safe-bottom))] pt-[var(--top-scrim)] sm:px-6 lg:max-w-[1184px] lg:px-8 lg:pb-16 lg:pt-9">
             <PageTransition>{children}</PageTransition>
           </div>
         </main>
