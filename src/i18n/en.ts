@@ -209,6 +209,7 @@ export const en = {
 
   pages: {
     dashboard: {
+      title: 'Today',
     },
     activities: {
       title: 'Activities',
@@ -437,7 +438,7 @@ export const en = {
     },
     // Training status and Form / Fitness / Fatigue, one card on Today.
     bodyCard: {
-      deltaIn: (delta: string, days: number) => `${delta} in ${days} d`,
+      deltaIn: (delta: string, days: number) => `${delta} in ${days} days`,
     },
     trainingStatusDays: {
       title: 'Training Status',
@@ -481,12 +482,29 @@ export const en = {
       },
       restDay: 'Rest day',
       restDaySubtitle: 'No session scheduled',
+      // The next session on the plan, under today's rest day (v4.17).
+      next: (weekday: string, title: string, km: string | null) => `Next: ${weekday} · ${title}${km ? ` · ${km} km` : ''}`,
+      openPlan: 'Open plan',
       race: 'Race',
     },
     weeklyStreak: {
+      title: 'This week',
       weeksInARow: (weeks: number) => `${weeks} week streak`,
       ofKm: (target: string) => `of ${target} km`,
-      sessionsOf: (done: number, planned: number) => `${done} of ${planned} session${planned !== 1 ? 's' : ''}`,
+      runsOf: (done: number, planned: number) => `${done} of ${planned} run${planned !== 1 ? 's' : ''}`,
+      // The session under each day of the week strip, by the coach's type.
+      kinds: {
+        easy: 'Easy',
+        easyStrides: 'Easy + strides',
+        recovery: 'Recovery',
+        long_run: 'Long run',
+        tempo: 'Tempo',
+        threshold: 'Threshold',
+        vo2max: 'VO₂ max',
+        anaerobic: 'Anaerobic',
+        sprint: 'Sprint',
+        race: 'Race',
+      },
     },
     celebration: {
       eyebrow: 'New personal record',
@@ -1049,23 +1067,25 @@ export const en = {
   },
 
   activities: {
-    searchPlaceholder: 'Search...',
+    // What the search reads: a run's name and notes, its weekday and date.
+    searchPlaceholder: 'Search runs, notes, dates…',
     all: 'All',
     count: (n: number) => `${n} activit${n !== 1 ? 'ies' : 'y'}`,
     countWithDistance: (runs: number, km: string) => `${runs} run${runs === 1 ? '' : 's'} · ${km} km`,
+    since: (month: string) => `since ${month}`,
     empty: 'No activities found',
     emptyFiltered: 'No sessions of this type',
     resetFilters: 'Reset filters',
     endOfList: 'That\'s all',
     thisWeek: 'This week',
-    lastWeek: 'Last week',
     shoeFilter: { clear: 'Show runs in every shoe' },
     weekLine: {
-      ofKm: (target: string) => `/${target} km`,
+      ofKm: (target: string) => ` of ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 run' : `${n} runs`),
+      runsOf: (done: number, planned: number) => `${done} of ${planned} run${planned !== 1 ? 's' : ''}`,
       easy: (pct: number) => `${pct}% easy`,
     },
-    mapButton: 'Map',
+    mapButton: 'Map view',
     sort: {
       label: 'Sort',
       date: 'Date',

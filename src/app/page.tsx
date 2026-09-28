@@ -5,7 +5,7 @@ import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getTrainingStatusDaysBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { getRecords, getQualifiedEffortsByActivityId, getMostRecentRecord } from '@/application/usecases/GetRecords'
-import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
+import { getPlannedWorkouts, getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { getTodayInsight, todayInsightSession } from '@/application/usecases/GetTodayInsight'
 import { getPbCelebrationInsight } from '@/application/usecases/GetPbCelebrationInsight'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
@@ -22,6 +22,8 @@ import { BodyCard, latestRatedStatus } from '@/components/dashboard/BodyCard'
 import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
+import { findNextSession } from '@/components/dashboard/nextSession'
+import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { t } from '@/i18n'
 
 export const revalidate = 3600
@@ -58,9 +60,15 @@ export default async function DashboardPage() {
   // goes into the insight instead of cancelling it.
   const aiVerdict = await getTodayInsight(trainingStatus, await todayInsightSession())
   const celebrationTake = await getPbCelebrationInsight(mostRecentRecord)
+  // What the rest of the plan holds: the session a rest day points to, and
+  // the name under each day of the week strip.
+  const plannedWorkouts = await getPlannedWorkouts()
+  const coachWorkouts = coaching?.workouts ?? []
+  const nextSession = findNextSession(today, coachWorkouts, plannedWorkouts, trainingZones)
+  const sessionKinds = plannedSessionKinds(weekTarget.days.map((day) => day.date), coachWorkouts, plannedWorkouts)
 
   return (
-    <div className="space-y-3.5">
+    <div className="flex flex-col gap-3.5">
       <CelebrationOverlay record={mostRecentRecord} aiTake={celebrationTake} />
 
       <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} />
@@ -70,6 +78,7 @@ export default async function DashboardPage() {
         plannedWorkout={todayWorkout && heroWorkoutView(todayWorkout)}
         todayActivity={todayActivity}
         aiVerdict={aiVerdict}
+        nextSession={nextSession}
       />
 
       <BodyCard status={trainingStatus} watchStatus={latestRatedStatus(trainingStatusDays)} />
@@ -77,7 +86,7 @@ export default async function DashboardPage() {
 
       {weeklyStreak && (
         <Link href="/plan" aria-label={t.plan.openPlanner} className="block active:scale-[0.99]">
-          <WeeklyStreakCard data={weeklyStreak} target={weekTarget} today={today} />
+          <WeeklyStreakCard data={weeklyStreak} target={weekTarget} today={today} sessionKinds={sessionKinds} />
         </Link>
       )}
 

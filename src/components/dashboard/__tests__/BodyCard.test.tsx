@@ -24,11 +24,11 @@ describe('latestRatedStatus', () => {
 })
 
 describe('deltaLabel', () => {
-  // Green "+10" and green "−9" used to mean opposite directions.
-  it('gives every delta an arrow and a window', () => {
-    expect(deltaLabel(10, 7)).toBe(t.dashboard.bodyCard.deltaIn('↑10', 7))
-    expect(deltaLabel(-9.4, 7)).toBe(t.dashboard.bodyCard.deltaIn('↓9', 7))
-    expect(deltaLabel(0.2, 14)).toBe(t.dashboard.bodyCard.deltaIn('0', 14))
+  // v4.17: the sign says which way ("+4 in 7 days"), the colour what it means.
+  it('gives every delta its sign and its window', () => {
+    expect(deltaLabel(10, 7)).toBe(t.dashboard.bodyCard.deltaIn('+10', 7))
+    expect(deltaLabel(-9.4, 7)).toBe(t.dashboard.bodyCard.deltaIn('−9', 7))
+    expect(deltaLabel(0.2, 14)).toBe(t.dashboard.bodyCard.deltaIn('±0', 14))
   })
 })
 
@@ -38,31 +38,43 @@ describe('BodyCard', () => {
   it('holds the three numbers and nothing else', () => {
     render(<BodyCard status={STATUS} />)
 
-    expect(screen.queryByText(t.formBand.neutral.toLowerCase())).toBeNull()
     expect(screen.getByText(t.dashboard.trainingLoad.form)).toBeInTheDocument()
     expect(screen.getByText(t.trainingStatus.metrics.fitness)).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.trainingLoad.fatigue)).toBeInTheDocument()
-    expect(screen.getByText(t.dashboard.bodyCard.deltaIn('↑1', 7))).toBeInTheDocument()
+    expect(screen.getByText(t.dashboard.bodyCard.deltaIn('+1', 7))).toBeInTheDocument()
     expect(screen.queryByRole('link')).toBeNull()
     expect(screen.getByTestId('body-card').textContent).not.toMatch(/of the last/)
   })
 
   // v4.7: Form's note is its band, as Analytics names it - "Productive" was
   // Garmin's training status, not a Form band.
-  it("writes Form's band after its delta, never the watch's status", () => {
+  it("writes Form's band before its delta, never the watch's status", () => {
     render(<BodyCard status={STATUS} watchStatus="productive" />)
-    const note = screen.getByTestId('form-band')
-    expect(note.textContent).toBe(`·${t.formBand[formBand(Math.round(STATUS.tsbNow))]}`)
+    expect(screen.getByTestId('form-band').textContent).toBe(t.formBand[formBand(Math.round(STATUS.tsbNow))])
     expect(screen.getByTestId('body-card').textContent).not.toContain(t.trainingStatus.status.productive)
   })
 
-  // v4.7: each delta takes its meaning's colour - fatigue falling is good.
+  // v4.17: each delta takes its meaning's status colour - fatigue falling is
+  // good, fatigue rising is caution - and never the accent.
   it('colours each delta by what it means', () => {
     render(<BodyCard status={{ ...STATUS, ctlDeltaShown: 4, atlDelta: -6 }} />)
     const [, fitness, fatigue] = screen.getAllByTestId('metric-delta')
-    expect(fitness!.getAttribute('style')).toContain('var(--good)')
-    expect(fatigue!.textContent).toContain('↓6')
-    expect(fatigue!.getAttribute('style')).toContain('var(--good)')
+    expect(fitness!.dataset.tone).toBe('pos')
+    expect(fitness!.parentElement!.className).toContain('text-[var(--pos)]')
+    expect(fatigue!.textContent).toBe(t.dashboard.bodyCard.deltaIn('−6', 7))
+    expect(fatigue!.dataset.tone).toBe('pos')
     expect(screen.getByTestId('body-card').innerHTML).not.toContain('var(--accent')
+  })
+
+  it('reads fatigue rising and a tired Form as caution', () => {
+    render(<BodyCard status={{ ...STATUS, tsbNow: -15, tsbDelta: 7, atl: 62, atlDelta: 6, ctl: 47, ctlDeltaShown: 4 }} />)
+    const [form, , fatigue] = screen.getAllByTestId('metric-delta')
+    expect(fatigue!.dataset.tone).toBe('warn')
+    expect(fatigue!.parentElement!.className).toContain('text-[var(--warn)]')
+    // The band is the line's colour; Form climbing back toward neutral is good.
+    const band = screen.getByTestId('form-band')
+    expect(band.textContent).toBe(t.formBand.tired)
+    expect(band.closest('.text-\\[var\\(--warn\\)\\]')).not.toBeNull()
+    expect(form!.dataset.tone).toBe('pos')
   })
 })
