@@ -9,6 +9,7 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { CoachingPlan } from '@/domain/coaching/types'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
+import { formatDate, formatDurationWords, formatPace } from '@/lib/formatters'
 import { WeekView } from '../WeekView'
 
 const TODAY = '2026-09-09'
@@ -114,18 +115,21 @@ describe('WeekView progression card', () => {
   it('spans the macrocycle to the primary target, not the four block weeks', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
+    const track = within(screen.getByTestId('phase-track'))
     for (const label of [t.plan.phaseTrack.base, t.plan.phaseTrack.build, t.plan.phaseTrack.peak, t.plan.phaseTrack.raceDay]) {
-      expect(screen.getByText(label)).toBeInTheDocument()
+      expect(track.getByText(label)).toBeInTheDocument()
     }
   })
 
   it('counts the week toward the primary target in the macrocycle card', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
-    // M11: phase and week on the left, the race as "10K · D-n" on the right.
+    // v4.17: phase and week on the left, the race's week on the right; the
+    // countdown is the header's.
     const line = screen.getByTestId('phase-line').textContent ?? ''
-    expect(line).toContain(t.plan.weekPurpose.weekOfTarget(1, 12))
-    expect(line).toMatch(/· D-\u2060?\d+/)
+    expect(line).toContain(`${t.plan.weekPurpose.planPhase.base} · ${t.plan.weekPurpose.weekOfTarget(1, 12)}`)
+    expect(line).toContain(t.plan.phaseTrack.raceWeek(formatDate('2026-11-23', { style: 'bare' })))
+    expect(line).not.toMatch(/D-\u2060?\d+/)
   })
 
   // H20: the race is on the phase line; the Races section is gone from Week.
@@ -243,17 +247,17 @@ describe('WeekView coaching day cells and Today', () => {
 })
 
 describe('WeekView target race', () => {
-  // H20: the race rides on the phase line as its distance and a countdown.
-  it('puts the coaching target race on the phase line as a countdown', () => {
+  // v4.17: the phase card names the race's week; the header counts down to it.
+  it("names the coaching target race's week on the phase line", () => {
     renderWeek({ coaching: overview() })
 
-    expect(screen.getByTestId('phase-line').textContent).toContain('D-\u206039')
+    expect(screen.getByTestId('phase-line').textContent).toContain(t.plan.phaseTrack.raceWeek(formatDate('2026-10-12', { style: 'bare' })))
   })
 
   it('keeps the Garmin race when there is no coaching', () => {
     renderWeek({ nextRace: { date: '2026-10-18', name: 'City Half', distance: '21K' } })
 
-    expect(screen.getByTestId('phase-line').textContent).toContain('21K · D-\u206039')
+    expect(screen.getByTestId('phase-line').textContent).toContain(t.plan.phaseTrack.raceWeek(formatDate('2026-10-12', { style: 'bare' })))
   })
 })
 
@@ -335,14 +339,27 @@ describe('WeekView easy share', () => {
   it('says nothing about easy time for runs without heart-rate zones', () => {
     renderWeek({ activities: [TEMPO, RACE] })
 
-    expect(screen.getByTestId('week-summary').textContent).not.toContain('%')
+    expect(screen.queryByTestId('week-easy')).toBeNull()
+    expect(screen.getByTestId('week-summary').textContent).not.toContain(t.plan.weekSummary.easyGuide(80))
   })
 })
 
 
+/** A stat's value and its inline unit, read under its label. */
+function stat(label: string): { value: string; unit: string | null; meaning: HTMLElement | null } {
+  const labelEl = within(screen.getByTestId('week-summary')).getByText(label)
+  const valueEl = labelEl.nextElementSibling as HTMLElement
+  return {
+    value: valueEl.childNodes[0]?.textContent ?? '',
+    unit: valueEl.querySelector('span')?.textContent ?? null,
+    meaning: (valueEl.nextElementSibling as HTMLElement | null) ?? null,
+  }
+}
+
 describe('the week summary against its plan', () => {
   // It added the run km to whatever was still planned and called the sum the
   // week, so Plan's "52 km" and Today's "6 of 23 km" read as two answers.
+  // v4.17: three stats - Distance, Sessions, Plan adherence.
   it('reads what was run against what the plan scheduled', () => {
     renderWeek({
       activities: [TEMPO],
@@ -352,15 +369,42 @@ describe('the week summary against its plan', () => {
       ],
     })
 
-    const summary = screen.getByTestId('week-summary').textContent
-    expect(summary).toContain(t.plan.weekSummary.ranOfPlan('4.8', '13'))
-    expect(summary).toContain(t.plan.weekSummary.sessionsOfPlan(1, 2))
+    const s = t.plan.stats
+    expect(stat(s.distance)).toMatchObject({ value: '4.8', unit: s.ofKm('13') })
+    expect(stat(s.sessions)).toMatchObject({ value: '1', unit: s.ofSessions(2) })
+    // The one session due so far was run; Thursday's is still to come.
+    expect(stat(s.adherence).value).toBe('100%')
+    expect(stat(s.adherence).meaning!.textContent).toBe(s.adherenceAim(80))
+    expect(stat(s.adherence).meaning!.className).toContain('text-[var(--pos)]')
   })
 
   it('keeps the plain total for a week with no plan', () => {
     renderWeek({ activities: [TEMPO, RACE] })
 
-    expect(screen.getByTestId('week-summary').textContent).toContain(`10 ${t.units.km} · ${t.plan.weekSummary.sessionsCount(2)}`)
+    const s = t.plan.stats
+    expect(stat(s.distance)).toMatchObject({ value: '10', unit: t.units.km })
+    expect(stat(s.sessions)).toMatchObject({ value: '2', unit: null })
+    expect(stat(s.adherence).value).toBe('—')
+    expect(stat(s.adherence).meaning!.textContent).toBe(s.noPlan)
+  })
+
+  it('reads a week not started as its plan', () => {
+    render(
+      <WeekView
+        weekStart={new Date(2026, 8, 14)}
+        byDate={new Map()}
+        byDatePlanned={new Map([['2026-09-15', { date: '2026-09-15', name: 'Easy', distanceM: 8_000 }]])}
+        today={TODAY}
+        atPresent={false}
+        onToday={() => {}}
+        planPhaseRanges={[]}
+      />
+    )
+
+    const s = t.plan.stats
+    expect(stat(s.distance)).toMatchObject({ value: '8', unit: s.kmPlanned })
+    expect(stat(s.sessions)).toMatchObject({ value: '1', unit: s.planned })
+    expect(stat(s.adherence).value).toBe('—')
   })
 })
 
@@ -377,6 +421,25 @@ describe('missed sessions', () => {
     renderWeek({ planned })
 
     expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.missed(2))
+    expect(within(screen.getByTestId('week-summary')).getByText(t.plan.weekSummary.missed(2)).className).toContain('text-[var(--neg)]')
+  })
+
+  // v4.17: of what was due, how much was run - short of the aim is a caution.
+  it('reads plan adherence off the sessions already due', () => {
+    renderWeek({ planned, activities: [TEMPO] })
+
+    const adherence = stat(t.plan.stats.adherence)
+    expect(adherence.value).toBe('50%')
+    expect(adherence.meaning!.className).toContain('text-[var(--warn)]')
+  })
+
+  it('draws a missed day as the negative status in the chart and names it in the list', () => {
+    renderWeek({ planned, activities: [TEMPO] })
+
+    const bar = screen.getByLabelText(/September 8/).querySelector<HTMLElement>('[data-bar-state]')!
+    expect(bar.dataset.barState).toBe('missed')
+    expect(bar.className).toContain('border-[var(--neg)]')
+    expect(within(screen.getByTestId('week-session-garmin:2026-09-08:Tempo')).getByText(t.sessionState.missed).className).toContain('text-[var(--neg)]')
   })
 
   // H20: a check for done, the word only where it is news - missed.
@@ -388,13 +451,13 @@ describe('missed sessions', () => {
     expect(within(screen.getByTestId('week-session-garmin:2026-09-11:Long')).queryByText(t.sessionState.planned)).toBeNull()
   })
 
-  // v4.3.1: today's row wears an 8 px accent dot and an accent day label.
+  // v4.17: today's row keeps its type's dot; its day label is the accent.
   it('marks today in the list with the accent', () => {
     renderWeek({ planned: [...planned, { date: TODAY, name: 'Easy', distanceM: 8_000 }] as PlannedWorkout[] })
-    const dots = screen.getAllByTestId('week-session-today-dot')
-    expect(dots).toHaveLength(1)
-    expect(dots[0]!.style.background).toBe('var(--accent)')
-    expect(dots[0]!.parentElement!.querySelector('.text-accent-text')).not.toBeNull()
+    const days = screen.getAllByTestId('week-session-today-day')
+    expect(days).toHaveLength(1)
+    expect(days[0]!.className).toContain('text-accent-text')
+    expect(days[0]!.nextElementSibling as HTMLElement).toHaveStyle({ background: 'var(--zone-2)' })
   })
 })
 
@@ -416,23 +479,62 @@ describe('WeekView state legend', () => {
   it('keys the week bars under them', () => {
     renderWeek({ activities: [TEMPO] })
     const legend = screen.getByTestId('day-state-legend')
-    for (const label of [t.sessionState.done, t.sessionState.planned, t.sessionState.missed, t.sessionState.today]) {
+    for (const label of [t.sessionState.done, t.plan.legend.plannedByType, t.sessionState.missed, t.sessionState.today]) {
       expect(legend.textContent).toContain(label)
     }
   })
 
-  // v4.3.1: the swatches are the bars' shapes, planned and missed in neutral ink, today the accent.
+  // v4.17: the swatches are the bars' shapes - done the accent, planned
+  // dashed (its colour is the session's type), missed neg, today the outline.
   it('draws each swatch in the shape its bar has', () => {
     renderWeek({ activities: [TEMPO] })
-    const swatch = (key: string) => screen.getByTestId('day-state-legend').querySelector<HTMLElement>(`[data-legend-swatch="${key}"]`)!
-    // v4.3.3: done is a small Z2/Z4/Z2 stack, as the done bars are zone-coloured.
-    const doneBars = [...swatch('done').children] as HTMLElement[]
-    expect(doneBars.map((bar) => bar.style.getPropertyValue('--state-color'))).toEqual(['var(--zone-2)', 'var(--zone-4)', 'var(--zone-2)'])
-    for (const bar of doneBars) expect(bar.className).toContain('state-done')
-    expect(swatch('planned').className).toContain('state-planned')
-    expect(swatch('planned').style.getPropertyValue('--state-color')).toBe('var(--muted-foreground)')
-    expect(swatch('missed').className).toContain('state-missed')
-    expect(swatch('missed').style.getPropertyValue('--state-color')).toBe('var(--muted-foreground)')
-    expect(swatch('today').className).toContain('today-bar')
+    const legend = within(screen.getByTestId('day-state-legend'))
+    const swatchOf = (label: string) => legend.getByText(label).firstElementChild as HTMLElement
+
+    expect(swatchOf(t.sessionState.done).style.background).toBe('var(--accent)')
+    expect(swatchOf(t.plan.legend.plannedByType).style.border).toContain('dashed')
+    expect(swatchOf(t.sessionState.missed).className).toContain('border-[var(--neg)]')
+    expect(swatchOf(t.sessionState.today).className).toContain('border-accent')
+  })
+})
+
+describe('the session rows', () => {
+  // v4.17: day · type dot · title over its target · km · chevron.
+  it("writes a planned row's target as its zone, pace and recovery", () => {
+    renderWeek({ coaching: overview(), trainingZones: ZONES })
+
+    const row = screen.getByTestId('week-session-workout-threshold')
+    const r = t.plan.row
+    expect(row.textContent).toContain(`${t.trainingZones.zoneNumber(4)} · ${r.pace('4:25–4:30')} · ${r.recovery('2:00')}`)
+    expect(row.textContent).toContain(t.units.km)
+    expect(row.querySelector('svg')).not.toBeNull()
+  })
+
+  it("writes a run's row as its time and pace, with a check", () => {
+    renderWeek({ activities: [TEMPO] })
+
+    const row = screen.getByTestId('week-session-done:2026-09-07')
+    expect(row.textContent).toContain(`${formatDurationWords(TEMPO.durationSeconds)} · ${formatPace(TEMPO.durationSeconds / TEMPO.distanceKm)}`)
+    expect(within(row).getByLabelText(t.sessionState.done).className).toContain('text-[var(--pos)]')
+  })
+})
+
+describe('the selected day', () => {
+  it('heads its card with its date, in the accent only for today', async () => {
+    const user = userEvent.setup()
+    renderWeek({ coaching: overview() })
+
+    expect(screen.getByText(`${t.plan.today} · ${formatDate(TODAY)}`).className).toContain('text-accent-text')
+    await user.click(screen.getByLabelText(/September 10/))
+    expect(screen.getByText(formatDate('2026-09-10')).className).toContain('text-muted-foreground')
+  })
+
+  it('reads a rest day with the next session in one sentence', async () => {
+    const user = userEvent.setup()
+    renderWeek({ coaching: overview() })
+
+    await user.click(screen.getByLabelText(/September 7/))
+    expect(screen.getByText(t.plan.restCard.title)).toBeInTheDocument()
+    expect(screen.getByText(t.plan.restCard.next(t.plan.weekdays[2]!, '3 × 8 min threshold'))).toBeInTheDocument()
   })
 })

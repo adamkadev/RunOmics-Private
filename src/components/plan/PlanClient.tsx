@@ -15,6 +15,7 @@ import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
+import { planRace, raceSubtitle } from './planRace'
 
 interface Props {
   activities: ActivitySummary[]
@@ -128,17 +129,24 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
     () => { if (!atPresent || canGoForward) shift(1) }
   )
 
-  return (
-    <div className="space-y-4">
-      <div className="px-1">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
-              {t.pages.plan.title}
-            </h1>
-            {/* No month subtitle: the navigator below names the month (G27). */}
-          </div>
+  // The race the plan builds to and how far off it is, under the title
+  // (v4.17) - no month: the navigator below names the period (G27).
+  const race = planRace(coaching, nextRace, today)
 
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Title and subtitle on the left, the switch right-aligned on the
+          title's row; on a phone the subtitle takes the full width under both. */}
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 sm:items-end">
+        <h1 className="col-start-1 row-start-1 min-w-0 text-display text-foreground">{t.pages.plan.title}</h1>
+        {race && (
+          // CompactTitleBar fades the line under the title by its inline
+          // opacity, and can write it before this component hydrates.
+          <p data-testid="plan-race" suppressHydrationWarning className="col-span-2 row-start-2 text-sm text-muted-foreground sm:col-span-1">
+            {raceSubtitle(race, today)}
+          </p>
+        )}
+        <div className="col-start-2 row-start-1 sm:row-span-2 sm:self-end">
           <SegmentedTabs
             tabs={modeTabs}
             items={[
@@ -146,10 +154,11 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
               { id: 'month', label: t.plan.switcher.month },
             ]}
             label={t.pages.plan.title}
-            tabClassName="px-5 py-2 text-sm"
+            size="sm"
+            tabClassName="px-3.5 text-[13px]"
           />
         </div>
-      </div>
+      </header>
 
       <div
         key={animKey}

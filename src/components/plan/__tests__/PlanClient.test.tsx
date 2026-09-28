@@ -4,13 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildCoachingOverview, type CoachingOverview } from '@/application/coaching/GetCoachingView'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
-import { formatDateRange } from '@/lib/formatters'
+import { formatDate, formatDateRange } from '@/lib/formatters'
 import { hydrateAcrossMidnight } from '@/lib/__tests__/hydrateAcrossMidnight'
 import { PlanClient } from '../PlanClient'
+import { planCoachingView, type PlanCoachingView } from '../planCoachingView'
 
 const NOW = new Date(2026, 8, 9, 12)
 
-function planClient(coaching: CoachingOverview | null = null, today = '2026-09-09') {
+function planClient(coaching: CoachingOverview | PlanCoachingView | null = null, today = '2026-09-09') {
   return (
     <PlanClient
       activities={[]}
@@ -64,6 +65,24 @@ describe('PlanClient week/month switching', () => {
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.week }))
     expect(screen.getByTestId('week-summary')).toBeInTheDocument()
+  })
+
+  // v4.17: the race the plan builds to and its countdown, under the title,
+  // in both views.
+  it('names the race and counts down to it under the title', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    render(planClient(planCoachingView(buildCoachingOverview(plan(), [], [], [], [], '2026-09-09'))))
+
+    const subtitle = `Autumn 10K · ${formatDate('2026-10-18', { style: 'bare' })} · ${t.plan.header.daysToGo(39)}`
+    expect(screen.getByTestId('plan-race').textContent).toBe(subtitle)
+    await user.click(screen.getByRole('tab', { name: t.plan.switcher.month }))
+    expect(screen.getByTestId('plan-race').textContent).toBe(subtitle)
+  })
+
+  it('has no subtitle without a race', () => {
+    renderPlan()
+
+    expect(screen.queryByTestId('plan-race')).toBeNull()
   })
 
   it('adds no coaching chrome to the header when no plan is active', () => {

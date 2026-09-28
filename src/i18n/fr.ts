@@ -1784,8 +1784,31 @@ export const fr = {
     plannedKmLabel: (km: number) => `${km} km prévus`,
     restCard: {
       title: 'Jour de repos',
-      noSession: 'Aucune séance prévue',
-      next: (weekday: string, title: string) => `Aucune séance prévue · prochaine : ${weekday}, ${title}`,
+      noSession: 'Aucune séance prévue.',
+      next: (weekday: string, title: string) => `Aucune séance prévue. Prochaine : ${weekday}, ${title}.`,
+    },
+    header: {
+      daysToGo: (n: number) => (n <= 0 ? 'c’est le jour J' : n === 1 ? 'encore 1 jour' : `encore ${n} jours`),
+    },
+    legend: {
+      plannedByType: 'Prévu · couleur = type de séance',
+    },
+    stats: {
+      distance: 'Distance',
+      sessions: 'Séances',
+      adherence: 'Respect du plan',
+      adherenceAim: (pct: number) => `Vise ${pct} % ou plus`,
+      noPlan: 'Pas de plan cette semaine',
+      ofKm: (km: string) => `sur ${km} km`,
+      ofSessions: (n: number) => `sur ${n}`,
+      kmPlanned: 'km prévus',
+      planned: 'prévues',
+    },
+    row: {
+      pace: (range: string) => `${range} /km`,
+      easyPace: (range: string) => `facile ${range} /km`,
+      stridesPace: (pace: string) => `accélérations ${pace} /km`,
+      recovery: (clock: string) => `${clock} récup`,
     },
     weekSummary: {
       missed: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
@@ -1819,6 +1842,8 @@ export const fr = {
       peak: 'Pic',
       taper: 'Affûtage',
       raceDay: 'Course',
+      weeks: (n: number) => `${n} sem.`,
+      raceWeek: (date: string) => `Semaine de course : ${date}`,
     },
     weekPurpose: {
       thisWeek: 'Cette semaine',
