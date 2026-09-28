@@ -1361,7 +1361,8 @@ export const en = {
     title: 'Goals & season',
     empty: 'No goals configured yet.',
     back: 'Progress',
-    volumeGoal: (year: number) => `${year} volume goal`,
+    // v4.17: the year's card is "Distance goal"; the year tabs say which year.
+    distanceGoal: 'Distance goal',
     ofKm: (goal: string) => `of ${goal} km`,
     reached: (over: string) => `Reached · +${over} km`,
     half: 'Half',
@@ -1393,6 +1394,13 @@ export const en = {
       needsWeeklyDetail: (needed: string, current: string) => `Needs ${needed} km/wk, running ${current}.`,
       // "Projected 1,757 km · 243 short.": the verdict alone, in its tone.
       verdict: (projected: string, outcome: string | null) => `${projected}${outcome ? ` · ${outcome}` : ''}.`,
+      // v4.17: under the bar, then the verdict and what the goal needs.
+      today: 'Today',
+      projectedMark: (km: string) => `Projected ${km}`,
+      shortAtPace: (km: string) => `${km} km short at this pace.`,
+      overAtPace: (km: string) => `${km} km over at this pace.`,
+      onPace: 'On pace for the goal.',
+      needs: (needed: string, current: string) => `The goal needs ${needed} km a week; you’re averaging ${current}.`,
     },
     monthlyVolume: {
       title: 'Monthly volume',
@@ -1416,14 +1424,24 @@ export const en = {
       today: 'Today',
       todayOn: (date: string) => `TODAY · ${date}`,
       blockWeek: (race: string, week: number, weeks: number) => `${race} block wk ${week} of ${weeks}`,
-      noDate: 'No date yet',
+      // v4.17: a race row - "NOV 29 · IN 62 DAYS", "Target 40:00 · plan week 4 of 12".
+      inDays: (days: number) => (days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`),
+      done: 'done',
+      target: (time: string) => `Target ${time}`,
+      planWeek: (week: number, weeks: number) => `plan week ${week} of ${weeks}`,
+      predictedOff: (gap: string) => `predicted · ${gap} off`,
+      predictedUnder: (gap: string) => `predicted · ${gap} under`,
+      underTarget: (gap: string) => `${gap} under target`,
+      overTarget: (gap: string) => `${gap} over target`,
+      noDate: 'Goals without a date',
+      noTarget: 'no target set',
     },
     history: {
-      title: 'Past Years',
+      title: 'Past seasons',
       achieved: 'Achieved',
       missed: 'Missed',
-      annualKm: (actual: string, target: string) => `${actual} / ${target} km`,
-      targetsCount: (achieved: number, total: number) => `${achieved}/${total} race targets`,
+      annualKm: (actual: string, target: string) => `${actual} of ${target} km`,
+      targetsCount: (achieved: number, total: number) => `${achieved} of ${total} race targets`,
     },
   },
 

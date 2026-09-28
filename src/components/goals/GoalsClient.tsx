@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { GoalsPageData } from '@/application/usecases/GetGoalsData'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { useToday } from '@/lib/useToday'
 import { YearView } from './YearView'
@@ -26,32 +26,31 @@ export function GoalsClient({ data, today: serverToday, block = null }: Props) {
   const yearData = selectedYear !== undefined ? byYear[selectedYear] : undefined
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-col gap-3.5">
+      <header className="mb-1.5 flex items-end justify-between gap-4">
         {/* The year itself is redundant here - the 2026/2025 toggle right next
             to it already says which season is showing. */}
         <h1 className="min-w-0 text-display text-foreground">{t.goals.title}</h1>
 
         {hasYearTabs && (
-          // Two mutually exclusive scopes on the whole screen, not a filter -
-          // the segmented control Plan uses for its week/month switch, not
-          // free-standing pills.
+          // Two mutually exclusive scopes on the whole screen, not a filter:
+          // the quiet tabs, at the small-range size (v4.17).
           <SegmentedTabs
             tabs={yearTabs}
             items={years.map((y) => ({ id: y, label: y }))}
             label={t.goals.title}
-            tabClassName="px-4 py-1.5 text-sm"
+            size="sm"
           />
         )}
-      </div>
+      </header>
 
-      <div {...(hasYearTabs ? yearTabs.panelProps : {})}>
+      <div {...(hasYearTabs ? yearTabs.panelProps : {})} className="outline-none">
         {yearData ? (
           <YearView key={yearData.year} yearData={yearData} today={today} block={block} />
         ) : (
-          <GlassSurface variant="card" className="rounded-2xl py-12 text-center">
+          <section className={cardClass({ className: 'py-12 text-center' })}>
             <p className="text-sm text-subtle">{t.goals.empty}</p>
-          </GlassSurface>
+          </section>
         )}
       </div>
 

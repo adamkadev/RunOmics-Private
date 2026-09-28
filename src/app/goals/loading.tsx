@@ -13,13 +13,13 @@ function CardSkeleton() {
 
 export default function GoalsLoading() {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-40" />
-          <Skeleton className="h-4 w-24" />
+    <div className="flex flex-col gap-3.5">
+      <div className="mb-1.5 flex items-end justify-between">
+        <div className="space-y-3.5">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-8 w-48" />
         </div>
-        <Skeleton className="h-7 w-14 rounded-lg" />
+        <Skeleton className="h-9 w-28 rounded-[11px]" />
       </div>
 
       <div className="space-y-3">
