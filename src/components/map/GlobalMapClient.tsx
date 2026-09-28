@@ -245,20 +245,24 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
         )}
 
         {/* The scale bottom left, the licence line bottom right (v4.17): both
-            always on the map, in the page and in fullscreen alike. */}
-        <HeatLegend className={`absolute left-3 z-10 ${bottom}`} />
-        <span
-          className={`pointer-events-none absolute right-3 z-10 max-w-[45%] text-right text-caption leading-tight text-subtle ${bottom}`}
-          data-testid="map-attribution"
-        >
-          {/* Each credit whole: a narrow map wraps between them, not inside one. */}
-          {t.pages.map.attribution.split(" · ").map((credit, i) => (
-            <Fragment key={credit}>
-              {i > 0 && " · "}
-              <span className="whitespace-nowrap">{credit}</span>
-            </Fragment>
-          ))}
-        </span>
+            always on the map, in the page and in fullscreen alike. Where the
+            two do not fit on one line - a phone - the credit takes the
+            corner and the scale sits just above it, never across it. */}
+        <div className={`pointer-events-none absolute inset-x-3 z-10 flex flex-wrap items-end gap-x-3 gap-y-1.5 ${bottom}`}>
+          <HeatLegend className="shrink-0" />
+          <span
+            className="ml-auto text-right text-caption leading-tight text-subtle"
+            data-testid="map-attribution"
+          >
+            {/* Each credit whole: a narrow map wraps between them, not inside one. */}
+            {t.pages.map.attribution.split(" · ").map((credit, i) => (
+              <Fragment key={credit}>
+                {i > 0 && " · "}
+                <span className="whitespace-nowrap">{credit}</span>
+              </Fragment>
+            ))}
+          </span>
+        </div>
       </div>
     </div>
   );
