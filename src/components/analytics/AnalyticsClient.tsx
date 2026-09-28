@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
@@ -15,6 +15,7 @@ import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { formatDateRange } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { PeriodControl } from './AnalyticsKit'
+import { CoachRead, coachReadOf } from './CoachRead'
 import {
   LOAD_PERIODS,
   WEEK_PERIODS,
@@ -32,7 +33,7 @@ import {
 } from './analyticsView'
 
 const tabLoading = () => (
-  <div className="space-y-3">
+  <div className="flex flex-col gap-3.5">
     <ChartCardSkeleton />
     <ChartCardSkeleton />
   </div>
@@ -140,34 +141,50 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
 
   const rows = weeks ? weekRows(data.weeks, data.plan, weeks, today) : []
   // One range line on every tab (v4.6): first Monday to today, or to the
-  // window's last Sunday once swiped back. The chip already says "12w".
+  // window's last Sunday once swiped back. The control beside it says "12 wk".
   const range = days ?? weeks!
-  const rangeLabel = formatDateRange(range.start, range.live ? today : range.end)
+  const rangeLabel = formatDateRange(range.start, range.live ? today : range.end, { year: 'always' })
+
+  // The coach read sits over every tab (v4.17), so it reads the same wherever
+  // it is opened: the speed reads at their 12 weeks, the load headline at the
+  // Load tab's own window.
+  const loadWindow = windows.fitness
+  const coach = useMemo(
+    () => coachReadOf(data, today, dayWindow(today, loadWindow.period, loadWindow.offset)),
+    [data, today, loadWindow],
+  )
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-3 px-1">
-        {/* The one large title, in the shell above the tabs; only the content
-            under the tabs changes on a switch. */}
-        <h1 data-testid="analytics-title" className="shrink-0 font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
-          {t.analytics.title}
-        </h1>
-      </div>
+    <div className="flex flex-col gap-3.5">
+      {/* The v4.17 page header: the title with the window under it, and the
+          page's one period control on the same row, on the right. */}
+      <header className="mb-1.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          {/* The one large title, above the tabs; only the content under the
+              tabs changes on a switch. */}
+          <h1 data-testid="analytics-title" className="text-display text-foreground">
+            {t.analytics.title}
+          </h1>
+          {/* The subtitle fades under the compact title bar, which sets its
+              opacity from the layout before this page hydrates. */}
+          <p className="truncate text-sm text-muted-foreground" data-testid="analytics-range" suppressHydrationWarning>
+            {rangeLabel}
+          </p>
+        </div>
+        <PeriodControl periods={loadTab ? LOAD_PERIODS : WEEK_PERIODS} value={current.period} onChange={setPeriod} />
+      </header>
 
-      <StickyBar ref={tabsRef} top="var(--sticky-top, max(var(--safe-top), 8px))">
-        <SegmentedTabs tabs={analyticsTabs} items={TABS} label={t.analytics.title} size="md" fill tabClassName="text-footnote sm:text-[15px]" />
+      {/* Its 8 pt of padding is for when it sticks; at rest the tabs sit the
+          page's 14 pt from the header and the coach read. */}
+      <StickyBar ref={tabsRef} top="var(--sticky-top, max(var(--safe-top), 8px))" className="-my-2">
+        <SegmentedTabs tabs={analyticsTabs} items={TABS} label={t.analytics.title} size="md" fill />
       </StickyBar>
 
-      <div className="flex items-center justify-between gap-3 px-0.5">
-        <span className="min-w-0 truncate text-[13px] text-muted-foreground" data-testid="analytics-range">
-          {rangeLabel}
-        </span>
-        <PeriodControl periods={loadTab ? LOAD_PERIODS : WEEK_PERIODS} value={current.period} onChange={setPeriod} />
-      </div>
+      {coach && <CoachRead view={coach.view} load={coach.load} />}
 
       <div {...analyticsTabs.panelProps} {...swipeHandlers}>
         {tab === 'fitness' && days && (
-          <LoadTab window={days} onShift={shift} today={today} data={data} />
+          <LoadTab window={days} period={current.period as LoadPeriod} onShift={shift} today={today} data={data} />
         )}
         {tab === 'performance' && days && (
           <PerformanceTab
