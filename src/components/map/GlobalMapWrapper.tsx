@@ -12,8 +12,8 @@ const GlobalMapClient = dynamic(
     // The chip row and the map box at their own sizes, so nothing moves when they arrive.
     loading: () => (
       <div className="flex flex-col gap-3.5">
-        <div className="mt-1 h-[34px]" />
-        <div className="h-[360px] w-full animate-pulse rounded-2xl bg-muted md:h-[540px]" />
+        <div className="mt-1 h-8" />
+        <div className="h-[360px] w-full animate-pulse rounded-2xl bg-muted md:h-[560px]" />
       </div>
     ),
   }

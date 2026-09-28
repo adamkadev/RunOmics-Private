@@ -117,9 +117,9 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
       // Home is the busiest area; elsewhere the ring is around where the runs start.
       headline: s.headline(territory.percentVolume, reach, selectedIdx === data.defaultClusterIdx),
       stats: [
-        { value: String(territory.routeCount), label: s.runsStat },
-        { value: territory.km.toLocaleString(t.locale), label: s.kmStat },
-        { value: reach, label: s.reachStat },
+        { label: s.runsStat, value: String(territory.routeCount) },
+        { label: s.kmStat, value: territory.km.toLocaleString(t.locale), unit: t.units.km },
+        { label: s.reachStat, value: reachKm(territory.medianReachKm).toLocaleString(t.locale), unit: t.units.km },
       ],
     };
   }, [clusters, selectedIdx, territory, names, selectedType, selectedYear, data.defaultClusterIdx]);
@@ -198,7 +198,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           <button
             onClick={() => setIsFullscreen(false)}
             aria-label={t.pages.map.exitFullscreen}
-            className="map-overlay ml-auto flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] text-foreground"
+            className="map-overlay ml-auto flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] text-[var(--text-2)]"
           >
             <Minimize size={14} />
           </button>
@@ -208,8 +208,8 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
       <div
         className={
           isFullscreen
-            ? "relative min-h-0 flex-1 bg-background"
-            : "relative h-[360px] overflow-hidden rounded-2xl border border-border bg-background md:h-[540px]"
+            ? "relative min-h-0 flex-1 bg-[var(--surface-2)]"
+            : "relative h-[360px] overflow-hidden rounded-2xl border border-border bg-[var(--surface-2)] md:h-[560px]"
         }
       >
         {/* Sized by a wrapper: MapLibre's own stylesheet makes its container
@@ -238,7 +238,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           <button
             onClick={() => setIsFullscreen(true)}
             aria-label={t.pages.map.fullscreen}
-            className="map-overlay absolute right-3 top-3 z-20 flex h-[34px] w-[34px] items-center justify-center rounded-[9px] text-foreground/80"
+            className="map-overlay absolute right-3 top-3 z-20 flex h-[34px] w-[34px] items-center justify-center rounded-[9px] text-[var(--text-2)]"
           >
             <Maximize size={14} />
           </button>

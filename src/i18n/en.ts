@@ -251,9 +251,9 @@ export const en = {
           tail: home ? ' around home.' : ' around where they start.',
         }),
         homeArea: 'Home area',
-        runsStat: 'runs',
-        kmStat: 'km',
-        reachStat: 'median reach',
+        runsStat: 'Runs',
+        kmStat: 'Distance',
+        reachStat: 'Median reach',
       },
     },
     shoes: {

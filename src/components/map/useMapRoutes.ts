@@ -10,7 +10,7 @@ import { firstSymbolLayerId, isPlaceLabelLayer, loadMapLibre, styleRunMapLabels 
 import { addEdgeFence } from "@/lib/runMapLayers";
 import { SURFACES } from "@/lib/themeTokens";
 import { addHeatLayer, type HeatLayer } from "./heatLayer";
-import { HEAT_STYLE, buildHeatTracks, ringCoordinates } from "./mapUtils";
+import { HEAT_LABEL_OPACITY, buildHeatTracks, ringCoordinates } from "./mapUtils";
 
 /** The routes' breathing room inside the map (v4.17). */
 export const FIT_PADDING = 36;
@@ -19,7 +19,6 @@ const FIT_MS = 800;
 
 const RING_SOURCE = "home-ring";
 const DOT_SOURCE = "home-dot";
-const DIM_LAYER = "heat-dim";
 
 /** The ring around home: what the card's sentence names. */
 export interface HomeRing {
@@ -97,7 +96,7 @@ export function useMapRoutes(
       const mode = isDark ? "dark" : "light";
       const map = new mgl.Map({
         container: containerRef.current!,
-        style: maptilerStyleUrl(isDark, token),
+        style: maptilerStyleUrl(isDark, token, { grey: true }),
         bounds: boundsArray(first.frame),
         fitBoundsOptions: { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM },
         // The licence-required attribution is the map's own line of text
@@ -117,26 +116,18 @@ export function useMapRoutes(
       map.on("load", () => {
         if (cancelled) return;
         const surface = SURFACES[mode];
-        const heat = HEAT_STYLE[mode];
+        // The tracks, the ring and home are the athlete's own: the accent.
         const accent = getComputedStyle(containerRef.current ?? document.documentElement).getPropertyValue("--accent").trim() || surface.text;
 
         // The Activity map's label rules (v4.10) - towns over the tracks with
         // a halo, nothing cut at the edge - quieter here (v4.17).
         styleRunMapLabels(map, { halo: surface.card, town: surface.text2, neighbourhood: surface.text3 });
         for (const layer of map.getStyle().layers) {
-          if (isPlaceLabelLayer(layer as { id: string; type: string })) map.setPaintProperty(layer.id, "text-opacity", heat.labelOpacity);
+          if (isPlaceLabelLayer(layer as { id: string; type: string })) map.setPaintProperty(layer.id, "text-opacity", HEAT_LABEL_OPACITY);
         }
         const firstSymbolId = firstSymbolLayerId(map);
 
-        // The basemap a step back: the page ground laid thinly over it.
-        if (heat.baseDim > 0) {
-          map.addLayer(
-            { id: DIM_LAYER, type: "background", paint: { "background-color": surface.background, "background-opacity": heat.baseDim } },
-            firstSymbolId,
-          );
-        }
-
-        heatRef.current = addHeatLayer(map, mode, firstSymbolId);
+        heatRef.current = addHeatLayer(map, mode, accent, firstSymbolId);
 
         map.addSource(RING_SOURCE, { type: "geojson", data: EMPTY });
         map.addLayer(
@@ -146,7 +137,7 @@ export function useMapRoutes(
             source: RING_SOURCE,
             layout: { "line-join": "round", "line-cap": "round" },
             // 4 px dashes, 6 px apart: the dash array counts line widths.
-            paint: { "line-color": accent, "line-width": 1.2, "line-opacity": 0.75, "line-dasharray": [4 / 1.2, 6 / 1.2] },
+            paint: { "line-color": accent, "line-width": 1.2, "line-opacity": 0.8, "line-dasharray": [4 / 1.2, 6 / 1.2] },
           },
           firstSymbolId,
         );
@@ -157,10 +148,11 @@ export function useMapRoutes(
             type: "circle",
             source: DOT_SOURCE,
             paint: {
+              // Home: the accent in a 2 px white ring, 10 px across.
               "circle-radius": 3,
-              "circle-color": heat.dot ?? accent,
+              "circle-color": accent,
               "circle-stroke-width": 2,
-              "circle-stroke-color": heat.dotEdge,
+              "circle-stroke-color": "#ffffff",
             },
           },
           firstSymbolId,

@@ -232,9 +232,9 @@ export const fr = {
           tail: home ? ' autour de chez toi.' : ' autour de leur point de départ.',
         }),
         homeArea: 'Secteur habituel',
-        runsStat: 'sorties',
-        kmStat: 'km',
-        reachStat: 'portée médiane',
+        runsStat: 'Sorties',
+        kmStat: 'Distance',
+        reachStat: 'Portée médiane',
       },
     },
     shoes: {

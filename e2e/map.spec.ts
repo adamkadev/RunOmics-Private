@@ -1,7 +1,7 @@
 import type { Locator } from '@playwright/test'
 import { test, expect } from './fixtures'
 
-test('heatmap: title, chips, a 540 pt map with its legend and licence on it, the card under it (v4.17)', async ({ page }) => {
+test('heatmap: title, chips, a 560 pt map with its legend and licence on it, the card under it (v4.17)', async ({ page }) => {
   await page.goto('/map')
   await expect(page.getByRole('heading', { name: 'Heatmap', exact: true })).toBeVisible()
   await expect(page.getByText(/runs with GPS/)).toBeVisible()
@@ -17,10 +17,10 @@ test('heatmap: title, chips, a 540 pt map with its legend and licence on it, the
   const card = page.getByTestId('territory-card')
   // Runs, km and the median reach the sentence's ring is drawn at.
   await expect(card).toContainText('ring')
-  await expect(card).toContainText('median reach')
+  await expect(card).toContainText('Median reach')
   const mapBox = (await map.boundingBox())!
-  // 540 pt with its 1 pt border inside.
-  expect(Math.round(mapBox.height)).toBe(538)
+  // 560 pt with its 1 pt border inside.
+  expect(Math.round(mapBox.height)).toBe(558)
   expect((await card.boundingBox())!.y).toBeGreaterThan(mapBox.y + mapBox.height)
 
   await page.getByRole('button', { name: 'Fullscreen' }).click()

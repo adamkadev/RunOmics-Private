@@ -6,13 +6,14 @@ import {
   mercatorY,
   HEAT_STYLE,
   heatLineWidth,
+  heatPasses,
+  rgba,
   reachKm,
   ringCoordinates,
   areaRows,
   computeAreaTerritory,
   type HeatFilters,
 } from '../mapUtils'
-import { HEAT_RAMP } from '@/lib/themeTokens'
 import { distanceKm } from '@/lib/math'
 import type { RouteCluster, RouteMeta } from '@/application/usecases/GetAllRoutes'
 
@@ -110,18 +111,18 @@ describe('HEAT_STYLE (v4.17)', () => {
     for (const mode of ['dark', 'light'] as const) {
       const [glow, core] = HEAT_STYLE[mode].passes
       expect(glow!.width).toBeGreaterThan(core!.width)
+      expect(glow!.alpha).toBeLessThan(core!.alpha)
       expect(core!.width).toBe(1)
     }
   })
 
-  it('rings home in the ramp\'s brightest stop on dark', () => {
-    expect(HEAT_STYLE.dark.dot).toBe(HEAT_RAMP.dark[3])
+  it('draws the tracks in the accent: they are the athlete\'s own data', () => {
+    expect(heatPasses('dark', '#2dd4a7').map((p) => p.color)).toEqual(['rgba(45,212,167,0.035)', 'rgba(45,212,167,0.16)'])
+    expect(heatPasses('light', '#4457d6')[1]!.color).toBe('rgba(68,87,214,0.2)')
   })
 
-  it('uses no zone hue in the ramp the legend draws', async () => {
-    const { ZONE_HEX } = await import('@/lib/themeTokens')
-    const zones = Object.values(ZONE_HEX).flat().map((hex) => hex.toLowerCase())
-    for (const hex of [...HEAT_RAMP.dark, ...HEAT_RAMP.light]) expect(zones).not.toContain(hex)
+  it('reads a short hex too', () => {
+    expect(rgba('#fff', 0.5)).toBe('rgba(255,255,255,0.5)')
   })
 })
 

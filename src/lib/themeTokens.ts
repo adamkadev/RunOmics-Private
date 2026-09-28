@@ -167,20 +167,6 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
 }
 
 /**
- * The heatmap's one scale (v4.17), rare to frequent: a teal family, faint
- * to near white on dark, pale to deep on light. It is what the tracks build
- * to as they stack (see the map's HEAT_STYLE), and the legend draws it.
- */
-export const HEAT_RAMP = {
-  dark: ['#0e3b2f', '#1b9e7c', '#2dd4a7', '#dffff5'],
-  light: ['#cfebe0', '#5dbb9b', '#0f8a6a', '#063a2c'],
-} as const
-
-/** The ramp's stops as --heat-1..4: flat tokens, the legend draws the gradient. */
-const heatRampTokens = (mode: 'light' | 'dark') =>
-  Object.fromEntries(HEAT_RAMP[mode].map((hex, i) => [`--heat-${i + 1}`, hex]))
-
-/**
  * The roles the app names, each read off a status, a zone or a neutral
  * (v4.17). Nothing here has a hue of its own: a type is its zone, good news
  * is --pos, caution --warn, bad --neg, and a reference series is a grey.
@@ -227,7 +213,6 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--chart-ground-contact': mode === 'dark' ? c.amber500 : c.amberLine,
     // The athlete's own data is the accent.
     '--chart-brand': 'var(--accent)',
-    ...heatRampTokens(mode),
     '--ro-accent': 'var(--accent)',
     '--ro-accent-hi': 'var(--accent-hover)',
     '--ro-ink': c.roInk,

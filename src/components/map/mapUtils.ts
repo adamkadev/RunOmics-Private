@@ -1,6 +1,5 @@
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
-import { HEAT_RAMP, SURFACES } from "@/lib/themeTokens";
 import { distanceKm, median, round } from "@/lib/math";
 import { t } from "@/i18n";
 
@@ -113,11 +112,10 @@ export function areaRows(clusters: RouteCluster[], routeMeta: RouteMeta[], filte
 /** An area gets its own row in the list from this share of km; the rest fold into one. */
 export const OWN_ROW_SHARE = 10;
 
-// The area, type and year chips share one pill (v4.17): neutral while
-// unset, the accent once set. The area is always set, so it always carries
-// the accent - the one place on the page that says which area this is.
-export const MAP_CHIP_GEOMETRY = "flex h-[34px] items-center rounded-full text-[13px] transition-colors";
-export const MAP_CHIP_PADDING = "0 14px";
+// The area, type and year chips are the app's filter chips (v4.17): neutral
+// while unset, inverted once set. The area is always set.
+export const MAP_CHIP_GEOMETRY = "flex h-8 items-center rounded-full text-[13px] transition-colors";
+export const MAP_CHIP_PADDING = "0 12px";
 /** An open menu outlines its unset chip in text ink. */
 export const MAP_CHIP_OPEN_BORDER = "1px solid var(--foreground)";
 export const MAP_CHIP_CARET_INK = "var(--subtle)";
@@ -169,46 +167,47 @@ export interface HeatPass {
   color: string;
 }
 
+/** `#rrggbb` at an alpha, as the canvas takes it. */
+export function rgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h.slice(0, 6), 16);
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
 /**
- * How the tracks are drawn (v4.17): every run stroked twice, a wide faint
- * glow and a thin core, all in one teal. Where runs overlap they build up -
- * added light on dark, multiplied ink on light - so the most run streets go
- * from HEAT_RAMP's first stop to its last with no count behind them.
+ * How the tracks are drawn (v4.17): every run stroked twice in the accent - a
+ * wide faint glow and a thin core - because the tracks are the athlete's own
+ * data. Where runs overlap they build up: added light on dark, multiplied ink
+ * on light, so the most run streets burn brightest (dark) or deepest (light)
+ * with no count behind them.
  */
 export const HEAT_STYLE = {
   dark: {
     composite: "lighter",
     passes: [
-      { width: 4, color: "rgba(25,150,115,0.035)" },
-      { width: 1, color: "rgba(45,212,167,0.16)" },
+      { width: 4, alpha: 0.035 },
+      { width: 1, alpha: 0.16 },
     ],
-    /** The home dot: the ramp's brightest stop, ringed in the map's ground. */
-    dot: HEAT_RAMP.dark[3],
-    dotEdge: SURFACES.dark.background,
-    /** The basemap at 90%: its roads a step quieter than the tracks. */
-    baseDim: 0.1,
-    labelOpacity: 0.45,
   },
   light: {
     composite: "multiply",
     passes: [
-      { width: 3, color: "rgba(15,138,106,0.05)" },
-      { width: 1, color: "rgba(15,138,106,0.2)" },
+      { width: 3, alpha: 0.05 },
+      { width: 1, alpha: 0.2 },
     ],
-    /** Null: the accent, ringed in white. */
-    dot: null,
-    dotEdge: "#ffffff",
-    baseDim: 0,
-    labelOpacity: 0.55,
   },
 } as const satisfies Record<"dark" | "light", {
   composite: GlobalCompositeOperation;
-  passes: readonly HeatPass[];
-  dot: string | null;
-  dotEdge: string;
-  baseDim: number;
-  labelOpacity: number;
+  passes: readonly { width: number; alpha: number }[];
 }>;
+
+/** The two passes in the accent's colour. */
+export function heatPasses(mode: "dark" | "light", accent: string): HeatPass[] {
+  return HEAT_STYLE[mode].passes.map((pass) => ({ width: pass.width, color: rgba(accent, pass.alpha) }));
+}
+
+/** Place names over the tracks at 60%, in both themes. */
+export const HEAT_LABEL_OPACITY = 0.6;
 
 /**
  * The core line's width in px at a MapLibre zoom: 1.2 px out to the city,

@@ -1,7 +1,7 @@
 "use client";
 
 import type { CanvasSource, Coordinates, Map as MapLibreMap } from "maplibre-gl";
-import { HEAT_STYLE, heatLineWidth, mercatorX, mercatorY } from "./mapUtils";
+import { HEAT_STYLE, heatLineWidth, heatPasses, mercatorX, mercatorY } from "./mapUtils";
 
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
@@ -30,8 +30,9 @@ export interface HeatLayer {
  * a raster under the place names. Panning and zooming move the raster with
  * the map; when the view settles it is redrawn sharp for the new view.
  */
-export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", beforeId: string | undefined): HeatLayer {
-  const style = HEAT_STYLE[mode];
+export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: string, beforeId: string | undefined): HeatLayer {
+  const composite = HEAT_STYLE[mode].composite;
+  const passes = heatPasses(mode, accent);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
@@ -77,13 +78,13 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", beforeId:
     if (!ctx) return;
     const { x0, y0, world, scale } = view;
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    ctx.globalCompositeOperation = style.composite;
+    ctx.globalCompositeOperation = composite;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     const lineWidth = heatLineWidth(map.getZoom());
     // Every glow before any core, as the design draws them; both blends are
     // order-free, so a reveal can add runs on top of what is drawn.
-    for (const pass of style.passes) {
+    for (const pass of passes) {
       ctx.lineWidth = lineWidth * pass.width;
       ctx.strokeStyle = pass.color;
       for (let t = from; t < to; t++) {

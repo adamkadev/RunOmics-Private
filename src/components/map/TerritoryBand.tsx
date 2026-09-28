@@ -1,16 +1,18 @@
 import { cn } from '@/lib/utils'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { Stat, StatGrid } from '@/components/ui/Stat'
 
-interface Stat {
-  value: string
+interface TerritoryStat {
   label: string
+  value: string
+  unit?: string
 }
 
 export interface TerritoryCardContent {
   eyebrow: string
   /** The sentence, with the ring it names set apart in the accent. */
   headline: { lead: string; accent: string; tail: string }
-  stats: Stat[]
+  stats: TerritoryStat[]
 }
 
 // A pure renderer: whoever owns the current area and filters decides what
@@ -19,7 +21,7 @@ export interface TerritoryCardContent {
 export function TerritoryBand({ eyebrow, headline, stats }: TerritoryCardContent) {
   return (
     <section
-      className="flex flex-col gap-3.5 rounded-2xl border border-border bg-card px-[18px] pb-4 pt-[18px]"
+      className="flex flex-col gap-3.5 rounded-2xl border border-border bg-card px-5 py-[18px]"
       data-testid="territory-card"
     >
       <div className="flex flex-col gap-1.5">
@@ -30,17 +32,12 @@ export function TerritoryBand({ eyebrow, headline, stats }: TerritoryCardContent
           {headline.tail}
         </p>
       </div>
-      <div
-        className="grid gap-4 border-t border-border pt-3.5"
-        style={{ gridTemplateColumns: `repeat(${stats.length}, minmax(0, 1fr))` }}
-      >
+      {/* The v4.17 stat: label on top, the value with its unit. */}
+      <StatGrid columns={stats.length} className="border-t border-border pt-3.5">
         {stats.map((stat) => (
-          <div key={stat.label} className="flex flex-col gap-0.5">
-            <span className="font-display text-[22px] font-semibold tabular-nums leading-tight text-foreground">{stat.value}</span>
-            <span className="text-xs text-muted-foreground">{stat.label}</span>
-          </div>
+          <Stat key={stat.label} label={stat.label} value={stat.value} unit={stat.unit} valueStyle={{ fontSize: 24 }} />
         ))}
-      </div>
+      </StatGrid>
     </section>
   )
 }
