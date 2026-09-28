@@ -42,9 +42,11 @@ function NavLink({ activity, direction }: { activity: AdjacentActivity | null; d
         <span className={cn(EYEBROW_CLASS, 'font-normal text-muted-foreground')}>
           {isPrev ? t.activity.nav.previous : t.activity.nav.next}
         </span>
-        {/* The run and its date, so the link says which run it opens (v4.17). */}
+        {/* The run and its date, so the link says which run it opens
+            (v4.17); a phone's half-width link keeps the name. */}
         <span className="truncate text-sm font-semibold text-foreground">
-          {activityLabel(activity)} · {formatDate(activity.date)}
+          {activityLabel(activity)}
+          <span className="hidden sm:inline"> · {formatDate(activity.date)}</span>
         </span>
       </span>
       {!isPrev && <ChevronRight size={16} className="shrink-0 text-muted-foreground" />}
