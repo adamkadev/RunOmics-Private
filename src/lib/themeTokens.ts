@@ -32,11 +32,13 @@ export const ZONE_HEX = {
 /**
  * Status, and only status (v4.17): good, caution, bad. Never a category - a
  * session type, a zone - and a delta takes one by what it means, not by
- * which way it moved: fatigue +6 is warn, fitness +4 is pos.
+ * which way it moved: fatigue +6 is warn, fitness +4 is pos. Pos is a
+ * yellower green than the teal accent (v4.17.2): #1e8a4c beside #0f8a6a
+ * read as the athlete's own data.
  */
 export const STATUS_HEX = {
-  light: { pos: '#1e8a4c', warn: '#b26b00', neg: '#c8372d' },
-  dark: { pos: '#5bd68a', warn: '#f2b544', neg: '#f26b5b' },
+  light: { pos: '#3f8f1f', warn: '#b26b00', neg: '#c8372d' },
+  dark: { pos: '#7bd64a', warn: '#f2b544', neg: '#f26b5b' },
 } as const
 
 /**
