@@ -123,11 +123,17 @@ describe('zone bands', () => {
     ])
   })
 
-  it('draws a band only where the lane reaches it, the outermost to the edge', () => {
+  it('draws a band only where the lane reaches it, on the line\'s scale', () => {
     const lane = { domain: [120, 170] as [number, number], reversed: false }
     expect(bandRect(lane, { zone: 4, from: 175, to: 185 })).toBeNull()
-    expect(bandRect(lane, { zone: 3, from: 165, to: 175 })).toMatchObject({ top: 0, labelled: false })
-    expect(bandRect(lane, { zone: 1, from: 119, to: 147 })).toMatchObject({ height: LANE_HEIGHT - 41.72, labelled: true })
+    // Z3 runs past the top of the scale, so it fills the padding up there.
+    expect(bandRect(lane, { zone: 3, from: 165, to: 175 })).toMatchObject({ top: 0, labelled: true })
+    const z1 = bandRect(lane, { zone: 1, from: 119, to: 147 })!
+    expect(z1.top).toBeCloseTo(41.72, 2)
+    expect(z1.top + z1.height).toBeCloseTo(87.64, 2)
+    // Pace's Z5 is everything faster: up from the top.
+    const pace = { domain: [260, 420] as [number, number], reversed: true }
+    expect(bandRect(pace, { zone: 5, from: -Infinity, to: 255 })).toMatchObject({ top: 0, labelled: false })
   })
 
   it("falls back to the athlete's heart-rate zones when the run has none", () => {

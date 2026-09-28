@@ -104,7 +104,8 @@ function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; split
       <div className={`${rowCls} whitespace-nowrap pb-1 text-caption uppercase tracking-[0.06em] text-muted-foreground`}>
         <span>{sp.cols.km}</span>
         <span>{sp.cols.pace}</span>
-        <span className="sr-only">{sp.cols.speed}</span>
+        {/* The bar's column has no visible heading; a reader still hears it. */}
+        <span><span className="sr-only">{sp.cols.speed}</span></span>
         <span className="text-right">{sp.cols.vsAvg}</span>
         {showHr && <span className="text-right">{sp.cols.hr}</span>}
       </div>

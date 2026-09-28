@@ -11,8 +11,8 @@ export const LANE_HEIGHT = 90
 export const ELEVATION_HEIGHT = 40
 /** The line stays this far off the lane's top and bottom edges. */
 const LANE_PAD = 4
-/** A zone band thinner than this has no room for its label. */
-const BAND_LABEL_MIN = 13
+/** A zone band thinner than this has no room for its 11 px label. */
+const BAND_LABEL_MIN = 12
 
 export type LaneKey = 'hr' | 'pace' | 'cadence' | 'elevation'
 export type ZoneNumber = 1 | 2 | 3 | 4 | 5
@@ -328,14 +328,12 @@ export function bandRect(lane: Pick<Lane, 'domain' | 'reversed'>, band: ZoneBand
     if (v === -Infinity) return lane.reversed ? 0 : LANE_HEIGHT
     return Math.min(LANE_HEIGHT, Math.max(0, LANE_PAD + share(lane, v) * (LANE_HEIGHT - 2 * LANE_PAD)))
   }
+  // The same scale as the line, clipped to the lane: a zone that runs past
+  // the domain fills the padding at that edge too.
   const a = edge(band.from)
   const b = edge(band.to)
-  let top = Math.min(a, b)
-  let bottom = Math.max(a, b)
-  // The outermost band runs to the lane's edge, not to the line's padding.
-  if (top <= LANE_PAD) top = 0
-  if (bottom >= LANE_HEIGHT - LANE_PAD) bottom = LANE_HEIGHT
-  const height = bottom - top
+  const top = Math.min(a, b)
+  const height = Math.max(a, b) - top
   if (height < 0.5) return null
   return { top, height, labelled: height >= BAND_LABEL_MIN }
 }

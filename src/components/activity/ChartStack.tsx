@@ -62,8 +62,9 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm }: { lane: La
               background: `color-mix(in srgb, var(--zone-${band.zone}) 11%, transparent)`,
             }}
           >
+            {/* 11 px like every axis label: the app's type floor (v4.17). */}
             {rect.labelled && (
-              <span className="absolute right-1.5 top-0.5 text-[10px] font-semibold leading-none" style={{ color: `var(--zone-${band.zone})` }}>
+              <span className="absolute right-1.5 top-px text-caption font-semibold leading-none" style={{ color: `var(--zone-${band.zone})` }}>
                 Z{band.zone}
               </span>
             )}
@@ -92,8 +93,8 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm }: { lane: La
           vectorEffect="non-scaling-stroke"
         />
       </svg>
-      <span className="absolute left-1.5 top-[3px] text-[10px] leading-none text-muted-foreground">{lane.format(top)}</span>
-      <span className="absolute bottom-[3px] left-1.5 text-[10px] leading-none text-muted-foreground">{lane.format(bottom)}</span>
+      <span className="absolute left-1.5 top-[3px] text-caption leading-none text-muted-foreground">{lane.format(top)}</span>
+      <span className="absolute bottom-[3px] left-1.5 text-caption leading-none text-muted-foreground">{lane.format(bottom)}</span>
     </>
   )
 })
@@ -339,7 +340,7 @@ export function ChartStack({ onScrub, ...input }: Props) {
         </ChartFigure>
       </div>
 
-      <div aria-hidden className="relative h-3.5 text-[11px] leading-none text-muted-foreground">
+      <div aria-hidden className="relative h-3.5 text-caption leading-none text-muted-foreground">
         {axis.ticks.map((km, i) => (
           <span
             key={km}
