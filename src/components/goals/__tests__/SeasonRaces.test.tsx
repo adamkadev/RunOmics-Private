@@ -45,59 +45,67 @@ function yearData(overrides: Partial<YearData> = {}): YearData {
 const BLOCK = { startDate: '2026-07-24', raceDate: '2026-10-16', week: 9, weeks: 12 }
 
 describe('SeasonTimeline', () => {
-  // C3: newest first - what is ahead, then today, then what is done.
-  it('lists the races newest first with today between ahead and done', () => {
+  // v4.17: what is ahead, next first, then what is done; today is on the strip.
+  it('lists the races ahead next first, then the ones done', () => {
     render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
     const items = [...screen.getByTestId('season-card').querySelectorAll('li')].map((li) => li.getAttribute('data-testid'))
     // One row per target distance: the half is scheduled again, so the 5K is the one done.
-    expect(items).toEqual(['timeline-upcoming', 'timeline-upcoming', 'timeline-today', 'timeline-done'])
+    expect(items).toEqual(['timeline-upcoming', 'timeline-upcoming', 'timeline-done'])
     const upcoming = screen.getAllByTestId('timeline-upcoming')
-    expect(upcoming[0]!.textContent).toContain('Autumn Trail Half')
-    expect(upcoming[1]!.textContent).toContain('Harbor Lights 10K')
+    expect(upcoming[0]!.textContent).toContain('Harbor Lights 10K')
+    expect(upcoming[1]!.textContent).toContain('Autumn Trail Half')
   })
 
-  it('gives the next race its countdown, target, block week and prediction', () => {
+  it('gives the next race its countdown, target, plan week and prediction', () => {
     render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
-    const next = screen.getAllByTestId('timeline-upcoming')[1]!
-    expect(next.textContent).toContain('D-\u206021')
-    expect(next.textContent).toContain(t.goals.targetTime('40:30'))
-    expect(next.textContent).toContain(t.goals.season.blockWeek('10K', 9, 12))
+    const next = screen.getAllByTestId('timeline-upcoming')[0]!
+    expect(next.textContent).toContain(t.goals.season.inDays(21))
+    expect(next.textContent).toContain(t.goals.season.target('40:30'))
+    expect(next.textContent).toContain(t.goals.season.planWeek(9, 12))
     expect(within(next).getByText('39:46')).toBeInTheDocument()
-    expect(within(next).getByText(t.goals.predictedTag)).toBeInTheDocument()
+    // 44 s inside the target: good news, in pos.
+    const delta = within(next).getByTestId('timeline-delta')
+    expect(delta.textContent).toBe(t.goals.season.predictedUnder('0:44'))
+    expect(delta.dataset.tone).toBe('pos')
   })
 
-  it('states a done race against its target, in --good when beaten (v5.5 #17)', () => {
+  it('colours a prediction short of its target in warn', () => {
+    const data = yearData()
+    data.nextRaceSpotlight = { ...data.nextRaceSpotlight!, predictedSeconds: 2596 }
+    render(<SeasonTimeline yearData={data} today={TODAY} block={BLOCK} />)
+    const delta = within(screen.getAllByTestId('timeline-upcoming')[0]!).getByTestId('timeline-delta')
+    expect(delta.textContent).toBe(t.goals.season.predictedOff('2:46'))
+    expect(delta.dataset.tone).toBe('warn')
+  })
+
+  it('states a done race against its target, in pos when beaten', () => {
     render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
-    const deltas = screen.getAllByTestId('timeline-delta')
-    expect(deltas.map((d) => d.textContent)).toEqual(['−0:25'])
-    for (const d of deltas) expect(d.className).toContain('text-[var(--good)]')
+    const done = screen.getByTestId('timeline-done')
+    expect(done.textContent).toContain(t.goals.season.done)
+    const delta = within(done).getByTestId('timeline-delta')
+    expect(delta.textContent).toBe(t.goals.season.underTarget('0:25'))
+    expect(delta.className).toContain('text-[var(--pos)]')
   })
 
-  it('draws the strip: races, the block band from its start to race day, and today', () => {
+  it('draws the strip: the year so far to today, a done race and the ones ahead', () => {
     render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
     expect(screen.getAllByTestId('season-marker-upcoming')).toHaveLength(2)
     expect(screen.getAllByTestId('season-marker-done')).toHaveLength(1)
-    const band = screen.getByTestId('season-block')
-    expect(band.style.left).toBe(`${(yearFraction('2026-07-24', 2026) * 100).toFixed(2)}%`)
+    const at = `${(yearFraction(TODAY, 2026) * 100).toFixed(2)}%`
+    expect(screen.getByTestId('season-today').style.left).toBe(at)
+    expect(screen.getByTestId('season-done').style.width).toBe(at)
+    expect(screen.getByTestId('season-done').className).toContain('bg-accent')
+    expect(screen.getByTestId('season-marker-done').querySelector('.bg-\\[var\\(--pos\\)\\]')).not.toBeNull()
   })
 
-  it('puts a race with no date in its own card, off the timeline', () => {
+  it('puts a goal with no date in its own card, off the timeline', () => {
     const data = yearData()
     data.goals!.targets.push({ distance: 'Marathon', targetSeconds: null })
     render(<SeasonTimeline yearData={data} today={TODAY} block={BLOCK} />)
-    expect(within(screen.getByTestId('season-no-date')).getByText(t.goals.season.noDate)).toBeInTheDocument()
+    const card = screen.getByTestId('season-no-date')
+    expect(within(card).getByText(t.goals.season.noDate)).toBeInTheDocument()
+    expect(card.textContent).toContain(t.goals.season.noTarget)
     expect(screen.getByTestId('season-card').textContent).not.toContain('Marathon')
-  })
-})
-
-describe('SeasonTimeline spacing', () => {
-  // The last row ended on its gap to a next row, doubling the card's bottom padding.
-  it('gives every row but the last the gap before the next', () => {
-    render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
-    const rows = [...screen.getByTestId('season-card').querySelectorAll('li')]
-    const gap = (li: Element) => li.lastElementChild!.className.includes('pb-4')
-    expect(rows.slice(0, -1).every(gap)).toBe(true)
-    expect(gap(rows.at(-1)!)).toBe(false)
   })
 })
 

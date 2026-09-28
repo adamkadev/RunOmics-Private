@@ -74,14 +74,17 @@ export const en = {
   } as Record<number, string>,
 
   vo2Grade: {
-    title: 'VO₂max grade',
+    title: 'VO₂ max grade',
     band: (sex: 'male' | 'female', bracket: string) => `${sex === 'male' ? 'Men' : 'Women'} ${bracket.replace('-', '–')}`,
     source: 'ACSM percentiles',
     unit: 'ml/kg/min',
     topForAge: (n: number) => `Top ${n}% for your age`,
     topForAgeInline: (n: number) => `top ${n}% for your age`,
-    in30d: 'in 30 d',
+    in30d: 'in 30 days',
     toNext: (gap: string, grade: string) => `${gap} to ${grade}.`,
+    // v4.17: under the bar, "0.4 to A+", the gap in ink.
+    toGrade: (grade: string) => `to ${grade}`,
+    ladder: 'Every grade for your age',
     eta: (weeks: number) => `About ${weeks} week${weeks === 1 ? '' : 's'} at your current trend.`,
     topGrade: 'Top grade for your age',
     newGrade: 'New grade',
@@ -136,12 +139,22 @@ export const en = {
   // Every pace axis runs the same way (lib/chartAxis paceAxis).
   // The rolling year as month rows (/consistency).
   consistency: {
+    // v4.17: three stats, the year as week columns, then active days per month.
     activeDays: 'Active days',
-    share: 'Share',
-    streak: 'Streak',
-    streakValue: (weeks: number) => `${weeks} wk`,
-    levels: { rest: 'Rest', run: 'Run', long: 'Long run' },
+    ofDays: (days: number) => `of ${days}`,
+    share: 'Share of days',
+    vsPrior: (delta: string) => `${delta} pts vs prior 12 months`,
+    // A history that starts inside the year before is compared over what it covers.
+    vsRange: (delta: string, range: string) => `${delta} pts vs ${range}`,
+    streak: 'Current streak',
+    weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
+    best: (weeks: number) => `Best: ${weeks} week${weeks === 1 ? '' : 's'}`,
+    calendarTitle: 'Every day, last 12 months',
+    colourKey: 'colour = distance',
+    levels: { rest: 'Rest', long: 'Long run (15 km +)' },
     today: 'Today',
+    toCome: 'to come',
+    perMonth: 'Active days per month',
     monthSummary: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'}`,
     restDay: (date: string) => `${date} · Rest day`,
     empty: 'No runs in the last 12 months yet.',
@@ -300,11 +313,14 @@ export const en = {
       appearance: 'Appearance',
       data: 'Data',
       account: 'Account',
+      notifications: 'Notifications',
     },
     sync: {
       title: 'Garmin sync',
       subtitle: 'Pull in today’s runs without waiting for tonight.',
       action: 'Sync now',
+      // The button while the chain runs; the device line says which step.
+      running: 'Syncing…',
       starting: 'Starting the workflow…',
       fetching: 'Fetching from Garmin, then rebuilding the app…',
       writing: 'New data is live. Writing the verdict…',
@@ -321,12 +337,14 @@ export const en = {
     appearance: {
       title: 'Appearance',
       themeLabel: 'Theme',
+      themeHint: 'Auto follows your system setting',
       light: 'Light',
       auto: 'Auto',
       dark: 'Dark',
     },
     accent: {
       title: 'Accent',
+      hint: 'Used for highlights and your own data — never for warnings',
       options: {
         teal:     { label: 'Teal' },
         periwinkle: { label: 'Periwinkle' },
@@ -357,8 +375,8 @@ export const en = {
       weight: 'Weight',
       height: 'Height',
       fitnessAge: 'Fitness age',
-      // Fitness age against the real age: "20 of 29" (C2, v4.4).
-      ofAge: (age: number) => `of ${age}`,
+      // Fitness age against the real age: "20 actual 29" (C2, v4.4; v4.17).
+      ofAge: (age: number) => `actual ${age}`,
       achievableFitnessAge: 'Potential',
       bmi: 'BMI',
       fitnessAgeBand: {
@@ -385,9 +403,13 @@ export const en = {
       garmin: 'Garmin Connect',
       connected: (source: string) => `${source} connected`,
       readOnly: 'Runs are read-only here',
-      readOnlySynced: (when: string, runs: string) => `Synced ${when} · ${runs} · read-only here`,
+      readOnlySynced: (when: string, runs: string) => `last synced ${when} · ${runs} · read-only here`,
       lastSync: 'Last synced',
       since: (monthYear: string) => `paired ${monthYear}`,
+      // v4.17: the device row - "● Connected · last synced 2h ago · 299 runs · Garmin Connect since Aug 2025".
+      connectedNow: 'Connected',
+      lastSyncedAgo: (when: string) => `last synced ${when}`,
+      sourceSince: (source: string, monthYear: string) => `${source} since ${monthYear}`,
     },
     dataExport: {
       workbook: 'Export training data (.xlsx)',
@@ -409,11 +431,11 @@ export const en = {
       types: {
         training: {
           title: 'Training reminders',
-          subtitle: 'Daily session at 10am, plus a weekly check-in on your distance goal.',
+          subtitle: 'Daily session at 10:00, plus a weekly check-in on your distance goal.',
         },
         shoes: {
           title: 'Shoe wear alerts',
-          subtitle: 'Warning at 70% and 90% wear.',
+          subtitle: 'Warns at 70% and 90% of a shoe’s lifespan.',
         },
         // The title says what the toggle does (v5.6 #6): the PR alert.
         races: {
@@ -1377,7 +1399,8 @@ export const en = {
     title: 'Goals & season',
     empty: 'No goals configured yet.',
     back: 'Progress',
-    volumeGoal: (year: number) => `${year} volume goal`,
+    // v4.17: the year's card is "Distance goal"; the year tabs say which year.
+    distanceGoal: 'Distance goal',
     ofKm: (goal: string) => `of ${goal} km`,
     reached: (over: string) => `Reached · +${over} km`,
     half: 'Half',
@@ -1409,6 +1432,13 @@ export const en = {
       needsWeeklyDetail: (needed: string, current: string) => `Needs ${needed} km/wk, running ${current}.`,
       // "Projected 1,757 km · 243 short.": the verdict alone, in its tone.
       verdict: (projected: string, outcome: string | null) => `${projected}${outcome ? ` · ${outcome}` : ''}.`,
+      // v4.17: under the bar, then the verdict and what the goal needs.
+      today: 'Today',
+      projectedMark: (km: string) => `Projected ${km}`,
+      shortAtPace: (km: string) => `${km} km short at this pace.`,
+      overAtPace: (km: string) => `${km} km over at this pace.`,
+      onPace: 'On pace for the goal.',
+      needs: (needed: string, current: string) => `The goal needs ${needed} km a week; you’re averaging ${current}.`,
     },
     monthlyVolume: {
       title: 'Monthly volume',
@@ -1432,14 +1462,24 @@ export const en = {
       today: 'Today',
       todayOn: (date: string) => `TODAY · ${date}`,
       blockWeek: (race: string, week: number, weeks: number) => `${race} block wk ${week} of ${weeks}`,
-      noDate: 'No date yet',
+      // v4.17: a race row - "NOV 29 · IN 62 DAYS", "Target 40:00 · plan week 4 of 12".
+      inDays: (days: number) => (days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`),
+      done: 'done',
+      target: (time: string) => `Target ${time}`,
+      planWeek: (week: number, weeks: number) => `plan week ${week} of ${weeks}`,
+      predictedOff: (gap: string) => `predicted · ${gap} off`,
+      predictedUnder: (gap: string) => `predicted · ${gap} under`,
+      underTarget: (gap: string) => `${gap} under target`,
+      overTarget: (gap: string) => `${gap} over target`,
+      noDate: 'Goals without a date',
+      noTarget: 'no target set',
     },
     history: {
-      title: 'Past Years',
+      title: 'Past seasons',
       achieved: 'Achieved',
       missed: 'Missed',
-      annualKm: (actual: string, target: string) => `${actual} / ${target} km`,
-      targetsCount: (achieved: number, total: number) => `${achieved}/${total} race targets`,
+      annualKm: (actual: string, target: string) => `${actual} of ${target} km`,
+      targetsCount: (achieved: number, total: number) => `${achieved} of ${total} race targets`,
     },
   },
 
@@ -1467,7 +1507,7 @@ export const en = {
     tracked: (km: string) => `${km} km tracked`,
     add: 'Add',
     addLabel: 'Add a pair in Garmin Connect',
-    edit: 'Edit',
+    edit: 'Edit shoe',
     editLabel: 'Edit limit, role or retire in Garmin Connect',
     inRotation: (n: number) => `In rotation · ${n}`,
     retiredSection: (n: number) => `Retired · ${n}`,
@@ -1479,9 +1519,9 @@ export const en = {
     overLimit: 'Over limit, consider retiring',
     since: (brand: string, month: string) => `${brand} · since ${month}`,
     roles: { daily: 'daily trainer', workouts: 'workouts', intervals: 'intervals', races: 'races' },
-    typeMixCaption: 'Share of distance · colours match activity types',
+    shareOfDistance: 'share of distance',
     easy: 'Easy',
-    heroStats: { runs: 'runs', kmAvg: 'km avg', pace: 'avg /km', bpm: 'avg bpm' },
+    heroStats: { runs: 'Runs', avgDistance: 'Avg distance', avgPace: 'Avg pace', avgHr: 'Avg heart rate' },
     lastRuns: 'Last runs',
     neverUsed: 'Never used',
     // Both numbers arrive formatted (formatKm), so 1,375 has its separator.
@@ -1558,7 +1598,9 @@ export const en = {
       },
     },
     detail: {
-      back: 'Shoes',
+      // A pair's page is under Progress, which lists the pairs (v4.17).
+      back: 'Progress',
+      retireFromWorkouts: (km: string) => `${km} km · retire from workouts`,
       stats: {
         distance: 'Distance',
         activities: 'Runs',
@@ -1625,35 +1667,50 @@ export const en = {
   profile: {
     // The hub: the year so far, then one row per sub-page with its status.
     hub: {
+      // v4.17: the header's season line, then the year card, four tiles, shoes and all time.
+      season: (year: number) => `Season ${year}`,
+      raceIn: (distance: string, days: number) =>
+        days <= 0 ? `${distance} today` : days === 1 ? `${distance} tomorrow` : `${distance} in ${days} days`,
+      yearTitle: (year: number) => `${year} distance`,
       runs: 'runs',
       records: 'Records',
-      // The record set most recently, marked (v4.3.3).
-      latestRecord: 'PR',
+      recordsWhen: 'all time',
+      recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Half marathon' } as Record<string, string>,
+      // The record set most recently, marked (v4.3.3); "new" only in its first weeks.
+      newRecord: 'NEW PR',
+      latestRecord: 'LATEST',
       latestRecordLabel: 'most recent record',
       shoes: 'Shoes',
+      allPairs: 'All pairs',
       consistency: 'Consistency',
       settings: 'Settings',
-      race: 'Race',
-      vo2max: 'VO₂max',
+      nextRace: 'Next race',
+      vo2max: 'VO₂ max',
       allTime: 'All time',
       vsYear: (delta: string, year: number) => `${delta} km vs ${year} to date`,
-      vsYearDelta: (delta: string) => `${delta} km`,
-      vsYearRest: (year: number) => ` vs ${year} to date`,
-      ofGoal: (km: string) => `/ ${km} km`,
-      goal: 'goal',
-      hoursRuns: (hours: number, runs: number) => `${hours} h · ${runs} runs`,
-      raceLine: (distance: string, date: string) => `${distance} ${date}`,
-      predicted: 'predicted',
-      target: (time: string) => `target ${time}`,
-      off: (gap: string) => `${gap} off`,
+      ofGoal: (km: string) => `of ${km} km`,
+      goal: 'Goal',
+      runsHours: (runs: number, hours: number) => `${runs} runs · ${hours} h`,
+      // "62 days · 10K Wintzenheim, Nov 29": the unit after the countdown.
+      raceMeta: (days: number, race: string, date: string) => `${days === 1 ? 'day' : 'days'} · ${race}, ${date}`,
+      predicted: 'Predicted',
+      target: (time: string) => `Target ${time}`,
+      toFind: (gap: string) => `${gap} to find`,
+      underTarget: (gap: string) => `${gap} under`,
       noRace: 'No race planned',
-      in12w: ' in 12 wk',
+      vo2Delta: (delta: string) => `${delta} in 12 weeks`,
       // The footers as segments, each kept whole on the line (v4.3.1).
       thresholdParts: (pace: string | null, lthr: number | null) =>
-        [pace ? `threshold ${pace}` : null, lthr ? `LTHR ${lthr}` : null].filter((part): part is string => part !== null),
+        [pace ? `Threshold ${pace} /km` : null, lthr ? `LTHR ${lthr} bpm` : null].filter((part): part is string => part !== null),
       noRecords: 'No records yet',
-      consistencyParts: (days: number, weeks: number) => [`${days} days`, `${weeks} wk streak`],
+      // "Last 12 weeks · 203 active days in 12 months · 4-week streak", the figures in ink.
+      consistencyWindow: 'Last 12 weeks',
+      consistencyDays: (days: number) => ({ lead: '', value: String(days), tail: ` active day${days === 1 ? '' : 's'} in 12 months` }),
+      consistencyStreak: (weeks: number) => ({ lead: '', value: `${weeks}-week`, tail: ' streak' }),
       since: (date: string) => `since ${date}`,
+      distance: 'Distance',
+      runsLabel: 'Runs',
+      time: 'Time',
       hours: 'h',
       openYears: 'Kilometres by year',
     },
@@ -1688,7 +1745,8 @@ export const en = {
       fourWeeks: '4 weeks',
       columnZone: 'Zone',
       columnPace: 'Pace /km',
-      columnHr: 'HR',
+      columnHr: 'Heart rate',
+      columnHrShort: 'HR',
       columnTime: 'Time',
       inZonesWeek: (duration: string) => `${duration} in zones this week`,
       inZonesRecent: (duration: string) => `${duration} in zones over the last 4 weeks`,
@@ -1696,7 +1754,7 @@ export const en = {
       noSessionsRecent: 'No sessions logged in these 4 weeks.',
       emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
       target: 'target',
-      hardShare: (pct: number) => `Z4–Z5 ${pct}% · target 10–15%`,
+      hardShare: (pct: number) => `Hard (Z4–Z5) ${pct}% · target 10–15%`,
       highIntensityNote: (pct: number) =>
         // No phase in the sentence (G17): it named a build block during a base week.
         `${pct}% of your time was Z4–Z5, against the 10–15% most training weeks keep it to.`,

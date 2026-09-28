@@ -2,80 +2,125 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
-import { consistencyMonths } from '@/components/consistency/consistencyMonths'
+import { consistencyMonths, dayLevel, LEVEL_FILL } from '@/components/consistency/consistencyMonths'
 import { ConsistencyMonths } from '@/components/consistency/ConsistencyMonths'
 import { t } from '@/i18n'
 
-/** Every day from `from` to `to`, running on the dates in `runs` (long if in `long`). */
-function window(from: string, to: string, runs: string[] = [], long: string[] = []): HeatmapDay[] {
+/** Every day from `from` to `to`, running `km[date]` km on the dates it names. */
+function window(from: string, to: string, km: Record<string, number> = {}): HeatmapDay[] {
   const days: HeatmapDay[] = []
   for (let d = new Date(`${from}T00:00:00Z`); d <= new Date(`${to}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + 1)) {
     const date = d.toISOString().slice(0, 10)
-    const ran = runs.includes(date) || long.includes(date)
-    days.push({ date, distanceKm: ran ? 10 : 0, sessionCount: ran ? 1 : 0, longRun: long.includes(date), activityId: ran ? `a-${date}` : null })
+    const ran = km[date] !== undefined
+    days.push({ date, distanceKm: km[date] ?? 0, sessionCount: ran ? 1 : 0, longRun: false, activityId: ran ? `a-${date}` : null })
   }
   return days
 }
 
+// A Saturday.
 const TODAY = '2026-09-26'
-const YEAR = window('2025-09-22', TODAY, ['2026-09-02', '2026-02-10'], ['2026-09-20'])
+const KM = { '2026-09-02': 6, '2026-02-10': 10, '2026-09-20': 18 }
+const YEAR = window('2025-09-22', TODAY, KM)
+
+describe('dayLevel', () => {
+  // v4.17: rest, under 8 km, 8 to 15 km, 15 km and more.
+  it('steps the accent ramp at 8 and 15 km', () => {
+    expect(dayLevel(undefined)).toBe(0)
+    expect(dayLevel({ distanceKm: 0, sessionCount: 0 })).toBe(0)
+    expect(dayLevel({ distanceKm: 7.9, sessionCount: 1 })).toBe(1)
+    expect(dayLevel({ distanceKm: 8, sessionCount: 1 })).toBe(2)
+    expect(dayLevel({ distanceKm: 15, sessionCount: 2 })).toBe(3)
+    expect(LEVEL_FILL[0]).toBe('var(--surface-2)')
+    expect(LEVEL_FILL[3]).toBe('var(--accent)')
+  })
+})
 
 describe('consistencyMonths', () => {
-  // C1: twelve rolling months as columns, oldest on the left; 31 day rows.
-  it('lays the rolling year out as twelve month columns of 31 rows', () => {
+  // v4.17: the twelve calendar months to this one, as Monday-first week columns.
+  it('lays the rolling year out as week columns from the Monday before its first day', () => {
     const view = consistencyMonths(YEAR, TODAY)
-    expect(view.months.map((m) => m.key)).toEqual([
-      '2025-10', '2025-11', '2025-12', '2026-01', '2026-02', '2026-03',
-      '2026-04', '2026-05', '2026-06', '2026-07', '2026-08', '2026-09',
-    ])
-    for (const month of view.months) expect(month.cells).toHaveLength(31)
+    // Oct 1, 2025 was a Wednesday; its week starts Sep 29.
+    expect(view.weeks[0]!.start).toBe('2025-09-29')
+    expect(view.weeks.at(-1)!.start).toBe('2026-09-28')
+    expect(view.weeks).toHaveLength(53)
+    for (const week of view.weeks) expect(week.days).toHaveLength(7)
+    // The days before the window are blank, not rest.
+    expect(view.weeks[0]!.days.slice(0, 2).map((d) => d.state)).toEqual(['none', 'none'])
+    expect(view.weeks[0]!.days[2]).toMatchObject({ date: '2025-10-01', state: 'rest' })
   })
 
-  it('leaves out the days a month does not have: 28, 30 and 31-day months', () => {
+  it('names each month over the column it starts, the first for the window', () => {
     const view = consistencyMonths(YEAR, TODAY)
-    const month = (key: string) => view.months.find((m) => m.key === key)!
-    expect(month('2026-02').cells.filter(Boolean)).toHaveLength(28)
-    expect(month('2026-02').cells[28]).toBeNull()
-    expect(month('2026-04').cells.filter(Boolean)).toHaveLength(30)
-    expect(month('2025-12').cells.filter(Boolean)).toHaveLength(31)
+    const labelled = view.weeks.filter((w) => w.monthLabel).map((w) => w.monthLabel)
+    expect(labelled).toEqual(['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'])
   })
 
-  it('draws the current month partial: today ringed, the days after it still to come', () => {
+  it('outlines today and leaves the days after it to come', () => {
     const view = consistencyMonths(YEAR, TODAY)
-    const september = view.months[11]!
-    expect(september.cells[25]).toMatchObject({ date: TODAY, today: true, state: 'rest' })
-    expect(september.cells[26]!.state).toBe('future')
-    expect(september.cells[29]!.state).toBe('future')
-    expect(september.cells[30]).toBeNull()
+    const lastFull = view.weeks.at(-2)!
+    expect(lastFull.days[5]).toMatchObject({ date: TODAY, today: true, state: 'rest' })
+    expect(lastFull.days[6]!.state).toBe('future')
+    expect(view.weeks.at(-1)!.days.every((d) => d.state === 'future')).toBe(true)
   })
 
-  it('reads rest, run and long run, and counts active days per month', () => {
-    const view = consistencyMonths(YEAR, TODAY, 4)
-    const september = view.months[11]!
-    expect(september.cells[1]!.state).toBe('run')
-    expect(september.cells[1]!.activityId).toBe('a-2026-09-02')
-    expect(september.cells[19]!.state).toBe('long')
-    expect(september.cells[0]!.state).toBe('rest')
-    expect(september.activeDays).toBe(2)
+  it('reads each run day by its km, and counts active days per month', () => {
+    const view = consistencyMonths(YEAR, TODAY, { streakWeeks: 4, bestStreakWeeks: 11 })
+    const cell = (date: string) => view.weeks.flatMap((w) => w.days).find((d) => d.date === date)!
+    expect(cell('2026-09-02')).toMatchObject({ state: 'run', level: 1, activityId: 'a-2026-09-02' })
+    expect(cell('2026-02-10')).toMatchObject({ state: 'run', level: 2 })
+    expect(cell('2026-09-20')).toMatchObject({ state: 'run', level: 3 })
+    expect(view.months).toHaveLength(12)
+    expect(view.months.at(-1)).toMatchObject({ key: '2026-09', activeDays: 2, days: 26 })
     expect(view.activeDays).toBe(3)
-    expect(view.streakWeeks).toBe(4)
+    // Oct 1 to today.
+    expect(view.windowDays).toBe(361)
+    expect(view).toMatchObject({ streakWeeks: 4, bestStreakWeeks: 11 })
   })
 
-  it('marks January as the column that starts the year', () => {
-    const view = consistencyMonths(YEAR, TODAY)
-    expect(view.months.filter((m) => m.startsYear).map((m) => m.key)).toEqual(['2026-01'])
+  it('compares the share with the year before, over the part the history covers', () => {
+    const runs = ['2025-06-01', '2025-06-03', '2025-08-10', '2026-02-10', '2026-09-02', '2026-09-20']
+    const view = consistencyMonths(YEAR, TODAY, { runDates: runs })
+    // History from Jun 1 to Sep 30, 2025: 3 of 122 days, 2% against 1% now.
+    expect(view.prior).toMatchObject({ sharePct: 2, fullYear: false })
+    expect(view.prior!.deltaPts).toBe(Math.round((3 / 361 - 3 / 122) * 100))
+
+    const full = consistencyMonths(YEAR, TODAY, { runDates: ['2024-10-01', ...runs] })
+    expect(full.prior!.fullYear).toBe(true)
+
+    // Too short a history before the window says nothing.
+    expect(consistencyMonths(YEAR, TODAY, { runDates: ['2025-09-20', '2026-02-10'] }).prior).toBeNull()
   })
 })
 
 describe('ConsistencyMonths', () => {
-  it('states active days, share and streak, and names every level in words', () => {
-    render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY, 4)} />)
-    expect(screen.getByText(t.consistency.activeDays)).toBeInTheDocument()
-    expect(screen.getByText(t.consistency.share)).toBeInTheDocument()
-    expect(screen.getByText(t.consistency.streakValue(4))).toBeInTheDocument()
+  it('states active days, the share and the streak, and the ramp in words', () => {
+    render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY, { streakWeeks: 4, bestStreakWeeks: 11 })} />)
+    const stats = screen.getByTestId('consistency-stats')
+    expect(stats.textContent).toContain(t.consistency.activeDays)
+    expect(stats.textContent).toContain(t.consistency.ofDays(361))
+    expect(stats.textContent).toContain(t.consistency.share)
+    expect(stats.textContent).toContain(t.consistency.best(11))
     for (const label of Object.values(t.consistency.levels)) expect(screen.getByText(label)).toBeInTheDocument()
-    expect(screen.getAllByTestId('consistency-month')).toHaveLength(12)
-    expect(screen.getByTestId('consistency-counts').textContent).toContain('2')
+    expect(screen.getAllByTestId('consistency-month').filter((m) => m.textContent)).toHaveLength(12)
+    expect(screen.getAllByTestId('month-bar')).toHaveLength(12)
+  })
+
+  // A month at or above the year's share is the full accent, one below it 40%.
+  it('draws the months that kept the year\'s share in the full accent', () => {
+    render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY)} />)
+    const bars = screen.getAllByTestId('month-bar')
+    expect(bars.at(-1)!.dataset.strong).toBe('true')
+    expect(bars[0]!.dataset.strong).toBe('false')
+    expect(bars.at(-1)!.style.background).toBe('var(--accent)')
+  })
+
+  it('colours the change in the share by what it means', () => {
+    const runs = ['2025-06-01', '2025-06-03', '2025-08-10', '2026-02-10', '2026-09-02', '2026-09-20']
+    render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY, { runDates: runs })} />)
+    const prior = screen.getByTestId('consistency-prior')
+    // Fewer days run than the year before is a caution.
+    expect(prior.textContent).toBe(t.consistency.vsRange('−2', 'Jun – Sep 2025'))
+    expect(prior.parentElement!.className).toContain('text-[var(--warn)]')
   })
 
   // C1: a run day opens its activity; a rest day says so.
@@ -83,6 +128,7 @@ describe('ConsistencyMonths', () => {
     render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY)} />)
     const run = document.querySelector('a[href="/activities/a-2026-09-02"]')
     expect(run).not.toBeNull()
+    expect(run!.getAttribute('aria-label')).toContain('6.00 km')
 
     const rest = document.querySelectorAll<HTMLButtonElement>('button[data-state="rest"]')[0]!
     await userEvent.click(rest)

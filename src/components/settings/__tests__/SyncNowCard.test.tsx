@@ -152,7 +152,9 @@ describe('Sync now, on the Garmin card', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
 
     renderCard()
-    expect(screen.getByText(s.starting)).toBeInTheDocument()
+    // v4.17: the button says it is syncing; the device line says which step.
+    expect(screen.getByText(s.running)).toBeInTheDocument()
+    expect(screen.getByTestId('sync-line').textContent).toBe(s.fetching)
 
     await settle()
     expect(fetchMock).toHaveBeenCalledTimes(1)

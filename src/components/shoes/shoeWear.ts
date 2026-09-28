@@ -1,4 +1,5 @@
 import { formatKm } from '@/lib/formatters'
+import { wearPercent, wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import type { ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
 
@@ -30,27 +31,34 @@ export function shoeWearCopy(shoe: { totalKm: number; maxKm: number }): {
   }
 }
 
-/** Where a pair is in its life, for the bar's colour (C4, v4.4b). */
-export type WearTone = 'ok' | 'near' | 'over'
+/**
+ * A pair's wear as its bar and tag draw it (v4.17), from the status its own
+ * page reads: the accent while it has life in it - its km are the athlete's
+ * own data - warn from Replace soon at 70%, neg from Replace at 90% and past
+ * the limit.
+ */
+export const WEAR_COLOR: Record<WearStatus, string> = {
+  ok: 'var(--accent)',
+  watch: 'var(--warn)',
+  replace: 'var(--neg)',
+}
 
-/** The share of the limit where the bar turns amber, and where its tick sits. */
-export const WEAR_NEAR_SHARE = 0.8
+/** A pair's wear status from its km, as its page and the Progress card read it. */
+export function shoeWearStatus(shoe: { totalKm: number; maxKm: number }): WearStatus {
+  return wearStatus(wearPercent({ ...shoe, retired: false }))
+}
 
-export function wearTone(shoe: { totalKm: number; maxKm: number }): WearTone {
-  if (!(shoe.maxKm > 0)) return 'ok'
-  const share = shoe.totalKm / shoe.maxKm
-  return share > 1 ? 'over' : share >= WEAR_NEAR_SHARE ? 'near' : 'ok'
+/** Past its limit: the overrun is the news (C4, v4.4b). */
+export function isPastLimit(shoe: { totalKm: number; maxKm: number }): boolean {
+  return shoeWearCopy(shoe).over
 }
 
 /**
- * Ink until the retire tick, amber past it (v5.5 #15): wear is data, so it
- * never takes the accent.
+ * Where the bar's tick sits when a pair has no threshold of its own: 80% of
+ * the limit, as the registry sets `alertThresholdKm` - past it, a pair is
+ * kept for easy runs and retired from workouts.
  */
-export const WEAR_COLOR: Record<WearTone, string> = {
-  ok: 'var(--foreground)',
-  near: 'var(--tone-caution)',
-  over: 'var(--tone-caution)',
-}
+export const RETIRE_FROM_WORKOUTS_SHARE = 0.8
 
 /** A pair's role, from the session it is worn for most. */
 export function shoeRole(type: ActivityType | null): string | null {

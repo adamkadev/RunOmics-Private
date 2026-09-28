@@ -3,7 +3,6 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { YearView } from '@/components/goals/YearView'
 import type { GoalProjection, YearData } from '@/application/usecases/GetGoalsData'
-import { STATUS } from '@/lib/statusColors'
 import { t } from '@/i18n'
 
 const p = t.goals.projection
@@ -37,7 +36,8 @@ const BEHIND: GoalProjection = {
 }
 
 describe('YearView annual goal card', () => {
-  it('fills in ink regardless of projection status - the fill states progress, not a verdict (v5.5 #17)', () => {
+  // v4.17: the year's km are the athlete's own data - the accent, whatever the projection says.
+  it('fills in the accent regardless of projection status - the fill states progress, not a verdict', () => {
     const onTrack: GoalProjection = {
       weeklyRate: 30,
       weeklyNeeded: 30,
@@ -47,11 +47,10 @@ describe('YearView annual goal card', () => {
     }
     for (const projection of [BEHIND, onTrack]) {
       const { container } = render(<YearView yearData={yearData(projection)} today={TODAY} />)
-      const fill = container.querySelector<HTMLElement>('.rounded-full.transition-all')
-      // The year's km is data, so ink (the accent is for "now"); amber would
-      // fire in January on a healthy year, and the verdict lives only in the
-      // projection headline.
-      expect(fill!.style.background).toBe('var(--foreground)')
+      const fill = container.querySelector<HTMLElement>('[data-testid="goal-fill"]')
+      // Amber would fire in January on a healthy year; the verdict lives only
+      // in the projection line.
+      expect(fill!.className).toContain('bg-accent')
     }
   })
 
@@ -60,6 +59,9 @@ describe('YearView annual goal card', () => {
     const marker = container.querySelector<HTMLElement>('[aria-label*="1,705"]')
     expect(marker).not.toBeNull()
     expect(marker!.style.left).toBe('85.25%')
+    // Falling short is a caution: the marker and its label are warn.
+    expect(marker!.style.background).toBe('var(--warn)')
+    expect(screen.getByText(p.projectedMark('1,705')).getAttribute('style')).toContain('var(--warn)')
     // C3: no "proj." label under it; the sentence below names the projection.
     expect(screen.queryByText(p.projectedTick)).toBeNull()
   })
@@ -67,18 +69,18 @@ describe('YearView annual goal card', () => {
   it('names the projection as the headline under the bar, in the shortfall tone', () => {
     const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
 
-    // C3: only the short verdict is in the tone; the need follows muted.
+    // C3: only the short verdict is in the tone; the need follows in text-2.
     const headline = screen.getByTestId('projection-verdict')
-    expect(headline.textContent).toBe(`${p.projected('1,705')} · ${p.shortBy('295')}.`)
-    expect(headline.className).toContain(STATUS.warning.text)
-    expect(screen.getByTestId('projection-line').textContent).toContain(p.needsWeeklyDetail('29', '25'))
+    expect(headline.textContent).toBe(p.shortAtPace('295'))
+    expect(headline.getAttribute('style')).toContain('var(--warn)')
+    expect(screen.getByTestId('projection-line').textContent).toContain(p.needs('29', '25'))
     // No small top-right chip repeating the same verdict a second time.
     expect(container.textContent).not.toContain(p.status.behind)
   })
 
   it('states what the goal still needs per week, muted beneath the projection', () => {
     const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
-    expect(container.textContent).toContain(p.needsWeeklyDetail('29', '25'))
+    expect(container.textContent).toContain(p.needs('29', '25'))
   })
 
   it('groups thousands the same way everywhere in the card', () => {
@@ -105,16 +107,17 @@ describe('YearView annual goal card', () => {
     const { container } = render(<YearView yearData={yearData(surplus)} today={TODAY} />)
     // 2030 against a 2000 goal is a surplus; reading the sign off `status`
     // (which is merely 'on_track' here) would have called this "short" instead.
-    expect(container.textContent).toContain(p.overBy('30'))
-    expect(container.textContent).not.toContain(p.shortBy('30'))
+    expect(container.textContent).toContain(p.overAtPace('30'))
+    expect(container.textContent).not.toContain(p.shortAtPace('30'))
+    expect(screen.getByTestId('projection-verdict').getAttribute('style')).toContain('var(--pos)')
   })
 
-  // R7d: a reached goal says so, with the surplus.
-  it('marks a reached goal with a chip and names the year it is for', () => {
+  // R7d: a reached goal says so, with the surplus, in a pos pill (v4.17).
+  it('marks a reached goal with a pill', () => {
     const data = yearData(BEHIND)
     const { container } = render(<YearView yearData={{ ...data, totalDistanceKm: 2047 }} today={TODAY} />)
-    expect(container.textContent).toContain(t.goals.reached('47'))
-    expect(container.textContent).toContain(t.goals.volumeGoal(data.year))
+    expect(screen.getByText(t.goals.reached('47')).dataset.tone).toBe('pos')
+    expect(container.textContent).toContain(t.goals.distanceGoal)
   })
 })
 

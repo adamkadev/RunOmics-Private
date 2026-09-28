@@ -1,4 +1,4 @@
-import { HUE, ink, paper, white, withAlpha } from '@/lib/palette'
+import { HUE, ink, paper, white } from '@/lib/palette'
 import { isActivityType, type ActivityType } from '@/domain/activity/types'
 import type { TrainingStatusType } from '@/domain/training/status'
 
@@ -163,18 +163,6 @@ export const READINESS_TONE_COLORS = {
 } as const
 
 
-// A month's volume is data (v5.5 #17): a month that hit its target is ink, a
-// short one amber, the month still running keeps its outline. Never the
-// accent, and no green or blue fills that read as zone colours.
-const INK = 'var(--foreground)'
-const AMB = 'var(--tone-caution)'
-export const GOAL_PACE_COLORS = {
-  ahead:   { bg: `color-mix(in srgb, ${INK} 6%, transparent)`, border: `color-mix(in srgb, ${INK} 25%, transparent)`, bar: INK },
-  onTrack: { bg: `color-mix(in srgb, ${INK} 6%, transparent)`, border: `color-mix(in srgb, ${INK} 25%, transparent)`, bar: INK },
-  behind:  { bg: `color-mix(in srgb, ${AMB} 6%, transparent)`, border: `color-mix(in srgb, ${AMB} 25%, transparent)`, bar: AMB },
-  pending: { bg: '',                            border: '',                           bar: 'var(--track-on-dark)' },
-} as const
-
 /**
  * The shoe dots are pair identity, not state: they say which column of the
  * comparison table a number belongs to, and which pair ran an activity. The old
@@ -192,17 +180,6 @@ export const SHOE_DOT_RAMP = [
   'var(--subtle)',
   'var(--subtle-2)',
 ] as const
-
-export const SHOE_WEAR_TINTS = {
-  watch: {
-    background: `linear-gradient(150deg, ${withAlpha(c.amber500, 0.16)}, ${withAlpha(c.amber500, 0.02)})`,
-    borderColor: withAlpha(c.amber500, 0.35),
-  },
-  replace: {
-    background: `linear-gradient(150deg, ${withAlpha(c.red500, 0.16)}, ${withAlpha(c.red500, 0.02)})`,
-    borderColor: withAlpha(c.red500, 0.35),
-  },
-} as const
 
 /**
  * A planned session's segments, as tokens (v4.17): warm-up and cool-down one
