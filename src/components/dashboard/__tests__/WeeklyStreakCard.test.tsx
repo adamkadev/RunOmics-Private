@@ -39,7 +39,7 @@ describe('WeeklyStreakCard', () => {
       { date: '2026-09-22', ranKm: 0, runs: 0, plannedKm: 10, plannedSessions: 1, type: 'Threshold', state: 'planned' },
       { date: '2026-09-23', ranKm: 0, runs: 0, plannedKm: null, plannedSessions: 0, state: 'rest' },
     ]
-    render(<WeeklyStreakCard data={DATA} target={target({ days })} today="2026-09-22" sessionKinds={{ '2026-09-21': 'Easy', '2026-09-22': 'Threshold' }} />)
+    render(<WeeklyStreakCard data={DATA} target={target({ days })} today="2026-09-22" sessionKinds={{ '2026-09-21': t.dashboard.weeklyStreak.kinds.easy, '2026-09-22': t.dashboard.weeklyStreak.kinds.threshold }} />)
 
     const strip = screen.getByTestId('week-strip')
     const bars = strip.querySelectorAll<HTMLElement>('[data-state]')
@@ -51,6 +51,14 @@ describe('WeeklyStreakCard', () => {
     expect(strip.textContent).toContain(`10 ${t.units.km}`)
     expect(strip.textContent).toContain('Easy')
     expect(strip.textContent).toContain(t.sessionState.rest)
+    // v4.17.3: the short word under 480 pt, the full name above it, never an ellipsis.
+    const tue = screen.getAllByTestId('week-strip-kind')[1]!
+    const [short, long] = [...tue.children] as HTMLElement[]
+    expect(short!.textContent).toBe(t.dashboard.weeklyStreak.kinds.threshold.shortLabel)
+    expect(short!.className).toContain('min-[480px]:hidden')
+    expect(long!.textContent).toBe(t.dashboard.weeklyStreak.kinds.threshold.label)
+    expect(long!.className).toContain('hidden min-[480px]:inline')
+    expect(tue.className).not.toMatch(/truncate|ellipsis|nowrap/)
   })
 
   it('falls back to the goal share when nothing is planned', () => {

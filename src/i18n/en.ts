@@ -559,18 +559,21 @@ export const en = {
       weeksInARow: (weeks: number) => `${weeks} week streak`,
       ofKm: (target: string) => `of ${target} km`,
       runsOf: (done: number, planned: number) => `${done} of ${planned} run${planned !== 1 ? 's' : ''}`,
-      // The session under each day of the week strip, by the coach's type.
+      // The session under each day of the week strip, by the coach's type,
+      // and its short label for a phone under 480 pt, where "Threshold" and
+      // "Long run" were cut (v4.17.3).
       kinds: {
-        easy: 'Easy',
-        easyStrides: 'Easy + strides',
-        recovery: 'Recovery',
-        long_run: 'Long run',
-        tempo: 'Tempo',
-        threshold: 'Threshold',
-        vo2max: 'VO₂ max',
-        anaerobic: 'Anaerobic',
-        sprint: 'Sprint',
-        race: 'Race',
+        easy: { label: 'Easy', shortLabel: 'Easy' },
+        easyStrides: { label: 'Easy + strides', shortLabel: 'Easy' },
+        recovery: { label: 'Recovery', shortLabel: 'Easy' },
+        long_run: { label: 'Long run', shortLabel: 'Long' },
+        tempo: { label: 'Tempo', shortLabel: 'Tempo' },
+        threshold: { label: 'Threshold', shortLabel: 'Thr' },
+        vo2max: { label: 'VO₂ max', shortLabel: 'Int' },
+        anaerobic: { label: 'Anaerobic', shortLabel: 'Int' },
+        sprint: { label: 'Sprint', shortLabel: 'Int' },
+        race: { label: 'Race', shortLabel: 'Race' },
+        rest: { label: 'Rest', shortLabel: 'Rest' },
       },
     },
     celebration: {

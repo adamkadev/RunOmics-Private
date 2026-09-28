@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import type { FormBand } from '@/domain/training/formBand'
 import { formatDate, MINUS } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { deltaTone } from '@/lib/deltaTone'
 import { TRAINING_STATUS_COLORS } from '@/lib/colors'
 import { Stat, StatGrid, type StatTone } from '@/components/ui/Stat'
@@ -18,13 +19,21 @@ import { formView, riskRows, statusView, type DayWindow, type LoadDay, type Load
 /** Garmin's statuses as cells, in the one status map (lib/colors). */
 const STATUS_COLOR = TRAINING_STATUS_COLORS
 
-/** Form's bars (v4.17): Fresh pos, Neutral line-2, Tired warn. */
+/**
+ * Form's bars and their legend (v4.17): Fresh pos, Neutral line-2, Tired
+ * warn, at the Training status cells' strength (v4.17.3) - the full #7bd64a
+ * Fresh bars were the loudest thing on the tab. 60% in dark, 70% in light,
+ * set on the card as --form-fill; the zero line and the labels keep full
+ * contrast.
+ */
+const formFill = (band: string) => `color-mix(in srgb, var(--form-band-fill-${band}) var(--form-fill), transparent)`
 export const FORM_FILL: Record<FormBand, string> = {
-  veryFresh: 'var(--form-band-fill-fresh)',
-  fresh: 'var(--form-band-fill-fresh)',
-  neutral: 'var(--form-band-fill-neutral)',
-  tired: 'var(--form-band-fill-tired)',
+  veryFresh: formFill('fresh'),
+  fresh: formFill('fresh'),
+  neutral: formFill('neutral'),
+  tired: formFill('tired'),
 }
+export const FORM_FILL_STRENGTH = '[--form-fill:70%] dark:[--form-fill:60%]'
 
 /**
  * What Form's band means: tired is caution, fresh good news, and very fresh
@@ -52,7 +61,7 @@ function FormCard({ load, window, period, onShift }: { load: LoadDay[]; window: 
   // than 10: a window of near-zero days stays near the line.
   const scale = Math.max(10, ...bars.map((b) => Math.abs(b.form)))
   return (
-    <Card className="gap-3.5" testId="form-card">
+    <Card className={cn('gap-3.5', FORM_FILL_STRENGTH)} testId="form-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
       <StatGrid columns={3} className="gap-3 sm:gap-4">
         <Stat size="lg" label={s.title} value={signed(view.form)} meaning={`${t.formBand[view.band]} · ${s.range[view.band]}`} tone={FORM_TONE[view.band]} />

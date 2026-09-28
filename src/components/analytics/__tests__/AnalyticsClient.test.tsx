@@ -264,7 +264,10 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('fitness-delta').parentElement!.className).toContain('--pos')
     const bands = [...screen.getByTestId('form-strip').querySelectorAll<HTMLElement>('[data-band]')]
     expect(bands).toHaveLength(28)
-    for (const bar of bands) expect(bar.style.background).toMatch(/^var\(--form-band-fill-(fresh|neutral|tired)\)$/)
+    // v4.17.3: the band fills at the card's --form-fill strength, 60% dark / 70% light.
+    for (const bar of bands) expect(bar.style.background).toMatch(/^color-mix\(in srgb, var\(--form-band-fill-(fresh|neutral|tired)\) var\(--form-fill\), transparent\)$/)
+    expect(card.className).toContain('[--form-fill:70%]')
+    expect(card.className).toContain('dark:[--form-fill:60%]')
     expect(card.querySelector('path[stroke="var(--foreground)"]')).not.toBeNull()
     expect(card.querySelector('path[stroke="var(--muted-foreground)"]')!.getAttribute('stroke-dasharray')).toBe('4 4')
   })

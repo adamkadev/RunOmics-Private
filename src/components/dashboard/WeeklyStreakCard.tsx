@@ -8,7 +8,7 @@ import { formatRanKm } from '@/lib/formatters'
 import { cardClass } from '@/components/ui/Card'
 import { useToday } from '@/lib/useToday'
 import { cn } from '@/lib/utils'
-import { weekStripDays, type WeekStripDay } from './weekStrip'
+import { weekStripDays, type KindLabel, type WeekStripDay } from './weekStrip'
 import { t } from '@/i18n'
 
 interface Props {
@@ -17,8 +17,8 @@ interface Props {
   target: WeekTarget
   /** The date the page was prerendered on; see useToday. */
   today: string
-  /** Each planned day's session, by date ("Threshold"): see plannedSessionKinds. */
-  sessionKinds?: Record<string, string>
+  /** Each planned day's session, by date ("Threshold" / "Thr"): see plannedSessionKinds. */
+  sessionKinds?: Record<string, KindLabel>
 }
 
 /** The bar area's height; a day's bar is its share of the tallest. */
@@ -59,8 +59,11 @@ function WeekStrip({ days }: { days: WeekStripDay[] }) {
           <span aria-hidden="true" className={cn('text-xs', day.isToday ? 'font-semibold text-accent-text' : 'text-[var(--text-2)]')}>
             {day.weekday}
           </span>
-          <span aria-hidden="true" className="max-w-full truncate text-caption text-muted-foreground">
-            {day.kind}
+          {/* The session's short word under 480 pt (v4.17.3), its full name
+              above; never cut to "Thres…". */}
+          <span aria-hidden="true" className="text-center text-caption leading-tight text-muted-foreground text-pretty" data-testid="week-strip-kind">
+            <span className="min-[480px]:hidden">{day.kindShort}</span>
+            <span className="hidden min-[480px]:inline">{day.kind}</span>
           </span>
         </li>
       ))}

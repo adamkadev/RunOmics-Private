@@ -1,10 +1,11 @@
-import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import { isActivityType, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
 import type { CoachingWorkoutType, WorkoutBlock } from '@/domain/coaching/types'
 import type { WeekDayState, WeekTarget } from '@/domain/training/weekTarget'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { formatDate, formatRanKm } from '@/lib/formatters'
 import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { t } from '@/i18n'
+import { kindOfType } from './todayVerdict'
 
 interface CoachDay {
   state: string
@@ -27,9 +28,9 @@ export function plannedSessionKinds(
   dates: readonly string[],
   coach: readonly CoachDay[],
   garmin: readonly Pick<PlannedWorkout, 'date' | 'type'>[],
-): Record<string, string> {
+): Record<string, KindLabel> {
   const k = t.dashboard.weeklyStreak.kinds
-  const kinds: Record<string, string> = {}
+  const kinds: Record<string, KindLabel> = {}
   for (const date of dates) {
     const view = coach.find((v) => v.prescription.date === date && v.state !== 'cancelled')
     if (view) {
@@ -38,14 +39,22 @@ export function plannedSessionKinds(
       continue
     }
     const plan = garmin.find((p) => p.date === date)
-    if (plan?.type) kinds[date] = typeLabel(plan.type)
+    if (plan?.type) kinds[date] = typeKind(plan.type)
   }
   return kinds
 }
 
-function typeLabel(type: ActivityType | undefined): string {
+/** A day's session in words, long and short: "Threshold" and, under 480 pt, "Thr" (v4.17.3). */
+export interface KindLabel {
+  label: string
+  shortLabel: string
+}
+
+function typeKind(type: ActivityType | undefined): KindLabel {
+  if (!type) return { label: '', shortLabel: '' }
   // A type this build does not know yet has no label; name it as it came.
-  return type ? (t.activityTypes[type] ?? type) : ''
+  const label = t.activityTypes[type] ?? type
+  return { label, shortLabel: isActivityType(type) ? t.dashboard.weeklyStreak.kinds[kindOfType(type)].shortLabel : label }
 }
 
 export interface WeekStripDay {
@@ -64,6 +73,8 @@ export interface WeekStripDay {
   color: string
   /** What the day is: the planned session, what was run instead, or Rest. */
   kind: string
+  /** The same in a word, for a phone under 480 pt: "Thr", "Long", "Int". */
+  kindShort: string
   /** The day's accessible name. */
   label: string
 }
@@ -72,7 +83,7 @@ export interface WeekStripDay {
  * The seven days as Today's week strip draws them, from the same WeekTarget
  * the "0 of 51 km" beside it reads, so the bars and the total agree.
  */
-export function weekStripDays(days: WeekTarget['days'], today: string, kinds: Record<string, string>): WeekStripDay[] {
+export function weekStripDays(days: WeekTarget['days'], today: string, kinds: Record<string, KindLabel>): WeekStripDay[] {
   const kmOf = (day: WeekTarget['days'][number]) =>
     day.state === 'done' ? day.ranKm : day.state === 'rest' ? null : day.plannedKm
   const tallest = Math.max(0, ...days.map((day) => kmOf(day) ?? 0))
@@ -80,12 +91,13 @@ export function weekStripDays(days: WeekTarget['days'], today: string, kinds: Re
   return days.map((day, i) => {
     const km = kmOf(day)
     // A run day says what was run when it was not what was planned.
-    const kind =
+    const named =
       day.state === 'rest'
-        ? t.sessionState.rest
+        ? t.dashboard.weeklyStreak.kinds.rest
         : day.state === 'done' && (day.plannedType || !kinds[day.date])
-          ? typeLabel(day.type)
-          : (kinds[day.date] ?? typeLabel(day.type))
+          ? typeKind(day.type)
+          : (kinds[day.date] ?? typeKind(day.type))
+    const kind = named.label
     const kmText = km === null ? null : day.state === 'done' ? formatRanKm(km) : formatWeekKm(km)
     const isToday = day.date === today
     const state = [t.sessionState[day.state], isToday ? t.sessionState.today : null].filter(Boolean).join(' · ')
@@ -99,6 +111,7 @@ export function weekStripDays(days: WeekTarget['days'], today: string, kinds: Re
       share: km !== null && tallest > 0 ? km / tallest : null,
       color: zoneColor(sessionZone(day)),
       kind,
+      kindShort: named.shortLabel,
       label: [
         t.sessionState.dayLabel(formatDate(day.date, { style: 'full' }), state),
         day.state === 'rest' ? null : kind,
