@@ -1067,23 +1067,25 @@ export const en = {
   },
 
   activities: {
-    searchPlaceholder: 'Search...',
+    // What the search reads: a run's name and notes, its weekday and date.
+    searchPlaceholder: 'Search runs, notes, dates…',
     all: 'All',
     count: (n: number) => `${n} activit${n !== 1 ? 'ies' : 'y'}`,
     countWithDistance: (runs: number, km: string) => `${runs} run${runs === 1 ? '' : 's'} · ${km} km`,
+    since: (month: string) => `since ${month}`,
     empty: 'No activities found',
     emptyFiltered: 'No sessions of this type',
     resetFilters: 'Reset filters',
     endOfList: 'That\'s all',
     thisWeek: 'This week',
-    lastWeek: 'Last week',
     shoeFilter: { clear: 'Show runs in every shoe' },
     weekLine: {
-      ofKm: (target: string) => `/${target} km`,
+      ofKm: (target: string) => ` of ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 run' : `${n} runs`),
+      runsOf: (done: number, planned: number) => `${done} of ${planned} run${planned !== 1 ? 's' : ''}`,
       easy: (pct: number) => `${pct}% easy`,
     },
-    mapButton: 'Map',
+    mapButton: 'Map view',
     sort: {
       label: 'Sort',
       date: 'Date',

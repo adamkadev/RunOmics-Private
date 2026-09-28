@@ -1039,23 +1039,24 @@ export const fr = {
   },
 
   activities: {
-    searchPlaceholder: 'Rechercher...',
+    searchPlaceholder: 'Cherche une sortie, une note, une date…',
     all: 'Toutes',
     count: (n: number) => `${n} activité${n > 1 ? 's' : ''}`,
     countWithDistance: (runs: number, km: string) => `${runs} sortie${runs === 1 ? '' : 's'} · ${km} km`,
+    since: (month: string) => `depuis ${month}`,
     empty: 'Aucune activité trouvée',
     emptyFiltered: 'Aucune séance de ce type',
     resetFilters: 'Réinitialiser les filtres',
     endOfList: 'C’est tout',
     thisWeek: 'Cette semaine',
-    lastWeek: 'Semaine dernière',
     shoeFilter: { clear: 'Afficher les sorties de toutes les chaussures' },
     weekLine: {
-      ofKm: (target: string) => `/${target} km`,
+      ofKm: (target: string) => ` sur ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 sortie' : `${n} sorties`),
+      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} sur ${planned}`,
       easy: (pct: number) => `${pct} % facile`,
     },
-    mapButton: 'Carte',
+    mapButton: 'Vue carte',
     sort: {
       label: 'Trier',
       date: 'Date',

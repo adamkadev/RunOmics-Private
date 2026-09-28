@@ -2,22 +2,22 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { SearchX, ChevronDown, X } from 'lucide-react'
+import { Search, SearchX, ChevronDown, X } from 'lucide-react'
 import { ActivityThumbRow } from './ActivityThumbRow'
 import { ACTIVITY_TYPES, isActivityType, type ActivitySummary, type ActivityType } from '@/domain/activity/types'
-import { sessionZone, zoneColor } from '@/lib/colors'
+import { runTypeColor } from '@/lib/colors'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { weeklyTargetKm, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm } from '@/components/plan/weekPlanDays'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { Pill } from '@/components/ui/Pill'
+import { TypeDot } from '@/components/ui/TypeDot'
 import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyShare } from '@/domain/activity/easyShare'
 import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
-import { formatDateRange, formatKm, formatRanKm } from '@/lib/formatters'
-import { SectionDivider } from '@/components/ui/SectionLabel'
+import { formatDate, formatDateRange, formatKm, formatRanKm } from '@/lib/formatters'
 import { useUrlParam } from '@/lib/useUrlParam'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
@@ -55,77 +55,76 @@ interface WeekRow extends WeekGroup<ActivitySummary> {
 
 const KM_STRONG = 'font-semibold text-foreground'
 
-/** "27/48 km · 3 runs · 85% easy": the current week's header, one line (H08, M8). */
-function CurrentWeekLine({ group, ranKm, targetKm }: { group: WeekRow; ranKm: number; targetKm: number | null }) {
+/**
+ * "0 of 51 km · 0 of 5 runs": the current week against its plan, as Today
+ * says it (v4.17), then the easy share once there is a run to measure.
+ */
+function CurrentWeekLine({
+  group,
+  ranKm,
+  targetKm,
+  plan,
+}: {
+  group: WeekRow
+  ranKm: number
+  targetKm: number | null
+  plan: { done: number; sessions: number } | null
+}) {
   const w = t.activities.weekLine
   return (
-    <span className="shrink-0 text-footnote tabular-nums text-muted-foreground" data-testid="week-line">
+    <span className="text-footnote text-muted-foreground" data-testid="week-line">
       <span className={KM_STRONG}>{formatRanKm(ranKm)}</span>
       {targetKm !== null ? w.ofKm(formatWeekKm(targetKm)) : ` ${t.units.km}`}
       {' · '}
-      {w.runs(group.items.length)}
+      {plan && plan.sessions > 0 ? w.runsOf(plan.done, plan.sessions) : w.runs(group.items.length)}
       {group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
     </span>
   )
 }
 
-/**
- * "45 km · 5 runs · 89% easy" on the first collapsed week, which teaches the
- * short "45 km · 5 · 89%" every week under it (v5.5 #24).
- */
-function PastWeekLine({ group, long = false }: { group: WeekRow; long?: boolean }) {
+/** "50 km · 5 runs · 89% easy": every aggregate says what it counts (v4.17). */
+function PastWeekLine({ group }: { group: WeekRow }) {
   const w = t.activities.weekLine
   return (
-    <span className="shrink-0 text-footnote tabular-nums text-muted-foreground" data-testid="past-week-line">
-      <span className={KM_STRONG}>{Math.round(group.totalKm)}</span> {t.units.km} · {long ? w.runs(group.items.length) : group.items.length}
-      {group.easyPct !== null && ` · ${long ? w.easy(group.easyPct) : `${group.easyPct}%`}`}
+    <span className="shrink-0 text-footnote text-muted-foreground" data-testid="past-week-line">
+      <span className={KM_STRONG}>{Math.round(group.totalKm)}</span> {t.units.km} · {w.runs(group.items.length)}
+      {group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
     </span>
   )
 }
 
-/** Runs as flat rows in one card, each with its route (H09, M8). */
-function ThumbRows({ items, efforts }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]> }) {
+/** Runs as rounded rows inside their open week, each with its route (v4.17). */
+function InsetRows({ items, efforts }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]> }) {
   return (
-    <>
+    <div className="flex flex-col px-2 pb-2">
       {items.map((a) => (
         <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={efforts[a.id]} variant="inset" />
       ))}
-    </>
+    </div>
   )
 }
 
 const DOT_CAP = 8
 
+/** The week's runs as their type dots, in the order they were run. */
 function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label: string }) {
   const chronological = [...items].sort((a, b) => a.date.localeCompare(b.date))
   const shown = chronological.slice(0, DOT_CAP)
   const overflow = chronological.length - shown.length
 
   return (
-    <div className="mt-1.5 flex items-center" role="img" aria-label={label}>
-      <div className="flex items-center" style={{ gap: '4px' }} aria-hidden="true">
-        {shown.map((a) =>
-          a.type === 'Race' ? (
-            <span
-              key={a.id}
-              className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', border: `1.5px solid ${zoneColor(sessionZone({ type: 'Race' }))}` }}
-            />
-          ) : (
-            <span
-              key={a.id}
-              className="shrink-0 rounded-[4px]"
-              style={{ width: '7px', height: '7px', background: zoneColor(sessionZone(a)) }}
-            />
-          )
-        )}
-      </div>
+    <span className="flex items-center" role="img" aria-label={label}>
+      <span className="flex items-center gap-1" aria-hidden="true">
+        {shown.map((a) => (
+          <TypeDot key={a.id} type={a.type} />
+        ))}
+      </span>
       {overflow > 0 && (
-        <span aria-hidden="true" style={{ marginLeft: '3px', fontSize: '11.5px', color: 'var(--subtle-2)' }}>
+        <span aria-hidden="true" className="ml-1 text-[11px] leading-none text-subtle">
           +{overflow}
         </span>
       )}
-    </div>
+    </span>
   )
 }
 
@@ -134,7 +133,7 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
 function WeekTargetBar({ ranKm, targetKm }: { ranKm: number; targetKm: number }) {
   const pct = Math.min(100, Math.round((ranKm / targetKm) * 100))
   return (
-    <div className="mx-4 mb-2 h-1 overflow-hidden rounded-full" style={{ background: 'var(--track)' }} data-testid="week-target-bar">
+    <div className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]" data-testid="week-target-bar">
       <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
     </div>
   )
@@ -154,19 +153,48 @@ function weekShape(items: ActivitySummary[]): string {
 }
 
 function weekRows(groups: WeekGroup<ActivitySummary>[], currentWeekStart: string): WeekRow[] {
-  const lastWeekStart = isoDate(addDays(new Date(currentWeekStart + 'T00:00:00'), -7))
-
   return groups.map((group) => {
-    // No year in the row: it truncated to "Dec 29, 2025 – J…". The year is a
-    // section header above the weeks it covers (G22).
+    // Every past week is its date range (v4.17), "Sep 21 - 27", with no
+    // year: the month heading above it has one (G22).
     const range = formatDateRange(group.key, isoDate(addDays(new Date(group.key + 'T00:00:00'), 6)), { year: 'never' })
     return {
       ...group,
-      label: group.key === currentWeekStart ? t.activities.thisWeek : group.key === lastWeekStart ? t.activities.lastWeek : range,
+      label: group.key === currentWeekStart ? t.activities.thisWeek : range,
       easyPct: easyShare(group.items)?.easy ?? null,
       shape: weekShape(group.items),
     }
   })
+}
+
+type ListBlock =
+  | { kind: 'current'; week: WeekRow }
+  | { kind: 'month'; key: string; label: string; km: number; runs: number; weeks: WeekRow[] }
+
+/**
+ * The weeks under their months (v4.17): consecutive past weeks that start in
+ * the same month share a sticky heading, which totals the weeks under it -
+ * so "132 km · 15 runs" is the sum of the rows it heads. The current week is
+ * its own card, wherever the sort puts it.
+ */
+function listBlocks(weeks: WeekRow[]): ListBlock[] {
+  const blocks: ListBlock[] = []
+  for (const week of weeks) {
+    if (week.isCurrent) {
+      blocks.push({ kind: 'current', week })
+      continue
+    }
+    const key = week.key.slice(0, 7)
+    const open = blocks[blocks.length - 1]
+    if (open?.kind === 'month' && open.key === key) {
+      open.weeks.push(week)
+      open.km += week.totalKm
+      open.runs += week.items.length
+    } else {
+      const label = formatDate(`${key}-01`, { precision: 'month', year: 'always', style: 'full' })
+      blocks.push({ kind: 'month', key, label, km: week.totalKm, runs: week.items.length, weeks: [week] })
+    }
+  }
+  return blocks
 }
 
 const FILTERS_STORAGE_KEY = 'activities:filters'
@@ -276,6 +304,13 @@ export function ActivityListClient({
   // describing the archive rather than the current filter.
   const totalKm = useMemo(() => initialItems.reduce((sum, a) => sum + a.distanceKm, 0), [initialItems])
   const chipTypes = useMemo(() => chipOrder(initialItems), [initialItems])
+  // "since May 2025", only when the page handed over the whole archive: a
+  // first page's oldest run is not the first run.
+  const firstMonth = useMemo(() => {
+    if (initialItems.length === 0 || initialItems.length < totalCount) return null
+    const first = initialItems.reduce((min, a) => (a.date < min ? a.date : min), initialItems[0]!.date)
+    return formatDate(first, { precision: 'month', year: 'always' })
+  }, [initialItems, totalCount])
 
   const [debouncedSearch, setDebouncedSearch] = useState('')
   useEffect(() => {
@@ -353,8 +388,7 @@ export function ActivityListClient({
     const opensOnThisWeek = sortOrder === 'desc' && !itemsAreFiltered
     return weekRows(opensOnThisWeek ? withCurrentWeek(grouped, currentWeekStart) : grouped, currentWeekStart)
   }, [items, sortBy, sortOrder, itemsAreFiltered, currentWeekStart])
-  // The first collapsed week spells its stats out; the rest use the short form.
-  const firstPastWeek = groups?.find((g) => !g.isCurrent)?.key
+  const blocks = useMemo(() => (groups ? listBlocks(groups) : null), [groups])
   // Before this week's first run its card is empty, so the latest runs would
   // otherwise all sit behind collapsed rows. The newest week that has any
   // starts open instead - under its own label, not the current card's.
@@ -399,64 +433,76 @@ export function ActivityListClient({
     setSearch('')
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="px-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h1 className="font-display text-title1 font-bold leading-[1.1] tracking-tight text-foreground">
-              {t.pages.activities.title}
-            </h1>
-            <p className="mt-0.5 text-footnote font-medium text-muted-foreground">
-              {totalKm > 0 ? t.activities.countWithDistance(totalCount, formatKm(totalKm)) : t.activities.count(totalCount)}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-start gap-2 pt-1">
-            <Link
-              href="/map"
-              className="flex h-9 items-center justify-center rounded-control border border-foreground/[0.12] px-3 text-footnote text-foreground transition-colors hover:bg-foreground/[0.06]"
-            >
-              {t.activities.mapButton}
-            </Link>
-            <SortDropdown
-              options={SORT_OPTIONS}
-              sortBy={sortBy}
-              order={sortOrder}
-              onChange={(value, order) => {
-                setSortBy(value)
-                setSortOrder(order)
-              }}
-              label={t.activities.sort.label}
-            />
-          </div>
-        </div>
+  const archiveLine = [
+    totalKm > 0 ? t.activities.countWithDistance(totalCount, formatKm(totalKm)) : t.activities.count(totalCount),
+    firstMonth ? t.activities.since(firstMonth) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
-        <div className="relative mt-3">
-          <input
-            type="text"
-            placeholder={t.activities.searchPlaceholder}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-11 w-full rounded-[14px] bg-foreground/[0.05] px-3.5 text-subhead text-foreground placeholder-subtle-2 focus:outline-none"
+  const toggleWeek = (key: string) =>
+    setExpandedWeeks((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+
+  return (
+    <div className="flex flex-col gap-3.5">
+      {/* The page header (v4.17): the H1 and its line, the page's controls on
+          the title's row. They top-align: the sort menu opens in the flow,
+          and a bottom-aligned row would drag the title down with it. */}
+      <header className="mb-1.5 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-display text-foreground">{t.pages.activities.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{archiveLine}</p>
+        </div>
+        <div className="flex shrink-0 items-start gap-2 pt-0.5">
+          <Link
+            href="/map"
+            className="flex h-9 items-center justify-center rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-footnote text-foreground transition-colors hover:bg-[var(--surface-2)]"
+          >
+            {t.activities.mapButton}
+          </Link>
+          <SortDropdown
+            options={SORT_OPTIONS}
+            sortBy={sortBy}
+            order={sortOrder}
+            onChange={(value, order) => {
+              setSortBy(value)
+              setSortOrder(order)
+            }}
+            label={t.activities.sort.label}
           />
         </div>
-      </div>
+      </header>
+
+      <label className="flex h-[42px] items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 text-muted-foreground transition-colors focus-within:border-[var(--line-2)]">
+        <Search size={16} aria-hidden="true" className="shrink-0" />
+        <input
+          type="text"
+          placeholder={t.activities.searchPlaceholder}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-full min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+        />
+      </label>
 
       <div className="relative -mx-4 sm:mx-0">
         <div
           ref={chipRailRef}
           onScroll={updateChipFade}
-          className="flex gap-2 overflow-x-auto px-4 pb-1 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          // The chips' 44 pt hit areas reach 6 pt past them; the padding keeps
+          // them inside the scroller, so the rail never scrolls vertically.
+          className="-my-1.5 flex gap-2 overflow-x-auto px-4 py-1.5 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           style={{ scrollPaddingInline: '16px' }}
         >
-          <Pill
-            as="button"
-            variant={selectedType === null ? 'selected' : 'neutral'}
-            className={cn('h-9 py-0 text-footnote font-semibold', selectedType === null ? 'px-4' : 'px-2.5')}
-            onClick={() => setSelectedType(null)}
-          >
+          <Pill as="button" variant={selectedType === null ? 'selected' : 'neutral'} className="px-3" onClick={() => setSelectedType(null)}>
             {t.activities.all}
           </Pill>
+          {/* Each type chip carries its category's dot (v4.17); a race is the
+              zone of its effort as a ring, never filled. */}
           {chipTypes.map((type) => {
             const active = selectedType === type
             return (
@@ -464,9 +510,11 @@ export function ActivityListClient({
                 key={type}
                 as="button"
                 variant={active ? 'selected' : 'neutral'}
-                className={cn('h-9 py-0 text-footnote font-semibold', active ? 'px-4' : 'px-2.5')}
+                className="px-3"
+                dotColor={type === 'Race' ? undefined : runTypeColor(type)}
                 onClick={() => setSelectedType(active ? null : type)}
               >
+                {type === 'Race' && <TypeDot type={type} />}
                 {t.activityTypes[type] ?? type}
               </Pill>
             )
@@ -475,15 +523,15 @@ export function ActivityListClient({
         {chipFade && (
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 w-[30px]"
-            style={{ height: '36px', background: 'linear-gradient(90deg, transparent, var(--background) 85%)' }}
+            className="pointer-events-none absolute right-0 top-0 h-8 w-[30px]"
+            style={{ background: 'linear-gradient(90deg, transparent, var(--background) 85%)' }}
           />
         )}
       </div>
 
       {gearId && (
-        <div className="px-1">
-          <Pill as="button" variant="selected" className="h-9 gap-1.5 py-0 text-footnote font-semibold" onClick={() => setGearId(null)} aria-label={t.activities.shoeFilter.clear}>
+        <div>
+          <Pill as="button" variant="selected" className="gap-1.5" onClick={() => setGearId(null)} aria-label={t.activities.shoeFilter.clear}>
             {shoeNames[gearId] ?? gearId}
             <X size={14} aria-hidden="true" />
           </Pill>
@@ -495,9 +543,9 @@ export function ActivityListClient({
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
         </div>
       ) : items.length === 0 ? (
-        <GlassSurface variant="card" className="rounded-2xl py-12 text-center">
+        <div className={cardClass({ padding: 'none', className: 'py-12 text-center' })}>
           <SearchX size={24} className="mx-auto text-subtle" />
-          <p className="mt-3 text-sm text-subtle">
+          <p className="mt-3 text-sm text-muted-foreground">
             {hasActiveFilter ? t.activities.emptyFiltered : t.activities.empty}
           </p>
           {hasActiveFilter && (
@@ -508,65 +556,75 @@ export function ActivityListClient({
               {t.activities.resetFilters}
             </button>
           )}
-        </GlassSurface>
-      ) : groups ? (
-        <div className="space-y-2">
-          {groups.map((g, i) => {
-            // A toggle flips a week from its default, so for the week that
-            // starts open, being in expandedWeeks means the reader closed it.
-            const isExpanded = g.isCurrent || expandedWeeks.has(g.key) !== (g.key === openByDefault)
-            const year = g.key.slice(0, 4)
-            const prevYear = i > 0 ? groups[i - 1]!.key.slice(0, 4) : today.slice(0, 4)
-            return (
-              <div key={g.key}>
-                {year !== prevYear && <SectionDivider as="h2" className="px-1 pb-2 pt-1">{year}</SectionDivider>}
-                {g.isCurrent ? (
-                  <GlassSurface variant="card" className="overflow-hidden rounded-[22px]" data-testid="current-week">
-                    <div className="flex items-baseline justify-between gap-3 px-4 pt-3.5 pb-2.5">
-                      <span className="truncate font-display text-base font-semibold text-foreground">{g.label}</span>
-                      <CurrentWeekLine group={g} ranKm={currentRanKm} targetKm={currentTargetKm} />
-                    </div>
-                    {currentTargetKm !== null && <WeekTargetBar ranKm={currentRanKm} targetKm={currentTargetKm} />}
-                    <ThumbRows items={g.items} efforts={qualifiedEffortsByActivityId} />
-                    {g.items.length > 0 && <div className="h-1" />}
-                  </GlassSurface>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedWeeks((prev) => {
-                          const next = new Set(prev)
-                          if (next.has(g.key)) next.delete(g.key)
-                          else next.add(g.key)
-                          return next
-                        })
-                      }
-                      aria-expanded={isExpanded}
-                      className="flex w-full items-center gap-3 border-b border-border px-4 py-3.5 text-left"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-display text-base font-semibold text-foreground">{g.label}</div>
-                        <WeekCompositionDots items={g.items} label={g.shape} />
+        </div>
+      ) : blocks ? (
+        <div className="flex flex-col gap-3.5">
+          {blocks.map((block) =>
+            block.kind === 'current' ? (
+              <section key={block.week.key} className={cardClass({ padding: 'none', overflow: true })} data-testid="current-week">
+                <div className="flex flex-col gap-2.5 px-4 py-4 sm:px-5">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <h2 className="truncate text-[15px] font-semibold text-foreground">{block.week.label}</h2>
+                    <CurrentWeekLine
+                      group={block.week}
+                      ranKm={currentRanKm}
+                      targetKm={currentTargetKm}
+                      plan={weekTarget ? { done: weekTarget.plannedDone, sessions: weekTarget.planSessions } : null}
+                    />
+                  </div>
+                  {currentTargetKm !== null && <WeekTargetBar ranKm={currentRanKm} targetKm={currentTargetKm} />}
+                </div>
+                {block.week.items.length > 0 && <InsetRows items={block.week.items} efforts={qualifiedEffortsByActivityId} />}
+              </section>
+            ) : (
+              <section key={block.key} data-testid="month">
+                {/* Sticky under the compact title bar while it shows, under
+                    the status strip otherwise. */}
+                <div
+                  className="sticky z-10 flex items-baseline justify-between gap-3 bg-background px-1 pb-2 pt-3.5"
+                  style={{ top: 'var(--sticky-top, var(--safe-top))' }}
+                >
+                  <h2 className="text-footnote font-semibold capitalize tracking-[0.02em] text-foreground">{block.label}</h2>
+                  <span className="text-xs text-muted-foreground" data-testid="month-line">
+                    {formatKm(block.km)} {t.units.km} · {t.activities.weekLine.runs(block.runs)}
+                  </span>
+                </div>
+                <div className={cardClass({ padding: 'none', overflow: true, className: 'divide-y divide-border' })}>
+                  {block.weeks.map((g) => {
+                    // A toggle flips a week from its default, so for the week
+                    // that starts open, being in expandedWeeks means the
+                    // reader closed it.
+                    const isExpanded = expandedWeeks.has(g.key) !== (g.key === openByDefault)
+                    return (
+                      <div key={g.key}>
+                        <button
+                          type="button"
+                          onClick={() => toggleWeek(g.key)}
+                          aria-expanded={isExpanded}
+                          className="flex w-full items-center gap-4 px-4 py-3.5 text-left sm:px-5"
+                        >
+                          <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                            <span className="truncate text-sm font-semibold text-foreground">{g.label}</span>
+                            <WeekCompositionDots items={g.items} label={g.shape} />
+                          </span>
+                          <PastWeekLine group={g} />
+                          <ChevronDown size={14} aria-hidden="true" className={cn('shrink-0 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
+                        </button>
+                        {isExpanded && g.items.length > 0 && <InsetRows items={g.items} efforts={qualifiedEffortsByActivityId} />}
                       </div>
-                      <PastWeekLine group={g} long={g.key === firstPastWeek} />
-                      <ChevronDown size={14} aria-hidden="true" className={cn('shrink-0 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
-                    </button>
-                    {isExpanded && g.items.length > 0 && (
-                      <GlassSurface variant="card" className="mt-2 overflow-hidden rounded-[22px] py-0.5">
-                        <ThumbRows items={g.items} efforts={qualifiedEffortsByActivityId} />
-                      </GlassSurface>
-                    )}
-                  </>
-                )}
-              </div>
-            )
-          })}
+                    )
+                  })}
+                </div>
+              </section>
+            ),
+          )}
         </div>
       ) : (
-        <GlassSurface variant="card" className="overflow-hidden rounded-[22px] py-0.5">
-          <ThumbRows items={items} efforts={qualifiedEffortsByActivityId} />
-        </GlassSurface>
+        <div className={cardClass({ padding: 'none', overflow: true, className: 'divide-y divide-border' })}>
+          {items.map((a) => (
+            <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
+          ))}
+        </div>
       )}
 
       {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-1" />}
