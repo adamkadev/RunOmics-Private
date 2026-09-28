@@ -1,13 +1,14 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-export type LegendSwatch = 'square' | 'dot' | 'line' | 'dash' | 'ring' | 'dashRing' | 'tint' | 'outline'
+export type LegendSwatch = 'square' | 'dot' | 'diamond' | 'line' | 'dash' | 'ring' | 'dashRing' | 'dashCircle' | 'tint' | 'outline'
 
 /**
  * A legend entry (v4.17): an 8 px swatch - a square for bars, a circle for
  * points, a 14 px line for series; a ring for an outline-only mark such as
  * a race; a tinted square for a soft fill (a missed day) and an outlined one
- * for an outline (today) - then a 12 px muted label.
+ * for an outline (today); a diamond and a dashed circle for marks drawn in
+ * those shapes (v4.17.2) - then a 12 px muted label.
  */
 export function LegendItem({ swatch, color, children }: { swatch: LegendSwatch; color: string; children: ReactNode }) {
   const style: CSSProperties =
@@ -19,6 +20,10 @@ export function LegendItem({ swatch, color, children }: { swatch: LegendSwatch; 
           ? { width: 8, height: 8, borderRadius: '50%', border: `1.5px solid ${color}` }
           : swatch === 'dashRing'
             ? { width: 8, height: 8, borderRadius: 2, border: `1.5px dashed ${color}` }
+            : swatch === 'dashCircle'
+              ? { width: 9, height: 9, borderRadius: '50%', border: `1.5px dashed ${color}` }
+            : swatch === 'diamond'
+              ? { width: 7, height: 7, margin: 1, transform: 'rotate(45deg)', background: color }
             : swatch === 'tint'
               ? { width: 8, height: 8, borderRadius: 2, border: `1px solid ${color}`, background: `color-mix(in srgb, ${color} 14%, transparent)` }
               : swatch === 'outline'

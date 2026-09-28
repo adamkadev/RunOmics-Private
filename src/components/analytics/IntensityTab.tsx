@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { formatDate, formatKm } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { zoneColor, type SessionZone } from '@/lib/colors'
 import { t } from '@/i18n'
 import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, THIS_WEEK_BORDER } from './AnalyticsKit'
@@ -121,11 +122,17 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
   )
 }
 
-/** Threshold sessions are Z4, intervals Z5; a planned one not run is a dashed ring. */
-const DOT_STYLE: Record<QualityDot, React.CSSProperties> = {
-  threshold: { background: 'var(--zone-4)' },
-  intervals: { background: 'var(--zone-5)' },
-  missed: { border: '1.5px dashed var(--muted-foreground)' },
+/**
+ * Threshold sessions a Z4 circle, intervals a Z5 diamond (v4.17.2) - two
+ * neighbouring zones as two dots of one size read alike - and a planned one
+ * not run a dashed ring. 12 px on a phone, 10 px from sm up; the diamond a
+ * square turned 45°, 9 px from sm up. Each sits in a box the diamond's
+ * diagonal fits, so a column of them never touches.
+ */
+const DOT_SHAPE: Record<QualityDot, { className: string; style: React.CSSProperties }> = {
+  threshold: { className: 'size-3 rounded-full sm:size-2.5', style: { background: 'var(--zone-4)' } },
+  intervals: { className: 'size-2.5 rotate-45 sm:size-[9px]', style: { background: 'var(--zone-5)' } },
+  missed: { className: 'box-border size-3 rounded-full sm:size-2.5', style: { border: '1.5px dashed var(--muted-foreground)' } },
 }
 
 /** Under this share of what the plan asks, the average is a caution. */
@@ -150,9 +157,11 @@ function QualityCard({ rows, plan }: { rows: WeekRow[]; plan: PlanWeekInput[] })
       >
         <div className="grid" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="quality-dots">
           {view.weeks.map((dots, i) => (
-            <div key={rows[i]!.week} className="flex h-14 flex-col-reverse items-center gap-1">
+            <div key={rows[i]!.week} className="flex h-16 flex-col-reverse items-center gap-0.5 sm:h-14">
               {dots.map((dot, j) => (
-                <span key={j} data-dot={dot} className="box-border block size-2.5 shrink-0 rounded-full" style={DOT_STYLE[dot]} />
+                <span key={j} className="flex size-3.5 shrink-0 items-center justify-center sm:size-[13px]">
+                  <span data-dot={dot} className={cn('block shrink-0', DOT_SHAPE[dot].className)} style={DOT_SHAPE[dot].style} />
+                </span>
               ))}
             </div>
           ))}
@@ -160,8 +169,8 @@ function QualityCard({ rows, plan }: { rows: WeekRow[]; plan: PlanWeekInput[] })
       </ChartScrub>
       <Legend className="gap-x-4">
         <LegendItem swatch="dot" color="var(--zone-4)">{s.threshold}</LegendItem>
-        <LegendItem swatch="dot" color="var(--zone-5)">{s.intervals}</LegendItem>
-        {view.weeks.some((w) => w.includes('missed')) && <LegendItem swatch="dashRing" color="var(--muted-foreground)">{s.missed}</LegendItem>}
+        <LegendItem swatch="diamond" color="var(--zone-5)">{s.intervals}</LegendItem>
+        {view.weeks.some((w) => w.includes('missed')) && <LegendItem swatch="dashCircle" color="var(--muted-foreground)">{s.missed}</LegendItem>}
       </Legend>
     </Card>
   )

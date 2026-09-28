@@ -111,6 +111,11 @@ function FormCard({ load, window, period, onShift }: { load: LoadDay[]; window: 
   )
 }
 
+/** A status cell's fill at 60% (v4.17.2): the strip, and its legend, lighter than today's cell. */
+export function statusTint(status: keyof typeof STATUS_COLOR): string {
+  return `color-mix(in srgb, ${STATUS_COLOR[status]} 60%, transparent)`
+}
+
 /** The status card's span, as its caption names it. */
 const STATUS_SPAN: Record<LoadPeriod, 'days28' | 'weeks12' | 'months12'> = { '4w': 'days28', '12w': 'weeks12', '1y': 'months12' }
 
@@ -129,27 +134,32 @@ function StatusCard({ days, window, period, onShift }: { days: StatusDay[]; wind
       </Sentence>
       <ChartScrub count={cells.length} onShift={onShift} readout={(i) => `${bare(cells[i]!.date)} · ${cells[i]!.status ? names[cells[i]!.status!] : '–'}`}>
         <div className="grid h-[22px] gap-[3px]" style={{ gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))` }} data-testid="training-status-strip">
-          {cells.map((cell, i) => (
-            <div
-              key={cell.date}
-              className="rounded-[4px]"
-              style={{
-                background: cell.status ? STATUS_COLOR[cell.status] : 'var(--track)',
-                // Today, outlined in text ink (v4.17).
-                outline: window.live && i === cells.length - 1 ? '2px solid var(--foreground)' : undefined,
-                outlineOffset: 1,
-              }}
-            />
-          ))}
+          {cells.map((cell, i) => {
+            const today = window.live && i === cells.length - 1
+            return (
+              <div
+                key={cell.date}
+                className="rounded-[4px]"
+                data-today={today || undefined}
+                style={{
+                  // The strip at 60% so the card reads lighter (v4.17.2);
+                  // today alone at full strength, outlined in text ink.
+                  background: cell.status ? (today ? STATUS_COLOR[cell.status] : statusTint(cell.status)) : 'var(--track)',
+                  outline: today ? '2px solid var(--foreground)' : undefined,
+                  outlineOffset: 1,
+                }}
+              />
+            )
+          })}
         </div>
       </ChartScrub>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground sm:grid-cols-4 sm:gap-x-3">
+      {/* Each count right after its name (v4.17.2), the items 20 px apart:
+          spread across the card, a count read as the next item's. */}
+      <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground" data-testid="status-legend">
         {view.totals.map(({ status, days: n }) => (
-          <span key={status} className="flex min-w-0 items-center justify-between gap-2">
-            <LegendItem swatch="square" color={STATUS_COLOR[status]}>
-              <span className="truncate">{names[status]}</span>
-            </LegendItem>
-            <b className="shrink-0 font-semibold text-foreground">{s.days(n)}</b>
+          <span key={status} className="flex items-center gap-1.5" data-testid="status-legend-item">
+            <LegendItem swatch="square" color={statusTint(status)}>{names[status]}</LegendItem>
+            <b className="font-semibold text-foreground">{s.days(n)}</b>
           </span>
         ))}
       </div>

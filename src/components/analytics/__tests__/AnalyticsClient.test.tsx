@@ -234,11 +234,27 @@ describe('Analytics (v4.5)', () => {
     render(<AnalyticsClient data={{ ...data, status }} today={TODAY} />)
     await screen.findByTestId('form-card')
     const cells = [...screen.getByTestId('training-status-strip').children] as HTMLElement[]
+    // v4.17.2: today at full strength and outlined, the rest at 60%.
     expect(cells.at(-1)!.style.background).toBe('var(--pos)')
     expect(cells.at(-1)!.style.outline).toContain('solid var(--foreground)')
-    expect(cells.at(-2)!.style.background).toBe('var(--neg)')
-    expect(cells.at(-3)!.style.background).toBe('var(--zone-1)')
+    expect(cells.at(-2)!.style.background).toBe('color-mix(in srgb, var(--neg) 60%, transparent)')
+    expect(cells.at(-3)!.style.background).toBe('color-mix(in srgb, var(--zone-1) 60%, transparent)')
     expect(cells.at(-2)!.style.outline).toBe('')
+  })
+
+  // v4.17.2: each count right after its name, the items 20 px apart - not
+  // spread across the card, where a count read as the next item's.
+  it('puts each status count right after its name', async () => {
+    render(<AnalyticsClient data={data} today={TODAY} />)
+    await screen.findByTestId('form-card')
+    const legend = screen.getByTestId('status-legend')
+    expect(legend.className).toContain('flex')
+    expect(legend.className).toContain('gap-x-5')
+    expect(legend.className).not.toMatch(/justify-between|grid/)
+    for (const item of within(legend).getAllByTestId('status-legend-item')) {
+      expect(item.className).toContain('gap-1.5')
+      expect(item.className).not.toContain('justify-between')
+    }
   })
 
   it('draws Form as fitness, fatigue and bars in their band colours', async () => {
@@ -271,6 +287,26 @@ describe('Analytics (v4.5)', () => {
     expect(vo2!.getAttribute('data-tone')).toBe('warn')
     expect(vo2!.parentElement!.className).toContain('text-[var(--warn)]')
     expect(screen.getByTestId('performance-summary').innerHTML).not.toContain('var(--accent')
+  })
+
+  // v4.17.2: the sparkline column stops at 240 px from sm up; the slack sits
+  // before the time, and one subgrid keeps the times and deltas aligned.
+  it('caps the prediction sparklines at 240 px, times and deltas aligned', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.performance, 'predictions-card')
+    expect(screen.getByTestId('predictions-grid').className).toContain('sm:grid-cols-[90px_240px_minmax(0,1fr)_auto_auto]')
+    for (const row of screen.getByTestId('predictions-grid').children) expect(row.className).toContain('grid-cols-subgrid')
+  })
+
+  // v4.17.2: the chart fits its paces, with three of them up the left.
+  it('fits the pace trend to its paces and labels three of them', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.performance, 'pace-trend-card')
+    const labels = [...screen.getByTestId('pace-axis').children].map((el) => el.textContent)
+    expect(labels).toHaveLength(3)
+    for (const label of labels) expect(label).toMatch(/^\d{1,2}:\d\d$/)
+    expect(screen.getByTestId('pace-trend-card').querySelectorAll('[data-testid="pace-gridline"]')).toHaveLength(3)
+    expect(screen.getByTestId('pace-trend-card').textContent).toContain('higher is faster')
   })
 
   it('draws the prediction sparklines faster up', async () => {
@@ -612,5 +648,33 @@ describe('Load trend and Recovery (v5.4)', () => {
     const vars = new Set([...source.matchAll(/var\(--([a-z-]+)\)/g)].map((m) => m[1]))
     expect([...vars].sort()).toEqual(['foreground', 'muted-foreground', 'pos', 'warn'])
     expect(source).not.toMatch(/#[0-9a-f]{3,6}\b/i)
+  })
+})
+
+describe('the pace axis (v4.17.2)', () => {
+  it('pads the paces by 10 s/km and puts three round paces inside', async () => {
+    const { paceAxis, PACE_PAD } = await import('../PerformanceTab')
+    const axis = paceAxis([265, 290, 335])
+    expect(axis.lo).toBe(265 - PACE_PAD)
+    expect(axis.hi).toBe(335 + PACE_PAD)
+    expect(axis.ticks).toEqual([270, 300, 330])
+    for (const range of [[315, 320], [300, 345], [240, 400], [330, 331]]) {
+      const { lo, hi, ticks } = paceAxis(range)
+      for (const tick of ticks) {
+        expect(tick).toBeGreaterThanOrEqual(lo)
+        expect(tick).toBeLessThanOrEqual(hi)
+      }
+      expect(new Set(ticks).size).toBe(3)
+    }
+  })
+})
+
+describe('quality session marks (v4.17.2)', () => {
+  it('draws intervals as a diamond, in the legend too', async () => {
+    const { LegendItem } = await import('@/components/ui/Legend')
+    render(<LegendItem swatch="diamond" color="var(--zone-5)">Intervals</LegendItem>)
+    const swatch = screen.getByText('Intervals').firstElementChild as HTMLElement
+    expect(swatch.style.transform).toBe('rotate(45deg)')
+    expect(swatch.style.background).toBe('var(--zone-5)')
   })
 })

@@ -153,15 +153,20 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
     <Card className="gap-2" testId="predictions-card">
       <CardHead title={s.title} caption={s.caption(words)} about={s.about} />
       {(lead || goal) && <Sentence className="mb-1.5" testId="predictions-sentence">{[lead, goal].filter(Boolean).join(' ')}</Sentence>}
-      <div className="flex flex-col">
+      {/* One grid for every row, each row a subgrid, so the auto columns
+          size to the widest time and delta and stay aligned. From sm up the
+          sparkline is capped at 240 px (v4.17.2) and the slack sits between
+          it and the time, which it stretched across. */}
+      <div className="grid grid-cols-[64px_minmax(0,1fr)_72px_52px] gap-x-3 sm:grid-cols-[90px_240px_minmax(0,1fr)_auto_auto] sm:gap-x-3.5" data-testid="predictions-grid">
         {rows.map((row) => (
           <div
             key={row.distance}
-            className="grid grid-cols-[64px_minmax(0,1fr)_72px_52px] items-center gap-3 border-t border-border py-2.5 sm:grid-cols-[90px_minmax(0,1fr)_80px_60px] sm:gap-3.5"
+            className="col-span-4 grid grid-cols-subgrid items-center border-t border-border py-2.5 sm:col-span-5"
             data-testid={`prediction-${row.distance}`}
           >
             <span className="text-sm font-medium text-foreground">{names[row.distance]}</span>
             <Spark values={thin(row.series)} />
+            <span aria-hidden className="hidden sm:block" />
             <span className="text-right text-[15px] font-semibold leading-none text-foreground">{formatDuration(Math.round(row.seconds))}</span>
             {/* Slower is the caution; faster is good news, by the one delta rule. */}
             {/* One line, signed (v5.5 #21): "33 s / slower" wrapped, and the
@@ -187,7 +192,23 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
   )
 }
 
-const PACE_STEP = 40
+/** Seconds a km of air above and below the paces (v4.17.2): the chart fits its data. */
+export const PACE_PAD = 10
+const PACE_STEPS = [5, 10, 15, 20, 30, 60, 120]
+
+/**
+ * The pace chart's domain and its three y labels (v4.17.2): the paces with
+ * 10 s/km either side - the axis started on a 40 s step and spanned two
+ * minutes at least, so the lines sat in a band of empty chart - and three
+ * round paces inside it, the widest step that keeps all three in.
+ */
+export function paceAxis(paces: readonly number[]): { lo: number; hi: number; ticks: [number, number, number] } {
+  const lo = Math.min(...paces) - PACE_PAD
+  const hi = Math.max(...paces) + PACE_PAD
+  const step = [...PACE_STEPS].reverse().find((k) => k <= (hi - lo) / 3) ?? PACE_STEPS[0]!
+  const mid = Math.round((lo + hi) / 2 / step) * step
+  return { lo, hi, ticks: [mid - step, mid, mid + step] }
+}
 
 /** A pace sentence part with its figure in bold, coloured by what the change means. */
 function PacePart({ parts, delta }: { parts: readonly [string, string, string]; delta: number | null }) {
@@ -204,10 +225,11 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
   const s = t.analytics.cards.paceTrend
   const paces = [...weeks.map((w) => w.easyPace), ...weeks.map((w) => w.hardPace)].filter((v): v is number => v !== null)
   if (!easy || paces.length < 2) return null
-  const lo = Math.floor(Math.min(...paces) / PACE_STEP) * PACE_STEP
-  const hi = Math.max(lo + PACE_STEP * 3, Math.ceil(Math.max(...paces) / PACE_STEP) * PACE_STEP)
+  const { lo, hi, ticks } = paceAxis(paces)
   const W = 1000
   const H = 120
+  // Faster is up: a pace's height from the top is its share of the way to the slowest.
+  const yOf = (pace: number) => (H * (pace - lo)) / (hi - lo)
   // Faster is up: the axis runs from the slowest pace at the bottom.
   const path = (pick: (w: WeeklyTrendPoint) => number | null) => linePath(smooth(weeks.map(pick)).map((v) => (v === null ? null : -v)), -hi, -lo, W, H)
   const shift = easy.delta === null || Math.abs(easy.delta) < 1 ? null : easy.delta
@@ -222,25 +244,37 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
         <PacePart parts={easyParts} delta={shift} />
         {workoutParts && <PacePart parts={workoutParts} delta={wHeld ? null : wShift} />}
       </Sentence>
-      <ChartScrub
-        count={weeks.length}
-        mode="line"
-        onShift={onShift}
-        readout={(i) => {
-          const w = weeks[i]!
-          return [t.analytics.cards.scrubWeek(bare(w.date)), w.easyPace && `${s.easy} ${formatClock(w.easyPace)}`, w.hardPace && `${s.workout} ${formatClock(w.hardPace)}`].filter(Boolean).join(' · ')
-        }}
-      >
-        <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
-          {[1, 2, 3].map((k) => (
-            <line key={k} x1="0" x2={W} y1={(H * k) / 4} y2={(H * k) / 4} stroke="var(--divider)" vectorEffect="non-scaling-stroke" />
+      {/* Three paces up the left (v4.17.2), outside the scrub so a touch
+          still reads the week under it; higher is faster. */}
+      <div className="flex gap-2">
+        <div className="relative w-8 shrink-0 text-[11px] leading-none text-muted-foreground" style={{ height: H }} aria-hidden data-testid="pace-axis">
+          {ticks.map((pace) => (
+            <span key={pace} className="absolute right-0 -translate-y-1/2" style={{ top: `${(yOf(pace) / H) * 100}%` }}>
+              {formatClock(pace)}
+            </span>
           ))}
-          {/* Workouts Z4, easy runs Z2: the two run types' own zones. */}
-          <path d={path((w) => w.hardPace)} fill="none" stroke="var(--zone-4)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-          <path d={path((w) => w.easyPace)} fill="none" stroke="var(--zone-2)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-        </svg>
-      </ChartScrub>
-      <AxisLabels labels={timeLabels(weeks.map((w) => w.date))} />
+        </div>
+        <ChartScrub
+          className="min-w-0 flex-1"
+          count={weeks.length}
+          mode="line"
+          onShift={onShift}
+          readout={(i) => {
+            const w = weeks[i]!
+            return [t.analytics.cards.scrubWeek(bare(w.date)), w.easyPace && `${s.easy} ${formatClock(w.easyPace)}`, w.hardPace && `${s.workout} ${formatClock(w.hardPace)}`].filter(Boolean).join(' · ')
+          }}
+        >
+          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
+            {ticks.map((pace) => (
+              <line key={pace} x1="0" x2={W} y1={yOf(pace)} y2={yOf(pace)} stroke="var(--divider)" vectorEffect="non-scaling-stroke" data-testid="pace-gridline" />
+            ))}
+            {/* Workouts Z4, easy runs Z2: the two run types' own zones. */}
+            <path d={path((w) => w.hardPace)} fill="none" stroke="var(--zone-4)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            <path d={path((w) => w.easyPace)} fill="none" stroke="var(--zone-2)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          </svg>
+        </ChartScrub>
+      </div>
+      <AxisLabels className="ml-10" labels={timeLabels(weeks.map((w) => w.date))} />
       <Legend className="gap-x-4">
         <LegendItem swatch="dot" color="var(--zone-2)">
           {s.easy} <b className="font-semibold text-foreground">{formatClock(easy.now)}</b>
