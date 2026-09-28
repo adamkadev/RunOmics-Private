@@ -1,6 +1,4 @@
-import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
-import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getConsistencyData } from '@/application/usecases/GetConsistencyData'
 import { appTodayIso } from '@/lib/calendarDate'
 import { ConsistencyMonths } from '@/components/consistency/ConsistencyMonths'
 import { consistencyMonths } from '@/components/consistency/consistencyMonths'
@@ -13,12 +11,8 @@ export const revalidate = 3600
 // year as week columns, and its months (v4.17).
 export default function ConsistencyPage() {
   const today = appTodayIso()
-  const streak = getWeeklyStreakData(new Date(`${today}T12:00:00`))
-  const view = consistencyMonths(getHeatmapData(), today, {
-    streakWeeks: streak?.currentWeeks ?? 0,
-    bestStreakWeeks: streak?.longestWeeks ?? null,
-    runDates: getAllActivities().map((a) => a.date),
-  })
+  const { days, ...options } = getConsistencyData(today)
+  const view = consistencyMonths(days, today, options)
   const p = t.pages.consistency
   return (
     <div className="flex flex-col gap-3.5">

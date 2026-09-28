@@ -12,6 +12,8 @@ import { t } from '@/i18n'
 const CARD_TITLE = 'text-[15px] font-semibold text-foreground'
 /** The day names down the left, every other row (v4.17). */
 const DAY_LABEL_ROWS = [0, 2, 4, 6]
+/** The day labels stay put while the weeks scroll under them, the gap covered too. */
+const STICKY = 'sticky left-0 z-10 bg-card shadow-[4px_0_0_var(--card)]'
 /** Under a share-point change this small, the year before says nothing new. */
 const FLAT_PTS = 2
 
@@ -54,7 +56,7 @@ function YearCalendar({ view, onRest }: { view: ConsistencyView; onRest: (date: 
     <div ref={scroller} className="-mx-1 overflow-x-auto px-1 pb-1" data-testid="consistency-calendar">
       <div className="min-w-[700px]">
         <div className="mb-[3px] grid gap-x-[3px] text-[10px] text-muted-foreground" style={columns(view.weeks.length)} aria-hidden>
-          <span className="sticky left-0 z-10 bg-card" />
+          <span className={STICKY} />
           {view.weeks.map((week) => (
             <span key={week.start} data-testid="consistency-month" className="h-3.5 overflow-visible whitespace-nowrap leading-[14px]">
               {week.monthLabel ?? ''}
@@ -63,7 +65,7 @@ function YearCalendar({ view, onRest }: { view: ConsistencyView; onRest: (date: 
         </div>
         <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={columns(view.weeks.length)}>
           {Array.from({ length: 7 }, (_, row) => (
-            <span key={`label-${row}`} aria-hidden className="sticky left-0 z-10 flex items-center bg-card text-[10px] leading-none text-muted-foreground">
+            <span key={`label-${row}`} aria-hidden className={cn(STICKY, 'flex items-center text-[10px] leading-none text-muted-foreground')}>
               {DAY_LABEL_ROWS.includes(row) ? dayLabel(row) : ''}
             </span>
           ))}
@@ -106,7 +108,7 @@ function MonthBars({ months, sharePct }: { months: ConsistencyMonth[]; sharePct:
       </div>
       <div className="grid grid-cols-12 gap-1.5 text-center text-[11px] text-muted-foreground sm:gap-2" aria-hidden>
         {months.map((month) => (
-          <span key={month.key} className="truncate">{month.label}</span>
+          <span key={month.key} className="whitespace-nowrap">{month.label}</span>
         ))}
       </div>
     </section>
