@@ -18,17 +18,15 @@ export type TokenBlock = {
 const c = HUE
 
 /**
- * Z1 to Z5 per mode, the values behind `--zone-1..5`: one intensity scale
- * that also colours every session type (lib/colors RUN_TYPE_ZONE) - Base
- * blue, Tempo green, Threshold orange, the Z5 types red. The session-type
- * colours are the athlete's own and v4.17 keeps them as they were; status is
- * --pos, --warn and --neg. The share card paints on a canvas and cannot read
- * a token, so it takes the same table.
+ * Z1 to Z5 per mode, the values behind `--zone-1..5` (v4.17): one intensity
+ * scale - recovery slate, easy blue, aerobic violet, threshold magenta, max
+ * pink - that also colours every session type (lib/colors TYPE_ZONE). It is
+ * a category scale only: status is --pos, --warn and --neg. The share card
+ * paints on a canvas and cannot read a token, so it takes the same table.
  */
 export const ZONE_HEX = {
-  // Every zone clears 3:1 on white; Z1, Z4 and Z5 are a step darker here.
-  light: [c.roZone1Light, c.blue500, c.roEmeraldDeep, c.zone4Light, c.zone5Light],
-  dark: [c.roZone1, c.zone2Dark, c.roEmeraldHi, c.zone4Dark, c.zone5Dark],
+  light: ['#61788f', '#2f74e0', '#6650dd', '#ae3cc2', '#d63a77'],
+  dark: ['#8397ab', '#5b9cf5', '#8f7cf7', '#d06be0', '#f0689e'],
 } as const
 
 /**
@@ -247,8 +245,10 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     // weeks): line-2, and a quieter muted third.
     '--series-2': 'var(--line-2)',
     '--series-3': 'var(--muted-foreground)',
-    // Ink for text on a zone fill: over 7:1 on Z3 and Z4 in both themes.
-    '--zone-ink': c.roInk,
+    // Ink for text on a zone fill (v4.17), per theme: white on the deeper
+    // light-theme zones (4.4-5.6:1), the dark ink on the bright dark-theme
+    // ones (5.2-6.2:1).
+    '--zone-ink': mode === 'dark' ? c.roInk : '#ffffff',
     '--zone-1': ZONE_HEX[mode][0],
     '--zone-2': ZONE_HEX[mode][1],
     '--zone-3': ZONE_HEX[mode][2],

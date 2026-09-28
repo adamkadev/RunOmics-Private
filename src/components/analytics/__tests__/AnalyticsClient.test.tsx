@@ -218,7 +218,7 @@ describe('Analytics (v4.5)', () => {
     expect(card.textContent).toContain(t.analytics.cards.risk.loadRatioFormula(412, 365))
   })
 
-  // v4.17: past its alert limit a risk is bad news, neg - never the Z5 red a VO2max session is drawn in.
+  // v4.17: past its alert limit a risk is bad news, neg - never the Z5 pink.
   it('marks a risk past its alert limit in neg, and one just out of range in warn', async () => {
     render(<AnalyticsClient data={{ ...data, risk: { ...data.risk!, acwr: 1.6, monotony: 2.1 } }} today={TODAY} />)
     await screen.findByTestId('form-card')
