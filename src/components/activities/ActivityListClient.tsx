@@ -436,9 +436,7 @@ export function ActivityListClient({
   const archiveLine = [
     totalKm > 0 ? t.activities.countWithDistance(totalCount, formatKm(totalKm)) : t.activities.count(totalCount),
     firstMonth ? t.activities.since(firstMonth) : null,
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  ].filter((part): part is string => part !== null)
 
   const toggleWeek = (key: string) =>
     setExpandedWeeks((prev) => {
@@ -456,7 +454,19 @@ export function ActivityListClient({
       <header className="mb-1.5 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-display text-foreground">{t.pages.activities.title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{archiveLine}</p>
+          {/* Each part carries its " · " in front, pulled out by the row's
+              negative margin: beside the phone's controls "since May 2025"
+              wraps onto its own line, its dot clipped at the edge. */}
+          <p className="mt-1 overflow-hidden text-sm text-muted-foreground">
+            <span className="-ml-3.5 flex flex-wrap">
+              {archiveLine.map((part) => (
+                <span key={part} className="whitespace-nowrap">
+                  <span aria-hidden="true" className="inline-block w-3.5 text-center">·</span>
+                  {part}
+                </span>
+              ))}
+            </span>
+          </p>
         </div>
         <div className="flex shrink-0 items-start gap-2 pt-0.5">
           <Link
