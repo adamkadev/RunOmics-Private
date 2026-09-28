@@ -106,7 +106,7 @@ function MiniCalendar({ weeks }: { weeks: HeatCell[][] }) {
   return (
     <div className="grid gap-[3px]" style={{ gridTemplateColumns: `14px repeat(${weeks.length}, minmax(0, 1fr))` }} aria-hidden="true" data-testid="heatmap">
       {Array.from({ length: 7 }, (_, day) => [
-        <span key={`label-${day}`} className="flex items-center text-[9px] leading-none text-muted-foreground">
+        <span key={`label-${day}`} className="flex items-center text-caption leading-none text-muted-foreground">
           {/* 2024-01-01 was a Monday. */}
           {day % 2 === 0 ? narrow.format(new Date(Date.UTC(2024, 0, 1 + day))) : ''}
         </span>,
@@ -277,7 +277,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
                   {/* The newest record says so in the accent; "new" only while it is (v4.17). */}
                   <dd className="flex items-baseline gap-1.5 font-semibold text-foreground">
                     {r.latest && (
-                      <span data-testid="latest-record" aria-label={h.latestRecordLabel} className="text-[10px] font-bold text-accent-text">
+                      <span data-testid="latest-record" aria-label={h.latestRecordLabel} className="text-caption font-bold text-accent-text">
                         {r.recent ? h.newRecord : h.latestRecord}
                       </span>
                     )}

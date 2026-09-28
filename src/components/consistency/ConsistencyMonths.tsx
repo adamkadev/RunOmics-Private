@@ -17,9 +17,9 @@ const STICKY = 'sticky left-0 z-10 bg-card shadow-[4px_0_0_var(--card)]'
 /** Under a share-point change this small, the year before says nothing new. */
 const FLAT_PTS = 2
 
-/** The week columns, 20 pt of day labels then one column a week. */
+/** The week columns, 24 pt of day labels then one column a week. */
 function columns(weeks: number): CSSProperties {
-  return { gridTemplateColumns: `20px repeat(${weeks}, minmax(0, 1fr))` }
+  return { gridTemplateColumns: `24px repeat(${weeks}, minmax(0, 1fr))` }
 }
 
 function Day({ cell, onRest }: { cell: ConsistencyCell; onRest: (date: string) => void }) {
@@ -55,17 +55,17 @@ function YearCalendar({ view, onRest }: { view: ConsistencyView; onRest: (date: 
   return (
     <div ref={scroller} className="-mx-1 overflow-x-auto px-1 pb-1" data-testid="consistency-calendar">
       <div className="min-w-[700px]">
-        <div className="mb-[3px] grid gap-x-[3px] text-[10px] text-muted-foreground" style={columns(view.weeks.length)} aria-hidden>
+        <div className="mb-[3px] grid gap-x-[3px] text-caption text-muted-foreground" style={columns(view.weeks.length)} aria-hidden>
           <span className={STICKY} />
           {view.weeks.map((week) => (
-            <span key={week.start} data-testid="consistency-month" className="h-3.5 overflow-visible whitespace-nowrap leading-[14px]">
+            <span key={week.start} data-testid="consistency-month" className="h-4 overflow-visible whitespace-nowrap leading-4">
               {week.monthLabel ?? ''}
             </span>
           ))}
         </div>
         <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={columns(view.weeks.length)}>
           {Array.from({ length: 7 }, (_, row) => (
-            <span key={`label-${row}`} aria-hidden className={cn(STICKY, 'flex items-center text-[10px] leading-none text-muted-foreground')}>
+            <span key={`label-${row}`} aria-hidden className={cn(STICKY, 'flex items-center text-caption leading-none text-muted-foreground')}>
               {DAY_LABEL_ROWS.includes(row) ? dayLabel(row) : ''}
             </span>
           ))}
