@@ -44,7 +44,7 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
       <div className="grid grid-cols-3 gap-4">
         {parts.map((p) => (
           <span key={p.label} className="flex min-w-0 flex-col gap-0.5">
-            <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span aria-hidden className="size-[7px] shrink-0 rounded-[2px]" style={{ background: p.color }} />
               {p.label}
             </span>

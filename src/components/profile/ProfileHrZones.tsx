@@ -191,7 +191,8 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
               <div key={zone} className={`${ROW_GRID} border-t border-border py-2.5 text-[13px] sm:text-sm`} data-testid={`zone-row-${zone}`}>
                 <span className="flex min-w-0 items-center gap-2 text-foreground">
                   <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: `var(--zone-${zone})` }} />
-                  <span className="truncate">
+                  {/* Wraps on a narrow phone rather than "Z4 Thres…" (v4.17.2). */}
+                  <span className="min-w-0">
                     <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
                   </span>
                 </span>

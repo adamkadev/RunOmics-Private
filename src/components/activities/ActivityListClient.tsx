@@ -88,7 +88,8 @@ function CurrentWeekLine({
 function PastWeekLine({ group }: { group: WeekRow }) {
   const w = t.activities.weekLine
   return (
-    <span className="shrink-0 text-footnote text-muted-foreground" data-testid="past-week-line">
+    // The line gives way on a narrow phone, wrapping, so the week's dates never do (v4.17.2).
+    <span className="min-w-0 text-right text-footnote text-muted-foreground text-pretty" data-testid="past-week-line">
       <span className={KM_STRONG}>{Math.round(group.totalKm)}</span> {t.units.km} · {w.runs(group.items.length)}
       {group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
     </span>
@@ -618,8 +619,8 @@ export function ActivityListClient({
                           aria-expanded={isExpanded}
                           className="flex w-full items-center gap-4 px-4 py-3.5 text-left sm:px-5"
                         >
-                          <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-                            <span className="truncate text-sm font-semibold text-foreground">{g.label}</span>
+                          <span className="flex flex-1 flex-col gap-1.5">
+                            <span className="whitespace-nowrap text-sm font-semibold text-foreground">{g.label}</span>
                             <WeekCompositionDots items={g.items} label={g.shape} />
                           </span>
                           <PastWeekLine group={g} />

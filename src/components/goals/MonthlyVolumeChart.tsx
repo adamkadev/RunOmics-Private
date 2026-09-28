@@ -117,7 +117,8 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
               <span
                 key={mg.month}
                 className={cn(
-                  'flex-1 truncate text-center text-[11px]',
+                  // A month's three letters, centred on its bar and never cut to "MA…" (v4.17.2).
+                  'flex-1 whitespace-nowrap text-center text-[11px]',
                   current?.month === mg.month ? 'text-foreground' : 'text-muted-foreground',
                 )}
               >

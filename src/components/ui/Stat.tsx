@@ -44,9 +44,11 @@ export function Stat({
 }) {
   return (
     <div className={cn('flex min-w-0 flex-col gap-1', className)}>
-      <span className="truncate text-xs text-muted-foreground">{label}</span>
+      {/* Label, value and meaning all wrap on a narrow column, never cut
+          (v4.17.2): at 360 pt "12-week average" and "30 km/week" were. */}
+      <span className="text-xs text-muted-foreground text-pretty">{label}</span>
       <span
-        className={cn('truncate font-semibold leading-tight tracking-[-0.01em] text-foreground', size === 'lg' ? 'text-[26px]' : 'text-[22px]')}
+        className={cn('font-semibold leading-tight tracking-[-0.01em] text-foreground', size === 'lg' ? 'text-[26px]' : 'text-[22px]')}
         style={valueStyle}
       >
         {value}
