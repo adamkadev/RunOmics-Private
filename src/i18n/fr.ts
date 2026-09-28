@@ -290,11 +290,13 @@ export const fr = {
       appearance: 'Apparence',
       data: 'Données',
       account: 'Compte',
+      notifications: 'Notifications',
     },
     sync: {
       title: 'Synchronisation Garmin',
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',
       action: 'Synchroniser',
+      running: 'Synchro…',
       starting: 'Démarrage du workflow…',
       fetching: 'Récupération Garmin, puis reconstruction de l’app…',
       writing: 'Nouvelles données en ligne. Rédaction du verdict…',
@@ -311,12 +313,14 @@ export const fr = {
     appearance: {
       title: 'Apparence',
       themeLabel: 'Thème',
+      themeHint: 'Auto suit le réglage de ton système',
       light: 'Clair',
       auto: 'Auto',
       dark: 'Sombre',
     },
     accent: {
       title: 'Accent',
+      hint: 'Pour les points forts et tes propres données — jamais pour les alertes',
       options: {
         teal:     { label: 'Sarcelle' },
         periwinkle: { label: 'Pervenche' },
@@ -375,9 +379,12 @@ export const fr = {
       garmin: 'Garmin Connect',
       connected: (source: string) => `${source} connecté`,
       readOnly: 'Les sorties sont en lecture seule ici',
-      readOnlySynced: (when: string, runs: string) => `Synchronisé ${when} · ${runs} · lecture seule`,
+      readOnlySynced: (when: string, runs: string) => `synchronisé ${when} · ${runs} · lecture seule`,
       lastSync: 'Dernière synchro',
       since: (monthYear: string) => `appairée depuis ${monthYear}`,
+      connectedNow: 'Connecté',
+      lastSyncedAgo: (when: string) => `dernière synchro ${when}`,
+      sourceSince: (source: string, monthYear: string) => `${source} depuis ${monthYear}`,
     },
     dataExport: {
       workbook: 'Exporter les données d’entraînement (.xlsx)',
@@ -399,11 +406,11 @@ export const fr = {
       types: {
         training: {
           title: 'Rappels d’entraînement',
-          subtitle: 'Séance du jour à 10h, plus un point hebdomadaire sur votre objectif kilométrique.',
+          subtitle: 'Séance du jour à 10:00, plus un point hebdomadaire sur ton objectif de distance.',
         },
         shoes: {
           title: 'Alertes d’usure des chaussures',
-          subtitle: 'Avertissement à 70 % et 90 % d’usure.',
+          subtitle: 'Avertit à 70 % et 90 % de la durée de vie d’une paire.',
         },
         races: {
           title: 'Records et prédictions',

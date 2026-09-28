@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { RefreshCw } from 'lucide-react'
 import type { User } from 'firebase/auth'
 import { authorizedFetch } from '@/lib/ownerFetch'
+import { Button } from '@/components/ui/Button'
 import { clearStoredSince, readStoredSince, writeStoredSince } from '@/lib/syncSince'
 import { t } from '@/i18n'
 
@@ -158,19 +159,17 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
 
 export type SyncNow = ReturnType<typeof useSyncNow>
 
-/** The device row's action: "Sync now", spinning while the chain runs. */
+/**
+ * The device row's action (v4.17): "Sync now" as the primary button - a
+ * real action, so the accent fill - spinning while the chain runs.
+ */
 export function SyncNowButton({ sync }: { sync: SyncNow }) {
   const s = t.settings.sync
   return (
-    <button
-      type="button"
-      onClick={sync.handleSync}
-      disabled={sync.running}
-      className="flex shrink-0 items-center gap-1.5 text-footnote font-semibold text-accent-text transition-opacity active:opacity-60 disabled:opacity-40"
-    >
+    <Button variant="primary" onClick={sync.handleSync} disabled={sync.running} className="h-8 shrink-0 px-3 disabled:opacity-60">
       {sync.running && <RefreshCw size={14} className="animate-spin" aria-hidden />}
-      {sync.running ? s.starting : s.action}
-    </button>
+      {sync.running ? s.running : s.action}
+    </Button>
   )
 }
 
@@ -180,23 +179,20 @@ export function SyncVerdict({ sync }: { sync: SyncNow }) {
   const { phase } = sync
   if (phase.kind !== 'done' || !phase.status.verdict) return null
   return (
-    <>
-      <div className="my-4 h-px bg-foreground/[0.06]" />
-      <div>
-        <p className="text-sm font-semibold leading-snug text-foreground">{phase.status.verdict.headline}</p>
-        <p className="mt-1 text-caption leading-snug text-muted-foreground">{phase.status.verdict.body}</p>
-        {phase.status.activity && (
-          <Link
-            href={`/activities/${phase.status.activity.id}`}
-            className="mt-2.5 inline-flex items-center gap-2 text-footnote font-semibold text-accent-text transition-opacity active:opacity-60"
-          >
-            <span className="text-muted-foreground">
-              {phase.status.activity.distance} · {phase.status.activity.duration}
-            </span>
-            {s.viewRun}
-          </Link>
-        )}
-      </div>
-    </>
+    <div className="border-b border-border py-3.5" data-testid="sync-verdict">
+      <p className="text-sm font-semibold leading-snug text-foreground">{phase.status.verdict.headline}</p>
+      <p className="mt-1 text-xs leading-snug text-muted-foreground">{phase.status.verdict.body}</p>
+      {phase.status.activity && (
+        <Link
+          href={`/activities/${phase.status.activity.id}`}
+          className="mt-2.5 inline-flex items-center gap-2 text-[13px] font-medium text-accent-text transition-opacity active:opacity-60"
+        >
+          <span className="text-muted-foreground">
+            {phase.status.activity.distance} · {phase.status.activity.duration}
+          </span>
+          {s.viewRun}
+        </Link>
+      )}
+    </div>
   )
 }

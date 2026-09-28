@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import type { User } from 'firebase/auth'
-import { siGarmin } from 'simple-icons'
 import { t } from '@/i18n'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { saveFileWithFallback } from '@/lib/fileExport'
 import { authorizedFetch } from '@/lib/ownerFetch'
 import { formatDate, formatRelativeAgo } from '@/lib/formatters'
 import { SyncNowButton, SyncVerdict, useSyncNow } from './SyncNowCard'
+import { ConnectedMark, GarminTile } from './GarminMark'
 
 export interface SyncDevice {
   name?: string
@@ -67,100 +67,77 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
     }
   }
 
-  const provenance = device && [
-    s.dataSource.garmin,
-    device.since && s.dataSource.since(formatDate(device.since, { precision: 'month' })),
-  ].filter(Boolean).join(' · ')
+  const provenance = device?.name && device.since
+    ? s.dataSource.sourceSince(s.dataSource.garmin, formatDate(device.since, { precision: 'month' }))
+    : null
 
   return (
-    <GlassSurface variant="card" className="p-5">
-      <div className="flex items-center gap-3.5" data-testid="garmin-row">
-        <div className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-[var(--segmented-track)]">
-          <svg
-            role="img"
-            viewBox="0 0 24 24"
-            width={19}
-            height={19}
-            fill="currentColor"
-            className="text-foreground"
-          >
-            <title>{s.dataSource.garmin}</title>
-            <path d={siGarmin.path} />
-          </svg>
-          <span
-            className="absolute -bottom-px -right-px h-2 w-2 rounded-full bg-accent ring-2 ring-card"
-            style={{ animation: 'pulse-ring 2s ease-in-out infinite' }}
-          />
-        </div>
+    <section className={cardClass({ padding: 'none', className: 'px-5' })} data-testid="data-card">
+      <div className="flex items-center gap-3.5 border-b border-border py-4" data-testid="garmin-row">
+        <GarminTile />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">
             {device?.name ?? s.dataSource.connected(s.dataSource.garmin)}
           </p>
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground" data-testid="sync-line">
-            {sync.progress ??
-              (lastSyncedAt
-                ? `${s.dataSource.lastSync} ${formatRelativeAgo(lastSyncedAt)} · ${t.common.runs(activityCount)}`
-                : s.sync.subtitle)}
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
+            {lastSyncedAt && !sync.progress && (
+              <>
+                <ConnectedMark />
+                {' · '}
+              </>
+            )}
+            <span data-testid="sync-line">
+              {sync.progress ??
+                (lastSyncedAt
+                  ? `${s.dataSource.lastSyncedAgo(formatRelativeAgo(lastSyncedAt))} · ${t.common.runs(activityCount)}`
+                  : s.sync.subtitle)}
+            </span>
+            {provenance && !sync.progress && ` · ${provenance}`}
           </p>
-          {device?.name && provenance && (
-            <p className="mt-0.5 truncate text-caption text-subtle-2">{provenance}</p>
-          )}
         </div>
         <SyncNowButton sync={sync} />
       </div>
 
       <SyncVerdict sync={sync} />
 
-      <div className="my-4 h-px bg-foreground/[0.06]" />
+      <button
+        type="button"
+        onClick={handleExport}
+        disabled={loading}
+        className="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-left text-sm text-foreground transition-opacity active:opacity-60 disabled:opacity-50"
+      >
+        <span>{loading ? s.dataExport.exporting : s.dataExport.title}</span>
+        <span className="shrink-0 text-[13px] font-medium text-accent-text">{s.rowAction.export}</span>
+      </button>
 
-      <div className="space-y-2.5">
-        <button
-          type="button"
-          onClick={handleExport}
-          disabled={loading}
-          className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground transition-opacity active:opacity-60 disabled:opacity-50"
-        >
-          <span>{loading ? s.dataExport.exporting : s.dataExport.title}</span>
-          <span className="shrink-0 font-semibold text-accent-text">{s.rowAction.export}</span>
-        </button>
-
-        <div>
-          <div className="flex w-full items-center justify-between gap-2 text-footnote text-muted-foreground">
-            <span>{s.offlineCache.clear}</span>
-            {confirmingClear ? (
-              <span className="flex shrink-0 items-center gap-3 font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setConfirmingClear(false)}
-                  className="text-muted-foreground transition-opacity active:opacity-60"
-                >
-                  {s.actions.confirmCancel}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearCache}
-                  className="text-destructive transition-opacity active:opacity-60"
-                >
-                  {s.actions.confirmYes}
-                </button>
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmingClear(true)}
-                className="shrink-0 font-semibold text-destructive transition-opacity active:opacity-60"
-              >
-                {s.rowAction.clear}
-              </button>
-            )}
-          </div>
-          <p className="mt-0.5 text-caption leading-snug text-subtle">
+      <div className="flex items-center justify-between gap-3 py-3.5">
+        <div className="min-w-0">
+          <p className="text-sm text-foreground">{s.offlineCache.clear}</p>
+          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
             {confirmingClear ? s.offlineCache.confirm : s.offlineCache.cost}
           </p>
         </div>
+        {confirmingClear ? (
+          <span className="flex shrink-0 items-center gap-3 text-[13px] font-medium">
+            <button type="button" onClick={() => setConfirmingClear(false)} className="hit-44 text-muted-foreground transition-opacity active:opacity-60">
+              {s.actions.confirmCancel}
+            </button>
+            <button type="button" onClick={handleClearCache} className="hit-44 text-[var(--neg)] transition-opacity active:opacity-60">
+              {s.actions.confirmYes}
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmingClear(true)}
+            className="hit-44 shrink-0 text-[13px] font-medium text-[var(--neg)] transition-opacity active:opacity-60"
+          >
+            {s.rowAction.clear}
+          </button>
+        )}
       </div>
 
       <Toast toast={toast} leaving={leaving} />
-    </GlassSurface>
+    </section>
   )
 }

@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react'
 import { disablePushNotifications, enablePushNotifications, isPushSupported } from '@/lib/pushNotifications'
 import { t } from '@/i18n'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { Toast, useToast } from '@/components/ui/Toast'
-import { cn } from '@/lib/utils'
+import { Toggle } from '@/components/ui/Toggle'
 
 type PushStatus = 'loading' | 'unsupported' | 'idle' | 'busy' | 'enabled' | 'denied'
 type NotifType = 'training' | 'shoes' | 'races'
@@ -36,32 +36,6 @@ const NOTIF_TYPES: { key: NotifType }[] = [
   { key: 'shoes' },
   { key: 'races' },
 ]
-
-function Toggle({ enabled, busy, onToggle }: {
-  enabled: boolean; busy: boolean; onToggle: () => void
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={enabled}
-      onClick={onToggle}
-      disabled={busy}
-      className={cn(
-        'relative h-5 w-9 shrink-0 rounded-full p-0 transition-colors disabled:opacity-40',
-        'after:absolute after:-inset-[10px] after:content-[""]',
-        enabled ? 'bg-accent' : 'bg-[var(--segmented-track)]'
-      )}
-    >
-      <span
-        className={cn(
-          'absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform',
-          enabled && 'translate-x-4'
-        )}
-      />
-    </button>
-  )
-}
 
 export function NotificationsForm() {
   const [status, setStatus] = useState<PushStatus>('loading')
@@ -124,31 +98,24 @@ export function NotificationsForm() {
 
   const busy = status === 'loading' || status === 'busy'
 
+  // One card of rows, a shared Toggle each (v4.17): the section's eyebrow names it.
   return (
-    <GlassSurface variant="card" className="p-5">
-      <h3 className="mb-4 text-body font-semibold text-foreground">{n.title}</h3>
-
-      <div className="space-y-4">
-        {NOTIF_TYPES.map(({ key }) => {
-          const strings = n.types[key]
-          const enabled = status === 'enabled' && prefs[key]
-          return (
-            <div key={key} className="flex min-h-[44px] items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-foreground">{strings.title}</p>
-                <p className="text-xs text-muted-foreground">{strings.subtitle}</p>
-              </div>
-              <Toggle
-                enabled={enabled}
-                busy={busy}
-                onToggle={() => handleToggle(key)}
-              />
+    <section className={cardClass({ padding: 'none', className: 'px-5' })} data-testid="notifications-card">
+      {NOTIF_TYPES.map(({ key }) => {
+        const strings = n.types[key]
+        const enabled = status === 'enabled' && prefs[key]
+        return (
+          <div key={key} className="flex min-h-[44px] items-center justify-between gap-4 border-b border-border py-3.5 last:border-b-0">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">{strings.title}</p>
+              <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{strings.subtitle}</p>
             </div>
-          )
-        })}
-      </div>
+            <Toggle checked={enabled} disabled={busy} label={strings.title} onChange={() => handleToggle(key)} />
+          </div>
+        )
+      })}
 
       <Toast toast={toast} leaving={leaving} />
-    </GlassSurface>
+    </section>
   )
 }

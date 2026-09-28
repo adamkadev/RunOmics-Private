@@ -312,11 +312,14 @@ export const en = {
       appearance: 'Appearance',
       data: 'Data',
       account: 'Account',
+      notifications: 'Notifications',
     },
     sync: {
       title: 'Garmin sync',
       subtitle: 'Pull in today’s runs without waiting for tonight.',
       action: 'Sync now',
+      // The button while the chain runs; the device line says which step.
+      running: 'Syncing…',
       starting: 'Starting the workflow…',
       fetching: 'Fetching from Garmin, then rebuilding the app…',
       writing: 'New data is live. Writing the verdict…',
@@ -333,12 +336,14 @@ export const en = {
     appearance: {
       title: 'Appearance',
       themeLabel: 'Theme',
+      themeHint: 'Auto follows your system setting',
       light: 'Light',
       auto: 'Auto',
       dark: 'Dark',
     },
     accent: {
       title: 'Accent',
+      hint: 'Used for highlights and your own data — never for warnings',
       options: {
         teal:     { label: 'Teal' },
         periwinkle: { label: 'Periwinkle' },
@@ -397,9 +402,13 @@ export const en = {
       garmin: 'Garmin Connect',
       connected: (source: string) => `${source} connected`,
       readOnly: 'Runs are read-only here',
-      readOnlySynced: (when: string, runs: string) => `Synced ${when} · ${runs} · read-only here`,
+      readOnlySynced: (when: string, runs: string) => `last synced ${when} · ${runs} · read-only here`,
       lastSync: 'Last synced',
       since: (monthYear: string) => `paired ${monthYear}`,
+      // v4.17: the device row - "● Connected · last synced 2h ago · 299 runs · Garmin Connect since Aug 2025".
+      connectedNow: 'Connected',
+      lastSyncedAgo: (when: string) => `last synced ${when}`,
+      sourceSince: (source: string, monthYear: string) => `${source} since ${monthYear}`,
     },
     dataExport: {
       workbook: 'Export training data (.xlsx)',
@@ -421,11 +430,11 @@ export const en = {
       types: {
         training: {
           title: 'Training reminders',
-          subtitle: 'Daily session at 10am, plus a weekly check-in on your distance goal.',
+          subtitle: 'Daily session at 10:00, plus a weekly check-in on your distance goal.',
         },
         shoes: {
           title: 'Shoe wear alerts',
-          subtitle: 'Warning at 70% and 90% wear.',
+          subtitle: 'Warns at 70% and 90% of a shoe’s lifespan.',
         },
         // The title says what the toggle does (v5.6 #6): the PR alert.
         races: {
