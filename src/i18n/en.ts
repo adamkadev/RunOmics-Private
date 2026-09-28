@@ -657,8 +657,9 @@ export const en = {
       },
       status: {
         title: 'Training status',
-        caption: (span: string, live: boolean) => `Garmin · ${live ? 'last ' : ''}${span}`,
+        caption: (span: string) => `Garmin · ${span}`,
         span: { days28: '28 days', weeks12: '12 weeks', months12: '12 months' },
+        spanLive: { days28: 'last 28 days', weeks12: 'last 12 weeks', months12: 'last 12 months' },
         about: "Garmin's training status: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
         sentenceToday: (count: number, days: number) => ` today, and on ${count} of the last ${days} days.`,
         sentenceOn: (date: string, count: number, days: number) => ` on ${date}, and on ${count} of those ${days} days.`,

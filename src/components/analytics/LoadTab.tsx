@@ -122,7 +122,7 @@ function StatusCard({ days, window, period, onShift }: { days: StatusDay[]; wind
   const cells = view.cells
   return (
     <Card testId="status-card">
-      <CardHead title={s.title} caption={s.caption(s.span[STATUS_SPAN[period]], window.live)} about={s.about} />
+      <CardHead title={s.title} caption={s.caption((window.live ? s.spanLive : s.span)[STATUS_SPAN[period]])} about={s.about} />
       <Sentence>
         <b>{names[view.current]}</b>
         {window.live ? s.sentenceToday(view.count, view.days) : s.sentenceOn(bare(window.end), view.count, view.days)}
