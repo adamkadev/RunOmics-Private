@@ -289,13 +289,19 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('performance-summary').innerHTML).not.toContain('var(--accent')
   })
 
-  // v4.17.2: the sparkline column stops at 240 px from sm up; the slack sits
-  // before the time, and one subgrid keeps the times and deltas aligned.
-  it('caps the prediction sparklines at 240 px, times and deltas aligned', async () => {
+  // One subgrid keeps the times and changes aligned; from sm up the sparkline
+  // sits right against the time, the slack after the distance.
+  it('draws each prediction as one line, the sparkline next to its time', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.performance, 'predictions-card')
-    expect(screen.getByTestId('predictions-grid').className).toContain('sm:grid-cols-[90px_240px_minmax(0,1fr)_auto_auto]')
-    for (const row of screen.getByTestId('predictions-grid').children) expect(row.className).toContain('grid-cols-subgrid')
+    // v4.17.3: distance, spacer, sparkline up against the time, time with its change.
+    expect(screen.getByTestId('predictions-grid').className).toContain('sm:grid-cols-[120px_1fr_minmax(0,360px)_auto]')
+    for (const row of screen.getByTestId('predictions-grid').children) {
+      expect(row.className).toContain('grid-cols-subgrid')
+      const cells = [...row.children]
+      expect(cells[2]!.tagName.toLowerCase()).toBe('svg')
+      expect(cells[3]!.getAttribute('data-testid')).toBe('prediction-time')
+    }
   })
 
   // v4.17.2: the chart fits its paces, with three of them up the left.
@@ -651,20 +657,27 @@ describe('Load trend and Recovery (v5.4)', () => {
   })
 })
 
-describe('the pace axis (v4.17.2)', () => {
-  it('pads the paces by 10 s/km and puts three round paces inside', async () => {
-    const { paceAxis, PACE_PAD } = await import('../PerformanceTab')
-    const axis = paceAxis([265, 290, 335])
-    expect(axis.lo).toBe(265 - PACE_PAD)
-    expect(axis.hi).toBe(335 + PACE_PAD)
-    expect(axis.ticks).toEqual([270, 300, 330])
-    for (const range of [[315, 320], [300, 345], [240, 400], [330, 331]]) {
+describe('the pace axis (v4.17.3)', () => {
+  it('pads the drawn paces by 5% of their range, at least 5 s, rounded out to 5 s', async () => {
+    const { paceAxis } = await import('../PerformanceTab')
+    // A 70 s range: 5% is 3.5, so the 5 s floor holds.
+    expect(paceAxis([265, 290, 335])).toMatchObject({ lo: 260, hi: 340, ticks: [280, 300, 320] })
+    // A 200 s range: 5% is 10.
+    expect(paceAxis([240, 440])).toMatchObject({ lo: 230, hi: 450 })
+  })
+
+  it('keeps the lines on at least 70% of the chart and three round paces inside it', async () => {
+    const { paceAxis } = await import('../PerformanceTab')
+    for (const range of [[315, 320], [300, 345], [240, 400], [318, 361], [330, 331]]) {
       const { lo, hi, ticks } = paceAxis(range)
+      expect(lo % 5).toBe(0)
+      expect(hi % 5).toBe(0)
       for (const tick of ticks) {
         expect(tick).toBeGreaterThanOrEqual(lo)
         expect(tick).toBeLessThanOrEqual(hi)
       }
       expect(new Set(ticks).size).toBe(3)
+      if (range[1]! - range[0]! >= 40) expect((range[1]! - range[0]!) / (hi - lo)).toBeGreaterThanOrEqual(0.7)
     }
   })
 })

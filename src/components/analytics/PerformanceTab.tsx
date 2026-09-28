@@ -153,30 +153,34 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
     <Card className="gap-2" testId="predictions-card">
       <CardHead title={s.title} caption={s.caption(words)} about={s.about} />
       {(lead || goal) && <Sentence className="mb-1.5" testId="predictions-sentence">{[lead, goal].filter(Boolean).join(' ')}</Sentence>}
-      {/* One grid for every row, each row a subgrid, so the auto columns
-          size to the widest time and delta and stay aligned. From sm up the
-          sparkline is capped at 240 px (v4.17.2) and the slack sits between
-          it and the time, which it stretched across. */}
-      <div className="grid grid-cols-[64px_minmax(0,1fr)_72px_52px] gap-x-3 sm:grid-cols-[90px_240px_minmax(0,1fr)_auto_auto] sm:gap-x-3.5" data-testid="predictions-grid">
+      {/* One grid for every row, each row a subgrid, so the time column
+          sizes to the widest time and the times align (v4.17.3): the
+          distance, a spacer, the sparkline right up against the time - no
+          600 px gap between them - and the time with its change. On a
+          phone the spacer goes and the row stays as it was. */}
+      <div className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-x-3 sm:grid-cols-[120px_1fr_minmax(0,360px)_auto] sm:gap-x-3.5" data-testid="predictions-grid">
         {rows.map((row) => (
           <div
             key={row.distance}
-            className="col-span-4 grid grid-cols-subgrid items-center border-t border-border py-2.5 sm:col-span-5"
+            className="col-span-3 grid grid-cols-subgrid items-center border-t border-border py-2.5 sm:col-span-4"
             data-testid={`prediction-${row.distance}`}
           >
             <span className="text-sm font-medium text-foreground">{names[row.distance]}</span>
-            <Spark values={thin(row.series)} />
             <span aria-hidden className="hidden sm:block" />
-            <span className="text-right text-[15px] font-semibold leading-none text-foreground">{formatDuration(Math.round(row.seconds))}</span>
-            {/* Slower is the caution; faster is good news, by the one delta rule. */}
-            {/* One line, signed (v5.5 #21): "33 s / slower" wrapped, and the
-                header already says "change in 12 weeks". */}
-            <span
-              className="whitespace-nowrap text-right text-xs leading-tight"
-              style={{ color: deltaColor('race', row.delta, { value: row.seconds }) }}
-              data-testid="prediction-delta"
-            >
-              {signedChange(row.delta) ?? ''}
+            <Spark values={thin(row.series)} />
+            <span className="flex items-baseline justify-end gap-3" data-testid="prediction-time">
+              <span className="min-w-[72px] text-right text-[15px] font-semibold leading-none text-foreground sm:min-w-0">{formatDuration(Math.round(row.seconds))}</span>
+              {/* Slower is the caution; faster is good news, by the one delta rule. */}
+              {/* One line, signed (v5.5 #21): "33 s / slower" wrapped, and the
+                  header already says "change in 12 weeks". A fixed width, so
+                  the times above and below line up. */}
+              <span
+                className="w-[52px] whitespace-nowrap text-right text-xs leading-tight sm:w-[60px]"
+                style={{ color: deltaColor('race', row.delta, { value: row.seconds }) }}
+                data-testid="prediction-delta"
+              >
+                {signedChange(row.delta) ?? ''}
+              </span>
             </span>
           </div>
         ))}
@@ -192,19 +196,26 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
   )
 }
 
-/** Seconds a km of air above and below the paces (v4.17.2): the chart fits its data. */
-export const PACE_PAD = 10
+/** The least air above and below the lines, in s/km; 5% of their range when that is more (v4.17.3). */
+export const PACE_PAD_MIN = 5
+const PACE_PAD_SHARE = 0.05
+/** The domain's limits land on a multiple of this many seconds. */
+const PACE_ROUND = 5
 const PACE_STEPS = [5, 10, 15, 20, 30, 60, 120]
 
 /**
- * The pace chart's domain and its three y labels (v4.17.2): the paces with
- * 10 s/km either side - the axis started on a 40 s step and spanned two
- * minutes at least, so the lines sat in a band of empty chart - and three
- * round paces inside it, the widest step that keeps all three in.
+ * The pace chart's domain and its three y labels (v4.17.3): the drawn paces
+ * - the smoothed lines, not the raw weeks, whose outliers left the lines in
+ * the top half - with 5% of their range either side, at least 5 s/km,
+ * rounded out to 5 s; then three round paces inside, the widest step that
+ * keeps all three in. Faster is up.
  */
 export function paceAxis(paces: readonly number[]): { lo: number; hi: number; ticks: [number, number, number] } {
-  const lo = Math.min(...paces) - PACE_PAD
-  const hi = Math.max(...paces) + PACE_PAD
+  const min = Math.min(...paces)
+  const max = Math.max(...paces)
+  const pad = Math.max(PACE_PAD_MIN, (max - min) * PACE_PAD_SHARE)
+  const lo = Math.floor((min - pad) / PACE_ROUND) * PACE_ROUND
+  const hi = Math.ceil((max + pad) / PACE_ROUND) * PACE_ROUND
   const step = [...PACE_STEPS].reverse().find((k) => k <= (hi - lo) / 3) ?? PACE_STEPS[0]!
   const mid = Math.round((lo + hi) / 2 / step) * step
   return { lo, hi, ticks: [mid - step, mid, mid + step] }
@@ -223,7 +234,10 @@ function PacePart({ parts, delta }: { parts: readonly [string, string, string]; 
 
 function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPoint[]; easy: PaceShift | null; workout: PaceShift | null; onShift: (step: 1 | -1) => void }) {
   const s = t.analytics.cards.paceTrend
-  const paces = [...weeks.map((w) => w.easyPace), ...weeks.map((w) => w.hardPace)].filter((v): v is number => v !== null)
+  // The lines as drawn, so the domain fits what is on the chart.
+  const easyLine = smooth(weeks.map((w) => w.easyPace))
+  const hardLine = smooth(weeks.map((w) => w.hardPace))
+  const paces = [...easyLine, ...hardLine].filter((v): v is number => v !== null)
   if (!easy || paces.length < 2) return null
   const { lo, hi, ticks } = paceAxis(paces)
   const W = 1000
@@ -231,7 +245,7 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
   // Faster is up: a pace's height from the top is its share of the way to the slowest.
   const yOf = (pace: number) => (H * (pace - lo)) / (hi - lo)
   // Faster is up: the axis runs from the slowest pace at the bottom.
-  const path = (pick: (w: WeeklyTrendPoint) => number | null) => linePath(smooth(weeks.map(pick)).map((v) => (v === null ? null : -v)), -hi, -lo, W, H)
+  const path = (line: (number | null)[]) => linePath(line.map((v) => (v === null ? null : -v)), -hi, -lo, W, H)
   const shift = easy.delta === null || Math.abs(easy.delta) < 1 ? null : easy.delta
   const easyParts = shift === null ? s.easyHeld : shift < 0 ? s.easyFaster(`${Math.abs(shift)} s`) : s.easySlower(`${shift} s`)
   const wShift = workout?.delta ?? null
@@ -269,8 +283,8 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
               <line key={pace} x1="0" x2={W} y1={yOf(pace)} y2={yOf(pace)} stroke="var(--divider)" vectorEffect="non-scaling-stroke" data-testid="pace-gridline" />
             ))}
             {/* Workouts Z4, easy runs Z2: the two run types' own zones. */}
-            <path d={path((w) => w.hardPace)} fill="none" stroke="var(--zone-4)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-            <path d={path((w) => w.easyPace)} fill="none" stroke="var(--zone-2)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            <path d={path(hardLine)} fill="none" stroke="var(--zone-4)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            <path d={path(easyLine)} fill="none" stroke="var(--zone-2)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
           </svg>
         </ChartScrub>
       </div>
