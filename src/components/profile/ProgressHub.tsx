@@ -287,7 +287,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               {shoes.map((s) => (
                 <Link key={s.gearId} href={`/shoes/${s.gearId}`} className="flex flex-col gap-2 transition-opacity active:opacity-70" data-testid="shoe-row">
                   <div className="flex items-baseline justify-between gap-3 text-sm">
-                    <span className="min-w-0 truncate text-foreground">
+                    <span className="min-w-0 break-words text-foreground text-pretty">
                       {s.name}
                       {s.status !== 'ok' && (
                         <span className="ml-1.5 text-xs" style={{ color: shoeColor(s.status) }} data-testid="shoe-status">{t.shoes.status[s.status]}</span>

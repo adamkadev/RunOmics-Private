@@ -49,12 +49,12 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
       <RouteThumb path={a.routeThumb} type={a.type} size={48} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
         <span className="flex min-w-0 items-center gap-1.5">
-          <span className="truncate text-sm font-semibold leading-tight text-foreground">{title}</span>
+          <span className="break-words text-sm font-semibold leading-tight text-foreground text-pretty">{title}</span>
           <PrBadge efforts={qualifiedEfforts} />
         </span>
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
           <TypeDot type={a.type} size={6} />
-          <span className="truncate">{meta}</span>
+          <span className="min-w-0 break-words text-pretty">{meta}</span>
         </span>
       </span>
       <span className="flex shrink-0 flex-col items-end gap-0.75">

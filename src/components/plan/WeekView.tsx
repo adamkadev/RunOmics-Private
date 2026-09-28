@@ -89,7 +89,7 @@ function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
 
   return (
     <div data-testid={`plan-workout-row-${workout.key}`} className={cardClass()}>
-      <div className="truncate text-[15px] font-semibold text-foreground">{summary.title}</div>
+      <div className="break-words text-[15px] font-semibold text-foreground text-pretty">{summary.title}</div>
       <div className="mt-1 text-[13px] leading-normal text-muted-foreground">{detail}</div>
       {workout.duration && (
         <div className="mt-3.5">
@@ -233,9 +233,9 @@ function WeekSessionRow({
       </span>
       <TypeDot type={workout.type} size={8} />
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="truncate text-sm font-semibold text-foreground">{workout.title}</span>
+        <span className="break-words text-sm font-semibold text-foreground text-pretty">{workout.title}</span>
         {(workout.detail || state === 'missed') && (
-          <span className="truncate text-xs text-muted-foreground">
+          <span className="break-words text-xs text-muted-foreground text-pretty">
             {state === 'missed' && <span className="font-medium text-[var(--neg)]">{t.sessionState.missed}</span>}
             {state === 'missed' && workout.detail && ' · '}
             {workout.detail}
@@ -597,7 +597,7 @@ export function WeekView({
                 className={cardClass({ className: 'block transition-colors hover:bg-[var(--surface-2)]' })}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className="min-w-0 truncate text-[15px] font-semibold text-foreground">{activityTitle(a)}</span>
+                  <span className="min-w-0 break-words text-[15px] font-semibold text-foreground text-pretty">{activityTitle(a)}</span>
                   <span className="flex shrink-0 items-center gap-2">
                     <SessionStateChip state="done" />
                     <ChevronRight size={18} className="text-subtle" aria-hidden="true" />

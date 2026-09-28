@@ -76,7 +76,7 @@ function SeasonStrip({ year, today, rows }: { year: number; today: string; rows:
       </div>
       <div className="mt-1 grid grid-cols-12 text-[11px] text-muted-foreground">
         {Array.from({ length: 12 }, (_, month) => (
-          <span key={month} className="truncate">{months.format(new Date(Date.UTC(year, month, 1))).replace(/\.$/, '')}</span>
+          <span key={month} className="whitespace-nowrap">{months.format(new Date(Date.UTC(year, month, 1))).replace(/\.$/, '')}</span>
         ))}
       </div>
     </div>
@@ -112,7 +112,7 @@ function RaceRow({ row, block }: { row: SeasonRaceRow; block: SeasonBlock | null
     <li className="flex items-start justify-between gap-4 border-t border-border py-3.5 last:pb-0" data-testid={`timeline-${upcoming ? 'upcoming' : 'done'}`}>
       <div className="flex min-w-0 flex-col gap-[3px]">
         <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{[date, when].filter(Boolean).join(' · ')}</span>
-        <span className="truncate text-[15px] font-semibold text-foreground">{row.title}</span>
+        <span className="break-words text-[15px] font-semibold text-foreground text-pretty">{row.title}</span>
         {sub.length > 0 && <span className="text-xs text-muted-foreground">{sub.join(' · ')}</span>}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-[3px] text-right">
@@ -164,7 +164,7 @@ export function SeasonTimeline({ yearData, today, block }: { yearData: YearData;
           <ul>
             {open.map((row) => (
               <li key={row.distance} className="flex items-baseline justify-between gap-3 border-t border-border py-3 text-sm last:pb-0">
-                <span className="min-w-0 truncate">
+                <span className="min-w-0 break-words text-pretty">
                   <b className="font-semibold text-foreground">{row.short}</b>
                   <span className="text-muted-foreground"> · {row.targetSeconds !== null ? s.targetTime(formatDuration(row.targetSeconds)) : s.season.noTarget}</span>
                 </span>
