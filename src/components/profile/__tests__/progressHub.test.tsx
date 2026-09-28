@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { t } from '@/i18n'
+import { yearOverYear } from '@/lib/yearOverYear'
 import { cumulativeYear, heatWeeks, progressHubView, type HubInput } from '../progressHub'
 import { ProgressHub, raceShare } from '../ProgressHub'
 
@@ -54,10 +55,26 @@ describe('progressHubView', () => {
   const view = progressHubView(INPUT)
 
   it('reads the year against last year and the goal', () => {
-    expect(view.hero).toMatchObject({ km: 1_394, goalKm: 2_000, deltaKm: 754, hours: 134, runs: 153 })
-    expect(view.hero.current.at(-1)).toEqual({ day: 269, km: 1_394 })
     // Last year up to the same day only: December's 340 km is not in it.
+    expect(view.hero).toMatchObject({ km: 1_394, goalKm: 2_000, deltaKm: 1_394 - 300, hours: 134, runs: 153 })
+    expect(view.hero.current.at(-1)).toEqual({ day: 269, km: 1_394 })
     expect(view.hero.previous.at(-1)!.km).toBe(300)
+  })
+
+  // v4.17: a history that starts in May of last year was read as this year to
+  // date against last year to date - +771 km where Analytics said +19. Both
+  // now count from the day the history starts, in both years.
+  it('states the same year-over-year delta as Analytics when the history starts mid-year', () => {
+    const activities = [
+      { date: '2025-05-21', distanceKm: 100 },
+      { date: '2025-08-01', distanceKm: 200 },
+      { date: '2026-02-01', distanceKm: 500 },
+      { date: '2026-06-01', distanceKm: 310 },
+    ]
+    const hub = progressHubView({ ...INPUT, activities, sinceDate: '2025-05-21' })
+    const yoy = yearOverYear(activities, INPUT.today)!
+    expect(yoy).toEqual({ km: 310, lastYearKm: 300, since: '2025-05-21' })
+    expect(hub.hero.deltaKm).toBe(yoy.km - yoy.lastYearKm)
   })
 
   it('marks the most recent record and keeps the four hub distances', () => {
@@ -112,7 +129,7 @@ describe('ProgressHub', () => {
     expect(screen.getByTestId('consistency-tile').getAttribute('href')).toBe('/consistency')
     expect(screen.getByTestId('shoes-tile').getAttribute('href')).toBe('/shoes')
     expect(screen.getByRole('link', { name: t.profile.hub.settings }).getAttribute('href')).toBe('/settings')
-    expect(screen.getByTestId('year-hero').textContent).toContain(t.profile.hub.vsYear('+754', 2025))
+    expect(screen.getByTestId('year-hero').textContent).toContain(t.profile.hub.vsYear('+1,094', 2025))
     expect(screen.getByTestId('race-tile').textContent).toContain('42:10')
     // C6: the All time card opens its page and shows this year and last as rows.
     expect(screen.getByTestId('all-time').getAttribute('href')).toBe('/all-time')

@@ -1,4 +1,5 @@
 import type { RecordEntry } from '@/domain/race/records'
+import { yearOverYear } from '@/lib/yearOverYear'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import type { ProfileGoal, ProfilePeriodStats } from '@/application/usecases/GetProfileData'
@@ -141,6 +142,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
   const latestDate = records.reduce<string | null>((max, r) => (r.date && (!max || r.date > max) ? r.date : max), null)
 
   const firstYear = input.sinceDate ? Number(input.sinceDate.slice(0, 4)) : year
+  const yoy = input.prevYear ? yearOverYear(input.activities, input.today) : null
   const yearKm = new Map<number, { km: number; runs: number; seconds: number }>()
   for (const a of input.activities) {
     const y = Number(a.date.slice(0, 4))
@@ -154,7 +156,8 @@ export function progressHubView(input: HubInput): ProgressHubView {
     hero: {
       km: Math.round(input.ytd.distanceKm),
       goalKm: input.goal && input.goal.goalYear.annualDistanceKm > 0 ? input.goal.goalYear.annualDistanceKm : null,
-      deltaKm: input.prevYear ? Math.round(input.ytd.distanceKm - input.prevYear.distanceKm) : null,
+      // The same dates in both years, from where the history starts (v4.17).
+      deltaKm: yoy ? yoy.km - yoy.lastYearKm : null,
       hours: Math.round(input.ytd.durationSeconds / 3600),
       runs: input.ytd.sessionCount,
       current: cumulativeYear(input.activities, year, today),
