@@ -3,58 +3,32 @@
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
-import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
+import type { LngLatBounds, Map as MapLibreMap } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyleUrl } from '@/lib/maptiler'
-import { MAP_COLORS, PACE_ROUTE_COLORS, PACE_ROUTE_STOPS } from '@/lib/colors'
-import { paceAtFraction } from '@/lib/paceRoute'
+import { MAP_COLORS } from '@/lib/colors'
 import { t } from '@/i18n'
 import { loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
 import {
   ROUTE_FIT_PADDING,
-  ROUTE_SOURCE,
   addEdgeFence,
-  addRouteLayers,
-  addRunMarkers,
-  markerImage,
-  setRunFinish,
+  addRunLayers,
+  pointAlongRoute,
+  setRunCursor,
+  setRunRoute,
 } from '@/lib/runMapLayers'
-import { keepAttributionCollapsed } from '@/lib/mapAttribution'
+
+type LngLat = [number, number]
 
 interface Props {
-  route: [number, number][]
-  paceSamples?: number[] | null
+  route: LngLat[]
+  /** The Charts scrub, as a share of the distance: the accent marker stands there. */
   hoverFraction?: number | null
   className?: string
 }
 
-function buildSegmentFeatures(route: [number, number][], paceSamples: number[] | null | undefined) {
-  return route.slice(0, -1).map((coord, i) => {
-    const pace = paceAtFraction(paceSamples, i / Math.max(route.length - 2, 1))
-    const next = route[i + 1]!
-    return {
-      type: 'Feature' as const,
-      properties: { pace },
-      geometry: { type: 'LineString' as const, coordinates: [coord, next] },
-    }
-  })
-}
-
-function mkMarker(bg: string, border = 'white', size = 13) {
-  const el = document.createElement('div')
-  Object.assign(el.style, {
-    width: `${size}px`, height: `${size}px`,
-    borderRadius: '50%',
-    backgroundColor: bg,
-    border: `2px solid ${border}`,
-    boxShadow: MAP_COLORS.chipShadow,
-    pointerEvents: 'none',
-  })
-  return el
-}
-
-export default function ActivityMap({ route, paceSamples, hoverFraction, className }: Props) {
+export default function ActivityMap({ route, hoverFraction, className }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   // The element MapLibre draws into. Fullscreen portals the map to <body>,
   // which gives React a new host node; this one moves between hosts, so the
@@ -63,9 +37,11 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
   const mapElRef = useRef<HTMLDivElement | null>(null)
   const hasToken = !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   const mapRef = useRef<MapLibreMap | null>(null)
-  const mglRef = useRef<typeof import('maplibre-gl') | null>(null)
-  const attribCleanupRef = useRef<(() => void) | null>(null)
-  const hoverMarkerRef = useRef<Marker | null>(null)
+  // What the run layers show, kept here so they can be drawn again as they
+  // were: the route drawn so far and the scrub's point (v4.17).
+  const drawnRef = useRef(0)
+  const cursorRef = useRef<LngLat | null>(null)
+  const layersReadyRef = useRef(false)
   const animFrameRef = useRef<number | null>(null)
   const boundsRef = useRef<LngLatBounds | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -131,14 +107,12 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
 
       const first = route[0]
       if (!first) return
-      const start: [number, number] = first
-      const [startLng, startLat] = start
+      const start: LngLat = first
 
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       mapRef.current?.remove()
       mapRef.current = null
-      hoverMarkerRef.current = null
-      mglRef.current = mgl
+      layersReadyRef.current = false
 
       const styleUrl = maptilerStyleUrl(isDark, token)
       const bounds = route.reduce(
@@ -154,18 +128,9 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
         fitBoundsOptions: { padding: ROUTE_FIT_PADDING, maxZoom: 15 },
         attributionControl: false,
       })
-      map.addControl(new mgl.AttributionControl({ compact: true }), 'bottom-right')
-      // MapLibre opens a compact attribution over the route (H13), and it can
-      // do so at any point of the load. Keep it as the ⓘ alone until tapped.
-      attribCleanupRef.current?.()
-      attribCleanupRef.current = keepAttributionCollapsed(mapEl)
-
-      const segments = buildSegmentFeatures(route, paceSamples)
-      const hasPace = !!(paceSamples && paceSamples.length > 1)
-
-      const lineColor: any = hasPace
-        ? ['interpolate', ['linear'], ['get', 'pace'], ...PACE_ROUTE_STOPS.flat()]
-        : PACE_ROUTE_COLORS.easy
+      // The MapTiler and OpenStreetMap credit as a line of text in the
+      // corner, always shown (v4.17): no longer folded behind an ⓘ.
+      map.addControl(new mgl.AttributionControl({ compact: false }), 'bottom-right')
 
       map.on('load', () => {
         if (cancelled) return
@@ -173,19 +138,26 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
         // Route and markers win; place names only fill the room left (v4.10).
         const mode = isDark ? 'dark' : 'light'
         styleRunMapLabels(map, { halo: SURFACES[mode].card, town: SURFACES[mode].text2, neighbourhood: SURFACES[mode].text3 })
-        addRouteLayers(map, {
-          casing: isDark ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
-          lineColor,
+        // The route is the athlete's own data, so it is the accent (v4.17);
+        // it was coloured by pace.
+        const accent = getComputedStyle(hostRef.current ?? document.documentElement).getPropertyValue('--accent').trim() || SURFACES[mode].text
+        const replay = drawnRef.current >= route.length
+        if (!replay) drawnRef.current = 0
+        addRunLayers(map, {
+          accent,
+          ring: MAP_COLORS.markerRingLight,
+          route: route.slice(0, drawnRef.current),
+          start,
+          cursor: cursorRef.current,
         })
-        // Start white with a dark outline, finish in the accent: no red.
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || PACE_ROUTE_COLORS.easy
-        const startImage = markerImage(MAP_COLORS.markerRingLight, SURFACES.dark.background)
-        const finishImage = markerImage(accent, MAP_COLORS.markerRingLight)
-        if (startImage && finishImage) addRunMarkers(map, start, { start: startImage, finish: finishImage })
+        layersReadyRef.current = true
         const removeFence = addEdgeFence(map)
         map.once('remove', removeFence)
+        // A theme or accent change rebuilds the map; the route is already
+        // drawn by then and comes back whole.
+        if (replay) return
 
-        const total = segments.length
+        const total = route.length
         const duration = 1800
         const startTime = performance.now()
 
@@ -193,19 +165,12 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
           if (cancelled) return
           const progress = Math.min((performance.now() - startTime) / duration, 1)
           const eased = 1 - Math.pow(1 - progress, 3)
-          const count = Math.floor(eased * total)
-
-          ;(map.getSource(ROUTE_SOURCE) as any)?.setData({ type: 'FeatureCollection', features: segments.slice(0, count) })
-
-          if (progress < 1) {
-            animFrameRef.current = requestAnimationFrame(animate)
-          } else {
-            animFrameRef.current = null
-            const last = route[route.length - 1]
-            if (last && (Math.abs(last[0] - startLng) > 0.0005 || Math.abs(last[1] - startLat) > 0.0005)) {
-              setRunFinish(map, start, last)
-            }
+          const count = Math.max(2, Math.floor(eased * total))
+          if (count !== drawnRef.current) {
+            drawnRef.current = count
+            setRunRoute(map, route.slice(0, count))
           }
+          animFrameRef.current = progress < 1 ? requestAnimationFrame(animate) : null
         }
 
         animFrameRef.current = requestAnimationFrame(animate)
@@ -224,36 +189,20 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
     return () => {
       cancelled = true
       observer.disconnect()
-      attribCleanupRef.current?.()
-      attribCleanupRef.current = null
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       mapRef.current?.remove()
       mapRef.current = null
-      hoverMarkerRef.current = null
+      layersReadyRef.current = false
+      drawnRef.current = 0
     }
-  }, [route, paceSamples])
+  }, [route])
 
+  // The Charts scrub's point on the route, by distance - the charts' samples
+  // are spread by distance, the GPS points by time.
   useEffect(() => {
+    cursorRef.current = hoverFraction == null ? null : pointAlongRoute(route, hoverFraction)
     const map = mapRef.current
-    const mgl = mglRef.current
-    if (!map || !mgl) return
-
-    if (hoverFraction == null) {
-      hoverMarkerRef.current?.remove()
-      hoverMarkerRef.current = null
-      return
-    }
-
-    const coord = route[Math.round(hoverFraction * (route.length - 1))]
-    if (!coord) return
-
-    if (!hoverMarkerRef.current) {
-      const el = mkMarker('white', 'var(--accent)', 14)
-      el.style.border = '3px solid var(--accent)'
-      hoverMarkerRef.current = new mgl.Marker({ element: el }).setLngLat(coord).addTo(map)
-    } else {
-      hoverMarkerRef.current.setLngLat(coord)
-    }
+    if (map && layersReadyRef.current) setRunCursor(map, cursorRef.current)
   }, [hoverFraction, route])
 
   if (!hasToken) return <MapUnavailable className={className} />
@@ -261,9 +210,10 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
   const tree = (
     <div
       className={cn(
-        // The attribution ⓘ sits 12 px in from the right and bottom, as the
-        // chips do (.activity-map in globals.css).
+        // The attribution sits 12 px in from the right and bottom, as the
+        // chips do (.activity-map in globals.css), on the map's dark pill.
         'activity-map relative overflow-hidden rounded-xl',
+        '[&_.maplibregl-ctrl-attrib]:rounded-md [&_.maplibregl-ctrl-attrib]:!bg-[var(--map-attrib-bg)] [&_.maplibregl-ctrl-attrib]:!px-1.5 [&_.maplibregl-ctrl-attrib]:!py-px',
         // Under the status strip, never touching the top edge (v4.8): iOS
         // kept the blur zone of a fullscreen map over the page's title.
         isFullscreen && 'activity-map-fullscreen fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[9999] rounded-none',

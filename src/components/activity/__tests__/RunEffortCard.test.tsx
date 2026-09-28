@@ -16,7 +16,9 @@ describe('RunEffortCard', () => {
     render(<RunEffortCard hrZones={ZONES} aer={3.1} ana={0} decoupling={{ percent: 3.1, drift: 'stable' } as never} />)
 
     const card = screen.getByTestId('run-effort')
-    expect(card.textContent).toContain('Z1 42 · Z2 58')
+    // v4.17: the bar's legend names each zone and its share.
+    expect(card.textContent).toContain(`Z1 ${t.zoneLabels[1]} 42%`)
+    expect(card.textContent).toContain(`Z2 ${t.zoneLabels[2]} 58%`)
     expect(screen.getByTestId('zone-stack').children).toHaveLength(2)
     expect(card.textContent).toContain('3.1')
     expect(card.textContent).toContain(t.activity.trainingEffect.levels.improving)
@@ -34,7 +36,9 @@ describe('RunEffortCard', () => {
       { zone: 3, seconds: 1, percent: 0.4, minBpm: 150, maxBpm: 165 },
     ]
     render(<RunEffortCard hrZones={zones} aer={null} ana={null} decoupling={null} />)
-    expect(screen.getByTestId('run-effort').textContent).toContain('Z1 60 · Z4 39 · Z5 1')
+    const text = screen.getByTestId('run-effort').textContent ?? ''
+    for (const label of [`Z1 ${t.zoneLabels[1]} 60%`, `Z4 ${t.zoneLabels[4]} 39%`, `Z5 ${t.zoneLabels[5]} 1%`]) expect(text).toContain(label)
+    expect(text).not.toContain('Z3')
     expect(screen.getByTestId('zone-stack').children).toHaveLength(3)
   })
 
@@ -45,6 +49,16 @@ describe('RunEffortCard', () => {
     expect(screen.getByTestId('run-effort').textContent).toContain(t.activity.decoupling.faded)
     await userEvent.click(screen.getByRole('button', { name: t.activity.decoupling.seeInCharts }))
     expect(onShowCharts).toHaveBeenCalled()
+  })
+
+  // v4.17: coloured by what it means - improving is pos, no benefit muted,
+  // a faded decoupling warn.
+  it('colours the effects and the decoupling by meaning', () => {
+    render(<RunEffortCard hrZones={ZONES} aer={3.4} ana={0.1} decoupling={{ percent: 7.2, drift: 'drifting' } as never} />)
+
+    expect(screen.getByText(t.activity.trainingEffect.levels.improving).className).toContain('--pos')
+    expect(screen.getByText(t.activity.trainingEffect.levels.noBenefit).className).toContain('text-muted-foreground')
+    expect(screen.getByText(t.activity.decoupling.faded).className).toContain('--warn')
   })
 
   it('draws nothing with nothing to show', () => {

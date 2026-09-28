@@ -1,11 +1,14 @@
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface AdjacentActivity {
   id: string
+  date: string
   dayOfWeek: string
   description: string
 }
@@ -29,17 +32,20 @@ function NavLink({ activity, direction }: { activity: AdjacentActivity | null; d
     <Link
       href={`/activities/${activity.id}`}
       className={cn(
-        'flex min-w-0 flex-1 items-center gap-2 px-4 py-3 text-sm transition-colors hover:bg-foreground/[0.04]',
+        'flex min-w-0 flex-1 items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--surface-2)]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
         isPrev ? 'justify-start' : 'justify-end text-right'
       )}
     >
       {isPrev && <ChevronLeft size={16} className="shrink-0 text-muted-foreground" />}
-      <span className="min-w-0">
-        <span className="block text-caption font-medium uppercase tracking-wide text-muted-foreground">
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className={cn(EYEBROW_CLASS, 'font-normal text-muted-foreground')}>
           {isPrev ? t.activity.nav.previous : t.activity.nav.next}
         </span>
-        <span className="block truncate font-semibold text-foreground">{activityLabel(activity)}</span>
+        {/* The run and its date, so the link says which run it opens (v4.17). */}
+        <span className="truncate text-sm font-semibold text-foreground">
+          {activityLabel(activity)} · {formatDate(activity.date)}
+        </span>
       </span>
       {!isPrev && <ChevronRight size={16} className="shrink-0 text-muted-foreground" />}
     </Link>
@@ -50,9 +56,9 @@ export function ActivityNav({ prev, next }: Props) {
   if (!prev && !next) return null
 
   return (
-    <GlassSurface variant="card" className="flex items-stretch divide-x divide-border overflow-hidden p-0">
+    <nav className={cardClass({ padding: 'none', overflow: true, className: 'flex items-stretch divide-x divide-border' })}>
       <NavLink activity={prev} direction="prev" />
       <NavLink activity={next} direction="next" />
-    </GlassSurface>
+    </nav>
   )
 }
