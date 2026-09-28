@@ -65,6 +65,20 @@ export const SURFACES = {
   },
 } as const
 
+/**
+ * The heatmap's one scale (v4.17), rare to frequent: a teal family, faint
+ * to near white on dark, pale to deep on light. It is what the tracks build
+ * to as they stack (see the map's HEAT_STYLE), and the legend draws it.
+ */
+export const HEAT_RAMP = {
+  dark: ['#0e3b2f', '#1b9e7c', '#2dd4a7', '#dffff5'],
+  light: ['#cfebe0', '#5dbb9b', '#0f8a6a', '#063a2c'],
+} as const
+
+/** The ramp's stops as --heat-1..4: flat tokens, the legend draws the gradient. */
+const heatRampTokens = (mode: 'light' | 'dark') =>
+  Object.fromEntries(HEAT_RAMP[mode].map((hex, i) => [`--heat-${i + 1}`, hex]))
+
 function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
   const n = SURFACES[mode]
   return {
@@ -235,6 +249,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--chart-hard': c.orange600,
       '--chart-ground-contact': c.amberLine,
       '--chart-brand': c.roEmeraldDeep,
+      ...heatRampTokens('light'),
 
       '--ro-accent': c.roEmeraldDeep,
       '--ro-accent-hi': c.roEmeraldLift,
@@ -290,6 +305,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--chart-hard': c.orange400,
       '--chart-ground-contact': c.amber500,
       '--chart-brand': c.roEmerald,
+      ...heatRampTokens('dark'),
 
 
 

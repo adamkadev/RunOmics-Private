@@ -207,7 +207,7 @@ export const fr = {
     map: {
       title: 'Heatmap',
       back: 'Activités',
-      runs: (n: number) => `${n} avec GPS`,
+      runs: (n: number) => `${n} sortie${n === 1 ? '' : 's'} avec GPS`,
       area: 'Zone',
       areas: 'Zones',
       areasSummary: (areas: number, runs: number) =>
@@ -224,17 +224,17 @@ export const fr = {
       more: 'Fréquent',
       noRoutes: 'Aucun parcours pour ce filtre',
       mapUnavailable: 'Carte indisponible - aucune clé de carte configurée',
-      attributionLabel: 'Données cartographiques',
       attribution: '© MapTiler · © OpenStreetMap contributors',
       territory: {
-        headline: (percent: number, place: string, radius: string) =>
-          `${percent} % de ta course se fait à ${place}. La moitié de tes sorties y restent à moins de ${radius} du centre.`,
-        headlineHome: (percent: number, radius: string) =>
-          `${percent} % de ta course se fait dans ton secteur habituel. La moitié de tes sorties y restent à moins de ${radius} de son centre.`,
+        headline: (percent: number, reach: string, home: boolean) => ({
+          lead: `${percent} % de ta course se fait ici. La moitié de tes sorties restent dans le `,
+          accent: `cercle de ${reach}`,
+          tail: home ? ' autour de chez toi.' : ' autour de leur point de départ.',
+        }),
         homeArea: 'Secteur habituel',
         runsStat: 'sorties',
         kmStat: 'km',
-        radiusStat: 'rayon de la moitié des sorties',
+        reachStat: 'portée médiane',
       },
     },
     shoes: {

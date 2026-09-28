@@ -71,6 +71,17 @@ describe('getAllRoutes', () => {
     expect(brussels.bounds).toEqual({ minLon: 4.3, maxLon: 4.32, minLat: 50.8, maxLat: 50.82 })
   })
 
+  it('frames a cluster on the 4th to 96th percentile of its points, so one long run does not zoom it out (v4.17)', async () => {
+    // 99 points on the home streets, one run's far end 20 km east.
+    const home: [number, number][] = Array.from({ length: 99 }, (_, i) => [7.75 + i * 0.0001, 48.58 + i * 0.0001])
+    const { getAllRoutes } = await load([activity('home', '2026-07-20', home), activity('far', '2026-07-19', [[7.75, 48.58], [8.02, 48.58]])])
+    const cluster = getAllRoutes().clusters[0]!
+
+    expect(cluster.bounds.maxLon).toBe(8.02)
+    expect(cluster.frame.maxLon).toBeLessThan(7.77)
+    expect(cluster.frame.minLat).toBeGreaterThanOrEqual(48.58)
+  })
+
   it('centres a cluster on its traces rather than on the first one seen', async () => {
     const { getAllRoutes } = await load([
       activity('a', '2026-07-20', [

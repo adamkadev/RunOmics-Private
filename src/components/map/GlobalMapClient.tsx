@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Info, Maximize, Minimize } from "lucide-react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Maximize, Minimize } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { ACTIVITY_TYPES, type ActivityType } from "@/domain/activity/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
@@ -11,13 +11,14 @@ import type { TerritoryCardContent } from "./TerritoryBand";
 import { ClusterPanel } from "./ClusterPanel";
 import { FilterChip } from "./FilterChip";
 import { HeatLegend } from "./HeatLegend";
-import { useMapRoutes } from "./useMapRoutes";
+import { useMapRoutes, type HomeRing } from "./useMapRoutes";
 import {
-  MAP_CHIP_NEUTRAL,
   areaRows,
   coordLabel,
   computeAreaTerritory,
   matchesFilters,
+  reachKm,
+  reachLabel,
   type HeatFilters,
 } from "./mapUtils";
 
@@ -26,22 +27,12 @@ interface Props {
   onContentChange?: (content: TerritoryCardContent | null) => void;
 }
 
-/**
- * The median radius as an upper bound: half the runs stay within it, so it
- * rounds up - "1 km" for 0.6, "1.3 km" for 1.21 - and never reads "0 km".
- */
-export function radiusLabel(km: number): string {
-  const up = km <= 1 ? 1 : Math.ceil(km * 10) / 10;
-  return `${up.toLocaleString(t.locale)} ${t.units.km}`;
-}
-
 export function GlobalMapClient({ data, onContentChange }: Props) {
   const { clusters, routeMeta } = data;
   const [selectedIdx, setSelectedIdx] = useState(data.defaultClusterIdx);
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<ActivityType | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showAttribution, setShowAttribution] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
 
   const [routes, setRoutes] = useState<[number, number][][]>([]);
@@ -93,19 +84,29 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
 
   const handleSelectCluster = useCallback((idx: number) => setSelectedIdx(idx), []);
 
+  const territory = useMemo(() => {
+    const cluster = clusters[selectedIdx];
+    return cluster ? computeAreaTerritory(cluster, routeMeta, routes, filters) : null;
+  }, [clusters, selectedIdx, routeMeta, routes, filters]);
+
+  // The ring on the map is the one the card's sentence names, at the
+  // distance it states.
+  const ring = useMemo<HomeRing | null>(
+    () => (territory ? { center: territory.home, radiusKm: reachKm(territory.medianReachKm) } : null),
+    [territory],
+  );
+
   // The card follows the area and filters on screen: eyebrow, headline and
   // stats all read the same filtered set the map draws, share by km.
   const cardContent = useMemo<TerritoryCardContent | null>(() => {
     const s = t.pages.map.territory;
     const cluster = clusters[selectedIdx];
-    if (!cluster) return null;
-    const territory = computeAreaTerritory(cluster, routeMeta, routes, filters);
-    if (!territory) return null;
+    if (!cluster || !territory) return null;
     // Without a place name the area is "your home area", never its
     // coordinates: the fallback read "all your 0.0°N 150.0°W running" (G26).
     const areaName = names[selectedIdx];
     const place = areaName && areaName !== coordLabel(cluster) ? areaName : null;
-    const radius = radiusLabel(territory.medianRadiusKm);
+    const reach = reachLabel(territory.medianReachKm);
     const eyebrow = [
       place ?? s.homeArea,
       ...(selectedType ? [t.activityTypes[selectedType]] : []),
@@ -113,20 +114,21 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     ].join(" · ");
     return {
       eyebrow,
-      headline: place ? s.headline(territory.percentVolume, place, radius) : s.headlineHome(territory.percentVolume, radius),
-      // Two stats (v5.6 #5): "half of runs within" repeated the headline.
+      // Home is the busiest area; elsewhere the ring is around where the runs start.
+      headline: s.headline(territory.percentVolume, reach, selectedIdx === data.defaultClusterIdx),
       stats: [
         { value: String(territory.routeCount), label: s.runsStat },
         { value: territory.km.toLocaleString(t.locale), label: s.kmStat },
+        { value: reach, label: s.reachStat },
       ],
     };
-  }, [clusters, selectedIdx, routeMeta, routes, filters, names, selectedType, selectedYear]);
+  }, [clusters, selectedIdx, territory, names, selectedType, selectedYear, data.defaultClusterIdx]);
 
   useEffect(() => {
     onContentChange?.(cardContent);
   }, [onContentChange, cardContent]);
 
-  const { containerRef, resize } = useMapRoutes(data, routes, selectedIdx, visibleIndices);
+  const { containerRef, resize } = useMapRoutes(data, routes, selectedIdx, visibleIndices, ring);
 
   useSetFullscreenChromeHidden(isFullscreen);
 
@@ -158,34 +160,21 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     };
   }, [clusters]);
 
-  const attributionButton = (overlay: boolean) => (
-    <button
-      onClick={() => setShowAttribution((v) => !v)}
-      aria-label={t.pages.map.attributionLabel}
-      aria-expanded={showAttribution}
-      className={[
-        "flex shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground",
-        overlay
-          ? "glass-map-chip absolute bottom-[calc(max(env(safe-area-inset-bottom),12px)+22px)] right-3 z-10 h-[30px] w-[30px]"
-          : "h-[22px] w-[22px]",
-      ].join(" ")}
-    >
-      <Info size={overlay ? 14 : 12} />
-    </button>
-  );
+  // Bottom overlays sit clear of the home indicator in fullscreen.
+  const bottom = isFullscreen ? "bottom-[max(env(safe-area-inset-bottom),12px)]" : "bottom-3";
 
   return (
     <div
-      className={isFullscreen ? "fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex flex-col bg-background" : "flex flex-col gap-3"}
+      className={isFullscreen ? "fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex flex-col bg-background" : "flex flex-col gap-3.5"}
       data-testid="heatmap"
     >
-      {/* The chips: in the page flow, or the fullscreen header with the
-          collapse button. All three fit one row at 375 pt; the area name
-          truncates first. */}
+      {/* The chips on their own row under the title (v4.17), wrapping rather
+          than cutting the area's name; in fullscreen, the header row with the
+          collapse button. */}
       <div
         className={[
-          "flex items-center gap-2",
-          isFullscreen ? "shrink-0 border-b border-border bg-card px-3 py-2" : "",
+          "flex flex-wrap items-center gap-2",
+          isFullscreen ? "shrink-0 border-b border-border bg-card px-3 py-2" : "mt-1",
         ].join(" ")}
       >
         <ClusterPanel rows={rows} names={names} selectedIdx={selectedIdx} onSelect={handleSelectCluster} />
@@ -209,68 +198,67 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           <button
             onClick={() => setIsFullscreen(false)}
             aria-label={t.pages.map.exitFullscreen}
-            className="ml-auto flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] text-foreground"
-            style={{ border: MAP_CHIP_NEUTRAL.border }}
+            className="map-overlay ml-auto flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] text-foreground"
           >
-            <Minimize size={16} />
+            <Minimize size={14} />
           </button>
         )}
       </div>
 
-      <div className={isFullscreen ? "relative min-h-0 flex-1" : "overflow-hidden rounded-[22px] border border-border bg-card"}>
-        <div className={isFullscreen ? "absolute inset-0" : "relative h-[360px]"}>
+      <div
+        className={
+          isFullscreen
+            ? "relative min-h-0 flex-1 bg-background"
+            : "relative h-[360px] overflow-hidden rounded-2xl border border-border bg-background md:h-[540px]"
+        }
+      >
+        {/* Sized by a wrapper: MapLibre's own stylesheet makes its container
+            position: relative, over any class set on it. */}
+        <div className="absolute inset-0">
           <div ref={containerRef} role="img" aria-label={t.pages.map.title} className="h-full w-full" />
-
-          {!process.env.NEXT_PUBLIC_MAPTILER_TOKEN && (
-            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-              <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
-                {t.pages.map.mapUnavailable}
-              </span>
-            </div>
-          )}
-
-          {visibleIndices.length === 0 && (
-            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-              <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
-                {t.pages.map.noRoutes}
-              </span>
-            </div>
-          )}
-
-          {/* Nothing on the routes but this (v4.8): legend and attribution
-              live in the footer row below. */}
-          {!isFullscreen && (
-            <button
-              onClick={() => setIsFullscreen(true)}
-              aria-label={t.pages.map.fullscreen}
-              className="glass-map-chip absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-[10px]"
-            >
-              <Maximize size={15} />
-            </button>
-          )}
-
-          {isFullscreen && (
-            <>
-              <HeatLegend overlay />
-              {attributionButton(true)}
-            </>
-          )}
-          {isFullscreen && showAttribution && (
-            <span className="glass-map-chip absolute bottom-[calc(max(env(safe-area-inset-bottom),12px)+60px)] right-3 z-10 rounded-[10px] px-3 py-1.5 text-caption text-muted-foreground">
-              {t.pages.map.attribution}
-            </span>
-          )}
         </div>
 
-        {!isFullscreen && (
-          <div className="flex flex-col gap-1.5 px-3.5 py-2.5">
-            <div className="flex items-center justify-between">
-              <HeatLegend />
-              {attributionButton(false)}
-            </div>
-            {showAttribution && <span className="text-caption text-muted-foreground">{t.pages.map.attribution}</span>}
+        {!process.env.NEXT_PUBLIC_MAPTILER_TOKEN && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
+              {t.pages.map.mapUnavailable}
+            </span>
           </div>
         )}
+
+        {visibleIndices.length === 0 && (
+          <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+            <span className="glass-map-chip px-4 py-2 text-xs font-medium text-subtle">
+              {t.pages.map.noRoutes}
+            </span>
+          </div>
+        )}
+
+        {!isFullscreen && (
+          <button
+            onClick={() => setIsFullscreen(true)}
+            aria-label={t.pages.map.fullscreen}
+            className="map-overlay absolute right-3 top-3 z-20 flex h-[34px] w-[34px] items-center justify-center rounded-[9px] text-foreground/80"
+          >
+            <Maximize size={14} />
+          </button>
+        )}
+
+        {/* The scale bottom left, the licence line bottom right (v4.17): both
+            always on the map, in the page and in fullscreen alike. */}
+        <HeatLegend className={`absolute left-3 z-10 ${bottom}`} />
+        <span
+          className={`pointer-events-none absolute right-3 z-10 max-w-[45%] text-right text-caption leading-tight text-subtle ${bottom}`}
+          data-testid="map-attribution"
+        >
+          {/* Each credit whole: a narrow map wraps between them, not inside one. */}
+          {t.pages.map.attribution.split(" · ").map((credit, i) => (
+            <Fragment key={credit}>
+              {i > 0 && " · "}
+              <span className="whitespace-nowrap">{credit}</span>
+            </Fragment>
+          ))}
+        </span>
       </div>
     </div>
   );

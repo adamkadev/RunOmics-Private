@@ -3,16 +3,7 @@
 import { useState } from "react";
 import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { t } from "@/i18n";
-import {
-  MAP_CHIP_AREA,
-  MAP_CHIP_CARET_INK,
-  MAP_CHIP_COUNT_INK,
-  MAP_CHIP_GEOMETRY,
-  MAP_CHIP_OPEN_BORDER,
-  MAP_CHIP_STYLE,
-  OWN_ROW_SHARE,
-  type AreaRow,
-} from "./mapUtils";
+import { MAP_CHIP_GEOMETRY, MAP_CHIP_PADDING, OWN_ROW_SHARE, type AreaRow } from "./mapUtils";
 import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
 interface Props {
@@ -35,7 +26,7 @@ function AreaOption({ row, name, selected, onPick }: { row: AreaRow; name: strin
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className={["truncate text-[15px] text-foreground", selected ? "font-semibold" : ""].join(" ")}>{name}</span>
           <span className="text-[13px] text-muted-foreground">
-            {t.pages.map.runs(row.runs)} · {row.km.toLocaleString(t.locale)} {t.units.km}
+            {t.common.runs(row.runs)} · {row.km.toLocaleString(t.locale)} {t.units.km}
           </span>
         </span>
         <span className="font-display text-[15px] font-semibold tabular-nums text-foreground">{row.sharePercent}%</span>
@@ -55,7 +46,6 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
   const [unfolded, setUnfolded] = useState(false);
 
   const selectedName = names[selectedIdx] ?? "";
-  const selectedRuns = rows.find((r) => r.idx === selectedIdx)?.runs ?? 0;
   const totalRuns = rows.reduce((s, r) => s + r.runs, 0);
   const totalKm = rows.reduce((s, r) => s + r.km, 0);
 
@@ -73,19 +63,20 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
   }
 
   return (
-    <div className="min-w-0 shrink">
+    <div className="min-w-0 max-w-full">
+      {/* The area in the accent (v4.17): always set, it says which area is
+          on the map. The whole name, never cut - the row wraps instead. */}
       <button
         {...menu.chipProps}
         title={selectedName}
         aria-label={`${t.pages.map.area}: ${selectedName}`}
-        className={[MAP_CHIP_GEOMETRY, "min-w-0 max-w-[150px] gap-[7px]"].join(" ")}
-        style={{ ...MAP_CHIP_STYLE, ...MAP_CHIP_AREA, ...(menu.open ? { border: MAP_CHIP_OPEN_BORDER } : {}) }}
+        className={[MAP_CHIP_GEOMETRY, "map-chip-selected max-w-full gap-1.5 font-semibold"].join(" ")}
+        style={{ padding: MAP_CHIP_PADDING }}
       >
-        <span className="min-w-0 truncate font-semibold">{selectedName}</span>
-        <span className="shrink-0 tabular-nums" style={{ color: MAP_CHIP_COUNT_INK }}>{selectedRuns}</span>
+        <span className="min-w-0 truncate">{selectedName}</span>
         <ChevronDown
-          size={10}
-          style={{ color: MAP_CHIP_CARET_INK }}
+          size={12}
+          strokeWidth={2.5}
           className={["shrink-0 transition-transform", menu.open ? "rotate-180" : ""].join(" ")}
         />
       </button>
@@ -118,7 +109,7 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-[15px] text-foreground">{t.pages.map.moreAreas(folded.length)}</span>
                   <span className="truncate text-[13px] text-muted-foreground">
-                    {t.pages.map.runs(folded.reduce((s, r) => s + r.runs, 0))} · {foldedKm.toLocaleString(t.locale)} {t.units.km} · {t.pages.map.including(names[folded[0]!.idx] ?? "")}
+                    {t.common.runs(folded.reduce((s, r) => s + r.runs, 0))} · {foldedKm.toLocaleString(t.locale)} {t.units.km} · {t.pages.map.including(names[folded[0]!.idx] ?? "")}
                   </span>
                 </span>
                 <span className="font-display text-[15px] font-semibold tabular-nums text-muted-foreground">

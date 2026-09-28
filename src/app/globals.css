@@ -159,6 +159,10 @@
   --chart-hard:              #ea580c;
   --chart-ground-contact:    #b87d0f;
   --chart-brand:             #0e9f6e;
+  --heat-1:                  #cfebe0;
+  --heat-2:                  #5dbb9b;
+  --heat-3:                  #0f8a6a;
+  --heat-4:                  #063a2c;
   --ro-accent:               #0e9f6e;
   --ro-accent-hi:            #14b886;
   --ro-ink:                  #0b1f17;
@@ -244,6 +248,10 @@
   --chart-hard:              #fb923c;
   --chart-ground-contact:    #f59e0b;
   --chart-brand:             #1ed787;
+  --heat-1:                  #0e3b2f;
+  --heat-2:                  #1b9e7c;
+  --heat-3:                  #2dd4a7;
+  --heat-4:                  #dffff5;
   --accent:                  #2fd1a6;
   --accent-foreground:       #03201a;
   --accent-text:             #2fd1a6;
@@ -478,6 +486,33 @@
     border: 1px solid var(--border);
     border-radius: 10px;
     color: var(--ro-text);
+  }
+
+  /* The heatmap's filter chips (v4.17): a pill on the card colour, its
+     label between text and muted ink. */
+  .map-chip {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: color-mix(in oklab, var(--foreground) 50%, var(--muted-foreground));
+  }
+
+  /* The chip that is set - the area always, a type or year once picked:
+     the solid accent on light, an accent outline on a tint of it on dark. */
+  .map-chip-selected {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: var(--accent-foreground);
+  }
+  .dark .map-chip-selected {
+    background: color-mix(in oklab, var(--accent) 12%, var(--background));
+    color: var(--accent-text);
+  }
+
+  /* What floats on the heatmap: its expand button and its legend. */
+  .map-overlay {
+    background: color-mix(in oklab, var(--card) 90%, transparent);
+    border: 1px solid var(--border);
+    color: var(--muted-foreground);
   }
 
   /* A raised surface on a card: a sheet, a popover, a selected pill. */

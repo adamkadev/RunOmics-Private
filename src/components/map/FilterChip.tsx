@@ -2,14 +2,7 @@
 
 import { Check, ChevronDown, X } from "lucide-react";
 import { t } from "@/i18n";
-import {
-  MAP_CHIP_ACTIVE,
-  MAP_CHIP_CARET_INK,
-  MAP_CHIP_GEOMETRY,
-  MAP_CHIP_NEUTRAL,
-  MAP_CHIP_OPEN_BORDER,
-  MAP_CHIP_STYLE,
-} from "./mapUtils";
+import { MAP_CHIP_CARET_INK, MAP_CHIP_GEOMETRY, MAP_CHIP_OPEN_BORDER, MAP_CHIP_PADDING } from "./mapUtils";
 import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
 interface Props<T extends string> {
@@ -22,8 +15,8 @@ interface Props<T extends string> {
 }
 
 /**
- * Type and year (v4.8): neutral until set, then the accent with an ✕ that
- * clears it - the only accent on the page. The menu lists "All" first.
+ * Type and year (v4.8): neutral until set, then the area chip's accent
+ * (v4.17) with an ✕ that clears it. The menu lists "All" first.
  */
 export function FilterChip<T extends string>({ allLabel, options, value, label, onChange }: Props<T>) {
   const menu = useChipMenu("end");
@@ -38,22 +31,19 @@ export function FilterChip<T extends string>({ allLabel, options, value, label, 
   return (
     <div className="shrink-0">
       <div
-        className={[MAP_CHIP_GEOMETRY, "overflow-hidden"].join(" ")}
-        style={{
-          ...(value ? MAP_CHIP_ACTIVE : MAP_CHIP_NEUTRAL),
-          ...(menu.open && !value ? { border: MAP_CHIP_OPEN_BORDER, color: "var(--foreground)" } : {}),
-          fontSize: MAP_CHIP_STYLE.fontSize,
-        }}
+        className={[MAP_CHIP_GEOMETRY, "overflow-hidden", value ? "map-chip-selected" : "map-chip"].join(" ")}
+        style={menu.open && !value ? { border: MAP_CHIP_OPEN_BORDER, color: "var(--foreground)" } : undefined}
       >
         <button
           {...menu.chipProps}
-          className="flex h-full items-center gap-[7px]"
-          style={{ padding: value ? "0 4px 0 12px" : MAP_CHIP_STYLE.padding, color: "inherit" }}
+          className="flex h-full items-center gap-1.5"
+          style={{ padding: value ? "0 4px 0 14px" : MAP_CHIP_PADDING, color: "inherit" }}
         >
           <span className={value ? "font-semibold" : ""}>{text}</span>
           {!value && (
             <ChevronDown
-              size={10}
+              size={12}
+              strokeWidth={2.5}
               style={{ color: MAP_CHIP_CARET_INK }}
               className={["transition-transform", menu.open ? "rotate-180" : ""].join(" ")}
             />
@@ -63,7 +53,7 @@ export function FilterChip<T extends string>({ allLabel, options, value, label, 
           <button
             onClick={() => onChange(null)}
             aria-label={t.pages.map.clearFilter(text)}
-            className="flex h-full items-center pl-1 pr-3"
+            className="flex h-full items-center pl-1 pr-3.5"
             style={{ color: "inherit", opacity: 0.7 }}
           >
             <X size={13} strokeWidth={2.5} />

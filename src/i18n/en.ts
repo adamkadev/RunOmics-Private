@@ -225,7 +225,7 @@ export const en = {
       title: 'Heatmap',
       back: 'Activities',
       // Only runs with a GPS track are on the map (v5.6 #5): 294 of 298.
-      runs: (n: number) => `${n} with GPS`,
+      runs: (n: number) => `${n} run${n === 1 ? '' : 's'} with GPS`,
       area: 'Area',
       areas: 'Areas',
       areasSummary: (areas: number, runs: number) =>
@@ -242,17 +242,18 @@ export const en = {
       more: 'Frequent',
       noRoutes: 'No routes for this filter',
       mapUnavailable: 'Map unavailable - no map token configured',
-      attributionLabel: 'Map data',
       attribution: '© MapTiler · © OpenStreetMap contributors',
       territory: {
-        headline: (percent: number, place: string, radius: string) =>
-          `${percent}% of your running is in ${place}. Half your runs there stay within ${radius} of the centre.`,
-        headlineHome: (percent: number, radius: string) =>
-          `${percent}% of your running is in your home area. Half your runs there stay within ${radius} of its centre.`,
+        // The place is the eyebrow's (v4.17); the ring is the map's.
+        headline: (percent: number, reach: string, home: boolean) => ({
+          lead: `${percent}% of your running is here. Half your runs stay inside the `,
+          accent: `${reach} ring`,
+          tail: home ? ' around home.' : ' around where they start.',
+        }),
         homeArea: 'Home area',
         runsStat: 'runs',
         kmStat: 'km',
-        radiusStat: 'half of runs within',
+        reachStat: 'median reach',
       },
     },
     shoes: {
