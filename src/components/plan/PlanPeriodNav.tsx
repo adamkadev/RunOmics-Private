@@ -1,0 +1,51 @@
+'use client'
+
+import type { ReactNode } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { t } from '@/i18n'
+
+// 30 pt inset squares on a line (v4.17), with the 44 pt hit area around them.
+const NAV_BUTTON =
+  'hit-44 flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-border bg-[var(--surface-2)] text-[var(--text-2)] transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
+
+/**
+ * The week's and the month's one navigator: previous, the period, next. The
+ * jump back to today sits beside the period's name, in the same row, so the
+ * chart under it never moves as it appears and disappears.
+ */
+export function PlanPeriodNav({
+  label,
+  onPrev,
+  onNext,
+  nextDisabled = false,
+  onToday,
+}: {
+  label: ReactNode
+  onPrev: () => void
+  onNext: () => void
+  nextDisabled?: boolean
+  /** Shown while the period on screen is not today's. */
+  onToday?: (() => void) | null
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <button type="button" aria-label={t.plan.prevPeriod} onClick={onPrev} className={NAV_BUTTON}>
+        <ChevronLeft size={16} aria-hidden="true" />
+      </button>
+      <div className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-foreground">
+        <span className="truncate">{label}</span>
+        {onToday && (
+          <>
+            <span aria-hidden="true" className="font-normal text-muted-foreground">·</span>
+            <button type="button" onClick={onToday} className="shrink-0 font-medium text-accent-text">
+              {t.plan.today}
+            </button>
+          </>
+        )}
+      </div>
+      <button type="button" aria-label={t.plan.nextPeriod} onClick={onNext} disabled={nextDisabled} className={NAV_BUTTON}>
+        <ChevronRight size={16} aria-hidden="true" />
+      </button>
+    </div>
+  )
+}

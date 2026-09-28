@@ -8,6 +8,7 @@ import { Pill } from '@/components/ui/Pill'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { formatPlanDuration, type PlanWorkoutView } from './planWorkoutView'
 import { WorkoutStructureBars, WorkoutStepList } from './WorkoutStructure'
+import { sessionZone } from '@/lib/colors'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
@@ -124,7 +125,11 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
                 {t.plan.structure.title}
               </p>
               {structure.length > 1 && (
-                <WorkoutStructureBars steps={structure} className="mb-3 flex h-[26px] items-end gap-[3px]" />
+                <WorkoutStructureBars
+                  steps={structure}
+                  zone={workout.type ? sessionZone(workout) : null}
+                  className="mb-3 flex h-[26px] items-end gap-[3px]"
+                />
               )}
               <WorkoutStepList steps={structure} type={workout.type as ActivityType | undefined} />
             </div>

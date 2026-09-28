@@ -1860,8 +1860,34 @@ export const en = {
     plannedKmLabel: (km: number) => `${km} km planned`,
     restCard: {
       title: 'Rest day',
-      noSession: 'No session planned',
-      next: (weekday: string, title: string) => `No session planned · next is ${weekday}, ${title}`,
+      noSession: 'No session planned.',
+      next: (weekday: string, title: string) => `No session planned. Next up: ${weekday}, ${title}.`,
+    },
+    // v4.17: the race the plan builds to, and how far off it is, under the title.
+    header: {
+      daysToGo: (n: number) => (n <= 0 ? 'race day' : n === 1 ? '1 day to go' : `${n} days to go`),
+    },
+    legend: {
+      plannedByType: 'Planned · colour = session type',
+    },
+    // The week's three stats (v4.17).
+    stats: {
+      distance: 'Distance',
+      sessions: 'Sessions',
+      adherence: 'Plan adherence',
+      adherenceAim: (pct: number) => `Aim for ${pct}% or more`,
+      noPlan: 'No plan this week',
+      ofKm: (km: string) => `of ${km} km`,
+      ofSessions: (n: number) => `of ${n}`,
+      kmPlanned: 'km planned',
+      planned: 'planned',
+    },
+    // A session row's target line: its zone, its paces, its recovery.
+    row: {
+      pace: (range: string) => `${range} /km`,
+      easyPace: (range: string) => `easy ${range} /km`,
+      stridesPace: (pace: string) => `strides ${pace} /km`,
+      recovery: (clock: string) => `${clock} rec`,
     },
     weekSummary: {
       missed: (n: number) => `${n} missed`,
@@ -1895,6 +1921,8 @@ export const en = {
       peak: 'Peak',
       taper: 'Taper',
       raceDay: 'Race',
+      weeks: (n: number) => `${n} wk`,
+      raceWeek: (date: string) => `Race week ${date}`,
     },
     weekPurpose: {
       thisWeek: 'This week',

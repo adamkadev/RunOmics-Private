@@ -30,10 +30,13 @@ export function WorkoutStructureBars({
   steps,
   className,
   labels = false,
+  zone = null,
 }: {
   steps: WorkoutStep[]
   className?: string
   labels?: boolean
+  /** The session's zone: the work is drawn in it (v4.17). */
+  zone?: number | null
 }) {
   const weights = steps.map((step) => Math.max(step.minutes, 1))
   const total = weights.reduce((sum, weight) => sum + weight, 0)
@@ -54,7 +57,7 @@ export function WorkoutStructureBars({
               flexGrow: weight,
               flexBasis: 0,
               height: STEP_HEIGHT[step.kind],
-              background: STEP_COLOR[step.kind],
+              background: step.kind === 'effort' && zone !== null ? zoneFill(zone) : STEP_COLOR[step.kind],
             }}
           >
             {labelled && (
@@ -85,11 +88,11 @@ export function recoveryLabel(steps: WorkoutStep[] | null | undefined): string |
 // The bar is filled in the zone the session targets and written in --zone-ink,
 // which clears 7:1 on Z3 and Z4. It used to be navy text on a mid-blue fill -
 // about 3:1 - and the blue said Z2 on a Z4 session.
-const ZONE_INK = 'var(--zone-ink)'
-const RECOVERY_FILL = 'color-mix(in srgb, var(--zone-1) 60%, transparent)'
+const ZONE_INK = WORKOUT_SEGMENT_INK.effort
+const RECOVERY_FILL = WORKOUT_SEGMENT_COLORS.recovery
 // Warm-up/cool-down need to read as segments, not gaps - .18 sat close
 // enough to the card's own light-mode tint that they blended into it.
-const EASE_FILL = 'color-mix(in srgb, var(--subtle) 32%, transparent)'
+const EASE_FILL = WORKOUT_SEGMENT_COLORS.warmup
 
 function zoneFill(zone: number | null): string {
   return `var(--zone-${zone ?? 2})`

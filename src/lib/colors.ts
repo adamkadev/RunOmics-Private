@@ -198,22 +198,27 @@ export const SHOE_WEAR_TINTS = {
   },
 } as const
 
+/**
+ * A planned session's segments, as tokens (v4.17): warm-up and cool-down one
+ * neutral, the jog between reps Z1's tint, the work its zone - Z4 unless the
+ * bar is told the session's own. The work was a fixed amber and the recovery
+ * a fixed blue that said "easy" on every session, and the white-alpha ease
+ * vanished on a light card.
+ */
 export const WORKOUT_SEGMENT_COLORS = {
-  warmup:   paper(0.18),
-  effort:   c.roAmber,
-  recovery: c.blue500,
-  cooldown: paper(0.18),
+  warmup:   'color-mix(in srgb, var(--subtle) 32%, transparent)',
+  effort:   'var(--zone-4)',
+  recovery: 'color-mix(in srgb, var(--zone-1) 60%, transparent)',
+  cooldown: 'color-mix(in srgb, var(--subtle) 32%, transparent)',
 } as const
 
 /**
  * Ink for the duration labels that sit inside the structure bar. Only `effort`
  * is drawn at full height, so it is the only segment wide and tall enough to
- * carry text. `roAmber` is a light fill: white ink on it measures 1.80:1 where
- * `roInk` clears 9.5:1, and because the fill is a fixed hex rather than a theme
- * token the same ink holds in both themes.
+ * carry text, in the same zone ink the session bar writes on its fills.
  */
 export const WORKOUT_SEGMENT_INK = {
-  effort: c.roInk,
+  effort: 'var(--zone-ink)',
 } as const
 
 export const CELEBRATION_COLORS = {
