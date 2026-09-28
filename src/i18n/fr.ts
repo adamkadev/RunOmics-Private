@@ -192,6 +192,7 @@ export const fr = {
 
   pages: {
     dashboard: {
+      title: 'Aujourd’hui',
     },
     activities: {
       title: 'Activités',
@@ -416,7 +417,7 @@ export const fr = {
         'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
     },
     bodyCard: {
-      deltaIn: (delta: string, days: number) => `${delta} en ${days} j`,
+      deltaIn: (delta: string, days: number) => `${delta} en ${days} jours`,
     },
     trainingStatusDays: {
       title: 'Statut d’entraînement',
@@ -460,12 +461,27 @@ export const fr = {
       },
       restDay: 'Jour de repos',
       restDaySubtitle: 'Aucune séance prévue',
+      next: (weekday: string, title: string, km: string | null) => `Ensuite : ${weekday} · ${title}${km ? ` · ${km} km` : ''}`,
+      openPlan: 'Voir le plan',
       race: 'Course',
     },
     weeklyStreak: {
+      title: 'Cette semaine',
       weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
       ofKm: (target: string) => `sur ${target} km`,
-      sessionsOf: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} sur ${planned}`,
+      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} sur ${planned}`,
+      kinds: {
+        easy: 'Facile',
+        easyStrides: 'Facile + accél.',
+        recovery: 'Récup',
+        long_run: 'Sortie longue',
+        tempo: 'Tempo',
+        threshold: 'Seuil',
+        vo2max: 'VO₂max',
+        anaerobic: 'Anaérobie',
+        sprint: 'Sprint',
+        race: 'Course',
+      },
     },
     celebration: {
       eyebrow: 'Nouveau record personnel',

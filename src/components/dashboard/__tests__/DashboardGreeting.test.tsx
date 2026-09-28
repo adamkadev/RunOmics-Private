@@ -8,6 +8,12 @@ const push = vi.fn()
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }))
 
 describe('DashboardGreeting', () => {
+  // v4.17: Today has a page header like every page - the H1 and its line.
+  it('heads the page with its title', () => {
+    render(<DashboardGreeting name="Adam" />)
+    expect(screen.getByRole('heading', { level: 1, name: t.pages.dashboard.title })).toBeInTheDocument()
+  })
+
   // The avatar looked tappable and was a plain div.
   it('makes the avatar a 44 pt link to Progress', () => {
     render(<DashboardGreeting name="Adam" />)

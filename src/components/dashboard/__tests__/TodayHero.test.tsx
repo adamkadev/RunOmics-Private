@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { t } from '@/i18n'
+import { formatWeekday } from '@/lib/formatters'
 import { TodayHero } from '../TodayHero'
 
 const RUN: ActivitySummary = {
@@ -12,15 +13,43 @@ const RUN: ActivitySummary = {
 const PLAN = { title: 'Threshold', type: 'Threshold' as const, duration: { seconds: 1_500, estimated: false }, distanceM: 6_000, activityId: 'a1', target: null, structure: null }
 
 describe('TodayHero', () => {
-  it('draws on the card surface and tokens, not fixed hexes', () => {
-    const { container } = render(<TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} />)
+  // v4.17: a plain surface card - the verdict's colour is its eyebrow's
+  // alone, never a tinted border or fill.
+  it('draws on the plain card surface, its tone only in the eyebrow', () => {
+    const status = { tsbNow: -15, tsbDelta: 7, ctl: 47, atl: 62, atlDelta: 6, loadTrend: 'maintaining' } as unknown as TrainingStatus
+    const { container } = render(<TodayHero status={status} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} />)
     const card = container.firstElementChild as HTMLElement
 
-    expect(card.className).toContain('glass-card')
-    expect(card.getAttribute('style')).not.toMatch(/#101a2c|rgba\(148,\s*178,\s*220/)
-    // H03: a thin border in the tone all round, not a thick left rule.
-    expect(card.className).not.toContain('border-l-[3px]')
-    expect(card.style.borderColor).toContain('color-mix')
+    expect(card.className).toContain('bg-card')
+    expect(card.className).toContain('border-border')
+    expect(card.getAttribute('style')).toBeNull()
+    const eyebrow = screen.getByText(t.dashboard.todayHero.eyebrowByTone.hold)
+    expect(eyebrow.getAttribute('style')).toContain('var(--warn)')
+    expect(eyebrow.querySelector('span[aria-hidden]')).not.toBeNull()
+  })
+
+  it('offers the plan from the session row', () => {
+    render(<TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} />)
+
+    expect(screen.getByRole('link', { name: t.dashboard.todayHero.openPlan })).toHaveAttribute('href', '/plan')
+    expect(screen.getByTestId('session-card')).toHaveTextContent(`${t.sessionState.planned}Threshold`)
+  })
+
+  it('names the next session on a rest day', () => {
+    const status = { tsbNow: -15, tsbDelta: 7, ctl: 47, atl: 62, atlDelta: 6, loadTrend: 'maintaining' } as unknown as TrainingStatus
+    render(
+      <TodayHero
+        status={status}
+        plannedWorkout={null}
+        todayActivity={null}
+        aiVerdict={null}
+        nextSession={{ date: '2026-09-29', title: 'Threshold 3 x 7:15', km: '10' }}
+      />,
+    )
+
+    const row = screen.getByTestId('session-card')
+    expect(row).toHaveTextContent(t.dashboard.todayHero.restDay)
+    expect(row).toHaveTextContent(t.dashboard.todayHero.next(formatWeekday('2026-09-29'), 'Threshold 3 x 7:15', '10'))
   })
 
   // v4.3.4: the watch status left the head for the Body card.

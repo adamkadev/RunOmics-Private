@@ -1,9 +1,9 @@
 'use client'
 
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { SearchX, ChevronDown, X } from 'lucide-react'
-import { ActivityThumbRow, ThumbRowDivider } from './ActivityThumbRow'
+import { ActivityThumbRow } from './ActivityThumbRow'
 import { ACTIVITY_TYPES, isActivityType, type ActivitySummary, type ActivityType } from '@/domain/activity/types'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
@@ -87,11 +87,8 @@ function PastWeekLine({ group, long = false }: { group: WeekRow; long?: boolean 
 function ThumbRows({ items, efforts }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]> }) {
   return (
     <>
-      {items.map((a, i) => (
-        <Fragment key={a.id}>
-          {i > 0 && <ThumbRowDivider />}
-          <ActivityThumbRow activity={a} qualifiedEfforts={efforts[a.id]} withDay />
-        </Fragment>
+      {items.map((a) => (
+        <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={efforts[a.id]} variant="inset" />
       ))}
     </>
   )
