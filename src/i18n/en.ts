@@ -463,7 +463,8 @@ export const en = {
       deltaIn: (delta: string, days: number) => `${delta} in ${days} days`,
       // Which way Form moved, before by how much (v4.17.1): "recovering, +7 in 7 days".
       formTrend: { up: 'recovering', down: 'absorbing load', flat: 'steady' },
-      formMove: (trend: string, delta: string) => `${trend}, ${delta}`,
+      // Before the delta: "recovering," then "+7 in 7 days".
+      formMoveLead: (trend: string) => `${trend},`,
     },
     trainingStatusDays: {
       title: 'Training Status',

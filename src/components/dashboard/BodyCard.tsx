@@ -61,22 +61,29 @@ export function BodyCard({ status }: { status: TrainingStatus | null; watchStatu
           value={formatDelta(form)}
           tone={BAND_TONE[band]}
           meaning={
-            // Each part carries its " · " in front, pulled out by the row's
-            // negative margin: on a phone the delta wraps onto its own line,
-            // its dot is clipped at the edge, and no line ends on a dot.
-            <span className="-ml-3 flex flex-wrap">
-              {/* Form's own band, as Analytics names it (v4.7). "Productive"
-                  was Garmin's training status, not a Form band. */}
-              <span className="whitespace-nowrap" data-testid="form-band">
-                <span aria-hidden="true" className="inline-block w-3" />
-                {t.formBand[band]}
-              </span>
-              {/* One meaning colour a stat (v4.17.1): the band carries it,
-                  which way Form moved and by how much is a muted detail -
-                  "Tired" in warn beside "+7" in pos read as two verdicts. */}
-              <span className="whitespace-nowrap text-muted-foreground" data-testid="metric-delta" data-tone="muted">
-                <span aria-hidden="true" className="inline-block w-3 text-center">·</span>
-                {t.dashboard.bodyCard.formMove(formTrend(status.tsbDelta), deltaLabel(status.tsbDelta, STATUS_DELTA_DAYS.form))}
+            // Wraps, never cut (v4.17.2): the band, then " · " and which way
+            // Form moved and by how much. The dot sits in a 12 px box pulled
+            // out by the row's negative margin and clipped at the column's
+            // edge, so when the move wraps onto its own line no line starts
+            // or ends on a dot; the move's own words wrap in whole phrases.
+            <span className="block overflow-hidden">
+              <span className="-ml-3 flex flex-wrap">
+                {/* Form's own band, as Analytics names it (v4.7). "Productive"
+                    was Garmin's training status, not a Form band. */}
+                <span data-testid="form-band">
+                  <span aria-hidden="true" className="inline-block w-3" />
+                  {t.formBand[band]}
+                </span>
+                {/* One meaning colour a stat (v4.17.1): the band carries it,
+                    which way Form moved and by how much is a muted detail -
+                    "Tired" in warn beside "+7" in pos read as two verdicts. */}
+                <span className="flex min-w-0 text-muted-foreground" data-testid="metric-delta" data-tone="muted">
+                  <span aria-hidden="true" className="w-3 shrink-0 text-center">·</span>
+                  <span className="min-w-0">
+                    <span className="inline-block">{t.dashboard.bodyCard.formMoveLead(formTrend(status.tsbDelta))}</span>{' '}
+                    <span className="inline-block">{deltaLabel(status.tsbDelta, STATUS_DELTA_DAYS.form)}</span>
+                  </span>
+                </span>
               </span>
             </span>
           }

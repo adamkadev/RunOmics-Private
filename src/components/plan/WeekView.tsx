@@ -293,7 +293,6 @@ function WeekStats({ target, notStarted }: { target: WeekTarget; notStarted: boo
           label={s.sessions}
           value={sessions.value}
           unit={sessions.unit}
-          wrapMeaning
           meaning={
             missed > 0 || unplanned > 0 ? (
               <>
@@ -307,7 +306,6 @@ function WeekStats({ target, notStarted }: { target: WeekTarget; notStarted: boo
         <Stat
           label={s.adherence}
           value={adherence === null ? '—' : `${adherence}%`}
-          wrapMeaning
           meaning={planKm === null ? s.noPlan : s.adherenceAim(PLAN_ADHERENCE_AIM)}
           tone={adherenceTone(adherence)}
         />

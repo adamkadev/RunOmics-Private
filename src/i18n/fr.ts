@@ -436,7 +436,7 @@ export const fr = {
     bodyCard: {
       deltaIn: (delta: string, days: number) => `${delta} en ${days} jours`,
       formTrend: { up: 'en récupération', down: 'sous charge', flat: 'stable' },
-      formMove: (trend: string, delta: string) => `${trend}, ${delta}`,
+      formMoveLead: (trend: string) => `${trend},`,
     },
     trainingStatusDays: {
       title: 'Statut d’entraînement',

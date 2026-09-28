@@ -77,7 +77,9 @@ describe('BodyCard', () => {
     expect(band.closest('.text-\\[var\\(--warn\\)\\]')).not.toBeNull()
     expect(form!.dataset.tone).toBe('muted')
     expect(form!.className).toContain('text-muted-foreground')
-    expect(form!.textContent).toBe(`·${t.dashboard.bodyCard.formMove(t.dashboard.bodyCard.formTrend.up, t.dashboard.bodyCard.deltaIn('+7', 7))}`)
+    expect(form!.textContent).toBe(`·${t.dashboard.bodyCard.formMoveLead(t.dashboard.bodyCard.formTrend.up)} ${t.dashboard.bodyCard.deltaIn('+7', 7)}`)
+    // v4.17.2: it wraps on a phone, never cut.
+    expect(form!.closest('[class*="truncate"], [class*="nowrap"]')).toBeNull()
   })
 
   it('says which way Form moved in a word', () => {

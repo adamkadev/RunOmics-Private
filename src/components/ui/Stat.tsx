@@ -20,7 +20,7 @@ export function Unit({ children }: { children: ReactNode }) {
  * The one stat pattern (v4.17), wherever a number is shown with its name:
  * the label on top in 12 px muted sentence case, the value at 22-26 px with
  * its unit inline, and an optional line under it that says what it means,
- * in a status colour or muted.
+ * in a status colour or muted, wrapping rather than cut.
  */
 export function Stat({
   label,
@@ -29,7 +29,6 @@ export function Stat({
   meaning,
   tone = 'muted',
   size = 'md',
-  wrapMeaning = false,
   className,
   valueStyle,
 }: {
@@ -40,8 +39,6 @@ export function Stat({
   tone?: StatTone
   /** md 22 px, lg 26 px. */
   size?: 'md' | 'lg'
-  /** Let a meaning line run onto a second line on a narrow screen instead of cutting it. */
-  wrapMeaning?: boolean
   className?: string
   valueStyle?: CSSProperties
 }) {
@@ -56,7 +53,8 @@ export function Stat({
         {unit != null && unit !== '' && <Unit>{unit}</Unit>}
       </span>
       {meaning != null && meaning !== '' && (
-        <span className={cn('text-xs', wrapMeaning ? 'text-pretty' : 'truncate', STAT_TONE_CLASS[tone])}>{meaning}</span>
+        // A meaning line wraps on a narrow screen, never cut (v4.17.2).
+        <span className={cn('text-xs text-pretty', STAT_TONE_CLASS[tone])}>{meaning}</span>
       )}
     </div>
   )
