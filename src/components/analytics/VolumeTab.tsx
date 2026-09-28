@@ -1,6 +1,6 @@
 'use client'
 
-import { formatDate, formatDelta, formatKm, formatRanKm, formatWeekday } from '@/lib/formatters'
+import { formatDate, formatDelta, formatKm, formatRanKm } from '@/lib/formatters'
 import { deltaColor } from '@/lib/deltaTone'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { t } from '@/i18n'
@@ -94,10 +94,6 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
           <LegendItem swatch="square" color={ACCENT_SOFT}>{hasPlan ? s.belowPlan : s.done}</LegendItem>
           {hasPlan && <LegendItem swatch="line" color="var(--foreground)">{s.plan}</LegendItem>}
         </Legend>
-        {/* Under the chart, not a second line in the stat row (v5.5 #23). */}
-        {view.onPlan && view.withoutPlan > 0 && (
-          <p className="text-xs text-muted-foreground" data-testid="weeks-without-plan">{s.withoutPlan(view.withoutPlan)}</p>
-        )}
       </div>
     </Card>
   )
@@ -180,19 +176,17 @@ function YtdCard({ ytd }: { ytd: YtdInput }) {
 /** The long run chart's top: at least half the week, so the 35% guide sits in its lower two thirds. */
 const LONG_RUN_TOP = 0.55
 
-function LongRunCard({ rows, live, today, onShift }: { rows: WeekRow[]; live: boolean; today: string; onShift: (step: 1 | -1) => void }) {
+function LongRunCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void }) {
   const s = t.analytics.cards.longRun
   const view = longRunView(rows)
   if (!view) return null
   const H = 90
-  const dayName = view.date ? (view.date === today ? t.analytics.cards.today : formatWeekday(view.date)) : null
   // Each bar is the long run's share of its week (v4.17), against the 35% rule.
   const shares = rows.map((r, i) => (r.km > 0 ? view.bars[i]!.km / r.km : 0))
   const top = Math.max(LONG_RUN_TOP, ...shares)
   return (
     <Card testId="long-run-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      <Headline value={formatRanKm(view.km)} unit={t.units.km} note={dayName && view.share !== null ? s.share(dayName, view.share) : undefined} />
       <Sentence>
         {s.rule}
         <b style={view.over ? { color: 'var(--warn)' } : undefined}>{s.over(view.over)}</b>
@@ -203,6 +197,9 @@ function LongRunCard({ rows, live, today, onShift }: { rows: WeekRow[]; live: bo
         readout={(i) => `${t.analytics.cards.scrubWeek(bare(rows[i]!.week))} · ${formatRanKm(view.bars[i]!.km)} ${t.units.km}${shares[i] ? ` · ${Math.round(shares[i]! * 100)}%` : ''}`}
       >
         <div className="relative grid items-end" style={{ height: H, gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="long-run-bars">
+          {/* The 35% rule as a dashed guide across the weeks, over the bars;
+              out of the grid, it takes no week's cell. */}
+          <div aria-hidden className="pointer-events-none absolute z-[1] inset-x-0 border-t border-dashed border-muted-foreground" style={{ bottom: (LONG_RUN_SHARE / top) * H }} data-testid="long-run-guide" />
           {view.bars.map((bar, i) => {
             const current = bar.current && live
             return bar.km > 0 ? (
@@ -224,8 +221,6 @@ function LongRunCard({ rows, live, today, onShift }: { rows: WeekRow[]; live: bo
               <EmptyWeek key={rows[i]!.week} />
             )
           })}
-          {/* The 35% rule as a dashed guide across the weeks. */}
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 border-t border-dashed border-muted-foreground" style={{ bottom: (LONG_RUN_SHARE / top) * H }} data-testid="long-run-guide" />
         </div>
       </ChartScrub>
       <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
@@ -238,16 +233,15 @@ export interface VolumeTabProps {
   live: boolean
   onShift: (step: 1 | -1) => void
   ytd: YtdInput | null
-  today: string
   weeklyAvgKm: number | null
 }
 
-export function VolumeTab({ rows, live, onShift, ytd, today, weeklyAvgKm }: VolumeTabProps) {
+export function VolumeTab({ rows, live, onShift, ytd, weeklyAvgKm }: VolumeTabProps) {
   return (
     <div className="flex flex-col gap-3.5">
       <WeeklyDistanceCard rows={rows} live={live} onShift={onShift} weeklyAvgKm={weeklyAvgKm} />
       {ytd && <YtdCard ytd={ytd} />}
-      <LongRunCard rows={rows} live={live} today={today} onShift={onShift} />
+      <LongRunCard rows={rows} live={live} onShift={onShift} />
     </div>
   )
 }

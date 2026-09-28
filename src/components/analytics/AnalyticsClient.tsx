@@ -200,7 +200,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             heat={data.heat}
           />
         )}
-        {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} today={today} weeklyAvgKm={data.weeklyAvgKm} />}
+        {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} weeklyAvgKm={data.weeklyAvgKm} />}
         {tab === 'health' && weeks && <IntensityTab rows={rows} live={weeks.live} onShift={shift} plan={data.plan} />}
       </div>
     </div>

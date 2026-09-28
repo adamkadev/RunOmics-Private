@@ -226,7 +226,7 @@ interface RiskScale {
   max: number
   lo: number
   hi: number
-  /** Beyond this the marker goes to Z5 rather than amber. */
+  /** Beyond this the value reads neg rather than warn (v4.17: never a zone). */
   alert: (v: number) => boolean
 }
 

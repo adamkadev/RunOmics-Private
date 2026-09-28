@@ -60,6 +60,7 @@ const data: AnalyticsBoardData = {
     bands: [
       { id: 'cold', label: '', runCount: 9, avgApparentTempC: 2, paceAtRefHr: 372, costSecPerKm: 13 },
       { id: 'cool', label: '', runCount: 40, avgApparentTempC: 10, paceAtRefHr: 359, costSecPerKm: 0 },
+      { id: 'mild', label: '', runCount: 20, avgApparentTempC: 17, paceAtRefHr: 363, costSecPerKm: 4 },
       { id: 'warm', label: '', runCount: 12, avgApparentTempC: 22, paceAtRefHr: 376, costSecPerKm: 17 },
     ],
   },
@@ -106,25 +107,25 @@ describe('Analytics (v4.5)', () => {
   })
 
   // v4.6: one set of periods on every tab; Performance defaults to 12w.
-  it('has one period control per tab, 4w/12w/1y on all four', async () => {
+  it('has one period control per tab, 4 wk / 12 wk / 1 yr on all four', async () => {
     await renderBoard()
     const periods = () => within(screen.getByRole('radiogroup')).getAllByRole('radio').map((r) => r.textContent)
     expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
-    expect(periods()).toEqual(['4w', '12w', '1y'])
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4w')
+    expect(periods()).toEqual(['4 wk', '12 wk', '1 yr'])
+    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4 wk')
     await openTab(t.analytics.tabs.performance, 'predictions-card')
-    expect(periods()).toEqual(['4w', '12w', '1y'])
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('12w')
-    expect(screen.getByTestId('predictions-card').textContent).toContain('change in 12 wk')
+    expect(periods()).toEqual(['4 wk', '12 wk', '1 yr'])
+    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('12 wk')
+    expect(screen.getByTestId('predictions-card').textContent).toContain('change in 12 weeks')
     await openTab(t.analytics.tabs.volume, 'weekly-card')
-    expect(periods()).toEqual(['4w', '12w', '1y'])
-    // One range line on every tab: first Monday to today, no "12 weeks ·".
-    expect(screen.getByTestId('analytics-range').textContent).toMatch(/^Jul 6 – Sep 26$/)
+    expect(periods()).toEqual(['4 wk', '12 wk', '1 yr'])
+    // One range line on every tab, under the title: first Monday to today.
+    expect(screen.getByTestId('analytics-range').textContent).toMatch(/^Jul 6 – Sep 26, 2026$/)
     await openTab(t.analytics.tabs.health, 'easy-hard-card')
     expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
   })
 
-  it('shows the coach read on Load only, one sentence with its signals behind a tap', async () => {
+  it('shows the coach read over every tab, one sentence with its signals behind a tap', async () => {
     await renderBoard()
     const coach = screen.getByTestId('coach-read')
     const s = t.analytics.cards.coachRead
@@ -132,7 +133,11 @@ describe('Analytics (v4.5)', () => {
     // Garmin's two estimates of one fitness share a vote, so it reads mixed
     // and names each side (v4.16.4).
     expect(coach.getAttribute('data-tone')).toBe('neutral')
-    expect(coach.textContent!.replace(s.eyebrow, '')).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
+    expect(screen.getByTestId('coach-read-headline').textContent).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
+    expect(coach.textContent).toContain(s.eyebrow)
+    expect(coach.textContent).toContain(s.why)
+    // Outside the tab panel: it stays put across a switch.
+    expect(screen.getByRole('tabpanel').contains(coach)).toBe(false)
     fireEvent.click(coach)
     const sheet = screen.getByRole('dialog')
     // The sheet backs its headline (v5.6 L1): the load fact first, then threshold.
@@ -144,14 +149,51 @@ describe('Analytics (v4.5)', () => {
     expect(sheet.querySelector('[data-trend="declining"] svg')!.getAttribute('style')).toContain('var(--tone-caution)')
     expect(sheet.innerHTML).not.toContain('var(--accent')
     fireEvent.keyDown(document, { key: 'Escape' })
-    await openTab(t.analytics.tabs.performance, 'predictions-card')
-    expect(screen.queryByTestId('coach-read')).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    for (const [tab, card] of [
+      [t.analytics.tabs.performance, 'predictions-card'],
+      [t.analytics.tabs.volume, 'weekly-card'],
+      [t.analytics.tabs.health, 'easy-hard-card'],
+    ] as const) {
+      await openTab(tab, card)
+      expect(screen.getByTestId('coach-read-headline').textContent).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
+    }
+  })
+
+  // v4.17: a centred dialog, no bottom-sheet handle, with Close and Adjust plan.
+  it('opens the coach read in a centred dialog with Close and an Adjust plan link to Plan', async () => {
+    await renderBoard()
+    fireEvent.click(screen.getByTestId('coach-read'))
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.getAttribute('aria-modal')).toBe('true')
+    expect(dialog.className).toContain('max-w-[520px]')
+    expect(dialog.className).toContain('rounded-[18px]')
+    // Focus moves into it, and the page behind it is inert.
+    expect(dialog.contains(document.activeElement)).toBe(true)
+    const adjust = within(dialog).getByRole('link', { name: t.analytics.cards.coachRead.adjustPlan })
+    expect(adjust.getAttribute('href')).toBe('/plan')
+    expect(adjust.className).toContain('bg-accent')
+    // Close is the outline button; the ✕ in the corner closes it too.
+    const closes = within(dialog).getAllByRole('button', { name: t.analytics.cards.close })
+    expect(closes).toHaveLength(2)
+    fireEvent.click(closes[1]!)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('colours the coach read eyebrow by what the headline says', async () => {
+    const { coachTone } = await import('../CoachRead')
+    const view = { tone: 'caution' as const, loadUp: false, signals: [] }
+    expect(coachTone(view, null)).toBe('warn')
+    expect(coachTone({ ...view, tone: 'positive' }, null)).toBe('pos')
+    expect(coachTone({ ...view, tone: 'neutral' }, null)).toBe('muted')
+    expect(coachTone({ ...view, tone: 'positive' }, { kind: 'spike', change: null })).toBe('warn')
+    expect(coachTone(view, { kind: 'building', change: { pct: 12, days: 10 }, recovery: true })).toBe('pos')
   })
 
   it('widens every Load card with the period, and resets the range', async () => {
     await renderBoard()
     expect(screen.getByTestId('training-status-strip').children).toHaveLength(28)
-    fireEvent.click(screen.getByRole('radio', { name: '12w' }))
+    fireEvent.click(screen.getByRole('radio', { name: '12 wk' }))
     expect(screen.getByTestId('training-status-strip').children.length).toBeLessThanOrEqual(10)
     expect(screen.getByTestId('analytics-range').textContent).not.toBe('')
   })
@@ -167,26 +209,67 @@ describe('Analytics (v4.5)', () => {
     await renderBoard()
     const card = screen.getByTestId('risk-card')
     expect(card.textContent).toContain(t.analytics.cards.risk.inRange(3, 3))
+    expect(screen.getByTestId('risk-count').getAttribute('style')).toContain('var(--pos)')
+    // Each range under its bar.
+    expect(card.textContent).toContain('Safe 0.8 – 1.3')
+    expect(card.textContent).toContain('Safe below 2.0')
+    expect(card.textContent).toContain('Safe −5 to +5')
     fireEvent.click(within(card).getByRole('button', { name: /Load ratio/ }))
     expect(card.textContent).toContain(t.analytics.cards.risk.loadRatioFormula(412, 365))
+  })
+
+  // v4.17: past its alert limit a risk is bad news, neg - never the Z5 pink.
+  it('marks a risk past its alert limit in neg, and one just out of range in warn', async () => {
+    render(<AnalyticsClient data={{ ...data, risk: { ...data.risk!, acwr: 1.6, monotony: 2.1 } }} today={TODAY} />)
+    await screen.findByTestId('form-card')
+    const value = (key: string) => within(screen.getByTestId(`risk-${key}`)).getByTestId('risk-value').getAttribute('style')
+    expect(value('loadRatio')).toContain('var(--neg)')
+    expect(value('rampRate')).toContain('var(--foreground)')
+    expect(screen.getByTestId('risk-count').getAttribute('style')).toContain('var(--neg)')
+    expect(screen.getByTestId('risk-card').innerHTML).not.toContain('--zone-')
+  })
+
+  it('draws the training status in status colours, today outlined', async () => {
+    const status = data.status.map((d, i) => ({ ...d, status: i === 58 ? ('overreaching' as const) : i === 57 ? ('recovery' as const) : d.status }))
+    render(<AnalyticsClient data={{ ...data, status }} today={TODAY} />)
+    await screen.findByTestId('form-card')
+    const cells = [...screen.getByTestId('training-status-strip').children] as HTMLElement[]
+    expect(cells.at(-1)!.style.background).toBe('var(--pos)')
+    expect(cells.at(-1)!.style.outline).toContain('solid var(--foreground)')
+    expect(cells.at(-2)!.style.background).toBe('var(--neg)')
+    expect(cells.at(-3)!.style.background).toBe('var(--zone-1)')
+    expect(cells.at(-2)!.style.outline).toBe('')
+  })
+
+  it('draws Form as fitness, fatigue and bars in their band colours', async () => {
+    await renderBoard()
+    const card = screen.getByTestId('form-card')
+    // Fitness rose: good news; fatigue held: muted.
+    expect(screen.getByTestId('fitness-delta').parentElement!.className).toContain('--pos')
+    const bands = [...screen.getByTestId('form-strip').querySelectorAll<HTMLElement>('[data-band]')]
+    expect(bands).toHaveLength(28)
+    for (const bar of bands) expect(bar.style.background).toMatch(/^var\(--form-band-fill-(fresh|neutral|tired)\)$/)
+    expect(card.querySelector('path[stroke="var(--foreground)"]')).not.toBeNull()
+    expect(card.querySelector('path[stroke="var(--muted-foreground)"]')!.getAttribute('stroke-dasharray')).toBe('4 4')
   })
 
   it("names the goal race under the predictions, and measures its gap to target", async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.performance, 'predictions-card')
     const card = screen.getByTestId('predictions-card')
-    expect(card.textContent).toContain('10K target: ')
-    expect(card.textContent).toMatch(/D-\u2060?64/)
+    expect(screen.getByTestId('predictions-race').textContent).toBe('10K race: Nov 29 · 64 days')
     expect(card.textContent).not.toMatch(/\d\.\d{3}/)
     expect(screen.getByTestId('predictions-sentence').textContent).toContain('off your 40:00 target')
     // VO2max as Progress prints it.
     expect(screen.getByTestId('performance-summary').textContent).toContain('55.0')
-    expect(screen.getByTestId('performance-summary').textContent).toContain('−1 in 12 wk')
+    expect(screen.getByTestId('performance-summary').textContent).toContain('−1 in 12 weeks')
+    expect(screen.getByTestId('performance-summary').textContent).toContain(`4:23${t.units.perKm}`)
     // v4.7: slower is amber, faster --good, by the same helper everywhere.
     for (const delta of screen.getAllByTestId('prediction-delta')) expect(delta.getAttribute('style')).toContain('var(--tone-caution)')
-    // VO2max fell by 1 in 12 weeks: amber on the delta, the value stays ink.
+    // VO2max fell by 1 in 12 weeks: warn on the meaning line, the value stays ink.
     const [vo2] = screen.getAllByTestId('summary-delta')
-    expect(vo2!.firstElementChild!.getAttribute('style')).toContain('var(--tone-caution)')
+    expect(vo2!.getAttribute('data-tone')).toBe('warn')
+    expect(vo2!.parentElement!.className).toContain('text-[var(--warn)]')
     expect(screen.getByTestId('performance-summary').innerHTML).not.toContain('var(--accent')
   })
 
@@ -199,29 +282,53 @@ describe('Analytics (v4.5)', () => {
     expect(ys.at(-1)!).toBeGreaterThan(ys[0]!)
   })
 
-  it('draws heat bars in the comparison grey with the best band in ink, and no accent', async () => {
+  // v4.17: each bar is the seconds lost against the best temperature band.
+  it('draws heat cost as seconds lost vs the best band: best in pos, over 10 s warn, less muted', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.performance, 'heat-card')
-    const bar = (id: string) => screen.getByTestId(`heat-${id}`).querySelector<HTMLElement>('.absolute')!
-    expect(bar('cold').style.background).toBe('var(--series-2)')
-    expect(bar('warm').style.background).toBe('var(--series-2)')
-    expect(bar('cool').style.background).toBe('var(--foreground)')
+    const row = (id: string) => screen.getByTestId(`heat-${id}`)
+    const bar = (id: string) => within(row(id)).queryByTestId('heat-bar')
+    const loss = (id: string) => within(row(id)).getByTestId('heat-loss')
+    expect(bar('cold')!.style.background).toBe('var(--warn)')
+    expect(bar('warm')!.style.background).toBe('var(--warn)')
+    expect(bar('mild')!.style.background).toBe('var(--muted-foreground)')
+    // 17 s of the 20 s scale.
+    expect(bar('warm')!.style.width).toBe('85%')
+    expect(bar('cool')).toBeNull()
+    expect(loss('cool').textContent).toBe(t.analytics.cards.heatCost.best)
+    expect(loss('cool').getAttribute('style')).toContain('var(--pos)')
+    expect(loss('mild').textContent).toBe('+4 s')
+    expect(loss('mild').getAttribute('style')).toContain('var(--muted-foreground)')
+    expect(row('hot').textContent).toContain(t.analytics.cards.heatCost.noRuns)
     expect(screen.getByTestId('heat-card').innerHTML).not.toContain('var(--accent)')
   })
 
-  it('ticks the plan on each week and outlines the current one', async () => {
+  it('ticks the plan on each week and dashes the current one', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.volume, 'weekly-card')
-    expect(screen.getByTestId('weekly-bars').children).toHaveLength(12)
+    const bars = screen.getByTestId('weekly-bars')
+    expect(bars.children).toHaveLength(12)
     expect(screen.getAllByTestId('plan-tick')).toHaveLength(12)
-    expect(screen.getByTestId('weekly-bars').querySelectorAll('[data-current]')).toHaveLength(1)
+    expect(bars.querySelectorAll('[data-current]')).toHaveLength(1)
+    // The athlete's own weeks in the accent: full at or above plan (90%), 40% under it.
+    const done = [...bars.querySelectorAll<HTMLElement>('[data-on-plan]:not([data-current])')]
+    expect(done.length).toBeGreaterThan(0)
+    for (const bar of done) expect(bar.style.background).toBe('var(--accent)')
+    const current = bars.querySelector<HTMLElement>('[data-current]')!
+    expect(current.style.background).toBe('transparent')
+    expect(current.style.border).toBe('1.5px dashed var(--accent)')
     expect(screen.getByTestId('ytd-footer').textContent).toContain('243 km short')
-    // The one weekly average, on both cards.
-    expect(screen.getByTestId('weekly-card').textContent).toContain('26km/wk avg')
-    // This week, flagged over 35% and still outlined, in the one "this week" style.
-    const longRun = screen.getByTestId('long-run-bars').lastElementChild as HTMLElement
+    // The one weekly average, as a stat with its unit.
+    expect(screen.getByTestId('weekly-card').textContent).toContain('12-week average26km/week')
+    // Year to date in the accent against last year's grey.
+    expect(screen.getByTestId('ytd-line').getAttribute('stroke')).toBe('var(--accent)')
+    expect(screen.getByTestId('ytd-delta').textContent).toBe(t.analytics.cards.ytd.vs('+754', 2025))
+    // This week, flagged over 35% and dashed, in the one "this week" style.
+    const longRun = screen.getByTestId('long-run-bars').querySelector<HTMLElement>('[data-current]')!
     expect(longRun.hasAttribute('data-over')).toBe(true)
-    expect(longRun.style.boxShadow).toBe('inset 0 0 0 2px var(--accent)')
+    expect(longRun.style.background).toBe('var(--warn)')
+    expect(longRun.style.outline).toBe('1.5px dashed var(--accent)')
+    expect(screen.getByTestId('long-run-guide')).toBeTruthy()
     expect(screen.getByTestId('long-run-card').textContent).toContain('Jul')
   })
 
@@ -257,11 +364,11 @@ describe('Analytics (v4.5)', () => {
     await openTab(t.analytics.tabs.health, 'zones-card')
     expect(screen.getByTestId('zone-ranges-link').getAttribute('href')).toBe('/athlete')
     // This week keeps full-strength zone colours and takes the one "this week"
-    // mark used on Volume: the 2 pt accent line over the 15% wash (v4.8 §3).
+    // mark used on Volume: the dashed accent outline (v4.17).
     const current = screen.getByTestId('zone-bars').querySelector<HTMLElement>('[data-current]')!
-    expect(current.style.boxShadow).toBe('inset 0 0 0 2px var(--accent)')
-    expect(current.style.background).toContain('15%')
+    expect(current.style.outline).toBe('1.5px dashed var(--accent)')
     expect(screen.getByTestId('zone-bars').innerHTML).not.toContain('opacity')
+    expect(screen.getByTestId('zone-bars').innerHTML).toContain('var(--zone-5)')
   })
 })
 
@@ -310,11 +417,15 @@ describe('a week with nothing run (v4.6)', () => {
     const rows = weekRows(weeksWithGap, [], window, TODAY)
     render(
       <>
-        <VolumeTab rows={rows} live onShift={() => {}} ytd={null} today={TODAY} weeklyAvgKm={null} />
+        <VolumeTab rows={rows} live onShift={() => {}} ytd={null} weeklyAvgKm={null} />
         <IntensityTab rows={rows} live onShift={() => {}} plan={[]} />
       </>,
     )
     expect(within(screen.getByTestId('weekly-bars')).getAllByTestId('empty-week')).toHaveLength(1)
+    // Without a plan every week is the accent at 40%: nothing to be on.
+    const done = [...screen.getByTestId('weekly-bars').querySelectorAll<HTMLElement>('[style*="background"]:not([data-current])')]
+    expect(done.length).toBeGreaterThan(0)
+    for (const bar of done) expect(bar.style.background).toBe('color-mix(in srgb, var(--accent) 40%, transparent)')
     expect(within(screen.getByTestId('long-run-bars')).getAllByTestId('empty-week')).toHaveLength(1)
     expect(within(screen.getByTestId('zone-bars')).getAllByTestId('empty-week')).toHaveLength(1)
   })
@@ -324,7 +435,7 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
   // "1 s faster" sat beside a flat arrow: inside the band it is level, in the
   // coach read and on the Easy pace tile alike.
   it('words a change inside the noise band as level, like the Easy pace tile', async () => {
-    const { coachText } = await import('../LoadTab')
+    const { coachText } = await import('../CoachRead')
     const { shiftWords } = await import('../PerformanceTab')
     const view = { tone: 'neutral' as const, loadUp: false, signals: [{ key: 'easy' as const, trend: 'flat' as const, pace: 352, delta: -1 }] }
     expect(coachText(view).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyLevel('5:52'))
@@ -336,7 +447,7 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
   // v4.16.4: "threshold and race predictions haven't followed" was one fixed
   // sentence, printed whichever reads had slipped.
   it('names only the reads that slipped', async () => {
-    const { coachText } = await import('../LoadTab')
+    const { coachText } = await import('../CoachRead')
     const { coachRead } = await import('../analyticsView')
     const s = t.analytics.cards.coachRead
     const view = coachRead({
@@ -354,7 +465,7 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
   })
 
   it('never credits load for speed when load did not go up', async () => {
-    const { coachText } = await import('../LoadTab')
+    const { coachText } = await import('../CoachRead')
     const s = t.analytics.cards.coachRead
     const view = { tone: 'positive' as const, loadUp: false, signals: [{ key: 'easy' as const, trend: 'improving' as const, pace: 352, delta: -8 }] }
     expect(coachText(view).headline).toBe(s.headline.positiveSteadyLoad)
@@ -362,7 +473,7 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
   })
 
   it('gives aerobic efficiency its unit and what the change means', async () => {
-    const { coachText } = await import('../LoadTab')
+    const { coachText } = await import('../CoachRead')
     const s = t.analytics.cards.coachRead
     const efficiency = (trend: 'improving' | 'flat' | 'declining', delta: number) =>
       coachText({ tone: 'neutral', loadUp: false, signals: [{ key: 'efficiency', trend, value: 1.15, delta }] }).signals[0]!.text
@@ -372,7 +483,7 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
   })
 
   it('says when last year only counts from the date the history starts', async () => {
-    const { coachText } = await import('../LoadTab')
+    const { coachText } = await import('../CoachRead')
     const s = t.analytics.cards.coachRead
     const volume = (since: string | null) =>
       coachText({ tone: 'neutral', loadUp: false, signals: [{ key: 'volume', trend: 'improving', delta: 312, since }] }).signals[0]!.text
@@ -413,8 +524,8 @@ describe('the coach read under a load headline (v4.16.4)', () => {
     await screen.findByTestId('form-card')
     await act(async () => screen.getByRole('tab', { name: t.analytics.tabs.volume }).click())
     const card = await screen.findByTestId('ytd-card')
-    expect(within(card).getByTestId('ytd-delta').textContent).toBe(t.analytics.cards.ytd.vsSince('+312', 'May 3'))
-    expect(card.textContent).toContain(t.analytics.cards.ytd.captionSince)
+    expect(within(card).getByTestId('ytd-delta').textContent).toBe(t.analytics.cards.ytd.vsSince('+312', 2025, 'May 3'))
+    expect(card.textContent).toContain(t.analytics.cards.ytd.caption)
   })
 })
 
@@ -456,8 +567,8 @@ describe('Load trend and Recovery (v5.4)', () => {
     await renderWith({ loads })
     const value = screen.getByTestId('load-trend-value')
     expect(value.getAttribute('data-state')).toBe('above')
-    expect(value.getAttribute('style')).toContain('var(--tone-caution)')
-    expect(screen.getByTestId('today-dot').getAttribute('style')).toContain('var(--tone-caution)')
+    expect(value.getAttribute('style')).toContain('var(--warn)')
+    expect(screen.getByTestId('today-dot').getAttribute('style')).toContain('var(--warn)')
     expect(screen.getAllByTestId('outside-dot').length).toBeGreaterThan(0)
     expect(screen.getByTestId('coach-read').getAttribute('data-load')).toBe('spike')
   })
@@ -471,17 +582,20 @@ describe('Load trend and Recovery (v5.4)', () => {
     await renderWith({ recovery: steady.map((n) => ({ ...n, hrv: null })) })
     const card = screen.getByTestId('recovery-card')
     expect(card.textContent).toContain(t.analytics.cards.recovery.captionDaily)
-    expect(card.textContent).toContain(t.analytics.cards.recovery.rhrInside[0].trim())
+    // One series: its baseline in the sentence.
+    expect(card.textContent).toContain(t.analytics.cards.recovery.insideBaseline(45, 47, 'bpm').join(''))
     expect(within(card).queryByTestId('recovery-hrv')).toBeNull()
     expect(within(card).queryByTestId('recovery-hrv-chart')).toBeNull()
     expect(within(card).getByTestId('recovery-rhr-chart')).toBeTruthy()
   })
 
-  it('reads recovery inside the baseline with today in the accent', async () => {
+  it('reads recovery inside the baseline over a pos baseline band, with no dots', async () => {
     await renderWith({ recovery: steady })
     const card = screen.getByTestId('recovery-card')
     expect(card.textContent).toContain(t.analytics.cards.recovery.bothInside[1])
-    expect(within(card).getAllByTestId('today-dot')[0]!.getAttribute('style')).toContain('var(--accent)')
+    // v4.17: no accent "now" dot; only a point outside the band is marked.
+    expect(within(card).queryByTestId('today-dot')).toBeNull()
+    expect(within(card).getAllByTestId('baseline-band')[0]!.getAttribute('fill')).toContain('var(--pos)')
   })
 
   it('says how many nights HRV has been low, and the coach read takes it into account', async () => {
@@ -493,10 +607,10 @@ describe('Load trend and Recovery (v5.4)', () => {
     expect(screen.getByTestId('coach-read').getAttribute('data-load')).toBe('dip')
   })
 
-  it('uses only the six v5.4 colours in the two cards', () => {
+  it('uses only the four v4.17 colours in the two cards', () => {
     const source = readFileSync(path.join(__dirname, '../LoadRecoveryCards.tsx'), 'utf8')
     const vars = new Set([...source.matchAll(/var\(--([a-z-]+)\)/g)].map((m) => m[1]))
-    expect([...vars].sort()).toEqual(['accent', 'card', 'divider', 'foreground', 'muted-foreground', 'tone-caution', 'track'])
+    expect([...vars].sort()).toEqual(['foreground', 'muted-foreground', 'pos', 'warn'])
     expect(source).not.toMatch(/#[0-9a-f]{3,6}\b/i)
   })
 })
