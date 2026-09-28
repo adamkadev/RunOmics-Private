@@ -53,7 +53,7 @@ function YearCalendar({ view, onRest }: { view: ConsistencyView; onRest: (date: 
   }, [])
 
   return (
-    <div ref={scroller} className="-mx-1 overflow-x-auto px-1 pb-1" data-testid="consistency-calendar">
+    <div ref={scroller} className="-mr-1 overflow-x-auto pb-1 pr-1 pt-0.5" data-testid="consistency-calendar">
       <div className="min-w-[700px]">
         <div className="mb-[3px] grid gap-x-[3px] text-caption text-muted-foreground" style={columns(view.weeks.length)} aria-hidden>
           <span className={STICKY} />
