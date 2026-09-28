@@ -708,7 +708,7 @@ export const fr = {
         adjusted: 'Corrigée chaleur',
         measured: 'Mesurée',
         rpe: 'Effort perçu',
-        rpeLine: (avg: string, trend: string) => `RPE moy. ${avg}, ${trend} · 4 sem`,
+        rpeLine: (avg: string, trend: string) => `RPE moy. ${avg}, ${trend} · 4 semaines`,
         rpeTrend: { easing: 'en baisse', rising: 'en hausse', steady: 'stable' } as Record<string, string>,
       },
       heatCost: {

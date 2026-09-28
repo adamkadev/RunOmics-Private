@@ -93,7 +93,7 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
   if (!cells.length) return null
   return (
     <section className={cardClass()} data-testid="performance-summary">
-      <StatGrid columns={cells.length}>
+      <StatGrid columns={cells.length} className="gap-3 sm:gap-4">
         {cells.map((c) => (
           <Stat
             key={c.label}

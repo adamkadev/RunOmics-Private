@@ -54,7 +54,7 @@ function FormCard({ load, window, period, onShift }: { load: LoadDay[]; window: 
   return (
     <Card className="gap-3.5" testId="form-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      <StatGrid columns={3}>
+      <StatGrid columns={3} className="gap-3 sm:gap-4">
         <Stat size="lg" label={s.title} value={signed(view.form)} meaning={`${t.formBand[view.band]} · ${s.range[view.band]}`} tone={FORM_TONE[view.band]} />
         <Stat
           size="lg"

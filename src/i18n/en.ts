@@ -735,7 +735,7 @@ export const en = {
         adjusted: 'Heat-adjusted',
         measured: 'Measured',
         rpe: 'Perceived effort',
-        rpeLine: (avg: string, trend: string) => `RPE avg ${avg}, ${trend} · 4 wk`,
+        rpeLine: (avg: string, trend: string) => `RPE avg ${avg}, ${trend} · 4 weeks`,
         rpeTrend: { easing: 'easing', rising: 'rising', steady: 'steady' } as Record<string, string>,
       },
       heatCost: {

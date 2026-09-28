@@ -38,7 +38,7 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
   return (
     <Card className="gap-3.5" testId="weekly-card">
       <CardHead title={s.title} caption={hasPlan ? s.caption : undefined} about={s.about} />
-      <StatGrid columns={view.onPlan ? 3 : 2}>
+      <StatGrid columns={view.onPlan ? 3 : 2} className="gap-3 sm:gap-4">
         <Stat
           size="lg"
           label={last.current ? s.thisWeek : s.weekOf(bare(last.week))}
