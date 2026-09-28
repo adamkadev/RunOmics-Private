@@ -38,6 +38,8 @@ function chipOrder(items: ActivitySummary[]): ActivityType[] {
 }
 const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 300
+/** The chip rail's right edge fading out over 24 pt while there is more to scroll (v4.17.2). */
+const CHIP_FADE = 'linear-gradient(to right, #000 calc(100% - 24px), transparent)'
 
 const SORT_OPTIONS: { value: ActivitySortKey; label: string }[] = [
   { value: 'date', label: t.activities.sort.date },
@@ -507,8 +509,16 @@ export function ActivityListClient({
           onScroll={updateChipFade}
           // The chips' 44 pt hit areas reach 6 pt past them; the padding keeps
           // them inside the scroller, so the rail never scrolls vertically.
-          className="-my-1.5 flex gap-2 overflow-x-auto px-4 py-1.5 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ scrollPaddingInline: '16px' }}
+          // While there is more to scroll, the rail's last 24 pt fade out
+          // (v4.17.2) - a chip cut at the edge read as the row's end - and
+          // the end padding lets the last chip scroll clear of the fade.
+          className="-my-1.5 flex gap-2 overflow-x-auto py-1.5 pl-4 pr-6 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{
+            scrollPaddingInline: '16px 24px',
+            ...(chipFade ? { maskImage: CHIP_FADE, WebkitMaskImage: CHIP_FADE } : {}),
+          }}
+          data-fade={chipFade || undefined}
+          data-testid="type-chips"
         >
           <Pill as="button" variant={selectedType === null ? 'selected' : 'neutral'} className="px-3" onClick={() => setSelectedType(null)}>
             {t.activities.all}
@@ -532,13 +542,6 @@ export function ActivityListClient({
             )
           })}
         </div>
-        {chipFade && (
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-0 h-8 w-[30px]"
-            style={{ background: 'linear-gradient(90deg, transparent, var(--background) 85%)' }}
-          />
-        )}
       </div>
 
       {gearId && (

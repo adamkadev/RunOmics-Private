@@ -125,7 +125,7 @@ export const fr = {
 
   consistency: {
     activeDays: 'Jours actifs',
-    ofDays: (days: number) => `sur ${days}`,
+    ofDays: (days: number, since: string) => `sur ${days} jours depuis le ${since}`,
     share: 'Part des jours',
     vsPrior: (delta: string) => `${delta} pts vs les 12 mois d'avant`,
     vsRange: (delta: string, range: string) => `${delta} pts vs ${range}`,

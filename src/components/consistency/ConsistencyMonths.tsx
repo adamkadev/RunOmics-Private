@@ -145,7 +145,10 @@ export function ConsistencyMonths({ view }: { view: ConsistencyView }) {
     <div className="flex flex-col gap-3.5">
       <section className={cardClass()} data-testid="consistency-stats">
         <StatGrid columns={3}>
-          <Stat size="lg" label={c.activeDays} value={view.activeDays} meaning={c.ofDays(view.windowDays)} />
+          {/* What the days are counted of (v4.17.2): the twelve months
+              from the first of the month, to today - "of 363" read as a
+              year that had lost two days. */}
+          <Stat size="lg" label={c.activeDays} value={view.activeDays} meaning={c.ofDays(view.windowDays, formatDate(view.windowStart, { style: 'bare', year: 'never' }))} />
           <Stat
             size="lg"
             label={c.share}

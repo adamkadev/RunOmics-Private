@@ -89,6 +89,8 @@ export interface ConsistencyView {
   activeDays: number
   /** Days in the window up to today. */
   windowDays: number
+  /** The window's first day: the first of the month eleven months back. */
+  windowStart: string
   /** Share of the window's days with a run, 0–100. */
   sharePct: number
   streakWeeks: number
@@ -208,6 +210,7 @@ export function consistencyMonths(days: HeatmapDay[], today: string, options: Co
     months,
     activeDays,
     windowDays: counted.length,
+    windowStart,
     sharePct: Math.round(share * 100),
     streakWeeks,
     bestStreakWeeks,

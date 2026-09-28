@@ -141,7 +141,7 @@ export const en = {
   consistency: {
     // v4.17: three stats, the year as week columns, then active days per month.
     activeDays: 'Active days',
-    ofDays: (days: number) => `of ${days}`,
+    ofDays: (days: number, since: string) => `of ${days} days since ${since}`,
     share: 'Share of days',
     vsPrior: (delta: string) => `${delta} pts vs prior 12 months`,
     // A history that starts inside the year before is compared over what it covers.
