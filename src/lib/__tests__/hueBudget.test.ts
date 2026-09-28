@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ACTIVITY_TYPES, type ActivityType } from '@/domain/activity/types'
 import { ACTIVITY_TYPE_STYLE } from '@/components/activity/activityTypeStyle'
-import { CHART_COLORS, TRAINING_PLAN_PHASE_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
+import { CHART_COLORS, TRAINING_STATUS_COLORS } from '@/lib/colors'
 import { ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT } from '@/lib/accent'
 import { rgbTriplet } from '@/lib/palette'
 import { TOKEN_BLOCKS } from '@/lib/themeTokens'
@@ -69,17 +69,6 @@ describe('activity type hue budget', () => {
   it('draws the three zone-5 types as the one zone-5 token', () => {
     const z5: ActivityType[] = ['VO2Max', 'Anaerobic', 'Sprint']
     for (const type of z5) expect(typeHue(type), type).toBe('var(--zone-5)')
-  })
-})
-
-describe('cross-map hue collisions', () => {
-  it('does not paint a training status and a plan phase the same violet', () => {
-    // WeekPurposeBanner takes its headline hue from TRAINING_STATUS_COLORS or
-    // from TRAINING_PLAN_PHASE_COLORS depending on the week it is describing,
-    // and PlanPhaseTrack renders the phase ramp directly below it - so one
-    // violet meaning both `fresh` and `peak` was two meanings on one screen.
-    expect(TRAINING_PLAN_PHASE_COLORS.peak).not.toBe(TRAINING_STATUS_COLORS.fresh)
-    expect(hueFamily(TRAINING_PLAN_PHASE_COLORS.peak!)).not.toBe('violet')
   })
 })
 

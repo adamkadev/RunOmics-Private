@@ -1,4 +1,4 @@
-import { HUE, ink, paper, white } from '@/lib/palette'
+import { HUE, ink, white } from '@/lib/palette'
 import { isActivityType, type ActivityType } from '@/domain/activity/types'
 import type { TrainingStatusType } from '@/domain/training/status'
 
@@ -58,37 +58,6 @@ export const TRAINING_STATUS_COLORS: Record<TrainingStatusType, string> = {
   unproductive: 'var(--warn)',
   detraining:   'var(--line-2)',
   overreaching: 'var(--neg)',
-}
-
-/**
- * `peak` was `violet500`, the same hex as `TRAINING_STATUS_COLORS.fresh`, and
- * WeekPurposeBanner paints its headline from whichever of the two maps applies
- * - so one violet meant "fresh" above a phase track that used it for "peak".
- * Bronze keeps peak inside `taper`'s amber family a clear 25 dE away, and is
- * the best-contrasting entry in the map on both grounds.
- */
-export const TRAINING_PLAN_PHASE_COLORS: Record<string, string> = {
-  base:    c.roEmerald,
-  build:   c.blue500,
-  peak:    c.amber700,
-  taper:   c.amber500,
-  raceDay: c.red500,
-}
-
-export const ZONE_COLORS: Record<number, string> = {
-  1: c.gray400,
-  2: c.blue400,
-  3: c.emerald400,
-  4: c.orange500,
-  5: c.red500,
-}
-
-export const ZONE_COLORS_DARK: Record<number, string> = {
-  1: paper(0.55),
-  2: c.roBlueHi,
-  3: c.roEmeraldHi,
-  4: c.roOrangeHi,
-  5: c.roRed,
 }
 
 /**
