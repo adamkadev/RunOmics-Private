@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { ButtonLink } from '@/components/ui/Button'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -138,12 +139,9 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, ne
               {row}
             </div>
           )}
-          <Link
-            href="/plan"
-            className="inline-flex h-8 shrink-0 items-center rounded-[9px] border border-[var(--line-2)] px-3 text-[13px] text-foreground transition-colors hover:bg-[var(--surface-2)] active:scale-[0.96]"
-          >
+          <ButtonLink href="/plan" variant="secondary" size="sm" className="shrink-0 px-3 font-medium">
             {s.openPlan}
-          </Link>
+          </ButtonLink>
         </div>
         {planned?.duration && planned.structure && (
           <div data-testid="today-structure-bar">

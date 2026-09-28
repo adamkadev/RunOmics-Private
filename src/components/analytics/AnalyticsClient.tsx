@@ -167,7 +167,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
           </h1>
           {/* The subtitle fades under the compact title bar, which sets its
               opacity from the layout before this page hydrates. */}
-          <p className="truncate text-sm text-muted-foreground" data-testid="analytics-range" suppressHydrationWarning>
+          <p className="truncate text-sm text-muted-foreground" data-testid="analytics-range">
             {rangeLabel}
           </p>
         </div>

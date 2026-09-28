@@ -468,10 +468,12 @@ export function ActivityListClient({
             </span>
           </p>
         </div>
-        <div className="flex shrink-0 items-start gap-2 pt-0.5">
+        {/* Level with the subtitle (v4.17): the sort menu floats, so it no
+            longer drags the title down when it opens. */}
+        <div className="flex shrink-0 items-center gap-2 self-end">
           <Link
             href="/map"
-            className="flex h-9 items-center justify-center rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-footnote text-foreground transition-colors hover:bg-[var(--surface-2)]"
+            className="flex h-[34px] items-center justify-center rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
           >
             {t.activities.mapButton}
           </Link>

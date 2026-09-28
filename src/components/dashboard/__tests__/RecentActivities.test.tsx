@@ -26,7 +26,7 @@ describe('RecentActivities', () => {
     expect(rows[0]!.textContent).toContain('5:55 /km')
     expect(rows[1]!.textContent).toContain(t.activityTypes.Threshold)
     const thumbs = screen.getAllByTestId('route-thumb')
-    expect(thumbs[0]!.style.width).toBe('52px')
+    expect(thumbs[0]!.style.width).toBe('48px')
     expect(thumbs[1]!.dataset.neutral).toBe('true')
   })
 

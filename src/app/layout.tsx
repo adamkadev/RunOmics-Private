@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist } from 'next/font/google'
+import localFont from 'next/font/local'
 import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -18,9 +18,16 @@ import {
 import { appleStartupImages } from '@/lib/splashScreens'
 import { STATUS_BAR_COLOR } from '@/lib/themeTokens'
 
-// One family for everything, numbers included (v4.17): Geist 400-700. The
-// display face with the slab "1" and the mono for figures are gone.
-const geist = Geist({ variable: '--font-geist', subsets: ['latin'] })
+// One family for everything, numbers included (v4.17): Geist, the variable
+// font whole (SIL OFL, fonts/Geist-LICENSE.txt). Google's latin subset left
+// out the subscript in VO₂ and the ↗ ↘ trend arrows, which fell back to
+// another face. The display face with the slab "1" and the mono are gone.
+const geist = localFont({
+  src: './fonts/Geist-Variable.woff2',
+  variable: '--font-geist',
+  weight: '100 900',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: {

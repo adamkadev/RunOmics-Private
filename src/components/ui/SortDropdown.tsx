@@ -42,7 +42,9 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
   const activeLabel = options.find((o) => o.value === sortBy)?.label
 
   return (
-    <div ref={ref} className="flex min-w-0 flex-col items-end">
+    // The menu floats over the page under its button (v4.17), so opening it
+    // never pushes the header - or the list - down.
+    <div ref={ref} className="relative flex min-w-0 flex-col items-end">
       {/* The arrow says "sort", so the word did not need to. The current key
           stays on screen though: an icon alone hides what the list is ordered by,
           and that is the one thing the control is reporting. */}
@@ -50,8 +52,8 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-label={`${label}: ${activeLabel ?? ''}`}
-        // Outlined like the Map button beside it (v5.6 #8): one header style.
-        className="flex h-9 shrink-0 items-center gap-1 rounded-control border border-foreground/[0.12] px-3 text-footnote text-foreground transition-colors hover:bg-foreground/[0.06]"
+        // The v4.17 outline button, like the Map button beside it: one header style.
+        className="flex h-[34px] shrink-0 items-center gap-1.5 rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
       >
         {order === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
         {activeLabel}
@@ -59,7 +61,7 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
       </button>
 
       {open && (
-        <div className="mt-1 min-w-[8rem] overflow-hidden rounded-xl border border-foreground/[0.12] bg-foreground/[0.04] py-1">
+        <div className="absolute right-0 top-full z-30 mt-1 min-w-[9rem] overflow-hidden rounded-xl border border-border bg-[var(--popover)] py-1 shadow-[var(--shadow-modal)]">
           {options.map((o) => (
             <button
               key={o.value}
@@ -68,8 +70,8 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
                 setOpen(false)
               }}
               className={cn(
-                'flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs font-medium transition-colors hover:bg-foreground/[0.07]',
-                o.value === sortBy ? 'bg-foreground/[0.10] text-foreground font-semibold' : 'text-foreground/70',
+                'flex min-h-9 w-full items-center gap-2 px-3 text-left text-[13px] font-medium transition-colors hover:bg-[var(--surface-2)]',
+                o.value === sortBy ? 'font-semibold text-foreground' : 'text-[var(--text-2)]',
               )}
             >
               {o.label}

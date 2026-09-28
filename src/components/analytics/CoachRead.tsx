@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { ButtonLink } from '@/components/ui/Button'
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
 import { formatClock, formatDate, formatDelta, formatDeltaFixed } from '@/lib/formatters'
 import { DELTA_TONE_COLOR } from '@/lib/deltaTone'
@@ -214,15 +214,10 @@ export function CoachRead({ view, load }: { view: CoachReadView; load: LoadCoach
           eyebrowTone={tone}
           onClose={() => setOpen(false)}
           actions={
-            // Where the plan is adjusted today: the Plan page. The primary
-            // Button's recipe, on a link, since it goes somewhere.
-            <Link
-              href="/plan"
-              className="inline-flex h-9 items-center justify-center rounded-[9px] bg-accent px-4 text-[13px] font-semibold text-accent-foreground transition-[filter] hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              data-testid="coach-adjust-plan"
-            >
+            // Where the plan is adjusted today: the Plan page.
+            <ButtonLink href="/plan" data-testid="coach-adjust-plan">
               {s.adjustPlan}
-            </Link>
+            </ButtonLink>
           }
         >
           <div className="flex flex-col">

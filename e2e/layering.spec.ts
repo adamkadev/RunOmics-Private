@@ -45,7 +45,7 @@ for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
     })
     expect(surface.aurora).toBe(false)
     expect(surface.image).toBe('none')
-    expect(surface.token).toMatch(/^#(0b0c0c|f3f4f4)$/)
+    expect(surface.token).toMatch(/^#(0c0d0d|f3f4f3)$/)
   })
 }
 

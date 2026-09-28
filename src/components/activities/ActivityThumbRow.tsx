@@ -46,7 +46,7 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
         variant === 'card' ? 'px-4 py-3' : 'rounded-[10px] px-3 py-2.5',
       )}
     >
-      <RouteThumb path={a.routeThumb} type={a.type} size={52} />
+      <RouteThumb path={a.routeThumb} type={a.type} size={48} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
         <span className="flex min-w-0 items-center gap-1.5">
           <span className="truncate text-sm font-semibold leading-tight text-foreground">{title}</span>
