@@ -1,48 +1,42 @@
-import { Skeleton, ChartCardSkeleton, StatCardSkeleton } from '@/components/ui/Skeleton'
+import { Skeleton, ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { cardClass } from '@/components/ui/Card'
 
+/** The page's own shape while it loads (v4.17): header, map card, verdict, tabs, a card. */
 export default function ActivityDetailLoading() {
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-3.5">
       <Skeleton className="h-4 w-24" />
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-5 w-14 rounded-full" />
-          <Skeleton className="h-7 w-56" />
-        </div>
+      <div className="mb-1.5 flex flex-col gap-2">
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-4 w-44" />
       </div>
 
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        {Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <Skeleton className="h-[300px] w-full rounded-xl" />
-        </div>
-        <div className="space-y-4 lg:col-span-2">
-          <div className={cardClass({ padding: 'lg' })}>
-            <Skeleton className="mb-4 h-4 w-24" />
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex justify-between">
-                  <Skeleton className="h-3 w-20" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-              ))}
+      <div className={cardClass({ padding: 'none', overflow: true })}>
+        <Skeleton className="h-[260px] w-full rounded-none sm:h-[320px]" />
+        <div className="grid grid-cols-2 gap-4 border-t border-border px-5 py-4 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-6 w-20" />
             </div>
-          </div>
-          <div className={cardClass({ padding: 'lg' })}>
-            <Skeleton className="mb-4 h-4 w-28" />
-            <Skeleton className="h-3 w-full rounded-full" />
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => <ChartCardSkeleton key={i} className="h-[180px]" />)}
+      <div className={cardClass({ className: 'flex flex-col gap-3' })}>
+        <Skeleton className="h-3 w-28" />
+        <Skeleton className="h-5 w-64" />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex justify-between border-t border-border pt-3">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        ))}
       </div>
+
+      <Skeleton className="mt-1.5 h-[42px] w-full rounded-[11px]" />
+      <ChartCardSkeleton className="h-[180px]" />
     </div>
   )
 }

@@ -1,9 +1,9 @@
 import type { ActivityDetailView } from './activityViews'
 import type { BaselineRange, DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { GlossaryTerm } from '@/components/ui/GlossaryTerm'
+import { RangeBar } from '@/components/ui/RangeBar'
 import { formatDelta } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 interface Metric {
@@ -24,40 +24,38 @@ interface Props {
 }
 
 /**
- * The run on its 8-week range (H17, M10): the ends are the lowest and highest
- * of those weeks (stretched to take this run), the grey tick is the baseline,
- * the bright tick this run.
+ * The run on its 8-week range (H17, M10, v4.17): the ends are the lowest and
+ * highest of those weeks (stretched to take this run), the shaded band the
+ * middle half of them - the baseline - and the marker this run. The range
+ * and what the run says against the baseline go under it.
  */
-function RangeTrack({ value, band, decimals }: { value: number; band: BaselineRange; decimals: number }) {
+function RangeTrack({ label, value, band, decimals, note }: { label: string; value: number; band: BaselineRange; decimals: number; note: string | null }) {
   const lo = Math.min(band.min, value)
   const hi = Math.max(band.max, value)
-  const at = (v: number) => (hi > lo ? ((v - lo) / (hi - lo)) * 100 : 50)
+  const at = (v: number) => (hi > lo ? (v - lo) / (hi - lo) : 0.5)
 
   return (
-    <div className="mt-2.5 flex items-center gap-3 text-footnote tabular-nums text-muted-foreground">
-      <span className="shrink-0">{lo.toFixed(decimals)}</span>
-      <div className="relative h-1.5 flex-1 rounded-full bg-[var(--track)]" data-testid="range-track">
-        <span
-          aria-hidden="true"
-          data-testid="baseline-tick"
-          className="absolute -top-1 h-3.5 w-0.5 -translate-x-1/2 rounded-full bg-muted-foreground"
-          style={{ left: `${at(band.median)}%` }}
-        />
-        <span
-          aria-hidden="true"
-          data-testid="value-tick"
-          className="absolute -top-1.5 h-4.5 w-1 -translate-x-1/2 rounded-full bg-foreground"
-          style={{ left: `${at(value)}%` }}
-        />
-      </div>
-      <span className="shrink-0">{hi.toFixed(decimals)}</span>
+    <div data-testid="range-track">
+      <RangeBar
+        label={`${label}: ${value.toFixed(decimals)}, ${lo.toFixed(decimals)}–${hi.toFixed(decimals)}`}
+        band={[at(band.low), at(band.high)]}
+        bandTone="baseline"
+        marker={at(value)}
+        caption={
+          <div className="flex justify-between gap-3 tabular-nums">
+            <span>{lo.toFixed(decimals)}</span>
+            {note && <span className="text-center text-[var(--text-2)]">{note}</span>}
+            <span>{hi.toFixed(decimals)}</span>
+          </div>
+        }
+      />
     </div>
   )
 }
 
 /**
- * "−0.04 m vs baseline", in grey: a delta against the baseline tick, with its
- * unit. Orange is a zone colour, not "worse" (H17).
+ * "−0.04 m vs baseline": a delta against the baseline's median, with its
+ * unit, in text-2 - a note, never a status colour (H17).
  */
 export function deltaSentence(m: Pick<Metric, 'value' | 'band' | 'decimals' | 'deltaUnit'>): string | null {
   const d = t.activity.dynamics
@@ -122,25 +120,29 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
   if (!metrics.length) return null
 
   return (
-    <GlassSurface variant="card" className="rounded-[22px] px-4.5 py-1" data-testid="running-dynamics">
-      {metrics.map((m, i) => {
+    <section className={cardClass({ padding: 'none', className: 'px-5 py-1.5' })} data-testid="running-dynamics">
+      {metrics.map((m) => {
         const sentence = deltaSentence(m)
         return (
-          <div key={m.label} className={cn('py-3.5', i > 0 && 'border-t border-border')}>
+          <div key={m.label} className="flex flex-col gap-2.5 border-b border-border py-4 last:border-b-0">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="text-subhead text-foreground">
+              <span className="text-sm font-medium text-foreground">
                 <GlossaryTerm term={m.term}>{m.label}</GlossaryTerm>
               </span>
-              <span className="font-display text-title3 font-bold tabular-nums text-foreground">
+              <span className="text-lg font-semibold tabular-nums text-foreground">
                 {m.display}
-                <span className="text-footnote font-medium text-muted-foreground"> {m.unit}</span>
+                <span className="text-xs font-normal text-muted-foreground"> {m.unit}</span>
               </span>
             </div>
-            {m.band && <RangeTrack value={m.value} band={m.band} decimals={m.decimals} />}
-            {sentence && <p className="mt-2 text-footnote tabular-nums text-muted-foreground">{sentence}</p>}
+            {m.band ? (
+              <RangeTrack label={m.label} value={m.value} band={m.band} decimals={m.decimals} note={sentence} />
+            ) : (
+              sentence && <p className="text-xs text-[var(--text-2)]">{sentence}</p>
+            )}
           </div>
         )
       })}
-    </GlassSurface>
+      {baseline && <p className="py-3 text-xs text-muted-foreground">{d.baselineNote(baseline.weeks)}</p>}
+    </section>
   )
 }

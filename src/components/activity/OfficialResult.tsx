@@ -1,7 +1,7 @@
 import { Flag } from 'lucide-react'
 import { topPercentile, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
 import { t } from '@/i18n'
 
 interface Props {
@@ -17,22 +17,22 @@ export function OfficialResult({ result, garminDistanceKm, garminDurationSeconds
   const percentile = topPercentile(result.overallPlace, result.finisherCount)
 
   return (
-    <GlassSurface variant="card" className="p-4">
-      <h3 className="mb-3 text-sm font-semibold text-foreground/80">{s.title}</h3>
+    <section className={cardClass({ className: 'flex flex-col gap-3' })}>
+      <h3 className="text-[15px] font-semibold text-foreground">{s.title}</h3>
       <div className="flex items-center gap-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-[var(--segmented-track)]">
-          <Flag size={15} className="text-[var(--tone-caution)]" />
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-[var(--surface-2)]">
+          <Flag size={15} className="text-muted-foreground" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-foreground">
             {formatDistance(distanceKm)} {t.units.km}
-            <span className="ml-1.5 font-normal text-subtle">
+            <span className="ml-1.5 font-normal text-muted-foreground">
               {formatDuration(result.chipTimeSeconds)} · {formatPace(Math.round(result.chipTimeSeconds / distanceKm))}
             </span>
           </p>
-          <p className="mt-0.5 text-xs text-subtle">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {result.overallPlace !== undefined && (
-              <span className="font-medium text-foreground/70">
+              <span className="font-medium text-[var(--text-2)]">
                 {result.finisherCount === undefined
                   ? s.placingWithoutField(result.overallPlace)
                   : s.placing(result.overallPlace, result.finisherCount)}
@@ -45,20 +45,21 @@ export function OfficialResult({ result, garminDistanceKm, garminDurationSeconds
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {isPersonalBest && (
-            <span className="rounded-full bg-[var(--segmented-track)] text-[var(--tone-caution)] px-2 py-0.5 text-caption font-bold">
+            // A record is good news: pos, not the caution gold (v4.17).
+            <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-caption font-semibold text-[var(--pos)]">
               {t.activity.bestEfforts.prBadge}
             </span>
           )}
           {percentile !== null && (
-            <span className="rounded-full bg-[var(--segmented-track)] px-2 py-0.5 text-caption font-bold text-muted-foreground">
+            <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-caption font-semibold text-muted-foreground">
               {s.topPercent(percentile)}
             </span>
           )}
         </div>
       </div>
-      <p className="mt-2.5 border-t border-border/50 pt-2 text-xs text-subtle">
+      <p className="border-t border-border pt-2.5 text-xs text-muted-foreground">
         {s.deviceNote(`${formatDistance(garminDistanceKm)} ${t.units.km}`, formatDuration(garminDurationSeconds))}
       </p>
-    </GlassSurface>
+    </section>
   )
 }

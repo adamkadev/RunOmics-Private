@@ -1168,9 +1168,9 @@ export const en = {
     },
     stats: {
       distance: 'Distance',
-      duration: 'Duration',
-      pace: 'Pace',
-      avgHr: 'Avg HR',
+      duration: 'Moving time',
+      pace: 'Avg pace',
+      avgHr: 'Avg heart rate',
     },
     verdict: {
       title: 'Run Verdict',
@@ -1180,6 +1180,12 @@ export const en = {
         caution: (type: string) => `Tough ${type}`,
       },
       effortClause: (rpeLabel: string, rpe: number) => `Perceived effort: ${rpeLabel} (RPE ${rpe}).`,
+      // The insight's eyebrow, in the verdict's status colour (v4.17).
+      eyebrow: {
+        positive: 'Strong session',
+        neutral: 'Session logged',
+        caution: 'Tough session',
+      },
     },
     // Read-only: RPE comes from the watch, and the note is the one thing on an
     // activity the user writes.
@@ -1190,7 +1196,7 @@ export const en = {
     },
     noteRow: {
       label: 'Note',
-      add: 'Add',
+      add: 'Add note',
       edit: 'Edit',
       read: 'Read',
       none: 'No note',
@@ -1203,7 +1209,15 @@ export const en = {
       dynamics: 'Dynamics',
     },
     bestEfforts: {
-      title: 'Best Efforts',
+      title: 'Best efforts',
+      // The tile's name: the distance with its unit (v4.17).
+      distances: {
+        '1k': '1 km',
+        '5k': '5 km',
+        '10k': '10 km',
+        half: 'Half marathon',
+        marathon: 'Marathon',
+      } as Record<string, string>,
       prBadge: 'PR',
       rankBadge: (rank: number) => `#${rank}`,
     },
@@ -1220,8 +1234,8 @@ export const en = {
       deviceNote: (distance: string, duration: string) => `Watch recorded ${distance} in ${duration}`,
     },
     decoupling: {
-      held: 'Held',
-      faded: 'Faded',
+      held: 'Held — under 5%',
+      faded: 'Faded — over 5%',
       title: 'Aerobic decoupling',
       stable: 'Held together',
       drifting: 'Faded',
@@ -1264,7 +1278,8 @@ export const en = {
       // The basis is in the name: these are heart-rate zones, not pace.
       title: 'Time in HR zones',
       noData: 'No HR zone data',
-      short: 'HR zones',
+      short: 'Heart-rate zones',
+      shareOfTime: 'share of time',
       mostIn: (zone: number, pct: number) => `most in Z${zone} · ${pct}%`,
     },
     trainingEffect: {
@@ -1325,23 +1340,30 @@ export const en = {
       vertOscillation: 'Vertical oscillation',
       vertRatio: 'Vertical ratio',
       vsBaselineShort: 'vs baseline',
-      level: 'level with baseline',
+      level: 'Level with baseline',
       ratioUnit: 'pt',
+      baselineNote: (weeks: number) => `Shaded band = your baseline, the middle half of your runs over the last ${weeks} weeks.`,
     },
     charts: {
-      heartRate: 'Heart Rate',
-      hr: 'HR',
+      heartRate: 'Heart rate',
       avg: 'avg',
       max: 'max',
-      best: 'best',
-      bestSmoothed: 'best (30 s)',
+      bestSmoothed: 'best 30 s',
       pace: 'Pace',
+      paceUnitHint: '/km · higher is faster',
       elevation: 'Elevation',
       cadence: 'Cadence',
       elevationGain: (m: number) => `+${m} m gain`,
-      readoutAt: 'At',
-      runAverage: 'Run average',
-      dragToScrub: 'drag to scrub',
+      scrubAt: (km: string, elapsed: string | null) => (elapsed ? `At ${km} km · ${elapsed} elapsed` : `At ${km} km`),
+      scrubHint: 'Drag across the charts to scrub — the dot on the map follows',
+      lineLabel: 'Chart line',
+      smoothed: 'Smoothed',
+      raw: 'Raw',
+      legend: {
+        zones: 'Background = your zones',
+        average: 'Run average',
+        km: 'Each km',
+      },
     },
     map: {
       fullscreen: 'Fullscreen',
@@ -1364,8 +1386,8 @@ export const en = {
       bandLabel: (range: string) => `band ${range}`,
       recoveryAvg: 'Recovery avg',
       // The set's summary at the top of its card: three numbers, no sentence (H14).
-      inBandLabel: 'in band',
-      spread: 'spread',
+      inBandLabel: 'In band',
+      spread: 'Spread',
       hrDrift: 'HR drift',
       cols: {
         km: 'Km',
@@ -1389,8 +1411,8 @@ export const en = {
       } as Record<string, string>,
     },
     nav: {
-      previous: 'Previous',
-      next: 'Next',
+      previous: 'Previous run',
+      next: 'Next run',
     },
   },
 

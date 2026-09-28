@@ -2,8 +2,8 @@
 
 import type { ActivitySplit } from '@/domain/activity/types'
 import { type RepSet, type Track, recoveryAverage, trackDomain, trackPosition } from '@/domain/activity/repSet'
-import { GlassSurface } from '@/components/ui/GlassSurface'
-import { STATUS } from '@/lib/statusColors'
+import { cardClass } from '@/components/ui/Card'
+import { Stat, StatGrid } from '@/components/ui/Stat'
 import { formatClock, formatDelta } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -94,43 +94,38 @@ export function IntervalSet({ set }: Props) {
   const cooldownLabel = s.intervalTypes.interval_cooldown ?? ''
 
   return (
-    <GlassSurface variant="card" className="flex flex-col gap-3 rounded-[22px] px-4.5 py-4" data-testid="interval-set">
-      {/* The set in three numbers, at the top, with no sentence (H14). */}
-      <div className="grid grid-cols-3 gap-2" data-testid="set-summary">
-        {band && (
-          <div className="flex flex-col gap-0.75">
-            <p className={cn('font-display text-title3 font-bold leading-none tabular-nums', inBandAll ? STATUS.success.text : STATUS.warning.text)}>
-              {set.inBand}/{set.reps.length}
-            </p>
-            <p className="text-caption text-muted-foreground">{s.inBandLabel}</p>
-          </div>
-        )}
-        <div className="flex flex-col gap-0.75">
-          <p className="font-display text-title3 font-bold leading-none tabular-nums text-foreground">
-            {set.spreadSecPerKm ?? '—'} <span className="text-footnote font-normal">{t.units.sec}</span>
-          </p>
-          <p className="text-caption text-muted-foreground">{s.spread}</p>
-        </div>
-        <div className="flex flex-col gap-0.75">
+    <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="interval-set">
+      {/* The set in three numbers, at the top, with no sentence (H14), in
+          the stat pattern (v4.17). All reps in the band is good news. */}
+      <div data-testid="set-summary">
+        <StatGrid columns={3}>
+          {band ? (
+            <Stat
+              label={s.inBandLabel}
+              value={`${set.inBand}/${set.reps.length}`}
+              valueStyle={{ color: inBandAll ? 'var(--pos)' : 'var(--warn)' }}
+            />
+          ) : null}
+          <Stat label={s.spread} value={set.spreadSecPerKm ?? '—'} unit={set.spreadSecPerKm != null ? t.units.sec : undefined} />
           {/* A drift, not a verdict: neutral ink and its unit (v4.3). */}
-          <p className="font-display text-title3 font-bold leading-none tabular-nums text-foreground">
-            {set.hrDriftBpm === null ? '—' : formatDelta(set.hrDriftBpm)}
-            {set.hrDriftBpm !== null && <span className="text-footnote font-normal"> {t.units.bpm}</span>}
-          </p>
-          <p className="text-caption text-muted-foreground">{s.hrDrift}</p>
-        </div>
+          <Stat
+            label={s.hrDrift}
+            value={set.hrDriftBpm === null ? '—' : formatDelta(set.hrDriftBpm)}
+            unit={set.hrDriftBpm !== null ? t.units.bpm : undefined}
+          />
+        </StatGrid>
       </div>
 
-      <div className="h-px bg-border" />
+      <div className="h-px bg-[var(--border)]" />
 
       <div className="flex flex-col gap-2">
-        <div className={cn(ROW, 'text-caption text-subtle-2')}>
+        <div className={cn(ROW, 'text-caption uppercase tracking-[0.06em] text-muted-foreground')}>
           <span>{s.cols.step}</span>
-          <span className="truncate" data-testid="band-header">
+          <span className="truncate normal-case tracking-normal" data-testid="band-header">
             {band ? s.bandLabel(`${formatClock(band.min)}–${formatClock(band.max)}`) : ''}
           </span>
-          <span className="text-right uppercase">{s.cols.pace}</span>
-          <span className="text-right uppercase">{s.cols.hr}</span>
+          <span className="text-right">{s.cols.pace}</span>
+          <span className="text-right">{s.cols.hr}</span>
         </div>
 
         {set.warmup && <QuietRow label={`${warmupLabel} ${km(set.warmup.distanceM)} ${t.units.km}`} pace={paceOf(set.warmup)} hr={set.warmup.avgHr} />}
@@ -153,6 +148,6 @@ export function IntervalSet({ set }: Props) {
 
         {set.cooldown && <QuietRow label={`${cooldownLabel} ${km(set.cooldown.distanceM)} ${t.units.km}`} pace={paceOf(set.cooldown)} hr={set.cooldown.avgHr} />}
       </div>
-    </GlassSurface>
+    </section>
   )
 }

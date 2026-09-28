@@ -1133,9 +1133,9 @@ export const fr = {
     },
     stats: {
       distance: 'Distance',
-      duration: 'Durée',
-      pace: 'Allure',
-      avgHr: 'FC moy',
+      duration: 'Temps en mouvement',
+      pace: 'Allure moy.',
+      avgHr: 'FC moyenne',
     },
     verdict: {
       title: 'Verdict de la sortie',
@@ -1145,6 +1145,11 @@ export const fr = {
         caution: (type: string) => `Sortie ${type} exigeante`,
       },
       effortClause: (rpeLabel: string, rpe: number) => `Effort ressenti : ${rpeLabel} (RPE ${rpe}).`,
+      eyebrow: {
+        positive: 'Belle séance',
+        neutral: 'Séance enregistrée',
+        caution: 'Séance exigeante',
+      },
     },
     effort: {
       label: 'Effort',
@@ -1153,7 +1158,7 @@ export const fr = {
     },
     noteRow: {
       label: 'Note',
-      add: 'Ajouter',
+      add: 'Ajouter une note',
       edit: 'Modifier',
       read: 'Lire',
       none: 'Pas de note',
@@ -1167,6 +1172,13 @@ export const fr = {
     },
     bestEfforts: {
       title: 'Meilleurs efforts',
+      distances: {
+        '1k': '1 km',
+        '5k': '5 km',
+        '10k': '10 km',
+        half: 'Semi-marathon',
+        marathon: 'Marathon',
+      } as Record<string, string>,
       prBadge: 'RP',
       rankBadge: (rank: number) => `#${rank}`,
     },
@@ -1183,8 +1195,8 @@ export const fr = {
       deviceNote: (distance: string, duration: string) => `Montre : ${distance} en ${duration}`,
     },
     decoupling: {
-      held: 'Tenu',
-      faded: 'Décroché',
+      held: 'Tenu — sous 5 %',
+      faded: 'Décroché — au-dessus de 5 %',
       title: 'Découplage aérobie',
       stable: 'Tenu',
       drifting: 'Dérive',
@@ -1224,7 +1236,8 @@ export const fr = {
     zones: {
       title: 'Temps en zones FC',
       noData: 'Pas de données de zones FC',
-      short: 'Zones FC',
+      short: 'Zones cardiaques',
+      shareOfTime: 'part du temps',
       mostIn: (zone: number, pct: number) => `surtout en Z${zone} · ${pct} %`,
     },
     trainingEffect: {
@@ -1285,23 +1298,30 @@ export const fr = {
       vertOscillation: 'Oscillation verticale',
       vertRatio: 'Ratio vertical',
       vsBaselineShort: 'vs référence',
-      level: 'au niveau de la référence',
+      level: 'Au niveau de la référence',
       ratioUnit: 'pt',
+      baselineNote: (weeks: number) => `Bande = ta référence, la moitié centrale de tes sorties des ${weeks} dernières semaines.`,
     },
     charts: {
       heartRate: 'Fréquence cardiaque',
-      hr: 'FC',
       avg: 'moy',
       max: 'max',
-      best: 'meilleure',
-      bestSmoothed: 'meilleure (30 s)',
+      bestSmoothed: 'meilleure 30 s',
       pace: 'Allure',
-      elevation: 'Dénivelé',
+      paceUnitHint: '/km · plus haut = plus vite',
+      elevation: 'Altitude',
       cadence: 'Cadence',
       elevationGain: (m: number) => `+${m} m D+`,
-      readoutAt: 'À',
-      runAverage: 'Moyenne de la sortie',
-      dragToScrub: 'glisser pour lire',
+      scrubAt: (km: string, elapsed: string | null) => (elapsed ? `À ${km} km · ${elapsed} de course` : `À ${km} km`),
+      scrubHint: 'Glisse sur les graphiques pour les parcourir — le point suit sur la carte',
+      lineLabel: 'Tracé',
+      smoothed: 'Lissé',
+      raw: 'Brut',
+      legend: {
+        zones: 'Fond = tes zones',
+        average: 'Moyenne de la sortie',
+        km: 'Chaque km',
+      },
     },
     map: {
       fullscreen: 'Plein écran',
@@ -1322,9 +1342,9 @@ export const fr = {
       bandLabel: (range: string) => `plage ${range}`,
       recoveryAvg: 'Récup moyenne',
       // The set's summary at the top of its card: three numbers, no sentence (H14).
-      inBandLabel: 'dans la zone',
-      spread: 'écart',
-      hrDrift: 'dérive FC',
+      inBandLabel: 'Dans la zone',
+      spread: 'Écart',
+      hrDrift: 'Dérive FC',
       title: 'Intervalles',
       lapTitle: 'Tours',
       cols: {
@@ -1349,8 +1369,8 @@ export const fr = {
       } as Record<string, string>,
     },
     nav: {
-      previous: 'Précédente',
-      next: 'Suivante',
+      previous: 'Sortie précédente',
+      next: 'Sortie suivante',
     },
   },
 

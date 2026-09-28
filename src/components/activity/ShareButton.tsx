@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Share } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import { t } from '@/i18n'
 
@@ -27,13 +27,15 @@ export function ShareButton({ activity, vo2Grade = null }: Props) {
 
   return (
     <>
-      <button
+      {/* The page's one action, on the title row (v4.17): an outline
+          button that says what it does, not an icon chip. */}
+      <Button
+        variant="secondary"
         onClick={() => setIsOpen(true)}
-        aria-label={t.activity.share}
-        className="glass-chip inline-flex shrink-0 items-center justify-center rounded-full p-2 text-foreground transition-transform active:scale-95 active:opacity-80"
+        className="h-[34px] shrink-0 bg-card px-3 font-normal"
       >
-        <Share size={16} />
-      </button>
+        {t.activity.share}
+      </Button>
 
       {isOpen && (
         <ShareCardModal

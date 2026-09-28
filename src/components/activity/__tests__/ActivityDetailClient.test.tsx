@@ -106,14 +106,24 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByRole('tab', { name: t.activity.tabs.intervals })).toHaveAttribute('aria-selected', 'true')
   })
 
-  // H16: one header - '← Activities', share, the big title - on every tab;
-  // the map, stats and verdict stay on Overview.
-  it('keeps the same header above every tab', () => {
+  // H16: one header - '← Activities', the big title, share - on every tab.
+  // v4.17: the map card with the four stats heads every tab too, since the
+  // Charts scrub moves a marker along its route; the verdict stays on Overview.
+  it('keeps the same header and the map card above every tab', () => {
     window.history.replaceState(null, '', '/activities/a1?tab=intervals')
     render(<ActivityDetailClient activity={ACTIVITY} aiVerdict={null} dynamicsBaseline={null} header={<h1>Threshold</h1>} />)
 
     expect(screen.getByRole('heading', { name: 'Threshold' })).toBeInTheDocument()
+    expect(screen.getByTestId('run-map-card').textContent).toContain(t.activity.stats.distance)
     expect(screen.queryByText(t.activity.effort.label)).toBeNull()
     expect(screen.queryByTestId('compact-header')).toBeNull()
+  })
+
+  // v4.17: the insight's eyebrow says how the session went, in its status colour.
+  it('heads the verdict with a status eyebrow', () => {
+    render(<ActivityDetailClient activity={{ ...ACTIVITY, rpe: 7 } as ActivityDetailView} aiVerdict={null} dynamicsBaseline={null} />)
+
+    const eyebrow = screen.getByText(t.activity.verdict.eyebrow.positive)
+    expect(eyebrow.getAttribute('style')).toContain('--pos')
   })
 })

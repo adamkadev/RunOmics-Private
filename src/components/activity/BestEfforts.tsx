@@ -1,7 +1,8 @@
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { EFFORTS as ALL_EFFORTS } from '@/domain/activity/effort'
+import { cardClass } from '@/components/ui/Card'
 import { formatDuration, formatPace } from '@/lib/formatters'
-import { SectionDivider } from '@/components/ui/SectionLabel'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const EFFORTS = ALL_EFFORTS.filter((e) => e.key !== '1mile')
@@ -11,6 +12,12 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
 }
 
+/**
+ * The run's best efforts as a three-column grid of inset tiles (v4.17): the
+ * distance with its unit, the time, then the pace in muted - every tile the
+ * same three lines, the 1 km's included. A record carries its rank, a PR in
+ * pos.
+ */
 export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
   const s = t.activity.bestEfforts
   const rankByKey = new Map(qualifiedEfforts.map((e) => [e.key, e.rank]))
@@ -21,31 +28,28 @@ export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
   })
   if (!entries.length) return null
 
-  // Two or three chips in a p-5 card left most of its width empty and cost a
-  // scroll. The distances are already labelled inline, so the card and its
-  // heading were housing three facts that fit on one row.
-  // A two-column grid under its label, not a strip that cut the 5K off at the
-  // edge; and no pace beside the 1K, whose time already is its pace (G23).
   return (
-    <div className="px-1">
-      <SectionDivider as="p" className="mb-2">{s.title}</SectionDivider>
-      <div className="grid grid-cols-2 gap-2" data-testid="best-efforts">
+    <section className={cardClass({ className: 'flex flex-col gap-3' })}>
+      <h3 className="text-[15px] font-semibold text-foreground">{s.title}</h3>
+      <div className="grid grid-cols-3 gap-2.5" data-testid="best-efforts">
         {entries.map(({ key, label, km, seconds, rank }) => (
-          <span
-            key={key}
-            className="flex min-w-0 items-baseline gap-1.5 rounded-control border border-border/60 bg-muted/30 px-2.5 py-1.5"
-          >
-            <span className="text-caption font-semibold text-subtle">{label}</span>
-            <span className="text-sm font-bold tabular-nums tracking-tight text-foreground">{formatDuration(seconds)}</span>
-            {km !== 1 && <span className="truncate text-caption tabular-nums text-subtle">{formatPace(Math.round(seconds / km))}</span>}
+          <div key={key} className="relative flex min-w-0 flex-col gap-0.5 rounded-xl bg-[var(--surface-2)] px-3 py-3 sm:px-3.5">
+            <span className="truncate text-xs text-muted-foreground">{s.distances[key] ?? label}</span>
+            <span className="text-lg font-semibold leading-tight text-foreground sm:text-xl">{formatDuration(seconds)}</span>
+            <span className="truncate text-xs text-muted-foreground">{formatPace(Math.round(seconds / km))}</span>
             {rank != null && (
-              <span className="ml-auto shrink-0 rounded-full bg-[var(--segmented-track)] text-[var(--tone-caution)] px-1.5 text-caption font-bold">
+              <span
+                className={cn(
+                  'absolute right-2.5 top-2.5 text-[11px] font-semibold leading-none',
+                  rank === 1 ? 'text-[var(--pos)]' : 'text-muted-foreground',
+                )}
+              >
                 {rank === 1 ? s.prBadge : s.rankBadge(rank)}
               </span>
             )}
-          </span>
+          </div>
         ))}
       </div>
-    </div>
+    </section>
   )
 }
