@@ -56,17 +56,14 @@ describe('activity type hue budget', () => {
     }
   })
 
-  it('stays out of the families that exist only as accent themes', () => {
-    // `Anaerobic` used to be violet600, which IS the endurance theme's
-    // `--accent-text`, so on that theme a type dot rendered as the accent.
-    // Violet and fuchsia are carried by nothing else in the app, so the ramp
-    // has no business in them. Orange is not on this list: the motivation
-    // accent is orange, but orange is also `Threshold`, `atl` and
-    // `unproductive`, and that predates this ramp.
-    const accentOnly = ['violet', 'fuchsia']
-    for (const type of TYPES) for (const hex of resolved(typeHue(type))) expect(accentOnly, type).not.toContain(hueFamily(hex))
-    expect(Object.values(ACCENT_SWATCHES_LIGHT)).not.toContain(typeHue('Anaerobic'))
-    expect(Object.values(ACCENT_SWATCHES)).not.toContain(typeHue('Anaerobic'))
+  it('never draws a type in the accent or a status colour (v4.17)', () => {
+    // A type is a category: its zone, and nothing that means "yours" or
+    // "good / caution / bad".
+    for (const type of TYPES) {
+      expect(typeHue(type), type).toMatch(/^var\(--zone-[1-5]\)$/)
+      expect(Object.values(ACCENT_SWATCHES_LIGHT)).not.toContain(typeHue(type))
+      expect(Object.values(ACCENT_SWATCHES)).not.toContain(typeHue(type))
+    }
   })
 
   it('draws the three zone-5 types as the one zone-5 token', () => {

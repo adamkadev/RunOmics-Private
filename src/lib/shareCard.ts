@@ -28,7 +28,7 @@ export interface RenderOptions {
  */
 export function pageFonts(): ShareFonts {
   if (typeof document === 'undefined' || !document.body) return FALLBACK_FONTS
-  const display = getComputedStyle(document.body).getPropertyValue('--font-space-grotesk').trim()
+  const display = getComputedStyle(document.body).getPropertyValue('--font-geist').trim()
   return display ? { ...FALLBACK_FONTS, display: `${display}, ${FALLBACK_FONTS.display}` } : FALLBACK_FONTS
 }
 

@@ -454,7 +454,7 @@ export function ActivityListClient({
         >
           <Pill
             as="button"
-            variant={selectedType === null ? 'accent' : 'neutral'}
+            variant={selectedType === null ? 'selected' : 'neutral'}
             className={cn('h-9 py-0 text-footnote font-semibold', selectedType === null ? 'px-4' : 'px-2.5')}
             onClick={() => setSelectedType(null)}
           >
@@ -466,7 +466,7 @@ export function ActivityListClient({
               <Pill
                 key={type}
                 as="button"
-                variant={active ? 'accent' : 'neutral'}
+                variant={active ? 'selected' : 'neutral'}
                 className={cn('h-9 py-0 text-footnote font-semibold', active ? 'px-4' : 'px-2.5')}
                 onClick={() => setSelectedType(active ? null : type)}
               >
@@ -486,7 +486,7 @@ export function ActivityListClient({
 
       {gearId && (
         <div className="px-1">
-          <Pill as="button" variant="accent" className="h-9 gap-1.5 py-0 text-footnote font-semibold" onClick={() => setGearId(null)} aria-label={t.activities.shoeFilter.clear}>
+          <Pill as="button" variant="selected" className="h-9 gap-1.5 py-0 text-footnote font-semibold" onClick={() => setGearId(null)} aria-label={t.activities.shoeFilter.clear}>
             {shoeNames[gearId] ?? gearId}
             <X size={14} aria-hidden="true" />
           </Pill>

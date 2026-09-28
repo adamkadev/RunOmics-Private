@@ -6,25 +6,34 @@ import { useMounted } from '@/lib/useMounted'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-export function ThemeToggle({ className }: { className?: string }) {
-  const { theme, setTheme } = useTheme()
+/**
+ * Light or dark, whichever is not on screen. `compact` is the sidebar's 30 px
+ * square on the inset surface (v4.17); its hit area still reaches 44 px.
+ */
+export function ThemeToggle({ className, compact = false }: { className?: string; compact?: boolean }) {
+  const { resolvedTheme, setTheme } = useTheme()
   const mounted = useMounted()
+  const size = compact ? 'h-[30px] w-[30px]' : 'h-11 w-11'
 
   if (!mounted) {
-    return <div className={cn('h-8 w-8 rounded-md', className)} />
+    return <div className={cn(size, 'rounded-lg', className)} />
   }
 
+  const dark = resolvedTheme === 'dark'
   return (
     <button
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      onClick={() => setTheme(dark ? 'light' : 'dark')}
       className={cn(
-        'flex h-11 w-11 items-center justify-center rounded-md transition-all duration-150',
-        'text-muted-foreground hover:bg-muted hover:text-foreground active:scale-90',
+        'flex items-center justify-center transition-all duration-150 active:scale-90',
+        compact
+          ? 'hit-44 rounded-lg border border-border bg-[var(--surface-2)] text-[var(--text-2)] hover:text-foreground'
+          : 'rounded-md text-muted-foreground hover:bg-muted hover:text-foreground',
+        size,
         className
       )}
       aria-label={t.theme.toggle}
     >
-      {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+      {dark ? <Sun size={compact ? 14 : 16} /> : <Moon size={compact ? 14 : 16} />}
     </button>
   )
 }

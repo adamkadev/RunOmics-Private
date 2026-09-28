@@ -309,8 +309,8 @@ export const fr = {
       title: 'Accent',
       options: {
         teal:     { label: 'Sarcelle' },
-        indigo:   { label: 'Indigo' },
-        lavender: { label: 'Lavande' },
+        periwinkle: { label: 'Pervenche' },
+        violet:     { label: 'Violet' },
         pink:     { label: 'Rose' },
         mono:     { label: 'Mono' },
       },

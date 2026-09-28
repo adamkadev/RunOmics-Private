@@ -328,8 +328,8 @@ export const en = {
       title: 'Accent',
       options: {
         teal:     { label: 'Teal' },
-        indigo:   { label: 'Indigo' },
-        lavender: { label: 'Lavender' },
+        periwinkle: { label: 'Periwinkle' },
+        violet:     { label: 'Violet' },
         pink:     { label: 'Pink' },
         mono:     { label: 'Mono' },
       },

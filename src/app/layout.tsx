@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
+import { Geist } from 'next/font/google'
 import Script from 'next/script'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -18,9 +18,9 @@ import {
 import { appleStartupImages } from '@/lib/splashScreens'
 import { STATUS_BAR_COLOR } from '@/lib/themeTokens'
 
-const inter = Inter({ variable: '--font-inter', subsets: ['latin'] })
-const spaceGrotesk = Space_Grotesk({ variable: '--font-space-grotesk', subsets: ['latin'], weight: ['500', '600', '700'] })
-const jetbrainsMono = JetBrains_Mono({ variable: '--font-jetbrains-mono', subsets: ['latin'] })
+// One family for everything, numbers included (v4.17): Geist 400-700. The
+// display face with the slab "1" and the mono for figures are gone.
+const geist = Geist({ variable: '--font-geist', subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: {
@@ -91,7 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang={t.locale.split('-')[0]}
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${geist.variable} h-full antialiased`}
     >
       <body className="h-full">
         {/* The reader's accent before first paint. A pre-v4.3 id reads as its

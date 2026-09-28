@@ -2,10 +2,9 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 /**
- * The one eyebrow recipe (G20): Inter caps at 600 and 0.06em. Tracked mono
- * caps were a second recipe beside it; mono is for figures only.
+ * The one eyebrow recipe (G20, v4.17): 11 px caps at 600 and 0.08em.
  */
-export const EYEBROW_CLASS = 'text-caption font-semibold uppercase tracking-[0.06em]'
+export const EYEBROW_CLASS = 'text-caption font-semibold uppercase tracking-[0.08em]'
 
 /**
  * The two label levels the app actually has. Before these existed the same job

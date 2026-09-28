@@ -22,9 +22,9 @@
   --color-delta-warn:        var(--delta-warn);
   --color-zone-ink:          var(--zone-ink);
   --color-ring:              var(--ring);
-  --font-sans:               var(--font-inter);
-  --font-display:            var(--font-space-grotesk);
-  --font-mono:               var(--font-jetbrains-mono);
+  --font-sans:               var(--font-geist);
+  --font-display:            var(--font-geist);
+  --font-mono:               var(--font-geist);
   /* rem, not px: these sizes must follow the browser/OS text-size setting the
      same way Tailwind's own text-xs/text-sm do, otherwise half the UI scales
      and half stays pinned. */
@@ -35,9 +35,9 @@
   --text-body:               1.0625rem;
   --text-title2:             1.375rem;
   --text-title1:             1.75rem;
-  --radius-card:             22px;
-  --radius-card-sm:          20px;
-  --radius-control:          10px;
+  --radius-card:             16px;
+  --radius-card-sm:          14px;
+  --radius-control:          9px;
   --shadow-card:             var(--shadow-card);
   --animate-fade-up:         fade-up 0.25s ease-out backwards;
   --animate-fade-in:         fade-in 0.2s ease-out both;
@@ -106,7 +106,7 @@
   --blur-md:               18px;
   --blur-lg:               28px;
   --saturate:              1.6;
-  --color-missed:          #e5396b;
+  --color-missed:          var(--neg);
   --safe-top:              env(safe-area-inset-top, 0px);
   --top-scrim:             calc(var(--safe-top) + 4px);
   --safe-bottom:           env(safe-area-inset-bottom, 0px);
@@ -129,76 +129,83 @@
 
 /* ─── Light tokens - Teal (default) ───────────────── */
 :root {
-  --status-bar:              #f3f4f4;
-  --delta-good:              var(--good);
-  --delta-warn:              #c2560f;
-  --good:                    #15803d;
-  --metric-form:             #0f7a52;
-  --metric-fitness:          #2563eb;
-  --metric-fatigue:          #c2560f;
-  --destructive:             #d1453f;
-  --tone-go:                 #0f7a52;
-  --tone-hold:               #c2560f;
-  --status-peaking:          #7c3aed;
-  --form-band-tired:         var(--delta-warn);
+  --status-bar:              #f3f4f3;
+  --delta-good:              var(--pos);
+  --delta-warn:              var(--warn);
+  --good:                    var(--pos);
+  --destructive:             var(--neg);
+  --metric-form:             var(--foreground);
+  --metric-fitness:          var(--foreground);
+  --metric-fatigue:          var(--muted-foreground);
+  --tone-go:                 var(--pos);
+  --tone-hold:               var(--warn);
+  --status-peaking:          var(--pos);
+  --form-band-tired:         var(--warn);
   --form-band-neutral:       var(--muted-foreground);
-  --form-band-fresh:         var(--delta-good);
-  --form-band-very-fresh:    var(--tone-caution);
-  --form-band-fill-fresh:    var(--zone-2);
-  --form-band-fill-neutral:  var(--band);
-  --form-band-fill-tired:    var(--tone-caution);
-  --series-2:                #b3b8b8;
-  --series-3:                #9a9f9f;
-  --zone-1:                  #5f97b0;
-  --zone-2:                  #3b82f6;
-  --zone-3:                  #0e9f6e;
-  --zone-4:                  #e8590c;
-  --zone-5:                  #e03131;
+  --form-band-fresh:         var(--pos);
+  --form-band-very-fresh:    var(--warn);
+  --form-band-fill-fresh:    var(--pos);
+  --form-band-fill-neutral:  var(--line-2);
+  --form-band-fill-tired:    var(--warn);
+  --series-2:                var(--line-2);
+  --series-3:                var(--muted-foreground);
+  --zone-1:                  #61788f;
+  --zone-2:                  #2f74e0;
+  --zone-3:                  #6650dd;
+  --zone-4:                  #ae3cc2;
+  --zone-5:                  #d63a77;
   --chart-cadence:           #4f7471;
-  --chart-easy:              #0e9f6e;
-  --chart-hard:              #ea580c;
+  --chart-easy:              var(--zone-2);
+  --chart-hard:              var(--zone-4);
   --chart-ground-contact:    #b87d0f;
-  --chart-brand:             #0e9f6e;
+  --chart-brand:             var(--accent);
   --heat-1:                  #cfebe0;
   --heat-2:                  #5dbb9b;
   --heat-3:                  #0f8a6a;
   --heat-4:                  #063a2c;
-  --ro-accent:               #0e9f6e;
-  --ro-accent-hi:            #14b886;
+  --ro-accent:               var(--accent);
+  --ro-accent-hi:            var(--accent-hover);
   --ro-ink:                  #0b1f17;
   --ro-blur:                 18px;
-  --accent:                  #0e8468;
+  --accent:                  #0f8a6a;
   --accent-foreground:       #ffffff;
-  --accent-text:             #0e8468;
-  --accent-hover:            color-mix(in oklab, #0e8468 88%, black);
-  --acc-soft:                color-mix(in oklab, #0e8468 20%, transparent);
-  --acc-line:                color-mix(in oklab, #0e8468 55%, transparent);
-  --ring:                    color-mix(in oklab, #0e8468 35%, transparent);
-  --background:              #f3f4f4;
-  --canvas:                  #f3f4f4;
+  --accent-text:             #0f8a6a;
+  --accent-hover:            color-mix(in oklab, #0f8a6a 88%, black);
+  --accent-soft:             #0f8a6a1f;
+  --acc-soft:                #0f8a6a1f;
+  --acc-line:                color-mix(in oklab, #0f8a6a 55%, transparent);
+  --ring:                    color-mix(in oklab, #0f8a6a 35%, transparent);
+  --background:              #f3f4f3;
+  --canvas:                  #f3f4f3;
   --card:                    #ffffff;
   --raised:                  #ffffff;
   --popover:                 #ffffff;
-  --muted:                   #e6e8e8;
-  --border:                  #e4e6e6;
-  --divider:                 #e4e6e6;
-  --foreground:              #111313;
-  --muted-foreground:        #6b7070;
-  --subtle:                  #8a8f8f;
-  --subtle-2:                #8a8f8f;
-  --ro-text:                 #111313;
-  --ro-text-2:               #6b7070;
-  --ro-text-3:               #8a8f8f;
-  --track:                   #e8eaea;
-  --heat-empty:              #e8eaea;
-  --band:                    #c9cdcd;
-  --thumb-bg:                #e6e8e8;
+  --muted:                   #f0f1f0;
+  --surface-2:               #f0f1f0;
+  --border:                  #e4e6e5;
+  --divider:                 #e4e6e5;
+  --line-2:                  #d3d6d4;
+  --foreground:              #141615;
+  --text-2:                  #434846;
+  --muted-foreground:        #6b706e;
+  --subtle:                  #9aa09d;
+  --subtle-2:                #9aa09d;
+  --ro-text:                 #141615;
+  --ro-text-2:               #6b706e;
+  --ro-text-3:               #9aa09d;
+  --track:                   #f0f1f0;
+  --heat-empty:              #f0f1f0;
+  --band:                    #d3d6d4;
+  --thumb-bg:                #f0f1f0;
   --tab-bar-bg:              #ffffff;
-  --tab-bar-hairline:        #e4e6e6;
-  --segmented-track:         #e6e8e8;
+  --tab-bar-hairline:        #e4e6e5;
+  --segmented-track:         #f0f1f0;
   --segmented-pill:          #ffffff;
-  --segmented-pill-shadow:   0 1px 3px rgba(0, 0, 0, 0.1);
-  --tone-caution:            #b45309;
+  --segmented-pill-shadow:   0 1px 2px rgba(0, 0, 0, 0.18);
+  --pos:                     #1e8a4c;
+  --warn:                    #b26b00;
+  --neg:                     #c8372d;
+  --tone-caution:            #b26b00;
   --shadow-card:             none;
   --shadow-raised:           0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-hero:             none;
@@ -206,7 +213,7 @@
   --hero-glow:               transparent;
   --glass-sat:               1;
   --glass-bg:                #ffffff;
-  --glass-border:            #e4e6e6;
+  --glass-border:            #e4e6e5;
   --glass-highlight:         transparent;
   --glass-shadow-float:      none;
   --glass-shadow-nav:        none;
@@ -218,167 +225,186 @@
 
 /* ─── Dark tokens - Teal (default) ────────────────── */
 .dark {
-  --status-bar:              #0b0c0c;
-  --delta-good:              var(--good);
-  --delta-warn:              #fb923c;
-  --good:                    #5bd68a;
-  --metric-form:             #34d399;
-  --metric-fitness:          #7db8ff;
-  --metric-fatigue:          #ff9a5a;
-  --destructive:             #f87171;
-  --tone-go:                 #34d399;
-  --tone-hold:               #ff9a5a;
-  --status-peaking:          #a78bfa;
-  --form-band-tired:         var(--delta-warn);
+  --status-bar:              #0c0d0d;
+  --delta-good:              var(--pos);
+  --delta-warn:              var(--warn);
+  --good:                    var(--pos);
+  --destructive:             var(--neg);
+  --metric-form:             var(--foreground);
+  --metric-fitness:          var(--foreground);
+  --metric-fatigue:          var(--muted-foreground);
+  --tone-go:                 var(--pos);
+  --tone-hold:               var(--warn);
+  --status-peaking:          var(--pos);
+  --form-band-tired:         var(--warn);
   --form-band-neutral:       var(--muted-foreground);
-  --form-band-fresh:         var(--delta-good);
-  --form-band-very-fresh:    var(--tone-caution);
-  --form-band-fill-fresh:    var(--zone-2);
-  --form-band-fill-neutral:  var(--band);
-  --form-band-fill-tired:    var(--tone-caution);
-  --series-2:                #5a6060;
-  --series-3:                #6b7070;
-  --zone-1:                  #7fb2c9;
-  --zone-2:                  #7ab8ff;
-  --zone-3:                  #4fe6a0;
-  --zone-4:                  #ff9a57;
-  --zone-5:                  #f0524f;
+  --form-band-fresh:         var(--pos);
+  --form-band-very-fresh:    var(--warn);
+  --form-band-fill-fresh:    var(--pos);
+  --form-band-fill-neutral:  var(--line-2);
+  --form-band-fill-tired:    var(--warn);
+  --series-2:                var(--line-2);
+  --series-3:                var(--muted-foreground);
+  --zone-1:                  #8397ab;
+  --zone-2:                  #5b9cf5;
+  --zone-3:                  #8f7cf7;
+  --zone-4:                  #d06be0;
+  --zone-5:                  #f0689e;
   --chart-cadence:           #8fb3b0;
-  --chart-easy:              #34d399;
-  --chart-hard:              #fb923c;
+  --chart-easy:              var(--zone-2);
+  --chart-hard:              var(--zone-4);
   --chart-ground-contact:    #f59e0b;
-  --chart-brand:             #1ed787;
+  --chart-brand:             var(--accent);
   --heat-1:                  #0e3b2f;
   --heat-2:                  #1b9e7c;
   --heat-3:                  #2dd4a7;
   --heat-4:                  #dffff5;
-  --accent:                  #2fd1a6;
-  --accent-foreground:       #03201a;
-  --accent-text:             #2fd1a6;
-  --accent-hover:            color-mix(in oklab, #2fd1a6 88%, white);
-  --acc-soft:                color-mix(in oklab, #2fd1a6 20%, transparent);
-  --acc-line:                color-mix(in oklab, #2fd1a6 55%, transparent);
-  --ring:                    color-mix(in oklab, #2fd1a6 70%, transparent);
-  --background:              #0b0c0c;
-  --canvas:                  #0b0c0c;
-  --card:                    #161818;
-  --raised:                  #1d2020;
-  --popover:                 #1d2020;
-  --muted:                   #1d2020;
-  --border:                  #252828;
-  --divider:                 #252828;
-  --foreground:              #f2f3f3;
-  --muted-foreground:        #9a9f9f;
-  --subtle:                  #6e7373;
-  --subtle-2:                #6e7373;
-  --ro-text:                 #f2f3f3;
-  --ro-text-2:               #9a9f9f;
-  --ro-text-3:               #6e7373;
-  --track:                   #262a2a;
-  --heat-empty:              #262a2a;
-  --band:                    #3a3f3f;
-  --thumb-bg:                #1d2020;
-  --tab-bar-bg:              #0b0c0c;
-  --tab-bar-hairline:        #252828;
-  --segmented-track:         #1d2020;
-  --segmented-pill:          #1d2020;
-  --segmented-pill-shadow:   none;
-  --tone-caution:            #f5b83d;
+  --ro-accent:               var(--accent);
+  --ro-accent-hi:            var(--accent-hover);
+  --ro-ink:                  #0b1f17;
+  --ro-blur:                 18px;
+  --accent:                  #2dd4a7;
+  --accent-foreground:       #07261d;
+  --accent-text:             #2dd4a7;
+  --accent-hover:            color-mix(in oklab, #2dd4a7 88%, white);
+  --accent-soft:             #2dd4a71f;
+  --acc-soft:                #2dd4a71f;
+  --acc-line:                color-mix(in oklab, #2dd4a7 55%, transparent);
+  --ring:                    color-mix(in oklab, #2dd4a7 70%, transparent);
+  --background:              #0c0d0d;
+  --canvas:                  #0c0d0d;
+  --card:                    #151616;
+  --raised:                  #1c1e1d;
+  --popover:                 #1c1e1d;
+  --muted:                   #1c1e1d;
+  --surface-2:               #1c1e1d;
+  --border:                  #242726;
+  --divider:                 #242726;
+  --line-2:                  #303432;
+  --foreground:              #f1f2f1;
+  --text-2:                  #bfc3c1;
+  --muted-foreground:        #8a8f8d;
+  --subtle:                  #5f6462;
+  --subtle-2:                #5f6462;
+  --ro-text:                 #f1f2f1;
+  --ro-text-2:               #8a8f8d;
+  --ro-text-3:               #5f6462;
+  --track:                   #1c1e1d;
+  --heat-empty:              #1c1e1d;
+  --band:                    #303432;
+  --thumb-bg:                #1c1e1d;
+  --tab-bar-bg:              #0c0d0d;
+  --tab-bar-hairline:        #242726;
+  --segmented-track:         #1c1e1d;
+  --segmented-pill:          #151616;
+  --segmented-pill-shadow:   0 1px 2px rgba(0, 0, 0, 0.18);
+  --pos:                     #5bd68a;
+  --warn:                    #f2b544;
+  --neg:                     #f26b5b;
+  --tone-caution:            #f2b544;
   --shadow-card:             none;
   --shadow-raised:           none;
   --shadow-hero:             none;
-  --hero-gradient:           #161818;
+  --hero-gradient:           #151616;
   --hero-glow:               transparent;
   --glass-sat:               1;
-  --glass-bg:                #161818;
-  --glass-border:            #252828;
+  --glass-bg:                #151616;
+  --glass-border:            #242726;
   --glass-highlight:         transparent;
   --glass-shadow-float:      none;
   --glass-shadow-nav:        none;
-  --glass-fallback:          #161818;
-  --glass-row-bg:            #161818;
-  --glass-bg-sheet:          #161818;
-  --glass-bg-nav:            #0b0c0c;
+  --glass-fallback:          #151616;
+  --glass-row-bg:            #151616;
+  --glass-bg-sheet:          #151616;
+  --glass-bg-nav:            #0c0d0d;
 }
 
-[data-accent="indigo"] {
-  --accent:             #4338ca;
+[data-accent="periwinkle"] {
+  --accent:             #4457d6;
   --accent-foreground:  #ffffff;
-  --accent-text:        #4338ca;
-  --accent-hover:       color-mix(in oklab, #4338ca 88%, black);
-  --acc-soft:           color-mix(in oklab, #4338ca 20%, transparent);
-  --acc-line:           color-mix(in oklab, #4338ca 55%, transparent);
-  --ring:               color-mix(in oklab, #4338ca 35%, transparent);
+  --accent-text:        #4457d6;
+  --accent-hover:       color-mix(in oklab, #4457d6 88%, black);
+  --accent-soft:        #4457d61f;
+  --acc-soft:           #4457d61f;
+  --acc-line:           color-mix(in oklab, #4457d6 55%, transparent);
+  --ring:               color-mix(in oklab, #4457d6 35%, transparent);
 }
 
-.dark[data-accent="indigo"] {
-  --accent:             #8c9bff;
-  --accent-foreground:  #0e1238;
-  --accent-text:        #8c9bff;
-  --accent-hover:       color-mix(in oklab, #8c9bff 88%, white);
-  --acc-soft:           color-mix(in oklab, #8c9bff 20%, transparent);
-  --acc-line:           color-mix(in oklab, #8c9bff 55%, transparent);
-  --ring:               color-mix(in oklab, #8c9bff 70%, transparent);
+.dark[data-accent="periwinkle"] {
+  --accent:             #8fa2ff;
+  --accent-foreground:  #07261d;
+  --accent-text:        #8fa2ff;
+  --accent-hover:       color-mix(in oklab, #8fa2ff 88%, white);
+  --accent-soft:        #8fa2ff1f;
+  --acc-soft:           #8fa2ff1f;
+  --acc-line:           color-mix(in oklab, #8fa2ff 55%, transparent);
+  --ring:               color-mix(in oklab, #8fa2ff 70%, transparent);
 }
 
-[data-accent="lavender"] {
-  --accent:             #7c3aed;
+[data-accent="violet"] {
+  --accent:             #7a4fd1;
   --accent-foreground:  #ffffff;
-  --accent-text:        #7c3aed;
-  --accent-hover:       color-mix(in oklab, #7c3aed 88%, black);
-  --acc-soft:           color-mix(in oklab, #7c3aed 20%, transparent);
-  --acc-line:           color-mix(in oklab, #7c3aed 55%, transparent);
-  --ring:               color-mix(in oklab, #7c3aed 35%, transparent);
+  --accent-text:        #7a4fd1;
+  --accent-hover:       color-mix(in oklab, #7a4fd1 88%, black);
+  --accent-soft:        #7a4fd11f;
+  --acc-soft:           #7a4fd11f;
+  --acc-line:           color-mix(in oklab, #7a4fd1 55%, transparent);
+  --ring:               color-mix(in oklab, #7a4fd1 35%, transparent);
 }
 
-.dark[data-accent="lavender"] {
-  --accent:             #b48cf0;
-  --accent-foreground:  #1a0f2e;
-  --accent-text:        #b48cf0;
-  --accent-hover:       color-mix(in oklab, #b48cf0 88%, white);
-  --acc-soft:           color-mix(in oklab, #b48cf0 20%, transparent);
-  --acc-line:           color-mix(in oklab, #b48cf0 55%, transparent);
-  --ring:               color-mix(in oklab, #b48cf0 70%, transparent);
+.dark[data-accent="violet"] {
+  --accent:             #b794f6;
+  --accent-foreground:  #07261d;
+  --accent-text:        #b794f6;
+  --accent-hover:       color-mix(in oklab, #b794f6 88%, white);
+  --accent-soft:        #b794f61f;
+  --acc-soft:           #b794f61f;
+  --acc-line:           color-mix(in oklab, #b794f6 55%, transparent);
+  --ring:               color-mix(in oklab, #b794f6 70%, transparent);
 }
 
 [data-accent="pink"] {
-  --accent:             #c2257a;
+  --accent:             #c23a83;
   --accent-foreground:  #ffffff;
-  --accent-text:        #c2257a;
-  --accent-hover:       color-mix(in oklab, #c2257a 88%, black);
-  --acc-soft:           color-mix(in oklab, #c2257a 20%, transparent);
-  --acc-line:           color-mix(in oklab, #c2257a 55%, transparent);
-  --ring:               color-mix(in oklab, #c2257a 35%, transparent);
+  --accent-text:        #c23a83;
+  --accent-hover:       color-mix(in oklab, #c23a83 88%, black);
+  --accent-soft:        #c23a831f;
+  --acc-soft:           #c23a831f;
+  --acc-line:           color-mix(in oklab, #c23a83 55%, transparent);
+  --ring:               color-mix(in oklab, #c23a83 35%, transparent);
 }
 
 .dark[data-accent="pink"] {
-  --accent:             #ff7ac0;
-  --accent-foreground:  #2e0a1d;
-  --accent-text:        #ff7ac0;
-  --accent-hover:       color-mix(in oklab, #ff7ac0 88%, white);
-  --acc-soft:           color-mix(in oklab, #ff7ac0 20%, transparent);
-  --acc-line:           color-mix(in oklab, #ff7ac0 55%, transparent);
-  --ring:               color-mix(in oklab, #ff7ac0 70%, transparent);
+  --accent:             #f58ac0;
+  --accent-foreground:  #07261d;
+  --accent-text:        #f58ac0;
+  --accent-hover:       color-mix(in oklab, #f58ac0 88%, white);
+  --accent-soft:        #f58ac01f;
+  --acc-soft:           #f58ac01f;
+  --acc-line:           color-mix(in oklab, #f58ac0 55%, transparent);
+  --ring:               color-mix(in oklab, #f58ac0 70%, transparent);
 }
 
 [data-accent="mono"] {
-  --accent:             #141616;
+  --accent:             #1a1c1b;
   --accent-foreground:  #ffffff;
-  --accent-text:        #141616;
-  --accent-hover:       color-mix(in oklab, #141616 88%, black);
-  --acc-soft:           color-mix(in oklab, #141616 20%, transparent);
-  --acc-line:           color-mix(in oklab, #141616 55%, transparent);
-  --ring:               color-mix(in oklab, #141616 35%, transparent);
+  --accent-text:        #1a1c1b;
+  --accent-hover:       color-mix(in oklab, #1a1c1b 88%, black);
+  --accent-soft:        #1a1c1b1f;
+  --acc-soft:           #1a1c1b1f;
+  --acc-line:           color-mix(in oklab, #1a1c1b 55%, transparent);
+  --ring:               color-mix(in oklab, #1a1c1b 35%, transparent);
 }
 
 .dark[data-accent="mono"] {
-  --accent:             #f2f3f3;
-  --accent-foreground:  #0b0c0c;
-  --accent-text:        #f2f3f3;
-  --accent-hover:       color-mix(in oklab, #f2f3f3 88%, white);
-  --acc-soft:           color-mix(in oklab, #f2f3f3 20%, transparent);
-  --acc-line:           color-mix(in oklab, #f2f3f3 55%, transparent);
-  --ring:               color-mix(in oklab, #f2f3f3 70%, transparent);
+  --accent:             #edefee;
+  --accent-foreground:  #0c0d0d;
+  --accent-text:        #edefee;
+  --accent-hover:       color-mix(in oklab, #edefee 88%, white);
+  --accent-soft:        #edefee1f;
+  --acc-soft:           #edefee1f;
+  --acc-line:           color-mix(in oklab, #edefee 55%, transparent);
+  --ring:               color-mix(in oklab, #edefee 70%, transparent);
 }
 
 /* ─── END GENERATED ─── */
@@ -458,7 +484,7 @@
 
   .glass-hero {
     border-radius: var(--radius-card);
-    padding: 18px;
+    padding: 18px 20px;
     border: 1px solid var(--border);
     background: var(--card);
   }
@@ -470,10 +496,10 @@
     border-top: 1px solid var(--tab-bar-hairline);
   }
 
-  /* The desktop sidebar: the page colour and a hairline. */
+  /* The desktop sidebar (v4.17): a card on the page, the surface and a line. */
   .glass-chrome {
-    background: var(--tab-bar-bg);
-    border: 1px solid var(--tab-bar-hairline);
+    background: var(--card);
+    border: 1px solid var(--border);
   }
 
   .glass-sheet {
@@ -539,9 +565,10 @@
     animation: ro-shimmer 1.8s ease-in-out infinite;
   }
 
+  /* The page title (v4.17): 30 px at 700 on desktop, a step smaller on a phone. */
   .text-display {
     font-family: var(--font-display);
-    font-size: clamp(1.6rem, 1.32rem + 1.4vw, 2.125rem);
+    font-size: clamp(1.625rem, 1.45rem + 0.8vw, 1.875rem);
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.15;
@@ -581,10 +608,11 @@ body {
 
 body {
   color: var(--foreground);
-  line-height: 1.625;
-  /* No tabular figures on the body (v4.3.2): Inter's tnum gives the hyphen a
-     figure's width, so "Warm-up" and "D-64" drew as "Warm - up". Numbers that
-     line up in columns or tick in place say tabular-nums themselves. */
+  line-height: 1.5;
+  /* Tabular figures everywhere (v4.17): numbers line up in every column and
+     tick in place. Geist's tnum leaves the hyphen alone, where Inter's gave
+     it a figure's width ("Warm - up", v4.3.2). */
+  font-variant-numeric: tabular-nums;
   overflow-x: hidden;
   -webkit-user-select: none;
   user-select: none;
@@ -610,7 +638,7 @@ textarea,
 }
 
 h1 {
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
   line-height: 1.2;
 }
 

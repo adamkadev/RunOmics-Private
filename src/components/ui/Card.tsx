@@ -16,9 +16,10 @@ export function cardClass({
   className,
 }: CardOptions = {}): string {
   return cn(
-    'rounded-xl border border-border bg-card shadow-card',
+    // The v4.17 card: radius 16, a line border, the surface, 18 x 20 padding.
+    'rounded-2xl border border-border bg-card shadow-card',
     padding === 'sm'   && 'p-3',
-    padding === 'base' && 'p-4',
+    padding === 'base' && 'px-5 py-[18px]',
     padding === 'lg'   && 'p-5',
     overflow  && 'overflow-hidden',
     clickable && 'cursor-pointer transition-shadow hover:shadow-md',

@@ -91,7 +91,7 @@ function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; split
         </span>
       </div>
 
-      <div className={`${rowCls} mt-3 whitespace-nowrap text-caption font-semibold uppercase tracking-[0.06em] text-subtle`}>
+      <div className={`${rowCls} mt-3 whitespace-nowrap text-caption font-semibold uppercase tracking-[0.08em] text-subtle`}>
         <span>{sp.cols.km}</span>
         <span>{sp.cols.pace}</span>
         <span>{sp.cols.speed}</span>

@@ -9,14 +9,14 @@ import {
   persistAccent,
 } from '@/lib/accent'
 
-describe('the v4.3 accents', () => {
-  it('offers five palettes, teal first and by default, no blue, orange, red or amber', () => {
-    expect(ACCENT_IDS).toEqual(['teal', 'indigo', 'lavender', 'pink', 'mono'])
+describe('the v4.17 accents', () => {
+  it('offers five palettes, teal first and by default', () => {
+    expect(ACCENT_IDS).toEqual(['teal', 'periwinkle', 'violet', 'pink', 'mono'])
     expect(DEFAULT_ACCENT).toBe('teal')
   })
 
   it('knows its own ids only', () => {
-    expect(isAccentId('indigo')).toBe(true)
+    expect(isAccentId('periwinkle')).toBe(true)
     expect(isAccentId('lime')).toBe(false)
     expect(isAccentId('performance')).toBe(false)
     expect(isAccentId(null)).toBe(false)
@@ -35,9 +35,14 @@ describe('reading a stored preference', () => {
 
   it('reads a pre-v4.3 accent as its nearest palette', () => {
     expect(parseAccent('nature')).toBe('teal')
-    expect(parseAccent('performance')).toBe('lavender')
-    expect(parseAccent('endurance')).toBe('lavender')
+    expect(parseAccent('performance')).toBe('violet')
+    expect(parseAccent('endurance')).toBe('violet')
     expect(parseAccent('silver')).toBe('mono')
+  })
+
+  it('reads v4.3\'s indigo and lavender as the v4.17 periwinkle and violet', () => {
+    expect(parseAccent('indigo')).toBe('periwinkle')
+    expect(parseAccent('lavender')).toBe('violet')
   })
 
   it('falls back to the default for a custom hue, nothing, or noise', () => {
@@ -59,11 +64,11 @@ describe('persistAccent', () => {
     window.addEventListener(ACCENT_CHANGE_EVENT, onChange)
     localStorage.setItem('runomics-accent-css', 'stale')
 
-    persistAccent('indigo')
+    persistAccent('periwinkle')
 
-    expect(localStorage.getItem(ACCENT_STORAGE_KEY)).toBe('indigo')
+    expect(localStorage.getItem(ACCENT_STORAGE_KEY)).toBe('periwinkle')
     expect(localStorage.getItem('runomics-accent-css')).toBeNull()
-    expect(document.documentElement.getAttribute('data-accent')).toBe('indigo')
+    expect(document.documentElement.getAttribute('data-accent')).toBe('periwinkle')
     expect(onChange).toHaveBeenCalled()
     window.removeEventListener(ACCENT_CHANGE_EVENT, onChange)
   })

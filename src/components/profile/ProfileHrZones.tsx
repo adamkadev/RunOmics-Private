@@ -163,7 +163,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
         )}
 
         <div
-          className={`${ROW_GRID} mt-4 border-b border-border pb-2 text-caption uppercase tracking-[0.06em] text-muted-foreground`}
+          className={`${ROW_GRID} mt-4 border-b border-border pb-2 text-caption uppercase tracking-[0.08em] text-muted-foreground`}
           data-testid="zone-columns"
         >
           <span>{s.columnZone}</span>

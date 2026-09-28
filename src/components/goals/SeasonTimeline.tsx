@@ -145,7 +145,7 @@ function TimelineRow({ row, block, last }: { row: SeasonRaceRow; block: SeasonBl
       {/* The gap before the next row; the last row ends on the card's own padding. */}
       <div className={cn('flex min-w-0 flex-1 items-start justify-between gap-3', !last && 'pb-4')}>
         <div className="min-w-0">
-          <p className="text-caption font-bold tracking-[0.06em] text-muted-foreground">
+          <p className="text-caption font-bold tracking-[0.08em] text-muted-foreground">
             {eyebrow}
           </p>
           <p className="mt-0.5 truncate font-display text-body font-bold text-foreground">{row.title}</p>
@@ -204,7 +204,7 @@ export function SeasonTimeline({ yearData, today, block }: { yearData: YearData;
                   <Marker kind="today" />
                   {past.length > 0 && <span aria-hidden className="mt-2 w-0.5 flex-1 rounded-full bg-border" />}
                 </div>
-                <p className={cn('text-caption font-bold tracking-[0.06em] text-foreground', past.length > 0 && 'pb-4')}>
+                <p className={cn('text-caption font-bold tracking-[0.08em] text-foreground', past.length > 0 && 'pb-4')}>
                   {s.season.todayOn(formatDate(today, { style: 'bare', year: 'never' }).toUpperCase())}
                 </p>
               </li>

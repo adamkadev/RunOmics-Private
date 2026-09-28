@@ -44,7 +44,7 @@ const RUN: ShareActivity = {
 
 function draw(partial: Partial<ShareCardScene> & Pick<ShareCardScene, 'design'>, mode: 'dark' | 'light' = 'dark') {
   const { ctx, ops } = recorder()
-  drawShareCard(ctx, { activity: RUN, palette: sharePalette('lavender', mode), fonts: FALLBACK_FONTS, place: 'Hoenheim', ...partial })
+  drawShareCard(ctx, { activity: RUN, palette: sharePalette('violet', mode), fonts: FALLBACK_FONTS, place: 'Hoenheim', ...partial })
   return ops
 }
 
@@ -70,7 +70,7 @@ describe('drawShareCard', () => {
   })
 
   it('keeps the accent to the logo mark and the finish marker, off every unit and label', () => {
-    const acc = curatedAccent('lavender').dark.acc
+    const acc = curatedAccent('violet').dark.acc
     const ops = draw({ design: 'route' })
     expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
     // The finish is the one accent fill; the mark is three accent strokes.
@@ -87,8 +87,8 @@ describe('drawShareCard', () => {
   it('starts white with a dark outline and finishes in the accent, as on the Activity map (v4.10)', () => {
     const ops = draw({ design: 'route' })
     const markers = ops.filter((o) => o.op === 'fill' && o.ty === HEADER_H)
-    const palette = sharePalette('lavender', 'dark')
-    expect(markers.map((m) => m.fill)).toEqual([palette.ring, curatedAccent('lavender').dark.acc])
+    const palette = sharePalette('violet', 'dark')
+    expect(markers.map((m) => m.fill)).toEqual([palette.ring, curatedAccent('violet').dark.acc])
     expect(markers.map((m) => m.fill)).not.toContain(PACE_ROUTE_COLORS.fast)
     const lines = ops.filter((o) => o.op === 'stroke' && o.ty === HEADER_H).map((o) => o.stroke)
     expect(new Set(lines.slice(1, -2)).size).toBeGreaterThan(1)
@@ -106,7 +106,7 @@ describe('drawShareCard', () => {
   })
 
   it('draws an empty track, no coloured dot, for a zone under a minute (v5.5 #12)', () => {
-    const palette = sharePalette('lavender', 'dark')
+    const palette = sharePalette('violet', 'dark')
     const ops = draw({ design: 'stats', activity: { ...RUN, hrZones: [{ zone: 2, seconds: 2400, percent: 99, minBpm: 120, maxBpm: 140 }, { zone: 4, seconds: 20, percent: 1, minBpm: 155, maxBpm: 170 }] } })
     expect(ops.some((o) => o.op === 'fill' && o.fill === palette.zones[3])).toBe(false)
     const zero = ops.filter((o) => o.op === 'fillText' && o.args[0] === '0 min')
@@ -123,8 +123,8 @@ describe('drawShareCard', () => {
     expect(texts(draw({ design: 'stats' }))).not.toContain('VO₂max A')
     const ops = draw({ design: 'stats', gradeBadge: 'VO₂max A' })
     const badge = ops.find((o) => o.op === 'fillText' && o.args[0] === 'VO₂max A')!
-    expect(badge.fill).toBe(sharePalette('lavender', 'dark').tx)
-    expect(ops.some((o) => o.op === 'fill' && o.fill === sharePalette('lavender', 'dark').seg)).toBe(true)
+    expect(badge.fill).toBe(sharePalette('violet', 'dark').tx)
+    expect(ops.some((o) => o.op === 'fill' && o.fill === sharePalette('violet', 'dark').seg)).toBe(true)
   })
 
   it('asks for a photo in the frame until there is one, in English', () => {

@@ -130,7 +130,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body }: Pr
   if (!isOwner) {
     return (
       <div className="flex min-h-64 flex-col items-center justify-center gap-4 px-4">
-        <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
+        <BackButton label={t.pages.settings.back} fallbackHref="/profile" className="lg:hidden" />
         <p className="text-center text-sm text-muted-foreground">{t.settings.auth.accessDenied}</p>
         <button
           onClick={handleSignOut}
@@ -177,7 +177,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body }: Pr
 function SettingsHeader() {
   return (
     <div>
-      <BackButton label={t.pages.settings.back} fallbackHref="/profile" />
+      <BackButton label={t.pages.settings.back} fallbackHref="/profile" className="lg:hidden" />
       <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
     </div>
   )

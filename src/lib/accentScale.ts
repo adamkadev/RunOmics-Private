@@ -1,12 +1,11 @@
 /**
- * The user's accent (v4.3, v4.3.2): five fixed palettes, one pair of colours per
- * mode. The accent fills selected states, marks today and the one hero card
- * per screen; surfaces stay neutral. No blue, orange, red or amber: they are
- * zone and caution colours, and an accent in their hue would read as data -
- * no sky, cyan or royal blue either, beside Z2 and the cadence line. The set
- * stays curated: a free colour could clash with a zone or fail contrast.
+ * The user's accent (v4.3, v4.17): five fixed palettes, one colour per mode.
+ * The accent marks the athlete's own data - weekly bars, the year line, the
+ * heatmap tracks, the route - and the real actions and the active nav row;
+ * surfaces stay neutral. The set stays curated: a free colour could clash
+ * with a zone or a status colour, or fail contrast.
  */
-export type AccentId = 'teal' | 'indigo' | 'lavender' | 'pink' | 'mono'
+export type AccentId = 'teal' | 'periwinkle' | 'violet' | 'pink' | 'mono'
 
 export interface AccentPair {
   /** The accent itself: fills, outlines, accent text at 14 px bold and up. */
@@ -21,32 +20,39 @@ export interface CuratedAccent {
   light: AccentPair
 }
 
+/** Ink on any accent fill (v4.17): a deep teal-black on dark, white on light. */
+const ACCENT_INK = { dark: '#07261d', light: '#ffffff' } as const
+
 export const CURATED_ACCENTS: readonly CuratedAccent[] = [
-  // Teal is the default and comes first (v4.9.1); lavender takes its place third.
-  // Light teal a step darker than the spec's #0f8a6e (4.3:1): white on it is 4.65:1.
-  { id: 'teal', dark: { acc: '#2fd1a6', onAcc: '#03201a' }, light: { acc: '#0e8468', onAcc: '#ffffff' } },
-  // Between Z2's sky blue and lavender (v4.3.2), so it never reads as a zone.
-  { id: 'indigo', dark: { acc: '#8c9bff', onAcc: '#0e1238' }, light: { acc: '#4338ca', onAcc: '#ffffff' } },
-  { id: 'lavender', dark: { acc: '#b48cf0', onAcc: '#1a0f2e' }, light: { acc: '#7c3aed', onAcc: '#ffffff' } },
-  { id: 'pink', dark: { acc: '#ff7ac0', onAcc: '#2e0a1d' }, light: { acc: '#c2257a', onAcc: '#ffffff' } },
-  { id: 'mono', dark: { acc: '#f2f3f3', onAcc: '#0b0c0c' }, light: { acc: '#141616', onAcc: '#ffffff' } },
+  // Teal is the default and comes first (v4.9.1).
+  // Light teal a step darker than the spec's #0f8a6a (4.3:1): white on it is 4.65:1.
+  { id: 'teal', dark: { acc: '#2dd4a7', onAcc: ACCENT_INK.dark }, light: { acc: '#0e8468', onAcc: ACCENT_INK.light } },
+  { id: 'periwinkle', dark: { acc: '#8fa2ff', onAcc: ACCENT_INK.dark }, light: { acc: '#4457d6', onAcc: ACCENT_INK.light } },
+  { id: 'violet', dark: { acc: '#b794f6', onAcc: ACCENT_INK.dark }, light: { acc: '#7a4fd1', onAcc: ACCENT_INK.light } },
+  { id: 'pink', dark: { acc: '#f58ac0', onAcc: ACCENT_INK.dark }, light: { acc: '#c23a83', onAcc: ACCENT_INK.light } },
+  // Mono is the text colour, so its ink flips to the page ground.
+  { id: 'mono', dark: { acc: '#edefee', onAcc: '#0c0d0d' }, light: { acc: '#1a1c1b', onAcc: ACCENT_INK.light } },
 ]
 
 export const ACCENT_IDS: readonly AccentId[] = CURATED_ACCENTS.map((accent) => accent.id)
 
 /**
  * Accents a reader may have saved before v4.3, read as their nearest
- * palette: green and teal to teal, blue and violet to lavender, silver to
- * mono, and v4.3's lime to the default. A custom hue has no palette and
- * takes the default.
+ * palette: green and teal to teal, blue and violet to violet, silver to
+ * mono, and v4.3's lime to the default; v4.3's indigo and lavender to the
+ * v4.17 periwinkle and violet. A custom hue has no palette and takes the
+ * default.
  */
 export const LEGACY_ACCENTS: Readonly<Record<string, AccentId>> = {
   nature: 'teal',
-  performance: 'lavender',
-  endurance: 'lavender',
+  performance: 'violet',
+  endurance: 'violet',
   silver: 'mono',
   // Lime left the set in v4.3.2 and reads as the default.
   lime: 'teal',
+  // Renamed in v4.17 with their new colours.
+  indigo: 'periwinkle',
+  lavender: 'violet',
 }
 
 export function curatedAccent(id: AccentId): CuratedAccent {

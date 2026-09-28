@@ -24,14 +24,15 @@ export function ListRow({
     <Link
       href={href}
       className={cn(
-        'flex min-h-15 items-center gap-3 px-4.5 py-2.5 transition-colors active:bg-foreground/[0.04]',
+        // The v4.17 row: 14 x 20 padding, the inset surface on hover.
+        'flex min-h-15 items-center gap-3 px-5 py-3.5 transition-colors hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)]',
         className,
       )}
     >
       <span className="min-w-0 flex-1">
-        <span className="block text-subhead font-semibold text-foreground">{title}</span>
+        <span className="block text-sm font-semibold text-foreground">{title}</span>
         {status && (
-          <span className={cn('mt-0.5 block truncate text-footnote', tone === 'warn' ? 'text-delta-warn' : 'text-muted-foreground')}>
+          <span className={cn('mt-0.5 block truncate text-xs', tone === 'warn' ? 'text-[var(--warn)]' : 'text-muted-foreground')}>
             {status}
           </span>
         )}

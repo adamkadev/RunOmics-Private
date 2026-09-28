@@ -86,30 +86,8 @@ export function Headline({ value, note, size = 30, noteStyle }: { value: ReactNo
   )
 }
 
-type Swatch = 'square' | 'dot' | 'line' | 'dash' | 'ring' | 'dashRing'
-
-export function LegendItem({ swatch, color, children }: { swatch: Swatch; color: string; children: ReactNode }) {
-  const style: CSSProperties =
-    swatch === 'line'
-      ? { width: 14, height: 2, background: color }
-      : swatch === 'dash'
-        ? { width: 14, borderTop: `2px dashed ${color}` }
-        : swatch === 'ring'
-          ? { width: 8, height: 8, borderRadius: 2, border: `1.5px solid ${color}` }
-          : swatch === 'dashRing'
-            ? { width: 8, height: 8, borderRadius: '50%', border: `1.5px dashed ${color}` }
-            : { width: 8, height: 8, borderRadius: swatch === 'dot' ? '50%' : 2, background: color }
-  return (
-    <span className="flex items-center gap-[5px]">
-      <span aria-hidden className="box-border shrink-0" style={style} />
-      {children}
-    </span>
-  )
-}
-
-export function Legend({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('flex flex-wrap gap-x-3.5 gap-y-1.5 text-caption text-muted-foreground', className)}>{children}</div>
-}
+// The legend is the app's one recipe (v4.17), shared with every page.
+export { Legend, LegendItem } from '@/components/ui/Legend'
 
 /** Start, middle and end of a window, the end read as Today while it is. */
 export function windowLabels(dates: string[], live: boolean): string[] {

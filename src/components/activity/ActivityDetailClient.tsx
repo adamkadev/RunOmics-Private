@@ -152,7 +152,7 @@ export function ActivityDetailClient({
           <RunVerdict activity={activity} aiVerdict={aiVerdict}>
             {!activity.avgHeartRate && (
               <div className="pt-2.5">
-                <span className="rounded-full border border-[var(--tone-caution)]/40 px-2 py-px text-caption font-semibold uppercase tracking-[0.06em] text-[var(--tone-caution)]">
+                <span className="rounded-full border border-[var(--tone-caution)]/40 px-2 py-px text-caption font-semibold uppercase tracking-[0.08em] text-[var(--tone-caution)]">
                   {t.activity.dataQuality.estimated}
                 </span>
               </div>

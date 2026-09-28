@@ -260,7 +260,7 @@ export function ShoeComparison({ rows }: Props) {
 
         {METRIC_GROUPS.map((group) => (
           <Fragment key={group}>
-            <div className="col-span-4 pb-0.5 pt-1.5 text-caption font-semibold uppercase tracking-[0.06em] text-subtle-2">
+            <div className="col-span-4 pb-0.5 pt-1.5 text-caption font-semibold uppercase tracking-[0.08em] text-subtle-2">
               {t.shoes.comparison.groups[group]}
             </div>
             {METRICS.filter((metric) => metric.group === group).map((metric) => {

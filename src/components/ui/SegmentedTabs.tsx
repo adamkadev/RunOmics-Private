@@ -62,16 +62,18 @@ export function useSegmentedTabs<T extends string | number>({
 export type SegmentedTabsState<T extends string | number> = ReturnType<typeof useSegmentedTabs<T>>
 
 const SIZE_CLASS = {
-  sm: 'h-8 px-3 text-xs',
-  md: 'h-10 px-4 text-sm',
+  sm: 'h-[30px] px-3 text-xs',
+  md: 'h-9 px-4 text-sm',
 } as const
 
 /**
- * The bordered pill switch - Plan's week/month, Goals' years, the profile's
- * year/all-time, the activity's and Analytics' sections, Records - one recipe
- * where there were four, from 36 to 48 pt tall. `size` is sm (32) or md (40);
- * either way every tab has a 44 pt hit area. `tabClassName` still carries a
- * one-off size, and `fill` stretches the tabs across the row.
+ * The quiet switch (v4.17) - Plan's week/month, Goals' years, the activity's
+ * and Analytics' sections, Records - one recipe everywhere: an inset track
+ * with a line, the selected tab lifted onto the card surface in text ink.
+ * The accent fill is kept for real actions. `size` is sm (30, small ranges)
+ * or md (36, page tabs); either way every tab has a 44 pt hit area.
+ * `tabClassName` still carries a one-off size, and `fill` stretches the tabs
+ * across the row.
  */
 export function SegmentedTabs<T extends string | number>({
   tabs,
@@ -94,7 +96,7 @@ export function SegmentedTabs<T extends string | number>({
     <div
       {...tabs.listProps}
       aria-label={label}
-      className={cn('flex shrink-0 gap-1 rounded-full bg-[var(--segmented-track)] p-1', fill && 'w-full', className)}
+      className={cn('flex shrink-0 gap-0.5 rounded-[11px] border border-border bg-[var(--segmented-track)] p-[3px]', fill && 'w-full', className)}
     >
       {items.map((item) => {
         const props = tabs.tabProps(item.id)
@@ -103,15 +105,17 @@ export function SegmentedTabs<T extends string | number>({
             key={item.id}
             {...props}
             className={cn(
-              'hit-44 flex items-center justify-center whitespace-nowrap rounded-full font-semibold transition-colors',
+              'hit-44 flex items-center justify-center whitespace-nowrap rounded-lg transition-colors',
               size && SIZE_CLASS[size],
               // Fill mode shares the spare width out equally on top of each
               // label, with 12 pt padding as the floor: equal widths left
               // "Performance" touching its pill edge to edge (G21).
               fill && 'min-w-0 flex-auto px-3',
               tabClassName,
-              // Selected is a solid accent fill (v4.3).
-              props['aria-selected'] ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'
+              // Selected is the card surface, lifted (v4.17).
+              props['aria-selected']
+                ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
+                : 'font-medium text-muted-foreground hover:text-foreground'
             )}
           >
             <span className="truncate">{item.label}</span>

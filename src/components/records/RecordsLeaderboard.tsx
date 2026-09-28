@@ -52,7 +52,7 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
       {/* Labelled columns, where a floating "best · predicted" caption used to
           key two unlabelled numbers per row. */}
       <div className="glass-card rounded-card-sm px-4 pb-1">
-        <div className={cn(ROW_GRID, 'pb-2 pt-3 text-caption font-semibold uppercase tracking-[0.06em] text-subtle')}>
+        <div className={cn(ROW_GRID, 'pb-2 pt-3 text-caption font-semibold uppercase tracking-[0.08em] text-subtle')}>
           <span>{t.records.cols.distance}</span>
           <span className="text-right">{t.records.cols.best}</span>
           <span className="text-right">{t.records.cols.predicted}</span>

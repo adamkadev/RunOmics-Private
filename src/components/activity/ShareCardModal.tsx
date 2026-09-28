@@ -75,7 +75,7 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
     if (photoUrlRef.current) URL.revokeObjectURL(photoUrlRef.current)
   }, [])
 
-  // A canvas draws in whatever font has loaded; draw again once Space Grotesk has.
+  // A canvas draws in whatever font has loaded; draw again once Geist has.
   useEffect(() => {
     let alive = true
     document.fonts?.ready.then(() => { if (alive) setFontsReady((n) => n + 1) }).catch(() => {})

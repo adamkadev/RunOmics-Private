@@ -2,18 +2,16 @@ import { cn } from '@/lib/utils'
 import type { ElementType, HTMLAttributes, ReactNode } from 'react'
 
 /**
- * `accent` is the one and only "selected" treatment - a solid accent fill.
- * There used to be a second one (`active`, a neutral 14 % foreground tint) so
- * the Activities filter row and the profile period toggle read as selected in a
- * different language from the year and window pickers. `neutral` is everything
- * unselected.
+ * The filter chip (v4.17). `selected` is the one "selected" treatment: text
+ * ink with the page ground as its label, inverted - the accent is for the
+ * athlete's own data and real actions, not for a filter. `neutral` is
+ * everything unselected: the surface, a line, text-2.
  */
-type PillVariant = 'accent' | 'neutral'
+type PillVariant = 'selected' | 'neutral'
 
 const VARIANT_CLASS: Record<PillVariant, string> = {
-  // Selected: a solid accent fill with its ink (v4.3).
-  accent:  'border border-transparent bg-accent text-accent-foreground font-semibold',
-  neutral: 'border border-[var(--divider)] bg-transparent text-muted-foreground hover:text-foreground',
+  selected: 'border border-foreground bg-foreground text-background font-semibold',
+  neutral:  'border border-border bg-card text-[var(--text-2)] hover:text-foreground',
 }
 
 interface PillProps extends HTMLAttributes<HTMLElement> {
@@ -37,7 +35,7 @@ export function Pill({
   return (
     <Tag
       className={cn(
-        'inline-flex flex-none items-center gap-1.5 rounded-full px-3.5 py-[7px] text-xs font-medium',
+        'inline-flex h-8 flex-none items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium',
         interactive && 'hit-44',
         'whitespace-nowrap transition-transform active:scale-95',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -48,7 +46,7 @@ export function Pill({
     >
       {dotColor && (
         <span
-          className="h-1.5 w-1.5 shrink-0 rounded-full"
+          className="h-[7px] w-[7px] shrink-0 rounded-full"
           style={{ backgroundColor: dotColor }}
           aria-hidden="true"
         />

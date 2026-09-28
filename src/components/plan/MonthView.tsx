@@ -275,7 +275,7 @@ export function MonthView({
           {WEEKDAYS.map((d, i) => (
             <div
               key={d}
-              className="py-2 text-center font-semibold uppercase tracking-[0.06em]"
+              className="py-2 text-center font-semibold uppercase tracking-[0.08em]"
               style={{ fontSize: '11px', color: i >= 5 ? 'var(--subtle-2)' : 'var(--subtle)' }}
             >
               {d}
