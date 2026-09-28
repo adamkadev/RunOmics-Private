@@ -142,7 +142,7 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
         {race && (
           // CompactTitleBar fades the line under the title by its inline
           // opacity, and can write it before this component hydrates.
-          <p data-testid="plan-race" suppressHydrationWarning className="col-span-2 row-start-2 text-sm text-muted-foreground sm:col-span-1">
+          <p data-testid="plan-race" className="col-span-2 row-start-2 text-sm text-muted-foreground sm:col-span-1">
             {raceSubtitle(race, today)}
           </p>
         )}

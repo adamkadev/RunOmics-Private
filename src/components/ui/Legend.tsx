@@ -1,12 +1,13 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-export type LegendSwatch = 'square' | 'dot' | 'line' | 'dash' | 'ring' | 'dashRing'
+export type LegendSwatch = 'square' | 'dot' | 'line' | 'dash' | 'ring' | 'dashRing' | 'tint' | 'outline'
 
 /**
  * A legend entry (v4.17): an 8 px swatch - a square for bars, a circle for
  * points, a 14 px line for series; a ring for an outline-only mark such as
- * a race - then a 12 px muted label.
+ * a race; a tinted square for a soft fill (a missed day) and an outlined one
+ * for an outline (today) - then a 12 px muted label.
  */
 export function LegendItem({ swatch, color, children }: { swatch: LegendSwatch; color: string; children: ReactNode }) {
   const style: CSSProperties =
@@ -18,7 +19,11 @@ export function LegendItem({ swatch, color, children }: { swatch: LegendSwatch; 
           ? { width: 8, height: 8, borderRadius: '50%', border: `1.5px solid ${color}` }
           : swatch === 'dashRing'
             ? { width: 8, height: 8, borderRadius: 2, border: `1.5px dashed ${color}` }
-            : { width: 8, height: 8, borderRadius: swatch === 'dot' ? '50%' : 2, background: color }
+            : swatch === 'tint'
+              ? { width: 8, height: 8, borderRadius: 2, border: `1px solid ${color}`, background: `color-mix(in srgb, ${color} 14%, transparent)` }
+              : swatch === 'outline'
+                ? { width: 8, height: 8, borderRadius: 2, border: `1.5px solid ${color}` }
+                : { width: 8, height: 8, borderRadius: swatch === 'dot' ? '50%' : 2, background: color }
   return (
     <span className="flex items-center gap-1.5">
       <span aria-hidden className="box-border shrink-0" style={style} />

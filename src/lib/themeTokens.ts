@@ -245,6 +245,10 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     // weeks): line-2, and a quieter muted third.
     '--series-2': 'var(--line-2)',
     '--series-3': 'var(--muted-foreground)',
+    // Ink for text on a zone fill (v4.17), per theme: white on the deeper
+    // light-theme zones (4.4-5.6:1), the dark ink on the bright dark-theme
+    // ones (5.2-6.2:1).
+    '--zone-ink': mode === 'dark' ? c.roInk : '#ffffff',
     '--zone-1': ZONE_HEX[mode][0],
     '--zone-2': ZONE_HEX[mode][1],
     '--zone-3': ZONE_HEX[mode][2],
@@ -303,8 +307,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--state-line': '1.5px',
       '--state-hatch': '40%',
       '--state-ring': '2px',
-      // Ink for text on a zone fill: over 7:1 on Z3 and Z4 in both themes.
-      '--zone-ink': c.roInk,
       '--scrim': ink(0.25),
       '--scrim-strong': ink(0.6),
       '--track-on-dark': paper(0.08),

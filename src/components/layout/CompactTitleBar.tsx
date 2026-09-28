@@ -106,7 +106,11 @@ export function CompactTitleBar() {
         const travel = restTop - barBottom
         if (travel <= 0) continue
         const left = el.getBoundingClientRect().top - barBottom
-        el.style.opacity = String(Math.min(1, Math.max(0, left / travel)))
+        const opacity = Math.min(1, Math.max(0, left / travel))
+        // Fully shown carries no inline style (v4.17): an `opacity: 1`
+        // written before a client page hydrates was a hydration mismatch.
+        if (opacity >= 1) el.style.removeProperty('opacity')
+        else el.style.opacity = String(opacity)
       }
     }
     const schedule = () => {

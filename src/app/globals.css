@@ -115,7 +115,6 @@
   --state-line:            1.5px;
   --state-hatch:           40%;
   --state-ring:            2px;
-  --zone-ink:              #0b1f17;
   --scrim:                 rgba(0, 0, 0, 0.25);
   --scrim-strong:          rgba(0, 0, 0, 0.6);
   --track-on-dark:         rgba(255, 255, 255, 0.08);
@@ -149,6 +148,7 @@
   --form-band-fill-tired:    var(--warn);
   --series-2:                var(--line-2);
   --series-3:                var(--muted-foreground);
+  --zone-ink:                #ffffff;
   --zone-1:                  #61788f;
   --zone-2:                  #2f74e0;
   --zone-3:                  #6650dd;
@@ -241,6 +241,7 @@
   --form-band-fill-tired:    var(--warn);
   --series-2:                var(--line-2);
   --series-3:                var(--muted-foreground);
+  --zone-ink:                #0b1f17;
   --zone-1:                  #8397ab;
   --zone-2:                  #5b9cf5;
   --zone-3:                  #8f7cf7;

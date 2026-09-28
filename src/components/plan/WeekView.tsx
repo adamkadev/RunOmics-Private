@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
@@ -262,11 +262,6 @@ function WeekSessionRow({
   )
 }
 
-// A meaning line that wraps rather than cut off, for a stat a third of a phone wide.
-function wrapped(node: ReactNode): ReactNode {
-  return <span className="whitespace-normal">{node}</span>
-}
-
 // The week's three stats (v4.17): the distance and the sessions, each against
 // the plan, and how much of what was due was run. Distance is the same
 // WeekTarget Today's ring and Activities read: what was run against what the
@@ -319,22 +314,22 @@ function WeekStats({
           label={s.sessions}
           value={sessions.value}
           unit={sessions.unit}
+          wrapMeaning
           meaning={
-            missed > 0 || unplanned > 0
-              ? wrapped(
-                  <>
-                    {missed > 0 && <span className="text-[var(--neg)]">{w.missed(missed)}</span>}
-                    {missed > 0 && unplanned > 0 && ' · '}
-                    {unplanned > 0 && w.unplanned(unplanned)}
-                  </>,
-                )
-              : null
+            missed > 0 || unplanned > 0 ? (
+              <>
+                {missed > 0 && <span className="text-[var(--neg)]">{w.missed(missed)}</span>}
+                {missed > 0 && unplanned > 0 && ' · '}
+                {unplanned > 0 && w.unplanned(unplanned)}
+              </>
+            ) : null
           }
         />
         <Stat
           label={s.adherence}
           value={adherence === null ? '—' : `${adherence}%`}
-          meaning={wrapped(planKm === null ? s.noPlan : s.adherenceAim(PLAN_ADHERENCE_AIM))}
+          wrapMeaning
+          meaning={planKm === null ? s.noPlan : s.adherenceAim(PLAN_ADHERENCE_AIM)}
           tone={adherenceTone(adherence)}
         />
       </StatGrid>

@@ -29,6 +29,7 @@ export function Stat({
   meaning,
   tone = 'muted',
   size = 'md',
+  wrapMeaning = false,
   className,
   valueStyle,
 }: {
@@ -39,6 +40,8 @@ export function Stat({
   tone?: StatTone
   /** md 22 px, lg 26 px. */
   size?: 'md' | 'lg'
+  /** Let a meaning line run onto a second line on a narrow screen instead of cutting it. */
+  wrapMeaning?: boolean
   className?: string
   valueStyle?: CSSProperties
 }) {
@@ -52,7 +55,9 @@ export function Stat({
         {value}
         {unit != null && unit !== '' && <Unit>{unit}</Unit>}
       </span>
-      {meaning != null && meaning !== '' && <span className={cn('truncate text-xs', STAT_TONE_CLASS[tone])}>{meaning}</span>}
+      {meaning != null && meaning !== '' && (
+        <span className={cn('text-xs', wrapMeaning ? 'text-pretty' : 'truncate', STAT_TONE_CLASS[tone])}>{meaning}</span>
+      )}
     </div>
   )
 }
