@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { GlassSurface } from '@/components/ui/GlassSurface'
+import { cardClass } from '@/components/ui/Card'
+import { Unit } from '@/components/ui/Stat'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import { formatClock as fmt, formatDurationCompact } from '@/lib/formatters'
+import { formatClock as fmt } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 type Bounds = [number, number, number, number, number]
@@ -16,21 +17,37 @@ const VIEWS = ['week', 'recent'] as const
 const HR_PERCENTS = [0.65, 0.8, 0.89, 0.95, 1.0]
 const HIGH_INTENSITY_ZONES = [4, 5]
 
-/** Zone, pace, HR and time: one grid for the header and every row. */
-const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.625rem_2.75rem] items-center gap-1.5'
+/** Zone, pace, HR and time: one grid for the header and every row, the prototype's widths from sm up. */
+const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.75rem_3.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_110px_90px_70px] sm:gap-3'
 
-/** The 10-15% hard-work target, as a bracket under the bar (v4.4.1): Z4-Z5
- *  sit on its right, so the Z3/Z4 edge should fall between 85% and 90%.
- *  Ticks on the bar itself read as zone borders. */
-const TARGET_SPAN = { from: 85, to: 90 }
+/** The hard-work target: 10-15% of the time in Z4-Z5. Outside it is a caution (v4.17). */
+const HARD_TARGET = { from: 10, to: 15 }
 
 /** Under this share of the window a zone is not drawn, and leaves no gap. */
 const MIN_SEGMENT_SHARE = 0.01
 
-/** "16′" under an hour, "1h44" over: the table's time column (C2). */
-function zoneTimeLabel(seconds: number): string {
+/** "22 min" under an hour, "8 h 37" over: the table's time column (v4.17). */
+export function zoneTimeLabel(seconds: number): string {
   const minutes = Math.round(seconds / 60)
-  return minutes < 60 ? `${minutes}′` : formatDurationCompact(seconds)
+  return minutes < 60 ? `${minutes} ${t.units.min}` : `${Math.floor(minutes / 60)} ${t.units.hour} ${String(minutes % 60).padStart(2, '0')}`
+}
+
+/** The window's time, "13 h 39 min", its units inline and muted. */
+function WindowTotal({ seconds }: { seconds: number }) {
+  const minutes = Math.round(seconds / 60)
+  const h = Math.floor(minutes / 60)
+  return (
+    <span className="text-2xl font-semibold leading-tight text-foreground" data-testid="zone-total">
+      {h > 0 && (
+        <>
+          {h}
+          <Unit>{t.units.hour}</Unit>{' '}
+        </>
+      )}
+      {minutes % 60}
+      <Unit>{t.units.min}</Unit>
+    </span>
+  )
 }
 
 function defaultBounds(lthr: number): Bounds {
@@ -99,10 +116,12 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
     .map((zone) => ({ zone, seconds: timeByZone.get(zone)?.seconds ?? 0 }))
     .filter((z) => windowTotal > 0 && z.seconds / windowTotal >= MIN_SEGMENT_SHARE)
 
+  const hardTone = highIntensityPct === null ? 'text-muted-foreground' : highIntensityPct < HARD_TARGET.from || highIntensityPct > HARD_TARGET.to ? 'text-[var(--warn)]' : 'text-[var(--pos)]'
+
   return (
-    <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5">
+    <section className={cardClass({ className: 'flex flex-col gap-3.5' })}>
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-body font-semibold text-foreground">{s.title}</h2>
+        <h2 className="text-[15px] font-semibold text-foreground">{s.title}</h2>
         <SegmentedTabs
           tabs={tabs}
           label={s.viewLabel}
@@ -114,92 +133,76 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
         />
       </div>
 
-      <div {...tabs.panelProps} className="mt-3 outline-none">
+      <div {...tabs.panelProps} className="flex flex-col gap-3.5 outline-none">
         {windowTotal === 0 ? (
-          <p className="text-footnote text-muted-foreground">{emptyLine}</p>
+          <p className="text-[13px] text-muted-foreground">{emptyLine}</p>
         ) : (
           <>
-            {/* The window's time, and its hard share against the target. */}
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="font-display text-title2 font-bold leading-none tabular-nums text-foreground" data-testid="zone-total">
-                {formatDurationCompact(windowTotal)}
-              </span>
+            {/* The window's time, and its hard share against the target: warn outside it (v4.17). */}
+            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <WindowTotal seconds={windowTotal} />
               {highIntensityPct !== null && (
-                <span className="text-footnote tabular-nums text-muted-foreground" data-testid="zone-hard-share">
+                <span className={`text-xs ${hardTone}`} data-testid="zone-hard-share">
                   {s.hardShare(highIntensityPct)}
                 </span>
               )}
             </div>
-            {/* Z1 to Z5 as one stacked bar, 2 pt apart; nothing drawn on it. */}
-            <div className="mt-2" data-testid="zone-stack">
-              <div className="flex h-3.5 gap-0.5 overflow-hidden rounded-[4px]">
-                {stacked.map((z) => (
-                  <span
-                    key={z.zone}
-                    data-zone={z.zone}
-                    className="h-full"
-                    style={{ flexGrow: z.seconds, flexBasis: 0, background: `var(--zone-${z.zone})` }}
-                  />
-                ))}
-              </div>
-              {/* The target under the bar: a bracket over 85-90% of its width. */}
-              <div className="relative mt-1 h-5" data-testid="zone-target">
+            {/* Z1 to Z5 as one bar of rounded segments, 3 pt apart, in the zone colours. */}
+            <div className="flex h-2.5 gap-[3px]" data-testid="zone-stack">
+              {stacked.map((z) => (
                 <span
-                  aria-hidden
-                  data-testid="zone-target-bracket"
-                  className="absolute top-0 h-1.5 rounded-b-[2px] border-x-2 border-b-2 border-muted-foreground"
-                  style={{ left: `${TARGET_SPAN.from}%`, width: `${TARGET_SPAN.to - TARGET_SPAN.from}%` }}
+                  key={z.zone}
+                  data-zone={z.zone}
+                  className="h-full rounded-full"
+                  style={{ flexGrow: z.seconds, flexBasis: 0, background: `var(--zone-${z.zone})` }}
                 />
-                <span
-                  className="absolute top-2 -translate-x-1/2 text-caption leading-none text-muted-foreground"
-                  style={{ left: `${(TARGET_SPAN.from + TARGET_SPAN.to) / 2}%` }}
-                >
-                  {s.target}
-                </span>
-              </div>
+              ))}
             </div>
-            {isAutoFallback && <p className="mt-2 text-xs leading-snug text-subtle">{s.emptyWeekFallback}</p>}
+            {isAutoFallback && <p className="-mt-1 text-xs leading-snug text-muted-foreground">{s.emptyWeekFallback}</p>}
           </>
         )}
 
-        <div
-          className={`${ROW_GRID} mt-4 border-b border-border pb-2 text-caption uppercase tracking-[0.08em] text-muted-foreground`}
-          data-testid="zone-columns"
-        >
-          <span>{s.columnZone}</span>
-          <span>{s.columnPace}</span>
-          <span>{s.columnHr}</span>
-          <span className="text-right">{s.columnTime}</span>
-        </div>
+        <div>
+          <div
+            className={`${ROW_GRID} pb-2.5 pt-1.5 text-[11px] uppercase tracking-[0.06em] text-muted-foreground`}
+            data-testid="zone-columns"
+          >
+            <span>{s.columnZone}</span>
+            <span className="whitespace-nowrap text-right">{s.columnPace}</span>
+            <span className="whitespace-nowrap text-right">
+              <span className="sm:hidden">{s.columnHrShort}</span>
+              <span className="hidden sm:inline">{s.columnHr}</span>
+            </span>
+            <span className="text-right">{s.columnTime}</span>
+          </div>
 
-        {zones.map(({ zone, min, max, pace }) => {
-          const seconds = timeByZone.get(zone)?.seconds ?? 0
-          const paceLabel =
-            zone === 1
-              ? warmupPaceSecPerKm !== null
-                ? `${fmt(warmupPaceSecPerKm)} +`
-                : '-'
-              : pace
-                ? `${fmt(pace.paceMinSecPerKm)}–${fmt(pace.paceMaxSecPerKm)}`
-                : '-'
+          {zones.map(({ zone, min, max, pace }) => {
+            const seconds = timeByZone.get(zone)?.seconds ?? 0
+            const paceLabel =
+              zone === 1
+                ? warmupPaceSecPerKm !== null
+                  ? `${fmt(warmupPaceSecPerKm)} +`
+                  : '-'
+                : pace
+                  ? `${fmt(pace.paceMinSecPerKm)}–${fmt(pace.paceMaxSecPerKm)}`
+                  : '-'
 
-          return (
-            <div key={zone} className="border-b border-border py-2.5 last:border-b-0" data-testid={`zone-row-${zone}`}>
-              <div className={`${ROW_GRID} text-footnote`}>
-                <span className="flex min-w-0 items-center gap-2 font-semibold text-foreground">
-                  <span className="size-2 shrink-0 rounded-full" style={{ background: `var(--zone-${zone})` }} />
+            return (
+              <div key={zone} className={`${ROW_GRID} border-t border-border py-2.5 text-[13px] sm:text-sm`} data-testid={`zone-row-${zone}`}>
+                <span className="flex min-w-0 items-center gap-2 text-foreground">
+                  <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: `var(--zone-${zone})` }} />
                   <span className="truncate">
-                    {t.trainingZones.zoneNumber(zone)} {t.zoneLabels[zone]}
+                    <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
                   </span>
                 </span>
-                <span className="tabular-nums text-foreground">{paceLabel}</span>
-                <span className="tabular-nums text-muted-foreground">{bpmRangeLabel(min, max)}</span>
-                <span className="text-right font-bold tabular-nums text-foreground">{zoneTimeLabel(seconds)}</span>
+                <span className="text-right text-[var(--text-2)]">{paceLabel}</span>
+                <span className="text-right text-[var(--text-2)]">{bpmRangeLabel(min, max)}</span>
+                <span className="text-right font-semibold text-foreground">{zoneTimeLabel(seconds)}</span>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
-    </GlassSurface>
+    </section>
   )
 }

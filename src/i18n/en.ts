@@ -74,14 +74,17 @@ export const en = {
   } as Record<number, string>,
 
   vo2Grade: {
-    title: 'VO₂max grade',
+    title: 'VO₂ max grade',
     band: (sex: 'male' | 'female', bracket: string) => `${sex === 'male' ? 'Men' : 'Women'} ${bracket.replace('-', '–')}`,
     source: 'ACSM percentiles',
     unit: 'ml/kg/min',
     topForAge: (n: number) => `Top ${n}% for your age`,
     topForAgeInline: (n: number) => `top ${n}% for your age`,
-    in30d: 'in 30 d',
+    in30d: 'in 30 days',
     toNext: (gap: string, grade: string) => `${gap} to ${grade}.`,
+    // v4.17: under the bar, "0.4 to A+", the gap in ink.
+    toGrade: (grade: string) => `to ${grade}`,
+    ladder: 'Every grade for your age',
     eta: (weeks: number) => `About ${weeks} week${weeks === 1 ? '' : 's'} at your current trend.`,
     topGrade: 'Top grade for your age',
     newGrade: 'New grade',
@@ -366,8 +369,8 @@ export const en = {
       weight: 'Weight',
       height: 'Height',
       fitnessAge: 'Fitness age',
-      // Fitness age against the real age: "20 of 29" (C2, v4.4).
-      ofAge: (age: number) => `of ${age}`,
+      // Fitness age against the real age: "20 actual 29" (C2, v4.4; v4.17).
+      ofAge: (age: number) => `actual ${age}`,
       achievableFitnessAge: 'Potential',
       bmi: 'BMI',
       fitnessAgeBand: {
@@ -1707,7 +1710,8 @@ export const en = {
       fourWeeks: '4 weeks',
       columnZone: 'Zone',
       columnPace: 'Pace /km',
-      columnHr: 'HR',
+      columnHr: 'Heart rate',
+      columnHrShort: 'HR',
       columnTime: 'Time',
       inZonesWeek: (duration: string) => `${duration} in zones this week`,
       inZonesRecent: (duration: string) => `${duration} in zones over the last 4 weeks`,
@@ -1715,7 +1719,7 @@ export const en = {
       noSessionsRecent: 'No sessions logged in these 4 weeks.',
       emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
       target: 'target',
-      hardShare: (pct: number) => `Z4–Z5 ${pct}% · target 10–15%`,
+      hardShare: (pct: number) => `Hard (Z4–Z5) ${pct}% · target 10–15%`,
       highIntensityNote: (pct: number) =>
         // No phase in the sentence (G17): it named a build block during a base week.
         `${pct}% of your time was Z4–Z5, against the 10–15% most training weeks keep it to.`,

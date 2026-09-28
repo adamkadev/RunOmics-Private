@@ -33,12 +33,12 @@ export function AthleteClient({ athlete, vo2Grade, weeklyZoneTime, recentZoneTim
   const source = mounted && synced ? p.syncedAgo(formatRelativeAgo(synced)) : p.fromGarmin
 
   return (
-    <div className="space-y-3">
-      <div>
-        <BackButton label={p.back} fallbackHref="/profile" />
+    <div className="flex flex-col gap-3.5">
+      <header className="mb-1.5">
+        <BackButton label={p.back} fallbackHref="/profile" className="mb-3.5" />
         <h1 className="text-display text-foreground">{p.title}</h1>
-        <p className="mt-1 text-footnote text-muted-foreground">{source}</p>
-      </div>
+        <p className="mt-1 text-sm text-muted-foreground">{source}</p>
+      </header>
 
       {vo2Grade && <Vo2GradeCard view={vo2Grade} />}
       <AthleteKeyNumbers athlete={athlete} />
