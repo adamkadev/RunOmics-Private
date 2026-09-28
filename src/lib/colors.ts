@@ -1,13 +1,16 @@
 import { HUE, ink, paper, white, withAlpha } from '@/lib/palette'
 import { isActivityType, type ActivityType } from '@/domain/activity/types'
+import type { TrainingStatusType } from '@/domain/training/status'
 
 const c = HUE
 
 export const CHART_COLORS = {
   brand:     c.roEmerald,
 
-  ctl:       c.blue500,
-  atl:       c.orange500,
+  // Fitness is the solid text line and fatigue the dashed muted one (v4.17):
+  // neutral series, never a hue that could read as a zone or a status.
+  ctl:       'var(--metric-fitness)',
+  atl:       'var(--metric-fatigue)',
 
   hr:            c.red500,
   hrEasy:        c.red300,
@@ -38,20 +41,23 @@ export const CHART_COLORS = {
   tooltipCursor:   'var(--divider)',
 } as const
 
-export const TRAINING_STATUS_COLORS: Record<string, string> = {
-  // Shown as "Peaking"; a token so each theme takes its own grade.
-  fresh:        'var(--status-peaking)',
-  productive:   c.emerald400,
-  // Holding fitness is good news, so it takes the deep step of `productive`'s
-  // green rather than the amber the rest of the app reserves for caution.
-  // `fresh` keeps violet: the only other rest-coloured tone in this map is
-  // `recovery`'s blue600, and any second blue lands within a few dE of it -
-  // that would trade one hue family for a distinction the legend needs.
-  maintaining:  c.emerald600,
-  recovery:     c.blue600,
-  unproductive: c.orange500,
-  detraining:   c.zinc400,
-  overreaching: c.red500,
+/**
+ * Garmin's training statuses (v4.17): a status is good, caution or bad news,
+ * so it reads the status tokens and never a zone - overreaching used to be
+ * the Z5 pink a VO2max session is drawn in. Productive is pos and Peaking
+ * (the app's `fresh`) its lighter step, good news that is not building;
+ * Unproductive, load that isn't turning into fitness, is caution; Overreaching
+ * is neg. Maintaining and Detraining say neither and take the two neutral
+ * greys, Detraining the fainter; Recovery, a rest state, is the recovery zone.
+ */
+export const TRAINING_STATUS_COLORS: Record<TrainingStatusType, string> = {
+  productive:   'var(--pos)',
+  fresh:        'color-mix(in srgb, var(--pos) 50%, transparent)',
+  maintaining:  'var(--muted-foreground)',
+  recovery:     'var(--zone-1)',
+  unproductive: 'var(--warn)',
+  detraining:   'var(--line-2)',
+  overreaching: 'var(--neg)',
 }
 
 /**

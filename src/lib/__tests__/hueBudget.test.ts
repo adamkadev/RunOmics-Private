@@ -81,18 +81,44 @@ describe('cross-map hue collisions', () => {
     expect(TRAINING_PLAN_PHASE_COLORS.peak).not.toBe(TRAINING_STATUS_COLORS.fresh)
     expect(hueFamily(TRAINING_PLAN_PHASE_COLORS.peak!)).not.toBe('violet')
   })
+})
 
-  it('does not paint a training status in an activity type hue', () => {
-    // `maintaining` was yellow500, the Tempo hue: on the dashboard a yellow
-    // ribbon segment meant "holding fitness" while a yellow dot in the rows
-    // below it meant "that run was a tempo run".
-    const typeHues = new Set(TYPES.map(typeHue))
-    expect(typeHues.has(TRAINING_STATUS_COLORS.maintaining!)).toBe(false)
+describe('training status colours (v4.17)', () => {
+  const statuses = Object.entries(TRAINING_STATUS_COLORS)
+
+  it('reads a status off the status tokens, never a zone, Recovery aside', () => {
+    // Overreaching was the Z5 a VO2max session is drawn in: a status is good,
+    // caution or bad news, or a neutral grey, and never a category.
+    for (const [status, color] of statuses) {
+      if (status === 'recovery') continue
+      expect(color, status).not.toMatch(/--zone-/)
+      expect(color, status).toMatch(/var\(--(pos|warn|neg|line-2|muted-foreground)\)/)
+    }
   })
 
-  it('keeps maintaining on the good-news green rather than the caution amber', () => {
-    expect(hueFamily(TRAINING_STATUS_COLORS.maintaining!))
-      .toBe(hueFamily(TRAINING_STATUS_COLORS.productive!))
+  it('maps the handoff pairs: Productive pos, Overreaching neg, Detraining line-2, Recovery Z1', () => {
+    expect(TRAINING_STATUS_COLORS).toMatchObject({
+      productive: 'var(--pos)',
+      overreaching: 'var(--neg)',
+      detraining: 'var(--line-2)',
+      recovery: 'var(--zone-1)',
+    })
+  })
+
+  it('keeps Unproductive on caution and Maintaining neutral, never good news', () => {
+    expect(TRAINING_STATUS_COLORS.unproductive).toBe('var(--warn)')
+    expect(TRAINING_STATUS_COLORS.maintaining).not.toMatch(/--(pos|warn|neg)/)
+  })
+
+  it('gives every status a colour of its own, so the strip and its legend tell them apart', () => {
+    const colors = statuses.map(([, color]) => color)
+    expect(new Set(colors).size).toBe(colors.length)
+  })
+
+  it('draws fitness and fatigue as the neutral text and muted series', () => {
+    // One value per theme block, light then dark.
+    expect(resolved(CHART_COLORS.ctl)).toEqual(['var(--foreground)', 'var(--foreground)'])
+    expect(resolved(CHART_COLORS.atl)).toEqual(['var(--muted-foreground)', 'var(--muted-foreground)'])
   })
 })
 
