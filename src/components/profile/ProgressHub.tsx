@@ -150,10 +150,10 @@ function shoeColor(status: WearStatus): string {
 }
 
 /**
- * Progress as a visual hub (H01, M12; v4.17): the year against last year and
- * the goal, then Next race, VO₂ max, Records and Consistency as a 2 x 2 grid
- * whose tiles keep their own height, the shoes, and all time with its km by
- * year. Every card opens the page it summarises.
+ * Progress as a visual hub (H01, M12; v4.17.1): the year against last year
+ * and the goal, then two columns that stack on their own - Next race, Records
+ * and the shoes; VO₂ max and Consistency - and all time with its km by year.
+ * Every card opens the page it summarises.
  */
 export function ProgressHub({ view }: { view: ProgressHubView }) {
   const h = t.profile.hub
@@ -211,127 +211,135 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
         </div>
       </Link>
 
-      {/* The tiles keep their own height (v4.17): Records no longer stretches to Consistency's. */}
-      <div className="grid grid-cols-1 items-start gap-3.5 sm:grid-cols-2">
-        <Tile href="/goals" title={h.nextRace} testId="race-tile">
-          {race ? (
-            <>
-              <p className="text-[26px] font-semibold leading-tight text-foreground">
-                {Math.max(0, race.daysUntil)}
-                <Unit>{h.raceMeta(race.daysUntil, [shortDist(race.distance), race.name].filter(Boolean).join(' '), formatDate(race.date, { style: 'bare' }))}</Unit>
-              </p>
-              {race.predictedSeconds !== null && (
-                <>
-                  <div className="flex items-baseline justify-between text-[13px]">
-                    <span className="text-muted-foreground">{h.predicted}</span>
-                    <span className="font-semibold text-foreground">{formatDuration(race.predictedSeconds)}</span>
-                  </div>
-                  {race.targetSeconds && raceGap !== null && (
-                    <>
-                      <Bar share={raceShare(race.predictedSeconds, race.targetSeconds)} color={raceTone} />
-                      <p className="text-xs text-muted-foreground" data-testid="race-target">
-                        {h.target(formatDuration(race.targetSeconds))}
-                        {' · '}
-                        <b className="font-semibold" style={{ color: raceTone }}>
-                          {raceGap > 0 ? h.toFind(formatDuration(raceGap)) : h.underTarget(formatDuration(-raceGap))}
-                        </b>
-                      </p>
-                    </>
-                  )}
-                </>
-              )}
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">{h.noRace}</p>
-          )}
-        </Tile>
-
-        <Tile href="/athlete" title={h.vo2max} testId="vo2-tile">
-          {vo2max ? (
-            <>
-              <p className="flex flex-wrap items-baseline gap-x-1.5">
-                <span className="text-[26px] font-semibold leading-tight text-foreground">{vo2max.value}</span>
-                {vo2max.delta !== null && (
-                  <span className="text-xs" data-testid="vo2-delta" style={{ color: deltaColor('vo2max', vo2max.delta) }}>
-                    {h.vo2Delta(formatDelta(vo2max.delta))}
-                  </span>
-                )}
-              </p>
-              <Sparkline values={vo2max.series} />
-              <Segments
-                testId="vo2-footer"
-                parts={h.thresholdParts(vo2max.thresholdPaceSecPerKm ? formatDuration(vo2max.thresholdPaceSecPerKm) : null, vo2max.lthrBpm)}
-              />
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">–</p>
-          )}
-        </Tile>
-
-        <Tile href="/records" title={h.records} aside={<Caption>{h.recordsWhen}</Caption>} className="gap-1" testId="records-tile">
-          {records.length > 0 ? (
-            <dl className="mt-1.5">
-              {records.map((r) => (
-                <div key={r.key} className="flex items-baseline justify-between gap-2 border-t border-border py-[9px] text-sm">
-                  <dt className="text-foreground">{h.recordLabels[r.key] ?? r.label}</dt>
-                  {/* The newest record says so in the accent; "new" only while it is (v4.17). */}
-                  <dd className="flex items-baseline gap-1.5 font-semibold text-foreground">
-                    {r.latest && (
-                      <span data-testid="latest-record" aria-label={h.latestRecordLabel} className="text-caption font-bold text-accent-text">
-                        {r.recent ? h.newRecord : h.latestRecord}
-                      </span>
+      {/* Two columns that stack on their own (v4.17.1): Next race, Records and
+          the shoes on the left, VO2 max and Consistency on the right, so no
+          card waits under a shorter neighbour. On a phone the columns melt
+          into one list (display: contents) and `order` interleaves them:
+          race, VO2 max, records, consistency, shoes. */}
+      <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2 sm:items-start" data-testid="progress-columns">
+        <div className="contents sm:flex sm:flex-col sm:gap-3.5" data-testid="progress-column">
+          <Tile href="/goals" title={h.nextRace} className="order-1 sm:order-none" testId="race-tile">
+            {race ? (
+              <>
+                <p className="text-[26px] font-semibold leading-tight text-foreground">
+                  {Math.max(0, race.daysUntil)}
+                  <Unit>{h.raceMeta(race.daysUntil, [shortDist(race.distance), race.name].filter(Boolean).join(' '), formatDate(race.date, { style: 'bare' }))}</Unit>
+                </p>
+                {race.predictedSeconds !== null && (
+                  <>
+                    <div className="flex items-baseline justify-between text-[13px]">
+                      <span className="text-muted-foreground">{h.predicted}</span>
+                      <span className="font-semibold text-foreground">{formatDuration(race.predictedSeconds)}</span>
+                    </div>
+                    {race.targetSeconds && raceGap !== null && (
+                      <>
+                        <Bar share={raceShare(race.predictedSeconds, race.targetSeconds)} color={raceTone} />
+                        <p className="text-xs text-muted-foreground" data-testid="race-target">
+                          {h.target(formatDuration(race.targetSeconds))}
+                          {' · '}
+                          <b className="font-semibold" style={{ color: raceTone }}>
+                            {raceGap > 0 ? h.toFind(formatDuration(raceGap)) : h.underTarget(formatDuration(-raceGap))}
+                          </b>
+                        </p>
+                      </>
                     )}
-                    {formatDuration(r.seconds)}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          ) : (
-            <p className="text-sm text-muted-foreground">{h.noRecords}</p>
-          )}
-        </Tile>
+                  </>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">{h.noRace}</p>
+            )}
+          </Tile>
 
-        <Tile href="/consistency" title={h.consistency} testId="consistency-tile">
-          <MiniCalendar weeks={consistency.weeks} />
-          <Segments
-            testId="consistency-footer"
-            parts={[
-              h.consistencyWindow,
-              <>{days.lead}<b className="font-semibold text-foreground">{days.value}</b>{days.tail}</>,
-              <>{streak.lead}<b className="font-semibold text-foreground">{streak.value}</b>{streak.tail}</>,
-            ]}
-          />
-        </Tile>
-      </div>
+          <Tile href="/records" title={h.records} aside={<Caption>{h.recordsWhen}</Caption>} className="order-3 gap-1 sm:order-none" testId="records-tile">
+            {records.length > 0 ? (
+              <dl className="mt-1.5">
+                {records.map((r) => (
+                  <div key={r.key} className="flex items-baseline justify-between gap-2 border-t border-border py-[9px] text-sm">
+                    <dt className="text-foreground">{h.recordLabels[r.key] ?? r.label}</dt>
+                    {/* The newest record says so in the accent; "new" only while it is (v4.17). */}
+                    <dd className="flex items-baseline gap-1.5 font-semibold text-foreground">
+                      {r.latest && (
+                        <span data-testid="latest-record" aria-label={h.latestRecordLabel} className="text-caption font-bold text-accent-text">
+                          {r.recent ? h.newRecord : h.latestRecord}
+                        </span>
+                      )}
+                      {formatDuration(r.seconds)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ) : (
+              <p className="text-sm text-muted-foreground">{h.noRecords}</p>
+            )}
+          </Tile>
 
-      {shoes.length > 0 && (
-        <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="shoes-tile">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className={TITLE}>{h.shoes}</h2>
-            <Link href="/shoes" className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground" data-testid="shoes-all">
-              {h.allPairs}
-              <ChevronRight size={14} aria-hidden="true" />
-            </Link>
-          </div>
-          {shoes.map((s) => (
-            <Link key={s.gearId} href={`/shoes/${s.gearId}`} className="flex flex-col gap-2 transition-opacity active:opacity-70" data-testid="shoe-row">
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="min-w-0 truncate text-foreground">
-                  {s.name}
-                  {s.status !== 'ok' && (
-                    <span className="ml-1.5 text-xs" style={{ color: shoeColor(s.status) }} data-testid="shoe-status">{t.shoes.status[s.status]}</span>
-                  )}
-                </span>
-                <span className="flex shrink-0 items-center gap-0.5 text-muted-foreground">
-                  <b className="font-semibold text-foreground">{formatKm(s.km)}</b>&nbsp;/ {formatKm(s.maxKm)} {t.units.km}
+
+          {shoes.length > 0 && (
+            <section className={cardClass({ className: 'order-5 flex flex-col gap-3 sm:order-none' })} data-testid="shoes-tile">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className={TITLE}>{h.shoes}</h2>
+                <Link href="/shoes" className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground" data-testid="shoes-all">
+                  {h.allPairs}
                   <ChevronRight size={14} aria-hidden="true" />
-                </span>
+                </Link>
               </div>
-              <Bar share={s.maxKm > 0 ? s.km / s.maxKm : 0} color={shoeColor(s.status)} />
-            </Link>
-          ))}
-        </section>
-      )}
+              {shoes.map((s) => (
+                <Link key={s.gearId} href={`/shoes/${s.gearId}`} className="flex flex-col gap-2 transition-opacity active:opacity-70" data-testid="shoe-row">
+                  <div className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="min-w-0 truncate text-foreground">
+                      {s.name}
+                      {s.status !== 'ok' && (
+                        <span className="ml-1.5 text-xs" style={{ color: shoeColor(s.status) }} data-testid="shoe-status">{t.shoes.status[s.status]}</span>
+                      )}
+                    </span>
+                    <span className="flex shrink-0 items-center gap-0.5 text-muted-foreground">
+                      <b className="font-semibold text-foreground">{formatKm(s.km)}</b>&nbsp;/ {formatKm(s.maxKm)} {t.units.km}
+                      <ChevronRight size={14} aria-hidden="true" />
+                    </span>
+                  </div>
+                  <Bar share={s.maxKm > 0 ? s.km / s.maxKm : 0} color={shoeColor(s.status)} />
+                </Link>
+              ))}
+            </section>
+          )}
+        </div>
+        <div className="contents sm:flex sm:flex-col sm:gap-3.5" data-testid="progress-column">
+          <Tile href="/athlete" title={h.vo2max} className="order-2 sm:order-none" testId="vo2-tile">
+            {vo2max ? (
+              <>
+                <p className="flex flex-wrap items-baseline gap-x-1.5">
+                  <span className="text-[26px] font-semibold leading-tight text-foreground">{vo2max.value}</span>
+                  {vo2max.delta !== null && (
+                    <span className="text-xs" data-testid="vo2-delta" style={{ color: deltaColor('vo2max', vo2max.delta) }}>
+                      {h.vo2Delta(formatDelta(vo2max.delta))}
+                    </span>
+                  )}
+                </p>
+                <Sparkline values={vo2max.series} />
+                <Segments
+                  testId="vo2-footer"
+                  parts={h.thresholdParts(vo2max.thresholdPaceSecPerKm ? formatDuration(vo2max.thresholdPaceSecPerKm) : null, vo2max.lthrBpm)}
+                />
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">–</p>
+            )}
+          </Tile>
+
+          <Tile href="/consistency" title={h.consistency} className="order-4 sm:order-none" testId="consistency-tile">
+            <MiniCalendar weeks={consistency.weeks} />
+            <Segments
+              testId="consistency-footer"
+              parts={[
+                h.consistencyWindow,
+                <>{days.lead}<b className="font-semibold text-foreground">{days.value}</b>{days.tail}</>,
+                <>{streak.lead}<b className="font-semibold text-foreground">{streak.value}</b>{streak.tail}</>,
+              ]}
+            />
+          </Tile>
+        </div>
+      </div>
 
       <Link href="/all-time" aria-label={h.openYears} className={cardClass({ className: cn('flex flex-col gap-3.5', LINK_CARD) })} data-testid="all-time">
         <div className="flex items-baseline justify-between gap-2">

@@ -202,6 +202,32 @@ describe('ProgressHub', () => {
   })
 })
 
+describe('the hub columns (v4.17.1)', () => {
+  // Records sat in a 2 x 2 row beside the taller Consistency card and left a
+  // gap under it. Each column stacks on its own now.
+  it('stacks Next race, Records and Shoes on the left, VO2 max and Consistency on the right', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} />)
+    const [left, right] = screen.getAllByTestId('progress-column')
+    const ids = (col: HTMLElement) => Array.from(col.children).map((el) => el.getAttribute('data-testid'))
+    expect(ids(left!)).toEqual(['race-tile', 'records-tile', 'shoes-tile'])
+    expect(ids(right!)).toEqual(['vo2-tile', 'consistency-tile'])
+    // A column is a flex stack from sm up and melts into the page's one list below it.
+    for (const col of [left!, right!]) expect(col.className).toMatch(/\bcontents\b.*\bsm:flex\b/)
+  })
+
+  it('orders a phone\'s one list distance, race, VO2 max, records, consistency, shoes, all time', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} />)
+    const order = (id: string) => Number(/(?:^| )order-(\d)/.exec(screen.getByTestId(id).className)?.[1])
+    const phone = ['race-tile', 'vo2-tile', 'records-tile', 'consistency-tile', 'shoes-tile'].map(order)
+    expect(phone).toEqual([1, 2, 3, 4, 5])
+    // Distance above the columns, all time below them, both full width.
+    const page = screen.getByTestId('progress-columns').parentElement!
+    const blocks = Array.from(page.children).map((el) => el.getAttribute('data-testid'))
+    expect(blocks.indexOf('year-hero')).toBeLessThan(blocks.indexOf('progress-columns'))
+    expect(blocks.indexOf('all-time')).toBeGreaterThan(blocks.indexOf('progress-columns'))
+  })
+})
+
 describe('one consistency count (v5.5 #9)', () => {
   it('matches the Consistency page, even for runs the rolling year and the month columns disagree on', async () => {
     const { consistencyMonths } = await import('@/components/consistency/consistencyMonths')
