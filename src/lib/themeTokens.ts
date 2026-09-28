@@ -147,6 +147,50 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
 }
 
 /**
+ * The basemap's colours (v4.17), per theme: greys only, so the athlete's
+ * tracks in the accent are the one colour on a map, and roads the only thing
+ * with real contrast. scripts/build-map-styles.ts bakes these into the styles
+ * kept in src/map/styles, so the map can't drift from the UI; labels and
+ * their halo are the UI's own muted, faint and ground.
+ */
+export const MAP_STYLE_COLORS = {
+  dark: {
+    background: '#111212',
+    land: '#141615',
+    water: '#0b0c0c',
+    waterway: '#0b0c0c',
+    building: '#171918',
+    roadMajor: '#2a2d2c',
+    roadMinor: '#1e2120',
+    roadCasing: '#171918',
+    path: '#232625',
+    rail: SURFACES.dark.line,
+    border: SURFACES.dark.line2,
+    placeLabel: SURFACES.dark.text2,
+    streetLabel: SURFACES.dark.text3,
+    halo: SURFACES.dark.background,
+  },
+  light: {
+    background: '#eef0ef',
+    land: '#e6eae7',
+    water: '#dce1df',
+    waterway: '#d3d9d6',
+    building: SURFACES.light.line,
+    roadMajor: '#ffffff',
+    roadMinor: '#f7f8f7',
+    roadCasing: SURFACES.light.line,
+    path: '#ffffff',
+    rail: SURFACES.light.line2,
+    border: SURFACES.light.line2,
+    placeLabel: SURFACES.light.text2,
+    streetLabel: SURFACES.light.text3,
+    halo: SURFACES.light.background,
+  },
+} as const
+
+export type MapStyleColors = { [K in keyof (typeof MAP_STYLE_COLORS)['dark']]: string }
+
+/**
  * One accent block (v4.3, v4.17): the palette's accent and its ink, and the
  * derived tints - `--accent-soft` (the accent at 1F alpha) for the active nav
  * row and soft fills, `--acc-line` for an accent outline. Accent text uses

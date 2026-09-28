@@ -1,16 +1,33 @@
+import type { StyleSpecification } from 'maplibre-gl'
 import { t } from '@/i18n'
+import light from '@/map/styles/runomics-light.json'
+import dark from '@/map/styles/runomics-dark.json'
 
-const STYLE_LIGHT = 'dataviz-v4'
-const STYLE_DARK = 'backdrop-v4-dark'
+const MAP_LANGUAGE = t.locale.split('-')[0] ?? 'en'
+
 /**
- * Grey on light too (v4.17): no green parks or blue water under data that is
- * drawn in one colour - the heatmap's tracks. The dark backdrop is grey already.
+ * Every label in `lang`, falling back to the local name: the kept styles
+ * name places in English (`name:en`), the way MapTiler's `language` query
+ * used to pick it on its side.
  */
-const STYLE_LIGHT_GREY = 'backdrop-v4-light'
+export function withLanguage(style: StyleSpecification, lang: string): StyleSpecification {
+  if (lang === 'en') return style
+  return {
+    ...style,
+    layers: style.layers.map((layer) => {
+      if (layer.type !== 'symbol' || !layer.layout?.['text-field']) return layer
+      const field = JSON.stringify(layer.layout['text-field']).replaceAll('"name:en"', `"name:${lang}"`)
+      return { ...layer, layout: { ...layer.layout, 'text-field': JSON.parse(field) } }
+    }),
+  }
+}
 
-const MAP_LANGUAGE = t.locale.split('-')[0]
-
-export function maptilerStyleUrl(isDark: boolean, token: string, { grey = false }: { grey?: boolean } = {}): string {
-  const style = isDark ? STYLE_DARK : grey ? STYLE_LIGHT_GREY : STYLE_LIGHT
-  return `https://api.maptiler.com/maps/${style}/style.json?key=${token}&language=${MAP_LANGUAGE}`
+/**
+ * RunOmics' own basemap for a theme (v4.17): the greys in src/map/styles,
+ * built from MapTiler's Dataviz by scripts/build-map-styles.ts, with the key
+ * filled into every source, sprite and glyph URL.
+ */
+export function maptilerStyle(isDark: boolean, token: string): StyleSpecification {
+  const style = JSON.parse(JSON.stringify(isDark ? dark : light).replaceAll('{key}', token)) as StyleSpecification
+  return withLanguage(style, MAP_LANGUAGE)
 }

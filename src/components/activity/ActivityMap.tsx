@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
-import { maptilerStyleUrl } from '@/lib/maptiler'
+import { maptilerStyle } from '@/lib/maptiler'
 import { MAP_COLORS, PACE_ROUTE_COLORS, PACE_ROUTE_STOPS } from '@/lib/colors'
 import { paceAtFraction } from '@/lib/paceRoute'
 import { t } from '@/i18n'
@@ -140,7 +140,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
       hoverMarkerRef.current = null
       mglRef.current = mgl
 
-      const styleUrl = maptilerStyleUrl(isDark, token)
+      const style = maptilerStyle(isDark, token)
       const bounds = route.reduce(
         (b, c) => b.extend(c as [number, number]),
         new mgl.LngLatBounds(route[0], route[0])
@@ -149,7 +149,7 @@ export default function ActivityMap({ route, paceSamples, hoverFraction, classNa
 
       const map = new mgl.Map({
         container: mapEl,
-        style: styleUrl,
+        style,
         bounds,
         fitBoundsOptions: { padding: ROUTE_FIT_PADDING, maxZoom: 15 },
         attributionControl: false,

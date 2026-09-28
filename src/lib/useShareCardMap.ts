@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { maptilerStyleUrl } from '@/lib/maptiler'
+import { maptilerStyle } from '@/lib/maptiler'
 import { routePadding, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
 import { loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
@@ -68,7 +68,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
   const bounds = points.reduce((b, c) => b.extend(c), new mgl.LngLatBounds(first, first))
   const map = new mgl.Map({
     container,
-    style: maptilerStyleUrl(isDark, token),
+    style: maptilerStyle(isDark, token),
     bounds,
     fitBoundsOptions: { padding: routePadding(width, height), maxZoom: 15, duration: 0 },
     canvasContextAttributes: { preserveDrawingBuffer: true },

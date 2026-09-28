@@ -206,16 +206,13 @@ export function heatPasses(mode: "dark" | "light", accent: string): HeatPass[] {
   return HEAT_STYLE[mode].passes.map((pass) => ({ width: pass.width, color: rgba(accent, pass.alpha) }));
 }
 
-/** Place names over the tracks at 60%, in both themes. */
-export const HEAT_LABEL_OPACITY = 0.6;
-
 /**
- * The core line's width in px at a MapLibre zoom: 1.2 px out to the city,
- * then 0.9 px more for each level in. MapLibre's zoom is one below the
- * 256 px tile zoom the design was drawn at.
+ * The core line's width in px at a MapLibre zoom (v4.17): 1.2 px out to
+ * zoom 12, 4 px from zoom 16, straight between.
  */
 export function heatLineWidth(zoom: number): number {
-  return Math.max(1.2, (zoom + 1 - 11) * 0.9);
+  const t = Math.min(1, Math.max(0, (zoom - 12) / 4));
+  return 1.2 + t * (4 - 1.2);
 }
 
 /** The home ring: a closed line `radiusKm` around `center`, [lon, lat]. */

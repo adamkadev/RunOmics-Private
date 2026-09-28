@@ -516,6 +516,22 @@ this repository.
 | Garmin auth | [garth](https://github.com/matin/garth) |
 | FIT parsing | [garmin-fit-sdk](https://pypi.org/project/garmin-fit-sdk/) |
 
+### Map styles
+
+The basemaps are RunOmics' own, kept in the repo: `src/map/styles/runomics-light.json` and
+`runomics-dark.json`, built from MapTiler's Dataviz styles (`dataviz-v4`, `dataviz-v4-dark`) in greys
+only, so the athlete's accent-coloured runs are the one colour on a map. The colours come from
+`MAP_STYLE_COLORS` in `src/lib/themeTokens.ts`. The MapTiler API cannot save a style, so after a
+MapTiler update (or a colour change) rebuild them by hand and commit the result:
+
+```bash
+MAPTILER_KEY=your_maptiler_key npm run map:styles
+```
+
+The script matches layers by pattern, fails if a colour with a hue is left in a visible layer, and
+writes `{key}` in place of the key; `maptilerStyle()` in `src/lib/maptiler.ts` fills it in at run time
+and names places in the app's language.
+
 ### Coaching frequency and training history
 
 `--days` specifies scheduling availability; `--runs-per-week` separately specifies

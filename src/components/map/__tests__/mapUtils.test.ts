@@ -126,11 +126,13 @@ describe('HEAT_STYLE (v4.17)', () => {
   })
 })
 
-describe('heatLineWidth', () => {
-  it('holds 1.2 px out to the city, then widens as the map zooms in', () => {
+describe('heatLineWidth (v4.17)', () => {
+  it('holds 1.2 px out to zoom 12, reaches 4 px at 16, straight between', () => {
     expect(heatLineWidth(8)).toBe(1.2)
-    expect(heatLineWidth(13)).toBeCloseTo(2.7, 10)
-    expect(heatLineWidth(14)).toBeGreaterThan(heatLineWidth(13))
+    expect(heatLineWidth(12)).toBe(1.2)
+    expect(heatLineWidth(14)).toBeCloseTo(2.6, 10)
+    expect(heatLineWidth(16)).toBe(4)
+    expect(heatLineWidth(19)).toBe(4)
   })
 })
 
