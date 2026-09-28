@@ -1,32 +1,37 @@
 'use client'
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { useDragToDismiss } from '@/lib/useDragToDismiss'
+import { X } from 'lucide-react'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/formatters'
+import type { DeltaTone } from '@/lib/deltaTone'
+import { cardClass } from '@/components/ui/Card'
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { Button } from '@/components/ui/Button'
+import type { StatTone } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 
 /**
  * The v4.5 card recipe (D1-D4): a title with its source or unit on the right,
  * then the number, one sentence, the chart and its legend. The (i) icons are
- * gone; the title itself opens the card's explanation.
+ * gone; the title itself opens the card's explanation. The card itself is the
+ * app's one (v4.17): radius 16, a line border, the surface, 18 x 20 padding.
  */
 export function Card({ children, className, testId }: { children: ReactNode; className?: string; testId?: string }) {
   return (
-    <section
-      data-testid={testId}
-      className={cn('flex flex-col gap-3 rounded-card border border-[var(--divider)] bg-card p-4', className)}
-    >
+    <section data-testid={testId} className={cardClass({ className: cn('flex flex-col gap-3', className) })}>
       {children}
     </section>
   )
 }
 
+/** A card title: 15 px at 600, with its caption 12 px muted on the right. */
 export function CardHead({ title, caption, about, right }: { title: string; caption?: ReactNode; about?: string; right?: ReactNode }) {
   const [open, setOpen] = useState(false)
+  const titleClass = 'min-w-0 truncate text-left text-[15px] font-semibold leading-snug text-foreground'
   return (
     <div className="flex items-baseline justify-between gap-3">
       {about ? (
@@ -34,27 +39,27 @@ export function CardHead({ title, caption, about, right }: { title: string; capt
           type="button"
           onClick={() => setOpen(true)}
           aria-haspopup="dialog"
-          className="min-w-0 truncate text-left font-display text-body font-bold leading-none text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className={cn(titleClass, 'rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring')}
         >
           {title}
         </button>
       ) : (
-        <h2 className="min-w-0 truncate font-display text-body font-bold leading-none text-foreground">{title}</h2>
+        <h2 className={titleClass}>{title}</h2>
       )}
-      {right ?? (caption && <span className="shrink-0 text-[12px] text-muted-foreground">{caption}</span>)}
+      {right ?? (caption && <span className="shrink-0 text-right text-xs text-muted-foreground">{caption}</span>)}
       {open && about && (
-        <Sheet title={title} onClose={() => setOpen(false)}>
-          <p className="text-[15px] leading-relaxed text-muted-foreground">{about}</p>
-        </Sheet>
+        <Dialog title={title} onClose={() => setOpen(false)}>
+          <p className="text-sm leading-normal text-[var(--text-2)]">{about}</p>
+        </Dialog>
       )}
     </div>
   )
 }
 
-/** One sentence, 14 pt ink, with its key figure in bold. */
+/** One sentence, 14 pt body in text-2, its key figure in bold text ink. */
 export function Sentence({ children, className, testId }: { children: ReactNode; className?: string; testId?: string }) {
   return (
-    <p data-testid={testId} className={cn('text-[14px] leading-[1.4] text-foreground text-pretty', className)}>
+    <p data-testid={testId} className={cn('text-sm leading-normal text-[var(--text-2)] text-pretty [&_b]:font-semibold [&_b]:text-foreground', className)}>
       {children}
     </p>
   )
@@ -71,20 +76,28 @@ export function BoldSentence({ parts, className, boldColor }: { parts: readonly 
   )
 }
 
-export function Headline({ value, note, size = 30, noteStyle }: { value: ReactNode; note?: ReactNode; size?: 24 | 30 | 40; noteStyle?: CSSProperties }) {
+/**
+ * A card's one number (v4.17 stat value): 26 px at 600, its unit inline at
+ * 13 px muted, and a note beside it - 12 px, muted unless it says something.
+ */
+export function Headline({ value, unit, note, noteStyle, valueStyle, testId }: { value: ReactNode; unit?: ReactNode; note?: ReactNode; noteStyle?: CSSProperties; valueStyle?: CSSProperties; testId?: string }) {
   return (
     <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-      <span className="font-display font-bold leading-none tabular-nums text-foreground" style={{ fontSize: size }}>
+      <span className="text-[26px] font-semibold leading-tight tracking-[-0.01em] text-foreground" style={valueStyle} data-testid={testId}>
         {value}
+        {unit != null && <span className="ml-1 text-[13px] font-normal tracking-normal text-muted-foreground">{unit}</span>}
       </span>
       {note && (
-        <span className="text-[13px] text-muted-foreground" style={noteStyle}>
+        <span className="text-xs text-muted-foreground" style={noteStyle}>
           {note}
         </span>
       )}
     </div>
   )
 }
+
+/** A delta's meaning as a stat tone: good news pos, worse warn, noise muted. */
+export const STAT_TONE: Record<DeltaTone, StatTone> = { good: 'pos', worse: 'warn', flat: 'muted' }
 
 // The legend is the app's one recipe (v4.17), shared with every page.
 export { Legend, LegendItem } from '@/components/ui/Legend'
@@ -97,7 +110,7 @@ export function windowLabels(dates: string[], live: boolean): string[] {
   return [bare(dates[0]!), bare(mid), live ? t.analytics.cards.today : bare(dates[dates.length - 1]!)]
 }
 
-/** Axis labels under a chart, spread end to end. */
+/** Axis labels under a chart, spread end to end: 11 px muted. */
 export function AxisLabels({ labels, className }: { labels: string[]; className?: string }) {
   return (
     <div className={cn('flex justify-between text-caption leading-none text-muted-foreground', className)} aria-hidden>
@@ -109,13 +122,15 @@ export function AxisLabels({ labels, className }: { labels: string[]; className?
 }
 
 /**
- * The tab's one period control (v4.5): a small ink segment under the tabs,
- * the chosen period filled with ink. It replaces every card's own pills.
+ * The page's one period control (v4.17), right of the title: the quiet
+ * SegmentedTabs `sm` recipe - a surface-2 track with a line, the chosen
+ * period lifted onto the card in text ink. It stays a radiogroup: a period
+ * filters the tab under it, it is not a tab of its own.
  */
 export function PeriodControl<P extends string>({ periods, value, onChange }: { periods: readonly P[]; value: P; onChange: (p: P) => void }) {
   const s = t.analytics.cards.period
   return (
-    <div role="radiogroup" aria-label={s.label} className="flex rounded-full bg-[var(--segmented-track)] p-[3px] text-[12px] font-semibold text-muted-foreground">
+    <div role="radiogroup" aria-label={s.label} className="flex shrink-0 gap-0.5 rounded-[10px] border border-border bg-[var(--segmented-track)] p-[3px]">
       {periods.map((p) => (
         <button
           key={p}
@@ -124,8 +139,10 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
           aria-checked={p === value}
           onClick={() => onChange(p)}
           className={cn(
-            'rounded-full px-3 py-1.5 leading-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            p === value && 'bg-foreground font-bold text-background',
+            'hit-44 flex h-7 items-center justify-center whitespace-nowrap rounded-[7px] px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            p === value
+              ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
+              : 'font-medium text-muted-foreground hover:text-foreground',
           )}
         >
           {s.short[p]}
@@ -135,37 +152,85 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
   )
 }
 
-export function Sheet({ title, eyebrow, onClose, children }: { title: string; eyebrow?: string; onClose: () => void; children: ReactNode }) {
-  const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
+const DIALOG_TONE: Record<StatTone, string> = {
+  pos: 'var(--pos)',
+  warn: 'var(--warn)',
+  neg: 'var(--neg)',
+  muted: 'var(--muted-foreground)',
+}
+
+/**
+ * The page's one dialog (v4.17): a centred modal, 520 wide at most, radius
+ * 18, over a 55% scrim blurred 2 px - no bottom-sheet handle. An eyebrow and
+ * a 19 px title with a close button, the body, then its actions on the right
+ * (Close alone unless it has its own). Focus stays inside, Escape closes it
+ * and the page under it does not scroll.
+ */
+export function Dialog({
+  title,
+  eyebrow,
+  eyebrowTone = 'muted',
+  onClose,
+  actions,
+  children,
+}: {
+  title: string
+  eyebrow?: string
+  eyebrowTone?: StatTone
+  onClose: () => void
+  /** Buttons beside Close, the primary one last. */
+  actions?: ReactNode
+  children: ReactNode
+}) {
   const trapRef = useFocusTrap<HTMLDivElement>()
+  const titleId = useId()
   useScrollLock()
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') close()
+      if (e.key === 'Escape') onClose()
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [close])
+  }, [onClose])
 
+  // Under the status bar, as every sheet: the strip dims itself (useScrollLock).
   return createPortal(
-    <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end sm:items-center sm:justify-center sm:p-4" style={{ touchAction: 'none' }} role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={close} />
+    <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-center justify-center p-4 sm:p-6" style={{ touchAction: 'none' }}>
+      <div className="absolute inset-0 animate-fade-in bg-black/55 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
       <div
         ref={trapRef}
-        className="relative w-full animate-sheet-up sm:max-w-sm sm:rounded-card-sm"
-        style={{ background: 'var(--raised)', boxShadow: 'var(--shadow-modal)', borderRadius: '22px 22px 20px 20px', border: '1px solid var(--border)', ...sheetStyle }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="relative flex max-h-full w-full max-w-[520px] animate-fade-up flex-col gap-3.5 overflow-y-auto overscroll-contain rounded-[18px] border border-[var(--line-2)] bg-card px-6 py-[22px] shadow-[var(--shadow-modal)]"
       >
-        <div className="flex justify-center pb-1 pt-3" {...handleProps}>
-          <div className="h-1 w-9 rounded-full" style={{ background: 'var(--divider)' }} />
-        </div>
-        <div className="px-5 pt-3" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 32px)' }}>
-          {eyebrow && <p className="mb-1.5 text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground">{eyebrow}</p>}
-          <h2 className="mb-3 font-display text-[20px] font-bold text-foreground">{title}</h2>
-          {children}
-          <button type="button" onClick={close} className="mt-5 w-full rounded-full bg-[var(--segmented-track)] py-3 text-[15px] font-semibold text-foreground">
-            {t.analytics.cards.close}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            {eyebrow && (
+              <span className={EYEBROW_CLASS} style={{ color: DIALOG_TONE[eyebrowTone] }}>
+                {eyebrow}
+              </span>
+            )}
+            <h2 id={titleId} className="text-[19px] font-semibold leading-[1.3] text-foreground text-pretty">
+              {title}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t.analytics.cards.close}
+            className="hit-44 flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-border bg-[var(--surface-2)] text-[var(--text-2)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <X size={14} strokeWidth={2.2} aria-hidden />
           </button>
+        </div>
+        {children}
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={onClose}>
+            {t.analytics.cards.close}
+          </Button>
+          {actions}
         </div>
       </div>
     </div>,
@@ -310,12 +375,12 @@ export function ChartScrub({
 }
 
 /**
- * The one "this week" mark on a weekly bar (v4.6): a 2 pt accent outline over
- * a 15% accent wash, as Plan draws today. Weekly distance, Long run and Time in
- * zones all use it.
+ * The one "this week" mark on a weekly bar (v4.17): a week still under way is
+ * dashed, as a planned session is. Weekly distance draws it as a dashed accent
+ * outline over no fill; Long run and Time in zones keep their colours inside
+ * the same dashed outline.
  */
-export const THIS_WEEK_FILL = 'color-mix(in oklab, var(--accent) 15%, transparent)'
-export const THIS_WEEK_OUTLINE = 'inset 0 0 0 2px var(--accent)'
+export const THIS_WEEK_BORDER = '1.5px dashed var(--accent)'
 
 /** A week with nothing run: a 2 pt stub on the baseline, so it reads as a zero, not as no data. */
 export function EmptyWeek() {

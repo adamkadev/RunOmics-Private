@@ -117,7 +117,7 @@ describe('D1 Load', () => {
     expect(view.totals.map((t) => t.status)).toEqual(['productive', 'overreaching', 'detraining', 'recovery'])
   })
 
-  it('marks a risk out of range amber, and beyond the alert limit Z5', () => {
+  it('marks a risk out of range as caution, and beyond the alert limit as an alert', () => {
     const panel = { acwr: 1.13, monotony: 1.5, rampRate: 2.4 } as LoadRiskPanel
     expect(riskRows(panel).map((r) => r.state)).toEqual(['ok', 'ok', 'ok'])
     expect(riskRows({ ...panel, acwr: 1.4 }).find((r) => r.key === 'loadRatio')!.state).toBe('out')

@@ -14,7 +14,7 @@ import { isRaceDistanceKey, type RaceDistanceKey } from '@/domain/race/distances
 import { cumulativeYear } from '@/components/profile/progressHub'
 import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
-import { yearOverYear } from '@/components/analytics/analyticsView'
+import { yearOverYear } from '@/lib/yearOverYear'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
 import { getLoadPairs, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
 
