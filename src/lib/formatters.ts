@@ -93,6 +93,11 @@ export function formatKm(km: number, decimals = 0): string {
   )
 }
 
+/** Any other figure in running text (a form value, a weekly rate): the locale's decimal, at most `maxDecimals`. */
+export function formatNumber(value: number, maxDecimals = 1): string {
+  return stableSpaces(value.toLocaleString(t.locale, { maximumFractionDigits: maxDecimals }))
+}
+
 /**
  * A planned distance, as every screen writes it: whole kilometres ("6 km").
  * Plan, Today and the run verdict each rounded the same 6.11 km prescription

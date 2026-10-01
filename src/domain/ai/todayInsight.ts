@@ -5,7 +5,7 @@ import type { RecentTraining } from '@/domain/training/recentTraining'
 import { MIN_REP_SECONDS } from '@/domain/activity/sessionExecution'
 import { t } from '@/i18n'
 import { insightHash } from './insightHash'
-import { avoidClause, CARD_PROMPT_VERSION, systemInstruction } from './prompt'
+import { avoidClause, CARD_PROMPT_VERSION, promptVersion, systemInstruction } from './prompt'
 
 export const TODAY_SURFACE = 'todayHero'
 export const TODAY_LIMITS = { headline: 52, body: 140 }
@@ -48,7 +48,7 @@ function ranToday(recent: RecentTraining): boolean {
 function facts({ status, tone, plannedWorkout, recent }: TodayContext) {
   const kind = sessionKind(plannedWorkout)
   return {
-    promptVersion: CARD_PROMPT_VERSION,
+    promptVersion: promptVersion(CARD_PROMPT_VERSION),
     tone,
     kind,
     status: status.status,

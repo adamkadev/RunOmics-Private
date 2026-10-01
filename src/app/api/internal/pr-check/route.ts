@@ -3,6 +3,7 @@ import { handleInternalRoute } from '@/lib/internalRoute'
 import { sendPushesToAllDevices } from '@/lib/sendPushNotification'
 import { getNewPrs } from '@/application/usecases/GetNewPrs'
 import { formatDuration } from '@/lib/formatters'
+import { t } from '@/i18n'
 
 export async function POST(req: NextRequest) {
   return handleInternalRoute('pr-check', req, async () => {
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
     // whole batch again next run, announcing the PRs that did get through a
     // second time: a rare duplicate beats a PR that is never announced.
     await sendPushesToAllDevices(
-      newPrs.map((pr) => ({ title: `New PR: ${pr.label}`, body: `${formatDuration(pr.seconds)} - new personal best!` }))
+      newPrs.map((pr) => ({ title: t.notifications.newPr.title(pr.label), body: t.notifications.newPr.body(formatDuration(pr.seconds)) }))
     )
     await commit()
 

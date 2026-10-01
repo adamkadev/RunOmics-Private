@@ -1882,6 +1882,42 @@ export const en = {
     off: (diff: string) => `${diff} off your PR`,
   },
 
+  // The pushes the phone shows outside the app (src/app/api/internal/*).
+  // Numbers arrive formatted, so the decimal follows the locale.
+  notifications: {
+    restDay: { title: 'Rest day', body: 'No session scheduled today - recovery day.' },
+    todaySession: {
+      title: "Today's session",
+      body: (name: string, detail: string | null) => (detail ? `${name} (${detail})` : name),
+    },
+    newPr: {
+      title: (label: string) => `New PR: ${label}`,
+      body: (time: string) => `${time} - new personal best!`,
+    },
+    shoeWear: {
+      title: (name: string) => `Shoe wear alert: ${name}`,
+      body: (km: string, threshold: string) => `${km} km - past its ${threshold} km alert threshold`,
+    },
+    overreaching: {
+      title: 'Overreaching risk detected',
+      body: (tsb: string, acwr: string | null) => `Form (TSB) ${tsb}${acwr ? `, ACWR ${acwr}` : ''} - high training risk, consider recovery.`,
+    },
+    staleSync: {
+      title: 'No data synced in a while',
+      body: (hours: number) => `Your last Garmin sync was ${hours}h ago - check that sync is still running.`,
+    },
+    newActivity: { title: (name: string) => `New activity: ${name}` },
+    weeklyGoal: {
+      title: 'Weekly goal check-in',
+      status: { ahead: 'ahead of pace', on_track: 'on track', behind: 'behind pace' },
+      body: (status: string, rate: string, needed: string) => `You're ${status} at ${rate} km/week (need ${needed} km/week).`,
+    },
+    workflowFailed: {
+      title: (workflow: string) => `${workflow} failed`,
+      body: (runUrl: string) => `Open the run: ${runUrl}`,
+    },
+  },
+
   nextRace: {
     // A word joiner after the hyphen keeps "D-64" on one line (v4.3.2); the
     // font has no U+2011, which would draw from a fallback face.

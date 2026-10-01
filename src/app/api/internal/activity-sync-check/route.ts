@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     // Stored only once every push went out, as in pr-check.
     await sendPushesToAllDevices(
       newActivities.map((activity) => ({
-        title: `New activity: ${activity.description}`,
+        title: t.notifications.newActivity.title(activity.description),
         body: [formatDistance(activity.distanceKm), formatDuration(activity.durationSeconds), t.activityTypes[activity.type]].join(' · '),
       }))
     )

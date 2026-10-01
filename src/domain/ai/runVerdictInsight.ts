@@ -10,7 +10,7 @@ import { MIN_REP_SECONDS, repStats, sessionExecution, type SessionExecution } fr
 import { resolvePerformance, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { formatClock } from '@/lib/formatters'
 import { insightHash } from './insightHash'
-import { avoidClause, systemInstruction } from './prompt'
+import { avoidClause, promptVersion, systemInstruction } from './prompt'
 
 export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
@@ -508,7 +508,7 @@ function facts({ activity, history, planned, official, intent }: RunVerdictConte
   const recentWeather = activity.date >= WEATHER_FACTS_FROM ? activity.weather : null
 
   return {
-    promptVersion: RUN_VERDICT_PROMPT_VERSION,
+    promptVersion: promptVersion(RUN_VERDICT_PROMPT_VERSION),
     tone: verdictTone(activity, kind, reps, execution?.kind === 'intervals'),
     kind,
     type: activity.type,

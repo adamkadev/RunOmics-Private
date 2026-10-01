@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
 import { sendPushToAllDevices } from '@/lib/sendPushNotification'
+import { t } from '@/i18n'
 
 const MAX_LENGTH = 200
 const RUN_URL_PREFIX = 'https://github.com/'
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    await sendPushToAllDevices(`${workflow} failed`, `Open the run: ${runUrl}`)
+    await sendPushToAllDevices(t.notifications.workflowFailed.title(workflow), t.notifications.workflowFailed.body(runUrl))
     return NextResponse.json({ sent: true })
   })
 }

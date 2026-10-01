@@ -2,7 +2,7 @@ import { DAY_MS } from '@/lib/calendarDate'
 import type { RecordEntry } from '@/domain/race/records'
 import { insightHash } from './insightHash'
 import { isRecentRecord } from './celebrationWindow'
-import { avoidClause, CARD_PROMPT_VERSION, systemInstruction } from './prompt'
+import { avoidClause, CARD_PROMPT_VERSION, promptVersion, systemInstruction } from './prompt'
 import { formatClock } from '@/lib/formatters'
 
 export const PB_CELEBRATION_SURFACE = 'pbCelebration'
@@ -20,7 +20,7 @@ export interface PbCelebrationContext {
 
 function facts({ record, previous }: PbCelebrationContext) {
   return {
-    promptVersion: CARD_PROMPT_VERSION,
+    promptVersion: promptVersion(CARD_PROMPT_VERSION),
     key: record.key,
     label: record.label,
     seconds: record.seconds,
