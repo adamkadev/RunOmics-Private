@@ -4,6 +4,7 @@ import { projectRoute, type LngLat } from '@/lib/shareCardMap'
 import { paceAtFraction, paceRouteColor } from '@/lib/paceRoute'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
+import { formatPercent } from '@/lib/formatters'
 
 type Ctx = CanvasRenderingContext2D
 
@@ -202,7 +203,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene) {
   ctx.textAlign = 'left'
   ctx.font = `700 34px ${fonts.display}`
   ctx.fillStyle = palette.tx
-  const pct = `${zones.top.percent}%`
+  const pct = formatPercent(zones.top.percent)
   ctx.fillText(pct, PAD_X, PAD_Y + HEAD - 6)
   const pctW = ctx.measureText(pct).width
   ctx.font = `600 15px ${fonts.text}`

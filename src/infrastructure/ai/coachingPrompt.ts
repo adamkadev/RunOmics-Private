@@ -18,7 +18,7 @@ import { activeLocale } from '@/i18n'
  * validateDraftFrequency accepts.
  */
 export const COACHING_LANGUAGE_RULE = activeLocale === 'fr'
-  ? 'Write every text the athlete reads in French, tutoiement, as a French-speaking running coach would say it: the plan name and focus, every week.focus and reducedVolume explanation, every workout title, description and notes, and every segment note. ' +
+  ? 'Write every text the athlete reads in French, tutoiement, as a French-speaking running coach would say it: the plan name and focus, every week.focus and reducedVolume explanation, every workout title, description and notes, every segment note, and the summary and evidence messages of a decision. ' +
     'Use the words French runners use (footing, sortie longue, endurance fondamentale, seuil, fractionné, accélérations, échauffement, retour au calme, récup) and French titles of the same shape: « Seuil 3 x 7:00 », « Sortie longue », « Accélérations 6 x 20 s », « Footing de récupération ». ' +
     "You are not told the athlete's gender, so no adjective or past participle may agree with the athlete. " +
     'Keep every JSON key, enum value, id and date exactly as specified, in English. ' +

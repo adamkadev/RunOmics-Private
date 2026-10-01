@@ -195,6 +195,8 @@ export const en = {
     ms: 'ms',
     mm: 'mm',
     percent: '%',
+    // The compass letter for west on a coordinate: east, north and south share their letter in French.
+    west: 'W',
     kcal: 'kcal',
     perKm: '/km',
     minPerKm: 'min/km',

@@ -2,6 +2,7 @@ import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { distanceKm, median, round } from "@/lib/math";
 import { t } from "@/i18n";
+import { formatDecimal } from "@/lib/formatters";
 
 export interface HeatFilters {
   year: string | null;
@@ -121,8 +122,8 @@ export const MAP_CHIP_OPEN_BORDER = "1px solid var(--foreground)";
 export const MAP_CHIP_CARET_INK = "var(--subtle)";
 
 export function coordLabel(c: RouteCluster): string {
-  const lat = `${Math.abs(c.center[1]).toFixed(1)}${c.center[1] >= 0 ? "°N" : "°S"}`;
-  const lon = `${Math.abs(c.center[0]).toFixed(1)}${c.center[0] >= 0 ? "°E" : "°W"}`;
+  const lat = `${formatDecimal(Math.abs(c.center[1]), 1)}${c.center[1] >= 0 ? "°N" : "°S"}`;
+  const lon = `${formatDecimal(Math.abs(c.center[0]), 1)}°${c.center[0] >= 0 ? "E" : t.units.west}`;
   return `${lat} ${lon}`;
 }
 

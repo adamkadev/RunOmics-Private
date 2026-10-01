@@ -175,6 +175,7 @@ export const fr = {
     ms: 'ms',
     mm: 'mm',
     percent: '%',
+    west: 'O',
     kcal: 'kcal',
     perKm: '/km',
     minPerKm: 'min/km',

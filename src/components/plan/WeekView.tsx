@@ -30,7 +30,7 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatClock, formatDate, formatDateRange, formatDistance, formatDurationWords, formatPace, formatPlannedKm, formatRanKm } from '@/lib/formatters'
+import { formatClock, formatDate, formatDateRange, formatDistance, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
@@ -305,7 +305,7 @@ function WeekStats({ target, notStarted }: { target: WeekTarget; notStarted: boo
         />
         <Stat
           label={s.adherence}
-          value={adherence === null ? '—' : `${adherence}%`}
+          value={adherence === null ? '—' : formatPercent(adherence)}
           meaning={planKm === null ? s.noPlan : s.adherenceAim(PLAN_ADHERENCE_AIM)}
           tone={adherenceTone(adherence)}
         />

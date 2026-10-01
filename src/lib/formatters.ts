@@ -98,6 +98,11 @@ export function formatDecimal(value: number, decimals: number): string {
   )
 }
 
+/** A share already in per cent (45 for 45 %), with the locale's spacing: "45%", « 45 % ». */
+export function formatPercent(percent: number, maxDecimals = 0): string {
+  return stableSpaces((percent / 100).toLocaleString(t.locale, { style: 'percent', maximumFractionDigits: maxDecimals }))
+}
+
 /** Any other figure in running text (a form value, a weekly rate): the locale's decimal, at most `maxDecimals`. */
 export function formatNumber(value: number, maxDecimals = 1): string {
   return stableSpaces(value.toLocaleString(t.locale, { maximumFractionDigits: maxDecimals }))
