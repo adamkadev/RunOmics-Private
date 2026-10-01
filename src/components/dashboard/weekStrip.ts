@@ -2,7 +2,7 @@ import { isActivityType, type ActivityType, type PlannedWorkout } from '@/domain
 import type { CoachingWorkoutType, WorkoutBlock } from '@/domain/coaching/types'
 import type { WeekDayState, WeekTarget } from '@/domain/training/weekTarget'
 import { sessionZone, zoneColor } from '@/lib/colors'
-import { formatDate, formatRanKm } from '@/lib/formatters'
+import { formatDate, formatNumber } from '@/lib/formatters'
 import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { t } from '@/i18n'
 import { kindOfType } from './todayVerdict'
@@ -98,7 +98,9 @@ export function weekStripDays(days: WeekTarget['days'], today: string, kinds: Re
           ? typeKind(day.type)
           : (kinds[day.date] ?? typeKind(day.type))
     const kind = named.label
-    const kmText = km === null ? null : day.state === 'done' ? formatRanKm(km) : formatWeekKm(km)
+    // One decimal at most: seven labels share a phone's width, and "10,4 km"
+    // ran into "9,23 km" beside it.
+    const kmText = km === null ? null : day.state === 'done' ? formatNumber(km, 1) : formatWeekKm(km)
     const isToday = day.date === today
     const state = [t.sessionState[day.state], isToday ? t.sessionState.today : null].filter(Boolean).join(' · ')
     return {

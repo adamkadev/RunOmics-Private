@@ -1186,7 +1186,7 @@ export const fr = {
     verdict: {
       title: 'Verdict de la sortie',
       headline: {
-        positive: (type: string) => `Belle sortie ${type}`,
+        positive: (type: string) => `Sortie ${type} réussie`,
         neutral: (type: string) => `Sortie ${type} enregistrée`,
         caution: (type: string) => `Sortie ${type} exigeante`,
       },
