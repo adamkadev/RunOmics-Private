@@ -135,7 +135,7 @@ export const fr = {
     calendarTitle: 'Chaque jour, 12 derniers mois',
     colourKey: 'couleur = distance',
     levels: { rest: 'Repos', long: 'Sortie longue (15 km +)' },
-    today: "Aujourd'hui",
+    today: 'Aujourd’hui',
     toCome: 'à venir',
     perMonth: 'Jours actifs par mois',
     monthSummary: (month: string, active: number) => `${month} : ${active} jour${active > 1 ? 's' : ''} actif${active > 1 ? 's' : ''}`,
@@ -1439,7 +1439,7 @@ export const fr = {
     best: 'Record',
     predictedTag: 'prédit',
     seasonRaces: 'Courses de la saison',
-    emptyPbs: (year: number) => `Pas encore de RP pour ${year} - ajoutez-les dans les Réglages.`,
+    emptyPbs: (year: number) => `Pas encore de RP pour ${year} - ajoute-les dans les Réglages.`,
     projection: {
       status: {
         ahead: 'En avance',
@@ -1454,11 +1454,11 @@ export const fr = {
       overBy: (km: string) => `${km} d’avance`,
       needsWeeklyDetail: (needed: string, current: string) => `Besoin de ${needed} km/sem, rythme actuel ${current}.`,
       verdict: (projected: string, outcome: string | null) => `${projected}${outcome ? ` · ${outcome}` : ''}.`,
-      today: "Aujourd'hui",
+      today: 'Aujourd’hui',
       projectedMark: (km: string) => `Projection ${km}`,
       shortAtPace: (km: string) => `${km} km de retard à ce rythme.`,
       overAtPace: (km: string) => `${km} km d’avance à ce rythme.`,
-      onPace: 'Dans le rythme de l’objectif.',
+      onPace: 'Dans les temps pour l’objectif.',
       needs: (needed: string, current: string) => `L’objectif demande ${needed} km par semaine ; tu en fais ${current} en moyenne.`,
     },
     monthlyVolume: {
@@ -1473,16 +1473,16 @@ export const fr = {
       km: (actual: number, target: number) => `${actual} / ${target}`,
       targetRule: 'objectif mensuel',
       inProgress: 'en cours',
-      daysIn: (month: string, days: number) => `${month} compte ${days} jour${days === 1 ? '' : 's'}`,
+      daysIn: (month: string, days: number) => `${month} : ${days} jour${days === 1 ? '' : 's'} écoulé${days === 1 ? '' : 's'}`,
       proRata: (actual: number, target: number) => `${actual} sur un objectif au prorata de ${target} km`,
       proRataCaption: (days: number) => `prorata · ${days} jour${days === 1 ? '' : 's'}`,
     },
     season: {
       title: 'Saison',
-      today: "Aujourd'hui",
-      todayOn: (date: string) => `AUJOURD'HUI · ${date}`,
-      blockWeek: (race: string, week: number, weeks: number) => `bloc ${race} sem ${week} sur ${weeks}`,
-      inDays: (days: number) => (days <= 0 ? "aujourd'hui" : days === 1 ? 'demain' : `dans ${days} jours`),
+      today: 'Aujourd’hui',
+      todayOn: (date: string) => `AUJOURD’HUI · ${date}`,
+      blockWeek: (race: string, week: number, weeks: number) => `bloc ${race} sem. ${week} sur ${weeks}`,
+      inDays: (days: number) => (days <= 0 ? 'aujourd’hui' : days === 1 ? 'demain' : `dans ${days} jours`),
       done: 'terminée',
       target: (time: string) => `Objectif ${time}`,
       planWeek: (week: number, weeks: number) => `semaine ${week} sur ${weeks} du plan`,
@@ -1514,18 +1514,18 @@ export const fr = {
     partialYear: (year: number, month: string, months: number, currentMonths: number, currentYear: number) =>
       `${year} a commencé en ${month} : ${months} mois contre ${currentMonths} en ${currentYear}.`,
     monthly: 'Km par mois',
-    best: (month: string, km: string) => `meilleur ${month} · ${km}`,
+    best: (month: string, km: string) => `meilleur mois : ${month} · ${km}`,
     longestRun: 'Plus longue sortie',
     biggestWeek: 'Plus grosse semaine',
     yearLabel: (year: number, km: string, runs: number, hours: string) => `${year} : ${km} km, ${runs} sorties, ${hours} h`,
   },
 
   shoes: {
-    tracked: (km: string) => `${km} km suivis`,
+    tracked: (km: string) => `${km} km au compteur`,
     add: 'Ajouter',
     addLabel: 'Ajouter une paire dans Garmin Connect',
     edit: 'Modifier la paire',
-    editLabel: 'Modifier la limite, le rôle ou la retraite dans Garmin Connect',
+    editLabel: 'Modifier la limite ou le rôle, ou retirer la paire dans Garmin Connect',
     inRotation: (n: number) => `En rotation · ${n}`,
     retiredSection: (n: number) => `Retraitées · ${n}`,
     kmLeftShort: 'km restants',
@@ -1533,7 +1533,7 @@ export const fr = {
     ofLimit: (limit: string) => `sur ${limit} km`,
     lastRun: (date: string) => `dernière ${date}`,
     runs: (n: number) => `${n} sortie${n === 1 ? '' : 's'}`,
-    overLimit: 'Limite dépassée, pensez à la retirer',
+    overLimit: 'Limite dépassée, pense à la retirer',
     since: (brand: string, month: string) => `${brand} · depuis ${month}`,
     roles: { daily: 'quotidienne', workouts: 'séances', intervals: 'fractionné', races: 'courses' },
     shareOfDistance: 'part de la distance',
@@ -1550,7 +1550,7 @@ export const fr = {
     retiredTitle: (name: string) => `Retraitée · ${name}`,
     status: {
       ok: 'Bon état',
-      watch: 'À remplacer bientôt',
+      watch: 'À remplacer',
       replace: 'À remplacer',
     },
     kmLeft: (km: string) => `~${km} km restants`,
@@ -1563,20 +1563,20 @@ export const fr = {
     },
     comparison: {
       title: 'Comparer deux paires',
-      subtitle: 'Sorties, distance, séances clés côte à côte',
+      subtitle: 'Allure, FC et types de séances côte à côte',
       change: 'Changer',
       changeLabel: 'Changer les paires comparées',
       pickHint: 'Choisis deux paires — un nouveau choix remplace le plus ancien',
-      note: "Portées à des saisons différentes – lis l'écart comme la saison, pas la paire.",
+      note: 'Portées à des saisons différentes – l’écart tient à la saison, pas à la paire.',
       delta: 'Δ',
       same: 'pareil',
-      beyondNoise: (metrics: string) => `${metrics} sortent du bruit de mesure ; le reste, c'est le même coureur.`,
-      noneBeyondNoise: "Rien ici ne sort du bruit de mesure - c'est le même coureur partout.",
+      beyondNoise: (metrics: string) => `L’écart sur ${metrics} dépasse le bruit de mesure ; pour le reste, c’est le même coureur.`,
+      noneBeyondNoise: "Rien ici ne sort du bruit de mesure - c’est le même coureur partout.",
       tooFewRunsShoe: (name: string, count: number) => `${name} a ${count} sortie${count === 1 ? '' : 's'}`,
-      tooFewRuns: (shoes: string, minRuns: number) => `${shoes} – les moyennes ont besoin d'environ ${minRuns}.`,
+      tooFewRuns: (shoes: string, minRuns: number) => `${shoes} – il en faut environ ${minRuns} pour des moyennes fiables.`,
       groups: {
-        howMuch: 'Combien',
-        howItRan: 'Comment ça a couru',
+        howMuch: 'Volume',
+        howItRan: 'À l’usage',
       },
       metrics: {
         sessions: 'Sorties',
@@ -1584,7 +1584,7 @@ export const fr = {
         keyShare: 'Séances qualité',
         pace: 'Allure /km',
         heartRate: 'FC bpm',
-        cadence: 'Cadence spm',
+        cadence: 'Cadence ppm',
         groundContact: 'Contact ms',
         oscillation: 'Rebond mm',
       },
@@ -1606,7 +1606,7 @@ export const fr = {
         kmPerWeek: 'km / sem.',
         avgPace: 'Allure moy.',
         weeks: 'Semaines',
-        avgRun: 'Sortie moy',
+        avgRun: 'Sortie moy.',
       },
       activitiesTitleActive: 'Sorties récentes',
       activitiesTitleRetired: 'Dernières sorties avant la retraite',
@@ -1615,35 +1615,35 @@ export const fr = {
       projectedRunOut: (weeklyKm: number, maxKm: string, targetDate: string, weeksRemaining: number) =>
         `À ${weeklyKm} km par semaine, tu atteindras ${maxKm} km vers ${targetDate} – encore ${weeksRemaining} semaine${weeksRemaining === 1 ? '' : 's'} environ.`,
       projectedRunOutFar: (weeklyKm: number, maxKm: string) =>
-        `À ${weeklyKm} km par semaine, ${maxKm} km c'est à plus d'un an.`,
+        `À ${weeklyKm} km par semaine, il te faudra plus d’un an pour atteindre ${maxKm} km.`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
         weeksLeft: (weeks: number) =>
           weeks <= 0 ? 'Elle a atteint sa limite.' : weeks === 1 ? 'Encore ~1 semaine à ton rythme.' : `Encore ~${weeks} semaines à ton rythme.`,
         planReplacement: 'Prévois la remplaçante ce mois-ci.',
         replaceNow: 'Prévois la remplaçante dès maintenant.',
-        noPaceData: 'Pas assez de kilométrage récent pour projeter un horizon.',
+        noPaceData: 'Pas assez de kilomètres récents pour estimer une échéance.',
       },
       typeShareLabels: {
         intervals: 'Fractionné',
       },
       typeShareGrouped: 'Tempo regroupe le seuil ; Fractionné regroupe sprint, anaérobie, VO2max et courses.',
       whatYouRunIn: {
-        title: 'Ce que tu y cours',
+        title: 'Tes sorties avec cette paire',
         summary: (pace: string, hr: number) => `${pace} · ${hr} bpm`,
       },
       whatItWasFor: {
         title: 'À quoi elle servait',
         summary: (hr: number) => `${hr} bpm moy.`,
-        keySessionPair: (percent: number) => `${percent}% de sa distance était en tempo, seuil ou fractionné.`,
-        easyPair: (percent: number) => `${percent}% de sa distance était de l’endurance fondamentale.`,
+        keySessionPair: (percent: number) => `${percent} % de sa distance était en tempo, seuil ou fractionné.`,
+        easyPair: (percent: number) => `${percent} % de sa distance était en endurance fondamentale.`,
       },
       retiredHero: {
         ranOut: (maxKm: string, weeks: number) => `A parcouru la quasi-totalité de ses ${maxKm} km en ${weeks} semaines.`,
         ranOutFastest: (maxKm: string, weeks: number) =>
           `A parcouru la quasi-totalité de ses ${maxKm} km en ${weeks} semaines – la paire que tu as usée le plus vite.`,
         retiredEarly: (percent: number, maxKm: string, weeks: number) =>
-          `Retraitée à ${percent}% d’une vie de ${maxKm} km, après ${weeks} semaines.`,
+          `Retraitée à ${percent} % de ses ${maxKm} km de durée de vie, après ${weeks} semaines.`,
       },
     },
   },
@@ -1652,7 +1652,7 @@ export const fr = {
     hub: {
       season: (year: number) => `Saison ${year}`,
       raceIn: (distance: string, days: number) =>
-        days <= 0 ? `${distance} aujourd'hui` : days === 1 ? `${distance} demain` : `${distance} dans ${days} jours`,
+        days <= 0 ? `${distance} aujourd’hui` : days === 1 ? `${distance} demain` : `${distance} dans ${days} jours`,
       yearTitle: (year: number) => `Distance ${year}`,
       runs: 'sorties',
       records: 'Records',
@@ -1676,7 +1676,7 @@ export const fr = {
       predicted: 'Prédit',
       target: (time: string) => `Objectif ${time}`,
       toFind: (gap: string) => `${gap} à trouver`,
-      underTarget: (gap: string) => `${gap} d'avance`,
+      underTarget: (gap: string) => `${gap} d’avance`,
       noRace: 'Aucune course prévue',
       vo2Delta: (delta: string) => `${delta} en 12 semaines`,
       thresholdParts: (pace: string | null, lthr: number | null) =>
@@ -1693,7 +1693,7 @@ export const fr = {
       openYears: 'Kilomètres par année',
     },
     hero: {
-      namePlaceholder: 'Votre nom',
+      namePlaceholder: 'Ton nom',
     },
     shoes: {
       pairs: (n: number) => `${n} paire${n !== 1 ? 's' : ''} active${n !== 1 ? 's' : ''}`,
@@ -1733,7 +1733,7 @@ export const fr = {
       target: 'cible',
       hardShare: (pct: number) => `Intense (Z4–Z5) ${pct} % · cible 10–15 %`,
       highIntensityNote: (pct: number) =>
-        `${pct}% de ton temps était en Z4–Z5, contre les 10–15% auxquels la plupart des semaines d’entraînement s’en tiennent.`,
+        `${pct} % de ton temps en Z4–Z5, alors que la plupart des semaines d’entraînement s’en tiennent à 10–15 %.`,
     },
     athlete: {
       title: 'Athlète',
@@ -1771,7 +1771,7 @@ export const fr = {
       routes: 'Parcours',
     },
     recurring: {
-      title: 'Les parcours où tu reviens',
+      title: 'Tes parcours habituels',
       subtitle: 'Même terrain, mêmes bosses - le seul cas où l’allure brute se compare d’un mois à l’autre.',
       runCount: (n: number) => `${n} fois`,
       best: 'Record',
@@ -1785,7 +1785,7 @@ export const fr = {
   },
 
   pbAlerts: {
-    off: (diff: string) => `à ${diff} de votre RP`,
+    off: (diff: string) => `à ${diff} de ton RP`,
   },
 
   notifications: {
@@ -1844,11 +1844,11 @@ export const fr = {
       },
       marathon: {
         label: 'Aérobie',
-        shortDesc: 'Puissance aérobie & allure course',
+        shortDesc: 'Endurance active & allure de course',
       },
       threshold: {
         label: 'Seuil',
-        shortDesc: 'Confortablement dur - allure seuil',
+        shortDesc: 'Soutenu mais contrôlé - allure seuil',
       },
       vo2max: {
         label: 'VO2max',
@@ -1881,7 +1881,7 @@ export const fr = {
       ANAEROBIC_SHORTAGE: 'Manque d’anaérobie',
       NO_DATA: 'Pas assez de données',
     } as Record<string, string | undefined>,
-    footnote: 'Charge Firstbeat des 4 dernières semaines par intensité, face aux plages que Garmin personnalise à partir de votre historique. Le repère indique où vous vous situez ; la zone verte est la cible.',
+    footnote: 'Charge Firstbeat des 4 dernières semaines par intensité, face aux plages que Garmin personnalise à partir de ton historique. Le repère indique où tu te situes ; la zone verte est la cible.',
   },
 
   loadRisk: {
@@ -1893,7 +1893,7 @@ export const fr = {
     },
     acwr: {
       label: 'ACWR',
-      description: 'Charge aiguë/chronique estimée sur les km · cible 0,8–1,3',
+      description: 'Rapport de charge aiguë/chronique, estimé d’après les km · cible 0,8–1,3',
       descriptionGarmin: 'Charge aiguë ÷ chronique, à partir des charges mesurées par la montre',
       inputs: (acute: number, chronic: number) => `aiguë ${acute} ÷ chronique ${chronic} =`,
     },
@@ -1917,7 +1917,7 @@ export const fr = {
     structure: {
       title: 'Structure',
       warmup: 'Échauffement',
-      cooldown: 'Repos',
+      cooldown: 'Retour au calme',
       single: (min: number, zone: string) => `${min}' @ ${zone}`,
       reps: (n: number, effort: number, zone: string) => `${n} × ${effort}' @ ${zone}`,
       repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' facile`,
@@ -1937,7 +1937,7 @@ export const fr = {
     races: 'Courses',
     targetPace: (pace: string) => `cible ${pace}`,
     session: {
-      stridesTitle: (bodyMin: number, reps: number, rep: string) => `Facile ${bodyMin} min + ${reps} × ${rep} accélérations`,
+      stridesTitle: (bodyMin: number, reps: number, rep: string) => `Footing ${bodyMin} min + ${reps} accélérations de ${rep}`,
       seconds: (s: number) => `${s} s`,
       withRecovery: (reps: string, recovery: string) => `${reps} · ${recovery} récup`,
       repsOnly: (n: number) => `${n} répétitions`,
@@ -1995,7 +1995,7 @@ export const fr = {
       weeksIn: (done: number, total: number) => `${done}/${total}`,
       targetTime: (clock: string) => `cible ${clock}`,
       primaryTarget: 'principal',
-      tuneUp: "d'appui",
+      tuneUp: 'préparation',
       blockEndsHere: 'fin de bloc',
       weeksInLabel: 'semaines',
     },
@@ -2025,7 +2025,7 @@ export const fr = {
   },
 
   coaching: {
-    garminOutOfDate: 'Garmin obsolète',
+    garminOutOfDate: 'Garmin pas à jour',
     states: {
       prescribed: 'Prescrite',
       adjusted: 'Ajustée',
