@@ -3,7 +3,7 @@ import type { BaselineRange, DynamicsBaseline } from '@/application/usecases/Get
 import { cardClass } from '@/components/ui/Card'
 import { GlossaryTerm } from '@/components/ui/GlossaryTerm'
 import { RangeBar } from '@/components/ui/RangeBar'
-import { formatDelta } from '@/lib/formatters'
+import { formatDecimal, formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 interface Metric {
@@ -37,15 +37,15 @@ function RangeTrack({ label, value, band, decimals, note }: { label: string; val
   return (
     <div data-testid="range-track">
       <RangeBar
-        label={`${label}: ${value.toFixed(decimals)}, ${lo.toFixed(decimals)}–${hi.toFixed(decimals)}`}
+        label={`${label}: ${formatDecimal(value, decimals)}, ${formatDecimal(lo, decimals)}–${formatDecimal(hi, decimals)}`}
         band={[at(band.low), at(band.high)]}
         bandTone="baseline"
         marker={at(value)}
         caption={
           <div className="flex justify-between gap-3 tabular-nums">
-            <span>{lo.toFixed(decimals)}</span>
+            <span>{formatDecimal(lo, decimals)}</span>
             {note && <span className="text-center text-[var(--text-2)]">{note}</span>}
-            <span>{hi.toFixed(decimals)}</span>
+            <span>{formatDecimal(hi, decimals)}</span>
           </div>
         }
       />
@@ -73,7 +73,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       label: d.strideLength,
       term: 'strideLength',
       value: a.strideLengthM,
-      display: a.strideLengthM.toFixed(2),
+      display: formatDecimal(a.strideLengthM, 2),
       unit: t.units.m,
       deltaUnit: t.units.m,
       decimals: 2,
@@ -85,7 +85,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       label: d.groundContact,
       term: 'groundContact',
       value: a.groundContactMs,
-      display: a.groundContactMs.toFixed(0),
+      display: formatDecimal(a.groundContactMs, 0),
       unit: t.units.ms,
       deltaUnit: t.units.ms,
       decimals: 0,
@@ -97,7 +97,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       label: d.vertOscillation,
       term: 'verticalOscillation',
       value: a.verticalOscillationMm,
-      display: a.verticalOscillationMm.toFixed(1),
+      display: formatDecimal(a.verticalOscillationMm, 1),
       unit: t.units.mm,
       deltaUnit: t.units.mm,
       decimals: 1,
@@ -109,7 +109,7 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       label: d.vertRatio,
       term: 'verticalRatio',
       value: a.verticalRatioPct,
-      display: a.verticalRatioPct.toFixed(1),
+      display: formatDecimal(a.verticalRatioPct, 1),
       unit: t.units.percent,
       deltaUnit: d.ratioUnit,
       decimals: 1,

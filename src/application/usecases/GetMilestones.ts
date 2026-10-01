@@ -193,7 +193,7 @@ export async function getMilestones(): Promise<Milestone[]> {
       type: 'first-activity',
       date: first.date,
       label: t.profile.milestones.firstActivity,
-      detail: t.profile.milestones.firstActivityDetail(first.distanceKm),
+      detail: t.profile.milestones.firstActivityDetail(formatKm(first.distanceKm, 1)),
     })
   }
 

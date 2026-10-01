@@ -1401,7 +1401,7 @@ export const en = {
       paceUnitHint: '/km · higher is faster',
       elevation: 'Elevation',
       cadence: 'Cadence',
-      elevationGain: (m: number) => `+${m} m gain`,
+      elevationGain: (m: string) => `+${m} m gain`,
       scrubAt: (km: string, elapsed: string | null) => (elapsed ? `At ${km} km · ${elapsed} elapsed` : `At ${km} km`),
       scrubHint: 'Drag across the charts to scrub — the dot on the map follows',
       lineLabel: 'Chart line',
@@ -1800,7 +1800,7 @@ export const en = {
       streakDetail: 'Still going - a run logged every week since',
       record: (label: string) => `${label} record`,
       firstActivity: 'First step',
-      firstActivityDetail: (km: number) => `Where it all began - ${km.toFixed(1)} km`,
+      firstActivityDetail: (km: string) => `Where it all began - ${km} km`,
       lifetimeDistance: (km: string) => `${km} km lifetime`,
       // Marathon equivalents, not races (G25).
       lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathon distances`,

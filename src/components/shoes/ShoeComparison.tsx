@@ -4,7 +4,7 @@ import { Fragment, useState } from 'react'
 import { ChevronDown, Check } from 'lucide-react'
 import type { ShoeComparisonRow } from '@/application/usecases/GetShoeComparison'
 import { BrandIcon } from '@/components/shoes/BrandIcon'
-import { formatClock, formatEraRange, MINUS, PLUS_MINUS } from '@/lib/formatters'
+import { formatClock, formatEraRange, formatNumber, MINUS, PLUS_MINUS } from '@/lib/formatters'
 import { shortShoeName } from '@/domain/shoe/shortName'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -42,7 +42,7 @@ function sentenceCase(text: string): string {
 
 function fmtSigned(n: number, unit = ''): string {
   if (n === 0) return `${PLUS_MINUS}0${unit}`
-  return `${n > 0 ? '+' : MINUS}${Math.abs(n)}${unit}`
+  return `${n > 0 ? '+' : MINUS}${formatNumber(Math.abs(n))}${unit}`
 }
 
 // The unit lives in the row label (see i18n `comparison.metrics`), not a
@@ -98,7 +98,7 @@ const METRICS: MetricRow[] = [
     key: 'cadence',
     group: 'howItRan',
     label: t.shoes.comparison.metrics.cadence,
-    value: (r) => (r.cadenceSpm ? `${r.cadenceSpm}` : '-'),
+    value: (r) => (r.cadenceSpm ? formatNumber(r.cadenceSpm) : '-'),
     raw: (r) => r.cadenceSpm,
     formatDelta: (d) => fmtSigned(Math.round(d * 10) / 10),
     noise: { key: 'cadence', threshold: 2 },
@@ -107,7 +107,7 @@ const METRICS: MetricRow[] = [
     key: 'groundContact',
     group: 'howItRan',
     label: t.shoes.comparison.metrics.groundContact,
-    value: (r) => (r.groundContactMs ? `${r.groundContactMs}` : '-'),
+    value: (r) => (r.groundContactMs ? formatNumber(r.groundContactMs) : '-'),
     raw: (r) => r.groundContactMs,
     formatDelta: (d) => fmtSigned(Math.round(d)),
     noise: { key: 'groundContact', threshold: 5 },
@@ -116,7 +116,7 @@ const METRICS: MetricRow[] = [
     key: 'oscillation',
     group: 'howItRan',
     label: t.shoes.comparison.metrics.oscillation,
-    value: (r) => (r.verticalOscillationMm ? `${r.verticalOscillationMm}` : '-'),
+    value: (r) => (r.verticalOscillationMm ? formatNumber(r.verticalOscillationMm) : '-'),
     raw: (r) => r.verticalOscillationMm,
     formatDelta: (d) => fmtSigned(Math.round(d * 10) / 10),
     noise: { key: 'oscillation', threshold: 2 },

@@ -4,7 +4,7 @@ import type { ActivitySplit } from '@/domain/activity/types'
 import { type RepSet, type Track, recoveryAverage, trackDomain, trackPosition } from '@/domain/activity/repSet'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
-import { formatClock, formatDelta } from '@/lib/formatters'
+import { formatClock, formatDelta, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -16,7 +16,7 @@ const ROW = 'grid w-full items-center gap-x-2.5 grid-cols-[1.375rem_minmax(0,1fr
 const MUTED_CELL = 'text-right tabular-nums text-muted-foreground'
 
 function km(distanceM: number): string {
-  return (distanceM / 1000).toFixed(2)
+  return formatKm(distanceM / 1000, 2)
 }
 
 function paceOf(split: ActivitySplit): number | null {

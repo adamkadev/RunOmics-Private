@@ -85,8 +85,13 @@ export function formatDistance(km: number): string {
  * here now; the i18n keys take an already-formatted string.
  */
 export function formatKm(km: number, decimals = 0): string {
+  return formatDecimal(km, decimals)
+}
+
+/** Any figure at a fixed number of decimals, as toFixed would - with the locale's decimal: toFixed always wrote a point. */
+export function formatDecimal(value: number, decimals: number): string {
   return stableSpaces(
-    km.toLocaleString(t.locale, {
+    value.toLocaleString(t.locale, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     })

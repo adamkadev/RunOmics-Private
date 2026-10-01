@@ -6,7 +6,7 @@ import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import { Legend, LegendItem } from '@/components/ui/Legend'
 import { STAT_TONE_CLASS, type StatTone } from '@/components/ui/Stat'
 import { zoneColor, type SessionZone } from '@/lib/colors'
-import { formatDeltaFixed } from '@/lib/formatters'
+import { formatDecimal, formatDeltaFixed } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -136,7 +136,7 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
             <Row
               term="aerobicEffect"
               label={t.activity.trainingEffect.aerobic}
-              value={aer.toFixed(1)}
+              value={formatDecimal(aer, 1)}
               word={trainingEffectLevel(aer)}
               tone={trainingEffectTone(aer)}
             />
@@ -145,7 +145,7 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
             <Row
               term="anaerobicEffect"
               label={t.activity.trainingEffect.anaerobic}
-              value={ana.toFixed(1)}
+              value={formatDecimal(ana, 1)}
               word={trainingEffectLevel(ana)}
               tone={trainingEffectTone(ana)}
             />

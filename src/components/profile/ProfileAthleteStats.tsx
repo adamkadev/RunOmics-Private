@@ -2,7 +2,7 @@ import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import type { CSSProperties } from 'react'
 import { cardClass } from '@/components/ui/Card'
 import { Unit } from '@/components/ui/Stat'
-import { formatDuration } from '@/lib/formatters'
+import { formatDuration, formatNumber } from '@/lib/formatters'
 import type { AthletePageView } from './athleteView'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -18,7 +18,10 @@ interface MetricData {
 type AvailableMetric = MetricData & { value: string | number }
 
 function available(metrics: MetricData[]): AvailableMetric[] {
-  return metrics.filter((metric): metric is AvailableMetric => metric.value !== undefined)
+  return metrics
+    .filter((metric): metric is AvailableMetric => metric.value !== undefined)
+    // A VMA, a weight or a BMI has a decimal, which follows the locale.
+    .map((metric) => (typeof metric.value === 'number' ? { ...metric, value: formatNumber(metric.value) } : metric))
 }
 
 /**

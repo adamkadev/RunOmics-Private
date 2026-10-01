@@ -2,7 +2,7 @@
 
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
-import { formatClock, formatDate, formatDeltaFixed, formatDuration, MINUS } from '@/lib/formatters'
+import { formatClock, formatDate, formatDecimal, formatDeltaFixed, formatDuration, formatNumber, MINUS } from '@/lib/formatters'
 import { deltaColor, deltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
@@ -82,9 +82,9 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
   const cells = [
     vo2 && {
       label: s.vo2max,
-      value: vo2.value.toFixed(1),
+      value: formatDecimal(vo2.value, 1),
       unit: undefined,
-      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${vo2.delta}` : `${MINUS}${Math.abs(vo2.delta)}`),
+      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${formatNumber(vo2.delta)}` : `${MINUS}${formatNumber(Math.abs(vo2.delta))}`),
       tone: STAT_TONE[deltaTone('vo2max', vo2.delta)],
     },
     threshold && { label: s.threshold, value: formatClock(threshold.now), unit: t.units.perKm, note: shiftWords(threshold.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', threshold.delta)] },
@@ -316,7 +316,7 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   const d = (v: number | null) => (v === null ? '–' : formatDeltaFixed(v, 2))
   const sentence =
     view.trend === 'dipping'
-      ? `${s.dipping}${view.heatCost !== null && view.heatCost >= 0.01 ? s.dippingHeat(view.heatCost.toFixed(2)) : s.dippingNoHeat}`
+      ? `${s.dipping}${view.heatCost !== null && view.heatCost >= 0.01 ? s.dippingHeat(formatDecimal(view.heatCost, 2)) : s.dippingNoHeat}`
       : view.trend === 'rising'
         ? s.rising
         : s.steady
@@ -325,7 +325,7 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
     <Card testId="efficiency-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
       <Headline
-        value={view.now.toFixed(2)}
+        value={formatDecimal(view.now, 2)}
         note={
           view.delta4w !== null || view.delta12w !== null ? (
             <span data-testid="efficiency-deltas">
@@ -347,7 +347,7 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
         count={view.dates.length}
         mode="line"
         onShift={onShift}
-        readout={(i) => [t.analytics.cards.scrubWeek(bare(view.dates[i]!)), view.adjusted[i] != null && `${s.adjusted} ${view.adjusted[i]!.toFixed(2)}`].filter(Boolean).join(' · ')}
+        readout={(i) => [t.analytics.cards.scrubWeek(bare(view.dates[i]!)), view.adjusted[i] != null && `${s.adjusted} ${formatDecimal(view.adjusted[i]!, 2)}`].filter(Boolean).join(' · ')}
       >
         <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
           <path d={linePath(smooth(view.measured), min, max, W, H)} fill="none" stroke="var(--muted-foreground)" strokeWidth="1.5" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
@@ -362,7 +362,7 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2.5 border-t border-border pt-3" data-testid="rpe-row">
           <div className="flex flex-col gap-0.5">
             <span className="text-sm font-medium text-foreground">{s.rpe}</span>
-            <span className="text-xs text-muted-foreground">{s.rpeLine(rpe.avg.toFixed(1), s.rpeTrend[rpe.trend]!)}</span>
+            <span className="text-xs text-muted-foreground">{s.rpeLine(formatDecimal(rpe.avg, 1), s.rpeTrend[rpe.trend]!)}</span>
           </div>
           <div className="flex h-[26px] items-end gap-[3px]" aria-hidden>
             {rpe.bars.map((v, i) => (

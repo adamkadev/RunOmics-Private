@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { cardClass } from '@/components/ui/Card'
 import { STAT_TONE_CLASS, type StatTone } from '@/components/ui/Stat'
-import { MINUS, formatDuration, formatClock } from '@/lib/formatters'
+import { MINUS, formatDuration, formatClock, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { ActivitySplit, SplitLap } from '@/domain/activity/types'
@@ -42,7 +42,7 @@ function paceStr(avgSpeedMs: number): string {
 }
 
 function distStr(distanceM: number): string {
-  return (distanceM / 1000).toFixed(2)
+  return formatKm(distanceM / 1000, 2)
 }
 
 // Km, pace, the speed bar, the gap to the run's average and HR (v4.17).
@@ -116,7 +116,7 @@ function PerKmSplits({ activity, splits }: { activity: ActivityDetailView; split
         return (
           <div key={split.km} className={`${rowCls} border-t border-border py-[7px] text-sm`} data-testid="km-split">
             <span className="tabular-nums text-muted-foreground">
-              {split.distanceKm < 1 ? split.distanceKm.toFixed(2) : split.km}
+              {split.distanceKm < 1 ? formatKm(split.distanceKm, 2) : split.km}
             </span>
             <span className="font-semibold tabular-nums text-foreground">{formatClock(split.paceSecPerKm)}</span>
             <span className="block h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]" aria-hidden="true">

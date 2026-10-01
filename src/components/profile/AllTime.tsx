@@ -117,7 +117,7 @@ function formatDateRangeMonths(fromKey: string, toKey: string): string {
 function Bests({ view }: { view: AllTimeView }) {
   const a = t.allTime
   const cells = [
-    view.longestRun && { label: a.longestRun, value: `${view.longestRun.km.toFixed(1)} ${t.units.km}`, date: view.longestRun.date },
+    view.longestRun && { label: a.longestRun, value: `${formatKm(view.longestRun.km, 1)} ${t.units.km}`, date: view.longestRun.date },
     view.biggestWeek && { label: a.biggestWeek, value: `${formatKm(view.biggestWeek.km)} ${t.units.km}`, date: view.biggestWeek.weekStart },
   ].filter((cell): cell is { label: string; value: string; date: string } => !!cell)
   if (cells.length === 0) return null

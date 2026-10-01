@@ -1,6 +1,6 @@
 import { cleanStream, paddedDomain } from '@/domain/activity/cleanStream'
 import { smoothStream } from '@/domain/activity/smoothStream'
-import { formatClock } from '@/lib/formatters'
+import { formatClock, formatNumber } from '@/lib/formatters'
 import { paceAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
@@ -238,7 +238,7 @@ export function buildLanes(input: ChartStackInput): Lane[] {
       format: (v) => `${Math.round(v)}`,
       // A 5 m wobble drawn edge to edge reads as a mountain range.
       domain: (s) => paddedDomain(s, 20),
-      summarize: () => (elevationGain != null ? c.elevationGain(elevationGain) : ''),
+      summarize: () => (elevationGain != null ? c.elevationGain(formatNumber(Math.round(elevationGain), 0)) : ''),
       bands: [],
     })
   }
