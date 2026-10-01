@@ -52,3 +52,12 @@ describe('French coach copy', () => {
     expect(copy.filter((line) => gendered.test(line))).toEqual([])
   })
 })
+
+describe('French plurals', () => {
+  // French counts 0 and 1 in the singular: « 0 sortie », « 1 sortie », « 2 sorties ».
+  it('start at two', () => {
+    expect(fr.activities.countWithDistance(0, '0')).toBe('0 sortie · 0 km')
+    expect(fr.activities.countWithDistance(1, '5')).toBe('1 sortie · 5 km')
+    expect(fr.activities.countWithDistance(2, '10')).toBe('2 sorties · 10 km')
+  })
+})
