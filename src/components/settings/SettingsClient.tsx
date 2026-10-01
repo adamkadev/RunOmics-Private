@@ -48,7 +48,10 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body }: Pr
     try {
       const provider = new GoogleAuthProvider()
       provider.setCustomParameters({ prompt: 'select_account' })
-      await signInWithPopup(getClientAuth(), provider)
+      const auth = getClientAuth()
+      // Google's own sign-in window, in the app's language.
+      auth.languageCode = t.locale
+      await signInWithPopup(auth, provider)
     } catch (err) {
       const code = (err as { code?: string }).code
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
