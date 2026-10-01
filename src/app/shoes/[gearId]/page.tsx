@@ -305,7 +305,7 @@ export default async function ShoeDetailPage({
               >
                 <TypeDot type={a.type} size={8} />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="truncate text-sm font-semibold text-foreground">{activityTitle(a)}</span>
+                  <span className="break-words text-sm font-semibold text-pretty text-foreground">{activityTitle(a)}</span>
                   <span className="truncate text-xs text-muted-foreground">
                     {[formatDate(a.date), a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null].filter(Boolean).join(' · ')}
                   </span>

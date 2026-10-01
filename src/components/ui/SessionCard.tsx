@@ -48,7 +48,7 @@ export function SessionCard({
     <>
       <SessionStateChip state={state} label={chipLabel} />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold text-foreground">{title}</div>
+        <div className="break-words text-sm font-semibold text-pretty text-foreground">{title}</div>
         {/* Wraps to a second line rather than cutting "planned 6…": the planned
             figure is the point of the line (G28). */}
         {detail && <div className="text-xs leading-snug text-muted-foreground">{detail}</div>}

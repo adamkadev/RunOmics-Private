@@ -31,7 +31,8 @@ export function Card({ children, className, testId }: { children: ReactNode; cla
 /** A card title: 15 px at 600, with its caption 12 px muted on the right. */
 export function CardHead({ title, caption, about, right }: { title: string; caption?: ReactNode; about?: string; right?: ReactNode }) {
   const [open, setOpen] = useState(false)
-  const titleClass = 'min-w-0 truncate text-left text-[15px] font-semibold leading-snug text-foreground'
+  // Wraps, never truncates: « Coût de la chaleur » lost half its width on a phone.
+  const titleClass = 'min-w-0 text-pretty break-words text-left text-[15px] font-semibold leading-snug text-foreground'
   return (
     <div className="flex items-baseline justify-between gap-3">
       {about ? (
