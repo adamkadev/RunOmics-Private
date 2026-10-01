@@ -28,3 +28,36 @@ describe('i18n parity', () => {
     expect(f.filter((p) => !inEn.has(p))).toEqual([])
   })
 })
+
+describe('French week streaks', () => {
+  it('reads one week in the singular', () => {
+    expect(fr.dashboard.weeklyStreak.weeksInARow(1)).toBe('1 semaine d’affilée')
+    expect(fr.dashboard.weeklyStreak.weeksInARow(3)).toBe('3 semaines d’affilée')
+    expect(fr.profile.milestones.streak(1)).toBe('1 semaine d’affilée')
+  })
+})
+
+describe('French coach copy', () => {
+  function strings(node: unknown): string[] {
+    if (typeof node === 'string') return [node]
+    if (typeof node === 'function') return [String((node as (...args: string[]) => string)('KIND', 'WHEN'))]
+    if (node && typeof node === 'object') return Object.values(node).flatMap(strings)
+    return []
+  }
+
+  // The app is not told who reads it: « tu es frais » is wrong for half its athletes.
+  it('agrees nothing with the athlete', () => {
+    const gendered = /\btu es (?:frais|fraîche|fatigué|fatiguée|prêt|prête|reposé|reposée)\b|\bt[’']es (?:entraîné|préparé)/i
+    const copy = [...strings(fr.dashboard.todayHero.verdict), ...strings(fr.notifications)]
+    expect(copy.filter((line) => gendered.test(line))).toEqual([])
+  })
+})
+
+describe('French plurals', () => {
+  // French counts 0 and 1 in the singular: « 0 sortie », « 1 sortie », « 2 sorties ».
+  it('start at two', () => {
+    expect(fr.activities.countWithDistance(0, '0')).toBe('0 sortie · 0 km')
+    expect(fr.activities.countWithDistance(1, '5')).toBe('1 sortie · 5 km')
+    expect(fr.activities.countWithDistance(2, '10')).toBe('2 sorties · 10 km')
+  })
+})

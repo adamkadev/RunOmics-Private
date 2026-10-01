@@ -8,6 +8,31 @@ import { activeLocale } from '@/i18n'
  */
 export const CARD_PROMPT_VERSION = 2
 
+/**
+ * The French writing rules carry their own version, folded into every
+ * surface's prompt version on a French build only: tightening them writes the
+ * French cards and verdicts again without spending an English deployment's
+ * daily budget on copy that did not change.
+ */
+const FRENCH_RULES_VERSION = 1
+
+export function promptVersion(version: number): number | string {
+  return activeLocale === 'fr' ? `${version}-fr${FRENCH_RULES_VERSION}` : version
+}
+
+/**
+ * Translated English read as translated English (a French deployment, Oct
+ * 2026): the facts and rules are English, so the model carried their turns of
+ * phrase over word for word, and it agreed adjectives with an athlete whose
+ * gender it is never told.
+ */
+const FRENCH_RULES = [
+  'Write in French, tutoiement, as a French-speaking running coach would say it out loud: never as a translation of the English facts and rules you are given.',
+  'Use the words French runners use (footing, sortie longue, endurance, fractionné, séance au seuil, allure, récup) and never carry an English turn of phrase over word for word: no « garder le facile facile », « faire compter », « payer » for a benefit, « construire de la condition ».',
+  "You are not told the athlete's gender, so no adjective or past participle may agree with the athlete: write « tes jambes sont fraîches », « la fatigue est retombée », « la séance est faite », never « tu es frais », « tu es fatiguée » or « tu t'es entraîné ».",
+  "Keep correct orthography: every accent (é, è, à, ê, ç...) and every elision apostrophe (l'effort, d'un, qu'il, s'est) - never drop them. Put a space before « : », « ; », « ! » and « ? », as French does.",
+].join(' ')
+
 export interface Limits {
   headline: number
   body: number
@@ -17,9 +42,7 @@ export interface Limits {
 export function systemInstruction(role: string, bodySpec: string, limits: Limits): string {
   return [
     role,
-    activeLocale === 'fr'
-      ? "Write in French, tutoiement, with correct orthography: keep every accent (é, è, à, ê, ç...) and every elision apostrophe (l'effort, d'un, qu'il, s'est) - never drop them."
-      : 'Write in English, second person.',
+    activeLocale === 'fr' ? FRENCH_RULES : 'Write in English, second person.',
     `"headline" is the verdict: at most ${limits.headline} characters, punchy, no emoji.`,
     `"body" is ${bodySpec}: at most ${limits.body} characters.`,
     'Never use the em-dash character. Never invent data that is not in the facts.',

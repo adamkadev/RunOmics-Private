@@ -59,12 +59,17 @@ export function bootstrapRecoveryFacts(
   }
 }
 
+// A French deployment's coach writes its prose in French (COACHING_LANGUAGE_RULE):
+// « objectif 40 minutes », « en moins de 45 min », « allure recommandée ».
+const FRENCH_GOAL = 'objectif|cible|arriv(?:ée|ee)|terminer|finir|boucler'
+const DURATION_UNIT = 'hours?|hrs?|heures?|minutes?|mins?|seconds?|secs?|secondes?'
+
 function finishTimeClaims(value: string): number[] {
   const claims: number[] = []
   const clockPattern = /\b(\d{1,3}):(\d{2})(?::(\d{2}))?\b/g
   for (const match of value.matchAll(clockPattern)) {
     const suffix = value.slice((match.index ?? 0) + match[0].length)
-    if (/^\s*(?:\/|per\s+)km\b/i.test(suffix)) continue
+    if (/^\s*(?:\/|per\s+|par\s+)km\b/i.test(suffix)) continue
     const first = Number(match[1])
     const second = Number(match[2])
     const third = match[3] === undefined ? undefined : Number(match[3])
@@ -72,31 +77,31 @@ function finishTimeClaims(value: string): number[] {
     claims.push(third === undefined ? first * 60 + second : first * 3_600 + second * 60 + third)
   }
 
-  const namedPattern = /\b(?:goal|target|finish(?:ing)?|complete(?:d)?|completion)\b[^.!?\n]{0,50}?\b(\d+(?:\.\d+)?)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b/gi
+  const namedPattern = new RegExp(`\\b(?:goal|target|finish(?:ing)?|complete(?:d)?|completion|${FRENCH_GOAL})\\b[^.!?\\n]{0,50}?\\b(\\d+(?:\\.\\d+)?)\\s*(${DURATION_UNIT})\\b`, 'gi')
   for (const match of value.matchAll(namedPattern)) claims.push(namedDurationSeconds(match[1]!, match[2]!))
 
-  const reversedNamedPattern = /\b(\d+(?:\.\d+)?)\s*(hours?|hrs?|minutes?|mins?|seconds?|secs?)\b[^.!?\n]{0,30}?\b(?:goal|target|finish(?:ing)?|completion)\b/gi
+  const reversedNamedPattern = new RegExp(`\\b(\\d+(?:\\.\\d+)?)\\s*(${DURATION_UNIT})\\b[^.!?\\n]{0,30}?\\b(?:goal|target|finish(?:ing)?|completion|${FRENCH_GOAL})\\b`, 'gi')
   for (const match of value.matchAll(reversedNamedPattern)) claims.push(namedDurationSeconds(match[1]!, match[2]!))
 
   for (const match of value.matchAll(/\bsub[- ]?(\d{2,3})\b/gi)) claims.push(Number(match[1]) * 60)
 
-  const relativeNamedPattern = /\b(?:in|under)\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?|minutes?|mins?)\b/gi
+  const relativeNamedPattern = /\b(?:in|under|en moins de|sous)\s+(\d+(?:\.\d+)?)\s*(hours?|hrs?|heures?|minutes?|mins?)\b/gi
   for (const match of value.matchAll(relativeNamedPattern)) claims.push(namedDurationSeconds(match[1]!, match[2]!))
   return claims
 }
 
 function namedDurationSeconds(amountText: string, unit: string): number {
-  const multiplier = /^(?:hours?|hrs?)$/i.test(unit) ? 3_600 : /^(?:minutes?|mins?)$/i.test(unit) ? 60 : 1
+  const multiplier = /^(?:hours?|hrs?|heures?)$/i.test(unit) ? 3_600 : /^(?:minutes?|mins?)$/i.test(unit) ? 60 : 1
   return Math.round(Number(amountText) * multiplier)
 }
 
 function paceClaims(value: string): number[] {
   const claims: number[] = []
-  for (const match of value.matchAll(/\b(\d{1,2}):(\d{2})\s*(?:\/|per\s+)km\b/gi)) {
+  for (const match of value.matchAll(/\b(\d{1,2}):(\d{2})\s*(?:\/|per\s+|par\s+)km\b/gi)) {
     const seconds = Number(match[1]) * 60 + Number(match[2])
     if (Number(match[2]) < 60) claims.push(seconds)
   }
-  for (const match of value.matchAll(/\b(\d+(?:\.\d+)?)\s*(?:seconds?|secs?)\s*(?:\/|per\s+)km\b/gi)) {
+  for (const match of value.matchAll(/\b(\d+(?:\.\d+)?)\s*(?:seconds?|secs?|secondes?)\s*(?:\/|per\s+|par\s+)km\b/gi)) {
     claims.push(Math.round(Number(match[1])))
   }
   return claims
@@ -140,7 +145,7 @@ function validateWorkoutForEvent(
   }
   const claims = finishTimeClaims(prose)
   const claimedPaces = paceClaims(prose)
-  const hasGoalLanguage = /\b(?:goal|target)\b/i.test(prose)
+  const hasGoalLanguage = /\b(?:goal|target|objectif|cible)\b/i.test(prose)
   if (event.targetSeconds === undefined && claims.length > 0) {
     throw new Error(`${event.name} has no explicit time goal; race pacing must be represented as a recommendation in structured pace fields`)
   }
@@ -148,7 +153,7 @@ function validateWorkoutForEvent(
     throw new Error(`${event.name} prose contradicts its explicit ${formatRaceTime(event.targetSeconds)} goal`)
   }
   if (event.targetSeconds === undefined && claimedPaces.length > 0) {
-    if (hasGoalLanguage || !/\brecommend(?:ed|ation)?\b/i.test(prose)) {
+    if (hasGoalLanguage || !/\brecommend(?:ed|ation)?\b|\brecommand|\bconseill/i.test(prose)) {
       throw new Error(`${event.name} has no explicit pace goal; AI pacing must be clearly described as a recommendation`)
     }
   }

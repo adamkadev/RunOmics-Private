@@ -54,7 +54,7 @@ function hasStructuredProgression(segments: WorkoutSegment[]): boolean {
  * targets actually progress.
  */
 export function validateWorkoutDraft(workout: BootstrapWorkoutDraft, label: string): void {
-  const mentionsStrides = /\bstrides?\b/i.test([workout.title, workout.description, ...(workout.notes ?? [])].join('\n'))
+  const mentionsStrides = /\bstrides?\b|\bacc[ée]l[ée]rations\b|\blignes droites\b/i.test([workout.title, workout.description, ...(workout.notes ?? [])].join('\n'))
   const strideRepeats = workout.blocks.filter((block): block is WorkoutRepeatBlock =>
     block.kind === 'repeat' && block.steps.some((step) => step.kind === 'strides')
   )

@@ -23,6 +23,7 @@ import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { RunPlace } from '@/components/activity/RunPlace'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { activityTitle } from '@/lib/activityTitle'
 
 export const revalidate = 3600
 
@@ -31,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) return { title: t.activity.metaFallbackTitle }
 
-  const name = activity.description || t.activity.runTitle(activity.dayOfWeek)
+  const name = activityTitle(activity)
   const stats = [
     formatDistance(activity.distanceKm),
     formatDuration(activity.durationSeconds),
@@ -107,7 +108,7 @@ export default async function ActivityDetailPage({
             <header className="mb-1.5 flex items-end justify-between gap-4">
               <div className="flex min-w-0 flex-col gap-1">
                 <h1 className="text-display text-foreground">
-                  {activity.description || t.activity.runTitle(activity.dayOfWeek)}
+                  {activityTitle(activity)}
                 </h1>
                 {/* Date · type · place: the type as its zone dot and its
                     name in text-2 (v4.17). */}

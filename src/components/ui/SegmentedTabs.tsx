@@ -111,7 +111,7 @@ export function SegmentedTabs<T extends string | number>({
               // label, with 12 pt padding as the floor: equal widths left
               // "Performance" touching its pill edge to edge (G21). 10 pt
               // on a phone, where 12 cut "Performance" at 360 pt (v4.17.2).
-              fill && 'min-w-0 flex-auto px-2.5 sm:px-3',
+              fill && 'min-w-0 flex-auto px-1.5 min-[400px]:px-2.5 sm:px-3',
               tabClassName,
               // Selected is the card surface, lifted (v4.17).
               props['aria-selected']

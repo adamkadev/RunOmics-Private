@@ -31,9 +31,13 @@ export function Card({ children, className, testId }: { children: ReactNode; cla
 /** A card title: 15 px at 600, with its caption 12 px muted on the right. */
 export function CardHead({ title, caption, about, right }: { title: string; caption?: ReactNode; about?: string; right?: ReactNode }) {
   const [open, setOpen] = useState(false)
-  const titleClass = 'min-w-0 truncate text-left text-[15px] font-semibold leading-snug text-foreground'
+  // Never truncated: « Coût de la chaleur » lost half its width on a phone.
+  // The title keeps its words whole and the caption moves under it when the
+  // two do not fit one line - squeezed beside a long caption, the title broke
+  // letter by letter.
+  const titleClass = 'min-w-0 text-pretty text-left text-[15px] font-semibold leading-snug text-foreground'
   return (
-    <div className="flex items-baseline justify-between gap-3">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
       {about ? (
         <button
           type="button"
@@ -46,7 +50,7 @@ export function CardHead({ title, caption, about, right }: { title: string; capt
       ) : (
         <h2 className={titleClass}>{title}</h2>
       )}
-      {right ?? (caption && <span className="shrink-0 text-right text-xs text-muted-foreground">{caption}</span>)}
+      {right ?? (caption && <span className="ml-auto min-w-0 text-right text-xs text-pretty text-muted-foreground">{caption}</span>)}
       {open && about && (
         <Dialog title={title} onClose={() => setOpen(false)}>
           <p className="text-sm leading-normal text-[var(--text-2)]">{about}</p>

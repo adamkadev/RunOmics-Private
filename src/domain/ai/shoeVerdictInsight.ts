@@ -1,7 +1,7 @@
 import type { ShoeDetail } from '@/domain/shoe/types'
 import type { WearStatus } from '@/domain/shoe/wearStatus'
 import { insightHash } from './insightHash'
-import { avoidClause, CARD_PROMPT_VERSION, systemInstruction } from './prompt'
+import { avoidClause, CARD_PROMPT_VERSION, promptVersion, systemInstruction } from './prompt'
 
 export const SHOE_VERDICT_PREFIX = 'shoeVerdict_'
 export const SHOE_VERDICT_LIMITS = { headline: 44, body: 130 }
@@ -21,7 +21,7 @@ const WEAR_STEP = 5
 
 function facts({ shoe, status, kmLeft, weeksRemaining }: ShoeVerdictContext) {
   return {
-    promptVersion: CARD_PROMPT_VERSION,
+    promptVersion: promptVersion(CARD_PROMPT_VERSION),
     name: shoe.name,
     status,
     wearBand: Math.round(shoe.wearPercent / WEAR_STEP) * WEAR_STEP,

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { LEVEL_FILL, STRONG_MONTH_DAYS, TODAY_OUTLINE, dayName, levelStyle, type ConsistencyCell, type ConsistencyMonth, type ConsistencyView, type DayLevel } from './consistencyMonths'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid, type StatTone } from '@/components/ui/Stat'
-import { formatDate, formatDelta } from '@/lib/formatters'
+import { formatDate, formatDelta, formatPercent } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -152,7 +152,7 @@ export function ConsistencyMonths({ view }: { view: ConsistencyView }) {
           <Stat
             size="lg"
             label={c.share}
-            value={`${view.sharePct}%`}
+            value={formatPercent(view.sharePct)}
             // The comparison wraps rather than clipping on a phone.
             meaning={priorLine && <span className="whitespace-normal" data-testid="consistency-prior">{priorLine}</span>}
             tone={priorTone}

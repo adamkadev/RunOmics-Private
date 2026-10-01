@@ -195,6 +195,8 @@ export const en = {
     ms: 'ms',
     mm: 'mm',
     percent: '%',
+    // The compass letter for west on a coordinate: east, north and south share their letter in French.
+    west: 'W',
     kcal: 'kcal',
     perKm: '/km',
     minPerKm: 'min/km',
@@ -1401,7 +1403,7 @@ export const en = {
       paceUnitHint: '/km · higher is faster',
       elevation: 'Elevation',
       cadence: 'Cadence',
-      elevationGain: (m: number) => `+${m} m gain`,
+      elevationGain: (m: string) => `+${m} m gain`,
       scrubAt: (km: string, elapsed: string | null) => (elapsed ? `At ${km} km · ${elapsed} elapsed` : `At ${km} km`),
       scrubHint: 'Drag across the charts to scrub — the dot on the map follows',
       lineLabel: 'Chart line',
@@ -1800,7 +1802,7 @@ export const en = {
       streakDetail: 'Still going - a run logged every week since',
       record: (label: string) => `${label} record`,
       firstActivity: 'First step',
-      firstActivityDetail: (km: number) => `Where it all began - ${km.toFixed(1)} km`,
+      firstActivityDetail: (km: string) => `Where it all began - ${km} km`,
       lifetimeDistance: (km: string) => `${km} km lifetime`,
       // Marathon equivalents, not races (G25).
       lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathon distances`,
@@ -1880,6 +1882,42 @@ export const en = {
 
   pbAlerts: {
     off: (diff: string) => `${diff} off your PR`,
+  },
+
+  // The pushes the phone shows outside the app (src/app/api/internal/*).
+  // Numbers arrive formatted, so the decimal follows the locale.
+  notifications: {
+    restDay: { title: 'Rest day', body: 'No session scheduled today - recovery day.' },
+    todaySession: {
+      title: "Today's session",
+      body: (name: string, detail: string | null) => (detail ? `${name} (${detail})` : name),
+    },
+    newPr: {
+      title: (label: string) => `New PR: ${label}`,
+      body: (time: string) => `${time} - new personal best!`,
+    },
+    shoeWear: {
+      title: (name: string) => `Shoe wear alert: ${name}`,
+      body: (km: string, threshold: string) => `${km} km - past its ${threshold} km alert threshold`,
+    },
+    overreaching: {
+      title: 'Overreaching risk detected',
+      body: (tsb: string, acwr: string | null) => `Form (TSB) ${tsb}${acwr ? `, ACWR ${acwr}` : ''} - high training risk, consider recovery.`,
+    },
+    staleSync: {
+      title: 'No data synced in a while',
+      body: (hours: number) => `Your last Garmin sync was ${hours}h ago - check that sync is still running.`,
+    },
+    newActivity: { title: (name: string) => `New activity: ${name}` },
+    weeklyGoal: {
+      title: 'Weekly goal check-in',
+      status: { ahead: 'ahead of pace', on_track: 'on track', behind: 'behind pace' },
+      body: (status: string, rate: string, needed: string) => `You're ${status} at ${rate} km/week (need ${needed} km/week).`,
+    },
+    workflowFailed: {
+      title: (workflow: string) => `${workflow} failed`,
+      body: (runUrl: string) => `Open the run: ${runUrl}`,
+    },
   },
 
   nextRace: {
@@ -2106,6 +2144,11 @@ export const en = {
     distance: 'Distance',
     pace: 'Pace',
     heartRate: 'Heart rate',
+    // A step's note on the watch, beside its pace target.
+    garminStep: {
+      hr: (min: number, max: number) => `HR ${min}-${max} bpm`,
+      hrZone: (zone: number) => `HR zone ${zone}`,
+    },
   },
 
   activityTypes: {

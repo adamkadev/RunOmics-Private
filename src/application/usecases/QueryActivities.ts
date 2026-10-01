@@ -1,6 +1,7 @@
 import { getActivities } from './GetActivities'
 import { toActivitySummary } from '@/domain/activity/summary'
 import type { Activity, ActivitySummary, ActivityType } from '@/domain/activity/types'
+import { formatWeekdayLong } from '@/lib/formatters'
 
 export type ActivitySortKey = 'date' | 'distance' | 'duration' | 'pace' | 'avgHr'
 export type ActivitySortOrder = 'asc' | 'desc'
@@ -57,6 +58,7 @@ export function queryActivities({
         a.description.toLowerCase().includes(q) ||
         a.comment.toLowerCase().includes(q) ||
         a.dayOfWeek.toLowerCase().includes(q) ||
+        formatWeekdayLong(a.date).toLowerCase().includes(q) ||
         a.date.includes(q)
     )
 

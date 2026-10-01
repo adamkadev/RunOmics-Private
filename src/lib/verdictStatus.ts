@@ -1,7 +1,7 @@
 import { getLatestRunVerdict } from '@/application/usecases/GetRunVerdictInsight'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
-import { t } from '@/i18n'
+import { activityTitle } from '@/lib/activityTitle'
 
 /**
  * How far a sync has got, answered the same way for the iOS shortcut polling
@@ -96,7 +96,7 @@ export async function verdictStatus(origin: string, since: number | null) {
     activity: {
       id: activity.id,
       date: activity.date,
-      name: activity.description || t.activity.runTitle(activity.dayOfWeek),
+      name: activityTitle(activity),
       type: activity.type,
       distance: formatDistance(activity.distanceKm),
       duration: formatDuration(activity.durationSeconds),

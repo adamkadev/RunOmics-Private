@@ -85,12 +85,27 @@ export function formatDistance(km: number): string {
  * here now; the i18n keys take an already-formatted string.
  */
 export function formatKm(km: number, decimals = 0): string {
+  return formatDecimal(km, decimals)
+}
+
+/** Any figure at a fixed number of decimals, as toFixed would - with the locale's decimal: toFixed always wrote a point. */
+export function formatDecimal(value: number, decimals: number): string {
   return stableSpaces(
-    km.toLocaleString(t.locale, {
+    value.toLocaleString(t.locale, {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
     })
   )
+}
+
+/** A share already in per cent (45 for 45 %), with the locale's spacing: "45%", « 45 % ». */
+export function formatPercent(percent: number, maxDecimals = 0): string {
+  return stableSpaces((percent / 100).toLocaleString(t.locale, { style: 'percent', maximumFractionDigits: maxDecimals }))
+}
+
+/** Any other figure in running text (a form value, a weekly rate): the locale's decimal, at most `maxDecimals`. */
+export function formatNumber(value: number, maxDecimals = 1): string {
+  return stableSpaces(value.toLocaleString(t.locale, { maximumFractionDigits: maxDecimals }))
 }
 
 /**
@@ -214,6 +229,14 @@ export function formatWeekday(isoDate: string, withDay = false): string {
   const date = atMidnight(isoDate.slice(0, 10))
   const weekday = date.toLocaleDateString(t.locale, { weekday: 'short' }).replace(/\.$/, '')
   return stableSpaces(withDay ? `${weekday} ${date.getDate()}` : weekday)
+}
+
+/**
+ * A date's full weekday in the locale: "Sunday", "dimanche". The sync stores
+ * the weekday as English text, so a French build read "Sortie du Sunday".
+ */
+export function formatWeekdayLong(isoDate: string): string {
+  return atMidnight(isoDate.slice(0, 10)).toLocaleDateString(t.locale, { weekday: 'long' })
 }
 
 export function formatMonthShortYear(isoDate: string, options: DateFormatOptions = {}): string {

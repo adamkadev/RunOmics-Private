@@ -18,6 +18,7 @@ import {
   BOOTSTRAP_SYSTEM_INSTRUCTION,
   bootstrapUserPrompt,
   contextPrompt,
+  withCoachingLanguage,
 } from './coachingPrompt'
 
 export { BOOTSTRAP_PLAN_RESPONSE_SCHEMA, bootstrapEventPrompt } from './coachingPrompt'
@@ -162,7 +163,7 @@ export class GeminiCoachingAdvisor implements CoachingAdvisor {
   async evaluateActivity(input: { context: CoachingContext; activity: Activity; prescription: WorkoutPrescription | null }): Promise<AdvisorRecommendation> {
     const raw = await request(
       RECOMMENDATION_SCHEMA,
-      'Evaluate the completed run and choose KEEP, ADJUST, or REPLAN. Normal runs should usually be KEEP. Use ADJUST only for small future workout changes and REPLAN only for meaningful events. Never alter completed or past sessions. Reasons and evidence must cite supplied facts.',
+      withCoachingLanguage('Evaluate the completed run and choose KEEP, ADJUST, or REPLAN. Normal runs should usually be KEEP. Use ADJUST only for small future workout changes and REPLAN only for meaningful events. Never alter completed or past sessions. Reasons and evidence must cite supplied facts.'),
       `${contextPrompt(input.context)}\nCompleted activity: ${JSON.stringify(completedActivityPrompt(input.context, input.activity))}\nMatched prescription: ${JSON.stringify(input.prescription)}`,
     )
     return parseRecommendation(raw, 'post_activity')
@@ -171,7 +172,7 @@ export class GeminiCoachingAdvisor implements CoachingAdvisor {
   async reviewWeek(input: { context: CoachingContext }): Promise<AdvisorRecommendation> {
     const raw = await request(
       RECOMMENDATION_SCHEMA,
-      'Review the rolling running plan. Prefer KEEP when the current future prescription remains appropriate, ADJUST for small workout changes, and REPLAN only for a material change. Never alter completed or past sessions. Keep the output horizon at four weeks.',
+      withCoachingLanguage('Review the rolling running plan. Prefer KEEP when the current future prescription remains appropriate, ADJUST for small workout changes, and REPLAN only for a material change. Never alter completed or past sessions. Keep the output horizon at four weeks.'),
       contextPrompt(input.context),
     )
     return parseRecommendation(raw, 'weekly_review')

@@ -9,6 +9,7 @@ import type {
   WorkoutTarget,
 } from '@/domain/coaching/types'
 import { hasCoursePacing } from '@/domain/coaching/coursePacing'
+import { t } from '@/i18n'
 
 interface GarminTypeRef {
   readonly displayOrder: number
@@ -166,10 +167,10 @@ function applyEndCondition(step: GarminExecutableStep, target: WorkoutTarget): v
 function stepDescription(segment: WorkoutSegment): string {
   const notes = [...(segment.notes ?? [])]
   if (segment.target.paceSecPerKm && segment.target.hrBpm) {
-    notes.push(`HR ${segment.target.hrBpm.min}-${segment.target.hrBpm.max} bpm`)
+    notes.push(t.coaching.garminStep.hr(segment.target.hrBpm.min, segment.target.hrBpm.max))
   }
   if (segment.target.paceSecPerKm && segment.target.hrZone !== undefined) {
-    notes.push(`HR zone ${segment.target.hrZone}`)
+    notes.push(t.coaching.garminStep.hrZone(segment.target.hrZone))
   }
   return notes.join(' ')
 }

@@ -6,7 +6,31 @@ import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidati
 import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows } from '@/domain/coaching/weekWindows'
 import { macrocyclePhases, phaseOn } from '@/domain/coaching/macrocycle'
 
-export { BOOTSTRAP_SYSTEM_INSTRUCTION } from './coachingRules.generated'
+import { BOOTSTRAP_SYSTEM_INSTRUCTION as BOOTSTRAP_RULES } from './coachingRules.generated'
+import { activeLocale } from '@/i18n'
+
+/**
+ * The athlete reads what the coach writes - the plan's name and focus, each
+ * week's focus, every workout's title, description and notes - and the rules
+ * are English, so a French deployment asked for nothing got an English plan.
+ * The JSON stays English: its keys and enums are read by code, not by her.
+ * The French wording for "fewer runs" and its reasons is one
+ * validateDraftFrequency accepts.
+ */
+export const COACHING_LANGUAGE_RULE = activeLocale === 'fr'
+  ? 'Write every text the athlete reads in French, tutoiement, as a French-speaking running coach would say it: the plan name and focus, every week.focus and reducedVolume explanation, every workout title, description and notes, every segment note, and the summary and evidence messages of a decision. ' +
+    'Use the words French runners use (footing, sortie longue, endurance fondamentale, seuil, fractionné, accélérations, échauffement, retour au calme, récup) and French titles of the same shape: « Seuil 3 x 7:00 », « Sortie longue », « Accélérations 6 x 20 s », « Footing de récupération ». ' +
+    "You are not told the athlete's gender, so no adjective or past participle may agree with the athlete. " +
+    'Keep every JSON key, enum value, id and date exactly as specified, in English. ' +
+    'Where these rules ask week.focus to say "fewer runs" with a recovery, taper, fatigue, illness or injury reason, write « moins de sorties » with « récupération », « affûtage », « fatigue », « maladie » or « blessure ».'
+  : ''
+
+/** A coaching instruction, with the language rule when the deployment needs one. */
+export function withCoachingLanguage(instruction: string): string {
+  return COACHING_LANGUAGE_RULE ? `${instruction} ${COACHING_LANGUAGE_RULE}` : instruction
+}
+
+export const BOOTSTRAP_SYSTEM_INSTRUCTION = withCoachingLanguage(BOOTSTRAP_RULES)
 
 /**
  * What the coach asks for and the shape it must come back in, kept apart from

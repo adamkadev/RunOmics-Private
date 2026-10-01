@@ -89,7 +89,7 @@ export function TodayHero({ status, plannedWorkout, todayActivity, aiVerdict, ne
     <>
       <StateChip state={session.state} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-sm font-semibold text-foreground">{session.title}</span>
+        <span className="break-words text-sm font-semibold text-pretty text-foreground">{session.title}</span>
         {/* Wraps rather than cutting "planned 6…": the figure is the point. */}
         {session.detail && <span className="text-xs leading-snug text-muted-foreground">{session.detail}</span>}
       </span>

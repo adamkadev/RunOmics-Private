@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { ButtonLink } from '@/components/ui/Button'
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
-import { formatClock, formatDate, formatDelta, formatDeltaFixed } from '@/lib/formatters'
+import { formatClock, formatDate, formatDecimal, formatDelta, formatDeltaFixed } from '@/lib/formatters'
 import { DELTA_TONE_COLOR } from '@/lib/deltaTone'
 import { VerdictEyebrow } from '@/components/ui/Verdict'
 import type { StatTone } from '@/components/ui/Stat'
@@ -113,7 +113,7 @@ export function coachText(
         return { trend: signal.trend, text }
       }
       case 'efficiency': {
-        const value = signal.value.toFixed(2)
+        const value = formatDecimal(signal.value, 2)
         const delta = formatDeltaFixed(signal.delta, 2)
         const text = signal.trend === 'flat' ? s.efficiencyLevel(value) : signal.trend === 'improving' ? s.efficiencyUp(value, delta) : s.efficiencyDown(value, delta)
         return { trend: signal.trend, text }

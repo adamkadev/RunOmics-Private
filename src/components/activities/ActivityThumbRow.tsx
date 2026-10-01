@@ -8,6 +8,7 @@ import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDate, formatDistance, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import { activityTitle } from '@/lib/activityTitle'
 
 interface Props {
   activity: ActivitySummary
@@ -27,7 +28,7 @@ interface Props {
  * the distance over the pace, each with its unit.
  */
 export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
-  const title = a.description || t.activity.runTitle(a.dayOfWeek)
+  const title = activityTitle(a)
   const meta = [
     formatDate(a.date, variant === 'inset' ? { year: 'never' } : {}),
     // A type this build does not know yet has no label; name it as it came.

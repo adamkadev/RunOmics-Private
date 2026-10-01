@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import type { FormBand } from '@/domain/training/formBand'
-import { formatDate, MINUS } from '@/lib/formatters'
+import { formatDate, formatDecimal, formatNumber, MINUS } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { deltaTone } from '@/lib/deltaTone'
 import { TRAINING_STATUS_COLORS } from '@/lib/colors'
@@ -181,14 +181,14 @@ const RISK_DECIMALS: Record<RiskRow['key'], number> = { loadRatio: 2, monotony: 
 const RISK_INK: Record<RiskRow['state'], string> = { ok: 'var(--foreground)', out: 'var(--warn)', alert: 'var(--neg)' }
 
 function riskValue(row: RiskRow): string {
-  const text = row.value.toFixed(RISK_DECIMALS[row.key])
+  const text = formatDecimal(row.value, RISK_DECIMALS[row.key])
   if (row.key !== 'rampRate') return text
-  return row.value > 0 ? `+${text}` : row.value < 0 ? `${MINUS}${Math.abs(row.value).toFixed(1)}` : text
+  return row.value > 0 ? `+${text}` : row.value < 0 ? `${MINUS}${formatDecimal(Math.abs(row.value), 1)}` : text
 }
 
 function edgeLabel(row: RiskRow, v: number): string {
-  if (row.key !== 'rampRate') return v.toFixed(1)
-  return v > 0 ? `+${v}` : v < 0 ? `${MINUS}${Math.abs(v)}` : '0'
+  if (row.key !== 'rampRate') return formatDecimal(v, 1)
+  return v > 0 ? `+${formatNumber(v)}` : v < 0 ? `${MINUS}${formatNumber(Math.abs(v))}` : '0'
 }
 
 /** The safe range under its bar: "Safe 0.8 – 1.3", "Safe below 2.0", "Safe −5 to +5". */

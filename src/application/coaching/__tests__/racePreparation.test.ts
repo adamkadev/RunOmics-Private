@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { BootstrapWorkoutDraft, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import { buildCoachingContext } from '../context'
-import { validateBootstrapDraftSemantics } from '../bootstrapValidation'
+import { validateBootstrapDraftSemantics, type BootstrapEvents } from '../bootstrapValidation'
 import { validateDraftFrequency } from '../frequency'
 
 const context = buildCoachingContext({ activities: [], plan: null, athlete: {}, trainingStatus: null, loadBalance: null, trainingZones: null, trajectories: null, latestVo2max: null, racePredictions: null, goals: [], personalBests: [], upcomingRaces: [], officialResults: [] }, '2026-09-05')
@@ -49,4 +49,28 @@ it('rejects constant exact race pace with course context but retains generic fla
   expect(() => validateBootstrapDraftSemantics(plan, course, context)).toThrow('constant exact pace')
   race.blocks = [{ kind: 'effort', target: { distanceMeters: 5000 }, notes: ['Average goal pace: 4:00/km; follow PacePro and terrain.'] }]
   expect(() => validateBootstrapDraftSemantics(plan, course, context)).not.toThrow()
+})
+
+// A French deployment's coach writes the race prose in French.
+describe('French race prose', () => {
+  const raceWith = (description: string, paced = false, events: BootstrapEvents = strategy) => {
+    const plan = draft([])
+    const race = plan.weeks[0]!.workouts[0]!
+    race.description = description
+    if (paced) race.blocks = [{ kind: 'effort', target: { distanceMeters: 5000, paceSecPerKm: { min: 235, max: 245 } } }]
+    return () => validateBootstrapDraftSemantics(plan, events, context)
+  }
+  const noGoal: BootstrapEvents = { ...strategy, tuneUps: strategy.tuneUps.map((event) => ({ ...event, targetSeconds: undefined })) }
+
+  it('reads a French finish time that contradicts the goal', () => {
+    expect(raceWith('Objectif 22 minutes sur ce 5 km.')).toThrow('contradicts its explicit 20:00 goal')
+    expect(raceWith('Course à boucler en moins de 22 min.')).toThrow('contradicts its explicit 20:00 goal')
+    expect(raceWith('Objectif 20 minutes sur ce 5 km.')).not.toThrow()
+  })
+
+  it('accepts a French recommendation where no goal was set, and refuses a French goal', () => {
+    expect(raceWith('Allure recommandée de 4:00 /km, à ajuster aux sensations.', true, noGoal)).not.toThrow()
+    expect(raceWith('Allure conseillée de 4:00 par km.', true, noGoal)).not.toThrow()
+    expect(raceWith('Objectif : 4:00 /km.', true, noGoal)).toThrow('clearly described as a recommendation')
+  })
 })

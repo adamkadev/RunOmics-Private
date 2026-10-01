@@ -4,7 +4,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
-import { formatDate } from '@/lib/formatters'
+import { formatDate, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
@@ -107,7 +107,7 @@ function CellValue({ planned, ranKm, hasActs, missed }: { planned: PlannedInfo |
       )}
       {hasActs && (
         <span className="truncate text-caption font-semibold text-foreground">
-          {ranKm.toFixed(1)} {t.units.km}
+          {formatKm(ranKm, 1)} {t.units.km}
         </span>
       )}
     </div>
