@@ -28,3 +28,11 @@ describe('i18n parity', () => {
     expect(f.filter((p) => !inEn.has(p))).toEqual([])
   })
 })
+
+describe('French week streaks', () => {
+  it('reads one week in the singular', () => {
+    expect(fr.dashboard.weeklyStreak.weeksInARow(1)).toBe('1 semaine d’affilée')
+    expect(fr.dashboard.weeklyStreak.weeksInARow(3)).toBe('3 semaines d’affilée')
+    expect(fr.profile.milestones.streak(1)).toBe('1 semaine d’affilée')
+  })
+})

@@ -524,7 +524,7 @@ export const fr = {
     },
     weeklyStreak: {
       title: 'Cette semaine',
-      weeksInARow: (weeks: number) => `${weeks} semaines d’affilée`,
+      weeksInARow: (weeks: number) => `${weeks} semaine${weeks === 1 ? '' : 's'} d’affilée`,
       ofKm: (target: string) => `sur ${target} km`,
       runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} sur ${planned}`,
       kinds: {
@@ -1700,7 +1700,7 @@ export const fr = {
     },
     milestones: {
       distanceTier: (km: string) => `${km} km cette année`,
-      streak: (weeks: number) => `${weeks} semaines d’affilée`,
+      streak: (weeks: number) => `${weeks} semaine${weeks === 1 ? '' : 's'} d’affilée`,
       streakDetail: 'Toujours en cours - une sortie chaque semaine depuis',
       record: (label: string) => `Record ${label}`,
       firstActivity: 'Premier pas',
