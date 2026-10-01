@@ -2142,6 +2142,11 @@ export const en = {
     distance: 'Distance',
     pace: 'Pace',
     heartRate: 'Heart rate',
+    // A step's note on the watch, beside its pace target.
+    garminStep: {
+      hr: (min: number, max: number) => `HR ${min}-${max} bpm`,
+      hrZone: (zone: number) => `HR zone ${zone}`,
+    },
   },
 
   activityTypes: {

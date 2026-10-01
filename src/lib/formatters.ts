@@ -226,6 +226,14 @@ export function formatWeekday(isoDate: string, withDay = false): string {
   return stableSpaces(withDay ? `${weekday} ${date.getDate()}` : weekday)
 }
 
+/**
+ * A date's full weekday in the locale: "Sunday", "dimanche". The sync stores
+ * the weekday as English text, so a French build read "Sortie du Sunday".
+ */
+export function formatWeekdayLong(isoDate: string): string {
+  return atMidnight(isoDate.slice(0, 10)).toLocaleDateString(t.locale, { weekday: 'long' })
+}
+
 export function formatMonthShortYear(isoDate: string, options: DateFormatOptions = {}): string {
   const month = formatDate(isoDate, { ...options, precision: 'month', year: 'never' })
   return t.dates.monthShortYear(month, isoDate.slice(2, 4))

@@ -2039,6 +2039,10 @@ export const fr = {
     distance: 'Distance',
     pace: 'Allure',
     heartRate: 'Fréquence cardiaque',
+    garminStep: {
+      hr: (min: number, max: number) => `FC ${min}-${max} bpm`,
+      hrZone: (zone: number) => `Zone FC ${zone}`,
+    },
   },
 
   activityTypes: {

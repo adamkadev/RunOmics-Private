@@ -5,6 +5,7 @@ import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { activityTitle } from '@/lib/activityTitle'
 
 interface AdjacentActivity {
   id: string
@@ -19,7 +20,7 @@ interface Props {
 }
 
 function activityLabel(activity: AdjacentActivity): string {
-  return activity.description || t.activity.runTitle(activity.dayOfWeek)
+  return activityTitle(activity)
 }
 
 // A missing side takes no room: the latest run showed Previous beside an

@@ -1,6 +1,7 @@
 import type { Activity } from '@/domain/activity/types'
 import { formatClock, formatDate, formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { activityTitle } from '@/lib/activityTitle'
 
 /** What a share card reads of a run - all the share modal is handed. */
 export type ShareActivity = Pick<
@@ -10,7 +11,7 @@ export type ShareActivity = Pick<
 >
 
 export function shareCardTitle(activity: ShareActivity): string {
-  return activity.description || t.activity.runTitle(activity.dayOfWeek)
+  return activityTitle(activity)
 }
 
 /** "Sat, Sep 26 · Hoenheim": the app's date, then the town when it is known. */

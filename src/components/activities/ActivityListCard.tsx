@@ -5,6 +5,7 @@ import type { ActivitySummary } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDate, formatDistance, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { activityTitle } from '@/lib/activityTitle'
 
 interface Props {
   activity: ActivitySummary
@@ -13,7 +14,7 @@ interface Props {
 
 export function ActivityListCard({ activity: a, qualifiedEfforts = [] }: Props) {
   const chartColor = zoneColor(sessionZone(a))
-  const title = a.description || t.activity.runTitle(a.dayOfWeek)
+  const title = activityTitle(a)
 
   const subtitle = [
     t.activityTypes[a.type],

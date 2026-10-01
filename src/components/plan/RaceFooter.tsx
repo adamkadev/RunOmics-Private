@@ -3,6 +3,7 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatClock, formatCountdown, formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { DISTANCE_KEY } from '@/domain/activity/effort'
 
 export interface FooterRace {
   race: UpcomingRace
@@ -30,10 +31,19 @@ function daysBetween(from: string, to: string): number {
 // Line 1 is the race itself - name and distance, the same read as an
 // Activities row. Line 2 is everything about when and why: date, target time,
 // then whichever one of role or block-end applies (a race is never both).
+// The sync stores the distance in Garmin's English ("Half-Marathon"); the
+// footer prints it in the locale, as the best-effort tiles do.
+function distanceName(distance: string): string {
+  const key = DISTANCE_KEY[distance]
+  return (key && t.activity.bestEfforts.distances[key]) || distance
+}
+
 function raceTitle({ race }: FooterRace): string {
   const name = DISTANCE_ONLY.test(race.name) && race.location ? race.location : race.name
-  const namesTheDistanceAlready = race.distance && name.toLowerCase().includes(race.distance.toLowerCase())
-  return namesTheDistanceAlready || !race.distance ? name : `${name} · ${race.distance}`
+  const distance = race.distance ? distanceName(race.distance) : null
+  const namesTheDistanceAlready =
+    race.distance && [race.distance, distance!].some((label) => name.toLowerCase().includes(label.toLowerCase()))
+  return namesTheDistanceAlready || !distance ? name : `${name} · ${distance}`
 }
 
 function raceDetail({ race, role, blockEndsHere }: FooterRace): string {
