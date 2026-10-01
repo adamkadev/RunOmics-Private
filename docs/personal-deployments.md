@@ -152,7 +152,11 @@ ships.
 `NEXT_PUBLIC_LOCALE` is read at build time (`src/i18n/index.ts`), so changing it
 needs a redeploy. The French translation is complete and kept at parity with
 English by `src/i18n/__tests__/parity.test.ts`, and the Gemini prompts follow the
-same locale, so the AI verdicts come out in French too.
+same locale, so the AI verdicts come out in French too. So do the push
+notifications (`t.notifications`). The coach CLI reads the locale from its own
+environment, not from Vercel: put `NEXT_PUBLIC_LOCALE=fr` in her local
+`.env.local` too, or `npm run coach` writes her plan - titles on the watch
+included - in English.
 
 Finally, create a **Deploy Hook** on the project (Settings → Git) - the sync
 workflow calls it once new data has been pushed.

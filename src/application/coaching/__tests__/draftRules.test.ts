@@ -48,6 +48,13 @@ describe('how a session is written', () => {
     expect(check(session({ title: 'Easy run with strides' }))).toThrow(/strides must be prescribed as a repeat group/)
   })
 
+  // A French deployment's coach calls them « accélérations » or « lignes droites ».
+  it('holds French strides to the same rule', () => {
+    expect(check(session({ title: 'Footing + accélérations' }))).toThrow(/strides must be prescribed as a repeat group/)
+    expect(check(session({ title: 'Footing', notes: ['Finir par 6 lignes droites.'] }))).toThrow(/strides must be prescribed as a repeat group/)
+    expect(check({ ...strides({}), title: 'Footing + accélérations 6 x 20 s' })).not.toThrow()
+  })
+
   it('rejects rigid pace targets on hill repetitions', () => {
     const hills = (target: Record<string, unknown>) => session({
       type: 'vo2max',
