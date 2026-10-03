@@ -16,7 +16,7 @@ describe('TodayHero', () => {
   // v4.17: a plain surface card - the verdict's colour is its eyebrow's
   // alone, never a tinted border or fill.
   it('draws on the plain card surface, its tone only in the eyebrow', () => {
-    const status = { tsbNow: -15, tsbDelta: 7, ctl: 47, atl: 62, atlDelta: 6, loadTrend: 'maintaining' } as unknown as TrainingStatus
+    const status = { tsbNow: -32, tsbDelta: -6, ctl: 47, atl: 79, atlDelta: 12, loadTrend: 'maintaining' } as unknown as TrainingStatus
     const { container } = render(<TodayHero status={status} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} />)
     const card = container.firstElementChild as HTMLElement
 
@@ -120,7 +120,7 @@ describe('the line under the verdict', () => {
 })
 
 describe('the verdict without a written one (v4.17.1)', () => {
-  const tired = { tsbNow: -15, tsbDelta: 7, ctl: 47, atl: 62, atlDelta: 6, loadTrend: 'maintaining' } as unknown as TrainingStatus
+  const tired = { tsbNow: -32, tsbDelta: -6, ctl: 47, atl: 79, atlDelta: 12, loadTrend: 'maintaining' } as unknown as TrainingStatus
 
   it("reads a rest day after a long run as the prototype does: rest now, for Tuesday's threshold", () => {
     render(
