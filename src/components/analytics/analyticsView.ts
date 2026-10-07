@@ -587,6 +587,8 @@ export interface ZonesView {
   recoveredAfter: string | null
   /** Hours over the window, the week under way included. */
   totalHours: number
+  /** The same hours by zone, Z1-Z5: the legend's figures. */
+  zoneHours: number[]
   yMax: number
 }
 
@@ -617,6 +619,7 @@ export function zonesView(rows: WeekRow[]): ZonesView | null {
     total: recovered ? 'recovered' : change >= 0.1 ? 'grew' : change <= -0.1 ? 'dropped' : 'held',
     recoveredAfter: recovered ? rows[done[trough]!.i]!.week : null,
     totalHours: totals.reduce((a, b) => a + b, 0),
+    zoneHours: [0, 1, 2, 3, 4].map((z) => weeks.reduce((sum, w) => sum + w.hours[z]!, 0)),
     yMax: Math.max(1, Math.ceil(Math.max(...totals))),
   }
 }

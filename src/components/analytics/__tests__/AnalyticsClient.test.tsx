@@ -433,6 +433,25 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('zone-bars').innerHTML).not.toContain('opacity')
     expect(screen.getByTestId('zone-bars').innerHTML).toContain('var(--zone-5)')
   })
+
+  // Design review, Oct 2026: Z3 and Z4 read as one colour in a stacked week.
+  // Each zone is named with its hours, so a segment never rests on its colour.
+  it('names every zone under Time in zones with its hours, and follows a held week', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.health, 'zones-card')
+    const key = () => screen.getByTestId('zone-key')
+    const figures = () => within(key()).getAllByTestId('zone-key-item').map((item) => [item.firstElementChild!.textContent, item.querySelector('b')!.textContent])
+    // Twelve weeks of 0.5 / 3 / 0.17 / 0.42 / 0.08 h.
+    expect(figures()).toEqual([['Z1', '6.0 h'], ['Z2', '36.0 h'], ['Z3', '2.0 h'], ['Z4', '5.0 h'], ['Z5', '1.0 h']])
+    const scrub = screen.getByTestId('zone-bars').closest<HTMLElement>('[data-chart-scrub]')!
+    scrub.getBoundingClientRect = () => ({ left: 0, width: 120, top: 0, height: 130, right: 120, bottom: 130 }) as DOMRect
+    fireEvent.pointerMove(scrub, { pointerType: 'mouse', clientX: 5, clientY: 60 })
+    expect(key().hasAttribute('data-held')).toBe(true)
+    expect(figures()).toEqual([['Z1', '0.5 h'], ['Z2', '3.0 h'], ['Z3', '0.2 h'], ['Z4', '0.4 h'], ['Z5', '0.1 h']])
+    fireEvent.pointerCancel(scrub)
+    expect(key().hasAttribute('data-held')).toBe(false)
+    expect(figures()[1]).toEqual(['Z2', '36.0 h'])
+  })
 })
 
 describe('the v4.5 colour rules', () => {
