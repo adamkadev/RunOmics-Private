@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { t } from '@/i18n'
-import { formatWeekday } from '@/lib/formatters'
+import { formatDate } from '@/lib/formatters'
 import { TodayHero } from '../TodayHero'
 
 const RUN: ActivitySummary = {
@@ -39,11 +39,18 @@ describe('TodayHero', () => {
     expect(eyebrow.getAttribute('style')).not.toContain('var(--warn)')
   })
 
-  it('offers the plan from the session row', () => {
-    render(<TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} />)
+  // Design review, Oct 2026: today's session until it is run, in a tile that
+  // says when, what and how, with the plan a 44 pt tap away.
+  it("shows today's session in the tile until it is run, and offers the plan", () => {
+    render(<TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} today="2026-09-24" />)
 
-    expect(screen.getByRole('link', { name: t.dashboard.todayHero.openPlan })).toHaveAttribute('href', '/plan')
-    expect(screen.getByTestId('session-card')).toHaveTextContent(`${t.sessionState.planned}Threshold`)
+    const open = screen.getByRole('link', { name: t.dashboard.todayHero.openPlan })
+    expect(open).toHaveAttribute('href', '/plan')
+    expect(open.className).toContain('hit-44')
+    const tile = screen.getByTestId('session-tile')
+    expect(tile).toHaveTextContent(t.dashboard.todayHero.tileToday(formatDate('2026-09-24')))
+    expect(tile).toHaveTextContent('Threshold')
+    expect(screen.queryByTestId('last-run')).toBeNull()
   })
 
   it('names the next session on a rest day', () => {
@@ -58,9 +65,9 @@ describe('TodayHero', () => {
       />,
     )
 
-    const row = screen.getByTestId('session-card')
-    expect(row).toHaveTextContent(t.dashboard.todayHero.restDay)
-    expect(row).toHaveTextContent(t.dashboard.todayHero.next(formatWeekday('2026-09-29'), 'Threshold 3 x 7:15', '10'))
+    const tile = screen.getByTestId('session-tile')
+    expect(tile).toHaveTextContent(t.dashboard.todayHero.tileNext(formatDate('2026-09-29')))
+    expect(tile).toHaveTextContent('Threshold 3 x 7:15')
   })
 
   // v4.3.4: the watch status left the head for the Body card.
@@ -76,22 +83,44 @@ describe('TodayHero', () => {
   })
 
   // The footer showed a finished run's "6.11 km · 25 min" with no state, so it
-  // read like the session still to do.
-  it('leads the session row with its state and planned against ran', () => {
+  // read like the session still to do. Done is a check row that opens the run,
+  // and the tile moves on to the next session.
+  it('shows a run done as a checked row over the next session', () => {
     render(
       <TodayHero
         status={null}
         plannedWorkout={PLAN}
         todayActivity={RUN}
         aiVerdict={{ headline: 'Steady day.', body: 'Keep it moderate.' }}
+        lastRun={{ state: 'done', date: '2026-09-24', title: 'Threshold · Done', detail: `${t.sessionCard.ranAt('6.11', '4:10 /km')} · ${t.sessionCard.plannedKm('6')}`, href: '/activities/a1' }}
+        nextSession={{ date: '2026-09-26', title: 'Easy run', km: '9', inDays: 2, kind: 'easy' }}
       />,
     )
 
-    const row = screen.getByTestId('session-card')
-    expect(row).toHaveTextContent(`✓ ${t.sessionState.done}`)
-    expect(row).toHaveTextContent('Threshold')
-    expect(row).toHaveTextContent(`${t.sessionCard.ranAt('6.11', '4:10 /km')} · ${t.sessionCard.plannedKm('6')}`)
+    const row = screen.getByTestId('last-run')
+    expect(row.dataset.state).toBe('done')
+    expect(row).toHaveTextContent('Threshold · Done')
     expect(row.getAttribute('href')).toBe('/activities/a1')
+    expect(screen.getByTestId('session-tile')).toHaveTextContent(t.dashboard.todayHero.tileNext(formatDate('2026-09-26')))
+  })
+
+  // A missed session is shape and colour both, and opens the plan read-only.
+  it('shows a session nobody ran as a dashed cross, never colour alone', () => {
+    render(
+      <TodayHero
+        status={null}
+        plannedWorkout={PLAN}
+        todayActivity={null}
+        aiVerdict={{ headline: 'Steady day.', body: '' }}
+        lastRun={{ state: 'missed', date: '2026-09-24', title: 'Thu · Easy run', detail: t.dashboard.todayHero.notRun('10'), href: '/plan' }}
+      />,
+    )
+
+    const row = screen.getByTestId('last-run')
+    expect(row.textContent).toContain('✕')
+    expect(row.querySelector<HTMLElement>('[aria-hidden]')!.style.border).toContain('dashed')
+    expect(row).toHaveTextContent(t.dashboard.todayHero.notRun('10'))
+    expect(row.getAttribute('href')).toBe('/plan')
   })
 
   it('keeps the offline copy when the AI insight is missing', () => {
@@ -99,7 +128,7 @@ describe('TodayHero', () => {
     render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={null} />)
 
     expect(screen.queryByText(t.sessionCard.coachInsight)).not.toBeInTheDocument()
-    expect(screen.getByTestId('session-card')).toHaveTextContent(t.dashboard.todayHero.restDay)
+    expect(screen.getByTestId('session-tile')).toHaveTextContent(t.dashboard.todayHero.restDay)
   })
 
   // The race is the plan's reason, not a daily number: its countdown stays on

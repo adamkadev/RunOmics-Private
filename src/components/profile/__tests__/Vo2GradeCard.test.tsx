@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Vo2GradeView } from '@/application/usecases/GetVo2Grade'
 import { Vo2GradeCard, gradeDelta } from '../Vo2GradeCard'
@@ -105,5 +105,16 @@ describe('Vo2GradeTodayRow (G3)', () => {
     expect(container.innerHTML).toBe('')
     rerender(<Vo2GradeTodayRow view={GRADED} />)
     expect(container.innerHTML).toBe('')
+  })
+
+  // Design review, Oct 2026: dismissible, and remembered per grade change.
+  it('puts the row away until the grade changes again', () => {
+    localStorage.clear()
+    const up = (date: string): Vo2GradeView => ({ ...GRADED, change: { kind: 'up', from: 'B+', date, regained: false } })
+    const { rerender } = render(<Vo2GradeTodayRow view={up('2026-09-26')} />)
+    fireEvent.click(screen.getByRole('button', { name: t.vo2Grade.dismiss }))
+    expect(screen.queryByTestId('vo2-grade-today')).toBeNull()
+    rerender(<Vo2GradeTodayRow view={up('2026-10-07')} />)
+    expect(screen.getByTestId('vo2-grade-today')).toBeInTheDocument()
   })
 })

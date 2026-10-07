@@ -109,6 +109,7 @@ export const en = {
     coachTop: 'Hold it with one VO₂ interval session a week and your current easy volume.',
     todayUp: (grade: string) => `VO₂max grade up to ${grade}`,
     todayBack: (grade: string) => `VO₂max grade back to ${grade}`,
+    dismiss: 'Dismiss',
     todayFrom: (grade: string) => `↑ from ${grade}`,
     todayRest: (value: string, top: number) => ` · ${value} · top ${top}%`,
     shareBadge: 'VO₂max grade badge',
@@ -474,6 +475,7 @@ export const en = {
       formTrend: { up: 'recovering', down: 'absorbing load', flat: 'steady' },
       // Before the delta: "recovering," then "+7 in 7 days".
       formMoveLead: (trend: string) => `${trend},`,
+      formOnScale: (form: string, band: string) => `Form ${form}: ${band}`,
     },
     trainingStatusDays: {
       title: 'Training Status',
@@ -490,6 +492,14 @@ export const en = {
       daysAgo: (d: number) => `${d}d ago`,
     },
     todayHero: {
+      // The session tile under the verdict (design review, Oct 2026): today's
+      // before it is run, then the next one.
+      tileToday: (date: string | null) => (date ? `Today · ${date}` : 'Today'),
+      tileNext: (date: string) => `Next · ${date}`,
+      // The last-run row above it.
+      doneTitle: (title: string) => `${title} · Done`,
+      missedTitle: (weekday: string, title: string) => `${weekday} · ${title}`,
+      notRun: (km: string | null) => (km ? `Not run · ${km} km planned` : 'Not run'),
       eyebrowByTone: {
         go: 'Green light',
         build: 'Building',

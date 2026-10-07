@@ -95,6 +95,7 @@ export const fr = {
     coachTop: 'Pour la garder : une séance de VMA par semaine et ton volume actuel en endurance.',
     todayUp: (grade: string) => `Note VO₂max passée à ${grade}`,
     todayBack: (grade: string) => `Note VO₂max revenue à ${grade}`,
+    dismiss: 'Masquer',
     todayFrom: (grade: string) => `↑ depuis ${grade}`,
     todayRest: (value: string, top: number) => ` · ${value} · top ${top} %`,
     shareBadge: 'Badge note VO₂max',
@@ -442,6 +443,7 @@ export const fr = {
       deltaIn: (delta: string, days: number) => `${delta} en ${days} jours`,
       formTrend: { up: 'en récupération', down: 'sous charge', flat: 'stable' },
       formMoveLead: (trend: string) => `${trend},`,
+      formOnScale: (form: string, band: string) => `Forme ${form} : ${band}`,
     },
     trainingStatusDays: {
       title: 'Statut d’entraînement',
@@ -458,6 +460,11 @@ export const fr = {
       daysAgo: (d: number) => `il y a ${d} j`,
     },
     todayHero: {
+      tileToday: (date: string | null) => (date ? `Aujourd’hui · ${date}` : 'Aujourd’hui'),
+      tileNext: (date: string) => `Ensuite · ${date}`,
+      doneTitle: (title: string) => `${title} · Fait`,
+      missedTitle: (weekday: string, title: string) => `${weekday} · ${title}`,
+      notRun: (km: string | null) => (km ? `Pas courue · ${km} km prévus` : 'Pas courue'),
       eyebrowByTone: {
         go: 'Feu vert',
         build: 'En charge',

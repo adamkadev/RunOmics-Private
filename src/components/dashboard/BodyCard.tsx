@@ -4,7 +4,7 @@ import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid, type StatTone } from '@/components/ui/Stat'
 import { deltaTone, type DeltaMetric, type DeltaTone } from '@/lib/deltaTone'
-import { formBand, type FormBand } from '@/domain/training/formBand'
+import { FORM_BAND_THRESHOLDS, formBand, type FormBand } from '@/domain/training/formBand'
 import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -25,6 +25,37 @@ const BAND_TONE: Record<FormBand, StatTone> = { tired: 'warn', neutral: 'muted',
 
 function deltaStatTone(metric: DeltaMetric, delta: number, current: number): StatTone {
   return DELTA_STAT_TONE[deltaTone(metric, delta, { value: current })]
+}
+
+/** The Form scale's ends: deep in the training zone to well rested. Past them the marker rests on the edge. */
+export const FORM_SCALE = { min: -40, max: 25 } as const
+
+const at = (value: number) => ((Math.min(FORM_SCALE.max, Math.max(FORM_SCALE.min, value)) - FORM_SCALE.min) / (FORM_SCALE.max - FORM_SCALE.min)) * 100
+
+/**
+ * Where today's Form sits (design review, Oct 2026): "−18" on its own did not
+ * say whether that was deep or normal. Tired below −10 in the caution
+ * colour, fresh above +5 in the good one, the training range between, the
+ * same bands the number's own word names - and the band in words beside it,
+ * never the colour alone.
+ */
+export function FormScale({ form }: { form: number }) {
+  const { tiredBelow, freshAbove } = FORM_BAND_THRESHOLDS
+  const band = formBand(form)
+  return (
+    <div className="mt-3.5 flex flex-col gap-1.5" data-testid="form-scale" role="img" aria-label={t.dashboard.bodyCard.formOnScale(formatDelta(form), t.formBand[band])}>
+      <div className="relative h-2 rounded-full bg-[var(--surface-2)]">
+        <span aria-hidden className="absolute inset-y-0 left-0 rounded-l-full opacity-45" style={{ width: `${at(tiredBelow)}%`, background: 'var(--form-band-fill-tired)' }} />
+        <span aria-hidden className="absolute inset-y-0 right-0 rounded-r-full opacity-45" style={{ left: `${at(freshAbove)}%`, background: 'var(--form-band-fill-fresh)' }} />
+        <span aria-hidden data-testid="form-marker" className="absolute -top-1 h-4 w-1 -translate-x-1/2 rounded-[2px] bg-foreground" style={{ left: `${at(form)}%` }} />
+      </div>
+      <div aria-hidden className="flex justify-between text-[11.5px] text-muted-foreground">
+        <span>{t.formBand.tired}</span>
+        <span>{t.formBand.neutral}</span>
+        <span>{t.formBand.fresh}</span>
+      </div>
+    </div>
+  )
 }
 
 /** Which way Form moved over its window, in a word: recovering, absorbing load, steady. */
@@ -111,6 +142,7 @@ export function BodyCard({ status }: { status: TrainingStatus | null; watchStatu
           }
         />
       </StatGrid>
+      <FormScale form={form} />
     </section>
   )
 }
