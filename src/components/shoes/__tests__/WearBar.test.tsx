@@ -35,9 +35,31 @@ describe('WearBar', () => {
 
   // C5: a retired pair's bar is full and muted, with no tick.
   it('draws a retired pair full width in muted ink', () => {
-    render(<WearBar totalKm={994} maxKm={1000} retired />)
+    render(<WearBar totalKm={994} maxKm={1000} retired tickLabel="800 km" />)
     expect(screen.getByTestId('wear-fill').style.background).toBe('var(--muted-foreground)')
     expect(screen.getByTestId('wear-fill').style.width).toBe('100%')
     expect(screen.queryByTestId('wear-tick')).toBeNull()
+    // No tick, nothing to name.
+    expect(screen.queryByTestId('wear-tick-label')).toBeNull()
+  })
+
+  // Design review, Oct 2026: the tick said nothing of what it marked.
+  it('names the tick under it, starting where the tick is', () => {
+    const { unmount } = render(<WearBar totalKm={676} maxKm={1000} tickKm={800} tickLabel="800 km · retire from workouts" />)
+    let label = screen.getByTestId('wear-tick-label')
+    expect(label.textContent).toBe('800 km · retire from workouts')
+    expect((label.firstElementChild as HTMLElement).style.flexBasis).toBe('80%')
+    unmount()
+
+    // Past the limit the tick moves in, and its label with it.
+    render(<WearBar totalKm={1_000} maxKm={500} tickLabel="400 km" />)
+    label = screen.getByTestId('wear-tick-label')
+    expect((label.firstElementChild as HTMLElement).style.flexBasis).toBe('40%')
+  })
+
+  it('writes no label unless asked to', () => {
+    render(<WearBar totalKm={676} maxKm={1000} tickKm={800} />)
+    expect(screen.getByTestId('wear-tick')).toBeInTheDocument()
+    expect(screen.queryByTestId('wear-tick-label')).toBeNull()
   })
 })

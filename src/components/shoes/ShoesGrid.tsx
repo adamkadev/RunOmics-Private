@@ -54,7 +54,13 @@ function RotationRow({ shoe, context }: { shoe: ShoeStats; context: string | nul
           </p>
         )}
       </div>
-      <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} tickKm={shoe.alertThresholdKm} className="mt-3" />
+      <WearBar
+        totalKm={shoe.totalKm}
+        maxKm={shoe.maxKm}
+        tickKm={shoe.alertThresholdKm}
+        tickLabel={t.shoes.detail.retireFromWorkouts(formatKm(shoe.alertThresholdKm))}
+        className="mt-3"
+      />
       <p className="mt-2.5 text-footnote tabular-nums text-muted-foreground" data-testid="shoe-meta">{shoeMeta(shoe)}</p>
       {context && <p className="mt-1 text-footnote text-foreground/80">{context}</p>}
     </Link>
