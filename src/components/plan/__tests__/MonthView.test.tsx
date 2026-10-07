@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { MonthView } from '../MonthView'
 import { PlanPhaseTrack } from '../PlanPhaseTrack'
@@ -53,14 +53,49 @@ describe('MonthView colours', () => {
     expect(cell.className).toContain('var(--cell-zone)_12%')
   })
 
-  it('draws a run day in the accent and a past planned day as missed', () => {
+  // Design review, Oct 2026: a run nothing was planned for read the same as
+  // one run to plan, and a missed day was colour alone.
+  it('draws a run nothing was planned for as extra, and a past planned day as missed, never in colour alone', () => {
     renderMonth('2026-09-27')
 
-    expect(cellOf('21').dataset.cellState).toBe('done')
+    expect(cellOf('21').dataset.cellState).toBe('extra')
     expect(cellOf('21').className).toContain('bg-[var(--accent-soft)]')
+    expect(cellOf('21').textContent).toContain(t.plan.extra)
     expect(cellOf('26').dataset.cellState).toBe('missed')
     expect(cellOf('26').className).toContain('var(--neg)')
+    expect(cellOf('26').style.outline).toContain('dashed')
+    expect(cellOf('26').textContent).toContain('✕')
     expect(cellOf('26').style.getPropertyValue('--cell-zone')).toBe('')
+    expect(screen.getByRole('button', { name: /September 26/ }).getAttribute('aria-label')).toContain(t.sessionState.missed)
+  })
+
+  it('opens a missed session read-only, saying nothing matched it', () => {
+    renderMonth('2026-09-27')
+    fireEvent.click(screen.getByRole('button', { name: /September 26/ }))
+
+    expect(screen.getByText(t.plan.missedNoRun)).toBeInTheDocument()
+  })
+
+  // Month read July's sessions planned by time alone as rest days, never missed.
+  it('counts a session planned by time alone', () => {
+    render(
+      <MonthView
+        year={2026}
+        month={6}
+        byDate={new Map()}
+        byDatePlanned={new Map([['2026-07-08', { date: '2026-07-08', name: 'Easy', type: 'Base', durationSecs: 2_700 }]])}
+        today="2026-07-20"
+        atPresent={false}
+        onToday={() => {}}
+        onSelectDay={() => {}}
+        onPrev={() => {}}
+        onNext={() => {}}
+        canGoForward
+      />,
+    )
+
+    expect(cellOf('8').dataset.cellState).toBe('missed')
+    expect(cellOf('8').textContent).toContain(`45 ${t.units.min}`)
   })
 
   it('writes both figures with their unit', () => {
@@ -105,14 +140,22 @@ describe('MonthView wording and grid', () => {
   })
 
   it('draws only the weeks the month needs, each with its total as a footer', () => {
-    const { container } = renderMonth()
+    renderMonth()
     // September 2026 starts on a Tuesday: 1 + 30 days is five weeks.
-    const footers = [...container.querySelectorAll('p.text-right')]
+    const footers = screen.getAllByTestId('month-week-total').map((p) => p.textContent)
 
-    expect(footers).toHaveLength(5)
-    // H21: one format for every week, "27 / 48 km".
-    expect(screen.getByText(t.plan.weekFooter(8, 10))).toBeInTheDocument()
-    for (const footer of footers) expect(footer.textContent).toMatch(/^\d+( \/ \d+)? km$/)
+    // H21 and the design review: run against plan in the week view's
+    // rounding, a week without a plan says so, and one still to come too.
+    expect(footers).toEqual([
+      t.plan.weekNoPlan('0'),
+      t.plan.weekNoPlan('0'),
+      t.plan.weekNoPlan('0'),
+      t.plan.weekSummary.ranOfPlan('8.4', '10'),
+      t.plan.noPlanYet,
+    ])
+    // The week's run against its plan as a bar, capped at the plan.
+    const bar = screen.getAllByTestId('month-week-total')[3]!.querySelector<HTMLElement>('[aria-hidden] > span')!
+    expect(bar.style.width).toBe('84%')
     expect(screen.queryByText('WK')).not.toBeInTheDocument()
   })
 
@@ -121,10 +164,13 @@ describe('MonthView wording and grid', () => {
     expect(screen.queryByRole('button', { name: t.plan.today })).toBeNull()
   })
 
-  // v4.1 G32: no legend card under the month; shapes and zone colour carry it.
-  it('has no legend card', () => {
+  // Design review, Oct 2026: one line, no card - done, the session types the
+  // month plans, missed. Today's outline and "extra" say themselves.
+  it('keys the month on one line: done, the types it plans, missed', () => {
     renderMonth()
+    const legend = screen.getByTestId('month-legend')
 
+    expect(legend.textContent).toBe(`${t.sessionState.done}${t.zoneLabels[4]}✕${t.sessionState.missed}`)
     expect(screen.queryByText(/planned km/)).not.toBeInTheDocument()
   })
 })

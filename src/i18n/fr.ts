@@ -1944,7 +1944,11 @@ export const fr = {
       `${sessions} séance${sessions > 1 ? 's' : ''} · ${ranKm} km courus · ${plannedKm} prévus`,
     weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
     switcher: { week: 'Semaine', month: 'Mois' },
-    weekFooter: (ran: number, planned: number) => (planned > 0 ? `${ran} / ${planned} km` : `${ran} km`),
+    weekNoPlan: (km: string) => `${km} km · sans plan`,
+    noPlanYet: 'Pas encore de plan',
+    extra: 'en plus',
+    extraRun: 'Sortie en plus',
+    missedNoRun: 'Manquée · aucune sortie',
     restDay: 'Repos',
     planned: 'Prévu',
     easyEffortLabel: 'EF',
@@ -1991,7 +1995,7 @@ export const fr = {
       daysToGo: (n: number) => (n <= 0 ? 'c’est le jour J' : n === 1 ? 'encore 1 jour' : `encore ${n} jours`),
     },
     legend: {
-      plannedByType: 'Prévu · couleur = type de séance',
+      plannedByType: 'Prévu',
     },
     stats: {
       distance: 'Distance',

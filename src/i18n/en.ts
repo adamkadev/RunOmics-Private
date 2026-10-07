@@ -2052,7 +2052,14 @@ export const en = {
       `${sessions} session${sessions !== 1 ? 's' : ''} · ${ranKm} km run · ${plannedKm} planned`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
-    weekFooter: (ran: number, planned: number) => (planned > 0 ? `${ran} / ${planned} km` : `${ran} km`),
+    // A month's week under its row: run against plan, or what it is without one.
+    weekNoPlan: (km: string) => `${km} km · no plan`,
+    noPlanYet: 'No plan yet',
+    // A run on a day with nothing planned, in its cell and its name.
+    extra: 'extra',
+    extraRun: 'Extra run',
+    // A planned session no run matched, on its sheet: the plan is read-only, so no reschedule.
+    missedNoRun: 'Missed · no run matched',
     restDay: 'Rest',
     planned: 'Planned',
     easyEffortLabel: 'Z2 easy',
@@ -2102,7 +2109,7 @@ export const en = {
       daysToGo: (n: number) => (n <= 0 ? 'race day' : n === 1 ? '1 day to go' : `${n} days to go`),
     },
     legend: {
-      plannedByType: 'Planned · colour = session type',
+      plannedByType: 'Planned',
     },
     // The week's three stats (v4.17).
     stats: {
