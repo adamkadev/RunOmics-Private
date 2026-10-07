@@ -33,8 +33,8 @@ const VERDICT_STATUS = {
   verdict: { headline: 'Held together to the last rep', body: 'Only two seconds a kilometre of fade.' },
 }
 
-function jsonResponse(body: unknown, ok = true) {
-  return { ok, status: ok ? 200 : 503, json: async () => body }
+function jsonResponse(body: unknown, ok = true, etag?: string) {
+  return { ok, status: ok ? 200 : 503, headers: new Headers(etag ? { etag } : {}), json: async () => body }
 }
 
 function renderCard(pollIntervalMs?: number) {
@@ -228,5 +228,73 @@ describe('Sync now, on the Garmin card', () => {
 
     expect(screen.getByText(s.upToDate)).toBeInTheDocument()
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+})
+
+// Design review, Oct 2026: fewer questions while the chain runs.
+describe('Sync now, while it waits', () => {
+  const STILL_GOING = { ...VERDICT_STATUS, ready: false, synced: false, reason: 'waiting for the deployment carrying this sync' }
+
+
+  it('waits a little longer before each question, up to half a minute', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    const start = Date.now()
+    localStorage.setItem(STORAGE_KEY, new Date(start).toISOString())
+    const times: number[] = []
+    const fetchMock = vi.fn(async () => {
+      times.push(Date.now() - start)
+      return jsonResponse(STILL_GOING)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderCard()
+    await settle(150_000)
+
+    // Asked at once on resume, then 10 s, 12.5 s, 15.6 s... apart, never more than 30 s.
+    const gaps = times.slice(1).map((at, i) => at - times[i]!)
+    expect(gaps.slice(0, 3)).toEqual([10_000, 12_500, 15_625])
+    expect(Math.max(...gaps)).toBe(30_000)
+  })
+
+  it('asks nothing while the page is in the background', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    localStorage.setItem(STORAGE_KEY, new Date().toISOString())
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(STILL_GOING))
+    vi.stubGlobal('fetch', fetchMock)
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+
+    renderCard()
+    await settle()
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    await settle(60_000)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    visibility.mockReturnValue('visible')
+    document.dispatchEvent(new Event('visibilitychange'))
+    await settle()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    visibility.mockRestore()
+  })
+
+  it('sends the last answer’s tag, and reads a 304 as still going', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
+    localStorage.setItem(STORAGE_KEY, new Date().toISOString())
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(STILL_GOING, true, '"abc"'))
+      .mockResolvedValueOnce({ ok: false, status: 304, headers: new Headers({ etag: '"abc"' }), json: async () => ({}) })
+      .mockResolvedValue(jsonResponse(VERDICT_STATUS, true, '"def"'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    renderCard()
+    await settle()
+    await settle(10_000)
+    expect(fetchMock.mock.calls[1]?.[1]?.headers).toMatchObject({ 'if-none-match': '"abc"' })
+    expect(screen.getByTestId('sync-line').textContent).toBe(s.fetching)
+
+    await settle(12_500)
+    await settle()
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    expect(screen.getByText(VERDICT_STATUS.verdict.headline)).toBeInTheDocument()
   })
 })
