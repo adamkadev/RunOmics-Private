@@ -25,10 +25,10 @@ GitHub Environment name and the matrix entry in the scheduled workflows.
 ## Why a separate Firebase project
 
 The Firestore collections are flat, global names - `activityNotes`, `pushTokens`,
-`aiInsights`, `aiBudget`, `notifications` - with no athlete in the key, and
-`firestore.rules` grants `allow read: if true` on `activityNotes` so notes render
-for signed-out visitors. Two deployments pointed at one Firebase project would
-therefore share notes, push tokens and the AI budget document.
+`aiInsights`, `aiBudget`, `notifications` - with no athlete in the key, and the
+activity page serves any note it is asked for (`/api/activities/[id]/note`). Two
+deployments pointed at one Firebase project would therefore share notes, push
+tokens and the AI budget document.
 
 A second Firebase project isolates all of it for zero code change, because the
 client and admin SDKs are already configured entirely from `NEXT_PUBLIC_FIREBASE_*`
@@ -223,6 +223,11 @@ Then add the profile to the matrices in `.github/workflows/`:
   profiles still run in parallel.
 - **Targetable.** A manual `sync.yml` dispatch takes a `profile` input, because
   `--force` and `--limit` only ever mean something for one dataset.
+- **Reprocessable.** `reprocess` rebuilds that profile's stored runs from the
+  cached FIT files with the current parser (`scripts/reprocess.py`), asking
+  Garmin for nothing - for runs stored before a parser fix, such as the best
+  efforts that moved to the moving clock in v5.5. The privacy steps after it
+  crop and verify every route as on any sync.
 
 ---
 
@@ -288,10 +293,11 @@ What it does not cover:
   invited still see the routes, so the zones around home keep their job.
 - **The workflow's routes** (`/api/internal/*`) keep their own shared secret
   and stay reachable, as the sync needs them.
-- **Firestore is not behind it.** `activityNotes` is still readable by document
-  ID straight from Firestore (`allow get: if true`), as the web config ships in
-  every page. Closing it means a rules change, and the rules cannot read
-  `RUNOMICS_VIEWERS`.
+- **Notes come through the app.** The activity page reads a note from
+  `/api/activities/[id]/note`, behind the gate, and `firestore.rules` lets only
+  the owner read `activityNotes` directly. Deploy the rules to each Firebase
+  project after the app (`firebase deploy --only firestore:rules --project
+  <id>`): until then a note can still be read straight from Firestore by id.
 
 ---
 
