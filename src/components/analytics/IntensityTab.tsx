@@ -71,7 +71,10 @@ function ZoneKey({ zoneHours, held }: { zoneHours: number[]; held: boolean }) {
           <LegendItem swatch="square" color={color}>
             {t.trainingZones.zoneNumber(z + 1)}
           </LegendItem>
-          <b className="whitespace-nowrap text-[13px] font-semibold tabular-nums text-foreground">{t.analytics.cards.period.hours(formatKm(zoneHours[z]!, 1))}</b>
+          {/* A decimal under 100 h and none above, as distances: a year's Z2 fits its fifth of a phone. */}
+          <b className="whitespace-nowrap text-[13px] font-semibold tabular-nums text-foreground">
+            {t.analytics.cards.period.hours(formatKm(zoneHours[z]!, zoneHours[z]! >= 100 ? 0 : 1))}
+          </b>
         </span>
       ))}
     </div>

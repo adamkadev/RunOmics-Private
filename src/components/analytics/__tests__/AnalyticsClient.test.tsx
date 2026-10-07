@@ -470,6 +470,9 @@ describe('Analytics (v4.5)', () => {
     fireEvent.pointerCancel(scrub)
     expect(key().hasAttribute('data-held')).toBe(false)
     expect(figures()[1]).toEqual(['Z2', '36.0 h'])
+    // A year's hours, as distances: a decimal under 100 and none above.
+    fireEvent.click(screen.getByRole('radio', { name: '1 yr' }))
+    expect(figures().slice(0, 2)).toEqual([['Z1', '26.0 h'], ['Z2', '156 h']])
   })
 })
 
