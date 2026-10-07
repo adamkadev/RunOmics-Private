@@ -168,14 +168,18 @@ describe('D2 Performance', () => {
 
   // Oct 7: the 10K's +8 s was grey on its row (under 0.5 % of 42:24) and
   // "slipped" in the sentence above it, which had a fixed 5 s of its own.
+  // One rule since (design review, Oct 2026): any slower time is a caution.
   it('reads a prediction as moved by the same rule its row is coloured by', () => {
     const days = [
       { date: '2026-07-16', seconds: { '5k': 1208, '10k': 2544, half: 5712, marathon: 12611 } },
       { date: '2026-10-07', seconds: { '5k': 1224, '10k': 2552, half: 5770, marathon: 12765 } },
     ]
     const rows = predictionRows(days, dayWindow('2026-10-07', '12w'))
-    expect(rows.map(predictionTone)).toEqual(['worse', 'flat', 'worse', 'worse'])
-    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 16, hi: 154, count: 3, of: 4 })
+    expect(rows.map(predictionTone)).toEqual(['worse', 'worse', 'worse', 'worse'])
+    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 8, hi: 154, count: 4, of: 4 })
+    // Only a change that prints as 0 s holds.
+    const level = predictionRows([days[0]!, { date: '2026-10-07', seconds: { ...days[0]!.seconds, '5k': 1208.3 } }], dayWindow('2026-10-07', '12w'))
+    expect(predictionTone(level[0]!)).toBe('flat')
   })
 
   it('reads efficiency now against four weeks and six months back, and what heat costs', () => {

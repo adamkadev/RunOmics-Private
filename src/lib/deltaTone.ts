@@ -43,8 +43,8 @@ const SAFE_RANGE: Partial<Record<DeltaMetric, { lo: number; hi: number }>> = {
 export interface DeltaContext {
   /**
    * The value now. Form needs it to tell whether the change moved toward the
-   * neutral band; a race time and a distance need it for their percentage
-   * threshold; the load markers need it for their safe range.
+   * neutral band; a distance needs it for its percentage threshold; the load
+   * markers need it for their safe range.
    */
   value?: number
   /**
@@ -75,11 +75,11 @@ export function deltaTone(metric: DeltaMetric, delta: number | null | undefined,
     // Seconds, positive when slower.
     case 'pace':
       return Math.abs(delta) < 3 ? 'flat' : delta < 0 ? 'good' : 'worse'
-    case 'race': {
-      const base = value !== undefined ? value - delta : null
-      const noise = base && base > 0 ? base * 0.005 : 0
-      return Math.abs(delta) < Math.max(noise, 1) ? 'flat' : delta < 0 ? 'good' : 'worse'
-    }
+    // A predicted race time: any slower time is a caution, any faster good
+    // news (design review, Oct 2026) - a 0.5 % band left the 10K's +8 s grey
+    // beside an amber 5K +16 s. Level only when it prints as 0 s.
+    case 'race':
+      return Math.round(delta) === 0 ? 'flat' : delta < 0 ? 'good' : 'worse'
     // m per heartbeat, printed to two decimals: up to 0.02 is week-to-week
     // noise (v4.16.4). Compared as printed, in hundredths, so the colour always
     // agrees with the number beside it.

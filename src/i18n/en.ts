@@ -880,8 +880,9 @@ export const en = {
         someSlipped: (n: number, of: number, range: string, period: string) => `${n} of ${of} slipped ${range} over ${period}.`,
         someImproved: (n: number, of: number, range: string, period: string) => `${n} of ${of} improved by ${range} over ${period}.`,
         mixed: (faster: number, of: number, period: string) => `${faster} of ${of} got faster over ${period}.`,
-        offTarget: (distance: string, gap: string, target: string) => `The ${distance} is ${gap} off your ${target} target.`,
-        onTarget: (distance: string, gap: string, target: string) => `The ${distance} is ${gap} inside your ${target} target.`,
+        // The gap to the goal race's target, its figure in bold (design review, Oct 2026).
+        offTarget: (distance: string, gap: string, target: string) => [`The ${distance} is `, gap, ` off your ${target} target.`] as [string, string, string],
+        onTarget: (distance: string, gap: string, target: string) => [`The ${distance} is `, gap, ` inside your ${target} target.`] as [string, string, string],
         range: (lo: string, hi: string) => (lo === hi ? lo : `${lo}–${hi}`),
         race: (distance: string) => `${distance} race: `,
         inDays: (n: number) => (n <= 0 ? 'today' : n === 1 ? 'tomorrow' : `${n} days`),

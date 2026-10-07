@@ -145,6 +145,9 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
             : s.held(who, words)
   const goalRow = race ? rows.find((r) => r.distance === race.distance) : undefined
   const gap = goalRow && race?.targetSeconds ? goalRow.seconds - race.targetSeconds : null
+  // The goal race's gap to its target, after the trend (design review, Oct
+  // 2026): its figure in bold, warn off the target and pos inside it, as
+  // Goals' season rows colour the same gap.
   const goal =
     gap !== null && race?.targetSeconds
       ? (gap > 0 ? s.offTarget : s.onTarget)(names[race.distance]!, formatDuration(Math.round(Math.abs(gap))), formatDuration(race.targetSeconds))
@@ -152,7 +155,21 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
   return (
     <Card className="gap-2" testId="predictions-card">
       <CardHead title={s.title} caption={s.caption(words)} about={s.about} />
-      {(lead || goal) && <Sentence className="mb-1.5" testId="predictions-sentence">{[lead, goal].filter(Boolean).join(' ')}</Sentence>}
+      {(lead || goal) && (
+        <Sentence className="mb-1.5" testId="predictions-sentence">
+          {lead}
+          {lead && goal && ' '}
+          {goal && (
+            <>
+              {goal[0]}
+              <b style={{ color: gap! > 0 ? 'var(--warn)' : 'var(--pos)' }} data-testid="predictions-gap">
+                {goal[1]}
+              </b>
+              {goal[2]}
+            </>
+          )}
+        </Sentence>
+      )}
       {/* One grid for every row, each row a subgrid, so the time column
           sizes to the widest time and the times align (v4.17.3): the
           distance, a spacer, the sparkline right up against the time - no

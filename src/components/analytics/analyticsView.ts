@@ -337,8 +337,9 @@ export function predictionRows(days: PredictionDay[], window: DayWindow): Predic
 
 /**
  * A prediction's change by the one delta rule, the one its row is coloured by:
- * under 0.5 % of the time is holding. The sentence had a fixed 5 s of its own,
- * so a 10K 8 s slower was grey on its row and "slipped" in the sentence above.
+ * any slower time is a caution, and only a change printed as 0 s is holding
+ * (design review, Oct 2026). The sentence had a fixed 5 s of its own, so a
+ * 10K 8 s slower was grey on its row and "slipped" in the sentence above.
  */
 export function predictionTone(row: PredictionRow): DeltaTone {
   return deltaTone('race', row.delta, { value: row.seconds })

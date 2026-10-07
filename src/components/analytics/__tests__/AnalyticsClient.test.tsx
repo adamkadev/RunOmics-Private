@@ -290,6 +290,9 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('predictions-race').textContent).toBe('10K race: Nov 29 · 64 days')
     expect(card.textContent).not.toMatch(/\d\.\d{3}/)
     expect(screen.getByTestId('predictions-sentence').textContent).toContain('off your 40:00 target')
+    // The gap itself in bold, a caution off the target, as Goals colours it.
+    expect(screen.getByTestId('predictions-gap').textContent).toBe('3:59')
+    expect(screen.getByTestId('predictions-gap').getAttribute('style')).toContain('var(--warn)')
     // VO2max as Progress prints it.
     expect(screen.getByTestId('performance-summary').textContent).toContain('55.0')
     expect(screen.getByTestId('performance-summary').textContent).toContain('−1.0 in 12 weeks')

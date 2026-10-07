@@ -26,13 +26,22 @@ describe('deltaTone (v4.7)', () => {
     expect(deltaTone('efficiency', -0.02)).toBe('flat')
     expect(deltaTone('efficiency', -0.015)).toBe('flat')
     expect(deltaTone('restingHr', 0.5)).toBe('flat')
-    // 0.5% of a race time; 2% of last year's distance.
-    expect(deltaTone('race', 5, { value: 2570 })).toBe('flat')
+    // A race time: level only when it prints as 0 s; 2% of last year's distance.
+    expect(deltaTone('race', 0.4, { value: 2570 })).toBe('flat')
     expect(deltaTone('race', 61, { value: 1224 })).toBe('worse')
     expect(deltaTone('race', -30, { value: 2400 })).toBe('good')
     expect(deltaTone('distance', 10, { value: 1394 })).toBe('flat')
     expect(deltaTone('distance', 754, { value: 1394 })).toBe('good')
     expect(deltaTone(null as unknown as 'fitness', null)).toBe('flat')
+  })
+
+  // Design review, Oct 2026: the 10K's +8 s (0.3 % of 42:32) was grey beside
+  // an amber 5K +16 s. Any slower predicted time is a caution.
+  it('reads any slower race time as worse, however small', () => {
+    expect(deltaTone('race', 8, { value: 2552 })).toBe('worse')
+    expect(deltaTone('race', 1, { value: 12765 })).toBe('worse')
+    expect(deltaTone('race', -1, { value: 12765 })).toBe('good')
+    expect(deltaColor('race', 8, { value: 2552 })).toBe('var(--tone-caution)')
   })
 
   it('reads Form by whether it moved toward the neutral band', () => {
