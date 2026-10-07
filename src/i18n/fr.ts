@@ -466,14 +466,14 @@ export const fr = {
       verdict: {
         headline: {
           rest: { go: 'Jour de repos. Profites-en.', caution: 'Jour de repos, bien placé.', hold: 'Aujourd’hui, repos complet.' },
-          easy: { go: 'Jambes fraîches, mais reste en endurance.', caution: 'Footing tranquille aujourd’hui.', hold: 'Footing très léger aujourd’hui.' },
-          quality: { go: 'Jambes fraîches : le bon jour pour la séance.', caution: 'Séance maintenue, mais sous contrôle.', hold: 'Allège la séance du jour.' },
-          race: { go: 'Jour de course, jambes fraîches.', caution: 'Jour de course : de la patience au départ.', hold: 'Jour de course : départ prudent.' },
+          easy: { go: 'Dans les clous. Reste en endurance.', caution: 'Footing tranquille aujourd’hui.', hold: 'Footing très léger aujourd’hui.' },
+          quality: { go: 'Dans les clous : le bon jour pour la séance.', caution: 'Séance maintenue, mais sous contrôle.', hold: 'Allège la séance du jour.' },
+          race: { go: 'Jour de course : tout est prêt.', caution: 'Jour de course : de la patience au départ.', hold: 'Jour de course : départ prudent.' },
           done: { go: 'Séance faite, et bien placée.', caution: 'Séance faite. Récupère bien.', hold: 'Séance faite. Place à la récupération.' },
         },
         why: {
-          go: 'La fatigue est retombée.',
-          caution: 'Fatigue et condition s’équilibrent à peu près.',
+          go: 'Ta charge d’entraînement est dans la bonne zone.',
+          caution: 'La fatigue commence à s’accumuler.',
           hold: 'La fatigue a pris le dessus sur ta condition.',
         },
         whyDone: {
@@ -515,7 +515,7 @@ export const fr = {
             hold: 'Pars moins vite que tu en as envie, puis accélère progressivement.',
           },
           done: {
-            go: 'Tu avais des jambes fraîches pour en profiter pleinement.',
+            go: 'Pile dans le plan : c’est comme ça que le travail paie.',
             caution: 'Une journée tranquille ensuite t’aidera à l’assimiler.',
             hold: 'Dors bien et prévois une journée tranquille ensuite.',
           },

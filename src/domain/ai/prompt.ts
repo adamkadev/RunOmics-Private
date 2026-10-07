@@ -6,7 +6,7 @@ import { activeLocale } from '@/i18n'
  * and each card is written again on the next pass instead of keeping copy
  * from the old prompt. Run verdicts carry their own (RUN_VERDICT_PROMPT_VERSION).
  */
-export const CARD_PROMPT_VERSION = 2
+export const CARD_PROMPT_VERSION = 3
 
 /**
  * The French writing rules carry their own version, folded into every

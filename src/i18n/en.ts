@@ -494,14 +494,14 @@ export const en = {
       verdict: {
         headline: {
           rest: { go: 'Rest day. Enjoy it.', caution: "Make today's rest count.", hold: "Take full advantage of today's rest." },
-          easy: { go: 'Fresh legs. Keep easy days easy.', caution: 'Steady day. Keep it easy.', hold: 'Keep today truly easy.' },
-          quality: { go: "You're fresh. Good day for quality.", caution: 'Run it, but keep it controlled.', hold: 'Go easier than planned today.' },
-          race: { go: "Race day. You're fresh for it.", caution: 'Race day. Start controlled.', hold: 'Race day. Start controlled.' },
+          easy: { go: 'On track. Keep easy days easy.', caution: 'Steady day. Keep it easy.', hold: 'Keep today truly easy.' },
+          quality: { go: 'On track. Good day for quality.', caution: 'Run it, but keep it controlled.', hold: 'Go easier than planned today.' },
+          race: { go: "Race day. You're ready for it.", caution: 'Race day. Start controlled.', hold: 'Race day. Start controlled.' },
           done: { go: 'Session done. Nicely timed.', caution: 'Session done. Recover well.', hold: 'Session done. Now let it sink in.' },
         },
         why: {
-          go: 'Fatigue has come down.',
-          caution: 'Fitness and fatigue are close to level.',
+          go: 'Your training load is in range.',
+          caution: 'Fatigue is starting to build up.',
           hold: 'Fatigue has run ahead of fitness.',
         },
         whyDone: {
@@ -529,7 +529,7 @@ export const en = {
           restSinksIn: 'A day off is when the work turns into fitness.',
           easyHold: 'Easy running helps you recover without adding load.',
           easyLands: (when: string, kind: string) => `Keep it easy so ${when}'s ${kind} lands.`,
-          easySave: (when: string, kind: string) => `Save the freshness for ${when}'s ${kind}.`,
+          easySave: (when: string, kind: string) => `Save your legs for ${when}'s ${kind}.`,
           easySettle: 'Keeping it easy lets the load settle.',
           easyGo: 'Easy days are what make the hard ones count.',
           quality: {
@@ -543,7 +543,7 @@ export const en = {
             hold: 'Start slower than you want and build into it.',
           },
           done: {
-            go: 'You ran it fresh, when the work counts most.',
+            go: 'Right on plan: this is how the work adds up.',
             caution: 'An easy day next lets it land.',
             hold: 'Sleep and an easy day next are what turn it into fitness.',
           },

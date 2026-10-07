@@ -111,7 +111,7 @@ describe('the line under the verdict', () => {
   // v4.17.1: never the Form / Fitness / Fatigue row again, under a headline
   // that already said it.
   it('falls back to why and what it gives, with no figure from the stats row', () => {
-    const status = { tsbNow: -11, tsbDelta: -3, ctl: 45, atl: 56, loadTrend: 'maintaining' } as unknown as TrainingStatus
+    const status = { tsbNow: -22, tsbDelta: -3, ctl: 45, atl: 67, atlDelta: -1, loadTrend: 'maintaining' } as unknown as TrainingStatus
     render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={{ headline: "Keep today's long run easy", body: '' } as never} yesterday="long_run" />)
     const v = t.dashboard.todayHero.verdict
     expect(screen.getByTestId('today-reason').textContent).toBe(`${v.yesterdayInLegs(v.kind.long_run)} ${v.gain.restSinksIn}`)

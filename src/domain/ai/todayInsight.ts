@@ -86,16 +86,16 @@ export function todayInsightGuard(context: TodayContext): string {
 
 const TONE_RULES: Record<ReadinessTone, Record<SessionKind, string>> = {
   go: {
-    rest: 'The athlete is fresh and recovered, and today is a rest day. Say what that freshness is being saved for.',
-    easy: 'The athlete is fresh and recovered. Encourage the easy run, and keep it easy: fresh legs are no reason to push an easy day.',
-    quality: "The athlete is fresh and recovered. Encourage today's session: this is the day to run its paces with confidence.",
-    race: 'The athlete is fresh and recovered, and today is race day. Back them to race it.',
+    rest: 'The training load is in range, and today is a rest day. Say what the rest sets up.',
+    easy: 'The training load is in range. Encourage the easy run, and keep it easy: a good week is no reason to push an easy day.',
+    quality: "The training load is in range. Encourage today's session: this is the day to run its paces with confidence.",
+    race: 'The training load is in range, and today is race day. Back them to race it.',
   },
   caution: {
-    rest: 'The athlete is neither fresh nor cooked, and today is a rest day. Say the rest is well placed and what it lets settle.',
-    easy: 'The athlete is neither fresh nor cooked. Advise keeping the easy run honestly easy.',
-    quality: "The athlete is neither fresh nor cooked. Advise running today's session at its prescribed paces and no faster, and cutting it short if the reps stop feeling controlled.",
-    race: 'The athlete is neither fresh nor cooked, and today is race day. Never tell them to hold back from racing: advise a controlled start and letting the effort build.',
+    rest: 'Fatigue is starting to build, and today is a rest day. Say the rest is well placed and what it lets settle.',
+    easy: 'Fatigue is starting to build. Advise keeping the easy run honestly easy.',
+    quality: "Fatigue is starting to build. Advise running today's session at its prescribed paces and no faster, and cutting it short if the reps stop feeling controlled.",
+    race: 'Fatigue is starting to build, and today is race day. Never tell them to hold back from racing: advise a controlled start and letting the effort build.',
   },
   hold: {
     rest: 'Fatigue is elevated, and today is a rest day. Say rest is exactly what the body needs now.',
@@ -106,7 +106,7 @@ const TONE_RULES: Record<ReadinessTone, Record<SessionKind, string>> = {
 }
 
 const COMPLETED_TONE_RULES: Record<ReadinessTone, string> = {
-  go: 'The athlete was fresh and already ran today. Affirm that was the window to use it.',
+  go: 'The training load was in range and the athlete already ran today. Affirm the session fits the plan.',
   caution: 'The athlete had little room to spare and already ran today. Say how carrying that landed, not what to watch going in.',
   hold: 'Fatigue was elevated and the athlete already ran today anyway. Acknowledge it is done and turn to what recovering from it now looks like.',
 }
@@ -114,7 +114,7 @@ const COMPLETED_TONE_RULES: Record<ReadinessTone, string> = {
 const COMPLETED_RACE_RULE = "Today's race is done. Acknowledge the effort and turn to recovering from it; never second-guess the decision to race."
 
 const RAN_ON_REST_DAY_RULES: Record<ReadinessTone, string> = {
-  go: 'Today was a rest day on the plan, and the athlete ran anyway while fresh. Say it is done and that the rest of the day is for recovering.',
+  go: 'Today was a rest day on the plan, and the athlete ran anyway with the load in range. Say it is done and that the rest of the day is for recovering.',
   caution: 'Today was a rest day on the plan, and the athlete ran anyway with little room to spare. Say it is done and what it now asks of recovery.',
   hold: 'Fatigue is elevated, today was a rest day on the plan, and the athlete ran anyway. Acknowledge it is done and turn to what recovering from it now looks like.',
 }

@@ -19,7 +19,7 @@ describe('todayVerdict (v4.17.1)', () => {
     expect(body).toBe(`${v.why.hold} ${v.gain.restPaysOff('Tuesday', v.kind.threshold)}`)
   })
 
-  it('only blames yesterday for a hard run, and never on a fresh day', () => {
+  it('only blames yesterday for a hard run, and never on a green-light day', () => {
     expect(todayVerdict({ tone: 'hold', today: 'easy', yesterday: 'easy', next: null }).body).toBe(`${v.why.hold} ${v.gain.easyHold}`)
     expect(todayVerdict({ tone: 'go', today: 'quality', yesterday: 'threshold', next: null }).body).toBe(`${v.why.go} ${v.gain.quality.go}`)
   })
