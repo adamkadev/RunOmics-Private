@@ -456,6 +456,7 @@ export const fr = {
     todayHero: {
       eyebrowByTone: {
         go: 'Feu vert',
+        build: 'En charge',
         caution: 'Prudence',
         hold: 'Lever le pied',
       },
@@ -465,19 +466,21 @@ export const fr = {
       // l’appli ne sait pas qui la lit.
       verdict: {
         headline: {
-          rest: { go: 'Jour de repos. Profites-en.', caution: 'Jour de repos, bien placé.', hold: 'Aujourd’hui, repos complet.' },
-          easy: { go: 'Dans les clous. Reste en endurance.', caution: 'Footing tranquille aujourd’hui.', hold: 'Footing très léger aujourd’hui.' },
-          quality: { go: 'Dans les clous : le bon jour pour la séance.', caution: 'Séance maintenue, mais sous contrôle.', hold: 'Allège la séance du jour.' },
-          race: { go: 'Jour de course : tout est prêt.', caution: 'Jour de course : de la patience au départ.', hold: 'Jour de course : départ prudent.' },
-          done: { go: 'Séance faite, et bien placée.', caution: 'Séance faite. Récupère bien.', hold: 'Séance faite. Place à la récupération.' },
+          rest: { go: 'Jour de repos. Profites-en.', build: 'Jour de repos, comme prévu.', caution: 'Jour de repos, bien placé.', hold: 'Aujourd’hui, repos complet.' },
+          easy: { go: 'Jambes fraîches, mais reste en endurance.', build: 'Dans les clous. Reste en endurance.', caution: 'Footing tranquille aujourd’hui.', hold: 'Footing très léger aujourd’hui.' },
+          quality: { go: 'Jambes fraîches : le bon jour pour la séance.', build: 'Dans les clous : séance comme prévu.', caution: 'Séance maintenue, mais sous contrôle.', hold: 'Allège la séance du jour.' },
+          race: { go: 'Jour de course, jambes fraîches.', build: 'Jour de course : tout est prêt.', caution: 'Jour de course : de la patience au départ.', hold: 'Jour de course : départ prudent.' },
+          done: { go: 'Séance faite, et bien placée.', build: 'Séance faite, comme prévu.', caution: 'Séance faite. Récupère bien.', hold: 'Séance faite. Place à la récupération.' },
         },
         why: {
-          go: 'Ta charge d’entraînement est dans la bonne zone.',
+          go: 'La fatigue est retombée.',
+          build: 'Ta charge d’entraînement est dans la bonne zone.',
           caution: 'La fatigue commence à s’accumuler.',
           hold: 'La fatigue a pris le dessus sur ta condition.',
         },
         whyDone: {
           go: '',
+          build: '',
           caution: '',
           hold: 'Tu avais déjà de la fatigue dans les jambes.',
         },
@@ -506,16 +509,19 @@ export const fr = {
           easyGo: 'Ce sont les footings tranquilles qui rendent les séances dures efficaces.',
           quality: {
             go: 'Tiens les allures prévues : c’est aujourd’hui que le travail compte.',
+            build: 'Tiens les allures prévues, sans aller plus vite.',
             caution: 'Respecte les allures prévues, sans ajouter de répétitions.',
             hold: 'Réduis les répétitions ou remplace-les par un footing : forcer sur des jambes fatiguées rapporte peu.',
           },
           race: {
             go: 'Tout ton entraînement visait ce jour.',
+            build: 'Tout ton entraînement visait ce jour.',
             caution: 'Pars moins vite que tu en as envie, puis accélère progressivement.',
             hold: 'Pars moins vite que tu en as envie, puis accélère progressivement.',
           },
           done: {
-            go: 'Pile dans le plan : c’est comme ça que le travail paie.',
+            go: 'Tu avais des jambes fraîches pour en profiter pleinement.',
+            build: 'C’est avec des séances comme celle-ci que le travail paie.',
             caution: 'Une journée tranquille ensuite t’aidera à l’assimiler.',
             hold: 'Dors bien et prévois une journée tranquille ensuite.',
           },

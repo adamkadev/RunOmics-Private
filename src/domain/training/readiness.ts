@@ -1,12 +1,13 @@
 import type { TrainingStatus } from '@/domain/training/status'
 
-export type ReadinessTone = 'go' | 'caution' | 'hold'
+export type ReadinessTone = 'go' | 'build' | 'caution' | 'hold'
 
 /**
  * Form (TSB) on the usual scale (Coggan; TrainingPeaks and intervals.icu read
  * it the same way): above +5 fresh, +5 to -10 neutral, -10 to -30 the
  * productive training zone, below -30 high risk.
  */
+const FORM_FRESH = 5
 const FORM_DEEP = -20
 const FORM_HIGH_RISK = -30
 
@@ -21,12 +22,14 @@ function fatigueRisingFast(status: TrainingStatus): boolean {
 }
 
 /**
- * The Today verdict's tone. Green light is the normal state of a block: the
- * load is in range and the plan stands as written. Caution names something
- * to watch: Form deep in the training zone, fatigue climbing fast, a
- * moderate-risk load, or fitness slipping despite the work. Hold is for real
- * risk: overreaching, a high-risk load, Form in the high-risk zone, or deep
- * in the training zone with fatigue still climbing fast.
+ * The Today verdict's tone. Build is the normal state of a block: the load
+ * is in range and the plan stands as written. Go is the same with fresh
+ * legs, Form above +5: the day a session can be run with confidence.
+ * Caution names something to watch: Form deep in the training zone, fatigue
+ * climbing fast, a moderate-risk load, or fitness slipping despite the work.
+ * Hold is for real risk: overreaching, a high-risk load, Form in the
+ * high-risk zone, or deep in the training zone with fatigue still climbing
+ * fast.
  *
  * Green light used to need Form above +5 with fatigue falling, which only a
  * taper or a few days off give, so caution was the default: 398 days of 464,
@@ -37,5 +40,5 @@ export function verdictTone(status: TrainingStatus): ReadinessTone {
   const climbing = fatigueRisingFast(status)
   if (status.tsbNow < FORM_HIGH_RISK || (status.tsbNow < FORM_DEEP && climbing)) return 'hold'
   if (status.tsbNow < FORM_DEEP || climbing || status.risk === 'moderate' || status.status === 'unproductive') return 'caution'
-  return 'go'
+  return status.tsbNow > FORM_FRESH ? 'go' : 'build'
 }

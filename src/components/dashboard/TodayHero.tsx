@@ -21,8 +21,11 @@ import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
 
 // Green light is good news; caution and hold back both ask for care (v4.17).
+// Building is neither: the normal day of a block, in neutral ink, so amber
+// keeps meaning something.
 const VERDICT_TONE: Record<ReadinessTone, VerdictTone> = {
   go: 'pos',
+  build: 'neutral',
   caution: 'warn',
   hold: 'warn',
 }

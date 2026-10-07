@@ -485,6 +485,7 @@ export const en = {
     todayHero: {
       eyebrowByTone: {
         go: 'Green light',
+        build: 'Building',
         caution: 'Caution',
         hold: 'Hold back',
       },
@@ -493,19 +494,21 @@ export const en = {
       // Fitness / Fatigue row under it already prints.
       verdict: {
         headline: {
-          rest: { go: 'Rest day. Enjoy it.', caution: "Make today's rest count.", hold: "Take full advantage of today's rest." },
-          easy: { go: 'On track. Keep easy days easy.', caution: 'Steady day. Keep it easy.', hold: 'Keep today truly easy.' },
-          quality: { go: 'On track. Good day for quality.', caution: 'Run it, but keep it controlled.', hold: 'Go easier than planned today.' },
-          race: { go: "Race day. You're ready for it.", caution: 'Race day. Start controlled.', hold: 'Race day. Start controlled.' },
-          done: { go: 'Session done. Nicely timed.', caution: 'Session done. Recover well.', hold: 'Session done. Now let it sink in.' },
+          rest: { go: 'Rest day. Enjoy it.', build: 'Rest day, right on plan.', caution: "Make today's rest count.", hold: "Take full advantage of today's rest." },
+          easy: { go: 'Fresh legs. Keep easy days easy.', build: 'On track. Keep easy days easy.', caution: 'Steady day. Keep it easy.', hold: 'Keep today truly easy.' },
+          quality: { go: "You're fresh. Good day for quality.", build: 'On track. Run it as planned.', caution: 'Run it, but keep it controlled.', hold: 'Go easier than planned today.' },
+          race: { go: "Race day. You're fresh for it.", build: "Race day. You're ready for it.", caution: 'Race day. Start controlled.', hold: 'Race day. Start controlled.' },
+          done: { go: 'Session done. Nicely timed.', build: 'Session done, as planned.', caution: 'Session done. Recover well.', hold: 'Session done. Now let it sink in.' },
         },
         why: {
-          go: 'Your training load is in range.',
+          go: 'Fatigue has come down.',
+          build: 'Your training load is in range.',
           caution: 'Fatigue is starting to build up.',
           hold: 'Fatigue has run ahead of fitness.',
         },
         whyDone: {
           go: '',
+          build: '',
           caution: '',
           hold: 'You ran it on tired legs.',
         },
@@ -529,21 +532,24 @@ export const en = {
           restSinksIn: 'A day off is when the work turns into fitness.',
           easyHold: 'Easy running helps you recover without adding load.',
           easyLands: (when: string, kind: string) => `Keep it easy so ${when}'s ${kind} lands.`,
-          easySave: (when: string, kind: string) => `Save your legs for ${when}'s ${kind}.`,
+          easySave: (when: string, kind: string) => `Save the freshness for ${when}'s ${kind}.`,
           easySettle: 'Keeping it easy lets the load settle.',
           easyGo: 'Easy days are what make the hard ones count.',
           quality: {
             go: 'Hit the planned paces: this is when the work counts most.',
+            build: 'Hit the planned paces, and no faster.',
             caution: 'Hold the planned paces and skip any extra reps.',
             hold: 'Cut the reps or swap it for an easy run: quality on tired legs rarely pays.',
           },
           race: {
             go: 'This is what the training was for.',
+            build: 'This is what the training was for.',
             caution: 'Start slower than you want and build into it.',
             hold: 'Start slower than you want and build into it.',
           },
           done: {
-            go: 'Right on plan: this is how the work adds up.',
+            go: 'You ran it fresh, when the work counts most.',
+            build: 'Sessions like this are how the work adds up.',
             caution: 'An easy day next lets it land.',
             hold: 'Sleep and an easy day next are what turn it into fitness.',
           },

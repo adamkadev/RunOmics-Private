@@ -11,15 +11,16 @@ const status = (over: Partial<TrainingStatus>): TrainingStatus => ({
 describe('verdictTone', () => {
   // Oct 2-7: Garmin productive, ACWR 0.9 optimal, Form -12 to -18 with fatigue
   // flat. Caution was the default, so it read on every one of those days.
-  it('gives the green light to a productive block with the load in range', () => {
-    expect(verdictTone(status({ tsbNow: -14.3, atlDelta: 2.4 }))).toBe('go')
-    expect(verdictTone(status({ tsbNow: -17.6, atlDelta: -0.6, ctl: 53.7 }))).toBe('go')
-    expect(verdictTone(status({ tsbNow: 3, atlDelta: 1, status: 'maintaining' }))).toBe('go')
+  it('reads a productive block with the load in range as building', () => {
+    expect(verdictTone(status({ tsbNow: -14.3, atlDelta: 2.4 }))).toBe('build')
+    expect(verdictTone(status({ tsbNow: -17.6, atlDelta: -0.6, ctl: 53.7 }))).toBe('build')
+    expect(verdictTone(status({ tsbNow: 3, atlDelta: 1, status: 'maintaining' }))).toBe('build')
+    expect(verdictTone(status({ tsbNow: 5, atlDelta: -3 }))).toBe('build')
   })
 
   // A first week: fitness 0, fatigue 2 after one 2 km run.
   it('does not call a first run fatigue', () => {
-    expect(verdictTone(status({ ctl: 0, atl: 2, tsbNow: -2, atlDelta: 2, status: 'maintaining' }))).toBe('go')
+    expect(verdictTone(status({ ctl: 0, atl: 2, tsbNow: -2, atlDelta: 2, status: 'maintaining' }))).toBe('build')
   })
 
   it('reads caution deep in the training zone, on fatigue climbing fast, or on a moderate-risk load', () => {
@@ -47,6 +48,7 @@ describe('verdictTone', () => {
   // in reads caution once fatigue climbs fast.
   it('gives the green light when fresh, a break included', () => {
     expect(verdictTone(status({ tsbNow: 8, atlDelta: -4 }))).toBe('go')
+    expect(verdictTone(status({ tsbNow: 6, atlDelta: 2 }))).toBe('go')
     expect(verdictTone(status({ tsbNow: 30, atlDelta: -12, status: 'detraining', loadTrend: 'detraining' }))).toBe('go')
   })
 })

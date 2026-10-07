@@ -28,6 +28,17 @@ describe('TodayHero', () => {
     expect(eyebrow.querySelector('span[aria-hidden]')).not.toBeNull()
   })
 
+  // Oct 7: Form -18 with the load in range read amber "Caution", then green
+  // above a Form card that said "Tired". A normal day of a block is neither.
+  it('reads a normal day of a block as building, in neutral ink', () => {
+    const status = { status: 'productive', risk: 'low', tsbNow: -18, tsbDelta: 3, ctl: 54, atl: 71, atlDelta: -1, loadTrend: 'building' } as unknown as TrainingStatus
+    render(<TodayHero status={status} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} />)
+
+    const eyebrow = screen.getByText(t.dashboard.todayHero.eyebrowByTone.build)
+    expect(eyebrow.getAttribute('style')).toContain('var(--text-2)')
+    expect(eyebrow.getAttribute('style')).not.toContain('var(--warn)')
+  })
+
   it('offers the plan from the session row', () => {
     render(<TodayHero status={null} plannedWorkout={PLAN} todayActivity={null} aiVerdict={null} />)
 

@@ -22,6 +22,14 @@ describe('todayVerdict (v4.17.1)', () => {
   it('only blames yesterday for a hard run, and never on a green-light day', () => {
     expect(todayVerdict({ tone: 'hold', today: 'easy', yesterday: 'easy', next: null }).body).toBe(`${v.why.hold} ${v.gain.easyHold}`)
     expect(todayVerdict({ tone: 'go', today: 'quality', yesterday: 'threshold', next: null }).body).toBe(`${v.why.go} ${v.gain.quality.go}`)
+    expect(todayVerdict({ tone: 'build', today: 'easy', yesterday: 'long_run', next: null }).body).toBe(`${v.yesterdayInLegs(v.kind.long_run)} ${v.gain.easyGo}`)
+  })
+
+  it('reads a building day as on plan, not as fatigue to settle', () => {
+    expect(todayVerdict({ tone: 'build', today: 'easy', yesterday: null, next: null })).toEqual({
+      headline: v.headline.easy.build,
+      body: `${v.why.build} ${v.gain.easyGo}`,
+    })
   })
 
   it('points an easy day at the next quality session, not at another easy one', () => {
@@ -31,7 +39,7 @@ describe('todayVerdict (v4.17.1)', () => {
   })
 
   it('never prints a figure', () => {
-    for (const tone of ['go', 'caution', 'hold'] as const) {
+    for (const tone of ['go', 'build', 'caution', 'hold'] as const) {
       for (const today of ['rest', 'easy', 'quality', 'race', 'done'] as const) {
         const { headline, body } = todayVerdict({ tone, today, yesterday: 'tempo', next: { date: '2026-10-01', inDays: 3, kind: 'threshold' } })
         expect(`${headline} ${body}`, `${tone} ${today}`).not.toMatch(/\d/)
