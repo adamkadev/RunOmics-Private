@@ -91,6 +91,9 @@ async function certFor(kid: string, now: number): Promise<string | undefined> {
 export interface FirebaseIdTokenClaims extends jwt.JwtPayload {
   sub: string
   owner?: boolean
+  /** The account's address, when it has one; email_verified says whether its provider checked it. */
+  email?: string
+  email_verified?: boolean
 }
 
 /** Throws on anything that doesn't check out - a bad signature, wrong project, an expired or not-yet-valid token. */

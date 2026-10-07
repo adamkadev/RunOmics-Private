@@ -206,6 +206,19 @@ export const fr = {
     refresh: 'Actualiser',
   },
 
+  // The private site's way in (RUNOMICS_PRIVATE, src/proxy.ts).
+  signIn: {
+    title: 'Connexion',
+    heading: 'Ce RunOmics est privé',
+    lead: 'Connecte-toi avec ton compte Google pour l’ouvrir.',
+    opening: 'Ouverture…',
+    notInvited: (email: string | null) =>
+      email ? `Le compte ${email} n’est pas invité sur ce RunOmics.` : 'Ce compte n’est pas invité sur ce RunOmics.',
+    otherAccount: 'Utiliser un autre compte',
+    unavailable: 'La connexion n’est pas encore configurée sur ce déploiement.',
+    retry: 'Réessayer',
+  },
+
   pages: {
     dashboard: {
       title: 'Aujourd’hui',

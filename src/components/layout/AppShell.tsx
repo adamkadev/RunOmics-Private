@@ -7,6 +7,7 @@ import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { NavigationHistoryProvider } from './NavigationHistory'
 import { CompactTitleBar } from './CompactTitleBar'
+import { SIGN_IN_PATH } from '@/lib/siteSession'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
 
@@ -65,6 +66,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       window.removeEventListener('pagehide', persist)
     }
   }, [pathname])
+
+  // The private site's sign-in (src/proxy.ts) is a page on its own: no tab
+  // bar or sidebar pointing at pages it cannot open yet.
+  if (pathname === SIGN_IN_PATH) {
+    return (
+      <div className="min-h-screen">
+        <ThemeSync />
+        <main>{children}</main>
+      </div>
+    )
+  }
 
   return (
     <NavigationHistoryProvider>

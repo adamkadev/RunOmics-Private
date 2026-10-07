@@ -5,6 +5,7 @@ import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { SectionDivider } from '@/components/ui/SectionLabel'
 import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
+import { SIGN_IN_PATH, endSiteSession, replacePage } from '@/lib/siteSession'
 import { formatRelativeAgo } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { BackButton } from '@/components/ui/BackButton'
@@ -64,7 +65,11 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body }: Pr
   }
 
   async function handleSignOut() {
+    // The private site's session first: on a private site, signing out ends
+    // at /sign-in, and the pages this device cached go too.
+    const site = await endSiteSession()
     await signOut(getClientAuth())
+    if (site.private) replacePage(SIGN_IN_PATH)
   }
 
   if (loading) {

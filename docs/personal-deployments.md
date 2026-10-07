@@ -145,6 +145,9 @@ Vercel supports any number of projects per repository. Give it its own domain.
 | `GITHUB_SYNC_TOKEN`, `GITHUB_SYNC_REPO` | the Sync button's PAT (Actions: Read and write on this repository) and this repository - may be shared |
 | `GITHUB_SYNC_PROFILE` | her profile name, `lamiaa`: her Sync button then syncs her data only, and its limits (one run at a time, 10 min apart, 12 a day) count her runs only. Unset, a tap syncs both athletes |
 | `NEXT_PUBLIC_MAPTILER_TOKEN` | may be shared, subject to the plan's request quota |
+| `RUNOMICS_PRIVATE` | optional, `1` to make the deployment private - see [A private deployment](#a-private-deployment) |
+| `SESSION_SECRET` | with `RUNOMICS_PRIVATE`: a fresh random string of 32+ characters (`openssl rand -base64 32`), **not** another profile's |
+| `RUNOMICS_VIEWERS` | optional, with `RUNOMICS_PRIVATE`: Google accounts that may view without being the owner, comma-separated - yours, on her deployment |
 
 `GEMINI_COACH_API_KEY` is deliberately absent: the adaptive coach is a local CLI
 (`npm run coach`) for now, so no deployment and no workflow reads it. It lives in
@@ -256,6 +259,39 @@ same activities again on the next run.
 A workspace with no recorded base is refused too, since it is unknown what it
 was built from. Hydrate it with `fetch_private_data.mjs`, or set
 `RUNOMICS_DATA_BASE_REVISION` to the commit it was built from if you know it.
+
+---
+
+## A private deployment
+
+`RUNOMICS_PRIVATE=1` closes the whole site to anyone who is not signed in: every
+page redirects to `/sign-in`, every API answers 401, before any page - cached or
+not - is served (`src/proxy.ts`). The owner gets in by the `owner` claim, and
+each address in `RUNOMICS_VIEWERS` by its verified Google sign-in, so the two
+athletes can each open the other's deployment. Unset, nothing changes.
+
+`/sign-in` trades the Firebase ID token for a session cookie, verified once and
+then signed with `SESSION_SECRET`; the proxy checks only the signature. The
+cookie lasts 30 days, after which `/sign-in` checks the Google account again -
+without a tap while the browser still holds the account. Changing
+`SESSION_SECRET` signs everyone out.
+
+Turning it on, in order: set the three variables on the Vercel project,
+redeploy, then open the site and sign in. An account without the claim is told
+it is not invited: grant the claim (step 4) and sign in again. Sign-out in
+Settings ends the session and clears the pages the device cached.
+
+What it does not cover:
+
+- **The privacy zones stay.** The gate decides who opens the site, not what
+  the data says: a shared card or screenshot, the data repository, and anyone
+  invited still see the routes, so the zones around home keep their job.
+- **The workflow's routes** (`/api/internal/*`) keep their own shared secret
+  and stay reachable, as the sync needs them.
+- **Firestore is not behind it.** `activityNotes` is still readable by document
+  ID straight from Firestore (`allow get: if true`), as the web config ships in
+  every page. Closing it means a rules change, and the rules cannot read
+  `RUNOMICS_VIEWERS`.
 
 ---
 

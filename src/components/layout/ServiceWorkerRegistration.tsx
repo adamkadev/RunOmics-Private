@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { t } from '@/i18n'
+import { SIGN_IN_PATH } from '@/lib/siteSession'
 
 export function ServiceWorkerRegistration() {
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null)
@@ -10,6 +11,9 @@ export function ServiceWorkerRegistration() {
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') return
     if (!('serviceWorker' in navigator)) return
+    // Not before the private site's sign-in: the worker's install caches the
+    // app's first page, which a signed-out visitor is only redirected from.
+    if (window.location.pathname === SIGN_IN_PATH) return
 
     let cancelled = false
 

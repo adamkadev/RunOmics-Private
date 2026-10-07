@@ -73,7 +73,9 @@ async function cacheFirst(request) {
 async function networkFirst(request, { isNavigation }) {
   try {
     const response = await fetch(request)
-    if (response.ok) {
+    // Never one that was redirected: on a private site that is /sign-in,
+    // which must not be kept as the page that sent there.
+    if (response.ok && !response.redirected) {
       const cache = await caches.open(PAGE_CACHE)
       cache.put(request, response.clone())
     }
