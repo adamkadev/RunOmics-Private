@@ -356,6 +356,12 @@ describe('Analytics (v4.5)', () => {
     expect(loss('mild').textContent).toBe('+4 s')
     expect(loss('mild').getAttribute('style')).toContain('var(--muted-foreground)')
     expect(row('hot').textContent).toContain(t.analytics.cards.heatCost.noRuns)
+    // Design review, Oct 2026: the best band is the zero, marked; a band
+    // without runs is an empty dashed track, never drawn like the best.
+    expect(within(row('cool')).getByTestId('heat-zero').style.background).toBe('var(--pos)')
+    expect(within(row('hot')).getByTestId('heat-empty').className).toContain('border-dashed')
+    expect(within(row('cool')).queryByTestId('heat-empty')).toBeNull()
+    expect(screen.getByTestId('heat-key').textContent).toBe(t.analytics.cards.heatCost.barKey)
     expect(screen.getByTestId('heat-card').innerHTML).not.toContain('var(--accent)')
   })
 

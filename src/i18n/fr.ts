@@ -849,6 +849,7 @@ export const fr = {
         best: 'meilleure',
         noRuns: 'aucune sortie',
         plus: (s: number) => `+${s} s`,
+        barKey: 'Barre plus longue : plus de s/km perdues face à ta meilleure tranche.',
       },
       weekly: {
         title: 'Distance hebdo',

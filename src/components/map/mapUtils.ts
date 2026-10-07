@@ -115,8 +115,9 @@ export const OWN_ROW_SHARE = 10;
 
 // The area, type and year chips are the app's filter chips (v4.17): neutral
 // while unset, inverted once set. The area is always set.
-export const MAP_CHIP_GEOMETRY = "flex h-8 items-center rounded-full text-[13px] transition-colors";
-export const MAP_CHIP_PADDING = "0 12px";
+/** 44 pt tall, the minimum tap target (design review, Oct 2026: they were 31 pt). */
+export const MAP_CHIP_GEOMETRY = "flex h-11 items-center rounded-full text-sm transition-colors";
+export const MAP_CHIP_PADDING = "0 14px";
 /** An open menu outlines its unset chip in text ink. */
 export const MAP_CHIP_OPEN_BORDER = "1px solid var(--foreground)";
 export const MAP_CHIP_CARET_INK = "var(--subtle)";

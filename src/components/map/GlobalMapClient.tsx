@@ -198,9 +198,9 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           <button
             onClick={() => setIsFullscreen(false)}
             aria-label={t.pages.map.exitFullscreen}
-            className="map-overlay ml-auto flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[9px] text-[var(--text-2)]"
+            className="map-overlay ml-auto flex size-11 shrink-0 items-center justify-center rounded-[12px] text-[var(--text-2)]"
           >
-            <Minimize size={14} />
+            <Minimize size={16} />
           </button>
         )}
       </div>
@@ -238,9 +238,9 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           <button
             onClick={() => setIsFullscreen(true)}
             aria-label={t.pages.map.fullscreen}
-            className="map-overlay absolute right-3 top-3 z-20 flex h-[34px] w-[34px] items-center justify-center rounded-[9px] text-[var(--text-2)]"
+            className="map-overlay absolute right-3 top-3 z-20 flex size-11 items-center justify-center rounded-[12px] text-[var(--text-2)]"
           >
-            <Maximize size={14} />
+            <Maximize size={16} />
           </button>
         )}
 

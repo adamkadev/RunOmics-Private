@@ -387,7 +387,10 @@ export function heatColor(row: { best: boolean; cost: number | null }): string {
 /**
  * Heat cost, redesigned (v4.17): each band's bar is the seconds a km it loses
  * against your best temperature band at the same heart rate. The best band
- * has no bar and reads "best" in pos.
+ * is the zero the others are measured from: a dot at the track's start and
+ * "best" in pos. A band without runs has a dashed, empty track - drawn like
+ * the best band's, it read as the best (design review, Oct 2026) - and a
+ * line under the rows says what a bar's length is.
  */
 function HeatCostCard({ data }: { data: HeatImpactData | null }) {
   const s = t.analytics.cards.heatCost
@@ -407,9 +410,14 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
           return (
             <div key={row.id} className="grid grid-cols-[60px_minmax(0,1fr)_96px] items-center gap-3 text-[13px] sm:grid-cols-[72px_minmax(0,1fr)_110px] sm:gap-3.5" data-testid={`heat-${row.id}`}>
               <span className="whitespace-nowrap text-[var(--text-2)]">{labels[row.id]}</span>
-              <div className="h-2 rounded-full bg-[var(--surface-2)]">
-                {row.cost !== null && !row.best && (
-                  <div className="h-full rounded-full" style={{ width: `${Math.min(1, row.cost / view.scale) * 100}%`, background: color }} data-testid="heat-bar" />
+              <div
+                className={row.pace === null ? 'box-border h-2 rounded-full border border-dashed border-[var(--line-2)]' : 'relative h-2 rounded-full bg-[var(--surface-2)]'}
+                data-testid={row.pace === null ? 'heat-empty' : undefined}
+              >
+                {row.best ? (
+                  <span aria-hidden className="absolute left-0 top-1/2 size-2.5 -translate-y-1/2 rounded-full" style={{ background: color }} data-testid="heat-zero" />
+                ) : (
+                  row.cost !== null && <div className="h-full rounded-full" style={{ width: `${Math.min(1, row.cost / view.scale) * 100}%`, background: color }} data-testid="heat-bar" />
                 )}
               </div>
               <span className="whitespace-nowrap text-right">
@@ -430,6 +438,7 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
           )
         })}
       </div>
+      <p className="pt-1 text-xs text-muted-foreground" data-testid="heat-key">{s.barKey}</p>
     </Card>
   )
 }

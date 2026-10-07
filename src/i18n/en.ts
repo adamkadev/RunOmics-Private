@@ -901,6 +901,7 @@ export const en = {
         best: 'best',
         noRuns: 'no runs',
         plus: (s: number) => `+${s} s`,
+        barKey: 'Longer bar: more s/km lost against your best band.',
       },
       weekly: {
         title: 'Weekly distance',
