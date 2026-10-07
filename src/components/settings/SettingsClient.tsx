@@ -224,7 +224,12 @@ function AppearanceSection() {
   )
 }
 
-/** Height, weight and BMI, as Garmin has them: read-only rows. */
+/**
+ * Height, weight and BMI, as Garmin has them: read-only rows, drawn as facts
+ * (design review, Oct 2026). The value is quiet on the right, where the
+ * page's actions sit in colour, with no chevron; the line under the card says
+ * where they change, so nobody taps them to find out.
+ */
 function ProfileSection({ body }: { body?: Body }) {
   const rows = body ? bodyMetrics(body) : []
   if (rows.length === 0) return null
@@ -235,14 +240,15 @@ function ProfileSection({ body }: { body?: Body }) {
           {rows.map((row) => (
             <div key={row.label} className="flex items-center justify-between gap-3 border-b border-border py-3.5 text-sm last:border-b-0">
               <dt className="text-foreground">{row.label}</dt>
-              <dd className="font-semibold text-foreground">
+              <dd className="text-muted-foreground" data-testid="profile-value">
                 {row.value}
-                {row.unit && <span className="ml-1 font-normal text-muted-foreground">{row.unit}</span>}
+                {row.unit && <span className="ml-1">{row.unit}</span>}
               </dd>
             </div>
           ))}
         </dl>
       </div>
+      <p className="px-1 text-xs leading-snug text-muted-foreground">{t.settings.profile.readOnly}</p>
     </Section>
   )
 }

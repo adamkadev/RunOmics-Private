@@ -443,6 +443,10 @@ export const en = {
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
     },
+    profile: {
+      // Under the read-only height, weight and BMI (design review, Oct 2026).
+      readOnly: 'From Garmin Connect - change them there.',
+    },
     offlineCache: {
       clear: 'Clear offline cache',
       cost: 'Pages and maps reload from the network until you visit them again.',

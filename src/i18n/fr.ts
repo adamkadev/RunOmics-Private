@@ -414,6 +414,9 @@ export const fr = {
       exporting: 'Export en cours…',
       failed: 'Impossible d’exporter les données d’entraînement.',
     },
+    profile: {
+      readOnly: 'Depuis Garmin Connect : c’est là que tu les modifies.',
+    },
     offlineCache: {
       clear: 'Vider le cache hors ligne',
       cost: 'Les pages et les cartes seront rechargées depuis le réseau à la prochaine visite.',

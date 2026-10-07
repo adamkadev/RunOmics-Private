@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { SettingsClient } from '@/components/settings/SettingsClient'
 import { t } from '@/i18n'
 
@@ -95,6 +95,22 @@ describe('SettingsClient owner gate', () => {
     // R7f: export is on the page signed out too, asking for the sign-in.
     expect(screen.getByText(t.settings.dataExport.title)).toBeInTheDocument()
     expect(screen.getByText(t.settings.dataExport.signedOut(t.common.runs(12)))).toBeInTheDocument()
+  })
+
+  // Design review, Oct 2026: height, weight and BMI are Garmin's, so they
+  // read as facts - nothing to tap, no chevron - and say where they change.
+  it('draws the profile as read-only facts', async () => {
+    render(<SettingsClient lastSyncedAt={null} activityCount={0} body={{ heightCm: 178, weightKg: 70, bmi: 22.1 }} />)
+    await screen.findByText(t.settings.auth.signIn)
+
+    const profile = screen.getByTestId('settings-profile')
+    expect(within(profile).queryByRole('button')).toBeNull()
+    expect(within(profile).queryByRole('link')).toBeNull()
+    expect(profile.querySelector('svg')).toBeNull()
+    const values = within(profile).getAllByTestId('profile-value')
+    expect(values.map((value) => value.textContent)).toEqual([`178${t.units.cm}`, `70${t.units.kg}`, '22.1'])
+    for (const value of values) expect(value.className).toContain('text-muted-foreground')
+    expect(profile.textContent).toContain(t.settings.profile.readOnly)
   })
 
   // v4.8 2g: the build line ends the page signed out too, after the last group.
