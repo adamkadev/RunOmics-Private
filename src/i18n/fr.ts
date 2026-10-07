@@ -73,7 +73,6 @@ export const fr = {
     toGrade: (grade: string) => `avant ${grade}`,
     ladder: 'Toutes les notes pour ton âge',
     eta: (weeks: number) => `Environ ${weeks} semaine${weeks > 1 ? 's' : ''} au rythme actuel.`,
-    topGrade: 'Meilleure note pour ton âge',
     newGrade: 'Nouvelle note',
     regainedGrade: 'Note retrouvée',
     upFrom: (grade: string) => `en hausse (avant : ${grade})`,

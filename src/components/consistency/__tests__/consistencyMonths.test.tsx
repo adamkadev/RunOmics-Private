@@ -100,8 +100,9 @@ describe('ConsistencyMonths', () => {
     render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY, { streakWeeks: 4, bestStreakWeeks: 11 })} />)
     const stats = screen.getByTestId('consistency-stats')
     expect(stats.textContent).toContain(t.consistency.activeDays)
-    // v4.17.2: the days it counts of, and from when - the first of October.
-    expect(stats.textContent).toContain(t.consistency.ofDays(361, 'Oct 1'))
+    // v4.17.2: the days it counts of, and from when - the first of October,
+    // with its year (design review, Oct 2026: "since Nov 1" named none).
+    expect(stats.textContent).toContain(t.consistency.ofDays(361, 'Oct 1, 2025'))
     expect(stats.textContent).toContain(t.consistency.share)
     expect(stats.textContent).toContain(t.consistency.best(11))
     for (const label of Object.values(t.consistency.levels)) expect(screen.getByText(label)).toBeInTheDocument()

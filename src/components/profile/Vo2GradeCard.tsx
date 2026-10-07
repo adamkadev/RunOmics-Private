@@ -141,13 +141,16 @@ export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
         )}
       </div>
 
+      {/* At the top grade the row read "Top grade for your age", which the
+          A+ and its percentile already say, and gave no reason to tap it
+          (design review, Oct 2026): it names the table it opens. */}
       <Link
         href={VO2_GRADE_HREF}
         aria-label={g.open}
         className="flex min-h-11 items-center justify-between gap-3 border-t border-border px-5 py-3 text-[13px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)]"
         data-testid="grade-footer"
       >
-        <span className="min-w-0">{next ? (etaWeeks !== null ? g.eta(etaWeeks) : g.ladder) : g.topGrade}</span>
+        <span className="min-w-0">{next && etaWeeks !== null ? g.eta(etaWeeks) : g.ladder}</span>
         <ChevronRight size={16} className="shrink-0 text-muted-foreground" aria-hidden />
       </Link>
     </section>

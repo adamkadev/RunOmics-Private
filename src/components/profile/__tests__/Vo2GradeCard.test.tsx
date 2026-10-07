@@ -52,10 +52,14 @@ describe('Vo2GradeCard (v5.3 G1, v4.17)', () => {
     expect(screen.getByTestId('grade-footer').getAttribute('href')).toBe('/athlete/vo2max')
   })
 
-  it('hides the bar at A+ and says it is the top grade', () => {
+  // Design review, Oct 2026: "Top grade for your age" repeated the A+ and
+  // gave the row no purpose; it names the table it opens.
+  it('hides the bar at A+, and its footer opens every grade for the age', () => {
     render(<Vo2GradeCard view={{ ...GRADED, grade: 'A+', floor: 55.4, next: null, etaWeeks: null }} />)
     expect(screen.queryByTestId('grade-progress')).toBeNull()
-    expect(screen.getByTestId('grade-footer').textContent).toContain(t.vo2Grade.topGrade)
+    const footer = screen.getByTestId('grade-footer')
+    expect(footer.textContent).toBe(t.vo2Grade.ladder)
+    expect(footer.getAttribute('href')).toBe('/athlete/vo2max')
   })
 
   it('says a level-up in pos, and a drop in muted ink with its reason, never amber', () => {

@@ -86,7 +86,6 @@ export const en = {
     toGrade: (grade: string) => `to ${grade}`,
     ladder: 'Every grade for your age',
     eta: (weeks: number) => `About ${weeks} week${weeks === 1 ? '' : 's'} at your current trend.`,
-    topGrade: 'Top grade for your age',
     newGrade: 'New grade',
     // A grade held until recently, lost in a dip and back: not new (Oct 2026).
     regainedGrade: 'Grade regained',
