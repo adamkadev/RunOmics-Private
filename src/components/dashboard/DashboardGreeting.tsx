@@ -10,6 +10,7 @@ import { useMounted } from '@/lib/useMounted'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { SYNC_LIMITS } from '@/lib/syncLimits'
 import { useSyncNow } from '@/components/settings/SyncNowCard'
+import { PullToRefresh } from './PullToRefresh'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -43,8 +44,19 @@ const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
 const LINE =
   'inline-flex min-h-11 min-w-0 items-center gap-1.5 text-left text-sm transition-opacity active:opacity-70 disabled:active:opacity-100'
 
+interface Line {
+  text: string
+  tone: 'muted' | 'accent' | 'caution'
+  spinning?: boolean
+  disabled?: boolean
+  /** A tap's action, and a pull's (PullToRefresh). */
+  onClick: () => void
+}
+
+const NOTHING = () => {}
+
 /** The line's words and colour, from the sync's state and the data's age. */
-function SyncLineButton({ text, tone, spinning = false, onClick, disabled = false }: { text: string; tone: 'muted' | 'accent' | 'caution'; spinning?: boolean; onClick: () => void; disabled?: boolean }) {
+function SyncLineButton({ text, tone, spinning = false, onClick, disabled = false }: Line) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} data-testid="sync-line" data-tone={tone} className={LINE} style={{ color: tone === 'caution' ? 'var(--tone-caution)' : 'var(--muted-foreground)' }}>
       <RefreshCw
@@ -56,6 +68,16 @@ function SyncLineButton({ text, tone, spinning = false, onClick, disabled = fals
       />
       <span className="truncate">{text}</span>
     </button>
+  )
+}
+
+/** The line, and the pull at the top of the page that does what its tap does (design review, Oct 2026). */
+function SyncControl(line: Line) {
+  return (
+    <>
+      <SyncLineButton {...line} />
+      <PullToRefresh onPull={line.onClick} disabled={line.disabled} />
+    </>
   )
 }
 
@@ -74,20 +96,18 @@ function OwnerSyncLine({ user, lastSyncedAt, ago }: { user: User; lastSyncedAt: 
 
   const age = syncAgeMs(lastSyncedAt)
   const late = isSyncLate(lastSyncedAt)
-  if (phase.kind === 'starting' || phase.kind === 'waiting') return <SyncLineButton text={s.syncing} tone="muted" spinning disabled onClick={() => {}} />
-  if (phase.kind === 'failed') return <SyncLineButton text={s.failed} tone="caution" onClick={sync.handleSync} />
-  if (phase.kind === 'limited') {
-    return <SyncLineButton text={phase.reason === 'dailyCap' ? s.dailyCap : s.nextIn(Math.ceil(phase.retryAfterSec / 60))} tone="muted" disabled onClick={() => {}} />
-  }
-  if (phase.kind === 'done') return <SyncLineButton text={s.synced(s.justNow)} tone="muted" onClick={() => setFreshNote(true)} />
-  if (phase.kind === 'upToDate') return <SyncLineButton text={s.upToDate} tone="muted" onClick={() => setFreshNote(true)} />
-  if (phase.kind === 'timedOut') return <SyncLineButton text={s.stillRunning} tone="muted" onClick={sync.handleSync} />
-
+  const noteFresh = () => setFreshNote(true)
+  let line: Line
+  if (phase.kind === 'starting' || phase.kind === 'waiting') line = { text: s.syncing, tone: 'muted', spinning: true, disabled: true, onClick: NOTHING }
+  else if (phase.kind === 'failed') line = { text: s.failed, tone: 'caution', onClick: sync.handleSync }
+  else if (phase.kind === 'limited') line = { text: phase.reason === 'dailyCap' ? s.dailyCap : s.nextIn(Math.ceil(phase.retryAfterSec / 60)), tone: 'muted', disabled: true, onClick: NOTHING }
+  else if (phase.kind === 'done') line = { text: s.synced(s.justNow), tone: 'muted', onClick: noteFresh }
+  else if (phase.kind === 'upToDate') line = { text: s.upToDate, tone: 'muted', onClick: noteFresh }
+  else if (phase.kind === 'timedOut') line = { text: s.stillRunning, tone: 'muted', onClick: sync.handleSync }
   // Fresh: nothing to fetch yet, and the server would hold it back anyway.
-  if (age < FRESH_SYNC_MS) {
-    return <SyncLineButton text={freshNote ? s.nextIn(Math.ceil((FRESH_SYNC_MS - age) / 60_000)) : s.synced(ago)} tone="muted" onClick={() => setFreshNote(true)} />
-  }
-  return <SyncLineButton text={isSyncStale(lastSyncedAt) ? `${s.synced(ago)} · ${s.tapToSync}` : s.synced(ago)} tone={late ? 'caution' : 'accent'} onClick={sync.handleSync} />
+  else if (age < FRESH_SYNC_MS) line = { text: freshNote ? s.nextIn(Math.ceil((FRESH_SYNC_MS - age) / 60_000)) : s.synced(ago), tone: 'muted', onClick: noteFresh }
+  else line = { text: isSyncStale(lastSyncedAt) ? `${s.synced(ago)} · ${s.tapToSync}` : s.synced(ago), tone: late ? 'caution' : 'accent', onClick: sync.handleSync }
+  return <SyncControl {...line} />
 }
 
 /**
@@ -95,7 +115,8 @@ function OwnerSyncLine({ user, lastSyncedAt, ago }: { user: User; lastSyncedAt: 
  * and the way to sync it - at any age, not only past 6 h, and without the
  * date, which "Today" and every session's own date already say. Amber once
  * the data is a day old (v4.3.4). The owner's tap starts the sync; anyone
- * else's goes to Settings, where signing in lives.
+ * else's goes to Settings, where signing in lives, and their pull reloads
+ * what the server has.
  */
 function SyncLine({ lastSyncedAt, ago }: { lastSyncedAt: string; ago: string }) {
   const s = t.dashboard.syncStatus
@@ -103,7 +124,12 @@ function SyncLine({ lastSyncedAt, ago }: { lastSyncedAt: string; ago: string }) 
   const router = useRouter()
   if (user && isOwner) return <OwnerSyncLine user={user} lastSyncedAt={lastSyncedAt} ago={ago} />
   const text = isSyncStale(lastSyncedAt) ? `${s.synced(ago)} · ${s.tapToSync}` : s.synced(ago)
-  return <SyncLineButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.push('/settings')} />
+  return (
+    <>
+      <SyncLineButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.push('/settings')} />
+      <PullToRefresh onPull={() => router.refresh()} />
+    </>
+  )
 }
 
 export function DashboardGreeting({ name, lastSyncedAt }: Props) {
