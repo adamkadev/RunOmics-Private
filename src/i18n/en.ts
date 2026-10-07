@@ -947,16 +947,9 @@ export const en = {
         plan: 'Plan',
       },
       ytd: {
+        // Its home is Goals (design review, Oct 2026): Volume keeps a row that opens it,
+        // in Goals' own words (goals.projection).
         title: 'Year to date',
-        caption: 'same dates, both years',
-        about: 'Your distance so far this year, against last year on the same dates and the straight line to your goal. When your history starts partway through last year, both years count from that date.',
-        vs: (delta: string, year: number) => `${delta} km vs ${year} to date`,
-        vsSince: (delta: string, year: number, since: string) => `${delta} km vs ${year}, both from ${since}`,
-        goal: (km: string) => `${km} km goal`,
-        short: (km: string) => `${km} km short`,
-        shortRest: (rate: string, needed: string) => ` at your current ${rate} km/week. The goal needs ${needed}.`,
-        onTrack: (km: string, rate: string) => `On track for ${km} km at your current ${rate} km/week.`,
-        reached: (km: string) => `Goal reached, ${km} km over.`,
       },
       longRun: {
         title: 'Long run',

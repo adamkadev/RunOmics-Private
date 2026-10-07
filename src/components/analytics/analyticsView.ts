@@ -104,15 +104,17 @@ export interface GoalRaceInput {
   targetSeconds: number | null
 }
 
+/**
+ * Year to date, as Goals reads it: Goals is its home (design review, Oct
+ * 2026), so Volume prints its distance and projection from the same figures,
+ * in a row that opens Goals, and the coach read takes last year's comparison.
+ */
 export interface YtdInput {
-  year: number
-  daysInYear: number
-  todayDay: number
-  current: { day: number; km: number }[]
-  previous: { day: number; km: number }[]
+  /** The year's distance, Goals' own total. */
+  km: number
   vsLastYear: YearOverYear | null
   goalKm: number | null
-  projection: { weeklyRate: number; weeklyNeeded: number; projectedYearKm: number } | null
+  projection: { projectedYearKm: number } | null
 }
 
 // Shared with Progress, so the two pages state one comparison (v4.17).

@@ -889,15 +889,6 @@ export const fr = {
       },
       ytd: {
         title: "Depuis janvier",
-        caption: 'mêmes dates, les deux années',
-        about: "Ta distance cette année, face à l’an dernier aux mêmes dates et à la ligne droite vers ton objectif. Si ton historique commence en cours d’année dernière, les deux années comptent à partir de cette date.",
-        vs: (delta: string, year: number) => `${delta} km vs ${year} à la même date`,
-        vsSince: (delta: string, year: number, since: string) => `${delta} km vs ${year}, les deux depuis le ${since}`,
-        goal: (km: string) => `objectif ${km} km`,
-        short: (km: string) => `Il manquera ${km} km`,
-        shortRest: (rate: string, needed: string) => ` à ton rythme actuel de ${rate} km/sem. Il faudrait tenir ${needed} km/sem.`,
-        onTrack: (km: string, rate: string) => `En route pour ${km} km à ton rythme actuel de ${rate} km/sem.`,
-        reached: (km: string) => `Objectif dépassé de ${km} km.`,
       },
       longRun: {
         title: 'Sortie longue',

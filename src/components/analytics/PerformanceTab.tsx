@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
 import { formatClock, formatDate, formatDecimal, formatDeltaFixed, formatDuration, MINUS } from '@/lib/formatters'
@@ -76,6 +78,9 @@ export function timeLabels(dates: string[]): string[] {
   return shown.filter((_, i) => i % step === 0)
 }
 
+/** VO₂max's home is Athlete & zones (design review, Oct 2026): its stat here is a summary that opens it. */
+const VO2_HOME = '/athlete'
+
 /** The tab's stat row (v4.17): VO₂max, threshold and easy pace, each with what its change means. */
 function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null }) {
   const s = t.analytics.cards.summary
@@ -86,25 +91,45 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
       unit: undefined,
       note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${formatDecimal(vo2.delta, 1)}` : `${MINUS}${formatDecimal(Math.abs(vo2.delta), 1)}`),
       tone: STAT_TONE[deltaTone('vo2max', vo2.delta)],
+      href: VO2_HOME,
     },
-    threshold && { label: s.threshold, value: formatClock(threshold.now), unit: t.units.perKm, note: shiftWords(threshold.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', threshold.delta)] },
-    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: shiftWords(easy.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', easy.delta)] },
+    threshold && { label: s.threshold, value: formatClock(threshold.now), unit: t.units.perKm, note: shiftWords(threshold.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', threshold.delta)], href: null },
+    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: shiftWords(easy.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
   ].filter((c) => !!c)
   if (!cells.length) return null
   return (
     <section className={cardClass()} data-testid="performance-summary">
       <StatGrid columns={cells.length} className="gap-3 sm:gap-4">
-        {cells.map((c) => (
-          <Stat
-            key={c.label}
-            size="lg"
-            label={c.label}
-            value={c.value}
-            unit={c.unit}
-            meaning={c.note && <span data-testid="summary-delta" data-tone={c.tone}>{c.note}</span>}
-            tone={c.tone}
-          />
-        ))}
+        {cells.map((c) => {
+          const stat = (
+            <Stat
+              key={c.label}
+              size="lg"
+              label={
+                c.href ? (
+                  <span className="inline-flex items-center gap-0.5">
+                    {c.label}
+                    <ChevronRight size={12} strokeWidth={2.4} aria-hidden />
+                  </span>
+                ) : (
+                  c.label
+                )
+              }
+              value={c.value}
+              unit={c.unit}
+              meaning={c.note && <span data-testid="summary-delta" data-tone={c.tone}>{c.note}</span>}
+              tone={c.tone}
+            />
+          )
+          // The whole stat opens its home, a 44 pt target and more.
+          return c.href ? (
+            <Link key={c.label} href={c.href} className="min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" data-testid="vo2-link">
+              {stat}
+            </Link>
+          ) : (
+            stat
+          )
+        })}
       </StatGrid>
     </section>
   )

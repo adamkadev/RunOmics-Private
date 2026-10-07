@@ -66,14 +66,10 @@ const data: AnalyticsBoardData = {
   },
   weeklyAvgKm: 26.4,
   ytd: {
-    year: 2026,
-    daysInYear: 365,
-    todayDay: 269,
-    current: [{ day: 0, km: 0 }, { day: 269, km: 1394 }],
-    previous: [{ day: 0, km: 0 }, { day: 365, km: 1116 }],
+    km: 1394,
     vsLastYear: { km: 1394, lastYearKm: 640, since: null },
     goalKm: 2000,
-    projection: { weeklyRate: 26, weeklyNeeded: 44, projectedYearKm: 1757 },
+    projection: { projectedYearKm: 1757 },
   },
 }
 
@@ -293,8 +289,10 @@ describe('Analytics (v4.5)', () => {
     // The gap itself in bold, a caution off the target, as Goals colours it.
     expect(screen.getByTestId('predictions-gap').textContent).toBe('3:59')
     expect(screen.getByTestId('predictions-gap').getAttribute('style')).toContain('var(--warn)')
-    // VO2max as Progress prints it.
+    // VO2max as Progress prints it, a summary that opens its home on Athlete & zones.
     expect(screen.getByTestId('performance-summary').textContent).toContain('55.0')
+    expect(screen.getByTestId('vo2-link').getAttribute('href')).toBe('/athlete')
+    expect(screen.getByTestId('vo2-link').textContent).toContain('55.0')
     expect(screen.getByTestId('performance-summary').textContent).toContain('−1.0 in 12 weeks')
     expect(screen.getByTestId('performance-summary').textContent).toContain(`4:23${t.units.perKm}`)
     // v4.7: slower is amber, faster --good, by the same helper everywhere.
@@ -382,12 +380,8 @@ describe('Analytics (v4.5)', () => {
     const current = bars.querySelector<HTMLElement>('[data-current]')!
     expect(current.style.background).toBe('transparent')
     expect(current.style.border).toBe('1.5px dashed var(--accent)')
-    expect(screen.getByTestId('ytd-footer').textContent).toContain('243 km short')
     // The one weekly average, as a stat with its unit.
     expect(screen.getByTestId('weekly-card').textContent).toContain('12-week average26km/week')
-    // Year to date in the accent against last year's grey.
-    expect(screen.getByTestId('ytd-line').getAttribute('stroke')).toBe('var(--accent)')
-    expect(screen.getByTestId('ytd-delta').textContent).toBe(t.analytics.cards.ytd.vs('+754', 2025))
     // This week, dashed in the one "this week" style and never flagged over:
     // its first runs are all of its distance so far.
     const longRun = screen.getByTestId('long-run-bars').querySelector<HTMLElement>('[data-current]')!
@@ -604,9 +598,63 @@ describe('the coach read under a load headline (v4.16.4)', () => {
     render(<AnalyticsClient data={{ ...data, ytd }} today={TODAY} />)
     await screen.findByTestId('form-card')
     await act(async () => screen.getByRole('tab', { name: t.analytics.tabs.volume }).click())
-    const card = await screen.findByTestId('ytd-card')
-    expect(within(card).getByTestId('ytd-delta').textContent).toBe(t.analytics.cards.ytd.vsSince('+312', 2025, 'May 3'))
-    expect(card.textContent).toContain(t.analytics.cards.ytd.caption)
+    await screen.findByTestId('weekly-card')
+    // Last year's comparison is the Volume read's case; the year itself is Goals'.
+    fireEvent.click(screen.getByTestId('coach-read-why'))
+    expect(screen.getByRole('dialog').textContent).toContain(t.analytics.cards.coachRead.volumeSince('+312', 'May 3'))
+  })
+})
+
+// Design review, Oct 2026: year to date is Goals' metric. Volume had a full
+// card of its own that said "243 km short at your current 26 km/week" where
+// Goals says "243 km short at this pace".
+describe('Year to date on Volume', () => {
+  async function renderBoth(ytd: NonNullable<AnalyticsBoardData['ytd']>, projection: { projectedYearKm: number } | null) {
+    const { VolumeTab } = await import('../VolumeTab')
+    const { YearView } = await import('@/components/goals/YearView')
+    const { weekRows, weekWindow } = await import('../analyticsView')
+    const window = weekWindow(TODAY, '12w')
+    const rows = weekRows(weeks, [], window, TODAY)
+    const year = Number(TODAY.slice(0, 4))
+    const goal = render(
+      <YearView
+        today={TODAY}
+        yearData={{
+          year,
+          totalDistanceKm: ytd.km,
+          goals: { year, annualDistanceKm: ytd.goalKm ?? 0, targets: [] },
+          pbs: [],
+          upcomingRaces: [],
+          projection: projection && { ...projection, weeklyRate: 26, weeklyNeeded: 44, status: 'behind', deltaKm: 0 },
+          monthlyGoals: [],
+          nextRaceSpotlight: null,
+          predictions: [],
+        }}
+      />,
+    )
+    const goals = within(goal.container)
+    const volume = within(render(<VolumeTab rows={rows} live onShift={() => {}} ytd={ytd} weeklyAvgKm={null} />).container)
+    return { goals, volume }
+  }
+
+  it('is a row that opens Goals, in Goals’ figures and words', async () => {
+    const { goals, volume } = await renderBoth(data.ytd!, data.ytd!.projection)
+    const p = t.goals.projection
+    expect(volume.queryByTestId('ytd-card')).toBeNull()
+    expect(volume.getByTestId('ytd-link').getAttribute('href')).toBe('/goals')
+    expect(volume.getByTestId('ytd-km').textContent).toBe(`1,394${t.goals.ofKm('2,000')}`)
+    // The same projection, the same verdict, the same rounding and tone.
+    expect(volume.getByTestId('ytd-projection').textContent).toBe(`${p.projectedMark('1,757')} · ${p.shortAtPace('243')}`)
+    expect(volume.getByTestId('ytd-verdict').textContent).toBe(goals.getByTestId('projection-verdict').textContent)
+    expect(volume.getByTestId('ytd-verdict').getAttribute('style')).toBe(goals.getByTestId('projection-verdict').getAttribute('style'))
+    expect(volume.getByTestId('ytd-projected').getAttribute('style')).toBe(goals.getByText(p.projectedMark('1,757')).getAttribute('style'))
+    expect(goals.getByTestId('goal-card').textContent).toContain('1,394')
+  })
+
+  it('says a goal already reached as Goals does', async () => {
+    const { goals, volume } = await renderBoth({ ...data.ytd!, km: 2120.4, projection: null }, null)
+    expect(volume.getByTestId('ytd-verdict').textContent).toBe(t.goals.reached('120'))
+    expect(goals.getByTestId('goal-card').textContent).toContain(t.goals.reached('120'))
   })
 })
 

@@ -11,7 +11,6 @@ import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { isRaceDistanceKey, type RaceDistanceKey } from '@/domain/race/distances'
-import { cumulativeYear } from '@/components/profile/progressHub'
 import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
 import { yearOverYear } from '@/lib/yearOverYear'
@@ -20,21 +19,12 @@ import { getLoadPairs, getRecoveryHistory } from '@/application/usecases/GetLoad
 
 export const revalidate = 3600
 
-function dayOfYear(iso: string): number {
-  const y = Number(iso.slice(0, 4))
-  return Math.round((Date.UTC(y, Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) - Date.UTC(y, 0, 1)) / 86_400_000) + 1
-}
-
-const daysIn = (year: number) => dayOfYear(`${year}-12-31`)
-
 export default async function AnalyticsPage() {
   const today = appTodayIso()
   const year = Number(today.slice(0, 4))
   const [data, trainingLoad, risk, goals] = await Promise.all([getAnalyticsData(), getTrainingLoad(), getLoadRiskPanel(), getGoalsPageData()])
 
   const activities = getActivitySummaries()
-  const todayDay = dayOfYear(today)
-  const hadLastYear = activities.some((a) => a.date.startsWith(String(year - 1)))
   const yearData = goals.byYear[year] ?? null
   const spotlight = yearData?.nextRaceSpotlight ?? null
   const goalKm = yearData?.goals && yearData.goals.annualDistanceKm > 0 ? yearData.goals.annualDistanceKm : null
@@ -62,21 +52,12 @@ export default async function AnalyticsPage() {
         : null,
     heat: getHeatImpact(),
     weeklyAvgKm: weeklyAverageKm(activities, today),
+    // Goals' own figures: Volume summarises them and links there.
     ytd: {
-      year,
-      daysInYear: daysIn(year),
-      todayDay,
-      current: cumulativeYear(activities, year, todayDay),
-      previous: hadLastYear ? cumulativeYear(activities, year - 1, daysIn(year - 1)) : [],
+      km: yearData?.totalDistanceKm ?? 0,
       vsLastYear: yearOverYear(activities, today),
       goalKm,
-      projection: yearData?.projection
-        ? {
-            weeklyRate: yearData.projection.weeklyRate,
-            weeklyNeeded: yearData.projection.weeklyNeeded,
-            projectedYearKm: yearData.projection.projectedYearKm,
-          }
-        : null,
+      projection: yearData?.projection ? { projectedYearKm: yearData.projection.projectedYearKm } : null,
     },
   }
 
