@@ -162,12 +162,16 @@ describe('Analytics (v4.5)', () => {
     fireEvent.click(screen.getByRole('radio', { name: '4 wk' }))
     expect(coach().textContent).toContain(s.eyebrow(words['4w']!, t.analytics.tabs.performance))
 
-    // Volume: its own claim. Every finished week's 16 km long run is over 35%
-    // of its 40-42 km.
+    // Volume: its own claim, the plan first. Every week made its 44 km plan,
+    // this one already; the 16 km long run, over 35% of 40-42 km in every
+    // finished week, leads the case.
     await openTab(t.analytics.tabs.volume, 'weekly-card')
     expect(coach().textContent).toContain(s.eyebrow(words['12w']!, t.analytics.tabs.volume))
-    expect(headline()).toBe(s.volumeTab.longRunOver(11, 11))
-    expect(coach().getAttribute('data-tone')).toBe('warn')
+    expect(headline()).toBe(s.volumeTab.onPlan(12, 12))
+    expect(coach().getAttribute('data-tone')).toBe('pos')
+    fireEvent.click(screen.getByTestId('coach-read-why'))
+    expect(screen.getByRole('dialog').querySelector('li')!.textContent).toBe(s.volumeTab.longRunRow(11))
+    fireEvent.keyDown(document, { key: 'Escape' })
 
     // Intensity: the one easy / moderate / hard verdict.
     await openTab(t.analytics.tabs.health, 'easy-hard-card')

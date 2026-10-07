@@ -11,9 +11,13 @@ export const STAT_TONE_CLASS: Record<StatTone, string> = {
   muted: 'text-muted-foreground',
 }
 
-/** A value's unit, inline after it: 13 px, regular, muted - "12.8 km", "5:44 /km". */
+/**
+ * A value's unit, inline after it: 13 px, regular, muted - "12.8 km", "5:44
+ * /km". It never breaks inside: "20.5 of 53" over a lone "km" read as two
+ * numbers (design review, Oct 2026); on a narrow column it moves down whole.
+ */
 export function Unit({ children }: { children: ReactNode }) {
-  return <span className="ml-1 text-[13px] font-normal tracking-normal text-muted-foreground">{children}</span>
+  return <span className="ml-1 whitespace-nowrap text-[13px] font-normal tracking-normal text-muted-foreground">{children}</span>
 }
 
 /**
