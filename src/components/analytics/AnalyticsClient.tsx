@@ -15,7 +15,8 @@ import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { formatDateRange } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { PeriodControl } from './AnalyticsKit'
-import { CoachRead, coachReadOf } from './CoachRead'
+import { CoachRead } from './CoachRead'
+import { tabRead } from './coachReadTabs'
 import {
   LOAD_PERIODS,
   WEEK_PERIODS,
@@ -145,14 +146,15 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   const range = days ?? weeks!
   const rangeLabel = formatDateRange(range.start, range.live ? today : range.end, { year: 'always' })
 
-  // The coach read sits over every tab (v4.17), so it reads the same wherever
-  // it is opened: the speed reads at their 12 weeks, the load headline at the
-  // Load tab's own window.
-  const loadWindow = windows.fitness
-  const coach = useMemo(
-    () => coachReadOf(data, today, dayWindow(today, loadWindow.period, loadWindow.offset)),
-    [data, today, loadWindow],
-  )
+  // Each tab's own coach read, over its own window (design review, Oct 2026):
+  // one 12-week read over every tab put the Load verdict over slipping race
+  // predictions, and said "12 weeks" on a tab set to 4.
+  const coach = useMemo(() => {
+    const live = loadTab ? dayWindow(today, current.period as LoadPeriod, current.offset) : weekWindow(today, current.period as WeekPeriod, current.offset)
+    const weekly = loadTab ? [] : weekRows(data.weeks, data.plan, live as ReturnType<typeof weekWindow>, today)
+    return tabRead({ tab, data, today, period: current.period as LoadPeriod, days: loadTab ? (live as ReturnType<typeof dayWindow>) : null, rows: weekly, live: live.live })
+  }, [data, today, tab, current, loadTab])
+  const coachEyebrow = t.analytics.cards.coachRead.eyebrow(t.analytics.cards.period.words[current.period]!, t.analytics.tabs[tab])
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -180,7 +182,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
         <SegmentedTabs tabs={analyticsTabs} items={TABS} label={t.analytics.title} size="md" fill />
       </StickyBar>
 
-      {coach && <CoachRead view={coach.view} load={coach.load} />}
+      {coach && <CoachRead read={coach} eyebrow={coachEyebrow} />}
 
       <div {...analyticsTabs.panelProps} {...swipeHandlers}>
         {tab === 'fitness' && days && (

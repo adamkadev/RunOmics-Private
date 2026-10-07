@@ -710,6 +710,8 @@ export function coachRead(input: {
   easy: PaceShift | null
   predictions: PredictionRow[]
   efficiency: EfficiencyView | null
+  /** Efficiency's change over the read's own window; its 12-week change when not given. */
+  efficiencyDelta?: number | null
   /** Fitness now and its change over the 12 weeks, for the load fact the headline is built on (v5.6 #3). */
   fitness?: number | null
   fitnessDelta: number | null
@@ -733,8 +735,9 @@ export function coachRead(input: {
     const faster = moved.filter((r) => predictionTone(r) === 'good').length
     signals.push({ key: 'predictions', trend: slower > faster ? 'declining' : faster > slower ? 'improving' : 'flat', slower, faster, count: moved.length })
   }
-  if (efficiency && efficiency.delta12w !== null) {
-    signals.push({ key: 'efficiency', trend: TREND[deltaTone('efficiency', efficiency.delta12w)], value: efficiency.now, delta: efficiency.delta12w })
+  const efficiencyDelta = input.efficiencyDelta !== undefined ? input.efficiencyDelta : (efficiency?.delta12w ?? null)
+  if (efficiency && efficiencyDelta !== null) {
+    signals.push({ key: 'efficiency', trend: TREND[deltaTone('efficiency', efficiencyDelta)], value: efficiency.now, delta: efficiencyDelta })
   }
   if (ytd) {
     const delta = ytd.km - ytd.lastYearKm

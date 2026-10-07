@@ -58,7 +58,7 @@ function bandPath(lo: number[], hi: number[], min: number, max: number, h: numbe
   return `${top}${bottom}Z`
 }
 
-function loadSentence(view: LoadTrendView): readonly [string, string, string] {
+export function loadSentence(view: LoadTrendView): readonly [string, string, string] {
   const s = t.analytics.cards.loadTrend
   const change = view.change
   if (view.state === 'below') return s.below
@@ -132,7 +132,7 @@ function deltaWords(series: RecoverySeries): string {
   return series.delta === null || series.delta === 0 ? s.noChange : s.vsWeek(signed(series.delta))
 }
 
-function recoverySentence(view: RecoveryView): readonly [string, string, string] {
+export function recoverySentence(view: RecoveryView): readonly [string, string, string] {
   const s = t.analytics.cards.recovery
   const { hrv, restingHr: rhr } = view
   if (!view.out) {

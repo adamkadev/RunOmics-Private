@@ -125,69 +125,76 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
   })
 
-  it('shows the coach read over every tab, one sentence with its signals behind a tap', async () => {
+  // Design review, Oct 2026: one 12-week read sat over every tab, the Load
+  // verdict over race predictions that had slipped, "12 weeks" under 4 wk.
+  it('reads each tab over its own period, and says which', async () => {
     await renderBoard()
-    const coach = screen.getByTestId('coach-read')
     const s = t.analytics.cards.coachRead
-    // Easy pace got faster, but threshold and the predictions got slower:
-    // Garmin's two estimates of one fitness share a vote, so it reads mixed
-    // and names each side (v4.16.4).
-    expect(coach.getAttribute('data-tone')).toBe('neutral')
-    expect(screen.getByTestId('coach-read-headline').textContent).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
-    expect(coach.textContent).toContain(s.eyebrow)
-    expect(coach.textContent).toContain(s.why)
+    const words = t.analytics.cards.period.words
+    const coach = () => screen.getByTestId('coach-read')
+    const headline = () => screen.getByTestId('coach-read-headline').textContent
+    // Load, at its 4 weeks: steady load inside its range, so the card's own sentence.
+    expect(coach().textContent).toContain(s.eyebrow(words['4w']!, t.analytics.tabs.fitness))
+    expect(coach().getAttribute('data-tone')).toBe('muted')
+    expect(headline()).toBe(t.analytics.cards.loadTrend.steady.join(''))
     // Outside the tab panel: it stays put across a switch.
-    expect(screen.getByRole('tabpanel').contains(coach)).toBe(false)
-    fireEvent.click(coach)
+    expect(screen.getByRole('tabpanel').contains(coach())).toBe(false)
+
+    // Performance, at its 12 weeks: easy pace faster, threshold and the
+    // predictions slower; Garmin's two estimates share a vote, so it reads
+    // mixed and names each side (v4.16.4).
+    await openTab(t.analytics.tabs.performance, 'predictions-card')
+    expect(coach().textContent).toContain(s.eyebrow(words['12w']!, t.analytics.tabs.performance))
+    expect(headline()).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
+    fireEvent.click(screen.getByTestId('coach-read-why'))
     const sheet = screen.getByRole('dialog')
-    // The sheet backs its headline (v5.6 L1): the load fact first, then threshold.
-    const bullets = [...sheet.querySelectorAll('li')].map((li) => li.textContent)
-    expect(bullets[0]).toMatch(/^Fitness \d+, \+\d+ in 12 weeks\.$/)
-    expect(bullets[1]).toBe(s.thresholdSlower('4:23', 9))
-    expect(sheet.textContent).toContain(s.predictionsSlower(2, 2))
-    expect(sheet.textContent).toContain(s.volume('+754'))
+    // The case for the headline, worse first, and nothing from another tab.
+    const bullets = [...sheet.querySelectorAll('li')]
+    expect(bullets.map((li) => li.getAttribute('data-trend'))).toEqual([...bullets.map((li) => li.getAttribute('data-trend'))].sort((a, b) => ['declining', 'flat', 'improving'].indexOf(a!) - ['declining', 'flat', 'improving'].indexOf(b!)))
+    expect(bullets[0]!.textContent).toBe(s.thresholdSlower('4:23', 9, s.ago['12w']!))
+    expect(sheet.textContent).toContain(s.predictionsSlower(2, 2, s.ago['12w']!))
+    expect(sheet.textContent).not.toContain(s.volume('+754'))
     expect(sheet.querySelector('[data-trend="declining"] svg')!.getAttribute('style')).toContain('var(--tone-caution)')
     expect(sheet.innerHTML).not.toContain('var(--accent')
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
-    for (const [tab, card] of [
-      [t.analytics.tabs.performance, 'predictions-card'],
-      [t.analytics.tabs.volume, 'weekly-card'],
-      [t.analytics.tabs.health, 'easy-hard-card'],
-    ] as const) {
-      await openTab(tab, card)
-      expect(screen.getByTestId('coach-read-headline').textContent).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
-    }
+    // The period control is the read's period too.
+    fireEvent.click(screen.getByRole('radio', { name: '4 wk' }))
+    expect(coach().textContent).toContain(s.eyebrow(words['4w']!, t.analytics.tabs.performance))
+
+    // Volume: its own claim. Every finished week's 16 km long run is over 35%
+    // of its 40-42 km.
+    await openTab(t.analytics.tabs.volume, 'weekly-card')
+    expect(coach().textContent).toContain(s.eyebrow(words['12w']!, t.analytics.tabs.volume))
+    expect(headline()).toBe(s.volumeTab.longRunOver(11, 11))
+    expect(coach().getAttribute('data-tone')).toBe('warn')
+
+    // Intensity: the one easy / moderate / hard verdict.
+    await openTab(t.analytics.tabs.health, 'easy-hard-card')
+    expect(headline()).toBe(s.intensityTab.inRange(84))
+    expect(coach().getAttribute('data-tone')).toBe('pos')
   })
 
-  // v4.17: a centred dialog, no bottom-sheet handle, with Close and Adjust plan.
-  it('opens the coach read in a centred dialog with Close and an Adjust plan link to Plan', async () => {
+  // v4.17: a centred dialog, no bottom-sheet handle. One way to dismiss, and
+  // the plan only opened: it is generated by the coach, never edited here.
+  it('opens the coach read in a centred dialog with one dismiss and an Open plan link to Plan', async () => {
     await renderBoard()
-    fireEvent.click(screen.getByTestId('coach-read'))
+    expect(screen.getByTestId('coach-open-plan').getAttribute('href')).toBe('/plan')
+    fireEvent.click(screen.getByTestId('coach-read-why'))
     const dialog = screen.getByRole('dialog')
     expect(dialog.getAttribute('aria-modal')).toBe('true')
     expect(dialog.className).toContain('max-w-[520px]')
     expect(dialog.className).toContain('rounded-[18px]')
     // Focus moves into it, and the page behind it is inert.
     expect(dialog.contains(document.activeElement)).toBe(true)
-    const adjust = within(dialog).getByRole('link', { name: t.analytics.cards.coachRead.adjustPlan })
-    expect(adjust.getAttribute('href')).toBe('/plan')
-    expect(adjust.className).toContain('bg-accent')
-    // Close is the outline button; the ✕ in the corner closes it too.
+    const open = within(dialog).getByRole('link', { name: t.analytics.cards.coachRead.openPlanButton })
+    expect(open.getAttribute('href')).toBe('/plan')
+    expect(open.className).toContain('bg-accent')
+    expect(dialog.textContent).not.toContain('Adjust')
     const closes = within(dialog).getAllByRole('button', { name: t.analytics.cards.close })
-    expect(closes).toHaveLength(2)
-    fireEvent.click(closes[1]!)
+    expect(closes).toHaveLength(1)
+    fireEvent.click(closes[0]!)
     expect(screen.queryByRole('dialog')).toBeNull()
-  })
-
-  it('colours the coach read eyebrow by what the headline says', async () => {
-    const { coachTone } = await import('../CoachRead')
-    const view = { tone: 'caution' as const, loadUp: false, signals: [] }
-    expect(coachTone(view, null)).toBe('warn')
-    expect(coachTone({ ...view, tone: 'positive' }, null)).toBe('pos')
-    expect(coachTone({ ...view, tone: 'neutral' }, null)).toBe('muted')
-    expect(coachTone({ ...view, tone: 'positive' }, { kind: 'spike', change: null })).toBe('warn')
-    expect(coachTone(view, { kind: 'building', change: { pct: 12, days: 10 }, recovery: true })).toBe('pos')
   })
 
   it('widens every Load card with the period, and resets the range', async () => {
@@ -481,19 +488,20 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
   // "1 s faster" sat beside a flat arrow: inside the band it is level, in the
   // coach read and on the Easy pace tile alike.
   it('words a change inside the noise band as level, like the Easy pace tile', async () => {
-    const { coachText } = await import('../CoachRead')
+    const { signalRows } = await import('../coachReadTabs')
     const { shiftWords } = await import('../PerformanceTab')
+    const s = t.analytics.cards.coachRead
     const view = { tone: 'neutral' as const, loadUp: false, signals: [{ key: 'easy' as const, trend: 'flat' as const, pace: 352, delta: -1 }] }
-    expect(coachText(view).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyLevel('5:52'))
+    expect(signalRows(view, '12w')[0]!.text).toBe(s.easyLevel('5:52', s.ago['12w']!))
     expect(shiftWords(-1, 3)).toBe(t.analytics.cards.summary.same)
     const faster = { ...view, signals: [{ ...view.signals[0]!, trend: 'improving' as const, delta: -8 }] }
-    expect(coachText(faster).signals[0]!.text).toBe(t.analytics.cards.coachRead.easyFaster('5:52', 8))
+    expect(signalRows(faster, '4w')[0]!.text).toBe(s.easyFaster('5:52', 8, s.ago['4w']!))
   })
 
   // v4.16.4: "threshold and race predictions haven't followed" was one fixed
   // sentence, printed whichever reads had slipped.
   it('names only the reads that slipped', async () => {
-    const { coachText } = await import('../CoachRead')
+    const { readHeadline } = await import('../coachReadTabs')
     const { coachRead } = await import('../analyticsView')
     const s = t.analytics.cards.coachRead
     const view = coachRead({
@@ -506,33 +514,33 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
       ytd: null,
     })!
     expect(view.tone).toBe('caution')
-    expect(coachText(view).headline).toBe(s.headline.cautionLoadUp('race predictions and aerobic efficiency', true))
-    expect(coachText(view).headline).not.toContain('threshold')
+    expect(readHeadline(view, '12w')).toBe(s.headline.cautionLoadUp('race predictions and aerobic efficiency', true))
+    expect(readHeadline(view, '12w')).not.toContain('threshold')
   })
 
   it('never credits load for speed when load did not go up', async () => {
-    const { coachText } = await import('../CoachRead')
+    const { readHeadline } = await import('../coachReadTabs')
     const s = t.analytics.cards.coachRead
     const view = { tone: 'positive' as const, loadUp: false, signals: [{ key: 'easy' as const, trend: 'improving' as const, pace: 352, delta: -8 }] }
-    expect(coachText(view).headline).toBe(s.headline.positiveSteadyLoad)
-    expect(coachText({ ...view, loadUp: true }).headline).toBe(s.headline.positive)
+    expect(readHeadline(view, '12w')).toBe(s.headline.positiveSteadyLoad(s.last['12w']!))
+    expect(readHeadline({ ...view, loadUp: true }, '12w')).toBe(s.headline.positive)
   })
 
   it('gives aerobic efficiency its unit and what the change means', async () => {
-    const { coachText } = await import('../CoachRead')
+    const { signalRows } = await import('../coachReadTabs')
     const s = t.analytics.cards.coachRead
     const efficiency = (trend: 'improving' | 'flat' | 'declining', delta: number) =>
-      coachText({ tone: 'neutral', loadUp: false, signals: [{ key: 'efficiency', trend, value: 1.15, delta }] }).signals[0]!.text
-    expect(efficiency('declining', -0.03)).toBe(s.efficiencyDown('1.15', '−0.03'))
+      signalRows({ tone: 'neutral', loadUp: false, signals: [{ key: 'efficiency', trend, value: 1.15, delta }] }, '12w')[0]!.text
+    expect(efficiency('declining', -0.03)).toBe(s.efficiencyDown('1.15', '−0.03', s.within['12w']!))
     expect(efficiency('declining', -0.03)).toContain('m per heartbeat')
-    expect(efficiency('flat', -0.02)).toBe(s.efficiencyLevel('1.15'))
+    expect(efficiency('flat', -0.02)).toBe(s.efficiencyLevel('1.15', s.ago['12w']!))
   })
 
   it('says when last year only counts from the date the history starts', async () => {
-    const { coachText } = await import('../CoachRead')
+    const { signalRows } = await import('../coachReadTabs')
     const s = t.analytics.cards.coachRead
     const volume = (since: string | null) =>
-      coachText({ tone: 'neutral', loadUp: false, signals: [{ key: 'volume', trend: 'improving', delta: 312, since }] }).signals[0]!.text
+      signalRows({ tone: 'neutral', loadUp: false, signals: [{ key: 'volume', trend: 'improving', delta: 312, since }] }, '12w')[0]!.text
     expect(volume(null)).toBe(s.volume('+312'))
     expect(volume('2025-05-03')).toBe(s.volumeSince('+312', 'May 3'))
   })
@@ -545,23 +553,18 @@ describe('the coach read under a load headline (v4.16.4)', () => {
   })
   afterAll(() => vi.useRealTimers())
 
-  // "Load jumped 30%" sat over six lines about pace that do not back it.
-  it('heads the speed lines with the headline they back', async () => {
+  // "Load jumped 30%" sat over six lines about pace that do not back it: the
+  // Load tab's read is load, its case load and recovery.
+  it('heads the Load read with the load headline and backs it with load', async () => {
     const loads = Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), acute: i < 50 ? 360 : 360 + (i - 49) * 20, chronic: 365 }))
     render(<AnalyticsClient data={{ ...data, loads }} today={TODAY} />)
     const coach = await screen.findByTestId('coach-read')
-    expect(coach.getAttribute('data-load')).toBe('spike')
-    fireEvent.click(coach)
+    expect(coach.getAttribute('data-tone')).toBe('warn')
+    fireEvent.click(screen.getByTestId('coach-read-why'))
+    const sheet = within(screen.getByRole('dialog'))
     const s = t.analytics.cards.coachRead
-    expect(within(screen.getByRole('dialog')).getByTestId('coach-read-speed').textContent).toBe(
-      s.headline.mixed('Easy pace', false, 'threshold and race predictions', true),
-    )
-  })
-
-  it('shows no second headline when the card leads with the speed read', async () => {
-    render(<AnalyticsClient data={data} today={TODAY} />)
-    fireEvent.click(await screen.findByTestId('coach-read'))
-    expect(within(screen.getByRole('dialog')).queryByTestId('coach-read-speed')).toBeNull()
+    expect(sheet.queryByText(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))).toBeNull()
+    expect(screen.getByRole('dialog').textContent).toMatch(/Fatigue \d+/)
   })
 
   it('compares Year to date from where the history starts when that is partway through last year', async () => {
@@ -616,7 +619,7 @@ describe('Load trend and Recovery (v5.4)', () => {
     expect(value.getAttribute('style')).toContain('var(--warn)')
     expect(screen.getByTestId('today-dot').getAttribute('style')).toContain('var(--warn)')
     expect(screen.getAllByTestId('outside-dot').length).toBeGreaterThan(0)
-    expect(screen.getByTestId('coach-read').getAttribute('data-load')).toBe('spike')
+    expect(screen.getByTestId('coach-read').getAttribute('data-tone')).toBe('warn')
   })
 
   it('hides Recovery under 7 nights of HRV, and never draws it empty', async () => {
@@ -650,7 +653,8 @@ describe('Load trend and Recovery (v5.4)', () => {
     const card = screen.getByTestId('recovery-card')
     expect(card.textContent).toContain(t.analytics.cards.recovery.hrvLow(3))
         expect(within(within(card).getByTestId('recovery-hrv')).getByText(/vs/).getAttribute('data-tone')).toBe('worse')
-    expect(screen.getByTestId('coach-read').getAttribute('data-load')).toBe('dip')
+    expect(screen.getByTestId('coach-read').getAttribute('data-tone')).toBe('warn')
+    expect(screen.getByTestId('coach-read-headline').textContent).toBe(t.analytics.cards.coachRead.load.dip)
   })
 
   it('uses only the four v4.17 colours in the two cards', () => {

@@ -10,7 +10,6 @@ import { formatDate } from '@/lib/formatters'
 import type { DeltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
-import { Button } from '@/components/ui/Button'
 import type { StatTone } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 
@@ -182,7 +181,7 @@ export function Dialog({
   eyebrow?: string
   eyebrowTone?: StatTone
   onClose: () => void
-  /** Buttons beside Close, the primary one last. */
+  /** The dialog's buttons, the primary one last; none, and it has no footer. */
   actions?: ReactNode
   children: ReactNode
 }) {
@@ -230,12 +229,9 @@ export function Dialog({
           </button>
         </div>
         {children}
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>
-            {t.analytics.cards.close}
-          </Button>
-          {actions}
-        </div>
+        {/* One way to dismiss (design review, Oct 2026): the × above, the
+            backdrop and Escape. A second "Close" beside it said the same. */}
+        {actions && <div className="flex justify-end gap-2">{actions}</div>}
       </div>
     </div>,
     document.body,
