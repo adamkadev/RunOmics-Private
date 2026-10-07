@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
@@ -47,6 +47,8 @@ vi.mock('firebase/firestore', () => ({
   },
   collection: () => ({}),
   getDoc: async (ref: { id: string }) => {
+    mockFirestoreReads += 1
+    if (mockFirestoreDenied) throw Object.assign(new Error('Missing or insufficient permissions.'), { code: 'permission-denied' })
     const stored = mockNotesById[ref.id] ?? null
     return { exists: () => stored !== null, data: () => stored }
   },
@@ -60,12 +62,32 @@ async function openNotes() {
   await userEvent.click(row)
 }
 
+let mockNoteApiStatus = 200
+let mockFirestoreReads = 0
+/** The rules: only the owner reads a note straight from Firestore. */
+let mockFirestoreDenied = false
+
+// The page reads a note through the app (/api/activities/[id]/note), so the
+// private site's gate covers it; Firestore is the owner's fallback.
+function noteApi(url: string) {
+  const id = decodeURIComponent(url.split('/')[3] ?? '')
+  mockLastRequestedId = id
+  const ok = mockNoteApiStatus === 200
+  return Promise.resolve({ ok, status: mockNoteApiStatus, json: async () => mockNotesById[id] ?? { note: '', tags: [] } })
+}
+
 beforeEach(() => {
   mockUser = null
   mockAllNotes = []
   mockNotesById = {}
   mockLastRequestedId = ''
+  mockNoteApiStatus = 200
+  mockFirestoreReads = 0
+  mockFirestoreDenied = false
+  vi.stubGlobal('fetch', vi.fn(noteApi))
 })
+
+afterEach(() => vi.unstubAllGlobals())
 
 describe('ActivityNotes owner gate', () => {
 
@@ -203,5 +225,33 @@ describe('ActivityNotes across a client-side navigation', () => {
 
     expect(mockLastRequestedId).toBe('a2')
     expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('two')
+  })
+})
+
+describe('ActivityNotes when the server cannot read notes', () => {
+  beforeEach(() => {
+    mockNoteApiStatus = 503
+    mockNotesById = { a1: { note: 'legs were dead', tags: [] } }
+  })
+
+  // An editor that opened empty over a note it could not fetch would let a
+  // save replace it.
+  it('reads the owner\'s note straight from Firestore', async () => {
+    mockUser = signedIn('owner@example.com', { owner: true })
+    render(<ActivityNotes activityId="a1" />)
+    await openNotes()
+    expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('legs were dead')
+    expect(mockFirestoreReads).toBeGreaterThan(0)
+  })
+
+  it('shows a visitor no note rather than an error', async () => {
+    mockFirestoreDenied = true
+    render(<ActivityNotes activityId="a1" />)
+    const row = await screen.findByTestId('note-row')
+    // Both reads are done - the app's, then Firestore's refusal - and nothing showed.
+    await vi.waitFor(() => expect(mockFirestoreReads).toBe(1))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(row).toHaveTextContent(t.activity.noteRow.none)
+    expect(row).toBeDisabled()
   })
 })

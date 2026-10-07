@@ -54,8 +54,12 @@ describe.skipIf(!emulator)('firestore.rules', () => {
   const owner = () => env.authenticatedContext('owner', { owner: true }).firestore()
 
   describe('activityNotes', () => {
-    it('lets anyone read one note by id, as the activity page does', async () => {
-      await assertSucceeds(getDoc(doc(visitor(), 'activityNotes', '101')))
+    // The activity page reads notes through the app, so a private site's
+    // gate covers them; straight from Firestore, only the owner may.
+    it('lets only the owner read a note by id', async () => {
+      await assertFails(getDoc(doc(visitor(), 'activityNotes', '101')))
+      await assertFails(getDoc(doc(stranger(), 'activityNotes', '101')))
+      await assertSucceeds(getDoc(doc(owner(), 'activityNotes', '101')))
     })
 
     it('never lets anyone but the owner list them', async () => {
