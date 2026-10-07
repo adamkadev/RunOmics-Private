@@ -16,7 +16,7 @@ describe('todaySession', () => {
   })
 
   it('is done once a run is recorded, whether or not it was planned', () => {
-    expect(todaySession(null, RUN)).toMatchObject({ state: 'done', title: 'Easy run', detail: t.sessionCard.ranAt('8.58', '5:55 /km'), href: '/activities/a1' })
+    expect(todaySession(null, RUN)).toMatchObject({ state: 'done', title: 'Easy run', detail: t.sessionCard.ranAt('8.6', '5:55 /km'), href: '/activities/a1' })
   })
 
   it('is a rest day with nothing planned or run', () => {

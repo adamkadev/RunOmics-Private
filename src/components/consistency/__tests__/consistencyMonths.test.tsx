@@ -147,7 +147,7 @@ describe('ConsistencyMonths', () => {
     render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY)} />)
     const run = document.querySelector('a[href="/activities/a-2026-09-02"]')
     expect(run).not.toBeNull()
-    expect(run!.getAttribute('aria-label')).toContain('6.00 km')
+    expect(run!.getAttribute('aria-label')).toContain('6.0 km')
 
     const rest = document.querySelectorAll<HTMLButtonElement>('button[data-state="rest"]')[0]!
     await userEvent.click(rest)

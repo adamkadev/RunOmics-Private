@@ -197,7 +197,7 @@ describe('distanceAxis', () => {
     const axis = distanceAxis(6.11)
     expect(axis.ticks).toEqual([0, 2, 4, 6.11])
     expect(axis.format(0)).toBe('0')
-    expect(axis.format(6.11)).toBe(`6.11 ${t.units.km}`)
+    expect(axis.format(6.11)).toBe(`6.1 ${t.units.km}`)
   })
 
   it('drops a round tick too close to the end', async () => {
