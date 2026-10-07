@@ -34,6 +34,8 @@ type Phase =
   | { kind: 'upToDate' }
   | { kind: 'timedOut' }
   | { kind: 'failed' }
+  /** The server held the sync back: synced moments ago, or the day's syncs used up. */
+  | { kind: 'limited'; reason: 'cooldown' | 'dailyCap'; retryAfterSec: number }
 
 function progressText(phase: Phase, s: typeof t.settings.sync): string | null {
   switch (phase.kind) {
@@ -47,6 +49,8 @@ function progressText(phase: Phase, s: typeof t.settings.sync): string | null {
       return s.stillRunning
     case 'failed':
       return s.failed
+    case 'limited':
+      return phase.reason === 'dailyCap' ? s.dailyCap : s.cooldown(Math.ceil(phase.retryAfterSec / 60))
     default:
       return null
   }
@@ -141,7 +145,15 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
     let since: string
     try {
       const response = await authorized('/api/sync/dispatch', { method: 'POST' })
+      // Held back by the server's limits (design review, Oct 2026): not a
+      // failure, and nothing to wait on - say when the next one can go.
+      if (response.status === 429) {
+        const body = (await response.json().catch(() => ({}))) as { reason?: string; retryAfter?: number }
+        setPhase({ kind: 'limited', reason: body.reason === 'dailyCap' ? 'dailyCap' : 'cooldown', retryAfterSec: body.retryAfter ?? 60 })
+        return
+      }
       if (!response.ok) throw new Error(`dispatch failed with ${response.status}`)
+      // A run already going comes back as its own start: wait on it as on ours.
       since = ((await response.json()) as { since: string }).since
     } catch (error) {
       console.error('Sync dispatch failed:', error)

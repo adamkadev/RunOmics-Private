@@ -1,4 +1,9 @@
 name: Sync Garmin Activities
+# Each run names the profile it syncs, "(all)" for the nightly one: the app's
+# Sync button reads the runs back to hold a second sync while one is going and
+# to space manual ones out (src/lib/syncLimits.ts), and one workflow serves
+# every athlete's deployment.
+run-name: Sync Garmin Activities (${{ inputs.profile || 'all' }})
 
 on:
   schedule:

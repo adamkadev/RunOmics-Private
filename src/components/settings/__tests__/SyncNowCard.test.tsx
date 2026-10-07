@@ -118,6 +118,29 @@ describe('Sync now, on the Garmin card', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 
+  // Design review, Oct 2026: held back by the server's limits is not a failure.
+  it('says when the next sync can go when the server holds one back', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, json: async () => ({ reason: 'cooldown', retryAfter: 290 }) }))
+
+    renderCard()
+    const user = userEvent.setup()
+    await user.click(screen.getByText(s.action))
+
+    await waitFor(() => expect(screen.getByText(s.cooldown(5))).toBeInTheDocument())
+    expect(screen.queryByText(s.failed)).toBeNull()
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+
+  it('says the day is used up when the daily cap is reached', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, json: async () => ({ reason: 'dailyCap', retryAfter: 3600 }) }))
+
+    renderCard()
+    const user = userEvent.setup()
+    await user.click(screen.getByText(s.action))
+
+    await waitFor(() => expect(screen.getByText(s.dailyCap)).toBeInTheDocument())
+  })
+
   it(
     'shows the verdict and clears storage once a poll comes back ready',
     async () => {

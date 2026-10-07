@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { syncConfig } from '../route'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { readSyncGate, syncConfig } from '../route'
 
 const CONFIGURED = {
   GITHUB_SYNC_TOKEN: 'ghp_test',
@@ -37,5 +37,41 @@ describe('syncConfig', () => {
   it('treats an empty override as unset rather than as an empty workflow name', () => {
     const config = syncConfig(env({ GITHUB_SYNC_WORKFLOW: '', GITHUB_SYNC_REF: '', GITHUB_SYNC_PROFILE: '' }))
     expect(config).toMatchObject({ workflow: 'sync.yml', ref: 'main', profile: null })
+  })
+})
+
+// Design review, Oct 2026: the limits come from GitHub's own record of the runs.
+describe('readSyncGate', () => {
+  const config = { repo: 'adamkadev/RunOmics-Private', workflow: 'sync.yml', ref: 'main', token: 'ghp_test', profile: 'adam' }
+  const NOW = Date.parse('2026-10-07T12:00:00Z')
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  it("asks for the last day's runs of the sync workflow, with the server's token", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ workflow_runs: [] }) })
+    vi.stubGlobal('fetch', fetchMock)
+
+    expect(await readSyncGate(config, NOW)).toEqual({ kind: 'open' })
+    const [url, init] = fetchMock.mock.calls[0]!
+    expect(url).toBe(`https://api.github.com/repos/adamkadev/RunOmics-Private/actions/workflows/sync.yml/runs?per_page=50&created=${encodeURIComponent('>=2026-10-06T12:00:00Z')}`)
+    expect(init.headers.authorization).toBe('Bearer ghp_test')
+  })
+
+  it('reads a run going as running', async () => {
+    const run = { status: 'in_progress', conclusion: null, event: 'workflow_dispatch', created_at: '2026-10-07T11:58:00Z', updated_at: '2026-10-07T11:59:00Z', display_title: 'Sync Garmin Activities (adam)' }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ workflow_runs: [run] }) }))
+    expect(await readSyncGate(config, NOW)).toEqual({ kind: 'running', since: '2026-10-07T11:58:00Z' })
+  })
+
+  // The workflow's per-profile concurrency still keeps two runs from overlapping.
+  it('lets the sync through when the runs cannot be read', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({}) }))
+    expect(await readSyncGate(config, NOW)).toEqual({ kind: 'open' })
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+    expect(await readSyncGate(config, NOW)).toEqual({ kind: 'open' })
   })
 })

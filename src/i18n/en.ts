@@ -335,6 +335,9 @@ export const en = {
       upToDate: 'Already up to date — no new run to fetch.',
       stillRunning: 'Still running. The verdict will appear on its own.',
       failed: 'Could not start the sync.',
+      // The server's limits on manual syncs (design review, Oct 2026).
+      cooldown: (min: number) => `Up to date — next sync in ${min} min.`,
+      dailyCap: 'Daily sync limit reached. Auto-sync continues tonight.',
       viewRun: 'View run ›',
       takesAbout: 'Takes about five minutes end to end.',
     },
@@ -485,6 +488,11 @@ export const en = {
       tapToSync: 'tap to sync',
       syncing: 'Syncing…',
       failed: 'Sync failed · tap to retry',
+      // The header's sync line, which is the sync control (design review, Oct 2026).
+      nextIn: (min: number) => `Up to date · next sync in ${min} min`,
+      dailyCap: 'Daily sync limit reached',
+      upToDate: 'Up to date',
+      stillRunning: 'Still syncing…',
       synced: (relative: string) => `Synced ${relative}`,
       justNow: 'just now',
       minutesAgo: (m: number) => `${m}m ago`,

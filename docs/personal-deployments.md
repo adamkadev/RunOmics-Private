@@ -142,6 +142,8 @@ Vercel supports any number of projects per repository. Give it its own domain.
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | her data repository and its PAT (step 1) |
 | `INTERNAL_NOTIFY_SECRET` | a fresh random string, **not** the one used by another profile |
 | `GEMINI_API_KEY` | her own key for the general AI surfaces - the free-tier quota is per key, so a shared one has the two deployments starving each other |
+| `GITHUB_SYNC_TOKEN`, `GITHUB_SYNC_REPO` | the Sync button's PAT (Actions: Read and write on this repository) and this repository - may be shared |
+| `GITHUB_SYNC_PROFILE` | her profile name, `lamiaa`: her Sync button then syncs her data only, and its limits (one run at a time, 10 min apart, 12 a day) count her runs only. Unset, a tap syncs both athletes |
 | `NEXT_PUBLIC_MAPTILER_TOKEN` | may be shared, subject to the plan's request quota |
 
 `GEMINI_COACH_API_KEY` is deliberately absent: the adaptive coach is a local CLI
