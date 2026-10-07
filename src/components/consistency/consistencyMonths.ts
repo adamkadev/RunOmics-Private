@@ -79,6 +79,8 @@ export interface ConsistencyMonth {
   activeDays: number
   /** The month's days up to today: all of them, or the days so far. */
   days: number
+  /** The month under way: its count is not a month's yet, so it is neither strong nor weak. */
+  inProgress: boolean
 }
 
 export interface ConsistencyView {
@@ -100,7 +102,7 @@ export interface ConsistencyView {
    * a history that starts inside that year is compared over the part it
    * covers, and says which.
    */
-  prior: { sharePct: number; deltaPts: number; fullYear: boolean; range: string } | null
+  prior: { sharePct: number; deltaPts: number; fullYear: boolean; range: string; months: number } | null
   range: string | null
 }
 
@@ -201,6 +203,7 @@ export function consistencyMonths(days: HeatmapDay[], today: string, options: Co
         fullLabel: formatDate(first, { precision: 'month', year: 'always' }),
         activeDays: inMonth.filter((cell) => cell.state === 'run').length,
         days: inMonth.length,
+        inProgress: key === today.slice(0, 7),
       }
     },
   )
@@ -238,6 +241,8 @@ function priorShare(runDates: readonly string[], windowStart: string, share: num
     deltaPts: Math.round((share - priorShareValue) * 100),
     fullYear: from === priorStart,
     range: formatDateRange(from, priorEnd, { precision: 'month', year: 'always' }),
+    // "−7 pts vs May – Oct 2025" wrapped over three lines in a third of a phone.
+    months: Math.max(1, Math.round(covered / 30.44)),
   }
 }
 

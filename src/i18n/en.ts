@@ -145,7 +145,7 @@ export const en = {
     share: 'Share of days',
     vsPrior: (delta: string) => `${delta} pts vs prior 12 months`,
     // A history that starts inside the year before is compared over what it covers.
-    vsRange: (delta: string, range: string) => `${delta} pts vs ${range}`,
+    vsMonths: (delta: string, months: number) => `${delta} pts vs prior ${months} month${months === 1 ? '' : 's'}`,
     streak: 'Current streak',
     weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
     best: (weeks: number) => `Best: ${weeks} week${weeks === 1 ? '' : 's'}`,
@@ -156,6 +156,8 @@ export const en = {
     toCome: 'to come',
     perMonth: 'Active days per month',
     monthSummary: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'}`,
+    monthSoFar: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'} so far`,
+    monthLegend: { strong: (days: number) => `${days}+ days`, fewer: 'Fewer', soFar: 'So far' },
     restDay: (date: string) => `${date} · Rest day`,
     empty: 'No runs in the last 12 months yet.',
   },
@@ -798,6 +800,9 @@ export const en = {
         slipped: (who: string, range: string, period: string) => `${who} slipped ${range} over ${period}.`,
         improved: (who: string, range: string, period: string) => `${who} improved by ${range} over ${period}.`,
         held: (who: string, period: string) => `${who} held over ${period}.`,
+        // Some moved, the others held: the held ones are grey on their rows.
+        someSlipped: (n: number, of: number, range: string, period: string) => `${n} of ${of} slipped ${range} over ${period}.`,
+        someImproved: (n: number, of: number, range: string, period: string) => `${n} of ${of} improved by ${range} over ${period}.`,
         mixed: (faster: number, of: number, period: string) => `${faster} of ${of} got faster over ${period}.`,
         offTarget: (distance: string, gap: string, target: string) => `The ${distance} is ${gap} off your ${target} target.`,
         onTarget: (distance: string, gap: string, target: string) => `The ${distance} is ${gap} inside your ${target} target.`,
@@ -1831,11 +1836,9 @@ export const en = {
       noSessionsThisWeek: 'No sessions logged yet.',
       noSessionsRecent: 'No sessions logged in these 4 weeks.',
       emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
-      target: 'target',
-      hardShare: (pct: number) => `Hard (Z4–Z5) ${pct}% · target 10–15%`,
-      highIntensityNote: (pct: number) =>
-        // No phase in the sentence (G17): it named a build block during a base week.
-        `${pct}% of your time was Z4–Z5, against the 10–15% most training weeks keep it to.`,
+      // The verdict is Analytics > Intensity's, word for word.
+      hardShare: (pct: number, verdict: string) => `Hard (Z4–Z5) ${pct}% · ${verdict}`,
+      soFar: 'this week so far',
     },
     athlete: {
       title: 'Athlete',

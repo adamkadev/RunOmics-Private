@@ -368,10 +368,11 @@ describe('Analytics (v4.5)', () => {
     // Year to date in the accent against last year's grey.
     expect(screen.getByTestId('ytd-line').getAttribute('stroke')).toBe('var(--accent)')
     expect(screen.getByTestId('ytd-delta').textContent).toBe(t.analytics.cards.ytd.vs('+754', 2025))
-    // This week, flagged over 35% and dashed, in the one "this week" style.
+    // This week, dashed in the one "this week" style and never flagged over:
+    // its first runs are all of its distance so far.
     const longRun = screen.getByTestId('long-run-bars').querySelector<HTMLElement>('[data-current]')!
-    expect(longRun.hasAttribute('data-over')).toBe(true)
-    expect(longRun.style.background).toBe('var(--warn)')
+    expect(longRun.hasAttribute('data-over')).toBe(false)
+    expect(longRun.style.background).not.toBe('var(--warn)')
     expect(longRun.style.outline).toBe('1.5px dashed var(--accent)')
     expect(screen.getByTestId('long-run-guide')).toBeTruthy()
     expect(screen.getByTestId('long-run-card').textContent).toContain('Jul')

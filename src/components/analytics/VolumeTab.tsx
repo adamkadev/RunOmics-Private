@@ -210,8 +210,9 @@ function LongRunCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; 
                 className="box-border rounded-[5px_5px_2px_2px]"
                 style={{
                   height: Math.max(3, (shares[i]! / top) * H),
-                  // Over the share is caution whichever week it is; the week
-                  // under way keeps it inside the dashed "this week" outline.
+                  // Over the share is caution; the week under way is never
+                  // over (its first runs are its whole distance so far) and
+                  // keeps the dashed "this week" outline.
                   background: bar.over ? 'var(--warn)' : 'color-mix(in srgb, var(--accent) 45%, transparent)',
                   outline: current ? THIS_WEEK_BORDER : undefined,
                   outlineOffset: current ? 2 : undefined,

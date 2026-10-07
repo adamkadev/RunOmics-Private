@@ -13,6 +13,7 @@ import {
   longRunView,
   paceShift,
   predictionRows,
+  predictionTone,
   predictionTrend,
   qualityView,
   riskRows,
@@ -160,7 +161,19 @@ describe('D2 Performance', () => {
       ['10k', 125],
     ])
     // In seconds, printed like each row's change (v4.8).
-    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 70, hi: 125, count: 2 })
+    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 70, hi: 125, count: 2, of: 2 })
+  })
+
+  // Oct 7: the 10K's +8 s was grey on its row (under 0.5 % of 42:24) and
+  // "slipped" in the sentence above it, which had a fixed 5 s of its own.
+  it('reads a prediction as moved by the same rule its row is coloured by', () => {
+    const days = [
+      { date: '2026-07-16', seconds: { '5k': 1208, '10k': 2544, half: 5712, marathon: 12611 } },
+      { date: '2026-10-07', seconds: { '5k': 1224, '10k': 2552, half: 5770, marathon: 12765 } },
+    ]
+    const rows = predictionRows(days, dayWindow('2026-10-07', '12w'))
+    expect(rows.map(predictionTone)).toEqual(['worse', 'flat', 'worse', 'worse'])
+    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 16, hi: 154, count: 3, of: 4 })
   })
 
   it('reads efficiency now against four weeks and six months back, and what heat costs', () => {
@@ -208,19 +221,22 @@ describe('D3 Volume', () => {
     expect(view.last.km).toBe(27.3)
     expect(view.last.current).toBe(true)
     expect(view.avg).toBeCloseTo(kms.slice(0, 11).reduce((a, b) => a + b, 0) / 11)
-    // v4.6: every week drawn with a plan line is in "of", this week too; it
-    // only counts as on plan once it has made it (27.3 of 48 hasn't).
-    expect(view.onPlan).toEqual({ hit: 11, of: 12 })
+    // The week under way is never a miss: it counts once it has made its plan
+    // (27.3 of 48 hasn't), so it is out of "of" for now.
+    expect(view.onPlan).toEqual({ hit: 11, of: 11 })
+    const made = rows.map((r) => (r.current ? { ...r, km: 48 } : r))
+    expect(weeklyDistanceView(made)!.onPlan).toEqual({ hit: 12, of: 12 })
   })
 
-  // v4.6: the rule applies to this week too, once it is past the share.
-  it('flags every week whose long run is over 35% of it, this week included', () => {
+  // Design review, Oct 2026: two runs into a week, its long run is half of it,
+  // so the week under way read "went over" every week.
+  it('flags every finished week whose long run is over 35% of it, never the week under way', () => {
     const view = longRunView(rows)!
     expect(view.km).toBe(14.2)
     expect(view.share).toBe(52)
-    expect(view.bars.filter((b) => b.over)).toHaveLength(3)
-    expect(view.bars.at(-1)).toMatchObject({ over: true, current: true })
-    expect(view.over).toBe(3)
+    expect(view.bars.filter((b) => b.over)).toHaveLength(2)
+    expect(view.bars.at(-1)).toMatchObject({ over: false, current: true })
+    expect(view.over).toBe(2)
   })
 
   it('takes the weekly average it is given while the window is the current one', () => {

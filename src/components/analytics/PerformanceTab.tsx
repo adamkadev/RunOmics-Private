@@ -137,9 +137,9 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
     trend === null
       ? null
       : trend.kind === 'slipped'
-        ? s.slipped(who, range, words)
+        ? trend.count < trend.of ? s.someSlipped(trend.count, trend.of, range, words) : s.slipped(who, range, words)
         : trend.kind === 'improved'
-          ? s.improved(who, range, words)
+          ? trend.count < trend.of ? s.someImproved(trend.count, trend.of, range, words) : s.improved(who, range, words)
           : trend.kind === 'mixed'
             ? s.mixed(trend.faster, trend.count, words)
             : s.held(who, words)
