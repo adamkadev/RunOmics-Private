@@ -1,7 +1,8 @@
 import fs from 'fs'
 import { describe, expect, it } from 'vitest'
-import { BOOTSTRAP_SYSTEM_INSTRUCTION } from '@/infrastructure/ai/coachingPrompt'
-import { GENERATED_PATH, expectedGenerated, rulesFromMarkdown } from '../coachingRules'
+import { ADAPTATION_NAMING_RULE, BOOTSTRAP_SYSTEM_INSTRUCTION } from '@/infrastructure/ai/coachingPrompt'
+import { WORKOUT_NAMING_INSTRUCTION } from '@/infrastructure/ai/coachingRules.generated'
+import { GENERATED_PATH, NAMING_SECTION, expectedGenerated, rulesFromMarkdown } from '../coachingRules'
 
 describe('coaching rules generation', () => {
   it('keeps the committed file in step with the Markdown', () => {
@@ -21,5 +22,20 @@ describe('coaching rules generation', () => {
 
   it('refuses a rules file with no rules in it', () => {
     expect(() => rulesFromMarkdown('# Coaching rules\n\nProse only.\n')).toThrow(/No rules found/)
+  })
+
+  // Design review, Oct 2026: a change to the live plan names what it writes
+  // by the same rules a block does, from the same file.
+  it('hands a change to the live plan the naming rules, and only those', () => {
+    const markdown = fs.readFileSync('.claude/skills/coaching-plan/rules.md', 'utf-8')
+    expect(WORKOUT_NAMING_INSTRUCTION).toBe(rulesFromMarkdown(markdown, NAMING_SECTION))
+    expect(WORKOUT_NAMING_INSTRUCTION).toContain('"Threshold · 3 × 8′ @ 4:25"')
+    expect(WORKOUT_NAMING_INSTRUCTION).not.toContain('runsPerWeek')
+    expect(BOOTSTRAP_SYSTEM_INSTRUCTION).toContain(WORKOUT_NAMING_INSTRUCTION)
+    expect(ADAPTATION_NAMING_RULE).toContain(WORKOUT_NAMING_INSTRUCTION)
+  })
+
+  it('refuses a section that is not there', () => {
+    expect(() => rulesFromMarkdown('# Coaching rules\n\n- One rule.\n', NAMING_SECTION)).toThrow(/No "## Naming the workouts" section/)
   })
 })

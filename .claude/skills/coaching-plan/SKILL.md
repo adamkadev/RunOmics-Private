@@ -66,6 +66,11 @@ advisors only build the prompt and read the answer.
 - `validateBootstrapDraftSemantics` - the races: recovery after one, nothing
   hard just before a tune-up, and no invented finish times.
 - `validateAvailableWeekdays` - every run lands on an available weekday.
+- `validateDraftNames` - in `workoutNames.ts`, last because a name is the
+  cheapest thing to correct: "Threshold · 3 × 8′ @ 4:25", at most 28
+  characters, × and ′, no " - ", no total distance or duration, a pace and
+  a repetition count the blocks actually prescribe; a `shortName` of at most
+  18 on every workout, and a `structure` that agrees with the blocks.
 - `normalizeBootstrapPlan` - structural validity.
 
 A change to the live plan - an `ADJUST` or `REPLAN` from `evaluate` or
@@ -74,10 +79,11 @@ would produce. Every session it adds or rewrites must be written as above
 and land on an available weekday, with one run a day and no week pushed past
 `runsPerWeek`. It may always take load away; whatever it adds must fit the
 volume ceiling, long-session and ramp bounds and the intensity caps and pace
-hold, judged only on the weeks it added to. The floor, the reduced-week
-rules, the "fewer runs" explanation, threshold progression and the race
-rules stay with bootstrap: they refuse exactly the easing an adaptation is
-for.
+hold, judged only on the weeks it added to. A title it writes follows the
+naming rules; one the plan already held is kept as it was written. The
+floor, the reduced-week rules, the "fewer runs" explanation, threshold
+progression and the race rules stay with bootstrap: they refuse exactly the
+easing an adaptation is for.
 
 `weekKm` converts a timed segment to distance through its pace, so a week
 counted from `distanceMeters` alone reads lighter than it trains.

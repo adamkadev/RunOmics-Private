@@ -109,8 +109,8 @@ function emptyDose(): WorkoutDose {
   return { thresholdMeters: 0, intervalMeters: 0, thresholdSeconds: 0, fastestByType: new Map() }
 }
 
-/** The mirror of segmentMeters: whichever of the two the segment was written in. */
-function segmentSeconds(segment: WorkoutSegment): number {
+/** The mirror of segmentMeters: whichever of the two the segment was written in. Shared with workoutNames.ts. */
+export function segmentSeconds(segment: WorkoutSegment): number {
   const { durationSeconds, distanceMeters, paceSecPerKm } = segment.target
   if (durationSeconds !== undefined) return durationSeconds
   if (distanceMeters !== undefined && paceSecPerKm !== undefined) {

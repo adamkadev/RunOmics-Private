@@ -12,6 +12,7 @@ import { validateBootstrapDraftSemantics, type BootstrapEvents } from './bootstr
 import { validateDraftFrequency } from './frequency'
 import { intensityBand, validateDraftIntensity } from './intensity'
 import { validateDraftVolume, volumeBand } from './volume'
+import { validateDraftNames, validateWorkoutName } from './workoutNames'
 
 /**
  * Every rule a proposed plan has to satisfy, and which of them apply when.
@@ -19,8 +20,9 @@ import { validateDraftVolume, volumeBand } from './volume'
  * The advisors only build prompts and read answers. Judging an answer happens
  * here, so a reply from the API, a reply pasted from a chat and a change to the
  * live plan all answer to the same rules. The checks themselves stay beside
- * their reasoning - frequency.ts, volume.ts, intensity.ts and
- * bootstrapValidation.ts - and this module is the one place that calls them.
+ * their reasoning - frequency.ts, volume.ts, intensity.ts,
+ * bootstrapValidation.ts and workoutNames.ts - and this module is the one
+ * place that calls them.
  */
 
 function flattenedSegments(blocks: WorkoutBlock[]): WorkoutSegment[] {
@@ -125,6 +127,9 @@ export function validateBootstrapDraft(draft: CoachingPlanDraft, rules: Bootstra
   validateDraftIntensity(draft, intensityBand(rules.context.athlete.thresholdPaceSecPerKm), rules.availableWeekdays)
   validateBootstrapDraftSemantics(draft, rules.events, rules.context)
   validateAvailableWeekdays(draft.weeks.flatMap((week) => week.workouts), rules.availableWeekdays)
+  // Last: a name is the cheapest thing to put right, so the substance is
+  // judged first and a repair is asked for it first.
+  validateDraftNames(draft)
 }
 
 function active(week: TrainingWeek): WorkoutPrescription[] {
@@ -191,4 +196,10 @@ export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, co
   const prior = asDraft(before)
   validateDraftVolume(draft, volumeBand(context.trainingHistory), weekdays, prior)
   validateDraftIntensity(draft, intensityBand(context.athlete.thresholdPaceSecPerKm), weekdays, prior)
+
+  // What the change names is held to the naming rules (design review, Oct
+  // 2026); a title the plan already held keeps the rules it was written
+  // under, wherever the change moved its session.
+  const titles = new Set(before.weeks.flatMap((week) => week.workouts).map((workout) => workout.title))
+  for (const workout of changed) validateWorkoutName(workout, `workout ${workout.id}`, { titleAsWritten: titles.has(workout.title) })
 }

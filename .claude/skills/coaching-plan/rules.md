@@ -104,7 +104,7 @@ The reasoning behind these rules, and the training science they came from, is in
 - When hasExplicitGoal is false, do not call any finish time an event goal; an AI-recommended pace must be described as a recommendation and encoded in paceSecPerKm.
 - Pace and finish-time conversions are deterministic inputs: never calculate, infer, or narrate a finish time from a pace.
 - You may repeat supplied targetFinishTime and targetPace values verbatim for that same event only.
-- Keep plan names, plan focus, and week focus free of numeric pace or finish-time targets.
+- Keep the plan's name, the plan focus and each week focus free of numeric pace or finish-time targets.
 - Race workouts must occur on a supplied event date.
 - Do not schedule anything outside the planning period.
 - Use only supplied dates, athlete metrics, goals, target ranges, and available weekdays.
@@ -129,9 +129,6 @@ The reasoning behind these rules, and the training science they came from, is in
 - Treat supplied hrZoneBoundsBpm as authoritative Garmin zone boundaries; do not recalculate HR zones from max HR or LTHR.
 - Never estimate a maximum heart rate from age, and never derive a zone, a pace or a target from such an estimate; athlete age is context for recovery and progression only.
 - Read trainingHistory.weeklySeries as the shape of the season: it gives the athlete's weekly kilometres and run counts in order from firstWeekStart, so a month lost to travel can be told apart from a month lost to fatigue or injury, which the averages alone cannot show.
-- Title a workout with its session type first and then only what varies between weeks, so the distinguishing word survives a display that truncates: "Threshold 3 x 7:00", "Long run", "Strides 6 x 20s", "Recovery run". Three sessions all beginning "Easy" cannot be told apart on a watch.
-- Use sentence case in titles: capitalise the first word only, unless a proper noun follows.
-- Never put a session's distance in its title. Distance is computed from the blocks and displayed separately, and a number written into the title is a second source of truth that drifts from the session it names.
 - Never use the words progressive or progression anywhere in an easy or steady workout title, description, workout notes, or segment notes; describe longer-term volume rebuilding as gradual instead.
 - Workout names and descriptions must match their blocks: call a workout progressive only when multiple blocks encode an actual rise in intensity.
 - Hill repetitions must use effort/RPE or form guidance (with HR only as secondary guidance), never a rigid flat-ground pace target; use a normal flat interval workout if pace is the execution target, and encode qualitative effort/RPE/form guidance in segment notes.
@@ -139,3 +136,22 @@ The reasoning behind these rules, and the training science they came from, is in
 - Do not assign hrZone or hrBpm to strides because HR response lags; guide them by pace or encode effort, relaxed speed, and form in segment notes.
 - Return structured workouts, not prose-only sessions.
 - Do not calculate new physiological metrics.
+
+## Naming the workouts
+
+The name is what the watch, Plan, Today and the run it becomes all show, and the app
+prints it as given: it never reads a figure back out of it. These bullets also go,
+on their own, to a change to the live plan, which names the sessions it writes too.
+`validateDraftNames` in `src/application/coaching/workoutNames.ts` holds a plan to
+them (design review, Oct 2026).
+
+- Name each workout in its title as its session type, then " · " and its structure when it has one: "Threshold · 3 × 8′ @ 4:25", "Easy · 54 min + 6 strides", "VO₂ intervals · 5 × 3′". A session without structure is its type alone: "Recovery run", "Easy run", "Long run". The type leads so that the word telling two sessions apart survives a watch that shows only the first characters.
+- The session types are Recovery run, Easy run, Easy, Long run, Tempo, Threshold, VO₂ intervals, Anaerobic, Sprints and Race; an easy run is "Easy" when a structure follows it.
+- Write repetitions as their count, the multiplication sign and their length with the prime: "3 × 8′", never "3 x 8", "3x8'" or "3 x 7:40". Round a repetition to the nearest minute (7:40 is 8′); one under a minute keeps its seconds with the double prime ("10 × 30″").
+- Put the repetitions' target pace last, after " @ ": "@ 4:25", the middle of their pace range, with no unit and never a range.
+- Keep a name to 28 characters, so it fits a row on a phone and on the watch; drop the pace first when it would not fit.
+- Use sentence case in names: capitalise the first word only, unless a proper noun follows.
+- Never use " - " in a name, and never put the session's total distance, its total duration or its zone in it. Each is computed from the blocks and shown beside the name, and a figure written into the name is a second source of truth that drifts from the session it names.
+- Give every workout a shortName of at most 18 characters for a tight row, the name itself when it already fits: "Threshold 3×8′", "Easy + strides", "Long run".
+- Give a workout with repetitions or extras a structure that states them as its blocks have them: {"reps": 3, "repMinutes": 8, "targetPace": "4:25"} for "Threshold · 3 × 8′ @ 4:25", {"extras": ["6 strides"]} for "Easy · 54 min + 6 strides".
+- A run inherits the name of the session it was, so keep each name specific enough to tell its session apart in a list of runs.

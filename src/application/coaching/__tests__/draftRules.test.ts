@@ -147,9 +147,23 @@ describe('a change to the live plan', () => {
     expect(() => validateAdaptation(before, changed(cancel, before), context)).not.toThrow()
   })
 
+  // Design review, Oct 2026: a change names what it writes by the naming
+  // rules, and past plans keep their names.
+  it('holds a title the change writes to the naming rules, and keeps one the plan held', () => {
+    const before = current()
+    const shortened = structuredClone(before)
+    shortened.weeks[0]!.workouts = shortened.weeks[0]!.workouts.map((each) => ({ ...each, totalDurationSeconds: 3_000, revision: 2, status: 'adjusted' as const }))
+
+    expect(shortened.weeks[0]!.workouts[0]!.title).toBe('3 × 8 min threshold')
+    expect(() => validateAdaptation(before, shortened, context)).not.toThrow()
+    expect(() => validateAdaptation(current(), changed(rewrite({ title: 'Easy run 3 x 8' })), context)).toThrow(/title "Easy run 3 x 8": write repetitions with ×/)
+    expect(() => validateAdaptation(current(), changed(rewrite({ title: 'Easy run, shorter' })), context)).toThrow(/shortName: every workout carries one/)
+    expect(() => validateAdaptation(current(), changed(rewrite({ title: 'Easy run, shorter', shortName: 'Easy run' })), context)).not.toThrow()
+  })
+
   it('does not refuse a week for runs it held before the change', () => {
     const crowded = changed((workouts) => [...workouts, extra('2026-09-16')])
 
-    expect(() => validateAdaptation(crowded, changed(rewrite({ title: 'Easy run, shortened' }), crowded), context)).not.toThrow()
+    expect(() => validateAdaptation(crowded, changed(rewrite({ title: 'Easy run, shortened', shortName: 'Easy run' }), crowded), context)).not.toThrow()
   })
 })

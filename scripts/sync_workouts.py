@@ -262,27 +262,41 @@ def _load_easy_pace_sec_per_km(data_dir: Path | None = None) -> float:
     return _DEFAULT_EASY_PACE_SEC_PER_KM
 
 
-def _load_coach_workout_types(data_dir: Path | None = None) -> dict[str, str]:
-    """ActivityType of each Garmin workout the coaching plan pushed, keyed by
-    Garmin workout id. `coaching/garmin-sync.json` links a prescription to the
-    workout it became, and the plan (current or superseded) states the
-    prescription's type - so a session the plan pushed is typed by the plan,
-    not guessed from the free-text title the planner wrote for it."""
+def _pushed_prescriptions(data_dir: Path | None = None) -> dict[str, dict]:
+    """Each Garmin workout the coaching plan pushed, keyed by Garmin workout
+    id, with the prescription it became. `coaching/garmin-sync.json` links a
+    prescription to the workout, and the plan (current or superseded) holds
+    the prescription. Raises when either cannot be read."""
     coaching = (data_dir or get_data_dir()) / "coaching"
     sync_path = coaching / "garmin-sync.json"
     if not sync_path.exists():
         return {}
+    entries = json.loads(sync_path.read_text(encoding="utf-8")).get("entries") or []
+    prescribed: dict[str, dict] = {}
+    for plan_path in [coaching / "current_plan.json", *sorted((coaching / "superseded").glob("*.json"))]:
+        if not plan_path.exists():
+            continue
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        for week in plan.get("weeks") or []:
+            for workout in week.get("workouts") or []:
+                if workout.get("id"):
+                    prescribed.setdefault(workout["id"], workout)
+
+    pushed: dict[str, dict] = {}
+    for entry in entries:
+        workout = prescribed.get(entry.get("prescriptionId") or "")
+        workout_id = str(entry.get("garminWorkoutId") or "")
+        if workout and workout_id:
+            pushed[workout_id] = workout
+    return pushed
+
+
+def _load_coach_workout_types(data_dir: Path | None = None) -> dict[str, str]:
+    """ActivityType of each Garmin workout the coaching plan pushed, keyed by
+    Garmin workout id: a session the plan pushed is typed by the plan, not
+    guessed from the free-text title the planner wrote for it."""
     try:
-        entries = json.loads(sync_path.read_text(encoding="utf-8")).get("entries") or []
-        prescribed: dict[str, str] = {}
-        for plan_path in [coaching / "current_plan.json", *sorted((coaching / "superseded").glob("*.json"))]:
-            if not plan_path.exists():
-                continue
-            plan = json.loads(plan_path.read_text(encoding="utf-8"))
-            for week in plan.get("weeks") or []:
-                for workout in week.get("workouts") or []:
-                    if workout.get("id") and workout.get("type"):
-                        prescribed.setdefault(workout["id"], workout["type"])
+        pushed = _pushed_prescriptions(data_dir)
     except Exception as exc:
         # Only the type hangs on it, and the name-based guess still stands.
         print(
@@ -292,12 +306,25 @@ def _load_coach_workout_types(data_dir: Path | None = None) -> dict[str, str]:
         return {}
 
     types: dict[str, str] = {}
-    for entry in entries:
-        activity_type = type_from_coaching_type(prescribed.get(entry.get("prescriptionId") or ""))
-        workout_id = str(entry.get("garminWorkoutId") or "")
-        if activity_type and workout_id:
+    for workout_id, workout in pushed.items():
+        activity_type = type_from_coaching_type(workout.get("type"))
+        if activity_type:
             types[workout_id] = activity_type
     return types
+
+
+def _load_coach_named_workouts(data_dir: Path | None = None) -> set[str]:
+    """Garmin workout ids of the sessions the coach named under the naming
+    rules (design review, Oct 2026), the ones carrying a shortName. Their name
+    already states its main set - "Threshold · 3 × 8′ @ 4:25", "Easy · 54 min
+    + 6 strides" - and is kept as written."""
+    try:
+        pushed = _pushed_prescriptions(data_dir)
+    except Exception:
+        # _load_coach_workout_types has said so already; the names are read
+        # as they always were.
+        return set()
+    return {workout_id for workout_id, workout in pushed.items() if workout.get("shortName")}
 
 
 def fetch_planned_workouts(
@@ -427,6 +454,7 @@ def _build_entries(
     planned: list[dict] = []
     easy_pace = _load_easy_pace_sec_per_km()
     coach_types = _load_coach_workout_types()
+    coach_named = _load_coach_named_workouts()
     resolve_distance_duration = {
         True: resolve_adaptive_distance_duration,
         False: resolve_manual_distance_duration,
@@ -460,7 +488,10 @@ def _build_entries(
             continue
 
         name = (detail.get("workoutName") or fallback_title).strip()
-        if " + " in name:
+        # A name the coach wrote under the naming rules is kept as written:
+        # its "+ 6 strides" is part of it, not an extra to drop.
+        named_by_coach = workout_id in coach_named
+        if " + " in name and not named_by_coach:
             name = name.split(" + ", 1)[0].strip()
         if not name:
             continue
@@ -513,7 +544,11 @@ def _build_entries(
             # write_planned_workouts falls back to can't recover it.
             entry["type"] = coach_type
 
-        if coach_type == "Base":
+        if named_by_coach:
+            # It already states its main set; appending ours would say it
+            # twice, after the " - " the naming rules keep out.
+            pass
+        elif coach_type == "Base":
             entry["name"] = "Base"
         elif coach_type or (workout_type or infer_planned_type(name)) != "Base":
             main_set = main_set_descriptor(detail, name, workout_steps)

@@ -65,6 +65,12 @@ function ids() {
   return () => `generated-${++value}`
 }
 
+// The fixture plan's sessions, named as a block is named now (design review, Oct 2026).
+const NAMED = {
+  threshold: { title: 'Threshold · 3 × 8′', shortName: 'Threshold 3×8′' },
+  easy: { title: 'Easy run', shortName: 'Easy run' },
+} as const
+
 function fourWeekPlan(): CoachingPlanDraft {
   const draft = plan()
   const persistent = {
@@ -92,7 +98,7 @@ function fourWeekPlan(): CoachingPlanDraft {
       workouts: week.workouts.map((workout) => ({
         date: workout.date,
         type: workout.type,
-        title: workout.title,
+        ...NAMED[workout.type as keyof typeof NAMED],
         description: workout.description,
         blocks: workout.blocks,
         ...(workout.notes ? { notes: workout.notes } : {}),
@@ -143,6 +149,7 @@ function targetAdvisor(requests: BootstrapRequest[]): CoachingAdvisor {
           date: event.date,
           type: 'race',
           title: event.name,
+          shortName: 'Tune-up race',
           description: 'Run the structured supporting event.',
           blocks: [{ kind: 'effort', target: { distanceMeters: event.distanceMeters ?? 1_000 } }],
         })
@@ -447,6 +454,7 @@ describe('coaching workflows', () => {
             date: '2026-09-06',
             type: 'recovery',
             title: 'Post-race recovery run',
+            shortName: 'Recovery run',
             description: 'Very relaxed running after the race.',
             blocks: [{ kind: 'effort', target: { durationSeconds: 1_800, hrZone: 1 } }],
           },
@@ -454,13 +462,15 @@ describe('coaching workflows', () => {
             date: '2026-09-08',
             type: 'easy',
             title: 'Easy aerobic run',
+            shortName: 'Easy run',
             description: 'Keep the final recovery day easy.',
             blocks: [{ kind: 'effort', target: { durationSeconds: 2_100, hrZone: 2 } }],
           },
           {
             date: '2026-09-10',
             type: 'threshold',
-            title: 'Controlled threshold intervals',
+            title: 'Threshold · 3 × 8′',
+            shortName: 'Threshold 3×8′',
             description: 'Resume quality after the protected recovery window.',
             blocks: [{
               kind: 'repeat',
@@ -593,6 +603,7 @@ describe('coaching workflows', () => {
           date: '2026-09-27',
           type: 'race',
           title: '10K Tune-up race',
+          shortName: 'Tune-up race',
           description,
           blocks: [{ kind: 'effort', target: { distanceMeters: 10_000, paceSecPerKm: { min: 245, max: 255 } } }],
         })
@@ -636,6 +647,7 @@ describe('coaching workflows', () => {
           date: '2026-09-05',
           type: 'race',
           title: '5K tune-up',
+          shortName: '5K tune-up',
           description,
           blocks: [{ kind: 'effort', target: { distanceMeters: 5_000, paceSecPerKm: { min: paceSecPerKm, max: paceSecPerKm } } }],
         })
@@ -789,7 +801,7 @@ describe('coaching workflows', () => {
   it('applies an adjustment only to a future prescription and increments both revisions once', async () => {
     const repository = new MemoryRepository()
     repository.plan = plan()
-    const changed = { ...repository.plan.weeks[1]!.workouts[0]!, title: 'Easy run shortened', totalDurationSeconds: 2_400 }
+    const changed = { ...repository.plan.weeks[1]!.workouts[0]!, title: 'Easy run shortened', shortName: 'Easy run', totalDurationSeconds: 2_400 }
     const advisor: CoachingAdvisor = {
       bootstrap: async () => { throw new Error('not called') },
       evaluateActivity: async () => ({
@@ -843,7 +855,7 @@ describe('coaching workflows', () => {
     repository.plan = plan()
     const [thisWeek, nextWeek] = repository.plan.weeks
     const past = thisWeek!.workouts[0]!
-    const collision = { ...past, date: '2026-09-12', title: 'Threshold, moved to Saturday' }
+    const collision = { ...past, date: '2026-09-12', title: 'Threshold, moved to Saturday', shortName: 'Threshold' }
     const advisor: CoachingAdvisor = {
       bootstrap: async () => { throw new Error('not called') },
       evaluateActivity: async () => { throw new Error('not called') },
@@ -986,7 +998,7 @@ describe('holding a change to the rules a new block answers to', () => {
     // A new Wednesday session carrying the id of Tuesday's run. Were that id
     // trusted, Tuesday's prescription would quietly become Wednesday's.
     const easy = preferred().weeks[1]!.workouts[0]!
-    const added = { ...easy, date: '2026-09-16', title: 'Added easy run', blocks: [{ kind: 'effort' as const, target: { distanceMeters: 3_000 } }] }
+    const added = { ...easy, date: '2026-09-16', title: 'Added easy run', shortName: 'Easy run', blocks: [{ kind: 'effort' as const, target: { distanceMeters: 3_000 } }] }
     const { repository, advisor, context } = adjusting([{ kind: 'upsert_workout', workout: added }])
 
     const proposal = await createPostActivityProposal(context, latestActivity, { repository, advisor, id: ids(), now })
@@ -1024,7 +1036,7 @@ it('passes and persists five-run preference independently of availability throug
         for (let offset = 0; offset < 7; offset++) {
           const date = addDays(week.startDate, offset)
           if (!request.availableWeekdays.includes(new Date(`${date}T00:00:00Z`).getUTCDay())) continue
-          week.workouts.push({ date, type: 'easy', title: 'Easy run', description: 'Comfortable aerobic effort', blocks: [{ kind: 'effort', target: { distanceMeters: 5000 } }] })
+          week.workouts.push({ date, type: 'easy', title: 'Easy run', shortName: 'Easy run', description: 'Comfortable aerobic effort', blocks: [{ kind: 'effort', target: { distanceMeters: 5000 } }] })
         }
       }
       return draft
