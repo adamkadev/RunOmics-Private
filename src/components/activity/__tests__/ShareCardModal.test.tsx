@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import { SHARE_THEME_KEY } from '@/lib/useShareCardPrefs'
+import { t } from '@/i18n'
 import { ShareCardModal } from '../ShareCardModal'
 
 const theme = vi.hoisted(() => ({ resolved: 'dark' }))
@@ -80,12 +81,42 @@ describe('ShareCardModal', () => {
 
   it('offers the VO₂max grade badge off by default, and only with a grade (v5.3)', async () => {
     const { unmount } = open()
-    expect(screen.queryByTestId('share-grade-toggle')).toBeNull()
+    expect(screen.queryByRole('switch', { name: t.vo2Grade.shareBadge })).toBeNull()
     unmount()
     render(<ShareCardModal activity={RUN} vo2Grade="A" canShareFiles canCopyImage onClose={() => {}} />)
-    const toggle = screen.getByTestId('share-grade-toggle')
+    const toggle = screen.getByRole('switch', { name: t.vo2Grade.shareBadge })
     expect(toggle.getAttribute('aria-checked')).toBe('false')
     await userEvent.click(toggle)
     expect(toggle.getAttribute('aria-checked')).toBe('true')
+  })
+
+  // Design review, Oct 2026: the design picker was a filled accent pill, unlike
+  // every other segmented control; the accent is the Share button's.
+  it('draws both pickers in the app\'s segmented style, the pick lifted, never the accent', () => {
+    open()
+    for (const group of ['Design', 'Background']) {
+      const picker = screen.getByRole('radiogroup', { name: group })
+      expect(picker.className).toContain('bg-[var(--segmented-track)]')
+      const pick = picker.querySelector<HTMLElement>('[aria-checked="true"]')!
+      expect(pick.className).toContain('bg-[var(--segmented-pill)]')
+      expect(pick.className).toContain('text-foreground')
+      expect(pick.getAttribute('style') ?? '').not.toContain('accent')
+      for (const option of picker.querySelectorAll('[role="radio"]')) expect(option.className).toContain('hit-44')
+    }
+  })
+
+  // Design review, Oct 2026: off, the badge switch had no track to see.
+  it('draws the badge switch as the app\'s one switch, its off track in line-2', async () => {
+    render(<ShareCardModal activity={RUN} vo2Grade="A" canShareFiles canCopyImage onClose={() => {}} />)
+    const toggle = screen.getByRole('switch', { name: t.vo2Grade.shareBadge })
+    expect(toggle.className).toContain('bg-[var(--line-2)]')
+    expect(toggle.className).toContain('hit-44')
+    await userEvent.click(toggle)
+    expect(toggle.className).toContain('bg-accent')
+  })
+
+  it('gives the close button a 44 pt target', () => {
+    open()
+    expect(screen.getByRole('button', { name: t.activity.shareCard.close }).className).toContain('hit-44')
   })
 })
