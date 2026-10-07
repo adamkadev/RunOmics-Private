@@ -139,6 +139,8 @@ describe('D2 Performance', () => {
       { date: '2026-09-20', vo2max: 55 },
     ]
     expect(vo2View(55, samples, TODAY)).toEqual({ value: 55, delta: -1 })
+    // To one decimal, as the value is printed: 55.8 to 56.0 is not "No change".
+    expect(vo2View(56, [{ date: '2026-07-16', vo2max: 55.8 }, { date: '2026-09-20', vo2max: 56.0 }], TODAY)!.delta).toBe(0.2)
     expect(vo2View(null, samples, TODAY)!.value).toBe(55)
   })
 

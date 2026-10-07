@@ -45,6 +45,20 @@ describe('a truncated data file degrades the section instead of the page', () =>
 })
 
 describe('a well-formed file still reads normally', () => {
+  // Garmin's daily resting HR carries workout readings on some days (142 bpm
+  // in Aug 2026), which the Recovery baseline took for resting.
+  it('recovery_history.json, leaving out resting heart rates no heart at rest has', async () => {
+    vi.mocked(fs.readFileSync).mockReturnValue(
+      JSON.stringify({ days: { '2026-08-14': { restingHr: 142 }, '2026-08-15': { hrv: 61, restingHr: 46 }, '2026-08-16': { hrv: 58, restingHr: 144 } } })
+    )
+    const { getRecoveryNights } = await import('../JsonRecoveryRepository')
+
+    expect(getRecoveryNights()).toEqual([
+      { date: '2026-08-15', hrv: 61, restingHr: 46 },
+      { date: '2026-08-16', hrv: 58, restingHr: null },
+    ])
+  })
+
   it('goals.json', async () => {
     vi.mocked(fs.readFileSync).mockReturnValue(
       JSON.stringify({ years: [{ year: 2026, annualDistanceKm: 1500, targets: [] }] })

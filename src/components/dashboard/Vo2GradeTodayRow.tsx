@@ -21,7 +21,7 @@ export function Vo2GradeTodayRow({ view }: { view: Vo2GradeView | null }) {
           {view.grade}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-subhead font-semibold text-foreground">{g.todayUp(view.grade)}</span>
+          <span className="block text-subhead font-semibold text-foreground">{view.change.regained ? g.todayBack(view.grade) : g.todayUp(view.grade)}</span>
           <span className="block truncate text-footnote text-muted-foreground">
             <span className="text-[var(--good)]">{g.todayFrom(view.change.from)}</span>
             {g.todayRest(formatKm(view.value, 1), view.topPercent)}

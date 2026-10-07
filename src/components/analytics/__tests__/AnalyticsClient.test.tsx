@@ -281,7 +281,7 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('predictions-sentence').textContent).toContain('off your 40:00 target')
     // VO2max as Progress prints it.
     expect(screen.getByTestId('performance-summary').textContent).toContain('55.0')
-    expect(screen.getByTestId('performance-summary').textContent).toContain('−1 in 12 weeks')
+    expect(screen.getByTestId('performance-summary').textContent).toContain('−1.0 in 12 weeks')
     expect(screen.getByTestId('performance-summary').textContent).toContain(`4:23${t.units.perKm}`)
     // v4.7: slower is amber, faster --good, by the same helper everywhere.
     for (const delta of screen.getAllByTestId('prediction-delta')) expect(delta.getAttribute('style')).toContain('var(--tone-caution)')

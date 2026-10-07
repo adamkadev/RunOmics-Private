@@ -29,11 +29,27 @@ describe('buildVo2Grade (v5.3)', () => {
   it('reports a level-up for three days only, and never a steady grade', () => {
     const samples = [{ date: '2026-09-01', vo2max: 54.0 }, { date: '2026-09-18', vo2max: 54.8 }, { date: '2026-09-25', vo2max: 55.0 }]
     const day1 = buildVo2Grade(input({ samples, today: '2026-09-25' }))
-    expect(day1.status === 'graded' && day1.change).toEqual({ kind: 'up', from: 'A−', date: '2026-09-25' })
+    expect(day1.status === 'graded' && day1.change).toEqual({ kind: 'up', from: 'A−', date: '2026-09-25', regained: false })
     const day3 = buildVo2Grade(input({ samples, today: '2026-09-27' }))
     expect(day3.status === 'graded' && day3.change?.kind).toBe('up')
     const day4 = buildVo2Grade(input({ samples, today: '2026-09-28' }))
     expect(day4.status === 'graded' && day4.change).toBeNull()
+  })
+
+  // Oct 2026: A+ from April to Sep 12, A- then A through September, A+ again
+  // on Oct 7 - which read "New grade, up from A".
+  it('calls a grade that comes back after a dip regained, not new', () => {
+    const samples = [
+      { date: '2026-04-20', vo2max: 55.6 },
+      { date: '2026-08-19', vo2max: 55.5 },
+      { date: '2026-09-04', vo2max: 54.0 },
+      { date: '2026-09-13', vo2max: 54.6 },
+      { date: '2026-09-30', vo2max: 55.5 },
+    ]
+    const view = buildVo2Grade(input({ samples, value: 56.0, today: '2026-10-07' }))
+    expect(view.status === 'graded' && view.change).toEqual({ kind: 'up', from: 'A', date: '2026-10-07', regained: true })
+    // Every month of the season, the September dip included.
+    expect(view.status === 'graded' && view.season.map((m) => m.grade).slice(3)).toEqual(['A+', 'A+', 'A+', 'A+', 'A+', 'A', 'A+'])
   })
 
   it('explains a drop by the days off before it, never as a level-up', () => {

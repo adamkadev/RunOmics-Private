@@ -88,6 +88,8 @@ export const en = {
     eta: (weeks: number) => `About ${weeks} week${weeks === 1 ? '' : 's'} at your current trend.`,
     topGrade: 'Top grade for your age',
     newGrade: 'New grade',
+    // A grade held until recently, lost in a dip and back: not new (Oct 2026).
+    regainedGrade: 'Grade regained',
     upFrom: (grade: string) => `up from ${grade}`,
     downFrom: (grade: string, daysOff: number | null) => (daysOff ? `From ${grade} after ${daysOff} days off` : `From ${grade}`),
     dropNote: 'Usually returns within 2–3 weeks of normal training.',
@@ -106,6 +108,7 @@ export const en = {
     coachNext: (grade: string) => `Your fastest route to ${grade} is one VO₂ interval session a week plus your current easy volume.`,
     coachTop: 'Hold it with one VO₂ interval session a week and your current easy volume.',
     todayUp: (grade: string) => `VO₂max grade up to ${grade}`,
+    todayBack: (grade: string) => `VO₂max grade back to ${grade}`,
     todayFrom: (grade: string) => `↑ from ${grade}`,
     todayRest: (value: string, top: number) => ` · ${value} · top ${top}%`,
     shareBadge: 'VO₂max grade badge',
@@ -374,7 +377,9 @@ export const en = {
       details: 'Heart & body',
       vma: 'VMA',
       maxHr: 'Max HR',
-      restingHr: 'Resting HR',
+      // Garmin's setting the zones and the load are computed from, not a
+      // reading of today (Analytics > Recovery has that, "Daily resting HR").
+      restingHr: 'Resting HR (zones)',
       vo2max: 'VO₂max',
       weight: 'Weight',
       height: 'Height',
@@ -732,7 +737,7 @@ export const en = {
         captionHrv: 'HRV · Garmin',
         about: 'Overnight HRV and resting heart rate from your watch, each against your own baseline: the middle 80% of your last 60 nights. Higher HRV and lower resting HR mean you are recovering. Each shows once the period has 7 days of it. Without the watch on overnight there is no HRV, and resting HR comes from your quietest stretch of the day, so it reads a little higher.',
         hrv: 'HRV',
-        restingHr: 'Resting HR',
+        restingHr: 'Daily resting HR',
         ms: 'ms',
         bpm: 'bpm',
         vsWeek: (delta: string) => `${delta} vs 7-day avg`,

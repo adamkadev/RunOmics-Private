@@ -59,7 +59,7 @@ describe('Vo2GradeCard (v5.3 G1, v4.17)', () => {
   })
 
   it('says a level-up in pos, and a drop in muted ink with its reason, never amber', () => {
-    const { unmount } = render(<Vo2GradeCard view={{ ...GRADED, change: { kind: 'up', from: 'B+', date: '2026-09-26' } }} />)
+    const { unmount } = render(<Vo2GradeCard view={{ ...GRADED, change: { kind: 'up', from: 'B+', date: '2026-09-26', regained: false } }} />)
     expect(screen.getByTestId('grade-up').className).toContain('var(--pos)')
     unmount()
     render(<Vo2GradeCard view={{ ...GRADED, grade: 'B+', change: { kind: 'down', from: 'A−', date: '2026-09-20', daysOff: 10 } }} />)
@@ -98,7 +98,7 @@ describe('Vo2GradeDetail (G2)', () => {
 
 describe('Vo2GradeTodayRow (G3)', () => {
   it('shows only after a level-up, never for a drop or a steady grade', () => {
-    const { rerender, container } = render(<Vo2GradeTodayRow view={{ ...GRADED, change: { kind: 'up', from: 'B+', date: '2026-09-26' } }} />)
+    const { rerender, container } = render(<Vo2GradeTodayRow view={{ ...GRADED, change: { kind: 'up', from: 'B+', date: '2026-09-26', regained: false } }} />)
     expect(screen.getByTestId('vo2-grade-today').textContent).toContain(t.vo2Grade.todayUp('A−'))
     expect(screen.getByTestId('vo2-grade-today').getAttribute('href')).toBe('/athlete/vo2max')
     rerender(<Vo2GradeTodayRow view={{ ...GRADED, change: { kind: 'down', from: 'A', date: '2026-09-26', daysOff: null } }} />)

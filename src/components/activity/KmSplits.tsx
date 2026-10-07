@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { ActivitySplit, SplitLap } from '@/domain/activity/types'
 import type { ActivityDetailView } from './activityViews'
-import { kmSplitsFromSamples, splitSpread, type KmSplit, type SplitSpread } from '@/domain/activity/kmSplits'
+import { kmSplitsOf, splitSpread, type KmSplit, type SplitSpread } from '@/domain/activity/kmSplits'
 import { repSet } from '@/domain/activity/repSet'
 import { IntervalSet } from './IntervalSet'
 
@@ -154,7 +154,8 @@ export function KmSplits({ activity }: Props) {
   if (set) return <IntervalSet set={set} />
 
   if (splits.length <= 1) {
-    const perKm = kmSplitsFromSamples({
+    const perKm = kmSplitsOf({
+      laps: splits[0]?.laps,
       distanceKm: activity.distanceKm,
       durationSec: activity.durationSeconds,
       paceSamples: activity.paceSamples,

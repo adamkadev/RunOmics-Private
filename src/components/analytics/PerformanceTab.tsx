@@ -2,7 +2,7 @@
 
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
-import { formatClock, formatDate, formatDecimal, formatDeltaFixed, formatDuration, formatNumber, MINUS } from '@/lib/formatters'
+import { formatClock, formatDate, formatDecimal, formatDeltaFixed, formatDuration, MINUS } from '@/lib/formatters'
 import { deltaColor, deltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
@@ -84,7 +84,7 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
       label: s.vo2max,
       value: formatDecimal(vo2.value, 1),
       unit: undefined,
-      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${formatNumber(vo2.delta)}` : `${MINUS}${formatNumber(Math.abs(vo2.delta))}`),
+      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${formatDecimal(vo2.delta, 1)}` : `${MINUS}${formatDecimal(Math.abs(vo2.delta), 1)}`),
       tone: STAT_TONE[deltaTone('vo2max', vo2.delta)],
     },
     threshold && { label: s.threshold, value: formatClock(threshold.now), unit: t.units.perKm, note: shiftWords(threshold.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', threshold.delta)] },

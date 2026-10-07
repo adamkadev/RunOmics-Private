@@ -207,13 +207,16 @@ export function daysOffBefore(runDates: string[], date: string): number | null {
   return longest >= 5 ? longest : null
 }
 
-/** The season's grades: January, then every third month back from this one. */
+/**
+ * The season's grades: every month from January to this one. Every third
+ * month read A+ in January, April, July and October while the grade had
+ * been A from February to April and A- in September: the dips fell between
+ * the cells, and the strip said "no change" beside a grade that just came back.
+ */
 export function seasonMonths(today: string): string[] {
   const year = Number(today.slice(0, 4))
   const month = Number(today.slice(5, 7))
-  const months = new Set<number>([1])
-  for (let m = month; m > 1; m -= 3) months.add(m)
-  return [...months].sort((a, b) => a - b).map((m) => `${year}-${String(m).padStart(2, '0')}`)
+  return Array.from({ length: month }, (_, i) => `${year}-${String(i + 1).padStart(2, '0')}`)
 }
 
 export interface BandLabel {

@@ -265,7 +265,10 @@ const VO2_WINDOW_DAYS = 84
 
 export interface Vo2View {
   value: number
-  /** Over the last 90 days, as Progress prints it: one source for both. */
+  /**
+   * Over the window, to one decimal as the value is printed: whole numbers
+   * read 55.8 to 56.0 as "No change" beside a grade that had just come back.
+   */
   delta: number | null
 }
 
@@ -278,7 +281,7 @@ export function vo2View(value: number | null, samples: { date: string; vo2max: n
   const recent = samples.filter((s) => s.date >= since && s.date <= today)
   const latest = value ?? recent.at(-1)?.vo2max ?? null
   if (latest === null) return null
-  return { value: latest, delta: recent.length >= 2 ? Math.round(recent.at(-1)!.vo2max - recent[0]!.vo2max) : null }
+  return { value: latest, delta: recent.length >= 2 ? Math.round((recent.at(-1)!.vo2max - recent[0]!.vo2max) * 10) / 10 : null }
 }
 
 export interface PaceShift {

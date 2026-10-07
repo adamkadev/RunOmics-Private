@@ -97,7 +97,7 @@ export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
             {change?.kind === 'up' ? (
               <>
                 <p className="text-sm font-semibold text-foreground">
-                  {g.newGrade} · <span className="text-[var(--pos)]" data-testid="grade-up">{g.upFrom(change.from)}</span>
+                  {change.regained ? g.regainedGrade : g.newGrade} · <span className="text-[var(--pos)]" data-testid="grade-up">{g.upFrom(change.from)}</span>
                 </p>
                 <p className="text-[13px] text-[var(--text-2)]">
                   {one(value)} {g.unit} · {g.topForAgeInline(topPercent)}
