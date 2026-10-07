@@ -11,6 +11,8 @@ import {
   formView,
   heatView,
   longRunView,
+  MISSED_CLUSTER,
+  missedClusters,
   paceShift,
   predictionRows,
   predictionTone,
@@ -250,6 +252,24 @@ describe('D3 Volume', () => {
     expect(weeklyDistanceView(rows)!.withoutPlan).toBe(0)
     const sparse = weekRows(weeks, plan.slice(0, 8), window, TODAY)
     expect(weeklyDistanceView(sparse)!.withoutPlan).toBe(4)
+  })
+
+  // Design review, Oct 2026: 3 or more planned sessions missed in 7 days, as
+  // July 13-19 had, are a stretch the Volume read names - not one-offs.
+  it('finds the missed sessions that came together inside the window, 3 in 7 days', () => {
+    expect(MISSED_CLUSTER).toEqual({ sessions: 3, days: 7 })
+    expect(missedClusters(['2026-09-18', '2026-09-19', '2026-09-24'], rows)).toEqual([{ from: '2026-09-18', to: '2026-09-24', sessions: 3 }])
+    // Three across 8 days is not one.
+    expect(missedClusters(['2026-09-14', '2026-09-18', '2026-09-21'], rows)).toEqual([])
+    // Groups that share a session are one stretch; apart, two.
+    expect(missedClusters(['2026-08-03', '2026-08-05', '2026-08-08', '2026-08-11'], rows)).toEqual([{ from: '2026-08-03', to: '2026-08-11', sessions: 4 }])
+    expect(missedClusters(['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-17', '2026-08-18', '2026-08-20'], rows)).toEqual([
+      { from: '2026-08-03', to: '2026-08-05', sessions: 3 },
+      { from: '2026-08-17', to: '2026-08-20', sessions: 3 },
+    ])
+    // Before the window's first Monday is another period's case.
+    expect(window.start).toBe('2026-07-06')
+    expect(missedClusters(['2026-07-03', '2026-07-04', '2026-07-06', '2026-07-07'], rows)).toEqual([])
   })
 })
 

@@ -540,6 +540,45 @@ export function weeklyDistanceView(rows: WeekRow[], avgKm: number | null = null)
   }
 }
 
+/**
+ * Missed sessions that came together rather than one at a time (design
+ * review, Oct 2026): this many planned sessions missed inside this many days,
+ * as July 13-19 had. Proposal; tune here.
+ */
+export const MISSED_CLUSTER = { sessions: 3, days: 7 } as const
+
+export interface MissedCluster {
+  from: string
+  to: string
+  sessions: number
+}
+
+const DAY_MS = 86_400_000
+const daysApart = (from: string, to: string) => Math.round((day(to).getTime() - day(from).getTime()) / DAY_MS)
+
+/**
+ * The weeks' missed sessions that came in clusters: any 3 or more inside 7
+ * days, and groups that share a session joined into one stretch. Sessions
+ * missed outside the weeks are another period's case.
+ */
+export function missedClusters(missed: readonly string[], rows: WeekRow[]): MissedCluster[] {
+  const first = rows[0]
+  const last = rows.at(-1)
+  if (!first || !last) return []
+  const end = isoDate(addDays(day(last.week), 6))
+  const days = missed.filter((d) => d >= first.week && d <= end).sort()
+  const stretches: [number, number][] = []
+  for (let i = 0; i < days.length; i++) {
+    let j = i
+    while (j + 1 < days.length && daysApart(days[i]!, days[j + 1]!) < MISSED_CLUSTER.days) j++
+    if (j - i + 1 < MISSED_CLUSTER.sessions) continue
+    const prev = stretches.at(-1)
+    if (prev && i <= prev[1]) prev[1] = Math.max(prev[1], j)
+    else stretches.push([i, j])
+  }
+  return stretches.map(([i, j]) => ({ from: days[i]!, to: days[j]!, sessions: j - i + 1 }))
+}
+
 /** A long run above this share of its week's distance loads one day heavily. */
 export const LONG_RUN_SHARE = 0.35
 

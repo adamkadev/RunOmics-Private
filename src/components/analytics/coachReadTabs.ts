@@ -12,6 +12,7 @@ import {
   formView,
   isSpeedSignal,
   longRunView,
+  missedClusters,
   paceShift,
   predictionRows,
   qualityView,
@@ -235,6 +236,15 @@ export function volumeRead(data: AnalyticsBoardData, rows: WeekRow[], live: bool
   if (weekly.avg !== null) out.push({ trend: 'flat', text: s.avgRow(formatKm(weekly.avg), live && data.weeklyAvgKm !== null ? 12 : finished) })
   if (plan && planShare !== null) {
     out.push({ trend: planShare >= ON_PLAN_WEEKS ? 'improving' : planShare < UNDER_PLAN_WEEKS ? 'declining' : 'flat', text: s.onPlanRow(plan.hit, plan.of) })
+  }
+  // Missed sessions that came together are part of the case, never the
+  // claim: the headline keeps its own rules (design review, Oct 2026).
+  const clusters = missedClusters(data.missed, rows)
+  const latest = clusters.at(-1)
+  if (latest) {
+    const missed = clusters.reduce((sum, c) => sum + c.sessions, 0)
+    const [from, to] = [bare(latest.from), bare(latest.to)]
+    out.push({ trend: 'declining', text: clusters.length === 1 ? s.missedRow(missed, from, to) : s.missedRows(missed, clusters.length, from, to) })
   }
   if (long) out.push({ trend: long.over > 0 ? 'declining' : 'improving', text: s.longRunRow(long.over) })
   const ytd = data.ytd?.vsLastYear

@@ -749,6 +749,10 @@ export const en = {
           avgRow: (km: string, n: number) => `${km} km a week on average over ${n} finished week${n === 1 ? '' : 's'}.`,
           onPlanRow: (hit: number, of: number) => `${hit} of ${of} planned weeks at 90% of the plan or more.`,
           longRunRow: (n: number) => (n === 0 ? 'No week with a long run over 35% of it.' : `${n} week${n === 1 ? '' : 's'} with a long run over 35% of it.`),
+          // Missed sessions that came together, 3 or more in 7 days (design review, Oct 2026).
+          missedRow: (n: number, from: string, to: string) => `${n} planned sessions missed between ${from} and ${to}.`,
+          missedRows: (n: number, stretches: number, from: string, to: string) =>
+            `${n} planned sessions missed in ${stretches} stretches, the last between ${from} and ${to}.`,
         },
         // The Intensity tab's read: the easy / moderate / hard verdict Analytics and Athlete share.
         intensityTab: {

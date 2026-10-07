@@ -25,6 +25,7 @@ export default async function AnalyticsPage() {
   const [data, trainingLoad, risk, goals] = await Promise.all([getAnalyticsData(), getTrainingLoad(), getLoadRiskPanel(), getGoalsPageData()])
 
   const activities = getActivitySummaries()
+  const plan = await loadPlanWeeks(getCoachingOverview(today), today)
   const yearData = goals.byYear[year] ?? null
   const spotlight = yearData?.nextRaceSpotlight ?? null
   const goalKm = yearData?.goals && yearData.goals.annualDistanceKm > 0 ? yearData.goals.annualDistanceKm : null
@@ -36,7 +37,8 @@ export default async function AnalyticsPage() {
     loads: getLoadPairs(),
     recovery: getRecoveryHistory(),
     weeks: data.weeklyTrends,
-    plan: await loadPlanWeeks(getCoachingOverview(today)),
+    plan: plan.weeks,
+    missed: plan.missed,
     vo2max: getVO2maxReadings(),
     threshold:
       getThresholdHistory()?.points.flatMap((p) => (p.thresholdPaceSecPerKm !== null ? [{ date: p.date, pace: p.thresholdPaceSecPerKm }] : [])) ?? [],

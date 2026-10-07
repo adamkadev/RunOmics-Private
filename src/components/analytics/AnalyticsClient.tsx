@@ -64,6 +64,8 @@ export interface AnalyticsBoardData {
   recovery: RecoveryNight[]
   weeks: WeeklyTrendPoint[]
   plan: PlanWeekInput[]
+  /** Days whose planned session was missed, by Plan's own day states: the Volume read's clusters. */
+  missed: string[]
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
   threshold: { date: string; pace: number }[]
   predictions: PredictionDay[]

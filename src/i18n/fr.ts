@@ -698,6 +698,9 @@ export const fr = {
           avgRow: (km: string, n: number) => `${km} km par semaine en moyenne sur ${n} semaine${n > 1 ? 's' : ''} terminée${n > 1 ? 's' : ''}.`,
           onPlanRow: (hit: number, of: number) => `${hit} semaine${hit > 1 ? 's' : ''} planifiée${hit > 1 ? 's' : ''} sur ${of} à 90 % du plan ou plus.`,
           longRunRow: (n: number) => (n === 0 ? 'Aucune semaine avec une sortie longue au-delà de 35 %.' : `${n} semaine${n > 1 ? 's' : ''} avec une sortie longue au-delà de 35 %.`),
+          missedRow: (n: number, from: string, to: string) => `${n} séances prévues manquées entre le ${from} et le ${to}.`,
+          missedRows: (n: number, stretches: number, from: string, to: string) =>
+            `${n} séances prévues manquées en ${stretches} périodes, la dernière entre le ${from} et le ${to}.`,
         },
         intensityTab: {
           inRange: (easy: number) => `Intensité dans la cible : ${easy} % du temps en facile.`,
