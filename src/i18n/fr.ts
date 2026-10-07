@@ -459,6 +459,7 @@ export const fr = {
       formTrend: { up: 'en récupération', down: 'sous charge', flat: 'stable' },
       formMoveLead: (trend: string) => `${trend},`,
       formOnScale: (form: string, band: string) => `Forme ${form} : ${band}`,
+      open: 'Ouvrir la charge dans Analyses',
     },
     trainingStatusDays: {
       title: 'Statut d’entraînement',

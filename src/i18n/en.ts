@@ -492,6 +492,8 @@ export const en = {
       // Before the delta: "recovering," then "+7 in 7 days".
       formMoveLead: (trend: string) => `${trend},`,
       formOnScale: (form: string, band: string) => `Form ${form}: ${band}`,
+      // The card opens its metrics' owner, Analytics › Load (design review, Oct 2026).
+      open: 'Open Load in Analytics',
     },
     trainingStatusDays: {
       title: 'Training Status',

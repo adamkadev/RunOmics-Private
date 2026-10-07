@@ -42,7 +42,10 @@ describe('BodyCard', () => {
     expect(screen.getByText(t.trainingStatus.metrics.fitness)).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.trainingLoad.fatigue)).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.bodyCard.deltaIn('+1', 7))).toBeInTheDocument()
-    expect(screen.queryByRole('link')).toBeNull()
+    // Nothing to follow inside it: the card as a whole opens Analytics › Load,
+    // the three numbers' home (design review, Oct 2026).
+    expect(screen.getByTestId('body-card').querySelector('a')).toBeNull()
+    expect(screen.getByRole('link', { name: t.dashboard.bodyCard.open }).getAttribute('href')).toBe('/analytics')
     expect(screen.getByTestId('body-card').textContent).not.toMatch(/of the last/)
   })
 
