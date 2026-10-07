@@ -1947,7 +1947,14 @@ export const en = {
       subtitle: 'Same ground, same hills - the one place raw pace compares across months.',
       runCount: (n: number) => `${n} times`,
       best: 'Best',
-      trailKey: 'taller = faster',
+      // What a bar is, then the dates its first and last bars were run
+      // (design review, Oct 2026): "taller = faster" alone named no axis.
+      trailKey: 'One bar per run · taller = faster',
+      trailSpan: (from: string, to: string) => `${from} → ${to}`,
+    },
+    milestones: {
+      // The key to the gold dot (design review, Oct 2026).
+      recordKey: 'Personal record',
     },
     noRecordYet: 'No record yet',
     cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted' },

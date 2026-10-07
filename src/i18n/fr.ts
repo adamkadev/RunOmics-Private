@@ -1837,7 +1837,11 @@ export const fr = {
       subtitle: 'Même terrain, mêmes bosses - le seul cas où l’allure brute se compare d’un mois à l’autre.',
       runCount: (n: number) => `${n} fois`,
       best: 'Record',
-      trailKey: 'plus haut = plus rapide',
+      trailKey: 'Une barre par sortie · plus haute = plus rapide',
+      trailSpan: (from: string, to: string) => `${from} → ${to}`,
+    },
+    milestones: {
+      recordKey: 'Record personnel',
     },
     noRecordYet: 'Pas encore de record',
     cols: { distance: 'Distance', best: 'Record', predicted: 'Prédit' },

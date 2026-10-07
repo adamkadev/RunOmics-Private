@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { MilestonesTimeline } from '../MilestonesTimeline'
+import { milestoneDotClass } from '../milestoneVisuals'
 import type { Milestone } from '@/application/usecases/GetMilestones'
+import { t } from '@/i18n'
 
 const MILESTONES: Milestone[] = [
   { type: 'distance-tier', date: '2026-01-11', label: '1,000 km', detail: 'lifetime' },
@@ -30,5 +32,21 @@ describe('MilestonesTimeline', () => {
   it('has nothing to show without milestones', () => {
     const { container } = render(<MilestonesTimeline milestones={[]} />)
     expect(container).toBeEmptyDOMElement()
+  })
+
+  // Design review, Oct 2026: a gold dot on some rows, and nothing said what it meant.
+  it('keys the record dot once, on the first year\'s line, in the dot\'s own gold', () => {
+    render(<MilestonesTimeline milestones={MILESTONES} />)
+
+    const keys = screen.getAllByTestId('milestone-key')
+    expect(keys).toHaveLength(1)
+    expect(keys[0]!.textContent).toBe(t.records.milestones.recordKey)
+    expect(keys[0]!.querySelector('span')!.className).toContain(milestoneDotClass('record')!)
+    expect(screen.getByRole('heading', { name: '2026' }).parentElement!.contains(keys[0]!)).toBe(true)
+  })
+
+  it('has no key when no row carries the mark', () => {
+    render(<MilestonesTimeline milestones={MILESTONES.filter((m) => m.type !== 'record')} />)
+    expect(screen.queryByTestId('milestone-key')).toBeNull()
   })
 })
