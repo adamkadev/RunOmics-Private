@@ -97,7 +97,7 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
   const rows: CoachRow[] = []
   // Without a headline of its own, the load sentence is the headline, not a row under it.
   if (trend && head) {
-    rows.push({ trend: trend.state !== 'in' ? 'declining' : trend.change && trend.change.pct >= 5 ? 'improving' : 'flat', text: joined(loadSentence(trend)) })
+    rows.push({ trend: trend.state !== 'in' ? 'declining' : trend.change && trend.change.pct >= 5 ? 'improving' : 'flat', text: joined(loadSentence(trend, window.live)) })
   }
   if (recovery) rows.push({ trend: recoveryTrend(recovery), text: joined(recoverySentence(recovery)) })
   const fitness: CoachRow | null = form
@@ -106,7 +106,7 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
   if (form) rows.push(fitness!, { trend: TREND_OF[deltaTone('fatigue', form.fatigueDelta)], text: s.fatigue(Math.round(form.fatigue), formatDelta(Math.round(form.fatigueDelta)), within) })
 
   if (head) return { tone: head.kind === 'building' ? 'pos' : 'warn', headline: loadHeadlineText(head), rows: ordered(rows) }
-  if (trend) return { tone: trend.state !== 'in' ? 'warn' : 'muted', headline: joined(loadSentence(trend)), rows: ordered(rows) }
+  if (trend) return { tone: trend.state !== 'in' ? 'warn' : 'muted', headline: joined(loadSentence(trend, window.live)), rows: ordered(rows) }
   // Without Garmin's load pair, Fitness is the claim and the rest its case.
   if (!fitness) return null
   return { tone: 'muted', headline: fitness.text, rows: ordered(rows.filter((row) => row !== fitness)) }

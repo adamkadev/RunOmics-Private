@@ -136,7 +136,7 @@ describe('Analytics (v4.5)', () => {
     // Load, at its 4 weeks: steady load inside its range, so the card's own sentence.
     expect(coach().textContent).toContain(s.eyebrow(words['4w']!, t.analytics.tabs.fitness))
     expect(coach().getAttribute('data-tone')).toBe('muted')
-    expect(headline()).toBe(t.analytics.cards.loadTrend.steady.join(''))
+    expect(headline()).toBe(t.analytics.cards.loadTrend.steady(t.analytics.cards.loadTrend.today).join(''))
     // Outside the tab panel: it stays put across a switch.
     expect(screen.getByRole('tabpanel').contains(coach())).toBe(false)
 
@@ -638,6 +638,28 @@ describe('Load trend and Recovery (v5.4)', () => {
     await renderWith({})
     expect(screen.getByTestId('load-trend-value').textContent).toBe('412')
     expect(screen.getByTestId('load-ratio-inputs').textContent).toBe('412 ÷ 365')
+  })
+
+  // Design review, Oct 2026: "still inside your safe range. 15 days went
+  // over" read as a contradiction. The range is today's; the days over it
+  // come after, as earlier days of the period.
+  it('says the load is in range today, and the days above it as earlier ones', async () => {
+    const s = t.analytics.cards.loadTrend
+    // Five days at 500 against a 292-475 range, ten days back; 412 since.
+    const loads = Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), acute: i >= 45 && i < 50 ? 500 : 412, chronic: 365 }))
+    await renderWith({ loads })
+    const sentence = s.steady(s.today).join('') + s.wentOver(5, 'Sep 16')
+    expect(screen.getByTestId('load-trend-card').textContent).toContain(sentence)
+    expect(sentence).toBe('Load steady, inside your safe range today. Earlier in this period, 5 days were above it, the last on Sep 16.')
+    // The coach read says it in the same words.
+    expect(screen.getByTestId('coach-read-headline').textContent).toBe(sentence)
+
+    // Swiped back, the period's last day stands in for today.
+    const { loadSentence } = await import('../LoadRecoveryCards')
+    const { loadTrendView } = await import('../loadRecoveryView')
+    const { dayWindow } = await import('../analyticsView')
+    const past = loadTrendView(loads, dayWindow(TODAY, '4w', 1), 900)!
+    expect(loadSentence(past, false).join('')).toBe(s.steady(s.onDay('Aug 29')).join(''))
   })
 
   it('turns the headline amber above the safe range and marks the day', async () => {

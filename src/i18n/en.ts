@@ -782,14 +782,21 @@ export const en = {
         about: 'Your acute load: the last 7 days of Garmin training load, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
         safe: (lo: number, hi: number) => `safe range ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 day' : `${days} days`) : Math.round(days / 7) === 1 ? '1 week' : `${Math.round(days / 7)} weeks`),
-        upIn: (pct: number, span: string) => ['Load up ', `${pct}% in ${span}`, ', still inside your safe range.'] as [string, string, string],
-        downIn: (pct: number, span: string) => ['Load down ', `${pct}% in ${span}`, ', still inside your safe range.'] as [string, string, string],
-        inRange: ['Load is ', 'inside your safe range', '.'] as [string, string, string],
-        steady: ['Load ', 'steady', ', inside your safe range.'] as [string, string, string],
+        // When the range is read (design review, Oct 2026): "still inside
+        // your safe range" beside "15 days went over" read as a contradiction.
+        // Today, or the period's last day once it is swiped back.
+        today: 'today',
+        onDay: (date: string) => `on ${date}`,
+        upIn: (pct: number, span: string, when: string) => ['Load up ', `${pct}% in ${span}`, `, inside your safe range ${when}.`] as [string, string, string],
+        downIn: (pct: number, span: string, when: string) => ['Load down ', `${pct}% in ${span}`, `, inside your safe range ${when}.`] as [string, string, string],
+        inRange: (when: string) => ['Load is ', 'inside your safe range', ` ${when}.`] as [string, string, string],
+        steady: (when: string) => ['Load ', 'steady', `, inside your safe range ${when}.`] as [string, string, string],
         jumped: (pct: number, span: string) => ['Load jumped ', `${pct}% in ${span}`, ', above your safe range. Ease off for 3–4 days.'] as [string, string, string],
         above: ['Load is ', 'above your safe range', '. Ease off for 3–4 days.'] as [string, string, string],
         below: ['Load is ', 'below your safe range', '. Fitness will start to slip.'] as [string, string, string],
-        wentOver: (days: number, last: string) => (days === 1 ? ` One day went over, on ${last}.` : ` ${days} days went over, the last on ${last}.`),
+        // The days before it that were above the range: history, said as such.
+        wentOver: (days: number, last: string) =>
+          days === 1 ? ` Earlier in this period, one day was above it, on ${last}.` : ` Earlier in this period, ${days} days were above it, the last on ${last}.`,
         legend: { acute: 'Acute load', safe: 'Safe range', outside: 'Outside range' },
         readout: (date: string, acute: number, lo: number, hi: number) => `${date} · ${acute} · safe ${lo}–${hi}`,
       },
