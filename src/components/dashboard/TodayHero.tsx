@@ -98,14 +98,16 @@ function SessionTile({ eyebrow, workout, title }: { eyebrow: string; workout: He
           {s.openPlan}
         </ButtonLink>
       </div>
-      {workout?.duration && workout.structure && (
+      {/* The session's shape (design review, Oct 2026): its steps as long as
+          they last, one block for a session without them. */}
+      {workout && (
         <div data-testid="today-structure-bar">
           <SessionStructureBar
-            steps={workout.structure}
+            variant="tile"
+            steps={workout.structure ?? []}
             zoneWord={workout.type ? (EFFORT_ZONE_BY_TYPE[workout.type] ?? null) : null}
             zone={workout.type ? sessionZone(workout) : null}
-            totalSeconds={workout.duration.seconds}
-            bare
+            totalSeconds={workout.duration?.seconds ?? 0}
           />
         </div>
       )}

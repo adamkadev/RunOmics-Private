@@ -4,6 +4,7 @@ import type { ActivitySummary } from '@/domain/activity/types'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { t } from '@/i18n'
 import { formatDate } from '@/lib/formatters'
+import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
 import { TodayHero } from '../TodayHero'
 
 const RUN: ActivitySummary = {
@@ -178,5 +179,56 @@ describe('the verdict without a written one (v4.17.1)', () => {
     expect(screen.getByTestId('today-reason').textContent).toBe(`${v.yesterdayInLegs(v.kind.long_run)} ${v.gain.restPaysOff(v.tomorrow, v.kind.threshold)}`)
     // Nothing the stats row prints: no form, fitness or fatigue figure.
     expect(screen.getByTestId('today-hero').querySelector('[data-testid="today-reason"]')!.textContent).not.toMatch(/\d/)
+  })
+})
+
+// Design review, Oct 2026 (mock 1a): the tile shows the session's shape - a
+// 12 pt bar and its caption - and a name too long for its row in two lines.
+describe('the session tile', () => {
+  const STRIDES = [
+    { kind: 'effort' as const, minutes: 54, seconds: 3_213 },
+    ...Array.from({ length: 6 }, (_, i) => [
+      { kind: 'effort' as const, minutes: 1, seconds: 20, rep: i + 1 },
+      { kind: 'recovery' as const, minutes: 1, seconds: 60, rep: i + 1 },
+    ]).flat(),
+  ]
+  // A rest day, so the tile is the next session.
+  const status = { status: 'productive', risk: 'low', tsbNow: -12, tsbDelta: 2, ctl: 54, atl: 66, atlDelta: -1, loadTrend: 'building' } as unknown as TrainingStatus
+  const next = (workout: Partial<HeroWorkoutView>) => ({
+    date: '2026-10-08', title: 'Easy + strides', km: '10', inDays: 1, kind: 'easy' as const,
+    workout: { ...PLAN, type: 'Base' as const, activityId: null, ...workout },
+  })
+
+  it('draws the next session as it runs, and says what it draws', () => {
+    render(
+      <TodayHero
+        status={status}
+        plannedWorkout={null}
+        todayActivity={null}
+        aiVerdict={null}
+        nextSession={next({ title: 'Easy · 54 min + 6 strides', shortName: 'Easy + strides', structure: STRIDES, duration: { seconds: 3_693, estimated: false } })}
+      />,
+    )
+
+    const bar = screen.getByTestId('today-structure-bar')
+    expect(bar.querySelectorAll('[aria-hidden] > span')).toHaveLength(7)
+    expect(bar).toHaveTextContent('54 min · Z2')
+    expect(bar).toHaveTextContent(t.plan.structure.strides(6, t.plan.session.seconds(20)))
+    // The tile has room for the whole name.
+    expect(screen.getByTestId('session-tile')).toHaveTextContent('Easy · 54 min + 6 strides')
+  })
+
+  it('is one block for a session without steps', () => {
+    render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={null} nextSession={next({ title: 'Easy run', structure: null, duration: null })} />)
+
+    const bar = screen.getByTestId('today-structure-bar')
+    expect(bar.querySelectorAll('[aria-hidden] > span')).toHaveLength(1)
+    expect(bar).toHaveTextContent(`Z2 ${t.plan.continuous}`)
+  })
+
+  it('keeps an older, longer name to two lines beside its button', () => {
+    render(<TodayHero status={status} plannedWorkout={null} todayActivity={null} aiVerdict={null} nextSession={next({ title: "Répétitions allure d'objectif - 4x3'@4:24" })} />)
+
+    expect(screen.getByText("Répétitions allure d'objectif - 4x3'@4:24").className).toContain('line-clamp-2')
   })
 })

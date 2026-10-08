@@ -2125,6 +2125,8 @@ export const en = {
       easyZone: 'Z1-Z2',
       min: (m: number) => `${m}'`,
       rec: (m: number) => `${m}' rec`,
+      // Under Today's session bar (design review, Oct 2026): "6 × 20s strides".
+      strides: (reps: number, rep: string) => `${reps} × ${rep} strides`,
     },
     timeOfDay: {
       Morning: 'Morning',

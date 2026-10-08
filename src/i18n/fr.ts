@@ -1994,6 +1994,7 @@ export const fr = {
       easyZone: 'Z1-Z2',
       min: (m: number) => `${m}'`,
       rec: (m: number) => `${m}' récup`,
+      strides: (reps: number, rep: string) => `${reps} accélérations de ${rep}`,
     },
     timeOfDay: {
       Morning: 'Matin',
