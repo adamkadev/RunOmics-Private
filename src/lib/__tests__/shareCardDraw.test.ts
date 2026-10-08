@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { balanceLines, drawShareCard, FALLBACK_FONTS, shareCardLayout, type ShareCardScene } from '@/lib/shareCardDraw'
+import { balanceLines, drawShareCard, FALLBACK_FONTS, shareCardLayout, slicePolyline, type ShareCardScene } from '@/lib/shareCardDraw'
 import { W, H, sharePalette } from '@/lib/shareCardPalette'
-import { PACE_ROUTE_COLORS } from '@/lib/colors'
 import { curatedAccent } from '@/lib/accentScale'
 import { SURFACES } from '@/lib/themeTokens'
 import type { ShareActivity } from '@/lib/shareCardStats'
@@ -36,14 +35,13 @@ const RUN: ShareActivity = {
   id: '1', date: '2026-09-26', dayOfWeek: 'Saturday', description: 'Strides 6 × 20s',
   distanceKm: 10, durationSeconds: 3453, paceSecPerKm: 344, avgHeartRate: 153, elevationGain: 40,
   route: [[7.70, 48.60], [7.71, 48.61], [7.72, 48.60], [7.73, 48.62]],
-  paceSamples: [420, 380, 300, 250],
   hrZones: [
     { zone: 2, seconds: 2400, percent: 80, minBpm: 120, maxBpm: 140 },
     { zone: 3, seconds: 600, percent: 20, minBpm: 140, maxBpm: 155 },
   ],
 }
 
-const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 } }
+const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 }, windows: [[0.2, 0.35], [0.45, 0.6], [0.7, 0.85]] as [number, number][] }
 
 function draw(partial: Partial<ShareCardScene> & Pick<ShareCardScene, 'design'>, mode: 'dark' | 'light' = 'dark') {
   const { ctx, ops } = recorder()
@@ -51,8 +49,8 @@ function draw(partial: Partial<ShareCardScene> & Pick<ShareCardScene, 'design'>,
   return ops
 }
 
-function layout(activity: ShareActivity = RUN) {
-  return shareCardLayout(recorder().ctx, activity, FALLBACK_FONTS)
+function layout(activity: ShareActivity = RUN, design: ShareCardScene['design'] = 'route') {
+  return shareCardLayout(recorder().ctx, activity, FALLBACK_FONTS, design)
 }
 
 const texts = (ops: Op[]) => ops.filter((o) => o.op === 'fillText').map((o) => o.args[0] as string)
@@ -62,7 +60,7 @@ const acc = curatedAccent('violet').dark.acc
 describe('drawShareCard', () => {
   it('lays the whole card on the theme background, one solid fill', () => {
     for (const mode of ['dark', 'light'] as const) {
-      const [first] = draw({ design: 'stats' }, mode)
+      const [first] = draw({ design: 'route' }, mode)
       expect(first).toMatchObject({ op: 'fillRect', args: [0, 0, W, H], fill: SURFACES[mode].background })
     }
   })
@@ -79,12 +77,13 @@ describe('drawShareCard', () => {
     }
   })
 
-  it('keeps the accent to the logo mark and the finish marker, off every unit and label', () => {
-    const ops = draw({ design: 'route' })
-    expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
-    // The finish is the one accent fill; the mark is three accent strokes.
-    expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
-    expect(ops.filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(3)
+  it('keeps the accent to the logo mark: off the route, its markers and every word', () => {
+    for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
+      const ops = draw({ design: 'route', activity })
+      expect(ops.filter((o) => (o.op === 'fillText' || o.op === 'fill') && o.fill === acc)).toEqual([])
+      // The mark is three accent strokes.
+      expect(ops.filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(3)
+    }
   })
 
   it('heads the card with the v5.2 lockup: three arcs of the small mark, then "RunOmics"', () => {
@@ -137,31 +136,43 @@ describe('an interval session (design review, Oct 2026)', () => {
   })
 })
 
-describe('the route', () => {
+describe('the route (design review, Oct 2026)', () => {
   const middle = (ops: Op[], activity: ShareActivity = RUN) => ops.filter((o) => o.ty === layout(activity).middleTop)
+  const strokes = (ops: Op[]) => ops.filter((o) => o.op === 'stroke')
 
-  it('colours the line by HR zone, never the accent, and names the zones it shows', () => {
-    const run = { ...RUN, hrSamples: [125, 125, 150, 150] }
-    const ops = draw({ design: 'route', activity: run })
-    const lines = middle(ops, run).filter((o) => o.op === 'stroke').map((o) => o.stroke)
-    expect(lines).toEqual(expect.arrayContaining([palette.zones[1], palette.zones[2]]))
-    expect(lines).not.toContain(acc)
-    expect(texts(ops)).toEqual(expect.arrayContaining(['HR zone', 'Z2', 'Z3']))
-  })
-
-  it('falls back to pace colours without heart rate, and says so: Slow to Fast', () => {
+  it('draws an easy run as one trace in the text colour, with no legend', () => {
     const ops = draw({ design: 'route' })
-    const lines = middle(ops).filter((o) => o.op === 'stroke').map((o) => o.stroke)
-    expect(new Set(lines.slice(1, -3)).size).toBeGreaterThan(1)
-    expect(texts(ops)).toEqual(expect.arrayContaining(['Pace', 'Slow', 'Fast']))
+    const lines = strokes(middle(ops)).map((o) => o.stroke)
+    expect(lines).toContain(palette.tx)
+    expect(lines.filter((c) => palette.zones.includes(c))).toEqual([])
+    expect(texts(ops)).not.toContain('Reps')
   })
 
-  it('starts white with a dark outline and always marks the finish in the accent, under the start', () => {
+  it('draws an interval session grey, its reps over it in Z4 and 1.6x as wide, under a "Reps" legend', () => {
+    const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
+    const ops = middle(draw({ design: 'route', activity: run }), run)
+    const lines = strokes(ops)
+    const grey = lines.findIndex((o) => o.stroke === palette.mu)
+    const reps = lines.filter((o) => o.stroke === palette.zones[3])
+    expect(reps).toHaveLength(3)
+    // Grey first, so a rep down the warm-up's road stays on top.
+    expect(lines.indexOf(reps[0]!)).toBeGreaterThan(grey)
+    expect(texts(ops)).toContain('Reps')
+  })
+
+  it('cuts a rep where it starts, not at the nearest point of the route', () => {
+    const line: [number, number][] = [[0, 0], [100, 0]]
+    expect(slicePolyline(line, 0.25, 0.5)).toEqual([[25, 0], [50, 0]])
+    expect(slicePolyline([[0, 0], [10, 0], [10, 10]], 0.25, 0.75)).toEqual([[5, 0], [10, 0], [10, 5]])
+  })
+
+  it('marks the start with a white ring and the finish with a dark square, the finish under it', () => {
     const loop = { ...RUN, route: [...RUN.route!, RUN.route![0]!] as [number, number][] }
     for (const run of [RUN, loop]) {
-      const fills = middle(draw({ design: 'route', activity: run }), run).filter((o) => o.op === 'fill').map((o) => o.fill)
-      expect(fills.slice(0, 2)).toEqual([acc, palette.ring])
-      expect(fills).not.toContain(PACE_ROUTE_COLORS.fast)
+      const ops = middle(draw({ design: 'route', activity: run }), run)
+      expect(ops.filter((o) => o.op === 'fill').map((o) => o.fill)).toEqual([palette.startRing, palette.ring])
+      const squares = ops.filter((o) => o.op === 'rect' && o.args[2] === o.args[3] && (o.args[2] as number) < 20)
+      expect(squares).toHaveLength(1)
     }
   })
 
@@ -193,6 +204,22 @@ describe('the Stats design (design review, Oct 2026)', () => {
     const ops = draw({ design: 'stats', activity: { ...RUN, hrZones: [{ zone: 2, seconds: 2400, percent: 99, minBpm: 120, maxBpm: 140 }, { zone: 4, seconds: 20, percent: 1, minBpm: 155, maxBpm: 170 }] } })
     expect(ops.some((o) => o.op === 'fill' && o.fill === palette.zones[3])).toBe(false)
     expect(texts(ops)).not.toContain('Z4 Threshold')
+  })
+
+  // Handoff 4: the card fits its content, the stats under a rule, no spacer.
+  it('is as tall as its zones, the stats under a rule', () => {
+    const stats = layout(RUN, 'stats')
+    expect(stats.height).toBeLessThan(H)
+    expect(stats.ruleY).toBe(stats.middleTop + stats.middleH + 31)
+    expect(layout(RUN, 'route').ruleY).toBeNull()
+    const ops = draw({ design: 'stats' })
+    expect(ops[0]).toMatchObject({ op: 'fillRect', args: [0, 0, W, stats.height] })
+    expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === stats.ruleY)).toBe(true)
+  })
+
+  it('grows with each zone the run used', () => {
+    const one = { ...RUN, hrZones: [RUN.hrZones[0]!] }
+    expect(layout(RUN, 'stats').height - layout(one, 'stats').height).toBe(36)
   })
 
   it('says so when the run has no heart rate', () => {

@@ -187,31 +187,6 @@ export const MAP_COLORS = {
   chipShadow:       `0 1px 4px ${ink(0.35)}`,
 } as const
 
-/**
- * The route's pace ramp, fastest to slowest, in the zones' own hex (MapLibre
- * paints a literal, not a token): Z5 to Z1, so a fast stretch of route is
- * the colour of a hard session, and no lime or brand green is left (v4.3.2).
- */
-export const PACE_ROUTE_COLORS = {
-  fast:      c.zone5Dark,
-  tempo:     c.zone4Dark,
-  steady:    c.roEmeraldHi,
-  easy:      c.zone2Dark,
-  recovery:  c.roZone1,
-} as const
-
-/**
- * The ramp's stops, seconds per km to colour: the map interpolates between
- * them, and the share card, which draws on a canvas, does the same.
- */
-export const PACE_ROUTE_STOPS: readonly (readonly [pace: number, color: string])[] = [
-  [255, PACE_ROUTE_COLORS.fast],
-  [300, PACE_ROUTE_COLORS.tempo],
-  [350, PACE_ROUTE_COLORS.steady],
-  [390, PACE_ROUTE_COLORS.easy],
-  [450, PACE_ROUTE_COLORS.recovery],
-]
-
 // The last-resort error screen draws before any stylesheet: the v4.17 dark
 // ground and ink, and the default teal accent for its one action.
 export const BOOT_COLORS = {

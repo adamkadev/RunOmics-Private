@@ -7,10 +7,9 @@ import { activityTitle } from '@/lib/activityTitle'
 export type ShareActivity = Pick<
   Activity,
   | 'id' | 'date' | 'dayOfWeek' | 'description' | 'distanceKm' | 'durationSeconds' | 'paceSecPerKm'
-  | 'avgHeartRate' | 'elevationGain' | 'route' | 'paceSamples' | 'hrZones'
+  | 'avgHeartRate' | 'elevationGain' | 'route' | 'hrZones'
 > & {
   type?: ActivityType
-  hrSamples?: number[] | null
   /** The coach's name for the session this run matched, written to its naming rules. */
   sessionTitle?: string | null
   /** The work of an interval session: its reps and their pace, against the plan's. */
@@ -25,6 +24,8 @@ export interface ShareReps {
   paceSecPerKm: number
   /** The plan's pace for the reps, when the run matched a session that set one. */
   target: { min: number; max: number } | null
+  /** Where each rep ran, as shares of the run's distance (0 to 1): the route draws them. */
+  windows: [number, number][]
 }
 
 /** The coach's session name when the run matched one (design review, Oct 2026), else the run's own. */
@@ -155,23 +156,4 @@ export function shareZones(activity: ShareActivity): ShareZones | null {
   }
   const longest = Math.max(...seconds)
   return { rows, headline: { percent: Math.round((longest / total) * 100), label: s.inZone(seconds.indexOf(longest) + 1) }, totalSeconds: total }
-}
-
-/**
- * The zone a heart rate falls in, by the run's own zone floors: the same
- * boundaries its time in zones was counted with. Null without them.
- */
-export function zoneOfHr(hr: number, hrZones: ShareActivity['hrZones']): number | null {
-  const floors = [...hrZones].filter((z) => z.minBpm > 0).sort((a, b) => a.zone - b.zone)
-  if (floors.length === 0) return null
-  let zone = floors[0]!.zone
-  for (const z of floors) if (hr >= z.minBpm) zone = z.zone
-  return zone
-}
-
-/** The heart rate under a point `ratio` (0 to 1) along the route, by the same share of the HR stream. */
-export function hrAtFraction(samples: readonly number[], ratio: number): number | null {
-  if (samples.length === 0) return null
-  const i = Math.round(Math.min(Math.max(ratio, 0), 1) * (samples.length - 1))
-  return samples[i] ?? null
 }
