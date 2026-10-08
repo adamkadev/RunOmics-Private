@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CoachingPlan, WorkoutPrescription } from '@/domain/coaching/types'
 import {
+  garminWorkoutName,
   isCourseAwareRace,
   paceRangeToSpeedRange,
   toGarminWorkoutPayload,
@@ -326,5 +327,18 @@ describe('course-aware races', () => {
     const easy = prescription({ date: '2026-10-03', type: 'easy' })
 
     expect(isCourseAwareRace(planWith({ pacingNotes: ['hilly course'] }), easy)).toBe(false)
+  })
+})
+
+// Design review, Oct 2026: the coach's names carry primes the watch fonts lack.
+describe('garminWorkoutName', () => {
+  it('writes the primes as the apostrophe and quote a watch can draw', () => {
+    expect(garminWorkoutName('Threshold · 3 × 8′ @ 4:25')).toBe("Threshold · 3 × 8' @ 4:25")
+    expect(garminWorkoutName('Strides · 6 × 20″')).toBe('Strides · 6 × 20"')
+  })
+
+  it('leaves a name without them as it was, so nothing already pushed changes', () => {
+    expect(garminWorkoutName("Threshold 3 x 7:40 - 3 x 8'@4:25")).toBe("Threshold 3 x 7:40 - 3 x 8'@4:25")
+    expect(garminWorkoutName('Répétitions course très rapide')).toBe('Répétitions course très rapide')
   })
 })
