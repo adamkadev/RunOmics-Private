@@ -119,14 +119,6 @@ describe('drawShareCard', () => {
     expect(all).toContain('No heart-rate zones for this run')
   })
 
-  it('draws the VO₂max grade badge only when asked, in ink on the segmented grey (v5.3)', () => {
-    expect(texts(draw({ design: 'stats' }))).not.toContain('VO₂max A')
-    const ops = draw({ design: 'stats', gradeBadge: 'VO₂max A' })
-    const badge = ops.find((o) => o.op === 'fillText' && o.args[0] === 'VO₂max A')!
-    expect(badge.fill).toBe(sharePalette('violet', 'dark').tx)
-    expect(ops.some((o) => o.op === 'fill' && o.fill === sharePalette('violet', 'dark').seg)).toBe(true)
-  })
-
   it('asks for a photo in the frame until there is one, in English', () => {
     expect(texts(draw({ design: 'photo' }))).toContain('Your photo fills this frame')
     const photo = { width: 1000, height: 800 } as HTMLImageElement

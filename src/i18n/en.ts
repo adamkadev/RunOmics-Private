@@ -113,8 +113,6 @@ export const en = {
     dismiss: 'Dismiss',
     todayFrom: (grade: string) => `↑ from ${grade}`,
     todayRest: (value: string, top: number) => ` · ${value} · top ${top}%`,
-    shareBadge: 'VO₂max grade badge',
-    badge: (grade: string) => `VO₂max ${grade}`,
   },
   glossary: {
     about: (term: string) => `What is ${term}?`,

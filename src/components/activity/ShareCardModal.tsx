@@ -17,12 +17,9 @@ import { useScrollLock } from '@/lib/useScrollLock'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { ShareCardActions } from '@/components/activity/ShareCardActions'
-import { Toggle } from '@/components/ui/Toggle'
 
 interface Props {
   activity: ShareActivity
-  /** The current VO₂max grade, for the optional badge; null hides the option. */
-  vo2Grade?: string | null
   canShareFiles: boolean
   canCopyImage: boolean
   onClose: () => void
@@ -51,7 +48,7 @@ function segmentClass(selected: boolean): string {
   )
 }
 
-export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCopyImage, onClose }: Props) {
+export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose }: Props) {
   const { resolvedTheme } = useTheme()
   const appTheme: ThemeMode = resolvedTheme === 'light' ? 'light' : 'dark'
   const accent = useAccent()
@@ -72,8 +69,6 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
-  // Off by default (v5.3): the badge is the athlete's to add.
-  const [showGrade, setShowGrade] = useState(false)
   const [fontsReady, setFontsReady] = useState(0)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -109,11 +104,10 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
     theme,
     photoImage,
     locationName,
-    gradeBadge: showGrade && vo2Grade ? t.vo2Grade.badge(vo2Grade) : null,
     mapImage,
     mapPoints,
     fonts: pageFonts(),
-  }), [activity, design, accent, theme, photoImage, locationName, showGrade, vo2Grade, mapImage, mapPoints])
+  }), [activity, design, accent, theme, photoImage, locationName, mapImage, mapPoints])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -282,16 +276,6 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
                 ))}
               </div>
             </div>
-
-            {/* The app's one switch (ui/Toggle), off in line-2 as in Settings.
-                The sheet's own drew off as --muted on its --background, two
-                near-equal greys: no track to see (design review, Oct 2026). */}
-            {vo2Grade && (
-              <div className="flex items-center justify-between" style={{ padding: '2px' }}>
-                <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{t.vo2Grade.shareBadge}</span>
-                <Toggle checked={showGrade} onChange={setShowGrade} label={t.vo2Grade.shareBadge} />
-              </div>
-            )}
 
           </div>
         </div>

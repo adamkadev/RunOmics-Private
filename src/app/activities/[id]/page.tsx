@@ -19,7 +19,6 @@ import { TypeDot } from '@/components/ui/TypeDot'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { paceZones } from '@/application/usecases/GetTrainingZones'
 import { chartZones } from '@/components/activity/chartStackLanes'
-import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { RunPlace } from '@/components/activity/RunPlace'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -74,8 +73,6 @@ export default async function ActivityDetailPage({
   const officialResult = officialResultsByActivityId(getOfficialRaceResults()).get(id) ?? null
   const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
-  const grade = getVo2Grade()
-  const vo2GradeLetter = grade?.status === 'graded' ? grade.grade : null
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
 
   // The Charts lanes are banded with the run's own HR zones and the
@@ -127,7 +124,7 @@ export default async function ActivityDetailPage({
                   <p data-title-sub className="text-sm text-muted-foreground">{activity.comment}</p>
                 )}
               </div>
-              <ShareButton activity={shareActivity(activity)} vo2Grade={vo2GradeLetter} />
+              <ShareButton activity={shareActivity(activity)} />
             </header>
           </>
         }

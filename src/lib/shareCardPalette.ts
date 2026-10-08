@@ -30,8 +30,6 @@ export interface SharePalette {
   mu: string
   /** --track: the zone bars' track and the empty photo frame. */
   fa: string
-  /** --segmented-track: the optional grade badge (v5.3). */
-  seg: string
   /** --accent: the eyebrow's dot and the finish marker, nothing else. */
   acc: string
   zones: readonly string[]
@@ -51,7 +49,6 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     tx: s.text,
     mu: s.text2,
     fa: s.faint,
-    seg: s.seg,
     acc: curatedAccent(accent)[mode].acc,
     zones: ZONE_HEX[mode],
     casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
