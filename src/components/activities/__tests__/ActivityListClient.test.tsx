@@ -158,3 +158,48 @@ describe('the archive under its months', () => {
     expect(ring.style.border).toContain('var(--zone-5)')
   })
 })
+
+describe('the list at a phone', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => vi.useRealTimers())
+
+  // Design review, Oct 2026: drawn at 34 pt, both are tapped at 44.
+  it('gives Map view and the sort menu 44 pt targets', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderList([run('a', '2026-09-20', 25)])
+
+    expect(screen.getByRole('link', { name: t.activities.mapButton }).className).toContain('hit-44')
+    const sort = screen.getByRole('button', { name: `${t.activities.sort.label}: ${t.activities.sort.date}` })
+    expect(sort.className).toContain('hit-44')
+    await user.click(sort)
+    expect(screen.getByRole('button', { name: t.activities.sort.distance }).className).toContain('min-h-11')
+  })
+
+  // A week's dots are its runs' types in colour; a screen reader hears them
+  // as the types they are (design review, Oct 2026).
+  it("names a week's dots by their session types", () => {
+    renderList([
+      { ...run('a', '2026-09-20', 12), type: 'Threshold' },
+      run('b', '2026-09-18', 8),
+      run('c', '2026-09-16', 10),
+    ])
+    const week = formatDateRange('2026-09-14', '2026-09-20', { year: 'never' })
+    const row = screen.getByRole('button', { name: new RegExp(`^${week}`) })
+    const shape = `2 ${t.activityTypes.Base.toLowerCase()} · 1 ${t.activityTypes.Threshold.toLowerCase()}`
+    expect(within(row).getByRole('img', { name: shape })).toBeInTheDocument()
+  })
+
+  // A legacy workout's long name wraps to two lines at most, never under the
+  // distance beside it (design review, Oct 2026).
+  it('clamps a long workout name to two lines', () => {
+    const name = 'Threshold 3 × 7:40 - 3 × 8\'@4:25 with a long warm-up and a cool-down to finish'
+    renderList([{ ...run('a', '2026-09-22', 10), description: name }])
+    const title = screen.getByText(name)
+    expect(title.className).toContain('line-clamp-2')
+    expect(title.className).toContain('min-w-0')
+  })
+})

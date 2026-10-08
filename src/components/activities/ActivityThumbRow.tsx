@@ -50,7 +50,10 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
       <RouteThumb path={a.routeThumb} type={a.type} size={48} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
         <span className="flex min-w-0 items-center gap-1.5">
-          <span className="break-words text-sm font-semibold leading-tight text-foreground text-pretty">{title}</span>
+          {/* A long name - a legacy workout's, a past plan's - wraps to two
+              lines at most, its longest word broken rather than pushed under
+              the distance (design review, Oct 2026). */}
+          <span className="line-clamp-2 min-w-0 break-words text-sm font-semibold leading-tight text-foreground text-pretty">{title}</span>
           <PrBadge efforts={qualifiedEfforts} />
         </span>
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
