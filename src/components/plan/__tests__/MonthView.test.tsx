@@ -95,14 +95,28 @@ describe('MonthView colours', () => {
     )
 
     expect(cellOf('8').dataset.cellState).toBe('missed')
-    expect(cellOf('8').textContent).toContain(`45 ${t.units.min}`)
+    // Bare in the tile, as mock 1c draws it; with its unit in the day's name.
+    expect(cellOf('8').textContent).toContain('45′')
+    expect(cellOf('8').querySelector('button')!.getAttribute('aria-label')).toContain(`45 ${t.units.min}`)
   })
 
-  it('writes both figures with their unit', () => {
+  // Design review, Oct 2026 (mock 1c): one bare figure a tile, a run's bold;
+  // the unit is in the day's name, and on the week row under it.
+  it('shows one bare figure a day, its unit in the name', () => {
     renderMonth()
 
-    expect(screen.getByRole('button', { name: /September 21/ }).textContent).toContain(`8.4 ${t.units.km}`)
-    expect(screen.getByRole('button', { name: /September 26/ }).textContent).toContain(`10 ${t.units.km}`)
+    const ran = screen.getByRole('button', { name: new RegExp(`September 21.*8\\.4 ${t.units.km}`) })
+    expect(ran.textContent).toContain('8.4')
+    expect(ran.textContent).not.toContain(t.units.km)
+    expect(ran.querySelector('.font-semibold')!.textContent).toBe('8.4')
+    const planned = screen.getByRole('button', { name: new RegExp(`September 26.*10 ${t.units.km}`) })
+    expect(planned.textContent).not.toContain(t.units.km)
+  })
+
+  it('draws each day as its own rounded tile, and nothing outside the month', () => {
+    renderMonth()
+    expect(cellOf('21').className).toContain('rounded-[10px]')
+    expect(cellOf('1').className).toContain('border')
   })
 })
 
