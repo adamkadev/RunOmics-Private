@@ -4,14 +4,17 @@ import { rgbTriplet } from '@/lib/palette'
 import { SURFACES, TOKEN_BLOCKS, ZONE_HEX } from '@/lib/themeTokens'
 
 /**
- * The zones are told apart in a stacked week by colour first (design review,
- * Oct 2026: Z3 and Z4 read as one colour there). Distances are OKLab ΔE ×100,
- * under normal vision and under protanopia and deuteranopia as Machado,
- * Oliveira & Fernandes (2009) simulate them at full severity: 15 apart for
- * anyone, 8 apart for a red-green colour-blind eye.
+ * Neighbouring zones stay apart in colour (design review, Oct 2026).
+ * Distances are OKLab ΔE ×100. The second review chose a mid violet for Z3
+ * over the first's lightness step, which kept Z3 15 apart from Z2 and Z4
+ * even under protanopia and deuteranopia (Machado, Oliveira & Fernandes,
+ * 2009): the mid violet is about 9.5 apart for normal vision and close to
+ * its neighbours for a red-green colour-blind eye, so the share card names
+ * each zone beside its colour. The simulation stays, to keep that trade
+ * measured.
  */
-const NORMAL_MIN = 15
-const CVD_MIN = 8
+const NORMAL_MIN = 9
+const CVD_FLOOR = 2.5
 
 type Matrix = readonly [readonly number[], readonly number[], readonly number[]]
 const PROTAN: Matrix = [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]]
@@ -37,14 +40,22 @@ function deltaE(a: string, b: string): number {
 const MODES = ['light', 'dark'] as const
 const INK = { light: '#ffffff', dark: TOKEN_BLOCKS.find((b) => b.selector === '.dark')!.tokens['--zone-ink']! }
 
-describe('the zone scale (design review, Oct 2026)', () => {
-  it.each(MODES)('%s: Z3 stands apart from Z2 and Z4, for every eye', (mode) => {
-    const [, z2, z3, z4] = ZONE_HEX[mode]
-    for (const other of [z2, z4]) {
-      expect(deltaE(z3, other), `${z3} / ${other}`).toBeGreaterThanOrEqual(NORMAL_MIN)
-      expect(deltaE(simulate(z3, PROTAN), simulate(other, PROTAN)), `protan ${z3} / ${other}`).toBeGreaterThanOrEqual(CVD_MIN)
-      expect(deltaE(simulate(z3, DEUTAN), simulate(other, DEUTAN)), `deutan ${z3} / ${other}`).toBeGreaterThanOrEqual(CVD_MIN)
+describe('the zone scale (design reviews, Oct 2026)', () => {
+  it.each(MODES)('%s: each zone stands apart from the next, Z1 to Z5', (mode) => {
+    const zones = ZONE_HEX[mode]
+    for (let i = 0; i < zones.length - 1; i++) {
+      const [a, b] = [zones[i]!, zones[i + 1]!]
+      expect(deltaE(a, b), `${a} / ${b}`).toBeGreaterThanOrEqual(NORMAL_MIN)
+      // Not one colour even to a red-green colour-blind eye; the Z labels do the rest.
+      expect(deltaE(simulate(a, PROTAN), simulate(b, PROTAN)), `protan ${a} / ${b}`).toBeGreaterThanOrEqual(CVD_FLOOR)
+      expect(deltaE(simulate(a, DEUTAN), simulate(b, DEUTAN)), `deutan ${a} / ${b}`).toBeGreaterThanOrEqual(CVD_FLOOR)
     }
+  })
+
+  // The second review's values (design review, Oct 2026).
+  it('takes the reviewed Z1 and mid-violet Z3', () => {
+    expect(ZONE_HEX.dark[0]).toBe('#8499b0')
+    expect([ZONE_HEX.dark[2], ZONE_HEX.light[2]]).toEqual(['#8f7cf2', '#6a52d9'])
   })
 
   // Plan's session bars write their minutes on the zone's fill in --zone-ink.

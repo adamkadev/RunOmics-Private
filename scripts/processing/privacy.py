@@ -12,6 +12,11 @@ uncropped GPS because the config was never set. `crop_privacy_zone(None)` /
 `crop_privacy_zone([])` never touch the config, so unrelated tests and
 tooling that never pass real route data don't need it either.
 
+Turning it off is a value, never an absence: PRIVACY_ZONES=off stores routes
+as recorded, real start and finish included. It is for a deployment whose
+site is private (RUNOMICS_PRIVATE) and whose owner shares routes knowingly;
+an unset or malformed config still fails as above.
+
 Why a zone hides more than a circle
 -----------------------------------
 Stripping only the points inside a fixed circle leaves every public route
@@ -59,6 +64,14 @@ _CENTRE_OFFSET_M = (100.0, 200.0)
 _EXTRA_TRIM_M = (100.0, 300.0)
 
 
+PRIVACY_OFF = "off"
+
+
+def privacy_off() -> bool:
+    """True when PRIVACY_ZONES says, in so many words, that no zone applies."""
+    return (os.environ.get("PRIVACY_ZONES") or "").strip().lower() == PRIVACY_OFF
+
+
 class PrivacyConfigError(RuntimeError):
     """PRIVACY_ZONES / PRIVACY_RADIUS_M is missing or malformed."""
 
@@ -70,6 +83,9 @@ class _Zone:
 
 
 def _parse_config() -> tuple[list[tuple[float, float]], float]:
+    if privacy_off():
+        return [], 0.0
+
     raw_zones = os.environ.get("PRIVACY_ZONES")
     raw_radius = os.environ.get("PRIVACY_RADIUS_M")
 
@@ -95,6 +111,8 @@ def _parse_config() -> tuple[list[tuple[float, float]], float]:
 
 def _load_config() -> tuple[list[_Zone], bytes]:
     configured, radius = _parse_config()
+    if not configured:
+        return [], b""
 
     # Keyed on the parsed values rather than the raw strings, so reformatting
     # the secret (spaces, trailing zeros) does not move every zone.
@@ -151,6 +169,8 @@ def crop_privacy_zone(route: list[Coord] | None, activity_id: str | None = None)
         return route
 
     zones, key = _load_config()
+    if not zones:
+        return route
     extra = _between(_EXTRA_TRIM_M, _unit(key, f"activity:{activity_id}")) if activity_id else _EXTRA_TRIM_M[1]
 
     kept = [

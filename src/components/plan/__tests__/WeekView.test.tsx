@@ -331,8 +331,8 @@ describe('the week summary against its plan', () => {
     expect(stat(s.sessions)).toMatchObject({ value: '1', unit: s.ofSessions(2) })
     // The one session due so far was run; Thursday's is still to come.
     expect(stat(s.adherence).value).toBe('100%')
-    expect(stat(s.adherence).meaning!.textContent).toBe(s.adherenceAim(80))
-    expect(stat(s.adherence).meaning!.className).toContain('text-[var(--pos)]')
+    // The number alone, at the owner's request: no "Aim for 80%" under it.
+    expect(stat(s.adherence).meaning).toBeNull()
   })
 
   it('keeps the plain total for a week with no plan', () => {
@@ -381,13 +381,13 @@ describe('missed sessions', () => {
     expect(within(screen.getByTestId('week-summary')).getByText(t.plan.weekSummary.missed(2)).className).toContain('text-[var(--neg)]')
   })
 
-  // v4.17: of what was due, how much was run - short of the aim is a caution.
+  // v4.17: of what was due, how much was run - the number alone.
   it('reads plan adherence off the sessions already due', () => {
     renderWeek({ planned, activities: [TEMPO] })
 
     const adherence = stat(t.plan.stats.adherence)
     expect(adherence.value).toBe('50%')
-    expect(adherence.meaning!.className).toContain('text-[var(--warn)]')
+    expect(adherence.meaning).toBeNull()
   })
 
   it('draws a missed day as the negative status in the chart and names it in the list', () => {

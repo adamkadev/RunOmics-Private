@@ -35,10 +35,13 @@ interface Props {
 }
 
 const WEEKDAYS = t.plan.weekdays
-const ROW_HEIGHT = 58
+const ROW_HEIGHT = 56
 // Seven day columns and nothing else: the 30 px week gutter clipped its
 // header at the edge; each week's total is a footer line under its row.
-const GRID_COLUMNS = 'repeat(7,minmax(0,1fr))'
+// Each day its own rounded tile, a gap between (design review, Oct 2026,
+// mock 1c): a flat grid of hairlines read as a spreadsheet.
+const GRID = 'grid grid-cols-7 gap-1.5'
+const TILE = 'overflow-hidden rounded-[10px]'
 
 /**
  * A day's state, as the week chart draws it (v4.17): what was run is the
@@ -52,7 +55,7 @@ const CELL_FILL: Record<MonthDayState, string> = {
   extra: 'bg-[var(--accent-soft)]',
   planned: 'bg-[color-mix(in_srgb,var(--cell-zone)_12%,transparent)]',
   missed: 'bg-[color-mix(in_srgb,var(--neg)_12%,transparent)]',
-  rest: '',
+  rest: 'border border-border',
 }
 
 /** A missed day's dashed outline, inside the cell so it never touches its neighbours'. */
@@ -118,37 +121,43 @@ function plannedInfoFor(
   return null
 }
 
-/** What a session was planned at: its distance, or its time when it has none. */
-function plannedFigure(planned: PlannedInfo): string | null {
-  if (planned.km !== null) return `${formatWeekKm(planned.km)} ${t.units.km}`
-  return planned.minutes !== null ? `${planned.minutes} ${t.units.min}` : null
+/** What a session was planned at, bare - its km, or its minutes when it has none - and with its unit. */
+function plannedFigure(planned: PlannedInfo): { bare: string; full: string } | null {
+  if (planned.km !== null) return { bare: formatWeekKm(planned.km), full: `${formatWeekKm(planned.km)} ${t.units.km}` }
+  return planned.minutes !== null ? { bare: `${planned.minutes}′`, full: `${planned.minutes} ${t.units.min}` } : null
 }
 
-// A day's planned km over what it ran - "10 km" light a plan, "8.5 km" bold a
-// run - a missed one "✕ 10 km" in the negative status, and a run nothing was
-// planned for labelled "extra" over its figure.
+/** The day's one figure with its unit, for its name: the tile shows it bare. */
+function figureWords(planned: PlannedInfo | null, ranKm: number, hasActs: boolean): string | null {
+  if (hasActs) return `${formatRanKm(ranKm)} ${t.units.km}`
+  return planned ? (plannedFigure(planned)?.full ?? null) : null
+}
+
+// One figure a day, bare, as mock 1c draws it (design review, Oct 2026): what
+// was run in bold - as the week view writes it, "10", not "10.0" - else what
+// is planned, light; a missed one in the negative status, its ✕ up by the
+// date where a phone-width tile has room for it, and a run
+// nothing was planned for labelled "extra" over its figure. The week row
+// under it carries the unit.
 function CellValue({ planned, ranKm, hasActs, state }: { planned: PlannedInfo | null; ranKm: number; hasActs: boolean; state: MonthDayState }) {
   const figure = planned && plannedFigure(planned)
   return (
-    <div className="mt-auto flex min-w-0 flex-col" style={{ lineHeight: 1.2 }}>
+    <div className="mt-auto flex min-w-0 flex-col leading-tight">
       {state === 'extra' && <span className="truncate text-[11px] leading-none text-muted-foreground">{t.plan.extra}</span>}
-      {figure && (
-        <span className={cn('truncate text-caption', state === 'missed' ? 'font-medium text-[var(--neg)]' : 'text-[var(--text-2)]')}>
-          {state === 'missed' && <span aria-hidden>✕ </span>}
-          {figure}
-        </span>
-      )}
-      {hasActs && (
-        <span className="truncate text-caption font-semibold text-foreground">
-          {/* As the week view writes a run: "10 km", not "10.0 km" beside a planned "10 km". */}
-          {formatRanKm(ranKm)} {t.units.km}
-        </span>
+      {hasActs ? (
+        <span className="truncate text-[13px] font-semibold tabular-nums text-foreground">{formatRanKm(ranKm)}</span>
+      ) : (
+        figure && (
+          <span className={cn('truncate text-[13px] tabular-nums', state === 'missed' ? 'font-semibold text-[var(--neg)]' : 'text-[var(--text-2)]')}>
+            {figure.bare}
+          </span>
+        )
       )}
     </div>
   )
 }
 
-const CELL_BUTTON = 'flex h-full w-full flex-col items-start px-1.5 pb-1 pt-1.5 text-left transition-colors hover:bg-[var(--surface-2)]'
+const CELL_BUTTON = 'flex h-full w-full flex-col items-start px-2 pb-1.5 pt-1.5 text-left transition-colors hover:bg-[var(--surface-2)]'
 
 // Same tap targets this pass found already correct, just carrying the new
 // single-value content: a completed day, or a coach-planned one, opens the
@@ -174,17 +183,22 @@ function DayCell({
   const ranKm = cell.acts.reduce((sum, a) => sum + a.distanceKm, 0)
   const hasActs = cell.acts.length > 0
   const dayNumber = (
-    <p
-      className="text-xs leading-none"
-      style={{ color: isToday ? 'var(--accent-text)' : 'var(--muted-foreground)', fontWeight: isToday ? 600 : 400 }}
-    >
-      {cell.day}
-    </p>
+    <span className="flex w-full items-start justify-between">
+      <span
+        className="text-xs leading-none"
+        style={{ color: isToday ? 'var(--accent-text)' : 'var(--muted-foreground)', fontWeight: isToday ? 600 : 400 }}
+      >
+        {cell.day}
+      </span>
+      {day.state === 'missed' && <span aria-hidden className="text-[11px] font-semibold leading-none text-[var(--neg)]">✕</span>}
+    </span>
   )
   const value = (planned || hasActs) && <CellValue planned={planned} ranKm={ranKm} hasActs={hasActs} state={day.state} />
-  // The state in the name too, as the week chart names its days: colour and
-  // shape are not all a screen reader hears.
-  const name = `${formatDate(cell.date, { style: 'full' })} · ${STATE_WORD[day.state]}`
+  // The state and the figure, with its unit, in the name, as the week chart
+  // names its days: colour, shape and a bare number are not all a screen
+  // reader should hear.
+  const words = figureWords(planned, ranKm, hasActs)
+  const name = [formatDate(cell.date, { style: 'full' }), STATE_WORD[day.state], words].filter(Boolean).join(' · ')
 
   if (hasActs || planned?.source === 'coach') {
     return (
@@ -204,7 +218,7 @@ function DayCell({
     )
   }
 
-  return <div className="flex h-full w-full flex-col items-start px-1.5 pt-1.5">{dayNumber}</div>
+  return <div className="flex h-full w-full flex-col items-start px-2 pt-1.5">{dayNumber}</div>
 }
 
 export function MonthView({
@@ -274,15 +288,15 @@ export function MonthView({
         />
       </div>
 
-      <div className="grid border-y border-border" style={{ gridTemplateColumns: GRID_COLUMNS }}>
+      <div className={cn(GRID, 'px-3')}>
         {WEEKDAYS.map((d, i) => (
-          <div key={d} className={cn(EYEBROW_CLASS, 'py-2 text-center', i >= 5 ? 'text-subtle' : 'text-muted-foreground')}>
+          <div key={d} className={cn(EYEBROW_CLASS, 'pb-2 text-center', i >= 5 ? 'text-subtle' : 'text-muted-foreground')}>
             {d}
           </div>
         ))}
       </div>
 
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-1 px-3">
         {rows.map((row, rowIndex) => {
           const realCells = row.filter((c): c is DayCellData => c !== null)
           const containsToday = realCells.some((c) => c.date === today)
@@ -302,10 +316,11 @@ export function MonthView({
           const share = weekPlanned > 0 ? Math.min(1, weekRan / weekPlanned) : null
 
           return (
-            <div key={rowIndex} className="border-t border-border first:border-t-0">
-              <div className="grid" style={{ gridTemplateColumns: GRID_COLUMNS, height: `${ROW_HEIGHT}px` }}>
+            <div key={rowIndex}>
+              <div className={GRID} style={{ height: `${ROW_HEIGHT}px` }}>
                 {row.map((cell, i) => {
-                  if (!cell) return <div key={i} className="border-r border-border bg-[var(--surface-2)] [&:nth-child(7n)]:border-r-0" />
+                  // Outside the month: no tile at all.
+                  if (!cell) return <div key={i} aria-hidden />
                   const planned = plannedInfoFor(cell.date, byDatePlanned, byDateCoach)
                   const day = days.get(cell.date) ?? { state: 'rest' as const }
                   const state = day.state
@@ -314,7 +329,7 @@ export function MonthView({
                     <div
                       key={i}
                       data-cell-state={state}
-                      className={cn('overflow-hidden border-r border-border [&:nth-child(7n)]:border-r-0', CELL_FILL[state])}
+                      className={cn(TILE, CELL_FILL[state])}
                       style={{
                         ...(state === 'planned' && planned ? ({ '--cell-zone': zoneColor(sessionZone(planned)) } as CSSProperties) : {}),
                         ...(state === 'missed' ? MISSED_OUTLINE : {}),
@@ -341,7 +356,7 @@ export function MonthView({
               {realCells.length > 0 && (
                 <p
                   data-testid="month-week-total"
-                  className={cn('flex items-center justify-end gap-2 px-2 py-1 text-caption', containsToday ? 'text-[var(--text-2)]' : 'text-muted-foreground')}
+                  className={cn('flex items-center justify-end gap-2 pb-1.5 pt-1 text-[13px] font-medium tabular-nums', containsToday ? 'text-foreground' : 'text-[var(--text-2)]')}
                 >
                   {share !== null && (
                     // Run against plan, capped at the plan: a week over it is full, not longer.
@@ -360,11 +375,13 @@ export function MonthView({
       {/* One line of legend (design review, Oct 2026): done, the session
           types this month plans, missed. Today's outline, the "extra" label
           and bold-ran / light-planned say themselves. */}
-      <div className="border-t border-border px-5 pt-3" data-testid="month-legend">
+      {/* Swatches in the full colours, as mock 1c keys them: the tiles' own
+          tints were too dark to read as a key. */}
+      <div className="mx-3 mt-1.5 border-t border-border px-1 pt-3" data-testid="month-legend">
         <Legend>
-          <LegendItem swatch="square" color="var(--accent-soft)">{t.sessionState.done}</LegendItem>
+          <LegendItem swatch="square" color="var(--accent)">{t.sessionState.done}</LegendItem>
           {zones.map((zone) => (
-            <LegendItem key={zone} swatch="square" color={`color-mix(in srgb, ${zoneColor(zone)} 35%, transparent)`}>
+            <LegendItem key={zone} swatch="square" color={zoneColor(zone)}>
               {t.zoneLabels[zone]}
             </LegendItem>
           ))}
@@ -374,7 +391,7 @@ export function MonthView({
           </span>
         </Legend>
       </div>
-      <p className="px-5 pb-3.5 pt-2.5 text-[13px] text-muted-foreground">{t.plan.summary(sessionCount, ranKm, plannedKm)}</p>
+      <p className="px-4 pb-4 pt-2.5 text-[13px] text-muted-foreground">{t.plan.summary(sessionCount, ranKm, plannedKm)}</p>
 
       {sheetWorkout && <PlannedWorkoutSheet workout={sheetWorkout} onClose={() => setSheetWorkout(null)} />}
     </section>

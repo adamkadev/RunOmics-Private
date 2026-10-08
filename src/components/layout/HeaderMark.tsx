@@ -1,23 +1,29 @@
-/** The app's mark, drawn in the accent: the sidebar's brand and the sign-in page's. */
+import { MARK_PATHS, MARK_SMALL_MAX_PX, MARK_SMALL_PATHS, MARK_SMALL_STROKE, MARK_STROKE, MARK_VIEWBOX } from '@/lib/brandMark'
+
+/**
+ * The app's mark, drawn in the accent: the sidebar's brand and the sign-in
+ * page's. The v5.2 mark from lib/brandMark - the same geometry as the app
+ * icon, the splash and the share card - with its small form at 24 px and
+ * under: the ring's front arc dropped, the stroke heavier.
+ */
 export function HeaderMark({ size = 24 }: { size?: number }) {
+  const small = size <= MARK_SMALL_MAX_PX
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 44 44"
+      viewBox={`0 0 ${MARK_VIEWBOX} ${MARK_VIEWBOX}`}
       fill="none"
       className="text-accent-text"
       role="img"
       aria-hidden="true"
+      data-testid="header-mark"
     >
-      <path d="M 6 16 A 16 8 0 0 1 38 16" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" />
-      <line x1="6" y1="16" x2="6" y2="28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" />
-      <line x1="38" y1="16" x2="38" y2="28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" />
-      <path d="M 6 28 A 16 8 0 0 0 38 28" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" opacity="0.45" />
-      <path d="M 6 28 A 16 8 0 0 1 38 28" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" />
-      <line x1="6" y1="28" x2="6" y2="40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" />
-      <line x1="38" y1="28" x2="38" y2="40" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" opacity="0.3" />
-      <path d="M 6 40 A 16 8 0 0 0 38 40" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" opacity="0.45" />
+      <g stroke="currentColor" strokeWidth={small ? MARK_SMALL_STROKE : MARK_STROKE} strokeLinecap="round">
+        {(small ? MARK_SMALL_PATHS : MARK_PATHS).map((d) => (
+          <path key={d} d={d} />
+        ))}
+      </g>
     </svg>
   )
 }

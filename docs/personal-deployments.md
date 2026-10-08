@@ -178,7 +178,7 @@ Under **Settings → Environments**, create an environment named after the profi
 | `APP_URL` | her Vercel domain, no trailing slash |
 | `INTERNAL_NOTIFY_SECRET` | must match the Vercel value from step 5 |
 | `VERCEL_DEPLOY_HOOK_URL` | step 5 |
-| `PRIVACY_ZONES`, `PRIVACY_RADIUS_M` | required, per athlete - the sync refuses to write a GPS route without them |
+| `PRIVACY_ZONES`, `PRIVACY_RADIUS_M` | required, per athlete - the sync refuses to write a GPS route without them. `PRIVACY_ZONES=off` (no radius needed) stores routes as recorded instead - see [A private deployment](#a-private-deployment) |
 | `PRIVACY_SALT` | optional but recommended: a long random string, so the zone's hidden offsets cannot be reproduced from the coordinates alone (see `scripts/processing/privacy.py`) |
 
 Add one environment **variable** as well - `PROFILE`, set to the environment's own
@@ -288,9 +288,13 @@ Settings ends the session and clears the pages the device cached.
 
 What it does not cover:
 
-- **The privacy zones stay.** The gate decides who opens the site, not what
-  the data says: a shared card or screenshot, the data repository, and anyone
-  invited still see the routes, so the zones around home keep their job.
+- **The privacy zones are separate.** The gate decides who opens the site,
+  not what the data says: a shared card or screenshot, the data repository,
+  and anyone invited see the routes as stored. To see real starts and
+  finishes, set the GitHub Environment secret `PRIVACY_ZONES=off` and run
+  *Sync Garmin Activities* with `reprocess`: every route with a cached FIT
+  file is rebuilt as recorded. Setting the zones back and reprocessing again
+  crops them again.
 - **The workflow's routes** (`/api/internal/*`) keep their own shared secret
   and stay reachable, as the sync needs them.
 - **Notes come through the app.** The activity page reads a note from

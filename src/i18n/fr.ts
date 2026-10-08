@@ -98,8 +98,6 @@ export const fr = {
     dismiss: 'Masquer',
     todayFrom: (grade: string) => `↑ depuis ${grade}`,
     todayRest: (value: string, top: number) => ` · ${value} · top ${top} %`,
-    shareBadge: 'Badge note VO₂max',
-    badge: (grade: string) => `VO₂max ${grade}`,
   },
   glossary: {
     about: (term: string) => `Définition : ${term}`,
@@ -1209,7 +1207,7 @@ export const fr = {
     shareMenu: {
       share: 'Partager',
       download: 'Télécharger',
-      copy: 'Copier',
+      copy: 'Copier l’image',
       copied: 'Copié',
     },
     shareCard: {
@@ -1230,15 +1228,23 @@ export const fr = {
         dark: 'Sombre',
         light: 'Clair',
       },
-      timeInZones: 'Temps par zone',
-      mostly: (zone: number, pct: number) => `surtout Z${zone} · ${pct} %`,
       inZone: (zone: number) => `en Z${zone}`,
+      // L’en-tête des zones d’une sortie facile : « 100 % facile · Z1–Z2 ».
+      easyZones: (from: number, to: number) => `facile · Z${from}–Z${to}`,
       minutes: (n: number) => `${n} min`,
       noZones: 'Pas de zones cardiaques pour cette sortie',
+      // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
+      repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
+      target: (pace: string) => `cible ${pace}`,
+      // La légende du parcours : ce que sa couleur représente.
+      hrZone: 'Zone FC',
+      paceLegend: 'Allure',
+      slow: 'Lent',
+      fast: 'Rapide',
       photo: 'Photo',
-      photoEmpty: 'Ta photo remplira ce cadre',
       choosePhoto: 'Choisir une photo',
-      changePhoto: 'Changer de photo',
+      photoHint: 'Remplit toute la carte',
+      replacePhoto: 'Remplacer la photo',
     },
     stats: {
       distance: 'Distance',
@@ -2034,7 +2040,6 @@ export const fr = {
       distance: 'Distance',
       sessions: 'Séances',
       adherence: 'Respect du plan',
-      adherenceAim: (pct: number) => `Vise ${pct} % ou plus`,
       noPlan: 'Pas de plan cette semaine',
       ofKm: (km: string) => `/ ${km} km`,
       ofSessions: (n: number) => `sur ${n}`,

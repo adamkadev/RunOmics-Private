@@ -181,3 +181,27 @@ class TestPrivacyConfigRequired:
 
         with pytest.raises(PrivacyConfigError):
             crop_privacy_zone([[1.0, 1.0], [2.0, 2.0]])
+
+
+class TestPrivacyOff:
+    """PRIVACY_ZONES=off is the one way to store routes as recorded: a value
+    someone typed, never a config left unset."""
+
+    def test_keeps_every_point_even_inside_the_old_zone(self, monkeypatch):
+        monkeypatch.setenv("PRIVACY_ZONES", "off")
+        route = _ray(45)
+
+        assert crop_privacy_zone(route, "a1") == route
+
+    def test_needs_no_radius_and_reads_any_case(self, monkeypatch):
+        monkeypatch.setenv("PRIVACY_ZONES", " Off ")
+        monkeypatch.delenv("PRIVACY_RADIUS_M", raising=False)
+        route = [_offset(0, 0), _offset(0, 10)]
+
+        assert crop_privacy_zone(route, "a1") == route
+
+    def test_anything_else_still_fails_loudly(self, monkeypatch):
+        monkeypatch.setenv("PRIVACY_ZONES", "none")
+
+        with pytest.raises(PrivacyConfigError):
+            crop_privacy_zone([[1.0, 1.0], [2.0, 2.0]])

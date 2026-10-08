@@ -29,6 +29,13 @@ describe('capability-driven athlete metrics', () => {
     expect(within(screen.getByTestId('zone-row-4')).getByText('163–171')).toBeInTheDocument()
   })
 
+  // Design review, Oct 2026: one order everywhere, Z1 to Z5 top to bottom.
+  it('lists the zones Z1 first, as the bar above them reads', () => {
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={[]} recentZoneTime={[]} />)
+    const rows = [...document.querySelectorAll('[data-testid^="zone-row-"]')].map((row) => row.getAttribute('data-testid'))
+    expect(rows).toEqual(['zone-row-1', 'zone-row-2', 'zone-row-3', 'zone-row-4', 'zone-row-5'])
+  })
+
   it('omits an unavailable threshold pace tile instead of rendering a placeholder', () => {
     render(<AthleteKeyNumbers athlete={{ vmaKmh: 15.2 }} />)
 

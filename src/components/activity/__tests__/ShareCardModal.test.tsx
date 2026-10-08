@@ -10,6 +10,11 @@ const theme = vi.hoisted(() => ({ resolved: 'dark' }))
 vi.mock('next-themes', () => ({ useTheme: () => ({ resolvedTheme: theme.resolved }) }))
 vi.mock('@/lib/useShareCardMap', () => ({ useShareCardMap: () => ({ image: null, points: null, failed: false }) }))
 vi.mock('@/lib/useShareCardGeocode', () => ({ useShareCardGeocode: () => ({ locationName: null }) }))
+// jsdom decodes no image: a chosen photo loads as soon as it is picked.
+vi.mock('@/lib/shareCard', async (load) => ({
+  ...(await load<typeof import('@/lib/shareCard')>()),
+  loadImage: () => Promise.resolve({ width: 1000, height: 800 }),
+}))
 
 const RUN: ShareActivity = {
   id: '1', date: '2026-09-26', dayOfWeek: 'Saturday', description: 'Easy',
@@ -29,6 +34,8 @@ const checked = (group: string) =>
 beforeEach(() => {
   localStorage.clear()
   theme.resolved = 'dark'
+  URL.createObjectURL = () => 'blob:photo'
+  URL.revokeObjectURL = () => {}
 })
 
 describe('ShareCardModal', () => {
@@ -60,14 +67,37 @@ describe('ShareCardModal', () => {
     expect(localStorage.getItem(SHARE_THEME_KEY)).toBe('dark')
   })
 
-  it('shows Share with Copy beside it, or Download where files cannot be shared', () => {
+  it('shows Share with Copy image beside it, or Download where files cannot be shared', () => {
     const { unmount } = open()
     expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Copy' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Copy image' })).toBeTruthy()
     unmount()
     open({ canShareFiles: false, canCopyImage: false })
     expect(screen.getByRole('button', { name: 'Download' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Copy' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Copy image' })).toBeNull()
+  })
+
+  // Design review, Oct 2026: the segmented control is the only selector.
+  it('has no page dots under the preview', () => {
+    open()
+    expect(screen.getByTestId('share-preview').nextElementSibling).toBeNull()
+  })
+
+  it('makes the empty photo frame the picker, and shares nothing until a photo is chosen', async () => {
+    open()
+    await userEvent.click(screen.getByRole('radio', { name: 'Photo' }))
+    expect(screen.getByTestId('share-photo-picker').textContent).toBe('Choose photoFills the whole card')
+    expect(screen.getByRole('button', { name: 'Share' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Copy image' })).toBeDisabled()
+    // A photo covers the whole card: there is no background to pick.
+    expect(screen.queryByRole('radiogroup', { name: 'Background' })).toBeNull()
+
+    await userEvent.upload(document.querySelector<HTMLInputElement>('input[type="file"]')!, new File(['x'], 'run.jpg', { type: 'image/jpeg' }))
+    const replace = await screen.findByRole('button', { name: 'Replace photo' })
+    expect(replace.style.height).toBe('44px')
+    expect(screen.queryByTestId('share-photo-picker')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Share' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Copy image' })).toBeEnabled()
   })
 
   it('fills the sheet to its container: no safe-area padding and no glass', () => {
@@ -77,17 +107,6 @@ describe('ShareCardModal', () => {
     expect(sheet.style.paddingTop).toBe('')
     expect(sheet.style.background).toBe('var(--background)')
     expect(sheet.style.backdropFilter ?? '').toBe('')
-  })
-
-  it('offers the VO₂max grade badge off by default, and only with a grade (v5.3)', async () => {
-    const { unmount } = open()
-    expect(screen.queryByRole('switch', { name: t.vo2Grade.shareBadge })).toBeNull()
-    unmount()
-    render(<ShareCardModal activity={RUN} vo2Grade="A" canShareFiles canCopyImage onClose={() => {}} />)
-    const toggle = screen.getByRole('switch', { name: t.vo2Grade.shareBadge })
-    expect(toggle.getAttribute('aria-checked')).toBe('false')
-    await userEvent.click(toggle)
-    expect(toggle.getAttribute('aria-checked')).toBe('true')
   })
 
   // Design review, Oct 2026: the design picker was a filled accent pill, unlike
@@ -105,18 +124,15 @@ describe('ShareCardModal', () => {
     }
   })
 
-  // Design review, Oct 2026: off, the badge switch had no track to see.
-  it('draws the badge switch as the app\'s one switch, its off track in line-2', async () => {
-    render(<ShareCardModal activity={RUN} vo2Grade="A" canShareFiles canCopyImage onClose={() => {}} />)
-    const toggle = screen.getByRole('switch', { name: t.vo2Grade.shareBadge })
-    expect(toggle.className).toContain('bg-[var(--line-2)]')
-    expect(toggle.className).toContain('hit-44')
-    await userEvent.click(toggle)
-    expect(toggle.className).toContain('bg-accent')
-  })
-
   it('gives the close button a 44 pt target', () => {
     open()
     expect(screen.getByRole('button', { name: t.activity.shareCard.close }).className).toContain('hit-44')
+  })
+
+  // At the owner's request: no VO₂max badge on a shared card, nor a switch for one.
+  it('offers no VO₂max badge', () => {
+    open()
+    expect(screen.queryByRole('switch')).toBeNull()
+    expect(screen.getByTestId('share-sheet').textContent).not.toContain('VO₂max')
   })
 })

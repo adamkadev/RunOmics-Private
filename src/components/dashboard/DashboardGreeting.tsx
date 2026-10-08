@@ -10,7 +10,6 @@ import { useMounted } from '@/lib/useMounted'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { SYNC_LIMITS } from '@/lib/syncLimits'
 import { useSyncNow } from '@/components/settings/SyncNowCard'
-import { PullToRefresh } from './PullToRefresh'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -49,7 +48,6 @@ interface Line {
   tone: 'muted' | 'accent' | 'caution'
   spinning?: boolean
   disabled?: boolean
-  /** A tap's action, and a pull's (PullToRefresh). */
   onClick: () => void
 }
 
@@ -71,15 +69,6 @@ function SyncLineButton({ text, tone, spinning = false, onClick, disabled = fals
   )
 }
 
-/** The line, and the pull at the top of the page that does what its tap does (design review, Oct 2026). */
-function SyncControl(line: Line) {
-  return (
-    <>
-      <SyncLineButton {...line} />
-      <PullToRefresh onPull={line.onClick} disabled={line.disabled} />
-    </>
-  )
-}
 
 /** The owner's line: the same sync, states and limits as Settings' button (useSyncNow). */
 function OwnerSyncLine({ user, lastSyncedAt, ago }: { user: User; lastSyncedAt: string; ago: string }) {
@@ -107,7 +96,7 @@ function OwnerSyncLine({ user, lastSyncedAt, ago }: { user: User; lastSyncedAt: 
   // Fresh: nothing to fetch yet, and the server would hold it back anyway.
   else if (age < FRESH_SYNC_MS) line = { text: freshNote ? s.nextIn(Math.ceil((FRESH_SYNC_MS - age) / 60_000)) : s.synced(ago), tone: 'muted', onClick: noteFresh }
   else line = { text: isSyncStale(lastSyncedAt) ? `${s.synced(ago)} · ${s.tapToSync}` : s.synced(ago), tone: late ? 'caution' : 'accent', onClick: sync.handleSync }
-  return <SyncControl {...line} />
+  return <SyncLineButton {...line} />
 }
 
 /**
@@ -115,8 +104,7 @@ function OwnerSyncLine({ user, lastSyncedAt, ago }: { user: User; lastSyncedAt: 
  * and the way to sync it - at any age, not only past 6 h, and without the
  * date, which "Today" and every session's own date already say. Amber once
  * the data is a day old (v4.3.4). The owner's tap starts the sync; anyone
- * else's goes to Settings, where signing in lives, and their pull reloads
- * what the server has.
+ * else's goes to Settings, where signing in lives.
  */
 function SyncLine({ lastSyncedAt, ago }: { lastSyncedAt: string; ago: string }) {
   const s = t.dashboard.syncStatus
@@ -124,12 +112,7 @@ function SyncLine({ lastSyncedAt, ago }: { lastSyncedAt: string; ago: string }) 
   const router = useRouter()
   if (user && isOwner) return <OwnerSyncLine user={user} lastSyncedAt={lastSyncedAt} ago={ago} />
   const text = isSyncStale(lastSyncedAt) ? `${s.synced(ago)} · ${s.tapToSync}` : s.synced(ago)
-  return (
-    <>
-      <SyncLineButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.push('/settings')} />
-      <PullToRefresh onPull={() => router.refresh()} />
-    </>
-  )
+  return <SyncLineButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.push('/settings')} />
 }
 
 export function DashboardGreeting({ name, lastSyncedAt }: Props) {

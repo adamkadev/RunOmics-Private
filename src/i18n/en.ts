@@ -113,8 +113,6 @@ export const en = {
     dismiss: 'Dismiss',
     todayFrom: (grade: string) => `↑ from ${grade}`,
     todayRest: (value: string, top: number) => ` · ${value} · top ${top}%`,
-    shareBadge: 'VO₂max grade badge',
-    badge: (grade: string) => `VO₂max ${grade}`,
   },
   glossary: {
     about: (term: string) => `What is ${term}?`,
@@ -1273,7 +1271,7 @@ export const en = {
     shareMenu: {
       share: 'Share',
       download: 'Download',
-      copy: 'Copy',
+      copy: 'Copy image',
       copied: 'Copied',
     },
     shareCard: {
@@ -1294,15 +1292,23 @@ export const en = {
         dark: 'Dark',
         light: 'Light',
       },
-      timeInZones: 'Time in zones',
-      mostly: (zone: number, pct: number) => `mostly Z${zone} · ${pct}%`,
       inZone: (zone: number) => `in Z${zone}`,
+      // The headline of an easy run's zones: "100% easy · Z1–Z2".
+      easyZones: (from: number, to: number) => `easy · Z${from}–Z${to}`,
       minutes: (n: number) => `${n} min`,
       noZones: 'No heart-rate zones for this run',
+      // An interval session's headline, drawn in capitals: "REP PACE · 3 × 8′".
+      repPace: (count: number, length: string) => `Rep pace · ${count} × ${length}`,
+      target: (pace: string) => `target ${pace}`,
+      // The route's legend: what its colour encodes.
+      hrZone: 'HR zone',
+      paceLegend: 'Pace',
+      slow: 'Slow',
+      fast: 'Fast',
       photo: 'Photo',
-      photoEmpty: 'Your photo fills this frame',
       choosePhoto: 'Choose photo',
-      changePhoto: 'Change photo',
+      photoHint: 'Fills the whole card',
+      replacePhoto: 'Replace photo',
     },
     stats: {
       distance: 'Distance',
@@ -2170,7 +2176,6 @@ export const en = {
       distance: 'Distance',
       sessions: 'Sessions',
       adherence: 'Plan adherence',
-      adherenceAim: (pct: number) => `Aim for ${pct}% or more`,
       noPlan: 'No plan this week',
       ofKm: (km: string) => `/ ${km} km`,
       ofSessions: (n: number) => `of ${n}`,

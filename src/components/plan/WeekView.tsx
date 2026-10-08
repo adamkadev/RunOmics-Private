@@ -23,7 +23,7 @@ import { SessionStructureBar } from './WorkoutStructure'
 import { PlanPhaseTrack } from './PlanPhaseTrack'
 import { PlanPeriodNav } from './PlanPeriodNav'
 import { WeekChart, WeekChartLegend } from './WeekChart'
-import { adherenceTone, planAdherence, PLAN_ADHERENCE_AIM } from './weekStats'
+import { planAdherence } from './weekStats'
 import { planRace, raceWeekLabel } from './planRace'
 import { paceLabel, stepClock, stepSeconds, workoutSummary } from './workoutSummary'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
@@ -306,11 +306,12 @@ function WeekStats({ target, notStarted }: { target: WeekTarget; notStarted: boo
             ) : null
           }
         />
+        {/* The number alone: "Aim for 80% or more" under it came off at the
+            owner's request. A week without a plan still says why it reads —. */}
         <Stat
           label={s.adherence}
           value={adherence === null ? '—' : formatPercent(adherence)}
-          meaning={planKm === null ? s.noPlan : s.adherenceAim(PLAN_ADHERENCE_AIM)}
-          tone={adherenceTone(adherence)}
+          meaning={planKm === null ? s.noPlan : null}
         />
       </StatGrid>
     </div>

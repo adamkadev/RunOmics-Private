@@ -7,7 +7,7 @@ import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepositor
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
 import { officialResultsByActivityId } from '@/domain/activity/raceResult'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
-import { activityDetailView, shareActivity } from '@/components/activity/activityViews'
+import { activityDetailView, shareActivity, shareSession } from '@/components/activity/activityViews'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
@@ -17,9 +17,10 @@ import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
 import { TypeDot } from '@/components/ui/TypeDot'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { appTodayIso } from '@/lib/calendarDate'
 import { paceZones } from '@/application/usecases/GetTrainingZones'
 import { chartZones } from '@/components/activity/chartStackLanes'
-import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { RunPlace } from '@/components/activity/RunPlace'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -74,9 +75,10 @@ export default async function ActivityDetailPage({
   const officialResult = officialResultsByActivityId(getOfficialRaceResults()).get(id) ?? null
   const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
-  const grade = getVo2Grade()
-  const vo2GradeLetter = grade?.status === 'graded' ? grade.grade : null
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
+  // The coach's session this run was, for the share card's title and its
+  // reps' target pace (design review, Oct 2026). Older runs had none.
+  const session = shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity)
 
   // The Charts lanes are banded with the run's own HR zones and the
   // athlete's pace zones; only the edges reach the page, not the profile.
@@ -127,7 +129,7 @@ export default async function ActivityDetailPage({
                   <p data-title-sub className="text-sm text-muted-foreground">{activity.comment}</p>
                 )}
               </div>
-              <ShareButton activity={shareActivity(activity)} vo2Grade={vo2GradeLetter} />
+              <ShareButton activity={shareActivity(activity, session)} />
             </header>
           </>
         }
