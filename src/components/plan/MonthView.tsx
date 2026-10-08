@@ -4,7 +4,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
 import { round } from '@/lib/math'
-import { formatDate, formatKm, formatRanKm } from '@/lib/formatters'
+import { formatDate, formatRanKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { cardClass } from '@/components/ui/Card'
 import { Legend, LegendItem } from '@/components/ui/Legend'
@@ -140,7 +140,8 @@ function CellValue({ planned, ranKm, hasActs, state }: { planned: PlannedInfo | 
       )}
       {hasActs && (
         <span className="truncate text-caption font-semibold text-foreground">
-          {formatKm(ranKm, 1)} {t.units.km}
+          {/* As the week view writes a run: "10 km", not "10.0 km" beside a planned "10 km". */}
+          {formatRanKm(ranKm)} {t.units.km}
         </span>
       )}
     </div>
