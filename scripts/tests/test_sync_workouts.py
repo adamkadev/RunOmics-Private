@@ -443,7 +443,12 @@ class TestCoachNamedWorkouts:
             {"prescriptionId": "plan-3:workout:1:2", "date": "2026-10-28", "garminWorkoutId": "1700000002"},
         ]}))
         (coaching / "current_plan.json").write_text(json.dumps({"weeks": [{"workouts": [
-            {"id": "plan-3:workout:1:1", "type": "threshold", "title": "Threshold · 3 × 8′ @ 4:25", "shortName": "Threshold 3×8′"},
+            {
+                "id": "plan-3:workout:1:1",
+                "type": "threshold",
+                "title": "Threshold · 3 × 8′ @ 4:25",
+                "shortName": "Threshold 3×8′",
+            },
             {"id": "plan-3:workout:1:2", "type": "threshold", "title": "Threshold 3 x 7:40"},
         ]}]}))
         return tmp_path
@@ -484,7 +489,8 @@ class TestCoachNamedWorkouts:
         monkeypatch.setattr("sync_workouts._load_coach_workout_types", lambda: {"1700000001": "Threshold"})
         monkeypatch.setattr("sync_workouts._load_coach_named_workouts", lambda: {"1700000001"})
 
-        entries = _build_entries(_FakeClient(self._threshold("Threshold · 3 × 8′ @ 4:25")), [("2026-10-27", "1700000001", "", False)])
+        client = _FakeClient(self._threshold("Threshold · 3 × 8′ @ 4:25"))
+        entries = _build_entries(client, [("2026-10-27", "1700000001", "", False)])
 
         assert entries[0]["name"] == "Threshold · 3 × 8′ @ 4:25"
         assert entries[0]["type"] == "Threshold"
