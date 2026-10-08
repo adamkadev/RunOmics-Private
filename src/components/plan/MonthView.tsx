@@ -135,7 +135,8 @@ function figureWords(planned: PlannedInfo | null, ranKm: number, hasActs: boolea
 
 // One figure a day, bare, as mock 1c draws it (design review, Oct 2026): what
 // was run in bold - as the week view writes it, "10", not "10.0" - else what
-// is planned, light; a missed one "✕ 10" in the negative status, and a run
+// is planned, light; a missed one in the negative status, its ✕ up by the
+// date where a phone-width tile has room for it, and a run
 // nothing was planned for labelled "extra" over its figure. The week row
 // under it carries the unit.
 function CellValue({ planned, ranKm, hasActs, state }: { planned: PlannedInfo | null; ranKm: number; hasActs: boolean; state: MonthDayState }) {
@@ -148,7 +149,6 @@ function CellValue({ planned, ranKm, hasActs, state }: { planned: PlannedInfo | 
       ) : (
         figure && (
           <span className={cn('truncate text-[13px] tabular-nums', state === 'missed' ? 'font-semibold text-[var(--neg)]' : 'text-[var(--text-2)]')}>
-            {state === 'missed' && <span aria-hidden>✕ </span>}
             {figure.bare}
           </span>
         )
@@ -183,12 +183,15 @@ function DayCell({
   const ranKm = cell.acts.reduce((sum, a) => sum + a.distanceKm, 0)
   const hasActs = cell.acts.length > 0
   const dayNumber = (
-    <p
-      className="text-xs leading-none"
-      style={{ color: isToday ? 'var(--accent-text)' : 'var(--muted-foreground)', fontWeight: isToday ? 600 : 400 }}
-    >
-      {cell.day}
-    </p>
+    <span className="flex w-full items-start justify-between">
+      <span
+        className="text-xs leading-none"
+        style={{ color: isToday ? 'var(--accent-text)' : 'var(--muted-foreground)', fontWeight: isToday ? 600 : 400 }}
+      >
+        {cell.day}
+      </span>
+      {day.state === 'missed' && <span aria-hidden className="text-[11px] font-semibold leading-none text-[var(--neg)]">✕</span>}
+    </span>
   )
   const value = (planned || hasActs) && <CellValue planned={planned} ranKm={ranKm} hasActs={hasActs} state={day.state} />
   // The state and the figure, with its unit, in the name, as the week chart
