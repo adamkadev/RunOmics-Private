@@ -2,11 +2,15 @@ import type { FeatureCollection, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { firstSymbolLayerId } from '@/lib/maplibre'
 import { distanceKm } from '@/lib/math'
+import { rgbTriplet } from '@/lib/palette'
 
 export const ROUTE_SOURCE = 'route'
 export const ROUTE_LINE_LAYER = 'route-line'
 export const RUN_START_SOURCE = 'run-start-dot'
 export const RUN_START_LAYER = 'run-start-dot'
+export const RUN_FINISH_SOURCE = 'run-finish-mark'
+export const RUN_FINISH_LAYER = 'run-finish-mark'
+export const FINISH_MARK_ICON = 'run-finish-mark'
 export const RUN_CURSOR_SOURCE = 'run-cursor'
 export const RUN_CURSOR_LAYER = 'run-cursor'
 export const RUN_MARKERS_SOURCE = 'run-start-finish'
@@ -28,14 +32,18 @@ type Image = { width: number; height: number; data: Uint8Array | Uint8ClampedArr
 
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] }
 
-/** What the Activity map shows of the run: the route drawn so far, its start and the scrub's point. */
+/** What the Activity map shows of the run: the route drawn so far, its start and finish, and the scrub's point. */
 export interface RunLayersState {
   /** The accent, as a literal colour: MapLibre paints values, not CSS variables. */
   accent: string
-  /** The ring round the start and the scrub marker. */
+  /** The ring round the start, the finish and the scrub marker. */
   ring: string
   route: LngLat[]
   start: LngLat
+  /** Where the run ended, once the route has been drawn that far. */
+  finish: LngLat | null
+  /** The finish square's fill. */
+  finishFill: string
   cursor: LngLat | null
 }
 
@@ -62,12 +70,38 @@ function setOrAddSource(map: MapLibreMap, id: string, data: FeatureCollection): 
   return true
 }
 
+/** The finish square's side and outline, in px: 13 across, so its corners show past the 14 px start dot it may sit under. */
+const FINISH_SIDE = 13
+const FINISH_RING = 2
+const PIXEL_RATIO = 2
+
+/**
+ * The finish as the share card draws it (design review, Oct 2026): a dark
+ * square ringed in white, told from the round start by its shape. MapLibre
+ * has no square marker, so it is an icon, drawn here pixel by pixel.
+ */
+export function finishMarkImage(fill: string, ring: string): Image {
+  const size = FINISH_SIDE * PIXEL_RATIO
+  const edge = FINISH_RING * PIXEL_RATIO
+  const [inner, outer] = [rgbTriplet(fill), rgbTriplet(ring)]
+  const data = new Uint8Array(size * size * 4)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const onRing = x < edge || y < edge || x >= size - edge || y >= size - edge
+      const [r, g, b] = onRing ? outer : inner
+      data.set([r!, g!, b!, 255], (y * size + x) * 4)
+    }
+  }
+  return { width: size, height: size, data }
+}
+
 /**
  * The run on the Activity map (v4.17), in one call that can be made again
  * after a style change: the route as one accent line, width 4, directly under
  * the style's first label layer so place names draw over it; the start as an
- * accent dot ringed in white; and the scrub's marker, a larger accent dot
- * that follows the Charts tab. The start and the marker sit on top of
+ * accent dot ringed in white; the finish as a dark square, under the start
+ * where a loop brings the two together; and the scrub's marker, a larger
+ * accent dot that follows the Charts tab. The markers sit on top of
  * everything.
  */
 export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
@@ -80,6 +114,17 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
       layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': state.accent, 'line-width': 4 },
     }, before)
+  }
+  if (!map.hasImage(FINISH_MARK_ICON)) {
+    map.addImage(FINISH_MARK_ICON, finishMarkImage(state.finishFill, state.ring), { pixelRatio: PIXEL_RATIO })
+  }
+  if (setOrAddSource(map, RUN_FINISH_SOURCE, pointData(state.finish)) || !map.getLayer(RUN_FINISH_LAYER)) {
+    map.addLayer({
+      id: RUN_FINISH_LAYER,
+      type: 'symbol',
+      source: RUN_FINISH_SOURCE,
+      layout: { 'icon-image': FINISH_MARK_ICON, 'icon-allow-overlap': true, 'icon-ignore-placement': true },
+    }, map.getLayer(RUN_START_LAYER) ? RUN_START_LAYER : undefined)
   }
   if (setOrAddSource(map, RUN_START_SOURCE, pointData(state.start)) || !map.getLayer(RUN_START_LAYER)) {
     map.addLayer({
@@ -108,6 +153,11 @@ export function setRunAccent(map: MapLibreMap, accent: string): void {
 
 export function setRunRoute(map: MapLibreMap, route: LngLat[]): void {
   ;(map.getSource(ROUTE_SOURCE) as GeoJSONSource | undefined)?.setData(routeData(route))
+}
+
+/** The finish, once the draw-in has reached it. */
+export function setRunFinishMark(map: MapLibreMap, at: LngLat | null): void {
+  ;(map.getSource(RUN_FINISH_SOURCE) as GeoJSONSource | undefined)?.setData(pointData(at))
 }
 
 /** The scrub's point on the route, or none. */

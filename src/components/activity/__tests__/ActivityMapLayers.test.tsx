@@ -75,7 +75,7 @@ describe('ActivityMap layers (v4.17)', () => {
     await waitFor(() => expect(seen.layers.some((l) => l.id === 'run-cursor')).toBe(true))
     document.documentElement.classList.toggle('dark')
     await waitFor(() => expect(seen.styles).toBe(2))
-    await waitFor(() => expect(seen.layers.map((l) => l.id)).toEqual(expect.arrayContaining(['route-line', 'run-start-dot', 'run-cursor'])))
+    await waitFor(() => expect(seen.layers.map((l) => l.id)).toEqual(expect.arrayContaining(['route-line', 'run-finish-mark', 'run-start-dot', 'run-cursor'])))
     document.documentElement.classList.toggle('dark')
   })
 
