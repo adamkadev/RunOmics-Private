@@ -362,22 +362,45 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, { middleH }: ShareCardLayout
   if (reps) drawRepsLegend(ctx, scene, middleH)
 }
 
-/** The zones block, from its top: the headline, the bar 14 px under it, the legend 16 px under that. */
-const HEADLINE_SIZE = 40
-const ZONE_BAR_TOP = HEADLINE_SIZE + 14
-const ZONE_BAR_H = 10
-const LEGEND_TOP = ZONE_BAR_TOP + ZONE_BAR_H + 16
+/**
+ * The zones block (design review, Oct 2026, round 2): a 64 px headline, a
+ * 16 px bar and the legend, spread down the middle with equal room above,
+ * between and below them - the block had sat small in the middle of a 4:5
+ * card, ~150 px empty over it.
+ */
+const HEADLINE_SIZE = 64
+const HEADLINE_LABEL_SIZE = 14
+const HEADLINE_GAP = 8
+const ZONE_BAR_H = 16
 const LEGEND_ROW = 13
-const LEGEND_ROW_GAP = 9
-const LEGEND_COL_GAP = 14
+const LEGEND_ROW_GAP = 14
+const LEGEND_COL_GAP = 16
 const SWATCH = 9
+/** The least room between the parts, on a middle too short to spread them. */
+const ZONE_MIN_GAP = 8
+
+export interface ZoneBlockLayout {
+  headlineTop: number
+  barTop: number
+  legendTop: number
+  legendH: number
+}
+
+/** The headline, the bar and a legend of `rows` rows down a middle `middleH` tall: CSS's space-evenly. */
+export function zoneBlockLayout(middleH: number, rows: number): ZoneBlockLayout {
+  const legendH = rows * LEGEND_ROW + Math.max(0, rows - 1) * LEGEND_ROW_GAP
+  const parts = HEADLINE_SIZE + ZONE_BAR_H + legendH
+  const gap = Math.max(ZONE_MIN_GAP, (middleH - parts) / 4)
+  const headlineTop = (middleH - parts - 2 * gap) / 2
+  const barTop = headlineTop + HEADLINE_SIZE + gap
+  return { headlineTop, barTop, legendTop: barTop + ZONE_BAR_H + gap, legendH }
+}
 
 /**
  * Time in zones (design review, Oct 2026): the share the run's kind is
  * judged on, one bar of the whole run in its zones - no gaps, so each
- * segment is its percent - and a two-column legend of the same percents,
- * centred in the middle. The percents sum to 100 and the headline is the
- * rows' own (shareZones).
+ * segment is its percent - and a two-column legend of the same percents.
+ * The percents sum to 100 and the headline is the rows' own (shareZones).
  */
 function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { middleH }: ShareCardLayout) {
   const s = t.activity.shareCard
@@ -391,25 +414,35 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
     return
   }
 
-  const rows = Math.ceil(zones.rows.length / 2)
-  const height = LEGEND_TOP + rows * LEGEND_ROW + (rows - 1) * LEGEND_ROW_GAP
-  const top = Math.round((middleH - height) / 2)
+  const block = zoneBlockLayout(middleH, Math.ceil(zones.rows.length / 2))
+  const barW = RIGHT - PAD_X
 
+  // The headline and its label on one line, the headline a size down when a
+  // longer label would run past the edge.
   ctx.textBaseline = 'alphabetic'
-  ctx.font = `700 ${HEADLINE_SIZE}px ${fonts.display}`
-  ctx.fillStyle = palette.tx
-  setSpacing(ctx, -0.03 * HEADLINE_SIZE)
   const pct = formatPercent(zones.headline.percent)
-  const baseline = top + Math.round(HEADLINE_SIZE * 0.8)
+  ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
+  const labelW = ctx.measureText(zones.headline.label).width
+  let size = HEADLINE_SIZE
+  const headlineFont = () => {
+    ctx.font = `700 ${size}px ${fonts.display}`
+    setSpacing(ctx, -0.04 * size)
+  }
+  headlineFont()
+  while (size > 40 && ctx.measureText(pct).width + HEADLINE_GAP + labelW > barW) {
+    size -= 4
+    headlineFont()
+  }
+  ctx.fillStyle = palette.tx
+  const baseline = block.headlineTop + Math.round(HEADLINE_SIZE * 0.8)
   ctx.fillText(pct, PAD_X, baseline)
   const pctW = ctx.measureText(pct).width
   setSpacing(ctx, 0)
-  ctx.font = `600 13px ${fonts.text}`
-  ctx.fillText(zones.headline.label, PAD_X + pctW + 6, baseline)
+  ctx.font = `600 ${HEADLINE_LABEL_SIZE}px ${fonts.text}`
+  ctx.fillText(zones.headline.label, PAD_X + pctW + HEADLINE_GAP, baseline)
 
   // One rounded track, the segments edge to edge inside it.
-  const barTop = top + ZONE_BAR_TOP
-  const barW = RIGHT - PAD_X
+  const barTop = block.barTop
   ctx.save()
   roundRect(ctx, PAD_X, barTop, barW, ZONE_BAR_H, ZONE_BAR_H / 2)
   ctx.clip()
@@ -425,7 +458,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
   const colW = (barW - LEGEND_COL_GAP) / 2
   zones.rows.forEach((row, i) => {
     const x = PAD_X + (i % 2) * (colW + LEGEND_COL_GAP)
-    const mid = top + LEGEND_TOP + Math.floor(i / 2) * (LEGEND_ROW + LEGEND_ROW_GAP) + LEGEND_ROW / 2
+    const mid = block.legendTop + Math.floor(i / 2) * (LEGEND_ROW + LEGEND_ROW_GAP) + LEGEND_ROW / 2
     ctx.fillStyle = palette.zones[row.zone - 1] ?? palette.mu
     ctx.beginPath()
     ctx.arc(x + SWATCH / 2, mid, SWATCH / 2, 0, Math.PI * 2)
@@ -481,14 +514,28 @@ function drawPhotoEmpty(ctx: Ctx, { palette, fonts }: ShareCardScene, { middleH 
   ctx.fillText(s.photoHint, W / 2, middleH / 2 + 27)
 }
 
+/** The scrim's black down the card's words: the foot of the date and place line. */
+export function headerFoot({ title }: Pick<ShareCardLayout, 'title'>): number {
+  return TITLE_BASELINE + (title.lines.length - 1) * title.lineHeight + 18 + 3
+}
+
+/**
+ * The photo's scrim, as [offset, black's alpha] stops down the card (design
+ * review, Oct 2026, round 2): dark under the header's words, clear through
+ * the photo, dark again under the stat row. The mock's top - .72, .4 at 18%,
+ * clear at 38% - left the date line 2.5:1 on a white sky; it holds .62 to
+ * the foot of the header's words instead, 5:1 there on white, then clears.
+ */
+export function photoScrim(headerBottom: number): [number, number][] {
+  const words = headerBottom / H
+  return [[0, 0.72], [words, 0.62], [Math.min(0.52, Math.max(0.38, words + 0.14)), 0], [0.52, 0], [1, 0.78]]
+}
+
 /** The photo over the whole card (design review, Oct 2026), darkened at the top and foot for the words. */
-function drawPhoto(ctx: Ctx, photo: HTMLImageElement) {
+function drawPhoto(ctx: Ctx, photo: HTMLImageElement, layout: ShareCardLayout) {
   drawCover(ctx, photo, W, H)
   const scrim = ctx.createLinearGradient(0, 0, 0, H)
-  scrim.addColorStop(0, 'rgba(0, 0, 0, 0.6)')
-  scrim.addColorStop(0.34, 'rgba(0, 0, 0, 0)')
-  scrim.addColorStop(0.52, 'rgba(0, 0, 0, 0)')
-  scrim.addColorStop(1, 'rgba(0, 0, 0, 0.75)')
+  for (const [offset, alpha] of photoScrim(headerFoot(layout))) scrim.addColorStop(offset, `rgba(0, 0, 0, ${alpha})`)
   ctx.fillStyle = scrim
   ctx.fillRect(0, 0, W, H)
 }
@@ -551,7 +598,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
 
   const photo = scene.design === 'photo' ? scene.photo : null
   if (photo) {
-    drawPhoto(ctx, photo)
+    drawPhoto(ctx, photo, layout)
   } else {
     ctx.save()
     ctx.translate(0, layout.middleTop)

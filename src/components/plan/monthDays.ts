@@ -38,9 +38,9 @@ function offsets(window: number): number[] {
 }
 
 /**
- * Every date in `dates` (ISO, ascending, one month) with its state. Matching
- * looks past the month's edges, so a run on the 31st can stand for a session
- * planned on the 1st of the next month on both months' screens.
+ * Every date in `dates` (ISO, ascending, one month's grid) with its state.
+ * Matching looks past the grid's edges, so a run on the 31st can stand for a
+ * session planned on the 1st of the next month on both months' screens.
  */
 export function monthDays(
   dates: readonly string[],

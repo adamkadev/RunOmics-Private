@@ -5,6 +5,7 @@ import type { ShareActivity, ShareReps } from '@/lib/shareCardStats'
 import { pickDefined } from '@/components/pickDefined'
 import { workoutSummary } from '@/components/plan/workoutSummary'
 import { prescriptionDistanceMeters, prescriptionDuration, prescriptionStructure } from '@/components/coaching/presentation'
+import { activityTitle } from '@/lib/activityTitle'
 
 /**
  * The activity page handed the whole Activity to its client components, so
@@ -166,6 +167,15 @@ function sessionName(session: WorkoutPrescription): string {
     distanceM: prescriptionDistanceMeters(session),
     structure: prescriptionStructure(session),
   }).title
+}
+
+/**
+ * The run's name on its page (design review, Oct 2026, round 2): its
+ * session's, where the coach set one - the header read "Strides 6 × 20s"
+ * over a card that read "Easy 54 min + 6 × 20s strides" - else the watch's.
+ */
+export function runName(activity: Pick<Activity, 'description' | 'date'>, session: WorkoutPrescription | null): string {
+  return session ? sessionName(session) : activityTitle(activity)
 }
 
 /**

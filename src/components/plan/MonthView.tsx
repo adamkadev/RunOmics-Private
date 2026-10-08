@@ -73,6 +73,8 @@ interface DayCellData {
   day: number
   date: string
   acts: ActivitySummary[]
+  /** A day of the month before or after, filling its week's row. */
+  outside: boolean
 }
 
 interface PlannedInfo {
@@ -84,10 +86,6 @@ interface PlannedInfo {
   // tap (week view vs. the workout sheet) - everything else about them is
   // drawn identically.
   source: 'coach' | 'garmin'
-}
-
-function monthKey(year: number, month: number): string {
-  return `${year}-${String(month + 1).padStart(2, '0')}`
 }
 
 function isoDateOf(year: number, month: number, day: number): string {
@@ -243,35 +241,39 @@ export function MonthView({
     const firstDay = new Date(year, month, 1)
     const startOffset = (firstDay.getDay() || 7) - 1
     const daysInMonth = new Date(year, month + 1, 0).getDate()
-    const prefix = monthKey(year, month)
+    // Only the weeks the month needs: an empty sixth row cost 120 pt.
+    const cellCount = Math.ceil((startOffset + daysInMonth) / 7) * 7
 
-    const cells: (DayCellData | null)[] = []
-    for (let i = 0; i < startOffset; i++) cells.push(null)
+    // Each row a whole Monday-to-Sunday week, its days from the months either
+    // side included (the owner's report, Oct 2026): October's first row read
+    // 33 of 31 km for a week run at 53, the Tuesday and Wednesday of
+    // September left out. The month's own figures stay the month's.
+    const cells: DayCellData[] = []
     let sessionCount = 0
     let ranKm = 0
     let plannedKm = 0
     const zones = new Set<ReturnType<typeof sessionZone>>()
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = `${prefix}-${String(day).padStart(2, '0')}`
+    for (let i = 0; i < cellCount; i++) {
+      const at = new Date(year, month, 1 - startOffset + i)
+      const date = isoDateOf(at.getFullYear(), at.getMonth(), at.getDate())
+      const outside = at.getMonth() !== month
       const acts = byDate.get(date) ?? []
-      sessionCount += acts.length
-      ranKm += acts.reduce((s, a) => s + a.distanceKm, 0)
       const planned = plannedInfoFor(date, byDatePlanned, byDateCoach)
-      if (planned) {
-        plannedKm += planned.km ?? 0
-        zones.add(sessionZone(planned))
+      // The key names the colours drawn, a muted day's too.
+      if (planned) zones.add(sessionZone(planned))
+      if (!outside) {
+        sessionCount += acts.length
+        ranKm += acts.reduce((s, a) => s + a.distanceKm, 0)
+        plannedKm += planned?.km ?? 0
       }
-      cells.push({ day, date, acts })
+      cells.push({ day: at.getDate(), date, acts, outside })
     }
-    // Only the weeks the month needs: an empty sixth row cost 120 pt.
-    while (cells.length % 7 !== 0) cells.push(null)
 
-    const rows: (DayCellData | null)[][] = []
+    const rows: DayCellData[][] = []
     for (let i = 0; i < cells.length / 7; i++) rows.push(cells.slice(i * 7, i * 7 + 7))
 
-    const dates = cells.filter((c): c is DayCellData => c !== null).map((c) => c.date)
-    const days = monthDays(dates, (d) => (byDate.get(d)?.length ?? 0) > 0, (d) => plannedInfoFor(d, byDatePlanned, byDateCoach) !== null, today)
+    const days = monthDays(cells.map((c) => c.date), (d) => (byDate.get(d)?.length ?? 0) > 0, (d) => plannedInfoFor(d, byDatePlanned, byDateCoach) !== null, today)
     return { rows, sessionCount, ranKm: round(ranKm, 0), plannedKm: round(plannedKm, 0), days, zones: [...zones].sort() }
   }, [year, month, byDate, byDatePlanned, byDateCoach, today])
 
@@ -298,12 +300,11 @@ export function MonthView({
 
       <div className="flex flex-col gap-1 px-3">
         {rows.map((row, rowIndex) => {
-          const realCells = row.filter((c): c is DayCellData => c !== null)
-          const containsToday = realCells.some((c) => c.date === today)
-          const rowIsFuture = realCells.length > 0 && realCells.every((c) => c.date > today)
-          const weekRan = realCells.reduce((s, c) => s + c.acts.reduce((sa, a) => sa + a.distanceKm, 0), 0)
-          const weekPlanned = realCells.reduce((s, c) => s + (plannedInfoFor(c.date, byDatePlanned, byDateCoach)?.km ?? 0), 0)
-          const weekHasPlan = realCells.some((c) => plannedInfoFor(c.date, byDatePlanned, byDateCoach) !== null)
+          const containsToday = row.some((c) => c.date === today)
+          const rowIsFuture = row.every((c) => c.date > today)
+          const weekRan = row.reduce((s, c) => s + c.acts.reduce((sa, a) => sa + a.distanceKm, 0), 0)
+          const weekPlanned = row.reduce((s, c) => s + (plannedInfoFor(c.date, byDatePlanned, byDateCoach)?.km ?? 0), 0)
+          const weekHasPlan = row.some((c) => plannedInfoFor(c.date, byDatePlanned, byDateCoach) !== null)
           // One format for every week (H21), in the week view's rounding
           // (design review, Oct 2026): "20.5 / 53 km" run against plan, "24 km
           // · no plan" a week the plan said nothing about, and a week still to
@@ -319,8 +320,6 @@ export function MonthView({
             <div key={rowIndex}>
               <div className={GRID} style={{ height: `${ROW_HEIGHT}px` }}>
                 {row.map((cell, i) => {
-                  // Outside the month: no tile at all.
-                  if (!cell) return <div key={i} aria-hidden />
                   const planned = plannedInfoFor(cell.date, byDatePlanned, byDateCoach)
                   const day = days.get(cell.date) ?? { state: 'rest' as const }
                   const state = day.state
@@ -329,7 +328,9 @@ export function MonthView({
                     <div
                       key={i}
                       data-cell-state={state}
-                      className={cn(TILE, CELL_FILL[state])}
+                      data-outside-month={cell.outside || undefined}
+                      // The month either side's days at half strength: there, and as tappable, but not this month's.
+                      className={cn(TILE, CELL_FILL[state], cell.outside && 'opacity-50')}
                       style={{
                         ...(state === 'planned' && planned ? ({ '--cell-zone': zoneColor(sessionZone(planned)) } as CSSProperties) : {}),
                         ...(state === 'missed' ? MISSED_OUTLINE : {}),
@@ -353,27 +354,25 @@ export function MonthView({
                   )
                 })}
               </div>
-              {realCells.length > 0 && (
-                <p
-                  data-testid="month-week-total"
-                  className={cn('flex items-center justify-end gap-2 pb-1.5 pt-1 text-[13px] font-medium tabular-nums', containsToday ? 'text-foreground' : 'text-[var(--text-2)]')}
-                >
-                  {share !== null && (
-                    // Run against plan, capped at the plan: a week over it is full, not longer.
-                    <span aria-hidden className="relative h-1 w-14 overflow-hidden rounded-full bg-[var(--line-2)]">
-                      <span className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${Math.round(share * 100)}%` }} />
-                    </span>
-                  )}
-                  <span className="whitespace-nowrap">{footer}</span>
-                </p>
-              )}
+              <p
+                data-testid="month-week-total"
+                className={cn('flex items-center justify-end gap-2 pb-1.5 pt-1 text-[13px] font-medium tabular-nums', containsToday ? 'text-foreground' : 'text-[var(--text-2)]')}
+              >
+                {share !== null && (
+                  // Run against plan, capped at the plan: a week over it is full, not longer.
+                  <span aria-hidden className="relative h-1 w-14 overflow-hidden rounded-full bg-[var(--line-2)]">
+                    <span className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${Math.round(share * 100)}%` }} />
+                  </span>
+                )}
+                <span className="whitespace-nowrap">{footer}</span>
+              </p>
             </div>
           )
         })}
       </div>
 
       {/* One line of legend (design review, Oct 2026): done, the session
-          types this month plans, missed. Today's outline, the "extra" label
+          types the grid plans, missed. Today's outline, the "extra" label
           and bold-ran / light-planned say themselves. */}
       {/* Swatches in the full colours, as mock 1c keys them: the tiles' own
           tints were too dark to read as a key. */}

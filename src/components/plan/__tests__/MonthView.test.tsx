@@ -28,8 +28,9 @@ function renderMonth(today = '2026-09-25') {
   )
 }
 
+/** The month's own tile for a day number: the grid's edges repeat 1 to 4 from the months either side. */
 function cellOf(day: string): HTMLElement {
-  return screen.getByText(day).closest<HTMLElement>('[data-cell-state]')!
+  return screen.getAllByText(day).map((el) => el.closest<HTMLElement>('[data-cell-state]')!).find((cell) => !cell.dataset.outsideMonth)!
 }
 
 describe('MonthView colours', () => {
@@ -113,10 +114,73 @@ describe('MonthView colours', () => {
     expect(planned.textContent).not.toContain(t.units.km)
   })
 
-  it('draws each day as its own rounded tile, and nothing outside the month', () => {
+  it('draws each day as its own rounded tile', () => {
     renderMonth()
     expect(cellOf('21').className).toContain('rounded-[10px]')
     expect(cellOf('1').className).toContain('border')
+  })
+})
+
+// The owner's report, Oct 2026: October's first row read 33 of 31 km for a
+// week run at 53 - its Tuesday and Wednesday were September's, left blank.
+describe('MonthView edges', () => {
+  const run = (id: string, date: string, distanceKm: number): ActivitySummary => ({ ...RUN, id, date, distanceKm })
+
+  function renderOctober(onSelectDay: (date: string) => void = () => {}) {
+    return render(
+      <MonthView
+        year={2026}
+        month={9}
+        byDate={new Map([
+          ['2026-09-29', [run('tue', '2026-09-29', 10.4)]],
+          ['2026-09-30', [run('wed', '2026-09-30', 9.2)]],
+          ['2026-10-02', [run('fri', '2026-10-02', 10)]],
+        ])}
+        byDatePlanned={new Map([
+          ['2026-09-29', { date: '2026-09-29', name: 'Threshold', type: 'Threshold', distanceM: 10_000 }],
+          ['2026-10-02', { date: '2026-10-02', name: 'Easy', type: 'Base', distanceM: 10_000 }],
+          ['2026-11-01', { date: '2026-11-01', name: 'Long', type: 'Base', distanceM: 14_000 }],
+        ])}
+        today="2026-10-08"
+        atPresent
+        onToday={() => {}}
+        onSelectDay={onSelectDay}
+        onPrev={() => {}}
+        onNext={() => {}}
+        canGoForward
+      />,
+    )
+  }
+
+  const edgeTile = (name: RegExp) => screen.getByRole('button', { name }).closest<HTMLElement>('[data-cell-state]')!
+
+  it("fills the first and last rows with the months either side's days, muted, their state kept", () => {
+    renderOctober()
+    const outside = [...document.querySelectorAll<HTMLElement>('[data-outside-month]')].map((cell) => cell.querySelector('.text-xs')!.textContent)
+
+    // October 2026 starts on a Thursday and ends on a Saturday.
+    expect(outside).toEqual(['28', '29', '30', '1'])
+    expect(edgeTile(/September 29/).dataset.cellState).toBe('done')
+    expect(edgeTile(/September 29/).className).toContain('opacity-50')
+    expect(edgeTile(/November 1/).dataset.cellState).toBe('planned')
+    expect(cellOf('2').className).not.toContain('opacity-50')
+  })
+
+  it("opens a muted day's week like any other", () => {
+    const opened: string[] = []
+    renderOctober((date) => opened.push(date))
+    fireEvent.click(screen.getByRole('button', { name: /September 30/ }))
+
+    expect(opened).toEqual(['2026-09-30'])
+  })
+
+  it('totals each row over its whole week, the summary over the month alone', () => {
+    renderOctober()
+    const footers = screen.getAllByTestId('month-week-total').map((p) => p.textContent)
+
+    expect(footers[0]).toBe(t.plan.weekSummary.ranOfPlan('29.6', '20'))
+    expect(footers.at(-1)).toBe(t.plan.weekSummary.ranOfPlan('0', '14'))
+    expect(screen.getByText(t.plan.summary(1, 10, 10))).toBeInTheDocument()
   })
 })
 
