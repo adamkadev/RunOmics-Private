@@ -27,15 +27,25 @@ export interface ShareCardMapOptions {
   enabled?: boolean
 }
 
-// The export is 1080 px wide, 3.6x the 300 px card: 4 keeps the map sharp in it.
-const PIXEL_RATIO = 4
+// The export is 1080 px wide, 3.6x the 300 px card. 3, a phone's own ratio,
+// not 4: the basemap went missing from the card on the owner's phone when
+// it went to 4 (Oct 2026), and grey streets lose nothing to the 1.2x the
+// export scales them by.
+const PIXEL_RATIO = 3
 
 const RENDER_TIMEOUT_MS = 15_000
 
-function once(map: import('maplibre-gl').Map, event: 'idle'): Promise<void> {
+/**
+ * Once the map has drawn all it will: 'idle'. A tile, glyph or sprite that
+ * fails to load is not the map failing - MapLibre draws the rest and still
+ * goes idle - so such an error is logged, where it used to cost the card its
+ * whole basemap. Only a map that never settles fails, at the timeout.
+ */
+function settled(map: import('maplibre-gl').Map, timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
-    map.once(event, () => resolve())
-    map.once('error', (e) => reject(e.error ?? new Error(`basemap ${event} failed`)))
+    const timer = setTimeout(() => reject(new Error('basemap render timed out')), timeoutMs)
+    map.on('error', (e) => console.warn('Share card basemap:', e.error?.message ?? e))
+    map.once('idle', () => { clearTimeout(timer); resolve() })
   })
 }
 
@@ -91,11 +101,8 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     addEdgeFence(map)
   })
 
-  const timeout = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('basemap render timed out')), RENDER_TIMEOUT_MS))
-
   try {
-    await Promise.race([once(map, 'idle'), timeout])
+    await settled(map, RENDER_TIMEOUT_MS)
 
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
 
@@ -113,7 +120,6 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
 }
 
 const rendered = new Map<string, Render>()
-const failed = new Set<string>()
 const inFlight = new Map<string, Promise<Render>>()
 
 function cacheKey(route: LngLat[], theme: ThemeMode, w: number, h: number): string {
@@ -129,9 +135,13 @@ export function useShareCardMap({
   const wanted = enabled && !!route && route.length > 1
   const key = wanted ? cacheKey(route!, theme, width, height) : null
   const [, bump] = useState(0)
+  // A failed map is this sheet's, not the session's: one that timed out once
+  // - the phone busy, the network slow - left every later share without its
+  // map until the app was closed. The next sheet tries again.
+  const [failedKey, setFailedKey] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!key || !route || rendered.has(key) || failed.has(key)) return
+    if (!key || !route || rendered.has(key)) return
     let alive = true
     let pending = inFlight.get(key)
     if (!pending) {
@@ -141,7 +151,7 @@ export function useShareCardMap({
     }
     pending
       .then((r) => { rendered.set(key, r); if (alive) bump(n => n + 1) })
-      .catch(() => { failed.add(key); if (alive) bump(n => n + 1) })
+      .catch(() => { if (alive) setFailedKey(key) })
       .finally(() => inFlight.delete(key))
     return () => { alive = false }
     // key already encodes route, theme, width and height - listing them again
@@ -153,6 +163,6 @@ export function useShareCardMap({
   return {
     image: hit?.image ?? null,
     points: hit?.points ?? null,
-    failed: !!key && failed.has(key),
+    failed: !!key && failedKey === key,
   }
 }
