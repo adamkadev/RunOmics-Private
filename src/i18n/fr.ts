@@ -2034,7 +2034,6 @@ export const fr = {
       distance: 'Distance',
       sessions: 'Séances',
       adherence: 'Respect du plan',
-      adherenceAim: (pct: number) => `Vise ${pct} % ou plus`,
       noPlan: 'Pas de plan cette semaine',
       ofKm: (km: string) => `/ ${km} km`,
       ofSessions: (n: number) => `sur ${n}`,

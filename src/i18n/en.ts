@@ -2170,7 +2170,6 @@ export const en = {
       distance: 'Distance',
       sessions: 'Sessions',
       adherence: 'Plan adherence',
-      adherenceAim: (pct: number) => `Aim for ${pct}% or more`,
       noPlan: 'No plan this week',
       ofKm: (km: string) => `/ ${km} km`,
       ofSessions: (n: number) => `of ${n}`,
