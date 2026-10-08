@@ -9,6 +9,12 @@ import type { CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/Coa
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
 
+// The fixture plan's sessions, named as a block is named now (design review, Oct 2026).
+const NAMED = {
+  threshold: { title: 'Threshold · 3 × 8′', shortName: 'Threshold 3×8′' },
+  easy: { title: 'Easy run', shortName: 'Easy run' },
+} as const
+
 function fourWeekPlan(): CoachingPlanDraft {
   const draft = plan()
   const persistent = {
@@ -29,7 +35,7 @@ function fourWeekPlan(): CoachingPlanDraft {
       workouts: week.workouts.map((workout) => ({
         date: workout.date,
         type: workout.type,
-        title: workout.title,
+        ...NAMED[workout.type as keyof typeof NAMED],
         description: workout.description,
         blocks: workout.blocks,
         ...(workout.notes ? { notes: workout.notes } : {}),

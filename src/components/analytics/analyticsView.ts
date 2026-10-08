@@ -7,6 +7,7 @@ import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { median } from '@/lib/math'
 import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
+import { intensityMix, type IntensityMix } from '@/domain/training/intensityMix'
 
 /**
  * Analytics v4.5 (D1-D4): one question per tab, one answer per card. Every
@@ -103,15 +104,17 @@ export interface GoalRaceInput {
   targetSeconds: number | null
 }
 
+/**
+ * Year to date, as Goals reads it: Goals is its home (design review, Oct
+ * 2026), so Volume prints its distance and projection from the same figures,
+ * in a row that opens Goals, and the coach read takes last year's comparison.
+ */
 export interface YtdInput {
-  year: number
-  daysInYear: number
-  todayDay: number
-  current: { day: number; km: number }[]
-  previous: { day: number; km: number }[]
+  /** The year's distance, Goals' own total. */
+  km: number
   vsLastYear: YearOverYear | null
   goalKm: number | null
-  projection: { weeklyRate: number; weeklyNeeded: number; projectedYearKm: number } | null
+  projection: { projectedYearKm: number } | null
 }
 
 // Shared with Progress, so the two pages state one comparison (v4.17).
@@ -264,7 +267,10 @@ const VO2_WINDOW_DAYS = 84
 
 export interface Vo2View {
   value: number
-  /** Over the last 90 days, as Progress prints it: one source for both. */
+  /**
+   * Over the window, to one decimal as the value is printed: whole numbers
+   * read 55.8 to 56.0 as "No change" beside a grade that had just come back.
+   */
   delta: number | null
 }
 
@@ -277,7 +283,7 @@ export function vo2View(value: number | null, samples: { date: string; vo2max: n
   const recent = samples.filter((s) => s.date >= since && s.date <= today)
   const latest = value ?? recent.at(-1)?.vo2max ?? null
   if (latest === null) return null
-  return { value: latest, delta: recent.length >= 2 ? Math.round(recent.at(-1)!.vo2max - recent[0]!.vo2max) : null }
+  return { value: latest, delta: recent.length >= 2 ? Math.round((recent.at(-1)!.vo2max - recent[0]!.vo2max) * 10) / 10 : null }
 }
 
 export interface PaceShift {
@@ -331,26 +337,35 @@ export function predictionRows(days: PredictionDay[], window: DayWindow): Predic
   })
 }
 
-/** Under five seconds either way is a prediction holding, not moving. */
-const PREDICTION_NOISE_SEC = 5
+/**
+ * A prediction's change by the one delta rule, the one its row is coloured by:
+ * any slower time is a caution, and only a change printed as 0 s is holding
+ * (design review, Oct 2026). The sentence had a fixed 5 s of its own, so a
+ * 10K 8 s slower was grey on its row and "slipped" in the sentence above.
+ */
+export function predictionTone(row: PredictionRow): DeltaTone {
+  return deltaTone('race', row.delta, { value: row.seconds })
+}
 
 export type PredictionTrend =
-  | { kind: 'slipped' | 'improved'; lo: number; hi: number; count: number }
+  /** `count` of the `of` predictions moved, all the same way; the rest held. */
+  | { kind: 'slipped' | 'improved'; lo: number; hi: number; count: number; of: number }
   | { kind: 'held'; count: number }
   | { kind: 'mixed'; faster: number; count: number }
 
 export function predictionTrend(rows: PredictionRow[]): PredictionTrend | null {
-  const deltas = known(rows.map((r) => r.delta))
-  if (!deltas.length) return null
-  const count = deltas.length
-  if (deltas.every((d) => Math.abs(d) < PREDICTION_NOISE_SEC)) return { kind: 'held', count }
-  const slower = deltas.every((d) => d >= PREDICTION_NOISE_SEC)
-  const faster = deltas.every((d) => d <= -PREDICTION_NOISE_SEC)
-  if (!slower && !faster) return { kind: 'mixed', faster: deltas.filter((d) => d <= -PREDICTION_NOISE_SEC).length, count }
-  const abs = deltas.map(Math.abs)
+  const moved = rows.filter((r) => r.delta !== null)
+  if (!moved.length) return null
+  const count = moved.length
+  const slower = moved.filter((r) => predictionTone(r) === 'worse')
+  const faster = moved.filter((r) => predictionTone(r) === 'good')
+  if (!slower.length && !faster.length) return { kind: 'held', count }
+  if (slower.length && faster.length) return { kind: 'mixed', faster: faster.length, count }
+  const changed = slower.length ? slower : faster
+  const abs = changed.map((r) => Math.abs(r.delta!))
   // Seconds, as each row prints its change: the card said "1-9 min" above a
   // 5K that lost 33 s (v4.8).
-  return { kind: slower ? 'slipped' : 'improved', lo: Math.round(Math.min(...abs)), hi: Math.round(Math.max(...abs)), count }
+  return { kind: slower.length ? 'slipped' : 'improved', lo: Math.round(Math.min(...abs)), hi: Math.round(Math.max(...abs)), count: changed.length, of: count }
 }
 
 export interface EfficiencyView {
@@ -511,10 +526,10 @@ export function weeklyDistanceView(rows: WeekRow[], avgKm: number | null = null)
   const last = rows.at(-1)
   if (!last) return null
   // The week under way is not a week's distance yet, so it stays out of the
-  // average. It does count against its plan (v4.6: every week the chart draws
-  // a plan line on is in "of"), on plan only once it has already made it.
+  // average, and out of "on plan" until it has made its plan: three days into
+  // a week, it read as a week missed.
   const done = rows.filter((r) => !r.current)
-  const planned = rows.filter((r) => r.planKm !== null && r.planKm > 0)
+  const planned = rows.filter((r) => r.planKm !== null && r.planKm > 0 && (!r.current || r.km >= r.planKm * ON_PLAN_SHARE))
   const peak = Math.max(...rows.map((r) => Math.max(r.km, r.planKm ?? 0)), 10)
   return {
     last,
@@ -523,6 +538,45 @@ export function weeklyDistanceView(rows: WeekRow[], avgKm: number | null = null)
     withoutPlan: rows.filter((r) => r.planKm === null || r.planKm <= 0).length,
     yMax: Math.ceil(peak / 10) * 10,
   }
+}
+
+/**
+ * Missed sessions that came together rather than one at a time (design
+ * review, Oct 2026): this many planned sessions missed inside this many days,
+ * as July 13-19 had. Proposal; tune here.
+ */
+export const MISSED_CLUSTER = { sessions: 3, days: 7 } as const
+
+export interface MissedCluster {
+  from: string
+  to: string
+  sessions: number
+}
+
+const DAY_MS = 86_400_000
+const daysApart = (from: string, to: string) => Math.round((day(to).getTime() - day(from).getTime()) / DAY_MS)
+
+/**
+ * The weeks' missed sessions that came in clusters: any 3 or more inside 7
+ * days, and groups that share a session joined into one stretch. Sessions
+ * missed outside the weeks are another period's case.
+ */
+export function missedClusters(missed: readonly string[], rows: WeekRow[]): MissedCluster[] {
+  const first = rows[0]
+  const last = rows.at(-1)
+  if (!first || !last) return []
+  const end = isoDate(addDays(day(last.week), 6))
+  const days = missed.filter((d) => d >= first.week && d <= end).sort()
+  const stretches: [number, number][] = []
+  for (let i = 0; i < days.length; i++) {
+    let j = i
+    while (j + 1 < days.length && daysApart(days[i]!, days[j + 1]!) < MISSED_CLUSTER.days) j++
+    if (j - i + 1 < MISSED_CLUSTER.sessions) continue
+    const prev = stretches.at(-1)
+    if (prev && i <= prev[1]) prev[1] = Math.max(prev[1], j)
+    else stretches.push([i, j])
+  }
+  return stretches.map(([i, j]) => ({ from: days[i]!, to: days[j]!, sessions: j - i + 1 }))
 }
 
 /** A long run above this share of its week's distance loads one day heavily. */
@@ -542,8 +596,9 @@ export function longRunView(rows: WeekRow[]): LongRunView | null {
   if (!last || rows.every((r) => !r.point || r.point.longestKm === 0)) return null
   const bars = rows.map((r) => {
     const km = r.point?.longestKm ?? 0
-    // The week under way counts too, once it is past the share (v4.6).
-    return { km, over: r.km > 0 && km / r.km > LONG_RUN_SHARE, current: r.current }
+    // Never the week under way: its first runs are all of its distance so far,
+    // so two runs in, it read "went over" every week.
+    return { km, over: !r.current && r.km > 0 && km / r.km > LONG_RUN_SHARE, current: r.current }
   })
   return {
     km: last.point?.longestKm ?? 0,
@@ -557,42 +612,12 @@ export function longRunView(rows: WeekRow[]): LongRunView | null {
 
 // ─── D4 Intensity ──────────────────────────────────────────────────────────
 
-export interface EasyHardView {
-  easySec: number
-  moderateSec: number
-  hardSec: number
-  easyPct: number
-  moderatePct: number
-  hardPct: number
-  status: 'inRange' | 'tooModerate' | 'tooHard'
-  totalSec: number
-}
+export type EasyHardView = IntensityMix
 
-/** Above this share of Z3 the week has drifted into the moderate middle. */
-const MODERATE_LIMIT_PCT = 10
-/** Below this share of easy time the split is off the 80/20 target. */
-const EASY_FLOOR_PCT = 75
-
+/** The window's split, by the domain's one definition (the Athlete page reads the same). */
 export function easyHardView(rows: WeekRow[]): EasyHardView | null {
   const zone = (z: number) => rows.reduce((s, r) => s + (r.point?.zoneSeconds[z] ?? 0), 0)
-  const easySec = zone(1) + zone(2)
-  const moderateSec = zone(3)
-  const hardSec = zone(4) + zone(5)
-  const totalSec = easySec + moderateSec + hardSec
-  if (totalSec <= 0) return null
-  const easyPct = Math.round((easySec / totalSec) * 100)
-  const moderatePct = Math.round((moderateSec / totalSec) * 100)
-  const hardPct = 100 - easyPct - moderatePct
-  return {
-    easySec,
-    moderateSec,
-    hardSec,
-    easyPct,
-    moderatePct,
-    hardPct,
-    status: moderatePct > MODERATE_LIMIT_PCT ? 'tooModerate' : easyPct < EASY_FLOOR_PCT ? 'tooHard' : 'inRange',
-    totalSec,
-  }
+  return intensityMix({ 1: zone(1), 2: zone(2), 3: zone(3), 4: zone(4), 5: zone(5) })
 }
 
 export interface ZonesView {
@@ -604,6 +629,8 @@ export interface ZonesView {
   recoveredAfter: string | null
   /** Hours over the window, the week under way included. */
   totalHours: number
+  /** The same hours by zone, Z1-Z5: the legend's figures. */
+  zoneHours: number[]
   yMax: number
 }
 
@@ -634,6 +661,7 @@ export function zonesView(rows: WeekRow[]): ZonesView | null {
     total: recovered ? 'recovered' : change >= 0.1 ? 'grew' : change <= -0.1 ? 'dropped' : 'held',
     recoveredAfter: recovered ? rows[done[trough]!.i]!.week : null,
     totalHours: totals.reduce((a, b) => a + b, 0),
+    zoneHours: [0, 1, 2, 3, 4].map((z) => weeks.reduce((sum, w) => sum + w.hours[z]!, 0)),
     yMax: Math.max(1, Math.ceil(Math.max(...totals))),
   }
 }
@@ -727,6 +755,8 @@ export function coachRead(input: {
   easy: PaceShift | null
   predictions: PredictionRow[]
   efficiency: EfficiencyView | null
+  /** Efficiency's change over the read's own window; its 12-week change when not given. */
+  efficiencyDelta?: number | null
   /** Fitness now and its change over the 12 weeks, for the load fact the headline is built on (v5.6 #3). */
   fitness?: number | null
   fitnessDelta: number | null
@@ -744,14 +774,15 @@ export function coachRead(input: {
     signals.push({ key: 'threshold', trend: TREND[deltaTone('pace', threshold.delta)], pace: threshold.now, delta: threshold.delta })
   }
   if (easy && easy.delta !== null) signals.push({ key: 'easy', trend: TREND[deltaTone('pace', easy.delta)], pace: easy.now, delta: easy.delta })
-  const moved = known(predictions.map((r) => r.delta))
+  const moved = predictions.filter((r) => r.delta !== null)
   if (moved.length) {
-    const slower = moved.filter((d) => d >= PREDICTION_NOISE_SEC).length
-    const faster = moved.filter((d) => d <= -PREDICTION_NOISE_SEC).length
+    const slower = moved.filter((r) => predictionTone(r) === 'worse').length
+    const faster = moved.filter((r) => predictionTone(r) === 'good').length
     signals.push({ key: 'predictions', trend: slower > faster ? 'declining' : faster > slower ? 'improving' : 'flat', slower, faster, count: moved.length })
   }
-  if (efficiency && efficiency.delta12w !== null) {
-    signals.push({ key: 'efficiency', trend: TREND[deltaTone('efficiency', efficiency.delta12w)], value: efficiency.now, delta: efficiency.delta12w })
+  const efficiencyDelta = input.efficiencyDelta !== undefined ? input.efficiencyDelta : (efficiency?.delta12w ?? null)
+  if (efficiency && efficiencyDelta !== null) {
+    signals.push({ key: 'efficiency', trend: TREND[deltaTone('efficiency', efficiencyDelta)], value: efficiency.now, delta: efficiencyDelta })
   }
   if (ytd) {
     const delta = ytd.km - ytd.lastYearKm

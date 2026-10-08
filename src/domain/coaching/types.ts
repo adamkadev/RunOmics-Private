@@ -57,12 +57,34 @@ export interface CoachingProvenance {
   parentRevision?: number
 }
 
+/**
+ * What a workout's name states, as fields (design review, Oct 2026): "Threshold
+ * · 3 × 8′ @ 4:25" is { reps: 3, repMinutes: 8, targetPace: '4:25' }, and the
+ * "6 strides" riding on an easy run an extra. Nothing reads them back out of
+ * the name.
+ */
+export interface WorkoutNameStructure {
+  reps?: number
+  repMinutes?: number
+  /** "4:25", per kilometre. */
+  targetPace?: string
+  extras?: string[]
+}
+
 export interface WorkoutPrescription {
   id: string
   revision: number
   date: string
   type: CoachingWorkoutType
+  /** The workout's name: what the watch, Plan, Today and the run it becomes all show. */
   title: string
+  /**
+   * The name for a tight row, at most 18 characters. Only names written under
+   * the naming rules (design review, Oct 2026) carry one; rows fall back to
+   * the title.
+   */
+  shortName?: string
+  structure?: WorkoutNameStructure
   description: string
   status: PrescriptionStatus
   totalDurationSeconds?: number

@@ -1,12 +1,19 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { Pill } from '@/components/ui/Pill'
 import { PeriodNav } from '@/components/ui/PeriodNav'
 import { ChartCardHead } from '@/components/ui/ChartCard'
 import { ChartRangeChips, ChartWindowPager } from '@/components/ui/ChartWindowNav'
+import { BackButton } from '@/components/ui/BackButton'
+import { SortDropdown } from '@/components/ui/SortDropdown'
+import { SaveButton } from '@/components/ui/SaveButton'
+import { ShareButton } from '@/components/activity/ShareButton'
+import type { ShareActivity } from '@/lib/shareCardStats'
 import { t } from '@/i18n'
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), back: vi.fn() }) }))
 
 /**
  * The ⓘ buttons were about 18 pt, the window chevrons 24, the range chips 32
@@ -68,5 +75,25 @@ describe('the 44 pt hit area', () => {
     for (const button of screen.getAllByRole('button')) {
       expect(button.className).toContain('hit-44')
     }
+  })
+
+  // Design review, Oct 2026: the back link, the sort menu, Share and the
+  // note's Save were drawn at 22-36 pt and tapped there.
+  it('wraps the back link, the sort menu, Share and Save', () => {
+    render(
+      <>
+        <BackButton label="Progress" fallbackHref="/profile" />
+        <SortDropdown options={[{ value: 'date', label: 'Date' }]} sortBy="date" order="desc" onChange={() => {}} label="Sort" />
+        <ShareButton activity={{} as ShareActivity} />
+        <SaveButton state="idle" />
+      </>,
+    )
+
+    for (const button of screen.getAllByRole('button')) {
+      expect(button.className).toContain('hit-44')
+    }
+    // The compact title bar's chevron and action press these two.
+    expect(screen.getByRole('button', { name: 'Progress' }).hasAttribute('data-bar-back')).toBe(true)
+    expect(screen.getByRole('button', { name: t.activity.share }).getAttribute('data-bar-action')).toBe('share')
   })
 })

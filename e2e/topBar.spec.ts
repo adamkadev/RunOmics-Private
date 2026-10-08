@@ -96,9 +96,9 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
   }).toPass({ timeout: 30_000 })
   await expect(page.locator('h1')).toBeVisible()
 
-  // The subtitle at the divider: scrolled until the large title has just
-  // gone under the status bar and the bar shows.
-  for (const y of [40, 56, 72]) {
+  // The subtitle at the divider: scrolled until the bar has collapsed in and
+  // the subtitle reaches its divider.
+  for (const y of [24, 40, 56, 72]) {
     await page.evaluate((top) => window.scrollTo(0, top), y)
     await page.waitForTimeout(200)
     const straddling = await page.evaluate(() => {
@@ -107,7 +107,7 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
       const band = bar.getBoundingClientRect().bottom
       const subtitle = document.querySelector('main h1')!.nextElementSibling as HTMLElement
       const box = subtitle.getBoundingClientRect()
-      return box.bottom > band ? Number(getComputedStyle(subtitle).opacity) : 0
+      return box.top < band && box.bottom > band ? Number(getComputedStyle(subtitle).opacity) : 0
     })
     if (straddling !== null) expect(straddling, `subtitle opacity at scroll ${y}`).toBeLessThan(0.05)
   }

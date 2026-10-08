@@ -34,6 +34,10 @@ _OUT_PATH = get_data_dir() / "recovery_history.json"
 
 _HISTORY_DAYS = 365
 _RATE_LIMIT_PAUSE = 1.0
+# A resting heart rate a person can have. Garmin's daily value carries
+# workout readings on some days (142 and 144 bpm in Aug 2026), which the
+# Recovery card's baseline then took for resting.
+_RESTING_HR_BPM = (30, 100)
 
 
 def _whole(value: Any) -> int | None:
@@ -73,7 +77,7 @@ def normalize_resting_hr(payload: Any) -> dict[str, int]:
             continue
         iso = entry.get("calendarDate")
         bpm = _whole(entry.get("value"))
-        if iso and bpm is not None:
+        if iso and bpm is not None and _RESTING_HR_BPM[0] <= bpm <= _RESTING_HR_BPM[1]:
             days[iso] = bpm
     return days
 

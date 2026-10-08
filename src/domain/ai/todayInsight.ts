@@ -8,7 +8,10 @@ import { insightHash } from './insightHash'
 import { avoidClause, CARD_PROMPT_VERSION, promptVersion, systemInstruction } from './prompt'
 
 export const TODAY_SURFACE = 'todayHero'
-export const TODAY_LIMITS = { headline: 52, body: 140 }
+// The body is one sentence of advice in two lines of the hero's 14 px text on
+// a 390 pt phone, about 80 characters (design review, Oct 2026); 140 ran to
+// four.
+export const TODAY_LIMITS = { headline: 52, body: 80 }
 
 export interface TodayContext {
   status: TrainingStatus
@@ -91,11 +94,17 @@ const TONE_RULES: Record<ReadinessTone, Record<SessionKind, string>> = {
     quality: "The athlete is fresh and recovered. Encourage today's session: this is the day to run its paces with confidence.",
     race: 'The athlete is fresh and recovered, and today is race day. Back them to race it.',
   },
+  build: {
+    rest: 'The training load is in range, and today is a rest day. Say what the rest sets up.',
+    easy: 'The training load is in range. Encourage the easy run, and keep it easy: a good week is no reason to push an easy day.',
+    quality: "The training load is in range. Encourage today's session at its prescribed paces, no faster.",
+    race: 'The training load is in range, and today is race day. Back them to race it.',
+  },
   caution: {
-    rest: 'The athlete is neither fresh nor cooked, and today is a rest day. Say the rest is well placed and what it lets settle.',
-    easy: 'The athlete is neither fresh nor cooked. Advise keeping the easy run honestly easy.',
-    quality: "The athlete is neither fresh nor cooked. Advise running today's session at its prescribed paces and no faster, and cutting it short if the reps stop feeling controlled.",
-    race: 'The athlete is neither fresh nor cooked, and today is race day. Never tell them to hold back from racing: advise a controlled start and letting the effort build.',
+    rest: 'Fatigue is starting to build, and today is a rest day. Say the rest is well placed and what it lets settle.',
+    easy: 'Fatigue is starting to build. Advise keeping the easy run honestly easy.',
+    quality: "Fatigue is starting to build. Advise running today's session at its prescribed paces and no faster, and cutting it short if the reps stop feeling controlled.",
+    race: 'Fatigue is starting to build, and today is race day. Never tell them to hold back from racing: advise a controlled start and letting the effort build.',
   },
   hold: {
     rest: 'Fatigue is elevated, and today is a rest day. Say rest is exactly what the body needs now.',
@@ -107,6 +116,7 @@ const TONE_RULES: Record<ReadinessTone, Record<SessionKind, string>> = {
 
 const COMPLETED_TONE_RULES: Record<ReadinessTone, string> = {
   go: 'The athlete was fresh and already ran today. Affirm that was the window to use it.',
+  build: 'The training load was in range and the athlete already ran today. Affirm the session fits the plan.',
   caution: 'The athlete had little room to spare and already ran today. Say how carrying that landed, not what to watch going in.',
   hold: 'Fatigue was elevated and the athlete already ran today anyway. Acknowledge it is done and turn to what recovering from it now looks like.',
 }
@@ -115,6 +125,7 @@ const COMPLETED_RACE_RULE = "Today's race is done. Acknowledge the effort and tu
 
 const RAN_ON_REST_DAY_RULES: Record<ReadinessTone, string> = {
   go: 'Today was a rest day on the plan, and the athlete ran anyway while fresh. Say it is done and that the rest of the day is for recovering.',
+  build: 'Today was a rest day on the plan, and the athlete ran anyway with the load in range. Say it is done and that the rest of the day is for recovering.',
   caution: 'Today was a rest day on the plan, and the athlete ran anyway with little room to spare. Say it is done and what it now asks of recovery.',
   hold: 'Fatigue is elevated, today was a rest day on the plan, and the athlete ran anyway. Acknowledge it is done and turn to what recovering from it now looks like.',
 }
@@ -132,14 +143,24 @@ const KIND_LABEL: Record<SessionKind, string> = {
   race: 'race day',
 }
 
+/** Every tone's badge, in this deployment's words: none of them is the copy's to write. */
+const BADGES = Object.values(t.dashboard.todayHero.eyebrowByTone).map((label) => `"${label}"`).join(', ')
+
 export const TODAY_SYSTEM_INSTRUCTION = [
   systemInstruction(
     'You are a running coach writing the one-line verdict at the top of an athlete dashboard.',
-    'one supporting sentence on why, in what the athlete feels rather than the numbers behind it',
+    'the one piece of advice that follows from the headline, in a single sentence: what to do today or on the next run, as the athlete would do it',
     TODAY_LIMITS
   ),
+  // Design review, Oct 2026: "Heavy legs took the brunt of that run" over
+  // "Keep Thursday truly easy and drop the strides if your legs feel flat."
+  'The headline is one claim, never advice: what the last run or the week has left in the legs, or what today is for. The body is the one piece of advice that follows from it, and nothing else: no second claim, no reason tacked on.',
+  'Never write a sentence that both worries and reassures, such as "Heavy legs took the brunt of that run, leaving your body ready to absorb the load": the tone says which of the two today is.',
+  // The plan is generated by the coach; the app only shows it.
+  'The plan is read-only in the app: advise what to do on the run or the day off - keep it easy, shorten it, drop the strides, sleep - and never to move, swap, reschedule or edit a session, or to adjust the plan.',
   // v4.16.4: the badge's own words, so the headline never echoes them.
   'Never contradict the tone you are given: it is already shown above your headline as a colored badge, whose words are given with the tone. Never reuse that phrase.',
+  `Never write a status label at all: not the badge's words nor another tone's (${BADGES}), and not the training status from the facts.`,
   'Turn the form, fitness and fatigue numbers into plain language - fresh legs, fatigue letting go, the week still in the body - and never state their values.',
   // v4.16.4: the session card and the weekly card print these right below.
   "The session card under your text already prints today's session - its name, distance, duration and paces, or what was run once it is done - and the weekly card below it prints this week's kilometres and sessions. Never state those numbers: say what they mean instead. The one number worth writing is the days since the last run, when that gap matters.",

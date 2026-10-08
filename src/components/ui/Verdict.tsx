@@ -2,14 +2,20 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { EYEBROW_CLASS } from './SectionLabel'
 
-export type VerdictTone = 'pos' | 'warn' | 'neg' | 'muted'
+export type VerdictTone = 'pos' | 'warn' | 'neg' | 'muted' | 'neutral'
 
 const TONE_COLOR: Record<VerdictTone, string> = {
   pos: 'var(--pos)',
   warn: 'var(--warn)',
   neg: 'var(--neg)',
   muted: 'var(--muted-foreground)',
+  // A state that is neither good nor bad news - Building - in body ink, so
+  // it reads as a word, not as a dimmed or disabled one.
+  neutral: 'var(--text-2)',
 }
+
+/** The dot carries the tone's colour; a neutral one is a quiet grey. */
+const DOT_COLOR: Record<VerdictTone, string> = { ...TONE_COLOR, neutral: 'var(--muted-foreground)' }
 
 /**
  * An insight's eyebrow (v4.17): a 7 px status dot and the verdict in the
@@ -19,7 +25,7 @@ const TONE_COLOR: Record<VerdictTone, string> = {
 export function VerdictEyebrow({ tone, children, className }: { tone: VerdictTone; children: ReactNode; className?: string }) {
   return (
     <p className={cn(EYEBROW_CLASS, 'flex items-center gap-2', className)} style={{ color: TONE_COLOR[tone] }}>
-      <span aria-hidden className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: TONE_COLOR[tone] }} />
+      <span aria-hidden className="h-[7px] w-[7px] shrink-0 rounded-full" style={{ background: DOT_COLOR[tone] }} />
       {children}
     </p>
   )

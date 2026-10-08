@@ -54,7 +54,13 @@ function RotationRow({ shoe, context }: { shoe: ShoeStats; context: string | nul
           </p>
         )}
       </div>
-      <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} tickKm={shoe.alertThresholdKm} className="mt-3" />
+      <WearBar
+        totalKm={shoe.totalKm}
+        maxKm={shoe.maxKm}
+        tickKm={shoe.alertThresholdKm}
+        tickLabel={t.shoes.detail.retireFromWorkouts(formatKm(shoe.alertThresholdKm))}
+        className="mt-3"
+      />
       <p className="mt-2.5 text-footnote tabular-nums text-muted-foreground" data-testid="shoe-meta">{shoeMeta(shoe)}</p>
       {context && <p className="mt-1 text-footnote text-foreground/80">{context}</p>}
     </Link>
@@ -97,7 +103,7 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
     <div className="space-y-5">
       {active.length > 0 && (
         <section className="space-y-2" data-testid="shoes-rotation">
-          <h2 className={SECTION}>{t.shoes.inRotation(active.length)}</h2>
+          <h2 data-bar-fade className={SECTION}>{t.shoes.inRotation(active.length)}</h2>
           <GlassSurface variant="card" className="divide-y divide-border overflow-hidden rounded-card-sm">
             {active.map((shoe) => (
               <RotationRow key={shoe.gearId} shoe={shoe} context={insights[shoe.gearId] ?? null} />
@@ -108,7 +114,7 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
 
       {retired.length > 0 && (
         <section className="space-y-2" data-testid="shoes-retired">
-          <h2 className={SECTION}>{t.shoes.retiredSection(retired.length)}</h2>
+          <h2 data-bar-fade className={SECTION}>{t.shoes.retiredSection(retired.length)}</h2>
           <GlassSurface variant="card" className="divide-y divide-border overflow-hidden rounded-card-sm">
             {retired.map((shoe) => (
               <Link key={shoe.gearId} href={`/shoes/${shoe.gearId}`} className="flex min-h-15 items-center gap-3 px-4 py-3" data-testid="retired-row">

@@ -11,8 +11,11 @@ import {
   formView,
   heatView,
   longRunView,
+  MISSED_CLUSTER,
+  missedClusters,
   paceShift,
   predictionRows,
+  predictionTone,
   predictionTrend,
   qualityView,
   riskRows,
@@ -138,6 +141,8 @@ describe('D2 Performance', () => {
       { date: '2026-09-20', vo2max: 55 },
     ]
     expect(vo2View(55, samples, TODAY)).toEqual({ value: 55, delta: -1 })
+    // To one decimal, as the value is printed: 55.8 to 56.0 is not "No change".
+    expect(vo2View(56, [{ date: '2026-07-16', vo2max: 55.8 }, { date: '2026-09-20', vo2max: 56.0 }], TODAY)!.delta).toBe(0.2)
     expect(vo2View(null, samples, TODAY)!.value).toBe(55)
   })
 
@@ -160,7 +165,23 @@ describe('D2 Performance', () => {
       ['10k', 125],
     ])
     // In seconds, printed like each row's change (v4.8).
-    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 70, hi: 125, count: 2 })
+    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 70, hi: 125, count: 2, of: 2 })
+  })
+
+  // Oct 7: the 10K's +8 s was grey on its row (under 0.5 % of 42:24) and
+  // "slipped" in the sentence above it, which had a fixed 5 s of its own.
+  // One rule since (design review, Oct 2026): any slower time is a caution.
+  it('reads a prediction as moved by the same rule its row is coloured by', () => {
+    const days = [
+      { date: '2026-07-16', seconds: { '5k': 1208, '10k': 2544, half: 5712, marathon: 12611 } },
+      { date: '2026-10-07', seconds: { '5k': 1224, '10k': 2552, half: 5770, marathon: 12765 } },
+    ]
+    const rows = predictionRows(days, dayWindow('2026-10-07', '12w'))
+    expect(rows.map(predictionTone)).toEqual(['worse', 'worse', 'worse', 'worse'])
+    expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 8, hi: 154, count: 4, of: 4 })
+    // Only a change that prints as 0 s holds.
+    const level = predictionRows([days[0]!, { date: '2026-10-07', seconds: { ...days[0]!.seconds, '5k': 1208.3 } }], dayWindow('2026-10-07', '12w'))
+    expect(predictionTone(level[0]!)).toBe('flat')
   })
 
   it('reads efficiency now against four weeks and six months back, and what heat costs', () => {
@@ -208,19 +229,22 @@ describe('D3 Volume', () => {
     expect(view.last.km).toBe(27.3)
     expect(view.last.current).toBe(true)
     expect(view.avg).toBeCloseTo(kms.slice(0, 11).reduce((a, b) => a + b, 0) / 11)
-    // v4.6: every week drawn with a plan line is in "of", this week too; it
-    // only counts as on plan once it has made it (27.3 of 48 hasn't).
-    expect(view.onPlan).toEqual({ hit: 11, of: 12 })
+    // The week under way is never a miss: it counts once it has made its plan
+    // (27.3 of 48 hasn't), so it is out of "of" for now.
+    expect(view.onPlan).toEqual({ hit: 11, of: 11 })
+    const made = rows.map((r) => (r.current ? { ...r, km: 48 } : r))
+    expect(weeklyDistanceView(made)!.onPlan).toEqual({ hit: 12, of: 12 })
   })
 
-  // v4.6: the rule applies to this week too, once it is past the share.
-  it('flags every week whose long run is over 35% of it, this week included', () => {
+  // Design review, Oct 2026: two runs into a week, its long run is half of it,
+  // so the week under way read "went over" every week.
+  it('flags every finished week whose long run is over 35% of it, never the week under way', () => {
     const view = longRunView(rows)!
     expect(view.km).toBe(14.2)
     expect(view.share).toBe(52)
-    expect(view.bars.filter((b) => b.over)).toHaveLength(3)
-    expect(view.bars.at(-1)).toMatchObject({ over: true, current: true })
-    expect(view.over).toBe(3)
+    expect(view.bars.filter((b) => b.over)).toHaveLength(2)
+    expect(view.bars.at(-1)).toMatchObject({ over: false, current: true })
+    expect(view.over).toBe(2)
   })
 
   it('takes the weekly average it is given while the window is the current one', () => {
@@ -228,6 +252,24 @@ describe('D3 Volume', () => {
     expect(weeklyDistanceView(rows)!.withoutPlan).toBe(0)
     const sparse = weekRows(weeks, plan.slice(0, 8), window, TODAY)
     expect(weeklyDistanceView(sparse)!.withoutPlan).toBe(4)
+  })
+
+  // Design review, Oct 2026: 3 or more planned sessions missed in 7 days, as
+  // July 13-19 had, are a stretch the Volume read names - not one-offs.
+  it('finds the missed sessions that came together inside the window, 3 in 7 days', () => {
+    expect(MISSED_CLUSTER).toEqual({ sessions: 3, days: 7 })
+    expect(missedClusters(['2026-09-18', '2026-09-19', '2026-09-24'], rows)).toEqual([{ from: '2026-09-18', to: '2026-09-24', sessions: 3 }])
+    // Three across 8 days is not one.
+    expect(missedClusters(['2026-09-14', '2026-09-18', '2026-09-21'], rows)).toEqual([])
+    // Groups that share a session are one stretch; apart, two.
+    expect(missedClusters(['2026-08-03', '2026-08-05', '2026-08-08', '2026-08-11'], rows)).toEqual([{ from: '2026-08-03', to: '2026-08-11', sessions: 4 }])
+    expect(missedClusters(['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-17', '2026-08-18', '2026-08-20'], rows)).toEqual([
+      { from: '2026-08-03', to: '2026-08-05', sessions: 3 },
+      { from: '2026-08-17', to: '2026-08-20', sessions: 3 },
+    ])
+    // Before the window's first Monday is another period's case.
+    expect(window.start).toBe('2026-07-06')
+    expect(missedClusters(['2026-07-03', '2026-07-04', '2026-07-06', '2026-07-07'], rows)).toEqual([])
   })
 })
 

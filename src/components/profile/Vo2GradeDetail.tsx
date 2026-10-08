@@ -75,10 +75,12 @@ function Ladder({ view }: { view: Graded }) {
 
       <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5" data-testid="grade-season">
         <p className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{g.season}</p>
-        <div className="mt-2.5 grid gap-2" style={{ gridTemplateColumns: `repeat(${view.season.length}, minmax(0, 1fr))` }}>
+        {/* Every month of the season (Oct 2026): up to twelve narrow cells, so
+            past six the letters step down a size to keep "A−" on one line. */}
+        <div className={cn('mt-2.5 grid', view.season.length > 6 ? 'gap-1' : 'gap-2')} style={{ gridTemplateColumns: `repeat(${view.season.length}, minmax(0, 1fr))` }}>
           {view.season.map(({ month, grade }) => (
-            <div key={month} className="flex flex-col gap-0.5">
-              <span className="font-display text-title3 font-bold text-foreground">{grade ?? '—'}</span>
+            <div key={month} className="flex min-w-0 flex-col items-center gap-0.5" data-testid="season-month">
+              <span className={cn('whitespace-nowrap font-display font-bold text-foreground', view.season.length > 6 ? 'text-[15px] leading-6' : 'text-title3')}>{grade ?? '—'}</span>
               <span className="text-caption text-muted-foreground">{formatDate(`${month}-01`, { precision: 'month', year: 'never' })}</span>
             </div>
           ))}

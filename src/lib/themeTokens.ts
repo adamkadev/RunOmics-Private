@@ -23,10 +23,16 @@ const c = HUE
  * pink - that also colours every session type (lib/colors TYPE_ZONE). It is
  * a category scale only: status is --pos, --warn and --neg. The share card
  * paints on a canvas and cannot read a token, so it takes the same table.
+ *
+ * Z3 steps away from its neighbours in lightness, its hue held (design
+ * review, Oct 2026): at the others' lightness it was told from Z4 by hue
+ * alone, and in a stacked week the two read as one colour - and as one blue
+ * with Z2 to a red-green colour-blind eye. It is deeper in light mode and
+ * lighter in dark, so each theme's zone ink still reads on it (8.7:1, 9.3:1).
  */
 export const ZONE_HEX = {
-  light: ['#61788f', '#2f74e0', '#6650dd', '#ae3cc2', '#d63a77'],
-  dark: ['#8397ab', '#5b9cf5', '#8f7cf7', '#d06be0', '#f0689e'],
+  light: ['#61788f', '#2f74e0', '#58359d', '#ae3cc2', '#d63a77'],
+  dark: ['#8397ab', '#5b9cf5', '#c4b5fd', '#d06be0', '#f0689e'],
 } as const
 
 /**
@@ -35,10 +41,12 @@ export const ZONE_HEX = {
  * which way it moved: fatigue +6 is warn, fitness +4 is pos. Pos is a
  * yellower green than the teal accent (v4.17.2): #1e8a4c beside #0f8a6a
  * read as the athlete's own data. Light takes the deeper #357a1a, 5.3:1 on
- * a card, so 12 px good-news text clears AA.
+ * a card, so 12 px good-news text clears AA. Light neg is #c0352a, not
+ * #c8372d: a missed day's "✕ 10 km" sits on its own 12 % tint, where
+ * #c8372d read 4.35:1 (design review, Oct 2026); now 4.6:1.
  */
 export const STATUS_HEX = {
-  light: { pos: '#357a1a', warn: '#b26b00', neg: '#c8372d' },
+  light: { pos: '#357a1a', warn: '#b26b00', neg: '#c0352a' },
   dark: { pos: '#7bd64a', warn: '#f2b544', neg: '#f26b5b' },
 } as const
 
@@ -257,8 +265,8 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--level-low': mode === 'dark' ? '35%' : '25%',
     '--level-mid': mode === 'dark' ? '65%' : '55%',
     // Ink for text on a zone fill (v4.17), per theme: white on the deeper
-    // light-theme zones (4.4-5.6:1), the dark ink on the bright dark-theme
-    // ones (5.2-6.2:1).
+    // light-theme zones (4.4-8.7:1), the dark ink on the bright dark-theme
+    // ones (5.6-9.3:1).
     '--zone-ink': mode === 'dark' ? c.roInk : '#ffffff',
     '--zone-1': ZONE_HEX[mode][0],
     '--zone-2': ZONE_HEX[mode][1],

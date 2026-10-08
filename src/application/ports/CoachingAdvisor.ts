@@ -6,6 +6,7 @@ import type {
   TargetEvent,
   TrainingWeek,
   WorkoutBlock,
+  WorkoutNameStructure,
   WorkoutPrescription,
 } from '@/domain/coaching/types'
 import type { CoachingContext } from '@/application/coaching/context'
@@ -28,6 +29,8 @@ export interface BootstrapWorkoutDraft {
   date: string
   type: CoachingWorkoutType
   title: string
+  shortName?: string
+  structure?: WorkoutNameStructure
   description: string
   blocks: WorkoutBlock[]
   notes?: string[]

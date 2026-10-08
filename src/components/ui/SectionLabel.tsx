@@ -23,7 +23,9 @@ export function SectionDivider({
   className?: string
 }) {
   return (
-    <Tag className={cn(EYEBROW_CLASS, 'text-muted-foreground', className)}>
+    // Between cards it has nothing around it, so the compact title bar fades
+    // it before its divider rather than cut it (design review, Oct 2026).
+    <Tag data-bar-fade className={cn(EYEBROW_CLASS, 'text-muted-foreground', className)}>
       {children}
     </Tag>
   )

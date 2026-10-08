@@ -1,4 +1,9 @@
 name: Sync Garmin Activities
+# Each run names the profile it syncs, "(all)" for the nightly one: the app's
+# Sync button reads the runs back to hold a second sync while one is going and
+# to space manual ones out (src/lib/syncLimits.ts), and one workflow serves
+# every athlete's deployment.
+run-name: Sync Garmin Activities (${{ inputs.profile || 'all' }})
 
 on:
   schedule:
@@ -17,6 +22,10 @@ on:
         default: false
       force:
         description: "Re-sync all activities (rebuilds every record)"
+        type: boolean
+        default: false
+      reprocess:
+        description: "Rebuild stored runs from their cached FIT files with the current parser (no Garmin calls)"
         type: boolean
         default: false
       profile:
@@ -267,6 +276,19 @@ jobs:
       - name: Disconnect Cloudflare WARP
         if: always()
         run: warp-cli --accept-tos disconnect || true
+
+      # Runs stored under an older parser keep what it computed until rebuilt:
+      # before v5.5, best efforts ran on the elapsed clock, so a run with a stop
+      # in it shows a best km slower than its fastest split. This rebuilds them
+      # from the FIT files cached above - nothing is asked of Garmin, unlike
+      # `force` - and the privacy steps below still crop and verify every route.
+      - name: Reprocess cached runs
+        if: inputs.reprocess == true && inputs.dry_run != true
+        env:
+          PRIVACY_ZONES: ${{ secrets.PRIVACY_ZONES }}
+          PRIVACY_RADIUS_M: ${{ secrets.PRIVACY_RADIUS_M }}
+          PRIVACY_SALT: ${{ secrets.PRIVACY_SALT }}
+        run: python scripts/reprocess.py
 
       - name: Backfill missing weather
         if: inputs.dry_run != true

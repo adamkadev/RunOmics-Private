@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
 import { LEVEL_FILL, STRONG_MONTH_DAYS, TODAY_OUTLINE, dayName, levelStyle, type ConsistencyCell, type ConsistencyMonth, type ConsistencyView, type DayLevel } from './consistencyMonths'
 import { cardClass } from '@/components/ui/Card'
+import { Legend, LegendItem } from '@/components/ui/Legend'
 import { Stat, StatGrid, type StatTone } from '@/components/ui/Stat'
 import { formatDate, formatDelta, formatPercent } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -80,7 +81,14 @@ function Swatch({ level }: { level: DayLevel }) {
   return <span aria-hidden className="size-3 shrink-0 rounded-[3px]" style={{ background: LEVEL_FILL[level] }} />
 }
 
-/** Active days a month (v4.17.1): 16 days or more is the full accent, fewer the ramp's lowest tint. */
+/** The month under way, as every chart draws a period that is not over: dashed, no verdict. */
+const IN_PROGRESS_BORDER = '1.5px dashed var(--accent)'
+
+/**
+ * Active days a month (v4.17.1): 16 days or more is the full accent, fewer the
+ * ramp's lowest tint. The month under way is dashed and judged neither way:
+ * five days into October, its 5 read as a weak month.
+ */
 function MonthBars({ months }: { months: ConsistencyMonth[] }) {
   const c = t.consistency
   return (
@@ -88,18 +96,25 @@ function MonthBars({ months }: { months: ConsistencyMonth[] }) {
       <h2 className={CARD_TITLE}>{c.perMonth}</h2>
       <div className="grid h-[110px] grid-cols-12 items-end gap-1.5 sm:gap-2">
         {months.map((month) => {
-          const strong = month.activeDays >= STRONG_MONTH_DAYS
+          const strong = !month.inProgress && month.activeDays >= STRONG_MONTH_DAYS
           return (
-            <div key={month.key} className="flex h-full flex-col items-center justify-end gap-1" aria-label={c.monthSummary(month.fullLabel, month.activeDays)} role="img">
+            <div
+              key={month.key}
+              className="flex h-full flex-col items-center justify-end gap-1"
+              aria-label={month.inProgress ? c.monthSoFar(month.fullLabel, month.activeDays) : c.monthSummary(month.fullLabel, month.activeDays)}
+              role="img"
+            >
               <span className="text-xs font-semibold text-foreground" aria-hidden>{month.activeDays}</span>
               <span
                 aria-hidden
                 data-testid="month-bar"
                 data-strong={strong}
-                className="block w-full rounded-[5px_5px_2px_2px]"
+                data-in-progress={month.inProgress || undefined}
+                className="box-border block w-full rounded-[5px_5px_2px_2px]"
                 style={{
                   height: `calc((100% - 20px) * ${month.activeDays / 31})`,
-                  background: strong ? LEVEL_FILL[3] : LEVEL_FILL[1],
+                  background: month.inProgress ? 'transparent' : strong ? LEVEL_FILL[3] : LEVEL_FILL[1],
+                  border: month.inProgress ? IN_PROGRESS_BORDER : undefined,
                 }}
               />
             </div>
@@ -111,6 +126,11 @@ function MonthBars({ months }: { months: ConsistencyMonth[] }) {
           <span key={month.key} className="whitespace-nowrap">{month.label}</span>
         ))}
       </div>
+      <Legend className="border-t border-border pt-2.5">
+        <LegendItem swatch="square" color={LEVEL_FILL[3]}>{c.monthLegend.strong(STRONG_MONTH_DAYS)}</LegendItem>
+        <LegendItem swatch="square" color={LEVEL_FILL[1]}>{c.monthLegend.fewer}</LegendItem>
+        <LegendItem swatch="dashRing" color="var(--accent)">{c.monthLegend.soFar}</LegendItem>
+      </Legend>
     </section>
   )
 }
@@ -138,7 +158,7 @@ export function ConsistencyMonths({ view }: { view: ConsistencyView }) {
   const priorLine = prior
     ? prior.fullYear
       ? c.vsPrior(formatDelta(prior.deltaPts))
-      : c.vsRange(formatDelta(prior.deltaPts), prior.range)
+      : c.vsMonths(formatDelta(prior.deltaPts), prior.months)
     : null
 
   return (
@@ -148,7 +168,7 @@ export function ConsistencyMonths({ view }: { view: ConsistencyView }) {
           {/* What the days are counted of (v4.17.2): the twelve months
               from the first of the month, to today - "of 363" read as a
               year that had lost two days. */}
-          <Stat size="lg" label={c.activeDays} value={view.activeDays} meaning={c.ofDays(view.windowDays, formatDate(view.windowStart, { style: 'bare', year: 'never' }))} />
+          <Stat size="lg" label={c.activeDays} value={view.activeDays} meaning={c.ofDays(view.windowDays, formatDate(view.windowStart, { style: 'bare', year: 'always' }))} />
           <Stat
             size="lg"
             label={c.share}

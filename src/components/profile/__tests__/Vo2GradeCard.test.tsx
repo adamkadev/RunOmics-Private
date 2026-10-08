@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Vo2GradeView } from '@/application/usecases/GetVo2Grade'
 import { Vo2GradeCard, gradeDelta } from '../Vo2GradeCard'
@@ -52,14 +52,18 @@ describe('Vo2GradeCard (v5.3 G1, v4.17)', () => {
     expect(screen.getByTestId('grade-footer').getAttribute('href')).toBe('/athlete/vo2max')
   })
 
-  it('hides the bar at A+ and says it is the top grade', () => {
+  // Design review, Oct 2026: "Top grade for your age" repeated the A+ and
+  // gave the row no purpose; it names the table it opens.
+  it('hides the bar at A+, and its footer opens every grade for the age', () => {
     render(<Vo2GradeCard view={{ ...GRADED, grade: 'A+', floor: 55.4, next: null, etaWeeks: null }} />)
     expect(screen.queryByTestId('grade-progress')).toBeNull()
-    expect(screen.getByTestId('grade-footer').textContent).toContain(t.vo2Grade.topGrade)
+    const footer = screen.getByTestId('grade-footer')
+    expect(footer.textContent).toBe(t.vo2Grade.ladder)
+    expect(footer.getAttribute('href')).toBe('/athlete/vo2max')
   })
 
   it('says a level-up in pos, and a drop in muted ink with its reason, never amber', () => {
-    const { unmount } = render(<Vo2GradeCard view={{ ...GRADED, change: { kind: 'up', from: 'B+', date: '2026-09-26' } }} />)
+    const { unmount } = render(<Vo2GradeCard view={{ ...GRADED, change: { kind: 'up', from: 'B+', date: '2026-09-26', regained: false } }} />)
     expect(screen.getByTestId('grade-up').className).toContain('var(--pos)')
     unmount()
     render(<Vo2GradeCard view={{ ...GRADED, grade: 'B+', change: { kind: 'down', from: 'A−', date: '2026-09-20', daysOff: 10 } }} />)
@@ -98,12 +102,23 @@ describe('Vo2GradeDetail (G2)', () => {
 
 describe('Vo2GradeTodayRow (G3)', () => {
   it('shows only after a level-up, never for a drop or a steady grade', () => {
-    const { rerender, container } = render(<Vo2GradeTodayRow view={{ ...GRADED, change: { kind: 'up', from: 'B+', date: '2026-09-26' } }} />)
+    const { rerender, container } = render(<Vo2GradeTodayRow view={{ ...GRADED, change: { kind: 'up', from: 'B+', date: '2026-09-26', regained: false } }} />)
     expect(screen.getByTestId('vo2-grade-today').textContent).toContain(t.vo2Grade.todayUp('A−'))
     expect(screen.getByTestId('vo2-grade-today').getAttribute('href')).toBe('/athlete/vo2max')
     rerender(<Vo2GradeTodayRow view={{ ...GRADED, change: { kind: 'down', from: 'A', date: '2026-09-26', daysOff: null } }} />)
     expect(container.innerHTML).toBe('')
     rerender(<Vo2GradeTodayRow view={GRADED} />)
     expect(container.innerHTML).toBe('')
+  })
+
+  // Design review, Oct 2026: dismissible, and remembered per grade change.
+  it('puts the row away until the grade changes again', () => {
+    localStorage.clear()
+    const up = (date: string): Vo2GradeView => ({ ...GRADED, change: { kind: 'up', from: 'B+', date, regained: false } })
+    const { rerender } = render(<Vo2GradeTodayRow view={up('2026-09-26')} />)
+    fireEvent.click(screen.getByRole('button', { name: t.vo2Grade.dismiss }))
+    expect(screen.queryByTestId('vo2-grade-today')).toBeNull()
+    rerender(<Vo2GradeTodayRow view={up('2026-10-07')} />)
+    expect(screen.getByTestId('vo2-grade-today')).toBeInTheDocument()
   })
 })

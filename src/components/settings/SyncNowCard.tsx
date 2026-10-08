@@ -12,6 +12,30 @@ import { t } from '@/i18n'
 const POLL_INTERVAL_MS = 10_000
 
 /**
+ * Each wait a quarter longer than the last, up to three intervals (design
+ * review, Oct 2026): nearly every answer in the chain's five minutes is
+ * "still going", and asking every ten seconds throughout bought nothing.
+ */
+const POLL_BACKOFF = 1.25
+const POLL_MAX_INTERVALS = 3
+
+/**
+ * Resolves once the page is in front. A page in the background asks nothing -
+ * the run goes on without it - and the first look back asks at once.
+ */
+function whenVisible(): Promise<void> {
+  if (typeof document === 'undefined' || document.visibilityState !== 'hidden') return Promise.resolve()
+  return new Promise((resolve) => {
+    const onChange = () => {
+      if (document.visibilityState === 'hidden') return
+      document.removeEventListener('visibilitychange', onChange)
+      resolve()
+    }
+    document.addEventListener('visibilitychange', onChange)
+  })
+}
+
+/**
  * Twelve minutes. The chain measures about five - Garmin, a Vercel rebuild,
  * then the ai-insights pass - and the slack is for a queued runner or a slow
  * build. Past that the run is still going; it just finishes without us.
@@ -34,6 +58,8 @@ type Phase =
   | { kind: 'upToDate' }
   | { kind: 'timedOut' }
   | { kind: 'failed' }
+  /** The server held the sync back: synced moments ago, or the day's syncs used up. */
+  | { kind: 'limited'; reason: 'cooldown' | 'dailyCap'; retryAfterSec: number }
 
 function progressText(phase: Phase, s: typeof t.settings.sync): string | null {
   switch (phase.kind) {
@@ -47,6 +73,8 @@ function progressText(phase: Phase, s: typeof t.settings.sync): string | null {
       return s.stillRunning
     case 'failed':
       return s.failed
+    case 'limited':
+      return phase.reason === 'dailyCap' ? s.dailyCap : s.cooldown(Math.ceil(phase.retryAfterSec / 60))
     default:
       return null
   }
@@ -70,11 +98,18 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
   const pollForVerdict = useCallback(
     async (since: string, resuming: boolean) => {
       const deadline = Date.parse(since) + POLL_CEILING_MS
+      // The last answer's tag: the same answer again comes back as an empty 304.
+      let etag: string | null = null
 
       async function checkOnce(): Promise<'done' | 'continue'> {
         try {
-          const response = await authorized(`/api/sync/status?since=${encodeURIComponent(since)}`)
+          const response = await authorized(
+            `/api/sync/status?since=${encodeURIComponent(since)}`,
+            etag ? { headers: { 'if-none-match': etag } } : undefined
+          )
+          // A 304 is the answer unchanged: the chain is still moving.
           if (!response.ok) return 'continue'
+          etag = response.headers.get('etag')
 
           const status = (await response.json()) as VerdictStatus
           if (status.ready) {
@@ -108,8 +143,11 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
         if ((await checkOnce()) === 'done') return
       }
 
+      let wait = pollIntervalMs
       while (!cancelled.current && Date.now() < deadline) {
-        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs))
+        await new Promise((resolve) => setTimeout(resolve, wait))
+        wait = Math.min(wait * POLL_BACKOFF, pollIntervalMs * POLL_MAX_INTERVALS)
+        await whenVisible()
         if (cancelled.current) return
         if ((await checkOnce()) === 'done') return
       }
@@ -141,7 +179,15 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
     let since: string
     try {
       const response = await authorized('/api/sync/dispatch', { method: 'POST' })
+      // Held back by the server's limits (design review, Oct 2026): not a
+      // failure, and nothing to wait on - say when the next one can go.
+      if (response.status === 429) {
+        const body = (await response.json().catch(() => ({}))) as { reason?: string; retryAfter?: number }
+        setPhase({ kind: 'limited', reason: body.reason === 'dailyCap' ? 'dailyCap' : 'cooldown', retryAfterSec: body.retryAfter ?? 60 })
+        return
+      }
       if (!response.ok) throw new Error(`dispatch failed with ${response.status}`)
+      // A run already going comes back as its own start: wait on it as on ours.
       since = ((await response.json()) as { since: string }).since
     } catch (error) {
       console.error('Sync dispatch failed:', error)

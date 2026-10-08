@@ -68,11 +68,13 @@ export function NotesSheet({
         ref={trapRef}
         className="relative w-full animate-sheet-up rounded-t-card-sm border-t border-border bg-card pb-[calc(0.75rem+var(--safe-bottom))] sm:max-w-sm sm:rounded-card-sm sm:border sm:pb-3"
       >
+        {/* Every control on the sheet has a 44 pt target, however small it
+            is drawn (design review, Oct 2026). */}
         <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
           <button
             type="button"
             onClick={onCancel}
-            className="text-left text-sm font-medium text-muted-foreground transition-opacity active:opacity-60"
+            className="hit-44 text-left text-sm font-medium text-muted-foreground transition-opacity active:opacity-60"
           >
             {t.settings.actions.confirmCancel}
           </button>
@@ -103,7 +105,7 @@ export function NotesSheet({
                       type="button"
                       onClick={() => onRemoveTag(tag)}
                       aria-label={t.activity.notes.removeTag(tag)}
-                      className="hover:text-destructive"
+                      className="hit-44 hover:text-destructive"
                     >
                       <X size={16} />
                     </button>
@@ -124,7 +126,7 @@ export function NotesSheet({
                       type="button"
                       onClick={() => onAddTag(tag)}
                       aria-label={t.activity.notes.addTag(tag)}
-                      className="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:text-accent-text"
+                      className="hit-44 inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:text-accent-text"
                     >
                       <Plus size={12} />
                       {tag}

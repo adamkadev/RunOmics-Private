@@ -12,6 +12,7 @@ import { MODEL_POOL, modelLimits, spacingMs } from '@/domain/ai/budget'
 import { generateStructuredJson } from '@/lib/gemini'
 import { parseBootstrapPlanDraft, parseRecommendation } from './coachingAnswer'
 import {
+  ADAPTATION_NAMING_RULE,
   ADAPTATION_WEEK_SCHEMA,
   ADAPTATION_WORKOUT_SCHEMA,
   BOOTSTRAP_PLAN_RESPONSE_SCHEMA,
@@ -163,7 +164,7 @@ export class GeminiCoachingAdvisor implements CoachingAdvisor {
   async evaluateActivity(input: { context: CoachingContext; activity: Activity; prescription: WorkoutPrescription | null }): Promise<AdvisorRecommendation> {
     const raw = await request(
       RECOMMENDATION_SCHEMA,
-      withCoachingLanguage('Evaluate the completed run and choose KEEP, ADJUST, or REPLAN. Normal runs should usually be KEEP. Use ADJUST only for small future workout changes and REPLAN only for meaningful events. Never alter completed or past sessions. Reasons and evidence must cite supplied facts.'),
+      withCoachingLanguage(`Evaluate the completed run and choose KEEP, ADJUST, or REPLAN. Normal runs should usually be KEEP. Use ADJUST only for small future workout changes and REPLAN only for meaningful events. Never alter completed or past sessions. Reasons and evidence must cite supplied facts. ${ADAPTATION_NAMING_RULE}`),
       `${contextPrompt(input.context)}\nCompleted activity: ${JSON.stringify(completedActivityPrompt(input.context, input.activity))}\nMatched prescription: ${JSON.stringify(input.prescription)}`,
     )
     return parseRecommendation(raw, 'post_activity')
@@ -172,7 +173,7 @@ export class GeminiCoachingAdvisor implements CoachingAdvisor {
   async reviewWeek(input: { context: CoachingContext }): Promise<AdvisorRecommendation> {
     const raw = await request(
       RECOMMENDATION_SCHEMA,
-      withCoachingLanguage('Review the rolling running plan. Prefer KEEP when the current future prescription remains appropriate, ADJUST for small workout changes, and REPLAN only for a material change. Never alter completed or past sessions. Keep the output horizon at four weeks.'),
+      withCoachingLanguage(`Review the rolling running plan. Prefer KEEP when the current future prescription remains appropriate, ADJUST for small workout changes, and REPLAN only for a material change. Never alter completed or past sessions. Keep the output horizon at four weeks. ${ADAPTATION_NAMING_RULE}`),
       contextPrompt(input.context),
     )
     return parseRecommendation(raw, 'weekly_review')

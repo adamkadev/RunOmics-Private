@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
@@ -13,7 +13,6 @@ import { RunEffortCard } from './RunEffortCard'
 import { KmSplits } from './KmSplits'
 import { BestEfforts } from './BestEfforts'
 import type { ChartZones } from './chartStackLanes'
-import { createScrubChannel, useScrubFraction, type ScrubChannel } from './scrubChannel'
 import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
 import { cardClass } from '@/components/ui/Card'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
@@ -21,6 +20,8 @@ import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { Stat } from '@/components/ui/Stat'
 import { useUrlParam } from '@/lib/useUrlParam'
+import { isStuck, restingTop, useStuck } from '@/lib/useStuck'
+import { cn } from '@/lib/utils'
 import type { SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
 import { SimilarRuns } from './SimilarRuns'
 import { ActivityNotes } from './ActivityNotes'
@@ -81,10 +82,28 @@ function sentenceCase(label: string): string {
   return label ? label.charAt(0) + label.slice(1).toLowerCase() : label
 }
 
-/** The map, with the Charts scrub's marker on it: only this re-renders while a finger drags. */
-function ScrubbedMap({ route, scrub }: { route: [number, number][]; scrub: ScrubChannel }) {
-  const fraction = useScrubFraction(scrub)
-  return <ActivityMapClient route={route} hoverFraction={fraction} className="h-full w-full rounded-none" />
+/**
+ * The run's four numbers on one line, under the tabs while they are pinned
+ * (design review, Oct 2026): the map card has scrolled away by then, and
+ * which run this is should survive a tab switch. It echoes the card, which a
+ * screen reader has read already, so it is hidden from one. It is drawn over
+ * what has scrolled under the strip, so it never moves the page.
+ */
+function RunSummary({ stats }: { stats: PrimaryStat[] }) {
+  return (
+    <div
+      aria-hidden="true"
+      data-testid="run-summary"
+      className="flex h-7 animate-[fade-in_150ms_ease-out] items-end justify-between gap-3 px-1 text-footnote text-muted-foreground"
+    >
+      {stats.map((stat) => (
+        <span key={stat.label} className="whitespace-nowrap">
+          <span className="font-semibold text-foreground">{stat.value}</span>
+          {stat.unit && ` ${stat.unit}`}
+        </span>
+      ))}
+    </div>
+  )
 }
 
 /** A detail row of the verdict card: the name muted on the left, the value in ink on the right. */
@@ -104,8 +123,11 @@ export function ActivityDetailClient({
   // The tab lives in ?tab=, so going back from Charts or Dynamics lands on it
   // again rather than on Overview.
   const [tabParam, setTabParam] = useUrlParam('tab')
-  const [scrub] = useState(createScrubChannel)
   const stats = buildPrimaryStats(activity)
+  const stripRef = useRef<HTMLDivElement>(null)
+  const pinned = useStuck(stripRef)
+  // Whether the strip was pinned when a tab was picked, until the new tab is drawn.
+  const switchRef = useRef<{ pinned: boolean } | null>(null)
   const hasSecondaryCharts = !!(activity.elevationProfile || activity.paceSamples || activity.cadenceSamples)
   const hasCharts = hasSecondaryCharts || !!activity.hrSamples
   const hasSplits = !!(activity.splits && activity.splits.length > 0)
@@ -123,26 +145,47 @@ export function ActivityDetailClient({
     { id: 'dynamics' as const, label: t.activity.tabs.dynamics, show: hasDynamics },
   ].filter((item) => item.show)
   const tab: TabId = isTabId(tabParam) && tabs.some((item) => item.id === tabParam) ? tabParam : 'overview'
-  const setTab = (next: TabId) => setTabParam(next === 'overview' ? null : next)
+  const setTab = (next: TabId) => {
+    if (next === tab) return
+    switchRef.current = { pinned: stripRef.current ? isStuck(stripRef.current) : false }
+    setTabParam(next === 'overview' ? null : next)
+  }
   const detailTabs = useSegmentedTabs({ ids: tabs.map((item) => item.id), value: tab, onChange: setTab })
   const e = t.activity.effort
+
+  // A tab picked with the strip pinned keeps it pinned, the new tab from its
+  // top; one picked lower down never opens the new tab under the strip. The
+  // map and the verdict leave or come back above the strip on a switch, which
+  // otherwise left the reader partway down the new tab.
+  useLayoutEffect(() => {
+    const switched = switchRef.current
+    switchRef.current = null
+    const strip = stripRef.current
+    if (!switched || !strip) return
+    const pinnedAt = restingTop(strip) - (parseFloat(getComputedStyle(strip).top) || 0)
+    if (switched.pinned || window.scrollY > pinnedAt) window.scrollTo({ top: Math.max(0, pinnedAt), behavior: 'instant' })
+  }, [tab])
 
   return (
     <>
       {header}
 
-      {/* The route and its four numbers in one card, on every tab (v4.17):
-          the Charts scrub moves a marker along this route, so the map stays
-          above the charts. 320 pt tall, the route in the accent. */}
+      {/* The route and its four numbers in one card (v4.17), the route 320
+          pt tall in the accent. The map is Overview's: on Splits, Charts and
+          Dynamics it pushed the tab's own content off the first screen, so
+          it collapses there and the four numbers stay (design review, Oct
+          2026). */}
       <section className={cardClass({ padding: 'none', overflow: true })} data-testid="run-map-card">
-        <div className="h-[260px] sm:h-[320px]">
-          {activity.route ? (
-            <ScrubbedMap route={activity.route} scrub={scrub} />
-          ) : (
-            <NoRouteMap className="h-full min-h-0 w-full rounded-none border-0" />
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-4 border-t border-border px-5 py-4 sm:grid-cols-4">
+        {tab === 'overview' && (
+          <div className="h-[260px] border-b border-border sm:h-[320px]" data-testid="run-map">
+            {activity.route ? (
+              <ActivityMapClient route={activity.route} className="h-full min-h-0 w-full rounded-none" />
+            ) : (
+              <NoRouteMap className="h-full min-h-0 w-full rounded-none border-0" />
+            )}
+          </div>
+        )}
+        <div className="grid grid-cols-2 gap-4 px-5 py-4 sm:grid-cols-4">
           {stats.map((stat) => (
             <Stat key={stat.label} label={stat.label} value={stat.value} unit={stat.unit} valueStyle={{ fontSize: 24 }} />
           ))}
@@ -199,8 +242,12 @@ export function ActivityDetailClient({
         </RunVerdict>
       )}
 
+      {/* Directly under the compact title bar once pinned (design review,
+          Oct 2026), the run's one-line summary under it. The summary's
+          28 pt are taken back from the margin, so the page under the strip
+          does not move when it shows. */}
       {tabs.length > 1 && (
-        <StickyBar top="var(--sticky-top, var(--top-scrim))" className="-mb-2">
+        <StickyBar ref={stripRef} top="var(--sticky-top, var(--top-scrim))" className={cn('-mb-2', pinned && '-mb-9')}>
           <SegmentedTabs
             tabs={detailTabs}
             items={tabs}
@@ -209,6 +256,7 @@ export function ActivityDetailClient({
             fill
             tabClassName="h-[34px] text-[13px]"
           />
+          {pinned && <RunSummary stats={stats} />}
         </StickyBar>
       )}
 
@@ -246,7 +294,6 @@ export function ActivityDetailClient({
             elevationProfile={activity.elevationProfile}
             elevationGain={activity.elevationGain}
             zones={chartZones}
-            onScrub={scrub.set}
           />
         )}
 

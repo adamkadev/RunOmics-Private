@@ -7,6 +7,7 @@ import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
+import { intensityMix } from '@/domain/training/intensityMix'
 import { formatClock as fmt } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -15,13 +16,9 @@ type View = 'week' | 'recent'
 
 const VIEWS = ['week', 'recent'] as const
 const HR_PERCENTS = [0.65, 0.8, 0.89, 0.95, 1.0]
-const HIGH_INTENSITY_ZONES = [4, 5]
 
 /** Zone, pace, HR and time: one grid for the header and every row, the prototype's widths from sm up. */
 const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.75rem_3.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_110px_90px_70px] sm:gap-3'
-
-/** The hard-work target: 10-15% of the time in Z4-Z5. Outside it is a caution (v4.17). */
-const HARD_TARGET = { from: 10, to: 15 }
 
 /** Under this share of the window a zone is not drawn, and leaves no gap. */
 const MIN_SEGMENT_SHARE = 0.01
@@ -71,9 +68,9 @@ interface Props {
 
 /**
  * One zone table under one Week / 4 weeks toggle (C2, v4.4): the window's
- * time and its Z4-Z5 share against the 10-15% target over one stacked Z1-Z5
- * bar, then zone, pace, HR and time as tabular columns. The stacked bar
- * replaced a progress bar per row.
+ * time and its Z4-Z5 share with the intensity verdict Analytics gives the same
+ * time, over one stacked Z1-Z5 bar, then zone, pace, HR and time as tabular
+ * columns. The stacked bar replaced a progress bar per row.
  */
 export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZones }: Props) {
   const s = t.profile.trainingZones
@@ -105,18 +102,20 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
   const timeByZone = new Map(zoneTime.map((z) => [z.zone, z]))
   const windowTotal = totalSeconds(zoneTime)
 
-  const highIntensitySeconds = HIGH_INTENSITY_ZONES.reduce(
-    (sum, zone) => sum + (timeByZone.get(zone)?.seconds ?? 0),
-    0
-  )
-  const highIntensityPct = windowTotal > 0 ? Math.round((highIntensitySeconds / windowTotal) * 100) : null
+  // One split and one verdict with Analytics > Intensity (design review, Oct
+  // 2026): this card read "Hard 7 %" in amber against its own 10-15 % target
+  // while Intensity read the same time "In range".
+  const mix = intensityMix(Object.fromEntries(zoneTime.map((z) => [z.zone, z.seconds])))
 
   const emptyLine = view === 'week' ? s.noSessionsThisWeek : s.noSessionsRecent
   const stacked = [1, 2, 3, 4, 5]
     .map((zone) => ({ zone, seconds: timeByZone.get(zone)?.seconds ?? 0 }))
     .filter((z) => windowTotal > 0 && z.seconds / windowTotal >= MIN_SEGMENT_SHARE)
 
-  const hardTone = highIntensityPct === null ? 'text-muted-foreground' : highIntensityPct < HARD_TARGET.from || highIntensityPct > HARD_TARGET.to ? 'text-[var(--warn)]' : 'text-[var(--pos)]'
+  const verdicts = t.analytics.cards.easyHard
+  // The week under way is not a week's split yet: no verdict, no colour.
+  const verdict = mix === null ? null : view === 'week' ? s.soFar : verdicts[mix.status]
+  const hardTone = mix === null || view === 'week' ? 'text-muted-foreground' : mix.status === 'inRange' ? 'text-[var(--pos)]' : 'text-[var(--warn)]'
 
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3.5' })}>
@@ -141,9 +140,9 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
             {/* The window's time, and its hard share against the target: warn outside it (v4.17). */}
             <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
               <WindowTotal seconds={windowTotal} />
-              {highIntensityPct !== null && (
+              {mix !== null && verdict !== null && (
                 <span className={`text-xs ${hardTone}`} data-testid="zone-hard-share">
-                  {s.hardShare(highIntensityPct)}
+                  {s.hardShare(mix.hardPct, verdict)}
                 </span>
               )}
             </div>

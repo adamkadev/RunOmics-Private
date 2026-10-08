@@ -15,6 +15,7 @@ from sync_workouts import (
     _WINDOW_FUTURE_DAYS,
     _WINDOW_PAST_DAYS,
     _build_entries,
+    _load_coach_named_workouts,
     _load_coach_workout_types,
     _load_easy_pace_sec_per_km,
     enrich_description_from_plan,
@@ -426,6 +427,97 @@ class TestCoachingPlanTypes:
         )
 
         assert json.loads((tmp_path / "2026.json").read_text())["planned"][0]["type"] == "Base"
+
+
+class TestCoachNamedWorkouts:
+    """A session the coach named under the naming rules (design review, Oct
+    2026) already states its main set, and the run it becomes inherits the
+    name: it is kept as written, never cut at " + " nor given a descriptor."""
+
+    @staticmethod
+    def _coaching_dir(tmp_path):
+        coaching = tmp_path / "coaching"
+        coaching.mkdir(parents=True)
+        (coaching / "garmin-sync.json").write_text(json.dumps({"entries": [
+            {"prescriptionId": "plan-3:workout:1:1", "date": "2026-10-27", "garminWorkoutId": "1700000001"},
+            {"prescriptionId": "plan-3:workout:1:2", "date": "2026-10-28", "garminWorkoutId": "1700000002"},
+        ]}))
+        (coaching / "current_plan.json").write_text(json.dumps({"weeks": [{"workouts": [
+            {
+                "id": "plan-3:workout:1:1",
+                "type": "threshold",
+                "title": "Threshold · 3 × 8′ @ 4:25",
+                "shortName": "Threshold 3×8′",
+            },
+            {"id": "plan-3:workout:1:2", "type": "threshold", "title": "Threshold 3 x 7:40"},
+        ]}]}))
+        return tmp_path
+
+    @staticmethod
+    def _threshold(name: str) -> dict:
+        return {
+            "workoutName": name,
+            "sportType": {"sportTypeKey": "running"},
+            "workoutSegments": [
+                {
+                    "workoutSteps": [
+                        _pace_zone_step("warmup", "distance", 2000, 330, 384),
+                        _repeat_group(
+                            3,
+                            [
+                                _pace_zone_step("interval", "time", 460, 262, 268),
+                                _pace_zone_step("recovery", "time", 240, 360, 420),
+                            ],
+                        ),
+                        _pace_zone_step("cooldown", "distance", 1600, 330, 384),
+                    ]
+                }
+            ],
+        }
+
+    def test_finds_the_sessions_named_under_the_rules(self, tmp_path):
+        assert _load_coach_named_workouts(self._coaching_dir(tmp_path)) == {"1700000001"}
+
+    def test_is_empty_without_a_coaching_plan_or_when_it_cannot_be_read(self, tmp_path):
+        assert _load_coach_named_workouts(tmp_path) == set()
+        (tmp_path / "coaching").mkdir()
+        (tmp_path / "coaching" / "garmin-sync.json").write_text("{not json")
+        assert _load_coach_named_workouts(tmp_path) == set()
+
+    def test_keeps_a_coach_named_session_as_written(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        monkeypatch.setattr("sync_workouts._load_coach_workout_types", lambda: {"1700000001": "Threshold"})
+        monkeypatch.setattr("sync_workouts._load_coach_named_workouts", lambda: {"1700000001"})
+
+        client = _FakeClient(self._threshold("Threshold · 3 × 8′ @ 4:25"))
+        entries = _build_entries(client, [("2026-10-27", "1700000001", "", False)])
+
+        assert entries[0]["name"] == "Threshold · 3 × 8′ @ 4:25"
+        assert entries[0]["type"] == "Threshold"
+
+    def test_keeps_the_strides_a_coach_name_carries(self, monkeypatch):
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        monkeypatch.setattr("sync_workouts._load_coach_workout_types", lambda: {"1700000003": "Base"})
+        monkeypatch.setattr("sync_workouts._load_coach_named_workouts", lambda: {"1700000003"})
+        detail = {
+            "workoutName": "Easy · 54 min + 6 strides",
+            "sportType": {"sportTypeKey": "running"},
+            "workoutSegments": [{"workoutSteps": [_pace_zone_step("interval", "distance", 9000, 330, 384)]}],
+        }
+
+        entries = _build_entries(_FakeClient(detail), [("2026-10-29", "1700000003", "", False)])
+
+        assert entries[0]["name"] == "Easy · 54 min + 6 strides"
+
+    def test_an_older_coach_name_still_gains_its_main_set(self, monkeypatch):
+        # Past plans keep their names: "Threshold 3 x 7:40" reads as it did.
+        monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
+        monkeypatch.setattr("sync_workouts._load_coach_workout_types", lambda: {"1700000002": "Threshold"})
+        monkeypatch.setattr("sync_workouts._load_coach_named_workouts", lambda: set())
+
+        entries = _build_entries(_FakeClient(self._threshold("Threshold 3 x 7:40")), [("2026-10-28", "1700000002", "", False)])
+
+        assert entries[0]["name"] == "Threshold 3 x 7:40 - 3x8'@4:25"
 
 
 class TestGarminSuppliedMetadata:

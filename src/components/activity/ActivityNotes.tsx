@@ -14,13 +14,30 @@ const SUGGESTED_TAGS_MAX = 12
 const NotesSheet = dynamic(() => import('./ActivityNotesSheet').then((m) => m.NotesSheet), { ssr: false })
 
 /**
- * Firestore, loaded on first use. A visitor reads one note after the page has
- * painted and only the owner ever writes, so the SDK stays out of the
- * activity page's first load.
+ * Firestore, loaded on first use. Only the owner writes, and only the owner
+ * lists tags, so the SDK stays out of the activity page's first load.
  */
 async function notesStore() {
   const [firestore, { getClientFirestore }] = await Promise.all([import('firebase/firestore'), import('@/lib/firebase')])
   return { firestore, db: getClientFirestore() }
+}
+
+/**
+ * The note, through the app (design review, Oct 2026): a private site's gate
+ * then covers it, and Firestore lets only the owner read notes directly. A
+ * server without the admin credentials answers `available: false`, and the
+ * owner - whom the rules still let in - reads it straight from Firestore, so
+ * an editor never opens empty over a note it could not fetch.
+ */
+async function readNote(activityId: string): Promise<ActivityNote | null> {
+  const response = await fetch(`/api/activities/${encodeURIComponent(activityId)}/note`)
+  if (!response.ok) return null
+  const data = (await response.json()) as ({ available: true } & ActivityNote) | { available: false }
+  if (data.available) return data.note !== '' || data.tags.length > 0 ? { note: data.note, tags: data.tags } : null
+  if (!isClientFirebaseConfigured) return null
+  const { firestore: { doc, getDoc }, db } = await notesStore()
+  const snap = await getDoc(doc(db, 'activityNotes', activityId))
+  return snap.exists() ? (snap.data() as ActivityNote) : null
 }
 
 function rankTagsByUse(all: string[][]): string[] {
@@ -61,15 +78,11 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   if (activityInState !== activityId) showNewActivity()
 
   useEffect(() => {
-    if (!isClientFirebaseConfigured) return
-
-    // Navigation can outrun Firestore; without this the slower read wins.
+    // Navigation can outrun the read; without this the slower one wins.
     let cancelled = false
-    notesStore()
-      .then(({ firestore: { doc, getDoc }, db }) => getDoc(doc(db, 'activityNotes', activityId)))
-      .then((snap) => {
-        if (cancelled || !snap.exists()) return
-        const data = snap.data() as ActivityNote
+    readNote(activityId)
+      .then((data) => {
+        if (cancelled || !data) return
         setSaved(data)
         setDraft(data)
       })

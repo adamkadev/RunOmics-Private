@@ -71,10 +71,18 @@ export function formatPaceRange([fast, slow]: [number, number]): string {
   return `${formatClock(fast)}-${formatClock(slow)} /km`
 }
 
+/** Under this, a distance keeps one decimal; at it and above, none. */
+const WHOLE_KM_FROM = 100
+
+/**
+ * A distance as every screen writes it (design review, Oct 2026): one
+ * decimal under 100 km, none above - "7.2 km" beside "12.9 km", where a run
+ * under 10 km used to take two ("7.20"). Through formatKm, so the decimal
+ * follows the locale: toFixed always wrote a point, and the French build
+ * showed "9.26" beside "1 321,5".
+ */
 export function formatDistance(km: number): string {
-  // Through formatKm, so the decimal follows the locale: toFixed always wrote
-  // a point, and the French build showed "9.26" beside "1 321,5".
-  return formatKm(km, km >= 10 ? 1 : 2)
+  return formatKm(km, km >= WHOLE_KM_FROM ? 0 : 1)
 }
 
 /**
@@ -119,9 +127,9 @@ export function formatPlannedKm(km: number): string {
 }
 
 /** A ran distance in a list or a total: formatDistance's precision without a
- *  trailing zero, so a week reads "6.11 of 52 km" and "4.8 of 13 km". */
+ *  trailing zero, so a week reads "6.1 / 52 km" and "20 / 53 km". */
 export function formatRanKm(km: number): string {
-  return stableSpaces(km.toLocaleString(t.locale, { minimumFractionDigits: 0, maximumFractionDigits: km >= 10 ? 1 : 2 }))
+  return stableSpaces(km.toLocaleString(t.locale, { minimumFractionDigits: 0, maximumFractionDigits: km >= WHOLE_KM_FROM ? 0 : 1 }))
 }
 
 /*

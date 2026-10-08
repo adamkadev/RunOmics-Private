@@ -81,7 +81,9 @@ export function PlannedWorkoutSheet({ workout, onClose }: Props) {
               <WorkoutIcon size={20} strokeWidth={2.2} style={{ color: typeColor ?? 'var(--muted-foreground)' }} />
             </span>
             <div className="min-w-0 flex-1">
-              <h2 className="text-base font-bold leading-snug text-foreground">
+              {/* Two lines at most: an older Garmin name runs to 41
+                  characters (design review, Oct 2026). */}
+              <h2 className="line-clamp-2 break-words text-base font-bold leading-snug text-foreground">
                 {workout.title}
               </h2>
             </div>

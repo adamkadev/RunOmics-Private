@@ -339,3 +339,16 @@ describe('a done day draws the steps it was planned with (v5.6 #2)', () => {
     expect(doneDaySteps('Threshold', undefined, undefined)).toEqual([])
   })
 })
+
+// Design review, Oct 2026: Month's day sheet names an older session as Garmin
+// did, in two lines at most.
+describe("the month day sheet's title", () => {
+  it('keeps a long name as given, to two lines', () => {
+    const view = plannedWorkoutView({ date: '2026-07-15', name: "Répétitions allure d'objectif - 4x3'@4:24", type: 'Threshold', durationSecs: 3_000 })
+    render(<PlannedWorkoutSheet workout={view} onClose={() => {}} />)
+
+    const title = within(screen.getByRole('dialog')).getByRole('heading')
+    expect(title.textContent).toBe("Répétitions allure d'objectif - 4x3'@4:24")
+    expect(title.className).toContain('line-clamp-2')
+  })
+})

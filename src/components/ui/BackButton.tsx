@@ -18,6 +18,9 @@ interface Props {
  * under Progress to Progress. It names the parent, not the page before - a
  * run opened from Today still reads "← Activities". Stepping back in history
  * when the parent is the page just left keeps its scroll and its filters.
+ *
+ * Once it scrolls away, the compact title bar's chevron presses it
+ * (`data-bar-back`), so the way back stays in reach (design review, Oct 2026).
  */
 export function BackButton({ label, fallbackHref = '/', className }: Props) {
   const router = useRouter()
@@ -25,11 +28,14 @@ export function BackButton({ label, fallbackHref = '/', className }: Props) {
 
   return (
     <button
+      type="button"
+      data-bar-back
       onClick={() => {
         if (origin?.isImmediate && origin.path.split('?')[0] === fallbackHref) router.back()
         else router.push(fallbackHref)
       }}
-      className={cn('mb-4 inline-flex items-center gap-1.5 text-subhead font-semibold text-muted-foreground transition-colors hover:text-foreground', className)}
+      // A 44 pt target around the 22 pt line (design review, Oct 2026).
+      className={cn('hit-44 mb-4 inline-flex items-center gap-1.5 text-subhead font-semibold text-muted-foreground transition-colors hover:text-foreground', className)}
     >
       <ArrowLeft size={16} strokeWidth={2.2} />
       {label}

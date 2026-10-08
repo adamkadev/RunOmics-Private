@@ -15,6 +15,8 @@ const PRESCRIPTION_FIELDS = [
   'date',
   'type',
   'title',
+  // A tight row's name (design review, Oct 2026), where the coach wrote one.
+  'shortName',
   'totalDurationSeconds',
   'totalDistanceMeters',
   'blocks',

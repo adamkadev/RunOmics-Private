@@ -58,3 +58,25 @@ export async function getActivityNotes(): Promise<ActivityNotesRead> {
     return UNAVAILABLE
   }
 }
+
+/**
+ * One note, for the activity page (src/app/api/activities/[id]/note): a
+ * request path, so a short budget. The page reads it through the app rather
+ * than from Firestore, so a private site's gate covers notes too.
+ */
+const NOTE_TIMEOUT_MS = 4_000
+
+export type ActivityNoteRead = { available: false } | { available: true; note: ActivityNote | null }
+
+export async function getActivityNote(activityId: string): Promise<ActivityNoteRead> {
+  if (!process.env.FIREBASE_PROJECT_ID) return { available: false }
+
+  try {
+    const snapshot = await withTimeout(getAdminFirestore().collection(COLLECTION).doc(activityId).get(), NOTE_TIMEOUT_MS, null)
+    if (!snapshot) return { available: false }
+    if (!snapshot.exists) return { available: true, note: null }
+    return { available: true, note: read(snapshot.data() as Record<string, unknown>) }
+  } catch {
+    return { available: false }
+  }
+}

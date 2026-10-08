@@ -52,8 +52,9 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-label={`${label}: ${activeLabel ?? ''}`}
-        // The v4.17 outline button, like the Map button beside it: one header style.
-        className="flex h-[34px] shrink-0 items-center gap-1.5 rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
+        // The v4.17 outline button, like the Map button beside it: one header
+        // style, drawn at 34 pt and tapped at 44 (design review, Oct 2026).
+        className="hit-44 flex h-[34px] shrink-0 items-center gap-1.5 rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
       >
         {order === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
         {activeLabel}
@@ -69,8 +70,9 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
                 onChange(o.value, o.value === sortBy && order === 'asc' ? 'desc' : o.value === sortBy ? 'asc' : 'desc')
                 setOpen(false)
               }}
+              // A row of the menu is a 44 pt target too.
               className={cn(
-                'flex min-h-9 w-full items-center gap-2 px-3 text-left text-[13px] font-medium transition-colors hover:bg-[var(--surface-2)]',
+                'flex min-h-11 w-full items-center gap-2 px-3 text-left text-[13px] font-medium transition-colors hover:bg-[var(--surface-2)]',
                 o.value === sortBy ? 'font-semibold text-foreground' : 'text-[var(--text-2)]',
               )}
             >

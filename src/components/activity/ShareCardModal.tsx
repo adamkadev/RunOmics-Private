@@ -14,8 +14,10 @@ import { useAccent } from '@/lib/useAccent'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { ShareCardActions } from '@/components/activity/ShareCardActions'
+import { Toggle } from '@/components/ui/Toggle'
 
 interface Props {
   activity: ShareActivity
@@ -30,6 +32,24 @@ interface Props {
 const PREVIEW_W = 242
 const PREVIEW_H = 430
 const SWIPE_PX = 40
+
+/**
+ * The quiet segmented recipe of every other choice in the app (ui/
+ * SegmentedTabs, as Settings' theme draws it): an inset track with a line,
+ * the pick lifted onto the card surface in text ink. The design picker wore
+ * a filled accent pill (design review, Oct 2026); the accent is the Share
+ * button's. Both pickers stay radiogroups: a choice, not a tab.
+ */
+const SEGMENTED_TRACK = 'gap-0.5 rounded-[11px] border border-border bg-[var(--segmented-track)] p-[3px]'
+
+function segmentClass(selected: boolean): string {
+  return cn(
+    'hit-44 flex items-center justify-center whitespace-nowrap rounded-lg transition-colors',
+    selected
+      ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
+      : 'font-medium text-muted-foreground hover:text-foreground',
+  )
+}
 
 export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCopyImage, onClose }: Props) {
   const { resolvedTheme } = useTheme()
@@ -164,9 +184,10 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
         <div className="flex shrink-0 items-center justify-between" style={{ padding: '6px 20px 14px' }}>
           <h2 className="font-display text-foreground" style={{ fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{s.title}</h2>
           <button
+            type="button"
             onClick={close}
             aria-label={s.close}
-            className="flex items-center justify-center text-muted-foreground"
+            className="hit-44 flex items-center justify-center text-muted-foreground"
             style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--muted)' }}
           >
             <X size={17} strokeWidth={2.5} />
@@ -212,24 +233,17 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
             <div
               role="radiogroup"
               aria-label={s.designTitle}
-              className="grid"
-              style={{
-                gridTemplateColumns: `repeat(${designs.length}, 1fr)`,
-                padding: 4, borderRadius: 999, background: 'var(--muted)',
-              }}
+              className={cn('grid', SEGMENTED_TRACK)}
+              style={{ gridTemplateColumns: `repeat(${designs.length}, minmax(0, 1fr))` }}
             >
               {designs.map((d) => (
                 <button
                   key={d}
+                  type="button"
                   role="radio"
                   aria-checked={d === design}
                   onClick={() => selectDesign(d)}
-                  style={{
-                    padding: '9px 0', borderRadius: 999, fontSize: 14,
-                    fontWeight: d === design ? 700 : 600,
-                    background: d === design ? 'var(--accent)' : 'transparent',
-                    color: d === design ? 'var(--accent-foreground)' : 'var(--muted-foreground)',
-                  }}
+                  className={cn(segmentClass(d === design), 'h-9 text-sm')}
                 >
                   {s.designLabels[d]}
                 </button>
@@ -242,8 +256,9 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
               <div className="flex items-center justify-between" style={{ padding: '2px' }}>
                 <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.photo}</span>
                 <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="text-foreground"
+                  className="hit-44 text-foreground"
                   style={{ fontSize: 14, fontWeight: 600, padding: '6px 2px' }}
                 >
                   {photoImage ? s.changePhoto : s.choosePhoto}
@@ -252,19 +267,15 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
             )}
             <div className="flex items-center justify-between" style={{ padding: '2px' }}>
               <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.background}</span>
-              <div role="radiogroup" aria-label={s.background} className="flex" style={{ padding: 3, borderRadius: 999, background: 'var(--muted)' }}>
+              <div role="radiogroup" aria-label={s.background} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
                 {(['dark', 'light'] as const).map((mode) => (
                   <button
                     key={mode}
+                    type="button"
                     role="radio"
                     aria-checked={theme === mode}
                     onClick={() => setTheme(mode)}
-                    style={{
-                      padding: '6px 14px', borderRadius: 999, fontSize: 13,
-                      fontWeight: theme === mode ? 700 : 600,
-                      background: theme === mode ? 'var(--foreground)' : 'transparent',
-                      color: theme === mode ? 'var(--background)' : 'var(--muted-foreground)',
-                    }}
+                    className={cn(segmentClass(theme === mode), 'h-[30px] px-3.5 text-[13px]')}
                   >
                     {s.themeLabels[mode]}
                   </button>
@@ -272,24 +283,13 @@ export function ShareCardModal({ activity, vo2Grade = null, canShareFiles, canCo
               </div>
             </div>
 
+            {/* The app's one switch (ui/Toggle), off in line-2 as in Settings.
+                The sheet's own drew off as --muted on its --background, two
+                near-equal greys: no track to see (design review, Oct 2026). */}
             {vo2Grade && (
               <div className="flex items-center justify-between" style={{ padding: '2px' }}>
                 <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{t.vo2Grade.shareBadge}</span>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={showGrade}
-                  aria-label={t.vo2Grade.shareBadge}
-                  onClick={() => setShowGrade((v) => !v)}
-                  className="relative shrink-0 rounded-full transition-colors"
-                  style={{ width: 51, height: 31, background: showGrade ? 'var(--foreground)' : 'var(--muted)' }}
-                  data-testid="share-grade-toggle"
-                >
-                  <span
-                    className="absolute top-[3px] rounded-full transition-[left]"
-                    style={{ width: 25, height: 25, left: showGrade ? 23 : 3, background: showGrade ? 'var(--background)' : 'var(--muted-foreground)' }}
-                  />
-                </button>
+                <Toggle checked={showGrade} onChange={setShowGrade} label={t.vo2Grade.shareBadge} />
               </div>
             )}
 

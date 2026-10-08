@@ -18,7 +18,7 @@ export function RecentActivities({ activities, qualifiedEffortsByActivityId = {}
     <section className="flex flex-col gap-3.5" data-testid="recent-activities">
       <div className="mt-2 flex items-center justify-between px-1">
         <h2 className="text-[15px] font-semibold text-foreground">{t.dashboard.recentActivities.title}</h2>
-        <Link href="/activities" className="text-footnote font-medium text-accent-text transition-opacity hover:opacity-80 active:opacity-60">
+        <Link href="/activities" className="hit-44 text-footnote font-medium text-accent-text transition-opacity hover:opacity-80 active:opacity-60">
           {t.common.viewAll} →
         </Link>
       </div>

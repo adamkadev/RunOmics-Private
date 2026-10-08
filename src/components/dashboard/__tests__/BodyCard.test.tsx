@@ -4,7 +4,7 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { TrainingStatusDayBar } from '@/application/usecases/GetTrainingStatusDaysBar'
 import { t } from '@/i18n'
 import { formBand } from '@/domain/training/formBand'
-import { BodyCard, deltaLabel, latestRatedStatus } from '../BodyCard'
+import { BodyCard, FormScale, deltaLabel, latestRatedStatus } from '../BodyCard'
 
 const STATUS = { tsbNow: 2, tsbDelta: 10, ctl: 11, ctlDelta: 3, ctlDeltaShown: 1, atl: 9, atlDelta: -9 } as unknown as TrainingStatus
 
@@ -42,7 +42,10 @@ describe('BodyCard', () => {
     expect(screen.getByText(t.trainingStatus.metrics.fitness)).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.trainingLoad.fatigue)).toBeInTheDocument()
     expect(screen.getByText(t.dashboard.bodyCard.deltaIn('+1', 7))).toBeInTheDocument()
-    expect(screen.queryByRole('link')).toBeNull()
+    // Nothing to follow inside it: the card as a whole opens Analytics › Load,
+    // the three numbers' home (design review, Oct 2026).
+    expect(screen.getByTestId('body-card').querySelector('a')).toBeNull()
+    expect(screen.getByRole('link', { name: t.dashboard.bodyCard.open }).getAttribute('href')).toBe('/analytics')
     expect(screen.getByTestId('body-card').textContent).not.toMatch(/of the last/)
   })
 
@@ -85,5 +88,22 @@ describe('BodyCard', () => {
   it('says which way Form moved in a word', () => {
     render(<BodyCard status={{ ...STATUS, tsbNow: -4, tsbDelta: -5 }} />)
     expect(screen.getAllByTestId('metric-delta')[0]!.textContent).toContain(t.dashboard.bodyCard.formTrend.down)
+  })
+})
+
+// Design review, Oct 2026: "−18" alone did not say whether it was deep or normal.
+describe('the Form scale', () => {
+  it('marks Form on the tired / neutral / fresh scale and names its band', () => {
+    render(<FormScale form={-18} />)
+    const scale = screen.getByTestId('form-scale')
+    expect(scale.getAttribute('aria-label')).toBe(t.dashboard.bodyCard.formOnScale('−18', t.formBand.tired))
+    // −40 to +25: −18 sits a third of the way along.
+    expect(screen.getByTestId('form-marker').style.left).toBe(`${(22 / 65) * 100}%`)
+    expect(scale.textContent).toBe(`${t.formBand.tired}${t.formBand.neutral}${t.formBand.fresh}`)
+  })
+
+  it('rests the marker on the edge past the scale', () => {
+    render(<FormScale form={40} />)
+    expect(screen.getByTestId('form-marker').style.left).toBe('100%')
   })
 })

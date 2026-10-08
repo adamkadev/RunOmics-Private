@@ -100,8 +100,9 @@ describe('ConsistencyMonths', () => {
     render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY, { streakWeeks: 4, bestStreakWeeks: 11 })} />)
     const stats = screen.getByTestId('consistency-stats')
     expect(stats.textContent).toContain(t.consistency.activeDays)
-    // v4.17.2: the days it counts of, and from when - the first of October.
-    expect(stats.textContent).toContain(t.consistency.ofDays(361, 'Oct 1'))
+    // v4.17.2: the days it counts of, and from when - the first of October,
+    // with its year (design review, Oct 2026: "since Nov 1" named none).
+    expect(stats.textContent).toContain(t.consistency.ofDays(361, 'Oct 1, 2025'))
     expect(stats.textContent).toContain(t.consistency.share)
     expect(stats.textContent).toContain(t.consistency.best(11))
     for (const label of Object.values(t.consistency.levels)) expect(screen.getByText(label)).toBeInTheDocument()
@@ -111,14 +112,26 @@ describe('ConsistencyMonths', () => {
 
   // v4.17.1: 16 active days or more is the full accent, fewer the ramp's lowest tint.
   it('draws a month of 16 active days or more in the full accent', () => {
-    const sixteen = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`2026-09-${String(i + 1).padStart(2, '0')}`, 5]))
-    const fifteen = Object.fromEntries(Array.from({ length: 15 }, (_, i) => [`2026-08-${String(i + 1).padStart(2, '0')}`, 5]))
+    const sixteen = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`2026-08-${String(i + 1).padStart(2, '0')}`, 5]))
+    const fifteen = Object.fromEntries(Array.from({ length: 15 }, (_, i) => [`2026-07-${String(i + 1).padStart(2, '0')}`, 5]))
     render(<ConsistencyMonths view={consistencyMonths(window('2025-09-22', TODAY, { ...fifteen, ...sixteen }), TODAY)} />)
     const bars = screen.getAllByTestId('month-bar')
-    expect(bars.at(-1)!.dataset.strong).toBe('true')
-    expect(bars.at(-1)!.style.background).toBe('var(--accent)')
-    expect(bars.at(-2)!.dataset.strong).toBe('false')
-    expect(bars.at(-2)!.style.background).toBe(LEVEL_FILL[1])
+    expect(bars.at(-2)!.dataset.strong).toBe('true')
+    expect(bars.at(-2)!.style.background).toBe('var(--accent)')
+    expect(bars.at(-3)!.dataset.strong).toBe('false')
+    expect(bars.at(-3)!.style.background).toBe(LEVEL_FILL[1])
+  })
+
+  // Design review, Oct 2026: five days into October, its 5 read as a weak month.
+  it('draws the month under way dashed, neither strong nor weak', () => {
+    const sixteen = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [`2026-09-${String(i + 1).padStart(2, '0')}`, 5]))
+    render(<ConsistencyMonths view={consistencyMonths(window('2025-09-22', TODAY, sixteen), TODAY)} />)
+    const now = screen.getAllByTestId('month-bar').at(-1)!
+    expect(now.dataset.inProgress).toBe('true')
+    expect(now.dataset.strong).toBe('false')
+    expect(now.style.background).toBe('transparent')
+    expect(now.style.border).toContain('dashed')
+    expect(screen.getByText(t.consistency.monthLegend.soFar)).toBeInTheDocument()
   })
 
   it('colours the change in the share by what it means', () => {
@@ -126,7 +139,7 @@ describe('ConsistencyMonths', () => {
     render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY, { runDates: runs })} />)
     const prior = screen.getByTestId('consistency-prior')
     // Fewer days run than the year before is a caution.
-    expect(prior.textContent).toBe(t.consistency.vsRange('−2', 'Jun – Sep 2025'))
+    expect(prior.textContent).toBe(t.consistency.vsMonths('−2', 4))
     expect(prior.parentElement!.className).toContain('text-[var(--warn)]')
   })
 
@@ -135,7 +148,7 @@ describe('ConsistencyMonths', () => {
     render(<ConsistencyMonths view={consistencyMonths(YEAR, TODAY)} />)
     const run = document.querySelector('a[href="/activities/a-2026-09-02"]')
     expect(run).not.toBeNull()
-    expect(run!.getAttribute('aria-label')).toContain('6.00 km')
+    expect(run!.getAttribute('aria-label')).toContain('6.0 km')
 
     const rest = document.querySelectorAll<HTMLButtonElement>('button[data-state="rest"]')[0]!
     await userEvent.click(rest)

@@ -10,7 +10,6 @@ import { formatDate } from '@/lib/formatters'
 import type { DeltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
-import { Button } from '@/components/ui/Button'
 import type { StatTone } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 
@@ -182,7 +181,7 @@ export function Dialog({
   eyebrow?: string
   eyebrowTone?: StatTone
   onClose: () => void
-  /** Buttons beside Close, the primary one last. */
+  /** The dialog's buttons, the primary one last; none, and it has no footer. */
   actions?: ReactNode
   children: ReactNode
 }) {
@@ -230,12 +229,9 @@ export function Dialog({
           </button>
         </div>
         {children}
-        <div className="flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>
-            {t.analytics.cards.close}
-          </Button>
-          {actions}
-        </div>
+        {/* One way to dismiss (design review, Oct 2026): the × above, the
+            backdrop and Escape. A second "Close" beside it said the same. */}
+        {actions && <div className="flex justify-end gap-2">{actions}</div>}
       </div>
     </div>,
     document.body,
@@ -276,6 +272,7 @@ export function ChartScrub({
   mode = 'bar',
   readout,
   onShift,
+  onActive,
   children,
   className,
 }: {
@@ -285,6 +282,8 @@ export function ChartScrub({
   readout: (index: number) => ReactNode
   /** +1 is one window older, -1 one newer. */
   onShift?: (step: 1 | -1) => void
+  /** The slot under the finger, null once it lifts: a card's legend can follow it. */
+  onActive?: (index: number | null) => void
   children: ReactNode
   className?: string
 }) {
@@ -295,6 +294,11 @@ export function ChartScrub({
   useEffect(() => () => {
     if (gesture.current?.timer) clearTimeout(gesture.current.timer)
   }, [])
+
+  function show(index: number | null) {
+    setActive(index)
+    onActive?.(index)
+  }
 
   function indexAt(clientX: number): number | null {
     const rect = ref.current?.getBoundingClientRect()
@@ -325,18 +329,18 @@ export function ChartScrub({
         const clientX = e.clientX
         start.timer = setTimeout(() => {
           start.held = true
-          setActive(indexAt(clientX))
+          show(indexAt(clientX))
         }, HOLD_MS)
         gesture.current = start
       }}
       onPointerMove={(e) => {
         if (e.pointerType === 'mouse') {
-          setActive(indexAt(e.clientX))
+          show(indexAt(e.clientX))
           return
         }
         const g = gesture.current
         if (!g) return
-        if (g.held) setActive(indexAt(e.clientX))
+        if (g.held) show(indexAt(e.clientX))
         else if (Math.hypot(e.clientX - g.x, e.clientY - g.y) > MOVE_TOLERANCE_PX && g.timer) {
           clearTimeout(g.timer)
           g.timer = null
@@ -349,15 +353,15 @@ export function ChartScrub({
           const dy = e.clientY - g.y
           if (onShift && Math.abs(dx) >= SWIPE_PX && Math.abs(dx) > Math.abs(dy) * 2) onShift(dx > 0 ? 1 : -1)
         }
-        if (e.pointerType !== 'mouse') setActive(null)
+        if (e.pointerType !== 'mouse') show(null)
         end()
       }}
       onPointerCancel={() => {
-        setActive(null)
+        show(null)
         end()
       }}
       onPointerLeave={(e) => {
-        if (e.pointerType === 'mouse') setActive(null)
+        if (e.pointerType === 'mouse') show(null)
       }}
       onContextMenu={(e) => e.preventDefault()}
     >

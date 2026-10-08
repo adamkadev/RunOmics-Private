@@ -121,8 +121,10 @@ export default async function ActivityDetailPage({
                   </span>
                   <RunPlace activityId={activity.id} start={activity.route?.[0] ?? null} />
                 </p>
+                {/* Under the title too, so it fades with the date line
+                    rather than show cut under the compact title bar. */}
                 {activity.comment && (
-                  <p className="text-sm text-muted-foreground">{activity.comment}</p>
+                  <p data-title-sub className="text-sm text-muted-foreground">{activity.comment}</p>
                 )}
               </div>
               <ShareButton activity={shareActivity(activity)} vo2Grade={vo2GradeLetter} />

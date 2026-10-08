@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { formatDate, formatKm } from '@/lib/formatters'
@@ -56,8 +57,33 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
   )
 }
 
+/**
+ * The zones' key, a figure under each (design review, Oct 2026): in a stacked
+ * week Z3 and Z4 read as one colour, so each zone is named with its hours -
+ * the window's, or the held week's while a finger is on the chart - and
+ * every segment can be read in words, not by its colour alone.
+ */
+function ZoneKey({ zoneHours, held }: { zoneHours: number[]; held: boolean }) {
+  return (
+    <div className="grid grid-cols-5 gap-2" data-testid="zone-key" data-held={held || undefined}>
+      {ZONE_COLOR.map((color, z) => (
+        <span key={z} className="flex min-w-0 flex-col gap-0.5 text-xs text-muted-foreground" data-testid="zone-key-item">
+          <LegendItem swatch="square" color={color}>
+            {t.trainingZones.zoneNumber(z + 1)}
+          </LegendItem>
+          {/* A decimal under 100 h and none above, as distances: a year's Z2 fits its fifth of a phone. */}
+          <b className="whitespace-nowrap text-[13px] font-semibold tabular-nums text-foreground">
+            {t.analytics.cards.period.hours(formatKm(zoneHours[z]!, zoneHours[z]! >= 100 ? 0 : 1))}
+          </b>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void }) {
   const s = t.analytics.cards.zones
+  const [held, setHeld] = useState<number | null>(null)
   const view = zonesView(rows)
   if (!view) return null
   const H = 130
@@ -79,6 +105,7 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
       <ChartScrub
         count={rows.length}
         onShift={onShift}
+        onActive={setHeld}
         readout={(i) => `${t.analytics.cards.scrubWeek(bare(rows[i]!.week))} · ${formatKm(view.weeks[i]!.hours.reduce((a, b) => a + b, 0), 1)} h`}
       >
         <div className="grid items-end" style={{ height: H, gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="zone-bars">
@@ -110,13 +137,7 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
       </ChartScrub>
       <div className="flex flex-col gap-2.5">
         <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
-        <Legend className="gap-x-3.5">
-          {ZONE_COLOR.map((color, z) => (
-            <LegendItem key={z} swatch="square" color={color}>
-              Z{z + 1}
-            </LegendItem>
-          ))}
-        </Legend>
+        <ZoneKey zoneHours={held !== null && view.weeks[held] ? view.weeks[held]!.hours : view.zoneHours} held={held !== null} />
       </div>
     </Card>
   )

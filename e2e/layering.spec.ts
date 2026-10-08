@@ -94,11 +94,12 @@ test.describe('on a phone', () => {
           { id: 'top-edge-bar', height: 48, opaque: true },
         ])
       }
-      // Scrolled, the compact bar shows - under the strip, not over it.
+      // Scrolled, the compact bar shows - under the strip, not over it, 52 pt
+      // tall (design review, Oct 2026).
       if (route === '/analytics') {
         const bar = await page.getByTestId('compact-title-bar').boundingBox()
         expect(bar?.y).toBe(59)
-        expect(bar?.height).toBe(44)
+        expect(bar?.height).toBe(52)
       }
     })
   }

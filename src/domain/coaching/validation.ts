@@ -13,6 +13,7 @@ import {
   type TrainingWeek,
   type WorkoutBlock,
   type WorkoutEvaluation,
+  type WorkoutNameStructure,
   type WorkoutPrescription,
   type WorkoutTarget,
 } from './types'
@@ -165,6 +166,30 @@ function workoutBlock(value: unknown, path: string): WorkoutBlock {
   }
 }
 
+/** "4:25": minutes and seconds per kilometre. */
+const PACE_CLOCK = /^\d{1,2}:[0-5]\d$/
+
+/**
+ * The fields a name states (design review, Oct 2026). Optional, and only
+ * their shape is read here: whether they agree with the blocks is
+ * application/coaching/workoutNames.ts's to judge, where the name is written.
+ */
+function nameStructure(value: unknown, path: string): WorkoutNameStructure {
+  const raw = object(value, path)
+  const repMinutes = raw.repMinutes === undefined ? undefined : number(raw.repMinutes, `${path}.repMinutes`)
+  if (repMinutes === 0) throw new CoachingValidationError(`${path}.repMinutes`, 'expected a number > 0')
+  const targetPace = raw.targetPace === undefined ? undefined : string(raw.targetPace, `${path}.targetPace`)
+  if (targetPace !== undefined && !PACE_CLOCK.test(targetPace)) throw new CoachingValidationError(`${path}.targetPace`, 'expected M:SS')
+  const structure: WorkoutNameStructure = {
+    ...(raw.reps === undefined ? {} : { reps: integer(raw.reps, `${path}.reps`, 1) }),
+    ...(repMinutes === undefined ? {} : { repMinutes }),
+    ...(targetPace === undefined ? {} : { targetPace }),
+    ...(raw.extras === undefined ? {} : { extras: array(raw.extras, `${path}.extras`, string) }),
+  }
+  if (Object.keys(structure).length === 0) throw new CoachingValidationError(path, 'states nothing; leave it out instead')
+  return structure
+}
+
 export function parseWorkoutPrescription(value: unknown, path = 'workout'): WorkoutPrescription {
   const raw = object(value, path)
   const workout: WorkoutPrescription = {
@@ -173,6 +198,8 @@ export function parseWorkoutPrescription(value: unknown, path = 'workout'): Work
     date: isoDate(raw.date, `${path}.date`),
     type: enumeration(raw.type, ['easy', 'recovery', 'long_run', 'tempo', 'threshold', 'vo2max', 'anaerobic', 'sprint', 'race'], `${path}.type`),
     title: string(raw.title, `${path}.title`),
+    ...(raw.shortName === undefined ? {} : { shortName: string(raw.shortName, `${path}.shortName`) }),
+    ...(raw.structure === undefined ? {} : { structure: nameStructure(raw.structure, `${path}.structure`) }),
     description: string(raw.description, `${path}.description`),
     status: enumeration(raw.status, ['prescribed', 'adjusted', 'cancelled'], `${path}.status`),
     ...(raw.totalDurationSeconds === undefined ? {} : { totalDurationSeconds: integer(raw.totalDurationSeconds, `${path}.totalDurationSeconds`, 1) }),

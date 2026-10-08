@@ -43,7 +43,7 @@ describe('in the French build', () => {
   // toFixed always wrote a point, so a run read "9.26" beside a total of
   // "1 321,5" on the same screen.
   it('writes a distance with the decimal comma', () => {
-    expect(fr.formatDistance(9.26)).toBe('9,26')
+    expect(fr.formatDistance(9.26)).toBe('9,3')
     expect(fr.formatDistance(12.34)).toBe('12,3')
   })
 
@@ -52,6 +52,6 @@ describe('in the French build', () => {
   })
 
   it('leaves the English build as it was', () => {
-    expect(formatDistance(9.26)).toBe('9.26')
+    expect(formatDistance(9.26)).toBe('9.3')
   })
 })

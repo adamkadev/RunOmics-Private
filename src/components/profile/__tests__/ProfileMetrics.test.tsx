@@ -105,27 +105,43 @@ describe('ProfileHrZones table', () => {
   })
 
   // v4.17: time is "9 min" under an hour, "2 h 05" over; the window's total
-  // and its Z4-Z5 share sit over one bar of zone segments, the share in warn
-  // outside the 10-15% target.
+  // and its Z4-Z5 share sit over one bar of zone segments. The week under way
+  // is not a week's split yet: no verdict and no colour.
   it('writes time with its units and puts the total and the hard share over the zone bar', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
     expect(within(screen.getByTestId('zone-row-4')).getByText(`9 ${t.units.min}`)).toBeInTheDocument()
     expect(screen.getByTestId('zone-total').textContent).toBe(`14${t.units.min}`)
     const share = screen.getByTestId('zone-hard-share')
-    expect(share.textContent).toBe(z.hardShare(100))
-    expect(share.className).toContain('text-[var(--warn)]')
+    expect(share.textContent).toBe(z.hardShare(100, z.soFar))
+    expect(share.className).toContain('text-muted-foreground')
     const stack = screen.getByTestId('zone-stack')
     expect([...stack.querySelectorAll('[data-zone]')].map((el) => el.getAttribute('data-zone'))).toEqual(['4', '5'])
   })
 
-  it('reads a hard share inside the target as good', () => {
-    const inTarget = [
-      { zone: 2, seconds: 88 * 60, percent: 0 },
-      { zone: 4, seconds: 12 * 60, percent: 0 },
+  // Design review, Oct 2026: "Hard 7 %" read amber here against a 10-15 %
+  // target while Analytics > Intensity read the same weeks "In range". One
+  // split and one verdict now, and too little hard is never a caution.
+  it('reads four weeks by the verdict Analytics gives the same time', () => {
+    const inRange = [
+      { zone: 2, seconds: 93 * 60, percent: 0 },
+      { zone: 4, seconds: 7 * 60, percent: 0 },
     ]
-    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={inTarget} recentZoneTime={[]} />)
-    expect(screen.getByTestId('zone-hard-share').className).toContain('text-[var(--pos)]')
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={[]} recentZoneTime={inRange} />)
+    const share = screen.getByTestId('zone-hard-share')
+    expect(share.textContent).toBe(z.hardShare(7, t.analytics.cards.easyHard.inRange))
+    expect(share.className).toContain('text-[var(--pos)]')
     expect(screen.getByTestId('zone-total').textContent).toBe(`1${t.units.hour} 40${t.units.min}`)
+  })
+
+  it('reads too much hard over four weeks as a caution', () => {
+    const tooHard = [
+      { zone: 2, seconds: 60 * 60, percent: 0 },
+      { zone: 4, seconds: 40 * 60, percent: 0 },
+    ]
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={[]} recentZoneTime={tooHard} />)
+    const share = screen.getByTestId('zone-hard-share')
+    expect(share.textContent).toBe(z.hardShare(40, t.analytics.cards.easyHard.tooHard))
+    expect(share.className).toContain('text-[var(--warn)]')
   })
 
   // v4.4.1: a zone under 1% of the window is not drawn at all, not a sliver.

@@ -28,11 +28,14 @@ export function ShareButton({ activity, vo2Grade = null }: Props) {
   return (
     <>
       {/* The page's one action, on the title row (v4.17): an outline
-          button that says what it does, not an icon chip. */}
+          button that says what it does, not an icon chip, with a 44 pt
+          target. Once the title row has scrolled away, the compact title
+          bar's share icon presses it (design review, Oct 2026). */}
       <Button
         variant="secondary"
+        data-bar-action="share"
         onClick={() => setIsOpen(true)}
-        className="h-[34px] shrink-0 bg-card px-3 font-normal"
+        className="hit-44 h-[34px] shrink-0 bg-card px-3 font-normal"
       >
         {t.activity.share}
       </Button>

@@ -62,12 +62,16 @@ describe('formatPace', () => {
 })
 
 describe('formatDistance', () => {
-  it('shows 2 decimals under 10 km', () => {
-    expect(formatDistance(5.123)).toBe('5.12')
+  // Design review, Oct 2026: one rule everywhere - "7.2 km" beside "12.9 km",
+  // never "7.20".
+  it('shows 1 decimal under 100 km', () => {
+    expect(formatDistance(5.123)).toBe('5.1')
+    expect(formatDistance(7.2)).toBe('7.2')
   })
 
-  it('shows 1 decimal at 10 km and above', () => {
+  it('shows 1 decimal at 10 km, and none from 100 km', () => {
     expect(formatDistance(10.567)).toBe('10.6')
+    expect(formatDistance(123.4)).toBe('123')
   })
 })
 

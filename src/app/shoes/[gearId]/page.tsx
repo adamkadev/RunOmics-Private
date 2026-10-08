@@ -231,11 +231,16 @@ export default async function ShoeDetailPage({
                 {wear.over ? wear.short : wear.exact}
               </span>
             </div>
-            <WearBar totalKm={shoe.totalKm} maxKm={shoe.maxKm} tickKm={shoe.alertThresholdKm} size="md" />
-            <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs leading-snug text-muted-foreground">
-              <span>{runOutSentence}</span>
-              <span className="shrink-0" data-testid="shoe-retire-mark">{d.retireFromWorkouts(formatKm(shoe.alertThresholdKm))}</span>
-            </div>
+            {/* The threshold is named under its tick, as on the list (design
+                review, Oct 2026), not at the row's far end. */}
+            <WearBar
+              totalKm={shoe.totalKm}
+              maxKm={shoe.maxKm}
+              tickKm={shoe.alertThresholdKm}
+              tickLabel={d.retireFromWorkouts(formatKm(shoe.alertThresholdKm))}
+              size="md"
+            />
+            {runOutSentence && <p className="text-xs leading-snug text-muted-foreground">{runOutSentence}</p>}
           </>
         )}
         <div className="mt-0.5 grid grid-cols-2 gap-4 border-t border-border pt-3.5 sm:grid-cols-4" data-testid="shoe-hero-stats">

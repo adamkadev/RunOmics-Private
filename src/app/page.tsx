@@ -22,7 +22,7 @@ import { BodyCard, latestRatedStatus } from '@/components/dashboard/BodyCard'
 import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
-import { findNextSession } from '@/components/dashboard/nextSession'
+import { findLastRun, findNextSession } from '@/components/dashboard/nextSession'
 import { yesterdayKind } from '@/components/dashboard/todayVerdict'
 import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { t } from '@/i18n'
@@ -71,6 +71,9 @@ export default async function DashboardPage() {
   const yesterdayPrescribed = coachWorkouts.find((w) => w.prescription.date === yesterdayIso && w.prescription.status !== 'cancelled')?.prescription.type ?? null
   const yesterday = yesterdayKind(data.recentActivities.find((a) => a.date === yesterdayIso) ?? null, yesterdayPrescribed)
   const sessionKinds = plannedSessionKinds(weekTarget.days.map((day) => day.date), coachWorkouts, plannedWorkouts)
+  const heroWorkout = todayWorkout && heroWorkoutView(todayWorkout)
+  // Today's run once it is done, else yesterday's run or missed session (design review, Oct 2026).
+  const lastRun = findLastRun(today, todayActivity, heroWorkout, data.recentActivities, coachWorkouts, plannedWorkouts, trainingZones)
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -80,11 +83,13 @@ export default async function DashboardPage() {
 
       <TodayHero
         status={trainingStatus}
-        plannedWorkout={todayWorkout && heroWorkoutView(todayWorkout)}
+        plannedWorkout={heroWorkout}
         todayActivity={todayActivity}
         aiVerdict={aiVerdict}
         nextSession={nextSession}
         yesterday={yesterday}
+        lastRun={lastRun}
+        today={today}
       />
 
       <BodyCard status={trainingStatus} watchStatus={latestRatedStatus(trainingStatusDays)} />

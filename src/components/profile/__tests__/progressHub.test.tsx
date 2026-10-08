@@ -142,6 +142,9 @@ describe('ProgressHub', () => {
     expect(screen.getAllByTestId('shoe-row').map((row) => row.getAttribute('href'))).toEqual(['/shoes/p', '/shoes/v'])
     expect(screen.getByTestId('shoes-all').getAttribute('href')).toBe('/shoes')
     expect(screen.getByRole('link', { name: t.profile.hub.settings }).getAttribute('href')).toBe('/settings')
+    // Design review, Oct 2026: 44 pt, like every control.
+    expect(screen.getByTestId('settings-gear').className).toContain('size-11')
+    expect(screen.getByTestId('shoes-all').className).toContain('hit-44')
     expect(screen.getByTestId('year-hero').textContent).toContain(t.profile.hub.vsYear('+1,094', 2025))
     expect(screen.getByTestId('race-tile').textContent).toContain('42:10')
     // C6: the All time card opens its page and shows this year and last as rows.

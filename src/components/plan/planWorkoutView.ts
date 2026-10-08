@@ -27,7 +27,10 @@ import { sessionTitle } from './sessionTitle'
 export interface PlanWorkoutView {
   key: string
   date: string
+  /** The session's name, as the coach or Garmin wrote it. */
   title: string
+  /** The coach's name for a tight row, when the session was named under the naming rules (design review, Oct 2026). */
+  shortName?: string
   type?: ActivityType
   scheduledTime?: ScheduledTimeOfDay
   duration: { seconds: number; estimated: boolean } | null
@@ -125,6 +128,7 @@ export function coachWorkoutView(
     key: workout.id,
     date: workout.date,
     title: workout.title,
+    ...(workout.shortName ? { shortName: workout.shortName } : {}),
     type,
     scheduledTime: garmin?.scheduledTime,
     duration: prescriptionDuration(workout),
@@ -141,7 +145,7 @@ export function coachWorkoutView(
   }
 }
 
-const HERO_FIELDS = ['title', 'type', 'duration', 'distanceM', 'scheduledTime', 'target', 'activityId', 'structure'] as const satisfies readonly (keyof PlanWorkoutView)[]
+const HERO_FIELDS = ['title', 'shortName', 'type', 'duration', 'distanceM', 'scheduledTime', 'target', 'activityId', 'structure'] as const satisfies readonly (keyof PlanWorkoutView)[]
 
 /**
  * What the dashboard hero shows of today's session. The full view also holds

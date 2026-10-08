@@ -35,12 +35,15 @@ export function PlanPeriodNav({
       <div className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-foreground">
         <span className="truncate">{label}</span>
         {onToday && (
-          <>
-            <span aria-hidden="true" className="font-normal text-muted-foreground">·</span>
-            <button type="button" onClick={onToday} className="shrink-0 font-medium text-accent-text">
-              {t.plan.today}
-            </button>
-          </>
+          // A chip with the 44 pt hit area round it (design review, Oct 2026):
+          // the bare "· Today" was a 20 pt target.
+          <button
+            type="button"
+            onClick={onToday}
+            className="hit-44 shrink-0 rounded-full bg-[var(--surface-2)] px-2.5 py-0.5 text-[13px] font-medium text-accent-text transition-colors hover:bg-[var(--line-2)]"
+          >
+            {t.plan.today}
+          </button>
         )}
       </div>
       <button type="button" aria-label={t.plan.nextPeriod} onClick={onNext} disabled={nextDisabled} className={NAV_BUTTON}>

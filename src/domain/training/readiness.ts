@@ -1,6 +1,6 @@
 import type { TrainingStatus } from '@/domain/training/status'
 
-export type ReadinessTone = 'go' | 'caution' | 'hold'
+export type ReadinessTone = 'go' | 'build' | 'caution' | 'hold'
 
 /**
  * Form (TSB) on the usual scale (Coggan; TrainingPeaks and intervals.icu read
@@ -22,21 +22,23 @@ function fatigueRisingFast(status: TrainingStatus): boolean {
 }
 
 /**
- * The Today verdict's tone. Hold is for real risk: overreaching, a
- * high-risk load, Form in the high-risk zone, or deep in the training zone
- * with fatigue still climbing fast. Form at -10 to -30 is where training
- * works: it held back a productive week with the load in range, rest day and
- * easy run included. That reads as caution - keep the easy days easy - not
- * as a reason to stop.
+ * The Today verdict's tone. Build is the normal state of a block: the load
+ * is in range and the plan stands as written. Go is the same with fresh
+ * legs, Form above +5: the day a session can be run with confidence.
+ * Caution names something to watch: Form deep in the training zone, fatigue
+ * climbing fast, a moderate-risk load, or fitness slipping despite the work.
+ * Hold is for real risk: overreaching, a high-risk load, Form in the
+ * high-risk zone, or deep in the training zone with fatigue still climbing
+ * fast.
+ *
+ * Green light used to need Form above +5 with fatigue falling, which only a
+ * taper or a few days off give, so caution was the default: 398 days of 464,
+ * a productive build with ACWR at 0.9 included, and it said nothing.
  */
 export function verdictTone(status: TrainingStatus): ReadinessTone {
   if (status.status === 'overreaching' || status.risk === 'high') return 'hold'
-  if (status.tsbNow < FORM_HIGH_RISK || (status.tsbNow < FORM_DEEP && fatigueRisingFast(status))) return 'hold'
-
-  const fatigueFalling = status.atlDelta < -1
-  if (status.tsbNow > FORM_FRESH && fatigueFalling) {
-    const notBuilding = status.status === 'unproductive' || status.status === 'detraining' || status.status === 'recovery'
-    return notBuilding ? 'caution' : 'go'
-  }
-  return 'caution'
+  const climbing = fatigueRisingFast(status)
+  if (status.tsbNow < FORM_HIGH_RISK || (status.tsbNow < FORM_DEEP && climbing)) return 'hold'
+  if (status.tsbNow < FORM_DEEP || climbing || status.risk === 'moderate' || status.status === 'unproductive') return 'caution'
+  return status.tsbNow > FORM_FRESH ? 'go' : 'build'
 }

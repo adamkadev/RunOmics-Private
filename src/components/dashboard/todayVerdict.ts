@@ -93,7 +93,7 @@ export function todayVerdict({ tone, today, yesterday, next }: TodayVerdictInput
           ? v.gain.easyHold
           : quality
             ? (tone === 'go' ? v.gain.easySave : v.gain.easyLands)(quality.when, v.kind[quality.kind])
-            : tone === 'go'
+            : tone === 'go' || tone === 'build'
               ? v.gain.easyGo
               : v.gain.easySettle
       break

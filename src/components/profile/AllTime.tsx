@@ -66,11 +66,32 @@ function Totals({ view }: { view: AllTimeView }) {
   )
 }
 
+/** The monthly chart's height, in pt. */
+const MONTHLY_H = 96
+/** Round steps for its scale, in km. */
+const SCALE_STEPS = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000]
+/** Lines up the side at most: on a 96 pt chart, more would crowd it. */
+const SCALE_LINES = 3
+
+/**
+ * The monthly chart's scale (design review, Oct 2026): with none, no month
+ * could be read but the best one named over the chart. The smallest round
+ * step that needs three lines at most, the top rounded up to it - so every
+ * line is a round figure and the best month still reaches near the top.
+ */
+export function monthlyScale(bestKm: number): { top: number; ticks: number[] } {
+  const best = Math.max(1, bestKm)
+  const step = SCALE_STEPS.find((s) => Math.ceil(best / s) <= SCALE_LINES) ?? Math.ceil(best / SCALE_LINES)
+  const lines = Math.ceil(best / step)
+  return { top: lines * step, ticks: Array.from({ length: lines }, (_, i) => (i + 1) * step) }
+}
+
 /** Every month since the first run: past years band grey, this year ink, and
  *  the month still running outlined in the accent, the one "now" (v5.5 #16). */
 function MonthlyBars({ view }: { view: AllTimeView }) {
   const a = t.allTime
-  const best = Math.max(1, view.bestMonth?.km ?? 1)
+  const scale = monthlyScale(view.bestMonth?.km ?? 0)
+  const at = (km: number) => `${(km / scale.top) * 100}%`
   const years = [...new Set(view.monthly.map((m) => m.year))]
   return (
     <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="all-time-monthly">
@@ -82,18 +103,34 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
           </span>
         )}
       </div>
-      <div className="mt-3 flex h-24 items-end gap-1" aria-hidden>
-        {view.monthly.map((m) => {
-          const style: CSSProperties = {
-            height: `${Math.max(3, Math.round((m.km / best) * 96))}px`,
-            background: m.year !== view.currentYear ? 'var(--band)' : 'var(--foreground)',
-            ...(m.partial ? { boxShadow: '0 0 0 1.5px var(--card), 0 0 0 3px var(--accent)' } : {}),
-          }
-          return <span key={m.key} data-testid="month-bar" data-month={m.key} className="block min-w-0 flex-1 rounded-[3px]" style={style} />
-        })}
+      <div className="mt-3 flex gap-2" aria-hidden>
+        {/* Round km up the left, as Analytics draws its pace axis, each on
+            a line across the bars. */}
+        <div className="relative w-8 shrink-0 text-caption leading-none text-muted-foreground" style={{ height: MONTHLY_H }} data-testid="monthly-axis">
+          {scale.ticks.map((km) => (
+            <span key={km} className="absolute right-0 translate-y-1/2" style={{ bottom: at(km) }}>
+              {formatKm(km)}
+            </span>
+          ))}
+        </div>
+        <div className="relative min-w-0 flex-1" style={{ height: MONTHLY_H }}>
+          {scale.ticks.map((km) => (
+            <span key={km} data-testid="monthly-gridline" className="absolute inset-x-0 border-t border-border" style={{ bottom: at(km) }} />
+          ))}
+          <div className="relative flex h-full items-end gap-1">
+            {view.monthly.map((m) => {
+              const style: CSSProperties = {
+                height: `${Math.max(3, Math.round((m.km / scale.top) * MONTHLY_H))}px`,
+                background: m.year !== view.currentYear ? 'var(--band)' : 'var(--foreground)',
+                ...(m.partial ? { boxShadow: '0 0 0 1.5px var(--card), 0 0 0 3px var(--accent)' } : {}),
+              }
+              return <span key={m.key} data-testid="month-bar" data-month={m.key} className="block min-w-0 flex-1 rounded-[3px]" style={style} />
+            })}
+          </div>
+        </div>
       </div>
       {/* The years under a divider, each spanning its own months. */}
-      <div className="mt-2 flex gap-1 border-t border-border pt-2 text-caption text-muted-foreground">
+      <div className="ml-10 mt-2 flex gap-1 border-t border-border pt-2 text-caption text-muted-foreground">
         {years.map((year) => {
           const months = view.monthly.filter((m) => m.year === year)
           return (

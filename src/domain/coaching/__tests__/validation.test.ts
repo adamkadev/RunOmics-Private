@@ -8,6 +8,30 @@ describe('coaching validation', () => {
     expect(parsed.blocks[1]).toMatchObject({ kind: 'repeat', repetitions: 3 })
   })
 
+  // Design review, Oct 2026: optional, so a plan written before them reads
+  // exactly as it did.
+  it('reads a short name and a structure, and a plan without them as before', () => {
+    const named = parseWorkoutPrescription(workout({
+      title: 'Threshold · 3 × 8′ @ 4:28',
+      shortName: 'Threshold 3×8′',
+      structure: { reps: 3, repMinutes: 8, targetPace: '4:28', extras: ['6 strides'] },
+    }))
+    expect(named).toMatchObject({ shortName: 'Threshold 3×8′', structure: { reps: 3, repMinutes: 8, targetPace: '4:28', extras: ['6 strides'] } })
+
+    const legacy = parseWorkoutPrescription(workout())
+    expect(legacy).not.toHaveProperty('shortName')
+    expect(legacy).not.toHaveProperty('structure')
+    expect(JSON.stringify(legacy)).toBe(JSON.stringify(workout()))
+  })
+
+  it('refuses a structure that states nothing, or a pace that is not a clock', () => {
+    expect(() => parseWorkoutPrescription(workout({ structure: {} }))).toThrow(/structure: states nothing/)
+    expect(() => parseWorkoutPrescription(workout({ structure: { targetPace: '4.25' } }))).toThrow(/targetPace: expected M:SS/)
+    expect(() => parseWorkoutPrescription(workout({ structure: { reps: 0 } }))).toThrow(/reps: expected a finite number >= 1/)
+    expect(() => parseWorkoutPrescription(workout({ structure: { repMinutes: 0 } }))).toThrow(/repMinutes: expected a number > 0/)
+    expect(() => parseWorkoutPrescription(workout({ shortName: ' ' }))).toThrow(/shortName: expected a non-empty string/)
+  })
+
   it('rejects an inverted pace range', () => {
     const invalid = workout()
     const repeat = invalid.blocks[1]

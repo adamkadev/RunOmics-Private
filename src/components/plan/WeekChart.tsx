@@ -106,7 +106,11 @@ export function WeekChart({
   )
 }
 
-/** The key under the week's bars: one swatch per shape the bars take. */
+/**
+ * The key under the week's bars: one swatch per shape the bars take, on one
+ * short line (design review, Oct 2026: "Planned · colour = session type" ran
+ * it onto two; the dashed swatch already says planned).
+ */
 export function WeekChartLegend() {
   return (
     <div data-testid="day-state-legend">

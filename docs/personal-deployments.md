@@ -25,10 +25,10 @@ GitHub Environment name and the matrix entry in the scheduled workflows.
 ## Why a separate Firebase project
 
 The Firestore collections are flat, global names - `activityNotes`, `pushTokens`,
-`aiInsights`, `aiBudget`, `notifications` - with no athlete in the key, and
-`firestore.rules` grants `allow read: if true` on `activityNotes` so notes render
-for signed-out visitors. Two deployments pointed at one Firebase project would
-therefore share notes, push tokens and the AI budget document.
+`aiInsights`, `aiBudget`, `notifications` - with no athlete in the key, and the
+activity page serves any note it is asked for (`/api/activities/[id]/note`). Two
+deployments pointed at one Firebase project would therefore share notes, push
+tokens and the AI budget document.
 
 A second Firebase project isolates all of it for zero code change, because the
 client and admin SDKs are already configured entirely from `NEXT_PUBLIC_FIREBASE_*`
@@ -142,7 +142,12 @@ Vercel supports any number of projects per repository. Give it its own domain.
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | her data repository and its PAT (step 1) |
 | `INTERNAL_NOTIFY_SECRET` | a fresh random string, **not** the one used by another profile |
 | `GEMINI_API_KEY` | her own key for the general AI surfaces - the free-tier quota is per key, so a shared one has the two deployments starving each other |
+| `GITHUB_SYNC_TOKEN`, `GITHUB_SYNC_REPO` | the Sync button's PAT (Actions: Read and write on this repository) and this repository - may be shared |
+| `GITHUB_SYNC_PROFILE` | her profile name, `lamiaa`: her Sync button then syncs her data only, and its limits (one run at a time, 10 min apart, 12 a day) count her runs only. Unset, a tap syncs both athletes |
 | `NEXT_PUBLIC_MAPTILER_TOKEN` | may be shared, subject to the plan's request quota |
+| `RUNOMICS_PRIVATE` | optional, `1` to make the deployment private - see [A private deployment](#a-private-deployment) |
+| `SESSION_SECRET` | with `RUNOMICS_PRIVATE`: a fresh random string of 32+ characters (`openssl rand -base64 32`), **not** another profile's |
+| `RUNOMICS_VIEWERS` | optional, with `RUNOMICS_PRIVATE`: Google accounts that may view without being the owner, comma-separated - yours, on her deployment |
 
 `GEMINI_COACH_API_KEY` is deliberately absent: the adaptive coach is a local CLI
 (`npm run coach`) for now, so no deployment and no workflow reads it. It lives in
@@ -218,6 +223,11 @@ Then add the profile to the matrices in `.github/workflows/`:
   profiles still run in parallel.
 - **Targetable.** A manual `sync.yml` dispatch takes a `profile` input, because
   `--force` and `--limit` only ever mean something for one dataset.
+- **Reprocessable.** `reprocess` rebuilds that profile's stored runs from the
+  cached FIT files with the current parser (`scripts/reprocess.py`), asking
+  Garmin for nothing - for runs stored before a parser fix, such as the best
+  efforts that moved to the moving clock in v5.5. The privacy steps after it
+  crop and verify every route as on any sync.
 
 ---
 
@@ -254,6 +264,40 @@ same activities again on the next run.
 A workspace with no recorded base is refused too, since it is unknown what it
 was built from. Hydrate it with `fetch_private_data.mjs`, or set
 `RUNOMICS_DATA_BASE_REVISION` to the commit it was built from if you know it.
+
+---
+
+## A private deployment
+
+`RUNOMICS_PRIVATE=1` closes the whole site to anyone who is not signed in: every
+page redirects to `/sign-in`, every API answers 401, before any page - cached or
+not - is served (`src/proxy.ts`). The owner gets in by the `owner` claim, and
+each address in `RUNOMICS_VIEWERS` by its verified Google sign-in, so the two
+athletes can each open the other's deployment. Unset, nothing changes.
+
+`/sign-in` trades the Firebase ID token for a session cookie, verified once and
+then signed with `SESSION_SECRET`; the proxy checks only the signature. The
+cookie lasts 30 days, after which `/sign-in` checks the Google account again -
+without a tap while the browser still holds the account. Changing
+`SESSION_SECRET` signs everyone out.
+
+Turning it on, in order: set the three variables on the Vercel project,
+redeploy, then open the site and sign in. An account without the claim is told
+it is not invited: grant the claim (step 4) and sign in again. Sign-out in
+Settings ends the session and clears the pages the device cached.
+
+What it does not cover:
+
+- **The privacy zones stay.** The gate decides who opens the site, not what
+  the data says: a shared card or screenshot, the data repository, and anyone
+  invited still see the routes, so the zones around home keep their job.
+- **The workflow's routes** (`/api/internal/*`) keep their own shared secret
+  and stay reachable, as the sync needs them.
+- **Notes come through the app.** The activity page reads a note from
+  `/api/activities/[id]/note`, behind the gate, and `firestore.rules` lets only
+  the owner read `activityNotes` directly. Deploy the rules to each Firebase
+  project after the app (`firebase deploy --only firestore:rules --project
+  <id>`): until then a note can still be read straight from Firestore by id.
 
 ---
 

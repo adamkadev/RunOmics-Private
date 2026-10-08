@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseRecommendation } from '../coachingAnswer'
+import { parseBootstrapPlanDraft, parseRecommendation } from '../coachingAnswer'
 
 const session = {
   date: '2026-09-15',
@@ -45,5 +45,35 @@ describe('reading an adaptation', () => {
 
   it('refuses an outcome it does not know', () => {
     expect(() => parseRecommendation(recommendation('PANIC', []), 'weekly_review')).toThrow(/recommendation\.outcome/)
+  })
+})
+
+// Design review, Oct 2026: a session's short name and structure travel with
+// it; a model that answers null for one has left it out.
+describe('reading the name a session comes with', () => {
+  const week = (workouts: unknown[]) => ({ startDate: '2026-09-14', endDate: '2026-09-20', focus: 'Week 1', workouts })
+
+  it('keeps a block session\'s short name and structure', () => {
+    const draft = parseBootstrapPlanDraft({
+      name: 'Base block',
+      focus: 'Aerobic volume',
+      weeks: [week([
+        { ...session, title: 'Easy · 30 min + 6 strides', shortName: 'Easy + strides', structure: { extras: ['6 strides'] } },
+        { ...session, date: '2026-09-16', shortName: null, structure: null },
+      ])],
+    })
+
+    expect(draft.weeks[0]!.workouts[0]).toMatchObject({ shortName: 'Easy + strides', structure: { extras: ['6 strides'] } })
+    expect(draft.weeks[0]!.workouts[1]).not.toHaveProperty('shortName')
+    expect(draft.weeks[0]!.workouts[1]).not.toHaveProperty('structure')
+  })
+
+  it('keeps an adapted session\'s too', () => {
+    const advice = parseRecommendation(recommendation('ADJUST', [
+      { kind: 'upsert_workout', workoutId: 'w-1', workout: { ...session, shortName: 'Easy run', structure: null } },
+    ]), 'post_activity')
+
+    expect(advice.changes[0]).toMatchObject({ workout: { shortName: 'Easy run' } })
+    expect(advice.changes[0]).not.toHaveProperty('workout.structure')
   })
 })

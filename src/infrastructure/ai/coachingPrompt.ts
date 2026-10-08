@@ -6,7 +6,7 @@ import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidati
 import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows } from '@/domain/coaching/weekWindows'
 import { macrocyclePhases, phaseOn } from '@/domain/coaching/macrocycle'
 
-import { BOOTSTRAP_SYSTEM_INSTRUCTION as BOOTSTRAP_RULES } from './coachingRules.generated'
+import { BOOTSTRAP_SYSTEM_INSTRUCTION as BOOTSTRAP_RULES, WORKOUT_NAMING_INSTRUCTION } from './coachingRules.generated'
 import { activeLocale } from '@/i18n'
 
 /**
@@ -18,8 +18,8 @@ import { activeLocale } from '@/i18n'
  * validateDraftFrequency accepts.
  */
 export const COACHING_LANGUAGE_RULE = activeLocale === 'fr'
-  ? 'Write every text the athlete reads in French, tutoiement, as a French-speaking running coach would say it: the plan name and focus, every week.focus and reducedVolume explanation, every workout title, description and notes, every segment note, and the summary and evidence messages of a decision. ' +
-    'Use the words French runners use (footing, sortie longue, endurance fondamentale, seuil, fractionné, accélérations, échauffement, retour au calme, récup) and French titles of the same shape: « Seuil 3 x 7:00 », « Sortie longue », « Accélérations 6 x 20 s », « Footing de récupération ». ' +
+  ? 'Write every text the athlete reads in French, tutoiement, as a French-speaking running coach would say it: the plan name and focus, every week.focus and reducedVolume explanation, every workout title, shortName, description, notes and structure extras, every segment note, and the summary and evidence messages of a decision. ' +
+    'Use the words French runners use (footing, sortie longue, endurance fondamentale, seuil, fractionné, accélérations, échauffement, retour au calme, récup) and French names of the same shape: « Seuil · 3 × 8′ @ 4:25 », « Footing · 6 accélérations », « Sortie longue », « Footing de récupération », with short names such as « Seuil 3×8′ » or « Footing + accél. ». ' +
     "You are not told the athlete's gender, so no adjective or past participle may agree with the athlete. " +
     'Keep every JSON key, enum value, id and date exactly as specified, in English. ' +
     'Where these rules ask week.focus to say "fewer runs" with a recovery, taper, fatigue, illness or injury reason, write « moins de sorties » with « récupération », « affûtage », « fatigue », « maladie » or « blessure ».'
@@ -31,6 +31,13 @@ export function withCoachingLanguage(instruction: string): string {
 }
 
 export const BOOTSTRAP_SYSTEM_INSTRUCTION = withCoachingLanguage(BOOTSTRAP_RULES)
+
+/**
+ * A change to the live plan names what it adds or rewrites as a block does
+ * (design review, Oct 2026), and is held to the same rules; a session it
+ * leaves alone keeps the name it was written with.
+ */
+export const ADAPTATION_NAMING_RULE = `Name every workout you add or rewrite by these rules, and keep the title of one you leave unchanged: ${WORKOUT_NAMING_INSTRUCTION}`
 
 /**
  * What the coach asks for and the shape it must come back in, kept apart from
@@ -86,17 +93,34 @@ const BOOTSTRAP_BLOCK_SCHEMA = {
   },
 }
 
+// What a name states, as fields (design review, Oct 2026). Optional in the
+// schema, so a plan written before it still reads; the naming rules ask for
+// it wherever a session has repetitions or extras.
+const NAME_STRUCTURE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    reps: { type: 'INTEGER' },
+    repMinutes: { type: 'NUMBER' },
+    targetPace: { type: 'STRING' },
+    extras: { type: 'ARRAY', items: { type: 'STRING' } },
+  },
+}
+
 const BOOTSTRAP_WORKOUT_SCHEMA = {
   type: 'OBJECT',
   properties: {
     date: { type: 'STRING' },
     type: { type: 'STRING', enum: ['easy', 'recovery', 'long_run', 'tempo', 'threshold', 'vo2max', 'anaerobic', 'sprint', 'race'] },
     title: { type: 'STRING' },
+    shortName: { type: 'STRING' },
+    structure: NAME_STRUCTURE_SCHEMA,
     description: { type: 'STRING' },
     blocks: { type: 'ARRAY', items: BOOTSTRAP_BLOCK_SCHEMA },
     notes: { type: 'ARRAY', items: { type: 'STRING' } },
   },
-  required: ['date', 'type', 'title', 'description', 'blocks'],
+  // Every session of a new block is named under the naming rules, so each
+  // carries its short name.
+  required: ['date', 'type', 'title', 'shortName', 'description', 'blocks'],
 }
 
 export const ADAPTATION_WORKOUT_SCHEMA = {
@@ -108,6 +132,9 @@ export const ADAPTATION_WORKOUT_SCHEMA = {
     totalDistanceMeters: { type: 'INTEGER' },
     blocks: { type: 'ARRAY', items: BLOCK_SCHEMA },
   },
+  // A session a change carries over keeps the name it was written with, which
+  // may predate short names.
+  required: ['date', 'type', 'title', 'description', 'blocks'],
 }
 
 const WEEK_REDUCTION_SCHEMA = {

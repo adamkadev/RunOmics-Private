@@ -83,3 +83,19 @@ describe('AppShell surface', () => {
     expect(strip.style.background).toBe('var(--status-bar)')
   })
 })
+
+// The private site's sign-in (src/proxy.ts) stands alone: no navigation
+// pointing at pages it cannot open yet.
+describe('AppShell on the sign-in page', () => {
+  afterEach(() => {
+    route.pathname = '/activities'
+  })
+
+  it('draws the page without the app around it', () => {
+    route.pathname = '/sign-in'
+    const { getByText, queryByTestId } = render(<AppShell>sign in</AppShell>)
+    expect(getByText('sign in')).toBeInTheDocument()
+    expect(queryByTestId('status-strip')).toBeNull()
+    expect(queryByTestId('top-edge-bar')).toBeNull()
+  })
+})

@@ -86,6 +86,16 @@ describe('ShoesGrid', () => {
     expect(meta).toBe(`${t.shoes.kmOf('150', '1,000')} · ${t.shoes.runs(12)} · ${t.shoes.lastRun('Sep 17')} · ${t.shoes.roles.daily}`)
   })
 
+  // Design review, Oct 2026: the tick on each bar was an unlabelled mark.
+  it('names each pair\'s retire-from-workouts tick under it', () => {
+    render(<ShoesGrid shoes={[shoe({ gearId: 'a' }), shoe({ gearId: 'b', maxKm: 800, alertThresholdKm: 640 })]} />)
+
+    expect(screen.getAllByTestId('wear-tick-label').map((label) => label.textContent)).toEqual([
+      t.shoes.detail.retireFromWorkouts('800'),
+      t.shoes.detail.retireFromWorkouts('640'),
+    ])
+  })
+
   it('lists a retired pair under its own label, with its era, runs and km, and no bar', () => {
     const { container } = render(
       <ShoesGrid

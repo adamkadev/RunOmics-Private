@@ -13,6 +13,7 @@ import {
   pacing,
 } from '../GeminiCoachingAdvisor'
 import { parseBootstrapPlanDraft } from '../coachingAnswer'
+import { WORKOUT_NAMING_INSTRUCTION } from '../coachingRules.generated'
 
 const gemini = vi.hoisted(() => ({ generateStructuredJson: vi.fn() }))
 vi.mock('@/lib/gemini', () => gemini)
@@ -62,6 +63,7 @@ function rawBootstrap(includePlaceholderIds: boolean) {
           date,
           type: workoutIndex === 0 ? 'easy' : 'tempo',
           title: workoutIndex === 0 ? 'Easy run' : 'Tempo run',
+          shortName: workoutIndex === 0 ? 'Easy run' : 'Tempo run',
           description: 'A structurally valid session.',
           totalDistanceMeters: 999_999,
           blocks: [{ kind: 'effort', target: { distanceMeters: 5_000 } }],
@@ -527,5 +529,22 @@ describe('pacing against the per-minute limit', () => {
     await expect(new GeminiCoachingAdvisor().bootstrap(input())).rejects.toThrow()
 
     expect(waits).toEqual([])
+  })
+})
+
+// Design review, Oct 2026: a change to the live plan names the sessions it
+// writes, so it is told the naming rules a block is.
+describe('a change to the live plan', () => {
+  it('is asked to name what it adds or rewrites by the naming rules', async () => {
+    gemini.generateStructuredJson.mockReset().mockResolvedValue({
+      ok: true,
+      value: { outcome: 'KEEP', reasonCodes: ['ON_PLAN'], summary: 'The plan stands.', evidence: [], changes: [] },
+    })
+
+    await new GeminiCoachingAdvisor().reviewWeek({ context: context() })
+
+    const request = gemini.generateStructuredJson.mock.calls.at(-1)?.[0] as { systemInstruction: string }
+    expect(request.systemInstruction).toContain('Name every workout you add or rewrite by these rules')
+    expect(request.systemInstruction).toContain(WORKOUT_NAMING_INSTRUCTION)
   })
 })

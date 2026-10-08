@@ -9,16 +9,27 @@ const status = (over: Partial<TrainingStatus>): TrainingStatus => ({
 })
 
 describe('verdictTone', () => {
-  // Oct 2: Garmin productive, ACWR 0.9 optimal, a rest day then an easy Z2 run.
-  // Form -14 and fatigue +2.4 in a week read "Hold back" every day.
-  it('reads the productive training zone as caution, not hold', () => {
-    expect(verdictTone(status({ tsbNow: -14.3, atlDelta: 2.4 }))).toBe('caution')
-    expect(verdictTone(status({ tsbNow: -24.8, atlDelta: 3 }))).toBe('caution')
+  // Oct 2-7: Garmin productive, ACWR 0.9 optimal, Form -12 to -18 with fatigue
+  // flat. Caution was the default, so it read on every one of those days.
+  it('reads a productive block with the load in range as building', () => {
+    expect(verdictTone(status({ tsbNow: -14.3, atlDelta: 2.4 }))).toBe('build')
+    expect(verdictTone(status({ tsbNow: -17.6, atlDelta: -0.6, ctl: 53.7 }))).toBe('build')
+    expect(verdictTone(status({ tsbNow: 3, atlDelta: 1, status: 'maintaining' }))).toBe('build')
+    expect(verdictTone(status({ tsbNow: 5, atlDelta: -3 }))).toBe('build')
   })
 
   // A first week: fitness 0, fatigue 2 after one 2 km run.
   it('does not call a first run fatigue', () => {
-    expect(verdictTone(status({ ctl: 0, atl: 2, tsbNow: -2, atlDelta: 2, status: 'maintaining' }))).toBe('caution')
+    expect(verdictTone(status({ ctl: 0, atl: 2, tsbNow: -2, atlDelta: 2, status: 'maintaining' }))).toBe('build')
+  })
+
+  it('reads caution deep in the training zone, on fatigue climbing fast, or on a moderate-risk load', () => {
+    // Oct 4, after a 13 km long run.
+    expect(verdictTone(status({ tsbNow: -21.4, atlDelta: -1.5, ctl: 53 }))).toBe('caution')
+    // Sep 21, the second week back from a two-week break: +16.5 at fitness 45.
+    expect(verdictTone(status({ tsbNow: -14.6, atlDelta: 16.5, ctl: 44.7 }))).toBe('caution')
+    expect(verdictTone(status({ tsbNow: -9, risk: 'moderate' }))).toBe('caution')
+    expect(verdictTone(status({ tsbNow: -5, status: 'unproductive' }))).toBe('caution')
   })
 
   it('holds back in the high-risk zone, or deep in training with fatigue still climbing fast', () => {
@@ -33,9 +44,11 @@ describe('verdictTone', () => {
     expect(verdictTone(status({ risk: 'high', tsbNow: -5 }))).toBe('hold')
   })
 
-  it('gives the green light when fresh and fatigue is letting go, unless fitness is slipping', () => {
+  // Aug 2026: two weeks off, Form +30. Nothing calls for care; the way back
+  // in reads caution once fatigue climbs fast.
+  it('gives the green light when fresh, a break included', () => {
     expect(verdictTone(status({ tsbNow: 8, atlDelta: -4 }))).toBe('go')
-    expect(verdictTone(status({ tsbNow: 8, atlDelta: -4, status: 'detraining' }))).toBe('caution')
-    expect(verdictTone(status({ tsbNow: 8, atlDelta: 1 }))).toBe('caution')
+    expect(verdictTone(status({ tsbNow: 6, atlDelta: 2 }))).toBe('go')
+    expect(verdictTone(status({ tsbNow: 30, atlDelta: -12, status: 'detraining', loadTrend: 'detraining' }))).toBe('go')
   })
 })

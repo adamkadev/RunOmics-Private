@@ -474,9 +474,11 @@ export function ActivityListClient({
         {/* Level with the subtitle (v4.17): the sort menu floats, so it no
             longer drags the title down when it opens. */}
         <div className="flex shrink-0 items-center gap-2 self-end">
+          {/* Drawn at 34 pt like the sort menu, tapped at 44 (design review,
+              Oct 2026). */}
           <Link
             href="/map"
-            className="flex h-[34px] items-center justify-center rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
+            className="hit-44 flex h-[34px] items-center justify-center rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
           >
             {t.activities.mapButton}
           </Link>

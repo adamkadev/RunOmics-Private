@@ -2,6 +2,7 @@ import type { Milestone } from '@/application/usecases/GetMilestones'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
+import { t } from '@/i18n'
 import { milestoneDotClass } from './milestoneVisuals'
 
 function groupByYear(milestones: Milestone[]): [string, Milestone[]][] {
@@ -37,14 +38,34 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
   )
 }
 
+/**
+ * What the gold dot means (design review, Oct 2026): marked rows beside
+ * unmarked ones read as colour nobody had explained. The key sits on the
+ * first year's line, as Records keys its medals beside the dots they mark.
+ */
+function RecordKey() {
+  return (
+    <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid="milestone-key">
+      <span aria-hidden className={cn('h-2 w-2 shrink-0 rounded-full', milestoneDotClass('record'))} />
+      {t.records.milestones.recordKey}
+    </p>
+  )
+}
+
 export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) {
   if (milestones.length === 0) return null
+  // No mark on the page, nothing to key.
+  const marked = milestones.some((m) => milestoneDotClass(m.type) !== null)
 
   return (
     <div className="space-y-6">
-      {groupByYear(milestones).map(([year, items]) => (
+      {groupByYear(milestones).map(([year, items], i) => (
         <div key={year}>
-          <h2 className="mb-2 px-1 text-caption font-bold uppercase tracking-[0.16em] text-subtle">{year}</h2>
+          {/* The year and the key fade as one label under the compact bar. */}
+          <div data-bar-fade className="mb-2 flex items-center justify-between gap-3 px-1">
+            <h2 className="text-caption font-bold uppercase tracking-[0.16em] text-subtle">{year}</h2>
+            {i === 0 && marked && <RecordKey />}
+          </div>
           <GlassSurface variant="card" className="p-2 sm:p-3">
             <ol className="divide-y divide-foreground/[0.06]">
               {items.map((m, i) => (

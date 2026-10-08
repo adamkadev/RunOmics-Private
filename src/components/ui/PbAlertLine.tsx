@@ -14,7 +14,7 @@ export function PbAlertLine({ alerts }: { alerts: PbAlert[] }) {
       <Flame className="h-4 w-4 shrink-0" aria-hidden="true" />
       {alerts.map((a, i) => (
         <span key={a.key} className="flex items-center gap-1.5">
-          <Link href={`/activities/${a.activityId}`} className="underline-offset-2 hover:underline">
+          <Link href={`/activities/${a.activityId}`} className="hit-44 underline-offset-2 hover:underline">
             {a.label} {s.off(formatClock(a.diffSeconds))} ({formatDate(a.date, { style: 'bare', year: 'always' })})
           </Link>
           {i < alerts.length - 1 && <span aria-hidden="true">·</span>}

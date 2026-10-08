@@ -174,11 +174,13 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
             {race && ` · ${h.raceIn(shortDist(race.distance), race.daysUntil)}`}
           </p>
         </div>
-        {/* Settings is a sidebar row on a wide screen; on a phone it is here. */}
+        {/* Settings is a sidebar row on a wide screen; on a phone it is here,
+            44 pt like every control (design review, Oct 2026). */}
         <Link
           href="/settings"
           aria-label={h.settings}
-          className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-transform active:scale-95 lg:hidden"
+          data-testid="settings-gear"
+          className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-transform active:scale-95 lg:hidden"
         >
           <Settings size={18} aria-hidden="true" />
         </Link>
@@ -279,7 +281,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
             <section className={cardClass({ className: 'order-5 flex flex-col gap-3 sm:order-none' })} data-testid="shoes-tile">
               <div className="flex items-center justify-between gap-2">
                 <h2 className={TITLE}>{h.shoes}</h2>
-                <Link href="/shoes" className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground" data-testid="shoes-all">
+                <Link href="/shoes" className="hit-44 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground" data-testid="shoes-all">
                   {h.allPairs}
                   <ChevronRight size={14} aria-hidden="true" />
                 </Link>

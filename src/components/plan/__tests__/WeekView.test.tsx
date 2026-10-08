@@ -482,3 +482,30 @@ describe('the selected day', () => {
     expect(screen.getByText(t.plan.restCard.next(t.plan.weekdays[2]!, '3 × 8 min threshold'))).toBeInTheDocument()
   })
 })
+
+// Design review, Oct 2026: a row takes the coach's short name, where it
+// wrote one; the day card has the room for the whole name; and an older name
+// too long for its row keeps to two lines.
+describe('the names a week shows', () => {
+  function named(): CoachingPlan {
+    const base = plan()
+    const [threshold] = base.weeks[0]!.workouts
+    base.weeks[0]!.workouts = [{ ...threshold!, title: 'Threshold · 3 × 8′ @ 4:28', shortName: 'Threshold 3×8′' }]
+    return base
+  }
+
+  it("puts the short name in the week's rows and the whole one on the day's card", () => {
+    renderWeek({ coaching: overview({ coachingPlan: named() }) })
+
+    expect(screen.getByTestId('week-session-workout-threshold')).toHaveTextContent('Threshold 3×8′')
+    expect(screen.getByTestId('week-session-workout-threshold')).not.toHaveTextContent('@ 4:28')
+    expect(screen.getByTestId('plan-workout-row-workout-threshold')).toHaveTextContent('Threshold · 3 × 8′ @ 4:28')
+  })
+
+  it('keeps an older name to two lines in its row', () => {
+    renderWeek({ planned: [{ date: TODAY, name: "Répétitions allure d'objectif - 4x3'@4:24", type: 'Threshold', durationSecs: 3_600 }] })
+
+    const row = screen.getByTestId(/^week-session-garmin:/)
+    expect(within(row).getByText("Répétitions allure d'objectif - 4x3'@4:24").className).toContain('line-clamp-2')
+  })
+})

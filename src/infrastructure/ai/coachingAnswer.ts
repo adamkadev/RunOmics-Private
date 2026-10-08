@@ -29,6 +29,14 @@ const PLACEHOLDER_PROVENANCE = { source: 'gemini' as const, trigger: 'bootstrap'
 
 type Trigger = 'bootstrap' | 'post_activity' | 'weekly_review'
 
+/** The name's optional fields, a null from the model read as left out. */
+function nameFields(raw: Record<string, unknown>): Record<string, unknown> {
+  return {
+    ...(raw.shortName === undefined || raw.shortName === null ? {} : { shortName: raw.shortName }),
+    ...(raw.structure === undefined || raw.structure === null ? {} : { structure: raw.structure }),
+  }
+}
+
 function bootstrapWorkoutDraft(value: unknown, label: string): BootstrapWorkoutDraft {
   const raw = parseObject(value, label)
   const parsed = parseWorkoutPrescription({
@@ -37,6 +45,7 @@ function bootstrapWorkoutDraft(value: unknown, label: string): BootstrapWorkoutD
     date: raw.date,
     type: raw.type,
     title: raw.title,
+    ...nameFields(raw),
     description: raw.description,
     status: 'prescribed',
     blocks: raw.blocks,
@@ -47,6 +56,8 @@ function bootstrapWorkoutDraft(value: unknown, label: string): BootstrapWorkoutD
     date: parsed.date,
     type: parsed.type,
     title: parsed.title,
+    ...(parsed.shortName ? { shortName: parsed.shortName } : {}),
+    ...(parsed.structure ? { structure: parsed.structure } : {}),
     description: parsed.description,
     blocks: parsed.blocks,
     ...(parsed.notes ? { notes: parsed.notes } : {}),
@@ -88,9 +99,10 @@ export function parseBootstrapPlanDraft(value: unknown): CoachingPlanDraft {
 }
 
 function draftWorkout(value: unknown, trigger: Trigger): WorkoutPrescription {
-  const raw = parseObject(value, 'workout')
+  const { shortName, structure, ...raw } = parseObject(value, 'workout')
   return parseWorkoutPrescription({
     ...raw,
+    ...nameFields({ shortName, structure }),
     id: typeof raw.id === 'string' && raw.id ? raw.id : 'draft-workout',
     revision: 1,
     status: 'prescribed',

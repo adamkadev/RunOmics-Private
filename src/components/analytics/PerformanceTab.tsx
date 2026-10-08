@@ -1,8 +1,10 @@
 'use client'
 
+import Link from 'next/link'
+import { ChevronRight } from 'lucide-react'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
-import { formatClock, formatDate, formatDecimal, formatDeltaFixed, formatDuration, formatNumber, MINUS } from '@/lib/formatters'
+import { formatClock, formatDate, formatDecimal, formatDeltaFixed, formatDuration, MINUS } from '@/lib/formatters'
 import { deltaColor, deltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
@@ -76,6 +78,9 @@ export function timeLabels(dates: string[]): string[] {
   return shown.filter((_, i) => i % step === 0)
 }
 
+/** VO₂max's home is Athlete & zones (design review, Oct 2026): its stat here is a summary that opens it. */
+const VO2_HOME = '/athlete'
+
 /** The tab's stat row (v4.17): VO₂max, threshold and easy pace, each with what its change means. */
 function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null }) {
   const s = t.analytics.cards.summary
@@ -84,27 +89,47 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
       label: s.vo2max,
       value: formatDecimal(vo2.value, 1),
       unit: undefined,
-      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${formatNumber(vo2.delta)}` : `${MINUS}${formatNumber(Math.abs(vo2.delta))}`),
+      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${formatDecimal(vo2.delta, 1)}` : `${MINUS}${formatDecimal(Math.abs(vo2.delta), 1)}`),
       tone: STAT_TONE[deltaTone('vo2max', vo2.delta)],
+      href: VO2_HOME,
     },
-    threshold && { label: s.threshold, value: formatClock(threshold.now), unit: t.units.perKm, note: shiftWords(threshold.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', threshold.delta)] },
-    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: shiftWords(easy.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', easy.delta)] },
+    threshold && { label: s.threshold, value: formatClock(threshold.now), unit: t.units.perKm, note: shiftWords(threshold.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', threshold.delta)], href: null },
+    easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: shiftWords(easy.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
   ].filter((c) => !!c)
   if (!cells.length) return null
   return (
     <section className={cardClass()} data-testid="performance-summary">
       <StatGrid columns={cells.length} className="gap-3 sm:gap-4">
-        {cells.map((c) => (
-          <Stat
-            key={c.label}
-            size="lg"
-            label={c.label}
-            value={c.value}
-            unit={c.unit}
-            meaning={c.note && <span data-testid="summary-delta" data-tone={c.tone}>{c.note}</span>}
-            tone={c.tone}
-          />
-        ))}
+        {cells.map((c) => {
+          const stat = (
+            <Stat
+              key={c.label}
+              size="lg"
+              label={
+                c.href ? (
+                  <span className="inline-flex items-center gap-0.5">
+                    {c.label}
+                    <ChevronRight size={12} strokeWidth={2.4} aria-hidden />
+                  </span>
+                ) : (
+                  c.label
+                )
+              }
+              value={c.value}
+              unit={c.unit}
+              meaning={c.note && <span data-testid="summary-delta" data-tone={c.tone}>{c.note}</span>}
+              tone={c.tone}
+            />
+          )
+          // The whole stat opens its home, a 44 pt target and more.
+          return c.href ? (
+            <Link key={c.label} href={c.href} className="min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" data-testid="vo2-link">
+              {stat}
+            </Link>
+          ) : (
+            stat
+          )
+        })}
       </StatGrid>
     </section>
   )
@@ -137,14 +162,17 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
     trend === null
       ? null
       : trend.kind === 'slipped'
-        ? s.slipped(who, range, words)
+        ? trend.count < trend.of ? s.someSlipped(trend.count, trend.of, range, words) : s.slipped(who, range, words)
         : trend.kind === 'improved'
-          ? s.improved(who, range, words)
+          ? trend.count < trend.of ? s.someImproved(trend.count, trend.of, range, words) : s.improved(who, range, words)
           : trend.kind === 'mixed'
             ? s.mixed(trend.faster, trend.count, words)
             : s.held(who, words)
   const goalRow = race ? rows.find((r) => r.distance === race.distance) : undefined
   const gap = goalRow && race?.targetSeconds ? goalRow.seconds - race.targetSeconds : null
+  // The goal race's gap to its target, after the trend (design review, Oct
+  // 2026): its figure in bold, warn off the target and pos inside it, as
+  // Goals' season rows colour the same gap.
   const goal =
     gap !== null && race?.targetSeconds
       ? (gap > 0 ? s.offTarget : s.onTarget)(names[race.distance]!, formatDuration(Math.round(Math.abs(gap))), formatDuration(race.targetSeconds))
@@ -152,7 +180,21 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
   return (
     <Card className="gap-2" testId="predictions-card">
       <CardHead title={s.title} caption={s.caption(words)} about={s.about} />
-      {(lead || goal) && <Sentence className="mb-1.5" testId="predictions-sentence">{[lead, goal].filter(Boolean).join(' ')}</Sentence>}
+      {(lead || goal) && (
+        <Sentence className="mb-1.5" testId="predictions-sentence">
+          {lead}
+          {lead && goal && ' '}
+          {goal && (
+            <>
+              {goal[0]}
+              <b style={{ color: gap! > 0 ? 'var(--warn)' : 'var(--pos)' }} data-testid="predictions-gap">
+                {goal[1]}
+              </b>
+              {goal[2]}
+            </>
+          )}
+        </Sentence>
+      )}
       {/* One grid for every row, each row a subgrid, so the time column
           sizes to the widest time and the times align (v4.17.3): the
           distance, a spacer, the sparkline right up against the time - no
@@ -387,7 +429,10 @@ export function heatColor(row: { best: boolean; cost: number | null }): string {
 /**
  * Heat cost, redesigned (v4.17): each band's bar is the seconds a km it loses
  * against your best temperature band at the same heart rate. The best band
- * has no bar and reads "best" in pos.
+ * is the zero the others are measured from: a dot at the track's start and
+ * "best" in pos. A band without runs has a dashed, empty track - drawn like
+ * the best band's, it read as the best (design review, Oct 2026) - and a
+ * line under the rows says what a bar's length is.
  */
 function HeatCostCard({ data }: { data: HeatImpactData | null }) {
   const s = t.analytics.cards.heatCost
@@ -407,9 +452,14 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
           return (
             <div key={row.id} className="grid grid-cols-[60px_minmax(0,1fr)_96px] items-center gap-3 text-[13px] sm:grid-cols-[72px_minmax(0,1fr)_110px] sm:gap-3.5" data-testid={`heat-${row.id}`}>
               <span className="whitespace-nowrap text-[var(--text-2)]">{labels[row.id]}</span>
-              <div className="h-2 rounded-full bg-[var(--surface-2)]">
-                {row.cost !== null && !row.best && (
-                  <div className="h-full rounded-full" style={{ width: `${Math.min(1, row.cost / view.scale) * 100}%`, background: color }} data-testid="heat-bar" />
+              <div
+                className={row.pace === null ? 'box-border h-2 rounded-full border border-dashed border-[var(--line-2)]' : 'relative h-2 rounded-full bg-[var(--surface-2)]'}
+                data-testid={row.pace === null ? 'heat-empty' : undefined}
+              >
+                {row.best ? (
+                  <span aria-hidden className="absolute left-0 top-1/2 size-2.5 -translate-y-1/2 rounded-full" style={{ background: color }} data-testid="heat-zero" />
+                ) : (
+                  row.cost !== null && <div className="h-full rounded-full" style={{ width: `${Math.min(1, row.cost / view.scale) * 100}%`, background: color }} data-testid="heat-bar" />
                 )}
               </div>
               <span className="whitespace-nowrap text-right">
@@ -430,6 +480,7 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
           )
         })}
       </div>
+      <p className="pt-1 text-xs text-muted-foreground" data-testid="heat-key">{s.barKey}</p>
     </Card>
   )
 }

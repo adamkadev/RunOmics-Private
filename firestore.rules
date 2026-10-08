@@ -14,8 +14,10 @@ service cloud.firestore {
         && request.resource.data.tags.size() <= 10;
     }
 
+    // Read by the owner only: everyone else reads a note through the app
+    // (/api/activities/[id]/note, admin SDK), behind a private site's gate.
     match /activityNotes/{activityId} {
-      allow get: if true;
+      allow get: if isOwner();
       allow list: if isOwner();
 
       allow create, update: if isOwner() && isWellFormedNote();

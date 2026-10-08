@@ -27,7 +27,7 @@ import {
 } from './chartStackLanes'
 
 type Props = ChartStackInput & {
-  /** Where the scrub is, as a share of the distance - the map's marker follows it. */
+  /** Where the scrub is, as a share of the distance, for a marker to follow. */
   onScrub?: (fraction: number | null) => void
 }
 
@@ -125,8 +125,8 @@ function Dot({ left, top, size }: { left: string; top: string; size: 8 | 10 }) {
  * Charts (v4.17): heart rate, pace and cadence as 90 pt lanes in text ink over
  * the athlete's zones, elevation as a strip under them, and one scrub across
  * all of it. The reading sits beside each lane's name and the point on the
- * run in the header - the separate readout card is gone - and the map's
- * marker follows. Smoothed is the default line; Raw shows what was recorded.
+ * run in the header - the separate readout card is gone. Smoothed is the
+ * default line; Raw shows what was recorded.
  */
 export function ChartStack({ onScrub, ...input }: Props) {
   const {

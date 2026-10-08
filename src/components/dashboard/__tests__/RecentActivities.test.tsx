@@ -22,7 +22,7 @@ describe('RecentActivities', () => {
     const rows = screen.getAllByTestId('thumb-row')
     expect(rows).toHaveLength(2)
     expect(rows[0]!.textContent).toContain(`${formatDate('2026-09-24')} · ${t.activityTypes.Base} · RPE 2`)
-    expect(rows[0]!.textContent).toContain('8.58')
+    expect(rows[0]!.textContent).toContain('8.6')
     expect(rows[0]!.textContent).toContain('5:55 /km')
     expect(rows[1]!.textContent).toContain(t.activityTypes.Threshold)
     const thumbs = screen.getAllByTestId('route-thumb')

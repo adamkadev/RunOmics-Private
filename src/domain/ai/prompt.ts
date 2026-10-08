@@ -5,8 +5,10 @@ import { activeLocale } from '@/i18n'
  * verdict): bump it with a change to their prompts or the shared rules below,
  * and each card is written again on the next pass instead of keeping copy
  * from the old prompt. Run verdicts carry their own (RUN_VERDICT_PROMPT_VERSION).
+ * 4: Today's copy is one claim and one piece of advice, in two lines at most
+ * (design review, Oct 2026).
  */
-export const CARD_PROMPT_VERSION = 2
+export const CARD_PROMPT_VERSION = 4
 
 /**
  * The French writing rules carry their own version, folded into every

@@ -39,7 +39,7 @@ describe('OfficialResult', () => {
   it('shows the certified distance, chip time and official pace', () => {
     renderResult(escher)
 
-    expect(screen.getByText(/5\.00 km/)).toBeInTheDocument()
+    expect(screen.getByText(/5\.0 km/)).toBeInTheDocument()
     expect(screen.getByText(/21:32/)).toBeInTheDocument()
     expect(screen.getByText(/4:18/)).toBeInTheDocument()
   })
@@ -67,7 +67,7 @@ describe('OfficialResult', () => {
     renderResult(escher)
 
     expect(screen.getByText(/Watch recorded/)).toBeInTheDocument()
-    expect(screen.getByText(/5\.25 km in 21:50/)).toBeInTheDocument()
+    expect(screen.getByText(/5\.3 km in 21:50/)).toBeInTheDocument()
     expect(screen.queryByText(/4:09/)).not.toBeInTheDocument()
   })
 })

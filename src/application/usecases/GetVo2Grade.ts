@@ -28,7 +28,8 @@ export const LEVEL_UP_DAYS = 3
 export const DROP_NOTE_DAYS = 21
 
 export type GradeChangeView =
-  | { kind: 'up'; from: Vo2Grade; date: string }
+  /** `regained`: the grade was held until recently and came back after a dip, so it is not new. */
+  | { kind: 'up'; from: Vo2Grade; date: string; regained: boolean }
   | { kind: 'down'; from: Vo2Grade; date: string; daysOff: number | null }
 
 export type Vo2GradeView =
@@ -50,6 +51,20 @@ export type Vo2GradeView =
       change: GradeChangeView | null
       season: { month: string; grade: Vo2Grade | null }[]
     }
+
+/** A grade held this recently and lost is regained when it comes back, not new. */
+const REGAINED_DAYS = 90
+
+/**
+ * Oct 2026: A+ from April to Sep 12, A- then A, A+ again on Oct 7 read "New
+ * grade, up from A". Each timeline entry holds until the next one starts.
+ */
+function regained(timeline: { date: string; grade: Vo2Grade }[], grade: Vo2Grade, since: string): boolean {
+  return timeline.slice(0, -2).some((entry, i) => {
+    const end = timeline[i + 1]!.date
+    return gradeRank(entry.grade) >= gradeRank(grade) && daysSince(end, since) <= REGAINED_DAYS
+  })
+}
 
 const DAY_MS = 86_400_000
 const daysSince = (date: string, today: string) =>
@@ -89,7 +104,7 @@ export function buildVo2Grade(input: Vo2GradeInput): Vo2GradeView {
   if (last && previous) {
     const age = daysSince(last.date, today)
     if (gradeRank(last.grade) > gradeRank(previous.grade) && age < LEVEL_UP_DAYS) {
-      change = { kind: 'up', from: previous.grade, date: last.date }
+      change = { kind: 'up', from: previous.grade, date: last.date, regained: regained(timeline, last.grade, last.date) }
     } else if (gradeRank(last.grade) < gradeRank(previous.grade) && age < DROP_NOTE_DAYS) {
       change = { kind: 'down', from: previous.grade, date: last.date, daysOff: daysOffBefore(input.runDates, last.date) }
     }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { kmSplitsFromSamples, splitSpread } from '../kmSplits'
+import { kmSplitsFromLaps, kmSplitsFromSamples, kmSplitsOf, splitSpread } from '../kmSplits'
 
 function evenSamples(count: number, pace: number): number[] {
   return Array.from({ length: count }, () => pace)
@@ -140,5 +140,78 @@ describe('splitSpread', () => {
 
   it('needs two full kilometres', () => {
     expect(splitSpread([km(1, 300), km(2, 280, 0.4)])).toBeNull()
+  })
+})
+
+// The Oct 7 recovery run: Garmin's 1 km auto laps, then a 46 m lap press and
+// the last 968 m. The splits rebuilt from its pace samples read km 10 at 5:43,
+// faster than the run's best kilometre (5:45), and a 100 s "negative split".
+const OCT7_LAPS = [
+  { durationSec: 362, distanceM: 1000, avgHr: 130 },
+  { durationSec: 358, distanceM: 1000, avgHr: 139 },
+  { durationSec: 359, distanceM: 1000, avgHr: 142 },
+  { durationSec: 363, distanceM: 1000, avgHr: 142 },
+  { durationSec: 355, distanceM: 1000, avgHr: 147 },
+  { durationSec: 356, distanceM: 1000, avgHr: 148 },
+  { durationSec: 359, distanceM: 1000, avgHr: 147 },
+  { durationSec: 360, distanceM: 1000, avgHr: 149 },
+  { durationSec: 362, distanceM: 1000, avgHr: 149 },
+  { durationSec: 16, distanceM: 46, avgHr: 150 },
+  { durationSec: 344, distanceM: 967.9, avgHr: 151 },
+]
+
+describe('kmSplitsFromLaps', () => {
+  it("reads each kilometre off the watch's laps, interpolating inside the lap that crosses it", () => {
+    const splits = kmSplitsFromLaps(OCT7_LAPS, 10.01)
+    expect(splits.map((s) => s.paceSecPerKm)).toEqual([362, 358, 359, 363, 355, 356, 359, 360, 362, 355])
+    // 46 m in 16 s, then 954 m of the last lap at 344 s / 967.9 m.
+    expect(splits.at(-1)).toMatchObject({ km: 10, distanceKm: 1, durationSec: 355, avgHr: 151 })
+    // The last 14 m is not a kilometre (under 50 m): the run's other 3589 s.
+    expect(splits).toHaveLength(10)
+    expect(splits.reduce((sum, s) => sum + s.durationSec, 0)).toBe(3589)
+    expect(splitSpread(splits)).toMatchObject({ spread: 8, kind: 'even' })
+  })
+
+  it('weights a kilometre\'s heart rate by the time it spent in each lap', () => {
+    const splits = kmSplitsFromLaps([
+      { durationSec: 150, distanceM: 500, avgHr: 140 },
+      { durationSec: 450, distanceM: 1500, avgHr: 160 },
+    ], 2)
+    expect(splits[0]).toMatchObject({ durationSec: 300, avgHr: 150 })
+    expect(splits[1]).toMatchObject({ durationSec: 300, avgHr: 160 })
+  })
+
+  it('puts a stop lap with no distance into the kilometre it happened in', () => {
+    const splits = kmSplitsFromLaps([
+      { durationSec: 300, distanceM: 1000, avgHr: null },
+      { durationSec: 30, distanceM: 0, avgHr: null },
+      { durationSec: 300, distanceM: 1000, avgHr: null },
+    ], 2)
+    expect(splits.map((s) => s.durationSec)).toEqual([300, 330])
+  })
+
+  it('leaves laps that do not cover the run to the samples', () => {
+    expect(kmSplitsFromLaps(OCT7_LAPS.slice(0, 5), 10.01)).toEqual([])
+    expect(kmSplitsFromLaps([{ durationSec: 600, distanceM: 2000, avgHr: null }], 2)).toEqual([])
+  })
+})
+
+describe('kmSplitsOf', () => {
+  it('prefers the laps and falls back to the samples without them', () => {
+    const input = { distanceKm: 10.01, durationSec: 3593, paceSamples: evenSamples(151, 359), hrSamples: null, avgPaceSecPerKm: 359 }
+    expect(kmSplitsOf({ ...input, laps: OCT7_LAPS })[9]!.paceSecPerKm).toBe(355)
+    expect(kmSplitsOf({ ...input, laps: null })).toEqual(kmSplitsFromSamples(input))
+  })
+})
+
+describe('kmSplitsFromSamples, stops', () => {
+  // A stop and the backfilled start are on the wall clock but not on the
+  // timer the splits are scaled to: kept in, they shaved every other km.
+  it('leaves stop samples out rather than spreading their time over every km', () => {
+    const paceSamples = evenSamples(101, 300)
+    paceSamples[0] = 1200
+    paceSamples[30] = 950
+    const splits = kmSplitsFromSamples({ distanceKm: 5, durationSec: 1500, paceSamples, hrSamples: null, avgPaceSecPerKm: 300 })
+    expect(splits.map((s) => s.paceSecPerKm)).toEqual([300, 300, 300, 300, 300])
   })
 })

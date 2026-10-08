@@ -30,7 +30,9 @@ import { coachingContextHash, type CoachingContext } from './context'
 import type { CoachingProposal } from './proposal'
 import { parseCoachingProposal } from './proposal'
 
-const PROMPT_VERSION = 'coaching-v1'
+// v2: workouts named by the naming rules, with a shortName and a structure
+// (design review, Oct 2026).
+const PROMPT_VERSION = 'coaching-v2'
 const NEAR_TERM_RACE_DAYS = 7
 
 export interface WorkflowServices {

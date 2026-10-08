@@ -40,6 +40,14 @@ class TestNormalizeRestingHr:
     def test_keys_resting_hr_by_date(self):
         assert normalize_resting_hr(RESTING) == {"2026-09-24": 46, "2026-09-25": 50}
 
+    def test_drops_readings_no_resting_heart_has(self):
+        payload = {"allMetrics": {"metricsMap": {"WELLNESS_RESTING_HEART_RATE": [
+            {"calendarDate": "2026-08-14", "value": 142},
+            {"calendarDate": "2026-08-15", "value": 48},
+            {"calendarDate": "2026-08-16", "value": 12},
+        ]}}}
+        assert normalize_resting_hr(payload) == {"2026-08-15": 48}
+
     def test_survives_an_empty_response(self):
         assert normalize_resting_hr({}) == {}
         assert normalize_resting_hr({"allMetrics": None}) == {}
