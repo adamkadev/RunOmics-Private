@@ -17,6 +17,7 @@ import {
   setRunAccent,
   pointAlongRoute,
   setRunCursor,
+  setRunFinishMark,
   setRunRoute,
 } from '@/lib/runMapLayers'
 
@@ -116,6 +117,8 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
       const first = route[0]
       if (!first) return
       const start: LngLat = first
+      // The finish shows once the draw-in reaches it, as a square (design review, Oct 2026).
+      const finish: LngLat | null = route.length > 1 ? route[route.length - 1]! : null
 
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       mapRef.current?.remove()
@@ -154,6 +157,7 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
           if (count !== drawnRef.current) {
             drawnRef.current = count
             setRunRoute(map, route.slice(0, count))
+            if (count >= total) setRunFinishMark(map, finish)
           }
           animFrameRef.current = progress < 1 ? requestAnimationFrame(animate) : null
         }
@@ -174,6 +178,8 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
           ring: MAP_COLORS.markerRingLight,
           route: route.slice(0, drawnRef.current),
           start,
+          finish: drawnRef.current >= route.length ? finish : null,
+          finishFill: SURFACES.dark.background,
           cursor: cursorRef.current,
         })
         layersReadyRef.current = true
