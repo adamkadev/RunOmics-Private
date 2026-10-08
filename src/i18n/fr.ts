@@ -20,6 +20,7 @@ export const fr = {
       profile: 'Progression',
       settings: 'Réglages',
     },
+    backTo: (page: string) => `Retour à ${page}`,
   },
   meta: {
     description: 'Ton tableau de bord personnel de course à pied - stats, cartes, tendances.',

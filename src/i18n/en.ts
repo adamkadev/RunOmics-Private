@@ -28,6 +28,8 @@ export const en = {
       profile: 'Progress',
       settings: 'Settings',
     },
+    // The compact bar's back chevron, named for the page it goes to.
+    backTo: (page: string) => `Back to ${page}`,
   },
   meta: {
     description: 'Your personal running training dashboard - stats, maps, trends.',

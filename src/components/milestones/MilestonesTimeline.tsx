@@ -61,7 +61,8 @@ export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) 
     <div className="space-y-6">
       {groupByYear(milestones).map(([year, items], i) => (
         <div key={year}>
-          <div className="mb-2 flex items-center justify-between gap-3 px-1">
+          {/* The year and the key fade as one label under the compact bar. */}
+          <div data-bar-fade className="mb-2 flex items-center justify-between gap-3 px-1">
             <h2 className="text-caption font-bold uppercase tracking-[0.16em] text-subtle">{year}</h2>
             {i === 0 && marked && <RecordKey />}
           </div>
