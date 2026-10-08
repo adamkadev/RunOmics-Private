@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { balanceLines, drawShareCard, FALLBACK_FONTS, shareCardLayout, slicePolyline, type ShareCardScene } from '@/lib/shareCardDraw'
+import { balanceLines, drawShareCard, FALLBACK_FONTS, headerFoot, photoScrim, shareCardLayout, slicePolyline, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
 import { W, H, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
 import { SURFACES } from '@/lib/themeTokens'
@@ -250,6 +250,26 @@ describe('the Stats design (design review, Oct 2026)', () => {
     expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === stats.ruleY && o.args[2] === W)).toBe(true)
   })
 
+  // Round 2: the block sat small in the middle, ~150 px empty above it.
+  it('spreads a 64 px headline, a 16 px bar and the legend evenly down the middle', () => {
+    const { middleH } = layout(RUN, 'stats')
+    const block = zoneBlockLayout(middleH, 2)
+    const gaps = [block.headlineTop, block.barTop - (block.headlineTop + 64), block.legendTop - (block.barTop + 16), middleH - (block.legendTop + block.legendH)]
+    for (const gap of gaps) expect(gap).toBeCloseTo(gaps[0]!, 6)
+    expect(block.legendH).toBe(13 * 2 + 14)
+
+    const ops = draw({ design: 'stats', activity: { ...RUN, type: 'Base' } })
+    expect(ops.find((o) => o.op === 'fillText' && o.args[0] === '80%')?.font).toContain('64px')
+    expect(ops.find((o) => o.op === 'fillText' && o.args[0] === 'easy · Z1–Z2')?.font).toContain('14px')
+    expect(ops.find((o) => o.op === 'roundRect')?.args.slice(3)).toEqual([16, 8])
+  })
+
+  it('keeps room between the parts on a middle too short to spread them', () => {
+    const block = zoneBlockLayout(120, 3)
+    expect(block.barTop - (block.headlineTop + 64)).toBe(8)
+    expect(block.legendTop - (block.barTop + 16)).toBe(8)
+  })
+
   it('says so when the run has no heart rate', () => {
     const all = texts(draw({ design: 'stats', activity: { ...RUN, hrZones: [] } }))
     expect(all).toContain('No heart-rate zones for this run')
@@ -267,5 +287,27 @@ describe('the Photo design (design review, Oct 2026)', () => {
     expect(ops.find((o) => o.op === 'drawImage')?.args.slice(5)).toEqual([0, 0, W, H])
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === 'Strides 6 × 20s')?.fill).toBe('#ffffff')
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === '10.0')?.fill).toBe('#ffffff')
+  })
+
+  // Round 2: the title and date sat on a bright sky with no scrim behind them.
+  it('darkens the top enough for the date line to read 4.5:1 on a white photo, then clears', () => {
+    const linear = (c: number) => { const v = c / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }
+    const contrast = (a: number, b: number) => (Math.max(linear(a), linear(b)) + 0.05) / (Math.min(linear(a), linear(b)) + 0.05)
+    const alphaAt = (stops: [number, number][], at: number) => {
+      const i = stops.findIndex(([offset]) => offset >= at)
+      if (i <= 0) return stops[Math.max(i, 0)]![1]
+      const [[o0, a0], [o1, a1]] = [stops[i - 1]!, stops[i]!]
+      return a0 + ((a1 - a0) * (at - o0)) / (o1 - o0)
+    }
+    const long = { ...RUN, description: 'Threshold 3 × 8 min at 4:25 with 2 min jog recoveries between' }
+    for (const activity of [RUN, long]) {
+      const foot = headerFoot(layout(activity))
+      const stops = photoScrim(foot)
+      // White under the scrim, and the date's 85% white over that.
+      const under = 255 * (1 - alphaAt(stops, (foot - 3) / H))
+      expect(contrast(0.85 * 255 + 0.15 * under, under)).toBeGreaterThanOrEqual(4.5)
+      expect(alphaAt(stops, 0.45)).toBe(0)
+      expect(stops.at(-1)).toEqual([1, 0.78])
+    }
   })
 })

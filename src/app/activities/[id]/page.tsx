@@ -7,7 +7,7 @@ import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepositor
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
 import { officialResultsByActivityId } from '@/domain/activity/raceResult'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
-import { activityDetailView, shareActivity, shareSession } from '@/components/activity/activityViews'
+import { activityDetailView, runName, shareActivity, shareSession } from '@/components/activity/activityViews'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
@@ -24,7 +24,6 @@ import { chartZones } from '@/components/activity/chartStackLanes'
 import { RunPlace } from '@/components/activity/RunPlace'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { activityTitle } from '@/lib/activityTitle'
 
 export const revalidate = 3600
 
@@ -33,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) return { title: t.activity.metaFallbackTitle }
 
-  const name = activityTitle(activity)
+  const name = runName(activity, shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity))
   const stats = [
     formatDistance(activity.distanceKm),
     formatDuration(activity.durationSeconds),
@@ -76,8 +75,9 @@ export default async function ActivityDetailPage({
   const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
-  // The coach's session this run was, for the share card's title and its
-  // reps' target pace (design review, Oct 2026). Older runs had none.
+  // The coach's session this run was, for the run's name - in the header and
+  // on the share card alike - and its reps' target pace (design review, Oct
+  // 2026). Older runs had none.
   const session = shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity)
 
   // The Charts lanes are banded with the run's own HR zones and the
@@ -110,7 +110,7 @@ export default async function ActivityDetailPage({
             <header className="mb-1.5 flex items-end justify-between gap-4">
               <div className="flex min-w-0 flex-col gap-1">
                 <h1 className="text-display text-foreground">
-                  {activityTitle(activity)}
+                  {runName(activity, session)}
                 </h1>
                 {/* Date · type · place: the type as its zone dot and its
                     name in text-2 (v4.17). */}

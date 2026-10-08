@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { WorkoutPrescription } from '@/domain/coaching/types'
-import { activityDetailView, shareActivity, shareSession } from '../activityViews'
+import { activityDetailView, runName, shareActivity, shareSession } from '../activityViews'
 
 const ACTIVITY = {
   id: '90000273',
@@ -134,6 +134,9 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
       ],
     } as unknown as WorkoutPrescription
     expect(shareActivity({ ...ACTIVITY, description: 'Strides 6 x 20s' }, strides).sessionTitle).toBe('Easy 54 min + 6 × 20s strides')
+    // Round 2: the page's header reads the same name, the watch's only without a session.
+    expect(runName({ ...ACTIVITY, description: 'Strides 6 x 20s' }, strides)).toBe('Easy 54 min + 6 × 20s strides')
+    expect(runName({ ...ACTIVITY, description: 'Strides 6 x 20s' }, null)).toBe('Strides 6 x 20s')
   })
 
   it('has no reps for an easy run, nor for one the watch kept no rep laps for', () => {
