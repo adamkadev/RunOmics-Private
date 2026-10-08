@@ -91,12 +91,14 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
   const easyZone = paceByHrZone.get(2)
   const warmupPaceSecPerKm = easyZone ? easyZone.paceMaxSecPerKm + 1 : null
 
+  // Z1 at the top, as the bar above reads left to right and every zone list
+  // in the app runs (design review, Oct 2026: one order everywhere).
   const zones = [
-    { zone: 5, min: bounds[4], max: null as number | null, pace: paceByHrZone.get(5) },
-    { zone: 4, min: bounds[3], max: bounds[4] - 1, pace: paceByHrZone.get(4) },
-    { zone: 3, min: bounds[2], max: bounds[3] - 1, pace: paceByHrZone.get(3) },
-    { zone: 2, min: bounds[1], max: bounds[2] - 1, pace: paceByHrZone.get(2) },
     { zone: 1, min: bounds[0], max: bounds[1] - 1, pace: undefined },
+    { zone: 2, min: bounds[1], max: bounds[2] - 1, pace: paceByHrZone.get(2) },
+    { zone: 3, min: bounds[2], max: bounds[3] - 1, pace: paceByHrZone.get(3) },
+    { zone: 4, min: bounds[3], max: bounds[4] - 1, pace: paceByHrZone.get(4) },
+    { zone: 5, min: bounds[4], max: null as number | null, pace: paceByHrZone.get(5) },
   ]
 
   const timeByZone = new Map(zoneTime.map((z) => [z.zone, z]))

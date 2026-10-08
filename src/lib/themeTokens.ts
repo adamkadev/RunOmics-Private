@@ -20,19 +20,19 @@ const c = HUE
 /**
  * Z1 to Z5 per mode, the values behind `--zone-1..5` (v4.17): one intensity
  * scale - recovery slate, easy blue, aerobic violet, threshold magenta, max
- * pink - that also colours every session type (lib/colors TYPE_ZONE). It is
+ * rose - that also colours every session type (lib/colors TYPE_ZONE). It is
  * a category scale only: status is --pos, --warn and --neg. The share card
  * paints on a canvas and cannot read a token, so it takes the same table.
  *
- * Z3 steps away from its neighbours in lightness, its hue held (design
- * review, Oct 2026): at the others' lightness it was told from Z4 by hue
- * alone, and in a stacked week the two read as one colour - and as one blue
- * with Z2 to a red-green colour-blind eye. It is deeper in light mode and
- * lighter in dark, so each theme's zone ink still reads on it (8.7:1, 9.3:1).
+ * The second design review (Oct 2026) set Z1 to #8499b0 and Z3 to a mid
+ * violet, #8f7cf2 dark and #6a52d9 light: the pale lavender Z3 had read as
+ * no colour beside Z2 and Z4 on the share card's route. Light Z1 keeps its
+ * deeper slate, as #8499b0 is 2.9:1 on a white card and a zone is a mark
+ * (3:1). Z5 stays rose, clear of --neg's coral.
  */
 export const ZONE_HEX = {
-  light: ['#61788f', '#2f74e0', '#58359d', '#ae3cc2', '#d63a77'],
-  dark: ['#8397ab', '#5b9cf5', '#c4b5fd', '#d06be0', '#f0689e'],
+  light: ['#61788f', '#2f74e0', '#6a52d9', '#ae3cc2', '#d63a77'],
+  dark: ['#8499b0', '#5b9cf5', '#8f7cf2', '#d06be0', '#f0689e'],
 } as const
 
 /**

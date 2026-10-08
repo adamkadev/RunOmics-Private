@@ -11,26 +11,26 @@ export type ThemeMode = 'light' | 'dark'
 export type ShareDesign = 'route' | 'stats' | 'photo'
 export const SHARE_DESIGNS: readonly ShareDesign[] = ['route', 'stats', 'photo']
 
-/** The card, 390 x 693: header, middle, stat row. Only the middle changes. */
+/**
+ * The card, 390 x 693: header, middle, stat row. Only the middle changes, and
+ * it takes whatever height the title and the stats leave (shareCardLayout).
+ */
 export const W = 390
 export const H = 693
-export const HEADER_H = 136
-export const MIDDLE_H = 400
-export const STATS_H = H - HEADER_H - MIDDLE_H
 
 /** The app's tokens for one theme and accent, as a canvas can take them. */
 export interface SharePalette {
   /** --background: the whole card, header and stat row alike. */
   bg: string
-  /** --line: the Stats middle's rules. */
+  /** --line: the route legend's outline. */
   line: string
   /** --foreground */
   tx: string
   /** --muted-foreground: eyebrow, date, units, labels. */
   mu: string
-  /** --track: the zone bars' track and the empty photo frame. */
+  /** --track: the zone rows' track and the empty photo frame. */
   fa: string
-  /** --accent: the eyebrow's dot and the finish marker, nothing else. */
+  /** --accent: the logo mark and the finish marker, nothing else. */
   acc: string
   zones: readonly string[]
   /** ActivityMap's route casing and marker ring. */

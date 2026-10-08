@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTheme } from 'next-themes'
-import { X } from 'lucide-react'
+import { Camera, X } from 'lucide-react'
 import type { ShareActivity } from '@/lib/shareCardStats'
-import { renderShareCard, loadImage, pageFonts, SHARE_DESIGNS, W, MIDDLE_H, type RenderOptions, type ShareDesign, type ThemeMode } from '@/lib/shareCard'
+import {
+  renderShareCard, loadImage, pageFonts, shareCardMiddleHeight, SHARE_DESIGNS, W,
+  type RenderOptions, type ShareDesign, type ThemeMode,
+} from '@/lib/shareCard'
 import { shareCardFile, saveCardPng, copyCardPng } from '@/lib/shareCardExport'
 import { useShareCardPrefs } from '@/lib/useShareCardPrefs'
 import { useShareCardMap } from '@/lib/useShareCardMap'
@@ -58,18 +61,23 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const { design: chosen, setDesign, theme, setTheme } = useShareCardPrefs(appTheme, hasRoute)
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   const { locationName } = useShareCardGeocode(activity)
+  const [fontsReady, setFontsReady] = useState(0)
+  // The map fills the middle, whose height the title's lines set: measured
+  // again once Geist has loaded, as the card will be drawn in it.
+  const [middleH, setMiddleH] = useState(() => shareCardMiddleHeight(activity, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
   const { image: mapImage, points: mapPoints } = useShareCardMap({
     route: activity.route,
     theme,
     width: W,
-    height: MIDDLE_H,
+    height: middleH,
     enabled: hasRoute,
   })
 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
-  const [fontsReady, setFontsReady] = useState(0)
+  // Photo with none chosen yet: the frame is the picker, and there is nothing to share.
+  const awaitingPhoto = design === 'photo' && !photoImage
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -93,9 +101,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   // A canvas draws in whatever font has loaded; draw again once Geist has.
   useEffect(() => {
     let alive = true
-    document.fonts?.ready.then(() => { if (alive) setFontsReady((n) => n + 1) }).catch(() => {})
+    document.fonts?.ready.then(() => {
+      if (!alive) return
+      setFontsReady((n) => n + 1)
+      setMiddleH(shareCardMiddleHeight(activity, pageFonts()))
+    }).catch(() => {})
     return () => { alive = false }
-  }, [])
+  }, [activity])
 
   const renderOptions = useCallback((): RenderOptions => ({
     activity,
@@ -115,11 +127,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     const dpr = Math.min(window.devicePixelRatio || 1, 3)
     renderShareCard(canvas, renderOptions(), dpr)
   }, [renderOptions, fontsReady])
-
-  function selectDesign(d: ShareDesign) {
-    setDesign(d)
-    if (d === 'photo' && !photoImage) fileInputRef.current?.click()
-  }
 
   function step(by: number) {
     const i = designs.indexOf(design)
@@ -195,7 +202,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               data-testid="share-preview"
               style={{
                 width: PREVIEW_W, height: PREVIEW_H, borderRadius: 16, overflow: 'hidden', flexShrink: 0,
-                boxShadow: '0 0 0 1px var(--border)', touchAction: 'pan-y',
+                boxShadow: awaitingPhoto ? 'none' : '0 0 0 1px var(--border)', touchAction: 'pan-y',
+                position: 'relative',
               }}
               onPointerDown={(e) => { swipeX.current = e.clientX }}
               onPointerUp={(e) => {
@@ -204,22 +212,25 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                 if (from === null) return
                 const dx = e.clientX - from
                 if (Math.abs(dx) >= SWIPE_PX) step(dx < 0 ? 1 : -1)
-                else if (design === 'photo') fileInputRef.current?.click()
+                else if (design === 'photo' && photoImage) fileInputRef.current?.click()
               }}
               onPointerCancel={() => { swipeX.current = null }}
             >
-              <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />
-            </div>
-            <div className="flex items-center" style={{ gap: 6 }} aria-hidden="true">
-              {designs.map((d) => (
-                <span
-                  key={d}
-                  style={{
-                    width: d === design ? 16 : 6, height: 6, borderRadius: 3,
-                    background: d === design ? 'var(--foreground)' : 'var(--band)',
-                  }}
-                />
-              ))}
+              <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: awaitingPhoto ? 'none' : 'block' }} />
+              {/* The empty frame is the picker (design review, Oct 2026). */}
+              {awaitingPhoto && (
+                <button
+                  type="button"
+                  data-testid="share-photo-picker"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground"
+                  style={{ gap: 10, borderRadius: 16, border: '1.5px dashed var(--muted-foreground)', background: 'var(--background)' }}
+                >
+                  <Camera size={34} strokeWidth={1.8} className="text-foreground" aria-hidden="true" />
+                  <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.choosePhoto}</span>
+                  <span style={{ fontSize: 12 }}>{s.photoHint}</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -236,7 +247,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                   type="button"
                   role="radio"
                   aria-checked={d === design}
-                  onClick={() => selectDesign(d)}
+                  onClick={() => setDesign(d)}
                   className={cn(segmentClass(d === design), 'h-9 text-sm')}
                 >
                   {s.designLabels[d]}
@@ -245,37 +256,43 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             </div>
 
             {/* Right under the picker (v5.5 #12): last in the list, it sat
-                behind the action buttons on a phone. */}
-            {design === 'photo' && (
+                behind the action buttons on a phone. A photo covers the
+                whole card, so it has no background to pick. */}
+            {design === 'photo' && photoImage && (
               <div className="flex items-center justify-between" style={{ padding: '2px' }}>
                 <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.photo}</span>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="hit-44 text-foreground"
-                  style={{ fontSize: 14, fontWeight: 600, padding: '6px 2px' }}
+                  className="flex items-center text-foreground"
+                  style={{
+                    height: 44, padding: '0 16px', borderRadius: 14, fontSize: 14, fontWeight: 600,
+                    background: 'var(--muted)', border: '1px solid var(--border)',
+                  }}
                 >
-                  {photoImage ? s.changePhoto : s.choosePhoto}
+                  {s.replacePhoto}
                 </button>
               </div>
             )}
-            <div className="flex items-center justify-between" style={{ padding: '2px' }}>
-              <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.background}</span>
-              <div role="radiogroup" aria-label={s.background} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
-                {(['dark', 'light'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    role="radio"
-                    aria-checked={theme === mode}
-                    onClick={() => setTheme(mode)}
-                    className={cn(segmentClass(theme === mode), 'h-[30px] px-3.5 text-[13px]')}
-                  >
-                    {s.themeLabels[mode]}
-                  </button>
-                ))}
+            {design !== 'photo' && (
+              <div className="flex items-center justify-between" style={{ padding: '2px' }}>
+                <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.background}</span>
+                <div role="radiogroup" aria-label={s.background} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
+                  {(['dark', 'light'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="radio"
+                      aria-checked={theme === mode}
+                      onClick={() => setTheme(mode)}
+                      className={cn(segmentClass(theme === mode), 'h-[30px] px-3.5 text-[13px]')}
+                    >
+                      {s.themeLabels[mode]}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
         </div>
@@ -284,6 +301,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           canShareFiles={canShareFiles}
           canCopyImage={canCopyImage}
           copyState={copyState}
+          disabled={awaitingPhoto}
           onShare={handleShare}
           onSave={handleSave}
           onCopy={handleCopy}

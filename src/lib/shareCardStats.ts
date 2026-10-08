@@ -1,4 +1,4 @@
-import type { Activity } from '@/domain/activity/types'
+import type { Activity, ActivityType } from '@/domain/activity/types'
 import { formatClock, formatDate, formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { activityTitle } from '@/lib/activityTitle'
@@ -8,10 +8,28 @@ export type ShareActivity = Pick<
   Activity,
   | 'id' | 'date' | 'dayOfWeek' | 'description' | 'distanceKm' | 'durationSeconds' | 'paceSecPerKm'
   | 'avgHeartRate' | 'elevationGain' | 'route' | 'paceSamples' | 'hrZones'
->
+> & {
+  type?: ActivityType
+  hrSamples?: number[] | null
+  /** The coach's name for the session this run matched, written to its naming rules. */
+  sessionTitle?: string | null
+  /** The work of an interval session: its reps and their pace, against the plan's. */
+  reps?: ShareReps | null
+}
 
+export interface ShareReps {
+  count: number
+  /** One rep's length, in seconds. */
+  repSeconds: number
+  /** The work laps only: their time over their distance. */
+  paceSecPerKm: number
+  /** The plan's pace for the reps, when the run matched a session that set one. */
+  target: { min: number; max: number } | null
+}
+
+/** The coach's session name when the run matched one (design review, Oct 2026), else the run's own. */
 export function shareCardTitle(activity: ShareActivity): string {
-  return activityTitle(activity)
+  return activity.sessionTitle?.trim() || activityTitle(activity)
 }
 
 /** "Sat, Sep 26 · Hoenheim": the app's date, then the town when it is known. */
@@ -26,33 +44,92 @@ export interface ShareStat {
   label: string
 }
 
-/** The stat row: Distance, Pace, Avg HR, Time - the ones the run has. */
+/**
+ * The stat row: Distance, Pace, Avg HR, Time - the ones the run has. An
+ * interval session drops the average pace (design review, Oct 2026): over
+ * reps and recoveries it describes neither, and the rep pace leads instead.
+ */
 export function shareStats(activity: ShareActivity): ShareStat[] {
   const s = t.activity.shareCard
   const stats: ShareStat[] = [
     { value: formatKm(activity.distanceKm, 1), unit: ` ${t.units.km}`, label: s.distance },
   ]
-  if (activity.paceSecPerKm && activity.paceSecPerKm > 0) {
+  if (!activity.reps && activity.paceSecPerKm && activity.paceSecPerKm > 0) {
     stats.push({ value: formatClock(activity.paceSecPerKm), unit: ` ${t.units.perKm}`, label: s.pace })
   }
+  if (activity.reps) stats.push({ value: formatDuration(Math.round(activity.durationSeconds)), unit: '', label: s.time })
   if (activity.avgHeartRate) {
     stats.push({ value: String(Math.round(activity.avgHeartRate)), unit: ` ${t.units.bpm}`, label: s.avgHr })
   }
-  stats.push({ value: formatDuration(Math.round(activity.durationSeconds)), unit: '', label: s.time })
+  if (!activity.reps) stats.push({ value: formatDuration(Math.round(activity.durationSeconds)), unit: '', label: s.time })
   return stats
+}
+
+/** "8′" for a rep in whole minutes, "45″" for one under a minute. */
+export function repLength(seconds: number): string {
+  return seconds >= 60 ? `${Math.round(seconds / 60)}′` : `${Math.round(seconds)}″`
+}
+
+export interface ShareRepHero {
+  /** "REP PACE · 3 × 8′" */
+  eyebrow: string
+  pace: string
+  /** "/km · target 4:25", or just "/km" with no target. */
+  detail: string
+}
+
+/** The interval session's headline: the reps' own pace, and the plan's beside it. */
+export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
+  const reps = activity.reps
+  if (!reps) return null
+  const s = t.activity.shareCard
+  const target = reps.target
+    ? reps.target.min === reps.target.max
+      ? formatClock(reps.target.min)
+      : `${formatClock(reps.target.min)}–${formatClock(reps.target.max)}`
+    : null
+  return {
+    eyebrow: s.repPace(reps.count, repLength(reps.repSeconds)),
+    pace: formatClock(reps.paceSecPerKm),
+    detail: target ? `${t.units.perKm} · ${s.target(target)}` : t.units.perKm,
+  }
 }
 
 export interface ShareZoneRow {
   zone: number
   seconds: number
-  /** The bar's length against the longest zone, 0 to 1. */
-  fill: number
+  /** The run's share of time in this zone, 0 to 1: the bar is the percentage. */
+  share: number
 }
 
 export interface ShareZones {
+  /** Only the zones the run spent time in, Z1 first. */
   rows: ShareZoneRow[]
-  /** The zone the run spent most time in, and its share of the whole. */
-  top: { zone: number; percent: number }
+  /** The headline: the share of time in the zones this kind of run is about. */
+  headline: { percent: number; label: string }
+  totalSeconds: number
+}
+
+/**
+ * The zones a run's kind is about (design review, Oct 2026): an easy or long
+ * run is judged on Z1-Z2, a threshold session on Z4, a tempo on Z3, a VO₂ or
+ * faster session on Z5. A race, or a run of no known kind, on its main zone.
+ */
+function headlineZones(type: ActivityType | undefined): number[] | null {
+  switch (type) {
+    case 'Base':
+      return [1, 2]
+    case 'Tempo':
+      return [3]
+    case 'Threshold':
+      return [4]
+    case 'VO2Max':
+    case 'Anaerobic':
+    case 'Sprint':
+      return [5]
+    default:
+      return null
+  }
 }
 
 /**
@@ -64,10 +141,37 @@ export function shareZones(activity: ShareActivity): ShareZones | null {
     activity.hrZones.filter((z) => z.zone === zone).reduce((sum, z) => sum + z.seconds, 0))
   const total = seconds.reduce((a, b) => a + b, 0)
   if (total <= 0) return null
-  const longest = Math.max(...seconds)
-  const topIndex = seconds.indexOf(longest)
-  return {
-    rows: seconds.map((s, i) => ({ zone: i + 1, seconds: s, fill: s / longest })),
-    top: { zone: topIndex + 1, percent: Math.round((longest / total) * 100) },
+
+  const s = t.activity.shareCard
+  const rows = seconds
+    .map((sec, i) => ({ zone: i + 1, seconds: sec, share: sec / total }))
+    // Under a minute reads as nothing at all, not a sliver of a bar.
+    .filter((row) => row.seconds >= 60)
+  const zones = headlineZones(activity.type)
+  if (zones) {
+    const share = zones.reduce((sum, z) => sum + (seconds[z - 1] ?? 0), 0) / total
+    const label = zones.length > 1 ? s.easyZones(zones[0]!, zones[zones.length - 1]!) : s.inZone(zones[0]!)
+    return { rows, headline: { percent: Math.round(share * 100), label }, totalSeconds: total }
   }
+  const longest = Math.max(...seconds)
+  return { rows, headline: { percent: Math.round((longest / total) * 100), label: s.inZone(seconds.indexOf(longest) + 1) }, totalSeconds: total }
+}
+
+/**
+ * The zone a heart rate falls in, by the run's own zone floors: the same
+ * boundaries its time in zones was counted with. Null without them.
+ */
+export function zoneOfHr(hr: number, hrZones: ShareActivity['hrZones']): number | null {
+  const floors = [...hrZones].filter((z) => z.minBpm > 0).sort((a, b) => a.zone - b.zone)
+  if (floors.length === 0) return null
+  let zone = floors[0]!.zone
+  for (const z of floors) if (hr >= z.minBpm) zone = z.zone
+  return zone
+}
+
+/** The heart rate under a point `ratio` (0 to 1) along the route, by the same share of the HR stream. */
+export function hrAtFraction(samples: readonly number[], ratio: number): number | null {
+  if (samples.length === 0) return null
+  const i = Math.round(Math.min(Math.max(ratio, 0), 1) * (samples.length - 1))
+  return samples[i] ?? null
 }

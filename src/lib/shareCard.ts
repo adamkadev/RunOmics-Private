@@ -1,12 +1,9 @@
 import type { ShareActivity } from '@/lib/shareCardStats'
 import type { AccentId } from '@/lib/accentScale'
 import { W, H, sharePalette, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
-import { drawShareCard, FALLBACK_FONTS, type ShareFonts } from '@/lib/shareCardDraw'
+import { drawShareCard, FALLBACK_FONTS, shareCardLayout, type ShareFonts } from '@/lib/shareCardDraw'
 
-export {
-  SHARE_DESIGNS, W, H, HEADER_H, MIDDLE_H, STATS_H,
-  type ShareDesign, type ThemeMode,
-} from '@/lib/shareCardPalette'
+export { SHARE_DESIGNS, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
 export { loadImage } from '@/lib/shareCardDraw'
 
 export interface RenderOptions {
@@ -29,6 +26,18 @@ export function pageFonts(): ShareFonts {
   if (typeof document === 'undefined' || !document.body) return FALLBACK_FONTS
   const display = getComputedStyle(document.body).getPropertyValue('--font-geist').trim()
   return display ? { ...FALLBACK_FONTS, display: `${display}, ${FALLBACK_FONTS.display}` } : FALLBACK_FONTS
+}
+
+/** The middle's height where there is no canvas to measure a title on. */
+const UNMEASURED_MIDDLE_H = 400
+
+/**
+ * The middle's height on this run's card, laid out as drawShareCard will lay
+ * it: the basemap is drawn to it, so the route fills the map's whole frame.
+ */
+export function shareCardMiddleHeight(activity: ShareActivity, fonts: ShareFonts): number {
+  const ctx = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')
+  return ctx ? shareCardLayout(ctx, activity, fonts).middleH : UNMEASURED_MIDDLE_H
 }
 
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
