@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ShareActivity } from '@/lib/shareCardStats'
@@ -78,15 +78,34 @@ describe('ShareCardModal', () => {
   })
 
   // Design review, Oct 2026: the segmented control is the only selector.
-  it('has no page dots under the preview', () => {
+  it('has no page dots under the preview: the design picker comes straight after it', () => {
     open()
-    expect(screen.getByTestId('share-preview').nextElementSibling).toBeNull()
+    expect(screen.getByTestId('share-preview').nextElementSibling?.getAttribute('aria-label')).toBe('Design')
+  })
+
+  // Design review, Oct 2026: the card changed height per tab and the controls under it jumped.
+  it('keeps one 4:5 card box, and one option row, on every tab', async () => {
+    open()
+    // jsdom drops a min() width; the box's ratio, margin and corners are what it can read.
+    const box = () => {
+      const { aspectRatio, marginTop, borderRadius } = screen.getByTestId('share-preview').style
+      return { aspectRatio, marginTop, borderRadius }
+    }
+    const first = box()
+    expect(first.aspectRatio).toBe('4 / 5')
+    for (const tab of ['Stats', 'Photo', 'Route']) {
+      await userEvent.click(screen.getByRole('radio', { name: tab }))
+      expect(box()).toEqual(first)
+      expect(screen.getByTestId('share-options').style.minHeight).toBe('52px')
+    }
   })
 
   it('makes the empty photo frame the picker, and shares nothing until a photo is chosen', async () => {
     open()
     await userEvent.click(screen.getByRole('radio', { name: 'Photo' }))
-    expect(screen.getByTestId('share-photo-picker').textContent).toBe('Choose photoFills the whole card')
+    expect(screen.getByTestId('share-photo-picker').textContent).toBe('Choose photoThis frame is the exact crop')
+    // The option row offers the same choice, where Dark and Light sit on the other tabs.
+    expect(within(screen.getByTestId('share-options')).getByRole('button', { name: 'Choose photo' }).style.height).toBe('44px')
     expect(screen.getByRole('button', { name: 'Share' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Copy image' })).toBeDisabled()
     // A photo covers the whole card: there is no background to pick.
@@ -100,13 +119,15 @@ describe('ShareCardModal', () => {
     expect(screen.getByRole('button', { name: 'Copy image' })).toBeEnabled()
   })
 
-  it('fills the sheet to its container: no safe-area padding and no glass', () => {
+  // Design review, Oct 2026: a full-height sheet left ~300 px of nothing above the buttons.
+  it('sizes the sheet to what it holds, the buttons right under the options, no glass', () => {
     open()
     const sheet = screen.getByTestId('share-sheet')
-    expect(sheet.className).toContain('h-full')
-    expect(sheet.style.paddingTop).toBe('')
-    expect(sheet.style.background).toBe('var(--background)')
+    expect(sheet.className).toContain('max-h-full')
+    expect(sheet.className).not.toMatch(/(^|\s)h-full/)
+    expect(sheet.style.background).toBe('var(--card)')
     expect(sheet.style.backdropFilter ?? '').toBe('')
+    expect(screen.getByTestId('share-options').nextElementSibling?.textContent).toContain('Share')
   })
 
   // Design review, Oct 2026: the design picker was a filled accent pill, unlike
@@ -126,7 +147,8 @@ describe('ShareCardModal', () => {
 
   it('gives the close button a 44 pt target', () => {
     open()
-    expect(screen.getByRole('button', { name: t.activity.shareCard.close }).className).toContain('hit-44')
+    const close = screen.getByRole('button', { name: t.activity.shareCard.close })
+    expect([close.style.width, close.style.height]).toEqual(['44px', '44px'])
   })
 
   // At the owner's request: no VO₂max badge on a shared card, nor a switch for one.

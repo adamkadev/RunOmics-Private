@@ -67,7 +67,7 @@ describe('drawShareCard', () => {
 
   it('draws the same header and stat row on every design', () => {
     const header = ['RunOmics', 'Strides 6 × 20s']
-    const stats = ['10.0', ' km', 'Distance', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR', '57:33', 'Time']
+    const stats = ['10.0', ' km', 'Distance', '57:33', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR']
     for (const design of ['route', 'stats', 'photo'] as const) {
       const all = texts(draw({ design }))
       const at = all.indexOf('RunOmics')
@@ -116,8 +116,8 @@ describe('the title (design review, Oct 2026)', () => {
 
   it('fills the card: the middle runs down to the stats, no band left under them', () => {
     const { middleTop, middleH, statsTop } = layout()
-    expect(middleTop + middleH).toBe(statsTop - 16)
-    expect(H - statsTop).toBeLessThan(80)
+    expect(middleTop + middleH).toBe(statsTop - 12)
+    expect(H - statsTop).toBeLessThan(60)
   })
 })
 
@@ -168,15 +168,19 @@ describe('the route (design review, Oct 2026)', () => {
     expect(slicePolyline([[0, 0], [10, 0], [10, 10]], 0.25, 0.75)).toEqual([[5, 0], [10, 0], [10, 5]])
   })
 
-  // The Activity map's markers (routeMarkers): radius 10 is the finish's outline, 12.5 the loop's, 5.5 the start's dot.
+  // The Activity map's markers (routeMarkers) at the card's 0.85: the finish's outline, the loop's, the start's dot.
+  const k = 0.85
+  const FINISH_OUTLINE = 9 * k + 1 * k
+  const LOOP_OUTLINE = 11 * k + 1.5 * k
+  const START_DOT = 8 * k - 2.5 * k
   const arcsOf = (ops: Op[], radius: number) => ops.filter((o) => o.op === 'arc' && o.args[2] === radius).map((o) => o.args.slice(0, 2))
 
   it('puts the checkered finish on the trace\'s own last point, the accent start over it', () => {
     const ops = middle(draw({ design: 'route' }))
     const trace = ops.filter((o) => o.op === 'lineTo')
     const last = trace[trace.length - 1]!.args
-    expect(arcsOf(ops, 10)).toEqual([last])
-    expect(arcsOf(ops, 5.5)).toHaveLength(1)
+    expect(arcsOf(ops, FINISH_OUTLINE)).toEqual([last])
+    expect(arcsOf(ops, START_DOT)).toHaveLength(1)
     expect(ops.some((o) => o.op === 'fillRect' && o.fill === '#0c0d0d')).toBe(true)
     const fills = ops.filter((o) => o.op === 'fill').map((o) => o.fill)
     expect(fills.lastIndexOf(acc)).toBeGreaterThan(fills.indexOf('#ffffff'))
@@ -185,9 +189,9 @@ describe('the route (design review, Oct 2026)', () => {
   it('draws a loop as one combined marker on the start, never two stacked', () => {
     const loop = { ...RUN, route: [...RUN.route!, RUN.route![0]!] as [number, number][] }
     const ops = middle(draw({ design: 'route', activity: loop }), loop)
-    expect(arcsOf(ops, 12.5)).toHaveLength(1)
-    expect(arcsOf(ops, 10)).toEqual([])
-    expect(arcsOf(ops, 5.5)).toEqual([])
+    expect(arcsOf(ops, LOOP_OUTLINE)).toHaveLength(1)
+    expect(arcsOf(ops, FINISH_OUTLINE)).toEqual([])
+    expect(arcsOf(ops, START_DOT)).toEqual([])
     // Its ring is the accent.
     expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
   })
@@ -211,31 +215,39 @@ describe('the route (design review, Oct 2026)', () => {
 describe('the Stats design (design review, Oct 2026)', () => {
   it('heads with the share the run is judged on, then a row for each zone it used', () => {
     const all = texts(draw({ design: 'stats', activity: { ...RUN, type: 'Base' } }))
-    expect(all).toEqual(expect.arrayContaining(['80%', 'easy · Z1–Z2', '· 50 min', 'Z2 Easy', 'Z3 Aerobic', '20%']))
+    expect(all).toEqual(expect.arrayContaining(['80%', 'easy · Z1–Z2', 'Z2 Easy', 'Z3 Aerobic', '20%']))
     expect(all).not.toContain('Z1 Recovery')
     expect(all).not.toContain('Z5 Max')
   })
 
-  it('draws a zone of under a minute nowhere, not as an empty track', () => {
-    const ops = draw({ design: 'stats', activity: { ...RUN, hrZones: [{ zone: 2, seconds: 2400, percent: 99, minBpm: 120, maxBpm: 140 }, { zone: 4, seconds: 20, percent: 1, minBpm: 155, maxBpm: 170 }] } })
+  it('draws a zone that rounds to 0% nowhere', () => {
+    const ops = draw({ design: 'stats', activity: { ...RUN, hrZones: [{ zone: 2, seconds: 2400, percent: 99, minBpm: 120, maxBpm: 140 }, { zone: 4, seconds: 5, percent: 1, minBpm: 155, maxBpm: 170 }] } })
     expect(ops.some((o) => o.op === 'fill' && o.fill === palette.zones[3])).toBe(false)
     expect(texts(ops)).not.toContain('Z4 Threshold')
   })
 
-  // Handoff 4: the card fits its content, the stats under a rule, no spacer.
-  it('is as tall as its zones, the stats under a rule', () => {
-    const stats = layout(RUN, 'stats')
-    expect(stats.height).toBeLessThan(H)
-    expect(stats.ruleY).toBe(stats.middleTop + stats.middleH + 31)
-    expect(layout(RUN, 'route').ruleY).toBeNull()
-    const ops = draw({ design: 'stats' })
-    expect(ops[0]).toMatchObject({ op: 'fillRect', args: [0, 0, W, stats.height] })
-    expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === stats.ruleY)).toBe(true)
+  // Design review, Oct 2026: one bar and a two-column legend, not a bar and then a bar per zone.
+  it('draws one bar of edge-to-edge segments and a legend, no bar per zone', () => {
+    const ops = draw({ design: 'stats' }).filter((o) => o.ty === layout(RUN, 'stats').middleTop)
+    const segments = ops.filter((o) => o.op === 'fillRect' && (o.fill === palette.zones[1] || o.fill === palette.zones[2]))
+    expect(segments).toHaveLength(2)
+    const [z2, z3] = segments.map((o) => o.args as number[])
+    expect(z2![0]! + z2![2]!).toBeCloseTo(z3![0]!, 6)
+    expect(z2![2]! / (z2![2]! + z3![2]!)).toBeCloseTo(0.8, 6)
+    expect(ops.filter((o) => o.op === 'roundRect')).toHaveLength(1)
   })
 
-  it('grows with each zone the run used', () => {
-    const one = { ...RUN, hrZones: [RUN.hrZones[0]!] }
-    expect(layout(RUN, 'stats').height - layout(one, 'stats').height).toBe(36)
+  // Design review, Oct 2026: one 4:5 box on every tab, the Stats design's stat row ruled off.
+  it('is the same 4:5 card as every design, the stat row ruled off', () => {
+    const stats = layout(RUN, 'stats')
+    const route = layout(RUN, 'route')
+    expect(W / H).toBe(4 / 5)
+    expect(stats.middleH).toBe(route.middleH)
+    expect(stats.ruleY).toBe(stats.statsTop - 12)
+    expect(route.ruleY).toBeNull()
+    const ops = draw({ design: 'stats' })
+    expect(ops[0]).toMatchObject({ op: 'fillRect', args: [0, 0, W, H] })
+    expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === stats.ruleY && o.args[2] === W)).toBe(true)
   })
 
   it('says so when the run has no heart rate', () => {
@@ -246,7 +258,7 @@ describe('the Stats design (design review, Oct 2026)', () => {
 
 describe('the Photo design (design review, Oct 2026)', () => {
   it('asks for a photo until there is one', () => {
-    expect(texts(draw({ design: 'photo' }))).toEqual(expect.arrayContaining(['Choose photo', 'Fills the whole card']))
+    expect(texts(draw({ design: 'photo' }))).toEqual(expect.arrayContaining(['Choose photo', 'This frame is the exact crop']))
   })
 
   it('fills the whole card with the photo, the words over it in white', () => {

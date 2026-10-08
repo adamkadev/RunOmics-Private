@@ -3,6 +3,8 @@ import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/co
 import { repSet } from '@/domain/activity/repSet'
 import type { ShareActivity, ShareReps } from '@/lib/shareCardStats'
 import { pickDefined } from '@/components/pickDefined'
+import { workoutSummary } from '@/components/plan/workoutSummary'
+import { prescriptionDistanceMeters, prescriptionDuration, prescriptionStructure } from '@/components/coaching/presentation'
 
 /**
  * The activity page handed the whole Activity to its client components, so
@@ -122,11 +124,18 @@ export function shareReps(activity: Pick<Activity, 'type' | 'splits'>, prescript
   }
 }
 
+/** A run's kind in the coach's broad terms: easy, quality, or neither (a race, a sprint). */
+function family(type: ActivityType): 'easy' | 'quality' | null {
+  if (type === 'Base') return 'easy'
+  return isIntervalType(type) ? 'quality' : null
+}
+
 /**
  * The coach's session a run is shared as: the one the coach matched it to,
- * else - for a quality run - the one quality session set for its day. The
- * coach matches on kind, so a threshold session the watch filed as tempo
- * matched nothing; an easy run on a hard day still takes no session.
+ * else - as Today pairs a run with its day - the one session set for its day
+ * of the run's own kind. The coach matches on exact kind, so a threshold
+ * session the watch filed as tempo matched nothing; an easy run on a hard
+ * day still takes no session.
  */
 export function shareSession(
   workouts: readonly { prescription: WorkoutPrescription; activityId: string | null }[],
@@ -134,29 +143,42 @@ export function shareSession(
 ): WorkoutPrescription | null {
   const matched = workouts.find((w) => w.activityId === activity.id)
   if (matched) return matched.prescription
-  if (!isIntervalType(activity.type)) return null
+  const kind = family(activity.type)
+  if (!kind) return null
   const day = workouts.filter((w) =>
     w.activityId === null &&
     w.prescription.status !== 'cancelled' &&
     w.prescription.date === activity.date.slice(0, 10) &&
-    isIntervalType(COACHING_TO_ACTIVITY_TYPE[w.prescription.type]))
+    family(COACHING_TO_ACTIVITY_TYPE[w.prescription.type]) === kind)
   return day.length === 1 ? day[0]!.prescription : null
 }
 
 /**
- * The share card's run, with the coach's session when it has one: its kind -
- * a threshold session the watch filed as tempo is read as the threshold it
- * was set as - and its reps' target. The coach's name titles the card only
- * when written under the naming rules (design review, Oct 2026), the ones
- * with a structure; an older name is shorter than the watch's own, which
- * the run carries.
+ * The session's name as Plan and Today write it (design review, Oct 2026):
+ * "Easy 63 min + 6 × 20s strides", not the watch's "Strides 6 x 20s" - the
+ * share card never derives a name of its own.
+ */
+function sessionName(session: WorkoutPrescription): string {
+  return workoutSummary({
+    title: session.title,
+    ...(session.shortName ? { shortName: session.shortName } : {}),
+    duration: prescriptionDuration(session),
+    distanceM: prescriptionDistanceMeters(session),
+    structure: prescriptionStructure(session),
+  }).title
+}
+
+/**
+ * The share card's run, with the coach's session when it has one: its name,
+ * as the plan shows it; its kind - a threshold session the watch filed as
+ * tempo is read as the threshold it was set as - and its reps' target.
  */
 export function shareActivity(activity: Activity, session: WorkoutPrescription | null = null): ShareActivity {
   const type = session ? COACHING_TO_ACTIVITY_TYPE[session.type] : activity.type
   return {
     ...pickDefined(activity, SHARE_FIELDS),
     type,
-    sessionTitle: session?.structure ? session.title : null,
+    sessionTitle: session ? sessionName(session) : null,
     reps: shareReps({ type, splits: activity.splits }, session),
   }
 }

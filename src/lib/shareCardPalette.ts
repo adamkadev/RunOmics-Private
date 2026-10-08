@@ -12,11 +12,13 @@ export type ShareDesign = 'route' | 'stats' | 'photo'
 export const SHARE_DESIGNS: readonly ShareDesign[] = ['route', 'stats', 'photo']
 
 /**
- * The card, 390 x 693: header, middle, stat row. Only the middle changes, and
- * it takes whatever height the title and the stats leave (shareCardLayout).
+ * The card, one 4:5 box for every design (design review, Oct 2026: the card
+ * changed height per tab and the controls under it jumped): 300 x 375, the
+ * size it shows at on a phone, exported at 1080 x 1350. Header, middle and
+ * stat row; only the middle changes, taking what the title and stats leave.
  */
-export const W = 390
-export const H = 693
+export const W = 300
+export const H = 375
 
 /** The app's tokens for one theme and accent, as a canvas can take them. */
 export interface SharePalette {

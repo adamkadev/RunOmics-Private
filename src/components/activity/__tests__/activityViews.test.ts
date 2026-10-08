@@ -116,9 +116,24 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
     expect(shareActivity(run, session).reps?.target).toEqual({ min: 262, max: 269 })
   })
 
-  it('titles the card with the coach\'s name only when written under the naming rules', () => {
+  // Design review, Oct 2026: the plan's name for the session, never one the card derives.
+  it('titles the card with the session\'s name as the plan shows it', () => {
     const legacy = { ...SESSION, title: 'Threshold 3 x 7:40', structure: undefined } as unknown as WorkoutPrescription
-    expect(shareActivity(run, legacy).sessionTitle).toBeNull()
+    expect(shareActivity(run, legacy).sessionTitle).toBe('Threshold 3 x 7:40')
+    const strides = {
+      type: 'easy',
+      title: 'Strides 6 x 20s',
+      blocks: [
+        { kind: 'effort', target: { distanceMeters: 9000, paceSecPerKm: { min: 330, max: 384 }, hrZone: 2 } },
+        {
+          kind: 'repeat', repetitions: 6, steps: [
+            { kind: 'strides', target: { durationSeconds: 20, paceSecPerKm: { min: 215, max: 230 } } },
+            { kind: 'recovery', target: { durationSeconds: 60, paceSecPerKm: { min: 360, max: 420 } } },
+          ],
+        },
+      ],
+    } as unknown as WorkoutPrescription
+    expect(shareActivity({ ...ACTIVITY, description: 'Strides 6 x 20s' }, strides).sessionTitle).toBe('Easy 54 min + 6 × 20s strides')
   })
 
   it('has no reps for an easy run, nor for one the watch kept no rep laps for', () => {
@@ -141,6 +156,12 @@ describe('shareSession', () => {
   it('else takes the one quality session set for a quality run\'s day', () => {
     const day = at('2026-10-06', 'threshold')
     expect(shareSession([at('2026-10-05', 'easy'), day], run)).toBe(day.prescription)
+  })
+
+  // As Today pairs them (design review, Oct 2026): the strides day's easy run is that session.
+  it('takes the day\'s easy session for an easy run', () => {
+    const day = at('2026-10-06', 'easy')
+    expect(shareSession([day], { ...run, type: 'Base' })).toBe(day.prescription)
   })
 
   it('takes none for an easy run on a hard day, a cancelled session, or a day of two', () => {

@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes'
 import { Camera, X } from 'lucide-react'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import {
-  renderShareCard, loadImage, pageFonts, shareCardMetrics, SHARE_DESIGNS, W, H,
+  renderShareCard, loadImage, pageFonts, shareCardMiddleHeight, SHARE_DESIGNS, W,
   type RenderOptions, type ShareDesign, type ThemeMode,
 } from '@/lib/shareCard'
 import { shareCardFile, saveCardPng, copyCardPng } from '@/lib/shareCardExport'
@@ -28,9 +28,12 @@ interface Props {
   onClose: () => void
 }
 
-/** The preview: the 390 x 693 card at 242 x 430, large enough to read. */
-const PREVIEW_W = 242
-const PREVIEW_SCALE = PREVIEW_W / W
+/**
+ * The card box (design review, Oct 2026): one 4:5 box on every tab, so the
+ * controls under it never move - 300 x 375, or narrower on a small phone,
+ * the sheet's 20 px margins and 14 px more on each side.
+ */
+const CARD_BOX_W = `min(${W}px, calc(100vw - 68px))`
 const SWIPE_PX = 40
 
 /**
@@ -62,16 +65,15 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   const { locationName } = useShareCardGeocode(activity)
   const [fontsReady, setFontsReady] = useState(0)
-  // The map fills the middle, whose height the title's lines set, and the
-  // Stats card is as tall as its zones: measured again once Geist has
-  // loaded, as the card will be drawn in it.
-  const [metrics, setMetrics] = useState(() => shareCardMetrics(activity, pageFonts()))
+  // The map fills the middle, whose height the title's lines set: measured
+  // again once Geist has loaded, as the card will be drawn in it.
+  const [middleH, setMiddleH] = useState(() => shareCardMiddleHeight(activity, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
   const { image: mapImage, points: mapPoints } = useShareCardMap({
     route: activity.route,
     theme,
     width: W,
-    height: metrics.middleH,
+    height: middleH,
     enabled: hasRoute,
   })
 
@@ -79,7 +81,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
   // Photo with none chosen yet: the frame is the picker, and there is nothing to share.
   const awaitingPhoto = design === 'photo' && !photoImage
-  const previewH = Math.round((design === 'stats' ? metrics.statsH : H) * PREVIEW_SCALE)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -106,7 +107,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     document.fonts?.ready.then(() => {
       if (!alive) return
       setFontsReady((n) => n + 1)
-      setMetrics(shareCardMetrics(activity, pageFonts()))
+      setMiddleH(shareCardMiddleHeight(activity, pageFonts()))
     }).catch(() => {})
     return () => { alive = false }
   }, [activity])
@@ -126,8 +127,10 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+    // Sharp at the box's own width, whatever the phone makes of 300 px.
     const dpr = Math.min(window.devicePixelRatio || 1, 3)
-    renderShareCard(canvas, renderOptions(), dpr)
+    const shown = canvas.parentElement?.clientWidth || W
+    renderShareCard(canvas, renderOptions(), (shown / W) * dpr)
   }, [renderOptions, fontsReady])
 
   function step(by: number) {
@@ -165,6 +168,11 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   const s = t.activity.shareCard
 
+  const chip = {
+    height: 44, padding: '0 16px', borderRadius: 14, fontSize: 14, fontWeight: 600,
+    background: 'var(--muted)', border: '1px solid var(--border)',
+  } as const
+
   return createPortal(
     <div
       className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4"
@@ -173,130 +181,123 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       aria-label={s.title}
       onClick={close}
     >
+      {/* A sheet as tall as what it holds (design review, Oct 2026): handle,
+          title, card, tabs, one option row, the buttons - no spacer, the
+          run still showing above it. It scrolls only on a phone too short. */}
       <div
         ref={trapRef}
         data-testid="share-sheet"
-        className="relative flex h-full w-full max-w-md animate-sheet-up flex-col overflow-hidden sm:max-h-[880px] sm:rounded-2xl"
-        style={{ ...sheetStyle, background: 'var(--background)' }}
+        className="relative flex max-h-full w-full max-w-md animate-sheet-up flex-col overflow-y-auto overscroll-contain rounded-t-[28px] [scrollbar-width:none] sm:rounded-[28px] [&::-webkit-scrollbar]:hidden"
+        style={{
+          ...sheetStyle,
+          background: 'var(--card)',
+          borderTop: '1px solid var(--border)',
+          padding: '8px 20px 0',
+          paddingBottom: 'max(26px, var(--safe-bottom))',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 justify-center" {...handleProps} style={{ ...handleProps.style, padding: '6px 0 4px' }}>
-          <span aria-hidden="true" style={{ width: 36, height: 5, borderRadius: 3, background: 'var(--band)' }} />
+        <div className="flex shrink-0 justify-center" {...handleProps} style={{ ...handleProps.style }}>
+          <span aria-hidden="true" style={{ width: 36, height: 5, borderRadius: 3, background: 'var(--border)' }} />
         </div>
 
-        <div className="flex shrink-0 items-center justify-between" style={{ padding: '6px 20px 14px' }}>
-          <h2 className="font-display text-foreground" style={{ fontSize: 20, fontWeight: 700, lineHeight: 1 }}>{s.title}</h2>
+        <div className="flex shrink-0 items-center justify-between" style={{ marginTop: 10 }}>
+          <h2 className="font-display text-foreground" style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1 }}>{s.title}</h2>
           <button
             type="button"
             onClick={close}
             aria-label={s.close}
-            className="hit-44 flex items-center justify-center text-muted-foreground"
-            style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--muted)' }}
+            className="flex items-center justify-center text-foreground"
+            style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--muted)' }}
           >
-            <X size={17} strokeWidth={2.5} />
+            <X size={16} strokeWidth={2.5} />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {/* 2 px of room so the scroller doesn't clip the preview's outline. */}
-          <div className="flex flex-col items-center" style={{ gap: 12, paddingTop: 2 }}>
-            <div
-              data-testid="share-preview"
-              style={{
-                width: PREVIEW_W, height: previewH, borderRadius: 16, overflow: 'hidden', flexShrink: 0,
-                boxShadow: awaitingPhoto ? 'none' : '0 0 0 1px var(--border)', touchAction: 'pan-y',
-                position: 'relative',
-              }}
-              onPointerDown={(e) => { swipeX.current = e.clientX }}
-              onPointerUp={(e) => {
-                const from = swipeX.current
-                swipeX.current = null
-                if (from === null) return
-                const dx = e.clientX - from
-                if (Math.abs(dx) >= SWIPE_PX) step(dx < 0 ? 1 : -1)
-                else if (design === 'photo' && photoImage) fileInputRef.current?.click()
-              }}
-              onPointerCancel={() => { swipeX.current = null }}
+        <div
+          data-testid="share-preview"
+          className="relative shrink-0 self-center overflow-hidden"
+          style={{
+            width: CARD_BOX_W, aspectRatio: '4 / 5', marginTop: 14, borderRadius: 24, touchAction: 'pan-y',
+            boxShadow: awaitingPhoto ? 'none' : '0 0 0 1px var(--border)',
+          }}
+          onPointerDown={(e) => { swipeX.current = e.clientX }}
+          onPointerUp={(e) => {
+            const from = swipeX.current
+            swipeX.current = null
+            if (from === null) return
+            const dx = e.clientX - from
+            if (Math.abs(dx) >= SWIPE_PX) step(dx < 0 ? 1 : -1)
+            else if (design === 'photo' && photoImage) fileInputRef.current?.click()
+          }}
+          onPointerCancel={() => { swipeX.current = null }}
+        >
+          <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: awaitingPhoto ? 'none' : 'block' }} />
+          {/* The empty frame is the picker, and the exact crop the photo gets. */}
+          {awaitingPhoto && (
+            <button
+              type="button"
+              data-testid="share-photo-picker"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground"
+              style={{ gap: 10, borderRadius: 24, border: '1.5px dashed var(--muted-foreground)', background: 'var(--background)' }}
             >
-              <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: awaitingPhoto ? 'none' : 'block' }} />
-              {/* The empty frame is the picker (design review, Oct 2026). */}
-              {awaitingPhoto && (
-                <button
-                  type="button"
-                  data-testid="share-photo-picker"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground"
-                  style={{ gap: 10, borderRadius: 16, border: '1.5px dashed var(--muted-foreground)', background: 'var(--background)' }}
-                >
-                  <Camera size={34} strokeWidth={1.8} className="text-foreground" aria-hidden="true" />
-                  <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.choosePhoto}</span>
-                  <span style={{ fontSize: 12 }}>{s.photoHint}</span>
-                </button>
-              )}
-            </div>
-          </div>
+              <Camera size={34} strokeWidth={1.8} className="text-foreground" aria-hidden="true" />
+              <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.choosePhoto}</span>
+              <span style={{ fontSize: 11 }}>{s.photoHint}</span>
+            </button>
+          )}
+        </div>
 
-          <div className="flex flex-col" style={{ padding: '14px 20px 28px', gap: 12 }}>
-            <div
-              role="radiogroup"
-              aria-label={s.designTitle}
-              className={cn('grid', SEGMENTED_TRACK)}
-              style={{ gridTemplateColumns: `repeat(${designs.length}, minmax(0, 1fr))` }}
+        <div
+          role="radiogroup"
+          aria-label={s.designTitle}
+          className={cn('grid shrink-0', SEGMENTED_TRACK)}
+          style={{ gridTemplateColumns: `repeat(${designs.length}, minmax(0, 1fr))`, marginTop: 14 }}
+        >
+          {designs.map((d) => (
+            <button
+              key={d}
+              type="button"
+              role="radio"
+              aria-checked={d === design}
+              onClick={() => setDesign(d)}
+              className={cn(segmentClass(d === design), 'h-9 text-sm')}
             >
-              {designs.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  role="radio"
-                  aria-checked={d === design}
-                  onClick={() => setDesign(d)}
-                  className={cn(segmentClass(d === design), 'h-9 text-sm')}
-                >
-                  {s.designLabels[d]}
-                </button>
-              ))}
-            </div>
+              {s.designLabels[d]}
+            </button>
+          ))}
+        </div>
 
-            {/* Right under the picker (v5.5 #12): last in the list, it sat
-                behind the action buttons on a phone. A photo covers the
-                whole card, so it has no background to pick. */}
-            {design === 'photo' && photoImage && (
-              <div className="flex items-center justify-between" style={{ padding: '2px' }}>
-                <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.photo}</span>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center text-foreground"
-                  style={{
-                    height: 44, padding: '0 16px', borderRadius: 14, fontSize: 14, fontWeight: 600,
-                    background: 'var(--muted)', border: '1px solid var(--border)',
-                  }}
-                >
-                  {s.replacePhoto}
-                </button>
+        {/* One option row, at one height on every tab: the background, or -
+            a photo covers the whole card - the photo itself. */}
+        <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
+          {design === 'photo' ? (
+            <>
+              <span className="text-foreground" style={{ fontSize: 16, fontWeight: 600 }}>{s.photo}</span>
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center text-foreground" style={chip}>
+                {photoImage ? s.replacePhoto : s.choosePhoto}
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="text-foreground" style={{ fontSize: 16, fontWeight: 600 }}>{s.background}</span>
+              <div role="radiogroup" aria-label={s.background} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
+                {(['dark', 'light'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    role="radio"
+                    aria-checked={theme === mode}
+                    onClick={() => setTheme(mode)}
+                    className={cn(segmentClass(theme === mode), 'h-[30px] px-3.5 text-[13px]')}
+                  >
+                    {s.themeLabels[mode]}
+                  </button>
+                ))}
               </div>
-            )}
-            {design !== 'photo' && (
-              <div className="flex items-center justify-between" style={{ padding: '2px' }}>
-                <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.background}</span>
-                <div role="radiogroup" aria-label={s.background} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
-                  {(['dark', 'light'] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      role="radio"
-                      aria-checked={theme === mode}
-                      onClick={() => setTheme(mode)}
-                      className={cn(segmentClass(theme === mode), 'h-[30px] px-3.5 text-[13px]')}
-                    >
-                      {s.themeLabels[mode]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-          </div>
+            </>
+          )}
         </div>
 
         <ShareCardActions

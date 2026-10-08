@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROUTE_PADDING, projectRoute, routePadding, routePaddingPx, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
+import { ROUTE_INSET, projectRoute, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 
 describe('simplifyRoute', () => {
   it('leaves short routes untouched', () => {
@@ -16,58 +16,33 @@ describe('simplifyRoute', () => {
   })
 })
 
-describe('routePaddingPx', () => {
-  it('measures the padding off the short side, so it is even on all four', () => {
-    expect(routePaddingPx(390, 844)).toBe(Math.round(390 * ROUTE_PADDING))
-    expect(routePaddingPx(390, 390)).toBe(Math.round(390 * ROUTE_PADDING))
-  })
-})
-
-describe('routePadding', () => {
-  it('stays symmetric on a square frame', () => {
-    const p = routePadding(390, 390)
-    const base = routePaddingPx(390, 390)
-    expect(p).toEqual({ top: base, right: base, bottom: base, left: base })
-  })
-
-  it('opens the top and bottom on the tall card, keeping the sides even', () => {
-    const p = routePadding(390, 693)
-    expect(p.left).toBe(p.right)
-    expect(p.top).toBeGreaterThan(p.left)
-    expect(p.bottom).toBeGreaterThan(p.top)
-  })
-})
-
 describe('projectRoute', () => {
-  const W = 390
-  const H = 693
+  // The share card's map: 300 wide, the middle under a one-line title.
+  const W = 300
+  const H = 236
   const route: LngLat[] = [[2.33, 48.85], [2.36, 48.87], [2.35, 48.84], [2.33, 48.85]]
 
-  it('centers the route horizontally and within the padded band vertically', () => {
+  it('is 14 px in from the map\'s edge', () => {
+    expect(ROUTE_INSET).toBe(14)
+  })
+
+  // Design review, Oct 2026: the route ran into the card's edge and the image read as cropped.
+  it('fits the route 14 px clear of every edge, filling one axis, centred on the other', () => {
     const pts = projectRoute(route, W, H)
     const xs = pts.map(p => p[0])
     const ys = pts.map(p => p[1])
     const [minX, maxX] = [Math.min(...xs), Math.max(...xs)]
     const [minY, maxY] = [Math.min(...ys), Math.max(...ys)]
-
-    const p = routePadding(W, H)
-    expect((minX + maxX) / 2).toBeCloseTo((p.left + (W - p.right)) / 2, 6)
-    expect((minY + maxY) / 2).toBeCloseTo((p.top + (H - p.bottom)) / 2, 6)
-
-    const fillX = (maxX - minX) / (W - p.left - p.right)
-    const fillY = (maxY - minY) / (H - p.top - p.bottom)
-    expect(Math.max(fillX, fillY)).toBeCloseTo(1, 6)
-    expect(Math.min(fillX, fillY)).toBeLessThanOrEqual(1)
-  })
-
-  it('keeps every point inside the padded frame', () => {
-    const p = routePadding(W, H)
-    for (const [x, y] of projectRoute(route, W, H)) {
-      expect(x).toBeGreaterThanOrEqual(p.left - 1e-6)
-      expect(x).toBeLessThanOrEqual(W - p.right + 1e-6)
-      expect(y).toBeGreaterThanOrEqual(p.top - 1e-6)
-      expect(y).toBeLessThanOrEqual(H - p.bottom + 1e-6)
+    for (const [x, y] of pts) {
+      expect(x).toBeGreaterThanOrEqual(ROUTE_INSET - 1e-6)
+      expect(x).toBeLessThanOrEqual(W - ROUTE_INSET + 1e-6)
+      expect(y).toBeGreaterThanOrEqual(ROUTE_INSET - 1e-6)
+      expect(y).toBeLessThanOrEqual(H - ROUTE_INSET + 1e-6)
     }
+    expect((minX + maxX) / 2).toBeCloseTo(W / 2, 6)
+    expect((minY + maxY) / 2).toBeCloseTo(H / 2, 6)
+    const fill = Math.max((maxX - minX) / (W - ROUTE_INSET * 2), (maxY - minY) / (H - ROUTE_INSET * 2))
+    expect(fill).toBeCloseTo(1, 6)
   })
 
   it('projects north as up and east as right', () => {

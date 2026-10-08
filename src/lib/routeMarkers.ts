@@ -66,32 +66,36 @@ export function routeEnds<P>(start: P, finish: P | null, joined: boolean): Route
   return [{ kind: 'finish', at: finish }, { kind: 'start', at: start }]
 }
 
-/** The colours a marker is made of, from the rim in. */
-function layers(kind: MarkerKind, accent: string) {
+/** The colours a marker is made of, from the rim in, its radii at `scale`. */
+function layers(kind: MarkerKind, accent: string, scale = 1) {
   const spec = MARKER_SPECS[kind]
-  const r = spec.diameter / 2
+  const r = (spec.diameter / 2) * scale
   return {
-    outline: spec.outline > 0 ? { radius: r + spec.outline, color: kind === 'loop' ? MARKER_INK : FINISH_OUTLINE } : null,
+    outline: spec.outline > 0 ? { radius: r + spec.outline * scale, color: kind === 'loop' ? MARKER_INK : FINISH_OUTLINE } : null,
     ring: { radius: r, color: kind === 'loop' ? accent : WHITE },
-    inner: { radius: r - spec.ring, checkered: kind !== 'start', color: accent },
+    inner: { radius: r - spec.ring * scale, checkered: kind !== 'start', color: accent },
+    checker: CHECKER * scale,
   }
 }
 
 /** The checkers across the inner disc, and where their grid starts from its centre: centred, so the rim is even. */
-function checkerGrid(radius: number) {
-  const cells = Math.ceil((radius * 2) / CHECKER)
-  return { cells, origin: -(cells * CHECKER) / 2 }
+function checkerGrid(radius: number, size: number) {
+  const cells = Math.ceil((radius * 2) / size)
+  return { cells, origin: -(cells * size) / 2 }
 }
 
 /** Whether the point (x, y) from the marker's centre is an ink checker. */
 function inkChecker(x: number, y: number, radius: number): boolean {
-  const { origin } = checkerGrid(radius)
+  const { origin } = checkerGrid(radius, CHECKER)
   return (Math.floor((x - origin) / CHECKER) + Math.floor((y - origin) / CHECKER)) % 2 === 1
 }
 
-/** A marker on a 2D canvas, centred on (x, y): the share card's. */
-export function drawRouteMarker(ctx: CanvasRenderingContext2D, kind: MarkerKind, [x, y]: Point, accent: string) {
-  const { outline, ring, inner } = layers(kind, accent)
+/**
+ * A marker on a 2D canvas, centred on (x, y): the share card's, at `scale` -
+ * the 300 px card is a phone map's width less its margins.
+ */
+export function drawRouteMarker(ctx: CanvasRenderingContext2D, kind: MarkerKind, [x, y]: Point, accent: string, scale = 1) {
+  const { outline, ring, inner, checker } = layers(kind, accent, scale)
   const disc = (radius: number, color: string) => {
     ctx.beginPath()
     ctx.arc(x, y, radius, 0, Math.PI * 2)
@@ -109,10 +113,11 @@ export function drawRouteMarker(ctx: CanvasRenderingContext2D, kind: MarkerKind,
     ctx.arc(x, y, inner.radius, 0, Math.PI * 2)
     ctx.clip()
     ctx.fillStyle = MARKER_INK
-    const { cells, origin } = checkerGrid(inner.radius)
+    const size = checker
+    const { cells, origin } = checkerGrid(inner.radius, size)
     for (let row = 0; row < cells; row++) {
       for (let col = 0; col < cells; col++) {
-        if ((row + col) % 2 === 1) ctx.fillRect(x + origin + col * CHECKER, y + origin + row * CHECKER, CHECKER, CHECKER)
+        if ((row + col) % 2 === 1) ctx.fillRect(x + origin + col * size, y + origin + row * size, size, size)
       }
     }
   }

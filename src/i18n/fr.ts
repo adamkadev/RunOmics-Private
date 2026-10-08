@@ -1231,7 +1231,6 @@ export const fr = {
       inZone: (zone: number) => `en Z${zone}`,
       // L’en-tête des zones d’une sortie facile : « 100 % facile · Z1–Z2 ».
       easyZones: (from: number, to: number) => `facile · Z${from}–Z${to}`,
-      minutes: (n: number) => `${n} min`,
       noZones: 'Pas de zones cardiaques pour cette sortie',
       // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
       repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
@@ -1240,7 +1239,7 @@ export const fr = {
       repsLegend: 'Fractions',
       photo: 'Photo',
       choosePhoto: 'Choisir une photo',
-      photoHint: 'Remplit toute la carte',
+      photoHint: 'Ce cadre est le recadrage exact',
       replacePhoto: 'Remplacer la photo',
     },
     stats: {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  repLength, shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones, type ShareActivity,
+  percentsTo100, repLength, shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones, type ShareActivity,
 } from '@/lib/shareCardStats'
 import { formatDate } from '@/lib/formatters'
 
@@ -25,12 +25,13 @@ const RUN: ShareActivity = {
 }
 
 describe('shareStats', () => {
-  it('reads Distance, Pace, Avg HR, Time, units apart from the values', () => {
+  // Design review, Oct 2026: the activity page's order, one order everywhere.
+  it('reads Distance, Time, Pace, Avg HR, units apart from the values', () => {
     expect(shareStats(RUN)).toEqual([
       { value: '10.0', unit: ' km', label: 'Distance' },
+      { value: '57:33', unit: '', label: 'Time' },
       { value: '5:44', unit: ' /km', label: 'Pace' },
       { value: '153', unit: ' bpm', label: 'Avg HR' },
-      { value: '57:33', unit: '', label: 'Time' },
     ])
   })
 
@@ -41,17 +42,43 @@ describe('shareStats', () => {
 })
 
 describe('shareZones', () => {
-  it('rows the zones the run spent time in, Z1 first, each its share of the whole run', () => {
+  it('rows the zones the run spent time in, Z1 first, in whole percents that sum to 100', () => {
     const zones = shareZones(RUN)!
-    expect(zones.rows.map((r) => r.zone)).toEqual([1, 2, 3, 4, 5])
-    expect(zones.rows[1]!.share).toBeCloseTo(2460 / 3420)
-    expect(zones.totalSeconds).toBe(3420)
+    expect(zones.rows).toEqual([
+      { zone: 1, percent: 7 }, { zone: 2, percent: 72 }, { zone: 3, percent: 14 }, { zone: 4, percent: 5 }, { zone: 5, percent: 2 },
+    ])
   })
 
-  // Design review, Oct 2026: only zones with time, and a bar is the percentage.
-  it('leaves out a zone of under a minute', () => {
-    const zones = shareZones({ ...RUN, hrZones: RUN.hrZones.map((z) => (z.zone === 5 ? { ...z, seconds: 20 } : z)) })!
+  // Design review, Oct 2026: 10 + 77 + 10 + 4 read 101%, and 86% easy beside a Z1 + Z2 of 87.
+  it('rounds once, to the total, and heads with the rows\' own sum', () => {
+    const at = (shares: number[]) => ({ ...RUN, type: 'Base' as const, hrZones: shares.map((sec, i) => ({ ...RUN.hrZones[i]!, seconds: sec })) })
+    const zones = shareZones(at([96, 766, 96, 42, 0]))!
+    // The mock's own run: 10 / 76 / 10 / 4, and 86% easy.
+    expect(zones.rows.map((r) => r.percent)).toEqual([10, 76, 10, 4])
+    expect(zones.headline.percent).toBe(86)
+
+    // Any split: the rows sum to 100, and the headline is their Z1 + Z2.
+    let seed = 7
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+    for (let n = 0; n < 20; n++) {
+      const sample = shareZones(at([0, 0, 0, 0, 0].map(() => Math.round(random() * 3000))))
+      if (!sample) continue
+      const shown = sample.rows.reduce((sum, r) => sum + r.percent, 0)
+      expect(shown).toBe(100)
+      const easy = sample.rows.filter((r) => r.zone <= 2).reduce((sum, r) => sum + r.percent, 0)
+      expect(sample.headline.percent).toBe(easy)
+    }
+  })
+
+  it('leaves out a zone that rounds to nothing', () => {
+    const zones = shareZones({ ...RUN, hrZones: RUN.hrZones.map((z) => (z.zone === 5 ? { ...z, seconds: 5 } : z)) })!
     expect(zones.rows.map((r) => r.zone)).toEqual([1, 2, 3, 4])
+    expect(zones.rows.reduce((sum, r) => sum + r.percent, 0)).toBe(100)
+  })
+
+  it('splits whole percents by largest remainder', () => {
+    expect(percentsTo100([1, 1, 1])).toEqual([34, 33, 33])
+    expect(percentsTo100([0, 0])).toEqual([0, 0])
   })
 
   it('heads an easy run with its time in Z1-Z2, a threshold session with its time in Z4', () => {

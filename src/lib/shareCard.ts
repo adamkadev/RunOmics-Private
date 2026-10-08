@@ -28,34 +28,24 @@ export function pageFonts(): ShareFonts {
   return display ? { ...FALLBACK_FONTS, display: `${display}, ${FALLBACK_FONTS.display}` } : FALLBACK_FONTS
 }
 
-export interface ShareCardMetrics {
-  /** The route's middle: the basemap is drawn to it, so the route fills the map's whole frame. */
-  middleH: number
-  /** The Stats design's card, as tall as its zones. */
-  statsH: number
-}
+/** The route's middle where there is no canvas to measure a title on. */
+const UNMEASURED_MIDDLE_H = 236
 
-/** Where there is no canvas to measure a title on. */
-const UNMEASURED: ShareCardMetrics = { middleH: 400, statsH: H }
-
-/** This run's card, laid out as drawShareCard will lay it. */
-export function shareCardMetrics(activity: ShareActivity, fonts: ShareFonts): ShareCardMetrics {
+/**
+ * The route's middle on this run's card, laid out as drawShareCard will lay
+ * it: the basemap is drawn to it, so the route fills the map's whole frame.
+ */
+export function shareCardMiddleHeight(activity: ShareActivity, fonts: ShareFonts): number {
   const ctx = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')
-  if (!ctx) return UNMEASURED
-  return {
-    middleH: shareCardLayout(ctx, activity, fonts, 'route').middleH,
-    statsH: shareCardLayout(ctx, activity, fonts, 'stats').height,
-  }
+  return ctx ? shareCardLayout(ctx, activity, fonts, 'route').middleH : UNMEASURED_MIDDLE_H
 }
 
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {
+  canvas.width = Math.round(W * scale)
+  canvas.height = Math.round(H * scale)
   const ctx = canvas.getContext('2d')
   if (!ctx) return
   const fonts = options.fonts ?? pageFonts()
-  // Sized before drawing: the Stats design is as tall as its zones.
-  const { height } = shareCardLayout(ctx, options.activity, fonts, options.design)
-  canvas.width = W * scale
-  canvas.height = height * scale
   if (scale !== 1) ctx.scale(scale, scale)
   drawShareCard(ctx, {
     activity: options.activity,

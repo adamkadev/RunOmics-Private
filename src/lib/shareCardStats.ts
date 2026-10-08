@@ -46,23 +46,23 @@ export interface ShareStat {
 }
 
 /**
- * The stat row: Distance, Pace, Avg HR, Time - the ones the run has. An
- * interval session drops the average pace (design review, Oct 2026): over
- * reps and recoveries it describes neither, and the rep pace leads instead.
+ * The stat row: Distance, Time, Pace, Avg HR - the ones the run has, in the
+ * activity page's order (design review, Oct 2026: one order everywhere). An
+ * interval session drops the average pace: over reps and recoveries it
+ * describes neither, and the rep pace leads instead.
  */
 export function shareStats(activity: ShareActivity): ShareStat[] {
   const s = t.activity.shareCard
   const stats: ShareStat[] = [
     { value: formatKm(activity.distanceKm, 1), unit: ` ${t.units.km}`, label: s.distance },
+    { value: formatDuration(Math.round(activity.durationSeconds)), unit: '', label: s.time },
   ]
   if (!activity.reps && activity.paceSecPerKm && activity.paceSecPerKm > 0) {
     stats.push({ value: formatClock(activity.paceSecPerKm), unit: ` ${t.units.perKm}`, label: s.pace })
   }
-  if (activity.reps) stats.push({ value: formatDuration(Math.round(activity.durationSeconds)), unit: '', label: s.time })
   if (activity.avgHeartRate) {
     stats.push({ value: String(Math.round(activity.avgHeartRate)), unit: ` ${t.units.bpm}`, label: s.avgHr })
   }
-  if (!activity.reps) stats.push({ value: formatDuration(Math.round(activity.durationSeconds)), unit: '', label: s.time })
   return stats
 }
 
@@ -98,17 +98,35 @@ export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
 
 export interface ShareZoneRow {
   zone: number
-  seconds: number
-  /** The run's share of time in this zone, 0 to 1: the bar is the percentage. */
-  share: number
+  /** The run's whole percent in this zone: the zones shown always sum to 100. */
+  percent: number
 }
 
 export interface ShareZones {
-  /** Only the zones the run spent time in, Z1 first. */
+  /** The zones with a percent to show, Z1 first. */
   rows: ShareZoneRow[]
-  /** The headline: the share of time in the zones this kind of run is about. */
+  /** The headline: the share of time in the zones this kind of run is about, summed from the rows' own percents. */
   headline: { percent: number; label: string }
-  totalSeconds: number
+}
+
+/**
+ * Whole percents that sum to exactly 100 (largest remainder): each value
+ * floored, then the points left go to the largest remainders. Rounding each
+ * on its own read 10 + 77 + 10 + 4 = 101% (design review, Oct 2026).
+ */
+export function percentsTo100(values: readonly number[]): number[] {
+  const total = values.reduce((a, b) => a + b, 0)
+  if (total <= 0) return values.map(() => 0)
+  const exact = values.map((v) => (v / total) * 100)
+  const floors = exact.map(Math.floor)
+  let left = 100 - floors.reduce((a, b) => a + b, 0)
+  const order = exact.map((v, i) => ({ i, rest: v - floors[i]! })).sort((a, b) => b.rest - a.rest || a.i - b.i)
+  for (const { i } of order) {
+    if (left <= 0) break
+    floors[i]! += 1
+    left--
+  }
+  return floors
 }
 
 /**
@@ -135,25 +153,25 @@ function headlineZones(type: ActivityType | undefined): number[] | null {
 
 /**
  * Z1 to Z5 from the run's own zone times - the Overview's Time in zones -
- * or null when the run has no heart rate to split.
+ * or null when the run has no heart rate to split. Rounded once, to the
+ * total, and the headline summed from those rounded percents, so 86% easy
+ * is the 10 + 76 the rows show (design review, Oct 2026). A zone that
+ * rounds to 0% is not shown.
  */
 export function shareZones(activity: ShareActivity): ShareZones | null {
   const seconds = [1, 2, 3, 4, 5].map((zone) =>
     activity.hrZones.filter((z) => z.zone === zone).reduce((sum, z) => sum + z.seconds, 0))
-  const total = seconds.reduce((a, b) => a + b, 0)
-  if (total <= 0) return null
+  if (seconds.reduce((a, b) => a + b, 0) <= 0) return null
 
   const s = t.activity.shareCard
-  const rows = seconds
-    .map((sec, i) => ({ zone: i + 1, seconds: sec, share: sec / total }))
-    // Under a minute reads as nothing at all, not a sliver of a bar.
-    .filter((row) => row.seconds >= 60)
+  const percents = percentsTo100(seconds)
+  const rows = percents.map((percent, i) => ({ zone: i + 1, percent })).filter((row) => row.percent > 0)
   const zones = headlineZones(activity.type)
   if (zones) {
-    const share = zones.reduce((sum, z) => sum + (seconds[z - 1] ?? 0), 0) / total
+    const percent = zones.reduce((sum, z) => sum + (percents[z - 1] ?? 0), 0)
     const label = zones.length > 1 ? s.easyZones(zones[0]!, zones[zones.length - 1]!) : s.inZone(zones[0]!)
-    return { rows, headline: { percent: Math.round(share * 100), label }, totalSeconds: total }
+    return { rows, headline: { percent, label } }
   }
-  const longest = Math.max(...seconds)
-  return { rows, headline: { percent: Math.round((longest / total) * 100), label: s.inZone(seconds.indexOf(longest) + 1) }, totalSeconds: total }
+  const main = percents.indexOf(Math.max(...percents))
+  return { rows, headline: { percent: percents[main]!, label: s.inZone(main + 1) } }
 }
