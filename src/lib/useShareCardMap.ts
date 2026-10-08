@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { maptilerStyle } from '@/lib/maptiler'
-import { routePadding, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
+import { ROUTE_INSET, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
 import { loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
@@ -27,8 +27,8 @@ export interface ShareCardMapOptions {
   enabled?: boolean
 }
 
-// The export is 1080 px wide, about 2.8x the card: 3 keeps the map sharp in it.
-const PIXEL_RATIO = 3
+// The export is 1080 px wide, 3.6x the 300 px card: 4 keeps the map sharp in it.
+const PIXEL_RATIO = 4
 
 const RENDER_TIMEOUT_MS = 15_000
 
@@ -70,7 +70,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     container,
     style: maptilerStyle(isDark, token),
     bounds,
-    fitBoundsOptions: { padding: routePadding(width, height), maxZoom: 15, duration: 0 },
+    fitBoundsOptions: { padding: ROUTE_INSET, maxZoom: 15, duration: 0 },
     canvasContextAttributes: { preserveDrawingBuffer: true },
     pixelRatio: PIXEL_RATIO,
     interactive: false,

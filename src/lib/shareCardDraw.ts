@@ -1,6 +1,6 @@
 import {
   shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones,
-  type ShareActivity, type ShareRepHero, type ShareZones,
+  type ShareActivity, type ShareRepHero,
 } from '@/lib/shareCardStats'
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
 import { projectRoute } from '@/lib/shareCardMap'
@@ -35,26 +35,32 @@ export interface ShareCardScene {
   mapPoints?: [number, number][] | null
 }
 
-const PAD_X = 24
+/**
+ * The 300 x 375 card's geometry (design review, Oct 2026), the mock's own
+ * px: a 16 px margin, the lockup at 14, the title 19 px, the stat row 16 px
+ * off the foot.
+ */
+const PAD_X = 16
 /** The mark in the header lockup; small enough to take the 3-arc variant. */
-const LOCKUP_MARK = 16
+const LOCKUP_MARK = 12
+const LOCKUP_Y = 21
 const RIGHT = W - PAD_X
 
 /** The title's first baseline, and the header's height when the title takes one line. */
-const TITLE_BASELINE = 72
-const HEADER_BASE = 136
-/** 30 px, as the card has always drawn it; a title that won't sit in two lines steps down to 24. */
-const TITLE_SIZES = [30, 28, 26, 24] as const
-/** The stat row: value, then label, 25 px off the card's foot. */
-const STATS_BLOCK = 47
-const STATS_PAD_TOP = 16
-const STATS_PAD_BOTTOM = 25
-/** The rep pace: its eyebrow, then the pace and the target beside it. */
-const HERO_PAD_TOP = 19
-const HERO_BLOCK = 60
-/** The Stats design's foot: a rule 31 px under the zones, the stats 22 px under it. */
-const RULE_GAP = 31
-const STATS_PAD_TOP_RULED = 22
+const TITLE_BASELINE = 50
+const HEADER_BASE = 79
+/** 19 px; a title that won't sit in two lines steps down to 16. */
+const TITLE_SIZES = [19, 18, 17, 16] as const
+/** The stat row: value, then label, 16 px off the card's foot. */
+const STATS_BLOCK = 32
+const STATS_PAD_TOP = 12
+const STATS_PAD_BOTTOM = 16
+/** The rep pace: its eyebrow, then the pace and the target beside it; the stats 10 px under it. */
+const HERO_PAD_TOP = 12
+const HERO_BLOCK = 40
+const STATS_PAD_TOP_AFTER_HERO = 10
+/** The markers at the card's scale: a phone map's width less its margins. */
+const MARKER_SCALE = 0.85
 
 export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -126,10 +132,8 @@ function titleLines(ctx: Ctx, text: string, fonts: ShareFonts): ShareTitle {
 /**
  * Where everything sits (design review, Oct 2026): the header as tall as
  * its title, the stats - the rep pace above them on an interval session -
- * at the card's foot, and the middle taking all that is left, so there is
- * no empty band under the map. The Stats design is as tall as its zones
- * (design review, Oct 2026: no spacer pushing the stats down), its stats
- * under a rule; the card is then shorter than 693.
+ * at the card's foot, and the middle taking all that is left. Every design
+ * is the same 4:5 box; the Stats design rules its stat row off.
  */
 export interface ShareCardLayout {
   title: ShareTitle
@@ -138,27 +142,27 @@ export interface ShareCardLayout {
   middleH: number
   heroTop: number
   statsTop: number
-  /** The rule over the stats, on the Stats design only. */
+  /** The rule over the stat row, on the Stats design only. */
   ruleY: number | null
-  height: number
 }
 
 export function shareCardLayout(ctx: Ctx, activity: ShareActivity, fonts: ShareFonts, design: ShareDesign = 'route'): ShareCardLayout {
   const title = titleLines(ctx, shareCardTitle(activity), fonts)
   const middleTop = HEADER_BASE + (title.lines.length - 1) * title.lineHeight
   const hero = shareRepHero(activity)
-
-  if (design === 'stats') {
-    const middleH = zonesHeight(ctx, shareZones(activity), fonts)
-    const heroTop = middleTop + middleH + HERO_PAD_TOP
-    const ruleY = (hero ? heroTop + HERO_BLOCK : middleTop + middleH) + RULE_GAP
-    const statsTop = ruleY + STATS_PAD_TOP_RULED
-    return { title, hero, middleTop, middleH, heroTop, statsTop, ruleY, height: statsTop + STATS_BLOCK + STATS_PAD_BOTTOM }
-  }
-
   const statsTop = H - STATS_PAD_BOTTOM - STATS_BLOCK
-  const footerTop = statsTop - STATS_PAD_TOP - (hero ? HERO_PAD_TOP + HERO_BLOCK : 0)
-  return { title, hero, middleTop, middleH: footerTop - middleTop, heroTop: footerTop + HERO_PAD_TOP, statsTop, ruleY: null, height: H }
+  const stripTop = statsTop - (hero ? STATS_PAD_TOP_AFTER_HERO : STATS_PAD_TOP)
+  const footerTop = stripTop - (hero ? HERO_PAD_TOP + HERO_BLOCK : 0)
+  return {
+    title,
+    hero,
+    middleTop,
+    middleH: footerTop - middleTop,
+    heroTop: footerTop + HERO_PAD_TOP,
+    statsTop,
+    // Clear of the rep pace's digits when it stands over the stat row.
+    ruleY: design === 'stats' ? stripTop + (hero ? 4 : 0) : null,
+  }
 }
 
 function roundRect(ctx: Ctx, x: number, y: number, w: number, h: number, r: number) {
@@ -195,43 +199,45 @@ function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { titl
   // The v5.2 lockup: the mark, then the wordmark in Space Grotesk 700 at
   // -0.03em, 0.36x the mark's height apart.
   ctx.textAlign = 'left'
-  drawMark(ctx, PAD_X, 31.5 - LOCKUP_MARK / 2, LOCKUP_MARK, ink.mark)
-  ctx.font = `700 14px ${fonts.display}`
+  drawMark(ctx, PAD_X, LOCKUP_Y - LOCKUP_MARK / 2, LOCKUP_MARK, ink.mark)
+  ctx.font = `700 10.5px ${fonts.display}`
   ctx.fillStyle = ink.mu
   ctx.textBaseline = 'middle'
-  setSpacing(ctx, -0.03 * 14)
-  ctx.fillText('RunOmics', PAD_X + LOCKUP_MARK * (1 + 0.36), 32)
+  setSpacing(ctx, -0.03 * 10.5)
+  ctx.fillText('RunOmics', PAD_X + LOCKUP_MARK + 5, LOCKUP_Y)
   setSpacing(ctx, 0)
 
   ctx.textBaseline = 'alphabetic'
   ctx.font = `700 ${title.size}px ${fonts.display}`
   ctx.fillStyle = ink.tx
+  setSpacing(ctx, -0.01 * title.size)
   title.lines.forEach((line, i) => ctx.fillText(line, PAD_X, TITLE_BASELINE + i * title.lineHeight))
+  setSpacing(ctx, 0)
 
-  ctx.font = `400 14px ${fonts.text}`
+  ctx.font = `400 10px ${fonts.text}`
   ctx.fillStyle = ink.mu
   const last = TITLE_BASELINE + (title.lines.length - 1) * title.lineHeight
-  ctx.fillText(fit(ctx, shareCardSubtitle(activity, place), RIGHT - PAD_X), PAD_X, last + 30)
+  ctx.fillText(fit(ctx, shareCardSubtitle(activity, place), RIGHT - PAD_X), PAD_X, last + 18)
 }
 
 /** "REP PACE · 3 × 8′" in the session's zone, then the reps' pace and the plan's beside it. */
 function drawHero(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, hero: ShareRepHero, top: number, ink: Ink) {
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
-  ctx.font = `700 15px ${fonts.text}`
+  ctx.font = `700 9.5px ${fonts.text}`
   ctx.fillStyle = ink === PHOTO_INK ? ink.tx : (palette.zones[runTypeZone(activity.type) - 1] ?? ink.mu)
-  setSpacing(ctx, 0.08 * 15)
-  ctx.fillText(hero.eyebrow.toLocaleUpperCase(t.locale), PAD_X, top + 13)
+  setSpacing(ctx, 0.08 * 9.5)
+  ctx.fillText(hero.eyebrow.toLocaleUpperCase(t.locale), PAD_X, top + 9)
 
-  ctx.font = `700 44px ${fonts.display}`
+  ctx.font = `700 28px ${fonts.display}`
   ctx.fillStyle = ink.tx
-  setSpacing(ctx, -0.02 * 44)
-  ctx.fillText(hero.pace, PAD_X, top + 58)
+  setSpacing(ctx, -0.02 * 28)
+  ctx.fillText(hero.pace, PAD_X, top + 38)
   const paceW = ctx.measureText(hero.pace).width
   setSpacing(ctx, 0)
-  ctx.font = `400 17px ${fonts.text}`
+  ctx.font = `400 11px ${fonts.text}`
   ctx.fillStyle = ink.mu
-  ctx.fillText(hero.detail, PAD_X + paceW + 9, top + 58)
+  ctx.fillText(hero.detail, PAD_X + paceW + 6, top + 38)
 }
 
 /** How far along the line each point is, in px from the first. */
@@ -277,20 +283,20 @@ function strokeLine(ctx: Ctx, pts: [number, number][], color: string, width: num
 }
 
 /** The route's widths: one trace, or the grey under reps 1.6x as wide. */
-const TRACE_W = 5
-const GREY_W = 4
+const TRACE_W = 3
+const GREY_W = 2.5
 const REP_W = GREY_W * 1.6
 
 /** "▬ Reps", at the map's foot, on an interval session only. */
 function drawRepsLegend(ctx: Ctx, { palette, fonts }: ShareCardScene, bottom: number) {
-  const BAR_W = 22
-  const BAR_H = 5
-  const PILL_H = 28
-  ctx.font = `400 13px ${fonts.text}`
+  const BAR_W = 14
+  const BAR_H = 3
+  const PILL_H = 18
+  ctx.font = `400 9px ${fonts.text}`
   const label = t.activity.shareCard.repsLegend
-  const width = 11 + BAR_W + 7 + ctx.measureText(label).width + 11
-  const x = 12
-  const y = bottom - 12 - PILL_H
+  const width = 7 + BAR_W + 5 + ctx.measureText(label).width + 7
+  const x = 8
+  const y = bottom - 8 - PILL_H
   ctx.fillStyle = palette.bg
   roundRect(ctx, x, y, width, PILL_H, PILL_H / 2)
   ctx.fill()
@@ -299,17 +305,17 @@ function drawRepsLegend(ctx: Ctx, { palette, fonts }: ShareCardScene, bottom: nu
   ctx.stroke()
   const mid = y + PILL_H / 2
   ctx.fillStyle = palette.zones[3]!
-  roundRect(ctx, x + 11, mid - BAR_H / 2, BAR_W, BAR_H, BAR_H / 2)
+  roundRect(ctx, x + 7, mid - BAR_H / 2, BAR_W, BAR_H, BAR_H / 2)
   ctx.fill()
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
   ctx.fillStyle = palette.mu
-  ctx.fillText(label, x + 11 + BAR_W + 7, mid)
+  ctx.fillText(label, x + 7 + BAR_W + 5, mid)
 }
 
 /**
- * The route on its basemap, filling the middle (design review, Oct 2026): no
- * zone colouring. One trace in the text colour, never the accent - or, on an
+ * The route on its basemap, filling the middle, fitted 14 px clear of its
+ * edges (design review, Oct 2026): no zone colouring. One trace in the text colour, never the accent - or, on an
  * interval session, the run in grey and its reps over it in Z4's colour, as
  * wide again and more, so a rep run down the warm-up's road still shows.
  * Reps on one road merge into one line; the headline counts them.
@@ -337,7 +343,7 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, { middleH }: ShareCardLayout
   ctx.lineCap = 'round'
   ctx.save()
   ctx.globalAlpha = 0.85
-  strokeLine(ctx, pts, palette.casing, (reps ? GREY_W : TRACE_W) + 4)
+  strokeLine(ctx, pts, palette.casing, (reps ? GREY_W : TRACE_W) + 3)
   ctx.restore()
 
   if (reps) {
@@ -351,118 +357,88 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, { middleH }: ShareCardLayout
   // last point, one loop marker where it would touch the start.
   const first = pts[0]!
   const last = pts[pts.length - 1]!
-  for (const end of routeEnds(first, last, endsJoined(first, last))) drawRouteMarker(ctx, end.kind, end.at, palette.acc)
+  for (const end of routeEnds(first, last, endsJoined(first, last))) drawRouteMarker(ctx, end.kind, end.at, palette.acc, MARKER_SCALE)
 
   if (reps) drawRepsLegend(ctx, scene, middleH)
 }
 
-/** The zones block: the headline's baseline, the bar under it, a row every 36 px. */
-const HEADLINE_BASELINE = 60
-const HEADLINE_WRAP = 26
-const ZONE_BAR_H = 16
-const ROWS_GAP = 31
-const ROW_STEP = 36
-const NO_ZONES_H = 64
-
-/** Whether the minutes go under the headline: a long label leaves them no room beside it. */
-function headlineWraps(ctx: Ctx, zones: ShareZones, fonts: ShareFonts): boolean {
-  ctx.font = `700 56px ${fonts.display}`
-  setSpacing(ctx, -0.03 * 56)
-  let x = PAD_X + ctx.measureText(formatPercent(zones.headline.percent)).width + 10
-  setSpacing(ctx, 0)
-  ctx.font = `600 19px ${fonts.text}`
-  x += ctx.measureText(zones.headline.label).width + 7
-  ctx.font = `400 16px ${fonts.text}`
-  return x + ctx.measureText(`· ${t.activity.shareCard.minutes(Math.round(zones.totalSeconds / 60))}`).width > RIGHT
-}
-
-/** How tall the zones block is: the headline, the bar, the rows, the last row's half. */
-function zonesHeight(ctx: Ctx, zones: ShareZones | null, fonts: ShareFonts): number {
-  if (!zones) return NO_ZONES_H
-  const wrap = headlineWraps(ctx, zones, fonts) ? HEADLINE_WRAP : 0
-  return HEADLINE_BASELINE + wrap + 22 + ZONE_BAR_H + ROWS_GAP + (zones.rows.length - 1) * ROW_STEP + 10
-}
+/** The zones block, from its top: the headline, the bar 14 px under it, the legend 16 px under that. */
+const HEADLINE_SIZE = 40
+const ZONE_BAR_TOP = HEADLINE_SIZE + 14
+const ZONE_BAR_H = 10
+const LEGEND_TOP = ZONE_BAR_TOP + ZONE_BAR_H + 16
+const LEGEND_ROW = 13
+const LEGEND_ROW_GAP = 9
+const LEGEND_COL_GAP = 14
+const SWATCH = 9
 
 /**
- * Time in zones (design review, Oct 2026): the headline the run's kind is
- * judged on, one bar of the whole run in its zones, then a row for each
- * zone it spent time in, each bar its share of the run.
+ * Time in zones (design review, Oct 2026): the share the run's kind is
+ * judged on, one bar of the whole run in its zones - no gaps, so each
+ * segment is its percent - and a two-column legend of the same percents,
+ * centred in the middle. The percents sum to 100 and the headline is the
+ * rows' own (shareZones).
  */
 function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { middleH }: ShareCardLayout) {
   const s = t.activity.shareCard
   const zones = shareZones(activity)
+  ctx.textAlign = 'left'
   if (!zones) {
-    ctx.font = `400 14px ${fonts.text}`
+    ctx.font = `400 12px ${fonts.text}`
     ctx.fillStyle = palette.mu
-    ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
     ctx.fillText(s.noZones, PAD_X, middleH / 2)
     return
   }
 
-  const wraps = headlineWraps(ctx, zones, fonts)
-  let y = HEADLINE_BASELINE
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'alphabetic'
-  ctx.font = `700 56px ${fonts.display}`
-  ctx.fillStyle = palette.tx
-  setSpacing(ctx, -0.03 * 56)
-  const pct = formatPercent(zones.headline.percent)
-  ctx.fillText(pct, PAD_X, y)
-  let x = PAD_X + ctx.measureText(pct).width + 10
-  setSpacing(ctx, 0)
-  ctx.font = `600 19px ${fonts.text}`
-  ctx.fillText(zones.headline.label, x, y)
-  x += ctx.measureText(zones.headline.label).width + 7
-  ctx.font = `400 16px ${fonts.text}`
-  ctx.fillStyle = palette.mu
-  const minutes = s.minutes(Math.round(zones.totalSeconds / 60))
-  if (wraps) {
-    y += HEADLINE_WRAP
-    ctx.fillText(minutes, PAD_X, y)
-  } else {
-    ctx.fillText(`· ${minutes}`, x, y)
-  }
+  const rows = Math.ceil(zones.rows.length / 2)
+  const height = LEGEND_TOP + rows * LEGEND_ROW + (rows - 1) * LEGEND_ROW_GAP
+  const top = Math.round((middleH - height) / 2)
 
-  const BAR_H = ZONE_BAR_H
-  const GAP = 5
-  const barTop = y + 22
-  const shown = zones.rows.reduce((sum, row) => sum + row.seconds, 0)
-  const room = RIGHT - PAD_X - GAP * (zones.rows.length - 1)
+  ctx.textBaseline = 'alphabetic'
+  ctx.font = `700 ${HEADLINE_SIZE}px ${fonts.display}`
+  ctx.fillStyle = palette.tx
+  setSpacing(ctx, -0.03 * HEADLINE_SIZE)
+  const pct = formatPercent(zones.headline.percent)
+  const baseline = top + Math.round(HEADLINE_SIZE * 0.8)
+  ctx.fillText(pct, PAD_X, baseline)
+  const pctW = ctx.measureText(pct).width
+  setSpacing(ctx, 0)
+  ctx.font = `600 13px ${fonts.text}`
+  ctx.fillText(zones.headline.label, PAD_X + pctW + 6, baseline)
+
+  // One rounded track, the segments edge to edge inside it.
+  const barTop = top + ZONE_BAR_TOP
+  const barW = RIGHT - PAD_X
+  ctx.save()
+  roundRect(ctx, PAD_X, barTop, barW, ZONE_BAR_H, ZONE_BAR_H / 2)
+  ctx.clip()
   let at = PAD_X
   for (const row of zones.rows) {
-    const w = Math.max((row.seconds / shown) * room, BAR_H)
+    const w = (row.percent / 100) * barW
     ctx.fillStyle = palette.zones[row.zone - 1] ?? palette.mu
-    roundRect(ctx, at, barTop, w, BAR_H, BAR_H / 2)
-    ctx.fill()
-    at += w + GAP
+    ctx.fillRect(at, barTop, w, ZONE_BAR_H)
+    at += w
   }
+  ctx.restore()
 
-  const ROW_H = 9
-  const rowsTop = barTop + BAR_H + ROWS_GAP
-  ctx.font = `400 17px ${fonts.text}`
-  const labels = zones.rows.map((row) => `Z${row.zone} ${t.zoneLabels[row.zone] ?? ''}`.trim())
-  const trackX = PAD_X + Math.max(...labels.map((l) => ctx.measureText(l).width)) + 14
-  const trackW = RIGHT - 48 - 12 - trackX
-  ctx.textBaseline = 'middle'
+  const colW = (barW - LEGEND_COL_GAP) / 2
   zones.rows.forEach((row, i) => {
-    const mid = rowsTop + i * ROW_STEP
-    ctx.textAlign = 'left'
-    ctx.font = `400 17px ${fonts.text}`
-    ctx.fillStyle = palette.mu
-    ctx.fillText(labels[i]!, PAD_X, mid)
-
-    ctx.fillStyle = palette.fa
-    roundRect(ctx, trackX, mid - ROW_H / 2, trackW, ROW_H, ROW_H / 2)
-    ctx.fill()
+    const x = PAD_X + (i % 2) * (colW + LEGEND_COL_GAP)
+    const mid = top + LEGEND_TOP + Math.floor(i / 2) * (LEGEND_ROW + LEGEND_ROW_GAP) + LEGEND_ROW / 2
     ctx.fillStyle = palette.zones[row.zone - 1] ?? palette.mu
-    roundRect(ctx, trackX, mid - ROW_H / 2, Math.max(row.share * trackW, ROW_H), ROW_H, ROW_H / 2)
+    ctx.beginPath()
+    ctx.arc(x + SWATCH / 2, mid, SWATCH / 2, 0, Math.PI * 2)
     ctx.fill()
-
+    ctx.textBaseline = 'middle'
+    ctx.textAlign = 'left'
+    ctx.font = `400 11px ${fonts.text}`
+    ctx.fillStyle = palette.mu
+    ctx.fillText(`Z${row.zone} ${t.zoneLabels[row.zone] ?? ''}`.trim(), x + SWATCH + 7, mid)
     ctx.textAlign = 'right'
-    ctx.font = `700 17px ${fonts.text}`
+    ctx.font = `700 11px ${fonts.text}`
     ctx.fillStyle = palette.tx
-    ctx.fillText(formatPercent(Math.round(row.share * 100)), RIGHT, mid)
+    ctx.fillText(formatPercent(row.percent), x + colW, mid)
   })
 }
 
@@ -494,35 +470,35 @@ function drawPhotoEmpty(ctx: Ctx, { palette, fonts }: ShareCardScene, { middleH 
   const s = t.activity.shareCard
   ctx.fillStyle = palette.fa
   ctx.fillRect(0, 0, W, middleH)
-  camera(ctx, W / 2, middleH / 2 - 30, 34, palette.tx)
+  camera(ctx, W / 2, middleH / 2 - 26, 34, palette.tx)
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.font = `600 16px ${fonts.text}`
+  ctx.font = `600 15px ${fonts.text}`
   ctx.fillStyle = palette.tx
   ctx.fillText(s.choosePhoto, W / 2, middleH / 2 + 8)
-  ctx.font = `400 13px ${fonts.text}`
+  ctx.font = `400 11px ${fonts.text}`
   ctx.fillStyle = palette.mu
-  ctx.fillText(s.photoHint, W / 2, middleH / 2 + 30)
+  ctx.fillText(s.photoHint, W / 2, middleH / 2 + 27)
 }
 
 /** The photo over the whole card (design review, Oct 2026), darkened at the top and foot for the words. */
 function drawPhoto(ctx: Ctx, photo: HTMLImageElement) {
   drawCover(ctx, photo, W, H)
   const scrim = ctx.createLinearGradient(0, 0, 0, H)
-  scrim.addColorStop(0, 'rgba(0, 0, 0, 0.55)')
-  scrim.addColorStop(0.32, 'rgba(0, 0, 0, 0)')
-  scrim.addColorStop(0.55, 'rgba(0, 0, 0, 0)')
-  scrim.addColorStop(1, 'rgba(0, 0, 0, 0.72)')
+  scrim.addColorStop(0, 'rgba(0, 0, 0, 0.6)')
+  scrim.addColorStop(0.34, 'rgba(0, 0, 0, 0)')
+  scrim.addColorStop(0.52, 'rgba(0, 0, 0, 0)')
+  scrim.addColorStop(1, 'rgba(0, 0, 0, 0.75)')
   ctx.fillStyle = scrim
   ctx.fillRect(0, 0, W, H)
 }
 
-/** Distance, Pace, Avg HR, Time: value and unit on one line, the label under it. */
+/** Distance, Time, Pace, Avg HR: value and unit on one line, the label under it. */
 function drawStats(ctx: Ctx, { activity, fonts }: ShareCardScene, top: number, ink: Ink) {
   const stats = shareStats(activity)
-  const valueFont = `700 24px ${fonts.display}`
-  const unitFont = `500 13px ${fonts.text}`
-  const labelFont = `400 14px ${fonts.text}`
+  const valueFont = `700 15px ${fonts.display}`
+  const unitFont = `500 9px ${fonts.text}`
+  const labelFont = `400 9.5px ${fonts.text}`
   const cells = stats.map((stat) => {
     ctx.font = valueFont
     const valueW = ctx.measureText(stat.value).width
@@ -541,16 +517,16 @@ function drawStats(ctx: Ctx, { activity, fonts }: ShareCardScene, top: number, i
     ctx.textBaseline = 'alphabetic'
     ctx.font = valueFont
     ctx.fillStyle = ink.tx
-    ctx.fillText(stat.value, x, top + 21)
+    ctx.fillText(stat.value, x, top + 13)
     if (stat.unit) {
       ctx.font = unitFont
       ctx.fillStyle = ink.mu
-      ctx.fillText(stat.unit, x + valueW, top + 21)
+      ctx.fillText(stat.unit, x + valueW, top + 13)
     }
     ctx.textBaseline = 'top'
     ctx.font = labelFont
     ctx.fillStyle = ink.mu
-    ctx.fillText(stat.label, x, top + 30)
+    ctx.fillText(stat.label, x, top + 19)
     x += width + gap
   }
 }
@@ -562,16 +538,16 @@ const MIDDLES: Record<ShareDesign, (ctx: Ctx, scene: ShareCardScene, layout: Sha
 }
 
 /**
- * One frame for every design (v4.9): header, middle and stat row on the
- * theme's background; only the middle changes with the design, and the
- * Stats design's card is only as tall as its zones. A chosen photo takes
- * the whole card instead, the words over it in white.
+ * One 4:5 frame for every design (design review, Oct 2026): header, middle
+ * and stat row on the theme's background; only the middle changes with the
+ * design. A chosen photo takes the whole card instead, the words over it in
+ * white.
  */
 export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   const layout = shareCardLayout(ctx, scene.activity, scene.fonts, scene.design)
   const { palette } = scene
   ctx.fillStyle = palette.bg
-  ctx.fillRect(0, 0, W, layout.height)
+  ctx.fillRect(0, 0, W, H)
 
   const photo = scene.design === 'photo' ? scene.photo : null
   if (photo) {
@@ -589,7 +565,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   const ink = photo ? PHOTO_INK : { tx: palette.tx, mu: palette.mu, mark: palette.acc }
   if (layout.ruleY !== null) {
     ctx.fillStyle = palette.line
-    ctx.fillRect(PAD_X, layout.ruleY, W - PAD_X * 2, 1)
+    ctx.fillRect(0, layout.ruleY, W, 1)
   }
   drawHeader(ctx, scene, layout, ink)
   if (layout.hero) drawHero(ctx, scene, layout.hero, layout.heroTop, ink)

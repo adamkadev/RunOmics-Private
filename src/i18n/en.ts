@@ -1295,7 +1295,6 @@ export const en = {
       inZone: (zone: number) => `in Z${zone}`,
       // The headline of an easy run's zones: "100% easy · Z1–Z2".
       easyZones: (from: number, to: number) => `easy · Z${from}–Z${to}`,
-      minutes: (n: number) => `${n} min`,
       noZones: 'No heart-rate zones for this run',
       // An interval session's headline, drawn in capitals: "REP PACE · 3 × 8′".
       repPace: (count: number, length: string) => `Rep pace · ${count} × ${length}`,
@@ -1304,7 +1303,7 @@ export const en = {
       repsLegend: 'Reps',
       photo: 'Photo',
       choosePhoto: 'Choose photo',
-      photoHint: 'Fills the whole card',
+      photoHint: 'This frame is the exact crop',
       replacePhoto: 'Replace photo',
     },
     stats: {

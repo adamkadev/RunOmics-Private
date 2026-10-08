@@ -15,12 +15,12 @@ interface Props {
 }
 
 const BUTTON = {
-  height: 50, borderRadius: 14, fontSize: 16,
+  height: 52, borderRadius: 16, fontSize: 16,
   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
 } as const
 
 /**
- * One row (v4.9), pinned under the options: Share, or Download where the
+ * One row (v4.9), right under the option row: Share, or Download where the
  * browser can't share a file, in the accent with its own ink; Copy image
  * beside it where images can be copied, neutral, and still neutral once it
  * says Copied. Both grey out while there is nothing to share.
@@ -33,8 +33,7 @@ export function ShareCardActions({ canShareFiles, canCopyImage, copyState, disab
       style={{
         gridTemplateColumns: canCopyImage ? 'minmax(0, 1fr) auto' : 'minmax(0, 1fr)',
         gap: 10,
-        padding: '12px 20px',
-        paddingBottom: 'max(20px, var(--safe-bottom))',
+        marginTop: 4,
       }}
     >
       <button

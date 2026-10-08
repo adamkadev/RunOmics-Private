@@ -1,24 +1,11 @@
 export type LngLat = [number, number]
 
-export const ROUTE_PADDING = 0.12
-
-export function routePaddingPx(w: number, h: number): number {
-  return Math.round(Math.min(w, h) * ROUTE_PADDING)
-}
-
-export interface RoutePadding { top: number; right: number; bottom: number; left: number }
-
-export function routePadding(w: number, h: number): RoutePadding {
-  const base = routePaddingPx(w, h)
-  const tall = h > w * 1.3
-  if (!tall) return { top: base, right: base, bottom: base, left: base }
-  return {
-    top: Math.round(h * 0.18),
-    bottom: Math.round(h * 0.24),
-    left: Math.round(w * 0.14),
-    right: Math.round(w * 0.14),
-  }
-}
+/**
+ * The route's room on every side of the share card's map, in px (design
+ * review, Oct 2026): the trace fills the map but never reaches its edge,
+ * where the shared image read as cropped.
+ */
+export const ROUTE_INSET = 14
 
 const MAX_POINTS = 150
 
@@ -43,15 +30,14 @@ export function projectRoute(route: LngLat[], w: number, h: number): [number, nu
   const minX = Math.min(...xs), maxX = Math.max(...xs)
   const minY = Math.min(...ys), maxY = Math.max(...ys)
 
-  const p = routePadding(w, h)
-  const availW = w - p.left - p.right
-  const availH = h - p.top - p.bottom
+  const availW = w - ROUTE_INSET * 2
+  const availH = h - ROUTE_INSET * 2
   const scale = Math.min(
     availW / Math.max(maxX - minX, MIN_EXTENT),
     availH / Math.max(maxY - minY, MIN_EXTENT),
   )
-  const cx = (p.left + (w - p.right)) / 2
-  const cy = (p.top + (h - p.bottom)) / 2
+  const cx = w / 2
+  const cy = h / 2
   const ox = cx - ((minX + maxX) / 2) * scale
   const oy = cy - ((minY + maxY) / 2) * scale
   return pts.map(([x, y]) => [x * scale + ox, y * scale + oy])
