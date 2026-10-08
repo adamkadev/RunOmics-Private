@@ -1,8 +1,7 @@
 import type { FeatureCollection, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
-import { firstSymbolLayerId } from '@/lib/maplibre'
 import { distanceKm } from '@/lib/math'
-import { rgbTriplet } from '@/lib/palette'
+import { JOIN_PX as JOIN_DISTANCE_PX, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
 
 export const ROUTE_SOURCE = 'route'
 export const ROUTE_LINE_LAYER = 'route-line'
@@ -11,6 +10,7 @@ export const RUN_START_LAYER = 'run-start-dot'
 export const RUN_FINISH_SOURCE = 'run-finish-mark'
 export const RUN_FINISH_LAYER = 'run-finish-mark'
 export const FINISH_MARK_ICON = 'run-finish-mark'
+export const LOOP_MARK_ICON = 'run-loop-mark'
 export const RUN_CURSOR_SOURCE = 'run-cursor'
 export const RUN_CURSOR_LAYER = 'run-cursor'
 export const RUN_MARKERS_SOURCE = 'run-start-finish'
@@ -40,10 +40,10 @@ export interface RunLayersState {
   ring: string
   route: LngLat[]
   start: LngLat
-  /** Where the run ended, once the route has been drawn that far. */
+  /** Where the run ended - the drawn line's own last point - once the route has been drawn that far. */
   finish: LngLat | null
-  /** The finish square's fill. */
-  finishFill: string
+  /** Whether start and finish sit under 20 px apart at the current zoom: one loop marker then. */
+  joined: boolean
   cursor: LngLat | null
 }
 
@@ -70,42 +70,31 @@ function setOrAddSource(map: MapLibreMap, id: string, data: FeatureCollection): 
   return true
 }
 
-/** The finish square's side and outline, in px: 13 across, so its corners show past the 14 px start dot it may sit under. */
-const FINISH_SIDE = 13
-const FINISH_RING = 2
-const PIXEL_RATIO = 2
+const ICON_PIXEL_RATIO = 2
 
-/**
- * The finish as the share card draws it (design review, Oct 2026): a dark
- * square ringed in white, told from the round start by its shape. MapLibre
- * has no square marker, so it is an icon, drawn here pixel by pixel.
- */
-export function finishMarkImage(fill: string, ring: string): Image {
-  const size = FINISH_SIDE * PIXEL_RATIO
-  const edge = FINISH_RING * PIXEL_RATIO
-  const [inner, outer] = [rgbTriplet(fill), rgbTriplet(ring)]
-  const data = new Uint8Array(size * size * 4)
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const onRing = x < edge || y < edge || x >= size - edge || y >= size - edge
-      const [r, g, b] = onRing ? outer : inner
-      data.set([r!, g!, b!, 255], (y * size + x) * 4)
-    }
+/** The ends as features: the start alone, or the finish or loop marker (routeMarkers). */
+function endsData(start: LngLat, finish: LngLat | null, joined: boolean) {
+  const ends = routeEnds(start, finish, joined)
+  const startAt = ends.find((end) => end.kind === 'start')?.at ?? null
+  const mark = ends.find((end) => end.kind !== 'start')
+  const icon = mark?.kind === 'loop' ? LOOP_MARK_ICON : FINISH_MARK_ICON
+  const marks: FeatureCollection<Point> = {
+    type: 'FeatureCollection',
+    features: mark ? [{ type: 'Feature', properties: { icon }, geometry: { type: 'Point', coordinates: mark.at } }] : [],
   }
-  return { width: size, height: size, data }
+  return { start: pointData(startAt), marks }
 }
 
 /**
  * The run on the Activity map (v4.17), in one call that can be made again
- * after a style change: the route as one accent line, width 4, directly under
- * the style's first label layer so place names draw over it; the start as an
- * accent dot ringed in white; the finish as a dark square, under the start
- * where a loop brings the two together; and the scrub's marker, a larger
- * accent dot that follows the Charts tab. The markers sit on top of
- * everything.
+ * after a style change: the route as one accent line, width 4, over the
+ * style's place names (design review, Oct 2026: a label used to sit over
+ * the finish); the start as a 16 px accent dot in a white ring; the finish
+ * as the checkered dot of routeMarkers on the line's last point, or one
+ * loop marker on the start where the two would touch; and the scrub's
+ * marker, a larger accent dot that follows the Charts tab, on top.
  */
 export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
-  const before = firstSymbolLayerId(map)
   if (setOrAddSource(map, ROUTE_SOURCE, routeData(state.route)) || !map.getLayer(ROUTE_LINE_LAYER)) {
     map.addLayer({
       id: ROUTE_LINE_LAYER,
@@ -113,25 +102,30 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
       source: ROUTE_SOURCE,
       layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': state.accent, 'line-width': 4 },
-    }, before)
+    })
   }
   if (!map.hasImage(FINISH_MARK_ICON)) {
-    map.addImage(FINISH_MARK_ICON, finishMarkImage(state.finishFill, state.ring), { pixelRatio: PIXEL_RATIO })
+    map.addImage(FINISH_MARK_ICON, routeMarkerImage('finish', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
   }
-  if (setOrAddSource(map, RUN_FINISH_SOURCE, pointData(state.finish)) || !map.getLayer(RUN_FINISH_LAYER)) {
+  if (!map.hasImage(LOOP_MARK_ICON)) {
+    map.addImage(LOOP_MARK_ICON, routeMarkerImage('loop', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
+  }
+  const ends = endsData(state.start, state.finish, state.joined)
+  if (setOrAddSource(map, RUN_FINISH_SOURCE, ends.marks) || !map.getLayer(RUN_FINISH_LAYER)) {
     map.addLayer({
       id: RUN_FINISH_LAYER,
       type: 'symbol',
       source: RUN_FINISH_SOURCE,
-      layout: { 'icon-image': FINISH_MARK_ICON, 'icon-allow-overlap': true, 'icon-ignore-placement': true },
-    }, map.getLayer(RUN_START_LAYER) ? RUN_START_LAYER : undefined)
+      layout: { 'icon-image': ['get', 'icon'], 'icon-allow-overlap': true, 'icon-ignore-placement': true },
+    })
   }
-  if (setOrAddSource(map, RUN_START_SOURCE, pointData(state.start)) || !map.getLayer(RUN_START_LAYER)) {
+  if (setOrAddSource(map, RUN_START_SOURCE, ends.start) || !map.getLayer(RUN_START_LAYER)) {
+    // 16 px across: a 5.5 px dot, the 2.5 px ring drawn outside it.
     map.addLayer({
       id: RUN_START_LAYER,
       type: 'circle',
       source: RUN_START_SOURCE,
-      paint: { 'circle-radius': 5, 'circle-color': state.accent, 'circle-stroke-color': state.ring, 'circle-stroke-width': 2 },
+      paint: { 'circle-radius': 5.5, 'circle-color': state.accent, 'circle-stroke-color': state.ring, 'circle-stroke-width': 2.5 },
     })
   }
   if (setOrAddSource(map, RUN_CURSOR_SOURCE, pointData(state.cursor)) || !map.getLayer(RUN_CURSOR_LAYER)) {
@@ -144,20 +138,29 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   }
 }
 
-/** The route drawn so far: the draw-in animation hands it a longer slice each frame. */
-/** A new accent on the run's layers, without re-adding them (v4.17). */
+/** A new accent on the run's layers, without re-adding them (v4.17); the loop marker's ring is in it. */
 export function setRunAccent(map: MapLibreMap, accent: string): void {
   if (map.getLayer(ROUTE_LINE_LAYER)) map.setPaintProperty(ROUTE_LINE_LAYER, 'line-color', accent)
   for (const id of [RUN_START_LAYER, RUN_CURSOR_LAYER]) if (map.getLayer(id)) map.setPaintProperty(id, 'circle-color', accent)
+  if (map.hasImage(LOOP_MARK_ICON)) map.updateImage(LOOP_MARK_ICON, routeMarkerImage('loop', accent, ICON_PIXEL_RATIO))
+}
+
+/** Whether the ends' centres sit under 20 px apart at the map's current zoom. */
+export function runEndsJoined(map: Pick<MapLibreMap, 'project'>, start: LngLat, finish: LngLat): boolean {
+  const a = map.project(start)
+  const b = map.project(finish)
+  return Math.hypot(b.x - a.x, b.y - a.y) < JOIN_DISTANCE_PX
 }
 
 export function setRunRoute(map: MapLibreMap, route: LngLat[]): void {
   ;(map.getSource(ROUTE_SOURCE) as GeoJSONSource | undefined)?.setData(routeData(route))
 }
 
-/** The finish, once the draw-in has reached it. */
-export function setRunFinishMark(map: MapLibreMap, at: LngLat | null): void {
-  ;(map.getSource(RUN_FINISH_SOURCE) as GeoJSONSource | undefined)?.setData(pointData(at))
+/** The ends as they now stand: the finish once the draw-in has reached it, joined into one marker on a loop. */
+export function setRunEnds(map: MapLibreMap, start: LngLat, finish: LngLat | null, joined: boolean): void {
+  const ends = endsData(start, finish, joined)
+  ;(map.getSource(RUN_START_SOURCE) as GeoJSONSource | undefined)?.setData(ends.start)
+  ;(map.getSource(RUN_FINISH_SOURCE) as GeoJSONSource | undefined)?.setData(ends.marks)
 }
 
 /** The scrub's point on the route, or none. */
@@ -279,8 +282,8 @@ export function addEdgeFence(map: MapLibreMap): () => void {
   }
 }
 
-/** A clear square the size of a marker: collision without paint, for maps whose markers are drawn elsewhere. */
-export function clearMarkerImage(diameter = 13): Image {
+/** A clear square the size of the largest marker: collision without paint, for maps whose markers are drawn elsewhere. */
+export function clearMarkerImage(diameter = markerExtent('loop')): Image {
   const size = (diameter + 2) * 2
   return { width: size, height: size, data: new Uint8Array(size * size * 4) }
 }

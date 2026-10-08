@@ -77,11 +77,13 @@ describe('drawShareCard', () => {
     }
   })
 
-  it('keeps the accent to the logo mark: off the route, its markers and every word', () => {
+  // Design review, Oct 2026: the accent is a point marker's, never a trace or a word.
+  it('keeps the accent to the logo mark and the start marker: off the route and every word', () => {
     for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
       const ops = draw({ design: 'route', activity })
-      expect(ops.filter((o) => (o.op === 'fillText' || o.op === 'fill') && o.fill === acc)).toEqual([])
-      // The mark is three accent strokes.
+      expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
+      expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
+      // The mark is three accent strokes; the route takes none.
       expect(ops.filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(3)
     }
   })
@@ -166,14 +168,28 @@ describe('the route (design review, Oct 2026)', () => {
     expect(slicePolyline([[0, 0], [10, 0], [10, 10]], 0.25, 0.75)).toEqual([[5, 0], [10, 0], [10, 5]])
   })
 
-  it('marks the start with a white ring and the finish with a dark square, the finish under it', () => {
+  // The Activity map's markers (routeMarkers): radius 10 is the finish's outline, 12.5 the loop's, 5.5 the start's dot.
+  const arcsOf = (ops: Op[], radius: number) => ops.filter((o) => o.op === 'arc' && o.args[2] === radius).map((o) => o.args.slice(0, 2))
+
+  it('puts the checkered finish on the trace\'s own last point, the accent start over it', () => {
+    const ops = middle(draw({ design: 'route' }))
+    const trace = ops.filter((o) => o.op === 'lineTo')
+    const last = trace[trace.length - 1]!.args
+    expect(arcsOf(ops, 10)).toEqual([last])
+    expect(arcsOf(ops, 5.5)).toHaveLength(1)
+    expect(ops.some((o) => o.op === 'fillRect' && o.fill === '#0c0d0d')).toBe(true)
+    const fills = ops.filter((o) => o.op === 'fill').map((o) => o.fill)
+    expect(fills.lastIndexOf(acc)).toBeGreaterThan(fills.indexOf('#ffffff'))
+  })
+
+  it('draws a loop as one combined marker on the start, never two stacked', () => {
     const loop = { ...RUN, route: [...RUN.route!, RUN.route![0]!] as [number, number][] }
-    for (const run of [RUN, loop]) {
-      const ops = middle(draw({ design: 'route', activity: run }), run)
-      expect(ops.filter((o) => o.op === 'fill').map((o) => o.fill)).toEqual([palette.startRing, palette.ring])
-      const squares = ops.filter((o) => o.op === 'rect' && o.args[2] === o.args[3] && (o.args[2] as number) < 20)
-      expect(squares).toHaveLength(1)
-    }
+    const ops = middle(draw({ design: 'route', activity: loop }), loop)
+    expect(arcsOf(ops, 12.5)).toHaveLength(1)
+    expect(arcsOf(ops, 10)).toEqual([])
+    expect(arcsOf(ops, 5.5)).toEqual([])
+    // Its ring is the accent.
+    expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
   })
 
   it('paints the basemap over the whole middle', () => {
