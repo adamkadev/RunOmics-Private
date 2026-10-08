@@ -1422,7 +1422,7 @@ export const fr = {
       cadence: 'Cadence',
       elevationGain: (m: string) => `${m} m D+`,
       scrubAt: (km: string, elapsed: string | null) => (elapsed ? `À ${km} km · ${elapsed} de course` : `À ${km} km`),
-      scrubHint: 'Glisse sur les graphiques pour les parcourir — le point suit sur la carte',
+      scrubHint: 'Glisse sur les graphiques pour les parcourir',
       lineLabel: 'Tracé',
       smoothed: 'Lissé',
       raw: 'Brut',

@@ -1,11 +1,21 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ActivityDetailView } from '../activityViews'
 import { t } from '@/i18n'
+import { formatDistance } from '@/lib/formatters'
 
 vi.mock('../ActivityMapClient', () => ({ ActivityMapClient: () => <div data-testid="map" /> }))
 vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: false }))
 vi.mock('@/lib/useOwnerAuth', () => ({ useOwnerAuth: () => ({ isOwner: false }) }))
+
+// jsdom lays nothing out, so whether the tabs are pinned, and where they rest,
+// are set here.
+const strip = vi.hoisted(() => ({ pinned: false, restingTop: 0 }))
+vi.mock('@/lib/useStuck', () => ({
+  useStuck: () => strip.pinned,
+  isStuck: () => strip.pinned,
+  restingTop: () => strip.restingTop,
+}))
 
 const { ActivityDetailClient } = await import('../ActivityDetailClient')
 
@@ -33,7 +43,12 @@ function renderDetail() {
 }
 
 describe('ActivityDetailClient', () => {
-  afterEach(() => window.history.replaceState(null, '', '/'))
+  afterEach(() => {
+    window.history.replaceState(null, '', '/')
+    strip.pinned = false
+    strip.restingTop = 0
+    vi.restoreAllMocks()
+  })
 
   // Similar runs and the map filled the first screen; the run's own stats,
   // RPE and note were on the second or on none.
@@ -106,10 +121,9 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByRole('tab', { name: t.activity.tabs.intervals })).toHaveAttribute('aria-selected', 'true')
   })
 
-  // H16: one header - '← Activities', the big title, share - on every tab.
-  // v4.17: the map card with the four stats heads every tab too, since the
-  // Charts scrub moves a marker along its route; the verdict stays on Overview.
-  it('keeps the same header and the map card above every tab', () => {
+  // H16: one header - '← Activities', the big title, share - on every tab,
+  // and the four stats under it; the verdict stays on Overview.
+  it('keeps the same header and the four stats above every tab', () => {
     window.history.replaceState(null, '', '/activities/a1?tab=intervals')
     render(<ActivityDetailClient activity={ACTIVITY} aiVerdict={null} dynamicsBaseline={null} header={<h1>Threshold</h1>} />)
 
@@ -117,6 +131,56 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByTestId('run-map-card').textContent).toContain(t.activity.stats.distance)
     expect(screen.queryByText(t.activity.effort.label)).toBeNull()
     expect(screen.queryByTestId('compact-header')).toBeNull()
+  })
+
+  // Design review, Oct 2026: the map pushed Splits, Charts and Dynamics off
+  // the first screen. It opens with the run, and collapses on a switch.
+  it('shows the map on Overview and collapses it on the other tabs', () => {
+    render(<ActivityDetailClient activity={{ ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView} aiVerdict={null} dynamicsBaseline={null} />)
+    expect(within(screen.getByTestId('run-map-card')).getByTestId('map')).toBeInTheDocument()
+
+    act(() => screen.getByRole('tab', { name: t.activity.tabs.intervals }).click())
+    expect(screen.queryByTestId('run-map')).toBeNull()
+    expect(screen.getByTestId('run-map-card').textContent).toContain(t.activity.stats.distance)
+
+    act(() => screen.getByRole('tab', { name: t.activity.tabs.overview }).click())
+    expect(screen.getByTestId('map')).toBeInTheDocument()
+  })
+
+  // Under the pinned tabs, the run's numbers on one line, so a tab switch
+  // keeps which run this is in view (design review, Oct 2026).
+  it('pins a one-line summary under the tabs once they stick, and only then', () => {
+    const { rerender } = renderDetail()
+    expect(screen.queryByTestId('run-summary')).toBeNull()
+
+    strip.pinned = true
+    rerender(<ActivityDetailClient activity={ACTIVITY} aiVerdict={null} dynamicsBaseline={null} />)
+    const summary = screen.getByTestId('run-summary')
+    expect(summary.closest('[data-testid="sticky-bar"]')).not.toBeNull()
+    expect(summary.textContent).toBe(`${formatDistance(6.11)} ${t.units.km}25:244:10 ${t.units.perKm}115 ${t.units.bpm}`)
+    // The stats card says it to a screen reader already.
+    expect(summary.getAttribute('aria-hidden')).toBe('true')
+    // Drawn over what has scrolled under the strip: the page does not move.
+    expect(screen.getByTestId('sticky-bar').className).toContain('-mb-9')
+  })
+
+  it('keeps pinned tabs pinned across a switch, the new tab from its top', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    strip.pinned = true
+    strip.restingTop = 480
+    renderDetail()
+
+    act(() => screen.getByRole('tab', { name: t.activity.tabs.intervals }).click())
+    expect(scrollTo).toHaveBeenLastCalledWith({ top: 480, behavior: 'instant' })
+  })
+
+  it('leaves the page where it is on a switch lower down that hides nothing', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+    strip.restingTop = 480
+    renderDetail()
+
+    act(() => screen.getByRole('tab', { name: t.activity.tabs.intervals }).click())
+    expect(scrollTo).not.toHaveBeenCalled()
   })
 
   // v4.17: the insight's eyebrow says how the session went, in its status colour.

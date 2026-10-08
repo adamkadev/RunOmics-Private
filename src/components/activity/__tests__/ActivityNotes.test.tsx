@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { t } from '@/i18n'
@@ -188,6 +188,21 @@ describe('ActivityNotes sheet', () => {
     expect(screen.getByRole('button', { name: t.activity.notes.removeTag('rain') })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: t.activity.notes.addTag('rain') })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: t.activity.notes.addTag('trail') })).toBeInTheDocument()
+  })
+
+  // Design review, Oct 2026: the row that opens the sheet is a full-width
+  // 44 pt row, and every control on the sheet is a 44 pt target, however
+  // small it is drawn - Cancel, Save, a tag's ✕ and each suggested tag.
+  it('gives every control a 44 pt target', async () => {
+    mockAllNotes = [{ note: '', tags: ['rain', 'trail'] }]
+    render(<ActivityNotes activityId="a1" />)
+    expect((await screen.findByTestId('note-row')).className).toContain('min-h-11')
+    await openNotes()
+    await userEvent.click(await screen.findByRole('button', { name: t.activity.notes.addTag('rain') }))
+
+    for (const button of within(screen.getByRole('dialog')).getAllByRole('button')) {
+      expect(button.className, button.getAttribute('aria-label') ?? button.textContent ?? '').toContain('hit-44')
+    }
   })
 })
 

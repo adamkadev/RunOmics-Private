@@ -1493,7 +1493,8 @@ export const en = {
       cadence: 'Cadence',
       elevationGain: (m: string) => `+${m} m gain`,
       scrubAt: (km: string, elapsed: string | null) => (elapsed ? `At ${km} km · ${elapsed} elapsed` : `At ${km} km`),
-      scrubHint: 'Drag across the charts to scrub — the dot on the map follows',
+      // The map is Overview's (design review, Oct 2026): no dot on it to follow.
+      scrubHint: 'Drag across the charts to scrub',
       lineLabel: 'Chart line',
       smoothed: 'Smoothed',
       raw: 'Raw',
