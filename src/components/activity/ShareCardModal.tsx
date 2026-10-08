@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes'
 import { Camera, X } from 'lucide-react'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import {
-  renderShareCard, loadImage, pageFonts, shareCardMiddleHeight, SHARE_DESIGNS, W,
+  renderShareCard, loadImage, pageFonts, shareCardMetrics, SHARE_DESIGNS, W, H,
   type RenderOptions, type ShareDesign, type ThemeMode,
 } from '@/lib/shareCard'
 import { shareCardFile, saveCardPng, copyCardPng } from '@/lib/shareCardExport'
@@ -30,7 +30,7 @@ interface Props {
 
 /** The preview: the 390 x 693 card at 242 x 430, large enough to read. */
 const PREVIEW_W = 242
-const PREVIEW_H = 430
+const PREVIEW_SCALE = PREVIEW_W / W
 const SWIPE_PX = 40
 
 /**
@@ -62,15 +62,16 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   const { locationName } = useShareCardGeocode(activity)
   const [fontsReady, setFontsReady] = useState(0)
-  // The map fills the middle, whose height the title's lines set: measured
-  // again once Geist has loaded, as the card will be drawn in it.
-  const [middleH, setMiddleH] = useState(() => shareCardMiddleHeight(activity, pageFonts()))
+  // The map fills the middle, whose height the title's lines set, and the
+  // Stats card is as tall as its zones: measured again once Geist has
+  // loaded, as the card will be drawn in it.
+  const [metrics, setMetrics] = useState(() => shareCardMetrics(activity, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
   const { image: mapImage, points: mapPoints } = useShareCardMap({
     route: activity.route,
     theme,
     width: W,
-    height: middleH,
+    height: metrics.middleH,
     enabled: hasRoute,
   })
 
@@ -78,6 +79,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
   // Photo with none chosen yet: the frame is the picker, and there is nothing to share.
   const awaitingPhoto = design === 'photo' && !photoImage
+  const previewH = Math.round((design === 'stats' ? metrics.statsH : H) * PREVIEW_SCALE)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -104,7 +106,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     document.fonts?.ready.then(() => {
       if (!alive) return
       setFontsReady((n) => n + 1)
-      setMiddleH(shareCardMiddleHeight(activity, pageFonts()))
+      setMetrics(shareCardMetrics(activity, pageFonts()))
     }).catch(() => {})
     return () => { alive = false }
   }, [activity])
@@ -201,7 +203,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <div
               data-testid="share-preview"
               style={{
-                width: PREVIEW_W, height: PREVIEW_H, borderRadius: 16, overflow: 'hidden', flexShrink: 0,
+                width: PREVIEW_W, height: previewH, borderRadius: 16, overflow: 'hidden', flexShrink: 0,
                 boxShadow: awaitingPhoto ? 'none' : '0 0 0 1px var(--border)', touchAction: 'pan-y',
                 position: 'relative',
               }}

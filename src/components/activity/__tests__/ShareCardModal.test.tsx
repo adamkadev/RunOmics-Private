@@ -19,7 +19,7 @@ vi.mock('@/lib/shareCard', async (load) => ({
 const RUN: ShareActivity = {
   id: '1', date: '2026-09-26', dayOfWeek: 'Saturday', description: 'Easy',
   distanceKm: 10, durationSeconds: 3453, paceSecPerKm: 344, avgHeartRate: 153, elevationGain: 40,
-  route: [[7.7, 48.6], [7.71, 48.61]], paceSamples: null, hrZones: [],
+  route: [[7.7, 48.6], [7.71, 48.61]], hrZones: [],
 }
 
 function open(props: Partial<{ activity: ShareActivity; canShareFiles: boolean; canCopyImage: boolean }> = {}) {

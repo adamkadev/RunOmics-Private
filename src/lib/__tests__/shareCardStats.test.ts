@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  hrAtFraction, repLength, shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones, zoneOfHr,
-  type ShareActivity,
+  repLength, shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones, type ShareActivity,
 } from '@/lib/shareCardStats'
 import { formatDate } from '@/lib/formatters'
 
@@ -16,7 +15,6 @@ const RUN: ShareActivity = {
   avgHeartRate: 153,
   elevationGain: 40,
   route: null,
-  paceSamples: null,
   hrZones: [
     { zone: 1, seconds: 240, percent: 7, minBpm: 100, maxBpm: 120 },
     { zone: 2, seconds: 2460, percent: 71, minBpm: 120, maxBpm: 140 },
@@ -70,7 +68,7 @@ describe('shareZones', () => {
   })
 })
 
-const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 } }
+const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 }, windows: [] }
 
 describe('an interval session (design review, Oct 2026)', () => {
   it('takes the coach\'s name for the session, else the run\'s', () => {
@@ -92,21 +90,6 @@ describe('an interval session (design review, Oct 2026)', () => {
   it('writes a rep in minutes, or seconds under one', () => {
     expect(repLength(480)).toBe('8′')
     expect(repLength(45)).toBe('45″')
-  })
-})
-
-describe('the route\'s heart rate', () => {
-  it('reads the zone off the run\'s own floors', () => {
-    expect(zoneOfHr(130, RUN.hrZones)).toBe(2)
-    expect(zoneOfHr(175, RUN.hrZones)).toBe(5)
-    expect(zoneOfHr(90, RUN.hrZones)).toBe(1)
-    expect(zoneOfHr(130, [])).toBeNull()
-  })
-
-  it('reads the stream at the same share of its length', () => {
-    expect(hrAtFraction([100, 120, 140], 0.5)).toBe(120)
-    expect(hrAtFraction([100, 120, 140], 1)).toBe(140)
-    expect(hrAtFraction([], 0.5)).toBeNull()
   })
 })
 

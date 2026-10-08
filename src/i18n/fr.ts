@@ -1236,11 +1236,8 @@ export const fr = {
       // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
       repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
       target: (pace: string) => `cible ${pace}`,
-      // La légende du parcours : ce que sa couleur représente.
-      hrZone: 'Zone FC',
-      paceLegend: 'Allure',
-      slow: 'Lent',
-      fast: 'Rapide',
+      // La légende du parcours d’une séance de fractionné : elle marque les fractions.
+      repsLegend: 'Fractions',
       photo: 'Photo',
       choosePhoto: 'Choisir une photo',
       photoHint: 'Remplit toute la carte',
