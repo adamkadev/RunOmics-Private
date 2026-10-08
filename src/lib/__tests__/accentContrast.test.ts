@@ -110,3 +110,19 @@ describe('accent never collides with the danger signal', () => {
     expect(deltaE(accent!, STATUS_HEX[mode as 'dark' | 'light'].neg)).toBeGreaterThanOrEqual(MIN_DELTA_E)
   })
 })
+
+/** `color-mix(in srgb, fg share%, transparent)` laid over `bg`. */
+function tint(fg: string, bg: string, share: number): string {
+  const channel = (hex: string, i: number) => parseInt(hex.slice(i, i + 2), 16)
+  return `#${[1, 3, 5].map((i) => Math.round(channel(fg, i) * share + channel(bg, i) * (1 - share)).toString(16).padStart(2, '0')).join('')}`
+}
+
+// Design review, Oct 2026: a missed day's "✕ 10 km" on Month sits on the neg
+// status at 12 % over the card, and light read 4.35:1 there.
+describe('missed text', () => {
+  it.each(['dark', 'light'] as const)('reads at 4.5:1 or more on its own tint, %s', (mode) => {
+    const neg = STATUS_HEX[mode].neg
+    expect(contrast(neg, tint(neg, SURFACES[mode].card, 0.12))).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(neg, SURFACES[mode].card)).toBeGreaterThanOrEqual(4.5)
+  })
+})
