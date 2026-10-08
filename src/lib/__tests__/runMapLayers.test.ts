@@ -4,6 +4,7 @@ import {
   EDGE_FENCE_LAYER,
   FINISH_ICON,
   FINISH_MARK_ICON,
+  LOOP_MARK_ICON,
   ROUTE_FIT_PADDING,
   ROUTE_LINE_LAYER,
   ROUTE_SOURCE,
@@ -13,16 +14,18 @@ import {
   RUN_FINISH_SOURCE,
   RUN_MARKERS_LAYER,
   RUN_START_LAYER,
+  RUN_START_SOURCE,
   START_ICON,
   addEdgeFence,
   addRunLayers,
   addRunMarkers,
   edgePoints,
-  finishMarkImage,
   markerPoints,
   pointAlongRoute,
+  runEndsJoined,
+  setRunAccent,
   setRunCursor,
-  setRunFinishMark,
+  setRunEnds,
 } from '../runMapLayers'
 
 function fakeMap() {
@@ -31,6 +34,7 @@ function fakeMap() {
     { id: 'Town labels', type: 'symbol' },
   ]
   const images = new Set<string>()
+  const updated: string[] = []
   const data: Record<string, unknown> = {}
   const handlers: Record<string, (() => void)[]> = {}
   const map = {
@@ -44,36 +48,39 @@ function fakeMap() {
     },
     hasImage: (id: string) => images.has(id),
     addImage: (id: string) => { images.add(id) },
+    updateImage: (id: string) => { updated.push(id) },
+    setPaintProperty: () => {},
     getCanvas: () => ({ clientWidth: 48, clientHeight: 32 }),
     unproject: ([x, y]: [number, number]) => ({ lng: x, lat: y }),
     on: (e: string, cb: () => void) => { (handlers[e] ??= []).push(cb) },
     off: () => {},
   } as unknown as MapLibreMap
-  return { map, layers, images, data, handlers }
+  return { map, layers, images, updated, data, handlers }
 }
 
 const IMAGE = { width: 2, height: 2, data: new Uint8Array(16) }
 
 const RUN = {
   accent: '#2dd4a7', ring: '#ffffff', route: [[7.7, 48.6], [7.71, 48.61]] as [number, number][],
-  start: [7.7, 48.6] as [number, number], finish: [7.71, 48.61] as [number, number], finishFill: '#0c0d0d', cursor: null,
+  start: [7.7, 48.6] as [number, number], finish: [7.71, 48.61] as [number, number], joined: false, cursor: null,
 }
 
 describe('the run map layers (v4.17)', () => {
-  it('puts the accent route directly under the first label layer, so names draw over it', () => {
+  // Design review, Oct 2026: a place name sat over the finish.
+  it('draws the accent route and its markers over the place names', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
-    expect(layers.map((l) => l.id)).toEqual(['Water', ROUTE_LINE_LAYER, 'Town labels', RUN_FINISH_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
+    expect(layers.map((l) => l.id)).toEqual(['Water', 'Town labels', ROUTE_LINE_LAYER, RUN_FINISH_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
     const route = layers.find((l) => l.id === ROUTE_LINE_LAYER)!
     expect(route).toMatchObject({ type: 'line', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': RUN.accent, 'line-width': 4 } })
   })
 
-  it('draws the start and the scrub marker as accent circles ringed in white', () => {
+  it('draws the start, 16 px across, and the scrub marker as accent circles ringed in white', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
     expect(layers.find((l) => l.id === RUN_START_LAYER)).toMatchObject({
       type: 'circle',
-      paint: { 'circle-radius': 5, 'circle-color': RUN.accent, 'circle-stroke-color': RUN.ring, 'circle-stroke-width': 2 },
+      paint: { 'circle-radius': 5.5, 'circle-color': RUN.accent, 'circle-stroke-color': RUN.ring, 'circle-stroke-width': 2.5 },
     })
     expect(layers.find((l) => l.id === RUN_CURSOR_LAYER)).toMatchObject({
       type: 'circle',
@@ -82,28 +89,44 @@ describe('the run map layers (v4.17)', () => {
   })
 
   // At the owner's request: the Activity map had no end marker at all.
-  it('marks the finish with a dark square ringed in white, under the start where a loop meets it', () => {
+  it('puts the checkered finish on the drawn line\'s own last point', () => {
     const { map, layers, images, data } = fakeMap()
     addRunLayers(map, RUN)
-    expect(images.has(FINISH_MARK_ICON)).toBe(true)
+    expect([...images]).toEqual(expect.arrayContaining([FINISH_MARK_ICON, LOOP_MARK_ICON]))
     expect(layers.find((l) => l.id === RUN_FINISH_LAYER)).toMatchObject({
       type: 'symbol',
-      layout: { 'icon-image': FINISH_MARK_ICON, 'icon-allow-overlap': true, 'icon-ignore-placement': true },
+      layout: { 'icon-image': ['get', 'icon'], 'icon-allow-overlap': true, 'icon-ignore-placement': true },
     })
-    const ids = layers.map((l) => l.id)
-    expect(ids.indexOf(RUN_FINISH_LAYER)).toBeLessThan(ids.indexOf(RUN_START_LAYER))
-    expect((data[RUN_FINISH_SOURCE] as { features: { geometry: { coordinates: unknown } }[] }).features[0]!.geometry.coordinates).toEqual(RUN.finish)
-    setRunFinishMark(map, null)
-    expect((data[RUN_FINISH_SOURCE] as { features: unknown[] }).features).toHaveLength(0)
+    const marks = (data[RUN_FINISH_SOURCE] as { features: { properties: { icon: string }; geometry: { coordinates: unknown } }[] }).features
+    expect(marks).toHaveLength(1)
+    expect(marks[0]).toMatchObject({ properties: { icon: FINISH_MARK_ICON }, geometry: { coordinates: RUN.route[RUN.route.length - 1] } })
+    expect((data[RUN_START_SOURCE] as { features: unknown[] }).features).toHaveLength(1)
   })
 
-  it('draws the finish square pixel by pixel: the fill inside a 2 px white ring', () => {
-    const image = finishMarkImage('#0c0d0d', '#ffffff')
-    expect([image.width, image.height]).toEqual([26, 26])
-    const px = (x: number, y: number) => [...image.data.slice((y * 26 + x) * 4, (y * 26 + x) * 4 + 4)]
-    expect(px(0, 0)).toEqual([255, 255, 255, 255])
-    expect(px(3, 13)).toEqual([255, 255, 255, 255])
-    expect(px(13, 13)).toEqual([12, 13, 13, 255])
+  // Design review, Oct 2026: never two markers stacked.
+  it('draws a loop as one combined marker on the start while the ends touch, then both once apart', () => {
+    const { map, data } = fakeMap()
+    addRunLayers(map, { ...RUN, joined: true })
+    const marks = () => (data[RUN_FINISH_SOURCE] as { features: { properties: { icon: string }; geometry: { coordinates: unknown } }[] }).features
+    const starts = () => (data[RUN_START_SOURCE] as { features: unknown[] }).features
+    expect(marks()).toEqual([expect.objectContaining({ properties: { icon: LOOP_MARK_ICON }, geometry: expect.objectContaining({ coordinates: RUN.start }) })])
+    expect(starts()).toHaveLength(0)
+    setRunEnds(map, RUN.start, RUN.finish, false)
+    expect(marks()[0]!.properties.icon).toBe(FINISH_MARK_ICON)
+    expect(starts()).toHaveLength(1)
+  })
+
+  it('asks at the current zoom whether the ends are under 20 px apart', () => {
+    const at = (px: number) => ({ project: ([lng]: [number, number]) => ({ x: lng === 0 ? 0 : px, y: 0 }) }) as unknown as Parameters<typeof runEndsJoined>[0]
+    expect(runEndsJoined(at(19), [0, 0], [1, 0])).toBe(true)
+    expect(runEndsJoined(at(20), [0, 0], [1, 0])).toBe(false)
+  })
+
+  it('repaints the loop marker\'s accent ring with a new accent', () => {
+    const { map, updated } = fakeMap()
+    addRunLayers(map, RUN)
+    setRunAccent(map, '#ff0000')
+    expect(updated).toContain(LOOP_MARK_ICON)
   })
 
   // The layers go on again after a style change, as they were.

@@ -51,6 +51,8 @@ vi.mock('@/lib/maplibre', async (importOriginal) => {
     }
     hasImage() { return false }
     addImage() {}
+    updateImage() {}
+    project() { return { x: 0, y: 0 } }
     getCanvas() { return { clientWidth: 100, clientHeight: 100 } }
     unproject() { return { lng: 0, lat: 0 } }
   }
@@ -81,11 +83,11 @@ describe('ActivityMap layers (v4.17)', () => {
 
   beforeAll(() => { process.env.NEXT_PUBLIC_MAPTILER_TOKEN = 'test' })
 
-  it('draws the route under the labels in the accent, the start and the scrub marker as circle layers, no DOM markers', async () => {
+  it('draws the route over the labels in the accent, the start and the scrub marker as circle layers, no DOM markers', async () => {
     render(<ActivityMap route={[[7.7, 48.6], [7.72, 48.62]]} />)
     await waitFor(() => expect(seen.layers.some((l) => l.id === 'run-cursor')).toBe(true))
     const ids = seen.layers.map((l) => l.id)
-    expect(ids.indexOf('route-line')).toBeLessThan(ids.indexOf('Town labels'))
+    expect(ids.indexOf('route-line')).toBeGreaterThan(ids.indexOf('Town labels'))
     expect(ids).not.toContain('route-bg')
     expect(ids.indexOf('run-start-dot')).toBeGreaterThan(ids.indexOf('Town labels'))
     expect(seen.layers.find((l) => l.id === 'run-start-dot')?.type).toBe('circle')

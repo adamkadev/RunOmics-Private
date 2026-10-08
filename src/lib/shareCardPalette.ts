@@ -30,15 +30,11 @@ export interface SharePalette {
   mu: string
   /** --track: the zone rows' track and the empty photo frame. */
   fa: string
-  /** --accent: the logo mark and the finish marker, nothing else. */
+  /** --accent: the logo mark and the route's point markers, never a trace (routeMarkers). */
   acc: string
   zones: readonly string[]
-  /** ActivityMap's route casing and marker ring. */
+  /** ActivityMap's route casing. */
   casing: string
-  /** White: the start's fill and the finish's ring. */
-  ring: string
-  /** The start's dark outline. */
-  startRing: string
 }
 
 export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
@@ -52,7 +48,5 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     acc: curatedAccent(accent)[mode].acc,
     zones: ZONE_HEX[mode],
     casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
-    ring: MAP_COLORS.markerRingLight,
-    startRing: SURFACES.dark.background,
   }
 }

@@ -16,8 +16,9 @@ import {
   addRunLayers,
   setRunAccent,
   pointAlongRoute,
+  runEndsJoined,
   setRunCursor,
-  setRunFinishMark,
+  setRunEnds,
   setRunRoute,
 } from '@/lib/runMapLayers'
 
@@ -117,7 +118,8 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
       const first = route[0]
       if (!first) return
       const start: LngLat = first
-      // The finish shows once the draw-in reaches it, as a square (design review, Oct 2026).
+      // The finish is the drawn line's own last point (design review, Oct 2026),
+      // shown once the draw-in reaches it.
       const finish: LngLat | null = route.length > 1 ? route[route.length - 1]! : null
 
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
@@ -145,6 +147,19 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
       map.addControl(new mgl.AttributionControl({ compact: false }), 'bottom-right')
       mapRef.current = map
 
+      // A loop's start and finish are one marker while they would touch: asked
+      // again at every zoom, so zooming in parts them.
+      let joined = false
+      const finishShown = () => finish !== null && drawnRef.current >= route.length
+      function updateEnds(force = false) {
+        if (!finishShown() || !finish) return
+        const next = runEndsJoined(map, start, finish)
+        if (!force && next === joined) return
+        joined = next
+        setRunEnds(map, start, finish, joined)
+      }
+      map.on('zoom', () => { if (layersReadyRef.current) updateEnds() })
+
       function animateRoute() {
         const total = route.length
         const duration = 1800
@@ -157,7 +172,7 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
           if (count !== drawnRef.current) {
             drawnRef.current = count
             setRunRoute(map, route.slice(0, count))
-            if (count >= total) setRunFinishMark(map, finish)
+            if (count >= total) updateEnds(true)
           }
           animFrameRef.current = progress < 1 ? requestAnimationFrame(animate) : null
         }
@@ -173,13 +188,14 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
         // The route is the athlete's own data, so it is the accent (v4.17);
         // it was coloured by pace.
         accent = readAccent()
+        joined = finishShown() && finish !== null && runEndsJoined(map, start, finish)
         addRunLayers(map, {
           accent,
           ring: MAP_COLORS.markerRingLight,
           route: route.slice(0, drawnRef.current),
           start,
-          finish: drawnRef.current >= route.length ? finish : null,
-          finishFill: SURFACES.dark.background,
+          finish: finishShown() ? finish : null,
+          joined,
           cursor: cursorRef.current,
         })
         layersReadyRef.current = true

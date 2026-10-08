@@ -5,6 +5,7 @@ import {
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
 import { projectRoute } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
+import { drawRouteMarker, endsJoined, routeEnds } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
 import { formatPercent } from '@/lib/formatters'
@@ -233,46 +234,6 @@ function drawHero(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, hero: 
   ctx.fillText(hero.detail, PAD_X + paceW + 9, top + 58)
 }
 
-/** The start: a white ring with a dark outline, as on the Activity map. */
-function startMarker(ctx: Ctx, [x, y]: [number, number], palette: SharePalette) {
-  ctx.beginPath()
-  ctx.arc(x, y, 6.5, 0, Math.PI * 2)
-  ctx.fillStyle = palette.ring
-  ctx.fill()
-  ctx.lineWidth = 2
-  ctx.strokeStyle = palette.startRing
-  ctx.stroke()
-}
-
-/** The finish (design review, Oct 2026): a dark square with a white outline, never the accent. */
-function finishMarker(ctx: Ctx, [x, y]: [number, number], palette: SharePalette) {
-  const side = 11.5
-  ctx.beginPath()
-  ctx.rect(x - side / 2, y - side / 2, side, side)
-  ctx.fillStyle = palette.startRing
-  ctx.fill()
-  ctx.lineWidth = 2
-  ctx.strokeStyle = palette.ring
-  ctx.stroke()
-}
-
-/** Markers this far apart sit side by side, not on each other. */
-const MARKER_GAP = 16
-
-/**
- * Where the finish marker goes (always one, next to the start): the route's
- * end, or - on a loop that ends back at the start - the last point of its
- * way in that stands clear of the start's marker.
- */
-function finishPoint(pts: [number, number][]): [number, number] | null {
-  const [sx, sy] = pts[0]!
-  for (let i = pts.length - 1; i > 0; i--) {
-    const [x, y] = pts[i]!
-    if (Math.hypot(x - sx, y - sy) >= MARKER_GAP) return pts[i]!
-  }
-  return null
-}
-
 /** How far along the line each point is, in px from the first. */
 function cumulative(pts: [number, number][]): number[] {
   const at = [0]
@@ -386,10 +347,11 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, { middleH }: ShareCardLayout
     strokeLine(ctx, pts, palette.tx, TRACE_W)
   }
 
-  // The finish under the start where the two meet.
-  const finish = finishPoint(pts)
-  if (finish) finishMarker(ctx, finish, palette)
-  startMarker(ctx, pts[0]!, palette)
+  // The Activity map's markers (routeMarkers): the finish on the line's own
+  // last point, one loop marker where it would touch the start.
+  const first = pts[0]!
+  const last = pts[pts.length - 1]!
+  for (const end of routeEnds(first, last, endsJoined(first, last))) drawRouteMarker(ctx, end.kind, end.at, palette.acc)
 
   if (reps) drawRepsLegend(ctx, scene, middleH)
 }
