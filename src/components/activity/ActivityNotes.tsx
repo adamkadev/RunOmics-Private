@@ -25,17 +25,16 @@ async function notesStore() {
 /**
  * The note, through the app (design review, Oct 2026): a private site's gate
  * then covers it, and Firestore lets only the owner read notes directly. A
- * server without the admin credentials answers 503, and the owner - whom the
- * rules still let in - reads it straight from Firestore, so an editor never
- * opens empty over a note it could not fetch.
+ * server without the admin credentials answers `available: false`, and the
+ * owner - whom the rules still let in - reads it straight from Firestore, so
+ * an editor never opens empty over a note it could not fetch.
  */
 async function readNote(activityId: string): Promise<ActivityNote | null> {
   const response = await fetch(`/api/activities/${encodeURIComponent(activityId)}/note`)
-  if (response.ok) {
-    const data = (await response.json()) as ActivityNote
-    return data.note !== '' || data.tags.length > 0 ? data : null
-  }
-  if (response.status !== 503 || !isClientFirebaseConfigured) return null
+  if (!response.ok) return null
+  const data = (await response.json()) as ({ available: true } & ActivityNote) | { available: false }
+  if (data.available) return data.note !== '' || data.tags.length > 0 ? { note: data.note, tags: data.tags } : null
+  if (!isClientFirebaseConfigured) return null
   const { firestore: { doc, getDoc }, db } = await notesStore()
   const snap = await getDoc(doc(db, 'activityNotes', activityId))
   return snap.exists() ? (snap.data() as ActivityNote) : null

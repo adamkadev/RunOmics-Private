@@ -17,18 +17,22 @@ describe('/api/activities/[id]/note', () => {
     getActivityNote.mockResolvedValue({ available: true, note: { note: 'Felt sick', tags: ['illness'] } })
     const response = await get('101')
     expect(getActivityNote).toHaveBeenCalledWith('101')
-    expect(await response.json()).toEqual({ note: 'Felt sick', tags: ['illness'] })
+    expect(await response.json()).toEqual({ available: true, note: 'Felt sick', tags: ['illness'] })
     expect(response.headers.get('cache-control')).toBe('private, no-store')
   })
 
   it('answers an empty note for a run nobody annotated', async () => {
     getActivityNote.mockResolvedValue({ available: true, note: null })
-    expect(await (await get('102')).json()).toEqual({ note: '', tags: [] })
+    expect(await (await get('102')).json()).toEqual({ available: true, note: '', tags: [] })
   })
 
+  // Not a 503: a deployment without notes is not an error, and the browser
+  // would log one on every activity page.
   it('says when notes cannot be read, rather than that there is none', async () => {
     getActivityNote.mockResolvedValue({ available: false })
-    expect((await get('103')).status).toBe(503)
+    const response = await get('103')
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ available: false })
   })
 
   it('never reads a path that is not one document', async () => {

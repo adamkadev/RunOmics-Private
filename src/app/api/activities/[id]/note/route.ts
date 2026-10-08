@@ -20,7 +20,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params
   if (!isNoteId(id)) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  // A server without the admin credentials says so in the answer rather than
+  // as a 503: a deployment without notes is not an error, and every activity
+  // page would log one.
   const read = await getActivityNote(id)
-  if (!read.available) return NextResponse.json({ error: 'Notes are unavailable' }, { status: 503, headers: NO_STORE })
-  return NextResponse.json(read.note ?? { note: '', tags: [] }, { headers: NO_STORE })
+  if (!read.available) return NextResponse.json({ available: false }, { headers: NO_STORE })
+  return NextResponse.json({ available: true, ...(read.note ?? { note: '', tags: [] }) }, { headers: NO_STORE })
 }

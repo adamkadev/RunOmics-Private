@@ -62,7 +62,7 @@ async function openNotes() {
   await userEvent.click(row)
 }
 
-let mockNoteApiStatus = 200
+let mockNotesUnavailable = false
 let mockFirestoreReads = 0
 /** The rules: only the owner reads a note straight from Firestore. */
 let mockFirestoreDenied = false
@@ -72,8 +72,9 @@ let mockFirestoreDenied = false
 function noteApi(url: string) {
   const id = decodeURIComponent(url.split('/')[3] ?? '')
   mockLastRequestedId = id
-  const ok = mockNoteApiStatus === 200
-  return Promise.resolve({ ok, status: mockNoteApiStatus, json: async () => mockNotesById[id] ?? { note: '', tags: [] } })
+  // "Unavailable" is a server without the admin credentials: the answer says so.
+  const body = mockNotesUnavailable ? { available: false } : { available: true, ...(mockNotesById[id] ?? { note: '', tags: [] }) }
+  return Promise.resolve({ ok: true, status: 200, json: async () => body })
 }
 
 beforeEach(() => {
@@ -81,7 +82,7 @@ beforeEach(() => {
   mockAllNotes = []
   mockNotesById = {}
   mockLastRequestedId = ''
-  mockNoteApiStatus = 200
+  mockNotesUnavailable = false
   mockFirestoreReads = 0
   mockFirestoreDenied = false
   vi.stubGlobal('fetch', vi.fn(noteApi))
@@ -245,7 +246,7 @@ describe('ActivityNotes across a client-side navigation', () => {
 
 describe('ActivityNotes when the server cannot read notes', () => {
   beforeEach(() => {
-    mockNoteApiStatus = 503
+    mockNotesUnavailable = true
     mockNotesById = { a1: { note: 'legs were dead', tags: [] } }
   })
 
