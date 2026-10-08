@@ -11,6 +11,7 @@ import { kindOfType, type SessionKind } from './todayVerdict'
 /** The next session on the plan after today, as the hero's rest row names it. */
 export interface NextSession {
   date: string
+  /** Its name for a line of prose: the coach's short name where there is one. */
   title: string
   /** Whole planned km ("10"), or null when the plan gives no distance. */
   km: string | null
@@ -58,7 +59,7 @@ export function findNextSession(
     const { workout, kind } = session
     return {
       date,
-      title: workoutSummary(workout).title,
+      title: workoutSummary(workout).shortTitle,
       km: workout.distanceM ? formatPlannedKm(workout.distanceM / 1000) : null,
       inDays: i,
       kind,
@@ -95,8 +96,9 @@ export function findLastRun(
   zones: TrainingZonesData | null = null,
 ): LastRun | null {
   const s = t.dashboard.todayHero
+  // A row: the coach's short name where there is one (design review, Oct 2026).
   const title = (activity: ActivitySummary, workout: PlanWorkoutView | HeroWorkoutView | null) =>
-    s.doneTitle(workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }).title : activity.description || t.activityTypes[activity.type])
+    s.doneTitle(workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }).shortTitle : activity.description || t.activityTypes[activity.type])
   if (todayActivity) {
     return { state: 'done', date: today, title: title(todayActivity, todayWorkout), detail: ranDetail(todayActivity, todayWorkout), href: `/activities/${todayActivity.id}` }
   }
@@ -114,7 +116,7 @@ export function findLastRun(
   return {
     state: 'missed',
     date: yesterday,
-    title: s.missedTitle(formatWeekday(yesterday), workoutSummary(session.workout).title),
+    title: s.missedTitle(formatWeekday(yesterday), workoutSummary(session.workout).shortTitle),
     detail: s.notRun(km),
     href: '/plan',
   }

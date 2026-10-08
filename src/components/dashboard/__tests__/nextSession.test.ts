@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { WorkoutPrescription } from '@/domain/coaching/types'
 import { findLastRun, findNextSession } from '../nextSession'
+import { formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 function prescription(date: string, title: string, totalDistanceMeters: number): WorkoutPrescription {
@@ -70,5 +71,26 @@ describe('findLastRun', () => {
 
   it('is nothing after a day with neither', () => {
     expect(findLastRun('2026-10-09', null, null, [run('2026-10-06', 10)], [], [])).toBeNull()
+  })
+})
+
+// Design review, Oct 2026: a row names a session by the coach's short name,
+// where it has one; the tile keeps the whole name.
+describe('a session named under the naming rules', () => {
+  const named = (date: string): WorkoutPrescription => ({
+    ...prescription(date, 'Threshold · 3 × 8′ @ 4:25', 10_665),
+    type: 'threshold',
+    shortName: 'Threshold 3×8′',
+  })
+
+  it('is the short name in a row, the whole name on the tile', () => {
+    const next = findNextSession('2026-10-05', [view(named('2026-10-06'))], [])
+    expect(next).toMatchObject({ title: 'Threshold 3×8′', workout: { title: 'Threshold · 3 × 8′ @ 4:25', shortName: 'Threshold 3×8′' } })
+
+    const done = findLastRun('2026-10-07', null, null, [run('2026-10-06', 10.4)], [view(named('2026-10-06'))], [])
+    expect(done!.title).toBe(t.dashboard.todayHero.doneTitle('Threshold 3×8′'))
+
+    const missed = findLastRun('2026-10-07', null, null, [], [view(named('2026-10-06'))], [])
+    expect(missed!.title).toBe(t.dashboard.todayHero.missedTitle(formatWeekday('2026-10-06'), 'Threshold 3×8′'))
   })
 })

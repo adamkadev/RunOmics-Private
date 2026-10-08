@@ -11,6 +11,8 @@ import { t } from '@/i18n'
  */
 export interface WorkoutSummary {
   title: string
+  /** A tight row's name: the coach's short name, else the title. */
+  shortTitle: string
   durationSeconds: number | null
   distanceM: number | null
   /** The session's paces, each named, never merged into one range. */
@@ -43,6 +45,18 @@ export function stepClock(seconds: number): string {
   return seconds < 60 ? t.plan.session.seconds(Math.round(seconds)) : formatClock(seconds)
 }
 
+/**
+ * A session's parts as its steps give them: the easy body, when one block
+ * dwarfs the rest, the reps around it or making it up, and whether those reps
+ * are strides. Titles, captions and Today's bar all read a session this way.
+ */
+export function sessionParts(steps: WorkoutStep[]): { body: WorkoutStep | null; reps: WorkoutStep[]; strides: boolean } {
+  const efforts = steps.filter((s) => s.kind === 'effort')
+  const body = findBody(efforts)
+  const reps = body ? efforts.filter((e) => e !== body) : efforts.length > 1 ? efforts : []
+  return { body, reps, strides: !!body && reps.length > 0 && stepSeconds(reps[0]!) <= STRIDE_MAX_SECONDS }
+}
+
 export function repCaption(steps: WorkoutStep[]): string | null {
   const efforts = steps.filter((s) => s.kind === 'effort')
   if (efforts.length < 2) return null
@@ -56,16 +70,18 @@ export function repCaption(steps: WorkoutStep[]): string | null {
 }
 
 export function workoutSummary(
-  view: Pick<PlanWorkoutView, 'title' | 'duration' | 'distanceM' | 'structure'>,
+  view: Pick<PlanWorkoutView, 'title' | 'shortName' | 'duration' | 'distanceM' | 'structure'>,
 ): WorkoutSummary {
   const steps = view.structure ?? []
   const efforts = steps.filter((s) => s.kind === 'effort')
-  const body = findBody(efforts)
-  const reps = body ? efforts.filter((e) => e !== body) : efforts.length > 1 ? efforts : []
-  const strides = !!body && reps.length > 0 && stepSeconds(reps[0]!) <= STRIDE_MAX_SECONDS
+  const { body, reps, strides } = sessionParts(steps)
   const s = t.plan.session
 
-  const title = strides
+  // A session the coach named under the naming rules says what it is as
+  // written (design review, Oct 2026): "Easy · 54 min + 6 strides". Only an
+  // older title, "Strides 6 x 20s", is rebuilt - from the steps, never by
+  // reading the name.
+  const title = strides && !view.shortName
     ? s.stridesTitle(Math.round(stepSeconds(body!) / 60), reps.length, stepClock(stepSeconds(reps[0]!)))
     : view.title
 
@@ -81,6 +97,7 @@ export function workoutSummary(
 
   return {
     title,
+    shortTitle: view.shortName ?? title,
     durationSeconds: view.duration?.seconds ?? null,
     distanceM: view.distanceM,
     paces,

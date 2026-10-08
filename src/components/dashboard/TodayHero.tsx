@@ -68,7 +68,7 @@ function LastRunRow({ run }: { run: LastRun }) {
         {missed ? '✕' : <Check size={16} strokeWidth={2.6} />}
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="break-words text-sm font-semibold text-pretty text-foreground">{run.title}</span>
+        <span className="line-clamp-2 break-words text-sm font-semibold text-pretty text-foreground">{run.title}</span>
         <span className="text-xs leading-snug text-muted-foreground">{run.detail}</span>
       </span>
       <ChevronRight size={16} className="shrink-0 text-subtle" aria-hidden />
@@ -89,7 +89,9 @@ function SessionTile({ eyebrow, workout, title }: { eyebrow: string; workout: He
       <div className="flex items-center gap-3">
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-[11.5px] font-bold uppercase tracking-[0.08em] text-accent-text">{eyebrow}</span>
-          <span className="break-words text-[15px] font-semibold text-pretty text-foreground">{title}</span>
+          {/* Two lines at most, beside the button: an older name can run
+              to 41 characters (design review, Oct 2026). */}
+          <span className="line-clamp-2 break-words text-[15px] font-semibold text-pretty text-foreground">{title}</span>
           {detail && <span className="text-xs leading-snug text-muted-foreground">{detail}</span>}
         </span>
         <ButtonLink href="/plan" variant="secondary" size="sm" className="hit-44 shrink-0 px-3 font-medium">

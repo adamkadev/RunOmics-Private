@@ -51,3 +51,27 @@ describe('workoutSummary', () => {
     expect(todaySession(heroWorkoutView(view), null).title).toBe(summary.title)
   })
 })
+
+// Design review, Oct 2026: a name the coach wrote under the naming rules is
+// printed as given, and a tight row takes its short name.
+describe('a session named under the naming rules', () => {
+  const named = {
+    ...STRIDES,
+    prescription: { ...STRIDES.prescription, title: 'Easy · 51 min + 6 strides', shortName: 'Easy + strides' },
+  } as unknown as Parameters<typeof coachWorkoutView>[0]
+
+  it('keeps its name as written, where an older one is rebuilt from its steps', () => {
+    expect(workoutSummary(coachWorkoutView(named)).title).toBe('Easy · 51 min + 6 strides')
+    expect(workoutSummary(coachWorkoutView(STRIDES)).title).toBe(t.plan.session.stridesTitle(51, 6, t.plan.session.seconds(20)))
+  })
+
+  it('gives a tight row its short name, else the title', () => {
+    expect(workoutSummary(coachWorkoutView(named)).shortTitle).toBe('Easy + strides')
+    expect(workoutSummary(coachWorkoutView(STRIDES)).shortTitle).toBe(workoutSummary(coachWorkoutView(STRIDES)).title)
+  })
+
+  it('carries the short name to Today', () => {
+    expect(heroWorkoutView(coachWorkoutView(named)).shortName).toBe('Easy + strides')
+    expect(heroWorkoutView(coachWorkoutView(STRIDES))).not.toHaveProperty('shortName')
+  })
+})

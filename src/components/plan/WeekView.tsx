@@ -131,7 +131,8 @@ function findNextPlanned(
     const d = days[i]!
     const coach = byDateCoach?.get(d.date)?.find((v) => v.state !== 'cancelled')
     const plan = byDatePlanned.get(d.date)
-    const title = coach?.prescription.title ?? sessionTitle(plan?.name, plan?.type as ActivityType | undefined) ?? null
+    // A line of prose: the coach's short name where there is one.
+    const title = coach?.prescription.shortName ?? coach?.prescription.title ?? sessionTitle(plan?.name, plan?.type as ActivityType | undefined) ?? null
     if (title) return { weekday: WEEKDAY_SHORT_INDEX[new Date(d.date + 'T00:00:00').getDay()]!, title }
   }
   return null
@@ -233,7 +234,9 @@ function WeekSessionRow({
       </span>
       <TypeDot type={workout.type} size={8} />
       <span className="flex min-w-0 flex-col gap-0.5">
-        <span className="break-words text-sm font-semibold text-foreground text-pretty">{workout.title}</span>
+        {/* Two lines at most: a name from before the naming rules can run
+            to 41 characters (design review, Oct 2026). */}
+        <span className="line-clamp-2 break-words text-sm font-semibold text-foreground text-pretty">{workout.title}</span>
         {(workout.detail || state === 'missed') && (
           <span className="break-words text-xs text-muted-foreground text-pretty">
             {state === 'missed' && <span className="font-medium text-[var(--neg)]">{t.sessionState.missed}</span>}
@@ -430,16 +433,17 @@ export function WeekView({
         const coach = (byDateCoach?.get(d.date) ?? []).filter((v) => v.state !== 'cancelled')
         if (coach.length > 0) {
           const plan = byDatePlanned.get(d.date) ?? null
-          // Titled by workoutSummary, as the day card and Today title it.
+          // Titled by workoutSummary, as the day card and Today title it: a
+          // row takes the short name (design review, Oct 2026).
           return coach.map((view) => {
             const planned = coachWorkoutView(view, trainingZones, coach.length === 1 ? plan : null)
-            return { ...planned, title: workoutSummary(planned).title, detail: plannedRowDetail(planned), done: false }
+            return { ...planned, title: workoutSummary(planned).shortTitle, detail: plannedRowDetail(planned), done: false }
           })
         }
         const plan = byDatePlanned.get(d.date)
         if (!plan) return []
         const planned = plannedWorkoutView(plan, trainingZones)
-        return [{ ...planned, title: workoutSummary(planned).title, detail: plannedRowDetail(planned), done: false }]
+        return [{ ...planned, title: workoutSummary(planned).shortTitle, detail: plannedRowDetail(planned), done: false }]
       })
   }, [days, byDateCoach, byDatePlanned, trainingZones])
 
