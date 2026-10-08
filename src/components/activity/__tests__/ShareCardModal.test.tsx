@@ -2,7 +2,6 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ShareActivity } from '@/lib/shareCardStats'
-import { SHARE_THEME_KEY } from '@/lib/useShareCardPrefs'
 import { t } from '@/i18n'
 import { ShareCardModal } from '../ShareCardModal'
 
@@ -58,13 +57,16 @@ describe('ShareCardModal', () => {
     expect(document.querySelectorAll('canvas')).toHaveLength(1)
   })
 
-  it('opens the background on the app theme and remembers a pick', async () => {
+  // The owner's report, Oct 2026: a background picked on one share stayed on the next.
+  it('opens the background on the app theme every time, a pick lasting only while the sheet is open', async () => {
     theme.resolved = 'light'
-    open()
+    const { unmount } = open()
     expect(checked('Background')).toBe('Light')
     await userEvent.click(screen.getByRole('radio', { name: 'Dark' }))
     expect(checked('Background')).toBe('Dark')
-    expect(localStorage.getItem(SHARE_THEME_KEY)).toBe('dark')
+    unmount()
+    open()
+    expect(checked('Background')).toBe('Light')
   })
 
   it('shows Share with Copy image beside it, or Download where files cannot be shared', () => {
