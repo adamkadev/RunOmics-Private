@@ -61,3 +61,11 @@ def test_refuses_to_guess_without_a_configuration(tmp_path, monkeypatch, capsys)
 
 def test_an_empty_workspace_has_nothing_to_verify(tmp_path):
     assert verify_privacy_zone.main(tmp_path) == 0
+
+
+def test_has_nothing_to_verify_when_the_zones_are_off(tmp_path, capsys, monkeypatch):
+    monkeypatch.setenv("PRIVACY_ZONES", "off")
+    root = _write_workspace(tmp_path, [{"id": "1", "route": [_point(0), _point(100)]}])
+
+    assert verify_privacy_zone.main(root) == 0
+    assert "off" in capsys.readouterr().out

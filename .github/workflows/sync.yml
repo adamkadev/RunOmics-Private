@@ -131,7 +131,8 @@ jobs:
           # Without these the sync refuses every GPS activity; failing here says
           # why before Garmin is contacted.
           [ -n "$PRIVACY_ZONES" ]            || MISSING="$MISSING PRIVACY_ZONES"
-          [ -n "$PRIVACY_RADIUS_M" ]         || MISSING="$MISSING PRIVACY_RADIUS_M"
+          # PRIVACY_ZONES=off turns the zones off on purpose and needs no radius.
+          [ -n "$PRIVACY_RADIUS_M" ] || [ "$PRIVACY_ZONES" = "off" ] || MISSING="$MISSING PRIVACY_RADIUS_M"
           if [ -n "$MISSING" ]; then
             echo "::error::Environment '${{ matrix.profile }}' is missing secret(s):$MISSING"
             echo "Every profile syncs into its own private data repository and never"

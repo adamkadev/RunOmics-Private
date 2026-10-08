@@ -28,7 +28,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from data_directory import get_data_dir
-from processing.privacy import PrivacyConfigError, configured_zones, distance_m
+from processing.privacy import PrivacyConfigError, configured_zones, distance_m, privacy_off
 
 # Endpoints within this distance of a zone are the ones an observer would use
 # to draw its ring, so they are the ones worth reporting.
@@ -47,6 +47,9 @@ def main(data_dir: Path | None = None) -> int:
     except PrivacyConfigError as exc:
         print(f"Cannot verify: {exc}")
         return 2
+    if privacy_off():
+        print("Privacy zones are off (PRIVACY_ZONES=off): routes are stored as recorded, nothing to verify.")
+        return 0
 
     activities_dir = (data_dir or get_data_dir()) / "activities"
     if not (activities_dir / "index.json").exists():
