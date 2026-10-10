@@ -694,6 +694,14 @@ describe('the race prediction range (v4.8)', () => {
 })
 
 describe('Load trend and Recovery (v5.4)', () => {
+  // Pinned like the board's other blocks: unpinned, the live window ended on
+  // the real date and lost the fixture's first days above range from Oct 9.
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(`${TODAY}T12:00:00`))
+  })
+  afterAll(() => vi.useRealTimers())
+
   const nights = (n: number, hrv: (i: number) => number, rhr: (i: number) => number) =>
     Array.from({ length: n }, (_, i) => ({ date: day(n - 1 - i), hrv: hrv(i), restingHr: rhr(i) }))
   const wobble = (i: number) => [0, 2, -1, 3, -2, 1, -3, 2][i % 8]!

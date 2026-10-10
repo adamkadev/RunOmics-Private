@@ -60,8 +60,16 @@ describe('budget', () => {
     expect(BACKFILL_POOL.filter((model) => MODEL_POOL.includes(model))).toEqual([])
   })
 
-  it('carries a night of read surfaces even with one model retired out from under us', () => {
-    expect(budgetLosingOneModel(MODEL_POOL)).toBeGreaterThanOrEqual(SURFACE_CALLS_PER_NIGHT * 2)
+  // Oct 2026: 3.7 Flash was retired into 3.8, which is the case this budget is for.
+  it('carries two worst nights of read surfaces, and one with another model retired', () => {
+    const poolBudget = MODEL_POOL.reduce((sum, model) => sum + dailyBudget(model), 0)
+    expect(poolBudget).toBeGreaterThanOrEqual(SURFACE_CALLS_PER_NIGHT * 2)
+    expect(budgetLosingOneModel(MODEL_POOL)).toBeGreaterThanOrEqual(SURFACE_CALLS_PER_NIGHT)
+  })
+
+  it('pools 3.7 Flash no more: Google answers it with 3.8, which is already in the pool', () => {
+    expect(MODEL_POOL).not.toContain('gemini-3.7-flash')
+    expect(new Set(MODEL_POOL).size).toBe(MODEL_POOL.length)
   })
 
   it('clears a wholly invalidated history in one night even with one model retired', () => {

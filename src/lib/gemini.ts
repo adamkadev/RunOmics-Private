@@ -3,7 +3,12 @@ import type { Limits } from '@/domain/ai/prompt'
 import { activeLocale } from '@/i18n'
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
-export const CALL_TIMEOUT_MS = 30_000
+/**
+ * 3.8 Flash thinks for longer than the models before it, even at 'low', and
+ * its calls ran into a 30 s limit (Oct 2026); 45 s still leaves a 280 s pass
+ * room for a fallback model after a call that times out.
+ */
+export const CALL_TIMEOUT_MS = 45_000
 
 const FRENCH_ELISION_MISSING = /\b(?:[LldDsScCnNjJtTmM]|[Qq]ue)\s+(?=[aeiouyàâäéèêëïîôöùûühAEIOUYÀÂÄÉÈÊËÏÎÔÖÙÛÜH])/
 const FRENCH_ACCENT = /[àâäéèêëïîôöùûüçÀÂÄÉÈÊËÏÎÔÖÙÛÜÇ]/
@@ -167,6 +172,19 @@ interface Attempt {
   retryable: boolean
 }
 
+/**
+ * Gemini 3.8 Flash and later take no sampling settings - temperature, top_p
+ * and top_k are deprecated there, its thinking level and the response
+ * schema steer it instead (Google's 3.8 Flash migration notes) - so only an
+ * older model is sent one.
+ */
+export function takesTemperature(model: string): boolean {
+  const version = model.match(/^gemini-(\d+)\.(\d+)/)
+  if (!version) return true
+  const [major, minor] = [Number(version[1]), Number(version[2])]
+  return major < 3 || (major === 3 && minor < 8)
+}
+
 async function attemptStructuredJson(request: StructuredRequest): Promise<Attempt> {
   try {
     const res = await fetch(`${ENDPOINT}/${request.model}:generateContent`, {
@@ -178,7 +196,7 @@ async function attemptStructuredJson(request: StructuredRequest): Promise<Attemp
         generationConfig: {
           responseMimeType: 'application/json',
           responseSchema: request.responseSchema,
-          temperature: request.temperature ?? 0.4,
+          ...(takesTemperature(request.model) ? { temperature: request.temperature ?? 0.4 } : {}),
           thinkingConfig: { thinkingLevel: 'low' },
         },
       }),
