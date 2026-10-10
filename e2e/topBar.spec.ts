@@ -55,8 +55,10 @@ async function textUnderTheBar(page: Page): Promise<string[]> {
         if (Number(getComputedStyle(node).opacity) === 0) faded = true
       }
       if (faded) continue
-      // Sample the text's part inside the band, and its first line just below.
-      for (const y of [Math.max(box.top, 0) + 1, Math.min(box.bottom, band) - 1]) {
+      // Sample the text's part inside the band, top and bottom - both inside
+      // it: a text box starting 1 px above the band's foot sampled its top
+      // at top + 1, the first pixel under the bar, and read as a leak there.
+      for (const y of [Math.min(Math.max(box.top, 0) + 1, band - 1), Math.min(box.bottom, band) - 1]) {
         const hit = document.elementFromPoint(box.left + Math.min(box.width / 2, 20), y)
         if (hit && main.contains(hit) && !hit.closest('[data-testid="sticky-bar"]')) {
           leaks.push(el.textContent!.trim().slice(0, 40))

@@ -79,8 +79,13 @@ function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
 }
 
+/**
+ * A call that ran out its time is the same luck as a 503 (Oct 2026): 3.8
+ * Flash ran into the call timeout on every surface of a day, and with the
+ * walk stopping there the next model in the pool was never asked.
+ */
 function isTransient(reason: string): boolean {
-  return reason.startsWith('http 500') || reason.startsWith('http 503')
+  return reason.startsWith('http 500') || reason.startsWith('http 503') || reason.startsWith('TimeoutError')
 }
 
 export function shouldTryAnotherModel(reason: string): boolean {

@@ -976,10 +976,15 @@ budget so the deadline is checked against the whole cost of a call, not just the
 before it; otherwise a call reserved just inside the ceiling runs past it, Vercel kills the
 invocation, and the partial result the caller had already earned becomes a 504.
 
-`CALL_TIMEOUT_MS` is 30s. Gemini 3.x cannot turn thinking off (2.5's `thinkingBudget: 0` does
+`CALL_TIMEOUT_MS` is 45s. Gemini 3.x cannot turn thinking off (2.5's `thinkingBudget: 0` does
 not apply to this family), `'low'` is the floor, and it still spends real tokens on a
 schema-constrained answer: a French one measured 23s live at 360 thinking tokens, where 15s
-was aborting calls that would have succeeded seconds later.
+was aborting calls that would have succeeded seconds later. 3.8 Flash thinks for longer
+still, and on Oct 10 2026 its calls ran into the 30s the limit was then, on every surface of
+both syncs. A call that times out now hands the request to the next model in the pool, as a
+503 does. 3.8 Flash also takes no sampling settings (`temperature`, `top_p` and `top_k` are
+deprecated there), so `generateStructuredJson` sends a temperature only to the models before
+it.
 
 **A transient failure moves to the next model, not the next surface.** 429 and 404 mean that
 model is done for the day, and the pool exists so the work can continue — but the loop used to
@@ -987,8 +992,8 @@ abandon the item and carry that recovery only as far as the *next* item's `reser
 verdict pending, a single Google-side 503 therefore wasted an entire pass; two passes in a row
 went that way before a run verdict finally landed. `generateFromPool()`
 (`src/application/ai/insightPass.ts`, not the route handler any more) now retries the same
-request on a different pool member, up to three attempts, for anything transient (500, 503) or
-closed (429, 404). Copy the validator rejected is not retried: that is the documented
+request on a different pool member, up to three attempts, for anything transient (500, 503, a
+timeout) or closed (429, 404). Copy the validator rejected is not retried: that is the documented
 reject-and-requeue path, and spending a second model on it would buy nothing. Failing to
 reserve at all is reported separately from a model failing, because only the former means the
 caller should stop looping. The pool is the only retry: `generateInsight` sends one request
@@ -1008,15 +1013,18 @@ the verdicts for runs that just landed — which is a few calls a night. (The se
 the four Analytics tab cards were written here too until v4.16.4, long after v4.6 replaced them
 on the page with the rule-based coach read.) The five passes per night do not
 multiply that: once a surface's hash matches, the pass reports `unchanged` and spends nothing.
-Three Flash models give it 54, so it still runs at 2.6x its worst night after one of them is
-retired out from under us.
+Two Flash models give it 36, 2.6x its worst night, and one of them alone still covers that
+night. There were three until Oct 2026, when Google retired 3.7 Flash into 3.8: asked under
+its old name it was 3.8 asked twice, paced and budgeted as if it were another model, so the
+second ask came inside 3.8's minute and drew on its day.
 
 `BACKFILL_POOL` carries the per-activity verdict queue, whose demand is not the one run a day
 but the whole eligible history at once: any change to `runHistory` or the verdict facts moves
 every hash, and the 90-day horizon plus the record holders is around 100 verdicts. Two Lite
 models give it 996. What actually caps a pass there is the invocation clock rather than the
-quota — `reserve()` stops handing out models 33s before the 280s ceiling, and at Lite's 5s
-spacing that is roughly 24 verdicts, which is what `DEFAULT_RUN_VERDICTS_PER_RUN` is set to.
+quota — `reserve()` stops handing out models 48s before the 280s ceiling, and at Lite's 5s
+spacing that is roughly two dozen verdicts, which is what `DEFAULT_RUN_VERDICTS_PER_RUN` (24)
+is set to.
 Five passes clear the 100 with room to spare. The pools share one ledger and one spender, so a
 verdict backfill can never starve the dashboard even when it is churning through a rebuild.
 

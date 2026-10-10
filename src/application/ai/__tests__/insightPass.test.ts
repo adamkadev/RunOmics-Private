@@ -166,6 +166,11 @@ describe('shouldTryAnotherModel', () => {
     expect(shouldTryAnotherModel('http 500: internal')).toBe(true)
   })
 
+  // Oct 2026: 3.8 Flash timed out on every surface of a day and 3.6 was never asked.
+  it('moves on from a call that ran out its time', () => {
+    expect(shouldTryAnotherModel('TimeoutError: TimeoutError: The operation was aborted due to timeout')).toBe(true)
+  })
+
   it('does not burn another model on copy the validator rejected', () => {
     expect(shouldTryAnotherModel('headline 61 > 56 chars')).toBe(false)
     expect(shouldTryAnotherModel('headline or body missing')).toBe(false)
