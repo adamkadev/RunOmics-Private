@@ -1,6 +1,6 @@
 import { DAY_MS } from '@/lib/calendarDate'
 import ExcelJS from 'exceljs'
-import type { Activity, PlannedWorkout } from '@/domain/activity/types'
+import type { Activity, ActivitySplit, PlannedWorkout } from '@/domain/activity/types'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { AthleteHistoryEntry } from '@/infrastructure/repositories/JsonAthleteHistoryRepository'
 import type { GoalYear, PbYear, UpcomingRaceYear } from './GetGoalsData'
@@ -12,7 +12,7 @@ import type { TrainingPlanRaw } from '@/infrastructure/repositories/JsonTraining
 import type { TrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import type { Vo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
-import { sessionExecution } from '@/domain/activity/sessionExecution'
+import { MIN_REP_SECONDS, repStats, sessionExecution } from '@/domain/activity/sessionExecution'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
 import { loadSeries } from '@/domain/training/loadSeries'
 import { round } from '@/lib/math'
@@ -232,6 +232,7 @@ function guideRows(generatedAt: Date): RowData[] {
     { section: 'Caveat', item: 'daily_plan_completion', description: 'planned_day_completed only means at least one activity occurred on a planned date; it does not prove the prescribed workout was followed.' },
     { section: 'Sheet', item: 'Athlete', description: 'Current athlete profile and physiological reference values.' },
     { section: 'Sheet', item: 'Activities', description: 'One row per activity with conditions, intensity, execution, records, and gear.' },
+    { section: 'Sheet', item: 'Intervals', description: 'One row per segment of a workout with reps or strides - warm-up, each rep or stride, each recovery, cool-down - with its own pace and heart rate.' },
     { section: 'Sheet', item: 'Daily Status', description: 'One row per calendar day, including rest days, with load, status, plan, and race context.' },
     { section: 'Sheet', item: 'Records', description: 'Official yearly personal bests plus locally derived records when no official record exists.' },
     { section: 'Sheet', item: 'Races', description: 'Completed race activities and calendar races, joined when date and distance match.' },
@@ -277,6 +278,7 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds): RowData[]
   return [...data.activities].sort((a, b) => a.date.localeCompare(b.date)).map((activity) => {
     const decoupling = aerobicDecoupling(activity)
     const execution = sessionExecution(activity)
+    const reps = repStats(activity)
     const shoe = activity.gearId ? shoes.get(activity.gearId) : undefined
     return {
       activity_id: activity.id,
@@ -332,8 +334,61 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds): RowData[]
       execution_fade_sec_per_km: execution?.kind === 'intervals' ? execution.fadeSecPerKm : null,
       execution_spread_sec_per_km: execution?.spreadSecPerKm ?? null,
       execution_hr_drift_bpm: execution?.hrDriftBpm ?? null,
+      execution_rep_paces_sec_per_km: execution?.kind === 'intervals' ? execution.repPaces.join(' | ') : null,
+      execution_rep_avg_pace_sec_per_km: reps?.paceSecPerKm ?? null,
+      execution_rep_avg_hr_bpm: reps?.avgHr ?? null,
+      execution_rep_avg_seconds: reps?.secondsPerRep ?? null,
       comment: activity.comment || null,
     }
+  })
+}
+
+const SEGMENT: Record<Exclude<ActivitySplit['type'], 'lap'>, string> = {
+  interval_warmup: 'warmup',
+  interval_active: 'rep',
+  interval_rest: 'recovery',
+  interval_recovery: 'recovery',
+  interval_cooldown: 'cooldown',
+}
+
+/**
+ * Each structured segment on its own row, so a session reads rep by rep
+ * rather than through a whole-run average that the warm-up and recoveries
+ * dilute. Reps and strides are told apart as sessionExecution does: a short
+ * effort beside a continuous block is a stride, and a single continuous
+ * block is the run itself rather than one rep. Sessions with neither reps nor
+ * strides are left out, since one row would only repeat the Activities sheet.
+ */
+function intervalRows(data: TrainingWorkbookData): RowData[] {
+  return [...data.activities].sort((a, b) => a.date.localeCompare(b.date)).flatMap((activity) => {
+    const segments = (activity.splits ?? []).filter((split) => split.type !== 'lap')
+    const active = segments.filter((split) => split.type === 'interval_active')
+    const continuous = active.filter((split) => split.durationSec >= MIN_REP_SECONDS).length
+    const segmentOf = (split: ActivitySplit): string => {
+      if (split.type !== 'interval_active') return SEGMENT[split.type as keyof typeof SEGMENT]
+      if (split.durationSec < MIN_REP_SECONDS) return continuous ? 'stride' : 'rep'
+      return continuous >= 2 ? 'rep' : 'steady'
+    }
+    const labelled = segments.map((split) => ({ split, segment: segmentOf(split) }))
+    if (!labelled.some(({ segment }) => segment === 'rep' || segment === 'stride')) return []
+
+    const counts = { rep: 0, stride: 0 }
+    return labelled.map(({ split, segment }, index) => {
+      const counted = segment === 'rep' || segment === 'stride'
+      if (counted) counts[segment] += 1
+      return {
+        activity_id: activity.id,
+        date: excelDate(activity.date),
+        description: activity.description,
+        segment_index: index + 1,
+        segment,
+        rep_index: counted ? counts[segment] : null,
+        duration_seconds: round(split.durationSec, 0),
+        distance_m: round(split.distanceM, 0),
+        pace_sec_per_km: split.distanceM > 0 ? round((split.durationSec / split.distanceM) * 1000, 0) : null,
+        avg_heart_rate_bpm: split.avgHr,
+      }
+    })
   })
 }
 
@@ -680,8 +735,14 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
     'best_effort_10k_seconds', 'best_effort_half_marathon_seconds', 'best_effort_marathon_seconds',
     'aerobic_decoupling_pct', 'aerobic_decoupling_status', 'execution_kind', 'execution_reps',
     'execution_fade_sec_per_km', 'execution_spread_sec_per_km', 'execution_hr_drift_bpm',
-    { key: 'comment', width: 36, wrap: true },
+    { key: 'execution_rep_paces_sec_per_km', width: 22 }, 'execution_rep_avg_pace_sec_per_km',
+    'execution_rep_avg_hr_bpm', 'execution_rep_avg_seconds', { key: 'comment', width: 36, wrap: true },
   ), activityRows(data, athleteHrBounds))
+
+  addDataSheet(workbook, 'Intervals', columns(
+    { key: 'activity_id', width: 24 }, { key: 'date', ...DATE_COLUMN }, { key: 'description', width: 28, wrap: true },
+    'segment_index', 'segment', 'rep_index', 'duration_seconds', 'distance_m', 'pace_sec_per_km', 'avg_heart_rate_bpm',
+  ), intervalRows(data))
 
   addDataSheet(workbook, 'Daily Status', columns(
     { key: 'date', ...DATE_COLUMN }, 'actual_activity_count', 'actual_distance_km', 'actual_duration_seconds',

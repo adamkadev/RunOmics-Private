@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs'
 import { describe, expect, it } from 'vitest'
-import type { Activity } from '@/domain/activity/types'
+import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import { buildTrainingWorkbook, type TrainingWorkbookData } from '../GetTrainingWorkbook'
 
 function activity(overrides: Partial<Activity> = {}): Activity {
@@ -96,7 +96,7 @@ describe('buildTrainingWorkbook', () => {
     const workbook = buildTrainingWorkbook(data(), new Date('2026-01-03T12:00:00.000Z'))
 
     expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
-      'Guide', 'Athlete', 'Activities', 'Daily Status', 'Records', 'Races', 'Training Plan',
+      'Guide', 'Athlete', 'Activities', 'Intervals', 'Daily Status', 'Records', 'Races', 'Training Plan',
       'Fitness History', 'Race Predictions', 'Shoes', 'Goals', 'Load Balance',
     ])
     expect(workbook.worksheets.every((sheet) => sheet.getTables().length === 1)).toBe(true)
@@ -114,6 +114,52 @@ describe('buildTrainingWorkbook', () => {
     expect(columns).not.toContain('route')
     expect(columns).not.toContain('polyline')
     expect(columns).not.toContain('hrSamples')
+  })
+
+  it('exports each rep of a structured session with its own pace and heart rate', () => {
+    const split = (type: ActivitySplit['type'], durationSec: number, distanceM: number, avgHr: number | null): ActivitySplit =>
+      ({ type, durationSec, distanceM, avgSpeedMs: distanceM / durationSec, avgHr, laps: [] })
+    const input = data()
+    input.activities = [activity({
+      id: 'threshold-1',
+      description: 'Threshold · 3 × 8′ @ 4:25',
+      splits: [
+        split('interval_warmup', 720, 2100, 140),
+        split('interval_active', 460, 1692, 167),
+        split('interval_recovery', 240, 640, 150),
+        split('interval_active', 460, 1751, 170),
+        split('interval_recovery', 240, 640, 152),
+        split('interval_active', 460, 1769, 169),
+        split('interval_active', 20, 90, null),
+        split('interval_cooldown', 600, 1700, 145),
+      ],
+    }), activity({
+      id: 'easy-1',
+      splits: [split('interval_active', 3000, 9000, 148)],
+    }), activity({
+      id: 'strides-1',
+      splits: [split('interval_active', 3000, 9000, 148), split('interval_active', 20, 100, null), split('interval_recovery', 60, 150, 160)],
+    })]
+
+    const workbook = buildTrainingWorkbook(input, new Date('2026-01-03T12:00:00.000Z'))
+    const activities = workbook.getWorksheet('Activities')!
+    const activityColumns = headers(activities)
+    const threshold = activities.getRow(2)
+    expect(threshold.getCell(activityColumns.indexOf('execution_rep_paces_sec_per_km') + 1).value).toBe('272 | 263 | 260')
+    expect(threshold.getCell(activityColumns.indexOf('execution_rep_avg_hr_bpm') + 1).value).toBe(169)
+
+    const intervals = workbook.getWorksheet('Intervals')!
+    const columns = headers(intervals)
+    const rows = [...Array(intervals.rowCount - 1)].map((_, index) => intervals.getRow(index + 2))
+    const cell = (row: ExcelJS.Row, key: string) => row.getCell(columns.indexOf(key) + 1).value
+
+    expect(rows.map((row) => cell(row, 'activity_id'))).toEqual([...Array(8).fill('threshold-1'), ...Array(3).fill('strides-1')])
+    expect(rows.map((row) => cell(row, 'segment'))).toEqual(
+      ['warmup', 'rep', 'recovery', 'rep', 'recovery', 'rep', 'stride', 'cooldown', 'steady', 'stride', 'recovery'],
+    )
+    expect(rows.map((row) => cell(row, 'rep_index'))).toEqual([null, 1, null, 2, null, 3, 1, null, null, 1, null])
+    expect(cell(rows[1]!, 'pace_sec_per_km')).toBe(272)
+    expect(cell(rows[1]!, 'avg_heart_rate_bpm')).toBe(167)
   })
 
   it('keeps rest days in the daily status timeline', () => {
@@ -163,7 +209,7 @@ describe('buildTrainingWorkbook', () => {
     const reopened = new ExcelJS.Workbook()
     await reopened.xlsx.load(buffer)
 
-    expect(reopened.worksheets).toHaveLength(12)
+    expect(reopened.worksheets).toHaveLength(13)
     expect(reopened.getWorksheet('Activities')?.rowCount).toBe(1)
     expect(reopened.getWorksheet('Daily Status')?.rowCount).toBe(2)
   })
