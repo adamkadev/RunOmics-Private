@@ -162,6 +162,16 @@ describe('buildTrainingWorkbook', () => {
     expect(cell(rows[1]!, 'avg_heart_rate_bpm')).toBe(167)
   })
 
+  it('labels the Garmin zone floors as lower bounds', () => {
+    const input = data()
+    input.athlete = { ...input.athlete, hrZoneBoundsBpm: [112, 140, 156, 167, 173] }
+    const sheet = buildTrainingWorkbook(input, new Date('2026-01-03T12:00:00.000Z')).getWorksheet('Athlete')!
+    const columns = headers(sheet)
+
+    expect(columns).not.toContain('hr_zone_2_upper_bpm')
+    expect(sheet.getRow(2).getCell(columns.indexOf('hr_zone_2_lower_bpm') + 1).value).toBe(140)
+  })
+
   it('keeps rest days in the daily status timeline', () => {
     const workbook = buildTrainingWorkbook(data(), new Date('2026-01-03T12:00:00.000Z'))
     const sheet = workbook.getWorksheet('Daily Status')!
