@@ -1025,8 +1025,11 @@ the one after it brought no new activity, so nothing asked again. Now every sync
 anything - the timestamp alone included - runs the AI passes; with no new data it skips the
 wait for the new deployment and the other checks, and a pass with nothing left to do costs a
 few Firestore reads.
-Two Flash models give it 36, 2.6x its worst night, and one of them alone still covers that
-night. There were three until Oct 2026, when Google retired 3.7 Flash into 3.8: asked under
+Four Flash models give it 72, five times its worst night: 3.8 and 3.6 Flash first, then 3 Flash
+and 2.5 Flash, which joined in Oct 2026 with a free quota of their own and none of it used, after
+a day Google answered 3.8 and 3.6 with nothing but 503s and a run's verdict had nowhere else to
+go. 2.5 sets its thinking by a token budget (512, about what `'low'` spends here) where 3.x takes
+a level. The pool also held 3.7 Flash, until Google retired it into 3.8: asked under
 its old name it was 3.8 asked twice, paced and budgeted as if it were another model, so the
 second ask came inside 3.8's minute and drew on its day.
 

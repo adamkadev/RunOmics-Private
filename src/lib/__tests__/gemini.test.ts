@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { generateInsight, generateStructuredJson, takesTemperature } from '@/lib/gemini'
+import { generateInsight, generateStructuredJson, takesTemperature, thinkingConfig } from '@/lib/gemini'
 
 // generateStructuredJson retries a transient failure; tests skip the real waiting.
 const nap = () => Promise.resolve()
@@ -239,6 +239,23 @@ describe('generateStructuredJson transient failures', () => {
     expect(bodies[1]).toMatchObject({ temperature: 0.2 })
     expect(bodies[2]).toMatchObject({ temperature: 0.4 })
     expect([takesTemperature('gemini-3.9-flash'), takesTemperature('gemini-4.0-flash'), takesTemperature('gemini-3.10-flash')]).toEqual([false, false, false])
+  })
+
+  // Oct 2026: 2.5 Flash joined the pool, and 2.x sets thinking by a token budget, not a level.
+  it('sets thinking by level on Gemini 3, by budget on 2.5', async () => {
+    const bodies: Record<string, unknown>[] = []
+    vi.stubGlobal('fetch', vi.fn(async (_url: string, init: { body: string }) => {
+      bodies.push(JSON.parse(init.body).generationConfig)
+      return ok()
+    }))
+
+    await generateStructuredJson({ ...request, model: 'gemini-2.5-flash', temperature: 0.2 }, nap)
+    await generateStructuredJson({ ...request, model: 'gemini-3-flash-preview', temperature: 0.2 }, nap)
+
+    expect(bodies[0]).toMatchObject({ thinkingConfig: { thinkingBudget: 512 }, temperature: 0.2 })
+    expect(bodies[0]!.thinkingConfig).not.toHaveProperty('thinkingLevel')
+    expect(bodies[1]).toMatchObject({ thinkingConfig: { thinkingLevel: 'low' }, temperature: 0.2 })
+    expect(thinkingConfig('gemini-3.8-flash')).toEqual({ thinkingLevel: 'low' })
   })
 
   it('retries a timeout, which is the same kind of luck as a 503', async () => {

@@ -221,13 +221,22 @@ describe('generateFromPool', () => {
   })
 
   // Oct 2026: with two models the third attempt went back to the one that had just said 503.
-  it('asks each model once, then gives up naming each', async () => {
+  it('asks each model once, three at most, then gives up naming each', async () => {
     const generate = vi.fn().mockResolvedValue(fail('http 503: busy'))
 
     const attempt = await generateFromPool(deps({ generate }), MODEL_POOL, REQUEST)
 
+    const asked = MODEL_POOL.slice(0, 3)
+    expect(generate.mock.calls.map(([request]) => request.model)).toEqual(asked)
+    expect(attempt).toEqual({ ok: false, reason: asked.map((model) => `${model}: http 503: busy`).join(' | '), reserved: true })
+  })
+
+  it('never asks one model twice for the same item, however short the pool', async () => {
+    const generate = vi.fn().mockResolvedValue(fail('http 503: busy'))
+
+    await generateFromPool(deps({ generate }), [BEST, SECOND], REQUEST)
+
     expect(generate.mock.calls.map(([request]) => request.model)).toEqual([BEST, SECOND])
-    expect(attempt).toEqual({ ok: false, reason: `${BEST}: http 503: busy | ${SECOND}: http 503: busy`, reserved: true })
   })
 
   it('gives a GEMINI_MODEL override, one model for the whole pool, one chance', async () => {

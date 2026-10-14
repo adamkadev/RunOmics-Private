@@ -172,6 +172,12 @@ interface Attempt {
   retryable: boolean
 }
 
+/** "gemini-3.8-flash" is 3.8, "gemini-3-flash-preview" 3.0; null for a name that carries none. */
+function modelVersion(model: string): { major: number; minor: number } | null {
+  const version = model.match(/^gemini-(\d+)(?:\.(\d+))?-/)
+  return version ? { major: Number(version[1]), minor: Number(version[2] ?? 0) } : null
+}
+
 /**
  * Gemini 3.8 Flash and later take no sampling settings - temperature, top_p
  * and top_k are deprecated there, its thinking level and the response
@@ -179,10 +185,19 @@ interface Attempt {
  * older model is sent one.
  */
 export function takesTemperature(model: string): boolean {
-  const version = model.match(/^gemini-(\d+)\.(\d+)/)
+  const version = modelVersion(model)
   if (!version) return true
-  const [major, minor] = [Number(version[1]), Number(version[2])]
-  return major < 3 || (major === 3 && minor < 8)
+  return version.major < 3 || (version.major === 3 && version.minor < 8)
+}
+
+/**
+ * How much the model thinks before it answers. Gemini 3.x is set by level,
+ * 'low' its floor; 2.x by a token budget, and 512 is about what 'low' spends
+ * on these answers (Oct 2026: 2.5 Flash joined the pool as a fallback).
+ */
+export function thinkingConfig(model: string): { thinkingLevel: 'low' } | { thinkingBudget: number } {
+  const version = modelVersion(model)
+  return version && version.major < 3 ? { thinkingBudget: 512 } : { thinkingLevel: 'low' }
 }
 
 async function attemptStructuredJson(request: StructuredRequest): Promise<Attempt> {
@@ -197,7 +212,7 @@ async function attemptStructuredJson(request: StructuredRequest): Promise<Attemp
           responseMimeType: 'application/json',
           responseSchema: request.responseSchema,
           ...(takesTemperature(request.model) ? { temperature: request.temperature ?? 0.4 } : {}),
-          thinkingConfig: { thinkingLevel: 'low' },
+          thinkingConfig: thinkingConfig(request.model),
         },
       }),
       signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
