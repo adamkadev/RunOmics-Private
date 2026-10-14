@@ -992,8 +992,10 @@ abandon the item and carry that recovery only as far as the *next* item's `reser
 verdict pending, a single Google-side 503 therefore wasted an entire pass; two passes in a row
 went that way before a run verdict finally landed. `generateFromPool()`
 (`src/application/ai/insightPass.ts`, not the route handler any more) now retries the same
-request on a different pool member, up to three attempts, for anything transient (500, 503, a
-timeout) or closed (429, 404). Copy the validator rejected is not retried: that is the documented
+request on a different pool member, each member once and three at most, for anything
+transient (500, 503, a timeout) or closed (429, 404). Once each, because with two models a third
+attempt went straight back to the one that had just answered 503: in a day of Google's 503s
+that third request was a third of the budget, spent for nothing. Copy the validator rejected is not retried: that is the documented
 reject-and-requeue path, and spending a second model on it would buy nothing. Failing to
 reserve at all is reported separately from a model failing, because only the former means the
 caller should stop looping. The pool is the only retry: `generateInsight` sends one request
@@ -1012,9 +1014,22 @@ surfaces a reader actually looks at — `today`, a PB celebration, a shoe verdic
 the verdicts for runs that just landed — which is a few calls a night. (The season headline and
 the four Analytics tab cards were written here too until v4.16.4, long after v4.6 replaced them
 on the page with the rule-based coach read.) The five passes per night do not
-multiply that: once a surface's hash matches, the pass reports `unchanged` and spends nothing.
-Two Flash models give it 36, 2.6x its worst night, and one of them alone still covers that
-night. There were three until Oct 2026, when Google retired 3.7 Flash into 3.8: asked under
+multiply that: once a surface's hash matches, the pass reports `unchanged` and spends nothing,
+and the sync stops passing once one asks Gemini nothing (the day's ledger reads the same after
+it as before).
+
+**A sync with no new data still finishes the AI work.** The post-sync step used to run only on
+a sync that brought new data. In Oct 2026 a run's verdict and Today's card met nothing but 503s,
+which spent the day's budget; the next sync came before the quota's midnight-Pacific reset, and
+the one after it brought no new activity, so nothing asked again. Now every sync that writes
+anything - the timestamp alone included - runs the AI passes; with no new data it skips the
+wait for the new deployment and the other checks, and a pass with nothing left to do costs a
+few Firestore reads.
+Four Flash models give it 72, five times its worst night: 3.8 and 3.6 Flash first, then 3 Flash
+and 2.5 Flash, which joined in Oct 2026 with a free quota of their own and none of it used, after
+a day Google answered 3.8 and 3.6 with nothing but 503s and a run's verdict had nowhere else to
+go. 2.5 sets its thinking by a token budget (512, about what `'low'` spends here) where 3.x takes
+a level. The pool also held 3.7 Flash, until Google retired it into 3.8: asked under
 its old name it was 3.8 asked twice, paced and budgeted as if it were another model, so the
 second ask came inside 3.8's minute and drew on its day.
 

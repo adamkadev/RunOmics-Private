@@ -341,8 +341,9 @@ jobs:
             echo "data_changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "committed=true" >> "$GITHUB_OUTPUT"
-            # A commit carrying only a new timestamp has nothing for the
-            # post-sync checks to look at.
+            # A commit carrying only a new timestamp has nothing new for the
+            # post-sync checks to look at - only the AI work an earlier sync
+            # left unfinished, which the step below retries.
             if echo "$OUTPUT" | grep -q "refresh last-synced timestamp"; then
               echo "data_changed=false" >> "$GITHUB_OUTPUT"
             else
@@ -357,12 +358,19 @@ jobs:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
 
+      # On every sync that wrote anything, the timestamp alone included (Oct
+      # 2026): a run's verdict and Today's card that Google refused with 503s
+      # had used up the day's budget, the next sync fell before the quota's
+      # reset, and the one after brought no new activity - so nothing asked
+      # again, and the run stayed without its verdict. With no new data only
+      # the AI passes run, on the deployment already live.
       - name: Trigger post-sync checks
-        if: steps.commit.outputs.data_changed == 'true'
+        if: steps.commit.outputs.committed == 'true'
         env:
           APP_URL: ${{ secrets.APP_URL }}
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
           EXPECTED_SYNC: ${{ steps.commit.outputs.last_synced_at }}
+          DATA_CHANGED: ${{ steps.commit.outputs.data_changed }}
         run: |
           # Everything these endpoints read comes off the build's own filesystem,
           # so they answer for whatever deployment is live - and the previous one
@@ -372,21 +380,25 @@ jobs:
           # saw no new activity, reported "outstanding: 0", and the run it had
           # just synced had to wait for the next night to get its verdict.
           #
-          # Wait for the deployment carrying this run's own sync timestamp.
-          DEPLOYED=false
-          for i in $(seq 1 24); do
-            LIVE=$(printf 'x-internal-secret: %s\n' "$SECRET" \
-              | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
-              | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
-            if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
-              DEPLOYED=true
-              echo "Deployment carrying $EXPECTED_SYNC is live after $(((i - 1) * 15))s."
-              break
+          # Wait for the deployment carrying this run's own sync timestamp. A
+          # sync that only moved the timestamp has nothing to wait for: the
+          # deployment live already serves the same data.
+          if [ "$DATA_CHANGED" = "true" ]; then
+            DEPLOYED=false
+            for i in $(seq 1 24); do
+              LIVE=$(printf 'x-internal-secret: %s\n' "$SECRET" \
+                | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
+                | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
+              if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
+                DEPLOYED=true
+                echo "Deployment carrying $EXPECTED_SYNC is live after $(((i - 1) * 15))s."
+                break
+              fi
+              sleep 15
+            done
+            if [ "$DEPLOYED" != "true" ]; then
+              echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
             fi
-            sleep 15
-          done
-          if [ "$DEPLOYED" != "true" ]; then
-            echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
           fi
 
           # The checks below need Firebase Admin (Firestore and every push) and
@@ -412,10 +424,13 @@ jobs:
             echo
           }
 
-          check pr-check
-          check shoe-wear-check
-          check overreaching-check
-          check activity-sync-check
+          # New records, alerts and activities come only with new data.
+          if [ "$DATA_CHANGED" = "true" ]; then
+            check pr-check
+            check shoe-wear-check
+            check overreaching-check
+            check activity-sync-check
+          fi
 
           # Each pass regenerates a surface only if its facts moved (a Firestore
           # read, no spend) and backfills another batch of run verdicts, without
@@ -428,9 +443,21 @@ jobs:
           # Five passes rather than one: a single 503 (Google-side capacity) or a
           # slow model still costs a pass without progress, and a big run-verdict
           # backfill can span more than one pass on its own. A pass where
-          # everything is already current costs a handful of reads.
+          # everything is already current costs a handful of reads, and once
+          # one asks Gemini nothing - the day's ledger reads the same after it
+          # as before - the rest would only read the same: everything is
+          # current, or the budget is spent.
+          LAST_SPEND=""
           for i in 1 2 3 4 5; do
-            check ai-insights 310
+            OUT=$(check ai-insights 310)
+            echo "$OUT"
+            SPEND=$(printf '%s' "$OUT" \
+              | python -c "import json,sys; print(json.dumps(json.load(sys.stdin).get('spend') or {}, sort_keys=True))" 2>/dev/null || true)
+            if [ -n "$SPEND" ] && [ "$SPEND" = "$LAST_SPEND" ]; then
+              echo "Pass $i asked Gemini nothing: the rest would only read the same."
+              break
+            fi
+            LAST_SPEND=$SPEND
           done
 
       # Last, so a partial sync still reaches the data repository first.

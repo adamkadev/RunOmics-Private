@@ -220,13 +220,42 @@ describe('generateFromPool', () => {
     expect(generate).toHaveBeenCalledTimes(1)
   })
 
-  it('gives up after three attempts, naming each one', async () => {
+  // Oct 2026: with two models the third attempt went back to the one that had just said 503.
+  it('asks each model once, three at most, then gives up naming each', async () => {
     const generate = vi.fn().mockResolvedValue(fail('http 503: busy'))
 
     const attempt = await generateFromPool(deps({ generate }), MODEL_POOL, REQUEST)
 
-    expect(generate).toHaveBeenCalledTimes(3)
-    expect(attempt.ok === false && attempt.reason.split(' | ')).toHaveLength(3)
+    const asked = MODEL_POOL.slice(0, 3)
+    expect(generate.mock.calls.map(([request]) => request.model)).toEqual(asked)
+    expect(attempt).toEqual({ ok: false, reason: asked.map((model) => `${model}: http 503: busy`).join(' | '), reserved: true })
+  })
+
+  it('never asks one model twice for the same item, however short the pool', async () => {
+    const generate = vi.fn().mockResolvedValue(fail('http 503: busy'))
+
+    await generateFromPool(deps({ generate }), [BEST, SECOND], REQUEST)
+
+    expect(generate.mock.calls.map(([request]) => request.model)).toEqual([BEST, SECOND])
+  })
+
+  it('gives a GEMINI_MODEL override, one model for the whole pool, one chance', async () => {
+    const { spender } = fakeSpender()
+    const override: Spender = { ...spender, reserve: async () => 'gemini-override' }
+    const generate = vi.fn().mockResolvedValue(fail('http 503: busy'))
+
+    await generateFromPool(deps({ spender: override, generate }), MODEL_POOL, REQUEST)
+
+    expect(generate).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets the caller go on when only the models not yet asked are refused', async () => {
+    const generate = vi.fn().mockResolvedValue(fail('http 503: busy'))
+
+    const attempt = await generateFromPool(deps({ spender: fakeSpender({ reservations: 1 }).spender, generate }), MODEL_POOL, REQUEST)
+
+    expect(generate).toHaveBeenCalledTimes(1)
+    expect(attempt).toMatchObject({ ok: false, reserved: true })
   })
 
   it('reports a spender that would not reserve apart from a model that failed', async () => {
