@@ -108,6 +108,10 @@ type PoolAttempt =
  * Copy the validator rejected is not retried - another model would only buy
  * the same odds. `reserved: false` means the spender refused outright, which
  * is the only failure that should stop a caller looping.
+ *
+ * Each model is asked once (Oct 2026): with two in the pool the third attempt
+ * went back to the one that had just answered 503, and in a day of Google's
+ * 503s that third request was a third of the budget spent for nothing.
  */
 export async function generateFromPool(
   deps: InsightPassDeps,
@@ -115,13 +119,20 @@ export async function generateFromPool(
   request: Omit<InsightRequest, 'model'>
 ): Promise<PoolAttempt> {
   const attempts: string[] = []
+  const tried = new Set<string>()
 
   for (let attempt = 0; attempt < MAX_ATTEMPTS_PER_SURFACE; attempt += 1) {
-    const model = await deps.spender.reserve(pool)
+    const untried = pool.filter((model) => !tried.has(model))
+    if (!untried.length) break
+    const model = await deps.spender.reserve(untried)
     if (!model) {
-      attempts.push(noReserveReason(deps.spender, pool))
-      return { ok: false, reason: attempts.join(' | '), reserved: false }
+      attempts.push(noReserveReason(deps.spender, untried))
+      // Refused only the models not yet asked: the ones that were may still
+      // answer the next item, so the caller goes on.
+      return { ok: false, reason: attempts.join(' | '), reserved: tried.size > 0 }
     }
+    // A model the pool does not name is GEMINI_MODEL standing in for all of it: one model, one chance.
+    for (const asked of pool.includes(model) ? [model] : pool) tried.add(asked)
 
     const result = await deps.generate({ ...request, model })
     if (result.ok) return { ok: true, model, insight: result.insight }
