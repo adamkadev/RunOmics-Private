@@ -178,7 +178,16 @@ export function buildGarminSyncPlan(
   options: GarminSyncOptions = {},
 ): GarminSyncPlan {
   const current = state ?? emptyGarminSyncState()
-  const known = current.planId === null || current.planId === plan.id ? entriesByPrescription(current) : new Map()
+  // A new plan claims the entries of the sessions it kept from the plan the
+  // mapping was written for - bootstrap --start keeps them under their own
+  // ids, which carry that plan's id - so they are kept or moved on Garmin
+  // rather than pushed a second time. Nothing else of the old plan's is its own.
+  const recorded = entriesByPrescription(current)
+  const kept = new Set(plan.weeks.flatMap((week) => week.workouts.map((workout) => workout.id))
+    .filter((id) => current.planId !== null && id.startsWith(`${current.planId}:`)))
+  const known = current.planId === null || current.planId === plan.id
+    ? recorded
+    : new Map([...recorded].filter(([prescriptionId]) => kept.has(prescriptionId)))
 
   const range = syncRange(window)
   const workouts = workoutsWithin(plan, evaluations, range)

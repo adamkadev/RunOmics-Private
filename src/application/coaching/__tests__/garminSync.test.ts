@@ -246,6 +246,30 @@ describe('never touching what RunOmics does not own', () => {
 
     expect(operations.find((operation) => operation.prescriptionId === 'a')?.action).toBe('create')
   })
+
+  it('claims the entries of sessions a new plan kept from the plan the mapping was written for', () => {
+    const kept = workout({ id: 'old-plan:workout:1:1', date: '2026-09-08' })
+    const moved = workout({ id: 'old-plan:workout:1:2', date: '2026-09-09' })
+    const dropped = workout({ id: 'old-plan:workout:1:3', date: '2026-09-10' })
+    const state = {
+      ...syncedState([
+        { id: kept.id, date: kept.date, workout: kept },
+        { id: moved.id, date: moved.date, workout: moved },
+        { id: dropped.id, date: dropped.date, workout: dropped },
+      ]),
+      planId: 'old-plan',
+    }
+
+    const next = plan([kept, { ...moved, date: '2026-09-11' }, workout({ id: 'new-plan:workout:2:1', date: '2026-09-12' })])
+    const actions = Object.fromEntries(build(next, state).operations.map((operation) => [operation.prescriptionId, operation.action]))
+
+    expect(actions).toEqual({
+      [kept.id]: 'keep',
+      [moved.id]: 'replace',
+      [dropped.id]: 'delete',
+      'new-plan:workout:2:1': 'create',
+    })
+  })
 })
 
 describe('selecting what is syncable', () => {
