@@ -14,7 +14,7 @@ export default async function GoalsPage() {
   // The block the next race closes, as Plan counts it: macrocycle start to race day.
   const plan = getCoachingOverview(today)?.plan ?? null
   const week = plan ? macrocycleWeek(plan, today) : null
-  const block = plan && week
+  const block = plan?.targetEvent && week
     ? { startDate: macrocycleStart(plan), raceDate: plan.targetEvent.date, week: week.done, weeks: week.total }
     : null
 

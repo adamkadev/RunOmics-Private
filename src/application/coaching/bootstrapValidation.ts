@@ -6,7 +6,7 @@ import type { TargetEvent } from '@/domain/coaching/types'
 import { finishSecondsFromPace, formatRaceTime, raceTargetFacts } from '@/domain/coaching/raceTarget'
 
 export interface BootstrapEvents {
-  primary: TargetEvent
+  primary: TargetEvent | null
   tuneUps: TargetEvent[]
   planningStartDate: string
 }
@@ -175,13 +175,17 @@ function validateWorkoutForEvent(
   }
 }
 
+function raceEvents(strategy: BootstrapEvents): TargetEvent[] {
+  return strategy.primary ? [strategy.primary, ...strategy.tuneUps] : strategy.tuneUps
+}
+
 export function validateBootstrapDraftSemantics(
   draft: CoachingPlanDraft,
   strategy: BootstrapEvents,
   context: CoachingContext,
 ): void {
   validateFocusProse(draft)
-  const events = [strategy.primary, ...strategy.tuneUps]
+  const events = raceEvents(strategy)
   const workouts = draft.weeks.flatMap((week) => week.workouts)
   validateRacePreparation(draft, strategy)
   const recovery = bootstrapRecoveryFacts(context, strategy.planningStartDate)
@@ -231,7 +235,7 @@ export function validateBootstrapDraftSemantics(
 function validateRacePreparation(draft: CoachingPlanDraft, strategy: BootstrapEvents): void {
   const workouts = draft.weeks.flatMap(week => week.workouts)
   const dates = new Set(workouts.map(workout => workout.date))
-  for (const event of [strategy.primary, ...strategy.tuneUps]) {
+  for (const event of raceEvents(strategy)) {
     if (event.targetSeconds === undefined) continue
     for (const start of [-4, -3]) {
       if ([0, 1, 2].every(offset => dates.has(addDays(event.date, start + offset)))) {
@@ -239,7 +243,7 @@ function validateRacePreparation(draft: CoachingPlanDraft, strategy: BootstrapEv
       }
     }
   }
-  if (strategy.primary.distanceMeters !== 10_000) return
+  if (strategy.primary?.distanceMeters !== 10_000) return
   const faster = workouts.filter(workout => ['vo2max', 'anaerobic', 'sprint'].includes(workout.type))
   if (faster.length > 1) throw new Error('A 10K block permits at most one separate 5K-specific/VO2 stimulus')
   for (const stimulus of faster) {

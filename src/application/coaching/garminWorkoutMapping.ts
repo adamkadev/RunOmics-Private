@@ -255,7 +255,7 @@ export function toGarminWorkoutPayload(workout: WorkoutPrescription): GarminWork
 
 export function raceEventFor(plan: CoachingPlan, workout: WorkoutPrescription): TargetEvent | null {
   if (workout.type !== 'race') return null
-  return [plan.targetEvent, ...(plan.tuneUpEvents ?? [])].find((event) => event.date === workout.date) ?? null
+  return [...(plan.targetEvent ? [plan.targetEvent] : []), ...(plan.tuneUpEvents ?? [])].find((event) => event.date === workout.date) ?? null
 }
 
 export function isCourseAwareRace(plan: CoachingPlan, workout: WorkoutPrescription): boolean {

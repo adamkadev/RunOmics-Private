@@ -12,6 +12,13 @@ const SHAPE = { raceWeekDays: 7, base: 0.45, build: 0.35 } as const
 
 export type MacrocyclePhase = 'base' | 'build' | 'peak' | 'raceDay'
 
+/**
+ * The macrocycle a block belongs to when no race is its target. Carrying it
+ * as the target id lets consecutive general blocks share one start date, and
+ * marking a race primary later opens a fresh run-up toward it.
+ */
+export const GENERAL_PREPARATION = 'general'
+
 export interface MacrocyclePhaseRange {
   phase: MacrocyclePhase
   startDate: string
@@ -65,7 +72,7 @@ export function resolveMacrocycleStart(
 
 export function macrocycleOf(plan: CoachingPlan): { targetEventId: string; startDate: string } {
   return {
-    targetEventId: plan.targetEvent.id,
+    targetEventId: plan.targetEvent?.id ?? GENERAL_PREPARATION,
     startDate: plan.macrocycleStartDate ?? plan.block.startDate,
   }
 }

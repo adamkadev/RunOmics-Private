@@ -1,3 +1,4 @@
+import { DAY_MS } from '@/lib/calendarDate'
 import { hasCoursePacing } from '@/domain/coaching/coursePacing'
 import { raceTargetFacts } from '@/domain/coaching/raceTarget'
 import { WEEK_REDUCTION_REASONS, type BootstrapRequest } from '@/application/ports/CoachingAdvisor'
@@ -5,6 +6,7 @@ import type { CoachingContext } from '@/application/coaching/context'
 import { bootstrapRecoveryFacts } from '@/application/coaching/bootstrapValidation'
 import { MAX_BOOTSTRAP_WEEKS, isoWeekWindows } from '@/domain/coaching/weekWindows'
 import { macrocyclePhases, phaseOn } from '@/domain/coaching/macrocycle'
+import { CONTROLLED_THRESHOLD } from '@/application/coaching/controlledThreshold'
 
 import { BOOTSTRAP_SYSTEM_INSTRUCTION as BOOTSTRAP_RULES, WORKOUT_NAMING_INSTRUCTION } from './coachingRules.generated'
 import { activeLocale } from '@/i18n'
@@ -182,11 +184,38 @@ export function contextPrompt(context: CoachingContext): string {
 When an activity carries a performance object, source precedence is already resolved: those figures are the race performance and garminMeasured holds the raw device reading, which must never be quoted as the race result. Structured coaching context:\n${JSON.stringify(context)}`
 }
 
-export function bootstrapEventPrompt(event: BootstrapRequest['primaryTargetEvent']): Record<string, unknown> {
+export function bootstrapEventPrompt(event: BootstrapRequest['tuneUpEvents'][number]): Record<string, unknown> {
   return { ...event, ...raceTargetFacts(event), ...(hasCoursePacing(event) ? { pacingMode: 'course_aware', goalPaceMeaning: 'average_over_entire_course_not_constant_pace' } : {}) }
 }
 
 
+
+function macrocyclePrompt(input: BootstrapRequest, windows: { startDate: string; endDate: string }[]): string {
+  const start = input.macrocycleStartDate
+  if (!input.primaryTargetEvent) {
+    // No race date to divide toward, so no phases: the count of weeks since
+    // general preparation began is what the block can still be told. Counted
+    // in Monday weeks, so a Thursday start and the Monday after are not both week 1.
+    const monday = (date: string) => {
+      const time = Date.parse(`${date}T00:00:00Z`)
+      return time - ((new Date(time).getUTCDay() + 6) % 7) * DAY_MS
+    }
+    const weekOf = (date: string) => Math.round((monday(date) - monday(start)) / (7 * DAY_MS)) + 1
+    return JSON.stringify({
+      mode: 'general_preparation',
+      startDate: start,
+      weeksInThisBlock: windows.map((window) => ({ ...window, phase: 'general', weekOfPreparation: weekOf(window.startDate) })),
+    })
+  }
+  const phases = macrocyclePhases(start, input.primaryTargetEvent.date)
+  if (phases.length === 0) return 'unknown; treat this block on its own terms'
+  return JSON.stringify({
+    startDate: start,
+    raceDate: input.primaryTargetEvent.date,
+    phases,
+    weeksInThisBlock: windows.map((window) => ({ ...window, phase: phaseOn(phases, window.startDate) })),
+  })
+}
 
 export function bootstrapUserPrompt(input: BootstrapRequest): string {
   const windows = isoWeekWindows(input.planningStartDate, input.horizonEndDate)
@@ -194,14 +223,11 @@ export function bootstrapUserPrompt(input: BootstrapRequest): string {
   // The season's shape, and which part of it each planned week falls in. A
   // rolling block regenerated toward the present cannot otherwise tell a base
   // block from a peak one, so every block came out looking the same.
-  const phases = macrocyclePhases(input.macrocycleStartDate, input.primaryTargetEvent.date)
-  const macrocycle = phases.length === 0 ? 'unknown; treat this block on its own terms' : JSON.stringify({
-    startDate: input.macrocycleStartDate,
-    raceDate: input.primaryTargetEvent.date,
-    phases,
-    weeksInThisBlock: windows.map((window) => ({ ...window, phase: phaseOn(phases, window.startDate) })),
-  })
+  const primary = input.primaryTargetEvent
   const recovery = bootstrapRecoveryFacts(input.context, input.planningStartDate)
+  const target = primary
+    ? JSON.stringify(bootstrapEventPrompt(primary))
+    : 'none - general preparation, progressing fitness over time rather than toward a race'
 
-  return `${contextPrompt(input.context)}\nPOST_RACE_RECOVERY: ${JSON.stringify(recovery)}\nPRIMARY_TARGET: ${JSON.stringify(bootstrapEventPrompt(input.primaryTargetEvent))}\nTUNE_UP_EVENTS (each goal is independent): ${JSON.stringify(input.tuneUpEvents.map(bootstrapEventPrompt))}\nAvailable UTC weekdays (0=Sun): ${input.availableWeekdays.join(',')}\nrunsPerWeek (normal desired frequency): ${input.runsPerWeek ?? "unspecified; do not infer from availability"}\nMACROCYCLE (the season this rolling block is one slice of): ${macrocycle}\nPlan starts: ${input.planningStartDate}\nPlan horizon ends: ${input.horizonEndDate}\nReturn exactly ${weekCount} week${weekCount === 1 ? '' : 's'} using these exact startDate/endDate pairs, in this order: ${JSON.stringify(windows)}. Weeks run Monday to Sunday; the first may be shorter because the plan starts mid-week. Do not invent other boundaries, and keep every workout inside its own week.\nUser target override: ${input.targetEventId ?? 'none'}\nAdditional athlete guidance (volume ranges are guidance, not mandatory quotas): ${input.guidance ?? 'none'}`
+  return `${contextPrompt(input.context)}\nPOST_RACE_RECOVERY: ${JSON.stringify(recovery)}\nPRIMARY_TARGET: ${target}\nTUNE_UP_EVENTS (each goal is independent): ${JSON.stringify(input.tuneUpEvents.map(bootstrapEventPrompt))}\nAvailable UTC weekdays (0=Sun): ${input.availableWeekdays.join(',')}\nrunsPerWeek (normal desired frequency): ${input.runsPerWeek ?? "unspecified; do not infer from availability"}\nMACROCYCLE (the season this rolling block is one slice of): ${macrocyclePrompt(input, windows)}\nCONTROLLED_THRESHOLD_DOSE: ${JSON.stringify(CONTROLLED_THRESHOLD.dose)}\nPlan starts: ${input.planningStartDate}${input.planningStartDate > input.context.referenceDate ? ` (sessions from ${input.context.referenceDate} until then stay as currentPlan has them)` : ''}\nPlan horizon ends: ${input.horizonEndDate}\nReturn exactly ${weekCount} week${weekCount === 1 ? '' : 's'} using these exact startDate/endDate pairs, in this order: ${JSON.stringify(windows)}. Weeks run Monday to Sunday; the first may be shorter because the plan starts mid-week. Do not invent other boundaries, and keep every workout inside its own week.\nUser target override: ${input.targetEventId ?? 'none'}\nAdditional athlete guidance (volume ranges are guidance, not mandatory quotas): ${input.guidance ?? 'none'}`
 }

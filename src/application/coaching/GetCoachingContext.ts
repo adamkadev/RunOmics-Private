@@ -13,6 +13,7 @@ import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getActivityNotes } from '@/infrastructure/repositories/FirestoreActivityNoteRepository'
+import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 import { getThresholdSamples } from '@/infrastructure/repositories/JsonThresholdHistoryRepository'
 import { getVO2maxHistory } from '@/application/usecases/GetVO2maxHistory'
 import { getRecords, type RecordEntry } from '@/application/usecases/GetRecords'
@@ -99,6 +100,7 @@ export async function getCoachingContext(plan: CoachingPlan | null, referenceDat
 
   return buildCoachingContext({
     activityNotes: activityNotes.notes,
+    archivedPlans: new JsonCoachingRepository(process.env.RUNOMICS_DATA_DIR).getArchivedPlans(),
     activities,
     plan,
     athlete,

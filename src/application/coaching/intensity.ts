@@ -1,6 +1,7 @@
 import type { BootstrapWeekDraft, BootstrapWorkoutDraft, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
 import type { CoachingWorkoutType, WorkoutSegment } from '@/domain/coaching/types'
 import { segmentMeters, segments, trainingWeekShare, weekKm } from './volume'
+import { CONTROLLED_THRESHOLD } from './controlledThreshold'
 
 // Daniels' per-workout rules of thumb, re-keyed to the week's own planned
 // distance: a denominator taken from a historical average would stop binding
@@ -43,7 +44,7 @@ const STRIDE_MAX_SECONDS = 60
 // floor - which runs first - is what has something to say about it.
 const MEANINGFUL_WEEK_KM = 10
 
-export type Intensity = 'easy' | 'threshold' | 'interval'
+export type Intensity = 'easy' | 'threshold' | 'controlled' | 'interval'
 
 export interface IntensityBand {
   /** At or faster than this, running stops counting as aerobic volume. */
@@ -73,6 +74,13 @@ function classify(segment: WorkoutSegment, type: CoachingWorkoutType, band: Inte
   }
 
   const fastest = segment.target.paceSecPerKm?.min
+  // A controlled threshold session is run by pace with heart rate as its limit, so its guide may sit
+  // slower than the threshold band and it is quality all the same: read it
+  // from the session's type and its cap, never from the guide. Only a guide
+  // reaching interval pace makes it something else.
+  if (type === 'threshold' && segment.kind === 'effort' && segment.target.hrBpm !== undefined) {
+    return fastest !== undefined && fastest < band.intervalSecPerKm ? 'interval' : 'controlled'
+  }
   if (fastest !== undefined) {
     if (fastest < band.intervalSecPerKm) return 'interval'
     return fastest <= band.qualitySecPerKm ? 'threshold' : 'easy'
@@ -94,19 +102,26 @@ function classify(segment: WorkoutSegment, type: CoachingWorkoutType, band: Inte
 }
 
 interface WorkoutDose {
+  /** Pace-led threshold repetitions, held to the threshold cap. */
   thresholdMeters: number
   intervalMeters: number
   thresholdSeconds: number
+  /** Controlled threshold repetitions, held to CONTROLLED_THRESHOLD.dose instead of the threshold cap. */
+  controlledSeconds: number
+  /** Everything prescribed but a race, the denominator of the controlled threshold share. */
+  runningSeconds: number
   /**
    * The fastest repetition prescribed in each kind of quality session, keyed
    * by the session's own type rather than by which side of the threshold band
-   * it landed on - drifting out of the band is the drift being looked for.
+   * it landed on - drifting out of the band is the drift being looked for. A
+   * controlled threshold guide is set by repetition length, slower for longer, so each of
+   * its lengths is a kind of its own.
    */
-  fastestByType: Map<CoachingWorkoutType, number>
+  fastest: Map<string, { type: CoachingWorkoutType; pace: number; label: string }>
 }
 
 function emptyDose(): WorkoutDose {
-  return { thresholdMeters: 0, intervalMeters: 0, thresholdSeconds: 0, fastestByType: new Map() }
+  return { thresholdMeters: 0, intervalMeters: 0, thresholdSeconds: 0, controlledSeconds: 0, runningSeconds: 0, fastest: new Map() }
 }
 
 /** The mirror of segmentMeters: whichever of the two the segment was written in. Shared with workoutNames.ts. */
@@ -124,20 +139,26 @@ function addDose(workout: BootstrapWorkoutDraft, band: IntensityBand, dose: Work
   if (workout.type === 'race') return
 
   for (const { segment, repetitions } of segments(workout.blocks)) {
+    dose.runningSeconds += segmentSeconds(segment) * repetitions
     const intensity = classify(segment, workout.type, band)
     if (intensity === 'easy') continue
 
     if (intensity === 'threshold') {
       dose.thresholdMeters += segmentMeters(segment) * repetitions
       dose.thresholdSeconds += segmentSeconds(segment) * repetitions
+    } else if (intensity === 'controlled') {
+      dose.controlledSeconds += segmentSeconds(segment) * repetitions
     } else {
       dose.intervalMeters += segmentMeters(segment) * repetitions
     }
 
     const pace = segment.target.paceSecPerKm?.min
     if (pace === undefined || DRIFT_SEC[workout.type] === undefined) continue
-    const seen = dose.fastestByType.get(workout.type)
-    if (seen === undefined || pace < seen) dose.fastestByType.set(workout.type, pace)
+    const length = segmentSeconds(segment)
+    const key = intensity === 'controlled' ? `${workout.type}:${length}` : workout.type
+    const label = intensity === 'controlled' ? `${workout.type} ${minutes(length)}-minute repetitions` : workout.type
+    const seen = dose.fastest.get(key)
+    if (seen === undefined || pace < seen.pace) dose.fastest.set(key, { type: workout.type, pace, label })
   }
 }
 
@@ -174,6 +195,9 @@ export function validateDraftIntensity(
   band: IntensityBand | null,
   availableWeekdays: number[],
   before?: CoachingPlanDraft,
+  // A pace-guide change the athlete's own runs called for, and they accepted,
+  // is the one way a guide may move inside a block; drift is everything else.
+  options: { guideChange?: boolean } = {},
 ): void {
   if (band === null) return
 
@@ -197,7 +221,7 @@ export function validateDraftIntensity(
 
   // Before the caps, because a repetition that drifted out of the threshold
   // band trips the interval cap first and reports the wrong problem.
-  driftCheck(doses, judged)
+  if (!options.guideChange) driftCheck(doses, judged)
 
   for (const entry of doses) {
     const { week, km, share, dose } = entry
@@ -218,18 +242,62 @@ export function validateDraftIntensity(
     if (hardKm > round(km * COMBINED_SHARE)) {
       throw new Error(`Week ${week.startDate} runs ${hardKm} km of its ${km} km at threshold or faster, over the ${round(km * COMBINED_SHARE)} km ceiling on hard running; move the remainder into easy running`)
     }
+    // A share of time, so a part week is judged as it stands: both sides of
+    // the ratio shrink with it.
+    const controlledCeiling = CONTROLLED_THRESHOLD.dose.maxShareOfRunningTime
+    if (dose.controlledSeconds > dose.runningSeconds * controlledCeiling) {
+      throw new Error(`Week ${week.startDate} prescribes ${minutes(dose.controlledSeconds)} min of controlled threshold in ${minutes(dose.runningSeconds)} min of running, over the ${Math.round(controlledCeiling * 100)}% ceiling; cut repetitions`)
+    }
   }
 
+  controlledRampCheck(doses, judged)
   if (before === undefined) progressionCheck(doses)
+}
+
+/**
+ * The weeks whose dose can be compared: a full training week, at volume, not
+ * a declared reduction. A part week at either end of the block always looks
+ * like a drop or a jump, so it is no evidence of either.
+ */
+function loadingWeeks(doses: WeekDose[]): WeekDose[] {
+  return doses.filter(({ week, km, share }) => km >= MEANINGFUL_WEEK_KM && share >= 1 && week.reducedVolume === undefined)
+}
+
+/**
+ * Controlled threshold time may grow, or hold - a repeated week is the point of the method -
+ * but never by more than CONTROLLED_THRESHOLD.dose allows in a week, nor past the ceilings
+ * time at threshold answers to. A week after a lighter one is measured
+ * against the loading week before it, so returning to the dose is no jump.
+ */
+function controlledRampCheck(doses: WeekDose[], judged: (entry: WeekDose) => boolean): void {
+  const loading = loadingWeeks(doses)
+  const step = CONTROLLED_THRESHOLD.dose.maxWeeklyStepMinutes * 60
+  for (let index = 1; index < loading.length; index++) {
+    const current = loading[index]!
+    if (!judged(current)) continue
+    const before = loading[index - 1]!.dose.controlledSeconds
+    const now = current.dose.controlledSeconds
+    if (now - before > step) {
+      throw new Error(`Week ${current.week.startDate} takes controlled threshold time from ${minutes(before)} to ${minutes(now)} min, more than the ${CONTROLLED_THRESHOLD.dose.maxWeeklyStepMinutes} min a week it may grow`)
+    }
+    if (before > 0 && now > before * STEP_CEILING) {
+      throw new Error(`Week ${current.week.startDate} takes controlled threshold time from ${minutes(before)} to ${minutes(now)} min, beyond the quarter a week it may climb`)
+    }
+    const twoBack = loading[index - 2]?.dose.controlledSeconds ?? 0
+    if (twoBack > 0 && now > twoBack * TWO_WEEK_CEILING) {
+      throw new Error(`Week ${current.week.startDate} takes controlled threshold time from ${minutes(twoBack)} to ${minutes(now)} min across two weeks, beyond the two-week ceiling`)
+    }
+  }
 }
 
 /** More hard running than the same week held before, or a faster repetition. */
 function hardened(dose: WorkoutDose, prior: WorkoutDose | undefined): boolean {
   if (prior === undefined) return true
   if (dose.thresholdMeters > prior.thresholdMeters || dose.intervalMeters > prior.intervalMeters) return true
-  for (const [type, pace] of dose.fastestByType) {
-    const seen = prior.fastestByType.get(type)
-    if (seen === undefined || pace < seen) return true
+  if (dose.controlledSeconds > prior.controlledSeconds) return true
+  for (const [key, { pace }] of dose.fastest) {
+    const seen = prior.fastest.get(key)
+    if (seen === undefined || pace < seen.pace) return true
   }
   return false
 }
@@ -241,17 +309,17 @@ function hardened(dose: WorkoutDose, prior: WorkoutDose | undefined): boolean {
  * week before, so three tolerable steps cannot add up to an intolerable drift.
  */
 function driftCheck(doses: WeekDose[], judged: (entry: WeekDose) => boolean): void {
-  const baselines = new Map<CoachingWorkoutType, { pace: number; startDate: string }>()
+  const baselines = new Map<string, { pace: number; startDate: string }>()
   for (const entry of doses) {
     const { week, dose } = entry
-    for (const [type, pace] of dose.fastestByType) {
-      const baseline = baselines.get(type)
+    for (const [key, { type, pace, label }] of dose.fastest) {
+      const baseline = baselines.get(key)
       if (baseline === undefined) {
-        baselines.set(type, { pace, startDate: week.startDate })
+        baselines.set(key, { pace, startDate: week.startDate })
         continue
       }
       if (judged(entry) && baseline.pace - pace > DRIFT_SEC[type]!) {
-        throw new Error(`Week ${week.startDate} prescribes ${type} at ${pace} s/km against ${baseline.pace} s/km in the week of ${baseline.startDate}; hold the pace across the block and progress by repetitions`)
+        throw new Error(`Week ${week.startDate} prescribes ${label} at ${pace} s/km against ${baseline.pace} s/km in the week of ${baseline.startDate}; hold the pace across the block and progress by repetitions`)
       }
     }
   }
@@ -261,10 +329,11 @@ function driftCheck(doses: WeekDose[], judged: (entry: WeekDose) => boolean): vo
  * Progress by repetition count first, then repetition length, holding pace
  * fixed - which leaves time at threshold as the quantity that has to move. A
  * block going 4.8, 4.0, 3.6, 4.8 km develops nothing. Reduced weeks are
- * exempt: shedding quality is what they are for.
+ * exempt: shedding quality is what they are for. Pace-led threshold only: a
+ * controlled threshold session may repeat its week, and controlledRampCheck bounds how fast it grows.
  */
 function progressionCheck(doses: WeekDose[]): void {
-  const loading = doses.filter(({ week, km }) => km >= MEANINGFUL_WEEK_KM && week.reducedVolume === undefined)
+  const loading = loadingWeeks(doses)
   if (loading.length < 2) return
   // A block may legitimately carry no threshold work at all, as post-race
   // recovery does. It may not carry some and leave it flat.

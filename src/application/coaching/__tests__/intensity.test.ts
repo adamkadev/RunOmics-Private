@@ -262,6 +262,103 @@ describe('time at threshold across the block', () => {
   })
 })
 
+// Controlled threshold: a threshold session run by pace with heart rate as its limit. Its
+// repetitions carry an hrBpm cap, and their guide is set by length - the
+// 8-10 minute ones at 272-280 s/km, slower than the 268 s/km edge of the
+// threshold band, which is how the October block's sessions used to read as easy.
+const CAP = { min: 156, max: 173 }
+const LONG = { min: 272, max: 280 }
+const MEDIUM = { min: 268, max: 274 }
+
+const controlledReps = (count: number, minutes: number, pace: { min: number; max: number }, jogSeconds = 90): WorkoutBlock => ({
+  kind: 'repeat',
+  repetitions: count,
+  steps: [
+    { kind: 'effort', target: { durationSeconds: minutes * 60, paceSecPerKm: pace, hrBpm: CAP } },
+    { kind: 'recovery', target: { durationSeconds: jogSeconds, paceSecPerKm: { min: 360, max: 420 } } },
+  ],
+})
+
+const controlled = (count: number, minutes: number, pace = LONG, jogSeconds = 90) =>
+  workout('threshold', [warmup(1700), warmup(1000), warmup(1000), controlledReps(count, minutes, pace, jogSeconds), cooldown(1700)])
+
+/** The repeatable week: jog, long-repetition session, jog with strides, medium-repetition session, long run. */
+function controlledWeek(start: string, wednesday: ReturnType<typeof workout>, saturday: ReturnType<typeof workout>, easyKm = [9, 8], longKm = 14): BootstrapWeekDraft {
+  return week(start, [
+    workout('easy', [easy(easyKm[0]! * 1_000)]),
+    wednesday,
+    workout('easy', [easy(easyKm[1]! * 1_000), strides(6)]),
+    saturday,
+    workout('long_run', [easy(longKm * 1_000)]),
+  ])
+}
+
+describe('controlled threshold sessions', () => {
+  it('counts repetitions guided slower than the threshold band as quality, so their dose is checked', () => {
+    // Two 4 x 12 minute sessions at 272-280 s/km in a short week: 96 minutes in
+    // about five hours. Read by pace alone this was all easy running.
+    const heavy = draft(controlledWeek('2026-10-19', controlled(4, 12), controlled(4, 12, MEDIUM, 60), [6, 6], 10))
+    expect(() => validateDraftIntensity(heavy, BAND, DAYS)).toThrow(/min of controlled threshold in \d+ min of running, over the 25% ceiling/)
+  })
+
+  it('accepts the block written on 2026-10-15: 44, 55 and 60 minutes, then a lighter week', () => {
+    const block = draft(
+      controlledWeek('2026-10-19', controlled(3, 8), controlled(4, 5, MEDIUM, 60), [10, 8], 13),
+      controlledWeek('2026-10-26', controlled(3, 10), controlled(5, 5, MEDIUM, 60), [9, 8], 13.5),
+      controlledWeek('2026-11-02', controlled(3, 10), controlled(5, 6, MEDIUM, 60), [9, 8], 14),
+      { ...controlledWeek('2026-11-09', controlled(3, 8), controlled(4, 5, MEDIUM, 60), [8, 6], 11), reducedVolume: { reason: 'cutback', explanation: 'Lighter week.' } },
+    )
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
+  })
+
+  it('lets the full week repeat, where pace-led threshold has to keep rising', () => {
+    const full = () => controlledWeek('2026-11-16', controlled(3, 10), controlled(5, 6, MEDIUM, 60))
+    const block = draft(full(), { ...full(), startDate: '2026-11-23', endDate: '2026-11-29' }, { ...full(), startDate: '2026-11-30', endDate: '2026-12-06' })
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
+  })
+
+  it('refuses controlled threshold time growing faster than the weekly step allows', () => {
+    // 30 to 60 minutes: one session to two at full length in a single week.
+    const block = draft(
+      week('2026-10-19', [workout('easy', [easy(10_000)]), controlled(3, 10), workout('easy', [easy(9_000)]), workout('easy', [easy(10_000)]), workout('long_run', [easy(14_000)])]),
+      controlledWeek('2026-10-26', controlled(3, 10), controlled(5, 6, MEDIUM, 60)),
+    )
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).toThrow(/controlled threshold time from 30 to 60 min, more than the 15 min a week/)
+  })
+
+  it('measures the week after a lighter one against the loading week before it', () => {
+    const block = draft(
+      controlledWeek('2026-11-02', controlled(3, 10), controlled(5, 6, MEDIUM, 60)),
+      { ...controlledWeek('2026-11-09', controlled(2, 10), controlled(4, 5, MEDIUM, 60), [7, 6], 11), reducedVolume: { reason: 'cutback', explanation: 'Fatigue flag.' } },
+      controlledWeek('2026-11-16', controlled(3, 10), controlled(5, 6, MEDIUM, 60)),
+    )
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
+  })
+
+  it('holds each repetition length to its own guide, so a short-repetition week may run faster', () => {
+    // Week B: 10 x 3 minutes at 260-265 s/km, alternating with 5 x 6 minutes at 268-274.
+    const block = draft(
+      controlledWeek('2026-11-16', controlled(3, 10), controlled(5, 6, MEDIUM, 60)),
+      controlledWeek('2026-11-23', controlled(3, 10), controlled(10, 3, { min: 260, max: 265 }, 60)),
+    )
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
+  })
+
+  it('still refuses one repetition length creeping faster across the block', () => {
+    const block = draft(
+      controlledWeek('2026-11-16', controlled(3, 10), controlled(5, 6, MEDIUM, 60)),
+      controlledWeek('2026-11-23', controlled(3, 10, { min: 266, max: 272 }), controlled(5, 6, MEDIUM, 60)),
+    )
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).toThrow(/threshold 10-minute repetitions at 266 s\/km against 272 s\/km/)
+  })
+
+  it('leaves the threshold cap to pace-led repetitions: a controlled threshold session is held to its own share instead', () => {
+    // 60 minutes of controlled threshold is about 13 km, far past 10% of 58 km, and inside 25% of the time.
+    const block = draft(controlledWeek('2026-11-02', controlled(3, 10), controlled(5, 6, MEDIUM, 60)))
+    expect(() => validateDraftIntensity(block, BAND, DAYS)).not.toThrow()
+  })
+})
+
 describe('judging an adaptation', () => {
   it('lets a change take easy running out of a week, though its hard share then rises', () => {
     const before = soundWeek('2026-09-28', 1500, 48)

@@ -43,7 +43,7 @@ export interface PlanCoachingView {
   plan: {
     block: Pick<TrainingBlock, 'startDate' | 'endDate'>
     macrocycleStartDate?: string
-    targetEvent: PlanEvent
+    targetEvent?: PlanEvent
     tuneUpEvents?: PlanEvent[]
   }
   workouts: PlanPrescriptionView[]
@@ -72,7 +72,7 @@ export function planCoachingView(overview: CoachingOverview): PlanCoachingView {
     plan: {
       block: { startDate: block.startDate, endDate: block.endDate },
       ...(macrocycleStartDate ? { macrocycleStartDate } : {}),
-      targetEvent: planEvent(targetEvent),
+      ...(targetEvent ? { targetEvent: planEvent(targetEvent) } : {}),
       ...(tuneUpEvents ? { tuneUpEvents: tuneUpEvents.map(planEvent) } : {}),
     },
     workouts: overview.workouts.map((view) => ({ ...view, prescription: planPrescription(view.prescription) })),

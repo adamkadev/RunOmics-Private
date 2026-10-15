@@ -4,7 +4,7 @@ import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@
 export interface CoachingProposal {
   schemaVersion: 1
   id: string
-  kind: 'bootstrap' | 'post_activity' | 'weekly_review'
+  kind: 'bootstrap' | 'post_activity' | 'weekly_review' | 'autoregulation'
   createdAt: string
   referenceDate: string
   contextHash: string
@@ -19,7 +19,7 @@ export function parseCoachingProposal(value: unknown): CoachingProposal {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('proposal must be an object')
   const raw = value as Record<string, unknown>
   if (raw.schemaVersion !== 1) throw new Error(`unsupported proposal schema version ${String(raw.schemaVersion)}`)
-  if (raw.kind !== 'bootstrap' && raw.kind !== 'post_activity' && raw.kind !== 'weekly_review') {
+  if (raw.kind !== 'bootstrap' && raw.kind !== 'post_activity' && raw.kind !== 'weekly_review' && raw.kind !== 'autoregulation') {
     throw new Error(`unsupported proposal kind ${String(raw.kind)}`)
   }
   const requiredString = (field: string): string => {

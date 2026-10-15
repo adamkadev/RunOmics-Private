@@ -44,11 +44,14 @@ The reasoning behind these rules, and the training science they came from, is in
 
 ## How hard the week is
 
-- Keep threshold running within 10 per cent of the week's own planned distance and interval running within 8 per cent of it, counting the repetitions only: warm-up, cool-down and recovery jogs are easy volume and sit outside both caps while still counting toward the week's total.
+- Keep pace-led threshold running within 10 per cent of the week's own planned distance and interval running within 8 per cent of it, counting the repetitions only: warm-up, cool-down and recovery jogs are easy volume and sit outside both caps while still counting toward the week's total.
 - Compute both caps from the week being prescribed, never from a historical average, so the cap still binds in the lightest week.
 - Those two caps already hold hard running under 20 per cent of the week, so do not state a separate easy/hard split or an accounting basis; the validator counts by distance and converts a timed segment through its own prescribed pace.
 - Hold every prescribed repetition pace constant for the whole block. A later week prescribing the same kind of session faster than the first is drift, not progress, whatever the weekly total says.
-- Make time at threshold rise in every loading week, by repetition count first and repetition length second, and never by more than 25 per cent in a week nor 40 per cent across any two weeks; a reduced week is exempt. The 10 per cent cap usually binds long before those ceilings, so the session grows only as the week does.
+- Make pace-led time at threshold rise in every loading week, by repetition count first and repetition length second, and never by more than 25 per cent in a week nor 40 per cent across any two weeks; a reduced week is exempt. The 10 per cent cap usually binds long before those ceilings, so the session grows only as the week does.
+- A controlled threshold session is a threshold workout whose every repetition step carries an hrBpm range, its max the heart-rate ceiling, which keeps it below the threshold. It is run by pace with heart rate as the limit, so its pace guide may sit slower than the threshold band and it is quality all the same, and the pace-led threshold rules above do not apply to it.
+- Set a controlled threshold session's pace guide by repetition length, slower for longer repetitions, and hold each length's guide fixed for the whole block, as for any repetition.
+- Hold controlled threshold time to CONTROLLED_THRESHOLD_DOSE instead of the 10 per cent cap: at most maxShareOfRunningTime of the week's running time, and never more than maxWeeklyStepMinutes above the previous full loading week, nor past the 25 and 40 per cent ceilings. It need not rise: repeating a full week is the method, and a week after a lighter one returns to the dose without counting as a jump.
 
 ## Where the numbers have been
 
@@ -67,6 +70,17 @@ The reasoning behind these rules, and the training science they came from, is in
 - In peak, ease aerobic volume and make the quality specific to the target distance and its goal pace.
 - In the final week before the race, taper: cut volume by 30 to 50 per cent, hold intensity and frequency, and introduce nothing new.
 - When a block spans two phases, treat each week by its own phase and name the transition in week.focus.
+- When PRIMARY_TARGET is none, the block is general preparation: it progresses fitness over time toward no race, so MACROCYCLE carries no phases, every week follows the base rules above, and nothing tapers, peaks or sharpens toward a date.
+- In general preparation, a race in TUNE_UP_EVENTS is a supporting run the block passes through, not a goal: keep the two days before it free of hard sessions, as for any tune-up, and leave the rest of its week as the block would have it.
+
+## Controlled threshold blocks in general preparation
+
+- context.autoregulation reads each recent controlled threshold session from minute 3 of every repetition against its heart-rate target, compares the latest easy run with the athlete's recent normal, and reads the latest 5K fitness check. Its guideProposals and a fatigue flag are proposals the athlete has not accepted: keep each repetition length's guide as currentPlan last prescribed it unless the guidance says a proposal was accepted, and name any open proposal in the plan focus without stating a pace.
+- Once the controlled threshold dose has reached the full week - for this athlete two sessions of about 30 minutes each in about 56 to 58 km - repeat that week rather than growing it further.
+- Take a lighter week only when context.autoregulation flags fatigue, in the week before a fitness check, or as a routine one no more often than every six to eight weeks; never as a fixed last week of every block. A lighter week cuts controlled threshold time by about a third and easy running by about a fifth, keeps every run and the strides, and sets reducedVolume.
+- Alternate two speed weeks so they never fall in the same week. Week A: hill sprints on Thursday in place of the flat strides, 6 to 8 repetitions of 10 seconds up a steep hill with a walk back down, written as a strides repeat group with no pace or heart-rate target and effort and form in the notes. Week B: Saturday's 5-6 minute repetitions become 10 × 3 minutes with 60 seconds of jogging, guided at about 4:20-4:25 for now and under the same heart-rate ceiling.
+- Every 8 to 12 weeks a fitness check - a 5K time trial or a parkrun - takes the place of one Saturday threshold session, on a date the athlete has registered as an event, so it arrives as a supporting race. When context.autoregulation.fitnessCheck carries proposedGuides, write the next block's guides from them and say in the plan focus that they come from the check.
+- With no target race there is no race-pace work: the fastest running is the strides, the hill sprints and the short-repetition threshold session.
 
 ## Targets, tune-ups and post-race recovery
 

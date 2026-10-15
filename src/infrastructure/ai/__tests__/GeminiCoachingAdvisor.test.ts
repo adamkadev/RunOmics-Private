@@ -240,6 +240,26 @@ describe('Gemini bootstrap draft boundary', () => {
     expect(tuneUpEvents[0]).not.toHaveProperty('targetSeconds')
   })
 
+  it('tells a general block it has no target to peak for, and how far into preparation it is', async () => {
+    gemini.generateStructuredJson.mockResolvedValueOnce({ ok: true, value: rawBootstrap(false) })
+    await new GeminiCoachingAdvisor().bootstrap({
+      context: context(),
+      availableWeekdays: [0, 2, 3, 4, 6],
+      runsPerWeek: 5,
+      planningStartDate: '2026-09-07',
+      primaryTargetEvent: null,
+      tuneUpEvents: [],
+      horizonEndDate: '2026-10-04',
+      macrocycleStartDate: '2026-08-24',
+    })
+
+    const { prompt } = gemini.generateStructuredJson.mock.calls.at(-1)?.[0] as { prompt: string }
+    expect(prompt).toContain('PRIMARY_TARGET: none - general preparation')
+    expect(prompt).toContain('"mode":"general_preparation"')
+    expect(prompt).toContain('"startDate":"2026-09-07","endDate":"2026-09-13","phase":"general","weekOfPreparation":3')
+    expect(prompt).not.toContain('raceDate')
+  })
+
   it('keeps strides as the repeat group the model prescribed', () => {
     const raw = rawBootstrap(false)
     const firstWorkout = raw.weeks[0]!.workouts[0]! as { title: string; blocks: unknown[] }

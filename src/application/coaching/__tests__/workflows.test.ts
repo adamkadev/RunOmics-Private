@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest'
 import type { Activity } from '@/domain/activity/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { AdvisorRecommendation, BootstrapRequest, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
-import type { CoachDecision, CoachState, CoachingPlan, WorkoutEvaluation } from '@/domain/coaching/types'
+import type { CoachDecision, CoachState, CoachingPlan, TrainingWeek, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import { buildCoachingContext, coachingContextHash, type CoachingContextInput } from '../context'
-import { applyCoachingProposal, createBootstrapProposal, createPostActivityProposal, createWeeklyReviewProposal } from '../workflows'
+import { applyCoachingProposal, createAutoregulationProposal, createBootstrapProposal, createPostActivityProposal, createWeeklyReviewProposal } from '../workflows'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
 import { isoWeekWindows } from '@/domain/coaching/weekWindows'
+import { GENERAL_PREPARATION } from '@/domain/coaching/macrocycle'
+import { COACHING_SCHEMA_VERSION } from '@/domain/coaching/types'
+import { parseCoachingPlan } from '@/domain/coaching/validation'
 
 class MemoryRepository implements CoachingRepository {
   plan: CoachingPlan | null = null
@@ -199,7 +202,7 @@ describe('coaching workflows', () => {
 
     expect(result.macrocycleStartDate).toBe(result.block.startDate)
     expect(repository.getState()?.macrocycle).toEqual({
-      targetEventId: result.targetEvent.id,
+      targetEventId: result.targetEvent?.id,
       startDate: result.block.startDate,
     })
   })
@@ -751,7 +754,7 @@ describe('coaching workflows', () => {
       primaryTargetEvent: { id: '29837036', name: 'Private 5K' },
       horizonEndDate: '2026-09-05',
     })
-    expect(proposal.proposedPlan?.targetEvent.id).toBe('29837036')
+    expect(proposal.proposedPlan?.targetEvent?.id).toBe('29837036')
   })
 
   it('records a KEEP evaluation without changing the plan revision', async () => {
@@ -895,7 +898,7 @@ describe('coaching workflows', () => {
     const result = applyCoachingProposal(proposal, repository, coachingContextHash(context))
 
     expect(result.macrocycleStartDate).toBe('2026-08-03')
-    expect(repository.state?.macrocycle).toEqual({ targetEventId: result.targetEvent.id, startDate: '2026-08-03' })
+    expect(repository.state?.macrocycle).toEqual({ targetEventId: result.targetEvent?.id, startDate: '2026-08-03' })
   })
 
   it('records the macrocycle for a plan written before the field existed', async () => {
@@ -1188,5 +1191,252 @@ describe('repairing a rejected draft', () => {
     await expect(createBootstrapProposal(context, [2, 3], services(bootstrap)))
       .rejects.toThrow(/outside the available weekdays/)
     expect(asked).toBe(3)
+  })
+})
+
+describe('general preparation', () => {
+  const general = (context: ReturnType<typeof targetContext>, requests: BootstrapRequest[], repository = new MemoryRepository()) =>
+    createBootstrapProposal(context, [0, 2, 3, 4, 6], {
+      repository, advisor: targetAdvisor(requests), id: ids(), now: () => new Date('2026-09-04T08:00:00Z'),
+    }, undefined, undefined, undefined, true, true)
+
+  it('plans four full weeks toward no race when none is registered', async () => {
+    const requests: BootstrapRequest[] = []
+    const repository = new MemoryRepository()
+    const context = targetContext([])
+    const proposal = await createBootstrapProposal(context, [0, 2, 3, 4, 6], {
+      repository, advisor: targetAdvisor(requests), id: ids(), now: () => new Date('2026-09-04T08:00:00Z'),
+    })
+
+    expect(requests[0]).toMatchObject({ primaryTargetEvent: null, tuneUpEvents: [], horizonEndDate: '2026-10-01' })
+    expect(proposal.proposedPlan?.targetEvent).toBeUndefined()
+    expect(proposal.proposedPlan?.goal.kind).toBe('performance')
+    expect(proposal.decision.summary).toMatch(/general preparation/)
+
+    applyCoachingProposal(proposal, repository, coachingContextHash(context))
+    expect(repository.getState()?.macrocycle).toEqual({ targetEventId: GENERAL_PREPARATION, startDate: '2026-09-04' })
+  })
+
+  it('runs every race inside the block as a supporting one, whichever Garmin marks primary', async () => {
+    const requests: BootstrapRequest[] = []
+    const proposal = await general(targetContext([
+      { garminEventUuid: 'autumn-10k', date: '2026-09-27', name: 'Autumn 10K', distance: '10K', isPrimaryEvent: true },
+      { garminEventUuid: 'spring-half', date: '2027-05-08', name: 'Spring Half', distance: 'Half-Marathon' },
+    ]), requests)
+
+    expect(requests[0]).toMatchObject({
+      primaryTargetEvent: null,
+      tuneUpEvents: [{ id: 'autumn-10k', role: 'tune_up' }],
+      horizonEndDate: '2026-10-01',
+    })
+    expect(proposal.proposedPlan).toMatchObject({ tuneUpEvents: [{ id: 'autumn-10k' }], block: { endDate: '2026-10-01' } })
+    expect(proposal.proposedPlan?.targetEvent).toBeUndefined()
+  })
+
+  it('refuses a block that is asked to be general and to target a race at once', async () => {
+    await expect(createBootstrapProposal(targetContext([
+      { garminEventUuid: 'autumn-10k', date: '2026-09-27', name: 'Autumn 10K', distance: '10K' },
+    ]), [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor: targetAdvisor([]), id: ids(),
+    }, 'autumn-10k', undefined, undefined, false, true)).rejects.toThrow(/no target race/)
+  })
+
+  it('keeps counting from where general preparation began when the next block is written', async () => {
+    const repository = new MemoryRepository()
+    repository.saveState({
+      schemaVersion: COACHING_SCHEMA_VERSION,
+      activePlanId: null,
+      activePlanRevision: null,
+      lastDecisionId: null,
+      lastBootstrapAt: null,
+      lastPostActivityAt: null,
+      lastWeeklyReviewAt: null,
+      macrocycle: { targetEventId: GENERAL_PREPARATION, startDate: '2026-08-07' },
+      updatedAt: '2026-09-01T00:00:00Z',
+    })
+    const requests: BootstrapRequest[] = []
+    const proposal = await general(targetContext([]), requests, repository)
+
+    expect(requests[0]?.macrocycleStartDate).toBe('2026-08-07')
+    expect(proposal.proposedPlan?.macrocycleStartDate).toBe('2026-08-07')
+  })
+})
+
+describe('provenance', () => {
+  it('records the advisor that wrote the block, not Gemini by default', async () => {
+    const requests: BootstrapRequest[] = []
+    const advisor = { ...targetAdvisor(requests), source: 'manual' as const }
+    const proposal = await createBootstrapProposal(targetContext([]), [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor, id: ids(), now: () => new Date('2026-09-04T08:00:00Z'),
+    })
+
+    expect(proposal.proposedPlan?.provenance.source).toBe('manual')
+    expect(proposal.decision.provenance.source).toBe('manual')
+  })
+
+  it('still reads an advisor that does not say as Gemini', async () => {
+    const proposal = await createBootstrapProposal(targetContext([]), [0, 2, 4, 6], {
+      repository: new MemoryRepository(), advisor: targetAdvisor([]), id: ids(), now: () => new Date('2026-09-04T08:00:00Z'),
+    })
+
+    expect(proposal.proposedPlan?.provenance.source).toBe('gemini')
+  })
+})
+
+describe('a block that starts on a later Monday', () => {
+  const withStart = (repository: MemoryRepository, requests: BootstrapRequest[], start: string) => {
+    const context = buildCoachingContext({ ...contextInput(repository.plan), activities: [], upcomingRaces: [] }, '2026-09-08')
+    const proposal = createBootstrapProposal(context, [0, 2, 3, 4, 6], {
+      repository, advisor: targetAdvisor(requests), id: ids(), now: () => new Date('2026-09-08T08:00:00Z'),
+    }, undefined, undefined, undefined, true, true, start)
+    return { context, proposal }
+  }
+
+  it('keeps the current plan\'s sessions until then exactly as written, and writes the block from that Monday', async () => {
+    const repository = new MemoryRepository()
+    repository.plan = plan()
+    const kept = repository.plan.weeks[0]!.workouts[0]!
+    const requests: BootstrapRequest[] = []
+    const { context, proposal } = withStart(repository, requests, '2026-09-14')
+    const result = await proposal
+
+    expect(requests[0]).toMatchObject({ planningStartDate: '2026-09-14', horizonEndDate: '2026-10-11' })
+    expect(result.proposedPlan?.block).toMatchObject({ startDate: '2026-09-08', endDate: '2026-10-11' })
+    const [first, second] = result.proposedPlan!.weeks
+    expect(first).toMatchObject({ index: 1, startDate: '2026-09-08', endDate: '2026-09-13' })
+    // Its title predates the naming rules; kept, it is not judged by them again.
+    expect(first!.workouts).toEqual([kept])
+    expect(second).toMatchObject({ index: 2, startDate: '2026-09-14' })
+    // A session of the outgoing plan on or after the start is replaced, not kept.
+    const written = result.proposedPlan!.weeks.flatMap((week) => week.workouts.map((workout) => workout.id))
+    expect(written).not.toContain('workout-easy')
+
+    const applied = applyCoachingProposal(result, repository, coachingContextHash(context))
+    expect(applied.weeks[0]!.workouts).toEqual([kept])
+  })
+
+  it('refuses a start that is not a Monday within the coming week', async () => {
+    for (const start of ['2026-09-15', '2026-09-21', '2026-09-07']) {
+      const repository = new MemoryRepository()
+      repository.plan = plan()
+      await expect(withStart(repository, [], start).proposal).rejects.toThrow(/--start must be a Monday/)
+    }
+  })
+})
+
+describe('an autoregulation proposal', () => {
+  const EASY = { min: 330, max: 384 }
+  const LONG = { min: 272, max: 280 }
+  const MEDIUM = { min: 268, max: 274 }
+  const label = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+
+  const prescription = (id: string, date: string, fields: Partial<WorkoutPrescription>): WorkoutPrescription => ({
+    id, revision: 1, date, type: 'easy', title: 'Easy run', shortName: 'Easy run', description: 'Easy.', status: 'prescribed',
+    blocks: [{ kind: 'effort', target: { distanceMeters: 9_000, paceSecPerKm: EASY } }],
+    provenance: { source: 'manual', trigger: 'bootstrap', createdAt: '2026-10-15T17:00:00.000Z' }, ...fields,
+  })
+  const controlled = (id: string, date: string, reps: number, minutes: number, guide: { min: number; max: number }) => {
+    const pace = label(Math.round((guide.min + guide.max) / 2))
+    return prescription(id, date, {
+      type: 'threshold', title: `Threshold · ${reps} × ${minutes}′ @ ${pace}`, shortName: `Threshold ${reps}×${minutes}′`,
+      structure: { reps, repMinutes: minutes, targetPace: pace },
+      blocks: [
+        { kind: 'warmup', target: { distanceMeters: 3_700, paceSecPerKm: EASY } },
+        { kind: 'repeat', repetitions: reps, steps: [
+          { kind: 'effort', target: { durationSeconds: minutes * 60, paceSecPerKm: guide, hrBpm: { min: 156, max: 173 } } },
+          { kind: 'recovery', target: { durationSeconds: 90, paceSecPerKm: { min: 360, max: 420 } } },
+        ] },
+        { kind: 'cooldown', target: { distanceMeters: 1_700, paceSecPerKm: EASY } },
+      ],
+    })
+  }
+  const stridesRun = (id: string, date: string) => prescription(id, date, {
+    title: 'Easy · 8 km + 6 strides', shortName: 'Easy + strides', structure: { extras: ['6 strides'] },
+    blocks: [
+      { kind: 'effort', target: { distanceMeters: 8_000, paceSecPerKm: EASY } },
+      { kind: 'repeat', repetitions: 6, steps: [
+        { kind: 'strides', target: { durationSeconds: 20, paceSecPerKm: { min: 215, max: 230 } } },
+        { kind: 'recovery', target: { durationSeconds: 60, paceSecPerKm: { min: 360, max: 420 } } },
+      ] },
+    ],
+  })
+  const fullWeek = (n: number, start: string): TrainingWeek => {
+    const day = (offset: number) => addDays(start, offset)
+    return {
+      id: `week-${n}`, index: n, startDate: start, endDate: day(6), focus: 'The repeatable week.',
+      workouts: [
+        prescription(`easy-${n}`, day(1), {}),
+        controlled(`long-${n}`, day(2), 3, 10, LONG),
+        stridesRun(`strides-${n}`, day(3)),
+        controlled(`medium-${n}`, day(5), 5, 6, MEDIUM),
+        prescription(`longrun-${n}`, day(6), { type: 'long_run', title: 'Long run', shortName: 'Long run', blocks: [{ kind: 'effort', target: { distanceMeters: 14_000, paceSecPerKm: EASY } }] }),
+      ],
+    }
+  }
+  const block = (): CoachingPlan => plan({
+    id: 'threshold-block',
+    trainingPreferences: { availableWeekdays: [0, 2, 3, 4, 6], runsPerWeek: 5 },
+    block: { id: 'threshold-block:block', name: 'Controlled threshold base', startDate: '2026-11-02', endDate: '2026-11-15', focus: 'Repeat the week.' },
+    targetEvent: undefined,
+    goal: { kind: 'performance', description: 'Progress.' },
+    weeks: [fullWeek(1, '2026-11-02'), fullWeek(2, '2026-11-09')],
+  })
+
+  // Eight weeks of about 55 km on five days: enough history that the volume
+  // ceiling judges these weeks as the athlete's, not a beginner's.
+  const history = (): Activity[] => Array.from({ length: 56 }, (_, offset) => addDays('2026-09-07', offset))
+    .filter((date) => [0, 2, 3, 4, 6].includes(new Date(`${date}T00:00:00Z`).getUTCDay()))
+    .map((date) => {
+      const long = new Date(`${date}T00:00:00Z`).getUTCDay() === 0
+      return { ...latestActivity, id: `h-${date}`, date, type: 'Base', distanceKm: long ? 14 : 10, durationSeconds: long ? 4_830 : 3_450, paceSecPerKm: 345, avgHeartRate: 145 } as Activity
+    })
+
+  const setup = () => {
+    const repository = new MemoryRepository()
+    // As the repository reads it: parsed, so a change's "before" compares like for like.
+    repository.plan = parseCoachingPlan(block())
+    const context = buildCoachingContext({ ...contextInput(repository.plan), activities: history(), upcomingRaces: [] }, '2026-11-04')
+    return { repository, context, services: { repository, advisor: targetAdvisor([]), id: ids(), now: () => new Date('2026-11-04T20:00:00Z') } }
+  }
+
+  it('moves only the coming sessions on that guide, and applies as any other proposal', () => {
+    const { repository, context, services } = setup()
+    const proposal = createAutoregulationProposal(context, services, {
+      kind: 'pace_guide',
+      proposal: { repClass: 'long', direction: 'faster', guide: LONG, proposedGuide: { min: 268, max: 276 }, stepSecPerKm: 4, sessions: [] },
+    })!
+
+    expect(proposal.kind).toBe('autoregulation')
+    expect(proposal.decision).toMatchObject({ outcome: 'ADJUST', trigger: 'autoregulation', provenance: { source: 'autoregulation' } })
+    // Today's session is run; only next week's is rewritten, faster than the block began, and allowed.
+    expect(proposal.decision.changes.map((change) => change.kind === 'upsert_workout' ? change.after.id : null)).toEqual(['long-2'])
+
+    const applied = applyCoachingProposal(proposal, repository, coachingContextHash(context))
+    const moved = applied.weeks[1]!.workouts.find((workout) => workout.id === 'long-2')!
+    expect(moved).toMatchObject({ title: 'Threshold · 3 × 10′ @ 4:32', revision: 2, status: 'adjusted' })
+    expect(applied.weeks[0]!.workouts.find((workout) => workout.id === 'long-1')!.title).toBe('Threshold · 3 × 10′ @ 4:36')
+  })
+
+  it('writes the lighter week into the rest of the flagged run\'s week', () => {
+    const { context, services } = setup()
+    const proposal = createAutoregulationProposal(context, services, {
+      kind: 'lighter_week',
+      fatigue: { run: { activityId: 'h', date: '2026-11-04', hr: 152, paceSecPerKm: 345, tempC: 12, durationSeconds: 3_300 }, normalHr: 146, comparables: 4, flagged: true },
+    })!
+
+    const after = Object.fromEntries(proposal.decision.changes.map((change) => change.kind === 'upsert_workout' ? [change.after.id, change.after.title] : []))
+    expect(after).toEqual({
+      'strides-1': 'Easy · 6.5 km + 6 strides',
+      'medium-1': 'Threshold · 3 × 6′ @ 4:31',
+      'longrun-1': 'Long run',
+    })
+  })
+
+  it('proposes nothing for a run that was not flagged', () => {
+    const { context, services } = setup()
+    expect(createAutoregulationProposal(context, services, {
+      kind: 'lighter_week',
+      fatigue: { run: { activityId: 'h', date: '2026-11-04', hr: 147, paceSecPerKm: 345, tempC: 12, durationSeconds: 3_300 }, normalHr: 146, comparables: 4, flagged: false },
+    })).toBeNull()
   })
 })

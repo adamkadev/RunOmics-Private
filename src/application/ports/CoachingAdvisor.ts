@@ -2,6 +2,7 @@ import type { Activity } from '@/domain/activity/types'
 import type {
   CoachDecisionOutcome,
   CoachEvidence,
+  CoachingProvenance,
   CoachingWorkoutType,
   TargetEvent,
   TrainingWeek,
@@ -17,7 +18,8 @@ export interface BootstrapRequest {
   runsPerWeek?: number
   availableWeekdays: number[]
   planningStartDate: string
-  primaryTargetEvent: TargetEvent
+  /** Null for general preparation: no race is the target. */
+  primaryTargetEvent: TargetEvent | null
   tuneUpEvents: TargetEvent[]
   horizonEndDate: string
   /** Where the season began, so the block can be told which phase it sits in. */
@@ -77,6 +79,8 @@ export interface AdvisorRecommendation {
 }
 
 export interface CoachingAdvisor {
+  /** Who writes the advice, recorded as its provenance; Gemini when unsaid. */
+  readonly source?: CoachingProvenance['source']
   bootstrap(request: BootstrapRequest): Promise<CoachingPlanDraft>
   evaluateActivity(input: {
     context: CoachingContext

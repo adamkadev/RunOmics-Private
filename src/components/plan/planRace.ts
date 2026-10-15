@@ -16,7 +16,7 @@ export type PlanRace = Pick<UpcomingRace, 'date' | 'name' | 'distance' | 'locati
 export function planRace(coaching: PlanCoachingView | null, nextRace: UpcomingRace | null | undefined, today: string): PlanRace | null {
   if (!coaching) return nextRace && nextRace.date >= today ? nextRace : null
   const { targetEvent, tuneUpEvents } = coaching.plan
-  const event = [targetEvent, ...(tuneUpEvents ?? [])].find((e) => e.date >= today)
+  const event = [...(targetEvent ? [targetEvent] : []), ...(tuneUpEvents ?? [])].find((e) => e.date >= today)
   return event ? { date: event.date, name: event.name, distance: event.distanceLabel ?? '', location: event.location } : null
 }
 

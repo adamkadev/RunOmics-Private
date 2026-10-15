@@ -63,3 +63,13 @@ describe('macrocycleWeek on a Sunday start (v5.5 #8)', () => {
     expect(macrocycleWeek(plan as never, '2026-09-28')).toEqual({ done: 4, total: 12 })
   })
 })
+
+describe('a general block, with no race to count toward', () => {
+  const plan = { macrocycleStartDate: '2026-10-19', block: { startDate: '2026-10-19' } }
+
+  it('draws no phases and no week-of-target count', async () => {
+    const { macrocyclePhaseRanges, macrocycleWeek } = await import('../presentation')
+    expect(macrocyclePhaseRanges(plan)).toEqual([])
+    expect(macrocycleWeek(plan, '2026-10-26')).toBeNull()
+  })
+})

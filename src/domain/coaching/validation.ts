@@ -9,6 +9,7 @@ import {
   type CoachingPlan,
   type CoachingProvenance,
   type NumberRange,
+  type TargetEvent,
   type TrainingGoal,
   type TrainingWeek,
   type WorkoutBlock,
@@ -119,8 +120,8 @@ function range(value: unknown, path: string): NumberRange {
 function provenance(value: unknown, path: string): CoachingProvenance {
   const raw = object(value, path)
   return {
-    source: enumeration(raw.source, ['gemini', 'manual', 'demo'], `${path}.source`),
-    trigger: enumeration(raw.trigger, ['bootstrap', 'post_activity', 'weekly_review'], `${path}.trigger`),
+    source: enumeration(raw.source, ['gemini', 'manual', 'demo', 'autoregulation'], `${path}.source`),
+    trigger: enumeration(raw.trigger, ['bootstrap', 'post_activity', 'weekly_review', 'autoregulation'], `${path}.trigger`),
     createdAt: timestamp(raw.createdAt, `${path}.createdAt`),
     ...(raw.model === undefined ? {} : { model: string(raw.model, `${path}.model`) }),
     ...(raw.promptVersion === undefined ? {} : { promptVersion: string(raw.promptVersion, `${path}.promptVersion`) }),
@@ -240,7 +241,7 @@ function trainingGoal(value: unknown, path: string): TrainingGoal {
     : { kind, description }
 }
 
-function targetEvent(value: unknown, path: string): CoachingPlan['targetEvent'] {
+function targetEvent(value: unknown, path: string): TargetEvent {
   const raw = object(value, path)
   return {
     id: string(raw.id, `${path}.id`),
@@ -275,7 +276,7 @@ export function parseCoachingPlan(value: unknown, path = 'plan'): CoachingPlan {
     ...(raw.macrocycleStartDate === undefined
       ? {}
       : { macrocycleStartDate: isoDate(raw.macrocycleStartDate, `${path}.macrocycleStartDate`) }),
-    targetEvent: targetEvent(raw.targetEvent, `${path}.targetEvent`),
+    ...(raw.targetEvent === undefined ? {} : { targetEvent: targetEvent(raw.targetEvent, `${path}.targetEvent`) }),
     ...(raw.tuneUpEvents === undefined ? {} : { tuneUpEvents: array(raw.tuneUpEvents, `${path}.tuneUpEvents`, targetEvent) }),
     goal: trainingGoal(raw.goal, `${path}.goal`),
     weeks: array(raw.weeks, `${path}.weeks`, trainingWeek),
@@ -286,13 +287,15 @@ export function parseCoachingPlan(value: unknown, path = 'plan'): CoachingPlan {
   if (plan.macrocycleStartDate !== undefined && plan.macrocycleStartDate > plan.block.startDate) {
     throw new CoachingValidationError(`${path}.macrocycleStartDate`, 'must not start after the training block')
   }
-  if (plan.block.endDate > plan.targetEvent.date) throw new CoachingValidationError(`${path}.block.endDate`, 'training block cannot extend beyond the primary target event')
-  if (plan.targetEvent.role !== undefined && plan.targetEvent.role !== 'primary') throw new CoachingValidationError(`${path}.targetEvent.role`, 'targetEvent must be primary')
+  const target = plan.targetEvent
+  if (target && plan.block.endDate > target.date) throw new CoachingValidationError(`${path}.block.endDate`, 'training block cannot extend beyond the primary target event')
+  if (target?.role !== undefined && target.role !== 'primary') throw new CoachingValidationError(`${path}.targetEvent.role`, 'targetEvent must be primary')
   if (plan.weeks.length === 0 || plan.weeks.length > MAX_BOOTSTRAP_WEEKS) throw new CoachingValidationError(`${path}.weeks`, `must contain 1 to ${MAX_BOOTSTRAP_WEEKS} weeks`)
-  const ids = new Set<string>([plan.id, plan.block.id, plan.targetEvent.id])
+  const ids = new Set<string>([plan.id, plan.block.id, ...(target ? [target.id] : [])])
   for (const [index, event] of (plan.tuneUpEvents ?? []).entries()) {
     if (event.role !== 'tune_up') throw new CoachingValidationError(`${path}.tuneUpEvents[${index}].role`, 'must be tune_up')
-    if (event.date < plan.block.startDate || event.date > plan.targetEvent.date) throw new CoachingValidationError(`${path}.tuneUpEvents[${index}].date`, 'must fall inside the block before the primary target')
+    // With no target, a supporting race is one the block passes through.
+    if (event.date < plan.block.startDate || event.date > (target?.date ?? plan.block.endDate)) throw new CoachingValidationError(`${path}.tuneUpEvents[${index}].date`, 'must fall inside the block before the primary target')
     if (ids.has(event.id)) throw new CoachingValidationError(`${path}.tuneUpEvents`, `duplicate id ${event.id}`)
     ids.add(event.id)
   }
@@ -359,7 +362,7 @@ export function parseCoachDecision(value: unknown, path = 'decision'): CoachDeci
     schemaVersion: COACHING_SCHEMA_VERSION,
     id: string(raw.id, `${path}.id`),
     outcome: enumeration(raw.outcome, ['KEEP', 'ADJUST', 'REPLAN'], `${path}.outcome`),
-    trigger: enumeration(raw.trigger, ['bootstrap', 'post_activity', 'weekly_review'], `${path}.trigger`),
+    trigger: enumeration(raw.trigger, ['bootstrap', 'post_activity', 'weekly_review', 'autoregulation'], `${path}.trigger`),
     createdAt: timestamp(raw.createdAt, `${path}.createdAt`),
     effectiveDate: isoDate(raw.effectiveDate, `${path}.effectiveDate`),
     planId: string(raw.planId, `${path}.planId`),
@@ -467,7 +470,7 @@ function trainingPreferences(value: unknown): NonNullable<CoachingPlan['training
   return { availableWeekdays: days, ...(runs === undefined ? {} : { runsPerWeek: runs }) }
 }
 
-function raceCourseContext(value: unknown, path: string): NonNullable<CoachingPlan['targetEvent']['courseContext']> {
+function raceCourseContext(value: unknown, path: string): NonNullable<TargetEvent['courseContext']> {
   const raw = object(value, path)
   return {
     pacingNotes: array(raw.pacingNotes, `${path}.pacingNotes`, string),

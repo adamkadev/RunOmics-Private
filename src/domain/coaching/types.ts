@@ -3,7 +3,8 @@ import type { ActivityType } from '@/domain/activity/types'
 export const COACHING_SCHEMA_VERSION = 1 as const
 
 export type CoachDecisionOutcome = 'KEEP' | 'ADJUST' | 'REPLAN'
-export type CoachTrigger = 'bootstrap' | 'post_activity' | 'weekly_review'
+// autoregulation: a change proposed by code from the athlete's own runs, not by a model.
+export type CoachTrigger = 'bootstrap' | 'post_activity' | 'weekly_review' | 'autoregulation'
 export type CoachingPlanStatus = 'active' | 'completed' | 'superseded'
 export type PrescriptionStatus = 'prescribed' | 'adjusted' | 'cancelled'
 
@@ -48,7 +49,7 @@ export interface WorkoutRepeatBlock {
 export type WorkoutBlock = WorkoutSegment | WorkoutRepeatBlock
 
 export interface CoachingProvenance {
-  source: 'gemini' | 'manual' | 'demo'
+  source: 'gemini' | 'manual' | 'demo' | 'autoregulation'
   trigger: CoachTrigger
   createdAt: string
   model?: string
@@ -143,7 +144,8 @@ export interface CoachingPlan {
   status: CoachingPlanStatus
   block: TrainingBlock
   macrocycleStartDate?: string
-  targetEvent: TargetEvent
+  /** Absent for general preparation: a block written to progress, not toward a race. */
+  targetEvent?: TargetEvent
   tuneUpEvents?: TargetEvent[]
   goal: TrainingGoal
   weeks: TrainingWeek[]
@@ -230,6 +232,7 @@ export interface CoachState {
   lastBootstrapAt: string | null
   lastPostActivityAt: string | null
   lastWeeklyReviewAt: string | null
+  /** targetEventId is GENERAL_PREPARATION while no race is the target. */
   macrocycle?: { targetEventId: string; startDate: string }
   updatedAt: string
 }

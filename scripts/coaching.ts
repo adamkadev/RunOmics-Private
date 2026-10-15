@@ -19,16 +19,21 @@ function usage(): string {
   return [
     'RunOmics coaching preview/apply',
     '',
-    '  npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5 [--race <id|name>]',
+    '  npm run coach -- bootstrap --days tue,wed,thu,sat,sun --runs-per-week 5 [--race <id|name> | --general]',
     '  npm run coach -- bootstrap --days ... --runs-per-week 5 --prompt-out coach-prompt.md',
     '  npm run coach -- bootstrap --days ... --runs-per-week 5 --from-answer answer.json',
     '  npm run coach -- evaluate --activity <id|latest>',
     '  npm run coach -- weekly-review',
+    '  npm run coach -- autoregulate   (after each threshold session: proposes, never applies)',
     '  npm run coach -- --apply .coach-previews/<proposal>.json',
     '',
     'Options:',
     '  --data-dir <path>  Read/write an existing workspace without fetching or pushing it.',
     '  --runs-per-week <n> Normal desired runs, independently of available --days.',
+    '  --start <monday>   Write the new block from that Monday, at most a week out,',
+    '                     keeping the current plan\'s sessions until then unchanged.',
+    '  --general          Plan general preparation toward no race; races inside the',
+    '                     block are run as supporting ones. The default with no race.',
     '  --guidance-file <path> Additional athlete instructions for bootstrap.',
     '  --context-out <path> Save the compact bootstrap context for inspection.',
     '  --prompt-out <path> Write the coaching prompt to paste into a chat instead of calling the API.',
@@ -135,7 +140,7 @@ async function createProposal(command: string, args: string[]) {
     const context = await getCoachingContext(currentPlan, referenceDate)
     const contextOutput = option(args, '--context-out')
     if (contextOutput) fs.writeFileSync(path.resolve(contextOutput), JSON.stringify(context, null, 2) + '\n')
-    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), fileOption(args, '--guidance-file'), args.includes('--replace'))
+    return createBootstrapProposal(context, availableDays(option(args, '--days')), { advisor, repository }, option(args, '--race'), requestedRuns(args), fileOption(args, '--guidance-file'), args.includes('--replace'), args.includes('--general'), option(args, '--start'))
   }
 
   if (command === 'evaluate') {
@@ -181,6 +186,71 @@ async function applyPreview(args: string[], proposalPath: string): Promise<void>
   }
 }
 
+const pace = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`
+
+/**
+ * Reads the athlete's runs against the controlled threshold targets and writes a preview for
+ * each change they call for. Nothing is applied: each preview is applied, or
+ * not, by hand with --apply.
+ */
+async function autoregulate(args: string[]): Promise<void> {
+  const { JsonCoachingRepository } = await interopImport(import('@/infrastructure/repositories/JsonCoachingRepository'))
+  const { getAllActivities } = await interopImport(import('@/infrastructure/repositories/JsonActivityRepository'))
+  const { getCoachingContext } = await interopImport(import('@/application/coaching/GetCoachingContext'))
+  const { autoregulationReport } = await interopImport(import('@/application/coaching/autoregulation'))
+  const { createAutoregulationProposal } = await interopImport(import('@/application/coaching/workflows'))
+  const { CONTROLLED_THRESHOLD } = await interopImport(import('@/application/coaching/controlledThreshold'))
+  const { getOfficialRaceResults } = await interopImport(import('@/infrastructure/repositories/JsonRaceResultRepository'))
+
+  const repository = new JsonCoachingRepository(process.env.RUNOMICS_DATA_DIR)
+  const plan = repository.getCurrentPlan()
+  if (!plan) throw new Error('No current coaching plan exists')
+  const referenceDate = option(args, '--reference-date') ?? new Date().toISOString().slice(0, 10)
+  const report = autoregulationReport(getAllActivities(), [plan, ...repository.getArchivedPlans()], referenceDate, getOfficialRaceResults())
+
+  console.log(`\nControlled threshold sessions in the last ${CONTROLLED_THRESHOLD.fatigue.lookbackDays} days (heart rate from minute 3 / target / ceiling ${CONTROLLED_THRESHOLD.autoregulation.ceilingHrBpm}):`)
+  if (report.controlledSessions.length === 0) console.log('  none read yet')
+  for (const session of report.controlledSessions) {
+    const reps = session.reps.map((rep) => `${rep.windowHr} @ ${pace(rep.paceSecPerKm)}`).join(', ')
+    const temperature = session.tempC === null ? '' : `, ${session.tempC} °C`
+    console.log(`  ${session.date} ${session.repClass.padEnd(6)} guide ${pace(session.guide.min)}-${pace(session.guide.max)}  ${reps || 'no repetitions read'}${temperature}  target ${session.targetHr}: ${session.verdict}`)
+  }
+
+  const fatigue = report.fatigue
+  if (fatigue) {
+    const run = `${fatigue.run.date} easy run ${fatigue.run.hr} bpm at ${pace(fatigue.run.paceSecPerKm)}${fatigue.run.tempC === null ? '' : `, ${fatigue.run.tempC} °C`}`
+    console.log(fatigue.normalHr === null
+      ? `\nFatigue: ${run} - ${fatigue.comparables} similar run(s), ${CONTROLLED_THRESHOLD.fatigue.minComparables} needed to judge`
+      : `\nFatigue: ${run} against a normal of ${fatigue.normalHr} over ${fatigue.comparables} similar runs - ${fatigue.flagged ? 'FLAGGED' : 'fine'}`)
+  }
+
+  const check = report.fitnessCheck
+  if (check) {
+    const moved = check.previous ? ` (${pace(check.previous.paceSecPerKm)}/km on ${check.previous.date})` : ' - the first check, so the baseline'
+    console.log(`\nFitness check: 5K on ${check.date} at ${pace(check.paceSecPerKm)}/km${moved}; it implies a threshold of ${pace(check.impliedThresholdSecPerKm)}/km`)
+    for (const { repClass, guide, proposedGuide } of check.proposedGuides) {
+      console.log(`  proposed ${repClass} guide: ${pace(guide.min)}-${pace(guide.max)} -> ${pace(proposedGuide.min)}-${pace(proposedGuide.max)} (for the next block)`)
+    }
+  }
+
+  const changes = [
+    ...report.guideProposals.map((proposal) => ({ kind: 'pace_guide' as const, proposal })),
+    ...(fatigue?.flagged ? [{ kind: 'lighter_week' as const, fatigue }] : []),
+  ]
+  if (changes.length === 0) {
+    console.log('\nNothing to propose.')
+    return
+  }
+  const context = await getCoachingContext(plan, referenceDate)
+  const outputDir = path.resolve(option(args, '--out') ?? '.coach-previews')
+  for (const change of changes) {
+    const proposal = createAutoregulationProposal(context, { repository }, change)
+    if (proposal) printProposal(writeProposalPreview(proposal, outputDir), proposal)
+    else console.log(`\n${change.kind}: nothing left in the plan for it to change.`)
+  }
+  if (changes.length > 1) console.log('\nEach preview is built on the current plan: apply one, then run autoregulate again for the next.')
+}
+
 function isPromptWritten(error: unknown): error is { promptPath: string } {
   return error instanceof Error && error.name === 'ManualPromptWritten'
 }
@@ -216,6 +286,10 @@ async function main(): Promise<void> {
   const workspace = await dataWorkspace(args, false)
   try {
     process.env.RUNOMICS_DATA_DIR = workspace.root
+    if (args[0] === 'autoregulate') {
+      await autoregulate(args)
+      return
+    }
     const proposal = await createProposal(args[0]!, args)
     const outputDir = path.resolve(option(args, '--out') ?? '.coach-previews')
     printProposal(writeProposalPreview(proposal, outputDir), proposal)

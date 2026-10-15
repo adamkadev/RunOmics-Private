@@ -91,6 +91,33 @@ describe('how a session is written', () => {
   })
 })
 
+describe('the speed weeks of a controlled threshold block', () => {
+  it('accepts hill sprints written as the rules ask: strides by effort, a walk back down, no pace or heart rate', async () => {
+    const { validateWorkoutName } = await import('../workoutNames')
+    const hills: BootstrapWorkoutDraft = {
+      date: '2026-11-19',
+      type: 'easy',
+      title: 'Easy · 8 km + 8 hill sprints',
+      shortName: 'Easy + hills',
+      structure: { extras: ['8 hill sprints'] },
+      description: 'Easy running, then short hill sprints for strength and power.',
+      blocks: [
+        { kind: 'effort', target: { distanceMeters: 8_000, paceSecPerKm: { min: 330, max: 384 } } },
+        {
+          kind: 'repeat',
+          repetitions: 8,
+          steps: [
+            { kind: 'strides', target: { durationSeconds: 10 }, notes: ['Up a steep hill, hard but relaxed: drive the arms, stay tall.'] },
+            { kind: 'recovery', target: { durationSeconds: 90 }, notes: ['Walk back down.'] },
+          ],
+        },
+      ],
+    }
+    expect(() => validateWorkoutDraft(hills, 'hills')).not.toThrow()
+    expect(() => validateWorkoutName(hills, 'hills')).not.toThrow()
+  })
+})
+
 describe('a change to the live plan', () => {
   // Tuesdays and Wednesdays, one run a week. Week 2 holds one run, Tuesday the 15th.
   const current = () => plan({ trainingPreferences: { availableWeekdays: [2, 3], runsPerWeek: 1 } })

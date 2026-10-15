@@ -12,6 +12,7 @@ import {
   type CoachingPlan,
   type CoachingProvenance,
   type AggregateWorkoutComparison,
+  type NumberRange,
   type TargetEvent,
   type TrainingGoal,
   type TrainingWeek,
@@ -22,7 +23,8 @@ import {
 import { applyCoachDecision, getFutureSnapshot } from '@/domain/coaching/lifecycle'
 import { isoWeekWindows, weekWindowIndex } from '@/domain/coaching/weekWindows'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
-import { macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
+import { GENERAL_PREPARATION, macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
+import { lighterWeekSessions, lighterWorkout, withGuide, type FatigueReading, type GuideProposal } from './autoregulation'
 import { parseCoachDecision, parseCoachingPlan, parseWorkoutEvaluation } from '@/domain/coaching/validation'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import type { AdvisorRecommendation, CoachingAdvisor, CoachingPlanDraft } from '@/application/ports/CoachingAdvisor'
@@ -46,9 +48,17 @@ function defaultId(): string {
   return crypto.randomUUID()
 }
 
-function provenance(trigger: CoachingProvenance['trigger'], createdAt: string, decisionId?: string): CoachingProvenance {
+type Source = CoachingProvenance['source']
+type AdaptationTrigger = 'post_activity' | 'weekly_review' | 'autoregulation'
+
+/** Whoever wrote the advice: an advisor that does not say is the Gemini one every plan came from before. */
+function sourceOf(services: WorkflowServices): Source {
+  return services.advisor.source ?? 'gemini'
+}
+
+function provenance(source: Source, trigger: CoachingProvenance['trigger'], createdAt: string, decisionId?: string): CoachingProvenance {
   return {
-    source: 'gemini',
+    source,
     trigger,
     createdAt,
     promptVersion: PROMPT_VERSION,
@@ -77,13 +87,15 @@ function eventFromRace(race: CoachingContext['upcomingRaces'][number], role: Coa
 }
 
 interface BootstrapTargetStrategy {
-  primary: TargetEvent
+  /** Null for general preparation: the block progresses fitness toward no race. */
+  primary: TargetEvent | null
   tuneUps: TargetEvent[]
   planningStartDate: string
   horizonEndDate: string
 }
 
-function selectBootstrapTarget(context: CoachingContext, targetEventId?: string): BootstrapTargetStrategy {
+function selectBootstrapTarget(context: CoachingContext, targetEventId?: string, general = false, start?: string): BootstrapTargetStrategy {
+  if (general && targetEventId) throw new Error('A general block has no target race; drop --race or --general')
   const reference = new Date(`${context.referenceDate}T00:00:00Z`)
   const races = context.upcomingRaces
     .filter((race) => race.date >= context.referenceDate)
@@ -92,9 +104,18 @@ function selectBootstrapTarget(context: CoachingContext, targetEventId?: string)
   const completedRaceToday = context.recentActivities.some(
     (activity) => activity.date === context.referenceDate && activity.type === 'Race',
   )
-  const planningStartDate = completedRaceToday && !hasPendingSameDayRace
+  const earliestStart = completedRaceToday && !hasPendingSameDayRace
     ? new Date(reference.getTime() + DAY_MS).toISOString().slice(0, 10)
     : context.referenceDate
+  // A block opens on a Monday at most a week out, so the days kept from the
+  // current plan fill no more than the one week before it.
+  if (start !== undefined) {
+    const latest = new Date(reference.getTime() + 7 * DAY_MS).toISOString().slice(0, 10)
+    if (start < earliestStart || start > latest || new Date(`${start}T00:00:00Z`).getUTCDay() !== 1) {
+      throw new Error(`--start must be a Monday from ${earliestStart} to ${latest}, not ${start}`)
+    }
+  }
+  const planningStartDate = start ?? earliestStart
   const planningStart = new Date(`${planningStartDate}T00:00:00Z`)
   const fullHorizonEnd = new Date(planningStart.getTime() + 27 * DAY_MS).toISOString().slice(0, 10)
   const overridden = targetEventId
@@ -103,11 +124,21 @@ function selectBootstrapTarget(context: CoachingContext, targetEventId?: string)
       })
     : undefined
   if (targetEventId && !overridden) throw new Error(`Upcoming race not found: ${targetEventId}`)
-  const nearest = races[0]
-  if (!nearest) throw new Error('No upcoming race is available for bootstrap')
+  const nearest = races.find((race) => race.date >= planningStartDate)
+  // With no race to aim at, or none wanted, the block is general preparation:
+  // the full four weeks, and any race inside them run as a supporting one.
+  if (general || !nearest) {
+    const tuneUps = races
+      .filter((race) => race.date >= planningStartDate && race.date <= fullHorizonEnd)
+      .map((race) => eventFromRace(race, 'tune_up'))
+    return { primary: null, tuneUps, planningStartDate, horizonEndDate: fullHorizonEnd }
+  }
 
   const garminPrimary = races.find((race) => race.isPrimaryEvent === true)
   let primaryRace = overridden ?? garminPrimary ?? nearest
+  if (primaryRace.date < planningStartDate) {
+    throw new Error(`${primaryRace.name} on ${primaryRace.date} falls before the block would start on ${planningStartDate}`)
+  }
   if (!targetEventId && !garminPrimary) {
     const daysToNearest = Math.round((new Date(`${nearest.date}T00:00:00Z`).getTime() - reference.getTime()) / DAY_MS)
     const laterWithinHorizon = races.filter((race) => race.date > nearest.date && race.date <= fullHorizonEnd)
@@ -116,18 +147,50 @@ function selectBootstrapTarget(context: CoachingContext, targetEventId?: string)
 
   const horizonEndDate = primaryRace.date < fullHorizonEnd ? primaryRace.date : fullHorizonEnd
   const tuneUps = races
-    .filter((race) => race.date < primaryRace.date && race.date <= horizonEndDate)
+    .filter((race) => race.date >= planningStartDate && race.date < primaryRace.date && race.date <= horizonEndDate)
     .map((race) => eventFromRace(race, 'tune_up'))
   return { primary: eventFromRace(primaryRace, 'primary'), tuneUps, planningStartDate, horizonEndDate }
 }
 
-function selectGoal(context: CoachingContext, event: TargetEvent): TrainingGoal {
+function selectGoal(context: CoachingContext, event: TargetEvent | null): TrainingGoal {
+  if (!event) return { kind: 'performance', description: 'Progress running fitness over time, with no target race.' }
   const eventYear = Number(event.date.slice(0, 4))
   const annualTarget = context.goals.find((year) => year.year === eventYear)?.targets.find((candidate) => candidate.distance === event.distanceLabel)
   const targetSeconds = event.targetSeconds ?? annualTarget?.targetSeconds
   return targetSeconds
     ? { kind: 'time', targetSeconds, description: `Run ${event.distanceLabel} in the target time.` }
     : { kind: 'finish', description: `Complete ${event.name}.` }
+}
+
+/** A session's totals, where every segment gives one; a mixed session has none. */
+function calculatedTotals(blocks: WorkoutBlock[]): Pick<WorkoutPrescription, 'totalDurationSeconds' | 'totalDistanceMeters'> {
+  const segments = blocks.flatMap((block) => block.kind === 'repeat'
+    ? block.steps.map((step) => ({ segment: step, multiplier: block.repetitions }))
+    : [{ segment: block, multiplier: 1 }])
+  const allDuration = segments.every(({ segment }) => segment.target.durationSeconds !== undefined)
+  const allDistance = segments.every(({ segment }) => segment.target.distanceMeters !== undefined)
+  return {
+    ...(allDuration ? { totalDurationSeconds: segments.reduce((sum, { segment, multiplier }) => sum + segment.target.durationSeconds! * multiplier, 0) } : {}),
+    ...(allDistance ? { totalDistanceMeters: segments.reduce((sum, { segment, multiplier }) => sum + segment.target.distanceMeters! * multiplier, 0) } : {}),
+  }
+}
+
+/**
+ * The current plan's sessions from today until a later --start, kept exactly
+ * as written - ids, titles and all - in the weeks they already sat in, cut to
+ * those days. They were judged when they were written, as an adaptation keeps
+ * a title the plan already held.
+ */
+function carriedWeeks(plan: CoachingPlan | null, from: string, before: string): TrainingWeek[] {
+  if (!plan || before <= from) return []
+  const lastDay = new Date(Date.parse(`${before}T00:00:00Z`) - DAY_MS).toISOString().slice(0, 10)
+  return plan.weeks.flatMap((week) => {
+    const workouts = week.workouts.filter((workout) => workout.date >= from && workout.date < before)
+    if (workouts.length === 0) return []
+    const startDate = week.startDate > from ? week.startDate : from
+    const endDate = week.endDate < lastDay ? week.endDate : lastDay
+    return [{ ...week, startDate, endDate, workouts }]
+  })
 }
 
 /** Structure only - every rule a draft must satisfy has been checked by draftRules. */
@@ -138,6 +201,8 @@ function normalizeBootstrapPlan(
   createdAt: string,
   id: () => string,
   macrocycleStartDate: string,
+  source: Source,
+  carried: TrainingWeek[] = [],
 ): CoachingPlan {
   const horizonEnd = strategy.horizonEndDate
   const windows = isoWeekWindows(strategy.planningStartDate, horizonEnd)
@@ -149,18 +214,12 @@ function normalizeBootstrapPlan(
     }
   })
   const planId = id()
-  const calculatedTotals = (blocks: WorkoutBlock[]) => {
-    const segments = blocks.flatMap((block) => block.kind === 'repeat'
-      ? block.steps.map((step) => ({ segment: step, multiplier: block.repetitions }))
-      : [{ segment: block, multiplier: 1 }])
-    const allDuration = segments.every(({ segment }) => segment.target.durationSeconds !== undefined)
-    const allDistance = segments.every(({ segment }) => segment.target.distanceMeters !== undefined)
+  // Kept weeks come first and take the first indexes; their workouts keep the
+  // ids they were written with, which carry the outgoing plan's id.
+  const keptWeeks = carried.map((week, weekIndex) => ({ ...week, id: `${planId}:week:${weekIndex + 1}`, index: weekIndex + 1 }))
+  const normalizedWeeks = draft.weeks.map((week, draftIndex) => {
+    const weekIndex = keptWeeks.length + draftIndex
     return {
-      ...(allDuration ? { totalDurationSeconds: segments.reduce((sum, { segment, multiplier }) => sum + segment.target.durationSeconds! * multiplier, 0) } : {}),
-      ...(allDistance ? { totalDistanceMeters: segments.reduce((sum, { segment, multiplier }) => sum + segment.target.distanceMeters! * multiplier, 0) } : {}),
-    }
-  }
-  const normalizedWeeks = draft.weeks.map((week, weekIndex) => ({
     id: `${planId}:week:${weekIndex + 1}`,
     index: weekIndex + 1,
     startDate: week.startDate,
@@ -172,9 +231,10 @@ function normalizeBootstrapPlan(
       id: `${planId}:workout:${weekIndex + 1}:${workoutIndex + 1}`,
       revision: 1,
       status: 'prescribed' as const,
-      provenance: provenance('bootstrap', createdAt),
+      provenance: provenance(source, 'bootstrap', createdAt),
     })),
-  }))
+    }
+  })
   for (const week of normalizedWeeks) {
     if (week.startDate < strategy.planningStartDate || week.endDate > horizonEnd) throw new Error(`${week.id} extends outside the selected target horizon`)
     for (const workout of week.workouts) {
@@ -183,24 +243,27 @@ function normalizeBootstrapPlan(
       }
     }
   }
+  const blockStart = keptWeeks[0]?.startDate ?? strategy.planningStartDate
   return parseCoachingPlan({
     schemaVersion: COACHING_SCHEMA_VERSION,
     id: planId,
     revision: 1,
     status: 'active',
-    macrocycleStartDate,
-    targetEvent: strategy.primary,
+    // A new macrocycle opens with the block, kept days included, since a
+    // macrocycle may not start after the block it contains.
+    macrocycleStartDate: macrocycleStartDate < blockStart ? macrocycleStartDate : blockStart,
+    ...(strategy.primary ? { targetEvent: strategy.primary } : {}),
     ...(strategy.tuneUps.length ? { tuneUpEvents: strategy.tuneUps } : {}),
     goal: selectGoal(context, strategy.primary),
     block: {
       id: `${planId}:block`,
       name: draft.name,
-      startDate: strategy.planningStartDate,
+      startDate: blockStart,
       endDate: horizonEnd,
       focus: draft.focus,
     },
-    weeks: normalizedWeeks,
-    provenance: provenance('bootstrap', createdAt),
+    weeks: [...keptWeeks, ...normalizedWeeks],
+    provenance: provenance(source, 'bootstrap', createdAt),
   })
 }
 
@@ -212,6 +275,7 @@ function findWorkout(plan: CoachingPlan, workoutId: string): WorkoutPrescription
 
 function normalizeWorkout(
   draft: WorkoutPrescription,
+  source: Source,
   trigger: CoachingProvenance['trigger'],
   createdAt: string,
   decisionId: string,
@@ -224,7 +288,7 @@ function normalizeWorkout(
     id,
     revision,
     status,
-    provenance: provenance(trigger, createdAt, decisionId),
+    provenance: provenance(source, trigger, createdAt, decisionId),
   }
 }
 
@@ -245,6 +309,7 @@ function normalizeWeeks(
   weeks: TrainingWeek[],
   plan: CoachingPlan,
   effectiveDate: string,
+  source: Source,
   trigger: CoachingProvenance['trigger'],
   createdAt: string,
   decisionId: string,
@@ -271,7 +336,7 @@ function normalizeWeeks(
       workouts: week.workouts.map((draft) => {
         const prior = existing.get(draft.id)
         if (prior && samePrescription(draft, prior)) return prior
-        return normalizeWorkout(draft, trigger, createdAt, decisionId, prior?.id ?? id(), (prior?.revision ?? 0) + 1, prior ? 'adjusted' : 'prescribed')
+        return normalizeWorkout(draft, source, trigger, createdAt, decisionId, prior?.id ?? id(), (prior?.revision ?? 0) + 1, prior ? 'adjusted' : 'prescribed')
       }),
     }
   })
@@ -280,7 +345,8 @@ function normalizeWeeks(
 function materializeChanges(
   advice: AdvisorRecommendation,
   plan: CoachingPlan,
-  trigger: 'post_activity' | 'weekly_review',
+  source: Source,
+  trigger: AdaptationTrigger,
   effectiveDate: string,
   createdAt: string,
   decisionId: string,
@@ -296,7 +362,7 @@ function materializeChanges(
       kind: 'replace_future',
       effectiveDate,
       beforeWeeks: getFutureSnapshot(plan, effectiveDate),
-      afterWeeks: normalizeWeeks(replacement.weeks, plan, effectiveDate, trigger, createdAt, decisionId, id),
+      afterWeeks: normalizeWeeks(replacement.weeks, plan, effectiveDate, source, trigger, createdAt, decisionId, id),
     }]
   }
 
@@ -307,7 +373,7 @@ function materializeChanges(
       return {
         kind: 'cancel_workout',
         before,
-        after: normalizeWorkout(before, trigger, createdAt, decisionId, before.id, before.revision + 1, 'cancelled'),
+        after: normalizeWorkout(before, source, trigger, createdAt, decisionId, before.id, before.revision + 1, 'cancelled'),
       }
     }
     const before = change.workoutId ? findWorkout(plan, change.workoutId) : null
@@ -316,6 +382,7 @@ function materializeChanges(
       before,
       after: normalizeWorkout(
         change.workout,
+        source,
         trigger,
         createdAt,
         decisionId,
@@ -330,7 +397,8 @@ function materializeChanges(
 function decisionFromAdvice(
   advice: AdvisorRecommendation,
   plan: CoachingPlan,
-  trigger: 'post_activity' | 'weekly_review',
+  source: Source,
+  trigger: AdaptationTrigger,
   effectiveDate: string,
   createdAt: string,
   decisionId: string,
@@ -349,8 +417,8 @@ function decisionFromAdvice(
     reasonCodes: advice.reasonCodes,
     summary: advice.summary,
     evidence: advice.evidence,
-    changes: materializeChanges(advice, plan, trigger, effectiveDate, createdAt, decisionId, id),
-    provenance: provenance(trigger, createdAt),
+    changes: materializeChanges(advice, plan, source, trigger, effectiveDate, createdAt, decisionId, id),
+    provenance: provenance(source, trigger, createdAt),
   })
 }
 
@@ -377,6 +445,7 @@ function evaluationFor(
   contextHash: string,
   createdAt: string,
   id: () => string,
+  source: Source,
 ): WorkoutEvaluation {
   const { prescription, status } = matchPrescription(plan, activity)
   const comparable = status === 'matched' && prescription
@@ -406,7 +475,7 @@ function evaluationFor(
     summary: decision.summary,
     createdAt,
     contextHash,
-    provenance: provenance('post_activity', createdAt, decision.id),
+    provenance: provenance(source, 'post_activity', createdAt, decision.id),
   })
 }
 
@@ -443,6 +512,8 @@ export async function createBootstrapProposal(
   runsPerWeek?: number,
   guidance?: string,
   replace = false,
+  general = false,
+  start?: string,
 ): Promise<CoachingProposal> {
   // Bootstrap is how a block is written, and blocks are rewritten - a rejected
   // plan, a changed goal, a week that turned out wrong. Refusing outright left
@@ -457,10 +528,11 @@ export async function createBootstrapProposal(
   const now = services.now?.() ?? new Date()
   const id = services.id ?? defaultId
   const createdAt = now.toISOString()
-  const strategy = selectBootstrapTarget(context, targetEventId)
+  const strategy = selectBootstrapTarget(context, targetEventId, general, start)
+  const carried = carriedWeeks(existing, context.referenceDate, strategy.planningStartDate)
   const macrocycleStartDate = resolveMacrocycleStart(
     services.repository.getState(),
-    strategy.primary.id,
+    strategy.primary?.id ?? GENERAL_PREPARATION,
     strategy.planningStartDate,
   )
 
@@ -479,7 +551,7 @@ export async function createBootstrapProposal(
 
   const review = (draft: CoachingPlanDraft) => {
     validateBootstrapDraft(draft, { availableWeekdays, runsPerWeek, context, events: strategy })
-    return normalizeBootstrapPlan(draft, context, strategy, createdAt, id, macrocycleStartDate)
+    return normalizeBootstrapPlan(draft, context, strategy, createdAt, id, macrocycleStartDate, sourceOf(services), carried)
   }
 
   const proposedPlan = await draftUntilAccepted(ask, review)
@@ -496,10 +568,12 @@ export async function createBootstrapProposal(
     basePlanRevision: null,
     resultPlanRevision: 1,
     reasonCodes: ['INITIAL_PLAN'],
-    summary: `Created the initial training block for ${proposedPlan.targetEvent.name}.`,
+    summary: proposedPlan.targetEvent
+      ? `Created the initial training block for ${proposedPlan.targetEvent.name}.`
+      : 'Created a general preparation block with no target race.',
     evidence: [],
     changes: [{ kind: 'replace_future', effectiveDate: strategy.planningStartDate, beforeWeeks: [], afterWeeks: proposedPlan.weeks }],
-    provenance: provenance('bootstrap', createdAt),
+    provenance: provenance(sourceOf(services), 'bootstrap', createdAt),
   })
   return {
     schemaVersion: 1,
@@ -538,12 +612,12 @@ async function createAdaptationProposal(
   const advice = kind === 'post_activity' && activity
     ? await services.advisor.evaluateActivity({ context, activity, prescription: matched })
     : await services.advisor.reviewWeek({ context })
-  const decision = decisionFromAdvice(advice, plan, kind, effectiveDate, createdAt, id(), id)
+  const decision = decisionFromAdvice(advice, plan, sourceOf(services), kind, effectiveDate, createdAt, id(), id)
   // Judged on the plan it would produce, by the rules a bootstrap answers to:
   // until this, only the decision's own shape was checked.
   validateAdaptation(plan, applyCoachDecision(plan, decision), context)
   const hash = coachingContextHash(context)
-  const evaluation = activity ? evaluationFor(plan, activity, decision, hash, createdAt, id) : undefined
+  const evaluation = activity ? evaluationFor(plan, activity, decision, hash, createdAt, id, sourceOf(services)) : undefined
   return {
     schemaVersion: 1,
     id: id(),
@@ -568,6 +642,95 @@ export function createPostActivityProposal(
 
 export function createWeeklyReviewProposal(context: CoachingContext, services: WorkflowServices): Promise<CoachingProposal> {
   return createAdaptationProposal('weekly_review', context, services)
+}
+
+export type AutoregulationChange =
+  | { kind: 'pace_guide'; proposal: GuideProposal }
+  | { kind: 'lighter_week'; fatigue: FatigueReading }
+
+const paceLabel = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
+const rangeLabel = (range: NumberRange) => `${paceLabel(range.min)}-${paceLabel(range.max)}`
+
+function guideAdvice(plan: CoachingPlan, proposal: GuideProposal, effectiveDate: string): AdvisorRecommendation {
+  const changes = plan.weeks
+    .flatMap((week) => week.workouts)
+    .filter((workout) => workout.date >= effectiveDate)
+    .flatMap((workout) => {
+      const moved = withGuide(workout, proposal.guide, proposal.proposedGuide)
+      return moved ? [{ kind: 'upsert_workout' as const, workoutId: workout.id, workout: moved }] : []
+    })
+  const verb = proposal.direction === 'faster' ? 'Take' : 'Add'
+  return {
+    outcome: 'ADJUST',
+    reasonCodes: [proposal.direction === 'faster' ? 'THRESHOLD_HR_UNDER_TARGET' : 'THRESHOLD_HR_OVER_TARGET'],
+    summary: `${verb} ${proposal.stepSecPerKm} s/km ${proposal.direction === 'faster' ? 'off' : 'to'} the ${proposal.repClass}-repetition controlled threshold guide: ${rangeLabel(proposal.guide)} becomes ${rangeLabel(proposal.proposedGuide)}.`,
+    evidence: proposal.sessions.map((session) => ({
+      code: 'THRESHOLD_SESSION',
+      message: `${session.date}: heart rate from minute 3 ${session.reps.map((rep) => rep.windowHr).join('/')} bpm at ${session.reps.map((rep) => paceLabel(rep.paceSecPerKm)).join('/')}${session.tempC === null ? '' : `, ${session.tempC} °C`} - ${session.verdict}`,
+    })),
+    changes,
+  }
+}
+
+function lighterWeekAdvice(plan: CoachingPlan, fatigue: FatigueReading, referenceDate: string): AdvisorRecommendation {
+  const changes = lighterWeekSessions(plan, fatigue.run.date, referenceDate).flatMap((workout) => {
+    const lighter = lighterWorkout(workout)
+    if (!lighter) return []
+    // A shorter run's old totals would misstate it, so they are worked out again.
+    const recounted: WorkoutPrescription = { ...lighter }
+    delete recounted.totalDistanceMeters
+    delete recounted.totalDurationSeconds
+    return [{ kind: 'upsert_workout' as const, workoutId: workout.id, workout: { ...recounted, ...calculatedTotals(recounted.blocks) } }]
+  })
+  return {
+    outcome: 'ADJUST',
+    reasonCodes: ['EASY_RUN_HR_ABOVE_NORMAL'],
+    summary: `A lighter week: easy-run heart rate is ${Math.round(fatigue.run.hr - fatigue.normalHr!)} bpm above the recent normal. Controlled threshold time down by about a third, easy running by about a fifth, every run kept.`,
+    evidence: [{
+      code: 'EASY_RUN_HR',
+      message: `${fatigue.run.date}: ${fatigue.run.hr} bpm at ${paceLabel(Math.round(fatigue.run.paceSecPerKm))}${fatigue.run.tempC === null ? '' : `, ${fatigue.run.tempC} °C`}, against a normal of ${fatigue.normalHr} bpm over ${fatigue.comparables} similar runs`,
+      value: fatigue.run.hr - fatigue.normalHr!,
+      unit: 'bpm',
+    }],
+    changes,
+  }
+}
+
+/**
+ * A change the athlete's own runs call for, written as a proposal and never
+ * applied here: the athlete reads it and applies it, as any other. Null when
+ * there is nothing in the plan for it to change.
+ */
+export function createAutoregulationProposal(
+  context: CoachingContext,
+  services: Omit<WorkflowServices, 'advisor'>,
+  change: AutoregulationChange,
+): CoachingProposal | null {
+  const plan = services.repository.getCurrentPlan()
+  if (!plan) throw new Error('No current coaching plan exists')
+  if (change.kind === 'lighter_week' && (!change.fatigue.flagged || change.fatigue.normalHr === null)) return null
+  const now = services.now?.() ?? new Date()
+  const id = services.id ?? defaultId
+  const createdAt = now.toISOString()
+  const effectiveDate = new Date(Date.parse(`${context.referenceDate}T00:00:00Z`) + DAY_MS).toISOString().slice(0, 10)
+  const advice = change.kind === 'pace_guide'
+    ? guideAdvice(plan, change.proposal, effectiveDate)
+    : lighterWeekAdvice(plan, change.fatigue, context.referenceDate)
+  if (advice.changes.length === 0) return null
+
+  const decision = decisionFromAdvice(advice, plan, 'autoregulation', 'autoregulation', effectiveDate, createdAt, id(), id)
+  validateAdaptation(plan, applyCoachDecision(plan, decision), context, { guideChange: change.kind === 'pace_guide' })
+  return {
+    schemaVersion: 1,
+    id: id(),
+    kind: 'autoregulation',
+    createdAt,
+    referenceDate: context.referenceDate,
+    contextHash: coachingContextHash(context),
+    basePlanId: plan.id,
+    basePlanRevision: plan.revision,
+    decision,
+  }
 }
 
 function nextState(previous: CoachState | null, proposal: CoachingProposal, plan: CoachingPlan): CoachState {

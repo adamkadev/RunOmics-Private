@@ -41,7 +41,7 @@ function blockPlan(): CoachingPlan {
   return {
     ...base,
     macrocycleStartDate: '2026-09-07',
-    targetEvent: { ...base.targetEvent, date: '2026-11-29', role: 'primary' },
+    targetEvent: { ...base.targetEvent!, date: '2026-11-29', role: 'primary' },
   }
 }
 

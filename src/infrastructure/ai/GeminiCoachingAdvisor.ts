@@ -156,6 +156,7 @@ function quotaHint(models: string[], reasons: string[]): string {
 }
 
 export class GeminiCoachingAdvisor implements CoachingAdvisor {
+  readonly source = 'gemini' as const
   async bootstrap(input: BootstrapRequest): Promise<CoachingPlanDraft> {
     const raw = await request(BOOTSTRAP_PLAN_RESPONSE_SCHEMA, BOOTSTRAP_SYSTEM_INSTRUCTION, bootstrapUserPrompt(input))
     return parseBootstrapPlanDraft(raw)

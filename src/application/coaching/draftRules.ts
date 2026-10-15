@@ -88,7 +88,11 @@ export function validateWorkoutDraft(workout: BootstrapWorkoutDraft, label: stri
   ].join('\n')
   const isHillWorkout = workout.type !== 'race'
     && /\b(?:hill|hills|uphill|incline)\b|(?:côte|côtes|montee|montée|montées)/i.test(workoutProse)
-  if (isHillWorkout && segments.some((segment) =>
+  // The hill is in the repetitions - every stride, every repeated effort. The
+  // easy running a session of hill sprints opens with keeps its pace.
+  const repeated = workout.blocks.flatMap((block) => block.kind === 'repeat' ? block.steps : [])
+  const hillEfforts = [...repeated, ...workout.blocks.filter((block) => block.kind === 'strides')]
+  if (isHillWorkout && hillEfforts.some((segment) =>
     (segment.kind === 'effort' || segment.kind === 'strides')
     && segment.target.paceSecPerKm !== undefined
   )) {
@@ -179,7 +183,7 @@ function validateAdaptedFrequency(before: CoachingPlan, after: CoachingPlan, cha
  * refuse exactly the easing an adaptation exists for, and the race rules
  * judge how a block is laid around its events, which an adaptation inherits.
  */
-export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, context: CoachingContext): void {
+export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, context: CoachingContext, options: { guideChange?: boolean } = {}): void {
   const previous = new Map(before.weeks.flatMap((week) => week.workouts).map((workout) => [workout.id, workout]))
   const changed = after.weeks.flatMap(active).filter((workout) => {
     const prior = previous.get(workout.id)
@@ -195,7 +199,7 @@ export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, co
   const draft = asDraft(after)
   const prior = asDraft(before)
   validateDraftVolume(draft, volumeBand(context.trainingHistory), weekdays, prior)
-  validateDraftIntensity(draft, intensityBand(context.athlete.thresholdPaceSecPerKm), weekdays, prior)
+  validateDraftIntensity(draft, intensityBand(context.athlete.thresholdPaceSecPerKm), weekdays, prior, options)
 
   // What the change names is held to the naming rules (design review, Oct
   // 2026); a title the plan already held keeps the rules it was written

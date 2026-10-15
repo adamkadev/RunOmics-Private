@@ -25,7 +25,7 @@ function daysBetween(from: string, to: string): number {
 /** The dates the macrocycle is measured between - all a phase track reads of a plan. */
 export type MacrocycleSpan = Pick<CoachingPlan, 'macrocycleStartDate'> & {
   block: Pick<CoachingPlan['block'], 'startDate'>
-  targetEvent: Pick<CoachingPlan['targetEvent'], 'date'>
+  targetEvent?: Pick<NonNullable<CoachingPlan['targetEvent']>, 'date'>
 }
 
 export function macrocycleStart(plan: MacrocycleSpan): string {
@@ -33,7 +33,8 @@ export function macrocycleStart(plan: MacrocycleSpan): string {
 }
 
 export function macrocyclePhaseRanges(plan: MacrocycleSpan): PlanPhaseRange[] {
-  return macrocyclePhases(macrocycleStart(plan), plan.targetEvent.date)
+  // General preparation has no race to divide the season toward.
+  return plan.targetEvent ? macrocyclePhases(macrocycleStart(plan), plan.targetEvent.date) : []
 }
 
 /**
@@ -42,6 +43,7 @@ export function macrocyclePhaseRanges(plan: MacrocycleSpan): PlanPhaseRange[] {
  * start (Sep 6) the same week read "week 3" on Plan and "wk 4" on Goals.
  */
 export function macrocycleWeek(plan: MacrocycleSpan, date: string): { done: number; total: number } | null {
+  if (!plan.targetEvent) return null
   const start = macrocycleStart(plan)
   const total = Math.max(1, Math.round(daysBetween(start, plan.targetEvent.date) / 7))
   const monday = isoDate(startOfWeek(new Date(`${date}T00:00:00`)))

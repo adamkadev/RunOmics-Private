@@ -68,7 +68,7 @@ describe('coaching validation', () => {
       tuneUpEvents: [{ id: 'race-tune-up', name: 'Tune-up 5K', date: '2026-09-20', role: 'tune_up', targetSeconds: 1_200 }],
     }))
     expect(parsed.tuneUpEvents?.[0]?.role).toBe('tune_up')
-    expect(parsed.targetEvent.targetSeconds).toBe(2_400)
+    expect(parsed.targetEvent?.targetSeconds).toBe(2_400)
     expect(parsed.tuneUpEvents?.[0]?.targetSeconds).toBe(1_200)
 
     const invalid = plan({

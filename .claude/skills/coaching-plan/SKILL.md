@@ -35,6 +35,21 @@ npm run coach -- bootstrap --days ... --runs-per-week 5 --from-answer answer.jso
 A rejected plan rewrites the prompt with the reason attached, ready to answer
 again. Apply the preview it prints with `npm run coach -- --apply <path>`.
 
+Add `--general` for a block written toward no race: the full four weeks, base
+rules throughout, and any race inside it run as a supporting one. It is also
+what bootstrap does when no race is registered. Consecutive general blocks
+share one macrocycle start; marking a race primary later opens a fresh run-up.
+
+`--start <monday>` writes the block from a Monday at most a week out and keeps
+the current plan's sessions until then exactly as written.
+
+After each controlled threshold session, `npm run coach -- autoregulate` reads the runs against the
+heart-rate targets: a pace-guide change when two sessions of one repetition
+length agree, a lighter week when easy-run heart rate sits 5+ bpm above the
+recent normal at similar pace and temperature, and the latest 5K check. It
+writes previews and applies nothing. Every threshold it and the controlled threshold dose
+checks use is in `src/application/coaching/controlledThreshold.ts`.
+
 Bootstrap refuses while a plan is active. Add `--replace` to supersede it; the
 outgoing plan is kept under `coaching/superseded/<id>.json`, so rewriting a
 block is reversible.

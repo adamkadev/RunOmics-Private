@@ -2,6 +2,7 @@ import { DAY_MS } from '@/lib/calendarDate'
 import 'server-only'
 import { trainingHistory, isRunningActivity, type TrainingHistory } from '@/domain/training/trainingHistory'
 import { createHash } from 'crypto'
+import { autoregulationReport, controlledStep, type AutoregulationReport } from './autoregulation'
 import type { Activity } from '@/domain/activity/types'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { raceExecution, type RaceExecution } from '@/domain/activity/raceExecution'
@@ -98,6 +99,12 @@ export interface CoachingContext {
   racePredictions: GarminRacePredictionsData['latest'] | null
   adherence: { prescribed: number; completed: number; percent: number } | null
   currentPlan: CoachingPlan | null
+  /**
+   * The controlled threshold sessions read against their targets, the guide changes and the lighter
+   * week they call for - proposals the athlete has not accepted. Present only
+   * while the plan prescribes them.
+   */
+  autoregulation?: AutoregulationReport
 }
 
 export interface CoachingContextInput {
@@ -116,6 +123,8 @@ export interface CoachingContextInput {
   officialResults: OfficialRaceResult[]
   /** Keyed by activity id; absent entries simply have no note. */
   activityNotes?: Map<string, { note: string; tags: string[] }>
+  /** The plans the current one replaced, newest first, so a session before a block boundary is still read. */
+  archivedPlans?: CoachingPlan[]
 }
 
 function dayNumber(date: string): number {
@@ -280,6 +289,9 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
     racePredictions: input.racePredictions?.latest ?? null,
     adherence: adherence(input.plan, input.activities, referenceDate),
     currentPlan: input.plan,
+    ...(input.plan?.weeks.some((week) => week.workouts.some((workout) => controlledStep(workout) !== null))
+      ? { autoregulation: autoregulationReport(input.activities, [input.plan, ...(input.archivedPlans ?? [])], referenceDate, input.officialResults) }
+      : {}),
   }
 }
 

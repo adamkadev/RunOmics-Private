@@ -61,6 +61,8 @@ export function renderManualPrompt(input: BootstrapRequest): string {
  * preview path an API answer would take.
  */
 export class ManualCoachingAdvisor implements CoachingAdvisor {
+  // The answer is pasted from a chat, or written by hand: not a Gemini call.
+  readonly source = 'manual' as const
   private consumed = false
 
   constructor(
