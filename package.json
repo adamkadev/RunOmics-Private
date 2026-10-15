@@ -38,9 +38,12 @@
     "screenshots": "dotenv -e .env.e2e -- playwright test --config playwright.screenshots.config.ts",
     "screenshots:clean": "rm -rf screenshots/output screenshots/.pw-artifacts",
     "set-owner-claim": "dotenv -e .env.local -- node scripts/set_owner_claim.mjs",
-    "coach": "dotenv -e .env.prod -e .env.local -- node --conditions=react-server --import tsx scripts/coaching.ts",
-    "coach:sync-garmin": "dotenv -e .env.local -- node --conditions=react-server --import tsx scripts/coaching-sync-garmin.ts",
-    "coach:garmin-auth": "dotenv -e .env.local -- node scripts/garmin_auth.mjs"
+    "coach": "dotenv -o -e .env.adam.local -- node --conditions=react-server --import tsx scripts/coaching.ts",
+    "coach:sync-garmin": "dotenv -o -e .env.adam.local -- node --conditions=react-server --import tsx scripts/coaching-sync-garmin.ts",
+    "coach:garmin-auth": "dotenv -o -e .env.adam.local -- node scripts/garmin_auth.mjs",
+    "coach:lamiaa": "dotenv -o -e .env.lamiaa.local -v NEXT_PUBLIC_LOCALE=fr -- node --conditions=react-server --import tsx scripts/coaching.ts",
+    "coach:sync-garmin:lamiaa": "dotenv -o -e .env.lamiaa.local -v NEXT_PUBLIC_LOCALE=fr -- node --conditions=react-server --import tsx scripts/coaching-sync-garmin.ts",
+    "coach:garmin-auth:lamiaa": "dotenv -o -e .env.lamiaa.local -- node scripts/garmin_auth.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
