@@ -5,6 +5,7 @@ import { getVo2maxNorms } from '@/infrastructure/repositories/JsonVo2maxNormsRep
 import { tierFromScore, type RankTier } from '@/domain/athlete/rank'
 import { bracketForAge, type Vo2maxNorms, type Vo2maxThresholds } from '@/domain/athlete/vo2maxNorms'
 import { round } from '@/lib/math'
+import { vdotFromEffort } from '@/domain/training/vdot'
 
 export type { RankTier }
 
@@ -15,14 +16,6 @@ export interface AthleteRank {
 }
 
 const VDOT_EFFORT_KM: Record<string, number> = { '5k': 5, '10k': 10, half: 21.0975, marathon: 42.195 }
-
-function vdotFromEffort(distanceKm: number, seconds: number): number {
-  const velocity = (distanceKm * 1000) / (seconds / 60)
-  const vo2 = -4.6 + 0.182258 * velocity + 0.000104 * velocity * velocity
-  const minutes = seconds / 60
-  const percentMax = 0.8 + 0.1894393 * Math.exp(-0.012778 * minutes) + 0.2989558 * Math.exp(-0.1932605 * minutes)
-  return vo2 / percentMax
-}
 
 function bestVdot(records: RecordEntry[]): number | null {
   let best: number | null = null
