@@ -190,16 +190,6 @@ export function takesTemperature(model: string): boolean {
   return version.major < 3 || (version.major === 3 && version.minor < 8)
 }
 
-/**
- * How much the model thinks before it answers. Gemini 3.x is set by level,
- * 'low' its floor; 2.x by a token budget, and 512 is about what 'low' spends
- * on these answers (Oct 2026: 2.5 Flash joined the pool as a fallback).
- */
-export function thinkingConfig(model: string): { thinkingLevel: 'low' } | { thinkingBudget: number } {
-  const version = modelVersion(model)
-  return version && version.major < 3 ? { thinkingBudget: 512 } : { thinkingLevel: 'low' }
-}
-
 async function attemptStructuredJson(request: StructuredRequest): Promise<Attempt> {
   try {
     const res = await fetch(`${ENDPOINT}/${request.model}:generateContent`, {
@@ -212,7 +202,8 @@ async function attemptStructuredJson(request: StructuredRequest): Promise<Attemp
           responseMimeType: 'application/json',
           responseSchema: request.responseSchema,
           ...(takesTemperature(request.model) ? { temperature: request.temperature ?? 0.4 } : {}),
-          thinkingConfig: thinkingConfig(request.model),
+          // Gemini 3 is set by level, 'low' its floor.
+          thinkingConfig: { thinkingLevel: 'low' },
         },
       }),
       signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
