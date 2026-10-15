@@ -67,7 +67,10 @@ export function resolveMacrocycleStart(
   planningStartDate: string,
 ): string {
   const carried = state?.macrocycle
-  return carried && carried.targetEventId === primaryTargetId ? carried.startDate : planningStartDate
+  if (!carried || carried.targetEventId !== primaryTargetId) return planningStartDate
+  // A block rewritten to start earlier than the journey it continues moves the
+  // journey's start back with it: a macrocycle never starts after its block.
+  return carried.startDate < planningStartDate ? carried.startDate : planningStartDate
 }
 
 export function macrocycleOf(plan: CoachingPlan): { targetEventId: string; startDate: string } {

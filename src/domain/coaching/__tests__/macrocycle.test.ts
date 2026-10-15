@@ -76,6 +76,11 @@ describe('resolveMacrocycleStart', () => {
     expect(resolveMacrocycleStart(carried, PRIMARY, '2026-10-04')).toBe(MACROCYCLE_START)
   })
 
+  it('moves the start back when the block is rewritten to begin earlier', () => {
+    const carried = state({ macrocycle: { targetEventId: PRIMARY, startDate: '2026-10-19' } })
+    expect(resolveMacrocycleStart(carried, PRIMARY, '2026-10-15')).toBe('2026-10-15')
+  })
+
   it('starts a new journey when the athlete targets a different race', () => {
     const carried = state({ macrocycle: { targetEventId: PRIMARY, startDate: MACROCYCLE_START } })
 
