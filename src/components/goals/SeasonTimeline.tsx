@@ -32,44 +32,120 @@ export function yearFraction(iso: string, year: number): number {
 
 const pct = (fraction: number) => `${(fraction * 100).toFixed(2)}%`
 
-/** A mark on the strip: its label over it, centred on its date. */
-function Mark({ at, label, labelClassName, children, testId }: { at: number; label: string; labelClassName?: string; children: ReactNode; testId?: string }) {
+/** The strip's line, its vertical centre in px. */
+const LINE_Y = 27
+const LABEL_H = 14
+const LABEL_GAP = 6
+/** The narrowest strip the labels are laid out for: a phone's card. */
+const MIN_STRIP_PX = 280
+/** About how wide an 11 px semibold character is, and the air kept between two labels. */
+const LABEL_CH_PX = 6.5
+const LABEL_AIR_PX = 6
+
+export type Lane = 'above' | 'below'
+
+/**
+ * Which side of the line each label goes (screen audit, Oct 2026): "Marathon",
+ * "Today" and "10K" a few weeks apart were drawn over one another as
+ * "MarTodayl0K". The races first, in date order, each on its preferred side
+ * unless it would touch a label already there, then the other; Today last, on
+ * whichever side is free, and when neither is it keeps its tick without a
+ * label - the accent line already ends there. Laid out for the narrowest
+ * strip, so a wider one only has more air. null is a mark with no label.
+ */
+export function stripLanes(
+  marks: readonly { at: number; label: string; prefer: Lane; optional?: boolean }[],
+  widthPx = MIN_STRIP_PX,
+): (Lane | null)[] {
+  const spans = marks.map(({ at, label }) => {
+    const half = (label.length * LABEL_CH_PX) / 2
+    return { left: at * widthPx - half, right: at * widthPx + half }
+  })
+  const placed: { lane: Lane; left: number; right: number }[] = []
+  const free = (lane: Lane, i: number) =>
+    placed.every((p) => p.lane !== lane || p.right + LABEL_AIR_PX <= spans[i]!.left || spans[i]!.right + LABEL_AIR_PX <= p.left)
+  const order = marks.map((_, i) => i).sort((a, b) => Number(!!marks[a]!.optional) - Number(!!marks[b]!.optional) || marks[a]!.at - marks[b]!.at)
+  const lanes: (Lane | null)[] = marks.map(() => null)
+  for (const i of order) {
+    const { prefer, optional } = marks[i]!
+    const other: Lane = prefer === 'above' ? 'below' : 'above'
+    const lane = free(prefer, i) ? prefer : free(other, i) ? other : optional ? null : prefer
+    lanes[i] = lane
+    if (lane) placed.push({ lane, ...spans[i]! })
+  }
+  return lanes
+}
+
+/** A mark on the strip, centred on its date, its label above or below the line. */
+function Mark({
+  at,
+  label,
+  lane,
+  markHeight,
+  labelClassName,
+  children,
+  testId,
+}: {
+  at: number
+  /** Null draws the mark alone: Today when both sides are taken. */
+  label: string | null
+  lane: Lane
+  /** The mark's own height, so its centre lands on the line. */
+  markHeight: number
+  labelClassName?: string
+  children: ReactNode
+  testId?: string
+}) {
+  const top = lane === 'above' ? LINE_Y - LABEL_H - LABEL_GAP - markHeight / 2 : LINE_Y - markHeight / 2
+  const text = label !== null && <span className={cn('whitespace-nowrap text-[11px] font-semibold leading-[14px] text-foreground', labelClassName)}>{label}</span>
   return (
-    <span className="absolute top-0 flex -translate-x-1/2 flex-col items-center gap-1.5" style={{ left: pct(at) }} data-testid={testId}>
-      <span className={cn('whitespace-nowrap text-[11px] font-semibold leading-[14px] text-foreground', labelClassName)}>{label}</span>
+    <span className="absolute flex -translate-x-1/2 flex-col items-center gap-1.5" style={{ left: pct(at), top }} data-testid={testId} data-lane={lane}>
+      {lane === 'above' && text}
       {children}
+      {lane === 'below' && text}
     </span>
   )
 }
 
 /**
  * Jan-Dec as one strip (v4.17): the year so far in the accent to today, a
- * race done in pos, one ahead an outlined circle.
+ * race done a filled circle in text ink, one ahead an outlined one. Filled,
+ * not the pos green: the lime dot on the teal line read as a clash (screen
+ * audit, Oct 2026), and shape already says done.
  */
 function SeasonStrip({ year, today, rows }: { year: number; today: string; rows: SeasonRaceRow[] }) {
   const thisYear = Number(today.slice(0, 4)) === year
   const done = today.slice(0, 4) > String(year) ? 1 : thisYear ? yearFraction(today, year) : 0
   const months = new Intl.DateTimeFormat(t.locale, { month: 'short', timeZone: 'UTC' })
 
+  const marks = [
+    ...rows.map((row) => ({ at: yearFraction(row.date!, year), label: row.short, prefer: 'above' as Lane })),
+    ...(thisYear ? [{ at: done, label: t.goals.season.today, prefer: 'below' as Lane, optional: true }] : []),
+  ]
+  const lanes = stripLanes(marks)
+  const todayLane = thisYear ? lanes.at(-1)! : null
+  const anyBelow = lanes.includes('below')
+
   return (
     <div aria-hidden>
-      <div className="relative h-11" data-testid="season-strip">
+      {/* Taller when a label sits under the line, so it clears the months. */}
+      <div className={cn('relative', anyBelow ? 'h-[60px]' : 'h-11')} data-testid="season-strip">
         <span className="absolute inset-x-0 top-[26px] h-0.5 rounded-full bg-[var(--line-2)]" />
         <span className="absolute left-0 top-[26px] h-0.5 rounded-full bg-accent" style={{ width: pct(done) }} data-testid="season-done" />
-        {rows.map((row) => {
+        {rows.map((row, i) => {
           const upcoming = row.kind === 'scheduled'
           return (
-            <Mark key={row.distance} at={yearFraction(row.date!, year)} label={row.short} testId={`season-marker-${upcoming ? 'upcoming' : 'done'}`}>
+            <Mark key={row.distance} at={marks[i]!.at} label={row.short} lane={lanes[i] ?? 'above'} markHeight={12} testId={`season-marker-${upcoming ? 'upcoming' : 'done'}`}>
               {upcoming ? (
                 <span className="box-border block size-3 rounded-full border-2 border-foreground bg-card" />
               ) : (
-                <span className="block size-3 rounded-full bg-[var(--pos)]" />
+                <span className="block size-3 rounded-full bg-foreground" />
               )}
             </Mark>
           )
         })}
         {thisYear && (
-          <Mark at={done} label={t.goals.season.today} labelClassName="text-accent-text" testId="season-today">
+          <Mark at={done} label={todayLane ? t.goals.season.today : null} lane={todayLane ?? 'below'} markHeight={14} labelClassName="text-accent-text" testId="season-today">
             <span className="block h-3.5 w-0.5 bg-accent" />
           </Mark>
         )}

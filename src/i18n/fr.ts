@@ -575,7 +575,7 @@ export const fr = {
       title: 'Cette semaine',
       weeksInARow: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
       ofKm: (target: string) => `sur ${target} km`,
-      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} sur ${planned}`,
+      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} prévue${done > 1 ? 's' : ''} sur ${planned}`,
       kinds: {
         easy: { label: 'Facile', shortLabel: 'Endu' },
         easyStrides: { label: 'Facile + accél.', shortLabel: 'Endu' },
@@ -1188,7 +1188,7 @@ export const fr = {
     weekLine: {
       ofKm: (target: string) => ` sur ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 sortie' : `${n} sorties`),
-      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} sur ${planned}`,
+      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} prévue${done > 1 ? 's' : ''} sur ${planned}`,
       easy: (pct: number) => `${pct} % facile`,
     },
     mapButton: 'Vue carte',
@@ -1741,6 +1741,7 @@ export const fr = {
       vo2max: 'VO₂ max',
       allTime: 'Depuis le début',
       vsYear: (delta: string, year: number) => `${delta} km vs ${year} à la même date`,
+      vsYearSince: (delta: string, year: number, since: string) => `${delta} km vs ${year} depuis le ${since}`,
       ofGoal: (km: string) => `sur ${km} km`,
       goal: 'Objectif',
       runsHours: (runs: number, hours: number) => `${runs} sorties · ${hours} h`,

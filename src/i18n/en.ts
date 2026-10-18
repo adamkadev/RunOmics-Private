@@ -615,7 +615,9 @@ export const en = {
       title: 'This week',
       weeksInARow: (weeks: number) => `${weeks} week streak`,
       ofKm: (target: string) => `of ${target} km`,
-      runsOf: (done: number, planned: number) => `${done} of ${planned} run${planned !== 1 ? 's' : ''}`,
+      // Planned sessions only: an extra run fills a bar too, and "2 of 3 runs"
+      // under five filled bars read as a contradiction (screen audit, Oct 2026).
+      runsOf: (done: number, planned: number) => `${done} of ${planned} planned run${planned !== 1 ? 's' : ''}`,
       // The session under each day of the week strip, by the coach's type,
       // and its short label for a phone under 480 pt, where "Threshold" and
       // "Long run" were cut (v4.17.3).
@@ -1252,7 +1254,7 @@ export const en = {
     weekLine: {
       ofKm: (target: string) => ` of ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 run' : `${n} runs`),
-      runsOf: (done: number, planned: number) => `${done} of ${planned} run${planned !== 1 ? 's' : ''}`,
+      runsOf: (done: number, planned: number) => `${done} of ${planned} planned run${planned !== 1 ? 's' : ''}`,
       easy: (pct: number) => `${pct}% easy`,
     },
     mapButton: 'Map view',
@@ -1857,6 +1859,8 @@ export const en = {
       vo2max: 'VO₂ max',
       allTime: 'All time',
       vsYear: (delta: string, year: number) => `${delta} km vs ${year} to date`,
+      // The same dates in both years, from where the history starts (screen audit, Oct 2026).
+      vsYearSince: (delta: string, year: number, since: string) => `${delta} km vs ${year} since ${since}`,
       ofGoal: (km: string) => `of ${km} km`,
       goal: 'Goal',
       runsHours: (runs: number, hours: number) => `${runs} runs · ${hours} h`,

@@ -14,18 +14,28 @@ const STUB_PX = 8
 /** A session with no distance, or a very short one, still reads as a bar. */
 const MIN_BAR_PX = 14
 
-function cellName(cell: DayStateCell): string {
-  const state = [t.sessionState[cell.state], cell.isToday ? t.sessionState.today : null].filter(Boolean).join(' · ')
-  return [t.sessionState.dayLabel(cell.fullLabel, state), cell.detail].filter(Boolean).join(' · ')
+/** A run day's own km to the tenth ("10.2"); a plan's as the week writes it ("10"). */
+function kmFigure(cell: DayStateCell): string | null {
+  if (cell.state === 'rest' || cell.km === null) return null
+  const tenth = Math.round(cell.km * 10) / 10
+  return cell.state === 'done' ? formatKm(tenth, Number.isInteger(tenth) ? 0 : 1) : formatWeekKm(cell.km)
 }
 
-/** A run day's own km to the tenth ("10.2 km"); a plan's as the week writes it ("10 km"). */
+function cellName(cell: DayStateCell): string {
+  const state = [t.sessionState[cell.state], cell.isToday ? t.sessionState.today : null].filter(Boolean).join(' · ')
+  const figure = kmFigure(cell)
+  const km = figure !== null ? `${figure} ${t.units.km}` : null
+  const detail = cell.detail && km && cell.detail.includes(km) ? cell.detail : [km, cell.detail].filter(Boolean).join(' · ')
+  return [t.sessionState.dayLabel(cell.fullLabel, state), detail].filter(Boolean).join(' · ')
+}
+
+/**
+ * The figure over a bar, bare: the week's total carries the unit, and
+ * "11.5 km" ran into its neighbours at phone width (screen audit, Oct 2026).
+ */
 function kmLabel(cell: DayStateCell): string {
   if (cell.state === 'rest') return cell.isToday ? t.plan.restDay : ''
-  if (cell.km === null) return '–'
-  const tenth = Math.round(cell.km * 10) / 10
-  const km = cell.state === 'done' ? formatKm(tenth, Number.isInteger(tenth) ? 0 : 1) : formatWeekKm(cell.km)
-  return `${km} ${t.units.km}`
+  return kmFigure(cell) ?? '–'
 }
 
 /**
@@ -37,7 +47,9 @@ function kmLabel(cell: DayStateCell): string {
 function barClass(cell: DayStateCell): string {
   if (cell.state === 'done') return 'bg-accent'
   if (cell.isToday) return 'border-2 border-accent bg-[var(--accent-soft)]'
-  if (cell.state === 'missed') return 'border border-[var(--neg)] bg-[color-mix(in_srgb,var(--neg)_25%,transparent)]'
+  // A ghost of what was planned, unfilled: a missed long run read as the
+  // week's biggest day (screen audit, Oct 2026).
+  if (cell.state === 'missed') return 'border-[1.5px] border-dashed border-[var(--neg)] bg-transparent'
   if (cell.state === 'planned') return 'border-[1.5px] border-dashed border-[var(--bar-zone)] bg-[color-mix(in_srgb,var(--bar-zone)_14%,transparent)]'
   return 'border border-border bg-[var(--surface-2)]'
 }
@@ -78,7 +90,7 @@ export function WeekChart({
           >
             <span
               className={cn(
-                'h-4 whitespace-nowrap text-[11px] font-semibold leading-4 sm:text-xs',
+                'h-4 w-full whitespace-nowrap text-center text-[11px] font-semibold leading-4 tabular-nums sm:text-xs',
                 cell.state === 'missed' ? 'text-[var(--neg)]' : 'text-[var(--text-2)]',
               )}
             >
@@ -123,7 +135,7 @@ export function WeekChartLegend() {
           <span
             aria-hidden
             data-legend-swatch="missed"
-            className="box-border size-2 shrink-0 rounded-[2px] border border-[var(--neg)] bg-[color-mix(in_srgb,var(--neg)_25%,transparent)]"
+            className="box-border size-2 shrink-0 rounded-[2px] border border-dashed border-[var(--neg)]"
           />
           {t.sessionState.missed}
         </span>

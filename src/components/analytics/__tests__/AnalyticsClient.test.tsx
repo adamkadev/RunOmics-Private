@@ -399,9 +399,12 @@ describe('Analytics (v4.5)', () => {
     const done = [...bars.querySelectorAll<HTMLElement>('[data-on-plan]:not([data-current])')]
     expect(done.length).toBeGreaterThan(0)
     for (const bar of done) expect(bar.style.background).toBe('var(--accent)')
+    // This week is filled by its status and ringed with the dashed outline, as
+    // the long-run chart draws it (screen audit, Oct 2026): an empty outline
+    // left a week already over plan with no bar.
     const current = bars.querySelector<HTMLElement>('[data-current]')!
-    expect(current.style.background).toBe('transparent')
-    expect(current.style.border).toBe('1.5px dashed var(--accent)')
+    expect(current.style.background).toMatch(/var\(--accent\)/)
+    expect(current.style.outline).toBe('1.5px dashed var(--accent)')
     // The one weekly average, as a stat with its unit.
     expect(screen.getByTestId('weekly-card').textContent).toContain('12-week average26km/week')
     // This week, dashed in the one "this week" style and never flagged over:
@@ -803,8 +806,9 @@ describe('Load trend and Recovery (v5.4)', () => {
 describe('the pace axis (v4.17.3)', () => {
   it('pads the drawn paces by 5% of their range, at least 5 s, rounded out to 5 s', async () => {
     const { paceAxis } = await import('../PerformanceTab')
-    // A 70 s range: 5% is 3.5, so the 5 s floor holds.
-    expect(paceAxis([265, 290, 335])).toMatchObject({ lo: 260, hi: 340, ticks: [280, 300, 320] })
+    // A 70 s range: 5% is 3.5, so the 5 s floor holds. The labels are the
+    // edges and the middle (screen audit, Oct 2026).
+    expect(paceAxis([265, 290, 335])).toMatchObject({ lo: 260, hi: 340, ticks: [260, 300, 340] })
     // A 200 s range: 5% is 10.
     expect(paceAxis([240, 440])).toMatchObject({ lo: 230, hi: 450 })
   })
@@ -820,6 +824,10 @@ describe('the pace axis (v4.17.3)', () => {
         expect(tick).toBeLessThanOrEqual(hi)
       }
       expect(new Set(ticks).size).toBe(3)
+      // Every pace between the top and bottom labels, the middle on 5 s.
+      expect(ticks[0]).toBeLessThanOrEqual(range[0]!)
+      expect(ticks[2]).toBeGreaterThanOrEqual(range[1]!)
+      expect(ticks[1] % 5).toBe(0)
       if (range[1]! - range[0]! >= 40) expect((range[1]! - range[0]!) / (hi - lo)).toBeGreaterThanOrEqual(0.7)
     }
   })

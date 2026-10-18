@@ -79,6 +79,9 @@ describe('progressHubView', () => {
     const yoy = yearOverYear(activities, INPUT.today)!
     expect(yoy).toEqual({ km: 310, lastYearKm: 300, since: '2025-05-21' })
     expect(hub.hero.deltaKm).toBe(yoy.km - yoy.lastYearKm)
+    // The label names where those dates start (screen audit, Oct 2026).
+    expect(hub.hero.compareSince).toBe('2025-05-21')
+    expect(progressHubView(INPUT).hero.compareSince).toBeNull()
   })
 
   it('marks the most recent record and keeps the four hub distances', () => {

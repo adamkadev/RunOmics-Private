@@ -192,7 +192,9 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
           {hero.deltaKm !== null && (
             // Coloured by what it means, against the km it is measured on.
             <span className="text-right text-xs" data-testid="year-delta" style={{ color: deltaColor('distance', hero.deltaKm, { value: hero.compareKm ?? hero.km }) }}>
-              {h.vsYear(formatDelta(hero.deltaKm), view.year - 1)}
+              {hero.compareSince
+                ? h.vsYearSince(formatDelta(hero.deltaKm), view.year - 1, formatDate(hero.compareSince, { style: 'bare', year: 'never' }))
+                : h.vsYear(formatDelta(hero.deltaKm), view.year - 1)}
             </span>
           )}
         </div>

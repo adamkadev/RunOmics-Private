@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { seasonRaceRows } from '@/components/goals/SeasonRaces'
-import { SeasonTimeline, yearFraction } from '@/components/goals/SeasonTimeline'
+import { SeasonTimeline, stripLanes, yearFraction } from '@/components/goals/SeasonTimeline'
 import type { YearData, PbData } from '@/application/usecases/GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
 import { t } from '@/i18n'
@@ -95,7 +95,7 @@ describe('SeasonTimeline', () => {
     expect(screen.getByTestId('season-today').style.left).toBe(at)
     expect(screen.getByTestId('season-done').style.width).toBe(at)
     expect(screen.getByTestId('season-done').className).toContain('bg-accent')
-    expect(screen.getByTestId('season-marker-done').querySelector('.bg-\\[var\\(--pos\\)\\]')).not.toBeNull()
+    expect(screen.getByTestId('season-marker-done').querySelector('.bg-foreground')).not.toBeNull()
   })
 
   it('puts a goal with no date in its own card, off the timeline', () => {
@@ -106,6 +106,33 @@ describe('SeasonTimeline', () => {
     expect(within(card).getByText(t.goals.season.noDate)).toBeInTheDocument()
     expect(card.textContent).toContain(t.goals.season.noTarget)
     expect(screen.getByTestId('season-card').textContent).not.toContain('Marathon')
+  })
+})
+
+// Screen audit, Oct 2026: Marathon (Oct 7), Today (Oct 18) and 10K (Nov 8)
+// were drawn over one another as "MarTodayl0K".
+describe('stripLanes', () => {
+  const at = (iso: string) => yearFraction(iso, 2026)
+
+  it('keeps labels far apart above the line, and Today below it', () => {
+    expect(stripLanes([
+      { at: at('2026-03-16'), label: '5K', prefer: 'above' },
+      { at: at('2026-10-18'), label: 'Today', prefer: 'below', optional: true },
+    ])).toEqual(['above', 'below'])
+  })
+
+  it('sends a race label under the line when it would touch its neighbour above', () => {
+    const lanes = stripLanes([
+      { at: at('2026-03-16'), label: '5K', prefer: 'above' },
+      { at: at('2026-10-07'), label: 'Marathon', prefer: 'above' },
+      { at: at('2026-11-08'), label: '10K', prefer: 'above' },
+      { at: at('2026-12-20'), label: 'Half', prefer: 'above' },
+      { at: at('2026-10-18'), label: 'Today', prefer: 'below', optional: true },
+    ])
+    expect(lanes.slice(0, 4)).toEqual(['above', 'above', 'below', 'above'])
+    // No room left on either side between Marathon and 10K: Today keeps its
+    // tick and drops its word.
+    expect(lanes[4]).toBeNull()
   })
 })
 

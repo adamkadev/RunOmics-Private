@@ -243,24 +243,25 @@ export const PACE_PAD_MIN = 5
 const PACE_PAD_SHARE = 0.05
 /** The domain's limits land on a multiple of this many seconds. */
 const PACE_ROUND = 5
-const PACE_STEPS = [5, 10, 15, 20, 30, 60, 120]
 
 /**
  * The pace chart's domain and its three y labels (v4.17.3): the drawn paces
  * - the smoothed lines, not the raw weeks, whose outliers left the lines in
  * the top half - with 5% of their range either side, at least 5 s/km,
- * rounded out to 5 s; then three round paces inside, the widest step that
- * keeps all three in. Faster is up.
+ * rounded out to 5 s. The three labels are the domain's two edges and its
+ * middle, so every drawn pace sits between two labelled lines: ticks round
+ * to a step inside the domain left the workout line above the top label and
+ * the easy line under the bottom one (screen audit, Oct 2026). The domain
+ * grows by 5 s when needed to keep the middle on a 5 s pace. Faster is up.
  */
 export function paceAxis(paces: readonly number[]): { lo: number; hi: number; ticks: [number, number, number] } {
   const min = Math.min(...paces)
   const max = Math.max(...paces)
   const pad = Math.max(PACE_PAD_MIN, (max - min) * PACE_PAD_SHARE)
   const lo = Math.floor((min - pad) / PACE_ROUND) * PACE_ROUND
-  const hi = Math.ceil((max + pad) / PACE_ROUND) * PACE_ROUND
-  const step = [...PACE_STEPS].reverse().find((k) => k <= (hi - lo) / 3) ?? PACE_STEPS[0]!
-  const mid = Math.round((lo + hi) / 2 / step) * step
-  return { lo, hi, ticks: [mid - step, mid, mid + step] }
+  const rounded = Math.ceil((max + pad) / PACE_ROUND) * PACE_ROUND
+  const hi = (rounded - lo) % (2 * PACE_ROUND) === 0 ? rounded : rounded + PACE_ROUND
+  return { lo, hi, ticks: [lo, (lo + hi) / 2, hi] }
 }
 
 /** A pace sentence part with its figure in bold, coloured by what the change means. */
@@ -301,8 +302,9 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
         {workoutParts && <PacePart parts={workoutParts} delta={wHeld ? null : wShift} />}
       </Sentence>
       {/* Three paces up the left (v4.17.2), outside the scrub so a touch
-          still reads the week under it; higher is faster. */}
-      <div className="flex gap-2">
+          still reads the week under it; higher is faster. The outer two sit
+          on the chart's edges, so a little room above and below for them. */}
+      <div className="flex gap-2 py-1.5">
         <div className="relative w-8 shrink-0 text-[11px] leading-none text-muted-foreground" style={{ height: H }} aria-hidden data-testid="pace-axis">
           {ticks.map((pace) => (
             <span key={pace} className="absolute right-0 -translate-y-1/2" style={{ top: `${(yOf(pace) / H) * 100}%` }}>
