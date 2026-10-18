@@ -5,7 +5,7 @@ import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import type { ProfileGoal, ProfilePeriodStats } from '@/application/usecases/GetProfileData'
 import type { NextRaceSpotlight } from '@/application/usecases/GetGoalsData'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
-import { consistencyMonths, dayLevel, type DayLevel } from '@/components/consistency/consistencyMonths'
+import { consistencyMonths, dayLevel, type DayLevel } from '@/components/consistency/consistencyMonthsView'
 import { isPlaceholderRaceName, raceDisplayName } from '@/components/goals/raceName'
 import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 

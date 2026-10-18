@@ -7,7 +7,7 @@ import { getRecords } from '@/application/usecases/GetRecords'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { ProgressHub } from '@/components/profile/ProgressHub'
-import { progressHubView } from '@/components/profile/progressHub'
+import { progressHubView } from '@/components/profile/progressHubView'
 import { appTodayIso } from '@/lib/calendarDate'
 
 export const revalidate = 3600

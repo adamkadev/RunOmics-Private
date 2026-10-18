@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
-import { consistencyMonths, dayLevel, LEVEL_FILL } from '@/components/consistency/consistencyMonths'
+import { consistencyMonths, dayLevel, LEVEL_FILL } from '@/components/consistency/consistencyMonthsView'
 import { ConsistencyMonths } from '@/components/consistency/ConsistencyMonths'
 import { t } from '@/i18n'
 

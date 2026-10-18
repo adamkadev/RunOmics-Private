@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { t } from '@/i18n'
 import { yearOverYear } from '@/lib/yearOverYear'
-import { cumulativeYear, heatWeeks, progressHubView, type HubInput } from '../progressHub'
+import { cumulativeYear, heatWeeks, progressHubView, type HubInput } from '../progressHubView'
 import { ProgressHub, raceShare } from '../ProgressHub'
 
 function shoe(overrides: Partial<ShoeStats>): ShoeStats {
@@ -233,7 +233,7 @@ describe('the hub columns (v4.17.1)', () => {
 
 describe('one consistency count (v5.5 #9)', () => {
   it('matches the Consistency page, even for runs the rolling year and the month columns disagree on', async () => {
-    const { consistencyMonths } = await import('@/components/consistency/consistencyMonths')
+    const { consistencyMonths } = await import('@/components/consistency/consistencyMonthsView')
     // Sep 28-30, 2025: inside a rolling 365 days, before the page's first month (Oct).
     const edge = ['2025-09-28', '2025-09-30', '2025-10-01', '2026-09-20'].map((date) => ({
       date, distanceKm: 8, sessionCount: 1, longRun: false, activityId: date,
