@@ -11,6 +11,7 @@ import {
   type Theme,
 } from './routes'
 import { ACCENT_STORAGE_KEY } from '@/lib/accent'
+import { signInAsOwner } from './owner'
 
 const OUTPUT_DIR = path.join(__dirname, 'output')
 
@@ -145,6 +146,12 @@ for (const accent of selectedAccents()) {
           const dir = path.join(OUTPUT_DIR, accent, theme, route.name)
           await preparePage(page, theme, accent)
           await gotoAndSettle(page, await resolvePath(page, route), route, theme, accent)
+          if (route.asOwner) {
+            // A deployment has no emulator to sign in against.
+            test.skip(!!process.env.SCREENSHOT_BASE_URL, 'the owner capture needs the local Auth emulator')
+            await signInAsOwner(page)
+            await page.waitForTimeout(600)
+          }
           await captureScreens(page, dir, '')
 
           if (route.hasTabs) {

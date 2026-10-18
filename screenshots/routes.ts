@@ -10,6 +10,8 @@ export interface RouteSpec {
    * with this - so it has content in whichever dataset is being served.
    */
   firstLinkTo?: string
+  /** Captured signed in as the owner, through the Auth emulator (owner.ts). */
+  asOwner?: boolean
 }
 
 export const ROUTES: RouteSpec[] = [
@@ -28,6 +30,7 @@ export const ROUTES: RouteSpec[] = [
   { path: '/consistency', name: 'consistency' },
   { path: '/all-time', name: 'all-time' },
   { path: '/settings', name: 'settings' },
+  { path: '/settings', name: 'settings-owner', asOwner: true },
   { path: '/no-such-page', name: 'not-found' },
 ]
 

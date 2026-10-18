@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
-import { getAuth } from 'firebase/auth'
+import { connectAuthEmulator, getAuth, type Auth } from 'firebase/auth'
 
 import { firebaseConfig } from './firebaseConfig'
 
@@ -15,6 +15,17 @@ export function getClientFirestore() {
   return getFirestore(getClientApp())
 }
 
-export function getClientAuth() {
-  return getAuth(getClientApp())
+// Set only by the screenshot build (playwright.screenshots.config.ts), so the
+// capture can sign in as the owner without a real Google account. Inlined at
+// build time: unset in every other build, where this is dead code.
+const AUTH_EMULATOR_HOST = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST
+let authEmulatorConnected = false
+
+export function getClientAuth(): Auth {
+  const auth = getAuth(getClientApp())
+  if (AUTH_EMULATOR_HOST && !authEmulatorConnected) {
+    connectAuthEmulator(auth, `http://${AUTH_EMULATOR_HOST}`, { disableWarnings: true })
+    authEmulatorConnected = true
+  }
+  return auth
 }

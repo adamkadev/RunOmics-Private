@@ -1,5 +1,7 @@
 import fs from 'node:fs'
+import { parseEnv } from 'node:util'
 import { defineConfig, devices } from '@playwright/test'
+import { AUTH_EMULATOR_HOST } from './screenshots/owner'
 
 const PROVISIONED_CHROMIUM = '/opt/pw-browsers/chromium'
 const executablePath =
@@ -13,6 +15,20 @@ const baseURL = process.env.SCREENSHOT_BASE_URL ?? `http://localhost:${process.e
 // preset's in-browser viewport. capture.spec.ts adds the safe areas.
 const phone = devices['iPhone 15 Pro']
 const PHONE_SCREEN = { width: 393, height: 852 }
+
+// The offline build has no map tiles: .env.e2e leaves the MapTiler token
+// unset. The screenshot build borrows the one in .env.local when there is one,
+// so the map is audited with its tiles.
+function localMapTilerToken(): string | undefined {
+  if (process.env.NEXT_PUBLIC_MAPTILER_TOKEN) return process.env.NEXT_PUBLIC_MAPTILER_TOKEN
+  try {
+    return parseEnv(fs.readFileSync('.env.local', 'utf8')).NEXT_PUBLIC_MAPTILER_TOKEN || undefined
+  } catch {
+    return undefined
+  }
+}
+
+const mapTilerToken = localMapTilerToken()
 
 export default defineConfig({
   testDir: './screenshots',
@@ -35,11 +51,27 @@ export default defineConfig({
   ...(process.env.SCREENSHOT_BASE_URL
     ? {}
     : {
-        webServer: {
-          command: 'npm run e2e:build && npm run e2e:start',
-          url: baseURL,
-          reuseExistingServer: true,
-          timeout: 300_000,
-        },
+        webServer: [
+          // Settings is captured signed in as the owner: a Google account
+          // the Auth emulator makes up, so no real account is involved.
+          {
+            command: 'firebase emulators:start --only auth --project runomics-dev',
+            url: `http://${AUTH_EMULATOR_HOST}`,
+            reuseExistingServer: true,
+            timeout: 120_000,
+          },
+          {
+            command: 'npm run e2e:build && npm run e2e:start',
+            url: baseURL,
+            reuseExistingServer: true,
+            timeout: 300_000,
+            // NEXT_PUBLIC_* is inlined at build time, and dotenv does not
+            // override a variable already set, so these win over .env.e2e.
+            env: {
+              NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST: AUTH_EMULATOR_HOST,
+              ...(mapTilerToken ? { NEXT_PUBLIC_MAPTILER_TOKEN: mapTilerToken } : {}),
+            },
+          },
+        ],
       }),
 })
