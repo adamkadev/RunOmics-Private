@@ -442,6 +442,8 @@ export const en = {
       signedOut: (runs: string) => `Workbook of all ${runs} · sign in to export`,
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
+      csv: 'Export activities for Claude (.csv)',
+      notesUnavailable: 'Exported without your notes and tags: the notes store did not answer. Try again.',
     },
     profile: {
       // Under the read-only height, weight and BMI (design review, Oct 2026).

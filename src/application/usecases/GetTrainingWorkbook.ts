@@ -17,6 +17,7 @@ import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp
 import { loadSeries } from '@/domain/training/loadSeries'
 import { round } from '@/lib/math'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getActivityNotes, type ActivityNote } from '@/infrastructure/repositories/FirestoreActivityNoteRepository'
 import { getAthleteHistory } from '@/infrastructure/repositories/JsonAthleteHistoryRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
@@ -34,7 +35,7 @@ import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistor
 export const TRAINING_WORKBOOK_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-const SCHEMA_VERSION = '1.0'
+const SCHEMA_VERSION = '1.1'
 const HEADER_FILL = '17324D'
 const HEADER_TEXT = 'FFFFFF'
 const ACCENT = '37B6A5'
@@ -51,6 +52,10 @@ interface ColumnDefinition {
 
 export interface TrainingWorkbookData {
   activities: Activity[]
+  /** The notes and tags typed in the app, by activity id. Firestore is their only home. */
+  activityNotes: ReadonlyMap<string, ActivityNote>
+  /** False when Firestore could not be asked: an empty `activityNotes` then means "unknown", not "none". */
+  notesAvailable: boolean
   athlete: AthleteProfile
   athleteHistory: AthleteHistoryEntry[]
   goals: GoalYear[]
@@ -229,10 +234,11 @@ function guideRows(generatedAt: Date): RowData[] {
     { section: 'Usage', item: 'units', description: 'Units are included in column names. Pace and finish times remain numeric seconds for analysis.' },
     { section: 'Privacy', item: 'location_data', description: 'Route coordinates and encoded polylines are intentionally excluded.' },
     { section: 'Privacy', item: 'raw_samples', description: 'Raw heart-rate, pace, cadence, and elevation arrays are excluded; useful summaries are exported instead.' },
+    { section: 'Notes', item: 'comment_and_tags', description: 'comment and tags are the notes and tags typed on each activity in the app. notes_status is "included" on every row of a complete export; "unavailable" means the notes store could not be read, so a blank comment does not mean there was no note: export again.' },
     { section: 'Caveat', item: 'daily_plan_completion', description: 'planned_day_completed only means at least one activity occurred on a planned date; it does not prove the prescribed workout was followed.' },
     { section: 'Caveat', item: 'hr_zones', description: 'Athlete HR zone columns are Garmin zone floors: a zone runs from its own lower bound up to one below the next zone\'s, and zone 5 up to max_hr_bpm.' },
     { section: 'Sheet', item: 'Athlete', description: 'Current athlete profile and physiological reference values.' },
-    { section: 'Sheet', item: 'Activities', description: 'One row per activity with conditions, intensity, execution, records, and gear.' },
+    { section: 'Sheet', item: 'Activities', description: 'One row per activity with conditions, intensity, execution, records, gear, and your notes and tags. The CSV export is this sheet alone.' },
     { section: 'Sheet', item: 'Intervals', description: 'One row per segment of a workout with reps or strides - warm-up, each rep or stride, each recovery, cool-down - with its own pace and heart rate.' },
     { section: 'Sheet', item: 'Daily Status', description: 'One row per calendar day, including rest days, with load, status, plan, and race context.' },
     { section: 'Sheet', item: 'Records', description: 'Official yearly personal bests plus locally derived records when no official record exists.' },
@@ -281,6 +287,7 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds): RowData[]
     const execution = sessionExecution(activity)
     const reps = repStats(activity)
     const shoe = activity.gearId ? shoes.get(activity.gearId) : undefined
+    const note = data.activityNotes.get(activity.id)
     return {
       activity_id: activity.id,
       date: excelDate(activity.date),
@@ -339,7 +346,9 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds): RowData[]
       execution_rep_avg_pace_sec_per_km: reps?.paceSecPerKm ?? null,
       execution_rep_avg_hr_bpm: reps?.avgHr ?? null,
       execution_rep_avg_seconds: reps?.secondsPerRep ?? null,
-      comment: activity.comment || null,
+      comment: note?.note || activity.comment || null,
+      tags: note && note.tags.length > 0 ? note.tags.join(' | ') : null,
+      notes_status: data.notesAvailable ? 'included' : 'unavailable',
     }
   })
 }
@@ -697,6 +706,24 @@ const columns = (...keys: Array<string | ColumnDefinition>): ColumnDefinition[] 
   typeof column === 'string' ? { key: column } : column
 )
 
+const ACTIVITY_COLUMNS = columns(
+
+    { key: 'activity_id', width: 24 }, { key: 'date', ...DATE_COLUMN }, 'day_of_week', 'iso_week', 'type', 'type_source',
+    { key: 'description', width: 28, wrap: true }, 'duration_seconds', 'distance_km', 'pace_sec_per_km',
+    'avg_heart_rate_bpm', 'rpe_1_10', 'elevation_gain_m', 'aerobic_training_effect', 'anaerobic_training_effect',
+    'trimp', 'calories_kcal', 'cadence_spm', 'ground_contact_ms', 'vertical_oscillation_mm', 'vertical_ratio_pct',
+    'stride_length_m', 'vo2max', 'watch_temperature_c', 'hr_zone_1_seconds', 'hr_zone_2_seconds',
+    'hr_zone_3_seconds', 'hr_zone_4_seconds', 'hr_zone_5_seconds', 'hard_minutes_z4_z5',
+    'weather_temperature_c', 'weather_apparent_temperature_c', 'weather_humidity_pct', 'weather_wind_kph',
+    'weather_wind_direction_deg', 'weather_precipitation_mm', 'weather_code_wmo', { key: 'gear_id', width: 22 },
+    'shoe_brand', 'shoe_model', 'best_effort_1k_seconds', 'best_effort_1_mile_seconds', 'best_effort_5k_seconds',
+    'best_effort_10k_seconds', 'best_effort_half_marathon_seconds', 'best_effort_marathon_seconds',
+    'aerobic_decoupling_pct', 'aerobic_decoupling_status', 'execution_kind', 'execution_reps',
+    'execution_fade_sec_per_km', 'execution_spread_sec_per_km', 'execution_hr_drift_bpm',
+    { key: 'execution_rep_paces_sec_per_km', width: 22 }, 'execution_rep_avg_pace_sec_per_km',
+    'execution_rep_avg_hr_bpm', 'execution_rep_avg_seconds', { key: 'comment', width: 36, wrap: true }, { key: 'tags', width: 24, wrap: true }, 'notes_status',
+)
+
 export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = new Date()): ExcelJS.Workbook {
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'Runomics'
@@ -723,22 +750,7 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
     { key: 'device_since', ...DATE_COLUMN }, { key: 'last_profile_update', ...DATE_COLUMN },
   ), athleteRows(data.athlete))
 
-  addDataSheet(workbook, 'Activities', columns(
-    { key: 'activity_id', width: 24 }, { key: 'date', ...DATE_COLUMN }, 'day_of_week', 'iso_week', 'type', 'type_source',
-    { key: 'description', width: 28, wrap: true }, 'duration_seconds', 'distance_km', 'pace_sec_per_km',
-    'avg_heart_rate_bpm', 'rpe_1_10', 'elevation_gain_m', 'aerobic_training_effect', 'anaerobic_training_effect',
-    'trimp', 'calories_kcal', 'cadence_spm', 'ground_contact_ms', 'vertical_oscillation_mm', 'vertical_ratio_pct',
-    'stride_length_m', 'vo2max', 'watch_temperature_c', 'hr_zone_1_seconds', 'hr_zone_2_seconds',
-    'hr_zone_3_seconds', 'hr_zone_4_seconds', 'hr_zone_5_seconds', 'hard_minutes_z4_z5',
-    'weather_temperature_c', 'weather_apparent_temperature_c', 'weather_humidity_pct', 'weather_wind_kph',
-    'weather_wind_direction_deg', 'weather_precipitation_mm', 'weather_code_wmo', { key: 'gear_id', width: 22 },
-    'shoe_brand', 'shoe_model', 'best_effort_1k_seconds', 'best_effort_1_mile_seconds', 'best_effort_5k_seconds',
-    'best_effort_10k_seconds', 'best_effort_half_marathon_seconds', 'best_effort_marathon_seconds',
-    'aerobic_decoupling_pct', 'aerobic_decoupling_status', 'execution_kind', 'execution_reps',
-    'execution_fade_sec_per_km', 'execution_spread_sec_per_km', 'execution_hr_drift_bpm',
-    { key: 'execution_rep_paces_sec_per_km', width: 22 }, 'execution_rep_avg_pace_sec_per_km',
-    'execution_rep_avg_hr_bpm', 'execution_rep_avg_seconds', { key: 'comment', width: 36, wrap: true },
-  ), activityRows(data, athleteHrBounds))
+  addDataSheet(workbook, 'Activities', ACTIVITY_COLUMNS, activityRows(data, athleteHrBounds))
 
   addDataSheet(workbook, 'Intervals', columns(
     { key: 'activity_id', width: 24 }, { key: 'date', ...DATE_COLUMN }, { key: 'description', width: 28, wrap: true },
@@ -804,9 +816,13 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
   return workbook
 }
 
-export async function getTrainingWorkbook(generatedAt = new Date()): Promise<Buffer> {
-  const data: TrainingWorkbookData = {
+/** Everything the exports read: the JSON data, plus the notes from Firestore. */
+export async function loadTrainingWorkbookData(): Promise<TrainingWorkbookData> {
+  const notes = await getActivityNotes()
+  return {
     activities: getAllActivities(),
+    activityNotes: notes.notes,
+    notesAvailable: notes.available,
     athlete: getAthleteProfile(),
     athleteHistory: getAthleteHistory(),
     goals: getGoalYears(),
@@ -821,6 +837,34 @@ export async function getTrainingWorkbook(generatedAt = new Date()): Promise<Buf
     upcomingRaces: getUpcomingRaceYears(),
     vo2maxHistory: getVo2maxSamples(),
   }
+}
+
+export async function writeTrainingWorkbook(data: TrainingWorkbookData, generatedAt = new Date()): Promise<Buffer> {
   const workbook = buildTrainingWorkbook(data, generatedAt)
   return Buffer.from(await workbook.xlsx.writeBuffer())
+}
+
+export const ACTIVITIES_CSV_MIME = 'text/csv; charset=utf-8'
+
+function csvCell(value: Primitive | undefined): string {
+  if (value === null || value === undefined) return ''
+  const text = value instanceof Date ? utcDate(value) : String(value)
+  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
+}
+
+/**
+ * The Activities sheet as CSV, for pasting or uploading to an LLM: the same
+ * columns and rows as the workbook, UTF-8, RFC 4180 quoting, dates as
+ * yyyy-mm-dd and blanks for missing values. No BOM - a reader that wants
+ * UTF-8 gets it, and Excel users have the workbook.
+ */
+export function buildActivitiesCsv(data: TrainingWorkbookData): string {
+  const athleteHrBounds: HrBounds = {
+    maxHr: data.athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr,
+    restingHr: data.athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr,
+  }
+  const keys = ACTIVITY_COLUMNS.map((column) => column.key)
+  const lines = [keys.join(',')]
+  for (const row of activityRows(data, athleteHrBounds)) lines.push(keys.map((key) => csvCell(row[key])).join(','))
+  return `${lines.join('\r\n')}\r\n`
 }

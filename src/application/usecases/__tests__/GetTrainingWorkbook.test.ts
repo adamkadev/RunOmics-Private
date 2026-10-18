@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs'
 import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
-import { buildTrainingWorkbook, type TrainingWorkbookData } from '../GetTrainingWorkbook'
+import { buildActivitiesCsv, buildTrainingWorkbook, type TrainingWorkbookData } from '../GetTrainingWorkbook'
 
 function activity(overrides: Partial<Activity> = {}): Activity {
   return {
@@ -71,6 +71,8 @@ function data(): TrainingWorkbookData {
         paceSecPerKm: 270,
       }),
     ],
+    activityNotes: new Map(),
+    notesAvailable: true,
     athlete: { displayName: 'Runner', age: 35, restingHrBpm: 45, maxHrBpm: 190 },
     athleteHistory: [{ date: '2026-01-01', weightKg: 70 }],
     goals: [{ year: 2026, annualDistanceKm: 1000, targets: [{ distance: '10K', targetSeconds: 2600 }] }],
@@ -195,7 +197,7 @@ describe('buildTrainingWorkbook', () => {
 
     expect(reopened.getWorksheet('Records')?.rowCount).toBeGreaterThan(1)
     expect(reopened.getWorksheet('Races')?.getCell('A2').value).toBe('completed')
-    expect(reopened.getWorksheet('Guide')?.getCell('C2').value).toBe('1.0')
+    expect(reopened.getWorksheet('Guide')?.getCell('C2').value).toBe('1.1')
   })
 
   it('keeps every sheet usable before the first sync', async () => {
@@ -222,5 +224,91 @@ describe('buildTrainingWorkbook', () => {
     expect(reopened.worksheets).toHaveLength(13)
     expect(reopened.getWorksheet('Activities')?.rowCount).toBe(1)
     expect(reopened.getWorksheet('Daily Status')?.rowCount).toBe(2)
+  })
+
+  describe('notes and tags', () => {
+    function cell(sheet: ExcelJS.Worksheet, row: number, column: string) {
+      return sheet.getRow(row).getCell(headers(sheet).indexOf(column) + 1).value
+    }
+
+    it('writes the typed note and tags, ahead of the importer\'s empty comment', () => {
+      const input = data()
+      input.activityNotes = new Map([['activity-1', { note: 'Sick, cut short', tags: ['sick', 'heat'] }]])
+
+      const sheet = buildTrainingWorkbook(input, new Date('2026-01-03T12:00:00.000Z')).getWorksheet('Activities')!
+
+      expect(cell(sheet, 2, 'comment')).toBe('Sick, cut short')
+      expect(cell(sheet, 2, 'tags')).toBe('sick | heat')
+      expect(cell(sheet, 2, 'notes_status')).toBe('included')
+      // An activity with no note keeps what the JSON held and has no tags.
+      expect(cell(sheet, 3, 'tags')).toBeNull()
+    })
+
+    it('says so on every row when the notes store could not be read', () => {
+      const input = data()
+      input.notesAvailable = false
+
+      const workbook = buildTrainingWorkbook(input, new Date('2026-01-03T12:00:00.000Z'))
+      const sheet = workbook.getWorksheet('Activities')!
+
+      expect(cell(sheet, 2, 'notes_status')).toBe('unavailable')
+      expect(cell(sheet, 3, 'notes_status')).toBe('unavailable')
+    })
+  })
+
+  describe('buildActivitiesCsv', () => {
+    function parse(csv: string): string[][] {
+      const rows: string[][] = []
+      let row: string[] = []
+      let field = ''
+      let quoted = false
+      for (let i = 0; i < csv.length; i++) {
+        const c = csv[i]!
+        if (quoted) {
+          if (c === '"' && csv[i + 1] === '"') { field += '"'; i++ } else if (c === '"') quoted = false
+          else field += c
+        } else if (c === '"') quoted = true
+        else if (c === ',') { row.push(field); field = '' }
+        else if (c === '\r' && csv[i + 1] === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++ }
+        else field += c
+      }
+      return rows
+    }
+
+    it('is the Activities sheet: same columns, one row per activity, ISO dates', () => {
+      const input = data()
+      const workbook = buildTrainingWorkbook(input, new Date('2026-01-03T12:00:00.000Z'))
+      const rows = parse(buildActivitiesCsv(input))
+
+      expect(rows[0]).toEqual(headers(workbook.getWorksheet('Activities')!))
+      expect(rows).toHaveLength(3)
+      expect(rows[1]![rows[0]!.indexOf('date')]).toBe('2026-01-01')
+      expect(rows[1]![rows[0]!.indexOf('activity_id')]).toBe('activity-1')
+    })
+
+    it('quotes notes with commas, quotes and line breaks so they survive a round trip', () => {
+      const input = data()
+      const note = 'Left calf, "tight" after 3 km\nwalked the last 500 m'
+      input.activityNotes = new Map([['activity-1', { note, tags: ['calf', 'walk'] }]])
+
+      const rows = parse(buildActivitiesCsv(input))
+      const header = rows[0]!
+
+      expect(rows[1]![header.indexOf('comment')]).toBe(note)
+      expect(rows[1]![header.indexOf('tags')]).toBe('calf | walk')
+      expect(rows[1]).toHaveLength(header.length)
+    })
+
+    it('marks every row when the notes store could not be read, and keeps raw data out', () => {
+      const input = data()
+      input.notesAvailable = false
+
+      const csv = buildActivitiesCsv(input)
+      const rows = parse(csv)
+      const header = rows[0]!
+
+      expect(rows.slice(1).map((row) => row[header.indexOf('notes_status')])).toEqual(['unavailable', 'unavailable'])
+      expect(csv).not.toContain('private-route')
+    })
   })
 })
