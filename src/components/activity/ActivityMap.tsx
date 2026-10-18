@@ -162,11 +162,13 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
 
       function animateRoute() {
         const total = route.length
-        const duration = 1800
+        // Drawn in one step for a reader who asked for less motion (screen
+        // audit, Oct 2026): the 1.8 s draw ignored the setting.
+        const duration = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 1800
         const startTime = performance.now()
         function animate() {
           if (cancelled) return
-          const progress = Math.min((performance.now() - startTime) / duration, 1)
+          const progress = duration === 0 ? 1 : Math.min((performance.now() - startTime) / duration, 1)
           const eased = 1 - Math.pow(1 - progress, 3)
           const count = Math.max(2, Math.floor(eased * total))
           if (count !== drawnRef.current) {
@@ -174,6 +176,8 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
             setRunRoute(map, route.slice(0, count))
             if (count >= total) updateEnds(true)
           }
+          // The whole run is on the map: what a screenshot waits for.
+          if (progress >= 1 && hostRef.current) hostRef.current.dataset.routeDrawn = ''
           animFrameRef.current = progress < 1 ? requestAnimationFrame(animate) : null
         }
         animFrameRef.current = requestAnimationFrame(animate)

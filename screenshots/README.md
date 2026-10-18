@@ -58,7 +58,7 @@ For **each accent × each theme × each route**:
 
 | Frame                    | What it is                                                     |
 | ------------------------ | -------------------------------------------------------------- |
-| `screen-1` … `screen-6`  | One phone screen each, scrolling down the page. Each overlaps the last by 180 pt - more than the fixed header and tab bar cover - so every line is clear of both in one of them. The last one ends at the bottom of the page. |
+| `screen-1` … `screen-6`  | One phone screen each, scrolling down the page. Each overlaps the last by 220 pt - more than the fixed header and tab bar cover - so every line is clear of both in one of them. The last one ends at the bottom of the page. |
 | `full`                   | Whole page stitched into one tall image                        |
 
 Pages with in-page tabs (**Plan**, **Analytics**, **Records**, an **activity**) additionally
@@ -142,6 +142,11 @@ until its text is illegible, and a phone screen is what the app is judged on.
   `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST` for that; no other build does. No
   real account and no Firestore rule are involved. Skipped when
   `SCREENSHOT_BASE_URL` points at a deployment.
+- **The activity map** is shot once its route is drawn: the page marks the
+  map `data-route-drawn`, and the run emulates reduced motion, so the route
+  draws in one step. The demo athlete's runs are placed in the mid-Pacific
+  on purpose, so no made-up runner sits on a real street: the maps show the
+  route on an empty basemap, never tiles.
 - **Map** is captured with its tiles when `.env.local` has a
   `NEXT_PUBLIC_MAPTILER_TOKEN`: the screenshot build borrows it. Without one it
   shows its shell and legend only.

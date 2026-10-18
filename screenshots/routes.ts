@@ -12,12 +12,18 @@ export interface RouteSpec {
   firstLinkTo?: string
   /** Captured signed in as the owner, through the Auth emulator (owner.ts). */
   asOwner?: boolean
+  /**
+   * Waited for before shooting, but not required: a mark the page sets once
+   * something slow has finished - the activity map's route, drawn (screen
+   * audit, Oct 2026: it was shot half-way through its animation).
+   */
+  settledWhen?: string
 }
 
 export const ROUTES: RouteSpec[] = [
   { path: '/', name: 'dashboard' },
   { path: '/activities', name: 'activities' },
-  { path: '/activities', name: 'activity-detail', firstLinkTo: '/activities/', hasTabs: true },
+  { path: '/activities', name: 'activity-detail', firstLinkTo: '/activities/', hasTabs: true, settledWhen: '[data-route-drawn]' },
   { path: '/plan', name: 'plan', hasTabs: true },
   { path: '/analytics', name: 'analytics', hasTabs: true },
   { path: '/map', name: 'map' },
