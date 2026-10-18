@@ -19,7 +19,9 @@ Work in this order. Each numbered section is one PR.
 
 ---
 
-## 1. Bug: Today shows yesterday's Garmin workout after midnight
+## 1. Bug: Today shows yesterday's Garmin workout after midnight (done)
+
+Fixed on `main` in d94d905.
 
 `getTodayPlannedWorkout()` (`src/application/usecases/GetPlannedWorkouts.ts`) picks the day with `isoDate(new Date())`, which is the server's UTC date. The rest of `src/app/page.tsx` uses `appTodayIso()`.
 
@@ -33,7 +35,7 @@ Fix: pass the page's single `today` into the lookup. Add a test with `NEXT_PUBLI
 - A future year with only a race should show the race, not the PB empty state.
 - Fix the copy "No PBs for {year} yet - add them in Settings.": Settings has no PB entry.
 
-## 3. Today
+## 3. Today (done)
 
 Mockups:
 - `today-morning-en-light.png`, `today-morning-en-dark.png`, `today-morning-fr-light.png`, `today-morning-fr-dark.png`
