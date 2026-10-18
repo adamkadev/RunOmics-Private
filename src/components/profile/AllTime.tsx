@@ -33,7 +33,7 @@ export function YearRows({ years, currentYear, compact = false }: { years: AllTi
               <span
                 className="block h-full rounded-full"
                 data-testid="year-bar"
-                style={{ width: `${(y.km / best) * 100}%`, background: current ? 'var(--foreground)' : 'var(--band)' }}
+                style={{ width: `${(y.km / best) * 100}%`, background: current ? 'var(--accent)' : 'var(--band)' }}
               />
             </span>
             <span className="text-right text-footnote tabular-nums text-muted-foreground" aria-hidden>
@@ -49,7 +49,7 @@ export function YearRows({ years, currentYear, compact = false }: { years: AllTi
 function Totals({ view }: { view: AllTimeView }) {
   const a = t.allTime
   return (
-    <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="all-time-totals">
+    <GlassSurface variant="card" className="rounded-card-sm px-5 py-4" data-testid="all-time-totals">
       <div className="grid grid-cols-3 gap-2">
         {[
           [formatKm(view.km), a.km],
@@ -94,7 +94,7 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
   const at = (km: number) => `${(km / scale.top) * 100}%`
   const years = [...new Set(view.monthly.map((m) => m.year))]
   return (
-    <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="all-time-monthly">
+    <GlassSurface variant="card" className="rounded-card-sm px-5 py-4" data-testid="all-time-monthly">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className={TITLE}>{a.monthly}</h2>
         {view.bestMonth && (
@@ -117,11 +117,13 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
           {scale.ticks.map((km) => (
             <span key={km} data-testid="monthly-gridline" className="absolute inset-x-0 border-t border-border" style={{ bottom: at(km) }} />
           ))}
-          <div className="relative flex h-full items-end gap-1">
+          {/* Inset by the month-so-far ring, so the last bar's ring stays inside the gridlines (screen audit, Oct 2026). */}
+          <div className="relative flex h-full items-end gap-1 px-[3px]">
             {view.monthly.map((m) => {
               const style: CSSProperties = {
                 height: `${Math.max(3, Math.round((m.km / scale.top) * MONTHLY_H))}px`,
-                background: m.year !== view.currentYear ? 'var(--band)' : 'var(--foreground)',
+                // This year is the athlete's own data, the accent, as on Progress (screen audit, Oct 2026).
+                background: m.year !== view.currentYear ? 'var(--band)' : 'var(--accent)',
                 ...(m.partial ? { boxShadow: '0 0 0 1.5px var(--card), 0 0 0 3px var(--accent)' } : {}),
               }
               return <span key={m.key} data-testid="month-bar" data-month={m.key} className="block min-w-0 flex-1 rounded-[3px]" style={style} />
@@ -180,7 +182,7 @@ export function AllTime({ view }: { view: AllTimeView }) {
     <div className="space-y-3">
       <Totals view={view} />
 
-      <GlassSurface variant="card" className="rounded-card-sm px-4 py-4" data-testid="all-time-years">
+      <GlassSurface variant="card" className="rounded-card-sm px-5 py-4" data-testid="all-time-years">
         <div className="mb-3 flex items-baseline justify-between gap-3">
           <h2 className={TITLE}>{a.byYear}</h2>
           <span className="text-footnote text-muted-foreground">{a.byYearUnits}</span>

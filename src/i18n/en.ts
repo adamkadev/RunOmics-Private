@@ -360,6 +360,8 @@ export const en = {
     rowAction: {
       export: 'Export ›',
       clear: 'Clear ›',
+      // Signed out, what the row actually does first (screen audit, Oct 2026).
+      signIn: 'Sign in ›',
     },
     appearance: {
       title: 'Appearance',
@@ -443,7 +445,9 @@ export const en = {
     dataExport: {
       workbook: 'Export training data (.xlsx)',
       title: 'Export activities',
-      signedOut: (runs: string) => `Workbook of all ${runs} · sign in to export`,
+      signedOut: (runs: string) => `Workbook or CSV of all ${runs} · sign in to export`,
+      // Under the owner's row, as the Clear row says what it does (screen audit, Oct 2026).
+      ownerHint: (runs: string) => `Workbook or CSV of all ${runs}`,
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
       sheetTitle: 'Export my activities',

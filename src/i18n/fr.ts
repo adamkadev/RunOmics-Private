@@ -330,6 +330,7 @@ export const fr = {
     rowAction: {
       export: 'Exporter ›',
       clear: 'Vider ›',
+      signIn: 'Se connecter ›',
     },
     appearance: {
       title: 'Apparence',
@@ -410,7 +411,8 @@ export const fr = {
     dataExport: {
       workbook: 'Exporter les données d’entraînement (.xlsx)',
       title: 'Exporter les activités',
-      signedOut: (runs: string) => `Classeur des ${runs} · connecte-toi pour exporter`,
+      signedOut: (runs: string) => `Classeur ou CSV des ${runs} · connecte-toi pour exporter`,
+      ownerHint: (runs: string) => `Classeur ou CSV des ${runs}`,
       exporting: 'Export en cours…',
       failed: 'Impossible d’exporter les données d’entraînement.',
       sheetTitle: 'Exporter mes activités',

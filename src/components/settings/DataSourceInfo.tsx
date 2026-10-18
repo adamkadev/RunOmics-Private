@@ -127,7 +127,10 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
         data-testid="export-row"
         className="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-left text-sm text-foreground transition-opacity active:opacity-60 disabled:opacity-50"
       >
-        <span>{loading ? s.dataExport.exporting : s.dataExport.title}</span>
+        <span className="min-w-0">
+          <span className="block">{loading ? s.dataExport.exporting : s.dataExport.title}</span>
+          <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{s.dataExport.ownerHint(t.common.runs(activityCount))}</span>
+        </span>
         <span className="shrink-0 text-[13px] font-medium text-accent-text">{s.rowAction.export}</span>
       </button>
 

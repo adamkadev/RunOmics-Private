@@ -1,10 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { t } from '@/i18n'
 import { yearOverYear } from '@/lib/yearOverYear'
 import { cumulativeYear, heatWeeks, progressHubView, type HubInput } from '../progressHubView'
-import { ProgressHub, raceShare } from '../ProgressHub'
+import { ProgressHub, raceScale } from '../ProgressHub'
 
 function shoe(overrides: Partial<ShoeStats>): ShoeStats {
   return {
@@ -125,9 +125,13 @@ describe('the hub helpers', () => {
     expect(weeks.at(-1)).toEqual([rest, rest, mid, mid, rest, { level: 0, today: true, future: false }, { level: 0, today: false, future: true }])
   })
 
-  it('fills the race bar a fifth less per 1% over the target', () => {
-    expect(raceShare(2400, 2400)).toBe(1)
-    expect(raceShare(2530, 2400)).toBeCloseTo(0.729, 2)
+  // Screen audit, Oct 2026: the bar was full whenever the prediction beat the target.
+  it('puts the prediction on a scale centred on the target, faster to the right', () => {
+    expect(raceScale(2400, 2400)).toEqual({ target: 0.5, predicted: 0.5 })
+    expect(raceScale(2356, 2400).predicted).toBeGreaterThan(0.5)
+    expect(raceScale(2530, 2400).predicted).toBeLessThan(0.5)
+    // 6% of the target either side, clamped.
+    expect(raceScale(3000, 2400).predicted).toBe(0)
   })
 })
 
@@ -195,7 +199,7 @@ describe('ProgressHub', () => {
     const target = screen.getByTestId('race-target')
     expect(target.textContent).toContain(t.profile.hub.toFind('2:10'))
     expect(target.querySelector('b')!.getAttribute('style')).toContain('var(--warn)')
-    expect(screen.getByTestId('race-tile').querySelector<HTMLElement>('[data-testid="bar-fill"]')!.style.background).toBe('var(--warn)')
+    expect(within(screen.getByTestId('race-scale')).getByTestId('range-marker').style.background).toBe('var(--warn)')
   })
 
   it('tags a shoe that needs replacing soon, and draws its bar in warn', () => {
@@ -249,10 +253,10 @@ describe('one consistency count (v5.5 #9)', () => {
 
 // v4.17 reverses v5.5 R2: the accent marks the athlete's own data in charts.
 describe('the accent marks the athlete\'s own data (v4.17)', () => {
-  it('draws this year in the accent, last year in line-2 and the goal dashed', () => {
+  it('draws this year in the accent, last year in the reference grey and the goal dashed', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     expect(screen.getByTestId('current-line').getAttribute('stroke')).toBe('var(--accent)')
-    expect(screen.getByTestId('previous-line').getAttribute('stroke')).toBe('var(--line-2)')
+    expect(screen.getByTestId('previous-line').getAttribute('stroke')).toBe('var(--series-2)')
     expect(screen.getByTestId('goal-line').getAttribute('stroke-dasharray')).toBe('4 5')
     expect(screen.getByTestId('year-chart').querySelector('[fill="var(--accent)"]')).toBeNull()
     // A reference series, not the athlete's own: text ink.
