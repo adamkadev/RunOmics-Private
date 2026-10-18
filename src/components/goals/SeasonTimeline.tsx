@@ -45,13 +45,9 @@ const LABEL_AIR_PX = 6
 export type Lane = 'above' | 'below'
 
 /**
- * Which side of the line each label goes (screen audit, Oct 2026): "Marathon",
- * "Today" and "10K" a few weeks apart were drawn over one another as
- * "MarTodayl0K". The races first, in date order, each on its preferred side
- * unless it would touch a label already there, then the other; Today last, on
- * whichever side is free, and when neither is it keeps its tick without a
- * label - the accent line already ends there. Laid out for the narrowest
- * strip, so a wider one only has more air. null is a mark with no label.
+ * Which side of the line each label goes: races first, on their preferred side
+ * unless it would touch a label there; Today last, and null (tick, no label)
+ * when neither side is free. Laid out for the narrowest strip.
  */
 export function stripLanes(
   marks: readonly { at: number; label: string; prefer: Lane; optional?: boolean }[],
@@ -76,7 +72,6 @@ export function stripLanes(
   return lanes
 }
 
-/** A mark on the strip, centred on its date, its label above or below the line. */
 function Mark({
   at,
   label,
@@ -109,9 +104,7 @@ function Mark({
 
 /**
  * Jan-Dec as one strip (v4.17): the year so far in the accent to today, a
- * race done a filled circle in text ink, one ahead an outlined one. Filled,
- * not the pos green: the lime dot on the teal line read as a clash (screen
- * audit, Oct 2026), and shape already says done.
+ * race done a filled circle in text ink, one ahead an outlined one.
  */
 function SeasonStrip({ year, today, rows }: { year: number; today: string; rows: SeasonRaceRow[] }) {
   const thisYear = Number(today.slice(0, 4)) === year

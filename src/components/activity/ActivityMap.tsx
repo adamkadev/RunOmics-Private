@@ -162,8 +162,6 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
 
       function animateRoute() {
         const total = route.length
-        // Drawn in one step for a reader who asked for less motion (screen
-        // audit, Oct 2026): the 1.8 s draw ignored the setting.
         const duration = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 1800
         const startTime = performance.now()
         function animate() {
@@ -176,7 +174,7 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
             setRunRoute(map, route.slice(0, count))
             if (count >= total) updateEnds(true)
           }
-          // The whole run is on the map: what a screenshot waits for.
+          // Screenshots wait for this mark.
           if (progress >= 1 && hostRef.current) hostRef.current.dataset.routeDrawn = ''
           animFrameRef.current = progress < 1 ? requestAnimationFrame(animate) : null
         }
@@ -259,9 +257,7 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
       className={cn(
         // The attribution sits 12 px in from the right and bottom, as the
         // chips do (.activity-map in globals.css), on the map's dark pill.
-        // Its own stacking context: maplibre's controls sit at z-index 20,
-        // which otherwise reached the page and painted the credit over the
-        // status strip when the map scrolled under it (screen audit, Oct 2026).
+        // isolate: maplibre's z-index 20 controls would otherwise paint over the status strip.
         'activity-map relative isolate overflow-hidden rounded-xl',
         '[&_.maplibregl-ctrl-attrib]:rounded-md [&_.maplibregl-ctrl-attrib]:!bg-[var(--map-attrib-bg)] [&_.maplibregl-ctrl-attrib]:!px-1.5 [&_.maplibregl-ctrl-attrib]:!py-px',
         // Under the status strip, never touching the top edge (v4.8): iOS

@@ -4,9 +4,7 @@ import bundleAnalyzer from "@next/bundle-analyzer";
 
 const { version } = JSON.parse(readFileSync("./package.json", "utf8")) as { version: string };
 
-// The screenshot build signs in against the local Auth emulator (see
-// screenshots/owner.ts): its popup talks to the app through an iframe and
-// fetches. Unset everywhere else, so no other build allows it.
+// Set only by the screenshot build, whose emulator sign-in needs an iframe and fetches.
 const authEmulator = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST
   ? ` http://${process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST}`
   : "";

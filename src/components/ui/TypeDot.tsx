@@ -2,9 +2,7 @@ import { runTypeColor } from '@/lib/colors'
 import { cn } from '@/lib/utils'
 
 /**
- * A session type's category dot (v4.17): its zone's colour, 8 px (7 px made
- * the neighbouring blues and purples hard to tell apart; screen audit, Oct
- * 2026). A race is
+ * A session type's category dot (v4.17): its zone's colour, 8 px. A race is
  * the zone of its effort drawn outline only - a 1.5 px ring, never filled -
  * so it reads as "a race" without spending a colour of its own.
  */

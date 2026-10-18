@@ -87,6 +87,8 @@ export interface GoalsPageData {
   years: number[]
   byYear: Record<number, YearData>
   history: YearOutcome[]
+  /** The next race in any year; each year's own spotlight only sees that year's races. */
+  nextRace: NextRaceSpotlight | null
 }
 
 export function computeProjection(
@@ -164,6 +166,19 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
 
     return { month, targetKm, actualKm, status, progress }
   })
+}
+
+export function nextRaceAcrossYears(
+  upcomingRaceYears: readonly { year: number; races: UpcomingRace[] }[],
+  currentYear: number,
+  predictions: GoalRacePrediction[],
+  today: string,
+): NextRaceSpotlight | null {
+  const races = upcomingRaceYears
+    .filter((u) => u.year >= currentYear)
+    .flatMap((u) => u.races)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  return computeNextRaceSpotlight(races, predictions, today)
 }
 
 export function computeNextRaceSpotlight(
@@ -345,5 +360,7 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
     })
     .filter((outcome): outcome is YearOutcome => outcome !== null)
 
-  return { years: allYears, byYear, history }
+  const nextRace = nextRaceAcrossYears(upcomingRaceYears, currentYear, predictions, today)
+
+  return { years: allYears, byYear, history, nextRace }
 }

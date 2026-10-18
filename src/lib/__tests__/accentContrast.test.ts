@@ -127,9 +127,6 @@ describe('missed text', () => {
   })
 })
 
-// Screen audit, Oct 2026: faint text, light-mode warn text and reference
-// series were under their contrast floors, and the dark selected tab sank
-// below its track.
 describe('screen audit contrast floors', () => {
   it.each(['dark', 'light'] as const)('faint text reads at 4.5:1 or more on the card and the ground, %s', (mode) => {
     const s = SURFACES[mode]

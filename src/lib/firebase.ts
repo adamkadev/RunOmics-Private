@@ -15,9 +15,7 @@ export function getClientFirestore() {
   return getFirestore(getClientApp())
 }
 
-// Set only by the screenshot build (playwright.screenshots.config.ts), so the
-// capture can sign in as the owner without a real Google account. Inlined at
-// build time: unset in every other build, where this is dead code.
+// Set only by the screenshot build, to sign in without a real Google account; dead code elsewhere.
 const AUTH_EMULATOR_HOST = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST
 let authEmulatorConnected = false
 

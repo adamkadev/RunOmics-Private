@@ -80,7 +80,6 @@ function YearChart({ hero }: { hero: ProgressHubView['hero'] }) {
         <line x1={0} y1={y(0)} x2={CHART_W} y2={y(hero.goalKm)} stroke="var(--muted-foreground)" strokeWidth={1.2} strokeDasharray="4 5" vectorEffect="non-scaling-stroke" data-testid="goal-line" />
       )}
       {hero.previous.length > 1 && (
-        // The reference series' grey, 3:1 on the card: line-2 was 1.45:1 (screen audit, Oct 2026).
         <path d={path(hero.previous, x, y)} fill="none" stroke="var(--series-2)" strokeWidth={2} vectorEffect="non-scaling-stroke" data-testid="previous-line" />
       )}
       <path d={path(hero.current, x, y)} fill="none" stroke="var(--accent)" strokeWidth={2.4} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="current-line" />
@@ -88,11 +87,7 @@ function YearChart({ hero }: { hero: ProgressHubView['hero'] }) {
   )
 }
 
-/**
- * VO2max over the window, in text ink, its two ends dotted so it reads as a
- * line through readings. A flat window is a short strip, not 50 pt of air
- * around a full-width rule that read as a divider (screen audit, Oct 2026).
- */
+/** VO2max over the window, its ends dotted; a flat window draws as a short strip. */
 function Sparkline({ values }: { values: number[] }) {
   if (values.length < 2) return <div className="h-[50px]" />
   const lo = Math.min(...values)
@@ -154,15 +149,7 @@ function Bar({ share, color }: { share: number; color: string }) {
   )
 }
 
-/**
- * How far the prediction sits from the target, as a bar: full at or under
- * the target, a fifth off for every 1% slower.
- */
-/**
- * The prediction on a time scale centred on the target, faster to the right,
- * 6% of the target either side (screen audit, Oct 2026): a bar full whenever
- * the prediction beat the target said nothing "0:44 under" did not.
- */
+/** The prediction on a scale centred on the target, faster to the right, 6% either side. */
 export function raceScale(predicted: number, target: number): { target: number; predicted: number } {
   const at = (seconds: number) => Math.min(1, Math.max(0, 0.5 + (target - seconds) / (target * RACE_SCALE_SHARE * 2)))
   return { target: at(target), predicted: at(predicted) }
@@ -321,10 +308,6 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
             <section className={cardClass({ className: 'order-5 flex flex-col gap-3 sm:order-none' })} data-testid="shoes-tile">
               <div className="flex items-center justify-between gap-2">
                 <h2 className={TITLE}>{h.shoes}</h2>
-                {/* A link of its own, so the app's one "see all" style - the
-                    accent and an arrow, as Today's "View all →" and a shoe's
-                    "All 147 →"; grey chevrons mark a whole card (screen audit,
-                    Oct 2026). */}
                 <Link href="/shoes" className="hit-44 text-footnote font-medium text-accent-text transition-opacity hover:opacity-80 active:opacity-60" data-testid="shoes-all">
                   {h.allPairs} →
                 </Link>

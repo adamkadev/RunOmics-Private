@@ -182,10 +182,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
             const paceLabel =
               zone === 1
                 ? warmupPaceSecPerKm !== null
-                  ? // One notation for an open end, as the HR column writes it: "6:18 +"
-                    // sat beside "≥ 182" (screen audit, Oct 2026). A pace at or
-                    // above 6:18 /km is the slow side, Z1's.
-                    `≥ ${fmt(warmupPaceSecPerKm)}`
+                  ? `≥ ${fmt(warmupPaceSecPerKm)}`
                   : '-'
                 : pace
                   ? `${fmt(pace.paceMinSecPerKm)}–${fmt(pace.paceMaxSecPerKm)}`

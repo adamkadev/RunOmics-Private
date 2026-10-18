@@ -77,8 +77,6 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
     }
   }
 
-  // One row, the format chosen in a sheet (design review, Oct 2026): two
-  // near-identical rows left the reader guessing which file was which.
   const exportOptions: ExportOption[] = [
     { key: 'xlsx', title: s.dataExport.workbookTitle, extension: '.xlsx', hint: s.dataExport.workbookHint, onSelect: () => handleExport('xlsx') },
     { key: 'csv', title: s.dataExport.csvTitle, extension: '.csv', hint: s.dataExport.csvHint, onSelect: () => handleExport('csv') },

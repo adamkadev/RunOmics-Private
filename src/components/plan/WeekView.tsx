@@ -36,7 +36,7 @@ import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import {
   macrocyclePhaseRanges,
-  macrocycleWeek,
+  macrocycleWeek, preparationWeek,
   prescriptionDistanceMeters,
 } from '@/components/coaching/presentation'
 import {
@@ -299,8 +299,6 @@ function WeekStats({ target, notStarted }: { target: WeekTarget; notStarted: boo
           meaning={
             missed > 0 || unplanned > 0 ? (
               <>
-                {/* Each count whole: "3 / unplanned" broke at the space
-                    (screen audit, Oct 2026); the line may break between them. */}
                 {missed > 0 && <span className="whitespace-nowrap text-[var(--neg)]">{w.missed(missed)}</span>}
                 {missed > 0 && unplanned > 0 && ' · '}
                 {unplanned > 0 && <span className="whitespace-nowrap">{w.unplanned(unplanned)}</span>}
@@ -472,6 +470,8 @@ export function WeekView({
   // any other week still read the current week's number, so every week in
   // the block looked like the same week.
   const targetWeek = coaching ? macrocycleWeek(coaching.plan, firstDay.date) : null
+  // General preparation has no race to count toward, so it counts its own weeks.
+  const prepWeek = coaching ? preparationWeek(coaching.plan, firstDay.date) : null
 
   // The race the block builds to: its week closes the phase card, and the
   // header counts down to it (v4.17).
@@ -489,10 +489,16 @@ export function WeekView({
 
   const phaseLabel = planPhase
     ? t.plan.weekPurpose.planPhase[planPhase]
-    : isPrePlan
-      ? t.plan.weekPurpose.prePlan
+    : prepWeek !== null
+      ? t.plan.weekPurpose.generalPreparation
+      : isPrePlan
+        ? t.plan.weekPurpose.prePlan
+        : null
+  const weekOfLabel = !isPrePlan && targetWeek
+    ? t.plan.weekPurpose.weekOfTarget(targetWeek.done, targetWeek.total)
+    : prepWeek !== null
+      ? t.plan.weekPurpose.weekN(prepWeek)
       : null
-  const weekOfLabel = !isPrePlan && targetWeek ? t.plan.weekPurpose.weekOfTarget(targetWeek.done, targetWeek.total) : null
   const fallbackLabel = phaseLabel || weekOfLabel ? null : weekOver ? null : isCurrentWeek ? t.plan.weekPurpose.thisWeek : t.plan.weekPurpose.upcoming
 
   const target = useMemo(

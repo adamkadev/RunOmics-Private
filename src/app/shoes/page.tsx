@@ -41,9 +41,7 @@ export default async function ShoesPage() {
               {t.shoes.tracked(formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0)))}
             </p>
           </div>
-          {/* Pairs come from Garmin; adding one happens there. The app's one
-              secondary button, as a shoe's Edit and Activities' Map: drawn at
-              34 pt, tapped at 44 (screen audit, Oct 2026). */}
+          {/* Pairs come from Garmin; adding one happens there. */}
           <a
             href={GARMIN_GEAR_URL}
             target="_blank"

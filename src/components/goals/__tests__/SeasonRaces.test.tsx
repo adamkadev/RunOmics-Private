@@ -109,8 +109,6 @@ describe('SeasonTimeline', () => {
   })
 })
 
-// Screen audit, Oct 2026: Marathon (Oct 7), Today (Oct 18) and 10K (Nov 8)
-// were drawn over one another as "MarTodayl0K".
 describe('stripLanes', () => {
   const at = (iso: string) => yearFraction(iso, 2026)
 
@@ -130,8 +128,6 @@ describe('stripLanes', () => {
       { at: at('2026-10-18'), label: 'Today', prefer: 'below', optional: true },
     ])
     expect(lanes.slice(0, 4)).toEqual(['above', 'above', 'below', 'above'])
-    // No room left on either side between Marathon and 10K: Today keeps its
-    // tick and drops its word.
     expect(lanes[4]).toBeNull()
   })
 })

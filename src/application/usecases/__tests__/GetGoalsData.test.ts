@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import {
   computeProjection,
   computeYearOutcome,
-  computeNextRaceSpotlight,
+  computeNextRaceSpotlight, nextRaceAcrossYears,
   computeMonthlyGoals,
 } from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
@@ -205,6 +205,28 @@ describe('computeNextRaceSpotlight', () => {
       '2024-07-01'
     )
     expect(result?.predictedSeconds).toBe(1210)
+  })
+})
+
+describe('nextRaceAcrossYears', () => {
+  it('finds the next race in a later year when this one has none left', () => {
+    const years = [
+      { year: 2026, races: [race({ date: '2026-03-16', name: 'Spring 5K' })] },
+      { year: 2027, races: [race({ date: '2027-04-25', name: 'City Marathon', distance: 'Marathon' })] },
+    ]
+    const result = nextRaceAcrossYears(years, 2026, [], '2026-10-18')
+    expect(result?.race.name).toBe('City Marathon')
+    expect(result?.daysUntil).toBe(189)
+  })
+
+  it('takes the earliest across years, and ignores years already past', () => {
+    const years = [
+      { year: 2025, races: [race({ date: '2025-12-31', name: 'Old' })] },
+      { year: 2027, races: [race({ date: '2027-02-01', name: 'Later' })] },
+      { year: 2026, races: [race({ date: '2026-11-08', name: 'Sooner' })] },
+    ]
+    expect(nextRaceAcrossYears(years, 2026, [], '2026-10-18')?.race.name).toBe('Sooner')
+    expect(nextRaceAcrossYears([], 2026, [], '2026-10-18')).toBeNull()
   })
 })
 

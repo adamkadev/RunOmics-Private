@@ -5,13 +5,8 @@ import type { ReactNode } from 'react'
  * athlete's baseline, the load ratio against its safe band: an 8 px track,
  * the band in pos (or the accent, for a baseline), and a 3 x 16 px marker in
  * text ink or the value's own status. The caption goes under it. Positions
- * are 0 to 1 along the track.
- *
- * Screen audit, Oct 2026: the surface-2 track and the 24% and 12% bands were
- * 1.1-1.3:1, so the band "the key reference" barely showed; the track is now
- * line-2 and the bands stronger. A value past either end was a marker pinned
- * half off the track in the in-range ink: it now stays on the track, in the
- * marker's colour, with an arrow pointing off the end.
+ * are 0 to 1 along the track; a value past either end stays on the track
+ * with an arrow pointing off it.
  */
 export function RangeBar({
   band,
@@ -52,7 +47,7 @@ export function RangeBar({
             className="absolute top-0 h-4 w-[3px] -translate-x-1/2 rounded-full"
             data-testid="range-marker"
             data-overflow={overflow ?? undefined}
-            // Kept whole on the track: at 0 or 1 a centred marker was half off it.
+            // Clamped so a marker at 0 or 1 stays whole on the track.
             style={{ left: `clamp(1.5px, ${clamp(marker) * 100}%, calc(100% - 1.5px))`, background: markerColor }}
           />
         )}

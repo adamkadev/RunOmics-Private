@@ -44,7 +44,6 @@ describe('consistencyMonths', () => {
     const view = consistencyMonths(YEAR, TODAY)
     // Oct 1, 2025 was a Wednesday; its week starts Sep 29.
     expect(view.weeks[0]!.start).toBe('2025-09-29')
-    // The last column is today's week, not the month's last (screen audit, Oct 2026).
     expect(view.weeks.at(-1)!.start).toBe('2026-09-21')
     expect(view.weeks).toHaveLength(52)
     for (const week of view.weeks) expect(week.days).toHaveLength(7)

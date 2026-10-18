@@ -16,9 +16,7 @@ const baseURL = process.env.SCREENSHOT_BASE_URL ?? `http://localhost:${process.e
 const phone = devices['iPhone 15 Pro']
 const PHONE_SCREEN = { width: 393, height: 852 }
 
-// The offline build has no map tiles: .env.e2e leaves the MapTiler token
-// unset. The screenshot build borrows the one in .env.local when there is one,
-// so the map is audited with its tiles.
+// .env.e2e leaves the MapTiler token unset: borrow .env.local's so the map has tiles.
 function localMapTilerToken(): string | undefined {
   if (process.env.NEXT_PUBLIC_MAPTILER_TOKEN) return process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   try {
@@ -52,8 +50,7 @@ export default defineConfig({
     ? {}
     : {
         webServer: [
-          // Settings is captured signed in as the owner: a Google account
-          // the Auth emulator makes up, so no real account is involved.
+          // For the owner Settings capture (screenshots/owner.ts).
           {
             command: 'firebase emulators:start --only auth --project runomics-dev',
             url: `http://${AUTH_EMULATOR_HOST}`,
@@ -65,8 +62,7 @@ export default defineConfig({
             url: baseURL,
             reuseExistingServer: true,
             timeout: 300_000,
-            // NEXT_PUBLIC_* is inlined at build time, and dotenv does not
-            // override a variable already set, so these win over .env.e2e.
+            // Inlined at build time; dotenv won't override them.
             env: {
               NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST: AUTH_EMULATOR_HOST,
               ...(mapTilerToken ? { NEXT_PUBLIC_MAPTILER_TOKEN: mapTilerToken } : {}),

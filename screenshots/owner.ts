@@ -1,12 +1,7 @@
 import { expect, type Page } from '@playwright/test'
 import { t } from '@/i18n'
 
-/**
- * Settings captured signed in as the owner. The screenshot build points
- * Firebase Auth at the local emulator (src/lib/firebase.ts), which makes up a
- * Google account with the owner claim, so no real account or Firestore rule
- * is involved.
- */
+/** Settings signed in as the owner, against the local Auth emulator: no real account. */
 export const AUTH_EMULATOR_HOST = '127.0.0.1:9099'
 
 const PROJECT_ID = 'runomics-dev'
@@ -21,7 +16,6 @@ async function post<T>(url: string, body: unknown, headers: Record<string, strin
   return (await res.json()) as T
 }
 
-/** The emulator's Google account with the owner claim; the same one on every call. */
 async function ensureOwner(): Promise<void> {
   // The emulator accepts an unsigned JSON id_token for a federated sign-in.
   const idToken = encodeURIComponent(JSON.stringify({ ...OWNER, email_verified: true }))
@@ -36,12 +30,7 @@ async function ensureOwner(): Promise<void> {
   })
 }
 
-/**
- * Signs in through Settings' own button and the emulator's Google popup. The
- * popup hands its result back through an iframe Firebase loads on demand, and
- * now and then the hand-off is lost and the page stays on "Signing in…": so a
- * fresh page and another try, three at most.
- */
+/** The popup's hand-off back to the page is sometimes lost, so up to three tries. */
 export async function signInAsOwner(page: Page): Promise<void> {
   await ensureOwner()
 

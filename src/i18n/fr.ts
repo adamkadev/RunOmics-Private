@@ -2103,6 +2103,8 @@ export const fr = {
         raceDay: 'Jour de course',
       },
       weekOfTarget: (done: number, total: number) => `semaine ${done} sur ${total}`,
+      generalPreparation: 'Préparation générale',
+      weekN: (n: number) => `semaine ${n}`,
       raceOn: (date: string) => `course le ${date}`,
     },
   },

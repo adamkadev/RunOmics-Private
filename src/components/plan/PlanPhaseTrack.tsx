@@ -34,11 +34,7 @@ function days(from: string, to: string): number {
  * current here if it overlaps the week at all; progress reads through to the
  * end of the displayed week, since that's the furthest point this view knows
  * the plan has reached.
- *
- * Only one phase is "you are here" (screen audit, Oct 2026): a week across a
- * boundary lit Build and Peak alike under a header saying "Build". The phase
- * the header names wins among those the week overlaps; without one, any
- * overlapping phase is current, as before.
+ * When the week spans two phases, the one its header names is current.
  */
 export function PlanPhaseTrack({
   ranges,

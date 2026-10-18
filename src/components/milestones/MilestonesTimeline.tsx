@@ -62,9 +62,7 @@ export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) 
     <div className="space-y-6">
       {groupByYear(milestones).map(([year, items], i) => (
         <div key={year}>
-          {/* The year and the key fade as one label under the compact bar.
-              The Records tab's label and card (screen audit, Oct 2026): three
-              tabs headed three ways read as three screens. */}
+          {/* The year and the key fade as one label under the compact bar. */}
           <div data-bar-fade className="mb-3 flex items-center justify-between gap-3">
             <SectionDivider as="h2">{year}</SectionDivider>
             {i === 0 && marked && <RecordKey />}

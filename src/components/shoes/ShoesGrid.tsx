@@ -20,10 +20,7 @@ export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
 }
 
 const SECTION = 'px-1 text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground'
-/**
- * A list row's divider, inset to the text as Settings and Records draw theirs,
- * not edge to edge (screen audit, Oct 2026); the row's press tint stays full width.
- */
+/** A row divider inset to the text; the row's press tint stays full width. */
 const ROW_DIVIDER = 'relative before:absolute before:inset-x-5 before:top-0 before:h-px before:bg-border first:before:hidden'
 
 /** "676 / 1,000 km · 73 runs · last Sep 24 · daily trainer", or the overrun. */
@@ -60,7 +57,6 @@ function RotationRow({ shoe, context }: { shoe: ShoeStats; context: string | nul
               <span className="font-display text-body font-bold tabular-nums text-foreground">{formatKm(left)}</span> {t.shoes.kmLeftShort}
             </p>
           )}
-          {/* A row that opens a page says so, as the retired rows do. */}
           <ChevronRight size={16} className="text-muted-foreground" aria-hidden="true" />
         </div>
       </div>
@@ -144,8 +140,6 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
       )}
 
       {compare && (
-        // A card like the lists above it: the outline-only one was the page's
-        // one unfilled card (screen audit, Oct 2026).
         <details className="group rounded-card-sm border border-border bg-card" data-testid="shoes-compare">
           <summary className="flex min-h-15 cursor-pointer list-none items-center gap-3 px-5 py-3 [&::-webkit-details-marker]:hidden">
             <span className="min-w-0 flex-1">

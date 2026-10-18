@@ -43,9 +43,7 @@ export const ZONE_HEX = {
  * read as the athlete's own data. Light takes the deeper #357a1a, 5.3:1 on
  * a card, so 12 px good-news text clears AA. Light neg is #c0352a, not
  * #c8372d: a missed day's "✕ 10 km" sits on its own 12 % tint, where
- * #c8372d read 4.35:1 (design review, Oct 2026); now 4.6:1. Light warn is
- * #9a5b00, 5.4:1 on a card: #b26b00 was 4.2:1, under AA for the small
- * "COACH READ" labels and status lines it colours (screen audit, Oct 2026).
+ * #c8372d read 4.35:1; now 4.6:1. Light warn is #9a5b00, 5.4:1 on a card.
  */
 export const STATUS_HEX = {
   light: { pos: '#357a1a', warn: '#9a5b00', neg: '#c0352a' },
@@ -72,20 +70,14 @@ export const SURFACES = {
     text2: '#6b706e',
     // The map's street labels (v4.17 faint). Not for UI text: see subtle.
     text3: '#9aa09d',
-    // Faint UI text - dates, table headers, the version line (screen audit,
-    // Oct 2026). #9aa09d was 2.4-2.7:1 and carried real information; on the
-    // light ground nothing lighter than the label grey reaches 4.5:1, so in
-    // light it is that grey.
+    // Faint UI text at 4.5:1; on the light ground nothing lighter than the label grey reaches it.
     subtle: '#6b706e',
     tabBar: '#ffffff',
     // Tracks, inset tiles, the segmented control's ground (v4.17 surface-2).
     seg: '#f0f1f0',
-    // The selected tab on that ground.
     pill: '#ffffff',
     faint: '#f0f1f0',
-    // Reference series and neutral bars - last year, a route's past runs, a
-    // neutral form band (screen audit, Oct 2026): 3.1:1 on a card, so the
-    // data reads as data. #d3d6d4 was 1.45:1.
+    // Reference series and neutral bars: 3:1 or more on a card.
     band: '#8e9491',
     amber: STATUS_HEX.light.warn,
     shadowRaised: '0 1px 3px rgba(0, 0, 0, 0.06)',
@@ -100,16 +92,13 @@ export const SURFACES = {
     body: '#bfc3c1',
     text2: '#8a8f8d',
     text3: '#5f6462',
-    // 4.8:1 on a card, 5.1:1 on the ground: a step under text2 that still
-    // passes AA (#5f6462 was 3.0:1).
+    // A step under text2 that still reaches 4.5:1.
     subtle: '#7f8482',
     tabBar: '#0c0d0d',
     seg: '#1c1e1d',
-    // Lighter than the track, so the selected tab is raised rather than sunk:
-    // the card colour (#151616) sat 1.08:1 under it (screen audit, Oct 2026).
+    // Lighter than the track, so the selected tab is raised rather than sunk.
     pill: '#303432',
     faint: '#1c1e1d',
-    // 3.6:1 on a card (#303432 was 1.2:1).
     band: '#6a706d',
     amber: STATUS_HEX.dark.warn,
     shadowRaised: 'none',
@@ -280,9 +269,7 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     // blurred on the pale ground, so light takes a lighter rest and a wider
     // gap between them. Shares, not colours, so the mix follows the accent
     // wherever a cell is drawn.
-    // Screen audit, Oct 2026: light's first step sat 1.2:1 from a rest day,
-    // and dark's rest cells 1.08:1 on the card, so the grid's shape went;
-    // light steps up to 40% and 70%, and dark's rest is a step above the card.
+    // Steps wide enough to tell a rest day from the first level, in both themes.
     '--level-rest': mode === 'dark' ? '#262928' : '#eceeed',
     '--level-low': mode === 'dark' ? '35%' : '40%',
     '--level-mid': mode === 'dark' ? '65%' : '70%',
@@ -302,10 +289,7 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--chart-ground-contact': mode === 'dark' ? c.amber500 : c.amberLine,
     // The athlete's own data is the accent.
     '--chart-brand': 'var(--accent)',
-    // Where the map's heat ends up where runs pile on: light multiplies the
-    // tracks toward a deep accent, dark adds them toward white. The legend
-    // ran to the plain accent, a colour no busy street is drawn in (screen
-    // audit, Oct 2026).
+    // Where the map's heat ends up where runs pile on: a deep accent in light (multiply), toward white in dark (add).
     '--heat-end': mode === 'dark' ? 'color-mix(in srgb, var(--accent) 35%, #ffffff)' : 'color-mix(in srgb, var(--accent) 45%, #000000)',
     '--ro-accent': 'var(--accent)',
     '--ro-accent-hi': 'var(--accent-hover)',

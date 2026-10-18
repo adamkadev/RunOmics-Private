@@ -51,6 +51,15 @@ export function macrocycleWeek(plan: MacrocycleSpan, date: string): { done: numb
   return { done: Math.min(Math.max(done, 1), total), total }
 }
 
+/** General preparation's week: Monday weeks from the start, as coachingPrompt counts them. Null with a race. */
+export function preparationWeek(plan: MacrocycleSpan, date: string): number | null {
+  if (plan.targetEvent) return null
+  const startMonday = isoDate(startOfWeek(new Date(`${macrocycleStart(plan)}T00:00:00`)))
+  const monday = isoDate(startOfWeek(new Date(`${date}T00:00:00`)))
+  const week = Math.floor(daysBetween(startMonday, monday) / 7) + 1
+  return week >= 1 ? week : null
+}
+
 export function garminAlert(view: Pick<PrescriptionView, 'garminStatus'>): string | null {
   return view.garminStatus === 'scheduled_different' ? t.coaching.garminOutOfDate : null
 }

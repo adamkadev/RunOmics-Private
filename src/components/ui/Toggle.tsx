@@ -30,8 +30,6 @@ export function Toggle({
       className={cn(
         'hit-44 relative h-6 w-10 shrink-0 rounded-full transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40',
-        // Off is the band grey, 3:1 on the card: on line-2 the track and its
-        // white knob were both 1.5:1 (screen audit, Oct 2026).
         checked ? 'bg-accent' : 'bg-[var(--band)]',
         className
       )}

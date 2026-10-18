@@ -3,9 +3,8 @@
 import { t } from "@/i18n";
 
 /**
- * Rare → Frequent (v4.17): the accent from a fifth of its strength, through
- * all of it, to where overlapping tracks end up - deeper in light, toward
- * white in dark (--heat-end; screen audit, Oct 2026). A pill in the map's
+ * Rare → Frequent (v4.17): the accent from a fifth of its strength to
+ * --heat-end, where overlapping tracks end up. A pill in the map's
  * bottom-left corner, in the page and in fullscreen.
  */
 export function HeatLegend({ className = "" }: { className?: string }) {

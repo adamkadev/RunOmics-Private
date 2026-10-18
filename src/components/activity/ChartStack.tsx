@@ -62,9 +62,8 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm }: { lane: La
               background: `color-mix(in srgb, var(--zone-${band.zone}) 11%, transparent)`,
             }}
           >
-            {/* 11 px like every axis label: the app's type floor (v4.17). Over
-                the lines, on a chip of the lane's ground: the run average ran
-                through "Z3" and struck it out (screen audit, Oct 2026). */}
+            {/* 11 px like every axis label: the app's type floor (v4.17). On a
+                chip above the lines, so the average line can't strike it out. */}
             {rect.labelled && (
               <span
                 className="absolute right-1 top-px z-[1] rounded-sm bg-background px-0.5 text-caption font-semibold leading-none"
@@ -77,7 +76,6 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm }: { lane: La
         )
       })}
       <svg viewBox={`0 0 ${VIEW_WIDTH} ${LANE_HEIGHT}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
-        {/* line-2: the border grey was 1.0:1 on the lane's ground in light (screen audit, Oct 2026). */}
         <path d={kmTicksPath(distanceKm)} stroke="var(--line-2)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
         {lane.average !== null && (
           <path
@@ -316,7 +314,6 @@ export function ChartStack({ onScrub, ...input }: Props) {
               const value = reading(elevation.smoothed)
               return (
                 <div className="flex flex-col gap-1" data-testid="lane-elevation">
-                  {/* Titled like the lanes above it (screen audit, Oct 2026). */}
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-[13px] text-muted-foreground">
                     <span>
                       <b className="font-semibold text-foreground">{elevation.label}</b> {elevation.unit}
@@ -332,7 +329,6 @@ export function ChartStack({ onScrub, ...input }: Props) {
                   </div>
                   <div className="relative" style={{ height: ELEVATION_HEIGHT }}>
                     <ElevationPlot lane={elevation} />
-                    {/* Its scale, as the lanes write theirs. */}
                     <span className="absolute left-1.5 top-0 text-caption leading-none text-muted-foreground" data-testid="elevation-top">
                       {elevation.format(elevation.domain[1])}
                     </span>
@@ -369,7 +365,6 @@ export function ChartStack({ onScrub, ...input }: Props) {
       </div>
 
       <Legend className="gap-x-4 border-t border-border pt-2.5">
-        {/* The zones' key stronger than the bands themselves, so it reads at 8 px (screen audit, Oct 2026). */}
         {hasBands && (
           <LegendItem swatch="square" color="color-mix(in srgb, var(--zone-2) 45%, transparent)">
             {c.legend.zones}
