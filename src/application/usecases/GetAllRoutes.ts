@@ -18,6 +18,13 @@ export interface RouteCluster {
   routeCount: number
   totalKm: number
   center: [number, number]
+  /**
+   * Where the area is named from: the centre of the run that sits closest to
+   * all the others. `center` is a mean, and an area made of two or three
+   * separate spots averages to somewhere between them - a village with no
+   * run in it, which reverse geocoding then names.
+   */
+  labelPoint: [number, number]
   bounds: LngLatBounds
   /**
    * What the map opens on (v4.17): the 4th to 96th percentile of the area's
@@ -41,6 +48,21 @@ export interface AllRoutesData extends MapShellData {
 }
 
 const CLUSTER_RADIUS_KM = 12
+
+/** The point with the smallest summed distance to every other: always one of `points`. */
+export function medoid(points: [number, number][]): [number, number] {
+  let best = points[0]!
+  let bestSum = Infinity
+  for (const p of points) {
+    let sum = 0
+    for (const q of points) sum += distanceKm(p[0], p[1], q[0], q[1])
+    if (sum < bestSum) {
+      bestSum = sum
+      best = p
+    }
+  }
+  return best
+}
 
 function findNearestClusterIdx(
   lon: number,
@@ -73,6 +95,7 @@ export function getAllRoutes(): AllRoutesData {
     km: number
     sumCLon: number; sumCLat: number
     center: [number, number]
+    runCenters: [number, number][]
   }
 
   const acc: ClusterAcc[] = []
@@ -90,7 +113,7 @@ export function getAllRoutes(): AllRoutesData {
       ? nearestIdx
       : acc.push({
         indices: [], minLon: Infinity, maxLon: -Infinity, minLat: Infinity, maxLat: -Infinity,
-        km: 0, sumCLon: 0, sumCLat: 0, center: [cLon, cLat],
+        km: 0, sumCLon: 0, sumCLat: 0, center: [cLon, cLat], runCenters: [],
       }) - 1
 
     const g = acc[clusterIdx]
@@ -103,6 +126,7 @@ export function getAllRoutes(): AllRoutesData {
     g.km += a.distanceKm
     g.sumCLon += cLon
     g.sumCLat += cLat
+    g.runCenters.push([cLon, cLat])
     g.center = [g.sumCLon / g.indices.length, g.sumCLat / g.indices.length]
 
   })
@@ -114,6 +138,7 @@ export function getAllRoutes(): AllRoutesData {
       routeCount: g.indices.length,
       totalKm: Math.round(g.km),
       center: g.center,
+      labelPoint: medoid(g.runCenters),
       bounds,
       frame: percentileBounds(g.indices.map((idx) => activities[idx]!.route!)) ?? bounds,
       routeIndices: g.indices,
