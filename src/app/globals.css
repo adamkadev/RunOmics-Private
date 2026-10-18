@@ -149,8 +149,8 @@
   --series-2:                var(--band);
   --series-3:                var(--muted-foreground);
   --level-rest:              #eceeed;
-  --level-low:               25%;
-  --level-mid:               55%;
+  --level-low:               40%;
+  --level-mid:               70%;
   --zone-ink:                #ffffff;
   --zone-1:                  #61788f;
   --zone-2:                  #2f74e0;
@@ -244,7 +244,7 @@
   --form-band-fill-tired:    var(--warn);
   --series-2:                var(--band);
   --series-3:                var(--muted-foreground);
-  --level-rest:              var(--surface-2);
+  --level-rest:              #262928;
   --level-low:               35%;
   --level-mid:               65%;
   --zone-ink:                #0b1f17;

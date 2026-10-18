@@ -144,16 +144,20 @@ export const en = {
   consistency: {
     // v4.17: three stats, the year as week columns, then active days per month.
     activeDays: 'Active days',
-    ofDays: (days: number, since: string) => `of ${days} days since ${since}`,
+    // No-break spaces inside the date and the month count: they split across
+    // lines in a narrow stat tile (screen audit, Oct 2026).
+    ofDays: (days: number, since: string) => `of ${days} days since ${since.replace(/ /g, '\u00a0')}`,
     share: 'Share of days',
-    vsPrior: (delta: string) => `${delta} pts vs prior 12 months`,
+    vsPrior: (delta: string) => `${delta} pts vs prior 12\u00a0months`,
     // A history that starts inside the year before is compared over what it covers.
-    vsMonths: (delta: string, months: number) => `${delta} pts vs prior ${months} month${months === 1 ? '' : 's'}`,
+    vsMonths: (delta: string, months: number) => `${delta} pts vs prior ${months}\u00a0month${months === 1 ? '' : 's'}`,
     streak: 'Current streak',
     weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
     best: (weeks: number) => `Best: ${weeks} week${weeks === 1 ? '' : 's'}`,
     calendarTitle: 'Every day, last 12 months',
     colourKey: 'colour = distance',
+    // Shown while earlier months are off to the left of a phone's grid.
+    scrollHint: 'Swipe for earlier months',
     levels: { rest: 'Rest', long: 'Long run (15 km +)' },
     today: 'Today',
     toCome: 'to come',

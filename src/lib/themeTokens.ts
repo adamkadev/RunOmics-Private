@@ -280,9 +280,12 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     // blurred on the pale ground, so light takes a lighter rest and a wider
     // gap between them. Shares, not colours, so the mix follows the accent
     // wherever a cell is drawn.
-    '--level-rest': mode === 'dark' ? 'var(--surface-2)' : '#eceeed',
-    '--level-low': mode === 'dark' ? '35%' : '25%',
-    '--level-mid': mode === 'dark' ? '65%' : '55%',
+    // Screen audit, Oct 2026: light's first step sat 1.2:1 from a rest day,
+    // and dark's rest cells 1.08:1 on the card, so the grid's shape went;
+    // light steps up to 40% and 70%, and dark's rest is a step above the card.
+    '--level-rest': mode === 'dark' ? '#262928' : '#eceeed',
+    '--level-low': mode === 'dark' ? '35%' : '40%',
+    '--level-mid': mode === 'dark' ? '65%' : '70%',
     // Ink for text on a zone fill (v4.17), per theme: white on the deeper
     // light-theme zones (4.4-8.7:1), the dark ink on the bright dark-theme
     // ones (5.6-9.3:1).

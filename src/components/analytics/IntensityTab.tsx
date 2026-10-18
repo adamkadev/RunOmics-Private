@@ -159,7 +159,10 @@ const DOT_SHAPE: Record<QualityDot, { className: string; style: React.CSSPropert
 /** Under this share of what the plan asks, the average is a caution. */
 const QUALITY_SHORT = 0.9
 
-function QualityCard({ rows, plan }: { rows: WeekRow[]; plan: PlanWeekInput[] }) {
+/** A dot's slot in a week's column, with the gap under it, in px: the plan's line sits on these. */
+const DOT_SLOT_PX = 16
+
+function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; plan: PlanWeekInput[] }) {
   const s = t.analytics.cards.quality
   const view = qualityView(rows, plan)
   if (!view || view.avg === null) return null
@@ -176,11 +179,21 @@ function QualityCard({ rows, plan }: { rows: WeekRow[]; plan: PlanWeekInput[] })
         count={rows.length}
         readout={(i) => s.readout(t.analytics.cards.scrubWeek(bare(rows[i]!.week)), view.weeks[i]!.filter((d) => d !== 'missed').length, view.planned[i] ?? null)}
       >
-        <div className="grid" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="quality-dots">
+        <div className="relative grid" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="quality-dots">
+          {/* What the plan asks a week, as a dashed line over that many dots,
+              like the other weekly charts' plan marks (screen audit, Oct 2026). */}
+          {view.planAsks !== null && view.planAsks > 0 && (
+            <div
+              aria-hidden
+              data-testid="quality-plan-line"
+              className="pointer-events-none absolute inset-x-0 z-[1] border-t border-dashed border-foreground"
+              style={{ bottom: Math.min(4, view.planAsks) * DOT_SLOT_PX }}
+            />
+          )}
           {view.weeks.map((dots, i) => (
-            <div key={rows[i]!.week} className="flex h-16 flex-col-reverse items-center gap-0.5 sm:h-14">
+            <div key={rows[i]!.week} className="flex h-16 flex-col-reverse items-center gap-0.5">
               {dots.map((dot, j) => (
-                <span key={j} className="flex size-3.5 shrink-0 items-center justify-center sm:size-[13px]">
+                <span key={j} className="flex size-3.5 shrink-0 items-center justify-center">
                   <span data-dot={dot} className={cn('block shrink-0', DOT_SHAPE[dot].className)} style={DOT_SHAPE[dot].style} />
                 </span>
               ))}
@@ -188,10 +201,14 @@ function QualityCard({ rows, plan }: { rows: WeekRow[]; plan: PlanWeekInput[] })
           ))}
         </div>
       </ChartScrub>
+      {/* The weeks under the dots, as every other weekly chart has them: empty
+          weeks read as gaps without them (screen audit, Oct 2026). */}
+      <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
       <Legend className="gap-x-4">
         <LegendItem swatch="dot" color="var(--zone-4)">{s.threshold}</LegendItem>
         <LegendItem swatch="diamond" color="var(--zone-5)">{s.intervals}</LegendItem>
         {view.weeks.some((w) => w.includes('missed')) && <LegendItem swatch="dashCircle" color="var(--muted-foreground)">{s.missed}</LegendItem>}
+        {view.planAsks !== null && view.planAsks > 0 && <LegendItem swatch="dash" color="var(--foreground)">{t.analytics.cards.weekly.plan}</LegendItem>}
       </Legend>
     </Card>
   )
@@ -210,7 +227,7 @@ export function IntensityTab({ rows, live, onShift, plan }: IntensityTabProps) {
     <div className="flex flex-col gap-3.5">
       <EasyHardCard rows={rows} />
       <ZonesCard rows={rows} live={live} onShift={onShift} />
-      <QualityCard rows={rows} plan={plan} />
+      <QualityCard rows={rows} live={live} plan={plan} />
       {/* A way out to the zone table on Athlete & zones, as a card row. */}
       <Link
         href="/athlete"

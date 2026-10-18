@@ -44,8 +44,9 @@ describe('consistencyMonths', () => {
     const view = consistencyMonths(YEAR, TODAY)
     // Oct 1, 2025 was a Wednesday; its week starts Sep 29.
     expect(view.weeks[0]!.start).toBe('2025-09-29')
-    expect(view.weeks.at(-1)!.start).toBe('2026-09-28')
-    expect(view.weeks).toHaveLength(53)
+    // The last column is today's week, not the month's last (screen audit, Oct 2026).
+    expect(view.weeks.at(-1)!.start).toBe('2026-09-21')
+    expect(view.weeks).toHaveLength(52)
     for (const week of view.weeks) expect(week.days).toHaveLength(7)
     // The days before the window are blank, not rest.
     expect(view.weeks[0]!.days.slice(0, 2).map((d) => d.state)).toEqual(['none', 'none'])
@@ -58,12 +59,11 @@ describe('consistencyMonths', () => {
     expect(labelled).toEqual(['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'])
   })
 
-  it('outlines today and leaves the days after it to come', () => {
+  it('outlines today and leaves the rest of its week to come, and no week after it', () => {
     const view = consistencyMonths(YEAR, TODAY)
-    const lastFull = view.weeks.at(-2)!
-    expect(lastFull.days[5]).toMatchObject({ date: TODAY, today: true, state: 'rest' })
-    expect(lastFull.days[6]!.state).toBe('future')
-    expect(view.weeks.at(-1)!.days.every((d) => d.state === 'future')).toBe(true)
+    const last = view.weeks.at(-1)!
+    expect(last.days[5]).toMatchObject({ date: TODAY, today: true, state: 'rest' })
+    expect(last.days[6]!.state).toBe('future')
   })
 
   it('reads each run day by its km, and counts active days per month', () => {

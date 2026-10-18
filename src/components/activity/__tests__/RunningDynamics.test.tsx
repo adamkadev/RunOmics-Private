@@ -41,7 +41,8 @@ describe('RunningDynamics', () => {
     // The band runs 1.00-1.08 on a 0.96-1.14 track.
     const band = bar.children[1] as HTMLElement
     expect(parseFloat(band.style.left)).toBeCloseTo(22.22, 1)
-    expect(band.style.background).toContain('--accent-soft')
+    // The accent at 45%: the 12% soft tint was 1.2:1 on its track (screen audit, Oct 2026).
+    expect(band.style.background).toContain('var(--accent) 45%')
     expect(card.textContent).toContain('0.96')
     expect(card.textContent).toContain('1.14')
     const delta = screen.getByText(`−0.04 m ${d.vsBaselineShort}`)
