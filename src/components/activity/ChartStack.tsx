@@ -369,8 +369,9 @@ export function ChartStack({ onScrub, ...input }: Props) {
       </div>
 
       <Legend className="gap-x-4 border-t border-border pt-2.5">
+        {/* The zones' key stronger than the bands themselves, so it reads at 8 px (screen audit, Oct 2026). */}
         {hasBands && (
-          <LegendItem swatch="square" color="color-mix(in srgb, var(--zone-2) 22%, transparent)">
+          <LegendItem swatch="square" color="color-mix(in srgb, var(--zone-2) 45%, transparent)">
             {c.legend.zones}
           </LegendItem>
         )}
@@ -378,7 +379,7 @@ export function ChartStack({ onScrub, ...input }: Props) {
           {c.legend.average}
         </LegendItem>
         <span className="flex items-center gap-1.5">
-          <span aria-hidden className="h-2.5 w-px shrink-0 bg-[var(--line-2)]" />
+          <span aria-hidden className="h-2.5 w-0.5 shrink-0 rounded-full bg-[var(--band)]" />
           {c.legend.km}
         </span>
       </Legend>

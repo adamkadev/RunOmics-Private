@@ -326,7 +326,7 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
         >
           <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
             {ticks.map((pace) => (
-              <line key={pace} x1="0" x2={W} y1={yOf(pace)} y2={yOf(pace)} stroke="var(--divider)" vectorEffect="non-scaling-stroke" data-testid="pace-gridline" />
+              <line key={pace} x1="0" x2={W} y1={yOf(pace)} y2={yOf(pace)} stroke="var(--line-2)" vectorEffect="non-scaling-stroke" data-testid="pace-gridline" />
             ))}
             {/* Workouts Z4, easy runs Z2: the two run types' own zones. */}
             <path d={path(hardLine)} fill="none" stroke="var(--zone-4)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
@@ -412,7 +412,7 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
           </div>
           <div className="flex h-[26px] items-end gap-[3px]" aria-hidden>
             {rpe.bars.map((v, i) => (
-              <div key={i} className="w-[7px] rounded-[2px]" style={{ height: v === null ? 2 : Math.max(2, (v / rpeMax) * 24), background: i === rpe.bars.length - 1 ? 'var(--foreground)' : 'var(--line-2)' }} />
+              <div key={i} className="w-[7px] rounded-[2px]" style={{ height: v === null ? 2 : Math.max(2, (v / rpeMax) * 24), background: i === rpe.bars.length - 1 ? 'var(--foreground)' : 'var(--series-2)' }} />
             ))}
           </div>
         </div>
@@ -457,7 +457,9 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
             <div key={row.id} className="grid grid-cols-[60px_minmax(0,1fr)_96px] items-center gap-3 text-[13px] sm:grid-cols-[72px_minmax(0,1fr)_110px] sm:gap-3.5" data-testid={`heat-${row.id}`}>
               <span className="whitespace-nowrap text-[var(--text-2)]">{labels[row.id]}</span>
               <div
-                className={row.pace === null ? 'box-border h-2 rounded-full border border-dashed border-[var(--line-2)]' : 'relative h-2 rounded-full bg-[var(--surface-2)]'}
+                // line-2 tracks and a muted dashed "no runs" outline: the surface-2
+                // track and line-2 dashes were 1.1-1.4:1 (screen audit, Oct 2026).
+                className={row.pace === null ? 'box-border h-2 rounded-full border border-dashed border-muted-foreground' : 'relative h-2 rounded-full bg-[var(--line-2)]'}
                 data-testid={row.pace === null ? 'heat-empty' : undefined}
               >
                 {row.best ? (
