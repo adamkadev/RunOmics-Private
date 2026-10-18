@@ -45,11 +45,13 @@ describe('Export', () => {
     return fetchMock
   }
 
-  it('offers the workbook and the CSV, each asking the route for its own format', async () => {
+  it('has one export row that opens a sheet with the workbook and the CSV, each asking the route for its own format', async () => {
     const fetchMock = stubExport()
     render(<DataSourceInfo lastSyncedAt={null} activityCount={0} user={USER} />)
 
+    await userEvent.click(screen.getByTestId('export-row'))
     await userEvent.click(screen.getByTestId('export-xlsx'))
+    await userEvent.click(await screen.findByTestId('export-row'))
     await userEvent.click(screen.getByTestId('export-csv'))
 
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
@@ -66,6 +68,7 @@ describe('Export', () => {
     stubExport({ 'X-Runomics-Notes-Unavailable': 'true' })
     render(<DataSourceInfo lastSyncedAt={null} activityCount={0} user={USER} />)
 
+    await userEvent.click(screen.getByTestId('export-row'))
     await userEvent.click(screen.getByTestId('export-csv'))
 
     expect(await screen.findByText(s.dataExport.notesUnavailable)).toBeInTheDocument()

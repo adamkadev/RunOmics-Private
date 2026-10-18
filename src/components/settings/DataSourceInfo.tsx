@@ -11,6 +11,7 @@ import { NOTES_UNAVAILABLE_HEADER } from '@/lib/exportHeaders'
 import { formatDate, formatRelativeAgo } from '@/lib/formatters'
 import { SyncNowButton, SyncVerdict, useSyncNow } from './SyncNowCard'
 import { ConnectedMark, GarminTile } from './GarminMark'
+import { ExportSheet, type ExportOption } from './ExportSheet'
 
 export interface SyncDevice {
   name?: string
@@ -42,6 +43,7 @@ const EXPORT_FILE: Record<ExportFormat, { name: string; type: string }> = {
 export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, pollIntervalMs }: Props) {
   const sync = useSyncNow(user, pollIntervalMs)
   const [loading, setLoading] = useState<ExportFormat | null>(null)
+  const [pickingFormat, setPickingFormat] = useState(false)
   const [confirmingClear, setConfirmingClear] = useState(false)
   const { toast, leaving, showToast } = useToast()
   const s = t.settings
@@ -74,6 +76,13 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
       setLoading(null)
     }
   }
+
+  // One row, the format chosen in a sheet (design review, Oct 2026): two
+  // near-identical rows left the reader guessing which file was which.
+  const exportOptions: ExportOption[] = [
+    { key: 'xlsx', title: s.dataExport.workbookTitle, extension: '.xlsx', hint: s.dataExport.workbookHint, onSelect: () => handleExport('xlsx') },
+    { key: 'csv', title: s.dataExport.csvTitle, extension: '.csv', hint: s.dataExport.csvHint, onSelect: () => handleExport('csv') },
+  ]
 
   const provenance = device?.name && device.since
     ? s.dataSource.sourceSince(s.dataSource.garmin, formatDate(device.since, { precision: 'month' }))
@@ -108,19 +117,16 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
 
       <SyncVerdict sync={sync} />
 
-      {(['xlsx', 'csv'] as const).map((format) => (
-        <button
-          key={format}
-          type="button"
-          onClick={() => handleExport(format)}
-          disabled={loading !== null}
-          data-testid={`export-${format}`}
-          className="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-left text-sm text-foreground transition-opacity active:opacity-60 disabled:opacity-50"
-        >
-          <span>{loading === format ? s.dataExport.exporting : format === 'csv' ? s.dataExport.csv : s.dataExport.title}</span>
-          <span className="shrink-0 text-[13px] font-medium text-accent-text">{s.rowAction.export}</span>
-        </button>
-      ))}
+      <button
+        type="button"
+        onClick={() => setPickingFormat(true)}
+        disabled={loading !== null}
+        data-testid="export-row"
+        className="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-left text-sm text-foreground transition-opacity active:opacity-60 disabled:opacity-50"
+      >
+        <span>{loading ? s.dataExport.exporting : s.dataExport.title}</span>
+        <span className="shrink-0 text-[13px] font-medium text-accent-text">{s.rowAction.export}</span>
+      </button>
 
       <div className="flex items-center justify-between gap-3 py-3.5">
         <div className="min-w-0">
@@ -148,6 +154,8 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
           </button>
         )}
       </div>
+
+      {pickingFormat && <ExportSheet options={exportOptions} onClose={() => setPickingFormat(false)} />}
 
       <Toast toast={toast} leaving={leaving} />
     </section>
