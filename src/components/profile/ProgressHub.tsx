@@ -283,9 +283,12 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
             <section className={cardClass({ className: 'order-5 flex flex-col gap-3 sm:order-none' })} data-testid="shoes-tile">
               <div className="flex items-center justify-between gap-2">
                 <h2 className={TITLE}>{h.shoes}</h2>
-                <Link href="/shoes" className="hit-44 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground" data-testid="shoes-all">
-                  {h.allPairs}
-                  <ChevronRight size={14} aria-hidden="true" />
+                {/* A link of its own, so the app's one "see all" style - the
+                    accent and an arrow, as Today's "View all →" and a shoe's
+                    "All 147 →"; grey chevrons mark a whole card (screen audit,
+                    Oct 2026). */}
+                <Link href="/shoes" className="hit-44 text-footnote font-medium text-accent-text transition-opacity hover:opacity-80 active:opacity-60" data-testid="shoes-all">
+                  {h.allPairs} →
                 </Link>
               </div>
               {shoes.map((s) => (

@@ -16,7 +16,7 @@ describe('NotificationsForm (v4.17)', () => {
     for (const type of [n.training, n.shoes, n.races]) {
       const toggle = await screen.findByRole('switch', { name: type.title })
       expect(toggle.getAttribute('aria-checked')).toBe('false')
-      // Off is line-2, a choice - never drawn as disabled.
+      // Off is the band grey, a choice - never drawn as disabled.
       expect(toggle.className).toContain('bg-[var(--band)]')
       expect(screen.getByText(type.subtitle)).toBeInTheDocument()
     }

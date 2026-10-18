@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { wearStatus } from '@/domain/shoe/wearStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -19,6 +20,11 @@ export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
 }
 
 const SECTION = 'px-1 text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground'
+/**
+ * A list row's divider, inset to the text as Settings and Records draw theirs,
+ * not edge to edge (screen audit, Oct 2026); the row's press tint stays full width.
+ */
+const ROW_DIVIDER = 'relative before:absolute before:inset-x-5 before:top-0 before:h-px before:bg-border first:before:hidden'
 
 /** "676 / 1,000 km · 73 runs · last Sep 24 · daily trainer", or the overrun. */
 export function shoeMeta(shoe: ShoeStats): string {
@@ -42,23 +48,28 @@ function RotationRow({ shoe, context }: { shoe: ShoeStats; context: string | nul
   const left = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
   const over = isPastLimit(shoe)
   return (
-    <Link href={`/shoes/${shoe.gearId}`} className="block px-4 py-3.5 transition-colors active:bg-foreground/[0.04]" data-testid="shoe-card">
+    <Link href={`/shoes/${shoe.gearId}`} className={cn(ROW_DIVIDER, 'block px-5 py-3.5 transition-colors active:bg-foreground/[0.04]')} data-testid="shoe-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-caption uppercase tracking-[0.08em] text-muted-foreground">{shoe.brand}</p>
           <p className="truncate font-display text-body font-bold text-foreground">{shoe.name}</p>
         </div>
-        {!over && (
-          <p className="shrink-0 text-footnote text-muted-foreground">
-            <span className="font-display text-body font-bold tabular-nums text-foreground">{formatKm(left)}</span> {t.shoes.kmLeftShort}
-          </p>
-        )}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {!over && (
+            <p className="text-footnote text-muted-foreground">
+              <span className="font-display text-body font-bold tabular-nums text-foreground">{formatKm(left)}</span> {t.shoes.kmLeftShort}
+            </p>
+          )}
+          {/* A row that opens a page says so, as the retired rows do. */}
+          <ChevronRight size={16} className="text-muted-foreground" aria-hidden="true" />
+        </div>
       </div>
       <WearBar
         totalKm={shoe.totalKm}
         maxKm={shoe.maxKm}
         tickKm={shoe.alertThresholdKm}
         tickLabel={t.shoes.detail.retireFromWorkouts(formatKm(shoe.alertThresholdKm))}
+        limitLabel={t.shoes.detail.limitTick(formatKm(shoe.maxKm))}
         className="mt-3"
       />
       <p className="mt-2.5 text-footnote tabular-nums text-muted-foreground" data-testid="shoe-meta">{shoeMeta(shoe)}</p>
@@ -104,7 +115,7 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
       {active.length > 0 && (
         <section className="space-y-2" data-testid="shoes-rotation">
           <h2 data-bar-fade className={SECTION}>{t.shoes.inRotation(active.length)}</h2>
-          <GlassSurface variant="card" className="divide-y divide-border overflow-hidden rounded-card-sm">
+          <GlassSurface variant="card" className="overflow-hidden rounded-card-sm">
             {active.map((shoe) => (
               <RotationRow key={shoe.gearId} shoe={shoe} context={insights[shoe.gearId] ?? null} />
             ))}
@@ -115,9 +126,9 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
       {retired.length > 0 && (
         <section className="space-y-2" data-testid="shoes-retired">
           <h2 data-bar-fade className={SECTION}>{t.shoes.retiredSection(retired.length)}</h2>
-          <GlassSurface variant="card" className="divide-y divide-border overflow-hidden rounded-card-sm">
+          <GlassSurface variant="card" className="overflow-hidden rounded-card-sm">
             {retired.map((shoe) => (
-              <Link key={shoe.gearId} href={`/shoes/${shoe.gearId}`} className="flex min-h-15 items-center gap-3 px-4 py-3" data-testid="retired-row">
+              <Link key={shoe.gearId} href={`/shoes/${shoe.gearId}`} className={cn(ROW_DIVIDER, 'flex min-h-15 items-center gap-3 px-5 py-3')} data-testid="retired-row">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-display text-body font-bold text-foreground">{shoe.name}</span>
                   <span className="block truncate text-footnote text-muted-foreground">{retiredSubline(shoe)}</span>
@@ -133,9 +144,10 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
       )}
 
       {compare && (
-        // An outline, no fill: an action, not data.
-        <details className="group rounded-card-sm border border-border" data-testid="shoes-compare">
-          <summary className="flex min-h-15 cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+        // A card like the lists above it: the outline-only one was the page's
+        // one unfilled card (screen audit, Oct 2026).
+        <details className="group rounded-card-sm border border-border bg-card" data-testid="shoes-compare">
+          <summary className="flex min-h-15 cursor-pointer list-none items-center gap-3 px-5 py-3 [&::-webkit-details-marker]:hidden">
             <span className="min-w-0 flex-1">
               <span className="block font-display text-body font-bold text-foreground">{t.shoes.comparison.title}</span>
               <span className="block truncate text-footnote text-muted-foreground">{t.shoes.comparison.subtitle}</span>

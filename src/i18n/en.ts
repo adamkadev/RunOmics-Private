@@ -1776,6 +1776,8 @@ export const en = {
       // A pair's page is under Progress, which lists the pairs (v4.17).
       back: 'Progress',
       retireFromWorkouts: (km: string) => `${km} km · retire from workouts`,
+      // The limit's own tick, once a pair has run past it (screen audit, Oct 2026).
+      limitTick: (km: string) => `${km} km limit`,
       stats: {
         distance: 'Distance',
         activities: 'Runs',
@@ -1849,7 +1851,7 @@ export const en = {
       yearTitle: (year: number) => `${year} distance`,
       runs: 'runs',
       records: 'Records',
-      recordsWhen: 'all time',
+      recordsWhen: 'All time',
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Half marathon' } as Record<string, string>,
       // The record set most recently, marked (v4.3.3); "new" only in its first weeks.
       newRecord: 'NEW PR',

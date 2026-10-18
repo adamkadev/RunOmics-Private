@@ -1672,6 +1672,7 @@ export const fr = {
     detail: {
       back: 'Progression',
       retireFromWorkouts: (km: string) => `${km} km · fin des séances de qualité`,
+      limitTick: (km: string) => `limite ${km} km`,
       stats: {
         distance: 'Distance',
         activities: 'Sorties',
@@ -1729,7 +1730,7 @@ export const fr = {
       yearTitle: (year: number) => `Distance ${year}`,
       runs: 'sorties',
       records: 'Records',
-      recordsWhen: 'depuis le début',
+      recordsWhen: 'Depuis le début',
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Semi-marathon' } as Record<string, string>,
       newRecord: 'NOUVEAU RP',
       latestRecord: 'DERNIER',
