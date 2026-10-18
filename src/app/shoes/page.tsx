@@ -41,13 +41,15 @@ export default async function ShoesPage() {
               {t.shoes.tracked(formatKm(shoes.reduce((sum, shoe) => sum + shoe.totalKm, 0)))}
             </p>
           </div>
-          {/* Pairs come from Garmin; adding one happens there. */}
+          {/* Pairs come from Garmin; adding one happens there. The app's one
+              secondary button, as a shoe's Edit and Activities' Map: drawn at
+              34 pt, tapped at 44 (screen audit, Oct 2026). */}
           <a
             href={GARMIN_GEAR_URL}
             target="_blank"
             rel="noreferrer"
             aria-label={t.shoes.addLabel}
-            className="flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border px-4 text-footnote font-bold text-foreground transition-opacity active:opacity-70"
+            className="hit-44 inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
           >
             <Plus size={16} strokeWidth={2.5} aria-hidden="true" />
             {t.shoes.add}

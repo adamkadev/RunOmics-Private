@@ -13,6 +13,7 @@ import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { cardClass } from '@/components/ui/Card'
 import { Pill } from '@/components/ui/Pill'
 import { TypeDot } from '@/components/ui/TypeDot'
+import { Legend, LegendItem } from '@/components/ui/Legend'
 import { SortDropdown } from '@/components/ui/SortDropdown'
 import { easyShare } from '@/domain/activity/easyShare'
 import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/weekGroups'
@@ -108,6 +109,26 @@ function InsetRows({ items, efforts }: { items: ActivitySummary[]; efforts: Reco
 }
 
 const DOT_CAP = 8
+
+/**
+ * What the week rows' dots mean, the types on screen only: a race's hollow
+ * ring and the neighbouring blues and purples had no key (screen audit,
+ * Oct 2026).
+ */
+function TypeKey({ items }: { items: ActivitySummary[] }) {
+  const present = new Set(items.map((a) => a.type))
+  const types = ALL_TYPES.filter((type) => present.has(type))
+  if (types.length === 0) return null
+  return (
+    <Legend className="px-1">
+      {types.map((type) => (
+        <LegendItem key={type} swatch={type === 'Race' ? 'ring' : 'dot'} color={runTypeColor(type)}>
+          {t.activityTypes[type] ?? type}
+        </LegendItem>
+      ))}
+    </Legend>
+  )
+}
 
 /** The week's runs as their type dots, in the order they were run. */
 function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label: string }) {
@@ -577,10 +598,11 @@ export function ActivityListClient({
         </div>
       ) : blocks ? (
         <div className="flex flex-col gap-3.5">
+          <TypeKey items={items} />
           {blocks.map((block) =>
             block.kind === 'current' ? (
               <section key={block.week.key} className={cardClass({ padding: 'none', overflow: true })} data-testid="current-week">
-                <div className="flex flex-col gap-2.5 px-4 py-4 sm:px-5">
+                <div className="flex flex-col gap-2.5 px-5 py-4">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                     <h2 className="truncate text-[15px] font-semibold text-foreground">{block.week.label}</h2>
                     <CurrentWeekLine
@@ -619,7 +641,7 @@ export function ActivityListClient({
                           type="button"
                           onClick={() => toggleWeek(g.key)}
                           aria-expanded={isExpanded}
-                          className="flex w-full items-center gap-4 px-4 py-3.5 text-left sm:px-5"
+                          className="flex w-full items-center gap-4 px-5 py-3.5 text-left"
                         >
                           <span className="flex flex-1 flex-col gap-1.5">
                             <span className="whitespace-nowrap text-sm font-semibold text-foreground">{g.label}</span>

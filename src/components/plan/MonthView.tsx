@@ -189,6 +189,17 @@ function DayCell({
         {cell.day}
       </span>
       {day.state === 'missed' && <span aria-hidden className="text-[11px] font-semibold leading-none text-[var(--neg)]">✕</span>}
+      {/* The session's type in its full zone colour, the legend's own square:
+          the 12% tints alone were about 1.2:1 on the card and looked alike
+          (screen audit, Oct 2026). */}
+      {day.state === 'planned' && planned && (
+        <span
+          aria-hidden
+          data-testid="month-zone-mark"
+          className="mt-px h-2 w-2 shrink-0 rounded-[2px]"
+          style={{ background: zoneColor(sessionZone(planned)) }}
+        />
+      )}
     </span>
   )
   const value = (planned || hasActs) && <CellValue planned={planned} ranKm={ranKm} hasActs={hasActs} state={day.state} />
