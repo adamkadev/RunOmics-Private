@@ -200,7 +200,9 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
           distance, a spacer, the sparkline right up against the time - no
           600 px gap between them - and the time with its change. On a
           phone the spacer goes and the row stays as it was. */}
-      <div className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-x-3 sm:grid-cols-[120px_1fr_minmax(0,360px)_auto] sm:gap-x-3.5" data-testid="predictions-grid">
+      {/* 76 pt for the name on a phone: at 64 "Marathon" all but touched its
+          sparkline (screen audit, Oct 2026). */}
+      <div className="grid grid-cols-[76px_minmax(0,1fr)_auto] gap-x-3 sm:grid-cols-[120px_1fr_minmax(0,360px)_auto] sm:gap-x-3.5" data-testid="predictions-grid">
         {rows.map((row) => (
           <div
             key={row.distance}

@@ -7,6 +7,7 @@ import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import { formatDate, formatKm, formatMonthShortYear, formatPace } from '@/lib/formatters'
 import { reverseGeocode } from '@/lib/reverseGeocode'
 import { t } from '@/i18n'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 
 interface Props {
   routes: RecurringRoute[]
@@ -138,9 +139,10 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
   return (
     <section className="space-y-3">
       {/* No subtitle: Records and Milestones carry none, and three tabs that
-          introduce themselves differently read as three different screens. */}
-      <div>
-        <h2 className="font-display text-title3 font-bold text-foreground">{t.records.recurring.title}</h2>
+          introduce themselves differently read as three different screens -
+          so the same label and card as theirs (screen audit, Oct 2026). */}
+      <div className="space-y-1">
+        <SectionDivider as="h2">{t.records.recurring.title}</SectionDivider>
         {/* Above the list, not below it: at the foot of fifteen rows the key
             arrives long after the bars it explains. Muted, not subtle: a key
             too faint to read explains nothing. */}
@@ -149,9 +151,9 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
         </p>
       </div>
 
-      <ul>
+      <ul className="glass-card rounded-card-sm px-5">
         {routes.map((route) => (
-          <li key={route.id} className="flex items-center gap-3 border-b border-foreground/10 px-0.5 py-[11px] last:border-b-0">
+          <li key={route.id} className="flex items-center gap-3 border-b border-border py-[11px] last:border-b-0">
             <Outline path={route.outline} />
 
             {/* A fixed column: the text never gives way to the trail. */}

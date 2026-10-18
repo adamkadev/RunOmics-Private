@@ -882,7 +882,8 @@ export const en = {
         threshold: 'Threshold pace',
         easyPace: 'Easy pace',
         in12w: (delta: string) => `${delta} in 12 weeks`,
-        noChange12w: 'No change in 12 weeks',
+        // In the shape of in12w's "+0.4 in 12 weeks": the words wrapped where its neighbours did not (screen audit, Oct 2026).
+        noChange12w: '±0 in 12 weeks',
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',
@@ -1910,10 +1911,11 @@ export const en = {
     milestones: {
       distanceTier: (km: string) => `${km} km this year`,
       streak: (weeks: number) => `${weeks}-week active streak`,
-      streakDetail: 'Still going - a run logged every week since',
+      // The app's separator, a middle dot, not a hyphen standing in for a dash (screen audit, Oct 2026).
+      streakDetail: 'Still going · a run logged every week since',
       record: (label: string) => `${label} record`,
       firstActivity: 'First step',
-      firstActivityDetail: (km: string) => `Where it all began - ${km} km`,
+      firstActivityDetail: (km: string) => `Where it all began · ${km} km`,
       lifetimeDistance: (km: string) => `${km} km lifetime`,
       // Marathon equivalents, not races (G25).
       lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathon distances`,

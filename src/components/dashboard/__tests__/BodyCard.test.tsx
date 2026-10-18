@@ -81,6 +81,9 @@ describe('BodyCard', () => {
     expect(form!.dataset.tone).toBe('muted')
     expect(form!.className).toContain('text-muted-foreground')
     expect(form!.textContent).toBe(`·${t.dashboard.bodyCard.formMoveLead(t.dashboard.bodyCard.formTrend.up)} ${t.dashboard.bodyCard.deltaIn('+7', 7)}`)
+    // Screen audit, Oct 2026: the word is read out, not drawn, so Form keeps
+    // to the two lines of its neighbours.
+    expect(form!.querySelector('.sr-only')!.textContent).toContain(t.dashboard.bodyCard.formTrend.up)
     // v4.17.2: it wraps on a phone, never cut.
     expect(form!.closest('[class*="truncate"], [class*="nowrap"]')).toBeNull()
   })

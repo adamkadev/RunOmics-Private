@@ -45,7 +45,9 @@ export function FormScale({ form }: { form: number }) {
   const band = formBand(form)
   return (
     <div className="mt-3.5 flex flex-col gap-1.5" data-testid="form-scale" role="img" aria-label={t.dashboard.bodyCard.formOnScale(formatDelta(form), t.formBand[band])}>
-      <div className="relative h-2 rounded-full bg-[var(--surface-2)]">
+      {/* The neutral middle is the track itself: line-2, as surface-2 left a
+          gap in the gauge at 1.1:1 (screen audit, Oct 2026). */}
+      <div className="relative h-2 rounded-full bg-[var(--line-2)]">
         <span aria-hidden className="absolute inset-y-0 left-0 rounded-l-full opacity-45" style={{ width: `${at(tiredBelow)}%`, background: 'var(--form-band-fill-tired)' }} />
         <span aria-hidden className="absolute inset-y-0 right-0 rounded-r-full opacity-45" style={{ left: `${at(freshAbove)}%`, background: 'var(--form-band-fill-fresh)' }} />
         <span aria-hidden data-testid="form-marker" className="absolute -top-1 h-4 w-1 -translate-x-1/2 rounded-[2px] bg-foreground" style={{ left: `${at(form)}%` }} />
@@ -115,7 +117,11 @@ export function BodyCard({ status }: { status: TrainingStatus | null; watchStatu
                   <span className="flex min-w-0 text-muted-foreground" data-testid="metric-delta" data-tone="muted">
                     <span aria-hidden="true" className="w-3 shrink-0 text-center">·</span>
                     <span className="min-w-0">
-                      <span className="inline-block">{t.dashboard.bodyCard.formMoveLead(formTrend(status.tsbDelta))}</span>{' '}
+                      {/* The word for the move is for a screen reader: on screen
+                          the sign says it, and "recovering," took Form to three
+                          lines beside one-line Fitness and Fatigue (screen
+                          audit, Oct 2026). */}
+                      <span className="sr-only">{t.dashboard.bodyCard.formMoveLead(formTrend(status.tsbDelta))} </span>
                       <span className="inline-block">{deltaLabel(status.tsbDelta, STATUS_DELTA_DAYS.form)}</span>
                     </span>
                   </span>
