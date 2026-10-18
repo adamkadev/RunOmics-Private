@@ -7,7 +7,7 @@ import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { getGarminRacePredictions } from './GetGarminRacePredictions'
 import { DISTANCE_KEY, getRecords } from './GetRecords'
 import { RACE_DISTANCES, type RaceDistanceKey } from '@/domain/race/distances'
-import { DAY_MS, addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
+import { DAY_MS, addDays, appTodayIso, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { round } from '@/lib/math'
 import type { PbEntry, GoalYear, UpcomingRace } from '@/domain/goals/types'
@@ -96,11 +96,11 @@ export function computeProjection(
   year: number,
   totalDistanceKm: number,
   goals: GoalYear,
+  now = new Date(),
 ): GoalProjection | null {
   const goal = goals.annualDistanceKm
   if (goal <= 0 || totalDistanceKm >= goal) return null
 
-  const now = new Date()
   const yearStart = new Date(year, 0, 1)
   const yearEnd = new Date(year + 1, 0, 1)
   const weeksElapsed = (now.getTime() - yearStart.getTime()) / (7 * DAY_MS)
@@ -122,9 +122,8 @@ export function computeProjection(
   return { weeklyRate, weeklyNeeded, projectedYearKm, status, deltaKm }
 }
 
-export function computeMonthlyGoals(activities: Activity[], year: number, goals: GoalYear): MonthGoal[] {
+export function computeMonthlyGoals(activities: Activity[], year: number, goals: GoalYear, now = new Date()): MonthGoal[] {
   const annualKm = goals.annualDistanceKm
-  const now = new Date()
   const daysInYear = (new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / DAY_MS
 
   return Array.from({ length: 12 }, (_, i) => {
@@ -262,12 +261,13 @@ export function computeWeeklyGoal(activities: Activity[], year: number, goals: G
   return { targetKm, actualKm }
 }
 
-export async function getCurrentWeeklyGoal(): Promise<WeeklyGoal | null> {
-  const year = new Date().getFullYear()
+export async function getCurrentWeeklyGoal(today: string = appTodayIso()): Promise<WeeklyGoal | null> {
+  const now = new Date(`${today}T12:00:00`)
+  const year = now.getFullYear()
   const goalYears = getGoalYears()
   const goals = goalYears.find((g) => g.year === year)
   if (!goals) return null
-  return computeWeeklyGoal(getAllActivities(), year, goals)
+  return computeWeeklyGoal(getAllActivities(), year, goals, now)
 }
 
 async function getGoalPredictions(): Promise<GoalRacePrediction[]> {
@@ -288,7 +288,7 @@ async function getGoalPredictions(): Promise<GoalRacePrediction[]> {
   })
 }
 
-export async function getGoalsPageData(): Promise<GoalsPageData> {
+export async function getGoalsPageData(today: string = appTodayIso()): Promise<GoalsPageData> {
   const activities = getAllActivities()
   const upcomingRaceYears = getUpcomingRaceYears()
   const goalYears = getGoalYears()
@@ -305,8 +305,8 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
     ])
   ).sort((a, b) => b - a)
 
-  const currentYear = new Date().getFullYear()
-  const today = new Date().toISOString().slice(0, 10)
+  const now = new Date(`${today}T12:00:00`)
+  const currentYear = now.getFullYear()
   const byYear: Record<number, YearData> = {}
 
   for (const year of allYears) {
@@ -331,10 +331,10 @@ export async function getGoalsPageData(): Promise<GoalsPageData> {
 
     const projection =
       year === currentYear && goals
-        ? computeProjection(activities, year, rawYearKm, goals)
+        ? computeProjection(activities, year, rawYearKm, goals, now)
         : null
 
-    const monthlyGoals = goals ? computeMonthlyGoals(activities, year, goals) : []
+    const monthlyGoals = goals ? computeMonthlyGoals(activities, year, goals, now) : []
 
     const nextRaceSpotlight =
       year === currentYear ? computeNextRaceSpotlight(upcomingRaces, predictions, today) : null

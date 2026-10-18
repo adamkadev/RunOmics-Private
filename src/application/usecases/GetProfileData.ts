@@ -1,4 +1,4 @@
-import { DAY_MS, isoDate } from '@/lib/calendarDate'
+import { DAY_MS, appTodayIso } from '@/lib/calendarDate'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile, type AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getVo2maxNorms } from '@/infrastructure/repositories/JsonVo2maxNormsRepository'
@@ -73,7 +73,7 @@ function periodStats(
   }
 }
 
-export async function getProfileData(): Promise<ProfileData> {
+export async function getProfileData(today: string = appTodayIso()): Promise<ProfileData> {
   const activities = getAllActivities()
   const lifetime = getLifetimeStats()
   const allRecords = await getRecords()
@@ -87,7 +87,7 @@ export async function getProfileData(): Promise<ProfileData> {
     ? activities.reduce((min, a) => (a.date < min ? a.date : min), firstActivity.date)
     : null
 
-  const now = new Date()
+  const now = new Date(`${today}T12:00:00`)
   const currentYear = now.getFullYear()
   const elapsedDaysThisYear = Math.max(
     1,
@@ -98,7 +98,7 @@ export async function getProfileData(): Promise<ProfileData> {
   const ytdDistanceKmRounded = yearDistanceKm(activities, currentYear)
 
   const prevYear = currentYear - 1
-  const prevYearActivities = yearToDate(activities, prevYear, sameDateLastYear(isoDate(now)))
+  const prevYearActivities = yearToDate(activities, prevYear, sameDateLastYear(today))
   const prevYearStats =
     prevYearActivities.length > 0
       ? periodStats(prevYearActivities, sumDistanceKm(prevYearActivities), elapsedDaysThisYear)
@@ -116,7 +116,7 @@ export async function getProfileData(): Promise<ProfileData> {
     ? {
         goalYear,
         totalDistanceKm: ytdDistanceKmRounded,
-        projection: computeProjection(activities, currentYear, ytdDistanceKm, goalYear),
+        projection: computeProjection(activities, currentYear, ytdDistanceKm, goalYear, now),
       }
     : null
 

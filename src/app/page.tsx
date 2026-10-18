@@ -30,7 +30,12 @@ import { t } from '@/i18n'
 export const revalidate = 3600
 
 export default async function DashboardPage() {
-  const data = getDashboardData()
+  // One date for the whole render, in the athlete's zone when one is set, and
+  // every "today" lookup below takes it. The Garmin fallback used to read the
+  // server's UTC date, so for two hours after midnight in Luxembourg Monday's
+  // rest day showed Sunday's long run.
+  const today = appTodayIso()
+  const data = getDashboardData(today)
   const athlete = getAthleteProfile()
   const lastSyncedAt = getLastSyncedAt()
   const trainingStatus = await getTrainingStatus()
@@ -38,12 +43,8 @@ export default async function DashboardPage() {
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const mostRecentRecord = getMostRecentRecord(records)
-  const todayPlannedWorkout = await getTodayPlannedWorkout()
-  const weeklyStreak = getWeeklyStreakData()
-  // One date for the whole render, in the athlete's zone when one is set - the
-  // coaching overview used to default to the UTC date while this page used the
-  // server's local one.
-  const today = appTodayIso()
+  const todayPlannedWorkout = await getTodayPlannedWorkout(today)
+  const weeklyStreak = getWeeklyStreakData(new Date(`${today}T12:00:00`))
   const coaching = getCoachingOverview(today)
   const weekTarget = await loadWeekTarget(today, coaching)
 
@@ -59,7 +60,7 @@ export default async function DashboardPage() {
   // card the generator had already written and paid for, and left the hero on
   // deterministic copy on exactly the days there was most to say. The session
   // goes into the insight instead of cancelling it.
-  const aiVerdict = await getTodayInsight(trainingStatus, await todayInsightSession())
+  const aiVerdict = await getTodayInsight(trainingStatus, await todayInsightSession(today), today)
   const celebrationTake = await getPbCelebrationInsight(mostRecentRecord)
   // What the rest of the plan holds: the session a rest day points to, and
   // the name under each day of the week strip.

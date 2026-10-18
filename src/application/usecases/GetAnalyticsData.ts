@@ -6,7 +6,7 @@ import { easyShare, type EasyHardSplit } from '@/domain/activity/easyShare'
 import { sumDistanceKm } from '@/domain/activity/distance'
 import { AXIS_TICK_DATE, formatDate, monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
-import { DAY_MS, isoDate } from '@/lib/calendarDate'
+import { DAY_MS, appTodayIso, isoDate } from '@/lib/calendarDate'
 import { qualityKind } from '@/domain/training/qualitySession'
 
 export { easyHardShare }
@@ -441,9 +441,9 @@ function buildRunningDynamicsDaily(activities: Activity[], now: Date): DailyRunn
   return trimLeadingEmpty(points, (p) => p.cadence7 !== null || p.cadence30 !== null)
 }
 
-export async function getAnalyticsData(): Promise<AnalyticsPageData> {
+export async function getAnalyticsData(today: string = appTodayIso()): Promise<AnalyticsPageData> {
   const all = getAllActivities()
-  const now = new Date()
+  const now = new Date(`${today}T12:00:00`)
 
   const byYearMap = new Map<number, Activity[]>()
   for (const a of all) {

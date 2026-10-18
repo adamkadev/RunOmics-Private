@@ -8,7 +8,7 @@ import type {
 } from '@/domain/coaching/types'
 import { garminScheduleStatus } from '@/domain/coaching/matching'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
-import { isoDate } from '@/lib/calendarDate'
+import { appTodayIso } from '@/lib/calendarDate'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
@@ -76,11 +76,11 @@ export function buildCoachingOverview(
   return { plan, currentWeekId: currentWeek?.id ?? null, workouts: views, latestDecision, latestEvaluation, nextKeyWorkout }
 }
 
-// Both readers date "today" by the local calendar, as src/lib/calendarDate
-// does. The overview used UTC while getTodayPrescription used local time, so
-// after local midnight they disagreed on the day - and on a Monday, the week.
+// Both readers date "today" by appTodayIso(), as the pages that call them do.
+// The overview used UTC while getTodayPrescription used local time, so after
+// local midnight they disagreed on the day - and on a Monday, the week.
 export function getCoachingOverview(
-  today = isoDate(new Date()),
+  today = appTodayIso(),
   repository: Pick<CoachingRepository, 'getCurrentPlan' | 'getDecisions' | 'getEvaluations'> = new JsonCoachingRepository(),
 ): CoachingOverview | null {
   const plan = repository.getCurrentPlan()
@@ -104,7 +104,7 @@ export function getCoachingOverview(
  * that for one row, so this reads the plan and nothing else.
  */
 export function getTodayPrescription(
-  today = isoDate(new Date()),
+  today = appTodayIso(),
   repository: Pick<CoachingRepository, 'getCurrentPlan'> = new JsonCoachingRepository(),
 ): WorkoutPrescription | null {
   const plan = repository.getCurrentPlan()

@@ -3,7 +3,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { trimp, type HrBounds } from './GetTrainingLoad'
-import { isoDate } from '@/lib/calendarDate'
+import { appTodayIso, isoDate } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 
 const FALLBACK_DURATION_MINUTES = 40
@@ -100,8 +100,13 @@ export async function getPlannedWorkouts(): Promise<PlannedWorkout[]> {
   return planned.map((w) => estimatePlannedLoad(withoutStaleSteps(w, cutoff), byType, overall))
 }
 
-export async function getTodayPlannedWorkout(): Promise<PlannedWorkout | null> {
+/**
+ * The Garmin session dated `today`. The date is the caller's: read from the
+ * server's own clock (UTC on Vercel), it was still yesterday for the first
+ * hours after the athlete's midnight, and Today showed Sunday's long run on
+ * Monday's rest day.
+ */
+export async function getTodayPlannedWorkout(today: string = appTodayIso()): Promise<PlannedWorkout | null> {
   const planned = await getPlannedWorkouts()
-  const today = isoDate(new Date())
   return planned.find((w) => w.date === today) ?? null
 }
