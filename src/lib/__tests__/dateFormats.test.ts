@@ -67,8 +67,6 @@ describe('formatDateRange', () => {
     expect(formatDateRange('2026-09-07', '2026-09-13', { now })).not.toMatch(/Mon|Sun/)
   })
 
-  // Screen audit, Oct 2026: the week spanning new year read "Dec 29, 2025 –
-  // Jan 4, 2026" under a month heading that names the year.
   it('leaves the years out when told never, even across new year', () => {
     const label = formatDateRange('2025-12-29', '2026-01-04', { now, year: 'never' })
     expect(label).not.toMatch(/2025|2026/)

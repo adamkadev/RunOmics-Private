@@ -30,7 +30,6 @@ describe('WearBar', () => {
 
     render(<WearBar totalKm={1_375} maxKm={500} />)
     expect(screen.getByTestId('wear-tick').style.left).toBe(`${((500 * 0.8) / 1_375) * 100}%`)
-    // Solid to the limit, hatched past it, the limit ticked (screen audit, Oct 2026).
     const limit = `${(500 / 1_375) * 100}%`
     expect(screen.getByTestId('wear-fill').style.width).toBe(limit)
     expect(screen.getByTestId('wear-overrun').style.left).toBe(limit)

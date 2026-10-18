@@ -132,7 +132,6 @@ describe('WeekView progression card', () => {
     expect(line).not.toMatch(/D-\u2060?\d+/)
   })
 
-  // Oct 2026: a general preparation block read only "This week".
   it('names general preparation and its week when the plan has no race', () => {
     const general: CoachingPlan = { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined }
     renderWeek({ coaching: overview({ coachingPlan: general }) })

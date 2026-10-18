@@ -79,7 +79,6 @@ describe('progressHubView', () => {
     const yoy = yearOverYear(activities, INPUT.today)!
     expect(yoy).toEqual({ km: 310, lastYearKm: 300, since: '2025-05-21' })
     expect(hub.hero.deltaKm).toBe(yoy.km - yoy.lastYearKm)
-    // The label names where those dates start (screen audit, Oct 2026).
     expect(hub.hero.compareSince).toBe('2025-05-21')
     expect(progressHubView(INPUT).hero.compareSince).toBeNull()
   })
@@ -125,7 +124,6 @@ describe('the hub helpers', () => {
     expect(weeks.at(-1)).toEqual([rest, rest, mid, mid, rest, { level: 0, today: true, future: false }, { level: 0, today: false, future: true }])
   })
 
-  // Screen audit, Oct 2026: the bar was full whenever the prediction beat the target.
   it('puts the prediction on a scale centred on the target, faster to the right', () => {
     expect(raceScale(2400, 2400)).toEqual({ target: 0.5, predicted: 0.5 })
     expect(raceScale(2356, 2400).predicted).toBeGreaterThan(0.5)

@@ -25,9 +25,7 @@ const SAFE_AREA = { top: 59, bottom: 34, left: 0, right: 0 }
 // Consecutive screens, each overlapping the last by more than the fixed
 // header and tab bar cover, so every line of the page is clear of both in one
 // of them. The tall full-page image is kept too, but a tool reading
-// screenshots shrinks it until its text is illegible. 220, not 180: the
-// compact header (about 110 pt) and the tab bar left a few rows - an
-// activity's Conditions - never whole on any screen (screen audit, Oct 2026).
+// screenshots shrinks it until its text is illegible.
 const SCREEN_OVERLAP = 220
 const MAX_SCREENS = 6
 

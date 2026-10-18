@@ -116,8 +116,6 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body }: Pr
                 <span className="block text-sm text-foreground">{t.settings.dataExport.title}</span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">{t.settings.dataExport.signedOut(t.common.runs(activityCount))}</span>
               </span>
-              {/* Says what the tap does first: the active "Export ›" over "sign
-                  in to export" read as a contradiction (screen audit, Oct 2026). */}
               <span className="shrink-0 text-[13px] font-medium text-accent-text">{t.settings.rowAction.signIn}</span>
             </button>
           </div>

@@ -117,12 +117,11 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
           {scale.ticks.map((km) => (
             <span key={km} data-testid="monthly-gridline" className="absolute inset-x-0 border-t border-border" style={{ bottom: at(km) }} />
           ))}
-          {/* Inset by the month-so-far ring, so the last bar's ring stays inside the gridlines (screen audit, Oct 2026). */}
+          {/* Inset by the month-so-far ring's width, so it stays inside the gridlines. */}
           <div className="relative flex h-full items-end gap-1 px-[3px]">
             {view.monthly.map((m) => {
               const style: CSSProperties = {
                 height: `${Math.max(3, Math.round((m.km / scale.top) * MONTHLY_H))}px`,
-                // This year is the athlete's own data, the accent, as on Progress (screen audit, Oct 2026).
                 background: m.year !== view.currentYear ? 'var(--band)' : 'var(--accent)',
                 ...(m.partial ? { boxShadow: '0 0 0 1.5px var(--card), 0 0 0 3px var(--accent)' } : {}),
               }

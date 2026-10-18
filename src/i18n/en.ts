@@ -144,8 +144,7 @@ export const en = {
   consistency: {
     // v4.17: three stats, the year as week columns, then active days per month.
     activeDays: 'Active days',
-    // No-break spaces inside the date and the month count: they split across
-    // lines in a narrow stat tile (screen audit, Oct 2026).
+    // No-break spaces keep the date and the month count whole in a narrow tile.
     ofDays: (days: number, since: string) => `of ${days} days since ${since.replace(/ /g, '\u00a0')}`,
     share: 'Share of days',
     vsPrior: (delta: string) => `${delta} pts vs prior 12\u00a0months`,
@@ -156,7 +155,6 @@ export const en = {
     best: (weeks: number) => `Best: ${weeks} week${weeks === 1 ? '' : 's'}`,
     calendarTitle: 'Every day, last 12 months',
     colourKey: 'colour = distance',
-    // Shown while earlier months are off to the left of a phone's grid.
     scrollHint: 'Swipe for earlier months',
     levels: { rest: 'Rest', long: 'Long run (15 km +)' },
     today: 'Today',
@@ -360,7 +358,6 @@ export const en = {
     rowAction: {
       export: 'Export ›',
       clear: 'Clear ›',
-      // Signed out, what the row actually does first (screen audit, Oct 2026).
       signIn: 'Sign in ›',
     },
     appearance: {
@@ -446,7 +443,6 @@ export const en = {
       workbook: 'Export training data (.xlsx)',
       title: 'Export activities',
       signedOut: (runs: string) => `Workbook or CSV of all ${runs} · sign in to export`,
-      // Under the owner's row, as the Clear row says what it does (screen audit, Oct 2026).
       ownerHint: (runs: string) => `Workbook or CSV of all ${runs}`,
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
@@ -623,8 +619,7 @@ export const en = {
       title: 'This week',
       weeksInARow: (weeks: number) => `${weeks} week streak`,
       ofKm: (target: string) => `of ${target} km`,
-      // Planned sessions only: an extra run fills a bar too, and "2 of 3 runs"
-      // under five filled bars read as a contradiction (screen audit, Oct 2026).
+      // Planned sessions only: an extra run fills a bar too.
       runsOf: (done: number, planned: number) => `${done} of ${planned} planned run${planned !== 1 ? 's' : ''}`,
       // The session under each day of the week strip, by the coach's type,
       // and its short label for a phone under 480 pt, where "Threshold" and
@@ -882,7 +877,6 @@ export const en = {
         threshold: 'Threshold pace',
         easyPace: 'Easy pace',
         in12w: (delta: string) => `${delta} in 12 weeks`,
-        // In the shape of in12w's "+0.4 in 12 weeks": the words wrapped where its neighbours did not (screen audit, Oct 2026).
         noChange12w: '±0 in 12 weeks',
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
@@ -1781,7 +1775,6 @@ export const en = {
       // A pair's page is under Progress, which lists the pairs (v4.17).
       back: 'Progress',
       retireFromWorkouts: (km: string) => `${km} km · retire from workouts`,
-      // The limit's own tick, once a pair has run past it (screen audit, Oct 2026).
       limitTick: (km: string) => `${km} km limit`,
       stats: {
         distance: 'Distance',
@@ -1870,7 +1863,7 @@ export const en = {
       vo2max: 'VO₂ max',
       allTime: 'All time',
       vsYear: (delta: string, year: number) => `${delta} km vs ${year} to date`,
-      // The same dates in both years, from where the history starts (screen audit, Oct 2026).
+      // The same dates in both years, from where the history starts.
       vsYearSince: (delta: string, year: number, since: string) => `${delta} km vs ${year} since ${since}`,
       ofGoal: (km: string) => `of ${km} km`,
       goal: 'Goal',
@@ -1911,7 +1904,6 @@ export const en = {
     milestones: {
       distanceTier: (km: string) => `${km} km this year`,
       streak: (weeks: number) => `${weeks}-week active streak`,
-      // The app's separator, a middle dot, not a hyphen standing in for a dash (screen audit, Oct 2026).
       streakDetail: 'Still going · a run logged every week since',
       record: (label: string) => `${label} record`,
       firstActivity: 'First step',
@@ -2251,7 +2243,6 @@ export const en = {
         raceDay: 'Race day',
       },
       weekOfTarget: (done: number, total: number) => `week ${done} of ${total}`,
-      // A block with no race: general preparation and its week since the start, no total.
       generalPreparation: 'General preparation',
       weekN: (n: number) => `week ${n}`,
       raceOn: (date: string) => `race ${date}`,

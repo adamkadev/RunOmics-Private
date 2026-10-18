@@ -47,8 +47,6 @@ describe('WeeklyStreakCard', () => {
     expect(bars[1]!.style.border).toBe('2px solid var(--accent)')
     expect(bars[1]!.hasAttribute('data-today')).toBe(true)
     expect(bars[2]!.style.height).toBe('8px')
-    // Bare figures over the bars; the total beside the title carries the unit
-    // (screen audit, Oct 2026).
     expect(strip.textContent).toContain('8.5')
     expect(strip.textContent).toContain('10')
     expect(strip.textContent).not.toContain(`8.5 ${t.units.km}`)

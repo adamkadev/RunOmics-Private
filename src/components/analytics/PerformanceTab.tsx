@@ -200,8 +200,6 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
           distance, a spacer, the sparkline right up against the time - no
           600 px gap between them - and the time with its change. On a
           phone the spacer goes and the row stays as it was. */}
-      {/* 76 pt for the name on a phone: at 64 "Marathon" all but touched its
-          sparkline (screen audit, Oct 2026). */}
       <div className="grid grid-cols-[76px_minmax(0,1fr)_auto] gap-x-3 sm:grid-cols-[120px_1fr_minmax(0,360px)_auto] sm:gap-x-3.5" data-testid="predictions-grid">
         {rows.map((row) => (
           <div
@@ -250,11 +248,9 @@ const PACE_ROUND = 5
  * The pace chart's domain and its three y labels (v4.17.3): the drawn paces
  * - the smoothed lines, not the raw weeks, whose outliers left the lines in
  * the top half - with 5% of their range either side, at least 5 s/km,
- * rounded out to 5 s. The three labels are the domain's two edges and its
- * middle, so every drawn pace sits between two labelled lines: ticks round
- * to a step inside the domain left the workout line above the top label and
- * the easy line under the bottom one (screen audit, Oct 2026). The domain
- * grows by 5 s when needed to keep the middle on a 5 s pace. Faster is up.
+ * rounded out to 5 s. The labels are its two edges and its middle, so every
+ * drawn pace sits between two labelled lines; the domain grows by 5 s when
+ * needed to keep the middle on a 5 s pace. Faster is up.
  */
 export function paceAxis(paces: readonly number[]): { lo: number; hi: number; ticks: [number, number, number] } {
   const min = Math.min(...paces)
@@ -457,8 +453,6 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
             <div key={row.id} className="grid grid-cols-[60px_minmax(0,1fr)_96px] items-center gap-3 text-[13px] sm:grid-cols-[72px_minmax(0,1fr)_110px] sm:gap-3.5" data-testid={`heat-${row.id}`}>
               <span className="whitespace-nowrap text-[var(--text-2)]">{labels[row.id]}</span>
               <div
-                // line-2 tracks and a muted dashed "no runs" outline: the surface-2
-                // track and line-2 dashes were 1.1-1.4:1 (screen audit, Oct 2026).
                 className={row.pace === null ? 'box-border h-2 rounded-full border border-dashed border-muted-foreground' : 'relative h-2 rounded-full bg-[var(--line-2)]'}
                 data-testid={row.pace === null ? 'heat-empty' : undefined}
               >

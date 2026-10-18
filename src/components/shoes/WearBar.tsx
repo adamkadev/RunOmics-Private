@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import { RETIRE_FROM_WORKOUTS_SHARE, WEAR_COLOR, shoeWearStatus } from './shoeWear'
 
 const TICK_COLOR = 'bg-[var(--text-2)]'
-/** A card-coloured edge, so a tick reads on the fill as on the track (screen audit, Oct 2026: 1.7:1 on the red). */
+/** A card-coloured edge, so a tick reads on the fill as on the track. */
 const TICK_EDGE: CSSProperties = { boxShadow: '0 0 0 1.5px var(--card)' }
 
 /**
@@ -13,11 +13,8 @@ const TICK_EDGE: CSSProperties = { boxShadow: '0 0 0 1.5px var(--card)' }
  * is scaled to the km run, so the tick moves in and the overrun shows. A
  * retired pair's bar is full and muted.
  *
- * Past the limit the limit is marked too (screen audit, Oct 2026): the bar
- * was solid red end to end with the only tick at the retire point, under
- * "of 500 km". The fill is solid to the limit and hatched beyond it, the
- * limit has a tick of its own in text ink, and the label under the bar names
- * the limit rather than a retire point the pair is long past.
+ * Past the limit the fill is solid to the limit and hatched beyond, and the
+ * limit gets a tick and a label of its own.
  */
 export function WearBar({
   totalKm,

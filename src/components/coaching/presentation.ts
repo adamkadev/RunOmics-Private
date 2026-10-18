@@ -51,13 +51,7 @@ export function macrocycleWeek(plan: MacrocycleSpan, date: string): { done: numb
   return { done: Math.min(Math.max(done, 1), total), total }
 }
 
-/**
- * The week of general preparation a date falls in: Monday weeks counted from
- * the macrocycle's start, as the coach is told them (coachingPrompt). With no
- * race there is no "week 3 of 12", and Plan's header fell back to "This week"
- * (Oct 2026); this is the count it reads instead. Null with a race to count
- * toward, or before the start.
- */
+/** General preparation's week: Monday weeks from the start, as coachingPrompt counts them. Null with a race. */
 export function preparationWeek(plan: MacrocycleSpan, date: string): number | null {
   if (plan.targetEvent) return null
   const startMonday = isoDate(startOfWeek(new Date(`${macrocycleStart(plan)}T00:00:00`)))

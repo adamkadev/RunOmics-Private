@@ -5,7 +5,6 @@ import { t } from '@/i18n'
 export default function NotFound() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center text-center">
-      {/* Full strength: at 60% the icon was 2.3:1 in light (screen audit, Oct 2026). */}
       <HeartPulse size={24} aria-hidden="true" className="mb-4 text-accent-text" />
       <h1 className="text-6xl font-black text-foreground">{t.pages.notFound.code}</h1>
       <p className="mt-2 text-balance text-lg font-medium text-muted-foreground">

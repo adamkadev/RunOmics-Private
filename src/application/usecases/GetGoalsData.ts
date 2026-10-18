@@ -87,12 +87,7 @@ export interface GoalsPageData {
   years: number[]
   byYear: Record<number, YearData>
   history: YearOutcome[]
-  /**
-   * The next race on the calendar, whatever its year (Oct 2026): a year's own
-   * spotlight looks at that year's races only, so with nothing left in 2026
-   * Progress said "No race planned" over a marathon in 2027. Goals keeps the
-   * per-year spotlight, which it matches to that year's targets.
-   */
+  /** The next race in any year; each year's own spotlight only sees that year's races. */
   nextRace: NextRaceSpotlight | null
 }
 
@@ -173,7 +168,6 @@ export function computeMonthlyGoals(activities: Activity[], year: number, goals:
   })
 }
 
-/** The next race from this year on, whatever its year: see GoalsPageData.nextRace. */
 export function nextRaceAcrossYears(
   upcomingRaceYears: readonly { year: number; races: UpcomingRace[] }[],
   currentYear: number,

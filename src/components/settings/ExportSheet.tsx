@@ -21,10 +21,6 @@ interface Props {
   onClose: () => void
 }
 
-/**
- * One export row on the card, the format picked here (design review, Oct 2026):
- * two near-identical rows left the reader guessing which file was which.
- */
 export function ExportSheet({ options, onClose }: Props) {
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
   const trapRef = useFocusTrap<HTMLDivElement>()

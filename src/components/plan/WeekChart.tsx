@@ -29,10 +29,7 @@ function cellName(cell: DayStateCell): string {
   return [t.sessionState.dayLabel(cell.fullLabel, state), detail].filter(Boolean).join(' · ')
 }
 
-/**
- * The figure over a bar, bare: the week's total carries the unit, and
- * "11.5 km" ran into its neighbours at phone width (screen audit, Oct 2026).
- */
+/** The figure over a bar, bare: the week's total carries the unit. */
 function kmLabel(cell: DayStateCell): string {
   if (cell.state === 'rest') return cell.isToday ? t.plan.restDay : ''
   return kmFigure(cell) ?? '–'
@@ -47,8 +44,6 @@ function kmLabel(cell: DayStateCell): string {
 function barClass(cell: DayStateCell): string {
   if (cell.state === 'done') return 'bg-accent'
   if (cell.isToday) return 'border-2 border-accent bg-[var(--accent-soft)]'
-  // A ghost of what was planned, unfilled: a missed long run read as the
-  // week's biggest day (screen audit, Oct 2026).
   if (cell.state === 'missed') return 'border-[1.5px] border-dashed border-[var(--neg)] bg-transparent'
   if (cell.state === 'planned') return 'border-[1.5px] border-dashed border-[var(--bar-zone)] bg-[color-mix(in_srgb,var(--bar-zone)_14%,transparent)]'
   return 'border border-border bg-[var(--surface-2)]'

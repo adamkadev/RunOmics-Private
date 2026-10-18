@@ -44,8 +44,6 @@ function Day({ cell, onRest }: { cell: ConsistencyCell; onRest: (date: string) =
  */
 function YearCalendar({ view, onRest }: { view: ConsistencyView; onRest: (date: string) => void }) {
   const scroller = useRef<HTMLDivElement>(null)
-  // Earlier months off to the left: the grid opens on today, and nothing said
-  // the "12 months" of its title were a swipe away (screen audit, Oct 2026).
   const [moreBefore, setMoreBefore] = useState(false)
   const dayLabels = new Intl.DateTimeFormat(t.locale, { weekday: 'short', timeZone: 'UTC' })
   // 2024-01-01 was a Monday.
@@ -85,7 +83,6 @@ function YearCalendar({ view, onRest }: { view: ConsistencyView; onRest: (date: 
       </div>
     </div>
       {moreBefore && (
-        // A fade just right of the day labels, over the weeks that run on under them.
         <span aria-hidden className="pointer-events-none absolute inset-y-0 left-[27px] z-20 w-6 bg-gradient-to-r from-card to-transparent" data-testid="consistency-fade" />
       )}
     </div>

@@ -73,7 +73,6 @@ describe('a general block, with no race to count toward', () => {
     expect(macrocycleWeek(plan, '2026-10-26')).toBeNull()
   })
 
-  // Oct 2026: with no "week N of M" the Plan header said only "This week".
   it('counts its own weeks from the start, in Monday weeks', async () => {
     const { preparationWeek } = await import('../presentation')
     expect(preparationWeek(plan, '2026-10-19')).toBe(1)

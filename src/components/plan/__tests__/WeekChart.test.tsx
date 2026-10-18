@@ -34,7 +34,6 @@ describe('WeekChart', () => {
     expect(bar('2026-10-02').className).toContain('bg-[var(--surface-2)]')
   })
 
-  // Screen audit, Oct 2026: "11.5 km" over each bar ran into its neighbours.
   it('writes each km bare over its bar, a run to the tenth, and names it with its unit', () => {
     render(<WeekChart days={DAYS} />)
 

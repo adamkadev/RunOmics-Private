@@ -208,8 +208,6 @@ describe('computeNextRaceSpotlight', () => {
   })
 })
 
-// Oct 2026: with nothing left in 2026, Progress said "No race planned" over a
-// marathon in 2027.
 describe('nextRaceAcrossYears', () => {
   it('finds the next race in a later year when this one has none left', () => {
     const years = [

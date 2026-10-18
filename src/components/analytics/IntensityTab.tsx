@@ -159,7 +159,7 @@ const DOT_SHAPE: Record<QualityDot, { className: string; style: React.CSSPropert
 /** Under this share of what the plan asks, the average is a caution. */
 const QUALITY_SHORT = 0.9
 
-/** A dot's slot in a week's column, with the gap under it, in px: the plan's line sits on these. */
+/** A dot's slot in a week's column, gap included, in px. */
 const DOT_SLOT_PX = 16
 
 function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; plan: PlanWeekInput[] }) {
@@ -180,8 +180,6 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
         readout={(i) => s.readout(t.analytics.cards.scrubWeek(bare(rows[i]!.week)), view.weeks[i]!.filter((d) => d !== 'missed').length, view.planned[i] ?? null)}
       >
         <div className="relative grid" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="quality-dots">
-          {/* What the plan asks a week, as a dashed line over that many dots,
-              like the other weekly charts' plan marks (screen audit, Oct 2026). */}
           {view.planAsks !== null && view.planAsks > 0 && (
             <div
               aria-hidden
@@ -201,8 +199,6 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
           ))}
         </div>
       </ChartScrub>
-      {/* The weeks under the dots, as every other weekly chart has them: empty
-          weeks read as gaps without them (screen audit, Oct 2026). */}
       <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
       <Legend className="gap-x-4">
         <LegendItem swatch="dot" color="var(--zone-4)">{s.threshold}</LegendItem>

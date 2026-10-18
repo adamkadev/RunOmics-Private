@@ -19,12 +19,7 @@ export interface ProgressHubView {
     deltaKm: number | null
     /** This year's km over those same dates, which the delta is read against. */
     compareKm: number | null
-    /**
-     * Where those dates start when the history began after 1 January last
-     * year; null from 1 January. The label names it: "-5 km vs 2025 to date"
-     * over a chart drawn from January read as a sum gone wrong, the delta
-     * being April to today (screen audit, Oct 2026).
-     */
+    /** Where those dates start when the history began after 1 January last year; null otherwise. */
     compareSince: string | null
     hours: number
     runs: number
