@@ -259,7 +259,10 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
       className={cn(
         // The attribution sits 12 px in from the right and bottom, as the
         // chips do (.activity-map in globals.css), on the map's dark pill.
-        'activity-map relative overflow-hidden rounded-xl',
+        // Its own stacking context: maplibre's controls sit at z-index 20,
+        // which otherwise reached the page and painted the credit over the
+        // status strip when the map scrolled under it (screen audit, Oct 2026).
+        'activity-map relative isolate overflow-hidden rounded-xl',
         '[&_.maplibregl-ctrl-attrib]:rounded-md [&_.maplibregl-ctrl-attrib]:!bg-[var(--map-attrib-bg)] [&_.maplibregl-ctrl-attrib]:!px-1.5 [&_.maplibregl-ctrl-attrib]:!py-px',
         // Under the status strip, never touching the top edge (v4.8): iOS
         // kept the blur zone of a fullscreen map over the page's title.

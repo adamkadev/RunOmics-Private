@@ -210,8 +210,10 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
       <div
         className={
           isFullscreen
-            ? "relative min-h-0 flex-1 bg-[var(--surface-2)]"
-            : "relative h-[360px] overflow-hidden rounded-2xl border border-border bg-[var(--surface-2)] md:h-[560px]"
+            ? "relative isolate min-h-0 flex-1 bg-[var(--surface-2)]"
+            : // Isolated, as the activity map is: its overlays' z-indices stay
+              // inside it rather than reaching the page's bars (screen audit, Oct 2026).
+              "relative isolate h-[360px] overflow-hidden rounded-2xl border border-border bg-[var(--surface-2)] md:h-[560px]"
         }
       >
         {/* Sized by a wrapper: MapLibre's own stylesheet makes its container
