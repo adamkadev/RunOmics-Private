@@ -34,12 +34,23 @@ describe('WeekChart', () => {
     expect(bar('2026-10-02').className).toContain('bg-[var(--surface-2)]')
   })
 
-  it('writes each km with its unit, a run to the tenth', () => {
+  // Screen audit, Oct 2026: "11.5 km" over each bar ran into its neighbours.
+  it('writes each km bare over its bar, a run to the tenth, and names it with its unit', () => {
     render(<WeekChart days={DAYS} />)
 
-    expect(screen.getByLabelText(/Day 2026-09-28/).textContent).toContain(`8.5 ${t.units.km}`)
-    expect(screen.getByLabelText(/Day 2026-10-01/).textContent).toContain(`5 ${t.units.km}`)
+    const run = screen.getByLabelText(/Day 2026-09-28/)
+    expect(run.textContent).toContain('8.5')
+    expect(run.textContent).not.toContain(t.units.km)
+    expect(run.getAttribute('aria-label')).toContain(`8.5 ${t.units.km}`)
+    expect(screen.getByLabelText(/Day 2026-10-01/).textContent).toContain('5')
     expect(screen.getByLabelText(/Day 2026-10-04/).textContent).toContain('–')
+  })
+
+  it('draws a missed day as an unfilled ghost of its plan', () => {
+    render(<WeekChart days={DAYS} />)
+
+    expect(bar('2026-09-29').className).toContain('border-dashed')
+    expect(bar('2026-09-29').className).toContain('bg-transparent')
   })
 
   it('scales the bars to the longest day, with a stub for rest', () => {

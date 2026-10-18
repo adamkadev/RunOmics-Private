@@ -1,7 +1,7 @@
 import { getConsistencyData } from '@/application/usecases/GetConsistencyData'
 import { appTodayIso } from '@/lib/calendarDate'
 import { ConsistencyMonths } from '@/components/consistency/ConsistencyMonths'
-import { consistencyMonths } from '@/components/consistency/consistencyMonths'
+import { consistencyMonths } from '@/components/consistency/consistencyMonthsView'
 import { BackButton } from '@/components/ui/BackButton'
 import { t } from '@/i18n'
 

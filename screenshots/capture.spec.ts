@@ -11,6 +11,7 @@ import {
   type Theme,
 } from './routes'
 import { ACCENT_STORAGE_KEY } from '@/lib/accent'
+import { signInAsOwner } from './owner'
 
 const OUTPUT_DIR = path.join(__dirname, 'output')
 
@@ -24,8 +25,10 @@ const SAFE_AREA = { top: 59, bottom: 34, left: 0, right: 0 }
 // Consecutive screens, each overlapping the last by more than the fixed
 // header and tab bar cover, so every line of the page is clear of both in one
 // of them. The tall full-page image is kept too, but a tool reading
-// screenshots shrinks it until its text is illegible.
-const SCREEN_OVERLAP = 180
+// screenshots shrinks it until its text is illegible. 220, not 180: the
+// compact header (about 110 pt) and the tab bar left a few rows - an
+// activity's Conditions - never whole on any screen (screen audit, Oct 2026).
+const SCREEN_OVERLAP = 220
 const MAX_SCREENS = 6
 
 const FREEZE_MOTION_CSS = `
@@ -113,6 +116,10 @@ async function gotoAndSettle(page: Page, url: string, route: RouteSpec, theme: T
       .catch(() => {})
   }
 
+  if (route.settledWhen) {
+    await page.locator(route.settledWhen).first().waitFor({ state: 'attached', timeout: 10_000 }).catch(() => {})
+  }
+
   await page
     .waitForFunction((t) => document.documentElement.classList.contains(t), theme, {
       timeout: 5_000,
@@ -145,6 +152,12 @@ for (const accent of selectedAccents()) {
           const dir = path.join(OUTPUT_DIR, accent, theme, route.name)
           await preparePage(page, theme, accent)
           await gotoAndSettle(page, await resolvePath(page, route), route, theme, accent)
+          if (route.asOwner) {
+            // A deployment has no emulator to sign in against.
+            test.skip(!!process.env.SCREENSHOT_BASE_URL, 'the owner capture needs the local Auth emulator')
+            await signInAsOwner(page)
+            await page.waitForTimeout(600)
+          }
           await captureScreens(page, dir, '')
 
           if (route.hasTabs) {

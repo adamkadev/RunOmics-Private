@@ -34,9 +34,27 @@ function days(from: string, to: string): number {
  * current here if it overlaps the week at all; progress reads through to the
  * end of the displayed week, since that's the furthest point this view knows
  * the plan has reached.
+ *
+ * Only one phase is "you are here" (screen audit, Oct 2026): a week across a
+ * boundary lit Build and Peak alike under a header saying "Build". The phase
+ * the header names wins among those the week overlaps; without one, any
+ * overlapping phase is current, as before.
  */
-export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPhaseRange[]; weekStart: string; weekEnd: string }) {
+export function PlanPhaseTrack({
+  ranges,
+  weekStart,
+  weekEnd,
+  phase = null,
+}: {
+  ranges: PlanPhaseRange[]
+  weekStart: string
+  weekEnd: string
+  /** The phase the week's header names. */
+  phase?: TrainingPlanPhase | null
+}) {
   if (ranges.length < 2) return null
+  const overlaps = (r: PlanPhaseRange) => r.endDate >= weekStart && r.startDate <= weekEnd
+  const named = phase !== null && ranges.some((r) => overlaps(r) && r.phase === phase)
 
   return (
     <div
@@ -47,7 +65,7 @@ export function PlanPhaseTrack({ ranges, weekStart, weekEnd }: { ranges: PlanPha
       {ranges.map((r) => {
         const length = days(r.startDate, r.endDate)
         const isPast = r.endDate < weekStart
-        const isCurrent = !isPast && r.startDate <= weekEnd
+        const isCurrent = !isPast && r.startDate <= weekEnd && (!named || r.phase === phase)
         const progress = isPast ? 100 : isCurrent ? Math.min(100, Math.max(0, (days(r.startDate, weekEnd) / length) * 100)) : 0
         // A one-week phase is its name alone, as the race week is.
         const weeks = Math.round(length / 7)

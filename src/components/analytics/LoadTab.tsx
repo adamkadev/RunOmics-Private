@@ -232,7 +232,13 @@ function RiskRowView({ row, risk }: { row: RiskRow; risk: LoadRiskPanel }) {
         </span>
       </div>
       {formula && <p className="text-xs leading-snug text-muted-foreground">{explain}</p>}
-      <RangeBar band={[at(row.lo), at(row.hi)]} marker={at(row.value)} caption={safeCaption(row)} label={`${name} ${riskValue(row)}, ${safeCaption(row)}`} />
+      <RangeBar
+        band={[at(row.lo), at(row.hi)]}
+        marker={at(row.value)}
+        markerColor={RISK_INK[row.state]}
+        caption={safeCaption(row)}
+        label={`${name} ${riskValue(row)}, ${safeCaption(row)}`}
+      />
     </div>
   )
 }

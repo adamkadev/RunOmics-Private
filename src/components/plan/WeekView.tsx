@@ -299,9 +299,11 @@ function WeekStats({ target, notStarted }: { target: WeekTarget; notStarted: boo
           meaning={
             missed > 0 || unplanned > 0 ? (
               <>
-                {missed > 0 && <span className="text-[var(--neg)]">{w.missed(missed)}</span>}
+                {/* Each count whole: "3 / unplanned" broke at the space
+                    (screen audit, Oct 2026); the line may break between them. */}
+                {missed > 0 && <span className="whitespace-nowrap text-[var(--neg)]">{w.missed(missed)}</span>}
                 {missed > 0 && unplanned > 0 && ' · '}
-                {unplanned > 0 && w.unplanned(unplanned)}
+                {unplanned > 0 && <span className="whitespace-nowrap">{w.unplanned(unplanned)}</span>}
               </>
             ) : null
           }
@@ -528,7 +530,7 @@ export function WeekView({
               date, so a pre-plan week in August still showed Base (today's
               phase) as active; and a single reference day disagreed with the
               header whenever a phase boundary fell mid-week. */}
-          <PlanPhaseTrack ranges={phaseRanges} weekStart={firstDay.date} weekEnd={lastDay.date} />
+          <PlanPhaseTrack ranges={phaseRanges} weekStart={firstDay.date} weekEnd={lastDay.date} phase={planPhase ?? null} />
         </section>
       )}
 

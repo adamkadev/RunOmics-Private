@@ -5,7 +5,7 @@ import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import type { ProfileGoal, ProfilePeriodStats } from '@/application/usecases/GetProfileData'
 import type { NextRaceSpotlight } from '@/application/usecases/GetGoalsData'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
-import { consistencyMonths, dayLevel, type DayLevel } from '@/components/consistency/consistencyMonths'
+import { consistencyMonths, dayLevel, type DayLevel } from '@/components/consistency/consistencyMonthsView'
 import { isPlaceholderRaceName, raceDisplayName } from '@/components/goals/raceName'
 import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 
@@ -19,6 +19,13 @@ export interface ProgressHubView {
     deltaKm: number | null
     /** This year's km over those same dates, which the delta is read against. */
     compareKm: number | null
+    /**
+     * Where those dates start when the history began after 1 January last
+     * year; null from 1 January. The label names it: "-5 km vs 2025 to date"
+     * over a chart drawn from January read as a sum gone wrong, the delta
+     * being April to today (screen audit, Oct 2026).
+     */
+    compareSince: string | null
     hours: number
     runs: number
     /** Cumulative km by day of the year, this year up to today. */
@@ -173,6 +180,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
       // The same dates in both years, from where the history starts (v4.17).
       deltaKm: yoy ? yoy.km - yoy.lastYearKm : null,
       compareKm: yoy ? yoy.km : null,
+      compareSince: yoy?.since ?? null,
       hours: Math.round(input.ytd.durationSeconds / 3600),
       runs: input.ytd.sessionCount,
       current: cumulativeYear(input.activities, year, today),

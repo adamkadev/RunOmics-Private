@@ -39,7 +39,10 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
   return (
     <Card className="gap-3.5" testId="weekly-card">
       <CardHead title={s.title} caption={hasPlan ? s.caption : undefined} about={s.about} />
-      <StatGrid columns={view.onPlan ? 3 : 2} className="gap-3 sm:gap-4">
+      {/* The grid's own 16 pt between columns: at 12 on a phone "51.3 / 35 km"
+          ran into "39 km/week" (screen audit, Oct 2026); a unit that no longer
+          fits moves down whole. */}
+      <StatGrid columns={view.onPlan ? 3 : 2}>
         <Stat
           size="lg"
           label={last.current ? s.thisWeek : s.weekOf(bare(last.week))}
@@ -73,9 +76,13 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
                     className="box-border rounded-[5px_5px_2px_2px]"
                     style={{
                       height: Math.max(3, (r.km / view.yMax) * H),
-                      // The week under way is dashed: not a week's distance yet.
-                      background: current ? 'transparent' : onPlan(r) ? ACCENT : ACCENT_SOFT,
-                      border: current ? THIS_WEEK_BORDER : undefined,
+                      // The week under way is filled by its status like any other
+                      // and ringed with the dashed "this week" outline, as the
+                      // long-run chart draws it: an empty outline left a week
+                      // already over plan with no bar at all (screen audit, Oct 2026).
+                      background: onPlan(r) ? ACCENT : ACCENT_SOFT,
+                      outline: current ? THIS_WEEK_BORDER : undefined,
+                      outlineOffset: current ? 2 : undefined,
                     }}
                   />
                 ) : current ? (

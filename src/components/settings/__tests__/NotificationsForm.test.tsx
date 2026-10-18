@@ -16,8 +16,8 @@ describe('NotificationsForm (v4.17)', () => {
     for (const type of [n.training, n.shoes, n.races]) {
       const toggle = await screen.findByRole('switch', { name: type.title })
       expect(toggle.getAttribute('aria-checked')).toBe('false')
-      // Off is line-2, a choice - never drawn as disabled.
-      expect(toggle.className).toContain('bg-[var(--line-2)]')
+      // Off is the band grey, a choice - never drawn as disabled.
+      expect(toggle.className).toContain('bg-[var(--band)]')
       expect(screen.getByText(type.subtitle)).toBeInTheDocument()
     }
     await vi.waitFor(() => expect(screen.getAllByRole('switch').every((s) => !(s as HTMLButtonElement).disabled)).toBe(true))

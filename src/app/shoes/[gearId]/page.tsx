@@ -238,6 +238,7 @@ export default async function ShoeDetailPage({
               maxKm={shoe.maxKm}
               tickKm={shoe.alertThresholdKm}
               tickLabel={d.retireFromWorkouts(formatKm(shoe.alertThresholdKm))}
+              limitLabel={d.limitTick(formatKm(shoe.maxKm))}
               size="md"
             />
             {runOutSentence && <p className="text-xs leading-snug text-muted-foreground">{runOutSentence}</p>}

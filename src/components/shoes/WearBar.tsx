@@ -1,7 +1,10 @@
+import type { CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 import { RETIRE_FROM_WORKOUTS_SHARE, WEAR_COLOR, shoeWearStatus } from './shoeWear'
 
 const TICK_COLOR = 'bg-[var(--text-2)]'
+/** A card-coloured edge, so a tick reads on the fill as on the track (screen audit, Oct 2026: 1.7:1 on the red). */
+const TICK_EDGE: CSSProperties = { boxShadow: '0 0 0 1.5px var(--card)' }
 
 /**
  * A pair's wear against its limit (C4, v4.4b; v4.17): the accent while it has
@@ -9,12 +12,19 @@ const TICK_COLOR = 'bg-[var(--text-2)]'
  * is retired from workouts - the pair's own threshold. Past the limit the bar
  * is scaled to the km run, so the tick moves in and the overrun shows. A
  * retired pair's bar is full and muted.
+ *
+ * Past the limit the limit is marked too (screen audit, Oct 2026): the bar
+ * was solid red end to end with the only tick at the retire point, under
+ * "of 500 km". The fill is solid to the limit and hatched beyond it, the
+ * limit has a tick of its own in text ink, and the label under the bar names
+ * the limit rather than a retire point the pair is long past.
  */
 export function WearBar({
   totalKm,
   maxKm,
   tickKm,
   tickLabel,
+  limitLabel,
   retired = false,
   size = 'sm',
   className,
@@ -25,6 +35,8 @@ export function WearBar({
   tickKm?: number
   /** What the tick marks, written under it. */
   tickLabel?: string
+  /** The limit's tick, named, once the pair has run past it. */
+  limitLabel?: string
   retired?: boolean
   /** sm 6 pt (the list), md 8 pt (a pair's own page). */
   size?: 'sm' | 'md'
@@ -35,25 +47,47 @@ export function WearBar({
   const fill = retired ? 100 : (totalKm / scale) * 100
   const threshold = tickKm ?? maxKm * RETIRE_FROM_WORKOUTS_SHARE
   const tick = maxKm > 0 && !retired ? (threshold / scale) * 100 : null
+  const limit = maxKm > 0 && !retired && totalKm > maxKm ? (maxKm / scale) * 100 : null
+  const color = retired ? 'var(--muted-foreground)' : WEAR_COLOR[status]
+  const label = limit !== null && limitLabel ? { at: limit, text: limitLabel, tone: 'text-foreground' } : tick !== null && tickLabel ? { at: tick, text: tickLabel, tone: 'text-muted-foreground' } : null
 
   return (
     <div className={className}>
       <div
-        className={cn('relative rounded-full bg-[var(--surface-2)]', size === 'md' ? 'h-2' : 'h-1.5')}
+        className={cn('relative rounded-full bg-[var(--line-2)]', size === 'md' ? 'h-2' : 'h-1.5')}
         data-testid="wear-bar"
         data-tone={retired ? 'retired' : status}
       >
         <span
           className="absolute inset-y-0 left-0 rounded-full"
           data-testid="wear-fill"
-          style={{ width: `${fill}%`, background: retired ? 'var(--muted-foreground)' : WEAR_COLOR[status] }}
+          style={{ width: `${limit ?? fill}%`, background: color }}
         />
+        {limit !== null && (
+          <span
+            className="absolute inset-y-0 rounded-r-full"
+            data-testid="wear-overrun"
+            style={{
+              left: `${limit}%`,
+              width: `${fill - limit}%`,
+              background: `repeating-linear-gradient(135deg, ${color} 0 3px, color-mix(in srgb, ${color} 35%, transparent) 3px 6px)`,
+            }}
+          />
+        )}
         {tick !== null && (
           <span
             aria-hidden
             data-testid="wear-tick"
             className={cn('absolute -inset-y-1 w-0.5 -translate-x-1/2 rounded-full', TICK_COLOR)}
-            style={{ left: `${tick}%` }}
+            style={{ left: `${tick}%`, ...TICK_EDGE }}
+          />
+        )}
+        {limit !== null && (
+          <span
+            aria-hidden
+            data-testid="wear-limit-tick"
+            className="absolute -inset-y-1.5 w-0.5 -translate-x-1/2 rounded-full bg-foreground"
+            style={{ left: `${limit}%`, ...TICK_EDGE }}
           />
         )}
       </div>
@@ -61,12 +95,12 @@ export function WearBar({
           800 km said nothing. The label starts under the tick, behind a
           short tick of its own; where it would run past the bar's end the
           spacer gives way first, so it slides left and stays whole. */}
-      {tick !== null && tickLabel && (
-        <div className="mt-1.5 flex" data-testid="wear-tick-label">
-          <span aria-hidden className="min-w-0" style={{ flexBasis: `${tick}%` }} />
-          <span className="-ml-px flex shrink-0 items-center gap-1 whitespace-nowrap text-caption leading-none text-muted-foreground">
-            <span aria-hidden className={cn('h-2.5 w-0.5 rounded-full', TICK_COLOR)} />
-            {tickLabel}
+      {label && (
+        <div className="mt-1.5 flex" data-testid={label.at === limit ? 'wear-limit-label' : 'wear-tick-label'}>
+          <span aria-hidden className="min-w-0" style={{ flexBasis: `${label.at}%` }} />
+          <span className={cn('-ml-px flex shrink-0 items-center gap-1 whitespace-nowrap text-caption leading-none', label.tone)}>
+            <span aria-hidden className={cn('h-2.5 w-0.5 rounded-full', label.at === limit ? 'bg-foreground' : TICK_COLOR)} />
+            {label.text}
           </span>
         </div>
       )}

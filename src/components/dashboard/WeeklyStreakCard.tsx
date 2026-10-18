@@ -39,7 +39,9 @@ function barStyle(day: WeekStripDay): CSSProperties {
     case 'planned':
       return { height, border: `1.5px dashed ${day.color}`, background: `color-mix(in srgb, ${day.color} 14%, transparent)` }
     case 'missed':
-      return { height, border: '1px solid var(--neg)', background: 'color-mix(in srgb, var(--neg) 25%, transparent)' }
+      // A ghost: the outline of what was planned, unfilled, so a missed long
+      // run no longer reads as the week's biggest day (screen audit, Oct 2026).
+      return { height, border: '1.5px dashed var(--neg)', background: 'transparent' }
     default:
       return { height, border: '1px solid var(--border)', background: 'var(--surface-2)' }
   }
@@ -50,8 +52,14 @@ function WeekStrip({ days }: { days: WeekStripDay[] }) {
     <ul className="flex items-stretch gap-1.5 sm:gap-2.5" data-testid="week-strip">
       {days.map((day) => (
         <li key={day.date} aria-label={day.label} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
-          <span aria-hidden="true" className="h-4 whitespace-nowrap text-xs font-semibold text-[var(--text-2)]">
-            {day.state !== 'rest' && day.kmText !== null ? `${day.kmText} ${t.units.km}` : ''}
+          {/* The bare figure, centred on its bar: the total beside the title
+              carries the unit, and "11.5 km" ran into its neighbours at
+              phone width (screen audit, Oct 2026). */}
+          <span
+            aria-hidden="true"
+            className={cn('h-4 w-full whitespace-nowrap text-center text-xs font-semibold tabular-nums', day.state === 'missed' ? 'text-[var(--neg)]' : 'text-[var(--text-2)]')}
+          >
+            {day.state !== 'rest' && day.kmText !== null ? day.kmText : ''}
           </span>
           <span aria-hidden="true" className="flex w-full items-end" style={{ height: BAR_AREA }}>
             <span className="box-border block w-full rounded-lg" data-state={day.state} data-today={day.isToday ? '' : undefined} style={barStyle(day)} />

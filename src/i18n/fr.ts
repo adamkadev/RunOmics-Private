@@ -126,15 +126,16 @@ export const fr = {
 
   consistency: {
     activeDays: 'Jours actifs',
-    ofDays: (days: number, since: string) => `sur ${days} jours depuis le ${since}`,
+    ofDays: (days: number, since: string) => `sur ${days} jours depuis le ${since.replace(/ /g, '\u00a0')}`,
     share: 'Part des jours',
-    vsPrior: (delta: string) => `${delta} pts vs les 12 mois précédents`,
-    vsMonths: (delta: string, months: number) => `${delta} pts vs les ${months} mois d’avant`,
+    vsPrior: (delta: string) => `${delta} pts vs les 12\u00a0mois précédents`,
+    vsMonths: (delta: string, months: number) => `${delta} pts vs les ${months}\u00a0mois d’avant`,
     streak: 'Série en cours',
     weeks: (weeks: number) => (weeks > 1 ? 'semaines' : 'semaine'),
     best: (weeks: number) => `Record : ${weeks} semaine${weeks > 1 ? 's' : ''}`,
     calendarTitle: 'Chaque jour, 12 derniers mois',
     colourKey: 'couleur = distance',
+    scrollHint: 'Glisse pour les mois précédents',
     levels: { rest: 'Repos', long: 'Sortie longue (15 km +)' },
     today: 'Aujourd’hui',
     toCome: 'à venir',
@@ -329,6 +330,7 @@ export const fr = {
     rowAction: {
       export: 'Exporter ›',
       clear: 'Vider ›',
+      signIn: 'Se connecter ›',
     },
     appearance: {
       title: 'Apparence',
@@ -409,7 +411,8 @@ export const fr = {
     dataExport: {
       workbook: 'Exporter les données d’entraînement (.xlsx)',
       title: 'Exporter les activités',
-      signedOut: (runs: string) => `Classeur des ${runs} · connecte-toi pour exporter`,
+      signedOut: (runs: string) => `Classeur ou CSV des ${runs} · connecte-toi pour exporter`,
+      ownerHint: (runs: string) => `Classeur ou CSV des ${runs}`,
       exporting: 'Export en cours…',
       failed: 'Impossible d’exporter les données d’entraînement.',
       sheetTitle: 'Exporter mes activités',
@@ -575,7 +578,7 @@ export const fr = {
       title: 'Cette semaine',
       weeksInARow: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
       ofKm: (target: string) => `sur ${target} km`,
-      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} sur ${planned}`,
+      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} prévue${done > 1 ? 's' : ''} sur ${planned}`,
       kinds: {
         easy: { label: 'Facile', shortLabel: 'Endu' },
         easyStrides: { label: 'Facile + accél.', shortLabel: 'Endu' },
@@ -813,7 +816,7 @@ export const fr = {
         threshold: 'Allure seuil',
         easyPace: 'Allure facile',
         in12w: (delta: string) => `${delta} en 12 semaines`,
-        noChange12w: 'Stable sur 12 semaines',
+        noChange12w: '±0 sur 12 semaines',
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
@@ -1188,7 +1191,7 @@ export const fr = {
     weekLine: {
       ofKm: (target: string) => ` sur ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 sortie' : `${n} sorties`),
-      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} sur ${planned}`,
+      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} prévue${done > 1 ? 's' : ''} sur ${planned}`,
       easy: (pct: number) => `${pct} % facile`,
     },
     mapButton: 'Vue carte',
@@ -1671,6 +1674,7 @@ export const fr = {
     detail: {
       back: 'Progression',
       retireFromWorkouts: (km: string) => `${km} km · fin des séances de qualité`,
+      limitTick: (km: string) => `limite ${km} km`,
       stats: {
         distance: 'Distance',
         activities: 'Sorties',
@@ -1728,7 +1732,7 @@ export const fr = {
       yearTitle: (year: number) => `Distance ${year}`,
       runs: 'sorties',
       records: 'Records',
-      recordsWhen: 'depuis le début',
+      recordsWhen: 'Depuis le début',
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Semi-marathon' } as Record<string, string>,
       newRecord: 'NOUVEAU RP',
       latestRecord: 'DERNIER',
@@ -1741,6 +1745,7 @@ export const fr = {
       vo2max: 'VO₂ max',
       allTime: 'Depuis le début',
       vsYear: (delta: string, year: number) => `${delta} km vs ${year} à la même date`,
+      vsYearSince: (delta: string, year: number, since: string) => `${delta} km vs ${year} depuis le ${since}`,
       ofGoal: (km: string) => `sur ${km} km`,
       goal: 'Objectif',
       runsHours: (runs: number, hours: number) => `${runs} sorties · ${hours} h`,
@@ -1777,10 +1782,10 @@ export const fr = {
     milestones: {
       distanceTier: (km: string) => `${km} km cette année`,
       streak: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
-      streakDetail: 'Toujours en cours - une sortie chaque semaine depuis',
+      streakDetail: 'Toujours en cours · une sortie chaque semaine depuis',
       record: (label: string) => `Record ${label}`,
       firstActivity: 'Premier pas',
-      firstActivityDetail: (km: string) => `Le début de l’aventure - ${km} km`,
+      firstActivityDetail: (km: string) => `Le début de l’aventure · ${km} km`,
       lifetimeDistance: (km: string) => `${km} km au total`,
       lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} distances marathon`,
       lifetimeDistanceWorldTour: '🌍 Le tour du monde à l’équateur',

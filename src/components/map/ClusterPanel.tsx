@@ -63,9 +63,11 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
   }
 
   return (
-    <div className="min-w-0 max-w-full">
+    // Its full width in the chip row, which scrolls rather than squeezing it; a
+    // name wider than the row still truncates inside the chip.
+    <div className="max-w-full shrink-0">
       {/* The area in the accent (v4.17): always set, it says which area is
-          on the map. The whole name, never cut - the row wraps instead. */}
+          on the map. The whole name, never cut - the row scrolls instead. */}
       <button
         {...menu.chipProps}
         title={selectedName}

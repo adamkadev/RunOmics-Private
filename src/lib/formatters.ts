@@ -285,6 +285,17 @@ export function formatDateRange(startIso: string, endIso: string, options: DateF
     year === 'always' ||
     (year === 'auto' &&
       (start.getFullYear() !== now.getFullYear() || end.getFullYear() !== now.getFullYear()))
+  if (year === 'never' && start.getFullYear() !== end.getFullYear()) {
+    // formatRange adds both years to a range that spans two, and 'never'
+    // means never: "Dec 29, 2025 – Jan 4, 2026" broke a week row under a
+    // month heading that already names the year (screen audit, Oct 2026).
+    // Each end on its own, joined the way the locale joins a range.
+    const format = new Intl.DateTimeFormat(t.locale, dateFields(options, false, true))
+    const join =
+      format.formatRangeToParts(new Date(2000, 0, 31), new Date(2000, 1, 1)).find((p) => p.source === 'shared' && p.type === 'literal')?.value ??
+      ' – '
+    return stableSpaces(`${format.format(start)}${join}${format.format(end)}`)
+  }
   return stableSpaces(
     new Intl.DateTimeFormat(t.locale, dateFields(options, showYear, true)).formatRange(start, end)
   )

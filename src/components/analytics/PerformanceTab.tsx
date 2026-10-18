@@ -200,7 +200,9 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
           distance, a spacer, the sparkline right up against the time - no
           600 px gap between them - and the time with its change. On a
           phone the spacer goes and the row stays as it was. */}
-      <div className="grid grid-cols-[64px_minmax(0,1fr)_auto] gap-x-3 sm:grid-cols-[120px_1fr_minmax(0,360px)_auto] sm:gap-x-3.5" data-testid="predictions-grid">
+      {/* 76 pt for the name on a phone: at 64 "Marathon" all but touched its
+          sparkline (screen audit, Oct 2026). */}
+      <div className="grid grid-cols-[76px_minmax(0,1fr)_auto] gap-x-3 sm:grid-cols-[120px_1fr_minmax(0,360px)_auto] sm:gap-x-3.5" data-testid="predictions-grid">
         {rows.map((row) => (
           <div
             key={row.distance}
@@ -243,24 +245,25 @@ export const PACE_PAD_MIN = 5
 const PACE_PAD_SHARE = 0.05
 /** The domain's limits land on a multiple of this many seconds. */
 const PACE_ROUND = 5
-const PACE_STEPS = [5, 10, 15, 20, 30, 60, 120]
 
 /**
  * The pace chart's domain and its three y labels (v4.17.3): the drawn paces
  * - the smoothed lines, not the raw weeks, whose outliers left the lines in
  * the top half - with 5% of their range either side, at least 5 s/km,
- * rounded out to 5 s; then three round paces inside, the widest step that
- * keeps all three in. Faster is up.
+ * rounded out to 5 s. The three labels are the domain's two edges and its
+ * middle, so every drawn pace sits between two labelled lines: ticks round
+ * to a step inside the domain left the workout line above the top label and
+ * the easy line under the bottom one (screen audit, Oct 2026). The domain
+ * grows by 5 s when needed to keep the middle on a 5 s pace. Faster is up.
  */
 export function paceAxis(paces: readonly number[]): { lo: number; hi: number; ticks: [number, number, number] } {
   const min = Math.min(...paces)
   const max = Math.max(...paces)
   const pad = Math.max(PACE_PAD_MIN, (max - min) * PACE_PAD_SHARE)
   const lo = Math.floor((min - pad) / PACE_ROUND) * PACE_ROUND
-  const hi = Math.ceil((max + pad) / PACE_ROUND) * PACE_ROUND
-  const step = [...PACE_STEPS].reverse().find((k) => k <= (hi - lo) / 3) ?? PACE_STEPS[0]!
-  const mid = Math.round((lo + hi) / 2 / step) * step
-  return { lo, hi, ticks: [mid - step, mid, mid + step] }
+  const rounded = Math.ceil((max + pad) / PACE_ROUND) * PACE_ROUND
+  const hi = (rounded - lo) % (2 * PACE_ROUND) === 0 ? rounded : rounded + PACE_ROUND
+  return { lo, hi, ticks: [lo, (lo + hi) / 2, hi] }
 }
 
 /** A pace sentence part with its figure in bold, coloured by what the change means. */
@@ -301,8 +304,9 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
         {workoutParts && <PacePart parts={workoutParts} delta={wHeld ? null : wShift} />}
       </Sentence>
       {/* Three paces up the left (v4.17.2), outside the scrub so a touch
-          still reads the week under it; higher is faster. */}
-      <div className="flex gap-2">
+          still reads the week under it; higher is faster. The outer two sit
+          on the chart's edges, so a little room above and below for them. */}
+      <div className="flex gap-2 py-1.5">
         <div className="relative w-8 shrink-0 text-[11px] leading-none text-muted-foreground" style={{ height: H }} aria-hidden data-testid="pace-axis">
           {ticks.map((pace) => (
             <span key={pace} className="absolute right-0 -translate-y-1/2" style={{ top: `${(yOf(pace) / H) * 100}%` }}>
@@ -322,7 +326,7 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
         >
           <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
             {ticks.map((pace) => (
-              <line key={pace} x1="0" x2={W} y1={yOf(pace)} y2={yOf(pace)} stroke="var(--divider)" vectorEffect="non-scaling-stroke" data-testid="pace-gridline" />
+              <line key={pace} x1="0" x2={W} y1={yOf(pace)} y2={yOf(pace)} stroke="var(--line-2)" vectorEffect="non-scaling-stroke" data-testid="pace-gridline" />
             ))}
             {/* Workouts Z4, easy runs Z2: the two run types' own zones. */}
             <path d={path(hardLine)} fill="none" stroke="var(--zone-4)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
@@ -408,7 +412,7 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
           </div>
           <div className="flex h-[26px] items-end gap-[3px]" aria-hidden>
             {rpe.bars.map((v, i) => (
-              <div key={i} className="w-[7px] rounded-[2px]" style={{ height: v === null ? 2 : Math.max(2, (v / rpeMax) * 24), background: i === rpe.bars.length - 1 ? 'var(--foreground)' : 'var(--line-2)' }} />
+              <div key={i} className="w-[7px] rounded-[2px]" style={{ height: v === null ? 2 : Math.max(2, (v / rpeMax) * 24), background: i === rpe.bars.length - 1 ? 'var(--foreground)' : 'var(--series-2)' }} />
             ))}
           </div>
         </div>
@@ -453,7 +457,9 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
             <div key={row.id} className="grid grid-cols-[60px_minmax(0,1fr)_96px] items-center gap-3 text-[13px] sm:grid-cols-[72px_minmax(0,1fr)_110px] sm:gap-3.5" data-testid={`heat-${row.id}`}>
               <span className="whitespace-nowrap text-[var(--text-2)]">{labels[row.id]}</span>
               <div
-                className={row.pace === null ? 'box-border h-2 rounded-full border border-dashed border-[var(--line-2)]' : 'relative h-2 rounded-full bg-[var(--surface-2)]'}
+                // line-2 tracks and a muted dashed "no runs" outline: the surface-2
+                // track and line-2 dashes were 1.1-1.4:1 (screen audit, Oct 2026).
+                className={row.pace === null ? 'box-border h-2 rounded-full border border-dashed border-muted-foreground' : 'relative h-2 rounded-full bg-[var(--line-2)]'}
                 data-testid={row.pace === null ? 'heat-empty' : undefined}
               >
                 {row.best ? (

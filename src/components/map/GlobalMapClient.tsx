@@ -168,12 +168,14 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
       className={isFullscreen ? "fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex flex-col bg-background" : "flex flex-col gap-3.5"}
       data-testid="heatmap"
     >
-      {/* The chips on their own row under the title (v4.17), wrapping rather
-          than cutting the area's name; in fullscreen, the header row with the
-          collapse button. */}
+      {/* The chips on their own row under the title (v4.17), never cutting
+          the area's name: one row that scrolls sideways, as "All years"
+          wrapping onto a line of its own pushed the map down (screen audit,
+          Oct 2026); their menus are fixed, so the scroll never clips them.
+          In fullscreen, the header row with the collapse button. */}
       <div
         className={[
-          "flex flex-wrap items-center gap-2",
+          "flex items-center gap-2 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
           isFullscreen ? "shrink-0 border-b border-border bg-card px-3 py-2" : "mt-1",
         ].join(" ")}
       >
@@ -208,8 +210,10 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
       <div
         className={
           isFullscreen
-            ? "relative min-h-0 flex-1 bg-[var(--surface-2)]"
-            : "relative h-[360px] overflow-hidden rounded-2xl border border-border bg-[var(--surface-2)] md:h-[560px]"
+            ? "relative isolate min-h-0 flex-1 bg-[var(--surface-2)]"
+            : // Isolated, as the activity map is: its overlays' z-indices stay
+              // inside it rather than reaching the page's bars (screen audit, Oct 2026).
+              "relative isolate h-[360px] overflow-hidden rounded-2xl border border-border bg-[var(--surface-2)] md:h-[560px]"
         }
       >
         {/* Sized by a wrapper: MapLibre's own stylesheet makes its container

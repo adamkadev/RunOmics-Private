@@ -126,3 +126,29 @@ describe('missed text', () => {
     expect(contrast(neg, SURFACES[mode].card)).toBeGreaterThanOrEqual(4.5)
   })
 })
+
+// Screen audit, Oct 2026: faint text, light-mode warn text and reference
+// series were under their contrast floors, and the dark selected tab sank
+// below its track.
+describe('screen audit contrast floors', () => {
+  it.each(['dark', 'light'] as const)('faint text reads at 4.5:1 or more on the card and the ground, %s', (mode) => {
+    const s = SURFACES[mode]
+    expect(contrast(s.subtle, s.card)).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(s.subtle, s.background)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(['dark', 'light'] as const)('warn text reads at 4.5:1 or more on the card, %s', (mode) => {
+    expect(contrast(STATUS_HEX[mode].warn, SURFACES[mode].card)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(['dark', 'light'] as const)('a reference series reads at 3:1 or more on the card, %s', (mode) => {
+    expect(contrast(SURFACES[mode].band, SURFACES[mode].card)).toBeGreaterThanOrEqual(3)
+  })
+
+  it.each(['dark', 'light'] as const)('the selected tab stands apart from its track, %s', (mode) => {
+    const s = SURFACES[mode]
+    expect(contrast(s.pill, s.seg)).toBeGreaterThanOrEqual(1.05)
+    // In dark the pill is raised, lighter than the track it sits on.
+    if (mode === 'dark') expect(luminance(s.pill)).toBeGreaterThan(luminance(s.seg))
+  })
+})

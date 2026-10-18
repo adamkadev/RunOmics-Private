@@ -58,7 +58,7 @@ For **each accent × each theme × each route**:
 
 | Frame                    | What it is                                                     |
 | ------------------------ | -------------------------------------------------------------- |
-| `screen-1` … `screen-6`  | One phone screen each, scrolling down the page. Each overlaps the last by 180 pt - more than the fixed header and tab bar cover - so every line is clear of both in one of them. The last one ends at the bottom of the page. |
+| `screen-1` … `screen-6`  | One phone screen each, scrolling down the page. Each overlaps the last by 220 pt - more than the fixed header and tab bar cover - so every line is clear of both in one of them. The last one ends at the bottom of the page. |
 | `full`                   | Whole page stitched into one tall image                        |
 
 Pages with in-page tabs (**Plan**, **Analytics**, **Records**, an **activity**) additionally
@@ -83,7 +83,8 @@ screenshots/output/
 
 Dashboard, Activities (list + an activity), Plan (week + month), Analytics,
 Map, Goals, Records (PRs + Milestones tabs), Shoes (list + a shoe), Profile,
-Athlete, Settings and the not-found page — defined in [`routes.ts`](./routes.ts).
+Athlete, Consistency, All-time, Settings (signed out and as the owner) and the
+not-found page — defined in [`routes.ts`](./routes.ts).
 The activity and the shoe are the first ones their list links to, so they have
 content in whichever dataset is being served.
 
@@ -125,9 +126,32 @@ until its text is illegible, and a phone screen is what the app is judged on.
 
 ## Notes
 
-- **Settings** renders its signed-out view (no auth in the capture run); that's
-  the correct anonymous state to audit.
-- **Map** shows its shell/legend but not the tiles — `NEXT_PUBLIC_MAPTILER_TOKEN`
-  is intentionally unset for the offline `.env.e2e` build.
+- **Not the real home-screen app.** Headless Chromium cannot run as an iOS
+  standalone web app: `display-mode: standalone` does not match, the status
+  bar and home indicator are not drawn, and Safari's rendering is not
+  WebKit-on-iOS. The capture emulates the safe areas (59/34 pt) so the page
+  pads itself as it does on the phone, but what sits under the notch, the
+  status-bar colour (`theme-color`) and the splash screen are checked on a
+  phone or in the iOS Simulator, not here.
+- **Settings** is captured twice: `settings` is the signed-out view, and
+  `settings-owner` is signed in as the owner through the **Firebase Auth
+  emulator**. The run starts it (`firebase emulators:start --only auth`, port
+  9099; needs the Firebase CLI and Java), creates a made-up Google account with
+  the `owner` claim, and signs in through Settings' own button and the
+  emulator's popup. The screenshot build sets
+  `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST` for that; no other build does. No
+  real account and no Firestore rule are involved. Skipped when
+  `SCREENSHOT_BASE_URL` points at a deployment.
+- **The activity map** is shot once its route is drawn: the page marks the
+  map `data-route-drawn`, and the run emulates reduced motion, so the route
+  draws in one step. The demo athlete's runs are placed in the mid-Pacific
+  on purpose, so no made-up runner sits on a real street: the maps show the
+  route on an empty basemap, never tiles.
+- **Map** is captured with its tiles when `.env.local` has a
+  `NEXT_PUBLIC_MAPTILER_TOKEN`: the screenshot build borrows it. Without one it
+  shows its shell and legend only.
+- Both settings are baked in at build time, so a server already listening on
+  the e2e port from an earlier `npm run test:e2e` is reused as is: stop it
+  first, or the owner capture and the tiles are missing.
 - To add a screen, add an entry to `routes.ts`. Set `hasTabs: true` if it has a
   `role="tab"` bar you want walked.

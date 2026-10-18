@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import Link from 'next/link'
-import { LEVEL_FILL, STRONG_MONTH_DAYS, TODAY_OUTLINE, dayName, levelStyle, type ConsistencyCell, type ConsistencyMonth, type ConsistencyView, type DayLevel } from './consistencyMonths'
+import { LEVEL_FILL, STRONG_MONTH_DAYS, TODAY_OUTLINE, dayName, levelStyle, type ConsistencyCell, type ConsistencyMonth, type ConsistencyView, type DayLevel } from './consistencyMonthsView'
 import { cardClass } from '@/components/ui/Card'
 import { Legend, LegendItem } from '@/components/ui/Legend'
 import { Stat, StatGrid, type StatTone } from '@/components/ui/Stat'
@@ -44,16 +44,26 @@ function Day({ cell, onRest }: { cell: ConsistencyCell; onRest: (date: string) =
  */
 function YearCalendar({ view, onRest }: { view: ConsistencyView; onRest: (date: string) => void }) {
   const scroller = useRef<HTMLDivElement>(null)
+  // Earlier months off to the left: the grid opens on today, and nothing said
+  // the "12 months" of its title were a swipe away (screen audit, Oct 2026).
+  const [moreBefore, setMoreBefore] = useState(false)
   const dayLabels = new Intl.DateTimeFormat(t.locale, { weekday: 'short', timeZone: 'UTC' })
   // 2024-01-01 was a Monday.
   const dayLabel = (row: number) => dayLabels.format(new Date(Date.UTC(2024, 0, 1 + row))).replace(/\.$/, '')
 
   useEffect(() => {
     const el = scroller.current
-    if (el) el.scrollLeft = el.scrollWidth
+    if (!el) return
+    el.scrollLeft = el.scrollWidth
+    const update = () => setMoreBefore(el.scrollLeft > 4)
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    return () => el.removeEventListener('scroll', update)
   }, [])
 
   return (
+    <div className="flex flex-col gap-1.5">
+    <div className="relative">
     <div ref={scroller} className="-mr-1 overflow-x-auto pb-1 pr-1 pt-0.5" data-testid="consistency-calendar">
       <div className="min-w-[700px]">
         <div className="mb-[3px] grid gap-x-[3px] text-caption text-muted-foreground" style={columns(view.weeks.length)} aria-hidden>
@@ -73,6 +83,17 @@ function YearCalendar({ view, onRest }: { view: ConsistencyView; onRest: (date: 
           {view.weeks.flatMap((week) => week.days.map((cell) => <Day key={cell.date} cell={cell} onRest={onRest} />))}
         </div>
       </div>
+    </div>
+      {moreBefore && (
+        // A fade just right of the day labels, over the weeks that run on under them.
+        <span aria-hidden className="pointer-events-none absolute inset-y-0 left-[27px] z-20 w-6 bg-gradient-to-r from-card to-transparent" data-testid="consistency-fade" />
+      )}
+    </div>
+      {moreBefore && (
+        <span className="text-xs text-muted-foreground" data-testid="consistency-scroll-hint">
+          ← {t.consistency.scrollHint}
+        </span>
+      )}
     </div>
   )
 }

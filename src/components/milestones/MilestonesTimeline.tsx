@@ -1,5 +1,6 @@
 import type { Milestone } from '@/application/usecases/GetMilestones'
 import { GlassSurface } from '@/components/ui/GlassSurface'
+import { SectionDivider } from '@/components/ui/SectionLabel'
 import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -19,7 +20,7 @@ function groupByYear(milestones: Milestone[]): [string, Milestone[]][] {
 function MilestoneRow({ milestone }: { milestone: Milestone }) {
   const dotClass = milestoneDotClass(milestone.type)
   return (
-    <li className="flex items-center gap-3 px-2 py-2.5">
+    <li className="flex items-center gap-3 py-2.5">
       {/* The column stays whether or not the row earns a mark, so the labels
           keep one left edge down the year. */}
       <span className={cn('h-2 w-2 shrink-0 rounded-full', dotClass ?? 'bg-transparent')} />
@@ -61,13 +62,15 @@ export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) 
     <div className="space-y-6">
       {groupByYear(milestones).map(([year, items], i) => (
         <div key={year}>
-          {/* The year and the key fade as one label under the compact bar. */}
-          <div data-bar-fade className="mb-2 flex items-center justify-between gap-3 px-1">
-            <h2 className="text-caption font-bold uppercase tracking-[0.16em] text-subtle">{year}</h2>
+          {/* The year and the key fade as one label under the compact bar.
+              The Records tab's label and card (screen audit, Oct 2026): three
+              tabs headed three ways read as three screens. */}
+          <div data-bar-fade className="mb-3 flex items-center justify-between gap-3">
+            <SectionDivider as="h2">{year}</SectionDivider>
             {i === 0 && marked && <RecordKey />}
           </div>
-          <GlassSurface variant="card" className="p-2 sm:p-3">
-            <ol className="divide-y divide-foreground/[0.06]">
+          <GlassSurface variant="card" className="px-5 py-1">
+            <ol className="divide-y divide-border">
               {items.map((m, i) => (
                 <MilestoneRow key={`${m.type}-${m.date}-${i}`} milestone={m} />
               ))}

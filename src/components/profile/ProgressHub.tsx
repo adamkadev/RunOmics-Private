@@ -4,13 +4,14 @@ import { ChevronRight, Settings } from 'lucide-react'
 import { cardClass } from '@/components/ui/Card'
 import { Legend, LegendItem } from '@/components/ui/Legend'
 import { Stat, StatGrid, Unit } from '@/components/ui/Stat'
+import { RangeBar } from '@/components/ui/RangeBar'
 import { formatDate, formatDelta, formatDuration, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import type { WearStatus } from '@/domain/shoe/wearStatus'
-import type { HeatCell, ProgressHubView, YearPoint } from './progressHub'
-import { levelStyle } from '@/components/consistency/consistencyMonths'
+import type { HeatCell, ProgressHubView, YearPoint } from './progressHubView'
+import { levelStyle } from '@/components/consistency/consistencyMonthsView'
 import { shortDist } from '@/components/goals/shortDistance'
 import { WEAR_COLOR } from '@/components/shoes/shoeWear'
 
@@ -64,7 +65,7 @@ function path(points: YearPoint[], x: (day: number) => number, y: (km: number) =
 
 /**
  * This year's km against last year's and the goal (v4.17): the year is the
- * athlete's own data, so the accent; last year is the neutral line-2, and
+ * athlete's own data, so the accent; last year is the reference grey, and
  * the goal a dashed muted line.
  */
 function YearChart({ hero }: { hero: ProgressHubView['hero'] }) {
@@ -79,24 +80,42 @@ function YearChart({ hero }: { hero: ProgressHubView['hero'] }) {
         <line x1={0} y1={y(0)} x2={CHART_W} y2={y(hero.goalKm)} stroke="var(--muted-foreground)" strokeWidth={1.2} strokeDasharray="4 5" vectorEffect="non-scaling-stroke" data-testid="goal-line" />
       )}
       {hero.previous.length > 1 && (
-        <path d={path(hero.previous, x, y)} fill="none" stroke="var(--line-2)" strokeWidth={2} vectorEffect="non-scaling-stroke" data-testid="previous-line" />
+        // The reference series' grey, 3:1 on the card: line-2 was 1.45:1 (screen audit, Oct 2026).
+        <path d={path(hero.previous, x, y)} fill="none" stroke="var(--series-2)" strokeWidth={2} vectorEffect="non-scaling-stroke" data-testid="previous-line" />
       )}
       <path d={path(hero.current, x, y)} fill="none" stroke="var(--accent)" strokeWidth={2.4} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="current-line" />
     </svg>
   )
 }
 
+/**
+ * VO2max over the window, in text ink, its two ends dotted so it reads as a
+ * line through readings. A flat window is a short strip, not 50 pt of air
+ * around a full-width rule that read as a divider (screen audit, Oct 2026).
+ */
 function Sparkline({ values }: { values: number[] }) {
   if (values.length < 2) return <div className="h-[50px]" />
   const lo = Math.min(...values)
   const hi = Math.max(...values)
-  const d = values
-    .map((v, i) => `${i === 0 ? 'M' : 'L'}${((i / (values.length - 1)) * 1000).toFixed(1)} ${(4 + (1 - (hi > lo ? (v - lo) / (hi - lo) : 0.5)) * 42).toFixed(1)}`)
-    .join(' ')
+  const flat = hi === lo
+  const height = flat ? 16 : 50
+  const yOf = (v: number) => (flat ? 0.5 : 4 / 50 + (1 - (v - lo) / (hi - lo)) * (42 / 50))
+  const d = values.map((v, i) => `${i === 0 ? 'M' : 'L'}${((i / (values.length - 1)) * 1000).toFixed(1)} ${(yOf(v) * height).toFixed(1)}`).join(' ')
+  const dot = (v: number, left: string, last: boolean) => (
+    <span
+      aria-hidden
+      className={cn('absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full', last ? 'bg-foreground' : 'bg-muted-foreground')}
+      style={{ left, top: `${yOf(v) * 100}%` }}
+    />
+  )
   return (
-    <svg viewBox="0 0 1000 50" className="block h-[50px] w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="vo2-sparkline">
-      <path d={d} fill="none" stroke="var(--foreground)" strokeWidth={1.8} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-    </svg>
+    <div className="relative mx-[3px]" style={{ height }} data-testid="vo2-spark">
+      <svg viewBox={`0 0 1000 ${height}`} className="block h-full w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="vo2-sparkline" data-flat={flat || undefined}>
+        <path d={d} fill="none" stroke="var(--foreground)" strokeWidth={1.6} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+      </svg>
+      {dot(values[0]!, '0%', false)}
+      {dot(values.at(-1)!, '100%', true)}
+    </div>
   )
 }
 
@@ -139,10 +158,17 @@ function Bar({ share, color }: { share: number; color: string }) {
  * How far the prediction sits from the target, as a bar: full at or under
  * the target, a fifth off for every 1% slower.
  */
-export function raceShare(predicted: number, target: number): number {
-  if (predicted <= target) return 1
-  return Math.max(0.05, 1 - ((predicted - target) / target) * 5)
+/**
+ * The prediction on a time scale centred on the target, faster to the right,
+ * 6% of the target either side (screen audit, Oct 2026): a bar full whenever
+ * the prediction beat the target said nothing "0:44 under" did not.
+ */
+export function raceScale(predicted: number, target: number): { target: number; predicted: number } {
+  const at = (seconds: number) => Math.min(1, Math.max(0, 0.5 + (target - seconds) / (target * RACE_SCALE_SHARE * 2)))
+  return { target: at(target), predicted: at(predicted) }
 }
+
+const RACE_SCALE_SHARE = 0.06
 
 /** A shoe's bar and tag (v4.17): the accent while it has life, warn from Replace soon. */
 function shoeColor(status: WearStatus): string {
@@ -192,7 +218,9 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
           {hero.deltaKm !== null && (
             // Coloured by what it means, against the km it is measured on.
             <span className="text-right text-xs" data-testid="year-delta" style={{ color: deltaColor('distance', hero.deltaKm, { value: hero.compareKm ?? hero.km }) }}>
-              {h.vsYear(formatDelta(hero.deltaKm), view.year - 1)}
+              {hero.compareSince
+                ? h.vsYearSince(formatDelta(hero.deltaKm), view.year - 1, formatDate(hero.compareSince, { style: 'bare', year: 'never' }))
+                : h.vsYear(formatDelta(hero.deltaKm), view.year - 1)}
             </span>
           )}
         </div>
@@ -206,7 +234,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
           <Legend>
             <LegendItem swatch="line" color="var(--accent)">{view.year}</LegendItem>
-            {hero.previous.length > 1 && <LegendItem swatch="line" color="var(--line-2)">{view.year - 1}</LegendItem>}
+            {hero.previous.length > 1 && <LegendItem swatch="line" color="var(--series-2)">{view.year - 1}</LegendItem>}
             {hero.goalKm !== null && <LegendItem swatch="dash" color="var(--muted-foreground)">{h.goal}</LegendItem>}
           </Legend>
           <span>{h.runsHours(hero.runs, hero.hours)}</span>
@@ -235,7 +263,19 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
                     </div>
                     {race.targetSeconds && raceGap !== null && (
                       <>
-                        <Bar share={raceShare(race.predictedSeconds, race.targetSeconds)} color={raceTone} />
+                        {(() => {
+                          const scale = raceScale(race.predictedSeconds, race.targetSeconds)
+                          return (
+                            <div data-testid="race-scale">
+                              <RangeBar
+                                band={[scale.target, 1]}
+                                marker={scale.predicted}
+                                markerColor={raceTone}
+                                label={`${h.predicted} ${formatDuration(race.predictedSeconds)}, ${h.target(formatDuration(race.targetSeconds))}`}
+                              />
+                            </div>
+                          )
+                        })()}
                         <p className="text-xs text-muted-foreground" data-testid="race-target">
                           {h.target(formatDuration(race.targetSeconds))}
                           {' · '}
@@ -281,9 +321,12 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
             <section className={cardClass({ className: 'order-5 flex flex-col gap-3 sm:order-none' })} data-testid="shoes-tile">
               <div className="flex items-center justify-between gap-2">
                 <h2 className={TITLE}>{h.shoes}</h2>
-                <Link href="/shoes" className="hit-44 flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground" data-testid="shoes-all">
-                  {h.allPairs}
-                  <ChevronRight size={14} aria-hidden="true" />
+                {/* A link of its own, so the app's one "see all" style - the
+                    accent and an arrow, as Today's "View all →" and a shoe's
+                    "All 147 →"; grey chevrons mark a whole card (screen audit,
+                    Oct 2026). */}
+                <Link href="/shoes" className="hit-44 text-footnote font-medium text-accent-text transition-opacity hover:opacity-80 active:opacity-60" data-testid="shoes-all">
+                  {h.allPairs} →
                 </Link>
               </div>
               {shoes.map((s) => (
@@ -353,7 +396,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
           <Stat label={h.runsLabel} value={allTime.runs} valueStyle={{ fontSize: 24 }} />
           <Stat label={h.time} value={formatKm(allTime.hours)} unit={h.hours} valueStyle={{ fontSize: 24 }} />
         </StatGrid>
-        {/* This year and last as rows (C6): this year the accent, last year line-2. */}
+        {/* This year and last as rows (C6): this year the accent, last year the reference grey. */}
         <ul className="flex flex-col gap-3 border-t border-border pt-3 text-[13px]" data-testid="year-rows">
           {[...allTime.years.slice(-2)].reverse().map((y) => {
             const current = y.year === view.year
@@ -361,7 +404,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
               <li key={y.year} className="grid grid-cols-[44px_minmax(0,1fr)_150px] items-center gap-3" data-testid="year-row">
                 <span className={cn(current ? 'font-semibold text-foreground' : 'text-muted-foreground')}>{y.year}</span>
                 <span aria-hidden className="block h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                  <span className="block h-full rounded-full" data-testid="year-bar" style={{ width: `${(y.km / bestYearKm) * 100}%`, background: current ? 'var(--accent)' : 'var(--line-2)' }} />
+                  <span className="block h-full rounded-full" data-testid="year-bar" style={{ width: `${(y.km / bestYearKm) * 100}%`, background: current ? 'var(--accent)' : 'var(--series-2)' }} />
                 </span>
                 <span className="text-right text-muted-foreground">
                   <b className="font-semibold text-foreground">{formatKm(y.km)} {t.units.km}</b> · {t.common.runs(y.runs)}

@@ -4,6 +4,13 @@ import bundleAnalyzer from "@next/bundle-analyzer";
 
 const { version } = JSON.parse(readFileSync("./package.json", "utf8")) as { version: string };
 
+// The screenshot build signs in against the local Auth emulator (see
+// screenshots/owner.ts): its popup talks to the app through an iframe and
+// fetches. Unset everywhere else, so no other build allows it.
+const authEmulator = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST
+  ? ` http://${process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST}`
+  : "";
+
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com${
@@ -12,9 +19,9 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://api.maptiler.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://api.maptiler.com https://nominatim.openstreetmap.org https://*.googleapis.com https://apis.google.com",
+  `connect-src 'self' https://api.maptiler.com https://nominatim.openstreetmap.org https://*.googleapis.com https://apis.google.com${authEmulator}`,
   "worker-src 'self' blob:",
-  "frame-src https://*.firebaseapp.com https://accounts.google.com https://apis.google.com",
+  `frame-src https://*.firebaseapp.com https://accounts.google.com https://apis.google.com${authEmulator}`,
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",

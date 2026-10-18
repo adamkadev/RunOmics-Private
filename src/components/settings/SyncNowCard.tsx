@@ -212,7 +212,7 @@ export type SyncNow = ReturnType<typeof useSyncNow>
 export function SyncNowButton({ sync }: { sync: SyncNow }) {
   const s = t.settings.sync
   return (
-    <Button variant="primary" onClick={sync.handleSync} disabled={sync.running} className="h-8 shrink-0 px-3 disabled:opacity-60">
+    <Button variant="primary" onClick={sync.handleSync} disabled={sync.running} className="h-11 w-full disabled:opacity-60">
       {sync.running && <RefreshCw size={14} className="animate-spin" aria-hidden />}
       {sync.running ? s.running : s.action}
     </Button>

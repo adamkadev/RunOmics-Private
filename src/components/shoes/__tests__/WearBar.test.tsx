@@ -30,7 +30,25 @@ describe('WearBar', () => {
 
     render(<WearBar totalKm={1_375} maxKm={500} />)
     expect(screen.getByTestId('wear-tick').style.left).toBe(`${((500 * 0.8) / 1_375) * 100}%`)
-    expect(screen.getByTestId('wear-fill').style.width).toBe('100%')
+    // Solid to the limit, hatched past it, the limit ticked (screen audit, Oct 2026).
+    const limit = `${(500 / 1_375) * 100}%`
+    expect(screen.getByTestId('wear-fill').style.width).toBe(limit)
+    expect(screen.getByTestId('wear-overrun').style.left).toBe(limit)
+    expect(screen.getByTestId('wear-limit-tick').style.left).toBe(limit)
+  })
+
+  it('names the limit, not the retire point, once the pair is past it', () => {
+    render(<WearBar totalKm={1_000} maxKm={500} tickLabel="400 km · retire from workouts" limitLabel="500 km limit" />)
+    const label = screen.getByTestId('wear-limit-label')
+    expect(label.textContent).toBe('500 km limit')
+    expect((label.firstElementChild as HTMLElement).style.flexBasis).toBe('50%')
+    expect(screen.queryByTestId('wear-tick-label')).toBeNull()
+  })
+
+  it('draws no limit tick while the pair is within its limit', () => {
+    render(<WearBar totalKm={676} maxKm={1000} tickKm={800} limitLabel="1,000 km limit" />)
+    expect(screen.queryByTestId('wear-limit-tick')).toBeNull()
+    expect(screen.queryByTestId('wear-overrun')).toBeNull()
   })
 
   // C5: a retired pair's bar is full and muted, with no tick.

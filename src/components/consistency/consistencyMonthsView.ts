@@ -34,8 +34,12 @@ export const STRONG_MONTH_DAYS = 16
 
 /** Today, outlined in the accent a pixel off its cell. */
 export const TODAY_OUTLINE: CSSProperties = { outline: '1.5px solid var(--accent)', outlineOffset: 1 }
-/** A day still to come: a dashed line and no fill. */
-export const FUTURE_OUTLINE: CSSProperties = { outline: '1px dashed var(--border)', outlineOffset: 1, background: 'transparent' }
+/**
+ * A day still to come: a dashed line inside the cell and no fill. Inside, not
+ * an outline: an outline a pixel off grew each cell into the gap, so future
+ * days looked bigger and touched one another (screen audit, Oct 2026).
+ */
+export const FUTURE_OUTLINE: CSSProperties = { border: '1px dashed var(--line-2)', boxSizing: 'border-box', background: 'transparent' }
 
 /** A cell's fill, outline included. */
 export function levelStyle(level: DayLevel, { today = false, future = false }: { today?: boolean; future?: boolean } = {}): CSSProperties {
@@ -180,7 +184,10 @@ export function consistencyMonths(days: HeatmapDay[], today: string, options: Co
 
   const weeks: ConsistencyWeek[] = []
   let labelled: string | null = null
-  for (let start = mondayOf(windowStart); start <= windowEnd; start = plusDays(start, 7)) {
+  // To the end of this week, not of the month: up to two whole columns of
+  // days still to come said nothing (screen audit, Oct 2026).
+  const lastColumn = mondayOf(today)
+  for (let start = mondayOf(windowStart); start <= windowEnd && start <= lastColumn; start = plusDays(start, 7)) {
     // The first column is named for the window's first month, even when its
     // Monday falls in the month before.
     const month = weeks.length === 0 ? windowStart.slice(0, 7) : start.slice(0, 7)
