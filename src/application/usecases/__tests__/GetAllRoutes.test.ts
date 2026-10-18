@@ -99,6 +99,36 @@ describe('getAllRoutes', () => {
     expect(lat).toBeCloseTo(48.81, 6)
   })
 
+  it('names an area after a place that was run, not the empty middle of its spots', async () => {
+    // Five runs in Lampertheim, three in Bischheim, one in Neudorf: all within
+    // 12 km, so one area, whose mean lands in Souffelweyersheim, where none of
+    // them went (Lamiaa's map, Oct 2026).
+    const at = (lon: number, lat: number): [number, number][] => [[lon - 0.005, lat - 0.003], [lon + 0.005, lat + 0.003]]
+    const runs = [
+      ...[0, 1, 2, 3, 4].map((i) => activity(`lampertheim-${i}`, `2025-09-2${i}`, at(7.698 + i * 0.002, 48.649), 4)),
+      ...[0, 1, 2].map((i) => activity(`bischheim-${i}`, `2025-10-0${i + 1}`, at(7.77 + i * 0.003, 48.612), 4)),
+      activity('neudorf', '2025-10-10', at(7.786, 48.569), 6),
+    ]
+    const { getAllRoutes } = await load(runs)
+    const [area] = getAllRoutes().clusters
+
+    expect(area?.routeCount).toBe(9)
+    // The mean sits between the spots…
+    expect(area!.center[0]).toBeGreaterThan(7.72)
+    // …the label on a Lampertheim run.
+    const [lon, lat] = area!.labelPoint
+    expect(lon).toBeLessThan(7.71)
+    expect(lat).toBeCloseTo(48.649, 3)
+  })
+
+  it('labels a one-run area at that run', async () => {
+    const { getAllRoutes } = await load([activity('a', '2026-07-20', [[2.3, 48.8], [2.32, 48.82]])])
+
+    const [lon, lat] = getAllRoutes().clusters[0]!.labelPoint
+    expect(lon).toBeCloseTo(2.31, 6)
+    expect(lat).toBeCloseTo(48.81, 6)
+  })
+
   it('drops runs with no usable trace from the map entirely', async () => {
     const { getAllRoutes } = await load([
       ...HISTORY,

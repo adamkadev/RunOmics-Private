@@ -158,6 +158,7 @@ const cluster = (id: string, routeIndices: number[]): RouteCluster => ({
   routeCount: routeIndices.length,
   totalKm: 0,
   center: [0, 0],
+  labelPoint: [0, 0],
   bounds: { minLon: 0, maxLon: 0, minLat: 0, maxLat: 0 },
   frame: { minLon: 0, maxLon: 0, minLat: 0, maxLat: 0 },
   routeIndices,

@@ -149,7 +149,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN;
     if (!token) return;
     let cancelled = false;
-    Promise.all(clusters.map((c) => reverseGeocode(c.center[0], c.center[1], token))).then(
+    Promise.all(clusters.map((c) => reverseGeocode(c.labelPoint[0], c.labelPoint[1], token))).then(
       (results) => {
         if (cancelled) return;
         setNames(clusters.map((c, i) => results[i] ?? coordLabel(c)));

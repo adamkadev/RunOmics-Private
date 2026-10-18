@@ -19,6 +19,7 @@ function cluster(overrides: Partial<RouteCluster> = {}): RouteCluster {
     routeCount: 2,
     totalKm: 30,
     center: CENTER,
+    labelPoint: CENTER,
     bounds: { minLon: 2.3, maxLon: 2.4, minLat: 48.8, maxLat: 48.9 },
     frame: { minLon: 2.3, maxLon: 2.4, minLat: 48.8, maxLat: 48.9 },
     routeIndices: [0, 1],
