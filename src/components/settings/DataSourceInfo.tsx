@@ -112,6 +112,9 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
             {provenance && !sync.progress && ` · ${provenance}`}
           </p>
         </div>
+      </div>
+
+      <div className="border-b border-border py-3.5">
         <SyncNowButton sync={sync} />
       </div>
 
