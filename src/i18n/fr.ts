@@ -1306,8 +1306,8 @@ export const fr = {
       deviceNote: (distance: string, duration: string) => `Montre : ${distance} en ${duration}`,
     },
     decoupling: {
-      held: 'Tenu — sous 5 %',
-      faded: 'Décroché — au-dessus de 5 %',
+      held: 'Tenu · < 5 %',
+      faded: 'Décroché · > 5 %',
       title: 'Découplage aérobie',
       stable: 'Tenu',
       drifting: 'Dérive',
