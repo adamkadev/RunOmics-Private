@@ -257,7 +257,9 @@ describe('buildTrainingWorkbook', () => {
   })
 
   describe('buildActivitiesCsv', () => {
-    function parse(csv: string): string[][] {
+    function parse(withBom: string): string[][] {
+      expect(withBom.startsWith('\uFEFF')).toBe(true)
+      const csv = withBom.slice(1)
       const rows: string[][] = []
       let row: string[] = []
       let field = ''
@@ -297,6 +299,20 @@ describe('buildTrainingWorkbook', () => {
       expect(rows[1]![header.indexOf('comment')]).toBe(note)
       expect(rows[1]![header.indexOf('tags')]).toBe('calf | walk')
       expect(rows[1]).toHaveLength(header.length)
+    })
+
+    it('starts with a UTF-8 byte order mark, so a Mac spreadsheet keeps the accents', () => {
+      const input = data()
+      input.activities = [activity({ description: 'Metz Course à pied' })]
+      input.activityNotes = new Map([['activity-1', { note: 'Fréquence cardiaque erronée', tags: [] }]])
+
+      const csv = buildActivitiesCsv(input)
+      const bytes = Buffer.from(csv, 'utf8')
+
+      expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf])
+      expect(csv.match(/\uFEFF/g)).toHaveLength(1)
+      expect(parse(csv)[1]).toContain('Metz Course à pied')
+      expect(parse(csv)[1]).toContain('Fréquence cardiaque erronée')
     })
 
     it('marks every row when the notes store could not be read, and keeps raw data out', () => {
