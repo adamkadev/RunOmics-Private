@@ -36,7 +36,7 @@ import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import {
   macrocyclePhaseRanges,
-  macrocycleWeek,
+  macrocycleWeek, preparationWeek,
   prescriptionDistanceMeters,
 } from '@/components/coaching/presentation'
 import {
@@ -472,6 +472,8 @@ export function WeekView({
   // any other week still read the current week's number, so every week in
   // the block looked like the same week.
   const targetWeek = coaching ? macrocycleWeek(coaching.plan, firstDay.date) : null
+  // General preparation has no race and so no phases or "of 12": its own week count.
+  const prepWeek = coaching ? preparationWeek(coaching.plan, firstDay.date) : null
 
   // The race the block builds to: its week closes the phase card, and the
   // header counts down to it (v4.17).
@@ -489,10 +491,16 @@ export function WeekView({
 
   const phaseLabel = planPhase
     ? t.plan.weekPurpose.planPhase[planPhase]
-    : isPrePlan
-      ? t.plan.weekPurpose.prePlan
+    : prepWeek !== null
+      ? t.plan.weekPurpose.generalPreparation
+      : isPrePlan
+        ? t.plan.weekPurpose.prePlan
+        : null
+  const weekOfLabel = !isPrePlan && targetWeek
+    ? t.plan.weekPurpose.weekOfTarget(targetWeek.done, targetWeek.total)
+    : prepWeek !== null
+      ? t.plan.weekPurpose.weekN(prepWeek)
       : null
-  const weekOfLabel = !isPrePlan && targetWeek ? t.plan.weekPurpose.weekOfTarget(targetWeek.done, targetWeek.total) : null
   const fallbackLabel = phaseLabel || weekOfLabel ? null : weekOver ? null : isCurrentWeek ? t.plan.weekPurpose.thisWeek : t.plan.weekPurpose.upcoming
 
   const target = useMemo(

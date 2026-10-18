@@ -2251,6 +2251,9 @@ export const en = {
         raceDay: 'Race day',
       },
       weekOfTarget: (done: number, total: number) => `week ${done} of ${total}`,
+      // A block with no race: general preparation and its week since the start, no total.
+      generalPreparation: 'General preparation',
+      weekN: (n: number) => `week ${n}`,
       raceOn: (date: string) => `race ${date}`,
     },
   },

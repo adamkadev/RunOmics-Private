@@ -132,6 +132,16 @@ describe('WeekView progression card', () => {
     expect(line).not.toMatch(/D-\u2060?\d+/)
   })
 
+  // Oct 2026: a general preparation block read only "This week".
+  it('names general preparation and its week when the plan has no race', () => {
+    const general: CoachingPlan = { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined }
+    renderWeek({ coaching: overview({ coachingPlan: general }) })
+
+    const line = screen.getByTestId('phase-line').textContent ?? ''
+    expect(line).toContain(`${t.plan.weekPurpose.generalPreparation} · ${t.plan.weekPurpose.weekN(2)}`)
+    expect(screen.queryByTestId('phase-track')).toBeNull()
+  })
+
   // H20: the race is on the phase line; the Races section is gone from Week.
   it('draws no Races section under the week', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
