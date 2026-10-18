@@ -412,6 +412,8 @@ export const fr = {
       signedOut: (runs: string) => `Classeur des ${runs} · connecte-toi pour exporter`,
       exporting: 'Export en cours…',
       failed: 'Impossible d’exporter les données d’entraînement.',
+      csv: 'Exporter les activités pour Claude (.csv)',
+      notesUnavailable: 'Exporté sans tes notes ni tes tags : la base des notes n’a pas répondu. Réessaie.',
     },
     profile: {
       readOnly: 'Depuis Garmin Connect : c’est là que tu les modifies.',

@@ -7,6 +7,7 @@ import { cardClass } from '@/components/ui/Card'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { saveFileWithFallback } from '@/lib/fileExport'
 import { authorizedFetch } from '@/lib/ownerFetch'
+import { NOTES_UNAVAILABLE_HEADER } from '@/lib/exportHeaders'
 import { formatDate, formatRelativeAgo } from '@/lib/formatters'
 import { SyncNowButton, SyncVerdict, useSyncNow } from './SyncNowCard'
 import { ConnectedMark, GarminTile } from './GarminMark'
@@ -26,6 +27,13 @@ interface Props {
   pollIntervalMs?: number
 }
 
+type ExportFormat = 'xlsx' | 'csv'
+
+const EXPORT_FILE: Record<ExportFormat, { name: string; type: string }> = {
+  xlsx: { name: 'runomics-training-data', type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' },
+  csv: { name: 'runomics-activities', type: 'text/csv' },
+}
+
 /**
  * The one Garmin card (v5.6 #6): the device, when it last synced, and "Sync
  * now" on the same row, then export and the offline cache. The sync had a
@@ -33,7 +41,7 @@ interface Props {
  */
 export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, pollIntervalMs }: Props) {
   const sync = useSyncNow(user, pollIntervalMs)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<ExportFormat | null>(null)
   const [confirmingClear, setConfirmingClear] = useState(false)
   const { toast, leaving, showToast } = useToast()
   const s = t.settings
@@ -49,21 +57,21 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
     }
   }
 
-  async function handleExport() {
-    setLoading(true)
+  async function handleExport(format: ExportFormat) {
+    setLoading(format)
     try {
-      const res = await authorizedFetch(user, '/api/activities/export')
+      const res = await authorizedFetch(user, `/api/activities/export?format=${format}`)
       if (!res.ok) throw new Error(`Export failed with ${res.status}`)
-      const workbook = await res.blob()
+      const body = await res.blob()
       const stamp = new Date().toISOString().slice(0, 10)
-      const file = new File([workbook], `runomics-training-data-${stamp}.xlsx`, {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      })
+      const file = new File([body], `${EXPORT_FILE[format].name}-${stamp}.${format}`, { type: EXPORT_FILE[format].type })
       await saveFileWithFallback(file)
+      // The file is saved either way; a blank comment column must not pass for "no notes".
+      if (res.headers.get(NOTES_UNAVAILABLE_HEADER)) showToast(s.dataExport.notesUnavailable, false)
     } catch {
       showToast(s.dataExport.failed, false)
     } finally {
-      setLoading(false)
+      setLoading(null)
     }
   }
 
@@ -100,15 +108,19 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
 
       <SyncVerdict sync={sync} />
 
-      <button
-        type="button"
-        onClick={handleExport}
-        disabled={loading}
-        className="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-left text-sm text-foreground transition-opacity active:opacity-60 disabled:opacity-50"
-      >
-        <span>{loading ? s.dataExport.exporting : s.dataExport.title}</span>
-        <span className="shrink-0 text-[13px] font-medium text-accent-text">{s.rowAction.export}</span>
-      </button>
+      {(['xlsx', 'csv'] as const).map((format) => (
+        <button
+          key={format}
+          type="button"
+          onClick={() => handleExport(format)}
+          disabled={loading !== null}
+          data-testid={`export-${format}`}
+          className="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-left text-sm text-foreground transition-opacity active:opacity-60 disabled:opacity-50"
+        >
+          <span>{loading === format ? s.dataExport.exporting : format === 'csv' ? s.dataExport.csv : s.dataExport.title}</span>
+          <span className="shrink-0 text-[13px] font-medium text-accent-text">{s.rowAction.export}</span>
+        </button>
+      ))}
 
       <div className="flex items-center justify-between gap-3 py-3.5">
         <div className="min-w-0">
