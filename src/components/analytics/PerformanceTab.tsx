@@ -462,7 +462,7 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
                   row.cost !== null && <div className="h-full rounded-full" style={{ width: `${Math.min(1, row.cost / view.scale) * 100}%`, background: color }} data-testid="heat-bar" />
                 )}
               </div>
-              <span className="whitespace-nowrap text-right">
+              <span className="text-right">
                 {row.pace === null ? (
                   <>
                     <b className="font-semibold text-foreground">—</b> <span className="text-muted-foreground">{s.noRuns}</span>

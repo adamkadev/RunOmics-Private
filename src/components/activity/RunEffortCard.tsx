@@ -65,7 +65,7 @@ function Row({ term, label, value, word, tone, onClick, actionLabel }: {
   actionLabel?: string
 }) {
   const reading = (
-    <span className="flex items-baseline gap-1.5 whitespace-nowrap text-sm">
+    <span className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5 text-right text-sm">
       <b className="font-semibold text-foreground">{value}</b>
       <span className={STAT_TONE_CLASS[tone]}>{word}</span>
       {onClick && <ChevronRight size={14} aria-hidden="true" className="self-center text-muted-foreground" />}
