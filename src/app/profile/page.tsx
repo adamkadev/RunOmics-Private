@@ -13,9 +13,9 @@ import { appTodayIso } from '@/lib/calendarDate'
 export const revalidate = 3600
 
 export default async function ProfilePage() {
-  const data = await getProfileData()
   const today = appTodayIso()
-  const goals = await getGoalsPageData()
+  const data = await getProfileData(today)
+  const goals = await getGoalsPageData(today)
 
   const view = progressHubView({
     today,

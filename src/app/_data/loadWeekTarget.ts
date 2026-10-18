@@ -12,7 +12,7 @@ import { currentWeekTarget, planMaps } from '@/components/plan/weekPlanDays'
  * Activities and Plan give one answer.
  */
 export async function loadWeekTarget(today: string, coaching: CoachingOverview | null): Promise<WeekTarget> {
-  const goal = await getCurrentWeeklyGoal()
+  const goal = await getCurrentWeeklyGoal(today)
   const maps = planMaps(getActivitySummaries(), await getPlannedWorkouts(), coaching?.workouts ?? [])
   return currentWeekTarget(maps, today, goal?.targetKm ?? null)
 }

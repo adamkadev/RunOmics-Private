@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest'
-import { buildTypeLoadStats, estimatePlannedLoad, withoutStaleSteps } from '../GetPlannedWorkouts'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { buildTypeLoadStats, estimatePlannedLoad, getTodayPlannedWorkout, withoutStaleSteps } from '../GetPlannedWorkouts'
 import type { Activity, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
+
+const { getAllPlannedWorkouts } = vi.hoisted(() => ({ getAllPlannedWorkouts: vi.fn() }))
+vi.mock('@/infrastructure/repositories/JsonPlannedWorkoutRepository', () => ({ getAllPlannedWorkouts }))
+vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities: () => [] }))
+vi.mock('@/infrastructure/repositories/JsonAthleteRepository', () => ({ getAthleteProfile: () => ({}) }))
 
 const HR_BOUNDS = { maxHr: 190, restingHr: 50 }
 
@@ -90,5 +95,37 @@ describe('withoutStaleSteps', () => {
   it('returns the same object when there is no structure to drop', () => {
     const w: PlannedWorkout = { date: '2025-01-01', name: 'Base' }
     expect(withoutStaleSteps(w, '2026-05-01')).toBe(w)
+  })
+})
+
+describe('getTodayPlannedWorkout', () => {
+  const SUNDAY_LONG_RUN: PlannedWorkout = { date: '2026-10-18', name: 'Long run 12 km', type: 'Base', durationSecs: 4080 }
+  const TUESDAY_EASY: PlannedWorkout = { date: '2026-10-20', name: 'Easy run', type: 'Base' }
+
+  beforeEach(() => {
+    // 00:53 on Monday 19 October in Luxembourg (UTC+2): still Sunday on a UTC server.
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-10-18T22:53:00Z'))
+    vi.stubEnv('NEXT_PUBLIC_TIME_ZONE', 'Europe/Luxembourg')
+    getAllPlannedWorkouts.mockReturnValue([SUNDAY_LONG_RUN, TUESDAY_EASY])
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllEnvs()
+  })
+
+  it("does not hand Sunday's session to Monday's rest day after the athlete's midnight", async () => {
+    expect(await getTodayPlannedWorkout()).toBeNull()
+  })
+
+  it("finds the session on the athlete's date when there is one", async () => {
+    getAllPlannedWorkouts.mockReturnValue([SUNDAY_LONG_RUN, { date: '2026-10-19', name: 'Recovery run' }])
+    expect((await getTodayPlannedWorkout())?.name).toBe('Recovery run')
+  })
+
+  it('reads the date the caller gives it', async () => {
+    expect((await getTodayPlannedWorkout('2026-10-18'))?.name).toBe('Long run 12 km')
+    expect((await getTodayPlannedWorkout('2026-10-20'))?.name).toBe('Easy run')
   })
 })
