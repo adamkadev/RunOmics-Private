@@ -27,7 +27,8 @@ export default async function AnalyticsPage() {
   const activities = getActivitySummaries()
   const plan = await loadPlanWeeks(getCoachingOverview(today), today)
   const yearData = goals.byYear[year] ?? null
-  const spotlight = yearData?.nextRaceSpotlight ?? null
+  // The next race whatever its year, as Progress reads it.
+  const spotlight = goals.nextRace
   const goalKm = yearData?.goals && yearData.goals.annualDistanceKm > 0 ? yearData.goals.annualDistanceKm : null
 
   const board: AnalyticsBoardData = {

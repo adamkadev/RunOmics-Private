@@ -25,7 +25,8 @@ export default async function ProfilePage() {
     allTime: data.allTime,
     sinceDate: data.hero.sinceDate,
     goal: data.goal,
-    spotlight: goals.byYear[Number(today.slice(0, 4))]?.nextRaceSpotlight ?? null,
+    // The next race whatever its year, not this year's only.
+    spotlight: goals.nextRace,
     vo2max: { value: getLatestVO2max(), samples: getVo2maxSamples().days },
     athlete: { lthrBpm: data.athlete.lthrBpm, thresholdPaceSecPerKm: data.athlete.thresholdPaceSecPerKm },
     records: await getRecords(),
