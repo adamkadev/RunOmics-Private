@@ -36,15 +36,30 @@ async function ensureOwner(): Promise<void> {
   })
 }
 
-/** Signs in through Settings' own button and the emulator's Google popup. */
+/**
+ * Signs in through Settings' own button and the emulator's Google popup. The
+ * popup hands its result back through an iframe Firebase loads on demand, and
+ * now and then the hand-off is lost and the page stays on "Signing in…": so a
+ * fresh page and another try, three at most.
+ */
 export async function signInAsOwner(page: Page): Promise<void> {
   await ensureOwner()
 
-  const popupOpened = page.waitForEvent('popup')
-  await page.getByRole('button', { name: t.settings.auth.signIn }).click()
-  const popup = await popupOpened
-  await popup.locator('li.js-reuse-account', { hasText: OWNER.email }).click()
+  for (let attempt = 1; ; attempt++) {
+    const popupOpened = page.waitForEvent('popup')
+    await page.getByRole('button', { name: t.settings.auth.signIn }).click()
+    const popup = await popupOpened
+    await popup.locator('li.js-reuse-account', { hasText: OWNER.email }).click()
 
-  // The owner's Data card only renders once the claim has been read.
-  await expect(page.getByTestId('data-card')).toBeVisible({ timeout: 15_000 })
+    // The owner's Data card only renders once the claim has been read.
+    const card = page.getByTestId('data-card')
+    const signedIn = await card.waitFor({ state: 'visible', timeout: 8_000 }).then(() => true, () => false)
+    if (signedIn) return
+    if (attempt === 3) {
+      await expect(card).toBeVisible()
+      return
+    }
+    if (!popup.isClosed()) await popup.close()
+    await page.reload({ waitUntil: 'domcontentloaded' })
+  }
 }
