@@ -412,7 +412,11 @@ export const fr = {
       signedOut: (runs: string) => `Classeur des ${runs} · connecte-toi pour exporter`,
       exporting: 'Export en cours…',
       failed: 'Impossible d’exporter les données d’entraînement.',
-      csv: 'Exporter les activités pour Claude (.csv)',
+      sheetTitle: 'Exporter mes activités',
+      workbookTitle: 'Classeur complet',
+      workbookHint: 'Toutes tes sorties, prêtes à ouvrir dans un tableur.',
+      csvTitle: 'Données brutes',
+      csvHint: 'Un fichier léger, lisible par n’importe quel outil.',
       notesUnavailable: 'Exporté sans tes notes ni tes tags : la base des notes n’a pas répondu. Réessaie.',
     },
     profile: {

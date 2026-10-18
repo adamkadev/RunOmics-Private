@@ -846,6 +846,8 @@ export async function writeTrainingWorkbook(data: TrainingWorkbookData, generate
 
 export const ACTIVITIES_CSV_MIME = 'text/csv; charset=utf-8'
 
+const UTF8_BOM = '\uFEFF'
+
 function csvCell(value: Primitive | undefined): string {
   if (value === null || value === undefined) return ''
   const text = value instanceof Date ? utcDate(value) : String(value)
@@ -855,8 +857,12 @@ function csvCell(value: Primitive | undefined): string {
 /**
  * The Activities sheet as CSV, for pasting or uploading to an LLM: the same
  * columns and rows as the workbook, UTF-8, RFC 4180 quoting, dates as
- * yyyy-mm-dd and blanks for missing values. No BOM - a reader that wants
- * UTF-8 gets it, and Excel users have the workbook.
+ * yyyy-mm-dd and blanks for missing values.
+ *
+ * It starts with a UTF-8 byte order mark. Without one, Numbers and Excel on
+ * a Mac read the file as Mac Roman and "à pied" comes out "√† pied" - and a
+ * CSV is opened there to check it before it is uploaded. LLMs and CSV
+ * parsers skip the mark.
  */
 export function buildActivitiesCsv(data: TrainingWorkbookData): string {
   const athleteHrBounds: HrBounds = {
@@ -866,5 +872,5 @@ export function buildActivitiesCsv(data: TrainingWorkbookData): string {
   const keys = ACTIVITY_COLUMNS.map((column) => column.key)
   const lines = [keys.join(',')]
   for (const row of activityRows(data, athleteHrBounds)) lines.push(keys.map((key) => csvCell(row[key])).join(','))
-  return `${lines.join('\r\n')}\r\n`
+  return `${UTF8_BOM}${lines.join('\r\n')}\r\n`
 }

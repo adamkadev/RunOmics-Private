@@ -442,7 +442,11 @@ export const en = {
       signedOut: (runs: string) => `Workbook of all ${runs} · sign in to export`,
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
-      csv: 'Export activities for Claude (.csv)',
+      sheetTitle: 'Export my activities',
+      workbookTitle: 'Full workbook',
+      workbookHint: 'All your runs, ready to open in a spreadsheet.',
+      csvTitle: 'Raw data',
+      csvHint: 'A light file that any tool can read.',
       notesUnavailable: 'Exported without your notes and tags: the notes store did not answer. Try again.',
     },
     profile: {
