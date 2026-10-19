@@ -79,7 +79,7 @@ describe('styleRunMapLabels (v4.10)', () => {
       'text-allow-overlap': false,
       'text-padding': 2,
       'text-variable-anchor': ['center', 'top', 'bottom', 'left', 'right'],
-      'text-radial-offset': 0.4,
+      'text-radial-offset': 1.2,
       'text-size': 10,
     })
     expect(layout.Neighbourhood?.['text-size']).toBe(9)

@@ -75,8 +75,13 @@ interface RenderOptions {
 const LABEL_FENCE_SOURCE = 'share-label-fence'
 const LABEL_FENCE_LAYER = 'share-label-fence'
 const LABEL_FENCE_ICON = 'share-label-fence'
-/** The fence's clear icon: the 3 px trace and its 3 px halo, 9 px across, and no more (3.0.1). */
-const LABEL_FENCE_PX = 10
+/**
+ * The fence's clear icon, as wide as the line it stands for and no wider: the
+ * 3 px trace and its casing. At 10 px it reached a name's own point, and a
+ * name can only step a few px off that point, so every district the run went
+ * through was dropped - the card came back with no names at all.
+ */
+const LABEL_FENCE_PX = 6
 
 /**
  * The card's place names (redesign, Oct 2026): towns and the river, never

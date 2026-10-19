@@ -238,6 +238,11 @@ export function addWaterLabels(map: MapLibreMap, options: WaterLabelOptions): vo
 }
 /** On its point first, then beside it, so a name next to the route still finds room. */
 const LABEL_ANCHORS: ('center' | 'top' | 'bottom' | 'left' | 'right')[] = ['center', 'top', 'bottom', 'left', 'right']
+/**
+ * How far a name may step off its own point, in ems: far enough to clear the
+ * route's fence, which runs right through the districts a run passes.
+ */
+const LABEL_RADIAL_OFFSET = 1.2
 
 export function isPlaceLabelLayer(layer: StyleLayer): boolean {
   if (layer.type !== 'symbol') return false
@@ -285,7 +290,7 @@ export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): v
     map.setLayoutProperty(layer.id, 'text-allow-overlap', false)
     map.setLayoutProperty(layer.id, 'text-padding', 2)
     map.setLayoutProperty(layer.id, 'text-variable-anchor', LABEL_ANCHORS)
-    map.setLayoutProperty(layer.id, 'text-radial-offset', 0.4)
+    map.setLayoutProperty(layer.id, 'text-radial-offset', LABEL_RADIAL_OFFSET)
     map.setLayoutProperty(layer.id, 'text-size', small ? 9 : 10)
     map.setPaintProperty(layer.id, 'text-opacity', small ? (colors.districtOpacity ?? 1) : 1)
     map.setPaintProperty(layer.id, 'text-color', small ? colors.neighbourhood : colors.town)
