@@ -27,7 +27,6 @@ export default async function PlanPage() {
       plannedWorkouts={plannedWorkouts}
       hrBounds={hrBoundsFor(getAthleteProfile())}
       planPhaseRanges={trainingPlan?.ranges ?? []}
-      planSpan={trainingPlan}
       nextRace={nextRace}
       trainingZones={trainingZones}
       coaching={coaching ? planCoachingView(coaching) : null}

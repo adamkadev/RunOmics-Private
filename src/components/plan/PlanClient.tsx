@@ -6,7 +6,6 @@ import type { HrBounds } from '@/domain/training/trimp'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import type { PlanSpan } from '@/domain/training/planProgress'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
@@ -15,7 +14,8 @@ import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
-import { planRace, raceSubtitle } from './planRace'
+import { planRace } from './planRace'
+import { planPhaseLine, raceCountdown } from './planPhase'
 
 interface Props {
   activities: ActivitySummary[]
@@ -24,7 +24,6 @@ interface Props {
   planPhaseRanges: PlanPhaseRange[]
   nextRace: UpcomingRace | null
   trainingZones: TrainingZonesData | null
-  planSpan: PlanSpan | null
   coaching: PlanCoachingView | null
   /** The date the page was prerendered on; see useToday. */
   today: string
@@ -33,7 +32,7 @@ interface Props {
 type ViewMode = 'week' | 'month'
 const VIEW_MODES = ['week', 'month'] as const
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRanges, nextRace, trainingZones, planSpan, coaching, today: serverToday }: Props) {
+export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRanges, nextRace, trainingZones, coaching, today: serverToday }: Props) {
   const today = useToday(serverToday)
   const now = new Date(`${today}T00:00:00`)
   const [mode, setMode] = useState<ViewMode>('week')
@@ -129,9 +128,14 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
     () => { if (!atPresent || canGoForward) shift(1) }
   )
 
-  // The race the plan builds to and how far off it is, under the title
-  // (v4.17) - no month: the navigator below names the period (G27).
+  // Under the title (design review, Oct 2026): where the plan is in the
+  // displayed period - "Build · week 9 of 12" - then the race it builds to
+  // and how far off it is. No dates: the navigator below names the period.
+  const shownDate =
+    mode === 'week' ? isoDate(weekStart) : atPresent ? today : `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const phaseLine = planPhaseLine(coaching?.plan ?? null, planPhaseRanges, shownDate)
   const race = planRace(coaching, nextRace, today)
+  const subtitleRest = [phaseLine?.week, race ? raceCountdown(race, today) : null].filter((part): part is string => !!part)
 
   return (
     <div className="flex flex-col gap-5">
@@ -139,11 +143,14 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
           title's row; on a phone the subtitle takes the full width under both. */}
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 sm:items-end">
         <h1 className="col-start-1 row-start-1 min-w-0 text-display text-foreground">{t.pages.plan.title}</h1>
-        {race && (
+        {(phaseLine?.phase || subtitleRest.length > 0) && (
           // CompactTitleBar fades the line under the title by its inline
           // opacity, and can write it before this component hydrates.
-          <p data-testid="plan-race" className="col-span-2 row-start-2 text-sm text-muted-foreground sm:col-span-1">
-            {raceSubtitle(race, today)}
+          <p data-testid="plan-subtitle" className="col-span-2 row-start-2 text-sm text-muted-foreground sm:col-span-1">
+            {phaseLine?.phase && <span className="font-semibold text-foreground">{phaseLine.phase}</span>}
+            {subtitleRest.map((part, i) => (
+              <span key={i}>{i > 0 || phaseLine?.phase ? ` · ${part}` : part}</span>
+            ))}
           </p>
         )}
         <div className="col-start-2 row-start-1 sm:row-span-2 sm:self-end">
@@ -180,12 +187,8 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
             onPrevWeek={() => shift(-1)}
             onNextWeek={() => shift(1)}
             canGoForward={canGoForward}
-            planPhaseRanges={planPhaseRanges}
-            nextRace={nextRace}
             trainingZones={trainingZones}
-            planSpan={planSpan}
             initialSelectedDate={focusDate}
-            coaching={coaching}
             onSelectDate={setFocusDate}
           />
         ) : (

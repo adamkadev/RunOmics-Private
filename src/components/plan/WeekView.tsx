@@ -1,44 +1,34 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import type { ActivitySummary, ActivityType, PlannedWorkout, ScheduledTimeOfDay } from '@/domain/activity/types'
 import { sessionZone } from '@/lib/colors'
 import { sessionTitle } from './sessionTitle'
 import type { HrBounds } from '@/domain/training/trimp'
-import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
-import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { weekTarget, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm, resolveDayType, resolvePlannedType, weekPlanDays } from './weekPlanDays'
 import { dayStateCells } from './dayStateCells'
 import { SessionStateChip } from '@/components/ui/SessionCard'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
-import { Stat, StatGrid, Unit } from '@/components/ui/Stat'
+import { Unit } from '@/components/ui/Stat'
 import { TypeDot } from '@/components/ui/TypeDot'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { SessionStructureBar } from './WorkoutStructure'
-import { PlanPhaseTrack } from './PlanPhaseTrack'
 import { PlanPeriodNav } from './PlanPeriodNav'
 import { WeekChart, WeekChartLegend } from './WeekChart'
 import { planAdherence } from './weekStats'
-import { planRace, raceWeekLabel } from './planRace'
 import { paceLabel, stepClock, stepSeconds, workoutSummary } from './workoutSummary'
-import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
-import type { PlanSpan } from '@/domain/training/planProgress'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatClock, formatDate, formatDateRange, formatDistance, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
-import {
-  macrocyclePhaseRanges,
-  macrocycleWeek, preparationWeek,
-  prescriptionDistanceMeters,
-} from '@/components/coaching/presentation'
+import type { PlanPrescriptionView } from './planCoachingView'
+import { prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import {
   coachWorkoutView,
   doneDaySteps,
@@ -72,7 +62,7 @@ function splitEffort(effort: string | null): { band: string | null; pace: string
 // A planned session with no logged activity is a read-only statement of what
 // is prescribed, not a control - there is nowhere for a tap to go, so this is
 // a plain div: no onClick, no chevron, no hover/press state.
-function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
+function PlannedWorkoutRow({ workout, eyebrow, isToday = false }: { workout: PlanWorkoutView; eyebrow?: ReactNode; isToday?: boolean }) {
   // The same reading as Today's hero (workoutSummary): the title, the
   // duration and distance, then each pace by name - "easy 5:30–6:24 ·
   // strides 3:35" - never one merged range (H02).
@@ -88,7 +78,8 @@ function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
   const zoneWord = band?.split(' ')[0] ?? null
 
   return (
-    <div data-testid={`plan-workout-row-${workout.key}`} className={cardClass()}>
+    <div data-testid={`plan-workout-row-${workout.key}`} className={cardClass({ className: isToday ? TODAY_BORDER : undefined })}>
+      {eyebrow}
       <div className="break-words text-[15px] font-semibold text-foreground text-pretty">{summary.title}</div>
       <div className="mt-1 text-[13px] leading-normal text-muted-foreground">{detail}</div>
       {workout.duration && (
@@ -105,11 +96,18 @@ function PlannedWorkoutRow({ workout }: { workout: PlanWorkoutView }) {
   )
 }
 
+/** The selected day's card, when that day is today: a 2 pt accent border (design review, Oct 2026). */
+const TODAY_BORDER = 'border-2 border-[var(--accent)]'
+
 // Rest is a prescribed state, not a missing render - it gets the same shell
 // as any other day, dashed and unfilled (v4.17).
-function RestDayCard({ next }: { next: { weekday: string; title: string } | null }) {
+function RestDayCard({ next, eyebrow, isToday = false }: { next: { weekday: string; title: string } | null; eyebrow?: ReactNode; isToday?: boolean }) {
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border border-dashed border-[var(--line-2)] px-5 py-4">
+    <div
+      data-testid="rest-day-card"
+      className={cn('flex flex-col gap-1 rounded-2xl border border-dashed border-[var(--line-2)] px-5 py-4', isToday && cn(TODAY_BORDER, 'border-solid'))}
+    >
+      {eyebrow}
       <div className="text-[15px] font-semibold text-foreground">{t.plan.restCard.title}</div>
       <div className="text-[13px] text-muted-foreground">
         {next ? t.plan.restCard.next(next.weekday, next.title) : t.plan.restCard.noSession}
@@ -263,14 +261,20 @@ function WeekSessionRow({
   )
 }
 
-// The week's three stats (v4.17): the distance and the sessions, each against
-// the plan, and how much of what was due was run. Distance is the same
-// WeekTarget Today's ring and Activities read: what was run against what the
-// plan scheduled. It used to add the run km to whatever was still planned,
-// missed days included, and call the sum the week.
+// The week's three figures on one line (design review, Oct 2026): the
+// distance and the sessions, each against the plan, and how much of what was
+// due was run. Distance is the same WeekTarget Today's ring and Activities
+// read: what was run against what the plan scheduled.
+function WeekFigure({ value, unit, testId }: { value: string; unit: ReactNode; testId: string }) {
+  return (
+    <span data-testid={testId} className="whitespace-nowrap">
+      <b className="text-[17px] font-semibold tabular-nums text-foreground">{value}</b> {unit}
+    </span>
+  )
+}
+
 function WeekStats({ target, notStarted }: { target: WeekTarget; notStarted: boolean }) {
   const s = t.plan.stats
-  const w = t.plan.weekSummary
   const planKm = target.planKm
   const distance =
     planKm === null
@@ -280,40 +284,22 @@ function WeekStats({ target, notStarted }: { target: WeekTarget; notStarted: boo
         : { value: formatRanKm(target.ranKm), unit: s.ofKm(formatWeekKm(planKm)) }
   const sessions =
     planKm === null
-      ? { value: String(target.ranSessions), unit: null }
+      ? { value: String(target.ranSessions), unit: s.sessions(target.ranSessions) }
       : notStarted
         ? { value: String(target.planSessions), unit: s.planned }
         : { value: String(target.plannedDone), unit: s.ofSessions(target.planSessions) }
-  const missed = planKm === null ? 0 : target.missedSessions
-  const unplanned = planKm === null ? 0 : target.unplannedRuns
   const adherence = planAdherence(target)
 
   return (
-    <div data-testid="week-summary" className="flex flex-col gap-3 border-t border-border pt-3.5">
-      <StatGrid columns={3}>
-        <Stat label={s.distance} value={distance.value} unit={distance.unit} />
-        <Stat
-          label={s.sessions}
-          value={sessions.value}
-          unit={sessions.unit}
-          meaning={
-            missed > 0 || unplanned > 0 ? (
-              <>
-                {missed > 0 && <span className="whitespace-nowrap text-[var(--neg)]">{w.missed(missed)}</span>}
-                {missed > 0 && unplanned > 0 && ' · '}
-                {unplanned > 0 && <span className="whitespace-nowrap">{w.unplanned(unplanned)}</span>}
-              </>
-            ) : null
-          }
-        />
-        {/* The number alone: "Aim for 80% or more" under it came off at the
-            owner's request. A week without a plan still says why it reads —. */}
-        <Stat
-          label={s.adherence}
-          value={adherence === null ? '—' : formatPercent(adherence)}
-          meaning={planKm === null ? s.noPlan : null}
-        />
-      </StatGrid>
+    <div
+      data-testid="week-summary"
+      className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t border-border pt-3 text-[13px] text-muted-foreground"
+    >
+      <WeekFigure testId="week-distance" value={distance.value} unit={distance.unit} />
+      <WeekFigure testId="week-sessions-count" value={sessions.value} unit={sessions.unit} />
+      {adherence !== null && (
+        <WeekFigure testId="week-adherence" value={formatPercent(adherence)} unit={<span className="sr-only">{s.adherence}</span>} />
+      )}
     </div>
   )
 }
@@ -323,7 +309,6 @@ interface Props {
   byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
   byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
-  coaching?: PlanCoachingView | null
   onSelectDate?: (date: string) => void
   hrBounds?: HrBounds
   today: string
@@ -332,10 +317,7 @@ interface Props {
   onPrevWeek?: () => void
   onNextWeek?: () => void
   canGoForward?: boolean
-  planPhaseRanges: PlanPhaseRange[]
-  nextRace?: UpcomingRace | null
   trainingZones?: TrainingZonesData | null
-  planSpan?: PlanSpan | null
   initialSelectedDate?: string | null
 }
 
@@ -344,7 +326,6 @@ export function WeekView({
   byDate,
   byDatePlanned,
   byDateCoach,
-  coaching = null,
   onSelectDate,
   today,
   atPresent,
@@ -352,8 +333,6 @@ export function WeekView({
   onPrevWeek,
   onNextWeek,
   canGoForward = false,
-  planPhaseRanges,
-  nextRace,
   trainingZones = null,
   initialSelectedDate,
 }: Props) {
@@ -448,98 +427,21 @@ export function WeekView({
       })
   }, [days, byDateCoach, byDatePlanned, trainingZones])
 
-  // Same priority as resolveDayType and the strip: a day that was actually
-  // run counts as what was run, regardless of whether a coach/Garmin entry
-  // exists for it. Reading straight from the plan for every day - as this
-  // used to - silently dropped any completed day the plan didn't cover,
-  // undercounting volume and sessions against what the strip and "this week"
-  // list both show for the same week.
-  const coachPhaseRanges = useMemo(
-    () => (coaching ? macrocyclePhaseRanges(coaching.plan) : []),
-    [coaching]
-  )
-
-  // The title used to read Garmin's phase ranges while the track below it read the
-  // coaching plan's, so a known Base week still degraded to the "This week" fallback.
-  const planPhase = useMemo(
-    () => weekPlanPhase(days.map((d) => d.date), coachPhaseRanges.length ? coachPhaseRanges : planPhaseRanges),
-    [days, coachPhaseRanges, planPhaseRanges]
-  )
-
-  // Bound to the displayed week, not the real "today" - otherwise paging to
-  // any other week still read the current week's number, so every week in
-  // the block looked like the same week.
-  const targetWeek = coaching ? macrocycleWeek(coaching.plan, firstDay.date) : null
-  // General preparation has no race to count toward, so it counts its own weeks.
-  const prepWeek = coaching ? preparationWeek(coaching.plan, firstDay.date) : null
-
-  // The race the block builds to: its week closes the phase card, and the
-  // header counts down to it (v4.17).
-  const race = useMemo(() => planRace(coaching, nextRace, today), [coaching, nextRace, today])
-
-  const weekOver = lastDay.date < today
-  const isCurrentWeek = !weekOver && firstDay.date <= today
-
-  // weekPlanPhase returns null both when the coach/Garmin ranges don't cover
-  // this week at all (before the plan starts) and for other gaps - only the
-  // first of those gets its own label, so a bare week counter never renders
-  // for a week the ranges simply don't reach yet.
-  const activePhaseRanges = coaching ? coachPhaseRanges : planPhaseRanges
-  const isPrePlan = planPhase === null && activePhaseRanges.length > 0 && lastDay.date < activePhaseRanges[0]!.startDate
-
-  const phaseLabel = planPhase
-    ? t.plan.weekPurpose.planPhase[planPhase]
-    : prepWeek !== null
-      ? t.plan.weekPurpose.generalPreparation
-      : isPrePlan
-        ? t.plan.weekPurpose.prePlan
-        : null
-  const weekOfLabel = !isPrePlan && targetWeek
-    ? t.plan.weekPurpose.weekOfTarget(targetWeek.done, targetWeek.total)
-    : prepWeek !== null
-      ? t.plan.weekPurpose.weekN(prepWeek)
-      : null
-  const fallbackLabel = phaseLabel || weekOfLabel ? null : weekOver ? null : isCurrentWeek ? t.plan.weekPurpose.thisWeek : t.plan.weekPurpose.upcoming
-
   const target = useMemo(
     () => weekTarget(weekPlanDays(days.map((d) => d.date), { byDate, byDatePlanned, byDateCoach: byDateCoach ?? new Map() }), today, null),
     [days, byDate, byDatePlanned, byDateCoach, today]
   )
 
   const isTodaySelected = selected.date === today
-  const dayEyebrow = isTodaySelected ? `${t.plan.today} · ${formatDate(selected.date)}` : formatDate(selected.date)
-  const phaseRanges = coaching ? coachPhaseRanges : planPhaseRanges
-  const phaseText = [phaseLabel, weekOfLabel].filter(Boolean)
+  // The selected day heads its card, inside it (design review, Oct 2026).
+  const dayEyebrow = (
+    <p data-testid="selected-day-eyebrow" className={cn(EYEBROW_CLASS, 'mb-1.5', isTodaySelected ? 'text-accent-text' : 'text-muted-foreground')}>
+      {isTodaySelected ? `${t.plan.today} · ${formatDate(selected.date)}` : formatDate(selected.date)}
+    </p>
+  )
 
   return (
     <div className="flex flex-col gap-3.5">
-      {(phaseText.length > 0 || fallbackLabel || race || phaseRanges.length >= 2) && (
-        <section className={cardClass({ className: 'flex flex-col gap-2.5 py-4' })}>
-          {(phaseText.length > 0 || fallbackLabel || race) && (
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[13px]" data-testid="phase-line">
-              <p className="min-w-0 text-muted-foreground">
-                {phaseText.length > 0 ? (
-                  <>
-                    {/* The phase in ink, where the plan is in it; the week count muted beside it. */}
-                    <span className="font-semibold text-foreground">{phaseText[0]}</span>
-                    {phaseText[1] && ` · ${phaseText[1]}`}
-                  </>
-                ) : (
-                  fallbackLabel
-                )}
-              </p>
-              {race && <p className="shrink-0 text-muted-foreground">{raceWeekLabel(race)}</p>}
-            </div>
-          )}
-          {/* The displayed week's own range, not the real `today` - the track
-              otherwise always lit whichever phase covers the actual current
-              date, so a pre-plan week in August still showed Base (today's
-              phase) as active; and a single reference day disagreed with the
-              header whenever a phase boundary fell mid-week. */}
-          <PlanPhaseTrack ranges={phaseRanges} weekStart={firstDay.date} weekEnd={lastDay.date} phase={planPhase ?? null} />
-        </section>
-      )}
-
       <section className={cardClass({ className: 'flex flex-col gap-4 pt-4' })}>
         <PlanPeriodNav
           label={formatDateRange(firstDay.date, lastDay.date)}
@@ -571,12 +473,9 @@ export function WeekView({
         />
       </section>
 
-      {/* The selected day heads its card, above it. */}
-      <p className={cn(EYEBROW_CLASS, 'px-1 pt-2', isTodaySelected ? 'text-accent-text' : 'text-muted-foreground')}>{dayEyebrow}</p>
-
       {selected.acts.length > 0 ? (
         <div className="flex flex-col gap-2.5">
-          {selected.acts.map((a) => {
+          {selected.acts.map((a, index) => {
             // A coach prescription is only this activity's plan when it is
             // actually linked to it (activityId). Otherwise it may describe
             // a session that was swapped or skipped, and Garmin's own plan -
@@ -607,8 +506,9 @@ export function WeekView({
                 key={a.id}
                 href={`/activities/${a.id}`}
                 aria-label={`${activityTitle(a)}, ${formatDate(a.date)}, ${t.plan.viewActivity}`}
-                className={cardClass({ className: 'block transition-colors hover:bg-[var(--surface-2)]' })}
+                className={cardClass({ className: cn('block transition-colors hover:bg-[var(--surface-2)]', isTodaySelected && TODAY_BORDER) })}
               >
+                {index === 0 && dayEyebrow}
                 <div className="flex items-center justify-between gap-3">
                   <span className="min-w-0 break-words text-[15px] font-semibold text-foreground text-pretty">{activityTitle(a)}</span>
                   <span className="flex shrink-0 items-center gap-2">
@@ -632,12 +532,12 @@ export function WeekView({
         </div>
       ) : selectedWorkouts.length > 0 ? (
         <div className="flex flex-col gap-2.5">
-          {selectedWorkouts.map((workout) => (
-            <PlannedWorkoutRow key={workout.key} workout={workout} />
+          {selectedWorkouts.map((workout, index) => (
+            <PlannedWorkoutRow key={workout.key} workout={workout} eyebrow={index === 0 ? dayEyebrow : null} isToday={isTodaySelected} />
           ))}
         </div>
       ) : (
-        <RestDayCard next={findNextPlanned(days, selected.date, byDatePlanned, byDateCoach)} />
+        <RestDayCard next={findNextPlanned(days, selected.date, byDatePlanned, byDateCoach)} eyebrow={dayEyebrow} isToday={isTodaySelected} />
       )}
 
       {thisWeekSessions.length > 0 && (

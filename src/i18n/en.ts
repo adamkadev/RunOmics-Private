@@ -2121,8 +2121,6 @@ export const en = {
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
     // A month's week under its row: run against plan, or what it is without one.
-    weekNoPlan: (km: string) => `${km} km · no plan`,
-    noPlanYet: 'No plan yet',
     // A run on a day with nothing planned, in its cell and its name.
     extra: 'extra',
     extraRun: 'Extra run',
@@ -2174,21 +2172,19 @@ export const en = {
       noSession: 'No session planned.',
       next: (weekday: string, title: string) => `No session planned. Next up: ${weekday}, ${title}.`,
     },
-    // v4.17: the race the plan builds to, and how far off it is, under the title.
+    // The race the plan builds to, after the phase under the title: "Half in 42 d".
     header: {
-      daysToGo: (n: number) => (n <= 0 ? 'race day' : n === 1 ? '1 day to go' : `${n} days to go`),
+      raceIn: (distance: string, days: number) => (days <= 0 ? `${distance} today` : `${distance} in ${days} d`),
     },
     legend: {
       plannedByType: 'Planned',
     },
-    // The week's three stats (v4.17).
+    // The week's three figures, on one line (design review, Oct 2026).
     stats: {
-      distance: 'Distance',
-      sessions: 'Sessions',
       adherence: 'Plan adherence',
-      noPlan: 'No plan this week',
       ofKm: (km: string) => `/ ${km} km`,
-      ofSessions: (n: number) => `of ${n}`,
+      ofSessions: (n: number) => `of ${n} session${n !== 1 ? 's' : ''}`,
+      sessions: (n: number): string => (n === 1 ? 'session' : 'sessions'),
       kmPlanned: 'km planned',
       planned: 'planned',
     },
@@ -2200,8 +2196,6 @@ export const en = {
       recovery: (clock: string) => `${clock} rec`,
     },
     weekSummary: {
-      missed: (n: number) => `${n} missed`,
-      unplanned: (n: number) => `${n} unplanned`,
       easyOfTarget: (easy: number, target: number) => `${easy}% easy · ${target}% target`,
       aboutLoad: 'About the week\'s load',
       loadOfPlan: (load: number, target: number) => `Load ${load} of ${target} pts planned`,
@@ -2209,7 +2203,6 @@ export const en = {
       loadDone: (load: number) => `Load ${load} pts`,
       loadDefinition: 'Training load in points, from heart rate and duration (TRIMP).',
       sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
-      ranOfPlan: (ran: string, plan: string) => `${ran} / ${plan} km`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} of ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} session${sessions !== 1 ? 's' : ''}`,
     },
@@ -2222,18 +2215,7 @@ export const en = {
       blockEndsHere: 'block end',
       weeksInLabel: 'weeks in',
     },
-    phaseTrack: {
-      base: 'Base',
-      build: 'Build',
-      peak: 'Peak',
-      taper: 'Taper',
-      raceDay: 'Race',
-      weeks: (n: number) => `${n} wk`,
-      raceWeek: (date: string) => `Race week ${date}`,
-    },
     weekPurpose: {
-      thisWeek: 'This week',
-      upcoming: 'Upcoming week',
       prePlan: 'Pre-plan',
       planPhase: {
         base: 'Base',

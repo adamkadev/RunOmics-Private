@@ -36,24 +36,23 @@ interface Props {
 
 const WEEKDAYS = t.plan.weekdays
 const ROW_HEIGHT = 56
-// Seven day columns and nothing else: the 30 px week gutter clipped its
-// header at the edge; each week's total is a footer line under its row.
-// Each day its own rounded tile, a gap between (design review, Oct 2026,
-// mock 1c): a flat grid of hairlines read as a spreadsheet.
-const GRID = 'grid grid-cols-7 gap-1.5'
+// Seven day columns, then the week's km (design review, Oct 2026): run in
+// bold over planned. Each day its own rounded tile, a gap between: a flat
+// grid of hairlines read as a spreadsheet.
+const GRID = 'grid grid-cols-[repeat(7,minmax(0,1fr))_2.75rem] gap-1.5'
 const TILE = 'overflow-hidden rounded-[10px]'
 
 /**
  * A day's state, as the week chart draws it (v4.17): what was run is the
  * accent's soft fill, an extra run too with its own label, a session still to
- * come its type's zone at 12%, a missed one the negative status at 12% with a
+ * come a dashed outline and a 12% tint in its type's zone, a missed one the negative status at 12% with a
  * dashed outline and a cross - never colour alone (design review, Oct 2026).
  * Today is an accent outline on top of whichever it is.
  */
 const CELL_FILL: Record<MonthDayState, string> = {
   done: 'bg-[var(--accent-soft)]',
   extra: 'bg-[var(--accent-soft)]',
-  planned: 'bg-[color-mix(in_srgb,var(--cell-zone)_12%,transparent)]',
+  planned: 'border-[1.5px] border-dashed border-[var(--cell-zone)] bg-[color-mix(in_srgb,var(--cell-zone)_12%,transparent)]',
   missed: 'bg-[color-mix(in_srgb,var(--neg)_12%,transparent)]',
   rest: 'border border-border',
 }
@@ -146,7 +145,7 @@ function CellValue({ planned, ranKm, hasActs, state }: { planned: PlannedInfo | 
         <span className="truncate text-[13px] font-semibold tabular-nums text-foreground">{formatRanKm(ranKm)}</span>
       ) : (
         figure && (
-          <span className={cn('truncate text-[13px] tabular-nums', state === 'missed' ? 'font-semibold text-[var(--neg)]' : 'text-[var(--text-2)]')}>
+          <span className={cn('truncate text-[13px] tabular-nums', state === 'missed' ? 'font-semibold text-[var(--neg)]' : 'font-medium text-[var(--cell-zone,var(--text-2))]')}>
             {figure.bare}
           </span>
         )
@@ -189,14 +188,6 @@ function DayCell({
         {cell.day}
       </span>
       {day.state === 'missed' && <span aria-hidden className="text-[11px] font-semibold leading-none text-[var(--neg)]">✕</span>}
-      {day.state === 'planned' && planned && (
-        <span
-          aria-hidden
-          data-testid="month-zone-mark"
-          className="mt-px h-2 w-2 shrink-0 rounded-[2px]"
-          style={{ background: zoneColor(sessionZone(planned)) }}
-        />
-      )}
     </span>
   )
   const value = (planned || hasActs) && <CellValue planned={planned} ranKm={ranKm} hasActs={hasActs} state={day.state} />
@@ -304,91 +295,75 @@ export function MonthView({
             {d}
           </div>
         ))}
+        <div className={cn(EYEBROW_CLASS, 'pb-2 text-right text-muted-foreground')}>{t.units.km}</div>
       </div>
 
-      <div className="flex flex-col gap-1 px-3">
+      <div className="flex flex-col gap-1.5 px-3">
         {rows.map((row, rowIndex) => {
           const containsToday = row.some((c) => c.date === today)
           const rowIsFuture = row.every((c) => c.date > today)
           const weekRan = row.reduce((s, c) => s + c.acts.reduce((sa, a) => sa + a.distanceKm, 0), 0)
           const weekPlanned = row.reduce((s, c) => s + (plannedInfoFor(c.date, byDatePlanned, byDateCoach)?.km ?? 0), 0)
-          const weekHasPlan = row.some((c) => plannedInfoFor(c.date, byDatePlanned, byDateCoach) !== null)
-          // One format for every week (H21), in the week view's rounding
-          // (design review, Oct 2026): "20.5 / 53 km" run against plan, "24 km
-          // · no plan" a week the plan said nothing about, and a week still to
-          // come with nothing planned "No plan yet".
-          const footer =
-            weekPlanned > 0 ? t.plan.weekSummary.ranOfPlan(formatRanKm(weekRan), formatWeekKm(weekPlanned))
-            : weekHasPlan ? `${formatRanKm(weekRan)} ${t.units.km}`
-            : rowIsFuture ? t.plan.noPlanYet
-            : t.plan.weekNoPlan(formatRanKm(weekRan))
-          const share = weekPlanned > 0 ? Math.min(1, weekRan / weekPlanned) : null
+          // A week still to come with nothing planned has no figure to give.
+          const showTotal = weekPlanned > 0 || !rowIsFuture
 
           return (
-            <div key={rowIndex}>
-              <div className={GRID} style={{ height: `${ROW_HEIGHT}px` }}>
-                {row.map((cell, i) => {
-                  const planned = plannedInfoFor(cell.date, byDatePlanned, byDateCoach)
-                  const day = days.get(cell.date) ?? { state: 'rest' as const }
-                  const state = day.state
-                  const isToday = cell.date === today
-                  return (
-                    <div
-                      key={i}
-                      data-cell-state={state}
-                      data-outside-month={cell.outside || undefined}
-                      // The month either side's days at half strength: there, and as tappable, but not this month's.
-                      className={cn(TILE, CELL_FILL[state], cell.outside && 'opacity-50')}
-                      style={{
-                        ...(state === 'planned' && planned ? ({ '--cell-zone': zoneColor(sessionZone(planned)) } as CSSProperties) : {}),
-                        ...(state === 'missed' ? MISSED_OUTLINE : {}),
-                        ...(isToday ? { boxShadow: 'inset 0 0 0 2px var(--accent)' } : {}),
+            <div key={rowIndex} className={GRID} style={{ height: `${ROW_HEIGHT}px` }}>
+              {row.map((cell, i) => {
+                const planned = plannedInfoFor(cell.date, byDatePlanned, byDateCoach)
+                const day = days.get(cell.date) ?? { state: 'rest' as const }
+                const state = day.state
+                const isToday = cell.date === today
+                return (
+                  <div
+                    key={i}
+                    data-cell-state={state}
+                    data-outside-month={cell.outside || undefined}
+                    // The month either side's days at half strength: there, and as tappable, but not this month's.
+                    className={cn(TILE, CELL_FILL[state], cell.outside && 'opacity-[0.45]')}
+                    style={{
+                      ...(state === 'planned' && planned ? ({ '--cell-zone': zoneColor(sessionZone(planned)) } as CSSProperties) : {}),
+                      ...(state === 'missed' ? MISSED_OUTLINE : {}),
+                      ...(isToday ? { boxShadow: 'inset 0 0 0 2px var(--accent)' } : {}),
+                    }}
+                  >
+                    <DayCell
+                      cell={cell}
+                      isToday={isToday}
+                      planned={planned}
+                      day={day}
+                      garminPlan={byDatePlanned.get(cell.date) ?? null}
+                      onSelectDay={onSelectDay}
+                      onOpenSheet={(workout, missed) => {
+                        const view = plannedWorkoutView(workout)
+                        // Read-only: what was planned and that nothing matched it, no reschedule.
+                        setSheetWorkout(missed ? { ...view, statusLabel: t.plan.missedNoRun } : view)
                       }}
-                    >
-                      <DayCell
-                        cell={cell}
-                        isToday={isToday}
-                        planned={planned}
-                        day={day}
-                        garminPlan={byDatePlanned.get(cell.date) ?? null}
-                        onSelectDay={onSelectDay}
-                        onOpenSheet={(workout, missed) => {
-                          const view = plannedWorkoutView(workout)
-                          // Read-only: what was planned and that nothing matched it, no reschedule.
-                          setSheetWorkout(missed ? { ...view, statusLabel: t.plan.missedNoRun } : view)
-                        }}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-              <p
+                    />
+                  </div>
+                )
+              })}
+              <div
                 data-testid="month-week-total"
-                className={cn('flex items-center justify-end gap-2 pb-1.5 pt-1 text-[13px] font-medium tabular-nums', containsToday ? 'text-foreground' : 'text-[var(--text-2)]')}
+                className={cn('flex min-w-0 flex-col items-end justify-center leading-tight tabular-nums', containsToday ? 'text-foreground' : 'text-[var(--text-2)]')}
               >
-                {share !== null && (
-                  // Run against plan, capped at the plan: a week over it is full, not longer.
-                  <span aria-hidden className="relative h-1 w-14 overflow-hidden rounded-full bg-[var(--line-2)]">
-                    <span className="absolute inset-y-0 left-0 rounded-full bg-accent" style={{ width: `${Math.round(share * 100)}%` }} />
-                  </span>
-                )}
-                <span className="whitespace-nowrap">{footer}</span>
-              </p>
+                {showTotal && <span className="text-[13px] font-semibold">{formatRanKm(weekRan)}</span>}
+                {weekPlanned > 0 && <span className="whitespace-nowrap text-[11px] text-muted-foreground">/ {formatWeekKm(weekPlanned)}</span>}
+              </div>
             </div>
           )
         })}
       </div>
 
       {/* One line of legend (design review, Oct 2026): done, the session
-          types the grid plans, missed. Today's outline, the "extra" label
-          and bold-ran / light-planned say themselves. */}
-      {/* Swatches in the full colours, as mock 1c keys them: the tiles' own
-          tints were too dark to read as a key. */}
+          types the grid plans, missed - each in its tile's shape. Today's
+          outline, the "extra" label and bold-ran / light-planned say
+          themselves. */}
       <div className="mx-3 mt-1.5 border-t border-border px-1 pt-3" data-testid="month-legend">
-        <Legend>
-          <LegendItem swatch="square" color="var(--accent)">{t.sessionState.done}</LegendItem>
+        <Legend className="text-[11px]">
+          <LegendItem swatch="tint" color="var(--accent)">{t.sessionState.done}</LegendItem>
           {zones.map((zone) => (
-            <LegendItem key={zone} swatch="square" color={zoneColor(zone)}>
+            <LegendItem key={zone} swatch="dashRing" color={zoneColor(zone)}>
               {t.zoneLabels[zone]}
             </LegendItem>
           ))}
