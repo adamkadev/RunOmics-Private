@@ -1319,9 +1319,9 @@ export const en = {
     },
     stats: {
       distance: 'Distance',
-      duration: 'Moving time',
+      duration: 'Moving',
       pace: 'Avg pace',
-      avgHr: 'Avg heart rate',
+      avgHr: 'Avg HR',
     },
     verdict: {
       title: 'Run Verdict',
@@ -1349,8 +1349,6 @@ export const en = {
       label: 'Note',
       add: 'Add note',
       edit: 'Edit',
-      read: 'Read',
-      none: 'No note',
     },
     tabs: {
       groupLabel: 'Activity sections',
@@ -1446,12 +1444,10 @@ export const en = {
       },
     },
     conditions: {
-      label: 'Conditions',
       wind: (reading: string) => `wind ${reading}`,
     },
     shoe: {
-      label: 'Shoe',
-      add: 'Add',
+      add: 'Add shoe',
       changeInGarmin: (name: string) => `${name} - change in Garmin Connect`,
       addInGarmin: 'Set the shoe in Garmin Connect',
     },

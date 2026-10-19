@@ -515,6 +515,25 @@
     color: var(--ro-text);
   }
 
+  /* The round buttons floating over a map (3.0): back, expand and share on
+     the activity's hero, close, recenter and style in fullscreen. */
+  .map-round-button {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 9999px;
+    background: color-mix(in srgb, var(--card) 90%, transparent);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    transition: opacity 150ms ease-out;
+  }
+  .map-round-button:active {
+    opacity: 0.7;
+  }
+
   /* The heatmap's filter chips (v4.17): the app's filter chip, the surface
      with a line and text-2 while unset... */
   .map-chip {

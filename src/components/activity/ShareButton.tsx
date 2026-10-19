@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Button } from '@/components/ui/Button'
+import { Share } from 'lucide-react'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import { t } from '@/i18n'
 
@@ -25,18 +25,18 @@ export function ShareButton({ activity }: Props) {
 
   return (
     <>
-      {/* The page's one action, on the title row (v4.17): an outline
-          button that says what it does, not an icon chip, with a 44 pt
-          target. Once the title row has scrolled away, the compact title
-          bar's share icon presses it (design review, Oct 2026). */}
-      <Button
-        variant="secondary"
+      {/* The page's one action, a 40 pt circle on the map hero (3.0).
+          Once the hero has scrolled away, the compact title bar's share icon
+          presses it (design review, Oct 2026). */}
+      <button
+        type="button"
         data-bar-action="share"
+        aria-label={t.activity.share}
         onClick={() => setIsOpen(true)}
-        className="hit-44 h-[34px] shrink-0 bg-card px-3 font-normal"
+        className="map-round-button hit-44"
       >
-        {t.activity.share}
-      </Button>
+        <Share size={18} strokeWidth={2} aria-hidden="true" />
+      </button>
 
       {isOpen && (
         <ShareCardModal

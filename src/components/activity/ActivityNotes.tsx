@@ -6,7 +6,10 @@ import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import type { SaveState } from '@/components/ui/SaveButton'
 import { Toast, useToast } from '@/components/ui/Toast'
+import { Pencil } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import { RUN_CHIP_CLASS } from './RunVerdict'
 import { EMPTY_NOTE as EMPTY, NOTE_MAX_LENGTH, TAG_MAX_LENGTH, TAGS_MAX_COUNT, type ActivityNote } from './activityNote'
 
 const SUGGESTED_TAGS_MAX = 12
@@ -59,6 +62,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   const [knownTags, setKnownTags] = useState<string[] | null>(null)
   const [saveState, setSaveState] = useState<SaveState>('idle')
   const [open, setOpen] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [activityInState, setActivityInState] = useState(activityId)
   const { toast, leaving, showToast } = useToast()
 
@@ -72,6 +76,7 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
     setTagInput('')
     setSaveState('idle')
     setOpen(false)
+    setExpanded(false)
     // knownTags deliberately survives: tags are shared across every note.
   }
 
@@ -147,34 +152,42 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
     }
   }
 
-  // A row on the activity, always there: the note is the one thing here the
-  // user writes, and it had no visible way in - the button hid itself from
-  // anyone signed out, and sat in the title row when it did show.
-  const preview = saved.note || saved.tags.join(' · ')
+  // A chip in the verdict card's row (3.0): with a note it expands in place
+  // to show it, without one it opens the editor for the owner and is not
+  // drawn for anyone else - there is nothing to read.
   const r = t.activity.noteRow
-  const canOpen = isOwner || hasNote
+  if (!hasNote && !isOwner) return null
 
   return (
-    <div>
+    <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        disabled={!canOpen}
-        aria-haspopup={canOpen ? 'dialog' : undefined}
+        onClick={() => (hasNote ? setExpanded((v) => !v) : setOpen(true))}
+        aria-expanded={hasNote ? expanded : undefined}
+        aria-haspopup={hasNote ? undefined : 'dialog'}
         data-testid="note-row"
-        className="flex min-h-11 w-full items-center justify-between gap-3 border-t border-border text-left text-sm disabled:cursor-default"
+        className={cn(RUN_CHIP_CLASS, !hasNote && 'font-medium text-accent-text')}
       >
-        {/* A detail row (v4.17): the name muted, the value in ink; adding one
-            is an action, so it is the accent link. */}
-        <span className="shrink-0 text-muted-foreground">{r.label}</span>
-        {hasNote ? (
-          <span className="min-w-0 truncate text-foreground">{preview} ›</span>
-        ) : isOwner ? (
-          <span className="font-medium text-accent-text">{r.add}</span>
-        ) : (
-          <span className="text-subtle">{r.none}</span>
-        )}
+        <Pencil size={12} strokeWidth={2} aria-hidden="true" />
+        {hasNote ? r.label : r.add}
       </button>
+
+      {hasNote && expanded && (
+        <div className="flex basis-full flex-col gap-1.5 rounded-lg bg-background px-3 py-2.5 text-sm" data-testid="note-text">
+          {saved.note && <p className="whitespace-pre-line text-foreground">{saved.note}</p>}
+          {saved.tags.length > 0 && <p className="text-xs text-muted-foreground">{saved.tags.join(' · ')}</p>}
+          {isOwner && (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-haspopup="dialog"
+              className="hit-44 self-start text-[13px] font-medium text-accent-text"
+            >
+              {r.edit}
+            </button>
+          )}
+        </div>
+      )}
 
       {open && (
         <NotesSheet
@@ -194,6 +207,6 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
       )}
 
       <Toast toast={toast} leaving={leaving} />
-    </div>
+    </>
   )
 }

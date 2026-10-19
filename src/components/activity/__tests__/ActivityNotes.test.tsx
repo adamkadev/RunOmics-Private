@@ -56,10 +56,12 @@ vi.mock('firebase/firestore', () => ({
   setDoc: async () => {},
 }))
 
+/** The note chip: it opens the editor, or shows the note and then Edit for the owner. */
 async function openNotes() {
-  const row = await screen.findByTestId('note-row')
-  await vi.waitFor(() => expect(row).toBeEnabled())
-  await userEvent.click(row)
+  const chip = await screen.findByTestId('note-row')
+  await userEvent.click(chip)
+  const edit = screen.queryByRole('button', { name: t.activity.noteRow.edit })
+  if (edit) await userEvent.click(edit)
 }
 
 let mockNotesUnavailable = false
@@ -92,23 +94,30 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('ActivityNotes owner gate', () => {
 
-  // The row is always there - the note had no visible entry point - but a
-  // visitor with nothing to read has nothing to open.
-  it('shows a signed-out visitor a row with no note and nothing to open', async () => {
+  // 3.0: a chip in the verdict card. A visitor with nothing to read gets none.
+  it('draws no chip for a signed-out visitor when there is no note', async () => {
     render(<ActivityNotes activityId="a1" />)
-    const row = await screen.findByTestId('note-row')
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
-    expect(row).toHaveTextContent(t.activity.noteRow.none)
-    expect(row).toBeDisabled()
+    expect(screen.queryByTestId('note-row')).toBeNull()
   })
 
-  it('shows the read-only note to a visitor when one exists', async () => {
+  it('expands the note in place for a visitor when one exists', async () => {
     mockNotesById = { [ACTIVITY_ID]: { note: 'Great tempo run', tags: ['tempo'] } }
     render(<ActivityNotes activityId="a1" />)
-    await openNotes()
+    const chip = await screen.findByTestId('note-row')
+    await vi.waitFor(() => expect(chip).toHaveAttribute('aria-expanded', 'false'))
+    await userEvent.click(chip)
 
-    expect(await screen.findByText('Great tempo run')).toBeInTheDocument()
-    expect(screen.queryByPlaceholderText(t.activity.notes.notePlaceholder)).not.toBeInTheDocument()
+    expect(chip).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('note-text')).toHaveTextContent('Great tempo run')
+    expect(screen.getByTestId('note-text')).toHaveTextContent('tempo')
+    expect(screen.queryByRole('button', { name: t.activity.noteRow.edit })).toBeNull()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    await userEvent.click(chip)
+    expect(screen.queryByTestId('note-text')).toBeNull()
   })
 
   it('shows the editor to an account carrying the owner claim', async () => {
@@ -122,10 +131,10 @@ describe('ActivityNotes owner gate', () => {
   it('treats a signed-in account without the owner claim like a visitor', async () => {
     mockUser = signedIn('someone-else@example.com')
     render(<ActivityNotes activityId="a1" />)
-    const row = await screen.findByTestId('note-row')
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
-    await vi.waitFor(() => expect(row).toHaveTextContent(t.activity.noteRow.none))
-    expect(row).toBeDisabled()
+    expect(screen.queryByTestId('note-row')).toBeNull()
   })
 
   it('offers the owner a way to add a note', async () => {
@@ -140,6 +149,8 @@ describe('ActivityNotes owner gate', () => {
     mockUser = signedIn(OWNER_EMAIL)
     mockNotesById = { [ACTIVITY_ID]: { note: 'Great tempo run', tags: [] } }
     render(<ActivityNotes activityId="a1" />)
+    const chip = await screen.findByTestId('note-row')
+    await vi.waitFor(() => expect(chip).toHaveAttribute('aria-expanded', 'false'))
     await openNotes()
 
     expect(await screen.findByText('Great tempo run')).toBeInTheDocument()
@@ -191,13 +202,13 @@ describe('ActivityNotes sheet', () => {
     expect(screen.getByRole('button', { name: t.activity.notes.addTag('trail') })).toBeInTheDocument()
   })
 
-  // Design review, Oct 2026: the row that opens the sheet is a full-width
-  // 44 pt row, and every control on the sheet is a 44 pt target, however
-  // small it is drawn - Cancel, Save, a tag's ✕ and each suggested tag.
+  // Design review, Oct 2026: the chip that opens the sheet and every control
+  // on the sheet is a 44 pt target, however small it is drawn - Cancel,
+  // Save, a tag's ✕ and each suggested tag.
   it('gives every control a 44 pt target', async () => {
     mockAllNotes = [{ note: '', tags: ['rain', 'trail'] }]
     render(<ActivityNotes activityId="a1" />)
-    expect((await screen.findByTestId('note-row')).className).toContain('min-h-11')
+    expect((await screen.findByTestId('note-row')).className).toContain('hit-44')
     await openNotes()
     await userEvent.click(await screen.findByRole('button', { name: t.activity.notes.addTag('rain') }))
 
@@ -263,11 +274,9 @@ describe('ActivityNotes when the server cannot read notes', () => {
   it('shows a visitor no note rather than an error', async () => {
     mockFirestoreDenied = true
     render(<ActivityNotes activityId="a1" />)
-    const row = await screen.findByTestId('note-row')
     // Both reads are done - the app's, then Firestore's refusal - and nothing showed.
     await vi.waitFor(() => expect(mockFirestoreReads).toBe(1))
     await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(row).toHaveTextContent(t.activity.noteRow.none)
-    expect(row).toBeDisabled()
+    expect(screen.queryByTestId('note-row')).toBeNull()
   })
 })

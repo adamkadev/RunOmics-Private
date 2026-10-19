@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useRef, useCallback, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { MapPin, Maximize2, Minimize2 } from 'lucide-react'
+import { MapPin, Minimize2 } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyle } from '@/lib/maptiler'
@@ -29,9 +29,16 @@ interface Props {
   /** The Charts scrub, as a share of the distance: the accent marker stands there. */
   hoverFraction?: number | null
   className?: string
+  /** Whether the map fills the screen. The page's own expand button opens it. */
+  fullscreen?: boolean
+  onFullscreenChange?: (fullscreen: boolean) => void
+  /** Drawn over the tiles and under the map's own controls while in the page. */
+  overlay?: ReactNode
 }
 
-export default function ActivityMap({ route, hoverFraction, className }: Props) {
+const noop = () => {}
+
+export default function ActivityMap({ route, hoverFraction, className, fullscreen = false, onFullscreenChange = noop, overlay }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   // The element MapLibre draws into. Fullscreen portals the map to <body>,
   // which gives React a new host node; this one moves between hosts, so the
@@ -47,30 +54,31 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
   const layersReadyRef = useRef(false)
   const animFrameRef = useRef<number | null>(null)
   const boundsRef = useRef<LngLatBounds | null>(null)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const isFullscreen = fullscreen
+  const close = useCallback(() => onFullscreenChange(false), [onFullscreenChange])
 
   // Fullscreen takes the map out of the page, which moves the scroll under
   // it; leaving puts the page back where it was, to the pixel (v5.5 #1): left
-  // 1-2 pt down, iOS blurs the header under the status bar.
+  // 1-2 pt down, iOS blurs the header under the status bar. The hero keeps
+  // its height while the map is away, so the offset read on the way in is
+  // still the page's own.
   const scrollBeforeFullscreen = useRef<number | null>(null)
-  const toggleFullscreen = useCallback(() => {
-    setIsFullscreen((v) => {
-      if (!v) scrollBeforeFullscreen.current = window.scrollY
-      return !v
-    })
-  }, [])
   useLayoutEffect(() => {
-    if (isFullscreen || scrollBeforeFullscreen.current === null) return
+    if (isFullscreen) {
+      scrollBeforeFullscreen.current = window.scrollY
+      return
+    }
+    if (scrollBeforeFullscreen.current === null) return
     window.scrollTo({ top: scrollBeforeFullscreen.current, behavior: 'instant' })
     scrollBeforeFullscreen.current = null
   }, [isFullscreen])
 
   useEffect(() => {
     if (!isFullscreen) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsFullscreen(false) }
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [isFullscreen])
+  }, [isFullscreen, close])
 
   useLayoutEffect(() => {
     const host = hostRef.current
@@ -267,17 +275,17 @@ export default function ActivityMap({ route, hoverFraction, className }: Props) 
       )}
     >
       <div ref={hostRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
+      {!isFullscreen && overlay}
 
-      <button
-        onClick={toggleFullscreen}
-        className={cn(
-          'glass-map-chip absolute right-3 z-20 flex h-11 w-11 items-center justify-center transition-opacity active:opacity-70',
-          'top-3'
-        )}
-        aria-label={isFullscreen ? t.activity.map.exitFullscreen : t.activity.map.fullscreen}
-      >
-        {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-      </button>
+      {isFullscreen && (
+        <button
+          onClick={close}
+          className="glass-map-chip absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center transition-opacity active:opacity-70"
+          aria-label={t.activity.map.exitFullscreen}
+        >
+          <Minimize2 size={16} />
+        </button>
+      )}
 
     </div>
   )

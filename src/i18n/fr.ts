@@ -1253,9 +1253,9 @@ export const fr = {
     },
     stats: {
       distance: 'Distance',
-      duration: 'Temps en mouvement',
+      duration: 'En mouvement',
       pace: 'Allure moy.',
-      avgHr: 'FC moyenne',
+      avgHr: 'FC moy.',
     },
     verdict: {
       title: 'Verdict de la sortie',
@@ -1280,8 +1280,6 @@ export const fr = {
       label: 'Note',
       add: 'Ajouter une note',
       edit: 'Modifier',
-      read: 'Lire',
-      none: 'Pas de note',
     },
     tabs: {
       groupLabel: 'Sections de la sortie',
@@ -1373,12 +1371,10 @@ export const fr = {
       },
     },
     conditions: {
-      label: 'Conditions',
       wind: (reading: string) => `vent ${reading}`,
     },
     shoe: {
-      label: 'Chaussure',
-      add: 'Ajouter',
+      add: 'Ajouter la chaussure',
       changeInGarmin: (name: string) => `${name} - modifier dans Garmin Connect`,
       addInGarmin: 'Choisir la chaussure dans Garmin Connect',
     },
