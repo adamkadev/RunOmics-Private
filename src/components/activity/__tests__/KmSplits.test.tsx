@@ -2,7 +2,7 @@ import { act, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import { t } from '@/i18n'
-import { KmSplits } from '../KmSplits'
+import { KmSplits, isStructured } from '../KmSplits'
 import type { ActivityDetailView } from '../activityViews'
 
 function split(
@@ -66,9 +66,24 @@ describe('KmSplits', () => {
       />,
     )
 
-    expect(screen.getByText(t.activity.splits.title)).toBeInTheDocument()
+    // 3.0.2: a structured session opens on its laps, its kilometres a tap away.
+    expect(screen.getByRole('tab', { name: t.activity.splits.lapTitle })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_warmup!)).toBeInTheDocument()
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()
+  })
+
+  it('keeps the interval title when there are no kilometres to switch to', () => {
+    render(
+      <KmSplits
+        activity={{
+          ...activityWith([split('interval_warmup', 600, 2000, 120), split('interval_active', 240, 1000, 175)]),
+          distanceKm: 9,
+        }}
+      />,
+    )
+
+    expect(screen.getByText(t.activity.splits.title)).toBeInTheDocument()
+    expect(screen.queryByRole('tab')).toBeNull()
   })
 
   it('totals every split row', () => {
@@ -127,7 +142,7 @@ describe('KmSplits on a continuous run', () => {
   it('derives per-kilometre splits instead of one interval row that restates the total', () => {
     render(<KmSplits activity={continuous} />)
 
-    expect(screen.getByTestId('splits-avg').textContent).toBe(t.activity.splits.avg('5:00'))
+    expect(screen.getByText(t.activity.tabs.intervals)).toBeInTheDocument()
     expect(screen.getAllByTestId('km-split')).toHaveLength(5)
     expect(screen.queryByText(t.activity.splits.intervalTypes.lap!)).not.toBeInTheDocument()
     // One lap and no auto laps: nothing to switch to.
@@ -146,10 +161,33 @@ describe('KmSplits on a continuous run', () => {
     expect(screen.queryByTestId('km-split')).toBeNull()
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()
   })
+
+  // 5c: a long run started from a workout comes as one interval. It is a
+  // steady run, so it opens on its kilometres; the interval is under Laps.
+  it('opens a run kept as one interval on its kilometres, the interval under Laps', () => {
+    const autoLaps = [1, 2, 3, 4, 5].map(() => ({ durationSec: 300, distanceM: 1000, avgSpeedMs: 1000 / 300, avgHr: 150 }))
+    render(<KmSplits activity={{ ...continuous, splits: [split('interval_active', 1500, 5000, 150, autoLaps)] } as Activity} />)
+
+    expect(screen.getAllByTestId('km-split')).toHaveLength(5)
+    expect(screen.getByRole('tab', { name: t.activity.splits.cols.km })).toHaveAttribute('aria-selected', 'true')
+    showLaps()
+    expect(screen.queryByTestId('km-split')).toBeNull()
+    expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()
+  })
+})
+
+describe('isStructured', () => {
+  it('reads a warm-up, a recovery or a second interval as a structure', () => {
+    expect(isStructured([split('lap', 300, 1000), split('lap', 300, 1000)])).toBe(false)
+    expect(isStructured([split('interval_active', 1500, 5000)])).toBe(false)
+    expect(isStructured([split('interval_active', 240, 1000), split('interval_active', 240, 1000)])).toBe(true)
+    expect(isStructured([split('interval_warmup', 600, 2000), split('interval_active', 240, 1000)])).toBe(true)
+  })
 })
 
 describe('per-km splits', () => {
-  it('compares each km: a speed bar, its gap to the average and its climb', () => {
+  // 5c: KM · PACE · the speed bar · ELEV · HR; the fastest km is the full bar.
+  it('compares each km: a speed bar, longer when faster, and its climb', () => {
     render(
       <KmSplits
         activity={{
@@ -165,16 +203,60 @@ describe('per-km splits', () => {
       />,
     )
 
-    expect(screen.getByText(t.activity.splits.cols.speed)).toBeInTheDocument()
-    expect(screen.getByText(t.activity.splits.cols.vsAvg)).toBeInTheDocument()
     expect(screen.getByText(t.activity.splits.cols.elev)).toBeInTheDocument()
+    const widths = screen.getAllByTestId('km-bar').map((bar) => parseFloat(bar.style.width))
+    expect(widths[0]).toBeGreaterThan(widths[1]!)
+    expect(widths[1]).toBeGreaterThan(widths[2]!)
+    expect(widths[0]).toBe(100)
     // No elevation stream, no climb to show.
     expect(screen.getAllByTestId('km-elev').map((el) => el.textContent)).toEqual(['-', '-', '-'])
   })
 
-  // 3.0: the fastest km in the accent with its pace bold; faster than the
-  // average in the accent, slower muted; and each km's metres climbed.
-  it('marks the fastest km and signs the gap and the climb', () => {
+  // The footer: the fastest km in the accent on the left, the split verdict
+  // on the right - here the run faded, a positive split.
+  it('names the fastest km and the split in the footer', () => {
+    render(
+      <KmSplits
+        activity={{
+          ...({} as ActivityDetailView),
+          distanceKm: 4,
+          durationSeconds: 1000,
+          paceSecPerKm: 250,
+          avgHeartRate: 150,
+          splits: [split('lap', 240, 1_000), split('lap', 245, 1_000), split('lap', 255, 1_000), split('lap', 260, 1_000)],
+          paceSamples: null,
+          hrSamples: null,
+        }}
+      />,
+    )
+
+    const fastest = screen.getByTestId('fastest-km')
+    expect(fastest.textContent).toBe(`${t.activity.splits.fastest} ${t.activity.splits.fastestKm(1, '4:00')}`)
+    expect(fastest.querySelector('b')!.className).toContain('text-accent-text')
+    expect(screen.getByTestId('split-verdict').textContent).toBe(t.activity.splits.positiveSplit('+0:30'))
+  })
+
+  it('calls a negative split by its gain', () => {
+    render(
+      <KmSplits
+        activity={{
+          ...({} as ActivityDetailView),
+          distanceKm: 4,
+          durationSeconds: 1000,
+          paceSecPerKm: 250,
+          avgHeartRate: null,
+          splits: [split('lap', 260, 1_000), split('lap', 255, 1_000), split('lap', 245, 1_000), split('lap', 240, 1_000)],
+          paceSamples: null,
+          hrSamples: null,
+        }}
+      />,
+    )
+
+    expect(screen.getByTestId('split-verdict').textContent).toBe(t.activity.splits.negativeSplit('−0:30'))
+  })
+
+  // The fastest km in the accent, its pace and its bar; each km's metres climbed.
+  it('marks the fastest km and signs the climb', () => {
     render(
       <KmSplits
         activity={{
@@ -193,9 +275,11 @@ describe('per-km splits', () => {
 
     const rows = screen.getAllByTestId('km-split')
     expect(rows.map((row) => row.hasAttribute('data-fastest'))).toEqual([true, false, false])
-    expect(rows[0]!.children[1]!.className).toContain('font-bold')
-    expect(rows[0]!.children[3]!.className).toContain('text-accent-text')
-    expect(rows[2]!.children[3]!.className).toContain('text-muted-foreground')
+    expect(rows[0]!.children[1]!.className).toContain('text-accent-text')
+    expect(rows[1]!.children[1]!.className).not.toContain('text-accent-text')
+    const bars = screen.getAllByTestId('km-bar')
+    expect(bars[0]!.style.background).toBe('var(--accent)')
+    expect(bars[1]!.style.background).not.toContain('accent')
     // The stream smoothed as the Charts tab draws it: up on km 1, down later.
     const climbs = screen.getAllByTestId('km-elev').map((el) => el.textContent!)
     expect(climbs[0]).toMatch(/^\+\d+$/)
@@ -223,27 +307,5 @@ describe('per-km splits', () => {
     showLaps()
     expect(screen.queryByTestId('km-split')).toBeNull()
     expect(screen.getAllByText(t.activity.splits.intervalTypes.lap!)).toHaveLength(3)
-  })
-
-  // G14: with a 4:10 total, a 4:04 km read -5 because the unrounded paces
-  // were subtracted. It is measured against Total as printed.
-  it('measures vs avg against the Total row, both rounded alike', () => {
-    render(
-      <KmSplits
-        activity={{
-          ...({} as ActivityDetailView),
-          distanceKm: 3,
-          durationSeconds: 754,
-          paceSecPerKm: 249.5,
-          avgHeartRate: 150,
-          splits: [split('lap', 750, 3_000, 150)],
-          paceSamples: [...Array(100).fill(244.4), ...Array(100).fill(250), ...Array(100).fill(260)],
-          hrSamples: null,
-        }}
-      />,
-    )
-
-    // km 1 prints 4:04 and Total 4:10.
-    expect(screen.getByText(/^[−-]6$/)).toBeInTheDocument()
   })
 })

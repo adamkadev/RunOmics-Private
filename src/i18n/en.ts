@@ -1450,8 +1450,13 @@ export const en = {
     splits: {
       title: 'Intervals',
       lapTitle: 'Laps',
-      // The run's average beside Km / Laps (3.0).
-      avg: (pace: string) => `avg ${pace}`,
+      // The footer under the kilometres (3.0.2): the fastest km, and the
+      // second half against the first.
+      fastest: 'Fastest',
+      fastestKm: (km: number, pace: string) => `km ${km} · ${pace}`,
+      negativeSplit: (gap: string) => `Negative split ${gap}`,
+      positiveSplit: (gap: string) => `Positive split ${gap}`,
+      evenSplit: 'Even split',
       viewLabel: 'Splits by',
       partialKm: (km: string) => `final ${km}`,
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
@@ -1468,8 +1473,6 @@ export const en = {
         duration: 'Dur',
         dist: 'Dist',
         pace: 'Pace',
-        speed: 'Speed',
-        vsAvg: '±s',
         elev: 'Elev',
         hr: 'HR',
         total: 'Total',
@@ -1777,12 +1780,17 @@ export const en = {
       // The same dates in both years, from where the history starts.
       vsYearSince: (delta: string, year: number, since: string) => `${delta} km vs ${year} since ${since}`,
       ofGoal: (km: string) => `of ${km} km`,
-      // "201 days" under the race's eyebrow.
-      days: (days: number): string => (days === 1 ? 'day' : 'days'),
+      // "in 201 days" across from the race's eyebrow (3.0.2).
+      inDays: (days: number): string => (days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`),
+      // The Target · Predicted · Gap row, then the gap per km under its bar.
+      target: 'Target',
       predicted: 'Predicted',
-      target: (time: string) => `Target ${time}`,
-      toFind: (gap: string) => `${gap} to find`,
-      underTarget: (gap: string) => `${gap} under`,
+      gap: 'Gap',
+      perKmToFind: (seconds: number) => `${seconds} s/km to find.`,
+      perKmInHand: (seconds: number) => `${seconds} s/km in hand.`,
+      onTarget: 'On target.',
+      // The bar: where the predicted pace is when the target clock stops.
+      reached: (percent: number) => `${percent}% of the course at the target time`,
       noRace: 'No race planned',
       noRecords: 'No records yet',
       // "69 km short at this pace. Needs 41 km/wk, you average 35."
@@ -1791,6 +1799,9 @@ export const en = {
       atPace: 'at this pace.',
       onPace: 'On pace for the goal.',
       needs: (needed: string, average: string) => `Needs ${needed} km/wk, you average ${average}.`,
+      // The year chart's goal: its end labelled, its dotted line named in the caption (3.0.2).
+      goalLabel: (km: string) => `goal ${km}`,
+      goalLine: 'Dotted: the steady pace to the goal.',
       // The tiles under the records, as before 3.0 (owner's request, 3.0.1).
       vo2max: 'VO₂ max',
       vo2Delta: (delta: string) => `${delta} in 12 weeks`,

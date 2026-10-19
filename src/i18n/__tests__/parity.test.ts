@@ -69,8 +69,9 @@ describe('French design review copy', () => {
     expect(fr.plan.phase.raceInDays('Semi', 0)).toBe('Semi aujourd’hui')
     expect(fr.plan.weekRow.runsOf(1)).toBe('/ 1 sortie')
     expect(fr.plan.weekRow.runsOf(5)).toBe('/ 5 sorties')
-    expect(fr.profile.hub.days(1)).toBe('jour')
-    expect(fr.profile.hub.days(155)).toBe('jours')
+    expect(fr.profile.hub.inDays(1)).toBe('demain')
+    expect(fr.profile.hub.inDays(155)).toBe('dans 155 jours')
+    expect(fr.profile.hub.reached(98)).toBe('98 % du parcours au temps visé')
     expect(fr.profile.hub.needs('41', '35')).toBe('Il faut 41 km/sem., ta moyenne est de 35.')
   })
 

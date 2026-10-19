@@ -4,12 +4,12 @@ import { ChevronRight, Settings } from 'lucide-react'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
-import { formatDate, formatDelta, formatDuration, formatKm } from '@/lib/formatters'
+import { formatDate, formatDelta, formatDuration, formatKm, formatSignedDuration } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import type { WearStatus } from '@/domain/shoe/wearStatus'
-import type { HeatCell, ProgressHubView, YearPoint } from './progressHubView'
+import { raceGapView, type HeatCell, type ProgressHubView, type YearPoint } from './progressHubView'
 import { levelStyle } from '@/components/consistency/consistencyMonthsView'
 import { shortDist } from '@/components/goals/shortDistance'
 import { WEAR_COLOR } from '@/components/shoes/shoeWear'
@@ -123,7 +123,7 @@ function shoeColor(status: WearStatus): string {
 }
 
 const CHART_W = 1000
-const CHART_H = 90
+const CHART_H = 110
 /** The months named under the year chart (3.0): the quarters, and December at the end. */
 const TICK_MONTHS = [0, 3, 6, 9, 11]
 
@@ -131,62 +131,85 @@ function path(points: YearPoint[], x: (day: number) => number, y: (km: number) =
   return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.day).toFixed(1)} ${y(p.km).toFixed(1)}`).join(' ')
 }
 
-/** A gap to the race target: "46 s" under a minute, "2:10" from there. */
-export function raceGap(seconds: number): string {
-  return seconds < 60 ? `${seconds} ${t.units.sec}` : formatDuration(seconds)
-}
-
 /** The projection's colour: warn when it falls short of the goal, pos when it lands on it or over. */
 function projectionColor(hero: ProgressHubView['hero']): string {
   return hero.projection && hero.goalKm !== null && hero.projection.yearKm < hero.goalKm ? 'var(--warn)' : 'var(--pos)'
 }
 
+/** The year chart's y-axis (3.0.2): zero, a third, two thirds and the goal - or the chart's top without one. */
+export function yearTicks(goalKm: number | null, top: number): number[] {
+  const end = goalKm ?? top
+  return [0, end / 3, (end * 2) / 3, end].map(Math.round)
+}
+
 /**
  * The year's cumulative km (3.0): the athlete's own line in the accent, the
  * projection to 31 December dashed in its verdict colour, the goal a dotted
- * straight line from zero, over three faint gridlines.
+ * straight line from zero to its labelled end. Since 3.0.2 the gridlines are
+ * the y-axis ticks, each named in the gutter.
  */
 function YearChart({ hero, year }: { hero: ProgressHubView['hero']; year: number }) {
+  const h = t.profile.hub
   const last = hero.current.at(-1) ?? { day: 0, km: 0 }
   const top = Math.max(hero.goalKm ?? 0, hero.projection?.yearKm ?? 0, last.km, 1)
   const x = (day: number) => (day / hero.daysInYear) * CHART_W
   const y = (km: number) => CHART_H - 2 - (km / top) * (CHART_H - 8)
+  const at = (km: number) => `${((y(km) / CHART_H) * 100).toFixed(2)}%`
+  const ticks = yearTicks(hero.goalKm, top)
   const months = new Intl.DateTimeFormat(t.locale, { month: 'short', timeZone: 'UTC' })
   const dayOf = (month: number) => Math.round((Date.UTC(year, month, 1) - Date.UTC(year, 0, 1)) / 86_400_000)
 
   return (
-    <div>
-      <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="block h-[90px] w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="year-chart">
-        {[0.25, 0.5, 0.75].map((share) => (
-          <line key={share} x1={0} x2={CHART_W} y1={y(top * share)} y2={y(top * share)} stroke="var(--border)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 pt-2.5">
+      <div className="relative h-[110px] text-right text-caption leading-none text-muted-foreground tabular-nums" aria-hidden="true" data-testid="year-y-ticks">
+        {/* The widest label holds the gutter open; the others sit on their lines. */}
+        <span className="invisible">{formatKm(Math.max(...ticks))}</span>
+        {ticks.map((km, i) => (
+          <span key={i} className="absolute right-0 -translate-y-1/2" style={{ top: at(km) }}>
+            {formatKm(km)}
+          </span>
         ))}
+      </div>
+      <div className="relative">
+        <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="block h-[110px] w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="year-chart">
+          {ticks.map((km, i) => (
+            <line key={i} x1={0} x2={CHART_W} y1={y(km)} y2={y(km)} stroke="var(--border)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+          ))}
+          {hero.goalKm !== null && (
+            <line x1={0} y1={y(0)} x2={CHART_W} y2={y(hero.goalKm)} stroke="var(--muted-foreground)" strokeWidth={1.2} strokeDasharray="1 4" strokeLinecap="round" vectorEffect="non-scaling-stroke" data-testid="goal-line" />
+          )}
+          {hero.projection && (
+            <line
+              x1={x(last.day)}
+              y1={y(last.km)}
+              x2={CHART_W}
+              y2={y(hero.projection.yearKm)}
+              stroke={projectionColor(hero)}
+              strokeWidth={1.6}
+              strokeDasharray="5 5"
+              vectorEffect="non-scaling-stroke"
+              data-testid="projection-path"
+            />
+          )}
+          <path d={path(hero.current, x, y)} fill="none" stroke="var(--accent)" strokeWidth={2.4} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="current-line" />
+        </svg>
         {hero.goalKm !== null && (
-          <line x1={0} y1={y(0)} x2={CHART_W} y2={y(hero.goalKm)} stroke="var(--muted-foreground)" strokeWidth={1.2} strokeDasharray="1 4" strokeLinecap="round" vectorEffect="non-scaling-stroke" data-testid="goal-line" />
+          // Over the goal line's end, in the headroom the grid leaves above the chart.
+          <span className="absolute right-0 -translate-y-full whitespace-nowrap text-caption leading-none text-muted-foreground" style={{ top: `calc(${at(hero.goalKm)} - 3px)` }} aria-hidden="true" data-testid="goal-label">
+            {h.goalLabel(formatKm(hero.goalKm))}
+          </span>
         )}
-        {hero.projection && (
-          <line
-            x1={x(last.day)}
-            y1={y(last.km)}
-            x2={CHART_W}
-            y2={y(hero.projection.yearKm)}
-            stroke={projectionColor(hero)}
-            strokeWidth={1.6}
-            strokeDasharray="5 5"
-            vectorEffect="non-scaling-stroke"
-            data-testid="projection-path"
-          />
-        )}
-        <path d={path(hero.current, x, y)} fill="none" stroke="var(--accent)" strokeWidth={2.4} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="current-line" />
-      </svg>
+      </div>
+      <span aria-hidden="true" />
       <div className="relative mt-2 h-3.5 text-caption leading-[14px] text-muted-foreground" aria-hidden="true" data-testid="year-ticks">
         {TICK_MONTHS.map((month, i) => {
           const edge = i === 0 ? 'left' : i === TICK_MONTHS.length - 1 ? 'right' : null
-          const at = `${((dayOf(month) / hero.daysInYear) * 100).toFixed(2)}%`
+          const left = `${((dayOf(month) / hero.daysInYear) * 100).toFixed(2)}%`
           return (
             <span
               key={month}
               className={cn('absolute whitespace-nowrap', !edge && '-translate-x-1/2')}
-              style={edge === 'left' ? { left: 0 } : edge === 'right' ? { right: 0 } : { left: at }}
+              style={edge === 'left' ? { left: 0 } : edge === 'right' ? { right: 0 } : { left }}
             >
               {months.format(new Date(Date.UTC(year, month, 1))).replace(/\.$/, '')}
             </span>
@@ -197,41 +220,64 @@ function YearChart({ hero, year }: { hero: ProgressHubView['hero']; year: number
   )
 }
 
-/** The next race (3.0): the one card in the accent, a countdown, the prediction, and the gap to the target. */
+/** One figure of the race's Target · Predicted · Gap row: its label in caps over the time. */
+function RaceFigure({ label, value, className, testId }: { label: string; value: string; className?: string; testId?: string }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-0.5">
+      <dt className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{label}</dt>
+      <dd className={cn('whitespace-nowrap text-[22px] font-bold leading-tight tracking-[-0.01em] tabular-nums text-foreground', className)} data-testid={testId}>
+        {value}
+      </dd>
+    </div>
+  )
+}
+
+/**
+ * The next race (3.0, 3.0.2): the one card in the accent. The distance and
+ * date on one line with the countdown across from it, the name on its own
+ * line, then Target · Predicted · Gap - the gap warn while the prediction is
+ * slower, pos under it - over a bar of where the predicted pace is when the
+ * target clock stops, and the gap per km.
+ */
 function RaceCard({ race }: { race: ProgressHubView['race'] }) {
   const h = t.profile.hub
-  const gap = race?.predictedSeconds != null && race.targetSeconds ? race.predictedSeconds - race.targetSeconds : null
+  const gap = race ? raceGapView(race) : null
   return (
-    <Link href="/goals" className={cardClass({ className: cn('flex flex-col gap-3 rounded-3xl border-accent', LINK_CARD, 'hover:border-accent') })} data-testid="race-tile">
+    <Link href="/goals" className={cardClass({ className: cn('flex flex-col gap-2.5 rounded-3xl border-accent', LINK_CARD, 'hover:border-accent') })} data-testid="race-tile">
       {race ? (
         <>
           <div className="flex items-baseline justify-between gap-3">
-            <span className={cn(EYEBROW_CLASS, 'text-accent-text')} data-testid="race-eyebrow">
-              {shortDist(race.distance)} · {formatDate(race.date, { year: 'always' })}
+            <span className={cn(EYEBROW_CLASS, 'whitespace-nowrap text-accent-text')} data-testid="race-eyebrow">
+              {shortDist(race.distance)} · {formatDate(race.date, { style: 'bare', year: 'always' })}
             </span>
-            {race.name && <span className="min-w-0 truncate text-[13px] text-muted-foreground">{race.name}</span>}
+            <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground" data-testid="race-countdown">{h.inDays(race.daysUntil)}</span>
           </div>
-          <div className="flex items-end justify-between gap-3">
-            <p className="flex items-baseline gap-1.5" data-testid="race-countdown">
-              <span className="text-[56px] font-bold leading-none tracking-[-0.03em] text-foreground">{Math.max(0, race.daysUntil)}</span>
-              <span className="text-[15px] text-muted-foreground">{h.days(race.daysUntil)}</span>
-            </p>
-            {race.predictedSeconds !== null && (
-              <p className="flex flex-col items-end gap-0.5 text-right">
-                <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{h.predicted}</span>
-                <span className="text-[26px] font-bold leading-tight tracking-[-0.01em] text-foreground" data-testid="race-predicted">
-                  {formatDuration(race.predictedSeconds)}
-                </span>
-              </p>
-            )}
-          </div>
-          {race.targetSeconds && gap !== null && (
-            <p className="flex items-baseline justify-between gap-3 rounded-[14px] bg-background px-3.5 py-3 text-[13px]" data-testid="race-target">
-              <span className="text-muted-foreground">{h.target(formatDuration(race.targetSeconds))}</span>
-              <b className={cn('font-semibold', gap > 0 ? 'text-[var(--warn)]' : 'text-[var(--pos)]')}>
-                {gap > 0 ? h.toFind(raceGap(gap)) : h.underTarget(raceGap(-gap))}
-              </b>
-            </p>
+          {race.name && <p className="break-words text-[15px] font-semibold text-foreground text-pretty" data-testid="race-name">{race.name}</p>}
+          {(race.targetSeconds || race.predictedSeconds !== null) && (
+            <dl className="grid grid-cols-3 gap-2" data-testid="race-figures">
+              {race.targetSeconds ? <RaceFigure label={h.target} value={formatDuration(race.targetSeconds)} testId="race-target" /> : null}
+              {race.predictedSeconds !== null && <RaceFigure label={h.predicted} value={formatDuration(race.predictedSeconds)} testId="race-predicted" />}
+              {gap && (
+                <RaceFigure
+                  label={h.gap}
+                  value={formatSignedDuration(gap.gapSeconds)}
+                  className={gap.gapSeconds > 0 ? 'text-[var(--warn)]' : 'text-[var(--pos)]'}
+                  testId="race-gap"
+                />
+              )}
+            </dl>
+          )}
+          {gap && (
+            <>
+              <div role="img" aria-label={h.reached(Math.floor(gap.reached * 100))} className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]" data-testid="race-bar">
+                <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(gap.reached * 1000) / 10}%` }} />
+              </div>
+              {gap.perKmSeconds !== null && (
+                <p className="text-xs text-muted-foreground" data-testid="race-caption">
+                  {gap.gapSeconds > 0 ? h.perKmToFind(gap.perKmSeconds) : gap.gapSeconds < 0 ? h.perKmInHand(gap.perKmSeconds) : h.onTarget}
+                </p>
+              )}
+            </>
           )}
         </>
       ) : (
@@ -267,14 +313,20 @@ function YearCard({ view }: { view: ProgressHubView }) {
         </span>
       </p>
       <YearChart hero={hero} year={view.year} />
-      {projection && shortKm !== null && (
-        // The verdict in its tone, then what the goal needs (C3, 3.0).
+      {hero.goalKm !== null && (
+        // The verdict in its tone, then what the goal needs (C3, 3.0), then
+        // what the dotted line is (3.0.2).
         <p className="text-[13px] leading-normal text-[var(--text-2)]" data-testid="projection-line">
-          <b className="font-semibold" style={{ color: projectionColor(hero) }} data-testid="projection-verdict">
-            {shortKm < 0 ? h.shortBy(formatKm(-shortKm)) : shortKm > 0 ? h.overBy(formatKm(shortKm)) : h.onPace}
-          </b>{' '}
-          {shortKm !== 0 && `${h.atPace} `}
-          {h.needs(formatKm(projection.weeklyNeeded), formatKm(projection.weeklyRate))}
+          {projection && shortKm !== null && (
+            <>
+              <b className="font-semibold" style={{ color: projectionColor(hero) }} data-testid="projection-verdict">
+                {shortKm < 0 ? h.shortBy(formatKm(-shortKm)) : shortKm > 0 ? h.overBy(formatKm(shortKm)) : h.onPace}
+              </b>{' '}
+              {shortKm !== 0 && `${h.atPace} `}
+              {h.needs(formatKm(projection.weeklyNeeded), formatKm(projection.weeklyRate))}{' '}
+            </>
+          )}
+          <span className="text-muted-foreground" data-testid="goal-line-note">{h.goalLine}</span>
         </p>
       )}
     </Link>

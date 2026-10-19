@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { kmElevationDeltas, kmSplitsFromLaps, kmSplitsFromSamples, kmSplitsOf } from '../kmSplits'
+import { EVEN_SPLIT_SEC, halfSplitSec, kmElevationDeltas, kmSplitsFromLaps, kmSplitsFromSamples, kmSplitsOf } from '../kmSplits'
 
 function evenSamples(count: number, pace: number): number[] {
   return Array.from({ length: count }, () => pace)
@@ -209,5 +209,32 @@ describe('kmSplitsFromSamples, stops', () => {
     paceSamples[30] = 950
     const splits = kmSplitsFromSamples({ distanceKm: 5, durationSec: 1500, paceSamples, hrSamples: null, avgPaceSecPerKm: 300 })
     expect(splits.map((s) => s.paceSecPerKm)).toEqual([300, 300, 300, 300, 300])
+  })
+})
+
+describe('halfSplitSec', () => {
+  const km = (durationSec: number, distanceKm = 1) => ({ distanceKm, durationSec })
+
+  // 3.0.2: the second half against the first, by distance.
+  it('is negative when the second half is the faster', () => {
+    expect(halfSplitSec([km(310), km(300), km(290), km(280)])).toBe(-40)
+  })
+
+  it('is positive when the run faded', () => {
+    expect(halfSplitSec([km(280), km(290), km(300), km(310)])).toBe(40)
+  })
+
+  it('reads the halfway mark inside the km that crosses it', () => {
+    // 2.5 km in 720 s: halfway is 1.25 km, reached at 375 s.
+    expect(halfSplitSec([km(300), km(300), km(120, 0.5)])).toBe(720 - 2 * 375)
+  })
+
+  it('has nothing to halve under two kilometres', () => {
+    expect(halfSplitSec([km(300)])).toBeNull()
+    expect(halfSplitSec([])).toBeNull()
+  })
+
+  it('counts a few seconds either way as even', () => {
+    expect(Math.abs(halfSplitSec([km(300), km(302)])!)).toBeLessThan(EVEN_SPLIT_SEC)
   })
 })

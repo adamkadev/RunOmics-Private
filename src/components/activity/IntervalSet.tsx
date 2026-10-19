@@ -10,6 +10,8 @@ import { t } from '@/i18n'
 
 interface Props {
   set: RepSet
+  /** Inside the Splits card, behind Km / Laps: no card of its own. */
+  bare?: boolean
 }
 
 const ROW = 'grid w-full items-center gap-x-2.5 grid-cols-[1.375rem_minmax(0,1fr)_3rem_2.25rem]'
@@ -84,7 +86,7 @@ function RepTrack({ pace, track, band, standing }: { pace: number | null; track:
  * The set per M10: three numbers, then warm-up, a track per rep, the
  * recoveries as one average row, and the cool-down, in one card.
  */
-export function IntervalSet({ set }: Props) {
+export function IntervalSet({ set, bare = false }: Props) {
   const s = t.activity.splits
   const inBandAll = set.band !== null && set.inBand === set.reps.length
   const track = trackDomain(set)
@@ -94,7 +96,7 @@ export function IntervalSet({ set }: Props) {
   const cooldownLabel = s.intervalTypes.interval_cooldown ?? ''
 
   return (
-    <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="interval-set">
+    <section className={bare ? 'flex flex-col gap-3' : cardClass({ className: 'flex flex-col gap-3' })} data-testid="interval-set">
       {/* The set in three numbers, at the top, with no sentence (H14), in
           the stat pattern (v4.17). All reps in the band is good news. */}
       <div data-testid="set-summary">

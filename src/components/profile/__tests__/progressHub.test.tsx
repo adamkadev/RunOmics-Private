@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { t } from '@/i18n'
 import { yearOverYear } from '@/lib/yearOverYear'
-import { cumulativeYear, heatWeeks, progressHubView, type HubInput } from '../progressHubView'
-import { ProgressHub, raceGap } from '../ProgressHub'
+import { cumulativeYear, heatWeeks, progressHubView, raceGapView, type HubInput } from '../progressHubView'
+import { ProgressHub, yearTicks } from '../ProgressHub'
 
 function shoe(overrides: Partial<ShoeStats>): ShoeStats {
   return {
@@ -132,9 +132,23 @@ describe('the hub helpers', () => {
     expect(weeks.at(-1)).toEqual([rest, rest, mid, mid, rest, { level: 0, today: true, future: false }, { level: 0, today: false, future: true }])
   })
 
-  it('states a race gap in seconds under a minute', () => {
-    expect(raceGap(46)).toBe(`46 ${t.units.sec}`)
-    expect(raceGap(130)).toBe('2:10')
+  // 3.0.2: the bar is where the predicted pace stands when the target clock stops.
+  it('reads the race gap per km and how far the predicted pace gets by the target time', () => {
+    const race = { daysUntil: 201, distance: 'Half-Marathon', distanceKm: 21.0975, name: null, date: '2027-05-08', targetSeconds: 5700, predictedSeconds: 5746 }
+    const gap = raceGapView(race)!
+    expect(gap.gapSeconds).toBe(46)
+    expect(gap.perKmSeconds).toBe(2)
+    expect(gap.reached).toBeCloseTo(5700 / 5746)
+    expect(raceGapView({ ...race, predictedSeconds: 5600 })).toMatchObject({ gapSeconds: -100, perKmSeconds: 5, reached: 1 })
+    // Under half a second a km still reads as one; an unknown distance has none.
+    expect(raceGapView({ ...race, predictedSeconds: 5705 })!.perKmSeconds).toBe(1)
+    expect(raceGapView({ ...race, distanceKm: null })!.perKmSeconds).toBeNull()
+    expect(raceGapView({ ...race, targetSeconds: null })).toBeNull()
+  })
+
+  it('ticks the year chart at zero, thirds and the goal', () => {
+    expect(yearTicks(2000, 2100)).toEqual([0, 667, 1333, 2000])
+    expect(yearTicks(null, 1500)).toEqual([0, 500, 1000, 1500])
   })
 })
 
@@ -158,14 +172,27 @@ describe('ProgressHub (3.0)', () => {
     expect(screen.getByTestId('settings-gear').className).toContain('size-11')
   })
 
-  it('leads with the race: an accent border, the countdown, the prediction and the gap to find in warn', () => {
+  it('leads with the race: an accent border, the countdown, Target · Predicted · Gap with the gap in warn, and the gap per km', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     expect(screen.getByTestId('race-tile').className).toContain('border-accent')
-    expect(screen.getByTestId('race-countdown').textContent).toBe(`64${t.profile.hub.days(64)}`)
+    expect(screen.getByTestId('race-countdown').textContent).toBe(t.profile.hub.inDays(64))
+    expect(screen.getByTestId('race-eyebrow').className).toContain('whitespace-nowrap')
+    expect(screen.getByTestId('race-target').textContent).toBe('41:24')
     expect(screen.getByTestId('race-predicted').textContent).toBe('42:10')
-    const gap = screen.getByTestId('race-target').querySelector('b')!
-    expect(gap.textContent).toBe(t.profile.hub.toFind(`46 ${t.units.sec}`))
+    const gap = screen.getByTestId('race-gap')
+    expect(gap.textContent).toBe('+0:46')
     expect(gap.className).toContain('text-[var(--warn)]')
+    expect(screen.getByTestId('race-bar').getAttribute('aria-label')).toBe(t.profile.hub.reached(98))
+    expect(screen.getByTestId('race-caption').textContent).toBe(t.profile.hub.perKmToFind(5))
+  })
+
+  it('names the race on its own line, and greens a prediction under the target', () => {
+    const spotlight = { ...INPUT.spotlight!, race: { date: '2027-05-08', name: 'ING Night Marathon Luxembourg', distance: 'Half-Marathon', targetSeconds: 5700 }, predictedSeconds: 5600 }
+    render(<ProgressHub view={progressHubView({ ...INPUT, spotlight })} />)
+    expect(screen.getByTestId('race-name').textContent).toBe('ING Night Marathon Luxembourg')
+    expect(screen.getByTestId('race-name').className).not.toContain('truncate')
+    expect(screen.getByTestId('race-gap').className).toContain('text-[var(--pos)]')
+    expect(screen.getByTestId('race-caption').textContent).toBe(t.profile.hub.perKmInHand(5))
   })
 
   it('reads the year against its goal, with where it lands and what it needs', () => {
@@ -235,5 +262,14 @@ describe('the year chart (3.0)', () => {
     expect(screen.getByTestId('projection-path').getAttribute('stroke')).toBe('var(--warn)')
     expect(screen.getByTestId('goal-line').getAttribute('stroke-dasharray')).toBe('1 4')
     expect(screen.getByTestId('year-ticks').children).toHaveLength(5)
+  })
+
+  // 3.0.2: the y-axis named, the goal line's end labelled and the dotted line explained.
+  it('names the y-axis ticks and the goal, and says what the dotted line is', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} />)
+    const ticks = [...screen.getByTestId('year-y-ticks').children].slice(1).map((c) => c.textContent)
+    expect(ticks).toEqual(['0', '667', '1,333', '2,000'])
+    expect(screen.getByTestId('goal-label').textContent).toBe(t.profile.hub.goalLabel('2,000'))
+    expect(screen.getByTestId('goal-line-note').textContent).toBe(t.profile.hub.goalLine)
   })
 })
