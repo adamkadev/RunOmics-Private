@@ -1,6 +1,7 @@
 import type { FeatureCollection, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { distanceKm } from '@/lib/math'
+import { isPlaceLabelLayer } from '@/lib/maplibre'
 import { JOIN_PX as JOIN_DISTANCE_PX, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
 
 export const ROUTE_SOURCE = 'route'
@@ -125,11 +126,26 @@ export function addRouteLabelGuard(map: MapLibreMap, source: string): void {
 }
 
 /**
+ * Towns and districts over the route (3.0.3, at the owner's request): a
+ * district the run went through is the name worth reading, so its label is
+ * lifted above the route and the guard - placed first, never dropped for
+ * the line, drawn over it on its halo of the ground. Streets and water
+ * stay under the line and guarded. Before the markers, which stay on top.
+ */
+export function liftPlaceLabels(map: MapLibreMap): void {
+  const before = map.getLayer(RUN_FINISH_LAYER) ? RUN_FINISH_LAYER : undefined
+  for (const layer of map.getStyle().layers) {
+    if (isPlaceLabelLayer(layer as { id: string; type: string; 'source-layer'?: string })) map.moveLayer(layer.id, before)
+  }
+}
+
+/**
  * The run on the Activity map (v4.17), in one call that can be made again
  * after a style change: the route as one accent line, width 4, on a 3 px
  * halo in the page ground (3.0), over the style's place names (design
  * review, Oct 2026: a label used to sit over the finish), with no name left
- * under it (addRouteLabelGuard); the start as a 7 px accent dot in a 2.5 px
+ * under it (addRouteLabelGuard) but the towns and districts, which sit over
+ * it (liftPlaceLabels); the start as a 7 px accent dot in a 2.5 px
  * ring of the ground; the finish
  * as the checkered dot of routeMarkers on the line's last point, or one
  * loop marker on the start where the two would touch; and the scrub's
@@ -156,6 +172,7 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
     })
   }
   addRouteLabelGuard(map, ROUTE_SOURCE)
+  liftPlaceLabels(map)
   if (!map.hasImage(FINISH_MARK_ICON)) {
     map.addImage(FINISH_MARK_ICON, routeMarkerImage('finish', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
   }

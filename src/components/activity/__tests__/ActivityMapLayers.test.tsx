@@ -49,6 +49,11 @@ vi.mock('@/lib/maplibre', async (importOriginal) => {
       const at = before ? this.layers.findIndex((l) => l.id === before) : this.layers.length
       this.layers.splice(at, 0, layer)
     }
+    moveLayer(id: string, before?: string) {
+      const [layer] = this.layers.splice(this.layers.findIndex((l) => l.id === id), 1)
+      const at = before ? this.layers.findIndex((l) => l.id === before) : this.layers.length
+      this.layers.splice(at, 0, layer!)
+    }
     hasImage() { return false }
     addImage() {}
     updateImage() {}
@@ -83,11 +88,12 @@ describe('ActivityMap layers (v4.17)', () => {
 
   beforeAll(() => { process.env.NEXT_PUBLIC_MAPTILER_TOKEN = 'test' })
 
-  it('draws the route over the labels in the accent, the start and the scrub marker as circle layers, no DOM markers', async () => {
+  // 3.0.3: town and district names over the line, the markers over them.
+  it('draws the route in the accent under the place names, the start and the scrub marker as circle layers, no DOM markers', async () => {
     render(<ActivityMap route={[[7.7, 48.6], [7.72, 48.62]]} />)
     await waitFor(() => expect(seen.layers.some((l) => l.id === 'run-cursor')).toBe(true))
     const ids = seen.layers.map((l) => l.id)
-    expect(ids.indexOf('route-line')).toBeGreaterThan(ids.indexOf('Town labels'))
+    expect(ids.indexOf('route-line')).toBeLessThan(ids.indexOf('Town labels'))
     expect(ids).not.toContain('route-bg')
     expect(ids.indexOf('run-start-dot')).toBeGreaterThan(ids.indexOf('Town labels'))
     expect(seen.layers.find((l) => l.id === 'run-start-dot')?.type).toBe('circle')
