@@ -1,6 +1,6 @@
 import { curatedAccent, type AccentId } from '@/lib/accentScale'
 import { MAP_COLORS } from '@/lib/colors'
-import { SURFACES, ZONE_HEX } from '@/lib/themeTokens'
+import { STATUS_HEX, SURFACES, ZONE_HEX } from '@/lib/themeTokens'
 
 export type ThemeMode = 'light' | 'dark'
 
@@ -35,9 +35,17 @@ export interface SharePalette {
   /** --accent: the logo mark and the route's point markers, never a trace (routeMarkers). */
   acc: string
   zones: readonly string[]
+  /** --pos and --warn: the verdict eyebrow's dot and word, as the Overview card colours them. */
+  pos: string
+  warn: string
+  /** The route: one colour, near-black on light and near-white on dark (redesign, Oct 2026). */
+  route: string
   /** ActivityMap's route casing. */
   casing: string
 }
+
+/** The share card's route ink (redesign, Oct 2026): never the accent, never a pace or HR colour. */
+export const SHARE_ROUTE_HEX = { light: '#141716', dark: '#f2f4f3' } as const
 
 export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
   const s = SURFACES[mode]
@@ -49,6 +57,9 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     fa: s.faint,
     acc: curatedAccent(accent)[mode].acc,
     zones: ZONE_HEX[mode],
+    pos: STATUS_HEX[mode].pos,
+    warn: STATUS_HEX[mode].warn,
+    route: SHARE_ROUTE_HEX[mode],
     casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
   }
 }
