@@ -123,15 +123,17 @@ export function computeProjection(
 }
 
 export function computeMonthlyGoals(activities: Activity[], year: number, goals: GoalYear, now = new Date()): MonthGoal[] {
-  const annualKm = goals.annualDistanceKm
-  const daysInYear = (new Date(year + 1, 0, 1).getTime() - new Date(year, 0, 1).getTime()) / DAY_MS
+  // A twelfth of the year for every month (3.1): the chart draws one target
+  // line, so a month's hit or short has to be read against that same line.
+  // Weighting by days put February's target 14 km under the line it was drawn
+  // against, a bar below the line coloured as a hit.
+  const targetKm = round(goals.annualDistanceKm / 12, 1)
 
   return Array.from({ length: 12 }, (_, i) => {
     const month = i + 1
     const monthStart = new Date(year, month - 1, 1)
     const monthEnd = new Date(year, month, 1)
     const daysInMonth = Math.round((monthEnd.getTime() - monthStart.getTime()) / DAY_MS)
-    const targetKm = round((annualKm * daysInMonth) / daysInYear, 1)
 
     const actualKm = round(
       activities

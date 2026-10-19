@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { GoalsClient, defaultGoalsYear } from '@/components/goals/GoalsClient'
 import type { GoalsPageData, YearData } from '@/application/usecases/GetGoalsData'
+import { t } from '@/i18n'
 
 const TODAY = '2026-10-19'
 
@@ -49,7 +50,20 @@ describe('defaultGoalsYear', () => {
 describe('GoalsClient', () => {
   it('opens on 2026 in 2026 when 2027 has a race', () => {
     render(<GoalsClient data={data()} today={TODAY} />)
-    expect(screen.getByRole('tab', { name: '2026' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByTestId('year-stepper').textContent).toBe('2026')
     expect(screen.getByTestId('goal-card')).toBeTruthy()
+  })
+
+  // 3.1: ‹ 2026 › - left to the year before, right to the one after, stopping at the ends.
+  it('steps through the years, past ones included', () => {
+    render(<GoalsClient data={data()} today={TODAY} />)
+    fireEvent.click(screen.getByRole('button', { name: t.goals.prevYear }))
+    expect(screen.getByTestId('year-stepper').textContent).toBe('2025')
+    expect(screen.getByRole('button', { name: t.goals.prevYear })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: t.goals.nextYear }))
+    fireEvent.click(screen.getByRole('button', { name: t.goals.nextYear }))
+    expect(screen.getByTestId('year-stepper').textContent).toBe('2027')
+    expect(screen.getByRole('button', { name: t.goals.nextYear })).toBeDisabled()
+    expect(screen.getByTestId('season-card').textContent).toContain('Spring Half')
   })
 })
