@@ -12,6 +12,8 @@ const PLACE_LAYER_ID = /\b(place|city|town|village|suburb|neighbou?rhood|hamlet|
 /** Neighbourhoods and quartiers: drawn a step smaller and quieter than towns. */
 const NEIGHBOURHOOD_LAYER_ID = /\b(suburb|neighbou?rhood|hamlet|quarter|isolated)\b/i
 const STYLE_MAX_ZOOM = 24
+/** On its point first, then beside it, so a name next to the route still finds room. */
+const LABEL_ANCHORS: ('center' | 'top' | 'bottom' | 'left' | 'right')[] = ['center', 'top', 'bottom', 'left', 'right']
 
 export function isPlaceLabelLayer(layer: StyleLayer): boolean {
   if (layer.type !== 'symbol') return false
@@ -37,6 +39,9 @@ export interface PlaceLabelColors {
  * Streets, POIs and house numbers stay off. Every name is muted, never
  * bold white. Every name kept is fully opaque (3.0.1): the style's zoom
  * steps faded districts out below 13, which left the share card with none.
+ * On the card's 300 px map a name at the app's 11-12 px took a third of the
+ * width and found no room beside a loop, so names are a step smaller and
+ * may sit beside their point, not only on it.
  */
 export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): void {
   for (const raw of map.getStyle().layers) {
@@ -51,9 +56,10 @@ export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): v
     // Any zoom: the style's own ranges hid a town on a small map.
     map.setLayerZoomRange(layer.id, 0, STYLE_MAX_ZOOM)
     map.setLayoutProperty(layer.id, 'text-allow-overlap', false)
-    map.setLayoutProperty(layer.id, 'text-padding', 4)
-    map.setLayoutProperty(layer.id, 'text-variable-anchor', ['center'])
-    map.setLayoutProperty(layer.id, 'text-size', small ? 11 : 12)
+    map.setLayoutProperty(layer.id, 'text-padding', 2)
+    map.setLayoutProperty(layer.id, 'text-variable-anchor', LABEL_ANCHORS)
+    map.setLayoutProperty(layer.id, 'text-radial-offset', 0.4)
+    map.setLayoutProperty(layer.id, 'text-size', small ? 9 : 10)
     map.setPaintProperty(layer.id, 'text-opacity', 1)
     map.setPaintProperty(layer.id, 'text-color', small ? colors.neighbourhood : colors.town)
     map.setPaintProperty(layer.id, 'text-halo-color', colors.halo)

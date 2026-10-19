@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 import { Maximize2 } from 'lucide-react'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
@@ -59,7 +59,9 @@ export function RunMapHero({
         </>
       )}
       <div className="absolute inset-x-0 top-3 z-20 flex items-start justify-between px-4">
-        {back ?? <span />}
+        {/* Keyed: back and share are elements the server page made, and React
+            asks a key of one set beside other children of a client element. */}
+        <Fragment key="back">{back ?? <span />}</Fragment>
         <div className="flex gap-2">
           {route && (
             <button
@@ -71,7 +73,7 @@ export function RunMapHero({
               <Maximize2 size={17} strokeWidth={2} aria-hidden="true" />
             </button>
           )}
-          {share}
+          <Fragment key="share">{share}</Fragment>
         </div>
       </div>
     </section>
