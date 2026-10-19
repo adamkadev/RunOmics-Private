@@ -459,6 +459,7 @@ export const fr = {
       atl: 'ATL',
       acwr: 'ACWR',
       garmin: 'Garmin',
+      lastSevenDays: '7 jours',
       noValue: '—',
     },
     stale: {

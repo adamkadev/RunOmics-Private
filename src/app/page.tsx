@@ -17,7 +17,8 @@ import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { loadWeekTarget } from '@/app/_data/loadWeekTarget'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { StaleSyncBanner } from '@/components/dashboard/StaleSyncBanner'
-import { ReadinessCard, latestRatedStatus } from '@/components/dashboard/ReadinessCard'
+import { ReadinessCard, lastSevenDays, latestRatedStatus } from '@/components/dashboard/ReadinessCard'
+import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { TodayBoard, type SessionCardData } from '@/components/dashboard/TodayBoard'
 import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
@@ -103,7 +104,12 @@ export default async function DashboardPage() {
       <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} />
       <StaleSyncBanner lastSyncedAt={lastSyncedAt} />
 
-      <ReadinessCard status={trainingStatus} watchStatus={latestRatedStatus(trainingStatusDays)} verdict={aiVerdict} />
+      <ReadinessCard
+        status={trainingStatus}
+        watchStatus={latestRatedStatus(trainingStatusDays)}
+        verdict={aiVerdict}
+        lastWeek={lastSevenDays(getActivitySummaries(), today)}
+      />
       <Vo2GradeTodayRow view={getVo2Grade(today)} />
 
       <TodayBoard session={todayCard ?? nextCard} lastRun={lastRun} />

@@ -491,6 +491,8 @@ export const en = {
       atl: 'ATL',
       acwr: 'ACWR',
       garmin: 'Garmin',
+      // In Garmin's place when the watch has no training status (a Forerunner 55).
+      lastSevenDays: '7 days',
       noValue: '—',
     },
     stale: {
