@@ -66,19 +66,14 @@ export const fr = {
     title: 'Note VO₂max',
     band: (sex: 'male' | 'female', bracket: string) => `${sex === 'male' ? 'Hommes' : 'Femmes'} ${bracket.replace('-', '–')}`,
     source: 'percentiles ACSM',
-    unit: 'ml/kg/min',
-    topForAge: (n: number) => `Top ${n} % pour ton âge`,
-    topForAgeInline: (n: number) => `top ${n} % pour ton âge`,
+    valueLabel: 'VO₂ max',
+    topInBand: (n: number, sex: 'male' | 'female', bracket: string) => `Top ${n} % · ${sex === 'male' ? 'hommes' : 'femmes'} ${bracket.replace('-', '–')}`,
     in30d: 'en 30 jours',
     toNext: (gap: string, grade: string) => `${gap} avant ${grade}.`,
-    toGrade: (grade: string) => `avant ${grade}`,
-    ladder: 'Toutes les notes pour ton âge',
-    eta: (weeks: number) => `Environ ${weeks} semaine${weeks > 1 ? 's' : ''} au rythme actuel.`,
     newGrade: 'Nouvelle note',
     regainedGrade: 'Note retrouvée',
     upFrom: (grade: string) => `en hausse (avant : ${grade})`,
     downFrom: (grade: string, daysOff: number | null) => (daysOff ? `En baisse après ${daysOff} jours sans courir (avant : ${grade})` : `En baisse (avant : ${grade})`),
-    dropNote: 'Revient en général en 2 à 3 semaines d’entraînement normal.',
     calibrating: 'Calibrage',
     gradeIn: (n: number) => `Note dans ${n} sortie${n > 1 ? 's' : ''}`,
     gradeAfter: 'Note après 4 semaines de sorties avec cardio',
@@ -189,6 +184,8 @@ export const fr = {
     yrs: 'ans',
     kg: 'kg',
     cm: 'cm',
+    kb: 'ko',
+    mb: 'Mo',
     kmh: 'km/h',
     mlKgMin: 'ml/kg/min',
   },
@@ -302,7 +299,7 @@ export const fr = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Infos de version copiées',
     sections: {
-      profile: 'Profil',
+      profile: 'Profil · depuis Garmin',
       appearance: 'Apparence',
       data: 'Données',
       account: 'Compte',
@@ -323,8 +320,6 @@ export const fr = {
       viewRun: 'Voir la sortie ›',
     },
     rowAction: {
-      export: 'Exporter ›',
-      clear: 'Vider ›',
       signIn: 'Se connecter ›',
     },
     appearance: {
@@ -336,6 +331,7 @@ export const fr = {
     },
     accent: {
       title: 'Accent',
+      caption: 'graphiques et mises en avant',
       options: {
         teal:     { label: 'Sarcelle' },
         periwinkle: { label: 'Pervenche' },
@@ -361,25 +357,18 @@ export const fr = {
       details: 'Cœur et corps',
       vma: 'VMA',
       maxHr: 'FC max',
-      restingHr: 'FC repos (zones)',
+      restingHr: 'FC repos',
       vo2max: 'VO₂max',
       weight: 'Poids',
       height: 'Taille',
       fitnessAge: 'Âge physique',
-      // Fitness age against the real age: "20 of 29" (C2, v4.4).
-      ofAge: (age: number) => `âge réel ${age}`,
+      // Fitness age against the real age: « 18 pour 29 ans » (C2, v4.4; 3.0 1j).
+      ofAge: (age: number) => `pour ${age} ans`,
       achievableFitnessAge: 'Potentiel',
-      bmi: 'IMC',
       fitnessAgeBand: {
         younger: (years: number) => `−${years} ans`,
         onPar: 'identique',
         older: (years: number) => `+${years} ans`,
-      },
-      bmiBand: {
-        underweight: 'maigreur',
-        healthy: 'normal',
-        overweight: 'surpoids',
-        obese: 'obésité',
       },
     },
     actions: {
@@ -387,7 +376,6 @@ export const fr = {
       saving: 'Enregistrement…',
       saved: 'Enregistré',
       error: 'Erreur lors de l’enregistrement, réessaie.',
-      confirmYes: 'Oui',
       confirmCancel: 'Annuler',
     },
     dataSource: {
@@ -398,8 +386,7 @@ export const fr = {
       lastSync: 'Dernière synchro',
       since: (monthYear: string) => `appairée depuis ${monthYear}`,
       connectedNow: 'Connecté',
-      lastSyncedAgo: (when: string) => `dernière synchro ${when}`,
-      sourceSince: (source: string, monthYear: string) => `${source} depuis ${monthYear}`,
+      lastSyncedAgo: (when: string) => `Synchronisé ${when}`,
     },
     dataExport: {
       workbook: 'Exporter les données d’entraînement (.xlsx)',
@@ -415,26 +402,25 @@ export const fr = {
     },
     profile: {
       readOnly: 'Depuis Garmin Connect : c’est là que tu les modifies.',
+      lthr: (bpm: number) => `FC seuil ${bpm}`,
+      maxHr: (bpm: number) => `max ${bpm}`,
     },
     offlineCache: {
       clear: 'Vider le cache hors ligne',
       confirm: 'Vider ?',
+      confirmAction: 'Vider',
       cleared: 'Cache hors ligne vidé.',
       failed: 'Impossible de vider le cache hors ligne.',
     },
     notifications: {
       title: 'Notifications',
       error: 'Impossible de mettre à jour les réglages de notification, réessaie.',
+      // « 8 h 11 », the French way of writing a time.
+      at: (hour: number, minute: string) => `${hour} h ${minute}`,
       types: {
-        training: {
-          title: 'Rappels d’entraînement',
-        },
-        shoes: {
-          title: 'Alertes d’usure des chaussures',
-        },
-        races: {
-          title: 'Records et prédictions',
-        },
+        training: { title: 'Rappels d’entraînement' },
+        shoes: { title: 'Alertes d’usure des chaussures' },
+        races: { title: 'Records et prédictions' },
       },
     },
   },
@@ -1731,8 +1717,9 @@ export const fr = {
       inZonesRecent: (duration: string) => `${duration} en zones sur les 4 dernières semaines`,
       noSessionsThisWeek: 'Aucune séance enregistrée pour le moment.',
       noSessionsRecent: 'Aucune séance enregistrée sur ces 4 semaines.',
-      emptyWeekFallback: 'Pas encore de séance cette semaine - affichage des 4 dernières semaines.',
-      hardShare: (pct: number, verdict: string) => `Intense (Z4–Z5) ${pct} % · ${verdict}`,
+      hard: (pct: string) => `Intense ${pct}`,
+      verdict: { inRange: 'dans la cible', tooModerate: 'trop de modéré', tooHard: 'trop d’intense' },
+      totalLine: (duration: string) => `${duration} au total · objectif 80 / 20`,
       soFar: 'semaine en cours',
     },
     athlete: {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
-import { SettingsClient } from '@/components/settings/SettingsClient'
+import { SettingsClient, zonesSummary } from '@/components/settings/SettingsClient'
 import { t } from '@/i18n'
 import { GARMIN_CONNECT_URL } from '@/lib/garminConnect'
 
@@ -77,43 +77,61 @@ describe('SettingsClient owner gate', () => {
     expect(screen.queryByTestId('notifications-form')).not.toBeInTheDocument()
   })
 
-  // v4.17: Appearance, Data and Notifications, even signed out; the theme comes first.
-  it('groups the page into Appearance, Data and Notifications, even signed out', async () => {
+  // 3.0 1i: Appearance, Profile, Data and Notifications, even signed out; the theme comes first.
+  it('groups the page into Appearance, Profile, Data and Notifications, even signed out', async () => {
     renderSettings()
     await screen.findByText(t.settings.auth.signIn)
 
     const sections = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
-    expect(sections).toEqual([t.settings.sections.appearance, t.settings.sections.data, t.settings.sections.notifications])
+    expect(sections).toEqual([
+      t.settings.sections.appearance,
+      t.settings.sections.profile,
+      t.settings.sections.data,
+      t.settings.sections.notifications,
+    ])
     const appearance = screen.getByTestId('settings-appearance').textContent!
     expect(appearance.indexOf(t.settings.appearance.themeLabel)).toBeLessThan(appearance.indexOf(t.settings.accent.title))
+    expect(appearance).toContain(t.settings.accent.caption)
     // Where the runs come from, that it is live, and what signing in unlocks.
     expect(screen.getByTestId('garmin-row').textContent).toContain(t.settings.dataSource.garmin)
     expect(screen.getByTestId('garmin-connected').className).toContain('text-[var(--pos)]')
-    // The sync is the owner's: signed out there is no Sync now.
+    // The sync is the owner's: signed out there is no Sync.
     expect(screen.queryByText(t.settings.sync.action)).not.toBeInTheDocument()
     expect(screen.getAllByText(new RegExp(t.common.runs(12))).length).toBeGreaterThan(0)
     expect(screen.getByText(t.settings.auth.signInToManage)).toBeInTheDocument()
     // R7f: export is on the page signed out too, asking for the sign-in.
     expect(screen.getByText(t.settings.dataExport.title)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: new RegExp(t.settings.rowAction.signIn) })).toBeInTheDocument()
+    expect(screen.getByText(t.settings.rowAction.signIn)).toBeInTheDocument()
   })
 
-  // Design review, Oct 2026: height, weight and BMI are Garmin's, so they
-  // read as facts - nothing to tap, no chevron - and say where they change.
-  it('draws the profile as read-only facts', async () => {
-    render(<SettingsClient lastSyncedAt={null} activityCount={0} body={{ heightCm: 178, weightKg: 70, bmi: 22.1 }} />)
+  // Height and weight are Garmin's, so they read as facts - nothing to tap,
+  // no chevron (design review, Oct 2026). 3.0 1i: no BMI, and one row on to
+  // Athlete & zones with the two heart rates its zones hang from.
+  it('draws height and weight as read-only facts, then the row to Athlete & zones', async () => {
+    render(<SettingsClient lastSyncedAt={null} activityCount={0} body={{ heightCm: 178, weightKg: 70 }} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
     await screen.findByText(t.settings.auth.signIn)
 
     const profile = screen.getByTestId('settings-profile')
     expect(within(profile).queryByRole('button')).toBeNull()
-    expect(profile.querySelector('svg')).toBeNull()
     const values = within(profile).getAllByTestId('profile-value')
-    expect(values.map((value) => value.textContent)).toEqual([`178${t.units.cm}`, `70${t.units.kg}`, '22.1'])
+    expect(values.map((value) => value.textContent)).toEqual([`178${t.units.cm}`, `70${t.units.kg}`])
     for (const value of values) expect(value.className).toContain('text-muted-foreground')
+    expect(profile.textContent).not.toContain('BMI')
+
+    const athlete = screen.getByTestId('athlete-zones-row')
+    expect(athlete.getAttribute('href')).toBe('/athlete')
+    expect(athlete.textContent).toBe(`${t.pages.athlete.title}LTHR 179 · Max 200`)
     // Design review, Oct 2026: the note is the way to Garmin Connect, where they change.
     const garmin = within(profile).getByRole('link', { name: t.settings.profile.readOnly })
     expect(garmin.getAttribute('href')).toBe(GARMIN_CONNECT_URL)
     expect(garmin.className).toContain('hit-44')
+  })
+
+  it('names only the heart rate Garmin has on the Athlete & zones row', () => {
+    expect(zonesSummary({ lthrBpm: 179, maxHrBpm: 200 })).toBe('LTHR 179 · Max 200')
+    expect(zonesSummary({ maxHrBpm: 200 })).toBe('Max 200')
+    expect(zonesSummary({})).toBeNull()
+    expect(zonesSummary(undefined)).toBeNull()
   })
 
   // v4.8 2g: the build line ends the page signed out too, after the last group.
@@ -153,8 +171,9 @@ describe('SettingsClient owner gate', () => {
     renderSettings()
 
     expect(await screen.findByTestId('notifications-form')).toBeInTheDocument()
-    // v4.17: sign out is the outline (secondary) button.
-    expect(screen.getByText(t.settings.auth.signOut).className).toContain('border-[var(--line-2)]')
+    // 3.0 1i: sign out is red text, not a box.
+    expect(screen.getByText(t.settings.auth.signOut).className).toContain('text-[var(--neg)]')
+    expect(screen.getByText(t.settings.auth.signOut).className).not.toContain('border')
     expect(screen.queryByText(t.settings.auth.accessDenied)).not.toBeInTheDocument()
   })
 

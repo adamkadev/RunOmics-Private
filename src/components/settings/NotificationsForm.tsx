@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react'
 import { disablePushNotifications, enablePushNotifications, isPushSupported } from '@/lib/pushNotifications'
 import { t } from '@/i18n'
-import { cardClass } from '@/components/ui/Card'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { Toggle } from '@/components/ui/Toggle'
+import { useMounted } from '@/lib/useMounted'
+import { dailyReminderTime } from './reminderTime'
+import { GROUP_CARD, GROUP_ROW } from './settingsGroup'
 
 type PushStatus = 'loading' | 'unsupported' | 'idle' | 'busy' | 'enabled' | 'denied'
 type NotifType = 'training' | 'shoes' | 'races'
@@ -42,6 +44,9 @@ export function NotificationsForm() {
   const [prefs, setPrefs] = useState<Record<NotifType, boolean>>({ training: false, shoes: false, races: false })
   const { toast, leaving, showToast } = useToast()
   const n = t.settings.notifications
+
+  // The device's clock, so after mount: the server would read its own zone.
+  const reminderAt = useMounted() ? dailyReminderTime(new Date(), process.env.NEXT_PUBLIC_TIME_ZONE || undefined) : null
 
   useEffect(() => {
     isPushSupported().then((supported) => {
@@ -98,16 +103,25 @@ export function NotificationsForm() {
 
   const busy = status === 'loading' || status === 'busy'
 
-  // One card of rows, a shared Toggle each (v4.17): the section's eyebrow names it.
+  // One group of rows, a shared Toggle each (v4.17; 3.0 1i): the title alone,
+  // and the daily reminder's time beside its switch. That time is read-only:
+  // the workflow's schedule sets it, nothing here stores one.
   return (
-    <section className={cardClass({ padding: 'none', className: 'px-5' })} data-testid="notifications-card">
+    <section className={GROUP_CARD} data-testid="notifications-card">
       {NOTIF_TYPES.map(({ key }) => {
-        const strings = n.types[key]
+        const title = n.types[key].title
         const enabled = status === 'enabled' && prefs[key]
         return (
-          <div key={key} className="flex min-h-[44px] items-center justify-between gap-4 border-b border-border py-3.5 last:border-b-0">
-            <p className="min-w-0 text-sm font-medium text-foreground">{strings.title}</p>
-            <Toggle checked={enabled} disabled={busy} label={strings.title} onChange={() => handleToggle(key)} />
+          <div key={key} className={GROUP_ROW}>
+            <p className="min-w-0 text-sm text-foreground">{title}</p>
+            <span className="flex shrink-0 items-center gap-3">
+              {key === 'training' && reminderAt && (
+                <span className="text-sm tabular-nums text-muted-foreground" data-testid="reminder-time">
+                  {reminderAt}
+                </span>
+              )}
+              <Toggle checked={enabled} disabled={busy} label={title} onChange={() => handleToggle(key)} />
+            </span>
           </div>
         )
       })}

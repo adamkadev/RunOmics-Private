@@ -79,21 +79,16 @@ export const en = {
     title: 'VO₂ max grade',
     band: (sex: 'male' | 'female', bracket: string) => `${sex === 'male' ? 'Men' : 'Women'} ${bracket.replace('-', '–')}`,
     source: 'ACSM percentiles',
-    unit: 'ml/kg/min',
-    topForAge: (n: number) => `Top ${n}% for your age`,
-    topForAgeInline: (n: number) => `top ${n}% for your age`,
+    // The card's value, "57.0 VO₂ max", and its percentile in its band (3.0 1j).
+    valueLabel: 'VO₂ max',
+    topInBand: (n: number, sex: 'male' | 'female', bracket: string) => `Top ${n}% · ${sex === 'male' ? 'men' : 'women'} ${bracket.replace('-', '–')}`,
     in30d: 'in 30 days',
     toNext: (gap: string, grade: string) => `${gap} to ${grade}.`,
-    // v4.17: under the bar, "0.4 to A+", the gap in ink.
-    toGrade: (grade: string) => `to ${grade}`,
-    ladder: 'Every grade for your age',
-    eta: (weeks: number) => `About ${weeks} week${weeks === 1 ? '' : 's'} at your current trend.`,
     newGrade: 'New grade',
     // A grade held until recently, lost in a dip and back: not new (Oct 2026).
     regainedGrade: 'Grade regained',
     upFrom: (grade: string) => `up from ${grade}`,
     downFrom: (grade: string, daysOff: number | null) => (daysOff ? `From ${grade} after ${daysOff} days off` : `From ${grade}`),
-    dropNote: 'Usually returns within 2–3 weeks of normal training.',
     calibrating: 'Calibrating',
     gradeIn: (n: number) => `Grade in ${n} more run${n === 1 ? '' : 's'}`,
     gradeAfter: 'Grade after 4 weeks of runs with heart rate',
@@ -213,6 +208,8 @@ export const en = {
     yrs: 'yrs',
     kg: 'kg',
     cm: 'cm',
+    kb: 'KB',
+    mb: 'MB',
     kmh: 'km/h',
     mlKgMin: 'ml/kg/min',
   },
@@ -328,7 +325,7 @@ export const en = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Build info copied',
     sections: {
-      profile: 'Profile',
+      profile: 'Profile · from Garmin',
       appearance: 'Appearance',
       data: 'Data',
       account: 'Account',
@@ -336,7 +333,7 @@ export const en = {
     },
     sync: {
       subtitle: 'Pull in today’s runs without waiting for tonight.',
-      action: 'Sync now',
+      action: 'Sync',
       // The button while the chain runs; the device line says which step.
       running: 'Syncing…',
       starting: 'Starting the workflow…',
@@ -351,8 +348,6 @@ export const en = {
       viewRun: 'View run ›',
     },
     rowAction: {
-      export: 'Export ›',
-      clear: 'Clear ›',
       signIn: 'Sign in ›',
     },
     appearance: {
@@ -364,6 +359,7 @@ export const en = {
     },
     accent: {
       title: 'Accent',
+      caption: 'charts & highlights',
       options: {
         teal:     { label: 'Teal' },
         periwinkle: { label: 'Periwinkle' },
@@ -384,32 +380,25 @@ export const en = {
     },
     athlete: {
       age: 'Age',
-      thresholdPace: 'Threshold pace',
+      thresholdPace: 'Threshold',
       thresholdHr: 'Threshold HR',
       details: 'Heart & body',
       vma: 'VMA',
       maxHr: 'Max HR',
       // Garmin's setting the zones and the load are computed from, not a
       // reading of today (Analytics > Recovery has that, "Daily resting HR").
-      restingHr: 'Resting HR (zones)',
+      restingHr: 'Resting HR',
       vo2max: 'VO₂max',
       weight: 'Weight',
       height: 'Height',
       fitnessAge: 'Fitness age',
-      // Fitness age against the real age: "20 actual 29" (C2, v4.4; v4.17).
-      ofAge: (age: number) => `actual ${age}`,
+      // Fitness age against the real age: "18 vs 29" (C2, v4.4; 3.0 1j).
+      ofAge: (age: number) => `vs ${age}`,
       achievableFitnessAge: 'Potential',
-      bmi: 'BMI',
       fitnessAgeBand: {
         younger: (years: number) => `−${years} yrs`,
         onPar: 'on par',
         older: (years: number) => `+${years} yrs`,
-      },
-      bmiBand: {
-        underweight: 'underweight',
-        healthy: 'healthy',
-        overweight: 'overweight',
-        obese: 'obese',
       },
     },
     actions: {
@@ -417,7 +406,6 @@ export const en = {
       saving: 'Saving...',
       saved: 'Saved',
       error: 'Error saving, please retry.',
-      confirmYes: 'Yes',
       confirmCancel: 'Cancel',
     },
     dataSource: {
@@ -427,10 +415,9 @@ export const en = {
       readOnlySynced: (when: string, runs: string) => `last synced ${when} · ${runs} · read-only here`,
       lastSync: 'Last synced',
       since: (monthYear: string) => `paired ${monthYear}`,
-      // v4.17: the device row - "● Connected · last synced 2h ago · 299 runs · Garmin Connect since Aug 2025".
+      // The device row's line after its dot (3.0 1i): "Synced 2h ago · 315 runs".
       connectedNow: 'Connected',
-      lastSyncedAgo: (when: string) => `last synced ${when}`,
-      sourceSince: (source: string, monthYear: string) => `${source} since ${monthYear}`,
+      lastSyncedAgo: (when: string) => `Synced ${when}`,
     },
     dataExport: {
       workbook: 'Export training data (.xlsx)',
@@ -445,29 +432,29 @@ export const en = {
       notesUnavailable: 'Exported without your notes and tags: the notes store did not answer. Try again.',
     },
     profile: {
-      // Under the read-only height, weight and BMI (design review, Oct 2026).
+      // Under the read-only height and weight, a link to Garmin Connect (design review, Oct 2026).
       readOnly: 'From Garmin Connect - change them there.',
+      // The Athlete & zones row's value: "LTHR 179 · Max 200" (3.0 1i).
+      lthr: (bpm: number) => `LTHR ${bpm}`,
+      maxHr: (bpm: number) => `Max ${bpm}`,
     },
     offlineCache: {
       clear: 'Clear offline cache',
       confirm: 'Clear it?',
+      confirmAction: 'Clear',
       cleared: 'Offline cache cleared.',
       failed: 'Could not clear the offline cache.',
     },
     notifications: {
       title: 'Notifications',
       error: 'Could not update notification settings, please retry.',
+      // The daily reminder's time beside its switch: "08:11".
+      at: (hour: number, minute: string) => `${String(hour).padStart(2, '0')}:${minute}`,
       types: {
-        training: {
-          title: 'Training reminders',
-        },
-        shoes: {
-          title: 'Shoe wear alerts',
-        },
+        training: { title: 'Training reminders' },
+        shoes: { title: 'Shoe wear alerts' },
         // The title says what the toggle does (v5.6 #6): the PR alert.
-        races: {
-          title: 'PRs and predictions',
-        },
+        races: { title: 'PRs and predictions' },
       },
     },
   },
@@ -1851,9 +1838,11 @@ export const en = {
       inZonesRecent: (duration: string) => `${duration} in zones over the last 4 weeks`,
       noSessionsThisWeek: 'No sessions logged yet.',
       noSessionsRecent: 'No sessions logged in these 4 weeks.',
-      emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
-      // The verdict is Analytics > Intensity's, word for word.
-      hardShare: (pct: number, verdict: string) => `Hard (Z4–Z5) ${pct}% · ${verdict}`,
+      // The headline, "Hard 4% · in range": Analytics > Intensity's verdict, lower case after the dot (3.0 1j).
+      hard: (pct: string) => `Hard ${pct}`,
+      verdict: { inRange: 'in range', tooModerate: 'too much moderate', tooHard: 'too much hard' },
+      // The verdict's own target, Analytics' 80/20 (see intensityMix).
+      totalLine: (duration: string) => `${duration} total · aim for 80 / 20`,
       soFar: 'this week so far',
     },
     athlete: {
