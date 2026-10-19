@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { balanceLines, drawShareCard, FALLBACK_FONTS, headerFoot, photoScrim, shareCardLayout, slicePolyline, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
-import { W, H, sharePalette } from '@/lib/shareCardPalette'
+import { balanceLines, balanceWrap, drawShareCard, FALLBACK_FONTS, headerFoot, photoScrim, shareCardLayout, verdictHero, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
+import { W, H, SHARE_ROUTE_HEX, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
-import { SURFACES } from '@/lib/themeTokens'
+import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
 import type { ShareActivity } from '@/lib/shareCardStats'
 
 interface Op { op: string; args: unknown[]; fill: string; stroke: string; font: string; ty: number }
@@ -41,7 +41,7 @@ const RUN: ShareActivity = {
   ],
 }
 
-const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 }, windows: [[0.2, 0.35], [0.45, 0.6], [0.7, 0.85]] as [number, number][] }
+const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 } }
 
 function draw(partial: Partial<ShareCardScene> & Pick<ShareCardScene, 'design'>, mode: 'dark' | 'light' = 'dark') {
   const { ctx, ops } = recorder()
@@ -138,34 +138,62 @@ describe('an interval session (design review, Oct 2026)', () => {
   })
 })
 
-describe('the route (design review, Oct 2026)', () => {
-  const middle = (ops: Op[], activity: ShareActivity = RUN) => ops.filter((o) => o.ty === layout(activity).middleTop)
+describe('the route (redesign, Oct 2026)', () => {
   const strokes = (ops: Op[]) => ops.filter((o) => o.op === 'stroke')
+  /** The route's own points: every lineTo but the lockup's. */
+  const trace = (ops: Op[]) => ops.filter((o) => o.op === 'lineTo' && o.stroke !== acc).map((o) => o.args as [number, number])
 
-  it('draws an easy run as one trace in the text colour, with no legend', () => {
-    const ops = draw({ design: 'route' })
-    const lines = strokes(middle(ops)).map((o) => o.stroke)
-    expect(lines).toContain(palette.tx)
-    expect(lines.filter((c) => palette.zones.includes(c))).toEqual([])
-    expect(texts(ops)).not.toContain('Reps')
+  it('draws one trace, near-black on light and near-white on dark, an interval session too', () => {
+    for (const mode of ['dark', 'light'] as const) {
+      const colours = sharePalette('violet', mode)
+      for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
+        const lines = strokes(draw({ design: 'route', activity }, mode)).map((o) => o.stroke)
+        expect(lines).toContain(SHARE_ROUTE_HEX[mode])
+        expect(lines.filter((c) => colours.zones.includes(c) || c === colours.mu)).toEqual([])
+      }
+    }
+    expect(SHARE_ROUTE_HEX).toEqual({ light: '#141716', dark: '#f2f4f3' })
   })
 
-  it('draws an interval session grey, its reps over it in Z4 and 1.6x as wide, under a "Reps" legend', () => {
-    const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
-    const ops = middle(draw({ design: 'route', activity: run }), run)
-    const lines = strokes(ops)
-    const grey = lines.findIndex((o) => o.stroke === palette.mu)
-    const reps = lines.filter((o) => o.stroke === palette.zones[3])
-    expect(reps).toHaveLength(3)
-    // Grey first, so a rep down the warm-up's road stays on top.
-    expect(lines.indexOf(reps[0]!)).toBeGreaterThan(grey)
-    expect(texts(ops)).toContain('Reps')
+  it('fits the route between the header and the stats, 16 px clear of both', () => {
+    const l = layout()
+    expect(l.routeFrame.top).toBe(headerFoot(l) + 16)
+    expect(l.routeFrame.bottom).toBe(H - l.textBottom + 16)
+    for (const [, y] of trace(draw({ design: 'route' }))) {
+      expect(y).toBeGreaterThanOrEqual(l.routeFrame.top - 1e-6)
+      expect(y).toBeLessThanOrEqual(H - l.routeFrame.bottom + 1e-6)
+    }
   })
 
-  it('cuts a rep where it starts, not at the nearest point of the route', () => {
-    const line: [number, number][] = [[0, 0], [100, 0]]
-    expect(slicePolyline(line, 0.25, 0.5)).toEqual([[25, 0], [50, 0]])
-    expect(slicePolyline([[0, 0], [10, 0], [10, 10]], 0.25, 0.75)).toEqual([[5, 0], [10, 0], [10, 5]])
+  it('keeps the route clear of a two-line title and of the rep pace', () => {
+    const long = { ...RUN, sessionTitle: 'Threshold · 3 × 8′ @ 4:25 then six strides on the flat', type: 'Threshold' as const, reps: REPS }
+    const l = layout(long)
+    expect(l.routeFrame.top).toBeGreaterThan(layout().routeFrame.top)
+    expect(l.routeFrame.bottom).toBeGreaterThan(layout().routeFrame.bottom)
+    for (const [, y] of trace(draw({ design: 'route', activity: long }))) {
+      expect(y).toBeGreaterThanOrEqual(l.routeFrame.top - 1e-6)
+      expect(y).toBeLessThanOrEqual(l.textBottom - 16 + 1e-6)
+    }
+  })
+
+  it('paints the basemap over the whole card, the header and stats on bands of the background over it', () => {
+    const map = {} as HTMLCanvasElement
+    const ops = draw({ design: 'route', mapImage: map, mapPoints: [[40, 100], [200, 250], [260, 120]] })
+    const image = ops.findIndex((o) => o.op === 'drawImage')
+    expect(ops[image]).toMatchObject({ args: [map, 0, 0, W, H], ty: 0 })
+    const { textTop, textBottom } = layout()
+    const bands = ops.filter((o) => o.op === 'fillRect' && o.fill === palette.bg).map((o) => o.args)
+    expect(bands).toEqual(expect.arrayContaining([[0, 0, W, textTop], [0, textBottom, W, H - textBottom]]))
+    // Over the map and the route, under the words.
+    const band = ops.findIndex((o, i) => i > image && o.op === 'fillRect' && o.fill === palette.bg)
+    const header = ops.findIndex((o) => o.op === 'fillText' && o.args[0] === 'RunOmics')
+    expect(ops.slice(image, band).some((o) => o.op === 'stroke')).toBe(true)
+    expect(header).toBeGreaterThan(band)
+  })
+
+  it('rules the stat row off, inside the card\'s margins', () => {
+    const { ruleY } = layout()
+    expect(draw({ design: 'route' }).some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === ruleY && o.args[0] === 16 && o.args[2] === W - 32)).toBe(true)
   })
 
   // The Activity map's markers (routeMarkers) at the card's 0.85: the finish's outline, the loop's, the start's dot.
@@ -176,10 +204,9 @@ describe('the route (design review, Oct 2026)', () => {
   const arcsOf = (ops: Op[], radius: number) => ops.filter((o) => o.op === 'arc' && o.args[2] === radius).map((o) => o.args.slice(0, 2))
 
   it('puts the checkered finish on the trace\'s own last point, the accent start over it', () => {
-    const ops = middle(draw({ design: 'route' }))
-    const trace = ops.filter((o) => o.op === 'lineTo')
-    const last = trace[trace.length - 1]!.args
-    expect(arcsOf(ops, FINISH_OUTLINE)).toEqual([last])
+    const ops = draw({ design: 'route' })
+    const points = trace(ops)
+    expect(arcsOf(ops, FINISH_OUTLINE)).toEqual([points[points.length - 1]])
     expect(arcsOf(ops, START_DOT)).toHaveLength(1)
     expect(ops.some((o) => o.op === 'fillRect' && o.fill === '#0c0d0d')).toBe(true)
     const fills = ops.filter((o) => o.op === 'fill').map((o) => o.fill)
@@ -188,31 +215,79 @@ describe('the route (design review, Oct 2026)', () => {
 
   it('draws a loop as one combined marker on the start, never two stacked', () => {
     const loop = { ...RUN, route: [...RUN.route!, RUN.route![0]!] as [number, number][] }
-    const ops = middle(draw({ design: 'route', activity: loop }), loop)
+    const ops = draw({ design: 'route', activity: loop })
     expect(arcsOf(ops, LOOP_OUTLINE)).toHaveLength(1)
     expect(arcsOf(ops, FINISH_OUTLINE)).toEqual([])
     expect(arcsOf(ops, START_DOT)).toEqual([])
     // Its ring is the accent.
     expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
   })
+})
 
-  it('paints the basemap over the whole middle', () => {
-    const map = {} as HTMLCanvasElement
-    const ops = draw({ design: 'route', mapImage: map, mapPoints: [[40, 60], [200, 300], [350, 120]] })
-    const { middleTop, middleH } = layout()
-    expect(ops.find((o) => o.op === 'drawImage')).toMatchObject({ args: [map, 0, 0, W, middleH], ty: middleTop })
+describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
+  const VERDICT = { tone: 'positive' as const, headline: 'Usual long-run pace, 7 bpm cheaper than last month.' }
+  const led = { ...RUN, type: 'Base' as const, verdict: VERDICT }
+
+  it('leads with the eyebrow in the status colour, then the verdict as a 27 px hero', () => {
+    const ops = draw({ design: 'stats', activity: led })
+    const eyebrow = ops.find((o) => o.op === 'fillText' && o.args[0] === 'STRONG SESSION')
+    expect(eyebrow?.fill).toBe(STATUS_HEX.dark.pos)
+    const hero = ops.filter((o) => o.op === 'fillText' && o.font.startsWith('700 27px'))
+    expect(hero.map((o) => o.args[0]).join(' ')).toBe(VERDICT.headline)
+    expect(hero.length).toBeGreaterThan(1)
+    // A 1.08 line height.
+    expect((hero[1]!.args[2] as number) - (hero[0]!.args[2] as number)).toBe(Math.round(27 * 1.08))
   })
 
-  it('centres a basemap drawn for another height, the route moved with it', () => {
-    const { middleH } = layout()
-    const map = { width: W * 3, height: (middleH - 40) * 3 } as HTMLCanvasElement
-    const ops = draw({ design: 'route', mapImage: map, mapPoints: [[40, 60], [200, 300], [350, 120]] })
-    expect(ops.find((o) => o.op === 'drawImage')?.args).toEqual([map, 0, 20, W, middleH - 40])
-    expect(ops.find((o) => o.op === 'moveTo')?.args).toEqual([40, 80])
+  it('colours a tough session warn and a logged one muted', () => {
+    const caution = draw({ design: 'stats', activity: { ...led, verdict: { ...VERDICT, tone: 'caution' } } }, 'light')
+    expect(caution.find((o) => o.op === 'fillText' && o.args[0] === 'TOUGH SESSION')?.fill).toBe(STATUS_HEX.light.warn)
+    const neutral = draw({ design: 'stats', activity: { ...led, verdict: { ...VERDICT, tone: 'neutral' } } })
+    expect(neutral.find((o) => o.op === 'fillText' && o.args[0] === 'SESSION LOGGED')?.fill).toBe(palette.mu)
+  })
+
+  it('replaces the zones headline with a 6 px bar and its percents', () => {
+    const ops = draw({ design: 'stats', activity: led })
+    const all = texts(ops)
+    expect(all).not.toContain('80%')
+    expect(all).not.toContain('easy · Z1–Z2')
+    expect(all).toEqual(expect.arrayContaining(['Z2 80%', 'Z3 20%']))
+    expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
+  })
+
+  it('keeps the 4-stat row', () => {
+    const all = texts(draw({ design: 'stats', activity: led }))
+    expect(all.slice(-11)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
+  })
+
+  it('draws no bar for a run without heart rate, the verdict still leading', () => {
+    const all = texts(draw({ design: 'stats', activity: { ...led, hrZones: [] } }))
+    expect(all).toContain('STRONG SESSION')
+    expect(all).not.toContain('No heart-rate zones for this run')
+  })
+
+  it('balances the hero over the lines it needs, never past three', () => {
+    const measure = recorder().ctx
+    // 7 px a character.
+    expect(balanceWrap(measure, 'Usual long-run pace, 7 bpm cheaper.', 200)).toEqual(['Usual long-run pace,', '7 bpm cheaper.'])
+    expect(balanceWrap(measure, 'one two three four five six', 1000)).toEqual(['one two three four five six'])
+    const long = verdictHero(measure, 'A very long verdict that the coach wrote about this run and about how the legs felt all the way to the end of it today', FALLBACK_FONTS)
+    expect(long.lines.length).toBeLessThanOrEqual(3)
+  })
+
+  it('labels the bar\'s first zone at its start and the last at its end, dropping one that would touch', () => {
+    const w = (text: string) => text.length * 5
+    expect(zoneBarLabels([{ zone: 1, percent: 24 }, { zone: 2, percent: 76 }], 16, 268, w)).toEqual([
+      { zone: 1, text: 'Z1 24%', x: 16, align: 'left' },
+      { zone: 2, text: 'Z2 76%', x: 284, align: 'right' },
+    ])
+    const crowded = zoneBarLabels([{ zone: 1, percent: 3 }, { zone: 2, percent: 90 }, { zone: 3, percent: 4 }, { zone: 4, percent: 3 }], 16, 268, w)
+    // Z3 and Z4 would touch at the end: Z3's 4% keeps its label.
+    expect(crowded.map((l) => l.zone)).toEqual([1, 2, 3])
   })
 })
 
-describe('the Stats design (design review, Oct 2026)', () => {
+describe('the Stats design without a written verdict (design review, Oct 2026)', () => {
   it('heads with the share the run is judged on, then a row for each zone it used', () => {
     const all = texts(draw({ design: 'stats', activity: { ...RUN, type: 'Base' } }))
     expect(all).toEqual(expect.arrayContaining(['80%', 'easy · Z1–Z2', 'Z2 Easy', 'Z3 Aerobic', '20%']))
@@ -237,17 +312,18 @@ describe('the Stats design (design review, Oct 2026)', () => {
     expect(ops.filter((o) => o.op === 'roundRect')).toHaveLength(1)
   })
 
-  // Design review, Oct 2026: one 4:5 box on every tab, the Stats design's stat row ruled off.
+  // Design review, Oct 2026: one 4:5 box on every tab, the stat row ruled off but under a photo.
   it('is the same 4:5 card as every design, the stat row ruled off', () => {
     const stats = layout(RUN, 'stats')
     const route = layout(RUN, 'route')
     expect(W / H).toBe(4 / 5)
     expect(stats.middleH).toBe(route.middleH)
     expect(stats.ruleY).toBe(stats.statsTop - 12)
-    expect(route.ruleY).toBeNull()
+    expect(route.ruleY).toBe(stats.ruleY)
+    expect(layout(RUN, 'photo').ruleY).toBeNull()
     const ops = draw({ design: 'stats' })
     expect(ops[0]).toMatchObject({ op: 'fillRect', args: [0, 0, W, H] })
-    expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === stats.ruleY && o.args[2] === W)).toBe(true)
+    expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === stats.ruleY && o.args[2] === W - 32)).toBe(true)
   })
 
   // Round 2: the block sat small in the middle, ~150 px empty above it.

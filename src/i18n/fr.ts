@@ -1238,14 +1238,12 @@ export const fr = {
         light: 'Clair',
       },
       inZone: (zone: number) => `en Z${zone}`,
-      // L’en-tête des zones d’une sortie facile : « 100 % facile · Z1–Z2 ».
+      // L’en-tête des zones d’une sortie facile sans verdict rédigé : « 100 % facile · Z1–Z2 ».
       easyZones: (from: number, to: number) => `facile · Z${from}–Z${to}`,
       noZones: 'Pas de zones cardiaques pour cette sortie',
       // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
       repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
       target: (pace: string) => `cible ${pace}`,
-      // La légende du parcours d’une séance de fractionné : elle marque les fractions.
-      repsLegend: 'Fractions',
       photo: 'Photo',
       choosePhoto: 'Choisir une photo',
       photoHint: 'Ce cadre est le recadrage exact',
