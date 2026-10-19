@@ -35,7 +35,8 @@ export interface PlaceLabelColors {
  * start and finish markers and the edge fence sit above it and win, so a
  * name under a marker or cut by the edge is dropped rather than drawn.
  * Streets, POIs and house numbers stay off. Every name is muted, never
- * bold white.
+ * bold white. Every name kept is fully opaque (3.0.1): the style's zoom
+ * steps faded districts out below 13, which left the share card with none.
  */
 export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): void {
   for (const raw of map.getStyle().layers) {
@@ -53,6 +54,7 @@ export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): v
     map.setLayoutProperty(layer.id, 'text-padding', 4)
     map.setLayoutProperty(layer.id, 'text-variable-anchor', ['center'])
     map.setLayoutProperty(layer.id, 'text-size', small ? 11 : 12)
+    map.setPaintProperty(layer.id, 'text-opacity', 1)
     map.setPaintProperty(layer.id, 'text-color', small ? colors.neighbourhood : colors.town)
     map.setPaintProperty(layer.id, 'text-halo-color', colors.halo)
     map.setPaintProperty(layer.id, 'text-halo-width', 1.5)

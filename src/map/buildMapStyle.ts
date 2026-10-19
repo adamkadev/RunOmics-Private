@@ -22,6 +22,25 @@ const MAJOR_ROADS = ['motorway', 'trunk', 'primary', 'secondary']
 const HIDE = /poi|transit|housenumber|house_num|aeroway|aviation|aerodrome|mountain_peak|shadow|building top|3d|hatching/
 const PLACE_LABEL = /place|city|town|village|state|country|continent|capital/
 const STREET_LABEL = /road_label|pathway_label|pedestrian_label|transportation_name|street/
+/**
+ * A city's districts (3.0.1): MapTiler shows them from zoom 13, and a run's
+ * map sits at 12 to 13, so a loop round Metz named only "Metz". Suburbs and
+ * quarters (Devant-les-Ponts, Sablon) now show from 11 and neighbourhoods
+ * from 13; hamlets and the rest keep their zoom 14.
+ */
+const DISTRICT_MINZOOM = 11
+const DISTRICT_OPACITY: Json = [
+  'step', ['zoom'], 0,
+  DISTRICT_MINZOOM, ['match', ['get', 'class'], ['suburb', 'quarter'], 1, 0],
+  13, ['match', ['get', 'class'], ['suburb', 'quarter', 'neighbourhood', 'neighborhood'], 1, 0],
+  14, 1,
+]
+
+/** Whether a place layer draws districts: its filter names suburbs or quarters. */
+function isDistrictLayer(layer: Layer): boolean {
+  return /"(suburb|quarter)"/.test(JSON.stringify(layer.filter ?? null))
+}
+
 /** Green space, drawn in the park colour (3.0). */
 const PARK = /park|wood|forest|grass|cemetery|leisure|pitch|golf|garden|meadow|scrub/
 /** The only layers that may keep a hue: parks and water (3.0). */
@@ -74,6 +93,10 @@ function styleLayer(layer: Layer, c: MapStyleColors): void {
       paint(layer, { 'text-color': c.streetLabel, 'text-halo-color': c.halo })
     } else if (PLACE_LABEL.test(k)) {
       paint(layer, { 'text-color': c.placeLabel, 'text-halo-color': c.halo })
+      if (isDistrictLayer(layer)) {
+        layer.minzoom = Math.min(layer.minzoom ?? DISTRICT_MINZOOM, DISTRICT_MINZOOM)
+        paint(layer, { 'text-opacity': DISTRICT_OPACITY })
+      }
     } else {
       return hide(layer)
     }

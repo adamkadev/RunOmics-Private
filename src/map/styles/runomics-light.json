@@ -5386,7 +5386,7 @@
       "type": "symbol",
       "source": "maptiler_planet_v4",
       "source-layer": "place_label",
-      "minzoom": 13,
+      "minzoom": 11,
       "layout": {
         "symbol-sort-key": [
           "to-number",
@@ -5488,6 +5488,20 @@
             "zoom"
           ],
           0,
+          11,
+          [
+            "match",
+            [
+              "get",
+              "class"
+            ],
+            [
+              "suburb",
+              "quarter"
+            ],
+            1,
+            0
+          ],
           13,
           [
             "match",
@@ -5497,8 +5511,9 @@
             ],
             [
               "suburb",
-              "neighborhood",
-              "neighbourhood"
+              "quarter",
+              "neighbourhood",
+              "neighborhood"
             ],
             1,
             0
