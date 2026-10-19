@@ -33,38 +33,31 @@ const GRADED: Vo2GradeView = {
   season: [{ month: '2026-01', grade: 'B' }, { month: '2026-03', grade: 'B+' }, { month: '2026-06', grade: 'B+' }, { month: '2026-09', grade: 'A−' }],
 }
 
-describe('Vo2GradeCard (v5.3 G1, v4.17)', () => {
-  it('shows grade, value, percentile, delta, the progress to the next grade and "x to next"', () => {
+describe('Vo2GradeCard (v5.3 G1; 3.0 1j)', () => {
+  // 3.0 1j: one compact row - tile, value, percentile in its band, the
+  // 30-day change - and the whole card opens the grade page.
+  it('shows grade, value, percentile in its band and delta, the whole card opening the grade page', () => {
     render(<Vo2GradeCard view={GRADED} />)
     const card = screen.getByTestId('vo2-grade-card')
+    expect(card.tagName).toBe('A')
+    expect(card.getAttribute('href')).toBe('/athlete/vo2max')
     expect(screen.getByTestId('grade-letter').textContent).toBe('A−')
     // v4.17: the grade on an accent-soft tile, the athlete's own mark.
     expect(screen.getByTestId('grade-letter').className).toContain('bg-[var(--accent-soft)]')
     expect(screen.getByTestId('grade-letter').className).toContain('text-accent-text')
-    expect(card.textContent).toContain(t.vo2Grade.topForAge(10))
+    expect(card.textContent).toContain(`54.0${t.vo2Grade.valueLabel}`)
+    expect(screen.getByTestId('grade-band').textContent).toBe('Top 10% · men 20–29')
     expect(screen.getByTestId('grade-delta').textContent).toBe(`+0.8 ${t.vo2Grade.in30d}`)
     expect(screen.getByTestId('grade-delta').getAttribute('style')).toContain('var(--good)')
-    expect(screen.getByTestId('grade-band').textContent).toContain('Men 20–29')
-    const bar = screen.getByTestId('grade-progress')
-    expect(bar.querySelector('.bg-accent')).not.toBeNull()
-    expect(screen.getByTestId('grade-gap').textContent).toBe(`0.5 ${t.vo2Grade.toGrade('A')}`)
-    expect(screen.getByTestId('grade-footer').textContent).toContain(t.vo2Grade.eta(6))
-    expect(screen.getByTestId('grade-footer').getAttribute('href')).toBe('/athlete/vo2max')
-  })
-
-  // Design review, Oct 2026: "Top grade for your age" repeated the A+ and
-  // gave the row no purpose; it names the table it opens.
-  it('hides the bar at A+, and its footer opens every grade for the age', () => {
-    render(<Vo2GradeCard view={{ ...GRADED, grade: 'A+', floor: 55.4, next: null, etaWeeks: null }} />)
+    // The bar to the next grade and its footer are gone from this card.
     expect(screen.queryByTestId('grade-progress')).toBeNull()
-    const footer = screen.getByTestId('grade-footer')
-    expect(footer.textContent).toBe(t.vo2Grade.ladder)
-    expect(footer.getAttribute('href')).toBe('/athlete/vo2max')
+    expect(screen.queryByTestId('grade-footer')).toBeNull()
   })
 
-  it('says a level-up in pos, and a drop in muted ink with its reason, never amber', () => {
+  it('says a level-up in pos, and a drop in muted ink, never amber', () => {
     const { unmount } = render(<Vo2GradeCard view={{ ...GRADED, change: { kind: 'up', from: 'B+', date: '2026-09-26', regained: false } }} />)
     expect(screen.getByTestId('grade-up').className).toContain('var(--pos)')
+    expect(screen.getByTestId('grade-up').textContent).toBe(`${t.vo2Grade.newGrade} · ${t.vo2Grade.upFrom('B+')}`)
     unmount()
     render(<Vo2GradeCard view={{ ...GRADED, grade: 'B+', change: { kind: 'down', from: 'A−', date: '2026-09-20', daysOff: 10 } }} />)
     const down = screen.getByTestId('grade-down')

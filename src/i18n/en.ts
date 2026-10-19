@@ -79,21 +79,16 @@ export const en = {
     title: 'VO₂ max grade',
     band: (sex: 'male' | 'female', bracket: string) => `${sex === 'male' ? 'Men' : 'Women'} ${bracket.replace('-', '–')}`,
     source: 'ACSM percentiles',
-    unit: 'ml/kg/min',
-    topForAge: (n: number) => `Top ${n}% for your age`,
-    topForAgeInline: (n: number) => `top ${n}% for your age`,
+    // The card's value, "57.0 VO₂ max", and its percentile in its band (3.0 1j).
+    valueLabel: 'VO₂ max',
+    topInBand: (n: number, sex: 'male' | 'female', bracket: string) => `Top ${n}% · ${sex === 'male' ? 'men' : 'women'} ${bracket.replace('-', '–')}`,
     in30d: 'in 30 days',
     toNext: (gap: string, grade: string) => `${gap} to ${grade}.`,
-    // v4.17: under the bar, "0.4 to A+", the gap in ink.
-    toGrade: (grade: string) => `to ${grade}`,
-    ladder: 'Every grade for your age',
-    eta: (weeks: number) => `About ${weeks} week${weeks === 1 ? '' : 's'} at your current trend.`,
     newGrade: 'New grade',
     // A grade held until recently, lost in a dip and back: not new (Oct 2026).
     regainedGrade: 'Grade regained',
     upFrom: (grade: string) => `up from ${grade}`,
     downFrom: (grade: string, daysOff: number | null) => (daysOff ? `From ${grade} after ${daysOff} days off` : `From ${grade}`),
-    dropNote: 'Usually returns within 2–3 weeks of normal training.',
     calibrating: 'Calibrating',
     gradeIn: (n: number) => `Grade in ${n} more run${n === 1 ? '' : 's'}`,
     gradeAfter: 'Grade after 4 weeks of runs with heart rate',
@@ -390,20 +385,20 @@ export const en = {
     },
     athlete: {
       age: 'Age',
-      thresholdPace: 'Threshold pace',
+      thresholdPace: 'Threshold',
       thresholdHr: 'Threshold HR',
       details: 'Heart & body',
       vma: 'VMA',
       maxHr: 'Max HR',
       // Garmin's setting the zones and the load are computed from, not a
       // reading of today (Analytics > Recovery has that, "Daily resting HR").
-      restingHr: 'Resting HR (zones)',
+      restingHr: 'Resting HR',
       vo2max: 'VO₂max',
       weight: 'Weight',
       height: 'Height',
       fitnessAge: 'Fitness age',
-      // Fitness age against the real age: "20 actual 29" (C2, v4.4; v4.17).
-      ofAge: (age: number) => `actual ${age}`,
+      // Fitness age against the real age: "18 vs 29" (C2, v4.4; 3.0 1j).
+      ofAge: (age: number) => `vs ${age}`,
       achievableFitnessAge: 'Potential',
       fitnessAgeBand: {
         younger: (years: number) => `−${years} yrs`,
@@ -1911,9 +1906,11 @@ export const en = {
       inZonesRecent: (duration: string) => `${duration} in zones over the last 4 weeks`,
       noSessionsThisWeek: 'No sessions logged yet.',
       noSessionsRecent: 'No sessions logged in these 4 weeks.',
-      emptyWeekFallback: 'This week has no sessions yet - showing your last 4 weeks instead.',
-      // The verdict is Analytics > Intensity's, word for word.
-      hardShare: (pct: number, verdict: string) => `Hard (Z4–Z5) ${pct}% · ${verdict}`,
+      // The headline, "Hard 4% · in range": Analytics > Intensity's verdict, lower case after the dot (3.0 1j).
+      hard: (pct: string) => `Hard ${pct}`,
+      verdict: { inRange: 'in range', tooModerate: 'too much moderate', tooHard: 'too much hard' },
+      // The verdict's own target, Analytics' 80/20 (see intensityMix).
+      totalLine: (duration: string) => `${duration} total · aim for 80 / 20`,
       soFar: 'this week so far',
     },
     athlete: {

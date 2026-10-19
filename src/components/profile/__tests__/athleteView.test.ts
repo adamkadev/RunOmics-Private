@@ -32,14 +32,13 @@ describe('athletePageView', () => {
     expect(JSON.stringify(view)).not.toContain('achilles')
   })
 
+  // 3.0 1j: height, weight and BMI are Settings' (and BMI is gone), the
+  // potential fitness age is drawn nowhere.
   it('carries exactly the fields /athlete draws', () => {
     expect(Object.keys(athletePageView(PROFILE)).sort()).toEqual(
       [
-        'achievableFitnessAgeYrs',
         'age',
-        'bmi',
         'fitnessAgeYrs',
-        'heightCm',
         'hrZoneBoundsBpm',
         'lastUpdate',
         'lthrBpm',
@@ -47,7 +46,6 @@ describe('athletePageView', () => {
         'restingHrBpm',
         'thresholdPaceSecPerKm',
         'vmaKmh',
-        'weightKg',
       ].sort()
     )
   })
