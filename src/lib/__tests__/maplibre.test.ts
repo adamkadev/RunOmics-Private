@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import { WATER_LABEL_LAYER, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
+import { PARK_LABEL_LAYER, WATER_LABEL_LAYER, addParkLabels, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
 
 type Layer = { id: string; type: string; 'source-layer'?: string; source?: string }
 
@@ -139,5 +139,37 @@ describe('addWaterLabels (3.0.1)', () => {
     addWaterLabels(fakeMap(layers).map, { halo: '#0b0c0c', water: '#5b7d99', lang: 'fr' })
     const added = layers.find((l) => l.id === WATER_LABEL_LAYER) as unknown as Record<string, Record<string, unknown>>
     expect(JSON.stringify(added.layout!['text-field'])).toContain('name:fr')
+  })
+})
+
+describe('addParkLabels (3.0.1)', () => {
+  // A park's name is a POI point - poi_public, subclass park - not a park
+  // source-layer: the polygons carry neither a name nor an area.
+  const styleLayers = (): Layer[] => [
+    { id: 'Leisure', type: 'fill', 'source-layer': 'leisure', source: 'planet' },
+    { id: 'Townhalls', type: 'symbol', 'source-layer': 'poi_public', source: 'planet' },
+  ]
+
+  it('names a park with its tree, over the water and the districts', () => {
+    const layers = styleLayers()
+    addParkLabels(fakeMap(layers).map, { halo: '#0b0c0c', park: '#5f8a6d' })
+    const added = layers.find((l) => l.id === PARK_LABEL_LAYER) as unknown as Record<string, Record<string, unknown>>
+    expect(added['source-layer']).toBe('poi_public')
+    expect(added.layout!['icon-image']).toBe('park')
+    expect(added.paint!['icon-color']).toBe('#5f8a6d')
+    expect(added.layout!['text-optional']).toBe(true)
+    expect(JSON.stringify(added.filter)).toContain('park')
+    // Park sorts before water, so it wins the room where the two collide.
+    const water = styleLayers()
+    water.push({ id: 'Pond labels', type: 'symbol', 'source-layer': 'water_label', source: 'planet' })
+    addWaterLabels(fakeMap(water).map, { halo: '#0b0c0c', water: '#5b7d99' })
+    const waterLayer = water.find((l) => l.id === WATER_LABEL_LAYER) as unknown as Record<string, Record<string, unknown>>
+    expect(Number(added.layout!['symbol-sort-key'])).toBeLessThan(Number(waterLayer.layout!['symbol-sort-key']))
+  })
+
+  it('adds nothing without the POI source layer', () => {
+    const bare: Layer[] = [{ id: 'Leisure', type: 'fill', 'source-layer': 'leisure', source: 'planet' }]
+    addParkLabels(fakeMap(bare).map, { halo: '#0b0c0c', park: '#5f8a6d' })
+    expect(bare).toHaveLength(1)
   })
 })

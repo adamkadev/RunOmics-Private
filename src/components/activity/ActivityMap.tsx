@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { maptilerStyle } from '@/lib/maptiler'
 import { MapAttribution } from '@/components/ui/MapAttribution'
 import { t } from '@/i18n'
-import { addWaterLabels, loadMapLibre } from '@/lib/maplibre'
+import { addParkLabels, addWaterLabels, loadMapLibre } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
 import {
   ROUTE_FIT_PADDING,
@@ -47,6 +47,7 @@ const noop = () => {}
  * cycles the two that exist.
  */
 const WATER_INK = { light: '#5f7f9a', dark: '#5b7d99' } as const
+const PARK_INK = { light: '#5e7f65', dark: '#5f8a6d' } as const
 const MAP_LANG = t.locale.split('-')[0] ?? 'en'
 
 const MAP_STYLES = ['dark', 'light'] as const
@@ -255,7 +256,9 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           joined,
           cursor: cursorRef.current,
         })
-        addWaterLabels(map, { halo: SURFACES[dark ? 'dark' : 'light'].background, water: WATER_INK[dark ? 'dark' : 'light'], lang: MAP_LANG })
+        const mode = dark ? 'dark' : 'light'
+        addWaterLabels(map, { halo: SURFACES[mode].background, water: WATER_INK[mode], lang: MAP_LANG })
+        addParkLabels(map, { halo: SURFACES[mode].background, park: PARK_INK[mode], lang: MAP_LANG })
         layersReadyRef.current = true
         removeFence?.()
         removeFence = addEdgeFence(map)

@@ -34,6 +34,12 @@ export const WATER_LABEL_LAYER = 'runomics-water-label'
 const WATER_LABEL_SOURCE_LAYER = 'water_label'
 const WATER_LINE_CLASSES = ['river', 'canal'] as const
 const ITALIC_FONT = ['Metropolis Semi Bold Italic', 'Noto Sans Italic']
+const PLACE_FONT = ['Metropolis Semi Bold', 'Noto Sans Semi Bold']
+
+/** The name in the reader's language where the tiles carry one. */
+function localName(lang: string | undefined): unknown {
+  return lang && lang !== 'en' ? ['coalesce', ['get', `name:${lang}`], ['get', 'name']] : ['get', 'name']
+}
 /** Park over water over district, where two names want the same room. */
 export const LABEL_SORT = { park: 1, water: 2 } as const
 
@@ -44,6 +50,26 @@ function vectorSourceOf(map: MapLibreMap, sourceLayer: string): string | null {
     if (layer['source-layer'] === sourceLayer && typeof layer.source === 'string') return layer.source
   }
   return null
+}
+
+export const PARK_LABEL_LAYER = 'runomics-park-label'
+/**
+ * A park's name is a POI point in the Planet v4 tiles - `poi_public`, class
+ * `public`, subclass `park` - not a `park` source-layer and not OpenMapTiles'
+ * `poi` class. The polygon layers (`leisure`, `forest`, `wood`) carry no name
+ * and no area, so a park cannot be skipped by how big it is: zoom and the
+ * collision between labels are the only handles.
+ */
+const PARK_SOURCE_LAYER = 'poi_public'
+const PARK_ICON = 'park'
+const PARK_MIN_ZOOM = 12
+
+export interface ParkLabelOptions {
+  halo: string
+  /** The name's ink, and the tree's: a muted green-grey. */
+  park: string
+  size?: number
+  lang?: string
 }
 
 export interface WaterLabelOptions {
@@ -62,13 +88,48 @@ export interface WaterLabelOptions {
  * italic, pale, and optional - a name that finds no room is dropped rather
  * than pushed over the route. Placed under the place names, which win.
  */
+export function addParkLabels(map: MapLibreMap, options: ParkLabelOptions): void {
+  if (map.getLayer(PARK_LABEL_LAYER)) return
+  const source = vectorSourceOf(map, PARK_SOURCE_LAYER)
+  if (!source) return
+  map.addLayer({
+    id: PARK_LABEL_LAYER,
+    type: 'symbol',
+    source,
+    'source-layer': PARK_SOURCE_LAYER,
+    minzoom: PARK_MIN_ZOOM,
+    filter: ['all', ['has', 'name'], ['==', ['get', 'subclass'], 'park']],
+    layout: {
+      'symbol-sort-key': LABEL_SORT.park,
+      'icon-image': PARK_ICON,
+      'icon-size': 0.6,
+      'icon-optional': true,
+      'text-field': localName(options.lang) as string,
+      'text-font': PLACE_FONT,
+      'text-size': options.size ?? 11,
+      'text-anchor': 'top',
+      'text-offset': [0, 0.7],
+      'text-optional': true,
+      'text-padding': 2,
+      'text-max-width': 8,
+    },
+    paint: {
+      'icon-color': options.park,
+      'icon-halo-color': options.halo,
+      'icon-halo-width': 1,
+      'text-color': options.park,
+      'text-halo-color': options.halo,
+      'text-halo-width': 1.4,
+      'text-halo-blur': 0.5,
+    },
+  } as Parameters<MapLibreMap['addLayer']>[0])
+}
+
 export function addWaterLabels(map: MapLibreMap, options: WaterLabelOptions): void {
   if (map.getLayer(WATER_LABEL_LAYER)) return
   const source = vectorSourceOf(map, WATER_LABEL_SOURCE_LAYER)
   if (!source) return
-  const name: unknown = options.lang && options.lang !== 'en'
-    ? ['coalesce', ['get', `name:${options.lang}`], ['get', 'name']]
-    : ['get', 'name']
+  const name = localName(options.lang)
   map.addLayer({
     id: WATER_LABEL_LAYER,
     type: 'symbol',
