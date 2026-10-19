@@ -132,6 +132,21 @@ function Dot({ left, top, color }: { left: string; top: string; color?: string }
   )
 }
 
+/**
+ * The scrub's cursor, drawn inside each plot (3.0.2): one line down the
+ * whole stack crossed every lane's header and struck through its numbers.
+ */
+function Cursor({ left }: { left: string }) {
+  return (
+    <span
+      aria-hidden
+      data-testid="scrub-cursor"
+      className="pointer-events-none absolute inset-y-0 w-px bg-foreground opacity-45"
+      style={{ left }}
+    />
+  )
+}
+
 export function ChartStack({ onScrub, ...input }: Props) {
   const {
     distanceKm,
@@ -309,6 +324,7 @@ export function ChartStack({ onScrub, ...input }: Props) {
                   </div>
                   <div className="relative overflow-hidden rounded-lg bg-card" style={{ height: LANE_HEIGHT }}>
                     <LanePlot lane={lane} series={series} distanceKm={distanceKm} color={LINE_COLOR[lane.key as keyof typeof LINE_COLOR]} />
+                    {on && <Cursor left={cursorX} />}
                     {value !== null && (
                       <Dot left={cursorX} top={pct(laneY(lane, value), LANE_HEIGHT)} color={LINE_COLOR[lane.key as keyof typeof LINE_COLOR]} />
                     )}
@@ -336,6 +352,7 @@ export function ChartStack({ onScrub, ...input }: Props) {
                   </div>
                   <div className="relative" style={{ height: ELEVATION_HEIGHT }}>
                     <ElevationPlot lane={elevation} />
+                    {on && <Cursor left={cursorX} />}
                     <span className={`absolute left-1.5 top-0 text-muted-foreground ${AXIS_LABEL}`} data-testid="elevation-top">
                       {elevation.format(elevation.domain[1])}
                     </span>
@@ -344,14 +361,6 @@ export function ChartStack({ onScrub, ...input }: Props) {
                 </div>
               )
             })()}
-
-            {on && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-y-0 w-px bg-foreground opacity-45"
-                style={{ left: cursorX }}
-              />
-            )}
           </div>
         </ChartFigure>
       </div>

@@ -277,6 +277,7 @@ export function ActivityDetailClient({
             <PaceHrPreview
               paceSamples={activity.paceSamples}
               hrSamples={activity.hrSamples}
+              distanceKm={activity.distanceKm}
               onShowCharts={hasCharts ? () => setTab('charts') : undefined}
             />
             <RunEffortCard

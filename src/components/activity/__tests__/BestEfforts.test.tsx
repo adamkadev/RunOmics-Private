@@ -33,14 +33,15 @@ describe('BestEfforts', () => {
   })
 
   // v4.17: three columns of tiles, each the distance with its unit, the time
-  // and the pace - the 1 km's too, so every tile reads the same.
+  // and the pace. 3.0.2: the 1 km's time is its pace, so it is said once.
   it('lays efforts out in three columns of distance, time and pace', () => {
     render(<BestEfforts bestEfforts={{ '1k': 223, '5k': 1205 }} qualifiedEfforts={[]} />)
 
     expect(screen.getByTestId('best-efforts').className).toContain('grid-cols-3')
     expect(screen.getByText('1 km')).toBeInTheDocument()
     expect(screen.getByText('5 km')).toBeInTheDocument()
-    expect(screen.getAllByText(/\/km/)).toHaveLength(2)
+    expect(screen.getAllByText(/\/km/)).toHaveLength(1)
+    expect(screen.getAllByText(/3:43/)).toHaveLength(1)
   })
 })
 

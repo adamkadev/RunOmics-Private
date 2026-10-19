@@ -141,12 +141,13 @@ describe('opening a week', () => {
 })
 
 describe('the legend and the summary', () => {
-  it('keys the kinds the month draws and the dashed planned tile', () => {
+  it('keys the kinds the month draws and the dashed planned tile, Easy and Long as one blue entry', () => {
     renderMonth()
 
     expect(screen.getByTestId('month-legend').textContent).toBe(
-      [t.plan.kinds.easy, t.plan.month.long, t.activityTypes.Threshold, t.sessionState.planned].join(''),
+      [t.plan.month.easyLong, t.activityTypes.Threshold, t.sessionState.planned].join(''),
     )
+    expect(screen.getByTestId('legend-easy').querySelector<HTMLElement>('span')!.style.background).toBe('var(--zone-2)')
   })
 
   it('reads the month’s own km against its plan, the phase left to its rows', () => {

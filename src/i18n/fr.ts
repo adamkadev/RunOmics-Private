@@ -1245,6 +1245,7 @@ export const fr = {
       openCharts: 'Graphiques',
       pace: 'Allure',
       hr: 'FC',
+      start: 'Départ',
     },
     dataQuality: {
       estimated: 'Estimé',
@@ -1955,7 +1956,7 @@ export const fr = {
     month: {
       phaseEnds: (phase: string, date: string) => `${phase} · fin le ${date}`,
       phaseWeeks: (phase: string, n: number) => `${phase} · ${n} semaine${n > 1 ? 's' : ''}`,
-      long: 'Sortie longue',
+      easyLong: 'Footing / Sortie longue',
       phaseWeek: (phase: string, n: number, total: number) => `${phase} · semaine ${n} sur ${total}`,
       kmOf: (ran: string, plan: string) => `${ran} sur ${plan} km`,
       nextKey: 'Prochaine séance clé',

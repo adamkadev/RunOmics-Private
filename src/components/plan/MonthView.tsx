@@ -309,16 +309,11 @@ export function MonthView({
       </div>
 
       <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs text-muted-foreground" data-testid="month-legend">
-        <span className="flex items-center gap-1.5">
+        {/* Easy and Long share the blue by design (3.0.2): one entry, named for both when the month has a long run. */}
+        <span className="flex items-center gap-1.5" data-testid="legend-easy">
           <Swatch style={{ background: zoneColor(2) }} />
-          {t.plan.kinds.easy}
+          {hasLong ? m.easyLong : t.plan.kinds.easy}
         </span>
-        {hasLong && (
-          <span className="flex items-center gap-1.5">
-            <Swatch style={{ background: zoneColor(2) }} />
-            {m.long}
-          </span>
-        )}
         {qualityTypes.map((type) => (
           <span key={type} className="flex items-center gap-1.5">
             <Swatch style={{ background: kindColor(type) }} />

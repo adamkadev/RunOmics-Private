@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { ACCENT_IDS, ACCENT_SWATCHES, ACCENT_SWATCHES_LIGHT, CURATED_ACCENTS, DEFAULT_ACCENT, type AccentId } from '@/lib/accent'
-import { TOKEN_BLOCKS } from '@/lib/themeTokens'
+import { TOKEN_BLOCKS, accentTokens, readableOn } from '@/lib/themeTokens'
+import { contrastRatio } from '@/lib/oklch'
 import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
 import { white } from '@/lib/palette'
 
@@ -147,5 +148,36 @@ describe('screen audit contrast floors', () => {
     expect(contrast(s.pill, s.seg)).toBeGreaterThanOrEqual(1.05)
     // In dark the pill is raised, lighter than the track it sits on.
     if (mode === 'dark') expect(luminance(s.pill)).toBeGreaterThan(luminance(s.seg))
+  })
+})
+
+// 3.0.2: amber text and accent labels clear 4.5:1 wherever light theme puts
+// them - a white card, the page ground and an inset tile. On a card every
+// accent already did; the teal read 4.2:1 on the ground and 4.1:1 on a tile,
+// the pink 4.4:1 on a tile, so light --accent-text is the accent a step
+// darker (readableOn) while fills keep the accent itself.
+describe('light theme text on its surfaces', () => {
+  const s = SURFACES.light
+  const grounds = { card: s.card, ground: s.background, tile: s.seg }
+
+  it.each(Object.entries(grounds))('amber (warn) text reads at 4.5:1 or more on the %s', (_, ground) => {
+    expect(contrastRatio(STATUS_HEX.light.warn, ground)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it.each(
+    CURATED_ACCENTS.flatMap((accent) =>
+      Object.entries(grounds).map(([name, ground]) => ({ id: accent.id, name, ground, text: accentTokens(accent, 'light')['--accent-text']! })),
+    ),
+  )('$id accent text reads at 4.5:1 or more on the $name', ({ text, ground }) => {
+    expect(contrastRatio(text, ground)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('darkens only an accent that needs it, and only the text', () => {
+    const teal = CURATED_ACCENTS.find((accent) => accent.id === 'teal')!
+    const violet = CURATED_ACCENTS.find((accent) => accent.id === 'violet')!
+    expect(accentTokens(teal, 'light')['--accent-text']).not.toBe(teal.light.acc)
+    expect(accentTokens(teal, 'light')['--accent']).toBe(teal.light.acc)
+    expect(accentTokens(violet, 'light')['--accent-text']).toBe(violet.light.acc)
+    expect(readableOn('#1a1c1b', s.seg)).toBe('#1a1c1b')
   })
 })

@@ -1311,6 +1311,8 @@ export const en = {
       openCharts: 'Charts',
       pace: 'Pace',
       hr: 'HR',
+      // Under the lines' left end; the right end is the run's distance (3.0.2).
+      start: 'Start',
     },
     dataQuality: {
       estimated: 'Estimated',
@@ -2103,7 +2105,8 @@ export const en = {
     month: {
       phaseEnds: (phase: string, date: string) => `${phase} · ends ${date}`,
       phaseWeeks: (phase: string, n: number) => `${phase} · ${n} week${n !== 1 ? 's' : ''}`,
-      long: 'Long',
+      // The legend's one blue entry (3.0.2).
+      easyLong: 'Easy / Long',
       phaseWeek: (phase: string, n: number, total: number) => `${phase} · week ${n} of ${total}`,
       kmOf: (ran: string, plan: string) => `${ran} of ${plan} km`,
       nextKey: 'Next key session',

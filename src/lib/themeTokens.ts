@@ -1,5 +1,6 @@
 import { HUE, ink, paper } from './palette'
 import { CURATED_ACCENTS, curatedAccent, type CuratedAccent } from './accentScale'
+import { contrastRatio, hexToOklch, oklchToHex } from './oklch'
 
 /**
  * The opaque status bar's colour in an installed iPhone app, one per mode.
@@ -232,18 +233,36 @@ export const MAP_STYLE_COLORS = {
 
 export type MapStyleColors = { [K in keyof (typeof MAP_STYLE_COLORS)['dark']]: string }
 
+/** Text's AA floor: small accent labels must clear it. */
+const TEXT_CONTRAST = 4.5
+
+/**
+ * A colour as text on a ground, darkened in OKLCH lightness - hue and chroma
+ * kept - only as far as 4.5:1 needs; a colour that already reads is itself.
+ */
+export function readableOn(hex: string, ground: string, ratio = TEXT_CONTRAST): string {
+  const colour = hexToOklch(hex)
+  let text = hex
+  for (let l = colour.l; contrastRatio(text, ground) < ratio && l > 0; l -= 0.005) text = oklchToHex({ ...colour, l })
+  return text
+}
+
 /**
  * One accent block (v4.3, v4.17): the palette's accent and its ink, and the
  * derived tints - `--accent-soft` (the accent at 1F alpha) for the active nav
  * row and soft fills, `--acc-line` for an accent outline. Accent text uses
- * `--accent-text`, the accent itself.
+ * `--accent-text`: the accent itself, except in light mode where the accent
+ * reads under 4.5:1 on the page ground and inset tiles (3.0.2: teal was
+ * 4.2:1 on #f3f4f3, 4.1:1 on #f0f1f0; pink 4.4:1 on a tile) - there it is
+ * the accent a step darker, enough for the darkest light surface. On a
+ * white card every accent already read; fills and rings keep the accent.
  */
 export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode: 'light' | 'dark'): Record<string, string> {
   const { acc, onAcc } = accent[mode]
   return {
     '--accent': acc,
     '--accent-foreground': onAcc,
-    '--accent-text': acc,
+    '--accent-text': mode === 'light' ? readableOn(acc, SURFACES.light.seg) : acc,
     '--accent-hover': `color-mix(in oklab, ${acc} 88%, ${mode === 'dark' ? 'white' : 'black'})`,
     '--accent-soft': `${acc}1f`,
     '--acc-soft': `${acc}1f`,

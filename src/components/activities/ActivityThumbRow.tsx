@@ -8,7 +8,7 @@ import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDate, formatDistance, formatDuration, formatPace, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { activityTitle } from '@/lib/activityTitle'
+import { activityTitle, splitStructuredTitle } from '@/lib/activityTitle'
 
 interface Props {
   activity: ActivitySummary
@@ -40,12 +40,15 @@ export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds'
 
 /**
  * A run as a list row (v4.17): its route on a tile, the name, then the type's
- * dot and the meta line, and on the right the distance over the pace, each
- * with its unit.
+ * dot and the meta line - a structured name's structure first - and on the
+ * right the distance over the pace, each with its unit.
  */
 export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
-  const title = activityTitle(a)
-  const meta = thumbRowMeta(a, variant)
+  // A structured name is its session's name on the first line, its
+  // structure leading the meta on the second (3.0.2): one truncated line cut
+  // the structure off.
+  const { name: title, structure } = splitStructuredTitle(activityTitle(a))
+  const meta = [structure, thumbRowMeta(a, variant)].filter(Boolean).join(' · ')
   const inset = variant === 'inset'
 
   return (
