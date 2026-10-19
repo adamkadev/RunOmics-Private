@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { maptilerStyle } from '@/lib/maptiler'
+import { maptilerStyle, shareBasemapStyle } from '@/lib/maptiler'
 import { bandFencePoints, routeFencePoints, simplifyRoute, type LngLat, type RouteFrame } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
 import { loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
@@ -39,6 +39,8 @@ export interface ShareCardMapOptions {
 const PIXEL_RATIO = 3
 
 const RENDER_TIMEOUT_MS = 15_000
+
+const DISTRICT_OPACITY = 0.7
 
 /**
  * Once the map has drawn all it will: 'idle'. A tile, glyph or sprite that
@@ -129,7 +131,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
   const bounds = points.reduce((b, c) => b.extend(c), new mgl.LngLatBounds(first, first))
   const map = new mgl.Map({
     container,
-    style: maptilerStyle(isDark, token),
+    style: shareBasemapStyle(maptilerStyle(isDark, token), isDark),
     bounds,
     fitBoundsOptions: { padding: frame, maxZoom: 15, duration: 0 },
     canvasContextAttributes: { preserveDrawingBuffer: true },
@@ -146,7 +148,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
   // one cut by the edge or by the header's and stats' bands.
   const surface = SURFACES[isDark ? 'dark' : 'light']
   map.on('load', () => {
-    styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text3 })
+    styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text3, districtOpacity: DISTRICT_OPACITY })
     showWaterNames(map, { text: surface.text3, halo: surface.background })
     addRunMarkers(map, first, { start: clearMarkerImage(), finish: clearMarkerImage() })
     const last = points[points.length - 1]

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { StyleSpecification } from 'maplibre-gl'
-import { heatBasemapStyle, maptilerStyle, withLanguage } from '../maptiler'
+import { heatBasemapStyle, maptilerStyle, shareBasemapStyle, withLanguage } from '../maptiler'
 import { MAP_STYLE_COLORS } from '../themeTokens'
 
 describe('maptilerStyle (v4.17)', () => {
@@ -57,5 +57,21 @@ describe('heatBasemapStyle (3.0.1)', () => {
     const source = light()
     heatBasemapStyle(source, false)
     expect(background(source)).toBe(MAP_STYLE_COLORS.light.background)
+  })
+})
+
+describe('shareBasemapStyle (3.0.1)', () => {
+  it('deepens the parks and water the card draws, in both themes', () => {
+    for (const isDark of [true, false]) {
+      const mode = isDark ? 'dark' : 'light'
+      const json = JSON.stringify(shareBasemapStyle(maptilerStyle(isDark, 'k'), isDark))
+      for (const role of ['park', 'water'] as const) expect(json).not.toContain(MAP_STYLE_COLORS[mode][role])
+    }
+  })
+
+  it('leaves the style it was given alone', () => {
+    const source = maptilerStyle(false, 'k')
+    shareBasemapStyle(source, false)
+    expect(JSON.stringify(source)).toContain(MAP_STYLE_COLORS.light.park)
   })
 })

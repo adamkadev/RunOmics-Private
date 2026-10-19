@@ -28,6 +28,8 @@ export interface PlaceLabelColors {
   town: string
   /** Neighbourhoods, a step quieter. */
   neighbourhood: string
+  /** How opaque a district's name is; 1 unless the caller wants them fainter. */
+  districtOpacity?: number
 }
 
 /**
@@ -60,7 +62,7 @@ export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): v
     map.setLayoutProperty(layer.id, 'text-variable-anchor', LABEL_ANCHORS)
     map.setLayoutProperty(layer.id, 'text-radial-offset', 0.4)
     map.setLayoutProperty(layer.id, 'text-size', small ? 9 : 10)
-    map.setPaintProperty(layer.id, 'text-opacity', 1)
+    map.setPaintProperty(layer.id, 'text-opacity', small ? (colors.districtOpacity ?? 1) : 1)
     map.setPaintProperty(layer.id, 'text-color', small ? colors.neighbourhood : colors.town)
     map.setPaintProperty(layer.id, 'text-halo-color', colors.halo)
     map.setPaintProperty(layer.id, 'text-halo-width', 1.5)

@@ -65,7 +65,10 @@ vi.mock('@/lib/runMapLayers', () => ({
   clearMarkerImage: () => ({}),
   setRunFinish: () => {},
 }))
-vi.mock('@/lib/maptiler', () => ({ maptilerStyle: () => ({}) }))
+vi.mock('@/lib/maptiler', () => ({
+  maptilerStyle: () => ({}),
+  shareBasemapStyle: (style: unknown) => style,
+}))
 
 const { useShareCardMap } = await import('@/lib/useShareCardMap')
 

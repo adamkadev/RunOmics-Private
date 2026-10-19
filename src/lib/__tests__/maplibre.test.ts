@@ -57,6 +57,14 @@ describe('styleRunMapLabels (v4.10)', () => {
     for (const id of ['Town', 'Neighbourhood', 'Place labels']) expect(paint[id]?.['text-opacity'], id).toBe(1)
   })
 
+  // The share card asks for its districts a step fainter than its towns.
+  it('fades only the districts when the caller asks for it', () => {
+    const { map, paint } = fakeMap(layers)
+    styleRunMapLabels(map, { ...COLORS, districtOpacity: 0.7 })
+    expect(paint.Neighbourhood?.['text-opacity']).toBe(0.7)
+    expect(paint.Town?.['text-opacity']).toBe(1)
+  })
+
   it('makes every name collide, on or beside its point, muted, with a halo in the surface colour', () => {
     const { map, layout, paint } = fakeMap(layers)
     styleRunMapLabels(map, COLORS)
