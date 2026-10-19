@@ -112,6 +112,16 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
     expect(shareActivity(run, SESSION).reps).toMatchObject({ count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 } })
   })
 
+  // The route draws the reps where they ran (design review, Oct 2026).
+  it('places each rep along the run, the laps laid end to end', () => {
+    const total = 2500 + 3 * (1818 + 300) + 1600
+    const windows = shareActivity(run, SESSION).reps!.windows
+    expect(windows).toHaveLength(3)
+    expect(windows[0]![0]).toBeCloseTo(2500 / total)
+    expect(windows[0]![1]).toBeCloseTo(4318 / total)
+    expect(windows[2]![1]).toBeCloseTo((total - 1600 - 300) / total)
+  })
+
   it('takes the target from the repeat\'s effort step when the name sets none', () => {
     const blocks = [{ kind: 'repeat', steps: [{ kind: 'effort', target: { paceSecPerKm: { min: 262.4, max: 268.6 } } }] }]
     const session = { ...SESSION, structure: undefined, blocks } as unknown as WorkoutPrescription

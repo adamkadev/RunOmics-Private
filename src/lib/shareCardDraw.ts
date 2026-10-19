@@ -260,16 +260,83 @@ function strokeLine(ctx: Ctx, pts: [number, number][], color: string, width: num
   ctx.stroke()
 }
 
-/** The trace, and the halo in the map's own ground under it. */
+/** How far along the line each point is, in px from the first. */
+function cumulative(pts: [number, number][]): number[] {
+  const at = [0]
+  for (let i = 1; i < pts.length; i++) {
+    const [x1, y1] = pts[i - 1]!
+    const [x2, y2] = pts[i]!
+    at.push(at[i - 1]! + Math.hypot(x2 - x1, y2 - y1))
+  }
+  return at
+}
+
+/**
+ * The stretch of the line from share `from` to share `to` of its length, cut
+ * where the shares fall rather than at the nearest point: a simplified route
+ * keeps few points on a straight road, and a rep starts where it started.
+ */
+export function slicePolyline(pts: [number, number][], from: number, to: number): [number, number][] {
+  const at = cumulative(pts)
+  const length = at[at.length - 1]!
+  if (length <= 0 || to <= from) return []
+  const pointAt = (d: number): [number, number] => {
+    const i = Math.max(1, at.findIndex((v) => v >= d))
+    const [x1, y1] = pts[i - 1]!
+    const [x2, y2] = pts[i]!
+    const span = at[i]! - at[i - 1]!
+    const k = span > 0 ? (d - at[i - 1]!) / span : 0
+    return [x1 + (x2 - x1) * k, y1 + (y2 - y1) * k]
+  }
+  const [a, b] = [Math.max(from, 0) * length, Math.min(to, 1) * length]
+  return [pointAt(a), ...pts.filter((_, i) => at[i]! > a && at[i]! < b), pointAt(b)]
+}
+
+/** The route's widths: one trace, or the grey under reps 1.6x as wide; the halo 3 px wider. */
 const TRACE_W = 3
-const CASING_W = TRACE_W + 3
+const GREY_W = 2.5
+const REP_W = GREY_W * 1.6
+
+/** "▬ Reps", just above the stats, on an interval session only. */
+function drawRepsLegend(ctx: Ctx, { palette, fonts }: ShareCardScene, bottom: number) {
+  const BAR_W = 14
+  const BAR_H = 3
+  const PILL_H = 18
+  ctx.font = `400 9px ${fonts.text}`
+  const label = t.activity.shareCard.repsLegend
+  const width = 7 + BAR_W + 5 + ctx.measureText(label).width + 7
+  const x = 8
+  const y = bottom - 8 - PILL_H
+  ctx.fillStyle = palette.bg
+  roundRect(ctx, x, y, width, PILL_H, PILL_H / 2)
+  ctx.fill()
+  ctx.lineWidth = 1
+  ctx.strokeStyle = palette.line
+  ctx.stroke()
+  const mid = y + PILL_H / 2
+  ctx.fillStyle = palette.zones[3]!
+  roundRect(ctx, x + 7, mid - BAR_H / 2, BAR_W, BAR_H, BAR_H / 2)
+  ctx.fill()
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = palette.mu
+  ctx.fillText(label, x + 7 + BAR_W + 5, mid)
+}
+
+/** Whether the Route card marks this run's reps. */
+function hasReps(scene: ShareCardScene): boolean {
+  return (scene.activity.reps?.windows.length ?? 0) > 0
+}
 
 /**
  * The route on a map that fills the card (redesign, Oct 2026): one colour,
- * near-black on light and near-white on dark - no zone, pace or rep colour -
+ * near-black on light and near-white on dark, no zone or pace colour -
  * fitted between the header and the stats (layout.routeFrame), so it never
  * runs under the words. The basemap was drawn for that frame; without one,
- * the route is projected into it on the bare background.
+ * the route is projected into it on the bare background. An interval
+ * session is the exception, at the owner's request: the run in grey and its
+ * reps over it in Z4's colour, 1.6x as wide, so a rep run down the
+ * warm-up's road still shows.
  */
 function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   const { activity, palette, mapImage, mapPoints } = scene
@@ -287,9 +354,15 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   ctx.lineCap = 'round'
   ctx.save()
   ctx.globalAlpha = 0.85
-  strokeLine(ctx, pts, palette.casing, CASING_W)
+  const reps = hasReps(scene)
+  strokeLine(ctx, pts, palette.casing, (reps ? GREY_W : TRACE_W) + 3)
   ctx.restore()
-  strokeLine(ctx, pts, palette.route, TRACE_W)
+  if (reps) {
+    strokeLine(ctx, pts, palette.mu, GREY_W)
+    for (const [from, to] of activity.reps!.windows) strokeLine(ctx, slicePolyline(pts, from, to), palette.zones[3]!, REP_W)
+  } else {
+    strokeLine(ctx, pts, palette.route, TRACE_W)
+  }
 
   // The Activity map's markers (routeMarkers): the finish on the line's own
   // last point, one loop marker where it would touch the start.
@@ -748,6 +821,8 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   } else if (scene.design === 'route') {
     drawRoute(ctx, scene, layout)
     drawBands(ctx, scene, layout)
+    // Over the bands, so the stats' fade does not cover it.
+    if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textBottom)
   } else {
     ctx.save()
     ctx.translate(0, layout.middleTop)

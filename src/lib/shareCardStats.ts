@@ -33,6 +33,8 @@ export interface ShareReps {
   paceSecPerKm: number
   /** The plan's pace for the reps, when the run matched a session that set one. */
   target: { min: number; max: number } | null
+  /** Where each rep ran, as shares of the run's distance: the Route card draws them over the run. */
+  windows: [number, number][]
 }
 
 /** The coach's session name when the run matched one (design review, Oct 2026), else the run's own. */

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { balanceLines, balanceWrap, drawShareCard, FALLBACK_FONTS, headerFoot, photoScrim, shareCardLayout, verdictHero, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
+import { balanceLines, balanceWrap, drawShareCard, FALLBACK_FONTS, headerFoot, photoScrim, shareCardLayout, slicePolyline, verdictHero, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
 import { W, H, SHARE_ROUTE_HEX, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
 import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
@@ -41,7 +41,7 @@ const RUN: ShareActivity = {
   ],
 }
 
-const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 } }
+const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 }, windows: [[0.2, 0.35], [0.45, 0.6], [0.7, 0.85]] as [number, number][] }
 
 function draw(partial: Partial<ShareCardScene> & Pick<ShareCardScene, 'design'>, mode: 'dark' | 'light' = 'dark') {
   const { ctx, ops } = recorder()
@@ -143,16 +143,36 @@ describe('the route (redesign, Oct 2026)', () => {
   /** The route's own points: every lineTo but the lockup's. */
   const trace = (ops: Op[]) => ops.filter((o) => o.op === 'lineTo' && o.stroke !== acc).map((o) => o.args as [number, number])
 
-  it('draws one trace, near-black on light and near-white on dark, an interval session too', () => {
+  it('draws one trace, near-black on light and near-white on dark, with no legend', () => {
     for (const mode of ['dark', 'light'] as const) {
       const colours = sharePalette('violet', mode)
-      for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
-        const lines = strokes(draw({ design: 'route', activity }, mode)).map((o) => o.stroke)
-        expect(lines).toContain(SHARE_ROUTE_HEX[mode])
-        expect(lines.filter((c) => colours.zones.includes(c) || c === colours.mu)).toEqual([])
-      }
+      const ops = draw({ design: 'route' }, mode)
+      const lines = strokes(ops).map((o) => o.stroke)
+      expect(lines).toContain(SHARE_ROUTE_HEX[mode])
+      expect(lines.filter((c) => colours.zones.includes(c) || c === colours.mu)).toEqual([])
+      expect(texts(ops)).not.toContain('Reps')
     }
     expect(SHARE_ROUTE_HEX).toEqual({ light: '#141716', dark: '#f2f4f3' })
+  })
+
+  // At the owner's request (3.0): an interval session keeps its reps marked.
+  it('draws an interval session grey, its reps over it in Z4 and 1.6x as wide, under a "Reps" legend', () => {
+    const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
+    const ops = draw({ design: 'route', activity: run })
+    const lines = strokes(ops)
+    const grey = lines.findIndex((o) => o.stroke === palette.mu)
+    const reps = lines.filter((o) => o.stroke === palette.zones[3])
+    expect(reps).toHaveLength(3)
+    // Grey first, so a rep down the warm-up's road stays on top.
+    expect(lines.indexOf(reps[0]!)).toBeGreaterThan(grey)
+    expect(lines.map((o) => o.stroke)).not.toContain(SHARE_ROUTE_HEX.dark)
+    expect(texts(ops)).toContain('Reps')
+  })
+
+  it('cuts a rep where it starts, not at the nearest point of the route', () => {
+    const line: [number, number][] = [[0, 0], [100, 0]]
+    expect(slicePolyline(line, 0.25, 0.5)).toEqual([[25, 0], [50, 0]])
+    expect(slicePolyline([[0, 0], [10, 0], [10, 10]], 0.25, 0.75)).toEqual([[5, 0], [10, 0], [10, 5]])
   })
 
   it('fits the route between the header and the stats, 16 px clear of both', () => {

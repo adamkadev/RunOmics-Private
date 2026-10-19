@@ -1,4 +1,4 @@
-import type { Activity, ActivityType } from '@/domain/activity/types'
+import type { Activity, ActivitySplit, ActivityType } from '@/domain/activity/types'
 import { runVerdictTone } from '@/domain/activity/runVerdict'
 import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 import { repSet } from '@/domain/activity/repSet'
@@ -87,9 +87,27 @@ function repTarget(prescription: WorkoutPrescription | null): ShareReps['target'
 }
 
 /**
+ * Where the rep laps ran, as shares of the run's distance, the laps laid end
+ * to end. A lead-in the Splits tab moved to the warm-up is the first active
+ * lap, so the reps are the last of them.
+ */
+function repWindows(splits: ActivitySplit[], reps: number): [number, number][] {
+  const total = splits.reduce((sum, split) => sum + split.distanceM, 0)
+  if (total <= 0) return []
+  const windows: [number, number][] = []
+  let at = 0
+  for (const split of splits) {
+    if (split.type === 'interval_active') windows.push([at / total, (at + split.distanceM) / total])
+    at += split.distanceM
+  }
+  return windows.slice(windows.length - reps)
+}
+
+/**
  * An interval session's work (design review, Oct 2026): the work laps the
  * Splits tab reads as reps, their time over their distance - recoveries,
- * warm-up and cool-down out - and the plan's pace for them. Null for any other kind of run, or one the watch kept no
+ * warm-up and cool-down out - the plan's pace for them, and where on the
+ * run they fell. Null for any other kind of run, or one the watch kept no
  * rep laps for.
  */
 export function shareReps(activity: Pick<Activity, 'type' | 'splits'>, prescription: WorkoutPrescription | null): ShareReps | null {
@@ -104,6 +122,7 @@ export function shareReps(activity: Pick<Activity, 'type' | 'splits'>, prescript
     repSeconds: set.repDurationSec,
     paceSecPerKm: Math.round((seconds / metres) * 1000),
     target: repTarget(prescription),
+    windows: repWindows(activity.splits, set.reps.length),
   }
 }
 

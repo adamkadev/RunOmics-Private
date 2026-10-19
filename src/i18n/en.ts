@@ -1219,6 +1219,8 @@ export const en = {
       // An interval session's headline, drawn in capitals: "REP PACE · 3 × 8′".
       repPace: (count: number, length: string) => `Rep pace · ${count} × ${length}`,
       target: (pace: string) => `target ${pace}`,
+      // The route's legend on an interval session: the reps are what it marks.
+      repsLegend: 'Reps',
       photo: 'Photo',
       choosePhoto: 'Choose photo',
       photoHint: 'This frame is the exact crop',
