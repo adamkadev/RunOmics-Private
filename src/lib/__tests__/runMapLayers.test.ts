@@ -7,7 +7,6 @@ import {
   LOOP_MARK_ICON,
   ROUTE_FIT_PADDING,
   ROUTE_HALO_LAYER,
-  ROUTE_LABEL_GUARD_LAYER,
   ROUTE_LINE_LAYER,
   ROUTE_SOURCE,
   RUN_CURSOR_LAYER,
@@ -49,11 +48,6 @@ function fakeMap() {
       const at = before ? layers.findIndex((l) => l.id === before) : layers.length
       layers.splice(at, 0, layer)
     },
-    moveLayer: (id: string, before?: string) => {
-      const [layer] = layers.splice(layers.findIndex((l) => l.id === id), 1)
-      const at = before ? layers.findIndex((l) => l.id === before) : layers.length
-      layers.splice(at, 0, layer!)
-    },
     hasImage: (id: string) => images.has(id),
     addImage: (id: string) => { images.add(id) },
     updateImage: (id: string) => { updated.push(id) },
@@ -78,8 +72,8 @@ describe('the run map layers (v4.17)', () => {
   it('draws the accent route and its markers over the place names', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
-    // 3.0.3: the town's name over the route and its guard, the markers over it.
-    expect(layers.map((l) => l.id)).toEqual(['Water', 'Road labels', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, ROUTE_LABEL_GUARD_LAYER, 'Town labels', RUN_FINISH_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
+    // 3.0.3: under every label, as the heatmap's tracks are; the markers on top.
+    expect(layers.map((l) => l.id)).toEqual(['Water', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, 'Road labels', 'Town labels', RUN_FINISH_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
     const route = layers.find((l) => l.id === ROUTE_LINE_LAYER)!
     expect(route).toMatchObject({ type: 'line', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': RUN.accent, 'line-width': 4 } })
   })
@@ -92,26 +86,15 @@ describe('the run map layers (v4.17)', () => {
   })
 
   // 3.0 handoff: "Metz" sat under the line.
-  it('guards the route with invisible icons above the street names, so one crossing it is dropped', () => {
-    const { map, layers } = fakeMap()
-    addRunLayers(map, RUN)
-    const guard = layers.find((l) => l.id === ROUTE_LABEL_GUARD_LAYER)!
-    expect(guard).toMatchObject({
-      type: 'symbol',
-      layout: { 'symbol-placement': 'line', 'icon-allow-overlap': true, 'icon-ignore-placement': false },
-    })
-    expect(layers.indexOf(guard)).toBeGreaterThan(layers.findIndex((l) => l.id === 'Road labels'))
-  })
-
   // 3.0.3, the owner's request: a district the run crossed keeps its name.
-  it('lifts town and district names over the route and its guard, once however often it is called', () => {
+  it('drops no name for the line: no guard, the route under the labels however often it is called', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
     addRunLayers(map, RUN)
     const ids = layers.map((l) => l.id)
-    expect(ids.filter((id) => id === 'Town labels')).toHaveLength(1)
-    expect(ids.indexOf('Town labels')).toBeGreaterThan(ids.indexOf(ROUTE_LABEL_GUARD_LAYER))
-    expect(ids.indexOf('Town labels')).toBeLessThan(ids.indexOf(RUN_FINISH_LAYER))
+    expect(ids.filter((id) => id === ROUTE_LINE_LAYER)).toHaveLength(1)
+    expect(ids.indexOf(ROUTE_LINE_LAYER)).toBeLessThan(ids.indexOf('Road labels'))
+    expect(layers.filter((l) => l.layout?.['symbol-placement'] === 'line')).toEqual([])
   })
 
   it('draws the start, a 7 px dot, and the scrub marker as accent circles in a ring', () => {

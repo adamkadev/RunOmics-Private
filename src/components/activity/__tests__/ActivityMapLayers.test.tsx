@@ -49,11 +49,6 @@ vi.mock('@/lib/maplibre', async (importOriginal) => {
       const at = before ? this.layers.findIndex((l) => l.id === before) : this.layers.length
       this.layers.splice(at, 0, layer)
     }
-    moveLayer(id: string, before?: string) {
-      const [layer] = this.layers.splice(this.layers.findIndex((l) => l.id === id), 1)
-      const at = before ? this.layers.findIndex((l) => l.id === before) : this.layers.length
-      this.layers.splice(at, 0, layer!)
-    }
     hasImage() { return false }
     addImage() {}
     updateImage() {}
@@ -88,7 +83,7 @@ describe('ActivityMap layers (v4.17)', () => {
 
   beforeAll(() => { process.env.NEXT_PUBLIC_MAPTILER_TOKEN = 'test' })
 
-  // 3.0.3: town and district names over the line, the markers over them.
+  // 3.0.3: every name over the line, as on the heatmap; the markers over them.
   it('draws the route in the accent under the place names, the start and the scrub marker as circle layers, no DOM markers', async () => {
     render(<ActivityMap route={[[7.7, 48.6], [7.72, 48.62]]} />)
     await waitFor(() => expect(seen.layers.some((l) => l.id === 'run-cursor')).toBe(true))

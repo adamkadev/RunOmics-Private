@@ -1,13 +1,12 @@
 import type { FeatureCollection, Point } from 'geojson'
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { distanceKm } from '@/lib/math'
-import { isPlaceLabelLayer } from '@/lib/maplibre'
+import { firstSymbolLayerId } from '@/lib/maplibre'
 import { JOIN_PX as JOIN_DISTANCE_PX, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
 
 export const ROUTE_SOURCE = 'route'
 export const ROUTE_LINE_LAYER = 'route-line'
 export const ROUTE_HALO_LAYER = 'route-halo'
-export const ROUTE_LABEL_GUARD_LAYER = 'route-label-guard'
 export const RUN_START_SOURCE = 'run-start-dot'
 export const RUN_START_LAYER = 'run-start-dot'
 export const RUN_FINISH_SOURCE = 'run-finish-mark'
@@ -100,59 +99,19 @@ function addClearIcon(map: MapLibreMap): void {
 }
 
 /**
- * No place name under the route (3.0 handoff: "Metz" sat under the line).
- * MapLibre never tests a label against a line, so an invisible icon every
- * 12 px along the route, placed above the labels, makes a name that would
- * cross it collide and be dropped. It reads the route's own source, so it
- * follows the draw-in. Names clear of the line stay.
- */
-export function addRouteLabelGuard(map: MapLibreMap, source: string): void {
-  addClearIcon(map)
-  if (map.getLayer(ROUTE_LABEL_GUARD_LAYER)) return
-  map.addLayer({
-    id: ROUTE_LABEL_GUARD_LAYER,
-    type: 'symbol',
-    source,
-    layout: {
-      'symbol-placement': 'line',
-      'symbol-spacing': 12,
-      'icon-image': FENCE_ICON,
-      'icon-size': 0.5,
-      'icon-allow-overlap': true,
-      'icon-ignore-placement': false,
-      'icon-rotation-alignment': 'map',
-    },
-  })
-}
-
-/**
- * Towns and districts over the route (3.0.3, at the owner's request): a
- * district the run went through is the name worth reading, so its label is
- * lifted above the route and the guard - placed first, never dropped for
- * the line, drawn over it on its halo of the ground. Streets and water
- * stay under the line and guarded. Before the markers, which stay on top.
- */
-export function liftPlaceLabels(map: MapLibreMap): void {
-  const before = map.getLayer(RUN_FINISH_LAYER) ? RUN_FINISH_LAYER : undefined
-  for (const layer of map.getStyle().layers) {
-    if (isPlaceLabelLayer(layer as { id: string; type: string; 'source-layer'?: string })) map.moveLayer(layer.id, before)
-  }
-}
-
-/**
  * The run on the Activity map (v4.17), in one call that can be made again
  * after a style change: the route as one accent line, width 4, on a 3 px
- * halo in the page ground (3.0), over the style's place names (design
- * review, Oct 2026: a label used to sit over the finish), with no name left
- * under it (addRouteLabelGuard) but the towns and districts, which sit over
- * it (liftPlaceLabels); the start as a 7 px accent dot in a 2.5 px
- * ring of the ground; the finish
+ * halo in the page ground (3.0), under the style's labels as the heatmap's
+ * tracks are (3.0.3, at the owner's request): every name stays, drawn over
+ * the line on its own halo, so a district the run crossed is named. The
+ * start as a 7 px accent dot in a 2.5 px ring of the ground; the finish
  * as the checkered dot of routeMarkers on the line's last point, or one
  * loop marker on the start where the two would touch; and the scrub's
  * marker, a larger accent dot that follows the Charts tab, on top.
  */
 export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   const newSource = setOrAddSource(map, ROUTE_SOURCE, routeData(state.route))
+  const underLabels = firstSymbolLayerId(map)
   if (newSource || !map.getLayer(ROUTE_HALO_LAYER)) {
     map.addLayer({
       id: ROUTE_HALO_LAYER,
@@ -160,7 +119,7 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
       source: ROUTE_SOURCE,
       layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': state.ring, 'line-width': 10 },
-    })
+    }, underLabels)
   }
   if (newSource || !map.getLayer(ROUTE_LINE_LAYER)) {
     map.addLayer({
@@ -169,10 +128,8 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
       source: ROUTE_SOURCE,
       layout: { 'line-join': 'round', 'line-cap': 'round' },
       paint: { 'line-color': state.accent, 'line-width': 4 },
-    })
+    }, underLabels)
   }
-  addRouteLabelGuard(map, ROUTE_SOURCE)
-  liftPlaceLabels(map)
   if (!map.hasImage(FINISH_MARK_ICON)) {
     map.addImage(FINISH_MARK_ICON, routeMarkerImage('finish', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
   }

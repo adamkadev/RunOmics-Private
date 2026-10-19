@@ -6,9 +6,9 @@ All notable changes to this project are documented in this file.
 
 3.0.3 — a district the run crosses keeps its name.
 
-- Activity map: town and district names sit over the route on their halo,
-  under the markers; a name on the line is no longer dropped. Street and
-  water names stay under the line, still kept off it.
+- Activity map: the route runs under the map's names, as the heatmap's
+  tracks do, so every name stays, drawn over the line on its halo; the
+  markers stay on top. The guard that dropped a name on the line is gone.
 - Share card: the map is captured without its towns and districts, and the
   card draws them after the route, on a halo of its own ground, so the
   districts a run went through are named. None is drawn where the header's
