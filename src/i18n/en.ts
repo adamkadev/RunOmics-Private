@@ -259,9 +259,6 @@ export const en = {
     },
     map: {
       title: 'Heatmap',
-      back: 'Activities',
-      // Only runs with a GPS track are on the map (v5.6 #5): 294 of 298.
-      runs: (n: number) => `${n} run${n === 1 ? '' : 's'} with GPS`,
       area: 'Area',
       areas: 'Areas',
       areasSummary: (areas: number, runs: number) =>
@@ -1255,12 +1252,11 @@ export const en = {
     thisWeek: 'This week',
     shoeFilter: { clear: 'Show runs in every shoe' },
     weekLine: {
-      ofKm: (target: string) => ` of ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 run' : `${n} runs`),
-      runsOf: (done: number, planned: number) => `${done} of ${planned} planned run${planned !== 1 ? 's' : ''}`,
       easy: (pct: number) => `${pct}% easy`,
     },
-    mapButton: 'Map view',
+    // The page's two views, under the title (design review, Oct 2026).
+    view: { label: 'View', list: 'List', map: 'Map' },
     sort: {
       label: 'Sort',
       date: 'Date',

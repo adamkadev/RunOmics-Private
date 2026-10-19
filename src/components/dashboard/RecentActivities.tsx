@@ -25,7 +25,7 @@ export function RecentActivities({ activities, qualifiedEffortsByActivityId = {}
 
       <div className={cardClass({ padding: 'none', overflow: true, className: 'divide-y divide-border' })}>
         {activities.map((a) => (
-          <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
+          <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} meta="type" />
         ))}
       </div>
     </section>

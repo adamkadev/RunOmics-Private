@@ -235,8 +235,6 @@ export const fr = {
     },
     map: {
       title: 'Heatmap',
-      back: 'Activités',
-      runs: (n: number) => `${n} sortie${n > 1 ? 's' : ''} avec GPS`,
       area: 'Zone',
       areas: 'Zones',
       areasSummary: (areas: number, runs: number) =>
@@ -1189,12 +1187,10 @@ export const fr = {
     thisWeek: 'Cette semaine',
     shoeFilter: { clear: 'Afficher les sorties de toutes les chaussures' },
     weekLine: {
-      ofKm: (target: string) => ` sur ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 sortie' : `${n} sorties`),
-      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} prévue${done > 1 ? 's' : ''} sur ${planned}`,
       easy: (pct: number) => `${pct} % facile`,
     },
-    mapButton: 'Vue carte',
+    view: { label: 'Affichage', list: 'Liste', map: 'Carte' },
     sort: {
       label: 'Trier',
       date: 'Date',

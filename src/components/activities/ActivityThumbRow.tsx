@@ -5,7 +5,7 @@ import { TypeDot } from '@/components/ui/TypeDot'
 import { Unit } from '@/components/ui/Stat'
 import type { ActivitySummary } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
-import { formatDate, formatDistance, formatPace } from '@/lib/formatters'
+import { formatDate, formatDistance, formatDuration, formatPace, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { activityTitle } from '@/lib/activityTitle'
@@ -20,23 +20,47 @@ interface Props {
    * leaves the year out.
    */
   variant?: 'card' | 'inset'
+  /**
+   * `run`: date · moving time · avg HR (Activities, design review Oct 2026).
+   * `type`: date · type · RPE, as Today's recent runs still read.
+   */
+  meta?: 'run' | 'type'
 }
 
 /**
- * A run as a list row (v4.17): its route on a tile, the name, then a meta
- * line - the type's dot, the date, the type and the RPE - and on the right
- * the distance over the pace, each with its unit.
+ * A row's meta line (design review, Oct 2026): the date, the moving time and
+ * the average HR - "Tue 20 · 57:23 · 139 bpm" - the HR left out when the run
+ * has none. The type is the dot beside it. Inside its week the weekday and
+ * day are enough; a row outside one keeps the month.
  */
-export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
-  const title = activityTitle(a)
-  const meta = [
-    formatDate(a.date, variant === 'inset' ? { year: 'never' } : {}),
-    // A type this build does not know yet has no label; name it as it came.
-    t.activityTypes[a.type] ?? a.type,
-    a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null,
+export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds' | 'avgHeartRate'>, variant: 'card' | 'inset' = 'card'): string {
+  return [
+    variant === 'inset' ? formatWeekday(a.date, true) : formatDate(a.date),
+    a.durationSeconds > 0 ? formatDuration(Math.round(a.durationSeconds)) : null,
+    a.avgHeartRate ? `${Math.round(a.avgHeartRate)} ${t.units.bpm}` : null,
   ]
     .filter(Boolean)
     .join(' · ')
+}
+
+/**
+ * A run as a list row (v4.17): its route on a tile, the name, then the type's
+ * dot and the meta line, and on the right the distance over the pace, each
+ * with its unit.
+ */
+export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card', meta: metaKind = 'run' }: Props) {
+  const title = activityTitle(a)
+  const meta =
+    metaKind === 'run'
+      ? thumbRowMeta(a, variant)
+      : [
+          formatDate(a.date, variant === 'inset' ? { year: 'never' } : {}),
+          // A type this build does not know yet has no label; name it as it came.
+          t.activityTypes[a.type] ?? a.type,
+          a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')
 
   return (
     <Link
