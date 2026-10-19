@@ -82,4 +82,14 @@ describe('number formatting', () => {
     const offenders = sources(join(process.cwd(), 'src', 'components')).filter((file) => /\.toLocaleString\(/.test(readFileSync(file, 'utf8')))
     expect(offenders).toEqual([])
   })
+
+  // 3.0.2: toFixed always writes a point, so "9.5" sat beside the French
+  // build's "9,5". A figure on screen goes through formatDecimal; toFixed
+  // stays for SVG paths, CSS percents and cache keys, never a JSX child.
+  it('never renders a toFixed figure as text', () => {
+    const offenders = sources(join(process.cwd(), 'src', 'components')).filter((file) =>
+      /(?<![$=])\{[^{}]*\.toFixed\(\d\)\}/.test(readFileSync(file, 'utf8')),
+    )
+    expect(offenders).toEqual([])
+  })
 })

@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
+import { formatDecimal, formatKm } from '@/lib/formatters'
 
 /**
  * Seven days, each drawn as its state and its intensity: the shape says done,
@@ -43,14 +44,16 @@ function cellName(cell: DayStateCell): string {
   return [t.sessionState.dayLabel(cell.fullLabel, state), cell.detail].filter(Boolean).join(' · ')
 }
 
+// Through lib/formatters, so the decimal follows the locale: toFixed always
+// wrote "9.5", beside the French build's "9,5" everywhere else.
 function formatCellKm(km: number): string {
-  return km < 10 && Math.round(km * 10) % 10 !== 0 ? km.toFixed(1) : String(Math.round(km))
+  return km < 10 && Math.round(km * 10) % 10 !== 0 ? formatDecimal(km, 1) : formatKm(km)
 }
 
 /** A run day's own km, to the tenth: "10.2", not the planned "10" (M11). */
 function formatRunKm(km: number): string {
   const tenth = Math.round(km * 10) / 10
-  return Number.isInteger(tenth) ? String(tenth) : tenth.toFixed(1)
+  return Number.isInteger(tenth) ? formatKm(tenth) : formatDecimal(tenth, 1)
 }
 
 /**

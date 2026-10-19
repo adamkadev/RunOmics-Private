@@ -1543,7 +1543,7 @@ export const en = {
         behind: 'Short',
         pending: 'Upcoming',
       },
-      km: (actual: number, target: number) => `${actual} / ${target}`,
+      km: (actual: string, target: string) => `${actual} / ${target}`,
       targetRule: 'monthly target',
       inProgress: 'in progress',
       daysIn: (month: string, days: number) => `${month} is ${days} day${days === 1 ? '' : 's'} in`,

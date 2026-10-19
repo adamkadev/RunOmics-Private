@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react'
 import type { MonthGoal } from '@/application/usecases/GetGoalsData'
 import { cardClass } from '@/components/ui/Card'
 import { Legend, LegendItem } from '@/components/ui/Legend'
-import { monthLabel, monthName } from '@/lib/formatters'
+import { formatKm, monthLabel, monthName } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -77,7 +77,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
               className="pointer-events-none absolute left-0 -translate-y-1/2 text-[11px] text-muted-foreground"
               style={{ bottom: `${Math.min((typicalTargetKm / scaleMax) * 100, 100)}%` }}
             >
-              {typicalTargetKm}
+              {formatKm(typicalTargetKm)}
             </span>
             {elapsedMonths.map((mg) => {
               const isCurrent = current?.month === mg.month
@@ -87,8 +87,8 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
                   <div
                     className="absolute inset-x-0 bottom-0 rounded-[5px_5px_2px_2px] transition-all"
                     title={`${monthLabel(mg.month)}: ${t.goals.monthlyVolume.km(
-                      Math.round(mg.actualKm),
-                      Math.round(mg.progress ? mg.progress.proRataTargetKm : mg.targetKm),
+                      formatKm(mg.actualKm),
+                      formatKm(mg.progress ? mg.progress.proRataTargetKm : mg.targetKm),
                     )} ${t.units.km}`}
                     style={{
                       height: `${(mg.actualKm / scaleMax) * 100}%`,

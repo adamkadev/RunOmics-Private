@@ -1464,7 +1464,7 @@ export const fr = {
         behind: 'Manqué',
         pending: 'À venir',
       },
-      km: (actual: number, target: number) => `${actual} / ${target}`,
+      km: (actual: string, target: string) => `${actual} / ${target}`,
       targetRule: 'objectif mensuel',
       inProgress: 'en cours',
       daysIn: (month: string, days: number) => `${month} : ${days} jour${days > 1 ? 's' : ''} écoulé${days > 1 ? 's' : ''}`,
