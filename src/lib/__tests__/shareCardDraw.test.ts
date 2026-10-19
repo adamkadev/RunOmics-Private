@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { balanceLines, balanceWrap, drawShareCard, FALLBACK_FONTS, headerFoot, photoScrim, shareCardLayout, slicePolyline, verdictHero, zoneBarLabels, zoneBlockLayout, type ShareCardScene } from '@/lib/shareCardDraw'
-import { W, H, SHARE_ROUTE_HEX, sharePalette } from '@/lib/shareCardPalette'
+import { W, H, SHARE_MARKER_HEX, sharePalette } from '@/lib/shareCardPalette'
 import { curatedAccent } from '@/lib/accentScale'
 import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
 import type { ShareActivity } from '@/lib/shareCardStats'
@@ -41,7 +41,7 @@ const RUN: ShareActivity = {
   ],
 }
 
-const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 }, windows: [[0.2, 0.35], [0.45, 0.6], [0.7, 0.85]] as [number, number][] }
+const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, paces: [262, 264, 266], target: { min: 265, max: 265 }, windows: [[0.2, 0.35], [0.45, 0.6], [0.7, 0.85]] as [number, number][] }
 
 function draw(partial: Partial<ShareCardScene> & Pick<ShareCardScene, 'design'>, mode: 'dark' | 'light' = 'dark') {
   const { ctx, ops } = recorder()
@@ -78,14 +78,17 @@ describe('drawShareCard', () => {
   })
 
   // Design review, Oct 2026: the accent is a point marker's, never a trace or a word.
-  it('keeps the accent to the logo mark and the start marker: off the route and every word', () => {
+  // 3.0.1 polish (mock 3f): the accent is the logo mark and the trace, never a word.
+  it('keeps the accent to the logo mark and the route: off every word and every marker', () => {
     for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
       const ops = draw({ design: 'route', activity })
       expect(ops.filter((o) => o.op === 'fillText' && o.fill === acc)).toEqual([])
-      expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
-      // The mark is three accent strokes; the route takes none.
-      expect(ops.filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(3)
+      expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toEqual([])
     }
+    // The mark is three accent strokes; a plain run's trace is a fourth.
+    expect(draw({ design: 'route' }).filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(4)
+    const reps = draw({ design: 'route', activity: { ...RUN, type: 'Threshold' as const, reps: REPS } })
+    expect(reps.filter((o) => o.op === 'stroke' && o.stroke === acc)).toHaveLength(3)
   })
 
   it('heads the card with the v5.2 lockup: three arcs of the small mark, then "RunOmics"', () => {
@@ -127,9 +130,44 @@ describe('an interval session (design review, Oct 2026)', () => {
   it('leads with the rep pace in the session\'s zone, then Distance, Time and Avg HR', () => {
     const ops = draw({ design: 'route', activity: session })
     const all = texts(ops)
-    expect(all).toEqual(expect.arrayContaining(['REP PACE · 3 × 8′', '4:24', '/km · target 4:25']))
+    expect(all).toEqual(expect.arrayContaining(['REP PACE · 3 × 8′', '4:24', '/km', 'target 4:25 · −0:01']))
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === 'REP PACE · 3 × 8′')?.fill).toBe(palette.zones[3])
     expect(all.slice(-8)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '153', ' bpm', 'Avg HR'])
+  })
+
+  // 4b: the title is the type, the structure moves to the subtitle, and the
+  // reps that differ read as chips under the hero.
+  it('titles the card by type, with the structure and the reps under it', () => {
+    const all = texts(draw({ design: 'route', activity: session }))
+    expect(all).toContain('Threshold')
+    expect(all).toContain('3 × 8′ @ 4:25')
+    expect(all).toEqual(expect.arrayContaining(['Rep 1', '4:22', 'Rep 3', '4:26']))
+    expect(all.some((text) => text.includes('× 8′ @') && text.startsWith('Threshold'))).toBe(false)
+  })
+
+  // The reps take the session's own type, as the hero's caption does: a tempo
+  // session is Z3's violet, not the threshold magenta.
+  it('draws the reps in the session\'s type, on the route, the legend and the bars', () => {
+    const tempo = { ...RUN, type: 'Tempo' as const, reps: { ...REPS, count: 5, paces: [260, 265, 270, 262, 268] } }
+    const ops = draw({ design: 'route', activity: tempo })
+    const strokes = ops.filter((o) => o.op === 'stroke').map((o) => o.stroke)
+    expect(strokes).toContain(palette.zones[2])
+    expect(strokes).not.toContain(palette.zones[3])
+    const fills = ops.filter((o) => o.op === 'fill' || o.op === 'fillRect').map((o) => o.fill)
+    expect(fills).toContain(palette.zones[2])
+    expect(ops.find((o) => o.op === 'fillText' && String(o.args[0]).startsWith('REP PACE'))?.fill).toBe(palette.zones[2])
+  })
+
+  it('keeps the Reps legend at the map\'s top right, on the card\'s own margin', () => {
+    const ops = draw({ design: 'route', activity: session })
+    const legend = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Reps')!
+    expect(legend.args[1] as number).toBeGreaterThan(W / 2)
+    expect(legend.args[2] as number).toBeLessThan(layout(session).textTop + 40)
+    // Its pill ends where the words do, 16 px off the card's edge.
+    const at = ops.indexOf(legend)
+    const pill = ops.filter((o, i) => o.op === 'roundRect' && i < at).at(-2)!
+    const [x, , width] = pill.args as [number, number, number, number, number]
+    expect(x + width).toBeCloseTo(W - 16, 6)
   })
 
   it('gives the rep pace its room out of the middle', () => {
@@ -143,16 +181,18 @@ describe('the route (redesign, Oct 2026)', () => {
   /** The route's own points: every lineTo but the lockup's. */
   const trace = (ops: Op[]) => ops.filter((o) => o.op === 'lineTo' && o.stroke !== acc).map((o) => o.args as [number, number])
 
-  it('draws one trace, near-black on light and near-white on dark, with no legend', () => {
+  // 3.0.1 polish (mock 3f): the trace is the accent, as the app draws it.
+  it('draws one trace in the accent, with no legend', () => {
     for (const mode of ['dark', 'light'] as const) {
       const colours = sharePalette('violet', mode)
       const ops = draw({ design: 'route' }, mode)
       const lines = strokes(ops).map((o) => o.stroke)
-      expect(lines).toContain(SHARE_ROUTE_HEX[mode])
+      expect(lines).toContain(colours.acc)
+      expect(colours.route).toBe(colours.acc)
       expect(lines.filter((c) => colours.zones.includes(c) || c === colours.mu)).toEqual([])
       expect(texts(ops)).not.toContain('Reps')
     }
-    expect(SHARE_ROUTE_HEX).toEqual({ light: '#141716', dark: '#f2f4f3' })
+    expect(SHARE_MARKER_HEX.dark).toBe('#f2f4f3')
   })
 
   // At the owner's request (3.0): an interval session keeps its reps marked.
@@ -160,13 +200,25 @@ describe('the route (redesign, Oct 2026)', () => {
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
     const ops = draw({ design: 'route', activity: run })
     const lines = strokes(ops)
-    const grey = lines.findIndex((o) => o.stroke === palette.mu)
+    const grey = lines.findIndex((o) => o.stroke === palette.trace)
+    expect(grey).toBeGreaterThanOrEqual(0)
     const reps = lines.filter((o) => o.stroke === palette.zones[3])
     expect(reps).toHaveLength(3)
     // Grey first, so a rep down the warm-up's road stays on top.
     expect(lines.indexOf(reps[0]!)).toBeGreaterThan(grey)
-    expect(lines.map((o) => o.stroke)).not.toContain(SHARE_ROUTE_HEX.dark)
     expect(texts(ops)).toContain('Reps')
+  })
+
+  // The rest of the route is a muted grey, so the reps are what the eye finds:
+  // on dark it sits under the ink the names take, never beside it.
+  it('keeps the non-rep route muted, a step under the names, on both themes', () => {
+    expect(sharePalette('violet', 'dark').trace).toBe('#6b7270')
+    expect(sharePalette('violet', 'light').trace).toBe('#8a8a8a')
+    const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
+    for (const mode of ['dark', 'light'] as const) {
+      const colours = sharePalette('violet', mode)
+      expect(strokes(draw({ design: 'route', activity: run }, mode)).map((o) => o.stroke)).toContain(colours.trace)
+    }
   })
 
   it('cuts a rep where it starts, not at the nearest point of the route', () => {
@@ -185,12 +237,14 @@ describe('the route (redesign, Oct 2026)', () => {
     }
   })
 
+  // A rep session is titled by its type alone (4b), so the two-line title is
+  // another run's; the rep pace and its chips take the room at the foot.
   it('keeps the route clear of a two-line title and of the rep pace', () => {
-    const long = { ...RUN, sessionTitle: 'Threshold · 3 × 8′ @ 4:25 then six strides on the flat', type: 'Threshold' as const, reps: REPS }
-    const l = layout(long)
-    expect(l.routeFrame.top).toBeGreaterThan(layout().routeFrame.top)
+    const long = { ...RUN, sessionTitle: 'Broschtkriibslaf an der Stad Lëtzebuerg, mat de Kollegen' }
+    expect(layout(long).routeFrame.top).toBeGreaterThan(layout().routeFrame.top)
+    const l = layout({ ...RUN, type: 'Threshold' as const, reps: REPS })
     expect(l.routeFrame.bottom).toBeGreaterThan(layout().routeFrame.bottom)
-    for (const [, y] of trace(draw({ design: 'route', activity: long }))) {
+    for (const [, y] of trace(draw({ design: 'route', activity: { ...RUN, type: 'Threshold' as const, reps: REPS } }))) {
       expect(y).toBeGreaterThanOrEqual(l.routeFrame.top - 1e-6)
       expect(y).toBeLessThanOrEqual(l.textBottom - 16 + 1e-6)
     }
@@ -211,9 +265,12 @@ describe('the route (redesign, Oct 2026)', () => {
     expect(header).toBeGreaterThan(band)
   })
 
-  it('rules the stat row off, inside the card\'s margins', () => {
+  // 3.0.1 polish (mock 3f): the strip is the card's own ground, ruled off edge to edge.
+  it('rules the stat row off and sets it on the card colour', () => {
     const { ruleY } = layout()
-    expect(draw({ design: 'route' }).some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === ruleY && o.args[0] === 16 && o.args[2] === W - 32)).toBe(true)
+    const ops = draw({ design: 'route' })
+    expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.card && o.args[1] === ruleY && o.args[0] === 0 && o.args[2] === W)).toBe(true)
+    expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === ruleY && o.args[0] === 0 && o.args[2] === W && o.args[3] === 1)).toBe(true)
   })
 
   // The Activity map's markers (routeMarkers) at the card's 0.85: the finish's outline, the loop's, the start's dot.
@@ -223,14 +280,14 @@ describe('the route (redesign, Oct 2026)', () => {
   const START_DOT = 8 * k - 2.5 * k
   const arcsOf = (ops: Op[], radius: number) => ops.filter((o) => o.op === 'arc' && o.args[2] === radius).map((o) => o.args.slice(0, 2))
 
-  it('puts the checkered finish on the trace\'s own last point, the accent start over it', () => {
+  it('puts the checkered finish on the trace\'s own last point, the white start over it', () => {
     const ops = draw({ design: 'route' })
     const points = trace(ops)
     expect(arcsOf(ops, FINISH_OUTLINE)).toEqual([points[points.length - 1]])
     expect(arcsOf(ops, START_DOT)).toHaveLength(1)
     expect(ops.some((o) => o.op === 'fillRect' && o.fill === '#0c0d0d')).toBe(true)
     const fills = ops.filter((o) => o.op === 'fill').map((o) => o.fill)
-    expect(fills.lastIndexOf(acc)).toBeGreaterThan(fills.indexOf('#ffffff'))
+    expect(fills.lastIndexOf(palette.marker)).toBeGreaterThan(fills.indexOf('#ffffff'))
   })
 
   it('draws a loop as one combined marker on the start, never two stacked', () => {
@@ -239,8 +296,8 @@ describe('the route (redesign, Oct 2026)', () => {
     expect(arcsOf(ops, LOOP_OUTLINE)).toHaveLength(1)
     expect(arcsOf(ops, FINISH_OUTLINE)).toEqual([])
     expect(arcsOf(ops, START_DOT)).toEqual([])
-    // Its ring is the accent.
-    expect(ops.filter((o) => o.op === 'fill' && o.fill === acc)).toHaveLength(1)
+    // Its ring is the marker's own colour.
+    expect(ops.filter((o) => o.op === 'fill' && o.fill === palette.marker)).toHaveLength(1)
   })
 })
 
@@ -343,7 +400,7 @@ describe('the Stats design without a written verdict (design review, Oct 2026)',
     expect(layout(RUN, 'photo').ruleY).toBeNull()
     const ops = draw({ design: 'stats' })
     expect(ops[0]).toMatchObject({ op: 'fillRect', args: [0, 0, W, H] })
-    expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === stats.ruleY && o.args[2] === W - 32)).toBe(true)
+    expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === stats.ruleY && o.args[2] === W)).toBe(true)
   })
 
   // Round 2: the block sat small in the middle, ~150 px empty above it.

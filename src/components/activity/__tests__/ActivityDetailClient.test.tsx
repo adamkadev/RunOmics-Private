@@ -80,7 +80,7 @@ describe('ActivityDetailClient', () => {
     renderDetail()
     const stats = screen.getByTestId('run-stats')
     expect(stats.textContent).toBe(
-      `${formatDistance(6.11)}${t.units.km}${t.activity.stats.distance}25:24${t.activity.stats.duration}4:10${t.units.perKm}${t.activity.stats.pace}115${t.units.bpm}${t.activity.stats.avgHr}`,
+      `${formatDistance(6.11)}${t.units.km}${t.activity.stats.distance}25${t.units.min}${t.activity.stats.duration}4:10${t.units.perKm}${t.activity.stats.pace}115${t.units.bpm}${t.activity.stats.avgHr}`,
     )
     expect(stats.className).toContain('grid-cols-4')
     expect(screen.queryByTestId('run-summary')).toBeNull()
@@ -92,7 +92,7 @@ describe('ActivityDetailClient', () => {
     const weather = { tempC: 18, apparentTempC: 18, humidityPct: 60, windKph: 2, windDirDeg: 0, precipitationMm: 0, code: 0 }
     renderDetail({ activity: { ...ACTIVITY, rpe: 1, weather } as ActivityDetailView, shoe: { name: 'Vomero Plus', dotColor: '#fff' } })
     const chips = within(screen.getByTestId('run-chips'))
-    expect(chips.getByTestId('run-effort').textContent).toBe(`${t.activity.effort.label} ${t.activity.effort.value(1, 'Very light')}`)
+    expect(chips.getByTestId('run-effort').textContent).toBe(t.activities.row.rpeValue(1))
     expect(chips.getByTestId('run-conditions').textContent).toBe('18°C · wind 2 km/h N')
     expect(chips.getByTestId('run-shoe').textContent).toBe('Vomero Plus')
     expect(chips.getByTestId('note-row')).toBeInTheDocument()
@@ -183,10 +183,11 @@ describe('ActivityDetailClient', () => {
   })
 
   // v4.17: the insight's eyebrow says how the session went, in its status colour.
-  it('heads the verdict with a status eyebrow', () => {
+  it('heads the verdict with one accent label: how it went and what it was', () => {
     renderDetail({ activity: { ...ACTIVITY, rpe: 7 } as ActivityDetailView })
 
-    const eyebrow = screen.getByText(t.activity.verdict.eyebrow.positive)
-    expect(eyebrow.getAttribute('style')).toContain('--pos')
+    const session = t.activity.verdict.headline.positive(t.activityTypes[ACTIVITY.type])
+    const eyebrow = screen.getByText(`${t.activity.verdict.eyebrow.positive} · ${session}`)
+    expect(eyebrow.getAttribute('style')).toContain('--accent-text')
   })
 })

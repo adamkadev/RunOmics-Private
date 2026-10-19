@@ -3,6 +3,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
+import { getRecentLoad } from '@/application/usecases/GetRecentLoad'
 import { getRecords, getMostRecentRecord } from '@/application/usecases/GetRecords'
 import { getPlannedWorkouts, getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { getTodayInsight, todayInsightSession } from '@/application/usecases/GetTodayInsight'
@@ -22,6 +23,7 @@ import { ReadinessCard } from '@/components/dashboard/ReadinessCard'
 import { TodayBoard } from '@/components/dashboard/TodayBoard'
 import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
+import { LoadStrip } from '@/components/dashboard/LoadStrip'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { findLastRun, findNextSession, sessionCard } from '@/components/dashboard/nextSession'
 import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
@@ -44,6 +46,7 @@ export default async function DashboardPage() {
   const mostRecentRecord = getMostRecentRecord(records)
   const todayPlannedWorkout = await getTodayPlannedWorkout(today)
   const weeklyStreak = getWeeklyStreakData(new Date(`${today}T12:00:00`))
+  const recentLoad = await getRecentLoad(today)
   const coaching = getCoachingOverview(today)
   const weekTarget = await loadWeekTarget(today, coaching)
 
@@ -94,6 +97,8 @@ export default async function DashboardPage() {
           <WeeklyStreakCard data={weeklyStreak} target={weekTarget} today={today} sessionKinds={sessionKinds} />
         </Link>
       )}
+
+      {recentLoad && <LoadStrip recent={recentLoad} />}
     </div>
   )
 }

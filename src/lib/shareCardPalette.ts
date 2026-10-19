@@ -32,20 +32,26 @@ export interface SharePalette {
   mu: string
   /** --track: the zone rows' track and the empty photo frame. */
   fa: string
-  /** --accent: the logo mark and the route's point markers, never a trace (routeMarkers). */
+  /** --card: the stat strip's own ground under the hairline (3.0.1 polish, mock 3f). */
+  card: string
+  /** --accent: the logo mark and the route trace (3.0.1). */
   acc: string
   zones: readonly string[]
   /** --pos and --warn: the verdict eyebrow's dot and word, as the Overview card colours them. */
   pos: string
   warn: string
-  /** The route: one colour, near-black on light and near-white on dark (redesign, Oct 2026). */
+  /** The route: the accent, as the app draws it (3.0.1 polish, mock 3f). */
   route: string
+  /** The route's end markers: white on dark, the accent on light, so they read over the trace. */
+  marker: string
+  /** An interval route's own grey, under its reps: a step lighter than the ink on light. */
+  trace: string
   /** ActivityMap's route casing. */
   casing: string
 }
 
-/** The share card's route ink (redesign, Oct 2026): never the accent, never a pace or HR colour. */
-export const SHARE_ROUTE_HEX = { light: '#141716', dark: '#f2f4f3' } as const
+/** The route's end markers (3.0.1): white on dark, the accent on light, over an accent trace. */
+export const SHARE_MARKER_HEX = { light: null, dark: '#f2f4f3' } as const
 
 export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
   const s = SURFACES[mode]
@@ -55,11 +61,14 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     tx: s.text,
     mu: s.text2,
     fa: s.faint,
+    card: s.card,
     acc: curatedAccent(accent)[mode].acc,
     zones: ZONE_HEX[mode],
     pos: STATUS_HEX[mode].pos,
     warn: STATUS_HEX[mode].warn,
-    route: SHARE_ROUTE_HEX[mode],
+    route: curatedAccent(accent)[mode].acc,
+    marker: SHARE_MARKER_HEX[mode] ?? curatedAccent(accent)[mode].acc,
+    trace: mode === 'light' ? '#8a8a8a' : '#6b7270',
     casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
   }
 }

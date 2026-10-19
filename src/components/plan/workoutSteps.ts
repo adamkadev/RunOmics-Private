@@ -5,12 +5,6 @@ import { t } from '@/i18n'
 import { kindLabel, type SessionKind } from './sessionKind'
 import { sessionParts, stepClock, stepSeconds } from './workoutSummary'
 
-/**
- * The selected workout's intensity profile and steps (redesign 3.0, 1d): one
- * block per step, as wide as it lasts - warm-up, cool-down and the jog
- * between reps low and neutral, the work full height in the session's colour
- * - and under it the same session as a list of rows.
- */
 export type StepTone = 'ease' | 'work' | 'recovery'
 
 export interface ProfileBlock {
@@ -30,7 +24,6 @@ export interface StepRow {
 }
 
 const EASE_FILL = WORKOUT_SEGMENT_COLORS.warmup
-const RECOVERY_FILL = WORKOUT_SEGMENT_COLORS.recovery
 /** Strides inside an easy run are drawn at max, as Today's bar draws them. */
 const STRIDE_FILL = zoneColor(5)
 
@@ -44,6 +37,13 @@ function paceText(step: WorkoutStep | undefined): string | null {
   return pace ? t.plan.row.pace(`${formatClock(pace[0])}–${formatClock(pace[1])}`) : null
 }
 
+function setSpanSeconds(list: WorkoutStep[], reps: WorkoutStep[]): number {
+  const first = list.indexOf(reps[0]!)
+  const last = list.lastIndexOf(reps[reps.length - 1]!)
+  if (first < 0 || last < first) return 0
+  return list.slice(first, last + 1).reduce((sum, step) => sum + stepSeconds(step), 0)
+}
+
 /** A session never ends on the jog after its last rep. */
 function trimmed(steps: WorkoutStep[]): WorkoutStep[] {
   return steps.at(-1)?.kind === 'recovery' ? steps.slice(0, -1) : steps
@@ -54,12 +54,18 @@ export function intensityBlocks(steps: WorkoutStep[] | null, totalSeconds: numbe
   const list = trimmed(steps ?? [])
   if (list.length <= 1) return [{ tone: 'work', seconds: Math.max(totalSeconds, 1), fill: color }]
   const { body, strides } = sessionParts(list)
-  return list.map((step) => {
+  const blocks = list.map<ProfileBlock>((step) => {
     const seconds = Math.max(stepSeconds(step), 1)
     if (step.kind === 'warmup' || step.kind === 'cooldown') return { tone: 'ease', seconds, fill: EASE_FILL }
-    if (step.kind === 'recovery') return { tone: 'recovery', seconds, fill: RECOVERY_FILL }
+    if (step.kind === 'recovery') return { tone: 'recovery', seconds, fill: EASE_FILL }
     return { tone: 'work', seconds, fill: strides && step !== body ? STRIDE_FILL : color }
   })
+  return blocks.reduce<ProfileBlock[]>((merged, block) => {
+    const last = merged.at(-1)
+    if (last && last.tone === block.tone && last.fill === block.fill) last.seconds += block.seconds
+    else merged.push({ ...block })
+    return merged
+  }, [])
 }
 
 interface StepSession {
@@ -104,13 +110,14 @@ export function stepRows({ steps, type, kind, color, totalSeconds, pace = null }
   if (reps.length > 0) {
     const rep = stepLength(stepSeconds(reps[0]!))
     const rec = recovery ? t.plan.row.recovery(stepClock(stepSeconds(recovery))) : null
+    const setSeconds = setSpanSeconds(list, reps)
     rows.push({
       key: 'reps',
       tone: 'work',
       fill: strides ? STRIDE_FILL : color,
       title: strides ? s.strides(reps.length, rep) : s.reps(reps.length, rep, label.toLocaleLowerCase(t.locale)),
       detail: join(strides ? null : zone, paceText(reps[0]), rec),
-      duration: s.repsShort(reps.length, rep),
+      duration: setSeconds > 0 ? stepLength(setSeconds) : s.repsShort(reps.length, rep),
     })
   }
   if (cooldown) rows.push({ key: 'cooldown', tone: 'ease', fill: EASE_FILL, title: s.cooldown, detail: paceText(cooldown) ?? s.easy, duration: stepLength(stepSeconds(cooldown)) })

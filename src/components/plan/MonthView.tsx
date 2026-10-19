@@ -14,7 +14,7 @@ import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { PlanPeriodNav } from './PlanPeriodNav'
 import { monthDays, type MonthDayState } from './monthDays'
-import { phaseWeek, planPhaseSpans, spanOfWeek, spanWeeks, type PhaseSpan } from './planPhaseSpans'
+import { planPhaseSpans, spanOfWeek, spanWeeks, type PhaseSpan } from './planPhaseSpans'
 import { dayKind, kindColor, type DayKind } from './sessionKind'
 import { sessionTitle } from './sessionTitle'
 import { formatWeekKm } from './weekPlanDays'
@@ -85,7 +85,11 @@ interface Row {
 /** A day's tile (redesign 3.0, 1g): a run in its colour at 20%, a session still to come dashed in it, rest empty. */
 function tileStyle(cell: Cell): CSSProperties | null {
   const color = cell.kind?.color ?? 'var(--muted-foreground)'
-  if (cell.state === 'done' || cell.state === 'extra') return { background: `color-mix(in srgb, ${color} 20%, transparent)` }
+  if (cell.state === 'done' || cell.state === 'extra')
+    return {
+      background: `color-mix(in srgb, ${color} 25%, transparent)`,
+      border: `1px solid color-mix(in srgb, ${color} 50%, transparent)`,
+    }
   if (cell.state === 'planned') return { border: `1px dashed ${color}` }
   if (cell.state === 'missed') return { border: '1px dashed var(--neg)' }
   return null
@@ -122,12 +126,6 @@ function Swatch({ style }: { style: CSSProperties }) {
   return <span aria-hidden className="box-border size-2.5 shrink-0 rounded-[3px]" style={style} />
 }
 
-/**
- * Plan's month (redesign 3.0, 1g): each week a row, its phase a 3 pt border
- * down its left - the current phase in the accent - and the phase named once,
- * over its first week. A day is its date and a tile with its km; the week's
- * km sit at the end of its row. Tapping a week opens it in the Week view.
- */
 export function MonthView({
   year,
   month,
@@ -219,7 +217,6 @@ export function MonthView({
   }
 
   const monthName = formatDate(monthStart, { precision: 'month', style: 'full', year: 'never' })
-  const summaryPhase = phaseWeek(spans, rows.find((r) => r.current)?.monday ?? rows[0]!.monday)
   const key = monthEnd >= today ? nextKeySession(monthStart > today ? monthStart : today, byDatePlanned, byDateCoach) : null
   const m = t.plan.month
 
@@ -300,14 +297,10 @@ export function MonthView({
                   )
                 })}
                 <span data-testid="month-week-total" className="flex min-w-0 flex-col items-end pr-1 leading-tight tabular-nums">
-                  {row.future ? (
-                    row.plannedKm > 0 && <span className="text-sm font-semibold text-muted-foreground">{formatWeekKm(row.plannedKm)}</span>
-                  ) : (
-                    <>
-                      <span className={cn('text-sm font-semibold', row.current ? 'text-accent-text' : 'text-foreground')}>{formatRanKm(row.ranKm)}</span>
-                      {row.plannedKm > 0 && <span className="text-[11px] text-muted-foreground">/ {formatWeekKm(row.plannedKm)}</span>}
-                    </>
-                  )}
+                  <span className={cn('text-sm font-semibold', row.future ? 'text-muted-foreground' : row.current ? 'text-accent-text' : 'text-foreground')}>
+                    {row.future ? '–' : formatRanKm(row.ranKm)}
+                  </span>
+                  {row.plannedKm > 0 && <span className="text-[11px] text-muted-foreground">/ {formatWeekKm(row.plannedKm)}</span>}
                 </span>
               </button>
             </div>
@@ -339,12 +332,7 @@ export function MonthView({
       </div>
 
       <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="month-summary">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-          <h2 className="text-[15px] font-semibold text-foreground">{monthName}</h2>
-          {summaryPhase && (
-            <p className="text-xs text-muted-foreground">{m.phaseWeek(summaryPhase.span.shortName, summaryPhase.week, summaryPhase.total)}</p>
-          )}
-        </div>
+        <h2 className="text-[15px] font-semibold text-foreground">{monthName}</h2>
         {plannedKm > 0 && (
           <div aria-hidden className="h-2 overflow-hidden rounded-full bg-[var(--line-2)]">
             <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.round((ranKm / plannedKm) * 100))}%` }} />

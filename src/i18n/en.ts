@@ -543,6 +543,11 @@ export const en = {
         rest: 'Rest',
       },
     },
+    loadStrip: {
+      title: 'Load · last 7 days',
+      band: (lo: number, hi: number) => `target ${lo}–${hi}`,
+      day: (date: string, load: number) => `${date} · load ${load}`,
+    },
     celebration: {
       eyebrow: 'New personal record',
       later: 'Later',
@@ -1219,6 +1224,9 @@ export const en = {
       // An interval session's headline, drawn in capitals: "REP PACE · 3 × 8′".
       repPace: (count: number, length: string) => `Rep pace · ${count} × ${length}`,
       target: (pace: string) => `target ${pace}`,
+      structure: (set: string, pace: string) => `${set} @ ${pace}`,
+      rep: (n: number) => `Rep ${n}`,
+      repRange: (fastest: string, slowest: string) => `Fastest ${fastest} · Slowest ${slowest}`,
       // The route's legend on an interval session: the reps are what it marks.
       repsLegend: 'Reps',
       photo: 'Photo',
@@ -1304,6 +1312,12 @@ export const en = {
       },
       footnote: 'Pace-to-heart-rate ratio, second half vs first. Under 5% is the mark of a steady run.',
       seeInCharts: 'See it in Charts ›',
+    },
+    pacePreview: {
+      title: 'Pace & heart rate',
+      openCharts: 'Charts',
+      pace: 'Pace',
+      hr: 'HR',
     },
     dataQuality: {
       estimated: 'Estimated',
@@ -2054,6 +2068,17 @@ export const en = {
     },
     // Plan's week (redesign 3.0): the phase card, the week row, the selected day.
     kinds: { easy: 'Easy', long: 'Long run' },
+    typeLetters: {
+      easy: 'E',
+      long: 'L',
+      Sprint: 'S',
+      Anaerobic: 'A',
+      VO2Max: 'V',
+      Threshold: 'T',
+      Tempo: 'Tm',
+      Base: 'E',
+      Race: 'R',
+    } as Record<string, string>,
     phase: {
       weekOf: (total: number) => ({ before: 'Week', after: `of ${total}` }),
       generalShort: 'General prep',

@@ -502,6 +502,11 @@ export const fr = {
         rest: 'Repos',
       },
     },
+    loadStrip: {
+      title: 'Charge · 7 derniers jours',
+      band: (lo: number, hi: number) => `cible ${lo}–${hi}`,
+      day: (date: string, load: number) => `${date} · charge ${load}`,
+    },
     celebration: {
       eyebrow: 'Nouveau record personnel',
       later: 'Plus tard',
@@ -1156,6 +1161,9 @@ export const fr = {
       // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
       repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
       target: (pace: string) => `cible ${pace}`,
+      structure: (set: string, pace: string) => `${set} @ ${pace}`,
+      rep: (n: number) => `Fraction ${n}`,
+      repRange: (fastest: string, slowest: string) => `Plus rapide ${fastest} · Plus lente ${slowest}`,
       // La légende du parcours d’une séance de fractionné : elle marque les fractions.
       repsLegend: 'Fractions',
       photo: 'Photo',
@@ -1237,6 +1245,12 @@ export const fr = {
       },
       footnote: 'Rapport allure/FC, seconde moitié contre première. Sous 5 %, la sortie est tenue.',
       seeInCharts: 'Voir dans Graphiques ›',
+    },
+    pacePreview: {
+      title: 'Allure et fréquence cardiaque',
+      openCharts: 'Graphiques',
+      pace: 'Allure',
+      hr: 'FC',
     },
     dataQuality: {
       estimated: 'Estimé',
@@ -1912,6 +1926,17 @@ export const fr = {
       next: (weekday: string, title: string) => `Aucune séance prévue. Prochaine : ${weekday}, ${title}.`,
     },
     kinds: { easy: 'Footing', long: 'Sortie longue' },
+    typeLetters: {
+      easy: 'F',
+      long: 'L',
+      Sprint: 'Sp',
+      Anaerobic: 'A',
+      VO2Max: 'V',
+      Threshold: 'S',
+      Tempo: 'Tm',
+      Base: 'F',
+      Race: 'C',
+    } as Record<string, string>,
     phase: {
       weekOf: (total: number) => ({ before: 'Semaine', after: `sur ${total}` }),
       generalShort: 'Prépa générale',

@@ -1,6 +1,7 @@
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { distanceKm, median, round } from "@/lib/math";
+import { heatRamp } from "@/lib/heatRamp";
 import { t } from "@/i18n";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 
@@ -16,18 +17,11 @@ export function matchesFilters(meta: RouteMeta | undefined, filters: HeatFilters
   return true;
 }
 
-// The territory card follows whichever area is on the map, not a fixed
-// all-time home base - so it recomputes from the same filtered route set the
-// heatmap itself is drawing, scoped to the one cluster in view.
 export interface AreaTerritory {
-  /** Where the area's runs start: the median start point, [lon, lat]. */
   home: [number, number];
-  /** The area's share of all km under the filters. */
   percentVolume: number;
-  /** Half the runs never go further than this from home. */
   medianReachKm: number;
   routeCount: number;
-  /** The area's km under the filters: the numerator of percentVolume. */
   km: number;
 }
 
@@ -67,11 +61,6 @@ export function computeAreaTerritory(
   };
 }
 
-/**
- * The median reach as an upper bound: half the runs stay within it, so it
- * rounds up - 1 for 0.6, 1.3 for 1.21 - and never reads 0. The ring is drawn
- * at this radius, so the map and the sentence state the same distance.
- */
 export function reachKm(km: number): number {
   return km <= 1 ? 1 : Math.ceil(km * 10) / 10;
 }
@@ -84,15 +73,9 @@ export interface AreaRow {
   idx: number;
   runs: number;
   km: number;
-  /** The area's share of all km under the filters - the card's basis too. */
   sharePercent: number;
 }
 
-/**
- * Every area with a run under the filters, busiest by km first: the area
- * list that replaced the world view (v4.8). One share basis, km, the same
- * one computeAreaTerritory states.
- */
 export function areaRows(clusters: RouteCluster[], routeMeta: RouteMeta[], filters: HeatFilters): AreaRow[] {
   const perArea = clusters.map((c, idx) => {
     const indices = c.routeIndices.filter((i) => matchesFilters(routeMeta[i], filters));
@@ -140,12 +123,6 @@ export function mercatorY(lat: number): number {
   return (180 - (180 / Math.PI) * Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360))) / 360;
 }
 
-/**
- * Each run as one flat list of Mercator x, y pairs, ready to stroke. A GPS
- * jump (v5.6 #5) is a NaN pair: the pen lifts there, so no straight line
- * fans out where the watch lost its fix, and the run stays one stroke - a
- * run that crosses itself never counts twice.
- */
 export function buildHeatTracks(routes: [number, number][][], indices: number[]): Float64Array[] {
   const tracks: Float64Array[] = [];
   for (const i of indices) {
@@ -176,13 +153,6 @@ export function rgba(hex: string, alpha: number): string {
   return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
-/**
- * How the tracks are drawn (v4.17): every run stroked twice in the accent - a
- * wide faint glow and a thin core - because the tracks are the athlete's own
- * data. Where runs overlap they build up: added light on dark, multiplied ink
- * on light, so the most run streets burn brightest (dark) or deepest (light)
- * with no count behind them.
- */
 export const HEAT_STYLE = {
   dark: {
     composite: "lighter",
@@ -193,31 +163,23 @@ export const HEAT_STYLE = {
   },
   light: {
     composite: "multiply",
-    passes: [
-      { width: 3, alpha: 0.05 },
-      { width: 1, alpha: 0.2 },
-    ],
+    passes: [{ width: 1.3, alpha: 0.5 }],
   },
 } as const satisfies Record<"dark" | "light", {
   composite: GlobalCompositeOperation;
   passes: readonly { width: number; alpha: number }[];
 }>;
 
-/** The two passes in the accent's colour. */
 export function heatPasses(mode: "dark" | "light", accent: string): HeatPass[] {
-  return HEAT_STYLE[mode].passes.map((pass) => ({ width: pass.width, color: rgba(accent, pass.alpha) }));
+  const color = mode === "light" ? heatRamp(accent).light : accent;
+  return HEAT_STYLE[mode].passes.map((pass) => ({ width: pass.width, color: rgba(color, pass.alpha) }));
 }
 
-/**
- * The core line's width in px at a MapLibre zoom (v4.17): 1.2 px out to
- * zoom 12, 4 px from zoom 16, straight between.
- */
 export function heatLineWidth(zoom: number): number {
   const t = Math.min(1, Math.max(0, (zoom - 12) / 4));
   return 1.2 + t * (4 - 1.2);
 }
 
-/** The home ring: a closed line `radiusKm` around `center`, [lon, lat]. */
 export function ringCoordinates(center: [number, number], radiusKm: number, steps = 96): [number, number][] {
   const [lon, lat] = center;
   const dLat = radiusKm / 111.32;

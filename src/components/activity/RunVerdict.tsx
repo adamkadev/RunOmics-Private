@@ -19,31 +19,23 @@ export const RUN_CHIP_CLASS =
 
 /** The verdict's tone as a status colour: a strong session is good news, a tough one a caution. */
 const STATUS_TONE: Record<RunTone, VerdictTone> = {
-  positive: 'pos',
-  neutral: 'muted',
+  positive: 'accent',
+  neutral: 'accent',
   caution: 'warn',
 }
 
-/**
- * The verdict (v4.17): an eyebrow with a status dot saying how the session
- * went, the headline, then the coach's sentence in text-2, on a plain card;
- * effort, conditions, shoe and the note follow as one row of chips (3.0) -
- * four full-width rows pushed the tabs a screen down. The body is at
- * most 150 characters, so it shows in full, with no clamp and no "Coach
- * insight" label. Without an AI verdict the card falls back to a headline and
- * invents no body.
- */
 export function RunVerdict({ activity, aiVerdict, children }: Props) {
   const v = t.activity.verdict
   const tone = runVerdictTone(activity)
-  const headline = aiVerdict?.headline ?? v.headline[tone](t.activityTypes[activity.type])
+  const session = v.headline[tone](t.activityTypes[activity.type])
+  const eyebrow = `${v.eyebrow[tone]} · ${session}`
 
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="run-verdict">
       <VerdictBlock
         tone={STATUS_TONE[tone]}
-        eyebrow={v.eyebrow[tone]}
-        headline={headline}
+        eyebrow={eyebrow}
+        headline={aiVerdict?.headline ?? null}
         body={aiVerdict?.body ? <span data-testid="run-verdict-body">{aiVerdict.body}</span> : undefined}
       />
       {children && (

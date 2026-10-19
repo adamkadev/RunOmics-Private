@@ -43,15 +43,13 @@ describe('TodaySessionCard', () => {
     expect(eyebrow.className).toContain('uppercase')
   })
 
-  it('draws the session as it runs, one block without steps', () => {
+  it('draws the bar only for a session built of steps', () => {
     const { unmount } = render(<TodaySessionCard card={card({ workout: { ...EASY, structure: STRIDES } })} />)
     expect(screen.getByTestId('today-structure-bar').children).toHaveLength(7)
     unmount()
 
     render(<TodaySessionCard card={card()} />)
-    const bar = screen.getByTestId('today-structure-bar')
-    expect(bar.children).toHaveLength(1)
-    expect((bar.children[0] as HTMLElement).style.background).toBe('var(--zone-2)')
+    expect(screen.queryByTestId('today-structure-bar')).toBeNull()
   })
 
   it('keeps an older, longer name to two lines', () => {

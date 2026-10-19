@@ -9,11 +9,12 @@ import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaselin
 import { RunMapHero } from './RunMapHero'
 import { RunVerdict, RUN_CHIP_CLASS } from './RunVerdict'
 import { RunEffortCard } from './RunEffortCard'
+import { PaceHrPreview } from './PaceHrPreview'
 import { KmSplits } from './KmSplits'
 import { BestEfforts } from './BestEfforts'
 import { RunPlace } from './RunPlace'
 import type { ChartZones } from './chartStackLanes'
-import { formatClock, formatDistance, formatDuration } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDuration, formatDurationRounded } from '@/lib/formatters'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
@@ -87,29 +88,19 @@ function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
   const s = t.activity.stats
   const stats: PrimaryStat[] = [
     { label: s.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
-    { label: s.duration, value: formatDuration(activity.durationSeconds) },
+    { label: s.duration, ...formatDurationRounded(activity.durationSeconds) },
   ]
   if (activity.paceSecPerKm) stats.push({ label: s.pace, value: formatClock(activity.paceSecPerKm), unit: t.units.perKm })
   if (activity.avgHeartRate) stats.push({ label: s.avgHr, value: `${activity.avgHeartRate}`, unit: t.units.bpm })
   return stats
 }
 
-/** "Very Easy" as "Very easy": the chips are in sentence case (v4.17). */
-function sentenceCase(label: string): string {
-  return label ? label.charAt(0) + label.slice(1).toLowerCase() : label
-}
-
-/**
- * The run's four numbers, once (3.0): a 22 pt value with its unit, its name
- * under it. They were a 2 x 2 card under the map and again a strip pinned
- * under the tabs.
- */
 function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; testId?: string }) {
   return (
     <div className="grid grid-cols-4 gap-x-2" data-testid={testId}>
       {stats.map((stat) => (
         <div key={stat.label} className="flex min-w-0 flex-col gap-0.5">
-          <span className="whitespace-nowrap text-[22px] font-bold leading-tight tracking-[-0.01em] text-foreground">
+          <span className="whitespace-nowrap text-[20px] font-bold leading-tight tracking-[-0.01em] text-foreground">
             {stat.value}
             {stat.unit && <span className="ml-0.5 text-xs font-normal tracking-normal text-muted-foreground">{stat.unit}</span>}
           </span>
@@ -230,9 +221,7 @@ export function ActivityDetailClient({
           <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')}>{t.activity.dataQuality.estimated}</span>
         )}
         <span className={RUN_CHIP_CLASS} data-testid="run-effort">
-          {activity.rpe !== null
-            ? `${e.label} ${e.value(activity.rpe, sentenceCase(t.rpeLabels[activity.rpe] ?? ''))}`
-            : `${e.label} ${e.notLogged}`}
+          {activity.rpe !== null ? t.activities.row.rpeValue(activity.rpe) : `${e.label} ${e.notLogged}`}
         </span>
         {/* The weather and the pair explain effort and heart rate, so they
             sit with them (v4.8 2h). No wind reading, no wind. */}
@@ -274,6 +263,11 @@ export function ActivityDetailClient({
         {tab === 'overview' && (
           <>
             {extras}
+            <PaceHrPreview
+              paceSamples={activity.paceSamples}
+              hrSamples={activity.hrSamples}
+              onShowCharts={hasCharts ? () => setTab('charts') : undefined}
+            />
             <RunEffortCard
               hrZones={activity.hrZones}
               aer={activity.aerTrainingEffect}

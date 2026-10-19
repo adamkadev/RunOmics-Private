@@ -1,4 +1,4 @@
-import type { Activity, ActivitySplit, ActivityType } from '@/domain/activity/types'
+import type { Activity, ActivitySplit, ActivityType, PlannedWorkout, WorkoutStep } from '@/domain/activity/types'
 import { runVerdictTone } from '@/domain/activity/runVerdict'
 import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 import { repSet } from '@/domain/activity/repSet'
@@ -73,17 +73,23 @@ function paceOf(text: string | undefined): number | null {
   return m ? Number(m[1]) * 60 + Number(m[2]) : null
 }
 
-/** The pace the session set for its reps: its structure's when it has one, else the repeat's effort step. */
-function repTarget(prescription: WorkoutPrescription | null): ShareReps['target'] {
-  if (!prescription) return null
-  const named = paceOf(prescription.structure?.targetPace)
+/**
+ * The pace the reps were set at: the coach's prescription first - its named
+ * pace, else its repeat's effort step - and failing that the planned workout
+ * the watch carried, whose effort steps hold the same band. A run the coach
+ * matched to nothing still has its target, which is what the watch beeped at.
+ */
+function repTarget(prescription: WorkoutPrescription | null, planned: PlannedWorkout | null): ShareReps['target'] {
+  const named = paceOf(prescription?.structure?.targetPace)
   if (named !== null) return { min: named, max: named }
-  for (const block of prescription.blocks) {
+  for (const block of prescription?.blocks ?? []) {
     if (block.kind !== 'repeat') continue
     const pace = block.steps.find((step) => step.kind === 'effort')?.target.paceSecPerKm
     if (pace) return { min: Math.round(pace.min), max: Math.round(pace.max) }
   }
-  return null
+  const step = planned?.steps?.find((item: WorkoutStep) => item.kind === 'effort' && item.paceSecPerKm)
+  const band = step?.paceSecPerKm
+  return band ? { min: Math.round(band[0]), max: Math.round(band[1]) } : null
 }
 
 /**
@@ -110,7 +116,11 @@ function repWindows(splits: ActivitySplit[], reps: number): [number, number][] {
  * run they fell. Null for any other kind of run, or one the watch kept no
  * rep laps for.
  */
-export function shareReps(activity: Pick<Activity, 'type' | 'splits'>, prescription: WorkoutPrescription | null): ShareReps | null {
+export function shareReps(
+  activity: Pick<Activity, 'type' | 'splits'>,
+  prescription: WorkoutPrescription | null,
+  planned: PlannedWorkout | null = null,
+): ShareReps | null {
   if (!isIntervalType(activity.type) || !activity.splits) return null
   const set = repSet(activity.splits)
   if (!set) return null
@@ -120,8 +130,9 @@ export function shareReps(activity: Pick<Activity, 'type' | 'splits'>, prescript
   return {
     count: set.reps.length,
     repSeconds: set.repDurationSec,
+    paces: set.reps.map((rep) => (rep.distanceM > 0 ? Math.round((rep.durationSec / rep.distanceM) * 1000) : 0)).filter((pace) => pace > 0),
     paceSecPerKm: Math.round((seconds / metres) * 1000),
-    target: repTarget(prescription),
+    target: repTarget(prescription, planned),
     windows: repWindows(activity.splits, set.reps.length),
   }
 }
@@ -190,6 +201,7 @@ export function shareActivity(
   activity: Activity,
   session: WorkoutPrescription | null = null,
   aiVerdict: { headline: string } | null = null,
+  planned: PlannedWorkout | null = null,
 ): ShareActivity {
   const type = session ? COACHING_TO_ACTIVITY_TYPE[session.type] : activity.type
   const headline = aiVerdict?.headline.trim()
@@ -197,7 +209,7 @@ export function shareActivity(
     ...pickDefined(activity, SHARE_FIELDS),
     type,
     sessionTitle: session ? sessionName(session) : null,
-    reps: shareReps({ type, splits: activity.splits }, session),
+    reps: shareReps({ type, splits: activity.splits }, session, planned),
     verdict: headline ? { tone: runVerdictTone(activity), headline } : null,
   }
 }

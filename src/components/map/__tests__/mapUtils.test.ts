@@ -15,6 +15,7 @@ import {
   type HeatFilters,
 } from '../mapUtils'
 import { distanceKm } from '@/lib/math'
+import { heatRamp } from '@/lib/heatRamp'
 import type { RouteCluster, RouteMeta } from '@/application/usecases/GetAllRoutes'
 
 const meta = (over: Partial<RouteMeta> = {}): RouteMeta => ({
@@ -107,18 +108,24 @@ describe('HEAT_STYLE (v4.17)', () => {
     expect(HEAT_STYLE.light.composite).toBe('multiply')
   })
 
-  it('draws a wide faint glow before a thin core, in both themes', () => {
-    for (const mode of ['dark', 'light'] as const) {
-      const [glow, core] = HEAT_STYLE[mode].passes
-      expect(glow!.width).toBeGreaterThan(core!.width)
-      expect(glow!.alpha).toBeLessThan(core!.alpha)
-      expect(core!.width).toBe(1)
-    }
+  it('draws a wide faint glow before a thin core on dark', () => {
+    const [glow, core] = HEAT_STYLE.dark.passes
+    expect(glow!.width).toBeGreaterThan(core!.width)
+    expect(glow!.alpha).toBeLessThan(core!.alpha)
+    expect(core!.width).toBe(1)
   })
 
-  it('draws the tracks in the accent: they are the athlete\'s own data', () => {
+  it('draws light mode as one stroke, half opaque and wider, with no glow', () => {
+    expect(HEAT_STYLE.light.passes).toHaveLength(1)
+    const [only] = HEAT_STYLE.light.passes
+    expect(only!.alpha).toBeGreaterThanOrEqual(0.5)
+    expect(only!.width).toBeGreaterThan(1)
+  })
+
+  it('draws the tracks in the accent on dark, and its own ramp on light', () => {
     expect(heatPasses('dark', '#2dd4a7').map((p) => p.color)).toEqual(['rgba(45,212,167,0.035)', 'rgba(45,212,167,0.16)'])
-    expect(heatPasses('light', '#4457d6')[1]!.color).toBe('rgba(68,87,214,0.2)')
+    const { light } = heatRamp('#4457d6')
+    expect(heatPasses('light', '#4457d6')).toEqual([{ width: HEAT_STYLE.light.passes[0]!.width, color: rgba(light, 0.5) }])
   })
 
   it('reads a short hex too', () => {

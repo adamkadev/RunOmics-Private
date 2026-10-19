@@ -55,9 +55,24 @@ const maps = vi.hoisted(() => {
   return { FakeMap }
 })
 
+const labelCalls: { halo: string; town: string; neighbourhood: string; districtOpacity?: number }[] = []
+const waterCalls: { halo: string; water: string; size?: number; lang?: string }[] = []
+const parkCalls: { halo: string; park: string; size?: number; lang?: string }[] = []
+const landmarkCalls: { halo: string; landmark: string; size?: number; lang?: string }[] = []
 vi.mock('@/lib/maplibre', () => ({
   loadMapLibre: async () => ({ Map: maps.FakeMap, LngLatBounds: class { extend() { return this } } }),
-  styleRunMapLabels: () => {},
+  styleRunMapLabels: (_map: unknown, colors: { halo: string; town: string; neighbourhood: string; districtOpacity?: number }) => {
+    labelCalls.push(colors)
+  },
+  addWaterLabels: (_map: unknown, options: { halo: string; water: string; size?: number; lang?: string }) => {
+    waterCalls.push(options)
+  },
+  addParkLabels: (_map: unknown, options: { halo: string; park: string; size?: number; lang?: string }) => {
+    parkCalls.push(options)
+  },
+  addLandmarkLabels: (_map: unknown, options: { halo: string; landmark: string; size?: number; lang?: string }) => {
+    landmarkCalls.push(options)
+  },
 }))
 vi.mock('@/lib/runMapLayers', () => ({
   addEdgeFence: () => () => {},
@@ -65,7 +80,10 @@ vi.mock('@/lib/runMapLayers', () => ({
   clearMarkerImage: () => ({}),
   setRunFinish: () => {},
 }))
-vi.mock('@/lib/maptiler', () => ({ maptilerStyle: () => ({}) }))
+vi.mock('@/lib/maptiler', () => ({
+  maptilerStyle: () => ({}),
+  shareBasemapStyle: (style: unknown) => style,
+}))
 
 const { useShareCardMap } = await import('@/lib/useShareCardMap')
 
@@ -101,6 +119,34 @@ describe('the share card basemap', () => {
     expect(result.current.image).not.toBeNull()
     expect(result.current.failed).toBe(false)
     expect(warn).toHaveBeenCalledWith('Share card basemap:', 'glyphs 404')
+  })
+
+  // The names sit over a dark map, so they take the muted ink a step more
+  // opaque than on light, where the ground is pale.
+  it('names the districts in the muted ink, fainter on light than on dark', async () => {
+    labelCalls.length = 0
+    maps.FakeMap.script = (map) => { map.emit('load'); map.emit('idle') }
+    for (const [theme, east, opacity] of [['dark', 2.51, 0.8], ['light', 2.52, 0.7]] as const) {
+      renderHook(() => useShareCardMap({ route: route(east), theme, width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
+      await act(() => vi.advanceTimersByTimeAsync(100))
+      const call = labelCalls.at(-1)!
+      expect(call.districtOpacity).toBe(opacity)
+      expect(call.neighbourhood).toBe(call.town)
+    }
+    expect(labelCalls.at(-2)!.town).toBe('#8d9391')
+  })
+
+  // The tiles name a river on water_label, not on OpenMapTiles' water_name.
+  it('names the rivers, parks and landmarks, a step smaller than the app draws them', async () => {
+    waterCalls.length = 0
+    parkCalls.length = 0
+    landmarkCalls.length = 0
+    maps.FakeMap.script = (map) => { map.emit('load'); map.emit('idle') }
+    renderHook(() => useShareCardMap({ route: route(2.53), theme: 'dark', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
+    await act(() => vi.advanceTimersByTimeAsync(100))
+    expect(waterCalls.at(-1)).toMatchObject({ water: '#5b7d99', size: 10 })
+    expect(parkCalls.at(-1)).toMatchObject({ park: '#5f8a6d', size: 10 })
+    expect(landmarkCalls.at(-1)).toMatchObject({ landmark: '#9a8ca8', size: 10 })
   })
 
   it('is tried again in the next sheet after one that never settled', async () => {

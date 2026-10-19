@@ -64,11 +64,12 @@ describe('the month grid', () => {
     expect(cell('2026-09-28').className).toContain('opacity-40')
   })
 
-  it('fills a run in its colour at 20%, dashes a session still to come, and leaves rest empty', () => {
+  it('fills a run in its colour, dashes a session still to come, and leaves rest empty', () => {
     renderMonth()
 
-    expect(tile('2026-10-13').style.background).toBe('color-mix(in srgb, var(--zone-2) 20%, transparent)')
-    expect(tile('2026-10-14').style.background).toBe('color-mix(in srgb, var(--zone-4) 20%, transparent)')
+    expect(tile('2026-10-13').style.background).toBe('color-mix(in srgb, var(--zone-2) 25%, transparent)')
+    expect(tile('2026-10-13').style.border).toBe('1px solid color-mix(in srgb, var(--zone-2) 50%, transparent)')
+    expect(tile('2026-10-14').style.background).toBe('color-mix(in srgb, var(--zone-4) 25%, transparent)')
     expect(tile('2026-10-21').style.border).toBe('1px dashed var(--zone-4)')
     expect(tile('2026-10-25').style.border).toBe(`1px dashed ${LONG_RUN_COLOR}`)
     expect(tile('2026-10-15').getAttribute('style')).toBeNull()
@@ -117,7 +118,7 @@ describe('the km column', () => {
     const totals = screen.getAllByTestId('month-week-total').map((c) => c.textContent)
     expect(totals[2]).toBe('18/ 24')
     expect(totals[3]).toBe('0/ 29')
-    expect(totals[4]).toBe('')
+    expect(totals[4]).toBe('–')
   })
 })
 
@@ -148,12 +149,12 @@ describe('the legend and the summary', () => {
     )
   })
 
-  it('reads the month’s own km against its plan, and the phase week', () => {
+  it('reads the month’s own km against its plan, the phase left to its rows', () => {
     renderMonth()
 
     const summary = screen.getByTestId('month-summary')
     expect(summary.textContent).toContain(t.plan.month.kmOf('18', '53'))
-    expect(summary.textContent).toContain(t.plan.month.phaseWeek(t.plan.weekPurpose.planPhase.build, 2, 6))
+    expect(summary.textContent).not.toContain(t.plan.month.phaseWeek(t.plan.weekPurpose.planPhase.build, 2, 6))
   })
 
   it('opens the next key session in the Week view', () => {

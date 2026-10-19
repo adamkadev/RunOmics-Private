@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { RUN_CHART_LINE } from '@/lib/colors'
 import { t } from '@/i18n'
 import { ChartStack } from '../ChartStack'
 
@@ -84,8 +85,8 @@ describe('ChartStack scrub', () => {
     await waitFor(() => expect(screen.getByTestId('scrub-header').querySelector('b')?.textContent).toBe('5.0 km'))
 
     const line = (lane: string) => screen.getByTestId(`lane-${lane}`).querySelectorAll('path')[2]!.getAttribute('stroke')
-    expect(line('hr')).toBe('var(--foreground)')
-    expect(line('pace')).toBe('var(--accent)')
+    expect(line('hr')).toBe(RUN_CHART_LINE.hr)
+    expect(line('pace')).toBe(RUN_CHART_LINE.pace)
     expect(screen.getByTestId('lane-pace').textContent).toContain(`${t.activity.charts.pace} /km ↑`)
     expect(screen.getByTestId('chart-stack').textContent).not.toContain('Run average')
   })

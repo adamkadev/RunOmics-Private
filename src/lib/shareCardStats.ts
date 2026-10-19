@@ -31,15 +31,31 @@ export interface ShareReps {
   repSeconds: number
   /** The work laps only: their time over their distance. */
   paceSecPerKm: number
+  /** Each rep's own pace, in seconds per km, in the order they were run. */
+  paces: number[]
   /** The plan's pace for the reps, when the run matched a session that set one. */
   target: { min: number; max: number } | null
   /** Where each rep ran, as shares of the run's distance: the Route card draws them over the run. */
   windows: [number, number][]
 }
 
-/** The coach's session name when the run matched one (design review, Oct 2026), else the run's own. */
+/** A rep session is titled by its type alone; its structure goes to the subtitle (4b). */
 export function shareCardTitle(activity: ShareActivity): string {
+  if (activity.reps && activity.type) return t.activityTypes[activity.type]
   return activity.sessionTitle?.trim() || activityTitle(activity)
+}
+
+/** "2 × 7′ @ 4:25": the session's shape, for the subtitle. */
+export function shareStructure(activity: ShareActivity): string | null {
+  const reps = activity.reps
+  if (!reps) return null
+  const set = `${reps.count} × ${repLength(reps.repSeconds)}`
+  const target = reps.target
+  if (!target) return set
+  // The band's centre, as the session's own name writes it ("2 × 7′ @ 4:25");
+  // the hero beside it carries the band in full.
+  const pace = formatClock(Math.round((target.min + target.max) / 2))
+  return t.activity.shareCard.structure(set, pace)
 }
 
 /** "Sat, Sep 26 · Hoenheim": the app's date, then the town when it is known. */
@@ -84,8 +100,10 @@ export interface ShareRepHero {
   /** "REP PACE · 3 × 8′" */
   eyebrow: string
   pace: string
-  /** "/km · target 4:25", or just "/km" with no target. */
-  detail: string
+  /** The unit beside the pace. */
+  unit: string
+  /** "target 4:25 · +0:01", or null with no target. */
+  target: string | null
 }
 
 /** The interval session's headline: the reps' own pace, and the plan's beside it. */
@@ -98,11 +116,53 @@ export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
       ? formatClock(reps.target.min)
       : `${formatClock(reps.target.min)}–${formatClock(reps.target.max)}`
     : null
+  const off = reps.target ? repDelta(reps.paceSecPerKm, reps.target) : null
   return {
     eyebrow: s.repPace(reps.count, repLength(reps.repSeconds)),
     pace: formatClock(reps.paceSecPerKm),
-    detail: target ? `${t.units.perKm} · ${s.target(target)}` : t.units.perKm,
+    unit: t.units.perKm,
+    target: target ? [s.target(target), off].filter(Boolean).join(' · ') : null,
   }
+}
+
+/** How far off the plan the reps ran: "+0:01" slower, "−0:03" faster, nothing when inside the band. */
+function repDelta(pace: number, target: { min: number; max: number }): string | null {
+  const off = pace < target.min ? pace - target.min : pace > target.max ? pace - target.max : 0
+  if (off === 0) return null
+  const sign = off > 0 ? '+' : '−'
+  const abs = Math.abs(off)
+  return `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
+}
+
+/** One rep as a chip: "Rep 1" and its pace. */
+export interface ShareRepChip {
+  label: string
+  pace: string
+}
+
+export type ShareRepDetail =
+  | { kind: 'chips'; chips: ShareRepChip[] }
+  | { kind: 'bars'; bars: number[]; range: string }
+
+/**
+ * What the card says about the reps under the hero: up to three that differ
+ * as chips, four or more as a bar each with the spread under them, and
+ * nothing at all when every rep ran the same pace.
+ */
+export function shareRepDetail(activity: ShareActivity): ShareRepDetail | null {
+  const paces = activity.reps?.paces ?? []
+  if (paces.length < 2) return null
+  const fastest = Math.min(...paces)
+  const slowest = Math.max(...paces)
+  if (fastest === slowest) return null
+  const s = t.activity.shareCard
+  if (paces.length <= 3) {
+    return { kind: 'chips', chips: paces.map((pace, i) => ({ label: s.rep(i + 1), pace: formatClock(pace) })) }
+  }
+  // Taller is faster: the fastest rep fills the bar, the slowest keeps a stub.
+  const span = slowest - fastest
+  const bars = paces.map((pace) => (span > 0 ? 1 - (pace - fastest) / span : 1))
+  return { kind: 'bars', bars, range: s.repRange(formatClock(fastest), formatClock(slowest)) }
 }
 
 export interface ShareZoneRow {

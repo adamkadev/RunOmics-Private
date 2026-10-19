@@ -12,20 +12,11 @@ import { t } from '@/i18n'
 
 interface Props {
   data: WeeklyStreakData
-  /** This week against the plan - the same selector Plan and Activities read. */
   target: WeekTarget
-  /** The date the page was prerendered on; see useToday. */
   today: string
-  /** Each planned day's session, by date ("Threshold"): see plannedSessionKinds. */
   sessionKinds?: Record<string, string>
 }
 
-/**
- * A day's circle (design review, Oct 2026): planned is a dashed ring in its
- * session's category, done is the accent filled - the athlete's own km - and
- * missed the dashed neg ring. Today, still to run, is the 2 px accent ring;
- * a rest day the hairline.
- */
 function circleStyle(day: WeekStripDay): CSSProperties {
   if (day.state === 'done') return { background: 'var(--accent)', color: 'var(--accent-foreground)' }
   if (day.isToday) return { border: '2px solid var(--accent)' }
@@ -35,8 +26,13 @@ function circleStyle(day: WeekStripDay): CSSProperties {
     case 'missed':
       return { border: '1.5px dashed var(--neg)', color: 'var(--neg)' }
     default:
-      return { border: '1px solid var(--border)' }
+      return { background: 'var(--surface-2)', color: 'var(--muted-foreground)' }
   }
+}
+
+function circleText(day: WeekStripDay): string {
+  if (day.state === 'rest') return '–'
+  return day.kmText ?? ''
 }
 
 function WeekStrip({ days }: { days: WeekStripDay[] }) {
@@ -51,7 +47,7 @@ function WeekStrip({ days }: { days: WeekStripDay[] }) {
             data-today={day.isToday ? '' : undefined}
             style={circleStyle(day)}
           >
-            {day.state !== 'rest' && day.kmText !== null ? day.kmText : ''}
+            {circleText(day)}
           </span>
           <span aria-hidden="true" className={cn('text-[11px]', day.isToday ? 'font-semibold text-accent-text' : 'text-muted-foreground')}>
             {day.letter}
@@ -62,12 +58,6 @@ function WeekStrip({ days }: { days: WeekStripDay[] }) {
   )
 }
 
-/**
- * This week (design review, Oct 2026): "0 / 54 km · 0 / 5 runs" beside the
- * title, over the seven days as circles, the planned km in each. The bars
- * and their session names repeated Plan's week; the names are now each
- * day's accessible name.
- */
 export function WeeklyStreakCard({ data, target, today: serverToday, sessionKinds = {} }: Props) {
   const s = t.dashboard.weeklyStreak
   const todayIso = useToday(serverToday)

@@ -15,7 +15,7 @@ import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { coachWorkoutView, plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
 import { sessionTitle } from './sessionTitle'
-import { dayKind } from './sessionKind'
+import { dayKind, kindLetter } from './sessionKind'
 import { formatWeekKm, weekPlanDays } from './weekPlanDays'
 import { phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
@@ -27,11 +27,6 @@ import { DoneDayCard, PlannedWorkoutCard, RestDayCard } from './PlanDayCard'
 const NAV_BUTTON =
   'hit-44 flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 
-/**
- * The phase the week is in (redesign 3.0, 1d): "General preparation" with
- * "Week 2 of 6 · Half in 29 wk" across from it, and under them one segment
- * per week of the phase, the weeks up to this one in the accent.
- */
 function PhaseCard({ name, week, total, race }: { name: string; week: number; total: number; race: string | null }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
@@ -113,11 +108,6 @@ interface Props {
   trainingZones?: TrainingZonesData | null
 }
 
-/**
- * Plan's week (redesign 3.0, 1d): the phase, the week's km and runs against
- * the plan, the seven days, and the selected day's workout - its steps while
- * it is still to come, planned against done once it is over.
- */
 export function WeekView({
   weekStart,
   selectedDate,
@@ -148,13 +138,17 @@ export function WeekView({
 
   const selectorDays = useMemo<SelectorDay[]>(
     () =>
-      target.days.map((day) => ({
-        date: day.date,
-        state: day.state,
-        km: day.state === 'done' ? day.ranKm : day.plannedKm,
-        color: dayKind(day.date, byDate.get(day.date) ?? [], byDatePlanned, byDateCoach)?.color ?? null,
-        isToday: day.date === today,
-      })),
+      target.days.map((day) => {
+        const kind = dayKind(day.date, byDate.get(day.date) ?? [], byDatePlanned, byDateCoach)
+        return {
+          date: day.date,
+          state: day.state,
+          km: day.state === 'done' ? day.ranKm : day.plannedKm,
+          color: kind?.color ?? null,
+          letter: kind && day.state !== 'rest' ? kindLetter(kind.type, kind.kind) : null,
+          isToday: day.date === today,
+        }
+      }),
     [target, byDate, byDatePlanned, byDateCoach, today]
   )
 

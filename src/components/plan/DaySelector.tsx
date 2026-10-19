@@ -13,6 +13,8 @@ export interface SelectorDay {
   km: number | null
   /** The session's colour (sessionKind); null on a rest day. */
   color: string | null
+  /** The session's letter under the bar ("E", "T", "Tm", "L"); null on a rest day. */
+  letter: string | null
   isToday: boolean
 }
 
@@ -35,12 +37,6 @@ function dayName(day: SelectorDay): string {
   return [t.sessionState.dayLabel(formatDate(day.date, { style: 'full' }), state), km].filter(Boolean).join(' · ')
 }
 
-/**
- * The week as seven days (redesign 3.0, 1d): the day's letter, its date, and
- * a bar as long as its km in its session's colour - a rest day a stub, a
- * missed session an outline in the negative status. Selecting a day shows
- * its workout under the selector; today wears the accent.
- */
 export function DaySelector({
   days,
   selectedDate,
@@ -87,6 +83,13 @@ export function DaySelector({
                   ...(day.state === 'done' || day.state === 'planned' ? { background: day.color ?? 'var(--line-2)' } : {}),
                 }}
               />
+            </span>
+            <span
+              aria-hidden
+              className="text-[11px] font-semibold leading-none tracking-[0.04em]"
+              style={{ color: day.letter ? (day.color ?? 'var(--muted-foreground)') : 'var(--muted-foreground)' }}
+            >
+              {day.letter ?? '–'}
             </span>
           </button>
         )
