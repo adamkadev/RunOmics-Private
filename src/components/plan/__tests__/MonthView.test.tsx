@@ -51,6 +51,10 @@ describe('MonthView colours', () => {
     expect(cell.dataset.cellState).toBe('planned')
     expect(cell.style.getPropertyValue('--cell-zone')).toBe('var(--zone-4)')
     expect(cell.className).toContain('var(--cell-zone)_12%')
+    // The tint alone (owner, Oct 2026): no dashed outline, no square inside.
+    expect(cell.className).not.toContain('border-dashed')
+    expect(cell.style.outline).toBe('')
+    expect(cell.querySelector('[data-testid="month-zone-mark"]')).toBeNull()
   })
 
   // Design review, Oct 2026: a run nothing was planned for read the same as

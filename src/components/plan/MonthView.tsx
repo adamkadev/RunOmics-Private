@@ -45,14 +45,15 @@ const TILE = 'overflow-hidden rounded-[10px]'
 /**
  * A day's state, as the week chart draws it (v4.17): what was run is the
  * accent's soft fill, an extra run too with its own label, a session still to
- * come a dashed outline and a 12% tint in its type's zone, a missed one the negative status at 12% with a
- * dashed outline and a cross - never colour alone (design review, Oct 2026).
+ * come a 12% tint in its type's zone - no dashed outline and no square: the
+ * colour is enough (owner, Oct 2026) - and a missed one the negative status
+ * at 12% with a dashed outline and a cross, never colour alone.
  * Today is an accent outline on top of whichever it is.
  */
 const CELL_FILL: Record<MonthDayState, string> = {
   done: 'bg-[var(--accent-soft)]',
   extra: 'bg-[var(--accent-soft)]',
-  planned: 'border-[1.5px] border-dashed border-[var(--cell-zone)] bg-[color-mix(in_srgb,var(--cell-zone)_12%,transparent)]',
+  planned: 'bg-[color-mix(in_srgb,var(--cell-zone)_12%,transparent)]',
   missed: 'bg-[color-mix(in_srgb,var(--neg)_12%,transparent)]',
   rest: 'border border-border',
 }
@@ -363,7 +364,7 @@ export function MonthView({
         <Legend className="text-[11px]">
           <LegendItem swatch="tint" color="var(--accent)">{t.sessionState.done}</LegendItem>
           {zones.map((zone) => (
-            <LegendItem key={zone} swatch="dashRing" color={zoneColor(zone)}>
+            <LegendItem key={zone} swatch="tint" color={zoneColor(zone)}>
               {t.zoneLabels[zone]}
             </LegendItem>
           ))}
