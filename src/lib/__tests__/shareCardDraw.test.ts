@@ -145,6 +145,19 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(all.some((text) => text.includes('× 8′ @') && text.startsWith('Threshold'))).toBe(false)
   })
 
+  // The reps take the session's own type, as the hero's caption does: a tempo
+  // session is Z3's violet, not the threshold magenta.
+  it('draws the reps in the session\'s type, on the route, the legend and the bars', () => {
+    const tempo = { ...RUN, type: 'Tempo' as const, reps: { ...REPS, count: 5, paces: [260, 265, 270, 262, 268] } }
+    const ops = draw({ design: 'route', activity: tempo })
+    const strokes = ops.filter((o) => o.op === 'stroke').map((o) => o.stroke)
+    expect(strokes).toContain(palette.zones[2])
+    expect(strokes).not.toContain(palette.zones[3])
+    const fills = ops.filter((o) => o.op === 'fill' || o.op === 'fillRect').map((o) => o.fill)
+    expect(fills).toContain(palette.zones[2])
+    expect(ops.find((o) => o.op === 'fillText' && String(o.args[0]).startsWith('REP PACE'))?.fill).toBe(palette.zones[2])
+  })
+
   it('keeps the Reps legend at the map\'s top right, clear of the names below', () => {
     const ops = draw({ design: 'route', activity: session })
     const legend = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Reps')!

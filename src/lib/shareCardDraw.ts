@@ -5,6 +5,11 @@ import {
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
 import { projectRoute, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
+
+/** The reps' colour: the session's type, as the hero's caption writes it. */
+function repColor(activity: ShareActivity, palette: SharePalette): string {
+  return palette.zones[runTypeZone(activity.type) - 1] ?? palette.zones[3]!
+}
 import { drawRouteMarker, endsJoined, routeEnds } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
 import { t } from '@/i18n'
@@ -263,7 +268,7 @@ function drawHero(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, hero: 
   ctx.textAlign = 'left'
   ctx.textBaseline = 'alphabetic'
   ctx.font = `700 9.5px ${fonts.text}`
-  ctx.fillStyle = ink === PHOTO_INK ? ink.tx : (palette.zones[runTypeZone(activity.type) - 1] ?? ink.mu)
+  ctx.fillStyle = ink === PHOTO_INK ? ink.tx : repColor(activity, palette)
   setSpacing(ctx, 0.08 * 9.5)
   ctx.fillText(hero.eyebrow.toLocaleUpperCase(t.locale), PAD_X, top + 9)
 
@@ -284,7 +289,7 @@ function drawHero(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, hero: 
 }
 
 /** The reps under the hero: three or fewer as chips, four or more as a bar each. */
-function drawRepDetail(ctx: Ctx, { fonts, palette }: ShareCardScene, detail: ShareRepDetail, top: number, ink: Ink) {
+function drawRepDetail(ctx: Ctx, { activity, fonts, palette }: ShareCardScene, detail: ShareRepDetail, top: number, ink: Ink) {
   ctx.textAlign = 'left'
   ctx.textBaseline = 'middle'
   if (detail.kind === 'chips') {
@@ -311,7 +316,7 @@ function drawRepDetail(ctx: Ctx, { fonts, palette }: ShareCardScene, detail: Sha
   const gap = 3
   const width = Math.min(120, detail.bars.length * 8)
   const barW = Math.max(2, (width - gap * (detail.bars.length - 1)) / detail.bars.length)
-  ctx.fillStyle = palette.zones[3]!
+  ctx.fillStyle = repColor(activity, palette)
   detail.bars.forEach((share, i) => {
     const h = Math.max(2, Math.round(BAR_MAX * (0.35 + 0.65 * share)))
     ctx.fillRect(PAD_X + i * (barW + gap), top + BAR_MAX - h, barW, h)
@@ -370,7 +375,7 @@ const GREY_W = 2.5
 const REP_W = GREY_W * 1.6
 
 /** "▬ Reps", just above the stats, on an interval session only. */
-function drawRepsLegend(ctx: Ctx, { palette, fonts }: ShareCardScene, top: number) {
+function drawRepsLegend(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, top: number) {
   const BAR_W = 14
   const BAR_H = 3
   const PILL_H = 18
@@ -386,7 +391,7 @@ function drawRepsLegend(ctx: Ctx, { palette, fonts }: ShareCardScene, top: numbe
   ctx.strokeStyle = palette.line
   ctx.stroke()
   const mid = y + PILL_H / 2
-  ctx.fillStyle = palette.zones[3]!
+  ctx.fillStyle = repColor(activity, palette)
   roundRect(ctx, x + 7, mid - BAR_H / 2, BAR_W, BAR_H, BAR_H / 2)
   ctx.fill()
   ctx.textAlign = 'left'
@@ -431,7 +436,7 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   ctx.restore()
   if (reps) {
     strokeLine(ctx, pts, palette.trace, GREY_W)
-    for (const [from, to] of activity.reps!.windows) strokeLine(ctx, slicePolyline(pts, from, to), palette.zones[3]!, REP_W)
+    for (const [from, to] of activity.reps!.windows) strokeLine(ctx, slicePolyline(pts, from, to), repColor(activity, palette), REP_W)
   } else {
     strokeLine(ctx, pts, palette.route, TRACE_W)
   }
