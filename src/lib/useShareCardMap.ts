@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { maptilerStyle, shareBasemapStyle } from '@/lib/maptiler'
 import { bandFencePoints, routeFencePoints, simplifyRoute, type LngLat, type RouteFrame } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
-import { addParkLabels, addWaterLabels, loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
+import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
 import { t } from '@/i18n'
 import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
@@ -44,6 +44,7 @@ const RENDER_TIMEOUT_MS = 15_000
 const DISTRICT_OPACITY = { light: 0.7, dark: 0.8 } as const
 const WATER_INK = { light: '#5f7f9a', dark: '#5b7d99' } as const
 const PARK_INK = { light: '#5e7f65', dark: '#5f8a6d' } as const
+const LANDMARK_INK = { light: '#7d6f8c', dark: '#9a8ca8' } as const
 /** The card's map is 300 px wide: its names sit a step under the app's. */
 const CARD_LABEL_SIZE = 10
 const MAP_LANG = t.locale.split('-')[0] ?? 'en'
@@ -143,6 +144,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text2, districtOpacity: DISTRICT_OPACITY[theme] })
     addWaterLabels(map, { halo: surface.background, water: WATER_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
     addParkLabels(map, { halo: surface.background, park: PARK_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
+    addLandmarkLabels(map, { halo: surface.background, landmark: LANDMARK_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
     addRunMarkers(map, first, { start: clearMarkerImage(), finish: clearMarkerImage() })
     const last = points[points.length - 1]
     if (last && last !== first) setRunFinish(map, first, last)

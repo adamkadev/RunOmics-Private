@@ -41,7 +41,7 @@ function localName(lang: string | undefined): unknown {
   return lang && lang !== 'en' ? ['coalesce', ['get', `name:${lang}`], ['get', 'name']] : ['get', 'name']
 }
 /** Park over water over district, where two names want the same room. */
-export const LABEL_SORT = { park: 1, water: 2 } as const
+export const LABEL_SORT = { park: 1, landmark: 2, water: 3 } as const
 
 /** The vector source a style keeps a given source-layer on. */
 function vectorSourceOf(map: MapLibreMap, sourceLayer: string): string | null {
@@ -68,6 +68,29 @@ export interface ParkLabelOptions {
   halo: string
   /** The name's ink, and the tree's: a muted green-grey. */
   park: string
+  size?: number
+  lang?: string
+}
+
+export const LANDMARK_LABEL_LAYER = 'runomics-landmark-label'
+/**
+ * The places a city is known for. The tiles split POIs by category, so a
+ * landmark is a castle or an attraction on `poi_tourism` and a museum or a
+ * theatre on `poi_culture`; each class has its own icon in the sprite. Kept
+ * to a short list, so a run through a city centre names a handful of
+ * landmarks rather than every shop on the way.
+ */
+const LANDMARK_LAYERS = [
+  { sourceLayer: 'poi_tourism', classes: ['attraction', 'castle', 'monument', 'artwork', 'viewpoint'] },
+  { sourceLayer: 'poi_culture', classes: ['museum', 'theatre'] },
+] as const
+const LANDMARK_ICONS = ['attraction', 'castle', 'monument', 'artwork', 'viewpoint', 'museum', 'theatre'] as const
+const LANDMARK_MIN_ZOOM = 13
+
+export interface LandmarkLabelOptions {
+  halo: string
+  /** The name's ink and its icon's. */
+  landmark: string
   size?: number
   lang?: string
 }
@@ -123,6 +146,46 @@ export function addParkLabels(map: MapLibreMap, options: ParkLabelOptions): void
       'text-halo-blur': 0.5,
     },
   } as Parameters<MapLibreMap['addLayer']>[0])
+}
+
+export function addLandmarkLabels(map: MapLibreMap, options: LandmarkLabelOptions): void {
+  for (const { sourceLayer, classes } of LANDMARK_LAYERS) {
+    const id = `${LANDMARK_LABEL_LAYER}-${sourceLayer}`
+    if (map.getLayer(id)) continue
+    const source = vectorSourceOf(map, sourceLayer)
+    if (!source) continue
+    map.addLayer({
+      id,
+      type: 'symbol',
+      source,
+      'source-layer': sourceLayer,
+      minzoom: LANDMARK_MIN_ZOOM,
+      filter: ['all', ['has', 'name'], ['in', ['get', 'class'], ['literal', [...classes]]]],
+      layout: {
+        'symbol-sort-key': LABEL_SORT.landmark,
+        'icon-image': ['match', ['get', 'class'], [...LANDMARK_ICONS], ['get', 'class'], 'attraction'],
+        'icon-size': 0.6,
+        'icon-optional': true,
+        'text-field': localName(options.lang) as string,
+        'text-font': PLACE_FONT,
+        'text-size': options.size ?? 11,
+        'text-anchor': 'top',
+        'text-offset': [0, 0.7],
+        'text-optional': true,
+        'text-padding': 2,
+        'text-max-width': 8,
+      },
+      paint: {
+        'icon-color': options.landmark,
+        'icon-halo-color': options.halo,
+        'icon-halo-width': 1,
+        'text-color': options.landmark,
+        'text-halo-color': options.halo,
+        'text-halo-width': 1.4,
+        'text-halo-blur': 0.5,
+      },
+    } as Parameters<MapLibreMap['addLayer']>[0])
+  }
 }
 
 export function addWaterLabels(map: MapLibreMap, options: WaterLabelOptions): void {

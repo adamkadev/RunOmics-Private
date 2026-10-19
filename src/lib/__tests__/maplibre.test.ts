@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import { PARK_LABEL_LAYER, WATER_LABEL_LAYER, addParkLabels, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
+import { LANDMARK_LABEL_LAYER, PARK_LABEL_LAYER, WATER_LABEL_LAYER, addLandmarkLabels, addParkLabels, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
 
 type Layer = { id: string; type: string; 'source-layer'?: string; source?: string }
 
@@ -171,5 +171,40 @@ describe('addParkLabels (3.0.1)', () => {
     const bare: Layer[] = [{ id: 'Leisure', type: 'fill', 'source-layer': 'leisure', source: 'planet' }]
     addParkLabels(fakeMap(bare).map, { halo: '#0b0c0c', park: '#5f8a6d' })
     expect(bare).toHaveLength(1)
+  })
+})
+
+describe('addLandmarkLabels (3.0.1)', () => {
+  // The tiles split POIs by category: a castle is tourism, a museum culture.
+  const styleLayers = (): Layer[] => [
+    { id: 'Tourism', type: 'symbol', 'source-layer': 'poi_tourism', source: 'planet' },
+    { id: 'Culture', type: 'symbol', 'source-layer': 'poi_culture', source: 'planet' },
+  ]
+
+  it('names a landmark from both POI layers, each with its own icon', () => {
+    const layers = styleLayers()
+    addLandmarkLabels(fakeMap(layers).map, { halo: '#0b0c0c', landmark: '#9a8ca8' })
+    const added = layers.filter((l) => l.id.startsWith(LANDMARK_LABEL_LAYER)) as unknown as Record<string, Record<string, unknown>>[]
+    expect(added).toHaveLength(2)
+    expect(added.map((l) => l['source-layer'])).toEqual(['poi_tourism', 'poi_culture'])
+    expect(JSON.stringify(added[0]!.filter)).toContain('castle')
+    expect(JSON.stringify(added[1]!.filter)).toContain('museum')
+    expect(JSON.stringify(added[0]!.layout!['icon-image'])).toContain('match')
+    expect(added[0]!.paint!['text-color']).toBe('#9a8ca8')
+  })
+
+  it('leaves the park the louder of the two, and skips a layer the tiles lack', () => {
+    const layers = styleLayers()
+    layers.push({ id: 'Townhalls', type: 'symbol', 'source-layer': 'poi_public', source: 'planet' })
+    const { map } = fakeMap(layers)
+    addParkLabels(map, { halo: '#0b0c0c', park: '#5f8a6d' })
+    addLandmarkLabels(map, { halo: '#0b0c0c', landmark: '#9a8ca8' })
+    const park = layers.find((l) => l.id === PARK_LABEL_LAYER) as unknown as Record<string, Record<string, unknown>>
+    const mark = layers.find((l) => l.id.startsWith(LANDMARK_LABEL_LAYER)) as unknown as Record<string, Record<string, unknown>>
+    expect(Number(park.layout!['symbol-sort-key'])).toBeLessThan(Number(mark.layout!['symbol-sort-key']))
+
+    const bare: Layer[] = [{ id: 'Culture', type: 'symbol', 'source-layer': 'poi_culture', source: 'planet' }]
+    addLandmarkLabels(fakeMap(bare).map, { halo: '#0b0c0c', landmark: '#9a8ca8' })
+    expect(bare.filter((l) => l.id.startsWith(LANDMARK_LABEL_LAYER))).toHaveLength(1)
   })
 })
