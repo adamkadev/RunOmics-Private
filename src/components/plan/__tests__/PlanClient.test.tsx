@@ -4,9 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildCoachingOverview, type CoachingOverview } from '@/application/coaching/GetCoachingView'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
-import { formatDateRange } from '@/lib/formatters'
+import { formatDate, formatDateRange } from '@/lib/formatters'
 import { hydrateAcrossMidnight } from '@/lib/__tests__/hydrateAcrossMidnight'
-import { PlanClient } from '../PlanClient'
+import { PlanClient, planDateParam } from '../PlanClient'
 import { planCoachingView, type PlanCoachingView } from '../planCoachingView'
 
 const NOW = new Date(2026, 8, 9, 12)
@@ -34,7 +34,10 @@ describe('PlanClient week/month switching', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.setSystemTime(NOW)
   })
-  afterEach(() => vi.useRealTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    window.history.replaceState(null, '', '/')
+  })
 
   it('opens on the week view', () => {
     renderPlan()
@@ -43,16 +46,18 @@ describe('PlanClient week/month switching', () => {
     expect(screen.getByRole('tab', { name: t.plan.switcher.month }).getAttribute('aria-selected')).toBe('false')
   })
 
-  it('switches to the month view and back', async () => {
+  it('switches to the month view and back, keeping the view in the URL', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     renderPlan()
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.month }))
     expect(screen.getByRole('tab', { name: t.plan.switcher.month }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.queryByTestId('week-summary')).not.toBeInTheDocument()
+    expect(window.location.search).toBe('?view=month')
+    expect(screen.queryByTestId('day-selector')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.week }))
-    expect(screen.getByTestId('week-summary')).toBeInTheDocument()
+    expect(screen.getByTestId('day-selector')).toBeInTheDocument()
+    expect(window.location.search).toBe('')
   })
 
   it('behaves the same way once a coaching block is active', async () => {
@@ -63,36 +68,15 @@ describe('PlanClient week/month switching', () => {
     expect(screen.getByRole('tab', { name: t.plan.switcher.month }).getAttribute('aria-selected')).toBe('true')
 
     await user.click(screen.getByRole('tab', { name: t.plan.switcher.week }))
-    expect(screen.getByTestId('week-summary')).toBeInTheDocument()
+    expect(screen.getByTestId('day-selector')).toBeInTheDocument()
   })
 
-  // Design review, Oct 2026: the phase and its week under the title, then
-  // the race and its countdown, in both views.
-  it('names the phase, the week and the race under the title', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+  // Redesign 3.0: the phase card counts down to the race; the header is the title and the switch.
+  it('carries no subtitle under the title', () => {
     render(planClient(planCoachingView(buildCoachingOverview(plan(), [], [], [], [], '2026-09-09'))))
-
-    const w = t.plan.weekPurpose
-    const subtitle = `${w.planPhase.base} · ${w.weekOfTarget(1, 6)} · ${t.plan.header.raceIn('10K', 39)}`
-    expect(screen.getByTestId('plan-subtitle').textContent).toBe(subtitle)
-    // The phase in ink, the rest muted.
-    expect(screen.getByText(w.planPhase.base).className).toContain('font-semibold')
-    await user.click(screen.getByRole('tab', { name: t.plan.switcher.month }))
-    expect(screen.getByTestId('plan-subtitle').textContent).toBe(subtitle)
-  })
-
-  it('follows the week paged to', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    render(planClient(planCoachingView(buildCoachingOverview(plan(), [], [], [], [], '2026-09-09'))))
-
-    await user.click(screen.getByRole('button', { name: t.plan.nextPeriod }))
-    expect(screen.getByTestId('plan-subtitle').textContent).toContain(t.plan.weekPurpose.weekOfTarget(2, 6))
-  })
-
-  it('has no subtitle without a plan or a race', () => {
-    renderPlan()
 
     expect(screen.queryByTestId('plan-subtitle')).toBeNull()
+    expect(screen.getByTestId('phase-line').textContent).toContain(t.plan.phase.raceInWeeks('10K', 6))
   })
 
   it('adds no coaching chrome to the header when no plan is active', () => {
@@ -100,6 +84,61 @@ describe('PlanClient week/month switching', () => {
 
     expect(container.textContent).not.toMatch(/Garmin out of date/i)
     expect(screen.queryByTestId('race-footer')).not.toBeInTheDocument()
+  })
+})
+
+describe('PlanClient selected day', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    window.history.replaceState(null, '', '/')
+  })
+
+  // Today's next-workout card links to /plan?date=: the Week view, on that day.
+  it('opens on the day the URL names', () => {
+    window.history.replaceState(null, '', '/plan?date=2026-09-17')
+    renderPlan()
+
+    expect(screen.getByRole('heading', { name: formatDateRange('2026-09-14', '2026-09-20') })).toBeInTheDocument()
+    expect(screen.getByTestId('day-2026-09-17').getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('opens the month the URL asks for', () => {
+    window.history.replaceState(null, '', '/plan?view=month&date=2026-10-21')
+    renderPlan()
+
+    expect(screen.getByRole('tab', { name: t.plan.switcher.month }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByText(formatDate('2026-10-01', { precision: 'month', style: 'full', year: 'always' }))).toBeInTheDocument()
+  })
+
+  it('writes the selected day to the URL, and today as no date at all', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    window.history.replaceState(null, '', '/plan')
+    renderPlan()
+
+    await user.click(screen.getByTestId('day-2026-09-11'))
+    expect(window.location.search).toBe('?date=2026-09-11')
+    await user.click(screen.getByTestId('day-2026-09-09'))
+    expect(window.location.search).toBe('')
+  })
+
+  it('pages a week at a time, landing on today in its own week', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    window.history.replaceState(null, '', '/plan?date=2026-09-01')
+    renderPlan()
+
+    await user.click(screen.getByRole('button', { name: t.plan.nextPeriod }))
+    expect(window.location.search).toBe('')
+    expect(screen.getByTestId('day-2026-09-09').getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('ignores a date that is no day', () => {
+    expect(planDateParam('2026-02-30')).toBeNull()
+    expect(planDateParam('tomorrow')).toBeNull()
+    expect(planDateParam('2026-10-21')).toBe('2026-10-21')
   })
 })
 
@@ -133,3 +172,32 @@ describe('PlanClient across midnight', () => {
   })
 })
 
+// Today's next workout opens Plan on its day (design review, Oct 2026).
+describe('PlanClient on a linked day', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('opens the week view on ?date=, with that day selected', () => {
+    window.history.replaceState(null, '', '/plan?date=2026-09-17')
+    const { container } = renderPlan()
+
+    expect(screen.getByRole('tab', { name: t.plan.switcher.week }).getAttribute('aria-selected')).toBe('true')
+    expect(container.textContent).toContain(formatDateRange('2026-09-14', '2026-09-20'))
+    // Thursday, the fourth day of the week, is the one selected.
+    const days = [...container.querySelectorAll('button[aria-pressed]')]
+    expect(days.map((day) => day.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false', 'true', 'false', 'false', 'false'])
+  })
+
+  it('ignores a date it cannot read', () => {
+    window.history.replaceState(null, '', '/plan?date=tomorrow')
+    const { container } = renderPlan()
+
+    expect(container.textContent).toContain(formatDateRange('2026-09-07', '2026-09-13'))
+  })
+})

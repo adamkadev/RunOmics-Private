@@ -15,13 +15,11 @@ import { OfficialResult } from '@/components/activity/OfficialResult'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
-import { TypeDot } from '@/components/ui/TypeDot'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { appTodayIso } from '@/lib/calendarDate'
 import { paceZones } from '@/application/usecases/GetTrainingZones'
 import { chartZones } from '@/components/activity/chartStackLanes'
-import { RunPlace } from '@/components/activity/RunPlace'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -89,50 +87,22 @@ export default async function ActivityDetailPage({
     athlete.thresholdPaceSecPerKm ? paceZones(athlete.thresholdPaceSecPerKm) : null,
   )
 
-  // After a run the page opens on the run (v4.17): '← Activities', the title
-  // with its date, type and place and Share on its row, the map card with
-  // the four numbers, the verdict with effort, conditions, shoe and note,
-  // then the tabs. The header is handed to the client, which draws it on
-  // every tab.
+  // After a run the page opens on the run (3.0): the map edge to edge with
+  // the way back and Share on it, the title, the four numbers, the verdict
+  // with effort, conditions, shoe and note as chips, then the tabs. The same
+  // on every tab.
   return (
     <div className="flex flex-col gap-3.5">
       <ActivityDetailClient
         activity={activityDetailView(activity)}
+        name={runName(activity, session)}
+        dateLabel={formatDate(activity.date)}
+        comment={activity.comment || undefined}
         qualifiedEfforts={qualifiedEfforts}
         aiVerdict={aiVerdict}
         chartZones={zones}
-        header={
-          <>
-            <BackButton label={t.activity.back} fallbackHref="/activities" className="mb-0 self-start" />
-
-            {/* The page header: H1 and a 14 pt muted subtitle, the page's
-                action right-aligned on the same row. */}
-            <header className="mb-1.5 flex items-end justify-between gap-4">
-              <div className="flex min-w-0 flex-col gap-1">
-                <h1 className="text-display text-foreground">
-                  {runName(activity, session)}
-                </h1>
-                {/* Date · type · place: the type as its zone dot and its
-                    name in text-2 (v4.17). */}
-                <p className="flex flex-wrap items-center gap-x-1.5 text-sm text-muted-foreground" data-testid="activity-subtitle">
-                  {formatDate(activity.date)}
-                  <span aria-hidden>·</span>
-                  <span className="inline-flex items-center gap-1.5 text-[var(--text-2)]">
-                    <TypeDot type={activity.type} />
-                    {t.activityTypes[activity.type]}
-                  </span>
-                  <RunPlace activityId={activity.id} start={activity.route?.[0] ?? null} />
-                </p>
-                {/* Under the title too, so it fades with the date line
-                    rather than show cut under the compact title bar. */}
-                {activity.comment && (
-                  <p data-title-sub className="text-sm text-muted-foreground">{activity.comment}</p>
-                )}
-              </div>
-              <ShareButton activity={shareActivity(activity, session)} />
-            </header>
-          </>
-        }
+        back={<BackButton label={t.activity.back} fallbackHref="/activities" variant="round" />}
+        share={<ShareButton activity={shareActivity(activity, session, aiVerdict)} />}
         dynamicsBaseline={getDynamicsBaseline(activity)}
         shoe={shoe}
         similarRuns={similarRuns}

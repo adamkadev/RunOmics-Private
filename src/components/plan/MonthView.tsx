@@ -1,23 +1,23 @@
 'use client'
 
-import { useMemo, useState, type CSSProperties } from 'react'
-import { sessionZone, zoneColor } from '@/lib/colors'
-import { type ActivitySummary, type ActivityType, type PlannedWorkout } from '@/domain/activity/types'
-import { round } from '@/lib/math'
-import { formatDate, formatRanKm } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
+import { useMemo, type CSSProperties, type MouseEvent } from 'react'
+import { ChevronRight } from 'lucide-react'
+import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
+import { isKeyPrescription, prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import { cardClass } from '@/components/ui/Card'
-import { Legend, LegendItem } from '@/components/ui/Legend'
-import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
-import { PlanPeriodNav } from './PlanPeriodNav'
-import { PlannedWorkoutSheet } from './PlannedWorkoutSheet'
-import { plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
-import { formatWeekKm } from './weekPlanDays'
-import { monthDays, type MonthDay, type MonthDayState } from './monthDays'
+import { LONG_RUN_COLOR, zoneColor } from '@/lib/colors'
+import { isoDate, startOfWeek } from '@/lib/calendarDate'
+import { formatDate, formatRanKm, formatWeekday } from '@/lib/formatters'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import type { PlanPrescriptionView } from './planCoachingView'
-import { prescriptionDistanceMeters } from '@/components/coaching/presentation'
-import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
+import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
+import { PlanPeriodNav } from './PlanPeriodNav'
+import { monthDays, type MonthDayState } from './monthDays'
+import { phaseWeek, planPhaseSpans, spanOfWeek, spanWeeks, type PhaseSpan } from './planPhaseSpans'
+import { dayKind, kindColor, type DayKind } from './sessionKind'
+import { sessionTitle } from './sessionTitle'
+import { formatWeekKm } from './weekPlanDays'
 
 interface Props {
   year: number
@@ -25,206 +25,117 @@ interface Props {
   byDate: Map<string, ActivitySummary[]>
   byDatePlanned: Map<string, PlannedWorkout>
   byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
+  coaching?: PlanCoachingView | null
+  planPhaseRanges?: PlanPhaseRange[]
   today: string
   atPresent: boolean
   onToday: () => void
+  /** Opens the Week view on a day. */
   onSelectDay: (date: string) => void
   onPrev: () => void
   onNext: () => void
   canGoForward: boolean
 }
 
-const WEEKDAYS = t.plan.weekdays
-const ROW_HEIGHT = 56
-// Seven day columns, then the week's km (design review, Oct 2026): run in
-// bold over planned. Each day its own rounded tile, a gap between: a flat
-// grid of hairlines read as a spreadsheet.
-const GRID = 'grid grid-cols-[repeat(7,minmax(0,1fr))_2.75rem] gap-1.5'
-const TILE = 'overflow-hidden rounded-[10px]'
+// Seven day columns, then the week's km in a 56 pt column (redesign 3.0, 1g).
+const GRID = 'grid grid-cols-[repeat(7,minmax(0,1fr))_56px]'
 
-/**
- * A day's state, as the week chart draws it (v4.17): what was run is the
- * accent's soft fill, an extra run too with its own label, a session still to
- * come a 12% tint in its type's zone - no dashed outline and no square: the
- * colour is enough (owner, Oct 2026) - and a missed one the negative status
- * at 12% with a dashed outline and a cross, never colour alone.
- * Today is an accent outline on top of whichever it is.
- */
-const CELL_FILL: Record<MonthDayState, string> = {
-  done: 'bg-[var(--accent-soft)]',
-  extra: 'bg-[var(--accent-soft)]',
-  planned: 'bg-[color-mix(in_srgb,var(--cell-zone)_12%,transparent)]',
-  missed: 'bg-[color-mix(in_srgb,var(--neg)_12%,transparent)]',
-  rest: 'border border-border',
-}
-
-/** A missed day's dashed outline, inside the cell so it never touches its neighbours'. */
-const MISSED_OUTLINE: CSSProperties = { outline: '1.5px dashed var(--neg)', outlineOffset: -3 }
-
-const STATE_WORD: Record<MonthDayState, string> = {
-  done: t.sessionState.done,
-  extra: t.plan.extraRun,
-  planned: t.sessionState.planned,
-  missed: t.sessionState.missed,
-  rest: t.sessionState.rest,
-}
-
-interface DayCellData {
-  day: number
-  date: string
-  acts: ActivitySummary[]
-  /** A day of the month before or after, filling its week's row. */
-  outside: boolean
-}
-
-interface PlannedInfo {
-  type: ActivityType
-  /** Null for a session planned by time alone. */
+/** What a session was planned at: its km, or its minutes when it has none. */
+interface Planned {
   km: number | null
   minutes: number | null
-  // A coach prescription and a plain Garmin plan open different things on
-  // tap (week view vs. the workout sheet) - everything else about them is
-  // drawn identically.
-  source: 'coach' | 'garmin'
 }
 
-function isoDateOf(year: number, month: number, day: number): string {
-  const d = new Date(year, month, day)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function plannedInfoFor(
-  date: string,
-  byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
-): PlannedInfo | null {
+function plannedFor(date: string, byDatePlanned: Map<string, PlannedWorkout>, byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>): Planned | null {
   const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
   if (coach) {
     const meters = prescriptionDistanceMeters(coach.prescription)
-    if (meters !== null && meters > 0) {
-      return { type: COACHING_TO_ACTIVITY_TYPE[coach.prescription.type], km: meters / 1000, minutes: null, source: 'coach' }
-    }
+    const seconds = coach.prescription.totalDurationSeconds
+    return { km: meters ? meters / 1000 : null, minutes: seconds ? Math.round(seconds / 60) : null }
   }
-  // A Garmin session planned by time alone is still a session: Month read
-  // five such July days as rest and never as missed, where Week counted them.
+  // A Garmin session planned by time alone is still a session.
   const plan = byDatePlanned.get(date)
   if (plan && (plan.distanceM || plan.durationSecs)) {
-    return {
-      type: (plan.type as ActivityType | undefined) ?? 'Base',
-      km: plan.distanceM ? plan.distanceM / 1000 : null,
-      minutes: plan.durationSecs ? Math.round(plan.durationSecs / 60) : null,
-      source: 'garmin',
-    }
+    return { km: plan.distanceM ? plan.distanceM / 1000 : null, minutes: plan.durationSecs ? Math.round(plan.durationSecs / 60) : null }
   }
   return null
 }
 
-/** What a session was planned at, bare - its km, or its minutes when it has none - and with its unit. */
-function plannedFigure(planned: PlannedInfo): { bare: string; full: string } | null {
-  if (planned.km !== null) return { bare: formatWeekKm(planned.km), full: `${formatWeekKm(planned.km)} ${t.units.km}` }
-  return planned.minutes !== null ? { bare: `${planned.minutes}′`, full: `${planned.minutes} ${t.units.min}` } : null
+interface Cell {
+  date: string
+  outside: boolean
+  state: MonthDayState
+  kind: DayKind | null
+  ranKm: number
+  planned: Planned | null
 }
 
-/** The day's one figure with its unit, for its name: the tile shows it bare. */
-function figureWords(planned: PlannedInfo | null, ranKm: number, hasActs: boolean): string | null {
-  if (hasActs) return `${formatRanKm(ranKm)} ${t.units.km}`
-  return planned ? (plannedFigure(planned)?.full ?? null) : null
+interface Row {
+  monday: string
+  cells: Cell[]
+  span: PhaseSpan | null
+  /** The phase's label, over the first of its weeks on screen. */
+  label: string | null
+  ranKm: number
+  plannedKm: number
+  current: boolean
+  future: boolean
 }
 
-// One figure a day, bare, as mock 1c draws it (design review, Oct 2026): what
-// was run in bold - as the week view writes it, "10", not "10.0" - else what
-// is planned, light; a missed one in the negative status, its ✕ up by the
-// date where a phone-width tile has room for it, and a run
-// nothing was planned for labelled "extra" over its figure. The week row
-// under it carries the unit.
-function CellValue({ planned, ranKm, hasActs, state }: { planned: PlannedInfo | null; ranKm: number; hasActs: boolean; state: MonthDayState }) {
-  const figure = planned && plannedFigure(planned)
-  return (
-    <div className="mt-auto flex min-w-0 flex-col leading-tight">
-      {state === 'extra' && <span className="truncate text-[11px] leading-none text-muted-foreground">{t.plan.extra}</span>}
-      {hasActs ? (
-        <span className="truncate text-[13px] font-semibold tabular-nums text-foreground">{formatRanKm(ranKm)}</span>
-      ) : (
-        figure && (
-          <span className={cn('truncate text-[13px] tabular-nums', state === 'missed' ? 'font-semibold text-[var(--neg)]' : 'font-medium text-[var(--cell-zone,var(--text-2))]')}>
-            {figure.bare}
-          </span>
-        )
-      )}
-    </div>
-  )
+/** A day's tile (redesign 3.0, 1g): a run in its colour at 20%, a session still to come dashed in it, rest empty. */
+function tileStyle(cell: Cell): CSSProperties | null {
+  const color = cell.kind?.color ?? 'var(--muted-foreground)'
+  if (cell.state === 'done' || cell.state === 'extra') return { background: `color-mix(in srgb, ${color} 20%, transparent)` }
+  if (cell.state === 'planned') return { border: `1px dashed ${color}` }
+  if (cell.state === 'missed') return { border: '1px dashed var(--neg)' }
+  return null
 }
 
-const CELL_BUTTON = 'flex h-full w-full flex-col items-start px-2 pb-1.5 pt-1.5 text-left transition-colors hover:bg-[var(--surface-2)]'
+function tileFigure(cell: Cell): string | null {
+  if (cell.ranKm > 0) return formatRanKm(cell.ranKm)
+  if (!cell.planned) return null
+  return cell.planned.km !== null ? formatWeekKm(cell.planned.km) : cell.planned.minutes !== null ? t.plan.steps.minutes(cell.planned.minutes) : null
+}
 
-// Same tap targets this pass found already correct, just carrying the new
-// single-value content: a completed day, or a coach-planned one, opens the
-// week view at that date; a plain Garmin-only plan opens its own sheet.
-// A day with neither is a plain div - nothing to open.
-function DayCell({
-  cell,
-  isToday,
-  planned,
-  day,
-  garminPlan,
-  onSelectDay,
-  onOpenSheet,
-}: {
-  cell: DayCellData
-  isToday: boolean
-  planned: PlannedInfo | null
-  day: MonthDay
-  garminPlan: PlannedWorkout | null
-  onSelectDay: (date: string) => void
-  onOpenSheet: (workout: PlannedWorkout, missed: boolean) => void
-}) {
-  const ranKm = cell.acts.reduce((sum, a) => sum + a.distanceKm, 0)
-  const hasActs = cell.acts.length > 0
-  const dayNumber = (
-    <span className="flex w-full items-start justify-between">
-      <span
-        className="text-xs leading-none"
-        style={{ color: isToday ? 'var(--accent-text)' : 'var(--muted-foreground)', fontWeight: isToday ? 600 : 400 }}
-      >
-        {cell.day}
-      </span>
-      {day.state === 'missed' && <span aria-hidden className="text-[11px] font-semibold leading-none text-[var(--neg)]">✕</span>}
-    </span>
-  )
-  const value = (planned || hasActs) && <CellValue planned={planned} ranKm={ranKm} hasActs={hasActs} state={day.state} />
-  // The state and the figure, with its unit, in the name, as the week chart
-  // names its days: colour, shape and a bare number are not all a screen
-  // reader should hear.
-  const words = figureWords(planned, ranKm, hasActs)
-  const name = [formatDate(cell.date, { style: 'full' }), STATE_WORD[day.state], words].filter(Boolean).join(' · ')
-
-  if (hasActs || planned?.source === 'coach') {
-    return (
-      <button type="button" onClick={() => onSelectDay(cell.date)} aria-label={name} className={CELL_BUTTON}>
-        {dayNumber}
-        {value}
-      </button>
-    )
+/** The next quality session from `from`: the coach's key sessions, else Garmin's typed ones. */
+function nextKeySession(
+  from: string,
+  byDatePlanned: Map<string, PlannedWorkout>,
+  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>,
+): { date: string; title: string } | null {
+  const dates = [...new Set([...byDatePlanned.keys(), ...(byDateCoach?.keys() ?? [])])].filter((d) => d >= from).sort()
+  for (const date of dates) {
+    const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
+    if (coach) {
+      if (isKeyPrescription(coach.prescription)) return { date, title: coach.prescription.shortName ?? coach.prescription.title }
+      continue
+    }
+    const plan = byDatePlanned.get(date)
+    if (plan?.type && plan.type !== 'Base') return { date, title: sessionTitle(plan.name, plan.type) ?? t.activityTypes[plan.type] }
   }
-
-  if (planned?.source === 'garmin' && garminPlan) {
-    return (
-      <button type="button" onClick={() => onOpenSheet(garminPlan, day.state === 'missed')} aria-label={name} className={CELL_BUTTON}>
-        {dayNumber}
-        {value}
-      </button>
-    )
-  }
-
-  return <div className="flex h-full w-full flex-col items-start px-2 pt-1.5">{dayNumber}</div>
+  return null
 }
 
+const QUALITY_ORDER: ActivityType[] = ['Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race']
+
+function Swatch({ style }: { style: CSSProperties }) {
+  return <span aria-hidden className="box-border size-2.5 shrink-0 rounded-[3px]" style={style} />
+}
+
+/**
+ * Plan's month (redesign 3.0, 1g): each week a row, its phase a 3 pt border
+ * down its left - the current phase in the accent - and the phase named once,
+ * over its first week. A day is its date and a tile with its km; the week's
+ * km sit at the end of its row. Tapping a week opens it in the Week view.
+ */
 export function MonthView({
   year,
   month,
   byDate,
   byDatePlanned,
   byDateCoach,
+  coaching = null,
+  planPhaseRanges = [],
   today,
   atPresent,
   onToday,
@@ -233,150 +144,230 @@ export function MonthView({
   onNext,
   canGoForward,
 }: Props) {
-  const [sheetWorkout, setSheetWorkout] = useState<PlanWorkoutView | null>(null)
+  const monthStart = isoDate(new Date(year, month, 1))
+  const monthEnd = isoDate(new Date(year, month + 1, 0))
+  const spans = useMemo(() => planPhaseSpans(coaching, planPhaseRanges), [coaching, planPhaseRanges])
+  const currentSpan = spanOfWeek(spans, isoDate(startOfWeek(new Date(`${today}T00:00:00`))))
 
-  const monthLabel = formatDate(isoDateOf(year, month, 1), { precision: 'month', style: 'full', year: 'always' })
-
-  const { rows, sessionCount, ranKm, plannedKm, days, zones } = useMemo(() => {
-    const firstDay = new Date(year, month, 1)
-    const startOffset = (firstDay.getDay() || 7) - 1
+  const { rows, ranKm, plannedKm, qualityTypes, hasLong } = useMemo(() => {
+    const first = new Date(year, month, 1)
+    const startOffset = (first.getDay() || 7) - 1
     const daysInMonth = new Date(year, month + 1, 0).getDate()
-    // Only the weeks the month needs: an empty sixth row cost 120 pt.
+    // Only the weeks the month needs, each a whole Monday-to-Sunday week.
     const cellCount = Math.ceil((startOffset + daysInMonth) / 7) * 7
+    const dates = Array.from({ length: cellCount }, (_, i) => isoDate(new Date(year, month, 1 - startOffset + i)))
+    const states = monthDays(dates, (d) => (byDate.get(d)?.length ?? 0) > 0, (d) => plannedFor(d, byDatePlanned, byDateCoach) !== null, today)
 
-    // Each row a whole Monday-to-Sunday week, its days from the months either
-    // side included (the owner's report, Oct 2026): October's first row read
-    // 33 of 31 km for a week run at 53, the Tuesday and Wednesday of
-    // September left out. The month's own figures stay the month's.
-    const cells: DayCellData[] = []
-    let sessionCount = 0
     let ranKm = 0
     let plannedKm = 0
-    const zones = new Set<ReturnType<typeof sessionZone>>()
-
-    for (let i = 0; i < cellCount; i++) {
-      const at = new Date(year, month, 1 - startOffset + i)
-      const date = isoDateOf(at.getFullYear(), at.getMonth(), at.getDate())
-      const outside = at.getMonth() !== month
-      const acts = byDate.get(date) ?? []
-      const planned = plannedInfoFor(date, byDatePlanned, byDateCoach)
-      // The key names the colours drawn, a muted day's too.
-      if (planned) zones.add(sessionZone(planned))
-      if (!outside) {
-        sessionCount += acts.length
-        ranKm += acts.reduce((s, a) => s + a.distanceKm, 0)
-        plannedKm += planned?.km ?? 0
-      }
-      cells.push({ day: at.getDate(), date, acts, outside })
+    const quality = new Set<ActivityType>()
+    let hasLong = false
+    const rows: Row[] = []
+    let previous: PhaseSpan | null = null
+    for (let r = 0; r < dates.length / 7; r++) {
+      const cells = dates.slice(r * 7, r * 7 + 7).map((date): Cell => {
+        const acts = byDate.get(date) ?? []
+        const kind = dayKind(date, acts, byDatePlanned, byDateCoach)
+        const cell: Cell = {
+          date,
+          outside: date < monthStart || date > monthEnd,
+          state: states.get(date)?.state ?? 'rest',
+          kind,
+          ranKm: acts.reduce((s, a) => s + a.distanceKm, 0),
+          planned: plannedFor(date, byDatePlanned, byDateCoach),
+        }
+        if (kind?.kind === 'quality') quality.add(kind.type)
+        if (kind?.kind === 'long') hasLong = true
+        if (!cell.outside) {
+          ranKm += cell.ranKm
+          plannedKm += cell.planned?.km ?? 0
+        }
+        return cell
+      })
+      const monday = cells[0]!.date
+      const sunday = cells[6]!.date
+      const span = spanOfWeek(spans, monday)
+      // Named once, over its first week: "BASE · ENDS OCT 11" for a phase
+      // already under way, "GENERAL PREP · 6 WEEKS" for one that starts here.
+      const label =
+        span && span !== previous
+          ? span.startDate < monday && r === 0
+            ? t.plan.month.phaseEnds(span.shortName, formatDate(span.endDate, { style: 'bare' }))
+            : t.plan.month.phaseWeeks(span.shortName, spanWeeks(span))
+          : null
+      previous = span
+      rows.push({
+        monday,
+        cells,
+        span,
+        label,
+        ranKm: cells.reduce((s, c) => s + c.ranKm, 0),
+        plannedKm: cells.reduce((s, c) => s + (c.planned?.km ?? 0), 0),
+        current: monday <= today && today <= sunday,
+        future: monday > today,
+      })
     }
+    return { rows, ranKm, plannedKm, qualityTypes: QUALITY_ORDER.filter((type) => quality.has(type)), hasLong }
+  }, [year, month, monthStart, monthEnd, byDate, byDatePlanned, byDateCoach, spans, today])
 
-    const rows: DayCellData[][] = []
-    for (let i = 0; i < cells.length / 7; i++) rows.push(cells.slice(i * 7, i * 7 + 7))
+  const phaseColor = (span: PhaseSpan | null) => (!span ? 'transparent' : span === currentSpan ? 'var(--accent)' : 'var(--zone-1)')
 
-    const days = monthDays(cells.map((c) => c.date), (d) => (byDate.get(d)?.length ?? 0) > 0, (d) => plannedInfoFor(d, byDatePlanned, byDateCoach) !== null, today)
-    return { rows, sessionCount, ranKm: round(ranKm, 0), plannedKm: round(plannedKm, 0), days, zones: [...zones].sort() }
-  }, [year, month, byDate, byDatePlanned, byDateCoach, today])
+  function openRow(row: Row, event: MouseEvent<HTMLButtonElement>) {
+    // A tap on a day opens the week on that day; anywhere else, on today or the week's Monday.
+    const date = (event.target as HTMLElement).closest<HTMLElement>('[data-date]')?.dataset.date
+    onSelectDay(date ?? (row.current ? today : row.monday))
+  }
+
+  const monthName = formatDate(monthStart, { precision: 'month', style: 'full', year: 'never' })
+  const summaryPhase = phaseWeek(spans, rows.find((r) => r.current)?.monday ?? rows[0]!.monday)
+  const key = monthEnd >= today ? nextKeySession(monthStart > today ? monthStart : today, byDatePlanned, byDateCoach) : null
+  const m = t.plan.month
 
   return (
-    <section className={cardClass({ padding: 'none', overflow: true })}>
-      <div className="px-5 pb-3.5 pt-4">
-        <PlanPeriodNav
-          label={monthLabel}
-          onPrev={onPrev}
-          onNext={onNext}
-          nextDisabled={atPresent && !canGoForward}
-          // Hidden while today's month is on screen.
-          onToday={atPresent ? null : onToday}
-        />
-      </div>
+    <div className="flex flex-col gap-3.5">
+      <PlanPeriodNav
+        label={formatDate(monthStart, { precision: 'month', style: 'full', year: 'always' })}
+        onPrev={onPrev}
+        onNext={onNext}
+        nextDisabled={atPresent && !canGoForward}
+        onToday={atPresent ? null : onToday}
+      />
 
-      <div className={cn(GRID, 'px-3')}>
-        {WEEKDAYS.map((d, i) => (
-          <div key={d} className={cn(EYEBROW_CLASS, 'pb-2 text-center', i >= 5 ? 'text-subtle' : 'text-muted-foreground')}>
-            {d}
-          </div>
-        ))}
-        <div className={cn(EYEBROW_CLASS, 'pb-2 text-right text-muted-foreground')}>{t.units.km}</div>
-      </div>
-
-      <div className="flex flex-col gap-1.5 px-3">
-        {rows.map((row, rowIndex) => {
-          const containsToday = row.some((c) => c.date === today)
-          const rowIsFuture = row.every((c) => c.date > today)
-          const weekRan = row.reduce((s, c) => s + c.acts.reduce((sa, a) => sa + a.distanceKm, 0), 0)
-          const weekPlanned = row.reduce((s, c) => s + (plannedInfoFor(c.date, byDatePlanned, byDateCoach)?.km ?? 0), 0)
-          // A week still to come with nothing planned has no figure to give.
-          const showTotal = weekPlanned > 0 || !rowIsFuture
-
-          return (
-            <div key={rowIndex} className={GRID} style={{ height: `${ROW_HEIGHT}px` }}>
-              {row.map((cell, i) => {
-                const planned = plannedInfoFor(cell.date, byDatePlanned, byDateCoach)
-                const day = days.get(cell.date) ?? { state: 'rest' as const }
-                const state = day.state
-                const isToday = cell.date === today
-                return (
-                  <div
-                    key={i}
-                    data-cell-state={state}
-                    data-outside-month={cell.outside || undefined}
-                    // The month either side's days at half strength: there, and as tappable, but not this month's.
-                    className={cn(TILE, CELL_FILL[state], cell.outside && 'opacity-[0.45]')}
-                    style={{
-                      ...(state === 'planned' && planned ? ({ '--cell-zone': zoneColor(sessionZone(planned)) } as CSSProperties) : {}),
-                      ...(state === 'missed' ? MISSED_OUTLINE : {}),
-                      ...(isToday ? { boxShadow: 'inset 0 0 0 2px var(--accent)' } : {}),
-                    }}
-                  >
-                    <DayCell
-                      cell={cell}
-                      isToday={isToday}
-                      planned={planned}
-                      day={day}
-                      garminPlan={byDatePlanned.get(cell.date) ?? null}
-                      onSelectDay={onSelectDay}
-                      onOpenSheet={(workout, missed) => {
-                        const view = plannedWorkoutView(workout)
-                        // Read-only: what was planned and that nothing matched it, no reschedule.
-                        setSheetWorkout(missed ? { ...view, statusLabel: t.plan.missedNoRun } : view)
-                      }}
-                    />
-                  </div>
-                )
-              })}
-              <div
-                data-testid="month-week-total"
-                className={cn('flex min-w-0 flex-col items-end justify-center leading-tight tabular-nums', containsToday ? 'text-foreground' : 'text-[var(--text-2)]')}
-              >
-                {showTotal && <span className="text-[13px] font-semibold">{formatRanKm(weekRan)}</span>}
-                {weekPlanned > 0 && <span className="whitespace-nowrap text-[11px] text-muted-foreground">/ {formatWeekKm(weekPlanned)}</span>}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* One line of legend (design review, Oct 2026): done, the session
-          types the grid plans, missed - each in its tile's shape. Today's
-          outline, the "extra" label and bold-ran / light-planned say
-          themselves. */}
-      <div className="mx-3 mt-1.5 border-t border-border px-1 pt-3" data-testid="month-legend">
-        <Legend className="text-[11px]">
-          <LegendItem swatch="tint" color="var(--accent)">{t.sessionState.done}</LegendItem>
-          {zones.map((zone) => (
-            <LegendItem key={zone} swatch="tint" color={zoneColor(zone)}>
-              {t.zoneLabels[zone]}
-            </LegendItem>
+      <div>
+        <div className={cn(GRID, 'pb-1.5 pl-[3px] text-center text-[11px] text-muted-foreground')} aria-hidden>
+          {t.plan.weekdays.map((d, i) => (
+            <span key={i}>{d.slice(0, 1)}</span>
           ))}
-          <span className="flex items-center gap-1.5 text-[var(--neg)]">
-            <span aria-hidden className="text-[11px] font-semibold leading-none">✕</span>
-            <span className="text-muted-foreground">{t.sessionState.missed}</span>
-          </span>
-        </Legend>
-      </div>
-      <p className="px-4 pb-4 pt-2.5 text-[13px] text-muted-foreground">{t.plan.summary(sessionCount, ranKm, plannedKm)}</p>
+          <span className="pr-1 text-right">{t.units.km}</span>
+        </div>
 
-      {sheetWorkout && <PlannedWorkoutSheet workout={sheetWorkout} onClose={() => setSheetWorkout(null)} />}
-    </section>
+        <div className="flex flex-col gap-1.5" data-testid="month-grid">
+          {rows.map((row) => (
+            <div key={row.monday}>
+              {row.label && (
+                <p
+                  data-testid="month-phase-label"
+                  className="flex items-center gap-1.5 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.08em]"
+                  style={{ color: row.span === currentSpan ? 'var(--accent-text)' : 'var(--zone-1)' }}
+                >
+                  <span aria-hidden className="size-1.5 rounded-full" style={{ background: phaseColor(row.span) }} />
+                  {row.label}
+                </p>
+              )}
+              <button
+                type="button"
+                data-testid="month-week"
+                data-current={row.current || undefined}
+                onClick={(event) => openRow(row, event)}
+                aria-label={m.weekLabel(
+                  formatDate(row.monday, { style: 'bare' }),
+                  row.plannedKm > 0 ? `${formatRanKm(row.ranKm)} ${t.plan.weekRow.kmOf(formatWeekKm(row.plannedKm))}` : `${formatRanKm(row.ranKm)} ${t.units.km}`,
+                )}
+                className={cn(GRID, 'w-full items-center rounded-r-xl border-l-[3px] py-1.5 text-left transition-colors hover:bg-[var(--surface-2)]', row.current && 'bg-card')}
+                style={{ borderLeftColor: phaseColor(row.span) }}
+              >
+                {row.cells.map((cell) => {
+                  const isToday = cell.date === today
+                  const figure = tileFigure(cell)
+                  const style = tileStyle(cell)
+                  return (
+                    <span
+                      key={cell.date}
+                      data-date={cell.date}
+                      data-cell-state={cell.state}
+                      data-outside-month={cell.outside || undefined}
+                      className={cn('flex min-w-0 flex-col items-center gap-1', cell.outside && 'opacity-40')}
+                    >
+                      <span
+                        className={cn(
+                          'flex size-[22px] items-center justify-center rounded-full text-xs tabular-nums',
+                          isToday ? 'bg-accent font-semibold text-accent-foreground' : 'text-foreground',
+                        )}
+                      >
+                        {Number(cell.date.slice(8))}
+                      </span>
+                      <span
+                        data-testid="month-tile"
+                        className={cn(
+                          'box-border flex h-[34px] w-full max-w-[40px] items-center justify-center rounded-[9px] text-xs font-semibold tabular-nums',
+                          cell.state === 'missed' ? 'text-[var(--neg)]' : 'text-foreground',
+                        )}
+                        style={style ?? undefined}
+                      >
+                        {style ? figure : null}
+                      </span>
+                    </span>
+                  )
+                })}
+                <span data-testid="month-week-total" className="flex min-w-0 flex-col items-end pr-1 leading-tight tabular-nums">
+                  {row.future ? (
+                    row.plannedKm > 0 && <span className="text-sm font-semibold text-muted-foreground">{formatWeekKm(row.plannedKm)}</span>
+                  ) : (
+                    <>
+                      <span className={cn('text-sm font-semibold', row.current ? 'text-accent-text' : 'text-foreground')}>{formatRanKm(row.ranKm)}</span>
+                      {row.plannedKm > 0 && <span className="text-[11px] text-muted-foreground">/ {formatWeekKm(row.plannedKm)}</span>}
+                    </>
+                  )}
+                </span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs text-muted-foreground" data-testid="month-legend">
+        <span className="flex items-center gap-1.5">
+          <Swatch style={{ background: zoneColor(2) }} />
+          {t.plan.kinds.easy}
+        </span>
+        {hasLong && (
+          <span className="flex items-center gap-1.5">
+            <Swatch style={{ background: LONG_RUN_COLOR }} />
+            {m.long}
+          </span>
+        )}
+        {qualityTypes.map((type) => (
+          <span key={type} className="flex items-center gap-1.5">
+            <Swatch style={{ background: kindColor(type, 'quality') }} />
+            {t.activityTypes[type]}
+          </span>
+        ))}
+        <span className="flex items-center gap-1.5">
+          <Swatch style={{ border: '1px dashed var(--muted-foreground)' }} />
+          {t.sessionState.planned}
+        </span>
+      </div>
+
+      <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="month-summary">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3">
+          <h2 className="text-[15px] font-semibold text-foreground">{monthName}</h2>
+          {summaryPhase && (
+            <p className="text-xs text-muted-foreground">{m.phaseWeek(summaryPhase.span.shortName, summaryPhase.week, summaryPhase.total)}</p>
+          )}
+        </div>
+        {plannedKm > 0 && (
+          <div aria-hidden className="h-2 overflow-hidden rounded-full bg-[var(--line-2)]">
+            <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.round((ranKm / plannedKm) * 100))}%` }} />
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {plannedKm > 0 ? m.kmOf(formatRanKm(ranKm), formatWeekKm(plannedKm)) : `${formatRanKm(ranKm)} ${t.units.km}`}
+        </p>
+        {key && (
+          <button
+            type="button"
+            onClick={() => onSelectDay(key.date)}
+            data-testid="month-next-key"
+            className="-mx-1 mt-1 flex items-center justify-between gap-3 rounded-lg border-t border-border px-1 pt-3 text-left"
+          >
+            <span className="flex min-w-0 flex-col">
+              <span className="text-xs text-muted-foreground">{m.nextKey}</span>
+              <span className="truncate text-[15px] font-semibold text-foreground">{`${formatWeekday(key.date, true)} · ${key.title}`}</span>
+            </span>
+            <ChevronRight size={18} aria-hidden="true" className="shrink-0 text-accent-text" />
+          </button>
+        )}
+      </section>
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { allTimeView } from '../GetAllTime'
 
-const run = (date: string, distanceKm: number, durationSeconds = 3600) => ({ date, distanceKm, durationSeconds })
+const run = (date: string, distanceKm: number, durationSeconds = 3600) => ({ id: `a-${date}`, date, distanceKm, durationSeconds })
 
 const RUNS = [
   run('2025-05-03', 10),
@@ -18,13 +18,13 @@ describe('allTimeView', () => {
     expect(view).toMatchObject({ km: 104, runs: 6, since: '2025-05-03', months: 17, currentYear: 2026 })
   })
 
-  it('gives one row per year and notes a first year that started after January', () => {
+  // 3.0: km a month, fair to a first year that started in May.
+  it('gives one row per year with its km a month over the months it covers', () => {
     const view = allTimeView(RUNS, '2026-09-26')
-    expect(view.years.map(({ year, km, runs }) => ({ year, km, runs }))).toEqual([
-      { year: 2025, km: 43, runs: 3 },
-      { year: 2026, km: 61, runs: 3 },
+    expect(view.years.map(({ year, km, runs, months, kmPerMonth }) => ({ year, km, runs, months, kmPerMonth }))).toEqual([
+      { year: 2025, km: 43, runs: 3, months: 8, kmPerMonth: 5 },
+      { year: 2026, km: 61, runs: 3, months: 9, kmPerMonth: 7 },
     ])
-    expect(view.partialFirstYear).toEqual({ year: 2025, startMonth: 5, months: 8, currentMonths: 9 })
   })
 
   it('draws every month since the first, the current one partial, and names the best', () => {
@@ -37,7 +37,7 @@ describe('allTimeView', () => {
 
   it('finds the longest run and the biggest week', () => {
     const view = allTimeView(RUNS, '2026-09-26')
-    expect(view.longestRun).toEqual({ km: 32, date: '2026-04-22' })
+    expect(view.longestRun).toEqual({ km: 32, date: '2026-04-22', activityId: 'a-2026-04-22' })
     expect(view.biggestWeek).toEqual({ km: 52, weekStart: '2026-04-20' })
   })
 })

@@ -34,7 +34,6 @@ describe('planRace', () => {
 })
 
 describe('the race in words', () => {
-  // v4.17: "10K Wintzenheim · Nov 29 · 62 days to go".
   it('names a distance-only race by its distance and place', () => {
     expect(raceTitle({ date: '2026-11-29', name: '10 km', distance: '10K', location: 'Wintzenheim' })).toBe('10K Wintzenheim')
     expect(raceTitle({ date: '2026-11-29', name: '10K', distance: '10K' })).toBe('10K')

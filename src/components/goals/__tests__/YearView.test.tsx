@@ -121,6 +121,13 @@ describe('YearView annual goal card', () => {
   })
 })
 
+describe('a year not yet started (3.0)', () => {
+  it('draws no "0 of 2,500 km" goal card', () => {
+    const next = { ...yearData(BEHIND), year: YEAR + 1, totalDistanceKm: 0, projection: null }
+    render(<YearView yearData={next} today={TODAY} />)
+    expect(screen.queryByTestId('goal-card')).toBeNull()
+  })
+})
 
 describe('YearView, a year with only a race', () => {
   const race = { date: '2027-03-22', name: 'Spring Half', distance: 'Half-Marathon', targetSeconds: 5999 }

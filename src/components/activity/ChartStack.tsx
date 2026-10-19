@@ -2,11 +2,9 @@
 
 import { memo, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { cardClass } from '@/components/ui/Card'
-import { Legend, LegendItem } from '@/components/ui/Legend'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { formatDuration, formatKm } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
+import { runTypeColor } from '@/lib/colors'
 import { t } from '@/i18n'
 import { distanceAxis } from './chartAxis'
 import {
@@ -24,6 +22,7 @@ import {
   sampleAt,
   type ChartStackInput,
   type Lane,
+  type LaneKey,
 } from './chartStackLanes'
 
 type Props = ChartStackInput & {
@@ -36,12 +35,22 @@ const LINE_MODES = ['smoothed', 'raw'] as const
 
 const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`
 
+/** Each lane's line (3.0): heart rate in ink, pace in the accent, cadence in the quality colour. */
+const LINE_COLOR: Record<Exclude<LaneKey, 'elevation'>, string> = {
+  hr: 'var(--foreground)',
+  pace: 'var(--accent)',
+  cadence: runTypeColor('Threshold'),
+}
+
+/** The axis and zone labels: 11 px, the app's type floor (the handoff's 10 px is under it). */
+const AXIS_LABEL = 'text-caption leading-none'
+
 /**
  * One lane with nothing in it that moves: its zone bands, the km ticks, the
  * run average and the line. The scrub cursor and dot are drawn over it by the
  * stack, so a pointer move never redraws a path.
  */
-const LanePlot = memo(function LanePlot({ lane, series, distanceKm }: { lane: Lane; series: (number | null)[]; distanceKm: number }) {
+const LanePlot = memo(function LanePlot({ lane, series, distanceKm, color }: { lane: Lane; series: (number | null)[]; distanceKm: number; color: string }) {
   const y = (v: number) => laneY(lane, v)
   const [lo, hi] = lane.domain
   const top = lane.reversed ? lo : hi
@@ -60,13 +69,15 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm }: { lane: La
               top: pct(rect.top, LANE_HEIGHT),
               height: pct(rect.height, LANE_HEIGHT),
               background: `color-mix(in srgb, var(--zone-${band.zone}) 11%, transparent)`,
+              // The boundary with the next zone as a hairline (3.0).
+              borderTop: rect.top > 0.5 ? `1px solid color-mix(in srgb, var(--zone-${band.zone}) 45%, transparent)` : undefined,
             }}
           >
-            {/* 11 px like every axis label: the app's type floor (v4.17). On a
-                chip above the lines, so the average line can't strike it out. */}
+            {/* 11 px like the axis labels, at the top right. On a chip
+                above the lines, so the average line can't strike it out. */}
             {rect.labelled && (
               <span
-                className="absolute right-1 top-px z-[1] rounded-sm bg-background px-0.5 text-caption font-semibold leading-none"
+                className={`absolute right-1 top-px z-[1] rounded-sm bg-card px-0.5 font-semibold ${AXIS_LABEL}`}
                 style={{ color: `var(--zone-${band.zone})` }}
               >
                 Z{band.zone}
@@ -90,47 +101,48 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm }: { lane: La
         <path
           d={linePath(series, y)}
           fill="none"
-          stroke="var(--foreground)"
+          stroke={color}
           strokeWidth={1.6}
           strokeLinejoin="round"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
         />
       </svg>
-      <span className="absolute left-1.5 top-[3px] text-caption leading-none text-muted-foreground">{lane.format(top)}</span>
-      <span className="absolute bottom-[3px] left-1.5 text-caption leading-none text-muted-foreground">{lane.format(bottom)}</span>
+      <span className={`absolute left-1.5 top-[3px] text-muted-foreground ${AXIS_LABEL}`}>{lane.format(top)}</span>
+      <span className={`absolute bottom-[3px] left-1.5 text-muted-foreground ${AXIS_LABEL}`}>{lane.format(bottom)}</span>
     </>
   )
 })
 
+/** Elevation (3.0): a quiet area with its outline, context for the lanes above. */
 const ElevationPlot = memo(function ElevationPlot({ lane }: { lane: Lane }) {
+  const y = (v: number) => elevationY(lane, v)
   return (
     <svg viewBox={`0 0 ${VIEW_WIDTH} ${ELEVATION_HEIGHT}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
-      <path d={areaPath(lane.smoothed, (v) => elevationY(lane, v), ELEVATION_HEIGHT)} fill="color-mix(in srgb, var(--band) 55%, transparent)" />
+      <path d={areaPath(lane.smoothed, y, ELEVATION_HEIGHT)} fill="var(--line-2)" />
+      <path d={linePath(lane.smoothed, y)} fill="none" stroke="var(--subtle)" strokeWidth={1.2} vectorEffect="non-scaling-stroke" />
     </svg>
   )
 })
 
-/** The scrub's mark on one lane: an accent dot on the line, ringed in the card. */
-function Dot({ left, top, size }: { left: string; top: string; size: 8 | 10 }) {
+/** The scrub's mark on one lane: a 9 px accent dot on the line, ringed in the page. */
+function Dot({ left, top }: { left: string; top: string }) {
   return (
     <span
       aria-hidden
-      className={cn(
-        'pointer-events-none absolute rounded-full border-2 border-card bg-accent',
-        size === 10 ? '-ml-[5px] -mt-[5px] h-2.5 w-2.5' : '-ml-1 -mt-1 h-2 w-2',
-      )}
+      className="pointer-events-none absolute -ml-[4.5px] -mt-[4.5px] h-[9px] w-[9px] rounded-full border-2 border-background bg-accent"
       style={{ left, top }}
     />
   )
 }
 
 /**
- * Charts (v4.17): heart rate, pace and cadence as 90 pt lanes in text ink over
- * the athlete's zones, elevation as a strip under them, and one scrub across
- * all of it. The reading sits beside each lane's name and the point on the
- * run in the header - the separate readout card is gone. Smoothed is the
- * default line; Raw shows what was recorded.
+ * Charts (3.0): heart rate, pace and cadence as 72 pt lanes over the
+ * athlete's zones - heart rate in ink, pace in the accent, cadence in the
+ * quality colour - elevation last as a strip under them, and one scrub
+ * across all of it. The reading sits bold beside each lane's name and the
+ * point on the run in the row at the top. Smoothed is the default line; Raw
+ * shows what was recorded.
  */
 export function ChartStack({ onScrub, ...input }: Props) {
   const {
@@ -245,17 +257,22 @@ export function ChartStack({ onScrub, ...input }: Props) {
   const on = fraction !== null
   const cursorX = on ? `${(fraction * 100).toFixed(2)}%` : '0'
   const elapsed = on ? elapsedAt(lanes.find((l) => l.key === 'pace'), fraction, distanceKm) : null
-  const header = on
-    ? c.scrubAt(formatKm(fraction * distanceKm, 2), elapsed != null ? formatDuration(Math.round(elapsed)) : null)
-    : c.scrubHint
+  const header = on ? (
+    <>
+      {c.scrubAt.lead}
+      <b className="font-semibold text-foreground">{c.scrubAt.km(formatKm(fraction * distanceKm, 1))}</b>
+      {elapsed != null && c.scrubAt.elapsed(formatDuration(Math.round(elapsed)))}
+    </>
+  ) : (
+    c.scrubHint
+  )
   const summary = lanes.map((l) => `${l.label} ${l.summary}`).join('. ')
   const axis = distanceAxis(distanceKm)
-  const hasBands = plotted.some((l) => l.bands.length > 0)
 
   const reading = (series: (number | null)[]) => (on ? (sampleAt(series, fraction, distanceKm)?.value ?? null) : null)
 
   return (
-    <section className={cardClass({ padding: 'none', className: 'flex flex-col gap-3.5 px-5 pb-3.5 pt-4' })} data-testid="chart-stack">
+    <section className="flex flex-col gap-3" data-testid="chart-stack">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="min-w-0 text-[13px] text-muted-foreground" data-testid="scrub-header">
           {header}
@@ -276,7 +293,7 @@ export function ChartStack({ onScrub, ...input }: Props) {
           <div
             ref={areaRef}
             data-testid="chart-scrub"
-            className="relative flex cursor-crosshair touch-pan-y select-none flex-col gap-3.5"
+            className="relative flex cursor-crosshair touch-pan-y select-none flex-col gap-3"
             onPointerDown={handleDown}
             onPointerMove={handleMove}
             onPointerUp={handleUp}
@@ -302,9 +319,9 @@ export function ChartStack({ onScrub, ...input }: Props) {
                       <span className="text-muted-foreground">{lane.summary}</span>
                     </span>
                   </div>
-                  <div className="relative overflow-hidden rounded-md bg-background" style={{ height: LANE_HEIGHT }}>
-                    <LanePlot lane={lane} series={series} distanceKm={distanceKm} />
-                    {value !== null && <Dot left={cursorX} top={pct(laneY(lane, value), LANE_HEIGHT)} size={10} />}
+                  <div className="relative overflow-hidden rounded-lg bg-card" style={{ height: LANE_HEIGHT }}>
+                    <LanePlot lane={lane} series={series} distanceKm={distanceKm} color={LINE_COLOR[lane.key as keyof typeof LINE_COLOR]} />
+                    {value !== null && <Dot left={cursorX} top={pct(laneY(lane, value), LANE_HEIGHT)} />}
                   </div>
                 </div>
               )
@@ -329,10 +346,10 @@ export function ChartStack({ onScrub, ...input }: Props) {
                   </div>
                   <div className="relative" style={{ height: ELEVATION_HEIGHT }}>
                     <ElevationPlot lane={elevation} />
-                    <span className="absolute left-1.5 top-0 text-caption leading-none text-muted-foreground" data-testid="elevation-top">
+                    <span className={`absolute left-1.5 top-0 text-muted-foreground ${AXIS_LABEL}`} data-testid="elevation-top">
                       {elevation.format(elevation.domain[1])}
                     </span>
-                    {value !== null && <Dot left={cursorX} top={pct(elevationY(elevation, value), ELEVATION_HEIGHT)} size={8} />}
+                    {value !== null && <Dot left={cursorX} top={pct(elevationY(elevation, value), ELEVATION_HEIGHT)} />}
                   </div>
                 </div>
               )
@@ -341,7 +358,7 @@ export function ChartStack({ onScrub, ...input }: Props) {
             {on && (
               <span
                 aria-hidden
-                className="pointer-events-none absolute inset-y-0 w-px bg-[var(--text-2)] opacity-60"
+                className="pointer-events-none absolute inset-y-0 w-px bg-foreground opacity-45"
                 style={{ left: cursorX }}
               />
             )}
@@ -349,7 +366,8 @@ export function ChartStack({ onScrub, ...input }: Props) {
         </ChartFigure>
       </div>
 
-      <div aria-hidden className="relative h-3.5 text-caption leading-none text-muted-foreground">
+      {/* Each label at its own km, the last one right-aligned to the end (3.0). */}
+      <div aria-hidden className={`relative h-3.5 text-muted-foreground ${AXIS_LABEL}`} data-testid="km-axis">
         {axis.ticks.map((km, i) => (
           <span
             key={km}
@@ -363,21 +381,6 @@ export function ChartStack({ onScrub, ...input }: Props) {
           </span>
         ))}
       </div>
-
-      <Legend className="gap-x-4 border-t border-border pt-2.5">
-        {hasBands && (
-          <LegendItem swatch="square" color="color-mix(in srgb, var(--zone-2) 45%, transparent)">
-            {c.legend.zones}
-          </LegendItem>
-        )}
-        <LegendItem swatch="dash" color="var(--muted-foreground)">
-          {c.legend.average}
-        </LegendItem>
-        <span className="flex items-center gap-1.5">
-          <span aria-hidden className="h-2.5 w-0.5 shrink-0 rounded-full bg-[var(--band)]" />
-          {c.legend.km}
-        </span>
-      </Legend>
     </section>
   )
 }

@@ -18,18 +18,26 @@ export function dayLevel(day: Pick<HeatmapDay, 'distanceKm' | 'sessionCount'> | 
 }
 
 /**
- * The one consistency ramp, on the Progress card, this page and its month
- * bars (v4.17.1): a day run is the athlete's own data, so it is the accent -
- * 35%, 65%, full in dark; 25%, 55%, full in light - on the rest fill.
+ * The accent lifted towards the text ink (3.0): lighter in dark, deeper in
+ * light, so it stands out from the accent itself in both themes and for
+ * every accent. A long day, and All time's best month.
+ */
+export const ACCENT_LIFT = 'color-mix(in oklab, var(--accent) 70%, var(--foreground))'
+
+/**
+ * The one consistency ramp, on this page and its month bars (v4.17.1, 3.0):
+ * a day run is the athlete's own data, so it is the accent - 35% and 65% in
+ * dark, 40% and 70% in light, on the rest fill - and a long day the lifted
+ * accent.
  */
 export const LEVEL_FILL: Record<DayLevel, string> = {
   0: 'var(--level-rest)',
   1: 'color-mix(in srgb, var(--accent) var(--level-low), transparent)',
   2: 'color-mix(in srgb, var(--accent) var(--level-mid), transparent)',
-  3: 'var(--accent)',
+  3: ACCENT_LIFT,
 }
 
-/** A month with this many active days or more is the full accent; fewer, the ramp's lowest tint. */
+/** The month target (3.0): this many active days or more is the full accent; fewer, the ramp's lowest tint. */
 export const STRONG_MONTH_DAYS = 16
 
 /** Today, outlined in the accent a pixel off its cell. */
@@ -63,7 +71,7 @@ export interface ConsistencyCell {
 export interface ConsistencyWeek {
   /** The Monday. */
   start: string
-  /** The short month name, on the column where a month starts; null elsewhere. */
+  /** The short month name, on the column whose week holds the month's first day; null elsewhere. */
   monthLabel: string | null
   /** Monday to Sunday. */
   days: ConsistencyCell[]
@@ -79,12 +87,14 @@ export interface ConsistencyMonth {
   activeDays: number
   /** The month's days up to today: all of them, or the days so far. */
   days: number
-  /** The month under way: its count is not a month's yet, so it is neither strong nor weak. */
+  /** The month under way: its count is not a month's yet, so it is drawn with its projection. */
   inProgress: boolean
+  /** The month under way's active days at its pace so far, never under its count; null for a month done. */
+  projected: number | null
 }
 
 export interface ConsistencyView {
-  /** The rolling year as week columns, Monday on top (v4.17). */
+  /** The last 26 weeks as columns, Monday on top (3.0). */
   weeks: ConsistencyWeek[]
   /** The same twelve months, for the active days per month. */
   months: ConsistencyMonth[]
@@ -93,20 +103,22 @@ export interface ConsistencyView {
   windowDays: number
   /** The window's first day: the first of the month eleven months back. */
   windowStart: string
-  /** Share of the window's days with a run, 0–100. */
-  sharePct: number
+  /** Runs a week over the window, to one decimal (3.0): the share of days only restated active days. */
+  runsPerWeek: number
   streakWeeks: number
   bestStreakWeeks: number | null
   /**
-   * The share over the twelve months before, where the history reaches them:
-   * a history that starts inside that year is compared over the part it
-   * covers, and says which.
+   * Runs a week over the twelve months before, where the history reaches
+   * them: a history that starts inside that year is compared over the part
+   * it covers, and says which.
    */
-  prior: { sharePct: number; deltaPts: number; fullYear: boolean; range: string; months: number } | null
+  prior: { runsPerWeek: number; delta: number; fullYear: boolean; months: number } | null
   range: string | null
 }
 
 export const MONTHS_SHOWN = 12
+/** The calendar's columns (3.0): six months, which fit a phone's width. */
+export const WEEKS_SHOWN = 26
 /** Under this many days of history, the year before has no share worth comparing. */
 const MIN_PRIOR_DAYS = 28
 
@@ -154,11 +166,10 @@ export interface ConsistencyOptions {
 }
 
 /**
- * The rolling year - the twelve calendar months to this one - as GitHub-style
- * week columns (v4.17), Monday on top, every day on the accent ramp by its
- * distance. The days after today are still to come; the days before the
- * window's first month are left blank. The months are counted too, for the
- * active days per month under it.
+ * The rolling year - the twelve calendar months to this one - counted (3.0):
+ * its active days and runs a week, and its months for the active days per
+ * month. Its last 26 weeks are GitHub-style columns, Monday on top, every day
+ * on the accent ramp by its distance; the days after today are still to come.
  */
 export function consistencyMonths(days: HeatmapDay[], today: string, options: ConsistencyOptions = {}): ConsistencyView {
   const { streakWeeks = 0, bestStreakWeeks = null, runDates = [] } = options
@@ -179,54 +190,56 @@ export function consistencyMonths(days: HeatmapDay[], today: string, options: Co
   }
 
   const weeks: ConsistencyWeek[] = []
-  let labelled: string | null = null
   const lastColumn = mondayOf(today)
   for (let start = mondayOf(windowStart); start <= windowEnd && start <= lastColumn; start = plusDays(start, 7)) {
-    // The first column is named for the window's first month, even when its
-    // Monday falls in the month before.
-    const month = weeks.length === 0 ? windowStart.slice(0, 7) : start.slice(0, 7)
-    const monthLabel = month !== labelled ? shortMonth(`${month}-01`) : null
-    labelled = month
-    weeks.push({ start, monthLabel, days: Array.from({ length: 7 }, (_, d) => cellOf(plusDays(start, d))) })
+    const days = Array.from({ length: 7 }, (_, d) => cellOf(plusDays(start, d)))
+    // Each month is named over its real week: the column that holds its first day.
+    const first = days.find((cell) => cell.date.endsWith('-01'))
+    weeks.push({ start, monthLabel: first ? shortMonth(first.date) : null, days })
   }
 
   const counted = weeks.flatMap((week) => week.days).filter((cell) => cell.state === 'rest' || cell.state === 'run')
   const activeDays = counted.filter((cell) => cell.state === 'run').length
-  const share = counted.length > 0 ? activeDays / counted.length : 0
+  const runs = counted.reduce((sum, cell) => sum + (byDate.get(cell.date)?.sessionCount ?? 0), 0)
+  const runsPerWeek = counted.length > 0 ? runs / (counted.length / 7) : 0
 
   const months = Array.from({ length: MONTHS_SHOWN }, (_, i) => monthStartBack(today, MONTHS_SHOWN - 1 - i)).map(
     (first): ConsistencyMonth => {
       const key = first.slice(0, 7)
       const inMonth = counted.filter((cell) => cell.date.startsWith(key))
+      const active = inMonth.filter((cell) => cell.state === 'run').length
+      const inProgress = key === today.slice(0, 7)
+      const monthDays = Number(monthEnd(key).slice(8, 10))
       return {
         key,
         label: shortMonth(first),
         fullLabel: formatDate(first, { precision: 'month', year: 'always' }),
-        activeDays: inMonth.filter((cell) => cell.state === 'run').length,
+        activeDays: active,
         days: inMonth.length,
-        inProgress: key === today.slice(0, 7),
+        inProgress,
+        projected: inProgress ? Math.max(active, inMonth.length > 0 ? Math.round((active / inMonth.length) * monthDays) : 0) : null,
       }
     },
   )
 
   return {
-    weeks,
+    weeks: weeks.slice(-WEEKS_SHOWN),
     months,
     activeDays,
     windowDays: counted.length,
     windowStart,
-    sharePct: Math.round(share * 100),
+    runsPerWeek: Math.round(runsPerWeek * 10) / 10,
     streakWeeks,
     bestStreakWeeks,
-    prior: priorShare(runDates, windowStart, share),
+    prior: priorRate(runDates, windowStart, runsPerWeek),
     range: activeDays > 0 ? formatDateRange(windowStart, today, { precision: 'month', year: 'always' }) : null,
   }
 }
 
-/** The share of days with a run over the twelve months before `windowStart`, as far as the history reaches. */
-function priorShare(runDates: readonly string[], windowStart: string, share: number): ConsistencyView['prior'] {
-  const dates = new Set(runDates.map((date) => date.slice(0, 10)))
-  if (dates.size === 0) return null
+/** Runs a week over the twelve months before `windowStart`, as far as the history reaches. */
+function priorRate(runDates: readonly string[], windowStart: string, runsPerWeek: number): ConsistencyView['prior'] {
+  const dates = runDates.map((date) => date.slice(0, 10))
+  if (dates.length === 0) return null
   const first = [...dates].sort()[0]!
   const [year, month] = windowStart.split('-').map(Number) as [number, number]
   const priorStart = iso(Date.UTC(year - 1, month - 1, 1))
@@ -235,14 +248,13 @@ function priorShare(runDates: readonly string[], windowStart: string, share: num
   if (from > priorEnd || daysBetween(from, priorEnd) < MIN_PRIOR_DAYS) return null
 
   const covered = daysBetween(from, priorEnd)
-  const active = [...dates].filter((date) => date >= from && date <= priorEnd).length
-  const priorShareValue = active / covered
+  const runs = dates.filter((date) => date >= from && date <= priorEnd).length
+  const prior = runs / (covered / 7)
   return {
-    sharePct: Math.round(priorShareValue * 100),
-    deltaPts: Math.round((share - priorShareValue) * 100),
+    runsPerWeek: Math.round(prior * 10) / 10,
+    delta: Math.round((runsPerWeek - prior) * 10) / 10,
     fullYear: from === priorStart,
-    range: formatDateRange(from, priorEnd, { precision: 'month', year: 'always' }),
-    // "−7 pts vs May – Oct 2025" wrapped over three lines in a third of a phone.
+    // "−0.4 vs May – Oct 2025" wrapped over three lines in a third of a phone.
     months: Math.max(1, Math.round(covered / 30.44)),
   }
 }

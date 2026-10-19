@@ -3,19 +3,18 @@
 import { useRunPlace } from '@/lib/useRunPlace'
 
 /**
- * "· Robertsau" after the date and type in the Activity header (v4.13.2):
- * the quartier the run started in, or its town. The small map can't name
- * it - the style only labels quartiers zoomed right in - so the header does.
- * Nothing until the lookup answers; nothing without a route.
+ * "· Metz" after the type and date in the Activity title line: the town the
+ * run started in (3.0), the one place rule the share card follows too - the
+ * quartier read as a different place on each screen. Nothing until the
+ * lookup answers; nothing without a route.
  */
 export function RunPlace({ activityId, start }: { activityId: string; start: [number, number] | null }) {
-  const { town, quartier } = useRunPlace(activityId, start)
-  const name = quartier ?? town
-  if (!name) return null
+  const { town } = useRunPlace(activityId, start)
+  if (!town) return null
   return (
     <>
       <span aria-hidden>·</span>
-      <span data-testid="run-place">{name}</span>
+      <span data-testid="run-place">{town}</span>
     </>
   )
 }

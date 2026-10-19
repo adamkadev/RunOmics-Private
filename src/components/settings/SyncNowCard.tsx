@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { RefreshCw } from 'lucide-react'
 import type { User } from 'firebase/auth'
 import { authorizedFetch } from '@/lib/ownerFetch'
-import { Button } from '@/components/ui/Button'
 import { clearStoredSince, readStoredSince, writeStoredSince } from '@/lib/syncSince'
 import { t } from '@/i18n'
 
@@ -206,16 +205,22 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
 export type SyncNow = ReturnType<typeof useSyncNow>
 
 /**
- * The device row's action (v4.17): "Sync now" as the primary button - a
- * real action, so the accent fill - spinning while the chain runs.
+ * The device row's action (3.0 1i): "Sync" as a text link in the accent on
+ * the row's right, not a full-width button; "Syncing…" with its spinner
+ * while the chain runs, and the device line says which step.
  */
 export function SyncNowButton({ sync }: { sync: SyncNow }) {
   const s = t.settings.sync
   return (
-    <Button variant="primary" onClick={sync.handleSync} disabled={sync.running} className="h-11 w-full disabled:opacity-60">
-      {sync.running && <RefreshCw size={14} className="animate-spin" aria-hidden />}
+    <button
+      type="button"
+      onClick={sync.handleSync}
+      disabled={sync.running}
+      className="hit-44 inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-accent-text transition-opacity active:opacity-60 disabled:text-muted-foreground"
+    >
+      {sync.running && <RefreshCw size={13} className="animate-spin" aria-hidden />}
       {sync.running ? s.running : s.action}
-    </Button>
+    </button>
   )
 }
 
@@ -225,7 +230,7 @@ export function SyncVerdict({ sync }: { sync: SyncNow }) {
   const { phase } = sync
   if (phase.kind !== 'done' || !phase.status.verdict) return null
   return (
-    <div className="border-b border-border py-3.5" data-testid="sync-verdict">
+    <div className="border-b border-border px-4 py-3" data-testid="sync-verdict">
       <p className="text-sm font-semibold leading-snug text-foreground">{phase.status.verdict.headline}</p>
       <p className="mt-1 text-xs leading-snug text-muted-foreground">{phase.status.verdict.body}</p>
       {phase.status.activity && (

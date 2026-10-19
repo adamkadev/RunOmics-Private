@@ -1,7 +1,6 @@
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { weekPlanPhase } from '@/domain/training/weekPlanPhase'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
-import { shortDist } from '@/components/goals/shortDistance'
 import {
   macrocyclePhaseRanges,
   macrocycleWeek,
@@ -9,7 +8,6 @@ import {
   type MacrocycleSpan,
 } from '@/components/coaching/presentation'
 import { t } from '@/i18n'
-import { daysUntil, raceTitle, type PlanRace } from './planRace'
 
 /** Where the plan is in a week: "General preparation" and "week 2", or "Build" and "week 9 of 12". */
 export interface PlanPhaseLine {
@@ -19,8 +17,7 @@ export interface PlanPhaseLine {
 
 /**
  * The phase and the week count of the week a date falls in - the coaching
- * block's, else Garmin's phase ranges. Plan's subtitle and Progress's race
- * tile both read it, so they never name two different weeks.
+ * block's, else Garmin's phase ranges, as Progress's race tile names it.
  */
 export function planPhaseLine(
   plan: MacrocycleSpan | null,
@@ -45,9 +42,4 @@ export function planPhaseLine(
   const phaseLabel = phase ? w.planPhase[phase] : prepWeek !== null ? w.generalPreparation : isPrePlan ? w.prePlan : null
   const weekLabel = !isPrePlan && targetWeek ? w.weekOfTarget(targetWeek.done, targetWeek.total) : prepWeek !== null ? w.weekN(prepWeek) : null
   return phaseLabel || weekLabel ? { phase: phaseLabel, week: weekLabel } : null
-}
-
-/** The race in the subtitle: "Half in 42 d". */
-export function raceCountdown(race: PlanRace, today: string): string {
-  return t.plan.header.raceIn(shortDist(race.distance) || raceTitle(race), daysUntil(race.date, today))
 }

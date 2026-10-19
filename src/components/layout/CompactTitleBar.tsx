@@ -159,8 +159,12 @@ export function CompactTitleBar() {
       const barBottom = statusBar + BAR_HEIGHT
       const atTop = scroll <= SCROLL_TOP_TOLERANCE
       // The scroll the bar collapses in at: 24 pt, or less where the large
-      // title meets the status bar first.
-      const collapseAt = Math.max(SCROLL_TOP_TOLERANCE + 1, Math.min(COLLAPSE_SCROLL, headingRest - statusBar))
+      // title meets the status bar first. A title under a hero
+      // (`data-title-late`, the activity's map) is on screen well past
+      // 24 pt, so the bar waits until the title reaches it.
+      const collapseAt = heading.hasAttribute('data-title-late')
+        ? Math.max(SCROLL_TOP_TOLERANCE + 1, headingRest - barBottom)
+        : Math.max(SCROLL_TOP_TOLERANCE + 1, Math.min(COLLAPSE_SCROLL, headingRest - statusBar))
       const collapsed = !atTop && scroll >= collapseAt
       setShown(collapsed)
 

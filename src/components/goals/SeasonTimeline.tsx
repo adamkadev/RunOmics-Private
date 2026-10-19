@@ -198,60 +198,27 @@ function RaceRow({ row, block }: { row: SeasonRaceRow; block: SeasonBlock | null
  * The season (C3, v4.4; v4.17): Jan-Dec as a strip with today and the
  * races on it, then the races as rows - what is ahead, next first, then
  * what is done, most recent first - each with its prediction or result. A
- * goal with no date has no place on either and gets its own card.
+ * goal with no date has no place on either and is left out (3.0): its rows
+ * only ever read "no target set".
  */
 export function SeasonTimeline({ yearData, today, block }: { yearData: YearData; today: string; block: SeasonBlock | null }) {
   const rows = seasonRaceRows(yearData, today)
   const dated = rows.filter((row) => row.date !== null)
-  // A past year has no undated goals (v5.5 #25): "10K · –" in 2025 is a race
-  // that can no longer be set, and its only time would be today's prediction.
-  const pastYear = Number(today.slice(0, 4)) > yearData.year
-  const open = pastYear ? [] : rows.filter((row) => row.date === null)
-  if (rows.length === 0) return null
+  if (dated.length === 0) return null
 
   const ahead = dated.filter((row) => row.kind === 'scheduled').sort((a, b) => a.date!.localeCompare(b.date!))
   const past = dated.filter((row) => row.kind === 'done').sort((a, b) => b.date!.localeCompare(a.date!))
   const s = t.goals
 
   return (
-    <>
-      {dated.length > 0 && (
-        <section className={cardClass({ className: 'flex flex-col gap-4' })} data-testid="season-card">
-          <h2 className={TITLE}>{s.season.title}</h2>
-          <SeasonStrip year={yearData.year} today={today} rows={dated} />
-          <ol>
-            {[...ahead, ...past].map((row) => (
-              <RaceRow key={row.distance} row={row} block={block} />
-            ))}
-          </ol>
-        </section>
-      )}
-
-      {open.length > 0 && (
-        <section className={cardClass({ className: 'flex flex-col' })} data-testid="season-no-date">
-          <h2 className={cn(TITLE, 'pb-1.5')}>{s.season.noDate}</h2>
-          <ul>
-            {open.map((row) => (
-              <li key={row.distance} className="flex items-baseline justify-between gap-3 border-t border-border py-3 text-sm last:pb-0">
-                <span className="min-w-0 break-words text-pretty">
-                  <b className="font-semibold text-foreground">{row.short}</b>
-                  <span className="text-muted-foreground"> · {row.targetSeconds !== null ? s.targetTime(formatDuration(row.targetSeconds)) : s.season.noTarget}</span>
-                </span>
-                <span className="shrink-0">
-                  {row.seconds !== null ? (
-                    <>
-                      <span className="text-xs text-muted-foreground">{s.predictedTag}</span>{' '}
-                      <b className="font-semibold text-foreground">{formatDuration(row.seconds)}</b>
-                    </>
-                  ) : (
-                    <span className="text-muted-foreground">–</span>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-    </>
+    <section className={cardClass({ className: 'flex flex-col gap-4' })} data-testid="season-card">
+      <h2 className={TITLE}>{s.season.title}</h2>
+      <SeasonStrip year={yearData.year} today={today} rows={dated} />
+      <ol>
+        {[...ahead, ...past].map((row) => (
+          <RaceRow key={row.distance} row={row} block={block} />
+        ))}
+      </ol>
+    </section>
   )
 }

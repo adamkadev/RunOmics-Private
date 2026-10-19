@@ -2,7 +2,7 @@ import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { distanceKm, median, round } from "@/lib/math";
 import { t } from "@/i18n";
-import { formatDecimal } from "@/lib/formatters";
+import { formatDecimal, formatNumber } from "@/lib/formatters";
 
 export interface HeatFilters {
   year: string | null;
@@ -77,7 +77,7 @@ export function reachKm(km: number): number {
 }
 
 export function reachLabel(km: number): string {
-  return `${reachKm(km).toLocaleString(t.locale)} ${t.units.km}`;
+  return `${formatNumber(reachKm(km))} ${t.units.km}`;
 }
 
 export interface AreaRow {
@@ -177,35 +177,47 @@ export function rgba(hex: string, alpha: number): string {
 }
 
 /**
- * How the tracks are drawn (v4.17): every run stroked twice in the accent - a
- * wide faint glow and a thin core - because the tracks are the athlete's own
- * data. Where runs overlap they build up: added light on dark, multiplied ink
- * on light, so the most run streets burn brightest (dark) or deepest (light)
- * with no count behind them.
+ * How the tracks are drawn (v4.17): every run stroked twice - a wide faint
+ * glow and a thin core - and the strokes add up where runs overlap, so the
+ * most run streets read strongest with no count behind them. They add up as
+ * coverage, not colour (3.0): the canvas is then painted in one colour, the
+ * accent's, so the most run street is that colour and never past it. Added
+ * light used to burn through the accent to white on dark, and multiplied
+ * ink to black on light.
  */
 export const HEAT_STYLE = {
   dark: {
-    composite: "lighter",
     passes: [
       { width: 4, alpha: 0.035 },
       { width: 1, alpha: 0.16 },
     ],
+    /** The share of the accent in the top level, the rest black: the accent itself. */
+    end: 1,
   },
   light: {
-    composite: "multiply",
     passes: [
       { width: 3, alpha: 0.05 },
       { width: 1, alpha: 0.2 },
     ],
+    /** A deep shade of the accent, not black. */
+    end: 0.6,
   },
 } as const satisfies Record<"dark" | "light", {
-  composite: GlobalCompositeOperation;
   passes: readonly { width: number; alpha: number }[];
+  end: number;
 }>;
 
-/** The two passes in the accent's colour. */
-export function heatPasses(mode: "dark" | "light", accent: string): HeatPass[] {
-  return HEAT_STYLE[mode].passes.map((pass) => ({ width: pass.width, color: rgba(accent, pass.alpha) }));
+/** The two passes as coverage: white at each pass's alpha, painted over by heatColor. */
+export function heatPasses(mode: "dark" | "light"): HeatPass[] {
+  return HEAT_STYLE[mode].passes.map((pass) => ({ width: pass.width, color: rgba("#ffffff", pass.alpha) }));
+}
+
+/** The one colour the heat is painted in: where runs pile on, the map shows it at full strength. */
+export function heatColor(mode: "dark" | "light", accent: string): string {
+  const h = accent.replace("#", "");
+  const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h.slice(0, 6), 16);
+  const end = HEAT_STYLE[mode].end;
+  return `rgb(${Math.round((n >> 16) * end)},${Math.round(((n >> 8) & 255) * end)},${Math.round((n & 255) * end)})`;
 }
 
 /**

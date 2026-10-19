@@ -1,4 +1,5 @@
 import type { Activity, ActivitySplit, ActivityType } from '@/domain/activity/types'
+import { runVerdictTone } from '@/domain/activity/runVerdict'
 import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 import { repSet } from '@/domain/activity/repSet'
 import type { ShareActivity, ShareReps } from '@/lib/shareCardStats'
@@ -181,14 +182,22 @@ export function runName(activity: Pick<Activity, 'description' | 'date'>, sessio
 /**
  * The share card's run, with the coach's session when it has one: its name,
  * as the plan shows it; its kind - a threshold session the watch filed as
- * tempo is read as the threshold it was set as - and its reps' target.
+ * tempo is read as the threshold it was set as - and its reps' target. The
+ * Stats card leads with the run's written verdict (redesign, Oct 2026), its
+ * tone the Overview card's; a run without one keeps the zones headline.
  */
-export function shareActivity(activity: Activity, session: WorkoutPrescription | null = null): ShareActivity {
+export function shareActivity(
+  activity: Activity,
+  session: WorkoutPrescription | null = null,
+  aiVerdict: { headline: string } | null = null,
+): ShareActivity {
   const type = session ? COACHING_TO_ACTIVITY_TYPE[session.type] : activity.type
+  const headline = aiVerdict?.headline.trim()
   return {
     ...pickDefined(activity, SHARE_FIELDS),
     type,
     sessionTitle: session ? sessionName(session) : null,
     reps: shareReps({ type, splits: activity.splits }, session),
+    verdict: headline ? { tone: runVerdictTone(activity), headline } : null,
   }
 }

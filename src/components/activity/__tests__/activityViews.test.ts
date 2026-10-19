@@ -64,9 +64,21 @@ describe('shareActivity', () => {
     expect(Object.keys(shareActivity(ACTIVITY)).sort()).toEqual(
       [
         'avgHeartRate', 'date', 'dayOfWeek', 'description', 'distanceKm', 'durationSeconds', 'elevationGain',
-        'hrZones', 'id', 'paceSecPerKm', 'reps', 'route', 'sessionTitle', 'type',
+        'hrZones', 'id', 'paceSecPerKm', 'reps', 'route', 'sessionTitle', 'type', 'verdict',
       ].sort()
     )
+  })
+
+  // Redesign, Oct 2026: the Stats card leads with the verdict the Overview shows.
+  it('carries the written verdict\'s headline and the Overview card\'s tone', () => {
+    expect(shareActivity(ACTIVITY, null, { headline: ' Usual long-run pace, 7 bpm cheaper. ' }).verdict)
+      .toEqual({ tone: 'positive', headline: 'Usual long-run pace, 7 bpm cheaper.' })
+    expect(shareActivity({ ...ACTIVITY, rpe: 9 }, null, { headline: 'Too hard' }).verdict?.tone).toBe('caution')
+  })
+
+  it('has no verdict without a written one, so the card keeps its zones headline', () => {
+    expect(shareActivity(ACTIVITY).verdict).toBeNull()
+    expect(shareActivity(ACTIVITY, null, { headline: '  ' }).verdict).toBeNull()
   })
 })
 

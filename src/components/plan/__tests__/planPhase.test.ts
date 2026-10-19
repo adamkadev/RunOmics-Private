@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { t } from '@/i18n'
-import { planPhaseLine, raceCountdown } from '../planPhase'
+import { planPhaseLine } from '../planPhase'
 
 const w = t.plan.weekPurpose
 
@@ -27,17 +27,5 @@ describe('planPhaseLine', () => {
     expect(planPhaseLine(null, ranges, '2026-09-09')).toEqual({ phase: w.planPhase.build, week: null })
     expect(planPhaseLine(null, ranges, '2026-07-15')).toEqual({ phase: w.prePlan, week: null })
     expect(planPhaseLine(null, [], '2026-09-09')).toBeNull()
-  })
-})
-
-describe('raceCountdown', () => {
-  it('appends the race by its short distance and the days to it', () => {
-    expect(raceCountdown({ date: '2026-11-30', name: 'Spring Half', distance: 'Half-Marathon' }, '2026-10-19')).toBe(t.plan.header.raceIn(t.goals.half, 42))
-    expect(t.plan.header.raceIn('Half', 42)).toBe('Half in 42 d')
-    expect(t.plan.header.raceIn('Half', 0)).toBe('Half today')
-  })
-
-  it('falls back to the race name when it has no distance', () => {
-    expect(raceCountdown({ date: '2026-10-29', name: 'Club race', distance: '' }, '2026-10-19')).toBe(t.plan.header.raceIn('Club race', 10))
   })
 })

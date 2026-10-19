@@ -2,13 +2,12 @@
 
 import { useState } from 'react'
 import { cardClass } from '@/components/ui/Card'
-import { Unit } from '@/components/ui/Stat'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { intensityMix } from '@/domain/training/intensityMix'
-import { formatClock as fmt } from '@/lib/formatters'
+import { formatClock as fmt, formatPercent } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 type Bounds = [number, number, number, number, number]
@@ -20,8 +19,8 @@ const HR_PERCENTS = [0.65, 0.8, 0.89, 0.95, 1.0]
 /** Zone, pace, HR and time: one grid for the header and every row, the prototype's widths from sm up. */
 const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.75rem_3.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_110px_90px_70px] sm:gap-3'
 
-/** Under this share of the window a zone is not drawn, and leaves no gap. */
-const MIN_SEGMENT_SHARE = 0.01
+/** No zone with time in it draws narrower than this share of the bar (3.0 1j), so 1 % still shows. */
+const MIN_SEGMENT_PCT = 3
 
 /** "22 min" under an hour, "8 h 37" over: the table's time column (v4.17). */
 export function zoneTimeLabel(seconds: number): string {
@@ -29,22 +28,30 @@ export function zoneTimeLabel(seconds: number): string {
   return minutes < 60 ? `${minutes} ${t.units.min}` : `${Math.floor(minutes / 60)} ${t.units.hour} ${String(minutes % 60).padStart(2, '0')}`
 }
 
-/** The window's time, "13 h 39 min", its units inline and muted. */
-function WindowTotal({ seconds }: { seconds: number }) {
+/** The window's time, "19 h 11 min", or "42 min" under the hour. */
+export function windowTotalLabel(seconds: number): string {
   const minutes = Math.round(seconds / 60)
   const h = Math.floor(minutes / 60)
-  return (
-    <span className="text-2xl font-semibold leading-tight text-foreground" data-testid="zone-total">
-      {h > 0 && (
-        <>
-          {h}
-          <Unit>{t.units.hour}</Unit>{' '}
-        </>
-      )}
-      {minutes % 60}
-      <Unit>{t.units.min}</Unit>
-    </span>
-  )
+  return h > 0 ? `${h} ${t.units.hour} ${minutes % 60} ${t.units.min}` : `${minutes} ${t.units.min}`
+}
+
+export interface ZoneSegment {
+  zone: number
+  /** Its share of the window, for the label under it: at least 1 %, never a 0 % beside a segment. */
+  pct: number
+  /** Its width: the share, floored at MIN_SEGMENT_PCT. */
+  flex: number
+}
+
+/** Z1 to Z5 as the bar draws them: the zones with time, each as wide as its share (3.0 1j). */
+export function zoneSegments(zoneTime: ZoneShare[]): ZoneSegment[] {
+  const total = zoneTime.reduce((sum, z) => sum + z.seconds, 0)
+  if (total <= 0) return []
+  const byZone = new Map(zoneTime.map((z) => [z.zone, z.seconds]))
+  return [1, 2, 3, 4, 5]
+    .map((zone) => ({ zone, share: ((byZone.get(zone) ?? 0) / total) * 100 }))
+    .filter((z) => z.share > 0)
+    .map(({ zone, share }) => ({ zone, pct: Math.max(1, Math.round(share)), flex: Math.max(MIN_SEGMENT_PCT, share) }))
 }
 
 function defaultBounds(lthr: number): Bounds {
@@ -67,24 +74,21 @@ interface Props {
 }
 
 /**
- * One zone table under one Week / 4 weeks toggle (C2, v4.4): the window's
- * time and its Z4-Z5 share with the intensity verdict Analytics gives the same
- * time, over one stacked Z1-Z5 bar, then zone, pace, HR and time as tabular
- * columns. The stacked bar replaced a progress bar per row.
+ * One zone table under one Week / 4 weeks toggle (C2, v4.4; 3.0 1j), four
+ * weeks first: the hard share and the verdict Analytics gives the same time
+ * as the headline, the window's total and the 80/20 target under it, one bar
+ * of Z1-Z5 with each share under its segment, then zone, pace, HR and time
+ * as tabular columns.
  */
 export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZones }: Props) {
   const s = t.profile.trainingZones
-  const [manualView, setManualView] = useState<View | null>(null)
+  const [view, setView] = useState<View>('recent')
+  const tabs = useSegmentedTabs<View>({ ids: VIEWS, value: view, onChange: setView })
   const lthr = athlete.lthrBpm
   const bounds = athlete.hrZoneBoundsBpm ?? (lthr !== undefined ? defaultBounds(lthr) : null)
 
-  const weekHasData = totalSeconds(weeklyZoneTime) > 0
-  const view = manualView ?? (weekHasData ? 'week' : 'recent')
-  const tabs = useSegmentedTabs<View>({ ids: VIEWS, value: view, onChange: setManualView })
-
   if (bounds === null) return null
 
-  const isAutoFallback = manualView === null && !weekHasData
   const zoneTime = view === 'week' ? weeklyZoneTime : recentZoneTime
 
   const paceByHrZone = new Map((paceZones?.zones ?? []).map((zone) => [zone.hrZone, zone]))
@@ -108,19 +112,16 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
   // 2026): this card read "Hard 7 %" in amber against its own 10-15 % target
   // while Intensity read the same time "In range".
   const mix = intensityMix(Object.fromEntries(zoneTime.map((z) => [z.zone, z.seconds])))
+  const segments = zoneSegments(zoneTime)
 
   const emptyLine = view === 'week' ? s.noSessionsThisWeek : s.noSessionsRecent
-  const stacked = [1, 2, 3, 4, 5]
-    .map((zone) => ({ zone, seconds: timeByZone.get(zone)?.seconds ?? 0 }))
-    .filter((z) => windowTotal > 0 && z.seconds / windowTotal >= MIN_SEGMENT_SHARE)
 
-  const verdicts = t.analytics.cards.easyHard
   // The week under way is not a week's split yet: no verdict, no colour.
-  const verdict = mix === null ? null : view === 'week' ? s.soFar : verdicts[mix.status]
-  const hardTone = mix === null || view === 'week' ? 'text-muted-foreground' : mix.status === 'inRange' ? 'text-[var(--pos)]' : 'text-[var(--warn)]'
+  const verdict = mix === null ? null : view === 'week' ? s.soFar : s.verdict[mix.status]
+  const verdictTone = mix === null || view === 'week' ? 'text-muted-foreground' : mix.status === 'inRange' ? 'text-[var(--pos)]' : 'text-[var(--warn)]'
 
   return (
-    <section className={cardClass({ className: 'flex flex-col gap-3.5' })}>
+    <section className={cardClass({ className: 'flex flex-col gap-3.5 rounded-[18px]' })}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-[15px] font-semibold text-foreground">{s.title}</h2>
         <SegmentedTabs
@@ -135,37 +136,36 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
       </div>
 
       <div {...tabs.panelProps} className="flex flex-col gap-3.5 outline-none">
-        {windowTotal === 0 ? (
+        {windowTotal === 0 || mix === null ? (
           <p className="text-[13px] text-muted-foreground">{emptyLine}</p>
         ) : (
           <>
-            {/* The window's time, and its hard share against the target: warn outside it (v4.17). */}
-            <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-              <WindowTotal seconds={windowTotal} />
-              {mix !== null && verdict !== null && (
-                <span className={`text-xs ${hardTone}`} data-testid="zone-hard-share">
-                  {s.hardShare(mix.hardPct, verdict)}
-                </span>
-              )}
+            <div>
+              <p className="text-[19px] font-semibold leading-tight text-foreground" data-testid="zone-hard-share">
+                {s.hard(formatPercent(mix.hardPct))} · <span className={verdictTone} data-testid="zone-verdict">{verdict}</span>
+              </p>
+              <p className="mt-1 text-[12.5px] text-muted-foreground" data-testid="zone-total">
+                {s.totalLine(windowTotalLabel(windowTotal))}
+              </p>
             </div>
-            {/* Z1 to Z5 as one bar of rounded segments, 3 pt apart, in the zone colours. */}
-            <div className="flex h-2.5 gap-[3px]" data-testid="zone-stack">
-              {stacked.map((z) => (
-                <span
-                  key={z.zone}
-                  data-zone={z.zone}
-                  className="h-full rounded-full"
-                  style={{ flexGrow: z.seconds, flexBasis: 0, background: `var(--zone-${z.zone})` }}
-                />
+            {/* Z1 to Z5 as one bar, 3 pt apart, each as wide as its share and
+                no narrower than 3 %, its share under it. */}
+            <div className="flex gap-[3px]" data-testid="zone-stack">
+              {segments.map((z) => (
+                <div key={z.zone} data-zone={z.zone} className="flex min-w-0 flex-col items-center gap-1.5" style={{ flexGrow: z.flex, flexBasis: 0 }}>
+                  <span className="h-2 w-full rounded-full" style={{ background: `var(--zone-${z.zone})` }} />
+                  <span className="whitespace-nowrap text-[11px] tabular-nums text-muted-foreground" data-testid="zone-pct">
+                    {formatPercent(z.pct)}
+                  </span>
+                </div>
               ))}
             </div>
-            {isAutoFallback && <p className="-mt-1 text-xs leading-snug text-muted-foreground">{s.emptyWeekFallback}</p>}
           </>
         )}
 
         <div>
           <div
-            className={`${ROW_GRID} pb-2.5 pt-1.5 text-[11px] uppercase tracking-[0.06em] text-muted-foreground`}
+            className={`${ROW_GRID} pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground`}
             data-testid="zone-columns"
           >
             <span>{s.columnZone}</span>
@@ -189,17 +189,17 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
                   : '-'
 
             return (
-              <div key={zone} className={`${ROW_GRID} border-t border-border py-2.5 text-[13px] sm:text-sm`} data-testid={`zone-row-${zone}`}>
-                <span className="flex min-w-0 items-center gap-2 text-foreground">
+              <div key={zone} className={`${ROW_GRID} min-h-[38px] border-t border-border py-1.5`} data-testid={`zone-row-${zone}`}>
+                <span className="flex min-w-0 items-center gap-2 text-[13px] text-foreground">
                   <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: `var(--zone-${zone})` }} />
                   {/* Wraps on a narrow phone rather than "Z4 Thres…" (v4.17.2). */}
                   <span className="min-w-0">
                     <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
                   </span>
                 </span>
-                <span className="text-right text-[var(--text-2)]">{paceLabel}</span>
-                <span className="text-right text-[var(--text-2)]">{bpmRangeLabel(min, max)}</span>
-                <span className="text-right font-semibold text-foreground">{zoneTimeLabel(seconds)}</span>
+                <span className="text-right text-xs tabular-nums text-[var(--text-2)]">{paceLabel}</span>
+                <span className="text-right text-xs tabular-nums text-[var(--text-2)]">{bpmRangeLabel(min, max)}</span>
+                <span className="text-right text-xs font-semibold tabular-nums text-foreground">{zoneTimeLabel(seconds)}</span>
               </div>
             )
           })}

@@ -52,10 +52,10 @@ describe('the zone scale (design reviews, Oct 2026)', () => {
     }
   })
 
-  // The second review's values (design review, Oct 2026).
-  it('takes the reviewed Z1 and mid-violet Z3', () => {
-    expect(ZONE_HEX.dark[0]).toBe('#8499b0')
-    expect([ZONE_HEX.dark[2], ZONE_HEX.light[2]]).toEqual(['#8f7cf2', '#6a52d9'])
+  // The 3.0 handoff's dark scale; light keeps the second review's mid violet.
+  it('takes the 3.0 dark scale and the reviewed light Z3', () => {
+    expect(ZONE_HEX.dark).toEqual(['#8a9bb0', '#5b9cf5', '#8f7cf0', '#c77ae6', '#f07aa8'])
+    expect(ZONE_HEX.light[2]).toBe('#6a52d9')
   })
 
   // Plan's session bars write their minutes on the zone's fill in --zone-ink.

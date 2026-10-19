@@ -11,6 +11,8 @@ interface Props {
   /** The parent page. */
   fallbackHref?: string
   className?: string
+  /** `round`: a 40 pt circle with the arrow alone, floating over a map hero. */
+  variant?: 'link' | 'round'
 }
 
 /**
@@ -22,7 +24,7 @@ interface Props {
  * Once it scrolls away, the compact title bar's chevron presses it
  * (`data-bar-back`), so the way back stays in reach (design review, Oct 2026).
  */
-export function BackButton({ label, fallbackHref = '/', className }: Props) {
+export function BackButton({ label, fallbackHref = '/', className, variant = 'link' }: Props) {
   const router = useRouter()
   const origin = useNavigationOrigin()
 
@@ -34,11 +36,17 @@ export function BackButton({ label, fallbackHref = '/', className }: Props) {
         if (origin?.isImmediate && origin.path.split('?')[0] === fallbackHref) router.back()
         else router.push(fallbackHref)
       }}
+      aria-label={variant === 'round' ? label : undefined}
       // A 44 pt target around the 22 pt line (design review, Oct 2026).
-      className={cn('hit-44 mb-4 inline-flex items-center gap-1.5 text-subhead font-semibold text-muted-foreground transition-colors hover:text-foreground', className)}
+      className={cn(
+        variant === 'round'
+          ? 'map-round-button hit-44'
+          : 'hit-44 mb-4 inline-flex items-center gap-1.5 text-subhead font-semibold text-muted-foreground transition-colors hover:text-foreground',
+        className,
+      )}
     >
-      <ArrowLeft size={16} strokeWidth={2.2} />
-      {label}
+      <ArrowLeft size={variant === 'round' ? 20 : 16} strokeWidth={2.2} aria-hidden={variant === 'round' || undefined} />
+      {variant === 'link' && label}
     </button>
   )
 }

@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
-import type { HrBounds } from '@/domain/training/trimp'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
@@ -12,15 +11,13 @@ import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
+import { useUrlParam } from '@/lib/useUrlParam'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
-import { planRace } from './planRace'
-import { planPhaseLine, raceCountdown } from './planPhase'
 
 interface Props {
   activities: ActivitySummary[]
   plannedWorkouts: PlannedWorkout[]
-  hrBounds?: HrBounds
   planPhaseRanges: PlanPhaseRange[]
   nextRace: UpcomingRace | null
   trainingZones: TrainingZonesData | null
@@ -32,32 +29,43 @@ interface Props {
 type ViewMode = 'week' | 'month'
 const VIEW_MODES = ['week', 'month'] as const
 
-export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRanges, nextRace, trainingZones, coaching, today: serverToday }: Props) {
-  const today = useToday(serverToday)
-  const now = new Date(`${today}T00:00:00`)
-  const [mode, setMode] = useState<ViewMode>('week')
-  const modeTabs = useSegmentedTabs({ ids: VIEW_MODES, value: mode, onChange: setMode })
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(now))
-  const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth())
+/** A `?date=` worth reading: a real calendar day, "2026-10-21". */
+export function planDateParam(value: string | null): string | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  return isoDate(new Date(`${value}T00:00:00`)) === value ? value : null
+}
 
-  // The page hydrates on the date it was built, and the day can roll over
-  // after that - at midnight, or because the cached page is from yesterday. A
-  // view still on the week or month that was current follows the new one; a
-  // view the reader paged to stays put.
-  const [shownToday, setShownToday] = useState(today)
-  if (shownToday !== today) {
-    const was = new Date(`${shownToday}T00:00:00`)
-    setShownToday(today)
-    if (isoDate(weekStart) === isoDate(startOfWeek(was))) setWeekStart(startOfWeek(now))
-    if (year === was.getFullYear() && month === was.getMonth()) {
-      setYear(now.getFullYear())
-      setMonth(now.getMonth())
-    }
-  }
-  const [animKey, setAnimKey] = useState(0)
+const monthKeyOf = (date: string) => date.slice(0, 7)
+
+/**
+ * Plan (redesign 3.0): the week or the month, and the day selected in it.
+ * Both live in the URL - `?view=month`, `?date=2026-10-21` - so Today's next
+ * workout opens straight onto its day, and a reload keeps the place. No date
+ * is today, and follows it over midnight; no view is the week.
+ */
+export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextRace, trainingZones, coaching, today: serverToday }: Props) {
+  const today = useToday(serverToday)
+  const [viewParam, setViewParam] = useUrlParam('view')
+  const [dateParam, setDateParam] = useUrlParam('date')
+  const mode: ViewMode = viewParam === 'month' ? 'month' : 'week'
+  const selectedDate = planDateParam(dateParam) ?? today
+  const weekStart = useMemo(() => startOfWeek(new Date(`${selectedDate}T00:00:00`)), [selectedDate])
+  // The month paged to, apart from the selected day; null is the selected day's month.
+  const [pagedMonth, setPagedMonth] = useState<string | null>(null)
+  const monthKey = pagedMonth ?? monthKeyOf(selectedDate)
+  const year = Number(monthKey.slice(0, 4))
+  const month = Number(monthKey.slice(5, 7)) - 1
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward')
-  const [focusDate, setFocusDate] = useState<string | null>(null)
+
+  function setMode(next: ViewMode) {
+    setPagedMonth(null)
+    setViewParam(next === 'week' ? null : next)
+  }
+  const modeTabs = useSegmentedTabs({ ids: VIEW_MODES, value: mode, onChange: setMode })
+
+  function selectDate(date: string) {
+    setDateParam(date === today ? null : date)
+  }
 
   const byDate = useMemo(() => {
     const map = new Map<string, ActivitySummary[]>()
@@ -82,45 +90,37 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
   }, [coaching])
 
   const canGoForward = coaching
-    ? (mode === 'week' ? isoDate(addDays(weekStart, 6)) < coaching.plan.block.endDate : `${year}-${String(month + 1).padStart(2, '0')}` < coaching.plan.block.endDate.slice(0, 7))
+    ? (mode === 'week' ? isoDate(addDays(weekStart, 6)) < coaching.plan.block.endDate : monthKey < coaching.plan.block.endDate.slice(0, 7))
     : false
 
-  const atPresent =
-    mode === 'week'
-      ? isoDate(weekStart) === isoDate(startOfWeek(now))
-      : year === now.getFullYear() && month === now.getMonth()
-
+  const thisWeek = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
+  const atPresent = mode === 'week' ? isoDate(weekStart) === thisWeek : monthKey === monthKeyOf(today)
 
   function shift(delta: number) {
-    setFocusDate(null)
     setDirection(delta > 0 ? 'forward' : 'backward')
-    setAnimKey((k) => k + 1)
     if (mode === 'week') {
-      setWeekStart((prev) => addDays(prev, delta * 7))
+      // The same weekday a week on, or today when the week it lands on holds it.
+      const monday = isoDate(addDays(weekStart, delta * 7))
+      const next = isoDate(addDays(new Date(`${selectedDate}T00:00:00`), delta * 7))
+      selectDate(monday === thisWeek ? today : next)
     } else {
       const d = new Date(year, month + delta, 1)
-      setYear(d.getFullYear())
-      setMonth(d.getMonth())
+      setPagedMonth(monthKeyOf(isoDate(d)))
     }
   }
 
   function goToday() {
-    setFocusDate(null)
-    setDirection(weekStart < startOfWeek(now) ? 'forward' : 'backward')
-    setAnimKey((k) => k + 1)
-    setWeekStart(startOfWeek(now))
-    setYear(now.getFullYear())
-    setMonth(now.getMonth())
+    setDirection(selectedDate < today ? 'forward' : 'backward')
+    setPagedMonth(null)
+    setDateParam(null)
   }
 
+  /** A month's day, or its week: the Week view, on that day. */
   function openWeekAt(date: string) {
-    const [y, m, d] = date.split('-').map(Number)
-    if (y === undefined || m === undefined || d === undefined) return
-    setWeekStart(startOfWeek(new Date(y, m - 1, d)))
-    setFocusDate(date)
     setDirection('forward')
-    setAnimKey((k) => k + 1)
-    setMode('week')
+    setPagedMonth(null)
+    selectDate(date)
+    setViewParam(null)
   }
 
   const swipeHandlers = useSwipeNavigation(
@@ -128,47 +128,26 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
     () => { if (!atPresent || canGoForward) shift(1) }
   )
 
-  // Under the title (design review, Oct 2026): where the plan is in the
-  // displayed period - "Build · week 9 of 12" - then the race it builds to
-  // and how far off it is. No dates: the navigator below names the period.
-  const shownDate =
-    mode === 'week' ? isoDate(weekStart) : atPresent ? today : `${year}-${String(month + 1).padStart(2, '0')}-01`
-  const phaseLine = planPhaseLine(coaching?.plan ?? null, planPhaseRanges, shownDate)
-  const race = planRace(coaching, nextRace, today)
-  const subtitleRest = [phaseLine?.week, race ? raceCountdown(race, today) : null].filter((part): part is string => !!part)
-
   return (
     <div className="flex flex-col gap-5">
-      {/* Title and subtitle on the left, the switch right-aligned on the
-          title's row; on a phone the subtitle takes the full width under both. */}
-      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 sm:items-end">
-        <h1 className="col-start-1 row-start-1 min-w-0 text-display text-foreground">{t.pages.plan.title}</h1>
-        {(phaseLine?.phase || subtitleRest.length > 0) && (
-          // CompactTitleBar fades the line under the title by its inline
-          // opacity, and can write it before this component hydrates.
-          <p data-testid="plan-subtitle" className="col-span-2 row-start-2 text-sm text-muted-foreground sm:col-span-1">
-            {phaseLine?.phase && <span className="font-semibold text-foreground">{phaseLine.phase}</span>}
-            {subtitleRest.map((part, i) => (
-              <span key={i}>{i > 0 || phaseLine?.phase ? ` · ${part}` : part}</span>
-            ))}
-          </p>
-        )}
-        <div className="col-start-2 row-start-1 sm:row-span-2 sm:self-end">
-          <SegmentedTabs
-            tabs={modeTabs}
-            items={[
-              { id: 'week', label: t.plan.switcher.week },
-              { id: 'month', label: t.plan.switcher.month },
-            ]}
-            label={t.pages.plan.title}
-            size="sm"
-            tabClassName="px-3.5 text-[13px]"
-          />
-        </div>
+      {/* The title and the switch on one row (redesign 3.0): the phase card
+          names the race, so the header carries no subtitle. */}
+      <header className="flex items-center justify-between gap-4">
+        <h1 className="min-w-0 text-display text-foreground">{t.pages.plan.title}</h1>
+        <SegmentedTabs
+          tabs={modeTabs}
+          items={[
+            { id: 'week', label: t.plan.switcher.week },
+            { id: 'month', label: t.plan.switcher.month },
+          ]}
+          label={t.pages.plan.title}
+          size="sm"
+          tabClassName="px-3.5 text-[13px]"
+        />
       </header>
 
       <div
-        key={animKey}
+        key={mode === 'week' ? `week:${isoDate(weekStart)}` : `month:${monthKey}`}
         {...modeTabs.panelProps}
         className="overflow-hidden"
         style={{ animation: `var(--animate-cal-${direction})` }}
@@ -177,19 +156,21 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
         {mode === 'week' ? (
           <WeekView
             weekStart={weekStart}
+            selectedDate={selectedDate}
+            onSelectDate={selectDate}
             byDate={byDate}
             byDatePlanned={byDatePlanned}
             byDateCoach={byDateCoach}
-            hrBounds={hrBounds}
             today={today}
             atPresent={atPresent}
             onToday={goToday}
             onPrevWeek={() => shift(-1)}
             onNextWeek={() => shift(1)}
             canGoForward={canGoForward}
+            planPhaseRanges={planPhaseRanges}
+            nextRace={nextRace}
             trainingZones={trainingZones}
-            initialSelectedDate={focusDate}
-            onSelectDate={setFocusDate}
+            coaching={coaching}
           />
         ) : (
           <MonthView
@@ -198,6 +179,8 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
             byDate={byDate}
             byDatePlanned={byDatePlanned}
             byDateCoach={byDateCoach}
+            coaching={coaching}
+            planPhaseRanges={planPhaseRanges}
             today={today}
             atPresent={atPresent}
             onToday={goToday}
@@ -208,7 +191,6 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
           />
         )}
       </div>
-
     </div>
   )
 }

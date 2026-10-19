@@ -45,12 +45,11 @@ function GradeTile({ children, testId }: { children: string; testId?: string }) 
 const TITLE = 'text-[15px] font-semibold text-foreground'
 
 /**
- * The grade hero on Athlete & zones (v5.3 G1, states in G4; v4.17): the
- * letter on an accent-soft tile, the value with its unit, the percentile in
- * text-2 and the 30-day change coloured by what it means; the bar to the
- * next grade in the accent, with the gap between its two ends. A level-up
- * says so in pos for three days; a drop is muted, with its reason where one
- * is known, never amber. The footer opens the ladder.
+ * The grade card on Athlete & zones (v5.3 G1, states in G4; 3.0 1j): one
+ * tappable row that opens the grade page. The letter on an accent-soft tile,
+ * the value, the percentile in its band, and the 30-day change coloured by
+ * what it means. A level-up says so in pos for three days; a drop is muted,
+ * never amber. Calibrating, it is the dots, here and on the grade page alike.
  */
 export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
   const g = t.vo2Grade
@@ -80,79 +79,38 @@ export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
     )
   }
 
-  const { grade, value, topPercent, band, delta30, next, floor, etaWeeks, change } = view
-  const progress = next && floor !== null ? Math.min(1, Math.max(0, (value - floor) / (next.min - floor))) : null
+  const { grade, value, topPercent, band, delta30, change } = view
 
   return (
-    <section className={cardClass({ padding: 'none', overflow: true })} data-testid="vo2-grade-card">
-      <div className="flex flex-col gap-3.5 px-5 pb-4 pt-[18px]">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className={TITLE}>{g.title}</h2>
-          <GradeBandLabel band={band} />
-        </div>
-
-        <div className="flex items-center gap-[18px]">
-          <GradeTile testId="grade-letter">{grade}</GradeTile>
-          <div className="flex min-w-0 flex-col gap-[3px]">
-            {change?.kind === 'up' ? (
-              <>
-                <p className="text-sm font-semibold text-foreground">
-                  {change.regained ? g.regainedGrade : g.newGrade} · <span className="text-[var(--pos)]" data-testid="grade-up">{g.upFrom(change.from)}</span>
-                </p>
-                <p className="text-[13px] text-[var(--text-2)]">
-                  {one(value)} {g.unit} · {g.topForAgeInline(topPercent)}
-                </p>
-              </>
-            ) : change?.kind === 'down' ? (
-              <>
-                <p className="text-sm font-semibold text-muted-foreground" data-testid="grade-down">{g.downFrom(change.from, change.daysOff)}</p>
-                <p className="text-[13px] text-[var(--text-2)]">{g.dropNote}</p>
-              </>
-            ) : (
-              <>
-                <p className="text-[22px] font-semibold leading-tight text-foreground">
-                  {one(value)}
-                  <Unit>{g.unit}</Unit>
-                </p>
-                <p className="text-[13px] text-[var(--text-2)]">{g.topForAge(topPercent)}</p>
-                {delta30 !== null && (
-                  <p className="text-xs" data-testid="grade-delta" style={{ color: deltaColor('vo2max', delta30, { flatBelow: GRADE_DELTA_FLAT }) }}>
-                    {gradeDelta(delta30)} {g.in30d}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {next && floor !== null && progress !== null && (
-          <div className="flex flex-col gap-1.5" data-testid="grade-progress">
-            <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
-              <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(progress * 100)}%` }} />
-            </div>
-            <div className="grid grid-cols-[1fr_auto_1fr] gap-2 text-xs text-muted-foreground">
-              <span>{grade} · {one(floor)}</span>
-              <span data-testid="grade-gap">
-                <b className="font-semibold text-foreground">{one(next.gap)}</b> {g.toGrade(next.grade)}
-              </span>
-              <span className="text-right">{next.grade} · {one(next.min)}</span>
-            </div>
-          </div>
+    <Link
+      href={VO2_GRADE_HREF}
+      className={cardClass({ padding: 'none', className: 'flex items-center gap-4 rounded-[18px] px-4 py-4 transition-colors hover:bg-[var(--surface-2)]' })}
+      data-testid="vo2-grade-card"
+    >
+      <GradeTile testId="grade-letter">{grade}</GradeTile>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <p className="text-[22px] font-semibold leading-tight tabular-nums text-foreground">
+          {one(value)}
+          <Unit>{g.valueLabel}</Unit>
+        </p>
+        <p className="text-[13px] text-[var(--text-2)]" data-testid="grade-band">
+          {g.topInBand(topPercent, band.sex, band.bracket)}
+        </p>
+        {change?.kind === 'up' ? (
+          <p className="text-xs text-[var(--pos)]" data-testid="grade-up">
+            {change.regained ? g.regainedGrade : g.newGrade} · {g.upFrom(change.from)}
+          </p>
+        ) : change?.kind === 'down' ? (
+          <p className="text-xs text-muted-foreground" data-testid="grade-down">{g.downFrom(change.from, change.daysOff)}</p>
+        ) : (
+          delta30 !== null && (
+            <p className="text-xs" data-testid="grade-delta" style={{ color: deltaColor('vo2max', delta30, { flatBelow: GRADE_DELTA_FLAT }) }}>
+              {gradeDelta(delta30)} {g.in30d}
+            </p>
+          )
         )}
       </div>
-
-      {/* At the top grade the row read "Top grade for your age", which the
-          A+ and its percentile already say, and gave no reason to tap it
-          (design review, Oct 2026): it names the table it opens. */}
-      <Link
-        href={VO2_GRADE_HREF}
-        aria-label={g.open}
-        className="flex min-h-11 items-center justify-between gap-3 border-t border-border px-5 py-3 text-[13px] text-[var(--text-2)] transition-colors hover:bg-[var(--surface-2)]"
-        data-testid="grade-footer"
-      >
-        <span className="min-w-0">{next && etaWeeks !== null ? g.eta(etaWeeks) : g.ladder}</span>
-        <ChevronRight size={16} className="shrink-0 text-muted-foreground" aria-hidden />
-      </Link>
-    </section>
+      <ChevronRight size={18} className="shrink-0 text-subtle" aria-hidden />
+    </Link>
   )
 }

@@ -4,11 +4,11 @@ import { formatClock, formatNumber } from '@/lib/formatters'
 import { paceAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
-/** Every lane is drawn in a 1000 x 90 box and stretched to the card (v4.17). */
+/** Every lane is drawn in a 1000 x 72 box and stretched to the page (3.0). */
 export const VIEW_WIDTH = 1000
-export const LANE_HEIGHT = 90
-/** Elevation is only context: a 40 px strip under the three lanes. */
-export const ELEVATION_HEIGHT = 40
+export const LANE_HEIGHT = 72
+/** Elevation is only context: a 44 px strip under the three lanes, last. */
+export const ELEVATION_HEIGHT = 44
 /** The line stays this far off the lane's top and bottom edges. */
 const LANE_PAD = 4
 /** A zone band thinner than this has no room for its 11 px label. */
@@ -55,7 +55,7 @@ export function chartZones(
 export interface Lane {
   key: LaneKey
   label: string
-  /** What the lane is counted in, beside its name ("bpm", "/km · higher is faster"). */
+  /** What the lane is counted in, beside its name ("bpm", "/km ↑"). */
   unit: string
   /** The unit after a reading ("142 bpm"). */
   valueUnit: string
@@ -254,7 +254,7 @@ function share(lane: Pick<Lane, 'domain' | 'reversed'>, value: number): number {
 }
 
 /**
- * How far down its lane a value sits, in the lane's 90-unit box: the domain
+ * How far down its lane a value sits, in the lane's 72-unit box: the domain
  * spread over the plot, flipped for pace, and clipped 2 units inside the
  * edges so a raw spike past the scale still shows where it went.
  */

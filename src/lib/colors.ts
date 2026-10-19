@@ -91,6 +91,13 @@ export function runTypeColor(type: string | null | undefined): string {
 
 export type SessionZone = 1 | 2 | 3 | 4 | 5
 
+/**
+ * The long run on Plan (redesign 3.0): an easy run, so its zone's blue, a
+ * step deeper so the week's long run reads apart from the easy days beside
+ * it. Mixed from the zone token, so it follows both themes.
+ */
+export const LONG_RUN_COLOR = 'color-mix(in srgb, var(--zone-2) 78%, black)'
+
 /** A zone's colour token. */
 export function zoneColor(zone: SessionZone): string {
   return `var(--zone-${zone})`
@@ -188,10 +195,10 @@ export const MAP_COLORS = {
 } as const
 
 // The last-resort error screen draws before any stylesheet: the v4.17 dark
-// ground and ink, and the default teal accent for its one action.
+// ground and ink (the 3.0 values), and the default teal accent for its one action.
 export const BOOT_COLORS = {
-  background: '#0c0d0d',
-  foreground: '#f1f2f1',
+  background: '#0b0c0c',
+  foreground: '#f2f4f3',
   actionBg: '#2dd4a7',
   actionFg: '#07261d',
 } as const

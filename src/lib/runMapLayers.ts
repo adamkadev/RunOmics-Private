@@ -5,6 +5,8 @@ import { JOIN_PX as JOIN_DISTANCE_PX, markerExtent, routeEnds, routeMarkerImage 
 
 export const ROUTE_SOURCE = 'route'
 export const ROUTE_LINE_LAYER = 'route-line'
+export const ROUTE_HALO_LAYER = 'route-halo'
+export const ROUTE_LABEL_GUARD_LAYER = 'route-label-guard'
 export const RUN_START_SOURCE = 'run-start-dot'
 export const RUN_START_LAYER = 'run-start-dot'
 export const RUN_FINISH_SOURCE = 'run-finish-mark'
@@ -36,7 +38,10 @@ const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] }
 export interface RunLayersState {
   /** The accent, as a literal colour: MapLibre paints values, not CSS variables. */
   accent: string
-  /** The ring round the start, the finish and the scrub marker. */
+  /**
+   * The ring round the start and the scrub marker, and the route's halo:
+   * the page ground (3.0), so the line and its dots lift off the tiles.
+   */
   ring: string
   route: LngLat[]
   start: LngLat
@@ -85,17 +90,63 @@ function endsData(start: LngLat, finish: LngLat | null, joined: boolean) {
   return { start: pointData(startAt), marks }
 }
 
+/** A clear square: collision without paint. */
+function addClearIcon(map: MapLibreMap): void {
+  const size = 24
+  if (!map.hasImage(FENCE_ICON)) {
+    map.addImage(FENCE_ICON, { width: size, height: size, data: new Uint8Array(size * size * 4) })
+  }
+}
+
+/**
+ * No place name under the route (3.0 handoff: "Metz" sat under the line).
+ * MapLibre never tests a label against a line, so an invisible icon every
+ * 12 px along the route, placed above the labels, makes a name that would
+ * cross it collide and be dropped. It reads the route's own source, so it
+ * follows the draw-in. Names clear of the line stay.
+ */
+export function addRouteLabelGuard(map: MapLibreMap, source: string): void {
+  addClearIcon(map)
+  if (map.getLayer(ROUTE_LABEL_GUARD_LAYER)) return
+  map.addLayer({
+    id: ROUTE_LABEL_GUARD_LAYER,
+    type: 'symbol',
+    source,
+    layout: {
+      'symbol-placement': 'line',
+      'symbol-spacing': 12,
+      'icon-image': FENCE_ICON,
+      'icon-size': 0.5,
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': false,
+      'icon-rotation-alignment': 'map',
+    },
+  })
+}
+
 /**
  * The run on the Activity map (v4.17), in one call that can be made again
- * after a style change: the route as one accent line, width 4, over the
- * style's place names (design review, Oct 2026: a label used to sit over
- * the finish); the start as a 16 px accent dot in a white ring; the finish
+ * after a style change: the route as one accent line, width 4, on a 3 px
+ * halo in the page ground (3.0), over the style's place names (design
+ * review, Oct 2026: a label used to sit over the finish), with no name left
+ * under it (addRouteLabelGuard); the start as a 7 px accent dot in a 2.5 px
+ * ring of the ground; the finish
  * as the checkered dot of routeMarkers on the line's last point, or one
  * loop marker on the start where the two would touch; and the scrub's
  * marker, a larger accent dot that follows the Charts tab, on top.
  */
 export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
-  if (setOrAddSource(map, ROUTE_SOURCE, routeData(state.route)) || !map.getLayer(ROUTE_LINE_LAYER)) {
+  const newSource = setOrAddSource(map, ROUTE_SOURCE, routeData(state.route))
+  if (newSource || !map.getLayer(ROUTE_HALO_LAYER)) {
+    map.addLayer({
+      id: ROUTE_HALO_LAYER,
+      type: 'line',
+      source: ROUTE_SOURCE,
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': state.ring, 'line-width': 10 },
+    })
+  }
+  if (newSource || !map.getLayer(ROUTE_LINE_LAYER)) {
     map.addLayer({
       id: ROUTE_LINE_LAYER,
       type: 'line',
@@ -104,6 +155,7 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
       paint: { 'line-color': state.accent, 'line-width': 4 },
     })
   }
+  addRouteLabelGuard(map, ROUTE_SOURCE)
   if (!map.hasImage(FINISH_MARK_ICON)) {
     map.addImage(FINISH_MARK_ICON, routeMarkerImage('finish', state.accent, ICON_PIXEL_RATIO), { pixelRatio: ICON_PIXEL_RATIO })
   }
@@ -120,12 +172,12 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
     })
   }
   if (setOrAddSource(map, RUN_START_SOURCE, ends.start) || !map.getLayer(RUN_START_LAYER)) {
-    // 16 px across: a 5.5 px dot, the 2.5 px ring drawn outside it.
+    // A 7 px dot, the 2.5 px ring drawn outside it (3.0).
     map.addLayer({
       id: RUN_START_LAYER,
       type: 'circle',
       source: RUN_START_SOURCE,
-      paint: { 'circle-radius': 5.5, 'circle-color': state.accent, 'circle-stroke-color': state.ring, 'circle-stroke-width': 2.5 },
+      paint: { 'circle-radius': 7, 'circle-color': state.accent, 'circle-stroke-color': state.ring, 'circle-stroke-width': 2.5 },
     })
   }
   if (setOrAddSource(map, RUN_CURSOR_SOURCE, pointData(state.cursor)) || !map.getLayer(RUN_CURSOR_LAYER)) {
@@ -250,10 +302,7 @@ export function edgePoints(w: number, h: number, step = 16): [number, number][] 
  * follows the view as it moves. Returns the cleanup.
  */
 export function addEdgeFence(map: MapLibreMap): () => void {
-  const size = 24
-  if (!map.hasImage(FENCE_ICON)) {
-    map.addImage(FENCE_ICON, { width: size, height: size, data: new Uint8Array(size * size * 4) })
-  }
+  addClearIcon(map)
   map.addSource(EDGE_FENCE_SOURCE, { type: 'geojson', data: EMPTY })
   map.addLayer({
     id: EDGE_FENCE_LAYER,

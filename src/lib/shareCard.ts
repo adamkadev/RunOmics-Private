@@ -2,6 +2,7 @@ import type { ShareActivity } from '@/lib/shareCardStats'
 import type { AccentId } from '@/lib/accentScale'
 import { W, H, sharePalette, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
 import { drawShareCard, FALLBACK_FONTS, shareCardLayout, type ShareFonts } from '@/lib/shareCardDraw'
+import { ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 
 export { SHARE_DESIGNS, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
 export { loadImage } from '@/lib/shareCardDraw'
@@ -28,16 +29,29 @@ export function pageFonts(): ShareFonts {
   return display ? { ...FALLBACK_FONTS, display: `${display}, ${FALLBACK_FONTS.display}` } : FALLBACK_FONTS
 }
 
-/** The route's middle where there is no canvas to measure a title on. */
-const UNMEASURED_MIDDLE_H = 236
+/**
+ * Where there is no canvas to measure the title on: every word fits, so the
+ * title takes its one line.
+ */
+const UNMEASURED = { font: '', measureText: () => ({ width: 0 }) } as unknown as CanvasRenderingContext2D
+
+export interface ShareCardMapFrame {
+  /** The route's room on the full-card map, between the header and the stats. */
+  frame: RouteFrame
+  /** Where the header's band and the stats' band meet the map, half way down each fade. */
+  bands: [number, number]
+}
 
 /**
- * The route's middle on this run's card, laid out as drawShareCard will lay
- * it: the basemap is drawn to it, so the route fills the map's whole frame.
+ * The Route card's map as drawShareCard will lay it out (redesign, Oct
+ * 2026): the basemap is drawn for the whole card, the route fitted into
+ * this frame, so it sits between the header and the stats.
  */
-export function shareCardMiddleHeight(activity: ShareActivity, fonts: ShareFonts): number {
-  const ctx = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')
-  return ctx ? shareCardLayout(ctx, activity, fonts, 'route').middleH : UNMEASURED_MIDDLE_H
+export function shareCardMapFrame(activity: ShareActivity, fonts: ShareFonts): ShareCardMapFrame {
+  const ctx = (typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')) ?? UNMEASURED
+  const { routeFrame, textTop, textBottom } = shareCardLayout(ctx, activity, fonts, 'route')
+  const half = ROUTE_TEXT_GAP / 2
+  return { frame: routeFrame, bands: [textTop + half, textBottom - half] }
 }
 
 export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOptions, scale = 1) {

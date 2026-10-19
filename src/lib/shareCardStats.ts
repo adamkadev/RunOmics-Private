@@ -1,4 +1,5 @@
 import type { Activity, ActivityType } from '@/domain/activity/types'
+import type { VerdictTone } from '@/domain/activity/runVerdict'
 import { formatClock, formatDate, formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { activityTitle } from '@/lib/activityTitle'
@@ -14,6 +15,14 @@ export type ShareActivity = Pick<
   sessionTitle?: string | null
   /** The work of an interval session: its reps and their pace, against the plan's. */
   reps?: ShareReps | null
+  /** The run's verdict, as its Overview card reads it; null without a written one. */
+  verdict?: ShareVerdict | null
+}
+
+/** The Stats card's lead (redesign, Oct 2026): the verdict's tone for the eyebrow, the coach's headline as the hero. */
+export interface ShareVerdict {
+  tone: VerdictTone
+  headline: string
 }
 
 export interface ShareReps {
@@ -24,7 +33,7 @@ export interface ShareReps {
   paceSecPerKm: number
   /** The plan's pace for the reps, when the run matched a session that set one. */
   target: { min: number; max: number } | null
-  /** Where each rep ran, as shares of the run's distance (0 to 1): the route draws them. */
+  /** Where each rep ran, as shares of the run's distance: the Route card draws them over the run. */
   windows: [number, number][]
 }
 

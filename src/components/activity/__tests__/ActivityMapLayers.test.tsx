@@ -1,4 +1,4 @@
-import { render, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 const seen = vi.hoisted(() => ({
@@ -97,9 +97,11 @@ describe('ActivityMap layers (v4.17)', () => {
     expect(seen.markers).toBe(0)
   })
 
-  it('keeps the MapTiler and OpenStreetMap credit shown as text, not folded behind an ⓘ', async () => {
+  // 3.0: the credits fold behind the app's own 22 pt ⓘ, not MapLibre's line.
+  it('credits MapTiler and OpenStreetMap behind an ⓘ, with no MapLibre control', async () => {
     render(<ActivityMap route={[[7.7, 48.6], [7.72, 48.62]]} />)
-    await waitFor(() => expect(seen.controls.length).toBeGreaterThan(0))
-    expect(seen.controls.at(-1)).toMatchObject({ options: { compact: false } })
+    await waitFor(() => expect(seen.layers.some((l) => l.id === 'route-line')).toBe(true))
+    expect(seen.controls).toEqual([])
+    expect(screen.getByTestId('map-attribution')).toBeInTheDocument()
   })
 })

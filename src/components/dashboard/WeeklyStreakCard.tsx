@@ -5,10 +5,9 @@ import type { WeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { weeklyTargetKm, type WeekTarget } from '@/domain/training/weekTarget'
 import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { formatRanKm } from '@/lib/formatters'
-import { cardClass } from '@/components/ui/Card'
 import { useToday } from '@/lib/useToday'
 import { cn } from '@/lib/utils'
-import { weekStripDays, type KindLabel, type WeekStripDay } from './weekStrip'
+import { weekStripDays, type WeekStripDay } from './weekStrip'
 import { t } from '@/i18n'
 
 interface Props {
@@ -17,56 +16,45 @@ interface Props {
   target: WeekTarget
   /** The date the page was prerendered on; see useToday. */
   today: string
-  /** Each planned day's session, by date ("Threshold" / "Thr"): see plannedSessionKinds. */
-  sessionKinds?: Record<string, KindLabel>
+  /** Each planned day's session, by date ("Threshold"): see plannedSessionKinds. */
+  sessionKinds?: Record<string, string>
 }
 
-/** The bar area's height; a day's bar is its share of the tallest. */
-const BAR_AREA = 84
-/** A rest day, or a session the plan gave no km, is this stub. */
-const STUB = 8
-
 /**
- * A day's bar (v4.17): planned is a dashed outline over a soft tint of its
- * session's category, done is the accent - the athlete's own km - and
- * missed is the neg outline. Today, still to run, is the 2 px accent outline.
+ * A day's circle (design review, Oct 2026): planned is a dashed ring in its
+ * session's category, done is the accent filled - the athlete's own km - and
+ * missed the dashed neg ring. Today, still to run, is the 2 px accent ring;
+ * a rest day the hairline.
  */
-function barStyle(day: WeekStripDay): CSSProperties {
-  const height = day.share === null || day.state === 'rest' ? STUB : Math.max(STUB, Math.round(day.share * BAR_AREA))
-  if (day.state === 'done') return { height, background: 'var(--accent)' }
-  if (day.isToday) return { height, border: '2px solid var(--accent)', background: 'var(--accent-soft)' }
+function circleStyle(day: WeekStripDay): CSSProperties {
+  if (day.state === 'done') return { background: 'var(--accent)', color: 'var(--accent-foreground)' }
+  if (day.isToday) return { border: '2px solid var(--accent)' }
   switch (day.state) {
     case 'planned':
-      return { height, border: `1.5px dashed ${day.color}`, background: `color-mix(in srgb, ${day.color} 14%, transparent)` }
+      return { border: `1.5px dashed ${day.color}` }
     case 'missed':
-      return { height, border: '1.5px dashed var(--neg)', background: 'transparent' }
+      return { border: '1.5px dashed var(--neg)', color: 'var(--neg)' }
     default:
-      return { height, border: '1px solid var(--border)', background: 'var(--surface-2)' }
+      return { border: '1px solid var(--border)' }
   }
 }
 
 function WeekStrip({ days }: { days: WeekStripDay[] }) {
   return (
-    <ul className="flex items-stretch gap-1.5 sm:gap-2.5" data-testid="week-strip">
+    <ul className="flex justify-between gap-1" data-testid="week-strip">
       {days.map((day) => (
-        <li key={day.date} aria-label={day.label} className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+        <li key={day.date} aria-label={day.label} className="flex flex-col items-center gap-1.5">
           <span
             aria-hidden="true"
-            className={cn('h-4 w-full whitespace-nowrap text-center text-xs font-semibold tabular-nums', day.state === 'missed' ? 'text-[var(--neg)]' : 'text-[var(--text-2)]')}
+            className="box-border flex size-[34px] items-center justify-center rounded-full text-[11px] font-semibold tabular-nums text-foreground"
+            data-state={day.state}
+            data-today={day.isToday ? '' : undefined}
+            style={circleStyle(day)}
           >
             {day.state !== 'rest' && day.kmText !== null ? day.kmText : ''}
           </span>
-          <span aria-hidden="true" className="flex w-full items-end" style={{ height: BAR_AREA }}>
-            <span className="box-border block w-full rounded-lg" data-state={day.state} data-today={day.isToday ? '' : undefined} style={barStyle(day)} />
-          </span>
-          <span aria-hidden="true" className={cn('text-xs', day.isToday ? 'font-semibold text-accent-text' : 'text-[var(--text-2)]')}>
-            {day.weekday}
-          </span>
-          {/* The session's short word under 480 pt (v4.17.3), its full name
-              above; never cut to "Thres…". */}
-          <span aria-hidden="true" className="text-center text-caption leading-tight text-muted-foreground text-pretty" data-testid="week-strip-kind">
-            <span className="min-[480px]:hidden">{day.kindShort}</span>
-            <span className="hidden min-[480px]:inline">{day.kind}</span>
+          <span aria-hidden="true" className={cn('text-[11px]', day.isToday ? 'font-semibold text-accent-text' : 'text-muted-foreground')}>
+            {day.letter}
           </span>
         </li>
       ))}
@@ -75,29 +63,26 @@ function WeekStrip({ days }: { days: WeekStripDay[] }) {
 }
 
 /**
- * This week (v4.17): "0 of 51 km · 0 of 5 runs" beside the title, over the
- * seven days as bars of their km, each named by its session. The progress
- * bar under the total is gone - at 0 km it was an empty track saying the
- * same thing as the words. The ring and "5.5 km/day to hit 38" measured a
- * second target (M7).
+ * This week (design review, Oct 2026): "0 / 54 km · 0 / 5 runs" beside the
+ * title, over the seven days as circles, the planned km in each. The bars
+ * and their session names repeated Plan's week; the names are now each
+ * day's accessible name.
  */
 export function WeeklyStreakCard({ data, target, today: serverToday, sessionKinds = {} }: Props) {
   const s = t.dashboard.weeklyStreak
   const todayIso = useToday(serverToday)
   const targetKm = weeklyTargetKm(target)
   const days = weekStripDays(target.days, todayIso, sessionKinds)
+  const ran = formatRanKm(target.ranKm)
 
   return (
-    <section className={cardClass({ className: 'flex flex-col gap-4' })} data-testid="week-card">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="text-[15px] font-semibold text-foreground">{s.title}</h2>
-        <p className="text-footnote text-muted-foreground">
-          <span className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</span>{' '}
-          {targetKm !== null ? s.ofKm(formatWeekKm(targetKm)) : t.units.km}
+    <section className="flex flex-col gap-2.5" data-testid="week-card">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+        <h2 className="text-[13px] font-semibold text-foreground">{s.title}</h2>
+        <p className="text-[13px] text-muted-foreground tabular-nums">
+          {targetKm !== null ? s.kmOf(ran, formatWeekKm(targetKm)) : `${ran} ${t.units.km}`}
           {' · '}
-          {target.planSessions > 0
-            ? s.runsOf(target.plannedDone, target.planSessions)
-            : s.weeksInARow(Math.round(data.currentWeeks))}
+          {target.planSessions > 0 ? s.runsOf(target.plannedDone, target.planSessions) : s.weeksInARow(Math.round(data.currentWeeks))}
         </p>
       </div>
       {days.length > 0 && <WeekStrip days={days} />}

@@ -4,7 +4,7 @@ import type { AthletePageView } from './athleteView'
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { BackButton } from '@/components/ui/BackButton'
-import { AthleteDetails, AthleteKeyNumbers } from './ProfileAthleteStats'
+import { AthleteStats } from './ProfileAthleteStats'
 import { ProfileHrZones } from './ProfileHrZones'
 import { Vo2GradeCard } from './Vo2GradeCard'
 import type { Vo2GradeView } from '@/application/usecases/GetVo2Grade'
@@ -22,6 +22,7 @@ interface Props {
   lastSyncedAt?: string | null
 }
 
+/** Athlete & zones (3.0 1j): the grade card, the six numbers in one card, then the zones. */
 export function AthleteClient({ athlete, vo2Grade, weeklyZoneTime, recentZoneTime, paceZones, lastSyncedAt = null }: Props) {
   const p = t.pages.athlete
   // The sync's age is read from the browser's clock after mount: worked out on
@@ -41,14 +42,13 @@ export function AthleteClient({ athlete, vo2Grade, weeklyZoneTime, recentZoneTim
       </header>
 
       {vo2Grade && <Vo2GradeCard view={vo2Grade} />}
-      <AthleteKeyNumbers athlete={athlete} />
+      <AthleteStats athlete={athlete} />
       <ProfileHrZones
         athlete={athlete}
         weeklyZoneTime={weeklyZoneTime}
         recentZoneTime={recentZoneTime}
         paceZones={paceZones}
       />
-      <AthleteDetails athlete={athlete} />
     </div>
   )
 }

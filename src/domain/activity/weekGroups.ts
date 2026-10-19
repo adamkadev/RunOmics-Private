@@ -41,16 +41,3 @@ export function groupByWeek<T extends { date: string; distanceKm: number }>(
   }
   return groups
 }
-
-/**
- * A newest-first list opens on this week even before its first run. Without
- * a run there is no group for it, so the current week goes in empty, at the
- * place its date gives it, and its goal progress reads 0 km rather than the
- * previous week's total.
- */
-export function withCurrentWeek<T>(groups: WeekGroup<T>[], currentWeekStart: string): WeekGroup<T>[] {
-  if (groups.some((g) => g.isCurrent)) return groups
-  const empty: WeekGroup<T> = { key: currentWeekStart, items: [], totalKm: 0, isCurrent: true }
-  const olderAt = groups.findIndex((g) => g.key < currentWeekStart)
-  return olderAt === -1 ? [...groups, empty] : [...groups.slice(0, olderAt), empty, ...groups.slice(olderAt)]
-}

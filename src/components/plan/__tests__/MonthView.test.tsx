@@ -1,236 +1,167 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
-import { MonthView } from '../MonthView'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
+import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
+import { formatDate, formatWeekday } from '@/lib/formatters'
+import { LONG_RUN_COLOR } from '@/lib/colors'
 import { t } from '@/i18n'
-import type { ActivitySummary } from '@/domain/activity/types'
+import { MonthView } from '../MonthView'
 
-const RUN: ActivitySummary = {
-  id: 'run', date: '2026-09-21', dayOfWeek: 'Monday', type: 'Base', description: '', comment: '', distanceKm: 8.4, durationSeconds: 2_700,
-  paceSecPerKm: 320, avgHeartRate: 140, rpe: 3, hrZones: [], week: 202639, elevationGain: 10,
+function run(id: string, date: string, distanceKm: number, type: ActivitySummary['type'] = 'Base'): ActivitySummary {
+  return {
+    id, date, dayOfWeek: 'Monday', type, description: '', comment: '', distanceKm, durationSeconds: 2_700,
+    paceSecPerKm: 320, avgHeartRate: 140, rpe: 3, hrZones: [], week: 202642, elevationGain: 10,
+  }
 }
 
-function renderMonth(today = '2026-09-25') {
-  return render(
+const TODAY = '2026-10-19'
+const RUNS = [run('a', '2026-10-13', 10), run('b', '2026-10-14', 8, 'Threshold'), run('c', '2026-09-30', 9)]
+const PLANNED: PlannedWorkout[] = [
+  { date: '2026-10-13', name: 'Easy', type: 'Base', distanceM: 10_000 },
+  { date: '2026-10-14', name: 'Intervals', type: 'Threshold', distanceM: 8_000 },
+  { date: '2026-10-16', name: 'Easy', type: 'Base', distanceM: 6_000 },
+  { date: '2026-10-21', name: '3 × 8 min threshold', type: 'Threshold', distanceM: 11_000 },
+  { date: '2026-10-25', name: 'Long run', type: 'Base', distanceM: 18_000 },
+]
+const RANGES: PlanPhaseRange[] = [
+  { phase: 'base', startDate: '2026-09-14', endDate: '2026-10-11' },
+  { phase: 'build', startDate: '2026-10-12', endDate: '2026-11-22' },
+]
+
+function renderMonth(onSelectDay = vi.fn()) {
+  const byDate = new Map<string, ActivitySummary[]>()
+  for (const a of RUNS) byDate.set(a.date, [a])
+  render(
     <MonthView
       year={2026}
-      month={8}
-      byDate={new Map([[RUN.date, [RUN]]])}
-      byDatePlanned={new Map([['2026-09-26', { date: '2026-09-26', name: 'Threshold', type: 'Threshold', distanceM: 10_000 }]])}
-      today={today}
+      month={9}
+      byDate={byDate}
+      byDatePlanned={new Map(PLANNED.map((p) => [p.date, p]))}
+      planPhaseRanges={RANGES}
+      today={TODAY}
       atPresent
       onToday={() => {}}
-      onSelectDay={() => {}}
+      onSelectDay={onSelectDay}
       onPrev={() => {}}
       onNext={() => {}}
       canGoForward={false}
     />,
   )
+  return onSelectDay
 }
 
-/** The month's own tile for a day number: the grid's edges repeat 1 to 4 from the months either side. */
-function cellOf(day: string): HTMLElement {
-  return screen.getAllByText(day).map((el) => el.closest<HTMLElement>('[data-cell-state]')!).find((cell) => !cell.dataset.outsideMonth)!
-}
+const cell = (date: string) => document.querySelector<HTMLElement>(`[data-date="${date}"]`)!
+const tile = (date: string) => within(cell(date)).getByTestId('month-tile')
+const weeks = () => screen.getAllByTestId('month-week')
 
-describe('MonthView colours', () => {
-  // The today cell was ringed in a fixed emerald - the colour Base, Form and
-  // "productive" wear - which on the Nature accent was the same green twice.
-  it('marks today with an accent outline', () => {
-    renderMonth()
-    const day = screen.getByText('25')
-
-    expect(day.style.color).toBe('var(--accent-text)')
-    expect(cellOf('25').style.boxShadow).toContain('var(--accent)')
-  })
-
-  // v4.17: a planned day is its type's zone at 12%, never its own hue.
-  it("tints a planned session in its zone's colour", () => {
-    renderMonth()
-    const cell = screen.getByRole('button', { name: /September 26/ }).closest<HTMLElement>('[data-cell-state]')!
-
-    expect(cell.dataset.cellState).toBe('planned')
-    expect(cell.style.getPropertyValue('--cell-zone')).toBe('var(--zone-4)')
-    expect(cell.className).toContain('var(--cell-zone)_12%')
-    // The tint alone (owner, Oct 2026): no dashed outline, no square inside.
-    expect(cell.className).not.toContain('border-dashed')
-    expect(cell.style.outline).toBe('')
-    expect(cell.querySelector('[data-testid="month-zone-mark"]')).toBeNull()
-  })
-
-  // Design review, Oct 2026: a run nothing was planned for read the same as
-  // one run to plan, and a missed day was colour alone.
-  it('draws a run nothing was planned for as extra, and a past planned day as missed, never in colour alone', () => {
-    renderMonth('2026-09-27')
-
-    expect(cellOf('21').dataset.cellState).toBe('extra')
-    expect(cellOf('21').className).toContain('bg-[var(--accent-soft)]')
-    expect(cellOf('21').textContent).toContain(t.plan.extra)
-    expect(cellOf('26').dataset.cellState).toBe('missed')
-    expect(cellOf('26').className).toContain('var(--neg)')
-    expect(cellOf('26').style.outline).toContain('dashed')
-    expect(cellOf('26').textContent).toContain('✕')
-    expect(cellOf('26').style.getPropertyValue('--cell-zone')).toBe('')
-    expect(screen.getByRole('button', { name: /September 26/ }).getAttribute('aria-label')).toContain(t.sessionState.missed)
-  })
-
-  it('opens a missed session read-only, saying nothing matched it', () => {
-    renderMonth('2026-09-27')
-    fireEvent.click(screen.getByRole('button', { name: /September 26/ }))
-
-    expect(screen.getByText(t.plan.missedNoRun)).toBeInTheDocument()
-  })
-
-  // Month read July's sessions planned by time alone as rest days, never missed.
-  it('counts a session planned by time alone', () => {
-    render(
-      <MonthView
-        year={2026}
-        month={6}
-        byDate={new Map()}
-        byDatePlanned={new Map([['2026-07-08', { date: '2026-07-08', name: 'Easy', type: 'Base', durationSecs: 2_700 }]])}
-        today="2026-07-20"
-        atPresent={false}
-        onToday={() => {}}
-        onSelectDay={() => {}}
-        onPrev={() => {}}
-        onNext={() => {}}
-        canGoForward
-      />,
-    )
-
-    expect(cellOf('8').dataset.cellState).toBe('missed')
-    // Bare in the tile, as mock 1c draws it; with its unit in the day's name.
-    expect(cellOf('8').textContent).toContain('45′')
-    expect(cellOf('8').querySelector('button')!.getAttribute('aria-label')).toContain(`45 ${t.units.min}`)
-  })
-
-  // Design review, Oct 2026 (mock 1c): one bare figure a tile, a run's bold;
-  // the unit is in the day's name, and on the week row under it.
-  it('shows one bare figure a day, its unit in the name', () => {
+describe('the month grid', () => {
+  it('draws only the weeks the month needs, Monday to Sunday', () => {
     renderMonth()
 
-    const ran = screen.getByRole('button', { name: new RegExp(`September 21.*8\\.4 ${t.units.km}`) })
-    expect(ran.textContent).toContain('8.4')
-    expect(ran.textContent).not.toContain(t.units.km)
-    expect(ran.querySelector('.font-semibold')!.textContent).toBe('8.4')
-    const planned = screen.getByRole('button', { name: new RegExp(`September 26.*10 ${t.units.km}`) })
-    expect(planned.textContent).not.toContain(t.units.km)
+    // October 2026 starts on a Thursday and ends on a Saturday: five weeks.
+    expect(weeks()).toHaveLength(5)
+    expect(cell('2026-09-28').dataset.outsideMonth).toBe('true')
+    expect(cell('2026-09-28').className).toContain('opacity-40')
   })
 
-  it('draws each day as its own rounded tile', () => {
+  it('fills a run in its colour at 20%, dashes a session still to come, and leaves rest empty', () => {
     renderMonth()
-    expect(cellOf('21').className).toContain('rounded-[10px]')
-    expect(cellOf('1').className).toContain('border')
+
+    expect(tile('2026-10-13').style.background).toBe('color-mix(in srgb, var(--zone-2) 20%, transparent)')
+    expect(tile('2026-10-14').style.background).toBe('color-mix(in srgb, var(--zone-4) 20%, transparent)')
+    expect(tile('2026-10-21').style.border).toBe('1px dashed var(--zone-4)')
+    expect(tile('2026-10-25').style.border).toBe(`1px dashed ${LONG_RUN_COLOR}`)
+    expect(tile('2026-10-15').getAttribute('style')).toBeNull()
+    expect(tile('2026-10-15').textContent).toBe('')
+  })
+
+  it('names a past session that was not run missed, in the negative status', () => {
+    renderMonth()
+
+    expect(cell('2026-10-16').dataset.cellState).toBe('missed')
+    expect(tile('2026-10-16').style.border).toBe('1px dashed var(--neg)')
+  })
+
+  it('fills today’s date in the accent', () => {
+    renderMonth()
+
+    expect(within(cell(TODAY)).getByText('19').className).toContain('bg-accent')
   })
 })
 
-// The owner's report, Oct 2026: October's first row read 33 of 31 km for a
-// week run at 53 - its Tuesday and Wednesday were September's, left blank.
-describe('MonthView edges', () => {
-  const run = (id: string, date: string, distanceKm: number): ActivitySummary => ({ ...RUN, id, date, distanceKm })
+describe('the phases down the side', () => {
+  it('names each phase once, over its first week on screen', () => {
+    renderMonth()
 
-  function renderOctober(onSelectDay: (date: string) => void = () => {}) {
-    return render(
-      <MonthView
-        year={2026}
-        month={9}
-        byDate={new Map([
-          ['2026-09-29', [run('tue', '2026-09-29', 10.4)]],
-          ['2026-09-30', [run('wed', '2026-09-30', 9.2)]],
-          ['2026-10-02', [run('fri', '2026-10-02', 10)]],
-        ])}
-        byDatePlanned={new Map([
-          ['2026-09-29', { date: '2026-09-29', name: 'Threshold', type: 'Threshold', distanceM: 10_000 }],
-          ['2026-10-02', { date: '2026-10-02', name: 'Easy', type: 'Base', distanceM: 10_000 }],
-          ['2026-11-01', { date: '2026-11-01', name: 'Long', type: 'Base', distanceM: 14_000 }],
-        ])}
-        today="2026-10-08"
-        atPresent
-        onToday={() => {}}
-        onSelectDay={onSelectDay}
-        onPrev={() => {}}
-        onNext={() => {}}
-        canGoForward
-      />,
-    )
-  }
-
-  const edgeTile = (name: RegExp) => screen.getByRole('button', { name }).closest<HTMLElement>('[data-cell-state]')!
-
-  it("fills the first and last rows with the months either side's days, muted, their state kept", () => {
-    renderOctober()
-    const outside = [...document.querySelectorAll<HTMLElement>('[data-outside-month]')].map((cell) => cell.querySelector('.text-xs')!.textContent)
-
-    // October 2026 starts on a Thursday and ends on a Saturday.
-    expect(outside).toEqual(['28', '29', '30', '1'])
-    expect(edgeTile(/September 29/).dataset.cellState).toBe('done')
-    expect(edgeTile(/September 29/).className).toContain('opacity-[0.45]')
-    expect(edgeTile(/November 1/).dataset.cellState).toBe('planned')
-    expect(cellOf('2').className).not.toContain('opacity-[0.45]')
+    expect(screen.getAllByTestId('month-phase-label').map((p) => p.textContent)).toEqual([
+      t.plan.month.phaseEnds(t.plan.weekPurpose.planPhase.base, formatDate('2026-10-11', { style: 'bare' })),
+      t.plan.month.phaseWeeks(t.plan.weekPurpose.planPhase.build, 6),
+    ])
   })
 
-  it("opens a muted day's week like any other", () => {
-    const opened: string[] = []
-    renderOctober((date) => opened.push(date))
-    fireEvent.click(screen.getByRole('button', { name: /September 30/ }))
+  it('borders each week in its phase, the current one in the accent, and lifts the current week', () => {
+    renderMonth()
 
-    expect(opened).toEqual(['2026-09-30'])
-  })
-
-  it('totals each row over its whole week, the summary over the month alone', () => {
-    renderOctober()
-    const totals = screen.getAllByTestId('month-week-total').map((p) => p.textContent)
-
-    expect(totals[0]).toBe('29.6/ 20')
-    expect(totals.at(-1)).toBe('0/ 14')
-    expect(screen.getByText(t.plan.summary(1, 10, 10))).toBeInTheDocument()
+    const [first, , , current] = weeks()
+    expect(first!.style.borderLeftColor).toBe('var(--zone-1)')
+    expect(current!.style.borderLeftColor).toBe('var(--accent)')
+    expect(current!.dataset.current).toBe('true')
+    expect(current!.className).toContain('bg-card')
   })
 })
 
-describe('MonthView wording and grid', () => {
-  // "129 of 89 km planned" read as a plan beaten, not two numbers.
-  it('names run and planned km apart in the summary', () => {
+describe('the km column', () => {
+  it('reads each week as run over planned, a week to come as its plan', () => {
     renderMonth()
 
-    expect(screen.getByText(t.plan.summary(1, 8, 10))).toBeInTheDocument()
-    expect(t.plan.summary(12, 129, 89)).toContain('129 km run')
+    const totals = screen.getAllByTestId('month-week-total').map((c) => c.textContent)
+    expect(totals[2]).toBe('18/ 24')
+    expect(totals[3]).toBe('0/ 29')
+    expect(totals[4]).toBe('')
+  })
+})
+
+describe('opening a week', () => {
+  it('opens the Week view on the day tapped', () => {
+    const onSelectDay = renderMonth()
+
+    fireEvent.click(cell('2026-10-14'))
+    expect(onSelectDay).toHaveBeenCalledWith('2026-10-14')
   })
 
-  // Design review, Oct 2026: each week's km in an 8th column, run in bold
-  // over "/ planned" muted.
-  it('draws only the weeks the month needs, each with its km in an 8th column', () => {
-    renderMonth()
-    // September 2026 starts on a Tuesday: 1 + 30 days is five weeks.
-    const totals = screen.getAllByTestId('month-week-total')
+  it('opens the current week on today, another on its Monday', () => {
+    const onSelectDay = renderMonth()
 
-    expect(totals).toHaveLength(5)
-    // The column has its own header, and each total sits in its week's row.
-    expect(screen.getByText(t.units.km)).toBeInTheDocument()
-    expect(totals[3]!.parentElement!.children).toHaveLength(8)
-    // Run bold, then the plan muted; a week with no plan has the run alone,
-    // and one still to come with nothing planned has nothing.
-    const [ran, planned] = [...totals[3]!.children] as HTMLElement[]
-    expect(ran!.textContent).toBe('8.4')
-    expect(ran!.className).toContain('font-semibold')
-    expect(planned!.textContent).toBe('/ 10')
-    expect(planned!.className).toContain('text-muted-foreground')
-    expect(totals[0]!.textContent).toBe('0')
-    expect(totals[4]!.textContent).toBe('')
-    expect(screen.queryByText('WK')).not.toBeInTheDocument()
+    fireEvent.click(within(weeks()[3]!).getByTestId('month-week-total'))
+    expect(onSelectDay).toHaveBeenLastCalledWith(TODAY)
+    fireEvent.click(within(weeks()[1]!).getByTestId('month-week-total'))
+    expect(onSelectDay).toHaveBeenLastCalledWith('2026-10-05')
+  })
+})
+
+describe('the legend and the summary', () => {
+  it('keys the kinds the month draws and the dashed planned tile', () => {
+    renderMonth()
+
+    expect(screen.getByTestId('month-legend').textContent).toBe(
+      [t.plan.kinds.easy, t.plan.month.long, t.activityTypes.Threshold, t.sessionState.planned].join(''),
+    )
   })
 
-  it('hides the Today button while today is in view', () => {
+  it('reads the month’s own km against its plan, and the phase week', () => {
     renderMonth()
-    expect(screen.queryByRole('button', { name: t.plan.today })).toBeNull()
+
+    const summary = screen.getByTestId('month-summary')
+    expect(summary.textContent).toContain(t.plan.month.kmOf('18', '53'))
+    expect(summary.textContent).toContain(t.plan.month.phaseWeek(t.plan.weekPurpose.planPhase.build, 2, 6))
   })
 
-  // Design review, Oct 2026: one line, no card - done, the session types the
-  // month plans, missed. Today's outline and "extra" say themselves.
-  it('keys the month on one line: done, the types it plans, missed', () => {
-    renderMonth()
-    const legend = screen.getByTestId('month-legend')
+  it('opens the next key session in the Week view', () => {
+    const onSelectDay = renderMonth()
 
-    expect(legend.textContent).toBe(`${t.sessionState.done}${t.zoneLabels[4]}✕${t.sessionState.missed}`)
-    expect(screen.queryByText(/planned km/)).not.toBeInTheDocument()
+    const key = screen.getByTestId('month-next-key')
+    expect(key.textContent).toContain(`${formatWeekday('2026-10-21', true)} · 3 × 8 min threshold`)
+    fireEvent.click(key)
+    expect(onSelectDay).toHaveBeenCalledWith('2026-10-21')
   })
 })

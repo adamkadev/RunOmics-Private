@@ -16,10 +16,6 @@ const ATHLETE_PAGE_FIELDS = [
   'hrZoneBoundsBpm',
   'age',
   'fitnessAgeYrs',
-  'achievableFitnessAgeYrs',
-  'heightCm',
-  'weightKg',
-  'bmi',
   'vmaKmh',
   'thresholdPaceSecPerKm',
   'lastUpdate',
@@ -27,7 +23,7 @@ const ATHLETE_PAGE_FIELDS = [
 
 const PROFILE_ATHLETE_FIELDS = ['displayName', 'vmaKmh', 'lthrBpm'] as const satisfies readonly (keyof AthleteProfile)[]
 
-/** /athlete: the stat tiles and the HR zone table. */
+/** /athlete: the stats card and the HR zone table. */
 export type AthletePageView = Pick<AthleteProfile, (typeof ATHLETE_PAGE_FIELDS)[number]>
 
 /** /profile: the hero's name and the athlete card's headline metrics. */

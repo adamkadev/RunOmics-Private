@@ -99,15 +99,17 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
   await expect(page.locator('h1')).toBeVisible()
 
   // The subtitle at the divider: scrolled until the bar has collapsed in and
-  // the subtitle reaches its divider.
-  for (const y of [24, 40, 56, 72]) {
+  // the subtitle reaches its divider. The title sits under the map hero
+  // (3.0), its type and date line above it, so the sweep is around the title.
+  const titleTop = await page.evaluate(() => document.querySelector('main h1')!.getBoundingClientRect().top + window.scrollY)
+  for (const y of [-24, -8, 8, 24].map((d) => Math.max(0, Math.round(titleTop - 110 + d)))) {
     await page.evaluate((top) => window.scrollTo(0, top), y)
     await page.waitForTimeout(200)
     const straddling = await page.evaluate(() => {
       const bar = document.querySelector<HTMLElement>('[data-testid="compact-title-bar"]')!
       if (getComputedStyle(bar).display === 'none') return null
       const band = bar.getBoundingClientRect().bottom
-      const subtitle = document.querySelector('main h1')!.nextElementSibling as HTMLElement
+      const subtitle = document.querySelector<HTMLElement>('main [data-title-sub]')!
       const box = subtitle.getBoundingClientRect()
       return box.top < band && box.bottom > band ? Number(getComputedStyle(subtitle).opacity) : 0
     })
