@@ -162,7 +162,7 @@
   --chart-hard:              var(--zone-4);
   --chart-ground-contact:    #b87d0f;
   --chart-brand:             var(--accent);
-  --heat-end:                color-mix(in srgb, var(--accent) 45%, #000000);
+  --heat-end:                color-mix(in srgb, var(--accent) 60%, #000000);
   --ro-accent:               var(--accent);
   --ro-accent-hi:            var(--accent-hover);
   --ro-ink:                  #0b1f17;
@@ -259,7 +259,7 @@
   --chart-hard:              var(--zone-4);
   --chart-ground-contact:    #f59e0b;
   --chart-brand:             var(--accent);
-  --heat-end:                color-mix(in srgb, var(--accent) 35%, #ffffff);
+  --heat-end:                var(--accent);
   --ro-accent:               var(--accent);
   --ro-accent-hi:            var(--accent-hover);
   --ro-ink:                  #0b1f17;

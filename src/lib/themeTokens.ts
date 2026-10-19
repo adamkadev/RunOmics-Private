@@ -312,8 +312,10 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--chart-ground-contact': mode === 'dark' ? c.amber500 : c.amberLine,
     // The athlete's own data is the accent.
     '--chart-brand': 'var(--accent)',
-    // Where the map's heat ends up where runs pile on: a deep accent in light (multiply), toward white in dark (add).
-    '--heat-end': mode === 'dark' ? 'color-mix(in srgb, var(--accent) 35%, #ffffff)' : 'color-mix(in srgb, var(--accent) 45%, #000000)',
+    // Where the map's heat ends up where runs pile on (3.0): the full accent
+    // in dark, never white; a deep accent in light, never black. The heat
+    // layer stops at the same colours.
+    '--heat-end': mode === 'dark' ? 'var(--accent)' : 'color-mix(in srgb, var(--accent) 60%, #000000)',
     '--ro-accent': 'var(--accent)',
     '--ro-accent-hi': 'var(--accent-hover)',
     '--ro-ink': c.roInk,
