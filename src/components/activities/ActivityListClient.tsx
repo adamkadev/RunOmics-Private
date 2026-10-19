@@ -295,6 +295,16 @@ export function ActivityListClient({
   )
   const blocks = useMemo(() => (groups ? listBlocks(groups) : null), [groups])
 
+  // ?week= (a Monday) brings that week's card into view; it is All time's
+  // way in from its biggest week (3.0). Every week is open, so it only
+  // scrolls, once the list holding it has loaded.
+  const [weekParam] = useUrlParam('week')
+  useEffect(() => {
+    if (!weekParam || !blocks) return
+    const frame = requestAnimationFrame(() => document.getElementById(`week-${weekParam}`)?.scrollIntoView({ block: 'start' }))
+    return () => cancelAnimationFrame(frame)
+  }, [weekParam, blocks])
+
   const loadMore = useCallback(() => {
     if (nextOffset === null || loadingMore) return
     setLoadingMore(true)
@@ -443,7 +453,7 @@ export function ActivityListClient({
                     // This week as a heading line over its runs (design review,
                     // Oct 2026): its km and runs, not the plan - Today and Plan
                     // show the week against plan. Only once it has a run (3.0).
-                    <section key={block.week.key} data-testid="current-week">
+                    <section key={block.week.key} id={`week-${block.week.key}`} className="scroll-mt-24" data-testid="current-week">
                       <div className="flex items-baseline justify-between gap-3 px-1 pb-2">
                         <h2 className="min-w-0 truncate text-[15px] font-semibold text-foreground">
                           {t.activities.thisWeek} · {formatDateRange(block.week.key, isoDate(addDays(new Date(`${block.week.key}T00:00:00`), 6)), { year: 'never' })}
@@ -474,7 +484,7 @@ export function ActivityListClient({
                           said nothing of what each run was. */}
                       <div className="flex flex-col gap-3">
                         {block.weeks.map((g) => (
-                          <section key={g.key} className={cardClass({ padding: 'none', overflow: true })} data-testid="week">
+                          <section key={g.key} id={`week-${g.key}`} className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24' })} data-testid="week">
                             <div className="flex items-baseline justify-between gap-4 px-4 pb-1.5 pt-3.5">
                               <h3 className="whitespace-nowrap text-sm font-semibold text-foreground">{g.label}</h3>
                               <PastWeekLine group={g} />

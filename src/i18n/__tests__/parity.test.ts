@@ -71,7 +71,7 @@ describe('French design review copy', () => {
     expect(fr.plan.weekRow.runsOf(5)).toBe('/ 5 sorties')
     expect(fr.profile.hub.days(1)).toBe('jour')
     expect(fr.profile.hub.days(155)).toBe('jours')
-    expect(fr.profile.hub.planPhase('préparation générale · semaine 2')).toBe('Plan : préparation générale · semaine 2')
+    expect(fr.profile.hub.needs('41', '35')).toBe('Il faut 41 km/sem., ta moyenne est de 35.')
   })
 
   it('writes the shoe projection on one line', () => {

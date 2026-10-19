@@ -7,6 +7,10 @@ export interface AllTimeYear {
   km: number
   runs: number
   hours: number
+  /** The year's months from the first run on, this one included: 8 for a first year from May. */
+  months: number
+  /** Km a month over those months (3.0), which compares a partial first year fairly. */
+  kmPerMonth: number
 }
 
 export interface AllTimeMonth {
@@ -14,7 +18,7 @@ export interface AllTimeMonth {
   key: string
   year: number
   km: number
-  /** The month still running, drawn as a lighter bar. */
+  /** The month still running, drawn as an outline. */
   partial: boolean
 }
 
@@ -28,11 +32,10 @@ export interface AllTimeView {
   months: number
   /** Oldest first. */
   years: AllTimeYear[]
-  /** When the first year started after January: its months against this year's so far. */
-  partialFirstYear: { year: number; startMonth: number; months: number; currentMonths: number } | null
   monthly: AllTimeMonth[]
   bestMonth: AllTimeMonth | null
-  longestRun: { km: number; date: string } | null
+  /** The run a tap opens; its id is null only for a run without one. */
+  longestRun: { km: number; date: string; activityId: string | null } | null
   biggestWeek: { km: number; weekStart: string } | null
   currentYear: number
 }
@@ -58,10 +61,13 @@ function monthsBetween(from: string, to: string): string[] {
 }
 
 /**
- * Everything since the first run (C6, v4.4b): the totals, one row per year
- * scaled to the best one, every month's km, and the two bests.
+ * Everything since the first run (C6, v4.4b; 3.0): the totals, each year's
+ * km a month, every month's km, and the two bests.
  */
-export function allTimeView(activities: Pick<Activity, 'date' | 'distanceKm' | 'durationSeconds'>[], today: string): AllTimeView {
+export function allTimeView(
+  activities: (Pick<Activity, 'date' | 'distanceKm' | 'durationSeconds'> & { id?: string })[],
+  today: string,
+): AllTimeView {
   const currentYear = Number(today.slice(0, 4))
   const dated = activities.filter((a) => a.date).map((a) => ({ ...a, date: a.date.slice(0, 10) }))
   const since = dated.reduce<string | null>((min, a) => (!min || a.date < min ? a.date : min), null)
@@ -69,13 +75,13 @@ export function allTimeView(activities: Pick<Activity, 'date' | 'distanceKm' | '
   const km = dated.reduce((sum, a) => sum + a.distanceKm, 0)
   const seconds = dated.reduce((sum, a) => sum + a.durationSeconds, 0)
 
-  const byYear = new Map<number, AllTimeYear>()
+  const byYear = new Map<number, { km: number; runs: number; hours: number }>()
   const byMonth = new Map<string, number>()
   const byWeek = new Map<string, number>()
   let longestRun: AllTimeView['longestRun'] = null
   for (const a of dated) {
     const year = Number(a.date.slice(0, 4))
-    const entry = byYear.get(year) ?? { year, km: 0, runs: 0, hours: 0 }
+    const entry = byYear.get(year) ?? { km: 0, runs: 0, hours: 0 }
     entry.km += a.distanceKm
     entry.runs += 1
     entry.hours += a.durationSeconds / 3600
@@ -83,14 +89,8 @@ export function allTimeView(activities: Pick<Activity, 'date' | 'distanceKm' | '
     byMonth.set(monthKey(a.date), (byMonth.get(monthKey(a.date)) ?? 0) + a.distanceKm)
     const week = isoDate(startOfWeek(new Date(`${a.date}T12:00:00`)))
     byWeek.set(week, (byWeek.get(week) ?? 0) + a.distanceKm)
-    if (!longestRun || a.distanceKm > longestRun.km) longestRun = { km: a.distanceKm, date: a.date }
+    if (!longestRun || a.distanceKm > longestRun.km) longestRun = { km: a.distanceKm, date: a.date, activityId: a.id ?? null }
   }
-
-  const firstYear = since ? Number(since.slice(0, 4)) : currentYear
-  const years = Array.from({ length: currentYear - firstYear + 1 }, (_, i) => firstYear + i).map((year) => {
-    const entry = byYear.get(year)
-    return { year, km: Math.round(entry?.km ?? 0), runs: entry?.runs ?? 0, hours: Math.round(entry?.hours ?? 0) }
-  })
 
   const currentKey = monthKey(today)
   const monthly = since
@@ -101,18 +101,26 @@ export function allTimeView(activities: Pick<Activity, 'date' | 'distanceKm' | '
         partial: key === currentKey,
       }))
     : []
+
+  const firstYear = since ? Number(since.slice(0, 4)) : currentYear
+  const years = Array.from({ length: currentYear - firstYear + 1 }, (_, i) => firstYear + i).map((year) => {
+    const entry = byYear.get(year)
+    const months = monthly.filter((m) => m.year === year).length
+    return {
+      year,
+      km: Math.round(entry?.km ?? 0),
+      runs: entry?.runs ?? 0,
+      hours: Math.round(entry?.hours ?? 0),
+      months,
+      kmPerMonth: months > 0 ? Math.round((entry?.km ?? 0) / months) : 0,
+    }
+  })
   const bestMonth = monthly.reduce<AllTimeMonth | null>((best, m) => (!best || m.km > best.km ? m : best), null)
 
   const biggestWeek = [...byWeek].reduce<AllTimeView['biggestWeek']>(
     (best, [weekStart, weekKm]) => (!best || weekKm > best.km ? { km: weekKm, weekStart } : best),
     null,
   )
-
-  const startMonth = since ? Number(since.slice(5, 7)) : 1
-  const partialFirstYear =
-    since && firstYear < currentYear && startMonth > 1
-      ? { year: firstYear, startMonth, months: 13 - startMonth, currentMonths: Number(today.slice(5, 7)) }
-      : null
 
   return {
     km: Math.round(km),
@@ -121,10 +129,9 @@ export function allTimeView(activities: Pick<Activity, 'date' | 'distanceKm' | '
     since,
     months: monthly.length,
     years,
-    partialFirstYear,
     monthly,
     bestMonth,
-    longestRun: longestRun ? { km: Math.round(longestRun.km * 10) / 10, date: longestRun.date } : null,
+    longestRun: longestRun ? { ...longestRun, km: Math.round(longestRun.km * 10) / 10 } : null,
     biggestWeek: biggestWeek ? { km: Math.round(biggestWeek.km), weekStart: biggestWeek.weekStart } : null,
     currentYear,
   }

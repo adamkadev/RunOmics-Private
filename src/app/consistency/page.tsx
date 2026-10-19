@@ -8,7 +8,7 @@ import { t } from '@/i18n'
 export const revalidate = 3600
 
 // Consistency is its own Progress page, reached from the hub: the rolling
-// year as week columns, and its months (v4.17).
+// year counted, its last six months as week columns, and its months (3.0).
 export default function ConsistencyPage() {
   const today = appTodayIso()
   const { days, ...options } = getConsistencyData(today)
@@ -19,7 +19,7 @@ export default function ConsistencyPage() {
       <header className="mb-1.5">
         <BackButton label={p.back} fallbackHref="/profile" className="mb-3.5" />
         <h1 className="text-display text-foreground">{p.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{view.range ? p.window(view.range) : p.rolling}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{view.range ?? p.rolling}</p>
       </header>
       <ConsistencyMonths view={view} />
     </div>
