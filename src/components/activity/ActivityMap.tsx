@@ -258,9 +258,9 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           cursor: cursorRef.current,
         })
         const mode = dark ? 'dark' : 'light'
-        addWaterLabels(map, { halo: SURFACES[mode].background, water: WATER_INK[mode], lang: MAP_LANG })
         addParkLabels(map, { halo: SURFACES[mode].background, park: PARK_INK[mode], lang: MAP_LANG })
         addLandmarkLabels(map, { halo: SURFACES[mode].background, landmark: LANDMARK_INK[mode], lang: MAP_LANG })
+        addWaterLabels(map, { halo: SURFACES[mode].background, water: WATER_INK[mode], lang: MAP_LANG })
         showPlacesAtAnyZoom(map)
         layersReadyRef.current = true
         removeFence?.()

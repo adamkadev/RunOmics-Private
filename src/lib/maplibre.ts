@@ -161,7 +161,7 @@ export function addParkLabels(map: MapLibreMap, options: ParkLabelOptions): void
       'text-halo-width': 1.4,
       'text-halo-blur': 0.5,
     },
-  } as Parameters<MapLibreMap['addLayer']>[0])
+  } as Parameters<MapLibreMap['addLayer']>[0], firstSymbolLayerId(map))
 }
 
 export function addLandmarkLabels(map: MapLibreMap, options: LandmarkLabelOptions): void {
@@ -200,7 +200,7 @@ export function addLandmarkLabels(map: MapLibreMap, options: LandmarkLabelOption
         'text-halo-width': 1.4,
         'text-halo-blur': 0.5,
       },
-    } as Parameters<MapLibreMap['addLayer']>[0])
+    } as Parameters<MapLibreMap['addLayer']>[0], firstSymbolLayerId(map))
   }
 }
 
@@ -234,7 +234,7 @@ export function addWaterLabels(map: MapLibreMap, options: WaterLabelOptions): vo
       'text-halo-width': 1.4,
       'text-halo-blur': 0.5,
     },
-  } as Parameters<MapLibreMap['addLayer']>[0])
+  } as Parameters<MapLibreMap['addLayer']>[0], firstSymbolLayerId(map))
 }
 /** On its point first, then beside it, so a name next to the route still finds room. */
 const LABEL_ANCHORS: ('center' | 'top' | 'bottom' | 'left' | 'right')[] = ['center', 'top', 'bottom', 'left', 'right']
@@ -297,7 +297,7 @@ export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): v
 
 /** The first label layer: the route goes under it, so names draw over the line. */
 export function firstSymbolLayerId(map: MapLibreMap): string | undefined {
-  return map.getStyle().layers.find((layer) => layer.type === 'symbol')?.id
+  return map.getStyle().layers.find((layer) => layer.type === 'symbol' && !layer.id.startsWith(OWN_LAYER_PREFIX))?.id
 }
 
 let workerConfigured = false

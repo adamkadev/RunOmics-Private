@@ -73,6 +73,7 @@ vi.mock('@/lib/maplibre', () => ({
   addLandmarkLabels: (_map: unknown, options: { halo: string; landmark: string; size?: number; lang?: string }) => {
     landmarkCalls.push(options)
   },
+  showPlacesAtAnyZoom: () => {},
 }))
 vi.mock('@/lib/runMapLayers', () => ({
   addEdgeFence: () => () => {},

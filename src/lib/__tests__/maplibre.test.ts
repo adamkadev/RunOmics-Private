@@ -15,7 +15,11 @@ function fakeMap(layers: Layer[], filters: Record<string, unknown> = {}) {
     setPaintProperty: (id: string, k: string, v: unknown) => { (paint[id] ??= {})[k] = v },
     setLayerZoomRange: (id: string, min: number, max: number) => { zooms[id] = [min, max] },
     getLayer: (id: string) => layers.find((l) => l.id === id),
-    addLayer: (layer: Record<string, unknown>) => { layers.push(layer as unknown as Layer) },
+    addLayer: (layer: Record<string, unknown>, before?: string) => {
+      const at = before ? layers.findIndex((l) => l.id === before) : -1
+      if (at < 0) layers.push(layer as unknown as Layer)
+      else layers.splice(at, 0, layer as unknown as Layer)
+    },
     getFilter: (id: string) => filters[id],
     setFilter: (id: string, f: unknown) => { setFilters[id] = f },
   } as unknown as MapLibreMap
@@ -237,5 +241,32 @@ describe('showPlacesAtAnyZoom (3.0.1)', () => {
     showPlacesAtAnyZoom(map, { districtOpacity: 0.8 })
     expect(paint['Place labels']?.['text-opacity']).toBe(0.8)
     expect(paint['City labels']?.['text-opacity']).toBe(1)
+  })
+})
+
+describe('where the app puts its own labels', () => {
+  // Across layers it is the order that decides, not symbol-sort-key: MapLibre
+  // places the earlier layer first, so ours must sit above the style's names
+  // and above the street names they used to lose to.
+  it('places park, then landmark, then water, all before the style\'s own names', () => {
+    const layers: Layer[] = [
+      { id: 'Water', type: 'fill', 'source-layer': 'water', source: 'planet' },
+      { id: 'Road labels', type: 'symbol', 'source-layer': 'road_label', source: 'planet' },
+      { id: 'Place labels', type: 'symbol', 'source-layer': 'place_label', source: 'planet' },
+      { id: 'Pond labels', type: 'symbol', 'source-layer': 'water_label', source: 'planet' },
+      { id: 'Townhalls', type: 'symbol', 'source-layer': 'poi_public', source: 'planet' },
+      { id: 'Tourism', type: 'symbol', 'source-layer': 'poi_tourism', source: 'planet' },
+    ]
+    const { map } = fakeMap(layers)
+    addParkLabels(map, { halo: '#0b0c0c', park: '#5f8a6d' })
+    addLandmarkLabels(map, { halo: '#0b0c0c', landmark: '#9a8ca8' })
+    addWaterLabels(map, { halo: '#0b0c0c', water: '#5b7d99' })
+
+    const order = layers.map((l) => l.id)
+    const ours = order.filter((id) => id.startsWith('runomics-'))
+    expect(ours[0]).toBe(PARK_LABEL_LAYER)
+    expect(ours.at(-1)).toBe(WATER_LABEL_LAYER)
+    expect(order.indexOf(WATER_LABEL_LAYER)).toBeLessThan(order.indexOf('Road labels'))
+    expect(order.indexOf(WATER_LABEL_LAYER)).toBeLessThan(order.indexOf('Place labels'))
   })
 })
