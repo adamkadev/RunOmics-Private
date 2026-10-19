@@ -490,6 +490,7 @@ export const en = {
       ctl: 'CTL',
       atl: 'ATL',
       acwr: 'ACWR',
+      acwrValue: (ratio: string) => ratio,
       garmin: 'Garmin',
       // In Garmin's place when the watch has no training status (a Forerunner 55).
       lastSevenDays: '7 days',

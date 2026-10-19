@@ -78,3 +78,12 @@ describe('French design review copy', () => {
     expect(fr.shoes.detail.projectedRunOut(25, '1 000', 'janv. 27', 11)).toBe('1 000 km ≈ janv. 27 · 11 sem. à 25 km/sem.')
   })
 })
+
+// Lamiaa reads French and does not know CTL, ATL or ACWR (Oct 2026).
+describe('French readiness card, in plain words', () => {
+  it('names the numbers without acronyms', () => {
+    const r = fr.dashboard.readiness
+    for (const label of [r.formLabel, r.ctl, r.atl, r.acwr, r.lastSevenDays]) expect(label).not.toMatch(/CTL|ATL|ACWR|TSB/)
+    expect(r.acwrValue('1,79')).toBe('×1,79')
+  })
+})

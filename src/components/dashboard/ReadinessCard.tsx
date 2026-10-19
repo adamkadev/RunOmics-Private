@@ -93,7 +93,7 @@ export function ReadinessCard({
                 value={Math.round(status.atl)}
                 delta={{ text: formatDelta(Math.round(status.atlDelta)), color: DELTA_TONE_COLOR[fatigue] }}
               />
-              <Cell label={s.acwr} value={status.acwr === null ? s.noValue : formatDecimal(status.acwr, 2)} />
+              <Cell label={s.acwr} value={status.acwr === null ? s.noValue : s.acwrValue(formatDecimal(status.acwr, 2))} />
               {watchStatus ? (
                 <Cell
                   label={s.garmin}
