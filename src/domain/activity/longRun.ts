@@ -9,6 +9,11 @@ export function isLongRun(activity: Pick<Activity, 'durationSeconds'>): boolean 
 
 const LONG_NAME = /\blong\b|\blongue\b/i
 
+/** A session its plan named a long run: "Long run", « Sortie longue ». */
+export function isLongName(name: string | null | undefined): boolean {
+  return LONG_NAME.test(name ?? '')
+}
+
 /**
  * A long run by its length, or by the name its plan gave it: a 70-minute
  * "Long run" is the week's long run for an athlete at 35 km a week, whatever
@@ -16,5 +21,5 @@ const LONG_NAME = /\blong\b|\blongue\b/i
  * band, which stays on the clock.
  */
 export function isLongSession(activity: Pick<Activity, 'durationSeconds' | 'description'>): boolean {
-  return isLongRun(activity) || LONG_NAME.test(activity.description ?? '')
+  return isLongRun(activity) || isLongName(activity.description)
 }

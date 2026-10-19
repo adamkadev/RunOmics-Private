@@ -1,4 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import { sessionZone, zoneColor } from '@/lib/colors'
@@ -24,21 +26,30 @@ const PLANNED: PlannedWorkout[] = [
 ]
 const RUNS = [activity({ id: 'a1', date: '2026-09-07', type: 'Tempo' }), activity({ id: 'a2', date: '2026-09-08', type: 'Threshold' })]
 
-function renderWeek() {
-  const byDate = new Map<string, ActivitySummary[]>()
-  for (const a of RUNS) byDate.set(a.date, [a])
-  return render(
+function Week({ byDate }: { byDate: Map<string, ActivitySummary[]> }) {
+  const [selected, setSelected] = useState(TODAY)
+  return (
     <WeekView
       weekStart={new Date(2026, 8, 7)}
       byDate={byDate}
       byDatePlanned={new Map(PLANNED.map((p) => [p.date, p]))}
-      hrBounds={{ maxHr: 202, restingHr: 45 }}
+      coaching={null}
+      selectedDate={selected}
+      onSelectDate={setSelected}
       today={TODAY}
       atPresent
       onToday={() => {}}
+      planPhaseRanges={[]}
+      nextRace={null}
       trainingZones={null}
-    />,
+    />
   )
+}
+
+function renderWeek() {
+  const byDate = new Map<string, ActivitySummary[]>()
+  for (const a of RUNS) byDate.set(a.date, [a])
+  return render(<Week byDate={byDate} />)
 }
 
 describe('sessionZone', () => {
@@ -64,61 +75,23 @@ describe('sessionTitle', () => {
 })
 
 describe('one session colour across the week', () => {
-  // v4.17: a session still to come is its type's zone, in the chart and the
-  // list alike; what was run is the accent in the chart - the athlete's own
-  // data - and keeps its type's dot in the list.
-  it('colours every planned bar and every list dot with zoneColor(sessionZone(session))', () => {
+  // Redesign 3.0: every day's bar is its session's colour, run or still to
+  // come - the same zone its type is drawn in on every other screen.
+  it('colours every bar with zoneColor(sessionZone(session))', () => {
     const { container } = renderWeek()
 
-    const planned = [...container.querySelectorAll<HTMLElement>('[data-bar-state="planned"]')]
-    expect(planned.map((bar) => bar.style.getPropertyValue('--bar-zone'))).toEqual(PLANNED.map((p) => zoneColor(sessionZone(p))))
-
-    const done = [...container.querySelectorAll<HTMLElement>('[data-bar-state="done"]')]
-    expect(done).toHaveLength(RUNS.length)
-    for (const bar of done) {
-      expect(bar.className).toContain('bg-accent')
-      expect(bar.style.getPropertyValue('--bar-zone')).toBe('')
-    }
-
+    const bars = [...container.querySelectorAll<HTMLElement>('[data-bar-state="planned"], [data-bar-state="done"]')]
     const types = [...RUNS.map((r) => r.type), ...PLANNED.map((p) => p.type)]
-    const rows = screen.getAllByTestId(/^week-session-/)
-    expect(rows).toHaveLength(types.length)
-    rows.forEach((row, i) => {
-      const dot = row.querySelector<HTMLElement>('span.rounded-full')!
-      expect(dot.style.background).toBe(zoneColor(sessionZone({ type: types[i] })))
-    })
+    expect(bars.map((bar) => bar.style.background)).toEqual(types.map((type) => zoneColor(sessionZone({ type }))))
   })
 
-  it('names the contradicting session after its type, not its label', () => {
+  it('names the contradicting session after its type, not its label', async () => {
+    const user = userEvent.setup()
     renderWeek()
-    const rows = screen.getAllByTestId(/^week-session-/)
-    const wed = rows.find((row) => row.textContent?.includes(t.activityTypes.VO2Max))
-    expect(wed).toBeDefined()
-    expect(within(wed!).queryByText(/Threshold/)).not.toBeInTheDocument()
-  })
-})
 
-describe('planned km from the plan (G04)', () => {
-  // H20: a done row is the distance run and a check; the plan is on the day card.
-  it('writes a done row as the distance run and a check', () => {
-    const byDate = new Map<string, ActivitySummary[]>([
-      ['2026-09-10', [activity({ id: 'long', date: '2026-09-10', type: 'VO2Max', distanceKm: 12.4 })]],
-    ])
-    render(
-      <WeekView
-        weekStart={new Date(2026, 8, 7)}
-        byDate={byDate}
-        byDatePlanned={new Map(PLANNED.map((p) => [p.date, p]))}
-        hrBounds={{ maxHr: 202, restingHr: 45 }}
-        today={TODAY}
-        atPresent
-        onToday={() => {}}
-        trainingZones={null}
-      />,
-    )
-    const row = screen.getAllByTestId(/^week-session-/).find((r) => r.textContent?.includes('12.4'))!
-    expect(row.textContent).toContain('12.4')
-    expect(row.textContent).not.toContain('/ 10')
-    expect(row.textContent).toContain('✓')
+    await user.click(screen.getByTestId('day-2026-09-10'))
+    const card = screen.getByTestId(/^plan-workout-garmin:2026-09-10/)
+    expect(within(card).getByRole('heading').textContent).toBe(t.activityTypes.VO2Max)
+    expect(within(card).queryByText(/Threshold/)).not.toBeInTheDocument()
   })
 })

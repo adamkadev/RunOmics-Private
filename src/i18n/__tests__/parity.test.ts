@@ -64,11 +64,11 @@ describe('French plurals', () => {
 
 // Design review, Oct 2026: the new lines in French, with its plurals and spacing.
 describe('French design review copy', () => {
-  it('writes the plan subtitle, the week line and the race tile', () => {
-    expect(fr.plan.header.raceIn('Semi', 42)).toBe('Semi dans 42 j')
-    expect(fr.plan.header.raceIn('Semi', 0)).toBe('Semi aujourd’hui')
-    expect(fr.plan.stats.ofSessions(1)).toBe('sur 1 séance')
-    expect(fr.plan.stats.ofSessions(5)).toBe('sur 5 séances')
+  it('writes the plan phase card, the week line and the race tile', () => {
+    expect(fr.plan.phase.raceInWeeks('Semi', 29)).toBe('Semi dans 29 sem.')
+    expect(fr.plan.phase.raceInDays('Semi', 0)).toBe('Semi aujourd’hui')
+    expect(fr.plan.weekRow.runsOf(1)).toBe('/ 1 sortie')
+    expect(fr.plan.weekRow.runsOf(5)).toBe('/ 5 sorties')
     expect(fr.profile.hub.days(1)).toBe('jour')
     expect(fr.profile.hub.days(155)).toBe('jours')
     expect(fr.profile.hub.planPhase('préparation générale · semaine 2')).toBe('Plan : préparation générale · semaine 2')

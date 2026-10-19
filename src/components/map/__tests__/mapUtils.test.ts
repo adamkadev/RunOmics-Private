@@ -7,6 +7,7 @@ import {
   HEAT_STYLE,
   heatLineWidth,
   heatPasses,
+  heatColor,
   rgba,
   reachKm,
   ringCoordinates,
@@ -102,9 +103,11 @@ describe('GPS jumps (v5.6 #5)', () => {
 })
 
 describe('HEAT_STYLE (v4.17)', () => {
-  it('adds light on dark and multiplies ink on light, so overlaps build up', () => {
-    expect(HEAT_STYLE.dark.composite).toBe('lighter')
-    expect(HEAT_STYLE.light.composite).toBe('multiply')
+  // 3.0: the top level is the accent on dark, a deep shade of it on light.
+  it('caps the build-up at the accent, and at a deep shade of it on light', () => {
+    expect(HEAT_STYLE.dark.end).toBe(1)
+    expect(HEAT_STYLE.light.end).toBeGreaterThan(0.4)
+    expect(HEAT_STYLE.light.end).toBeLessThan(1)
   })
 
   it('draws a wide faint glow before a thin core, in both themes', () => {
@@ -116,9 +119,17 @@ describe('HEAT_STYLE (v4.17)', () => {
     }
   })
 
-  it('draws the tracks in the accent: they are the athlete\'s own data', () => {
-    expect(heatPasses('dark', '#2dd4a7').map((p) => p.color)).toEqual(['rgba(45,212,167,0.035)', 'rgba(45,212,167,0.16)'])
-    expect(heatPasses('light', '#4457d6')[1]!.color).toBe('rgba(68,87,214,0.2)')
+  it('adds the tracks up as coverage, in white', () => {
+    expect(heatPasses('dark').map((p) => p.color)).toEqual(['rgba(255,255,255,0.035)', 'rgba(255,255,255,0.16)'])
+    expect(heatPasses('light')[1]!.color).toBe('rgba(255,255,255,0.2)')
+  })
+
+  // 3.0: the athlete's own data, capped - the accent itself on dark, never
+  // white; a deep shade of it on light, never black.
+  it('paints the heat in the accent, capped', () => {
+    expect(heatColor('dark', '#2dd4a7')).toBe('rgb(45,212,167)')
+    expect(heatColor('light', '#0e8468')).toBe('rgb(8,79,62)')
+    expect(heatColor('light', '#fff')).toBe('rgb(153,153,153)')
   })
 
   it('reads a short hex too', () => {

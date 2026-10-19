@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { groupByWeek, weekStartOf, withCurrentWeek } from '../weekGroups'
+import { groupByWeek, weekStartOf } from '../weekGroups'
 
 // Thursday 24 September 2026 sits in the week of Monday the 21st.
 const THIS_WEEK = '2026-09-21'
@@ -43,27 +43,5 @@ describe('groupByWeek', () => {
 
     expect(newestFirst.map((g) => g.key)).toEqual(['2026-09-21', '2026-09-14'])
     expect(oldestFirst.map((g) => g.key)).toEqual(['2026-09-14', '2026-09-21'])
-  })
-})
-
-describe('withCurrentWeek', () => {
-  it('opens a newest-first list on an empty current week before its first run', () => {
-    const groups = withCurrentWeek(groupByWeek([run('2026-09-20', 25), run('2026-09-13')], THIS_WEEK), THIS_WEEK)
-
-    expect(groups[0]).toEqual({ key: THIS_WEEK, items: [], totalKm: 0, isCurrent: true })
-    expect(groups.slice(1).map((g) => [g.key, g.totalKm, g.isCurrent])).toEqual([
-      ['2026-09-14', 25, false],
-      ['2026-09-07', 10, false],
-    ])
-  })
-
-  it('leaves a list that already holds the current week alone', () => {
-    const groups = groupByWeek([run('2026-09-23'), run('2026-09-16')], THIS_WEEK)
-
-    expect(withCurrentWeek(groups, THIS_WEEK)).toBe(groups)
-  })
-
-  it('stands in for the current week on an empty list too', () => {
-    expect(withCurrentWeek([], THIS_WEEK)).toEqual([{ key: THIS_WEEK, items: [], totalKm: 0, isCurrent: true }])
   })
 })

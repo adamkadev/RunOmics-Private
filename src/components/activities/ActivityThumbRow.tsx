@@ -15,9 +15,9 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
   /**
    * `card`: a row of a list card, divided by the card (Activities sorted by
-   * something other than date). `inset`: a rounded row
-   * inside an open Activities week, under its month's heading, so its date
-   * leaves the year out.
+   * something other than date). `inset`: a rounded row inside an
+   * Activities week card, under its month's heading, so its date leaves the
+   * month out; a smaller tile and a one-line name (3.0).
    */
   variant?: 'card' | 'inset'
 }
@@ -46,6 +46,7 @@ export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds'
 export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
   const title = activityTitle(a)
   const meta = thumbRowMeta(a, variant)
+  const inset = variant === 'inset'
 
   return (
     <Link
@@ -56,22 +57,30 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
         variant === 'card' ? 'px-4 py-3' : 'rounded-[10px] px-3 py-2.5',
       )}
     >
-      <RouteThumb path={a.routeThumb} type={a.type} size={48} />
+      <RouteThumb path={a.routeThumb} type={a.type} size={inset ? 44 : 48} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
         <span className="flex min-w-0 items-center gap-1.5">
           {/* A long name - a legacy workout's, a past plan's - wraps to two
               lines at most, its longest word broken rather than pushed under
-              the distance (design review, Oct 2026). */}
-          <span className="line-clamp-2 min-w-0 break-words text-sm font-semibold leading-tight text-foreground text-pretty">{title}</span>
+              the distance (design review, Oct 2026). In a week it is one
+              line, ellipsed (3.0). */}
+          <span
+            className={cn(
+              'min-w-0 font-semibold leading-tight text-foreground',
+              inset ? 'truncate text-[15px]' : 'line-clamp-2 break-words text-sm text-pretty',
+            )}
+          >
+            {title}
+          </span>
           <PrBadge efforts={qualifiedEfforts} />
         </span>
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
           <TypeDot type={a.type} size={6} />
-          <span className="min-w-0 break-words text-pretty">{meta}</span>
+          <span className={cn('min-w-0', inset ? 'truncate text-[12.5px]' : 'break-words text-pretty')}>{meta}</span>
         </span>
       </span>
       <span className="flex shrink-0 flex-col items-end gap-0.75">
-        <span className="text-[15px] font-semibold leading-tight text-foreground">
+        <span className={cn('font-semibold leading-tight text-foreground', inset ? 'text-base' : 'text-[15px]')}>
           {formatDistance(a.distanceKm)}
           <Unit>{t.units.km}</Unit>
         </span>

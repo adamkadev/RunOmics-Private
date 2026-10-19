@@ -4,12 +4,12 @@ import type { ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { t } from '@/i18n'
 
-// 30 pt inset squares on a line (v4.17), with the 44 pt hit area around them.
+// Bare chevrons either side of the period (redesign 3.0, 1g), with the 44 pt hit area around them.
 const NAV_BUTTON =
-  'hit-44 flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-border bg-[var(--surface-2)] text-[var(--text-2)] transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
+  'hit-44 flex size-[30px] shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 
 /**
- * The week's and the month's one navigator: previous, the period, next. The
+ * The month's navigator: previous, the period, next. The
  * jump back to today sits beside the period's name, in the same row, so the
  * chart under it never moves as it appears and disappears.
  */
@@ -30,9 +30,9 @@ export function PlanPeriodNav({
   return (
     <div className="flex items-center justify-between gap-3">
       <button type="button" aria-label={t.plan.prevPeriod} onClick={onPrev} className={NAV_BUTTON}>
-        <ChevronLeft size={16} aria-hidden="true" />
+        <ChevronLeft size={20} aria-hidden="true" />
       </button>
-      <div className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-foreground">
+      <div className="flex min-w-0 items-center gap-1.5 text-[17px] font-semibold text-foreground">
         <span className="truncate">{label}</span>
         {onToday && (
           // A chip with the 44 pt hit area round it (design review, Oct 2026):
@@ -47,7 +47,7 @@ export function PlanPeriodNav({
         )}
       </div>
       <button type="button" aria-label={t.plan.nextPeriod} onClick={onNext} disabled={nextDisabled} className={NAV_BUTTON}>
-        <ChevronRight size={16} aria-hidden="true" />
+        <ChevronRight size={20} aria-hidden="true" />
       </button>
     </div>
   )
