@@ -543,6 +543,11 @@ export const en = {
         rest: 'Rest',
       },
     },
+    loadStrip: {
+      title: 'Load · last 7 days',
+      band: (lo: number, hi: number) => `target ${lo}–${hi}`,
+      day: (date: string, load: number) => `${date} · load ${load}`,
+    },
     celebration: {
       eyebrow: 'New personal record',
       later: 'Later',

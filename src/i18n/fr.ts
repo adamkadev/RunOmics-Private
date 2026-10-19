@@ -502,6 +502,11 @@ export const fr = {
         rest: 'Repos',
       },
     },
+    loadStrip: {
+      title: 'Charge · 7 derniers jours',
+      band: (lo: number, hi: number) => `cible ${lo}–${hi}`,
+      day: (date: string, load: number) => `${date} · charge ${load}`,
+    },
     celebration: {
       eyebrow: 'Nouveau record personnel',
       later: 'Plus tard',
