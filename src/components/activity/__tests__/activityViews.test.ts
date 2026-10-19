@@ -122,6 +122,24 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
     expect(windows[2]![1]).toBeCloseTo((total - 1600 - 300) / total)
   })
 
+  // The coach matched nothing; the watch's own plan for the day still holds
+  // the band it beeped at.
+  it('falls back to the planned workout\'s effort step when the coach matched none', () => {
+    const planned = {
+      date: '2026-10-13',
+      name: "Threshold 2 x 7:00 - 2x7'@4:25",
+      steps: [
+        { kind: 'warmup' as const, minutes: 12, paceSecPerKm: [330, 384] as [number, number] },
+        { kind: 'effort' as const, minutes: 7, paceSecPerKm: [262, 268] as [number, number] },
+        { kind: 'recovery' as const, minutes: 4, paceSecPerKm: [360, 420] as [number, number] },
+      ],
+    }
+    expect(shareActivity(run, null, null, planned).reps?.target).toEqual({ min: 262, max: 268 })
+    // The coach's own pace still wins where there is one.
+    expect(shareActivity(run, SESSION, null, planned).reps?.target).toEqual({ min: 265, max: 265 })
+    expect(shareActivity(run, null, null, null).reps?.target).toBeNull()
+  })
+
   it('takes the target from the repeat\'s effort step when the name sets none', () => {
     const blocks = [{ kind: 'repeat', steps: [{ kind: 'effort', target: { paceSecPerKm: { min: 262.4, max: 268.6 } } }] }]
     const session = { ...SESSION, structure: undefined, blocks } as unknown as WorkoutPrescription

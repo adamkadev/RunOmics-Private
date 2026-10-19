@@ -44,6 +44,8 @@ export interface SharePalette {
   route: string
   /** The route's end markers: white on dark, the accent on light, so they read over the trace. */
   marker: string
+  /** An interval route's own grey, under its reps: a step lighter than the ink on light. */
+  trace: string
   /** ActivityMap's route casing. */
   casing: string
 }
@@ -66,6 +68,7 @@ export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
     warn: STATUS_HEX[mode].warn,
     route: curatedAccent(accent)[mode].acc,
     marker: SHARE_MARKER_HEX[mode] ?? curatedAccent(accent)[mode].acc,
+    trace: mode === 'light' ? '#8a8a8a' : s.text2,
     casing: mode === 'dark' ? MAP_COLORS.routeCasingDark : MAP_COLORS.routeCasingLight,
   }
 }

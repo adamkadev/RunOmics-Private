@@ -52,7 +52,9 @@ export function shareStructure(activity: ShareActivity): string | null {
   const set = `${reps.count} × ${repLength(reps.repSeconds)}`
   const target = reps.target
   if (!target) return set
-  const pace = target.min === target.max ? formatClock(target.min) : `${formatClock(target.min)}–${formatClock(target.max)}`
+  // The band's centre, as the session's own name writes it ("2 × 7′ @ 4:25");
+  // the hero beside it carries the band in full.
+  const pace = formatClock(Math.round((target.min + target.max) / 2))
   return t.activity.shareCard.structure(set, pace)
 }
 

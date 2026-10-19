@@ -4,13 +4,23 @@ const WORKER_URL = '/maplibre/maplibre-gl-worker.mjs'
 
 export type MapLibre = typeof import('maplibre-gl')
 
-type StyleLayer = { id: string; type: string; 'source-layer'?: string }
+type StyleLayer = { id: string; type: string; 'source-layer'?: string; filter?: unknown }
 
 /** Where a style keeps its town and neighbourhood names (OpenMapTiles and the older v4 styles). */
 const PLACE_SOURCE_LAYERS = ['place', 'city_label', 'town_label', 'place_label']
 const PLACE_LAYER_ID = /\b(place|city|town|village|suburb|neighbou?rhood|hamlet|quarter|locality)\b/i
 /** Neighbourhoods and quartiers: drawn a step smaller and quieter than towns. */
 const NEIGHBOURHOOD_LAYER_ID = /\b(suburb|neighbou?rhood|hamlet|quarter|isolated)\b/i
+/**
+ * A district layer the style names by its filter, not its id: OpenMapTiles
+ * keeps suburbs and quarters in the same "Place labels" layer as towns, so
+ * matching on the id alone left every district at the town's size and ink.
+ */
+const DISTRICT_FILTER = /"(suburb|quarter|neighbou?rhood|hamlet)"/
+
+function isDistrictLayer(layer: StyleLayer): boolean {
+  return NEIGHBOURHOOD_LAYER_ID.test(layer.id) || DISTRICT_FILTER.test(JSON.stringify(layer.filter ?? null))
+}
 const STYLE_MAX_ZOOM = 24
 /** On its point first, then beside it, so a name next to the route still finds room. */
 const LABEL_ANCHORS: ('center' | 'top' | 'bottom' | 'left' | 'right')[] = ['center', 'top', 'bottom', 'left', 'right']
@@ -53,7 +63,7 @@ export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): v
       map.setLayoutProperty(layer.id, 'visibility', 'none')
       continue
     }
-    const small = NEIGHBOURHOOD_LAYER_ID.test(layer.id)
+    const small = isDistrictLayer(layer)
     map.setLayoutProperty(layer.id, 'visibility', 'visible')
     // Any zoom: the style's own ranges hid a town on a small map.
     map.setLayerZoomRange(layer.id, 0, STYLE_MAX_ZOOM)

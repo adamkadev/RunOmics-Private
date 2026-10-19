@@ -16,6 +16,7 @@ import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { appTodayIso } from '@/lib/calendarDate'
 import { paceZones } from '@/application/usecases/GetTrainingZones'
@@ -77,6 +78,8 @@ export default async function ActivityDetailPage({
   // on the share card alike - and its reps' target pace (design review, Oct
   // 2026). Older runs had none.
   const session = shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity)
+  // The watch's own plan for the day, for a rep target the coach never matched.
+  const plannedForDay = (await getPlannedWorkouts()).find((w) => w.date === activity.date.slice(0, 10)) ?? null
 
   // The Charts lanes are banded with the run's own HR zones and the
   // athlete's pace zones; only the edges reach the page, not the profile.
@@ -102,7 +105,7 @@ export default async function ActivityDetailPage({
         aiVerdict={aiVerdict}
         chartZones={zones}
         back={<BackButton label={t.activity.back} fallbackHref="/activities" variant="round" />}
-        share={<ShareButton activity={shareActivity(activity, session, aiVerdict)} />}
+        share={<ShareButton activity={shareActivity(activity, session, aiVerdict, plannedForDay)} />}
         dynamicsBaseline={getDynamicsBaseline(activity)}
         shoe={shoe}
         similarRuns={similarRuns}

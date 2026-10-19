@@ -66,7 +66,7 @@ const CHIP_H = 16
 const BAR_MAX = 16
 const REP_DETAIL_PAD_TOP = 8
 const REP_DETAIL_H = { chips: CHIP_H, bars: BAR_MAX + 12 } as const
-const STATS_PAD_TOP_AFTER_HERO = 10
+const STATS_PAD_TOP_AFTER_HERO = 16
 /** The markers at the card's scale: a phone map's width less its margins. */
 const MARKER_SCALE = 0.85
 
@@ -183,7 +183,7 @@ export function shareCardLayout(ctx: Ctx, activity: ShareActivity, fonts: ShareF
     heroTop: footerTop + HERO_PAD_TOP,
     statsTop,
     // Clear of the rep pace's digits when it stands over the stat row.
-    ruleY: design === 'photo' ? null : stripTop + (hero ? 4 : 0),
+    ruleY: design === 'photo' ? null : stripTop + (hero ? 7 : 0),
     textTop,
     textBottom: footerTop,
     routeFrame: { top: textTop + ROUTE_TEXT_GAP, right: ROUTE_INSET, bottom: H - footerTop + ROUTE_TEXT_GAP, left: ROUTE_INSET },
@@ -430,7 +430,7 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   strokeLine(ctx, pts, palette.casing, (reps ? GREY_W : TRACE_W) + 3)
   ctx.restore()
   if (reps) {
-    strokeLine(ctx, pts, palette.mu, GREY_W)
+    strokeLine(ctx, pts, palette.trace, GREY_W)
     for (const [from, to] of activity.reps!.windows) strokeLine(ctx, slicePolyline(pts, from, to), palette.zones[3]!, REP_W)
   } else {
     strokeLine(ctx, pts, palette.route, TRACE_W)

@@ -148,7 +148,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
   // one cut by the edge or by the header's and stats' bands.
   const surface = SURFACES[isDark ? 'dark' : 'light']
   map.on('load', () => {
-    styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text3, districtOpacity: DISTRICT_OPACITY })
+    styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text2, districtOpacity: DISTRICT_OPACITY })
     showWaterNames(map, { text: surface.text3, halo: surface.background })
     addRunMarkers(map, first, { start: clearMarkerImage(), finish: clearMarkerImage() })
     const last = points[points.length - 1]
