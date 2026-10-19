@@ -58,14 +58,17 @@ describe('queryActivities', () => {
     expect(item?.distanceKm).toBe(10)
   })
 
-  it('keeps only the requested activity type', () => {
+  it('keeps only the requested activity types', () => {
     withHistory([
       activity({ id: 'base', type: 'Base' }),
       activity({ id: 'threshold', type: 'Threshold' }),
+      activity({ id: 'vo2', type: 'VO2Max' }),
       activity({ id: 'race', type: 'Race' }),
     ])
 
-    expect(ids(queryActivities({ type: 'Threshold' }).items)).toEqual(['threshold'])
+    expect(ids(queryActivities({ types: ['Threshold'] }).items)).toEqual(['threshold'])
+    // The filter sheet's picks: "Threshold, VO₂ Max".
+    expect(ids(queryActivities({ types: ['Threshold', 'VO2Max'] }).items).sort()).toEqual(['threshold', 'vo2'])
   })
 
   // G29: the shoe page links to Activities filtered to that pair.
@@ -82,7 +85,8 @@ describe('queryActivities', () => {
   it('keeps every type when none is asked for', () => {
     withHistory([activity({ id: 'a', type: 'Base' }), activity({ id: 'b', type: 'Race' })])
 
-    expect(queryActivities({ type: null }).total).toBe(2)
+    expect(queryActivities({ types: null }).total).toBe(2)
+    expect(queryActivities({ types: [] }).total).toBe(2)
   })
 
   it('searches the description, the comment, the weekday and the date', () => {
@@ -118,7 +122,7 @@ describe('queryActivities', () => {
       activity({ id: 'c', type: 'Threshold', description: 'flat' }),
     ])
 
-    expect(ids(queryActivities({ type: 'Threshold', search: 'hills' }).items)).toEqual(['b'])
+    expect(ids(queryActivities({ types: ['Threshold'], search: 'hills' }).items)).toEqual(['b'])
   })
 
   it('sorts on distance, duration, pace and heart rate', () => {

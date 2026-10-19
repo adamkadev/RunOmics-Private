@@ -1,11 +1,11 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import { ActivityListClient } from '../ActivityListClient'
 import { currentWeekTarget, planMaps } from '@/components/plan/weekPlanDays'
-import { formatDate, formatDateRange } from '@/lib/formatters'
+import { formatDate, formatDateRange, formatWeekday } from '@/lib/formatters'
 
 // Thursday 24 September 2026, in the week of Monday the 21st.
 const NOW = new Date(2026, 8, 24, 12)
@@ -42,39 +42,40 @@ function renderList(items: ActivitySummary[]) {
   )
 }
 
+// The filter and the sort live in the URL, which jsdom keeps between tests.
+function freshPage() {
+  sessionStorage.clear()
+  window.history.replaceState(null, '', '/activities')
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  vi.setSystemTime(NOW)
+}
+
 describe('the current week on /activities', () => {
-  beforeEach(() => {
-    sessionStorage.clear()
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    vi.setSystemTime(NOW)
-  })
+  beforeEach(freshPage)
   afterEach(() => vi.useRealTimers())
 
-  it('counts none of last week toward this week before its first run', () => {
+  // 3.0: before this week's first run there is no "This week · 0 km" card.
+  it('leaves this week out until its first run', () => {
     renderList([run('a', '2026-09-20', 25), run('b', '2026-09-13', 10)])
 
-    expect(screen.getByText(t.activities.thisWeek)).toBeInTheDocument()
-    const line = screen.getByTestId('week-line').textContent
-    expect(line).toContain(`0${t.activities.weekLine.ofKm('40')}`)
-    expect(line).not.toContain('25')
+    expect(screen.queryByText(t.activities.thisWeek)).not.toBeInTheDocument()
+    expect(screen.queryByTestId('current-week')).not.toBeInTheDocument()
   })
 
-  it('shows last week as an ordinary row, open until this week has a run', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+  // 3.0: every week is a card of its runs, none folded away.
+  it('shows every week as a card of its runs', () => {
     renderList([run('a', '2026-09-20', 25), run('b', '2026-09-13', 10)])
 
-    // A collapsible row under its date range (v4.17), not the current card.
+    const weeks = screen.getAllByTestId('week')
+    expect(weeks).toHaveLength(2)
     const range = formatDateRange('2026-09-14', '2026-09-20', { year: 'never' })
-    const lastWeek = screen.getByRole('button', { name: new RegExp(`^${range}`) })
-    expect(screen.getByText('Run a')).toBeInTheDocument()
-    expect(screen.queryByText('Run b')).not.toBeInTheDocument()
-
-    await user.click(lastWeek)
-    expect(screen.queryByText('Run a')).not.toBeInTheDocument()
+    expect(within(weeks[0]!).getByRole('heading', { name: range })).toBeInTheDocument()
+    expect(within(weeks[0]!).getByText('Run a')).toBeInTheDocument()
+    expect(within(weeks[1]!).getByText('Run b')).toBeInTheDocument()
   })
 
-  // v4.17: the open week's runs show their pace per km.
-  it('writes the pace per km on an open week', () => {
+  // v4.17: a week's runs show their pace per km.
+  it('writes the pace per km on a week', () => {
     renderList([run('a', '2026-09-20', 25)])
     expect(screen.getByTestId('thumb-row').textContent).toContain('6:00 /km')
   })
@@ -91,11 +92,7 @@ describe('the current week on /activities', () => {
 })
 
 describe('a type this build does not know', () => {
-  beforeEach(() => {
-    sessionStorage.clear()
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    vi.setSystemTime(NOW)
-  })
+  beforeEach(freshPage)
   afterEach(() => vi.useRealTimers())
 
   // Activity JSON is cast, not parsed, so a new classifier type reaches the
@@ -112,11 +109,7 @@ describe('a type this build does not know', () => {
 
 
 describe('the archive under its months', () => {
-  beforeEach(() => {
-    sessionStorage.clear()
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    vi.setSystemTime(NOW)
-  })
+  beforeEach(freshPage)
   afterEach(() => vi.useRealTimers())
 
   // v4.17: sticky month headings, each totalling the weeks under it - a week
@@ -146,60 +139,151 @@ describe('the archive under its months', () => {
     expect(screen.getByRole('heading', { level: 1 }).nextElementSibling!.textContent).toContain(since)
   })
 
-  // v4.17: each type chip carries its category dot, a race its ring.
-  it('dots each type chip with its category', () => {
+  // 3.0: four group chips, no dots.
+  it('filters by four groups, without dots', () => {
     renderList([run('a', '2026-09-20', 25)])
-    const rail = within(screen.getByRole('button', { name: t.activities.all }).parentElement!)
-    const tempo = rail.getByRole('button', { name: t.activityTypes.Tempo })
-    expect((tempo.querySelector('span[aria-hidden]') as HTMLElement).style.backgroundColor).toBe('var(--zone-3)')
-    const race = rail.getByRole('button', { name: t.activityTypes.Race })
-    const ring = race.querySelector('span[aria-hidden]') as HTMLElement
-    expect(ring.style.background).toBe('transparent')
-    expect(ring.style.border).toContain('var(--zone-5)')
+    const rail = screen.getByTestId('type-chips')
+    const names = within(rail).getAllByRole('button').map((b) => b.textContent)
+    expect(names).toEqual([t.activities.all, t.activities.groups.easy, t.activities.groups.workouts, t.activities.groups.races])
+    expect(rail.querySelector('span[aria-hidden]')).toBeNull()
   })
 })
 
 describe('the list at a phone', () => {
-  beforeEach(() => {
-    sessionStorage.clear()
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    vi.setSystemTime(NOW)
-  })
+  beforeEach(freshPage)
   afterEach(() => vi.useRealTimers())
 
-  // Design review, Oct 2026: drawn at 34 pt, both are tapped at 44.
-  it('gives Map view and the sort menu 44 pt targets', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+  // 3.0: List | Map replaces the header's Map view button and sort menu.
+  it('switches to the map from List | Map, and keeps no sort menu', () => {
     renderList([run('a', '2026-09-20', 25)])
 
-    expect(screen.getByRole('link', { name: t.activities.mapButton }).className).toContain('hit-44')
-    const sort = screen.getByRole('button', { name: `${t.activities.sort.label}: ${t.activities.sort.date}` })
-    expect(sort.className).toContain('hit-44')
-    await user.click(sort)
-    expect(screen.getByRole('button', { name: t.activities.sort.distance }).className).toContain('min-h-11')
+    const view = screen.getByRole('navigation', { name: t.activities.view.label })
+    expect(within(view).getByText(t.activities.view.list).getAttribute('aria-current')).toBe('page')
+    const map = within(view).getByRole('link', { name: t.activities.view.map })
+    expect(map.getAttribute('href')).toBe('/map')
+    expect(map.className).toContain('hit-44')
+    expect(screen.queryByRole('button', { name: new RegExp(`^${t.activities.sort.label}`) })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: t.activities.filter.title }).className).toContain('hit-44')
   })
 
-  // A week's dots are its runs' types in colour; a screen reader hears them
-  // as the types they are (design review, Oct 2026).
-  it("names a week's dots by their session types", () => {
-    renderList([
-      { ...run('a', '2026-09-20', 12), type: 'Threshold' },
-      run('b', '2026-09-18', 8),
-      run('c', '2026-09-16', 10),
-    ])
-    const week = formatDateRange('2026-09-14', '2026-09-20', { year: 'never' })
-    const row = screen.getByRole('button', { name: new RegExp(`^${week}`) })
-    const shape = `2 ${t.activityTypes.Base.toLowerCase()} · 1 ${t.activityTypes.Threshold.toLowerCase()}`
-    expect(within(row).getByRole('img', { name: shape })).toBeInTheDocument()
+  // 3.0: "Sun 20 · 1:00:00 · 145 bpm" - the type is the dot beside it.
+  it("writes a week's run as its day, time and heart rate", () => {
+    renderList([{ ...run('a', '2026-09-20', 12), avgHeartRate: 145 }])
+    const row = screen.getByTestId('thumb-row')
+    expect(row.textContent).toContain(`${formatWeekday('2026-09-20', true)} · 1:00:00 · 145 ${t.units.bpm}`)
+    expect(row.textContent).not.toContain(t.activityTypes.Base)
   })
 
-  // A legacy workout's long name wraps to two lines at most, never under the
-  // distance beside it (design review, Oct 2026).
-  it('clamps a long workout name to two lines', () => {
+  // A long name stays on one line in a week, ellipsed (3.0).
+  it('ellipses a long workout name', () => {
     const name = 'Threshold 3 × 7:40 - 3 × 8\'@4:25 with a long warm-up and a cool-down to finish'
     renderList([{ ...run('a', '2026-09-22', 10), description: name }])
     const title = screen.getByText(name)
-    expect(title.className).toContain('line-clamp-2')
+    expect(title.className).toContain('truncate')
     expect(title.className).toContain('min-w-0')
+  })
+})
+
+describe('the filter sheet', () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    freshPage()
+    fetchMock.mockReset()
+    fetchMock.mockResolvedValue({ json: async () => ({ items: [], total: 0, nextOffset: null }) })
+    vi.stubGlobal('fetch', fetchMock)
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  const archive = (): ActivitySummary[] => [
+    { ...run('t1', '2026-09-20', 10), type: 'Threshold' },
+    { ...run('t2', '2026-09-18', 12), type: 'Threshold' },
+    { ...run('v1', '2026-09-16', 8), type: 'VO2Max' },
+    run('b1', '2026-09-14', 9),
+  ]
+
+  const sheetUser = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+  const typeBox = (sheet: HTMLElement, type: ActivityType) =>
+    within(sheet).getByRole('checkbox', { name: new RegExp(t.activityTypes[type]) })
+
+  async function openSheet(user: ReturnType<typeof sheetUser>) {
+    await user.click(screen.getByRole('button', { name: t.activities.filter.title }))
+    return screen.getByRole('dialog', { name: t.activities.filter.title })
+  }
+
+  it('counts each type and the runs the ticks would show', async () => {
+    const user = sheetUser()
+    renderList(archive())
+    const sheet = await openSheet(user)
+
+    expect(typeBox(sheet, 'Threshold').textContent).toContain('2')
+    expect(within(sheet).getByRole('button', { name: t.activities.filter.show(4) })).toBeInTheDocument()
+
+    await user.click(typeBox(sheet, 'Threshold'))
+    await user.click(typeBox(sheet, 'VO2Max'))
+    expect(within(sheet).getByRole('button', { name: t.activities.filter.show(3) })).toBeInTheDocument()
+  })
+
+  // 3.0: picked types stand in for the groups as one chip whose ✕ clears them.
+  it('applies picked types as one removable chip, kept in the URL', async () => {
+    const user = sheetUser()
+    renderList(archive())
+    const sheet = await openSheet(user)
+    await user.click(typeBox(sheet, 'Threshold'))
+    await user.click(typeBox(sheet, 'VO2Max'))
+    await user.click(within(sheet).getByRole('button', { name: t.activities.filter.show(3) }))
+
+    const label = `${t.activityTypes.Threshold}, ${t.activityTypes.VO2Max}`
+    const chip = await screen.findByRole('button', { name: t.activities.filter.clearTypes(label) })
+    expect(within(screen.getByTestId('type-chips')).getAllByRole('button')).toHaveLength(1)
+    expect(new URLSearchParams(window.location.search).get('types')).toBe('Threshold,VO2Max')
+    await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain('types=Threshold%2CVO2Max'))
+
+    await user.click(chip)
+    expect(window.location.search).toBe('')
+    expect(screen.getByRole('button', { name: t.activities.all }).className).toContain('bg-foreground')
+  })
+
+  it("collapses a whole group's types back into its chip", async () => {
+    const user = sheetUser()
+    renderList(archive())
+    const sheet = await openSheet(user)
+    await user.click(typeBox(sheet, 'Base'))
+    await user.click(within(sheet).getByRole('button', { name: t.activities.filter.show(1) }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(screen.getByRole('button', { name: t.activities.groups.easy }).getAttribute('aria-pressed')).toBe('true')
+    expect(new URLSearchParams(window.location.search).get('group')).toBe('easy')
+  })
+
+  it("opens on the chip's group ticked, and Reset clears the ticks and the sort", async () => {
+    const user = sheetUser()
+    window.history.replaceState(null, '', '/activities?group=workouts&sort=longest')
+    renderList(archive())
+    const sheet = await openSheet(user)
+    expect(typeBox(sheet, 'Tempo').getAttribute('aria-checked')).toBe('true')
+    expect(within(sheet).getByRole('tab', { name: t.activities.sort.longest }).getAttribute('aria-selected')).toBe('true')
+
+    await user.click(within(sheet).getByRole('button', { name: t.activities.filter.reset }))
+    expect(within(sheet).queryAllByRole('checkbox', { checked: true })).toHaveLength(0)
+    expect(within(sheet).getByRole('tab', { name: t.activities.sort.newest }).getAttribute('aria-selected')).toBe('true')
+  })
+
+  // Longest and Fastest are one ranked list, with no weeks.
+  it('sorts by the longest run as a flat list', async () => {
+    const user = sheetUser()
+    fetchMock.mockResolvedValue({ json: async () => ({ items: archive(), total: 4, nextOffset: null }) })
+    renderList(archive())
+    const sheet = await openSheet(user)
+    await user.click(within(sheet).getByRole('tab', { name: t.activities.sort.longest }))
+    await user.click(within(sheet).getByRole('button', { name: t.activities.filter.show(4) }))
+
+    await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain('sortBy=distance'))
+    expect(new URLSearchParams(window.location.search).get('sort')).toBe('longest')
+    await waitFor(() => expect(screen.queryAllByTestId('week')).toHaveLength(0))
+    expect(screen.getAllByTestId('thumb-row')).toHaveLength(4)
   })
 })

@@ -7,7 +7,6 @@ import { PeriodNav } from '@/components/ui/PeriodNav'
 import { ChartCardHead } from '@/components/ui/ChartCard'
 import { ChartRangeChips, ChartWindowPager } from '@/components/ui/ChartWindowNav'
 import { BackButton } from '@/components/ui/BackButton'
-import { SortDropdown } from '@/components/ui/SortDropdown'
 import { SaveButton } from '@/components/ui/SaveButton'
 import { ShareButton } from '@/components/activity/ShareButton'
 import type { ShareActivity } from '@/lib/shareCardStats'
@@ -77,13 +76,12 @@ describe('the 44 pt hit area', () => {
     }
   })
 
-  // Design review, Oct 2026: the back link, the sort menu, Share and the
-  // note's Save were drawn at 22-36 pt and tapped there.
-  it('wraps the back link, the sort menu, Share and Save', () => {
+  // Design review, Oct 2026: the back link, Share and the note's Save were
+  // drawn at 22-36 pt and tapped there.
+  it('wraps the back link, Share and Save', () => {
     render(
       <>
         <BackButton label="Progress" fallbackHref="/profile" />
-        <SortDropdown options={[{ value: 'date', label: 'Date' }]} sortBy="date" order="desc" onChange={() => {}} label="Sort" />
         <ShareButton activity={{} as ShareActivity} />
         <SaveButton state="idle" />
       </>,

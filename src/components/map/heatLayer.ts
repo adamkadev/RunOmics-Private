@@ -1,7 +1,7 @@
 "use client";
 
 import type { CanvasSource, Coordinates, Map as MapLibreMap } from "maplibre-gl";
-import { HEAT_STYLE, heatLineWidth, heatPasses, mercatorX, mercatorY } from "./mapUtils";
+import { heatColor, heatLineWidth, heatPasses, mercatorX, mercatorY } from "./mapUtils";
 
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
@@ -31,8 +31,8 @@ export interface HeatLayer {
  * the map; when the view settles it is redrawn sharp for the new view.
  */
 export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: string, beforeId: string | undefined): HeatLayer {
-  const composite = HEAT_STYLE[mode].composite;
-  const passes = heatPasses(mode, accent);
+  const passes = heatPasses(mode);
+  const color = heatColor(mode, accent);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
@@ -78,7 +78,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     if (!ctx) return;
     const { x0, y0, world, scale } = view;
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
-    ctx.globalCompositeOperation = composite;
+    // Coverage adds up, capped at opaque; the colour comes after.
+    ctx.globalCompositeOperation = "lighter";
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     const lineWidth = heatLineWidth(map.getZoom());
@@ -106,6 +107,13 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
         ctx.stroke();
       }
     }
+    // Paint everything drawn so far in the heat colour at its coverage: the
+    // most run street is the colour itself, never lighter or darker (3.0).
+    // A reveal adds white coverage on top, which this paints over again.
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "source-in";
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
   function source(): CanvasSource | undefined {
