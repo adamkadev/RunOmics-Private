@@ -9,6 +9,11 @@
     "maptiler_planet_v4": {
       "url": "https://api.maptiler.com/tiles/v4/tiles.json?key={key}",
       "type": "vector"
+    },
+    "runomics-terrain": {
+      "type": "raster-dem",
+      "url": "https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key={key}",
+      "tileSize": 256
     }
   },
   "layers": [
@@ -73,7 +78,7 @@
       },
       "paint": {
         "fill-antialias": true,
-        "fill-color": "#e6eae7",
+        "fill-color": "#d3e6d0",
         "fill-opacity": 1
       },
       "filter": [
@@ -93,7 +98,8 @@
         "visibility": "visible"
       },
       "paint": {
-        "fill-color": "#e6eae7"
+        "fill-color": "#d3e6d0",
+        "fill-opacity": 1
       },
       "filter": [
         "==",
@@ -114,23 +120,8 @@
       },
       "paint": {
         "fill-antialias": false,
-        "fill-color": "#e6eae7",
-        "fill-opacity": {
-          "stops": [
-            [
-              8,
-              0.2
-            ],
-            [
-              9,
-              0.25
-            ],
-            [
-              11,
-              0.35
-            ]
-          ]
-        }
+        "fill-color": "#d3e6d0",
+        "fill-opacity": 1
       },
       "filter": [
         "==",
@@ -150,7 +141,8 @@
         "visibility": "visible"
       },
       "paint": {
-        "fill-color": "#e6eae7"
+        "fill-color": "#d3e6d0",
+        "fill-opacity": 1
       },
       "filter": [
         "==",
@@ -171,20 +163,9 @@
       },
       "paint": {
         "fill-antialias": true,
-        "fill-color": "#e6eae7",
-        "fill-opacity": {
-          "stops": [
-            [
-              10,
-              0.25
-            ],
-            [
-              14,
-              0.55
-            ]
-          ]
-        },
-        "fill-outline-color": "#e6eae7"
+        "fill-color": "#d3e6d0",
+        "fill-opacity": 1,
+        "fill-outline-color": "#d3e6d0"
       },
       "filter": [
         "all",
@@ -220,7 +201,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "line-color": "#d3d9d6",
+        "line-color": "#c6dbee",
         "line-dasharray": [
           2,
           2
@@ -286,7 +267,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "line-color": "#d3d9d6",
+        "line-color": "#c6dbee",
         "line-opacity": 1,
         "line-width": [
           "interpolate",
@@ -351,6 +332,18 @@
       ]
     },
     {
+      "id": "Hillshade",
+      "type": "hillshade",
+      "source": "runomics-terrain",
+      "maxzoom": 16,
+      "paint": {
+        "hillshade-shadow-color": "rgba(0, 0, 0, 0.06)",
+        "hillshade-highlight-color": "rgba(255, 255, 255, 0.07)",
+        "hillshade-accent-color": "rgba(0, 0, 0, 0.06)",
+        "hillshade-exaggeration": 0.35
+      }
+    },
+    {
       "id": "Water shadow",
       "type": "fill",
       "source": "maptiler_planet_v4",
@@ -393,7 +386,7 @@
       },
       "paint": {
         "fill-antialias": true,
-        "fill-color": "#dce1df",
+        "fill-color": "#c6dbee",
         "fill-opacity": [
           "case",
           [
@@ -890,7 +883,7 @@
             "secondary"
           ],
           "#ffffff",
-          "#f7f8f7"
+          "#f8f9f8"
         ],
         "line-width": [
           "interpolate",
@@ -1768,7 +1761,7 @@
             "secondary"
           ],
           "#ffffff",
-          "#f7f8f7"
+          "#f8f9f8"
         ],
         "line-width": [
           "interpolate",
@@ -2915,7 +2908,7 @@
             "secondary"
           ],
           "#ffffff",
-          "#f7f8f7"
+          "#f8f9f8"
         ],
         "line-width": [
           "interpolate",
@@ -4163,7 +4156,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-halo-color": "#f3f4f3"
       },
       "filter": [
@@ -4246,7 +4239,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-opacity": 1,
         "text-halo-color": "#f3f4f3"
       },
@@ -4362,7 +4355,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-opacity": 1,
         "text-halo-color": "#f3f4f3"
       },
@@ -4481,7 +4474,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-opacity": 1,
         "text-halo-color": "#f3f4f3"
       },
@@ -4588,7 +4581,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-opacity": [
           "step",
           [
@@ -4771,7 +4764,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-opacity": 1,
         "text-halo-color": "#f3f4f3"
       },
@@ -4875,7 +4868,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-halo-color": "#f3f4f3"
       },
       "filter": [
@@ -4942,7 +4935,7 @@
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-halo-color": "#f3f4f3"
       },
       "filter": [
@@ -5039,25 +5032,11 @@
         ],
         "text-pitch-alignment": "viewport",
         "text-rotation-alignment": "auto",
-        "text-size": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          15,
-          8,
-          16,
-          10,
-          18,
-          11
-        ],
+        "text-size": 11,
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-halo-blur": 0,
         "text-halo-color": "#f3f4f3",
         "text-halo-width": 1.5,
@@ -5191,25 +5170,11 @@
             0.1
           ]
         ],
-        "text-size": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          15,
-          9,
-          16,
-          11,
-          18,
-          12
-        ],
+        "text-size": 11,
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-halo-blur": 0,
         "text-halo-color": "#f3f4f3",
         "text-halo-width": 1.5,
@@ -5342,80 +5307,11 @@
         ],
         "text-pitch-alignment": "viewport",
         "text-rotation-alignment": "auto",
-        "text-size": [
-          "interpolate",
-          [
-            "linear"
-          ],
-          [
-            "zoom"
-          ],
-          14,
-          [
-            "match",
-            [
-              "get",
-              "class"
-            ],
-            [
-              "primary"
-            ],
-            10,
-            7
-          ],
-          15,
-          [
-            "match",
-            [
-              "get",
-              "class"
-            ],
-            [
-              "primary"
-            ],
-            10,
-            [
-              "secondary",
-              "tertiary"
-            ],
-            9,
-            7
-          ],
-          16,
-          [
-            "match",
-            [
-              "get",
-              "class"
-            ],
-            [
-              "primary",
-              "secondary",
-              "tertiary"
-            ],
-            11,
-            10
-          ],
-          18,
-          [
-            "match",
-            [
-              "get",
-              "class"
-            ],
-            [
-              "primary",
-              "secondary",
-              "tertiary"
-            ],
-            13,
-            12
-          ]
-        ],
+        "text-size": 11,
         "visibility": "visible"
       },
       "paint": {
-        "text-color": "#9aa09d",
+        "text-color": "#9aa19f",
         "text-halo-blur": 0,
         "text-halo-color": "#f3f4f3",
         "text-halo-width": 1.5,

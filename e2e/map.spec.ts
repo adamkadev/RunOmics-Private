@@ -10,6 +10,8 @@ test('heatmap: Activities on Map, chips, a 560 pt map with its legend and licenc
 
   await expect(page.getByText('Rare')).toBeVisible()
   await expect(page.getByText('Frequent')).toBeVisible()
+  // The credits sit behind an ⓘ (3.0) and open on a tap.
+  await page.getByRole('button', { name: 'Map credits' }).click()
   await expect(page.getByTestId('map-attribution')).toContainText('OpenStreetMap')
   await expect(page.getByRole('button', { name: 'World view' })).toHaveCount(0)
 

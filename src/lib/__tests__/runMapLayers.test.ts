@@ -6,6 +6,8 @@ import {
   FINISH_MARK_ICON,
   LOOP_MARK_ICON,
   ROUTE_FIT_PADDING,
+  ROUTE_HALO_LAYER,
+  ROUTE_LABEL_GUARD_LAYER,
   ROUTE_LINE_LAYER,
   ROUTE_SOURCE,
   RUN_CURSOR_LAYER,
@@ -70,17 +72,36 @@ describe('the run map layers (v4.17)', () => {
   it('draws the accent route and its markers over the place names', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
-    expect(layers.map((l) => l.id)).toEqual(['Water', 'Town labels', ROUTE_LINE_LAYER, RUN_FINISH_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
+    expect(layers.map((l) => l.id)).toEqual(['Water', 'Town labels', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, ROUTE_LABEL_GUARD_LAYER, RUN_FINISH_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
     const route = layers.find((l) => l.id === ROUTE_LINE_LAYER)!
     expect(route).toMatchObject({ type: 'line', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': RUN.accent, 'line-width': 4 } })
   })
 
-  it('draws the start, 16 px across, and the scrub marker as accent circles ringed in white', () => {
+  // 3.0 handoff: one colour, width 4, on a 3 px halo of the ground.
+  it('lays a 3 px halo in the ring colour under the route', () => {
+    const { map, layers } = fakeMap()
+    addRunLayers(map, RUN)
+    expect(layers.find((l) => l.id === ROUTE_HALO_LAYER)).toMatchObject({ type: 'line', paint: { 'line-color': RUN.ring, 'line-width': 10 } })
+  })
+
+  // 3.0 handoff: "Metz" sat under the line.
+  it('guards the route with invisible icons above the labels, so a name crossing it is dropped', () => {
+    const { map, layers } = fakeMap()
+    addRunLayers(map, RUN)
+    const guard = layers.find((l) => l.id === ROUTE_LABEL_GUARD_LAYER)!
+    expect(guard).toMatchObject({
+      type: 'symbol',
+      layout: { 'symbol-placement': 'line', 'icon-allow-overlap': true, 'icon-ignore-placement': false },
+    })
+    expect(layers.indexOf(guard)).toBeGreaterThan(layers.findIndex((l) => l.id === 'Town labels'))
+  })
+
+  it('draws the start, a 7 px dot, and the scrub marker as accent circles in a ring', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
     expect(layers.find((l) => l.id === RUN_START_LAYER)).toMatchObject({
       type: 'circle',
-      paint: { 'circle-radius': 5.5, 'circle-color': RUN.accent, 'circle-stroke-color': RUN.ring, 'circle-stroke-width': 2.5 },
+      paint: { 'circle-radius': 7, 'circle-color': RUN.accent, 'circle-stroke-color': RUN.ring, 'circle-stroke-width': 2.5 },
     })
     expect(layers.find((l) => l.id === RUN_CURSOR_LAYER)).toMatchObject({
       type: 'circle',

@@ -7,7 +7,7 @@ import { CURATED_ACCENTS, curatedAccent, type CuratedAccent } from './accentScal
  * dark at launch, so it can't follow the accent: it is a neutral close to
  * every accent's background, and the page top fades from it (--status-bar).
  */
-export const STATUS_BAR_COLOR = { light: '#f3f4f3', dark: '#0c0d0d' } as const
+export const STATUS_BAR_COLOR = { light: '#f3f4f3', dark: '#0b0c0c' } as const
 
 export type TokenBlock = {
   selector: string
@@ -29,10 +29,14 @@ const c = HUE
  * no colour beside Z2 and Z4 on the share card's route. Light Z1 keeps its
  * deeper slate, as #8499b0 is 2.9:1 on a white card and a zone is a mark
  * (3:1). Z5 stays rose, clear of --neg's coral.
+ *
+ * RunOmics 3.0 (Oct 2026) took the dark scale from the redesign handoff:
+ * a cooler Z1, a softer orchid Z4 and a lighter rose Z5. Light keeps its
+ * deeper steps, which a zone mark needs for 3:1 on a white card.
  */
 export const ZONE_HEX = {
   light: ['#61788f', '#2f74e0', '#6a52d9', '#ae3cc2', '#d63a77'],
-  dark: ['#8499b0', '#5b9cf5', '#8f7cf2', '#d06be0', '#f0689e'],
+  dark: ['#8a9bb0', '#5b9cf5', '#8f7cf0', '#c77ae6', '#f07aa8'],
 } as const
 
 /**
@@ -44,10 +48,12 @@ export const ZONE_HEX = {
  * a card, so 12 px good-news text clears AA. Light neg is #c0352a, not
  * #c8372d: a missed day's "✕ 10 km" sits on its own 12 % tint, where
  * #c8372d read 4.35:1; now 4.6:1. Light warn is #9a5b00, 5.4:1 on a card.
+ * Dark takes the 3.0 handoff's values: a softer coral neg, so an error
+ * no longer reads as Z5.
  */
 export const STATUS_HEX = {
   light: { pos: '#357a1a', warn: '#9a5b00', neg: '#c0352a' },
-  dark: { pos: '#7bd64a', warn: '#f2b544', neg: '#f26b5b' },
+  dark: { pos: '#7fd13b', warn: '#f0b73c', neg: '#ff8a80' },
 } as const
 
 /**
@@ -61,6 +67,7 @@ export const SURFACES = {
     card: '#ffffff',
     raised: '#ffffff',
     line: '#e4e6e5',
+    divider: '#e4e6e5',
     // Outline buttons and neutral bars (v4.17 line-2).
     line2: '#d3d6d4',
     text: '#141615',
@@ -82,23 +89,30 @@ export const SURFACES = {
     amber: STATUS_HEX.light.warn,
     shadowRaised: '0 1px 3px rgba(0, 0, 0, 0.06)',
   },
+  // RunOmics 3.0 (Oct 2026): the redesign handoff's dark ground - a
+  // darker inset tile than the card, a sheet a step above it, and a
+  // hairline divider a step under the card border.
   dark: {
-    background: '#0c0d0d',
-    card: '#151616',
-    raised: '#1c1e1d',
-    line: '#242726',
+    background: '#0b0c0c',
+    card: '#141616',
+    raised: '#1a1d1d',
+    line: '#232626',
+    // Dividers inside a card and the tab bar's top edge.
+    divider: '#1f2222',
     line2: '#303432',
-    text: '#f1f2f1',
-    body: '#bfc3c1',
-    text2: '#8a8f8d',
-    text3: '#5f6462',
+    text: '#f2f4f3',
+    body: '#a3aaa7',
+    text2: '#8d9391',
+    text3: '#5b6563',
     // A step under text2 that still reaches 4.5:1.
     subtle: '#7f8482',
-    tabBar: '#0c0d0d',
-    seg: '#1c1e1d',
-    // Lighter than the track, so the selected tab is raised rather than sunk.
-    pill: '#303432',
-    faint: '#1c1e1d',
+    tabBar: '#0d0f0f',
+    // The inset tile and the segmented control's ground.
+    seg: '#0f1111',
+    // The active segment.
+    pill: '#2a2e2d',
+    // Empty tracks: gauges, progress bars, rest days.
+    faint: '#262a29',
     band: '#6a706d',
     amber: STATUS_HEX.dark.warn,
     shadowRaised: 'none',
@@ -119,7 +133,7 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--surface-2': n.seg,
     // One line colour for borders, dividers and chart grids (v4.3 --line).
     '--border': n.line,
-    '--divider': n.line,
+    '--divider': n.divider,
     // A second, stronger line: outline buttons, neutral bars (v4.17).
     '--line-2': n.line2,
     '--foreground': n.text,
@@ -137,7 +151,7 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--band': n.band,
     '--thumb-bg': n.seg,
     '--tab-bar-bg': n.tabBar,
-    '--tab-bar-hairline': n.line,
+    '--tab-bar-hairline': n.divider,
     // Quiet tabs (v4.17): the track is surface-2, the active tab the card.
     '--segmented-track': n.seg,
     '--segmented-pill': n.pill,
@@ -166,44 +180,53 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
 }
 
 /**
- * The basemap's colours (v4.17), per theme: greys only, so the athlete's
- * tracks in the accent are the one colour on a map, and roads the only thing
- * with real contrast. scripts/build-map-styles.ts bakes these into the styles
- * kept in src/map/styles, so the map can't drift from the UI; labels and
- * their halo are the UI's own muted, faint and ground.
+ * The basemap's colours (v4.17), per theme. scripts/build-map-styles.ts bakes
+ * these into the styles kept in src/map/styles, so the map can't drift from
+ * the UI; labels and their halo are the UI's own muted, faint and ground.
+ *
+ * RunOmics 3.0 (Oct 2026): the map was "just tiles with a line on top".
+ * Parks and water take a muted green and blue, and a hillshade under 7 %
+ * gives the ground some relief; everything else stays grey, so the accent
+ * route is still the one bright colour. Street names are fainter still.
  */
 export const MAP_STYLE_COLORS = {
   dark: {
     background: '#111212',
     land: '#141615',
-    water: '#0b0c0c',
-    waterway: '#0b0c0c',
+    park: '#15261d',
+    water: '#13212e',
+    waterway: '#13212e',
     building: '#171918',
-    roadMajor: '#2a2d2c',
-    roadMinor: '#1e2120',
+    roadMajor: '#252b2a',
+    roadMinor: '#1b201f',
     roadCasing: '#171918',
     path: '#232625',
     rail: SURFACES.dark.line,
     border: SURFACES.dark.line2,
     placeLabel: SURFACES.dark.text2,
-    streetLabel: SURFACES.dark.text3,
+    streetLabel: '#4f5856',
     halo: SURFACES.dark.background,
+    hillshadeShadow: 'rgba(0, 0, 0, 0.07)',
+    hillshadeHighlight: 'rgba(255, 255, 255, 0.03)',
   },
   light: {
     background: '#eef0ef',
     land: '#e6eae7',
-    water: '#dce1df',
-    waterway: '#d3d9d6',
+    park: '#d3e6d0',
+    water: '#c6dbee',
+    waterway: '#c6dbee',
     building: SURFACES.light.line,
     roadMajor: '#ffffff',
-    roadMinor: '#f7f8f7',
+    roadMinor: '#f8f9f8',
     roadCasing: SURFACES.light.line,
     path: '#ffffff',
     rail: SURFACES.light.line2,
     border: SURFACES.light.line2,
     placeLabel: SURFACES.light.text2,
-    streetLabel: SURFACES.light.text3,
+    streetLabel: '#9aa19f',
     halo: SURFACES.light.background,
+    hillshadeShadow: 'rgba(0, 0, 0, 0.06)',
+    hillshadeHighlight: 'rgba(255, 255, 255, 0.07)',
   },
 } as const
 

@@ -274,6 +274,8 @@ export const en = {
       noRoutes: 'No routes for this filter',
       mapUnavailable: 'Map unavailable - no map token configured',
       attribution: '© MapTiler · © OpenStreetMap contributors',
+      // The ⓘ that opens the credits on every map (3.0).
+      credits: 'Map credits',
       territory: {
         // The place is the eyebrow's (v4.17); the ring is the map's.
         headline: (percent: number, reach: string, home: boolean) => ({

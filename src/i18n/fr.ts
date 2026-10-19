@@ -250,6 +250,7 @@ export const fr = {
       noRoutes: 'Aucun parcours pour ce filtre',
       mapUnavailable: 'Carte indisponible - aucune clé de carte configurée',
       attribution: '© MapTiler · © les contributeurs d’OpenStreetMap',
+      credits: 'Crédits de la carte',
       territory: {
         headline: (percent: number, reach: string, home: boolean) => ({
           lead: `${percent} % de tes kilomètres sont courus ici. La moitié de tes sorties restent dans un `,
