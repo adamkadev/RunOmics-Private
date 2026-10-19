@@ -42,8 +42,8 @@ const LINE_COLOR: Record<Exclude<LaneKey, 'elevation'>, string> = {
   cadence: runTypeColor('Threshold'),
 }
 
-/** The 10 px axis and zone labels (3.0). */
-const AXIS_LABEL = 'text-[10px] leading-none'
+/** The axis and zone labels: 11 px, the app's type floor (the handoff's 10 px is under it). */
+const AXIS_LABEL = 'text-caption leading-none'
 
 /**
  * One lane with nothing in it that moves: its zone bands, the km ticks, the
@@ -73,7 +73,7 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm, color }: { l
               borderTop: rect.top > 0.5 ? `1px solid color-mix(in srgb, var(--zone-${band.zone}) 45%, transparent)` : undefined,
             }}
           >
-            {/* 10 px like the axis labels (3.0), at the top right. On a chip
+            {/* 11 px like the axis labels, at the top right. On a chip
                 above the lines, so the average line can't strike it out. */}
             {rect.labelled && (
               <span

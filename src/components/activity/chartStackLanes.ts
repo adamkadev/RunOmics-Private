@@ -11,8 +11,8 @@ export const LANE_HEIGHT = 72
 export const ELEVATION_HEIGHT = 44
 /** The line stays this far off the lane's top and bottom edges. */
 const LANE_PAD = 4
-/** A zone band thinner than this has no room for its 10 px label. */
-const BAND_LABEL_MIN = 10
+/** A zone band thinner than this has no room for its 11 px label. */
+const BAND_LABEL_MIN = 12
 
 export type LaneKey = 'hr' | 'pace' | 'cadence' | 'elevation'
 export type ZoneNumber = 1 | 2 | 3 | 4 | 5

@@ -127,7 +127,7 @@ describe('zone bands', () => {
     const lane = { domain: [120, 170] as [number, number], reversed: false }
     expect(bandRect(lane, { zone: 4, from: 175, to: 185 })).toBeNull()
     // Z3 runs past the top of the scale, so it fills the padding up there.
-    expect(bandRect(lane, { zone: 3, from: 165, to: 175 })).toMatchObject({ top: 0, labelled: true })
+    expect(bandRect(lane, { zone: 3, from: 160, to: 175 })).toMatchObject({ top: 0, labelled: true })
     const z1 = bandRect(lane, { zone: 1, from: 119, to: 147 })!
     expect(z1.top).toBeCloseTo(33.44, 2)
     expect(z1.top + z1.height).toBeCloseTo(69.28, 2)

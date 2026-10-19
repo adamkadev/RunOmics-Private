@@ -92,7 +92,7 @@ function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits:
 
   return (
     <div className="flex flex-col">
-      <div className={`${rowCls} whitespace-nowrap pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.06em] text-muted-foreground`}>
+      <div className={`${rowCls} whitespace-nowrap pb-1.5 text-caption font-semibold uppercase tracking-[0.06em] text-muted-foreground`}>
         <span>{sp.cols.km}</span>
         <span>{sp.cols.pace}</span>
         {/* The bar's column has no visible heading; a reader still hears it. */}
