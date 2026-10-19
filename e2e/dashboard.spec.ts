@@ -1,15 +1,15 @@
 import { test, expect } from './fixtures'
 
-test('dashboard renders the weekly snapshot and recent activities', async ({ page }) => {
+test('dashboard renders the readiness card and the day', async ({ page }) => {
   await page.goto('/')
 
-  // The greeting that used to head this page is deliberately gone - it was the
-  // largest type on the screen and the only thing on it not about the running.
-  // The form/fitness/fatigue trio is the snapshot this test is named for.
-  await expect(page.getByText('Form', { exact: true })).toBeVisible()
-  await expect(page.getByText('Fitness', { exact: true })).toBeVisible()
-  await expect(page.getByText('Fatigue', { exact: true })).toBeVisible()
+  // The readiness card (design review, Oct 2026): the Form dial, CTL, ATL,
+  // ACWR and Garmin's status, the whole card a way into Analytics.
+  const readiness = page.getByTestId('readiness-card')
+  await expect(readiness).toBeVisible()
+  for (const label of ['CTL', 'ATL', 'ACWR']) await expect(readiness.getByText(label, { exact: true })).toBeVisible()
+  await expect(page.getByTestId('readiness-card-link')).toHaveAttribute('href', '/analytics')
 
-  const firstActivityLink = page.locator('a[href^="/activities/"]').first()
-  await expect(firstActivityLink).toBeVisible()
+  // Then the day: the session card and the last run, whichever the data has.
+  await expect(page.getByTestId('today-board')).toBeVisible()
 })

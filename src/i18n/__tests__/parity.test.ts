@@ -48,7 +48,7 @@ describe('French coach copy', () => {
   // The app is not told who reads it: « tu es frais » is wrong for half its athletes.
   it('agrees nothing with the athlete', () => {
     const gendered = /\btu es (?:frais|fraîche|fatigué|fatiguée|prêt|prête|reposé|reposée)\b|\bt[’']es (?:entraîné|préparé)/i
-    const copy = [...strings(fr.dashboard.todayHero.verdict), ...strings(fr.notifications)]
+    const copy = [...strings(fr.dashboard), ...strings(fr.notifications)]
     expect(copy.filter((line) => gendered.test(line))).toEqual([])
   })
 })

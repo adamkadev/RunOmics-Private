@@ -5,8 +5,8 @@ import { workoutSummary } from '@/components/plan/workoutSummary'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatPlannedKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { ranDetail } from './todaySession'
-import { kindOfType, type SessionKind } from './todayVerdict'
+import { ranDetail, runMeta } from './todaySession'
+import { kindOfType, type SessionKind } from './sessionKind'
 
 /** The next session on the plan after today, as the hero's rest row names it. */
 export interface NextSession {
@@ -72,19 +72,22 @@ export function findNextSession(
 /** The row above the next session: a run done, or a session planned and not run. */
 export interface LastRun {
   state: 'done' | 'missed'
+  /** `done`: today's run or a missed session, led by its badge; `past`: an earlier run, led by its route. */
+  layout: 'done' | 'past'
   date: string
   title: string
   detail: string
   /** The run for a run; the plan, read-only, for a missed session. */
   href: string
+  /** The route thumb a past run is led by. */
+  thumb?: string | null
+  type?: string | null
 }
 
 /**
  * The hero's last-run row (design review, Oct 2026): today's run once it is
- * done; on a day with nothing left to run, yesterday's - the run, or the
- * session it planned and nobody ran. Before today's run there is none: the
- * tile under it is today's session. A missed session is said, never moved:
- * the plan is the coach's.
+ * done, else yesterday's run, or the session it planned and nobody ran. A
+ * missed session is said, never moved: the plan is the coach's.
  */
 export function findLastRun(
   today: string,
@@ -100,21 +103,31 @@ export function findLastRun(
   const title = (activity: ActivitySummary, workout: PlanWorkoutView | HeroWorkoutView | null) =>
     s.doneTitle(workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }).shortTitle : activity.description || t.activityTypes[activity.type])
   if (todayActivity) {
-    return { state: 'done', date: today, title: title(todayActivity, todayWorkout), detail: ranDetail(todayActivity, todayWorkout), href: `/activities/${todayActivity.id}` }
+    return { state: 'done', layout: 'done', date: today, title: title(todayActivity, todayWorkout), detail: ranDetail(todayActivity, todayWorkout), href: `/activities/${todayActivity.id}` }
   }
-  if (todayWorkout) return null
 
   const yesterday = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
   const session = sessionOn(yesterday, coach, garmin, zones)
   const run = recent.find((a) => a.date === yesterday)
   if (run) {
     const workout = session ? heroWorkoutView(session.workout) : null
-    return { state: 'done', date: yesterday, title: title(run, workout), detail: ranDetail(run, workout), href: `/activities/${run.id}` }
+    return {
+      state: 'done',
+      layout: 'past',
+      date: yesterday,
+      title: s.yesterdayTitle(workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }).shortTitle : run.description || t.activityTypes[run.type]),
+      detail: runMeta(run),
+      href: `/activities/${run.id}`,
+      thumb: run.routeThumb ?? null,
+      type: run.type,
+    }
   }
+  if (todayWorkout) return null
   if (!session) return null
   const km = session.workout.distanceM ? formatPlannedKm(session.workout.distanceM / 1000) : null
   return {
     state: 'missed',
+    layout: 'done',
     date: yesterday,
     title: s.missedTitle(formatWeekday(yesterday), workoutSummary(session.workout).shortTitle),
     detail: s.notRun(km),

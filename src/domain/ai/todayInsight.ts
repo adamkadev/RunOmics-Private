@@ -144,7 +144,7 @@ const KIND_LABEL: Record<SessionKind, string> = {
 }
 
 /** Every tone's badge, in this deployment's words: none of them is the copy's to write. */
-const BADGES = Object.values(t.dashboard.todayHero.eyebrowByTone).map((label) => `"${label}"`).join(', ')
+const BADGES = Object.values(t.dashboard.readiness.eyebrowByTone).map((label) => `"${label}"`).join(', ')
 
 export const TODAY_SYSTEM_INSTRUCTION = [
   systemInstruction(
@@ -182,7 +182,7 @@ function lastRunLine(lastRun: NonNullable<RecentTraining['lastRun']>): string {
 
 export function todayInsightPrompt(context: TodayContext, recentHeadlines: string[]): string {
   const f = facts(context)
-  const badge = t.dashboard.todayHero.eyebrowByTone[context.tone]
+  const badge = t.dashboard.readiness.eyebrowByTone[context.tone]
 
   return [
     `Tone: ${f.tone}, shown in the badge above your headline as "${badge}". ${toneRule(context.tone, f.kind, ranToday(context.recent))}`,
