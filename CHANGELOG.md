@@ -16,7 +16,8 @@ to the minute, and one number format.
 - Dynamics: a range scale per metric, your usual 8 weeks as a pill and
   this run as a tick, "vs your usual", one legend line.
 - The stat strip names its time "Time" (« Temps »), not "Moving"; the
-  fullscreen map's card writes it to the minute: "1:07 h", "46 min".
+  fullscreen map's card writes it as the strip does: to the minute
+  from an hour ("1:07 h"), with its seconds under one ("22:14 min").
 - The pace/HR preview keeps its lines apart and labels its ends; Best
   efforts' 1 km shows its time once; the chart cursor stays below the
   headers.
@@ -42,7 +43,8 @@ to the minute, and one number format.
 
 - One number format: "2,000" and "9.5" in English, « 2 000 » and « 9,5 »
   in French, in the charts' axes and tooltips too.
-- Share cards write the time as "1:07 h", not "1:06:39".
+- Share cards write the time as "1:07 h", not "1:06:39"; under an hour,
+  "22:14 min".
 - Activities list: a structured title keeps the type on its line, the
   structure under it.
 - Light theme: accent text reaches 4.5:1 on every light surface.

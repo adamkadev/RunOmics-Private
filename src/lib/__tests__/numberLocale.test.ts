@@ -1,7 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { MINUS, formatClock, formatDeltaFixed, formatDistance, formatKm } from '../formatters'
+import { MINUS, formatClock, formatDeltaFixed, formatDistance, formatDurationRounded, formatKm } from '../formatters'
 
 describe('formatDeltaFixed', () => {
   it('keeps the precision it is given', () => {
@@ -26,6 +26,19 @@ describe('formatClock', () => {
   it('rounds before it splits, so a minute never has sixty seconds', () => {
     expect(formatClock(299.6)).toBe('5:00')
     expect(formatClock(1199.5)).toBe('20:00')
+  })
+})
+
+// 3.0.2 hotfix: a 5K's time keeps its seconds; from an hour, to the minute.
+describe('formatDurationRounded', () => {
+  it('keeps the seconds under an hour', () => {
+    expect(formatDurationRounded(1334)).toEqual({ value: '22:14', unit: 'min' })
+    expect(formatDurationRounded(3599.4)).toEqual({ value: '59:59', unit: 'min' })
+  })
+
+  it('writes an hour or more to the minute', () => {
+    expect(formatDurationRounded(3999)).toEqual({ value: '1:07', unit: 'h' })
+    expect(formatDurationRounded(3600)).toEqual({ value: '1:00', unit: 'h' })
   })
 })
 

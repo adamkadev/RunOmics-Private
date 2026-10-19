@@ -14,12 +14,17 @@ export function formatDuration(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-/** A headline duration to the nearest minute, with the unit it takes: 1:06:39 is "1:07" h, 45:31 "46" min. */
+/**
+ * A headline duration with the unit it takes (3.0.2): from an hour, to the
+ * minute - 1:06:39 is "1:07" h; under it the seconds stay, as a 5K's time
+ * is read - 22:14 is "22:14" min.
+ */
 export function formatDurationRounded(seconds: number): { value: string; unit: string } {
+  if (Math.round(seconds) < 3600) return { value: formatClock(seconds), unit: t.units.min }
   const totalMinutes = Math.round(seconds / 60)
   const h = Math.floor(totalMinutes / 60)
   const m = totalMinutes % 60
-  return h > 0 ? { value: `${h}:${String(m).padStart(2, '0')}`, unit: t.units.hour } : { value: `${m}`, unit: t.units.min }
+  return { value: `${h}:${String(m).padStart(2, '0')}`, unit: t.units.hour }
 }
 
 export function formatDurationWords(seconds: number): string {

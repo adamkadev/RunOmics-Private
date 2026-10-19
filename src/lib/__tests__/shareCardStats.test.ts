@@ -29,7 +29,7 @@ describe('shareStats', () => {
   it('reads Distance, Time, Pace, Avg HR, units apart from the values', () => {
     expect(shareStats(RUN)).toEqual([
       { value: '10.0', unit: ' km', label: 'Distance' },
-      { value: '58', unit: ' min', label: 'Time' },
+      { value: '57:33', unit: ' min', label: 'Time' },
       { value: '5:44', unit: ' /km', label: 'Pace' },
       { value: '153', unit: ' bpm', label: 'Avg HR' },
     ])
