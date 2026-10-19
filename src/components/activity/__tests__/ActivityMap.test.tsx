@@ -96,12 +96,12 @@ describe('ActivityMap fullscreen', () => {
   })
 
   // 3.0: the hero draws its own back, expand and share; the map in the page
-  // has no control of its own, and no km markers or colour toggle.
-  it('draws no button of its own in the page', async () => {
+  // has only its credits' ⓘ, and no km markers or colour toggle.
+  it('draws no button of its own in the page but the credits', async () => {
     render(<ActivityMap route={ROUTE} />)
 
     expect(screen.queryByTestId('map-top-chips')).toBeNull()
-    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([t.pages.map.credits])
   })
 
   it('closes on Escape', async () => {

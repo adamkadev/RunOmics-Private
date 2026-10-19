@@ -6,7 +6,7 @@ import { MapPin, Minimize2 } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyle } from '@/lib/maptiler'
-import { MAP_COLORS } from '@/lib/colors'
+import { MapAttribution } from '@/components/ui/MapAttribution'
 import { t } from '@/i18n'
 import { loadMapLibre } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
@@ -113,6 +113,10 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     const readAccent = () =>
       getComputedStyle(hostRef.current ?? document.documentElement).getPropertyValue('--accent').trim() ||
       SURFACES[isDark() ? 'dark' : 'light'].text
+    // The route's halo and the start's ring are the page behind the map (3.0).
+    const readRing = () =>
+      getComputedStyle(hostRef.current ?? document.documentElement).getPropertyValue('--background').trim() ||
+      SURFACES[isDark() ? 'dark' : 'light'].background
     let removeFence: (() => void) | null = null
     let stopObserving: (() => void) | null = null
 
@@ -150,9 +154,6 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         fitBoundsOptions: { padding: ROUTE_FIT_PADDING, maxZoom: 15 },
         attributionControl: false,
       })
-      // The MapTiler and OpenStreetMap credit as a line of text in the
-      // corner, always shown (v4.17): no longer folded behind an ⓘ.
-      map.addControl(new mgl.AttributionControl({ compact: false }), 'bottom-right')
       mapRef.current = map
 
       // A loop's start and finish are one marker while they would touch: asked
@@ -201,7 +202,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         joined = finishShown() && finish !== null && runEndsJoined(map, start, finish)
         addRunLayers(map, {
           accent,
-          ring: MAP_COLORS.markerRingLight,
+          ring: readRing(),
           route: route.slice(0, drawnRef.current),
           start,
           finish: finishShown() ? finish : null,
@@ -263,11 +264,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
   const tree = (
     <div
       className={cn(
-        // The attribution sits 12 px in from the right and bottom, as the
-        // chips do (.activity-map in globals.css), on the map's dark pill.
         // isolate: maplibre's z-index 20 controls would otherwise paint over the status strip.
         'activity-map relative isolate overflow-hidden rounded-xl',
-        '[&_.maplibregl-ctrl-attrib]:rounded-md [&_.maplibregl-ctrl-attrib]:!bg-[var(--map-attrib-bg)] [&_.maplibregl-ctrl-attrib]:!px-1.5 [&_.maplibregl-ctrl-attrib]:!py-px',
         // Under the status strip, never touching the top edge (v4.8): iOS
         // kept the blur zone of a fullscreen map over the page's title.
         isFullscreen && 'activity-map-fullscreen fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[9999] rounded-none',
@@ -276,6 +274,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     >
       <div ref={hostRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
       {!isFullscreen && overlay}
+      {/* The MapTiler and OpenStreetMap credits behind a 22 pt ⓘ (3.0). */}
+      <MapAttribution className="absolute bottom-3 right-3 z-20" />
 
       {isFullscreen && (
         <button
