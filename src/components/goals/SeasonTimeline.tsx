@@ -8,6 +8,7 @@ import { formatDate, formatDuration } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { seasonRaceRows, type SeasonRaceRow } from './SeasonRaces'
+import { monthInitials } from './monthInitials'
 
 /** The training block the next race closes: its span and where today is in it. */
 export interface SeasonBlock {
@@ -104,16 +105,17 @@ function Mark({
 
 /**
  * Jan-Dec as one strip (v4.17): the year so far in the accent to today, a
- * race done a filled circle in text ink, one ahead an outlined one.
+ * race done a filled circle in text ink, one ahead an outlined one. Labels sit
+ * above the line, Today's too (3.1), and the month running is in the accent.
  */
 function SeasonStrip({ year, today, rows }: { year: number; today: string; rows: SeasonRaceRow[] }) {
   const thisYear = Number(today.slice(0, 4)) === year
   const done = today.slice(0, 4) > String(year) ? 1 : thisYear ? yearFraction(today, year) : 0
-  const months = new Intl.DateTimeFormat(t.locale, { month: 'short', timeZone: 'UTC' })
+  const currentMonth = thisYear ? Number(today.slice(5, 7)) : null
 
   const marks = [
     ...rows.map((row) => ({ at: yearFraction(row.date!, year), label: row.short, prefer: 'above' as Lane })),
-    ...(thisYear ? [{ at: done, label: t.goals.season.today, prefer: 'below' as Lane, optional: true }] : []),
+    ...(thisYear ? [{ at: done, label: t.goals.season.today, prefer: 'above' as Lane, optional: true }] : []),
   ]
   const lanes = stripLanes(marks)
   const todayLane = thisYear ? lanes.at(-1)! : null
@@ -132,7 +134,8 @@ function SeasonStrip({ year, today, rows }: { year: number; today: string; rows:
               {upcoming ? (
                 <span className="box-border block size-3 rounded-full border-2 border-foreground bg-card" />
               ) : (
-                <span className="block size-3 rounded-full bg-foreground" />
+                // Ringed in the card's ground, so the dot stands off the line it sits on.
+                <span className="box-border block size-3.5 rounded-full border-[3px] border-card bg-foreground" />
               )}
             </Mark>
           )
@@ -143,9 +146,9 @@ function SeasonStrip({ year, today, rows }: { year: number; today: string; rows:
           </Mark>
         )}
       </div>
-      <div className="mt-1 grid grid-cols-12 text-[11px] text-muted-foreground">
-        {Array.from({ length: 12 }, (_, month) => (
-          <span key={month} className="whitespace-nowrap">{months.format(new Date(Date.UTC(year, month, 1))).replace(/\.$/, '')}</span>
+      <div className="mt-1 grid grid-cols-12 text-center text-[11px] text-muted-foreground">
+        {monthInitials().map((initial, i) => (
+          <span key={i} className={cn(currentMonth === i + 1 && 'text-accent-text')}>{initial}</span>
         ))}
       </div>
     </div>
@@ -164,12 +167,12 @@ function outcome(row: SeasonRaceRow): { text: string; tone: 'pos' | 'warn' | 'mu
 
 const TONE_CLASS = { pos: 'text-[var(--pos)]', warn: 'text-[var(--warn)]', muted: 'text-muted-foreground' } as const
 
-/** One race: its date and countdown, name, target and plan week; its prediction or result. */
+/** One race: its date, distance and countdown, name, target and plan week; its prediction or result. */
 function RaceRow({ row, block }: { row: SeasonRaceRow; block: SeasonBlock | null }) {
   const s = t.goals.season
   const upcoming = row.kind === 'scheduled'
   const date = formatDate(row.date!, { style: 'bare', year: 'never' })
-  const when = upcoming ? (row.daysUntil !== null ? s.inDays(row.daysUntil) : null) : s.done
+  const when = upcoming && row.daysUntil !== null ? s.inDays(row.daysUntil) : null
   const isBlockRace = upcoming && block !== null && block.raceDate === row.date
   const sub = [
     row.targetSeconds !== null ? s.target(formatDuration(row.targetSeconds)) : null,
@@ -180,18 +183,28 @@ function RaceRow({ row, block }: { row: SeasonRaceRow; block: SeasonBlock | null
   return (
     <li className="flex items-start justify-between gap-4 border-t border-border py-3.5 last:pb-0" data-testid={`timeline-${upcoming ? 'upcoming' : 'done'}`}>
       <div className="flex min-w-0 flex-col gap-[3px]">
-        <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{[date, when].filter(Boolean).join(' · ')}</span>
-        <span className="break-words text-[15px] font-semibold text-foreground text-pretty">{row.title}</span>
+        <span className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{[date, row.short, when].filter(Boolean).join(' · ')}</span>
+        <span className="break-words text-[15px] font-semibold text-foreground text-pretty">{row.name}</span>
         {sub.length > 0 && <span className="text-xs text-muted-foreground">{sub.join(' · ')}</span>}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-[3px] text-right">
-        <span className="text-lg font-semibold text-foreground">{row.seconds !== null ? formatDuration(row.seconds) : '–'}</span>
+        <span className="text-xl font-semibold text-foreground">{row.seconds !== null ? formatDuration(row.seconds) : '–'}</span>
         <span className={cn('text-xs', TONE_CLASS[result.tone])} data-testid="timeline-delta" data-tone={result.tone}>
           {result.text}
         </span>
       </div>
     </li>
   )
+}
+
+/**
+ * How many races run so far met their target, out of those that had one
+ * and a result (3.1); null when none has both yet.
+ */
+export function targetsHit(rows: readonly SeasonRaceRow[]): { hit: number; total: number } | null {
+  const judged = rows.filter((row) => row.kind === 'done' && row.targetSeconds !== null && row.seconds !== null)
+  if (judged.length === 0) return null
+  return { hit: judged.filter((row) => row.seconds! <= row.targetSeconds!).length, total: judged.length }
 }
 
 /**
@@ -209,10 +222,18 @@ export function SeasonTimeline({ yearData, today, block }: { yearData: YearData;
   const ahead = dated.filter((row) => row.kind === 'scheduled').sort((a, b) => a.date!.localeCompare(b.date!))
   const past = dated.filter((row) => row.kind === 'done').sort((a, b) => b.date!.localeCompare(a.date!))
   const s = t.goals
+  const tally = targetsHit(dated)
 
   return (
     <section className={cardClass({ className: 'flex flex-col gap-4' })} data-testid="season-card">
-      <h2 className={TITLE}>{s.season.title}</h2>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className={TITLE}>{s.season.title}</h2>
+        {tally && (
+          <span className={cn('text-xs', tally.hit > 0 ? 'text-accent-text' : 'text-muted-foreground')} data-testid="season-tally">
+            {s.season.targetsHit(tally.hit, tally.total)}
+          </span>
+        )}
+      </div>
       <SeasonStrip year={yearData.year} today={today} rows={dated} />
       <ol>
         {[...ahead, ...past].map((row) => (

@@ -247,7 +247,13 @@ describe('computeMonthlyGoals', () => {
     expect(september.progress!.daysElapsed).toBe(16)
     expect(september.progress!.daysInMonth).toBe(30)
     expect(september.progress!.proRataTargetKm).toBeLessThan(september.targetKm)
-    expect(Math.round(september.progress!.proRataTargetKm)).toBe(87)
+    expect(Math.round(september.progress!.proRataTargetKm)).toBe(89)
+  })
+
+  // 3.1: one target line on the chart, so one target for every month.
+  it('asks a twelfth of the year of every month', () => {
+    const months = computeMonthlyGoals([], 2024, goal(2000))
+    expect(new Set(months.map((mg) => mg.targetKm))).toEqual(new Set([166.7]))
   })
 
   it('leaves finished and future months with nothing to pro-rate', () => {

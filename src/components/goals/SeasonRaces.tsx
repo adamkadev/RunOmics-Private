@@ -14,6 +14,8 @@ export interface SeasonRaceRow {
   sortKey: string
   kind: 'done' | 'scheduled' | 'open'
   title: string
+  /** The race's own name, or the distance where it has none: the row's title under its "MAY 16 · HALF" eyebrow. */
+  name: string
   /** Date, then target or outcome - joined with a middle dot. */
   sub: string[]
   countdownText: string | null
@@ -81,7 +83,8 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
     if (scheduledRace) {
       const raceDate = formatDate(scheduledRace.date, { style: 'bare' })
       const hasPassed = scheduledRace.date < today
-      const title = `${shortDist(target.distance)} · ${raceDisplayName({ ...scheduledRace, distance: target.distance })}`
+      const name = raceDisplayName({ ...scheduledRace, distance: target.distance })
+      const title = `${shortDist(target.distance)} · ${name}`
 
       if (hasPassed) {
         const result =
@@ -92,6 +95,7 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
           sortKey: scheduledRace.date,
           kind: 'done',
           title,
+          name,
           sub: [raceDate, targetLine].filter((part): part is string => part !== null),
           countdownText: null,
           isNext: false,
@@ -120,6 +124,7 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
         sortKey: scheduledRace.date,
         kind: 'scheduled',
         title,
+        name,
         sub: [raceDate, targetLine].filter((part): part is string => part !== null),
         countdownText: daysUntil >= 0 ? formatCountdown(daysUntil) : null,
         isNext: isSpotlight,
@@ -144,6 +149,7 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
         title: pb.activity.description
           ? `${shortDist(target.distance)} · ${pb.activity.description}`
           : shortDist(target.distance),
+        name: pb.activity.description || shortDist(target.distance),
         sub: [formatDate(pb.activity.date, { style: 'bare' }), targetLine].filter((part): part is string => part !== null),
         countdownText: null,
         isNext: false,
@@ -164,6 +170,7 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
       sortKey: '9999-99-99',
       kind: 'open',
       title: shortDist(target.distance),
+      name: shortDist(target.distance),
       sub: [s.noDateSet, targetLine].filter((part): part is string => part !== null),
       countdownText: null,
       isNext: false,
