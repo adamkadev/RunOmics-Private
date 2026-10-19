@@ -153,9 +153,6 @@ export const fr = {
     dayLabel: (day: string, state: string) => `${day} : ${state}`,
   },
   sessionCard: {
-    ranAt: (km: string, pace: string) => `${km} km courus à ${pace}`,
-    ran: (km: string) => `${km} km courus`,
-    plannedKm: (km: string) => `${km} km prévus`,
     coachInsight: 'Analyse du coach',
     onPlan: 'Conforme au plan',
     plannedLine: (km: string) => `${km} km prévus`,
@@ -479,9 +476,6 @@ export const fr = {
       tomorrow: 'Demain',
       openInPlan: 'Voir dans le plan',
       hrCap: (bpm: number) => `≤ ${bpm}`,
-      yesterday: 'Hier',
-      done: 'Faite',
-      notRun: (km: string | null) => (km ? `Pas courue · ${km} km prévus` : 'Pas courue'),
     },
     weeklyStreak: {
       title: 'Cette semaine',
@@ -1339,10 +1333,11 @@ export const fr = {
       groundContact: 'Contact au sol',
       vertOscillation: 'Oscillation verticale',
       vertRatio: 'Rapport vertical',
-      vsBaselineShort: 'vs référence',
-      level: 'Au niveau de la référence',
+      vsUsual: 'vs d’habitude',
+      level: 'Comme d’habitude',
       ratioUnit: 'pt',
-      baselineNote: (weeks: number) => `Bande = ta référence, la moitié centrale de tes sorties des ${weeks} dernières semaines.`,
+      usualRange: (weeks: number) => `Ta plage habituelle, ${weeks} dernières semaines`,
+      thisRun: 'Cette sortie',
     },
     charts: {
       heartRate: 'Fréquence cardiaque',
@@ -1928,9 +1923,13 @@ export const fr = {
     },
     continuous: 'continu',
     restCard: {
+      eyebrow: 'Repos',
       title: 'Jour de repos',
-      noSession: 'Aucune séance prévue.',
-      next: (weekday: string, title: string) => `Aucune séance prévue. Prochaine : ${weekday}, ${title}.`,
+      next: (weekday: string) => `Prochaine : ${weekday}`,
+    },
+    comingUp: {
+      title: 'À venir',
+      hint: 'touche pour ouvrir',
     },
     kinds: { easy: 'Footing', long: 'Sortie longue' },
     typeLetters: {
@@ -1952,8 +1951,6 @@ export const fr = {
     },
     weekRow: {
       kmOf: (km: string) => `/ ${km} km`,
-      runsOf: (n: number) => `/ ${n} sortie${n > 1 ? 's' : ''}`,
-      runs: (n: number) => (n > 1 ? 'sorties' : 'sortie'),
     },
     month: {
       phaseEnds: (phase: string, date: string) => `${phase} · fin le ${date}`,

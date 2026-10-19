@@ -176,9 +176,6 @@ export const en = {
   },
   // Planned against ran, on a SessionCard.
   sessionCard: {
-    ranAt: (km: string, pace: string) => `Ran ${km} km at ${pace}`,
-    ran: (km: string) => `Ran ${km} km`,
-    plannedKm: (km: string) => `planned ${km} km`,
     coachInsight: 'Coach insight',
     onPlan: 'On plan',
     plannedLine: (km: string) => `Planned ${km} km`,
@@ -516,10 +513,6 @@ export const en = {
       tomorrow: 'Tomorrow',
       openInPlan: 'Open in Plan',
       hrCap: (bpm: number) => `≤ ${bpm}`,
-      // The last-run row beside it.
-      yesterday: 'Yesterday',
-      done: 'Done',
-      notRun: (km: string | null) => (km ? `Not run · ${km} km planned` : 'Not run'),
     },
     weeklyStreak: {
       title: 'This week',
@@ -1409,10 +1402,12 @@ export const en = {
       groundContact: 'Ground contact',
       vertOscillation: 'Vertical oscillation',
       vertRatio: 'Vertical ratio',
-      vsBaselineShort: 'vs baseline',
-      level: 'Level with baseline',
+      // The range scale (3.0.2): the pill is the usual range, the tick this run.
+      vsUsual: 'vs your usual',
+      level: 'Right on your usual',
       ratioUnit: 'pt',
-      baselineNote: (weeks: number) => `Shaded band = your baseline, the middle half of your runs over the last ${weeks} weeks.`,
+      usualRange: (weeks: number) => `Your usual range, last ${weeks} weeks`,
+      thisRun: 'This run',
     },
     charts: {
       heartRate: 'Heart rate',
@@ -2072,10 +2067,15 @@ export const en = {
       targetPace: (range: string) => `target ${range}`,
     },
     continuous: 'continuous',
+    // The rest day on one line, then the week's sessions still to come (3.0.2).
     restCard: {
+      eyebrow: 'Rest',
       title: 'Rest day',
-      noSession: 'No session planned.',
-      next: (weekday: string, title: string) => `No session planned. Next up: ${weekday}, ${title}.`,
+      next: (weekday: string) => `Next: ${weekday}`,
+    },
+    comingUp: {
+      title: 'Coming up',
+      hint: 'tap to open',
     },
     // Plan's week (redesign 3.0): the phase card, the week row, the selected day.
     kinds: { easy: 'Easy', long: 'Long run' },
@@ -2098,8 +2098,6 @@ export const en = {
     },
     weekRow: {
       kmOf: (km: string) => `/ ${km} km`,
-      runsOf: (n: number) => `/ ${n} run${n !== 1 ? 's' : ''}`,
-      runs: (n: number): string => (n === 1 ? 'run' : 'runs'),
     },
     // Plan's month (redesign 3.0): the phase labels, the key and the summary card.
     month: {

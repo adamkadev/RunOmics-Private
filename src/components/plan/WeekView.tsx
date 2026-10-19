@@ -21,7 +21,7 @@ import { phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
-import { DoneDayCard, PlannedWorkoutCard, RestDayCard } from './PlanDayCard'
+import { ComingUpCard, DoneDayCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 
 // 30 pt squares with the 44 pt hit area round them, beside the week's dates.
 const NAV_BUTTON =
@@ -87,6 +87,34 @@ function selectedWorkouts(
   const coach = (byDateCoach?.get(date) ?? []).filter((v) => v.state !== 'cancelled')
   if (coach.length > 0) return coach.map((view) => coachWorkoutView(view, trainingZones, coach.length === 1 ? plan : null))
   return plan ? [plannedWorkoutView(plan, trainingZones)] : []
+}
+
+/**
+ * Coming up (3.0.2): every session planned from today to Sunday that has not
+ * been run, in order - "Tue 20 · 10 km · 1h00", in its type's colour.
+ */
+function comingUpRows(
+  dates: string[],
+  today: string,
+  byDate: Map<string, ActivitySummary[]>,
+  byDatePlanned: Map<string, PlannedWorkout>,
+  byDateCoach: ReadonlyMap<string, PlanPrescriptionView[]> | undefined,
+  trainingZones: TrainingZonesData | null
+): ComingUpRow[] {
+  return dates.flatMap((date) => {
+    if (date < today || (byDate.get(date) ?? []).length > 0) return []
+    const kind = dayKind(date, [], byDatePlanned, byDateCoach)
+    if (!kind) return []
+    return selectedWorkouts(date, byDatePlanned, byDateCoach, trainingZones).map((workout) => {
+      const summary = workoutSummary(workout)
+      const detail = [
+        formatWeekday(date, true),
+        summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null,
+        summary.durationSeconds ? formatDurationWords(summary.durationSeconds) : null,
+      ]
+      return { key: workout.key, date, title: summary.title, detail: detail.filter(Boolean).join(' · '), color: kind.color }
+    })
+  })
 }
 
 interface Props {
@@ -191,7 +219,13 @@ export function WeekView({
       </div>
     )
   } else {
-    dayCard = <RestDayCard date={selected} next={selected < today ? null : findNextPlanned(dates, selected, byDatePlanned, byDateCoach)} />
+    const coming = comingUpRows(dates, today, byDate, byDatePlanned, byDateCoach, trainingZones)
+    dayCard = (
+      <>
+        <RestDayCard date={selected} next={selected < today ? null : findNextPlanned(dates, selected, byDatePlanned, byDateCoach)} />
+        {coming.length > 0 && <ComingUpCard rows={coming} selectedDate={selected} onSelect={onSelectDate} />}
+      </>
+    )
   }
 
   return (
@@ -217,12 +251,10 @@ export function WeekView({
             </button>
           )}
         </div>
+        {/* Km only (3.0.2): the runs are counted in Coming up and the selector. */}
         <p className="text-[13px] tabular-nums text-muted-foreground" data-testid="week-summary">
           <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
           {planKm === null ? ` ${t.units.km}` : ` ${w.kmOf(formatWeekKm(planKm))}`}
-          {' · '}
-          <b className="font-semibold text-foreground">{target.ranSessions}</b>
-          {planKm === null ? ` ${w.runs(target.ranSessions)}` : ` ${w.runsOf(target.planSessions)}`}
         </p>
       </div>
 

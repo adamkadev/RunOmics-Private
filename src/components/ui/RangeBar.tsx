@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react'
 
+/** The usual-range pill's fill, the accent dimmed under its own outline - its legend swatch too. */
+export const USUAL_PILL_FILL = 'color-mix(in srgb, var(--accent) 35%, transparent)'
+
 /**
  * A value against its range (v4.17) - running dynamics against the
  * athlete's baseline, the load ratio against its safe band: an 8 px track,
@@ -27,18 +30,24 @@ export function RangeBar({
 }) {
   const clamp = (v: number) => Math.min(1, Math.max(0, v))
   const overflow = marker == null ? null : marker > 1 ? 'high' : marker < 0 ? 'low' : null
+  // A baseline is a range scale (3.0.2, 5e): a hairline track, the usual
+  // range a pill in the accent standing proud of it.
+  const scale = bandTone === 'baseline'
   return (
     <div className="flex flex-col gap-1.5">
       <div role="img" aria-label={label} className="relative h-4">
-        <div className="absolute inset-x-0 top-1 h-2 rounded-full bg-[var(--line-2)]" data-testid="range-bar-track" />
+        <div
+          className={scale ? 'absolute inset-x-0 top-1.5 h-1 rounded-full bg-[var(--line-2)]' : 'absolute inset-x-0 top-1 h-2 rounded-full bg-[var(--line-2)]'}
+          data-testid="range-bar-track"
+        />
         {band && (
           <div
-            className="absolute top-1 h-2 rounded-full"
+            className={scale ? 'absolute top-[3px] h-2.5 rounded-full border border-accent' : 'absolute top-1 h-2 rounded-full'}
             data-testid="range-band"
             style={{
               left: `${clamp(band[0]) * 100}%`,
               width: `${Math.max(0, clamp(band[1]) - clamp(band[0])) * 100}%`,
-              background: bandTone === 'pos' ? 'color-mix(in srgb, var(--pos) 45%, transparent)' : 'color-mix(in srgb, var(--accent) 45%, transparent)',
+              background: scale ? USUAL_PILL_FILL : 'color-mix(in srgb, var(--pos) 45%, transparent)',
             }}
           />
         )}

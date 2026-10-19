@@ -9,7 +9,6 @@ import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { CoachingPlan } from '@/domain/coaching/types'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
-import { LONG_RUN_COLOR } from '@/lib/colors'
 import { t } from '@/i18n'
 import { WeekView } from '../WeekView'
 
@@ -162,7 +161,8 @@ describe('the phase card', () => {
 })
 
 describe('the week row', () => {
-  it('reads what was run against what the plan scheduled, in km and runs', () => {
+  // 3.0.2: km only; the runs are in Coming up and the selector.
+  it('reads what was run against what the plan scheduled, in km', () => {
     renderWeek({
       activities: [TEMPO],
       planned: [
@@ -171,13 +171,13 @@ describe('the week row', () => {
       ],
     })
 
-    expect(screen.getByTestId('week-summary').textContent).toBe(`4.8 ${t.plan.weekRow.kmOf('13')} · 1 ${t.plan.weekRow.runsOf(2)}`)
+    expect(screen.getByTestId('week-summary').textContent).toBe(`4.8 ${t.plan.weekRow.kmOf('13')}`)
   })
 
   it('keeps the plain totals for a week with no plan', () => {
     renderWeek({ activities: [TEMPO, RACE] })
 
-    expect(screen.getByTestId('week-summary').textContent).toBe(`10 ${t.units.km} · 2 ${t.plan.weekRow.runs(2)}`)
+    expect(screen.getByTestId('week-summary').textContent).toBe(`10 ${t.units.km}`)
   })
 })
 
@@ -196,7 +196,8 @@ describe('the day selector', () => {
     expect(bar('2026-09-07').style.height).toBe(`${Math.round(4.79 * 3.2)}px`)
     expect(bar('2026-09-07').style.background).toBe('var(--zone-3)')
     expect(bar('2026-09-12').style.height).toBe(`${Math.round(18 * 3.2)}px`)
-    expect(bar('2026-09-12').style.background).toBe(LONG_RUN_COLOR)
+    // The long run shares the easy blue (3.0.2).
+    expect(bar('2026-09-12').style.background).toBe('var(--zone-2)')
     expect(bar('2026-09-10').getAttribute('data-bar-state')).toBe('rest')
     expect(bar('2026-09-10').style.height).toBe('4px')
   })
@@ -312,6 +313,41 @@ describe('a rest day', () => {
     await user.click(day('2026-09-10'))
     const card = screen.getByTestId('plan-rest-day')
     expect(within(card).getByRole('heading').textContent).toBe(t.plan.restCard.title)
-    expect(card.textContent).toContain('Long run')
+    expect(within(card).getByTestId('rest-next').textContent).toBe(`${t.plan.restCard.next('Sat')}Long run`)
+  })
+
+  // 3.0.2: the rest day is one line, and the week's sessions still to come are listed under it.
+  it('lists the week’s sessions still to come, each selecting its day', async () => {
+    const user = userEvent.setup()
+    const onSelectDate = vi.fn()
+    renderWeek({
+      activities: [TEMPO],
+      onSelectDate,
+      planned: [
+        { date: '2026-09-07', name: 'Tempo', type: 'Tempo', distanceM: 5_000 },
+        { date: '2026-09-11', name: 'Threshold', type: 'Threshold', distanceM: 10_000, durationSecs: 3_480 },
+        { date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 },
+      ],
+    })
+
+    const rows = within(screen.getByTestId('coming-up')).getAllByTestId('coming-up-row')
+    expect(rows.map((row) => row.textContent)).toEqual([
+      `Threshold${'Fri 11'} · 10 ${t.units.km} · 58 min`,
+      `Long run${'Sat 12'} · 18 ${t.units.km}`,
+    ])
+    expect(rows[0]!.querySelector<HTMLElement>('[aria-hidden]')!.style.background).toBe('var(--zone-4)')
+    expect(rows[1]!.querySelector<HTMLElement>('[aria-hidden]')!.style.background).toBe('var(--zone-2)')
+
+    await user.click(rows[1]!)
+    expect(onSelectDate).toHaveBeenCalledWith('2026-09-12')
+    expect(day('2026-09-12').getAttribute('aria-pressed')).toBe('true')
+    expect(screen.queryByTestId('coming-up')).toBeNull()
+  })
+
+  it('lists nothing when the week has no session left', () => {
+    renderWeek({ planned: [{ date: '2026-09-08', name: 'Easy', type: 'Base', distanceM: 8_000 }] })
+
+    expect(screen.getByTestId('plan-rest-day')).toBeInTheDocument()
+    expect(screen.queryByTestId('coming-up')).toBeNull()
   })
 })

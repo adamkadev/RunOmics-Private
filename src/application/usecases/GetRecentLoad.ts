@@ -1,6 +1,7 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
+import type { Activity, ActivityType } from '@/domain/activity/types'
 import { DAY_MS } from '@/lib/calendarDate'
 import { dailyTrimpByDate } from './GetTrainingLoad'
 import { getTrainingStatus } from './GetTrainingStatus'
@@ -14,6 +15,8 @@ export interface RecentLoadDay {
   date: string
   load: number
   isToday: boolean
+  /** The day's run, by its longest, for the bar's colour; null on a day without one. */
+  type: ActivityType | null
 }
 
 export interface RecentLoad {
@@ -30,6 +33,16 @@ function lastDays(today: string, count: number): string[] {
   return days
 }
 
+/** Each day's longest run's type: the session the day was, as Plan colours it. */
+export function dayTypes(activities: readonly Pick<Activity, 'date' | 'type' | 'durationSeconds'>[]): Map<string, ActivityType> {
+  const longest = new Map<string, { type: ActivityType; seconds: number }>()
+  for (const a of activities) {
+    const held = longest.get(a.date)
+    if (!held || a.durationSeconds > held.seconds) longest.set(a.date, { type: a.type, seconds: a.durationSeconds })
+  }
+  return new Map([...longest].map(([date, { type }]) => [date, type]))
+}
+
 export async function getRecentLoad(today: string): Promise<RecentLoad | null> {
   const activities = getAllActivities()
   if (!activities.length) return null
@@ -43,11 +56,13 @@ export async function getRecentLoad(today: string): Promise<RecentLoad | null> {
     restingHr: athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr,
   }
   const byDate = dailyTrimpByDate(activities, hrBounds)
+  const types = dayTypes(activities)
 
   const days = lastDays(today, RECENT_LOAD_DAYS).map((date) => ({
     date,
     load: Math.round(byDate.get(date) ?? 0),
     isToday: date === today,
+    type: types.get(date) ?? null,
   }))
   const band = { lo: Math.round(status.ctl * LOAD_BAND.lo), hi: Math.round(status.ctl * LOAD_BAND.hi) }
 

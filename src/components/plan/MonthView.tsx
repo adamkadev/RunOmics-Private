@@ -6,7 +6,7 @@ import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/act
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { isKeyPrescription, prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import { cardClass } from '@/components/ui/Card'
-import { LONG_RUN_COLOR, zoneColor } from '@/lib/colors'
+import { zoneColor } from '@/lib/colors'
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
 import { formatDate, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -315,13 +315,13 @@ export function MonthView({
         </span>
         {hasLong && (
           <span className="flex items-center gap-1.5">
-            <Swatch style={{ background: LONG_RUN_COLOR }} />
+            <Swatch style={{ background: zoneColor(2) }} />
             {m.long}
           </span>
         )}
         {qualityTypes.map((type) => (
           <span key={type} className="flex items-center gap-1.5">
-            <Swatch style={{ background: kindColor(type, 'quality') }} />
+            <Swatch style={{ background: kindColor(type) }} />
             {t.activityTypes[type]}
           </span>
         ))}

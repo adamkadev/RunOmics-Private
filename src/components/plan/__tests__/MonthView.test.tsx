@@ -3,7 +3,6 @@ import { describe, expect, it, vi } from 'vitest'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { formatDate, formatWeekday } from '@/lib/formatters'
-import { LONG_RUN_COLOR } from '@/lib/colors'
 import { t } from '@/i18n'
 import { MonthView } from '../MonthView'
 
@@ -71,7 +70,8 @@ describe('the month grid', () => {
     expect(tile('2026-10-13').style.border).toBe('1px solid color-mix(in srgb, var(--zone-2) 50%, transparent)')
     expect(tile('2026-10-14').style.background).toBe('color-mix(in srgb, var(--zone-4) 25%, transparent)')
     expect(tile('2026-10-21').style.border).toBe('1px dashed var(--zone-4)')
-    expect(tile('2026-10-25').style.border).toBe(`1px dashed ${LONG_RUN_COLOR}`)
+    // The long run shares the easy blue (3.0.2).
+    expect(tile('2026-10-25').style.border).toBe('1px dashed var(--zone-2)')
     expect(tile('2026-10-15').getAttribute('style')).toBeNull()
     expect(tile('2026-10-15').textContent).toBe('')
   })
