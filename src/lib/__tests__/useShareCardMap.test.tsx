@@ -37,8 +37,27 @@ const maps = vi.hoisted(() => {
     unproject([x, y]: [number, number]) {
       return { lng: x, lat: y }
     }
+    styleLayers: { id: string; type: string; 'source-layer'?: string }[] = []
+    rendered: unknown[] = []
+    hidden: string[] = []
+    moved: string[] = []
     getStyle() {
-      return { layers: [] }
+      return { layers: this.styleLayers }
+    }
+    moveLayer(id: string) {
+      this.moved.push(id)
+    }
+    queryRenderedFeatures() {
+      return this.rendered
+    }
+    getLayoutProperty() {
+      return 9
+    }
+    getPaintProperty() {
+      return 0.8
+    }
+    setLayoutProperty(id: string, key: string, value: string) {
+      if (key === 'visibility' && value === 'none') this.hidden.push(id)
     }
     hasImage() {
       return false
@@ -74,6 +93,7 @@ vi.mock('@/lib/maplibre', () => ({
     landmarkCalls.push(options)
   },
   showPlacesAtAnyZoom: () => {},
+  isPlaceLabelLayer: (layer: { 'source-layer'?: string }) => layer['source-layer'] === 'place_label',
 }))
 vi.mock('@/lib/runMapLayers', () => ({
   addEdgeFence: () => () => {},
@@ -176,5 +196,32 @@ describe('the share card basemap', () => {
     const fence = map.sources.get('share-label-fence')!.data.features.map((f) => f.geometry.coordinates)
     // The route's two ends, and a line across the card at each band.
     expect(fence).toEqual(expect.arrayContaining([[2.43, 48.89], [2.48, 48.9], [0, 79], [300, 79], [0, 307]]))
+  })
+})
+
+// 3.0.3, the owner's request: a district the run crossed keeps its name.
+describe('the share card names', () => {
+  it('lifts the towns and districts over the fence, reads where they were placed, and captures the map without them', async () => {
+    const drawnMaps: { moved: string[]; hidden: string[] }[] = []
+    maps.FakeMap.script = (map) => {
+      const fake = map as unknown as { styleLayers: unknown[]; rendered: unknown[] }
+      fake.styleLayers = [{ id: 'Road labels', type: 'symbol', 'source-layer': 'road_label' }, { id: 'Place labels', type: 'symbol', 'source-layer': 'place_label' }]
+      fake.rendered = [
+        { properties: { name: 'Devant-les-Ponts' }, geometry: { type: 'Point', coordinates: [120, 140] }, layer: { id: 'Place labels' } },
+        { properties: { name: 'Devant-les-Ponts' }, geometry: { type: 'Point', coordinates: [121, 141] }, layer: { id: 'Place labels' } },
+      ]
+      drawnMaps.push(map as unknown as (typeof drawnMaps)[number])
+      map.emit('load')
+      map.emit('idle')
+      // The second idle: the map again, once the names are hidden.
+      const again = (n: number) => { map.emit('idle'); if (n > 0) setTimeout(() => again(n - 1), 10) }
+      setTimeout(() => again(50), 10)
+    }
+    const { result } = renderHook(() => useShareCardMap({ route: route(2.59), theme: 'dark', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
+    await act(() => vi.advanceTimersByTimeAsync(1000))
+
+    expect(drawnMaps[0]!.moved).toEqual(['Place labels'])
+    expect(drawnMaps[0]!.hidden).toEqual(['Place labels'])
+    expect(result.current.labels).toEqual([{ text: 'Devant-les-Ponts', x: 120, y: 140, size: 9, color: expect.any(String), opacity: 0.8 }])
   })
 })

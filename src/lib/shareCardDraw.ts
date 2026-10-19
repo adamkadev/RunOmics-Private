@@ -38,6 +38,18 @@ export interface ShareCardScene {
   /** The basemap for the whole card, drawn for the layout's route frame, and the route projected onto it. */
   mapImage?: HTMLCanvasElement | null
   mapPoints?: [number, number][] | null
+  /** The towns and districts MapLibre placed, drawn over the route (3.0.3). */
+  mapLabels?: ShareMapLabel[] | null
+}
+
+/** A place name as the map placed it, in the card's px, to draw over the route. */
+export interface ShareMapLabel {
+  text: string
+  x: number
+  y: number
+  size: number
+  color: string
+  opacity: number
 }
 
 /**
@@ -446,6 +458,32 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   const first = pts[0]!
   const last = pts[pts.length - 1]!
   for (const end of routeEnds(first, last, endsJoined(first, last))) drawRouteMarker(ctx, end.kind, end.at, palette.marker, MARKER_SCALE)
+}
+
+/**
+ * Towns and districts over the route (3.0.3, at the owner's request): the
+ * map captured without them, they are drawn after the line on a halo of the
+ * card's ground, so a district the run crossed keeps its name. Only between
+ * the bands, where no fade can cut one.
+ */
+function drawPlaceLabels(ctx: Ctx, { mapLabels, palette, fonts }: ShareCardScene, { textTop, textBottom }: ShareCardLayout) {
+  if (!mapLabels?.length) return
+  ctx.save()
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.lineJoin = 'round'
+  for (const label of mapLabels) {
+    const half = label.size / 2
+    if (label.y - half < textTop + ROUTE_TEXT_GAP || label.y + half > textBottom - ROUTE_TEXT_GAP) continue
+    ctx.font = `600 ${label.size}px ${fonts.text}`
+    ctx.globalAlpha = label.opacity
+    ctx.lineWidth = 3
+    ctx.strokeStyle = palette.bg
+    ctx.strokeText(label.text, label.x, label.y)
+    ctx.fillStyle = label.color
+    ctx.fillText(label.text, label.x, label.y)
+  }
+  ctx.restore()
 }
 
 /** A #rrggbb colour at `alpha`, for a fade to the card's own background. */
@@ -897,6 +935,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
     drawPhoto(ctx, photo, layout)
   } else if (scene.design === 'route') {
     drawRoute(ctx, scene, layout)
+    drawPlaceLabels(ctx, scene, layout)
     drawBands(ctx, scene, layout)
     // Over the bands, so the stats' fade does not cover it.
     if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textTop)

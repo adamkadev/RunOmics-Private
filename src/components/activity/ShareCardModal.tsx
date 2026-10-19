@@ -70,7 +70,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   // has loaded, as the card will be drawn in it.
   const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(activity, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
-  const { image: mapImage, points: mapPoints } = useShareCardMap({
+  const { image: mapImage, points: mapPoints, labels: mapLabels } = useShareCardMap({
     route: activity.route,
     theme,
     width: W,
@@ -124,8 +124,9 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     locationName,
     mapImage,
     mapPoints,
+    mapLabels,
     fonts: pageFonts(),
-  }), [activity, design, accent, theme, photoImage, locationName, mapImage, mapPoints])
+  }), [activity, design, accent, theme, photoImage, locationName, mapImage, mapPoints, mapLabels])
 
   useEffect(() => {
     const canvas = canvasRef.current

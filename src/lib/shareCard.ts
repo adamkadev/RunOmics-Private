@@ -1,7 +1,7 @@
 import type { ShareActivity } from '@/lib/shareCardStats'
 import type { AccentId } from '@/lib/accentScale'
 import { W, H, sharePalette, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
-import { drawShareCard, FALLBACK_FONTS, shareCardLayout, type ShareFonts } from '@/lib/shareCardDraw'
+import { drawShareCard, FALLBACK_FONTS, shareCardLayout, type ShareFonts, type ShareMapLabel } from '@/lib/shareCardDraw'
 import { ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 
 export { SHARE_DESIGNS, W, H, type ShareDesign, type ThemeMode } from '@/lib/shareCardPalette'
@@ -16,6 +16,7 @@ export interface RenderOptions {
   locationName?: string | null
   mapImage?: HTMLCanvasElement | null
   mapPoints?: [number, number][] | null
+  mapLabels?: ShareMapLabel[] | null
   fonts?: ShareFonts
 }
 
@@ -70,6 +71,7 @@ export function renderShareCard(canvas: HTMLCanvasElement, options: RenderOption
     photo: options.photoImage,
     mapImage: options.mapImage,
     mapPoints: options.mapPoints,
+    mapLabels: options.mapLabels,
   })
 }
 

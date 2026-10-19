@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { maptilerStyle, shareBasemapStyle } from '@/lib/maptiler'
 import { bandFencePoints, routeFencePoints, simplifyRoute, type LngLat, type RouteFrame } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
-import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, showPlacesAtAnyZoom, styleRunMapLabels } from '@/lib/maplibre'
+import { addLandmarkLabels, addParkLabels, addWaterLabels, isPlaceLabelLayer, loadMapLibre, showPlacesAtAnyZoom, styleRunMapLabels } from '@/lib/maplibre'
+import type { ShareMapLabel } from '@/lib/shareCardDraw'
 import { SURFACES } from '@/lib/themeTokens'
 import { t } from '@/i18n'
 import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
@@ -12,12 +13,15 @@ import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/l
 export interface ShareCardMap {
   image: HTMLCanvasElement | null
   points: [number, number][] | null
+  /** The towns and districts, for the card to draw over its route (3.0.3). */
+  labels: ShareMapLabel[] | null
   failed: boolean
 }
 
 interface Render {
   image: HTMLCanvasElement
   points: [number, number][]
+  labels: ShareMapLabel[]
 }
 
 export interface ShareCardMapOptions {
@@ -107,6 +111,31 @@ function fenceLabels(map: import('maplibre-gl').Map, points: LngLat[], width: nu
   })
 }
 
+function placeLayerIds(map: import('maplibre-gl').Map): string[] {
+  return map.getStyle().layers.filter((layer) => isPlaceLabelLayer(layer as { id: string; type: string; 'source-layer'?: string })).map((layer) => layer.id)
+}
+
+/** Each town and district MapLibre placed, once, in the card's px, with its size, ink and opacity. */
+function placedLabels(map: import('maplibre-gl').Map, mode: ThemeMode): ShareMapLabel[] {
+  const ids = placeLayerIds(map)
+  if (ids.length === 0) return []
+  const surface = SURFACES[mode]
+  const seen = new Set<string>()
+  const out: ShareMapLabel[] = []
+  for (const feature of map.queryRenderedFeatures({ layers: ids })) {
+    const props = feature.properties ?? {}
+    const text = String(props[`name:${MAP_LANG}`] ?? props.name ?? '').trim()
+    if (!text || seen.has(text) || feature.geometry.type !== 'Point') continue
+    seen.add(text)
+    const id = feature.layer.id
+    const size = Number(map.getLayoutProperty(id, 'text-size')) || CARD_LABEL_SIZE
+    const opacity = Number(map.getPaintProperty(id, 'text-opacity'))
+    const { x, y } = map.project(feature.geometry.coordinates as [number, number])
+    out.push({ text, x, y, size, color: surface.text2, opacity: Number.isFinite(opacity) ? opacity : 1 })
+  }
+  return out
+}
+
 async function renderRouteMap(opts: RenderOptions): Promise<Render> {
   const { route, theme, width, height, frame, bands } = opts
   const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
@@ -156,6 +185,9 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     if (last && last !== first) setRunFinish(map, first, last)
     addEdgeFence(map)
     fenceLabels(map, points, width, bands)
+    // Towns and districts above the fence (3.0.3): placed first, so the line
+    // drops none of them; the card draws them over its route afterwards.
+    for (const id of placeLayerIds(map)) map.moveLayer(id)
   })
 
   try {
@@ -163,13 +195,22 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
 
     await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
 
+    // Read where MapLibre placed each name, then capture the map without
+    // them: the card paints its route over the map, and the names over that.
+    const labels = placedLabels(map, isDark ? 'dark' : 'light')
+    if (labels.length > 0) {
+      for (const id of placeLayerIds(map)) map.setLayoutProperty(id, 'visibility', 'none')
+      await settled(map, RENDER_TIMEOUT_MS)
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())))
+    }
+
     const src = map.getCanvas()
     const image = document.createElement('canvas')
     image.width = src.width
     image.height = src.height
     image.getContext('2d')?.drawImage(src, 0, 0)
 
-    return { image, points: points.map((c) => { const p = map.project(c); return [p.x, p.y] }) }
+    return { image, points: points.map((c) => { const p = map.project(c); return [p.x, p.y] }), labels }
   } finally {
     map.remove()
     container.remove()
@@ -221,6 +262,7 @@ export function useShareCardMap({
   return {
     image: hit?.image ?? null,
     points: hit?.points ?? null,
+    labels: hit?.labels ?? null,
     failed: !!key && failedKey === key,
   }
 }

@@ -15,7 +15,7 @@ function recorder() {
   const stack: { ty: number; state: typeof state }[] = []
   const log = (op: string) => (...args: unknown[]) => { ops.push({ op, args, fill: state.fillStyle, stroke: state.strokeStyle, font: state.font, ty }) }
   const ctx = {
-    ...Object.fromEntries(['fillRect', 'fillText', 'fill', 'stroke', 'arc', 'ellipse', 'drawImage', 'moveTo', 'lineTo', 'rect', 'roundRect'].map((k) => [k, log(k)])),
+    ...Object.fromEntries(['fillRect', 'fillText', 'strokeText', 'fill', 'stroke', 'arc', 'ellipse', 'drawImage', 'moveTo', 'lineTo', 'rect', 'roundRect'].map((k) => [k, log(k)])),
     beginPath() {}, clip() {}, closePath() {}, arcTo() {}, scale() {},
     createLinearGradient() { return { addColorStop() {} } },
     save() { stack.push({ ty, state: { ...state } }) },
@@ -462,5 +462,21 @@ describe('the Photo design (design review, Oct 2026)', () => {
       expect(alphaAt(stops, 0.45)).toBe(0)
       expect(stops.at(-1)).toEqual([1, 0.78])
     }
+  })
+})
+
+// 3.0.3, the owner's request: a district the run crossed keeps its name.
+describe('the place names on the Route card', () => {
+  const label = (text: string, y: number) => ({ text, x: 150, y, size: 9, color: '#8d9391', opacity: 0.8 })
+
+  it('draws them over the route, on a halo of the ground, and none a band would cut', () => {
+    const l = layout()
+    const inside = (l.textTop + l.textBottom) / 2
+    const ops = draw({ design: 'route', mapLabels: [label('Devant-les-Ponts', inside), label('Under the header', l.textTop + 2)] })
+    const name = ops.findIndex((o) => o.op === 'fillText' && o.args[0] === 'Devant-les-Ponts')
+    const lastTrace = ops.map((o) => o.op).lastIndexOf('lineTo')
+    expect(name).toBeGreaterThan(lastTrace)
+    expect(ops.find((o) => o.op === 'strokeText' && o.args[0] === 'Devant-les-Ponts')?.stroke).toBe(sharePalette('violet', 'dark').bg)
+    expect(texts(ops)).not.toContain('Under the header')
   })
 })
