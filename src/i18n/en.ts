@@ -1839,7 +1839,7 @@ export const en = {
       lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathon distances`,
       lifetimeDistanceWorldTour: '🌍 A full trip around the Earth',
       activityCount: (n: number) => `${ordinal(n)} run`,
-      activityCountDetail: (km: string) => `${km} km covered so far`,
+      activityCountDetail: (km: string) => `${km} km lifetime`,
     },
     trainingZones: {
       title: 'Training zones',
@@ -1889,30 +1889,43 @@ export const en = {
       longest: 'Longest Run',
     } as Record<string, string>,
     raceTag: 'race',
-    trainingTag: 'training run',
+    trainingTag: 'training',
     notYetRun: 'Not yet run',
     segmented: {
-      prs: 'Records',
+      best: 'Best times',
       milestones: 'Milestones',
       routes: 'Routes',
     },
     recurring: {
-      title: 'Routes you keep coming back to',
-      runCount: (n: number) => `${n} times`,
+      runCount: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
       best: 'Best',
       // What a bar is, then the dates its first and last bars were run
       // (design review, Oct 2026): "taller = faster" alone named no axis.
       trailKey: 'One bar per run · taller = faster',
       trailSpan: (from: string, to: string) => `${from} → ${to}`,
+      legendBest: 'best',
+      legendLatest: 'latest',
+      bestPace: (pace: string) => `best ${pace}`,
+      lastPace: (pace: string) => `last ${pace}`,
+      newBest: 'new best',
+      // A route whose start no place name came back for.
+      unnamed: (n: number) => `Route ${n}`,
     },
     milestones: {
-      // The key to the gold dot (design review, Oct 2026).
-      recordKey: 'Personal record',
+      nextUp: 'Next up',
+      // Runs or km, the unit the milestone's own title already names.
+      toGo: (n: string) => `${n} to go`,
     },
     noRecordYet: 'No record yet',
     cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted' },
-    sameAsBest: '= best',
-    medalLegend: ['1st', '2nd', '3rd'] as [string, string, string],
+    // A gap under a minute: "5s".
+    gapSeconds: (s: number) => `${s}s`,
+    faster: (gap: string) => `${gap} faster`,
+    slower: (gap: string) => `${gap} slower`,
+    // The prediction is the best to the second: run already at potential.
+    atPotential: 'at potential',
+    allEfforts: (distance: string) => `All ${distance} efforts ›`,
+    topEfforts: (n: number, distance: string) => `Top ${n} ${distance} efforts ›`,
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
   },
 

@@ -3,7 +3,7 @@ import { CURATED_ACCENTS } from '@/lib/accentScale'
 import { TOKEN_BLOCKS, accentTokens } from '@/lib/themeTokens'
 import { TRAINING_METRIC_COLORS, ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
-import { milestoneDotClass } from '@/components/milestones/milestoneVisuals'
+import { milestoneIcon } from '@/components/milestones/milestoneVisuals'
 
 /**
  * What an accent is allowed to paint. The accent owns links, selected states,
@@ -68,7 +68,7 @@ describe('markers that mean something do not move with the accent', () => {
     'medal gold': STATUS.gold.dot,
     'medal silver': STATUS.silver.dot,
     'medal bronze': STATUS.bronze.dot,
-    'milestone record dot': milestoneDotClass('record'),
+    'milestone record trophy': milestoneIcon('record').className,
     'Form': TRAINING_METRIC_COLORS.form,
     'Fitness': TRAINING_METRIC_COLORS.fitness,
     'Fatigue': TRAINING_METRIC_COLORS.fatigue,
@@ -81,13 +81,15 @@ describe('markers that mean something do not move with the accent', () => {
     expect(value).not.toMatch(/accent/)
   })
 
-  it('gives a record the same gold in Milestones as in Records', () => {
-    expect(milestoneDotClass('record')).toBe(STATUS.gold.dot)
+  it('marks a record milestone in the warm amber, never the accent', () => {
+    const record = milestoneIcon('record').className
+    expect(record).toContain('var(--warn)')
+    expect(record).not.toMatch(/accent/)
   })
 
-  it('leaves every other milestone type unmarked, which is the point', () => {
-    for (const type of ['distance-tier', 'streak', 'lifetime-distance', 'activity-count', 'first-activity'] as const) {
-      expect(milestoneDotClass(type)).toBeNull()
+  it('leaves every count, total and streak neutral', () => {
+    for (const type of ['streak', 'lifetime-distance', 'activity-count', 'first-activity'] as const) {
+      expect(milestoneIcon(type).className).not.toMatch(/accent|warn/)
     }
   })
 })

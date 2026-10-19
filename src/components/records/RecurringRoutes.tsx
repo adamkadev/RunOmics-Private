@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
-import { formatDate, formatKm, formatMonthShortYear, formatPace } from '@/lib/formatters'
+import { formatClock, formatDate, formatKm, formatMonthShortYear } from '@/lib/formatters'
 import { reverseGeocode } from '@/lib/reverseGeocode'
 import { t } from '@/i18n'
-import { SectionDivider } from '@/components/ui/SectionLabel'
+import { cardClass } from '@/components/ui/Card'
+import { TRAIL_RUNS, formatGap, routeLatest, trailBars } from './recordsView'
 
 interface Props {
   routes: RecurringRoute[]
@@ -26,10 +27,9 @@ function routeKm(km: number): string {
 }
 
 /**
- * A date in as little width as it can take - the best run's line and the
+ * A date in as little width as it can take - the latest run's line and the
  * trail's two ends are narrow: a day this year, a month and year before
- * that. "Best" is dropped beside it - a pace beside a route already reads as
- * the fastest one.
+ * that.
  */
 function compactDate(isoDate: string, thisYear: number): string {
   return Number(isoDate.slice(0, 4)) === thisYear
@@ -41,7 +41,7 @@ function Outline({ path }: { path: string }) {
   return (
     <svg
       viewBox={`-6 -6 ${OUTLINE_BOX + 12} ${OUTLINE_BOX + 12}`}
-      className="h-[38px] w-[30px] shrink-0 text-foreground"
+      className="h-9 w-8 shrink-0 text-foreground/85"
       aria-hidden="true"
     >
       <path
@@ -56,45 +56,89 @@ function Outline({ path }: { path: string }) {
   )
 }
 
-/** The trail shows this many runs at most, the latest ones. */
-export const TRAIL_RUNS = 24
+const BAR_TONE = {
+  best: 'bg-accent',
+  latest: 'bg-foreground',
+  other: 'bg-[var(--band)] opacity-60',
+} as const
 
 /**
- * The trail fills whatever the text column leaves and scales its bars to fit.
- * It used to grow a 3 px bar per run, so the most-run routes pushed their own
- * text down to "9.…" and "3:3…".
+ * One bar per run in date order, taller for faster: the best in the accent,
+ * the latest in ink, the rest dim. The dates of its two ends name the axis
+ * (design review, Oct 2026): the bars are runs, not days.
  */
 function PaceTrail({ route, thisYear }: { route: RecurringRoute; thisYear: number }) {
+  const bars = trailBars(route)
   const runs = route.runs.slice(-TRAIL_RUNS)
-  const paces = runs.map((r) => r.paceSecPerKm)
-  const fastest = Math.min(...paces)
-  const slowest = Math.max(...paces)
-  const span = slowest - fastest || 1
   const first = runs[0] ? compactDate(runs[0].date, thisYear) : null
   const last = runs.length > 0 ? compactDate(runs[runs.length - 1]!.date, thisYear) : null
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-end gap-1.5">
-      <div data-testid="pace-trail" className="flex h-8 w-full items-end justify-end gap-0.5" aria-hidden="true">
-        {/* Band grey, the latest run in ink (v5.5 #14): the accent is for "now". */}
-        {runs.map((run, i) => (
+    <div className="flex shrink-0 flex-col items-end gap-1.5">
+      <div data-testid="pace-trail" className="flex h-[38px] items-end gap-0.5" aria-hidden="true">
+        {bars.map((bar) => (
           <span
-            key={run.activityId}
-            data-latest={i === runs.length - 1 ? '' : undefined}
-            className={cn('min-w-px max-w-[5px] flex-1 rounded-full', i === runs.length - 1 ? 'bg-foreground' : 'bg-[var(--band)]')}
-            style={{ height: `${20 + ((slowest - run.paceSecPerKm) / span) * 80}%` }}
+            key={bar.activityId}
+            data-tone={bar.tone}
+            className={cn('w-1 rounded-sm', BAR_TONE[bar.tone])}
+            style={{ height: `${bar.heightPx}px` }}
           />
         ))}
       </div>
-      {/* The axis, named by its ends (design review, Oct 2026): the bars are
-          runs in order, not days, so the dates of the first and the latest
-          say how much time they cover. */}
       {first && last && (
         <p data-testid="pace-trail-span" className="whitespace-nowrap text-caption leading-none text-muted-foreground">
           {first === last ? last : t.records.recurring.trailSpan(first, last)}
         </p>
       )}
     </div>
+  )
+}
+
+/** The key to the bars' two colours, beside the line that says what a bar is. */
+function TrailKey() {
+  const r = t.records.recurring
+  return (
+    <div className="flex items-center justify-between gap-3 px-0.5 text-xs text-muted-foreground">
+      <p>{r.trailKey}</p>
+      <p className="flex shrink-0 items-center gap-2.5" aria-hidden="true">
+        <span className="flex items-center gap-1">
+          <span className={cn('h-2.5 w-1 rounded-sm', BAR_TONE.best)} />
+          {r.legendBest}
+        </span>
+        <span className="flex items-center gap-1">
+          <span className={cn('h-2.5 w-1 rounded-sm', BAR_TONE.latest)} />
+          {r.legendLatest}
+        </span>
+      </p>
+    </div>
+  )
+}
+
+/** "best 5:07 · last 5:19 +12s", or "best 5:16 · new best Sep 17" when the latest run set it. */
+function BestAndLast({ route, thisYear }: { route: RecurringRoute; thisYear: number }) {
+  const r = t.records.recurring
+  const latest = routeLatest(route)
+  return (
+    <p className="truncate text-xs text-foreground/85" data-testid="route-best">
+      <Link href={`/activities/${route.bestActivityId}`} className="hit-44">
+        {r.bestPace(formatClock(route.bestPaceSecPerKm))}
+      </Link>
+      {latest?.kind === 'new-best' && (
+        <>
+          {' · '}
+          {r.newBest} <span className="text-accent-text">{compactDate(latest.date, thisYear)}</span>
+        </>
+      )}
+      {latest?.kind === 'behind' && (
+        <>
+          {' · '}
+          {r.lastPace(formatClock(latest.run.paceSecPerKm))}{' '}
+          <span data-testid="route-gap" className={latest.gapSeconds > 0 ? 'text-[var(--warn)]' : 'text-muted-foreground'}>
+            {latest.gapSeconds > 0 ? `+${formatGap(latest.gapSeconds)}` : `±${formatGap(0)}`}
+          </span>
+        </>
+      )}
+    </p>
   )
 }
 
@@ -138,51 +182,28 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
 
   return (
     <section className="space-y-3">
-      {/* No subtitle: Records and Milestones carry none, and three tabs that
-          introduce themselves differently read as three different screens -
-          so the same label and card as theirs (screen audit, Oct 2026). */}
-      <div className="space-y-1">
-        <SectionDivider as="h2">{t.records.recurring.title}</SectionDivider>
-        {/* Above the list, not below it: at the foot of fifteen rows the key
-            arrives long after the bars it explains. Muted, not subtle: a key
-            too faint to read explains nothing. */}
-        <p className="mt-0.5 text-caption text-muted-foreground">
-          {t.records.recurring.trailKey}
-        </p>
-      </div>
+      {/* The key above the list, not below it: at the foot of fifteen rows it
+          arrives long after the bars it explains. */}
+      <TrailKey />
 
-      <ul className="glass-card rounded-card-sm px-5">
-        {routes.map((route) => (
-          <li key={route.id} className="flex items-center gap-3 border-b border-border py-[11px] last:border-b-0">
+      <ul className={cardClass({ padding: 'none', className: 'px-4 py-0.5' })}>
+        {routes.map((route, i) => (
+          <li
+            key={route.id}
+            className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border py-3 last:border-b-0"
+          >
             <Outline path={route.outline} />
 
-            {/* A fixed column: the text never gives way to the trail. */}
-            <div data-testid="route-text" className="w-[150px] shrink-0">
-              {/* The run count holds this slot whether or not a place resolves,
-                  so it never moves line between one row and the next. */}
-              <p className="truncate font-display text-subhead font-bold text-foreground">
-                {routeKm(route.distanceKm)} {t.units.km}
-                <span className="text-caption font-medium text-subtle">
-                  {' · '}
-                  {t.records.recurring.runCount(route.runCount)}
-                </span>
+            <div data-testid="route-text" className="min-w-0 space-y-0.5">
+              {/* Named after where it starts, at street grain; a number
+                  until a place comes back. */}
+              <p className="truncate text-subhead font-semibold text-foreground" data-testid="route-name">
+                {places[route.id] ?? t.records.recurring.unnamed(i + 1)}
               </p>
-
-              {/* Never cut (design review, Oct 2026): a street name ahead of
-                  the pace took the date off the end of one truncated line.
-                  The best run keeps its line; the place wraps under it. */}
-              <Link
-                href={`/activities/${route.bestActivityId}`}
-                className="hit-44 mt-0.5 block text-caption text-muted-foreground"
-                data-testid="route-best"
-              >
-                {formatPace(route.bestPaceSecPerKm)} · {compactDate(route.bestDate, thisYear)}
-              </Link>
-              {places[route.id] && (
-                <p className="mt-0.5 break-words text-caption leading-snug text-subtle" data-testid="route-place">
-                  {places[route.id]}
-                </p>
-              )}
+              <p className="truncate text-xs text-muted-foreground">
+                {routeKm(route.distanceKm)} {t.units.km} · {t.records.recurring.runCount(route.runCount)}
+              </p>
+              <BestAndLast route={route} thisYear={thisYear} />
             </div>
 
             <PaceTrail route={route} thisYear={thisYear} />

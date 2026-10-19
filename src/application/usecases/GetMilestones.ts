@@ -171,6 +171,61 @@ export function getWeeklyStreakData(now = new Date(`${appTodayIso()}T12:00:00`))
   }
 }
 
+export interface NextMilestone {
+  kind: 'activity-count' | 'distance-tier'
+  label: string
+  /** What is left, in the milestone's own unit: runs or km. */
+  remaining: number
+  /** 0-1, how far along the way to it from zero. */
+  progress: number
+}
+
+/**
+ * The two milestones that are always on their way (Records > Milestones,
+ * NEXT UP): the next run-count tier and the next tier of this year's
+ * distance. Either drops out past the last tier.
+ */
+export function findNextMilestones(
+  activitiesAscByDate: { date: string; distanceKm: number }[],
+  year: number,
+  countTiers: number[] = ACTIVITY_COUNT_TIERS,
+  distanceTiers: number[] = DISTANCE_TIERS_KM,
+): NextMilestone[] {
+  const next: NextMilestone[] = []
+
+  const count = activitiesAscByDate.length
+  const countTier = countTiers.find((tier) => tier > count)
+  if (countTier !== undefined) {
+    next.push({
+      kind: 'activity-count',
+      label: t.profile.milestones.activityCount(countTier),
+      remaining: countTier - count,
+      progress: count / countTier,
+    })
+  }
+
+  const yearKm = activitiesAscByDate
+    .filter((a) => Number(a.date.slice(0, 4)) === year)
+    .reduce((sum, a) => sum + a.distanceKm, 0)
+  const distanceTier = distanceTiers.find((tier) => tier > yearKm)
+  if (distanceTier !== undefined) {
+    next.push({
+      kind: 'distance-tier',
+      label: t.profile.milestones.distanceTier(formatKm(distanceTier)),
+      // Rounded up: "0 to go" would be a milestone already passed.
+      remaining: Math.ceil(distanceTier - yearKm),
+      progress: yearKm / distanceTier,
+    })
+  }
+
+  return next
+}
+
+export function getNextMilestones(today: string = appTodayIso()): NextMilestone[] {
+  const ascending = [...getAllActivities()].sort((a, b) => a.date.localeCompare(b.date))
+  return findNextMilestones(ascending, Number(today.slice(0, 4)))
+}
+
 export async function getMilestones(today: string = appTodayIso()): Promise<Milestone[]> {
   const activities = getAllActivities()
   const ascending = [...activities].sort((a, b) => a.date.localeCompare(b.date))
@@ -181,9 +236,10 @@ export async function getMilestones(today: string = appTodayIso()): Promise<Mile
     milestones.push({
       type: 'distance-tier',
       date: crossing.date,
-      // No detail: the row sits under its year heading and carries its own
-      // date, so "Crossed in 2026" was the third telling of the same fact.
       label: t.profile.milestones.distanceTier(formatKm(crossing.tierKm)),
+      // The year under it: the rows sit under a month heading now, which
+      // says which year only when it is not this one.
+      detail: String(crossing.year),
     })
   }
 
