@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { WorkoutPrescription } from '@/domain/coaching/types'
-import { findLastRun, findNextSession, sessionCard } from '../nextSession'
+import { findNextSession, sessionCard } from '../nextSession'
 import { formatWeekday } from '@/lib/formatters'
-import { runMeta } from '../todaySession'
 import { t } from '@/i18n'
 
 function prescription(date: string, title: string, totalDistanceMeters: number): WorkoutPrescription {
@@ -47,40 +46,6 @@ const run = (date: string, km: number): ActivitySummary => ({
 
 const EASY = { title: 'Easy run', type: 'Base' as const, duration: { seconds: 3_600, estimated: false }, distanceM: 10_000, activityId: null, target: null, structure: null, hr: null }
 
-// Design review 3.0 (mock 1b): the compact row beside the next session.
-describe('findLastRun', () => {
-  it("is today's run once it is done, opening the run", () => {
-    const last = findLastRun('2026-10-07', run('2026-10-07', 10), null, [], [], [])
-    expect(last).toMatchObject({ state: 'done', when: 'today', date: '2026-10-07', title: 'Morning run', href: '/activities/a:2026-10-07', thumb: 'M10 10L40 40' })
-  })
-
-  it("is yesterday's run under today's session, led by its route", () => {
-    const last = findLastRun('2026-10-07', null, { ...EASY, duration: null, distanceM: 9000 }, [run('2026-10-06', 10)], [], [])
-    expect(last).toMatchObject({ state: 'done', when: 'yesterday', date: '2026-10-06', type: 'Base', title: 'Morning run', thumb: 'M10 10L40 40' })
-    expect(last!.detail).toBe(runMeta(run('2026-10-06', 10)))
-  })
-
-  it("has nothing to show before today's run on a first day", () => {
-    expect(findLastRun('2026-10-07', null, EASY, [], [], [])).toBeNull()
-  })
-
-  it("is yesterday's run on a day off, under its plan's name", () => {
-    const last = findLastRun('2026-10-08', null, null, [run('2026-10-07', 10)], [view(prescription('2026-10-07', 'Recovery run', 9000))], [])
-    expect(last).toMatchObject({ state: 'done', when: 'yesterday', date: '2026-10-07', title: 'Recovery run' })
-  })
-
-  // Said, never moved: the plan is the coach's, opened on that day.
-  it('is the session yesterday planned and nobody ran, opening the plan on its day', () => {
-    const garmin: PlannedWorkout[] = [{ date: '2026-10-08', name: 'Easy run', type: 'Base', distanceM: 10_000 }]
-    const last = findLastRun('2026-10-09', null, null, [], [], garmin)
-    expect(last).toMatchObject({ state: 'missed', when: 'yesterday', date: '2026-10-08', detail: t.dashboard.todayHero.notRun('10'), href: '/plan?date=2026-10-08' })
-  })
-
-  it('is nothing after a day with neither', () => {
-    expect(findLastRun('2026-10-09', null, null, [run('2026-10-06', 10)], [], [])).toBeNull()
-  })
-})
-
 // Design review 3.0 (mock 1b): the next-workout card.
 describe('sessionCard', () => {
   it("is today's session until it is run, opening Plan on today", () => {
@@ -109,8 +74,8 @@ describe('sessionCard', () => {
   })
 })
 
-// Design review, Oct 2026: a row and the card name a session by the coach's
-// short name, where it has one.
+// Design review, Oct 2026: the card names a session by the coach's short
+// name, where it has one.
 describe('a session named under the naming rules', () => {
   const named = (date: string): WorkoutPrescription => ({
     ...prescription(date, 'Threshold · 3 × 8′ @ 4:25', 10_665),
@@ -118,13 +83,10 @@ describe('a session named under the naming rules', () => {
     shortName: 'Threshold 3×8′',
   })
 
-  it('is the short name in a row and on the card', () => {
+  it('is the short name on the card', () => {
     const next = findNextSession('2026-10-05', [view(named('2026-10-06'))], [])
     expect(next).toMatchObject({ title: 'Threshold 3×8′', workout: { title: 'Threshold · 3 × 8′ @ 4:25', shortName: 'Threshold 3×8′' } })
     expect(sessionCard('2026-10-05', null, null, next)!.title).toBe('Threshold 3×8′')
-
-    expect(findLastRun('2026-10-07', null, null, [run('2026-10-06', 10.4)], [view(named('2026-10-06'))], [])!.title).toBe('Threshold 3×8′')
-    expect(findLastRun('2026-10-07', null, null, [], [view(named('2026-10-06'))], [])!.title).toBe('Threshold 3×8′')
   })
 })
 

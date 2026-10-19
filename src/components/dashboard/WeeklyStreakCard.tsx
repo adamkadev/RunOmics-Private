@@ -17,8 +17,14 @@ interface Props {
   sessionKinds?: Record<string, string>
 }
 
+/**
+ * A day's circle in Plan's type colours (3.0.2, mock 5f): a session to come
+ * dashed in its type's colour, a run done ringed and tinted in the colour of
+ * what was run - blue for an easy or long run, purple for threshold - as
+ * Plan's day selector fills its bar. Today is the accent ring until run.
+ */
 function circleStyle(day: WeekStripDay): CSSProperties {
-  if (day.state === 'done') return { background: 'var(--accent)', color: 'var(--accent-foreground)' }
+  if (day.state === 'done') return { border: `2px solid ${day.color}`, background: `color-mix(in srgb, ${day.color} 22%, transparent)` }
   if (day.isToday) return { border: '2px solid var(--accent)' }
   switch (day.state) {
     case 'planned':

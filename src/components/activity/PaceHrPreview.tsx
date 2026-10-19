@@ -1,12 +1,16 @@
 import { ChevronRight } from 'lucide-react'
 import { RUN_CHART_LINE } from '@/lib/colors'
+import { formatDistance } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 const W = 100
-const H = 54
-const PAD = 3
+const H = 64
+const PAD = 2
+/** Pace above, heart rate below (3.0.2): drawn over each other, the two lines tangled into one. */
+const LANE_GAP = 8
+const LANE_H = (H - LANE_GAP) / 2
 
-function path(samples: number[], invert: boolean): string | null {
+function path(samples: number[], invert: boolean, top: number): string | null {
   const points = samples.filter((value) => Number.isFinite(value) && value > 0)
   if (points.length < 2) return null
   const lo = Math.min(...points)
@@ -16,24 +20,30 @@ function path(samples: number[], invert: boolean): string | null {
     .map((value, i) => {
       const x = (i / (points.length - 1)) * W
       const share = (value - lo) / span
-      const y = PAD + (invert ? share : 1 - share) * (H - PAD * 2)
+      const y = top + PAD + (invert ? share : 1 - share) * (LANE_H - PAD * 2)
       return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`
     })
     .join(' ')
 }
 
+/**
+ * The run's pace and heart rate at a glance, on Overview: each in a lane of
+ * its own, so the two read apart, over the distance from start to finish.
+ */
 export function PaceHrPreview({
   paceSamples,
   hrSamples,
+  distanceKm,
   onShowCharts,
 }: {
   paceSamples: number[] | null
   hrSamples: number[] | null
+  distanceKm: number
   onShowCharts?: () => void
 }) {
   const s = t.activity.pacePreview
-  const pace = paceSamples ? path(paceSamples, true) : null
-  const hr = hrSamples ? path(hrSamples, false) : null
+  const pace = paceSamples ? path(paceSamples, true, 0) : null
+  const hr = hrSamples ? path(hrSamples, false, pace ? LANE_H + LANE_GAP : 0) : null
   if (!pace && !hr) return null
 
   return (
@@ -54,10 +64,21 @@ export function PaceHrPreview({
           </button>
         )}
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-[54px] w-full" role="img" aria-label={s.title}>
-        {pace && <path d={pace} fill="none" stroke={RUN_CHART_LINE.pace} strokeWidth="1.4" vectorEffect="non-scaling-stroke" />}
-        {hr && <path d={hr} fill="none" stroke={RUN_CHART_LINE.hr} strokeWidth="1.4" vectorEffect="non-scaling-stroke" />}
+      <svg
+        viewBox={`0 0 ${W} ${pace && hr ? H : LANE_H}`}
+        preserveAspectRatio="none"
+        className={pace && hr ? 'h-[64px] w-full' : 'h-[28px] w-full'}
+        role="img"
+        aria-label={s.title}
+      >
+        {pace && <path d={pace} fill="none" stroke={RUN_CHART_LINE.pace} strokeWidth="1.4" vectorEffect="non-scaling-stroke" data-testid="preview-pace" />}
+        {hr && <path d={hr} fill="none" stroke={RUN_CHART_LINE.hr} strokeWidth="1.4" vectorEffect="non-scaling-stroke" data-testid="preview-hr" />}
       </svg>
+      {/* Where the lines start and end: the start and the run's distance. */}
+      <div aria-hidden className="flex justify-between text-[11px] leading-none text-muted-foreground" data-testid="preview-ends">
+        <span>{s.start}</span>
+        <span>{`${formatDistance(distanceKm)} ${t.units.km}`}</span>
+      </div>
     </section>
   )
 }

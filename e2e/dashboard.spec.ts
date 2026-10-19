@@ -11,9 +11,10 @@ test('dashboard renders the readiness card and the day', async ({ page }) => {
   for (const label of ['Fitness', 'Fatigue', 'Load']) await expect(readiness.getByText(label, { exact: true })).toBeVisible()
   await expect(page.getByTestId('readiness-card-link')).toHaveAttribute('href', '/analytics')
 
-  // Then the day: the next workout, one link to Plan on its day, and the
-  // last run, whichever the data has.
+  // Then the day: the next workout, one link to Plan on its day (3.0.2: no
+  // last-run row - it is the top of Activities).
   await expect(page.getByTestId('today-board')).toBeVisible()
   const session = page.getByTestId('session-card')
   if (await session.count()) await expect(session).toHaveAttribute('href', /^\/plan\?date=\d{4}-\d{2}-\d{2}$/)
+  await expect(page.getByTestId('last-run')).toHaveCount(0)
 })

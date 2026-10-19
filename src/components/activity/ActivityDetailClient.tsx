@@ -14,7 +14,7 @@ import { KmSplits } from './KmSplits'
 import { BestEfforts } from './BestEfforts'
 import { RunPlace } from './RunPlace'
 import type { ChartZones } from './chartStackLanes'
-import { formatClock, formatDistance, formatDuration, formatDurationRounded } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDurationRounded } from '@/lib/formatters'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
@@ -77,7 +77,7 @@ function buildMapStats(activity: ActivityDetailView): PrimaryStat[] {
   const s = t.activity.map.stats
   const stats: PrimaryStat[] = [
     { label: s.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
-    { label: s.time, value: formatDuration(activity.durationSeconds) },
+    { label: s.time, ...formatDurationRounded(activity.durationSeconds) },
   ]
   if (activity.paceSecPerKm) stats.push({ label: s.pace, value: formatClock(activity.paceSecPerKm), unit: t.units.perKm })
   if (activity.elevationGain != null) stats.push({ label: s.elevation, value: `+${Math.round(activity.elevationGain)}`, unit: t.units.m })
@@ -258,14 +258,26 @@ export function ActivityDetailClient({
       )}
 
       {/* The panel stands in for the cards it holds, 14 pt apart like the
-          page's own. */}
-      <div {...(tabs.length > 1 ? detailTabs.panelProps : {})} className="flex flex-col gap-3.5 outline-none">
+          page's own. On a phone it is at least a screen less the bars, the
+          strip and the page's foot tall (3.0.2): a short tab - one Splits
+          card - left the page too short to scroll the strip up to the title
+          bar, so it stopped a little below it with a sliver of the card
+          above showing between them. */}
+      <div
+        {...(tabs.length > 1 ? detailTabs.panelProps : {})}
+        className={cn(
+          'flex flex-col gap-3.5 outline-none',
+          tabs.length > 1 && 'max-lg:min-h-[calc(100dvh_-_var(--safe-top)_-_var(--safe-bottom)_-_15rem)]',
+        )}
+        data-testid="activity-panel"
+      >
         {tab === 'overview' && (
           <>
             {extras}
             <PaceHrPreview
               paceSamples={activity.paceSamples}
               hrSamples={activity.hrSamples}
+              distanceKm={activity.distanceKm}
               onShowCharts={hasCharts ? () => setTab('charts') : undefined}
             />
             <RunEffortCard

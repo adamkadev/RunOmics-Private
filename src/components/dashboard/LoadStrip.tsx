@@ -1,4 +1,5 @@
-import type { RecentLoad } from '@/application/usecases/GetRecentLoad'
+import type { RecentLoad, RecentLoadDay } from '@/application/usecases/GetRecentLoad'
+import { sessionZone, zoneColor } from '@/lib/colors'
 import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -8,6 +9,16 @@ const MIN_BAR_PX = 3
 function dayLetter(date: string): string {
   const weekday = (new Date(`${date}T00:00:00Z`).getUTCDay() + 6) % 7
   return (t.plan.weekdays[weekday] ?? '').charAt(0).toUpperCase()
+}
+
+/**
+ * A day's bar in the colour Plan draws its session in (3.0.2, mock 5f): blue
+ * for an easy or long run, purple for threshold, and so on (sessionZone). A
+ * day without a run keeps the hairline grey, today without one the accent.
+ */
+export function loadBarColor(day: RecentLoadDay): string {
+  if (day.type) return zoneColor(sessionZone(day))
+  return day.isToday ? 'var(--accent)' : 'var(--line-2)'
 }
 
 export function LoadStrip({ recent }: { recent: RecentLoad }) {
@@ -31,9 +42,10 @@ export function LoadStrip({ recent }: { recent: RecentLoad }) {
               />
               <span
                 className="relative w-full rounded-[4px]"
+                data-testid="load-bar"
                 style={{
                   height: Math.max(MIN_BAR_PX, scale(day.load)),
-                  background: day.isToday ? 'var(--accent)' : 'var(--line-2)',
+                  background: loadBarColor(day),
                 }}
               >
                 <span className="sr-only">{s.day(formatDate(day.date, { style: 'full' }), day.load)}</span>

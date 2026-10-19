@@ -6,6 +6,7 @@ import { activityTypeStyle } from '@/components/activity/activityTypeStyle'
 import type { ActivityType } from '@/domain/activity/types'
 import type { MonthlyVolume } from '@/application/usecases/GetAnalyticsData'
 import { CHART_COLORS } from '@/lib/colors'
+import { formatDecimal, formatKm } from '@/lib/formatters'
 import { monthAxis } from '@/lib/chartAxis'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { GlassSurface } from '@/components/ui/GlassSurface'
@@ -34,12 +35,12 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   return (
     <TooltipCard label={label}>
       <p className="mb-1 text-sm font-semibold text-foreground">
-        {total.toFixed(1)} {t.units.km}
+        {formatDecimal(total, 1)} {t.units.km}
       </p>
       {[...payload].reverse().map((p) => (
         <p key={p.dataKey} className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.fill }} />
-          {p.dataKey}: {p.value.toFixed(1)} {t.units.km}
+          {p.dataKey}: {formatDecimal(p.value, 1)} {t.units.km}
         </p>
       ))}
     </TooltipCard>
@@ -55,7 +56,7 @@ export function MonthlyVolumeChart({ data, typesPresent, controls }: Props) {
   }))
 
   const totals = data.map((m) => m.totalKm)
-  const summary = `${t.analytics.charts.monthlyVolume.title}: ${Math.min(...totals).toFixed(0)}–${Math.max(...totals).toFixed(0)} ${t.units.km}`
+  const summary = `${t.analytics.charts.monthlyVolume.title}: ${formatKm(Math.min(...totals))}–${formatKm(Math.max(...totals))} ${t.units.km}`
 
   const totalByType = new Map<ActivityType, number>()
   for (const m of data) {
@@ -90,6 +91,7 @@ export function MonthlyVolumeChart({ data, typesPresent, controls }: Props) {
               axisLine={false}
               tickLine={false}
               unit={` ${t.units.km}`}
+              tickFormatter={(km: number) => formatKm(km)}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: CHART_COLORS.tooltipCursor }} />
             {orderedTypes.map((type, i) => (

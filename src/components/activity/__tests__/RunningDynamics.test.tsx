@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { t } from '@/i18n'
 import { RunningDynamics, deltaSentence } from '../RunningDynamics'
@@ -10,7 +10,7 @@ describe('deltaSentence', () => {
   // H17: the delta against the baseline tick, with its unit, in grey.
   it('writes the delta with its unit against the baseline', () => {
     expect(deltaSentence({ value: 1.0, band: { min: 0.96, median: 1.04, max: 1.14, low: 1.0, high: 1.08 }, decimals: 2, deltaUnit: 'm' })).toBe(
-      `−0.04 m ${d.vsBaselineShort}`,
+      `−0.04 m ${d.vsUsual}`,
     )
   })
 
@@ -31,23 +31,50 @@ describe('RunningDynamics', () => {
     groundContactMs: null, verticalOscillationMm: null, verticalRatioPct: null,
   }
 
-  // v4.17: a range bar - the 8-week ends, the middle half shaded as the
-  // baseline band, the run as the marker - and the note in text-2.
-  it('draws the range with a baseline band, the note in text-2 and no cadence chart', () => {
+  // 3.0.2 (5e): a range scale - the 8-week ends, the middle half as the
+  // accent pill of the usual range, the run as the tick - the note in text-2.
+  it('draws the range scale with a usual-range pill, the note in text-2 and no cadence chart', () => {
     render(<RunningDynamics activity={activity} baseline={baseline} />)
 
     const card = screen.getByTestId('running-dynamics')
     const bar = screen.getByRole('img', { name: /Stride length/ })
-    // The band runs 1.00-1.08 on a 0.96-1.14 track.
+    // The pill runs 1.00-1.08 on a 0.96-1.14 track.
     const band = bar.children[1] as HTMLElement
     expect(parseFloat(band.style.left)).toBeCloseTo(22.22, 1)
-    expect(band.style.background).toContain('var(--accent) 45%')
+    expect(band.className).toContain('border-accent')
+    expect(band.style.background).toContain('var(--accent)')
     expect(card.textContent).toContain('0.96')
     expect(card.textContent).toContain('1.14')
-    const delta = screen.getByText(`−0.04 m ${d.vsBaselineShort}`)
+    const delta = screen.getByText(`−0.04 m ${d.vsUsual}`)
     expect(delta.className).toContain('text-[var(--text-2)]')
     expect(delta.className).not.toMatch(/warn|orange|pos|neg/)
-    expect(card.textContent).toContain(d.baselineNote(8))
     expect(screen.queryByText(/cadence through/i)).toBeNull()
+  })
+
+  // One line of legend over the scales replaces the footer sentence.
+  it('says what the pill and the tick are once, at the top', () => {
+    render(<RunningDynamics activity={activity} baseline={baseline} />)
+
+    const legend = screen.getByTestId('dynamics-legend')
+    expect(legend.textContent).toContain(d.usualRange(8))
+    expect(legend.textContent).toContain(d.thisRun)
+    expect(screen.getByTestId('running-dynamics').firstElementChild).toBe(legend)
+  })
+
+  it('has no legend without a usual range to show', () => {
+    render(<RunningDynamics activity={activity} baseline={null} />)
+    expect(screen.queryByTestId('dynamics-legend')).toBeNull()
+  })
+
+  // The title stays clean: no (i) beside it, the name itself opens the definition.
+  it('opens a metric definition from its name, with no info icon on the title', () => {
+    render(<RunningDynamics activity={activity} baseline={baseline} />)
+
+    const name = screen.getByRole('button', { name: t.glossary.about(t.glossary.strideLength.term) })
+    expect(name.textContent).toBe(d.strideLength)
+    expect(name.querySelector('svg')).toBeNull()
+    act(() => name.click())
+    expect(name).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('note').textContent).toBe(t.glossary.strideLength.definition)
   })
 })

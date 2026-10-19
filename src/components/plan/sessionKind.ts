@@ -1,6 +1,6 @@
 import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import { isLongName, isLongSession } from '@/domain/activity/longRun'
-import { LONG_RUN_COLOR, sessionZone, zoneColor } from '@/lib/colors'
+import { sessionZone, zoneColor } from '@/lib/colors'
 import { t } from '@/i18n'
 import type { PlanPrescriptionView } from './planCoachingView'
 import { resolveDayType, resolvePlannedType } from './weekPlanDays'
@@ -30,8 +30,12 @@ export function kindOf(type: ActivityType, long: boolean): SessionKind {
   return long ? 'long' : 'easy'
 }
 
-export function kindColor(type: ActivityType, kind: SessionKind): string {
-  return kind === 'long' ? LONG_RUN_COLOR : zoneColor(sessionZone({ type }))
+/**
+ * A session's colour: its zone's. The long run is an easy run and shares the
+ * easy blue (3.0.2, by design); its letter tells it apart.
+ */
+export function kindColor(type: ActivityType): string {
+  return zoneColor(sessionZone({ type }))
 }
 
 export function kindLetter(type: ActivityType, kind: SessionKind): string {
@@ -59,5 +63,5 @@ export function dayKind(
   if (!resolved) return null
   const long = plannedLong(date, byDatePlanned, byDateCoach) || acts.some((a) => a.type === 'Base' && isLongSession(a))
   const kind = kindOf(resolved.type, long)
-  return { type: resolved.type, kind, color: kindColor(resolved.type, kind) }
+  return { type: resolved.type, kind, color: kindColor(resolved.type) }
 }

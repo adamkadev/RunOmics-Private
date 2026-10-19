@@ -2,6 +2,51 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.2] - 2026-10-19
+
+3.0.2 — the open items from the 3.0 review (canvas 5b–5f), a run's time
+to the minute, and one number format.
+
+### Activity
+
+- Splits: one card with Km / Laps (Km for a steady run, Laps for a
+  structured one), KM · PACE · speed bar · ELEV · HR, the fastest km in
+  the accent, and a footer with the fastest km and the split verdict.
+- The tabs always pin under the header; no card shows behind them.
+- Dynamics: a range scale per metric, your usual 8 weeks as a pill and
+  this run as a tick, "vs your usual", one legend line.
+- The stat strip names its time "Time" (« Temps »), not "Moving"; the
+  fullscreen map's card writes it to the minute: "1:07 h", "46 min".
+- The pace/HR preview keeps its lines apart and labels its ends; Best
+  efforts' 1 km shows its time once; the chart cursor stays below the
+  headers.
+
+### Progress
+
+- Race card: the date on one line, the race name on its own, Target ·
+  Predicted · Gap (amber when slower), and the gap per km.
+- Distance chart: y-axis ticks and a labelled goal line.
+
+### Plan
+
+- A rest day is one line, with a "Coming up" list of the week's sessions.
+- The week row reads km only; Easy and Long share the blue, and the month
+  legend reads "Easy / Long".
+
+### Today
+
+- Sync is a ↻ button; the Yesterday row is gone; week rings and load bars
+  take Plan's type colours.
+
+### Everywhere
+
+- One number format: "2,000" and "9.5" in English, « 2 000 » and « 9,5 »
+  in French, in the charts' axes and tooltips too.
+- Share cards write the time as "1:07 h", not "1:06:39".
+- Activities list: a structured title keeps the type on its line, the
+  structure under it.
+- Light theme: accent text reaches 4.5:1 on every light surface.
+
 ## [3.0.1] - 2026-10-19
 
 3.0.1 — polish. The review of the 3.0 build (canvas 3b–3f): tighter hierarchy

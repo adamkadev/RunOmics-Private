@@ -25,7 +25,7 @@ describe('WeeklyStreakCard', () => {
   })
 
   // Design review, Oct 2026: seven circles - planned dashed in the session's
-  // category with its km, done filled in the accent, today the accent ring,
+  // category with its km, done in its type's colour (3.0.2), today the accent ring,
   // rest the hairline - and a letter under each.
   it('draws the week as seven circles with the km in them', () => {
     // After mount the card reads the reader's clock (useToday).
@@ -41,7 +41,9 @@ describe('WeeklyStreakCard', () => {
 
     const strip = screen.getByTestId('week-strip')
     const circles = strip.querySelectorAll<HTMLElement>('[data-state]')
-    expect(circles[0]!.style.background).toBe('var(--accent)')
+    // Done in the colour of what was run, as Plan draws it: an easy run's blue.
+    expect(circles[0]!.style.border).toBe('2px solid var(--zone-2)')
+    expect(circles[0]!.style.background).toContain('var(--zone-2)')
     expect(circles[0]!.textContent).toBe('8.5')
     expect(circles[1]!.style.border).toBe('2px solid var(--accent)')
     expect(circles[1]!.hasAttribute('data-today')).toBe(true)

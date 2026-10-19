@@ -184,12 +184,21 @@ describe('the list at a phone', () => {
   })
 
   // A long name stays on one line in a week, ellipsed (3.0).
-  it('ellipses a long workout name', () => {
-    const name = 'Threshold 3 × 7:40 - 3 × 8\'@4:25 with a long warm-up and a cool-down to finish'
+  it('ellipses a long name', () => {
+    const name = 'Long progressive Sunday run along the river with friends from the club'
     renderList([{ ...run('a', '2026-09-22', 10), description: name }])
     const title = screen.getByText(name)
     expect(title.className).toContain('truncate')
     expect(title.className).toContain('min-w-0')
+  })
+
+  // 3.0.2: a structured name is its type on the first line, the structure
+  // leading the meta on the second, so the ellipsis no longer cuts it off.
+  it('puts a structured name’s structure on the second line', () => {
+    const name = 'Threshold 3 × 7:40 - 3 × 8\'@4:25'
+    renderList([{ ...run('a', '2026-09-22', 10), description: name }])
+    expect(screen.getByText('Threshold').className).toContain('truncate')
+    expect(screen.getByTestId('thumb-row').textContent).toContain(`3 × 7:40 - 3 × 8'@4:25 · ${formatWeekday('2026-09-22', true)}`)
   })
 })
 

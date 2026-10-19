@@ -153,7 +153,7 @@ describe('ActivityDetailClient', () => {
     // The floating card: name, date, then distance, time, pace and the climb.
     expect(hero.getByTestId('map').textContent).toContain('Threshold runSun, Oct 18')
     expect(hero.getByTestId('map-card-stats').textContent).toBe(
-      `${formatDistance(6.11)}${t.units.km}${t.activity.map.stats.distance}25:24${t.activity.map.stats.time}4:10${t.units.perKm}${t.activity.map.stats.pace}+64${t.units.m}${t.activity.map.stats.elevation}`,
+      `${formatDistance(6.11)}${t.units.km}${t.activity.map.stats.distance}25${t.units.min}${t.activity.map.stats.time}4:10${t.units.perKm}${t.activity.map.stats.pace}+64${t.units.m}${t.activity.map.stats.elevation}`,
     )
   })
 
@@ -171,6 +171,15 @@ describe('ActivityDetailClient', () => {
 
     act(() => screen.getByRole('tab', { name: t.activity.tabs.intervals }).click())
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 480, behavior: 'instant' })
+  })
+
+  // 3.0.2 (5c): a short tab left the page too short for the strip to reach
+  // the title bar, a sliver of the card above showing between them. The
+  // panel is a phone screen less the bars, the strip and the page's foot.
+  it('makes the panel tall enough for the strip to pin on a short tab', () => {
+    renderDetail()
+    act(() => screen.getByRole('tab', { name: t.activity.tabs.intervals }).click())
+    expect(screen.getByTestId('activity-panel').className).toContain('max-lg:min-h-[calc(100dvh')
   })
 
   it('leaves the page where it is on a switch lower down that hides nothing', () => {

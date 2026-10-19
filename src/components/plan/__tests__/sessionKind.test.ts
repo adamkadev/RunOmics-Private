@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { buildCoachingOverview, type PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { PlannedWorkout } from '@/domain/activity/types'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
-import { LONG_RUN_COLOR } from '@/lib/colors'
 import { t } from '@/i18n'
 import { dayKind, kindLabel, plannedLong } from '../sessionKind'
 
@@ -29,7 +28,7 @@ describe('a day’s kind', () => {
     expect(plannedLong(DATE, new Map(), coach('easy'))).toBe(false)
     expect(plannedLong(DATE, garmin({ name: 'Long run', type: 'Base' }))).toBe(true)
     expect(plannedLong(DATE, garmin({ name: 'Long intervals', type: 'Threshold' }))).toBe(false)
-    expect(dayKind(DATE, [], garmin({ name: 'Sortie longue', type: 'Base' }))?.color).toBe(LONG_RUN_COLOR)
+    expect(dayKind(DATE, [], garmin({ name: 'Sortie longue', type: 'Base' }))?.color).toBe('var(--zone-2)')
   })
 
   it('reads a run day by what was run: a 90-minute easy run is the long run', () => {

@@ -169,7 +169,7 @@
   --ro-blur:                 18px;
   --accent:                  #0e8468;
   --accent-foreground:       #ffffff;
-  --accent-text:             #0e8468;
+  --accent-text:             #007c61;
   --accent-hover:            color-mix(in oklab, #0e8468 88%, black);
   --accent-soft:             #0e84681f;
   --acc-soft:                #0e84681f;
@@ -367,7 +367,7 @@
 [data-accent="pink"] {
   --accent:             #c23a83;
   --accent-foreground:  #ffffff;
-  --accent-text:        #c23a83;
+  --accent-text:        #bf3780;
   --accent-hover:       color-mix(in oklab, #c23a83 88%, black);
   --accent-soft:        #c23a831f;
   --acc-soft:           #c23a831f;

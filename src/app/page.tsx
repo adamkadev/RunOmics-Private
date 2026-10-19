@@ -25,7 +25,7 @@ import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
 import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
 import { LoadStrip } from '@/components/dashboard/LoadStrip'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
-import { findLastRun, findNextSession, sessionCard } from '@/components/dashboard/nextSession'
+import { findNextSession, sessionCard } from '@/components/dashboard/nextSession'
 import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
 import { t } from '@/i18n'
@@ -71,7 +71,6 @@ export default async function DashboardPage() {
   const nextSession = findNextSession(today, coachWorkouts, plannedWorkouts, trainingZones)
   const sessionKinds = plannedSessionKinds(weekTarget.days.map((day) => day.date), coachWorkouts, plannedWorkouts)
   const heroWorkout = todayWorkout && heroWorkoutView(todayWorkout)
-  const lastRun = findLastRun(today, todayActivity, heroWorkout, data.recentActivities, coachWorkouts, plannedWorkouts, trainingZones)
 
   // The next workout: today's until it is run, then the next, in the phase
   // Plan's subtitle names for its week, with its heart-rate ceiling.
@@ -89,7 +88,7 @@ export default async function DashboardPage() {
       <StaleSyncBanner lastSyncedAt={lastSyncedAt} />
 
       <ReadinessCard status={trainingStatus} verdict={aiVerdict} />
-      <TodayBoard session={card} lastRun={lastRun} />
+      <TodayBoard session={card} />
       <Vo2GradeTodayRow view={getVo2Grade(today)} />
 
       {weeklyStreak && (

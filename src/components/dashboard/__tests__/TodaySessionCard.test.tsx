@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
 import { t } from '@/i18n'
 import { TodaySessionCard } from '../TodaySessionCard'
-import { LastRunRow } from '../LastRunRow'
 import type { SessionCard } from '../nextSession'
 
 const STRIDES = [
@@ -55,39 +54,5 @@ describe('TodaySessionCard', () => {
   it('keeps an older, longer name to two lines', () => {
     render(<TodaySessionCard card={card({ title: "Répétitions allure d'objectif - 4x3'@4:24" })} />)
     expect(screen.getByText("Répétitions allure d'objectif - 4x3'@4:24").className).toContain('line-clamp-2')
-  })
-})
-
-describe('LastRunRow', () => {
-  it('shows a run done with its route, the day, and an accent check', () => {
-    render(
-      <LastRunRow
-        run={{ state: 'done', when: 'yesterday', date: '2026-10-18', title: 'Long run', detail: '11.5 km · 5:47 /km · 145 bpm · 1:06:39', href: '/activities/a1', thumb: 'M10 10L40 40', type: 'Base' }}
-      />,
-    )
-
-    const row = screen.getByTestId('last-run')
-    expect(row).toHaveAttribute('href', '/activities/a1')
-    expect(row).toHaveTextContent(t.dashboard.todayHero.yesterday)
-    expect(row).toHaveTextContent('Long run')
-    expect(row).toHaveTextContent('11.5 km · 5:47 /km · 145 bpm')
-    expect(screen.getByTestId('route-thumb')).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: t.dashboard.todayHero.done }).style.color).toBe('var(--accent-text)')
-  })
-
-  // Shape and colour both, never colour alone; it opens the plan on its day.
-  it('shows a session nobody ran as a dashed cross', () => {
-    render(
-      <LastRunRow
-        run={{ state: 'missed', when: 'yesterday', date: '2026-10-18', title: 'Easy run', detail: t.dashboard.todayHero.notRun('10'), href: '/plan?date=2026-10-18', type: 'Base' }}
-      />,
-    )
-
-    const cross = screen.getByRole('img', { name: t.dashboard.todayHero.notRun(null) })
-    expect(cross.textContent).toBe('✕')
-    expect(cross.style.border).toContain('dashed')
-    expect(screen.getByTestId('last-run')).toHaveTextContent(t.dashboard.todayHero.notRun('10'))
-    expect(screen.getByTestId('last-run')).toHaveAttribute('href', '/plan?date=2026-10-18')
-    expect(screen.queryByTestId('route-thumb')).toBeNull()
   })
 })

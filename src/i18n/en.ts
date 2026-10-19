@@ -176,9 +176,6 @@ export const en = {
   },
   // Planned against ran, on a SessionCard.
   sessionCard: {
-    ranAt: (km: string, pace: string) => `Ran ${km} km at ${pace}`,
-    ran: (km: string) => `Ran ${km} km`,
-    plannedKm: (km: string) => `planned ${km} km`,
     coachInsight: 'Coach insight',
     onPlan: 'On plan',
     plannedLine: (km: string) => `Planned ${km} km`,
@@ -516,10 +513,6 @@ export const en = {
       tomorrow: 'Tomorrow',
       openInPlan: 'Open in Plan',
       hrCap: (bpm: number) => `≤ ${bpm}`,
-      // The last-run row beside it.
-      yesterday: 'Yesterday',
-      done: 'Done',
-      notRun: (km: string | null) => (km ? `Not run · ${km} km planned` : 'Not run'),
     },
     weeklyStreak: {
       title: 'This week',
@@ -1236,7 +1229,7 @@ export const en = {
     },
     stats: {
       distance: 'Distance',
-      duration: 'Moving',
+      duration: 'Time',
       pace: 'Avg pace',
       avgHr: 'Avg HR',
     },
@@ -1318,6 +1311,8 @@ export const en = {
       openCharts: 'Charts',
       pace: 'Pace',
       hr: 'HR',
+      // Under the lines' left end; the right end is the run's distance (3.0.2).
+      start: 'Start',
     },
     dataQuality: {
       estimated: 'Estimated',
@@ -1409,10 +1404,12 @@ export const en = {
       groundContact: 'Ground contact',
       vertOscillation: 'Vertical oscillation',
       vertRatio: 'Vertical ratio',
-      vsBaselineShort: 'vs baseline',
-      level: 'Level with baseline',
+      // The range scale (3.0.2): the pill is the usual range, the tick this run.
+      vsUsual: 'vs your usual',
+      level: 'Right on your usual',
       ratioUnit: 'pt',
-      baselineNote: (weeks: number) => `Shaded band = your baseline, the middle half of your runs over the last ${weeks} weeks.`,
+      usualRange: (weeks: number) => `Your usual range, last ${weeks} weeks`,
+      thisRun: 'This run',
     },
     charts: {
       heartRate: 'Heart rate',
@@ -1450,8 +1447,13 @@ export const en = {
     splits: {
       title: 'Intervals',
       lapTitle: 'Laps',
-      // The run's average beside Km / Laps (3.0).
-      avg: (pace: string) => `avg ${pace}`,
+      // The footer under the kilometres (3.0.2): the fastest km, and the
+      // second half against the first.
+      fastest: 'Fastest',
+      fastestKm: (km: number, pace: string) => `km ${km} · ${pace}`,
+      negativeSplit: (gap: string) => `Negative split ${gap}`,
+      positiveSplit: (gap: string) => `Positive split ${gap}`,
+      evenSplit: 'Even split',
       viewLabel: 'Splits by',
       partialKm: (km: string) => `final ${km}`,
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
@@ -1468,8 +1470,6 @@ export const en = {
         duration: 'Dur',
         dist: 'Dist',
         pace: 'Pace',
-        speed: 'Speed',
-        vsAvg: '±s',
         elev: 'Elev',
         hr: 'HR',
         total: 'Total',
@@ -1543,7 +1543,7 @@ export const en = {
         behind: 'Short',
         pending: 'Upcoming',
       },
-      km: (actual: number, target: number) => `${actual} / ${target}`,
+      km: (actual: string, target: string) => `${actual} / ${target}`,
       targetRule: 'monthly target',
       inProgress: 'in progress',
       daysIn: (month: string, days: number) => `${month} is ${days} day${days === 1 ? '' : 's'} in`,
@@ -1777,12 +1777,17 @@ export const en = {
       // The same dates in both years, from where the history starts.
       vsYearSince: (delta: string, year: number, since: string) => `${delta} km vs ${year} since ${since}`,
       ofGoal: (km: string) => `of ${km} km`,
-      // "201 days" under the race's eyebrow.
-      days: (days: number): string => (days === 1 ? 'day' : 'days'),
+      // "in 201 days" across from the race's eyebrow (3.0.2).
+      inDays: (days: number): string => (days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`),
+      // The Target · Predicted · Gap row, then the gap per km under its bar.
+      target: 'Target',
       predicted: 'Predicted',
-      target: (time: string) => `Target ${time}`,
-      toFind: (gap: string) => `${gap} to find`,
-      underTarget: (gap: string) => `${gap} under`,
+      gap: 'Gap',
+      perKmToFind: (seconds: number) => `${seconds} s/km to find.`,
+      perKmInHand: (seconds: number) => `${seconds} s/km in hand.`,
+      onTarget: 'On target.',
+      // The bar: where the predicted pace is when the target clock stops.
+      reached: (percent: number) => `${percent}% of the course at the target time`,
       noRace: 'No race planned',
       noRecords: 'No records yet',
       // "69 km short at this pace. Needs 41 km/wk, you average 35."
@@ -1791,6 +1796,9 @@ export const en = {
       atPace: 'at this pace.',
       onPace: 'On pace for the goal.',
       needs: (needed: string, average: string) => `Needs ${needed} km/wk, you average ${average}.`,
+      // The year chart's goal: its end labelled, its dotted line named in the caption (3.0.2).
+      goalLabel: (km: string) => `goal ${km}`,
+      goalLine: 'Dotted: the steady pace to the goal.',
       // The tiles under the records, as before 3.0 (owner's request, 3.0.1).
       vo2max: 'VO₂ max',
       vo2Delta: (delta: string) => `${delta} in 12 weeks`,
@@ -2061,10 +2069,15 @@ export const en = {
       targetPace: (range: string) => `target ${range}`,
     },
     continuous: 'continuous',
+    // The rest day on one line, then the week's sessions still to come (3.0.2).
     restCard: {
+      eyebrow: 'Rest',
       title: 'Rest day',
-      noSession: 'No session planned.',
-      next: (weekday: string, title: string) => `No session planned. Next up: ${weekday}, ${title}.`,
+      next: (weekday: string) => `Next: ${weekday}`,
+    },
+    comingUp: {
+      title: 'Coming up',
+      hint: 'tap to open',
     },
     // Plan's week (redesign 3.0): the phase card, the week row, the selected day.
     kinds: { easy: 'Easy', long: 'Long run' },
@@ -2087,14 +2100,13 @@ export const en = {
     },
     weekRow: {
       kmOf: (km: string) => `/ ${km} km`,
-      runsOf: (n: number) => `/ ${n} run${n !== 1 ? 's' : ''}`,
-      runs: (n: number): string => (n === 1 ? 'run' : 'runs'),
     },
     // Plan's month (redesign 3.0): the phase labels, the key and the summary card.
     month: {
       phaseEnds: (phase: string, date: string) => `${phase} · ends ${date}`,
       phaseWeeks: (phase: string, n: number) => `${phase} · ${n} week${n !== 1 ? 's' : ''}`,
-      long: 'Long',
+      // The legend's one blue entry (3.0.2).
+      easyLong: 'Easy / Long',
       phaseWeek: (phase: string, n: number, total: number) => `${phase} · week ${n} of ${total}`,
       kmOf: (ran: string, plan: string) => `${ran} of ${plan} km`,
       nextKey: 'Next key session',

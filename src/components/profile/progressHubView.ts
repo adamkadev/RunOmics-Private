@@ -8,6 +8,7 @@ import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { consistencyMonths, dayLevel, type DayLevel } from '@/components/consistency/consistencyMonthsView'
 import { isPlaceholderRaceName, raceDisplayName } from '@/components/goals/raceName'
 import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
+import { DISTANCE_KEY, EFFORTS } from '@/domain/activity/effort'
 
 /** The Progress hub (H01, M12; 3.0): every figure the page draws, worked out once. */
 export interface ProgressHubView {
@@ -30,6 +31,8 @@ export interface ProgressHubView {
   race: {
     daysUntil: number
     distance: string
+    /** The race's length, for the gap per km; null for a distance the app does not know. */
+    distanceKm: number | null
     /** The event's name, or its place where the name only restates the distance; null when neither says more. */
     name: string | null
     date: string
@@ -140,6 +143,20 @@ export function heatWeeks(days: HeatmapDay[], today: string): HeatCell[][] {
   )
 }
 
+/**
+ * The race card's gap row (3.0.2): the prediction against the target, the gap
+ * per km, and how far along the course the predicted pace is when the target
+ * clock stops - the bar's fill. 1:35:46 against 1:35:00 is 99%: 170 m short
+ * on a half. Null without both times.
+ */
+export function raceGapView(race: NonNullable<ProgressHubView['race']>): { gapSeconds: number; perKmSeconds: number | null; reached: number } | null {
+  if (race.predictedSeconds === null || !race.targetSeconds) return null
+  const gapSeconds = race.predictedSeconds - race.targetSeconds
+  // A gap under half a second a km still reads as one, never "0 s/km".
+  const perKmSeconds = race.distanceKm ? (gapSeconds === 0 ? 0 : Math.max(1, Math.round(Math.abs(gapSeconds) / race.distanceKm))) : null
+  return { gapSeconds, perKmSeconds, reached: Math.min(1, race.targetSeconds / race.predictedSeconds) }
+}
+
 export function progressHubView(input: HubInput): ProgressHubView {
   const year = Number(input.today.slice(0, 4))
   const today = dayOfYear(input.today)
@@ -185,6 +202,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
       ? {
           daysUntil: spotlight.daysUntil,
           distance: spotlight.race.distance,
+          distanceKm: EFFORTS.find((e) => e.key === DISTANCE_KEY[spotlight.race.distance])?.km ?? null,
           name: raceName(spotlight.race),
           date: spotlight.race.date,
           predictedSeconds: spotlight.predictedSeconds,

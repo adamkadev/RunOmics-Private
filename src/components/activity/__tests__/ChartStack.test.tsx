@@ -77,6 +77,20 @@ describe('ChartStack scrub', () => {
     expect(onScrub).toHaveBeenCalledWith(null)
   })
 
+  // 3.0.2: the cursor is drawn inside each plot, never across a lane's header
+  // and the numbers in it.
+  it('keeps the scrub cursor inside the plots, under the lane headers', async () => {
+    const { area } = renderStack()
+    expect(screen.queryByTestId('scrub-cursor')).toBeNull()
+    fireEvent.pointerMove(area, { clientX: 175, pointerId: 1, pointerType: 'mouse' })
+
+    await waitFor(() => expect(screen.getAllByTestId('scrub-cursor')).toHaveLength(2))
+    for (const cursor of screen.getAllByTestId('scrub-cursor')) {
+      expect(cursor.parentElement!.parentElement!.dataset.testid).toMatch(/^lane-/)
+      expect(cursor.parentElement!.parentElement).not.toBe(area)
+    }
+  })
+
   // 3.0: the scrub row bolds the distance, heart rate is drawn in ink and pace
   // in the accent, and the legend under the charts is gone.
   it('bolds the distance in the scrub row and colours each lane its own way', async () => {

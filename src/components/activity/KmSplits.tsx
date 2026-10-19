@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { ActivitySplit, SplitLap } from '@/domain/activity/types'
 import type { ActivityDetailView } from './activityViews'
-import { kmElevationDeltas, kmSplitsOf, type KmSplit } from '@/domain/activity/kmSplits'
+import { EVEN_SPLIT_SEC, halfSplitSec, kmElevationDeltas, kmSplitsOf, type KmSplit } from '@/domain/activity/kmSplits'
 import { cleanStream } from '@/domain/activity/cleanStream'
 import { smoothStream } from '@/domain/activity/smoothStream'
 import { repSet } from '@/domain/activity/repSet'
@@ -47,9 +47,9 @@ function distStr(distanceM: number): string {
   return formatKm(distanceM / 1000, 2)
 }
 
-// KM 30 · PACE 42 · the speed bar · ±S 34 · ELEV 38 · HR 32 (3.0).
-const PER_KM_ROW = 'grid w-full items-center gap-x-2.5 grid-cols-[30px_42px_minmax(0,1fr)_34px_38px_32px]'
-const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-2.5 grid-cols-[30px_42px_minmax(0,1fr)_34px_38px]'
+// KM 30 · PACE 44 · the pace bar · ELEV 38 · HR 34 (3.0.2, 5c).
+const PER_KM_ROW = 'grid w-full items-center gap-x-2 grid-cols-[30px_44px_minmax(0,1fr)_38px_34px]'
+const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-2 grid-cols-[30px_44px_minmax(0,1fr)_38px]'
 
 interface Props {
   activity: ActivityDetailView
@@ -63,72 +63,86 @@ type View = 'km' | 'laps'
 const VIEWS = ['km', 'laps'] as const
 
 /**
- * A continuous run's kilometres, compared with each other (3.0): a bar per
- * km as long as its speed - the fastest km in the accent with its pace in
- * bold, the others that beat the average in a deeper accent, the slower ones
- * in a neutral - the gap to the average in seconds, in the accent when
- * faster, and the metres climbed, which is what explains a slow km on a hill.
+ * A session with a structure to read (3.0.2): a warm-up, a recovery or a
+ * cool-down, or more than one work interval. A run the watch kept as one
+ * interval - a long run started from a workout - is a steady run.
+ */
+export function isStructured(splits: readonly ActivitySplit[]): boolean {
+  if (splits.some((s) => s.type !== 'lap' && s.type !== 'interval_active')) return true
+  return splits.filter((s) => s.type === 'interval_active').length > 1
+}
+
+/** The fastest whole kilometre, the one the accent marks; a partial last km is not one to crown. */
+function fastestKm(splits: KmSplit[]): KmSplit | null {
+  const full = splits.filter((s) => s.distanceKm >= 0.99)
+  return full.length > 1 ? full.reduce((a, b) => (b.paceSecPerKm < a.paceSecPerKm ? b : a)) : null
+}
+
+/** "Negative split −0:20": the second half against the first, even within a few seconds. */
+function splitVerdict(splits: KmSplit[]): string | null {
+  const sp = t.activity.splits
+  const delta = halfSplitSec(splits)
+  if (delta === null) return null
+  if (Math.abs(delta) < EVEN_SPLIT_SEC) return sp.evenSplit
+  const gap = `${delta < 0 ? MINUS : '+'}${formatClock(Math.abs(delta))}`
+  return delta < 0 ? sp.negativeSplit(gap) : sp.positiveSplit(gap)
+}
+
+/**
+ * A continuous run's kilometres, compared with each other (3.0.2, 5c): a bar
+ * per km as long as its speed - the fastest km the full bar, as the mockup
+ * draws it and 3.0's "bar length ∝ speed" set it, so a drift reads at a
+ * glance - the fastest km in the accent, its pace too, the metres
+ * climbed, which is what explains a slow km on a hill, and the heart rate.
+ * The footer names the fastest km and how the second half went.
  */
 function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits: KmSplit[] }) {
   const sp = t.activity.splits
   const showHr = splits.some((s) => s.avgHr !== null)
   const rowCls = showHr ? PER_KM_ROW : PER_KM_ROW_NO_HR
-  const avgPace = perKmAverage(activity, splits)
   const elevation = kmElevationDeltas(
     splits,
     activity.elevationProfile ? smoothStream(cleanStream(activity.elevationProfile, { spikeFloor: 60 })) : null,
     activity.distanceKm,
   )
 
-  // Bars run from the slowest km (12 %) to the fastest (full), so the
-  // differences a few seconds apart can be seen; speed is 1 / pace.
-  const speeds = splits.map((s) => 1 / s.paceSecPerKm)
-  const lo = Math.min(...speeds)
-  const hi = Math.max(...speeds)
-  const width = (speed: number) => (hi > lo ? 12 + ((speed - lo) / (hi - lo)) * 88 : 100)
-  // A partial last km is not a kilometre to crown.
-  const full = splits.filter((s) => s.distanceKm >= 0.99)
-  const fastest = full.length > 1 ? full.reduce((a, b) => (b.paceSecPerKm < a.paceSecPerKm ? b : a)).km : null
+  // Bars run from the fastest km (12 %) to the slowest (full), so the
+  // differences a few seconds apart can be seen.
+  const paces = splits.map((s) => s.paceSecPerKm)
+  const lo = Math.min(...paces)
+  const hi = Math.max(...paces)
+  const width = (pace: number) => (hi > lo ? 12 + ((hi - pace) / (hi - lo)) * 88 : 100)
+  const fastest = fastestKm(splits)
+  const verdict = splitVerdict(splits)
 
   return (
     <div className="flex flex-col">
       <div className={`${rowCls} whitespace-nowrap pb-1.5 text-caption font-semibold uppercase tracking-[0.06em] text-muted-foreground`}>
         <span>{sp.cols.km}</span>
         <span>{sp.cols.pace}</span>
-        {/* The bar's column has no visible heading; a reader still hears it. */}
-        <span><span className="sr-only">{sp.cols.speed}</span></span>
-        <span className="text-right">{sp.cols.vsAvg}</span>
+        {/* The bar restates the pace beside it: no heading of its own. */}
+        <span />
         <span className="text-right">{sp.cols.elev}</span>
         {showHr && <span className="text-right">{sp.cols.hr}</span>}
       </div>
 
       {splits.map((split, i) => {
-        const delta = Math.round(split.paceSecPerKm) - avgPace
-        const best = split.km === fastest
+        const best = split.km === fastest?.km
         const climb = elevation[i]
         return (
-          <div key={split.km} className={`${rowCls} py-[9px] text-sm`} data-testid="km-split" data-fastest={best || undefined}>
+          <div key={split.km} className={`${rowCls} py-[7px] text-sm`} data-testid="km-split" data-fastest={best || undefined}>
             <span className="tabular-nums text-muted-foreground">
               {split.distanceKm < 1 ? formatKm(split.distanceKm, 1) : split.km}
             </span>
-            <span className={cn('font-mono tabular-nums text-foreground', best ? 'font-bold' : 'font-medium')}>
+            <span className={cn('font-mono font-medium tabular-nums', best ? 'text-accent-text' : 'text-foreground')}>
               {formatClock(split.paceSecPerKm)}
             </span>
-            <span className="block h-1.5 overflow-hidden rounded-full bg-[var(--track)]" aria-hidden="true">
+            <span className="block h-2 overflow-hidden rounded-full bg-[var(--track)]" aria-hidden="true">
               <span
                 className="block h-full rounded-full"
-                style={{
-                  width: `${width(speeds[i]!)}%`,
-                  background: best
-                    ? 'var(--accent)'
-                    : delta < 0
-                      ? 'color-mix(in srgb, var(--accent) 62%, var(--card))'
-                      : 'var(--line-2)',
-                }}
+                data-testid="km-bar"
+                style={{ width: `${width(paces[i]!)}%`, background: best ? 'var(--accent)' : 'var(--line-2)' }}
               />
-            </span>
-            <span className={cn('text-right tabular-nums', delta < 0 ? 'text-accent-text' : 'text-muted-foreground')}>
-              {signed(delta)}
             </span>
             <span className="text-right tabular-nums text-muted-foreground" data-testid="km-elev">
               {climb == null ? '-' : signed(climb)}
@@ -137,19 +151,25 @@ function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits:
           </div>
         )
       })}
+
+      {(fastest || verdict) && (
+        <div
+          className="mt-1.5 flex items-baseline justify-between gap-3 border-t border-border pt-2.5 text-xs text-muted-foreground"
+          data-testid="splits-footer"
+        >
+          <span data-testid="fastest-km">
+            {fastest && (
+              <>
+                {sp.fastest}{' '}
+                <b className="font-semibold text-accent-text">{sp.fastestKm(fastest.km, formatClock(fastest.paceSecPerKm))}</b>
+              </>
+            )}
+          </span>
+          {verdict && <span data-testid="split-verdict">{verdict}</span>}
+        </div>
+      )}
     </div>
   )
-}
-
-/**
- * The run's average pace in whole seconds, as the header prints it, and each
- * split is rounded the same way before the subtraction: a 4:04 km against a
- * 4:10 average reads -6, not -5.
- */
-function perKmAverage(activity: ActivityDetailView, splits: KmSplit[]): number {
-  const distanceKm = splits.reduce((s, x) => s + x.distanceKm, 0)
-  const durationSec = splits.reduce((s, x) => s + x.durationSec, 0)
-  return Math.round(activity.paceSecPerKm ?? durationSec / distanceKm)
 }
 
 /** The watch's laps or the session's intervals, a row each, with a total. */
@@ -266,22 +286,22 @@ function LapTable({ splits, bare = false }: { splits: ActivitySplit[]; bare?: bo
 }
 
 /**
- * Splits (3.0): a run of laps opens on its kilometres, with Km / Laps to
- * switch to the watch's own laps and the run's average pace on the right. A
- * structured session keeps its rep set or its interval table.
+ * Splits (3.0.2, 5c): one card, the run's kilometres and its laps behind
+ * Km / Laps when it has both. A steady run opens on its kilometres, a
+ * structured session on its laps - its rep set or its interval table. A run
+ * with no kilometres to rebuild keeps its laps alone.
  */
 export function KmSplits({ activity }: Props) {
-  const [view, setView] = useState<View>('km')
-  const viewTabs = useSegmentedTabs<View>({ ids: VIEWS, value: view, onChange: setView })
   const splits = activity.splits
+  const [view, setView] = useState<View>(splits && isStructured(splits) ? 'laps' : 'km')
+  const viewTabs = useSegmentedTabs<View>({ ids: VIEWS, value: view, onChange: setView })
 
   if (!splits || splits.length === 0) return null
 
   const set = repSet(splits)
-  if (set) return <IntervalSet set={set} />
-  if (!splits.every((s) => s.type === 'lap')) return <LapTable splits={splits} />
-
-  // One lap is the whole run: its auto laps are the laps to show.
+  const lapsOnly = splits.every((s) => s.type === 'lap')
+  // One lap or one interval is the whole run: its auto laps are its laps,
+  // and what its kilometres are read from.
   const laps: ActivitySplit[] =
     splits.length > 1 ? splits : (splits[0]?.laps ?? []).map((lap) => ({ type: 'lap', ...lap, laps: [] }))
   const perKm = kmSplitsOf({
@@ -293,16 +313,21 @@ export function KmSplits({ activity }: Props) {
     avgPaceSecPerKm: activity.paceSecPerKm,
   })
   const hasKm = perKm.length > 1
-  const hasLaps = laps.length > 1
+  // A run of laps lists them; a session keeps its own rows - the one
+  // interval a run was started as, its auto laps folded under it.
+  const lapRows = lapsOnly ? laps : splits
+  const hasLaps = set !== null || lapRows.length > 1 || (lapRows[0]?.laps.length ?? 0) > 1
+  const lapsView = set ? <IntervalSet set={set} bare={hasKm} /> : <LapTable splits={lapRows.length > 1 ? lapRows : splits} bare={hasKm} />
 
-  if (!hasKm) return <LapTable splits={hasLaps ? laps : splits} />
+  if (!hasKm) return lapsView
 
   const sp = t.activity.splits
   const shown: View = hasLaps ? view : 'km'
   return (
-    <section className="flex flex-col gap-3" data-testid="splits">
-      <div className="flex items-center justify-between gap-3">
-        {hasLaps ? (
+    <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="splits">
+      <div className="flex min-h-[30px] items-center justify-between gap-3">
+        <h3 className="text-[17px] font-semibold text-foreground">{t.activity.tabs.intervals}</h3>
+        {hasLaps && (
           <SegmentedTabs
             tabs={viewTabs}
             label={sp.viewLabel}
@@ -312,15 +337,10 @@ export function KmSplits({ activity }: Props) {
             ]}
             tabClassName="h-[28px] px-3 text-[13px]"
           />
-        ) : (
-          <span />
         )}
-        <span className="text-[13px] text-muted-foreground" data-testid="splits-avg">
-          {sp.avg(formatClock(perKmAverage(activity, perKm)))}
-        </span>
       </div>
       <div {...(hasLaps ? viewTabs.panelProps : {})} className="outline-none">
-        {shown === 'km' ? <PerKmRows activity={activity} splits={perKm} /> : <LapTable splits={laps} bare />}
+        {shown === 'km' ? <PerKmRows activity={activity} splits={perKm} /> : lapsView}
       </div>
     </section>
   )

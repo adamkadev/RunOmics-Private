@@ -91,13 +91,6 @@ export function runTypeColor(type: string | null | undefined): string {
 
 export type SessionZone = 1 | 2 | 3 | 4 | 5
 
-/**
- * The long run on Plan (redesign 3.0): an easy run, so its zone's blue, a
- * step deeper so the week's long run reads apart from the easy days beside
- * it. Mixed from the zone token, so it follows both themes.
- */
-export const LONG_RUN_COLOR = 'color-mix(in srgb, var(--zone-2) 78%, black)'
-
 /** A zone's colour token. */
 export function zoneColor(zone: SessionZone): string {
   return `var(--zone-${zone})`

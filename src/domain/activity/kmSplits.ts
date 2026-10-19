@@ -200,3 +200,30 @@ export function kmElevationDeltas(
     return from === null || to === null ? null : Math.round(to - from)
   })
 }
+
+/** Under this many seconds apart, the two halves of a run are an even split. */
+export const EVEN_SPLIT_SEC = 5
+
+/**
+ * The run's second half against its first (3.0.2), by distance: the time to
+ * the halfway mark, read inside the kilometre that crosses it, against the
+ * time from there to the finish. Negative is a negative split - the second
+ * half the faster. Null without two kilometres to halve.
+ */
+export function halfSplitSec(splits: readonly Pick<KmSplit, 'distanceKm' | 'durationSec'>[]): number | null {
+  const totalKm = splits.reduce((sum, split) => sum + split.distanceKm, 0)
+  const totalSec = splits.reduce((sum, split) => sum + split.durationSec, 0)
+  if (splits.length < 2 || totalKm <= 0) return null
+  const halfKm = totalKm / 2
+  let km = 0
+  let firstSec = 0
+  for (const split of splits) {
+    if (km + split.distanceKm >= halfKm) {
+      firstSec += split.distanceKm > 0 ? ((halfKm - km) / split.distanceKm) * split.durationSec : 0
+      break
+    }
+    km += split.distanceKm
+    firstSec += split.durationSec
+  }
+  return Math.round(totalSec - 2 * firstSec)
+}

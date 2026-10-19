@@ -6,7 +6,6 @@ import type { ReactNode } from 'react'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { sessionZone } from '@/lib/colors'
 import { formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import type { PlanWorkoutView } from './planWorkoutView'
 import { kindLabel, type DayKind } from './sessionKind'
@@ -39,7 +38,8 @@ function Title({ children }: { children: ReactNode }) {
  * A session still to come (redesign 3.0, 1d): the eyebrow, the title, one
  * line of distance, time and target, then its intensity profile - each step
  * as wide as it lasts - and its steps. No send-to-watch and no list of the
- * week's other sessions: the day selector above already is the week.
+ * week's other sessions: the day selector above already is the week (a rest
+ * day lists them, 3.0.2, having nothing else to show).
  */
 export function PlannedWorkoutCard({ workout, kind }: { workout: PlanWorkoutView; kind: DayKind }) {
   const summary = workoutSummary(workout)
@@ -175,13 +175,74 @@ export function DoneDayCard({
   )
 }
 
-/** Rest is a prescribed state, not a missing render: the day says so, and what comes next. */
+/**
+ * Rest is a prescribed state, not a missing render (3.0.2: one line). The
+ * day and "Rest day" on the left, the next session on the right; the week's
+ * sessions are in Coming up under it.
+ */
 export function RestDayCard({ date, next }: { date: string; next: { weekday: string; title: string } | null }) {
+  const r = t.plan.restCard
   return (
-    <section data-testid="plan-rest-day" className={cn(CARD, 'border-dashed bg-transparent shadow-none')}>
-      <Eyebrow date={date} kind={null} />
-      <Title>{t.plan.restCard.title}</Title>
-      <p className="mt-1 text-[13px] text-muted-foreground">{next ? t.plan.restCard.next(next.weekday, next.title) : t.plan.restCard.noSession}</p>
+    <section
+      data-testid="plan-rest-day"
+      className="flex items-center justify-between gap-3 rounded-[18px] border border-dashed border-border px-4 py-3"
+    >
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">{`${formatWeekday(date, true)} · ${r.eyebrow}`}</p>
+        <h2 className="text-[17px] font-semibold leading-tight text-foreground">{r.title}</h2>
+      </div>
+      {next && (
+        <p className="flex min-w-0 flex-col items-end text-right text-xs text-muted-foreground" data-testid="rest-next">
+          <span className="whitespace-nowrap">{r.next(next.weekday)}</span>
+          <span className="max-w-full truncate">{next.title}</span>
+        </p>
+      )}
+    </section>
+  )
+}
+
+export interface ComingUpRow {
+  key: string
+  date: string
+  title: string
+  /** "Tue 20 · 10 km · 1h00". */
+  detail: string
+  color: string
+}
+
+/**
+ * The week's sessions still to come (3.0.2), under a rest day: each row its
+ * type's colour, its title and its day, distance and time; a tap selects
+ * the day, as the day selector does.
+ */
+export function ComingUpCard({ rows, selectedDate, onSelect }: { rows: ComingUpRow[]; selectedDate: string; onSelect: (date: string) => void }) {
+  const c = t.plan.comingUp
+  return (
+    <section className="rounded-3xl border border-border bg-card px-4 pb-1 pt-3.5 shadow-card" data-testid="coming-up">
+      <div className="flex items-baseline justify-between gap-3 pb-2">
+        <h2 className="text-[15px] font-semibold text-foreground">{c.title}</h2>
+        <span className="text-xs text-muted-foreground">{c.hint}</span>
+      </div>
+      <ul>
+        {rows.map((row) => (
+          <li key={row.key} className="border-t border-border">
+            <button
+              type="button"
+              onClick={() => onSelect(row.date)}
+              aria-pressed={row.date === selectedDate}
+              className="flex w-full items-center gap-3 py-3 text-left transition-opacity active:opacity-70"
+              data-testid="coming-up-row"
+            >
+              <span aria-hidden className="h-8 w-1 shrink-0 rounded-full" style={{ background: row.color }} />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-[15px] font-semibold text-foreground">{row.title}</span>
+                <span className="text-xs text-muted-foreground">{row.detail}</span>
+              </span>
+              <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }
