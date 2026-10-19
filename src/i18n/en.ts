@@ -458,6 +458,8 @@ export const en = {
   },
 
   dashboard: {
+    // Today's page header (design review 3.0): the date over the title.
+    headerDate: (weekday: string, date: string) => `${weekday}, ${date}`,
     readiness: {
       open: 'Open Load in Analytics',
       // Everyday words, not acronyms (Oct 2026).
@@ -480,9 +482,8 @@ export const en = {
       // This week's load against the usual: "×0.90".
       acwr: 'Load',
       acwrValue: (ratio: string) => `×${ratio}`,
-      garmin: 'Garmin',
-      // In Garmin's place when the watch has no training status (a Forerunner 55).
-      lastSevenDays: '7 days',
+      // Read out after a tile's delta; on screen the sign says it.
+      deltaIn: (days: number) => `in ${days} days`,
       noValue: '—',
     },
     stale: {
@@ -510,37 +511,36 @@ export const en = {
       daysAgo: (d: number) => `${d}d ago`,
     },
     todayHero: {
-      tileToday: (kind: string | null) => (kind ? `Today · ${kind}` : 'Today'),
-      tileNext: (date: string) => `Next · ${date}`,
-      openSession: 'Open the plan',
-      fields: { time: 'Time', dist: 'Dist', pace: 'Pace', hr: 'HR' },
+      // The next-workout card (design review 3.0): when, then the day.
+      today: 'Today',
+      tomorrow: 'Tomorrow',
+      openInPlan: 'Open in Plan',
       hrCap: (bpm: number) => `≤ ${bpm}`,
-      doneTitle: (title: string) => `${title} · Done`,
-      yesterdayTitle: (title: string) => `Yesterday · ${title}`,
-      missedTitle: (weekday: string, title: string) => `${weekday} · ${title}`,
+      // The last-run row beside it.
+      yesterday: 'Yesterday',
+      done: 'Done',
       notRun: (km: string | null) => (km ? `Not run · ${km} km planned` : 'Not run'),
     },
     weeklyStreak: {
       title: 'This week',
       weeksInARow: (weeks: number) => `${weeks} week streak`,
-      ofKm: (target: string) => `of ${target} km`,
-      // Planned sessions only: an extra run fills a bar too.
-      runsOf: (done: number, planned: number) => `${done} of ${planned} planned run${planned !== 1 ? 's' : ''}`,
-      // The session under each day of the week strip, by the coach's type,
-      // and its short label for a phone under 480 pt, where "Threshold" and
-      // "Long run" were cut (v4.17.3).
+      // "0 / 54 km · 0 / 5 runs" (design review 3.0).
+      kmOf: (ran: string, target: string) => `${ran} / ${target} km`,
+      // Planned sessions only: an extra run fills a day too.
+      runsOf: (done: number, planned: number) => `${done} / ${planned} run${planned !== 1 ? 's' : ''}`,
+      // Each day's session by the coach's type, in the day's accessible name.
       kinds: {
-        easy: { label: 'Easy', shortLabel: 'Easy' },
-        easyStrides: { label: 'Easy + strides', shortLabel: 'Easy' },
-        recovery: { label: 'Recovery', shortLabel: 'Easy' },
-        long_run: { label: 'Long run', shortLabel: 'Long' },
-        tempo: { label: 'Tempo', shortLabel: 'Tempo' },
-        threshold: { label: 'Threshold', shortLabel: 'Thr' },
-        vo2max: { label: 'VO₂ max', shortLabel: 'Int' },
-        anaerobic: { label: 'Anaerobic', shortLabel: 'Int' },
-        sprint: { label: 'Sprint', shortLabel: 'Int' },
-        race: { label: 'Race', shortLabel: 'Race' },
-        rest: { label: 'Rest', shortLabel: 'Rest' },
+        easy: 'Easy',
+        easyStrides: 'Easy + strides',
+        recovery: 'Recovery',
+        long_run: 'Long run',
+        tempo: 'Tempo',
+        threshold: 'Threshold',
+        vo2max: 'VO₂ max',
+        anaerobic: 'Anaerobic',
+        sprint: 'Sprint',
+        race: 'Race',
+        rest: 'Rest',
       },
     },
     celebration: {

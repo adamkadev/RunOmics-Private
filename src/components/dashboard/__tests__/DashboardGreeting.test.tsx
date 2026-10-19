@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
-import { DashboardGreeting, isSyncStale } from '../DashboardGreeting'
+import { DashboardGreeting, headerDate, isSyncStale } from '../DashboardGreeting'
 
 const push = vi.fn()
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }))
@@ -20,14 +20,27 @@ describe('DashboardGreeting', () => {
     const link = screen.getByRole('link', { name: t.nav.items.profile })
 
     expect(link).toHaveAttribute('href', '/profile')
-    // The disc is 34 pt; hit-44 grows its target without growing the row.
+    // The disc is 40 pt; hit-44 grows its target without growing the row.
     expect(link.className).toContain('hit-44')
-    expect(link.className).toContain('size-8.5')
+    expect(link.className).toContain('size-10')
   })
 
-  // Design review, Oct 2026: no date (Today and every session say it), and
-  // the sync line is the sync control at any age, 44 pt tall.
-  it('carries the sync line under the title, tappable at any age, without the date', async () => {
+  // Design review, Oct 2026 (mock 1b): the date over the title, which the
+  // compact bar fades with it.
+  it('writes the date over the title', () => {
+    // A client render reads the reader's clock (useToday).
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date(2026, 9, 19, 12))
+    render(<DashboardGreeting name="Adam" today="2026-10-19" />)
+    vi.useRealTimers()
+    const date = screen.getByTestId('today-date')
+    expect(date.textContent).toBe(headerDate('2026-10-19'))
+    expect(date.textContent).toBe('Monday, Oct 19')
+    expect(date.hasAttribute('data-title-sub')).toBe(true)
+  })
+
+  // The sync line is the sync control at any age, 44 pt tall, beside the avatar.
+  it('carries the sync line beside the avatar, tappable at any age', async () => {
     const lastSyncedAt = new Date(Date.now() - 2 * 3600_000).toISOString()
     render(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
 
@@ -35,7 +48,7 @@ describe('DashboardGreeting', () => {
     expect(line.tagName).toBe('BUTTON')
     expect(line.className).toContain('min-h-11')
     expect(line.textContent).toBe(t.dashboard.syncStatus.synced(t.dashboard.syncStatus.hoursAgo(2)))
-    expect(screen.getByTestId('today-header').textContent).not.toMatch(/(Mon|Tue|Wed|Thu|Fri|Sat|Sun), /)
+    expect(line.parentElement!.contains(screen.getByRole('link', { name: t.nav.items.profile }))).toBe(true)
 
     // Signed out: the tap goes to Settings, where signing in lives.
     await userEvent.click(line)

@@ -424,6 +424,8 @@ export const fr = {
   },
 
   dashboard: {
+    // « Lundi 19 oct. » : la date ouvre la ligne, d’où la majuscule.
+    headerDate: (weekday: string, date: string) => `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${date}`,
     readiness: {
       open: 'Ouvrir la charge dans Analyses',
       // Des mots de tous les jours, pas des sigles (Lamiaa, oct. 2026).
@@ -446,8 +448,7 @@ export const fr = {
       // La charge de la semaine rapportée à l’habitude : « ×1,79 ».
       acwr: 'Charge',
       acwrValue: (ratio: string) => `×${ratio}`,
-      garmin: 'Garmin',
-      lastSevenDays: '7 jours',
+      deltaIn: (days: number) => `en ${days} jours`,
       noValue: '—',
     },
     stale: {
@@ -474,33 +475,31 @@ export const fr = {
       daysAgo: (d: number) => `il y a ${d} j`,
     },
     todayHero: {
-      tileToday: (kind: string | null) => (kind ? `Aujourd’hui · ${kind}` : 'Aujourd’hui'),
-      tileNext: (date: string) => `Ensuite · ${date}`,
-      openSession: 'Voir le plan',
-      fields: { time: 'Durée', dist: 'Dist.', pace: 'Allure', hr: 'FC' },
+      today: 'Aujourd’hui',
+      tomorrow: 'Demain',
+      openInPlan: 'Voir dans le plan',
       hrCap: (bpm: number) => `≤ ${bpm}`,
-      doneTitle: (title: string) => `${title} · Fait`,
-      yesterdayTitle: (title: string) => `Hier · ${title}`,
-      missedTitle: (weekday: string, title: string) => `${weekday} · ${title}`,
+      yesterday: 'Hier',
+      done: 'Faite',
       notRun: (km: string | null) => (km ? `Pas courue · ${km} km prévus` : 'Pas courue'),
     },
     weeklyStreak: {
       title: 'Cette semaine',
       weeksInARow: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
-      ofKm: (target: string) => `sur ${target} km`,
-      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} prévue${done > 1 ? 's' : ''} sur ${planned}`,
+      kmOf: (ran: string, target: string) => `${ran} / ${target} km`,
+      runsOf: (done: number, planned: number) => `${done} / ${planned} sortie${planned > 1 ? 's' : ''}`,
       kinds: {
-        easy: { label: 'Facile', shortLabel: 'Endu' },
-        easyStrides: { label: 'Facile + accél.', shortLabel: 'Endu' },
-        recovery: { label: 'Récup', shortLabel: 'Endu' },
-        long_run: { label: 'Sortie longue', shortLabel: 'Long' },
-        tempo: { label: 'Tempo', shortLabel: 'Tempo' },
-        threshold: { label: 'Seuil', shortLabel: 'Seuil' },
-        vo2max: { label: 'VO₂max', shortLabel: 'Frac' },
-        anaerobic: { label: 'Anaérobie', shortLabel: 'Frac' },
-        sprint: { label: 'Sprint', shortLabel: 'Frac' },
-        race: { label: 'Course', shortLabel: 'Course' },
-        rest: { label: 'Repos', shortLabel: 'Repos' },
+        easy: 'Facile',
+        easyStrides: 'Facile + accél.',
+        recovery: 'Récup',
+        long_run: 'Sortie longue',
+        tempo: 'Tempo',
+        threshold: 'Seuil',
+        vo2max: 'VO₂max',
+        anaerobic: 'Anaérobie',
+        sprint: 'Sprint',
+        race: 'Course',
+        rest: 'Repos',
       },
     },
     celebration: {

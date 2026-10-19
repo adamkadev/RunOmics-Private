@@ -172,3 +172,32 @@ describe('PlanClient across midnight', () => {
   })
 })
 
+// Today's next workout opens Plan on its day (design review, Oct 2026).
+describe('PlanClient on a linked day', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(NOW)
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('opens the week view on ?date=, with that day selected', () => {
+    window.history.replaceState(null, '', '/plan?date=2026-09-17')
+    const { container } = renderPlan()
+
+    expect(screen.getByRole('tab', { name: t.plan.switcher.week }).getAttribute('aria-selected')).toBe('true')
+    expect(container.textContent).toContain(formatDateRange('2026-09-14', '2026-09-20'))
+    // Thursday, the fourth day of the week, is the one selected.
+    const days = [...container.querySelectorAll('button[aria-pressed]')]
+    expect(days.map((day) => day.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false', 'true', 'false', 'false', 'false'])
+  })
+
+  it('ignores a date it cannot read', () => {
+    window.history.replaceState(null, '', '/plan?date=tomorrow')
+    const { container } = renderPlan()
+
+    expect(container.textContent).toContain(formatDateRange('2026-09-07', '2026-09-13'))
+  })
+})
