@@ -119,7 +119,9 @@ describe('addWaterLabels (3.0.1)', () => {
     expect(added.source).toBe('planet')
     expect(added['source-layer']).toBe('water_label')
     expect(added.layout!['symbol-placement']).toBe('line')
-    expect(added.layout!['text-optional']).toBe(true)
+    // A line label carries no icon: text-optional would let MapLibre "place"
+    // the symbol with neither, and the river's name never drew.
+    expect(added.layout!['text-optional']).toBeUndefined()
     expect(String(added.layout!['text-font'])).toContain('Italic')
     expect(added.paint!['text-color']).toBe('#5b7d99')
     expect(JSON.stringify(added.filter)).toContain('river')
