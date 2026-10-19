@@ -15,7 +15,7 @@ import { t } from '@/i18n'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { coachWorkoutView, plannedWorkoutView, type PlanWorkoutView } from './planWorkoutView'
 import { sessionTitle } from './sessionTitle'
-import { dayKind } from './sessionKind'
+import { dayKind, kindLetter } from './sessionKind'
 import { formatWeekKm, weekPlanDays } from './weekPlanDays'
 import { phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
@@ -148,13 +148,17 @@ export function WeekView({
 
   const selectorDays = useMemo<SelectorDay[]>(
     () =>
-      target.days.map((day) => ({
-        date: day.date,
-        state: day.state,
-        km: day.state === 'done' ? day.ranKm : day.plannedKm,
-        color: dayKind(day.date, byDate.get(day.date) ?? [], byDatePlanned, byDateCoach)?.color ?? null,
-        isToday: day.date === today,
-      })),
+      target.days.map((day) => {
+        const kind = dayKind(day.date, byDate.get(day.date) ?? [], byDatePlanned, byDateCoach)
+        return {
+          date: day.date,
+          state: day.state,
+          km: day.state === 'done' ? day.ranKm : day.plannedKm,
+          color: kind?.color ?? null,
+          letter: kind && day.state !== 'rest' ? kindLetter(kind.type, kind.kind) : null,
+          isToday: day.date === today,
+        }
+      }),
     [target, byDate, byDatePlanned, byDateCoach, today]
   )
 

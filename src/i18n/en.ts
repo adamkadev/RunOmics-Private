@@ -2059,6 +2059,17 @@ export const en = {
     },
     // Plan's week (redesign 3.0): the phase card, the week row, the selected day.
     kinds: { easy: 'Easy', long: 'Long run' },
+    typeLetters: {
+      easy: 'E',
+      long: 'L',
+      Sprint: 'S',
+      Anaerobic: 'A',
+      VO2Max: 'V',
+      Threshold: 'T',
+      Tempo: 'Tm',
+      Base: 'E',
+      Race: 'R',
+    } as Record<string, string>,
     phase: {
       weekOf: (total: number) => ({ before: 'Week', after: `of ${total}` }),
       generalShort: 'General prep',

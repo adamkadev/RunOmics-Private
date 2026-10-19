@@ -1917,6 +1917,17 @@ export const fr = {
       next: (weekday: string, title: string) => `Aucune séance prévue. Prochaine : ${weekday}, ${title}.`,
     },
     kinds: { easy: 'Footing', long: 'Sortie longue' },
+    typeLetters: {
+      easy: 'F',
+      long: 'L',
+      Sprint: 'Sp',
+      Anaerobic: 'A',
+      VO2Max: 'V',
+      Threshold: 'S',
+      Tempo: 'Tm',
+      Base: 'F',
+      Race: 'C',
+    } as Record<string, string>,
     phase: {
       weekOf: (total: number) => ({ before: 'Semaine', after: `sur ${total}` }),
       generalShort: 'Prépa générale',

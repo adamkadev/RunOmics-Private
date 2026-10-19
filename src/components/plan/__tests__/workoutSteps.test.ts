@@ -48,7 +48,7 @@ describe('the steps list', () => {
     const rows = stepRows({ steps: THRESHOLD, type: 'Threshold', kind: 'quality', color: COLOR, totalSeconds: 3_480 })
     expect(rows.map((r) => [r.title, r.detail, r.duration])).toEqual([
       [t.plan.steps.warmup, t.plan.steps.easy, '15′'],
-      [t.plan.steps.reps(3, '8′', t.activityTypes.Threshold.toLowerCase()), 'Z4 · 4:32–4:40 /km · 1:30 rec', '3×8′'],
+      [t.plan.steps.reps(3, '8′', t.activityTypes.Threshold.toLowerCase()), 'Z4 · 4:32–4:40 /km · 1:30 rec', '27′'],
       [t.plan.steps.cooldown, t.plan.steps.easy, '10′'],
     ])
   })
@@ -56,7 +56,7 @@ describe('the steps list', () => {
   it('reads an easy run with strides as its body and its strides', () => {
     const rows = stepRows({ steps: STRIDES, type: 'Base', kind: 'easy', color: 'var(--zone-2)', totalSeconds: 2_720 })
     expect(rows.map((r) => r.title)).toEqual([t.plan.kinds.easy, t.plan.steps.strides(4, '20s')])
-    expect(rows[1]!.duration).toBe('4×20s')
+    expect(rows[1]!.duration).toBe('4:20')
     expect(rows[1]!.fill).toBe('var(--zone-5)')
   })
 

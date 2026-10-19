@@ -40,6 +40,11 @@ export function kindColor(type: ActivityType, kind: SessionKind): string {
   return kind === 'long' ? LONG_RUN_COLOR : zoneColor(sessionZone({ type }))
 }
 
+export function kindLetter(type: ActivityType, kind: SessionKind): string {
+  const letters = t.plan.typeLetters
+  return kind === 'quality' ? (letters[type] ?? letters.easy!) : (letters[kind] ?? letters.easy!)
+}
+
 /** "Easy", "Long run", or the quality session's type: "Threshold". */
 export function kindLabel(type: ActivityType, kind: SessionKind): string {
   return kind === 'quality' ? t.activityTypes[type] : t.plan.kinds[kind]

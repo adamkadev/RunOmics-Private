@@ -201,6 +201,14 @@ describe('the day selector', () => {
     expect(bar('2026-09-10').style.height).toBe('4px')
   })
 
+  it('names each day by its session letter, a dash on a rest day', () => {
+    renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 }] })
+
+    expect(day('2026-09-07').textContent).toContain(t.plan.typeLetters.Tempo)
+    expect(day('2026-09-12').textContent).toContain(t.plan.typeLetters.long)
+    expect(day('2026-09-10').textContent).toContain('–')
+  })
+
   it('draws a missed session as an outline in the negative status', () => {
     renderWeek({ planned: [{ date: '2026-09-08', name: 'Easy', type: 'Base', distanceM: 8_000 }] })
 
@@ -247,7 +255,7 @@ describe('a session still to come', () => {
       t.plan.steps.cooldown,
     ])
     expect(rows[1]!.textContent).toContain('Z4 · 4:25–4:30 /km · 2:00 rec')
-    expect(rows[1]!.textContent).toContain(t.plan.steps.repsShort(3, t.plan.steps.minutes(8)))
+    expect(rows[1]!.textContent).toContain(t.plan.steps.minutes(28))
   })
 
   it('has no send-to-watch and no list of the week under it', () => {

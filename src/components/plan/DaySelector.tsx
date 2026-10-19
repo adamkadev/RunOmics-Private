@@ -13,6 +13,8 @@ export interface SelectorDay {
   km: number | null
   /** The session's colour (sessionKind); null on a rest day. */
   color: string | null
+  /** The session's letter under the bar ("E", "T", "Tm", "L"); null on a rest day. */
+  letter: string | null
   isToday: boolean
 }
 
@@ -87,6 +89,13 @@ export function DaySelector({
                   ...(day.state === 'done' || day.state === 'planned' ? { background: day.color ?? 'var(--line-2)' } : {}),
                 }}
               />
+            </span>
+            <span
+              aria-hidden
+              className="text-[9.5px] font-semibold leading-none tracking-[0.04em]"
+              style={{ color: day.letter ? (day.color ?? 'var(--muted-foreground)') : 'var(--muted-foreground)' }}
+            >
+              {day.letter ?? '–'}
             </span>
           </button>
         )
