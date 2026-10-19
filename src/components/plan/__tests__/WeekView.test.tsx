@@ -224,10 +224,13 @@ describe('WeekView without coaching', () => {
     expect(screen.getAllByText(/Track session/).length).toBeGreaterThan(0)
   })
 
-  it('falls back to the rest-day copy on an empty day', () => {
+  // Owner, Oct 2026: a rest day is a short row in the list, not a card.
+  it('lists an empty day as a Rest row, with no day card', () => {
     renderWeek()
 
-    expect(screen.getByText(t.plan.restCard.title)).toBeInTheDocument()
+    expect(screen.getByTestId(`week-rest-${TODAY}`).textContent).toContain(t.sessionState.rest)
+    expect(screen.getAllByTestId(/^week-rest-/)).toHaveLength(7)
+    expect(screen.queryByTestId('selected-day-eyebrow')).toBeNull()
   })
 })
 
@@ -407,14 +410,13 @@ describe('the selected day', () => {
     expect(card.className).toContain('border-2')
     expect(card.className).toContain('border-[var(--accent)]')
 
+    // A rest day selected has no card: its row in the list says it.
     await user.click(screen.getByLabelText(/September 10/))
-    const rest = screen.getByTestId('rest-day-card')
-    expect(within(rest).getByTestId('selected-day-eyebrow').textContent).toBe(formatDate('2026-09-10'))
-    expect(within(rest).getByTestId('selected-day-eyebrow').className).toContain('text-muted-foreground')
-    expect(rest.className).not.toContain('border-[var(--accent)]')
+    expect(screen.queryByTestId('selected-day-eyebrow')).toBeNull()
+    expect(screen.getByTestId('week-rest-2026-09-10')).toBeInTheDocument()
   })
 
-  it("puts today's border on a run done today and on a rest day today", () => {
+  it("puts today's border on a run done today, and today's rest row in the accent", () => {
     const today = activity({ id: 'a-today', date: TODAY, type: 'Base', distanceKm: 8 })
     const done = renderWeek({ activities: [today] })
     const link = screen.getByRole('link', { name: new RegExp(formatDate(TODAY)) })
@@ -423,16 +425,16 @@ describe('the selected day', () => {
     done.unmount()
 
     renderWeek()
-    expect(screen.getByTestId('rest-day-card').className).toContain('border-[var(--accent)]')
+    expect(screen.getByTestId(`week-rest-${TODAY}`).firstElementChild!.className).toContain('text-accent-text')
   })
 
-  it('reads a rest day with the next session in one sentence', async () => {
-    const user = userEvent.setup()
+  it('lists rest days between the sessions, in day order', () => {
     renderWeek({ coaching: overview() })
 
-    await user.click(screen.getByLabelText(/September 7/))
-    expect(screen.getByText(t.plan.restCard.title)).toBeInTheDocument()
-    expect(screen.getByText(t.plan.restCard.next(t.plan.weekdays[2]!, '3 × 8 min threshold'))).toBeInTheDocument()
+    const rows = [...screen.getByTestId('week-sessions').children].map((row) => row.getAttribute('data-testid'))
+    expect(rows[0]).toBe('week-rest-2026-09-07')
+    expect(rows).toContain('week-session-workout-threshold')
+    expect(rows.indexOf('week-rest-2026-09-07')).toBeLessThan(rows.indexOf('week-session-workout-threshold'))
   })
 })
 

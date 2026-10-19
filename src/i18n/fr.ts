@@ -2009,11 +2009,6 @@ export const fr = {
     continuous: 'continu',
     ranKm: (km: string) => `${km} km parcourus`,
     plannedKmLabel: (km: number) => `${km} km prévus`,
-    restCard: {
-      title: 'Jour de repos',
-      noSession: 'Aucune séance prévue.',
-      next: (weekday: string, title: string) => `Aucune séance prévue. Prochaine : ${weekday}, ${title}.`,
-    },
     header: {
       raceIn: (distance: string, days: number) => (days <= 0 ? `${distance} aujourd’hui` : `${distance} dans ${days} j`),
     },

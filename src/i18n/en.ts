@@ -2147,11 +2147,6 @@ export const en = {
     continuous: 'continuous',
     ranKm: (km: string) => `${km} km ran`,
     plannedKmLabel: (km: number) => `${km} km planned`,
-    restCard: {
-      title: 'Rest day',
-      noSession: 'No session planned.',
-      next: (weekday: string, title: string) => `No session planned. Next up: ${weekday}, ${title}.`,
-    },
     // The race the plan builds to, after the phase under the title: "Half in 42 d".
     header: {
       raceIn: (distance: string, days: number) => (days <= 0 ? `${distance} today` : `${distance} in ${days} d`),

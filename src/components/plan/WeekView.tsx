@@ -99,41 +99,21 @@ function PlannedWorkoutRow({ workout, eyebrow, isToday = false }: { workout: Pla
 /** The selected day's card, when that day is today: a 2 pt accent border (design review, Oct 2026). */
 const TODAY_BORDER = 'border-2 border-[var(--accent)]'
 
-// Rest is a prescribed state, not a missing render - it gets the same shell
-// as any other day, dashed and unfilled (v4.17).
-function RestDayCard({ next, eyebrow, isToday = false }: { next: { weekday: string; title: string } | null; eyebrow?: ReactNode; isToday?: boolean }) {
+// A rest day is one short row in the week's list (owner, Oct 2026): the
+// dashed Rest day card took the top of the screen on a rest Monday.
+function RestRow({ date, isToday = false }: { date: string; isToday?: boolean }) {
   return (
     <div
-      data-testid="rest-day-card"
-      className={cn('flex flex-col gap-1 rounded-2xl border border-dashed border-[var(--line-2)] px-5 py-4', isToday && cn(TODAY_BORDER, 'border-solid'))}
+      data-testid={`week-rest-${date}`}
+      className="grid w-full grid-cols-[2.25rem_0.5rem_minmax(0,1fr)] items-center gap-3 border-b border-border px-5 py-2.5 last:border-b-0 sm:grid-cols-[3rem_0.75rem_minmax(0,1fr)]"
     >
-      {eyebrow}
-      <div className="text-[15px] font-semibold text-foreground">{t.plan.restCard.title}</div>
-      <div className="text-[13px] text-muted-foreground">
-        {next ? t.plan.restCard.next(next.weekday, next.title) : t.plan.restCard.noSession}
-      </div>
+      <span className={cn('text-[13px]', isToday ? 'font-semibold text-accent-text' : 'text-muted-foreground')}>
+        {WEEKDAY_SHORT_INDEX[new Date(date + 'T00:00:00').getDay()]}
+      </span>
+      <span aria-hidden />
+      <span className="text-[13px] text-muted-foreground">{t.sessionState.rest}</span>
     </div>
   )
-}
-
-function findNextPlanned(
-  days: Day[],
-  fromDate: string,
-  byDatePlanned: Map<string, PlannedWorkout>,
-  byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
-): { weekday: string; title: string } | null {
-  const fromIndex = days.findIndex((d) => d.date === fromDate)
-  if (fromIndex === -1) return null
-
-  for (let i = fromIndex + 1; i < days.length; i++) {
-    const d = days[i]!
-    const coach = byDateCoach?.get(d.date)?.find((v) => v.state !== 'cancelled')
-    const plan = byDatePlanned.get(d.date)
-    // A line of prose: the coach's short name where there is one.
-    const title = coach?.prescription.shortName ?? coach?.prescription.title ?? sessionTitle(plan?.name, plan?.type as ActivityType | undefined) ?? null
-    if (title) return { weekday: WEEKDAY_SHORT_INDEX[new Date(d.date + 'T00:00:00').getDay()]!, title }
-  }
-  return null
 }
 
 const WEEKDAY_SHORT_INDEX: Record<number, string> = {
@@ -148,6 +128,8 @@ const WEEKDAY_SHORT_INDEX: Record<number, string> = {
 
 interface WeekRowItem {
   key: string
+  /** A day with nothing run or planned: a short Rest row. */
+  rest?: boolean
   date: string
   title: string
   /** The row's second line: a run's time and pace, a plan's zone and targets. */
@@ -421,7 +403,7 @@ export function WeekView({
           })
         }
         const plan = byDatePlanned.get(d.date)
-        if (!plan) return []
+        if (!plan) return [{ key: `rest:${d.date}`, date: d.date, title: t.sessionState.rest, detail: null, distanceM: null, duration: null, done: false, rest: true }]
         const planned = plannedWorkoutView(plan, trainingZones)
         return [{ ...planned, title: workoutSummary(planned).shortTitle, detail: plannedRowDetail(planned), done: false }]
       })
@@ -536,13 +518,13 @@ export function WeekView({
             <PlannedWorkoutRow key={workout.key} workout={workout} eyebrow={index === 0 ? dayEyebrow : null} isToday={isTodaySelected} />
           ))}
         </div>
-      ) : (
-        <RestDayCard next={findNextPlanned(days, selected.date, byDatePlanned, byDateCoach)} eyebrow={dayEyebrow} isToday={isTodaySelected} />
-      )}
+      ) : null}
 
       {thisWeekSessions.length > 0 && (
         <section className={cardClass({ padding: 'none', overflow: true })} data-testid="week-sessions">
-          {thisWeekSessions.map((workout) => (
+          {thisWeekSessions.map((workout) => workout.rest ? (
+            <RestRow key={workout.key} date={workout.date} isToday={workout.date === today} />
+          ) : (
             <WeekSessionRow
               key={workout.key}
               workout={workout}
