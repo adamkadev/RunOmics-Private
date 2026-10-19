@@ -1,96 +1,61 @@
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import type { ReactNode } from 'react'
-import type { HeroWorkoutView } from '@/components/plan/planWorkoutView'
-import { cardClass } from '@/components/ui/Card'
-import { Unit } from '@/components/ui/Stat'
-import { SessionStructureBar } from '@/components/plan/WorkoutStructure'
-import { EFFORT_ZONE_BY_TYPE } from '@/domain/training/workoutStructure'
-import { workoutSummary } from '@/components/plan/workoutSummary'
+import { tileSegments } from '@/components/plan/WorkoutStructure'
 import { sessionZone } from '@/lib/colors'
-import { formatClock, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { t } from '@/i18n'
+import type { SessionCard } from './nextSession'
 
-const HOUR_SECONDS = 3600
-
-function fieldTime(seconds: number): string {
-  if (seconds < HOUR_SECONDS) return formatDurationWords(seconds)
-  const minutes = Math.round(seconds / 60)
-  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}`
-}
-
-function fieldPace(workout: HeroWorkoutView): string | null {
-  const { paces } = workoutSummary({ ...workout, structure: workout.structure ?? null })
-  const pace = paces.find((p) => p.kind === 'work' || p.kind === 'target') ?? paces[0]
-  return pace ? `${formatClock(pace.pace[0])}–${formatClock(pace.pace[1])}` : null
-}
-
-function Field({ label, value }: { label: string; value: ReactNode }) {
+/**
+ * The session's intensity (design review 3.0): 10 pt, in the session's
+ * zone, its steps as long as they last - the same reading of the structure
+ * as before (tileSegments), without the caption: the line above says it.
+ */
+function IntensityBar({ workout }: { workout: NonNullable<SessionCard['workout']> }) {
+  const zone = workout.type ? sessionZone(workout) : null
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
-      <span className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</span>
-      <span className="text-[17px] font-semibold leading-tight tracking-[-0.01em] tabular-nums text-foreground">{value}</span>
+    <div aria-hidden className="flex h-2.5 gap-[3px]" data-testid="today-structure-bar">
+      {tileSegments(workout.structure ?? [], zone).map((segment, i) => (
+        // Never thinner than 3 pt: a 20 s stride is a sliver, not nothing.
+        <span key={i} className="min-w-[3px] rounded-[5px]" style={{ flexGrow: segment.weight, flexBasis: 0, background: segment.fill }} />
+      ))}
     </div>
   )
 }
 
-export function TodaySessionCard({
-  eyebrow,
-  title,
-  workout,
-  hrCapBpm = null,
-}: {
-  eyebrow: string
-  title: string
-  workout: HeroWorkoutView | null
-  hrCapBpm?: number | null
-}) {
-  const s = t.dashboard.todayHero
-  const pace = workout ? fieldPace(workout) : null
-  const fields = [
-    workout?.duration ? { label: s.fields.time, value: fieldTime(workout.duration.seconds) } : null,
-    workout?.distanceM
-      ? { label: s.fields.dist, value: <>{formatDistance(workout.distanceM / 1000)}<Unit>{t.units.km}</Unit></> }
-      : null,
-    pace ? { label: s.fields.pace, value: pace } : null,
-    hrCapBpm ? { label: s.fields.hr, value: s.hrCap(hrCapBpm) } : null,
-  ].filter((field) => field !== null)
-
+/**
+ * The next workout (design review 3.0, mock 1b): today's session until it is
+ * run, then the next one, as one link that opens Plan's week on its day. When
+ * it is and the phase it falls in, its short name and its length, and its
+ * intensity in a bar. Nothing is sent to the watch from here: the sync does.
+ */
+export function TodaySessionCard({ card }: { card: SessionCard }) {
   return (
-    <Link href="/plan" aria-label={s.openSession} className="block active:scale-[0.99]" data-testid="session-card-link">
-      <section className={cardClass({ padding: 'lg', className: 'flex flex-col gap-3' })} data-testid="session-card">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-1">
-            <span className="text-caption font-semibold uppercase tracking-[0.08em] text-accent-text">{eyebrow}</span>
-            <span className="line-clamp-2 break-words text-[19px] font-semibold leading-snug text-pretty text-foreground">{title}</span>
-          </div>
-          <ChevronRight size={18} className="mt-0.5 shrink-0 text-subtle" aria-hidden />
-        </div>
-
-        {fields.length > 0 && (
-          <div
-            className="grid items-start gap-2"
-            style={{ gridTemplateColumns: fields.map((field) => (field.label === s.fields.pace ? '1.35fr' : '1fr')).join(' ') }}
-            data-testid="session-fields"
-          >
-            {fields.map((field) => (
-              <Field key={field.label} label={field.label} value={field.value} />
-            ))}
-          </div>
+    <Link
+      href={card.href}
+      data-testid="session-card"
+      data-date={card.date}
+      className="flex flex-col gap-2.5 rounded-[24px] border border-border bg-card px-[18px] py-3.5 shadow-card transition-colors hover:border-[var(--accent)] active:border-[var(--accent)]"
+    >
+      <span className="flex items-baseline justify-between gap-3">
+        <span className="text-caption font-semibold uppercase tracking-[0.1em] text-accent-text">{card.eyebrow}</span>
+        {card.phase && <span className="text-xs text-muted-foreground">{card.phase}</span>}
+      </span>
+      <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+        {/* The short name, at most two lines (design review, Oct 2026). */}
+        <span className="line-clamp-2 min-w-0 break-words text-[26px] font-bold leading-tight tracking-[-0.01em] text-pretty text-foreground">{card.title}</span>
+        {(card.km || card.detail) && (
+          <span className="text-sm tabular-nums text-[var(--text-2)]" data-testid="session-detail">
+            {card.km && <span className="font-semibold text-foreground">{card.km} {t.units.km}</span>}
+            {card.km && card.detail && ' · '}
+            {card.detail}
+          </span>
         )}
-
-        {workout && (
-          <div data-testid="today-structure-bar">
-            <SessionStructureBar
-              variant="tile"
-              steps={workout.structure ?? []}
-              zoneWord={workout.type ? (EFFORT_ZONE_BY_TYPE[workout.type] ?? null) : null}
-              zone={workout.type ? sessionZone(workout) : null}
-              totalSeconds={workout.duration?.seconds ?? 0}
-            />
-          </div>
-        )}
-      </section>
+      </span>
+      {card.workout && <IntensityBar workout={card.workout} />}
+      <span className="flex items-center justify-between text-sm font-semibold text-accent-text">
+        {t.dashboard.todayHero.openInPlan}
+        <ChevronRight size={16} strokeWidth={2.4} aria-hidden />
+      </span>
     </Link>
   )
 }

@@ -12,6 +12,7 @@ import { MonthView } from './MonthView'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
+import { useUrlParam } from '@/lib/useUrlParam'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 import { planRace } from './planRace'
@@ -31,6 +32,7 @@ interface Props {
 
 type ViewMode = 'week' | 'month'
 const VIEW_MODES = ['week', 'month'] as const
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRanges, nextRace, trainingZones, coaching, today: serverToday }: Props) {
   const today = useToday(serverToday)
@@ -58,6 +60,21 @@ export function PlanClient({ activities, plannedWorkouts, hrBounds, planPhaseRan
   const [animKey, setAnimKey] = useState(0)
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward')
   const [focusDate, setFocusDate] = useState<string | null>(null)
+
+  // A link to a day - Today's next workout, a missed session - is
+  // /plan?date=YYYY-MM-DD: the week view on that day, the day selected. The
+  // URL is read after hydration (useUrlParam), so the page stays static.
+  const [dateParam] = useUrlParam('date')
+  const [shownParam, setShownParam] = useState<string | null>(null)
+  if (dateParam !== shownParam) {
+    setShownParam(dateParam)
+    if (dateParam && ISO_DATE.test(dateParam)) {
+      setWeekStart(startOfWeek(new Date(`${dateParam}T00:00:00`)))
+      setFocusDate(dateParam)
+      setMode('week')
+      setAnimKey((k) => k + 1)
+    }
+  }
 
   const byDate = useMemo(() => {
     const map = new Map<string, ActivitySummary[]>()

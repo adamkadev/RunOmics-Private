@@ -1,9 +1,9 @@
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { coachWorkoutView, heroWorkoutView, plannedWorkoutView, type HeroWorkoutView, type PlanWorkoutView } from '@/components/plan/planWorkoutView'
-import { workoutSummary } from '@/components/plan/workoutSummary'
+import { paceLabel, workoutSummary } from '@/components/plan/workoutSummary'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatPlannedKm, formatWeekday } from '@/lib/formatters'
+import { formatDurationWords, formatPlannedKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { ranDetail, runMeta } from './todaySession'
 import { kindOfType, type SessionKind } from './sessionKind'
@@ -69,23 +69,29 @@ export function findNextSession(
   return null
 }
 
-/** The row above the next session: a run done, or a session planned and not run. */
+/** Plan's week on a day, with that day selected: PlanClient reads the date from the URL. */
+export function planDayHref(date: string): string {
+  return `/plan?date=${date}`
+}
+
+/** The row beside the next session: a run done, or a session planned and not run. */
 export interface LastRun {
   state: 'done' | 'missed'
-  /** `done`: today's run or a missed session, led by its badge; `past`: an earlier run, led by its route. */
-  layout: 'done' | 'past'
+  /** The day it was, the row's first line: today's run, or yesterday's. */
+  when: 'today' | 'yesterday'
   date: string
+  /** The session's short name, or the run's own. */
   title: string
   detail: string
-  /** The run for a run; the plan, read-only, for a missed session. */
+  /** The run for a run; Plan on its day, read-only, for a missed session. */
   href: string
-  /** The route thumb a past run is led by. */
+  /** The run's route for its thumbnail; null for a treadmill run or a missed session. */
   thumb?: string | null
   type?: string | null
 }
 
 /**
- * The hero's last-run row (design review, Oct 2026): today's run once it is
+ * Today's last-run row (design review 3.0, mock 1b): today's run once it is
  * done, else yesterday's run, or the session it planned and nobody ran. A
  * missed session is said, never moved: the plan is the coach's.
  */
@@ -98,24 +104,31 @@ export function findLastRun(
   garmin: readonly PlannedWorkout[],
   zones: TrainingZonesData | null = null,
 ): LastRun | null {
-  const s = t.dashboard.todayHero
   // A row: the coach's short name where there is one (design review, Oct 2026).
   const title = (activity: ActivitySummary, workout: PlanWorkoutView | HeroWorkoutView | null) =>
-    s.doneTitle(workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }).shortTitle : activity.description || t.activityTypes[activity.type])
+    workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }).shortTitle : activity.description || t.activityTypes[activity.type]
   if (todayActivity) {
-    return { state: 'done', layout: 'done', date: today, title: title(todayActivity, todayWorkout), detail: ranDetail(todayActivity, todayWorkout), href: `/activities/${todayActivity.id}` }
+    return {
+      state: 'done',
+      when: 'today',
+      date: today,
+      title: title(todayActivity, todayWorkout),
+      detail: ranDetail(todayActivity, todayWorkout),
+      href: `/activities/${todayActivity.id}`,
+      thumb: todayActivity.routeThumb ?? null,
+      type: todayActivity.type,
+    }
   }
 
   const yesterday = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
   const session = sessionOn(yesterday, coach, garmin, zones)
   const run = recent.find((a) => a.date === yesterday)
   if (run) {
-    const workout = session ? heroWorkoutView(session.workout) : null
     return {
       state: 'done',
-      layout: 'past',
+      when: 'yesterday',
       date: yesterday,
-      title: s.yesterdayTitle(workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }).shortTitle : run.description || t.activityTypes[run.type]),
+      title: title(run, session ? heroWorkoutView(session.workout) : null),
       detail: runMeta(run),
       href: `/activities/${run.id}`,
       thumb: run.routeThumb ?? null,
@@ -127,10 +140,75 @@ export function findLastRun(
   const km = session.workout.distanceM ? formatPlannedKm(session.workout.distanceM / 1000) : null
   return {
     state: 'missed',
-    layout: 'done',
+    when: 'yesterday',
     date: yesterday,
-    title: s.missedTitle(formatWeekday(yesterday), workoutSummary(session.workout).shortTitle),
-    detail: s.notRun(km),
-    href: '/plan',
+    title: workoutSummary(session.workout).shortTitle,
+    detail: t.dashboard.todayHero.notRun(km),
+    href: planDayHref(yesterday),
+    type: session.workout.type ?? null,
+  }
+}
+
+/** The next-workout card: the session, when it is, and the phase it falls in. */
+export interface SessionCard {
+  date: string
+  /** "Tomorrow · Tue 20", "Today · Mon 19", or the day alone further out. */
+  eyebrow: string
+  /** The session's short name: the card's title is 26 pt. */
+  title: string
+  /** Its planned km ("10"), the detail line's lead; null when the plan gives none. */
+  km: string | null
+  /** What follows the km: "1h00 · ≤ 158 bpm". */
+  detail: string | null
+  /** The session, for its intensity bar; null when only its name is known. */
+  workout: HeroWorkoutView | null
+  /** The phase of the plan the day falls in ("Base"), or null outside one. */
+  phase: string | null
+  href: string
+}
+
+/**
+ * The session the card shows (design review 3.0, mock 1b): today's until it
+ * is run, then the next one in the week ahead; none in a week with nothing
+ * left. Its length, then its heart-rate ceiling where the session has one,
+ * else its one pace.
+ */
+export function sessionCard(
+  today: string,
+  todayWorkout: HeroWorkoutView | null,
+  todayActivity: ActivitySummary | null,
+  next: NextSession | null,
+  {
+    phaseOn = () => null,
+    hrCapOf = () => null,
+  }: { phaseOn?: (date: string) => string | null; hrCapOf?: (workout: HeroWorkoutView | null) => number | null } = {},
+): SessionCard | null {
+  const s = t.dashboard.todayHero
+  const pick =
+    todayWorkout && !todayActivity
+      ? { date: today, workout: todayWorkout, title: null }
+      : next
+        ? { date: next.date, workout: next.workout ?? null, title: next.title }
+        : null
+  if (!pick) return null
+
+  const { date, workout } = pick
+  const summary = workout ? workoutSummary({ ...workout, structure: workout.structure ?? null }) : null
+  const tomorrow = isoDate(addDays(new Date(`${today}T00:00:00`), 1))
+  const when = date === today ? s.today : date === tomorrow ? s.tomorrow : null
+  const day = formatWeekday(date, true)
+  const hrCap = hrCapOf(workout)
+  // A ceiling says how to run it; without one, a single pace does. A session
+  // with several paces is Plan's to list.
+  const limit = hrCap ? `${s.hrCap(hrCap)} ${t.units.bpm}` : summary?.paces.length === 1 ? paceLabel(summary.paces[0]!) : null
+  return {
+    date,
+    eyebrow: when ? `${when} · ${day}` : day,
+    title: summary?.shortTitle ?? pick.title ?? '',
+    km: workout?.distanceM ? formatPlannedKm(workout.distanceM / 1000) : null,
+    detail: [workout?.duration ? formatDurationWords(workout.duration.seconds) : null, limit].filter(Boolean).join(' · ') || null,
+    workout,
+    phase: phaseOn(date),
+    href: planDayHref(date),
   }
 }

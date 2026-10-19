@@ -5,17 +5,20 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { RefreshCw } from 'lucide-react'
 import type { User } from 'firebase/auth'
-import { initials, formatRelativeAgo } from '@/lib/formatters'
+import { initials, formatDate, formatRelativeAgo, formatWeekdayLong } from '@/lib/formatters'
+import { appTodayIso } from '@/lib/calendarDate'
 import { useMounted } from '@/lib/useMounted'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
+import { useToday } from '@/lib/useToday'
 import { SYNC_LIMITS } from '@/lib/syncLimits'
 import { useSyncNow } from '@/components/settings/SyncNowCard'
-import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 interface Props {
   name?: string
   lastSyncedAt?: string | null
+  /** The date the page was prerendered on, which the header writes; see useToday. */
+  today?: string
 }
 
 /** Past this the sync line says it can be tapped. */
@@ -41,7 +44,7 @@ export function syncAgeMs(lastSyncedAt: string, now = Date.now()): number {
 const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
 
 const LINE =
-  'inline-flex min-h-11 min-w-0 items-center gap-1.5 text-left text-sm transition-opacity active:opacity-70 disabled:active:opacity-100'
+  'inline-flex min-h-11 min-w-0 items-center gap-1.5 text-right text-xs transition-opacity active:opacity-70 disabled:active:opacity-100'
 
 interface Line {
   text: string
@@ -53,17 +56,15 @@ interface Line {
 
 const NOTHING = () => {}
 
-/** The line's words and colour, from the sync's state and the data's age. */
+/**
+ * The line's words and colour, from the sync's state and the data's age. The
+ * words alone at rest (design review, Oct 2026), the turning arrows while a
+ * sync runs.
+ */
 function SyncLineButton({ text, tone, spinning = false, onClick, disabled = false }: Line) {
   return (
     <button type="button" onClick={onClick} disabled={disabled} data-testid="sync-line" data-tone={tone} className={LINE} style={{ color: tone === 'caution' ? 'var(--tone-caution)' : 'var(--muted-foreground)' }}>
-      <RefreshCw
-        size={14}
-        strokeWidth={2.2}
-        aria-hidden
-        className={cn('shrink-0', spinning && 'animate-spin')}
-        style={{ color: tone === 'accent' ? 'var(--accent-text)' : 'currentColor' }}
-      />
+      {spinning && <RefreshCw size={12} strokeWidth={2.2} aria-hidden className="shrink-0 animate-spin" />}
       <span className="truncate">{text}</span>
     </button>
   )
@@ -115,28 +116,38 @@ function SyncLine({ lastSyncedAt, ago }: { lastSyncedAt: string; ago: string }) 
   return <SyncLineButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.push('/settings')} />
 }
 
-export function DashboardGreeting({ name, lastSyncedAt }: Props) {
+/** "Monday, Oct 19", « Lundi 19 oct. »: the header's date over the title. */
+export function headerDate(isoDate: string): string {
+  return t.dashboard.headerDate(formatWeekdayLong(isoDate), formatDate(isoDate, { style: 'bare', year: 'never' }))
+}
+
+export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Props) {
   const displayName = name ?? t.profile.hero.namePlaceholder
+  const today = useToday(serverToday ?? appTodayIso())
 
   // After mount: an age worked out on the server is as old as the cached
   // page, and the browser's differs - React #418.
   const mounted = useMounted()
   const ago = mounted && lastSyncedAt ? formatRelativeAgo(lastSyncedAt) : null
 
-  // The avatar fades as it scrolls under the status strip (v5.5 #3): the
-  // strip is only the safe area tall, and the disc's lower edge showed under
-  // it as a sliver of accent. The title and its line are the compact title
-  // bar's to fade, as on every page. At the top it carries no inline style.
-  const avatarRef = useRef<HTMLAnchorElement>(null)
+  // The avatar and the sync line beside it fade as they scroll under the
+  // status strip (v5.5 #3): the strip is only the safe area tall, and the
+  // disc's lower edge showed under it as a sliver of accent. The title and
+  // the date are the compact title bar's to fade, as on every page. At the
+  // top they carry no inline style; faded out, they take no taps.
+  const sideRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    const avatar = avatarRef.current
-    if (!avatar) return
+    const side = sideRef.current
+    if (!side) return
     let frame = 0
     const fade = () => {
       frame = 0
       const y = window.scrollY
-      if (y <= 0) avatar.style.removeProperty('opacity')
-      else avatar.style.opacity = String(Math.max(0, 1 - y / Math.max(1, avatar.offsetHeight)))
+      const opacity = y <= 0 ? 1 : Math.max(0, 1 - y / Math.max(1, side.offsetHeight))
+      if (opacity >= 1) side.style.removeProperty('opacity')
+      else side.style.opacity = String(opacity)
+      if (opacity <= 0) side.style.pointerEvents = 'none'
+      else side.style.removeProperty('pointer-events')
     }
     const schedule = () => { if (!frame) frame = requestAnimationFrame(fade) }
     fade()
@@ -148,30 +159,33 @@ export function DashboardGreeting({ name, lastSyncedAt }: Props) {
   }, [])
 
   return (
-    // The page header every page has (v4.17): the H1, and the sync line under
-    // it, which is also the sync control. The verdict below is still the news.
-    <header data-testid="today-header" className="mb-1.5 flex items-center justify-between gap-4">
+    // The page header (design review, Oct 2026): the date over the H1, and on
+    // the right the sync line, which is also the sync control, beside the
+    // avatar. The verdict below is still the news.
+    <header data-testid="today-header" className="flex items-end justify-between gap-3">
       <div className="flex min-w-0 flex-col">
+        <p data-title-sub data-testid="today-date" className="text-[13px] font-medium text-muted-foreground">
+          {headerDate(today)}
+        </p>
         <h1 className="text-display text-foreground">{t.pages.dashboard.title}</h1>
-        <div data-title-sub className="-mt-1 flex min-h-11 min-w-0 items-center">
-          {ago && lastSyncedAt && <SyncLine lastSyncedAt={lastSyncedAt} ago={ago} />}
-        </div>
       </div>
-      {/* It looked tappable and was a plain div. A link to Progress now: the
-          34 pt disc, with a 44 pt hit area (hit-44) that doesn't take space. */}
-      <Link
-        ref={avatarRef}
-        href="/profile"
-        aria-label={t.nav.items.profile}
-        className="hit-44 flex size-8.5 shrink-0 items-center justify-center rounded-full active:scale-95"
-      >
-        <span
-          aria-hidden="true"
-          className="flex size-8.5 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground"
+      <div ref={sideRef} className="flex min-w-0 shrink items-center gap-2.5">
+        {ago && lastSyncedAt && <SyncLine lastSyncedAt={lastSyncedAt} ago={ago} />}
+        {/* A link to Progress: the 40 pt disc, with a 44 pt hit area (hit-44)
+            that doesn't take space. */}
+        <Link
+          href="/profile"
+          aria-label={t.nav.items.profile}
+          className="hit-44 flex size-10 shrink-0 items-center justify-center rounded-full active:scale-95"
         >
-          {initials(displayName)}
-        </span>
-      </Link>
+          <span
+            aria-hidden="true"
+            className="flex size-10 items-center justify-center rounded-full bg-accent text-[15px] font-bold text-accent-foreground"
+          >
+            {initials(displayName)}
+          </span>
+        </Link>
+      </div>
     </header>
   )
 }

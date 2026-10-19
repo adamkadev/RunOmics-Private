@@ -84,7 +84,7 @@ describe('French design review copy', () => {
 describe('the readiness card, in plain words', () => {
   it('names the numbers without acronyms', () => {
     for (const r of [en.dashboard.readiness, fr.dashboard.readiness]) {
-      for (const label of [r.formLabel, r.ctl, r.atl, r.acwr, r.lastSevenDays]) expect(label).not.toMatch(/CTL|ATL|ACWR|TSB/)
+      for (const label of [r.formLabel, r.ctl, r.atl, r.acwr]) expect(label).not.toMatch(/CTL|ATL|ACWR|TSB/)
     }
     expect(en.dashboard.readiness.acwrValue('0.90')).toBe('×0.90')
     expect(fr.dashboard.readiness.acwrValue('1,79')).toBe('×1,79')
