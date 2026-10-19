@@ -22,7 +22,7 @@ export const revalidate = 3600
 export default async function AnalyticsPage() {
   const today = appTodayIso()
   const year = Number(today.slice(0, 4))
-  const [data, trainingLoad, risk, goals] = await Promise.all([getAnalyticsData(), getTrainingLoad(), getLoadRiskPanel(), getGoalsPageData()])
+  const [data, trainingLoad, risk, goals] = await Promise.all([getAnalyticsData(today), getTrainingLoad(), getLoadRiskPanel(), getGoalsPageData(today)])
 
   const activities = getActivitySummaries()
   const plan = await loadPlanWeeks(getCoachingOverview(today), today)

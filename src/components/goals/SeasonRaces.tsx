@@ -46,15 +46,20 @@ function outcomeLine(seconds: number, targetSeconds: number): string {
 export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow[] {
   const { goals, pbs, upcomingRaces, nextRaceSpotlight, predictions } = yearData
   const s = t.goals
-  if (!goals) return []
+  // A year with races but no goals file still lists its races.
+  const targets = goals?.targets ?? []
+  if (targets.length === 0 && upcomingRaces.length === 0) return []
 
-  const targetDistances = new Set(goals.targets.map((target) => target.distance))
+  const targetDistances = new Set(targets.map((target) => target.distance))
   const extraDistances = [...new Set(upcomingRaces.map((race) => race.distance))].filter(
     (distance) => !targetDistances.has(distance)
   )
   const allTargets: GoalTarget[] = [
-    ...goals.targets,
-    ...extraDistances.map((distance) => ({ distance, targetSeconds: null })),
+    ...targets,
+    ...extraDistances.map((distance) => ({
+      distance,
+      targetSeconds: upcomingRaces.find((race) => race.distance === distance)?.targetSeconds ?? null,
+    })),
   ]
 
   return allTargets.map((target): SeasonRaceRow => {

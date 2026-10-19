@@ -2,13 +2,15 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Activity, CalendarDays, BarChart2, Map, Settings, User } from 'lucide-react'
+import type { ComponentType } from 'react'
+import { LayoutDashboard, Activity, CalendarDays, BarChart2, Map, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { activeNavHref } from '@/lib/navigation'
 import { t } from '@/i18n'
 import { APP_VERSION } from '@/lib/version'
 import { ThemeToggle } from './ThemeToggle'
 import { GlassTabBar } from './GlassTabBar'
+import { TrophyIcon } from './TrophyIcon'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { HeaderMark } from './HeaderMark'
 
@@ -18,7 +20,7 @@ const NAV_ITEMS = [
   { href: '/plan', label: t.nav.items.plan, icon: CalendarDays },
   { href: '/analytics', label: t.nav.items.analytics, icon: BarChart2 },
   { href: '/map', label: t.nav.items.heatmap, icon: Map },
-  { href: '/profile', label: t.nav.items.profile, icon: User },
+  { href: '/profile', label: t.nav.items.profile, icon: TrophyIcon },
 ]
 
 const NAV_HREFS = [...NAV_ITEMS.map((item) => item.href), '/settings']
@@ -30,7 +32,7 @@ export function Sidebar() {
   // One row recipe for the six sections and Settings (v4.17): 40 px tall,
   // an 18 px icon 12 px from its label; the section on screen takes the
   // accent on its soft tint.
-  const row = (href: string, label: string, Icon: typeof Settings) => {
+  const row = (href: string, label: string, Icon: ComponentType<{ size?: number; strokeWidth?: number; 'aria-hidden'?: boolean | 'true' }>) => {
     const active = currentHref === href
     return (
       <Link

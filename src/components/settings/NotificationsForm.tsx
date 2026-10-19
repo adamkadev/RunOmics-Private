@@ -106,10 +106,7 @@ export function NotificationsForm() {
         const enabled = status === 'enabled' && prefs[key]
         return (
           <div key={key} className="flex min-h-[44px] items-center justify-between gap-4 border-b border-border py-3.5 last:border-b-0">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground">{strings.title}</p>
-              <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{strings.subtitle}</p>
-            </div>
+            <p className="min-w-0 text-sm font-medium text-foreground">{strings.title}</p>
             <Toggle checked={enabled} disabled={busy} label={strings.title} onChange={() => handleToggle(key)} />
           </div>
         )

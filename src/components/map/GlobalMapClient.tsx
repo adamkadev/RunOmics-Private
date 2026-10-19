@@ -1,16 +1,18 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Maximize, Minimize } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { ACTIVITY_TYPES, type ActivityType } from "@/domain/activity/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
+import { formatKm, formatNumber } from "@/lib/formatters";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
 import type { TerritoryCardContent } from "./TerritoryBand";
 import { ClusterPanel } from "./ClusterPanel";
 import { FilterChip } from "./FilterChip";
 import { HeatLegend } from "./HeatLegend";
+import { MapAttribution } from "@/components/ui/MapAttribution";
 import { useMapRoutes, type HomeRing } from "./useMapRoutes";
 import {
   areaRows,
@@ -118,8 +120,8 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
       headline: s.headline(territory.percentVolume, reach, selectedIdx === data.defaultClusterIdx),
       stats: [
         { label: s.runsStat, value: String(territory.routeCount) },
-        { label: s.kmStat, value: territory.km.toLocaleString(t.locale), unit: t.units.km },
-        { label: s.reachStat, value: reachKm(territory.medianReachKm).toLocaleString(t.locale), unit: t.units.km },
+        { label: s.kmStat, value: formatKm(territory.km), unit: t.units.km },
+        { label: s.reachStat, value: formatNumber(reachKm(territory.medianReachKm)), unit: t.units.km },
       ],
     };
   }, [clusters, selectedIdx, territory, names, selectedType, selectedYear, data.defaultClusterIdx]);
@@ -244,24 +246,11 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           </button>
         )}
 
-        {/* The scale bottom left, the licence line bottom right (v4.17): both
-            always on the map, in the page and in fullscreen alike. Where the
-            two do not fit on one line - a phone - the credit takes the
-            corner and the scale sits just above it, never across it. */}
+        {/* The scale bottom left, the credits' ⓘ bottom right (3.0): both
+            always on the map, in the page and in fullscreen alike. */}
         <div className={`pointer-events-none absolute inset-x-3 z-10 flex flex-wrap items-end gap-x-3 gap-y-1.5 ${bottom}`}>
           <HeatLegend className="shrink-0" />
-          <span
-            className="ml-auto text-right text-caption leading-tight text-subtle"
-            data-testid="map-attribution"
-          >
-            {/* Each credit whole: a narrow map wraps between them, not inside one. */}
-            {t.pages.map.attribution.split(" · ").map((credit, i) => (
-              <Fragment key={credit}>
-                {i > 0 && " · "}
-                <span className="whitespace-nowrap">{credit}</span>
-              </Fragment>
-            ))}
-          </span>
+          <MapAttribution className="ml-auto" />
         </div>
       </div>
     </div>

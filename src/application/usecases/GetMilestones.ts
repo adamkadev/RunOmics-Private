@@ -3,7 +3,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getAllPlannedWorkouts } from '@/infrastructure/repositories/JsonPlannedWorkoutRepository'
 import { getRecords } from './GetRecords'
 import { computeWeekActivityDays } from './GetDashboardData'
-import { DAY_MS, isoWeekNumber, startOfWeek, addDays, isoDate } from '@/lib/calendarDate'
+import { DAY_MS, isoWeekNumber, startOfWeek, addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
 import { formatDistance, formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -159,7 +159,7 @@ export function computeWeekPlannedDays(planned: { date: string }[], now: Date): 
   return Array.from({ length: 7 }, (_, i) => dateSet.has(isoDate(addDays(monday, i))))
 }
 
-export function getWeeklyStreakData(now = new Date()): WeeklyStreakData | null {
+export function getWeeklyStreakData(now = new Date(`${appTodayIso()}T12:00:00`)): WeeklyStreakData | null {
   const activities = getAllActivities()
   if (!activities.length) return null
   const streak = currentWeekStreak(activities, now)
@@ -171,7 +171,7 @@ export function getWeeklyStreakData(now = new Date()): WeeklyStreakData | null {
   }
 }
 
-export async function getMilestones(): Promise<Milestone[]> {
+export async function getMilestones(today: string = appTodayIso()): Promise<Milestone[]> {
   const activities = getAllActivities()
   const ascending = [...activities].sort((a, b) => a.date.localeCompare(b.date))
 
@@ -218,7 +218,7 @@ export async function getMilestones(): Promise<Milestone[]> {
     })
   }
 
-  const streak = currentWeekStreak(activities, new Date())
+  const streak = currentWeekStreak(activities, new Date(`${today}T12:00:00`))
   if (streak && streak.weeks >= MIN_STREAK_WEEKS) {
     milestones.push({
       type: 'streak',

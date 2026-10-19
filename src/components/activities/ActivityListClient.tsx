@@ -1,19 +1,19 @@
 'use client'
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import { Search, SearchX, ChevronDown, X } from 'lucide-react'
 import { ActivityThumbRow } from './ActivityThumbRow'
 import { ACTIVITY_TYPES, isActivityType, type ActivitySummary, type ActivityType } from '@/domain/activity/types'
 import { runTypeColor } from '@/lib/colors'
 import type { ActivityQueryResult, ActivitySortKey, ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
-import { weeklyTargetKm, type WeekTarget } from '@/domain/training/weekTarget'
-import { formatWeekKm } from '@/components/plan/weekPlanDays'
+import type { MapShellData } from '@/application/usecases/GetAllRoutes'
 import { cardClass } from '@/components/ui/Card'
 import { Pill } from '@/components/ui/Pill'
 import { TypeDot } from '@/components/ui/TypeDot'
 import { SortDropdown } from '@/components/ui/SortDropdown'
+import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { easyShare } from '@/domain/activity/easyShare'
 import { groupByWeek, withCurrentWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
@@ -25,6 +25,17 @@ import { useToday } from '@/lib/useToday'
 import { t } from '@/i18n'
 
 const ALL_TYPES: readonly ActivityType[] = ACTIVITY_TYPES
+
+// The map and its tiles load only once the Map tab is opened.
+const GlobalMapWrapper = dynamic(() => import('@/components/map/GlobalMapWrapper').then((m) => m.GlobalMapWrapper), { ssr: false })
+
+export type ActivitiesView = 'list' | 'map'
+const VIEWS = ['list', 'map'] as const
+
+/** The view the address bar names: ?view=map opens the map; anything else, the list. */
+export function activitiesView(param: string | null): ActivitiesView {
+  return param === 'map' ? 'map' : 'list'
+}
 
 // Registry order is the intensity ramp, which puts Sprint and Anaerobic - the
 // two rarest - in the first two chip slots. Order the filter by how much of the
@@ -56,33 +67,6 @@ interface WeekRow extends WeekGroup<ActivitySummary> {
 }
 
 const KM_STRONG = 'font-semibold text-foreground'
-
-/**
- * "0 of 51 km · 0 of 5 runs": the current week against its plan, as Today
- * says it (v4.17), then the easy share once there is a run to measure.
- */
-function CurrentWeekLine({
-  group,
-  ranKm,
-  targetKm,
-  plan,
-}: {
-  group: WeekRow
-  ranKm: number
-  targetKm: number | null
-  plan: { done: number; sessions: number } | null
-}) {
-  const w = t.activities.weekLine
-  return (
-    <span className="text-footnote text-muted-foreground" data-testid="week-line">
-      <span className={KM_STRONG}>{formatRanKm(ranKm)}</span>
-      {targetKm !== null ? w.ofKm(formatWeekKm(targetKm)) : ` ${t.units.km}`}
-      {' · '}
-      {plan && plan.sessions > 0 ? w.runsOf(plan.done, plan.sessions) : w.runs(group.items.length)}
-      {group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
-    </span>
-  )
-}
 
 /** "50 km · 5 runs · 89% easy": every aggregate says what it counts (v4.17). */
 function PastWeekLine({ group }: { group: WeekRow }) {
@@ -128,17 +112,6 @@ function WeekCompositionDots({ items, label }: { items: ActivitySummary[]; label
         </span>
       )}
     </span>
-  )
-}
-
-// The bar measures the week against the plan's km, the one weekly target
-// Today and Plan read (weeklyTargetKm).
-function WeekTargetBar({ ranKm, targetKm }: { ranKm: number; targetKm: number }) {
-  const pct = Math.min(100, Math.round((ranKm / targetKm) * 100))
-  return (
-    <div className="h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]" data-testid="week-target-bar">
-      <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
-    </div>
   )
 }
 
@@ -251,8 +224,6 @@ async function fetchActivities(params: {
 }
 
 interface Props {
-  /** This week against its plan and the volume goal, from the same selector as Today and Plan. */
-  weekTarget: WeekTarget | null
   initialItems: ActivitySummary[]
   initialNextOffset: number | null
   totalCount: number
@@ -261,18 +232,24 @@ interface Props {
   today: string
   /** Shoe names by gear id, to name the ?shoe= filter. */
   shoeNames?: Record<string, string>
+  /** The map's runs and areas, for the Map tab. */
+  mapData: MapShellData
 }
 
 export function ActivityListClient({
-  weekTarget,
   initialItems,
   initialNextOffset,
   totalCount,
   qualifiedEffortsByActivityId = {},
   today: serverToday,
   shoeNames = {},
+  mapData,
 }: Props) {
   const today = useToday(serverToday)
+  // List or Map, in the address bar (?view=map), so /map can open on the map.
+  const [viewParam, setViewParam] = useUrlParam('view')
+  const view = activitiesView(viewParam)
+  const viewTabs = useSegmentedTabs({ ids: VIEWS, value: view, onChange: (next) => setViewParam(next === 'map' ? 'map' : null) })
   const [search, setSearch] = useState('')
   // ?shoe= narrows the list to one pair; it is the shoe page's way in.
   const [gearId, setGearId] = useUrlParam('shoe')
@@ -392,13 +369,9 @@ export function ActivityListClient({
     return weekRows(opensOnThisWeek ? withCurrentWeek(grouped, currentWeekStart) : grouped, currentWeekStart)
   }, [items, sortBy, sortOrder, itemsAreFiltered, currentWeekStart])
   const blocks = useMemo(() => (groups ? listBlocks(groups) : null), [groups])
-  // Before this week's first run its card is empty, so the latest runs would
+  // Before this week's first run it has no rows, so the latest runs would
   // otherwise all sit behind collapsed rows. The newest week that has any
-  // starts open instead - under its own label, not the current card's.
-  // The current week reads the plan's selector, the same ran km and target
-  // Today and Plan show (H04).
-  const currentTargetKm = weekTarget ? weeklyTargetKm(weekTarget) : null
-  const currentRanKm = weekTarget?.ranKm ?? groups?.find((g) => g.isCurrent)?.totalKm ?? 0
+  // starts open instead - under its own label, not the current week's.
   const openByDefault = groups?.[0]?.isCurrent && groups[0].items.length === 0 ? groups[1]?.key : undefined
 
   const loadMore = useCallback(() => {
@@ -471,18 +444,11 @@ export function ActivityListClient({
             </span>
           </p>
         </div>
-        {/* Level with the subtitle (v4.17): the sort menu floats, so it no
-            longer drags the title down when it opens. */}
-        <div className="flex shrink-0 items-center gap-2 self-end">
-          {/* Drawn at 34 pt like the sort menu, tapped at 44 (design review,
-              Oct 2026). */}
-          <Link
-            href="/map"
-            className="hit-44 flex h-[34px] items-center justify-center rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
-          >
-            {t.activities.mapButton}
-          </Link>
+        {/* The sort menu floats (v4.17), so it never drags the title down
+            when it opens; a 44 pt icon button (design review, Oct 2026). */}
+        {view === 'list' && (
           <SortDropdown
+            variant="icon"
             options={SORT_OPTIONS}
             sortBy={sortBy}
             order={sortOrder}
@@ -492,164 +458,186 @@ export function ActivityListClient({
             }}
             label={t.activities.sort.label}
           />
-        </div>
+        )}
       </header>
 
-      <label className="flex h-[42px] items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 text-muted-foreground transition-colors focus-within:border-[var(--line-2)]">
-        <Search size={16} aria-hidden="true" className="shrink-0" />
-        <input
-          type="text"
-          placeholder={t.activities.searchPlaceholder}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-full min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-        />
-      </label>
+      <SegmentedTabs
+        tabs={viewTabs}
+        items={[
+          { id: 'list', label: t.activities.view.list },
+          { id: 'map', label: t.activities.view.map },
+        ]}
+        label={t.activities.view.label}
+        size="md"
+        fill
+      />
 
-      <div className="relative -mx-4 sm:mx-0">
-        <div
-          ref={chipRailRef}
-          onScroll={updateChipFade}
-          // The chips' 44 pt hit areas reach 6 pt past them; the padding keeps
-          // them inside the scroller, so the rail never scrolls vertically.
-          // While there is more to scroll, the rail's last 24 pt fade out
-          // (v4.17.2) - a chip cut at the edge read as the row's end - and
-          // the end padding lets the last chip scroll clear of the fade.
-          className="-my-1.5 flex gap-2 overflow-x-auto py-1.5 pl-4 pr-6 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{
-            scrollPaddingInline: '16px 24px',
-            ...(chipFade ? { maskImage: CHIP_FADE, WebkitMaskImage: CHIP_FADE } : {}),
-          }}
-          data-fade={chipFade || undefined}
-          data-testid="type-chips"
-        >
-          <Pill as="button" variant={selectedType === null ? 'selected' : 'neutral'} className="px-3" onClick={() => setSelectedType(null)}>
-            {t.activities.all}
-          </Pill>
-          {/* Each type chip carries its category's dot (v4.17); a race is the
-              zone of its effort as a ring, never filled. The chips are the
-              week rows' key: a separate legend under them only repeated them. */}
-          {chipTypes.map((type) => {
-            const active = selectedType === type
-            return (
-              <Pill
-                key={type}
-                as="button"
-                variant={active ? 'selected' : 'neutral'}
-                className="px-3"
-                dotColor={type === 'Race' ? undefined : runTypeColor(type)}
-                onClick={() => setSelectedType(active ? null : type)}
+      <div {...viewTabs.panelProps} className="flex flex-col gap-3.5 outline-none">
+        {view === 'map' ? (
+          <GlobalMapWrapper data={mapData} />
+        ) : (
+          <>
+            <label className="flex h-[42px] items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 text-muted-foreground transition-colors focus-within:border-[var(--line-2)]">
+              <Search size={16} aria-hidden="true" className="shrink-0" />
+              <input
+                type="text"
+                placeholder={t.activities.searchPlaceholder}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-full min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+            </label>
+
+            <div className="relative -mx-4 sm:mx-0">
+              <div
+                ref={chipRailRef}
+                onScroll={updateChipFade}
+                // The chips' 44 pt hit areas reach 6 pt past them; the padding keeps
+                // them inside the scroller, so the rail never scrolls vertically.
+                // While there is more to scroll, the rail's last 24 pt fade out
+                // (v4.17.2) - a chip cut at the edge read as the row's end - and
+                // the end padding lets the last chip scroll clear of the fade.
+                className="-my-1.5 flex gap-2 overflow-x-auto py-1.5 pl-4 pr-6 sm:flex-wrap sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                style={{
+                  scrollPaddingInline: '16px 24px',
+                  ...(chipFade ? { maskImage: CHIP_FADE, WebkitMaskImage: CHIP_FADE } : {}),
+                }}
+                data-fade={chipFade || undefined}
+                data-testid="type-chips"
               >
-                {type === 'Race' && <TypeDot type={type} />}
-                {t.activityTypes[type] ?? type}
-              </Pill>
-            )
-          })}
-        </div>
-      </div>
+                <Pill as="button" variant={selectedType === null ? 'selected' : 'neutral'} className="px-3" onClick={() => setSelectedType(null)}>
+                  {t.activities.all}
+                </Pill>
+                {/* Each type chip carries its category's dot (v4.17); a race is the
+                    zone of its effort as a ring, never filled. The chips are the
+                    week rows' key: a separate legend under them only repeated them. */}
+                {chipTypes.map((type) => {
+                  const active = selectedType === type
+                  return (
+                    <Pill
+                      key={type}
+                      as="button"
+                      variant={active ? 'selected' : 'neutral'}
+                      className="px-3"
+                      dotColor={type === 'Race' ? undefined : runTypeColor(type)}
+                      onClick={() => setSelectedType(active ? null : type)}
+                    >
+                      {type === 'Race' && <TypeDot type={type} />}
+                      {t.activityTypes[type] ?? type}
+                    </Pill>
+                  )
+                })}
+              </div>
+            </div>
 
-      {gearId && (
-        <div>
-          <Pill as="button" variant="selected" className="gap-1.5" onClick={() => setGearId(null)} aria-label={t.activities.shoeFilter.clear}>
-            {shoeNames[gearId] ?? gearId}
-            <X size={14} aria-hidden="true" />
-          </Pill>
-        </div>
-      )}
+            {gearId && (
+              <div>
+                <Pill as="button" variant="selected" className="gap-1.5" onClick={() => setGearId(null)} aria-label={t.activities.shoeFilter.clear}>
+                  {shoeNames[gearId] ?? gearId}
+                  <X size={14} aria-hidden="true" />
+                </Pill>
+              </div>
+            )}
 
-      {isPending ? (
-        <div className="flex justify-center py-10">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
-        </div>
-      ) : items.length === 0 ? (
-        <div className={cardClass({ padding: 'none', className: 'py-12 text-center' })}>
-          <SearchX size={24} className="mx-auto text-subtle" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            {hasActiveFilter ? t.activities.emptyFiltered : t.activities.empty}
-          </p>
-          {hasActiveFilter && (
-            <button
-              onClick={resetFilters}
-              className="mt-4 text-xs font-semibold text-accent-text transition-opacity hover:opacity-70"
-            >
-              {t.activities.resetFilters}
-            </button>
-          )}
-        </div>
-      ) : blocks ? (
-        <div className="flex flex-col gap-3.5">
-          {blocks.map((block) =>
-            block.kind === 'current' ? (
-              <section key={block.week.key} className={cardClass({ padding: 'none', overflow: true })} data-testid="current-week">
-                <div className="flex flex-col gap-2.5 px-5 py-4">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-                    <h2 className="truncate text-[15px] font-semibold text-foreground">{block.week.label}</h2>
-                    <CurrentWeekLine
-                      group={block.week}
-                      ranKm={currentRanKm}
-                      targetKm={currentTargetKm}
-                      plan={weekTarget ? { done: weekTarget.plannedDone, sessions: weekTarget.planSessions } : null}
-                    />
-                  </div>
-                  {currentTargetKm !== null && <WeekTargetBar ranKm={currentRanKm} targetKm={currentTargetKm} />}
-                </div>
-                {block.week.items.length > 0 && <InsetRows items={block.week.items} efforts={qualifiedEffortsByActivityId} />}
-              </section>
-            ) : (
-              <section key={block.key} data-testid="month">
-                {/* Sticky under the compact title bar while it shows, under
-                    the status strip otherwise. */}
-                <div
-                  className="sticky z-10 flex items-baseline justify-between gap-3 bg-background px-1 pb-2 pt-3.5"
-                  style={{ top: 'var(--sticky-top, var(--safe-top))' }}
-                >
-                  <h2 className="text-footnote font-semibold capitalize tracking-[0.02em] text-foreground">{block.label}</h2>
-                  <span className="text-xs text-muted-foreground" data-testid="month-line">
-                    {formatKm(block.km)} {t.units.km} · {t.activities.weekLine.runs(block.runs)}
-                  </span>
-                </div>
-                <div className={cardClass({ padding: 'none', overflow: true, className: 'divide-y divide-border' })}>
-                  {block.weeks.map((g) => {
-                    // A toggle flips a week from its default, so for the week
-                    // that starts open, being in expandedWeeks means the
-                    // reader closed it.
-                    const isExpanded = expandedWeeks.has(g.key) !== (g.key === openByDefault)
-                    return (
-                      <div key={g.key}>
-                        <button
-                          type="button"
-                          onClick={() => toggleWeek(g.key)}
-                          aria-expanded={isExpanded}
-                          className="flex w-full items-center gap-4 px-5 py-3.5 text-left"
-                        >
-                          <span className="flex flex-1 flex-col gap-1.5">
-                            <span className="whitespace-nowrap text-sm font-semibold text-foreground">{g.label}</span>
-                            <WeekCompositionDots items={g.items} label={g.shape} />
-                          </span>
-                          <PastWeekLine group={g} />
-                          <ChevronDown size={14} aria-hidden="true" className={cn('shrink-0 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
-                        </button>
-                        {isExpanded && g.items.length > 0 && <InsetRows items={g.items} efforts={qualifiedEffortsByActivityId} />}
+            {isPending ? (
+              <div className="flex justify-center py-10">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
+              </div>
+            ) : items.length === 0 ? (
+              <div className={cardClass({ padding: 'none', className: 'py-12 text-center' })}>
+                <SearchX size={24} className="mx-auto text-subtle" />
+                <p className="mt-3 text-sm text-muted-foreground">
+                  {hasActiveFilter ? t.activities.emptyFiltered : t.activities.empty}
+                </p>
+                {hasActiveFilter && (
+                  <button
+                    onClick={resetFilters}
+                    className="mt-4 text-xs font-semibold text-accent-text transition-opacity hover:opacity-70"
+                  >
+                    {t.activities.resetFilters}
+                  </button>
+                )}
+              </div>
+            ) : blocks ? (
+              <div className="flex flex-col gap-3.5">
+                {blocks.map((block) =>
+                  block.kind === 'current' ? (
+                    // This week as a heading line over its runs (design review,
+                    // Oct 2026): its km and runs, not the plan - Today and Plan
+                    // show the week against plan.
+                    <section key={block.week.key} data-testid="current-week">
+                      <div className="flex items-baseline justify-between gap-3 px-1 pb-2">
+                        <h2 className="min-w-0 truncate text-footnote font-semibold tracking-[0.02em] text-foreground">
+                          {t.activities.thisWeek} · {formatDateRange(block.week.key, isoDate(addDays(new Date(`${block.week.key}T00:00:00`), 6)), { year: 'never' })}
+                        </h2>
+                        <span className="shrink-0 text-xs text-muted-foreground" data-testid="week-line">
+                          <span className={KM_STRONG}>{formatRanKm(block.week.totalKm)}</span> {t.units.km} · {t.activities.weekLine.runs(block.week.items.length)}
+                        </span>
                       </div>
-                    )
-                  })}
-                </div>
-              </section>
-            ),
-          )}
-        </div>
-      ) : (
-        <div className={cardClass({ padding: 'none', overflow: true, className: 'divide-y divide-border' })}>
-          {items.map((a) => (
-            <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
-          ))}
-        </div>
-      )}
+                      {block.week.items.length > 0 && (
+                        <div className={cardClass({ padding: 'none', overflow: true, className: 'pt-2' })}>
+                          <InsetRows items={block.week.items} efforts={qualifiedEffortsByActivityId} />
+                        </div>
+                      )}
+                    </section>
+                  ) : (
+                    <section key={block.key} data-testid="month">
+                      {/* Sticky under the compact title bar while it shows, under
+                          the status strip otherwise. */}
+                      <div
+                        className="sticky z-10 flex items-baseline justify-between gap-3 bg-background px-1 pb-2 pt-3.5"
+                        style={{ top: 'var(--sticky-top, var(--safe-top))' }}
+                      >
+                        <h2 className="text-footnote font-semibold capitalize tracking-[0.02em] text-foreground">{block.label}</h2>
+                        <span className="text-xs text-muted-foreground" data-testid="month-line">
+                          {formatKm(block.km)} {t.units.km} · {t.activities.weekLine.runs(block.runs)}
+                        </span>
+                      </div>
+                      <div className={cardClass({ padding: 'none', overflow: true, className: 'divide-y divide-border' })}>
+                        {block.weeks.map((g) => {
+                          // A toggle flips a week from its default, so for the week
+                          // that starts open, being in expandedWeeks means the
+                          // reader closed it.
+                          const isExpanded = expandedWeeks.has(g.key) !== (g.key === openByDefault)
+                          return (
+                            <div key={g.key}>
+                              <button
+                                type="button"
+                                onClick={() => toggleWeek(g.key)}
+                                aria-expanded={isExpanded}
+                                className="flex w-full items-center gap-4 px-5 py-3.5 text-left"
+                              >
+                                <span className="flex flex-1 flex-col gap-1.5">
+                                  <span className="whitespace-nowrap text-sm font-semibold text-foreground">{g.label}</span>
+                                  <WeekCompositionDots items={g.items} label={g.shape} />
+                                </span>
+                                <PastWeekLine group={g} />
+                                <ChevronDown size={14} aria-hidden="true" className={cn('shrink-0 text-muted-foreground transition-transform', isExpanded && 'rotate-180')} />
+                              </button>
+                              {isExpanded && g.items.length > 0 && <InsetRows items={g.items} efforts={qualifiedEffortsByActivityId} />}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </section>
+                  ),
+                )}
+              </div>
+            ) : (
+              <div className={cardClass({ padding: 'none', overflow: true, className: 'divide-y divide-border' })}>
+                {items.map((a) => (
+                  <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
+                ))}
+              </div>
+            )}
 
-      {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-1" />}
-      {!hasMore && items.length > 0 && (
-        <p className="py-2 text-center text-xs text-subtle">{t.activities.endOfList}</p>
-      )}
+            {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-1" />}
+            {!hasMore && items.length > 0 && (
+              <p className="py-2 text-center text-xs text-subtle">{t.activities.endOfList}</p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

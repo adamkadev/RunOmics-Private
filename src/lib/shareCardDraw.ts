@@ -1,9 +1,9 @@
 import {
   shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones,
-  type ShareActivity, type ShareRepHero,
+  type ShareActivity, type ShareRepHero, type ShareVerdict, type ShareZoneRow,
 } from '@/lib/shareCardStats'
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
-import { projectRoute } from '@/lib/shareCardMap'
+import { projectRoute, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
 import { runTypeZone } from '@/lib/colors'
 import { drawRouteMarker, endsJoined, routeEnds } from '@/lib/routeMarkers'
 import { drawMark } from '@/lib/brandMark'
@@ -30,7 +30,7 @@ export interface ShareCardScene {
   fonts: ShareFonts
   place?: string | null
   photo?: HTMLImageElement | null
-  /** The basemap for the middle, labels off, and the route projected onto it. */
+  /** The basemap for the whole card, drawn for the layout's route frame, and the route projected onto it. */
   mapImage?: HTMLCanvasElement | null
   mapPoints?: [number, number][] | null
 }
@@ -133,7 +133,7 @@ function titleLines(ctx: Ctx, text: string, fonts: ShareFonts): ShareTitle {
  * Where everything sits (design review, Oct 2026): the header as tall as
  * its title, the stats - the rep pace above them on an interval session -
  * at the card's foot, and the middle taking all that is left. Every design
- * is the same 4:5 box; the Stats design rules its stat row off.
+ * is the same 4:5 box; Route and Stats rule their stat row off.
  */
 export interface ShareCardLayout {
   title: ShareTitle
@@ -142,8 +142,14 @@ export interface ShareCardLayout {
   middleH: number
   heroTop: number
   statsTop: number
-  /** The rule over the stat row, on the Stats design only. */
+  /** The rule over the stat row, on Route and Stats; a photo runs under it. */
   ruleY: number | null
+  /** The foot of the header's words: the Route card's header band ends here, its fade starts. */
+  textTop: number
+  /** The top of the stats, or of the rep pace over them: the stats band starts here. */
+  textBottom: number
+  /** The route's room on the full-card map: 16 px under the header's words, 16 px over the stats. */
+  routeFrame: RouteFrame
 }
 
 export function shareCardLayout(ctx: Ctx, activity: ShareActivity, fonts: ShareFonts, design: ShareDesign = 'route'): ShareCardLayout {
@@ -153,6 +159,7 @@ export function shareCardLayout(ctx: Ctx, activity: ShareActivity, fonts: ShareF
   const statsTop = H - STATS_PAD_BOTTOM - STATS_BLOCK
   const stripTop = statsTop - (hero ? STATS_PAD_TOP_AFTER_HERO : STATS_PAD_TOP)
   const footerTop = stripTop - (hero ? HERO_PAD_TOP + HERO_BLOCK : 0)
+  const textTop = headerFoot({ title })
   return {
     title,
     hero,
@@ -161,7 +168,10 @@ export function shareCardLayout(ctx: Ctx, activity: ShareActivity, fonts: ShareF
     heroTop: footerTop + HERO_PAD_TOP,
     statsTop,
     // Clear of the rep pace's digits when it stands over the stat row.
-    ruleY: design === 'stats' ? stripTop + (hero ? 4 : 0) : null,
+    ruleY: design === 'photo' ? null : stripTop + (hero ? 4 : 0),
+    textTop,
+    textBottom: footerTop,
+    routeFrame: { top: textTop + ROUTE_TEXT_GAP, right: ROUTE_INSET, bottom: H - footerTop + ROUTE_TEXT_GAP, left: ROUTE_INSET },
   }
 }
 
@@ -240,38 +250,6 @@ function drawHero(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, hero: 
   ctx.fillText(hero.detail, PAD_X + paceW + 6, top + 38)
 }
 
-/** How far along the line each point is, in px from the first. */
-function cumulative(pts: [number, number][]): number[] {
-  const at = [0]
-  for (let i = 1; i < pts.length; i++) {
-    const [x1, y1] = pts[i - 1]!
-    const [x2, y2] = pts[i]!
-    at.push(at[i - 1]! + Math.hypot(x2 - x1, y2 - y1))
-  }
-  return at
-}
-
-/**
- * The stretch of the line from share `from` to share `to` of its length, cut
- * where the shares fall rather than at the nearest point: a simplified route
- * keeps few points on a straight road, and a rep starts where it started.
- */
-export function slicePolyline(pts: [number, number][], from: number, to: number): [number, number][] {
-  const at = cumulative(pts)
-  const length = at[at.length - 1]!
-  if (length <= 0 || to <= from) return []
-  const pointAt = (d: number): [number, number] => {
-    const i = Math.max(1, at.findIndex((v) => v >= d))
-    const [x1, y1] = pts[i - 1]!
-    const [x2, y2] = pts[i]!
-    const span = at[i]! - at[i - 1]!
-    const k = span > 0 ? (d - at[i - 1]!) / span : 0
-    return [x1 + (x2 - x1) * k, y1 + (y2 - y1) * k]
-  }
-  const [a, b] = [Math.max(from, 0) * length, Math.min(to, 1) * length]
-  return [pointAt(a), ...pts.filter((_, i) => at[i]! > a && at[i]! < b), pointAt(b)]
-}
-
 function strokeLine(ctx: Ctx, pts: [number, number][], color: string, width: number) {
   if (pts.length < 2) return
   ctx.strokeStyle = color
@@ -282,84 +260,73 @@ function strokeLine(ctx: Ctx, pts: [number, number][], color: string, width: num
   ctx.stroke()
 }
 
-/** The route's widths: one trace, or the grey under reps 1.6x as wide. */
+/** The trace, and the halo in the map's own ground under it. */
 const TRACE_W = 3
-const GREY_W = 2.5
-const REP_W = GREY_W * 1.6
-
-/** "▬ Reps", at the map's foot, on an interval session only. */
-function drawRepsLegend(ctx: Ctx, { palette, fonts }: ShareCardScene, bottom: number) {
-  const BAR_W = 14
-  const BAR_H = 3
-  const PILL_H = 18
-  ctx.font = `400 9px ${fonts.text}`
-  const label = t.activity.shareCard.repsLegend
-  const width = 7 + BAR_W + 5 + ctx.measureText(label).width + 7
-  const x = 8
-  const y = bottom - 8 - PILL_H
-  ctx.fillStyle = palette.bg
-  roundRect(ctx, x, y, width, PILL_H, PILL_H / 2)
-  ctx.fill()
-  ctx.lineWidth = 1
-  ctx.strokeStyle = palette.line
-  ctx.stroke()
-  const mid = y + PILL_H / 2
-  ctx.fillStyle = palette.zones[3]!
-  roundRect(ctx, x + 7, mid - BAR_H / 2, BAR_W, BAR_H, BAR_H / 2)
-  ctx.fill()
-  ctx.textAlign = 'left'
-  ctx.textBaseline = 'middle'
-  ctx.fillStyle = palette.mu
-  ctx.fillText(label, x + 7 + BAR_W + 5, mid)
-}
+const CASING_W = TRACE_W + 3
 
 /**
- * The route on its basemap, filling the middle, fitted 14 px clear of its
- * edges (design review, Oct 2026): no zone colouring. One trace in the text colour, never the accent - or, on an
- * interval session, the run in grey and its reps over it in Z4's colour, as
- * wide again and more, so a rep run down the warm-up's road still shows.
- * Reps on one road merge into one line; the headline counts them.
+ * The route on a map that fills the card (redesign, Oct 2026): one colour,
+ * near-black on light and near-white on dark - no zone, pace or rep colour -
+ * fitted between the header and the stats (layout.routeFrame), so it never
+ * runs under the words. The basemap was drawn for that frame; without one,
+ * the route is projected into it on the bare background.
  */
-function drawRoute(ctx: Ctx, scene: ShareCardScene, { middleH }: ShareCardLayout) {
+function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   const { activity, palette, mapImage, mapPoints } = scene
   const route = activity.route
   if (!route || route.length < 2) return
   let pts: [number, number][]
   if (mapImage && mapPoints && mapPoints.length > 1) {
-    // Drawn for this middle's height; one drawn before the fonts settled the
-    // title's lines is centred on it, the route moved with it.
-    const drawnH = mapImage.width ? mapImage.height * (W / mapImage.width) : middleH
-    const dy = (middleH - drawnH) / 2
-    ctx.drawImage(mapImage, 0, dy, W, drawnH)
-    pts = mapPoints.map(([x, y]) => [x, y + dy])
+    ctx.drawImage(mapImage, 0, 0, W, H)
+    pts = mapPoints
   } else {
-    if (mapImage) ctx.drawImage(mapImage, 0, 0, W, middleH)
-    pts = projectRoute(route, W, middleH)
+    pts = projectRoute(route, W, H, layout.routeFrame)
   }
 
-  const windows = activity.reps?.windows ?? []
-  const reps = windows.length > 0
   ctx.lineJoin = 'round'
   ctx.lineCap = 'round'
   ctx.save()
   ctx.globalAlpha = 0.85
-  strokeLine(ctx, pts, palette.casing, (reps ? GREY_W : TRACE_W) + 3)
+  strokeLine(ctx, pts, palette.casing, CASING_W)
   ctx.restore()
-
-  if (reps) {
-    strokeLine(ctx, pts, palette.mu, GREY_W)
-    for (const [from, to] of windows) strokeLine(ctx, slicePolyline(pts, from, to), palette.zones[3]!, REP_W)
-  } else {
-    strokeLine(ctx, pts, palette.tx, TRACE_W)
-  }
+  strokeLine(ctx, pts, palette.route, TRACE_W)
 
   // The Activity map's markers (routeMarkers): the finish on the line's own
   // last point, one loop marker where it would touch the start.
   const first = pts[0]!
   const last = pts[pts.length - 1]!
   for (const end of routeEnds(first, last, endsJoined(first, last))) drawRouteMarker(ctx, end.kind, end.at, palette.acc, MARKER_SCALE)
+}
 
-  if (reps) drawRepsLegend(ctx, scene, middleH)
+/** A #rrggbb colour at `alpha`, for a fade to the card's own background. */
+function withAlpha(hex: string, alpha: number): string {
+  const n = Number.parseInt(hex.slice(1, 7), 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
+}
+
+/**
+ * The Route card's header and stats on one background tone (redesign, Oct
+ * 2026): solid behind the words, fading into the map over the 16 px the
+ * route keeps clear of them, so the fade never dims the line.
+ */
+function drawBands(ctx: Ctx, { palette }: ShareCardScene, { textTop, textBottom }: ShareCardLayout) {
+  const solid = palette.bg
+  const clear = withAlpha(palette.bg, 0)
+  ctx.fillStyle = solid
+  ctx.fillRect(0, 0, W, textTop)
+  const top = ctx.createLinearGradient(0, textTop, 0, textTop + ROUTE_TEXT_GAP)
+  top.addColorStop(0, solid)
+  top.addColorStop(1, clear)
+  ctx.fillStyle = top
+  ctx.fillRect(0, textTop, W, ROUTE_TEXT_GAP)
+
+  const bottom = ctx.createLinearGradient(0, textBottom - ROUTE_TEXT_GAP, 0, textBottom)
+  bottom.addColorStop(0, clear)
+  bottom.addColorStop(1, solid)
+  ctx.fillStyle = bottom
+  ctx.fillRect(0, textBottom - ROUTE_TEXT_GAP, W, ROUTE_TEXT_GAP)
+  ctx.fillStyle = solid
+  ctx.fillRect(0, textBottom, W, H - textBottom)
 }
 
 /**
@@ -475,6 +442,185 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
   })
 }
 
+/** The lines `words` take at `max` px, each filled as far as it will go. */
+function greedyLines(ctx: Ctx, words: string[], max: number): string[] {
+  const lines: string[] = []
+  let line = ''
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word
+    if (!line || ctx.measureText(next).width <= max) line = next
+    else {
+      lines.push(line)
+      line = word
+    }
+  }
+  if (line) lines.push(line)
+  return lines
+}
+
+/**
+ * Any number of lines of about the same width, as CSS's text-wrap: balance
+ * sets them: the narrowest width that still takes no more lines than `max`
+ * does.
+ */
+export function balanceWrap(ctx: Ctx, text: string, max: number): string[] {
+  const words = text.split(/\s+/).filter(Boolean)
+  const lines = greedyLines(ctx, words, max)
+  if (lines.length < 2) return lines
+  let [lo, hi] = [0, max]
+  while (hi - lo > 0.5) {
+    const mid = (lo + hi) / 2
+    if (greedyLines(ctx, words, mid).length <= lines.length) hi = mid
+    else lo = mid
+  }
+  return greedyLines(ctx, words, hi)
+}
+
+/**
+ * The verdict as the Stats card's hero (redesign, Oct 2026): 27 px, 700,
+ * a 1.08 line height, balanced; a size down while it takes more than three
+ * lines, the third cut as a last resort.
+ */
+const VERDICT_SIZES = [27, 24, 22, 20] as const
+const VERDICT_MAX_LINES = 3
+const VERDICT_EYEBROW = 9.5
+const VERDICT_EYEBROW_GAP = 10
+const VERDICT_BAR_GAP = 16
+const VERDICT_BAR_H = 6
+const VERDICT_SEGMENT_GAP = 2
+const VERDICT_LABEL = 9
+const VERDICT_LABEL_GAP = 6
+
+export interface VerdictHero {
+  lines: string[]
+  size: number
+  lineHeight: number
+}
+
+export function verdictHero(ctx: Ctx, headline: string, fonts: ShareFonts): VerdictHero {
+  const max = RIGHT - PAD_X
+  const font = (size: number) => {
+    ctx.font = `700 ${size}px ${fonts.display}`
+    setSpacing(ctx, -0.02 * size)
+  }
+  let size: number = VERDICT_SIZES[0]
+  let lines: string[] = []
+  for (size of VERDICT_SIZES) {
+    font(size)
+    lines = balanceWrap(ctx, headline, max)
+    if (lines.length <= VERDICT_MAX_LINES) break
+  }
+  if (lines.length > VERDICT_MAX_LINES) {
+    lines = [...lines.slice(0, VERDICT_MAX_LINES - 1), fit(ctx, lines.slice(VERDICT_MAX_LINES - 1).join(' '), max)]
+  }
+  lines = lines.map((line) => fit(ctx, line, max))
+  setSpacing(ctx, 0)
+  return { lines, size, lineHeight: Math.round(size * 1.08) }
+}
+
+export interface ZoneBarLabel {
+  zone: number
+  text: string
+  x: number
+  align: 'left' | 'center' | 'right'
+}
+
+/**
+ * "Z1 24%" under the bar (redesign, Oct 2026): the first zone's at its
+ * segment's start, the last's at its end, any between centred on theirs.
+ * Where two would touch, the bigger share keeps its label.
+ */
+export function zoneBarLabels(rows: readonly ShareZoneRow[], left: number, width: number, measure: (text: string) => number): ZoneBarLabel[] {
+  const GAP = 8
+  let at = left
+  const all = rows.map((row, i) => {
+    const w = (row.percent / 100) * width
+    const text = `Z${row.zone} ${formatPercent(row.percent)}`
+    const textW = measure(text)
+    const align: ZoneBarLabel['align'] = i === 0 ? 'left' : i === rows.length - 1 ? 'right' : 'center'
+    const x = align === 'left' ? at : align === 'right' ? at + w : at + w / 2
+    const from = Math.min(Math.max(align === 'left' ? x : align === 'right' ? x - textW : x - textW / 2, left), left + width - textW)
+    at += w
+    return { label: { zone: row.zone, text, x, align }, from, to: from + textW, percent: row.percent }
+  })
+  const kept: typeof all = []
+  for (const c of [...all].sort((a, b) => b.percent - a.percent)) {
+    if (kept.every((k) => c.to + GAP <= k.from || c.from >= k.to + GAP)) kept.push(c)
+  }
+  return all.filter((c) => kept.includes(c)).map((c) => c.label)
+}
+
+/**
+ * The Stats card led by the run's verdict (redesign, Oct 2026): "● STRONG
+ * SESSION" in the Overview card's status colour, the coach's headline as
+ * the hero, then a 6 px bar of the run's zones with their percents. It
+ * replaces the zones headline ("100% easy · Z1–Z2"), which repeated the bar.
+ * The block sits centred down the middle.
+ */
+function drawVerdict(ctx: Ctx, scene: ShareCardScene, verdict: ShareVerdict, { middleH }: ShareCardLayout) {
+  const { activity, palette, fonts } = scene
+  const hero = verdictHero(ctx, verdict.headline, fonts)
+  const zones = shareZones(activity)
+  const barBlock = zones ? VERDICT_BAR_GAP + VERDICT_BAR_H + VERDICT_LABEL_GAP + VERDICT_LABEL : 0
+  const heroH = hero.lines.length * hero.lineHeight
+  const blockH = VERDICT_EYEBROW + VERDICT_EYEBROW_GAP + heroH + barBlock
+  let y = Math.max(0, (middleH - blockH) / 2)
+
+  // The eyebrow: a 5 px dot, the tone's word in capitals.
+  const tone = verdict.tone === 'positive' ? palette.pos : verdict.tone === 'caution' ? palette.warn : palette.mu
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  ctx.fillStyle = tone
+  ctx.beginPath()
+  ctx.arc(PAD_X + 2.5, y + VERDICT_EYEBROW / 2, 2.5, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.font = `700 ${VERDICT_EYEBROW}px ${fonts.text}`
+  setSpacing(ctx, 0.1 * VERDICT_EYEBROW)
+  ctx.fillText(t.activity.verdict.eyebrow[verdict.tone].toLocaleUpperCase(t.locale), PAD_X + 10, y + VERDICT_EYEBROW / 2)
+  setSpacing(ctx, 0)
+  y += VERDICT_EYEBROW + VERDICT_EYEBROW_GAP
+
+  ctx.textBaseline = 'alphabetic'
+  ctx.font = `700 ${hero.size}px ${fonts.display}`
+  ctx.fillStyle = palette.tx
+  setSpacing(ctx, -0.02 * hero.size)
+  // The first baseline a cap height and a little under the line's top.
+  hero.lines.forEach((line, i) => ctx.fillText(line, PAD_X, y + i * hero.lineHeight + Math.round(hero.size * 0.86)))
+  setSpacing(ctx, 0)
+  y += heroH
+  if (!zones) return
+
+  // One 6 px track, each zone's segment its share less a 2 px gap.
+  y += VERDICT_BAR_GAP
+  const barW = RIGHT - PAD_X
+  let at = PAD_X
+  for (const row of zones.rows) {
+    const w = (row.percent / 100) * barW
+    const last = row === zones.rows[zones.rows.length - 1]
+    ctx.fillStyle = palette.zones[row.zone - 1] ?? palette.mu
+    roundRect(ctx, at, y, Math.max(w - (last ? 0 : VERDICT_SEGMENT_GAP), 1), VERDICT_BAR_H, VERDICT_BAR_H / 2)
+    ctx.fill()
+    at += w
+  }
+  y += VERDICT_BAR_H + VERDICT_LABEL_GAP
+
+  ctx.font = `500 ${VERDICT_LABEL}px ${fonts.text}`
+  ctx.fillStyle = palette.mu
+  ctx.textBaseline = 'top'
+  for (const label of zoneBarLabels(zones.rows, PAD_X, barW, (text) => ctx.measureText(text).width)) {
+    ctx.textAlign = label.align
+    ctx.fillText(label.text, label.x, y)
+  }
+  ctx.textAlign = 'left'
+}
+
+/** The Stats middle: the verdict where the run has a written one, else its time in zones. */
+function drawStatsMiddle(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
+  const verdict = scene.activity.verdict
+  if (verdict) drawVerdict(ctx, scene, verdict, layout)
+  else drawZones(ctx, scene, layout)
+}
+
 /** The camera of the empty photo frame, the app's 24 px line icon at `size`. */
 function camera(ctx: Ctx, cx: number, cy: number, size: number, color: string) {
   const k = size / 24
@@ -578,17 +724,17 @@ function drawStats(ctx: Ctx, { activity, fonts }: ShareCardScene, top: number, i
   }
 }
 
-const MIDDLES: Record<ShareDesign, (ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) => void> = {
-  route: drawRoute,
-  stats: drawZones,
+const MIDDLES: Record<Exclude<ShareDesign, 'route'>, (ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) => void> = {
+  stats: drawStatsMiddle,
   photo: drawPhotoEmpty,
 }
 
 /**
  * One 4:5 frame for every design (design review, Oct 2026): header, middle
  * and stat row on the theme's background; only the middle changes with the
- * design. A chosen photo takes the whole card instead, the words over it in
- * white.
+ * design. The route's map fills the whole card instead, the header and
+ * stats on bands of the background fading into it (redesign, Oct 2026), and
+ * a chosen photo takes the whole card, the words over it in white.
  */
 export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   const layout = shareCardLayout(ctx, scene.activity, scene.fonts, scene.design)
@@ -599,6 +745,9 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   const photo = scene.design === 'photo' ? scene.photo : null
   if (photo) {
     drawPhoto(ctx, photo, layout)
+  } else if (scene.design === 'route') {
+    drawRoute(ctx, scene, layout)
+    drawBands(ctx, scene, layout)
   } else {
     ctx.save()
     ctx.translate(0, layout.middleTop)
@@ -612,7 +761,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   const ink = photo ? PHOTO_INK : { tx: palette.tx, mu: palette.mu, mark: palette.acc }
   if (layout.ruleY !== null) {
     ctx.fillStyle = palette.line
-    ctx.fillRect(0, layout.ruleY, W, 1)
+    ctx.fillRect(PAD_X, layout.ruleY, RIGHT - PAD_X, 1)
   }
   drawHeader(ctx, scene, layout, ink)
   if (layout.hero) drawHero(ctx, scene, layout.hero, layout.heroTop, ink)

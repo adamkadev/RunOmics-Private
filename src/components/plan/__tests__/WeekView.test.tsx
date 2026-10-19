@@ -3,8 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { buildCoachingOverview, type CoachingOverview, type PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
-import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
-import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { CoachingPlan } from '@/domain/coaching/types'
 import { plan } from '@/domain/coaching/__tests__/fixtures'
@@ -67,8 +65,6 @@ function renderWeek(options: {
   coaching?: CoachingOverview
   planned?: PlannedWorkout[]
   activities?: ActivitySummary[]
-  nextRace?: UpcomingRace | null
-  planPhaseRanges?: PlanPhaseRange[]
   trainingZones?: TrainingZonesData | null
 } = {}) {
   const activities = options.activities ?? []
@@ -81,25 +77,21 @@ function renderWeek(options: {
       byDate={byDate}
       byDatePlanned={new Map((options.planned ?? []).map((p) => [p.date, p]))}
       byDateCoach={options.coaching ? byDateCoach(options.coaching) : undefined}
-      coaching={options.coaching ?? null}
       hrBounds={HR_BOUNDS}
       today={TODAY}
       atPresent
       onToday={() => {}}
-      planPhaseRanges={options.planPhaseRanges ?? []}
-      nextRace={options.nextRace ?? null}
       trainingZones={options.trainingZones ?? null}
     />
   )
 }
 
 describe('WeekView weekly metrics', () => {
-  // H20: one line - volume left, easy share right - and no load (i).
-  it('reads the week in one line, with no load behind an info button', () => {
+  // H20: one line, and no load behind an info button.
+  it('reads the week in one line, with no info button', () => {
     renderWeek({ activities: [TEMPO, RACE], coaching: overview() })
 
-    expect(screen.getByTestId('week-summary')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: t.plan.weekSummary.aboutLoad })).toBeNull()
+    expect(within(screen.getByTestId('week-summary')).queryByRole('button')).toBeNull()
   })
 
   it('shows the completed activities and the coach prescription side by side', () => {
@@ -111,53 +103,14 @@ describe('WeekView weekly metrics', () => {
   })
 })
 
-describe('WeekView progression card', () => {
-  it('spans the macrocycle to the primary target, not the four block weeks', () => {
+// Design review, Oct 2026: the phase moved into Plan's subtitle (planPhase.ts).
+describe('WeekView without a phase card', () => {
+  it('draws no phase card, phase track or Races section', () => {
     renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
 
-    const track = within(screen.getByTestId('phase-track'))
-    for (const label of [t.plan.phaseTrack.base, t.plan.phaseTrack.build, t.plan.phaseTrack.peak, t.plan.phaseTrack.raceDay]) {
-      expect(track.getByText(label)).toBeInTheDocument()
-    }
-  })
-
-  it('counts the week toward the primary target in the macrocycle card', () => {
-    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
-
-    // v4.17: phase and week on the left, the race's week on the right; the
-    // countdown is the header's.
-    const line = screen.getByTestId('phase-line').textContent ?? ''
-    expect(line).toContain(`${t.plan.weekPurpose.planPhase.base} · ${t.plan.weekPurpose.weekOfTarget(1, 12)}`)
-    expect(line).toContain(t.plan.phaseTrack.raceWeek(formatDate('2026-11-23', { style: 'bare' })))
-    expect(line).not.toMatch(/D-\u2060?\d+/)
-  })
-
-  it('names general preparation and its week when the plan has no race', () => {
-    const general: CoachingPlan = { ...plan(), macrocycleStartDate: '2026-08-31', targetEvent: undefined }
-    renderWeek({ coaching: overview({ coachingPlan: general }) })
-
-    const line = screen.getByTestId('phase-line').textContent ?? ''
-    expect(line).toContain(`${t.plan.weekPurpose.generalPreparation} · ${t.plan.weekPurpose.weekN(2)}`)
+    expect(screen.queryByTestId('phase-line')).toBeNull()
     expect(screen.queryByTestId('phase-track')).toBeNull()
-  })
-
-  // H20: the race is on the phase line; the Races section is gone from Week.
-  it('draws no Races section under the week', () => {
-    renderWeek({ coaching: overview({ coachingPlan: blockPlan() }) })
-
     expect(screen.queryByTestId('race-footer')).toBeNull()
-  })
-
-  it('keeps the Garmin phase track when there is no coaching', () => {
-    renderWeek({
-      planPhaseRanges: [
-        { phase: 'base', startDate: '2026-08-01', endDate: '2026-09-06' },
-        { phase: 'build', startDate: '2026-09-07', endDate: '2026-10-04' },
-      ],
-    })
-
-    expect(screen.getAllByText(t.plan.phaseTrack.base).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(t.plan.phaseTrack.build).length).toBeGreaterThan(0)
   })
 
   it('adds no coaching header, block name or generated copy', () => {
@@ -255,21 +208,6 @@ describe('WeekView coaching day cells and Today', () => {
   })
 })
 
-describe('WeekView target race', () => {
-  // v4.17: the phase card names the race's week; the header counts down to it.
-  it("names the coaching target race's week on the phase line", () => {
-    renderWeek({ coaching: overview() })
-
-    expect(screen.getByTestId('phase-line').textContent).toContain(t.plan.phaseTrack.raceWeek(formatDate('2026-10-12', { style: 'bare' })))
-  })
-
-  it('keeps the Garmin race when there is no coaching', () => {
-    renderWeek({ nextRace: { date: '2026-10-18', name: 'City Half', distance: '21K' } })
-
-    expect(screen.getByTestId('phase-line').textContent).toContain(t.plan.phaseTrack.raceWeek(formatDate('2026-10-12', { style: 'bare' })))
-  })
-})
-
 describe('WeekView without coaching', () => {
   it('keeps the original layout and adds no coaching placeholders', () => {
     renderWeek({ activities: [TEMPO, RACE], planned: [{ date: TODAY, name: 'Track session', type: 'Threshold', durationSecs: 3_600 }] })
@@ -286,10 +224,13 @@ describe('WeekView without coaching', () => {
     expect(screen.getAllByText(/Track session/).length).toBeGreaterThan(0)
   })
 
-  it('falls back to the rest-day copy on an empty day', () => {
+  // Owner, Oct 2026: a rest day is a short row in the list, not a card.
+  it('lists an empty day as a Rest row, with no day card', () => {
     renderWeek()
 
-    expect(screen.getByText(t.plan.restCard.title)).toBeInTheDocument()
+    expect(screen.getByTestId(`week-rest-${TODAY}`).textContent).toContain(t.sessionState.rest)
+    expect(screen.getAllByTestId(/^week-rest-/)).toHaveLength(7)
+    expect(screen.queryByTestId('selected-day-eyebrow')).toBeNull()
   })
 })
 
@@ -311,22 +252,18 @@ describe('WeekView easy share', () => {
   })
 })
 
-/** A stat's value and its inline unit, read under its label. */
-function stat(label: string): { value: string; unit: string | null; meaning: HTMLElement | null } {
-  const labelEl = within(screen.getByTestId('week-summary')).getByText(label)
-  const valueEl = labelEl.nextElementSibling as HTMLElement
-  return {
-    value: valueEl.childNodes[0]?.textContent ?? '',
-    unit: valueEl.querySelector('span')?.textContent ?? null,
-    meaning: (valueEl.nextElementSibling as HTMLElement | null) ?? null,
-  }
+/** One of the week's figures: its bold number, and the words after it. */
+function figure(testId: string): { value: string; unit: string } {
+  const el = screen.getByTestId(testId)
+  const value = el.querySelector('b')!.textContent ?? ''
+  return { value, unit: (el.textContent ?? '').slice(value.length).trim() }
 }
 
 describe('the week summary against its plan', () => {
   // It added the run km to whatever was still planned and called the sum the
   // week, so Plan's "52 km" and Today's "6 of 23 km" read as two answers.
-  // v4.17: three stats - Distance, Sessions, Plan adherence.
-  it('reads what was run against what the plan scheduled', () => {
+  // Design review, Oct 2026: one line - distance, sessions, adherence.
+  it('reads what was run against what the plan scheduled, on one line', () => {
     renderWeek({
       activities: [TEMPO],
       planned: [
@@ -336,22 +273,20 @@ describe('the week summary against its plan', () => {
     })
 
     const s = t.plan.stats
-    expect(stat(s.distance)).toMatchObject({ value: '4.8', unit: s.ofKm('13') })
-    expect(stat(s.sessions)).toMatchObject({ value: '1', unit: s.ofSessions(2) })
+    expect(figure('week-distance')).toEqual({ value: '4.8', unit: s.ofKm('13') })
+    expect(figure('week-sessions-count')).toEqual({ value: '1', unit: s.ofSessions(2) })
     // The one session due so far was run; Thursday's is still to come.
-    expect(stat(s.adherence).value).toBe('100%')
-    // The number alone, at the owner's request: no "Aim for 80%" under it.
-    expect(stat(s.adherence).meaning).toBeNull()
+    expect(figure('week-adherence')).toEqual({ value: '100%', unit: s.adherence })
+    expect(screen.getByTestId('week-summary').className).toContain('border-t')
+    expect(screen.getByTestId('week-distance').querySelector('b')!.className).toContain('text-[17px]')
   })
 
-  it('keeps the plain total for a week with no plan', () => {
+  it('keeps the plain total for a week with no plan, and no adherence', () => {
     renderWeek({ activities: [TEMPO, RACE] })
 
-    const s = t.plan.stats
-    expect(stat(s.distance)).toMatchObject({ value: '10', unit: t.units.km })
-    expect(stat(s.sessions)).toMatchObject({ value: '2', unit: null })
-    expect(stat(s.adherence).value).toBe('—')
-    expect(stat(s.adherence).meaning!.textContent).toBe(s.noPlan)
+    expect(figure('week-distance')).toEqual({ value: '10', unit: t.units.km })
+    expect(figure('week-sessions-count')).toEqual({ value: '2', unit: t.plan.stats.sessions(2) })
+    expect(screen.queryByTestId('week-adherence')).toBeNull()
   })
 
   it('reads a week not started as its plan', () => {
@@ -363,14 +298,13 @@ describe('the week summary against its plan', () => {
         today={TODAY}
         atPresent={false}
         onToday={() => {}}
-        planPhaseRanges={[]}
       />
     )
 
     const s = t.plan.stats
-    expect(stat(s.distance)).toMatchObject({ value: '8', unit: s.kmPlanned })
-    expect(stat(s.sessions)).toMatchObject({ value: '1', unit: s.planned })
-    expect(stat(s.adherence).value).toBe('—')
+    expect(figure('week-distance')).toEqual({ value: '8', unit: s.kmPlanned })
+    expect(figure('week-sessions-count')).toEqual({ value: '1', unit: s.planned })
+    expect(screen.queryByTestId('week-adherence')).toBeNull()
   })
 })
 
@@ -383,20 +317,11 @@ describe('missed sessions', () => {
     { date: '2026-09-11', name: 'Long', distanceM: 14_000 },
   ]
 
-  it('counts them in the summary', () => {
-    renderWeek({ planned })
-
-    expect(screen.getByTestId('week-summary').textContent).toContain(t.plan.weekSummary.missed(2))
-    expect(within(screen.getByTestId('week-summary')).getByText(t.plan.weekSummary.missed(2)).className).toContain('text-[var(--neg)]')
-  })
-
   // v4.17: of what was due, how much was run - the number alone.
   it('reads plan adherence off the sessions already due', () => {
     renderWeek({ planned, activities: [TEMPO] })
 
-    const adherence = stat(t.plan.stats.adherence)
-    expect(adherence.value).toBe('50%')
-    expect(adherence.meaning).toBeNull()
+    expect(figure('week-adherence').value).toBe('50%')
   })
 
   it('draws a missed day as the negative status in the chart and names it in the list', () => {
@@ -473,22 +398,43 @@ describe('the session rows', () => {
 })
 
 describe('the selected day', () => {
-  it('heads its card with its date, in the accent only for today', async () => {
+  // Design review, Oct 2026: the date inside the card; today's card in a 2 pt accent border.
+  it('heads its card with its date, inside it, in the accent only for today', async () => {
     const user = userEvent.setup()
     renderWeek({ coaching: overview() })
 
-    expect(screen.getByText(`${t.plan.today} · ${formatDate(TODAY)}`).className).toContain('text-accent-text')
+    const card = screen.getByTestId('plan-workout-row-workout-threshold')
+    const eyebrow = within(card).getByTestId('selected-day-eyebrow')
+    expect(eyebrow.textContent).toBe(`${t.plan.today} · ${formatDate(TODAY)}`)
+    expect(eyebrow.className).toContain('text-accent-text')
+    expect(card.className).toContain('border-2')
+    expect(card.className).toContain('border-[var(--accent)]')
+
+    // A rest day selected has no card: its row in the list says it.
     await user.click(screen.getByLabelText(/September 10/))
-    expect(screen.getByText(formatDate('2026-09-10')).className).toContain('text-muted-foreground')
+    expect(screen.queryByTestId('selected-day-eyebrow')).toBeNull()
+    expect(screen.getByTestId('week-rest-2026-09-10')).toBeInTheDocument()
   })
 
-  it('reads a rest day with the next session in one sentence', async () => {
-    const user = userEvent.setup()
+  it("puts today's border on a run done today, and today's rest row in the accent", () => {
+    const today = activity({ id: 'a-today', date: TODAY, type: 'Base', distanceKm: 8 })
+    const done = renderWeek({ activities: [today] })
+    const link = screen.getByRole('link', { name: new RegExp(formatDate(TODAY)) })
+    expect(within(link).getByTestId('selected-day-eyebrow')).toBeInTheDocument()
+    expect(link.className).toContain('border-[var(--accent)]')
+    done.unmount()
+
+    renderWeek()
+    expect(screen.getByTestId(`week-rest-${TODAY}`).firstElementChild!.className).toContain('text-accent-text')
+  })
+
+  it('lists rest days between the sessions, in day order', () => {
     renderWeek({ coaching: overview() })
 
-    await user.click(screen.getByLabelText(/September 7/))
-    expect(screen.getByText(t.plan.restCard.title)).toBeInTheDocument()
-    expect(screen.getByText(t.plan.restCard.next(t.plan.weekdays[2]!, '3 × 8 min threshold'))).toBeInTheDocument()
+    const rows = [...screen.getByTestId('week-sessions').children].map((row) => row.getAttribute('data-testid'))
+    expect(rows[0]).toBe('week-rest-2026-09-07')
+    expect(rows).toContain('week-session-workout-threshold')
+    expect(rows.indexOf('week-rest-2026-09-07')).toBeLessThan(rows.indexOf('week-session-workout-threshold'))
   })
 })
 

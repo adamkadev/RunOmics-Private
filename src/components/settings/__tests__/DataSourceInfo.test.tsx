@@ -28,7 +28,7 @@ describe('Clear offline cache', () => {
     await userEvent.click(screen.getByRole('button', { name: s.rowAction.clear }))
     expect(screen.getByText(s.offlineCache.confirm)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: s.actions.confirmCancel }))
-    expect(screen.getByText(s.offlineCache.cost)).toBeInTheDocument()
+    expect(screen.queryByText(s.offlineCache.confirm)).toBeNull()
     expect(keys).not.toHaveBeenCalled()
 
     await userEvent.click(screen.getByRole('button', { name: s.rowAction.clear }))

@@ -11,6 +11,7 @@ import {
 } from '@/domain/coaching/types'
 import { macrocyclePhases } from '@/domain/coaching/macrocycle'
 import { bookends } from '@/domain/training/workoutStructure'
+import type { SessionHrTarget } from '@/domain/training/hrTarget'
 import { formatClock, formatDurationWords } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -173,6 +174,21 @@ export function prescriptionPace(workout: Segmented): string | null {
  */
 export function prescriptionEffortPace(workout: Segmented): string | null {
   return paceSpan(workout, (kind) => STEP_KIND[kind] === 'effort')
+}
+
+export function prescriptionHr(workout: Segmented): SessionHrTarget | null {
+  const caps: number[] = []
+  const zones: number[] = []
+
+  eachSegment(workout, ({ hrBpm, hrZone }, kind) => {
+    if (STEP_KIND[kind] !== 'effort') return
+    if (hrBpm) caps.push(hrBpm.max)
+    if (hrZone !== undefined) zones.push(hrZone)
+  })
+
+  const capBpm = caps.length > 0 ? Math.max(...caps) : null
+  const zone = zones.length > 0 ? Math.max(...zones) : null
+  return capBpm === null && zone === null ? null : { capBpm, zone }
 }
 
 export function prescriptionDuration(

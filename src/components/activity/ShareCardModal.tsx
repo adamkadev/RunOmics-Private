@@ -6,7 +6,7 @@ import { useTheme } from 'next-themes'
 import { Camera, X } from 'lucide-react'
 import type { ShareActivity } from '@/lib/shareCardStats'
 import {
-  renderShareCard, loadImage, pageFonts, shareCardMiddleHeight, SHARE_DESIGNS, W,
+  renderShareCard, loadImage, pageFonts, shareCardMapFrame, SHARE_DESIGNS, W, H,
   type RenderOptions, type ShareDesign, type ThemeMode,
 } from '@/lib/shareCard'
 import { shareCardFile, saveCardPng, copyCardPng } from '@/lib/shareCardExport'
@@ -65,15 +65,18 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
   const { locationName } = useShareCardGeocode(activity)
   const [fontsReady, setFontsReady] = useState(0)
-  // The map fills the middle, whose height the title's lines set: measured
-  // again once Geist has loaded, as the card will be drawn in it.
-  const [middleH, setMiddleH] = useState(() => shareCardMiddleHeight(activity, pageFonts()))
+  // The map fills the card, the route fitted between the header and the
+  // stats, whose height the title's lines set: measured again once Geist
+  // has loaded, as the card will be drawn in it.
+  const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(activity, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
   const { image: mapImage, points: mapPoints } = useShareCardMap({
     route: activity.route,
     theme,
     width: W,
-    height: middleH,
+    height: H,
+    frame: mapFrame.frame,
+    bands: mapFrame.bands,
     enabled: hasRoute,
   })
 
@@ -107,7 +110,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     document.fonts?.ready.then(() => {
       if (!alive) return
       setFontsReady((n) => n + 1)
-      setMiddleH(shareCardMiddleHeight(activity, pageFonts()))
+      setMapFrame(shareCardMapFrame(activity, pageFonts()))
     }).catch(() => {})
     return () => { alive = false }
   }, [activity])
@@ -183,14 +186,16 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     >
       {/* A sheet as tall as what it holds (design review, Oct 2026): handle,
           title, card, tabs, one option row, the buttons - no spacer, the
-          run still showing above it. It scrolls only on a phone too short. */}
+          run still showing above it. It scrolls only on a phone too short.
+          The raised sheet surface, a step over the page's cards (redesign,
+          Oct 2026). */}
       <div
         ref={trapRef}
         data-testid="share-sheet"
         className="relative flex max-h-full w-full max-w-md animate-sheet-up flex-col overflow-y-auto overscroll-contain rounded-t-[28px] [scrollbar-width:none] sm:rounded-[28px] [&::-webkit-scrollbar]:hidden"
         style={{
           ...sheetStyle,
-          background: 'var(--card)',
+          background: 'var(--popover)',
           borderTop: '1px solid var(--border)',
           padding: '8px 20px 0',
           paddingBottom: 'max(26px, var(--safe-bottom))',
@@ -202,7 +207,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         </div>
 
         <div className="flex shrink-0 items-center justify-between" style={{ marginTop: 10 }}>
-          <h2 className="font-display text-foreground" style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1 }}>{s.title}</h2>
+          <h2 className="font-display text-foreground" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1 }}>{s.title}</h2>
           <button
             type="button"
             onClick={close}

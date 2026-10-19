@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ROUTE_INSET, projectRoute, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
+import { ROUTE_INSET, bandFencePoints, projectRoute, routeFencePoints, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 
 describe('simplifyRoute', () => {
   it('leaves short routes untouched', () => {
@@ -60,8 +60,30 @@ describe('projectRoute', () => {
     }
   })
 
+  // Redesign, Oct 2026: the map fills the card, the route between the header and the stats.
+  it('fits the route inside a frame of its own, top and bottom clear of the text', () => {
+    const frame = { top: 90, right: 14, bottom: 80, left: 14 }
+    const pts = projectRoute(route, 300, 375, frame)
+    const ys = pts.map(p => p[1])
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(90 - 1e-6)
+    expect(Math.max(...ys)).toBeLessThanOrEqual(375 - 80 + 1e-6)
+    expect((Math.min(...ys) + Math.max(...ys)) / 2).toBeCloseTo((90 + 375 - 80) / 2, 6)
+  })
+
   it('thins before projecting, so the canvas and the basemap agree', () => {
     const long: LngLat[] = Array.from({ length: 500 }, (_, i) => [2.33 + i * 1e-4, 48.85 + i * 1e-4])
     expect(projectRoute(long, W, H)).toHaveLength(simplifyRoute(long).length)
+  })
+})
+
+describe('the label fences (redesign, Oct 2026)', () => {
+  it('walks the route every few px, keeping its corners, so no name can sit on it', () => {
+    const pts = routeFencePoints([[0, 0], [20, 0], [20, 10]], 6)
+    expect(pts).toEqual([[0, 0], [6, 0], [12, 0], [18, 0], [20, 0], [20, 6], [20, 10]])
+  })
+
+  it('runs a line across the card at each band edge', () => {
+    const pts = bandFencePoints(32, [80, 300], 16)
+    expect(pts).toEqual([[0, 80], [16, 80], [32, 80], [0, 300], [16, 300], [32, 300]])
   })
 })

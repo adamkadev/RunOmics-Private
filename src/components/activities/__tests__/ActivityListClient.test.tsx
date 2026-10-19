@@ -3,9 +3,19 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
-import { ActivityListClient } from '../ActivityListClient'
-import { currentWeekTarget, planMaps } from '@/components/plan/weekPlanDays'
+import { ActivityListClient, activitiesView } from '../ActivityListClient'
+import type { MapShellData } from '@/application/usecases/GetAllRoutes'
 import { formatDate, formatDateRange } from '@/lib/formatters'
+
+// The map is loaded with next/dynamic; here it is a stand-in that says what it was handed.
+vi.mock('next/dynamic', () => ({
+  default: () =>
+    function MapStandIn({ data }: { data: MapShellData }) {
+      return <div data-testid="global-map">{data.totalCount}</div>
+    },
+}))
+
+const MAP_DATA: MapShellData = { routeMeta: [], clusters: [], defaultClusterIdx: 0, totalCount: 7, totalKm: 70, years: ['2026'] }
 
 // Thursday 24 September 2026, in the week of Monday the 21st.
 const NOW = new Date(2026, 8, 24, 12)
@@ -33,11 +43,11 @@ function run(id: string, date: string, distanceKm: number): ActivitySummary {
 function renderList(items: ActivitySummary[]) {
   return render(
     <ActivityListClient
-      weekTarget={currentWeekTarget(planMaps(items, []), '2026-09-24', 40)}
       initialItems={items}
       initialNextOffset={null}
       totalCount={items.length}
       today="2026-09-24"
+      mapData={MAP_DATA}
     />
   )
 }
@@ -50,13 +60,15 @@ describe('the current week on /activities', () => {
   })
   afterEach(() => vi.useRealTimers())
 
+  // Design review, Oct 2026: "This week · Sep 21 – 27", its km and runs on
+  // the right, and no plan target or bar.
   it('counts none of last week toward this week before its first run', () => {
     renderList([run('a', '2026-09-20', 25), run('b', '2026-09-13', 10)])
 
-    expect(screen.getByText(t.activities.thisWeek)).toBeInTheDocument()
-    const line = screen.getByTestId('week-line').textContent
-    expect(line).toContain(`0${t.activities.weekLine.ofKm('40')}`)
-    expect(line).not.toContain('25')
+    const week = screen.getByTestId('current-week')
+    expect(within(week).getByRole('heading').textContent).toBe(`${t.activities.thisWeek} · ${formatDateRange('2026-09-21', '2026-09-27', { year: 'never' })}`)
+    expect(screen.getByTestId('week-line').textContent).toBe(`0 ${t.units.km} · ${t.activities.weekLine.runs(0)}`)
+    expect(screen.queryByTestId('week-target-bar')).toBeNull()
   })
 
   it('shows last week as an ordinary row, open until this week has a run', async () => {
@@ -79,11 +91,10 @@ describe('the current week on /activities', () => {
     expect(screen.getByTestId('thumb-row').textContent).toContain('6:00 /km')
   })
 
-  it('counts this week toward its goal once it has a run', () => {
+  it('counts this week once it has a run, over its runs as rows', () => {
     renderList([run('c', '2026-09-22', 12), run('a', '2026-09-20', 25)])
 
-    // H08, M8: one line, "12/40 km · 1 run · …", over the runs as flat rows.
-    expect(screen.getByTestId('week-line').textContent).toContain(`12${t.activities.weekLine.ofKm('40')} · ${t.activities.weekLine.runs(1)}`)
+    expect(screen.getByTestId('week-line').textContent).toBe(`12 ${t.units.km} · ${t.activities.weekLine.runs(1)}`)
     const card = screen.getByTestId('current-week')
     expect(card).toContainElement(screen.getByText('Run c'))
     expect(card.querySelector('[data-testid="route-thumb"]')).not.toBeNull()
@@ -167,14 +178,14 @@ describe('the list at a phone', () => {
   })
   afterEach(() => vi.useRealTimers())
 
-  // Design review, Oct 2026: drawn at 34 pt, both are tapped at 44.
-  it('gives Map view and the sort menu 44 pt targets', async () => {
+  // Design review, Oct 2026: the sort menu is a 44 pt icon button.
+  it('gives the sort menu a 44 pt icon button with a name', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     renderList([run('a', '2026-09-20', 25)])
 
-    expect(screen.getByRole('link', { name: t.activities.mapButton }).className).toContain('hit-44')
     const sort = screen.getByRole('button', { name: `${t.activities.sort.label}: ${t.activities.sort.date}` })
-    expect(sort.className).toContain('hit-44')
+    expect(sort.className).toContain('size-11')
+    expect(sort.textContent).toBe('')
     await user.click(sort)
     expect(screen.getByRole('button', { name: t.activities.sort.distance }).className).toContain('min-h-11')
   })
@@ -201,5 +212,47 @@ describe('the list at a phone', () => {
     const title = screen.getByText(name)
     expect(title.className).toContain('line-clamp-2')
     expect(title.className).toContain('min-w-0')
+  })
+})
+
+// Design review, Oct 2026: List | Map under the title, the view in the URL.
+describe('List and Map', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    window.history.replaceState(null, '', '/activities')
+  })
+  afterEach(() => window.history.replaceState(null, '', '/'))
+
+  it('reads ?view=map as the map and anything else as the list', () => {
+    expect(activitiesView('map')).toBe('map')
+    expect(activitiesView(null)).toBe('list')
+    expect(activitiesView('grid')).toBe('list')
+  })
+
+  it('opens on the list, and writes the map into the URL when chosen', async () => {
+    const user = userEvent.setup()
+    renderList([run('a', '2026-09-20', 25)])
+
+    expect(screen.getByRole('tab', { name: t.activities.view.list }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.queryByTestId('global-map')).toBeNull()
+
+    await user.click(screen.getByRole('tab', { name: t.activities.view.map }))
+    expect(window.location.search).toBe('?view=map')
+    expect(screen.getByTestId('global-map').textContent).toBe('7')
+    // The list's controls give way to the map.
+    expect(screen.queryByPlaceholderText(t.activities.searchPlaceholder)).toBeNull()
+    expect(screen.queryByRole('button', { name: new RegExp(t.activities.sort.label) })).toBeNull()
+
+    await user.click(screen.getByRole('tab', { name: t.activities.view.list }))
+    expect(window.location.search).toBe('')
+    expect(screen.queryByTestId('global-map')).toBeNull()
+  })
+
+  it('opens on the map from a ?view=map link', () => {
+    window.history.replaceState(null, '', '/activities?view=map')
+    renderList([run('a', '2026-09-20', 25)])
+
+    expect(screen.getByRole('tab', { name: t.activities.view.map }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByTestId('global-map')).toBeInTheDocument()
   })
 })

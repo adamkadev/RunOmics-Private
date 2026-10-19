@@ -102,7 +102,7 @@ export default async function ActivityDetailPage({
         aiVerdict={aiVerdict}
         chartZones={zones}
         back={<BackButton label={t.activity.back} fallbackHref="/activities" variant="round" />}
-        share={<ShareButton activity={shareActivity(activity, session)} />}
+        share={<ShareButton activity={shareActivity(activity, session, aiVerdict)} />}
         dynamicsBaseline={getDynamicsBaseline(activity)}
         shoe={shoe}
         similarRuns={similarRuns}

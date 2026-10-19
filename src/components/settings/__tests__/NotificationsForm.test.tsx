@@ -18,7 +18,8 @@ describe('NotificationsForm (v4.17)', () => {
       expect(toggle.getAttribute('aria-checked')).toBe('false')
       // Off is the band grey, a choice - never drawn as disabled.
       expect(toggle.className).toContain('bg-[var(--band)]')
-      expect(screen.getByText(type.subtitle)).toBeInTheDocument()
+      // Design review, Oct 2026: the row is its title, no subtitle under it.
+      expect(toggle.closest('div')!.querySelectorAll('p')).toHaveLength(1)
     }
     await vi.waitFor(() => expect(screen.getAllByRole('switch').every((s) => !(s as HTMLButtonElement).disabled)).toBe(true))
   })

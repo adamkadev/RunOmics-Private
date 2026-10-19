@@ -3,6 +3,7 @@ import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import type { WorkoutPrescription } from '@/domain/coaching/types'
 import { findLastRun, findNextSession } from '../nextSession'
 import { formatWeekday } from '@/lib/formatters'
+import { runMeta } from '../todaySession'
 import { t } from '@/i18n'
 
 function prescription(date: string, title: string, totalDistanceMeters: number): WorkoutPrescription {
@@ -48,18 +49,26 @@ const run = (date: string, km: number): ActivitySummary => ({
 describe('findLastRun', () => {
   it("is today's run once it is done, opening the run", () => {
     const last = findLastRun('2026-10-07', run('2026-10-07', 10), null, [], [], [])
-    expect(last).toMatchObject({ state: 'done', date: '2026-10-07', href: '/activities/a:2026-10-07' })
+    expect(last).toMatchObject({ state: 'done', layout: 'done', date: '2026-10-07', href: '/activities/a:2026-10-07' })
     expect(last!.title).toBe(t.dashboard.todayHero.doneTitle('Morning run'))
   })
 
-  it("is nothing before today's run: the tile is today's session", () => {
-    const today = { title: 'Easy run', type: 'Base' as const, duration: null, distanceM: 9000, activityId: null, target: null, structure: null }
-    expect(findLastRun('2026-10-07', null, today, [run('2026-10-06', 10)], [], [])).toBeNull()
+  it("is yesterday's run under today's session, led by its route", () => {
+    const today = { title: 'Easy run', type: 'Base' as const, duration: null, distanceM: 9000, activityId: null, target: null, structure: null, hr: null }
+    const last = findLastRun('2026-10-07', null, today, [run('2026-10-06', 10)], [], [])
+    expect(last).toMatchObject({ state: 'done', layout: 'past', date: '2026-10-06', type: 'Base' })
+    expect(last!.title).toBe(t.dashboard.todayHero.yesterdayTitle('Morning run'))
+    expect(last!.detail).toBe(runMeta(run('2026-10-06', 10)))
+  })
+
+  it("has nothing to show before today's run on a first day", () => {
+    const today = { title: 'Easy run', type: 'Base' as const, duration: null, distanceM: 9000, activityId: null, target: null, structure: null, hr: null }
+    expect(findLastRun('2026-10-07', null, today, [], [], [])).toBeNull()
   })
 
   it("is yesterday's run on a day off, under its plan's name", () => {
     const last = findLastRun('2026-10-08', null, null, [run('2026-10-07', 10)], [view(prescription('2026-10-07', 'Recovery run', 9000))], [])
-    expect(last).toMatchObject({ state: 'done', date: '2026-10-07', title: t.dashboard.todayHero.doneTitle('Recovery run') })
+    expect(last).toMatchObject({ state: 'done', layout: 'past', date: '2026-10-07', title: t.dashboard.todayHero.yesterdayTitle('Recovery run') })
   })
 
   // Said, never moved: the plan is the coach's.
@@ -88,7 +97,7 @@ describe('a session named under the naming rules', () => {
     expect(next).toMatchObject({ title: 'Threshold 3×8′', workout: { title: 'Threshold · 3 × 8′ @ 4:25', shortName: 'Threshold 3×8′' } })
 
     const done = findLastRun('2026-10-07', null, null, [run('2026-10-06', 10.4)], [view(named('2026-10-06'))], [])
-    expect(done!.title).toBe(t.dashboard.todayHero.doneTitle('Threshold 3×8′'))
+    expect(done!.title).toBe(t.dashboard.todayHero.yesterdayTitle('Threshold 3×8′'))
 
     const missed = findLastRun('2026-10-07', null, null, [], [view(named('2026-10-06'))], [])
     expect(missed!.title).toBe(t.dashboard.todayHero.missedTitle(formatWeekday('2026-10-06'), 'Threshold 3×8′'))

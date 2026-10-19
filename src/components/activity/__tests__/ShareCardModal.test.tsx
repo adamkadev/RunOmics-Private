@@ -127,7 +127,7 @@ describe('ShareCardModal', () => {
     const sheet = screen.getByTestId('share-sheet')
     expect(sheet.className).toContain('max-h-full')
     expect(sheet.className).not.toMatch(/(^|\s)h-full/)
-    expect(sheet.style.background).toBe('var(--card)')
+    expect(sheet.style.background).toBe('var(--popover)')
     expect(sheet.style.backdropFilter ?? '').toBe('')
     expect(screen.getByTestId('share-options').nextElementSibling?.textContent).toContain('Share')
   })

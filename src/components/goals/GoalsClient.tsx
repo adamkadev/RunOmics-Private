@@ -10,6 +10,12 @@ import type { SeasonBlock } from './SeasonTimeline'
 import { GoalsHistory } from './GoalsHistory'
 import { t } from '@/i18n'
 
+/** The season open on arrival: this year, or the newest one when it has no data. */
+export function defaultGoalsYear(years: readonly number[], today: string): number | undefined {
+  const current = Number(today.slice(0, 4))
+  return years.includes(current) ? current : years[0]
+}
+
 interface Props {
   data: GoalsPageData
   /** The date the page was prerendered on; see useToday. */
@@ -20,7 +26,7 @@ interface Props {
 export function GoalsClient({ data, today: serverToday, block = null }: Props) {
   const today = useToday(serverToday)
   const { years, byYear, history } = data
-  const [selectedYear, setSelectedYear] = useState(years[0])
+  const [selectedYear, setSelectedYear] = useState(() => defaultGoalsYear(years, serverToday))
   const yearTabs = useSegmentedTabs({ ids: years, value: selectedYear ?? 0, onChange: setSelectedYear })
   const hasYearTabs = years.length > 1
   const yearData = selectedYear !== undefined ? byYear[selectedYear] : undefined
