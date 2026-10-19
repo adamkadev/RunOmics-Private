@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import { firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
+import { WATER_LABEL_LAYER, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
 
-type Layer = { id: string; type: string; 'source-layer'?: string }
+type Layer = { id: string; type: string; 'source-layer'?: string; source?: string }
 
 function fakeMap(layers: Layer[], filters: Record<string, unknown> = {}) {
   const layout: Record<string, Record<string, unknown>> = {}
@@ -14,6 +14,8 @@ function fakeMap(layers: Layer[], filters: Record<string, unknown> = {}) {
     setLayoutProperty: (id: string, k: string, v: unknown) => { (layout[id] ??= {})[k] = v },
     setPaintProperty: (id: string, k: string, v: unknown) => { (paint[id] ??= {})[k] = v },
     setLayerZoomRange: (id: string, min: number, max: number) => { zooms[id] = [min, max] },
+    getLayer: (id: string) => layers.find((l) => l.id === id),
+    addLayer: (layer: Record<string, unknown>) => { layers.push(layer as unknown as Layer) },
     getFilter: (id: string) => filters[id],
     setFilter: (id: string, f: unknown) => { setFilters[id] = f },
   } as unknown as MapLibreMap
@@ -92,5 +94,50 @@ describe('the filter helpers', () => {
   it('finds the first label layer', () => {
     const { map } = fakeMap([{ id: 'Water', type: 'fill' }, { id: 'Road labels', type: 'symbol' }, { id: 'Town', type: 'symbol' }])
     expect(firstSymbolLayerId(map)).toBe('Road labels')
+  })
+})
+
+describe('addWaterLabels (3.0.1)', () => {
+  // The Planet v4 tiles name a river on water_label, as a line, with its kind
+  // in class; waterway carries the geometry and no name at all.
+  const styleLayers = (): Layer[] => [
+    { id: 'Waterway', type: 'line', 'source-layer': 'waterway', source: 'planet' },
+    { id: 'Pond labels', type: 'symbol', 'source-layer': 'water_label', source: 'planet' },
+  ]
+
+  it('names rivers and canals along their line, italic and optional', () => {
+    const layers = styleLayers()
+    const { map } = fakeMap(layers)
+    addWaterLabels(map, { halo: '#0b0c0c', water: '#5b7d99' })
+
+    const added = layers.find((l) => l.id === WATER_LABEL_LAYER) as unknown as Record<string, Record<string, unknown>>
+    expect(added).toBeDefined()
+    expect(added.source).toBe('planet')
+    expect(added['source-layer']).toBe('water_label')
+    expect(added.layout!['symbol-placement']).toBe('line')
+    expect(added.layout!['text-optional']).toBe(true)
+    expect(String(added.layout!['text-font'])).toContain('Italic')
+    expect(added.paint!['text-color']).toBe('#5b7d99')
+    expect(JSON.stringify(added.filter)).toContain('river')
+    expect(JSON.stringify(added.filter)).toContain('canal')
+  })
+
+  it('adds nothing twice, and nothing at all without the source layer', () => {
+    const layers = styleLayers()
+    const { map } = fakeMap(layers)
+    addWaterLabels(map, { halo: '#0b0c0c', water: '#5b7d99' })
+    addWaterLabels(map, { halo: '#0b0c0c', water: '#5b7d99' })
+    expect(layers.filter((l) => l.id === WATER_LABEL_LAYER)).toHaveLength(1)
+
+    const bare: Layer[] = [{ id: 'Water', type: 'fill', 'source-layer': 'water', source: 'planet' }]
+    addWaterLabels(fakeMap(bare).map, { halo: '#0b0c0c', water: '#5b7d99' })
+    expect(bare).toHaveLength(1)
+  })
+
+  it('reads the locale name where there is one', () => {
+    const layers = styleLayers()
+    addWaterLabels(fakeMap(layers).map, { halo: '#0b0c0c', water: '#5b7d99', lang: 'fr' })
+    const added = layers.find((l) => l.id === WATER_LABEL_LAYER) as unknown as Record<string, Record<string, unknown>>
+    expect(JSON.stringify(added.layout!['text-field'])).toContain('name:fr')
   })
 })

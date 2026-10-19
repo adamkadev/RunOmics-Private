@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { maptilerStyle } from '@/lib/maptiler'
 import { MapAttribution } from '@/components/ui/MapAttribution'
 import { t } from '@/i18n'
-import { loadMapLibre } from '@/lib/maplibre'
+import { addWaterLabels, loadMapLibre } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
 import {
   ROUTE_FIT_PADDING,
@@ -46,6 +46,9 @@ const noop = () => {}
  * and light RunOmics greys, with no satellite one built yet, so the button
  * cycles the two that exist.
  */
+const WATER_INK = { light: '#5f7f9a', dark: '#5b7d99' } as const
+const MAP_LANG = t.locale.split('-')[0] ?? 'en'
+
 const MAP_STYLES = ['dark', 'light'] as const
 type MapStyle = (typeof MAP_STYLES)[number]
 
@@ -252,6 +255,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           joined,
           cursor: cursorRef.current,
         })
+        addWaterLabels(map, { halo: SURFACES[dark ? 'dark' : 'light'].background, water: WATER_INK[dark ? 'dark' : 'light'], lang: MAP_LANG })
         layersReadyRef.current = true
         removeFence?.()
         removeFence = addEdgeFence(map)

@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react'
 import { maptilerStyle, shareBasemapStyle } from '@/lib/maptiler'
 import { bandFencePoints, routeFencePoints, simplifyRoute, type LngLat, type RouteFrame } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
-import { loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
+import { addWaterLabels, loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
+import { t } from '@/i18n'
 import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
 
 export interface ShareCardMap {
@@ -41,6 +42,10 @@ const PIXEL_RATIO = 3
 const RENDER_TIMEOUT_MS = 15_000
 
 const DISTRICT_OPACITY = { light: 0.7, dark: 0.8 } as const
+const WATER_INK = { light: '#5f7f9a', dark: '#5b7d99' } as const
+/** The card's map is 300 px wide: its names sit a step under the app's. */
+const CARD_LABEL_SIZE = 10
+const MAP_LANG = t.locale.split('-')[0] ?? 'en'
 
 /**
  * Once the map has drawn all it will: 'idle'. A tile, glyph or sprite that
@@ -71,9 +76,6 @@ const LABEL_FENCE_ICON = 'share-label-fence'
 /** The fence's clear icon: the 3 px trace and its 3 px halo, 9 px across, and no more (3.0.1). */
 const LABEL_FENCE_PX = 10
 
-/** OpenMapTiles' water names: the river the run follows is a landmark the card keeps. */
-const WATER_NAME_LAYERS = new Set(['water_name', 'waterway'])
-
 /**
  * The card's place names (redesign, Oct 2026): towns and the river, never
  * touching the route. The route is painted on the card afterwards, so here
@@ -96,17 +98,6 @@ function fenceLabels(map: import('maplibre-gl').Map, points: LngLat[], width: nu
     source: LABEL_FENCE_SOURCE,
     layout: { 'icon-image': LABEL_FENCE_ICON, 'icon-allow-overlap': true, 'icon-ignore-placement': false },
   })
-}
-
-/** The river's name back on, in the card's muted ink and halo; styleRunMapLabels keeps place names only. */
-function showWaterNames(map: import('maplibre-gl').Map, colors: { text: string; halo: string }) {
-  for (const layer of map.getStyle().layers) {
-    const sourceLayer = (layer as { 'source-layer'?: string })['source-layer']
-    if (layer.type !== 'symbol' || !sourceLayer || !WATER_NAME_LAYERS.has(sourceLayer)) continue
-    map.setLayoutProperty(layer.id, 'visibility', 'visible')
-    map.setPaintProperty(layer.id, 'text-color', colors.text)
-    map.setPaintProperty(layer.id, 'text-halo-color', colors.halo)
-  }
 }
 
 async function renderRouteMap(opts: RenderOptions): Promise<Render> {
@@ -149,7 +140,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
   const surface = SURFACES[isDark ? 'dark' : 'light']
   map.on('load', () => {
     styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text2, districtOpacity: DISTRICT_OPACITY[theme] })
-    showWaterNames(map, { text: surface.text3, halo: surface.background })
+    addWaterLabels(map, { halo: surface.background, water: WATER_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
     addRunMarkers(map, first, { start: clearMarkerImage(), finish: clearMarkerImage() })
     const last = points[points.length - 1]
     if (last && last !== first) setRunFinish(map, first, last)

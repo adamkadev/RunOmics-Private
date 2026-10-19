@@ -56,10 +56,14 @@ const maps = vi.hoisted(() => {
 })
 
 const labelCalls: { halo: string; town: string; neighbourhood: string; districtOpacity?: number }[] = []
+const waterCalls: { halo: string; water: string; size?: number; lang?: string }[] = []
 vi.mock('@/lib/maplibre', () => ({
   loadMapLibre: async () => ({ Map: maps.FakeMap, LngLatBounds: class { extend() { return this } } }),
   styleRunMapLabels: (_map: unknown, colors: { halo: string; town: string; neighbourhood: string; districtOpacity?: number }) => {
     labelCalls.push(colors)
+  },
+  addWaterLabels: (_map: unknown, options: { halo: string; water: string; size?: number; lang?: string }) => {
+    waterCalls.push(options)
   },
 }))
 vi.mock('@/lib/runMapLayers', () => ({
@@ -122,6 +126,15 @@ describe('the share card basemap', () => {
       expect(call.neighbourhood).toBe(call.town)
     }
     expect(labelCalls.at(-2)!.town).toBe('#8d9391')
+  })
+
+  // The tiles name a river on water_label, not on OpenMapTiles' water_name.
+  it('names the rivers in a pale blue-grey, a step smaller than the app draws them', async () => {
+    waterCalls.length = 0
+    maps.FakeMap.script = (map) => { map.emit('load'); map.emit('idle') }
+    renderHook(() => useShareCardMap({ route: route(2.53), theme: 'dark', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
+    await act(() => vi.advanceTimersByTimeAsync(100))
+    expect(waterCalls.at(-1)).toMatchObject({ water: '#5b7d99', size: 10 })
   })
 
   it('is tried again in the next sheet after one that never settled', async () => {

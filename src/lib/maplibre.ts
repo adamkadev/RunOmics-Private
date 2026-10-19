@@ -22,6 +22,80 @@ function isDistrictLayer(layer: StyleLayer): boolean {
   return NEIGHBOURHOOD_LAYER_ID.test(layer.id) || DISTRICT_FILTER.test(JSON.stringify(layer.filter ?? null))
 }
 const STYLE_MAX_ZOOM = 24
+/** The layers this app adds to a MapTiler style; styleRunMapLabels leaves them be. */
+const OWN_LAYER_PREFIX = 'runomics-'
+
+export const WATER_LABEL_LAYER = 'runomics-water-label'
+/**
+ * The tiles name a river on `water_label`, as a line, with its kind in
+ * `class`: the Planet v4 schema, not OpenMapTiles - `waterway` carries the
+ * geometry and no name at all, and there is no `water_name` layer.
+ */
+const WATER_LABEL_SOURCE_LAYER = 'water_label'
+const WATER_LINE_CLASSES = ['river', 'canal'] as const
+const ITALIC_FONT = ['Metropolis Semi Bold Italic', 'Noto Sans Italic']
+/** Park over water over district, where two names want the same room. */
+export const LABEL_SORT = { park: 1, water: 2 } as const
+
+/** The vector source a style keeps a given source-layer on. */
+function vectorSourceOf(map: MapLibreMap, sourceLayer: string): string | null {
+  for (const raw of map.getStyle().layers) {
+    const layer = raw as StyleLayer & { source?: string }
+    if (layer['source-layer'] === sourceLayer && typeof layer.source === 'string') return layer.source
+  }
+  return null
+}
+
+export interface WaterLabelOptions {
+  /** The surface under the map, for the halo. */
+  halo: string
+  /** The name's ink: a pale blue-grey, never the water's own fill. */
+  water: string
+  /** 11 px in the app; the card draws a step smaller. */
+  size?: number
+  /** The locale's name field, e.g. `name:fr`; the plain name is the fallback. */
+  lang?: string
+}
+
+/**
+ * Rivers and canals named along their line (Bevel's reading of a city map):
+ * italic, pale, and optional - a name that finds no room is dropped rather
+ * than pushed over the route. Placed under the place names, which win.
+ */
+export function addWaterLabels(map: MapLibreMap, options: WaterLabelOptions): void {
+  if (map.getLayer(WATER_LABEL_LAYER)) return
+  const source = vectorSourceOf(map, WATER_LABEL_SOURCE_LAYER)
+  if (!source) return
+  const name: unknown = options.lang && options.lang !== 'en'
+    ? ['coalesce', ['get', `name:${options.lang}`], ['get', 'name']]
+    : ['get', 'name']
+  map.addLayer({
+    id: WATER_LABEL_LAYER,
+    type: 'symbol',
+    source,
+    'source-layer': WATER_LABEL_SOURCE_LAYER,
+    filter: ['all', ['has', 'name'], ['in', ['get', 'class'], ['literal', [...WATER_LINE_CLASSES]]]],
+    layout: {
+      'symbol-placement': 'line',
+      'symbol-sort-key': LABEL_SORT.water,
+      'symbol-spacing': 420,
+      'text-field': name as string,
+      'text-font': ITALIC_FONT,
+      'text-size': options.size ?? 11,
+      'text-letter-spacing': 0.1,
+      'text-max-angle': 32,
+      'text-optional': true,
+      'text-allow-overlap': false,
+      'text-padding': 2,
+    },
+    paint: {
+      'text-color': options.water,
+      'text-halo-color': options.halo,
+      'text-halo-width': 1.4,
+      'text-halo-blur': 0.5,
+    },
+  } as Parameters<MapLibreMap['addLayer']>[0])
+}
 /** On its point first, then beside it, so a name next to the route still finds room. */
 const LABEL_ANCHORS: ('center' | 'top' | 'bottom' | 'left' | 'right')[] = ['center', 'top', 'bottom', 'left', 'right']
 
@@ -58,6 +132,7 @@ export interface PlaceLabelColors {
 export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): void {
   for (const raw of map.getStyle().layers) {
     const layer = raw as StyleLayer
+    if (layer.id.startsWith(OWN_LAYER_PREFIX)) continue
     if (layer.type !== 'symbol') continue
     if (!isPlaceLabelLayer(layer)) {
       map.setLayoutProperty(layer.id, 'visibility', 'none')
