@@ -66,8 +66,8 @@ interface RenderOptions {
 const LABEL_FENCE_SOURCE = 'share-label-fence'
 const LABEL_FENCE_LAYER = 'share-label-fence'
 const LABEL_FENCE_ICON = 'share-label-fence'
-/** The fence's clear icon: the 3 px trace, its 3 px halo and room either side. */
-const LABEL_FENCE_PX = 12
+/** The fence's clear icon: the 3 px trace and its 3 px halo, 9 px across, and no more (3.0.1). */
+const LABEL_FENCE_PX = 10
 
 /** OpenMapTiles' water names: the river the run follows is a landmark the card keeps. */
 const WATER_NAME_LAYERS = new Set(['water_name', 'waterway'])

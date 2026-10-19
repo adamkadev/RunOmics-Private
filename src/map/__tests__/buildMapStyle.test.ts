@@ -33,6 +33,7 @@ const SOURCE: StyleJson = {
     { id: 'Road labels', type: 'symbol', 'source-layer': 'road_label', minzoom: 14, layout: { 'text-field': ['coalesce', ['get', 'name:en'], ['get', 'name']] }, paint: { 'text-color': 'hsl(205,11%,47%)' } },
     { id: 'Pathway labels', type: 'symbol', 'source-layer': 'pathway_label', minzoom: 15, layout: { 'text-field': '{name}' }, paint: { 'text-color': 'hsl(205,11%,47%)' } },
     { id: 'Place labels', type: 'symbol', 'source-layer': 'place_label', layout: { 'text-field': '{name}' }, paint: { 'text-color': 'hsl(204,11%,47%)' } },
+    { id: 'District labels', type: 'symbol', 'source-layer': 'place_label', minzoom: 13, filter: ['match', ['get', 'class'], ['neighbourhood', 'quarter', 'suburb'], true, false], layout: { 'text-field': '{name}' }, paint: { 'text-opacity': ['step', ['zoom'], 0, 14, 1] } },
     { id: 'Bus stops', type: 'symbol', 'source-layer': 'poi', layout: { 'icon-image': 'bus' } },
     { id: '3D buildings', type: 'fill-extrusion', 'source-layer': 'building' },
   ],
@@ -93,6 +94,20 @@ describe('buildMapStyle (v4.17)', () => {
     const rebuilt = buildMapStyle(built, 'RunOmics Dark', c)
     expect(rebuilt.layers.filter((l) => l.id === HILLSHADE_LAYER)).toHaveLength(1)
     expect(rebuilt).toEqual(built)
+  })
+
+  // 3.0.1: a run's map sits at zoom 12-13, where Metz's districts were hidden.
+  it('names a city\'s suburbs and quarters from zoom 11, its neighbourhoods from 13', () => {
+    const district = layer('District labels')
+    expect(district.minzoom).toBe(11)
+    expect(district.paint!['text-opacity']).toEqual([
+      'step', ['zoom'], 0,
+      11, ['match', ['get', 'class'], ['suburb', 'quarter'], 1, 0],
+      13, ['match', ['get', 'class'], ['suburb', 'quarter', 'neighbourhood', 'neighborhood'], 1, 0],
+      14, 1,
+    ])
+    // A place layer with no district in its filter keeps its own range.
+    expect(layer('Place labels').minzoom).toBeUndefined()
   })
 
   it('leaves no hue in a visible layer, parks and water aside, and no key in any URL', () => {

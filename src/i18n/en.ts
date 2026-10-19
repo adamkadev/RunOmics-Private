@@ -1758,7 +1758,6 @@ export const en = {
       shoes: 'Shoes',
       consistency: 'Consistency',
       settings: 'Settings',
-      athlete: 'Athlete & zones',
       allTime: 'All time',
       vsYear: (delta: string, year: number) => `${delta} km vs ${year} to date`,
       // The same dates in both years, from where the history starts.
@@ -1778,13 +1777,23 @@ export const en = {
       atPace: 'at this pace.',
       onPace: 'On pace for the goal.',
       needs: (needed: string, average: string) => `Needs ${needed} km/wk, you average ${average}.`,
-      // The rows' status lines.
-      athleteStatus: (vo2max: number | null, lthr: number | null) =>
-        [vo2max ? `VO₂ max ${vo2max}` : null, lthr ? `LTHR ${lthr}` : null].filter(Boolean).join(' · ') || null,
-      consistencyStatus: (days: number, weeks: number) =>
-        `${days} active day${days === 1 ? '' : 's'} · ${weeks}-week streak`,
-      allTimeStatus: (km: string, since: string | null) => (since ? `${km} km since ${since}` : `${km} km`),
-      shoeStatus: (name: string, status: string) => `${name} · ${status}`,
+      // The tiles under the records, as before 3.0 (owner's request, 3.0.1).
+      vo2max: 'VO₂ max',
+      vo2Delta: (delta: string) => `${delta} in 12 weeks`,
+      // The footers as segments, each kept whole on the line (v4.3.1).
+      thresholdParts: (pace: string | null, lthr: number | null) =>
+        [pace ? `Threshold ${pace} /km` : null, lthr ? `LTHR ${lthr} bpm` : null].filter((part): part is string => part !== null),
+      // "Last 12 weeks · 203 active days in 12 months · 4-week streak", the figures in ink.
+      consistencyWindow: 'Last 12 weeks',
+      consistencyDays: (days: number) => ({ lead: '', value: String(days), tail: ` active day${days === 1 ? '' : 's'} in 12 months` }),
+      consistencyStreak: (weeks: number) => ({ lead: '', value: `${weeks}-week`, tail: ' streak' }),
+      allPairs: 'All pairs',
+      since: (date: string) => `since ${date}`,
+      distance: 'Distance',
+      runsLabel: 'Runs',
+      time: 'Time',
+      hours: 'h',
+      openYears: 'Kilometres by year',
     },
     hero: {
       namePlaceholder: 'Your name',

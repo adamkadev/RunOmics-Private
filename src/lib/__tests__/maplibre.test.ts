@@ -50,12 +50,26 @@ describe('styleRunMapLabels (v4.10)', () => {
     expect(setFilters).toEqual({})
   })
 
-  it('makes every name collide, centred, muted, with a halo in the surface colour', () => {
+  // 3.0.1: the style's zoom steps faded districts out, so the share card had none.
+  it('draws every place name it keeps fully opaque', () => {
+    const { map, paint } = fakeMap(layers)
+    styleRunMapLabels(map, COLORS)
+    for (const id of ['Town', 'Neighbourhood', 'Place labels']) expect(paint[id]?.['text-opacity'], id).toBe(1)
+  })
+
+  it('makes every name collide, on or beside its point, muted, with a halo in the surface colour', () => {
     const { map, layout, paint } = fakeMap(layers)
     styleRunMapLabels(map, COLORS)
-    expect(layout.Town).toMatchObject({ 'text-allow-overlap': false, 'text-padding': 4, 'text-variable-anchor': ['center'], 'text-size': 12 })
-    expect(layout.Neighbourhood?.['text-size']).toBe(11)
-    expect(paint.Town).toEqual({ 'text-color': '#9a9f9f', 'text-halo-color': '#161818', 'text-halo-width': 1.5, 'text-halo-blur': 0.5 })
+    // 3.0.1: a step smaller on the card's 300 px map, and free to sit beside its point.
+    expect(layout.Town).toMatchObject({
+      'text-allow-overlap': false,
+      'text-padding': 2,
+      'text-variable-anchor': ['center', 'top', 'bottom', 'left', 'right'],
+      'text-radial-offset': 0.4,
+      'text-size': 10,
+    })
+    expect(layout.Neighbourhood?.['text-size']).toBe(9)
+    expect(paint.Town).toEqual({ 'text-opacity': 1, 'text-color': '#9a9f9f', 'text-halo-color': '#161818', 'text-halo-width': 1.5, 'text-halo-blur': 0.5 })
     expect(paint.Neighbourhood?.['text-color']).toBe('#6e7373')
   })
 })
