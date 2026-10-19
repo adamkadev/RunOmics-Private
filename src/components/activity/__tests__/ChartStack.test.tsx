@@ -53,7 +53,7 @@ describe('ChartStack scrub', () => {
 
     // The fraction lands on the next frame, snapped to a sample: 196 / 350 of
     // 10 km is sample 111 of 199.
-    await waitFor(() => expect(screen.getByTestId('scrub-header').textContent).toMatch(/^At 5\.58 km · \d+:\d\d elapsed$/))
+    await waitFor(() => expect(screen.getByTestId('scrub-header').textContent).toMatch(/^At 5\.6 km · \d+:\d\d elapsed$/))
     expect(streamCleanups.count).toBe(afterMount)
   })
 
@@ -74,6 +74,20 @@ describe('ChartStack scrub', () => {
     onScrub.mockClear()
     unmount()
     expect(onScrub).toHaveBeenCalledWith(null)
+  })
+
+  // 3.0: the scrub row bolds the distance, heart rate is drawn in ink and pace
+  // in the accent, and the legend under the charts is gone.
+  it('bolds the distance in the scrub row and colours each lane its own way', async () => {
+    const { area } = renderStack()
+    fireEvent.pointerMove(area, { clientX: 175, pointerId: 1, pointerType: 'mouse' })
+    await waitFor(() => expect(screen.getByTestId('scrub-header').querySelector('b')?.textContent).toBe('5.0 km'))
+
+    const line = (lane: string) => screen.getByTestId(`lane-${lane}`).querySelectorAll('path')[2]!.getAttribute('stroke')
+    expect(line('hr')).toBe('var(--foreground)')
+    expect(line('pace')).toBe('var(--accent)')
+    expect(screen.getByTestId('lane-pace').textContent).toContain(`${t.activity.charts.pace} /km ↑`)
+    expect(screen.getByTestId('chart-stack').textContent).not.toContain('Run average')
   })
 
   it('draws the smoothed line by default and the recorded one on Raw', () => {

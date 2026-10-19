@@ -94,8 +94,8 @@ describe('the lane paths', () => {
   })
 
   it('ticks every whole km, not the start or the finish', () => {
-    expect(kmTicksPath(2.5)).toBe('M400.0 0 L400.0 90 M800.0 0 L800.0 90')
-    expect(kmTicksPath(3)).toBe('M333.3 0 L333.3 90 M666.7 0 L666.7 90')
+    expect(kmTicksPath(2.5)).toBe('M400.0 0 L400.0 72 M800.0 0 L800.0 72')
+    expect(kmTicksPath(3)).toBe('M333.3 0 L333.3 72 M666.7 0 L666.7 72')
   })
 })
 
@@ -129,8 +129,8 @@ describe('zone bands', () => {
     // Z3 runs past the top of the scale, so it fills the padding up there.
     expect(bandRect(lane, { zone: 3, from: 165, to: 175 })).toMatchObject({ top: 0, labelled: true })
     const z1 = bandRect(lane, { zone: 1, from: 119, to: 147 })!
-    expect(z1.top).toBeCloseTo(41.72, 2)
-    expect(z1.top + z1.height).toBeCloseTo(87.64, 2)
+    expect(z1.top).toBeCloseTo(33.44, 2)
+    expect(z1.top + z1.height).toBeCloseTo(69.28, 2)
     // Pace's Z5 is everything faster: up from the top.
     const pace = { domain: [260, 420] as [number, number], reversed: true }
     expect(bandRect(pace, { zone: 5, from: -Infinity, to: 255 })).toMatchObject({ top: 0, labelled: false })

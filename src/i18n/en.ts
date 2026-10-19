@@ -1497,21 +1497,17 @@ export const en = {
       max: 'max',
       bestSmoothed: 'best 30 s',
       pace: 'Pace',
-      paceUnitHint: '/km · higher is faster',
+      paceUnitHint: '/km ↑',
       elevation: 'Elevation',
       cadence: 'Cadence',
       elevationGain: (m: string) => `+${m} m gain`,
-      scrubAt: (km: string, elapsed: string | null) => (elapsed ? `At ${km} km · ${elapsed} elapsed` : `At ${km} km`),
+      // "At 7.2 km · 41:28 elapsed", the distance in bold (3.0).
+      scrubAt: { lead: 'At ', km: (km: string) => `${km} km`, elapsed: (elapsed: string) => ` · ${elapsed} elapsed` },
       // The map is Overview's (design review, Oct 2026): no dot on it to follow.
       scrubHint: 'Drag across the charts to scrub',
       lineLabel: 'Chart line',
       smoothed: 'Smoothed',
       raw: 'Raw',
-      legend: {
-        zones: 'Background = your zones',
-        average: 'Run average',
-        km: 'Each km',
-      },
     },
     map: {
       fullscreen: 'Fullscreen',
