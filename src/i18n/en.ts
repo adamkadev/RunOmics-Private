@@ -1691,7 +1691,8 @@ export const en = {
     roles: { daily: 'daily trainer', workouts: 'workouts', intervals: 'intervals', races: 'races' },
     shareOfDistance: 'share of distance',
     easy: 'Easy',
-    heroStats: { runs: 'Runs', avgDistance: 'Avg distance', avgPace: 'Avg pace', avgHr: 'Avg heart rate' },
+    // One row of four in the km card (design review, Oct 2026): short labels.
+    heroStats: { runs: 'Runs', avgDistance: 'Avg', avgPace: 'Pace', avgHr: 'HR' },
     lastRuns: 'Last runs',
     neverUsed: 'Never used',
     // Both numbers arrive formatted (formatKm), so 1,375 has its separator.
@@ -1785,13 +1786,13 @@ export const en = {
       activitiesTitleRetired: 'Last runs before retiring',
       allActivitiesCount: (count: number) => `All ${count}`,
       empty: 'No activities recorded with this pair yet.',
+      // One line (design review, Oct 2026): "1,000 km ≈ Jan ’27 · 11 wk at 25 km/wk".
       projectedRunOut: (weeklyKm: number, maxKm: string, targetDate: string, weeksRemaining: number) =>
-        `At ${weeklyKm} km a week you'll hit ${maxKm} km around ${targetDate} – about ${weeksRemaining} more week${weeksRemaining === 1 ? '' : 's'}.`,
+        `${maxKm} km ≈ ${targetDate} · ${weeksRemaining} wk at ${weeklyKm} km/wk`,
       // A three-year forecast off six runs is noise, not information - past a
       // year out, the sentence drops the date and says only what's true: it's
       // a long way off at this rate.
-      projectedRunOutFar: (weeklyKm: number, maxKm: string) =>
-        `At ${weeklyKm} km a week, ${maxKm} km is more than a year away.`,
+      projectedRunOutFar: (weeklyKm: number, maxKm: string) => `${maxKm} km in over a year at ${weeklyKm} km/wk`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
         weeksLeft: (weeks: number) =>

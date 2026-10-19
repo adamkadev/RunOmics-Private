@@ -1609,7 +1609,7 @@ export const fr = {
     roles: { daily: 'quotidienne', workouts: 'séances', intervals: 'fractionné', races: 'courses' },
     shareOfDistance: 'part de la distance',
     easy: 'Facile',
-    heroStats: { runs: 'Sorties', avgDistance: 'Distance moy.', avgPace: 'Allure moy.', avgHr: 'FC moy.' },
+    heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure', avgHr: 'FC' },
     lastRuns: 'Dernières sorties',
     neverUsed: 'Jamais utilisée',
     kmOf: (total: string, max: string) => `${total} / ${max} km`,
@@ -1685,9 +1685,8 @@ export const fr = {
       allActivitiesCount: (count: number) => `Les ${count}`,
       empty: 'Aucune activité enregistrée avec cette paire pour le moment.',
       projectedRunOut: (weeklyKm: number, maxKm: string, targetDate: string, weeksRemaining: number) =>
-        `À ${weeklyKm} km par semaine, tu atteindras ${maxKm} km vers ${targetDate} – encore ${weeksRemaining} semaine${weeksRemaining > 1 ? 's' : ''} environ.`,
-      projectedRunOutFar: (weeklyKm: number, maxKm: string) =>
-        `À ${weeklyKm} km par semaine, il te faudra plus d’un an pour atteindre ${maxKm} km.`,
+        `${maxKm} km ≈ ${targetDate} · ${weeksRemaining} sem. à ${weeklyKm} km/sem.`,
+      projectedRunOutFar: (weeklyKm: number, maxKm: string) => `${maxKm} km dans plus d’un an à ${weeklyKm} km/sem.`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
         weeksLeft: (weeks: number) =>

@@ -6,7 +6,7 @@ import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { wearStatus } from '@/domain/shoe/wearStatus'
 import { GlassSurface } from '@/components/ui/GlassSurface'
 import { formatDate, formatDateRange, formatKm } from '@/lib/formatters'
-import { isPastLimit, shoeRole } from './shoeWear'
+import { WEAR_COLOR, isPastLimit, shoeRole } from './shoeWear'
 import { WearBar } from './WearBar'
 import { t } from '@/i18n'
 
@@ -41,30 +41,44 @@ export function shoeMeta(shoe: ShoeStats): string {
  * A pair in rotation, as one row of the shared card (C4, v4.4b): brand,
  * model and km left, the wear bar, then what it has done and what it is for.
  */
-function RotationRow({ shoe, context }: { shoe: ShoeStats; context: string | null }) {
+function RotationRow({ shoe, context, tickLabel }: { shoe: ShoeStats; context: string | null; tickLabel: boolean }) {
   const left = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
   const over = isPastLimit(shoe)
+  const status = wearStatus(shoe.wearPercent)
   return (
-    <Link href={`/shoes/${shoe.gearId}`} className={cn(ROW_DIVIDER, 'block px-5 py-3.5 transition-colors active:bg-foreground/[0.04]')} data-testid="shoe-card">
+    // ?from=shoes: the pair's page goes back here, not to Progress.
+    <Link href={`/shoes/${shoe.gearId}?from=shoes`} className={cn(ROW_DIVIDER, 'block px-5 py-3.5 transition-colors active:bg-foreground/[0.04]')} data-testid="shoe-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-caption uppercase tracking-[0.08em] text-muted-foreground">{shoe.brand}</p>
           <p className="truncate font-display text-body font-bold text-foreground">{shoe.name}</p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {!over && (
-            <p className="text-footnote text-muted-foreground">
-              <span className="font-display text-body font-bold tabular-nums text-foreground">{formatKm(left)}</span> {t.shoes.kmLeftShort}
-            </p>
-          )}
-          <ChevronRight size={16} className="text-muted-foreground" aria-hidden="true" />
+        <div className="flex shrink-0 items-start gap-1.5">
+          <div className="flex flex-col items-end gap-1">
+            {!over && (
+              <p className="text-footnote text-muted-foreground">
+                <span className="font-display text-body font-bold tabular-nums text-foreground">{formatKm(left)}</span> {t.shoes.kmLeftShort}
+              </p>
+            )}
+            {/* The verdict, where there is one, as a small pill in its tone (design review, Oct 2026). */}
+            {status !== 'ok' && (
+              <span
+                data-testid="shoe-verdict-pill"
+                className="rounded-md px-2 py-0.5 text-caption font-semibold uppercase tracking-[0.08em]"
+                style={{ color: WEAR_COLOR[status], background: `color-mix(in srgb, ${WEAR_COLOR[status]} 15%, transparent)` }}
+              >
+                {t.shoes.status[status]}
+              </span>
+            )}
+          </div>
+          <ChevronRight size={16} className="mt-0.5 text-muted-foreground" aria-hidden="true" />
         </div>
       </div>
       <WearBar
         totalKm={shoe.totalKm}
         maxKm={shoe.maxKm}
         tickKm={shoe.alertThresholdKm}
-        tickLabel={t.shoes.detail.retireFromWorkouts(formatKm(shoe.alertThresholdKm))}
+        tickLabel={tickLabel ? t.shoes.detail.retireFromWorkouts(formatKm(shoe.alertThresholdKm)) : undefined}
         limitLabel={t.shoes.detail.limitTick(formatKm(shoe.maxKm))}
         className="mt-3"
       />
@@ -101,6 +115,10 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
   }
 
   const active = shoes.filter((shoe) => !shoe.retired).sort((a, b) => b.wearPercent - a.wearPercent)
+  // The tick's key once, by the section's label (design review, Oct 2026),
+  // when every pair in rotation retires from workouts at the same km; else
+  // each bar names its own.
+  const sharedTickKm = active.length > 0 && active.every((shoe) => shoe.alertThresholdKm === active[0]!.alertThresholdKm) ? active[0]!.alertThresholdKm : null
   // Newest retired first.
   const retired = shoes
     .filter((shoe) => shoe.retired)
@@ -110,10 +128,18 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
     <div className="space-y-5">
       {active.length > 0 && (
         <section className="space-y-2" data-testid="shoes-rotation">
-          <h2 data-bar-fade className={SECTION}>{t.shoes.inRotation(active.length)}</h2>
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 data-bar-fade className={SECTION}>{t.shoes.inRotation(active.length)}</h2>
+            {sharedTickKm !== null && (
+              <p className="flex min-w-0 items-center gap-1 text-caption text-muted-foreground" data-testid="shoes-tick-key">
+                <span aria-hidden className="h-2.5 w-0.5 shrink-0 rounded-full bg-[var(--text-2)]" />
+                <span className="truncate">{t.shoes.detail.retireFromWorkouts(formatKm(sharedTickKm))}</span>
+              </p>
+            )}
+          </div>
           <GlassSurface variant="card" className="overflow-hidden rounded-card-sm">
             {active.map((shoe) => (
-              <RotationRow key={shoe.gearId} shoe={shoe} context={insights[shoe.gearId] ?? null} />
+              <RotationRow key={shoe.gearId} shoe={shoe} context={insights[shoe.gearId] ?? null} tickLabel={sharedTickKm === null} />
             ))}
           </GlassSurface>
         </section>
@@ -124,7 +150,7 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
           <h2 data-bar-fade className={SECTION}>{t.shoes.retiredSection(retired.length)}</h2>
           <GlassSurface variant="card" className="overflow-hidden rounded-card-sm">
             {retired.map((shoe) => (
-              <Link key={shoe.gearId} href={`/shoes/${shoe.gearId}`} className={cn(ROW_DIVIDER, 'flex min-h-15 items-center gap-3 px-5 py-3')} data-testid="retired-row">
+              <Link key={shoe.gearId} href={`/shoes/${shoe.gearId}?from=shoes`} className={cn(ROW_DIVIDER, 'flex min-h-15 items-center gap-3 px-5 py-3')} data-testid="retired-row">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-display text-body font-bold text-foreground">{shoe.name}</span>
                   <span className="block truncate text-footnote text-muted-foreground">{retiredSubline(shoe)}</span>
