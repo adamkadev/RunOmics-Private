@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { MonthView } from '../MonthView'
-import { PlanPhaseTrack } from '../PlanPhaseTrack'
 import { t } from '@/i18n'
 import type { ActivitySummary } from '@/domain/activity/types'
 
@@ -181,30 +180,6 @@ describe('MonthView edges', () => {
     expect(footers[0]).toBe(t.plan.weekSummary.ranOfPlan('29.6', '20'))
     expect(footers.at(-1)).toBe(t.plan.weekSummary.ranOfPlan('0', '14'))
     expect(screen.getByText(t.plan.summary(1, 10, 10))).toBeInTheDocument()
-  })
-})
-
-describe('PlanPhaseTrack', () => {
-  const ranges = [
-    { phase: 'base' as const, startDate: '2026-09-07', endDate: '2026-10-04' },
-    { phase: 'build' as const, startDate: '2026-10-05', endDate: '2026-11-01' },
-  ]
-
-  it('marks the current phase with the accent, not a phase hue', () => {
-    render(<PlanPhaseTrack ranges={ranges} weekStart="2026-09-21" weekEnd="2026-09-27" />)
-
-    expect(screen.getByText(t.plan.phaseTrack.base).parentElement!.className).toContain('text-accent-text')
-    expect(screen.getByText(t.plan.phaseTrack.build).parentElement!.className).toContain('text-muted-foreground')
-  })
-
-  // v4.17: each segment is labelled with its length, and filled to the week shown.
-  it('labels each phase with its weeks and fills the current one to the week', () => {
-    render(<PlanPhaseTrack ranges={ranges} weekStart="2026-09-21" weekEnd="2026-09-27" />)
-    const track = screen.getByTestId('phase-track')
-
-    expect(track.textContent).toContain(`${t.plan.phaseTrack.base} · ${t.plan.phaseTrack.weeks(4)}`)
-    const fills = [...track.querySelectorAll<HTMLElement>('.bg-accent')].map((el) => el.style.width)
-    expect(fills).toEqual(['75%', '0%'])
   })
 })
 

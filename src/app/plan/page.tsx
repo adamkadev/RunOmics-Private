@@ -4,11 +4,9 @@ import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
-import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { PlanClient } from '@/components/plan/PlanClient'
 import { planCoachingView } from '@/components/plan/planCoachingView'
 import { appTodayIso } from '@/lib/calendarDate'
-import { hrBoundsFor } from '@/domain/training/hrBounds'
 
 export const revalidate = 3600
 
@@ -25,9 +23,7 @@ export default async function PlanPage() {
     <PlanClient
       activities={activities}
       plannedWorkouts={plannedWorkouts}
-      hrBounds={hrBoundsFor(getAthleteProfile())}
       planPhaseRanges={trainingPlan?.ranges ?? []}
-      planSpan={trainingPlan}
       nextRace={nextRace}
       trainingZones={trainingZones}
       coaching={coaching ? planCoachingView(coaching) : null}
