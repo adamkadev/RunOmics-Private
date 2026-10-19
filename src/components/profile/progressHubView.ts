@@ -6,8 +6,8 @@ import type { ProfileGoal, ProfilePeriodStats } from '@/application/usecases/Get
 import type { NextRaceSpotlight } from '@/application/usecases/GetGoalsData'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { consistencyMonths, dayLevel, type DayLevel } from '@/components/consistency/consistencyMonthsView'
-import { isPlaceholderRaceName, raceDisplayName } from '@/components/goals/raceName'
 import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
+import type { PlanPhaseLine } from '@/components/plan/planPhase'
 
 /** The Progress hub (H01, M12): every figure a tile draws, worked out once. */
 export interface ProgressHubView {
@@ -32,11 +32,13 @@ export interface ProgressHubView {
   race: {
     daysUntil: number
     distance: string
-    /** The event's name, or its place where the name only restates the distance; null when neither says more. */
-    name: string | null
     date: string
     predictedSeconds: number | null
     targetSeconds: number | null
+    /** Garmin's prediction less the target: warn when slower, pos when faster. Null without both. */
+    gap: { seconds: number; tone: 'warn' | 'pos' } | null
+    /** Where the plan is, as Plan's subtitle names it. */
+    phase: PlanPhaseLine | null
   } | null
   vo2max: {
     value: number
@@ -78,6 +80,7 @@ export interface HubInput {
   sinceDate: string | null
   goal: ProfileGoal | null
   spotlight: NextRaceSpotlight | null
+  planPhase?: PlanPhaseLine | null
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
   athlete: { lthrBpm?: number | null; thresholdPaceSecPerKm?: number | null }
   records: RecordEntry[]
@@ -93,9 +96,11 @@ const HEAT_WEEKS = 12
 /** A record set within this many days is a new one. */
 const NEW_RECORD_DAYS = 30
 
-function raceName(race: NextRaceSpotlight['race']): string | null {
-  const name = raceDisplayName(race)
-  return isPlaceholderRaceName(race.distance, name) ? null : name
+/** How far the prediction is from the target, and in which tone. */
+export function raceGap(predictedSeconds: number | null, targetSeconds: number | null): { seconds: number; tone: 'warn' | 'pos' } | null {
+  if (predictedSeconds === null || !targetSeconds) return null
+  const seconds = predictedSeconds - targetSeconds
+  return { seconds, tone: seconds > 0 ? 'warn' : 'pos' }
 }
 
 function dayOfYear(iso: string): number {
@@ -186,10 +191,11 @@ export function progressHubView(input: HubInput): ProgressHubView {
       ? {
           daysUntil: spotlight.daysUntil,
           distance: spotlight.race.distance,
-          name: raceName(spotlight.race),
           date: spotlight.race.date,
           predictedSeconds: spotlight.predictedSeconds,
           targetSeconds: spotlight.race.targetSeconds ?? null,
+          gap: raceGap(spotlight.predictedSeconds, spotlight.race.targetSeconds ?? null),
+          phase: input.planPhase ?? null,
         }
       : null,
     vo2max:

@@ -1864,13 +1864,13 @@ export const en = {
       ofGoal: (km: string) => `of ${km} km`,
       goal: 'Goal',
       runsHours: (runs: number, hours: number) => `${runs} runs · ${hours} h`,
-      // "62 days · 10K Wintzenheim, Nov 29": the unit after the countdown.
-      raceMeta: (days: number, race: string, date: string) => `${days === 1 ? 'day' : 'days'} · ${race}, ${date}`,
+      // The next race (design review, Oct 2026): "155 days · Half · Sun 22 Mar ’27", then three figures.
+      days: (days: number): string => (days === 1 ? 'day' : 'days'),
       predicted: 'Predicted',
-      target: (time: string) => `Target ${time}`,
-      toFind: (gap: string) => `${gap} to find`,
-      underTarget: (gap: string) => `${gap} under`,
-      noRace: 'No race planned',
+      targetLabel: 'Target',
+      toFindLabel: 'To find',
+      planPhase: (phase: string) => `Plan: ${phase}`,
+      garminPrediction: 'Garmin prediction',
       vo2Delta: (delta: string) => `${delta} in 12 weeks`,
       // The footers as segments, each kept whole on the line (v4.3.1).
       thresholdParts: (pace: string | null, lthr: number | null) =>

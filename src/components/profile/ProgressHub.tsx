@@ -2,8 +2,9 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { ChevronRight, Settings } from 'lucide-react'
 import { cardClass } from '@/components/ui/Card'
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { Legend, LegendItem } from '@/components/ui/Legend'
-import { Stat, StatGrid, Unit } from '@/components/ui/Stat'
+import { Stat, StatGrid } from '@/components/ui/Stat'
 import { RangeBar } from '@/components/ui/RangeBar'
 import { formatDate, formatDelta, formatDuration, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -162,17 +163,87 @@ function shoeColor(status: WearStatus): string {
   return WEAR_COLOR[status]
 }
 
+const RACE_LABEL = cn(EYEBROW_CLASS, 'text-muted-foreground')
+
+/** The gap to the target, signed: "+1:31" still to find, "−0:44" under it. */
+function signedGap(seconds: number): string {
+  return `${seconds > 0 ? '+' : seconds < 0 ? '\u2212' : ''}${formatDuration(Math.abs(seconds))}`
+}
+
 /**
- * Progress as a visual hub (H01, M12; v4.17.1): the year against last year
- * and the goal, then two columns that stack on their own - Next race, Records
- * and the shoes; VO₂ max and Consistency - and all time with its km by year.
- * Every card opens the page it summarises.
+ * The next race, first on the hub (design review, Oct 2026): the days to go,
+ * then Garmin's prediction, the target and the gap between them - each only
+ * when there is one - the prediction on its scale, and where the plan is.
+ */
+function RaceTile({ race }: { race: NonNullable<ProgressHubView['race']> }) {
+  const h = t.profile.hub
+  const cells = [
+    race.predictedSeconds !== null ? { key: 'predicted', label: h.predicted, value: formatDuration(race.predictedSeconds), color: undefined } : null,
+    race.targetSeconds ? { key: 'target', label: h.targetLabel, value: formatDuration(race.targetSeconds), color: undefined } : null,
+    race.gap ? { key: 'gap', label: h.toFindLabel, value: signedGap(race.gap.seconds), color: `var(--${race.gap.tone})` } : null,
+  ].filter((cell) => cell !== null)
+  const phase = race.phase ? [race.phase.phase?.toLocaleLowerCase(t.locale), race.phase.week].filter(Boolean).join(' · ') : null
+
+  return (
+    <Link
+      href="/goals"
+      data-testid="race-tile"
+      className={cardClass({ className: cn('order-0 flex flex-col gap-3 border-2 border-[var(--accent)]', LINK_CARD, 'hover:border-[var(--accent)]') })}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className={cn(EYEBROW_CLASS, 'text-accent-text')}>{h.nextRace}</span>
+        <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+      </div>
+      {/* Inline, so the words after the count wrap under it rather than drop as a block. */}
+      <p className="text-[15px] leading-snug text-muted-foreground">
+        <span className="mr-2 text-[34px] font-semibold leading-none tracking-[-0.02em] text-foreground" data-testid="race-days">
+          {Math.max(0, race.daysUntil)}
+        </span>
+        <span data-testid="race-meta">
+          {h.days(race.daysUntil)} · <b className="font-semibold text-foreground">{shortDist(race.distance)}</b> · {formatDate(race.date)}
+        </span>
+      </p>
+      {cells.length > 0 && (
+        <dl className="grid grid-cols-3 gap-3" data-testid="race-values">
+          {cells.map((cell) => (
+            <div key={cell.key} className="flex min-w-0 flex-col gap-0.5" data-testid={`race-${cell.key}`}>
+              <dt className={RACE_LABEL}>{cell.label}</dt>
+              <dd className="text-[20px] font-semibold tabular-nums leading-tight text-foreground" style={cell.color ? { color: cell.color } : undefined}>
+                {cell.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {race.predictedSeconds !== null && race.targetSeconds && race.gap && (
+        <div data-testid="race-scale">
+          <RangeBar
+            band={[raceScale(race.predictedSeconds, race.targetSeconds).target, 1]}
+            marker={raceScale(race.predictedSeconds, race.targetSeconds).predicted}
+            markerColor={`var(--${race.gap.tone})`}
+            label={`${h.predicted} ${formatDuration(race.predictedSeconds)}, ${h.targetLabel} ${formatDuration(race.targetSeconds)}`}
+          />
+        </div>
+      )}
+      {(phase || race.predictedSeconds !== null) && (
+        <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground" data-testid="race-footer">
+          {phase ? <span>{h.planPhase(phase)}</span> : <span />}
+          {race.predictedSeconds !== null && <span>{h.garminPrediction}</span>}
+        </div>
+      )}
+    </Link>
+  )
+}
+
+/**
+ * Progress as a visual hub (H01, M12; v4.17.1): the next race, the year
+ * against last year and the goal, then two columns that stack on their own -
+ * Records and the shoes; VO₂ max and Consistency - and all time with its km
+ * by year. Every card opens the page it summarises.
  */
 export function ProgressHub({ view }: { view: ProgressHubView }) {
   const h = t.profile.hub
   const { hero, race, vo2max, records, consistency, shoes, allTime } = view
-  const raceGap = race?.predictedSeconds != null && race.targetSeconds ? race.predictedSeconds - race.targetSeconds : null
-  const raceTone = raceGap !== null && raceGap > 0 ? 'var(--warn)' : 'var(--pos)'
   const days = h.consistencyDays(consistency.activeDays)
   const streak = h.consistencyStreak(consistency.streakWeeks)
   const bestYearKm = Math.max(1, ...allTime.years.slice(-2).map((y) => y.km))
@@ -198,6 +269,8 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
           <Settings size={18} aria-hidden="true" />
         </Link>
       </header>
+
+      {race && <RaceTile race={race} />}
 
       <Link href="/goals" className={cardClass({ className: cn('flex flex-col gap-3', LINK_CARD) })} data-testid="year-hero">
         <div className="flex items-baseline justify-between gap-3">
@@ -228,58 +301,13 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
         </div>
       </Link>
 
-      {/* Two columns that stack on their own (v4.17.1): Next race, Records and
-          the shoes on the left, VO2 max and Consistency on the right, so no
-          card waits under a shorter neighbour. On a phone the columns melt
-          into one list (display: contents) and `order` interleaves them:
-          race, VO2 max, records, consistency, shoes. */}
+      {/* Two columns that stack on their own (v4.17.1): Records and the
+          shoes on the left, VO2 max and Consistency on the right, so no card
+          waits under a shorter neighbour. On a phone the columns melt into
+          one list (display: contents) and `order` interleaves them: VO2 max,
+          records, consistency, shoes. */}
       <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2 sm:items-start" data-testid="progress-columns">
         <div className="contents sm:flex sm:flex-col sm:gap-3.5" data-testid="progress-column">
-          <Tile href="/goals" title={h.nextRace} className="order-1 sm:order-none" testId="race-tile">
-            {race ? (
-              <>
-                <p className="text-[26px] font-semibold leading-tight text-foreground">
-                  {Math.max(0, race.daysUntil)}
-                  <Unit>{h.raceMeta(race.daysUntil, [shortDist(race.distance), race.name].filter(Boolean).join(' '), formatDate(race.date, { style: 'bare' }))}</Unit>
-                </p>
-                {race.predictedSeconds !== null && (
-                  <>
-                    <div className="flex items-baseline justify-between text-[13px]">
-                      <span className="text-muted-foreground">{h.predicted}</span>
-                      <span className="font-semibold text-foreground">{formatDuration(race.predictedSeconds)}</span>
-                    </div>
-                    {race.targetSeconds && raceGap !== null && (
-                      <>
-                        {(() => {
-                          const scale = raceScale(race.predictedSeconds, race.targetSeconds)
-                          return (
-                            <div data-testid="race-scale">
-                              <RangeBar
-                                band={[scale.target, 1]}
-                                marker={scale.predicted}
-                                markerColor={raceTone}
-                                label={`${h.predicted} ${formatDuration(race.predictedSeconds)}, ${h.target(formatDuration(race.targetSeconds))}`}
-                              />
-                            </div>
-                          )
-                        })()}
-                        <p className="text-xs text-muted-foreground" data-testid="race-target">
-                          {h.target(formatDuration(race.targetSeconds))}
-                          {' · '}
-                          <b className="font-semibold" style={{ color: raceTone }}>
-                            {raceGap > 0 ? h.toFind(formatDuration(raceGap)) : h.underTarget(formatDuration(-raceGap))}
-                          </b>
-                        </p>
-                      </>
-                    )}
-                  </>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">{h.noRace}</p>
-            )}
-          </Tile>
-
           <Tile href="/records" title={h.records} aside={<Caption>{h.recordsWhen}</Caption>} className="order-3 gap-1 sm:order-none" testId="records-tile">
             {records.length > 0 ? (
               <dl className="mt-1.5">
