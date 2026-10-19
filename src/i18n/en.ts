@@ -1226,9 +1226,9 @@ export const en = {
     },
     stats: {
       distance: 'Distance',
-      duration: 'Moving time',
+      duration: 'Moving',
       pace: 'Avg pace',
-      avgHr: 'Avg heart rate',
+      avgHr: 'Avg HR',
     },
     verdict: {
       title: 'Run Verdict',
@@ -1256,8 +1256,6 @@ export const en = {
       label: 'Note',
       add: 'Add note',
       edit: 'Edit',
-      read: 'Read',
-      none: 'No note',
     },
     tabs: {
       groupLabel: 'Activity sections',
@@ -1353,12 +1351,10 @@ export const en = {
       },
     },
     conditions: {
-      label: 'Conditions',
       wind: (reading: string) => `wind ${reading}`,
     },
     shoe: {
-      label: 'Shoe',
-      add: 'Add',
+      add: 'Add shoe',
       changeInGarmin: (name: string) => `${name} - change in Garmin Connect`,
       addInGarmin: 'Set the shoe in Garmin Connect',
     },
@@ -1408,21 +1404,17 @@ export const en = {
       max: 'max',
       bestSmoothed: 'best 30 s',
       pace: 'Pace',
-      paceUnitHint: '/km · higher is faster',
+      paceUnitHint: '/km ↑',
       elevation: 'Elevation',
       cadence: 'Cadence',
       elevationGain: (m: string) => `+${m} m gain`,
-      scrubAt: (km: string, elapsed: string | null) => (elapsed ? `At ${km} km · ${elapsed} elapsed` : `At ${km} km`),
+      // "At 7.2 km · 41:28 elapsed", the distance in bold (3.0).
+      scrubAt: { lead: 'At ', km: (km: string) => `${km} km`, elapsed: (elapsed: string) => ` · ${elapsed} elapsed` },
       // The map is Overview's (design review, Oct 2026): no dot on it to follow.
       scrubHint: 'Drag across the charts to scrub',
       lineLabel: 'Chart line',
       smoothed: 'Smoothed',
       raw: 'Raw',
-      legend: {
-        zones: 'Background = your zones',
-        average: 'Run average',
-        km: 'Each km',
-      },
     },
     map: {
       fullscreen: 'Fullscreen',
@@ -1432,14 +1424,19 @@ export const en = {
       mapUnavailable: 'Map unavailable',
       mapUnavailableHint: 'No map token configured',
       routeMap: 'Activity route map',
+      // Fullscreen (3.0): fit the route again, and the basemap it shows.
+      recenter: 'Recenter on the route',
+      style: (name: string) => `Map style: ${name}`,
+      styles: { dark: 'Dark', light: 'Light' },
+      // The floating card's four numbers.
+      stats: { distance: 'Distance', time: 'Time', pace: 'Pace', elevation: 'Elev.' },
     },
     splits: {
       title: 'Intervals',
       lapTitle: 'Laps',
-      perKmTitle: 'Kilometre splits',
-      continuous: 'continuous run',
-      spreadShort: (kind: string, spread: number) => `${kind} · ${spread} s spread`,
-      spreadKind: { even: 'Even run', negative: 'Negative split', faded: 'Faded', uneven: 'Uneven' },
+      // The run's average beside Km / Laps (3.0).
+      avg: (pace: string) => `avg ${pace}`,
+      viewLabel: 'Splits by',
       partialKm: (km: string) => `final ${km}`,
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
       bandLabel: (range: string) => `band ${range}`,
@@ -1456,7 +1453,8 @@ export const en = {
         dist: 'Dist',
         pace: 'Pace',
         speed: 'Speed',
-        vsAvg: 'vs avg',
+        vsAvg: '±s',
+        elev: 'Elev',
         hr: 'HR',
         total: 'Total',
       },

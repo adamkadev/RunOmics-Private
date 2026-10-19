@@ -1,18 +1,23 @@
 import { act, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { ComponentProps, ReactNode } from 'react'
 import type { ActivityDetailView } from '../activityViews'
 import { t } from '@/i18n'
 import { formatDistance } from '@/lib/formatters'
 
-vi.mock('../ActivityMapClient', () => ({ ActivityMapClient: () => <div data-testid="map" /> }))
+vi.mock('../ActivityMapClient', () => ({
+  ActivityMapClient: ({ fullscreen, card }: { fullscreen?: boolean; card?: ReactNode }) => (
+    <div data-testid="map" data-fullscreen={fullscreen ? '' : undefined}>{fullscreen && card}</div>
+  ),
+}))
+vi.mock('../RunPlace', () => ({ RunPlace: () => null }))
 vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: false }))
-vi.mock('@/lib/useOwnerAuth', () => ({ useOwnerAuth: () => ({ isOwner: false }) }))
+vi.mock('@/lib/useOwnerAuth', () => ({ useOwnerAuth: () => ({ isOwner: true }) }))
 
 // jsdom lays nothing out, so whether the tabs are pinned, and where they rest,
 // are set here.
 const strip = vi.hoisted(() => ({ pinned: false, restingTop: 0 }))
 vi.mock('@/lib/useStuck', () => ({
-  useStuck: () => strip.pinned,
   isStuck: () => strip.pinned,
   restingTop: () => strip.restingTop,
 }))
@@ -32,12 +37,17 @@ const ACTIVITY = {
   hrSamples: [110, 115, 120],
 } as unknown as ActivityDetailView
 
-function renderDetail() {
+type DetailProps = ComponentProps<typeof ActivityDetailClient>
+
+function renderDetail(props: Partial<DetailProps> = {}) {
   return render(
     <ActivityDetailClient
       activity={ACTIVITY}
+      name="Threshold run"
+      dateLabel="Sun, Oct 18"
       aiVerdict={null}
       dynamicsBaseline={null}
+      {...props}
     />,
   )
 }
@@ -50,59 +60,54 @@ describe('ActivityDetailClient', () => {
     vi.restoreAllMocks()
   })
 
-  // Similar runs and the map filled the first screen; the run's own stats,
-  // RPE and note were on the second or on none.
-  // H10: verdict, effort and note in one card, then the tabs. The planned-
-  // against-ran row is gone at the owner's request: it took space for nothing.
-  it('orders the run first: stats, verdict, effort and note, then tabs', () => {
+  // 3.0: map, title, the four numbers, the verdict with its chips, then the
+  // tabs right after it.
+  it('keeps the run in reading order: map, title, stats, verdict, tabs', () => {
+    const { container } = renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView })
+    const order = ['run-hero', 'activity-subtitle', 'run-stats', 'run-verdict', 'sticky-bar'].map((id) => screen.getByTestId(id))
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    }
+    expect(container.querySelector('h1')!.textContent).toBe('Threshold run')
+    // Type · date above the 30 pt title.
+    expect(screen.getByTestId('activity-subtitle').textContent).toContain(`${t.activityTypes.Threshold}·Sun, Oct 18`)
+  })
+
+  // 3.0 cut the 2 x 2 card under the map and the strip pinned under the tabs:
+  // one strip of four numbers.
+  it('shows the four numbers once, as a four-column strip', () => {
+    strip.pinned = true
     renderDetail()
-    const card = screen.getByTestId('run-verdict')
-    expect(card.textContent).not.toContain(t.sessionCard.onPlan)
-    expect(card.textContent).toContain(t.activity.effort.label)
-    expect(card.textContent).toContain(t.activity.noteRow.label)
-  })
-
-  it('keeps the run in reading order', () => {
-    const { container } = renderDetail()
-    const text = container.textContent ?? ''
-    const at = (s: string) => text.indexOf(s)
-
-    expect(at(t.activity.stats.distance)).toBeLessThan(at(t.activity.effort.label))
-    expect(at(t.activity.effort.label)).toBeLessThan(at(t.activity.noteRow.label))
-    expect(at(t.activity.noteRow.label)).toBeLessThan(at(t.activity.tabs.overview))
-  })
-
-  // v4.8 2h: the chips left the map for the verdict card.
-  it('reads Effort · Conditions · Shoe · Note in the verdict card', () => {
-    const weather = { tempC: 18, apparentTempC: 18, humidityPct: 60, windKph: 2, windDirDeg: 0, precipitationMm: 0, code: 0 }
-    render(
-      <ActivityDetailClient
-        activity={{ ...ACTIVITY, weather } as ActivityDetailView}
-        aiVerdict={null}
-        dynamicsBaseline={null}
-        shoe={{ name: 'Vomero Plus', dotColor: '#fff' }}
-      />,
+    const stats = screen.getByTestId('run-stats')
+    expect(stats.textContent).toBe(
+      `${formatDistance(6.11)}${t.units.km}${t.activity.stats.distance}25:24${t.activity.stats.duration}4:10${t.units.perKm}${t.activity.stats.pace}115${t.units.bpm}${t.activity.stats.avgHr}`,
     )
-    const text = screen.getByTestId('run-verdict').textContent ?? ''
-    const at = (s: string) => text.indexOf(s)
-    expect(at(t.activity.effort.label)).toBeLessThan(at(t.activity.conditions.label))
-    expect(at(t.activity.conditions.label)).toBeLessThan(at(t.activity.shoe.label))
-    expect(at(t.activity.shoe.label)).toBeLessThan(at(t.activity.noteRow.label))
-    expect(screen.getByTestId('run-conditions').textContent).toContain('18°C · wind 2 km/h N')
-    expect(screen.getByTestId('run-shoe').textContent).toContain('Vomero Plus ›')
+    expect(stats.className).toContain('grid-cols-4')
+    expect(screen.queryByTestId('run-summary')).toBeNull()
+    expect(screen.getAllByText(t.activity.stats.distance)).toHaveLength(1)
   })
 
-  it('hides Conditions without weather and asks to add a shoe without one', () => {
+  // 3.0: the four full-width rows became one row of chips.
+  it('reads Effort, conditions, shoe and note as chips in the verdict card', () => {
+    const weather = { tempC: 18, apparentTempC: 18, humidityPct: 60, windKph: 2, windDirDeg: 0, precipitationMm: 0, code: 0 }
+    renderDetail({ activity: { ...ACTIVITY, rpe: 1, weather } as ActivityDetailView, shoe: { name: 'Vomero Plus', dotColor: '#fff' } })
+    const chips = within(screen.getByTestId('run-chips'))
+    expect(chips.getByTestId('run-effort').textContent).toBe(`${t.activity.effort.label} ${t.activity.effort.value(1, 'Very light')}`)
+    expect(chips.getByTestId('run-conditions').textContent).toBe('18°C · wind 2 km/h N')
+    expect(chips.getByTestId('run-shoe').textContent).toBe('Vomero Plus')
+    expect(chips.getByTestId('note-row')).toBeInTheDocument()
+  })
+
+  it('hides conditions without weather and asks to add a shoe without one', () => {
     renderDetail()
     expect(screen.queryByTestId('run-conditions')).toBeNull()
-    expect(screen.getByTestId('run-shoe').textContent).toContain(`${t.activity.shoe.add} ›`)
+    expect(screen.getByTestId('run-shoe').textContent).toBe(t.activity.shoe.add)
     expect(screen.getByTestId('run-shoe').getAttribute('href')).toBe('https://connect.garmin.com/modern/activity/a1')
   })
 
   it('says RPE was not logged rather than inventing one', () => {
     renderDetail()
-
-    expect(screen.getByText(t.activity.effort.notLogged)).toBeInTheDocument()
+    expect(screen.getByTestId('run-effort').textContent).toBe(`${t.activity.effort.label} ${t.activity.effort.notLogged}`)
   })
 
   // The tab lived in useState: going back from Charts reset it to Overview.
@@ -121,47 +126,41 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByRole('tab', { name: t.activity.tabs.intervals })).toHaveAttribute('aria-selected', 'true')
   })
 
-  // H16: one header - '← Activities', the big title, share - on every tab,
-  // and the four stats under it; the verdict stays on Overview.
-  it('keeps the same header and the four stats above every tab', () => {
+  // 3.0: everything above the tabs is the same on every tab, so a switch
+  // never moves the page under the hero.
+  it('keeps the map, title, numbers and verdict above every tab', () => {
     window.history.replaceState(null, '', '/activities/a1?tab=intervals')
-    render(<ActivityDetailClient activity={ACTIVITY} aiVerdict={null} dynamicsBaseline={null} header={<h1>Threshold</h1>} />)
+    renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView })
 
-    expect(screen.getByRole('heading', { name: 'Threshold' })).toBeInTheDocument()
-    expect(screen.getByTestId('run-map-card').textContent).toContain(t.activity.stats.distance)
-    expect(screen.queryByText(t.activity.effort.label)).toBeNull()
-    expect(screen.queryByTestId('compact-header')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Threshold run' })).toBeInTheDocument()
+    expect(within(screen.getByTestId('run-hero')).getByTestId('map')).toBeInTheDocument()
+    expect(screen.getByTestId('run-stats')).toBeInTheDocument()
+    expect(screen.getByTestId('run-verdict')).toBeInTheDocument()
   })
 
-  // Design review, Oct 2026: the map pushed Splits, Charts and Dynamics off
-  // the first screen. It opens with the run, and collapses on a switch.
-  it('shows the map on Overview and collapses it on the other tabs', () => {
-    render(<ActivityDetailClient activity={{ ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView} aiVerdict={null} dynamicsBaseline={null} />)
-    expect(within(screen.getByTestId('run-map-card')).getByTestId('map')).toBeInTheDocument()
+  // The hero's buttons: back on the left, expand and share on the right.
+  it('floats back, expand and share on the map, and expand opens it full screen', () => {
+    renderDetail({
+      activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]], elevationGain: 64.4 } as ActivityDetailView,
+      back: <button type="button">back</button>,
+      share: <button type="button">share</button>,
+    })
+    const hero = within(screen.getByTestId('run-hero'))
+    expect(hero.getAllByRole('button').map((b) => b.textContent || b.getAttribute('aria-label'))).toEqual(['back', t.activity.map.fullscreen, 'share'])
 
-    act(() => screen.getByRole('tab', { name: t.activity.tabs.intervals }).click())
-    expect(screen.queryByTestId('run-map')).toBeNull()
-    expect(screen.getByTestId('run-map-card').textContent).toContain(t.activity.stats.distance)
-
-    act(() => screen.getByRole('tab', { name: t.activity.tabs.overview }).click())
-    expect(screen.getByTestId('map')).toBeInTheDocument()
+    act(() => hero.getByRole('button', { name: t.activity.map.fullscreen }).click())
+    expect(hero.getByTestId('map').hasAttribute('data-fullscreen')).toBe(true)
+    // The floating card: name, date, then distance, time, pace and the climb.
+    expect(hero.getByTestId('map').textContent).toContain('Threshold runSun, Oct 18')
+    expect(hero.getByTestId('map-card-stats').textContent).toBe(
+      `${formatDistance(6.11)}${t.units.km}${t.activity.map.stats.distance}25:24${t.activity.map.stats.time}4:10${t.units.perKm}${t.activity.map.stats.pace}+64${t.units.m}${t.activity.map.stats.elevation}`,
+    )
   })
 
-  // Under the pinned tabs, the run's numbers on one line, so a tab switch
-  // keeps which run this is in view (design review, Oct 2026).
-  it('pins a one-line summary under the tabs once they stick, and only then', () => {
-    const { rerender } = renderDetail()
-    expect(screen.queryByTestId('run-summary')).toBeNull()
-
-    strip.pinned = true
-    rerender(<ActivityDetailClient activity={ACTIVITY} aiVerdict={null} dynamicsBaseline={null} />)
-    const summary = screen.getByTestId('run-summary')
-    expect(summary.closest('[data-testid="sticky-bar"]')).not.toBeNull()
-    expect(summary.textContent).toBe(`${formatDistance(6.11)} ${t.units.km}25:244:10 ${t.units.perKm}115 ${t.units.bpm}`)
-    // The stats card says it to a screen reader already.
-    expect(summary.getAttribute('aria-hidden')).toBe('true')
-    // Drawn over what has scrolled under the strip: the page does not move.
-    expect(screen.getByTestId('sticky-bar').className).toContain('-mb-9')
+  it('offers no expand button without a route', () => {
+    renderDetail()
+    expect(screen.queryByRole('button', { name: t.activity.map.fullscreen })).toBeNull()
+    expect(screen.getByText(t.activity.map.noTrace)).toBeInTheDocument()
   })
 
   it('keeps pinned tabs pinned across a switch, the new tab from its top', () => {
@@ -185,7 +184,7 @@ describe('ActivityDetailClient', () => {
 
   // v4.17: the insight's eyebrow says how the session went, in its status colour.
   it('heads the verdict with a status eyebrow', () => {
-    render(<ActivityDetailClient activity={{ ...ACTIVITY, rpe: 7 } as ActivityDetailView} aiVerdict={null} dynamicsBaseline={null} />)
+    renderDetail({ activity: { ...ACTIVITY, rpe: 7 } as ActivityDetailView })
 
     const eyebrow = screen.getByText(t.activity.verdict.eyebrow.positive)
     expect(eyebrow.getAttribute('style')).toContain('--pos')

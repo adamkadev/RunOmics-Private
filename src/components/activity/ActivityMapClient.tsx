@@ -1,6 +1,6 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 
 const ActivityMapDynamic = dynamic(() => import('./ActivityMap'), {
@@ -14,15 +14,22 @@ interface Props {
   route: [number, number][]
   hoverFraction?: number | null
   className?: string
+  fullscreen?: boolean
+  onFullscreenChange?: (fullscreen: boolean) => void
+  overlay?: ReactNode
+  card?: ReactNode
 }
 
-export const ActivityMapClient = memo(function ActivityMapClient({ route, hoverFraction, className }: Props) {
+export const ActivityMapClient = memo(function ActivityMapClient({ route, hoverFraction, className, fullscreen, onFullscreenChange, overlay, card }: Props) {
   return (
     <ActivityMapDynamic
       route={route}
       hoverFraction={hoverFraction}
       className={className}
+      fullscreen={fullscreen}
+      onFullscreenChange={onFullscreenChange}
+      overlay={overlay}
+      card={card}
     />
   )
 })
-

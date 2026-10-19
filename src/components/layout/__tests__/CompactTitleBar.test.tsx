@@ -165,6 +165,22 @@ describe('CompactTitleBar', () => {
     expect(document.querySelector('[data-bar-back]')!.getAttribute('style') ?? '').toBe('')
   })
 
+  // 3.0: the activity's title sits under a 330 pt map. Collapsing after 24 pt
+  // faded it out while it was still mid-screen; the bar waits for it instead.
+  it('waits for a title under a hero to reach the bar', async () => {
+    pushedPage()
+    const title = document.querySelector('h1')!
+    title.setAttribute('data-title-late', '')
+    place(title, 400, 36)
+    await mount(100)
+    expect(shown()).toBe(false)
+    expect(title.style.opacity).toBe('')
+
+    await scrollTo(400 - DIVIDER)
+    expect(shown()).toBe(true)
+    expect(title.style.opacity).toBe('0')
+  })
+
   it("puts the page's one action at the bar's trailing end", async () => {
     pushedPage()
     const share = vi.fn()
