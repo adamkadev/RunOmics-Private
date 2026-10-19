@@ -95,7 +95,7 @@ describe('shareZones', () => {
   })
 })
 
-const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 }, windows: [] }
+const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 } }
 
 describe('an interval session (design review, Oct 2026)', () => {
   it('takes the coach\'s name for the session, else the run\'s', () => {

@@ -11,11 +11,12 @@ import { t } from '@/i18n'
 export const revalidate = 3600
 
 export default async function RecordsPage() {
+  const today = appTodayIso()
   const records = await getRecords()
   const topEfforts = getTopEfforts()
   const pbAlerts = await getPbAlerts()
   const predictions = await getRacePredictions()
-  const milestones = await getMilestones()
+  const milestones = await getMilestones(today)
   const recurringRoutes = getRecurringRoutes()
 
   return (
@@ -34,7 +35,7 @@ export default async function RecordsPage() {
         pbAlerts={pbAlerts}
         milestones={milestones}
         recurringRoutes={recurringRoutes}
-        today={appTodayIso()}
+        today={today}
       />
     </div>
   )

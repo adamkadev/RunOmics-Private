@@ -3,9 +3,19 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
-import { ActivityListClient } from '../ActivityListClient'
-import { currentWeekTarget, planMaps } from '@/components/plan/weekPlanDays'
+import { ActivityListClient, activitiesView } from '../ActivityListClient'
+import type { MapShellData } from '@/application/usecases/GetAllRoutes'
 import { formatDate, formatDateRange, formatWeekday } from '@/lib/formatters'
+
+// The map is loaded with next/dynamic; here it is a stand-in that says what it was handed.
+vi.mock('next/dynamic', () => ({
+  default: () =>
+    function MapStandIn({ data }: { data: MapShellData }) {
+      return <div data-testid="global-map">{data.totalCount}</div>
+    },
+}))
+
+const MAP_DATA: MapShellData = { routeMeta: [], clusters: [], defaultClusterIdx: 0, totalCount: 7, totalKm: 70, years: ['2026'] }
 
 // Thursday 24 September 2026, in the week of Monday the 21st.
 const NOW = new Date(2026, 8, 24, 12)
@@ -33,11 +43,11 @@ function run(id: string, date: string, distanceKm: number): ActivitySummary {
 function renderList(items: ActivitySummary[]) {
   return render(
     <ActivityListClient
-      weekTarget={currentWeekTarget(planMaps(items, []), '2026-09-24', 40)}
       initialItems={items}
       initialNextOffset={null}
       totalCount={items.length}
       today="2026-09-24"
+      mapData={MAP_DATA}
     />
   )
 }
@@ -80,11 +90,15 @@ describe('the current week on /activities', () => {
     expect(screen.getByTestId('thumb-row').textContent).toContain('6:00 /km')
   })
 
-  it('counts this week toward its goal once it has a run', () => {
+  // Design review, Oct 2026: "This week · Sep 21 – 27", its km and runs on
+  // the right, and no plan target or bar.
+  it('counts this week once it has a run, over its runs as rows', () => {
     renderList([run('c', '2026-09-22', 12), run('a', '2026-09-20', 25)])
 
-    // H08, M8: one line, "12/40 km · 1 run · …", over the runs as flat rows.
-    expect(screen.getByTestId('week-line').textContent).toContain(`12${t.activities.weekLine.ofKm('40')} · ${t.activities.weekLine.runs(1)}`)
+    const week = screen.getByTestId('current-week')
+    expect(within(week).getByRole('heading').textContent).toBe(`${t.activities.thisWeek} · ${formatDateRange('2026-09-21', '2026-09-27', { year: 'never' })}`)
+    expect(screen.getByTestId('week-line').textContent).toMatch(new RegExp(`^12 ${t.units.km} · ${t.activities.weekLine.runs(1)}`))
+    expect(screen.queryByTestId('week-target-bar')).toBeNull()
     const card = screen.getByTestId('current-week')
     expect(card).toContainElement(screen.getByText('Run c'))
     expect(card.querySelector('[data-testid="route-thumb"]')).not.toBeNull()
@@ -153,15 +167,10 @@ describe('the list at a phone', () => {
   beforeEach(freshPage)
   afterEach(() => vi.useRealTimers())
 
-  // 3.0: List | Map replaces the header's Map view button and sort menu.
-  it('switches to the map from List | Map, and keeps no sort menu', () => {
+  // 3.0: no sort menu in the header; the sort lives in the filter sheet.
+  it('keeps no sort menu, and a 44 pt filter button', () => {
     renderList([run('a', '2026-09-20', 25)])
 
-    const view = screen.getByRole('navigation', { name: t.activities.view.label })
-    expect(within(view).getByText(t.activities.view.list).getAttribute('aria-current')).toBe('page')
-    const map = within(view).getByRole('link', { name: t.activities.view.map })
-    expect(map.getAttribute('href')).toBe('/map')
-    expect(map.className).toContain('hit-44')
     expect(screen.queryByRole('button', { name: new RegExp(`^${t.activities.sort.label}`) })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: t.activities.filter.title }).className).toContain('hit-44')
   })
@@ -285,5 +294,47 @@ describe('the filter sheet', () => {
     expect(new URLSearchParams(window.location.search).get('sort')).toBe('longest')
     await waitFor(() => expect(screen.queryAllByTestId('week')).toHaveLength(0))
     expect(screen.getAllByTestId('thumb-row')).toHaveLength(4)
+  })
+})
+
+// Design review, Oct 2026: List | Map under the title, the view in the URL.
+describe('List and Map', () => {
+  beforeEach(() => {
+    sessionStorage.clear()
+    window.history.replaceState(null, '', '/activities')
+  })
+  afterEach(() => window.history.replaceState(null, '', '/'))
+
+  it('reads ?view=map as the map and anything else as the list', () => {
+    expect(activitiesView('map')).toBe('map')
+    expect(activitiesView(null)).toBe('list')
+    expect(activitiesView('grid')).toBe('list')
+  })
+
+  it('opens on the list, and writes the map into the URL when chosen', async () => {
+    const user = userEvent.setup()
+    renderList([run('a', '2026-09-20', 25)])
+
+    expect(screen.getByRole('tab', { name: t.activities.view.list }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.queryByTestId('global-map')).toBeNull()
+
+    await user.click(screen.getByRole('tab', { name: t.activities.view.map }))
+    expect(window.location.search).toBe('?view=map')
+    expect(screen.getByTestId('global-map').textContent).toBe('7')
+    // The list's controls give way to the map.
+    expect(screen.queryByPlaceholderText(t.activities.searchPlaceholder)).toBeNull()
+    expect(screen.queryByRole('button', { name: t.activities.filter.title })).toBeNull()
+
+    await user.click(screen.getByRole('tab', { name: t.activities.view.list }))
+    expect(window.location.search).toBe('')
+    expect(screen.queryByTestId('global-map')).toBeNull()
+  })
+
+  it('opens on the map from a ?view=map link', () => {
+    window.history.replaceState(null, '', '/activities?view=map')
+    renderList([run('a', '2026-09-20', 25)])
+
+    expect(screen.getByRole('tab', { name: t.activities.view.map }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByTestId('global-map')).toBeInTheDocument()
   })
 })

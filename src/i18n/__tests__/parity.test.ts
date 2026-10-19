@@ -48,7 +48,7 @@ describe('French coach copy', () => {
   // The app is not told who reads it: « tu es frais » is wrong for half its athletes.
   it('agrees nothing with the athlete', () => {
     const gendered = /\btu es (?:frais|fraîche|fatigué|fatiguée|prêt|prête|reposé|reposée)\b|\bt[’']es (?:entraîné|préparé)/i
-    const copy = [...strings(fr.dashboard.todayHero.verdict), ...strings(fr.notifications)]
+    const copy = [...strings(fr.dashboard), ...strings(fr.notifications)]
     expect(copy.filter((line) => gendered.test(line))).toEqual([])
   })
 })
@@ -59,5 +59,34 @@ describe('French plurals', () => {
     expect(fr.activities.countWithDistance(0, '0')).toBe('0 sortie · 0 km')
     expect(fr.activities.countWithDistance(1, '5')).toBe('1 sortie · 5 km')
     expect(fr.activities.countWithDistance(2, '10')).toBe('2 sorties · 10 km')
+  })
+})
+
+// Design review, Oct 2026: the new lines in French, with its plurals and spacing.
+describe('French design review copy', () => {
+  it('writes the plan subtitle, the week line and the race tile', () => {
+    expect(fr.plan.header.raceIn('Semi', 42)).toBe('Semi dans 42 j')
+    expect(fr.plan.header.raceIn('Semi', 0)).toBe('Semi aujourd’hui')
+    expect(fr.plan.stats.ofSessions(1)).toBe('sur 1 séance')
+    expect(fr.plan.stats.ofSessions(5)).toBe('sur 5 séances')
+    expect(fr.profile.hub.days(1)).toBe('jour')
+    expect(fr.profile.hub.days(155)).toBe('jours')
+    expect(fr.profile.hub.planPhase('préparation générale · semaine 2')).toBe('Plan : préparation générale · semaine 2')
+  })
+
+  it('writes the shoe projection on one line', () => {
+    expect(fr.shoes.detail.projectedRunOut(25, '1 000', 'janv. 27', 11)).toBe('1 000 km ≈ janv. 27 · 11 sem. à 25 km/sem.')
+  })
+})
+
+// The readiness card names its numbers in everyday words, in both
+// languages: CTL, ATL, ACWR and TSB mean nothing to most runners (Oct 2026).
+describe('the readiness card, in plain words', () => {
+  it('names the numbers without acronyms', () => {
+    for (const r of [en.dashboard.readiness, fr.dashboard.readiness]) {
+      for (const label of [r.formLabel, r.ctl, r.atl, r.acwr, r.lastSevenDays]) expect(label).not.toMatch(/CTL|ATL|ACWR|TSB/)
+    }
+    expect(en.dashboard.readiness.acwrValue('0.90')).toBe('×0.90')
+    expect(fr.dashboard.readiness.acwrValue('1,79')).toBe('×1,79')
   })
 })

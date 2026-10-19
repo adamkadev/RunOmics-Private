@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { maptilerStyle } from '@/lib/maptiler'
-import { ROUTE_INSET, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
+import { bandFencePoints, routeFencePoints, simplifyRoute, type LngLat, type RouteFrame } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
 import { loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
@@ -22,8 +22,13 @@ interface Render {
 export interface ShareCardMapOptions {
   route: LngLat[] | null | undefined
   theme: ThemeMode
+  /** The whole card: the map runs under the header and the stats (redesign, Oct 2026). */
   width: number
   height: number
+  /** The route's room, clear of the header's words and the stats. */
+  frame: RouteFrame
+  /** Where the header's and the stats' bands meet the map: no name is cut by either. */
+  bands: readonly number[]
   enabled?: boolean
 }
 
@@ -54,10 +59,56 @@ interface RenderOptions {
   theme: ThemeMode
   width: number
   height: number
+  frame: RouteFrame
+  bands: readonly number[]
+}
+
+const LABEL_FENCE_SOURCE = 'share-label-fence'
+const LABEL_FENCE_LAYER = 'share-label-fence'
+const LABEL_FENCE_ICON = 'share-label-fence'
+/** The fence's clear icon: the 3 px trace, its 3 px halo and room either side. */
+const LABEL_FENCE_PX = 12
+
+/** OpenMapTiles' water names: the river the run follows is a landmark the card keeps. */
+const WATER_NAME_LAYERS = new Set(['water_name', 'waterway'])
+
+/**
+ * The card's place names (redesign, Oct 2026): towns and the river, never
+ * touching the route. The route is painted on the card afterwards, so here
+ * a clear icon every 6 px along it - and along the edges of the header's
+ * and the stats' bands - placed above the labels, makes MapLibre drop a
+ * name that would sit on the line or be cut by a band.
+ */
+function fenceLabels(map: import('maplibre-gl').Map, points: LngLat[], width: number, bands: readonly number[]) {
+  const screen = points.map((c): [number, number] => { const p = map.project(c); return [p.x, p.y] })
+  const features = [...routeFencePoints(screen), ...bandFencePoints(width, bands)].map(([x, y]) => {
+    const { lng, lat } = map.unproject([x, y])
+    return { type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: [lng, lat] } }
+  })
+  const size = LABEL_FENCE_PX
+  if (!map.hasImage(LABEL_FENCE_ICON)) map.addImage(LABEL_FENCE_ICON, { width: size, height: size, data: new Uint8Array(size * size * 4) })
+  map.addSource(LABEL_FENCE_SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features } })
+  map.addLayer({
+    id: LABEL_FENCE_LAYER,
+    type: 'symbol',
+    source: LABEL_FENCE_SOURCE,
+    layout: { 'icon-image': LABEL_FENCE_ICON, 'icon-allow-overlap': true, 'icon-ignore-placement': false },
+  })
+}
+
+/** The river's name back on, in the card's muted ink and halo; styleRunMapLabels keeps place names only. */
+function showWaterNames(map: import('maplibre-gl').Map, colors: { text: string; halo: string }) {
+  for (const layer of map.getStyle().layers) {
+    const sourceLayer = (layer as { 'source-layer'?: string })['source-layer']
+    if (layer.type !== 'symbol' || !sourceLayer || !WATER_NAME_LAYERS.has(sourceLayer)) continue
+    map.setLayoutProperty(layer.id, 'visibility', 'visible')
+    map.setPaintProperty(layer.id, 'text-color', colors.text)
+    map.setPaintProperty(layer.id, 'text-halo-color', colors.halo)
+  }
 }
 
 async function renderRouteMap(opts: RenderOptions): Promise<Render> {
-  const { route, theme, width, height } = opts
+  const { route, theme, width, height, frame, bands } = opts
   const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   if (!token) throw new Error('NEXT_PUBLIC_MAPTILER_TOKEN not set')
 
@@ -80,7 +131,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     container,
     style: maptilerStyle(isDark, token),
     bounds,
-    fitBoundsOptions: { padding: ROUTE_INSET, maxZoom: 15, duration: 0 },
+    fitBoundsOptions: { padding: frame, maxZoom: 15, duration: 0 },
     canvasContextAttributes: { preserveDrawingBuffer: true },
     pixelRatio: PIXEL_RATIO,
     interactive: false,
@@ -89,16 +140,19 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
   })
 
   // The Activity map's label rules (v4.10), with the halo in the card's own
-  // background. The card paints the route and markers on top afterwards, so
-  // clear icons stand in for the markers here: a name that would sit under
-  // one is dropped, as on the Activity map, and so is one cut by the edge.
+  // background, and the river's name kept. The card paints the route and
+  // markers on top afterwards, so clear icons stand in for them here: a name
+  // that would sit under one is dropped, as on the Activity map, and so is
+  // one cut by the edge or by the header's and stats' bands.
   const surface = SURFACES[isDark ? 'dark' : 'light']
   map.on('load', () => {
     styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text3 })
+    showWaterNames(map, { text: surface.text3, halo: surface.background })
     addRunMarkers(map, first, { start: clearMarkerImage(), finish: clearMarkerImage() })
     const last = points[points.length - 1]
     if (last && last !== first) setRunFinish(map, first, last)
     addEdgeFence(map)
+    fenceLabels(map, points, width, bands)
   })
 
   try {
@@ -122,18 +176,19 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
 const rendered = new Map<string, Render>()
 const inFlight = new Map<string, Promise<Render>>()
 
-function cacheKey(route: LngLat[], theme: ThemeMode, w: number, h: number): string {
+function cacheKey(route: LngLat[], theme: ThemeMode, w: number, h: number, frame: RouteFrame): string {
   const pts = simplifyRoute(route)
   const first = pts[0]!
   const last = pts[pts.length - 1]!
-  return `${pts.length}:${first}:${last}:${theme}:${w}x${h}`
+  return `${pts.length}:${first}:${last}:${theme}:${w}x${h}:${frame.top},${frame.right},${frame.bottom},${frame.left}`
 }
 
 export function useShareCardMap({
-  route, theme, width, height, enabled = true,
+  route, theme, width, height, frame, bands, enabled = true,
 }: ShareCardMapOptions): ShareCardMap {
   const wanted = enabled && !!route && route.length > 1
-  const key = wanted ? cacheKey(route!, theme, width, height) : null
+  // The bands follow the frame: the key holds both.
+  const key = wanted ? cacheKey(route!, theme, width, height, frame) : null
   const [, bump] = useState(0)
   // A failed map is this sheet's, not the session's: one that timed out once
   // - the phone busy, the network slow - left every later share without its
@@ -145,7 +200,7 @@ export function useShareCardMap({
     let alive = true
     let pending = inFlight.get(key)
     if (!pending) {
-      pending = renderRouteMap({ route, theme, width, height })
+      pending = renderRouteMap({ route, theme, width, height, frame, bands })
       pending.catch(() => {})
       inFlight.set(key, pending)
     }
@@ -154,7 +209,7 @@ export function useShareCardMap({
       .catch(() => { if (alive) setFailedKey(key) })
       .finally(() => inFlight.delete(key))
     return () => { alive = false }
-    // key already encodes route, theme, width and height - listing them again
+    // key already encodes route, theme, size and frame - listing them again
     // would re-render the map on every parent render that rebuilds the array.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])

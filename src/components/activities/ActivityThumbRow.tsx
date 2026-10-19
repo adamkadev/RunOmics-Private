@@ -14,40 +14,39 @@ interface Props {
   activity: ActivitySummary
   qualifiedEfforts?: QualifiedEffort[]
   /**
-   * `card`: a row of a list card, divided by the card (Today's recent runs,
-   * a list sorted by something other than date). `inset`: a rounded row
-   * inside an Activities week card, under its month's heading, so its meta
-   * line is the weekday, the time and the heart rate (3.0).
+   * `card`: a row of a list card, divided by the card (Activities sorted by
+   * something other than date). `inset`: a rounded row inside an
+   * Activities week card, under its month's heading, so its date leaves the
+   * month out; a smaller tile and a one-line name (3.0).
    */
   variant?: 'card' | 'inset'
 }
 
 /**
- * A run as a list row (v4.17): its route on a tile, the name, then a meta
- * line - the type's dot, the date, the type and the RPE - and on the right
- * the distance over the pace, each with its unit.
+ * A row's meta line (design review, Oct 2026): the date, the moving time and
+ * the average HR - "Tue 20 · 57:23 · 139 bpm" - the HR left out when the run
+ * has none. The type is the dot beside it. Inside its week the weekday and
+ * day are enough; a row outside one keeps the month.
+ */
+export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds' | 'avgHeartRate'>, variant: 'card' | 'inset' = 'card'): string {
+  return [
+    variant === 'inset' ? formatWeekday(a.date, true) : formatDate(a.date),
+    a.durationSeconds > 0 ? formatDuration(Math.round(a.durationSeconds)) : null,
+    a.avgHeartRate ? `${Math.round(a.avgHeartRate)} ${t.units.bpm}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+}
+
+/**
+ * A run as a list row (v4.17): its route on a tile, the name, then the type's
+ * dot and the meta line, and on the right the distance over the pace, each
+ * with its unit.
  */
 export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
   const title = activityTitle(a)
+  const meta = thumbRowMeta(a, variant)
   const inset = variant === 'inset'
-  // In a week the type is the dot and the week names the month: "Sun 18 ·
-  // 1:06:39 · 145 bpm" (3.0).
-  const meta = (
-    inset
-      ? [
-          formatWeekday(a.date, true),
-          formatDuration(a.durationSeconds),
-          a.avgHeartRate !== null ? `${Math.round(a.avgHeartRate)} ${t.units.bpm}` : null,
-        ]
-      : [
-          formatDate(a.date),
-          // A type this build does not know yet has no label; name it as it came.
-          t.activityTypes[a.type] ?? a.type,
-          a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null,
-        ]
-  )
-    .filter(Boolean)
-    .join(' · ')
 
   return (
     <Link

@@ -61,7 +61,8 @@ describe('buildTypeDistribution', () => {
 })
 
 describe('computeStreaks', () => {
-  const today = new Date()
+  const TODAY = '2026-07-20'
+  const today = new Date(`${TODAY}T12:00:00`)
   const daysAgo = (n: number) => {
     const d = new Date(today)
     d.setDate(d.getDate() - n)
@@ -70,17 +71,17 @@ describe('computeStreaks', () => {
 
   it('counts the current streak back from today', () => {
     const activities = [act({ date: daysAgo(0) }), act({ date: daysAgo(1) }), act({ date: daysAgo(2) })]
-    expect(computeStreaks(activities).current).toBe(3)
+    expect(computeStreaks(activities, TODAY).current).toBe(3)
   })
 
   it('still counts a streak ending yesterday if today is a rest day', () => {
     const activities = [act({ date: daysAgo(1) }), act({ date: daysAgo(2) })]
-    expect(computeStreaks(activities).current).toBe(2)
+    expect(computeStreaks(activities, TODAY).current).toBe(2)
   })
 
   it('returns 0 current streak when the last activity was 2+ days ago', () => {
     const activities = [act({ date: daysAgo(3) })]
-    expect(computeStreaks(activities).current).toBe(0)
+    expect(computeStreaks(activities, TODAY).current).toBe(0)
   })
 
   it('finds the longest streak across all history, not just the current one', () => {
@@ -91,6 +92,6 @@ describe('computeStreaks', () => {
       act({ date: '2026-01-04' }),
       act({ date: daysAgo(0) }),
     ]
-    expect(computeStreaks(activities).longest).toBe(4)
+    expect(computeStreaks(activities, TODAY).longest).toBe(4)
   })
 })

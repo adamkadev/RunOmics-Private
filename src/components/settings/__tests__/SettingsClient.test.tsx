@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { SettingsClient } from '@/components/settings/SettingsClient'
 import { t } from '@/i18n'
+import { GARMIN_CONNECT_URL } from '@/lib/garminConnect'
 
 const OWNER_EMAIL = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_OWNER_EMAIL = 'owner@test.dev'
@@ -94,7 +95,7 @@ describe('SettingsClient owner gate', () => {
     expect(screen.getByText(t.settings.auth.signInToManage)).toBeInTheDocument()
     // R7f: export is on the page signed out too, asking for the sign-in.
     expect(screen.getByText(t.settings.dataExport.title)).toBeInTheDocument()
-    expect(screen.getByText(t.settings.dataExport.signedOut(t.common.runs(12)))).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: new RegExp(t.settings.rowAction.signIn) })).toBeInTheDocument()
   })
 
   // Design review, Oct 2026: height, weight and BMI are Garmin's, so they
@@ -105,12 +106,14 @@ describe('SettingsClient owner gate', () => {
 
     const profile = screen.getByTestId('settings-profile')
     expect(within(profile).queryByRole('button')).toBeNull()
-    expect(within(profile).queryByRole('link')).toBeNull()
     expect(profile.querySelector('svg')).toBeNull()
     const values = within(profile).getAllByTestId('profile-value')
     expect(values.map((value) => value.textContent)).toEqual([`178${t.units.cm}`, `70${t.units.kg}`, '22.1'])
     for (const value of values) expect(value.className).toContain('text-muted-foreground')
-    expect(profile.textContent).toContain(t.settings.profile.readOnly)
+    // Design review, Oct 2026: the note is the way to Garmin Connect, where they change.
+    const garmin = within(profile).getByRole('link', { name: t.settings.profile.readOnly })
+    expect(garmin.getAttribute('href')).toBe(GARMIN_CONNECT_URL)
+    expect(garmin.className).toContain('hit-44')
   })
 
   // v4.8 2g: the build line ends the page signed out too, after the last group.

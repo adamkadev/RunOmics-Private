@@ -2,19 +2,20 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Activity, CalendarDays, BarChart2, User } from 'lucide-react'
+import { LayoutDashboard, Activity, CalendarDays, BarChart2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { activeNavHref } from '@/lib/navigation'
 import { t } from '@/i18n'
 import { useHaptic } from '@/lib/useHaptic'
 import { useFullscreenChromeHidden } from './FullscreenChromeContext'
+import { TrophyIcon } from './TrophyIcon'
 
 const TABS = [
   { href: '/',           label: t.nav.items.dashboard,   icon: LayoutDashboard },
   { href: '/activities', label: t.nav.items.activities,  icon: Activity },
   { href: '/plan',       label: t.nav.items.plan,        icon: CalendarDays },
   { href: '/analytics',  label: t.nav.items.analytics,   icon: BarChart2 },
-  { href: '/profile',    label: t.nav.items.profile,     icon: User },
+  { href: '/profile',    label: t.nav.items.profile,     icon: TrophyIcon },
 ] as const
 
 const TAB_HREFS = TABS.map((tab) => tab.href)
@@ -47,17 +48,19 @@ export function GlassTabBar() {
             href={href}
             onClick={() => { if (!active) haptic('light') }}
             aria-current={active ? 'page' : undefined}
+            // 3.0: five 64 px items on a 50 px row, which the bottom inset
+            // brings to the handoff's 84 px on a notched iPhone.
             className={cn(
-              'flex h-12 flex-1 items-center justify-center pt-1.5 transition-colors duration-150 active:scale-95',
+              'flex h-[50px] flex-1 items-center justify-center pt-1.5 transition-colors duration-150 active:scale-95',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-xl',
               active ? 'text-accent' : 'text-muted-foreground'
             )}
           >
             {/* No pill (v4.3.2): the active tab is its icon and label in the
                 accent, both outline icons in either state. */}
-            <span data-testid={active ? 'tab-active' : undefined} className="flex flex-col items-center gap-0.5 px-3 py-1">
-              <Icon size={22} strokeWidth={1.9} aria-hidden="true" />
-              <span className={cn('text-caption', active ? 'font-semibold' : 'font-medium')}>
+            <span data-testid={active ? 'tab-active' : undefined} className="flex w-16 flex-col items-center gap-[3px] py-1">
+              <Icon size={24} strokeWidth={1.8} aria-hidden="true" />
+              <span className="text-caption font-medium">
                 {label}
               </span>
             </span>

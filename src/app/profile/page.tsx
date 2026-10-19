@@ -9,13 +9,16 @@ import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistor
 import { ProgressHub } from '@/components/profile/ProgressHub'
 import { progressHubView } from '@/components/profile/progressHubView'
 import { appTodayIso } from '@/lib/calendarDate'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
+import { planPhaseLine } from '@/components/plan/planPhase'
 
 export const revalidate = 3600
 
 export default async function ProfilePage() {
-  const data = await getProfileData()
   const today = appTodayIso()
-  const goals = await getGoalsPageData()
+  const data = await getProfileData(today)
+  const goals = await getGoalsPageData(today)
 
   const view = progressHubView({
     today,
@@ -26,6 +29,8 @@ export default async function ProfilePage() {
     sinceDate: data.hero.sinceDate,
     goal: data.goal,
     spotlight: goals.nextRace,
+    // The same phase and week Plan's subtitle names.
+    planPhase: planPhaseLine(getCoachingOverview(today)?.plan ?? null, getTrainingPlan()?.ranges ?? [], today),
     vo2max: { value: getLatestVO2max(), samples: getVo2maxSamples().days },
     athlete: { lthrBpm: data.athlete.lthrBpm, thresholdPaceSecPerKm: data.athlete.thresholdPaceSecPerKm },
     records: await getRecords(),
