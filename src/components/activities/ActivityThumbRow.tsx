@@ -14,17 +14,12 @@ interface Props {
   activity: ActivitySummary
   qualifiedEfforts?: QualifiedEffort[]
   /**
-   * `card`: a row of a list card, divided by the card (Today's recent runs,
-   * a list sorted by something other than date). `inset`: a rounded row
+   * `card`: a row of a list card, divided by the card (Activities sorted by
+   * something other than date). `inset`: a rounded row
    * inside an open Activities week, under its month's heading, so its date
    * leaves the year out.
    */
   variant?: 'card' | 'inset'
-  /**
-   * `run`: date · moving time · avg HR (Activities, design review Oct 2026).
-   * `type`: date · type · RPE, as Today's recent runs still read.
-   */
-  meta?: 'run' | 'type'
 }
 
 /**
@@ -48,19 +43,9 @@ export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds'
  * dot and the meta line, and on the right the distance over the pace, each
  * with its unit.
  */
-export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card', meta: metaKind = 'run' }: Props) {
+export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
   const title = activityTitle(a)
-  const meta =
-    metaKind === 'run'
-      ? thumbRowMeta(a, variant)
-      : [
-          formatDate(a.date, variant === 'inset' ? { year: 'never' } : {}),
-          // A type this build does not know yet has no label; name it as it came.
-          t.activityTypes[a.type] ?? a.type,
-          a.rpe !== null ? t.activities.row.rpeValue(a.rpe) : null,
-        ]
-          .filter(Boolean)
-          .join(' · ')
+  const meta = thumbRowMeta(a, variant)
 
   return (
     <Link

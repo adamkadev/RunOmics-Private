@@ -137,7 +137,7 @@ describe('the kind of day (v4.16.4)', () => {
 describe('what the screen already shows (v4.16.4)', () => {
   it('hands the model the badge words it must not echo', () => {
     const prompt = todayInsightPrompt(context({ tone: 'go' }), [])
-    expect(prompt).toContain(`shown in the badge above your headline as "${t.dashboard.todayHero.eyebrowByTone.go}"`)
+    expect(prompt).toContain(`shown in the badge above your headline as "${t.dashboard.readiness.eyebrowByTone.go}"`)
     expect(TODAY_SYSTEM_INSTRUCTION).toContain('Never reuse that phrase.')
   })
 
@@ -168,13 +168,13 @@ describe('one claim, one piece of advice', () => {
   })
 
   it('writes no status label, its own badge or any other', () => {
-    for (const label of Object.values(t.dashboard.todayHero.eyebrowByTone)) expect(TODAY_SYSTEM_INSTRUCTION).toContain(`"${label}"`)
+    for (const label of Object.values(t.dashboard.readiness.eyebrowByTone)) expect(TODAY_SYSTEM_INSTRUCTION).toContain(`"${label}"`)
     expect(TODAY_SYSTEM_INSTRUCTION).toContain('not the training status from the facts')
   })
 
   it('agrees with the tone the app shows, building included', () => {
     const prompt = todayInsightPrompt(context({ tone: 'build' }), [])
-    expect(prompt).toContain(`Tone: build, shown in the badge above your headline as "${t.dashboard.todayHero.eyebrowByTone.build}"`)
+    expect(prompt).toContain(`Tone: build, shown in the badge above your headline as "${t.dashboard.readiness.eyebrowByTone.build}"`)
     expect(prompt).toContain('The training load is in range.')
   })
 })

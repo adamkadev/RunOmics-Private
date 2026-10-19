@@ -439,21 +439,32 @@ export const fr = {
   },
 
   dashboard: {
-    recentActivities: {
-      title: 'Récentes',
-    },
-    trainingLoad: {
-      title: 'Charge d’entraînement',
-      fitness: 'Condition',
-      fatigue: 'Fatigue',
-      form: 'Forme',
-    },
-    bodyCard: {
-      deltaIn: (delta: string, days: number) => `${delta} en ${days} jours`,
-      formTrend: { up: 'en récupération', down: 'sous charge', flat: 'stable' },
-      formMoveLead: (trend: string) => `${trend},`,
-      formOnScale: (form: string, band: string) => `Forme ${form} : ${band}`,
+    readiness: {
       open: 'Ouvrir la charge dans Analyses',
+      formLabel: 'Forme · TSB',
+      formOnDial: (form: string, band: string) => `Forme ${form} : ${band}`,
+      eyebrowByTone: {
+        go: 'Feu vert',
+        build: 'En charge',
+        caution: 'Prudence',
+        hold: 'Lever le pied',
+      },
+      lineByTone: {
+        go: 'La fatigue est retombée',
+        build: 'Charge dans la zone',
+        caution: 'La fatigue s’accumule',
+        hold: 'Fatigue devant la condition',
+      },
+      ctl: 'CTL',
+      atl: 'ATL',
+      acwr: 'ACWR',
+      garmin: 'Garmin',
+      noValue: '—',
+    },
+    stale: {
+      title: (hours: number) => `Données Garmin vieilles de ${hours} h`,
+      line: (when: string) => `Dernière synchro ${when} · une sortie peut manquer`,
+      sync: 'Synchroniser',
     },
     trainingStatusDays: {
       title: 'Statut d’entraînement',
@@ -474,89 +485,15 @@ export const fr = {
       daysAgo: (d: number) => `il y a ${d} j`,
     },
     todayHero: {
-      tileToday: (date: string | null) => (date ? `Aujourd’hui · ${date}` : 'Aujourd’hui'),
+      tileToday: (kind: string | null) => (kind ? `Aujourd’hui · ${kind}` : 'Aujourd’hui'),
       tileNext: (date: string) => `Ensuite · ${date}`,
+      openSession: 'Voir le plan',
+      fields: { time: 'Durée', dist: 'Dist.', pace: 'Allure', hr: 'FC' },
+      hrCap: (bpm: number) => `≤ ${bpm}`,
       doneTitle: (title: string) => `${title} · Fait`,
+      yesterdayTitle: (title: string) => `Hier · ${title}`,
       missedTitle: (weekday: string, title: string) => `${weekday} · ${title}`,
       notRun: (km: string | null) => (km ? `Pas courue · ${km} km prévus` : 'Pas courue'),
-      eyebrowByTone: {
-        go: 'Feu vert',
-        build: 'En charge',
-        caution: 'Prudence',
-        hold: 'Lever le pied',
-      },
-      // Écrit en français de coureur, pas traduit de l’anglais : « footing »,
-      // « endurance », jamais « garder le facile facile ». Rien ne s’accorde
-      // avec l’athlète (« tes jambes sont fraîches », pas « tu es frais ») :
-      // l’appli ne sait pas qui la lit.
-      verdict: {
-        headline: {
-          rest: { go: 'Jour de repos. Profites-en.', build: 'Jour de repos, comme prévu.', caution: 'Jour de repos, bien placé.', hold: 'Aujourd’hui, repos complet.' },
-          easy: { go: 'Jambes fraîches, mais reste en endurance.', build: 'Dans les clous. Reste en endurance.', caution: 'Footing tranquille aujourd’hui.', hold: 'Footing très léger aujourd’hui.' },
-          quality: { go: 'Jambes fraîches : le bon jour pour la séance.', build: 'Dans les clous : séance comme prévu.', caution: 'Séance maintenue, mais sous contrôle.', hold: 'Allège la séance du jour.' },
-          race: { go: 'Jour de course, jambes fraîches.', build: 'Jour de course : tout est prêt.', caution: 'Jour de course : de la patience au départ.', hold: 'Jour de course : départ prudent.' },
-          done: { go: 'Séance faite, et bien placée.', build: 'Séance faite, comme prévu.', caution: 'Séance faite. Récupère bien.', hold: 'Séance faite. Place à la récupération.' },
-        },
-        why: {
-          go: 'La fatigue est retombée.',
-          build: 'Ta charge d’entraînement est dans la bonne zone.',
-          caution: 'La fatigue commence à s’accumuler.',
-          hold: 'La fatigue a pris le dessus sur ta condition.',
-        },
-        whyDone: {
-          go: '',
-          build: '',
-          caution: '',
-          hold: 'Tu avais déjà de la fatigue dans les jambes.',
-        },
-        yesterdayInLegs: (kind: string) => `Tu as encore ${kind} d’hier dans les jambes.`,
-        tomorrow: 'demain',
-        // Une séance dans une phrase, avec son article : « la séance au seuil ».
-        kind: {
-          easy: 'le footing',
-          recovery: 'le footing de récupération',
-          long_run: 'la sortie longue',
-          tempo: 'le tempo',
-          threshold: 'la séance au seuil',
-          vo2max: 'la séance VO₂ max',
-          anaerobic: 'la séance anaérobie',
-          sprint: 'la séance de sprints',
-          race: 'la course',
-        },
-        gain: {
-          restPaysOff: (when: string, kind: string) => `Ce repos te servira ${when} pour ${kind}.`,
-          restFresh: (when: string, kind: string) => `Tu garderas des jambes fraîches pour ${kind} ${when}.`,
-          restSinksIn: 'C’est pendant le repos que l’entraînement porte ses fruits.',
-          easyHold: 'Courir doucement aide à récupérer sans rien ajouter à la charge.',
-          easyLands: (when: string, kind: string) => `Reste en endurance pour réussir ${kind} ${when}.`,
-          easySave: (when: string, kind: string) => `Garde de l’énergie pour ${kind} ${when}.`,
-          easySettle: 'Rester en endurance aide ton corps à assimiler la charge.',
-          easyGo: 'Ce sont les footings tranquilles qui rendent les séances dures efficaces.',
-          quality: {
-            go: 'Tiens les allures prévues : c’est aujourd’hui que le travail compte.',
-            build: 'Tiens les allures prévues, sans aller plus vite.',
-            caution: 'Respecte les allures prévues, sans ajouter de répétitions.',
-            hold: 'Réduis les répétitions ou remplace-les par un footing : forcer sur des jambes fatiguées rapporte peu.',
-          },
-          race: {
-            go: 'Tout ton entraînement visait ce jour.',
-            build: 'Tout ton entraînement visait ce jour.',
-            caution: 'Pars moins vite que tu en as envie, puis accélère progressivement.',
-            hold: 'Pars moins vite que tu en as envie, puis accélère progressivement.',
-          },
-          done: {
-            go: 'Tu avais des jambes fraîches pour en profiter pleinement.',
-            build: 'C’est avec des séances comme celle-ci que le travail paie.',
-            caution: 'Une journée tranquille ensuite t’aidera à l’assimiler.',
-            hold: 'Dors bien et prévois une journée tranquille ensuite.',
-          },
-        },
-      },
-      restDay: 'Jour de repos',
-      restDaySubtitle: 'Aucune séance prévue',
-      next: (weekday: string, title: string, km: string | null) => `Ensuite : ${weekday} · ${title}${km ? ` · ${km} km` : ''}`,
-      openPlan: 'Voir le plan',
-      race: 'Course',
     },
     weeklyStreak: {
       title: 'Cette semaine',
