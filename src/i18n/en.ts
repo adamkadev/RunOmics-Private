@@ -1434,6 +1434,12 @@ export const en = {
       mapUnavailable: 'Map unavailable',
       mapUnavailableHint: 'No map token configured',
       routeMap: 'Activity route map',
+      // Fullscreen (3.0): fit the route again, and the basemap it shows.
+      recenter: 'Recenter on the route',
+      style: (name: string) => `Map style: ${name}`,
+      styles: { dark: 'Dark', light: 'Light' },
+      // The floating card's four numbers.
+      stats: { distance: 'Distance', time: 'Time', pace: 'Pace', elevation: 'Elev.' },
     },
     splits: {
       title: 'Intervals',

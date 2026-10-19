@@ -1364,6 +1364,10 @@ export const fr = {
       mapUnavailable: 'Carte indisponible',
       mapUnavailableHint: 'Aucune clé de carte configurée',
       routeMap: 'Carte du parcours de l’activité',
+      recenter: 'Recentrer sur le parcours',
+      style: (name: string) => `Style de carte : ${name}`,
+      styles: { dark: 'Sombre', light: 'Clair' },
+      stats: { distance: 'Distance', time: 'Temps', pace: 'Allure', elevation: 'Dén.' },
     },
     splits: {
       avg: (pace: string) => `moy. ${pace}`,

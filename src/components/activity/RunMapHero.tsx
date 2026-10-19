@@ -23,9 +23,19 @@ const FADES = <HeroFades />
  * at the top and bottom, with the way back on the left and expand and share
  * on the right as 40 pt round buttons. The route is the run's one colour,
  * with no km markers and no pace or heart-rate ramp. Expand opens the map
- * full screen.
+ * full screen, with `card` floating at its foot.
  */
-export function RunMapHero({ route, back, share }: { route: [number, number][] | null; back?: ReactNode; share?: ReactNode }) {
+export function RunMapHero({
+  route,
+  back,
+  share,
+  card,
+}: {
+  route: [number, number][] | null
+  back?: ReactNode
+  share?: ReactNode
+  card?: ReactNode
+}) {
   const [fullscreen, setFullscreen] = useState(false)
 
   return (
@@ -40,6 +50,7 @@ export function RunMapHero({ route, back, share }: { route: [number, number][] |
           fullscreen={fullscreen}
           onFullscreenChange={setFullscreen}
           overlay={FADES}
+          card={card}
         />
       ) : (
         <>

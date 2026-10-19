@@ -17,9 +17,10 @@ interface Props {
   fullscreen?: boolean
   onFullscreenChange?: (fullscreen: boolean) => void
   overlay?: ReactNode
+  card?: ReactNode
 }
 
-export const ActivityMapClient = memo(function ActivityMapClient({ route, hoverFraction, className, fullscreen, onFullscreenChange, overlay }: Props) {
+export const ActivityMapClient = memo(function ActivityMapClient({ route, hoverFraction, className, fullscreen, onFullscreenChange, overlay, card }: Props) {
   return (
     <ActivityMapDynamic
       route={route}
@@ -28,6 +29,7 @@ export const ActivityMapClient = memo(function ActivityMapClient({ route, hoverF
       fullscreen={fullscreen}
       onFullscreenChange={onFullscreenChange}
       overlay={overlay}
+      card={card}
     />
   )
 })

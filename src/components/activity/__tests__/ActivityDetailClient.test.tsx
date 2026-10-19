@@ -1,12 +1,14 @@
 import { act, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { ComponentProps } from 'react'
+import type { ComponentProps, ReactNode } from 'react'
 import type { ActivityDetailView } from '../activityViews'
 import { t } from '@/i18n'
 import { formatDistance } from '@/lib/formatters'
 
 vi.mock('../ActivityMapClient', () => ({
-  ActivityMapClient: ({ fullscreen }: { fullscreen?: boolean }) => <div data-testid="map" data-fullscreen={fullscreen ? '' : undefined} />,
+  ActivityMapClient: ({ fullscreen, card }: { fullscreen?: boolean; card?: ReactNode }) => (
+    <div data-testid="map" data-fullscreen={fullscreen ? '' : undefined}>{fullscreen && card}</div>
+  ),
 }))
 vi.mock('../RunPlace', () => ({ RunPlace: () => null }))
 vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: false }))
@@ -139,7 +141,7 @@ describe('ActivityDetailClient', () => {
   // The hero's buttons: back on the left, expand and share on the right.
   it('floats back, expand and share on the map, and expand opens it full screen', () => {
     renderDetail({
-      activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView,
+      activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]], elevationGain: 64.4 } as ActivityDetailView,
       back: <button type="button">back</button>,
       share: <button type="button">share</button>,
     })
@@ -148,6 +150,11 @@ describe('ActivityDetailClient', () => {
 
     act(() => hero.getByRole('button', { name: t.activity.map.fullscreen }).click())
     expect(hero.getByTestId('map').hasAttribute('data-fullscreen')).toBe(true)
+    // The floating card: name, date, then distance, time, pace and the climb.
+    expect(hero.getByTestId('map').textContent).toContain('Threshold runSun, Oct 18')
+    expect(hero.getByTestId('map-card-stats').textContent).toBe(
+      `${formatDistance(6.11)}${t.units.km}${t.activity.map.stats.distance}25:24${t.activity.map.stats.time}4:10${t.units.perKm}${t.activity.map.stats.pace}+64${t.units.m}${t.activity.map.stats.elevation}`,
+    )
   })
 
   it('offers no expand button without a route', () => {

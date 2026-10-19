@@ -5,13 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
 import ActivityMap from '../ActivityMap'
 
-const maps = vi.hoisted(() => ({ built: [] as { container: HTMLElement; resizes: number; fits: number }[] }))
+const maps = vi.hoisted(() => ({ built: [] as { container: HTMLElement; resizes: number; fits: number; styles: unknown[] }[] }))
 
 vi.mock('@/lib/maplibre', () => {
   class FakeMap {
     container: HTMLElement
     resizes = 0
     fits = 0
+    styles: unknown[] = []
     constructor(options: { container: HTMLElement }) {
       this.container = options.container
       maps.built.push(this)
@@ -25,6 +26,9 @@ vi.mock('@/lib/maplibre', () => {
     }
     fitBounds() {
       this.fits += 1
+    }
+    setStyle(style: unknown) {
+      this.styles.push(style)
     }
   }
   class FakeBounds {
@@ -50,7 +54,7 @@ function Hero() {
   return (
     <>
       <button type="button" onClick={() => setFullscreen(true)}>{t.activity.map.fullscreen}</button>
-      <ActivityMap route={ROUTE} fullscreen={fullscreen} onFullscreenChange={setFullscreen} />
+      <ActivityMap route={ROUTE} fullscreen={fullscreen} onFullscreenChange={setFullscreen} card={<p>Long run</p>} />
     </>
   )
 }
@@ -102,6 +106,33 @@ describe('ActivityMap fullscreen', () => {
 
     expect(screen.queryByTestId('map-top-chips')).toBeNull()
     expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([t.pages.map.credits])
+  })
+
+  // 3.0 2g: close on the left, recenter and the basemap on the right, and the
+  // run's card floating at the foot.
+  it('recenters on the route and cycles the basemap in fullscreen, the card at its foot', async () => {
+    const user = userEvent.setup()
+    render(<Hero />)
+    await waitFor(() => expect(maps.built).toHaveLength(1))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(screen.queryByTestId('map-card')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: t.activity.map.fullscreen }))
+    expect(screen.getByTestId('map-card')).toHaveTextContent('Long run')
+    const [map] = maps.built
+    const fits = map!.fits
+    await user.click(screen.getByRole('button', { name: t.activity.map.recenter }))
+    expect(map!.fits).toBe(fits + 1)
+
+    // jsdom has no dark theme: the map opens light, and the button goes dark.
+    const style = screen.getByRole('button', { name: t.activity.map.style(t.activity.map.styles.light) })
+    await user.click(style)
+    expect(screen.getByRole('button', { name: t.activity.map.style(t.activity.map.styles.dark) })).toBeInTheDocument()
+    expect(map!.styles).toHaveLength(1)
+
+    // Leaving gives the page's map its theme's style back.
+    await user.click(screen.getByRole('button', { name: t.activity.map.exitFullscreen }))
+    await waitFor(() => expect(map!.styles).toHaveLength(2))
   })
 
   it('closes on Escape', async () => {

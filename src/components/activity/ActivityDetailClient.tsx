@@ -71,6 +71,18 @@ interface PrimaryStat {
   unit?: string
 }
 
+/** The fullscreen map's card (3.0): distance, time, pace and the climb. */
+function buildMapStats(activity: ActivityDetailView): PrimaryStat[] {
+  const s = t.activity.map.stats
+  const stats: PrimaryStat[] = [
+    { label: s.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
+    { label: s.time, value: formatDuration(activity.durationSeconds) },
+  ]
+  if (activity.paceSecPerKm) stats.push({ label: s.pace, value: formatClock(activity.paceSecPerKm), unit: t.units.perKm })
+  if (activity.elevationGain != null) stats.push({ label: s.elevation, value: `+${Math.round(activity.elevationGain)}`, unit: t.units.m })
+  return stats
+}
+
 function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
   const s = t.activity.stats
   const stats: PrimaryStat[] = [
@@ -92,9 +104,9 @@ function sentenceCase(label: string): string {
  * under it. They were a 2 x 2 card under the map and again a strip pinned
  * under the tabs.
  */
-function StatStrip({ stats }: { stats: PrimaryStat[] }) {
+function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; testId?: string }) {
   return (
-    <div className="grid grid-cols-4 gap-x-2" data-testid="run-stats">
+    <div className="grid grid-cols-4 gap-x-2" data-testid={testId}>
       {stats.map((stat) => (
         <div key={stat.label} className="flex min-w-0 flex-col gap-0.5">
           <span className="whitespace-nowrap text-[22px] font-bold leading-tight tracking-[-0.01em] text-foreground">
@@ -173,7 +185,20 @@ export function ActivityDetailClient({
       {/* Map first, edge to edge, then the run's name, its four numbers and
           the verdict, the tabs right under it (3.0). The same on every tab,
           so a tab switch keeps the page under the hero where it was. */}
-      <RunMapHero route={activity.route ?? null} back={back} share={share} />
+      <RunMapHero
+        route={activity.route ?? null}
+        back={back}
+        share={share}
+        card={
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="min-w-0 truncate text-[17px] font-bold text-foreground">{name}</span>
+              <span className="shrink-0 text-[13px] text-muted-foreground">{dateLabel}</span>
+            </div>
+            <StatStrip stats={buildMapStats(activity)} testId="map-card-stats" />
+          </div>
+        }
+      />
 
       <header className="-mt-1 flex flex-col gap-1">
         {/* Type · date · town: the type as its dot and its name. Above the

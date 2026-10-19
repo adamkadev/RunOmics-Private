@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useCallback, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useCallback, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { MapPin, Minimize2 } from 'lucide-react'
+import { Layers, LocateFixed, MapPin, X } from 'lucide-react'
 import type { LngLatBounds, Map as MapLibreMap } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyle } from '@/lib/maptiler'
@@ -34,11 +34,29 @@ interface Props {
   onFullscreenChange?: (fullscreen: boolean) => void
   /** Drawn over the tiles and under the map's own controls while in the page. */
   overlay?: ReactNode
+  /** The run's name, date and numbers, floating at the foot of the fullscreen map. */
+  card?: ReactNode
 }
 
 const noop = () => {}
 
-export default function ActivityMap({ route, hoverFraction, className, fullscreen = false, onFullscreenChange = noop, overlay }: Props) {
+/**
+ * The basemaps the fullscreen style button cycles through (3.0). The design
+ * asks for dark, light and satellite; the app's MapTiler styles are the dark
+ * and light RunOmics greys, with no satellite one built yet, so the button
+ * cycles the two that exist.
+ */
+const MAP_STYLES = ['dark', 'light'] as const
+type MapStyle = (typeof MAP_STYLES)[number]
+
+const themeStyle = (): MapStyle => (document.documentElement.classList.contains('dark') ? 'dark' : 'light')
+
+/** Clear of the top buttons, the sides and the floating card, so the route sits in what is left. */
+function fullscreenPadding(cardHeight: number) {
+  return { top: 76, right: 32, bottom: cardHeight + 56, left: 32 }
+}
+
+export default function ActivityMap({ route, hoverFraction, className, fullscreen = false, onFullscreenChange = noop, overlay, card }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
   // The element MapLibre draws into. Fullscreen portals the map to <body>,
   // which gives React a new host node; this one moves between hosts, so the
@@ -55,7 +73,28 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
   const animFrameRef = useRef<number | null>(null)
   const boundsRef = useRef<LngLatBounds | null>(null)
   const isFullscreen = fullscreen
-  const close = useCallback(() => onFullscreenChange(false), [onFullscreenChange])
+  const cardRef = useRef<HTMLDivElement>(null)
+  // The basemap picked in fullscreen; null follows the theme. Read by the
+  // theme observer inside the map's effect, so kept in a ref as well.
+  const [styleChoice, setStyleChoice] = useState<MapStyle | null>(null)
+  const styleChoiceRef = useRef<MapStyle | null>(null)
+  const applyStyleRef = useRef<((style: MapStyle) => void) | null>(null)
+  // Leaving fullscreen gives the page's map back its theme's style.
+  const close = useCallback(() => {
+    setStyleChoice(null)
+    onFullscreenChange(false)
+  }, [onFullscreenChange])
+
+  useEffect(() => {
+    styleChoiceRef.current = styleChoice
+    applyStyleRef.current?.(styleChoice ?? themeStyle())
+  }, [styleChoice])
+
+  const recenter = useCallback(() => {
+    const map = mapRef.current
+    if (!map || !boundsRef.current) return
+    map.fitBounds(boundsRef.current, { padding: fullscreenPadding(cardRef.current?.offsetHeight ?? 0), maxZoom: 15 })
+  }, [])
 
   // Fullscreen takes the map out of the page, which moves the scroll under
   // it; leaving puts the page back where it was, to the pixel (v5.5 #1): left
@@ -90,10 +129,11 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     map.resize()
     // Leaving fullscreen puts the route back as the card first showed it: a
     // pinch-zoom in fullscreen used to stay on the small map, with the route
-    // cut off at the card's edges.
-    if (!isFullscreen && boundsRef.current) {
-      map.fitBounds(boundsRef.current, { padding: ROUTE_FIT_PADDING, maxZoom: 15, animate: false })
-    }
+    // cut off at the card's edges. Entering centres it between the buttons
+    // and the floating card.
+    if (!boundsRef.current) return
+    const padding = isFullscreen ? fullscreenPadding(cardRef.current?.offsetHeight ?? 0) : ROUTE_FIT_PADDING
+    map.fitBounds(boundsRef.current, { padding, maxZoom: 15, animate: false })
   }, [isFullscreen])
 
   useEffect(() => {
@@ -113,10 +153,13 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     const readAccent = () =>
       getComputedStyle(hostRef.current ?? document.documentElement).getPropertyValue('--accent').trim() ||
       SURFACES[isDark() ? 'dark' : 'light'].text
-    // The route's halo and the start's ring are the page behind the map (3.0).
-    const readRing = () =>
-      getComputedStyle(hostRef.current ?? document.documentElement).getPropertyValue('--background').trim() ||
-      SURFACES[isDark() ? 'dark' : 'light'].background
+    // The route's halo and the start's ring are the page behind the map
+    // (3.0): the theme's --background, or the picked basemap's own page
+    // colour while fullscreen shows the other one.
+    const readRing = (darkMap: boolean) =>
+      (styleChoiceRef.current === null &&
+        getComputedStyle(hostRef.current ?? document.documentElement).getPropertyValue('--background').trim()) ||
+      SURFACES[darkMap ? 'dark' : 'light'].background
     let removeFence: (() => void) | null = null
     let stopObserving: (() => void) | null = null
 
@@ -139,7 +182,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
       mapRef.current = null
       layersReadyRef.current = false
 
-      let dark = isDark()
+      let dark = (styleChoiceRef.current ?? themeStyle()) === 'dark'
       let accent = readAccent()
       const bounds = route.reduce(
         (b, c) => b.extend(c as [number, number]),
@@ -202,7 +245,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         joined = finishShown() && finish !== null && runEndsJoined(map, start, finish)
         addRunLayers(map, {
           accent,
-          ring: readRing(),
+          ring: readRing(dark),
           route: route.slice(0, drawnRef.current),
           start,
           finish: finishShown() ? finish : null,
@@ -219,15 +262,21 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         }
       })
 
-      // A theme swaps the whole style in place; an accent only repaints.
+      // A theme, or the fullscreen style button, swaps the whole style in
+      // place; an accent only repaints.
+      const applyStyle = (style: MapStyle) => {
+        if (cancelled || (style === 'dark') === dark) return
+        dark = style === 'dark'
+        layersReadyRef.current = false
+        removeFence?.()
+        removeFence = null
+        map.setStyle(maptilerStyle(dark, token), { diff: false })
+      }
+      applyStyleRef.current = applyStyle
       const observer = new MutationObserver(() => {
         if (cancelled || !map.isStyleLoaded()) return
-        if (isDark() !== dark) {
-          dark = isDark()
-          layersReadyRef.current = false
-          removeFence?.()
-          removeFence = null
-          map.setStyle(maptilerStyle(dark, token), { diff: false })
+        if (styleChoiceRef.current === null && isDark() !== dark) {
+          applyStyle(themeStyle())
         } else if (readAccent() !== accent) {
           accent = readAccent()
           setRunAccent(map, accent)
@@ -242,6 +291,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     return () => {
       cancelled = true
       stopObserving?.()
+      applyStyleRef.current = null
       removeFence?.()
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
       mapRef.current?.remove()
@@ -261,32 +311,66 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
 
   if (!hasToken) return <MapUnavailable className={className} />
 
+  const m = t.activity.map
+  const shownStyle = styleChoice ?? (isFullscreen ? themeStyle() : 'dark')
+  const nextStyle = MAP_STYLES[(MAP_STYLES.indexOf(shownStyle) + 1) % MAP_STYLES.length]!
+
   const tree = (
     <div
       className={cn(
         // isolate: maplibre's z-index 20 controls would otherwise paint over the status strip.
         'activity-map relative isolate overflow-hidden rounded-xl',
+        className,
         // Under the status strip, never touching the top edge (v4.8): iOS
         // kept the blur zone of a fullscreen map over the page's title.
-        isFullscreen && 'activity-map-fullscreen fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[9999] rounded-none',
-        className
+        isFullscreen && 'activity-map-fullscreen fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[9999] h-auto rounded-none',
       )}
     >
-      <div ref={hostRef} role="img" aria-label={t.activity.map.routeMap} className="h-full w-full" />
+      <div ref={hostRef} role="img" aria-label={m.routeMap} className="h-full w-full" />
       {!isFullscreen && overlay}
-      {/* The MapTiler and OpenStreetMap credits behind a 22 pt ⓘ (3.0). */}
-      <MapAttribution className="absolute bottom-3 right-3 z-20" />
 
-      {isFullscreen && (
-        <button
-          onClick={close}
-          className="glass-map-chip absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center transition-opacity active:opacity-70"
-          aria-label={t.activity.map.exitFullscreen}
-        >
-          <Minimize2 size={16} />
-        </button>
+      {isFullscreen ? (
+        <>
+          {/* Full bleed (3.0): a fade under the buttons, close on the left,
+              recenter and the basemap on the right, the run's card floating
+              at the foot with the credits' ⓘ just above it. */}
+          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 bg-gradient-to-b from-background/85 to-transparent" />
+          <div className="absolute inset-x-0 top-3 z-20 flex items-start justify-between px-4">
+            <button type="button" onClick={close} aria-label={m.exitFullscreen} className="map-round-button hit-44 size-[42px]">
+              <X size={19} strokeWidth={2} aria-hidden="true" />
+            </button>
+            <div className="flex gap-2">
+              <button type="button" onClick={recenter} aria-label={m.recenter} className="map-round-button hit-44 size-[42px]">
+                <LocateFixed size={18} strokeWidth={2} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setStyleChoice(nextStyle)}
+                aria-label={m.style(m.styles[shownStyle])}
+                data-map-style={shownStyle}
+                className="map-round-button hit-44 size-[42px]"
+              >
+                <Layers size={18} strokeWidth={2} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          <div className="absolute inset-x-3 bottom-[calc(28px+var(--safe-bottom,0px))] z-20 flex flex-col items-end gap-2">
+            <MapAttribution />
+            {card && (
+              <div
+                ref={cardRef}
+                data-testid="map-card"
+                className="w-full rounded-[22px] border border-border bg-[color-mix(in_srgb,var(--card)_95%,transparent)] px-4 py-3.5"
+              >
+                {card}
+              </div>
+            )}
+          </div>
+        </>
+      ) : (
+        // The MapTiler and OpenStreetMap credits behind a 22 pt ⓘ (3.0).
+        <MapAttribution className="absolute bottom-3 right-3 z-20" />
       )}
-
     </div>
   )
 
