@@ -120,6 +120,7 @@ export function shareReps(activity: Pick<Activity, 'type' | 'splits'>, prescript
   return {
     count: set.reps.length,
     repSeconds: set.repDurationSec,
+    paces: set.reps.map((rep) => (rep.distanceM > 0 ? Math.round((rep.durationSec / rep.distanceM) * 1000) : 0)).filter((pace) => pace > 0),
     paceSecPerKm: Math.round((seconds / metres) * 1000),
     target: repTarget(prescription),
     windows: repWindows(activity.splits, set.reps.length),

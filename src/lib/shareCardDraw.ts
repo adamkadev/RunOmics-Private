@@ -1,6 +1,6 @@
 import {
-  shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones,
-  type ShareActivity, type ShareRepHero, type ShareVerdict, type ShareZoneRow,
+  shareCardSubtitle, shareCardTitle, shareRepDetail, shareRepHero, shareStats, shareStructure, shareZones,
+  type ShareActivity, type ShareRepDetail, type ShareRepHero, type ShareVerdict, type ShareZoneRow,
 } from '@/lib/shareCardStats'
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
 import { projectRoute, ROUTE_INSET, ROUTE_TEXT_GAP, type RouteFrame } from '@/lib/shareCardMap'
@@ -59,7 +59,13 @@ const STATS_PAD_TOP = 12
 const STATS_PAD_BOTTOM = 16
 /** The rep pace: its eyebrow, then the pace and the target beside it; the stats 10 px under it. */
 const HERO_PAD_TOP = 12
-const HERO_BLOCK = 40
+const HERO_BLOCK = 42
+const HERO_PACE_SIZE = 32
+/** The reps under the hero: a row of chips, or a bar each over their spread. */
+const CHIP_H = 16
+const BAR_MAX = 16
+const REP_DETAIL_PAD_TOP = 8
+const REP_DETAIL_H = { chips: CHIP_H, bars: BAR_MAX + 12 } as const
 const STATS_PAD_TOP_AFTER_HERO = 10
 /** The markers at the card's scale: a phone map's width less its margins. */
 const MARKER_SCALE = 0.85
@@ -140,6 +146,9 @@ function titleLines(ctx: Ctx, text: string, fonts: ShareFonts): ShareTitle {
 export interface ShareCardLayout {
   title: ShareTitle
   hero: ShareRepHero | null
+  /** The reps under the hero, and where they sit; null when every rep ran the same. */
+  repDetail: ShareRepDetail | null
+  repDetailTop: number
   middleTop: number
   middleH: number
   heroTop: number
@@ -158,13 +167,17 @@ export function shareCardLayout(ctx: Ctx, activity: ShareActivity, fonts: ShareF
   const title = titleLines(ctx, shareCardTitle(activity), fonts)
   const middleTop = HEADER_BASE + (title.lines.length - 1) * title.lineHeight
   const hero = shareRepHero(activity)
+  const repDetail = hero ? shareRepDetail(activity) : null
+  const detailH = repDetail ? REP_DETAIL_PAD_TOP + REP_DETAIL_H[repDetail.kind] : 0
   const statsTop = H - STATS_PAD_BOTTOM - STATS_BLOCK
   const stripTop = statsTop - (hero ? STATS_PAD_TOP_AFTER_HERO : STATS_PAD_TOP)
-  const footerTop = stripTop - (hero ? HERO_PAD_TOP + HERO_BLOCK : 0)
+  const footerTop = stripTop - (hero ? HERO_PAD_TOP + HERO_BLOCK + detailH : 0)
   const textTop = headerFoot({ title })
   return {
     title,
     hero,
+    repDetail,
+    repDetailTop: footerTop + HERO_PAD_TOP + HERO_BLOCK + REP_DETAIL_PAD_TOP,
     middleTop,
     middleH: footerTop - middleTop,
     heroTop: footerTop + HERO_PAD_TOP,
@@ -229,10 +242,20 @@ function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { titl
   title.lines.forEach((line, i) => ctx.fillText(line, PAD_X, TITLE_BASELINE + i * title.lineHeight))
   setSpacing(ctx, 0)
 
+  const last = TITLE_BASELINE + (title.lines.length - 1) * title.lineHeight
+  const rest = shareCardSubtitle(activity, place)
+  const structure = shareStructure(activity)
+  let x = PAD_X
+  if (structure) {
+    ctx.font = `600 10px ${fonts.text}`
+    ctx.fillStyle = ink.tx
+    ctx.fillText(structure, x, last + 18)
+    x += ctx.measureText(`${structure} · `).width
+  }
   ctx.font = `400 10px ${fonts.text}`
   ctx.fillStyle = ink.mu
-  const last = TITLE_BASELINE + (title.lines.length - 1) * title.lineHeight
-  ctx.fillText(fit(ctx, shareCardSubtitle(activity, place), RIGHT - PAD_X), PAD_X, last + 18)
+  if (structure) ctx.fillText(' · ', x - ctx.measureText(' · ').width, last + 18)
+  ctx.fillText(fit(ctx, rest, RIGHT - x), x, last + 18)
 }
 
 /** "REP PACE · 3 × 8′" in the session's zone, then the reps' pace and the plan's beside it. */
@@ -244,15 +267,59 @@ function drawHero(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, hero: 
   setSpacing(ctx, 0.08 * 9.5)
   ctx.fillText(hero.eyebrow.toLocaleUpperCase(t.locale), PAD_X, top + 9)
 
-  ctx.font = `700 28px ${fonts.display}`
+  ctx.font = `700 ${HERO_PACE_SIZE}px ${fonts.display}`
   ctx.fillStyle = ink.tx
-  setSpacing(ctx, -0.02 * 28)
-  ctx.fillText(hero.pace, PAD_X, top + 38)
-  const paceW = ctx.measureText(hero.pace).width
+  setSpacing(ctx, -0.03 * HERO_PACE_SIZE)
+  ctx.fillText(hero.pace, PAD_X, top + 40)
+  let x = PAD_X + ctx.measureText(hero.pace).width + 5
   setSpacing(ctx, 0)
   ctx.font = `400 11px ${fonts.text}`
   ctx.fillStyle = ink.mu
-  ctx.fillText(hero.detail, PAD_X + paceW + 6, top + 38)
+  ctx.fillText(hero.unit, x, top + 40)
+  if (hero.target) {
+    x += ctx.measureText(hero.unit).width + 7
+    ctx.font = `400 9.5px ${fonts.text}`
+    ctx.fillText(hero.target, x, top + 40)
+  }
+}
+
+/** The reps under the hero: three or fewer as chips, four or more as a bar each. */
+function drawRepDetail(ctx: Ctx, { fonts, palette }: ShareCardScene, detail: ShareRepDetail, top: number, ink: Ink) {
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'middle'
+  if (detail.kind === 'chips') {
+    let x = PAD_X
+    for (const chip of detail.chips) {
+      ctx.font = `400 9px ${fonts.text}`
+      const labelW = ctx.measureText(`${chip.label} `).width
+      ctx.font = `600 9px ${fonts.text}`
+      const width = 8 + labelW + ctx.measureText(chip.pace).width + 8
+      ctx.fillStyle = palette.card
+      roundRect(ctx, x, top, width, CHIP_H, 5)
+      ctx.fill()
+      ctx.font = `400 9px ${fonts.text}`
+      ctx.fillStyle = ink.mu
+      ctx.fillText(chip.label, x + 8, top + CHIP_H / 2)
+      ctx.font = `600 9px ${fonts.text}`
+      ctx.fillStyle = ink.tx
+      ctx.fillText(chip.pace, x + 8 + labelW, top + CHIP_H / 2)
+      x += width + 6
+    }
+    ctx.textBaseline = 'alphabetic'
+    return
+  }
+  const gap = 3
+  const width = Math.min(120, detail.bars.length * 8)
+  const barW = Math.max(2, (width - gap * (detail.bars.length - 1)) / detail.bars.length)
+  ctx.fillStyle = palette.zones[3]!
+  detail.bars.forEach((share, i) => {
+    const h = Math.max(2, Math.round(BAR_MAX * (0.35 + 0.65 * share)))
+    ctx.fillRect(PAD_X + i * (barW + gap), top + BAR_MAX - h, barW, h)
+  })
+  ctx.textBaseline = 'alphabetic'
+  ctx.font = `400 9px ${fonts.text}`
+  ctx.fillStyle = ink.mu
+  ctx.fillText(detail.range, PAD_X, top + BAR_MAX + 11)
 }
 
 function strokeLine(ctx: Ctx, pts: [number, number][], color: string, width: number) {
@@ -303,15 +370,15 @@ const GREY_W = 2.5
 const REP_W = GREY_W * 1.6
 
 /** "▬ Reps", just above the stats, on an interval session only. */
-function drawRepsLegend(ctx: Ctx, { palette, fonts }: ShareCardScene, bottom: number) {
+function drawRepsLegend(ctx: Ctx, { palette, fonts }: ShareCardScene, top: number) {
   const BAR_W = 14
   const BAR_H = 3
   const PILL_H = 18
   ctx.font = `400 9px ${fonts.text}`
   const label = t.activity.shareCard.repsLegend
   const width = 7 + BAR_W + 5 + ctx.measureText(label).width + 7
-  const x = 8
-  const y = bottom - 8 - PILL_H
+  const x = W - 8 - width
+  const y = top + 8
   ctx.fillStyle = palette.bg
   roundRect(ctx, x, y, width, PILL_H, PILL_H / 2)
   ctx.fill()
@@ -827,7 +894,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
     drawRoute(ctx, scene, layout)
     drawBands(ctx, scene, layout)
     // Over the bands, so the stats' fade does not cover it.
-    if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textBottom)
+    if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textTop)
   } else {
     ctx.save()
     ctx.translate(0, layout.middleTop)
@@ -847,5 +914,6 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
   }
   drawHeader(ctx, scene, layout, ink)
   if (layout.hero) drawHero(ctx, scene, layout.hero, layout.heroTop, ink)
+  if (layout.repDetail) drawRepDetail(ctx, scene, layout.repDetail, layout.repDetailTop, ink)
   drawStats(ctx, scene, layout.statsTop, ink)
 }

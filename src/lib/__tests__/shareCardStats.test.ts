@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  percentsTo100, repLength, shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones, type ShareActivity,
+  percentsTo100, repLength, shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones, type ShareActivity, shareRepDetail, shareStructure,
 } from '@/lib/shareCardStats'
 import { formatDate } from '@/lib/formatters'
 
@@ -95,7 +95,7 @@ describe('shareZones', () => {
   })
 })
 
-const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 }, windows: [] }
+const REPS = { count: 3, repSeconds: 480, paceSecPerKm: 264, paces: [262, 264, 266], target: { min: 265, max: 265 }, windows: [] }
 
 describe('an interval session (design review, Oct 2026)', () => {
   it('takes the coach\'s name for the session, else the run\'s', () => {
@@ -103,11 +103,39 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(shareCardTitle({ ...RUN, sessionTitle: '  ' })).toBe('Strides 6 × 20s')
   })
 
-  it('leads with the reps\' pace and the plan\'s', () => {
-    expect(shareRepHero({ ...RUN, reps: REPS })).toEqual({ eyebrow: 'Rep pace · 3 × 8′', pace: '4:24', detail: '/km · target 4:25' })
-    expect(shareRepHero({ ...RUN, reps: { ...REPS, target: { min: 260, max: 270 } } })!.detail).toBe('/km · target 4:20–4:30')
-    expect(shareRepHero({ ...RUN, reps: { ...REPS, target: null } })!.detail).toBe('/km')
+  it('leads with the reps\' pace, the plan\'s, and how far off it ran', () => {
+    expect(shareRepHero({ ...RUN, reps: REPS })).toEqual({ eyebrow: 'Rep pace · 3 × 8′', pace: '4:24', unit: '/km', target: 'target 4:25 · −0:01' })
+    // Inside the band: the target alone, with nothing to answer for.
+    expect(shareRepHero({ ...RUN, reps: { ...REPS, target: { min: 260, max: 270 } } })!.target).toBe('target 4:20–4:30')
+    expect(shareRepHero({ ...RUN, reps: { ...REPS, paceSecPerKm: 275, target: { min: 260, max: 270 } } })!.target).toBe('target 4:20–4:30 · +0:05')
+    expect(shareRepHero({ ...RUN, reps: { ...REPS, target: null } })!.target).toBeNull()
     expect(shareRepHero(RUN)).toBeNull()
+  })
+
+  // 4b: up to three reps that differ read as chips, more as bars, identical ones say nothing.
+  it('reads the reps as chips, as bars, or not at all', () => {
+    expect(shareRepDetail({ ...RUN, reps: REPS })).toEqual({
+      kind: 'chips',
+      chips: [
+        { label: 'Rep 1', pace: '4:22' },
+        { label: 'Rep 2', pace: '4:24' },
+        { label: 'Rep 3', pace: '4:26' },
+      ],
+    })
+    const many = shareRepDetail({ ...RUN, reps: { ...REPS, count: 5, paces: [260, 265, 270, 262, 268] } })
+    expect(many?.kind).toBe('bars')
+    if (many?.kind !== 'bars') throw new Error('expected bars')
+    expect(many.bars).toHaveLength(5)
+    expect(many.range).toBe('Fastest 4:20 · Slowest 4:30')
+    expect(shareRepDetail({ ...RUN, reps: { ...REPS, paces: [264, 264, 264] } })).toBeNull()
+    expect(shareRepDetail(RUN)).toBeNull()
+  })
+
+  it('titles a rep session by its type, its structure in the subtitle', () => {
+    const run = { ...RUN, type: 'Threshold' as const, reps: REPS, sessionTitle: 'Threshold · 3 × 8′ @ 4:25' }
+    expect(shareCardTitle(run)).toBe('Threshold')
+    expect(shareStructure(run)).toBe('3 × 8′ @ 4:25')
+    expect(shareStructure(RUN)).toBeNull()
   })
 
   it('drops the average pace, which describes neither the reps nor the recoveries', () => {

@@ -1161,6 +1161,9 @@ export const fr = {
       // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
       repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
       target: (pace: string) => `cible ${pace}`,
+      structure: (set: string, pace: string) => `${set} @ ${pace}`,
+      rep: (n: number) => `Fraction ${n}`,
+      repRange: (fastest: string, slowest: string) => `Plus rapide ${fastest} · Plus lente ${slowest}`,
       // La légende du parcours d’une séance de fractionné : elle marque les fractions.
       repsLegend: 'Fractions',
       photo: 'Photo',
