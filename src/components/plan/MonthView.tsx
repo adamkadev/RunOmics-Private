@@ -87,8 +87,8 @@ function tileStyle(cell: Cell): CSSProperties | null {
   const color = cell.kind?.color ?? 'var(--muted-foreground)'
   if (cell.state === 'done' || cell.state === 'extra')
     return {
-      background: `color-mix(in srgb, ${color} 18%, transparent)`,
-      border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
+      background: `color-mix(in srgb, ${color} 25%, transparent)`,
+      border: `1px solid color-mix(in srgb, ${color} 50%, transparent)`,
     }
   if (cell.state === 'planned') return { border: `1px dashed ${color}` }
   if (cell.state === 'missed') return { border: '1px dashed var(--neg)' }

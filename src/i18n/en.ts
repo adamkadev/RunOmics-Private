@@ -1310,6 +1310,12 @@ export const en = {
       footnote: 'Pace-to-heart-rate ratio, second half vs first. Under 5% is the mark of a steady run.',
       seeInCharts: 'See it in Charts ›',
     },
+    pacePreview: {
+      title: 'Pace & heart rate',
+      openCharts: 'Charts',
+      pace: 'Pace',
+      hr: 'HR',
+    },
     dataQuality: {
       estimated: 'Estimated',
     },

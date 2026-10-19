@@ -2,9 +2,10 @@ import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 import { EYEBROW_CLASS } from './SectionLabel'
 
-export type VerdictTone = 'pos' | 'warn' | 'neg' | 'muted' | 'neutral'
+export type VerdictTone = 'pos' | 'warn' | 'neg' | 'muted' | 'neutral' | 'accent'
 
 const TONE_COLOR: Record<VerdictTone, string> = {
+  accent: 'var(--accent-text)',
   pos: 'var(--pos)',
   warn: 'var(--warn)',
   neg: 'var(--neg)',
@@ -51,7 +52,9 @@ export function VerdictBlock({
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
       <VerdictEyebrow tone={tone}>{eyebrow}</VerdictEyebrow>
-      <p className={cn('font-semibold leading-snug text-foreground [text-wrap:pretty]', size === 'lg' ? 'text-[22px]' : 'text-[17px]')}>{headline}</p>
+      {headline && (
+        <p className={cn('font-semibold leading-snug text-foreground [text-wrap:pretty]', size === 'lg' ? 'text-[22px]' : 'text-[17px]')}>{headline}</p>
+      )}
       {body && <p className="text-sm leading-normal text-[var(--text-2)] [text-wrap:pretty]">{body}</p>}
     </div>
   )

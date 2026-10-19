@@ -30,7 +30,6 @@ export interface StepRow {
 }
 
 const EASE_FILL = WORKOUT_SEGMENT_COLORS.warmup
-const RECOVERY_FILL = WORKOUT_SEGMENT_COLORS.recovery
 /** Strides inside an easy run are drawn at max, as Today's bar draws them. */
 const STRIDE_FILL = zoneColor(5)
 
@@ -61,12 +60,18 @@ export function intensityBlocks(steps: WorkoutStep[] | null, totalSeconds: numbe
   const list = trimmed(steps ?? [])
   if (list.length <= 1) return [{ tone: 'work', seconds: Math.max(totalSeconds, 1), fill: color }]
   const { body, strides } = sessionParts(list)
-  return list.map((step) => {
+  const blocks = list.map<ProfileBlock>((step) => {
     const seconds = Math.max(stepSeconds(step), 1)
     if (step.kind === 'warmup' || step.kind === 'cooldown') return { tone: 'ease', seconds, fill: EASE_FILL }
-    if (step.kind === 'recovery') return { tone: 'recovery', seconds, fill: RECOVERY_FILL }
+    if (step.kind === 'recovery') return { tone: 'recovery', seconds, fill: EASE_FILL }
     return { tone: 'work', seconds, fill: strides && step !== body ? STRIDE_FILL : color }
   })
+  return blocks.reduce<ProfileBlock[]>((merged, block) => {
+    const last = merged.at(-1)
+    if (last && last.tone === block.tone && last.fill === block.fill) last.seconds += block.seconds
+    else merged.push({ ...block })
+    return merged
+  }, [])
 }
 
 interface StepSession {

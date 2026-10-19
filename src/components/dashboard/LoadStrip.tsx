@@ -41,7 +41,7 @@ export function LoadStrip({ recent }: { recent: RecentLoad }) {
             </span>
             <span
               aria-hidden
-              className={day.isToday ? 'text-[10.5px] font-semibold text-accent-text' : 'text-[10.5px] text-muted-foreground'}
+              className={day.isToday ? 'text-[11px] font-semibold text-accent-text' : 'text-[11px] text-muted-foreground'}
             >
               {dayLetter(day.date)}
             </span>

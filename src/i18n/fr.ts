@@ -1243,6 +1243,12 @@ export const fr = {
       footnote: 'Rapport allure/FC, seconde moitié contre première. Sous 5 %, la sortie est tenue.',
       seeInCharts: 'Voir dans Graphiques ›',
     },
+    pacePreview: {
+      title: 'Allure et fréquence cardiaque',
+      openCharts: 'Graphiques',
+      pace: 'Allure',
+      hr: 'FC',
+    },
     dataQuality: {
       estimated: 'Estimé',
     },

@@ -92,7 +92,7 @@ export function DaySelector({
             </span>
             <span
               aria-hidden
-              className="text-[9.5px] font-semibold leading-none tracking-[0.04em]"
+              className="text-[11px] font-semibold leading-none tracking-[0.04em]"
               style={{ color: day.letter ? (day.color ?? 'var(--muted-foreground)') : 'var(--muted-foreground)' }}
             >
               {day.letter ?? '–'}

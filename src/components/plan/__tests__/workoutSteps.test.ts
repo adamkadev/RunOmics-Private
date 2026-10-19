@@ -28,7 +28,7 @@ describe('the intensity profile', () => {
     expect(blocks.map((b) => b.seconds)).toEqual([900, 480, 90, 480, 90, 480, 90, 600])
     expect(blocks[0]!.fill).toBe(WORKOUT_SEGMENT_COLORS.warmup)
     expect(blocks[1]!.fill).toBe(COLOR)
-    expect(blocks[2]!.fill).toBe(WORKOUT_SEGMENT_COLORS.recovery)
+    expect(blocks[2]!.fill).toBe(WORKOUT_SEGMENT_COLORS.warmup)
   })
 
   it('drops the jog after the last rep and draws strides at max', () => {

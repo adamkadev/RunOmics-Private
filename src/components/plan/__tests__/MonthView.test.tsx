@@ -67,9 +67,9 @@ describe('the month grid', () => {
   it('fills a run in its colour, dashes a session still to come, and leaves rest empty', () => {
     renderMonth()
 
-    expect(tile('2026-10-13').style.background).toBe('color-mix(in srgb, var(--zone-2) 18%, transparent)')
-    expect(tile('2026-10-13').style.border).toBe('1px solid color-mix(in srgb, var(--zone-2) 25%, transparent)')
-    expect(tile('2026-10-14').style.background).toBe('color-mix(in srgb, var(--zone-4) 18%, transparent)')
+    expect(tile('2026-10-13').style.background).toBe('color-mix(in srgb, var(--zone-2) 25%, transparent)')
+    expect(tile('2026-10-13').style.border).toBe('1px solid color-mix(in srgb, var(--zone-2) 50%, transparent)')
+    expect(tile('2026-10-14').style.background).toBe('color-mix(in srgb, var(--zone-4) 25%, transparent)')
     expect(tile('2026-10-21').style.border).toBe('1px dashed var(--zone-4)')
     expect(tile('2026-10-25').style.border).toBe(`1px dashed ${LONG_RUN_COLOR}`)
     expect(tile('2026-10-15').getAttribute('style')).toBeNull()
