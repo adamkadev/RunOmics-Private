@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FeatureCollection } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
-import { maptilerStyle } from "@/lib/maptiler";
+import { heatBasemapStyle, maptilerStyle } from "@/lib/maptiler";
 import { percentileBounds, type LngLatBounds } from "@/lib/routeFrame";
 import { firstSymbolLayerId, loadMapLibre } from "@/lib/maplibre";
 import { EDGE_FENCE_LAYER, EDGE_FENCE_SOURCE, addEdgeFence } from "@/lib/runMapLayers";
@@ -153,7 +153,7 @@ export function useMapRoutes(
       let accent = readAccent();
       const map = new mgl.Map({
         container: containerRef.current!,
-        style: maptilerStyle(dark, token),
+        style: heatBasemapStyle(maptilerStyle(dark, token), dark),
         bounds: boundsArray(first.frame),
         fitBoundsOptions: { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM },
         // The licence-required attribution is the map's own line of text
@@ -186,7 +186,7 @@ export function useMapRoutes(
           dark = isDark();
           accent = readAccent();
           removeRunLayers(map);
-          map.setStyle(maptilerStyle(dark, token), { diff: false });
+          map.setStyle(heatBasemapStyle(maptilerStyle(dark, token), dark), { diff: false });
         } else if (readAccent() !== accent) {
           accent = readAccent();
           addRunLayers(map);

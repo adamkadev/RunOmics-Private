@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { StyleSpecification } from 'maplibre-gl'
-import { maptilerStyle, withLanguage } from '../maptiler'
+import { heatBasemapStyle, maptilerStyle, withLanguage } from '../maptiler'
 import { MAP_STYLE_COLORS } from '../themeTokens'
 
 describe('maptilerStyle (v4.17)', () => {
@@ -37,5 +37,25 @@ describe('withLanguage', () => {
 
   it('leaves English as built', () => {
     expect(withLanguage(style, 'en')).toBe(style)
+  })
+})
+
+describe('heatBasemapStyle (3.0.1)', () => {
+  const light = () => maptilerStyle(false, 'k')
+  const background = (s: StyleSpecification) => (s.layers.find((l) => l.type === 'background')!.paint as Record<string, unknown>)['background-color']
+
+  it('steps the light ground back toward grey, so the heat is the only saturated colour', () => {
+    const muted = heatBasemapStyle(light(), false)
+    const json = JSON.stringify(muted)
+    expect(background(muted)).not.toBe(MAP_STYLE_COLORS.light.background)
+    for (const role of ['park', 'water', 'land'] as const) expect(json).not.toContain(MAP_STYLE_COLORS.light[role])
+  })
+
+  it('leaves the dark style, and the style it was given, alone', () => {
+    const dark = maptilerStyle(true, 'k')
+    expect(heatBasemapStyle(dark, true)).toBe(dark)
+    const source = light()
+    heatBasemapStyle(source, false)
+    expect(background(source)).toBe(MAP_STYLE_COLORS.light.background)
   })
 })
