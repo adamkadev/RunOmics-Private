@@ -79,11 +79,14 @@ describe('French design review copy', () => {
   })
 })
 
-// Lamiaa reads French and does not know CTL, ATL or ACWR (Oct 2026).
-describe('French readiness card, in plain words', () => {
+// The readiness card names its numbers in everyday words, in both
+// languages: CTL, ATL, ACWR and TSB mean nothing to most runners (Oct 2026).
+describe('the readiness card, in plain words', () => {
   it('names the numbers without acronyms', () => {
-    const r = fr.dashboard.readiness
-    for (const label of [r.formLabel, r.ctl, r.atl, r.acwr, r.lastSevenDays]) expect(label).not.toMatch(/CTL|ATL|ACWR|TSB/)
-    expect(r.acwrValue('1,79')).toBe('×1,79')
+    for (const r of [en.dashboard.readiness, fr.dashboard.readiness]) {
+      for (const label of [r.formLabel, r.ctl, r.atl, r.acwr, r.lastSevenDays]) expect(label).not.toMatch(/CTL|ATL|ACWR|TSB/)
+    }
+    expect(en.dashboard.readiness.acwrValue('0.90')).toBe('×0.90')
+    expect(fr.dashboard.readiness.acwrValue('1,79')).toBe('×1,79')
   })
 })

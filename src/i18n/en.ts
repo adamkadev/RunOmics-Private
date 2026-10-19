@@ -473,7 +473,8 @@ export const en = {
   dashboard: {
     readiness: {
       open: 'Open Load in Analytics',
-      formLabel: 'Form · TSB',
+      // Everyday words, not acronyms (Oct 2026).
+      formLabel: 'Form',
       formOnDial: (form: string, band: string) => `Form ${form}: ${band}`,
       eyebrowByTone: {
         go: 'Green light',
@@ -487,10 +488,11 @@ export const en = {
         caution: 'Fatigue building up',
         hold: 'Fatigue ahead of fitness',
       },
-      ctl: 'CTL',
-      atl: 'ATL',
-      acwr: 'ACWR',
-      acwrValue: (ratio: string) => ratio,
+      ctl: 'Fitness',
+      atl: 'Fatigue',
+      // This week's load against the usual: "×0.90".
+      acwr: 'Load',
+      acwrValue: (ratio: string) => `×${ratio}`,
       garmin: 'Garmin',
       // In Garmin's place when the watch has no training status (a Forerunner 55).
       lastSevenDays: '7 days',
