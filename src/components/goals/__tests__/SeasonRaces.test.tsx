@@ -98,14 +98,13 @@ describe('SeasonTimeline', () => {
     expect(screen.getByTestId('season-marker-done').querySelector('.bg-foreground')).not.toBeNull()
   })
 
-  it('puts a goal with no date in its own card, off the timeline', () => {
+  // 3.0: a goal with no date only ever read "no target set"; it is left out.
+  it('leaves a goal with no date out', () => {
     const data = yearData()
     data.goals!.targets.push({ distance: 'Marathon', targetSeconds: null })
     render(<SeasonTimeline yearData={data} today={TODAY} block={BLOCK} />)
-    const card = screen.getByTestId('season-no-date')
-    expect(within(card).getByText(t.goals.season.noDate)).toBeInTheDocument()
-    expect(card.textContent).toContain(t.goals.season.noTarget)
     expect(screen.getByTestId('season-card').textContent).not.toContain('Marathon')
+    expect(screen.queryByTestId('season-no-date')).toBeNull()
   })
 })
 
@@ -148,14 +147,5 @@ describe('seasonRaceRows', () => {
     expect(five.kind).toBe('done')
     expect(five.achieved).toBe(true)
     expect(five.valueSub).toBe(t.goals.beatenBy('0:25'))
-  })
-})
-
-describe('a past year (v5.5 #25)', () => {
-  it('shows no undated distances: they can no longer be set', () => {
-    const data = yearData({ year: 2025, upcomingRaces: [], nextRaceSpotlight: null, pbs: [] })
-    data.goals!.targets.push({ distance: 'Marathon', targetSeconds: null })
-    render(<SeasonTimeline yearData={data} today="2026-09-27" block={null} />)
-    expect(screen.queryByTestId('season-no-date')).toBeNull()
   })
 })

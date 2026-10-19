@@ -1645,8 +1645,6 @@ export const en = {
       predictedUnder: (gap: string) => `predicted · ${gap} under`,
       underTarget: (gap: string) => `${gap} under target`,
       overTarget: (gap: string) => `${gap} over target`,
-      noDate: 'Goals without a date',
-      noTarget: 'no target set',
     },
     history: {
       title: 'Past seasons',
@@ -1842,54 +1840,43 @@ export const en = {
   profile: {
     // The hub: the year so far, then one row per sub-page with its status.
     hub: {
-      // v4.17: the header's season line, then the year card, four tiles, shoes and all time.
-      season: (year: number) => `Season ${year}`,
-      raceIn: (distance: string, days: number) =>
-        days <= 0 ? `${distance} today` : days === 1 ? `${distance} tomorrow` : `${distance} in ${days} days`,
+      // 3.0: the race, the year card, the records, then a row for each Progress page.
       yearTitle: (year: number) => `${year} distance`,
-      runs: 'runs',
       records: 'Records',
-      recordsWhen: 'All time',
-      recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Half marathon' } as Record<string, string>,
-      // The record set most recently, marked (v4.3.3); "new" only in its first weeks.
-      newRecord: 'NEW PR',
-      latestRecord: 'LATEST',
-      latestRecordLabel: 'most recent record',
+      recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Half' } as Record<string, string>,
+      // The record set most recently, tagged while it is new (v4.3.3, 3.0).
+      newRecord: 'NEW',
+      newRecordLabel: 'new record',
       shoes: 'Shoes',
-      allPairs: 'All pairs',
       consistency: 'Consistency',
       settings: 'Settings',
-      nextRace: 'Next race',
-      vo2max: 'VO₂ max',
+      athlete: 'Athlete & zones',
       allTime: 'All time',
       vsYear: (delta: string, year: number) => `${delta} km vs ${year} to date`,
       // The same dates in both years, from where the history starts.
       vsYearSince: (delta: string, year: number, since: string) => `${delta} km vs ${year} since ${since}`,
       ofGoal: (km: string) => `of ${km} km`,
-      goal: 'Goal',
-      runsHours: (runs: number, hours: number) => `${runs} runs · ${hours} h`,
-      // "62 days · 10K Wintzenheim, Nov 29": the unit after the countdown.
-      raceMeta: (days: number, race: string, date: string) => `${days === 1 ? 'day' : 'days'} · ${race}, ${date}`,
+      // "201 days" under the race's eyebrow.
+      days: (days: number): string => (days === 1 ? 'day' : 'days'),
       predicted: 'Predicted',
       target: (time: string) => `Target ${time}`,
       toFind: (gap: string) => `${gap} to find`,
       underTarget: (gap: string) => `${gap} under`,
       noRace: 'No race planned',
-      vo2Delta: (delta: string) => `${delta} in 12 weeks`,
-      // The footers as segments, each kept whole on the line (v4.3.1).
-      thresholdParts: (pace: string | null, lthr: number | null) =>
-        [pace ? `Threshold ${pace} /km` : null, lthr ? `LTHR ${lthr} bpm` : null].filter((part): part is string => part !== null),
       noRecords: 'No records yet',
-      // "Last 12 weeks · 203 active days in 12 months · 4-week streak", the figures in ink.
-      consistencyWindow: 'Last 12 weeks',
-      consistencyDays: (days: number) => ({ lead: '', value: String(days), tail: ` active day${days === 1 ? '' : 's'} in 12 months` }),
-      consistencyStreak: (weeks: number) => ({ lead: '', value: `${weeks}-week`, tail: ' streak' }),
-      since: (date: string) => `since ${date}`,
-      distance: 'Distance',
-      runsLabel: 'Runs',
-      time: 'Time',
-      hours: 'h',
-      openYears: 'Kilometres by year',
+      // "69 km short at this pace. Needs 41 km/wk, you average 35."
+      shortBy: (km: string) => `${km} km short`,
+      overBy: (km: string) => `${km} km over`,
+      atPace: 'at this pace.',
+      onPace: 'On pace for the goal.',
+      needs: (needed: string, average: string) => `Needs ${needed} km/wk, you average ${average}.`,
+      // The rows' status lines.
+      athleteStatus: (vo2max: number | null, lthr: number | null) =>
+        [vo2max ? `VO₂ max ${vo2max}` : null, lthr ? `LTHR ${lthr}` : null].filter(Boolean).join(' · ') || null,
+      consistencyStatus: (days: number, weeks: number) =>
+        `${days} active day${days === 1 ? '' : 's'} · ${weeks}-week streak`,
+      allTimeStatus: (km: string, since: string | null) => (since ? `${km} km since ${since}` : `${km} km`),
+      shoeStatus: (name: string, status: string) => `${name} · ${status}`,
     },
     hero: {
       namePlaceholder: 'Your name',
