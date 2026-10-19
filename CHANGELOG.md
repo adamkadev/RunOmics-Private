@@ -2,6 +2,39 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.0] - 2026-10-19
+
+3.0 — redesign. The app-wide UX pass from the RunOmics 3.0 handoff: one
+score and one verdict per screen, actionable cards, fewer repeated numbers.
+The version number restarts at 3.0.0 after 4.17.0; the earlier 3.0.0 entry
+below is the July 2026 release.
+
+### Global
+
+- Five tabs, Progress with a trophy. Dark theme on the handoff's tokens.
+- One km format per locale (the map card read "1.306 km" beside "2,684 km").
+- Richer basemap: parks, water, a faint hillshade, quieter street names.
+- One accent route on a halo, no place name under it, credits behind an ⓘ.
+
+### Screens
+
+- Today: Form dial with the AI verdict, Fitness / Fatigue / Load tiles; the
+  next workout opens Plan on its day; compact last run; week circles.
+- Plan: a day selector with the selected workout's steps and intensity
+  profile, planned vs done on past days; a month grid bordered by phase with
+  a summary card.
+- Activities: four group chips and a filter & sort sheet; week cards of runs.
+- Activity: map hero, one stat strip, verdict with chips, sticky tabs;
+  charts with a scrub row and shared cursor; splits with elevation; a
+  fullscreen map with recenter and a style toggle.
+- Share: a verdict-led Stats card; the Route card fitted between header and
+  stats.
+- Progress: race card with the gap to target, year chart, records grid;
+  Consistency with runs per week and a 6-month heatmap; All time in km per
+  month.
+- Athlete & zones and Settings: compact VO₂ row, grouped HR anchors, zones
+  on four weeks; grouped settings, Sync as a link, cache size.
+
 ## [4.0.0] - 2026-09-25
 
 RunOmics 4.0: the UI/UX redesign from the v4.0 audit, shipped as PRs
