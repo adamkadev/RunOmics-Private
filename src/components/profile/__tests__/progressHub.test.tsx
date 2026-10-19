@@ -144,7 +144,9 @@ describe('ProgressHub (3.0)', () => {
 
     expect(screen.getByTestId('race-tile').getAttribute('href')).toBe('/goals')
     expect(screen.getByTestId('year-hero').getAttribute('href')).toBe('/goals')
-    expect(screen.getAllByTestId('records-tile').map((tile) => tile.getAttribute('href'))).toEqual(['/records', '/records', '/records'])
+    // 3.0.1: the records are one card, its four times side by side.
+    expect(screen.getByTestId('records-tile').getAttribute('href')).toBe('/records')
+    expect(screen.getAllByTestId('record')).toHaveLength(3)
     expect(screen.getByTestId('vo2-tile').getAttribute('href')).toBe('/athlete')
     expect(screen.getByTestId('consistency-tile').getAttribute('href')).toBe('/consistency')
     expect(screen.getByTestId('all-time').getAttribute('href')).toBe('/all-time')

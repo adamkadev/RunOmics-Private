@@ -282,33 +282,39 @@ function YearCard({ view }: { view: ProgressHubView }) {
 }
 
 /** The four record distances as 2 x 2 tiles, the newest tagged while it is new (3.0). */
+/**
+ * The four hub records in one card (3.0.1): label over time, side by side.
+ * Four 2×2 tiles took a screen's worth of height for four numbers. The
+ * whole card opens Records.
+ */
 function Records({ records }: { records: ProgressHubView['records'] }) {
   const h = t.profile.hub
-  const tile = cardClass({ padding: 'none', className: cn('flex flex-col gap-1 rounded-[18px] px-4 py-3.5', LINK_CARD) })
-  if (records.length === 0) {
-    return (
-      <Link href="/records" className={tile} data-testid="records-tile">
-        <span className={TITLE}>{h.records}</span>
-        <span className="text-sm text-muted-foreground">{h.noRecords}</span>
-      </Link>
-    )
-  }
   return (
-    <div className="grid grid-cols-2 gap-3" data-testid="records">
-      {records.map((r) => (
-        <Link key={r.key} href="/records" className={tile} data-testid="records-tile">
-          <span className="flex items-baseline justify-between gap-2 text-[13px] text-muted-foreground">
-            {h.recordLabels[r.key] ?? r.label}
-            {r.recent && (
-              <span data-testid="latest-record" aria-label={h.newRecordLabel} className="text-caption font-bold text-accent-text">
-                {h.newRecord}
-              </span>
-            )}
-          </span>
-          <span className="text-2xl font-bold leading-tight tracking-[-0.01em] text-foreground">{formatDuration(r.seconds)}</span>
-        </Link>
-      ))}
-    </div>
+    <Link href="/records" className={cardClass({ className: cn('flex flex-col gap-3', LINK_CARD) })} data-testid="records-tile">
+      <div className="flex items-center justify-between gap-2">
+        <span className={TITLE}>{h.records}</span>
+        <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+      </div>
+      {records.length === 0 ? (
+        <span className="text-sm text-muted-foreground">{h.noRecords}</span>
+      ) : (
+        <dl className="grid grid-cols-4 gap-2" data-testid="records">
+          {records.map((r) => (
+            <div key={r.key} className="flex min-w-0 flex-col gap-0.5" data-testid="record">
+              <dt className="flex items-baseline gap-1 whitespace-nowrap text-xs text-muted-foreground">
+                {h.recordLabels[r.key] ?? r.label}
+                {r.recent && (
+                  <span data-testid="latest-record" aria-label={h.newRecordLabel} className="text-caption font-bold text-accent-text">
+                    {h.newRecord}
+                  </span>
+                )}
+              </dt>
+              <dd className="whitespace-nowrap text-[17px] font-semibold tabular-nums leading-tight text-foreground">{formatDuration(r.seconds)}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </Link>
   )
 }
 
