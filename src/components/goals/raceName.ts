@@ -10,7 +10,7 @@ export function isPlaceholderRaceName(distance: string, name: string): boolean {
 /**
  * The name a race goes by: its own, or its place where Garmin's placeholder
  * only restates the distance. A plain module, not the client SeasonRaces,
- * so the Progress hub can call it on the server.
+ * so a server page can call it too.
  */
 export function raceDisplayName(race: Pick<UpcomingRace, 'distance' | 'name' | 'location'>): string {
   return isPlaceholderRaceName(race.distance, race.name) && race.location ? race.location : race.name

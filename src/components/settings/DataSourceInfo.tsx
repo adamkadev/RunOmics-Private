@@ -137,7 +137,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
         <div className={GROUP_ROW} data-testid="cache-confirm">
           <span className="min-w-0">
             <span className="block text-sm text-foreground">{s.offlineCache.clear}</span>
-            <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{s.offlineCache.cost}</span>
+            <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{s.offlineCache.confirm}</span>
           </span>
           <span className="flex shrink-0 items-center gap-4 text-sm">
             <button type="button" onClick={() => setConfirmingClear(false)} className="hit-44 text-muted-foreground transition-opacity active:opacity-60">

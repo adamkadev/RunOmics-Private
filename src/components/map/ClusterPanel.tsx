@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { t } from "@/i18n";
+import { formatKm } from "@/lib/formatters";
 import { MAP_CHIP_GEOMETRY, MAP_CHIP_PADDING, OWN_ROW_SHARE, type AreaRow } from "./mapUtils";
 import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
@@ -26,7 +27,7 @@ function AreaOption({ row, name, selected, onPick }: { row: AreaRow; name: strin
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className={["truncate text-[15px] text-foreground", selected ? "font-semibold" : ""].join(" ")}>{name}</span>
           <span className="text-[13px] text-muted-foreground">
-            {t.common.runs(row.runs)} · {row.km.toLocaleString(t.locale)} {t.units.km}
+            {t.common.runs(row.runs)} · {formatKm(row.km)} {t.units.km}
           </span>
         </span>
         <span className="font-display text-[15px] font-semibold tabular-nums text-foreground">{row.sharePercent}%</span>
@@ -109,7 +110,7 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-[15px] text-foreground">{t.pages.map.moreAreas(folded.length)}</span>
                   <span className="truncate text-[13px] text-muted-foreground">
-                    {t.common.runs(folded.reduce((s, r) => s + r.runs, 0))} · {foldedKm.toLocaleString(t.locale)} {t.units.km} · {t.pages.map.including(names[folded[0]!.idx] ?? "")}
+                    {t.common.runs(folded.reduce((s, r) => s + r.runs, 0))} · {formatKm(foldedKm)} {t.units.km} · {t.pages.map.including(names[folded[0]!.idx] ?? "")}
                   </span>
                 </span>
                 <span className="font-display text-[15px] font-semibold tabular-nums text-muted-foreground">

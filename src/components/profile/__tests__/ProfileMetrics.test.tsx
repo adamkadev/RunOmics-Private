@@ -65,7 +65,8 @@ describe('capability-driven athlete metrics', () => {
     expect(card.className).toContain('grid-cols-3')
     expect(card.textContent).not.toMatch(/estimated|zones\)/i)
     expect(screen.queryByText(a.vo2max)).not.toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /^What is/ })).toHaveLength(3)
+    // Design review, Oct 2026: no definitions behind the labels.
+    expect(screen.queryByRole('button')).toBeNull()
   })
 
   it('draws a line between the rows and between the cells of each', () => {

@@ -32,13 +32,10 @@ function renderWeek() {
       weekStart={new Date(2026, 8, 7)}
       byDate={byDate}
       byDatePlanned={new Map(PLANNED.map((p) => [p.date, p]))}
-      coaching={null}
       hrBounds={{ maxHr: 202, restingHr: 45 }}
       today={TODAY}
       atPresent
       onToday={() => {}}
-      planPhaseRanges={[]}
-      nextRace={null}
       trainingZones={null}
     />,
   )
@@ -112,13 +109,10 @@ describe('planned km from the plan (G04)', () => {
         weekStart={new Date(2026, 8, 7)}
         byDate={byDate}
         byDatePlanned={new Map(PLANNED.map((p) => [p.date, p]))}
-        coaching={null}
         hrBounds={{ maxHr: 202, restingHr: 45 }}
         today={TODAY}
         atPresent
         onToday={() => {}}
-        planPhaseRanges={[]}
-        nextRace={null}
         trainingZones={null}
       />,
     )

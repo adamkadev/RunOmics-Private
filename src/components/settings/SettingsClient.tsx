@@ -21,6 +21,7 @@ import { NotificationsForm } from './NotificationsForm'
 import { BuildInfo } from './BuildInfo'
 import { GROUP_CARD, GROUP_ROW } from './settingsGroup'
 import { bodyMetrics } from '@/components/profile/ProfileAthleteStats'
+import { GARMIN_CONNECT_URL } from '@/lib/garminConnect'
 
 interface Body {
   heightCm?: number
@@ -270,6 +271,16 @@ function ProfileSection({ body, zones }: { body?: Body; zones?: Zones }) {
           </span>
         </Link>
       </div>
+      {/* Where they change, as a way there (design review, Oct 2026). */}
+      <a
+        href={GARMIN_CONNECT_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="hit-44 self-start px-1 text-xs leading-snug text-accent-text transition-opacity hover:opacity-80"
+        data-testid="profile-garmin-link"
+      >
+        {t.settings.profile.readOnly}
+      </a>
     </Section>
   )
 }

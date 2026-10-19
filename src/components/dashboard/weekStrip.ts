@@ -5,7 +5,7 @@ import { sessionZone, zoneColor } from '@/lib/colors'
 import { formatDate, formatNumber } from '@/lib/formatters'
 import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { t } from '@/i18n'
-import { kindOfType } from './todayVerdict'
+import { kindOfType } from './sessionKind'
 
 interface CoachDay {
   state: string

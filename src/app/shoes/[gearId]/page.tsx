@@ -5,17 +5,17 @@ import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeVerdictInsight } from '@/application/usecases/GetShoeVerdictInsight'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import { wearOutlook, weeksInRotation } from '@/domain/shoe/wearStatus'
-import { BackButton } from '@/components/ui/BackButton'
+import { ShoeBackButton } from '@/components/shoes/ShoeBackButton'
 import { cardClass } from '@/components/ui/Card'
-import { Stat } from '@/components/ui/Stat'
+import { Unit } from '@/components/ui/Stat'
+import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import { TypeDot } from '@/components/ui/TypeDot'
 import { VerdictBlock, type VerdictTone } from '@/components/ui/Verdict'
 import { zoneColor } from '@/lib/colors'
 import Link from 'next/link'
-import { GARMIN_GEAR_URL, WEAR_COLOR, shoeWearCopy } from '@/components/shoes/shoeWear'
+import { GARMIN_GEAR_URL, WEAR_COLOR, shoeProjection, shoeWearCopy } from '@/components/shoes/shoeWear'
 import { WearBar } from '@/components/shoes/WearBar'
-import { formatClock, formatDate, formatDateRange, formatDistance, formatKm, formatMonthShortYear } from '@/lib/formatters'
-import { addDays, isoDate } from '@/lib/calendarDate'
+import { formatClock, formatDate, formatDateRange, formatDistance, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { activityTitle } from '@/lib/activityTitle'
 
@@ -66,23 +66,9 @@ export async function generateStaticParams() {
   return Object.keys(getShoeRegistry()).map((gearId) => ({ gearId }))
 }
 
-/**
- * The month this pair runs out at the current rate.
- *
- * The clock is read here rather than in the component body. The page is ISR, so
- * the answer is baked once per regeneration either way and the month label is
- * stable for far longer than that - but a render that asks what time it is has
- * no fixed output, which is what react-hooks/purity objects to, and a date
- * computed during render is also the one that drifts between a prerender and a
- * rehydrate.
- */
 /** "Mar 2026": when a pair came into rotation, for its eyebrow. */
 function formatMonthYear(iso: string): string {
   return formatDate(iso, { precision: 'month', year: 'always' })
-}
-
-function projectedRunOutMonth(weeksRemaining: number, now = new Date()): string {
-  return formatMonthShortYear(isoDate(addDays(now, weeksRemaining * 7)))
 }
 
 export default async function ShoeDetailPage({
@@ -101,21 +87,7 @@ export default async function ShoeDetailPage({
   const weeksWorn = weeksInRotation(shoe.firstUsedDate, lastWornDate)
   const avgRunKm = shoe.activities.length > 0 ? shoe.totalKm / shoe.activities.length : null
 
-  // A projection past a year out is six runs extrapolated into noise, not
-  // information - the sentence drops the date it can't actually back up and
-  // says only what's true at this rate.
-  const FAR_OUT_WEEKS = 52
-  const runOutSentence =
-    !shoe.retired && weeksRemaining !== null && weeksRemaining > 0
-      ? weeksRemaining > FAR_OUT_WEEKS
-        ? d.projectedRunOutFar(Math.round(shoe.kmPerWeek), formatKm(shoe.maxKm))
-        : d.projectedRunOut(
-            Math.round(shoe.kmPerWeek),
-            formatKm(shoe.maxKm),
-            projectedRunOutMonth(weeksRemaining),
-            weeksRemaining
-          )
-      : null
+  const runOutLine = shoeProjection(shoe, weeksRemaining)
 
   // "Ran out its life" only fits a pair that actually reached the end of it -
   // one retired well short of its max km gets the honest percentage instead.
@@ -176,7 +148,7 @@ export default async function ShoeDetailPage({
   return (
     <div className="flex flex-col gap-3.5">
       <header className="mb-1.5">
-        <BackButton label={d.back} fallbackHref="/profile" className="mb-3.5" />
+        <ShoeBackButton className="mb-3.5" />
         <div className="flex items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-xs text-muted-foreground" data-testid="shoe-eyebrow">
@@ -241,15 +213,26 @@ export default async function ShoeDetailPage({
               limitLabel={d.limitTick(formatKm(shoe.maxKm))}
               size="md"
             />
-            {runOutSentence && <p className="text-xs leading-snug text-muted-foreground">{runOutSentence}</p>}
+            {runOutLine && <p className="text-xs leading-snug text-muted-foreground" data-testid="shoe-projection">{runOutLine}</p>}
           </>
         )}
-        <div className="mt-0.5 grid grid-cols-2 gap-4 border-t border-border pt-3.5 sm:grid-cols-4" data-testid="shoe-hero-stats">
-          <Stat label={s.heroStats.runs} value={shoe.activities.length} />
-          <Stat label={s.heroStats.avgDistance} value={avgRunKm !== null ? formatKm(avgRunKm, 1) : '–'} unit={avgRunKm !== null ? t.units.km : null} />
-          <Stat label={s.heroStats.avgPace} value={shoe.avgPaceSecPerKm !== null ? formatClock(shoe.avgPaceSecPerKm) : '–'} unit={shoe.avgPaceSecPerKm !== null ? t.units.perKm : null} />
-          <Stat label={s.heroStats.avgHr} value={shoe.avgHeartRate !== null ? Math.round(shoe.avgHeartRate) : '–'} unit={shoe.avgHeartRate !== null ? t.units.bpm : null} />
-        </div>
+        {/* Its four numbers as one row (design review, Oct 2026). */}
+        <dl className="mt-0.5 grid grid-cols-4 gap-2 border-t border-border pt-3.5" data-testid="shoe-hero-stats">
+          {[
+            { label: s.heroStats.runs, value: String(shoe.activities.length), unit: null },
+            { label: s.heroStats.avgDistance, value: avgRunKm !== null ? formatKm(avgRunKm, 1) : '–', unit: avgRunKm !== null ? t.units.km : null },
+            { label: s.heroStats.avgPace, value: shoe.avgPaceSecPerKm !== null ? formatClock(shoe.avgPaceSecPerKm) : '–', unit: shoe.avgPaceSecPerKm !== null ? t.units.perKm : null },
+            { label: s.heroStats.avgHr, value: shoe.avgHeartRate !== null ? String(Math.round(shoe.avgHeartRate)) : '–', unit: shoe.avgHeartRate !== null ? t.units.bpm : null },
+          ].map((stat) => (
+            <div key={stat.label} className="flex min-w-0 flex-col gap-1">
+              <dt className={`${EYEBROW_CLASS} truncate text-muted-foreground`}>{stat.label}</dt>
+              <dd className="whitespace-nowrap text-[17px] font-semibold leading-tight tabular-nums text-foreground">
+                {stat.value}
+                {stat.unit && <Unit>{stat.unit}</Unit>}
+              </dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {/* The standard verdict (v4.17): a status eyebrow on a plain card, no tint. */}

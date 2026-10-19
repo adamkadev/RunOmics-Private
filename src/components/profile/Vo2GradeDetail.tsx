@@ -87,12 +87,13 @@ function Ladder({ view }: { view: Graded }) {
         </div>
       </GlassSurface>
 
-      <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5" data-testid="grade-coach">
-        <p className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{g.coach}</p>
-        <p className="mt-1.5 text-subhead leading-snug text-foreground">
-          {view.next ? g.coachNext(view.next.grade) : g.coachTop}
-        </p>
-      </GlassSurface>
+      {/* Only at the top of the scale: the way to the next grade is the table above. */}
+      {!view.next && (
+        <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5" data-testid="grade-coach">
+          <p className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{g.coach}</p>
+          <p className="mt-1.5 text-subhead leading-snug text-foreground">{g.coachTop}</p>
+        </GlassSurface>
+      )}
     </>
   )
 }

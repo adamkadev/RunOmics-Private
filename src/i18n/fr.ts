@@ -86,7 +86,6 @@ export const fr = {
     topPct: (n: number) => `Top ${n} %`,
     season: 'Cette saison',
     coach: 'Coach',
-    coachNext: (grade: string) => `Le plus court chemin vers ${grade} : une séance de VMA par semaine, en gardant ton volume actuel en endurance.`,
     coachTop: 'Pour la garder : une séance de VMA par semaine et ton volume actuel en endurance.',
     todayUp: (grade: string) => `Note VO₂max passée à ${grade}`,
     todayBack: (grade: string) => `Note VO₂max revenue à ${grade}`,
@@ -227,13 +226,10 @@ export const fr = {
     },
     records: {
       title: 'Records',
-      subtitle: 'Records personnels et prédictions de course',
       back: 'Progression',
     },
     map: {
       title: 'Heatmap',
-      back: 'Activités',
-      runs: (n: number) => `${n} sortie${n > 1 ? 's' : ''} avec GPS`,
       area: 'Zone',
       areas: 'Zones',
       areasSummary: (areas: number, runs: number) =>
@@ -251,6 +247,7 @@ export const fr = {
       noRoutes: 'Aucun parcours pour ce filtre',
       mapUnavailable: 'Carte indisponible - aucune clé de carte configurée',
       attribution: '© MapTiler · © les contributeurs d’OpenStreetMap',
+      credits: 'Crédits de la carte',
       territory: {
         headline: (percent: number, reach: string, home: boolean) => ({
           lead: `${percent} % de tes kilomètres sont courus ici. La moitié de tes sorties restent dans un `,
@@ -309,7 +306,6 @@ export const fr = {
       notifications: 'Notifications',
     },
     sync: {
-      title: 'Synchronisation Garmin',
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',
       action: 'Synchroniser',
       running: 'Synchro…',
@@ -322,7 +318,6 @@ export const fr = {
       cooldown: (min: number) => `À jour — prochaine synchro dans ${min} min.`,
       dailyCap: 'Limite de synchros du jour atteinte. La synchro automatique continue cette nuit.',
       viewRun: 'Voir la sortie ›',
-      takesAbout: 'Environ cinq minutes au total.',
     },
     rowAction: {
       signIn: 'Se connecter ›',
@@ -406,12 +401,13 @@ export const fr = {
       notesUnavailable: 'Exporté sans tes notes ni tes tags : la base des notes n’a pas répondu. Réessaie.',
     },
     profile: {
+      readOnly: 'Depuis Garmin Connect : c’est là que tu les modifies.',
       lthr: (bpm: number) => `FC seuil ${bpm}`,
       maxHr: (bpm: number) => `max ${bpm}`,
     },
     offlineCache: {
       clear: 'Vider le cache hors ligne',
-      cost: 'Les pages et les cartes seront rechargées depuis le réseau à la prochaine visite.',
+      confirm: 'Vider ?',
       confirmAction: 'Vider',
       cleared: 'Cache hors ligne vidé.',
       failed: 'Impossible de vider le cache hors ligne.',
@@ -430,23 +426,36 @@ export const fr = {
   },
 
   dashboard: {
-    recentActivities: {
-      title: 'Récentes',
-    },
-    trainingLoad: {
-      title: 'Charge d’entraînement',
-      fitness: 'Condition',
-      fatigue: 'Fatigue',
-      form: 'Forme',
-      footnote:
-        'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
-    },
-    bodyCard: {
-      deltaIn: (delta: string, days: number) => `${delta} en ${days} jours`,
-      formTrend: { up: 'en récupération', down: 'sous charge', flat: 'stable' },
-      formMoveLead: (trend: string) => `${trend},`,
-      formOnScale: (form: string, band: string) => `Forme ${form} : ${band}`,
+    readiness: {
       open: 'Ouvrir la charge dans Analyses',
+      // Des mots de tous les jours, pas des sigles (Lamiaa, oct. 2026).
+      formLabel: 'Forme',
+      formOnDial: (form: string, band: string) => `Forme ${form} : ${band}`,
+      eyebrowByTone: {
+        go: 'Feu vert',
+        build: 'En charge',
+        caution: 'Prudence',
+        hold: 'Lever le pied',
+      },
+      lineByTone: {
+        go: 'La fatigue est retombée',
+        build: 'Charge dans la zone',
+        caution: 'La fatigue s’accumule',
+        hold: 'La fatigue dépasse la condition',
+      },
+      ctl: 'Condition',
+      atl: 'Fatigue',
+      // La charge de la semaine rapportée à l’habitude : « ×1,79 ».
+      acwr: 'Charge',
+      acwrValue: (ratio: string) => `×${ratio}`,
+      garmin: 'Garmin',
+      lastSevenDays: '7 jours',
+      noValue: '—',
+    },
+    stale: {
+      title: (hours: number) => `Données Garmin vieilles de ${hours} h`,
+      line: (when: string) => `Dernière synchro ${when} · une sortie peut manquer`,
+      sync: 'Synchroniser',
     },
     trainingStatusDays: {
       title: 'Statut d’entraînement',
@@ -467,89 +476,15 @@ export const fr = {
       daysAgo: (d: number) => `il y a ${d} j`,
     },
     todayHero: {
-      tileToday: (date: string | null) => (date ? `Aujourd’hui · ${date}` : 'Aujourd’hui'),
+      tileToday: (kind: string | null) => (kind ? `Aujourd’hui · ${kind}` : 'Aujourd’hui'),
       tileNext: (date: string) => `Ensuite · ${date}`,
+      openSession: 'Voir le plan',
+      fields: { time: 'Durée', dist: 'Dist.', pace: 'Allure', hr: 'FC' },
+      hrCap: (bpm: number) => `≤ ${bpm}`,
       doneTitle: (title: string) => `${title} · Fait`,
+      yesterdayTitle: (title: string) => `Hier · ${title}`,
       missedTitle: (weekday: string, title: string) => `${weekday} · ${title}`,
       notRun: (km: string | null) => (km ? `Pas courue · ${km} km prévus` : 'Pas courue'),
-      eyebrowByTone: {
-        go: 'Feu vert',
-        build: 'En charge',
-        caution: 'Prudence',
-        hold: 'Lever le pied',
-      },
-      // Écrit en français de coureur, pas traduit de l’anglais : « footing »,
-      // « endurance », jamais « garder le facile facile ». Rien ne s’accorde
-      // avec l’athlète (« tes jambes sont fraîches », pas « tu es frais ») :
-      // l’appli ne sait pas qui la lit.
-      verdict: {
-        headline: {
-          rest: { go: 'Jour de repos. Profites-en.', build: 'Jour de repos, comme prévu.', caution: 'Jour de repos, bien placé.', hold: 'Aujourd’hui, repos complet.' },
-          easy: { go: 'Jambes fraîches, mais reste en endurance.', build: 'Dans les clous. Reste en endurance.', caution: 'Footing tranquille aujourd’hui.', hold: 'Footing très léger aujourd’hui.' },
-          quality: { go: 'Jambes fraîches : le bon jour pour la séance.', build: 'Dans les clous : séance comme prévu.', caution: 'Séance maintenue, mais sous contrôle.', hold: 'Allège la séance du jour.' },
-          race: { go: 'Jour de course, jambes fraîches.', build: 'Jour de course : tout est prêt.', caution: 'Jour de course : de la patience au départ.', hold: 'Jour de course : départ prudent.' },
-          done: { go: 'Séance faite, et bien placée.', build: 'Séance faite, comme prévu.', caution: 'Séance faite. Récupère bien.', hold: 'Séance faite. Place à la récupération.' },
-        },
-        why: {
-          go: 'La fatigue est retombée.',
-          build: 'Ta charge d’entraînement est dans la bonne zone.',
-          caution: 'La fatigue commence à s’accumuler.',
-          hold: 'La fatigue a pris le dessus sur ta condition.',
-        },
-        whyDone: {
-          go: '',
-          build: '',
-          caution: '',
-          hold: 'Tu avais déjà de la fatigue dans les jambes.',
-        },
-        yesterdayInLegs: (kind: string) => `Tu as encore ${kind} d’hier dans les jambes.`,
-        tomorrow: 'demain',
-        // Une séance dans une phrase, avec son article : « la séance au seuil ».
-        kind: {
-          easy: 'le footing',
-          recovery: 'le footing de récupération',
-          long_run: 'la sortie longue',
-          tempo: 'le tempo',
-          threshold: 'la séance au seuil',
-          vo2max: 'la séance VO₂ max',
-          anaerobic: 'la séance anaérobie',
-          sprint: 'la séance de sprints',
-          race: 'la course',
-        },
-        gain: {
-          restPaysOff: (when: string, kind: string) => `Ce repos te servira ${when} pour ${kind}.`,
-          restFresh: (when: string, kind: string) => `Tu garderas des jambes fraîches pour ${kind} ${when}.`,
-          restSinksIn: 'C’est pendant le repos que l’entraînement porte ses fruits.',
-          easyHold: 'Courir doucement aide à récupérer sans rien ajouter à la charge.',
-          easyLands: (when: string, kind: string) => `Reste en endurance pour réussir ${kind} ${when}.`,
-          easySave: (when: string, kind: string) => `Garde de l’énergie pour ${kind} ${when}.`,
-          easySettle: 'Rester en endurance aide ton corps à assimiler la charge.',
-          easyGo: 'Ce sont les footings tranquilles qui rendent les séances dures efficaces.',
-          quality: {
-            go: 'Tiens les allures prévues : c’est aujourd’hui que le travail compte.',
-            build: 'Tiens les allures prévues, sans aller plus vite.',
-            caution: 'Respecte les allures prévues, sans ajouter de répétitions.',
-            hold: 'Réduis les répétitions ou remplace-les par un footing : forcer sur des jambes fatiguées rapporte peu.',
-          },
-          race: {
-            go: 'Tout ton entraînement visait ce jour.',
-            build: 'Tout ton entraînement visait ce jour.',
-            caution: 'Pars moins vite que tu en as envie, puis accélère progressivement.',
-            hold: 'Pars moins vite que tu en as envie, puis accélère progressivement.',
-          },
-          done: {
-            go: 'Tu avais des jambes fraîches pour en profiter pleinement.',
-            build: 'C’est avec des séances comme celle-ci que le travail paie.',
-            caution: 'Une journée tranquille ensuite t’aidera à l’assimiler.',
-            hold: 'Dors bien et prévois une journée tranquille ensuite.',
-          },
-        },
-      },
-      restDay: 'Jour de repos',
-      restDaySubtitle: 'Aucune séance prévue',
-      next: (weekday: string, title: string, km: string | null) => `Ensuite : ${weekday} · ${title}${km ? ` · ${km} km` : ''}`,
-      openPlan: 'Voir le plan',
-      race: 'Course',
     },
     weeklyStreak: {
       title: 'Cette semaine',
@@ -1166,12 +1101,10 @@ export const fr = {
     thisWeek: 'Cette semaine',
     shoeFilter: { clear: 'Afficher les sorties de toutes les chaussures' },
     weekLine: {
-      ofKm: (target: string) => ` sur ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 sortie' : `${n} sorties`),
-      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} prévue${done > 1 ? 's' : ''} sur ${planned}`,
       easy: (pct: number) => `${pct} % facile`,
     },
-    mapButton: 'Vue carte',
+    view: { label: 'Affichage', list: 'Liste', map: 'Carte' },
     sort: {
       label: 'Trier',
       date: 'Date',
@@ -1215,14 +1148,12 @@ export const fr = {
         light: 'Clair',
       },
       inZone: (zone: number) => `en Z${zone}`,
-      // L’en-tête des zones d’une sortie facile : « 100 % facile · Z1–Z2 ».
+      // L’en-tête des zones d’une sortie facile sans verdict rédigé : « 100 % facile · Z1–Z2 ».
       easyZones: (from: number, to: number) => `facile · Z${from}–Z${to}`,
       noZones: 'Pas de zones cardiaques pour cette sortie',
       // L’en-tête d’une séance de fractionné, en capitales : « ALLURE DES FRACTIONS · 3 × 8′ ».
       repPace: (count: number, length: string) => `Allure des fractions · ${count} × ${length}`,
       target: (pace: string) => `cible ${pace}`,
-      // La légende du parcours d’une séance de fractionné : elle marque les fractions.
-      repsLegend: 'Fractions',
       photo: 'Photo',
       choosePhoto: 'Choisir une photo',
       photoHint: 'Ce cadre est le recadrage exact',
@@ -1481,7 +1412,6 @@ export const fr = {
     half: 'Semi',
     kmRemaining: (km: number) => `${km} km restants`,
     goalReached: 'Objectif atteint !',
-    upcoming: 'Courses à venir',
     doneHeading: 'Terminées',
     targetTime: (time: string) => `objectif ${time}`,
     finish: 'arrivée',
@@ -1491,7 +1421,7 @@ export const fr = {
     best: 'Record',
     predictedTag: 'prédit',
     seasonRaces: 'Courses de la saison',
-    emptyPbs: (year: number) => `Pas encore de RP pour ${year} - ajoute-les dans les Réglages.`,
+    emptyPbs: (year: number) => `Pas encore de RP pour ${year}.`,
     projection: {
       status: {
         ahead: 'En avance',
@@ -1590,7 +1520,7 @@ export const fr = {
     roles: { daily: 'quotidienne', workouts: 'séances', intervals: 'fractionné', races: 'courses' },
     shareOfDistance: 'part de la distance',
     easy: 'Facile',
-    heroStats: { runs: 'Sorties', avgDistance: 'Distance moy.', avgPace: 'Allure moy.', avgHr: 'FC moy.' },
+    heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure', avgHr: 'FC' },
     lastRuns: 'Dernières sorties',
     neverUsed: 'Jamais utilisée',
     kmOf: (total: string, max: string) => `${total} / ${max} km`,
@@ -1666,9 +1596,8 @@ export const fr = {
       allActivitiesCount: (count: number) => `Les ${count}`,
       empty: 'Aucune activité enregistrée avec cette paire pour le moment.',
       projectedRunOut: (weeklyKm: number, maxKm: string, targetDate: string, weeksRemaining: number) =>
-        `À ${weeklyKm} km par semaine, tu atteindras ${maxKm} km vers ${targetDate} – encore ${weeksRemaining} semaine${weeksRemaining > 1 ? 's' : ''} environ.`,
-      projectedRunOutFar: (weeklyKm: number, maxKm: string) =>
-        `À ${weeklyKm} km par semaine, il te faudra plus d’un an pour atteindre ${maxKm} km.`,
+        `${maxKm} km ≈ ${targetDate} · ${weeksRemaining} sem. à ${weeklyKm} km/sem.`,
+      projectedRunOutFar: (weeklyKm: number, maxKm: string) => `${maxKm} km dans plus d’un an à ${weeklyKm} km/sem.`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
         weeksLeft: (weeks: number) =>
@@ -1726,12 +1655,12 @@ export const fr = {
       ofGoal: (km: string) => `sur ${km} km`,
       goal: 'Objectif',
       runsHours: (runs: number, hours: number) => `${runs} sorties · ${hours} h`,
-      raceMeta: (days: number, race: string, date: string) => `${days > 1 ? 'jours' : 'jour'} · ${race}, ${date}`,
+      days: (days: number) => (days > 1 ? 'jours' : 'jour'),
       predicted: 'Prédit',
-      target: (time: string) => `Objectif ${time}`,
-      toFind: (gap: string) => `${gap} à trouver`,
-      underTarget: (gap: string) => `${gap} d’avance`,
-      noRace: 'Aucune course prévue',
+      targetLabel: 'Objectif',
+      toFindLabel: 'À trouver',
+      planPhase: (phase: string) => `Plan : ${phase}`,
+      garminPrediction: 'Prédiction Garmin',
       vo2Delta: (delta: string) => `${delta} en 12 semaines`,
       thresholdParts: (pace: string | null, lthr: number | null) =>
         [pace ? `Seuil ${pace} /km` : null, lthr ? `LTHR ${lthr} bpm` : null].filter((part): part is string => part !== null),
@@ -1805,7 +1734,6 @@ export const fr = {
   },
 
   records: {
-    title: 'Meilleurs temps',
     distances: {
       '1k': '1K',
       '1mile': '1 mile',
@@ -1825,7 +1753,6 @@ export const fr = {
     },
     recurring: {
       title: 'Tes parcours habituels',
-      subtitle: 'Même terrain, mêmes bosses - le seul cas où l’allure brute se compare d’un mois à l’autre.',
       runCount: (n: number) => `${n} fois`,
       best: 'Record',
       trailKey: 'Une barre par sortie · plus haute = plus rapide',
@@ -1967,9 +1894,8 @@ export const fr = {
       `${sessions} séance${sessions > 1 ? 's' : ''} · ${ranKm} km courus · ${plannedKm} prévus`,
     weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
     switcher: { week: 'Semaine', month: 'Mois' },
-    weekNoPlan: (km: string) => `${km} km · sans plan`,
-    noPlanYet: 'Pas encore de plan',
-    extra: 'en plus',
+    // Fits a month tile beside the km column (design review, Oct 2026): « en plus » was cut.
+    extra: 'bonus',
     extraRun: 'Sortie en plus',
     missedNoRun: 'Manquée · aucune sortie',
     restDay: 'Repos',
@@ -2010,24 +1936,17 @@ export const fr = {
     continuous: 'continu',
     ranKm: (km: string) => `${km} km parcourus`,
     plannedKmLabel: (km: number) => `${km} km prévus`,
-    restCard: {
-      title: 'Jour de repos',
-      noSession: 'Aucune séance prévue.',
-      next: (weekday: string, title: string) => `Aucune séance prévue. Prochaine : ${weekday}, ${title}.`,
-    },
     header: {
-      daysToGo: (n: number) => (n <= 0 ? 'c’est le jour J' : n === 1 ? 'encore 1 jour' : `encore ${n} jours`),
+      raceIn: (distance: string, days: number) => (days <= 0 ? `${distance} aujourd’hui` : `${distance} dans ${days} j`),
     },
     legend: {
       plannedByType: 'Prévu',
     },
     stats: {
-      distance: 'Distance',
-      sessions: 'Séances',
       adherence: 'Respect du plan',
-      noPlan: 'Pas de plan cette semaine',
       ofKm: (km: string) => `/ ${km} km`,
-      ofSessions: (n: number) => `sur ${n}`,
+      ofSessions: (n: number) => `sur ${n} séance${n > 1 ? 's' : ''}`,
+      sessions: (n: number) => (n > 1 ? 'séances' : 'séance'),
       kmPlanned: 'km prévus',
       planned: 'prévues',
     },
@@ -2038,16 +1957,11 @@ export const fr = {
       recovery: (clock: string) => `${clock} récup`,
     },
     weekSummary: {
-      missed: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
-      unplanned: (n: number) => `${n} hors plan`,
       easyOfTarget: (easy: number, target: number) => `${easy} % facile · objectif ${target} %`,
-      aboutLoad: 'À propos de la charge de la semaine',
       loadOfPlan: (load: number, target: number) => `Charge ${load} sur ${target} pts prévus`,
       loadPlannedLine: (load: number) => `Charge ${load} pts prévus`,
       loadDone: (load: number) => `Charge ${load} pts`,
-      loadDefinition: 'Charge d’entraînement en points, d’après la FC et la durée (TRIMP).',
       sessionsCount: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
-      ranOfPlan: (ran: string, plan: string) => `${ran} / ${plan} km`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} sur ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} séance${sessions > 1 ? 's' : ''}`,
     },
@@ -2060,18 +1974,7 @@ export const fr = {
       blockEndsHere: 'fin de bloc',
       weeksInLabel: 'semaines',
     },
-    phaseTrack: {
-      base: 'Base',
-      build: 'Dévelop.',
-      peak: 'Pic',
-      taper: 'Affûtage',
-      raceDay: 'Course',
-      weeks: (n: number) => `${n} sem.`,
-      raceWeek: (date: string) => `Semaine de course : ${date}`,
-    },
     weekPurpose: {
-      thisWeek: 'Cette semaine',
-      upcoming: 'Semaine à venir',
       prePlan: 'Avant le plan',
       planPhase: {
         base: 'Base',

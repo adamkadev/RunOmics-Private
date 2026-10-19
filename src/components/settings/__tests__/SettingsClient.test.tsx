@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { SettingsClient, zonesSummary } from '@/components/settings/SettingsClient'
 import { t } from '@/i18n'
+import { GARMIN_CONNECT_URL } from '@/lib/garminConnect'
 
 const OWNER_EMAIL = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_OWNER_EMAIL = 'owner@test.dev'
@@ -117,10 +118,13 @@ describe('SettingsClient owner gate', () => {
     for (const value of values) expect(value.className).toContain('text-muted-foreground')
     expect(profile.textContent).not.toContain('BMI')
 
-    const links = within(profile).getAllByRole('link')
-    expect(links).toHaveLength(1)
-    expect(links[0]!.getAttribute('href')).toBe('/athlete')
-    expect(links[0]!.textContent).toBe(`${t.pages.athlete.title}LTHR 179 · Max 200`)
+    const athlete = screen.getByTestId('athlete-zones-row')
+    expect(athlete.getAttribute('href')).toBe('/athlete')
+    expect(athlete.textContent).toBe(`${t.pages.athlete.title}LTHR 179 · Max 200`)
+    // Design review, Oct 2026: the note is the way to Garmin Connect, where they change.
+    const garmin = within(profile).getByRole('link', { name: t.settings.profile.readOnly })
+    expect(garmin.getAttribute('href')).toBe(GARMIN_CONNECT_URL)
+    expect(garmin.className).toContain('hit-44')
   })
 
   it('names only the heart rate Garmin has on the Athlete & zones row', () => {

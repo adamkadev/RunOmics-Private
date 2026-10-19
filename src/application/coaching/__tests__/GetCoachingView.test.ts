@@ -18,10 +18,10 @@ describe('reading the coaching plan', () => {
     expect(getTodayPrescription('2026-09-15', empty)).toBeNull()
   })
 
-  it('dates today by the local calendar, as the rest of the app does', () => {
-    // In a child process because the zone is process-wide. At 20:00 UTC on
-    // Sunday the 13th it is already Monday in Auckland: a UTC "today" put the
-    // overview a week behind the prescription shown beside it.
+  // In a child process because the zone is process-wide. At 20:00 UTC on
+  // Sunday the 13th it is already Monday in Auckland: a UTC "today" put the
+  // overview a week behind the prescription shown beside it.
+  function currentWeekAt(env: Record<string, string>): string {
     const script = `
       const RealDate = Date
       const now = RealDate.parse('2026-09-13T20:00:00Z')
@@ -41,12 +41,18 @@ describe('reading the coaching plan', () => {
         process.stdout.write(String(getCoachingOverview(undefined, repository).currentWeekId))
       })().catch((error) => { console.error(error); process.exitCode = 1 })
     `
-    const currentWeek = execFileSync(process.execPath, ['--conditions=react-server', '--import', 'tsx', '-e', script], {
+    return execFileSync(process.execPath, ['--conditions=react-server', '--import', 'tsx', '-e', script], {
       cwd: process.cwd(),
       encoding: 'utf-8',
-      env: { ...process.env, TZ: 'Pacific/Auckland' },
+      env: { ...process.env, ...env },
     })
+  }
 
-    expect(currentWeek).toBe('week-2')
+  it('dates today by the local calendar when no zone is set, as the rest of the app does', () => {
+    expect(currentWeekAt({ TZ: 'Pacific/Auckland', NEXT_PUBLIC_TIME_ZONE: '' })).toBe('week-2')
+  })
+
+  it("dates today in the athlete's zone on a UTC server", () => {
+    expect(currentWeekAt({ TZ: 'UTC', NEXT_PUBLIC_TIME_ZONE: 'Pacific/Auckland' })).toBe('week-2')
   })
 })

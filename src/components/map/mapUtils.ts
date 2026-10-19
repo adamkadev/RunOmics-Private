@@ -2,7 +2,7 @@ import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { distanceKm, median, round } from "@/lib/math";
 import { t } from "@/i18n";
-import { formatDecimal } from "@/lib/formatters";
+import { formatDecimal, formatNumber } from "@/lib/formatters";
 
 export interface HeatFilters {
   year: string | null;
@@ -77,7 +77,7 @@ export function reachKm(km: number): number {
 }
 
 export function reachLabel(km: number): string {
-  return `${reachKm(km).toLocaleString(t.locale)} ${t.units.km}`;
+  return `${formatNumber(reachKm(km))} ${t.units.km}`;
 }
 
 export interface AreaRow {

@@ -1,4 +1,3 @@
-import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import { cardClass } from '@/components/ui/Card'
 import { Unit } from '@/components/ui/Stat'
 import { formatDuration, formatNumber } from '@/lib/formatters'
@@ -9,8 +8,6 @@ import { t } from '@/i18n'
 
 interface MetricData {
   label: string
-  /** A term with a definition behind an (i). */
-  glossary?: GlossaryKey
   unit: string
   value: string | number | undefined
 }
@@ -34,15 +31,14 @@ export function athleteStats(athlete: AthletePageView): AvailableMetric[] {
   const a = t.settings.athlete
   return available([
     { label: a.restingHr, unit: t.units.bpm, value: athlete.restingHrBpm },
-    { label: a.thresholdHr, glossary: 'lthr', unit: t.units.bpm, value: athlete.lthrBpm },
+    { label: a.thresholdHr, unit: t.units.bpm, value: athlete.lthrBpm },
     { label: a.maxHr, unit: t.units.bpm, value: athlete.maxHrBpm },
     {
       label: a.thresholdPace,
-      glossary: 'thresholdPace',
       unit: t.units.perKm,
       value: athlete.thresholdPaceSecPerKm ? formatDuration(athlete.thresholdPaceSecPerKm) : undefined,
     },
-    { label: a.vma, glossary: 'vma', unit: t.units.kmh, value: athlete.vmaKmh },
+    { label: a.vma, unit: t.units.kmh, value: athlete.vmaKmh },
     {
       label: a.fitnessAge,
       unit: athlete.age !== undefined ? a.ofAge(athlete.age) : '',
@@ -53,8 +49,8 @@ export function athleteStats(athlete: AthletePageView): AvailableMetric[] {
 
 /**
  * The stats as one card of cells, three to a row, a line between them
- * (v4.17; 3.0 1j). Each label with a definition opens it on a tap; there is
- * no (i) on the card.
+ * (v4.17; 3.0 1j), under plain labels (design review, Oct 2026: no
+ * definitions - they clipped inside the label's truncate).
  */
 export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
   const cells = athleteStats(athlete)
@@ -69,7 +65,7 @@ export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
           className={cn('flex min-w-0 flex-col gap-1 px-4 py-3.5', i % 3 > 0 && 'border-l border-border', i >= 3 && 'border-t border-border')}
         >
           <div className="truncate text-xs text-muted-foreground">
-            {cell.glossary ? <GlossaryTerm term={cell.glossary} quiet>{cell.label}</GlossaryTerm> : cell.label}
+            {cell.label}
           </div>
           <div className="truncate text-[22px] font-semibold leading-tight tabular-nums text-foreground">
             {cell.value}

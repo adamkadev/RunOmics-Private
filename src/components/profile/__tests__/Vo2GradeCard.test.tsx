@@ -89,7 +89,8 @@ describe('Vo2GradeDetail (G2)', () => {
     expect(screen.getByTestId('grade-row-A+').textContent).toContain(t.vo2Grade.andAbove('55.4'))
     expect(screen.getByTestId('grade-row-C').textContent).toContain(t.vo2Grade.below('42.6'))
     expect(screen.getByTestId('grade-season').textContent).toContain('B+')
-    expect(screen.getByTestId('grade-coach').textContent).toContain(t.vo2Grade.coachNext('A'))
+    // Design review, Oct 2026: no coach line on the way to the next grade.
+    expect(screen.queryByTestId('grade-coach')).toBeNull()
   })
 })
 

@@ -34,7 +34,7 @@ describe('Clear offline cache', () => {
     expect(screen.getByTestId('cache-row').innerHTML).not.toContain('--neg')
 
     await userEvent.click(screen.getByTestId('cache-row'))
-    expect(screen.getByText(s.offlineCache.cost)).toBeInTheDocument()
+    expect(screen.getByText(s.offlineCache.confirm)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: s.actions.confirmCancel }))
     expect(screen.getByTestId('cache-row')).toBeInTheDocument()
     expect(keys).not.toHaveBeenCalled()

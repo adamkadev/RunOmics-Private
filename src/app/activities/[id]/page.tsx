@@ -129,7 +129,7 @@ export default async function ActivityDetailPage({
                   <p data-title-sub className="text-sm text-muted-foreground">{activity.comment}</p>
                 )}
               </div>
-              <ShareButton activity={shareActivity(activity, session)} />
+              <ShareButton activity={shareActivity(activity, session, aiVerdict)} />
             </header>
           </>
         }
