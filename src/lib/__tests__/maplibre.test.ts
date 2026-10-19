@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import { LANDMARK_LABEL_LAYER, PARK_LABEL_LAYER, WATER_LABEL_LAYER, addLandmarkLabels, addParkLabels, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
+import { showPlacesAtAnyZoom, LANDMARK_LABEL_LAYER, PARK_LABEL_LAYER, WATER_LABEL_LAYER, addLandmarkLabels, addParkLabels, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
 
-type Layer = { id: string; type: string; 'source-layer'?: string; source?: string }
+type Layer = { id: string; type: string; 'source-layer'?: string; source?: string; filter?: unknown }
 
 function fakeMap(layers: Layer[], filters: Record<string, unknown> = {}) {
   const layout: Record<string, Record<string, unknown>> = {}
@@ -206,5 +206,36 @@ describe('addLandmarkLabels (3.0.1)', () => {
     const bare: Layer[] = [{ id: 'Culture', type: 'symbol', 'source-layer': 'poi_culture', source: 'planet' }]
     addLandmarkLabels(fakeMap(bare).map, { halo: '#0b0c0c', landmark: '#9a8ca8' })
     expect(bare.filter((l) => l.id.startsWith(LANDMARK_LABEL_LAYER))).toHaveLength(1)
+  })
+})
+
+describe('showPlacesAtAnyZoom (3.0.1)', () => {
+  // The style fades hamlets in at zoom 14, and drops a city label above it:
+  // the small places never showed, and the big ones went as you zoomed in.
+  const layers = (): Layer[] => [
+    { id: 'Place labels', type: 'symbol', 'source-layer': 'place_label', filter: ['match', ['get', 'class'], ['hamlet', 'suburb', 'quarter'], true, false] },
+    { id: 'City labels', type: 'symbol', 'source-layer': 'city_label' },
+    { id: 'Road labels', type: 'symbol', 'source-layer': 'road_label' },
+    { id: 'runomics-park-label', type: 'symbol', 'source-layer': 'poi_public' },
+  ]
+
+  it('lifts every place name to any zoom, and leaves the streets alone', () => {
+    const { map, zooms, paint } = fakeMap(layers())
+    showPlacesAtAnyZoom(map)
+
+    expect(zooms['Place labels']).toEqual([0, 24])
+    // A city kept maxzoom 14, so its name went the moment you zoomed in.
+    expect(zooms['City labels']).toEqual([0, 24])
+    expect(paint['City labels']?.['text-opacity']).toBe(1)
+    // Street names and this app's own layers are not place names.
+    expect(zooms['Road labels']).toBeUndefined()
+    expect(zooms['runomics-park-label']).toBeUndefined()
+  })
+
+  it('keeps a district as faint as the caller asks', () => {
+    const { map, paint } = fakeMap(layers())
+    showPlacesAtAnyZoom(map, { districtOpacity: 0.8 })
+    expect(paint['Place labels']?.['text-opacity']).toBe(0.8)
+    expect(paint['City labels']?.['text-opacity']).toBe(1)
   })
 })

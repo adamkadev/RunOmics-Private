@@ -72,6 +72,22 @@ export interface ParkLabelOptions {
   lang?: string
 }
 
+/**
+ * Every place name the style keeps, at any zoom, big or small. The tiles hold
+ * hamlets and isolated dwellings, but the style fades them in at zoom 14; a
+ * city label is dropped above 14 and a town above 16. So a run through a
+ * hamlet passed through nothing named, and zooming into a city lost its name.
+ * The route's own fence still decides which of them find room.
+ */
+export function showPlacesAtAnyZoom(map: MapLibreMap, options: { districtOpacity?: number } = {}): void {
+  for (const raw of map.getStyle().layers) {
+    const layer = raw as StyleLayer
+    if (layer.id.startsWith(OWN_LAYER_PREFIX) || !isPlaceLabelLayer(layer)) continue
+    map.setLayerZoomRange(layer.id, 0, STYLE_MAX_ZOOM)
+    map.setPaintProperty(layer.id, 'text-opacity', isDistrictLayer(layer) ? (options.districtOpacity ?? 1) : 1)
+  }
+}
+
 export const LANDMARK_LABEL_LAYER = 'runomics-landmark-label'
 /**
  * The places a city is known for. The tiles split POIs by category, so a

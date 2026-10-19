@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 import { maptilerStyle } from '@/lib/maptiler'
 import { MapAttribution } from '@/components/ui/MapAttribution'
 import { t } from '@/i18n'
-import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre } from '@/lib/maplibre'
+import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, showPlacesAtAnyZoom } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
 import {
   ROUTE_FIT_PADDING,
@@ -261,6 +261,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         addWaterLabels(map, { halo: SURFACES[mode].background, water: WATER_INK[mode], lang: MAP_LANG })
         addParkLabels(map, { halo: SURFACES[mode].background, park: PARK_INK[mode], lang: MAP_LANG })
         addLandmarkLabels(map, { halo: SURFACES[mode].background, landmark: LANDMARK_INK[mode], lang: MAP_LANG })
+        showPlacesAtAnyZoom(map)
         layersReadyRef.current = true
         removeFence?.()
         removeFence = addEdgeFence(map)
