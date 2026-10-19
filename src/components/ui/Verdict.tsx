@@ -18,11 +18,6 @@ const TONE_COLOR: Record<VerdictTone, string> = {
 /** The dot carries the tone's colour; a neutral one is a quiet grey. */
 const DOT_COLOR: Record<VerdictTone, string> = { ...TONE_COLOR, neutral: 'var(--muted-foreground)' }
 
-/**
- * An insight's eyebrow (v4.17): a 7 px status dot and the verdict in the
- * same status colour - Hold back in warn, Strong session in pos, Replace
- * soon in warn. The card around it stays a plain surface; nothing tints it.
- */
 export function VerdictEyebrow({ tone, children, className }: { tone: VerdictTone; children: ReactNode; className?: string }) {
   return (
     <p className={cn(EYEBROW_CLASS, 'flex items-center gap-2', className)} style={{ color: TONE_COLOR[tone] }}>

@@ -5,12 +5,6 @@ import { t } from '@/i18n'
 import type { PlanPrescriptionView } from './planCoachingView'
 import { resolveDayType, resolvePlannedType } from './weekPlanDays'
 
-/**
- * What a day is on Plan (redesign 3.0): an easy run, the long run, or a
- * quality session. Easy and quality keep the colour of their type's zone
- * (RUN_TYPE_ZONE), as every other screen draws them; the long run is the
- * easy blue a step deeper, so the week's one long day stands out.
- */
 export type SessionKind = 'easy' | 'long' | 'quality'
 
 export interface DayKind {

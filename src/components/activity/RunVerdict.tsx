@@ -24,15 +24,6 @@ const STATUS_TONE: Record<RunTone, VerdictTone> = {
   caution: 'warn',
 }
 
-/**
- * The verdict (v4.17): an eyebrow with a status dot saying how the session
- * went, the headline, then the coach's sentence in text-2, on a plain card;
- * effort, conditions, shoe and the note follow as one row of chips (3.0) -
- * four full-width rows pushed the tabs a screen down. The body is at
- * most 150 characters, so it shows in full, with no clamp and no "Coach
- * insight" label. Without an AI verdict the card falls back to a headline and
- * invents no body.
- */
 export function RunVerdict({ activity, aiVerdict, children }: Props) {
   const v = t.activity.verdict
   const tone = runVerdictTone(activity)

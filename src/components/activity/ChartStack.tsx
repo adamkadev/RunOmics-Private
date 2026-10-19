@@ -132,14 +132,6 @@ function Dot({ left, top, color }: { left: string; top: string; color?: string }
   )
 }
 
-/**
- * Charts (3.0): heart rate, pace and cadence as 72 pt lanes over the
- * athlete's zones - heart rate in ink, pace in the accent, cadence in the
- * quality colour - elevation last as a strip under them, and one scrub
- * across all of it. The reading sits bold beside each lane's name and the
- * point on the run in the row at the top. Smoothed is the default line; Raw
- * shows what was recorded.
- */
 export function ChartStack({ onScrub, ...input }: Props) {
   const {
     distanceKm,

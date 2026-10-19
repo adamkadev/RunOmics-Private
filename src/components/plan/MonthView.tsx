@@ -126,12 +126,6 @@ function Swatch({ style }: { style: CSSProperties }) {
   return <span aria-hidden className="box-border size-2.5 shrink-0 rounded-[3px]" style={style} />
 }
 
-/**
- * Plan's month (redesign 3.0, 1g): each week a row, its phase a 3 pt border
- * down its left - the current phase in the accent - and the phase named once,
- * over its first week. A day is its date and a tile with its km; the week's
- * km sit at the end of its row. Tapping a week opens it in the Week view.
- */
 export function MonthView({
   year,
   month,

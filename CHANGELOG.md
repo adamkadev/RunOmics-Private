@@ -2,6 +2,49 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.1] - 2026-10-19
+
+3.0.1 — polish. The review of the 3.0 build (canvas 3b–3f): tighter hierarchy
+and one job per colour, with the chart series pinned to their own hues.
+
+### Today
+
+- The structure bar is drawn only for a session built of steps; an easy or a
+  long run is one block of one colour, which the line above already says.
+- A rest day's circle is a filled disc with a dash, not an empty ring.
+- New "Load · last 7 days" strip: each day's TRIMP against the band a day sits
+  in while the week holds its load steady (0.8–1.3 × fitness), today in the
+  accent, the days lettered M–S.
+
+### Plan
+
+- A type letter under each day's bar (E, T, Tm, L), a dash on a rest day.
+- A step's row carries the set's own time ("27′" for 3 × 8′ with 1:30 jog),
+  not its title again.
+- The intensity profile merges a split warm-up into one block and draws the
+  recovery jogs in the cool-down's grey.
+- Month tiles: a run is its type at 25% with a 50% border, a session still to
+  come stays dashed. Every week row reads done / planned, a week to come "–".
+- The month summary drops the phase line the rows already carry.
+
+### Activity
+
+- The headline stats read 20 px, the time rounded to the minute ("1:07 h").
+- One verdict label in the accent ("Strong session · Solid base"), then the
+  AI sentence - or nothing, where before it repeated the label.
+- Effort reads "RPE 7", not "Effort 7 · Hard".
+- Overview opens with a pace and heart-rate preview that switches to Charts.
+- Chart series take fixed hues (RUN_CHART_LINE): heart rate #ff6b6b, pace cyan
+  #4cc9f0, cadence purple - never the accent, which repainted with the theme.
+- The distance axis drops a tick within a step of the end, so "10" and
+  "11.5 km" no longer run together.
+
+### Share
+
+- The route is the accent, as the app draws it, with a white start marker on
+  dark. The logo sits at 80%, and the stat strip has the card's own ground
+  under a full-width hairline.
+
 ## [3.0.0] - 2026-10-19
 
 3.0 — redesign. The app-wide UX pass from the RunOmics 3.0 handoff: one

@@ -5,12 +5,6 @@ import { t } from '@/i18n'
 import { kindLabel, type SessionKind } from './sessionKind'
 import { sessionParts, stepClock, stepSeconds } from './workoutSummary'
 
-/**
- * The selected workout's intensity profile and steps (redesign 3.0, 1d): one
- * block per step, as wide as it lasts - warm-up, cool-down and the jog
- * between reps low and neutral, the work full height in the session's colour
- * - and under it the same session as a list of rows.
- */
 export type StepTone = 'ease' | 'work' | 'recovery'
 
 export interface ProfileBlock {

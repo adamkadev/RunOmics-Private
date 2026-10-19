@@ -95,11 +95,6 @@ function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
   return stats
 }
 
-/**
- * The run's four numbers, once (3.0): a 22 pt value with its unit, its name
- * under it. They were a 2 x 2 card under the map and again a strip pinned
- * under the tabs.
- */
 function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; testId?: string }) {
   return (
     <div className="grid grid-cols-4 gap-x-2" data-testid={testId}>

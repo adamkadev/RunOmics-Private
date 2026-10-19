@@ -37,12 +37,6 @@ function dayName(day: SelectorDay): string {
   return [t.sessionState.dayLabel(formatDate(day.date, { style: 'full' }), state), km].filter(Boolean).join(' · ')
 }
 
-/**
- * The week as seven days (redesign 3.0, 1d): the day's letter, its date, and
- * a bar as long as its km in its session's colour - a rest day a stub, a
- * missed session an outline in the negative status. Selecting a day shows
- * its workout under the selector; today wears the accent.
- */
 export function DaySelector({
   days,
   selectedDate,
