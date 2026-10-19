@@ -43,6 +43,8 @@ export interface ShareCardScene {
 const PAD_X = 16
 /** The mark in the header lockup; small enough to take the 3-arc variant. */
 const LOCKUP_MARK = 12
+/** The lockup sits at 80% (3.0.1 polish, mock 3f): the run is the card's subject, not the brand. */
+const LOCKUP_ALPHA = 0.8
 const LOCKUP_Y = 21
 const RIGHT = W - PAD_X
 
@@ -209,6 +211,8 @@ function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { titl
   // The v5.2 lockup: the mark, then the wordmark in Space Grotesk 700 at
   // -0.03em, 0.36x the mark's height apart.
   ctx.textAlign = 'left'
+  ctx.save()
+  ctx.globalAlpha = LOCKUP_ALPHA
   drawMark(ctx, PAD_X, LOCKUP_Y - LOCKUP_MARK / 2, LOCKUP_MARK, ink.mark)
   ctx.font = `700 10.5px ${fonts.display}`
   ctx.fillStyle = ink.mu
@@ -216,6 +220,7 @@ function drawHeader(ctx: Ctx, { activity, fonts, place }: ShareCardScene, { titl
   setSpacing(ctx, -0.03 * 10.5)
   ctx.fillText('RunOmics', PAD_X + LOCKUP_MARK + 5, LOCKUP_Y)
   setSpacing(ctx, 0)
+  ctx.restore()
 
   ctx.textBaseline = 'alphabetic'
   ctx.font = `700 ${title.size}px ${fonts.display}`
@@ -368,7 +373,7 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
   // last point, one loop marker where it would touch the start.
   const first = pts[0]!
   const last = pts[pts.length - 1]!
-  for (const end of routeEnds(first, last, endsJoined(first, last))) drawRouteMarker(ctx, end.kind, end.at, palette.acc, MARKER_SCALE)
+  for (const end of routeEnds(first, last, endsJoined(first, last))) drawRouteMarker(ctx, end.kind, end.at, palette.marker, MARKER_SCALE)
 }
 
 /** A #rrggbb colour at `alpha`, for a fade to the card's own background. */
@@ -835,8 +840,10 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
 
   const ink = photo ? PHOTO_INK : { tx: palette.tx, mu: palette.mu, mark: palette.acc }
   if (layout.ruleY !== null) {
+    ctx.fillStyle = palette.card
+    ctx.fillRect(0, layout.ruleY, W, H - layout.ruleY)
     ctx.fillStyle = palette.line
-    ctx.fillRect(PAD_X, layout.ruleY, RIGHT - PAD_X, 1)
+    ctx.fillRect(0, layout.ruleY, W, 1)
   }
   drawHeader(ctx, scene, layout, ink)
   if (layout.hero) drawHero(ctx, scene, layout.hero, layout.heroTop, ink)
