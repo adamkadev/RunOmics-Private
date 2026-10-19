@@ -10,6 +10,7 @@ import type {
 import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import { paceZoneKeyFor } from '@/domain/training/typePaceZone'
 import { parseWorkoutStructure } from '@/domain/training/workoutStructure'
+import type { SessionHrTarget } from '@/domain/training/hrTarget'
 import {
   garminAlert,
   isKeyPrescription,
@@ -17,6 +18,7 @@ import {
   prescriptionDuration,
   prescriptionEffortPace,
   prescriptionPace,
+  prescriptionHr,
   prescriptionStructure,
 } from '@/components/coaching/presentation'
 import { pickDefined } from '@/components/pickDefined'
@@ -40,6 +42,7 @@ export interface PlanWorkoutView {
   description: string | null
   notes: string[]
   structure: WorkoutStep[] | null
+  hr: SessionHrTarget | null
   statusLabel: string
   alert: string | null
   activityId: string | null
@@ -89,6 +92,7 @@ export function plannedWorkoutView(
     description: null,
     notes: [],
     structure: plan.steps ?? parseWorkoutStructure(plan.name, plan.durationSecs),
+    hr: null,
     statusLabel: t.plan.planned,
     alert: null,
     activityId: null,
@@ -138,6 +142,7 @@ export function coachWorkoutView(
     description: workout.description || null,
     notes: workout.notes ?? [],
     structure: prescriptionStructure(workout),
+    hr: prescriptionHr(workout),
     statusLabel: t.coaching.states[view.state],
     alert: garminAlert(view),
     activityId: view.activityId,
@@ -145,7 +150,7 @@ export function coachWorkoutView(
   }
 }
 
-const HERO_FIELDS = ['title', 'shortName', 'type', 'duration', 'distanceM', 'scheduledTime', 'target', 'activityId', 'structure'] as const satisfies readonly (keyof PlanWorkoutView)[]
+const HERO_FIELDS = ['title', 'shortName', 'type', 'duration', 'distanceM', 'scheduledTime', 'target', 'activityId', 'structure', 'hr'] as const satisfies readonly (keyof PlanWorkoutView)[]
 
 /**
  * What the dashboard hero shows of today's session. The full view also holds

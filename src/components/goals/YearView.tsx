@@ -48,7 +48,7 @@ export function YearView({ yearData, today, block = null }: Props) {
   // Reached is a state the card says outright, with the surplus, rather than a
   // full bar the reader has to decode.
   const reachedByKm = annualDistanceKm > 0 && totalDistanceKm >= annualDistanceKm ? Math.round(totalDistanceKm - annualDistanceKm) : null
-  const hasRaceDistanceCards = !!goals && (goals.targets.length > 0 || upcomingRaces.length > 0)
+  const hasRaceDistanceCards = (goals?.targets.length ?? 0) > 0 || upcomingRaces.length > 0
   // A year not yet started has nothing to show against its goal (3.0): "0 of 2,500 km" was an empty state.
   const notStarted = yearData.year > Number(today.slice(0, 4)) && totalDistanceKm === 0
 

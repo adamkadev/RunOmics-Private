@@ -64,9 +64,21 @@ describe('shareActivity', () => {
     expect(Object.keys(shareActivity(ACTIVITY)).sort()).toEqual(
       [
         'avgHeartRate', 'date', 'dayOfWeek', 'description', 'distanceKm', 'durationSeconds', 'elevationGain',
-        'hrZones', 'id', 'paceSecPerKm', 'reps', 'route', 'sessionTitle', 'type',
+        'hrZones', 'id', 'paceSecPerKm', 'reps', 'route', 'sessionTitle', 'type', 'verdict',
       ].sort()
     )
+  })
+
+  // Redesign, Oct 2026: the Stats card leads with the verdict the Overview shows.
+  it('carries the written verdict\'s headline and the Overview card\'s tone', () => {
+    expect(shareActivity(ACTIVITY, null, { headline: ' Usual long-run pace, 7 bpm cheaper. ' }).verdict)
+      .toEqual({ tone: 'positive', headline: 'Usual long-run pace, 7 bpm cheaper.' })
+    expect(shareActivity({ ...ACTIVITY, rpe: 9 }, null, { headline: 'Too hard' }).verdict?.tone).toBe('caution')
+  })
+
+  it('has no verdict without a written one, so the card keeps its zones headline', () => {
+    expect(shareActivity(ACTIVITY).verdict).toBeNull()
+    expect(shareActivity(ACTIVITY, null, { headline: '  ' }).verdict).toBeNull()
   })
 })
 
@@ -98,16 +110,6 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
 
   it('reads the reps off the work laps only, with the plan\'s pace for them', () => {
     expect(shareActivity(run, SESSION).reps).toMatchObject({ count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 } })
-  })
-
-  // The route draws the reps where they ran (design review, Oct 2026).
-  it('places each rep along the run, the laps laid end to end', () => {
-    const total = 2500 + 3 * (1818 + 300) + 1600
-    const windows = shareActivity(run, SESSION).reps!.windows
-    expect(windows).toHaveLength(3)
-    expect(windows[0]![0]).toBeCloseTo(2500 / total)
-    expect(windows[0]![1]).toBeCloseTo(4318 / total)
-    expect(windows[2]![1]).toBeCloseTo((total - 1600 - 300) / total)
   })
 
   it('takes the target from the repeat\'s effort step when the name sets none', () => {

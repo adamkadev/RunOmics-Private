@@ -4,8 +4,8 @@
   "description": "Your personal running training dashboard - stats, maps, trends.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0c0d0d",
-  "theme_color": "#0c0d0d",
+  "background_color": "#0b0c0c",
+  "theme_color": "#0b0c0c",
   "icons": [
     {
       "src": "/icons/app-icon.svg",

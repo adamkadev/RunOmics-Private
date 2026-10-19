@@ -1,11 +1,23 @@
 export type LngLat = [number, number]
 
 /**
- * The route's room on every side of the share card's map, in px (design
- * review, Oct 2026): the trace fills the map but never reaches its edge,
- * where the shared image read as cropped.
+ * The route's room on each side of the share card's map, in px. The map
+ * fills the whole card under the header and the stats (redesign, Oct 2026),
+ * so the route is fitted between them: 16 px under the header's words and
+ * 16 px over the stats, ROUTE_INSET from the card's sides.
  */
+export interface RouteFrame {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
+
+/** The route's room from the card's sides, where no text sits. */
 export const ROUTE_INSET = 14
+
+/** The route's clearance from the header's words and from the stats. */
+export const ROUTE_TEXT_GAP = 16
 
 const MAX_POINTS = 150
 
@@ -22,7 +34,10 @@ function mercator([lng, lat]: LngLat): [number, number] {
 
 const MIN_EXTENT = 1e-7
 
-export function projectRoute(route: LngLat[], w: number, h: number): [number, number][] {
+const UNIFORM: RouteFrame = { top: ROUTE_INSET, right: ROUTE_INSET, bottom: ROUTE_INSET, left: ROUTE_INSET }
+
+/** The route fitted into a w x h box, `frame` clear of its edges: the card without its basemap. */
+export function projectRoute(route: LngLat[], w: number, h: number, frame: RouteFrame = UNIFORM): [number, number][] {
   const simplified = simplifyRoute(route)
   const pts = simplified.map(mercator)
   const xs = pts.map(p => p[0])
@@ -30,15 +45,49 @@ export function projectRoute(route: LngLat[], w: number, h: number): [number, nu
   const minX = Math.min(...xs), maxX = Math.max(...xs)
   const minY = Math.min(...ys), maxY = Math.max(...ys)
 
-  const availW = w - ROUTE_INSET * 2
-  const availH = h - ROUTE_INSET * 2
+  const availW = w - frame.left - frame.right
+  const availH = h - frame.top - frame.bottom
   const scale = Math.min(
     availW / Math.max(maxX - minX, MIN_EXTENT),
     availH / Math.max(maxY - minY, MIN_EXTENT),
   )
-  const cx = w / 2
-  const cy = h / 2
+  const cx = frame.left + availW / 2
+  const cy = frame.top + availH / 2
   const ox = cx - ((minX + maxX) / 2) * scale
   const oy = cy - ((minY + maxY) / 2) * scale
   return pts.map(([x, y]) => [x * scale + ox, y * scale + oy])
+}
+
+/**
+ * Points every `step` px along a line drawn on screen (redesign, Oct 2026):
+ * an invisible icon on each, placed above the place names, makes a name that
+ * would touch the route collide and be dropped, as the edge fence does at
+ * the canvas edge. Vertices are kept, so a corner is fenced too.
+ */
+export function routeFencePoints(pts: readonly [number, number][], step = 6): [number, number][] {
+  const out: [number, number][] = []
+  for (let i = 0; i < pts.length; i++) {
+    const [x2, y2] = pts[i]!
+    if (i > 0) {
+      const [x1, y1] = pts[i - 1]!
+      const length = Math.hypot(x2 - x1, y2 - y1)
+      for (let d = step; d < length; d += step) out.push([x1 + ((x2 - x1) * d) / length, y1 + ((y2 - y1) * d) / length])
+    }
+    out.push([x2, y2])
+  }
+  return out
+}
+
+/**
+ * Points every `step` px across the card where the header's band and the
+ * stats' band meet the map, out to the far edge: a name cut by either fade
+ * is dropped, as one cut by the canvas edge is.
+ */
+export function bandFencePoints(w: number, ys: readonly number[], step = 16): [number, number][] {
+  const out: [number, number][] = []
+  for (const y of ys) {
+    for (let x = 0; x < w; x += step) out.push([x, y])
+    out.push([w, y])
+  }
+  return out
 }

@@ -86,8 +86,28 @@ describe('ShoesGrid', () => {
     expect(meta).toBe(`${t.shoes.kmOf('150', '1,000')} · ${t.shoes.runs(12)} · ${t.shoes.lastRun('Sep 17')} · ${t.shoes.roles.daily}`)
   })
 
-  // Design review, Oct 2026: the tick on each bar was an unlabelled mark.
-  it('names each pair\'s retire-from-workouts tick under it', () => {
+  // Design review, Oct 2026: the key once, by the section's label, not under every bar.
+  it('keys the retire-from-workouts tick once when every pair shares it', () => {
+    render(<ShoesGrid shoes={[shoe({ gearId: 'a' }), shoe({ gearId: 'b', totalKm: 300, wearPercent: 30 })]} />)
+
+    expect(screen.getByTestId('shoes-tick-key').textContent).toBe(t.shoes.detail.retireFromWorkouts('800'))
+    expect(screen.queryAllByTestId('wear-tick-label')).toHaveLength(0)
+    expect(screen.getAllByTestId('wear-tick')).toHaveLength(2)
+  })
+
+  it('pills a pair to replace soon under its km left, in warn, and links to it from Shoes', () => {
+    render(<ShoesGrid shoes={[shoe({ gearId: 'a', totalKm: 716, wearPercent: 72 }), shoe({ gearId: 'b' })]} />)
+
+    const [soon, fresh] = screen.getAllByTestId('shoe-card')
+    const pill = soon!.querySelector<HTMLElement>('[data-testid="shoe-verdict-pill"]')!
+    expect(pill.textContent).toBe(t.shoes.status.watch)
+    expect(pill.style.color).toBe('var(--warn)')
+    expect(fresh!.querySelector('[data-testid="shoe-verdict-pill"]')).toBeNull()
+    expect(soon!.getAttribute('href')).toBe('/shoes/a?from=shoes')
+  })
+
+  // Pairs with their own thresholds keep a label under each bar.
+  it('names each pair\'s tick under it when the thresholds differ', () => {
     render(<ShoesGrid shoes={[shoe({ gearId: 'a' }), shoe({ gearId: 'b', maxKm: 800, alertThresholdKm: 640 })]} />)
 
     expect(screen.getAllByTestId('wear-tick-label').map((label) => label.textContent)).toEqual([

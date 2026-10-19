@@ -106,7 +106,6 @@ export const en = {
     topPct: (n: number) => `Top ${n}%`,
     season: 'This season',
     coach: 'Coach',
-    coachNext: (grade: string) => `Your fastest route to ${grade} is one VO₂ interval session a week plus your current easy volume.`,
     coachTop: 'Hold it with one VO₂ interval session a week and your current easy volume.',
     todayUp: (grade: string) => `VO₂max grade up to ${grade}`,
     todayBack: (grade: string) => `VO₂max grade back to ${grade}`,
@@ -253,14 +252,10 @@ export const en = {
     },
     records: {
       title: 'Records',
-      subtitle: 'Personal bests and race predictions',
       back: 'Progress',
     },
     map: {
       title: 'Heatmap',
-      back: 'Activities',
-      // Only runs with a GPS track are on the map (v5.6 #5): 294 of 298.
-      runs: (n: number) => `${n} run${n === 1 ? '' : 's'} with GPS`,
       area: 'Area',
       areas: 'Areas',
       areasSummary: (areas: number, runs: number) =>
@@ -278,6 +273,8 @@ export const en = {
       noRoutes: 'No routes for this filter',
       mapUnavailable: 'Map unavailable - no map token configured',
       attribution: '© MapTiler · © OpenStreetMap contributors',
+      // The ⓘ that opens the credits on every map (3.0).
+      credits: 'Map credits',
       territory: {
         // The place is the eyebrow's (v4.17); the ring is the map's.
         headline: (percent: number, reach: string, home: boolean) => ({
@@ -336,7 +333,6 @@ export const en = {
       notifications: 'Notifications',
     },
     sync: {
-      title: 'Garmin sync',
       subtitle: 'Pull in today’s runs without waiting for tonight.',
       action: 'Sync now',
       // The button while the chain runs; the device line says which step.
@@ -351,7 +347,6 @@ export const en = {
       cooldown: (min: number) => `Up to date — next sync in ${min} min.`,
       dailyCap: 'Daily sync limit reached. Auto-sync continues tonight.',
       viewRun: 'View run ›',
-      takesAbout: 'Takes about five minutes end to end.',
     },
     rowAction: {
       export: 'Export ›',
@@ -361,14 +356,12 @@ export const en = {
     appearance: {
       title: 'Appearance',
       themeLabel: 'Theme',
-      themeHint: 'Auto follows your system setting',
       light: 'Light',
       auto: 'Auto',
       dark: 'Dark',
     },
     accent: {
       title: 'Accent',
-      hint: 'Used for highlights and your own data — never for warnings',
       options: {
         teal:     { label: 'Teal' },
         periwinkle: { label: 'Periwinkle' },
@@ -440,8 +433,6 @@ export const en = {
     dataExport: {
       workbook: 'Export training data (.xlsx)',
       title: 'Export activities',
-      signedOut: (runs: string) => `Workbook or CSV of all ${runs} · sign in to export`,
-      ownerHint: (runs: string) => `Workbook or CSV of all ${runs}`,
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
       sheetTitle: 'Export my activities',
@@ -457,7 +448,6 @@ export const en = {
     },
     offlineCache: {
       clear: 'Clear offline cache',
-      cost: 'Pages and maps reload from the network until you visit them again.',
       confirm: 'Clear it?',
       cleared: 'Offline cache cleared.',
       failed: 'Could not clear the offline cache.',
@@ -468,43 +458,50 @@ export const en = {
       types: {
         training: {
           title: 'Training reminders',
-          subtitle: 'Daily session at 10:00, plus a weekly check-in on your distance goal.',
         },
         shoes: {
           title: 'Shoe wear alerts',
-          subtitle: 'Warns at 70% and 90% of a shoe’s lifespan.',
         },
         // The title says what the toggle does (v5.6 #6): the PR alert.
         races: {
           title: 'PRs and predictions',
-          subtitle: 'When a run sets a PR or moves a race prediction.',
         },
       },
     },
   },
 
   dashboard: {
-    recentActivities: {
-      title: 'Recent',
-    },
-    trainingLoad: {
-      title: 'Training Load',
-      fitness: 'Fitness',
-      fatigue: 'Fatigue',
-      form: 'Form',
-      footnote:
-        'Fitness = 42-day load average (CTL) · Fatigue = 7-day (ATL) · Form = Fitness - Fatigue (TSB).',
-    },
-    // Training status and Form / Fitness / Fatigue, one card on Today.
-    bodyCard: {
-      deltaIn: (delta: string, days: number) => `${delta} in ${days} days`,
-      // Which way Form moved, before by how much (v4.17.1): "recovering, +7 in 7 days".
-      formTrend: { up: 'recovering', down: 'absorbing load', flat: 'steady' },
-      // Before the delta: "recovering," then "+7 in 7 days".
-      formMoveLead: (trend: string) => `${trend},`,
-      formOnScale: (form: string, band: string) => `Form ${form}: ${band}`,
-      // The card opens its metrics' owner, Analytics › Load (design review, Oct 2026).
+    readiness: {
       open: 'Open Load in Analytics',
+      // Everyday words, not acronyms (Oct 2026).
+      formLabel: 'Form',
+      formOnDial: (form: string, band: string) => `Form ${form}: ${band}`,
+      eyebrowByTone: {
+        go: 'Green light',
+        build: 'Building',
+        caution: 'Caution',
+        hold: 'Hold back',
+      },
+      lineByTone: {
+        go: 'Fatigue has come down',
+        build: 'Load in range',
+        caution: 'Fatigue building up',
+        hold: 'Fatigue ahead of fitness',
+      },
+      ctl: 'Fitness',
+      atl: 'Fatigue',
+      // This week's load against the usual: "×0.90".
+      acwr: 'Load',
+      acwrValue: (ratio: string) => `×${ratio}`,
+      garmin: 'Garmin',
+      // In Garmin's place when the watch has no training status (a Forerunner 55).
+      lastSevenDays: '7 days',
+      noValue: '—',
+    },
+    stale: {
+      title: (hours: number) => `Garmin data ${hours} h old`,
+      line: (when: string) => `Last sync ${when} · a run may be missing`,
+      sync: 'Sync',
     },
     trainingStatusDays: {
       title: 'Training Status',
@@ -526,92 +523,15 @@ export const en = {
       daysAgo: (d: number) => `${d}d ago`,
     },
     todayHero: {
-      // The session tile under the verdict (design review, Oct 2026): today's
-      // before it is run, then the next one.
-      tileToday: (date: string | null) => (date ? `Today · ${date}` : 'Today'),
+      tileToday: (kind: string | null) => (kind ? `Today · ${kind}` : 'Today'),
       tileNext: (date: string) => `Next · ${date}`,
-      // The last-run row above it.
+      openSession: 'Open the plan',
+      fields: { time: 'Time', dist: 'Dist', pace: 'Pace', hr: 'HR' },
+      hrCap: (bpm: number) => `≤ ${bpm}`,
       doneTitle: (title: string) => `${title} · Done`,
+      yesterdayTitle: (title: string) => `Yesterday · ${title}`,
       missedTitle: (weekday: string, title: string) => `${weekday} · ${title}`,
       notRun: (km: string | null) => (km ? `Not run · ${km} km planned` : 'Not run'),
-      eyebrowByTone: {
-        go: 'Green light',
-        build: 'Building',
-        caution: 'Caution',
-        hold: 'Hold back',
-      },
-      // The coach card without a written verdict (v4.17.1): what to do with
-      // today, then why and what it gives - never a figure the Form /
-      // Fitness / Fatigue row under it already prints.
-      verdict: {
-        headline: {
-          rest: { go: 'Rest day. Enjoy it.', build: 'Rest day, right on plan.', caution: "Make today's rest count.", hold: "Take full advantage of today's rest." },
-          easy: { go: 'Fresh legs. Keep easy days easy.', build: 'On track. Keep easy days easy.', caution: 'Steady day. Keep it easy.', hold: 'Keep today truly easy.' },
-          quality: { go: "You're fresh. Good day for quality.", build: 'On track. Run it as planned.', caution: 'Run it, but keep it controlled.', hold: 'Go easier than planned today.' },
-          race: { go: "Race day. You're fresh for it.", build: "Race day. You're ready for it.", caution: 'Race day. Start controlled.', hold: 'Race day. Start controlled.' },
-          done: { go: 'Session done. Nicely timed.', build: 'Session done, as planned.', caution: 'Session done. Recover well.', hold: 'Session done. Now let it sink in.' },
-        },
-        why: {
-          go: 'Fatigue has come down.',
-          build: 'Your training load is in range.',
-          caution: 'Fatigue is starting to build up.',
-          hold: 'Fatigue has run ahead of fitness.',
-        },
-        whyDone: {
-          go: '',
-          build: '',
-          caution: '',
-          hold: 'You ran it on tired legs.',
-        },
-        yesterdayInLegs: (kind: string) => `Yesterday's ${kind} is still in your legs.`,
-        tomorrow: 'tomorrow',
-        // A session in a sentence: "Tuesday's threshold session".
-        kind: {
-          easy: 'easy run',
-          recovery: 'recovery run',
-          long_run: 'long run',
-          tempo: 'tempo run',
-          threshold: 'threshold session',
-          vo2max: 'VO₂ max session',
-          anaerobic: 'anaerobic session',
-          sprint: 'sprint session',
-          race: 'race',
-        },
-        gain: {
-          restPaysOff: (when: string, kind: string) => `Rest today pays off in ${when}'s ${kind}.`,
-          restFresh: (when: string, kind: string) => `It keeps you fresh for ${when}'s ${kind}.`,
-          restSinksIn: 'A day off is when the work turns into fitness.',
-          easyHold: 'Easy running helps you recover without adding load.',
-          easyLands: (when: string, kind: string) => `Keep it easy so ${when}'s ${kind} lands.`,
-          easySave: (when: string, kind: string) => `Save the freshness for ${when}'s ${kind}.`,
-          easySettle: 'Keeping it easy lets the load settle.',
-          easyGo: 'Easy days are what make the hard ones count.',
-          quality: {
-            go: 'Hit the planned paces: this is when the work counts most.',
-            build: 'Hit the planned paces, and no faster.',
-            caution: 'Hold the planned paces and skip any extra reps.',
-            hold: 'Cut the reps or swap it for an easy run: quality on tired legs rarely pays.',
-          },
-          race: {
-            go: 'This is what the training was for.',
-            build: 'This is what the training was for.',
-            caution: 'Start slower than you want and build into it.',
-            hold: 'Start slower than you want and build into it.',
-          },
-          done: {
-            go: 'You ran it fresh, when the work counts most.',
-            build: 'Sessions like this are how the work adds up.',
-            caution: 'An easy day next lets it land.',
-            hold: 'Sleep and an easy day next are what turn it into fitness.',
-          },
-        },
-      },
-      restDay: 'Rest day',
-      restDaySubtitle: 'No session scheduled',
-      // The next session on the plan, under today's rest day (v4.17).
-      next: (weekday: string, title: string, km: string | null) => `Next: ${weekday} · ${title}${km ? ` · ${km} km` : ''}`,
-      openPlan: 'Open plan',
-      race: 'Race',
     },
     weeklyStreak: {
       title: 'This week',
@@ -1253,12 +1173,11 @@ export const en = {
     thisWeek: 'This week',
     shoeFilter: { clear: 'Show runs in every shoe' },
     weekLine: {
-      ofKm: (target: string) => ` of ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 run' : `${n} runs`),
-      runsOf: (done: number, planned: number) => `${done} of ${planned} planned run${planned !== 1 ? 's' : ''}`,
       easy: (pct: number) => `${pct}% easy`,
     },
-    mapButton: 'Map view',
+    // The page's two views, under the title (design review, Oct 2026).
+    view: { label: 'View', list: 'List', map: 'Map' },
     sort: {
       label: 'Sort',
       date: 'Date',
@@ -1302,14 +1221,12 @@ export const en = {
         light: 'Light',
       },
       inZone: (zone: number) => `in Z${zone}`,
-      // The headline of an easy run's zones: "100% easy · Z1–Z2".
+      // The headline of an easy run's zones, on a run without a written verdict: "100% easy · Z1–Z2".
       easyZones: (from: number, to: number) => `easy · Z${from}–Z${to}`,
       noZones: 'No heart-rate zones for this run',
       // An interval session's headline, drawn in capitals: "REP PACE · 3 × 8′".
       repPace: (count: number, length: string) => `Rep pace · ${count} × ${length}`,
       target: (pace: string) => `target ${pace}`,
-      // The route's legend on an interval session: the reps are what it marks.
-      repsLegend: 'Reps',
       photo: 'Photo',
       choosePhoto: 'Choose photo',
       photoHint: 'This frame is the exact crop',
@@ -1578,7 +1495,6 @@ export const en = {
     half: 'Half',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
-    upcoming: 'Upcoming races',
     doneHeading: 'Done',
     targetTime: (time: string) => `target ${time}`,
     finish: 'finish',
@@ -1588,7 +1504,7 @@ export const en = {
     best: 'Best',
     predictedTag: 'predicted',
     seasonRaces: 'Season Races',
-    emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
+    emptyPbs: (year: number) => `No PBs for ${year} yet.`,
     projection: {
       status: {
         ahead: 'Ahead',
@@ -1692,7 +1608,8 @@ export const en = {
     roles: { daily: 'daily trainer', workouts: 'workouts', intervals: 'intervals', races: 'races' },
     shareOfDistance: 'share of distance',
     easy: 'Easy',
-    heroStats: { runs: 'Runs', avgDistance: 'Avg distance', avgPace: 'Avg pace', avgHr: 'Avg heart rate' },
+    // One row of four in the km card (design review, Oct 2026): short labels.
+    heroStats: { runs: 'Runs', avgDistance: 'Avg', avgPace: 'Pace', avgHr: 'HR' },
     lastRuns: 'Last runs',
     neverUsed: 'Never used',
     // Both numbers arrive formatted (formatKm), so 1,375 has its separator.
@@ -1786,13 +1703,13 @@ export const en = {
       activitiesTitleRetired: 'Last runs before retiring',
       allActivitiesCount: (count: number) => `All ${count}`,
       empty: 'No activities recorded with this pair yet.',
+      // One line (design review, Oct 2026): "1,000 km ≈ Jan ’27 · 11 wk at 25 km/wk".
       projectedRunOut: (weeklyKm: number, maxKm: string, targetDate: string, weeksRemaining: number) =>
-        `At ${weeklyKm} km a week you'll hit ${maxKm} km around ${targetDate} – about ${weeksRemaining} more week${weeksRemaining === 1 ? '' : 's'}.`,
+        `${maxKm} km ≈ ${targetDate} · ${weeksRemaining} wk at ${weeklyKm} km/wk`,
       // A three-year forecast off six runs is noise, not information - past a
       // year out, the sentence drops the date and says only what's true: it's
       // a long way off at this rate.
-      projectedRunOutFar: (weeklyKm: number, maxKm: string) =>
-        `At ${weeklyKm} km a week, ${maxKm} km is more than a year away.`,
+      projectedRunOutFar: (weeklyKm: number, maxKm: string) => `${maxKm} km in over a year at ${weeklyKm} km/wk`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
         weeksLeft: (weeks: number) =>
@@ -1937,7 +1854,6 @@ export const en = {
   },
 
   records: {
-    title: 'Top Times',
     distances: {
       '1k': '1K',
       '1mile': '1 Mile',
@@ -1957,7 +1873,6 @@ export const en = {
     },
     recurring: {
       title: 'Routes you keep coming back to',
-      subtitle: 'Same ground, same hills - the one place raw pace compares across months.',
       runCount: (n: number) => `${n} times`,
       best: 'Best',
       // What a bar is, then the dates its first and last bars were run
@@ -2107,8 +2022,6 @@ export const en = {
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
     // A month's week under its row: run against plan, or what it is without one.
-    weekNoPlan: (km: string) => `${km} km · no plan`,
-    noPlanYet: 'No plan yet',
     // A run on a day with nothing planned, in its cell and its name.
     extra: 'extra',
     extraRun: 'Extra run',
@@ -2155,26 +2068,19 @@ export const en = {
     continuous: 'continuous',
     ranKm: (km: string) => `${km} km ran`,
     plannedKmLabel: (km: number) => `${km} km planned`,
-    restCard: {
-      title: 'Rest day',
-      noSession: 'No session planned.',
-      next: (weekday: string, title: string) => `No session planned. Next up: ${weekday}, ${title}.`,
-    },
-    // v4.17: the race the plan builds to, and how far off it is, under the title.
+    // The race the plan builds to, after the phase under the title: "Half in 42 d".
     header: {
-      daysToGo: (n: number) => (n <= 0 ? 'race day' : n === 1 ? '1 day to go' : `${n} days to go`),
+      raceIn: (distance: string, days: number) => (days <= 0 ? `${distance} today` : `${distance} in ${days} d`),
     },
     legend: {
       plannedByType: 'Planned',
     },
-    // The week's three stats (v4.17).
+    // The week's three figures, on one line (design review, Oct 2026).
     stats: {
-      distance: 'Distance',
-      sessions: 'Sessions',
       adherence: 'Plan adherence',
-      noPlan: 'No plan this week',
       ofKm: (km: string) => `/ ${km} km`,
-      ofSessions: (n: number) => `of ${n}`,
+      ofSessions: (n: number) => `of ${n} session${n !== 1 ? 's' : ''}`,
+      sessions: (n: number): string => (n === 1 ? 'session' : 'sessions'),
       kmPlanned: 'km planned',
       planned: 'planned',
     },
@@ -2186,16 +2092,11 @@ export const en = {
       recovery: (clock: string) => `${clock} rec`,
     },
     weekSummary: {
-      missed: (n: number) => `${n} missed`,
-      unplanned: (n: number) => `${n} unplanned`,
       easyOfTarget: (easy: number, target: number) => `${easy}% easy · ${target}% target`,
-      aboutLoad: 'About the week\'s load',
       loadOfPlan: (load: number, target: number) => `Load ${load} of ${target} pts planned`,
       loadPlannedLine: (load: number) => `Load ${load} pts planned`,
       loadDone: (load: number) => `Load ${load} pts`,
-      loadDefinition: 'Training load in points, from heart rate and duration (TRIMP).',
       sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
-      ranOfPlan: (ran: string, plan: string) => `${ran} / ${plan} km`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} of ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} session${sessions !== 1 ? 's' : ''}`,
     },
@@ -2208,18 +2109,7 @@ export const en = {
       blockEndsHere: 'block end',
       weeksInLabel: 'weeks in',
     },
-    phaseTrack: {
-      base: 'Base',
-      build: 'Build',
-      peak: 'Peak',
-      taper: 'Taper',
-      raceDay: 'Race',
-      weeks: (n: number) => `${n} wk`,
-      raceWeek: (date: string) => `Race week ${date}`,
-    },
     weekPurpose: {
-      thisWeek: 'This week',
-      upcoming: 'Upcoming week',
       prePlan: 'Pre-plan',
       planPhase: {
         base: 'Base',

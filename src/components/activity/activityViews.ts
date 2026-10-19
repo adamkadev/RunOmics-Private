@@ -1,4 +1,5 @@
-import type { Activity, ActivitySplit, ActivityType } from '@/domain/activity/types'
+import type { Activity, ActivityType } from '@/domain/activity/types'
+import { runVerdictTone } from '@/domain/activity/runVerdict'
 import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/coaching/types'
 import { repSet } from '@/domain/activity/repSet'
 import type { ShareActivity, ShareReps } from '@/lib/shareCardStats'
@@ -86,27 +87,9 @@ function repTarget(prescription: WorkoutPrescription | null): ShareReps['target'
 }
 
 /**
- * Where the rep laps ran, as shares of the run's distance, the laps laid end
- * to end. A lead-in the Splits tab moved to the warm-up is the first active
- * lap, so the reps are the last of them.
- */
-function repWindows(splits: ActivitySplit[], reps: number): [number, number][] {
-  const total = splits.reduce((sum, split) => sum + split.distanceM, 0)
-  if (total <= 0) return []
-  const windows: [number, number][] = []
-  let at = 0
-  for (const split of splits) {
-    if (split.type === 'interval_active') windows.push([at / total, (at + split.distanceM) / total])
-    at += split.distanceM
-  }
-  return windows.slice(windows.length - reps)
-}
-
-/**
  * An interval session's work (design review, Oct 2026): the work laps the
  * Splits tab reads as reps, their time over their distance - recoveries,
- * warm-up and cool-down out - the plan's pace for them, and where on the
- * run they fell. Null for any other kind of run, or one the watch kept no
+ * warm-up and cool-down out - and the plan's pace for them. Null for any other kind of run, or one the watch kept no
  * rep laps for.
  */
 export function shareReps(activity: Pick<Activity, 'type' | 'splits'>, prescription: WorkoutPrescription | null): ShareReps | null {
@@ -121,7 +104,6 @@ export function shareReps(activity: Pick<Activity, 'type' | 'splits'>, prescript
     repSeconds: set.repDurationSec,
     paceSecPerKm: Math.round((seconds / metres) * 1000),
     target: repTarget(prescription),
-    windows: repWindows(activity.splits, set.reps.length),
   }
 }
 
@@ -181,14 +163,22 @@ export function runName(activity: Pick<Activity, 'description' | 'date'>, sessio
 /**
  * The share card's run, with the coach's session when it has one: its name,
  * as the plan shows it; its kind - a threshold session the watch filed as
- * tempo is read as the threshold it was set as - and its reps' target.
+ * tempo is read as the threshold it was set as - and its reps' target. The
+ * Stats card leads with the run's written verdict (redesign, Oct 2026), its
+ * tone the Overview card's; a run without one keeps the zones headline.
  */
-export function shareActivity(activity: Activity, session: WorkoutPrescription | null = null): ShareActivity {
+export function shareActivity(
+  activity: Activity,
+  session: WorkoutPrescription | null = null,
+  aiVerdict: { headline: string } | null = null,
+): ShareActivity {
   const type = session ? COACHING_TO_ACTIVITY_TYPE[session.type] : activity.type
+  const headline = aiVerdict?.headline.trim()
   return {
     ...pickDefined(activity, SHARE_FIELDS),
     type,
     sessionTitle: session ? sessionName(session) : null,
     reps: shareReps({ type, splits: activity.splits }, session),
+    verdict: headline ? { tone: runVerdictTone(activity), headline } : null,
   }
 }

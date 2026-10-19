@@ -337,6 +337,14 @@ export function relativeTimeParts(iso: string, now: Date = new Date()): { unit: 
   return { unit: 'days', value: Math.floor(diffHours / 24) }
 }
 
+/** A moment this week, as the stale banner names it: "Sat 14:40". */
+export function formatWeekdayTime(iso: string): string {
+  const at = new Date(iso)
+  const weekday = stableSpaces(at.toLocaleDateString(t.locale, { weekday: 'short' }).replace(/\.$/, ''))
+  const time = stableSpaces(at.toLocaleTimeString(t.locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))
+  return `${weekday} ${time}`
+}
+
 export function formatRelativeAgo(iso: string): string {
   const s = t.dashboard.syncStatus
   const { unit, value } = relativeTimeParts(iso)
