@@ -427,6 +427,7 @@ export const fr = {
       open: 'Ouvrir la charge dans Analyses',
       // Des mots de tous les jours, pas des sigles (Lamiaa, oct. 2026).
       formLabel: 'Forme',
+      yesterday: 'Hier',
       formOnDial: (form: string, band: string) => `Forme ${form} : ${band}`,
       eyebrowByTone: {
         go: 'Feu vert',

@@ -7,8 +7,8 @@ import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/co
 import { verdictTone } from '@/domain/training/readiness'
 import { recentTraining } from '@/domain/training/recentTraining'
 import { TODAY_SURFACE, todayInsightGuard, todayInsightHash, type TodayContext } from '@/domain/ai/todayInsight'
-import { readVerifiedInsight } from '@/infrastructure/repositories/FirestoreInsightsRepository'
-import { appTodayIso } from '@/lib/calendarDate'
+import { readLatestInsight, readVerifiedInsight } from '@/infrastructure/repositories/FirestoreInsightsRepository'
+import { addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
 import type { Insight } from '@/lib/gemini'
 
 export function buildTodayContext(
@@ -59,16 +59,34 @@ export async function todayInsightSession(today: string = appTodayIso()): Promis
   return prescription ? asPlannedWorkout(prescription) : await getTodayPlannedWorkout(today)
 }
 
+/** Today's card, or yesterday's while today's is not written yet (3.1.0). */
+export interface TodayVerdict extends Insight {
+  /** Written on the athlete's previous day: Today labels it "Yesterday". */
+  yesterday?: boolean
+}
+
+/**
+ * Today's verdict. Between midnight and the night's sync no card matches the
+ * new day, and the hero used to sit empty; the latest card, when it was
+ * written yesterday (the athlete's day), stands in, marked as yesterday's.
+ * An older one is not shown.
+ */
 export async function getTodayInsight(
   status: TrainingStatus | null,
   plannedWorkout: PlannedWorkout | null,
   today: string = appTodayIso()
-): Promise<Insight | null> {
+): Promise<TodayVerdict | null> {
   if (!status) return null
 
   const context = buildTodayContext(status, plannedWorkout, today)
-  return readVerifiedInsight(TODAY_SURFACE, {
+  const fresh = await readVerifiedInsight(TODAY_SURFACE, {
     hash: todayInsightHash(context),
     guard: todayInsightGuard(context),
   })
+  if (fresh) return fresh
+
+  const latest = await readLatestInsight(TODAY_SURFACE)
+  if (!latest) return null
+  const yesterday = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
+  return appTodayIso(new Date(latest.generatedAt)) === yesterday ? { ...latest.insight, yesterday: true } : null
 }

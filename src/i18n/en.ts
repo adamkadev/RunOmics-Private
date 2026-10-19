@@ -461,6 +461,8 @@ export const en = {
       open: 'Open Load in Analytics',
       // Everyday words, not acronyms (Oct 2026).
       formLabel: 'Form',
+      // Over yesterday's verdict, shown until the night's sync writes today's (3.1.0).
+      yesterday: 'Yesterday',
       formOnDial: (form: string, band: string) => `Form ${form}: ${band}`,
       eyebrowByTone: {
         go: 'Green light',
