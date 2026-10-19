@@ -179,6 +179,8 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
             byDate={byDate}
             byDatePlanned={byDatePlanned}
             byDateCoach={byDateCoach}
+            coaching={coaching}
+            planPhaseRanges={planPhaseRanges}
             today={today}
             atPresent={atPresent}
             onToday={goToday}

@@ -162,20 +162,3 @@ export type HeroWorkoutView = Pick<PlanWorkoutView, (typeof HERO_FIELDS)[number]
 export function heroWorkoutView(view: PlanWorkoutView): HeroWorkoutView {
   return pickDefined(view, HERO_FIELDS)
 }
-
-/**
- * A done day's structure bar (v5.6 #2): the steps it was planned with. The
- * bar used to take no steps at all and read a threshold 3 × 7:00 as "56 min ·
- * Z4 continuous". A coach prescription counts only when it is linked to this
- * run; Garmin's plan only when the run was the kind of session it planned,
- * so a swapped day doesn't draw someone else's reps. Otherwise: continuous.
- */
-export function doneDaySteps(
-  activityType: ActivityType,
-  coach: Pick<PlanPrescriptionView, 'prescription'> | undefined,
-  garmin: Pick<PlannedWorkout, 'type' | 'steps' | 'name' | 'durationSecs'> | undefined,
-): WorkoutStep[] {
-  if (coach) return prescriptionStructure(coach.prescription) ?? []
-  if (garmin && garmin.type === activityType) return garmin.steps ?? parseWorkoutStructure(garmin.name, garmin.durationSecs) ?? []
-  return []
-}

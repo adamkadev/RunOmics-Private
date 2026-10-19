@@ -1,4 +1,4 @@
-import type { ActivityType, ScheduledTimeOfDay } from '@/domain/activity/types'
+import type { ActivityType } from '@/domain/activity/types'
 
 function ordinal(n: number): string {
   const rem10 = n % 10
@@ -2031,36 +2031,17 @@ export const en = {
     today: 'Today',
     prevPeriod: 'Previous',
     nextPeriod: 'Next',
-    summary: (sessions: number, ranKm: number, plannedKm: number) =>
-      `${sessions} session${sessions !== 1 ? 's' : ''} · ${ranKm} km run · ${plannedKm} planned`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
-    // A run on a day with nothing planned, in its cell and its name.
-    extra: 'extra',
-    extraRun: 'Extra run',
-    // A planned session no run matched, on its sheet: the plan is read-only, so no reschedule.
-    missedNoRun: 'Missed · no run matched',
     planned: 'Planned',
     easyEffortLabel: 'Z2 easy',
     structure: {
-      title: 'Structure',
       warmup: 'Warm-up',
       cooldown: 'Cool-down',
-      single: (min: number, zone: string) => `${min}' @ ${zone}`,
-      reps: (n: number, effort: number, zone: string) => `${n} × ${effort}' @ ${zone}`,
-      repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' easy`,
-      easyZone: 'Z1-Z2',
       min: (m: number) => `${m}'`,
-      rec: (m: number) => `${m}' rec`,
       // Under Today's session bar (design review, Oct 2026): "6 × 20s strides".
       strides: (reps: number, rep: string) => `${reps} × ${rep} strides`,
     },
-    timeOfDay: {
-      Morning: 'Morning',
-      Afternoon: 'Afternoon',
-      Evening: 'Evening',
-      Night: 'Night',
-    } as Record<ScheduledTimeOfDay, string>,
     openPlanner: 'Open the weekly planner',
     type: 'Type',
     races: 'Races',
@@ -2094,6 +2075,16 @@ export const en = {
       kmOf: (km: string) => `/ ${km} km`,
       runsOf: (n: number) => `/ ${n} run${n !== 1 ? 's' : ''}`,
       runs: (n: number): string => (n === 1 ? 'run' : 'runs'),
+    },
+    // Plan's month (redesign 3.0): the phase labels, the key and the summary card.
+    month: {
+      phaseEnds: (phase: string, date: string) => `${phase} · ends ${date}`,
+      phaseWeeks: (phase: string, n: number) => `${phase} · ${n} week${n !== 1 ? 's' : ''}`,
+      long: 'Long',
+      phaseWeek: (phase: string, n: number, total: number) => `${phase} · week ${n} of ${total}`,
+      kmOf: (ran: string, plan: string) => `${ran} of ${plan} km`,
+      nextKey: 'Next key session',
+      weekLabel: (monday: string, km: string) => `Week of ${monday} · ${km}`,
     },
     daySelector: 'Days of the week',
     steps: {

@@ -15,3 +15,11 @@ test('plan opens on the day its URL names', async ({ page }) => {
   await page.goto('/plan?date=2026-10-21')
   await expect(page.getByTestId('day-2026-10-21')).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('plan month view opens a week on tap', async ({ page }) => {
+  await page.goto('/plan?view=month')
+  await expect(page.getByRole('tab', { name: 'Month' })).toHaveAttribute('aria-selected', 'true')
+  await page.getByTestId('month-week').first().click()
+  await expect(page.getByRole('tab', { name: 'Week' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByTestId('day-selector')).toBeVisible()
+})

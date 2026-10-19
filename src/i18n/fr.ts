@@ -1,4 +1,4 @@
-import type { ActivityType, ScheduledTimeOfDay } from '@/domain/activity/types'
+import type { ActivityType } from '@/domain/activity/types'
 import type { Strings } from './en'
 
 export const fr = {
@@ -1903,34 +1903,16 @@ export const fr = {
     today: 'Aujourd’hui',
     prevPeriod: 'Précédent',
     nextPeriod: 'Suivant',
-    summary: (sessions: number, ranKm: number, plannedKm: number) =>
-      `${sessions} séance${sessions > 1 ? 's' : ''} · ${ranKm} km courus · ${plannedKm} prévus`,
     weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
     switcher: { week: 'Semaine', month: 'Mois' },
-    // Fits a month tile beside the km column (design review, Oct 2026): « en plus » was cut.
-    extra: 'bonus',
-    extraRun: 'Sortie en plus',
-    missedNoRun: 'Manquée · aucune sortie',
     planned: 'Prévu',
     easyEffortLabel: 'EF',
     structure: {
-      title: 'Structure',
       warmup: 'Échauffement',
       cooldown: 'Retour au calme',
-      single: (min: number, zone: string) => `${min}' @ ${zone}`,
-      reps: (n: number, effort: number, zone: string) => `${n} × ${effort}' @ ${zone}`,
-      repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' facile`,
-      easyZone: 'Z1-Z2',
       min: (m: number) => `${m}'`,
-      rec: (m: number) => `${m}' récup`,
       strides: (reps: number, rep: string) => `${reps} accélérations de ${rep}`,
     },
-    timeOfDay: {
-      Morning: 'Matin',
-      Afternoon: 'Après-midi',
-      Evening: 'Soir',
-      Night: 'Nuit',
-    } as Record<ScheduledTimeOfDay, string>,
     openPlanner: 'Ouvrir le planificateur',
     type: 'Type',
     races: 'Courses',
@@ -1961,6 +1943,15 @@ export const fr = {
       kmOf: (km: string) => `/ ${km} km`,
       runsOf: (n: number) => `/ ${n} sortie${n > 1 ? 's' : ''}`,
       runs: (n: number) => (n > 1 ? 'sorties' : 'sortie'),
+    },
+    month: {
+      phaseEnds: (phase: string, date: string) => `${phase} · fin le ${date}`,
+      phaseWeeks: (phase: string, n: number) => `${phase} · ${n} semaine${n > 1 ? 's' : ''}`,
+      long: 'Sortie longue',
+      phaseWeek: (phase: string, n: number, total: number) => `${phase} · semaine ${n} sur ${total}`,
+      kmOf: (ran: string, plan: string) => `${ran} sur ${plan} km`,
+      nextKey: 'Prochaine séance clé',
+      weekLabel: (monday: string, km: string) => `Semaine du ${monday} · ${km}`,
     },
     daySelector: 'Jours de la semaine',
     steps: {
