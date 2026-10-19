@@ -382,7 +382,7 @@ function drawRepsLegend(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, 
   ctx.font = `400 9px ${fonts.text}`
   const label = t.activity.shareCard.repsLegend
   const width = 7 + BAR_W + 5 + ctx.measureText(label).width + 7
-  const x = W - 8 - width
+  const x = RIGHT - width
   const y = top + 8
   ctx.fillStyle = palette.bg
   roundRect(ctx, x, y, width, PILL_H, PILL_H / 2)

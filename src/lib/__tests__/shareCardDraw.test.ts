@@ -158,11 +158,16 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(ops.find((o) => o.op === 'fillText' && String(o.args[0]).startsWith('REP PACE'))?.fill).toBe(palette.zones[2])
   })
 
-  it('keeps the Reps legend at the map\'s top right, clear of the names below', () => {
+  it('keeps the Reps legend at the map\'s top right, on the card\'s own margin', () => {
     const ops = draw({ design: 'route', activity: session })
     const legend = ops.find((o) => o.op === 'fillText' && o.args[0] === 'Reps')!
     expect(legend.args[1] as number).toBeGreaterThan(W / 2)
     expect(legend.args[2] as number).toBeLessThan(layout(session).textTop + 40)
+    // Its pill ends where the words do, 16 px off the card's edge.
+    const at = ops.indexOf(legend)
+    const pill = ops.filter((o, i) => o.op === 'roundRect' && i < at).at(-2)!
+    const [x, , width] = pill.args as [number, number, number, number, number]
+    expect(x + width).toBeCloseTo(W - 16, 6)
   })
 
   it('gives the rep pace its room out of the middle', () => {

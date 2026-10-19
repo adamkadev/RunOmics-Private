@@ -13,8 +13,12 @@ export interface RouteFrame {
   left: number
 }
 
-/** The route's room from the card's sides, where no text sits. */
-export const ROUTE_INSET = 14
+/**
+ * The route's room from the card's sides. Wide enough that an end marker
+ * centred on the frame's edge still clears the card's text margin: the
+ * finish flag sat a few px off the border while the words kept 16.
+ */
+export const ROUTE_INSET = 27
 
 /** The route's clearance from the header's words and from the stats. */
 export const ROUTE_TEXT_GAP = 16

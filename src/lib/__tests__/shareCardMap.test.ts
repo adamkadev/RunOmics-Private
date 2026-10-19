@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { ROUTE_INSET, bandFencePoints, projectRoute, routeFencePoints, simplifyRoute, type LngLat } from '@/lib/shareCardMap'
 
+/** The widest end marker the card draws, as a radius: the loop's, at the card's 0.85. */
+const MARKER_RADIUS = (11 + 1.5) * 0.85
+
 describe('simplifyRoute', () => {
   it('leaves short routes untouched', () => {
     const route: LngLat[] = [[0, 0], [1, 1], [2, 2]]
@@ -22,12 +25,15 @@ describe('projectRoute', () => {
   const H = 236
   const route: LngLat[] = [[2.33, 48.85], [2.36, 48.87], [2.35, 48.84], [2.33, 48.85]]
 
-  it('is 14 px in from the map\'s edge', () => {
-    expect(ROUTE_INSET).toBe(14)
+  // Wide enough for an end marker on the frame's edge to clear the card's
+  // own 16 px text margin (3.0.1: the finish flag sat on the border).
+  it('keeps the route clear of the card\'s text margin', () => {
+    expect(ROUTE_INSET).toBe(27)
+    expect(ROUTE_INSET - MARKER_RADIUS).toBeGreaterThanOrEqual(16)
   })
 
   // Design review, Oct 2026: the route ran into the card's edge and the image read as cropped.
-  it('fits the route 14 px clear of every edge, filling one axis, centred on the other', () => {
+  it('fits the route clear of every edge, filling one axis, centred on the other', () => {
     const pts = projectRoute(route, W, H)
     const xs = pts.map(p => p[0])
     const ys = pts.map(p => p[1])
