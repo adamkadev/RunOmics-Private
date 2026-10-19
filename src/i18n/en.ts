@@ -142,27 +142,26 @@ export const en = {
   // Every pace axis runs the same way (lib/chartAxis paceAxis).
   // The rolling year as month rows (/consistency).
   consistency: {
-    // v4.17: three stats, the year as week columns, then active days per month.
+    // 3.0: three stats, the last six months as week columns, then active days per month.
     activeDays: 'Active days',
-    // No-break spaces keep the date and the month count whole in a narrow tile.
-    ofDays: (days: number, since: string) => `of ${days} days since ${since.replace(/ /g, '\u00a0')}`,
-    share: 'Share of days',
-    vsPrior: (delta: string) => `${delta} pts vs prior 12\u00a0months`,
+    // The window's dates are the page's subtitle.
+    ofDays: (days: number) => `of ${days}`,
+    runsPerWeek: 'Runs / week',
+    vsLastYear: (delta: string) => `${delta} vs last year`,
     // A history that starts inside the year before is compared over what it covers.
-    vsMonths: (delta: string, months: number) => `${delta} pts vs prior ${months}\u00a0month${months === 1 ? '' : 's'}`,
-    streak: 'Current streak',
-    weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
-    best: (weeks: number) => `Best: ${weeks} week${weeks === 1 ? '' : 's'}`,
-    calendarTitle: 'Every day, last 12 months',
+    vsMonths: (delta: string, months: number) => `${delta} vs prior ${months}\u00a0month${months === 1 ? '' : 's'}`,
+    streak: 'Streak',
+    weeks: 'wk',
+    best: (weeks: number) => `best ${weeks}`,
+    calendarTitle: 'Last 6 months',
     colourKey: 'colour = distance',
-    scrollHint: 'Swipe for earlier months',
-    levels: { rest: 'Rest', long: 'Long run (15 km +)' },
+    levels: { rest: 'Rest', long: '15 km+' },
     today: 'Today',
     toCome: 'to come',
     perMonth: 'Active days per month',
+    target: (days: number) => `target ${days}`,
     monthSummary: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'}`,
     monthSoFar: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'} so far`,
-    monthLegend: { strong: (days: number) => `${days}+ days`, fewer: 'Fewer', soFar: 'So far' },
     restDay: (date: string) => `${date} · Rest day`,
     empty: 'No runs in the last 12 months yet.',
   },
@@ -322,7 +321,6 @@ export const en = {
     consistency: {
       title: 'Consistency',
       rolling: 'Rolling 12 months',
-      window: (range: string) => `${range} · rolling 12 months`,
       back: 'Progress',
     },
   },
