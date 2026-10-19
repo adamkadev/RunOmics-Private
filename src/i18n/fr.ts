@@ -454,7 +454,7 @@ export const fr = {
         go: 'La fatigue est retombée',
         build: 'Charge dans la zone',
         caution: 'La fatigue s’accumule',
-        hold: 'Fatigue devant la condition',
+        hold: 'La fatigue dépasse la condition',
       },
       ctl: 'Condition',
       atl: 'Fatigue',
