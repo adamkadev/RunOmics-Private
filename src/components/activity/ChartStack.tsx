@@ -4,7 +4,7 @@ import { memo, useEffect, useMemo, useRef, useState, type PointerEvent as ReactP
 import { ChartFigure } from '@/components/ui/ChartFigure'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { formatDuration, formatKm } from '@/lib/formatters'
-import { runTypeColor } from '@/lib/colors'
+import { RUN_CHART_LINE } from '@/lib/colors'
 import { t } from '@/i18n'
 import { distanceAxis } from './chartAxis'
 import {
@@ -35,12 +35,8 @@ const LINE_MODES = ['smoothed', 'raw'] as const
 
 const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`
 
-/** Each lane's line (3.0): heart rate in ink, pace in the accent, cadence in the quality colour. */
-const LINE_COLOR: Record<Exclude<LaneKey, 'elevation'>, string> = {
-  hr: 'var(--foreground)',
-  pace: 'var(--accent)',
-  cadence: runTypeColor('Threshold'),
-}
+/** Each lane's line: the run chart's own hues, fixed and not the accent. */
+const LINE_COLOR: Record<Exclude<LaneKey, 'elevation'>, string> = RUN_CHART_LINE
 
 /** The axis and zone labels: 11 px, the app's type floor (the handoff's 10 px is under it). */
 const AXIS_LABEL = 'text-caption leading-none'
@@ -125,13 +121,13 @@ const ElevationPlot = memo(function ElevationPlot({ lane }: { lane: Lane }) {
   )
 })
 
-/** The scrub's mark on one lane: a 9 px accent dot on the line, ringed in the page. */
-function Dot({ left, top }: { left: string; top: string }) {
+/** The scrub's mark on one lane: a 9 px dot in the lane's own colour, ringed in the page. */
+function Dot({ left, top, color }: { left: string; top: string; color?: string }) {
   return (
     <span
       aria-hidden
-      className="pointer-events-none absolute -ml-[4.5px] -mt-[4.5px] h-[9px] w-[9px] rounded-full border-2 border-background bg-accent"
-      style={{ left, top }}
+      className="pointer-events-none absolute -ml-[4.5px] -mt-[4.5px] h-[9px] w-[9px] rounded-full border-2 border-background"
+      style={{ left, top, background: color ?? 'var(--accent)' }}
     />
   )
 }
@@ -321,7 +317,9 @@ export function ChartStack({ onScrub, ...input }: Props) {
                   </div>
                   <div className="relative overflow-hidden rounded-lg bg-card" style={{ height: LANE_HEIGHT }}>
                     <LanePlot lane={lane} series={series} distanceKm={distanceKm} color={LINE_COLOR[lane.key as keyof typeof LINE_COLOR]} />
-                    {value !== null && <Dot left={cursorX} top={pct(laneY(lane, value), LANE_HEIGHT)} />}
+                    {value !== null && (
+                      <Dot left={cursorX} top={pct(laneY(lane, value), LANE_HEIGHT)} color={LINE_COLOR[lane.key as keyof typeof LINE_COLOR]} />
+                    )}
                   </div>
                 </div>
               )

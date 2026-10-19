@@ -172,6 +172,19 @@ export const WORKOUT_SEGMENT_COLORS = {
 } as const
 
 /**
+ * A run's chart data series (README, "Chart data colours"): fixed hues, never
+ * the accent - an accent-tied pace line changed with the user's theme and
+ * clashed with the route and the active tab. The red is close to the error
+ * colour, so it is kept to chart lines and their scrub dots: never text, never
+ * a badge.
+ */
+export const RUN_CHART_LINE = {
+  hr: '#ff6b6b',
+  pace: '#4cc9f0',
+  cadence: runTypeColor('Threshold'),
+} as const
+
+/**
  * Ink for the duration labels that sit inside the structure bar. Only `effort`
  * is drawn at full height, so it is the only segment wide and tall enough to
  * carry text, in the same zone ink the session bar writes on its fills.

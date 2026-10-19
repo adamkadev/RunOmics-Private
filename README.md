@@ -1222,6 +1222,14 @@ voice rather than the athlete's chosen tint.
 - `statusColors` is for statuses with universal meaning (success, in-progress, pending, warning,
   danger). Accent-coloured elements — nav, CTAs, progress bars — stay in accent.
 - Elevation uses `roRust` rather than stone-500, which read as grey in the categorical set.
+- **Chart data colours (3.0.1).** A run's chart lines are fixed hues in `RUN_CHART_LINE`, never
+  the accent: heart rate `#ff6b6b`, pace cyan `#4cc9f0`, cadence the quality purple, elevation the
+  grey fill. An accent-tied pace line repainted with the user's theme and clashed with the route
+  and the active tab. The red sits close to the error red, so it is kept to chart lines and their
+  scrub dots - never text, never a badge. Overview's pace/heart-rate preview reads the same table
+  and carries a "Pace · HR" legend.
+- **Plan's day selector (3.0.1).** Two outlines, two meanings: a mint outline is *today*, a grey
+  outline is the *selected* day. A day can carry both, and today is selected by default.
 
 ### Maps
 

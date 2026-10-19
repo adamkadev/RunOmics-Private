@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react'
+import { RUN_CHART_LINE } from '@/lib/colors'
 import { t } from '@/i18n'
 
 const W = 100
@@ -41,9 +42,9 @@ export function PaceHrPreview({
         <h3 className="flex flex-wrap items-baseline gap-x-2 text-[13.5px] font-semibold text-foreground">
           {s.title}
           <span aria-hidden className="text-[11px] font-normal text-muted-foreground">
-            <span style={{ color: 'var(--accent-text)' }}>{s.pace}</span>
+            <span style={{ color: RUN_CHART_LINE.pace }}>{s.pace}</span>
             {' · '}
-            <span className="text-foreground">{s.hr}</span>
+            <span style={{ color: RUN_CHART_LINE.hr }}>{s.hr}</span>
           </span>
         </h3>
         {onShowCharts && (
@@ -54,8 +55,8 @@ export function PaceHrPreview({
         )}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="h-[54px] w-full" role="img" aria-label={s.title}>
-        {pace && <path d={pace} fill="none" stroke="var(--accent)" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />}
-        {hr && <path d={hr} fill="none" stroke="var(--foreground)" strokeWidth="1.4" vectorEffect="non-scaling-stroke" />}
+        {pace && <path d={pace} fill="none" stroke={RUN_CHART_LINE.pace} strokeWidth="1.4" vectorEffect="non-scaling-stroke" />}
+        {hr && <path d={hr} fill="none" stroke={RUN_CHART_LINE.hr} strokeWidth="1.4" vectorEffect="non-scaling-stroke" />}
       </svg>
     </section>
   )
