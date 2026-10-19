@@ -1236,7 +1236,7 @@ export const en = {
     },
     stats: {
       distance: 'Distance',
-      duration: 'Moving',
+      duration: 'Time',
       pace: 'Avg pace',
       avgHr: 'Avg HR',
     },

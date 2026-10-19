@@ -1173,7 +1173,7 @@ export const fr = {
     },
     stats: {
       distance: 'Distance',
-      duration: 'En mouvement',
+      duration: 'Temps',
       pace: 'Allure moy.',
       avgHr: 'FC moy.',
     },

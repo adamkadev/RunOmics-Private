@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.0.2] - 2026-10-19
+
+3.0.2 — fix. One way to write a run's time.
+
+### Activity
+
+- The stat strip names its time "Time" (« Temps »), not "Moving".
+- The fullscreen map's card writes it to the minute, as the strip does:
+  "1:07 h", "46 min".
+
+### Share
+
+- The Route, Stats and Photo cards write the time the same way, "1:07 h",
+  not "1:06:39".
+
 ## [3.0.1] - 2026-10-19
 
 3.0.1 — polish. The review of the 3.0 build (canvas 3b–3f): tighter hierarchy

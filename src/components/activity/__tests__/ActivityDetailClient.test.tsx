@@ -153,7 +153,7 @@ describe('ActivityDetailClient', () => {
     // The floating card: name, date, then distance, time, pace and the climb.
     expect(hero.getByTestId('map').textContent).toContain('Threshold runSun, Oct 18')
     expect(hero.getByTestId('map-card-stats').textContent).toBe(
-      `${formatDistance(6.11)}${t.units.km}${t.activity.map.stats.distance}25:24${t.activity.map.stats.time}4:10${t.units.perKm}${t.activity.map.stats.pace}+64${t.units.m}${t.activity.map.stats.elevation}`,
+      `${formatDistance(6.11)}${t.units.km}${t.activity.map.stats.distance}25${t.units.min}${t.activity.map.stats.time}4:10${t.units.perKm}${t.activity.map.stats.pace}+64${t.units.m}${t.activity.map.stats.elevation}`,
     )
   })
 

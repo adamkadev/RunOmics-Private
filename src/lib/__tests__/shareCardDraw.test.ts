@@ -67,7 +67,7 @@ describe('drawShareCard', () => {
 
   it('draws the same header and stat row on every design', () => {
     const header = ['RunOmics', 'Strides 6 × 20s']
-    const stats = ['10.0', ' km', 'Distance', '57:33', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR']
+    const stats = ['10.0', ' km', 'Distance', '58', ' min', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR']
     for (const design of ['route', 'stats', 'photo'] as const) {
       const all = texts(draw({ design }))
       const at = all.indexOf('RunOmics')
@@ -132,7 +132,7 @@ describe('an interval session (design review, Oct 2026)', () => {
     const all = texts(ops)
     expect(all).toEqual(expect.arrayContaining(['REP PACE · 3 × 8′', '4:24', '/km', 'target 4:25 · −0:01']))
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === 'REP PACE · 3 × 8′')?.fill).toBe(palette.zones[3])
-    expect(all.slice(-8)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '153', ' bpm', 'Avg HR'])
+    expect(all.slice(-9)).toEqual(['10.0', ' km', 'Distance', '58', ' min', 'Time', '153', ' bpm', 'Avg HR'])
   })
 
   // 4b: the title is the type, the structure moves to the subtitle, and the
@@ -334,7 +334,7 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
 
   it('keeps the 4-stat row', () => {
     const all = texts(draw({ design: 'stats', activity: led }))
-    expect(all.slice(-11)).toEqual(['10.0', ' km', 'Distance', '57:33', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
+    expect(all.slice(-12)).toEqual(['10.0', ' km', 'Distance', '58', ' min', 'Time', '5:44', ' /km', 'Pace', '153', ' bpm', 'Avg HR'])
   })
 
   it('draws no bar for a run without heart rate, the verdict still leading', () => {

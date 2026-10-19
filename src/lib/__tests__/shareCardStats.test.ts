@@ -29,10 +29,15 @@ describe('shareStats', () => {
   it('reads Distance, Time, Pace, Avg HR, units apart from the values', () => {
     expect(shareStats(RUN)).toEqual([
       { value: '10.0', unit: ' km', label: 'Distance' },
-      { value: '57:33', unit: '', label: 'Time' },
+      { value: '58', unit: ' min', label: 'Time' },
       { value: '5:44', unit: ' /km', label: 'Pace' },
       { value: '153', unit: ' bpm', label: 'Avg HR' },
     ])
+  })
+
+  // 3.0.2: to the minute, as the activity page writes it.
+  it('writes an hour-long run as h:mm, not to the second', () => {
+    expect(shareStats({ ...RUN, durationSeconds: 3999 })[1]).toEqual({ value: '1:07', unit: ' h', label: 'Time' })
   })
 
   it('leaves out what the run did not record', () => {

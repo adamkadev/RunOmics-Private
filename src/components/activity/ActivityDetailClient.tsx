@@ -14,7 +14,7 @@ import { KmSplits } from './KmSplits'
 import { BestEfforts } from './BestEfforts'
 import { RunPlace } from './RunPlace'
 import type { ChartZones } from './chartStackLanes'
-import { formatClock, formatDistance, formatDuration, formatDurationRounded } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDurationRounded } from '@/lib/formatters'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
@@ -77,7 +77,7 @@ function buildMapStats(activity: ActivityDetailView): PrimaryStat[] {
   const s = t.activity.map.stats
   const stats: PrimaryStat[] = [
     { label: s.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
-    { label: s.time, value: formatDuration(activity.durationSeconds) },
+    { label: s.time, ...formatDurationRounded(activity.durationSeconds) },
   ]
   if (activity.paceSecPerKm) stats.push({ label: s.pace, value: formatClock(activity.paceSecPerKm), unit: t.units.perKm })
   if (activity.elevationGain != null) stats.push({ label: s.elevation, value: `+${Math.round(activity.elevationGain)}`, unit: t.units.m })

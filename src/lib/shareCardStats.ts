@@ -1,6 +1,6 @@
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import type { VerdictTone } from '@/domain/activity/runVerdict'
-import { formatClock, formatDate, formatDuration, formatKm } from '@/lib/formatters'
+import { formatClock, formatDate, formatDurationRounded, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { activityTitle } from '@/lib/activityTitle'
 
@@ -76,11 +76,17 @@ export interface ShareStat {
  * interval session drops the average pace: over reps and recoveries it
  * describes neither, and the rep pace leads instead.
  */
+function shareDuration(seconds: number): { value: string; unit: string } {
+  const { value, unit } = formatDurationRounded(seconds)
+  return { value, unit: ` ${unit}` }
+}
+
 export function shareStats(activity: ShareActivity): ShareStat[] {
   const s = t.activity.shareCard
   const stats: ShareStat[] = [
     { value: formatKm(activity.distanceKm, 1), unit: ` ${t.units.km}`, label: s.distance },
-    { value: formatDuration(Math.round(activity.durationSeconds)), unit: '', label: s.time },
+    // To the minute, as the activity page writes it (3.0.2): "1:07 h", "46 min".
+    { ...shareDuration(activity.durationSeconds), label: s.time },
   ]
   if (!activity.reps && activity.paceSecPerKm && activity.paceSecPerKm > 0) {
     stats.push({ value: formatClock(activity.paceSecPerKm), unit: ` ${t.units.perKm}`, label: s.pace })
