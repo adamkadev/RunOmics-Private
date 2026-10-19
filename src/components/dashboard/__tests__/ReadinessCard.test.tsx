@@ -12,7 +12,7 @@ const STATUS = {
   tsbNow: -6, tsbDelta: 3, ctl: 54, ctlDelta: 2, ctlDeltaShown: 1, atl: 60, atlDelta: 4, acwr: 0.98,
 } as unknown as TrainingStatus
 
-const WEEK = { km: 9.8, runs: 3 }
+const WEEK = { km: 9.8 }
 
 function days(pattern: string): TrainingStatusDayBar[] {
   const key = { f: 'fresh', p: 'productive', m: 'maintaining', r: 'recovery' } as const
@@ -121,7 +121,8 @@ describe('without a Garmin training status', () => {
     expect(card).not.toHaveTextContent(t.dashboard.readiness.garmin)
     expect(card).toHaveTextContent(t.dashboard.readiness.lastSevenDays)
     expect(screen.getByTestId('readiness-last-week').textContent).toBe(`9.8${t.units.km}`)
-    expect(card).toHaveTextContent(t.activities.weekLine.runs(3))
+    // On one line, like the other cells: no run count under the km.
+    expect(card).not.toHaveTextContent(t.activities.weekLine.runs(3))
   })
 
   it('keeps Garmin’s status when the watch has one', () => {
@@ -136,6 +137,6 @@ describe('without a Garmin training status', () => {
       { date: '2026-10-15', distanceKm: 3 },
       { date: '2026-10-14', distanceKm: 5 },
     ]
-    expect(lastSevenDays(runs, '2026-10-21')).toEqual({ km: 9.8, runs: 3 })
+    expect(lastSevenDays(runs, '2026-10-21')).toEqual({ km: 9.8 })
   })
 })

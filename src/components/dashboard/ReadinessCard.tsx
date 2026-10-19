@@ -26,11 +26,10 @@ export function latestRatedStatus(days: TrainingStatusDayBar[]): Status | null {
   return [...days].reverse().find((d) => d.status)?.status ?? null
 }
 
-/** Km and runs over the last seven days, today included. */
-export function lastSevenDays(activities: readonly { date: string; distanceKm: number }[], today: string): { km: number; runs: number } {
+/** Km over the last seven days, today included. */
+export function lastSevenDays(activities: readonly { date: string; distanceKm: number }[], today: string): { km: number } {
   const from = isoDate(addDays(new Date(`${today}T00:00:00`), -6))
-  const recent = activities.filter((a) => a.date >= from && a.date <= today)
-  return { km: recent.reduce((sum, a) => sum + a.distanceKm, 0), runs: recent.length }
+  return { km: activities.filter((a) => a.date >= from && a.date <= today).reduce((sum, a) => sum + a.distanceKm, 0) }
 }
 
 function Cell({ label, value, delta }: { label: string; value: ReactNode; delta?: { text: string; color: string } }) {
@@ -58,8 +57,8 @@ export function ReadinessCard({
   status: TrainingStatus | null
   watchStatus?: Status | null
   verdict?: Insight | null
-  /** The last seven days, shown in Garmin's place when the watch reports no training status (a Forerunner 55). */
-  lastWeek: { km: number; runs: number }
+  /** The last seven days' km, shown in Garmin's place when the watch reports no training status (a Forerunner 55). */
+  lastWeek: { km: number }
 }) {
   if (!status) return null
 
@@ -108,7 +107,6 @@ export function ReadinessCard({
                       <span className="ml-1 text-[13px] font-normal tracking-normal text-muted-foreground">{t.units.km}</span>
                     </span>
                   }
-                  delta={{ text: t.activities.weekLine.runs(lastWeek.runs), color: 'var(--muted-foreground)' }}
                 />
               )}
             </div>
