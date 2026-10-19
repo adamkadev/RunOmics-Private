@@ -61,3 +61,20 @@ describe('French plurals', () => {
     expect(fr.activities.countWithDistance(2, '10')).toBe('2 sorties · 10 km')
   })
 })
+
+// Design review, Oct 2026: the new lines in French, with its plurals and spacing.
+describe('French design review copy', () => {
+  it('writes the plan subtitle, the week line and the race tile', () => {
+    expect(fr.plan.header.raceIn('Semi', 42)).toBe('Semi dans 42 j')
+    expect(fr.plan.header.raceIn('Semi', 0)).toBe('Semi aujourd’hui')
+    expect(fr.plan.stats.ofSessions(1)).toBe('sur 1 séance')
+    expect(fr.plan.stats.ofSessions(5)).toBe('sur 5 séances')
+    expect(fr.profile.hub.days(1)).toBe('jour')
+    expect(fr.profile.hub.days(155)).toBe('jours')
+    expect(fr.profile.hub.planPhase('préparation générale · semaine 2')).toBe('Plan : préparation générale · semaine 2')
+  })
+
+  it('writes the shoe projection on one line', () => {
+    expect(fr.shoes.detail.projectedRunOut(25, '1 000', 'janv. 27', 11)).toBe('1 000 km ≈ janv. 27 · 11 sem. à 25 km/sem.')
+  })
+})

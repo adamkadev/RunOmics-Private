@@ -91,7 +91,6 @@ export const fr = {
     topPct: (n: number) => `Top ${n} %`,
     season: 'Cette saison',
     coach: 'Coach',
-    coachNext: (grade: string) => `Le plus court chemin vers ${grade} : une séance de VMA par semaine, en gardant ton volume actuel en endurance.`,
     coachTop: 'Pour la garder : une séance de VMA par semaine et ton volume actuel en endurance.',
     todayUp: (grade: string) => `Note VO₂max passée à ${grade}`,
     todayBack: (grade: string) => `Note VO₂max revenue à ${grade}`,
@@ -230,13 +229,10 @@ export const fr = {
     },
     records: {
       title: 'Records',
-      subtitle: 'Records personnels et prédictions de course',
       back: 'Progression',
     },
     map: {
       title: 'Heatmap',
-      back: 'Activités',
-      runs: (n: number) => `${n} sortie${n > 1 ? 's' : ''} avec GPS`,
       area: 'Zone',
       areas: 'Zones',
       areasSummary: (areas: number, runs: number) =>
@@ -312,7 +308,6 @@ export const fr = {
       notifications: 'Notifications',
     },
     sync: {
-      title: 'Synchronisation Garmin',
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',
       action: 'Synchroniser',
       running: 'Synchro…',
@@ -325,7 +320,6 @@ export const fr = {
       cooldown: (min: number) => `À jour — prochaine synchro dans ${min} min.`,
       dailyCap: 'Limite de synchros du jour atteinte. La synchro automatique continue cette nuit.',
       viewRun: 'Voir la sortie ›',
-      takesAbout: 'Environ cinq minutes au total.',
     },
     rowAction: {
       export: 'Exporter ›',
@@ -335,14 +329,12 @@ export const fr = {
     appearance: {
       title: 'Apparence',
       themeLabel: 'Thème',
-      themeHint: 'Auto suit le réglage de ton système',
       light: 'Clair',
       auto: 'Auto',
       dark: 'Sombre',
     },
     accent: {
       title: 'Accent',
-      hint: 'Pour la mise en évidence et tes propres données — jamais pour les alertes',
       options: {
         teal:     { label: 'Sarcelle' },
         periwinkle: { label: 'Pervenche' },
@@ -411,8 +403,6 @@ export const fr = {
     dataExport: {
       workbook: 'Exporter les données d’entraînement (.xlsx)',
       title: 'Exporter les activités',
-      signedOut: (runs: string) => `Classeur ou CSV des ${runs} · connecte-toi pour exporter`,
-      ownerHint: (runs: string) => `Classeur ou CSV des ${runs}`,
       exporting: 'Export en cours…',
       failed: 'Impossible d’exporter les données d’entraînement.',
       sheetTitle: 'Exporter mes activités',
@@ -427,7 +417,6 @@ export const fr = {
     },
     offlineCache: {
       clear: 'Vider le cache hors ligne',
-      cost: 'Les pages et les cartes seront rechargées depuis le réseau à la prochaine visite.',
       confirm: 'Vider ?',
       cleared: 'Cache hors ligne vidé.',
       failed: 'Impossible de vider le cache hors ligne.',
@@ -438,15 +427,12 @@ export const fr = {
       types: {
         training: {
           title: 'Rappels d’entraînement',
-          subtitle: 'Séance du jour à 10 h, plus un point hebdomadaire sur ton objectif de distance.',
         },
         shoes: {
           title: 'Alertes d’usure des chaussures',
-          subtitle: 'Avertit à 70 % et 90 % de la durée de vie d’une paire.',
         },
         races: {
           title: 'Records et prédictions',
-          subtitle: 'Quand une sortie bat un record ou fait bouger une prédiction.',
         },
       },
     },
@@ -461,8 +447,6 @@ export const fr = {
       fitness: 'Condition',
       fatigue: 'Fatigue',
       form: 'Forme',
-      footnote:
-        'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
     },
     bodyCard: {
       deltaIn: (delta: string, days: number) => `${delta} en ${days} jours`,
@@ -1189,12 +1173,10 @@ export const fr = {
     thisWeek: 'Cette semaine',
     shoeFilter: { clear: 'Afficher les sorties de toutes les chaussures' },
     weekLine: {
-      ofKm: (target: string) => ` sur ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 sortie' : `${n} sorties`),
-      runsOf: (done: number, planned: number) => `${done} sortie${done > 1 ? 's' : ''} prévue${done > 1 ? 's' : ''} sur ${planned}`,
       easy: (pct: number) => `${pct} % facile`,
     },
-    mapButton: 'Vue carte',
+    view: { label: 'Affichage', list: 'Liste', map: 'Carte' },
     sort: {
       label: 'Trier',
       date: 'Date',
@@ -1504,7 +1486,6 @@ export const fr = {
     half: 'Semi',
     kmRemaining: (km: number) => `${km} km restants`,
     goalReached: 'Objectif atteint !',
-    upcoming: 'Courses à venir',
     doneHeading: 'Terminées',
     targetTime: (time: string) => `objectif ${time}`,
     finish: 'arrivée',
@@ -1514,7 +1495,7 @@ export const fr = {
     best: 'Record',
     predictedTag: 'prédit',
     seasonRaces: 'Courses de la saison',
-    emptyPbs: (year: number) => `Pas encore de RP pour ${year} - ajoute-les dans les Réglages.`,
+    emptyPbs: (year: number) => `Pas encore de RP pour ${year}.`,
     projection: {
       status: {
         ahead: 'En avance',
@@ -1613,7 +1594,7 @@ export const fr = {
     roles: { daily: 'quotidienne', workouts: 'séances', intervals: 'fractionné', races: 'courses' },
     shareOfDistance: 'part de la distance',
     easy: 'Facile',
-    heroStats: { runs: 'Sorties', avgDistance: 'Distance moy.', avgPace: 'Allure moy.', avgHr: 'FC moy.' },
+    heroStats: { runs: 'Sorties', avgDistance: 'Moy.', avgPace: 'Allure', avgHr: 'FC' },
     lastRuns: 'Dernières sorties',
     neverUsed: 'Jamais utilisée',
     kmOf: (total: string, max: string) => `${total} / ${max} km`,
@@ -1689,9 +1670,8 @@ export const fr = {
       allActivitiesCount: (count: number) => `Les ${count}`,
       empty: 'Aucune activité enregistrée avec cette paire pour le moment.',
       projectedRunOut: (weeklyKm: number, maxKm: string, targetDate: string, weeksRemaining: number) =>
-        `À ${weeklyKm} km par semaine, tu atteindras ${maxKm} km vers ${targetDate} – encore ${weeksRemaining} semaine${weeksRemaining > 1 ? 's' : ''} environ.`,
-      projectedRunOutFar: (weeklyKm: number, maxKm: string) =>
-        `À ${weeklyKm} km par semaine, il te faudra plus d’un an pour atteindre ${maxKm} km.`,
+        `${maxKm} km ≈ ${targetDate} · ${weeksRemaining} sem. à ${weeklyKm} km/sem.`,
+      projectedRunOutFar: (weeklyKm: number, maxKm: string) => `${maxKm} km dans plus d’un an à ${weeklyKm} km/sem.`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
         weeksLeft: (weeks: number) =>
@@ -1749,12 +1729,12 @@ export const fr = {
       ofGoal: (km: string) => `sur ${km} km`,
       goal: 'Objectif',
       runsHours: (runs: number, hours: number) => `${runs} sorties · ${hours} h`,
-      raceMeta: (days: number, race: string, date: string) => `${days > 1 ? 'jours' : 'jour'} · ${race}, ${date}`,
+      days: (days: number) => (days > 1 ? 'jours' : 'jour'),
       predicted: 'Prédit',
-      target: (time: string) => `Objectif ${time}`,
-      toFind: (gap: string) => `${gap} à trouver`,
-      underTarget: (gap: string) => `${gap} d’avance`,
-      noRace: 'Aucune course prévue',
+      targetLabel: 'Objectif',
+      toFindLabel: 'À trouver',
+      planPhase: (phase: string) => `Plan : ${phase}`,
+      garminPrediction: 'Prédiction Garmin',
       vo2Delta: (delta: string) => `${delta} en 12 semaines`,
       thresholdParts: (pace: string | null, lthr: number | null) =>
         [pace ? `Seuil ${pace} /km` : null, lthr ? `LTHR ${lthr} bpm` : null].filter((part): part is string => part !== null),
@@ -1827,7 +1807,6 @@ export const fr = {
   },
 
   records: {
-    title: 'Meilleurs temps',
     distances: {
       '1k': '1K',
       '1mile': '1 mile',
@@ -1847,7 +1826,6 @@ export const fr = {
     },
     recurring: {
       title: 'Tes parcours habituels',
-      subtitle: 'Même terrain, mêmes bosses - le seul cas où l’allure brute se compare d’un mois à l’autre.',
       runCount: (n: number) => `${n} fois`,
       best: 'Record',
       trailKey: 'Une barre par sortie · plus haute = plus rapide',
@@ -1989,9 +1967,8 @@ export const fr = {
       `${sessions} séance${sessions > 1 ? 's' : ''} · ${ranKm} km courus · ${plannedKm} prévus`,
     weekdays: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
     switcher: { week: 'Semaine', month: 'Mois' },
-    weekNoPlan: (km: string) => `${km} km · sans plan`,
-    noPlanYet: 'Pas encore de plan',
-    extra: 'en plus',
+    // Fits a month tile beside the km column (design review, Oct 2026): « en plus » was cut.
+    extra: 'bonus',
     extraRun: 'Sortie en plus',
     missedNoRun: 'Manquée · aucune sortie',
     restDay: 'Repos',
@@ -2032,24 +2009,17 @@ export const fr = {
     continuous: 'continu',
     ranKm: (km: string) => `${km} km parcourus`,
     plannedKmLabel: (km: number) => `${km} km prévus`,
-    restCard: {
-      title: 'Jour de repos',
-      noSession: 'Aucune séance prévue.',
-      next: (weekday: string, title: string) => `Aucune séance prévue. Prochaine : ${weekday}, ${title}.`,
-    },
     header: {
-      daysToGo: (n: number) => (n <= 0 ? 'c’est le jour J' : n === 1 ? 'encore 1 jour' : `encore ${n} jours`),
+      raceIn: (distance: string, days: number) => (days <= 0 ? `${distance} aujourd’hui` : `${distance} dans ${days} j`),
     },
     legend: {
       plannedByType: 'Prévu',
     },
     stats: {
-      distance: 'Distance',
-      sessions: 'Séances',
       adherence: 'Respect du plan',
-      noPlan: 'Pas de plan cette semaine',
       ofKm: (km: string) => `/ ${km} km`,
-      ofSessions: (n: number) => `sur ${n}`,
+      ofSessions: (n: number) => `sur ${n} séance${n > 1 ? 's' : ''}`,
+      sessions: (n: number) => (n > 1 ? 'séances' : 'séance'),
       kmPlanned: 'km prévus',
       planned: 'prévues',
     },
@@ -2060,16 +2030,11 @@ export const fr = {
       recovery: (clock: string) => `${clock} récup`,
     },
     weekSummary: {
-      missed: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
-      unplanned: (n: number) => `${n} hors plan`,
       easyOfTarget: (easy: number, target: number) => `${easy} % facile · objectif ${target} %`,
-      aboutLoad: 'À propos de la charge de la semaine',
       loadOfPlan: (load: number, target: number) => `Charge ${load} sur ${target} pts prévus`,
       loadPlannedLine: (load: number) => `Charge ${load} pts prévus`,
       loadDone: (load: number) => `Charge ${load} pts`,
-      loadDefinition: 'Charge d’entraînement en points, d’après la FC et la durée (TRIMP).',
       sessionsCount: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
-      ranOfPlan: (ran: string, plan: string) => `${ran} / ${plan} km`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} sur ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} séance${sessions > 1 ? 's' : ''}`,
     },
@@ -2082,18 +2047,7 @@ export const fr = {
       blockEndsHere: 'fin de bloc',
       weeksInLabel: 'semaines',
     },
-    phaseTrack: {
-      base: 'Base',
-      build: 'Dévelop.',
-      peak: 'Pic',
-      taper: 'Affûtage',
-      raceDay: 'Course',
-      weeks: (n: number) => `${n} sem.`,
-      raceWeek: (date: string) => `Semaine de course : ${date}`,
-    },
     weekPurpose: {
-      thisWeek: 'Cette semaine',
-      upcoming: 'Semaine à venir',
       prePlan: 'Avant le plan',
       planPhase: {
         base: 'Base',

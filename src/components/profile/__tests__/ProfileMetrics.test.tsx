@@ -57,7 +57,8 @@ describe('capability-driven athlete metrics', () => {
     expect(screen.queryByText(a.vo2max)).not.toBeInTheDocument()
     expect(screen.getByText('4:18')).toBeInTheDocument()
     expect(screen.getByTestId('athlete-key-numbers').textContent).toContain(`20${a.ofAge(29)}`)
-    expect(screen.getAllByRole('button', { name: /^What is/ })).toHaveLength(3)
+    // Design review, Oct 2026: no definitions behind the labels.
+    expect(screen.queryByRole('button')).toBeNull()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })
 

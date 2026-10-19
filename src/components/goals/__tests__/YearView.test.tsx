@@ -121,3 +121,24 @@ describe('YearView annual goal card', () => {
   })
 })
 
+
+describe('YearView, a year with only a race', () => {
+  const race = { date: '2027-03-22', name: 'Spring Half', distance: 'Half-Marathon', targetSeconds: 5999 }
+  const raceOnly: YearData = {
+    year: 2027,
+    totalDistanceKm: 0,
+    goals: null,
+    pbs: [],
+    upcomingRaces: [race],
+    projection: null,
+    monthlyGoals: [],
+    nextRaceSpotlight: null,
+    predictions: [],
+  }
+
+  it('shows the race, not the PB empty state', () => {
+    render(<YearView yearData={raceOnly} today="2026-10-19" />)
+    expect(screen.getByTestId('season-card').textContent).toContain('Spring Half')
+    expect(screen.queryByText(t.goals.emptyPbs(2027))).toBeNull()
+  })
+})

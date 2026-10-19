@@ -93,10 +93,31 @@ describe('progressHubView', () => {
     expect(view.shoes.map((s) => [s.name, s.status])).toEqual([['Pegasus 41', 'watch'], ['Vomero Plus', 'ok']])
   })
 
-  it('names the race by its place when its name only restates the distance', () => {
-    expect(view.race).toMatchObject({ distance: '10K', name: null, daysUntil: 64 })
-    const named = progressHubView({ ...INPUT, spotlight: { ...INPUT.spotlight!, race: { ...INPUT.spotlight!.race, location: 'Wintzenheim' } } })
-    expect(named.race!.name).toBe('Wintzenheim')
+  // Design review, Oct 2026: the gap is signed, warn when slower than the target, pos when faster.
+  it('signs the gap to the target and tones it', () => {
+    expect(view.race!.gap).toEqual({ seconds: 130, tone: 'warn' })
+    const faster = { ...INPUT.spotlight!, predictedSeconds: 2356 }
+    expect(progressHubView({ ...INPUT, spotlight: faster }).race!.gap).toEqual({ seconds: -44, tone: 'pos' })
+    const onTarget = { ...INPUT.spotlight!, predictedSeconds: 2400 }
+    expect(progressHubView({ ...INPUT, spotlight: onTarget }).race!.gap).toEqual({ seconds: 0, tone: 'pos' })
+  })
+
+  it('has no gap without a target or a prediction, and no race without a spotlight', () => {
+    const noTarget = { ...INPUT.spotlight!, race: { ...INPUT.spotlight!.race, targetSeconds: null } }
+    expect(progressHubView({ ...INPUT, spotlight: noTarget }).race).toMatchObject({ targetSeconds: null, gap: null, predictedSeconds: 2530 })
+    const noPrediction = { ...INPUT.spotlight!, predictedSeconds: null }
+    expect(progressHubView({ ...INPUT, spotlight: noPrediction }).race).toMatchObject({ predictedSeconds: null, gap: null, targetSeconds: 2400 })
+    expect(progressHubView({ ...INPUT, spotlight: null }).race).toBeNull()
+  })
+
+  it('carries the plan phase Plan names, or none', () => {
+    expect(view.race!.phase).toBeNull()
+    const phase = { phase: 'Build', week: 'week 9 of 12' }
+    expect(progressHubView({ ...INPUT, planPhase: phase }).race!.phase).toEqual(phase)
+  })
+
+  it('reads the race by its distance, date and days to go', () => {
+    expect(view.race).toMatchObject({ distance: '10K', date: '2026-11-29', daysUntil: 64 })
   })
 
   it('draws km by year from the first run to this year', () => {
@@ -191,13 +212,43 @@ describe('ProgressHub', () => {
     expect(screen.getByTestId('latest-record').textContent).toBe(t.profile.hub.latestRecord)
   })
 
-  // v4.17: the gap to target is a caution, in warn, with its bar.
-  it('states the gap to the race target in warn', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    const target = screen.getByTestId('race-target')
-    expect(target.textContent).toContain(t.profile.hub.toFind('2:10'))
-    expect(target.querySelector('b')!.getAttribute('style')).toContain('var(--warn)')
+  // Design review, Oct 2026: first on the hub, in a 2 pt accent border -
+  // the days to go, then PREDICTED · TARGET · TO FIND, the scale and the plan.
+  it('opens the hub with the next race, its figures and the plan', () => {
+    const phase = { phase: t.plan.weekPurpose.generalPreparation, week: t.plan.weekPurpose.weekN(2) }
+    render(<ProgressHub view={progressHubView({ ...INPUT, planPhase: phase })} />)
+    const tile = screen.getByTestId('race-tile')
+
+    const page = tile.parentElement!
+    expect(page.children[1]).toBe(tile)
+    expect(tile.className).toContain('order-0')
+    expect(tile.className).toContain('border-2')
+    expect(tile.className).toContain('border-[var(--accent)]')
+    expect(screen.getByTestId('race-days').textContent).toBe('64')
+    expect(screen.getByTestId('race-meta').textContent).toContain(t.profile.hub.days(64))
+    expect(screen.getByTestId('race-predicted').textContent).toBe(`${t.profile.hub.predicted}42:10`)
+    expect(screen.getByTestId('race-target').textContent).toBe(`${t.profile.hub.targetLabel}40:00`)
+    // Slower than the target: still to find, in warn.
+    const gap = within(screen.getByTestId('race-gap')).getByRole('definition')
+    expect(gap.textContent).toBe('+2:10')
+    expect(gap.getAttribute('style')).toContain('var(--warn)')
     expect(within(screen.getByTestId('race-scale')).getByTestId('range-marker').style.background).toBe('var(--warn)')
+    const footer = screen.getByTestId('race-footer').textContent
+    expect(footer).toContain(t.profile.hub.planPhase(`${t.plan.weekPurpose.generalPreparation.toLowerCase()} · ${t.plan.weekPurpose.weekN(2)}`))
+    expect(footer).toContain(t.profile.hub.garminPrediction)
+  })
+
+  it('drops a missing figure and its scale, and the whole tile without a race', () => {
+    const noTarget = { ...INPUT.spotlight!, race: { ...INPUT.spotlight!.race, targetSeconds: null } }
+    const { unmount } = render(<ProgressHub view={progressHubView({ ...INPUT, spotlight: noTarget })} />)
+    expect(screen.getByTestId('race-predicted')).toBeInTheDocument()
+    expect(screen.queryByTestId('race-target')).toBeNull()
+    expect(screen.queryByTestId('race-gap')).toBeNull()
+    expect(screen.queryByTestId('race-scale')).toBeNull()
+    unmount()
+
+    render(<ProgressHub view={progressHubView({ ...INPUT, spotlight: null })} />)
+    expect(screen.queryByTestId('race-tile')).toBeNull()
   })
 
   it('tags a shoe that needs replacing soon, and draws its bar in warn', () => {
@@ -213,24 +264,25 @@ describe('ProgressHub', () => {
 describe('the hub columns (v4.17.1)', () => {
   // Records sat in a 2 x 2 row beside the taller Consistency card and left a
   // gap under it. Each column stacks on its own now.
-  it('stacks Next race, Records and Shoes on the left, VO2 max and Consistency on the right', () => {
+  it('stacks Records and Shoes on the left, VO2 max and Consistency on the right', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     const [left, right] = screen.getAllByTestId('progress-column')
     const ids = (col: HTMLElement) => Array.from(col.children).map((el) => el.getAttribute('data-testid'))
-    expect(ids(left!)).toEqual(['race-tile', 'records-tile', 'shoes-tile'])
+    expect(ids(left!)).toEqual(['records-tile', 'shoes-tile'])
     expect(ids(right!)).toEqual(['vo2-tile', 'consistency-tile'])
     // A column is a flex stack from sm up and melts into the page's one list below it.
     for (const col of [left!, right!]) expect(col.className).toMatch(/\bcontents\b.*\bsm:flex\b/)
   })
 
-  it('orders a phone\'s one list distance, race, VO2 max, records, consistency, shoes, all time', () => {
+  it('orders a phone\'s one list race, distance, VO2 max, records, consistency, shoes, all time', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     const order = (id: string) => Number(/(?:^| )order-(\d)/.exec(screen.getByTestId(id).className)?.[1])
-    const phone = ['race-tile', 'vo2-tile', 'records-tile', 'consistency-tile', 'shoes-tile'].map(order)
-    expect(phone).toEqual([1, 2, 3, 4, 5])
-    // Distance above the columns, all time below them, both full width.
+    const phone = ['vo2-tile', 'records-tile', 'consistency-tile', 'shoes-tile'].map(order)
+    expect(phone).toEqual([2, 3, 4, 5])
+    // The race and the distance above the columns, all time below them, all full width.
     const page = screen.getByTestId('progress-columns').parentElement!
     const blocks = Array.from(page.children).map((el) => el.getAttribute('data-testid'))
+    expect(blocks.indexOf('race-tile')).toBeLessThan(blocks.indexOf('year-hero'))
     expect(blocks.indexOf('year-hero')).toBeLessThan(blocks.indexOf('progress-columns'))
     expect(blocks.indexOf('all-time')).toBeGreaterThan(blocks.indexOf('progress-columns'))
   })

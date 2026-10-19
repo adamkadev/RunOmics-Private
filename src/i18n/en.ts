@@ -106,7 +106,6 @@ export const en = {
     topPct: (n: number) => `Top ${n}%`,
     season: 'This season',
     coach: 'Coach',
-    coachNext: (grade: string) => `Your fastest route to ${grade} is one VO₂ interval session a week plus your current easy volume.`,
     coachTop: 'Hold it with one VO₂ interval session a week and your current easy volume.',
     todayUp: (grade: string) => `VO₂max grade up to ${grade}`,
     todayBack: (grade: string) => `VO₂max grade back to ${grade}`,
@@ -254,14 +253,10 @@ export const en = {
     },
     records: {
       title: 'Records',
-      subtitle: 'Personal bests and race predictions',
       back: 'Progress',
     },
     map: {
       title: 'Heatmap',
-      back: 'Activities',
-      // Only runs with a GPS track are on the map (v5.6 #5): 294 of 298.
-      runs: (n: number) => `${n} run${n === 1 ? '' : 's'} with GPS`,
       area: 'Area',
       areas: 'Areas',
       areasSummary: (areas: number, runs: number) =>
@@ -338,7 +333,6 @@ export const en = {
       notifications: 'Notifications',
     },
     sync: {
-      title: 'Garmin sync',
       subtitle: 'Pull in today’s runs without waiting for tonight.',
       action: 'Sync now',
       // The button while the chain runs; the device line says which step.
@@ -353,7 +347,6 @@ export const en = {
       cooldown: (min: number) => `Up to date — next sync in ${min} min.`,
       dailyCap: 'Daily sync limit reached. Auto-sync continues tonight.',
       viewRun: 'View run ›',
-      takesAbout: 'Takes about five minutes end to end.',
     },
     rowAction: {
       export: 'Export ›',
@@ -363,14 +356,12 @@ export const en = {
     appearance: {
       title: 'Appearance',
       themeLabel: 'Theme',
-      themeHint: 'Auto follows your system setting',
       light: 'Light',
       auto: 'Auto',
       dark: 'Dark',
     },
     accent: {
       title: 'Accent',
-      hint: 'Used for highlights and your own data — never for warnings',
       options: {
         teal:     { label: 'Teal' },
         periwinkle: { label: 'Periwinkle' },
@@ -442,8 +433,6 @@ export const en = {
     dataExport: {
       workbook: 'Export training data (.xlsx)',
       title: 'Export activities',
-      signedOut: (runs: string) => `Workbook or CSV of all ${runs} · sign in to export`,
-      ownerHint: (runs: string) => `Workbook or CSV of all ${runs}`,
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
       sheetTitle: 'Export my activities',
@@ -459,7 +448,6 @@ export const en = {
     },
     offlineCache: {
       clear: 'Clear offline cache',
-      cost: 'Pages and maps reload from the network until you visit them again.',
       confirm: 'Clear it?',
       cleared: 'Offline cache cleared.',
       failed: 'Could not clear the offline cache.',
@@ -470,16 +458,13 @@ export const en = {
       types: {
         training: {
           title: 'Training reminders',
-          subtitle: 'Daily session at 10:00, plus a weekly check-in on your distance goal.',
         },
         shoes: {
           title: 'Shoe wear alerts',
-          subtitle: 'Warns at 70% and 90% of a shoe’s lifespan.',
         },
         // The title says what the toggle does (v5.6 #6): the PR alert.
         races: {
           title: 'PRs and predictions',
-          subtitle: 'When a run sets a PR or moves a race prediction.',
         },
       },
     },
@@ -494,8 +479,6 @@ export const en = {
       fitness: 'Fitness',
       fatigue: 'Fatigue',
       form: 'Form',
-      footnote:
-        'Fitness = 42-day load average (CTL) · Fatigue = 7-day (ATL) · Form = Fitness - Fatigue (TSB).',
     },
     // Training status and Form / Fitness / Fatigue, one card on Today.
     bodyCard: {
@@ -1255,12 +1238,11 @@ export const en = {
     thisWeek: 'This week',
     shoeFilter: { clear: 'Show runs in every shoe' },
     weekLine: {
-      ofKm: (target: string) => ` of ${target} km`,
       runs: (n: number): string => (n === 1 ? '1 run' : `${n} runs`),
-      runsOf: (done: number, planned: number) => `${done} of ${planned} planned run${planned !== 1 ? 's' : ''}`,
       easy: (pct: number) => `${pct}% easy`,
     },
-    mapButton: 'Map view',
+    // The page's two views, under the title (design review, Oct 2026).
+    view: { label: 'View', list: 'List', map: 'Map' },
     sort: {
       label: 'Sort',
       date: 'Date',
@@ -1580,7 +1562,6 @@ export const en = {
     half: 'Half',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
-    upcoming: 'Upcoming races',
     doneHeading: 'Done',
     targetTime: (time: string) => `target ${time}`,
     finish: 'finish',
@@ -1590,7 +1571,7 @@ export const en = {
     best: 'Best',
     predictedTag: 'predicted',
     seasonRaces: 'Season Races',
-    emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
+    emptyPbs: (year: number) => `No PBs for ${year} yet.`,
     projection: {
       status: {
         ahead: 'Ahead',
@@ -1695,7 +1676,8 @@ export const en = {
     roles: { daily: 'daily trainer', workouts: 'workouts', intervals: 'intervals', races: 'races' },
     shareOfDistance: 'share of distance',
     easy: 'Easy',
-    heroStats: { runs: 'Runs', avgDistance: 'Avg distance', avgPace: 'Avg pace', avgHr: 'Avg heart rate' },
+    // One row of four in the km card (design review, Oct 2026): short labels.
+    heroStats: { runs: 'Runs', avgDistance: 'Avg', avgPace: 'Pace', avgHr: 'HR' },
     lastRuns: 'Last runs',
     neverUsed: 'Never used',
     // Both numbers arrive formatted (formatKm), so 1,375 has its separator.
@@ -1789,13 +1771,13 @@ export const en = {
       activitiesTitleRetired: 'Last runs before retiring',
       allActivitiesCount: (count: number) => `All ${count}`,
       empty: 'No activities recorded with this pair yet.',
+      // One line (design review, Oct 2026): "1,000 km ≈ Jan ’27 · 11 wk at 25 km/wk".
       projectedRunOut: (weeklyKm: number, maxKm: string, targetDate: string, weeksRemaining: number) =>
-        `At ${weeklyKm} km a week you'll hit ${maxKm} km around ${targetDate} – about ${weeksRemaining} more week${weeksRemaining === 1 ? '' : 's'}.`,
+        `${maxKm} km ≈ ${targetDate} · ${weeksRemaining} wk at ${weeklyKm} km/wk`,
       // A three-year forecast off six runs is noise, not information - past a
       // year out, the sentence drops the date and says only what's true: it's
       // a long way off at this rate.
-      projectedRunOutFar: (weeklyKm: number, maxKm: string) =>
-        `At ${weeklyKm} km a week, ${maxKm} km is more than a year away.`,
+      projectedRunOutFar: (weeklyKm: number, maxKm: string) => `${maxKm} km in over a year at ${weeklyKm} km/wk`,
       verdict: {
         eyebrow: (statusLabel: string) => `Verdict · ${statusLabel}`,
         weeksLeft: (weeks: number) =>
@@ -1868,13 +1850,13 @@ export const en = {
       ofGoal: (km: string) => `of ${km} km`,
       goal: 'Goal',
       runsHours: (runs: number, hours: number) => `${runs} runs · ${hours} h`,
-      // "62 days · 10K Wintzenheim, Nov 29": the unit after the countdown.
-      raceMeta: (days: number, race: string, date: string) => `${days === 1 ? 'day' : 'days'} · ${race}, ${date}`,
+      // The next race (design review, Oct 2026): "155 days · Half · Sun 22 Mar ’27", then three figures.
+      days: (days: number): string => (days === 1 ? 'day' : 'days'),
       predicted: 'Predicted',
-      target: (time: string) => `Target ${time}`,
-      toFind: (gap: string) => `${gap} to find`,
-      underTarget: (gap: string) => `${gap} under`,
-      noRace: 'No race planned',
+      targetLabel: 'Target',
+      toFindLabel: 'To find',
+      planPhase: (phase: string) => `Plan: ${phase}`,
+      garminPrediction: 'Garmin prediction',
       vo2Delta: (delta: string) => `${delta} in 12 weeks`,
       // The footers as segments, each kept whole on the line (v4.3.1).
       thresholdParts: (pace: string | null, lthr: number | null) =>
@@ -1951,7 +1933,6 @@ export const en = {
   },
 
   records: {
-    title: 'Top Times',
     distances: {
       '1k': '1K',
       '1mile': '1 Mile',
@@ -1971,7 +1952,6 @@ export const en = {
     },
     recurring: {
       title: 'Routes you keep coming back to',
-      subtitle: 'Same ground, same hills - the one place raw pace compares across months.',
       runCount: (n: number) => `${n} times`,
       best: 'Best',
       // What a bar is, then the dates its first and last bars were run
@@ -2121,8 +2101,6 @@ export const en = {
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
     // A month's week under its row: run against plan, or what it is without one.
-    weekNoPlan: (km: string) => `${km} km · no plan`,
-    noPlanYet: 'No plan yet',
     // A run on a day with nothing planned, in its cell and its name.
     extra: 'extra',
     extraRun: 'Extra run',
@@ -2169,26 +2147,19 @@ export const en = {
     continuous: 'continuous',
     ranKm: (km: string) => `${km} km ran`,
     plannedKmLabel: (km: number) => `${km} km planned`,
-    restCard: {
-      title: 'Rest day',
-      noSession: 'No session planned.',
-      next: (weekday: string, title: string) => `No session planned. Next up: ${weekday}, ${title}.`,
-    },
-    // v4.17: the race the plan builds to, and how far off it is, under the title.
+    // The race the plan builds to, after the phase under the title: "Half in 42 d".
     header: {
-      daysToGo: (n: number) => (n <= 0 ? 'race day' : n === 1 ? '1 day to go' : `${n} days to go`),
+      raceIn: (distance: string, days: number) => (days <= 0 ? `${distance} today` : `${distance} in ${days} d`),
     },
     legend: {
       plannedByType: 'Planned',
     },
-    // The week's three stats (v4.17).
+    // The week's three figures, on one line (design review, Oct 2026).
     stats: {
-      distance: 'Distance',
-      sessions: 'Sessions',
       adherence: 'Plan adherence',
-      noPlan: 'No plan this week',
       ofKm: (km: string) => `/ ${km} km`,
-      ofSessions: (n: number) => `of ${n}`,
+      ofSessions: (n: number) => `of ${n} session${n !== 1 ? 's' : ''}`,
+      sessions: (n: number): string => (n === 1 ? 'session' : 'sessions'),
       kmPlanned: 'km planned',
       planned: 'planned',
     },
@@ -2200,16 +2171,11 @@ export const en = {
       recovery: (clock: string) => `${clock} rec`,
     },
     weekSummary: {
-      missed: (n: number) => `${n} missed`,
-      unplanned: (n: number) => `${n} unplanned`,
       easyOfTarget: (easy: number, target: number) => `${easy}% easy · ${target}% target`,
-      aboutLoad: 'About the week\'s load',
       loadOfPlan: (load: number, target: number) => `Load ${load} of ${target} pts planned`,
       loadPlannedLine: (load: number) => `Load ${load} pts planned`,
       loadDone: (load: number) => `Load ${load} pts`,
-      loadDefinition: 'Training load in points, from heart rate and duration (TRIMP).',
       sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
-      ranOfPlan: (ran: string, plan: string) => `${ran} / ${plan} km`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} of ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} session${sessions !== 1 ? 's' : ''}`,
     },
@@ -2222,18 +2188,7 @@ export const en = {
       blockEndsHere: 'block end',
       weeksInLabel: 'weeks in',
     },
-    phaseTrack: {
-      base: 'Base',
-      build: 'Build',
-      peak: 'Peak',
-      taper: 'Taper',
-      raceDay: 'Race',
-      weeks: (n: number) => `${n} wk`,
-      raceWeek: (date: string) => `Race week ${date}`,
-    },
     weekPurpose: {
-      thisWeek: 'This week',
-      upcoming: 'Upcoming week',
       prePlan: 'Pre-plan',
       planPhase: {
         base: 'Base',
