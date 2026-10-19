@@ -72,6 +72,22 @@ export interface ParkLabelOptions {
   lang?: string
 }
 
+/**
+ * Every place name the style keeps, at any zoom, big or small. The tiles hold
+ * hamlets and isolated dwellings, but the style fades them in at zoom 14; a
+ * city label is dropped above 14 and a town above 16. So a run through a
+ * hamlet passed through nothing named, and zooming into a city lost its name.
+ * The route's own fence still decides which of them find room.
+ */
+export function showPlacesAtAnyZoom(map: MapLibreMap, options: { districtOpacity?: number } = {}): void {
+  for (const raw of map.getStyle().layers) {
+    const layer = raw as StyleLayer
+    if (layer.id.startsWith(OWN_LAYER_PREFIX) || !isPlaceLabelLayer(layer)) continue
+    map.setLayerZoomRange(layer.id, 0, STYLE_MAX_ZOOM)
+    map.setPaintProperty(layer.id, 'text-opacity', isDistrictLayer(layer) ? (options.districtOpacity ?? 1) : 1)
+  }
+}
+
 export const LANDMARK_LABEL_LAYER = 'runomics-landmark-label'
 /**
  * The places a city is known for. The tiles split POIs by category, so a
@@ -145,7 +161,7 @@ export function addParkLabels(map: MapLibreMap, options: ParkLabelOptions): void
       'text-halo-width': 1.4,
       'text-halo-blur': 0.5,
     },
-  } as Parameters<MapLibreMap['addLayer']>[0])
+  } as Parameters<MapLibreMap['addLayer']>[0], firstSymbolLayerId(map))
 }
 
 export function addLandmarkLabels(map: MapLibreMap, options: LandmarkLabelOptions): void {
@@ -184,7 +200,7 @@ export function addLandmarkLabels(map: MapLibreMap, options: LandmarkLabelOption
         'text-halo-width': 1.4,
         'text-halo-blur': 0.5,
       },
-    } as Parameters<MapLibreMap['addLayer']>[0])
+    } as Parameters<MapLibreMap['addLayer']>[0], firstSymbolLayerId(map))
   }
 }
 
@@ -202,13 +218,12 @@ export function addWaterLabels(map: MapLibreMap, options: WaterLabelOptions): vo
     layout: {
       'symbol-placement': 'line',
       'symbol-sort-key': LABEL_SORT.water,
-      'symbol-spacing': 420,
+      'symbol-spacing': 250,
       'text-field': name as string,
       'text-font': ITALIC_FONT,
       'text-size': options.size ?? 11,
       'text-letter-spacing': 0.1,
-      'text-max-angle': 32,
-      'text-optional': true,
+      'text-max-angle': 45,
       'text-allow-overlap': false,
       'text-padding': 2,
     },
@@ -218,10 +233,15 @@ export function addWaterLabels(map: MapLibreMap, options: WaterLabelOptions): vo
       'text-halo-width': 1.4,
       'text-halo-blur': 0.5,
     },
-  } as Parameters<MapLibreMap['addLayer']>[0])
+  } as Parameters<MapLibreMap['addLayer']>[0], firstSymbolLayerId(map))
 }
 /** On its point first, then beside it, so a name next to the route still finds room. */
 const LABEL_ANCHORS: ('center' | 'top' | 'bottom' | 'left' | 'right')[] = ['center', 'top', 'bottom', 'left', 'right']
+/**
+ * How far a name may step off its own point, in ems: far enough to clear the
+ * route's fence, which runs right through the districts a run passes.
+ */
+const LABEL_RADIAL_OFFSET = 1.2
 
 export function isPlaceLabelLayer(layer: StyleLayer): boolean {
   if (layer.type !== 'symbol') return false
@@ -269,7 +289,7 @@ export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): v
     map.setLayoutProperty(layer.id, 'text-allow-overlap', false)
     map.setLayoutProperty(layer.id, 'text-padding', 2)
     map.setLayoutProperty(layer.id, 'text-variable-anchor', LABEL_ANCHORS)
-    map.setLayoutProperty(layer.id, 'text-radial-offset', 0.4)
+    map.setLayoutProperty(layer.id, 'text-radial-offset', LABEL_RADIAL_OFFSET)
     map.setLayoutProperty(layer.id, 'text-size', small ? 9 : 10)
     map.setPaintProperty(layer.id, 'text-opacity', small ? (colors.districtOpacity ?? 1) : 1)
     map.setPaintProperty(layer.id, 'text-color', small ? colors.neighbourhood : colors.town)
@@ -281,7 +301,7 @@ export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): v
 
 /** The first label layer: the route goes under it, so names draw over the line. */
 export function firstSymbolLayerId(map: MapLibreMap): string | undefined {
-  return map.getStyle().layers.find((layer) => layer.type === 'symbol')?.id
+  return map.getStyle().layers.find((layer) => layer.type === 'symbol' && !layer.id.startsWith(OWN_LAYER_PREFIX))?.id
 }
 
 let workerConfigured = false

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { maptilerStyle, shareBasemapStyle } from '@/lib/maptiler'
 import { bandFencePoints, routeFencePoints, simplifyRoute, type LngLat, type RouteFrame } from '@/lib/shareCardMap'
 import type { ThemeMode } from '@/lib/shareCardPalette'
-import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, styleRunMapLabels } from '@/lib/maplibre'
+import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, showPlacesAtAnyZoom, styleRunMapLabels } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
 import { t } from '@/i18n'
 import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/lib/runMapLayers'
@@ -75,8 +75,13 @@ interface RenderOptions {
 const LABEL_FENCE_SOURCE = 'share-label-fence'
 const LABEL_FENCE_LAYER = 'share-label-fence'
 const LABEL_FENCE_ICON = 'share-label-fence'
-/** The fence's clear icon: the 3 px trace and its 3 px halo, 9 px across, and no more (3.0.1). */
-const LABEL_FENCE_PX = 10
+/**
+ * The fence's clear icon, as wide as the line it stands for and no wider: the
+ * 3 px trace and its casing. At 10 px it reached a name's own point, and a
+ * name can only step a few px off that point, so every district the run went
+ * through was dropped - the card came back with no names at all.
+ */
+const LABEL_FENCE_PX = 6
 
 /**
  * The card's place names (redesign, Oct 2026): towns and the river, never
@@ -142,9 +147,10 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
   const surface = SURFACES[isDark ? 'dark' : 'light']
   map.on('load', () => {
     styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text2, districtOpacity: DISTRICT_OPACITY[theme] })
-    addWaterLabels(map, { halo: surface.background, water: WATER_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
     addParkLabels(map, { halo: surface.background, park: PARK_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
     addLandmarkLabels(map, { halo: surface.background, landmark: LANDMARK_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
+    addWaterLabels(map, { halo: surface.background, water: WATER_INK[theme], size: CARD_LABEL_SIZE, lang: MAP_LANG })
+    showPlacesAtAnyZoom(map, { districtOpacity: DISTRICT_OPACITY[theme] })
     addRunMarkers(map, first, { start: clearMarkerImage(), finish: clearMarkerImage() })
     const last = points[points.length - 1]
     if (last && last !== first) setRunFinish(map, first, last)

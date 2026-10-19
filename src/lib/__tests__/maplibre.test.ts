@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Map as MapLibreMap } from 'maplibre-gl'
-import { LANDMARK_LABEL_LAYER, PARK_LABEL_LAYER, WATER_LABEL_LAYER, addLandmarkLabels, addParkLabels, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
+import { showPlacesAtAnyZoom, LANDMARK_LABEL_LAYER, PARK_LABEL_LAYER, WATER_LABEL_LAYER, addLandmarkLabels, addParkLabels, addWaterLabels, firstSymbolLayerId, isPlaceLabelLayer, styleRunMapLabels } from '../maplibre'
 
-type Layer = { id: string; type: string; 'source-layer'?: string; source?: string }
+type Layer = { id: string; type: string; 'source-layer'?: string; source?: string; filter?: unknown }
 
 function fakeMap(layers: Layer[], filters: Record<string, unknown> = {}) {
   const layout: Record<string, Record<string, unknown>> = {}
@@ -15,7 +15,11 @@ function fakeMap(layers: Layer[], filters: Record<string, unknown> = {}) {
     setPaintProperty: (id: string, k: string, v: unknown) => { (paint[id] ??= {})[k] = v },
     setLayerZoomRange: (id: string, min: number, max: number) => { zooms[id] = [min, max] },
     getLayer: (id: string) => layers.find((l) => l.id === id),
-    addLayer: (layer: Record<string, unknown>) => { layers.push(layer as unknown as Layer) },
+    addLayer: (layer: Record<string, unknown>, before?: string) => {
+      const at = before ? layers.findIndex((l) => l.id === before) : -1
+      if (at < 0) layers.push(layer as unknown as Layer)
+      else layers.splice(at, 0, layer as unknown as Layer)
+    },
     getFilter: (id: string) => filters[id],
     setFilter: (id: string, f: unknown) => { setFilters[id] = f },
   } as unknown as MapLibreMap
@@ -75,7 +79,7 @@ describe('styleRunMapLabels (v4.10)', () => {
       'text-allow-overlap': false,
       'text-padding': 2,
       'text-variable-anchor': ['center', 'top', 'bottom', 'left', 'right'],
-      'text-radial-offset': 0.4,
+      'text-radial-offset': 1.2,
       'text-size': 10,
     })
     expect(layout.Neighbourhood?.['text-size']).toBe(9)
@@ -115,7 +119,9 @@ describe('addWaterLabels (3.0.1)', () => {
     expect(added.source).toBe('planet')
     expect(added['source-layer']).toBe('water_label')
     expect(added.layout!['symbol-placement']).toBe('line')
-    expect(added.layout!['text-optional']).toBe(true)
+    // A line label carries no icon: text-optional would let MapLibre "place"
+    // the symbol with neither, and the river's name never drew.
+    expect(added.layout!['text-optional']).toBeUndefined()
     expect(String(added.layout!['text-font'])).toContain('Italic')
     expect(added.paint!['text-color']).toBe('#5b7d99')
     expect(JSON.stringify(added.filter)).toContain('river')
@@ -206,5 +212,63 @@ describe('addLandmarkLabels (3.0.1)', () => {
     const bare: Layer[] = [{ id: 'Culture', type: 'symbol', 'source-layer': 'poi_culture', source: 'planet' }]
     addLandmarkLabels(fakeMap(bare).map, { halo: '#0b0c0c', landmark: '#9a8ca8' })
     expect(bare.filter((l) => l.id.startsWith(LANDMARK_LABEL_LAYER))).toHaveLength(1)
+  })
+})
+
+describe('showPlacesAtAnyZoom (3.0.1)', () => {
+  // The style fades hamlets in at zoom 14, and drops a city label above it:
+  // the small places never showed, and the big ones went as you zoomed in.
+  const layers = (): Layer[] => [
+    { id: 'Place labels', type: 'symbol', 'source-layer': 'place_label', filter: ['match', ['get', 'class'], ['hamlet', 'suburb', 'quarter'], true, false] },
+    { id: 'City labels', type: 'symbol', 'source-layer': 'city_label' },
+    { id: 'Road labels', type: 'symbol', 'source-layer': 'road_label' },
+    { id: 'runomics-park-label', type: 'symbol', 'source-layer': 'poi_public' },
+  ]
+
+  it('lifts every place name to any zoom, and leaves the streets alone', () => {
+    const { map, zooms, paint } = fakeMap(layers())
+    showPlacesAtAnyZoom(map)
+
+    expect(zooms['Place labels']).toEqual([0, 24])
+    // A city kept maxzoom 14, so its name went the moment you zoomed in.
+    expect(zooms['City labels']).toEqual([0, 24])
+    expect(paint['City labels']?.['text-opacity']).toBe(1)
+    // Street names and this app's own layers are not place names.
+    expect(zooms['Road labels']).toBeUndefined()
+    expect(zooms['runomics-park-label']).toBeUndefined()
+  })
+
+  it('keeps a district as faint as the caller asks', () => {
+    const { map, paint } = fakeMap(layers())
+    showPlacesAtAnyZoom(map, { districtOpacity: 0.8 })
+    expect(paint['Place labels']?.['text-opacity']).toBe(0.8)
+    expect(paint['City labels']?.['text-opacity']).toBe(1)
+  })
+})
+
+describe('where the app puts its own labels', () => {
+  // Across layers it is the order that decides, not symbol-sort-key: MapLibre
+  // places the earlier layer first, so ours must sit above the style's names
+  // and above the street names they used to lose to.
+  it('places park, then landmark, then water, all before the style\'s own names', () => {
+    const layers: Layer[] = [
+      { id: 'Water', type: 'fill', 'source-layer': 'water', source: 'planet' },
+      { id: 'Road labels', type: 'symbol', 'source-layer': 'road_label', source: 'planet' },
+      { id: 'Place labels', type: 'symbol', 'source-layer': 'place_label', source: 'planet' },
+      { id: 'Pond labels', type: 'symbol', 'source-layer': 'water_label', source: 'planet' },
+      { id: 'Townhalls', type: 'symbol', 'source-layer': 'poi_public', source: 'planet' },
+      { id: 'Tourism', type: 'symbol', 'source-layer': 'poi_tourism', source: 'planet' },
+    ]
+    const { map } = fakeMap(layers)
+    addParkLabels(map, { halo: '#0b0c0c', park: '#5f8a6d' })
+    addLandmarkLabels(map, { halo: '#0b0c0c', landmark: '#9a8ca8' })
+    addWaterLabels(map, { halo: '#0b0c0c', water: '#5b7d99' })
+
+    const order = layers.map((l) => l.id)
+    const ours = order.filter((id) => id.startsWith('runomics-'))
+    expect(ours[0]).toBe(PARK_LABEL_LAYER)
+    expect(ours.at(-1)).toBe(WATER_LABEL_LAYER)
+    expect(order.indexOf(WATER_LABEL_LAYER)).toBeLessThan(order.indexOf('Road labels'))
+    expect(order.indexOf(WATER_LABEL_LAYER)).toBeLessThan(order.indexOf('Place labels'))
   })
 })
