@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { kmSplitsFromLaps, kmSplitsFromSamples, kmSplitsOf, splitSpread } from '../kmSplits'
+import { kmElevationDeltas, kmSplitsFromLaps, kmSplitsFromSamples, kmSplitsOf } from '../kmSplits'
 
 function evenSamples(count: number, pace: number): number[] {
   return Array.from({ length: count }, () => pace)
@@ -122,24 +122,21 @@ describe('kmSplitsFromSamples calibration', () => {
   })
 })
 
-describe('splitSpread', () => {
-  const km = (n: number, pace: number, distanceKm = 1) => ({ km: n, distanceKm, durationSec: pace * distanceKm, paceSecPerKm: pace, avgHr: null })
+describe('kmElevationDeltas', () => {
+  const km = (distanceKm = 1) => ({ distanceKm })
 
-  it('names the fastest and slowest full km and the gap between them', () => {
-    const spread = splitSpread([km(1, 244), km(2, 254), km(3, 252), km(4, 243), km(5, 247), km(6, 256), km(7, 258, 0.11)])
-
-    expect(spread).toMatchObject({ spread: 13, kind: 'even' })
-    expect(spread!.fastest.km).toBe(4)
-    expect(spread!.slowest.km).toBe(6)
+  it("reads each km's climb from the stream laid over the distance", () => {
+    // 0 m at the start, 20 m at km 2, back to 10 m at the 3 km finish.
+    expect(kmElevationDeltas([km(), km(), km()], [0, 10, 20, 10], 3)).toEqual([10, 10, -10])
   })
 
-  it('reads a second half this much faster as a negative split, slower as a fade', () => {
-    expect(splitSpread([km(1, 300), km(2, 298), km(3, 280), km(4, 278)])!.kind).toBe('negative')
-    expect(splitSpread([km(1, 278), km(2, 280), km(3, 298), km(4, 300)])!.kind).toBe('faded')
+  it('takes a partial last km for what it is', () => {
+    expect(kmElevationDeltas([km(), km(0.5)], [100, 110, 115, 116], 1.5)).toEqual([15, 1])
   })
 
-  it('needs two full kilometres', () => {
-    expect(splitSpread([km(1, 300), km(2, 280, 0.4)])).toBeNull()
+  it('reads across a gap from the side it has, and nothing without a stream', () => {
+    expect(kmElevationDeltas([km(), km()], [0, null, 20], 2)).toEqual([20, 0])
+    expect(kmElevationDeltas([km(), km()], null, 2)).toEqual([null, null])
   })
 })
 
@@ -169,7 +166,6 @@ describe('kmSplitsFromLaps', () => {
     // The last 14 m is not a kilometre (under 50 m): the run's other 3589 s.
     expect(splits).toHaveLength(10)
     expect(splits.reduce((sum, s) => sum + s.durationSec, 0)).toBe(3589)
-    expect(splitSpread(splits)).toMatchObject({ spread: 8, kind: 'even' })
   })
 
   it('weights a kilometre\'s heart rate by the time it spent in each lap', () => {

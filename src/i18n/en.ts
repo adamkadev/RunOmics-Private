@@ -1438,10 +1438,9 @@ export const en = {
     splits: {
       title: 'Intervals',
       lapTitle: 'Laps',
-      perKmTitle: 'Kilometre splits',
-      continuous: 'continuous run',
-      spreadShort: (kind: string, spread: number) => `${kind} · ${spread} s spread`,
-      spreadKind: { even: 'Even run', negative: 'Negative split', faded: 'Faded', uneven: 'Uneven' },
+      // The run's average beside Km / Laps (3.0).
+      avg: (pace: string) => `avg ${pace}`,
+      viewLabel: 'Splits by',
       partialKm: (km: string) => `final ${km}`,
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
       bandLabel: (range: string) => `band ${range}`,
@@ -1458,7 +1457,8 @@ export const en = {
         dist: 'Dist',
         pace: 'Pace',
         speed: 'Speed',
-        vsAvg: 'vs avg',
+        vsAvg: '±s',
+        elev: 'Elev',
         hr: 'HR',
         total: 'Total',
       },
