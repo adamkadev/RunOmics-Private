@@ -1,4 +1,3 @@
-import { GlossaryTerm, type GlossaryKey } from '@/components/ui/GlossaryTerm'
 import type { CSSProperties } from 'react'
 import { cardClass } from '@/components/ui/Card'
 import { Unit } from '@/components/ui/Stat'
@@ -9,8 +8,6 @@ import { t } from '@/i18n'
 
 interface MetricData {
   label: string
-  /** A term with a definition behind an (i). */
-  glossary?: GlossaryKey
   unit: string
   value: string | number | undefined
 }
@@ -31,16 +28,15 @@ function available(metrics: MetricData[]): AvailableMetric[] {
 export function keyMetrics(athlete: AthletePageView): AvailableMetric[] {
   const a = t.settings.athlete
   return available([
-    { label: a.vma, glossary: 'vma', unit: t.units.kmh, value: athlete.vmaKmh },
+    { label: a.vma, unit: t.units.kmh, value: athlete.vmaKmh },
     {
       label: a.fitnessAge,
       unit: athlete.age !== undefined ? a.ofAge(athlete.age) : '',
       value: athlete.fitnessAgeYrs !== undefined ? Math.round(athlete.fitnessAgeYrs) : undefined,
     },
-    { label: a.thresholdHr, glossary: 'lthr', unit: t.units.bpm, value: athlete.lthrBpm },
+    { label: a.thresholdHr, unit: t.units.bpm, value: athlete.lthrBpm },
     {
       label: a.thresholdPace,
-      glossary: 'thresholdPace',
       unit: t.units.perKm,
       value: athlete.thresholdPaceSecPerKm ? formatDuration(athlete.thresholdPaceSecPerKm) : undefined,
     },
@@ -54,8 +50,8 @@ function cellBorders(i: number): string {
 
 /**
  * The four key numbers as one strip (C2, v4.4; v4.17): a cell each, 24 pt
- * values with their units inline. Each label opens its definition on a
- * tap; there is no (i) on the card.
+ * values with their units inline, under plain labels (design review, Oct
+ * 2026: no definitions - they clipped inside the label's truncate).
  */
 export function AthleteKeyNumbers({ athlete }: { athlete: AthletePageView }) {
   const tiles = keyMetrics(athlete)
@@ -70,7 +66,7 @@ export function AthleteKeyNumbers({ athlete }: { athlete: AthletePageView }) {
       {tiles.map((tile, i) => (
         <div key={tile.label} data-testid="athlete-key-number" className={cn('flex min-w-0 flex-col gap-1 px-5 py-[18px]', cellBorders(i))}>
           <div className="truncate text-xs text-muted-foreground">
-            {tile.glossary ? <GlossaryTerm term={tile.glossary} quiet>{tile.label}</GlossaryTerm> : tile.label}
+            {tile.label}
           </div>
           <div className="truncate text-2xl font-semibold leading-tight text-foreground">
             {tile.value}

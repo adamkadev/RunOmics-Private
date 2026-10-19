@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { SectionDivider } from '@/components/ui/SectionLabel'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import { formatDate, formatDuration, formatDistance, formatPace } from '@/lib/formatters'
@@ -44,11 +43,8 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
   }
 
   return (
+    // No section label (design review, Oct 2026): "Top times" repeated the H1 and the tab.
     <section className="space-y-3">
-      <SectionDivider as="h2">
-        {t.records.title}
-      </SectionDivider>
-
       {/* Labelled columns, where a floating "best · predicted" caption used to
           key two unlabelled numbers per row. */}
       <div className="glass-card rounded-card-sm px-5 pb-1">

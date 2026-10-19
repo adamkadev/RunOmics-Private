@@ -125,19 +125,14 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
         data-testid="export-row"
         className="flex w-full items-center justify-between gap-3 border-b border-border py-3.5 text-left text-sm text-foreground transition-opacity active:opacity-60 disabled:opacity-50"
       >
-        <span className="min-w-0">
-          <span className="block">{loading ? s.dataExport.exporting : s.dataExport.title}</span>
-          <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{s.dataExport.ownerHint(t.common.runs(activityCount))}</span>
-        </span>
+        <span className="min-w-0">{loading ? s.dataExport.exporting : s.dataExport.title}</span>
         <span className="shrink-0 text-[13px] font-medium text-accent-text">{s.rowAction.export}</span>
       </button>
 
       <div className="flex items-center justify-between gap-3 py-3.5">
         <div className="min-w-0">
           <p className="text-sm text-foreground">{s.offlineCache.clear}</p>
-          <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
-            {confirmingClear ? s.offlineCache.confirm : s.offlineCache.cost}
-          </p>
+          {confirmingClear && <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{s.offlineCache.confirm}</p>}
         </div>
         {confirmingClear ? (
           <span className="flex shrink-0 items-center gap-3 text-[13px] font-medium">

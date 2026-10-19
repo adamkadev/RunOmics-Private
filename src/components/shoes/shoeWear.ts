@@ -1,5 +1,6 @@
 import { formatKm, formatMonthShortYear } from '@/lib/formatters'
 import { addDays, isoDate } from '@/lib/calendarDate'
+import { GARMIN_CONNECT_URL } from '@/lib/garminConnect'
 import { wearPercent, wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import type { ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
@@ -72,7 +73,7 @@ export function shoeRole(type: ActivityType | null): string | null {
 }
 
 /** Pairs, limits and retirement are Garmin's: the list's Add and the detail's Edit open its gear page. */
-export const GARMIN_GEAR_URL = 'https://connect.garmin.com/modern/gear'
+export const GARMIN_GEAR_URL = `${GARMIN_CONNECT_URL}/gear`
 
 /** Past a year out, a projection is a handful of runs extrapolated into noise: no date. */
 const FAR_OUT_WEEKS = 52

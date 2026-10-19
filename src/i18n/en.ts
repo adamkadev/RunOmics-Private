@@ -106,7 +106,6 @@ export const en = {
     topPct: (n: number) => `Top ${n}%`,
     season: 'This season',
     coach: 'Coach',
-    coachNext: (grade: string) => `Your fastest route to ${grade} is one VO₂ interval session a week plus your current easy volume.`,
     coachTop: 'Hold it with one VO₂ interval session a week and your current easy volume.',
     todayUp: (grade: string) => `VO₂max grade up to ${grade}`,
     todayBack: (grade: string) => `VO₂max grade back to ${grade}`,
@@ -254,7 +253,6 @@ export const en = {
     },
     records: {
       title: 'Records',
-      subtitle: 'Personal bests and race predictions',
       back: 'Progress',
     },
     map: {
@@ -335,7 +333,6 @@ export const en = {
       notifications: 'Notifications',
     },
     sync: {
-      title: 'Garmin sync',
       subtitle: 'Pull in today’s runs without waiting for tonight.',
       action: 'Sync now',
       // The button while the chain runs; the device line says which step.
@@ -350,7 +347,6 @@ export const en = {
       cooldown: (min: number) => `Up to date — next sync in ${min} min.`,
       dailyCap: 'Daily sync limit reached. Auto-sync continues tonight.',
       viewRun: 'View run ›',
-      takesAbout: 'Takes about five minutes end to end.',
     },
     rowAction: {
       export: 'Export ›',
@@ -360,14 +356,12 @@ export const en = {
     appearance: {
       title: 'Appearance',
       themeLabel: 'Theme',
-      themeHint: 'Auto follows your system setting',
       light: 'Light',
       auto: 'Auto',
       dark: 'Dark',
     },
     accent: {
       title: 'Accent',
-      hint: 'Used for highlights and your own data — never for warnings',
       options: {
         teal:     { label: 'Teal' },
         periwinkle: { label: 'Periwinkle' },
@@ -439,8 +433,6 @@ export const en = {
     dataExport: {
       workbook: 'Export training data (.xlsx)',
       title: 'Export activities',
-      signedOut: (runs: string) => `Workbook or CSV of all ${runs} · sign in to export`,
-      ownerHint: (runs: string) => `Workbook or CSV of all ${runs}`,
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
       sheetTitle: 'Export my activities',
@@ -456,7 +448,6 @@ export const en = {
     },
     offlineCache: {
       clear: 'Clear offline cache',
-      cost: 'Pages and maps reload from the network until you visit them again.',
       confirm: 'Clear it?',
       cleared: 'Offline cache cleared.',
       failed: 'Could not clear the offline cache.',
@@ -467,16 +458,13 @@ export const en = {
       types: {
         training: {
           title: 'Training reminders',
-          subtitle: 'Daily session at 10:00, plus a weekly check-in on your distance goal.',
         },
         shoes: {
           title: 'Shoe wear alerts',
-          subtitle: 'Warns at 70% and 90% of a shoe’s lifespan.',
         },
         // The title says what the toggle does (v5.6 #6): the PR alert.
         races: {
           title: 'PRs and predictions',
-          subtitle: 'When a run sets a PR or moves a race prediction.',
         },
       },
     },
@@ -491,8 +479,6 @@ export const en = {
       fitness: 'Fitness',
       fatigue: 'Fatigue',
       form: 'Form',
-      footnote:
-        'Fitness = 42-day load average (CTL) · Fatigue = 7-day (ATL) · Form = Fitness - Fatigue (TSB).',
     },
     // Training status and Form / Fitness / Fatigue, one card on Today.
     bodyCard: {
@@ -1576,7 +1562,6 @@ export const en = {
     half: 'Half',
     kmRemaining: (km: number) => `${km} km remaining`,
     goalReached: 'Goal reached!',
-    upcoming: 'Upcoming races',
     doneHeading: 'Done',
     targetTime: (time: string) => `target ${time}`,
     finish: 'finish',
@@ -1948,7 +1933,6 @@ export const en = {
   },
 
   records: {
-    title: 'Top Times',
     distances: {
       '1k': '1K',
       '1mile': '1 Mile',
@@ -1968,7 +1952,6 @@ export const en = {
     },
     recurring: {
       title: 'Routes you keep coming back to',
-      subtitle: 'Same ground, same hills - the one place raw pace compares across months.',
       runCount: (n: number) => `${n} times`,
       best: 'Best',
       // What a bar is, then the dates its first and last bars were run
@@ -2194,11 +2177,9 @@ export const en = {
     },
     weekSummary: {
       easyOfTarget: (easy: number, target: number) => `${easy}% easy · ${target}% target`,
-      aboutLoad: 'About the week\'s load',
       loadOfPlan: (load: number, target: number) => `Load ${load} of ${target} pts planned`,
       loadPlannedLine: (load: number) => `Load ${load} pts planned`,
       loadDone: (load: number) => `Load ${load} pts`,
-      loadDefinition: 'Training load in points, from heart rate and duration (TRIMP).',
       sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} of ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} session${sessions !== 1 ? 's' : ''}`,

@@ -87,12 +87,11 @@ function renderWeek(options: {
 }
 
 describe('WeekView weekly metrics', () => {
-  // H20: one line - volume left, easy share right - and no load (i).
-  it('reads the week in one line, with no load behind an info button', () => {
+  // H20: one line, and no load behind an info button.
+  it('reads the week in one line, with no info button', () => {
     renderWeek({ activities: [TEMPO, RACE], coaching: overview() })
 
-    expect(screen.getByTestId('week-summary')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: t.plan.weekSummary.aboutLoad })).toBeNull()
+    expect(within(screen.getByTestId('week-summary')).queryByRole('button')).toBeNull()
   })
 
   it('shows the completed activities and the coach prescription side by side', () => {

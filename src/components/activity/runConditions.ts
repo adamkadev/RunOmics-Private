@@ -1,6 +1,7 @@
 import type { ActivityWeather } from '@/domain/activity/types'
 import { compassPoint } from '@/domain/activity/weather'
 import { t } from '@/i18n'
+import { GARMIN_CONNECT_URL } from '@/lib/garminConnect'
 
 /**
  * "18°C · wind 2 km/h N": the Conditions row of the verdict card (v4.8 2h).
@@ -18,5 +19,5 @@ export function conditionsText(weather: ActivityWeather): string {
 
 /** Garmin Connect's page for one activity: where its shoe is set or changed. */
 export function garminActivityUrl(activityId: string): string {
-  return `https://connect.garmin.com/modern/activity/${encodeURIComponent(activityId)}`
+  return `${GARMIN_CONNECT_URL}/activity/${encodeURIComponent(activityId)}`
 }

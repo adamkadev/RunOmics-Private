@@ -91,7 +91,6 @@ export const fr = {
     topPct: (n: number) => `Top ${n} %`,
     season: 'Cette saison',
     coach: 'Coach',
-    coachNext: (grade: string) => `Le plus court chemin vers ${grade} : une séance de VMA par semaine, en gardant ton volume actuel en endurance.`,
     coachTop: 'Pour la garder : une séance de VMA par semaine et ton volume actuel en endurance.',
     todayUp: (grade: string) => `Note VO₂max passée à ${grade}`,
     todayBack: (grade: string) => `Note VO₂max revenue à ${grade}`,
@@ -230,7 +229,6 @@ export const fr = {
     },
     records: {
       title: 'Records',
-      subtitle: 'Records personnels et prédictions de course',
       back: 'Progression',
     },
     map: {
@@ -310,7 +308,6 @@ export const fr = {
       notifications: 'Notifications',
     },
     sync: {
-      title: 'Synchronisation Garmin',
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',
       action: 'Synchroniser',
       running: 'Synchro…',
@@ -323,7 +320,6 @@ export const fr = {
       cooldown: (min: number) => `À jour — prochaine synchro dans ${min} min.`,
       dailyCap: 'Limite de synchros du jour atteinte. La synchro automatique continue cette nuit.',
       viewRun: 'Voir la sortie ›',
-      takesAbout: 'Environ cinq minutes au total.',
     },
     rowAction: {
       export: 'Exporter ›',
@@ -333,14 +329,12 @@ export const fr = {
     appearance: {
       title: 'Apparence',
       themeLabel: 'Thème',
-      themeHint: 'Auto suit le réglage de ton système',
       light: 'Clair',
       auto: 'Auto',
       dark: 'Sombre',
     },
     accent: {
       title: 'Accent',
-      hint: 'Pour la mise en évidence et tes propres données — jamais pour les alertes',
       options: {
         teal:     { label: 'Sarcelle' },
         periwinkle: { label: 'Pervenche' },
@@ -409,8 +403,6 @@ export const fr = {
     dataExport: {
       workbook: 'Exporter les données d’entraînement (.xlsx)',
       title: 'Exporter les activités',
-      signedOut: (runs: string) => `Classeur ou CSV des ${runs} · connecte-toi pour exporter`,
-      ownerHint: (runs: string) => `Classeur ou CSV des ${runs}`,
       exporting: 'Export en cours…',
       failed: 'Impossible d’exporter les données d’entraînement.',
       sheetTitle: 'Exporter mes activités',
@@ -425,7 +417,6 @@ export const fr = {
     },
     offlineCache: {
       clear: 'Vider le cache hors ligne',
-      cost: 'Les pages et les cartes seront rechargées depuis le réseau à la prochaine visite.',
       confirm: 'Vider ?',
       cleared: 'Cache hors ligne vidé.',
       failed: 'Impossible de vider le cache hors ligne.',
@@ -436,15 +427,12 @@ export const fr = {
       types: {
         training: {
           title: 'Rappels d’entraînement',
-          subtitle: 'Séance du jour à 10 h, plus un point hebdomadaire sur ton objectif de distance.',
         },
         shoes: {
           title: 'Alertes d’usure des chaussures',
-          subtitle: 'Avertit à 70 % et 90 % de la durée de vie d’une paire.',
         },
         races: {
           title: 'Records et prédictions',
-          subtitle: 'Quand une sortie bat un record ou fait bouger une prédiction.',
         },
       },
     },
@@ -459,8 +447,6 @@ export const fr = {
       fitness: 'Condition',
       fatigue: 'Fatigue',
       form: 'Forme',
-      footnote:
-        'Condition = charge moyenne sur 42 j (CTL) · Fatigue = 7 j (ATL) · Forme = Condition - Fatigue (TSB).',
     },
     bodyCard: {
       deltaIn: (delta: string, days: number) => `${delta} en ${days} jours`,
@@ -1500,7 +1486,6 @@ export const fr = {
     half: 'Semi',
     kmRemaining: (km: number) => `${km} km restants`,
     goalReached: 'Objectif atteint !',
-    upcoming: 'Courses à venir',
     doneHeading: 'Terminées',
     targetTime: (time: string) => `objectif ${time}`,
     finish: 'arrivée',
@@ -1822,7 +1807,6 @@ export const fr = {
   },
 
   records: {
-    title: 'Meilleurs temps',
     distances: {
       '1k': '1K',
       '1mile': '1 mile',
@@ -1842,7 +1826,6 @@ export const fr = {
     },
     recurring: {
       title: 'Tes parcours habituels',
-      subtitle: 'Même terrain, mêmes bosses - le seul cas où l’allure brute se compare d’un mois à l’autre.',
       runCount: (n: number) => `${n} fois`,
       best: 'Record',
       trailKey: 'Une barre par sortie · plus haute = plus rapide',
@@ -2053,11 +2036,9 @@ export const fr = {
     },
     weekSummary: {
       easyOfTarget: (easy: number, target: number) => `${easy} % facile · objectif ${target} %`,
-      aboutLoad: 'À propos de la charge de la semaine',
       loadOfPlan: (load: number, target: number) => `Charge ${load} sur ${target} pts prévus`,
       loadPlannedLine: (load: number) => `Charge ${load} pts prévus`,
       loadDone: (load: number) => `Charge ${load} pts`,
-      loadDefinition: 'Charge d’entraînement en points, d’après la FC et la durée (TRIMP).',
       sessionsCount: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
       sessionsOfPlan: (ran: number, plan: number) => `${ran} sur ${plan}`,
       planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} séance${sessions > 1 ? 's' : ''}`,
