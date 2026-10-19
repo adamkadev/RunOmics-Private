@@ -1,4 +1,4 @@
-import type { ActivityType, ScheduledTimeOfDay } from '@/domain/activity/types'
+import type { ActivityType } from '@/domain/activity/types'
 
 function ordinal(n: number): string {
   const rem10 = n % 10
@@ -2036,40 +2036,18 @@ export const en = {
     today: 'Today',
     prevPeriod: 'Previous',
     nextPeriod: 'Next',
-    summary: (sessions: number, ranKm: number, plannedKm: number) =>
-      `${sessions} session${sessions !== 1 ? 's' : ''} · ${ranKm} km run · ${plannedKm} planned`,
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     switcher: { week: 'Week', month: 'Month' },
-    // A month's week under its row: run against plan, or what it is without one.
-    // A run on a day with nothing planned, in its cell and its name.
-    extra: 'extra',
-    extraRun: 'Extra run',
-    // A planned session no run matched, on its sheet: the plan is read-only, so no reschedule.
-    missedNoRun: 'Missed · no run matched',
-    restDay: 'Rest',
     planned: 'Planned',
     easyEffortLabel: 'Z2 easy',
     structure: {
-      title: 'Structure',
       warmup: 'Warm-up',
       cooldown: 'Cool-down',
-      single: (min: number, zone: string) => `${min}' @ ${zone}`,
-      reps: (n: number, effort: number, zone: string) => `${n} × ${effort}' @ ${zone}`,
-      repsWithRecovery: (n: number, effort: number, recovery: number, zone: string) => `${n} × ${effort}' @ ${zone} / ${recovery}' easy`,
-      easyZone: 'Z1-Z2',
       min: (m: number) => `${m}'`,
-      rec: (m: number) => `${m}' rec`,
       // Under Today's session bar (design review, Oct 2026): "6 × 20s strides".
       strides: (reps: number, rep: string) => `${reps} × ${rep} strides`,
     },
-    timeOfDay: {
-      Morning: 'Morning',
-      Afternoon: 'Afternoon',
-      Evening: 'Evening',
-      Night: 'Night',
-    } as Record<ScheduledTimeOfDay, string>,
     openPlanner: 'Open the weekly planner',
-    viewActivity: 'view activity',
     type: 'Type',
     races: 'Races',
     targetPace: (pace: string) => `target ${pace}`,
@@ -2085,41 +2063,57 @@ export const en = {
       targetPace: (range: string) => `target ${range}`,
     },
     continuous: 'continuous',
-    ranKm: (km: string) => `${km} km ran`,
-    plannedKmLabel: (km: number) => `${km} km planned`,
-    // The race the plan builds to, after the phase under the title: "Half in 42 d".
-    header: {
-      raceIn: (distance: string, days: number) => (days <= 0 ? `${distance} today` : `${distance} in ${days} d`),
+    restCard: {
+      title: 'Rest day',
+      noSession: 'No session planned.',
+      next: (weekday: string, title: string) => `No session planned. Next up: ${weekday}, ${title}.`,
     },
-    legend: {
-      plannedByType: 'Planned',
+    // Plan's week (redesign 3.0): the phase card, the week row, the selected day.
+    kinds: { easy: 'Easy', long: 'Long run' },
+    phase: {
+      weekOf: (total: number) => ({ before: 'Week', after: `of ${total}` }),
+      generalShort: 'General prep',
+      raceInWeeks: (race: string, weeks: number) => `${race} in ${weeks} wk`,
+      raceInDays: (race: string, days: number) => (days === 0 ? `${race} today` : days === 1 ? `${race} tomorrow` : `${race} in ${days} days`),
     },
-    // The week's three figures, on one line (design review, Oct 2026).
-    stats: {
-      adherence: 'Plan adherence',
-      ofKm: (km: string) => `/ ${km} km`,
-      ofSessions: (n: number) => `of ${n} session${n !== 1 ? 's' : ''}`,
-      sessions: (n: number): string => (n === 1 ? 'session' : 'sessions'),
-      kmPlanned: 'km planned',
-      planned: 'planned',
+    weekRow: {
+      kmOf: (km: string) => `/ ${km} km`,
+      runsOf: (n: number) => `/ ${n} run${n !== 1 ? 's' : ''}`,
+      runs: (n: number): string => (n === 1 ? 'run' : 'runs'),
+    },
+    // Plan's month (redesign 3.0): the phase labels, the key and the summary card.
+    month: {
+      phaseEnds: (phase: string, date: string) => `${phase} · ends ${date}`,
+      phaseWeeks: (phase: string, n: number) => `${phase} · ${n} week${n !== 1 ? 's' : ''}`,
+      long: 'Long',
+      phaseWeek: (phase: string, n: number, total: number) => `${phase} · week ${n} of ${total}`,
+      kmOf: (ran: string, plan: string) => `${ran} of ${plan} km`,
+      nextKey: 'Next key session',
+      weekLabel: (monday: string, km: string) => `Week of ${monday} · ${km}`,
+    },
+    daySelector: 'Days of the week',
+    steps: {
+      warmup: 'Warm-up',
+      cooldown: 'Cool-down',
+      easy: 'easy',
+      minutes: (m: number) => `${m}′`,
+      reps: (n: number, rep: string, kind: string) => `${n} × ${rep} ${kind}`,
+      strides: (n: number, rep: string) => `${n} × ${rep} strides`,
+      repsShort: (n: number, rep: string) => `${n}×${rep}`,
+    },
+    dayCard: {
+      planned: 'Planned',
+      done: 'Done',
+      notPlanned: 'Nothing planned',
+      asPlanned: 'As planned',
+      viewActivity: 'View activity',
+      viewNamed: (name: string) => `View ${name}`,
     },
     // A session row's target line: its zone, its paces, its recovery.
     row: {
       pace: (range: string) => `${range} /km`,
-      easyPace: (range: string) => `easy ${range} /km`,
-      stridesPace: (pace: string) => `strides ${pace} /km`,
       recovery: (clock: string) => `${clock} rec`,
     },
-    weekSummary: {
-      easyOfTarget: (easy: number, target: number) => `${easy}% easy · ${target}% target`,
-      loadOfPlan: (load: number, target: number) => `Load ${load} of ${target} pts planned`,
-      loadPlannedLine: (load: number) => `Load ${load} pts planned`,
-      loadDone: (load: number) => `Load ${load} pts`,
-      sessionsCount: (n: number) => `${n} session${n !== 1 ? 's' : ''}`,
-      sessionsOfPlan: (ran: number, plan: number) => `${ran} of ${plan}`,
-      planOnly: (km: string, sessions: number) => `Plan ${km} km · ${sessions} session${sessions !== 1 ? 's' : ''}`,
-    },
-    plannedVsRecorded: (planned: string, recorded: string) => `planned ${planned} · recorded ${recorded}`,
     raceFooter: {
       weeksIn: (done: number, total: number) => `${done}/${total}`,
       targetTime: (clock: string) => `target ${clock}`,
@@ -2140,7 +2134,6 @@ export const en = {
       weekOfTarget: (done: number, total: number) => `week ${done} of ${total}`,
       generalPreparation: 'General preparation',
       weekN: (n: number) => `week ${n}`,
-      raceOn: (date: string) => `race ${date}`,
     },
   },
 

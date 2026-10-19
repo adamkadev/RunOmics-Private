@@ -1,4 +1,3 @@
-import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { buildCoachingOverview, type PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
@@ -6,7 +5,6 @@ import type { PlannedWorkout } from '@/domain/activity/types'
 import type { CoachingPlan, WorkoutBlock, WorkoutPrescription } from '@/domain/coaching/types'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
-import { PlannedWorkoutSheet } from '../PlannedWorkoutSheet'
 import { coachWorkoutView, plannedWorkoutView } from '../planWorkoutView'
 
 const ZONES: TrainingZonesData = {
@@ -227,58 +225,6 @@ describe('structure, only where there is structure to show', () => {
   })
 })
 
-describe('the sheet renders whichever source it is given', () => {
-  it('shows the coached session with its target, intent and state', () => {
-    render(<PlannedWorkoutSheet workout={coachWorkoutView(viewOf(recovery()), ZONES)} onClose={() => {}} />)
-
-    const sheet = screen.getByRole('dialog')
-    expect(within(sheet).getByRole('heading', { name: 'Post-Race Recovery Run' })).toBeInTheDocument()
-    expect(sheet.textContent).toContain('25 min')
-    expect(sheet.textContent).toContain('4.0')
-    expect(sheet.textContent).toContain(t.plan.easyEffortLabel)
-    expect(sheet.textContent).toContain('5:50–6:27/km')
-    expect(within(sheet).getByText("Very easy recovery run to clear fatigue from yesterday's race.")).toBeInTheDocument()
-    expect(within(sheet).getByText('Keep effort strictly easy and controlled.')).toBeInTheDocument()
-    expect(within(sheet).getByText(t.coaching.states.prescribed)).toBeInTheDocument()
-  })
-
-  it('shows no structure section for a single continuous run', () => {
-    render(<PlannedWorkoutSheet workout={coachWorkoutView(viewOf(recovery()), ZONES)} onClose={() => {}} />)
-
-    const sheet = screen.getByRole('dialog')
-    expect(within(sheet).queryByText(t.plan.structure.title)).not.toBeInTheDocument()
-    expect(sheet.textContent).not.toContain('4 km ·')
-    expect(within(sheet).queryByText(t.plan.structure.warmup)).not.toBeInTheDocument()
-  })
-
-  it('shows the existing structure UI for a real interval session', () => {
-    const blocks: WorkoutBlock[] = [
-      { kind: 'warmup', target: { durationSeconds: 900 } },
-      {
-        kind: 'repeat',
-        repetitions: 3,
-        steps: [
-          { kind: 'effort', target: { distanceMeters: 1_600, paceSecPerKm: { min: 260, max: 270 } } },
-          { kind: 'recovery', target: { durationSeconds: 120 } },
-        ],
-      },
-      { kind: 'cooldown', target: { durationSeconds: 600 } },
-    ]
-    render(
-      <PlannedWorkoutSheet
-        workout={coachWorkoutView(viewOf(recovery({ title: 'Threshold 3 × 1600m', blocks })), ZONES)}
-        onClose={() => {}}
-      />
-    )
-
-    const sheet = screen.getByRole('dialog')
-    expect(within(sheet).getByText(t.plan.structure.title)).toBeInTheDocument()
-    expect(within(sheet).getByText(t.plan.structure.warmup)).toBeInTheDocument()
-    expect(within(sheet).getByText(t.plan.structure.cooldown)).toBeInTheDocument()
-    expect(sheet.textContent).toMatch(/3 ×/)
-  })
-})
-
 describe('a Garmin planned workout is untouched by any of this', () => {
   const garmin: PlannedWorkout = {
     date: '2026-09-09',
@@ -302,53 +248,5 @@ describe('a Garmin planned workout is untouched by any of this', () => {
     expect(view.alert).toBeNull()
     expect(view.target).toBeNull()
     expect(view.effort).toBe('Threshold · 4:20-4:30 /km')
-  })
-
-  it('renders the sheet exactly as it did before, duration unmarked', () => {
-    render(<PlannedWorkoutSheet workout={plannedWorkoutView(garmin, ZONES)} onClose={() => {}} />)
-
-    const sheet = screen.getByRole('dialog')
-    expect(sheet.textContent).toContain('1h00')
-    expect(sheet.textContent).not.toContain('≈')
-    expect(within(sheet).getByText(t.plan.planned)).toBeInTheDocument()
-    expect(within(sheet).getByText(t.plan.timeOfDay.Morning)).toBeInTheDocument()
-    expect(sheet.textContent).not.toContain('/km')
-  })
-})
-
-describe('a done day draws the steps it was planned with (v5.6 #2)', () => {
-  const steps = [
-    { kind: 'warmup' as const, minutes: 12 },
-    { kind: 'effort' as const, minutes: 7, rep: 1 },
-    { kind: 'recovery' as const, minutes: 2, rep: 1 },
-    { kind: 'effort' as const, minutes: 7, rep: 2 },
-    { kind: 'recovery' as const, minutes: 2, rep: 2 },
-    { kind: 'effort' as const, minutes: 7, rep: 3 },
-    { kind: 'cooldown' as const, minutes: 10 },
-  ]
-  const garmin = { type: 'Threshold' as const, steps, name: 'Threshold 3 x 7:00', durationSecs: 3360 }
-
-  it("takes Garmin's steps when the run was the session it planned", async () => {
-    const { doneDaySteps } = await import('../planWorkoutView')
-    expect(doneDaySteps('Threshold', undefined, garmin)).toBe(steps)
-  })
-
-  it('stays continuous for a swapped day or no plan', async () => {
-    const { doneDaySteps } = await import('../planWorkoutView')
-    expect(doneDaySteps('Base', undefined, garmin)).toEqual([])
-    expect(doneDaySteps('Threshold', undefined, undefined)).toEqual([])
-  })
-})
-
-// Design review, Oct 2026: Month's day sheet names an older session as Garmin
-// did, in two lines at most.
-describe("the month day sheet's title", () => {
-  it('keeps a long name as given, to two lines', () => {
-    const view = plannedWorkoutView({ date: '2026-07-15', name: "Répétitions allure d'objectif - 4x3'@4:24", type: 'Threshold', durationSecs: 3_000 })
-    render(<PlannedWorkoutSheet workout={view} onClose={() => {}} />)
-
-    const title = within(screen.getByRole('dialog')).getByRole('heading')
-    expect(title.textContent).toBe("Répétitions allure d'objectif - 4x3'@4:24")
-    expect(title.className).toContain('line-clamp-2')
   })
 })

@@ -8,7 +8,7 @@ export type PlanRace = Pick<UpcomingRace, 'date' | 'name' | 'distance' | 'locati
 /**
  * The race the plan builds to: the coaching block's target, else its next
  * tune-up still to come; Garmin's next race when there is no coaching. The
- * subtitle under Plan's title counts down to it.
+ * week's phase card counts down to it (redesign 3.0).
  */
 export function planRace(coaching: PlanCoachingView | null, nextRace: UpcomingRace | null | undefined, today: string): PlanRace | null {
   if (!coaching) return nextRace && nextRace.date >= today ? nextRace : null
