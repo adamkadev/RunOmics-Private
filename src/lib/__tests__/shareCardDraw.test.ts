@@ -195,12 +195,25 @@ describe('the route (redesign, Oct 2026)', () => {
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
     const ops = draw({ design: 'route', activity: run })
     const lines = strokes(ops)
-    const grey = lines.findIndex((o) => o.stroke === palette.mu)
+    const grey = lines.findIndex((o) => o.stroke === palette.trace)
+    expect(grey).toBeGreaterThanOrEqual(0)
     const reps = lines.filter((o) => o.stroke === palette.zones[3])
     expect(reps).toHaveLength(3)
     // Grey first, so a rep down the warm-up's road stays on top.
     expect(lines.indexOf(reps[0]!)).toBeGreaterThan(grey)
     expect(texts(ops)).toContain('Reps')
+  })
+
+  // The rest of the route is a muted grey, so the reps are what the eye finds:
+  // on dark it sits under the ink the names take, never beside it.
+  it('keeps the non-rep route muted, a step under the names, on both themes', () => {
+    expect(sharePalette('violet', 'dark').trace).toBe('#6b7270')
+    expect(sharePalette('violet', 'light').trace).toBe('#8a8a8a')
+    const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
+    for (const mode of ['dark', 'light'] as const) {
+      const colours = sharePalette('violet', mode)
+      expect(strokes(draw({ design: 'route', activity: run }, mode)).map((o) => o.stroke)).toContain(colours.trace)
+    }
   })
 
   it('cuts a rep where it starts, not at the nearest point of the route', () => {

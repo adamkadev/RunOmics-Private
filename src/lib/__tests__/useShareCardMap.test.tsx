@@ -55,9 +55,12 @@ const maps = vi.hoisted(() => {
   return { FakeMap }
 })
 
+const labelCalls: { halo: string; town: string; neighbourhood: string; districtOpacity?: number }[] = []
 vi.mock('@/lib/maplibre', () => ({
   loadMapLibre: async () => ({ Map: maps.FakeMap, LngLatBounds: class { extend() { return this } } }),
-  styleRunMapLabels: () => {},
+  styleRunMapLabels: (_map: unknown, colors: { halo: string; town: string; neighbourhood: string; districtOpacity?: number }) => {
+    labelCalls.push(colors)
+  },
 }))
 vi.mock('@/lib/runMapLayers', () => ({
   addEdgeFence: () => () => {},
@@ -104,6 +107,21 @@ describe('the share card basemap', () => {
     expect(result.current.image).not.toBeNull()
     expect(result.current.failed).toBe(false)
     expect(warn).toHaveBeenCalledWith('Share card basemap:', 'glyphs 404')
+  })
+
+  // The names sit over a dark map, so they take the muted ink a step more
+  // opaque than on light, where the ground is pale.
+  it('names the districts in the muted ink, fainter on light than on dark', async () => {
+    labelCalls.length = 0
+    maps.FakeMap.script = (map) => { map.emit('load'); map.emit('idle') }
+    for (const [theme, east, opacity] of [['dark', 2.51, 0.8], ['light', 2.52, 0.7]] as const) {
+      renderHook(() => useShareCardMap({ route: route(east), theme, width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
+      await act(() => vi.advanceTimersByTimeAsync(100))
+      const call = labelCalls.at(-1)!
+      expect(call.districtOpacity).toBe(opacity)
+      expect(call.neighbourhood).toBe(call.town)
+    }
+    expect(labelCalls.at(-2)!.town).toBe('#8d9391')
   })
 
   it('is tried again in the next sheet after one that never settled', async () => {
