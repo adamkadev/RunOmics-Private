@@ -31,10 +31,11 @@ export const fr = {
   },
 
   chartWindow: {
+    // Semaines, mois, ans : S, M, A, en capitales comme 3M · 6M · 1A.
     ranges: {
-      '4w': '4s',
-      '6m': '6m',
-      '1y': '1a',
+      '4w': '4S',
+      '6m': '6M',
+      '1y': '1A',
     },
     previous: 'Période précédente',
     next: 'Période suivante',
@@ -550,7 +551,7 @@ export const fr = {
     cards: {
       period: {
         label: 'Période',
-        short: { '4w': '4 sem', '12w': '12 sem', '1y': '1 an' } as Record<string, string>,
+        short: { '4w': '4S', '12w': '12S', '1y': '1A' } as Record<string, string>,
         words: { '4w': '4 semaines', '12w': '12 semaines', '1y': 'un an' } as Record<string, string>,
         weeks: (n: number) => `${n} semaine${n > 1 ? 's' : ''}`,
         hours: (h: string) => `${h} h`,
@@ -1711,8 +1712,10 @@ export const fr = {
     trainingZones: {
       title: 'Zones d’entraînement',
       viewLabel: 'Temps en zones sur',
-      week: 'Semaine',
-      fourWeeks: '4 semaines',
+      week: '1S',
+      fourWeeks: '4S',
+      weekSpoken: 'Cette semaine',
+      fourWeeksSpoken: '4 dernières semaines',
       columnZone: 'Zone',
       columnPace: 'Allure /km',
       columnHr: 'Fréq. cardiaque',

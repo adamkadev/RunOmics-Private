@@ -40,10 +40,12 @@ export const en = {
   },
 
   chartWindow: {
+    // One way to name a window (3.1.0): a figure and a capital, as
+    // Consistency's 3M · 6M · 1Y.
     ranges: {
-      '4w': '4w',
-      '6m': '6m',
-      '1y': '1y',
+      '4w': '4W',
+      '6m': '6M',
+      '1y': '1Y',
     },
     previous: 'Previous period',
     next: 'Next period',
@@ -592,7 +594,7 @@ export const en = {
     cards: {
       period: {
         label: 'Period',
-        short: { '4w': '4 wk', '12w': '12 wk', '1y': '1 yr' } as Record<string, string>,
+        short: { '4w': '4W', '12w': '12W', '1y': '1Y' } as Record<string, string>,
         words: { '4w': '4 weeks', '12w': '12 weeks', '1y': 'a year' } as Record<string, string>,
         weeks: (n: number) => `${n} week${n === 1 ? '' : 's'}`,
         hours: (h: string) => `${h} h`,
@@ -1846,8 +1848,10 @@ export const en = {
     trainingZones: {
       title: 'Training zones',
       viewLabel: 'Time in zones over',
-      week: 'Week',
-      fourWeeks: '4 weeks',
+      week: '1W',
+      fourWeeks: '4W',
+      weekSpoken: 'This week',
+      fourWeeksSpoken: 'Last 4 weeks',
       columnZone: 'Zone',
       columnPace: 'Pace /km',
       columnHr: 'Heart rate',
