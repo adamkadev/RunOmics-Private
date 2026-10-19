@@ -190,6 +190,8 @@ export const fr = {
     yrs: 'ans',
     kg: 'kg',
     cm: 'cm',
+    kb: 'ko',
+    mb: 'Mo',
     kmh: 'km/h',
     mlKgMin: 'ml/kg/min',
   },
@@ -305,7 +307,7 @@ export const fr = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Infos de version copiées',
     sections: {
-      profile: 'Profil',
+      profile: 'Profil · depuis Garmin',
       appearance: 'Apparence',
       data: 'Données',
       account: 'Compte',
@@ -328,21 +330,18 @@ export const fr = {
       takesAbout: 'Environ cinq minutes au total.',
     },
     rowAction: {
-      export: 'Exporter ›',
-      clear: 'Vider ›',
       signIn: 'Se connecter ›',
     },
     appearance: {
       title: 'Apparence',
       themeLabel: 'Thème',
-      themeHint: 'Auto suit le réglage de ton système',
       light: 'Clair',
       auto: 'Auto',
       dark: 'Sombre',
     },
     accent: {
       title: 'Accent',
-      hint: 'Pour la mise en évidence et tes propres données — jamais pour les alertes',
+      caption: 'graphiques et mises en avant',
       options: {
         teal:     { label: 'Sarcelle' },
         periwinkle: { label: 'Pervenche' },
@@ -376,17 +375,10 @@ export const fr = {
       // Fitness age against the real age: "20 of 29" (C2, v4.4).
       ofAge: (age: number) => `âge réel ${age}`,
       achievableFitnessAge: 'Potentiel',
-      bmi: 'IMC',
       fitnessAgeBand: {
         younger: (years: number) => `−${years} ans`,
         onPar: 'identique',
         older: (years: number) => `+${years} ans`,
-      },
-      bmiBand: {
-        underweight: 'maigreur',
-        healthy: 'normal',
-        overweight: 'surpoids',
-        obese: 'obésité',
       },
     },
     actions: {
@@ -394,7 +386,6 @@ export const fr = {
       saving: 'Enregistrement…',
       saved: 'Enregistré',
       error: 'Erreur lors de l’enregistrement, réessaie.',
-      confirmYes: 'Oui',
       confirmCancel: 'Annuler',
     },
     dataSource: {
@@ -405,14 +396,11 @@ export const fr = {
       lastSync: 'Dernière synchro',
       since: (monthYear: string) => `appairée depuis ${monthYear}`,
       connectedNow: 'Connecté',
-      lastSyncedAgo: (when: string) => `dernière synchro ${when}`,
-      sourceSince: (source: string, monthYear: string) => `${source} depuis ${monthYear}`,
+      lastSyncedAgo: (when: string) => `Synchronisé ${when}`,
     },
     dataExport: {
       workbook: 'Exporter les données d’entraînement (.xlsx)',
       title: 'Exporter les activités',
-      signedOut: (runs: string) => `Classeur ou CSV des ${runs} · connecte-toi pour exporter`,
-      ownerHint: (runs: string) => `Classeur ou CSV des ${runs}`,
       exporting: 'Export en cours…',
       failed: 'Impossible d’exporter les données d’entraînement.',
       sheetTitle: 'Exporter mes activités',
@@ -423,31 +411,25 @@ export const fr = {
       notesUnavailable: 'Exporté sans tes notes ni tes tags : la base des notes n’a pas répondu. Réessaie.',
     },
     profile: {
-      readOnly: 'Depuis Garmin Connect : c’est là que tu les modifies.',
+      lthr: (bpm: number) => `FC seuil ${bpm}`,
+      maxHr: (bpm: number) => `max ${bpm}`,
     },
     offlineCache: {
       clear: 'Vider le cache hors ligne',
       cost: 'Les pages et les cartes seront rechargées depuis le réseau à la prochaine visite.',
-      confirm: 'Vider ?',
+      confirmAction: 'Vider',
       cleared: 'Cache hors ligne vidé.',
       failed: 'Impossible de vider le cache hors ligne.',
     },
     notifications: {
       title: 'Notifications',
       error: 'Impossible de mettre à jour les réglages de notification, réessaie.',
+      // « 8 h 11 », the French way of writing a time.
+      at: (hour: number, minute: string) => `${hour} h ${minute}`,
       types: {
-        training: {
-          title: 'Rappels d’entraînement',
-          subtitle: 'Séance du jour à 10 h, plus un point hebdomadaire sur ton objectif de distance.',
-        },
-        shoes: {
-          title: 'Alertes d’usure des chaussures',
-          subtitle: 'Avertit à 70 % et 90 % de la durée de vie d’une paire.',
-        },
-        races: {
-          title: 'Records et prédictions',
-          subtitle: 'Quand une sortie bat un record ou fait bouger une prédiction.',
-        },
+        training: { title: 'Rappels d’entraînement' },
+        shoes: { title: 'Alertes d’usure des chaussures' },
+        races: { title: 'Records et prédictions' },
       },
     },
   },

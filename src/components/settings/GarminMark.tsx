@@ -13,12 +13,15 @@ export function GarminTile() {
   )
 }
 
-/** "● Connected" in pos: the source is live (v4.17). */
+/**
+ * The green dot before the sync line (3.0 1i): the source is live. The word
+ * is for a screen reader; on screen the dot says it.
+ */
 export function ConnectedMark() {
   return (
-    <span className="whitespace-nowrap text-[var(--pos)]" data-testid="garmin-connected">
-      <span aria-hidden className="mr-1 inline-block size-1.5 -translate-y-px rounded-full bg-[var(--pos)] align-middle" />
-      {t.settings.dataSource.connectedNow}
+    <span className="text-[var(--pos)]" data-testid="garmin-connected">
+      <span aria-hidden className="mr-1.5 inline-block size-1.5 -translate-y-px rounded-full bg-[var(--pos)] align-middle" />
+      <span className="sr-only">{t.settings.dataSource.connectedNow} · </span>
     </span>
   )
 }

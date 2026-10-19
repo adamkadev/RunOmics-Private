@@ -214,6 +214,8 @@ export const en = {
     yrs: 'yrs',
     kg: 'kg',
     cm: 'cm',
+    kb: 'KB',
+    mb: 'MB',
     kmh: 'km/h',
     mlKgMin: 'ml/kg/min',
   },
@@ -331,7 +333,7 @@ export const en = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Build info copied',
     sections: {
-      profile: 'Profile',
+      profile: 'Profile · from Garmin',
       appearance: 'Appearance',
       data: 'Data',
       account: 'Account',
@@ -340,7 +342,7 @@ export const en = {
     sync: {
       title: 'Garmin sync',
       subtitle: 'Pull in today’s runs without waiting for tonight.',
-      action: 'Sync now',
+      action: 'Sync',
       // The button while the chain runs; the device line says which step.
       running: 'Syncing…',
       starting: 'Starting the workflow…',
@@ -356,21 +358,18 @@ export const en = {
       takesAbout: 'Takes about five minutes end to end.',
     },
     rowAction: {
-      export: 'Export ›',
-      clear: 'Clear ›',
       signIn: 'Sign in ›',
     },
     appearance: {
       title: 'Appearance',
       themeLabel: 'Theme',
-      themeHint: 'Auto follows your system setting',
       light: 'Light',
       auto: 'Auto',
       dark: 'Dark',
     },
     accent: {
       title: 'Accent',
-      hint: 'Used for highlights and your own data — never for warnings',
+      caption: 'charts & highlights',
       options: {
         teal:     { label: 'Teal' },
         periwinkle: { label: 'Periwinkle' },
@@ -406,17 +405,10 @@ export const en = {
       // Fitness age against the real age: "20 actual 29" (C2, v4.4; v4.17).
       ofAge: (age: number) => `actual ${age}`,
       achievableFitnessAge: 'Potential',
-      bmi: 'BMI',
       fitnessAgeBand: {
         younger: (years: number) => `−${years} yrs`,
         onPar: 'on par',
         older: (years: number) => `+${years} yrs`,
-      },
-      bmiBand: {
-        underweight: 'underweight',
-        healthy: 'healthy',
-        overweight: 'overweight',
-        obese: 'obese',
       },
     },
     actions: {
@@ -424,7 +416,6 @@ export const en = {
       saving: 'Saving...',
       saved: 'Saved',
       error: 'Error saving, please retry.',
-      confirmYes: 'Yes',
       confirmCancel: 'Cancel',
     },
     dataSource: {
@@ -434,16 +425,13 @@ export const en = {
       readOnlySynced: (when: string, runs: string) => `last synced ${when} · ${runs} · read-only here`,
       lastSync: 'Last synced',
       since: (monthYear: string) => `paired ${monthYear}`,
-      // v4.17: the device row - "● Connected · last synced 2h ago · 299 runs · Garmin Connect since Aug 2025".
+      // The device row's line after its dot (3.0 1i): "Synced 2h ago · 315 runs".
       connectedNow: 'Connected',
-      lastSyncedAgo: (when: string) => `last synced ${when}`,
-      sourceSince: (source: string, monthYear: string) => `${source} since ${monthYear}`,
+      lastSyncedAgo: (when: string) => `Synced ${when}`,
     },
     dataExport: {
       workbook: 'Export training data (.xlsx)',
       title: 'Export activities',
-      signedOut: (runs: string) => `Workbook or CSV of all ${runs} · sign in to export`,
-      ownerHint: (runs: string) => `Workbook or CSV of all ${runs}`,
       exporting: 'Exporting...',
       failed: 'Could not export the training data.',
       sheetTitle: 'Export my activities',
@@ -454,33 +442,27 @@ export const en = {
       notesUnavailable: 'Exported without your notes and tags: the notes store did not answer. Try again.',
     },
     profile: {
-      // Under the read-only height, weight and BMI (design review, Oct 2026).
-      readOnly: 'From Garmin Connect - change them there.',
+      // The Athlete & zones row's value: "LTHR 179 · Max 200" (3.0 1i).
+      lthr: (bpm: number) => `LTHR ${bpm}`,
+      maxHr: (bpm: number) => `Max ${bpm}`,
     },
     offlineCache: {
       clear: 'Clear offline cache',
       cost: 'Pages and maps reload from the network until you visit them again.',
-      confirm: 'Clear it?',
+      confirmAction: 'Clear',
       cleared: 'Offline cache cleared.',
       failed: 'Could not clear the offline cache.',
     },
     notifications: {
       title: 'Notifications',
       error: 'Could not update notification settings, please retry.',
+      // The daily reminder's time beside its switch: "08:11".
+      at: (hour: number, minute: string) => `${String(hour).padStart(2, '0')}:${minute}`,
       types: {
-        training: {
-          title: 'Training reminders',
-          subtitle: 'Daily session at 10:00, plus a weekly check-in on your distance goal.',
-        },
-        shoes: {
-          title: 'Shoe wear alerts',
-          subtitle: 'Warns at 70% and 90% of a shoe’s lifespan.',
-        },
+        training: { title: 'Training reminders' },
+        shoes: { title: 'Shoe wear alerts' },
         // The title says what the toggle does (v5.6 #6): the PR alert.
-        races: {
-          title: 'PRs and predictions',
-          subtitle: 'When a run sets a PR or moves a race prediction.',
-        },
+        races: { title: 'PRs and predictions' },
       },
     },
   },

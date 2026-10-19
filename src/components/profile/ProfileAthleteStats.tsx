@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { cardClass } from '@/components/ui/Card'
 import { Unit } from '@/components/ui/Stat'
 import { formatDuration, formatNumber } from '@/lib/formatters'
+import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import type { AthletePageView } from './athleteView'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -110,12 +111,11 @@ export function AthleteDetails({ athlete }: { athlete: AthletePageView }) {
   )
 }
 
-/** Height, weight and BMI, for Settings > Profile. */
-export function bodyMetrics(athlete: Pick<AthletePageView, 'heightCm' | 'weightKg' | 'bmi'>): AvailableMetric[] {
+/** Height and weight, for Settings > Profile (3.0 1i: no BMI). */
+export function bodyMetrics(athlete: Pick<AthleteProfile, 'heightCm' | 'weightKg'>): AvailableMetric[] {
   const a = t.settings.athlete
   return available([
     { label: a.height, unit: t.units.cm, value: athlete.heightCm },
     { label: a.weight, unit: t.units.kg, value: athlete.weightKg },
-    { label: a.bmi, unit: '', value: athlete.bmi },
   ])
 }

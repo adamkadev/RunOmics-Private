@@ -80,7 +80,7 @@ describe('capability-driven athlete metrics', () => {
     expect(within(row).getByText(a.restingHr)).toBeInTheDocument()
     expect(within(row).getByText(a.maxHr)).toBeInTheDocument()
     expect(within(row).queryByText(a.fitnessAge)).toBeNull()
-    expect(screen.queryByText(a.bmi)).not.toBeInTheDocument()
+    expect(screen.queryByText('BMI')).not.toBeInTheDocument()
     expect(row.querySelector('svg')).toBeNull()
   })
 

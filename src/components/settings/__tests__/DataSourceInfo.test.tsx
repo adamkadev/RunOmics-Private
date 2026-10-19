@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { User } from 'firebase/auth'
 import { DataSourceInfo } from '@/components/settings/DataSourceInfo'
@@ -18,23 +18,56 @@ afterEach(() => {
 })
 
 describe('Clear offline cache', () => {
-  // Design review, Oct 2026: clearing the cache asks first.
-  it('asks before it clears anything, and Cancel leaves the cache alone', async () => {
+  // Design review, Oct 2026: clearing the cache asks first. 3.0 1i: a
+  // neutral row with the cache's size, never the error colour.
+  it('shows its size, asks before it clears anything, and Cancel leaves the cache alone', async () => {
     const keys = vi.fn(async () => ['pages', 'maps'])
     const remove = vi.fn<(key: string) => Promise<boolean>>(async () => true)
     vi.stubGlobal('caches', { keys, delete: remove })
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      storage: { estimate: async () => ({ usage: 30 * 1024 * 1024, usageDetails: { caches: 24 * 1024 * 1024 } }) },
+    })
     render(<DataSourceInfo lastSyncedAt={null} activityCount={0} user={USER} />)
 
-    await userEvent.click(screen.getByRole('button', { name: s.rowAction.clear }))
-    expect(screen.getByText(s.offlineCache.confirm)).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: s.actions.confirmCancel }))
+    expect((await screen.findByTestId('cache-size')).textContent).toBe(`24 ${t.units.mb}`)
+    expect(screen.getByTestId('cache-row').innerHTML).not.toContain('--neg')
+
+    await userEvent.click(screen.getByTestId('cache-row'))
     expect(screen.getByText(s.offlineCache.cost)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: s.actions.confirmCancel }))
+    expect(screen.getByTestId('cache-row')).toBeInTheDocument()
     expect(keys).not.toHaveBeenCalled()
 
-    await userEvent.click(screen.getByRole('button', { name: s.rowAction.clear }))
-    await userEvent.click(screen.getByRole('button', { name: s.actions.confirmYes }))
+    await userEvent.click(screen.getByTestId('cache-row'))
+    const confirm = screen.getByRole('button', { name: s.offlineCache.confirmAction })
+    expect(confirm.className).not.toContain('--neg')
+    await userEvent.click(confirm)
     expect(await screen.findByText(s.offlineCache.cleared)).toBeInTheDocument()
     expect(remove.mock.calls.map(([key]) => key)).toEqual(['pages', 'maps'])
+  })
+
+  it('leaves the size out where the browser does not give one', async () => {
+    vi.stubGlobal('navigator', { ...navigator, storage: undefined })
+    render(<DataSourceInfo lastSyncedAt={null} activityCount={0} user={USER} />)
+    await waitFor(() => expect(screen.getByTestId('cache-row')).toBeInTheDocument())
+    expect(screen.queryByTestId('cache-size')).toBeNull()
+  })
+})
+
+describe('The device row', () => {
+  // 3.0 1i: a green dot, "Synced 2h ago · N runs", and Sync as a text link on the row.
+  it('says when it last synced after a green dot, with Sync as a text action on the row', () => {
+    const twoHoursAgo = new Date(Date.now() - 2 * 3600_000).toISOString()
+    render(<DataSourceInfo lastSyncedAt={twoHoursAgo} activityCount={315} device={{ name: 'Forerunner 255 Music' }} user={USER} />)
+    const row = screen.getByTestId('garmin-row')
+    expect(row.textContent).toContain('Forerunner 255 Music')
+    expect(screen.getByTestId('sync-line').textContent).toMatch(/^Synced .* · 315 runs$/)
+    expect(screen.getByTestId('garmin-connected').className).toContain('text-[var(--pos)]')
+    const sync = screen.getByRole('button', { name: t.settings.sync.action })
+    expect(row.contains(sync)).toBe(true)
+    expect(sync.className).toContain('text-accent-text')
+    expect(sync.className).not.toMatch(/\bbg-/)
   })
 })
 
