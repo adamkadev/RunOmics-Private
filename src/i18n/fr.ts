@@ -1514,7 +1514,7 @@ export const fr = {
     best: 'Record',
     predictedTag: 'prédit',
     seasonRaces: 'Courses de la saison',
-    emptyPbs: (year: number) => `Pas encore de RP pour ${year} - ajoute-les dans les Réglages.`,
+    emptyPbs: (year: number) => `Pas encore de RP pour ${year}.`,
     projection: {
       status: {
         ahead: 'En avance',

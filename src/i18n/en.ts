@@ -1590,7 +1590,7 @@ export const en = {
     best: 'Best',
     predictedTag: 'predicted',
     seasonRaces: 'Season Races',
-    emptyPbs: (year: number) => `No PBs for ${year} yet - add them in Settings.`,
+    emptyPbs: (year: number) => `No PBs for ${year} yet.`,
     projection: {
       status: {
         ahead: 'Ahead',
