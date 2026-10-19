@@ -441,7 +441,8 @@ export const fr = {
   dashboard: {
     readiness: {
       open: 'Ouvrir la charge dans Analyses',
-      formLabel: 'Forme · TSB',
+      // Des mots de tous les jours, pas des sigles (Lamiaa, oct. 2026).
+      formLabel: 'Forme',
       formOnDial: (form: string, band: string) => `Forme ${form} : ${band}`,
       eyebrowByTone: {
         go: 'Feu vert',
@@ -455,10 +456,13 @@ export const fr = {
         caution: 'La fatigue s’accumule',
         hold: 'Fatigue devant la condition',
       },
-      ctl: 'CTL',
-      atl: 'ATL',
-      acwr: 'ACWR',
+      ctl: 'Condition',
+      atl: 'Fatigue',
+      // La charge de la semaine rapportée à l’habitude : « ×1,79 ».
+      acwr: 'Charge',
+      acwrValue: (ratio: string) => `×${ratio}`,
       garmin: 'Garmin',
+      lastSevenDays: '7 jours',
       noValue: '—',
     },
     stale: {

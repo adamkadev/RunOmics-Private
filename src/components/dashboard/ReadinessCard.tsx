@@ -7,7 +7,8 @@ import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { cardClass } from '@/components/ui/Card'
 import { VerdictEyebrow, type VerdictTone } from '@/components/ui/Verdict'
 import { deltaTone, DELTA_TONE_COLOR } from '@/lib/deltaTone'
-import { formatDecimal, formatDelta } from '@/lib/formatters'
+import { formatDecimal, formatDelta, formatRanKm } from '@/lib/formatters'
+import { addDays, isoDate } from '@/lib/calendarDate'
 import type { Insight } from '@/lib/gemini'
 import { FormDial } from './FormDial'
 import { t } from '@/i18n'
@@ -23,6 +24,13 @@ const VERDICT_TONE: Record<ReadinessTone, VerdictTone> = {
 
 export function latestRatedStatus(days: TrainingStatusDayBar[]): Status | null {
   return [...days].reverse().find((d) => d.status)?.status ?? null
+}
+
+/** Km and runs over the last seven days, today included. */
+export function lastSevenDays(activities: readonly { date: string; distanceKm: number }[], today: string): { km: number; runs: number } {
+  const from = isoDate(addDays(new Date(`${today}T00:00:00`), -6))
+  const recent = activities.filter((a) => a.date >= from && a.date <= today)
+  return { km: recent.reduce((sum, a) => sum + a.distanceKm, 0), runs: recent.length }
 }
 
 function Cell({ label, value, delta }: { label: string; value: ReactNode; delta?: { text: string; color: string } }) {
@@ -45,10 +53,13 @@ export function ReadinessCard({
   status,
   watchStatus = null,
   verdict = null,
+  lastWeek,
 }: {
   status: TrainingStatus | null
   watchStatus?: Status | null
   verdict?: Insight | null
+  /** The last seven days, shown in Garmin's place when the watch reports no training status (a Forerunner 55). */
+  lastWeek: { km: number; runs: number }
 }) {
   if (!status) return null
 
@@ -82,15 +93,24 @@ export function ReadinessCard({
                 value={Math.round(status.atl)}
                 delta={{ text: formatDelta(Math.round(status.atlDelta)), color: DELTA_TONE_COLOR[fatigue] }}
               />
-              <Cell label={s.acwr} value={status.acwr === null ? s.noValue : formatDecimal(status.acwr, 2)} />
-              <Cell
-                label={s.garmin}
-                value={
-                  <span className="text-[17px] leading-snug break-words">
-                    {watchStatus ? t.trainingStatus.status[watchStatus] : s.noValue}
-                  </span>
-                }
-              />
+              <Cell label={s.acwr} value={status.acwr === null ? s.noValue : s.acwrValue(formatDecimal(status.acwr, 2))} />
+              {watchStatus ? (
+                <Cell
+                  label={s.garmin}
+                  value={<span className="text-[17px] leading-snug break-words">{t.trainingStatus.status[watchStatus]}</span>}
+                />
+              ) : (
+                <Cell
+                  label={s.lastSevenDays}
+                  value={
+                    <span data-testid="readiness-last-week">
+                      {formatRanKm(lastWeek.km)}
+                      <span className="ml-1 text-[13px] font-normal tracking-normal text-muted-foreground">{t.units.km}</span>
+                    </span>
+                  }
+                  delta={{ text: t.activities.weekLine.runs(lastWeek.runs), color: 'var(--muted-foreground)' }}
+                />
+              )}
             </div>
           </div>
         </div>
