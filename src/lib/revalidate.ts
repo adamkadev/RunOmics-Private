@@ -7,7 +7,6 @@ export const PAGE_PATHS_REQUIRING_REVALIDATE = [
   'src/app/analytics/page.tsx',
   'src/app/athlete/page.tsx',
   'src/app/goals/page.tsx',
-  'src/app/map/page.tsx',
   'src/app/plan/page.tsx',
   'src/app/profile/page.tsx',
   'src/app/records/page.tsx',

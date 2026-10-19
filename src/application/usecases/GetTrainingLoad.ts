@@ -5,7 +5,7 @@ import type { Activity } from '@/domain/activity/types'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
 import { ATL_DAYS, type LoadSnapshot } from '@/domain/training/taper'
 import { loadSeries } from '@/domain/training/loadSeries'
-import { isoDate } from '@/lib/calendarDate'
+import { appTodayIso } from '@/lib/calendarDate'
 import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 
 export { trimp, type HrBounds }
@@ -44,7 +44,7 @@ export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEF
   const first = activities.reduce<string | null>((min, a) => (min === null || a.date < min ? a.date : min), null)
   if (!first) return series
 
-  for (const [date, day] of loadSeries(dailyLoad, first, isoDate(new Date()))) {
+  for (const [date, day] of loadSeries(dailyLoad, first, appTodayIso())) {
     series.set(date, { ctl: round(day.ctl), atl: round(day.atl), tsb: round(day.tsb) })
   }
   return series

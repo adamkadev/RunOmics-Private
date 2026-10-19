@@ -51,6 +51,10 @@ describe('MonthView colours', () => {
     expect(cell.dataset.cellState).toBe('planned')
     expect(cell.style.getPropertyValue('--cell-zone')).toBe('var(--zone-4)')
     expect(cell.className).toContain('var(--cell-zone)_12%')
+    // The tint alone (owner, Oct 2026): no dashed outline, no square inside.
+    expect(cell.className).not.toContain('border-dashed')
+    expect(cell.style.outline).toBe('')
+    expect(cell.querySelector('[data-testid="month-zone-mark"]')).toBeNull()
   })
 
   // Design review, Oct 2026: a run nothing was planned for read the same as
@@ -160,9 +164,9 @@ describe('MonthView edges', () => {
     // October 2026 starts on a Thursday and ends on a Saturday.
     expect(outside).toEqual(['28', '29', '30', '1'])
     expect(edgeTile(/September 29/).dataset.cellState).toBe('done')
-    expect(edgeTile(/September 29/).className).toContain('opacity-50')
+    expect(edgeTile(/September 29/).className).toContain('opacity-[0.45]')
     expect(edgeTile(/November 1/).dataset.cellState).toBe('planned')
-    expect(cellOf('2').className).not.toContain('opacity-50')
+    expect(cellOf('2').className).not.toContain('opacity-[0.45]')
   })
 
   it("opens a muted day's week like any other", () => {
@@ -175,10 +179,10 @@ describe('MonthView edges', () => {
 
   it('totals each row over its whole week, the summary over the month alone', () => {
     renderOctober()
-    const footers = screen.getAllByTestId('month-week-total').map((p) => p.textContent)
+    const totals = screen.getAllByTestId('month-week-total').map((p) => p.textContent)
 
-    expect(footers[0]).toBe(t.plan.weekSummary.ranOfPlan('29.6', '20'))
-    expect(footers.at(-1)).toBe(t.plan.weekSummary.ranOfPlan('0', '14'))
+    expect(totals[0]).toBe('29.6/ 20')
+    expect(totals.at(-1)).toBe('0/ 14')
     expect(screen.getByText(t.plan.summary(1, 10, 10))).toBeInTheDocument()
   })
 })
@@ -192,23 +196,26 @@ describe('MonthView wording and grid', () => {
     expect(t.plan.summary(12, 129, 89)).toContain('129 km run')
   })
 
-  it('draws only the weeks the month needs, each with its total as a footer', () => {
+  // Design review, Oct 2026: each week's km in an 8th column, run in bold
+  // over "/ planned" muted.
+  it('draws only the weeks the month needs, each with its km in an 8th column', () => {
     renderMonth()
     // September 2026 starts on a Tuesday: 1 + 30 days is five weeks.
-    const footers = screen.getAllByTestId('month-week-total').map((p) => p.textContent)
+    const totals = screen.getAllByTestId('month-week-total')
 
-    // H21 and the design review: run against plan in the week view's
-    // rounding, a week without a plan says so, and one still to come too.
-    expect(footers).toEqual([
-      t.plan.weekNoPlan('0'),
-      t.plan.weekNoPlan('0'),
-      t.plan.weekNoPlan('0'),
-      t.plan.weekSummary.ranOfPlan('8.4', '10'),
-      t.plan.noPlanYet,
-    ])
-    // The week's run against its plan as a bar, capped at the plan.
-    const bar = screen.getAllByTestId('month-week-total')[3]!.querySelector<HTMLElement>('[aria-hidden] > span')!
-    expect(bar.style.width).toBe('84%')
+    expect(totals).toHaveLength(5)
+    // The column has its own header, and each total sits in its week's row.
+    expect(screen.getByText(t.units.km)).toBeInTheDocument()
+    expect(totals[3]!.parentElement!.children).toHaveLength(8)
+    // Run bold, then the plan muted; a week with no plan has the run alone,
+    // and one still to come with nothing planned has nothing.
+    const [ran, planned] = [...totals[3]!.children] as HTMLElement[]
+    expect(ran!.textContent).toBe('8.4')
+    expect(ran!.className).toContain('font-semibold')
+    expect(planned!.textContent).toBe('/ 10')
+    expect(planned!.className).toContain('text-muted-foreground')
+    expect(totals[0]!.textContent).toBe('0')
+    expect(totals[4]!.textContent).toBe('')
     expect(screen.queryByText('WK')).not.toBeInTheDocument()
   })
 

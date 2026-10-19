@@ -20,10 +20,11 @@ const BUTTON = {
 } as const
 
 /**
- * One row (v4.9), right under the option row: Share, or Download where the
- * browser can't share a file, in the accent with its own ink; Copy image
- * beside it where images can be copied, neutral, and still neutral once it
- * says Copied. Both grey out while there is nothing to share.
+ * One row (v4.9), right under the option row: Share with the share-nodes
+ * icon, or Download where the browser can't share a file, in the accent with
+ * its own ink; Copy image beside it where images can be copied, outlined
+ * (redesign, Oct 2026), and still outlined once it says Copied. Both grey
+ * out while there is nothing to share.
  */
 export function ShareCardActions({ canShareFiles, canCopyImage, copyState, disabled = false, onShare, onSave, onCopy }: Props) {
   const copied = copyState === 'copied'
@@ -56,7 +57,7 @@ export function ShareCardActions({ canShareFiles, canCopyImage, copyState, disab
           aria-live="polite"
           style={{
             ...BUTTON, fontWeight: 600, padding: '0 20px',
-            background: 'var(--muted)', border: '1px solid var(--border)',
+            background: 'transparent', border: '1px solid var(--line-2)',
             color: disabled ? 'var(--muted-foreground)' : 'var(--foreground)',
           }}
         >

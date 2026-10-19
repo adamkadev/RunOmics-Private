@@ -1,5 +1,7 @@
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { MINUS, formatClock, formatDeltaFixed, formatDistance } from '../formatters'
+import { MINUS, formatClock, formatDeltaFixed, formatDistance, formatKm } from '../formatters'
 
 describe('formatDeltaFixed', () => {
   it('keeps the precision it is given', () => {
@@ -51,7 +53,33 @@ describe('in the French build', () => {
     expect(fr.formatDeltaFixed(-1.44, 1)).toBe(`${MINUS}1,4`)
   })
 
+  // 3.0 handoff: the map card read "1.306 km" beside "2,684 km".
+  it('groups thousands with the French space', () => {
+    expect(fr.formatKm(2684)).toMatch(/^2\s684$/)
+    expect(fr.formatKm(1306)).toMatch(/^1\s306$/)
+  })
+
   it('leaves the English build as it was', () => {
+    expect(formatKm(2684)).toBe('2,684')
+    expect(formatKm(1306)).toBe('1,306')
     expect(formatDistance(9.26)).toBe('9.3')
+  })
+})
+
+/** Every .ts/.tsx file under dir, tests aside. */
+function sources(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name)
+    if (entry.isDirectory()) return entry.name === '__tests__' ? [] : sources(path)
+    return /\.tsx?$/.test(entry.name) ? [path] : []
+  })
+}
+
+// 3.0 handoff: one locale formatter for every km value. A component that
+// called toLocaleString itself skipped stableSpaces and drifted from the rest.
+describe('number formatting', () => {
+  it('goes through lib/formatters in every component', () => {
+    const offenders = sources(join(process.cwd(), 'src', 'components')).filter((file) => /\.toLocaleString\(/.test(readFileSync(file, 'utf8')))
+    expect(offenders).toEqual([])
   })
 })

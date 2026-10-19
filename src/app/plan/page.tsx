@@ -11,12 +11,12 @@ import { appTodayIso } from '@/lib/calendarDate'
 export const revalidate = 3600
 
 export default async function PlanPage() {
+  const today = appTodayIso()
   const activities = getActivitySummaries()
   const plannedWorkouts = await getPlannedWorkouts()
-  const nextRace = await getNextRace()
+  const nextRace = await getNextRace(today)
   const trainingZones = await getTrainingZones()
   const trainingPlan = getTrainingPlan()
-  const today = appTodayIso()
   const coaching = getCoachingOverview(today)
 
   return (

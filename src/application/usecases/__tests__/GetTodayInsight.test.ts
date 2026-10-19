@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { TrainingStatus } from '../GetTrainingStatus'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import { TODAY_SURFACE, todayInsightGuard, todayInsightHash } from '@/domain/ai/todayInsight'
-import { isoDate } from '@/lib/calendarDate'
 
 const { getActivitySummaries, readVerifiedInsight, getTodayPlannedWorkout, getTodayPrescription } = vi.hoisted(() => ({
   getActivitySummaries: vi.fn(),
@@ -18,7 +17,7 @@ vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', () => ({ re
 
 const { buildTodayContext, getTodayInsight, todayInsightSession } = await import('../GetTodayInsight')
 
-const NOW = new Date('2026-07-20T09:00:00')
+const TODAY = '2026-07-20'
 const INSIGHT = { headline: 'Fresh legs today', body: 'Form is back above zero, so the tempo can be honest.' }
 
 function status(overrides: Partial<TrainingStatus> = {}): TrainingStatus {
@@ -61,27 +60,27 @@ describe('buildTodayContext', () => {
   })
 
   it('reads the tone off the status the hero is rendered from', () => {
-    expect(buildTodayContext(status(), null, NOW).tone).toBe('go')
-    expect(buildTodayContext(status({ status: 'overreaching' }), null, NOW).tone).toBe('hold')
+    expect(buildTodayContext(status(), null, TODAY).tone).toBe('go')
+    expect(buildTodayContext(status({ status: 'overreaching' }), null, TODAY).tone).toBe('hold')
   })
 
   it("carries this week's training and the last run, which is what makes the copy specific", () => {
-    // NOW is a Monday, so Saturday's and Wednesday's runs were last week's.
-    const context = buildTodayContext(status(), null, NOW)
+    // TODAY is a Monday, so Saturday's and Wednesday's runs were last week's.
+    const context = buildTodayContext(status(), null, TODAY)
 
     expect(context.recent).toMatchObject({ weekRuns: 0, weekKm: 0 })
     expect(context.recent.lastRun).toEqual({ type: 'Base', daysAgo: 2, distanceKm: 10 })
   })
 
   it('carries the planned session, or the absence of one', () => {
-    expect(buildTodayContext(status(), WORKOUT, NOW).plannedWorkout).toBe(WORKOUT)
-    expect(buildTodayContext(status(), null, NOW).plannedWorkout).toBeNull()
+    expect(buildTodayContext(status(), WORKOUT, TODAY).plannedWorkout).toBe(WORKOUT)
+    expect(buildTodayContext(status(), null, TODAY).plannedWorkout).toBeNull()
   })
 
   it('never looks past the day it is built for', () => {
     withHistory([summary('2026-07-25'), summary('2026-07-18')])
 
-    expect(buildTodayContext(status(), null, NOW).recent.lastRun?.daysAgo).toBe(2)
+    expect(buildTodayContext(status(), null, TODAY).recent.lastRun?.daysAgo).toBe(2)
   })
 })
 
@@ -158,9 +157,9 @@ describe('getTodayInsight', () => {
 
   it('moves the guard once the session the copy was written for has been run', async () => {
     readVerifiedInsight.mockResolvedValue(null)
-    await getTodayInsight(status(), WORKOUT)
-    withHistory([summary(isoDate(new Date()))])
-    await getTodayInsight(status(), WORKOUT)
+    await getTodayInsight(status(), WORKOUT, TODAY)
+    withHistory([summary(TODAY)])
+    await getTodayInsight(status(), WORKOUT, TODAY)
 
     const [upcoming, completed] = readVerifiedInsight.mock.calls
     expect(upcoming?.[1].guard).not.toBe(completed?.[1].guard)
@@ -192,7 +191,7 @@ describe('todayInsightSession', () => {
     getTodayPrescription.mockReturnValue(PRESCRIPTION)
     getTodayPlannedWorkout.mockResolvedValue({ date: '2026-07-20', name: 'RUNOMICS-W3-THU' })
 
-    expect(await todayInsightSession(NOW)).toEqual({
+    expect(await todayInsightSession(TODAY)).toEqual({
       date: '2026-07-20',
       name: 'Threshold 3 x 1600m',
       type: 'Threshold',
@@ -207,23 +206,36 @@ describe('todayInsightSession', () => {
     delete (open as Partial<typeof PRESCRIPTION>).totalDistanceMeters
     getTodayPrescription.mockReturnValue(open)
 
-    const session = await todayInsightSession(NOW)
+    const session = await todayInsightSession(TODAY)
     expect(session).not.toHaveProperty('durationSecs')
     expect(session).not.toHaveProperty('distanceM')
   })
 
   it('falls back to the Garmin entry when no plan prescribes today', async () => {
     getTodayPlannedWorkout.mockResolvedValue(WORKOUT)
-    expect(await todayInsightSession(NOW)).toBe(WORKOUT)
+    expect(await todayInsightSession(TODAY)).toBe(WORKOUT)
   })
 
   it('is null on a day with neither, so the verdict speaks to a rest day', async () => {
-    expect(await todayInsightSession(NOW)).toBeNull()
+    expect(await todayInsightSession(TODAY)).toBeNull()
   })
 
-  it('asks for the prescription on the local date, not a UTC one', async () => {
-    await todayInsightSession(new Date('2026-07-20T23:30:00'))
-    expect(getTodayPrescription).toHaveBeenCalledWith('2026-07-20')
+  describe("on the athlete's date, not the server's", () => {
+    afterEach(() => {
+      vi.useRealTimers()
+      vi.unstubAllEnvs()
+    })
+
+    it('asks the plan and the watch about the same day the page shows', async () => {
+      // 00:53 on Monday 19 October in Luxembourg: still Sunday on a UTC server.
+      vi.useFakeTimers()
+      vi.setSystemTime(new Date('2026-10-18T22:53:00Z'))
+      vi.stubEnv('NEXT_PUBLIC_TIME_ZONE', 'Europe/Luxembourg')
+
+      await todayInsightSession()
+      expect(getTodayPrescription).toHaveBeenCalledWith('2026-10-19')
+      expect(getTodayPlannedWorkout).toHaveBeenCalledWith('2026-10-19')
+    })
   })
 
   it('hashes the same context the generator wrote, so a prescribed day still resolves', async () => {
@@ -234,7 +246,7 @@ describe('todayInsightSession', () => {
     withHistory([summary('2026-07-18')])
     readVerifiedInsight.mockResolvedValue(INSIGHT)
 
-    const session = await todayInsightSession(NOW)
+    const session = await todayInsightSession(TODAY)
     expect(await getTodayInsight(status(), session)).toEqual(INSIGHT)
 
     // Both sides default `now`, exactly as the page and the generator do.

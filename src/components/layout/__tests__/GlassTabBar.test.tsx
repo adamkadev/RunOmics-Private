@@ -31,18 +31,25 @@ describe('GlassTabBar', () => {
     }
   })
 
-  // v4.3.2: no pill in any state; the active tab is its icon and label in the accent.
+  // v4.3.2: no pill in any state; the active tab is its icon and label in the
+  // accent. 3.0: one 500 weight for every label, the colour alone marks it.
   it('colours only the active icon and label, with no pill', () => {
     render(<GlassTabBar />)
     const links = screen.getAllByRole('link')
     const active = links.filter((link) => link.getAttribute('aria-current') === 'page')
     expect(active).toHaveLength(1)
     expect(active[0]!.className).toContain('text-accent')
-    expect(active[0]!.querySelector('span > span')!.className).toContain('font-semibold')
+    expect(active[0]!.querySelector('span > span')!.className).toContain('font-medium')
     for (const link of links) {
       expect(link.innerHTML).not.toContain('--acc-soft')
       expect(link.innerHTML).not.toMatch(/bg-accent|rounded-2xl/)
       if (link !== active[0]) expect(link.className).toContain('text-muted-foreground')
     }
+  })
+
+  it('marks Progress with the trophy, not the person', () => {
+    render(<GlassTabBar />)
+    const progress = screen.getByRole('link', { name: /Progress/ })
+    expect(progress.querySelector('path')!.getAttribute('d')).toMatch(/^M8 4h8v5a4 4 0 0 1-8 0z/)
   })
 })

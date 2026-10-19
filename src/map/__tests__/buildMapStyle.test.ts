@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildMapStyle, huedColors, withKeyPlaceholder, type StyleJson } from '../buildMapStyle'
+import { HILLSHADE_LAYER, HILLSHADE_SOURCE, buildMapStyle, huedColors, withKeyPlaceholder, type StyleJson } from '../buildMapStyle'
 import { MAP_STYLE_COLORS } from '@/lib/themeTokens'
 import light from '../styles/runomics-light.json'
 import dark from '../styles/runomics-dark.json'
@@ -43,10 +43,10 @@ const layer = (id: string) => built.layers.find((l) => l.id === id)!
 const hidden = (id: string) => layer(id).layout?.visibility === 'none'
 
 describe('buildMapStyle (v4.17)', () => {
-  it('paints ground, land, water and buildings in the token greys', () => {
+  it('paints ground, land and buildings in the token greys, parks and water in their muted hue', () => {
     expect(layer('Background').paint).toMatchObject({ 'background-color': c.background })
-    expect(layer('Wood').paint).toMatchObject({ 'fill-color': c.land })
-    expect(layer('Stadium').paint).toMatchObject({ 'fill-color': c.land, 'fill-outline-color': c.land })
+    expect(layer('Wood').paint).toMatchObject({ 'fill-color': c.park, 'fill-opacity': 1 })
+    expect(layer('Stadium').paint).toMatchObject({ 'fill-color': c.park, 'fill-outline-color': c.park })
     expect(layer('Water').paint).toEqual({ 'fill-color': c.water })
     expect(layer('River').paint).toMatchObject({ 'line-color': c.waterway })
     expect(layer('Building').paint).toMatchObject({ 'fill-color': c.building })
@@ -77,11 +77,25 @@ describe('buildMapStyle (v4.17)', () => {
     expect(layer('Road labels').minzoom).toBe(14)
     expect(layer('Pathway labels').minzoom).toBe(14)
     expect(layer('Road labels').paint).toMatchObject({ 'text-color': c.streetLabel, 'text-halo-color': c.halo })
+    expect(layer('Road labels').layout).toMatchObject({ 'text-size': 11 })
     expect(layer('Place labels').paint).toMatchObject({ 'text-color': c.placeLabel, 'text-halo-color': c.halo })
     expect(layer('Place labels').layout!['text-field']).toEqual(['coalesce', ['get', 'name:en'], ['get', 'name']])
   })
 
-  it('leaves no hue in a visible layer and no key in any URL', () => {
+  // 3.0 handoff: relief at 7 % or less, under the water.
+  it('adds a faint hillshade once, above the land and below the water', () => {
+    const ids = built.layers.map((l) => l.id)
+    expect(ids.indexOf(HILLSHADE_LAYER)).toBeGreaterThan(ids.indexOf('Stadium'))
+    expect(ids.indexOf(HILLSHADE_LAYER)).toBeLessThan(ids.indexOf('Water shadow'))
+    expect(built.sources[HILLSHADE_SOURCE]).toMatchObject({ type: 'raster-dem', url: expect.stringContaining('key={key}') })
+    const alpha = String(layer(HILLSHADE_LAYER).paint!['hillshade-shadow-color']).match(/([\d.]+)\)$/)![1]
+    expect(Number(alpha)).toBeLessThanOrEqual(0.07)
+    const rebuilt = buildMapStyle(built, 'RunOmics Dark', c)
+    expect(rebuilt.layers.filter((l) => l.id === HILLSHADE_LAYER)).toHaveLength(1)
+    expect(rebuilt).toEqual(built)
+  })
+
+  it('leaves no hue in a visible layer, parks and water aside, and no key in any URL', () => {
     expect(huedColors(built)).toEqual([])
     expect(JSON.stringify(built)).not.toContain('ABC123')
     expect(JSON.stringify(built)).toContain('key={key}')
@@ -90,7 +104,7 @@ describe('buildMapStyle (v4.17)', () => {
   })
 
   it('finds a hue left behind', () => {
-    expect(huedColors({ ...SOURCE, layers: [SOURCE.layers[1]!] })).toHaveLength(1)
+    expect(huedColors({ ...SOURCE, layers: SOURCE.layers.filter((l) => l.id === 'Country border') })).toHaveLength(1)
   })
 
   it('replaces any key, not just a known one', () => {
@@ -99,7 +113,7 @@ describe('buildMapStyle (v4.17)', () => {
 })
 
 describe('the committed styles', () => {
-  it('are greys only, and carry the placeholder, never a key', () => {
+  it('are greys only, parks and water aside, and carry the placeholder, never a key', () => {
     for (const style of [light, dark] as unknown as StyleJson[]) {
       expect(huedColors(style)).toEqual([])
       const json = JSON.stringify(style)

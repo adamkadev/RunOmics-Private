@@ -9,8 +9,8 @@ import { t } from '@/i18n'
 export const revalidate = 3600
 
 export default async function GoalsPage() {
-  const data = await getGoalsPageData()
   const today = appTodayIso()
+  const data = await getGoalsPageData(today)
   // The block the next race closes, as Plan counts it: macrocycle start to race day.
   const plan = getCoachingOverview(today)?.plan ?? null
   const week = plan ? macrocycleWeek(plan, today) : null

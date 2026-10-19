@@ -75,7 +75,7 @@ describe('PlanClient week/month switching', () => {
   it('carries no subtitle under the title', () => {
     render(planClient(planCoachingView(buildCoachingOverview(plan(), [], [], [], [], '2026-09-09'))))
 
-    expect(screen.queryByTestId('plan-race')).toBeNull()
+    expect(screen.queryByTestId('plan-subtitle')).toBeNull()
     expect(screen.getByTestId('phase-line').textContent).toContain(t.plan.phase.raceInWeeks('10K', 6))
   })
 

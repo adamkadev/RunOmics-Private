@@ -195,10 +195,10 @@ export const MAP_COLORS = {
 } as const
 
 // The last-resort error screen draws before any stylesheet: the v4.17 dark
-// ground and ink, and the default teal accent for its one action.
+// ground and ink (the 3.0 values), and the default teal accent for its one action.
 export const BOOT_COLORS = {
-  background: '#0c0d0d',
-  foreground: '#f1f2f1',
+  background: '#0b0c0c',
+  foreground: '#f2f4f3',
   actionBg: '#2dd4a7',
   actionFg: '#07261d',
 } as const

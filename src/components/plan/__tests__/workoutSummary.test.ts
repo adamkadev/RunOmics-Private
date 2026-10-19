@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { coachWorkoutView } from '../planWorkoutView'
 import { paceLabel, repCaption, workoutSummary } from '../workoutSummary'
-import { todaySession } from '@/components/dashboard/todaySession'
 import { heroWorkoutView } from '../planWorkoutView'
 import { t } from '@/i18n'
 
@@ -48,7 +47,7 @@ describe('workoutSummary', () => {
   })
 
   it('gives Today the same title Plan prints', () => {
-    expect(todaySession(heroWorkoutView(view), null).title).toBe(summary.title)
+    expect(workoutSummary(heroWorkoutView(view)).title).toBe(summary.title)
   })
 })
 

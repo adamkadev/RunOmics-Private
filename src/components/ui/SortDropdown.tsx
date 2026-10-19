@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, ChevronDown } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type SortOrder = 'asc' | 'desc'
@@ -17,9 +17,15 @@ interface Props<T extends string> {
   order: SortOrder
   onChange: (sortBy: T, order: SortOrder) => void
   label: string
+  /**
+   * `button`: the outline button naming the current key. `icon`: a 44 pt
+   * round icon button, the key in its accessible name only (design review,
+   * Oct 2026).
+   */
+  variant?: 'button' | 'icon'
 }
 
-export function SortDropdown<T extends string>({ options, sortBy, order, onChange, label }: Props<T>) {
+export function SortDropdown<T extends string>({ options, sortBy, order, onChange, label, variant = 'button' }: Props<T>) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
 
@@ -48,18 +54,31 @@ export function SortDropdown<T extends string>({ options, sortBy, order, onChang
       {/* The arrow says "sort", so the word did not need to. The current key
           stays on screen though: an icon alone hides what the list is ordered by,
           and that is the one thing the control is reporting. */}
-      <button
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        aria-label={`${label}: ${activeLabel ?? ''}`}
-        // The v4.17 outline button, like the Map button beside it: one header
-        // style, drawn at 34 pt and tapped at 44 (design review, Oct 2026).
-        className="hit-44 flex h-[34px] shrink-0 items-center gap-1.5 rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
-      >
-        {order === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-        {activeLabel}
-        <ChevronDown size={12} className={cn('transition-transform', open && 'rotate-180')} />
-      </button>
+      {variant === 'icon' ? (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={`${label}: ${activeLabel ?? ''}`}
+          className="flex size-11 shrink-0 items-center justify-center rounded-full border border-[var(--line-2)] bg-card text-foreground transition-colors hover:bg-[var(--surface-2)]"
+        >
+          <ArrowUpDown size={18} aria-hidden="true" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={`${label}: ${activeLabel ?? ''}`}
+          // The v4.17 outline button: one header style, drawn at 34 pt and
+          // tapped at 44 (design review, Oct 2026).
+          className="hit-44 flex h-[34px] shrink-0 items-center gap-1.5 rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
+        >
+          {order === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+          {activeLabel}
+          <ChevronDown size={12} className={cn('transition-transform', open && 'rotate-180')} />
+        </button>
+      )}
 
       {open && (
         <div className="absolute right-0 top-full z-30 mt-1 min-w-[9rem] overflow-hidden rounded-xl border border-border bg-[var(--popover)] py-1 shadow-[var(--shadow-modal)]">

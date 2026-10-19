@@ -20,6 +20,7 @@ import { ConnectedMark, GarminTile } from './GarminMark'
 import { NotificationsForm } from './NotificationsForm'
 import { BuildInfo } from './BuildInfo'
 import { bodyMetrics } from '@/components/profile/ProfileAthleteStats'
+import { GARMIN_CONNECT_URL } from '@/lib/garminConnect'
 
 interface Body {
   heightCm?: number
@@ -112,10 +113,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body }: Pr
             {/* The hub promises export, so the row is here signed out too; the
                 workbook is owner-only, so it asks for the sign-in first. */}
             <button type="button" onClick={handleSignIn} className="flex w-full items-center justify-between gap-3 py-3.5 text-left">
-              <span className="min-w-0">
-                <span className="block text-sm text-foreground">{t.settings.dataExport.title}</span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">{t.settings.dataExport.signedOut(t.common.runs(activityCount))}</span>
-              </span>
+              <span className="min-w-0 text-sm text-foreground">{t.settings.dataExport.title}</span>
               <span className="shrink-0 text-[13px] font-medium text-accent-text">{t.settings.rowAction.signIn}</span>
             </button>
           </div>
@@ -195,13 +193,12 @@ function Section({ title, children, testId }: { title: string; children: ReactNo
   )
 }
 
-/** A setting's name and what it does, with its control on the right (under it on a phone). */
-function SettingRow({ title, hint, children, stack = false }: { title: string; hint: string; children: ReactNode; stack?: boolean }) {
+/** A setting's name, with its control on the right (under it on a phone); no subtitle (design review, Oct 2026). */
+function SettingRow({ title, children, stack = false }: { title: string; children: ReactNode; stack?: boolean }) {
   return (
     <div className={cn('flex justify-between gap-x-4 gap-y-3 border-b border-border py-3.5 last:border-b-0', stack ? 'flex-col sm:flex-row sm:items-center' : 'items-center')}>
       <div className="min-w-0">
         <p className="text-sm font-medium text-foreground">{title}</p>
-        <p className="mt-0.5 text-xs leading-snug text-muted-foreground">{hint}</p>
       </div>
       {children}
     </div>
@@ -213,10 +210,10 @@ function AppearanceSection() {
   return (
     <Section title={t.settings.sections.appearance}>
       <div className={cardClass({ padding: 'none', className: 'px-5 py-1.5' })} data-testid="settings-appearance">
-        <SettingRow title={t.settings.appearance.themeLabel} hint={t.settings.appearance.themeHint}>
+        <SettingRow title={t.settings.appearance.themeLabel}>
           <ThemeSegmented />
         </SettingRow>
-        <SettingRow title={t.settings.accent.title} hint={t.settings.accent.hint} stack>
+        <SettingRow title={t.settings.accent.title} stack>
           <AccentPicker />
         </SettingRow>
       </div>
@@ -248,7 +245,16 @@ function ProfileSection({ body }: { body?: Body }) {
           ))}
         </dl>
       </div>
-      <p className="px-1 text-xs leading-snug text-muted-foreground">{t.settings.profile.readOnly}</p>
+      {/* Where they change, as a way there (design review, Oct 2026). */}
+      <a
+        href={GARMIN_CONNECT_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="hit-44 self-start px-1 text-xs leading-snug text-accent-text transition-opacity hover:opacity-80"
+        data-testid="profile-garmin-link"
+      >
+        {t.settings.profile.readOnly}
+      </a>
     </Section>
   )
 }

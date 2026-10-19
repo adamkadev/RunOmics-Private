@@ -1,6 +1,6 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { toActivitySummary } from '@/domain/activity/summary'
-import { DAY_MS, addDays, isoDate, isoWeekNumber, startOfWeek } from '@/lib/calendarDate'
+import { DAY_MS, addDays, appTodayIso, isoDate, isoWeekNumber, startOfWeek } from '@/lib/calendarDate'
 import { round } from '@/lib/math'
 import type {
   Activity,
@@ -48,15 +48,14 @@ export function buildTypeDistribution(activities: Activity[]): TypeDistribution[
     .sort((a, b) => b.distanceKm - a.distanceKm)
 }
 
-export function computeStreaks(activities: Activity[]): { current: number; longest: number } {
+export function computeStreaks(activities: Activity[], todayIso: string = appTodayIso()): { current: number; longest: number } {
   const dateSet = new Set(activities.map((a) => a.date.slice(0, 10)))
 
   function fmt(d: Date) {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const today = new Date(`${todayIso}T00:00:00`)
 
   let current = 0
   const cursor = new Date(today)
@@ -98,7 +97,7 @@ export function computeWeekActivityDays(activities: Activity[], now: Date): bool
   return Array.from({ length: 7 }, (_, i) => dateSet.has(isoDate(addDays(monday, i))))
 }
 
-export function getDashboardData(): DashboardData {
+export function getDashboardData(today: string = appTodayIso()): DashboardData {
   const all = getAllActivities()
 
   const byWeek = new Map<number, Activity[]>()
@@ -109,7 +108,7 @@ export function getDashboardData(): DashboardData {
     byWeek.set(w, list)
   }
 
-  const todayWeekNum = isoWeekNumber(new Date())
+  const todayWeekNum = isoWeekNumber(new Date(`${today}T00:00:00`))
   if (!byWeek.has(todayWeekNum)) byWeek.set(todayWeekNum, [])
 
   const sortedWeeks = Array.from(byWeek.keys()).sort((a, b) => a - b)
@@ -130,7 +129,7 @@ export function getDashboardData(): DashboardData {
   })
 
   const typeDistribution = buildTypeDistribution(all)
-  const streaks = computeStreaks(all)
+  const streaks = computeStreaks(all, today)
 
   return {
     currentWeek,

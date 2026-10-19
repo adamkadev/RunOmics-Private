@@ -1361,7 +1361,9 @@ Two `YYYY-MM-DD` conventions coexist and must not be confused:
 date otherwise. Each page computes it on the server and hands it to its client components, which read
 it through `useToday(serverToday)`: the server render and the hydration both use the page's date, so
 ISR HTML cached from another day still hydrates, and after mount the value is the reader's date and
-rolls over at midnight.
+rolls over at midnight. A use case that decides "today" takes the date as a parameter defaulting to
+`appTodayIso()`, never `new Date()`, and a page passes its one date to every such call: the server's
+own clock is UTC on Vercel, so it is still yesterday for the first hours after the athlete's midnight.
 
 Coaching presentation does its date maths in UTC on purpose: a macrocycle spans a DST change, and
 local-midnight arithmetic drifts a day either side of it. `isoWeekNumber` returns `isoYear * 100 + isoWeek`,

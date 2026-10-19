@@ -1,15 +1,17 @@
 import type { Locator } from '@playwright/test'
 import { test, expect } from './fixtures'
 
-test('heatmap: title, chips, a 560 pt map with its legend and licence on it, the card under it (v4.17)', async ({ page }) => {
+test('heatmap: Activities on Map, chips, a 560 pt map with its legend and licence on it, the card under it', async ({ page }) => {
+  // /map is a deep link to the Map view of Activities (design review, Oct 2026).
   await page.goto('/map')
-  await expect(page.getByRole('heading', { name: 'Heatmap', exact: true })).toBeVisible()
-  await expect(page.getByText(/runs with GPS/)).toBeVisible()
-  // A top-level page on desktop: the sidebar holds it, nothing to go back to.
-  await expect(page.getByRole('button', { name: 'Activities' })).toBeHidden()
+  await expect(page).toHaveURL(/\/activities\?view=map$/)
+  await expect(page.getByRole('heading', { name: 'Activities', exact: true })).toBeVisible()
+  await expect(page.getByRole('tab', { name: 'Map' })).toHaveAttribute('aria-selected', 'true')
 
   await expect(page.getByText('Rare')).toBeVisible()
   await expect(page.getByText('Frequent')).toBeVisible()
+  // The credits sit behind an ⓘ (3.0) and open on a tap.
+  await page.getByRole('button', { name: 'Map credits' }).click()
   await expect(page.getByTestId('map-attribution')).toContainText('OpenStreetMap')
   await expect(page.getByRole('button', { name: 'World view' })).toHaveCount(0)
 
