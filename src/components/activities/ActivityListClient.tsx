@@ -401,6 +401,20 @@ export function ActivityListClient({
   const currentRanKm = weekTarget?.ranKm ?? groups?.find((g) => g.isCurrent)?.totalKm ?? 0
   const openByDefault = groups?.[0]?.isCurrent && groups[0].items.length === 0 ? groups[1]?.key : undefined
 
+  // ?week= (a Monday) opens that week and brings it into view; it is All
+  // time's way in from its biggest week (3.0).
+  const [weekParam] = useUrlParam('week')
+  useEffect(() => {
+    if (!weekParam) return
+    // The week that starts open is open already: adding it would close it.
+    if (weekParam !== openByDefault) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setExpandedWeeks((cur) => (cur.has(weekParam) ? cur : new Set(cur).add(weekParam)))
+    }
+    const frame = requestAnimationFrame(() => document.getElementById(`week-${weekParam}`)?.scrollIntoView({ block: 'start' }))
+    return () => cancelAnimationFrame(frame)
+  }, [weekParam, openByDefault])
+
   const loadMore = useCallback(() => {
     if (nextOffset === null || loadingMore) return
     setLoadingMore(true)
@@ -580,7 +594,7 @@ export function ActivityListClient({
         <div className="flex flex-col gap-3.5">
           {blocks.map((block) =>
             block.kind === 'current' ? (
-              <section key={block.week.key} className={cardClass({ padding: 'none', overflow: true })} data-testid="current-week">
+              <section key={block.week.key} id={`week-${block.week.key}`} className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24' })} data-testid="current-week">
                 <div className="flex flex-col gap-2.5 px-5 py-4">
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                     <h2 className="truncate text-[15px] font-semibold text-foreground">{block.week.label}</h2>
@@ -615,7 +629,7 @@ export function ActivityListClient({
                     // reader closed it.
                     const isExpanded = expandedWeeks.has(g.key) !== (g.key === openByDefault)
                     return (
-                      <div key={g.key}>
+                      <div key={g.key} id={`week-${g.key}`} className="scroll-mt-24">
                         <button
                           type="button"
                           onClick={() => toggleWeek(g.key)}

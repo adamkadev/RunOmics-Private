@@ -48,7 +48,7 @@ function Calendar({ view, onRest }: { view: ConsistencyView; onRest: (date: stri
 
   return (
     <div data-testid="consistency-calendar">
-      <div className="mb-[3px] grid gap-x-[3px] text-[10.5px] text-muted-foreground" style={columns(view.weeks.length)} aria-hidden>
+      <div className="mb-[3px] grid gap-x-[3px] text-caption text-muted-foreground" style={columns(view.weeks.length)} aria-hidden>
         <span />
         {view.weeks.map((week) => (
           <span key={week.start} data-testid="consistency-month" className="h-4 overflow-visible whitespace-nowrap leading-4">
@@ -58,7 +58,7 @@ function Calendar({ view, onRest }: { view: ConsistencyView; onRest: (date: stri
       </div>
       <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={columns(view.weeks.length)}>
         {Array.from({ length: 7 }, (_, row) => (
-          <span key={`label-${row}`} aria-hidden className="flex items-center text-[10.5px] leading-none text-muted-foreground">
+          <span key={`label-${row}`} aria-hidden className="flex items-center text-caption leading-none text-muted-foreground">
             {DAY_LABEL_ROWS.includes(row) ? dayLabel(row) : ''}
           </span>
         ))}
@@ -109,7 +109,7 @@ function MonthBars({ months }: { months: ConsistencyMonth[] }) {
               aria-label={month.inProgress ? c.monthSoFar(month.fullLabel, month.activeDays) : c.monthSummary(month.fullLabel, month.activeDays)}
               role="img"
             >
-              <span className="mb-1 text-[10.5px] font-semibold leading-none text-foreground" aria-hidden>{month.activeDays}</span>
+              <span className="mb-1 text-caption font-semibold leading-none text-foreground" aria-hidden>{month.activeDays}</span>
               {ahead > 0 && (
                 <span
                   aria-hidden
@@ -130,7 +130,7 @@ function MonthBars({ months }: { months: ConsistencyMonth[] }) {
           )
         })}
       </div>
-      <div className="-mt-1.5 grid grid-cols-12 gap-1.5 text-center text-[10.5px] text-muted-foreground sm:gap-2" aria-hidden>
+      <div className="-mt-1.5 grid grid-cols-12 gap-1.5 text-center text-caption text-muted-foreground sm:gap-2" aria-hidden>
         {months.map((month) => (
           <span key={month.key} className={cn(month.inProgress && 'font-semibold text-accent-text')}>{month.label.charAt(0).toUpperCase()}</span>
         ))}

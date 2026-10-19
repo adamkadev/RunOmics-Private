@@ -70,7 +70,7 @@ function YearChart({ hero, year }: { hero: ProgressHubView['hero']; year: number
         )}
         <path d={path(hero.current, x, y)} fill="none" stroke="var(--accent)" strokeWidth={2.4} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="current-line" />
       </svg>
-      <div className="relative mt-2 h-3.5 text-[10.5px] leading-[14px] text-muted-foreground" aria-hidden="true" data-testid="year-ticks">
+      <div className="relative mt-2 h-3.5 text-caption leading-[14px] text-muted-foreground" aria-hidden="true" data-testid="year-ticks">
         {TICK_MONTHS.map((month, i) => {
           const edge = i === 0 ? 'left' : i === TICK_MONTHS.length - 1 ? 'right' : null
           const at = `${((dayOf(month) / hero.daysInYear) * 100).toFixed(2)}%`

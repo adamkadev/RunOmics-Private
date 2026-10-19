@@ -1581,14 +1581,14 @@ export const fr = {
     runs: 'sorties',
     hours: 'heures',
     byYear: 'Par année',
-    byYearUnits: 'km · sorties · h',
-    partialYear: (year: number, month: string, months: number, currentMonths: number, currentYear: number) =>
-      `${year} a commencé en ${month} : ${months} mois contre ${currentMonths} en ${currentYear}.`,
+    perMonth: 'km par mois',
+    yearTotals: (km: string, runs: number, year: number) => `${km} km · ${runs} sortie${runs > 1 ? 's' : ''} en ${year}`,
+    yearLabel: (year: number, perMonth: string) => `${year} : ${perMonth} km par mois`,
     monthly: 'Km par mois',
-    best: (month: string, km: string) => `meilleur mois : ${month} · ${km}`,
+    best: (month: string) => `meilleur : ${month}`,
+    soFar: (month: string, km: string) => `${month} pour l’instant : ${km}`,
     longestRun: 'Plus longue sortie',
     biggestWeek: 'Plus grosse semaine',
-    yearLabel: (year: number, km: string, runs: number, hours: string) => `${year} : ${km} km, ${runs} sorties, ${hours} h`,
   },
 
   shoes: {

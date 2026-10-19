@@ -1661,15 +1661,16 @@ export const en = {
     km: 'km',
     runs: 'runs',
     hours: 'hours',
+    // 3.0: years compared by km a month, which is fair to a first year that started late.
     byYear: 'By year',
-    byYearUnits: 'km · runs · h',
-    partialYear: (year: number, month: string, months: number, currentMonths: number, currentYear: number) =>
-      `${year} started in ${month}: ${months} months vs ${currentMonths} in ${currentYear}.`,
+    perMonth: 'km per month',
+    yearTotals: (km: string, runs: number, year: number) => `${km} km · ${runs} run${runs === 1 ? '' : 's'} in ${year}`,
+    yearLabel: (year: number, perMonth: string) => `${year}: ${perMonth} km a month`,
     monthly: 'Monthly km',
-    best: (month: string, km: string) => `best ${month} · ${km}`,
+    best: (month: string) => `best ${month}`,
+    soFar: (month: string, km: string) => `${month} so far ${km}`,
     longestRun: 'Longest run',
     biggestWeek: 'Biggest week',
-    yearLabel: (year: number, km: string, runs: number, hours: string) => `${year}: ${km} km, ${runs} runs, ${hours} h`,
   },
 
   shoes: {
