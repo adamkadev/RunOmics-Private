@@ -50,18 +50,19 @@ describe('the selected chip speaks one language', () => {
     expect(unselected.className).not.toContain(TAB_SELECTED)
   })
 
-  it('marks the selected activity-type filter inverted', async () => {
+  it('marks the selected activity group inverted', async () => {
+    window.history.replaceState(null, '', '/activities')
     render(<ActivityListClient initialItems={[]} initialNextOffset={null} totalCount={0} today="2026-09-24" mapData={{ routeMeta: [], clusters: [], defaultClusterIdx: 0, totalCount: 0, totalKm: 0, years: [] }} />)
 
     const all = screen.getByRole('button', { name: t.activities.all })
     expect(all.className).toContain(CHIP_SELECTED)
     expect(all.className).not.toContain(RETIRED_ACTIVE_TINT)
 
-    // The sort menu repeats some labels, so stay inside the filter row.
     const row = within(all.parentElement!)
-    await userEvent.click(row.getByRole('button', { name: t.activityTypes.Tempo }))
+    await userEvent.click(row.getByRole('button', { name: t.activities.groups.workouts }))
 
-    expect(row.getByRole('button', { name: t.activityTypes.Tempo }).className).toContain(CHIP_SELECTED)
+    expect(row.getByRole('button', { name: t.activities.groups.workouts }).className).toContain(CHIP_SELECTED)
     expect(row.getByRole('button', { name: t.activities.all }).className).not.toContain(CHIP_SELECTED)
+    window.history.replaceState(null, '', '/')
   })
 })

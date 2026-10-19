@@ -7,7 +7,8 @@ export type ActivitySortKey = 'date' | 'distance' | 'duration' | 'pace' | 'avgHr
 export type ActivitySortOrder = 'asc' | 'desc'
 
 export interface ActivityQueryParams {
-  type?: ActivityType | null
+  /** Runs of these types; null or empty is every run. */
+  types?: readonly ActivityType[] | null
   /** Runs in one pair of shoes: the shoe page's "All 136 ›" (G29). */
   gearId?: string | null
   search?: string
@@ -39,7 +40,7 @@ function sortValue(a: Activity, key: ActivitySortKey): number {
 }
 
 export function queryActivities({
-  type = null,
+  types = null,
   gearId = null,
   search = '',
   sortBy = 'date',
@@ -50,7 +51,7 @@ export function queryActivities({
   const q = search.trim().toLowerCase()
 
   const filtered = getActivities()
-    .filter((a) => !type || a.type === type)
+    .filter((a) => !types?.length || types.includes(a.type))
     .filter((a) => !gearId || a.gearId === gearId)
     .filter(
       (a) =>

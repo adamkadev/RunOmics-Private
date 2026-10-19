@@ -1180,13 +1180,18 @@ export const en = {
     },
     // The page's two views, under the title (design review, Oct 2026).
     view: { label: 'View', list: 'List', map: 'Map' },
+    groups: { easy: 'Easy', workouts: 'Workouts', races: 'Races' },
+    filter: {
+      title: 'Filter & sort',
+      reset: 'Reset',
+      clearTypes: (types: string) => `Clear the filter: ${types}`,
+      show: (n: number) => `Show ${n} run${n === 1 ? '' : 's'}`,
+    },
     sort: {
       label: 'Sort',
-      date: 'Date',
-      distance: 'Distance',
-      duration: 'Duration',
-      pace: 'Pace',
-      avgHr: 'Avg HR',
+      newest: 'Newest',
+      longest: 'Longest',
+      fastest: 'Fastest',
     },
     row: {
       rpeValue: (n: number) => `RPE ${n}`,

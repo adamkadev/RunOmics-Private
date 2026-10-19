@@ -1119,13 +1119,18 @@ export const fr = {
       easy: (pct: number) => `${pct} % facile`,
     },
     view: { label: 'Affichage', list: 'Liste', map: 'Carte' },
+    groups: { easy: 'Faciles', workouts: 'Qualité', races: 'Courses' },
+    filter: {
+      title: 'Filtrer et trier',
+      reset: 'Réinitialiser',
+      clearTypes: (types: string) => `Effacer le filtre : ${types}`,
+      show: (n: number) => `Afficher ${n} sortie${n > 1 ? 's' : ''}`,
+    },
     sort: {
       label: 'Trier',
-      date: 'Date',
-      distance: 'Distance',
-      duration: 'Durée',
-      pace: 'Allure',
-      avgHr: 'FC moy.',
+      newest: 'Plus récentes',
+      longest: 'Plus longues',
+      fastest: 'Plus rapides',
     },
     row: {
       rpeValue: (n: number) => `RPE ${n}`,
