@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import { formatClock, formatDate, formatKm, formatMonthShortYear } from '@/lib/formatters'
 import { reverseGeocode } from '@/lib/reverseGeocode'
+import { useAccent } from '@/lib/useAccent'
 import { t } from '@/i18n'
 import { cardClass } from '@/components/ui/Card'
-import { TRAIL_RUNS, formatGap, routeLatest, trailBars } from './recordsView'
+import { TRAIL_RUNS, formatGap, routeLatest, trailBars, type TrailTone } from './recordsView'
 
 interface Props {
   routes: RecurringRoute[]
@@ -63,11 +64,22 @@ const BAR_TONE = {
 } as const
 
 /**
+ * With the white accent the best bar and the latest one are both near-white
+ * and the pair reads as one (App Fixes 5a, rule 4). The latest becomes an
+ * outline then, so the two still tell apart; every other accent keeps the
+ * filled ink bar.
+ */
+function barTone(tone: TrailTone, monoAccent: boolean): string {
+  if (tone === 'latest' && monoAccent) return 'border border-foreground bg-transparent'
+  return BAR_TONE[tone]
+}
+
+/**
  * One bar per run in date order, taller for faster: the best in the accent,
  * the latest in ink, the rest dim. The dates of its two ends name the axis
  * (design review, Oct 2026): the bars are runs, not days.
  */
-function PaceTrail({ route, thisYear }: { route: RecurringRoute; thisYear: number }) {
+function PaceTrail({ route, thisYear, monoAccent }: { route: RecurringRoute; thisYear: number; monoAccent: boolean }) {
   const bars = trailBars(route)
   const runs = route.runs.slice(-TRAIL_RUNS)
   const first = runs[0] ? compactDate(runs[0].date, thisYear) : null
@@ -80,7 +92,7 @@ function PaceTrail({ route, thisYear }: { route: RecurringRoute; thisYear: numbe
           <span
             key={bar.activityId}
             data-tone={bar.tone}
-            className={cn('w-1 rounded-sm', BAR_TONE[bar.tone])}
+            className={cn('box-border w-1 rounded-sm', barTone(bar.tone, monoAccent))}
             style={{ height: `${bar.heightPx}px` }}
           />
         ))}
@@ -95,7 +107,7 @@ function PaceTrail({ route, thisYear }: { route: RecurringRoute; thisYear: numbe
 }
 
 /** The key to the bars' two colours, beside the line that says what a bar is. */
-function TrailKey() {
+function TrailKey({ monoAccent }: { monoAccent: boolean }) {
   const r = t.records.recurring
   return (
     <div className="flex items-center justify-between gap-3 px-0.5 text-xs text-muted-foreground">
@@ -106,7 +118,7 @@ function TrailKey() {
           {r.legendBest}
         </span>
         <span className="flex items-center gap-1">
-          <span className={cn('h-2.5 w-1 rounded-sm', BAR_TONE.latest)} />
+          <span className={cn('box-border h-2.5 w-1 rounded-sm', barTone('latest', monoAccent))} />
           {r.legendLatest}
         </span>
       </p>
@@ -177,6 +189,7 @@ function useStartPlaces(routes: RecurringRoute[]): Record<string, string> {
 
 export function RecurringRoutes({ routes, thisYear }: Props) {
   const places = useStartPlaces(routes)
+  const monoAccent = useAccent() === 'mono'
 
   if (routes.length === 0) return null
 
@@ -184,7 +197,7 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
     <section className="space-y-3">
       {/* The key above the list, not below it: at the foot of fifteen rows it
           arrives long after the bars it explains. */}
-      <TrailKey />
+      <TrailKey monoAccent={monoAccent} />
 
       <ul className={cardClass({ padding: 'none', className: 'px-4 py-0.5' })}>
         {routes.map((route, i) => (
@@ -206,7 +219,7 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
               <BestAndLast route={route} thisYear={thisYear} />
             </div>
 
-            <PaceTrail route={route} thisYear={thisYear} />
+            <PaceTrail route={route} thisYear={thisYear} monoAccent={monoAccent} />
           </li>
         ))}
       </ul>

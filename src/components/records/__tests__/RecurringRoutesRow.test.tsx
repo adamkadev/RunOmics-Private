@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import { RecurringRoutes } from '../RecurringRoutes'
 import { TRAIL_RUNS } from '../recordsView'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
@@ -34,6 +34,23 @@ describe('RecurringRoutes row', () => {
     render(<RecurringRoutes routes={[route(60)]} thisYear={2026} />)
 
     expect(screen.getByTestId('pace-trail').children).toHaveLength(TRAIL_RUNS)
+  })
+
+  // App Fixes 5a, rule 4: with the white accent the best bar and the latest
+  // one are both near-white, so the latest becomes an outline.
+  it('outlines the latest bar under the white accent, and fills it under every other', () => {
+    const latest = () => [...screen.getByTestId('pace-trail').children].find((bar) => bar.getAttribute('data-tone') === 'latest')!
+
+    render(<RecurringRoutes routes={[route(6)]} thisYear={2026} />)
+    expect(latest().className).toContain('bg-foreground')
+
+    act(() => {
+      localStorage.setItem('runomics-accent', 'mono')
+      window.dispatchEvent(new Event('runomics:accent-change'))
+    })
+    expect(latest().className).toContain('bg-transparent')
+    expect(latest().className).toContain('border-foreground')
+    localStorage.removeItem('runomics-accent')
   })
 
   // Design review, Oct 2026: "7.20 km" sat in the list with "12.9 km".
