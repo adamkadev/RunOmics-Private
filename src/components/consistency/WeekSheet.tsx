@@ -2,6 +2,7 @@
 
 import { useEffect, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import { Check } from 'lucide-react'
 import Link from 'next/link'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateRange, formatDistance, formatDurationWords } from '@/lib/formatters'
@@ -20,14 +21,17 @@ function dayStyle(day: SheetDay): CSSProperties {
   return {}
 }
 
-/** The runs column: "5 ✓" on target, the count under it, "0/3" for the week under way, a dash for one to come. */
+/** The runs column: "5" with a tick on target, "0/3" for the week under way, a dash for one to come. */
 function RunsChip({ row, target }: { row: SheetRow; target: number }) {
   if (row.status === 'future') return <span className="justify-self-center text-[11px] text-subtle">–</span>
   const chip = 'justify-self-center whitespace-nowrap rounded-[7px] px-1.5 py-[3px] text-[11px] font-semibold tabular-nums'
   if (row.status === 'hit') {
     return (
       <span className={chip} style={{ background: 'color-mix(in srgb, var(--accent) 18%, transparent)' }} data-status="hit">
-        <span className="text-accent-text">{row.runs} ✓</span>
+        <span className="inline-flex items-center gap-0.5 text-accent-text">
+          {row.runs}
+          <Check size={10} strokeWidth={3} aria-hidden className="shrink-0" />
+        </span>
       </span>
     )
   }

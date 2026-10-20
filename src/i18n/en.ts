@@ -1373,6 +1373,8 @@ export const en = {
         `You've run this route ${n} times. This run: ${rank === 1 ? 'your best pace' : `your ${ordinal(rank)}-best pace`}.`,
       thisRun: 'This run',
       record: 'record',
+      // Read out for the medal beside the fastest of them.
+      fastest: 'Fastest on this route',
       paceDelta: (seconds: number) => `+${seconds}s/km`,
       chartSummary: (n: number, best: string) =>
         `Pace across your ${n} runs on this route; record ${best}.`,
@@ -1907,7 +1909,8 @@ export const en = {
       lifetimeDistance: (km: string) => `${km} km lifetime`,
       // Marathon equivalents, not races (G25).
       lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathon distances`,
-      lifetimeDistanceWorldTour: '🌍 A full trip around the Earth',
+      // The row's own globe icon says it; the glyph was a second one (3.0 override 3).
+      lifetimeDistanceWorldTour: 'A full trip around the Earth',
       activityCount: (n: number) => `${ordinal(n)} run`,
       activityCountDetail: (km: string) => `${km} km lifetime`,
     },
@@ -1974,7 +1977,7 @@ export const en = {
       // What a bar is, then the dates its first and last bars were run
       // (design review, Oct 2026): "taller = faster" alone named no axis.
       trailKey: 'One bar per run · taller = faster',
-      trailSpan: (from: string, to: string) => `${from} → ${to}`,
+      trailSpan: (from: string, to: string) => `${from} – ${to}`,
       legendBest: 'best',
       legendLatest: 'latest',
       bestPace: (pace: string) => `best ${pace}`,

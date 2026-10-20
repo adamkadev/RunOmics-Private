@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { Check, ChevronRight } from 'lucide-react'
 import type { WeekDayState } from '@/domain/training/weekTarget'
 import { StatusPill, type StatusTone } from '@/components/ui/StatusPill'
 import { cn } from '@/lib/utils'
@@ -12,11 +12,16 @@ const CHIP_TONE: Record<WeekDayState, StatusTone> = {
   rest: 'neutral',
 }
 
-/** Done, planned, missed or rest, in the one chip recipe every screen uses. */
+/**
+ * Done, planned, missed or rest, in the one chip recipe every screen uses.
+ * A day that was run carries a tick, drawn as an icon rather than a glyph
+ * (3.0 override 3).
+ */
 export function SessionStateChip({ state, label: override, className }: { state: WeekDayState; label?: string; className?: string }) {
-  const label = override ?? (state === 'done' ? `✓ ${t.sessionState.done}` : t.sessionState[state])
+  const label = override ?? t.sessionState[state]
   return (
-    <StatusPill tone={CHIP_TONE[state]} className={cn('flex-none rounded-lg px-2.5 py-1 font-semibold', className)}>
+    <StatusPill tone={CHIP_TONE[state]} className={cn('flex-none items-center gap-1 rounded-lg px-2.5 py-1 font-semibold', className)}>
+      {override === undefined && state === 'done' && <Check size={12} strokeWidth={3} aria-hidden className="shrink-0" />}
       {label}
     </StatusPill>
   )
@@ -37,7 +42,7 @@ export function SessionCard({
   className,
 }: {
   state: WeekDayState
-  /** The chip's words, when the state alone says less ("✓ On plan"). */
+  /** The chip's words, when the state alone says less ("On plan"). */
   chipLabel?: string
   title: string
   detail?: string | null

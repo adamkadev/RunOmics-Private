@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { Check, ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { sessionZone } from '@/lib/colors'
@@ -151,7 +151,7 @@ function Line({ label, children, testId }: { label: string; children: ReactNode;
 
 /**
  * A day that is over, or run (redesign 3.0, 1d): what was planned against
- * what was done - "10 km easy" against "11.5 km · 5:47 /km · Z2 86% ✓" - and
+ * what was done - "10 km easy" against "11.5 km · 5:47 /km · Z2 86%", ticked - and
  * a way into each run. A missed session says so; a run nothing was planned
  * for says that.
  */
@@ -199,9 +199,13 @@ export function DoneDayCard({
                   .map((part) => ` · ${part}`)
                   .join('')}
                 {onPlan && (
-                  <span className="ml-1.5 text-[var(--pos)]" role="img" aria-label={t.plan.dayCard.asPlanned}>
-                    ✓
-                  </span>
+                  <Check
+                    size={13}
+                    strokeWidth={3}
+                    role="img"
+                    aria-label={t.plan.dayCard.asPlanned}
+                    className="ml-1.5 inline-block shrink-0 align-[-2px] text-[var(--pos)]"
+                  />
                 )}
               </Line>
             )
