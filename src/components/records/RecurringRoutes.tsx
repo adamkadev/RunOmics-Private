@@ -1,12 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import { formatClock, formatDate, formatKm, formatMonthShortYear } from '@/lib/formatters'
 import { reverseGeocode } from '@/lib/reverseGeocode'
 import { useAccent } from '@/lib/useAccent'
+import { readRouteNames, routeKey, writeRouteName, ROUTE_NAME_MAX_LENGTH } from '@/lib/routeNames'
+import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { t } from '@/i18n'
 import { cardClass } from '@/components/ui/Card'
 import { TRAIL_RUNS, formatGap, routeLatest, trailBars, type TrailTone } from './recordsView'
@@ -155,12 +157,15 @@ function BestAndLast({ route, thisYear }: { route: RecurringRoute; thisYear: num
 }
 
 /**
- * Where each route starts, named. Street grain rather than town: these routes
- * are mostly in one place, so "Metz" would name half of them at once. The
- * lookup is cached in localStorage for a month by reverseGeocode, so this costs
- * one round of requests on a cold browser and nothing after.
+ * Where each route goes, named (App Fixes 1g). The far point names it - a
+ * loop's far side, an out-and-back's turnaround - because every route out of
+ * one front door starts on the same street, and naming them all after it
+ * told the reader nothing. Street grain rather than town: these routes are
+ * mostly in one place, so "Metz" would name half of them at once. The lookup
+ * is cached in localStorage for a month by reverseGeocode, so this costs one
+ * round of requests on a cold browser and nothing after.
  */
-function useStartPlaces(routes: RecurringRoute[]): Record<string, string> {
+function usePlaces(routes: RecurringRoute[]): Record<string, string> {
   const [places, setPlaces] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -170,8 +175,9 @@ function useStartPlaces(routes: RecurringRoute[]): Record<string, string> {
     let live = true
     Promise.all(
       routes.map(async (route) => {
-        if (!route.start) return null
-        const name = await reverseGeocode(route.start[0], route.start[1], token, 'street')
+        const at = route.far ?? route.start
+        if (!at) return null
+        const name = await reverseGeocode(at[0], at[1], token, 'street')
         return name ? ([route.id, name] as const) : null
       }),
     ).then((pairs) => {
@@ -187,8 +193,94 @@ function useStartPlaces(routes: RecurringRoute[]): Record<string, string> {
   return places
 }
 
+/** The names the athlete gave their routes, by route key (App Fixes 1g). */
+function useRouteNames(): { names: Map<string, string>; save: (key: string, name: string) => Promise<void> } {
+  const [names, setNames] = useState<Map<string, string>>(new Map())
+
+  useEffect(() => {
+    let live = true
+    readRouteNames().then((saved) => {
+      if (live) setNames(saved)
+    })
+    return () => {
+      live = false
+    }
+  }, [])
+
+  const save = useCallback(async (key: string, name: string) => {
+    await writeRouteName(key, name)
+    setNames((held) => {
+      const next = new Map(held)
+      const trimmed = name.trim()
+      if (trimmed === '') next.delete(key)
+      else next.set(key, trimmed.slice(0, ROUTE_NAME_MAX_LENGTH))
+      return next
+    })
+  }, [])
+
+  return { names, save }
+}
+
+/** The owner's rename, in place: tap the name, type, Enter or blur to save. */
+function RouteName({ name, onRename }: { name: string; onRename: ((name: string) => Promise<void>) | null }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(name)
+
+  if (!onRename) {
+    return (
+      <p className="truncate text-subhead font-semibold text-foreground" data-testid="route-name">
+        {name}
+      </p>
+    )
+  }
+
+  async function commit() {
+    setEditing(false)
+    if (draft.trim() !== name) await onRename!(draft)
+  }
+
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={draft}
+        maxLength={ROUTE_NAME_MAX_LENGTH}
+        aria-label={t.records.recurring.rename}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') void commit()
+          if (e.key === 'Escape') {
+            setDraft(name)
+            setEditing(false)
+          }
+        }}
+        className="w-full min-w-0 rounded-md bg-[var(--surface-2)] px-1 text-subhead font-semibold text-foreground outline-none"
+        data-testid="route-name-input"
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setDraft(name)
+        setEditing(true)
+      }}
+      title={t.records.recurring.rename}
+      className="block w-full min-w-0 truncate text-left text-subhead font-semibold text-foreground"
+      data-testid="route-name"
+    >
+      {name}
+    </button>
+  )
+}
+
 export function RecurringRoutes({ routes, thisYear }: Props) {
-  const places = useStartPlaces(routes)
+  const places = usePlaces(routes)
+  const { names, save } = useRouteNames()
+  const { isOwner } = useOwnerAuth()
   const monoAccent = useAccent() === 'mono'
 
   if (routes.length === 0) return null
@@ -200,7 +292,9 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
       <TrailKey monoAccent={monoAccent} />
 
       <ul className={cardClass({ padding: 'none', className: 'px-4 py-0.5' })}>
-        {routes.map((route, i) => (
+        {routes.map((route, i) => {
+          const key = routeKey(route)
+          return (
           <li
             key={route.id}
             className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-center gap-3 border-b border-border py-3 last:border-b-0"
@@ -208,11 +302,12 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
             <Outline path={route.outline} />
 
             <div data-testid="route-text" className="min-w-0 space-y-0.5">
-              {/* Named after where it starts, at street grain; a number
-                  until a place comes back. */}
-              <p className="truncate text-subhead font-semibold text-foreground" data-testid="route-name">
-                {places[route.id] ?? t.records.recurring.unnamed(i + 1)}
-              </p>
+              {/* Named after where it goes, at street grain; a number until
+                  a place comes back, and the athlete's own name over both. */}
+              <RouteName
+                name={(key && names.get(key)) || places[route.id] || t.records.recurring.unnamed(i + 1)}
+                onRename={isOwner && key ? (name) => save(key, name) : null}
+              />
               <p className="truncate text-xs text-muted-foreground">
                 {routeKm(route.distanceKm)} {t.units.km} · {t.records.recurring.runCount(route.runCount)}
               </p>
@@ -221,7 +316,8 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
 
             <PaceTrail route={route} thisYear={thisYear} monoAccent={monoAccent} />
           </li>
-        ))}
+          )
+        })}
       </ul>
     </section>
   )

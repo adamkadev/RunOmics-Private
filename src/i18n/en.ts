@@ -1608,6 +1608,8 @@ export const en = {
       title: 'Monthly volume',
       // 3.1: the card's caption, its legend and the running month's pace.
       target: (km: string) => `target ${km} km`,
+      // Where the plan sets each month's own target (App Fixes 3c).
+      targetFromPlan: 'target from your plan',
       hit: 'hit',
       short: 'short',
       running: (month: string, km: string, pace: string) => `${month} · ${km}, ${pace}`,
@@ -1988,6 +1990,8 @@ export const en = {
       newBest: 'new best',
       // A route whose start no place name came back for.
       unnamed: (n: number) => `Route ${n}`,
+      // The athlete's own name for a route, over the place it goes (App Fixes 1g).
+      rename: 'Rename this route',
     },
     milestones: {
       nextUp: 'Next up',

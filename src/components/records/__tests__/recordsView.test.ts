@@ -79,6 +79,7 @@ describe('groupMilestonesByMonth', () => {
 const route = (paces: number[], bestIndex: number): RecurringRoute => ({
   id: 'r',
   start: null,
+  far: null,
   runCount: paces.length,
   distanceKm: 7.3,
   outline: '',

@@ -1505,6 +1505,7 @@ export const fr = {
     monthlyVolume: {
       title: 'Volume mensuel',
       target: (km: string) => `objectif ${km} km`,
+      targetFromPlan: 'objectif issu de ton plan',
       hit: 'atteint',
       short: 'manqué',
       running: (month: string, km: string, pace: string) => `${month} · ${km}, ${pace}`,
@@ -1823,6 +1824,7 @@ export const fr = {
       lastPace: (pace: string) => `dernière ${pace}`,
       newBest: 'nouveau record',
       unnamed: (n: number) => `Parcours ${n}`,
+      rename: 'Renommer ce parcours',
     },
     milestones: {
       nextUp: 'Prochaines étapes',
