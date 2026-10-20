@@ -15,7 +15,7 @@ import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { PlanPeriodNav } from './PlanPeriodNav'
 import { monthDays, type MonthDayState } from './monthDays'
 import { planPhaseSpans, spanOfWeek, spanWeeks, type PhaseSpan } from './planPhaseSpans'
-import { dayKind, kindColor, type DayKind } from './sessionKind'
+import { dayKind, kindColor, kindLetter, type DayKind } from './sessionKind'
 import { sessionTitle } from './sessionTitle'
 import { formatWeekKm } from './weekPlanDays'
 
@@ -122,8 +122,23 @@ function nextKeySession(
 
 const QUALITY_ORDER: ActivityType[] = ['Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race']
 
-function Swatch({ style }: { style: CSSProperties }) {
-  return <span aria-hidden className="box-border size-2.5 shrink-0 rounded-[3px]" style={style} />
+/**
+ * A legend swatch, with the type's letter in it where the colour alone does
+ * not tell them apart (review 10): VO2 Max, Sprint, Anaerobic and Race are
+ * all zone 5, so the legend had three pink squares and no way to read which
+ * was which. The zones are the app's one session scale, so the letter does
+ * the telling rather than a sixth hue.
+ */
+function Swatch({ style, letter }: { style: CSSProperties; letter?: string }) {
+  return (
+    <span
+      aria-hidden
+      className="box-border flex size-2.5 shrink-0 items-center justify-center rounded-[3px] text-[7px] font-bold leading-none"
+      style={{ color: 'var(--zone-ink)', ...style }}
+    >
+      {letter}
+    </span>
+  )
 }
 
 export function MonthView({
@@ -286,11 +301,23 @@ export function MonthView({
                       <span
                         data-testid="month-tile"
                         className={cn(
-                          'box-border flex h-[34px] w-full max-w-[40px] items-center justify-center rounded-[9px] text-xs font-semibold tabular-nums',
+                          'relative box-border flex h-[34px] w-full max-w-[40px] items-center justify-center rounded-[9px] text-xs font-semibold tabular-nums',
                           cell.state === 'missed' ? 'text-[var(--neg)]' : 'text-foreground',
                         )}
                         style={style ?? undefined}
                       >
+                        {/* The session's letter in the corner where the tile
+                            is a quality day (review 10): two tiles the same
+                            pink are a VO2 Max and a race otherwise. */}
+                        {style && cell.kind?.kind === 'quality' && (
+                          <span
+                            aria-hidden
+                            className="absolute right-[3px] top-[2px] text-[8px] font-bold leading-none"
+                            style={{ color: cell.kind.color }}
+                          >
+                            {kindLetter(cell.kind.type, cell.kind.kind)}
+                          </span>
+                        )}
                         {style ? figure : null}
                       </span>
                     </span>
@@ -316,7 +343,7 @@ export function MonthView({
         </span>
         {qualityTypes.map((type) => (
           <span key={type} className="flex items-center gap-1.5">
-            <Swatch style={{ background: kindColor(type) }} />
+            <Swatch style={{ background: kindColor(type) }} letter={kindLetter(type, 'quality')} />
             {t.activityTypes[type]}
           </span>
         ))}

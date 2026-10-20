@@ -140,12 +140,27 @@ describe('opening a week', () => {
   })
 })
 
+describe('the quality letter on a tile (review 10)', () => {
+  it('letters a quality day and leaves an easy one to its number', () => {
+    renderMonth()
+
+    // 14 Oct was run as a Threshold, 13 Oct as an easy run: one colour
+    // cannot tell a VO2 Max from a race, so the letter does.
+    expect(tile('2026-10-14').textContent).toContain(t.plan.typeLetters.Threshold)
+    expect(tile('2026-10-13').textContent).not.toContain(t.plan.typeLetters.Threshold)
+    // Still planned, not yet run: the letter says which session is coming.
+    expect(tile('2026-10-21').textContent).toContain(t.plan.typeLetters.Threshold)
+  })
+})
+
 describe('the legend and the summary', () => {
   it('keys the kinds the month draws and the dashed planned tile, Easy and Long as one blue entry', () => {
     renderMonth()
 
+    // A quality swatch carries its letter, so three zone-5 entries are not
+    // three unreadable pink squares (review 10).
     expect(screen.getByTestId('month-legend').textContent).toBe(
-      [t.plan.month.easyLong, t.activityTypes.Threshold, t.sessionState.planned].join(''),
+      [t.plan.month.easyLong, `${t.plan.typeLetters.Threshold}${t.activityTypes.Threshold}`, t.sessionState.planned].join(''),
     )
     expect(screen.getByTestId('legend-easy').querySelector<HTMLElement>('span')!.style.background).toBe('var(--zone-2)')
   })
