@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { StyleSpecification } from 'maplibre-gl'
-import { heatBasemapStyle, maptilerStyle, shareBasemapStyle, withLanguage } from '../maptiler'
+import { HEAT_BASEMAP, heatBasemapStyle, maptilerStyle, shareBasemapStyle, withLanguage } from '../maptiler'
 import { MAP_STYLE_COLORS } from '../themeTokens'
 
 describe('maptilerStyle (v4.17)', () => {
@@ -40,23 +40,27 @@ describe('withLanguage', () => {
   })
 })
 
-describe('heatBasemapStyle (3.0.1)', () => {
-  const light = () => maptilerStyle(false, 'k')
-  const background = (s: StyleSpecification) => (s.layers.find((l) => l.type === 'background')!.paint as Record<string, unknown>)['background-color']
+describe('heatBasemapStyle (Wave 4, App Fixes 4d)', () => {
+  const paintOf = (s: StyleSpecification, id: string) => (s.layers.find((l) => l.id === id)!.paint ?? {}) as Record<string, unknown>
+  const layoutOf = (s: StyleSpecification, id: string) => (s.layers.find((l) => l.id === id)!.layout ?? {}) as Record<string, unknown>
 
-  it('steps the light ground back toward grey, so the heat is the only saturated colour', () => {
-    const muted = heatBasemapStyle(light(), false)
-    const json = JSON.stringify(muted)
-    expect(background(muted)).not.toBe(MAP_STYLE_COLORS.light.background)
-    for (const role of ['park', 'water', 'land'] as const) expect(json).not.toContain(MAP_STYLE_COLORS.light[role])
+  it('mutes land, parks, water and roads to the four heat greys, in both modes', () => {
+    for (const isDark of [false, true]) {
+      const colours = HEAT_BASEMAP[isDark ? 'dark' : 'light']
+      const muted = heatBasemapStyle(maptilerStyle(isDark, 'k'), isDark)
+      expect(paintOf(muted, 'Background')['background-color']).toBe(colours.land)
+      expect(paintOf(muted, 'Grass')['fill-color']).toBe(colours.park)
+      expect(paintOf(muted, 'Water')['fill-color']).toBe(colours.water)
+      expect(paintOf(muted, 'Road network')['line-color']).toBe(colours.road)
+      expect(layoutOf(muted, 'Building').visibility).toBe('none')
+      expect(paintOf(muted, 'City labels')['text-color']).toMatch(/,0\.6\)$/)
+    }
   })
 
-  it('leaves the dark style, and the style it was given, alone', () => {
-    const dark = maptilerStyle(true, 'k')
-    expect(heatBasemapStyle(dark, true)).toBe(dark)
-    const source = light()
+  it('leaves the style it was given alone', () => {
+    const source = maptilerStyle(false, 'k')
     heatBasemapStyle(source, false)
-    expect(background(source)).toBe(MAP_STYLE_COLORS.light.background)
+    expect(paintOf(source, 'Grass')['fill-color']).toBe(MAP_STYLE_COLORS.light.park)
   })
 })
 

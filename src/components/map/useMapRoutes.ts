@@ -8,7 +8,8 @@ import { heatBasemapStyle, maptilerStyle } from "@/lib/maptiler";
 import { percentileBounds, type LngLatBounds } from "@/lib/routeFrame";
 import { firstSymbolLayerId, loadMapLibre } from "@/lib/maplibre";
 import { EDGE_FENCE_LAYER, EDGE_FENCE_SOURCE, addEdgeFence } from "@/lib/runMapLayers";
-import { SURFACES } from "@/lib/themeTokens";
+import { heatAccent } from "@/lib/heatRamp";
+import { parseAccent } from "@/lib/accent";
 import { HEAT_LAYER, HEAT_SOURCE, addHeatLayer, type HeatLayer } from "./heatLayer";
 import { buildHeatTracks, ringCoordinates } from "./mapUtils";
 
@@ -80,9 +81,9 @@ export function useMapRoutes(
     let cancelled = false;
     let fenceCleanup: (() => void) | null = null;
     const isDark = () => document.documentElement.classList.contains("dark");
-    const readAccent = () =>
-      getComputedStyle(containerRef.current ?? document.documentElement).getPropertyValue("--accent").trim() ||
-      SURFACES[isDark() ? "dark" : "light"].text;
+    // The heat ramps start from the accent's full colour in both modes
+    // (App Fixes 4d), not the darker light-mode UI accent.
+    const readAccent = () => heatAccent(parseAccent(document.documentElement.getAttribute("data-accent")));
 
     function removeRunLayers(map: MapLibreMap) {
       heatRef.current?.remove();
@@ -112,8 +113,9 @@ export function useMapRoutes(
           type: "line",
           source: RING_SOURCE,
           layout: { "line-join": "round", "line-cap": "round" },
-          // 4 px dashes, 6 px apart: the dash array counts line widths.
-          paint: { "line-color": accent, "line-width": 1.2, "line-opacity": 0.8, "line-dasharray": [4 / 1.2, 6 / 1.2] },
+          // 6 px dashes, 6 px apart, the accent at half strength (App Fixes 4d):
+          // the dash array counts line widths.
+          paint: { "line-color": accent, "line-width": 1, "line-opacity": 0.5, "line-dasharray": [6, 6] },
         },
         firstSymbolId,
       );
@@ -124,11 +126,12 @@ export function useMapRoutes(
           type: "circle",
           source: DOT_SOURCE,
           paint: {
-            // Home: the accent in a 2 px white ring, 10 px across.
+            // Home: the accent in a 2 px ring of the ground - white on
+            // light, #0b0c0c on dark - 10 px across.
             "circle-radius": 3,
             "circle-color": accent,
             "circle-stroke-width": 2,
-            "circle-stroke-color": "#ffffff",
+            "circle-stroke-color": isDark() ? "#0b0c0c" : "#ffffff",
           },
         },
         firstSymbolId,
