@@ -10,6 +10,7 @@ import { firstSymbolLayerId, loadMapLibre } from "@/lib/maplibre";
 import { EDGE_FENCE_LAYER, EDGE_FENCE_SOURCE, addEdgeFence } from "@/lib/runMapLayers";
 import { heatAccent } from "@/lib/heatRamp";
 import { parseAccent } from "@/lib/accent";
+import { readHeatVariant } from "@/lib/heatVariant";
 import { HEAT_LAYER, HEAT_SOURCE, addHeatLayer, type HeatLayer } from "./heatLayer";
 import { buildHeatTracks, ringCoordinates } from "./mapUtils";
 
@@ -102,7 +103,7 @@ export function useMapRoutes(
       const accent = readAccent();
       const firstSymbolId = firstSymbolLayerId(map);
 
-      heatRef.current = addHeatLayer(map, isDark() ? "dark" : "light", accent, firstSymbolId);
+      heatRef.current = addHeatLayer(map, isDark() ? "dark" : "light", accent, firstSymbolId, readHeatVariant());
       heatRef.current.setTracks(tracksRef.current, false);
 
       const { ring: ringLine, dot } = ringData(ringRef.current);
@@ -113,9 +114,11 @@ export function useMapRoutes(
           type: "line",
           source: RING_SOURCE,
           layout: { "line-join": "round", "line-cap": "round" },
-          // 6 px dashes, 6 px apart, the accent at half strength (App Fixes 4d):
-          // the dash array counts line widths.
-          paint: { "line-color": accent, "line-width": 1, "line-opacity": 0.5, "line-dasharray": [6, 6] },
+          // Dark keeps 3.1.0's ring (4 px dashes, 6 px apart, at 0.8); light
+          // takes 4d's, 6 px dashes at half strength. Dash arrays count line widths.
+          paint: isDark()
+            ? { "line-color": accent, "line-width": 1.2, "line-opacity": 0.8, "line-dasharray": [4 / 1.2, 6 / 1.2] }
+            : { "line-color": accent, "line-width": 1, "line-opacity": 0.5, "line-dasharray": [6, 6] },
         },
         firstSymbolId,
       );
@@ -126,12 +129,11 @@ export function useMapRoutes(
           type: "circle",
           source: DOT_SOURCE,
           paint: {
-            // Home: the accent in a 2 px ring of the ground - white on
-            // light, #0b0c0c on dark - 10 px across.
+            // Home: the accent in a 2 px white ring, 10 px across, as 3.1.0 drew it.
             "circle-radius": 3,
             "circle-color": accent,
             "circle-stroke-width": 2,
-            "circle-stroke-color": isDark() ? "#0b0c0c" : "#ffffff",
+            "circle-stroke-color": "#ffffff",
           },
         },
         firstSymbolId,
@@ -154,6 +156,7 @@ export function useMapRoutes(
       if (!first) return;
       let dark = isDark();
       let accent = readAccent();
+      let variant = readHeatVariant();
       const map = new mgl.Map({
         container: containerRef.current!,
         style: heatBasemapStyle(maptilerStyle(dark, token), dark),
@@ -190,12 +193,13 @@ export function useMapRoutes(
           accent = readAccent();
           removeRunLayers(map);
           map.setStyle(heatBasemapStyle(maptilerStyle(dark, token), dark), { diff: false });
-        } else if (readAccent() !== accent) {
+        } else if (readAccent() !== accent || readHeatVariant() !== variant) {
           accent = readAccent();
+          variant = readHeatVariant();
           addRunLayers(map);
         }
       });
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-accent"] });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-accent", "data-heat-variant"] });
       stopObserving = () => observer.disconnect();
     }
 

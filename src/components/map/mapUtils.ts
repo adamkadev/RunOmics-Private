@@ -321,6 +321,26 @@ export function heatZoomScale(zoom: number): number {
   return Math.min(1.6, Math.max(0.6, 2 ** ((zoom - 12.5) / 2)));
 }
 
+/**
+ * Dark mode as 3.1.0 drew it (restored, owner, Oct 2026): every run stroked
+ * on its own in the accent, a faint wide glow then a thin core, added
+ * together ("lighter"), so a street glows by how many runs overlap on it and
+ * the busiest burn towards white. The level-based ramp fogged it on iPhone.
+ */
+export const HEAT_DARK = {
+  composite: "lighter",
+  passes: [
+    { width: 4, alpha: 0.035 },
+    { width: 1, alpha: 0.16 },
+  ],
+} as const satisfies { composite: GlobalCompositeOperation; passes: readonly { width: number; alpha: number }[] };
+
+/** The dark tracks' line width: 1.2 px at city zoom, up to 4 px on a street. */
+export function heatLineWidth(zoom: number): number {
+  const t = Math.min(1, Math.max(0, (zoom - 12) / 4));
+  return 1.2 + t * (4 - 1.2);
+}
+
 export function ringCoordinates(center: [number, number], radiusKm: number, steps = 96): [number, number][] {
   const [lon, lat] = center;
   const dLat = radiusKm / 111.32;

@@ -44,8 +44,8 @@ describe('heatBasemapStyle (Wave 4, App Fixes 4d)', () => {
   const paintOf = (s: StyleSpecification, id: string) => (s.layers.find((l) => l.id === id)!.paint ?? {}) as Record<string, unknown>
   const layoutOf = (s: StyleSpecification, id: string) => (s.layers.find((l) => l.id === id)!.layout ?? {}) as Record<string, unknown>
 
-  it('mutes land, parks, water and roads to the four heat greys, in both modes', () => {
-    for (const isDark of [false, true]) {
+  it('mutes land, parks, water and roads to the four heat greys in light', () => {
+    for (const isDark of [false]) {
       const colours = HEAT_BASEMAP[isDark ? 'dark' : 'light']
       const muted = heatBasemapStyle(maptilerStyle(isDark, 'k'), isDark)
       expect(paintOf(muted, 'Background')['background-color']).toBe(colours.land)
@@ -55,6 +55,12 @@ describe('heatBasemapStyle (Wave 4, App Fixes 4d)', () => {
       expect(layoutOf(muted, 'Building').visibility).toBe('none')
       expect(paintOf(muted, 'City labels')['text-color']).toMatch(/,0\.6\)$/)
     }
+  })
+
+  // Restored from 3.1.0: the additive dark tracks read on the dark basemap as it is.
+  it('keeps the dark basemap as it is', () => {
+    const dark = maptilerStyle(true, 'k')
+    expect(heatBasemapStyle(dark, true)).toBe(dark)
   })
 
   it('leaves the style it was given alone', () => {

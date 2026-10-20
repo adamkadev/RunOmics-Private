@@ -4,17 +4,22 @@ import type { CanvasSource, Coordinates, Map as MapLibreMap } from "maplibre-gl"
 import {
   HEAT_HALO_RINGS,
   HEAT_LEVELS,
+  HEAT_DARK,
   HEAT_STYLE,
   buildHeatLevels,
   heatCore,
   heatHalo,
   heatLevelT,
+  heatLineWidth,
   heatZoomScale,
   mercatorX,
   mercatorY,
   type HeatStroke,
 } from "./mapUtils";
-import { rgbCss } from "@/lib/heatRamp";
+import { hexToRgb, rgbCss } from "@/lib/heatRamp";
+
+/** Dark B's glow, at most (owner A/B test). */
+const HEAT_B_GLOW_MAX = 0.35;
 
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
@@ -48,8 +53,9 @@ export interface HeatLayer {
  * and a sharp core whose colour, opacity and width all rise with it - rare
  * streets thin and pale (dim on dark), the riverside thick and glowing.
  */
-export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: string, beforeId: string | undefined): HeatLayer {
-  const composite = HEAT_STYLE[mode].composite;
+export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: string, beforeId: string | undefined, variant: "A" | "B" = "A"): HeatLayer {
+  // Dark B (owner A/B test): normal blending, so nothing passes the accent.
+  const composite = mode === "dark" ? (variant === "B" ? "source-over" : HEAT_DARK.composite) : HEAT_STYLE[mode].composite;
   const strokes: { halo: HeatStroke | null; core: HeatStroke }[] = Array.from({ length: HEAT_LEVELS }, (_, level) => ({
     halo: heatHalo(mode, accent, heatLevelT(level)),
     core: heatCore(mode, accent, heatLevelT(level)),
@@ -57,8 +63,10 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
-  /** Each frequency level as one NaN-broken path, rarest first. */
+  /** Each frequency level as one NaN-broken path, rarest first (light). */
   let levels: Float64Array[] = [];
+  /** Every run on its own (dark, as 3.1.0 drew it). */
+  let tracks: Float64Array[] = [];
   let view = { x0: 0, y0: 0, world: 1, scale: 1, width: 1, height: 1 };
   let coordinates: Coordinates = [[0, 0], [0, 0], [0, 0], [0, 0]];
 
@@ -118,6 +126,66 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     ctx.globalCompositeOperation = composite;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
+    if (mode === "dark" && variant === "B") {
+      // B: the glows on their own canvas in normal blending, laid on at 0.35
+      // at most, then the cores in normal blending: overlaps build towards
+      // the accent and never past it, so no street turns white.
+      const lineWidth = heatLineWidth(map.getZoom());
+      const glow = document.createElement("canvas");
+      glow.width = canvas.width;
+      glow.height = canvas.height;
+      const g = glow.getContext("2d");
+      if (g) {
+        g.setTransform(view.scale, 0, 0, view.scale, 0, 0);
+        g.lineJoin = "round";
+        g.lineCap = "round";
+        g.lineWidth = lineWidth * HEAT_DARK.passes[0].width;
+        g.strokeStyle = rgbCss(hexToRgb(accent), 0.12);
+        const { x0, y0, world } = view;
+        for (const track of tracks) {
+          g.beginPath();
+          let penDown = false;
+          for (let p = 0; p < track.length; p += 2) {
+            const x = track[p]!;
+            if (Number.isNaN(x)) {
+              penDown = false;
+              continue;
+            }
+            const px = (x - x0) * world;
+            const py = (track[p + 1]! - y0) * world;
+            if (penDown) g.lineTo(px, py);
+            else g.moveTo(px, py);
+            penDown = true;
+          }
+          g.stroke();
+        }
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = HEAT_B_GLOW_MAX;
+        ctx.drawImage(glow, 0, 0);
+        ctx.restore();
+      }
+      ctx.lineWidth = lineWidth * HEAT_DARK.passes[1].width;
+      ctx.strokeStyle = rgbCss(hexToRgb(accent), HEAT_DARK.passes[1].alpha);
+      for (const track of tracks) {
+        trace(track);
+        ctx.stroke();
+      }
+      return;
+    }
+    if (mode === "dark") {
+      // Every glow before any core; additive, so order doesn't matter.
+      const lineWidth = heatLineWidth(map.getZoom());
+      for (const pass of HEAT_DARK.passes) {
+        ctx.lineWidth = lineWidth * pass.width;
+        ctx.strokeStyle = rgbCss(hexToRgb(accent), pass.alpha);
+        for (const track of tracks) {
+          trace(track);
+          ctx.stroke();
+        }
+      }
+      return;
+    }
     const k = heatZoomScale(map.getZoom());
     // Every halo under every core, each pass rarest first so the busy
     // streets land on top. The halo is three soft rings, not a blur filter,
@@ -190,7 +258,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
 
   return {
     setTracks(next, reveal) {
-      levels = buildHeatLevels(next);
+      tracks = next;
+      levels = mode === "dark" ? [] : buildHeatLevels(next);
       if (reveal && map.getLayer(HEAT_LAYER)) {
         // A fade, not a draw-in: the frequencies need every run at once.
         map.setPaintProperty(HEAT_LAYER, "raster-opacity-transition", { duration: 0, delay: 0 });

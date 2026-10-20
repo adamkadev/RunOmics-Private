@@ -56,7 +56,9 @@ function withAlpha(hex: string, alpha: number): string {
 }
 
 export function heatBasemapStyle(style: StyleSpecification, isDark: boolean): StyleSpecification {
-  const colours = HEAT_BASEMAP[isDark ? 'dark' : 'light']
+  // Dark keeps its own basemap, as 3.1.0 did: the additive tracks read on it as they are.
+  if (isDark) return style
+  const colours = HEAT_BASEMAP.light
   return {
     ...style,
     layers: style.layers.map((layer) => {

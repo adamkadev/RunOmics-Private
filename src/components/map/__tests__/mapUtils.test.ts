@@ -6,6 +6,8 @@ import {
   mercatorY,
   HEAT_LEVELS,
   HEAT_STYLE,
+  HEAT_DARK,
+  heatLineWidth,
   HEAT_HALO_MIN_T,
   heatRankScale,
   buildHeatLevels,
@@ -103,6 +105,21 @@ describe('GPS jumps (v5.6 #5)', () => {
   it('keeps a run with no jump as one unbroken stroke', () => {
     const [track] = buildHeatTracks([[[7.7, 48.6], [7.7005, 48.6], [7.701, 48.6]]], [0])
     expect(Array.from(track!).some(Number.isNaN)).toBe(false)
+  })
+})
+
+describe('the dark heatmap, as 3.1.0 drew it', () => {
+  it('adds every run on its own: a faint wide glow, then a thin core', () => {
+    expect(HEAT_DARK.composite).toBe('lighter')
+    expect(HEAT_DARK.passes).toEqual([
+      { width: 4, alpha: 0.035 },
+      { width: 1, alpha: 0.16 },
+    ])
+  })
+
+  it('widens its lines from 1.2 px at city zoom to 4 px on a street', () => {
+    expect(heatLineWidth(11)).toBe(1.2)
+    expect(heatLineWidth(16)).toBe(4)
   })
 })
 
