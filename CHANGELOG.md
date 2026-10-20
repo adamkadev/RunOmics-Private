@@ -2,6 +2,54 @@
 
 All notable changes to this project are documented in this file.
 
+## [3.1.0] - 2026-10-20
+
+3.1.0 — the final Progress mockups: Goals & season, Records, Consistency
+and All time.
+
+### Goals & season
+
+- A year stepper (‹ 2026 ›); the distance goal shows km to go, the
+  projected total and a verdict: how far short at this pace, and the
+  weekly km that closes it.
+- Season: "N of M race targets hit", a Jan–Dec track and one row per race
+  with its target and result.
+- Monthly volume inline: each month against a twelfth of the goal, hit in
+  the accent, short in a lighter accent, the current month dashed.
+
+### Records
+
+- One page with three tabs: Best times, Milestones and Routes.
+  /milestones now opens /records?tab=milestones.
+- Best times: every distance with its date and the effort list (top 20).
+- Routes: each route you repeat, with its latest 16 runs as bars.
+
+### Consistency
+
+- 3M · 6M · 1Y range (6M by default, kept in the address).
+- Weekly streak: a week counts when it has 3 or more runs. The same streak
+  shows on Today, the Progress hub and Consistency. This week's three
+  circles fill as you run; planned sessions are counted.
+- Runs per week: one dot per run, on-target weeks in the accent, a line at
+  3, the current streak underlined. Tap a week for its sheet: runs, km,
+  time, a month calendar and a link to that week's activities.
+- Your running week: runs by weekday, with your anchor day and rest day.
+- The six-month heatmap and the active-days bars are gone.
+
+### All time
+
+- Average km a month in the header, each year's total under its bar, the
+  best month named, and the current month's projected total as a dashed
+  outline.
+
+### Elsewhere
+
+- Today: between midnight and the nightly sync, yesterday's AI verdict
+  shows, marked "Yesterday".
+- Time windows are named one way, short and uppercase: 4W · 12W · 1Y in
+  Analytics, 1W · 4W for training zones, 3M · 6M · 1Y on Consistency
+  (FR 4S · 12S · 1A). Screen readers hear the full words.
+
 ## [3.0.3] - 2026-10-19
 
 3.0.3 — a district the run crosses keeps its name.
