@@ -208,7 +208,7 @@ function LongRunCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; 
               is (review 13): a bare dash left the reader to work out which
               height was the rule. */}
           <div aria-hidden className="pointer-events-none absolute z-[1] inset-x-0 border-t border-dashed border-muted-foreground" style={{ bottom: (LONG_RUN_SHARE / top) * H }} data-testid="long-run-guide">
-            <span className="absolute right-0 -top-[7px] bg-card pl-1 text-[10px] font-medium leading-none tabular-nums text-muted-foreground" data-testid="long-run-guide-label">
+            <span className="absolute right-0 -top-[7px] bg-card pl-1 text-[11px] font-medium leading-none tabular-nums text-muted-foreground" data-testid="long-run-guide-label">
               {formatPercent(LONG_RUN_SHARE * 100)}
             </span>
           </div>

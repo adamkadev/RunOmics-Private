@@ -2211,6 +2211,12 @@ export const en = {
       easyLong: 'Easy / Long',
       phaseWeek: (phase: string, n: number, total: number) => `${phase} · week ${n} of ${total}`,
       kmOf: (ran: string, plan: string) => `${ran} of ${plan} km`,
+      // Where the plan starts partway through the month, the comparison is
+      // over the days it covers, and the month's own total is said beside it
+      // (review 8): a whole month's km against part of a month's plan read
+      // as "160 of 114 km".
+      planCovers: (from: string, to: string) => `plan covers ${from} – ${to}`,
+      monthTotal: (km: string) => `${km} km this month`,
       nextKey: 'Next key session',
       weekLabel: (monday: string, km: string) => `Week of ${monday} · ${km}`,
     },

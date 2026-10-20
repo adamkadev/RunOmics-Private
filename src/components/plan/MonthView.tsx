@@ -122,23 +122,8 @@ function nextKeySession(
 
 const QUALITY_ORDER: ActivityType[] = ['Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint', 'Race']
 
-/**
- * A legend swatch, with the type's letter in it where the colour alone does
- * not tell them apart (review 10): VO2 Max, Sprint, Anaerobic and Race are
- * all zone 5, so the legend had three pink squares and no way to read which
- * was which. The zones are the app's one session scale, so the letter does
- * the telling rather than a sixth hue.
- */
-function Swatch({ style, letter }: { style: CSSProperties; letter?: string }) {
-  return (
-    <span
-      aria-hidden
-      className="box-border flex size-2.5 shrink-0 items-center justify-center rounded-[3px] text-[7px] font-bold leading-none"
-      style={{ color: 'var(--zone-ink)', ...style }}
-    >
-      {letter}
-    </span>
-  )
+function Swatch({ style }: { style: CSSProperties }) {
+  return <span aria-hidden className="box-border size-2.5 shrink-0 rounded-[3px]" style={style} />
 }
 
 export function MonthView({
@@ -162,7 +147,7 @@ export function MonthView({
   const spans = useMemo(() => planPhaseSpans(coaching, planPhaseRanges), [coaching, planPhaseRanges])
   const currentSpan = spanOfWeek(spans, isoDate(startOfWeek(new Date(`${today}T00:00:00`))))
 
-  const { rows, ranKm, plannedKm, qualityTypes, hasLong } = useMemo(() => {
+  const { rows, ranKm, plannedKm, planSpan, ranInPlanKm, qualityTypes, hasLong } = useMemo(() => {
     const first = new Date(year, month, 1)
     const startOffset = (first.getDay() || 7) - 1
     const daysInMonth = new Date(year, month + 1, 0).getDate()
@@ -220,8 +205,22 @@ export function MonthView({
         future: monday > today,
       })
     }
-    return { rows, ranKm, plannedKm, qualityTypes: QUALITY_ORDER.filter((type) => quality.has(type)), hasLong }
+    // The days the plan actually covers, and what was run over them: a plan
+    // that starts partway through the month is not something the whole
+    // month's km can be measured against (review 8).
+    const covered = rows.flatMap((row) => row.cells).filter((c) => !c.outside && c.planned !== null)
+    const firstPlanned = covered[0]
+    const lastPlanned = covered[covered.length - 1]
+    const ranInPlanKm = covered.reduce((sum, c) => sum + c.ranKm, 0)
+    const planSpan =
+      firstPlanned && lastPlanned && (firstPlanned.date > monthStart || lastPlanned.date < monthEnd)
+        ? { from: firstPlanned.date, to: lastPlanned.date }
+        : null
+    return { rows, ranKm, plannedKm, planSpan, ranInPlanKm, qualityTypes: QUALITY_ORDER.filter((type) => quality.has(type)), hasLong }
   }, [year, month, monthStart, monthEnd, byDate, byDatePlanned, byDateCoach, spans, today])
+
+  /** The km the plan's own days got, so the two sides of "of" are the same days. */
+  const againstPlanKm = planSpan === null ? ranKm : ranInPlanKm
 
   const phaseColor = (span: PhaseSpan | null) => (!span ? 'transparent' : span === currentSpan ? 'var(--accent)' : 'var(--zone-1)')
 
@@ -301,24 +300,26 @@ export function MonthView({
                       <span
                         data-testid="month-tile"
                         className={cn(
-                          'relative box-border flex h-[34px] w-full max-w-[40px] items-center justify-center rounded-[9px] text-xs font-semibold tabular-nums',
+                          'box-border flex h-[34px] w-full max-w-[40px] items-center justify-center rounded-[9px] text-xs font-semibold tabular-nums',
                           cell.state === 'missed' ? 'text-[var(--neg)]' : 'text-foreground',
                         )}
                         style={style ?? undefined}
                       >
-                        {/* The session's letter in the corner where the tile
-                            is a quality day (review 10): two tiles the same
-                            pink are a VO2 Max and a race otherwise. */}
-                        {style && cell.kind?.kind === 'quality' && (
-                          <span
-                            aria-hidden
-                            className="absolute right-[3px] top-[2px] text-[8px] font-bold leading-none"
-                            style={{ color: cell.kind.color }}
-                          >
-                            {kindLetter(cell.kind.type, cell.kind.kind)}
+                        {/* A quality day says which session it is (review
+                            10): VO2 Max, Sprint, Anaerobic and Race are all
+                            zone 5, so two tiles of the same pink are a race
+                            and a set of reps otherwise. The letter sits over
+                            the day's km, both at the type scale's floor. */}
+                        {style && cell.kind?.kind === 'quality' ? (
+                          <span className="flex flex-col items-center leading-none">
+                            <span className="text-[11px] font-bold" style={{ color: cell.kind.color }}>
+                              {kindLetter(cell.kind.type, cell.kind.kind)}
+                            </span>
+                            {figure && <span className="text-[11px] font-semibold">{figure}</span>}
                           </span>
-                        )}
-                        {style ? figure : null}
+                        ) : style ? (
+                          figure
+                        ) : null}
                       </span>
                     </span>
                   )
@@ -343,7 +344,7 @@ export function MonthView({
         </span>
         {qualityTypes.map((type) => (
           <span key={type} className="flex items-center gap-1.5">
-            <Swatch style={{ background: kindColor(type) }} letter={kindLetter(type, 'quality')} />
+            <Swatch style={{ background: kindColor(type) }} />
             {t.activityTypes[type]}
           </span>
         ))}
@@ -357,11 +358,21 @@ export function MonthView({
         <h2 className="text-[15px] font-semibold text-foreground">{monthName}</h2>
         {plannedKm > 0 && (
           <div aria-hidden className="h-2 overflow-hidden rounded-full bg-[var(--line-2)]">
-            <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.round((ranKm / plannedKm) * 100))}%` }} />
+            <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.round((againstPlanKm / plannedKm) * 100))}%` }} />
           </div>
         )}
-        <p className="text-xs text-muted-foreground">
-          {plannedKm > 0 ? m.kmOf(formatRanKm(ranKm), formatWeekKm(plannedKm)) : `${formatRanKm(ranKm)} ${t.units.km}`}
+        <p className="text-xs text-muted-foreground" data-testid="month-km">
+          {plannedKm > 0 ? m.kmOf(formatRanKm(againstPlanKm), formatWeekKm(plannedKm)) : `${formatRanKm(ranKm)} ${t.units.km}`}
+          {/* Where the plan is only part of the month, the ratio is over its
+              own days and the month's total is said beside it (review 8). */}
+          {plannedKm > 0 && planSpan !== null && (
+            <>
+              {' · '}
+              {m.planCovers(formatDate(planSpan.from, { style: 'bare', year: 'never' }), formatDate(planSpan.to, { style: 'bare', year: 'never' }))}
+              {' · '}
+              {m.monthTotal(formatRanKm(ranKm))}
+            </>
+          )}
         </p>
         {key && (
           <button

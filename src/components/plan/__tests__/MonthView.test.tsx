@@ -157,10 +157,8 @@ describe('the legend and the summary', () => {
   it('keys the kinds the month draws and the dashed planned tile, Easy and Long as one blue entry', () => {
     renderMonth()
 
-    // A quality swatch carries its letter, so three zone-5 entries are not
-    // three unreadable pink squares (review 10).
     expect(screen.getByTestId('month-legend').textContent).toBe(
-      [t.plan.month.easyLong, `${t.plan.typeLetters.Threshold}${t.activityTypes.Threshold}`, t.sessionState.planned].join(''),
+      [t.plan.month.easyLong, t.activityTypes.Threshold, t.sessionState.planned].join(''),
     )
     expect(screen.getByTestId('legend-easy').querySelector<HTMLElement>('span')!.style.background).toBe('var(--zone-2)')
   })
@@ -171,6 +169,20 @@ describe('the legend and the summary', () => {
     const summary = screen.getByTestId('month-summary')
     expect(summary.textContent).toContain(t.plan.month.kmOf('18', '53'))
     expect(summary.textContent).not.toContain(t.plan.month.phaseWeek(t.plan.weekPurpose.planPhase.build, 2, 6))
+  })
+
+  // Review 8: a whole month's km against a plan that covers 13-25 Oct read
+  // as "160 of 114 km". The ratio is over the plan's own days, and the
+  // month's total is said beside it.
+  it('compares the plan’s own days, and says the month’s total beside them', () => {
+    renderMonth()
+
+    const km = screen.getByTestId('month-km').textContent!
+    expect(km).toContain(t.plan.month.kmOf('18', '53'))
+    expect(km).toContain(
+      t.plan.month.planCovers(formatDate('2026-10-13', { style: 'bare', year: 'never' }), formatDate('2026-10-25', { style: 'bare', year: 'never' })),
+    )
+    expect(km).toContain(t.plan.month.monthTotal('18'))
   })
 
   it('opens the next key session in the Week view', () => {

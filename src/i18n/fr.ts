@@ -2027,6 +2027,8 @@ export const fr = {
       easyLong: 'Footing / Sortie longue',
       phaseWeek: (phase: string, n: number, total: number) => `${phase} · semaine ${n} sur ${total}`,
       kmOf: (ran: string, plan: string) => `${ran} sur ${plan} km`,
+      planCovers: (from: string, to: string) => `le plan couvre du ${from} au ${to}`,
+      monthTotal: (km: string) => `${km} km ce mois-ci`,
       nextKey: 'Prochaine séance clé',
       weekLabel: (monday: string, km: string) => `Semaine du ${monday} · ${km}`,
     },
