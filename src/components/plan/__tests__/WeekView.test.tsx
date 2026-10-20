@@ -193,13 +193,14 @@ describe('the day selector', () => {
   it('draws each day as a bar as long as its km, in its colour, and rest as a stub', () => {
     renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 }] })
 
-    expect(bar('2026-09-07').style.height).toBe(`${Math.round(4.79 * 3.2)}px`)
+    // App Fixes 3b: 5 px a km in a 70 px track, the long run capped at 68 px.
+    expect(bar('2026-09-07').style.height).toBe(`${Math.round(4.79 * 5)}px`)
     expect(bar('2026-09-07').style.background).toBe('var(--zone-3)')
-    expect(bar('2026-09-12').style.height).toBe(`${Math.round(18 * 3.2)}px`)
+    expect(bar('2026-09-12').style.height).toBe('68px')
     // The long run shares the easy blue (3.0.2).
     expect(bar('2026-09-12').style.background).toBe('var(--zone-2)')
     expect(bar('2026-09-10').getAttribute('data-bar-state')).toBe('rest')
-    expect(bar('2026-09-10').style.height).toBe('4px')
+    expect(bar('2026-09-10').style.height).toBe('5px')
   })
 
   it('names each day by its session letter, a dash on a rest day', () => {
@@ -210,11 +211,12 @@ describe('the day selector', () => {
     expect(day('2026-09-10').textContent).toContain('–')
   })
 
-  it('draws a missed session as an outline in the negative status', () => {
+  // Wave 5: amber, as on Today.
+  it('draws a missed session as a dashed amber outline', () => {
     renderWeek({ planned: [{ date: '2026-09-08', name: 'Easy', type: 'Base', distanceM: 8_000 }] })
 
     expect(bar('2026-09-08').getAttribute('data-bar-state')).toBe('missed')
-    expect(bar('2026-09-08').className).toContain('border-[var(--neg)]')
+    expect(bar('2026-09-08').className).toContain('border-[var(--warn)]')
   })
 
   it('selects a day on tap', async () => {

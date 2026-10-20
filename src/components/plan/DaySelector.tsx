@@ -18,12 +18,16 @@ export interface SelectorDay {
   isToday: boolean
 }
 
-/** Each km is 3.2 px of bar (redesign 3.0, 1d), up to the tallest a phone row holds. */
-const PX_PER_KM = 3.2
-const MAX_BAR_PX = 96
+/**
+ * Each km is 5 px of a 20 px wide bar in a 70 px track (App Fixes 3b): an
+ * easy 10 km stands 50 px, a long run fills the track.
+ */
+const PX_PER_KM = 5
+const TRACK_PX = 70
+const MAX_BAR_PX = 68
 /** A session with no distance, or a very short one, still reads as a bar. */
 const MIN_BAR_PX = 14
-const STUB_PX = 4
+const STUB_PX = 5
 
 export function barHeight(day: Pick<SelectorDay, 'state' | 'km'>): number {
   if (day.state === 'rest') return STUB_PX
@@ -46,7 +50,6 @@ export function DaySelector({
   selectedDate: string
   onSelect: (date: string) => void
 }) {
-  const track = Math.max(20, ...days.map(barHeight))
 
   return (
     <div role="group" aria-label={t.plan.daySelector} className="grid grid-cols-7 gap-1" data-testid="day-selector">
@@ -61,22 +64,23 @@ export function DaySelector({
             aria-pressed={selected}
             data-testid={`day-${day.date}`}
             className={cn(
-              'mx-auto flex w-full max-w-[44px] flex-col items-center gap-1 rounded-2xl border py-2 transition-[background-color,transform] active:scale-95',
-              selected ? 'border-[var(--line-2)] bg-[var(--surface-2)]' : 'border-transparent',
+              'flex w-full flex-col items-center gap-1.5 rounded-2xl border-[1.5px] py-2 transition-[background-color,transform] active:scale-95',
+              selected && !day.isToday ? 'border-[var(--line-2)] bg-[var(--surface-2)]' : 'border-transparent',
+              // Today is a ring and its date in the accent, never a fill (App Fixes 5a).
               day.isToday && 'border-accent',
             )}
           >
-            <span className="text-[11px] leading-none text-muted-foreground">{(t.plan.weekdays[i] ?? '').slice(0, 1)}</span>
-            <span className={cn('text-base font-semibold leading-tight tabular-nums', day.isToday ? 'text-accent-text' : 'text-foreground')}>
+            <span className="text-xs leading-none text-muted-foreground">{(t.plan.weekdays[i] ?? '').slice(0, 1)}</span>
+            <span className={cn('text-lg font-semibold leading-tight tabular-nums', day.isToday ? 'text-accent-text' : 'text-foreground')}>
               {Number(day.date.slice(8))}
             </span>
-            <span className="mt-1 flex items-end" style={{ height: track }}>
+            <span className="flex items-end" style={{ height: TRACK_PX }}>
               <span
                 data-bar-state={day.state}
                 className={cn(
-                  'box-border block w-3.5 rounded-[5px]',
-                  day.state === 'rest' && 'bg-[var(--line-2)]',
-                  day.state === 'missed' && 'border-[1.5px] border-dashed border-[var(--neg)]',
+                  'box-border block w-5',
+                  day.state === 'rest' ? 'rounded-[3px] bg-[var(--rest-bar)]' : 'rounded-[7px]',
+                  day.state === 'missed' && 'border-[1.5px] border-dashed border-[var(--warn)]',
                 )}
                 style={{
                   height: barHeight(day),
@@ -86,7 +90,7 @@ export function DaySelector({
             </span>
             <span
               aria-hidden
-              className="text-[11px] font-semibold leading-none tracking-[0.04em]"
+              className="text-xs font-semibold leading-none tracking-[0.04em]"
               style={{ color: day.letter ? (day.color ?? 'var(--muted-foreground)') : 'var(--muted-foreground)' }}
             >
               {day.letter ?? '–'}
