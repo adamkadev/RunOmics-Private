@@ -899,9 +899,11 @@ export const en = {
         // broken over two lines in a column three wide.
         underWeek: (when: string) => `km ${when.toLocaleLowerCase('en')}`,
         underWeekOfPlan: (km: string, when: string) => `of ${km} km ${when.toLocaleLowerCase('en')}`,
-        underAvg: (n: number) => (n >= 52 ? 'km/week · 1-yr avg' : `km/week · ${n}-wk avg`),
+        // A non-breaking hyphen and space: the label is two words, and
+        // "12-" on one line over "wk avg" on the next is neither.
+        underAvg: (n: number) => (n >= 52 ? 'km/week · 1\u2011yr\u00a0avg' : `km/week · ${n}\u2011wk\u00a0avg`),
         underOnPlan: 'weeks on plan',
-        underOnPlanOf: (n: number) => `of ${n} weeks on plan`,
+        underOnPlanOf: (n: number) => `of ${n} week${n === 1 ? '' : 's'} on plan`,
         done: 'Done',
         plan: 'Plan',
       },

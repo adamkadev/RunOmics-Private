@@ -403,7 +403,7 @@ describe('Analytics (v4.5)', () => {
     expect(current.style.background).toMatch(/var\(--accent\)/)
     expect(current.style.outline).toBe('1.5px dashed var(--accent)')
     // The one weekly average, as a stat with its unit.
-    expect(screen.getByTestId('weekly-card').textContent).toContain('26km/week · 12-wk avg')
+    expect(screen.getByTestId('weekly-card').textContent).toContain(`26${t.analytics.cards.weekly.underAvg(12)}`)
     // This week, dashed in the one "this week" style and never flagged over:
     // its first runs are all of its distance so far.
     const longRun = screen.getByTestId('long-run-bars').querySelector<HTMLElement>('[data-current]')!
