@@ -9,7 +9,7 @@ import { deltaColor, deltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { t } from '@/i18n'
-import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, STAT_TONE, Sentence, linePath } from './AnalyticsKit'
+import { AxisLabels, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, STAT_TONE, Sentence, linePath } from './AnalyticsKit'
 import {
   efficiencyView,
   heatView,
@@ -447,6 +447,9 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   )
 }
 
+/** A cost under this many seconds a km is noise, and goes unsaid. */
+const COST_WORTH_SAYING = 5
+
 /** A heat loss past this many seconds a km is worth a caution; less stays muted. */
 export const HEAT_WARN_SEC = 10
 
@@ -477,8 +480,8 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
         {(() => {
           // App Fixes 2b: the best band, then the cold cost and the warm one.
           const best = view.rows.find((row) => row.best)
-          const cold = view.cold !== null && view.cold >= 5 ? view.cold : null
-          const warm = view.warm !== null && view.warm.hi >= 5 ? range : null
+          const cold = view.cold !== null && view.cold >= COST_WORTH_SAYING ? view.cold : null
+          const warm = view.warm !== null && view.warm.hi >= COST_WORTH_SAYING ? range : null
           if (view.warm === null && view.cold === null) return <Sentence>{s.noWarm}</Sentence>
           if (cold === null && warm === null) return <Sentence>{s.little}</Sentence>
           const bold = ([a, b, c]: [string, string, string]) => (

@@ -4,6 +4,7 @@ import {
   computeYearOutcome,
   computeNextRaceSpotlight, nextRaceAcrossYears,
   computeMonthlyGoals,
+  plannedKmByMonth,
 } from '../GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
 import type { GoalYear, YearData, UpcomingRace, GoalRacePrediction } from '../GetGoalsData'
@@ -250,10 +251,30 @@ describe('computeMonthlyGoals', () => {
     expect(Math.round(september.progress!.proRataTargetKm)).toBe(89)
   })
 
-  // 3.1: one target line on the chart, so one target for every month.
-  it('asks a twelfth of the year of every month', () => {
+  // 3.1: with no plan behind the year, one target line on the chart, so one
+  // target for every month.
+  it('asks a twelfth of the year of every month without a plan', () => {
     const months = computeMonthlyGoals([], 2024, goal(2000))
     expect(new Set(months.map((mg) => mg.targetKm))).toEqual(new Set([166.7]))
+  })
+
+  // App Fixes 3c: Goals read a twelfth of the year while Plan had 226 km in
+  // October, and the two disagreed about the same month.
+  it('takes a month\'s target from the plan where the plan covers it', () => {
+    const planned = plannedKmByMonth([
+      { date: '2024-10-01', distanceM: 120_000 },
+      { date: '2024-10-15', distanceM: 106_000 },
+      { date: '2024-11-02', distanceM: 10_000 },
+    ])
+    const months = computeMonthlyGoals([], 2024, goal(2000), new Date('2024-09-16T12:00:00'), planned)
+    expect(months[9]!.targetKm).toBe(226)
+    expect(months[10]!.targetKm).toBe(10)
+    // A month the plan says nothing about keeps the twelfth.
+    expect(months[0]!.targetKm).toBe(166.7)
+  })
+
+  it('counts only planned sessions that carry a distance', () => {
+    expect(plannedKmByMonth([{ date: '2024-10-01' }, { date: '2024-10-02', distanceM: 8_000 }]).get('2024-10')).toBe(8)
   })
 
   it('leaves finished and future months with nothing to pro-rate', () => {

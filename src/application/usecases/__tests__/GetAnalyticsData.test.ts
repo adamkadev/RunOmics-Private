@@ -232,6 +232,8 @@ describe('buildWeeklyTrends', () => {
   })
 })
 
+// App Fixes 2b: a quality week's pace is its hard reps, not the session
+// around them - a longer warm-up used to read as a slower "workout pace".
 describe('computeTotals', () => {
   it('sums distance, duration, elevation and calories', () => {
     const acts = [

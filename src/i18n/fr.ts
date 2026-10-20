@@ -823,7 +823,7 @@ export const fr = {
       paceTrend: {
         title: 'Tendance d’allure',
         caption: 'moyenne hebdo · plus haut = plus rapide',
-        about: "L’allure moyenne de la semaine en footing et en séance (toute sortie qui n’est pas facile). Plus rapide en haut.",
+        about: "L’allure moyenne de la semaine en footing, et celle des répétitions dures de tes séances - l’échauffement, les récups et le retour au calme sont exclus. Plus rapide en haut.",
         easyFaster: (s: string) => ['Les footings ont gagné ', `${s}/km`, '.'] as [string, string, string],
         easySlower: (s: string) => ['Les footings ont perdu ', `${s}/km`, '.'] as [string, string, string],
         easyHeld: ['L’allure facile est ', 'stable', '.'] as [string, string, string],
@@ -855,7 +855,8 @@ export const fr = {
         caption: (hr: number) => `allure à ${hr} bpm, face à ta meilleure tranche`,
         about: "Ton allure de footing à fréquence cardiaque égale, selon la température ressentie. Chaque barre est le nombre de secondes par km que tu perds face à ta meilleure tranche de température.",
         lose: (range: string) => ['Au-dessus de 20 °C, tu perds ', `${range} s/km`, ' à FC égale.'] as [string, string, string],
-        little: 'La chaleur t’a peu coûté jusqu’ici : moins de 5 s/km à FC égale.',
+        cold: (cost: number) => ['En dessous de 5 °C, tu perds ', `${cost} s/km`, ' à FC égale.'] as [string, string, string],
+        little: 'La température t’a peu coûté jusqu’ici : moins de 5 s/km à FC égale.',
         noWarm: 'Pas encore de footing au-dessus de 20 °C pour mesurer le coût de la chaleur.',
         best: 'meilleure',
         noRuns: 'aucune sortie',
@@ -1581,6 +1582,7 @@ export const fr = {
     monthlyVolume: {
       title: 'Volume mensuel',
       target: (km: string) => `objectif ${km} km`,
+      targetFromPlan: 'objectif issu de ton plan',
       hit: 'atteint',
       short: 'manqué',
       running: (month: string, km: string, pace: string) => `${month} · ${km}, ${pace}`,
@@ -1913,8 +1915,7 @@ export const fr = {
         'out-back': (place: string) => `Aller-retour ${place}`,
         point: (place: string) => `Vers ${place}`,
       },
-      rename: 'Renommer le parcours',
-      renameHint: 'Laisser vide pour garder le nom du lieu',
+      rename: 'Renommer ce parcours',
     },
     milestones: {
       nextUp: 'Prochaines étapes',

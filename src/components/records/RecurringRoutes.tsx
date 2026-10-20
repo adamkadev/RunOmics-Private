@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -8,6 +8,8 @@ import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import { formatClock, formatDate, formatKm, formatMonthShortYear } from '@/lib/formatters'
 import { reverseGeocode } from '@/lib/reverseGeocode'
 import { useAccent } from '@/lib/useAccent'
+import { useOwnerAuth } from '@/lib/useOwnerAuth'
+import { readRouteNames, routeKey, writeRouteName, ROUTE_NAME_MAX_LENGTH } from '@/lib/routeNames'
 import { t } from '@/i18n'
 import { cardClass } from '@/components/ui/Card'
 import { formatGap, routeLatest, trailBars, type TrailTone } from './recordsView'
@@ -159,70 +161,83 @@ function usePlaceNames(routes: RecurringRoute[]): Record<string, string> {
   return places
 }
 
-/** The reader's own route names, kept on this device, by the route's first run. */
-const ROUTE_NAMES_KEY = 'runomics-route-names'
+/** The names the athlete gave their routes, by route key (App Fixes 1g). */
+function useRouteNames(): { names: Map<string, string>; save: (key: string, name: string) => Promise<void> } {
+  const [names, setNames] = useState<Map<string, string>>(new Map())
 
-function routeKey(route: RecurringRoute): string {
-  return route.runs[0]?.activityId ?? route.id
-}
+  useEffect(() => {
+    let live = true
+    readRouteNames().then((saved) => {
+      if (live) setNames(saved)
+    })
+    return () => {
+      live = false
+    }
+  }, [])
 
-function readRouteNames(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem(ROUTE_NAMES_KEY)
-    return raw ? (JSON.parse(raw) as Record<string, string>) : {}
-  } catch {
-    return {}
-  }
-}
-
-function useRouteNames(): [Record<string, string>, (key: string, name: string) => void] {
-  const [names, setNames] = useState<Record<string, string>>({})
-  useEffect(() => setNames(readRouteNames()), [])
-  const rename = (key: string, name: string) => {
-    setNames((prev) => {
-      const next = { ...prev }
-      if (name.trim()) next[key] = name.trim()
-      else delete next[key]
-      try {
-        localStorage.setItem(ROUTE_NAMES_KEY, JSON.stringify(next))
-      } catch {
-        // The name still shows until the page reloads.
-      }
+  const save = useCallback(async (key: string, name: string) => {
+    await writeRouteName(key, name)
+    setNames((held) => {
+      const next = new Map(held)
+      const trimmed = name.trim()
+      if (trimmed === '') next.delete(key)
+      else next.set(key, trimmed.slice(0, ROUTE_NAME_MAX_LENGTH))
       return next
     })
-  }
-  return [names, rename]
+  }, [])
+
+  return { names, save }
 }
 
-/** The route's name; a tap turns it into a field to rename it, empty to go back to the place. */
-function RouteName({ name, custom, onRename }: { name: string; custom: string | undefined; onRename: (name: string) => void }) {
+/** The owner's rename, in place: tap the name, type, Enter or blur to save. */
+function RouteName({ name, onRename }: { name: string; onRename: ((name: string) => Promise<void>) | null }) {
   const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(name)
+
+  if (!onRename) {
+    return (
+      <p className="truncate text-subhead font-semibold text-foreground" data-testid="route-name">
+        {name}
+      </p>
+    )
+  }
+
+  async function commit() {
+    setEditing(false)
+    if (draft.trim() !== name) await onRename!(draft)
+  }
+
   if (editing) {
     return (
       <input
         autoFocus
-        defaultValue={custom ?? name}
+        value={draft}
+        maxLength={ROUTE_NAME_MAX_LENGTH}
         aria-label={t.records.recurring.rename}
-        placeholder={t.records.recurring.renameHint}
-        data-testid="route-name-input"
-        className="w-full rounded-md bg-[var(--surface-2)] px-1.5 py-0.5 text-[15px] font-semibold text-foreground outline-none"
-        onBlur={(e) => {
-          onRename(e.currentTarget.value)
-          setEditing(false)
-        }}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur()
-          if (e.key === 'Escape') setEditing(false)
+          if (e.key === 'Enter') void commit()
+          if (e.key === 'Escape') {
+            setDraft(name)
+            setEditing(false)
+          }
         }}
+        className="w-full min-w-0 rounded-md bg-[var(--surface-2)] px-1 text-subhead font-semibold text-foreground outline-none"
+        data-testid="route-name-input"
       />
     )
   }
+
   return (
     <button
       type="button"
-      onClick={() => setEditing(true)}
-      aria-label={`${name} · ${t.records.recurring.rename}`}
-      className="block w-full truncate text-left text-[15px] font-semibold text-foreground"
+      onClick={() => {
+        setDraft(name)
+        setEditing(true)
+      }}
+      title={t.records.recurring.rename}
+      className="block w-full min-w-0 truncate text-left text-subhead font-semibold text-foreground"
       data-testid="route-name"
     >
       {name}
@@ -232,7 +247,8 @@ function RouteName({ name, custom, onRename }: { name: string; custom: string | 
 
 export function RecurringRoutes({ routes, thisYear }: Props) {
   const places = usePlaceNames(routes)
-  const [names, rename] = useRouteNames()
+  const { names, save } = useRouteNames()
+  const { isOwner } = useOwnerAuth()
   const monoAccent = useAccent() === 'mono'
   const [all, setAll] = useState(false)
 
@@ -249,18 +265,14 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
       <ul className={cardClass({ padding: 'none', className: 'px-4 py-0.5' })}>
         {shown.map((route, i) => {
           const key = routeKey(route)
-          const custom = names[key]
+          const custom = key ? names.get(key) : undefined
           return (
             <li
               key={route.id}
               className="grid grid-cols-[minmax(0,1fr)_74px] items-center gap-2.5 border-b border-border py-3 last:border-b-0"
             >
               <div data-testid="route-text" className="flex min-w-0 flex-col gap-0.5">
-                <RouteName
-                  name={custom ?? places[route.id] ?? t.records.recurring.unnamed(i + 1)}
-                  custom={custom}
-                  onRename={(name) => rename(key, name)}
-                />
+                <RouteName name={custom ?? places[route.id] ?? t.records.recurring.unnamed(i + 1)} onRename={isOwner && key ? (name) => save(key, name) : null} />
                 {/* The distance leads, so similar loops tell apart. */}
                 <p className="truncate text-[12.5px] text-muted-foreground">
                   {routeKm(route.distanceKm)} {t.units.km} · {t.records.recurring.runCount(route.runCount)}

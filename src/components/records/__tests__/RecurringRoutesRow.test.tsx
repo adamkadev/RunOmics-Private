@@ -2,11 +2,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
 import { RecurringRoutes } from '../RecurringRoutes'
 import { TRAIL_RUNS } from '../recordsView'
+import { routeKey } from '@/lib/routeNames'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import { t } from '@/i18n'
 
 const geocode = vi.hoisted(() => ({ name: null as string | null }))
 vi.mock('@/lib/reverseGeocode', () => ({ reverseGeocode: async () => geocode.name }))
+const saved = vi.hoisted(() => ({ names: new Map<string, string>() }))
+vi.mock('@/lib/routeNames', async (actual) => ({ ...(await actual<typeof import('@/lib/routeNames')>()), readRouteNames: async () => saved.names }))
 
 const runs = (n: number) =>
   Array.from({ length: n }, (_, i) => ({ activityId: `a${i}`, date: '2026-01-01', paceSecPerKm: 280 + (i % 7) }))
@@ -88,11 +91,13 @@ describe('RecurringRoutes row', () => {
     expect(await screen.findByText(t.records.recurring.named.loop('Moselle riverside'))).toHaveAttribute('data-testid', 'route-name')
   })
 
-  it('keeps a name the reader gave the route', () => {
-    localStorage.setItem('runomics-route-names', JSON.stringify({ a0: 'Home loop' }))
-    render(<RecurringRoutes routes={[route(5)]} thisYear={2026} />)
-    expect(screen.getByTestId('route-name').textContent).toBe('Home loop')
-    localStorage.removeItem('runomics-route-names')
+  // Stored against the route's own shape (lib/routeNames), not its place in the list.
+  it('keeps a name the athlete gave the route', async () => {
+    const named = { ...route(5), start: [6.17, 49.12] as [number, number], far: [6.18, 49.13] as [number, number] }
+    saved.names = new Map([[routeKey(named)!, 'Home loop']])
+    render(<RecurringRoutes routes={[named]} thisYear={2026} />)
+    expect(await screen.findByText('Home loop')).toHaveAttribute('data-testid', 'route-name')
+    saved.names = new Map()
   })
 
   // Final mockups (3.1.0): "best 5:07 · last 5:19 +12s", the gap in amber.

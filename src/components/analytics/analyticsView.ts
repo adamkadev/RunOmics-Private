@@ -456,6 +456,8 @@ export function rpeView(allWeeks: WeeklyTrendPoint[], end: string): RpeView | nu
 
 export const HEAT_BAND_ORDER: HeatBandId[] = ['cold', 'cool', 'mild', 'warm', 'hot']
 const WARM_BANDS: HeatBandId[] = ['warm', 'hot']
+/** Cold costs pace too (App Fixes 2b), so the card names both ends. */
+const COLD_BANDS: HeatBandId[] = ['cold']
 
 export interface HeatRow {
   id: HeatBandId
@@ -486,7 +488,7 @@ export function heatView(data: HeatImpactData | null): HeatView | null {
     refHeartRate: data.refHeartRate,
     rows,
     warm: warmCosts.length ? { lo: Math.min(...warmCosts), hi: Math.max(...warmCosts) } : null,
-    cold: rows.find((r) => r.id === 'cold')?.cost ?? null,
+    cold: known(rows.filter((r) => COLD_BANDS.includes(r.id)).map((r) => r.cost)).at(0) ?? null,
     scale: Math.max(20, ...known(rows.map((r) => r.cost))),
   }
 }

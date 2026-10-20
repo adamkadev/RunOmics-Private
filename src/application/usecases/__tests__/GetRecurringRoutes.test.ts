@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { clusterByRoute } from '../GetRecurringRoutes'
+import { clusterByRoute, farthestPoint } from '../GetRecurringRoutes'
 import type { Activity } from '@/domain/activity/types'
 
 const trace = (cells: number, lane = 0) =>
@@ -42,5 +42,25 @@ describe('clusterByRoute', () => {
     ])
 
     expect(clusters[0]?.runs).toHaveLength(3)
+  })
+})
+
+// App Fixes 1g: a route is named after where it goes, so it has to know
+// which point that is - a loop's far side, an out-and-back's turnaround.
+describe('farthestPoint', () => {
+  it('finds the turnaround of an out-and-back', () => {
+    const out: [number, number][] = [[6.1, 49.6], [6.11, 49.6], [6.12, 49.6], [6.11, 49.6], [6.1, 49.6]]
+    expect(farthestPoint(out)).toEqual([6.12, 49.6])
+  })
+
+  it('counts east-west and north-south alike', () => {
+    // At 49.6°N a degree of longitude is about two thirds of a degree of
+    // latitude, so the shorter-looking northward leg is the farther one.
+    const loop: [number, number][] = [[6.1, 49.6], [6.113, 49.6], [6.1, 49.61]]
+    expect(farthestPoint(loop)).toEqual([6.1, 49.61])
+  })
+
+  it('has nothing to name without a route', () => {
+    expect(farthestPoint([])).toBeNull()
   })
 })

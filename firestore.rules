@@ -24,6 +24,23 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    function isWellFormedRouteName() {
+      return request.resource.data.keys().hasOnly(['name'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 80;
+    }
+
+    // The names the athlete gave their recurring routes (App Fixes 1g).
+    // The owner's alone: nothing else reads or writes them.
+    match /routeNames/{routeKey} {
+      allow get: if isOwner();
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && isWellFormedRouteName();
+      allow delete: if isOwner();
+    }
+
     match /pushTokens/{token} {
       allow write: if isOwner();
     }

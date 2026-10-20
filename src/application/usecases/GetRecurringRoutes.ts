@@ -12,10 +12,9 @@ export interface RouteRun {
 export interface RecurringRoute {
   id: string
   /**
-   * Where the route starts, for naming it after a place. The runs' own titles
-   * name the session - "Seuil", "1 h endurance" - so two routes that share a
-   * workout type end up sharing a name while two names for one route are a
-   * coin toss.
+   * Where the route starts. The runs' own titles name the session - "Seuil",
+   * "1 h endurance" - so two routes that share a workout type end up sharing
+   * a name while two names for one route are a coin toss.
    */
   start: Coord | null
   /**
@@ -42,7 +41,7 @@ const POINT_TO_POINT_KM = 0.4
 /** Halves that share this much of their ground retrace each other. */
 const RETRACE_OVERLAP = 0.6
 
-export function farthestPoint(route: Coord[]): Coord | null {
+export function farthestPoint(route: readonly Coord[]): Coord | null {
   const start = route[0]
   if (!start) return null
   let far = start
@@ -57,7 +56,7 @@ export function farthestPoint(route: Coord[]): Coord | null {
   return far
 }
 
-export function routeShape(route: Coord[]): RouteShape {
+export function routeShape(route: readonly Coord[]): RouteShape {
   const start = route[0]
   const end = route[route.length - 1]
   if (!start || !end) return 'loop'
@@ -105,6 +104,7 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
 
   const best = timed.reduce((fastest, a) => (a.paceSecPerKm! < fastest.paceSecPerKm! ? a : fastest), latest)
 
+  const route = latest.route as Coord[]
   return {
     id: `${index}`,
     start: (latest.route as Coord[])[0] ?? null,

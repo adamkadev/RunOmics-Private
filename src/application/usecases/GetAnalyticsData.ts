@@ -159,6 +159,7 @@ export function avgField(activities: Activity[], pick: (a: Activity) => number |
 }
 
 const weightedPace = (acts: Activity[]) => weightedAvg(acts, (a) => a.paceSecPerKm, (a) => a.distanceKm, 0)
+
 const weightedHr = (acts: Activity[]) => weightedAvg(acts, (a) => a.avgHeartRate, (a) => a.durationSeconds, 0)
 const weightedCadence = (acts: Activity[]) => weightedAvg(acts, (a) => a.cadenceSpm, (a) => a.durationSeconds)
 const weightedGroundContact = (acts: Activity[]) => weightedAvg(acts, (a) => a.groundContactMs, (a) => a.durationSeconds, 0)
