@@ -5,10 +5,13 @@ Code: `RunOmics-Private` @ `1a08065` (v3.1.0), branch `claude/new-session-2hfk2x
 
 Size key: **S** one file / copy-level · **M** a few components or a view · **L** new data plumbing or many screens.
 
-> **Status.** Every item below was implemented on this branch; the per-badge
-> rows are kept as the record of what the code looked like before. What was
-> decided along the way, and the three places the result deviates from the
-> mockups, is at the foot of this file.
+> **Status.** Waves 1 to 3 below are implemented on this branch; the
+> per-badge rows are kept as the record of what the code looked like before.
+> **Wave 4** - rep pace (2b), the temperature cost's cold end (2b), the
+> plan-based monthly target (3c) and route naming (1g) - is on
+> `claude/wave-4`, to be reviewed against real data and its Firestore rules
+> before it lands. What was decided along the way is at the foot of this
+> file.
 
 ---
 
@@ -206,7 +209,7 @@ work was asked for in full rather than item by item.
    The chart keeps its single dashed rule only while every month asks the
    same; where the plan sets each month's target, every bar carries its own
    tick, and the caption says "target from your plan". A year with no plan
-   behind it reads exactly as before.
+   behind it reads exactly as before. *(On `claude/wave-4`.)*
 3. **Zone table (1e).** The table keeps Zone, Pace, HR and Time. The share
    left the bar, where a 1 % zone had no room to print it, and reads small
    after the zone's time - "4h58 · 27%".
@@ -231,5 +234,5 @@ chart's pace line is a fixed blue, never the accent, so there is no clash to
 swap. The white-accent half of the rule - the routes "latest" bar as an
 outline - is implemented.
 
-Everything else follows the badges as written. `npm run verify` is green and
-`next build` succeeds.
+Everything else in waves 1 to 3 follows the badges as written. `npm run
+verify` is green and `next build` succeeds.

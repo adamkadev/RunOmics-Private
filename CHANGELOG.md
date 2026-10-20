@@ -5,6 +5,9 @@ All notable changes to this project are documented in this file.
 ## [Unreleased]
 
 The 3.1 handoff's audit pass (App Fixes), worked through badge by badge.
+The four items that need new data - rep pace, the temperature cost's cold
+end, the plan-based monthly target and route naming - are on their own
+branch, for review against real data.
 
 ### Today and Analytics agree
 
@@ -18,9 +21,6 @@ The 3.1 handoff's audit pass (App Fixes), worked through badge by badge.
 - The read says why the watch still reads "Productive" while the load is
   low - it looks at 28 days (2a).
 - A resting HR below its baseline is no longer flagged as a dip (2a).
-- Rep pace replaces "workout pace": the work intervals alone, not the
-  warm-up and recoveries around them (2b).
-- "Heat cost" is "Temperature cost", and says what the cold costs too (2b).
 - Quality sessions are done, extra and missed; a window with weeks missed
   says so instead of reading as on target (2d).
 - Weekly distance: the number leads with its unit and name under it,
@@ -42,9 +42,6 @@ The 3.1 handoff's audit pass (App Fixes), worked through badge by badge.
 - Activities: a bar names what a filtered list's totals count, the long
   run is a filter of its own, and a workout row leads with its date
   (1d, 3d).
-- Goals: a month the plan covers takes the plan's own km as its target
-  (3c).
-- Records: routes are named after where they go, and can be renamed (1g).
 
 ### Everywhere
 
