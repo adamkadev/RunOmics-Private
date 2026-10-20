@@ -5,6 +5,11 @@ Code: `RunOmics-Private` @ `1a08065` (v3.1.0), branch `claude/new-session-2hfk2x
 
 Size key: **S** one file / copy-level · **M** a few components or a view · **L** new data plumbing or many screens.
 
+> **Status.** Every item below was implemented on this branch; the per-badge
+> rows are kept as the record of what the code looked like before. What was
+> decided along the way, and the three places the result deviates from the
+> mockups, is at the foot of this file.
+
 ---
 
 ## Rules (App Fixes, cards 01–04)
@@ -186,3 +191,40 @@ Workout types and zones take `zoneColor` / `ZONE_HEX`, chart series take fixed `
 19. 2b "Rep pace" from hard reps only; "Temperature cost" with the cold side.
 20. 3c plan-based monthly target.
 21. 1g route naming by destination + user renames (new persisted store).
+
+---
+
+## What shipped, and the calls made along the way
+
+The four questions the audit raised were answered as follows, since the
+work was asked for in full rather than item by item.
+
+1. **Tokens.** The app's v4.17 token system stays; the mockups' layout and
+   copy were followed, not their hexes. Recreating the 3.0 table literally
+   would undo the light-mode contrast work.
+2. **Monthly target (3c).** A month the plan covers takes the plan's own km.
+   The chart keeps its single dashed rule only while every month asks the
+   same; where the plan sets each month's target, every bar carries its own
+   tick, and the caption says "target from your plan". A year with no plan
+   behind it reads exactly as before.
+3. **Zone table (1e).** The share became a column, as the mockup has it. The
+   pace column did not leave: each zone's range reads under its name, so the
+   table matches the mockup's four columns without dropping data the app
+   had. Reversible in one component if you want the mockup exactly.
+4. **Device brands.** Every user-visible string says "your watch". The three
+   rows that open the watch's own app (shoes, height and weight) keep their
+   link and drop the brand from the words - "change it in your watch's app".
+
+Two further deviations worth knowing:
+
+- **The Form dial stays on Today.** Mockup 1a draws the hero without it, but
+  its note asks only for the load number to agree with Analytics, so the
+  dial was kept and the load ratio tile moved to Analytics' load story
+  instead (2a). Today now reads Form on the dial, Fitness and Fatigue on two
+  tiles, and the load on the strip.
+- **"Easy" in the filter sheet now excludes long runs**, because the long
+  run is a row of its own beside it; the Easy *chip* still covers both, as
+  the handoff's grouping has it.
+
+Everything else follows the badges as written. `npm run verify` is green and
+`next build` succeeds.

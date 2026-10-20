@@ -2,6 +2,64 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+The 3.1 handoff's audit pass (App Fixes), worked through badge by badge.
+
+### Today and Analytics agree
+
+- Today's status line and its load strip read the seven-day load against
+  the safe range from the pair Analytics plots, and the line turns amber
+  when the load is outside it (1a).
+- The coach read's arrow follows the number and its colour says whether
+  that is good news: "Fatigue 48, down 23" used to point up (1b).
+- The load ratio left Injury risk for the Load trend card, beside the
+  load it is made of; under 0.8 is detraining, not an injury (2a).
+- The read says why the watch still reads "Productive" while the load is
+  low - it looks at 28 days (2a).
+- A resting HR below its baseline is no longer flagged as a dip (2a).
+- Rep pace replaces "workout pace": the work intervals alone, not the
+  warm-up and recoveries around them (2b).
+- "Heat cost" is "Temperature cost", and says what the cold costs too (2b).
+- Quality sessions are done, extra and missed; a window with weeks missed
+  says so instead of reading as on target (2d).
+- Weekly distance: the number leads with its unit and name under it,
+  "below plan" and "unplanned" have a swatch each, and a missed week has
+  its own dashed outline (1f, 2c).
+
+### Progress, Plan and Activities
+
+- The Progress hub previews its pages: Goals & season instead of a second
+  distance chart, the weekly streak instead of a daily heatmap, and VO₂
+  max as a line of the Records card (1h).
+- Athlete & zones: each zone's share is a column of the table, with its
+  pace under its name; the VO₂ ranking is the grade's own band (1e).
+- A planned session of one step drops the structure bar and lists its
+  pace and heart-rate targets (3b).
+- A run the watch kept as one lap reads "Whole run" and offers the
+  kilometres, never "Interval" (1c).
+- Activities: a bar names what a filtered list's totals count, the long
+  run is a filter of its own, and a workout row leads with its date
+  (1d, 3d).
+- Goals: a month the plan covers takes the plan's own km as its target
+  (3c).
+- Records: routes are named after where they go, and can be renamed (1g).
+
+### Everywhere
+
+- Cyan replaces the blue accent, with its own light-mode value (5b).
+- The light-mode heatmap draws a blurred halo under a pale-to-deep ramp;
+  the dark one stops at the full accent rather than running on to white
+  (4a). The white accent takes a graphite ramp.
+- Today without a run is an accent outline, never an accent fill (5a).
+- Durations are "1:00 h" from an hour and "45 min" under it (3d).
+- The watch's brand is out of the interface: every string says "your
+  watch" (3.0 override 1).
+- Chevrons and SVG icons in place of arrow and triangle glyphs; the pace
+  axis says "up = faster" in words (rules 01, 03, 3d).
+- Dynamics says which way is better per metric and colours the "vs your
+  usual" line by it (3d).
+
 ## [3.1.0] - 2026-10-20
 
 3.1.0 — the final Progress mockups: Goals & season, Records, Consistency
