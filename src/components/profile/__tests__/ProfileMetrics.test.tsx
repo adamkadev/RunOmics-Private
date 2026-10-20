@@ -84,14 +84,21 @@ describe('ProfileHrZones table', () => {
   ]
   const recent = [{ zone: 2, seconds: 125 * 60, percent: 0 }]
 
-  // App Fixes 1e: the share is a column of the table, so a 1 % zone has room
-  // for its number; each zone's pace reads under its name.
-  it('labels Zone, HR, share and Time as their own columns', () => {
+  it('labels Zone, Pace, HR and Time as their own columns', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
     const header = screen.getByTestId('zone-columns')
-    for (const column of [z.columnZone, z.columnHr, z.columnShare, z.columnTime]) {
+    for (const column of [z.columnZone, z.columnPace, z.columnHr, z.columnTime]) {
       expect(within(header).getByText(column)).toBeInTheDocument()
     }
+  })
+
+  // App Fixes 1e: the share left the bar, where a 1 % zone had no room to
+  // print it, and reads after the zone's time instead.
+  it('reads each zone\'s share after its time, not under the bar', () => {
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
+    const row = screen.getByTestId('zone-row-2')
+    expect(within(row).getByTestId('zone-pct').textContent).toContain('%')
+    expect(within(screen.getByTestId('zone-stack')).queryByTestId('zone-pct')).toBeNull()
   })
 
   // 3.0 1j: four weeks first, whatever the week holds, and no line to say so.
@@ -153,7 +160,7 @@ describe('ProfileHrZones table', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={[]} recentZoneTime={withSliver} />)
     const stack = screen.getByTestId('zone-stack')
     expect([...stack.querySelectorAll('[data-zone]')].map((el) => el.getAttribute('data-zone'))).toEqual(['1', '2', '3', '4', '5'])
-    expect(screen.getAllByTestId('zone-pct').map((el) => el.textContent)).toEqual(['26%', '61%', '8%', '5%', '1%'])
+    expect(screen.getAllByTestId('zone-pct').map((el) => el.textContent?.trim())).toEqual(['· 26%', '· 61%', '· 8%', '· 5%', '· 1%'])
   })
 
   it('has a single Week / 4 weeks toggle that switches the whole table', async () => {

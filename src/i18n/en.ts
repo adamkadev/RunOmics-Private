@@ -1919,8 +1919,6 @@ export const en = {
       fourWeeksSpoken: 'Last 4 weeks',
       columnZone: 'Zone',
       columnPace: 'Pace /km',
-      // The share column (App Fixes 1e), where a 1 % zone has room for it.
-      columnShare: '%',
       columnHr: 'Heart rate',
       columnHrShort: 'HR',
       columnTime: 'Time',

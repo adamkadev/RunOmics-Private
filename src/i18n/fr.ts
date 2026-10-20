@@ -1764,7 +1764,6 @@ export const fr = {
       fourWeeksSpoken: '4 dernières semaines',
       columnZone: 'Zone',
       columnPace: 'Allure /km',
-      columnShare: '%',
       columnHr: 'Fréq. cardiaque',
       columnHrShort: 'FC',
       columnTime: 'Temps',
