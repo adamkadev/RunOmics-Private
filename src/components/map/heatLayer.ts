@@ -1,13 +1,26 @@
 "use client";
 
 import type { CanvasSource, Coordinates, Map as MapLibreMap } from "maplibre-gl";
-import { HEAT_DARK_CAP_ALPHA, HEAT_STYLE, heatLightFloor, heatLineWidth, heatPasses, mercatorX, mercatorY, rgba } from "./mapUtils";
+import {
+  HEAT_HALO_RINGS,
+  HEAT_LEVELS,
+  HEAT_STYLE,
+  buildHeatLevels,
+  heatCore,
+  heatHalo,
+  heatLevelT,
+  heatZoomScale,
+  mercatorX,
+  mercatorY,
+  type HeatStroke,
+} from "./mapUtils";
+import { rgbCss } from "@/lib/heatRamp";
 
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
 
-const REVEAL_STEPS = 16;
-const REVEAL_STEP_MS = 45;
+/** A new set of routes fades in over this long. */
+const REVEAL_MS = 600;
 
 /** Canvas drawn past each edge, a quarter of the view, so a pan shows tracks before the redraw. */
 const MARGIN = 0.25;
@@ -18,7 +31,7 @@ const MAX_SIDE = 4096;
 const TILE_SIZE = 512;
 
 export interface HeatLayer {
-  /** Replace the tracks drawn, revealing them in steps unless `reveal` is false. */
+  /** Replace the tracks drawn, fading them in unless `reveal` is false. */
   setTracks(tracks: Float64Array[], reveal: boolean): void;
   remove(): void;
 }
@@ -29,20 +42,23 @@ export interface HeatLayer {
  * are stroked onto a canvas over the view and MapLibre draws that canvas as
  * a raster under the place names. Panning and zooming move the raster with
  * the map; when the view settles it is redrawn sharp for the new view.
+ *
+ * Wave 4 (App Fixes 4d): the tracks are first turned into segments by how
+ * often they were run, then each frequency level is drawn as a blurred halo
+ * and a sharp core whose colour, opacity and width all rise with it - rare
+ * streets thin and pale (dim on dark), the riverside thick and glowing.
  */
 export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: string, beforeId: string | undefined): HeatLayer {
   const composite = HEAT_STYLE[mode].composite;
-  const passes = heatPasses(mode, accent);
+  const strokes: { halo: HeatStroke | null; core: HeatStroke }[] = Array.from({ length: HEAT_LEVELS }, (_, level) => ({
+    halo: heatHalo(mode, accent, heatLevelT(level)),
+    core: heatCore(mode, accent, heatLevelT(level)),
+  }));
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
-  /** Holds what was drawn while the light floor is applied, for its shape. */
-  const maskCanvas = mode === "light" ? document.createElement("canvas") : null;
-  const floor = heatLightFloor(accent);
 
-  let tracks: Float64Array[] = [];
-  /** Tracks already on the canvas: a reveal adds to them, a redraw repeats them. */
-  let drawn = 0;
-  let revealTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Each frequency level as one NaN-broken path, rarest first. */
+  let levels: Float64Array[] = [];
   let view = { x0: 0, y0: 0, world: 1, scale: 1, width: 1, height: 1 };
   let coordinates: Coordinates = [[0, 0], [0, 0], [0, 0], [0, 0]];
 
@@ -77,76 +93,55 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     coordinates = [topLeft, corner(w + mx, -my), corner(w + mx, h + my), corner(-mx, h + my)];
   }
 
-  function stroke(from: number, to: number) {
+  function trace(path: Float64Array) {
     if (!ctx) return;
-    const { x0, y0, world, scale } = view;
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    const { x0, y0, world } = view;
+    ctx.beginPath();
+    let penDown = false;
+    for (let p = 0; p < path.length; p += 2) {
+      const x = path[p]!;
+      if (Number.isNaN(x)) {
+        penDown = false;
+        continue;
+      }
+      const px = (x - x0) * world;
+      const py = (path[p + 1]! - y0) * world;
+      if (penDown) ctx.lineTo(px, py);
+      else ctx.moveTo(px, py);
+      penDown = true;
+    }
+  }
+
+  function draw() {
+    if (!ctx) return;
+    ctx.setTransform(view.scale, 0, 0, view.scale, 0, 0);
     ctx.globalCompositeOperation = composite;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
-    const lineWidth = heatLineWidth(map.getZoom());
-    // Every glow before any core, as the design draws them; both blends are
-    // order-free, so a reveal can add runs on top of what is drawn.
-    for (const pass of passes) {
-      ctx.lineWidth = lineWidth * pass.width;
-      ctx.strokeStyle = pass.color;
-      // The halo is the same stroke, blurred (App Fixes 4a); a canvas
-      // without filter support simply draws it sharp.
-      ctx.filter = pass.blur ? `blur(${pass.blur}px)` : "none";
-      for (let t = from; t < to; t++) {
-        const track = tracks[t]!;
-        ctx.beginPath();
-        let penDown = false;
-        for (let p = 0; p < track.length; p += 2) {
-          const x = track[p]!;
-          if (Number.isNaN(x)) {
-            penDown = false;
-            continue;
-          }
-          const px = (x - x0) * world;
-          const py = (track[p + 1]! - y0) * world;
-          if (penDown) ctx.lineTo(px, py);
-          else ctx.moveTo(px, py);
-          penDown = true;
-        }
+    const k = heatZoomScale(map.getZoom());
+    // Every halo under every core, each pass rarest first so the busy
+    // streets land on top. The halo is three soft rings, not a blur filter,
+    // so it is the same width in Safari as in Chrome.
+    for (let level = 0; level < levels.length; level++) {
+      const path = levels[level]!;
+      if (!path.length) continue;
+      const halo = strokes[level]!.halo;
+      if (!halo) continue;
+      trace(path);
+      for (const ring of HEAT_HALO_RINGS) {
+        ctx.lineWidth = halo.width * k * ring;
+        ctx.strokeStyle = rgbCss(halo.rgb, halo.alpha / HEAT_HALO_RINGS.length);
         ctx.stroke();
       }
     }
-    // Never leave the blur on the context for whatever draws next.
-    ctx.filter = "none";
-
-    // The accent washed back over what was drawn, so added light stops at
-    // the accent instead of running on to white (3.0 override 9). Only where
-    // the canvas already has tracks - `source-atop` leaves the ground alone.
-    if (mode === "dark") {
-      ctx.globalCompositeOperation = "source-atop";
-      ctx.fillStyle = rgba(accent, HEAT_DARK_CAP_ALPHA);
-      ctx.fillRect(0, 0, canvas.width / view.scale, canvas.height / view.scale);
-      ctx.globalCompositeOperation = composite;
-    }
-
-    // The same floor the other way up (App Fixes 4a): multiplied ink keeps
-    // going past the deep shade to black, so the busiest ground is lifted
-    // back to it. `lighten` takes the paler of what is there and the floor,
-    // which leaves a faint track alone, but it paints the bare ground too -
-    // so the shape drawn is kept and put back over it.
-    if (mode === "light" && maskCanvas) {
-      const mask = maskCanvas.getContext("2d");
-      if (mask) {
-        maskCanvas.width = canvas.width;
-        maskCanvas.height = canvas.height;
-        mask.setTransform(1, 0, 0, 1, 0, 0);
-        mask.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
-        mask.drawImage(canvas, 0, 0);
-        ctx.globalCompositeOperation = "lighten";
-        ctx.fillStyle = floor;
-        ctx.fillRect(0, 0, canvas.width / view.scale, canvas.height / view.scale);
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.globalCompositeOperation = "destination-in";
-        ctx.drawImage(maskCanvas, 0, 0);
-        ctx.setTransform(view.scale, 0, 0, view.scale, 0, 0);
-        ctx.globalCompositeOperation = composite;
-      }
+    for (let level = 0; level < levels.length; level++) {
+      const path = levels[level]!;
+      if (!path.length) continue;
+      const core = strokes[level]!.core;
+      ctx.lineWidth = core.width * k;
+      ctx.strokeStyle = core.color;
+      trace(path);
+      ctx.stroke();
     }
   }
 
@@ -175,13 +170,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
   function redraw() {
     layout();
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    stroke(0, drawn);
+    draw();
     upload();
-  }
-
-  function stopReveal() {
-    if (revealTimer !== null) clearTimeout(revealTimer);
-    revealTimer = null;
   }
 
   layout();
@@ -200,28 +190,22 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
 
   return {
     setTracks(next, reveal) {
-      stopReveal();
-      tracks = next;
-      if (!reveal || !tracks.length) {
-        drawn = tracks.length;
+      levels = buildHeatLevels(next);
+      if (reveal && map.getLayer(HEAT_LAYER)) {
+        // A fade, not a draw-in: the frequencies need every run at once.
+        map.setPaintProperty(HEAT_LAYER, "raster-opacity-transition", { duration: 0, delay: 0 });
+        map.setPaintProperty(HEAT_LAYER, "raster-opacity", 0);
         redraw();
+        requestAnimationFrame(() => {
+          if (!map.getLayer(HEAT_LAYER)) return;
+          map.setPaintProperty(HEAT_LAYER, "raster-opacity-transition", { duration: REVEAL_MS, delay: 0 });
+          map.setPaintProperty(HEAT_LAYER, "raster-opacity", 1);
+        });
         return;
       }
-      drawn = 0;
       redraw();
-      let step = 0;
-      const advance = () => {
-        step += 1;
-        const target = Math.ceil((tracks.length * step) / REVEAL_STEPS);
-        stroke(drawn, target);
-        drawn = target;
-        upload();
-        revealTimer = step < REVEAL_STEPS ? setTimeout(advance, REVEAL_STEP_MS) : null;
-      };
-      advance();
     },
     remove() {
-      stopReveal();
       map.off("moveend", redraw);
       map.off("resize", redraw);
       map.off("render", onRender);

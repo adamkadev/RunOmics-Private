@@ -78,18 +78,18 @@ export function groupMilestonesByMonth(milestones: Milestone[]): MilestoneMonth[
   return [...groups.entries()].map(([key, items]) => ({ key, items }))
 }
 
-/** The trail shows this many runs at most, the latest ones. */
-export const TRAIL_RUNS = 16
+/** The trail shows the last six runs (Wave 4, App Fixes 1g). */
+export const TRAIL_RUNS = 6
 
-/** Bar heights in px: the slowest run at the floor, the fastest at the top. */
-const BAR_MIN = 8
-const BAR_RANGE = 30
+/** Bar heights as a share of the 36 px trail: the slowest run at the floor, the fastest full. */
+const BAR_MIN = 30
+const BAR_RANGE = 70
 
 export type TrailTone = 'best' | 'latest' | 'other'
 
 export interface TrailBar {
   activityId: string
-  heightPx: number
+  heightPct: number
   tone: TrailTone
 }
 
@@ -105,7 +105,7 @@ export function trailBars(route: RecurringRoute): TrailBar[] {
   const span = Math.max(...paces) - fastest || 1
   return runs.map((run, i) => ({
     activityId: run.activityId,
-    heightPx: Math.round(BAR_MIN + ((span - (run.paceSecPerKm - fastest)) / span) * BAR_RANGE),
+    heightPct: Math.round(BAR_MIN + ((span - (run.paceSecPerKm - fastest)) / span) * BAR_RANGE),
     tone: run.activityId === route.bestActivityId ? 'best' : i === runs.length - 1 ? 'latest' : 'other',
   }))
 }

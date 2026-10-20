@@ -196,13 +196,13 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
               <div key={zone} className={`${ROW_GRID} min-h-[38px] border-t border-border py-1.5`} data-testid={`zone-row-${zone}`}>
                 <span className="flex min-w-0 items-center gap-2 text-[13px] text-foreground">
                   <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: `var(--zone-${zone})` }} />
-                  {/* Wraps on a narrow phone rather than "Z4 Thres…" (v4.17.2). */}
-                  <span className="min-w-0">
+                  {/* One line (Wave 5 G): "Z1 Recovery" never wraps; the name column is minmax(0,1fr). */}
+                  <span className="min-w-0 truncate whitespace-nowrap">
                     <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
                   </span>
                 </span>
-                <span className="text-right text-xs tabular-nums text-[var(--text-2)]">{paceLabel}</span>
-                <span className="text-right text-xs tabular-nums text-[var(--text-2)]">{bpmRangeLabel(min, max)}</span>
+                <span className="whitespace-nowrap text-right text-xs tabular-nums tracking-[-0.01em] text-[var(--text-2)]">{paceLabel}</span>
+                <span className="whitespace-nowrap text-right text-xs tabular-nums text-[var(--text-2)]">{bpmRangeLabel(min, max)}</span>
                 <span className="whitespace-nowrap text-right text-xs font-semibold tabular-nums text-foreground">
                   {zoneTimeLabel(seconds)}
                   {share !== null && (

@@ -471,7 +471,7 @@ export interface HeatView {
   rows: HeatRow[]
   /** The cost range above 20°C, from the same rows the bars draw. */
   warm: { lo: number; hi: number } | null
-  /** What the cold below 5°C costs, when it costs anything (App Fixes 2b). */
+  /** The cost below 5 °C, which the subtitle names beside the warm one. */
   cold: number | null
   scale: number
 }
@@ -635,6 +635,8 @@ export interface ZonesView {
   total: 'grew' | 'dropped' | 'held' | 'recovered'
   /** The low week total time came back from, when it did. */
   recoveredAfter: string | null
+  /** The first full week after that low one: "climbed back from Aug 31". */
+  backFrom: string | null
   /** Hours over the window, the week under way included. */
   totalHours: number
   /** The same hours by zone, Z1-Z5: the legend's figures. */
@@ -668,6 +670,7 @@ export function zonesView(rows: WeekRow[]): ZonesView | null {
     hard: hardMin.length ? { lo: roundTo5(Math.min(...hardMin)), hi: roundTo5(Math.max(...hardMin)) } : null,
     total: recovered ? 'recovered' : change >= 0.1 ? 'grew' : change <= -0.1 ? 'dropped' : 'held',
     recoveredAfter: recovered ? rows[done[trough]!.i]!.week : null,
+    backFrom: recovered && done[trough + 1] ? rows[done[trough + 1]!.i]!.week : null,
     totalHours: totals.reduce((a, b) => a + b, 0),
     zoneHours: [0, 1, 2, 3, 4].map((z) => weeks.reduce((sum, w) => sum + w.hours[z]!, 0)),
     yMax: Math.max(1, Math.ceil(Math.max(...totals))),

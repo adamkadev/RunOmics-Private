@@ -1,7 +1,7 @@
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { distanceKm, median, round } from "@/lib/math";
-import { heatRamp } from "@/lib/heatRamp";
+import { rampDark, rampLight, rgbCss } from "@/lib/heatRamp";
 import { t } from "@/i18n";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 
@@ -140,121 +140,185 @@ export function buildHeatTracks(routes: [number, number][][], indices: number[])
   return tracks;
 }
 
-export interface HeatPass {
-  /** The stroke as a multiple of the line width. */
+/**
+ * How busy a route is, 0 to 1 (Wave 4, App Fixes 4d): runs over it on a log
+ * scale against the busiest street, so one run and two read apart but fifty
+ * and sixty do not. One run everywhere is still the faint end, not the full one.
+ */
+/**
+ * Frequency by rank (Wave 5 B): log/max put almost every street near the
+ * top. `t` is a count's mid-rank among every cell in view, scaled so the
+ * busiest is 1, then raised to 1.8, so only about the top 15 % go past 0.6.
+ */
+export const HEAT_RANK_EXPONENT = 1.8;
+export function heatRankScale(counts: Iterable<number>): (count: number) => number {
+  const sorted = [...counts].sort((a, b) => a - b);
+  const n = sorted.length;
+  if (!n) return () => 0;
+  const rank = new Map<number, number>();
+  for (let i = 0; i < n; ) {
+    let j = i;
+    while (j < n && sorted[j] === sorted[i]) j++;
+    rank.set(sorted[i]!, (i + (j - i) / 2) / n);
+    i = j;
+  }
+  const top = rank.get(sorted[n - 1]!)!;
+  return (count) => Math.min(1, Math.max(0, ((rank.get(count) ?? 0) / top) ** HEAT_RANK_EXPONENT));
+}
+
+export function heatFrequency(count: number, maxCount: number): number {
+  const t = Math.log1p(count) / Math.log1p(Math.max(2, maxCount));
+  return Math.min(1, Math.max(0, t));
+}
+
+/** Frequencies drawn as this many steps: one canvas path each. */
+export const HEAT_LEVELS = 16;
+/** A street's width, for counting: runs within it share one count. */
+export const HEAT_CELL_M = 25;
+const EARTH_M = 40_075_016.686;
+
+/** The `t` a level is drawn at. */
+export function heatLevelT(level: number): number {
+  return level / (HEAT_LEVELS - 1);
+}
+
+/** Cell keys as numbers: a column times this, plus a row, stays exact. */
+const ROW_SPAN = 4_194_304;
+
+/** Latitude of a Mercator y (0 to 1). */
+function mercatorLat(y: number): number {
+  return (Math.atan(Math.sinh(Math.PI * (1 - 2 * y))) * 180) / Math.PI;
+}
+
+/**
+ * The tracks as segments by frequency (Wave 4, App Fixes 4d): each level a
+ * single path, NaN-broken, rarest first. Every 25 m cell counts the runs that
+ * crossed it; a segment takes the lower count of its two ends, so a side
+ * street leaving a busy one stays rare. Each piece of street is drawn once,
+ * by the first run over it, so overlapping runs never stack into ink: the
+ * frequency, not the overlap, sets the colour.
+ */
+export function buildHeatLevels(tracks: Float64Array[]): Float64Array[] {
+  const levels: number[][] = Array.from({ length: HEAT_LEVELS }, () => []);
+  const first = tracks.find((tr) => tr.length >= 2 && !Number.isNaN(tr[1]!));
+  if (!first) return levels.map(() => new Float64Array());
+  const cell = HEAT_CELL_M / (EARTH_M * Math.cos((mercatorLat(first[1]!) * Math.PI) / 180));
+  const key = (x: number, y: number) => Math.floor(x / cell) * ROW_SPAN + Math.floor(y / cell);
+
+  const counts = new Map<number, number>();
+  for (const track of tracks) {
+    const seen = new Set<number>();
+    for (let p = 0; p < track.length; p += 2) {
+      const x = track[p]!;
+      if (Number.isNaN(x)) continue;
+      seen.add(key(x, track[p + 1]!));
+    }
+    for (const k of seen) counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  const rankOf = heatRankScale(counts.values());
+  const levelOf = (k: number) => Math.round(rankOf(counts.get(k) ?? 1) * (HEAT_LEVELS - 1));
+
+  const cellOwner = new Map<number, number>();
+  const edgeOwner = new Map<string, number>();
+  tracks.forEach((track, owner) => {
+    let open = -1; // the level of the polyline being built, or -1
+    for (let p = 2; p < track.length; p += 2) {
+      const x0 = track[p - 2]!;
+      const x1 = track[p]!;
+      if (Number.isNaN(x0) || Number.isNaN(x1)) {
+        if (open >= 0) levels[open]!.push(NaN, NaN);
+        open = -1;
+        continue;
+      }
+      const y0 = track[p - 1]!;
+      const y1 = track[p + 1]!;
+      const a = key(x0, y0);
+      const b = key(x1, y1);
+      let mine: boolean;
+      if (a === b) {
+        const o = cellOwner.get(a);
+        if (o === undefined) cellOwner.set(a, owner);
+        mine = o === undefined || o === owner;
+      } else {
+        const e = a < b ? `${a}_${b}` : `${b}_${a}`;
+        const o = edgeOwner.get(e);
+        if (o === undefined) edgeOwner.set(e, owner);
+        mine = o === undefined || o === owner;
+      }
+      if (!mine) {
+        if (open >= 0) levels[open]!.push(NaN, NaN);
+        open = -1;
+        continue;
+      }
+      const level = Math.min(levelOf(a), levelOf(b));
+      if (level !== open) {
+        if (open >= 0) levels[open]!.push(NaN, NaN);
+        levels[level]!.push(x0, y0);
+        open = level;
+      }
+      levels[level]!.push(x1, y1);
+    }
+    if (open >= 0) levels[open]!.push(NaN, NaN);
+  });
+  return levels.map((points) => Float64Array.from(points));
+}
+
+/** One stroke of a level: its width in px, colour (and its parts), and the halo's blur. */
+export interface HeatStroke {
   width: number;
   color: string;
-  /** A soft halo under the tracks, in px (App Fixes 4a). */
-  blur?: number;
-}
-
-/** `#rrggbb` at an alpha, as the canvas takes it. */
-export function rgba(hex: string, alpha: number): string {
-  const h = hex.replace("#", "");
-  const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h.slice(0, 6), 16);
-  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${alpha})`;
+  rgb: readonly [number, number, number];
+  alpha: number;
+  blur: number;
 }
 
 /**
- * Which end of the heat ramp a pass is drawn in (3.0 override 9, App Fixes
- * 4a): a blurred halo under the tracks, then the ramp itself - a pale tint,
- * the accent, and a deep accent shade - so a route run many times multiplies
- * down to ink while a rare one stays a tint.
+ * The halo's blur as stacked strokes, not a canvas filter (Wave 4): Safari
+ * scales `ctx.filter` blur with the canvas transform, so at 3x it drew a
+ * halo three times as wide and the city turned to fog. Three concentric
+ * strokes - wider than the halo, as a blur spreads, down to inside it - at a third of the
+ * opacity each build the same soft falloff in every browser.
  */
-export type HeatTone = "halo" | "tint" | "accent" | "deep";
+export const HEAT_HALO_RINGS = [1.6, 1.15, 0.7] as const;
 
+/**
+ * The two layers each level is drawn in (Wave 4, App Fixes 4d): a blurred
+ * halo, then a sharp core. Light multiplies, dark screens. The halo in light
+ * stays in the tint-to-accent half of the ramp, so it glows and never inks.
+ */
 export const HEAT_STYLE = {
-  dark: {
-    composite: "lighter",
-    passes: [
-      { width: 4, alpha: 0.035, tone: "halo" },
-      { width: 1, alpha: 0.16, tone: "accent" },
-    ],
-  },
-  light: {
-    composite: "multiply",
-    // Softer than the first pass at this (App Fixes 4a): multiply compounds,
-    // so four heavy passes made one run look like twenty and a busy street
-    // black. A run should read as a tint and only a street run week after
-    // week as ink.
-    passes: [
-      { width: 5, alpha: 0.05, tone: "halo", blur: 6 },
-      { width: 2.2, alpha: 0.11, tone: "tint" },
-      { width: 1.3, alpha: 0.18, tone: "accent" },
-      { width: 0.8, alpha: 0.24, tone: "deep" },
-    ],
-  },
-} as const satisfies Record<"dark" | "light", {
-  composite: GlobalCompositeOperation;
-  passes: readonly { width: number; alpha: number; tone: HeatTone; blur?: number }[];
-}>;
+  light: { composite: "multiply", haloOpacity: [0.12, 0.48] },
+  dark: { composite: "screen", haloOpacity: [0.14, 0.61] },
+} as const satisfies Record<"dark" | "light", { composite: GlobalCompositeOperation; haloOpacity: readonly [number, number] }>;
 
-/** The colour a tone is drawn in, for one accent and mode. */
-export function heatToneColor(mode: "dark" | "light", accent: string, tone: HeatTone): string {
-  if (mode === "dark") return accent;
-  const ramp = heatRamp(accent);
-  switch (tone) {
-    case "halo":
-    case "tint":
-      return ramp.light;
-    case "deep":
-      return ramp.deep;
-    case "accent":
-      return accent;
-  }
+/** The halo's blur at the mockup's 354 px map width. */
+export const HEAT_HALO_BLUR = 3.2;
+
+/** Under this `t` a street has no halo at all (Wave 5 B): rare streets stay thin lines. */
+export const HEAT_HALO_MIN_T = 0.35;
+
+export function heatHalo(mode: "dark" | "light", accent: string, t: number): HeatStroke | null {
+  if (t < HEAT_HALO_MIN_T) return null;
+  const [base, span] = HEAT_STYLE[mode].haloOpacity;
+  const rgb = mode === "light" ? rampLight(accent, t * 0.45) : rampDark(accent, t);
+  const alpha = base + span * t;
+  // 6 to 13 px over the haloed range only.
+  const width = 6 + (7 * (t - HEAT_HALO_MIN_T)) / (1 - HEAT_HALO_MIN_T);
+  return { width, color: rgbCss(rgb, alpha), rgb, alpha, blur: HEAT_HALO_BLUR };
+}
+
+export function heatCore(mode: "dark" | "light", accent: string, t: number): HeatStroke {
+  const rgb = mode === "light" ? rampLight(accent, t) : rampDark(accent, t);
+  const alpha = 0.43 + 0.57 * t;
+  return { width: 1.2 + 2.1 * t, color: rgbCss(rgb, alpha), rgb, alpha, blur: 0 };
 }
 
 /**
- * How hard the accent is washed back over the dark canvas once the tracks
- * are drawn (3.0 override 9, App Fixes 4a). Added light stacks: with enough
- * runs over one street the sum reaches white, and the heatmap then said
- * "white", not "your accent, bright". This pulls the busiest ground back to
- * the accent while leaving the rare tracks, which never got near the
- * ceiling, as they were.
+ * The strokes' scale with zoom: 1 at the city view the mockup draws (about
+ * zoom 12), thicker as the map closes in on a street, thinner out of town.
  */
-export const HEAT_DARK_CAP_ALPHA = 0.55;
-
-/** The ink the light floor mixes towards: near-black, with the map's green cast. */
-const HEAT_INK = "#06100d";
-
-/** From one colour to another, channel by channel. */
-function mixHex(from: string, to: string, t: number): string {
-  const a = parseInt(from.slice(1), 16);
-  const b = parseInt(to.slice(1), 16);
-  const ch = (shift: number) => Math.round((((a >> shift) & 255) * (1 - t) + ((b >> shift) & 255) * t));
-  return `#${[16, 8, 0].map((shift) => ch(shift).toString(16).padStart(2, "0")).join("")}`;
-}
-
-/**
- * How far past its own deep stop the floor sits: a shade, so the busiest
- * ground still reads as darker than the pass that draws it.
- */
-const HEAT_FLOOR_MIX = 0.25;
-
-/**
- * How dark the light heatmap is allowed to get (App Fixes 4a). Multiply
- * compounds with every overlapping run, so a city centre bottomed out at
- * near-black and the ramp said nothing above its second-busiest street. The
- * floor is a shade under the ramp's own deep stop - about the accent half
- * way to the ink - and the busiest ground sits on it instead of going past
- * it. It is built from the ramp, not the accent, so the near-black mono
- * accent floors on graphite like its tracks do.
- */
-export function heatLightFloor(accent: string): string {
-  return mixHex(heatRamp(accent).deep, HEAT_INK, HEAT_FLOOR_MIX);
-}
-
-export function heatPasses(mode: "dark" | "light", accent: string): HeatPass[] {
-  return HEAT_STYLE[mode].passes.map((pass) => ({
-    width: pass.width,
-    color: rgba(heatToneColor(mode, accent, pass.tone), pass.alpha),
-    ...("blur" in pass && pass.blur ? { blur: pass.blur } : {}),
-  }));
-}
-
-export function heatLineWidth(zoom: number): number {
-  const t = Math.min(1, Math.max(0, (zoom - 12) / 4));
-  return 1.2 + t * (4 - 1.2);
+export function heatZoomScale(zoom: number): number {
+  return Math.min(1.6, Math.max(0.6, 2 ** ((zoom - 12.5) / 2)));
 }
 
 export function ringCoordinates(center: [number, number], radiusKm: number, steps = 96): [number, number][] {

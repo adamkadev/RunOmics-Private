@@ -1,4 +1,5 @@
 'use client'
+import { setDaySkipped, useSkippedDays } from '@/lib/skippedDays'
 
 import Link from 'next/link'
 import { Check, ChevronRight } from 'lucide-react'
@@ -18,14 +19,13 @@ const CARD = 'rounded-3xl border border-border bg-card p-[18px] shadow-card'
 
 const PROFILE_HEIGHT: Record<StepTone, number> = { ease: 16, recovery: 16, work: 54 }
 
-/** "● WED 21 · THRESHOLD", in the session's colour. */
+/** "WED 21 · THRESHOLD", in the session's colour (App Fixes 3b: no dot). */
 function Eyebrow({ date, kind }: { date: string; kind: DayKind | null }) {
   return (
     <p
       className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em]"
       style={{ color: kind?.color ?? 'var(--muted-foreground)' }}
     >
-      {kind && <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ background: kind.color }} />}
       <span>{[formatWeekday(date, true), kind ? kindLabel(kind.type, kind.kind) : null].filter(Boolean).join(' · ')}</span>
     </p>
   )
@@ -35,12 +35,12 @@ function Title({ children }: { children: ReactNode }) {
   return <h2 className="mt-1.5 break-words text-[25px] font-bold leading-tight tracking-[-0.01em] text-foreground text-pretty">{children}</h2>
 }
 
-/** A target of the session: its name on the left, the number on the right. */
-function TargetRow({ label, value }: { label: string; value: string }) {
+/** A target of the session as a tile (App Fixes 3b): its name over the number. */
+function TargetTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-border py-[7px] last:border-b-0" data-testid="plan-target">
-      <span className="min-w-0 text-[13px] text-muted-foreground">{label}</span>
-      <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">{value}</span>
+    <div className="flex min-w-0 flex-col gap-[3px] rounded-[14px] bg-[var(--background)] px-3 py-2.5" data-testid="plan-target">
+      <span className="text-[11px] text-muted-foreground">{label}</span>
+      <span className="text-[15px] font-semibold tabular-nums text-foreground">{value}</span>
     </div>
   )
 }
@@ -69,14 +69,9 @@ export function PlannedWorkoutCard({
   const summary = workoutSummary(workout)
   const totalSeconds = summary.durationSeconds ?? 0
   const structured = (workout.structure?.length ?? 0) > 1
-  const subline = [
-    summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null,
-    totalSeconds > 0 ? formatDurationWords(totalSeconds) : null,
-    // A one-step session carries its paces as targets under the card instead.
-    ...(structured ? summary.paces.map(paceLabel) : []),
-  ]
-    .filter(Boolean)
-    .join(' · ')
+  const km = summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null
+  const time = totalSeconds > 0 ? formatDurationWords(totalSeconds) : null
+  const subline = [km, time, ...(structured ? summary.paces.map(paceLabel) : [])].filter(Boolean).join(' · ')
   const blocks = intensityBlocks(workout.structure, totalSeconds, kind.color)
   const rows = stepRows({ steps: workout.structure, type: kind.type, kind: kind.kind, color: kind.color, totalSeconds, pace: effortPace(workout.effort) })
   // A one-step session has no structure to read a pace off (the coach's
@@ -90,8 +85,25 @@ export function PlannedWorkoutCard({
   return (
     <section data-testid={`plan-workout-${workout.key}`} className={CARD}>
       <Eyebrow date={workout.date} kind={kind} />
-      <Title>{summary.title}</Title>
-      {subline && <p className="mt-1 text-[13px] text-muted-foreground">{subline}</p>}
+      {structured ? (
+        <>
+          <Title>{summary.title}</Title>
+          {subline && <p className="mt-1 text-[13px] text-muted-foreground">{subline}</p>}
+        </>
+      ) : (
+        // One step (App Fixes 3b): the distance and time across from the
+        // title, "10 km · 1:00 h", the km in ink.
+        <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+          <h2 className="break-words text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground text-pretty">{summary.title}</h2>
+          {(km || time) && (
+            <span className="text-sm text-[var(--text-2)]" data-testid="plan-amount">
+              {km && <b className="font-semibold text-foreground">{km}</b>}
+              {km && time && ' · '}
+              {time}
+            </span>
+          )}
+        </div>
+      )}
       {structured && (
         <div aria-hidden data-testid="intensity-profile" className="mt-4 flex h-[54px] items-end gap-[3px]">
           {blocks.map((block, i) => (
@@ -105,11 +117,13 @@ export function PlannedWorkoutCard({
         </div>
       )}
       {!structured && (paceTarget !== null || hrCap !== null) && (
-        <div className="mt-3.5 border-t border-border" data-testid="plan-targets">
-          {paceTarget !== null && <TargetRow label={s.paceTarget} value={`${paceTarget} ${t.units.perKm}`} />}
-          {hrCap !== null && <TargetRow label={hrZone ? s.hrTargetZone(hrZone) : s.hrTarget} value={`${s.hrCap(hrCap)} ${t.units.bpm}`} />}
+        <div className="mt-2.5 grid grid-cols-2 gap-2" data-testid="plan-targets">
+          {paceTarget !== null && <TargetTile label={s.paceTarget} value={`${paceTarget} ${t.units.perKm}`} />}
+          {hrCap !== null && <TargetTile label={hrZone ? s.hrTargetZone(hrZone) : s.hrTarget} value={`${s.hrCap(hrCap)} ${t.units.bpm}`} />}
         </div>
       )}
+      {/* The steps only when there is more than one to read. */}
+      {structured && (
       <ol className="mt-3.5 border-t border-border" data-testid="workout-steps">
         {rows.map((row) => (
           <li key={row.key} className="flex items-center gap-3 border-b border-border py-[7px] last:border-b-0">
@@ -122,7 +136,30 @@ export function PlannedWorkoutCard({
           </li>
         ))}
       </ol>
+      )}
     </section>
+  )
+}
+
+/**
+ * The week's next quality session (App Fixes 3b), under the day card: its
+ * label in the session's colour, then "Wed 21 · Threshold 3 × 8′". A tap
+ * selects its day.
+ */
+export function NextKeySessionCard({ weekday, title, color, onSelect }: { weekday: string; title: string; color: string; onSelect?: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-border bg-card px-3.5 py-3 text-left transition-opacity active:opacity-70"
+      data-testid="next-key-session"
+    >
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.06em]" style={{ color }}>{t.plan.nextKeySession}</span>
+        <span className="truncate text-sm font-semibold text-foreground">{`${weekday} · ${title}`}</span>
+      </span>
+      <ChevronRight size={14} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+    </button>
   )
 }
 
@@ -146,6 +183,33 @@ function Line({ label, children, testId }: { label: string; children: ReactNode;
       <span className="text-[13px] text-muted-foreground">{label}</span>
       <span className="min-w-0 text-foreground">{children}</span>
     </div>
+  )
+}
+
+/**
+ * A missed session (Wave 5, Today › missed day): "Missed", and the way to say
+ * it was skipped on purpose - sick or resting - which Today then draws as a
+ * rest day and stops counting. Undone the same way.
+ */
+function MissedLine({ date }: { date: string }) {
+  const skipped = useSkippedDays().has(date)
+  const s = t.plan.dayCard
+  return (
+    <Line label={t.plan.dayCard.done} testId="done-line">
+      {skipped ? (
+        <span className="font-semibold text-muted-foreground" data-testid="skipped-mark">{s.skipped}</span>
+      ) : (
+        <span className="font-semibold text-[var(--warn)]">{t.sessionState.missed}</span>
+      )}
+      <button
+        type="button"
+        onClick={() => setDaySkipped(date, !skipped)}
+        className="ml-2 text-[13px] font-medium text-accent-text"
+        data-testid="skip-toggle"
+      >
+        {skipped ? s.undoSkip : s.markSkipped}
+      </button>
+    </Line>
   )
 }
 
@@ -182,9 +246,7 @@ export function DoneDayCard({
           {planned ?? <span className="text-muted-foreground">{t.plan.dayCard.notPlanned}</span>}
         </Line>
         {acts.length === 0 ? (
-          <Line label={t.plan.dayCard.done} testId="done-line">
-            <span className="font-semibold text-[var(--neg)]">{t.sessionState.missed}</span>
-          </Line>
+          <MissedLine date={date} />
         ) : (
           acts.map((a) => {
             const share = a.hrZones.find((z) => z.zone === zone)?.percent

@@ -80,6 +80,7 @@ const route = (paces: number[], bestIndex: number): RecurringRoute => ({
   id: 'r',
   start: null,
   far: null,
+  shape: 'loop',
   runCount: paces.length,
   distanceKm: 7.3,
   outline: '',
@@ -92,7 +93,7 @@ const route = (paces: number[], bestIndex: number): RecurringRoute => ({
 describe('trailBars', () => {
   it('stands the fastest run tallest and the slowest shortest', () => {
     const bars = trailBars(route([330, 307, 319], 1))
-    expect(bars.map((b) => b.heightPx)).toEqual([8, 38, 22])
+    expect(bars.map((b) => b.heightPct)).toEqual([30, 100, 63])
     expect(bars.map((b) => b.tone)).toEqual(['other', 'best', 'latest'])
   })
 

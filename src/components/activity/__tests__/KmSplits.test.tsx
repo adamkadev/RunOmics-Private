@@ -209,7 +209,7 @@ describe('KmSplits on a continuous run', () => {
     showLaps()
     const card = screen.getByTestId('whole-run-lap')
     expect(within(card).queryByText(t.activity.splits.cols.step)).toBeNull()
-    expect(within(card).getByText(t.activity.splits.cols.type)).toBeInTheDocument()
+    expect(within(card).getByText(t.activity.splits.cols.lap)).toBeInTheDocument()
   })
 })
 

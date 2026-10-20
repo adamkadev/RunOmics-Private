@@ -1,11 +1,10 @@
-import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
 import { DashboardGreeting, headerDate, isSyncStale } from '../DashboardGreeting'
 
-const push = vi.fn()
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }))
+const refresh = vi.fn()
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh }) }))
 
 // Signed out unless a test signs the owner in, with the sync in the phase it sets.
 const owner = vi.hoisted(() => ({ signedIn: false, phase: { kind: 'idle' } as { kind: string }, handleSync: vi.fn() }))
@@ -53,64 +52,56 @@ describe('DashboardGreeting', () => {
     expect(date.hasAttribute('data-title-sub')).toBe(true)
   })
 
-  // 3.0.2 (mock 5f): sync is a round ↻ button beside the avatar, tappable at
-  // any age; its words are its name at rest, not a line on screen.
-  it('carries the sync button beside the avatar, tappable at any age', async () => {
+  /** A pull down from the top of the page, far enough to sync. */
+  function pull(distance = 200) {
+    fireEvent.touchStart(window, { touches: [{ clientY: 0 }] })
+    fireEvent.touchMove(window, { touches: [{ clientY: distance }] })
+    fireEvent.touchEnd(window)
+  }
+
+  // Wave 5 A0 (App Fixes 1a): no ↻ button in the header; a pull refreshes.
+  it('has no sync button, only its note beside the avatar', async () => {
     const lastSyncedAt = new Date(Date.now() - 2 * 3600_000).toISOString()
     render(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
 
     const s = t.dashboard.syncStatus
-    const button = await screen.findByRole('button', { name: s.synced(s.hoursAgo(2)) })
-    expect(button).toBe(screen.getByTestId('sync-line'))
-    expect(button.className).toContain('size-10')
-    expect(button.className).toContain('rounded-full')
-    expect(button.className).toContain('hit-44')
-    expect(button.textContent).toBe('')
-    expect(screen.getByTestId('sync-note').textContent).toBe('')
-    expect(button.parentElement!.parentElement!.contains(screen.getByRole('link', { name: t.nav.items.profile }))).toBe(true)
-
-    // Signed out: the tap goes to Settings, where signing in lives.
-    await userEvent.click(button)
-    expect(push).toHaveBeenCalledWith('/settings')
+    const note = await screen.findByTestId('sync-note')
+    expect(note.getAttribute('aria-label')).toBe(s.synced(s.hoursAgo(2)))
+    expect(note.textContent).toBe('')
+    expect(screen.queryByRole('button')).toBeNull()
   })
 
-  // H06 and v4.3.4: past 6 h its name says it can be tapped, amber once a day old.
-  it('offers the sync past 6 h, muted, and turns amber once the data is a day old', async () => {
+  it('reads the data again on a pull when signed out, and turns amber once a day old', async () => {
     const { unmount } = render(<DashboardGreeting name="Adam" lastSyncedAt={new Date(Date.now() - 23 * 3600_000).toISOString()} />)
-    const button = await screen.findByTestId('sync-line')
-    expect(button.getAttribute('aria-label')).toContain(t.dashboard.syncStatus.tapToSync)
-    expect(button.getAttribute('style')).toContain('--muted-foreground')
+    await screen.findByTestId('sync-note')
+    pull()
+    expect(refresh).toHaveBeenCalled()
     unmount()
 
     render(<DashboardGreeting name="Adam" lastSyncedAt={new Date(Date.now() - 30 * 3600_000).toISOString()} />)
-    const late = await screen.findByTestId('sync-line')
-    expect(late.dataset.tone).toBe('caution')
-    expect(late.getAttribute('style')).toContain('--tone-caution')
+    expect((await screen.findByTestId('sync-note')).dataset.tone).toBe('caution')
   })
 
-  // The owner's press starts the sync; its words come on screen while it runs.
-  it('shows the sync’s words beside the button once pressed, and turns the arrows while it runs', async () => {
+  it('starts the owner\'s sync on a pull, and shows its words while it runs', async () => {
     owner.signedIn = true
     const s = t.dashboard.syncStatus
     const lastSyncedAt = new Date(Date.now() - 14 * 3600_000).toISOString()
     const { rerender } = render(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
-    const button = await screen.findByRole('button', { name: `${s.synced(s.hoursAgo(14))} · ${s.tapToSync}` })
-    expect(screen.getByTestId('sync-note').textContent).toBe('')
-    await userEvent.click(button)
+    await screen.findByTestId('sync-note')
+    pull(40)
+    expect(owner.handleSync).not.toHaveBeenCalled()
+    pull()
     expect(owner.handleSync).toHaveBeenCalled()
 
     owner.phase = { kind: 'starting' }
     rerender(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
-    const running = screen.getByTestId('sync-line')
-    expect(running).toBeDisabled()
-    expect(running.getAttribute('aria-label')).toBe(s.syncing)
-    expect(running.querySelector('svg')!.getAttribute('class')).toContain('animate-spin')
     expect(screen.getByRole('status').textContent).toBe(s.syncing)
+    expect(screen.getByTestId('pull-indicator').querySelector('svg')!.getAttribute('class')).toContain('animate-spin')
 
     owner.phase = { kind: 'failed' }
     rerender(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
     expect(screen.getByTestId('sync-note').textContent).toBe(s.failed)
-    expect(screen.getByTestId('sync-line').dataset.tone).toBe('caution')
+    expect(screen.getByTestId('sync-note').dataset.tone).toBe('caution')
   })
 
   it('keeps a fresh sync as plain text', () => {

@@ -91,7 +91,7 @@ function tileStyle(cell: Cell): CSSProperties | null {
       border: `1px solid color-mix(in srgb, ${color} 50%, transparent)`,
     }
   if (cell.state === 'planned') return { border: `1px dashed ${color}` }
-  if (cell.state === 'missed') return { border: '1px dashed var(--neg)' }
+  if (cell.state === 'missed') return { border: '1px dashed var(--warn)' }
   return null
 }
 
@@ -301,7 +301,7 @@ export function MonthView({
                         data-testid="month-tile"
                         className={cn(
                           'box-border flex h-[34px] w-full max-w-[40px] items-center justify-center rounded-[9px] text-xs font-semibold tabular-nums',
-                          cell.state === 'missed' ? 'text-[var(--neg)]' : 'text-foreground',
+                          cell.state === 'missed' ? 'text-[var(--warn)]' : 'text-foreground',
                         )}
                         style={style ?? undefined}
                       >

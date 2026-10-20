@@ -27,9 +27,10 @@ describe('TodaySessionCard', () => {
     expect(link.tagName).toBe('A')
     expect(link).toHaveAttribute('href', '/plan?date=2026-10-20')
     expect(link).toHaveTextContent('Tomorrow · Tue 20')
-    expect(link).toHaveTextContent('Base')
+    // Wave 5 A0: no phase label and no "Open in Plan" - the card is the tap target.
+    expect(link).not.toHaveTextContent('Base')
     expect(screen.getByTestId('session-detail').textContent).toBe(`10 ${t.units.km} · 1:00 h · ≤ 158 bpm`)
-    expect(link).toHaveTextContent(t.dashboard.todayHero.openInPlan)
+    expect(link).not.toHaveTextContent(t.dashboard.todayHero.openInPlan)
     expect(link.textContent).not.toMatch(/watch/i)
     expect(link.querySelector('button')).toBeNull()
     expect(screen.getAllByRole('link')).toHaveLength(1)

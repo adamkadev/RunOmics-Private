@@ -1,35 +1,21 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { ChevronRight, Settings } from 'lucide-react'
+import { ArrowDownRight, ArrowUpRight, ChevronRight, Settings } from 'lucide-react'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
-import { formatDate, formatDecimal, formatDelta, formatDuration, formatKm, formatSignedDuration } from '@/lib/formatters'
+import { formatDate, formatDecimal, formatDuration, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import type { WearStatus } from '@/domain/shoe/wearStatus'
-import { raceGapView, type ProgressHubView } from './progressHubView'
+import type { ProgressHubView } from './progressHubView'
 import { shortDist } from '@/components/goals/shortDistance'
 import { WEAR_COLOR } from '@/components/shoes/shoeWear'
 
 const TITLE = 'text-[15px] font-semibold text-foreground'
 /** A card that opens its page: the whole surface is the target. */
 const LINK_CARD = 'text-left transition-[border-color,transform] hover:border-[var(--line-2)] active:scale-[0.99]'
-
-/** A line of whole segments: it wraps between them, never inside one (v4.3.1). */
-function Segments({ parts, className, testId }: { parts: ReactNode[]; className?: string; testId?: string }) {
-  return (
-    <p className={cn('flex flex-wrap gap-x-1 whitespace-nowrap text-xs text-muted-foreground', className)} data-testid={testId}>
-      {parts.map((part, i) => (
-        <span key={i} className="whitespace-nowrap">
-          {i > 0 && <span aria-hidden="true">· </span>}
-          {part}
-        </span>
-      ))}
-    </p>
-  )
-}
 
 /** A tile that opens its sub-page: its title, a chevron or a caption, then its figure. */
 function Tile({ href, title, aside, className, children, testId }: { href: string; title: string; aside?: ReactNode; className?: string; children: ReactNode; testId?: string }) {
@@ -54,10 +40,10 @@ function Caption({ children }: { children: ReactNode }) {
   )
 }
 
-function Bar({ share, color }: { share: number; color: string }) {
+function Bar({ share, color, thin = false }: { share: number; color: string; thin?: boolean }) {
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
-      <div className="h-full rounded-full" data-testid="bar-fill" style={{ width: `${Math.round(Math.min(1, Math.max(0, share)) * 1000) / 10}%`, background: color }} />
+    <div className={cn('w-full overflow-hidden', thin ? 'h-1 rounded-[2px] bg-[var(--track)]' : 'h-1.5 rounded-full bg-[var(--surface-2)]')}>
+      <div className={cn('h-full', thin ? 'rounded-[2px]' : 'rounded-full')} data-testid="bar-fill" style={{ width: `${Math.round(Math.min(1, Math.max(0, share)) * 1000) / 10}%`, background: color }} />
     </div>
   )
 }
@@ -74,64 +60,36 @@ function shoeColor(status: WearStatus): string {
   return WEAR_COLOR[status]
 }
 
-/** One figure of the race's Target · Predicted · Gap row: its label in caps over the time. */
-function RaceFigure({ label, value, className, testId }: { label: string; value: string; className?: string; testId?: string }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-0.5">
-      <dt className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{label}</dt>
-      <dd className={cn('whitespace-nowrap text-[22px] font-bold leading-tight tracking-[-0.01em] tabular-nums text-foreground', className)} data-testid={testId}>
-        {value}
-      </dd>
-    </div>
-  )
-}
-
 /**
- * The next race (3.0, 3.0.2): the one card in the accent. The distance and
- * date on one line with the countdown across from it, the name on its own
- * line, then Target · Predicted · Gap - the gap warn while the prediction is
- * slower, pos under it - over a bar of where the predicted pace is when the
- * target clock stops, and the gap per km.
+ * The next race (App Fixes 1h): one compact row - the distance, date and
+ * countdown in the accent over the race's name, the predicted time across
+ * from them. The full Target · Predicted · Gap reading is Goals'.
  */
 function RaceCard({ race }: { race: ProgressHubView['race'] }) {
   const h = t.profile.hub
-  const gap = race ? raceGapView(race) : null
+  const time = race ? (race.predictedSeconds ?? race.targetSeconds ?? null) : null
   return (
-    <Link href="/goals" className={cardClass({ className: cn('flex flex-col gap-2.5 rounded-3xl border-accent', LINK_CARD, 'hover:border-accent') })} data-testid="race-tile">
+    <Link
+      href="/goals"
+      className={cardClass({ className: cn('flex items-center justify-between gap-3 px-4 py-3.5', LINK_CARD) })}
+      style={{ borderColor: 'color-mix(in srgb, var(--accent) 22%, var(--background))' }}
+      data-testid="race-tile"
+    >
       {race ? (
         <>
-          <div className="flex items-baseline justify-between gap-3">
-            <span className={cn(EYEBROW_CLASS, 'whitespace-nowrap text-accent-text')} data-testid="race-eyebrow">
-              {shortDist(race.distance)} · {formatDate(race.date, { style: 'bare', year: 'always' })}
+          <div className="flex min-w-0 flex-col gap-[3px]">
+            <span className={cn(EYEBROW_CLASS, 'text-accent-text')} data-testid="race-eyebrow">
+              {shortDist(race.distance)} · {formatDate(race.date, { style: 'bare', year: 'never' })} · {h.inDays(race.daysUntil)}
             </span>
-            <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground" data-testid="race-countdown">{h.inDays(race.daysUntil)}</span>
+            {race.name && <p className="break-words text-[15px] font-semibold text-foreground text-pretty" data-testid="race-name">{race.name}</p>}
           </div>
-          {race.name && <p className="break-words text-[15px] font-semibold text-foreground text-pretty" data-testid="race-name">{race.name}</p>}
-          {(race.targetSeconds || race.predictedSeconds !== null) && (
-            <dl className="grid grid-cols-3 gap-2" data-testid="race-figures">
-              {race.targetSeconds ? <RaceFigure label={h.target} value={formatDuration(race.targetSeconds)} testId="race-target" /> : null}
-              {race.predictedSeconds !== null && <RaceFigure label={h.predicted} value={formatDuration(race.predictedSeconds)} testId="race-predicted" />}
-              {gap && (
-                <RaceFigure
-                  label={h.gap}
-                  value={formatSignedDuration(gap.gapSeconds)}
-                  className={gap.gapSeconds > 0 ? 'text-[var(--warn)]' : 'text-[var(--pos)]'}
-                  testId="race-gap"
-                />
-              )}
-            </dl>
-          )}
-          {gap && (
-            <>
-              <div role="img" aria-label={h.reached(Math.floor(gap.reached * 100))} className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]" data-testid="race-bar">
-                <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(gap.reached * 1000) / 10}%` }} />
-              </div>
-              {gap.perKmSeconds !== null && (
-                <p className="text-xs text-muted-foreground" data-testid="race-caption">
-                  {gap.gapSeconds > 0 ? h.perKmToFind(gap.perKmSeconds) : gap.gapSeconds < 0 ? h.perKmInHand(gap.perKmSeconds) : h.onTarget}
-                </p>
-              )}
-            </>
+          {time !== null && (
+            <div className="flex shrink-0 flex-col items-end gap-px">
+              <span className="text-xl font-bold tabular-nums leading-tight text-foreground" data-testid={race.predictedSeconds !== null ? 'race-predicted' : 'race-target'}>
+                {formatDuration(time)}
+              </span>
+              <span className="text-[11px] text-muted-foreground">{race.predictedSeconds !== null ? h.predictedShort : h.targetShort}</span>
+            </div>
           )}
         </>
       ) : (
@@ -141,47 +99,42 @@ function RaceCard({ race }: { race: ProgressHubView['race'] }) {
   )
 }
 
-/** The year against last year and its goal, the line to date and where it lands (3.0). */
+/**
+ * Goals & season (App Fixes 1h): the year's km against its goal, the verdict
+ * across from it, and a bar of the year so far with an amber tick where this
+ * pace lands it.
+ */
 function YearCard({ view }: { view: ProgressHubView }) {
   const h = t.profile.hub
   const { hero } = view
   const projection = hero.projection
   const shortKm = projection && hero.goalKm !== null ? projection.yearKm - hero.goalKm : null
+  const share = (km: number) => (hero.goalKm ? Math.min(1, Math.max(0, km / hero.goalKm)) * 100 : 0)
   return (
-    <Link href="/goals" className={cardClass({ className: cn('relative flex flex-col gap-3 pr-10', LINK_CARD) })} data-testid="year-hero">
-      <div className="flex items-baseline justify-between gap-3">
+    <Link href="/goals" className={cardClass({ className: cn('flex flex-col gap-[9px] px-4 py-3.5', LINK_CARD) })} data-testid="year-hero">
+      <div className="flex items-center justify-between gap-2">
         <span className={TITLE}>{h.goalsSeason}</span>
-        {hero.deltaKm !== null && (
-          // Coloured by what it means, against the km it is measured on.
-          <span className="text-right text-xs" data-testid="year-delta" style={{ color: deltaColor('distance', hero.deltaKm, { value: hero.compareKm ?? hero.km }) }}>
-            {hero.compareSince
-              ? h.vsYearSince(formatDelta(hero.deltaKm), view.year - 1, formatDate(hero.compareSince, { style: 'bare', year: 'never' }))
-              : h.vsYear(formatDelta(hero.deltaKm), view.year - 1)}
+        <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+      </div>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-2xl font-bold leading-tight text-foreground">
+          {formatKm(hero.km)}{' '}
+          <span className="text-[13px] font-normal text-muted-foreground">{hero.goalKm !== null ? h.ofGoal(formatKm(hero.goalKm)) : t.units.km}</span>
+        </p>
+        {shortKm !== null && (
+          <span className="text-right text-xs" style={{ color: projectionColor(hero) }} data-testid="projection-verdict">
+            {shortKm < 0 ? h.shortAtPace(formatKm(-shortKm)) : shortKm > 0 ? h.overAtPace(formatKm(shortKm)) : h.onPace}
           </span>
         )}
       </div>
-      <p className="text-[30px] font-bold leading-none tracking-[-0.02em] text-foreground">
-        {formatKm(hero.km)}
-        <span className="ml-1.5 text-sm font-normal tracking-normal text-muted-foreground">
-          {hero.goalKm !== null ? h.ofGoal(formatKm(hero.goalKm)) : t.units.km}
-        </span>
-      </p>
       {hero.goalKm !== null && (
-        // The verdict in its tone, then what the goal needs (C3, 3.0), then
-        // what the dotted line is (3.0.2).
-        <p className="text-[13px] leading-normal text-[var(--text-2)]" data-testid="projection-line">
-          {projection && shortKm !== null && (
-            <>
-              <b className="font-semibold" style={{ color: projectionColor(hero) }} data-testid="projection-verdict">
-                {shortKm < 0 ? h.shortBy(formatKm(-shortKm)) : shortKm > 0 ? h.overBy(formatKm(shortKm)) : h.onPace}
-              </b>{' '}
-              {shortKm !== 0 && `${h.atPace} `}
-              {h.needs(formatKm(projection.weeklyNeeded), formatKm(projection.weeklyRate))}{' '}
-            </>
+        <div className="relative h-1.5 rounded-[3px] bg-[var(--track)]" data-testid="year-bar">
+          <div className="absolute inset-y-0 left-0 rounded-[3px] bg-accent" style={{ width: `${share(hero.km)}%` }} />
+          {projection && (
+            <div className="absolute -top-[3px] h-3 w-0.5" style={{ left: `${share(projection.yearKm)}%`, background: projectionColor(hero) }} data-testid="projection-tick" />
           )}
-        </p>
+        </div>
       )}
-      <ChevronRight size={16} aria-hidden="true" className="absolute right-4 top-4 text-muted-foreground" />
     </Link>
   )
 }
@@ -204,10 +157,10 @@ function Records({ records, vo2max }: { records: ProgressHubView['records']; vo2
       {records.length === 0 ? (
         <span className="text-sm text-muted-foreground">{h.noRecords}</span>
       ) : (
-        <dl className="grid grid-cols-4 gap-2" data-testid="records">
+        <dl className="grid grid-cols-4 gap-1.5" data-testid="records">
           {records.map((r) => (
             <div key={r.key} className="flex min-w-0 flex-col gap-0.5" data-testid="record">
-              <dt className="flex items-baseline gap-1 whitespace-nowrap text-xs text-muted-foreground">
+              <dt className="flex items-baseline gap-1 whitespace-nowrap text-[11.5px] text-muted-foreground">
                 {h.recordLabels[r.key] ?? r.label}
                 {r.recent && (
                   <span data-testid="latest-record" aria-label={h.newRecordLabel} className="text-caption font-bold text-accent-text">
@@ -215,7 +168,7 @@ function Records({ records, vo2max }: { records: ProgressHubView['records']; vo2
                   </span>
                 )}
               </dt>
-              <dd className="whitespace-nowrap text-[17px] font-semibold tabular-nums leading-tight text-foreground">{formatDuration(r.seconds)}</dd>
+              <dd className="whitespace-nowrap text-base font-semibold tabular-nums leading-tight text-foreground">{formatDuration(r.seconds)}</dd>
             </div>
           ))}
         </dl>
@@ -226,23 +179,22 @@ function Records({ records, vo2max }: { records: ProgressHubView['records']; vo2
       {vo2max && (
         <Link
           href="/athlete"
-          className={cn('flex items-baseline justify-between gap-3 border-t border-border pt-2.5', LINK_CARD)}
+          className={cn('flex items-center justify-between gap-3 border-t border-border pt-2.5 text-[13px]', LINK_CARD)}
           data-testid="vo2-row"
         >
-          <span className="min-w-0 text-[13px] text-muted-foreground text-pretty">
+          <span className="min-w-0 text-[var(--text-2)] text-pretty">
             {h.vo2max}{' '}
             <b className="font-semibold tabular-nums text-foreground">{formatDecimal(vo2max.value, 1)}</b>
             {vo2max.grade && ` · ${vo2max.grade.letter}`}
             {vo2max.grade?.topPercent != null && ` · ${t.vo2Grade.topPct(vo2max.grade.topPercent)}`}
           </span>
-          <span className="flex shrink-0 items-center gap-1">
-            {vo2max.delta !== null && (
-              <span className="text-xs tabular-nums" data-testid="vo2-delta" style={{ color: deltaColor('vo2max', vo2max.delta) }}>
-                {h.vo2Delta(formatDelta(vo2max.delta))}
-              </span>
-            )}
-            <ChevronRight size={14} aria-hidden="true" className="text-muted-foreground" />
-          </span>
+          {vo2max.delta !== null && (
+            // The arrow follows the number, the colour says if that is good (rule 04).
+            <span className="flex shrink-0 items-center gap-1 tabular-nums" data-testid="vo2-delta" style={{ color: deltaColor('vo2max', vo2max.delta) }}>
+              {vo2max.delta !== 0 && (vo2max.delta > 0 ? <ArrowUpRight size={12} strokeWidth={2} aria-hidden /> : <ArrowDownRight size={12} strokeWidth={2} aria-hidden />)}
+              {h.vo2Delta(formatDecimal(Math.abs(vo2max.delta), Number.isInteger(vo2max.delta) ? 0 : 1))}
+            </span>
+          )}
         </Link>
       )}
     </section>
@@ -259,7 +211,6 @@ function Records({ records, vo2max }: { records: ProgressHubView['records']; vo2
 export function ProgressHub({ view }: { view: ProgressHubView }) {
   const h = t.profile.hub
   const { vo2max, consistency, shoes, allTime } = view
-  const days = h.consistencyDays(consistency.activeDays)
   const bestYearKm = Math.max(1, ...allTime.years.slice(-2).map((y) => y.km))
 
   return (
@@ -280,30 +231,46 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
 
       <RaceCard race={view.race} />
       <YearCard view={view} />
-      <Records records={view.records} vo2max={vo2max} />
 
       {/* VO2 max and Consistency side by side on a wide screen, stacked on a
           phone; then the shoes and all time (as before 3.0). */}
       <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2 sm:items-start" data-testid="progress-columns">
         <Tile href="/consistency" title={h.consistency} testId="consistency-tile">
           {/* The weekly streak, as Consistency itself now reads the year
-              (3.1.0, App Fixes 1h): the daily heatmap this tile drew was the
-              one the page had already dropped. */}
-          <p className="flex flex-wrap items-baseline gap-x-1.5">
-            <span className="text-[26px] font-semibold leading-tight tabular-nums text-foreground" data-testid="streak-weeks">
-              {consistency.streakWeeks}
+              (3.1.0, App Fixes 1h), over the last 26 weeks as a strip: a week
+              that hit its target in the accent, one under it grey, the week
+              under way a dashed outline. */}
+          <div className="flex items-end justify-between gap-3">
+            <p className="flex min-w-0 flex-wrap items-baseline gap-x-1">
+              <span className="text-2xl font-bold leading-tight tabular-nums text-foreground" data-testid="streak-weeks">
+                {consistency.streakWeeks}
+              </span>
+              <span className="text-[13px] text-muted-foreground text-pretty">{h.streakOf(consistency.thisWeek.target)}</span>
+            </p>
+            <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground" data-testid="consistency-this-week">
+              {h.runsThisWeek(consistency.thisWeek.runs, consistency.thisWeek.target)}
             </span>
-            <span className="text-xs text-muted-foreground text-pretty">{h.streakOf(consistency.thisWeek.target)}</span>
-          </p>
-          <Segments
-            testId="consistency-footer"
-            parts={[
-              <>{h.runsThisWeek(consistency.thisWeek.runs, consistency.thisWeek.target)}</>,
-              <>{days.lead}<b className="font-semibold text-foreground">{days.value}</b>{days.tail}</>,
-            ]}
-          />
+          </div>
+          <div className="flex h-[30px] items-end gap-[3px]" aria-hidden="true" data-testid="streak-strip">
+            {consistency.strip.map((week) => (
+              <span
+                key={week.monday}
+                data-hit={week.hit ? '' : undefined}
+                data-current={week.current ? '' : undefined}
+                className="box-border flex-1 rounded-[2px]"
+                style={{
+                  height: `${week.heightPct}%`,
+                  ...(week.current
+                    ? { border: '1px dashed var(--accent)' }
+                    : { background: week.hit ? 'var(--accent)' : 'var(--neutral-bar)' }),
+                }}
+              />
+            ))}
+          </div>
         </Tile>
       </div>
+
+      <Records records={view.records} vo2max={vo2max} />
 
       {shoes.length > 0 && (
         <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="shoes-tile">
@@ -316,19 +283,20 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
           </div>
           {shoes.map((s) => (
             <Link key={s.gearId} href={`/shoes/${s.gearId}`} className="flex flex-col gap-2 transition-opacity active:opacity-70" data-testid="shoe-row">
-              <div className="flex items-baseline justify-between gap-3 text-sm">
+              {/* One row a pair (App Fixes 1h): its name, "· replace soon" in
+                  amber when due, the km against its life, a 4 px bar. */}
+              <div className="flex items-baseline justify-between gap-3 text-[13px]">
                 <span className="min-w-0 break-words text-foreground text-pretty">
                   {s.name}
                   {s.status !== 'ok' && (
-                    <span className="ml-1.5 text-xs" style={{ color: shoeColor(s.status) }} data-testid="shoe-status">{t.shoes.status[s.status]}</span>
+                    <span style={{ color: shoeColor(s.status) }} data-testid="shoe-status"> · {t.shoes.status[s.status].toLocaleLowerCase(t.locale)}</span>
                   )}
                 </span>
-                <span className="flex shrink-0 items-center gap-0.5 text-muted-foreground">
-                  <b className="font-semibold text-foreground">{formatKm(s.km)}</b>&nbsp;/ {formatKm(s.maxKm)} {t.units.km}
-                  <ChevronRight size={14} aria-hidden="true" />
+                <span className="shrink-0 whitespace-nowrap text-[var(--text-2)]">
+                  <b className="font-semibold text-foreground">{formatKm(s.km)}</b> / {formatKm(s.maxKm)} {t.units.km}
                 </span>
               </div>
-              <Bar share={s.maxKm > 0 ? s.km / s.maxKm : 0} color={shoeColor(s.status)} />
+              <Bar share={s.maxKm > 0 ? s.km / s.maxKm : 0} color={shoeColor(s.status)} thin />
             </Link>
           ))}
         </section>

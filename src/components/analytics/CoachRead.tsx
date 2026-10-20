@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useId, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { ButtonLink } from '@/components/ui/Button'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react'
 import { DELTA_TONE_COLOR } from '@/lib/deltaTone'
 import { VerdictEyebrow } from '@/components/ui/Verdict'
 import { t } from '@/i18n'
-import { Dialog } from './AnalyticsKit'
+import { useFocusTrap } from '@/lib/useFocusTrap'
+import { useScrollLock } from '@/lib/useScrollLock'
 import type { Direction, TabRead } from './coachReadTabs'
 import type { Trend } from './analyticsView'
 
@@ -77,33 +78,86 @@ export function CoachRead({ read, eyebrow }: { read: TabRead; eyebrow: string })
           </Link>
         </div>
       </section>
-      {open && (
-        <Dialog
-          title={read.headline}
-          eyebrow={eyebrow}
-          eyebrowTone={read.tone}
-          onClose={() => setOpen(false)}
-          actions={
-            <ButtonLink href="/plan" className="w-full" data-testid="coach-open-plan-button">
-              {s.openPlanButton}
-            </ButtonLink>
-          }
-        >
-          <ul className="flex flex-col">
-            {read.rows.map((row, i) => {
-              const direction = row.direction ?? TREND_DIRECTION[row.trend]
-              const Icon = DIRECTION_ICON[direction]
-              const color = TREND_COLOR[row.trend]
-              return (
-                <li key={i} className="flex min-h-12 items-center gap-3 border-t border-border py-2.5 text-sm leading-[1.45] text-[var(--text-2)]" data-trend={row.trend} data-direction={direction}>
-                  <Icon size={16} strokeWidth={2.4} className="w-[18px] shrink-0" style={{ color }} aria-hidden />
-                  {row.text}
-                </li>
-              )
-            })}
-          </ul>
-        </Dialog>
-      )}
+      {open && <WhySheet read={read} eyebrow={eyebrow} onClose={() => setOpen(false)} />}
     </>
+  )
+}
+
+/** "Load 456, under the 462–750 safe range.": the lead, up to the first comma, in bold. */
+export function leadSplit(text: string): [string, string] {
+  const i = text.indexOf(', ')
+  return i > 0 && i < 40 ? [text.slice(0, i), text.slice(i)] : ['', text]
+}
+
+/**
+ * The case behind the read (App Fixes 1b): a bottom sheet with a grab
+ * handle, the eyebrow and claim, one row per piece of evidence with its lead
+ * number bold, then "Open plan" beside "Close".
+ */
+function WhySheet({ read, eyebrow, onClose }: { read: TabRead; eyebrow: string; onClose: () => void }) {
+  const s = t.analytics.cards.coachRead
+  const trapRef = useFocusTrap<HTMLDivElement>()
+  const titleId = useId()
+  useScrollLock()
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  return createPortal(
+    <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end justify-center" style={{ touchAction: 'none' }}>
+      <div className="absolute inset-0 animate-fade-in bg-black/55" onClick={onClose} aria-hidden />
+      <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        data-testid="why-sheet"
+        className="relative flex max-h-[85dvh] w-full max-w-[520px] animate-fade-up flex-col gap-3.5 overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-[var(--line-2)] bg-[var(--surface-sheet,var(--card))] px-5 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-[var(--shadow-modal)]"
+      >
+        <span aria-hidden className="h-1 w-10 self-center rounded-full bg-[var(--rest-bar)]" />
+        <VerdictEyebrow tone={read.tone} className="[&>span:first-child]:hidden">{eyebrow}</VerdictEyebrow>
+        <h2 id={titleId} className="text-xl font-semibold leading-[1.25] tracking-[-0.01em] text-foreground text-pretty">
+          {read.headline}
+        </h2>
+        <ul className="flex flex-col">
+          {read.rows.map((row, i) => {
+            const direction = row.direction ?? TREND_DIRECTION[row.trend]
+            const Icon = DIRECTION_ICON[direction]
+            const [lead, rest] = leadSplit(row.text)
+            return (
+              <li
+                key={i}
+                className="grid grid-cols-[28px_minmax(0,1fr)] gap-2.5 border-t border-border py-3 text-sm leading-[1.4] text-[var(--text-2)]"
+                data-trend={row.trend}
+                data-direction={direction}
+              >
+                <Icon size={16} strokeWidth={2} className="mt-0.5" style={{ color: TREND_COLOR[row.trend] }} aria-hidden />
+                <span>
+                  {lead && <b className="font-semibold text-foreground">{lead}</b>}
+                  {rest}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+        <div className="flex gap-2.5">
+          <Link
+            href="/plan"
+            className="flex flex-1 items-center justify-center rounded-[14px] bg-accent py-3.5 text-[15px] font-semibold text-accent-foreground active:opacity-80"
+            data-testid="coach-open-plan-button"
+          >
+            {s.openPlanButton}
+          </Link>
+          <button type="button" onClick={onClose} className="rounded-[14px] bg-[var(--border)] px-5 py-3.5 text-[15px] font-medium text-foreground active:opacity-80">
+            {t.analytics.cards.close}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }

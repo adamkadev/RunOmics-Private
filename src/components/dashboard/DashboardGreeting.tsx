@@ -44,15 +44,15 @@ export function syncAgeMs(lastSyncedAt: string, now = Date.now()): number {
 /** Under this, a sync has just run: a tap says when the next can go, and asks GitHub for nothing. */
 const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
 
-const BUTTON =
-  'hit-44 flex size-10 shrink-0 items-center justify-center rounded-full border border-border transition-opacity active:opacity-70 disabled:active:opacity-100'
+/** How far a pull at the top of the page has to travel before it syncs. */
+const PULL_TRIGGER_PX = 70
 
 interface Line {
   text: string
   tone: 'muted' | 'accent' | 'caution'
   spinning?: boolean
   disabled?: boolean
-  /** The words on screen beside the button: while a sync runs or has just answered, never at rest. */
+  /** The words on screen beside the avatar: while a sync runs or has just answered, never at rest. */
   shown?: boolean
   onClick: () => void
 }
@@ -60,32 +60,71 @@ interface Line {
 const NOTHING = () => {}
 
 /**
- * The sync control (3.0.2, mock 5f): a round ↻ beside the avatar, its words -
- * "Synced 14h ago" - its accessible name at rest, and on screen beside it
- * once pressed: while the sync runs, and what it answered. The arrows turn
- * while it runs; amber, button and words, once the data is a day old.
+ * Pull-to-refresh (App Fixes 1a, Wave 5 A0): the header's ↻ button is gone,
+ * and a pull down from the top of Today runs what it ran. A ring follows the
+ * finger and turns while the sync runs.
+ */
+function usePullToRefresh(onPull: () => void, disabled: boolean) {
+  const [pull, setPull] = useState(0)
+  const pullRef = useRef(0)
+  const onPullRef = useRef(onPull)
+  onPullRef.current = onPull
+  useEffect(() => {
+    if (disabled) return
+    let startY: number | null = null
+    const start = (e: TouchEvent) => {
+      startY = window.scrollY <= 0 && e.touches.length === 1 ? e.touches[0]!.clientY : null
+    }
+    const move = (e: TouchEvent) => {
+      if (startY === null) return
+      const dy = e.touches[0]!.clientY - startY
+      pullRef.current = dy > 0 && window.scrollY <= 0 ? Math.min(110, dy * 0.5) : 0
+      setPull(pullRef.current)
+    }
+    const end = () => {
+      if (pullRef.current >= PULL_TRIGGER_PX) onPullRef.current()
+      startY = null
+      pullRef.current = 0
+      setPull(0)
+    }
+    window.addEventListener('touchstart', start, { passive: true })
+    window.addEventListener('touchmove', move, { passive: true })
+    window.addEventListener('touchend', end)
+    window.addEventListener('touchcancel', end)
+    return () => {
+      window.removeEventListener('touchstart', start)
+      window.removeEventListener('touchmove', move)
+      window.removeEventListener('touchend', end)
+      window.removeEventListener('touchcancel', end)
+    }
+  }, [disabled])
+  return pull
+}
+
+/**
+ * The sync state beside the avatar: its words only while a sync runs or has
+ * just answered (3.0.2), and the pull that starts one. Amber once the data is
+ * a day old.
  */
 function SyncButton({ text, tone, spinning = false, onClick, disabled = false, shown = false }: Line) {
   const color = tone === 'caution' ? 'var(--tone-caution)' : 'var(--muted-foreground)'
+  const pull = usePullToRefresh(onClick, disabled)
   return (
-    <div className="flex min-w-0 items-center">
-      <span role="status" data-testid="sync-note" className={cn('min-w-0 truncate text-right text-xs', shown && 'mr-2')} style={{ color }}>
+    <>
+      <span role="status" aria-label={text} data-testid="sync-note" data-tone={tone} className="min-w-0 truncate text-right text-xs" style={{ color }}>
         {shown ? text : ''}
       </span>
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        aria-label={text}
-        title={text}
-        data-testid="sync-line"
-        data-tone={tone}
-        className={BUTTON}
-        style={{ color }}
-      >
-        <RotateCw size={17} strokeWidth={2.2} aria-hidden className={cn('shrink-0', spinning && 'animate-spin')} />
-      </button>
-    </div>
+      {(pull > 0 || spinning) && (
+        <span
+          aria-hidden
+          data-testid="pull-indicator"
+          className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+8px)] z-50 flex size-9 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card shadow-card"
+          style={{ transform: `translate(-50%, ${spinning ? 0 : pull - 36}px)`, opacity: spinning ? 1 : Math.min(1, pull / PULL_TRIGGER_PX) }}
+        >
+          <RotateCw size={16} strokeWidth={2.2} className={cn('text-muted-foreground', spinning && 'animate-spin')} style={spinning ? undefined : { rotate: `${pull * 3}deg` }} />
+        </span>
+      )}
+    </>
   )
 }
 
@@ -131,7 +170,7 @@ function SyncLine({ lastSyncedAt, ago }: { lastSyncedAt: string; ago: string }) 
   const router = useRouter()
   if (user && isOwner) return <OwnerSyncLine user={user} lastSyncedAt={lastSyncedAt} ago={ago} />
   const text = isSyncStale(lastSyncedAt) ? `${s.synced(ago)} · ${s.tapToSync}` : s.synced(ago)
-  return <SyncButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.push('/settings')} />
+  return <SyncButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.refresh()} />
 }
 
 /** "Monday, Oct 19", « Lundi 19 oct. »: the header's date over the title. */
@@ -181,10 +220,10 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
     // the right the sync button (3.0.2) beside the avatar. The verdict below is still the news.
     <header data-testid="today-header" className="flex items-end justify-between gap-3">
       <div className="flex min-w-0 flex-col">
-        <p data-title-sub data-testid="today-date" className="text-[13px] font-medium text-muted-foreground">
+        <p data-title-sub data-testid="today-date" className="text-[13px] text-muted-foreground">
           {headerDate(today)}
         </p>
-        <h1 className="text-display text-foreground">{t.pages.dashboard.title}</h1>
+        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-foreground">{t.pages.dashboard.title}</h1>
       </div>
       <div ref={sideRef} className="flex min-w-0 shrink items-center gap-2.5">
         {ago && lastSyncedAt && <SyncLine lastSyncedAt={lastSyncedAt} ago={ago} />}
@@ -197,7 +236,7 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
         >
           <span
             aria-hidden="true"
-            className="flex size-10 items-center justify-center rounded-full bg-accent text-[15px] font-bold text-accent-foreground"
+            className="flex size-10 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground"
           >
             {initials(displayName)}
           </span>

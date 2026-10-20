@@ -4,12 +4,15 @@ import {
   buildHeatTracks,
   mercatorX,
   mercatorY,
-  HEAT_DARK_CAP_ALPHA,
+  HEAT_LEVELS,
   HEAT_STYLE,
-  heatLineWidth,
-  heatLightFloor,
-  heatPasses,
-  rgba,
+  HEAT_HALO_MIN_T,
+  heatRankScale,
+  buildHeatLevels,
+  heatCore,
+  heatFrequency,
+  heatHalo,
+  heatZoomScale,
   reachKm,
   ringCoordinates,
   areaRows,
@@ -17,9 +20,6 @@ import {
   type HeatFilters,
 } from '../mapUtils'
 import { distanceKm } from '@/lib/math'
-import { heatRamp } from '@/lib/heatRamp'
-import { CURATED_ACCENTS } from '@/lib/accentScale'
-import { hexToOklch } from '@/lib/oklch'
 import type { RouteCluster, RouteMeta } from '@/application/usecases/GetAllRoutes'
 
 const meta = (over: Partial<RouteMeta> = {}): RouteMeta => ({
@@ -106,80 +106,84 @@ describe('GPS jumps (v5.6 #5)', () => {
   })
 })
 
-describe('HEAT_STYLE (v4.17)', () => {
-  it('adds light on dark and multiplies ink on light, so overlaps build up', () => {
-    expect(HEAT_STYLE.dark.composite).toBe('lighter')
-    expect(HEAT_STYLE.light.composite).toBe('multiply')
-  })
-
-  it('draws a wide faint glow before a thin core on dark', () => {
-    const [glow, core] = HEAT_STYLE.dark.passes
-    expect(glow!.width).toBeGreaterThan(core!.width)
-    expect(glow!.alpha).toBeLessThan(core!.alpha)
-    expect(core!.width).toBe(1)
-  })
-
-  // App Fixes 4a: a blurred halo under a ramp that runs pale tint, accent,
-  // deep shade - so a route run many times multiplies down to ink.
-  it('draws light mode as a halo under a pale-to-deep ramp', () => {
-    const tones = HEAT_STYLE.light.passes.map((p) => p.tone)
-    expect(tones).toEqual(['halo', 'tint', 'accent', 'deep'])
-    const [halo, ...ramp] = HEAT_STYLE.light.passes
-    expect(halo!.blur).toBeGreaterThan(0)
-    expect(halo!.width).toBeGreaterThan(ramp[0]!.width)
-    // Each step of the ramp is narrower and more opaque than the one before.
-    for (let i = 1; i < ramp.length; i++) {
-      expect(ramp[i]!.width).toBeLessThan(ramp[i - 1]!.width)
-      expect(ramp[i]!.alpha).toBeGreaterThan(ramp[i - 1]!.alpha)
-    }
-  })
-
-  it('draws the tracks in the accent on dark, and its own ramp on light', () => {
-    expect(heatPasses('dark', '#2dd4a7').map((p) => p.color)).toEqual(['rgba(45,212,167,0.035)', 'rgba(45,212,167,0.16)'])
-    const { light, deep } = heatRamp('#0e7f9b')
-    const passes = heatPasses('light', '#0e7f9b')
-    expect(passes.map((p) => p.color)).toEqual([rgba(light, 0.05), rgba(light, 0.11), rgba('#0e7f9b', 0.18), rgba(deep, 0.24)])
-    expect(passes[0]!.blur).toBe(6)
-    expect(passes.slice(1).every((p) => p.blur === undefined)).toBe(true)
-  })
-
-  // 3.0 override 9: added light stacks, so enough runs over one street summed
-  // to white. The canvas washes the accent back over what it drew, which caps
-  // the busiest ground at the accent; heatLayer applies it with source-atop.
-  it('caps the dark canvas at the accent rather than letting it reach white', () => {
-    expect(HEAT_DARK_CAP_ALPHA).toBeGreaterThan(0)
-    expect(HEAT_DARK_CAP_ALPHA).toBeLessThan(1)
-  })
-
-  // App Fixes 4a: multiply compounds, so the light canvas ran past the deep
-  // shade to near-black. The floor is the accent half way to the ink, and no
-  // amount of overlap goes darker than it.
-  it('floors the light canvas at the accent half way to the ink', () => {
-    for (const accent of CURATED_ACCENTS) {
-      const floor = heatLightFloor(accent.light.acc)
-      const { l } = hexToOklch(floor)
-      // Darker than the deepest pass draws, and still a colour, not black.
-      expect(l).toBeLessThan(hexToOklch(heatRamp(accent.light.acc).deep).l)
-      expect(l).toBeGreaterThan(0.3)
-    }
-  })
-
-  it('keeps every light pass light enough that one run reads as a tint', () => {
-    for (const pass of heatPasses('light', '#0e7f9b')) expect(pass.color).toMatch(/0\.(0|1|2)\d*\)$/)
-  })
-
-  it('reads a short hex too', () => {
-    expect(rgba('#fff', 0.5)).toBe('rgba(255,255,255,0.5)')
+describe('heat frequency by rank (Wave 5 B)', () => {
+  it('keeps the common counts low and only the busiest near the top', () => {
+    const counts = [...Array(60).fill(1), ...Array(25).fill(2), ...Array(10).fill(5), ...Array(5).fill(20)]
+    const rank = heatRankScale(counts)
+    expect(rank(20)).toBe(1)
+    expect(rank(1)).toBeLessThan(0.2)
+    // Only the top ~15 % past 0.6.
+    expect(counts.filter((c) => rank(c) > 0.6).length / counts.length).toBeLessThanOrEqual(0.16)
   })
 })
 
-describe('heatLineWidth (v4.17)', () => {
-  it('holds 1.2 px out to zoom 12, reaches 4 px at 16, straight between', () => {
-    expect(heatLineWidth(8)).toBe(1.2)
-    expect(heatLineWidth(12)).toBe(1.2)
-    expect(heatLineWidth(14)).toBeCloseTo(2.6, 10)
-    expect(heatLineWidth(16)).toBe(4)
-    expect(heatLineWidth(19)).toBe(4)
+describe('the heat layers (Wave 4, App Fixes 4d)', () => {
+  it('multiplies on light and screens on dark', () => {
+    expect(HEAT_STYLE.light.composite).toBe('multiply')
+    expect(HEAT_STYLE.dark.composite).toBe('screen')
+  })
+
+  // Wave 5 B: no halo under t 0.35, then 6 to 13 px over the rest.
+  it('skips the halo on rare streets and grows it 6 to 13 px above, the core 1.2 to 3.3 px', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      expect(heatHalo(mode, '#2dd4a7', 0)).toBeNull()
+      expect(heatHalo(mode, '#2dd4a7', 0.34)).toBeNull()
+      expect(heatHalo(mode, '#2dd4a7', HEAT_HALO_MIN_T)!.width).toBe(6)
+      expect(heatHalo(mode, '#2dd4a7', 1)!.width).toBe(13)
+      expect(heatCore(mode, '#2dd4a7', 0).width).toBe(1.2)
+      expect(heatCore(mode, '#2dd4a7', 1).width).toBeCloseTo(3.3, 10)
+      expect(heatHalo(mode, '#2dd4a7', 1)!.blur).toBe(3.2)
+    }
+  })
+
+  it('takes the opacities the mockup draws', () => {
+    expect(heatHalo('light', '#2dd4a7', 1)!.color).toMatch(/,0\.6\)$/)
+    expect(heatHalo('dark', '#2dd4a7', 1)!.color).toMatch(/,0\.75\)$/)
+    expect(heatCore('dark', '#2dd4a7', 0).color).toMatch(/,0\.43\)$/)
+    expect(heatCore('dark', '#2dd4a7', 1).color).toBe('rgb(45,212,167)')
+  })
+
+  it('keeps the light halo in the tint-to-accent half of the ramp', () => {
+    // rampLight(0.45) sits just past the accent, never near the ink.
+    expect(heatHalo('light', '#2dd4a7', 1)!.color).toMatch(/^rgba\(4\d,19\d,15\d,/)
+  })
+
+  it('scales the strokes with zoom around the city view', () => {
+    expect(heatZoomScale(12.5)).toBe(1)
+    expect(heatZoomScale(14.5)).toBe(1.6)
+    expect(heatZoomScale(8)).toBe(0.6)
+  })
+})
+
+describe('heatFrequency', () => {
+  it('normalises run counts on a log scale against the busiest street', () => {
+    expect(heatFrequency(50, 50)).toBe(1)
+    expect(heatFrequency(0, 50)).toBe(0)
+    expect(heatFrequency(7, 63)).toBeCloseTo(0.5, 10)
+  })
+
+  it('leaves one run everywhere at the faint end', () => {
+    expect(heatFrequency(1, 1)).toBeLessThan(1)
+  })
+})
+
+describe('buildHeatLevels', () => {
+  const street = (lat: number) =>
+    Float64Array.from([0, 1, 2, 3, 4, 5].flatMap((i) => [mercatorX(6.17 + i * 0.001), mercatorY(lat)]))
+
+  it('puts a street run often in a higher level than one run once, and draws each once', () => {
+    const busy = Array.from({ length: 10 }, () => street(49.12))
+    const levels = buildHeatLevels([...busy, street(49.13)])
+    expect(levels).toHaveLength(HEAT_LEVELS)
+    const used = levels.map((l, i) => (l.length ? i : -1)).filter((i) => i >= 0)
+    expect(used).toHaveLength(2)
+    expect(used[1]).toBe(HEAT_LEVELS - 1)
+    // Ten identical runs draw one path, not ten.
+    expect(levels[HEAT_LEVELS - 1]!.filter((v) => !Number.isNaN(v)).length).toBe(12)
+  })
+
+  it('draws nothing for no tracks', () => {
+    expect(buildHeatLevels([]).every((l) => l.length === 0)).toBe(true)
   })
 })
 

@@ -1,6 +1,15 @@
 import type { ActivityType } from '@/domain/activity/types'
 import type { Strings } from './en'
 
+/** "+6" as "up 6", "−23" as "down 23", "0" as level. */
+function moveWords(delta: string, up: string, down: string, level: string): string {
+  const sign = delta.charAt(0)
+  const n = delta.replace(/^[+−-]/, '')
+  if (sign === '+') return `${up} ${n}`
+  if (sign === '−' || sign === '-') return `${down} ${n}`
+  return n === '0' ? level : delta
+}
+
 export const fr = {
   locale: 'fr-FR',
 
@@ -467,6 +476,21 @@ export const fr = {
       acwr: 'Charge',
       acwrValue: (ratio: string) => `×${ratio}`,
       deltaIn: (days: number) => `en ${days} jours`,
+      deltaWeek: (n: number, days: number) => (days === 7 ? `${n} cette semaine` : `${n} en ${days} jours`),
+      fallback: {
+        below: (acute: number, lo: number, hi: number, fresh = false) => ({
+          headline: fresh ? 'Tu es frais. Il est temps de reconstruire.' : 'La charge est sous ta zone. Il est temps de reconstruire.',
+          body: `La charge ${acute} est passée sous ta zone sûre ${lo}–${hi}. Fais la séance du jour en entier pour la remonter.`,
+        }),
+        in: (acute: number, lo: number, hi: number) => ({
+          headline: 'La charge est là où elle doit être.',
+          body: `La charge ${acute} est dans ta zone sûre ${lo}–${hi}. Suis le plan.`,
+        }),
+        above: (acute: number, lo: number, hi: number) => ({
+          headline: 'La charge dépasse ta zone sûre.',
+          body: `La charge ${acute} est au-dessus de ta zone sûre ${lo}–${hi}. Garde la journée facile et laisse la fatigue redescendre.`,
+        }),
+      },
       noValue: '—',
     },
     stale: {
@@ -517,8 +541,17 @@ export const fr = {
         rest: 'Repos',
       },
     },
+    thisWeek: {
+      title: 'Cette semaine',
+      load: (acute: number, lo: number, hi: number) => `charge ${acute} · sûr ${lo}–${hi}`,
+      done: 'fait',
+      planned: 'prévu · km',
+      runsLeft: (n: number) => `${n} sortie${n > 1 ? 's' : ''} restante${n > 1 ? 's' : ''}`,
+      missed: 'manquée',
+      missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
+    },
     loadStrip: {
-      title: 'Charge · 7 derniers jours',
+      title: 'Charge · 7 jours',
       band: (lo: number, hi: number) => `cible ${lo}–${hi}`,
       safe: (lo: number, hi: number) => `· sûr ${lo}–${hi}`,
       day: (date: string, load: number) => `${date} · charge ${load}`,
@@ -606,16 +639,20 @@ export const fr = {
         },
         load: {
           spikeAndDip: 'La charge a bondi et la récupération fléchit. Prévois 2 jours tranquilles.',
-          watchStillSays: (status: string) =>
-            `Ta montre affiche toujours ${status}, parce qu'elle regarde les 28 derniers jours et que ton bloc récent était solide.`,
           spike: (pct: number, span: string) => `La charge a bondi de ${pct} % en ${span}. Lève le pied avant qu’elle ne te rattrape.`,
           spikeAbove: "La charge dépasse ta zone sûre. Lève le pied avant qu’elle ne te rattrape.",
           dip: 'La récupération fléchit. Fais une semaine tranquille.',
           building: (pct: number, span: string) => `La charge est en hausse de ${pct} % en ${span} et la récupération tient. Continue sur cette lancée.`,
           buildingLoad: (pct: number, span: string) => `La charge est en hausse de ${pct} % en ${span}. Continue sur cette lancée.`,
         },
-        fitness: (value: number, delta: string, within: string) => `Condition ${value}, ${delta} ${within}.`,
-        fatigue: (value: number, delta: string, within: string) => `Fatigue ${value}, ${delta} ${within}.`,
+        fitness: (value: number, delta: string, within: string) => `Condition ${value}, ${moveWords(delta, 'en hausse de', 'en baisse de', 'stable')} ${within}.`,
+        fatigue: (value: number, delta: string, within: string) => `Fatigue ${value}, ${moveWords(delta, 'en hausse de', 'en baisse de', 'stable')} ${within}.`,
+        loadRow: (state: 'below' | 'in' | 'above', acute: number, lo: number, hi: number) =>
+          state === 'below' ? `Charge ${acute}, sous la zone sûre ${lo}–${hi}.` : state === 'above' ? `Charge ${acute}, au-dessus de la zone sûre ${lo}–${hi}.` : `Charge ${acute}, dans la zone sûre ${lo}–${hi}.`,
+        fitnessNow: (perWeek: number, n: string) => (perWeek < 0 ? ` En recul de ${n} par semaine.` : perWeek > 0 ? ` En hausse de ${n} par semaine.` : ' Stable en ce moment.'),
+        fatigueNow: { fresh: ' Tu es bien récupéré.', veryFresh: ' Tu es bien récupéré.', neutral: ' La récupération suit son cours.', tired: ' Tu portes de la fatigue.' } as Record<string, string>,
+        restingHrRow: (side: 'low' | 'high' | null, value: number, lo: number, hi: number) =>
+          side === 'high' ? `FC repos ${value}, au-dessus de ta base ${lo}–${hi}.` : side === 'low' ? `FC repos ${value}, sous ta base ${lo}–${hi}.` : `FC repos ${value}, dans ta base ${lo}–${hi}.`,
         thresholdFaster: (pace: string, s: number, ago: string) => `Seuil ${pace} /km, ${s} s plus rapide qu’${ago}.`,
         thresholdSlower: (pace: string, s: number, ago: string) => `Seuil ${pace} /km, ${s} s plus lent qu’${ago}.`,
         thresholdLevel: (pace: string, ago: string) => `Seuil ${pace} /km, comme ${ago}.`,
@@ -666,6 +703,17 @@ export const fr = {
         fatigue: 'Fatigue',
         inPeriod: (delta: string, period: string) => `${delta} en ${period}`,
         legend: { fresh: 'Frais', neutral: 'Neutre', tired: 'Fatigué' },
+      },
+      loadCompact: {
+        title: 'Charge',
+        caption: '7 jours vs 28 jours',
+        safe: (lo: number, hi: number) => `sûr ${lo}–${hi}`,
+        fitnessWeek: 'condition / semaine',
+        restingHr: 'FC repos',
+        baseline: (side: 'low' | 'high' | null, lo: number, hi: number) =>
+          side === 'high' ? `au-dessus de la base ${lo}–${hi}` : side === 'low' ? `sous la base ${lo}–${hi}` : `dans la base ${lo}–${hi}`,
+        ok: 'OK',
+        check: 'À surveiller',
       },
       loadTrend: {
         title: 'Tendance de charge',
@@ -752,6 +800,7 @@ export const fr = {
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
+        flat: (signed: string) => `${signed} · stable`,
         secs: (n: number) => `${n} s`,
       },
       predictions: {
@@ -778,11 +827,11 @@ export const fr = {
         easyFaster: (s: string) => ['Les footings ont gagné ', `${s}/km`, '.'] as [string, string, string],
         easySlower: (s: string) => ['Les footings ont perdu ', `${s}/km`, '.'] as [string, string, string],
         easyHeld: ['L’allure facile est ', 'stable', '.'] as [string, string, string],
-        workoutFaster: (s: string) => [' Les répétitions ont gagné ', `${s}/km`, '.'] as [string, string, string],
-        workoutSlower: (s: string) => [' Les répétitions ont perdu ', `${s}/km`, '.'] as [string, string, string],
-        workoutHeld: [' Les répétitions sont ', 'stables', '.'] as [string, string, string],
+        workoutFaster: (s: string) => [' Les fractions ont gagné ', `${s}/km`, '.'] as [string, string, string],
+        workoutSlower: (s: string) => [' Les fractions ont perdu ', `${s}/km`, '.'] as [string, string, string],
+        workoutHeld: [' Les fractions sont ', 'stables', '.'] as [string, string, string],
         easy: 'Facile',
-        workout: 'Répétitions',
+        workout: 'Allure des fractions',
       },
       efficiency: {
         title: 'Efficacité aérobie',
@@ -813,6 +862,9 @@ export const fr = {
         noRuns: 'aucune sortie',
         plus: (s: number) => `+${s} s`,
         barKey: 'Barre plus longue : plus de s/km perdues face à ta meilleure tranche.',
+        fastest: (band: string) => `Tu es le plus rapide entre ${band}.`,
+        coldCosts: (s: string) => [' Sous 5 °C, tu perds ', `${s} s/km`, ''] as [string, string, string],
+        warmCosts: (s: string, afterCold: boolean) => [afterCold ? ', au-dessus de 20 °C ' : ' Au-dessus de 20 °C, tu perds ', `${s} s/km`, ''] as [string, string, string],
       },
       weekly: {
         title: 'Distance hebdo',
@@ -826,13 +878,14 @@ export const fr = {
         onPlan: 'Semaines dans le plan',
         ofPlanned: (n: number) => `sur ${n} prévue${n > 1 ? 's' : ''}`,
         withoutPlan: (n: number) => `${n} sem sans plan`,
-        onOrAbove: 'Plan atteint ou dépassé',
+        onOrAbove: 'Dans le plan',
+        planned: 'Prévu',
         belowPlan: 'Sous le plan',
         unplanned: 'Sans plan',
         missed: 'Manquée',
         underWeek: (when: string) => `km ${when.toLocaleLowerCase('fr')}`,
         underWeekOfPlan: (km: string, when: string) => `sur ${km} km ${when.toLocaleLowerCase('fr')}`,
-        underAvg: (n: number) => (n >= 52 ? 'km/sem · moy.\u00a01\u00a0an' : `km/sem · moy.\u00a0${n}\u00a0sem`),
+        underAvg: (n: number) => (n >= 52 ? 'km · moy.\u00a01\u00a0an' : `km · moy.\u00a0${n}\u00a0sem.`),
         underOnPlan: 'semaines dans le plan',
         underOnPlanOf: (n: number) => `sur ${n} semaine${n > 1 ? 's' : ''} dans le plan`,
         done: 'Fait',
@@ -840,10 +893,13 @@ export const fr = {
       },
       ytd: {
         title: "Depuis janvier",
+        shortOf: (km: string, goal: string) => `${km} km de retard sur ${goal} à ce rythme`,
+        overOf: (km: string, goal: string) => `${km} km d'avance sur ${goal} à ce rythme`,
       },
       longRun: {
-        title: 'Sortie longue',
+        title: 'Part de la sortie longue',
         caption: 'part de la distance hebdo',
+        overOf: (n: number, of: number) => `${n} sur ${of} semaine${of > 1 ? 's' : ''} au-dessus`,
         about: 'La sortie la plus longue de chaque semaine. Une sortie au-delà de 35 % de la semaine concentre une grande part de la charge sur un seul jour.',
         rule: 'Garde ta sortie longue sous 35 % de la semaine. ',
         over: (n: number) => (n === 0 ? 'Aucune semaine au-delà.' : n === 1 ? '1 semaine au-delà.' : `${n} semaines au-delà.`),
@@ -864,11 +920,12 @@ export const fr = {
         title: 'Temps par zone',
         caption: 'heures par semaine',
         about: "Les heures dans chaque zone cardiaque, semaine par semaine. La semaine en cours reste plus basse tant qu’elle n’est pas finie.",
-        stayed: (range: string, total: string) => ['Le temps en intensité est resté à ', `${range} min par semaine`, total] as [string, string, string],
-        ranged: (range: string, total: string) => ['Le temps en intensité a varié de ', `${range} min par semaine`, total] as [string, string, string],
-        total: { grew: ' pendant que le temps total augmentait.', dropped: ' pendant que le temps total baissait.', held: ' pendant que le temps total restait stable.' } as Record<string, string>,
-        recovered: (week: string) => ` ; le temps total est remonté après le ${week}.`,
-        hours: (h: string) => ` ${h} h au total.`,
+        summaryHours: (h: string) => `${h} h au total.`,
+        summaryTotal: { grew: ' Le temps hebdo a augmenté.', dropped: ' Le temps hebdo a baissé.', held: ' Le temps hebdo est resté stable.' } as Record<string, string>,
+        summaryRecovered: (when: string, back: string) => ` Le temps hebdo a baissé ${when}, puis il est remonté à partir du ${back}.`,
+        summaryHardUnder: (min: number) => ` Le temps en intensité est resté sous ${min} min par semaine.`,
+        summaryHardRange: (range: string) => ` Le temps en intensité a varié de ${range} min par semaine.`,
+        partOfMonth: (day: number, month: string) => `${day <= 10 ? 'début' : day <= 20 ? 'mi-' : 'fin'}${day <= 10 || day > 20 ? ' ' : ''}${month}`,
       },
       quality: {
         title: 'Séances de qualité',
@@ -887,10 +944,11 @@ export const fr = {
         plannedLegend: 'Prévue',
         missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
         missed: 'Manquée',
+        ofPlanned: (n: number) => `sur ${n} prévues`,
       },
       zoneRanges: {
         title: 'Plages de zones',
-        subtitle: 'Allure et fréquence cardiaque de chaque zone',
+        subtitle: 'Dans Athlète & zones',
       },
     },
     insightCards: {
@@ -1137,6 +1195,7 @@ export const fr = {
     weekLine: {
       runs: (n: number): string => (n === 1 ? '1 sortie' : `${n} sorties`),
       easy: (pct: number) => `${pct} % facile`,
+      ofRuns: (n: number, total: number) => `${n} sur ${total} sortie${total > 1 ? 's' : ''}`,
     },
     view: { label: 'Affichage', list: 'Liste', map: 'Carte' },
     groups: { easy: 'Faciles', workouts: 'Qualité', races: 'Courses' },
@@ -1148,11 +1207,24 @@ export const fr = {
       showAll: (n: number) => `Afficher les ${n} sorties`,
       showing: 'Affiché :',
       totalsCount: ' · les totaux ne comptent que celles-ci',
+      groupCount: {
+        easy: (n: number) => `${n} sortie${n > 1 ? 's' : ''} facile${n > 1 ? 's' : ''}`,
+        workouts: (n: number) => `${n} séance${n > 1 ? 's' : ''}`,
+        races: (n: number) => `${n} course${n > 1 ? 's' : ''}`,
+      },
+      groupTotals: {
+        easy: ' · les totaux ne comptent que les sorties faciles',
+        workouts: ' · les totaux ne comptent que les séances',
+        races: ' · les totaux ne comptent que les courses',
+      },
       clear: 'Effacer',
+      sortedBy: { oldest: "plus anciennes d'abord", longest: "plus longues d'abord", fastest: "plus rapides d'abord" } as Record<string, string>,
     },
     sort: {
       label: 'Trier',
-      newest: 'Plus récentes',
+      // Four segments at 390 pt (App Fixes 3e).
+      newest: 'Récentes',
+      oldest: 'Anciennes',
       longest: 'Plus longues',
       fastest: 'Plus rapides',
     },
@@ -1444,6 +1516,8 @@ export const fr = {
         elev: 'Dén.',
         hr: 'FC',
         total: 'Total',
+        lap: 'Tour',
+        time: 'Temps',
       },
       intervalTypes: {
         interval_warmup:   'Échauffement',
@@ -1559,6 +1633,11 @@ export const fr = {
     soFar: (month: string, km: string) => `${month} : ${km} pour l’instant`,
     longestRun: 'Plus longue sortie',
     biggestWeek: 'Plus grosse semaine',
+    distance: 'Distance',
+    time: 'Temps',
+    hoursUnit: 'h',
+    weekOf: (date: string) => `Semaine du ${date}`,
+    allYears: 'Toutes les années',
   },
 
   shoes: {
@@ -1709,6 +1788,10 @@ export const fr = {
       inDays: (days: number): string => (days <= 0 ? 'aujourd’hui' : days === 1 ? 'demain' : `dans ${days} jours`),
       target: 'Objectif',
       predicted: 'Prédit',
+      predictedShort: 'prédit',
+      targetShort: 'objectif',
+      shortAtPace: (km: string) => `${km} km de retard à ce rythme`,
+      overAtPace: (km: string) => `${km} km d'avance à ce rythme`,
       gap: 'Écart',
       perKmToFind: (seconds: number) => `${seconds} s/km à trouver.`,
       perKmInHand: (seconds: number) => `${seconds} s/km d’avance.`,
@@ -1724,7 +1807,7 @@ export const fr = {
       goalLabel: (km: string) => `objectif ${km}`,
       goalLine: 'Pointillés : le rythme régulier vers l’objectif.',
       vo2max: 'VO₂ max',
-      vo2Delta: (delta: string) => `${delta} en 12 semaines`,
+      vo2Delta: (delta: string) => `${delta} en 12 sem.`,
       thresholdParts: (pace: string | null, lthr: number | null) =>
         [pace ? `Seuil ${pace} /km` : null, lthr ? `LTHR ${lthr} bpm` : null].filter((part): part is string => part !== null),
       consistencyWindow: '12 dernières semaines',
@@ -1817,16 +1900,21 @@ export const fr = {
       routes: 'Parcours',
     },
     recurring: {
+      showAll: (n: number) => `Voir les ${n} parcours`,
       runCount: (n: number) => `${n} sortie${n > 1 ? 's' : ''}`,
       best: 'Record',
-      trailKey: 'Une barre par sortie · plus haute = plus rapide',
-      trailSpan: (from: string, to: string) => `${from} – ${to}`,
+      trailKey: 'Allure par sortie · plus haute = plus rapide',
       legendBest: 'record',
       legendLatest: 'dernière',
       bestPace: (pace: string) => `record ${pace}`,
       lastPace: (pace: string) => `dernière ${pace}`,
       newBest: 'nouveau record',
       unnamed: (n: number) => `Parcours ${n}`,
+      named: {
+        loop: (place: string) => `Boucle ${place}`,
+        'out-back': (place: string) => `Aller-retour ${place}`,
+        point: (place: string) => `Vers ${place}`,
+      },
       rename: 'Renommer ce parcours',
     },
     milestones: {
@@ -1963,6 +2051,7 @@ export const fr = {
   },
 
   plan: {
+    nextKeySession: 'Prochaine séance clé',
     today: 'Aujourd’hui',
     prevPeriod: 'Précédent',
     nextPeriod: 'Suivant',
@@ -2046,6 +2135,9 @@ export const fr = {
       repsShort: (n: number, rep: string) => `${n}×${rep}`,
     },
     dayCard: {
+      skipped: 'Sautée',
+      markSkipped: 'Sautée (malade / repos)',
+      undoSkip: 'Annuler',
       planned: 'Prévu',
       done: 'Réalisé',
       notPlanned: 'Rien de prévu',

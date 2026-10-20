@@ -118,44 +118,43 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
   const head = loadCoachHeadline(trend, recovery)
   const form = formView(data.load, window)
 
+  // The Why rows in the sheet's fixed order (App Fixes 1b): Load, Fitness,
+  // Fatigue, Resting HR, each a bold lead and what it means. Not sorted worse
+  // first, so the sheet reads the same way every time.
   const rows: CoachRow[] = []
-  // Without a headline of its own, the load sentence is the headline, not a row under it.
-  if (trend && head) {
+  if (trend) {
     rows.push({
       trend: trend.state !== 'in' ? 'declining' : trend.change && trend.change.pct >= 5 ? 'improving' : 'flat',
-      text: joined(loadSentence(trend, window.live)),
-      direction: trend.change ? directionOf(trend.change.pct) : undefined,
+      text: s.loadRow(trend.state, trend.acute, trend.lo, trend.hi),
+      direction: trend.change ? directionOf(trend.change.pct) : trend.state === 'below' ? 'down' : trend.state === 'above' ? 'up' : undefined,
     })
   }
-  if (recovery) rows.push({ trend: recoveryTrend(recovery), text: joined(recoverySentence(recovery)), direction: recoveryDirection(recovery) })
+  // Fitness a week: the last seven days of the window's fitness line.
+  const ramp = form && form.ctl.length > 7 ? Math.round((form.ctl.at(-1)! - form.ctl.at(-8)!) * 10) / 10 : null
   const fitness: CoachRow | null = form
     ? {
         trend: TREND_OF[deltaTone('fitness', form.fitnessDelta)],
-        text: s.fitness(Math.round(form.fitness), formatDelta(Math.round(form.fitnessDelta)), within),
+        text: s.fitness(Math.round(form.fitness), formatDelta(Math.round(form.fitnessDelta)), within) + (ramp !== null ? s.fitnessNow(Math.abs(ramp) < 0.5 ? 0 : ramp, formatDecimal(Math.abs(ramp), 1)) : ''),
         direction: directionOf(Math.round(form.fitnessDelta)),
       }
     : null
   if (form)
     rows.push(fitness!, {
       trend: TREND_OF[deltaTone('fatigue', form.fatigueDelta)],
-      text: s.fatigue(Math.round(form.fatigue), formatDelta(Math.round(form.fatigueDelta)), within),
+      text: s.fatigue(Math.round(form.fatigue), formatDelta(Math.round(form.fatigueDelta)), within) + (s.fatigueNow[form.band] ?? ''),
       direction: directionOf(Math.round(form.fatigueDelta)),
     })
+  const rhr = recovery?.restingHr
+  if (rhr) rows.push({ trend: rhr.side === 'high' ? 'declining' : rhr.side === 'low' ? 'improving' : 'flat', text: s.restingHrRow(rhr.side, rhr.now, rhr.lo, rhr.hi), direction: rhr.side === 'high' ? 'up' : rhr.side === 'low' ? 'down' : 'level' })
+  else if (recovery) rows.push({ trend: recoveryTrend(recovery), text: joined(recoverySentence(recovery)), direction: recoveryDirection(recovery) })
 
-  // The watch reads 28 days, so its status can still say "productive" while
-  // the last week's load has fallen out of range. Said plainly, the two stop
-  // looking like a contradiction (App Fixes 2a).
-  const watchStatus = data.status.filter((d) => d.date <= window.end).at(-1)?.status ?? null
-  const note =
-    trend?.state === 'below' && (watchStatus === 'productive' || watchStatus === 'maintaining')
-      ? s.load.watchStillSays(t.trainingStatus.status[watchStatus])
-      : undefined
-
-  if (head) return { tone: head.kind === 'building' ? 'pos' : 'warn', headline: loadHeadlineText(head), rows: ordered(rows), note }
-  if (trend) return { tone: trend.state !== 'in' ? 'warn' : 'muted', headline: joined(loadSentence(trend, window.live)), rows: ordered(rows), note }
+  // No note on the watch's own status: the Training status chart under
+  // Form shows it (owner, Oct 2026).
+  if (head) return { tone: head.kind === 'building' ? 'pos' : 'warn', headline: loadHeadlineText(head), rows }
+  if (trend) return { tone: trend.state !== 'in' ? 'warn' : 'muted', headline: joined(loadSentence(trend, window.live)), rows }
   // Without Garmin's load pair, Fitness is the claim and the rest its case.
   if (!fitness) return null
-  return { tone: 'muted', headline: fitness.text, rows: ordered(rows.filter((row) => row !== fitness)) }
+  return { tone: 'muted', headline: fitness.text, rows: rows.filter((row) => row !== fitness) }
 }
 
 // ─── Performance ───────────────────────────────────────────────────────────

@@ -76,11 +76,12 @@ describe('the month grid', () => {
     expect(tile('2026-10-15').textContent).toBe('')
   })
 
-  it('names a past session that was not run missed, in the negative status', () => {
+  // Wave 5: amber, as on Today.
+  it('names a past session that was not run missed, in amber', () => {
     renderMonth()
 
     expect(cell('2026-10-16').dataset.cellState).toBe('missed')
-    expect(tile('2026-10-16').style.border).toBe('1px dashed var(--neg)')
+    expect(tile('2026-10-16').style.border).toBe('1px dashed var(--warn)')
   })
 
   it('fills today’s date in the accent', () => {

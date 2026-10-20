@@ -21,7 +21,7 @@ import { phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
-import { ComingUpCard, DoneDayCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
+import { ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 
 // 30 pt squares with the 44 pt hit area round them, beside the week's dates.
 const NAV_BUTTON =
@@ -35,7 +35,8 @@ function PhaseCard({ name, week, total, race }: { name: string; week: number; to
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <h2 className="text-[15px] font-semibold text-foreground">{name}</h2>
         <p className="text-xs text-muted-foreground">
-          {weekOf.before} <b className="font-semibold text-foreground">{week}</b> {weekOf.after}
+          {/* All in the caption grey (App Fixes 3b): "Week 2 of 5". */}
+          {weekOf.before} {week} {weekOf.after}
           {race && ` · ${race}`}
         </p>
       </div>
@@ -200,6 +201,19 @@ export function WeekView({
   const w = t.plan.weekRow
   const planKm = target.planKm
 
+  // The week's next quality session after the day on screen and not yet run (App Fixes 3b).
+  const nextKey = (() => {
+    for (const date of dates) {
+      if (date <= selected || date < today || (byDate.get(date) ?? []).length > 0) continue
+      const k = dayKind(date, [], byDatePlanned, byDateCoach)
+      if (k?.kind !== 'quality') continue
+      const workout = selectedWorkouts(date, byDatePlanned, byDateCoach, trainingZones)[0]
+      if (!workout) continue
+      return { date, weekday: formatWeekday(date, true), title: workoutSummary(workout).title, color: k.color }
+    }
+    return null
+  })()
+
   let dayCard
   if (acts.length > 0 || (selected < today && workouts.length > 0)) {
     dayCard = (
@@ -239,7 +253,7 @@ export function WeekView({
           <button type="button" aria-label={t.plan.prevPeriod} onClick={() => onPrevWeek?.()} className={cn(NAV_BUTTON, '-ml-1.5')}>
             <ChevronLeft size={18} aria-hidden="true" />
           </button>
-          <h2 className="truncate text-base font-semibold text-foreground">{formatDateRange(firstDay, lastDay)}</h2>
+          <h2 className="truncate text-[17px] font-semibold text-foreground">{formatDateRange(firstDay, lastDay)}</h2>
           <button type="button" aria-label={t.plan.nextPeriod} onClick={() => onNextWeek?.()} disabled={atPresent && !canGoForward} className={NAV_BUTTON}>
             <ChevronRight size={18} aria-hidden="true" />
           </button>
@@ -263,6 +277,10 @@ export function WeekView({
       <DaySelector days={selectorDays} selectedDate={selected} onSelect={onSelectDate} />
 
       {dayCard}
+
+      {nextKey && (
+        <NextKeySessionCard weekday={nextKey.weekday} title={nextKey.title} color={nextKey.color} onSelect={() => onSelectDate(nextKey.date)} />
+      )}
     </div>
   )
 }

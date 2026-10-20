@@ -196,6 +196,9 @@
   --track:                   #f0f1f0;
   --heat-empty:              #f0f1f0;
   --band:                    #8e9491;
+  --rest-bar:                #d9dcdb;
+  --neutral-bar:             #b4b9b7;
+  --axis-text:               #8d9391;
   --thumb-bg:                #f0f1f0;
   --tab-bar-bg:              #ffffff;
   --tab-bar-hairline:        #e4e6e5;
@@ -293,6 +296,9 @@
   --track:                   #262a29;
   --heat-empty:              #262a29;
   --band:                    #6a706d;
+  --rest-bar:                #3a3f3e;
+  --neutral-bar:             #5b6260;
+  --axis-text:               #6b7270;
   --thumb-bg:                #0f1111;
   --tab-bar-bg:              #0d0f0f;
   --tab-bar-hairline:        #1f2222;

@@ -33,7 +33,9 @@ describe('AllTime monthly km', () => {
     const bars = Object.fromEntries(screen.getAllByTestId('month-bar').map((bar) => [bar.dataset.month, bar.style.height]))
     expect(bars).toEqual({ '2026-08': '55px', '2026-09': '107px', '2026-10': '75px' })
     expect(screen.getByTestId('month-so-far').style.height).toBe('17px')
-    expect(screen.getByTestId('monthly-years').textContent).toContain(t.allTime.soFar('Oct', '31'))
+    // App Fixes 1i: October's projection over its dashed bar.
+    expect(screen.getByTestId('month-projection').textContent).toBe('137')
+    expect(screen.getByTestId('monthly-years').textContent).toBe('2026')
   })
 
   // 3.1: 18 months at most; the best with its km over it, the month under way dashed.
@@ -53,8 +55,12 @@ describe('AllTime monthly km', () => {
     expect(bars.at(-1)!.className).toContain('border-dashed')
     expect(bars[0]!.style.background).toBe('var(--band)')
     expect(bars.find((bar) => bar.dataset.month === '2026-03')!.style.background).toBe('var(--accent)')
-    // One line where 2025 turns into 2026.
-    expect(screen.getAllByTestId('year-divider')).toHaveLength(1)
+    // A line before January, and each year under its own months: 2025 (May–Dec, 8) | 2026 (Jan–Oct, 10).
+    expect(screen.getAllByTestId('january-divider')).toHaveLength(1)
+    expect(screen.getAllByTestId('monthly-year').map((y) => [y.textContent, y.style.gridColumn])).toEqual([
+      ['2025', 'span 8'],
+      ['2026', 'span 10'],
+    ])
     expect(screen.getByTestId('monthly-header').textContent).toBe(t.allTime.best('236', 'Apr ’26'))
   })
 })
@@ -70,6 +76,18 @@ describe('AllTime by year (3.0)', () => {
       t.allTime.yearTotals('1,125', 2),
       `${t.allTime.yearTotals('800', 2)} · ${t.allTime.fromMonth('May')}`,
     ])
+  })
+
+  // Multi-year rules: the latest three, newest first, then "All years ›"; every change on the year before.
+  it('lists the latest three years, the rest behind All years, each changed on the year before', () => {
+    const runs = [2022, 2023, 2024, 2025, 2026].flatMap((y, i) => [run(`${y}-01-10`, 100 + i * 50), run(`${y}-06-10`, 100)])
+    render(<AllTime view={allTimeView(runs, '2026-06-20')} />)
+    const rows = screen.getAllByTestId('year-row')
+    expect(rows.map((r) => r.textContent!.slice(0, 4))).toEqual(['2026', '2025', '2024', '2023', '2022'])
+    expect(screen.getByTestId('year-rows').children).toHaveLength(3)
+    expect(screen.getByTestId('all-years').textContent).toContain(t.allTime.allYears)
+    // Four years have one before them.
+    expect(screen.getAllByTestId('year-change')).toHaveLength(4)
   })
 
   it('opens the longest run and the biggest week in Activities', () => {

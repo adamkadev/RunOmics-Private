@@ -9,7 +9,6 @@ import {
   distanceDistribution,
   computeTotals,
   buildWeeklyTrends,
-  repPace,
 } from '../GetAnalyticsData'
 import type { Activity, HrZone } from '@/domain/activity/types'
 
@@ -187,14 +186,19 @@ describe('buildWeeklyTrends', () => {
     expect(points.map((p) => p.date)).toEqual(['2024-06-03', '2024-07-01'])
   })
 
-  it('splits easy from hard runs when averaging pace', () => {
+  // App Fixes 2b: rep pace is the work laps of the quality sessions only;
+  // a session without laps says nothing about its reps.
+  it('splits easy pace from rep pace, the reps read off the work laps', () => {
+    const work = { type: 'interval_active' as const, durationSec: 1.8 * 270, distanceM: 1800, avgSpeedMs: 1000 / 270, avgHr: 172, laps: [] }
+    const warm = { type: 'interval_warmup' as const, durationSec: 2 * 350, distanceM: 2000, avgSpeedMs: 1000 / 350, avgHr: 140, laps: [] }
     const points = buildWeeklyTrends([
       act({ date: '2024-06-03', type: 'Base', paceSecPerKm: 360, distanceKm: 10 }),
-      act({ date: '2024-06-04', type: 'Threshold', paceSecPerKm: 240, distanceKm: 10 }),
+      act({ date: '2024-06-04', type: 'Threshold', paceSecPerKm: 300, distanceKm: 9.4, splits: [warm, work, work, work, warm] }),
+      act({ date: '2024-06-05', type: 'Threshold', paceSecPerKm: 240, distanceKm: 10 }),
     ])
 
     expect(points[0]?.easyPace).toBe(360)
-    expect(points[0]?.hardPace).toBe(240)
+    expect(points[0]?.hardPace).toBe(270)
   })
 
   it('sums the distance and session count of the week', () => {
@@ -230,35 +234,6 @@ describe('buildWeeklyTrends', () => {
 
 // App Fixes 2b: a quality week's pace is its hard reps, not the session
 // around them - a longer warm-up used to read as a slower "workout pace".
-describe('repPace', () => {
-  const split = (type: string, durationSec: number, distanceM: number) =>
-    ({ type, durationSec, distanceM, avgSpeedMs: distanceM / durationSec, avgHr: null, laps: [] }) as never
-
-  it('counts the work intervals alone', () => {
-    const session = act({
-      distanceKm: 10,
-      paceSecPerKm: 300,
-      splits: [
-        split('interval_warmup', 1_200, 3_000),
-        split('interval_active', 480, 2_000),
-        split('interval_rest', 120, 300),
-        split('interval_active', 480, 2_000),
-        split('interval_cooldown', 900, 2_700),
-      ],
-    })
-    // 960 s over 4 000 m: 4:00 /km, where the whole run averages 5:00.
-    expect(repPace([session])).toBe(240)
-  })
-
-  it('falls back to a run the watch kept whole', () => {
-    expect(repPace([act({ distanceKm: 10, paceSecPerKm: 300, splits: null })])).toBe(300)
-  })
-
-  it('is null without a run to read', () => {
-    expect(repPace([])).toBeNull()
-  })
-})
-
 describe('computeTotals', () => {
   it('sums distance, duration, elevation and calories', () => {
     const acts = [

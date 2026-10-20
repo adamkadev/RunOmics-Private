@@ -93,6 +93,11 @@ export const SURFACES = {
     faint: '#f0f1f0',
     // Reference series and neutral bars: 3:1 or more on a card.
     band: '#8e9491',
+    // Wave 4 (App Fixes 1f, 1g, 1h): a sparkline's other runs, a neutral or
+    // under-target bar, and a chart's axis labels.
+    restBar: '#d9dcdb',
+    neutralBar: '#b4b9b7',
+    axisText: '#8d9391',
     amber: STATUS_HEX.light.warn,
     shadowRaised: '0 1px 3px rgba(0, 0, 0, 0.06)',
   },
@@ -121,6 +126,9 @@ export const SURFACES = {
     // Empty tracks: gauges, progress bars, rest days.
     faint: '#262a29',
     band: '#6a706d',
+    restBar: '#3a3f3e',
+    neutralBar: '#5b6260',
+    axisText: '#6b7270',
     amber: STATUS_HEX.dark.warn,
     shadowRaised: 'none',
   },
@@ -156,6 +164,9 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--heat-empty': n.faint,
     // Neutral bars and reference series.
     '--band': n.band,
+    '--rest-bar': n.restBar,
+    '--neutral-bar': n.neutralBar,
+    '--axis-text': n.axisText,
     '--thumb-bg': n.seg,
     '--tab-bar-bg': n.tabBar,
     '--tab-bar-hairline': n.divider,

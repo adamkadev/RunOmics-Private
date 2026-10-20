@@ -9,7 +9,7 @@ import { deltaColor, deltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { t } from '@/i18n'
-import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, STAT_TONE, Sentence, linePath } from './AnalyticsKit'
+import { AxisLabels, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, STAT_TONE, Sentence, linePath } from './AnalyticsKit'
 import {
   efficiencyView,
   heatView,
@@ -50,6 +50,18 @@ export function shiftWords(delta: number | null, flatBelow = 1): string | null {
   if (delta === null) return null
   if (Math.abs(Math.round(delta)) < flatBelow) return s.same
   return delta > 0 ? s.slower(changeAmount(delta)) : s.faster(changeAmount(delta))
+}
+
+/** Under this a threshold move is "flat" (App Fixes 2b): grey "+4 s · flat", not an amber slowdown. */
+const THRESHOLD_FLAT_SEC = 5
+
+/** Threshold's note: "no change", "+4 s · flat" under 5 s, else "9 s slower". */
+export function thresholdWords(delta: number | null): string | null {
+  if (delta === null) return null
+  const r = Math.round(delta)
+  if (r === 0) return t.analytics.cards.summary.same
+  if (Math.abs(r) < THRESHOLD_FLAT_SEC) return t.analytics.cards.summary.flat(signedChange(r)!)
+  return shiftWords(delta, PACE_FLAT_SEC)
 }
 
 /** "+33 s", "−1:10", or "0 s": a signed change that fits its column. */
@@ -104,7 +116,14 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
       tone: STAT_TONE[deltaTone('vo2max', vo2.delta)],
       href: VO2_HOME,
     },
-    threshold && { label: s.threshold, value: formatClock(threshold.now), unit: t.units.perKm, note: shiftWords(threshold.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', threshold.delta)], href: null },
+    threshold && {
+      label: s.threshold,
+      value: formatClock(threshold.now),
+      unit: t.units.perKm,
+      note: thresholdWords(threshold.delta),
+      tone: threshold.delta !== null && Math.abs(Math.round(threshold.delta)) < THRESHOLD_FLAT_SEC ? STAT_TONE.flat : STAT_TONE[deltaTone('pace', threshold.delta)],
+      href: null,
+    },
     easy && { label: s.easyPace, value: formatClock(easy.now), unit: t.units.perKm, note: shiftWords(easy.delta, PACE_FLAT_SEC), tone: STAT_TONE[deltaTone('pace', easy.delta)], href: null },
   ].filter((c) => !!c)
   if (!cells.length) return null
@@ -457,11 +476,30 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
   return (
     <Card className="gap-2.5" testId="heat-card">
       <CardHead title={s.title} caption={s.caption(view.refHeartRate)} about={s.about} />
-      <div className="mb-1 flex flex-col gap-1">
-        {view.warm === null ? <Sentence>{s.noWarm}</Sentence> : view.warm.hi < 5 ? <Sentence>{s.little}</Sentence> : <BoldSentence parts={s.lose(range!)} />}
-        {/* The cold costs pace too, and the card used to say nothing about
-            it (App Fixes 2b). */}
-        {view.cold !== null && view.cold >= COST_WORTH_SAYING && <BoldSentence parts={s.cold(view.cold)} />}
+      <div className="mb-1">
+        {(() => {
+          // App Fixes 2b: the best band, then the cold cost and the warm one.
+          const best = view.rows.find((row) => row.best)
+          const cold = view.cold !== null && view.cold >= COST_WORTH_SAYING ? view.cold : null
+          const warm = view.warm !== null && view.warm.hi >= COST_WORTH_SAYING ? range : null
+          if (view.warm === null && view.cold === null) return <Sentence>{s.noWarm}</Sentence>
+          if (cold === null && warm === null) return <Sentence>{s.little}</Sentence>
+          const bold = ([a, b, c]: [string, string, string]) => (
+            <>
+              {a}
+              <b className="font-semibold text-foreground">{b}</b>
+              {c}
+            </>
+          )
+          return (
+            <p className="text-[13px] leading-[1.45] text-[var(--text-2)]" data-testid="heat-summary">
+              {best && s.fastest(labels[best.id] ?? '')}
+              {cold !== null && bold(s.coldCosts(String(cold)))}
+              {warm !== null && bold(s.warmCosts(warm, cold !== null))}
+              .
+            </p>
+          )
+        })()}
       </div>
       <div className="flex flex-col gap-2.5">
         {view.rows.map((row) => {

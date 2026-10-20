@@ -4,112 +4,78 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { formBand } from '@/domain/training/formBand'
 import { t } from '@/i18n'
 import { ReadinessCard } from '../ReadinessCard'
-import { FORM_SCALE, dialFraction } from '../FormDial'
 
 const STATUS = {
   status: 'productive', risk: 'low', loadTrend: 'building',
   tsbNow: -6, tsbDelta: 3, ctl: 54, ctlDelta: 2, ctlDeltaShown: 1, atl: 60, atlDelta: 4, acwr: 0.98,
 } as unknown as TrainingStatus
 
-describe('the Form dial', () => {
-  // Design review 3.0: a 270° arc filled as far as Form, in the band's own
-  // colour - the arc says how the athlete is, so it never takes the accent.
-  it('fills as far as today’s Form on the scale and names its band', () => {
-    render(<ReadinessCard status={STATUS} />)
-    const dial = screen.getByTestId('form-dial')
-
-    expect(dial.dataset.fraction).toBe(dialFraction(-6).toFixed(4))
-    expect(dial.getAttribute('aria-label')).toBe(t.dashboard.readiness.formOnDial('−6', t.formBand[formBand(-6)]))
-    expect(dial).toHaveTextContent('−6')
-    expect(dial).toHaveTextContent(t.dashboard.readiness.formLabel)
-    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--form-band-neutral)')
-  })
-
-  // App Fixes review 5: -18 read mint on Today and "Tired · below -10" in
-  // amber on Analytics. One number, one tone.
-  it('takes the tone of the band it falls in, as Analytics does', () => {
-    const { unmount } = render(<ReadinessCard status={{ ...STATUS, tsbNow: -18 }} />)
-    expect(screen.getByTestId('form-dial-fill').dataset.band).toBe('tired')
-    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--form-band-tired)')
-    unmount()
-    render(<ReadinessCard status={{ ...STATUS, tsbNow: 12 }} />)
-    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--form-band-fresh)')
-  })
-
-  it('rests on the edge past the scale, with no fill at its foot', () => {
-    expect(dialFraction(40)).toBe(1)
-    expect(dialFraction(-80)).toBe(0)
-    render(<ReadinessCard status={{ ...STATUS, tsbNow: FORM_SCALE.min - 5 }} />)
-    expect(screen.queryByTestId('form-dial-fill')).toBeNull()
-  })
-})
-
-describe('ReadinessCard', () => {
-  it('reads Fitness, Fatigue and Load on three tiles, and no watch status', () => {
+describe('ReadinessCard (App Fixes 1a)', () => {
+  it('reads Form, Fitness and Fatigue on three tiles, and no watch status', () => {
     render(<ReadinessCard status={STATUS} />)
 
+    expect(screen.getByTestId('tile-form')).toHaveTextContent(`${t.dashboard.readiness.formLabel}−6`)
+    expect(screen.getByTestId('tile-form')).toHaveTextContent(t.formBand.neutral.toLowerCase())
     expect(screen.getByTestId('tile-fitness')).toHaveTextContent(`${t.dashboard.readiness.ctl}54`)
     expect(screen.getByTestId('tile-fatigue')).toHaveTextContent(`${t.dashboard.readiness.atl}60`)
-    expect(screen.getByTestId('tile-load')).toHaveTextContent(`${t.dashboard.readiness.acwr}×0.98`)
+    expect(screen.queryByTestId('tile-load')).toBeNull()
     expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(t.trainingStatus.status.productive)
   })
 
-  it('writes a dash where the load ratio has nothing', () => {
-    render(<ReadinessCard status={{ ...STATUS, acwr: null }} />)
-    expect(screen.getByTestId('tile-load')).toHaveTextContent(t.dashboard.readiness.noValue)
-  })
-
-  // App Fixes 1a: the line's second half is the load against its safe range,
-  // the reading Analytics prints, not a word chosen off Form.
-  it('says how the load sits against its safe range, in Analytics\' own words', () => {
+  // The line is the form state, then the load against its safe range.
+  it('names the form state and the load against its range, amber while out of it', () => {
     render(<ReadinessCard status={STATUS} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79 }} />)
     const line = screen.getByTestId('readiness-status')
-    expect(line.textContent).toBe(`${t.dashboard.readiness.eyebrowByTone.build} · ${t.dashboard.readiness.loadState.below}`)
+    expect(line.textContent).toBe(`${t.formBand[formBand(-6)]} · ${t.dashboard.readiness.loadState.below}`)
     expect(line.style.color).toBe('var(--warn)')
-    // And the tile reads the ratio off that same pair, not a second source.
-    expect(screen.getByTestId('tile-load')).toHaveTextContent(`${t.dashboard.readiness.acwr}×0.79`)
   })
 
   it('falls back to the tone\'s own line where the watch has no load pair', () => {
     render(<ReadinessCard status={STATUS} />)
-    expect(screen.getByTestId('readiness-status').textContent).toBe(
-      `${t.dashboard.readiness.eyebrowByTone.build} · ${t.dashboard.readiness.lineByTone.build}`,
-    )
+    expect(screen.getByTestId('readiness-status').textContent).toBe(`${t.formBand.neutral} · ${t.dashboard.readiness.lineByTone.build}`)
   })
 
-  // Fitness climbing is good news, fatigue climbing is a caution.
+  // Rule 04: the arrow follows the number, the colour what it means.
   it('colours each delta by what it means', () => {
     render(<ReadinessCard status={STATUS} />)
     const [fitness, fatigue] = screen.getAllByTestId('readiness-delta')
 
-    expect(fitness!.textContent).toContain('+1')
-    expect(fitness!.getAttribute('style')).toContain('var(--good)')
-    expect(fatigue!.textContent).toContain('+4')
-    expect(fatigue!.getAttribute('style')).toContain('var(--tone-caution)')
+    expect(fitness!.textContent).toBe(t.dashboard.readiness.deltaWeek(1, 7))
+    expect(fitness!.dataset.tone).toBe('good')
+    expect(fatigue!.textContent).toBe(t.dashboard.readiness.deltaWeek(4, 7))
+    expect(fatigue!.dataset.tone).toBe('worse')
   })
 
-  it('says the readiness word and its line in the accent, and opens Analytics', () => {
+  it('says its line in the accent while load is in range, and opens Analytics', () => {
     render(<ReadinessCard status={STATUS} />)
-    const line = screen.getByTestId('readiness-status')
-
-    expect(line.textContent).toBe(`${t.dashboard.readiness.eyebrowByTone.build} · ${t.dashboard.readiness.lineByTone.build}`)
-    expect(line.getAttribute('style')).toContain('var(--accent-text)')
+    expect(screen.getByTestId('readiness-status').getAttribute('style')).toContain('var(--accent-text)')
     expect(screen.getByRole('link', { name: t.dashboard.readiness.open })).toHaveAttribute('href', '/analytics')
   })
 
-  // Design review 3.0: the dot and the words take the warn colour once the
-  // state asks for care.
   it('turns the status line to warn when it is a caution', () => {
     render(<ReadinessCard status={{ ...STATUS, tsbNow: -32, atlDelta: 12, atl: 79 }} />)
     const line = screen.getByTestId('readiness-status')
-
-    expect(line.textContent).toContain(t.dashboard.readiness.eyebrowByTone.hold)
+    expect(line.textContent).toContain(t.formBand.tired)
     expect(line.getAttribute('style')).toContain('var(--warn)')
     expect(line.querySelector<HTMLElement>('[aria-hidden]')!.style.background).toBe('var(--warn)')
   })
 
-  // The coach's headline and body beside the dial, with no "generated" label.
-  it('puts the written verdict beside the dial', () => {
+  // Wave 5 A0: the headline follows the form state the line names.
+  it('writes its own headline and body from the load, matching the form state', () => {
+    const load = { acute: 456, lo: 462, hi: 750, state: 'below' as const, ratio: 0.79 }
+    const { rerender } = render(<ReadinessCard status={{ ...STATUS, tsbNow: 4 }} load={load} />)
+    expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.dashboard.readiness.fallback.below(456, 462, 750).headline)
+    expect(screen.getByTestId('readiness-verdict')).toHaveTextContent('456')
+
+    rerender(<ReadinessCard status={{ ...STATUS, tsbNow: 4 }} load={load} verdict={{ headline: 'You’re fresh. Build again.', body: 'Run it in full.' }} />)
+    expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.dashboard.readiness.fallback.below(456, 462, 750).headline)
+
+    rerender(<ReadinessCard status={{ ...STATUS, tsbNow: 12 }} load={load} />)
+    expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.dashboard.readiness.fallback.below(456, 462, 750, true).headline)
+  })
+
+  // The coach's headline and body, with no "generated" label.
+  it('puts the written verdict under the line', () => {
     render(<ReadinessCard status={STATUS} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.' }} />)
     const verdict = screen.getByTestId('readiness-verdict')
 
@@ -118,8 +84,8 @@ describe('ReadinessCard', () => {
     expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(/generated/i)
   })
 
-  // Without a written verdict there is no sentence: the rules-based prose is gone.
-  it('shows no sentence without a written verdict', () => {
+  // Without a verdict or a load reading there is nothing to say.
+  it('shows no sentence without a written verdict or a load', () => {
     render(<ReadinessCard status={STATUS} />)
     expect(screen.queryByTestId('readiness-verdict')).toBeNull()
   })
