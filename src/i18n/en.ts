@@ -9,6 +9,15 @@ function ordinal(n: number): string {
   return `${n}th`
 }
 
+/** "+6" as "up 6", "−23" as "down 23", "0" as level. */
+function moveWords(delta: string, up: string, down: string, level: string): string {
+  const sign = delta.charAt(0)
+  const n = delta.replace(/^[+−-]/, '')
+  if (sign === '+') return `${up} ${n}`
+  if (sign === '−' || sign === '-') return `${down} ${n}`
+  return n === '0' ? level : delta
+}
+
 export const en = {
   locale: 'en-US',
 
@@ -506,6 +515,25 @@ export const en = {
       acwrValue: (ratio: string) => `×${ratio}`,
       // Read out after a tile's delta; on screen the sign says it.
       deltaIn: (days: number) => `in ${days} days`,
+      // "↘ 2 this week" under a tile (App Fixes 1a).
+      deltaWeek: (n: number, days: number) => (days === 7 ? `${n} this week` : `${n} in ${days} days`),
+      // The card's words when no written verdict is in yet, from the load itself.
+      fallback: {
+        // The headline follows the form state the status line names (Wave 5 A0):
+        // "fresh" only when form is above +5.
+        below: (acute: number, lo: number, hi: number, fresh = false) => ({
+          headline: fresh ? 'You\u2019re fresh. Time to build again.' : 'Load is below range. Time to build again.',
+          body: `Load ${acute} has dipped below your ${lo}–${hi} safe range. Run today\u2019s session in full to bring it back up.`,
+        }),
+        in: (acute: number, lo: number, hi: number) => ({
+          headline: 'Load is right where it should be.',
+          body: `Load ${acute} sits inside your ${lo}–${hi} safe range. Keep to the plan.`,
+        }),
+        above: (acute: number, lo: number, hi: number) => ({
+          headline: 'Load is running above your safe range.',
+          body: `Load ${acute} is over your ${lo}–${hi} safe range. Keep today easy and let fatigue come down.`,
+        }),
+      },
       noValue: '—',
     },
     stale: {
@@ -561,8 +589,18 @@ export const en = {
         rest: 'Rest',
       },
     },
+    thisWeek: {
+      title: 'This week',
+      // "load 456 · safe 462–750" (App Fixes 1a v2).
+      load: (acute: number, lo: number, hi: number) => `load ${acute} · safe ${lo}–${hi}`,
+      done: 'done',
+      planned: 'planned · km',
+      runsLeft: (n: number) => `${n} run${n !== 1 ? 's' : ''} left`,
+      missed: 'missed',
+      missedCount: (n: number) => `${n} missed`,
+    },
     loadStrip: {
-      title: 'Load · last 7 days',
+      title: 'Load · 7 days',
       band: (lo: number, hi: number) => `target ${lo}–${hi}`,
       safe: (lo: number, hi: number) => `· safe ${lo}–${hi}`,
       day: (date: string, load: number) => `${date} · load ${load}`,
@@ -657,17 +695,22 @@ export const en = {
         },
         load: {
           spikeAndDip: 'Load spiked and recovery is dipping. Take 2 easy days.',
-          // Why the watch and the load disagree (App Fixes 2a).
-          watchStillSays: (status: string) =>
-            `Your watch's training status still says ${status}, because it looks at the last 28 days and your recent block was strong.`,
           spike: (pct: number, span: string) => `Load jumped ${pct}% in ${span}. Ease off before it catches up.`,
           spikeAbove: 'Load is above your safe range. Ease off before it catches up.',
           dip: 'Recovery is dipping. Keep this week easy.',
           building: (pct: number, span: string) => `Load is up ${pct}% in ${span} and recovery is holding. Keep building.`,
           buildingLoad: (pct: number, span: string) => `Load is up ${pct}% in ${span}. Keep building.`,
         },
-        fitness: (value: number, delta: string, within: string) => `Fitness ${value}, ${delta} ${within}.`,
-        fatigue: (value: number, delta: string, within: string) => `Fatigue ${value}, ${delta} ${within}.`,
+        // "Fitness 52, up 6 in 4 weeks." (App Fixes 1b): the move in words, the arrow beside it.
+        fitness: (value: number, delta: string, within: string) => `Fitness ${value}, ${moveWords(delta, 'up', 'down', 'level')} ${within}.`,
+        fatigue: (value: number, delta: string, within: string) => `Fatigue ${value}, ${moveWords(delta, 'up', 'down', 'level')} ${within}.`,
+        // The Load tab's Why rows (App Fixes 1b): Load, Fitness, Fatigue, Resting HR, each a lead and what it means.
+        loadRow: (state: 'below' | 'in' | 'above', acute: number, lo: number, hi: number) =>
+          state === 'below' ? `Load ${acute}, under the ${lo}–${hi} safe range.` : state === 'above' ? `Load ${acute}, over the ${lo}–${hi} safe range.` : `Load ${acute}, inside the ${lo}–${hi} safe range.`,
+        fitnessNow: (perWeek: number, n: string) => (perWeek < 0 ? ` Slipping ${n} a week now.` : perWeek > 0 ? ` Building ${n} a week now.` : ' Holding steady now.'),
+        fatigueNow: { fresh: ' You\u2019re well recovered.', veryFresh: ' You\u2019re well recovered.', neutral: ' Recovery is on track.', tired: ' You\u2019re carrying fatigue.' } as Record<string, string>,
+        restingHrRow: (side: 'low' | 'high' | null, value: number, lo: number, hi: number) =>
+          side === 'high' ? `Resting HR ${value}, above your ${lo}–${hi} baseline.` : side === 'low' ? `Resting HR ${value}, below your ${lo}–${hi} baseline.` : `Resting HR ${value}, inside your ${lo}–${hi} baseline.`,
         thresholdFaster: (pace: string, s: number, ago: string) => `Threshold ${pace} /km, ${s} s faster than ${ago}.`,
         thresholdSlower: (pace: string, s: number, ago: string) => `Threshold ${pace} /km, ${s} s slower than ${ago}.`,
         thresholdLevel: (pace: string, ago: string) => `Threshold ${pace} /km, level with ${ago}.`,
@@ -722,6 +765,18 @@ export const en = {
         fatigue: 'Fatigue',
         inPeriod: (delta: string, period: string) => `${delta} in ${period}`,
         legend: { fresh: 'Fresh', neutral: 'Neutral', tired: 'Tired' },
+      },
+      // The Load tab's compact cards (App Fixes 2a).
+      loadCompact: {
+        title: 'Load',
+        caption: '7-day vs 28-day',
+        safe: (lo: number, hi: number) => `safe ${lo}–${hi}`,
+        fitnessWeek: 'fitness / week',
+        restingHr: 'Resting HR',
+        baseline: (side: 'low' | 'high' | null, lo: number, hi: number) =>
+          side === 'high' ? `above ${lo}–${hi} baseline` : side === 'low' ? `below ${lo}–${hi} baseline` : `inside ${lo}–${hi} baseline`,
+        ok: 'OK',
+        check: 'Check',
       },
       loadTrend: {
         title: 'Load trend',
@@ -813,6 +868,7 @@ export const en = {
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',
+        flat: (signed: string) => `${signed} · flat`,
         secs: (n: number) => `${n} s`,
       },
       predictions: {
@@ -837,15 +893,15 @@ export const en = {
       paceTrend: {
         title: 'Pace trend',
         caption: 'weekly average · higher is faster',
-        about: 'The weekly average pace of your easy runs and of your workouts (every run that is not easy). Faster is up.',
+        about: 'The weekly average pace of your easy runs and of the hard reps in your workouts. Faster is up.',
         easyFaster: (s: string) => ['Easy runs got ', `${s}/km faster`, '.'] as [string, string, string],
         easySlower: (s: string) => ['Easy runs got ', `${s}/km slower`, '.'] as [string, string, string],
         easyHeld: ['Easy pace ', 'held', '.'] as [string, string, string],
-        workoutFaster: (s: string) => [' Workout pace got ', `${s}/km faster`, '.'] as [string, string, string],
-        workoutSlower: (s: string) => [' Workout pace got ', `${s}/km slower`, '.'] as [string, string, string],
-        workoutHeld: [' Workout pace ', 'held', '.'] as [string, string, string],
+        workoutFaster: (s: string) => [' Rep pace got ', `${s}/km faster`, '.'] as [string, string, string],
+        workoutSlower: (s: string) => [' Rep pace got ', `${s}/km slower`, '.'] as [string, string, string],
+        workoutHeld: [' Rep pace ', 'held', '.'] as [string, string, string],
         easy: 'Easy',
-        workout: 'Workout',
+        workout: 'Rep pace',
       },
       efficiency: {
         title: 'Aerobic efficiency',
@@ -865,7 +921,7 @@ export const en = {
         rpeTrend: { easing: 'easing', rising: 'rising', steady: 'steady' } as Record<string, string>,
       },
       heatCost: {
-        title: 'Heat cost',
+        title: 'Temperature cost',
         caption: (hr: number) => `pace at ${hr} bpm, vs your best band`,
         about: 'Your easy-run pace at the same heart rate, by the temperature it felt like. Each bar is the seconds per km you lose against your best temperature band.',
         lose: (range: string) => ['Above 20 °C you lose ', `${range} s/km`, ' at the same heart rate.'] as [string, string, string],
@@ -875,6 +931,10 @@ export const en = {
         noRuns: 'no runs',
         plus: (s: number) => `+${s} s`,
         barKey: 'Longer bar: more s/km lost against your best band.',
+        // "You're fastest at 15–20 °C. Below 5 °C costs 16 s/km, above 20 °C 14–15 s/km." (App Fixes 2b)
+        fastest: (band: string) => `You're fastest at ${band}.`,
+        coldCosts: (s: string) => [' Below 5 °C costs ', `${s} s/km`, ''] as [string, string, string],
+        warmCosts: (s: string, afterCold: boolean) => [afterCold ? ', above 20 °C ' : ' Above 20 °C costs ', `${s} s/km`, ''] as [string, string, string],
       },
       weekly: {
         title: 'Weekly distance',
@@ -888,7 +948,9 @@ export const en = {
         onPlan: 'Weeks on plan',
         ofPlanned: (n: number) => `of ${n} planned`,
         withoutPlan: (n: number) => `${n} wk unplanned`,
-        onOrAbove: 'On or above plan',
+        onOrAbove: 'On plan',
+        // The week under way, its plan as a dashed outline (App Fixes 2c).
+        planned: 'Planned',
         belowPlan: 'Below plan',
         unplanned: 'Unplanned',
         // A week the plan asked for with nothing run against it (App Fixes 2c).
@@ -901,7 +963,7 @@ export const en = {
         underWeekOfPlan: (km: string, when: string) => `of ${km} km ${when.toLocaleLowerCase('en')}`,
         // A non-breaking hyphen and space: the label is two words, and
         // "12-" on one line over "wk avg" on the next is neither.
-        underAvg: (n: number) => (n >= 52 ? 'km/week · 1\u2011yr\u00a0avg' : `km/week · ${n}\u2011wk\u00a0avg`),
+        underAvg: (n: number) => (n >= 52 ? 'km · 1\u2011year\u00a0avg' : `km · ${n}\u2011week\u00a0avg`),
         underOnPlan: 'weeks on plan',
         underOnPlanOf: (n: number) => `of ${n} week${n === 1 ? '' : 's'} on plan`,
         done: 'Done',
@@ -911,10 +973,14 @@ export const en = {
         // Its home is Goals (design review, Oct 2026): Volume keeps a row that opens it,
         // in Goals' own words (goals.projection).
         title: 'Year to date',
+        shortOf: (km: string, goal: string) => `${km} km short of ${goal} at this pace`,
+        overOf: (km: string, goal: string) => `${km} km over ${goal} at this pace`,
       },
       longRun: {
-        title: 'Long run',
+        title: 'Long run share',
         caption: 'share of weekly distance',
+        // Across from the title (App Fixes 2c): "3 of 11 weeks over".
+        overOf: (n: number, of: number) => `${n} of ${of} week${of === 1 ? '' : 's'} over`,
         about: "Each week's longest run. One run above 35% of the week's distance puts a lot of the week's load on a single day.",
         rule: 'Keep your long run under 35% of the week. ',
         over: (n: number) => (n === 0 ? 'No week went over.' : n === 1 ? '1 week went over.' : `${n} weeks went over.`),
@@ -935,11 +1001,14 @@ export const en = {
         title: 'Time in zones',
         caption: 'hours per week',
         about: 'Hours in each heart-rate zone, week by week. The current week is lighter until it is done.',
-        stayed: (range: string, total: string) => ['Hard time stayed at ', `${range} min a week`, total] as [string, string, string],
-        ranged: (range: string, total: string) => ['Hard time ranged ', `${range} min a week`, total] as [string, string, string],
-        total: { grew: ' while total time grew.', dropped: ' while total time dropped.', held: ' while total time held.' } as Record<string, string>,
-        recovered: (week: string) => `; total time recovered after ${week}.`,
-        hours: (h: string) => ` ${h} h in all.`,
+        // App Fixes 2d: what changed, in order - the hours, how weekly time moved, then hard time.
+        summaryHours: (h: string) => `${h} h in all.`,
+        summaryTotal: { grew: ' Weekly time grew.', dropped: ' Weekly time dropped.', held: ' Weekly time held steady.' } as Record<string, string>,
+        summaryRecovered: (when: string, back: string) => ` Weekly time dropped ${when}, then climbed back from ${back}.`,
+        summaryHardUnder: (min: number) => ` Hard time stayed under ${min} min a week.`,
+        summaryHardRange: (range: string) => ` Hard time ranged ${range} min a week.`,
+        // "mid-August": a week placed in its month.
+        partOfMonth: (day: number, month: string) => `${day <= 10 ? 'early' : day <= 20 ? 'mid-' : 'late'}${day <= 10 || day > 20 ? ' ' : ''}${month}`,
       },
       quality: {
         title: 'Quality sessions',
@@ -960,10 +1029,12 @@ export const en = {
         plannedLegend: 'Planned',
         missedCount: (n: number) => `${n} missed`,
         missed: 'Missed',
+        // "of 10 planned · 1 extra" (App Fixes 2d), grey beside "11 done".
+        ofPlanned: (n: number) => `of ${n} planned`,
       },
       zoneRanges: {
         title: 'Zone ranges',
-        subtitle: 'Pace and heart rate for each zone',
+        subtitle: 'In Athlete & zones',
       },
     },
     insightCards: {
@@ -1212,6 +1283,8 @@ export const en = {
     weekLine: {
       runs: (n: number): string => (n === 1 ? '1 run' : `${n} runs`),
       easy: (pct: number) => `${pct}% easy`,
+      // Under a filter, the week's matching runs against all of its runs (App Fixes 1d).
+      ofRuns: (n: number, total: number) => `${n} of ${total} run${total === 1 ? '' : 's'}`,
     },
     // The page's two views, under the title (design review, Oct 2026).
     view: { label: 'View', list: 'List', map: 'Map' },
@@ -1226,11 +1299,25 @@ export const en = {
       // The bar over a filtered list (App Fixes 1d): what the totals count.
       showing: 'Showing',
       totalsCount: ' · totals count these only',
+      // A group chip alone names what is counted (App Fixes 1d): "90 workouts · totals count workouts only".
+      groupCount: {
+        easy: (n: number) => `${n} easy run${n === 1 ? '' : 's'}`,
+        workouts: (n: number) => `${n} workout${n === 1 ? '' : 's'}`,
+        races: (n: number) => `${n} race${n === 1 ? '' : 's'}`,
+      },
+      groupTotals: {
+        easy: ' · totals count easy runs only',
+        workouts: ' · totals count workouts only',
+        races: ' · totals count races only',
+      },
       clear: 'Clear',
+      // A sort other than newest, in the filter bar (App Fixes 3f).
+      sortedBy: { oldest: 'oldest first', longest: 'longest first', fastest: 'fastest first' } as Record<string, string>,
     },
     sort: {
       label: 'Sort',
       newest: 'Newest',
+      oldest: 'Oldest',
       longest: 'Longest',
       fastest: 'Fastest',
     },
@@ -1545,6 +1632,9 @@ export const en = {
         elev: 'Elev',
         hr: 'HR',
         total: 'Total',
+        // The one-lap table's headers (App Fixes 1c).
+        lap: 'Lap',
+        time: 'Time',
       },
       intervalTypes: {
         interval_warmup:   'Warm-up',
@@ -1671,6 +1761,13 @@ export const en = {
     soFar: (month: string, km: string) => `${month} ${km} so far`,
     longestRun: 'Longest run',
     biggestWeek: 'Biggest week',
+    // App Fixes 1i: the label over each total, its unit inline.
+    distance: 'Distance',
+    time: 'Time',
+    hoursUnit: 'h',
+    weekOf: (date: string) => `Week of ${date}`,
+    // More than three years: the latest three, then the rest behind this row.
+    allYears: 'All years',
   },
 
   shoes: {
@@ -1865,6 +1962,12 @@ export const en = {
       // The Target · Predicted · Gap row, then the gap per km under its bar.
       target: 'Target',
       predicted: 'Predicted',
+      // Under the race card's time (App Fixes 1h).
+      predictedShort: 'predicted',
+      targetShort: 'target',
+      // The Goals card's verdict, across from the km (App Fixes 1h).
+      shortAtPace: (km: string) => `${km} km short at this pace`,
+      overAtPace: (km: string) => `${km} km over at this pace`,
       gap: 'Gap',
       perKmToFind: (seconds: number) => `${seconds} s/km to find.`,
       perKmInHand: (seconds: number) => `${seconds} s/km in hand.`,
@@ -1884,7 +1987,7 @@ export const en = {
       goalLine: 'Dotted: the steady pace to the goal.',
       // The tiles under the records, as before 3.0 (owner's request, 3.0.1).
       vo2max: 'VO₂ max',
-      vo2Delta: (delta: string) => `${delta} in 12 weeks`,
+      vo2Delta: (delta: string) => `${delta} in 12 wk`,
       // The footers as segments, each kept whole on the line (v4.3.1).
       thresholdParts: (pace: string | null, lthr: number | null) =>
         [pace ? `Threshold ${pace} /km` : null, lthr ? `LTHR ${lthr} bpm` : null].filter((part): part is string => part !== null),
@@ -1983,19 +2086,26 @@ export const en = {
       routes: 'Routes',
     },
     recurring: {
+      showAll: (n: number) => `Show all ${n} routes`,
       runCount: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
       best: 'Best',
-      // What a bar is, then the dates its first and last bars were run
-      // (design review, Oct 2026): "taller = faster" alone named no axis.
-      trailKey: 'One bar per run · taller = faster',
-      trailSpan: (from: string, to: string) => `${from} – ${to}`,
+      // What a bar is (App Fixes 1g): one bar per run, the last six.
+      trailKey: 'Pace per run · taller = faster',
       legendBest: 'best',
       legendLatest: 'latest',
       bestPace: (pace: string) => `best ${pace}`,
       lastPace: (pace: string) => `last ${pace}`,
       newBest: 'new best',
-      // A route whose start no place name came back for.
+      // A route whose destination no place name came back for.
       unnamed: (n: number) => `Route ${n}`,
+      // Named by where it goes, not the start street every run shares (App Fixes 1g).
+      named: {
+        loop: (place: string) => `${place} loop`,
+        'out-back': (place: string) => `${place} out & back`,
+        point: (place: string) => `To ${place}`,
+      },
+      rename: 'Rename route',
+      renameHint: 'Leave empty to use the place name',
     },
     milestones: {
       nextUp: 'Next up',
@@ -2139,6 +2249,8 @@ export const en = {
 
   plan: {
     today: 'Today',
+    // Under the day card (App Fixes 3b).
+    nextKeySession: 'Next key session',
     prevPeriod: 'Previous',
     nextPeriod: 'Next',
     weekdays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
@@ -2233,6 +2345,10 @@ export const en = {
       repsShort: (n: number, rep: string) => `${n}×${rep}`,
     },
     dayCard: {
+      // Wave 5, Today › missed day: a miss marked as skipped on purpose.
+      skipped: 'Skipped',
+      markSkipped: 'Skipped (sick / rest)',
+      undoSkip: 'Undo',
       planned: 'Planned',
       done: 'Done',
       notPlanned: 'Nothing planned',
