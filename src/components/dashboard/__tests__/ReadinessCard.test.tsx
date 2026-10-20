@@ -33,15 +33,18 @@ describe('the Form dial', () => {
 })
 
 describe('ReadinessCard', () => {
-  // App Fixes 2a: the load ratio moved to Analytics' load story, where the
-  // band it is read against lives; Today keeps Fitness and Fatigue.
-  it('reads Fitness and Fatigue on two tiles, and no Garmin status', () => {
+  it('reads Fitness, Fatigue and Load on three tiles, and no watch status', () => {
     render(<ReadinessCard status={STATUS} />)
 
     expect(screen.getByTestId('tile-fitness')).toHaveTextContent(`${t.dashboard.readiness.ctl}54`)
     expect(screen.getByTestId('tile-fatigue')).toHaveTextContent(`${t.dashboard.readiness.atl}60`)
-    expect(screen.queryByTestId('tile-load')).toBeNull()
+    expect(screen.getByTestId('tile-load')).toHaveTextContent(`${t.dashboard.readiness.acwr}×0.98`)
     expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(t.trainingStatus.status.productive)
+  })
+
+  it('writes a dash where the load ratio has nothing', () => {
+    render(<ReadinessCard status={{ ...STATUS, acwr: null }} />)
+    expect(screen.getByTestId('tile-load')).toHaveTextContent(t.dashboard.readiness.noValue)
   })
 
   // App Fixes 1a: the line's second half is the load against its safe range,

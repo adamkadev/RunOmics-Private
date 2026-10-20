@@ -4,7 +4,7 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { deltaTone, DELTA_TONE_COLOR, type DeltaMetric } from '@/lib/deltaTone'
-import { formatDelta } from '@/lib/formatters'
+import { formatDecimal, formatDelta } from '@/lib/formatters'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import type { LoadReading } from '@/application/usecases/GetRecentLoad'
 import { FormDial } from './FormDial'
@@ -109,9 +109,10 @@ export function ReadinessCard({
           </div>
         </div>
 
-        {/* Fitness and Fatigue support the dial; the load ratio moved to
-            Analytics' load story, where the band it belongs to is (2a). */}
-        <div className="grid grid-cols-2 gap-2">
+        {/* Fitness, Fatigue and Load support the dial, which carries Form.
+            The ratio also reads on Analytics' Load trend card, beside the
+            load it is made of (2a); here it is the week against the usual. */}
+        <div className="grid grid-cols-3 gap-2">
           <Tile
             testId="tile-fitness"
             label={s.ctl}
@@ -124,6 +125,7 @@ export function ReadinessCard({
             value={Math.round(status.atl)}
             delta={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
+          <Tile testId="tile-load" label={s.acwr} value={status.acwr === null ? s.noValue : s.acwrValue(formatDecimal(status.acwr, 2))} />
         </div>
       </section>
     </Link>
