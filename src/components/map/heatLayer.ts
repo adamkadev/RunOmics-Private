@@ -20,6 +20,23 @@ import { hexToRgb, rgbCss } from "@/lib/heatRamp";
 
 /** Dark B's glow, at most (owner A/B test). */
 const HEAT_B_GLOW_MAX = 0.35;
+/** Dark C's glow, at most: A's blend, but overlaps can't add up to white. */
+const HEAT_C_GLOW_MAX = 0.4;
+/** Dark C's core at the busiest street, at most. */
+const HEAT_C_CORE_MAX_PX = 2.4;
+const GROUND_DARK = "#0b0c0c";
+
+/**
+ * Dark C's core colour by frequency: mix(accent, ground, 0.6) at t = 0, the
+ * accent at t = 0.7, mix(accent, white, 0.35) at t = 1 - never pure white.
+ */
+function heatCoreC(accent: string, t: number): string {
+  const A = hexToRgb(accent);
+  const dim = hexToRgb(GROUND_DARK).map((g, i) => A[i]! + (g - A[i]!) * 0.6);
+  const light = A.map((a) => a + (255 - a) * 0.35);
+  const mix = (a: readonly number[], b: readonly number[], k: number) => a.map((v, i) => v + (b[i]! - v) * k) as [number, number, number];
+  return rgbCss(t <= 0.7 ? mix(dim, A, t / 0.7) : mix(A, light, (t - 0.7) / 0.3));
+}
 
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
@@ -53,9 +70,9 @@ export interface HeatLayer {
  * and a sharp core whose colour, opacity and width all rise with it - rare
  * streets thin and pale (dim on dark), the riverside thick and glowing.
  */
-export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: string, beforeId: string | undefined, variant: "A" | "B" = "A"): HeatLayer {
+export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: string, beforeId: string | undefined, variant: "A" | "B" | "C" = "C"): HeatLayer {
   // Dark B (owner A/B test): normal blending, so nothing passes the accent.
-  const composite = mode === "dark" ? (variant === "B" ? "source-over" : HEAT_DARK.composite) : HEAT_STYLE[mode].composite;
+  const composite = mode === "dark" ? (variant === "A" ? HEAT_DARK.composite : "source-over") : HEAT_STYLE[mode].composite;
   const strokes: { halo: HeatStroke | null; core: HeatStroke }[] = Array.from({ length: HEAT_LEVELS }, (_, level) => ({
     halo: heatHalo(mode, accent, heatLevelT(level)),
     core: heatCore(mode, accent, heatLevelT(level)),
@@ -120,6 +137,46 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     }
   }
 
+  /** Every run's glow on its own canvas, then laid on the heat canvas at `max` opacity at most. */
+  function glowLayer(blend: GlobalCompositeOperation, alpha: number, max: number, lineWidth: number) {
+    if (!ctx) return;
+    const glow = document.createElement("canvas");
+    glow.width = canvas.width;
+    glow.height = canvas.height;
+    const g = glow.getContext("2d");
+    if (!g) return;
+    g.setTransform(view.scale, 0, 0, view.scale, 0, 0);
+    g.globalCompositeOperation = blend;
+    g.lineJoin = "round";
+    g.lineCap = "round";
+    g.lineWidth = lineWidth * HEAT_DARK.passes[0].width;
+    g.strokeStyle = rgbCss(hexToRgb(accent), alpha);
+    const { x0, y0, world } = view;
+    for (const track of tracks) {
+      g.beginPath();
+      let penDown = false;
+      for (let p = 0; p < track.length; p += 2) {
+        const x = track[p]!;
+        if (Number.isNaN(x)) {
+          penDown = false;
+          continue;
+        }
+        const px = (x - x0) * world;
+        const py = (track[p + 1]! - y0) * world;
+        if (penDown) g.lineTo(px, py);
+        else g.moveTo(px, py);
+        penDown = true;
+      }
+      g.stroke();
+    }
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = max;
+    ctx.drawImage(glow, 0, 0);
+    ctx.restore();
+  }
+
   function draw() {
     if (!ctx) return;
     ctx.setTransform(view.scale, 0, 0, view.scale, 0, 0);
@@ -131,44 +188,28 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       // at most, then the cores in normal blending: overlaps build towards
       // the accent and never past it, so no street turns white.
       const lineWidth = heatLineWidth(map.getZoom());
-      const glow = document.createElement("canvas");
-      glow.width = canvas.width;
-      glow.height = canvas.height;
-      const g = glow.getContext("2d");
-      if (g) {
-        g.setTransform(view.scale, 0, 0, view.scale, 0, 0);
-        g.lineJoin = "round";
-        g.lineCap = "round";
-        g.lineWidth = lineWidth * HEAT_DARK.passes[0].width;
-        g.strokeStyle = rgbCss(hexToRgb(accent), 0.12);
-        const { x0, y0, world } = view;
-        for (const track of tracks) {
-          g.beginPath();
-          let penDown = false;
-          for (let p = 0; p < track.length; p += 2) {
-            const x = track[p]!;
-            if (Number.isNaN(x)) {
-              penDown = false;
-              continue;
-            }
-            const px = (x - x0) * world;
-            const py = (track[p + 1]! - y0) * world;
-            if (penDown) g.lineTo(px, py);
-            else g.moveTo(px, py);
-            penDown = true;
-          }
-          g.stroke();
-        }
-        ctx.save();
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.globalAlpha = HEAT_B_GLOW_MAX;
-        ctx.drawImage(glow, 0, 0);
-        ctx.restore();
-      }
+      glowLayer("source-over", 0.12, HEAT_B_GLOW_MAX, lineWidth);
       ctx.lineWidth = lineWidth * HEAT_DARK.passes[1].width;
       ctx.strokeStyle = rgbCss(hexToRgb(accent), HEAT_DARK.passes[1].alpha);
       for (const track of tracks) {
         trace(track);
+        ctx.stroke();
+      }
+      return;
+    }
+    if (mode === "dark" && variant === "C") {
+      // C: A's glow, added up on its own canvas and laid on at 0.40 at most;
+      // then each street's core coloured and widened by how often it is run,
+      // rarest first, topping out at a light accent 2.4 px wide.
+      const lineWidth = heatLineWidth(map.getZoom());
+      glowLayer("lighter", HEAT_DARK.passes[0].alpha, HEAT_C_GLOW_MAX, lineWidth);
+      for (let level = 0; level < levels.length; level++) {
+        const path = levels[level]!;
+        if (!path.length) continue;
+        const t = heatLevelT(level);
+        ctx.lineWidth = Math.min(HEAT_C_CORE_MAX_PX, lineWidth * (1 + t));
+        ctx.strokeStyle = heatCoreC(accent, t);
+        trace(path);
         ctx.stroke();
       }
       return;
@@ -259,7 +300,7 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
   return {
     setTracks(next, reveal) {
       tracks = next;
-      levels = mode === "dark" ? [] : buildHeatLevels(next);
+      levels = mode === "dark" && variant !== "C" ? [] : buildHeatLevels(next);
       if (reveal && map.getLayer(HEAT_LAYER)) {
         // A fade, not a draw-in: the frequencies need every run at once.
         map.setPaintProperty(HEAT_LAYER, "raster-opacity-transition", { duration: 0, delay: 0 });
