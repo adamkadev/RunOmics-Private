@@ -8,19 +8,16 @@ const TODAY = '2026-10-20'
 const day = (date: string, d: Partial<WeekTargetDay> = {}): WeekTargetDay => ({ date, ranKm: 0, runs: 0, plannedKm: null, plannedSessions: 0, ...d })
 
 // Mon 19 run (8 of 10 planned), today 10 planned, Wed 11, Sun 13, the rest rest.
-const WEEK = weekTarget(
-  [
-    day('2026-10-19', { ranKm: 8, runs: 1, plannedKm: 10, plannedSessions: 1, type: 'Base' }),
-    day('2026-10-20', { plannedKm: 10, plannedSessions: 1, type: 'Base' }),
-    day('2026-10-21', { plannedKm: 11, plannedSessions: 1, type: 'Threshold' }),
-    day('2026-10-22'),
-    day('2026-10-23'),
-    day('2026-10-24'),
-    day('2026-10-25', { plannedKm: 13, plannedSessions: 1, type: 'Base' }),
-  ],
-  TODAY,
-  null,
-)
+const DAYS: WeekTargetDay[] = [
+  day('2026-10-19', { ranKm: 8, runs: 1, plannedKm: 10, plannedSessions: 1, type: 'Base' }),
+  day('2026-10-20', { plannedKm: 10, plannedSessions: 1, type: 'Base' }),
+  day('2026-10-21', { plannedKm: 11, plannedSessions: 1, type: 'Threshold' }),
+  day('2026-10-22'),
+  day('2026-10-23'),
+  day('2026-10-24'),
+  day('2026-10-25', { plannedKm: 13, plannedSessions: 1, type: 'Base' }),
+]
+const WEEK = weekTarget(DAYS, TODAY, null)
 
 describe('ThisWeekCard (App Fixes 1a v2)', () => {
   it('scales km to the week\'s largest day, 62 px tall, never under 8', () => {
@@ -50,7 +47,7 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
   })
 
   // Wave 5, Today › missed day.
-  const MISSED = weekTarget([day('2026-10-19', { plannedKm: 8, plannedSessions: 1 }), ...WEEK.days.slice(1).map(({ state: _s, ...d }) => d)], TODAY, null)
+  const MISSED = weekTarget([day('2026-10-19', { plannedKm: 8, plannedSessions: 1 }), ...DAYS.slice(1)], TODAY, null)
 
   it('dashes a missed day in amber, keeps its km, keys it and counts it', () => {
     render(<ThisWeekCard target={MISSED} today={TODAY} load={null} />)

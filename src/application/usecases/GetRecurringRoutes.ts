@@ -107,12 +107,12 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
   const route = latest.route as Coord[]
   return {
     id: `${index}`,
-    start: (latest.route as Coord[])[0] ?? null,
-    far: farthestPoint(latest.route as Coord[]),
-    shape: routeShape(latest.route as Coord[]),
+    start: route[0] ?? null,
+    far: farthestPoint(route),
+    shape: routeShape(route),
     runCount: timed.length,
     distanceKm: round(timed.reduce((sum, a) => sum + a.distanceKm, 0) / timed.length, 1),
-    outline: routeOutline(latest.route as Coord[]),
+    outline: routeOutline(route),
     runs: [...timed].reverse().map((a) => ({
       activityId: a.id,
       date: a.date.slice(0, 10),

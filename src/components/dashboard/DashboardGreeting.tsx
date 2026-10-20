@@ -68,7 +68,9 @@ function usePullToRefresh(onPull: () => void, disabled: boolean) {
   const [pull, setPull] = useState(0)
   const pullRef = useRef(0)
   const onPullRef = useRef(onPull)
-  onPullRef.current = onPull
+  useEffect(() => {
+    onPullRef.current = onPull
+  })
   useEffect(() => {
     if (disabled) return
     let startY: number | null = null
