@@ -5,7 +5,7 @@ import type { HeatmapDay } from '@/application/usecases/GetHeatmapData'
 import type { ProfileGoal, ProfilePeriodStats } from '@/application/usecases/GetProfileData'
 import type { NextRaceSpotlight } from '@/application/usecases/GetGoalsData'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
-import { consistencyMonths, dayLevel, type DayLevel } from '@/components/consistency/consistencyMonthsView'
+import { activeDaysInYear, dayLevel, type DayLevel } from '@/components/consistency/consistencyRamp'
 import { isPlaceholderRaceName, raceDisplayName } from '@/components/goals/raceName'
 import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import { DISTANCE_KEY, EFFORTS } from '@/domain/activity/effort'
@@ -230,7 +230,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
       weeks: heatWeeks(input.heatmapDays, input.today),
       // The Consistency page's own count (v5.5 #9): the card said 204 over a
       // rolling 365 days, the page 202 over its twelve month columns.
-      activeDays: consistencyMonths(input.heatmapDays, input.today).activeDays,
+      activeDays: activeDaysInYear(input.heatmapDays, input.today),
       streakWeeks: input.streakWeeks,
     },
     shoes: input.shoes

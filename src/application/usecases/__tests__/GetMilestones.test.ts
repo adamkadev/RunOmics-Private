@@ -139,6 +139,19 @@ describe('longestWeekStreak', () => {
     expect(longestWeekStreak(acts)).toBe(4)
   })
 
+  it('counts only weeks with enough runs when given a weekly target (3.1)', () => {
+    const acts = [
+      act('2026-06-01'), act('2026-06-02'), act('2026-06-03'),
+      act('2026-06-08'), act('2026-06-09'), act('2026-06-10'),
+      act('2026-06-15'),
+    ]
+    expect(longestWeekStreak(acts, 3)).toBe(2)
+    expect(longestWeekStreak(acts)).toBe(3)
+    // The week of 15 June is under way and under target: the streak holds from the week before.
+    expect(currentWeekStreak(acts, new Date('2026-06-16T00:00:00'), 3)?.weeks).toBe(2)
+    expect(currentWeekStreak(acts, new Date('2026-06-23T00:00:00'), 3)).toBeNull()
+  })
+
   it('counts a run spanning a calendar year boundary', () => {
     const acts = [act('2025-12-22'), act('2025-12-29'), act('2026-01-05')]
     expect(longestWeekStreak(acts)).toBe(3)

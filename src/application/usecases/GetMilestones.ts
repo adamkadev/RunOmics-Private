@@ -6,6 +6,7 @@ import { computeWeekActivityDays } from './GetDashboardData'
 import { DAY_MS, isoWeekNumber, startOfWeek, addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
 import { formatDistance, formatDuration, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 
 const DISTANCE_TIERS_KM = [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 5000]
 const MIN_STREAK_WEEKS = 8
@@ -115,8 +116,19 @@ export interface WeekStreak {
   startDate: string
 }
 
-export function currentWeekStreak(activities: Activity[], now: Date): WeekStreak | null {
-  const activeWeeks = new Set(activities.map((a) => a.week))
+/** The weeks, by `key`, with `minRuns` runs or more. */
+function weeksWith<T>(activities: Activity[], key: (a: Activity) => T, minRuns: number): Set<T> {
+  const counts = new Map<T, number>()
+  for (const a of activities) counts.set(key(a), (counts.get(key(a)) ?? 0) + 1)
+  return new Set([...counts].filter(([, runs]) => runs >= minRuns).map(([week]) => week))
+}
+
+/**
+ * The weeks in a row, to this one, with `minRuns` runs or more. A week under
+ * way that has not reached them yet carries the streak from the week before.
+ */
+export function currentWeekStreak(activities: Activity[], now: Date, minRuns = 1): WeekStreak | null {
+  const activeWeeks = weeksWith(activities, (a) => a.week, minRuns)
   let cursor = activeWeeks.has(isoWeekNumber(now)) ? now : addDays(now, -7)
 
   let weeks = 0
@@ -130,8 +142,8 @@ export function currentWeekStreak(activities: Activity[], now: Date): WeekStreak
   return { weeks, startDate: isoDate(startOfWeek(streakStartWeek)) }
 }
 
-export function longestWeekStreak(activities: Activity[]): number {
-  const weekStarts = new Set(activities.map((a) => isoDate(startOfWeek(new Date(a.date + 'T00:00:00')))))
+export function longestWeekStreak(activities: Activity[], minRuns = 1): number {
+  const weekStarts = weeksWith(activities, (a) => isoDate(startOfWeek(new Date(a.date + 'T00:00:00'))), minRuns)
   const sorted = Array.from(weekStarts).sort()
 
   let longest = 0
@@ -159,13 +171,18 @@ export function computeWeekPlannedDays(planned: { date: string }[], now: Date): 
   return Array.from({ length: 7 }, (_, i) => dateSet.has(isoDate(addDays(monday, i))))
 }
 
+/**
+ * The weekly streak (3.1): weeks in a row with three runs or more - the same
+ * count on Today, the Progress hub and Consistency. The milestone's streak
+ * stays a run every week, as its copy says.
+ */
 export function getWeeklyStreakData(now = new Date(`${appTodayIso()}T12:00:00`)): WeeklyStreakData | null {
   const activities = getAllActivities()
   if (!activities.length) return null
-  const streak = currentWeekStreak(activities, now)
+  const streak = currentWeekStreak(activities, now, WEEKLY_RUN_TARGET)
   return {
     currentWeeks: streak?.weeks ?? 0,
-    longestWeeks: longestWeekStreak(activities),
+    longestWeeks: longestWeekStreak(activities, WEEKLY_RUN_TARGET),
     weekDays: computeWeekActivityDays(activities, now),
     plannedDays: computeWeekPlannedDays(getAllPlannedWorkouts(), now),
   }

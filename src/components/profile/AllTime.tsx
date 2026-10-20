@@ -1,8 +1,6 @@
 import Link from 'next/link'
-import type { CSSProperties } from 'react'
 import { ChevronRight } from 'lucide-react'
 import { cardClass } from '@/components/ui/Card'
-import { ACCENT_LIFT } from '@/components/consistency/consistencyMonthsView'
 import { formatDate, formatKm, formatMonthShortYear, formatPercent } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -39,23 +37,26 @@ function signedPercent(pct: number): string {
 /**
  * The years by km a month (3.0), fair to a first year that started late:
  * this year in the accent with its change on last year, the others in the
- * band grey; their totals in a footnote.
+ * band grey; each year's totals under its bar (3.1), a first year that
+ * started after January saying from when.
  */
-export function YearRows({ years, currentYear }: { years: AllTimeYear[]; currentYear: number }) {
+export function YearRows({ years, currentYear, since }: { years: AllTimeYear[]; currentYear: number; since: string | null }) {
   const best = Math.max(1, ...years.map((y) => y.kmPerMonth))
   const newestFirst = [...years].reverse()
   const current = years.find((y) => y.year === currentYear)
   const previous = years.find((y) => y.year === currentYear - 1)
   const changePct = current && previous && previous.kmPerMonth > 0 ? Math.round((current.kmPerMonth / previous.kmPerMonth - 1) * 100) : null
+  // A first year from its first run's month, when that is not January.
+  const lateStart = since && !since.slice(5, 7).startsWith('01') ? since : null
   return (
-    <>
-      <ul className="flex flex-col gap-3" data-testid="year-rows">
+    <ul className="flex flex-col gap-3" data-testid="year-rows">
         {newestFirst.map((y) => {
           const isCurrent = y.year === currentYear
+          const from = lateStart && Number(lateStart.slice(0, 4)) === y.year ? formatDate(lateStart, { precision: 'month', year: 'never' }) : null
           return (
             <li
               key={y.year}
-              className="grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-3"
+              className="grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1"
               aria-label={t.allTime.yearLabel(y.year, formatKm(y.kmPerMonth))}
               data-testid="year-row"
             >
@@ -78,19 +79,14 @@ export function YearRows({ years, currentYear }: { years: AllTimeYear[]; current
                   </span>
                 )}
               </span>
+              <span className="col-start-2 col-end-4 text-[11.5px] text-muted-foreground" data-testid="year-totals">
+                {t.allTime.yearTotals(formatKm(y.km), y.runs)}
+                {from && ` · ${t.allTime.fromMonth(from)}`}
+              </span>
             </li>
           )
         })}
-      </ul>
-      <p className="mt-3 text-[12.5px] text-muted-foreground" data-testid="year-totals">
-        {newestFirst.map((y, i) => (
-          <span key={y.year} className="whitespace-nowrap">
-            {i > 0 && <span aria-hidden>{'  ·  '}</span>}
-            {t.allTime.yearTotals(formatKm(y.km), y.runs, y.year)}
-          </span>
-        ))}
-      </p>
-    </>
+    </ul>
   )
 }
 
@@ -123,88 +119,93 @@ function initial(key: string): string {
 }
 
 /**
- * The last 18 months (3.0): earlier years in the band grey, this year in the
- * accent, the best month the lifted accent with its km over it, and the
- * month still running a dashed accent outline. A line marks each new year.
+ * The last 18 months (3.0, 3.1): earlier years in the band grey, this year in
+ * the accent, the best month's km over its bar, and the month still running
+ * filled so far inside a dashed outline at its pace. Under the months, each
+ * year's name, a line where a new one starts, and this month's km so far.
  */
 function MonthlyBars({ view }: { view: AllTimeView }) {
   const a = t.allTime
   const shown = view.monthly.slice(-MONTHS_SHOWN)
-  const best = shown.reduce<AllTimeMonth | null>((max, m) => (!max || m.km > max.km ? m : max), null)
+  const best = shown.filter((m) => !m.partial).reduce<AllTimeMonth | null>((max, m) => (!max || m.km > max.km ? m : max), null)
   const now = shown.at(-1)?.partial ? shown.at(-1)! : null
-  const scale = monthlyScale(best?.km ?? 0)
+  const scale = monthlyScale(Math.max(best?.km ?? 0, now?.projectedKm ?? 0, now?.km ?? 0))
   const at = (km: number) => `${(km / scale.top) * 100}%`
+  const px = (km: number) => `${Math.max(3, Math.round((km / scale.top) * MONTHLY_H))}px`
+  const grid = { gridTemplateColumns: `repeat(${shown.length}, minmax(0, 1fr))` }
+  // Each year's months, in order: the years named under the chart.
+  const years = shown.reduce<{ year: number; months: number }[]>((list, m) => {
+    const last = list.at(-1)
+    if (last && last.year === m.year) last.months += 1
+    else list.push({ year: m.year, months: 1 })
+    return list
+  }, [])
+  const month = (key: string) => formatDate(`${key}-01`, { precision: 'month', year: 'never' })
   return (
     <section className={cardClass()} data-testid="all-time-monthly">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h2 className={TITLE}>{a.monthly}</h2>
-        <span className="text-[12.5px] text-muted-foreground" data-testid="monthly-header">
-          {best && best.km > 0 && a.best(formatMonthShortYear(`${best.key}-01`))}
-          {best && best.km > 0 && now && ' · '}
-          {now && (
-            <span className="text-accent-text">
-              {a.soFar(formatDate(`${now.key}-01`, { precision: 'month', year: 'never' }), formatKm(now.km))}
-            </span>
-          )}
-        </span>
+        {best && best.km > 0 && (
+          <span className="text-[12.5px] text-muted-foreground" data-testid="monthly-header">
+            {a.best(formatKm(best.km), formatMonthShortYear(`${best.key}-01`))}
+          </span>
+        )}
       </div>
-      <div className="mt-4 flex gap-2" aria-hidden>
-        {/* Round km up the left, each on a line across the bars. */}
-        <div className="relative w-7 shrink-0 text-caption leading-none text-muted-foreground" style={{ height: MONTHLY_H }} data-testid="monthly-axis">
+      <div className="mt-4" aria-hidden>
+        <div className="relative" style={{ height: MONTHLY_H }}>
           {scale.ticks.map((km) => (
-            <span key={km} className="absolute left-0 translate-y-1/2" style={{ bottom: at(km) }}>
-              {formatKm(km)}
-            </span>
+            <span key={km} data-testid="monthly-gridline" className="absolute inset-x-0 border-t border-border" style={{ bottom: at(km) }} />
           ))}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="relative" style={{ height: MONTHLY_H }}>
-            {scale.ticks.map((km) => (
-              <span key={km} data-testid="monthly-gridline" className="absolute inset-x-0 border-t border-border" style={{ bottom: at(km) }} />
-            ))}
-            <div className="relative flex h-full items-end gap-[3px]">
-              {shown.map((m, i) => {
-                const isBest = m === best && m.km > 0 && !m.partial
-                const fill = isBest ? ACCENT_LIFT : m.year !== view.currentYear ? 'var(--band)' : 'var(--accent)'
-                const style: CSSProperties = {
-                  height: `${Math.max(3, Math.round((m.km / scale.top) * MONTHLY_H))}px`,
-                  ...(m.partial ? { border: '1.5px dashed var(--accent)', background: 'transparent' } : { background: fill }),
-                }
-                return (
-                  <div key={m.key} className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end">
-                    {/* The year's first month, after another year's: a line where the year turns. */}
-                    {i > 0 && m.key.endsWith('-01') && (
-                      <span data-testid="year-divider" className="absolute -bottom-9 -left-[2px] top-0 w-px bg-[var(--line-2)]" />
-                    )}
-                    {isBest && (
-                      <span className="mb-1 text-caption font-semibold leading-none tabular-nums text-foreground" data-testid="best-value">
-                        {formatKm(m.km)}
-                      </span>
-                    )}
+          <div className="relative grid h-full items-end gap-[3px]" style={{ ...grid, gridTemplateRows: `${MONTHLY_H}px` }}>
+            {shown.map((m) => {
+              const isBest = m === best && m.km > 0
+              return (
+                <div key={m.key} className="relative flex h-full min-w-0 flex-col items-center justify-end">
+                  {isBest && (
+                    <span className="mb-1 text-caption font-semibold leading-none tabular-nums text-foreground" data-testid="best-value">
+                      {formatKm(m.km)}
+                    </span>
+                  )}
+                  {m.partial ? (
+                    <span
+                      data-testid="month-bar"
+                      data-month={m.key}
+                      className="relative box-border block w-full rounded-[3px] border-[1.5px] border-dashed border-accent"
+                      style={{ height: px(m.projectedKm ?? m.km) }}
+                    >
+                      <span data-testid="month-so-far" className="absolute inset-x-0 bottom-0 block rounded-[2px] bg-accent" style={{ height: px(m.km) }} />
+                    </span>
+                  ) : (
                     <span
                       data-testid="month-bar"
                       data-month={m.key}
                       data-best={isBest || undefined}
-                      className="box-border block w-full rounded-[3px]"
-                      style={style}
+                      className="block w-full rounded-[3px]"
+                      style={{ height: px(m.km), background: m.year !== view.currentYear ? 'var(--band)' : 'var(--accent)' }}
                     />
-                  </div>
-                )
-              })}
-            </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
-          <div className="mt-1.5 flex gap-[3px] text-center text-caption leading-[14px] text-muted-foreground">
-            {shown.map((m) => (
-              <span key={m.key} className={cn('min-w-0 flex-1', m.partial && 'font-semibold text-accent-text')}>{initial(m.key)}</span>
-            ))}
-          </div>
-          <div className="mt-1 flex gap-[3px] text-caption leading-[14px] text-muted-foreground" data-testid="monthly-years">
-            {shown.map((m, i) => (
-              <span key={m.key} className="min-w-0 flex-1 overflow-visible whitespace-nowrap">
-                {i === 0 || m.key.endsWith('-01') ? m.year : ''}
-              </span>
-            ))}
-          </div>
+        </div>
+        <div className="mt-1.5 grid gap-[3px] text-center text-caption leading-[14px] text-subtle" style={grid}>
+          {shown.map((m) => (
+            <span key={m.key} className={cn('min-w-0', m.partial && 'font-semibold text-accent-text')}>{initial(m.key)}</span>
+          ))}
+        </div>
+        <div className="mt-2.5 grid gap-[3px] text-caption leading-[14px] text-muted-foreground" style={grid} data-testid="monthly-years">
+          {years.map((y, i) => (
+            <span
+              key={y.year}
+              className={cn('min-w-0 whitespace-nowrap', i > 0 && 'border-l border-[var(--line-2)] pl-1')}
+              style={{ gridColumn: `span ${y.months}` }}
+              data-testid={i > 0 ? 'year-divider' : undefined}
+            >
+              {y.year}
+              {now && y.year === now.year && ` · ${a.soFar(month(now.key), formatKm(now.km))}`}
+            </span>
+          ))}
         </div>
       </div>
     </section>
@@ -234,7 +235,7 @@ function Bests({ view }: { view: AllTimeView }) {
       <div className="grid grid-cols-2 divide-x divide-border">
         {cells.map((cell) => (
           <Link key={cell.label} href={cell.href} className="flex flex-col gap-1.5 px-4 py-3.5 transition-colors hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)]" data-testid="all-time-best">
-            <span className="flex items-center justify-between gap-2 text-[13px] text-muted-foreground">
+            <span className="flex items-center gap-0.5 text-[13px] text-muted-foreground">
               {cell.label}
               <ChevronRight size={14} aria-hidden="true" className="shrink-0" />
             </span>
@@ -258,7 +259,7 @@ export function AllTime({ view }: { view: AllTimeView }) {
           <h2 className={TITLE}>{a.byYear}</h2>
           <span className="text-[12.5px] text-muted-foreground">{a.perMonth}</span>
         </div>
-        <YearRows years={view.years} currentYear={view.currentYear} />
+        <YearRows years={view.years} currentYear={view.currentYear} since={view.since} />
       </section>
 
       {view.monthly.length > 0 && <MonthlyBars view={view} />}

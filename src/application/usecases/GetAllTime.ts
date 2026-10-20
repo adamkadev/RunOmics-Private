@@ -20,6 +20,8 @@ export interface AllTimeMonth {
   km: number
   /** The month still running, drawn as an outline. */
   partial: boolean
+  /** The month still running at its pace so far, never under its km (3.1): its outline. Null for a month done. */
+  projectedKm: number | null
 }
 
 export interface AllTimeView {
@@ -93,13 +95,20 @@ export function allTimeView(
   }
 
   const currentKey = monthKey(today)
+  const dayOfMonth = Number(today.slice(8, 10))
+  const daysInMonth = new Date(Date.UTC(currentYear, Number(today.slice(5, 7)), 0)).getUTCDate()
   const monthly = since
-    ? monthsBetween(monthKey(since), currentKey).map((key) => ({
-        key,
-        year: Number(key.slice(0, 4)),
-        km: Math.round(byMonth.get(key) ?? 0),
-        partial: key === currentKey,
-      }))
+    ? monthsBetween(monthKey(since), currentKey).map((key) => {
+        const monthKm = byMonth.get(key) ?? 0
+        const partial = key === currentKey
+        return {
+          key,
+          year: Number(key.slice(0, 4)),
+          km: Math.round(monthKm),
+          partial,
+          projectedKm: partial ? Math.max(Math.round(monthKm), Math.round((monthKm / dayOfMonth) * daysInMonth)) : null,
+        }
+      })
     : []
 
   const firstYear = since ? Number(since.slice(0, 4)) : currentYear

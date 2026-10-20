@@ -136,30 +136,43 @@ export const en = {
   },
 
   // Every pace axis runs the same way (lib/chartAxis paceAxis).
-  // The rolling year as month rows (/consistency).
+  // Weeks against three runs a week (/consistency, 3.1).
   consistency: {
-    // 3.0: three stats, the last six months as week columns, then active days per month.
-    activeDays: 'Active days',
-    // The window's dates are the page's subtitle.
-    ofDays: (days: number) => `of ${days}`,
-    runsPerWeek: 'Runs / week',
-    vsLastYear: (delta: string) => `${delta} vs last year`,
-    // A history that starts inside the year before is compared over what it covers.
-    vsMonths: (delta: string, months: number) => `${delta} vs prior ${months}\u00a0month${months === 1 ? '' : 's'}`,
-    streak: 'Streak',
-    weeks: 'wk',
-    best: (weeks: number) => `best ${weeks}`,
-    calendarTitle: 'Last 6 months',
-    colourKey: 'colour = distance',
-    levels: { rest: 'Rest', long: '15 km+' },
-    today: 'Today',
-    toCome: 'to come',
-    perMonth: 'Active days per month',
-    target: (days: number) => `target ${days}`,
-    monthSummary: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'}`,
-    monthSoFar: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'} so far`,
-    restDay: (date: string) => `${date} · Rest day`,
-    empty: 'No runs in the last 12 months yet.',
+    ranges: { '3m': '3M', '6m': '6M', '1y': '1Y' },
+    // What a screen reader says for each range.
+    rangesSpoken: { '3m': '3 months', '6m': '6 months', '1y': '1 year' },
+    rangeLabel: 'Window',
+    streakEyebrow: 'Weekly streak',
+    weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
+    streakRule: (target: number, best: number) => `${target}+ runs a week · best ${best}`,
+    thisWeek: 'This week',
+    thisWeekRuns: (runs: number, target: number) => `${runs} of ${target}`,
+    planned: (sessions: number) => `${sessions} planned`,
+    thisWeekLabel: (runs: number, target: number) => `This week: ${runs} of ${target} runs`,
+    weeksOnTarget: 'weeks on target',
+    runsPerWeek: 'runs / week',
+    runs: (runs: number): string => (runs === 1 ? 'run' : 'runs'),
+    perWeek: 'Runs per week',
+    target: (runs: number) => `target ${runs}`,
+    legend: { onTarget: (runs: number) => `${runs}+ runs`, under: 'under', planned: 'planned', streak: 'streak' },
+    weekLabel: (week: string, runs: number) => `Week of ${week}: ${runs} run${runs === 1 ? '' : 's'}`,
+    runningWeek: 'Your running week',
+    weeksRan: (weeks: number) => `weeks you ran, of ${weeks}`,
+    weekdayLabel: (day: string, weeks: number) => `${day}: ${weeks} week${weeks === 1 ? '' : 's'}`,
+    anchor: (day: string) => `${day} is your anchor`,
+    anchorWeeks: (weeks: number, of: number) => `, ${weeks} of ${of} weeks.`,
+    restDay: (day: string) => `${day} stays a rest day.`,
+    sheet: {
+      title: (week: string) => `Week of ${week}`,
+      summary: (runs: number, km: string, time: string) => `${runs} run${runs === 1 ? '' : 's'} · ${km} km · ${time}`,
+      hit: 'Target hit',
+      under: 'Under target',
+      current: 'In progress',
+      runsColumn: 'runs',
+      seeRuns: (runs: number) => (runs === 1 ? 'See the run in Activities' : `See the ${runs} runs in Activities`),
+      close: 'Close',
+    },
+    empty: 'No runs yet.',
   },
 
   paceAxis: {
@@ -313,7 +326,6 @@ export const en = {
     },
     consistency: {
       title: 'Consistency',
-      rolling: 'Rolling 12 months',
       back: 'Progress',
     },
   },
@@ -1593,12 +1605,14 @@ export const en = {
     hours: 'hours',
     // 3.0: years compared by km a month, which is fair to a first year that started late.
     byYear: 'By year',
-    perMonth: 'km per month',
-    yearTotals: (km: string, runs: number, year: number) => `${km} km · ${runs} run${runs === 1 ? '' : 's'} in ${year}`,
+    perMonth: 'avg km / month',
+    yearTotals: (km: string, runs: number) => `${km} km · ${runs} run${runs === 1 ? '' : 's'}`,
+    // A first year that started after January (3.1).
+    fromMonth: (month: string) => `from ${month}`,
     yearLabel: (year: number, perMonth: string) => `${year}: ${perMonth} km a month`,
     monthly: 'Monthly km',
-    best: (month: string) => `best ${month}`,
-    soFar: (month: string, km: string) => `${month} so far ${km}`,
+    best: (km: string, month: string) => `best ${km} · ${month}`,
+    soFar: (month: string, km: string) => `${month} ${km} so far`,
     longestRun: 'Longest run',
     biggestWeek: 'Biggest week',
   },
