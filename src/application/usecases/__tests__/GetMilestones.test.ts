@@ -5,6 +5,7 @@ import {
   findActivityCountMilestones,
   currentWeekStreak,
   longestWeekStreak,
+  findNextMilestones,
 } from '../GetMilestones'
 import type { Activity } from '@/domain/activity/types'
 import { isoWeekNumber } from '@/lib/calendarDate'
@@ -138,8 +139,40 @@ describe('longestWeekStreak', () => {
     expect(longestWeekStreak(acts)).toBe(4)
   })
 
+  it('counts only weeks with enough runs when given a weekly target (3.1)', () => {
+    const acts = [
+      act('2026-06-01'), act('2026-06-02'), act('2026-06-03'),
+      act('2026-06-08'), act('2026-06-09'), act('2026-06-10'),
+      act('2026-06-15'),
+    ]
+    expect(longestWeekStreak(acts, 3)).toBe(2)
+    expect(longestWeekStreak(acts)).toBe(3)
+    // The week of 15 June is under way and under target: the streak holds from the week before.
+    expect(currentWeekStreak(acts, new Date('2026-06-16T00:00:00'), 3)?.weeks).toBe(2)
+    expect(currentWeekStreak(acts, new Date('2026-06-23T00:00:00'), 3)).toBeNull()
+  })
+
   it('counts a run spanning a calendar year boundary', () => {
     const acts = [act('2025-12-22'), act('2025-12-29'), act('2026-01-05')]
     expect(longestWeekStreak(acts)).toBe(3)
+  })
+})
+
+describe('findNextMilestones', () => {
+  const runs = (n: number, date: string, km: number) => Array.from({ length: n }, () => ({ date, distanceKm: km }))
+
+  it('names the next run count and this year\'s next distance, with what is left', () => {
+    const acts = [...runs(100, '2025-06-01', 10), ...runs(215, '2026-03-01', 7.2932)]
+    const [count, distance] = findNextMilestones(acts, 2026, [250, 300, 350, 400], [500, 1000, 1500, 2000])
+
+    expect(count).toMatchObject({ kind: 'activity-count', remaining: 35 })
+    expect(count!.progress).toBeCloseTo(0.9)
+    // 1,568 km this year: 2,000 is next, 432 to go - last year's 1,000 km does not count.
+    expect(distance).toMatchObject({ kind: 'distance-tier', remaining: 432 })
+    expect(distance!.progress).toBeCloseTo(1568 / 2000, 3)
+  })
+
+  it('drops a milestone past its last tier', () => {
+    expect(findNextMilestones(runs(5, '2026-01-01', 100), 2026, [5], [500])).toEqual([])
   })
 })

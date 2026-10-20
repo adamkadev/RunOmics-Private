@@ -27,10 +27,12 @@ export function GoalsHistory({ history }: { history: YearOutcome[] }) {
         ].filter((part): part is string => part !== null)
 
         return (
-          <div key={outcome.year} className={cardClass({ className: 'flex flex-wrap items-center gap-x-3 gap-y-1.5 py-4' })} data-testid="goals-history-year">
-            <span className="flex-1 text-[15px] font-semibold text-foreground">{outcome.year}</span>
-            {/* Under the year and its pill on a phone, between them from sm up. */}
-            {summary.length > 0 && <span className="order-last w-full text-[13px] text-muted-foreground sm:order-none sm:w-auto">{summary.join(' · ')}</span>}
+          <div key={outcome.year} className={cardClass({ className: 'flex items-center gap-3 py-3' })} data-testid="goals-history-year">
+            {/* The year, its distance and race targets under it; the outcome to its right (3.1). */}
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-[15px] font-semibold text-foreground">{outcome.year}</span>
+              {summary.length > 0 && <span className="text-xs text-muted-foreground">{summary.join(' · ')}</span>}
+            </span>
             {outcome.annualGoal && (
               <OutcomePill tone={outcome.annualGoal.achieved ? 'pos' : 'neg'}>
                 {outcome.annualGoal.achieved ? h.achieved : h.missed}

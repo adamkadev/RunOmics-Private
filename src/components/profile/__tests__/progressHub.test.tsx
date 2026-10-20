@@ -242,14 +242,14 @@ describe('ProgressHub (3.0)', () => {
 })
 
 describe('one consistency count (v5.5 #9)', () => {
-  it('matches the Consistency page, even for runs the rolling year and the month columns disagree on', async () => {
-    const { consistencyMonths } = await import('@/components/consistency/consistencyMonthsView')
+  it('counts the twelve calendar months, not a rolling 365 days', async () => {
+    const { activeDaysInYear } = await import('@/components/consistency/consistencyRamp')
     // Sep 28-30, 2025: inside a rolling 365 days, before the page's first month (Oct).
     const edge = ['2025-09-28', '2025-09-30', '2025-10-01', '2026-09-20'].map((date) => ({
       date, distanceKm: 8, sessionCount: 1, longRun: false, activityId: date,
     }))
     const input = { ...INPUT, today: '2026-09-27', heatmapDays: edge }
-    expect(progressHubView(input).consistency.activeDays).toBe(consistencyMonths(edge, '2026-09-27').activeDays)
+    expect(progressHubView(input).consistency.activeDays).toBe(activeDaysInYear(edge, '2026-09-27'))
     expect(progressHubView(input).consistency.activeDays).toBe(2)
   })
 })

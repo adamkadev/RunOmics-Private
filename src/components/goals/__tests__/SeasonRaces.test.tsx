@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { seasonRaceRows } from '@/components/goals/SeasonRaces'
-import { SeasonTimeline, stripLanes, yearFraction } from '@/components/goals/SeasonTimeline'
+import { SeasonTimeline, stripLanes, targetsHit, yearFraction } from '@/components/goals/SeasonTimeline'
 import type { YearData, PbData } from '@/application/usecases/GetGoalsData'
 import type { Activity } from '@/domain/activity/types'
 import { t } from '@/i18n'
@@ -81,7 +81,9 @@ describe('SeasonTimeline', () => {
   it('states a done race against its target, in pos when beaten', () => {
     render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
     const done = screen.getByTestId('timeline-done')
-    expect(done.textContent).toContain(t.goals.season.done)
+    // 3.1: "MAY 10 · HALF" over the race's own name, not "· DONE" over "Half · …".
+    expect(done.textContent).toContain('5K')
+    expect(done.textContent).not.toContain(`5K · `)
     const delta = within(done).getByTestId('timeline-delta')
     expect(delta.textContent).toBe(t.goals.season.underTarget('0:25'))
     expect(delta.className).toContain('text-[var(--pos)]')
@@ -111,11 +113,11 @@ describe('SeasonTimeline', () => {
 describe('stripLanes', () => {
   const at = (iso: string) => yearFraction(iso, 2026)
 
-  it('keeps labels far apart above the line, and Today below it', () => {
+  it('keeps labels far apart above the line, Today among them', () => {
     expect(stripLanes([
       { at: at('2026-03-16'), label: '5K', prefer: 'above' },
-      { at: at('2026-10-18'), label: 'Today', prefer: 'below', optional: true },
-    ])).toEqual(['above', 'below'])
+      { at: at('2026-10-18'), label: 'Today', prefer: 'above', optional: true },
+    ])).toEqual(['above', 'above'])
   })
 
   it('sends a race label under the line when it would touch its neighbour above', () => {
@@ -131,6 +133,19 @@ describe('stripLanes', () => {
   })
 })
 
+describe('targetsHit (3.1)', () => {
+  it('counts the races run that met their target, out of those judged', () => {
+    const rows = seasonRaceRows(yearData(), TODAY)
+    expect(targetsHit(rows)).toEqual({ hit: 1, total: 1 })
+    render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
+    expect(screen.getByTestId('season-tally').textContent).toBe(t.goals.season.targetsHit(1, 1))
+  })
+
+  it('has nothing to say before a race is run', () => {
+    expect(targetsHit(seasonRaceRows(yearData({ pbs: [] }), TODAY))).toBeNull()
+  })
+})
+
 describe('seasonRaceRows', () => {
   // R7d: the column is the prediction, labelled as one, and the half is "Half".
   it('prints the watch prediction as predicted, even where the best is faster', () => {
@@ -140,6 +155,7 @@ describe('seasonRaceRows', () => {
     expect(half.value).toBe('1:28:20')
     expect(half.valueSub).toBe(t.goals.predictedTag)
     expect(half.title.startsWith(`${t.goals.half} · `)).toBe(true)
+    expect(half.name).toBe('Autumn Trail Half')
   })
 
   it('states a done result against its target', () => {

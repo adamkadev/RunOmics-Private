@@ -40,10 +40,12 @@ export const en = {
   },
 
   chartWindow: {
+    // One way to name a window (3.1.0): a figure and a capital, as
+    // Consistency's 3M · 6M · 1Y.
     ranges: {
-      '4w': '4w',
-      '6m': '6m',
-      '1y': '1y',
+      '4w': '4W',
+      '6m': '6M',
+      '1y': '1Y',
     },
     previous: 'Previous period',
     next: 'Next period',
@@ -134,30 +136,43 @@ export const en = {
   },
 
   // Every pace axis runs the same way (lib/chartAxis paceAxis).
-  // The rolling year as month rows (/consistency).
+  // Weeks against three runs a week (/consistency, 3.1).
   consistency: {
-    // 3.0: three stats, the last six months as week columns, then active days per month.
-    activeDays: 'Active days',
-    // The window's dates are the page's subtitle.
-    ofDays: (days: number) => `of ${days}`,
-    runsPerWeek: 'Runs / week',
-    vsLastYear: (delta: string) => `${delta} vs last year`,
-    // A history that starts inside the year before is compared over what it covers.
-    vsMonths: (delta: string, months: number) => `${delta} vs prior ${months}\u00a0month${months === 1 ? '' : 's'}`,
-    streak: 'Streak',
-    weeks: 'wk',
-    best: (weeks: number) => `best ${weeks}`,
-    calendarTitle: 'Last 6 months',
-    colourKey: 'colour = distance',
-    levels: { rest: 'Rest', long: '15 km+' },
-    today: 'Today',
-    toCome: 'to come',
-    perMonth: 'Active days per month',
-    target: (days: number) => `target ${days}`,
-    monthSummary: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'}`,
-    monthSoFar: (month: string, active: number) => `${month}: ${active} active day${active === 1 ? '' : 's'} so far`,
-    restDay: (date: string) => `${date} · Rest day`,
-    empty: 'No runs in the last 12 months yet.',
+    ranges: { '3m': '3M', '6m': '6M', '1y': '1Y' },
+    // What a screen reader says for each range.
+    rangesSpoken: { '3m': '3 months', '6m': '6 months', '1y': '1 year' },
+    rangeLabel: 'Window',
+    streakEyebrow: 'Weekly streak',
+    weeks: (weeks: number): string => (weeks === 1 ? 'week' : 'weeks'),
+    streakRule: (target: number, best: number) => `${target}+ runs a week · best ${best}`,
+    thisWeek: 'This week',
+    thisWeekRuns: (runs: number, target: number) => `${runs} of ${target}`,
+    planned: (sessions: number) => `${sessions} planned`,
+    thisWeekLabel: (runs: number, target: number) => `This week: ${runs} of ${target} runs`,
+    weeksOnTarget: 'weeks on target',
+    runsPerWeek: 'runs / week',
+    runs: (runs: number): string => (runs === 1 ? 'run' : 'runs'),
+    perWeek: 'Runs per week',
+    target: (runs: number) => `target ${runs}`,
+    legend: { onTarget: (runs: number) => `${runs}+ runs`, under: 'under', planned: 'planned', streak: 'streak' },
+    weekLabel: (week: string, runs: number) => `Week of ${week}: ${runs} run${runs === 1 ? '' : 's'}`,
+    runningWeek: 'Your running week',
+    weeksRan: (weeks: number) => `weeks you ran, of ${weeks}`,
+    weekdayLabel: (day: string, weeks: number) => `${day}: ${weeks} week${weeks === 1 ? '' : 's'}`,
+    anchor: (day: string) => `${day} is your anchor`,
+    anchorWeeks: (weeks: number, of: number) => `, ${weeks} of ${of} weeks.`,
+    restDay: (day: string) => `${day} stays a rest day.`,
+    sheet: {
+      title: (week: string) => `Week of ${week}`,
+      summary: (runs: number, km: string, time: string) => `${runs} run${runs === 1 ? '' : 's'} · ${km} km · ${time}`,
+      hit: 'Target hit',
+      under: 'Under target',
+      current: 'In progress',
+      runsColumn: 'runs',
+      seeRuns: (runs: number) => (runs === 1 ? 'See the run in Activities' : `See the ${runs} runs in Activities`),
+      close: 'Close',
+    },
+    empty: 'No runs yet.',
   },
 
   paceAxis: {
@@ -311,7 +326,6 @@ export const en = {
     },
     consistency: {
       title: 'Consistency',
-      rolling: 'Rolling 12 months',
       back: 'Progress',
     },
   },
@@ -461,6 +475,8 @@ export const en = {
       open: 'Open Load in Analytics',
       // Everyday words, not acronyms (Oct 2026).
       formLabel: 'Form',
+      // Over yesterday's verdict, shown until the night's sync writes today's (3.1.0).
+      yesterday: 'Yesterday',
       formOnDial: (form: string, band: string) => `Form ${form}: ${band}`,
       eyebrowByTone: {
         go: 'Green light',
@@ -590,7 +606,7 @@ export const en = {
     cards: {
       period: {
         label: 'Period',
-        short: { '4w': '4 wk', '12w': '12 wk', '1y': '1 yr' } as Record<string, string>,
+        short: { '4w': '4W', '12w': '12W', '1y': '1Y' } as Record<string, string>,
         words: { '4w': '4 weeks', '12w': '12 weeks', '1y': 'a year' } as Record<string, string>,
         weeks: (n: number) => `${n} week${n === 1 ? '' : 's'}`,
         hours: (h: string) => `${h} h`,
@@ -1494,7 +1510,10 @@ export const en = {
     title: 'Goals & season',
     empty: 'No goals configured yet.',
     back: 'Progress',
-    // v4.17: the year's card is "Distance goal"; the year tabs say which year.
+    // 3.1: the ‹ 2026 › stepper's arrows.
+    prevYear: 'Previous year',
+    nextYear: 'Next year',
+    // v4.17: the year's card is "Distance goal"; the year stepper says which year.
     distanceGoal: 'Distance goal',
     ofKm: (goal: string) => `of ${goal} km`,
     reached: (over: string) => `Reached · +${over} km`,
@@ -1527,28 +1546,29 @@ export const en = {
       // "Projected 1,757 km · 243 short.": the verdict alone, in its tone.
       verdict: (projected: string, outcome: string | null) => `${projected}${outcome ? ` · ${outcome}` : ''}.`,
       // v4.17: under the bar, then the verdict and what the goal needs.
-      today: 'Today',
       projectedMark: (km: string) => `Projected ${km}`,
       shortAtPace: (km: string) => `${km} km short at this pace.`,
       overAtPace: (km: string) => `${km} km over at this pace.`,
       onPace: 'On pace for the goal.',
       needs: (needed: string, current: string) => `The goal needs ${needed} km a week; you’re averaging ${current}.`,
+      // 3.1: what closes a shortfall; under the bar, what is left, or what a year over missed by.
+      closes: (needed: string, current: string) => `${needed} km a week closes it; you average ${current}.`,
+      toGo: (km: string) => `${km} km to go`,
+      finalShort: (km: string) => `${km} km short`,
     },
     monthlyVolume: {
       title: 'Monthly volume',
-      subtitle: (from: string, to: string) => `${from} – ${to} against the monthly target`,
-      status: {
-        ahead: 'Hit',
-        on_track: 'On track',
-        behind: 'Short',
-        pending: 'Upcoming',
+      // 3.1: the card's caption, its legend and the running month's pace.
+      target: (km: string) => `target ${km} km`,
+      hit: 'hit',
+      short: 'short',
+      running: (month: string, km: string, pace: string) => `${month} · ${km}, ${pace}`,
+      pace: {
+        ahead: 'ahead of pace',
+        on_track: 'on pace',
+        behind: 'behind pace',
       },
       km: (actual: string, target: string) => `${actual} / ${target}`,
-      targetRule: 'monthly target',
-      inProgress: 'in progress',
-      daysIn: (month: string, days: number) => `${month} is ${days} day${days === 1 ? '' : 's'} in`,
-      proRata: (actual: number, target: number) => `${actual} of a pro-rata ${target} km`,
-      proRataCaption: (days: number) => `pro-rata · ${days} day${days === 1 ? '' : 's'} in`,
     },
     // C3, v4.4: the season strip and timeline.
     season: {
@@ -1558,13 +1578,13 @@ export const en = {
       blockWeek: (race: string, week: number, weeks: number) => `${race} block wk ${week} of ${weeks}`,
       // v4.17: a race row - "NOV 29 · IN 62 DAYS", "Target 40:00 · plan week 4 of 12".
       inDays: (days: number) => (days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`),
-      done: 'done',
       target: (time: string) => `Target ${time}`,
       planWeek: (week: number, weeks: number) => `plan week ${week} of ${weeks}`,
       predictedOff: (gap: string) => `predicted · ${gap} off`,
       predictedUnder: (gap: string) => `predicted · ${gap} under`,
-      underTarget: (gap: string) => `${gap} under target`,
-      overTarget: (gap: string) => `${gap} over target`,
+      underTarget: (gap: string) => `${gap} under`,
+      overTarget: (gap: string) => `${gap} over`,
+      targetsHit: (hit: number, total: number) => `${hit} of ${total} race target${total === 1 ? '' : 's'} hit`,
     },
     history: {
       title: 'Past seasons',
@@ -1585,12 +1605,14 @@ export const en = {
     hours: 'hours',
     // 3.0: years compared by km a month, which is fair to a first year that started late.
     byYear: 'By year',
-    perMonth: 'km per month',
-    yearTotals: (km: string, runs: number, year: number) => `${km} km · ${runs} run${runs === 1 ? '' : 's'} in ${year}`,
+    perMonth: 'avg km / month',
+    yearTotals: (km: string, runs: number) => `${km} km · ${runs} run${runs === 1 ? '' : 's'}`,
+    // A first year that started after January (3.1).
+    fromMonth: (month: string) => `from ${month}`,
     yearLabel: (year: number, perMonth: string) => `${year}: ${perMonth} km a month`,
     monthly: 'Monthly km',
-    best: (month: string) => `best ${month}`,
-    soFar: (month: string, km: string) => `${month} so far ${km}`,
+    best: (km: string, month: string) => `best ${km} · ${month}`,
+    soFar: (month: string, km: string) => `${month} ${km} so far`,
     longestRun: 'Longest run',
     biggestWeek: 'Biggest week',
   },
@@ -1839,13 +1861,15 @@ export const en = {
       lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathon distances`,
       lifetimeDistanceWorldTour: '🌍 A full trip around the Earth',
       activityCount: (n: number) => `${ordinal(n)} run`,
-      activityCountDetail: (km: string) => `${km} km covered so far`,
+      activityCountDetail: (km: string) => `${km} km lifetime`,
     },
     trainingZones: {
       title: 'Training zones',
       viewLabel: 'Time in zones over',
-      week: 'Week',
-      fourWeeks: '4 weeks',
+      week: '1W',
+      fourWeeks: '4W',
+      weekSpoken: 'This week',
+      fourWeeksSpoken: 'Last 4 weeks',
       columnZone: 'Zone',
       columnPace: 'Pace /km',
       columnHr: 'Heart rate',
@@ -1889,30 +1913,43 @@ export const en = {
       longest: 'Longest Run',
     } as Record<string, string>,
     raceTag: 'race',
-    trainingTag: 'training run',
+    trainingTag: 'training',
     notYetRun: 'Not yet run',
     segmented: {
-      prs: 'Records',
+      best: 'Best times',
       milestones: 'Milestones',
       routes: 'Routes',
     },
     recurring: {
-      title: 'Routes you keep coming back to',
-      runCount: (n: number) => `${n} times`,
+      runCount: (n: number) => `${n} run${n === 1 ? '' : 's'}`,
       best: 'Best',
       // What a bar is, then the dates its first and last bars were run
       // (design review, Oct 2026): "taller = faster" alone named no axis.
       trailKey: 'One bar per run · taller = faster',
       trailSpan: (from: string, to: string) => `${from} → ${to}`,
+      legendBest: 'best',
+      legendLatest: 'latest',
+      bestPace: (pace: string) => `best ${pace}`,
+      lastPace: (pace: string) => `last ${pace}`,
+      newBest: 'new best',
+      // A route whose start no place name came back for.
+      unnamed: (n: number) => `Route ${n}`,
     },
     milestones: {
-      // The key to the gold dot (design review, Oct 2026).
-      recordKey: 'Personal record',
+      nextUp: 'Next up',
+      // Runs or km, the unit the milestone's own title already names.
+      toGo: (n: string) => `${n} to go`,
     },
     noRecordYet: 'No record yet',
     cols: { distance: 'Distance', best: 'Best', predicted: 'Predicted' },
-    sameAsBest: '= best',
-    medalLegend: ['1st', '2nd', '3rd'] as [string, string, string],
+    // A gap under a minute: "5s".
+    gapSeconds: (s: number) => `${s}s`,
+    faster: (gap: string) => `${gap} faster`,
+    slower: (gap: string) => `${gap} slower`,
+    // The prediction is the best to the second: run already at potential.
+    atPotential: 'at potential',
+    allEfforts: (distance: string) => `All ${distance} efforts ›`,
+    topEfforts: (n: number, distance: string) => `Top ${n} ${distance} efforts ›`,
     findRace: (distance: string) => `Find a ${distance.toLowerCase()} ›`,
   },
 

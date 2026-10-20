@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { Trophy, ArrowRight, Calendar } from 'lucide-react'
-import { SectionDivider } from '@/components/ui/SectionLabel'
+import { EYEBROW_CLASS, SectionDivider } from '@/components/ui/SectionLabel'
 import { cardClass } from '@/components/ui/Card'
 import type { YearData } from '@/application/usecases/GetGoalsData'
 import { formatDuration, formatDate, formatKm, formatPace } from '@/lib/formatters'
@@ -12,6 +12,7 @@ import { SeasonTimeline, type SeasonBlock } from './SeasonTimeline'
 import { shortDist } from './shortDistance'
 import { t } from '@/i18n'
 import { OutcomePill } from './OutcomePill'
+import { cn } from '@/lib/utils'
 
 const TITLE = 'text-[15px] font-semibold text-foreground'
 
@@ -51,18 +52,23 @@ export function YearView({ yearData, today, block = null }: Props) {
   const hasRaceDistanceCards = (goals?.targets.length ?? 0) > 0 || upcomingRaces.length > 0
   // A year not yet started has nothing to show against its goal (3.0): "0 of 2,500 km" was an empty state.
   const notStarted = yearData.year > Number(today.slice(0, 4)) && totalDistanceKm === 0
+  // Under the bar (3.1): what is left this year, or, for a year that is over
+  // short of its goal, by how much - no projection there to set beside it.
+  const leftKm = annualDistanceKm > 0 && reachedByKm === null ? Math.round(annualDistanceKm - totalDistanceKm) : null
+  const yearOver = yearData.year < Number(today.slice(0, 4))
+  const leftLine = leftKm === null ? null : yearOver ? p.finalShort(formatKm(leftKm)) : p.toGo(formatKm(leftKm))
 
   return (
     <div className="flex flex-col gap-3.5">
       {goals && !notStarted && (
         <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="goal-card">
-          <h2 className={TITLE}>{t.goals.distanceGoal}</h2>
+          <h2 className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{t.goals.distanceGoal}</h2>
           <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span className="text-[32px] font-semibold leading-none tracking-[-0.02em] text-foreground">
+            <span className="text-[38px] font-bold leading-none tracking-[-0.03em] text-foreground">
               {/* No count-up (v5.6 #1): a frame mid-way read 1,040 of a 1,116 year, beside "+116 km". */}
               {formatKm(totalDistanceKm)}
             </span>
-            <span className="text-sm text-muted-foreground">{t.goals.ofKm(formatKm(annualDistanceKm))}</span>
+            <span className="text-[15px] text-[var(--text-2)]">{t.goals.ofKm(formatKm(annualDistanceKm))}</span>
             {reachedByKm !== null && <OutcomePill tone="pos" className="self-center">{t.goals.reached(formatKm(reachedByKm))}</OutcomePill>}
           </p>
           <div className="relative h-2 rounded-full bg-[var(--surface-2)]">
@@ -77,18 +83,18 @@ export function YearView({ yearData, today, block = null }: Props) {
               />
             )}
           </div>
+          {(leftLine || projection) && (
+            <div className="flex justify-between gap-3 text-xs text-muted-foreground">
+              <span data-testid="goal-left">{leftLine}</span>
+              {projection && <span style={{ color: projectionColor }}>{p.projectedMark(formatKm(projection.projectedYearKm))}</span>}
+            </div>
+          )}
           {projection && (
-            <>
-              <div className="flex justify-between gap-3 text-xs text-muted-foreground">
-                <span>{p.today}</span>
-                <span style={{ color: projectionColor }}>{p.projectedMark(formatKm(projection.projectedYearKm))}</span>
-              </div>
-              {/* The verdict in its tone, then what the goal needs (C3, v4.17). */}
-              <p className="border-t border-border pt-2.5 text-sm leading-normal text-[var(--text-2)]" data-testid="projection-line">
-                <b className="font-semibold" style={{ color: projectionColor }} data-testid="projection-verdict">{verdict}</b>{' '}
-                {p.needs(formatKm(projection.weeklyNeeded), formatKm(projection.weeklyRate))}
-              </p>
-            </>
+            // The verdict in its tone, then what closes the gap, or what the goal needs (C3, v4.17; 3.1).
+            <p className="border-t border-border pt-2.5 text-[13px] leading-normal text-[var(--text-2)] text-pretty" data-testid="projection-line">
+              <b className="font-semibold" style={{ color: projectionColor }} data-testid="projection-verdict">{verdict}</b>{' '}
+              {(signedDeltaKm < 0 ? p.closes : p.needs)(formatKm(projection.weeklyNeeded), formatKm(projection.weeklyRate))}
+            </p>
           )}
         </section>
       )}

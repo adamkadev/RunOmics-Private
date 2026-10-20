@@ -3,9 +3,10 @@ import type { TrainingStatus } from '../GetTrainingStatus'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import { TODAY_SURFACE, todayInsightGuard, todayInsightHash } from '@/domain/ai/todayInsight'
 
-const { getActivitySummaries, readVerifiedInsight, getTodayPlannedWorkout, getTodayPrescription } = vi.hoisted(() => ({
+const { getActivitySummaries, readVerifiedInsight, readLatestInsight, getTodayPlannedWorkout, getTodayPrescription } = vi.hoisted(() => ({
   getActivitySummaries: vi.fn(),
   readVerifiedInsight: vi.fn(),
+  readLatestInsight: vi.fn(),
   getTodayPlannedWorkout: vi.fn(),
   getTodayPrescription: vi.fn(),
 }))
@@ -13,7 +14,7 @@ const { getActivitySummaries, readVerifiedInsight, getTodayPlannedWorkout, getTo
 vi.mock('../GetActivities', () => ({ getActivitySummaries }))
 vi.mock('../GetPlannedWorkouts', () => ({ getTodayPlannedWorkout }))
 vi.mock('@/application/coaching/GetCoachingView', () => ({ getTodayPrescription }))
-vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', () => ({ readVerifiedInsight }))
+vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', () => ({ readVerifiedInsight, readLatestInsight }))
 
 const { buildTodayContext, getTodayInsight, todayInsightSession } = await import('../GetTodayInsight')
 
@@ -103,8 +104,26 @@ describe('getTodayInsight', () => {
 
   it('null when the cached verdict has gone stale, so the hero keeps its own copy', async () => {
     readVerifiedInsight.mockResolvedValue(null)
+    readLatestInsight.mockResolvedValue(null)
 
     expect(await getTodayInsight(status(), WORKOUT)).toBeNull()
+  })
+
+  // 3.1.0: between midnight and the night's sync, yesterday's card stands in.
+  it("shows yesterday's card, marked, until today's is written - and nothing older", async () => {
+    readVerifiedInsight.mockResolvedValue(null)
+    readLatestInsight.mockResolvedValue({ insight: INSIGHT, generatedAt: '2026-07-19T12:00:00.000Z' })
+    expect(await getTodayInsight(status(), WORKOUT, TODAY)).toEqual({ ...INSIGHT, yesterday: true })
+
+    readLatestInsight.mockResolvedValue({ insight: INSIGHT, generatedAt: '2026-07-17T12:00:00.000Z' })
+    expect(await getTodayInsight(status(), WORKOUT, TODAY)).toBeNull()
+  })
+
+  it("never reaches for yesterday's card when today's is there", async () => {
+    readVerifiedInsight.mockResolvedValue(INSIGHT)
+    readLatestInsight.mockClear()
+    expect(await getTodayInsight(status(), WORKOUT, TODAY)).toEqual(INSIGHT)
+    expect(readLatestInsight).not.toHaveBeenCalled()
   })
 
   it('keys the verdict on the facts it was written from', async () => {

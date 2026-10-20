@@ -129,8 +129,8 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
           label={s.viewLabel}
           size="sm"
           items={[
-            { id: 'week', label: s.week },
-            { id: 'recent', label: s.fourWeeks },
+            { id: 'week', label: s.week, ariaLabel: s.weekSpoken },
+            { id: 'recent', label: s.fourWeeks, ariaLabel: s.fourWeeksSpoken },
           ]}
         />
       </div>

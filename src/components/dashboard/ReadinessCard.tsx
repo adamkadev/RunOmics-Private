@@ -5,7 +5,7 @@ import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { deltaTone, DELTA_TONE_COLOR, type DeltaMetric } from '@/lib/deltaTone'
 import { formatDecimal, formatDelta } from '@/lib/formatters'
-import type { Insight } from '@/lib/gemini'
+import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import { FormDial } from './FormDial'
 import { t } from '@/i18n'
 
@@ -53,11 +53,12 @@ function Delta({ metric, delta, current, days }: { metric: DeltaMetric; delta: n
  * Today's one score and one sentence (design review 3.0, mock 1b): Form on
  * a dial, the state it reads as, then the coach's headline and body - the
  * written verdict, regenerated daily or after a sync, with no label saying
- * so. Fitness, Fatigue and Load support it on three tiles; Garmin's own
+ * so - but for "Yesterday" over yesterday's, shown between midnight and the
+ * night's sync (3.1.0). Fitness, Fatigue and Load support it on three tiles; Garmin's own
  * status, a second verdict beside this one, is gone. The card opens
  * Analytics › Load, where the three live in full.
  */
-export function ReadinessCard({ status, verdict = null }: { status: TrainingStatus | null; verdict?: Insight | null }) {
+export function ReadinessCard({ status, verdict = null }: { status: TrainingStatus | null; verdict?: TodayVerdict | null }) {
   if (!status) return null
 
   const s = t.dashboard.readiness
@@ -79,6 +80,11 @@ export function ReadinessCard({ status, verdict = null }: { status: TrainingStat
             </p>
             {verdict && (
               <div className="flex flex-col gap-1.5" data-testid="readiness-verdict">
+                {verdict.yesterday && (
+                  <p className="text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground" data-testid="verdict-yesterday">
+                    {s.yesterday}
+                  </p>
+                )}
                 <p className="text-[19px] font-semibold leading-[1.22] text-foreground [text-wrap:pretty]">{verdict.headline}</p>
                 {verdict.body && <p className="text-[13px] leading-snug text-[var(--text-2)] [text-wrap:pretty]">{verdict.body}</p>}
               </div>

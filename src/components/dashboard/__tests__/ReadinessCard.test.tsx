@@ -98,4 +98,12 @@ describe('ReadinessCard', () => {
     render(<ReadinessCard status={{ ...STATUS, acwr: null }} />)
     expect(screen.getByTestId('tile-load')).toHaveTextContent(t.dashboard.readiness.noValue)
   })
+
+  // 3.1.0: yesterday's verdict, until the night's sync writes today's, says so.
+  it("labels yesterday's verdict, and only that one", () => {
+    const { rerender } = render(<ReadinessCard status={STATUS} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.', yesterday: true }} />)
+    expect(screen.getByTestId('verdict-yesterday')).toHaveTextContent(t.dashboard.readiness.yesterday)
+    rerender(<ReadinessCard status={STATUS} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.' }} />)
+    expect(screen.queryByTestId('verdict-yesterday')).toBeNull()
+  })
 })
