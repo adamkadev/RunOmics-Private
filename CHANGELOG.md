@@ -32,8 +32,9 @@ The 3.1 handoff's audit pass (App Fixes), worked through badge by badge.
 - The Progress hub previews its pages: Goals & season instead of a second
   distance chart, the weekly streak instead of a daily heatmap, and VO₂
   max as a line of the Records card (1h).
-- Athlete & zones: each zone's share is a column of the table, with its
-  pace under its name; the VO₂ ranking is the grade's own band (1e).
+- Athlete & zones: each zone's share reads after its time rather than
+  under the bar, where a 1 % zone had no room for it; the VO₂ ranking is
+  the grade's own band (1e).
 - A planned session of one step drops the structure bar and lists its
   pace and heart-rate targets (3b).
 - A run the watch kept as one lap reads "Whole run" and offers the
@@ -51,10 +52,12 @@ The 3.1 handoff's audit pass (App Fixes), worked through badge by badge.
 - The light-mode heatmap draws a blurred halo under a pale-to-deep ramp;
   the dark one stops at the full accent rather than running on to white
   (4a). The white accent takes a graphite ramp.
-- Today without a run is an accent outline, never an accent fill (5a).
+- Today without a run is an accent outline, never an accent fill, and the
+  routes "latest" bar outlines under the white accent (5a).
 - Durations are "1:00 h" from an hour and "45 min" under it (3d).
 - The watch's brand is out of the interface: every string says "your
-  watch" (3.0 override 1).
+  watch", and a way out to its app reads "Edit in your watch app" and is
+  drawn only where the watch has a page to open (3.0 override 1).
 - Chevrons and SVG icons in place of arrow and triangle glyphs; the pace
   axis says "up = faster" in words (rules 01, 03, 3d).
 - Dynamics says which way is better per metric and colours the "vs your

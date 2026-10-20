@@ -207,24 +207,29 @@ work was asked for in full rather than item by item.
    same; where the plan sets each month's target, every bar carries its own
    tick, and the caption says "target from your plan". A year with no plan
    behind it reads exactly as before.
-3. **Zone table (1e).** The share became a column, as the mockup has it. The
-   pace column did not leave: each zone's range reads under its name, so the
-   table matches the mockup's four columns without dropping data the app
-   had. Reversible in one component if you want the mockup exactly.
-4. **Device brands.** Every user-visible string says "your watch". The three
-   rows that open the watch's own app (shoes, height and weight) keep their
-   link and drop the brand from the words - "change it in your watch's app".
+3. **Zone table (1e).** The table keeps Zone, Pace, HR and Time. The share
+   left the bar, where a 1 % zone had no room to print it, and reads small
+   after the zone's time - "4h58 · 27%".
+4. **Device brands.** Every user-visible string says "your watch", and the
+   rows that open the watch's own app all read "Edit in your watch app".
+   Such a link is drawn only for an item the watch gave an id to; the brand
+   lives in the URL alone.
 
 Two further deviations worth knowing:
 
-- **The Form dial stays on Today.** Mockup 1a draws the hero without it, but
-  its note asks only for the load number to agree with Analytics, so the
-  dial was kept and the load ratio tile moved to Analytics' load story
-  instead (2a). Today now reads Form on the dial, Fitness and Fatigue on two
-  tiles, and the load on the strip.
+- **The Form dial stays on Today**, and so do its three tiles. Mockup 1a
+  draws the hero without the dial, but its note asks only for the load
+  number to agree with Analytics. The dial carries Form, the tiles carry
+  Fitness, Fatigue and the load ratio, and the strip carries the seven-day
+  load against its band. It is only Injury risk the ratio left (2a).
 - **"Easy" in the filter sheet now excludes long runs**, because the long
   run is a row of its own beside it; the Easy *chip* still covers both, as
   the handoff's grouping has it.
+
+One rule was skipped as moot: **5a rule 4's purple/cadence swap**. The
+chart's pace line is a fixed blue, never the accent, so there is no clash to
+swap. The white-accent half of the rule - the routes "latest" bar as an
+outline - is implemented.
 
 Everything else follows the badges as written. `npm run verify` is green and
 `next build` succeeds.
