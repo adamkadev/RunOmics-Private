@@ -5,6 +5,7 @@ import {
   findActivityCountMilestones,
   currentWeekStreak,
   longestWeekStreak,
+  findNextMilestones,
 } from '../GetMilestones'
 import type { Activity } from '@/domain/activity/types'
 import { isoWeekNumber } from '@/lib/calendarDate'
@@ -141,5 +142,24 @@ describe('longestWeekStreak', () => {
   it('counts a run spanning a calendar year boundary', () => {
     const acts = [act('2025-12-22'), act('2025-12-29'), act('2026-01-05')]
     expect(longestWeekStreak(acts)).toBe(3)
+  })
+})
+
+describe('findNextMilestones', () => {
+  const runs = (n: number, date: string, km: number) => Array.from({ length: n }, () => ({ date, distanceKm: km }))
+
+  it('names the next run count and this year\'s next distance, with what is left', () => {
+    const acts = [...runs(100, '2025-06-01', 10), ...runs(215, '2026-03-01', 7.2932)]
+    const [count, distance] = findNextMilestones(acts, 2026, [250, 300, 350, 400], [500, 1000, 1500, 2000])
+
+    expect(count).toMatchObject({ kind: 'activity-count', remaining: 35 })
+    expect(count!.progress).toBeCloseTo(0.9)
+    // 1,568 km this year: 2,000 is next, 432 to go - last year's 1,000 km does not count.
+    expect(distance).toMatchObject({ kind: 'distance-tier', remaining: 432 })
+    expect(distance!.progress).toBeCloseTo(1568 / 2000, 3)
+  })
+
+  it('drops a milestone past its last tier', () => {
+    expect(findNextMilestones(runs(5, '2026-01-01', 100), 2026, [5], [500])).toEqual([])
   })
 })

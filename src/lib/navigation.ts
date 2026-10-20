@@ -6,7 +6,6 @@ const PARENT_SECTION: Record<string, string> = {
   '/all-time': '/profile',
   '/goals': '/profile',
   '/settings': '/profile',
-  '/milestones': '/profile',
   '/map': '/activities',
 }
 

@@ -1,38 +1,32 @@
-import type { Milestone } from '@/application/usecases/GetMilestones'
-import { GlassSurface } from '@/components/ui/GlassSurface'
-import { SectionDivider } from '@/components/ui/SectionLabel'
-import { formatDate } from '@/lib/formatters'
+import type { Milestone, NextMilestone } from '@/application/usecases/GetMilestones'
+import { SectionDivider, EYEBROW_CLASS } from '@/components/ui/SectionLabel'
+import { cardClass } from '@/components/ui/Card'
+import { groupMilestonesByMonth } from '@/components/records/recordsView'
+import { formatDate, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { milestoneDotClass } from './milestoneVisuals'
-
-function groupByYear(milestones: Milestone[]): [string, Milestone[]][] {
-  const groups = new Map<string, Milestone[]>()
-  for (const m of milestones) {
-    const year = m.date.slice(0, 4)
-    const list = groups.get(year)
-    if (list) list.push(m)
-    else groups.set(year, [m])
-  }
-  return [...groups.entries()]
-}
+import { milestoneIcon } from './milestoneVisuals'
 
 function MilestoneRow({ milestone }: { milestone: Milestone }) {
-  const dotClass = milestoneDotClass(milestone.type)
+  const { Icon, className } = milestoneIcon(milestone.type)
   return (
-    <li className="flex items-center gap-3 py-2.5">
-      {/* The column stays whether or not the row earns a mark, so the labels
-          keep one left edge down the year. */}
-      <span className={cn('h-2 w-2 shrink-0 rounded-full', dotClass ?? 'bg-transparent')} />
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold leading-tight text-foreground">{milestone.label}</span>
+    <li className="grid grid-cols-[30px_minmax(0,1fr)_auto] items-center gap-3 py-2.5">
+      <span
+        data-testid="milestone-icon"
+        className={cn('flex size-[30px] items-center justify-center rounded-full', className)}
+        aria-hidden
+      >
+        <Icon className="size-4" strokeWidth={2} />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold leading-tight text-foreground">{milestone.label}</span>
         {milestone.detail && (
-          <span className="mt-0.5 block truncate text-caption leading-tight text-muted-foreground">
+          <span className="mt-0.5 block truncate text-xs leading-tight text-muted-foreground">
             {milestone.detail}
           </span>
         )}
       </span>
-      <time className="shrink-0 text-caption tabular-nums text-subtle">
+      <time className="shrink-0 text-xs tabular-nums text-muted-foreground">
         {formatDate(milestone.date, { style: 'bare', year: 'never' })}
       </time>
     </li>
@@ -40,41 +34,60 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
 }
 
 /**
- * What the gold dot means (design review, Oct 2026): marked rows beside
- * unmarked ones read as colour nobody had explained. The key sits on the
- * first year's line, as Records keys its medals beside the dots they mark.
+ * What is on its way: the next run count and this year's next distance,
+ * each with how far along it is - the timeline below only says what has
+ * been done.
  */
-function RecordKey() {
+export function NextUpCard({ next }: { next: NextMilestone[] }) {
+  if (next.length === 0) return null
   return (
-    <p className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid="milestone-key">
-      <span aria-hidden className={cn('h-2 w-2 shrink-0 rounded-full', milestoneDotClass('record'))} />
-      {t.records.milestones.recordKey}
-    </p>
+    <section className={cardClass({ className: 'space-y-3 py-3.5' })} data-testid="milestones-next-up">
+      <h2 className={cn(EYEBROW_CLASS, 'text-accent-text')}>{t.records.milestones.nextUp}</h2>
+      {next.map((m) => (
+        <div key={m.kind} className="space-y-1.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="truncate text-sm font-semibold text-foreground">{m.label}</span>
+            <span className="shrink-0 text-xs text-muted-foreground">{t.records.milestones.toGo(formatKm(m.remaining))}</span>
+          </div>
+          <div
+            role="progressbar"
+            aria-label={m.label}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(m.progress * 100)}
+            className="h-1.5 overflow-hidden rounded-full bg-[var(--track)]"
+          >
+            <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, m.progress * 100)}%` }} />
+          </div>
+        </div>
+      ))}
+    </section>
   )
 }
 
-export function MilestonesTimeline({ milestones }: { milestones: Milestone[] }) {
+/**
+ * Milestones by month, newest first. The heading names the month alone this
+ * year and adds the year before it, so a row needs only its day.
+ */
+export function MilestonesTimeline({ milestones, today }: { milestones: Milestone[]; today: string }) {
   if (milestones.length === 0) return null
-  // No mark on the page, nothing to key.
-  const marked = milestones.some((m) => milestoneDotClass(m.type) !== null)
+  const now = new Date(`${today}T12:00:00`)
 
   return (
-    <div className="space-y-6">
-      {groupByYear(milestones).map(([year, items], i) => (
-        <div key={year}>
-          {/* The year and the key fade as one label under the compact bar. */}
-          <div data-bar-fade className="mb-3 flex items-center justify-between gap-3">
-            <SectionDivider as="h2">{year}</SectionDivider>
-            {i === 0 && marked && <RecordKey />}
-          </div>
-          <GlassSurface variant="card" className="px-5 py-1">
+    <div className="space-y-4">
+      {groupMilestonesByMonth(milestones).map(({ key, items }) => (
+        <section key={key} className="space-y-2">
+          <SectionDivider as="h2" className="px-0.5">
+            {formatDate(`${key}-01`, { precision: 'month', style: 'full', now })}
+          </SectionDivider>
+          <div className={cardClass({ padding: 'none', className: 'px-3.5 py-0.5' })}>
             <ol className="divide-y divide-border">
               {items.map((m, i) => (
                 <MilestoneRow key={`${m.type}-${m.date}-${i}`} milestone={m} />
               ))}
             </ol>
-          </GlassSurface>
-        </div>
+          </div>
+        </section>
       ))}
     </div>
   )
