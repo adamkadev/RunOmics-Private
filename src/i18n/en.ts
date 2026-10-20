@@ -1506,6 +1506,8 @@ export const en = {
       // A run the watch kept as one lap (App Fixes 1c): no laps were pressed,
       // so it is named for what it is and sends the reader to the kilometres.
       wholeRun: 'Whole run',
+      // A single lap that does not cover the run is just its first lap.
+      lapNumber: (n: number) => `Lap ${n}`,
       noLapsPressed: 'No laps pressed on this run. Km splits show how your pace changed.',
       seeKmSplits: 'See km splits',
       // The footer under the kilometres (3.0.2): the fastest km, and the

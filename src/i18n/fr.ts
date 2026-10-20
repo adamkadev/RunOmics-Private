@@ -1428,6 +1428,7 @@ export const fr = {
       title: 'Intervalles',
       lapTitle: 'Tours',
       wholeRun: 'Sortie entière',
+      lapNumber: (n: number) => `Tour ${n}`,
       noLapsPressed: "Aucun tour n'a été déclenché sur cette sortie. Les splits au km montrent comment ton allure a évolué.",
       seeKmSplits: 'Voir les splits au km',
       cols: {

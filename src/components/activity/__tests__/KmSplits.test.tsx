@@ -169,7 +169,8 @@ describe('KmSplits on a continuous run', () => {
   it('opens a run kept as one interval on its kilometres, and calls it the whole run under Laps', async () => {
     const user = userEvent.setup()
     const autoLaps = [1, 2, 3, 4, 5].map(() => ({ durationSec: 300, distanceM: 1000, avgSpeedMs: 1000 / 300, avgHr: 150 }))
-    render(<KmSplits activity={{ ...continuous, splits: [split('interval_active', 1500, 5000, 150, autoLaps)] } as Activity} />)
+    // The lap is the run: 5 km of a 5 km activity.
+    render(<KmSplits activity={{ ...continuous, distanceKm: 5, splits: [split('interval_active', 1500, 5000, 150, autoLaps)] } as Activity} />)
 
     expect(screen.getAllByTestId('km-split')).toHaveLength(5)
     expect(screen.getByRole('tab', { name: t.activity.splits.cols.km })).toHaveAttribute('aria-selected', 'true')
@@ -183,6 +184,32 @@ describe('KmSplits on a continuous run', () => {
     // And it hands the reader back to the kilometres.
     await user.click(within(whole).getByRole('button', { name: new RegExp(t.activity.splits.seeKmSplits) }))
     expect(screen.getAllByTestId('km-split')).toHaveLength(5)
+  })
+
+  // App Fixes 1c: a session started as one interval records its work block
+  // as that lap - 1.6 km of a 9.3 km threshold run - and calling that the
+  // whole run lied about the distance printed beside it.
+  it('calls a single lap that is only part of the run its first lap, not the whole run', () => {
+    const autoLaps = [1, 2, 3, 4].map(() => ({ durationSec: 93, distanceM: 400, avgSpeedMs: 400 / 93, avgHr: 185 }))
+    render(<KmSplits activity={{ ...continuous, distanceKm: 9.3, splits: [split('interval_active', 372, 1600, 185, autoLaps)] } as Activity} />)
+
+    showLaps()
+    const card = screen.getByTestId('whole-run-lap')
+    expect(card.dataset.wholeRun).toBeUndefined()
+    expect(within(card).getByText(t.activity.splits.lapNumber(1))).toBeInTheDocument()
+    expect(card.textContent).not.toContain(t.activity.splits.wholeRun)
+    // The note still points at the kilometres, which do cover the run.
+    expect(card.textContent).toContain(t.activity.splits.noLapsPressed)
+  })
+
+  it('drops the number column when the table has one row', () => {
+    const autoLaps = [1, 2].map(() => ({ durationSec: 300, distanceM: 1000, avgSpeedMs: 1000 / 300, avgHr: 150 }))
+    render(<KmSplits activity={{ ...continuous, distanceKm: 2, splits: [split('interval_active', 600, 2000, 150, autoLaps)] } as Activity} />)
+
+    showLaps()
+    const card = screen.getByTestId('whole-run-lap')
+    expect(within(card).queryByText(t.activity.splits.cols.step)).toBeNull()
+    expect(within(card).getByText(t.activity.splits.cols.type)).toBeInTheDocument()
   })
 })
 
