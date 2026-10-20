@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getDashboardData } from '@/application/usecases/GetDashboardData'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
@@ -15,20 +14,17 @@ import { coachWorkoutView, heroWorkoutView, plannedWorkoutView } from '@/compone
 import { planPhaseLine } from '@/components/plan/planPhase'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { appTodayIso } from '@/lib/calendarDate'
-import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { loadWeekTarget } from '@/app/_data/loadWeekTarget'
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting'
 import { StaleSyncBanner } from '@/components/dashboard/StaleSyncBanner'
 import { ReadinessCard } from '@/components/dashboard/ReadinessCard'
 import { TodayBoard } from '@/components/dashboard/TodayBoard'
 import { Vo2GradeTodayRow } from '@/components/dashboard/Vo2GradeTodayRow'
-import { WeeklyStreakCard } from '@/components/dashboard/WeeklyStreakCard'
-import { LoadStrip } from '@/components/dashboard/LoadStrip'
+import { ThisWeekCard } from '@/components/dashboard/ThisWeekCard'
 import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { findNextSession, sessionCard } from '@/components/dashboard/nextSession'
 import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
-import { t } from '@/i18n'
 
 export const revalidate = 3600
 
@@ -45,7 +41,6 @@ export default async function DashboardPage() {
   const records = await getRecords()
   const mostRecentRecord = getMostRecentRecord(records)
   const todayPlannedWorkout = await getTodayPlannedWorkout(today)
-  const weeklyStreak = getWeeklyStreakData(new Date(`${today}T12:00:00`))
   const recentLoad = await getRecentLoad(today)
   const coaching = getCoachingOverview(today)
   const weekTarget = await loadWeekTarget(today, coaching)
@@ -91,13 +86,9 @@ export default async function DashboardPage() {
       <TodayBoard session={card} />
       <Vo2GradeTodayRow view={getVo2Grade(today)} />
 
-      {weeklyStreak && (
-        <Link href="/plan" aria-label={t.plan.openPlanner} className="mt-1 block active:scale-[0.99]">
-          <WeeklyStreakCard data={weeklyStreak} target={weekTarget} today={today} sessionKinds={sessionKinds} />
-        </Link>
-      )}
-
-      {recentLoad && <LoadStrip recent={recentLoad} />}
+      {/* One Mon–Sun card for the week's km and the load (App Fixes 1a v2):
+          it replaces the circle row and the seven-day load chart. */}
+      <ThisWeekCard target={weekTarget} today={today} sessionKinds={sessionKinds} load={recentLoad?.reading ?? null} />
     </div>
   )
 }

@@ -4,10 +4,11 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { deltaTone, DELTA_TONE_COLOR, type DeltaMetric } from '@/lib/deltaTone'
-import { formatDecimal, formatDelta } from '@/lib/formatters'
+import { formatDelta } from '@/lib/formatters'
+import { formBand } from '@/domain/training/formBand'
+import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import type { LoadReading } from '@/application/usecases/GetRecentLoad'
-import { FormDial } from './FormDial'
 import { t } from '@/i18n'
 
 /**
@@ -24,42 +25,46 @@ const STATUS_COLOR: Record<ReadinessTone, string> = {
   hold: 'var(--warn)',
 }
 
+/** Words that name a form state, in either language. */
+const FRESH_WORDS = /\b(fresh|rested|frais|fraîche|reposée?)\b/i
+const TIRED_WORDS = /\b(tired|fatigued|fatiguée?)\b/i
+
 /**
- * A supporting number on its inner tile, set into the card in the page's own
- * ground: the label, the value, and how it moved.
+ * A number on its inner tile (App Fixes 1a): the label in caps, the value at
+ * 20 px bold, and a line under it - its band, or how it moved this week.
  */
-function Tile({ label, value, delta, testId }: { label: string; value: ReactNode; delta?: ReactNode; testId: string }) {
+function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; sub: ReactNode; testId: string }) {
   return (
-    <div data-testid={testId} className="flex min-w-0 flex-col gap-0.5 rounded-[14px] bg-background px-3 py-2.5">
-      <span className="text-caption font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</span>
-      <span className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-        <span className="text-[22px] font-semibold leading-tight tracking-[-0.01em] tabular-nums text-foreground">{value}</span>
-        {delta}
-      </span>
+    <div data-testid={testId} className="flex min-w-0 flex-col gap-1 rounded-[14px] bg-background px-3 py-2.5">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</span>
+      <span className="text-xl font-bold leading-tight tabular-nums text-foreground">{value}</span>
+      <span className="text-[11px] text-muted-foreground">{sub}</span>
     </div>
   )
 }
 
-/** A week's move in the colour of what it means: fatigue falling is good news. */
+/**
+ * A week's move (rule 04): the arrow follows the number, the colour says
+ * whether that is good - fatigue falling is mint, fitness falling amber.
+ */
 function Delta({ metric, delta, current, days }: { metric: DeltaMetric; delta: number; current: number; days: number }) {
   const tone = deltaTone(metric, delta, { value: current })
+  const rounded = Math.round(delta)
+  const Arrow = rounded > 0 ? ArrowUpRight : rounded < 0 ? ArrowDownRight : ArrowRight
   return (
-    <span data-testid="readiness-delta" data-tone={tone} className="text-xs font-semibold tabular-nums" style={{ color: DELTA_TONE_COLOR[tone] }}>
-      {formatDelta(Math.round(delta))}
-      {/* Read out only: on screen the tile says it. */}
-      <span className="sr-only"> {t.dashboard.readiness.deltaIn(days)}</span>
+    <span data-testid="readiness-delta" data-tone={tone} className="inline-flex items-center gap-0.5 whitespace-nowrap tabular-nums" style={{ color: DELTA_TONE_COLOR[tone] }}>
+      <Arrow size={12} strokeWidth={1.8} aria-hidden className="shrink-0" />
+      {t.dashboard.readiness.deltaWeek(Math.abs(rounded), days)}
     </span>
   )
 }
 
 /**
- * Today's one score and one sentence (design review 3.0, mock 1b): Form on
- * a dial, the state it reads as, then the coach's headline and body - the
- * written verdict, regenerated daily or after a sync, with no label saying
- * so - but for "Yesterday" over yesterday's, shown between midnight and the
- * night's sync (3.1.0). Fitness, Fatigue and Load support it on three tiles; Garmin's own
- * status, a second verdict beside this one, is gone. The card opens
- * Analytics › Load, where the three live in full.
+ * Today's status (App Fixes 1a): the line - in amber while the load is
+ * outside its safe range, from the one reading Analytics prints - then the
+ * coach's headline and body, then Form, Fitness and Fatigue on three tiles.
+ * Without a written verdict the card says the same from the load itself, so
+ * it is never just a line. The card opens Analytics › Load.
  */
 export function ReadinessCard({
   status,
@@ -76,60 +81,52 @@ export function ReadinessCard({
   const s = t.dashboard.readiness
   const form = Math.round(status.tsbNow)
   const tone = verdictTone(status)
-  // The second half of the line is the load against its safe range, from the
-  // one reading Analytics uses (App Fixes 1a): it used to be a word chosen
-  // off Form alone, so Today could read "Load in range" over an Analytics
-  // card saying the opposite.
   const color = load && load.state !== 'in' ? 'var(--warn)' : STATUS_COLOR[tone]
+  const band = formBand(status.tsbNow)
   const line = load ? s.loadState[load.state] : s.lineByTone[tone]
-  const ratio = load?.ratio ?? status.acwr
+  const fresh = band === 'fresh' || band === 'veryFresh'
+  const fallback = load ? s.fallback[load.state](load.acute, load.lo, load.hi, fresh) : null
+  // A written headline that names a form state the status line doesn't
+  // ("You're fresh" over NEUTRAL) gives way to the load's own (Wave 5 A0).
+  const contradicts = verdict ? (!fresh && FRESH_WORDS.test(verdict.headline)) || (band !== 'tired' && TIRED_WORDS.test(verdict.headline)) : false
+  const headline = (contradicts ? fallback?.headline : verdict?.headline) ?? fallback?.headline ?? verdict?.headline ?? null
+  const body = verdict ? verdict.body : (fallback?.body ?? null)
 
   return (
     <Link href="/analytics" aria-label={s.open} className="block active:scale-[0.99]" data-testid="readiness-card-link">
-      <section className="flex flex-col gap-4 rounded-[24px] border border-border bg-card p-[18px] shadow-card" data-testid="readiness-card">
-        <div className="flex items-center gap-4">
-          <FormDial form={form} />
-          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <p className="flex items-start gap-2 text-caption font-semibold uppercase leading-snug tracking-[0.1em]" style={{ color }} data-testid="readiness-status" data-tone={tone}>
-              <span aria-hidden className="mt-[0.3em] size-[7px] shrink-0 rounded-full" style={{ background: color }} />
-              <span>
-                {s.eyebrowByTone[tone]} · {line}
-              </span>
-            </p>
-            {verdict && (
-              <div className="flex flex-col gap-1.5" data-testid="readiness-verdict">
-                {verdict.yesterday && (
-                  <p className="text-caption font-semibold uppercase tracking-[0.1em] text-muted-foreground" data-testid="verdict-yesterday">
-                    {s.yesterday}
-                  </p>
-                )}
-                <p className="text-[19px] font-semibold leading-[1.22] text-foreground [text-wrap:pretty]">{verdict.headline}</p>
-                {verdict.body && <p className="text-[13px] leading-snug text-[var(--text-2)] [text-wrap:pretty]">{verdict.body}</p>}
-              </div>
+      <section className="flex flex-col gap-3 rounded-[22px] border border-border bg-card p-4 shadow-card" data-testid="readiness-card">
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color }} data-testid="readiness-status" data-tone={tone}>
+          <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ background: color }} />
+          <span>
+            {t.formBand[band]} · {line}
+          </span>
+        </p>
+        {headline && (
+          <div className="flex flex-col gap-3" data-testid="readiness-verdict">
+            {verdict?.yesterday && (
+              <p className="-mb-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground" data-testid="verdict-yesterday">
+                {s.yesterday}
+              </p>
             )}
+            <p className="text-[19px] font-semibold leading-[1.25] tracking-[-0.01em] text-foreground [text-wrap:pretty]">{headline}</p>
+            {body && <p className="text-[13px] leading-[1.45] text-[var(--text-2)] [text-wrap:pretty]">{body}</p>}
           </div>
-        </div>
+        )}
 
-        {/* Fitness, Fatigue and Load support the dial, which carries Form.
-            The ratio also reads on Analytics' Load trend card, beside the
-            load it is made of (2a); here it is the week against the usual. */}
         <div className="grid grid-cols-3 gap-2">
+          <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} sub={t.formBand[band].toLocaleLowerCase(t.locale)} />
           <Tile
             testId="tile-fitness"
             label={s.ctl}
             value={Math.round(status.ctl)}
-            delta={<Delta metric="fitness" delta={status.ctlDeltaShown} current={status.ctl} days={STATUS_DELTA_DAYS.fitness} />}
+            sub={<Delta metric="fitness" delta={status.ctlDeltaShown} current={status.ctl} days={STATUS_DELTA_DAYS.fitness} />}
           />
           <Tile
             testId="tile-fatigue"
             label={s.atl}
             value={Math.round(status.atl)}
-            delta={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
+            sub={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
-          {/* The ratio off the pair Analytics plots, where the watch has
-              one (App Fixes 1a): Today read ×1.10 from one source beside an
-              Analytics card reading 1.18 from another. */}
-          <Tile testId="tile-load" label={s.acwr} value={ratio === null ? s.noValue : s.acwrValue(formatDecimal(ratio, 2))} />
         </div>
       </section>
     </Link>
