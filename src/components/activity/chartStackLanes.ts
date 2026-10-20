@@ -55,7 +55,7 @@ export function chartZones(
 export interface Lane {
   key: LaneKey
   label: string
-  /** What the lane is counted in, beside its name ("bpm", "/km ↑"). */
+  /** What the lane is counted in, beside its name ("bpm", "/km, up = faster"). */
   unit: string
   /** The unit after a reading ("142 bpm"). */
   valueUnit: string

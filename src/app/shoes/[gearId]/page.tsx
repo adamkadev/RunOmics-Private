@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { ChevronRight } from 'lucide-react'
 import { getShoeDetail, type ShoeTypeBucket } from '@/application/usecases/GetShoeDetail'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeVerdictInsight } from '@/application/usecases/GetShoeVerdictInsight'
@@ -275,8 +276,9 @@ export default async function ShoeDetailPage({
         <div className="flex items-baseline justify-between gap-2 px-1 pt-2">
           <h2 className={TITLE}>{shoe.retired ? s.lastRuns : d.activitiesTitleActive}</h2>
           {shoe.activities.length > RECENT_RUNS && (
-            <Link href={`/activities?shoe=${shoe.gearId}`} className="shrink-0 text-[13px] font-medium text-accent-text transition-opacity hover:opacity-80">
-              {d.allActivitiesCount(shoe.activities.length)} →
+            <Link href={`/activities?shoe=${shoe.gearId}`} className="inline-flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-accent-text transition-opacity hover:opacity-80">
+              {d.allActivitiesCount(shoe.activities.length)}
+              <ChevronRight size={14} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
             </Link>
           )}
         </div>

@@ -14,11 +14,20 @@ function dayLetter(date: string): string {
 /**
  * A day's bar in the colour Plan draws its session in (3.0.2, mock 5f): blue
  * for an easy or long run, purple for threshold, and so on (sessionZone). A
- * day without a run keeps the hairline grey, today without one the accent.
+ * day without a run keeps the hairline grey.
+ *
+ * Today without a run is not filled at all: it is an outline in the accent
+ * (App Fixes, 5a rule 2 - today is a shape, not a colour), so a cyan accent
+ * beside an easy run's blue still reads as today.
  */
 export function loadBarColor(day: RecentLoadDay): string {
   if (day.type) return zoneColor(sessionZone(day))
-  return day.isToday ? 'var(--accent)' : 'var(--line-2)'
+  return day.isToday ? 'transparent' : 'var(--line-2)'
+}
+
+/** Today's bar carries the accent as its outline instead of its fill. */
+export function loadBarOutline(day: RecentLoadDay): string | undefined {
+  return !day.type && day.isToday ? '1.5px solid var(--accent)' : undefined
 }
 
 export function LoadStrip({ recent }: { recent: RecentLoad }) {
@@ -46,6 +55,7 @@ export function LoadStrip({ recent }: { recent: RecentLoad }) {
                 style={{
                   height: Math.max(MIN_BAR_PX, scale(day.load)),
                   background: loadBarColor(day),
+                  border: loadBarOutline(day),
                 }}
               >
                 <span className="sr-only">{s.day(formatDate(day.date, { style: 'full' }), day.load)}</span>

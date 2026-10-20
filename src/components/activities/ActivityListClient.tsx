@@ -56,14 +56,18 @@ interface WeekRow extends WeekGroup<ActivitySummary> {
 
 const KM_STRONG = 'font-semibold text-foreground'
 
-/** "45 km · 5 runs · 88% easy": every aggregate says what it counts (v4.17). */
-function PastWeekLine({ group }: { group: WeekRow }) {
+/**
+ * "45 km · 5 runs · 88% easy": every aggregate says what it counts (v4.17).
+ * Under a filter the share is dropped (App Fixes 1d): "88% easy" of the
+ * threshold runs alone says nothing about the week.
+ */
+function PastWeekLine({ group, showEasy }: { group: WeekRow; showEasy: boolean }) {
   const w = t.activities.weekLine
   return (
     // The line gives way on a narrow phone, wrapping, so the week's dates never do (v4.17.2).
     <span className="min-w-0 text-right text-footnote text-muted-foreground text-pretty" data-testid="past-week-line">
       <span className={KM_STRONG}>{formatKm(group.totalKm)}</span> {t.units.km} · {w.runs(group.items.length)}
-      {group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
+      {showEasy && group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
     </span>
   )
 }
@@ -460,7 +464,7 @@ export function ActivityListClient({
                         </h2>
                         <span className="shrink-0 text-[13px] text-muted-foreground" data-testid="week-line">
                           <span className={KM_STRONG}>{formatRanKm(block.week.totalKm)}</span> {t.units.km} · {t.activities.weekLine.runs(block.week.items.length)}
-                          {block.week.easyPct !== null && ` · ${t.activities.weekLine.easy(block.week.easyPct)}`}
+                          {!hasActiveFilter && block.week.easyPct !== null && ` · ${t.activities.weekLine.easy(block.week.easyPct)}`}
                         </span>
                       </div>
                       <div className={cardClass({ padding: 'none', overflow: true, className: 'pt-2' })}>
@@ -487,7 +491,7 @@ export function ActivityListClient({
                           <section key={g.key} id={`week-${g.key}`} className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24' })} data-testid="week">
                             <div className="flex items-baseline justify-between gap-4 px-4 pb-1.5 pt-3.5">
                               <h3 className="whitespace-nowrap text-sm font-semibold text-foreground">{g.label}</h3>
-                              <PastWeekLine group={g} />
+                              <PastWeekLine group={g} showEasy={!hasActiveFilter} />
                             </div>
                             <InsetRows items={g.items} efforts={qualifiedEffortsByActivityId} />
                           </section>

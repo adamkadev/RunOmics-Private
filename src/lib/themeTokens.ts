@@ -331,8 +331,11 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--chart-ground-contact': mode === 'dark' ? c.amber500 : c.amberLine,
     // The athlete's own data is the accent.
     '--chart-brand': 'var(--accent)',
-    // Where the map's heat ends up where runs pile on: a deep accent in light (multiply), toward white in dark (add).
-    '--heat-end': mode === 'dark' ? 'color-mix(in srgb, var(--accent) 35%, #ffffff)' : 'color-mix(in srgb, var(--accent) 45%, #000000)',
+    // Where the map's heat ends up where runs pile on: a deep accent shade in
+    // light (multiply), the accent itself in dark (add). Dark used to run on
+    // toward white, which read as a white route rather than a bright one;
+    // the handoff caps it at the full accent (3.0 override 9, App Fixes 4a).
+    '--heat-end': mode === 'dark' ? 'var(--accent)' : 'color-mix(in srgb, var(--accent) 45%, #000000)',
     '--ro-accent': 'var(--accent)',
     '--ro-accent-hi': 'var(--accent-hover)',
     '--ro-ink': c.roInk,

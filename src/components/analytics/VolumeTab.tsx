@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { formatDate, formatKm, formatRanKm } from '@/lib/formatters'
@@ -10,9 +11,30 @@ import { LONG_RUN_SHARE, ON_PLAN_SHARE, longRunView, weeklyDistanceView, type We
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
-/** The athlete's own weeks are the accent (v4.17): full at or above plan, 40% below it or unplanned. */
+/** The second half of a "ran / planned" value: the same size, a step back. */
+function Faint({ children }: { children: ReactNode }) {
+  return <span className="font-semibold text-muted-foreground">{children}</span>
+}
+
+/**
+ * The athlete's own weeks are the accent (v4.17): full at or above plan, 40%
+ * below it. A week the plan never asked for is grey, not a dim accent (App
+ * Fixes 1f): the two shared one swatch, so "below plan" and "unplanned" read
+ * as the same state.
+ */
 const ACCENT = 'var(--accent)'
 const ACCENT_SOFT = 'color-mix(in srgb, var(--accent) 40%, transparent)'
+const UNPLANNED = 'var(--series-2)'
+
+/**
+ * A week with km but no plan behind it, where the window has a plan at all:
+ * with no plan anywhere there is nothing to be off, and every week is simply
+ * a week that was run.
+ */
+const unplanned = (r: WeekRow, hasPlan: boolean) => hasPlan && r.planKm === null
+
+/** A week the plan asked for and nothing was run against. */
+const missedWeek = (r: WeekRow) => r.km === 0 && r.planKm !== null && r.planKm > 0
 
 /** Four labels under a row of weekly bars: the first, two between, and the last. */
 export function weekLabels(weeks: string[], live: boolean): string[] {
@@ -33,21 +55,42 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
   const { last } = view
   const H = 130
   const hasPlan = rows.some((r) => r.planKm !== null)
+  const hasMissed = rows.some(missedWeek)
+  const hasUnplanned = rows.some((r) => r.km > 0 && unplanned(r, hasPlan))
   // The app's one weekly average is its last 12 finished weeks; a window
   // further back averages its own.
   const avgWeeks = live && weeklyAvgKm !== null ? 12 : rows.filter((r) => !r.current).length
   return (
     <Card className="gap-3.5" testId="weekly-card">
       <CardHead title={s.title} caption={hasPlan ? s.caption : undefined} about={s.about} />
+      {/* The number leads and its unit and name sit under it (App Fixes 1f),
+          so "10 / 14" fits its column at any width. */}
       <StatGrid columns={view.onPlan ? 3 : 2}>
         <Stat
           size="lg"
-          label={last.current ? s.thisWeek : s.weekOf(bare(last.week))}
-          value={formatRanKm(last.km)}
-          unit={last.planKm !== null ? s.ofPlan(formatKm(last.planKm)) : t.units.km}
+          labelPosition="bottom"
+          label={s.underWeek(last.current ? s.thisWeek : s.weekOf(bare(last.week)))}
+          value={
+            <>
+              {formatRanKm(last.km)}
+              {last.planKm !== null && <Faint> / {formatKm(last.planKm)}</Faint>}
+            </>
+          }
         />
-        {view.avg !== null && <Stat size="lg" label={s.avgWeeks(avgWeeks)} value={formatKm(view.avg)} unit={s.perWeek} />}
-        {view.onPlan && <Stat size="lg" label={s.onPlan} value={view.onPlan.hit} unit={s.ofPlanned(view.onPlan.of)} />}
+        {view.avg !== null && <Stat size="lg" labelPosition="bottom" label={s.underAvg(avgWeeks)} value={formatKm(view.avg)} />}
+        {view.onPlan && (
+          <Stat
+            size="lg"
+            labelPosition="bottom"
+            label={s.underOnPlan}
+            value={
+              <>
+                {view.onPlan.hit}
+                <Faint> / {view.onPlan.of}</Faint>
+              </>
+            }
+          />
+        )}
       </StatGrid>
       <ChartScrub
         count={rows.length}
@@ -73,7 +116,7 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
                     className="box-border rounded-[5px_5px_2px_2px]"
                     style={{
                       height: Math.max(3, (r.km / view.yMax) * H),
-                      background: onPlan(r) ? ACCENT : ACCENT_SOFT,
+                      background: onPlan(r) ? ACCENT : unplanned(r, hasPlan) ? UNPLANNED : ACCENT_SOFT,
                       outline: current ? THIS_WEEK_BORDER : undefined,
                       outlineOffset: current ? 2 : undefined,
                     }}
@@ -81,7 +124,7 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
                 ) : current ? (
                   <div data-current="" className="box-border h-[3px] rounded-[2px]" style={{ borderTop: THIS_WEEK_BORDER }} />
                 ) : (
-                  <EmptyWeek />
+                  <EmptyWeek missed={missedWeek(r)} />
                 )}
               </div>
             )
@@ -93,6 +136,8 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
         <Legend className="gap-x-4">
           {hasPlan && <LegendItem swatch="square" color={ACCENT}>{s.onOrAbove}</LegendItem>}
           <LegendItem swatch="square" color={ACCENT_SOFT}>{hasPlan ? s.belowPlan : s.done}</LegendItem>
+          {hasUnplanned && <LegendItem swatch="square" color={UNPLANNED}>{s.unplanned}</LegendItem>}
+          {hasMissed && <LegendItem swatch="dashRing" color="var(--muted-foreground)">{s.missed}</LegendItem>}
           {hasPlan && <LegendItem swatch="line" color="var(--foreground)">{s.plan}</LegendItem>}
         </Legend>
       </div>

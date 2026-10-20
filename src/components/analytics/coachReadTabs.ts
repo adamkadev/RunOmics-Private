@@ -39,9 +39,23 @@ import {
 
 export type CoachTab = 'fitness' | 'performance' | 'volume' | 'health'
 
+/**
+ * Which way the row's own number moved (App Fixes, rule 04): the arrow
+ * follows the number, the colour says whether that is good news. A fatigue
+ * of 48, down 23, is a drop drawn in mint - it used to point up, because the
+ * arrow was read off the meaning.
+ */
+export type Direction = 'up' | 'down' | 'level'
+
+export function directionOf(delta: number): Direction {
+  return delta > 0 ? 'up' : delta < 0 ? 'down' : 'level'
+}
+
 export interface CoachRow {
   trend: Trend
   text: string
+  /** Unset where the row carries no number of its own; the trend draws it then. */
+  direction?: Direction
 }
 
 export interface TabRead {
@@ -79,6 +93,13 @@ export function loadHeadlineText(h: LoadCoachHeadline): string {
   }
 }
 
+/** Which way the recovery number that left its baseline went. */
+function recoveryDirection(view: RecoveryView): Direction | undefined {
+  if (!view.out) return 'level'
+  const side = view.restingHr?.side ?? view.hrv?.side
+  return side === 'high' ? 'up' : side === 'low' ? 'down' : undefined
+}
+
 /** Recovery outside its baseline the bad way is a caution; the good way, good news. */
 function recoveryTrend(view: RecoveryView): Trend {
   if (!view.out) return 'flat'
@@ -98,13 +119,26 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
   const rows: CoachRow[] = []
   // Without a headline of its own, the load sentence is the headline, not a row under it.
   if (trend && head) {
-    rows.push({ trend: trend.state !== 'in' ? 'declining' : trend.change && trend.change.pct >= 5 ? 'improving' : 'flat', text: joined(loadSentence(trend, window.live)) })
+    rows.push({
+      trend: trend.state !== 'in' ? 'declining' : trend.change && trend.change.pct >= 5 ? 'improving' : 'flat',
+      text: joined(loadSentence(trend, window.live)),
+      direction: trend.change ? directionOf(trend.change.pct) : undefined,
+    })
   }
-  if (recovery) rows.push({ trend: recoveryTrend(recovery), text: joined(recoverySentence(recovery)) })
+  if (recovery) rows.push({ trend: recoveryTrend(recovery), text: joined(recoverySentence(recovery)), direction: recoveryDirection(recovery) })
   const fitness: CoachRow | null = form
-    ? { trend: TREND_OF[deltaTone('fitness', form.fitnessDelta)], text: s.fitness(Math.round(form.fitness), formatDelta(Math.round(form.fitnessDelta)), within) }
+    ? {
+        trend: TREND_OF[deltaTone('fitness', form.fitnessDelta)],
+        text: s.fitness(Math.round(form.fitness), formatDelta(Math.round(form.fitnessDelta)), within),
+        direction: directionOf(Math.round(form.fitnessDelta)),
+      }
     : null
-  if (form) rows.push(fitness!, { trend: TREND_OF[deltaTone('fatigue', form.fatigueDelta)], text: s.fatigue(Math.round(form.fatigue), formatDelta(Math.round(form.fatigueDelta)), within) })
+  if (form)
+    rows.push(fitness!, {
+      trend: TREND_OF[deltaTone('fatigue', form.fatigueDelta)],
+      text: s.fatigue(Math.round(form.fatigue), formatDelta(Math.round(form.fatigueDelta)), within),
+      direction: directionOf(Math.round(form.fatigueDelta)),
+    })
 
   if (head) return { tone: head.kind === 'building' ? 'pos' : 'warn', headline: loadHeadlineText(head), rows: ordered(rows) }
   if (trend) return { tone: trend.state !== 'in' ? 'warn' : 'muted', headline: joined(loadSentence(trend, window.live)), rows: ordered(rows) }
@@ -157,18 +191,18 @@ export function signalRows(view: CoachReadView, period: Period): CoachRow[] {
   return view.signals.map((signal) => {
     switch (signal.key) {
       case 'fitness':
-        return { trend: signal.trend, text: s.fitness(Math.round(signal.value), formatDelta(Math.round(signal.delta)), within) }
+        return { trend: signal.trend, text: s.fitness(Math.round(signal.value), formatDelta(Math.round(signal.delta)), within), direction: directionOf(Math.round(signal.delta)) }
       case 'threshold': {
         const pace = formatClock(signal.pace)
         const text = signal.trend === 'flat' ? s.thresholdLevel(pace, ago) : signal.delta < 0 ? s.thresholdFaster(pace, Math.abs(signal.delta), ago) : s.thresholdSlower(pace, signal.delta, ago)
-        return { trend: signal.trend, text }
+        return { trend: signal.trend, text, direction: signal.trend === 'flat' ? 'level' : directionOf(signal.delta) }
       }
       case 'easy': {
         const pace = formatClock(signal.pace)
         // Inside the noise band it is level, in words and arrow alike (v5.6
         // #3): "1 s faster" sat beside a flat arrow.
         const text = signal.trend === 'flat' ? s.easyLevel(pace, ago) : signal.delta < 0 ? s.easyFaster(pace, Math.abs(signal.delta), ago) : s.easySlower(pace, signal.delta, ago)
-        return { trend: signal.trend, text }
+        return { trend: signal.trend, text, direction: signal.trend === 'flat' ? 'level' : directionOf(signal.delta) }
       }
       case 'predictions': {
         const text =
@@ -179,11 +213,11 @@ export function signalRows(view: CoachReadView, period: Period): CoachRow[] {
         const value = formatDecimal(signal.value, 2)
         const delta = formatDeltaFixed(signal.delta, 2)
         const text = signal.trend === 'flat' ? s.efficiencyLevel(value, ago) : signal.trend === 'improving' ? s.efficiencyUp(value, delta, within) : s.efficiencyDown(value, delta, within)
-        return { trend: signal.trend, text }
+        return { trend: signal.trend, text, direction: signal.trend === 'flat' ? 'level' : directionOf(signal.delta) }
       }
       case 'volume': {
         const delta = formatDelta(Math.round(signal.delta))
-        return { trend: signal.trend, text: signal.since ? s.volumeSince(delta, bare(signal.since)) : s.volume(delta) }
+        return { trend: signal.trend, text: signal.since ? s.volumeSince(delta, bare(signal.since)) : s.volume(delta), direction: directionOf(Math.round(signal.delta)) }
       }
     }
   })
@@ -251,7 +285,7 @@ export function volumeRead(data: AnalyticsBoardData, rows: WeekRow[], live: bool
   if (ytd && live) {
     const delta = ytd.km - ytd.lastYearKm
     const text = ytd.since ? cr.volumeSince(formatDelta(Math.round(delta)), bare(ytd.since)) : cr.volume(formatDelta(Math.round(delta)))
-    out.push({ trend: TREND_OF[deltaTone('distance', delta, { value: ytd.km })], text })
+    out.push({ trend: TREND_OF[deltaTone('distance', delta, { value: ytd.km })], text, direction: directionOf(delta) })
   }
 
   // The plan first: the coach sets each week's long run against its week, so

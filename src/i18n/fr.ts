@@ -157,7 +157,7 @@ export const fr = {
   },
 
   paceAxis: {
-    caption: 'plus rapide ↑',
+    caption: 'vers le haut = plus rapide',
   },
 
   sessionState: {
@@ -577,8 +577,8 @@ export const fr = {
       scrubWeek: (date: string) => `Semaine du ${date}`,
       coachRead: {
         eyebrow: (span: string, tab: string) => `Lecture du coach · ${span} · ${tab}`,
-        why: 'Pourquoi →',
-        openPlan: 'Voir le plan →',
+        why: 'Pourquoi',
+        openPlan: 'Voir le plan',
         openPlanButton: 'Voir le plan',
         last: { '4w': 'les 4 dernières semaines', '12w': 'les 12 dernières semaines', '1y': 'la dernière année' } as Record<string, string>,
         ago: { '4w': 'il y a 4 semaines', '12w': 'il y a 12 semaines', '1y': 'il y a un an' } as Record<string, string>,
@@ -818,7 +818,12 @@ export const fr = {
         ofPlanned: (n: number) => `sur ${n} prévue${n > 1 ? 's' : ''}`,
         withoutPlan: (n: number) => `${n} sem sans plan`,
         onOrAbove: 'Plan atteint ou dépassé',
-        belowPlan: 'Sous le plan / sans plan',
+        belowPlan: 'Sous le plan',
+        unplanned: 'Sans plan',
+        missed: 'Manquée',
+        underWeek: (when: string) => `km ${when.toLocaleLowerCase('fr')}`,
+        underAvg: (n: number) => (n >= 52 ? 'km / sem, moyenne sur 1 an' : `km / sem, moyenne sur ${n} sem`),
+        underOnPlan: 'semaines dans le plan',
         done: 'Fait',
         plan: 'Plan',
       },
@@ -917,7 +922,7 @@ export const fr = {
         title: 'Tendance d’allure',
         easy: 'Facile',
         workout: 'Qualité',
-        footnote: 'Allure moyenne pondérée par la distance, plus rapide ↑.',
+        footnote: 'Allure moyenne pondérée par la distance, vers le haut = plus rapide.',
         explains: {
           improving: (delta: string) => `Allure facile en progrès - ${delta} par rapport au début de la période`,
           stable: 'Allure facile stable sur la période',
@@ -1063,7 +1068,7 @@ export const fr = {
           half: 'Semi',
           marathon: 'Marathon',
         } as Record<string, string>,
-        footnote: 'Temps de course prédits par la montre à partir de la VO₂max et de l’entraînement récent. Tracés en allure pour que les quatre distances tiennent sur une même échelle, plus rapide ↑.',
+        footnote: 'Temps de course prédits par la montre à partir de la VO₂max et de l’entraînement récent. Tracés en allure pour que les quatre distances tiennent sur une même échelle, vers le haut = plus rapide.',
         reading: {
           faster: (distance: string, gain: string, current: string) =>
             `Le potentiel sur ${distance} progresse de ${gain} sur la période, à ${current} aujourd’hui.`,
@@ -1362,7 +1367,7 @@ export const fr = {
       max: 'max',
       bestSmoothed: 'meilleure 30 s',
       pace: 'Allure',
-      paceUnitHint: '/km ↑',
+      paceUnitHint: '/km, vers le haut = plus rapide',
       elevation: 'Altitude',
       cadence: 'Cadence',
       elevationGain: (m: string) => `${m} m D+`,
@@ -1951,6 +1956,10 @@ export const fr = {
       easyPace: (range: string) => `facile, cible ${range}`,
       stridesPace: (pace: string) => `accélérations ${pace}`,
       targetPace: (range: string) => `cible ${range}`,
+      paceTarget: 'Allure',
+      hrTarget: 'Fréquence cardiaque',
+      hrTargetZone: (zone: number) => `Fréquence cardiaque · Z${zone}`,
+      hrCap: (bpm: number) => `≤ ${bpm}`,
     },
     continuous: 'continu',
     restCard: {

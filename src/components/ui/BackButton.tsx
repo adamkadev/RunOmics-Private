@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { useNavigationOrigin } from '@/components/layout/NavigationHistory'
 import { cn } from '@/lib/utils'
 
@@ -18,7 +18,8 @@ interface Props {
 /**
  * The link to a page's parent (v4.17): an activity to Activities, a detail
  * under Progress to Progress. It names the parent, not the page before - a
- * run opened from Today still reads "← Activities". Stepping back in history
+ * run opened from Today still reads "‹ Activities". The mark is a chevron,
+ * never an arrow (App Fixes, rule 01). Stepping back in history
  * when the parent is the page just left keeps its scroll and its filters.
  *
  * Once it scrolls away, the compact title bar's chevron presses it
@@ -45,7 +46,7 @@ export function BackButton({ label, fallbackHref = '/', className, variant = 'li
         className,
       )}
     >
-      <ArrowLeft size={variant === 'round' ? 20 : 16} strokeWidth={2.2} aria-hidden={variant === 'round' || undefined} />
+      <ChevronLeft size={variant === 'round' ? 20 : 18} strokeWidth={2.2} aria-hidden={variant === 'round' || undefined} />
       {variant === 'link' && label}
     </button>
   )

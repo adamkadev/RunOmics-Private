@@ -15,12 +15,20 @@ const RECENT: RecentLoad = {
 }
 
 // 3.0.2 (mock 5f): the bars in Plan's type colours - an easy or long run's
-// blue, threshold's purple - a day off grey, today without a run the accent.
+// blue, threshold's purple - a day off grey. Today without a run is an
+// accent outline rather than an accent fill (App Fixes, 5a rule 2).
 describe('LoadStrip', () => {
   it('colours each day by the session it was', () => {
     render(<LoadStrip recent={RECENT} />)
     const bars = screen.getAllByTestId('load-bar').map((bar) => bar.style.background)
-    expect(bars).toEqual(['var(--zone-2)', 'var(--zone-4)', 'var(--line-2)', 'var(--accent)'])
+    expect(bars).toEqual(['var(--zone-2)', 'var(--zone-4)', 'var(--line-2)', 'transparent'])
+  })
+
+  it('draws today without a run as an accent outline, never an accent fill', () => {
+    render(<LoadStrip recent={RECENT} />)
+    const today = screen.getAllByTestId('load-bar').at(-1)!
+    expect(today.style.border).toBe('1.5px solid var(--accent)')
+    expect(today.style.background).toBe('transparent')
   })
 
   it("types a day by its longest run, and a long run as an easy run's blue", () => {

@@ -134,6 +134,7 @@ interface Props {
   planPhaseRanges: PlanPhaseRange[]
   nextRace?: UpcomingRace | null
   trainingZones?: TrainingZonesData | null
+  hrZoneBoundsBpm?: readonly number[] | null
 }
 
 export function WeekView({
@@ -153,6 +154,7 @@ export function WeekView({
   planPhaseRanges,
   nextRace,
   trainingZones = null,
+  hrZoneBoundsBpm = null,
 }: Props) {
   const dates = useMemo(() => Array.from({ length: 7 }, (_, i) => isoDate(addDays(weekStart, i))), [weekStart])
   const firstDay = dates[0]!
@@ -214,7 +216,7 @@ export function WeekView({
     dayCard = (
       <div className="flex flex-col gap-3">
         {workouts.map((workout) => (
-          <PlannedWorkoutCard key={workout.key} workout={workout} kind={kind} />
+          <PlannedWorkoutCard key={workout.key} workout={workout} kind={kind} hrZoneBoundsBpm={hrZoneBoundsBpm} />
         ))}
       </div>
     )

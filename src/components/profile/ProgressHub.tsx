@@ -445,8 +445,9 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
         <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="shoes-tile">
           <div className="flex items-center justify-between gap-2">
             <h2 className={TITLE}>{h.shoes}</h2>
-            <Link href="/shoes" className="hit-44 text-footnote font-medium text-accent-text transition-opacity hover:opacity-80 active:opacity-60" data-testid="shoes-all">
-              {h.allPairs} →
+            <Link href="/shoes" className="hit-44 inline-flex items-center gap-0.5 text-footnote font-medium text-accent-text transition-opacity hover:opacity-80 active:opacity-60" data-testid="shoes-all">
+              {h.allPairs}
+              <ChevronRight size={14} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
             </Link>
           </div>
           {shoes.map((s) => (

@@ -259,7 +259,7 @@
   --chart-hard:              var(--zone-4);
   --chart-ground-contact:    #f59e0b;
   --chart-brand:             var(--accent);
-  --heat-end:                color-mix(in srgb, var(--accent) 35%, #ffffff);
+  --heat-end:                var(--accent);
   --ro-accent:               var(--accent);
   --ro-accent-hi:            var(--accent-hover);
   --ro-ink:                  #0b1f17;
