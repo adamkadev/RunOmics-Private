@@ -1,27 +1,31 @@
 import { getConsistencyData } from '@/application/usecases/GetConsistencyData'
+import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { appTodayIso } from '@/lib/calendarDate'
-import { ConsistencyMonths } from '@/components/consistency/ConsistencyMonths'
-import { consistencyMonths } from '@/components/consistency/consistencyMonthsView'
+import { Consistency } from '@/components/consistency/Consistency'
+import { CONSISTENCY_RANGES, consistencyView, mondayOf, plusDays, type ConsistencyRange, type ConsistencyView } from '@/components/consistency/consistencyView'
 import { BackButton } from '@/components/ui/BackButton'
+import { loadPlannedDates } from '../_data/loadWeekTarget'
 import { t } from '@/i18n'
 
 export const revalidate = 3600
 
-// Consistency is its own Progress page, reached from the hub: the rolling
-// year counted, its last six months as week columns, and its months (3.0).
-export default function ConsistencyPage() {
+/** How far ahead the plan is read: to the end of the last week a month's calendar can show. */
+const PLAN_DAYS_AHEAD = 42
+
+// Consistency is its own Progress page, reached from the hub (3.1): the
+// weekly streak, runs per week against three, and the running week, over a
+// window the page keeps in ?range=. Each window is worked out here; the
+// switch only picks one.
+export default async function ConsistencyPage() {
   const today = appTodayIso()
-  const { days, ...options } = getConsistencyData(today)
-  const view = consistencyMonths(days, today, options)
-  const p = t.pages.consistency
+  const data = getConsistencyData(today)
+  const plannedDates = await loadPlannedDates(today, plusDays(mondayOf(today), PLAN_DAYS_AHEAD), getCoachingOverview(today))
+  const input = { ...data, today, plannedDates }
+  const views = Object.fromEntries(CONSISTENCY_RANGES.map((range) => [range, consistencyView(range, input)])) as Record<ConsistencyRange, ConsistencyView>
   return (
     <div className="flex flex-col gap-3.5">
-      <header className="mb-1.5">
-        <BackButton label={p.back} fallbackHref="/profile" className="mb-3.5" />
-        <h1 className="text-display text-foreground">{p.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{view.range ?? p.rolling}</p>
-      </header>
-      <ConsistencyMonths view={view} />
+      <BackButton label={t.pages.consistency.back} fallbackHref="/profile" className="-mb-1.5" />
+      <Consistency views={views} today={today} />
     </div>
   )
 }

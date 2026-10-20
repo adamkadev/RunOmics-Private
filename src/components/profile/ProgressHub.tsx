@@ -10,7 +10,7 @@ import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import type { WearStatus } from '@/domain/shoe/wearStatus'
 import { raceGapView, type HeatCell, type ProgressHubView, type YearPoint } from './progressHubView'
-import { levelStyle } from '@/components/consistency/consistencyMonthsView'
+import { levelStyle } from '@/components/consistency/consistencyRamp'
 import { shortDist } from '@/components/goals/shortDistance'
 import { WEAR_COLOR } from '@/components/shoes/shoeWear'
 

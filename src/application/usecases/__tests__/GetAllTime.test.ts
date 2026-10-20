@@ -31,6 +31,7 @@ describe('allTimeView', () => {
     const view = allTimeView(RUNS, '2026-09-26')
     expect(view.monthly[0]).toMatchObject({ key: '2025-05', km: 31 })
     expect(view.monthly.at(-1)).toMatchObject({ key: '2026-09', partial: true })
+    expect(view.monthly[0]!.projectedKm).toBeNull()
     expect(view.monthly.filter((m) => m.km === 0).length).toBeGreaterThan(0)
     expect(view.bestMonth).toMatchObject({ key: '2026-04', km: 52 })
   })

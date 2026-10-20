@@ -1,24 +1,27 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import { getHeatmapData, type HeatmapDay } from './GetHeatmapData'
 import { getWeeklyStreakData } from './GetMilestones'
 
-export interface ConsistencyData {
-  /** Every day of the last year and a week, as the heatmap reads it. */
-  days: HeatmapDay[]
-  streakWeeks: number
-  /** The longest run of active weeks there has been. */
-  bestStreakWeeks: number | null
-  /** Every run's date, for the share of days over the year before (v4.17). */
-  runDates: string[]
+export interface ConsistencyRun {
+  date: string
+  distanceKm: number
+  durationSeconds: number
 }
 
-/** What the Consistency page draws: the rolling year, the streaks, and the history behind them. */
+export interface ConsistencyData {
+  /** Every run, for the weeks the page counts and the week a tap opens. */
+  runs: ConsistencyRun[]
+  /** Weeks in a row with three runs or more, as Today and the Progress hub count them. */
+  streakWeeks: number
+  /** The longest such run of weeks there has been. */
+  bestStreakWeeks: number
+}
+
+/** What the Consistency page draws (3.1): the runs, and the weekly streak behind them. */
 export function getConsistencyData(today: string): ConsistencyData {
   const streak = getWeeklyStreakData(new Date(`${today}T12:00:00`))
   return {
-    days: getHeatmapData(),
+    runs: getAllActivities().map((a) => ({ date: a.date.slice(0, 10), distanceKm: a.distanceKm, durationSeconds: a.durationSeconds })),
     streakWeeks: streak?.currentWeeks ?? 0,
-    bestStreakWeeks: streak?.longestWeeks ?? null,
-    runDates: getAllActivities().map((a) => a.date),
+    bestStreakWeeks: streak?.longestWeeks ?? 0,
   }
 }
