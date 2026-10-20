@@ -37,9 +37,6 @@ const NUMBERED_TYPES = new Set(['interval_active', 'lap'])
 
 const ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem]'
 const ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem_1.75rem]'
-/** The same columns without the number: one row has nothing to number. */
-const ONE_ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3rem_2.5rem_2.75rem]'
-const ONE_ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3rem_2.5rem_2.75rem_1.75rem]'
 
 /**
  * How much of the run a single lap has to cover before it is the run (App
@@ -48,9 +45,6 @@ const ONE_ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3rem_2.5re
  * run" was a plain lie about the distance printed beside it.
  */
 const WHOLE_RUN_SHARE = 0.95
-
-/** A supporting cell of a lap row: the numbers that are not the duration. */
-const MUTED_CELL = 'text-xs tabular-nums text-[var(--text-2)]'
 
 function paceStr(avgSpeedMs: number): string {
   if (avgSpeedMs <= 0) return '-'
@@ -205,30 +199,32 @@ function WholeRunLap({
 }) {
   const sp = t.activity.splits
   const showHr = split.avgHr !== null
-  // One row, so no number to put in front of it.
-  const rowCls = showHr ? ONE_ROW_HR : ONE_ROW_NO_HR
+  // One row, so no number in front of it: the mockup's own columns (App Fixes 1c).
+  const rowCls = cn('grid w-full items-center gap-1', showHr ? 'grid-cols-[minmax(0,1fr)_64px_46px_44px_36px]' : 'grid-cols-[minmax(0,1fr)_64px_46px_44px]')
   const covers = activityDistanceKm > 0 ? split.distanceM / 1000 / activityDistanceKm : 0
   const isWholeRun = covers >= WHOLE_RUN_SHARE
   return (
     <section className={bare ? 'flex flex-col gap-3' : cardClass({ className: 'flex flex-col gap-3' })} data-testid="whole-run-lap" data-whole-run={isWholeRun || undefined}>
       {!bare && <h3 className="text-[15px] font-semibold text-foreground">{sp.lapTitle}</h3>}
-      <div className="w-full space-y-0.5">
-        <div className={`${rowCls} pb-1.5 text-caption uppercase tracking-[0.06em] text-muted-foreground`}>
-          <span className="truncate">{sp.cols.type}</span>
-          <span className="truncate">{sp.cols.duration}</span>
-          <span className="truncate">{sp.cols.dist}</span>
-          <span className="truncate">{sp.cols.pace}</span>
-          {showHr && <span className="truncate">{sp.cols.hr}</span>}
+      <div className="w-full">
+        <div className={`${rowCls} pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground`} data-testid="whole-run-cols">
+          <span className="truncate">{sp.cols.lap}</span>
+          <span className="text-right">{sp.cols.time}</span>
+          <span className="text-right">{sp.cols.km}</span>
+          <span className="text-right">{sp.cols.pace}</span>
+          {showHr && <span className="text-right">{sp.cols.hr}</span>}
         </div>
-        <div className={`${rowCls} rounded-md px-1 py-1.5`}>
-          <span className="truncate text-xs font-semibold text-foreground">{isWholeRun ? sp.wholeRun : sp.lapNumber(1)}</span>
-          <span className="text-xs tabular-nums">{formatDuration(split.durationSec)}</span>
-          <span className={MUTED_CELL}>{distStr(split.distanceM)}</span>
-          <span className={MUTED_CELL}>{paceStr(split.avgSpeedMs)}</span>
-          {showHr && <span className={MUTED_CELL}>{split.avgHr ?? '-'}</span>}
+        {/* Lined up with its header, a divider between them. */}
+        <div className={`${rowCls} border-t border-border py-1.5 text-[13px] text-foreground tabular-nums`}>
+          <span className="truncate font-semibold">{isWholeRun ? sp.wholeRun : sp.lapNumber(1)}</span>
+          <span className="text-right">{formatDuration(split.durationSec)}</span>
+          <span className="text-right">{distStr(split.distanceM)}</span>
+          <span className="text-right">{paceStr(split.avgSpeedMs)}</span>
+          {showHr && <span className="text-right">{split.avgHr ?? '-'}</span>}
         </div>
       </div>
-      <p className="text-xs leading-snug text-muted-foreground text-pretty">
+      {/* The note in a dark inset panel (App Fixes 1c). */}
+      <p className="rounded-[14px] bg-background p-3 text-[13px] leading-[1.45] text-[var(--text-2)] text-pretty" data-testid="no-laps-note">
         {sp.noLapsPressed}{' '}
         {onKmSplits && (
           <button type="button" onClick={onKmSplits} className="inline-flex items-center gap-0.5 font-medium text-accent-text">

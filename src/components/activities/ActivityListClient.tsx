@@ -61,8 +61,17 @@ const KM_STRONG = 'font-semibold text-foreground'
  * Under a filter the share is dropped (App Fixes 1d): "88% easy" of the
  * threshold runs alone says nothing about the week.
  */
-function PastWeekLine({ group, showEasy }: { group: WeekRow; showEasy: boolean }) {
+function PastWeekLine({ group, showEasy, weekTotal }: { group: WeekRow; showEasy: boolean; weekTotal: number | null }) {
   const w = t.activities.weekLine
+  // Under a filter (App Fixes 1d): "1 of 5 runs", the week's km being the
+  // rows' own under it.
+  if (weekTotal !== null) {
+    return (
+      <span className="min-w-0 text-right text-[13px] text-muted-foreground text-pretty" data-testid="past-week-line">
+        {w.ofRuns(group.items.length, weekTotal)}
+      </span>
+    )
+  }
   return (
     // The line gives way on a narrow phone, wrapping, so the week's dates never do (v4.17.2).
     <span className="min-w-0 text-right text-footnote text-muted-foreground text-pretty" data-testid="past-week-line">
@@ -298,7 +307,8 @@ export function ActivityListClient({
   // Weeks only for newest-first. A week with no run yet - this one, on a
   // Monday morning - has no card at all (3.0).
   const groups = useMemo(
-    () => (sort === 'newest' ? weekRows(groupByWeek(items, currentWeekStart), currentWeekStart) : null),
+    // Weeks for either date order (groupByWeek keeps the order it is given).
+    () => (sort === 'newest' || sort === 'oldest' ? weekRows(groupByWeek(items, currentWeekStart), currentWeekStart) : null),
     [items, sort, currentWeekStart],
   )
   const blocks = useMemo(() => (groups ? listBlocks(groups) : null), [groups])
@@ -342,10 +352,12 @@ export function ActivityListClient({
     return () => observer.disconnect()
   }, [hasMore, loadMore])
 
+  // Clear resets the sort with the filters (App Fixes 3f).
   function resetFilters() {
     setFilter(ALL_RUNS)
     setGearId(null)
     setSearch('')
+    setSortParam(null)
   }
 
   const archiveLine = [
@@ -356,7 +368,26 @@ export function ActivityListClient({
   const pickedLabel = typesLabel(filter.types)
   // What the filter bar names: every run the filter matches, not the page
   // of them on screen.
-  const countedLabel = t.activities.count(matched)
+  // A group chip alone, nothing else narrowing the list, names what the
+  // totals count (App Fixes 1d); anything else is "activities".
+  const onlyGroup = filter.types.length === 0 && filter.group !== 'all' && gearId === null && search.trim() === '' ? filter.group : null
+  // Every run in each week, from the archive the page handed over - only
+  // when it handed all of it, so "1 of 5 runs" is never a page's count.
+  const weekTotals = useMemo(() => {
+    if (initialItems.length < totalCount) return null
+    const totals = new Map<string, number>()
+    for (const a of initialItems) {
+      const monday = isoDate(startOfWeek(new Date(`${a.date.slice(0, 10)}T00:00:00`)))
+      totals.set(monday, (totals.get(monday) ?? 0) + 1)
+    }
+    return totals
+  }, [initialItems, totalCount])
+  const countedLabel = onlyGroup
+    ? t.activities.filter.groupCount[onlyGroup](matched)
+    : hasActiveFilter
+      ? t.activities.count(matched)
+      : t.activities.weekLine.runs(matched)
+  const totalsLabel = onlyGroup ? t.activities.filter.groupTotals[onlyGroup] : t.activities.filter.totalsCount
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -424,8 +455,11 @@ export function ActivityListClient({
                 className="hit-44 relative flex size-[38px] shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-[var(--surface-2)]"
               >
                 <SlidersHorizontal size={17} aria-hidden="true" />
-                {/* A sort other than newest has no chip of its own: a dot says the sheet holds one. */}
-                {sort !== 'newest' && <span aria-hidden="true" className="absolute right-0.5 top-0.5 size-2 rounded-full bg-accent" />}
+                {/* The sort or a filter off its default (App Fixes 3f): an 8 px
+                    accent dot in a 2 px ring of the ground. */}
+                {(sort !== 'newest' || hasActiveFilter) && (
+                  <span aria-hidden="true" data-testid="sheet-dot" className="absolute right-0.5 top-0.5 box-content size-2 rounded-full border-2 border-[var(--background)] bg-accent" />
+                )}
               </button>
             </div>
 
@@ -441,14 +475,24 @@ export function ActivityListClient({
             {/* What the totals below are counting, and one tap to stop
                 counting it (App Fixes 1d): a week's "45 km" under a filter is
                 the filter's km, and said nothing about it. */}
-            {hasActiveFilter && (
-              <div className="flex items-baseline justify-between gap-3 px-1" data-testid="filter-bar">
-                <p className="min-w-0 text-[13px] text-muted-foreground text-pretty">
+            {(hasActiveFilter || sort !== 'newest') && (
+              // An accent-tinted panel (App Fixes 1d): mint's #0f1d19 on a #1d3b32 line.
+              <div
+                className="flex items-center justify-between gap-3 rounded-xl border px-3 py-[9px] text-[12.5px]"
+                style={{
+                  background: 'color-mix(in srgb, var(--accent) 9%, var(--background))',
+                  borderColor: 'color-mix(in srgb, var(--accent) 22%, var(--background))',
+                }}
+                data-testid="filter-bar"
+              >
+                <p className="min-w-0 text-[var(--text-2)] text-pretty">
                   {t.activities.filter.showing}{' '}
                   <b className="font-semibold text-foreground">{countedLabel}</b>
-                  {t.activities.filter.totalsCount}
+                  {hasActiveFilter && totalsLabel}
+                  {/* The sort names itself (App Fixes 3f): "· oldest first". */}
+                  {sort !== 'newest' && ` · ${t.activities.filter.sortedBy[sort]}`}
                 </p>
-                <button type="button" onClick={resetFilters} className="hit-44 shrink-0 text-[13px] font-medium text-accent-text">
+                <button type="button" onClick={resetFilters} className="hit-44 shrink-0 font-medium text-accent-text">
                   {t.activities.filter.clear}
                 </button>
               </div>
@@ -504,7 +548,10 @@ export function ActivityListClient({
                       >
                         <h2 className="text-[15px] font-semibold capitalize text-foreground">{block.label}</h2>
                         <span className="text-[13px] text-muted-foreground" data-testid="month-line">
-                          {formatKm(block.km)} {t.units.km} · {t.activities.weekLine.runs(block.runs)}
+                          {/* A group filter names its runs first (App Fixes 1d): "2 workouts · 18 km". */}
+                          {onlyGroup
+                            ? `${t.activities.filter.groupCount[onlyGroup](block.runs)} · ${formatKm(block.km)} ${t.units.km}`
+                            : `${formatKm(block.km)} ${t.units.km} · ${t.activities.weekLine.runs(block.runs)}`}
                         </span>
                       </div>
                       {/* Every week a card of its runs (3.0): a row of type dots
@@ -514,7 +561,7 @@ export function ActivityListClient({
                           <section key={g.key} id={`week-${g.key}`} className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24' })} data-testid="week">
                             <div className="flex items-baseline justify-between gap-4 px-4 pb-1.5 pt-3.5">
                               <h3 className="whitespace-nowrap text-sm font-semibold text-foreground">{g.label}</h3>
-                              <PastWeekLine group={g} showEasy={!hasActiveFilter} />
+                              <PastWeekLine group={g} showEasy={!hasActiveFilter} weekTotal={hasActiveFilter ? (weekTotals?.get(g.key) ?? null) : null} />
                             </div>
                             <InsetRows items={g.items} efforts={qualifiedEffortsByActivityId} />
                           </section>

@@ -22,7 +22,7 @@ export function kindOfRun(activity: Pick<ActivitySummary, 'type' | 'durationSeco
 }
 
 export type FilterGroup = 'all' | 'easy' | 'workouts' | 'races'
-export type ActivitySort = 'newest' | 'longest' | 'fastest'
+export type ActivitySort = 'newest' | 'oldest' | 'longest' | 'fastest'
 
 /**
  * What the list shows (3.0): a group chip, or the exact types picked in the
@@ -47,7 +47,7 @@ export const FILTER_GROUPS = {
 } as const satisfies Record<Exclude<FilterGroup, 'all'>, readonly FilterKind[]>
 
 export const GROUP_IDS = ['all', 'easy', 'workouts', 'races'] as const satisfies readonly FilterGroup[]
-export const SORT_IDS = ['newest', 'longest', 'fastest'] as const satisfies readonly ActivitySort[]
+export const SORT_IDS = ['newest', 'oldest', 'longest', 'fastest'] as const satisfies readonly ActivitySort[]
 
 const SHEET_ORDER: readonly FilterKind[] = Object.values(FILTER_GROUPS).flat()
 
@@ -97,6 +97,8 @@ export function sortQuery(sort: ActivitySort): { sortBy: ActivitySortKey; sortOr
   switch (sort) {
     case 'newest':
       return { sortBy: 'date', sortOrder: 'desc' }
+    case 'oldest':
+      return { sortBy: 'date', sortOrder: 'asc' }
     case 'longest':
       return { sortBy: 'distance', sortOrder: 'desc' }
     case 'fastest':
