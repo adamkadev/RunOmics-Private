@@ -84,10 +84,12 @@ describe('ProfileHrZones table', () => {
   ]
   const recent = [{ zone: 2, seconds: 125 * 60, percent: 0 }]
 
-  it('labels Pace, HR and Time as their own columns', () => {
+  // App Fixes 1e: the share is a column of the table, so a 1 % zone has room
+  // for its number; each zone's pace reads under its name.
+  it('labels Zone, HR, share and Time as their own columns', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
     const header = screen.getByTestId('zone-columns')
-    for (const column of [z.columnZone, z.columnPace, z.columnHr, z.columnTime]) {
+    for (const column of [z.columnZone, z.columnHr, z.columnShare, z.columnTime]) {
       expect(within(header).getByText(column)).toBeInTheDocument()
     }
   })
@@ -138,8 +140,9 @@ describe('ProfileHrZones table', () => {
     expect(screen.getByTestId('zone-verdict').className).toContain('text-[var(--warn)]')
   })
 
-  // 3.0 1j: every zone with time draws, at least 3 % wide, its share under it.
-  it('draws each zone with time as wide as its share, at least 3 %, with its share under it', () => {
+  // 3.0 1j: every zone with time draws, at least 3 % wide; its share is read
+  // in the table beside it (App Fixes 1e).
+  it('draws each zone with time as wide as its share, at least 3 %, and reads the share in the table', () => {
     const withSliver = [
       { zone: 1, seconds: 26 * 60, percent: 0 },
       { zone: 2, seconds: 61 * 60, percent: 0 },

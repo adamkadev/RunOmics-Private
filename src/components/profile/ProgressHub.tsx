@@ -4,13 +4,12 @@ import { ChevronRight, Settings } from 'lucide-react'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
-import { formatDate, formatDelta, formatDuration, formatKm, formatSignedDuration } from '@/lib/formatters'
+import { formatDate, formatDecimal, formatDelta, formatDuration, formatKm, formatSignedDuration } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { deltaColor } from '@/lib/deltaTone'
 import { t } from '@/i18n'
 import type { WearStatus } from '@/domain/shoe/wearStatus'
-import { raceGapView, type HeatCell, type ProgressHubView, type YearPoint } from './progressHubView'
-import { levelStyle } from '@/components/consistency/consistencyRamp'
+import { raceGapView, type ProgressHubView } from './progressHubView'
 import { shortDist } from '@/components/goals/shortDistance'
 import { WEAR_COLOR } from '@/components/shoes/shoeWear'
 
@@ -55,60 +54,6 @@ function Caption({ children }: { children: ReactNode }) {
   )
 }
 
-/** VO2max over the window, its ends dotted; a flat window draws as a short strip. */
-function Sparkline({ values }: { values: number[] }) {
-  if (values.length < 2) return <div className="h-[50px]" />
-  const lo = Math.min(...values)
-  const hi = Math.max(...values)
-  const flat = hi === lo
-  const height = flat ? 16 : 50
-  const yOf = (v: number) => (flat ? 0.5 : 4 / 50 + (1 - (v - lo) / (hi - lo)) * (42 / 50))
-  const d = values.map((v, i) => `${i === 0 ? 'M' : 'L'}${((i / (values.length - 1)) * 1000).toFixed(1)} ${(yOf(v) * height).toFixed(1)}`).join(' ')
-  const dot = (v: number, left: string, last: boolean) => (
-    <span
-      aria-hidden
-      className={cn('absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full', last ? 'bg-foreground' : 'bg-muted-foreground')}
-      style={{ left, top: `${yOf(v) * 100}%` }}
-    />
-  )
-  return (
-    <div className="relative mx-[3px]" style={{ height }} data-testid="vo2-spark">
-      <svg viewBox={`0 0 1000 ${height}`} className="block h-full w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="vo2-sparkline" data-flat={flat || undefined}>
-        <path d={d} fill="none" stroke="var(--foreground)" strokeWidth={1.6} strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-      </svg>
-      {dot(values[0]!, '0%', false)}
-      {dot(values.at(-1)!, '100%', true)}
-    </div>
-  )
-}
-
-/** Twelve weeks as columns, Monday on top, with every other day named (v4.17). */
-function MiniCalendar({ weeks }: { weeks: HeatCell[][] }) {
-  const narrow = new Intl.DateTimeFormat(t.locale, { weekday: 'narrow', timeZone: 'UTC' })
-  return (
-    <div className="grid gap-[3px]" style={{ gridTemplateColumns: `14px repeat(${weeks.length}, minmax(0, 1fr))` }} aria-hidden="true" data-testid="heatmap">
-      {Array.from({ length: 7 }, (_, day) => [
-        <span key={`label-${day}`} className="flex items-center text-caption leading-none text-muted-foreground">
-          {/* 2024-01-01 was a Monday. */}
-          {day % 2 === 0 ? narrow.format(new Date(Date.UTC(2024, 0, 1 + day))) : ''}
-        </span>,
-        ...weeks.map((week, w) => {
-          const cell = week[day]!
-          return (
-            <span
-              key={`${w}-${day}`}
-              className="block aspect-square rounded-[3px]"
-              data-level={cell.future ? undefined : cell.level}
-              data-today={cell.today || undefined}
-              style={levelStyle(cell.level, { today: cell.today, future: cell.future })}
-            />
-          )
-        }),
-      ])}
-    </div>
-  )
-}
-
 function Bar({ share, color }: { share: number; color: string }) {
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-2)]">
@@ -117,107 +62,16 @@ function Bar({ share, color }: { share: number; color: string }) {
   )
 }
 
+/** The projection's colour: warn when it falls short of the goal, pos when it lands on it or over. */
+function projectionColor(hero: ProgressHubView['hero']): string {
+  const projected = hero.projection?.yearKm
+  if (projected === undefined || hero.goalKm === null) return 'var(--pos)'
+  return projected < hero.goalKm ? 'var(--warn)' : 'var(--pos)'
+}
+
 /** A shoe's bar and tag (v4.17): the accent while it has life, warn from Replace soon. */
 function shoeColor(status: WearStatus): string {
   return WEAR_COLOR[status]
-}
-
-const CHART_W = 1000
-const CHART_H = 110
-/** The months named under the year chart (3.0): the quarters, and December at the end. */
-const TICK_MONTHS = [0, 3, 6, 9, 11]
-
-function path(points: YearPoint[], x: (day: number) => number, y: (km: number) => number): string {
-  return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(p.day).toFixed(1)} ${y(p.km).toFixed(1)}`).join(' ')
-}
-
-/** The projection's colour: warn when it falls short of the goal, pos when it lands on it or over. */
-function projectionColor(hero: ProgressHubView['hero']): string {
-  return hero.projection && hero.goalKm !== null && hero.projection.yearKm < hero.goalKm ? 'var(--warn)' : 'var(--pos)'
-}
-
-/** The year chart's y-axis (3.0.2): zero, a third, two thirds and the goal - or the chart's top without one. */
-export function yearTicks(goalKm: number | null, top: number): number[] {
-  const end = goalKm ?? top
-  return [0, end / 3, (end * 2) / 3, end].map(Math.round)
-}
-
-/**
- * The year's cumulative km (3.0): the athlete's own line in the accent, the
- * projection to 31 December dashed in its verdict colour, the goal a dotted
- * straight line from zero to its labelled end. Since 3.0.2 the gridlines are
- * the y-axis ticks, each named in the gutter.
- */
-function YearChart({ hero, year }: { hero: ProgressHubView['hero']; year: number }) {
-  const h = t.profile.hub
-  const last = hero.current.at(-1) ?? { day: 0, km: 0 }
-  const top = Math.max(hero.goalKm ?? 0, hero.projection?.yearKm ?? 0, last.km, 1)
-  const x = (day: number) => (day / hero.daysInYear) * CHART_W
-  const y = (km: number) => CHART_H - 2 - (km / top) * (CHART_H - 8)
-  const at = (km: number) => `${((y(km) / CHART_H) * 100).toFixed(2)}%`
-  const ticks = yearTicks(hero.goalKm, top)
-  const months = new Intl.DateTimeFormat(t.locale, { month: 'short', timeZone: 'UTC' })
-  const dayOf = (month: number) => Math.round((Date.UTC(year, month, 1) - Date.UTC(year, 0, 1)) / 86_400_000)
-
-  return (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 pt-2.5">
-      <div className="relative h-[110px] text-right text-caption leading-none text-muted-foreground tabular-nums" aria-hidden="true" data-testid="year-y-ticks">
-        {/* The widest label holds the gutter open; the others sit on their lines. */}
-        <span className="invisible">{formatKm(Math.max(...ticks))}</span>
-        {ticks.map((km, i) => (
-          <span key={i} className="absolute right-0 -translate-y-1/2" style={{ top: at(km) }}>
-            {formatKm(km)}
-          </span>
-        ))}
-      </div>
-      <div className="relative">
-        <svg viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="block h-[110px] w-full" preserveAspectRatio="none" aria-hidden="true" data-testid="year-chart">
-          {ticks.map((km, i) => (
-            <line key={i} x1={0} x2={CHART_W} y1={y(km)} y2={y(km)} stroke="var(--border)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
-          ))}
-          {hero.goalKm !== null && (
-            <line x1={0} y1={y(0)} x2={CHART_W} y2={y(hero.goalKm)} stroke="var(--muted-foreground)" strokeWidth={1.2} strokeDasharray="1 4" strokeLinecap="round" vectorEffect="non-scaling-stroke" data-testid="goal-line" />
-          )}
-          {hero.projection && (
-            <line
-              x1={x(last.day)}
-              y1={y(last.km)}
-              x2={CHART_W}
-              y2={y(hero.projection.yearKm)}
-              stroke={projectionColor(hero)}
-              strokeWidth={1.6}
-              strokeDasharray="5 5"
-              vectorEffect="non-scaling-stroke"
-              data-testid="projection-path"
-            />
-          )}
-          <path d={path(hero.current, x, y)} fill="none" stroke="var(--accent)" strokeWidth={2.4} strokeLinejoin="round" vectorEffect="non-scaling-stroke" data-testid="current-line" />
-        </svg>
-        {hero.goalKm !== null && (
-          // Over the goal line's end, in the headroom the grid leaves above the chart.
-          <span className="absolute right-0 -translate-y-full whitespace-nowrap text-caption leading-none text-muted-foreground" style={{ top: `calc(${at(hero.goalKm)} - 3px)` }} aria-hidden="true" data-testid="goal-label">
-            {h.goalLabel(formatKm(hero.goalKm))}
-          </span>
-        )}
-      </div>
-      <span aria-hidden="true" />
-      <div className="relative mt-2 h-3.5 text-caption leading-[14px] text-muted-foreground" aria-hidden="true" data-testid="year-ticks">
-        {TICK_MONTHS.map((month, i) => {
-          const edge = i === 0 ? 'left' : i === TICK_MONTHS.length - 1 ? 'right' : null
-          const left = `${((dayOf(month) / hero.daysInYear) * 100).toFixed(2)}%`
-          return (
-            <span
-              key={month}
-              className={cn('absolute whitespace-nowrap', !edge && '-translate-x-1/2')}
-              style={edge === 'left' ? { left: 0 } : edge === 'right' ? { right: 0 } : { left }}
-            >
-              {months.format(new Date(Date.UTC(year, month, 1))).replace(/\.$/, '')}
-            </span>
-          )
-        })}
-      </div>
-    </div>
-  )
 }
 
 /** One figure of the race's Target · Predicted · Gap row: its label in caps over the time. */
@@ -294,9 +148,9 @@ function YearCard({ view }: { view: ProgressHubView }) {
   const projection = hero.projection
   const shortKm = projection && hero.goalKm !== null ? projection.yearKm - hero.goalKm : null
   return (
-    <Link href="/goals" className={cardClass({ className: cn('flex flex-col gap-3', LINK_CARD) })} data-testid="year-hero">
+    <Link href="/goals" className={cardClass({ className: cn('relative flex flex-col gap-3 pr-10', LINK_CARD) })} data-testid="year-hero">
       <div className="flex items-baseline justify-between gap-3">
-        <span className={TITLE}>{h.yearTitle(view.year)}</span>
+        <span className={TITLE}>{h.goalsSeason}</span>
         {hero.deltaKm !== null && (
           // Coloured by what it means, against the km it is measured on.
           <span className="text-right text-xs" data-testid="year-delta" style={{ color: deltaColor('distance', hero.deltaKm, { value: hero.compareKm ?? hero.km }) }}>
@@ -312,7 +166,6 @@ function YearCard({ view }: { view: ProgressHubView }) {
           {hero.goalKm !== null ? h.ofGoal(formatKm(hero.goalKm)) : t.units.km}
         </span>
       </p>
-      <YearChart hero={hero} year={view.year} />
       {hero.goalKm !== null && (
         // The verdict in its tone, then what the goal needs (C3, 3.0), then
         // what the dotted line is (3.0.2).
@@ -326,9 +179,9 @@ function YearCard({ view }: { view: ProgressHubView }) {
               {h.needs(formatKm(projection.weeklyNeeded), formatKm(projection.weeklyRate))}{' '}
             </>
           )}
-          <span className="text-muted-foreground" data-testid="goal-line-note">{h.goalLine}</span>
         </p>
       )}
+      <ChevronRight size={16} aria-hidden="true" className="absolute right-4 top-4 text-muted-foreground" />
     </Link>
   )
 }
@@ -339,10 +192,11 @@ function YearCard({ view }: { view: ProgressHubView }) {
  * Four 2×2 tiles took a screen's worth of height for four numbers. The
  * whole card opens Records.
  */
-function Records({ records }: { records: ProgressHubView['records'] }) {
+function Records({ records, vo2max }: { records: ProgressHubView['records']; vo2max: ProgressHubView['vo2max'] }) {
   const h = t.profile.hub
   return (
-    <Link href="/records" className={cardClass({ className: cn('flex flex-col gap-3', LINK_CARD) })} data-testid="records-tile">
+    <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="records-tile">
+      <Link href="/records" className={cn('flex flex-col gap-3', LINK_CARD)}>
       <div className="flex items-center justify-between gap-2">
         <span className={TITLE}>{h.records}</span>
         <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
@@ -366,7 +220,32 @@ function Records({ records }: { records: ProgressHubView['records'] }) {
           ))}
         </dl>
       )}
-    </Link>
+      </Link>
+      {/* VO2 max reads as a line of the same card (App Fixes 1h), and opens
+          Athlete & zones, where the grade lives. */}
+      {vo2max && (
+        <Link
+          href="/athlete"
+          className={cn('flex items-baseline justify-between gap-3 border-t border-border pt-2.5', LINK_CARD)}
+          data-testid="vo2-row"
+        >
+          <span className="min-w-0 text-[13px] text-muted-foreground text-pretty">
+            {h.vo2max}{' '}
+            <b className="font-semibold tabular-nums text-foreground">{formatDecimal(vo2max.value, 1)}</b>
+            {vo2max.grade && ` · ${vo2max.grade.letter}`}
+            {vo2max.grade?.topPercent != null && ` · ${t.vo2Grade.topPct(vo2max.grade.topPercent)}`}
+          </span>
+          <span className="flex shrink-0 items-center gap-1">
+            {vo2max.delta !== null && (
+              <span className="text-xs tabular-nums" data-testid="vo2-delta" style={{ color: deltaColor('vo2max', vo2max.delta) }}>
+                {h.vo2Delta(formatDelta(vo2max.delta))}
+              </span>
+            )}
+            <ChevronRight size={14} aria-hidden="true" className="text-muted-foreground" />
+          </span>
+        </Link>
+      )}
+    </section>
   )
 }
 
@@ -381,7 +260,6 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
   const h = t.profile.hub
   const { vo2max, consistency, shoes, allTime } = view
   const days = h.consistencyDays(consistency.activeDays)
-  const streak = h.consistencyStreak(consistency.streakWeeks)
   const bestYearKm = Math.max(1, ...allTime.years.slice(-2).map((y) => y.km))
 
   return (
@@ -402,40 +280,26 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
 
       <RaceCard race={view.race} />
       <YearCard view={view} />
-      <Records records={view.records} />
+      <Records records={view.records} vo2max={vo2max} />
 
       {/* VO2 max and Consistency side by side on a wide screen, stacked on a
           phone; then the shoes and all time (as before 3.0). */}
       <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2 sm:items-start" data-testid="progress-columns">
-        <Tile href="/athlete" title={h.vo2max} testId="vo2-tile">
-          {vo2max ? (
-            <>
-              <p className="flex flex-wrap items-baseline gap-x-1.5">
-                <span className="text-[26px] font-semibold leading-tight text-foreground">{vo2max.value}</span>
-                {vo2max.delta !== null && (
-                  <span className="text-xs" data-testid="vo2-delta" style={{ color: deltaColor('vo2max', vo2max.delta) }}>
-                    {h.vo2Delta(formatDelta(vo2max.delta))}
-                  </span>
-                )}
-              </p>
-              <Sparkline values={vo2max.series} />
-              <Segments
-                testId="vo2-footer"
-                parts={h.thresholdParts(vo2max.thresholdPaceSecPerKm ? formatDuration(vo2max.thresholdPaceSecPerKm) : null, vo2max.lthrBpm)}
-              />
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">–</p>
-          )}
-        </Tile>
         <Tile href="/consistency" title={h.consistency} testId="consistency-tile">
-          <MiniCalendar weeks={consistency.weeks} />
+          {/* The weekly streak, as Consistency itself now reads the year
+              (3.1.0, App Fixes 1h): the daily heatmap this tile drew was the
+              one the page had already dropped. */}
+          <p className="flex flex-wrap items-baseline gap-x-1.5">
+            <span className="text-[26px] font-semibold leading-tight tabular-nums text-foreground" data-testid="streak-weeks">
+              {consistency.streakWeeks}
+            </span>
+            <span className="text-xs text-muted-foreground text-pretty">{h.streakOf(consistency.thisWeek.target)}</span>
+          </p>
           <Segments
             testId="consistency-footer"
             parts={[
-              h.consistencyWindow,
+              <>{h.runsThisWeek(consistency.thisWeek.runs, consistency.thisWeek.target)}</>,
               <>{days.lead}<b className="font-semibold text-foreground">{days.value}</b>{days.tail}</>,
-              <>{streak.lead}<b className="font-semibold text-foreground">{streak.value}</b>{streak.tail}</>,
             ]}
           />
         </Tile>

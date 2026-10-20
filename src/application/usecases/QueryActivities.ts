@@ -2,13 +2,22 @@ import { getActivities } from './GetActivities'
 import { toActivitySummary } from '@/domain/activity/summary'
 import type { Activity, ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { formatWeekdayLong } from '@/lib/formatters'
+import { isLongSession } from '@/domain/activity/longRun'
 
 export type ActivitySortKey = 'date' | 'distance' | 'duration' | 'pace' | 'avgHr'
 export type ActivitySortOrder = 'asc' | 'desc'
 
+/**
+ * The long run as a filter of its own (App Fixes 3d). The classifier has no
+ * such type - a long run is a Base run - so the query derives it, and a
+ * plain "Base" then means the easy running that is left.
+ */
+export const LONG_RUN_KIND = 'LongRun'
+export type ActivityQueryKind = ActivityType | typeof LONG_RUN_KIND
+
 export interface ActivityQueryParams {
-  /** Runs of these types; null or empty is every run. */
-  types?: readonly ActivityType[] | null
+  /** Runs of these kinds; null or empty is every run. */
+  types?: readonly ActivityQueryKind[] | null
   /** Runs in one pair of shoes: the shoe page's "All 136 ›" (G29). */
   gearId?: string | null
   search?: string
@@ -22,6 +31,13 @@ export interface ActivityQueryResult {
   items: ActivitySummary[]
   total: number
   nextOffset: number | null
+}
+
+/** Whether a run is of a kind the filter asked for. */
+function matchesKind(activity: Activity, kind: ActivityQueryKind): boolean {
+  if (kind === LONG_RUN_KIND) return activity.type === 'Base' && isLongSession(activity)
+  if (kind === 'Base') return activity.type === 'Base' && !isLongSession(activity)
+  return activity.type === kind
 }
 
 function sortValue(a: Activity, key: ActivitySortKey): number {
@@ -51,7 +67,7 @@ export function queryActivities({
   const q = search.trim().toLowerCase()
 
   const filtered = getActivities()
-    .filter((a) => !types?.length || types.includes(a.type))
+    .filter((a) => !types?.length || types.some((kind) => matchesKind(a, kind)))
     .filter((a) => !gearId || a.gearId === gearId)
     .filter(
       (a) =>

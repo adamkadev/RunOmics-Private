@@ -17,6 +17,7 @@ import {
   sortQuery,
   typesLabel,
   type ActivityFilter,
+  type FilterKind,
   type ActivitySort,
 } from './activityFilter'
 import type { ActivitySummary } from '@/domain/activity/types'
@@ -213,6 +214,9 @@ export function ActivityListClient({
   )
 
   const [items, setItems] = useState(initialItems)
+  // How many runs the current filter matches, as the query itself counted
+  // them: the list only holds a page of them (App Fixes 1d).
+  const [matched, setMatched] = useState(totalCount)
   const [nextOffset, setNextOffset] = useState(initialNextOffset)
   const [loadingMore, setLoadingMore] = useState(false)
   const [isPending, setIsPending] = useState(false)
@@ -280,6 +284,7 @@ export function ActivityListClient({
         if (seq !== requestSeq.current) return
         setIsPending(false)
         setItems(result.items)
+        setMatched(result.total)
         setNextOffset(result.nextOffset)
       })
       .catch(() => {
@@ -350,6 +355,9 @@ export function ActivityListClient({
   ].filter((part): part is string => part !== null)
 
   const pickedLabel = typesLabel(filter.types)
+  // What the filter bar names: every run the filter matches, not the page
+  // of them on screen.
+  const countedLabel = t.activities.count(matched)
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -428,6 +436,22 @@ export function ActivityListClient({
                   {shoeNames[gearId] ?? gearId}
                   <X size={14} aria-hidden="true" />
                 </Pill>
+              </div>
+            )}
+
+            {/* What the totals below are counting, and one tap to stop
+                counting it (App Fixes 1d): a week's "45 km" under a filter is
+                the filter's km, and said nothing about it. */}
+            {hasActiveFilter && (
+              <div className="flex items-baseline justify-between gap-3 px-1" data-testid="filter-bar">
+                <p className="min-w-0 text-[13px] text-muted-foreground text-pretty">
+                  {t.activities.filter.showing}{' '}
+                  <b className="font-semibold text-foreground">{countedLabel}</b>
+                  {t.activities.filter.totalsCount}
+                </p>
+                <button type="button" onClick={resetFilters} className="hit-44 shrink-0 text-[13px] font-medium text-accent-text">
+                  {t.activities.filter.clear}
+                </button>
               </div>
             )}
 

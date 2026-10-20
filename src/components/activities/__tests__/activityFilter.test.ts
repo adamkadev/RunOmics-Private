@@ -4,6 +4,7 @@ import {
   ALL_RUNS,
   checkedTypes,
   countByType,
+  LONG_RUN,
   filterTypes,
   matchingCount,
   normalizeTypes,
@@ -34,7 +35,9 @@ describe('the sheet ticks as a filter', () => {
   })
 
   it("is a group's chip when they are exactly its types", () => {
-    expect(normalizeTypes(['Base'])).toEqual({ group: 'easy', types: [] })
+    // Easy is the easy running and the long run (App Fixes 3d).
+    expect(normalizeTypes(['Base', LONG_RUN])).toEqual({ group: 'easy', types: [] })
+    expect(normalizeTypes(['Base'])).toEqual({ group: 'all', types: ['Base'] })
     expect(normalizeTypes(['Sprint', 'Tempo', 'VO2Max', 'Anaerobic', 'Threshold'])).toEqual({ group: 'workouts', types: [] })
     expect(normalizeTypes(['Race'])).toEqual({ group: 'races', types: [] })
   })
@@ -46,18 +49,29 @@ describe('the sheet ticks as a filter', () => {
 
   it('opens the sheet on a group chip with its types ticked', () => {
     expect(checkedTypes({ group: 'workouts', types: [] })).toEqual(['Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint'])
+    // Easy holds the easy running and the long run (App Fixes 3d).
+    expect(checkedTypes({ group: 'easy', types: [] })).toEqual(['Base', LONG_RUN])
     expect(checkedTypes(ALL_RUNS)).toEqual([])
     expect(filterTypes(ALL_RUNS)).toBeNull()
   })
 })
 
 describe('the sheet counts', () => {
-  const counts = countByType([{ type: 'Base' }, { type: 'Base' }, { type: 'Threshold' }, { type: 'HillRepeats' as never }])
+  const run = (type: string, durationSeconds = 2_400, description = '') => ({ type: type as never, durationSeconds, description })
+  const counts = countByType([run('Base'), run('Base'), run('Threshold'), run('HillRepeats')])
 
   it('counts each type, and every run with nothing ticked', () => {
     expect(counts.get('Base')).toBe(2)
     expect(matchingCount(counts, ['Base', 'Threshold', 'Tempo'])).toBe(3)
     expect(matchingCount(counts, [])).toBe(4)
+  })
+
+  // App Fixes 3d: a long run counts as the long run, not as plain easy.
+  it('counts a long Base run under the long run', () => {
+    const withLong = countByType([run('Base'), run('Base', 95 * 60), run('Base', 2_400, 'Long run')])
+    expect(withLong.get('Base')).toBe(1)
+    expect(withLong.get(LONG_RUN)).toBe(2)
+    expect(matchingCount(withLong, ['Base', LONG_RUN])).toBe(3)
   })
 })
 

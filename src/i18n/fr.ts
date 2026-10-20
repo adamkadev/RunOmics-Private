@@ -1121,6 +1121,7 @@ export const fr = {
   activities: {
     searchPlaceholder: 'Cherche une sortie, une note, une date…',
     all: 'Toutes',
+    longRun: 'Sortie longue',
     count: (n: number) => `${n} activité${n > 1 ? 's' : ''}`,
     countWithDistance: (runs: number, km: string) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km`,
     since: (month: string) => `depuis ${month}`,
@@ -1141,6 +1142,10 @@ export const fr = {
       reset: 'Réinitialiser',
       clearTypes: (types: string) => `Effacer le filtre : ${types}`,
       show: (n: number) => `Afficher ${n} sortie${n > 1 ? 's' : ''}`,
+      showAll: (n: number) => `Afficher les ${n} sorties`,
+      showing: 'Affiché :',
+      totalsCount: ' · les totaux ne comptent que celles-ci',
+      clear: 'Effacer',
     },
     sort: {
       label: 'Trier',
@@ -1420,6 +1425,9 @@ export const fr = {
       hrDrift: 'Dérive FC',
       title: 'Intervalles',
       lapTitle: 'Tours',
+      wholeRun: 'Sortie entière',
+      noLapsPressed: "Aucun tour n'a été déclenché sur cette sortie. Les splits au km montrent comment ton allure a évolué.",
+      seeKmSplits: 'Voir les splits au km',
       cols: {
         km: 'Km',
         step: '#',
@@ -1677,6 +1685,9 @@ export const fr = {
   profile: {
     hub: {
       yearTitle: (year: number) => `Distance ${year}`,
+      goalsSeason: 'Objectifs & saison',
+      streakOf: (target: number) => `semaines d'affilée · ${target} sorties et plus`,
+      runsThisWeek: (runs: number, target: number) => `${runs} sur ${target} cette semaine`,
       records: 'Records',
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Semi' } as Record<string, string>,
       newRecord: 'NOUVEAU',
@@ -1752,6 +1763,7 @@ export const fr = {
       fourWeeksSpoken: '4 dernières semaines',
       columnZone: 'Zone',
       columnPace: 'Allure /km',
+      columnShare: '%',
       columnHr: 'Fréq. cardiaque',
       columnHrShort: 'FC',
       columnTime: 'Temps',

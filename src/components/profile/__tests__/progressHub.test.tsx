@@ -1,10 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { t } from '@/i18n'
 import { yearOverYear } from '@/lib/yearOverYear'
 import { cumulativeYear, heatWeeks, progressHubView, raceGapView, type HubInput } from '../progressHubView'
-import { ProgressHub, yearTicks } from '../ProgressHub'
+import { ProgressHub } from '../ProgressHub'
 
 function shoe(overrides: Partial<ShoeStats>): ShoeStats {
   return {
@@ -146,10 +146,6 @@ describe('the hub helpers', () => {
     expect(raceGapView({ ...race, targetSeconds: null })).toBeNull()
   })
 
-  it('ticks the year chart at zero, thirds and the goal', () => {
-    expect(yearTicks(2000, 2100)).toEqual([0, 667, 1333, 2000])
-    expect(yearTicks(null, 1500)).toEqual([0, 500, 1000, 1500])
-  })
 })
 
 describe('ProgressHub (3.0)', () => {
@@ -159,9 +155,10 @@ describe('ProgressHub (3.0)', () => {
     expect(screen.getByTestId('race-tile').getAttribute('href')).toBe('/goals')
     expect(screen.getByTestId('year-hero').getAttribute('href')).toBe('/goals')
     // 3.0.1: the records are one card, its four times side by side.
-    expect(screen.getByTestId('records-tile').getAttribute('href')).toBe('/records')
+    expect(within(screen.getByTestId('records-tile')).getAllByRole('link')[0]!.getAttribute('href')).toBe('/records')
     expect(screen.getAllByTestId('record')).toHaveLength(3)
-    expect(screen.getByTestId('vo2-tile').getAttribute('href')).toBe('/athlete')
+    // App Fixes 1h: VO2 max is a row of the records card, and opens Athlete.
+    expect(screen.getByTestId('vo2-row').getAttribute('href')).toBe('/athlete')
     expect(screen.getByTestId('consistency-tile').getAttribute('href')).toBe('/consistency')
     expect(screen.getByTestId('all-time').getAttribute('href')).toBe('/all-time')
     // v4.17: each pair opens its own page; the card's header opens the list.
@@ -224,20 +221,34 @@ describe('ProgressHub (3.0)', () => {
   // v4.3.1: the footers are whole segments, each kept on its line.
   it('keeps each footer segment whole', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
-    for (const id of ['consistency-footer', 'vo2-footer']) {
-      const footer = screen.getByTestId(id)
-      expect(footer.children.length).toBeGreaterThan(0)
-      for (const segment of footer.children) expect(segment.className).toContain('whitespace-nowrap')
-    }
-    expect(screen.getByTestId('consistency-footer').textContent).toMatch(/\d+ active days in 12 months/)
-    expect(screen.getByTestId('vo2-tile').textContent).toContain(t.profile.hub.vo2Delta('+1'))
+    const footer = screen.getByTestId('consistency-footer')
+    expect(footer.children.length).toBeGreaterThan(0)
+    for (const segment of footer.children) expect(segment.className).toContain('whitespace-nowrap')
+    expect(footer.textContent).toMatch(/\d+ active days in 12 months/)
+    expect(screen.getByTestId('records-tile').textContent).toContain(t.profile.hub.vo2Delta('+1'))
   })
 
-  it('shows this year and last on the All time card, and twelve weeks on Consistency, today outlined', () => {
+  // App Fixes 1h: the hub previews Consistency's own reading - the weekly
+  // streak - rather than drawing a daily heatmap the page itself dropped.
+  it('previews Consistency as the weekly streak and this week against the target', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} />)
+    const tile = screen.getByTestId('consistency-tile')
+    expect(within(tile).getByTestId('streak-weeks').textContent).toBe(String(INPUT.streakWeeks))
+    expect(tile.textContent).toContain(t.profile.hub.streakOf(3))
+    expect(screen.queryByTestId('heatmap')).toBeNull()
+  })
+
+  // App Fixes 1h: Goals owns the distance chart; the hub card is its preview.
+  it('previews Goals without a second distance chart', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} />)
+    const card = screen.getByTestId('year-hero')
+    expect(card.textContent).toContain(t.profile.hub.goalsSeason)
+    expect(within(card).queryByTestId('current-line')).toBeNull()
+  })
+
+  it('shows this year and last on the All time card', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     expect(screen.getAllByTestId('year-row').map((row) => row.textContent)).toEqual([expect.stringContaining('2026'), expect.stringContaining('2025')])
-    expect(screen.getByTestId('heatmap').querySelectorAll('[data-level]').length).toBeGreaterThan(0)
-    expect(screen.getByTestId('heatmap').querySelector<HTMLElement>('[data-today]')!.style.outline).toContain('var(--accent)')
   })
 })
 
@@ -255,21 +266,3 @@ describe('one consistency count (v5.5 #9)', () => {
 })
 
 // v4.17: the accent marks the athlete's own data in charts.
-describe('the year chart (3.0)', () => {
-  it('draws this year in the accent, the projection dashed in its verdict colour and the goal dotted', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    expect(screen.getByTestId('current-line').getAttribute('stroke')).toBe('var(--accent)')
-    expect(screen.getByTestId('projection-path').getAttribute('stroke')).toBe('var(--warn)')
-    expect(screen.getByTestId('goal-line').getAttribute('stroke-dasharray')).toBe('1 4')
-    expect(screen.getByTestId('year-ticks').children).toHaveLength(5)
-  })
-
-  // 3.0.2: the y-axis named, the goal line's end labelled and the dotted line explained.
-  it('names the y-axis ticks and the goal, and says what the dotted line is', () => {
-    render(<ProgressHub view={progressHubView(INPUT)} />)
-    const ticks = [...screen.getByTestId('year-y-ticks').children].slice(1).map((c) => c.textContent)
-    expect(ticks).toEqual(['0', '667', '1,333', '2,000'])
-    expect(screen.getByTestId('goal-label').textContent).toBe(t.profile.hub.goalLabel('2,000'))
-    expect(screen.getByTestId('goal-line-note').textContent).toBe(t.profile.hub.goalLine)
-  })
-})

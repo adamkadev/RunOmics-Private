@@ -8,6 +8,7 @@ import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { activeDaysInYear, dayLevel, type DayLevel } from '@/components/consistency/consistencyRamp'
 import { isPlaceholderRaceName, raceDisplayName } from '@/components/goals/raceName'
 import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
+import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 import { DISTANCE_KEY, EFFORTS } from '@/domain/activity/effort'
 
 /** The Progress hub (H01, M12; 3.0): every figure the page draws, worked out once. */
@@ -45,6 +46,8 @@ export interface ProgressHubView {
     series: number[]
     thresholdPaceSecPerKm: number | null
     lthrBpm: number | null
+    /** The grade and its ranking, the grade card's own (App Fixes 1h). */
+    grade: { letter: string; topPercent: number | null } | null
   } | null
   /** `recent` marks the record set most recently when it is new, set in the last few weeks. */
   records: { key: string; label: string; seconds: number; recent: boolean }[]
@@ -53,6 +56,12 @@ export interface ProgressHubView {
     weeks: HeatCell[][]
     activeDays: number
     streakWeeks: number
+    /**
+     * The week under way against the target a week has to hit to keep the
+     * streak (App Fixes 1h): the hub previews Consistency's own reading
+     * rather than drawing a second daily heatmap of its own.
+     */
+    thisWeek: { runs: number; target: number }
   }
   /** `status` is the pair's wear, as its own page reads it: Replace soon from 70%. */
   shoes: { gearId: string; name: string; km: number; maxKm: number; status: WearStatus }[]
@@ -80,11 +89,19 @@ export interface HubInput {
   goal: ProfileGoal | null
   spotlight: NextRaceSpotlight | null
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
+  /** The grade on screen, where the athlete has one; the hub never grades. */
+  vo2Grade?: { letter: string; topPercent: number | null } | null
   athlete: { lthrBpm?: number | null; thresholdPaceSecPerKm?: number | null }
   records: RecordEntry[]
   heatmapDays: HeatmapDay[]
   streakWeeks: number
   shoes: ShoeStats[]
+}
+
+/** Runs since this week's Monday: the streak tile's "0 of 3 this week". */
+function runsThisWeek(activities: HubInput['activities'], today: string): number {
+  const monday = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
+  return activities.filter((a) => a.date >= monday && a.date <= today).length
 }
 
 const HUB_RECORDS = ['1k', '5k', '10k', 'half']
@@ -213,6 +230,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
       vo2Value !== null
         ? {
             value: Math.round(vo2Value),
+            grade: input.vo2Grade ?? null,
             delta: vo2Window.length >= 2 ? Math.round(vo2Window.at(-1)!.vo2max - vo2Window[0]!.vo2max) : null,
             series: vo2Window.map((s) => s.vo2max),
             thresholdPaceSecPerKm: input.athlete.thresholdPaceSecPerKm ?? null,
@@ -232,6 +250,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
       // rolling 365 days, the page 202 over its twelve month columns.
       activeDays: activeDaysInYear(input.heatmapDays, input.today),
       streakWeeks: input.streakWeeks,
+      thisWeek: { runs: runsThisWeek(input.activities, input.today), target: WEEKLY_RUN_TARGET },
     },
     shoes: input.shoes
       .filter((s) => !s.retired)

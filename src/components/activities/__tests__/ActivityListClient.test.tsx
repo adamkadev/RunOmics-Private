@@ -225,7 +225,10 @@ describe('the filter sheet', () => {
 
   const sheetUser = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   const typeBox = (sheet: HTMLElement, type: ActivityType) =>
-    within(sheet).getByRole('checkbox', { name: new RegExp(t.activityTypes[type]) })
+    within(sheet).getByRole('checkbox', { name: new RegExp(`^${t.activityTypes[type]}`) })
+  /** The long run has a row of its own (App Fixes 3d). */
+  const longRunBox = (sheet: HTMLElement) =>
+    within(sheet).getByRole('checkbox', { name: new RegExp(t.activities.longRun) })
 
   async function openSheet(user: ReturnType<typeof sheetUser>) {
     await user.click(screen.getByRole('button', { name: t.activities.filter.title }))
@@ -238,7 +241,8 @@ describe('the filter sheet', () => {
     const sheet = await openSheet(user)
 
     expect(typeBox(sheet, 'Threshold').textContent).toContain('2')
-    expect(within(sheet).getByRole('button', { name: t.activities.filter.show(4) })).toBeInTheDocument()
+    // Nothing ticked: the button says what it opens (App Fixes 3d).
+    expect(within(sheet).getByRole('button', { name: t.activities.filter.showAll(4) })).toBeInTheDocument()
 
     await user.click(typeBox(sheet, 'Threshold'))
     await user.click(typeBox(sheet, 'VO2Max'))
@@ -269,7 +273,9 @@ describe('the filter sheet', () => {
     const user = sheetUser()
     renderList(archive())
     const sheet = await openSheet(user)
+    // Easy is the easy running and the long run together (App Fixes 3d).
     await user.click(typeBox(sheet, 'Base'))
+    await user.click(longRunBox(sheet))
     await user.click(within(sheet).getByRole('button', { name: t.activities.filter.show(1) }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
@@ -297,7 +303,7 @@ describe('the filter sheet', () => {
     renderList(archive())
     const sheet = await openSheet(user)
     await user.click(within(sheet).getByRole('tab', { name: t.activities.sort.longest }))
-    await user.click(within(sheet).getByRole('button', { name: t.activities.filter.show(4) }))
+    await user.click(within(sheet).getByRole('button', { name: t.activities.filter.showAll(4) }))
 
     await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain('sortBy=distance'))
     expect(new URLSearchParams(window.location.search).get('sort')).toBe('longest')

@@ -1,4 +1,5 @@
 import { act, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import { t } from '@/i18n'
@@ -163,8 +164,10 @@ describe('KmSplits on a continuous run', () => {
   })
 
   // 5c: a long run started from a workout comes as one interval. It is a
-  // steady run, so it opens on its kilometres; the interval is under Laps.
-  it('opens a run kept as one interval on its kilometres, the interval under Laps', () => {
+  // steady run, so it opens on its kilometres. Under Laps it reads as the
+  // whole run, never "Interval" (App Fixes 1c): no laps were pressed.
+  it('opens a run kept as one interval on its kilometres, and calls it the whole run under Laps', async () => {
+    const user = userEvent.setup()
     const autoLaps = [1, 2, 3, 4, 5].map(() => ({ durationSec: 300, distanceM: 1000, avgSpeedMs: 1000 / 300, avgHr: 150 }))
     render(<KmSplits activity={{ ...continuous, splits: [split('interval_active', 1500, 5000, 150, autoLaps)] } as Activity} />)
 
@@ -172,7 +175,14 @@ describe('KmSplits on a continuous run', () => {
     expect(screen.getByRole('tab', { name: t.activity.splits.cols.km })).toHaveAttribute('aria-selected', 'true')
     showLaps()
     expect(screen.queryByTestId('km-split')).toBeNull()
-    expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()
+    const whole = screen.getByTestId('whole-run-lap')
+    expect(within(whole).getByText(t.activity.splits.wholeRun)).toBeInTheDocument()
+    expect(whole.textContent).not.toContain(t.activity.splits.intervalTypes.interval_active!)
+    expect(whole.textContent).toContain(t.activity.splits.noLapsPressed)
+
+    // And it hands the reader back to the kilometres.
+    await user.click(within(whole).getByRole('button', { name: new RegExp(t.activity.splits.seeKmSplits) }))
+    expect(screen.getAllByTestId('km-split')).toHaveLength(5)
   })
 })
 

@@ -1189,6 +1189,8 @@ export const en = {
     // What the search reads: a run's name and notes, its weekday and date.
     searchPlaceholder: 'Search runs, notes, dates…',
     all: 'All',
+    // The long run as its own filter row (App Fixes 3d): a Base run the long-run rule picks out.
+    longRun: 'Long run',
     count: (n: number) => `${n} activit${n !== 1 ? 'ies' : 'y'}`,
     countWithDistance: (runs: number, km: string) => `${runs} run${runs === 1 ? '' : 's'} · ${km} km`,
     since: (month: string) => `since ${month}`,
@@ -1210,6 +1212,12 @@ export const en = {
       reset: 'Reset',
       clearTypes: (types: string) => `Clear the filter: ${types}`,
       show: (n: number) => `Show ${n} run${n === 1 ? '' : 's'}`,
+      // With nothing picked the button says so, rather than a bare count (App Fixes 3d).
+      showAll: (n: number) => `Show all ${n} runs`,
+      // The bar over a filtered list (App Fixes 1d): what the totals count.
+      showing: 'Showing',
+      totalsCount: ' · totals count these only',
+      clear: 'Clear',
     },
     sort: {
       label: 'Sort',
@@ -1488,6 +1496,11 @@ export const en = {
     splits: {
       title: 'Intervals',
       lapTitle: 'Laps',
+      // A run the watch kept as one lap (App Fixes 1c): no laps were pressed,
+      // so it is named for what it is and sends the reader to the kilometres.
+      wholeRun: 'Whole run',
+      noLapsPressed: 'No laps pressed on this run. Km splits show how your pace changed.',
+      seeKmSplits: 'See km splits',
       // The footer under the kilometres (3.0.2): the fastest km, and the
       // second half against the first.
       fastest: 'Fastest',
@@ -1811,6 +1824,11 @@ export const en = {
     hub: {
       // 3.0: the race, the year card, the records, then a row for each Progress page.
       yearTitle: (year: number) => `${year} distance`,
+      // The hub's cards preview their pages (App Fixes 1h): the year card is
+      // the way into Goals, not a second copy of its chart.
+      goalsSeason: 'Goals & season',
+      streakOf: (target: number) => `week streak · ${target}+ runs`,
+      runsThisWeek: (runs: number, target: number) => `${runs} of ${target} this week`,
       records: 'Records',
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Half' } as Record<string, string>,
       // The record set most recently, tagged while it is new (v4.3.3, 3.0).
@@ -1897,6 +1915,8 @@ export const en = {
       fourWeeksSpoken: 'Last 4 weeks',
       columnZone: 'Zone',
       columnPace: 'Pace /km',
+      // The share column (App Fixes 1e), where a 1 % zone has room for it.
+      columnShare: '%',
       columnHr: 'Heart rate',
       columnHrShort: 'HR',
       columnTime: 'Time',

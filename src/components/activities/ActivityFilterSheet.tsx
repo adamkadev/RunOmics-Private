@@ -11,15 +11,15 @@ import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { FILTER_GROUPS, SORT_IDS, matchingCount, type ActivitySort } from './activityFilter'
+import { FILTER_GROUPS, LONG_RUN, SORT_IDS, kindLabel, matchingCount, type ActivitySort, type FilterKind } from './activityFilter'
 
 interface Props {
   /** The types ticked when the sheet opens: the picked types, or the chip's group. */
-  types: ActivityType[]
+  types: FilterKind[]
   sort: ActivitySort
   /** Runs per type across the archive. */
   counts: ReadonlyMap<string, number>
-  onApply: (types: ActivityType[], sort: ActivitySort) => void
+  onApply: (types: FilterKind[], sort: ActivitySort) => void
   onClose: () => void
 }
 
@@ -32,7 +32,7 @@ const GROUPS = Object.keys(FILTER_GROUPS) as (keyof typeof FILTER_GROUPS)[]
 export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: Props) {
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
   const trapRef = useFocusTrap<HTMLDivElement>()
-  const [picked, setPicked] = useState<ActivityType[]>(types)
+  const [picked, setPicked] = useState<FilterKind[]>(types)
   const [pendingSort, setPendingSort] = useState<ActivitySort>(sort)
   const sortTabs = useSegmentedTabs({ ids: SORT_IDS, value: pendingSort, onChange: setPendingSort })
   const f = t.activities.filter
@@ -45,7 +45,7 @@ export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: P
 
   useScrollLock()
 
-  const toggle = (type: ActivityType) =>
+  const toggle = (type: FilterKind) =>
     setPicked((prev) => (prev.includes(type) ? prev.filter((p) => p !== type) : [...prev, type]))
 
   return createPortal(
@@ -100,6 +100,8 @@ export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: P
               <ul>
                 {FILTER_GROUPS[group].map((type) => {
                   const checked = picked.includes(type)
+                  // The long run takes the easy run's dot: it is one (App Fixes 3d).
+                  const dotType = type === LONG_RUN ? 'Base' : type
                   return (
                     <li key={type} className="border-b border-border last:border-b-0">
                       <button
@@ -118,8 +120,8 @@ export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: P
                         >
                           {checked && <Check size={14} strokeWidth={3} />}
                         </span>
-                        <TypeDot type={type} size={7} />
-                        <span className="min-w-0 flex-1 truncate text-[15px] text-foreground">{t.activityTypes[type]}</span>
+                        <TypeDot type={dotType} size={7} />
+                        <span className="min-w-0 flex-1 truncate text-[15px] text-foreground">{kindLabel(type)}</span>
                         <span className="text-[13px] tabular-nums text-muted-foreground">{counts.get(type) ?? 0}</span>
                       </button>
                     </li>
@@ -139,7 +141,8 @@ export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: P
             }}
             className="h-[50px] w-full rounded-[25px] bg-accent text-[16px] font-semibold text-accent-foreground transition-transform active:scale-[0.98]"
           >
-            {f.show(matchingCount(counts, picked))}
+            {/* With nothing ticked the button says what it opens, not a bare count (App Fixes 3d). */}
+            {picked.length === 0 ? f.showAll(matchingCount(counts, picked)) : f.show(matchingCount(counts, picked))}
           </button>
         </div>
       </div>

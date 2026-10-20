@@ -16,8 +16,13 @@ type View = 'week' | 'recent'
 const VIEWS = ['week', 'recent'] as const
 const HR_PERCENTS = [0.65, 0.8, 0.89, 0.95, 1.0]
 
-/** Zone, pace, HR and time: one grid for the header and every row, the prototype's widths from sm up. */
-const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.75rem_3.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_110px_90px_70px] sm:gap-3'
+/**
+ * Zone, HR, share and time: one grid for the header and every row (App Fixes
+ * 1e). The share moved out from under the bar, where a zone of 1 % had no
+ * room to print it; each zone's pace range reads under its name, so the
+ * table keeps it without a fifth column.
+ */
+const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_3.75rem_2.5rem_3.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_90px_60px_70px] sm:gap-3'
 
 /** No zone with time in it draws narrower than this share of the bar (3.0 1j), so 1 % still shows. */
 const MIN_SEGMENT_PCT = 3
@@ -149,14 +154,12 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
               </p>
             </div>
             {/* Z1 to Z5 as one bar, 3 pt apart, each as wide as its share and
-                no narrower than 3 %, its share under it. */}
+                no narrower than 3 %. The shares are read in the table under
+                it, where a 1 % zone has room for its number (App Fixes 1e). */}
             <div className="flex gap-[3px]" data-testid="zone-stack">
               {segments.map((z) => (
-                <div key={z.zone} data-zone={z.zone} className="flex min-w-0 flex-col items-center gap-1.5" style={{ flexGrow: z.flex, flexBasis: 0 }}>
+                <div key={z.zone} data-zone={z.zone} className="flex min-w-0 flex-col" style={{ flexGrow: z.flex, flexBasis: 0 }}>
                   <span className="h-2 w-full rounded-full" style={{ background: `var(--zone-${z.zone})` }} />
-                  <span className="whitespace-nowrap text-[11px] tabular-nums text-muted-foreground" data-testid="zone-pct">
-                    {formatPercent(z.pct)}
-                  </span>
                 </div>
               ))}
             </div>
@@ -169,16 +172,17 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
             data-testid="zone-columns"
           >
             <span>{s.columnZone}</span>
-            <span className="whitespace-nowrap text-right">{s.columnPace}</span>
             <span className="whitespace-nowrap text-right">
               <span className="sm:hidden">{s.columnHrShort}</span>
               <span className="hidden sm:inline">{s.columnHr}</span>
             </span>
+            <span className="text-right">{s.columnShare}</span>
             <span className="text-right">{s.columnTime}</span>
           </div>
 
           {zones.map(({ zone, min, max, pace }) => {
             const seconds = timeByZone.get(zone)?.seconds ?? 0
+            const share = segments.find((z) => z.zone === zone)?.pct ?? null
             const paceLabel =
               zone === 1
                 ? warmupPaceSecPerKm !== null
@@ -193,12 +197,21 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
                 <span className="flex min-w-0 items-center gap-2 text-[13px] text-foreground">
                   <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: `var(--zone-${zone})` }} />
                   {/* Wraps on a narrow phone rather than "Z4 Thres…" (v4.17.2). */}
-                  <span className="min-w-0">
-                    <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
+                  <span className="flex min-w-0 flex-col">
+                    <span className="min-w-0">
+                      <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
+                    </span>
+                    {paceLabel !== '-' && (
+                      <span className="text-[11px] tabular-nums text-muted-foreground" data-testid="zone-pace">
+                        {paceLabel} {t.units.perKm}
+                      </span>
+                    )}
                   </span>
                 </span>
-                <span className="text-right text-xs tabular-nums text-[var(--text-2)]">{paceLabel}</span>
                 <span className="text-right text-xs tabular-nums text-[var(--text-2)]">{bpmRangeLabel(min, max)}</span>
+                <span className="text-right text-xs tabular-nums text-[var(--text-2)]" data-testid="zone-pct">
+                  {share === null ? '-' : formatPercent(share)}
+                </span>
                 <span className="text-right text-xs font-semibold tabular-nums text-foreground">{zoneTimeLabel(seconds)}</span>
               </div>
             )

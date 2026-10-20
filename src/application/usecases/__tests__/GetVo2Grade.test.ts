@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Vo2maxNorms } from '@/domain/athlete/vo2maxNorms'
+import { gradeLadder } from '@/domain/athlete/vo2Grade'
 import { buildVo2Grade, type Vo2GradeInput } from '../GetVo2Grade'
 
 const T = { fair: 41.7, good: 45.4, excellent: 51.1, superior: 55.4 }
@@ -24,6 +25,15 @@ describe('buildVo2Grade (v5.3)', () => {
   it('grades the value on screen, with the gap to the next grade', () => {
     const view = buildVo2Grade(input({ samples: [{ date: '2026-08-01', vo2max: 54.8 }] }))
     expect(view).toMatchObject({ status: 'graded', grade: 'A', value: 55, floor: 54.5, next: { grade: 'A+', min: 55.4, gap: 0.4 }, band: { sex: 'male', bracket: '20-29' } })
+  })
+
+  // App Fixes 1e: the ranking is the grade's own row of the table, so the
+  // card's "Top 5%" and the A+ row cannot drift apart while the grade holds.
+  it('ranks the athlete by the grade\'s band, not the raw percentile', () => {
+    const ladder = gradeLadder(29, 'male', NORMS)
+    const view = buildVo2Grade(input({ value: 57, samples: [{ date: '2026-08-01', vo2max: 56.8 }] }))
+    expect(view.status === 'graded' && view.grade).toBe('A+')
+    expect(view.status === 'graded' && view.topPercent).toBe(ladder.find((b) => b.grade === 'A+')!.topPercent)
   })
 
   it('reports a level-up for three days only, and never a steady grade', () => {

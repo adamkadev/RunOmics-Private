@@ -38,6 +38,9 @@ const NUMBERED_TYPES = new Set(['interval_active', 'lap'])
 const ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem]'
 const ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem_1.75rem]'
 
+/** A supporting cell of a lap row: the numbers that are not the duration. */
+const MUTED_CELL = 'text-xs tabular-nums text-[var(--text-2)]'
+
 function paceStr(avgSpeedMs: number): string {
   if (avgSpeedMs <= 0) return '-'
   return formatClock(Math.round(1000 / avgSpeedMs))
@@ -169,6 +172,50 @@ function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits:
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * A run the watch kept as a single lap (App Fixes 1c): nobody pressed the
+ * lap button, so there are no laps to list. It says so and offers the
+ * kilometres instead - it used to draw one row headed "Intervals" and typed
+ * "Interval", which named a session the run never was.
+ */
+function WholeRunLap({ split, bare = false, onKmSplits }: { split: ActivitySplit; bare?: boolean; onKmSplits?: () => void }) {
+  const sp = t.activity.splits
+  const showHr = split.avgHr !== null
+  const rowCls = showHr ? ROW_HR : ROW_NO_HR
+  return (
+    <section className={bare ? 'flex flex-col gap-3' : cardClass({ className: 'flex flex-col gap-3' })} data-testid="whole-run-lap">
+      {!bare && <h3 className="text-[15px] font-semibold text-foreground">{sp.lapTitle}</h3>}
+      <div className="w-full space-y-0.5">
+        <div className={`${rowCls} pb-1.5 text-caption uppercase tracking-[0.06em] text-muted-foreground`}>
+          <span className="truncate">{sp.cols.step}</span>
+          <span className="truncate">{sp.cols.type}</span>
+          <span className="truncate">{sp.cols.duration}</span>
+          <span className="truncate">{sp.cols.dist}</span>
+          <span className="truncate">{sp.cols.pace}</span>
+          {showHr && <span className="truncate">{sp.cols.hr}</span>}
+        </div>
+        <div className={`${rowCls} rounded-md px-1 py-1.5`}>
+          <span />
+          <span className="truncate text-xs font-semibold text-foreground">{sp.wholeRun}</span>
+          <span className="text-xs tabular-nums">{formatDuration(split.durationSec)}</span>
+          <span className={MUTED_CELL}>{distStr(split.distanceM)}</span>
+          <span className={MUTED_CELL}>{paceStr(split.avgSpeedMs)}</span>
+          {showHr && <span className={MUTED_CELL}>{split.avgHr ?? '-'}</span>}
+        </div>
+      </div>
+      <p className="text-xs leading-snug text-muted-foreground text-pretty">
+        {sp.noLapsPressed}{' '}
+        {onKmSplits && (
+          <button type="button" onClick={onKmSplits} className="inline-flex items-center gap-0.5 font-medium text-accent-text">
+            {sp.seeKmSplits}
+            <ChevronRight size={13} strokeWidth={2.2} aria-hidden className="shrink-0" />
+          </button>
+        )}
+      </p>
+    </section>
   )
 }
 
@@ -317,7 +364,15 @@ export function KmSplits({ activity }: Props) {
   // interval a run was started as, its auto laps folded under it.
   const lapRows = lapsOnly ? laps : splits
   const hasLaps = set !== null || lapRows.length > 1 || (lapRows[0]?.laps.length ?? 0) > 1
-  const lapsView = set ? <IntervalSet set={set} bare={hasKm} /> : <LapTable splits={lapRows.length > 1 ? lapRows : splits} bare={hasKm} />
+  // One lap and no rep set: the watch recorded the run whole (App Fixes 1c).
+  const wholeRun = set === null && lapRows.length === 1 ? lapRows[0]! : null
+  const lapsView = set ? (
+    <IntervalSet set={set} bare={hasKm} />
+  ) : wholeRun ? (
+    <WholeRunLap split={wholeRun} bare={hasKm} onKmSplits={hasKm ? () => setView('km') : undefined} />
+  ) : (
+    <LapTable splits={lapRows.length > 1 ? lapRows : splits} bare={hasKm} />
+  )
 
   if (!hasKm) return lapsView
 
