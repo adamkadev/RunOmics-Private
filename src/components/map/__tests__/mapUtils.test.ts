@@ -7,6 +7,7 @@ import {
   HEAT_DARK_CAP_ALPHA,
   HEAT_STYLE,
   heatLineWidth,
+  heatLightFloor,
   heatPasses,
   rgba,
   reachKm,
@@ -17,6 +18,8 @@ import {
 } from '../mapUtils'
 import { distanceKm } from '@/lib/math'
 import { heatRamp } from '@/lib/heatRamp'
+import { CURATED_ACCENTS } from '@/lib/accentScale'
+import { hexToOklch } from '@/lib/oklch'
 import type { RouteCluster, RouteMeta } from '@/application/usecases/GetAllRoutes'
 
 const meta = (over: Partial<RouteMeta> = {}): RouteMeta => ({
@@ -135,7 +138,7 @@ describe('HEAT_STYLE (v4.17)', () => {
     expect(heatPasses('dark', '#2dd4a7').map((p) => p.color)).toEqual(['rgba(45,212,167,0.035)', 'rgba(45,212,167,0.16)'])
     const { light, deep } = heatRamp('#0e7f9b')
     const passes = heatPasses('light', '#0e7f9b')
-    expect(passes.map((p) => p.color)).toEqual([rgba(light, 0.09), rgba(light, 0.2), rgba('#0e7f9b', 0.34), rgba(deep, 0.46)])
+    expect(passes.map((p) => p.color)).toEqual([rgba(light, 0.05), rgba(light, 0.11), rgba('#0e7f9b', 0.18), rgba(deep, 0.24)])
     expect(passes[0]!.blur).toBe(6)
     expect(passes.slice(1).every((p) => p.blur === undefined)).toBe(true)
   })
@@ -146,6 +149,23 @@ describe('HEAT_STYLE (v4.17)', () => {
   it('caps the dark canvas at the accent rather than letting it reach white', () => {
     expect(HEAT_DARK_CAP_ALPHA).toBeGreaterThan(0)
     expect(HEAT_DARK_CAP_ALPHA).toBeLessThan(1)
+  })
+
+  // App Fixes 4a: multiply compounds, so the light canvas ran past the deep
+  // shade to near-black. The floor is the accent half way to the ink, and no
+  // amount of overlap goes darker than it.
+  it('floors the light canvas at the accent half way to the ink', () => {
+    for (const accent of CURATED_ACCENTS) {
+      const floor = heatLightFloor(accent.light.acc)
+      const { l } = hexToOklch(floor)
+      // Darker than the deepest pass draws, and still a colour, not black.
+      expect(l).toBeLessThan(hexToOklch(heatRamp(accent.light.acc).deep).l)
+      expect(l).toBeGreaterThan(0.3)
+    }
+  })
+
+  it('keeps every light pass light enough that one run reads as a tint', () => {
+    for (const pass of heatPasses('light', '#0e7f9b')) expect(pass.color).toMatch(/0\.(0|1|2)\d*\)$/)
   })
 
   it('reads a short hex too', () => {

@@ -173,11 +173,15 @@ export const HEAT_STYLE = {
   },
   light: {
     composite: "multiply",
+    // Softer than the first pass at this (App Fixes 4a): multiply compounds,
+    // so four heavy passes made one run look like twenty and a busy street
+    // black. A run should read as a tint and only a street run week after
+    // week as ink.
     passes: [
-      { width: 5, alpha: 0.09, tone: "halo", blur: 6 },
-      { width: 2.2, alpha: 0.2, tone: "tint" },
-      { width: 1.3, alpha: 0.34, tone: "accent" },
-      { width: 0.8, alpha: 0.46, tone: "deep" },
+      { width: 5, alpha: 0.05, tone: "halo", blur: 6 },
+      { width: 2.2, alpha: 0.11, tone: "tint" },
+      { width: 1.3, alpha: 0.18, tone: "accent" },
+      { width: 0.8, alpha: 0.24, tone: "deep" },
     ],
   },
 } as const satisfies Record<"dark" | "light", {
@@ -209,6 +213,36 @@ export function heatToneColor(mode: "dark" | "light", accent: string, tone: Heat
  * ceiling, as they were.
  */
 export const HEAT_DARK_CAP_ALPHA = 0.55;
+
+/** The ink the light floor mixes towards: near-black, with the map's green cast. */
+const HEAT_INK = "#06100d";
+
+/** From one colour to another, channel by channel. */
+function mixHex(from: string, to: string, t: number): string {
+  const a = parseInt(from.slice(1), 16);
+  const b = parseInt(to.slice(1), 16);
+  const ch = (shift: number) => Math.round((((a >> shift) & 255) * (1 - t) + ((b >> shift) & 255) * t));
+  return `#${[16, 8, 0].map((shift) => ch(shift).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/**
+ * How far past its own deep stop the floor sits: a shade, so the busiest
+ * ground still reads as darker than the pass that draws it.
+ */
+const HEAT_FLOOR_MIX = 0.25;
+
+/**
+ * How dark the light heatmap is allowed to get (App Fixes 4a). Multiply
+ * compounds with every overlapping run, so a city centre bottomed out at
+ * near-black and the ramp said nothing above its second-busiest street. The
+ * floor is a shade under the ramp's own deep stop - about the accent half
+ * way to the ink - and the busiest ground sits on it instead of going past
+ * it. It is built from the ramp, not the accent, so the near-black mono
+ * accent floors on graphite like its tracks do.
+ */
+export function heatLightFloor(accent: string): string {
+  return mixHex(heatRamp(accent).deep, HEAT_INK, HEAT_FLOOR_MIX);
+}
 
 export function heatPasses(mode: "dark" | "light", accent: string): HeatPass[] {
   return HEAT_STYLE[mode].passes.map((pass) => ({

@@ -1,7 +1,7 @@
 "use client";
 
 import type { CanvasSource, Coordinates, Map as MapLibreMap } from "maplibre-gl";
-import { HEAT_DARK_CAP_ALPHA, HEAT_STYLE, heatLineWidth, heatPasses, mercatorX, mercatorY, rgba } from "./mapUtils";
+import { HEAT_DARK_CAP_ALPHA, HEAT_STYLE, heatLightFloor, heatLineWidth, heatPasses, mercatorX, mercatorY, rgba } from "./mapUtils";
 
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
@@ -35,6 +35,9 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
   const passes = heatPasses(mode, accent);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
+  /** Holds what was drawn while the light floor is applied, for its shape. */
+  const maskCanvas = mode === "light" ? document.createElement("canvas") : null;
+  const floor = heatLightFloor(accent);
 
   let tracks: Float64Array[] = [];
   /** Tracks already on the canvas: a reveal adds to them, a redraw repeats them. */
@@ -120,6 +123,30 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       ctx.fillStyle = rgba(accent, HEAT_DARK_CAP_ALPHA);
       ctx.fillRect(0, 0, canvas.width / view.scale, canvas.height / view.scale);
       ctx.globalCompositeOperation = composite;
+    }
+
+    // The same floor the other way up (App Fixes 4a): multiplied ink keeps
+    // going past the deep shade to black, so the busiest ground is lifted
+    // back to it. `lighten` takes the paler of what is there and the floor,
+    // which leaves a faint track alone, but it paints the bare ground too -
+    // so the shape drawn is kept and put back over it.
+    if (mode === "light" && maskCanvas) {
+      const mask = maskCanvas.getContext("2d");
+      if (mask) {
+        maskCanvas.width = canvas.width;
+        maskCanvas.height = canvas.height;
+        mask.setTransform(1, 0, 0, 1, 0, 0);
+        mask.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+        mask.drawImage(canvas, 0, 0);
+        ctx.globalCompositeOperation = "lighten";
+        ctx.fillStyle = floor;
+        ctx.fillRect(0, 0, canvas.width / view.scale, canvas.height / view.scale);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(maskCanvas, 0, 0);
+        ctx.setTransform(view.scale, 0, 0, view.scale, 0, 0);
+        ctx.globalCompositeOperation = composite;
+      }
     }
   }
 
