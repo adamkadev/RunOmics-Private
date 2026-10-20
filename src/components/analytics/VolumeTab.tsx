@@ -1,6 +1,5 @@
 'use client'
 
-import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { formatDate, formatKm, formatRanKm } from '@/lib/formatters'
@@ -10,11 +9,6 @@ import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Legend, LegendItem, 
 import { LONG_RUN_SHARE, ON_PLAN_SHARE, longRunView, weeklyDistanceView, type WeekRow, type YtdInput } from './analyticsView'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
-
-/** The second half of a "ran / planned" value: the same size, a step back. */
-function Faint({ children }: { children: ReactNode }) {
-  return <span className="font-semibold text-muted-foreground">{children}</span>
-}
 
 /**
  * The athlete's own weeks are the accent (v4.17): full at or above plan, 40%
@@ -60,6 +54,7 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
   // The app's one weekly average is its last 12 finished weeks; a window
   // further back averages its own.
   const avgWeeks = live && weeklyAvgKm !== null ? 12 : rows.filter((r) => !r.current).length
+  const when = last.current ? s.thisWeek : s.weekOf(bare(last.week))
   return (
     <Card className="gap-3.5" testId="weekly-card">
       <CardHead title={s.title} caption={hasPlan ? s.caption : undefined} about={s.about} />
@@ -69,28 +64,15 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
         <Stat
           size="lg"
           labelPosition="bottom"
-          label={s.underWeek(last.current ? s.thisWeek : s.weekOf(bare(last.week)))}
-          value={
-            <>
-              {formatRanKm(last.km)}
-              {last.planKm !== null && <Faint> / {formatKm(last.planKm)}</Faint>}
-            </>
+          label={
+            last.planKm !== null
+              ? s.underWeekOfPlan(formatKm(last.planKm), when)
+              : s.underWeek(when)
           }
+          value={formatRanKm(last.km)}
         />
         {view.avg !== null && <Stat size="lg" labelPosition="bottom" label={s.underAvg(avgWeeks)} value={formatKm(view.avg)} />}
-        {view.onPlan && (
-          <Stat
-            size="lg"
-            labelPosition="bottom"
-            label={s.underOnPlan}
-            value={
-              <>
-                {view.onPlan.hit}
-                <Faint> / {view.onPlan.of}</Faint>
-              </>
-            }
-          />
-        )}
+        {view.onPlan && <Stat size="lg" labelPosition="bottom" label={s.underOnPlanOf(view.onPlan.of)} value={view.onPlan.hit} />}
       </StatGrid>
       <ChartScrub
         count={rows.length}

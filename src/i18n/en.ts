@@ -894,10 +894,15 @@ export const en = {
         unplanned: 'Unplanned',
         // A week the plan asked for with nothing run against it (App Fixes 2c).
         missed: 'Missed',
-        // With the number first, its unit and name read as one line under it (App Fixes 1f).
+        // With the number first, its unit and name read as one line under it
+        // (App Fixes 1f). What the number is measured against goes in that
+        // line too: "12.1" over "of 53 km this week", never "12.1 / 53"
+        // broken over two lines in a column three wide.
         underWeek: (when: string) => `km ${when.toLocaleLowerCase('en')}`,
-        underAvg: (n: number) => (n >= 52 ? 'km / week, 1-year avg' : `km / week, ${n}-week avg`),
+        underWeekOfPlan: (km: string, when: string) => `of ${km} km ${when.toLocaleLowerCase('en')}`,
+        underAvg: (n: number) => (n >= 52 ? 'km/week · 1-yr avg' : `km/week · ${n}-wk avg`),
         underOnPlan: 'weeks on plan',
+        underOnPlanOf: (n: number) => `of ${n} weeks on plan`,
         done: 'Done',
         plan: 'Plan',
       },
