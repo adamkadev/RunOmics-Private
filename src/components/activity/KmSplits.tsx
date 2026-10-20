@@ -37,6 +37,17 @@ const NUMBERED_TYPES = new Set(['interval_active', 'lap'])
 
 const ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem]'
 const ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem_1.75rem]'
+/** The same columns without the number: one row has nothing to number. */
+const ONE_ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3rem_2.5rem_2.75rem]'
+const ONE_ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1fr_3rem_2.5rem_2.75rem_1.75rem]'
+
+/**
+ * How much of the run a single lap has to cover before it is the run (App
+ * Fixes 1c). A session started as one interval records its work block as
+ * that lap - 1.6 km of a 9.3 km threshold run - and calling that "Whole
+ * run" was a plain lie about the distance printed beside it.
+ */
+const WHOLE_RUN_SHARE = 0.95
 
 /** A supporting cell of a lap row: the numbers that are not the duration. */
 const MUTED_CELL = 'text-xs tabular-nums text-[var(--text-2)]'
@@ -181,16 +192,28 @@ function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits:
  * kilometres instead - it used to draw one row headed "Intervals" and typed
  * "Interval", which named a session the run never was.
  */
-function WholeRunLap({ split, bare = false, onKmSplits }: { split: ActivitySplit; bare?: boolean; onKmSplits?: () => void }) {
+function WholeRunLap({
+  split,
+  activityDistanceKm,
+  bare = false,
+  onKmSplits,
+}: {
+  split: ActivitySplit
+  activityDistanceKm: number
+  bare?: boolean
+  onKmSplits?: () => void
+}) {
   const sp = t.activity.splits
   const showHr = split.avgHr !== null
-  const rowCls = showHr ? ROW_HR : ROW_NO_HR
+  // One row, so no number to put in front of it.
+  const rowCls = showHr ? ONE_ROW_HR : ONE_ROW_NO_HR
+  const covers = activityDistanceKm > 0 ? split.distanceM / 1000 / activityDistanceKm : 0
+  const isWholeRun = covers >= WHOLE_RUN_SHARE
   return (
-    <section className={bare ? 'flex flex-col gap-3' : cardClass({ className: 'flex flex-col gap-3' })} data-testid="whole-run-lap">
+    <section className={bare ? 'flex flex-col gap-3' : cardClass({ className: 'flex flex-col gap-3' })} data-testid="whole-run-lap" data-whole-run={isWholeRun || undefined}>
       {!bare && <h3 className="text-[15px] font-semibold text-foreground">{sp.lapTitle}</h3>}
       <div className="w-full space-y-0.5">
         <div className={`${rowCls} pb-1.5 text-caption uppercase tracking-[0.06em] text-muted-foreground`}>
-          <span className="truncate">{sp.cols.step}</span>
           <span className="truncate">{sp.cols.type}</span>
           <span className="truncate">{sp.cols.duration}</span>
           <span className="truncate">{sp.cols.dist}</span>
@@ -198,8 +221,7 @@ function WholeRunLap({ split, bare = false, onKmSplits }: { split: ActivitySplit
           {showHr && <span className="truncate">{sp.cols.hr}</span>}
         </div>
         <div className={`${rowCls} rounded-md px-1 py-1.5`}>
-          <span />
-          <span className="truncate text-xs font-semibold text-foreground">{sp.wholeRun}</span>
+          <span className="truncate text-xs font-semibold text-foreground">{isWholeRun ? sp.wholeRun : sp.lapNumber(1)}</span>
           <span className="text-xs tabular-nums">{formatDuration(split.durationSec)}</span>
           <span className={MUTED_CELL}>{distStr(split.distanceM)}</span>
           <span className={MUTED_CELL}>{paceStr(split.avgSpeedMs)}</span>
@@ -369,7 +391,7 @@ export function KmSplits({ activity }: Props) {
   const lapsView = set ? (
     <IntervalSet set={set} bare={hasKm} />
   ) : wholeRun ? (
-    <WholeRunLap split={wholeRun} bare={hasKm} onKmSplits={hasKm ? () => setView('km') : undefined} />
+    <WholeRunLap split={wholeRun} activityDistanceKm={activity.distanceKm} bare={hasKm} onKmSplits={hasKm ? () => setView('km') : undefined} />
   ) : (
     <LapTable splits={lapRows.length > 1 ? lapRows : splits} bare={hasKm} />
   )

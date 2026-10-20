@@ -43,18 +43,24 @@ export const ZONE_HEX = {
 /**
  * Status, and only status (v4.17): good, caution, bad. Never a category - a
  * session type, a zone - and a delta takes one by what it means, not by
- * which way it moved: fatigue +6 is warn, fitness +4 is pos. Pos is a
- * yellower green than the teal accent (v4.17.2): #1e8a4c beside #0f8a6a
- * read as the athlete's own data. Light takes the deeper #357a1a, 5.3:1 on
- * a card, so 12 px good-news text clears AA. Light neg is #c0352a, not
- * #c8372d: a missed day's "✕ 10 km" sits on its own 12 % tint, where
- * #c8372d read 4.35:1; now 4.6:1. Light warn is #9a5b00, 5.4:1 on a card.
- * Dark takes the 3.0 handoff's values: a softer coral neg, so an error
- * no longer reads as Z5.
+ * which way it moved: fatigue +6 is warn, fitness +4 is pos.
+ *
+ * Good is mint, fixed (3.0 override 2): "good is always #2dd4a7 and warning
+ * always amber; lime #7fd13b is retired". v4.17.2 had made pos a yellower
+ * green so it would not read as the teal accent's own data - but that put
+ * lime on every delta the app prints, and the handoff would rather good and
+ * the default accent match than have a third green. Mint matches the lime's
+ * contrast exactly on a dark card (9.59:1), and light takes the palette's
+ * own text-grade mint, 5.35:1 on a white card where the olive was 5.32.
+ *
+ * Light neg is #c0352a, not #c8372d: a missed day's "✕ 10 km" sits on its
+ * own 12 % tint, where #c8372d read 4.35:1; now 4.6:1. Light warn is
+ * #9a5b00, 5.4:1 on a card. Dark takes the 3.0 handoff's values: a softer
+ * coral neg, so an error no longer reads as Z5.
  */
 export const STATUS_HEX = {
-  light: { pos: '#357a1a', warn: '#9a5b00', neg: '#c0352a' },
-  dark: { pos: '#7fd13b', warn: '#f0b73c', neg: '#ff8a80' },
+  light: { pos: c.semGreenLight, warn: '#9a5b00', neg: '#c0352a' },
+  dark: { pos: '#2dd4a7', warn: '#f0b73c', neg: '#ff8a80' },
 } as const
 
 /**

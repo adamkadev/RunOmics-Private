@@ -140,6 +140,19 @@ describe('opening a week', () => {
   })
 })
 
+describe('the quality letter on a tile (review 10)', () => {
+  it('letters a quality day and leaves an easy one to its number', () => {
+    renderMonth()
+
+    // 14 Oct was run as a Threshold, 13 Oct as an easy run: one colour
+    // cannot tell a VO2 Max from a race, so the letter does.
+    expect(tile('2026-10-14').textContent).toContain(t.plan.typeLetters.Threshold)
+    expect(tile('2026-10-13').textContent).not.toContain(t.plan.typeLetters.Threshold)
+    // Still planned, not yet run: the letter says which session is coming.
+    expect(tile('2026-10-21').textContent).toContain(t.plan.typeLetters.Threshold)
+  })
+})
+
 describe('the legend and the summary', () => {
   it('keys the kinds the month draws and the dashed planned tile, Easy and Long as one blue entry', () => {
     renderMonth()
@@ -156,6 +169,20 @@ describe('the legend and the summary', () => {
     const summary = screen.getByTestId('month-summary')
     expect(summary.textContent).toContain(t.plan.month.kmOf('18', '53'))
     expect(summary.textContent).not.toContain(t.plan.month.phaseWeek(t.plan.weekPurpose.planPhase.build, 2, 6))
+  })
+
+  // Review 8: a whole month's km against a plan that covers 13-25 Oct read
+  // as "160 of 114 km". The ratio is over the plan's own days, and the
+  // month's total is said beside it.
+  it('compares the plan’s own days, and says the month’s total beside them', () => {
+    renderMonth()
+
+    const km = screen.getByTestId('month-km').textContent!
+    expect(km).toContain(t.plan.month.kmOf('18', '53'))
+    expect(km).toContain(
+      t.plan.month.planCovers(formatDate('2026-10-13', { style: 'bare', year: 'never' }), formatDate('2026-10-25', { style: 'bare', year: 'never' })),
+    )
+    expect(km).toContain(t.plan.month.monthTotal('18'))
   })
 
   it('opens the next key session in the Week view', () => {

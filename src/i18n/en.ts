@@ -810,7 +810,6 @@ export const en = {
         threshold: 'Threshold pace',
         easyPace: 'Easy pace',
         in12w: (delta: string) => `${delta} in 12 weeks`,
-        noChange12w: '±0 in 12 weeks',
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',
@@ -897,10 +896,17 @@ export const en = {
         unplanned: 'Unplanned',
         // A week the plan asked for with nothing run against it (App Fixes 2c).
         missed: 'Missed',
-        // With the number first, its unit and name read as one line under it (App Fixes 1f).
+        // With the number first, its unit and name read as one line under it
+        // (App Fixes 1f). What the number is measured against goes in that
+        // line too: "12.1" over "of 53 km this week", never "12.1 / 53"
+        // broken over two lines in a column three wide.
         underWeek: (when: string) => `km ${when.toLocaleLowerCase('en')}`,
-        underAvg: (n: number) => (n >= 52 ? 'km / week, 1-year avg' : `km / week, ${n}-week avg`),
+        underWeekOfPlan: (km: string, when: string) => `of ${km} km ${when.toLocaleLowerCase('en')}`,
+        // A non-breaking hyphen and space: the label is two words, and
+        // "12-" on one line over "wk avg" on the next is neither.
+        underAvg: (n: number) => (n >= 52 ? 'km/week · 1\u2011yr\u00a0avg' : `km/week · ${n}\u2011wk\u00a0avg`),
         underOnPlan: 'weeks on plan',
+        underOnPlanOf: (n: number) => `of ${n} week${n === 1 ? '' : 's'} on plan`,
         done: 'Done',
         plan: 'Plan',
       },
@@ -950,10 +956,11 @@ export const en = {
         // App Fixes 2d: the dots say whether the plan was kept, not which
         // kind of session it was.
         done: 'Done',
-        doneOfPlanned: (n: number) => `done of ${n} planned`,
         doneNoPlan: 'done',
+        // The three read as one sum: done = on plan + extra.
+        onPlan: (done: number, planned: number) => `${done} of ${planned} planned`,
         extra: (n: number) => `${n} extra`,
-        extraLegend: 'Extra',
+        plannedLegend: 'Planned',
         missedCount: (n: number) => `${n} missed`,
         missed: 'Missed',
       },
@@ -1463,8 +1470,10 @@ export const en = {
       vertRatio: 'Vertical ratio',
       // The range scale (3.0.2): the pill is the usual range, the tick this run.
       vsUsual: 'vs your usual',
-      // Which way is better for the metric (App Fixes 3d).
-      better: { higher: 'longer is better', lower: 'shorter is better' },
+      // Which way is better for the metric (App Fixes 3d). "Shorter" read
+      // as a length, which a bounce in centimetres and a ratio in points
+      // are not (review 9); lower is the word for all three.
+      better: { higher: 'longer is better', lower: 'lower is better' },
       level: 'Right on your usual',
       ratioUnit: 'pt',
       usualRange: (weeks: number) => `Your usual range, last ${weeks} weeks`,
@@ -1509,6 +1518,8 @@ export const en = {
       // A run the watch kept as one lap (App Fixes 1c): no laps were pressed,
       // so it is named for what it is and sends the reader to the kilometres.
       wholeRun: 'Whole run',
+      // A single lap that does not cover the run is just its first lap.
+      lapNumber: (n: number) => `Lap ${n}`,
       noLapsPressed: 'No laps pressed on this run. Km splits show how your pace changed.',
       seeKmSplits: 'See km splits',
       // The footer under the kilometres (3.0.2): the fastest km, and the
@@ -2209,6 +2220,12 @@ export const en = {
       easyLong: 'Easy / Long',
       phaseWeek: (phase: string, n: number, total: number) => `${phase} · week ${n} of ${total}`,
       kmOf: (ran: string, plan: string) => `${ran} of ${plan} km`,
+      // Where the plan starts partway through the month, the comparison is
+      // over the days it covers, and the month's own total is said beside it
+      // (review 8): a whole month's km against part of a month's plan read
+      // as "160 of 114 km".
+      planCovers: (from: string, to: string) => `plan covers ${from} – ${to}`,
+      monthTotal: (km: string) => `${km} km this month`,
       nextKey: 'Next key session',
       weekLabel: (monday: string, km: string) => `Week of ${monday} · ${km}`,
     },

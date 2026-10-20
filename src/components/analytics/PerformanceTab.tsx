@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
-import { formatClock, formatDate, formatDecimal, formatDeltaFixed, formatDuration, MINUS } from '@/lib/formatters'
+import { formatClock, formatDate, formatDecimal, formatDeltaFixed, formatDuration, MINUS, PLUS_MINUS } from '@/lib/formatters'
 import { deltaColor, deltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
@@ -89,7 +89,18 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
       label: s.vo2max,
       value: formatDecimal(vo2.value, 1),
       unit: undefined,
-      note: vo2.delta === null ? null : vo2.delta === 0 ? s.noChange12w : s.in12w(vo2.delta > 0 ? `+${formatDecimal(vo2.delta, 1)}` : `${MINUS}${formatDecimal(Math.abs(vo2.delta), 1)}`),
+      // A flat VO2max is "±0.0", the decimal every other VO2max number on
+      // the screen carries, and in the reader's own decimal mark (review 13).
+      note:
+        vo2.delta === null
+          ? null
+          : s.in12w(
+              vo2.delta === 0
+                ? `${PLUS_MINUS}${formatDecimal(0, 1)}`
+                : vo2.delta > 0
+                  ? `+${formatDecimal(vo2.delta, 1)}`
+                  : `${MINUS}${formatDecimal(Math.abs(vo2.delta), 1)}`,
+            ),
       tone: STAT_TONE[deltaTone('vo2max', vo2.delta)],
       href: VO2_HOME,
     },

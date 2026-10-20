@@ -1,20 +1,14 @@
 'use client'
 
-import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import { formatDate, formatKm, formatRanKm } from '@/lib/formatters'
+import { formatDate, formatKm, formatPercent, formatRanKm } from '@/lib/formatters'
 import { Stat, StatGrid, Unit } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Legend, LegendItem, Sentence, THIS_WEEK_BORDER } from './AnalyticsKit'
 import { LONG_RUN_SHARE, ON_PLAN_SHARE, longRunView, weeklyDistanceView, type WeekRow, type YtdInput } from './analyticsView'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
-
-/** The second half of a "ran / planned" value: the same size, a step back. */
-function Faint({ children }: { children: ReactNode }) {
-  return <span className="font-semibold text-muted-foreground">{children}</span>
-}
 
 /**
  * The athlete's own weeks are the accent (v4.17): full at or above plan, 40%
@@ -60,6 +54,7 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
   // The app's one weekly average is its last 12 finished weeks; a window
   // further back averages its own.
   const avgWeeks = live && weeklyAvgKm !== null ? 12 : rows.filter((r) => !r.current).length
+  const when = last.current ? s.thisWeek : s.weekOf(bare(last.week))
   return (
     <Card className="gap-3.5" testId="weekly-card">
       <CardHead title={s.title} caption={hasPlan ? s.caption : undefined} about={s.about} />
@@ -69,28 +64,15 @@ function WeeklyDistanceCard({ rows, live, onShift, weeklyAvgKm }: { rows: WeekRo
         <Stat
           size="lg"
           labelPosition="bottom"
-          label={s.underWeek(last.current ? s.thisWeek : s.weekOf(bare(last.week)))}
-          value={
-            <>
-              {formatRanKm(last.km)}
-              {last.planKm !== null && <Faint> / {formatKm(last.planKm)}</Faint>}
-            </>
+          label={
+            last.planKm !== null
+              ? s.underWeekOfPlan(formatKm(last.planKm), when)
+              : s.underWeek(when)
           }
+          value={formatRanKm(last.km)}
         />
         {view.avg !== null && <Stat size="lg" labelPosition="bottom" label={s.underAvg(avgWeeks)} value={formatKm(view.avg)} />}
-        {view.onPlan && (
-          <Stat
-            size="lg"
-            labelPosition="bottom"
-            label={s.underOnPlan}
-            value={
-              <>
-                {view.onPlan.hit}
-                <Faint> / {view.onPlan.of}</Faint>
-              </>
-            }
-          />
-        )}
+        {view.onPlan && <Stat size="lg" labelPosition="bottom" label={s.underOnPlanOf(view.onPlan.of)} value={view.onPlan.hit} />}
       </StatGrid>
       <ChartScrub
         count={rows.length}
@@ -222,8 +204,14 @@ function LongRunCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; 
       >
         <div className="relative grid items-end" style={{ height: H, gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="long-run-bars">
           {/* The 35% rule as a dashed guide across the weeks, over the bars;
-              out of the grid, it takes no week's cell. */}
-          <div aria-hidden className="pointer-events-none absolute z-[1] inset-x-0 border-t border-dashed border-muted-foreground" style={{ bottom: (LONG_RUN_SHARE / top) * H }} data-testid="long-run-guide" />
+              out of the grid, it takes no week's cell. The line says what it
+              is (review 13): a bare dash left the reader to work out which
+              height was the rule. */}
+          <div aria-hidden className="pointer-events-none absolute z-[1] inset-x-0 border-t border-dashed border-muted-foreground" style={{ bottom: (LONG_RUN_SHARE / top) * H }} data-testid="long-run-guide">
+            <span className="absolute right-0 -top-[7px] bg-card pl-1 text-[11px] font-medium leading-none tabular-nums text-muted-foreground" data-testid="long-run-guide-label">
+              {formatPercent(LONG_RUN_SHARE * 100)}
+            </span>
+          </div>
           {view.bars.map((bar, i) => {
             const current = bar.current && live
             return bar.km > 0 ? (

@@ -1,4 +1,4 @@
-import { formBand } from '@/domain/training/formBand'
+import { formBand, type FormBand } from '@/domain/training/formBand'
 import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
@@ -11,6 +11,19 @@ const RADIUS = (SIZE - STROKE) / 2
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 /** A 270° arc, open at the bottom. */
 const ARC = CIRCUMFERENCE * 0.75
+
+/**
+ * The arc in the band's own colour, the tokens Analytics already reads
+ * (App Fixes, review 5): the dial was drawn in the accent, so a form of
+ * -18 arrived mint on Today while Analytics called the same number
+ * "Tired, below -10" in amber. The arc is data, not interface.
+ */
+const DIAL_TONE: Record<FormBand, string> = {
+  tired: 'var(--form-band-tired)',
+  neutral: 'var(--form-band-neutral)',
+  fresh: 'var(--form-band-fresh)',
+  veryFresh: 'var(--form-band-very-fresh)',
+}
 
 /** How much of the arc Form fills, 0-1, on FORM_SCALE. */
 export function dialFraction(form: number): number {
@@ -26,6 +39,7 @@ export function dialFraction(form: number): number {
  */
 export function FormDial({ form }: { form: number }) {
   const fraction = dialFraction(form)
+  const band = formBand(form)
   const filled = ARC * fraction
   const value = formatDelta(form)
   // Starts bottom-left (135°) and runs clockwise over the top.
@@ -37,11 +51,11 @@ export function FormDial({ form }: { form: number }) {
       data-testid="form-dial"
       data-fraction={fraction.toFixed(4)}
       role="img"
-      aria-label={t.dashboard.readiness.formOnDial(value, t.formBand[formBand(form)])}
+      aria-label={t.dashboard.readiness.formOnDial(value, t.formBand[band])}
     >
       <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} aria-hidden>
         <circle {...circle} stroke="var(--line-2)" strokeDasharray={`${ARC} ${CIRCUMFERENCE}`} />
-        {filled > 0 && <circle {...circle} stroke="var(--accent)" strokeDasharray={`${filled} ${CIRCUMFERENCE}`} data-testid="form-dial-fill" />}
+        {filled > 0 && <circle {...circle} stroke={DIAL_TONE[band]} strokeDasharray={`${filled} ${CIRCUMFERENCE}`} data-testid="form-dial-fill" data-band={band} />}
       </svg>
       <div aria-hidden className="absolute inset-0 flex flex-col items-center justify-center gap-1">
         <span className="text-[34px] font-bold leading-none tracking-[-0.02em] tabular-nums text-foreground">{value}</span>
