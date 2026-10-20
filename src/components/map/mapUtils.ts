@@ -144,6 +144,8 @@ export interface HeatPass {
   /** The stroke as a multiple of the line width. */
   width: number;
   color: string;
+  /** A soft halo under the tracks, in px (App Fixes 4a). */
+  blur?: number;
 }
 
 /** `#rrggbb` at an alpha, as the canvas takes it. */
@@ -153,26 +155,57 @@ export function rgba(hex: string, alpha: number): string {
   return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
+/**
+ * Which end of the heat ramp a pass is drawn in (3.0 override 9, App Fixes
+ * 4a): a blurred halo under the tracks, then the ramp itself - a pale tint,
+ * the accent, and a deep accent shade - so a route run many times multiplies
+ * down to ink while a rare one stays a tint.
+ */
+export type HeatTone = "halo" | "tint" | "accent" | "deep";
+
 export const HEAT_STYLE = {
   dark: {
     composite: "lighter",
     passes: [
-      { width: 4, alpha: 0.035 },
-      { width: 1, alpha: 0.16 },
+      { width: 4, alpha: 0.035, tone: "halo" },
+      { width: 1, alpha: 0.16, tone: "accent" },
     ],
   },
   light: {
     composite: "multiply",
-    passes: [{ width: 1.3, alpha: 0.5 }],
+    passes: [
+      { width: 5, alpha: 0.09, tone: "halo", blur: 6 },
+      { width: 2.2, alpha: 0.2, tone: "tint" },
+      { width: 1.3, alpha: 0.34, tone: "accent" },
+      { width: 0.8, alpha: 0.46, tone: "deep" },
+    ],
   },
 } as const satisfies Record<"dark" | "light", {
   composite: GlobalCompositeOperation;
-  passes: readonly { width: number; alpha: number }[];
+  passes: readonly { width: number; alpha: number; tone: HeatTone; blur?: number }[];
 }>;
 
+/** The colour a tone is drawn in, for one accent and mode. */
+export function heatToneColor(mode: "dark" | "light", accent: string, tone: HeatTone): string {
+  if (mode === "dark") return accent;
+  const ramp = heatRamp(accent);
+  switch (tone) {
+    case "halo":
+    case "tint":
+      return ramp.light;
+    case "deep":
+      return ramp.deep;
+    case "accent":
+      return accent;
+  }
+}
+
 export function heatPasses(mode: "dark" | "light", accent: string): HeatPass[] {
-  const color = mode === "light" ? heatRamp(accent).light : accent;
-  return HEAT_STYLE[mode].passes.map((pass) => ({ width: pass.width, color: rgba(color, pass.alpha) }));
+  return HEAT_STYLE[mode].passes.map((pass) => ({
+    width: pass.width,
+    color: rgba(heatToneColor(mode, accent, pass.tone), pass.alpha),
+    ...("blur" in pass && pass.blur ? { blur: pass.blur } : {}),
+  }));
 }
 
 export function heatLineWidth(zoom: number): number {

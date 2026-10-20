@@ -2,6 +2,28 @@
 
 exports[`the generated accent blocks > paint the five v4.17 palettes 1`] = `
 {
+  "cyan": {
+    "dark": {
+      "--acc-line": "color-mix(in oklab, #5fd4f0 55%, transparent)",
+      "--acc-soft": "#5fd4f01f",
+      "--accent": "#5fd4f0",
+      "--accent-foreground": "#07261d",
+      "--accent-hover": "color-mix(in oklab, #5fd4f0 88%, white)",
+      "--accent-soft": "#5fd4f01f",
+      "--accent-text": "#5fd4f0",
+      "--ring": "color-mix(in oklab, #5fd4f0 70%, transparent)",
+    },
+    "light": {
+      "--acc-line": "color-mix(in oklab, #0e7f9b 55%, transparent)",
+      "--acc-soft": "#0e7f9b1f",
+      "--accent": "#0e7f9b",
+      "--accent-foreground": "#ffffff",
+      "--accent-hover": "color-mix(in oklab, #0e7f9b 88%, black)",
+      "--accent-soft": "#0e7f9b1f",
+      "--accent-text": "#007793",
+      "--ring": "color-mix(in oklab, #0e7f9b 35%, transparent)",
+    },
+  },
   "mono": {
     "dark": {
       "--acc-line": "color-mix(in oklab, #edefee 55%, transparent)",
@@ -22,28 +44,6 @@ exports[`the generated accent blocks > paint the five v4.17 palettes 1`] = `
       "--accent-soft": "#1a1c1b1f",
       "--accent-text": "#1a1c1b",
       "--ring": "color-mix(in oklab, #1a1c1b 35%, transparent)",
-    },
-  },
-  "periwinkle": {
-    "dark": {
-      "--acc-line": "color-mix(in oklab, #8fa2ff 55%, transparent)",
-      "--acc-soft": "#8fa2ff1f",
-      "--accent": "#8fa2ff",
-      "--accent-foreground": "#07261d",
-      "--accent-hover": "color-mix(in oklab, #8fa2ff 88%, white)",
-      "--accent-soft": "#8fa2ff1f",
-      "--accent-text": "#8fa2ff",
-      "--ring": "color-mix(in oklab, #8fa2ff 70%, transparent)",
-    },
-    "light": {
-      "--acc-line": "color-mix(in oklab, #4457d6 55%, transparent)",
-      "--acc-soft": "#4457d61f",
-      "--accent": "#4457d6",
-      "--accent-foreground": "#ffffff",
-      "--accent-hover": "color-mix(in oklab, #4457d6 88%, black)",
-      "--accent-soft": "#4457d61f",
-      "--accent-text": "#4457d6",
-      "--ring": "color-mix(in oklab, #4457d6 35%, transparent)",
     },
   },
   "pink": {

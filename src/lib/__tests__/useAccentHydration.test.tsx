@@ -18,11 +18,11 @@ describe('useAccent', () => {
   // Reading storage in a state initializer drew the stored one on hydration.
   it('hydrates on the default, then takes the accent this browser stored', async () => {
     const { html, container, recoverableErrors } = await hydrateOver(<Accent />, () =>
-      localStorage.setItem(ACCENT_STORAGE_KEY, 'periwinkle')
+      localStorage.setItem(ACCENT_STORAGE_KEY, 'cyan')
     )
 
     expect(html).toContain('teal')
     expect(recoverableErrors).toEqual([])
-    expect(container.textContent).toBe('periwinkle')
+    expect(container.textContent).toBe('cyan')
   })
 })

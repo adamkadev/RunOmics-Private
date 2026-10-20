@@ -115,17 +115,28 @@ describe('HEAT_STYLE (v4.17)', () => {
     expect(core!.width).toBe(1)
   })
 
-  it('draws light mode as one stroke, half opaque and wider, with no glow', () => {
-    expect(HEAT_STYLE.light.passes).toHaveLength(1)
-    const [only] = HEAT_STYLE.light.passes
-    expect(only!.alpha).toBeGreaterThanOrEqual(0.5)
-    expect(only!.width).toBeGreaterThan(1)
+  // App Fixes 4a: a blurred halo under a ramp that runs pale tint, accent,
+  // deep shade - so a route run many times multiplies down to ink.
+  it('draws light mode as a halo under a pale-to-deep ramp', () => {
+    const tones = HEAT_STYLE.light.passes.map((p) => p.tone)
+    expect(tones).toEqual(['halo', 'tint', 'accent', 'deep'])
+    const [halo, ...ramp] = HEAT_STYLE.light.passes
+    expect(halo!.blur).toBeGreaterThan(0)
+    expect(halo!.width).toBeGreaterThan(ramp[0]!.width)
+    // Each step of the ramp is narrower and more opaque than the one before.
+    for (let i = 1; i < ramp.length; i++) {
+      expect(ramp[i]!.width).toBeLessThan(ramp[i - 1]!.width)
+      expect(ramp[i]!.alpha).toBeGreaterThan(ramp[i - 1]!.alpha)
+    }
   })
 
   it('draws the tracks in the accent on dark, and its own ramp on light', () => {
     expect(heatPasses('dark', '#2dd4a7').map((p) => p.color)).toEqual(['rgba(45,212,167,0.035)', 'rgba(45,212,167,0.16)'])
-    const { light } = heatRamp('#4457d6')
-    expect(heatPasses('light', '#4457d6')).toEqual([{ width: HEAT_STYLE.light.passes[0]!.width, color: rgba(light, 0.5) }])
+    const { light, deep } = heatRamp('#0e7f9b')
+    const passes = heatPasses('light', '#0e7f9b')
+    expect(passes.map((p) => p.color)).toEqual([rgba(light, 0.09), rgba(light, 0.2), rgba('#0e7f9b', 0.34), rgba(deep, 0.46)])
+    expect(passes[0]!.blur).toBe(6)
+    expect(passes.slice(1).every((p) => p.blur === undefined)).toBe(true)
   })
 
   it('reads a short hex too', () => {

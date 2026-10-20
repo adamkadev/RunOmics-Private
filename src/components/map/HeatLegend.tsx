@@ -11,7 +11,8 @@ export function HeatLegend({ className = "" }: { className?: string }) {
   const ramp = heatRamp(accent);
   const background =
     resolvedTheme === "light"
-      ? `linear-gradient(90deg, color-mix(in srgb, ${ramp.light} 20%, transparent), ${ramp.light} 55%, ${ramp.deep})`
+      ? // The map's own three stops (App Fixes 4a): pale tint, the accent, deep.
+        `linear-gradient(90deg, color-mix(in srgb, ${ramp.light} 20%, transparent), ${accent} 55%, ${ramp.deep})`
       : "linear-gradient(90deg, color-mix(in srgb, var(--accent) 20%, transparent), var(--accent) 55%, var(--heat-end))";
 
   return (

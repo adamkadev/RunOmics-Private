@@ -344,7 +344,7 @@ export const fr = {
       caption: 'graphiques et mises en avant',
       options: {
         teal:     { label: 'Sarcelle' },
-        periwinkle: { label: 'Pervenche' },
+        cyan: { label: 'Cyan' },
         violet:     { label: 'Violet' },
         pink:     { label: 'Rose' },
         mono:     { label: 'Mono' },

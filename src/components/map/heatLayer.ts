@@ -87,6 +87,9 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     for (const pass of passes) {
       ctx.lineWidth = lineWidth * pass.width;
       ctx.strokeStyle = pass.color;
+      // The halo is the same stroke, blurred (App Fixes 4a); a canvas
+      // without filter support simply draws it sharp.
+      ctx.filter = pass.blur ? `blur(${pass.blur}px)` : "none";
       for (let t = from; t < to; t++) {
         const track = tracks[t]!;
         ctx.beginPath();
@@ -106,6 +109,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
         ctx.stroke();
       }
     }
+    // Never leave the blur on the context for whatever draws next.
+    ctx.filter = "none";
   }
 
   function source(): CanvasSource | undefined {

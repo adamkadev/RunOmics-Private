@@ -371,7 +371,7 @@ export const en = {
       caption: 'charts & highlights',
       options: {
         teal:     { label: 'Teal' },
-        periwinkle: { label: 'Periwinkle' },
+        cyan: { label: 'Cyan' },
         violet:     { label: 'Violet' },
         pink:     { label: 'Pink' },
         mono:     { label: 'Mono' },
