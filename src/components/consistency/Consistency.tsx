@@ -298,15 +298,7 @@ export function Consistency({ views, today }: { views: Record<ConsistencyRange, 
           tabs={tabs}
           label={c.rangeLabel}
           size="sm"
-          items={CONSISTENCY_RANGES.map((id) => ({
-            id,
-            label: (
-              <>
-                <span aria-hidden>{c.ranges[id]}</span>
-                <span className="sr-only">{c.rangesSpoken[id]}</span>
-              </>
-            ),
-          }))}
+          items={CONSISTENCY_RANGES.map((id) => ({ id, label: c.ranges[id], ariaLabel: c.rangesSpoken[id] }))}
         />
       </header>
       <div {...tabs.panelProps} className="flex flex-col gap-3.5 outline-none">
