@@ -1466,8 +1466,10 @@ export const en = {
       vertRatio: 'Vertical ratio',
       // The range scale (3.0.2): the pill is the usual range, the tick this run.
       vsUsual: 'vs your usual',
-      // Which way is better for the metric (App Fixes 3d).
-      better: { higher: 'longer is better', lower: 'shorter is better' },
+      // Which way is better for the metric (App Fixes 3d). "Shorter" read
+      // as a length, which a bounce in centimetres and a ratio in points
+      // are not (review 9); lower is the word for all three.
+      better: { higher: 'longer is better', lower: 'lower is better' },
       level: 'Right on your usual',
       ratioUnit: 'pt',
       usualRange: (weeks: number) => `Your usual range, last ${weeks} weeks`,

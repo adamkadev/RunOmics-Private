@@ -36,13 +36,15 @@ export function shoeWearCopy(shoe: { totalKm: number; maxKm: number }): {
 /**
  * A pair's wear as its bar and tag draw it (v4.17), from the status its own
  * page reads: the accent while it has life in it - its km are the athlete's
- * own data - warn from Replace soon at 70%, neg from Replace at 90% and past
- * the limit.
+ * own data - and amber once it is worn. Replace used to be neg, the app's
+ * red, which is the tone of something gone wrong (App Fixes, review 7); a
+ * pair at the end of its life is a warning, and the tag's own words -
+ * "Replace soon" against "Replace" - say how far along it is.
  */
 export const WEAR_COLOR: Record<WearStatus, string> = {
   ok: 'var(--accent)',
   watch: 'var(--warn)',
-  replace: 'var(--neg)',
+  replace: 'var(--warn)',
 }
 
 /** A pair's wear status from its km, as its page and the Progress card read it. */
