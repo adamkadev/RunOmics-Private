@@ -55,7 +55,7 @@ describe('sessionCard', () => {
       eyebrow: `${t.dashboard.todayHero.today} · ${formatWeekday('2026-10-19', true)}`,
       title: 'Easy run',
       km: '10',
-      detail: `1${t.units.hour}00 · ${t.dashboard.todayHero.hrCap(158)} ${t.units.bpm}`,
+      detail: `1:00 ${t.units.hour} · ${t.dashboard.todayHero.hrCap(158)} ${t.units.bpm}`,
       phase: 'Base',
       href: '/plan?date=2026-10-19',
     })

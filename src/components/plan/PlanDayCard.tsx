@@ -252,7 +252,7 @@ export interface ComingUpRow {
   key: string
   date: string
   title: string
-  /** "Tue 20 · 10 km · 1h00". */
+  /** "Tue 20 · 10 km · 1:00 h". */
   detail: string
   color: string
 }

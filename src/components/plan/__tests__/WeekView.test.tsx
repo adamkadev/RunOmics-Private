@@ -235,7 +235,7 @@ describe('a session still to come', () => {
     const card = screen.getByTestId('plan-workout-workout-threshold')
     expect(card.textContent).toContain(t.activityTypes.Threshold)
     expect(within(card).getByRole('heading').textContent).toBe('3 × 8 min threshold')
-    expect(card.textContent).toContain('1h00')
+    expect(card.textContent).toContain(`1:00 ${t.units.hour}`)
     expect(card.textContent).toContain(t.plan.session.targetPace('4:25–4:30'))
   })
 

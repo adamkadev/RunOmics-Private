@@ -15,7 +15,7 @@ const STRIDES = [
 const EASY: HeroWorkoutView = { title: 'Easy run', type: 'Base', duration: { seconds: 3_600, estimated: false }, distanceM: 10_000, activityId: null, target: null, structure: null, hr: null }
 
 function card(overrides: Partial<SessionCard> = {}): SessionCard {
-  return { date: '2026-10-20', eyebrow: 'Tomorrow · Tue 20', title: 'Easy run', km: '10', detail: '1h00 · ≤ 158 bpm', workout: EASY, phase: 'Base', href: '/plan?date=2026-10-20', ...overrides }
+  return { date: '2026-10-20', eyebrow: 'Tomorrow · Tue 20', title: 'Easy run', km: '10', detail: '1:00 h · ≤ 158 bpm', workout: EASY, phase: 'Base', href: '/plan?date=2026-10-20', ...overrides }
 }
 
 // Design review 3.0 (mock 1b): the next workout opens Plan on its day.
@@ -28,7 +28,7 @@ describe('TodaySessionCard', () => {
     expect(link).toHaveAttribute('href', '/plan?date=2026-10-20')
     expect(link).toHaveTextContent('Tomorrow · Tue 20')
     expect(link).toHaveTextContent('Base')
-    expect(screen.getByTestId('session-detail').textContent).toBe(`10 ${t.units.km} · 1h00 · ≤ 158 bpm`)
+    expect(screen.getByTestId('session-detail').textContent).toBe(`10 ${t.units.km} · 1:00 h · ≤ 158 bpm`)
     expect(link).toHaveTextContent(t.dashboard.todayHero.openInPlan)
     expect(link.textContent).not.toMatch(/watch/i)
     expect(link.querySelector('button')).toBeNull()

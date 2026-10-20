@@ -121,13 +121,13 @@ export const en = {
     fitness: { term: 'Fitness', definition: 'Fitness (CTL) is your 42-day average training load: the work your body has absorbed.' },
     fatigue: { term: 'Fatigue', definition: 'Fatigue (ATL) is your 7-day average training load: what the last week has cost you.' },
     vma: { term: 'VMA', definition: 'Maximal aerobic speed: the speed you reach at VO₂max, held for about six minutes.' },
-    vo2Grade: { term: 'Men / Women and age', definition: 'Your VO₂max against people of your sex and age decade, from Garmin’s age and sex norms (ACSM / Cooper Institute percentiles). A+ is the top 5%, C below the 45th percentile. The grade changes only once your VO₂max has stayed past the edge for 7 days.' },
-    vo2max: { term: 'VO₂max', definition: 'The most oxygen your body can use per kilo each minute, as Garmin estimates it from your runs.' },
+    vo2Grade: { term: 'Men / Women and age', definition: 'Your VO₂max against people of your sex and age decade, from the age and sex norms your watch uses (ACSM / Cooper Institute percentiles). A+ is the top 5%, C below the 45th percentile. The grade changes only once your VO₂max has stayed past the edge for 7 days.' },
+    vo2max: { term: 'VO₂max', definition: 'The most oxygen your body can use per kilo each minute, as your watch estimates it from your runs.' },
     lthr: { term: 'Threshold HR', definition: 'Lactate-threshold heart rate (LTHR): about the heart rate you could hold for an hour-long race.' },
     thresholdPace: { term: 'Threshold pace', definition: 'The pace at your lactate threshold: about what you could race for an hour.' },
     rpe: { term: 'RPE', definition: 'Rate of perceived exertion, 1 to 10, as logged on the watch after the run.' },
-    aerobicEffect: { term: 'Aerobic effect', definition: 'Garmin’s 0–5 score of how much the run built your aerobic fitness.' },
-    anaerobicEffect: { term: 'Anaerobic effect', definition: 'Garmin’s 0–5 score of how much the run built your capacity for short, hard efforts.' },
+    aerobicEffect: { term: 'Aerobic effect', definition: 'Your watch’s 0–5 score of how much the run built your aerobic fitness.' },
+    anaerobicEffect: { term: 'Anaerobic effect', definition: 'Your watch’s 0–5 score of how much the run built your capacity for short, hard efforts.' },
     strideLength: { term: 'Stride length', definition: 'How far you travel with each step, averaged over the run.' },
     groundContact: { term: 'Ground contact', definition: 'How long each foot stays on the ground per step. Shorter usually means a springier stride.' },
     verticalOscillation: { term: 'Vertical oscillation', definition: 'How far your body rises and falls with each step: the bounce.' },
@@ -305,8 +305,8 @@ export const en = {
     athlete: {
       title: 'Athlete & zones',
       back: 'Progress',
-      fromGarmin: 'From Garmin',
-      syncedAgo: (when: string) => `From Garmin · synced ${when}`,
+      fromGarmin: 'From your watch',
+      syncedAgo: (when: string) => `From your watch · synced ${when}`,
     },
     notFound: {
       code: '404',
@@ -334,7 +334,7 @@ export const en = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Build info copied',
     sections: {
-      profile: 'Profile · from Garmin',
+      profile: 'Profile · from your watch',
       appearance: 'Appearance',
       data: 'Data',
       account: 'Account',
@@ -346,7 +346,7 @@ export const en = {
       // The button while the chain runs; the device line says which step.
       running: 'Syncing…',
       starting: 'Starting the workflow…',
-      fetching: 'Fetching from Garmin, then rebuilding the app…',
+      fetching: 'Fetching from your watch, then rebuilding the app…',
       writing: 'New data is live. Writing the verdict…',
       upToDate: 'Already up to date — no new run to fetch.',
       stillRunning: 'Still running. The verdict will appear on its own.',
@@ -394,7 +394,7 @@ export const en = {
       details: 'Heart & body',
       vma: 'VMA',
       maxHr: 'Max HR',
-      // Garmin's setting the zones and the load are computed from, not a
+      // The watch's setting the zones and the load are computed from, not a
       // reading of today (Analytics > Recovery has that, "Daily resting HR").
       restingHr: 'Resting HR',
       vo2max: 'VO₂max',
@@ -418,7 +418,7 @@ export const en = {
       confirmCancel: 'Cancel',
     },
     dataSource: {
-      garmin: 'Garmin Connect',
+      garmin: 'your watch’s app',
       connected: (source: string) => `${source} connected`,
       readOnly: 'Runs are read-only here',
       readOnlySynced: (when: string, runs: string) => `last synced ${when} · ${runs} · read-only here`,
@@ -441,8 +441,10 @@ export const en = {
       notesUnavailable: 'Exported without your notes and tags: the notes store did not answer. Try again.',
     },
     profile: {
-      // Under the read-only height and weight, a link to Garmin Connect (design review, Oct 2026).
-      readOnly: 'From Garmin Connect - change them there.',
+      // Under the read-only height and weight, a link out to where the watch's data is kept
+      // (design review, Oct 2026). No brand in the words: the data is imported JSON, and the
+      // brand can change (3.0 override 1).
+      readOnly: 'From your watch - change them in its app.',
       // The Athlete & zones row's value: "LTHR 179 · Max 200" (3.0 1i).
       lthr: (bpm: number) => `LTHR ${bpm}`,
       maxHr: (bpm: number) => `Max ${bpm}`,
@@ -507,7 +509,7 @@ export const en = {
       noValue: '—',
     },
     stale: {
-      title: (hours: number) => `Garmin data ${hours} h old`,
+      title: (hours: number) => `Watch data ${hours} h old`,
       line: (when: string) => `Last sync ${when} · a run may be missing`,
       sync: 'Sync',
     },
@@ -596,7 +598,7 @@ export const en = {
   analytics: {
     // Which load model a card reads, named in its head: the watch's
     // acute/chronic load, or the app's own stress (Fitness / Fatigue).
-    model: { garmin: 'Garmin', runomics: 'RunOmics' },
+    model: { garmin: 'Your watch', runomics: 'RunOmics' },
     title: 'Analytics',
 
     aboutChart: 'What this chart measures',
@@ -724,7 +726,7 @@ export const en = {
       loadTrend: {
         title: 'Load trend',
         caption: '7-day acute load',
-        about: 'Your acute load: the last 7 days of Garmin training load, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
+        about: 'Your acute load: the last 7 days of training load from your watch, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
         safe: (lo: number, hi: number) => `safe range ${lo}–${hi}`,
         ratioSafe: (lo: number, hi: number) => `ratio · safe ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 day' : `${days} days`) : Math.round(days / 7) === 1 ? '1 week' : `${Math.round(days / 7)} weeks`),
@@ -748,10 +750,10 @@ export const en = {
       },
       recovery: {
         title: 'Recovery',
-        caption: 'Garmin · overnight',
+        caption: 'Your watch · overnight',
         // One series, named in the caption.
-        captionDaily: 'Resting HR · Garmin',
-        captionHrv: 'HRV · Garmin',
+        captionDaily: 'Resting HR · your watch',
+        captionHrv: 'HRV · your watch',
         about: 'Overnight HRV and resting heart rate from your watch, each against your own baseline: the middle 80% of your last 60 nights. Higher HRV and lower resting HR mean you are recovering. Each shows once the period has 7 days of it. Without the watch on overnight there is no HRV, and resting HR comes from your quietest stretch of the day, so it reads a little higher.',
         hrv: 'HRV',
         restingHr: 'Daily resting HR',
@@ -777,10 +779,10 @@ export const en = {
       },
       status: {
         title: 'Training status',
-        caption: (span: string) => `Garmin · ${span}`,
+        caption: (span: string) => `Your watch · ${span}`,
         span: { days28: '28 days', weeks12: '12 weeks', months12: '12 months' },
         spanLive: { days28: 'last 28 days', weeks12: 'last 12 weeks', months12: 'last 12 months' },
-        about: "Garmin's training status: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
+        about: "Your watch's training status: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
         sentenceToday: (count: number, days: number) => ` today, and on ${count} of the last ${days} days.`,
         sentenceOn: (date: string, count: number, days: number) => ` on ${date}, and on ${count} of those ${days} days.`,
         days: (n: number) => `${n} d`,
@@ -817,7 +819,7 @@ export const en = {
       predictions: {
         title: 'Race predictions',
         caption: (period: string) => `change in ${period}`,
-        about: "Garmin's predicted race times. The line under each is the period's trend, faster up.",
+        about: "The race times your watch predicts. The line under each is the period's trend, faster up.",
         count: (n: number): string => (n === 4 ? 'All four' : n === 3 ? 'All three' : n === 2 ? 'Both' : 'It'),
         slipped: (who: string, range: string, period: string) => `${who} slipped ${range} over ${period}.`,
         improved: (who: string, range: string, period: string) => `${who} improved by ${range} over ${period}.`,
@@ -1133,7 +1135,7 @@ export const en = {
         title: 'Running Lactate Threshold',
         pace: 'Threshold pace',
         lthr: 'Threshold HR',
-        footnote: 'The effort you can hold before lactate builds up, as the watch measures it. Garmin revises it every few weeks, so the line steps rather than drifts.',
+        footnote: 'The effort you can hold before lactate builds up, as the watch measures it. The watch revises it every few weeks, so the line steps rather than drifts.',
         reading: {
           change: (delta: string, since: string) => `Threshold pace is ${delta} since ${since}.`,
           flat: (since: string) => `Threshold pace is unchanged since ${since}.`,
@@ -1164,7 +1166,7 @@ export const en = {
         acute: 'Acute load',
         daysUnit: 'd',
         distribution: 'Days at each status',
-        footnote: 'The watch\'s daily verdict, with the acute and chronic load Firstbeat measured. The blue band is the chronic load range Garmin personalises for you.',
+        footnote: 'The watch\'s daily verdict, with the acute and chronic load it measured. The blue band is the chronic load range the watch personalises for you.',
         reading: (status: string, days: number, windowDays: number, latest: string | null) =>
           `${status} on ${days} of the last ${windowDays} days${latest ? `, reading ${latest} now` : ', and today'}.`,
       },
@@ -1415,8 +1417,8 @@ export const en = {
     },
     shoe: {
       add: 'Add shoe',
-      changeInGarmin: (name: string) => `${name} - change in Garmin Connect`,
-      addInGarmin: 'Set the shoe in Garmin Connect',
+      changeInGarmin: (name: string) => `${name} - change it in your watch’s app`,
+      addInGarmin: 'Set the shoe in your watch’s app',
     },
     weather: {
       wind: 'Wind',
@@ -1484,7 +1486,7 @@ export const en = {
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
       noTrace: 'GPS trace unavailable',
-      noTraceHint: 'Available after Garmin sync',
+      noTraceHint: 'Available after the next sync',
       mapUnavailable: 'Map unavailable',
       mapUnavailableHint: 'No map token configured',
       routeMap: 'Activity route map',
@@ -1661,9 +1663,9 @@ export const en = {
     // C4-C5, v4.4b: the list, the detail hero and the type mix.
     tracked: (km: string) => `${km} km tracked`,
     add: 'Add',
-    addLabel: 'Add a pair in Garmin Connect',
+    addLabel: 'Add a pair in your watch’s app',
     edit: 'Edit shoe',
-    editLabel: 'Edit limit, role or retire in Garmin Connect',
+    editLabel: 'Edit limit, role or retire in your watch’s app',
     inRotation: (n: number) => `In rotation · ${n}`,
     retiredSection: (n: number) => `Retired · ${n}`,
     kmLeftShort: 'km left',
@@ -2026,7 +2028,7 @@ export const en = {
     },
     staleSync: {
       title: 'No data synced in a while',
-      body: (hours: number) => `Your last Garmin sync was ${hours}h ago - check that sync is still running.`,
+      body: (hours: number) => `Your last sync was ${hours}h ago - check that sync is still running.`,
     },
     newActivity: { title: (name: string) => `New activity: ${name}` },
     weeklyGoal: {
@@ -2101,7 +2103,7 @@ export const en = {
       ANAEROBIC_SHORTAGE: 'Lacking anaerobic',
       NO_DATA: 'Not enough data',
     } as Record<string, string | undefined>,
-    footnote: 'Firstbeat load over the last 4 weeks split by intensity, against the ranges Garmin personalises from your history. The marker is where you sit; the green zone is the target.',
+    footnote: 'Training load over the last 4 weeks split by intensity, against the ranges your watch personalises from your history. The marker is where you sit; the green zone is the target.',
   },
 
   loadRisk: {
@@ -2248,7 +2250,7 @@ export const en = {
   },
 
   coaching: {
-    garminOutOfDate: 'Garmin out of date',
+    garminOutOfDate: 'Watch data out of date',
     states: {
       prescribed: 'Prescribed',
       adjusted: 'Adjusted',

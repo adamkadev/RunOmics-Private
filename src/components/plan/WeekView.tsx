@@ -91,7 +91,7 @@ function selectedWorkouts(
 
 /**
  * Coming up (3.0.2): every session planned from today to Sunday that has not
- * been run, in order - "Tue 20 · 10 km · 1h00", in its type's colour.
+ * been run, in order - "Tue 20 · 10 km · 1:00 h", in its type's colour.
  */
 function comingUpRows(
   dates: string[],

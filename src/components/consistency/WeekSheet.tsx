@@ -4,7 +4,7 @@ import { useEffect, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { addDays, isoDate } from '@/lib/calendarDate'
-import { formatDate, formatDateRange, formatDistance, formatDurationCompact } from '@/lib/formatters'
+import { formatDate, formatDateRange, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
@@ -132,7 +132,7 @@ export function WeekSheet({ view, weekStart, today, onClose }: { view: Consisten
           <div className="flex min-w-0 flex-col gap-0.5">
             <h2 className="text-xl font-bold tracking-[-0.01em] text-foreground">{title}</h2>
             <p className="text-[12.5px] text-muted-foreground" data-testid="week-summary">
-              {s.summary(week.runs, formatDistance(week.km), formatDurationCompact(week.seconds))}
+              {s.summary(week.runs, formatDistance(week.km), formatDurationWords(week.seconds))}
             </p>
           </div>
           <span

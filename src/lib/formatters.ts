@@ -27,23 +27,16 @@ export function formatDurationRounded(seconds: number): { value: string; unit: s
   return { value: `${h}:${String(m).padStart(2, '0')}`, unit: t.units.hour }
 }
 
+/**
+ * A duration with its unit, the one way the app writes one (App Fixes 3d):
+ * "1:00 h" from an hour, "45 min" under it. It used to run the two together
+ * as "1h00", which read as neither a clock nor a count of minutes.
+ */
 export function formatDurationWords(seconds: number): string {
   const totalMinutes = Math.round(seconds / 60)
   const h = Math.floor(totalMinutes / 60)
   const m = totalMinutes % 60
-  return h > 0 ? `${h}${t.units.hour}${String(m).padStart(2, '0')}` : `${m} ${t.units.min}`
-}
-
-/**
- * Same breakdown as `formatDurationWords`, but always carries the hour digit
- * (`0h22`, not `22 min`) - a list mixing both is two duration formats fighting
- * for the reader's attention, not one dominant number and a bunch of context.
- */
-export function formatDurationCompact(seconds: number): string {
-  const totalMinutes = Math.round(seconds / 60)
-  const h = Math.floor(totalMinutes / 60)
-  const m = totalMinutes % 60
-  return `${h}${t.units.hour}${String(m).padStart(2, '0')}`
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')} ${t.units.hour}` : `${m} ${t.units.min}`
 }
 
 export function formatClock(seconds: number): string {
