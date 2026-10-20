@@ -878,10 +878,11 @@ export const fr = {
           planned === null ? `${week} · ${done} faite(s), sans plan` : `${week} · ${done} sur ${planned} prévue(s)`,
         perWeek: ' par semaine',
         done: 'Faite',
-        doneOfPlanned: (n: number) => `faites sur ${n} prévues`,
         doneNoPlan: 'faites',
+        // Les trois se lisent comme une somme : faites = au plan + en plus.
+        onPlan: (done: number, planned: number) => `${done} sur ${planned} prévues`,
         extra: (n: number) => `${n} en plus`,
-        extraLegend: 'En plus',
+        plannedLegend: 'Prévue',
         missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
         missed: 'Manquée',
       },

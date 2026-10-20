@@ -671,11 +671,13 @@ export function zonesView(rows: WeekRow[]): ZonesView | null {
 
 /**
  * A week's quality sessions against what the plan asked for (App Fixes 2d):
- * done, one more than asked, or asked for and not run. The dots used to name
- * the session's type, which said nothing about whether the plan was kept -
- * a plan of 0.9 a week with two weeks missed read as "on target".
+ * one run, one still to come this week, or one asked for and never run. The
+ * dots used to name the session's type, which said nothing about whether the
+ * plan was kept - a plan of 0.9 a week with two weeks missed read as "on
+ * target". Sessions past what the plan asked for are drawn as run, because
+ * they were; the headline is where "extra" is said.
  */
-export type QualityDot = 'done' | 'extra' | 'missed'
+export type QualityDot = 'done' | 'planned' | 'missed'
 
 export interface QualityView {
   weeks: QualityDot[][]
@@ -683,33 +685,56 @@ export interface QualityView {
   planAsks: number | null
   /** What the plan had each week, for the readout; null for a week without one. */
   planned: (number | null)[]
-  /** The window's totals, the card's own headline. */
-  totals: { done: number; extra: number; missed: number; planned: number | null }
+  /**
+   * The window's totals, the card's own headline, and they add up:
+   * `done = onPlan + extra`. The old `done` counted every session in the
+   * window but `planned` only summed the weeks the plan covered, so the
+   * card read "16 done of 6 planned".
+   */
+  totals: {
+    /** Every quality session run in the window. */
+    done: number
+    /** Those that answered a week's plan: never more than that week asked. */
+    onPlan: number
+    /** Run beyond what was asked, or in a week the plan says nothing about. */
+    extra: number
+    /** Asked for in a finished week and not run. */
+    missed: number
+    /** What the plan asked for in total; null where no week has a plan. */
+    planned: number | null
+  }
 }
 
 export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView | null {
   const planByWeek = new Map(plan.map((p) => [p.week, p.planQuality]))
+  let done = 0
+  let onPlan = 0
+  let missedTotal = 0
+  let plannedTotal: number | null = null
+
   const weeks = rows.map((r) => {
     const sessions = (r.point?.thresholdSessions ?? 0) + (r.point?.intervalSessions ?? 0)
     const asked = planByWeek.get(r.week) ?? null
-    const done = asked === null ? sessions : Math.min(sessions, asked)
-    const extra = sessions - done
+    done += sessions
+    if (asked !== null) {
+      plannedTotal = (plannedTotal ?? 0) + asked
+      onPlan += Math.min(sessions, asked)
+    }
     // The week under way has its planned sessions still to come, not missed.
-    const missed = r.current || asked === null ? 0 : Math.max(0, asked - sessions)
+    const outstanding = asked === null ? 0 : Math.max(0, asked - sessions)
+    const missed = r.current ? 0 : outstanding
+    const stillToCome = r.current ? outstanding : 0
+    missedTotal += missed
     return [
-      ...Array<QualityDot>(done).fill('done'),
-      ...Array<QualityDot>(extra).fill('extra'),
+      ...Array<QualityDot>(sessions).fill('done'),
+      ...Array<QualityDot>(stillToCome).fill('planned'),
       ...Array<QualityDot>(missed).fill('missed'),
     ]
   })
+
   const finished = rows.filter((r) => !r.current)
   if (!finished.length && weeks.every((w) => w.length === 0)) return null
   const planned = known(rows.map((r) => planByWeek.get(r.week)))
-  const count = (dot: QualityDot) => weeks.reduce((sum, week) => sum + week.filter((d) => d === dot).length, 0)
-  const plannedTotal = rows.reduce<number | null>((sum, r) => {
-    const asked = planByWeek.get(r.week)
-    return asked === undefined ? sum : (sum ?? 0) + asked
-  }, null)
   return {
     weeks,
     avg: finished.length ? Math.round((mean(finished.map((r) => (r.point?.thresholdSessions ?? 0) + (r.point?.intervalSessions ?? 0))) ?? 0) * 10) / 10 : null,
@@ -717,7 +742,7 @@ export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView
     // every week's plan beside a week that had 3 (v4.6 item 4).
     planAsks: planned.length ? Math.round(mean(planned)! * 10) / 10 : null,
     planned: rows.map((r) => planByWeek.get(r.week) ?? null),
-    totals: { done: count('done'), extra: count('extra'), missed: count('missed'), planned: plannedTotal },
+    totals: { done, onPlan, extra: done - onPlan, missed: missedTotal, planned: plannedTotal },
   }
 }
 

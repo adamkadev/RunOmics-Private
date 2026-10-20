@@ -947,10 +947,11 @@ export const en = {
         // App Fixes 2d: the dots say whether the plan was kept, not which
         // kind of session it was.
         done: 'Done',
-        doneOfPlanned: (n: number) => `done of ${n} planned`,
         doneNoPlan: 'done',
+        // The three read as one sum: done = on plan + extra.
+        onPlan: (done: number, planned: number) => `${done} of ${planned} planned`,
         extra: (n: number) => `${n} extra`,
-        extraLegend: 'Extra',
+        plannedLegend: 'Planned',
         missedCount: (n: number) => `${n} missed`,
         missed: 'Missed',
       },

@@ -306,15 +306,19 @@ describe('D4 Intensity', () => {
     expect(view.avg).toBe(1.3)
   })
 
-  // A week that ran more than the plan asked for is not a week on plan: the
-  // extra session is its own mark, and the totals say so (App Fixes 2d).
-  it('counts a session past the plan as extra, and totals done, extra and missed', () => {
+  // A session past the plan was still run, so it is drawn as run; "extra" is
+  // said in the totals, where done splits into on-plan plus extra and the
+  // three add up (App Fixes 2d).
+  it('draws every session run, and totals done as on plan plus extra', () => {
     const weeks = window.weeks.map((d, i) => week(d, { thresholdSessions: i === 0 ? 3 : 1, intervalSessions: 0 }))
     const plan = window.weeks.map((d) => ({ week: d, planKm: null, planQuality: 2 }))
     const view = qualityView(weekRows(weeks, plan, window, TODAY), plan)!
-    expect(view.weeks[0]).toEqual(['done', 'done', 'extra'])
+    expect(view.weeks[0]).toEqual(['done', 'done', 'done'])
     expect(view.weeks[1]).toEqual(['done', 'missed'])
-    expect(view.totals).toEqual({ done: 5, extra: 1, missed: 2, planned: 8 })
+    // The week under way owes one, and owing is not missing.
+    expect(view.weeks[3]).toEqual(['done', 'planned'])
+    expect(view.totals).toEqual({ done: 6, onPlan: 5, extra: 1, missed: 2, planned: 8 })
+    expect(view.totals.done).toBe(view.totals.onPlan + view.totals.extra)
   })
 })
 

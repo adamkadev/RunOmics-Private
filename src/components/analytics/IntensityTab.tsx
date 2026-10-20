@@ -151,20 +151,18 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
  * diagonal fits, so a column of them never touches.
  */
 /**
- * A quality session the plan asked for and got, one more than it asked for,
- * and one it asked for and never got (App Fixes 2d).
+ * A quality session run, one this week's plan still asks for, and one it
+ * asked for and never got (App Fixes 2d). The plan's own count is these
+ * outline dots, week by week, not a line drawn over every column.
  */
 const DOT_SHAPE: Record<QualityDot, { className: string; style: React.CSSProperties }> = {
   done: { className: 'size-3 rounded-full sm:size-2.5', style: { background: 'var(--zone-4)' } },
-  extra: { className: 'box-border size-3 rounded-full sm:size-2.5', style: { border: '1.5px solid var(--zone-4)' } },
+  planned: { className: 'box-border size-3 rounded-full sm:size-2.5', style: { border: '1.5px solid var(--zone-4)' } },
   missed: { className: 'box-border size-3 rounded-full sm:size-2.5', style: { border: '1.5px dashed var(--muted-foreground)' } },
 }
 
 /** Under this share of what the plan asks, the average is a caution. */
 const QUALITY_SHORT = 0.9
-
-/** A dot's slot in a week's column, gap included, in px. */
-const DOT_SLOT_PX = 16
 
 function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; plan: PlanWeekInput[] }) {
   const s = t.analytics.cards.quality
@@ -175,9 +173,12 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
   // 0.9 against a plan of 0.9 read as "on target" over two weeks with
   // nothing in them.
   const tone = totals.missed > 0 ? 'var(--warn)' : view.planAsks === null ? undefined : view.avg >= view.planAsks * QUALITY_SHORT ? 'var(--pos)' : 'var(--warn)'
+  // Done is the headline, and the two clauses under it split it: on plan
+  // plus extra is exactly what was run (App Fixes 2d).
   const note = [
-    totals.planned !== null ? s.doneOfPlanned(totals.planned) : s.doneNoPlan,
-    totals.extra > 0 ? s.extra(totals.extra) : null,
+    s.doneNoPlan,
+    totals.planned !== null ? s.onPlan(totals.onPlan, totals.planned) : null,
+    totals.extra > 0 && totals.planned !== null ? s.extra(totals.extra) : null,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -197,17 +198,9 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
       <Headline value={totals.done} note={note} noteStyle={tone ? { color: tone } : undefined} testId="quality-done" />
       <ChartScrub
         count={rows.length}
-        readout={(i) => s.readout(t.analytics.cards.scrubWeek(bare(rows[i]!.week)), view.weeks[i]!.filter((d) => d !== 'missed').length, view.planned[i] ?? null)}
+        readout={(i) => s.readout(t.analytics.cards.scrubWeek(bare(rows[i]!.week)), view.weeks[i]!.filter((d) => d === 'done').length, view.planned[i] ?? null)}
       >
         <div className="relative grid" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="quality-dots">
-          {view.planAsks !== null && view.planAsks > 0 && (
-            <div
-              aria-hidden
-              data-testid="quality-plan-line"
-              className="pointer-events-none absolute inset-x-0 z-[1] border-t border-dashed border-foreground"
-              style={{ bottom: Math.min(4, view.planAsks) * DOT_SLOT_PX }}
-            />
-          )}
           {view.weeks.map((dots, i) => (
             <div key={rows[i]!.week} className="flex h-16 flex-col-reverse items-center gap-0.5">
               {dots.map((dot, j) => (
@@ -222,9 +215,8 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
       <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
       <Legend className="gap-x-4">
         <LegendItem swatch="dot" color="var(--zone-4)">{s.done}</LegendItem>
-        {totals.extra > 0 && <LegendItem swatch="ring" color="var(--zone-4)">{s.extraLegend}</LegendItem>}
+        {view.weeks.some((w) => w.includes('planned')) && <LegendItem swatch="ring" color="var(--zone-4)">{s.plannedLegend}</LegendItem>}
         {totals.missed > 0 && <LegendItem swatch="dashCircle" color="var(--muted-foreground)">{s.missed}</LegendItem>}
-        {view.planAsks !== null && view.planAsks > 0 && <LegendItem swatch="dash" color="var(--foreground)">{t.analytics.cards.weekly.plan}</LegendItem>}
       </Legend>
     </Card>
   )
