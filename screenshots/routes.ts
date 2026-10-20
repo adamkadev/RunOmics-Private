@@ -34,9 +34,6 @@ export const ROUTES: RouteSpec[] = [
   { path: '/settings', name: 'settings' },
   { path: '/settings', name: 'settings-owner', asOwner: true },
   { path: '/no-such-page', name: 'not-found' },
-  // Review captures (temporary, not committed).
-  { path: '/activities?group=workouts', name: 'activities-filtered' },
-  { path: '/activities/90000273', name: 'activity-laps', hasTabs: true, settledWhen: '[data-route-drawn]' },
 ]
 
 export const THEMES = ['light', 'dark'] as const
