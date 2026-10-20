@@ -62,6 +62,12 @@ export interface ProgressHubView {
      * rather than drawing a second daily heatmap of its own.
      */
     thisWeek: { runs: number; target: number }
+    /**
+     * The last 26 weeks, oldest first, the week under way last (Wave 4, App
+     * Fixes 1h): runs as a share of the busiest week, never under 20 %, and
+     * whether the week hit its target.
+     */
+    strip: StreakWeek[]
   }
   /** `status` is the pair's wear, as its own page reads it: Replace soon from 70%. */
   shoes: { gearId: string; name: string; km: number; maxKm: number; status: WearStatus }[]
@@ -72,6 +78,46 @@ export interface ProgressHubView {
     since: string | null
     years: { year: number; km: number; runs: number; hours: number }[]
   }
+}
+
+export interface StreakWeek {
+  monday: string
+  runs: number
+  heightPct: number
+  hit: boolean
+  current: boolean
+}
+
+/** The streak strip's length: half a year of weeks. */
+export const STREAK_STRIP_WEEKS = 26
+const STRIP_MIN_PCT = 20
+
+/** The last 26 weeks of runs from the year of days, the week under way last (App Fixes 1h). */
+export function streakStrip(days: readonly HeatmapDay[], today: string, target: number): StreakWeek[] {
+  const thisMonday = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
+  const runsByWeek = new Map<string, number>()
+  for (const day of days) {
+    if (day.date > today) continue
+    const monday = isoDate(startOfWeek(new Date(`${day.date}T00:00:00`)))
+    runsByWeek.set(monday, (runsByWeek.get(monday) ?? 0) + day.sessionCount)
+  }
+  const mondays = Array.from({ length: STREAK_STRIP_WEEKS }, (_, i) =>
+    isoDate(addDays(new Date(`${thisMonday}T00:00:00`), -7 * (STREAK_STRIP_WEEKS - 1 - i))),
+  )
+  const max = Math.max(1, ...mondays.map((m) => runsByWeek.get(m) ?? 0))
+  return mondays.map((monday) => {
+    const runs = runsByWeek.get(monday) ?? 0
+    const current = monday === thisMonday
+    // The week under way is drawn to its target, the outline it has to fill.
+    const drawn = current ? Math.max(runs, target) : runs
+    return {
+      monday,
+      runs,
+      heightPct: Math.min(100, Math.max(STRIP_MIN_PCT, Math.round((drawn / max) * 100))),
+      hit: runs >= target,
+      current,
+    }
+  })
 }
 
 export interface YearPoint {
@@ -251,6 +297,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
       activeDays: activeDaysInYear(input.heatmapDays, input.today),
       streakWeeks: input.streakWeeks,
       thisWeek: { runs: runsThisWeek(input.activities, input.today), target: WEEKLY_RUN_TARGET },
+      strip: streakStrip(input.heatmapDays, input.today, WEEKLY_RUN_TARGET),
     },
     shoes: input.shoes
       .filter((s) => !s.retired)

@@ -8,20 +8,24 @@ import type { AllTimeMonth, AllTimeView, AllTimeYear } from '@/application/useca
 
 const TITLE = 'text-[15px] font-semibold text-foreground'
 
-/** The three totals (3.0): left-aligned, equal columns. */
+/** The three totals (App Fixes 1i): the label on top, the unit inline, as on the home card. */
 function Totals({ view }: { view: AllTimeView }) {
   const a = t.allTime
+  const cells: [string, string, string | null][] = [
+    [a.distance, formatKm(view.km), t.units.km],
+    [a.runs.charAt(0).toUpperCase() + a.runs.slice(1), String(view.runs), null],
+    [a.time, formatKm(view.hours), a.hoursUnit],
+  ]
   return (
     <section className={cardClass()} data-testid="all-time-totals">
       <div className="grid grid-cols-3 gap-3">
-        {[
-          [formatKm(view.km), a.km],
-          [String(view.runs), a.runs],
-          [formatKm(view.hours), a.hours],
-        ].map(([value, label]) => (
-          <div key={label} className="min-w-0 text-left">
-            <p className="text-[28px] font-bold leading-none tracking-[-0.02em] tabular-nums text-foreground">{value}</p>
-            <p className="mt-1.5 text-[12.5px] text-muted-foreground">{label}</p>
+        {cells.map(([label, value, unit]) => (
+          <div key={label} className="flex min-w-0 flex-col gap-1 text-left">
+            <p className="text-[12.5px] text-muted-foreground">{label}</p>
+            <p className="whitespace-nowrap text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums text-foreground">
+              {value}
+              {unit && <span className="ml-1 text-sm font-normal text-muted-foreground">{unit}</span>}
+            </p>
           </div>
         ))}
       </div>
@@ -34,59 +38,77 @@ function signedPercent(pct: number): string {
   return `${pct > 0 ? '+' : pct < 0 ? '−' : '±'}${formatPercent(Math.abs(pct))}`
 }
 
+/** Years listed before "All years ›" (App Fixes 1i, multi-year rules). */
+export const YEARS_SHOWN = 3
+
 /**
- * The years by km a month (3.0), fair to a first year that started late:
- * this year in the accent with its change on last year, the others in the
- * band grey; each year's totals under its bar (3.1), a first year that
- * started after January saying from when.
+ * The years by km a month (App Fixes 1i), newest first, one layout per row:
+ * year · bar · km a month · the change on the year before. Every bar is on
+ * the best year's scale; a first year that started after January says from
+ * when. Past three years, the latest three and "All years ›" for the rest.
  */
 export function YearRows({ years, currentYear, since }: { years: AllTimeYear[]; currentYear: number; since: string | null }) {
   const best = Math.max(1, ...years.map((y) => y.kmPerMonth))
   const newestFirst = [...years].reverse()
-  const current = years.find((y) => y.year === currentYear)
-  const previous = years.find((y) => y.year === currentYear - 1)
-  const changePct = current && previous && previous.kmPerMonth > 0 ? Math.round((current.kmPerMonth / previous.kmPerMonth - 1) * 100) : null
+  const byYear = new Map(years.map((y) => [y.year, y]))
   // A first year from its first run's month, when that is not January.
-  const lateStart = since && !since.slice(5, 7).startsWith('01') ? since : null
-  return (
-    <ul className="flex flex-col gap-3" data-testid="year-rows">
-        {newestFirst.map((y) => {
-          const isCurrent = y.year === currentYear
-          const from = lateStart && Number(lateStart.slice(0, 4)) === y.year ? formatDate(lateStart, { precision: 'month', year: 'never' }) : null
-          return (
-            <li
-              key={y.year}
-              className="grid grid-cols-[2.75rem_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1"
-              aria-label={t.allTime.yearLabel(y.year, formatKm(y.kmPerMonth))}
-              data-testid="year-row"
+  const lateStart = since && since.slice(5, 7) !== '01' ? since : null
+  const row = (y: AllTimeYear) => {
+    const isCurrent = y.year === currentYear
+    const prev = byYear.get(y.year - 1)
+    const changePct = prev && prev.kmPerMonth > 0 ? Math.round((y.kmPerMonth / prev.kmPerMonth - 1) * 100) : null
+    const from = lateStart && Number(lateStart.slice(0, 4)) === y.year ? formatDate(lateStart, { precision: 'month', year: 'never' }) : null
+    return (
+      <li
+        key={y.year}
+        className="grid grid-cols-[2.75rem_minmax(0,1fr)_5.5rem] items-center gap-x-3 gap-y-1"
+        aria-label={t.allTime.yearLabel(y.year, formatKm(y.kmPerMonth))}
+        data-testid="year-row"
+      >
+        <span className={cn('text-[15px] tabular-nums', isCurrent ? 'font-semibold text-foreground' : 'text-muted-foreground')}>{y.year}</span>
+        <span aria-hidden className="block h-1.5 overflow-hidden rounded-full bg-[var(--track)]">
+          <span
+            className="block h-full rounded-full"
+            data-testid="year-bar"
+            style={{ width: `${(y.kmPerMonth / best) * 100}%`, background: isCurrent ? 'var(--accent)' : 'var(--band)' }}
+          />
+        </span>
+        {/* The values in one column, the change beside them. */}
+        <span className="flex items-baseline gap-2 tabular-nums" aria-hidden>
+          <span className={cn('text-[15px]', isCurrent ? 'font-bold text-foreground' : 'text-muted-foreground')}>{formatKm(y.kmPerMonth)}</span>
+          {changePct !== null && (
+            <span
+              className={cn('text-[11px] font-semibold', changePct > 0 ? 'text-[var(--pos)]' : changePct < 0 ? 'text-[var(--warn)]' : 'text-muted-foreground')}
+              data-testid="year-change"
             >
-              <span className={cn('text-[13px] tabular-nums', isCurrent ? 'font-bold text-foreground' : 'text-muted-foreground')}>{y.year}</span>
-              <span aria-hidden className="block h-2 overflow-hidden rounded-full bg-[var(--track)]">
-                <span
-                  className="block h-full rounded-full"
-                  data-testid="year-bar"
-                  style={{ width: `${(y.kmPerMonth / best) * 100}%`, background: isCurrent ? 'var(--accent)' : 'var(--band)' }}
-                />
-              </span>
-              <span className="flex items-baseline justify-end gap-1.5 text-right tabular-nums" aria-hidden>
-                <span className={cn('text-[15px]', isCurrent ? 'font-bold text-foreground' : 'text-muted-foreground')}>{formatKm(y.kmPerMonth)}</span>
-                {isCurrent && changePct !== null && (
-                  <span
-                    className={cn('text-[11px] font-semibold', changePct > 0 ? 'text-[var(--pos)]' : changePct < 0 ? 'text-[var(--warn)]' : 'text-muted-foreground')}
-                    data-testid="year-change"
-                  >
-                    {signedPercent(changePct)}
-                  </span>
-                )}
-              </span>
-              <span className="col-start-2 col-end-4 text-[11.5px] text-muted-foreground" data-testid="year-totals">
-                {t.allTime.yearTotals(formatKm(y.km), y.runs)}
-                {from && ` · ${t.allTime.fromMonth(from)}`}
-              </span>
-            </li>
-          )
-        })}
-    </ul>
+              {signedPercent(changePct)}
+            </span>
+          )}
+        </span>
+        <span className="col-start-2 col-end-4 text-[11.5px] text-muted-foreground" data-testid="year-totals">
+          {t.allTime.yearTotals(formatKm(y.km), y.runs)}
+          {from && ` · ${t.allTime.fromMonth(from)}`}
+        </span>
+      </li>
+    )
+  }
+  const head = newestFirst.slice(0, YEARS_SHOWN)
+  const rest = newestFirst.slice(YEARS_SHOWN)
+  return (
+    <div className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-3" data-testid="year-rows">
+        {head.map(row)}
+      </ul>
+      {rest.length > 0 && (
+        <details className="group" data-testid="all-years">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-0.5 text-[13px] font-medium text-accent-text group-open:hidden [&::-webkit-details-marker]:hidden">
+            {t.allTime.allYears}
+            <ChevronRight size={14} strokeWidth={2.2} aria-hidden />
+          </summary>
+          <ul className="flex flex-col gap-3">{rest.map(row)}</ul>
+        </details>
+      )}
+    </div>
   )
 }
 
@@ -140,7 +162,6 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
     else list.push({ year: m.year, months: 1 })
     return list
   }, [])
-  const month = (key: string) => formatDate(`${key}-01`, { precision: 'month', year: 'never' })
   return (
     <section className={cardClass()} data-testid="all-time-monthly">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
@@ -154,13 +175,26 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
       <div className="mt-4" aria-hidden>
         <div className="relative" style={{ height: MONTHLY_H }}>
           {scale.ticks.map((km) => (
-            <span key={km} data-testid="monthly-gridline" className="absolute inset-x-0 border-t border-border" style={{ bottom: at(km) }} />
+            <span key={km} data-testid="monthly-gridline" className="absolute inset-x-0 border-t border-border" style={{ bottom: at(km) }}>
+              {/* Labelled (App Fixes 1i): the km over the line, at the left. */}
+              <span className="absolute bottom-0.5 left-0 text-[11px] leading-none tabular-nums text-[var(--axis-text)]">{km}</span>
+            </span>
           ))}
           <div className="relative grid h-full items-end gap-[3px]" style={{ ...grid, gridTemplateRows: `${MONTHLY_H}px` }}>
-            {shown.map((m) => {
+            {shown.map((m, i) => {
               const isBest = m === best && m.km > 0
               return (
                 <div key={m.key} className="relative flex h-full min-w-0 flex-col items-center justify-end">
+                  {/* A 1 px line before every January (multi-year rules). */}
+                  {i > 0 && m.key.endsWith('-01') && (
+                    <span aria-hidden className="absolute -left-[2px] inset-y-0 w-px bg-[var(--line-2)]" data-testid="january-divider" />
+                  )}
+                  {m.partial && m.projectedKm !== null && m.projectedKm > m.km && (
+                    // October's projection on top of its dashed bar (App Fixes 1i).
+                    <span className="mb-1 text-caption font-semibold leading-none tabular-nums text-accent-text" data-testid="month-projection">
+                      {formatKm(m.projectedKm)}
+                    </span>
+                  )}
                   {isBest && (
                     <span className="mb-1 text-caption font-semibold leading-none tabular-nums text-foreground" data-testid="best-value">
                       {formatKm(m.km)}
@@ -194,16 +228,12 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
             <span key={m.key} className={cn('min-w-0', m.partial && 'font-semibold text-accent-text')}>{initial(m.key)}</span>
           ))}
         </div>
-        <div className="mt-2.5 grid gap-[3px] text-caption leading-[14px] text-muted-foreground" style={grid} data-testid="monthly-years">
-          {years.map((y, i) => (
-            <span
-              key={y.year}
-              className={cn('min-w-0 whitespace-nowrap', i > 0 && 'border-l border-[var(--line-2)] pl-1')}
-              style={{ gridColumn: `span ${y.months}` }}
-              data-testid={i > 0 ? 'year-divider' : undefined}
-            >
+        {/* Each year under its own months: the columns split by the months
+            of each year in view (multi-year rules). */}
+        <div className="mt-2.5 grid gap-[3px] border-t border-border pt-2.5 text-caption leading-[14px] text-muted-foreground" style={grid} data-testid="monthly-years">
+          {years.map((y) => (
+            <span key={y.year} className="min-w-0 whitespace-nowrap" style={{ gridColumn: `span ${y.months}` }} data-testid="monthly-year">
               {y.year}
-              {now && y.year === now.year && ` · ${a.soFar(month(now.key), formatKm(now.km))}`}
             </span>
           ))}
         </div>
@@ -219,16 +249,16 @@ function Bests({ view }: { view: AllTimeView }) {
     view.longestRun && {
       label: a.longestRun,
       value: `${formatKm(view.longestRun.km, 1)} ${t.units.km}`,
-      date: view.longestRun.date,
+      sub: formatDate(view.longestRun.date, { style: 'bare', year: 'always' }),
       href: view.longestRun.activityId ? `/activities/${view.longestRun.activityId}` : '/activities',
     },
     view.biggestWeek && {
       label: a.biggestWeek,
       value: `${formatKm(view.biggestWeek.km)} ${t.units.km}`,
-      date: view.biggestWeek.weekStart,
+      sub: a.weekOf(formatDate(view.biggestWeek.weekStart, { style: 'bare', year: 'never' })),
       href: `/activities?week=${view.biggestWeek.weekStart}`,
     },
-  ].filter((cell): cell is { label: string; value: string; date: string; href: string } => !!cell)
+  ].filter((cell): cell is { label: string; value: string; sub: string; href: string } => !!cell)
   if (cells.length === 0) return null
   return (
     <section className={cardClass({ padding: 'none', overflow: true })} data-testid="all-time-bests">
@@ -240,7 +270,7 @@ function Bests({ view }: { view: AllTimeView }) {
               <ChevronRight size={14} aria-hidden="true" className="shrink-0" />
             </span>
             <span className="text-2xl font-bold leading-none tabular-nums text-foreground">{cell.value}</span>
-            <span className="text-[12.5px] text-muted-foreground">{formatDate(cell.date, { style: 'bare', year: 'always' })}</span>
+            <span className="text-[12.5px] text-muted-foreground">{cell.sub}</span>
           </Link>
         ))}
       </div>

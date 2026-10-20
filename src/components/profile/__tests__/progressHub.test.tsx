@@ -169,36 +169,28 @@ describe('ProgressHub (3.0)', () => {
     expect(screen.getByTestId('settings-gear').className).toContain('size-11')
   })
 
-  it('leads with the race: an accent border, the countdown, Target · Predicted · Gap with the gap in warn, and the gap per km', () => {
+  // App Fixes 1h: one compact row - distance, date and countdown over the
+  // name, the predicted time across from them.
+  it('leads with the race as one row: eyebrow with the countdown, the name, the predicted time', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
-    expect(screen.getByTestId('race-tile').className).toContain('border-accent')
-    expect(screen.getByTestId('race-countdown').textContent).toBe(t.profile.hub.inDays(64))
-    expect(screen.getByTestId('race-eyebrow').className).toContain('whitespace-nowrap')
-    expect(screen.getByTestId('race-target').textContent).toBe('41:24')
+    expect(screen.getByTestId('race-eyebrow').textContent).toContain(t.profile.hub.inDays(64))
     expect(screen.getByTestId('race-predicted').textContent).toBe('42:10')
-    const gap = screen.getByTestId('race-gap')
-    expect(gap.textContent).toBe('+0:46')
-    expect(gap.className).toContain('text-[var(--warn)]')
-    expect(screen.getByTestId('race-bar').getAttribute('aria-label')).toBe(t.profile.hub.reached(98))
-    expect(screen.getByTestId('race-caption').textContent).toBe(t.profile.hub.perKmToFind(5))
+    expect(screen.queryByTestId('race-gap')).toBeNull()
   })
 
-  it('names the race on its own line, and greens a prediction under the target', () => {
+  it('names the race on its own line, never cut', () => {
     const spotlight = { ...INPUT.spotlight!, race: { date: '2027-05-08', name: 'ING Night Marathon Luxembourg', distance: 'Half-Marathon', targetSeconds: 5700 }, predictedSeconds: 5600 }
     render(<ProgressHub view={progressHubView({ ...INPUT, spotlight })} />)
     expect(screen.getByTestId('race-name').textContent).toBe('ING Night Marathon Luxembourg')
     expect(screen.getByTestId('race-name').className).not.toContain('truncate')
-    expect(screen.getByTestId('race-gap').className).toContain('text-[var(--pos)]')
-    expect(screen.getByTestId('race-caption').textContent).toBe(t.profile.hub.perKmInHand(5))
   })
 
-  it('reads the year against its goal, with where it lands and what it needs', () => {
+  it('reads the year against its goal, the verdict across, a tick where this pace lands', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
-    expect(screen.getByTestId('year-hero').textContent).toContain(t.profile.hub.vsYear('+1,094', 2025))
     const verdict = screen.getByTestId('projection-verdict')
-    expect(verdict.textContent).toBe(t.profile.hub.shortBy('69'))
+    expect(verdict.textContent).toBe(t.profile.hub.shortAtPace('69'))
     expect(verdict.getAttribute('style')).toContain('var(--warn)')
-    expect(screen.getByTestId('projection-line').textContent).toContain(t.profile.hub.needs('41', '35'))
+    expect(screen.getByTestId('projection-tick').getAttribute('style')).toContain('var(--warn)')
   })
 
   it('tags the newest record NEW in the accent, its time in text ink', () => {
@@ -213,19 +205,22 @@ describe('ProgressHub (3.0)', () => {
   it('tags a shoe that needs replacing soon, and draws its bar in warn', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     const [pegasus, vomero] = screen.getAllByTestId('shoe-row')
-    expect(pegasus!.textContent).toContain(t.shoes.status.watch)
+    expect(pegasus!.textContent).toContain(`· ${t.shoes.status.watch.toLowerCase()}`)
     expect(pegasus!.querySelector<HTMLElement>('[data-testid="bar-fill"]')!.style.background).toBe('var(--warn)')
     expect(vomero!.querySelector('[data-testid="shoe-status"]')).toBeNull()
   })
 
-  // v4.3.1: the footers are whole segments, each kept on its line.
-  it('keeps each footer segment whole', () => {
+  // Wave 4, App Fixes 1h: a 26-week strip replaces the active-days line.
+  it('draws the last 26 weeks as a strip, the week under way an outline', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
-    const footer = screen.getByTestId('consistency-footer')
-    expect(footer.children.length).toBeGreaterThan(0)
-    for (const segment of footer.children) expect(segment.className).toContain('whitespace-nowrap')
-    expect(footer.textContent).toMatch(/\d+ active days in 12 months/)
-    expect(screen.getByTestId('records-tile').textContent).toContain(t.profile.hub.vo2Delta('+1'))
+    const strip = screen.getByTestId('streak-strip')
+    expect(strip.children).toHaveLength(26)
+    const last = strip.children[25] as HTMLElement
+    expect(last.hasAttribute('data-current')).toBe(true)
+    expect(last.style.border).toContain('dashed')
+    expect(screen.getByTestId('consistency-tile').textContent).not.toMatch(/active days/)
+    expect(screen.getByTestId('consistency-this-week').textContent).toBe(t.profile.hub.runsThisWeek(progressHubView(INPUT).consistency.thisWeek.runs, 3))
+    expect(screen.getByTestId('records-tile').textContent).toContain(t.profile.hub.vo2Delta('1'))
   })
 
   // App Fixes 1h: the hub previews Consistency's own reading - the weekly
