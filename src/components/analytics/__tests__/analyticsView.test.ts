@@ -122,9 +122,10 @@ describe('D1 Load', () => {
 
   it('marks a risk out of range as caution, and beyond the alert limit as an alert', () => {
     const panel = { acwr: 1.13, monotony: 1.5, rampRate: 2.4 } as LoadRiskPanel
-    expect(riskRows(panel).map((r) => r.state)).toEqual(['ok', 'ok', 'ok'])
-    expect(riskRows({ ...panel, acwr: 1.4 }).find((r) => r.key === 'loadRatio')!.state).toBe('out')
-    expect(riskRows({ ...panel, acwr: 1.6 }).find((r) => r.key === 'loadRatio')!.state).toBe('alert')
+    expect(riskRows(panel).map((r) => r.state)).toEqual(['ok', 'ok'])
+    // App Fixes 2a: the load ratio is read beside the load on Load trend,
+    // not as one of the injury checks.
+    expect(riskRows(panel).map((r) => r.key)).toEqual(['monotony', 'rampRate'])
     expect(riskRows({ ...panel, rampRate: -6 }).find((r) => r.key === 'rampRate')!.state).toBe('out')
     expect(riskRows({ ...panel, monotony: 2.3 }).find((r) => r.key === 'monotony')!.state).toBe('alert')
     // Monotony's range starts at the scale's own end: no label there.
@@ -295,12 +296,25 @@ describe('D4 Intensity', () => {
     const weeks = window.weeks.map((d, i) => week(d, { thresholdSessions: 1, intervalSessions: i % 2 }))
     const plan = window.weeks.map((d) => ({ week: d, planKm: null, planQuality: 2 }))
     const view = qualityView(weekRows(weeks, plan, window, TODAY), plan)!
-    expect(view.weeks[0]).toEqual(['threshold', 'missed'])
-    expect(view.weeks[1]).toEqual(['threshold', 'intervals'])
-    expect(view.weeks[3]).toEqual(['threshold', 'intervals'])
+    // App Fixes 2d: a dot says whether the plan was kept, not which kind of
+    // session it was.
+    expect(view.weeks[0]).toEqual(['done', 'missed'])
+    expect(view.weeks[1]).toEqual(['done', 'done'])
+    expect(view.weeks[3]).toEqual(['done', 'done'])
     expect(view.planAsks).toBe(2)
     expect(view.planned).toEqual([2, 2, 2, 2])
     expect(view.avg).toBe(1.3)
+  })
+
+  // A week that ran more than the plan asked for is not a week on plan: the
+  // extra session is its own mark, and the totals say so (App Fixes 2d).
+  it('counts a session past the plan as extra, and totals done, extra and missed', () => {
+    const weeks = window.weeks.map((d, i) => week(d, { thresholdSessions: i === 0 ? 3 : 1, intervalSessions: 0 }))
+    const plan = window.weeks.map((d) => ({ week: d, planKm: null, planQuality: 2 }))
+    const view = qualityView(weekRows(weeks, plan, window, TODAY), plan)!
+    expect(view.weeks[0]).toEqual(['done', 'done', 'extra'])
+    expect(view.weeks[1]).toEqual(['done', 'missed'])
+    expect(view.totals).toEqual({ done: 5, extra: 1, missed: 2, planned: 8 })
   })
 })
 

@@ -456,6 +456,11 @@ export const fr = {
         caution: 'La fatigue s’accumule',
         hold: 'La fatigue dépasse la condition',
       },
+      loadState: {
+        below: 'Charge sous la zone',
+        in: 'Charge dans la zone',
+        above: 'Charge au-dessus de la zone',
+      },
       ctl: 'Condition',
       atl: 'Fatigue',
       // La charge de la semaine rapportée à l’habitude : « ×1,79 ».
@@ -515,6 +520,7 @@ export const fr = {
     loadStrip: {
       title: 'Charge · 7 derniers jours',
       band: (lo: number, hi: number) => `cible ${lo}–${hi}`,
+      safe: (lo: number, hi: number) => `· sûr ${lo}–${hi}`,
       day: (date: string, load: number) => `${date} · charge ${load}`,
     },
     celebration: {
@@ -600,6 +606,8 @@ export const fr = {
         },
         load: {
           spikeAndDip: 'La charge a bondi et la récupération fléchit. Prévois 2 jours tranquilles.',
+          watchStillSays: (status: string) =>
+            `Ta montre affiche toujours ${status}, parce qu'elle regarde les 28 derniers jours et que ton bloc récent était solide.`,
           spike: (pct: number, span: string) => `La charge a bondi de ${pct} % en ${span}. Lève le pied avant qu’elle ne te rattrape.`,
           spikeAbove: "La charge dépasse ta zone sûre. Lève le pied avant qu’elle ne te rattrape.",
           dip: 'La récupération fléchit. Fais une semaine tranquille.',
@@ -664,6 +672,7 @@ export const fr = {
         caption: 'charge aiguë sur 7 jours',
         about: "Ta charge aiguë : les 7 derniers jours de charge Garmin, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
         safe: (lo: number, hi: number) => `zone sûre ${lo}–${hi}`,
+        ratioSafe: (lo: number, hi: number) => `ratio · sûr ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 jour' : `${days} jours`) : Math.round(days / 7) === 1 ? '1 semaine' : `${Math.round(days / 7)} semaines`),
         today: 'aujourd’hui',
         onDay: (date: string) => `le ${date}`,
@@ -868,8 +877,12 @@ export const fr = {
         readout: (week: string, done: number, planned: number | null) =>
           planned === null ? `${week} · ${done} faite(s), sans plan` : `${week} · ${done} sur ${planned} prévue(s)`,
         perWeek: ' par semaine',
-        threshold: 'Seuil',
-        intervals: 'Fractionné',
+        done: 'Faite',
+        doneOfPlanned: (n: number) => `faites sur ${n} prévues`,
+        doneNoPlan: 'faites',
+        extra: (n: number) => `${n} en plus`,
+        extraLegend: 'En plus',
+        missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
         missed: 'Manquée',
       },
       zoneRanges: {

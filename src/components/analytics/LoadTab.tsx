@@ -176,7 +176,7 @@ function StatusCard({ days, window, period, onShift }: { days: StatusDay[]; wind
   )
 }
 
-const RISK_DECIMALS: Record<RiskRow['key'], number> = { loadRatio: 2, monotony: 1, rampRate: 1 }
+const RISK_DECIMALS: Record<RiskRow['key'], number> = { monotony: 1, rampRate: 1 }
 /** In range the value is text ink; out of it caution, past the alert limit bad (v4.17: never a zone). */
 const RISK_INK: Record<RiskRow['state'], string> = { ok: 'var(--foreground)', out: 'var(--warn)', alert: 'var(--neg)' }
 
@@ -198,34 +198,19 @@ export function safeCaption(row: RiskRow): string {
   return row.lo < 0 ? s.safeSigned(edgeLabel(row, row.lo), edgeLabel(row, row.hi)) : s.safeBetween(edgeLabel(row, row.lo), edgeLabel(row, row.hi))
 }
 
-function RiskRowView({ row, risk }: { row: RiskRow; risk: LoadRiskPanel }) {
+function RiskRowView({ row }: { row: RiskRow }) {
   const s = t.analytics.cards.risk
   const [formula, setFormula] = useState(false)
   const at = (v: number) => (v - row.min) / (row.max - row.min)
   const name = s[row.key]
-  // The ratio prints its inputs, the last point of Load trend (v5.4).
-  const hint =
-    row.key === 'loadRatio'
-      ? risk.acute !== null && risk.chronic !== null
-        ? `${risk.acute} ÷ ${risk.chronic}`
-        : s.loadRatioHint
-      : row.key === 'monotony'
-        ? s.monotonyHint
-        : s.rampRateHint
-  const explain =
-    row.key === 'loadRatio'
-      ? risk.acute !== null && risk.chronic !== null
-        ? s.loadRatioFormula(risk.acute, risk.chronic)
-        : s.loadRatioFormulaLocal
-      : row.key === 'monotony'
-        ? s.monotonyFormula
-        : s.rampRateFormula
+  const hint = row.key === 'monotony' ? s.monotonyHint : s.rampRateHint
+  const explain = row.key === 'monotony' ? s.monotonyFormula : s.rampRateFormula
   return (
     <div className="flex flex-col gap-2 border-t border-border py-2.5" data-testid={`risk-${row.key}`} data-state={row.state}>
       <div className="flex items-baseline justify-between gap-3">
         <button type="button" onClick={() => setFormula((v) => !v)} aria-expanded={formula} className="min-w-0 text-left text-sm text-foreground">
           <span className="font-medium">{name}</span>{' '}
-          <span className="text-xs text-muted-foreground" data-testid={row.key === 'loadRatio' ? 'load-ratio-inputs' : undefined}>{hint}</span>
+          <span className="text-xs text-muted-foreground">{hint}</span>
         </button>
         <span className="shrink-0 text-lg font-semibold leading-none" style={{ color: RISK_INK[row.state] }} data-testid="risk-value">
           {riskValue(row)}
@@ -266,7 +251,7 @@ function RiskCard({ risk }: { risk: LoadRiskPanel | null }) {
       </div>
       <div className="flex flex-col">
         {rows.map((row) => (
-          <RiskRowView key={row.key} row={row} risk={risk} />
+          <RiskRowView key={row.key} row={row} />
         ))}
       </div>
     </Card>

@@ -490,6 +490,13 @@ export const en = {
         caution: 'Fatigue building up',
         hold: 'Fatigue ahead of fitness',
       },
+      // The seven-day load against its safe range, the words Analytics' Load
+      // card uses for the same reading (App Fixes 1a).
+      loadState: {
+        below: 'Load below range',
+        in: 'Load in range',
+        above: 'Load above range',
+      },
       ctl: 'Fitness',
       atl: 'Fatigue',
       // This week's load against the usual: "×0.90".
@@ -555,6 +562,7 @@ export const en = {
     loadStrip: {
       title: 'Load · last 7 days',
       band: (lo: number, hi: number) => `target ${lo}–${hi}`,
+      safe: (lo: number, hi: number) => `· safe ${lo}–${hi}`,
       day: (date: string, load: number) => `${date} · load ${load}`,
     },
     celebration: {
@@ -647,6 +655,9 @@ export const en = {
         },
         load: {
           spikeAndDip: 'Load spiked and recovery is dipping. Take 2 easy days.',
+          // Why the watch and the load disagree (App Fixes 2a).
+          watchStillSays: (status: string) =>
+            `Your watch's training status still says ${status}, because it looks at the last 28 days and your recent block was strong.`,
           spike: (pct: number, span: string) => `Load jumped ${pct}% in ${span}. Ease off before it catches up.`,
           spikeAbove: 'Load is above your safe range. Ease off before it catches up.',
           dip: 'Recovery is dipping. Keep this week easy.',
@@ -715,6 +726,7 @@ export const en = {
         caption: '7-day acute load',
         about: 'Your acute load: the last 7 days of Garmin training load, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
         safe: (lo: number, hi: number) => `safe range ${lo}–${hi}`,
+        ratioSafe: (lo: number, hi: number) => `ratio · safe ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 day' : `${days} days`) : Math.round(days / 7) === 1 ? '1 week' : `${Math.round(days / 7)} weeks`),
         // When the range is read (design review, Oct 2026): "still inside
         // your safe range" beside "15 days went over" read as a contradiction.
@@ -930,8 +942,14 @@ export const en = {
         readout: (week: string, done: number, planned: number | null) =>
           planned === null ? `${week} · ${done} done, no plan` : `${week} · ${done} of ${planned} planned done`,
         perWeek: ' a week',
-        threshold: 'Threshold',
-        intervals: 'Intervals',
+        // App Fixes 2d: the dots say whether the plan was kept, not which
+        // kind of session it was.
+        done: 'Done',
+        doneOfPlanned: (n: number) => `done of ${n} planned`,
+        doneNoPlan: 'done',
+        extra: (n: number) => `${n} extra`,
+        extraLegend: 'Extra',
+        missedCount: (n: number) => `${n} missed`,
         missed: 'Missed',
       },
       zoneRanges: {

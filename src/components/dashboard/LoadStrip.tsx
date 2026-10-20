@@ -38,7 +38,15 @@ export function LoadStrip({ recent }: { recent: RecentLoad }) {
     <section className="flex flex-col gap-2 rounded-[20px] border border-border bg-card px-3.5 py-3 shadow-card" data-testid="load-strip">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <h2 className="text-[13px] font-semibold text-foreground">{s.title}</h2>
-        <p className="text-[11px] text-muted-foreground tabular-nums">{s.band(recent.band.lo, recent.band.hi)}</p>
+        {/* The seven-day load and its safe range, read off the pair Analytics
+            reads (App Fixes 1a), so the two screens print one number. */}
+        {recent.reading ? (
+          <p className="text-[11px] text-muted-foreground tabular-nums" data-testid="load-reading" data-state={recent.reading.state}>
+            <b className="font-semibold text-foreground">{recent.reading.acute}</b> {s.safe(recent.reading.lo, recent.reading.hi)}
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground tabular-nums">{s.band(recent.band.lo, recent.band.hi)}</p>
+        )}
       </div>
       <ul className="flex items-end gap-1.5">
         {recent.days.map((day) => (

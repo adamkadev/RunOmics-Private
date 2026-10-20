@@ -2,9 +2,11 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { dayTypes, type RecentLoad } from '@/application/usecases/GetRecentLoad'
 import { LoadStrip } from '../LoadStrip'
+import { t } from '@/i18n'
 
 const RECENT: RecentLoad = {
   band: { lo: 42, hi: 69 },
+  reading: { acute: 456, lo: 462, hi: 750, state: 'below' },
   peak: 80,
   days: [
     { date: '2026-10-16', load: 60, isToday: false, type: 'Base' },
@@ -18,6 +20,15 @@ const RECENT: RecentLoad = {
 // blue, threshold's purple - a day off grey. Today without a run is an
 // accent outline rather than an accent fill (App Fixes, 5a rule 2).
 describe('LoadStrip', () => {
+  // App Fixes 1a: the seven-day load and its safe range come from the pair
+  // Analytics reads, so the two screens cannot disagree.
+  it('prints the seven-day load against the safe range', () => {
+    render(<LoadStrip recent={RECENT} />)
+    const reading = screen.getByTestId('load-reading')
+    expect(reading.textContent).toBe(`456 ${t.dashboard.loadStrip.safe(462, 750)}`)
+    expect(reading.dataset.state).toBe('below')
+  })
+
   it('colours each day by the session it was', () => {
     render(<LoadStrip recent={RECENT} />)
     const bars = screen.getAllByTestId('load-bar').map((bar) => bar.style.background)

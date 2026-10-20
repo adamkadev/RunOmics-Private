@@ -1,8 +1,8 @@
 'use client'
 
-import type { LoadPair } from '@/domain/training/loadTrend'
+import { SAFE_RATIO_HI, SAFE_RATIO_LO, type LoadPair } from '@/domain/training/loadTrend'
 import type { RecoveryNight } from '@/domain/training/recovery'
-import { formatDate, MINUS } from '@/lib/formatters'
+import { formatDate, formatDecimal, MINUS } from '@/lib/formatters'
 import { DELTA_TONE_COLOR } from '@/lib/deltaTone'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { t } from '@/i18n'
@@ -89,6 +89,7 @@ export function LoadTrendCard({ pairs, window, yMax, onShift }: { pairs: LoadPai
   const { points } = view
   const n = points.length
   const out = view.state !== 'in'
+  const ratioOut = view.ratio < SAFE_RATIO_LO || view.ratio > SAFE_RATIO_HI
   return (
     <Card testId="load-trend-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
@@ -99,6 +100,13 @@ export function LoadTrendCard({ pairs, window, yMax, onShift }: { pairs: LoadPai
         </span>
         <span className="text-[13px]" style={{ color: MUTED }}>{s.safe(view.lo, view.hi)}</span>
       </div>
+      {/* The ratio reads beside the load it is made of (App Fixes 2a). Under
+          Injury risk it said "risk" about a number whose low end is simply
+          detraining. */}
+      <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[13px]" data-testid="load-ratio">
+        <b className="text-sm font-semibold" style={{ color: ratioOut ? WARN : INK }}>{formatDecimal(view.ratio, 2)}</b>
+        <span style={{ color: MUTED }}>{s.ratioSafe(SAFE_RATIO_LO, SAFE_RATIO_HI)}</span>
+      </p>
       <BoldSentence parts={loadSentence(view, window.live)} />
       <ChartScrub
         count={n}

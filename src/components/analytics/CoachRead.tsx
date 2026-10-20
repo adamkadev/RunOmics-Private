@@ -59,6 +59,11 @@ export function CoachRead({ read, eyebrow }: { read: TabRead; eyebrow: string })
         <p className="text-[15px] font-semibold leading-snug text-foreground text-pretty" data-testid="coach-read-headline">
           {read.headline}
         </p>
+        {read.note && (
+          <p className="text-[13px] leading-snug text-[var(--text-2)] text-pretty" data-testid="coach-read-note">
+            {read.note}
+          </p>
+        )}
         <div className="flex items-center gap-5">
           {read.rows.length > 0 && (
             <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={LINK} data-testid="coach-read-why">

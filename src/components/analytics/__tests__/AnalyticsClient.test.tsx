@@ -234,17 +234,17 @@ describe('Analytics (v4.5)', () => {
     expect(document.querySelector('[aria-label="' + t.analytics.aboutChart + '"]')).toBeNull()
   })
 
-  it('reads the injury risk against its ranges, and shows the load ratio formula on tap', async () => {
+  // App Fixes 2a: the load ratio reads beside the load on Load trend, so
+  // Injury risk is the two checks that are about injury.
+  it('reads the injury risk against its ranges', async () => {
     await renderBoard()
     const card = screen.getByTestId('risk-card')
-    expect(card.textContent).toContain(t.analytics.cards.risk.inRange(3, 3))
+    expect(card.textContent).toContain(t.analytics.cards.risk.inRange(2, 2))
     expect(screen.getByTestId('risk-count').getAttribute('style')).toContain('var(--pos)')
     // Each range under its bar.
-    expect(card.textContent).toContain('Safe 0.8 – 1.3')
+    expect(card.textContent).not.toContain('Safe 0.8 – 1.3')
     expect(card.textContent).toContain('Safe below 2.0')
     expect(card.textContent).toContain('Safe −5 to +5')
-    fireEvent.click(within(card).getByRole('button', { name: /Load ratio/ }))
-    expect(card.textContent).toContain(t.analytics.cards.risk.loadRatioFormula(412, 365))
   })
 
   // v4.17: past its alert limit a risk is bad news, neg - never the Z5 pink.
@@ -252,7 +252,7 @@ describe('Analytics (v4.5)', () => {
     render(<AnalyticsClient data={{ ...data, risk: { ...data.risk!, acwr: 1.6, monotony: 2.1 } }} today={TODAY} />)
     await screen.findByTestId('form-card')
     const value = (key: string) => within(screen.getByTestId(`risk-${key}`)).getByTestId('risk-value').getAttribute('style')
-    expect(value('loadRatio')).toContain('var(--neg)')
+    expect(value('monotony')).toContain('var(--neg)')
     expect(value('rampRate')).toContain('var(--foreground)')
     expect(screen.getByTestId('risk-count').getAttribute('style')).toContain('var(--neg)')
     expect(screen.getByTestId('risk-card').innerHTML).not.toContain('--zone-')
@@ -718,10 +718,11 @@ describe('Load trend and Recovery (v5.4)', () => {
     expect(ids).toEqual(['coach-read', 'form-card', 'load-trend-card', 'risk-card', 'recovery-card', 'status-card'])
   })
 
-  it('prints the load ratio with its inputs, the last point of Load trend', async () => {
+  // App Fixes 2a: the ratio sits with the load it is made of.
+  it('prints the load ratio beside the load, with its safe range', async () => {
     await renderWith({})
     expect(screen.getByTestId('load-trend-value').textContent).toBe('412')
-    expect(screen.getByTestId('load-ratio-inputs').textContent).toBe('412 ÷ 365')
+    expect(screen.getByTestId('load-ratio').textContent).toBe(`1.13${t.analytics.cards.loadTrend.ratioSafe(0.8, 1.3)}`)
   })
 
   // Design review, Oct 2026: "still inside your safe range. 15 days went

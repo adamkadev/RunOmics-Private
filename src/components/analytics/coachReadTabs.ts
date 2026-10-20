@@ -62,6 +62,8 @@ export interface TabRead {
   tone: StatTone
   headline: string
   rows: CoachRow[]
+  /** A second line under the claim, where the claim needs one (App Fixes 2a). */
+  note?: string
 }
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
@@ -140,8 +142,17 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
       direction: directionOf(Math.round(form.fatigueDelta)),
     })
 
-  if (head) return { tone: head.kind === 'building' ? 'pos' : 'warn', headline: loadHeadlineText(head), rows: ordered(rows) }
-  if (trend) return { tone: trend.state !== 'in' ? 'warn' : 'muted', headline: joined(loadSentence(trend, window.live)), rows: ordered(rows) }
+  // The watch reads 28 days, so its status can still say "productive" while
+  // the last week's load has fallen out of range. Said plainly, the two stop
+  // looking like a contradiction (App Fixes 2a).
+  const watchStatus = data.status.filter((d) => d.date <= window.end).at(-1)?.status ?? null
+  const note =
+    trend?.state === 'below' && (watchStatus === 'productive' || watchStatus === 'maintaining')
+      ? s.load.watchStillSays(t.trainingStatus.status[watchStatus])
+      : undefined
+
+  if (head) return { tone: head.kind === 'building' ? 'pos' : 'warn', headline: loadHeadlineText(head), rows: ordered(rows), note }
+  if (trend) return { tone: trend.state !== 'in' ? 'warn' : 'muted', headline: joined(loadSentence(trend, window.live)), rows: ordered(rows), note }
   // Without Garmin's load pair, Fitness is the claim and the rest its case.
   if (!fitness) return null
   return { tone: 'muted', headline: fitness.text, rows: ordered(rows.filter((row) => row !== fitness)) }

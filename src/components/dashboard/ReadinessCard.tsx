@@ -4,15 +4,18 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { verdictTone, type ReadinessTone } from '@/domain/training/readiness'
 import { STATUS_DELTA_DAYS } from '@/domain/training/status'
 import { deltaTone, DELTA_TONE_COLOR, type DeltaMetric } from '@/lib/deltaTone'
-import { formatDecimal, formatDelta } from '@/lib/formatters'
+import { formatDelta } from '@/lib/formatters'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
+import type { LoadReading } from '@/application/usecases/GetRecentLoad'
 import { FormDial } from './FormDial'
 import { t } from '@/i18n'
 
 /**
  * The status line's colour (design review 3.0): the accent while the block
  * goes as planned, the warn colour once it asks for care - Caution and Hold
- * back - on the dot and the words both, which also say it.
+ * back - on the dot and the words both, which also say it. A load outside
+ * its safe range is the same kind of news, so it takes the warn colour too
+ * (App Fixes 1a).
  */
 const STATUS_COLOR: Record<ReadinessTone, string> = {
   go: 'var(--accent-text)',
@@ -58,13 +61,27 @@ function Delta({ metric, delta, current, days }: { metric: DeltaMetric; delta: n
  * status, a second verdict beside this one, is gone. The card opens
  * Analytics › Load, where the three live in full.
  */
-export function ReadinessCard({ status, verdict = null }: { status: TrainingStatus | null; verdict?: TodayVerdict | null }) {
+export function ReadinessCard({
+  status,
+  verdict = null,
+  load = null,
+}: {
+  status: TrainingStatus | null
+  verdict?: TodayVerdict | null
+  /** The seven-day load reading Analytics prints, where the watch has one. */
+  load?: LoadReading | null
+}) {
   if (!status) return null
 
   const s = t.dashboard.readiness
   const form = Math.round(status.tsbNow)
   const tone = verdictTone(status)
-  const color = STATUS_COLOR[tone]
+  // The second half of the line is the load against its safe range, from the
+  // one reading Analytics uses (App Fixes 1a): it used to be a word chosen
+  // off Form alone, so Today could read "Load in range" over an Analytics
+  // card saying the opposite.
+  const color = load && load.state !== 'in' ? 'var(--warn)' : STATUS_COLOR[tone]
+  const line = load ? s.loadState[load.state] : s.lineByTone[tone]
 
   return (
     <Link href="/analytics" aria-label={s.open} className="block active:scale-[0.99]" data-testid="readiness-card-link">
@@ -75,7 +92,7 @@ export function ReadinessCard({ status, verdict = null }: { status: TrainingStat
             <p className="flex items-start gap-2 text-caption font-semibold uppercase leading-snug tracking-[0.1em]" style={{ color }} data-testid="readiness-status" data-tone={tone}>
               <span aria-hidden className="mt-[0.3em] size-[7px] shrink-0 rounded-full" style={{ background: color }} />
               <span>
-                {s.eyebrowByTone[tone]} · {s.lineByTone[tone]}
+                {s.eyebrowByTone[tone]} · {line}
               </span>
             </p>
             {verdict && (
@@ -92,7 +109,9 @@ export function ReadinessCard({ status, verdict = null }: { status: TrainingStat
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        {/* Fitness and Fatigue support the dial; the load ratio moved to
+            Analytics' load story, where the band it belongs to is (2a). */}
+        <div className="grid grid-cols-2 gap-2">
           <Tile
             testId="tile-fitness"
             label={s.ctl}
@@ -105,7 +124,6 @@ export function ReadinessCard({ status, verdict = null }: { status: TrainingStat
             value={Math.round(status.atl)}
             delta={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
-          <Tile testId="tile-load" label={s.acwr} value={status.acwr === null ? s.noValue : s.acwrValue(formatDecimal(status.acwr, 2))} />
         </div>
       </section>
     </Link>

@@ -212,7 +212,12 @@ export function statusView(days: StatusDay[], window: DayWindow): StatusView | n
 export type RiskState = 'ok' | 'out' | 'alert'
 
 export interface RiskRow {
-  key: 'loadRatio' | 'monotony' | 'rampRate'
+  /**
+   * The load ratio left this panel (App Fixes 2a): a ratio under 0.8 is
+   * detraining, not an injury risk, so it is read beside the load it comes
+   * from, on the Load trend card.
+   */
+  key: 'monotony' | 'rampRate'
   value: number
   state: RiskState
   /** Scale, safe range and the edges the labels sit at. */
@@ -239,7 +244,6 @@ interface RiskScale {
  * beyond ±5 a week is caution and beyond ±8 risk.
  */
 const RISK_SCALES: Record<RiskRow['key'], RiskScale> = {
-  loadRatio: { min: 0.4, max: 2, lo: 0.8, hi: 1.3, alert: (v) => v > 1.5 },
   monotony: { min: 0, max: 3, lo: 0, hi: 2, alert: (v) => v > 2 },
   rampRate: { min: -10, max: 10, lo: -5, hi: 5, alert: (v) => Math.abs(v) > 8 },
 }
@@ -247,7 +251,6 @@ const RISK_SCALES: Record<RiskRow['key'], RiskScale> = {
 export function riskRows(risk: LoadRiskPanel | null): RiskRow[] {
   if (!risk) return []
   const values: [RiskRow['key'], number | null][] = [
-    ['loadRatio', risk.acwr],
     ['monotony', risk.monotony],
     ['rampRate', risk.rampRate],
   ]
@@ -666,7 +669,13 @@ export function zonesView(rows: WeekRow[]): ZonesView | null {
   }
 }
 
-export type QualityDot = 'threshold' | 'intervals' | 'missed'
+/**
+ * A week's quality sessions against what the plan asked for (App Fixes 2d):
+ * done, one more than asked, or asked for and not run. The dots used to name
+ * the session's type, which said nothing about whether the plan was kept -
+ * a plan of 0.9 a week with two weeks missed read as "on target".
+ */
+export type QualityDot = 'done' | 'extra' | 'missed'
 
 export interface QualityView {
   weeks: QualityDot[][]
@@ -674,31 +683,41 @@ export interface QualityView {
   planAsks: number | null
   /** What the plan had each week, for the readout; null for a week without one. */
   planned: (number | null)[]
+  /** The window's totals, the card's own headline. */
+  totals: { done: number; extra: number; missed: number; planned: number | null }
 }
 
 export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView | null {
   const planByWeek = new Map(plan.map((p) => [p.week, p.planQuality]))
   const weeks = rows.map((r) => {
-    const threshold = r.point?.thresholdSessions ?? 0
-    const intervals = r.point?.intervalSessions ?? 0
+    const sessions = (r.point?.thresholdSessions ?? 0) + (r.point?.intervalSessions ?? 0)
+    const asked = planByWeek.get(r.week) ?? null
+    const done = asked === null ? sessions : Math.min(sessions, asked)
+    const extra = sessions - done
     // The week under way has its planned sessions still to come, not missed.
-    const missed = r.current ? 0 : Math.max(0, (planByWeek.get(r.week) ?? 0) - threshold - intervals)
+    const missed = r.current || asked === null ? 0 : Math.max(0, asked - sessions)
     return [
-      ...Array<QualityDot>(threshold).fill('threshold'),
-      ...Array<QualityDot>(intervals).fill('intervals'),
+      ...Array<QualityDot>(done).fill('done'),
+      ...Array<QualityDot>(extra).fill('extra'),
       ...Array<QualityDot>(missed).fill('missed'),
     ]
   })
-  const done = rows.filter((r) => !r.current)
-  if (!done.length && weeks.every((w) => w.length === 0)) return null
+  const finished = rows.filter((r) => !r.current)
+  if (!finished.length && weeks.every((w) => w.length === 0)) return null
   const planned = known(rows.map((r) => planByWeek.get(r.week)))
+  const count = (dot: QualityDot) => weeks.reduce((sum, week) => sum + week.filter((d) => d === dot).length, 0)
+  const plannedTotal = rows.reduce<number | null>((sum, r) => {
+    const asked = planByWeek.get(r.week)
+    return asked === undefined ? sum : (sum ?? 0) + asked
+  }, null)
   return {
     weeks,
-    avg: done.length ? Math.round((mean(done.map((r) => (r.point?.thresholdSessions ?? 0) + (r.point?.intervalSessions ?? 0))) ?? 0) * 10) / 10 : null,
+    avg: finished.length ? Math.round((mean(finished.map((r) => (r.point?.thresholdSessions ?? 0) + (r.point?.intervalSessions ?? 0))) ?? 0) * 10) / 10 : null,
     // One decimal: plans ran from 1 to 3 a week, and a rounded "1" read as
     // every week's plan beside a week that had 3 (v4.6 item 4).
     planAsks: planned.length ? Math.round(mean(planned)! * 10) / 10 : null,
     planned: rows.map((r) => planByWeek.get(r.week) ?? null),
+    totals: { done: count('done'), extra: count('extra'), missed: count('missed'), planned: plannedTotal },
   }
 }
 
