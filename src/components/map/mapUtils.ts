@@ -200,6 +200,16 @@ export function heatToneColor(mode: "dark" | "light", accent: string, tone: Heat
   }
 }
 
+/**
+ * How hard the accent is washed back over the dark canvas once the tracks
+ * are drawn (3.0 override 9, App Fixes 4a). Added light stacks: with enough
+ * runs over one street the sum reaches white, and the heatmap then said
+ * "white", not "your accent, bright". This pulls the busiest ground back to
+ * the accent while leaving the rare tracks, which never got near the
+ * ceiling, as they were.
+ */
+export const HEAT_DARK_CAP_ALPHA = 0.55;
+
 export function heatPasses(mode: "dark" | "light", accent: string): HeatPass[] {
   return HEAT_STYLE[mode].passes.map((pass) => ({
     width: pass.width,

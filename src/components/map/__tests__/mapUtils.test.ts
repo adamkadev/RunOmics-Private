@@ -4,6 +4,7 @@ import {
   buildHeatTracks,
   mercatorX,
   mercatorY,
+  HEAT_DARK_CAP_ALPHA,
   HEAT_STYLE,
   heatLineWidth,
   heatPasses,
@@ -137,6 +138,14 @@ describe('HEAT_STYLE (v4.17)', () => {
     expect(passes.map((p) => p.color)).toEqual([rgba(light, 0.09), rgba(light, 0.2), rgba('#0e7f9b', 0.34), rgba(deep, 0.46)])
     expect(passes[0]!.blur).toBe(6)
     expect(passes.slice(1).every((p) => p.blur === undefined)).toBe(true)
+  })
+
+  // 3.0 override 9: added light stacks, so enough runs over one street summed
+  // to white. The canvas washes the accent back over what it drew, which caps
+  // the busiest ground at the accent; heatLayer applies it with source-atop.
+  it('caps the dark canvas at the accent rather than letting it reach white', () => {
+    expect(HEAT_DARK_CAP_ALPHA).toBeGreaterThan(0)
+    expect(HEAT_DARK_CAP_ALPHA).toBeLessThan(1)
   })
 
   it('reads a short hex too', () => {

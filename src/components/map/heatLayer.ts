@@ -1,7 +1,7 @@
 "use client";
 
 import type { CanvasSource, Coordinates, Map as MapLibreMap } from "maplibre-gl";
-import { HEAT_STYLE, heatLineWidth, heatPasses, mercatorX, mercatorY } from "./mapUtils";
+import { HEAT_DARK_CAP_ALPHA, HEAT_STYLE, heatLineWidth, heatPasses, mercatorX, mercatorY, rgba } from "./mapUtils";
 
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
@@ -111,6 +111,16 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     }
     // Never leave the blur on the context for whatever draws next.
     ctx.filter = "none";
+
+    // The accent washed back over what was drawn, so added light stops at
+    // the accent instead of running on to white (3.0 override 9). Only where
+    // the canvas already has tracks - `source-atop` leaves the ground alone.
+    if (mode === "dark") {
+      ctx.globalCompositeOperation = "source-atop";
+      ctx.fillStyle = rgba(accent, HEAT_DARK_CAP_ALPHA);
+      ctx.fillRect(0, 0, canvas.width / view.scale, canvas.height / view.scale);
+      ctx.globalCompositeOperation = composite;
+    }
   }
 
   function source(): CanvasSource | undefined {
