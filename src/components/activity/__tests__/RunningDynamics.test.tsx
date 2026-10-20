@@ -45,10 +45,20 @@ describe('RunningDynamics', () => {
     expect(band.style.background).toContain('var(--accent)')
     expect(card.textContent).toContain('0.96')
     expect(card.textContent).toContain('1.14')
+    // App Fixes 3d: the line says which way is better and takes mint or
+    // amber by it - a shorter stride than usual is the amber way.
     const delta = screen.getByText(`−0.04 m ${d.vsUsual}`)
-    expect(delta.className).toContain('text-[var(--text-2)]')
-    expect(delta.className).not.toMatch(/warn|orange|pos|neg/)
+    expect(delta.style.color).toBe('var(--tone-caution)')
+    expect(card.textContent).toContain(d.better.higher)
     expect(screen.queryByText(/cadence through/i)).toBeNull()
+  })
+
+  it('reads a shorter ground contact than usual as the better way', async () => {
+    const { deltaTone } = await import('../RunningDynamics')
+    const band = { min: 230, max: 250, low: 236, high: 244, median: 240 }
+    expect(deltaTone({ term: 'groundContact', value: 234, band, decimals: 0 })).toBe('good')
+    expect(deltaTone({ term: 'groundContact', value: 246, band, decimals: 0 })).toBe('worse')
+    expect(deltaTone({ term: 'strideLength', value: 246, band, decimals: 0 })).toBe('good')
   })
 
   // One line of legend over the scales replaces the footer sentence.

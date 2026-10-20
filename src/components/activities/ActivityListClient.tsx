@@ -17,7 +17,6 @@ import {
   sortQuery,
   typesLabel,
   type ActivityFilter,
-  type FilterKind,
   type ActivitySort,
 } from './activityFilter'
 import type { ActivitySummary } from '@/domain/activity/types'

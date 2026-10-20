@@ -3,7 +3,8 @@
 import { useEffect, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { formatDate, formatDistance, formatDurationCompact } from '@/lib/formatters'
+import { addDays, isoDate } from '@/lib/calendarDate'
+import { formatDate, formatDateRange, formatDistance, formatDurationCompact } from '@/lib/formatters'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
@@ -36,6 +37,11 @@ function RunsChip({ row, target }: { row: SheetRow; target: number }) {
   return <span className={cn(chip, 'bg-muted text-muted-foreground')} data-status="under">{row.runs}</span>
 }
 
+/** "Sep 14 – 20": a calendar row's week, for the reader and the screen reader. */
+function weekRangeLabel(start: string): string {
+  return formatDateRange(start, isoDate(addDays(new Date(`${start}T00:00:00`), 6)), { year: 'never' })
+}
+
 function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
   const narrow = new Intl.DateTimeFormat(t.locale, { weekday: 'narrow', timeZone: 'UTC' })
   const columns = 'grid grid-cols-[repeat(7,minmax(0,1fr))_44px] items-center'
@@ -48,11 +54,14 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
         <span>{t.consistency.sheet.runsColumn}</span>
       </div>
       {sheet.rows.map((row) => (
+        // Each row says which week it is (App Fixes 3d): the grid of days
+        // alone left the highlighted week unnamed.
         <div
           key={row.start}
           className={cn(columns, 'h-9 rounded-xl', row.selected && 'bg-muted')}
           data-testid="calendar-row"
           data-selected={row.selected || undefined}
+          aria-label={weekRangeLabel(row.start)}
         >
           {row.days.map((day) => (
             <span key={day.date} className={cn('flex items-center justify-center', !day.inMonth && 'opacity-50')}>

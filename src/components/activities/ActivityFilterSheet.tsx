@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check } from 'lucide-react'
-import type { ActivityType } from '@/domain/activity/types'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { TypeDot } from '@/components/ui/TypeDot'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'

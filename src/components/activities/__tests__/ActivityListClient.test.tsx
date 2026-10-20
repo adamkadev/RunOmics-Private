@@ -192,13 +192,14 @@ describe('the list at a phone', () => {
     expect(title.className).toContain('min-w-0')
   })
 
-  // 3.0.2: a structured name is its type on the first line, the structure
-  // leading the meta on the second, so the ellipsis no longer cuts it off.
-  it('puts a structured name’s structure on the second line', () => {
+  // 3.0.2: a structured name is its type on the first line, its structure on
+  // the second. The date leads that line (App Fixes 3d), so a long structure
+  // is what the ellipsis takes, never the date.
+  it('puts a structured name’s structure on the second line, after the date', () => {
     const name = 'Threshold 3 × 7:40 - 3 × 8\'@4:25'
     renderList([{ ...run('a', '2026-09-22', 10), description: name }])
     expect(screen.getByText('Threshold').className).toContain('truncate')
-    expect(screen.getByTestId('thumb-row').textContent).toContain(`3 × 7:40 - 3 × 8'@4:25 · ${formatWeekday('2026-09-22', true)}`)
+    expect(screen.getByTestId('thumb-row').textContent).toContain(`${formatWeekday('2026-09-22', true)} · 1:00:00 · 3 × 7:40 - 3 × 8'@4:25`)
   })
 })
 

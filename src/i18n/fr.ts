@@ -1374,6 +1374,7 @@ export const fr = {
       vertOscillation: 'Oscillation verticale',
       vertRatio: 'Rapport vertical',
       vsUsual: 'vs d’habitude',
+      better: { higher: 'plus long, c’est mieux', lower: 'plus court, c’est mieux' },
       level: 'Comme d’habitude',
       ratioUnit: 'pt',
       usualRange: (weeks: number) => `Ta plage habituelle, ${weeks} dernières semaines`,
