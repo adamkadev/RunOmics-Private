@@ -1,7 +1,7 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { routeCells, routeOutline, overlap, type Coord } from '@/domain/activity/routeShape'
 import type { Activity } from '@/domain/activity/types'
-import { round } from '@/lib/math'
+import { distanceKm, round } from '@/lib/math'
 
 export interface RouteRun {
   activityId: string
@@ -18,6 +18,14 @@ export interface RecurringRoute {
    * coin toss.
    */
   start: Coord | null
+  /**
+   * Where the route goes: its point furthest from the start (Wave 4, App
+   * Fixes 1g). Every route from home shares its start street, so the name
+   * comes from here.
+   */
+  far: Coord | null
+  /** A loop, an out-and-back that retraces itself, or a run that ends elsewhere. */
+  shape: RouteShape
   runCount: number
   distanceKm: number
   outline: string
@@ -25,6 +33,39 @@ export interface RecurringRoute {
   bestPaceSecPerKm: number
   bestActivityId: string
   bestDate: string
+}
+
+export type RouteShape = 'loop' | 'out-back' | 'point'
+
+/** A run that ends further than this from its start went somewhere. */
+const POINT_TO_POINT_KM = 0.4
+/** Halves that share this much of their ground retrace each other. */
+const RETRACE_OVERLAP = 0.6
+
+export function farthestPoint(route: Coord[]): Coord | null {
+  const start = route[0]
+  if (!start) return null
+  let far = start
+  let farKm = 0
+  for (const point of route) {
+    const km = distanceKm(start[0], start[1], point[0], point[1])
+    if (km > farKm) {
+      far = point
+      farKm = km
+    }
+  }
+  return far
+}
+
+export function routeShape(route: Coord[]): RouteShape {
+  const start = route[0]
+  const end = route[route.length - 1]
+  if (!start || !end) return 'loop'
+  if (distanceKm(start[0], start[1], end[0], end[1]) > POINT_TO_POINT_KM) return 'point'
+  const half = Math.floor(route.length / 2)
+  const out = routeCells(route.slice(0, half))
+  const back = routeCells(route.slice(half))
+  return overlap(out, back) >= RETRACE_OVERLAP ? 'out-back' : 'loop'
 }
 
 const MIN_OVERLAP = 0.7
@@ -67,6 +108,8 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
   return {
     id: `${index}`,
     start: (latest.route as Coord[])[0] ?? null,
+    far: farthestPoint(latest.route as Coord[]),
+    shape: routeShape(latest.route as Coord[]),
     runCount: timed.length,
     distanceKm: round(timed.reduce((sum, a) => sum + a.distanceKm, 0) / timed.length, 1),
     outline: routeOutline(latest.route as Coord[]),

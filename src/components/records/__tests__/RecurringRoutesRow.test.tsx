@@ -14,6 +14,8 @@ const runs = (n: number) =>
 const route = (n: number): RecurringRoute => ({
   id: `r${n}`,
   start: null,
+  far: null,
+  shape: 'loop',
   runCount: n,
   distanceKm: 7.6,
   outline: 'M0 0 L10 10',
@@ -69,7 +71,7 @@ describe('RecurringRoutes row', () => {
     expect(lines[2]).toContain(`10.0 ${t.units.km}`)
   })
 
-  it('names a route after its start, and numbers it until a place comes back', async () => {
+  it('numbers a route until a place comes back', async () => {
     render(<RecurringRoutes routes={[route(3), route(4)]} thisYear={2026} />)
     expect(screen.getAllByTestId('route-name').map((el) => el.textContent)).toEqual([
       t.records.recurring.unnamed(1),
@@ -77,12 +79,20 @@ describe('RecurringRoutes row', () => {
     ])
   })
 
-  it('takes the place name when the lookup returns one', async () => {
+  // App Fixes 1g: named by where it goes, with its shape, not the start street.
+  it('names a route after the place at its far point', async () => {
     vi.stubEnv('NEXT_PUBLIC_MAPTILER_TOKEN', 'test-token')
-    geocode.name = 'Rue du Faubourg Saint-Antoine'
-    render(<RecurringRoutes routes={[{ ...route(5), start: [6.17, 49.12] }]} thisYear={2026} />)
+    geocode.name = 'Moselle riverside'
+    render(<RecurringRoutes routes={[{ ...route(5), start: [6.17, 49.12], far: [6.18, 49.13], shape: 'loop' }]} thisYear={2026} />)
 
-    expect(await screen.findByText('Rue du Faubourg Saint-Antoine')).toHaveAttribute('data-testid', 'route-name')
+    expect(await screen.findByText(t.records.recurring.named.loop('Moselle riverside'))).toHaveAttribute('data-testid', 'route-name')
+  })
+
+  it('keeps a name the reader gave the route', () => {
+    localStorage.setItem('runomics-route-names', JSON.stringify({ a0: 'Home loop' }))
+    render(<RecurringRoutes routes={[route(5)]} thisYear={2026} />)
+    expect(screen.getByTestId('route-name').textContent).toBe('Home loop')
+    localStorage.removeItem('runomics-route-names')
   })
 
   // Final mockups (3.1.0): "best 5:07 · last 5:19 +12s", the gap in amber.
@@ -110,24 +120,14 @@ describe('RecurringRoutes row', () => {
     expect(tones).toEqual(['best', 'other', 'other', 'other', 'latest'])
   })
 
-  // Design review, Oct 2026: "taller = faster" named no axis.
-  it('says what a bar is, keys its colours, and dates the trail by its first and latest runs', () => {
-    const dates = ['2024-12-01', '2024-12-02', '2025-04-12', ...Array.from({ length: 14 }, (_, i) => `2026-0${1 + (i % 9)}-15`), '2026-10-07']
-    const dated: RecurringRoute = {
-      ...route(dates.length),
-      runs: dates.map((date, i) => ({ activityId: `d${i}`, date, paceSecPerKm: 280 + (i % 5) })),
-    }
-    const { unmount } = render(<RecurringRoutes routes={[dated]} thisYear={2026} />)
+  // App Fixes 1g: the last six runs, no date range under them.
+  it('says what a bar is, keys its colours, and shows the last six runs with no dates', () => {
+    render(<RecurringRoutes routes={[route(20)]} thisYear={2026} />)
 
     expect(screen.getByText(t.records.recurring.trailKey)).toBeInTheDocument()
     expect(screen.getByText(t.records.recurring.legendBest)).toBeInTheDocument()
     expect(screen.getByText(t.records.recurring.legendLatest)).toBeInTheDocument()
-    // The latest 16 runs: the two of December 2024 are off the trail.
-    expect(screen.getByTestId('pace-trail-span').textContent).toBe(t.records.recurring.trailSpan('Apr ’25', 'Oct 7'))
-    unmount()
-
-    // Every run on one day: that day, once.
-    render(<RecurringRoutes routes={[route(4)]} thisYear={2026} />)
-    expect(screen.getByTestId('pace-trail-span').textContent).toBe('Jan 1')
+    expect(screen.getByTestId('pace-trail').children).toHaveLength(6)
+    expect(screen.queryByTestId('pace-trail-span')).toBeNull()
   })
 })
