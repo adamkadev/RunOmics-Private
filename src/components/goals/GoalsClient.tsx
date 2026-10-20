@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { GoalsPageData } from '@/application/usecases/GetGoalsData'
 import { cardClass } from '@/components/ui/Card'
-import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { useToday } from '@/lib/useToday'
 import { YearView } from './YearView'
 import type { SeasonBlock } from './SeasonTimeline'
@@ -14,6 +14,30 @@ import { t } from '@/i18n'
 export function defaultGoalsYear(years: readonly number[], today: string): number | undefined {
   const current = Number(today.slice(0, 4))
   return years.includes(current) ? current : years[0]
+}
+
+const STEP_BTN =
+  'hit-44 flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35'
+
+/**
+ * ‹ 2026 › (3.1): the season on show, a step at a time - left to the year
+ * before, right to the one after. `years` runs newest first.
+ */
+export function YearStepper({ years, value, onChange }: { years: readonly number[]; value: number; onChange: (year: number) => void }) {
+  const i = years.indexOf(value)
+  const older = years[i + 1]
+  const newer = i > 0 ? years[i - 1] : undefined
+  return (
+    <div className="flex shrink-0 items-center gap-1 rounded-xl border border-border bg-card px-1 py-0.5" data-testid="year-stepper">
+      <button type="button" className={STEP_BTN} aria-label={t.goals.prevYear} disabled={older === undefined} onClick={() => older !== undefined && onChange(older)}>
+        <ChevronLeft size={16} aria-hidden />
+      </button>
+      <span className="min-w-[4ch] text-center text-sm font-semibold tabular-nums text-foreground" aria-live="polite">{value}</span>
+      <button type="button" className={STEP_BTN} aria-label={t.goals.nextYear} disabled={newer === undefined} onClick={() => newer !== undefined && onChange(newer)}>
+        <ChevronRight size={16} aria-hidden />
+      </button>
+    </div>
+  )
 }
 
 interface Props {
@@ -27,30 +51,19 @@ export function GoalsClient({ data, today: serverToday, block = null }: Props) {
   const today = useToday(serverToday)
   const { years, byYear, history } = data
   const [selectedYear, setSelectedYear] = useState(() => defaultGoalsYear(years, serverToday))
-  const yearTabs = useSegmentedTabs({ ids: years, value: selectedYear ?? 0, onChange: setSelectedYear })
-  const hasYearTabs = years.length > 1
+  const hasYearStepper = years.length > 1 && selectedYear !== undefined
   const yearData = selectedYear !== undefined ? byYear[selectedYear] : undefined
 
   return (
     <div className="flex flex-col gap-3.5">
-      <header className="mb-1.5 flex items-end justify-between gap-4">
-        {/* The year itself is redundant here - the 2026/2025 toggle right next
-            to it already says which season is showing. */}
+      <header className="mb-1.5 flex items-center justify-between gap-4">
+        {/* The year itself is redundant here - the stepper right next to it
+            already says which season is showing. */}
         <h1 className="min-w-0 text-display text-foreground">{t.goals.title}</h1>
-
-        {hasYearTabs && (
-          // Two mutually exclusive scopes on the whole screen, not a filter:
-          // the quiet tabs, at the small-range size (v4.17).
-          <SegmentedTabs
-            tabs={yearTabs}
-            items={years.map((y) => ({ id: y, label: y }))}
-            label={t.goals.title}
-            size="sm"
-          />
-        )}
+        {hasYearStepper && <YearStepper years={years} value={selectedYear} onChange={setSelectedYear} />}
       </header>
 
-      <div {...(hasYearTabs ? yearTabs.panelProps : {})} className="outline-none">
+      <div>
         {yearData ? (
           <YearView key={yearData.year} yearData={yearData} today={today} block={block} />
         ) : (

@@ -95,7 +95,7 @@ describe('ProfileHrZones table', () => {
   // 3.0 1j: four weeks first, whatever the week holds, and no line to say so.
   it('opens on 4 weeks, even with time this week', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
-    expect(screen.getByRole('tab', { name: z.fourWeeks })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: z.fourWeeksSpoken })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByTestId('zone-total').textContent).toBe(z.totalLine(`2 ${t.units.hour} 5 ${t.units.min}`))
     expect(screen.queryByText(/no sessions yet/i)).toBeNull()
   })
@@ -104,7 +104,7 @@ describe('ProfileHrZones table', () => {
   // is not a week's split yet: no verdict colour.
   it('writes time with its units, and reads the week under way without a verdict colour', async () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
-    await userEvent.click(screen.getByRole('tab', { name: z.week }))
+    await userEvent.click(screen.getByRole('tab', { name: z.weekSpoken }))
     expect(within(screen.getByTestId('zone-row-4')).getByText(`9 ${t.units.min}`)).toBeInTheDocument()
     expect(screen.getByTestId('zone-total').textContent).toBe(z.totalLine(`14 ${t.units.min}`))
     expect(screen.getByTestId('zone-hard-share').textContent).toBe(`${z.hard('100%')} · ${z.soFar}`)
@@ -158,14 +158,14 @@ describe('ProfileHrZones table', () => {
     expect(screen.getAllByRole('tablist')).toHaveLength(1)
     expect(within(screen.getByTestId('zone-row-2')).getByText(`2 ${t.units.hour} 05`)).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('tab', { name: z.week }))
+    await userEvent.click(screen.getByRole('tab', { name: z.weekSpoken }))
     expect(within(screen.getByTestId('zone-row-2')).getByText(`0 ${t.units.min}`)).toBeInTheDocument()
     expect(within(screen.getByTestId('zone-row-4')).getByText(`9 ${t.units.min}`)).toBeInTheDocument()
   })
 
   it('says an empty week is empty, with no bar and no headline', async () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={[]} recentZoneTime={recent} />)
-    await userEvent.click(screen.getByRole('tab', { name: z.week }))
+    await userEvent.click(screen.getByRole('tab', { name: z.weekSpoken }))
     expect(screen.getByText(z.noSessionsThisWeek)).toBeInTheDocument()
     expect(screen.queryByTestId('zone-stack')).toBeNull()
     expect(screen.queryByTestId('zone-hard-share')).toBeNull()

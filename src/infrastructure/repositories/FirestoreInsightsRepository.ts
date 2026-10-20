@@ -80,6 +80,21 @@ export async function readVerifiedCachedInsight(
   }
 }
 
+/**
+ * The surface's latest card whatever it was written from, with the moment it
+ * was written: what Today shows, marked as yesterday's, between midnight and
+ * the night's sync (3.1.0). Null without Firestore or on a slow read.
+ */
+export async function readLatestInsight(surface: string): Promise<{ insight: Insight; generatedAt: string } | null> {
+  if (!process.env.FIREBASE_PROJECT_ID) return null
+  try {
+    const cached = await withTimeout(getCachedInsight(surface), READ_TIMEOUT_MS, null)
+    return cached ? { insight: { headline: cached.headline, body: cached.body, bullets: cached.bullets }, generatedAt: cached.generatedAt } : null
+  } catch {
+    return null
+  }
+}
+
 export async function readVerifiedInsight(surface: string, key: string | InsightKey): Promise<Insight | null> {
   const cached = await readVerifiedCachedInsight(surface, key)
   return cached ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null

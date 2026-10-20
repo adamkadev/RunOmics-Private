@@ -85,7 +85,8 @@ export function SegmentedTabs<T extends string | number>({
   tabClassName,
 }: {
   tabs: SegmentedTabsState<T>
-  items: readonly { id: T; label: ReactNode }[]
+  /** `ariaLabel` reads a short label in full: "4W" on screen, "last 4 weeks" aloud (3.1.0). */
+  items: readonly { id: T; label: ReactNode; ariaLabel?: string }[]
   label: string
   size?: keyof typeof SIZE_CLASS
   fill?: boolean
@@ -104,6 +105,7 @@ export function SegmentedTabs<T extends string | number>({
           <button
             key={item.id}
             {...props}
+            aria-label={item.ariaLabel}
             className={cn(
               'hit-44 flex items-center justify-center whitespace-nowrap rounded-lg transition-colors',
               size && SIZE_CLASS[size],

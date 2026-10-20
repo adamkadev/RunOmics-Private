@@ -140,6 +140,8 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
           type="button"
           role="radio"
           aria-checked={p === value}
+          // "4W" on screen, "4 weeks" read aloud (3.1.0).
+          aria-label={s.words[p]}
           onClick={() => onChange(p)}
           className={cn(
             'hit-44 flex h-7 items-center justify-center whitespace-nowrap rounded-[7px] px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',

@@ -73,14 +73,16 @@ describe('YearView annual goal card', () => {
     const headline = screen.getByTestId('projection-verdict')
     expect(headline.textContent).toBe(p.shortAtPace('295'))
     expect(headline.getAttribute('style')).toContain('var(--warn)')
-    expect(screen.getByTestId('projection-line').textContent).toContain(p.needs('29', '25'))
+    // 3.1: a shortfall says what closes it.
+    expect(screen.getByTestId('projection-line').textContent).toContain(p.closes('29', '25'))
+    expect(screen.getByTestId('goal-left').textContent).toBe(p.toGo('679'))
     // No small top-right chip repeating the same verdict a second time.
     expect(container.textContent).not.toContain(p.status.behind)
   })
 
   it('states what the goal still needs per week, muted beneath the projection', () => {
     const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
-    expect(container.textContent).toContain(p.needs('29', '25'))
+    expect(container.textContent).toContain(p.closes('29', '25'))
   })
 
   it('groups thousands the same way everywhere in the card', () => {
@@ -118,6 +120,16 @@ describe('YearView annual goal card', () => {
     const { container } = render(<YearView yearData={{ ...data, totalDistanceKm: 2047 }} today={TODAY} />)
     expect(screen.getByText(t.goals.reached('47')).dataset.tone).toBe('pos')
     expect(container.textContent).toContain(t.goals.distanceGoal)
+  })
+})
+
+describe('a year that is over (3.1)', () => {
+  it('states the final km against the goal, with no projection', () => {
+    const past = { ...yearData(BEHIND), year: YEAR - 1, projection: null }
+    render(<YearView yearData={past} today={TODAY} />)
+    expect(screen.getByTestId('goal-left').textContent).toBe(p.finalShort('679'))
+    expect(screen.queryByTestId('projection-line')).toBeNull()
+    expect(screen.queryByTestId('goal-projection')).toBeNull()
   })
 })
 

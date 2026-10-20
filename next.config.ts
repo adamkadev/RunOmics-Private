@@ -36,6 +36,12 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/**": ["./data/**/*"],
   },
+  // Milestones moved into Records as a tab (3.1.0). A config redirect rather
+  // than a page that calls redirect(): the client router's redirect lands
+  // before the address bar shows ?tab=, so the tab read the old URL.
+  async redirects() {
+    return [{ source: "/milestones", destination: "/records?tab=milestones", permanent: false }];
+  },
   async headers() {
     return [
       {

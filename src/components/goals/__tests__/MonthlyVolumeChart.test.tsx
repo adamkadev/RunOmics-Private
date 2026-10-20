@@ -7,7 +7,8 @@ import {
   inProgressMonth,
 } from '@/components/goals/MonthlyVolumeChart'
 import type { MonthGoal } from '@/application/usecases/GetGoalsData'
-import { monthLabel } from '@/lib/formatters'
+import { monthName } from '@/lib/formatters'
+import { monthInitials } from '@/components/goals/monthInitials'
 import { t } from '@/i18n'
 
 const s = t.goals.monthlyVolume
@@ -71,53 +72,22 @@ describe('inProgressMonth', () => {
   })
 })
 
-describe('MonthlyVolumeChart collapsed axis', () => {
-  it('names its months in full, and thins the axis rather than truncating it', () => {
+describe('MonthlyVolumeChart (3.1)', () => {
+  it('draws twelve columns under one target line, the months to come empty', () => {
+    const { container } = render(<MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} today={TODAY} />)
+    expect(screen.getByText(s.target('165'))).toBeInTheDocument()
+    expect(container.querySelectorAll('[data-testid="target-rule"]')).toHaveLength(1)
+    // Every elapsed month has its bar, the running one included; none after it.
+    expect(container.querySelectorAll('[title]')).toHaveLength(THIS_MONTH)
+    expect(container.querySelector('[data-testid="monthly-volume"]')!.textContent).toContain(monthInitials().join(''))
+  })
+
+  it('fills the running month inside a dashed outline of its target, and says its pace', () => {
     render(<MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} today={TODAY} />)
-
-    // A single initial cannot name the month it sits under: J is January, June
-    // and July. So the axis prints the whole abbreviation and drops every other
-    // label once the row is too narrow to carry them all.
-    const shown = Array.from({ length: THIS_MONTH }, (_, i) => monthLabel(i + 1))
-      .filter((label) => screen.queryAllByText(label).length > 0)
-
-    expect(shown.length).toBeGreaterThan(0)
-    for (const label of shown) expect(label.length).toBeGreaterThan(1)
-    if (THIS_MONTH > 6) expect(shown.length).toBeLessThan(THIS_MONTH)
-    else expect(shown).toHaveLength(THIS_MONTH)
-
-    // Every elapsed month still has its own bar, labelled or not - never a 13th.
-    expect(screen.getAllByTitle(/:/)).toHaveLength(THIS_MONTH)
-  })
-
-  it('states the target the dashed rule stands for, and draws one rule per month', () => {
-    const { container } = render(
-      <MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} today={TODAY} />,
-    )
-    expect(screen.getByText(s.targetRule)).toBeInTheDocument()
-    expect(container.querySelectorAll('[data-testid="target-rule"]')).toHaveLength(THIS_MONTH)
-  })
-
-  it('dashes the running month instead of filling it, and states how far into it we are', () => {
-    const { container } = render(
-      <MonthlyVolumeChart monthlyGoals={goalsForThisYear()} year={THIS_YEAR} today={TODAY} />,
-    )
-    expect(
-      screen.getByText(
-        `${s.daysIn(monthLabel(THIS_MONTH), DAYS_ELAPSED)} · ${s.proRata(40, PRO_RATA_KM)}`,
-      ),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByText(`${monthLabel(THIS_MONTH)} · ${s.status.behind}`),
-    ).not.toBeInTheDocument()
-
-    const bars = Array.from(container.querySelectorAll<HTMLElement>('[title]'))
-    const running = bars[bars.length - 1]!
-    expect(running.style.border).toMatch(/1px dashed/)
-    expect(running.style.background).toMatch(/14%/)
-
-    const finished = bars[0]!
-    expect(finished.style.border).toBe('')
+    const running = screen.getByTestId('running-month')
+    expect(running.className).toContain('border-dashed')
+    expect(running.querySelector('.bg-accent')).not.toBeNull()
+    expect(screen.getByTestId('running-legend').textContent).toBe(s.running(monthName(THIS_MONTH), '40', s.pace.behind))
   })
 
   // v4.17: a month's km are the athlete's own data - the accent at or above
@@ -132,6 +102,8 @@ describe('MonthlyVolumeChart collapsed axis', () => {
     )
     const bar = container.querySelector<HTMLElement>('[title]')!
     expect(bar.style.background).toBe('color-mix(in srgb, var(--accent) 40%, transparent)')
+    expect(bar.dataset.status).toBe('short')
+    expect(screen.queryByTestId('running-month')).toBeNull()
   })
 
   it('draws a hit month in the full accent', () => {

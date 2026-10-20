@@ -108,14 +108,14 @@ describe('Analytics (v4.5)', () => {
     await renderBoard()
     const periods = () => within(screen.getByRole('radiogroup')).getAllByRole('radio').map((r) => r.textContent)
     expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
-    expect(periods()).toEqual(['4 wk', '12 wk', '1 yr'])
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4 wk')
+    expect(periods()).toEqual(['4W', '12W', '1Y'])
+    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('4W')
     await openTab(t.analytics.tabs.performance, 'predictions-card')
-    expect(periods()).toEqual(['4 wk', '12 wk', '1 yr'])
-    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('12 wk')
+    expect(periods()).toEqual(['4W', '12W', '1Y'])
+    expect(screen.getByRole('radio', { checked: true }).textContent).toBe('12W')
     expect(screen.getByTestId('predictions-card').textContent).toContain('change in 12 weeks')
     await openTab(t.analytics.tabs.volume, 'weekly-card')
-    expect(periods()).toEqual(['4 wk', '12 wk', '1 yr'])
+    expect(periods()).toEqual(['4W', '12W', '1Y'])
     // One range line on every tab, under the title: first Monday to today.
     expect(screen.getByTestId('analytics-range').textContent).toMatch(/^Jul 6 – Sep 26, 2026$/)
     await openTab(t.analytics.tabs.health, 'easy-hard-card')
@@ -156,7 +156,7 @@ describe('Analytics (v4.5)', () => {
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).toBeNull()
     // The period control is the read's period too.
-    fireEvent.click(screen.getByRole('radio', { name: '4 wk' }))
+    fireEvent.click(screen.getByRole('radio', { name: '4 weeks' }))
     expect(coach().textContent).toContain(s.eyebrow(words['4w']!, t.analytics.tabs.performance))
 
     // Volume: its own claim, the plan first. Every week made its 44 km plan,
@@ -189,7 +189,7 @@ describe('Analytics (v4.5)', () => {
     for (const { tab, card, ranges } of cases) {
       await openTab(t.analytics.tabs[tab], card)
       for (const [i, period] of (['4w', '12w', '1y'] as const).entries()) {
-        fireEvent.click(screen.getByRole('radio', { name: t.analytics.cards.period.short[period] }))
+        fireEvent.click(screen.getByRole('radio', { name: t.analytics.cards.period.words[period] }))
         expect(screen.getByRole('radio', { checked: true }).textContent).toBe(t.analytics.cards.period.short[period])
         expect(screen.getByTestId('analytics-range').textContent).toBe(ranges[i])
         expect(screen.getByTestId('coach-read').textContent).toContain(s.eyebrow(words[period]!, t.analytics.tabs[tab]))
@@ -222,7 +222,7 @@ describe('Analytics (v4.5)', () => {
   it('widens every Load card with the period, and resets the range', async () => {
     await renderBoard()
     expect(screen.getByTestId('training-status-strip').children).toHaveLength(28)
-    fireEvent.click(screen.getByRole('radio', { name: '12 wk' }))
+    fireEvent.click(screen.getByRole('radio', { name: '12 weeks' }))
     expect(screen.getByTestId('training-status-strip').children.length).toBeLessThanOrEqual(10)
     expect(screen.getByTestId('analytics-range').textContent).not.toBe('')
   })
@@ -471,7 +471,7 @@ describe('Analytics (v4.5)', () => {
     expect(key().hasAttribute('data-held')).toBe(false)
     expect(figures()[1]).toEqual(['Z2', '36.0 h'])
     // A year's hours, as distances: a decimal under 100 and none above.
-    fireEvent.click(screen.getByRole('radio', { name: '1 yr' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'a year' }))
     expect(figures().slice(0, 2)).toEqual([['Z1', '26.0 h'], ['Z2', '156 h']])
   })
 })
