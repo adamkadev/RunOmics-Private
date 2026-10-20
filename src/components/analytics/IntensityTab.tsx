@@ -7,7 +7,7 @@ import { formatDate, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { zoneColor, type SessionZone } from '@/lib/colors'
 import { t } from '@/i18n'
-import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, THIS_WEEK_BORDER } from './AnalyticsKit'
+import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, THIS_WEEK_BORDER } from './AnalyticsKit'
 import { easyHardView, qualityView, zonesView, type PlanWeekInput, type QualityDot, type WeekRow } from './analyticsView'
 import { weekLabels } from './VolumeTab'
 
@@ -92,16 +92,18 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
   return (
     <Card testId="zones-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      {range && (
-        // Built from the weeks: a dip and a return reads as such, and the
-        // window's hours (moved here from the range line) close it.
-        <BoldSentence
-          parts={(narrow ? s.stayed : s.ranged)(
-            range,
-            `${view.total === 'recovered' ? s.recovered(bare(view.recoveredAfter!)) : s.total[view.total]!}${s.hours(formatKm(view.totalHours))}`,
-          )}
-        />
-      )}
+      {/* What changed (App Fixes 2d): "36 h in all. Weekly time dropped
+          mid-August, then climbed back from Aug 31. Hard time stayed under 25 min a week." */}
+      <p className="text-[12.5px] leading-[1.45] text-[var(--text-2)] text-pretty" data-testid="zones-summary">
+        {s.summaryHours(formatKm(view.totalHours))}
+        {view.total === 'recovered' && view.recoveredAfter && view.backFrom
+          ? s.summaryRecovered(
+              s.partOfMonth(Number(view.recoveredAfter.slice(8, 10)), new Date(`${view.recoveredAfter}T12:00:00Z`).toLocaleDateString(t.locale, { month: 'long', timeZone: 'UTC' })),
+              bare(view.backFrom),
+            )
+          : (s.summaryTotal[view.total] ?? '')}
+        {view.hard && (narrow ? s.summaryHardUnder(Math.ceil((view.hard.hi + 1) / 5) * 5) : s.summaryHardRange(range!))}
+      </p>
       <ChartScrub
         count={rows.length}
         onShift={onShift}
@@ -151,37 +153,30 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
  * diagonal fits, so a column of them never touches.
  */
 /**
- * A quality session run, one this week's plan still asks for, and one it
- * asked for and never got (App Fixes 2d). The plan's own count is these
- * outline dots, week by week, not a line drawn over every column.
+ * One rounded square a week (App Fixes 2d): filled when a quality session was
+ * run - with the count when there were more than one - dashed amber when the
+ * plan's session was missed, dashed in the Z4 colour while this week's is
+ * still to come, and an empty track otherwise.
  */
-const DOT_SHAPE: Record<QualityDot, { className: string; style: React.CSSProperties }> = {
-  done: { className: 'size-3 rounded-full sm:size-2.5', style: { background: 'var(--zone-4)' } },
-  planned: { className: 'box-border size-3 rounded-full sm:size-2.5', style: { border: '1.5px solid var(--zone-4)' } },
-  missed: { className: 'box-border size-3 rounded-full sm:size-2.5', style: { border: '1.5px dashed var(--muted-foreground)' } },
+function weekSquare(dots: QualityDot[]): { state: 'done' | 'missed' | 'planned' | 'none'; count: number; style: React.CSSProperties } {
+  const done = dots.filter((d) => d === 'done').length
+  if (done > 0) return { state: 'done', count: done, style: { background: 'var(--zone-4)' } }
+  if (dots.includes('missed')) return { state: 'missed', count: 0, style: { border: '1.5px dashed var(--warn)' } }
+  if (dots.includes('planned')) return { state: 'planned', count: 0, style: { border: '1.5px dashed var(--zone-4)' } }
+  return { state: 'none', count: 0, style: { background: 'var(--track)' } }
 }
-
-/** Under this share of what the plan asks, the average is a caution. */
-const QUALITY_SHORT = 0.9
 
 function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; plan: PlanWeekInput[] }) {
   const s = t.analytics.cards.quality
   const view = qualityView(rows, plan)
   if (!view || view.avg === null) return null
   const { totals } = view
-  // A week missed is the headline it deserves (App Fixes 2d): an average of
-  // 0.9 against a plan of 0.9 read as "on target" over two weeks with
-  // nothing in them.
-  const tone = totals.missed > 0 ? 'var(--warn)' : view.planAsks === null ? undefined : view.avg >= view.planAsks * QUALITY_SHORT ? 'var(--pos)' : 'var(--warn)'
-  // Done is the headline, and the two clauses under it split it: on plan
-  // plus extra is exactly what was run (App Fixes 2d).
-  const note = [
-    s.doneNoPlan,
-    totals.planned !== null ? s.onPlan(totals.onPlan, totals.planned) : null,
-    totals.extra > 0 && totals.planned !== null ? s.extra(totals.extra) : null,
-  ]
+  // Done is the headline; "of 10 planned · 1 extra" in grey beside it, and
+  // the missed weeks in amber in the header (App Fixes 2d).
+  const note = [totals.planned !== null ? s.ofPlanned(totals.planned) : null, totals.extra > 0 && totals.planned !== null ? s.extra(totals.extra) : null]
     .filter(Boolean)
     .join(' · ')
+  const squares = view.weeks.map(weekSquare)
   return (
     <Card testId="quality-card">
       <CardHead
@@ -195,28 +190,44 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
         }
         about={s.about}
       />
-      <Headline value={totals.done} note={note} noteStyle={tone ? { color: tone } : undefined} testId="quality-done" />
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1" data-testid="quality-done">
+        <span className="text-[22px] font-bold tabular-nums text-foreground">
+          {totals.done} <span className="text-[13px] font-normal text-muted-foreground">{s.doneNoPlan}</span>
+        </span>
+        {note && <span className="text-[12.5px] text-[var(--text-2)]">{note}</span>}
+      </div>
       <ChartScrub
         count={rows.length}
         readout={(i) => s.readout(t.analytics.cards.scrubWeek(bare(rows[i]!.week)), view.weeks[i]!.filter((d) => d === 'done').length, view.planned[i] ?? null)}
       >
-        <div className="relative grid" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="quality-dots">
-          {view.weeks.map((dots, i) => (
-            <div key={rows[i]!.week} className="flex h-16 flex-col-reverse items-center gap-0.5">
-              {dots.map((dot, j) => (
-                <span key={j} className="flex size-3.5 shrink-0 items-center justify-center">
-                  <span data-dot={dot} className={cn('block shrink-0', DOT_SHAPE[dot].className)} style={DOT_SHAPE[dot].style} />
-                </span>
-              ))}
-            </div>
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 5 }} data-testid="quality-squares">
+          {squares.map((sq, i) => (
+            <span
+              key={rows[i]!.week}
+              data-state={sq.state}
+              className={cn('box-border flex h-[22px] items-center justify-center text-[11px] font-semibold text-accent-foreground', rows.length > 20 ? 'rounded-[3px]' : 'rounded-[6px]')}
+              style={sq.style}
+            >
+              {sq.count > 1 && rows.length <= 20 ? sq.count : null}
+            </span>
           ))}
         </div>
       </ChartScrub>
       <AxisLabels labels={weekLabels(rows.map((r) => r.week), live)} />
-      <Legend className="gap-x-4">
-        <LegendItem swatch="dot" color="var(--zone-4)">{s.done}</LegendItem>
-        {view.weeks.some((w) => w.includes('planned')) && <LegendItem swatch="ring" color="var(--zone-4)">{s.plannedLegend}</LegendItem>}
-        {totals.missed > 0 && <LegendItem swatch="dashCircle" color="var(--muted-foreground)">{s.missed}</LegendItem>}
+      <Legend className="gap-x-3">
+        <LegendItem swatch="square" color="var(--zone-4)">{s.done}</LegendItem>
+        {totals.missed > 0 && (
+          <span className="inline-flex items-center gap-[5px]">
+            <span aria-hidden className="box-border size-[9px] rounded-[3px] border border-dashed border-[var(--warn)]" />
+            {s.missed}
+          </span>
+        )}
+        {squares.some((sq) => sq.state === 'planned') && (
+          <span className="inline-flex items-center gap-[5px]">
+            <span aria-hidden className="box-border size-[9px] rounded-[3px] border border-dashed border-[var(--zone-4)]" />
+            {s.plannedLegend}
+          </span>
+        )}
       </Legend>
     </Card>
   )

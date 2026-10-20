@@ -8,6 +8,8 @@ import { AXIS_TICK_DATE, formatDate, monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
 import { DAY_MS, appTodayIso, isoDate } from '@/lib/calendarDate'
 import { qualityKind } from '@/domain/training/qualitySession'
+import { DEFAULT_Z4_FLOOR_BPM, repPaceSecPerKm } from '@/domain/training/repPace'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 
 export { easyHardShare }
 
@@ -270,7 +272,7 @@ function buildSeries(buckets: Bucket[], scoped: Activity[]): AnalyticsSeries {
   }
 }
 
-export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
+export function buildWeeklyTrends(all: Activity[], z4FloorBpm = DEFAULT_Z4_FLOOR_BPM): WeeklyTrendPoint[] {
   const byWeek = new Map<string, Activity[]>()
   for (const a of all) {
     const monday = isoDate(startOfWeek(new Date(a.date + 'T12:00:00')))
@@ -300,7 +302,8 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
         distanceKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)),
         sessionCount: acts.length,
         easyPace: weightedPace(easy),
-        hardPace: weightedPace(hard),
+        // Rep pace (App Fixes 2b): the work laps of the week's quality sessions only.
+        hardPace: repPaceSecPerKm(hard, z4FloorBpm),
         ef: efficiencyFactor(easy),
         efAdjusted: adjustedEfficiencyFactor(easy),
         apparentTempC: avgField(easy, (a) => a.weather?.apparentTempC ?? null),
@@ -458,7 +461,7 @@ export async function getAnalyticsData(today: string = appTodayIso()): Promise<A
   return {
     years,
     byYear: Object.fromEntries(years.map((y) => [y, buildYearAnalytics(y, byYearMap.get(y)!, now)])),
-    weeklyTrends: buildWeeklyTrends(all),
+    weeklyTrends: buildWeeklyTrends(all, getAthleteProfile().hrZoneBoundsBpm?.[3] ?? DEFAULT_Z4_FLOOR_BPM),
     efficiencyDaily: buildEfficiencyDaily(all, now),
     runningDynamicsDaily: buildRunningDynamicsDaily(all, now),
     allTime: buildAllTimeAnalytics(byYearMap, all, now),
