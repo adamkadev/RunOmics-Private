@@ -19,6 +19,7 @@ function planClient(coaching: CoachingOverview | PlanCoachingView | null = null,
       planPhaseRanges={[]}
       nextRace={null}
       trainingZones={null}
+      hrZoneBoundsBpm={null}
       coaching={coaching}
       today={today}
     />

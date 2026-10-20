@@ -98,11 +98,31 @@ describe('ActivityDetailClient', () => {
     expect(chips.getByTestId('note-row')).toBeInTheDocument()
   })
 
-  it('hides conditions without weather and asks to add a shoe without one', () => {
+  it('hides conditions without weather', () => {
     renderDetail()
     expect(screen.queryByTestId('run-conditions')).toBeNull()
-    expect(screen.getByTestId('run-shoe').textContent).toBe(t.activity.shoe.add)
-    expect(screen.getByTestId('run-shoe').getAttribute('href')).toBe('https://connect.garmin.com/modern/activity/a1')
+  })
+
+  // 3.0 override 1: the way out to the watch's app is drawn only for a run
+  // the watch gave an id to; the brand then lives in the URL alone.
+  it('asks to add a shoe on a run the watch has a page for', () => {
+    renderDetail({ activity: { ...ACTIVITY, id: '90000276' } as ActivityDetailView })
+    const chip = screen.getByTestId('run-shoe')
+    expect(chip.textContent).toBe(t.activity.shoe.add)
+    expect(chip.getAttribute('href')).toBe('https://connect.garmin.com/modern/activity/90000276')
+    expect(chip.getAttribute('aria-label')).toBe(t.activity.shoe.addInGarmin)
+  })
+
+  it('reads the pair without a link on a run the watch never gave an id', () => {
+    renderDetail({ shoe: { name: 'Vomero Plus', dotColor: '#fff' } })
+    const chip = screen.getByTestId('run-shoe')
+    expect(chip.textContent).toBe('Vomero Plus')
+    expect(chip.getAttribute('href')).toBeNull()
+  })
+
+  it('draws no shoe chip at all without a pair and without a page to open', () => {
+    renderDetail()
+    expect(screen.queryByTestId('run-shoe')).toBeNull()
   })
 
   it('says RPE was not logged rather than inventing one', () => {

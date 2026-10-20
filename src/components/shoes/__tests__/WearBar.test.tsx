@@ -20,7 +20,7 @@ describe('WearBar', () => {
     }
     expect(fill(530)).toBe('var(--accent)')
     expect(fill(699)).toBe('var(--warn)')
-    expect(fill(1200)).toBe('var(--neg)')
+    expect(fill(1200)).toBe('var(--warn)')
   })
 
   it('ticks the retire-from-workouts threshold, and moves it in once the pair is past its limit', () => {

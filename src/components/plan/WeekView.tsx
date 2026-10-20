@@ -91,7 +91,7 @@ function selectedWorkouts(
 
 /**
  * Coming up (3.0.2): every session planned from today to Sunday that has not
- * been run, in order - "Tue 20 · 10 km · 1h00", in its type's colour.
+ * been run, in order - "Tue 20 · 10 km · 1:00 h", in its type's colour.
  */
 function comingUpRows(
   dates: string[],
@@ -134,6 +134,7 @@ interface Props {
   planPhaseRanges: PlanPhaseRange[]
   nextRace?: UpcomingRace | null
   trainingZones?: TrainingZonesData | null
+  hrZoneBoundsBpm?: readonly number[] | null
 }
 
 export function WeekView({
@@ -153,6 +154,7 @@ export function WeekView({
   planPhaseRanges,
   nextRace,
   trainingZones = null,
+  hrZoneBoundsBpm = null,
 }: Props) {
   const dates = useMemo(() => Array.from({ length: 7 }, (_, i) => isoDate(addDays(weekStart, i))), [weekStart])
   const firstDay = dates[0]!
@@ -214,7 +216,7 @@ export function WeekView({
     dayCard = (
       <div className="flex flex-col gap-3">
         {workouts.map((workout) => (
-          <PlannedWorkoutCard key={workout.key} workout={workout} kind={kind} />
+          <PlannedWorkoutCard key={workout.key} workout={workout} kind={kind} hrZoneBoundsBpm={hrZoneBoundsBpm} />
         ))}
       </div>
     )

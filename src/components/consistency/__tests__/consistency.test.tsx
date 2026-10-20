@@ -161,7 +161,10 @@ describe('Consistency', () => {
     const sheet = screen.getByTestId('week-sheet')
     expect(within(sheet).getByTestId('week-status').textContent).toBe(t.consistency.sheet.hit)
     expect(within(sheet).getByTestId('week-activities').getAttribute('href')).toBe('/activities?week=2026-10-12')
-    expect(within(sheet).getAllByTestId('calendar-row').find((row) => row.dataset.selected)).toBeTruthy()
+    const selected = within(sheet).getAllByTestId('calendar-row').find((row) => row.dataset.selected)
+    expect(selected).toBeTruthy()
+    // App Fixes 3d: the highlighted row says which week it is.
+    expect(selected!.getAttribute('aria-label')).toBe('Oct 12 – 18')
     expect(screen.getByTestId('week-selected')).toBeTruthy()
   })
 

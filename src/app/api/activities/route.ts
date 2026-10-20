@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { queryActivities, type ActivitySortKey, type ActivitySortOrder } from '@/application/usecases/QueryActivities'
+import { queryActivities, LONG_RUN_KIND, type ActivityQueryKind, type ActivitySortKey, type ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import { isActivityType } from '@/domain/activity/types'
+
+/** A kind the list can ask for: a type, or the long run it derives (App Fixes 3d). */
+function isQueryKind(value: string): value is ActivityQueryKind {
+  return value === LONG_RUN_KIND || isActivityType(value)
+}
 
 const SORT_KEYS: ActivitySortKey[] = ['date', 'distance', 'duration', 'pace', 'avgHr']
 const MAX_LIMIT = 50
@@ -9,7 +14,7 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams
 
   // ?types=Threshold,VO2Max: the filter sheet's picks, or a chip's group.
-  const types = (params.get('types') ?? '').split(',').filter(isActivityType)
+  const types = (params.get('types') ?? '').split(',').filter(isQueryKind)
 
   const sortByParam = params.get('sortBy')
   const sortBy: ActivitySortKey = SORT_KEYS.includes(sortByParam as ActivitySortKey)

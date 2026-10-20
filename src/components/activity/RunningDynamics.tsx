@@ -29,7 +29,7 @@ interface Props {
  * middle half of them - the usual range - and the tick this run. The ends'
  * values and what the run says against the usual go under it.
  */
-function RangeTrack({ label, value, band, decimals, note }: { label: string; value: number; band: BaselineRange; decimals: number; note: string | null }) {
+function RangeTrack({ label, value, band, decimals, note, noteInk }: { label: string; value: number; band: BaselineRange; decimals: number; note: string | null; noteInk: string }) {
   const lo = Math.min(band.min, value)
   const hi = Math.max(band.max, value)
   const at = (v: number) => (hi > lo ? (v - lo) / (hi - lo) : 0.5)
@@ -44,7 +44,7 @@ function RangeTrack({ label, value, band, decimals, note }: { label: string; val
         caption={
           <div className="flex justify-between gap-3 tabular-nums">
             <span>{formatDecimal(lo, decimals)}</span>
-            {note && <span className="text-center text-[var(--text-2)]">{note}</span>}
+            {note && <span className="text-center" style={{ color: noteInk }} data-testid="dynamics-delta">{note}</span>}
             <span>{formatDecimal(hi, decimals)}</span>
           </div>
         }
@@ -54,14 +54,44 @@ function RangeTrack({ label, value, band, decimals, note }: { label: string; val
 }
 
 /**
+ * Which way is better for each metric (App Fixes 3d): a longer stride is
+ * better, a shorter ground contact is, and less bounce - vertical
+ * oscillation and the ratio - is too. Said beside the metric, so the reader
+ * does not have to know.
+ */
+const BETTER: Record<Metric['term'], 'higher' | 'lower'> = {
+  strideLength: 'higher',
+  groundContact: 'lower',
+  verticalOscillation: 'lower',
+  verticalRatio: 'lower',
+}
+
+/**
  * "−0.04 m vs your usual": a delta against the usual range's median, with
- * its unit, in text-2 - a note, never a status colour (H17).
+ * its unit. Mint when it moved the better way and amber when it moved the
+ * other (App Fixes 3d); level is muted. It used to be a note in one colour,
+ * which left the reader to know which way was good.
  */
 export function deltaSentence(m: Pick<Metric, 'value' | 'band' | 'decimals' | 'deltaUnit'>): string | null {
   const d = t.activity.dynamics
   if (!m.band) return null
   const delta = Number((m.value - m.band.median).toFixed(m.decimals))
   return delta === 0 ? d.level : `${formatDelta(delta)} ${m.deltaUnit} ${d.vsUsual}`
+}
+
+/** The delta's tone: good the better way, caution the other, muted on level. */
+export function deltaTone(m: Pick<Metric, 'value' | 'band' | 'decimals' | 'term'>): 'good' | 'worse' | 'flat' {
+  if (!m.band) return 'flat'
+  const delta = Number((m.value - m.band.median).toFixed(m.decimals))
+  if (delta === 0) return 'flat'
+  const better = BETTER[m.term] === 'higher' ? delta > 0 : delta < 0
+  return better ? 'good' : 'worse'
+}
+
+const DELTA_INK: Record<'good' | 'worse' | 'flat', string> = {
+  good: 'var(--good)',
+  worse: 'var(--tone-caution)',
+  flat: 'var(--text-2)',
 }
 
 /**
@@ -144,13 +174,20 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
       {metrics.some((m) => m.band) && baseline && <Legend weeks={baseline.weeks} />}
       {metrics.map((m) => {
         const sentence = deltaSentence(m)
+        const ink = DELTA_INK[deltaTone(m)]
         return (
           <div key={m.label} className="flex flex-col gap-2.5 border-b border-border py-4 last:border-b-0">
             <div className="flex items-baseline justify-between gap-2">
               {/* The title stays clean (5e): no (i) beside it - the name
                   itself is the button that opens its definition. */}
-              <span className="text-sm font-semibold text-foreground">
-                <GlossaryTerm term={m.term} quiet>{m.label}</GlossaryTerm>
+              <span className="flex min-w-0 flex-col">
+                <span className="text-sm font-semibold text-foreground">
+                  <GlossaryTerm term={m.term} quiet>{m.label}</GlossaryTerm>
+                </span>
+                {/* Which way is better, said rather than assumed (App Fixes 3d). */}
+                <span className="text-[11px] text-muted-foreground" data-testid="dynamics-better">
+                  {d.better[BETTER[m.term]]}
+                </span>
               </span>
               <span className="text-lg font-semibold tabular-nums text-foreground">
                 {m.display}
@@ -158,9 +195,9 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
               </span>
             </div>
             {m.band ? (
-              <RangeTrack label={m.label} value={m.value} band={m.band} decimals={m.decimals} note={sentence} />
+              <RangeTrack label={m.label} value={m.value} band={m.band} decimals={m.decimals} note={sentence} noteInk={ink} />
             ) : (
-              sentence && <p className="text-xs text-[var(--text-2)]">{sentence}</p>
+              sentence && <p className="text-xs" style={{ color: ink }} data-testid="dynamics-delta">{sentence}</p>
             )}
           </div>
         )

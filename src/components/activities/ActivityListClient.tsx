@@ -56,14 +56,18 @@ interface WeekRow extends WeekGroup<ActivitySummary> {
 
 const KM_STRONG = 'font-semibold text-foreground'
 
-/** "45 km · 5 runs · 88% easy": every aggregate says what it counts (v4.17). */
-function PastWeekLine({ group }: { group: WeekRow }) {
+/**
+ * "45 km · 5 runs · 88% easy": every aggregate says what it counts (v4.17).
+ * Under a filter the share is dropped (App Fixes 1d): "88% easy" of the
+ * threshold runs alone says nothing about the week.
+ */
+function PastWeekLine({ group, showEasy }: { group: WeekRow; showEasy: boolean }) {
   const w = t.activities.weekLine
   return (
     // The line gives way on a narrow phone, wrapping, so the week's dates never do (v4.17.2).
     <span className="min-w-0 text-right text-footnote text-muted-foreground text-pretty" data-testid="past-week-line">
       <span className={KM_STRONG}>{formatKm(group.totalKm)}</span> {t.units.km} · {w.runs(group.items.length)}
-      {group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
+      {showEasy && group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
     </span>
   )
 }
@@ -209,6 +213,9 @@ export function ActivityListClient({
   )
 
   const [items, setItems] = useState(initialItems)
+  // How many runs the current filter matches, as the query itself counted
+  // them: the list only holds a page of them (App Fixes 1d).
+  const [matched, setMatched] = useState(totalCount)
   const [nextOffset, setNextOffset] = useState(initialNextOffset)
   const [loadingMore, setLoadingMore] = useState(false)
   const [isPending, setIsPending] = useState(false)
@@ -276,6 +283,7 @@ export function ActivityListClient({
         if (seq !== requestSeq.current) return
         setIsPending(false)
         setItems(result.items)
+        setMatched(result.total)
         setNextOffset(result.nextOffset)
       })
       .catch(() => {
@@ -346,6 +354,9 @@ export function ActivityListClient({
   ].filter((part): part is string => part !== null)
 
   const pickedLabel = typesLabel(filter.types)
+  // What the filter bar names: every run the filter matches, not the page
+  // of them on screen.
+  const countedLabel = t.activities.count(matched)
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -427,6 +438,22 @@ export function ActivityListClient({
               </div>
             )}
 
+            {/* What the totals below are counting, and one tap to stop
+                counting it (App Fixes 1d): a week's "45 km" under a filter is
+                the filter's km, and said nothing about it. */}
+            {hasActiveFilter && (
+              <div className="flex items-baseline justify-between gap-3 px-1" data-testid="filter-bar">
+                <p className="min-w-0 text-[13px] text-muted-foreground text-pretty">
+                  {t.activities.filter.showing}{' '}
+                  <b className="font-semibold text-foreground">{countedLabel}</b>
+                  {t.activities.filter.totalsCount}
+                </p>
+                <button type="button" onClick={resetFilters} className="hit-44 shrink-0 text-[13px] font-medium text-accent-text">
+                  {t.activities.filter.clear}
+                </button>
+              </div>
+            )}
+
             {isPending ? (
               <div className="flex justify-center py-10">
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
@@ -460,7 +487,7 @@ export function ActivityListClient({
                         </h2>
                         <span className="shrink-0 text-[13px] text-muted-foreground" data-testid="week-line">
                           <span className={KM_STRONG}>{formatRanKm(block.week.totalKm)}</span> {t.units.km} · {t.activities.weekLine.runs(block.week.items.length)}
-                          {block.week.easyPct !== null && ` · ${t.activities.weekLine.easy(block.week.easyPct)}`}
+                          {!hasActiveFilter && block.week.easyPct !== null && ` · ${t.activities.weekLine.easy(block.week.easyPct)}`}
                         </span>
                       </div>
                       <div className={cardClass({ padding: 'none', overflow: true, className: 'pt-2' })}>
@@ -487,7 +514,7 @@ export function ActivityListClient({
                           <section key={g.key} id={`week-${g.key}`} className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24' })} data-testid="week">
                             <div className="flex items-baseline justify-between gap-4 px-4 pb-1.5 pt-3.5">
                               <h3 className="whitespace-nowrap text-sm font-semibold text-foreground">{g.label}</h3>
-                              <PastWeekLine group={g} />
+                              <PastWeekLine group={g} showEasy={!hasActiveFilter} />
                             </div>
                             <InsetRows items={g.items} efforts={qualifiedEffortsByActivityId} />
                           </section>

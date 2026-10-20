@@ -272,7 +272,11 @@ export function recoveryView(nights: RecoveryNight[], window: DayWindow): Recove
     hrv: hrv ? onDates(dates, hrv.dates, hrv.series) : null,
     restingHr: rhr ? onDates(dates, rhr.dates, rhr.series) : null,
     hrvLowStreak,
-    out: (hrv?.series.side ?? null) !== null || (rhr?.series.side ?? null) !== null,
+    // Only the bad side is a flag (App Fixes 2a): a resting HR below its
+    // baseline is a recovered athlete, and HRV above it is the same news.
+    // Both used to raise "Recovery is dipping" over a number that had
+    // improved.
+    out: hrv?.series.side === 'low' || rhr?.series.side === 'high',
   }
 }
 

@@ -202,7 +202,7 @@
   --segmented-track:         #f0f1f0;
   --segmented-pill:          #ffffff;
   --segmented-pill-shadow:   0 1px 2px rgba(0, 0, 0, 0.18);
-  --pos:                     #357a1a;
+  --pos:                     #0f7a52;
   --warn:                    #9a5b00;
   --neg:                     #c0352a;
   --tone-caution:            #9a5b00;
@@ -259,7 +259,7 @@
   --chart-hard:              var(--zone-4);
   --chart-ground-contact:    #f59e0b;
   --chart-brand:             var(--accent);
-  --heat-end:                color-mix(in srgb, var(--accent) 35%, #ffffff);
+  --heat-end:                var(--accent);
   --ro-accent:               var(--accent);
   --ro-accent-hi:            var(--accent-hover);
   --ro-ink:                  #0b1f17;
@@ -299,7 +299,7 @@
   --segmented-track:         #0f1111;
   --segmented-pill:          #2a2e2d;
   --segmented-pill-shadow:   0 1px 2px rgba(0, 0, 0, 0.18);
-  --pos:                     #7fd13b;
+  --pos:                     #2dd4a7;
   --warn:                    #f0b73c;
   --neg:                     #ff8a80;
   --tone-caution:            #f0b73c;
@@ -320,26 +320,26 @@
   --glass-bg-nav:            #0d0f0f;
 }
 
-[data-accent="periwinkle"] {
-  --accent:             #4457d6;
+[data-accent="cyan"] {
+  --accent:             #0e7f9b;
   --accent-foreground:  #ffffff;
-  --accent-text:        #4457d6;
-  --accent-hover:       color-mix(in oklab, #4457d6 88%, black);
-  --accent-soft:        #4457d61f;
-  --acc-soft:           #4457d61f;
-  --acc-line:           color-mix(in oklab, #4457d6 55%, transparent);
-  --ring:               color-mix(in oklab, #4457d6 35%, transparent);
+  --accent-text:        #007793;
+  --accent-hover:       color-mix(in oklab, #0e7f9b 88%, black);
+  --accent-soft:        #0e7f9b1f;
+  --acc-soft:           #0e7f9b1f;
+  --acc-line:           color-mix(in oklab, #0e7f9b 55%, transparent);
+  --ring:               color-mix(in oklab, #0e7f9b 35%, transparent);
 }
 
-.dark[data-accent="periwinkle"] {
-  --accent:             #8fa2ff;
+.dark[data-accent="cyan"] {
+  --accent:             #5fd4f0;
   --accent-foreground:  #07261d;
-  --accent-text:        #8fa2ff;
-  --accent-hover:       color-mix(in oklab, #8fa2ff 88%, white);
-  --accent-soft:        #8fa2ff1f;
-  --acc-soft:           #8fa2ff1f;
-  --acc-line:           color-mix(in oklab, #8fa2ff 55%, transparent);
-  --ring:               color-mix(in oklab, #8fa2ff 70%, transparent);
+  --accent-text:        #5fd4f0;
+  --accent-hover:       color-mix(in oklab, #5fd4f0 88%, white);
+  --accent-soft:        #5fd4f01f;
+  --acc-soft:           #5fd4f01f;
+  --acc-line:           color-mix(in oklab, #5fd4f0 55%, transparent);
+  --ring:               color-mix(in oklab, #5fd4f0 70%, transparent);
 }
 
 [data-accent="violet"] {

@@ -3,26 +3,44 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { ButtonLink } from '@/components/ui/Button'
-import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react'
 import { DELTA_TONE_COLOR } from '@/lib/deltaTone'
 import { VerdictEyebrow } from '@/components/ui/Verdict'
 import { t } from '@/i18n'
 import { Dialog } from './AnalyticsKit'
-import type { TabRead } from './coachReadTabs'
+import type { Direction, TabRead } from './coachReadTabs'
 import type { Trend } from './analyticsView'
 
 /**
- * A trend's arrow in its meaning (v4.17): ↗ improving pos, → level muted,
- * ↘ worse warn. Never the accent, because a trend is not the athlete's data.
+ * The arrow follows the number and the colour says what it means (App Fixes,
+ * rule 04). Fatigue down 23 is a drop drawn in mint; read off the meaning
+ * alone, as it was, the same row pointed up while the number fell.
+ *
+ * A row with no number of its own keeps the meaning's own arrow, so the
+ * sheet never mixes a direction with nothing to point at.
  */
-const TREND_ICON: Record<Trend, { Icon: typeof ArrowRight; color: string }> = {
-  improving: { Icon: ArrowUpRight, color: DELTA_TONE_COLOR.good },
-  flat: { Icon: ArrowRight, color: DELTA_TONE_COLOR.flat },
-  declining: { Icon: ArrowDownRight, color: DELTA_TONE_COLOR.worse },
+const DIRECTION_ICON: Record<Direction, typeof ArrowRight> = {
+  up: ArrowUpRight,
+  level: ArrowRight,
+  down: ArrowDownRight,
 }
 
-/** "Why →" and "Open plan →": text links with a 44 pt target each. */
-const LINK = 'inline-flex min-h-11 items-center text-[13px] font-medium text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md'
+const TREND_DIRECTION: Record<Trend, Direction> = { improving: 'up', flat: 'level', declining: 'down' }
+
+const TREND_COLOR: Record<Trend, string> = {
+  improving: DELTA_TONE_COLOR.good,
+  flat: DELTA_TONE_COLOR.flat,
+  declining: DELTA_TONE_COLOR.worse,
+}
+
+/** "Why ›" and "Open plan ›": text links with a 44 pt target each, the
+ *  chevron an icon rather than a glyph (App Fixes, rules 03 and 04). */
+const LINK = 'inline-flex min-h-11 items-center gap-0.5 text-[13px] font-medium text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md'
+
+/** The chevron that ends a text link. */
+function LinkChevron() {
+  return <ChevronRight size={14} strokeWidth={2.2} aria-hidden className="shrink-0" />
+}
 
 /**
  * The coach read card (design review, Oct 2026): the tab's own read under an
@@ -41,14 +59,21 @@ export function CoachRead({ read, eyebrow }: { read: TabRead; eyebrow: string })
         <p className="text-[15px] font-semibold leading-snug text-foreground text-pretty" data-testid="coach-read-headline">
           {read.headline}
         </p>
+        {read.note && (
+          <p className="text-[13px] leading-snug text-[var(--text-2)] text-pretty" data-testid="coach-read-note">
+            {read.note}
+          </p>
+        )}
         <div className="flex items-center gap-5">
           {read.rows.length > 0 && (
             <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={LINK} data-testid="coach-read-why">
               {s.why}
+              <LinkChevron />
             </button>
           )}
           <Link href="/plan" className={LINK} data-testid="coach-open-plan">
             {s.openPlan}
+            <LinkChevron />
           </Link>
         </div>
       </section>
@@ -66,9 +91,11 @@ export function CoachRead({ read, eyebrow }: { read: TabRead; eyebrow: string })
         >
           <ul className="flex flex-col">
             {read.rows.map((row, i) => {
-              const { Icon, color } = TREND_ICON[row.trend]
+              const direction = row.direction ?? TREND_DIRECTION[row.trend]
+              const Icon = DIRECTION_ICON[direction]
+              const color = TREND_COLOR[row.trend]
               return (
-                <li key={i} className="flex min-h-12 items-center gap-3 border-t border-border py-2.5 text-sm leading-[1.45] text-[var(--text-2)]" data-trend={row.trend}>
+                <li key={i} className="flex min-h-12 items-center gap-3 border-t border-border py-2.5 text-sm leading-[1.45] text-[var(--text-2)]" data-trend={row.trend} data-direction={direction}>
                   <Icon size={16} strokeWidth={2.4} className="w-[18px] shrink-0" style={{ color }} aria-hidden />
                   {row.text}
                 </li>

@@ -25,6 +25,10 @@ export function Unit({ children }: { children: ReactNode }) {
  * the label on top in 12 px muted sentence case, the value at 22-26 px with
  * its unit inline, and an optional line under it that says what it means,
  * in a status colour or muted, wrapping rather than cut.
+ *
+ * `labelPosition="bottom"` turns it over (App Fixes 1f): the number leads and
+ * its unit and name sit under it, so a value as wide as "10 / 14" fits any
+ * column without the label pushing it into a second line.
  */
 export function Stat({
   label,
@@ -33,6 +37,7 @@ export function Stat({
   meaning,
   tone = 'muted',
   size = 'md',
+  labelPosition = 'top',
   className,
   valueStyle,
 }: {
@@ -43,21 +48,27 @@ export function Stat({
   tone?: StatTone
   /** md 22 px, lg 26 px. */
   size?: 'md' | 'lg'
+  /** `bottom`: the number first, its name under it (App Fixes 1f). */
+  labelPosition?: 'top' | 'bottom'
   className?: string
   valueStyle?: CSSProperties
 }) {
+  // Label, value and meaning all wrap on a narrow column, never cut
+  // (v4.17.2): at 360 pt "12-week average" and "30 km/week" were.
+  const name = <span className="text-xs text-muted-foreground text-pretty">{label}</span>
+  const bottom = labelPosition === 'bottom'
   return (
     <div className={cn('flex min-w-0 flex-col gap-1', className)}>
-      {/* Label, value and meaning all wrap on a narrow column, never cut
-          (v4.17.2): at 360 pt "12-week average" and "30 km/week" were. */}
-      <span className="text-xs text-muted-foreground text-pretty">{label}</span>
+      {!bottom && name}
       <span
         className={cn('font-semibold leading-tight tracking-[-0.01em] text-foreground', size === 'lg' ? 'text-[26px]' : 'text-[22px]')}
         style={valueStyle}
       >
         {value}
-        {unit != null && unit !== '' && <Unit>{unit}</Unit>}
+        {/* With the name under the value, the unit goes down with it. */}
+        {!bottom && unit != null && unit !== '' && <Unit>{unit}</Unit>}
       </span>
+      {bottom && name}
       {meaning != null && meaning !== '' && (
         // A meaning line wraps on a narrow screen, never cut (v4.17.2).
         <span className={cn('text-xs text-pretty', STAT_TONE_CLASS[tone])}>{meaning}</span>

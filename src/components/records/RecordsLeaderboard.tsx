@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { ChevronDown } from 'lucide-react'
 import type { RecordEntry, TopEfforts } from '@/application/usecases/GetRecords'
 import type { RacePrediction } from '@/application/usecases/GetRacePredictions'
 import { cardClass } from '@/components/ui/Card'
@@ -105,9 +106,12 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
             <p className="flex items-center gap-1 truncate text-subhead font-semibold text-foreground">
               {r.label}
               {expandable && (
-                <span aria-hidden className={cn('text-xs text-muted-foreground transition-transform', isExpanded && 'rotate-180')}>
-                  ▾
-                </span>
+                <ChevronDown
+                  aria-hidden
+                  size={14}
+                  strokeWidth={2.2}
+                  className={cn('shrink-0 text-muted-foreground transition-transform', isExpanded && 'rotate-180')}
+                />
               )}
             </p>
             <p className="truncate text-xs text-muted-foreground">
@@ -120,7 +124,7 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
         return (
           <div key={r.key} className={cn(divider)}>
             {/* The whole row is the target - it opens the distance's top
-                efforts - and the ▾ beside the name says there is more. */}
+                efforts - and the chevron beside the name says there is more. */}
             {expandable ? (
               <button
                 type="button"

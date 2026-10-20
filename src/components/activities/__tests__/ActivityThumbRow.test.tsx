@@ -45,11 +45,13 @@ describe('ActivityThumbRow', () => {
     distanceKm: 10.2, durationSeconds: 3443, paceSecPerKm: 337, avgHeartRate: 139, rpe: null, hrZones: [], week: 0, elevationGain: null, routeThumb: null,
   } as ActivitySummary
 
-  it('names the session on the first line and leads the meta with its structure', () => {
+  // App Fixes 3d: the date leads the meta line, the structure follows it,
+  // so a long structure is what a narrow row ellipses - never the date.
+  it('names the session on the first line and leads the meta with the date', () => {
     render(<ActivityThumbRow activity={activity} variant="inset" />)
     const row = screen.getByTestId('thumb-row')
     expect(screen.getByText('Threshold')).toBeInTheDocument()
-    expect(screen.getByText(`2 × 7:00 - 2 × 7′ · ${thumbRowMeta(activity, 'inset')}`)).toBeInTheDocument()
+    expect(screen.getByText(`${thumbRowMeta(activity, 'inset')} · 2 × 7:00 - 2 × 7′`)).toBeInTheDocument()
     expect(row.textContent).not.toContain('Threshold 2 ×')
   })
 })

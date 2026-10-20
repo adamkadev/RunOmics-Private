@@ -5,6 +5,8 @@ import type { Activity, ActivityType } from '@/domain/activity/types'
 import { DAY_MS } from '@/lib/calendarDate'
 import { dailyTrimpByDate } from './GetTrainingLoad'
 import { getTrainingStatus } from './GetTrainingStatus'
+import { getLoadPairs } from './GetLoadRecovery'
+import { latestLoadPair, loadRatio, safeRange } from '@/domain/training/loadTrend'
 
 export const RECENT_LOAD_DAYS = 7
 
@@ -19,11 +21,41 @@ export interface RecentLoadDay {
   type: ActivityType | null
 }
 
+/**
+ * The seven-day load against the range the watch calls safe: the very pair
+ * Analytics' Load card reads (`getLoadPairs`), so Today and Analytics can no
+ * longer print different numbers for the same thing (App Fixes 1a). Null
+ * where the watch has no acute/chronic pair; the strip then says nothing
+ * about a range it cannot source.
+ */
+export interface LoadReading {
+  acute: number
+  lo: number
+  hi: number
+  state: 'below' | 'in' | 'above'
+  /** Acute over chronic, the ratio Analytics prints from the same pair. */
+  ratio: number
+}
+
 export interface RecentLoad {
   days: RecentLoadDay[]
   band: { lo: number; hi: number }
   /** The tallest bar the strip has to draw: its own days, or the top of the band. */
   peak: number
+  reading: LoadReading | null
+}
+
+export function loadReading(pairs: ReturnType<typeof getLoadPairs>): LoadReading | null {
+  const pair = latestLoadPair(pairs)
+  if (!pair) return null
+  const { lo, hi } = safeRange(pair.chronic)
+  return {
+    acute: pair.acute,
+    lo,
+    hi,
+    state: pair.acute < lo ? 'below' : pair.acute > hi ? 'above' : 'in',
+    ratio: loadRatio(pair),
+  }
 }
 
 function lastDays(today: string, count: number): string[] {
@@ -66,5 +98,5 @@ export async function getRecentLoad(today: string): Promise<RecentLoad | null> {
   }))
   const band = { lo: Math.round(status.ctl * LOAD_BAND.lo), hi: Math.round(status.ctl * LOAD_BAND.hi) }
 
-  return { days, band, peak: Math.max(band.hi, ...days.map((day) => day.load)) }
+  return { days, band, peak: Math.max(band.hi, ...days.map((day) => day.load)), reading: loadReading(getLoadPairs()) }
 }

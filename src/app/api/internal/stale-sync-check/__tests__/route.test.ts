@@ -41,7 +41,7 @@ describe('POST /api/internal/stale-sync-check', () => {
     expect(await res.json()).toEqual({ alert: { hoursSinceSync: 80 } })
     expect(sendPushToAllDevices).toHaveBeenCalledWith(
       'No data synced in a while',
-      'Your last Garmin sync was 80h ago - check that sync is still running.'
+      'Your last sync was 80h ago - check that sync is still running.'
     )
     expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushToAllDevices.mock.invocationCallOrder[0]!)
   })

@@ -392,7 +392,16 @@ export function ChartScrub({
  */
 export const THIS_WEEK_BORDER = '1.5px dashed var(--accent)'
 
-/** A week with nothing run: a 2 pt stub on the baseline, so it reads as a zero, not as no data. */
-export function EmptyWeek() {
-  return <div aria-hidden data-testid="empty-week" className="h-0.5 rounded-[1px] bg-[var(--band)]" />
+/** A missed week's outline: a plan it had, and nothing run against it. */
+export const MISSED_WEEK_BORDER = '1.5px dashed var(--muted-foreground)'
+
+/**
+ * A week with nothing run: a 2 pt stub on the baseline, so it reads as a
+ * zero, not as no data. A week that had a plan and missed it is drawn taller
+ * as a dashed outline instead, with a legend entry of its own (App Fixes 2c),
+ * so a missed week and a week the plan never asked for stop looking alike.
+ */
+export function EmptyWeek({ missed = false }: { missed?: boolean } = {}) {
+  if (!missed) return <div aria-hidden data-testid="empty-week" className="h-0.5 rounded-[1px] bg-[var(--band)]" />
+  return <div aria-hidden data-testid="empty-week" data-missed="" className="h-2.5 rounded-[3px]" style={{ border: MISSED_WEEK_BORDER }} />
 }

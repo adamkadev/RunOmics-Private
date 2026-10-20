@@ -101,7 +101,8 @@ describe('ChartStack scrub', () => {
     const line = (lane: string) => screen.getByTestId(`lane-${lane}`).querySelectorAll('path')[2]!.getAttribute('stroke')
     expect(line('hr')).toBe(RUN_CHART_LINE.hr)
     expect(line('pace')).toBe(RUN_CHART_LINE.pace)
-    expect(screen.getByTestId('lane-pace').textContent).toContain(`${t.activity.charts.pace} /km ↑`)
+    // App Fixes 3d: the direction is in words, not an arrow glyph.
+    expect(screen.getByTestId('lane-pace').textContent).toContain(`${t.activity.charts.pace} ${t.activity.charts.paceUnitHint}`)
     expect(screen.getByTestId('chart-stack').textContent).not.toContain('Run average')
   })
 

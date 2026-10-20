@@ -4,7 +4,7 @@ import type { SessionCard } from '../nextSession'
 import { TodayBoard } from '../TodayBoard'
 
 const SESSION: SessionCard = {
-  date: '2026-10-19', eyebrow: 'Today · Mon 19', title: 'Long run', km: '12', detail: '1h10',
+  date: '2026-10-19', eyebrow: 'Today · Mon 19', title: 'Long run', km: '12', detail: '1:10 h',
   workout: null, phase: 'Base', href: '/plan?date=2026-10-19',
 }
 

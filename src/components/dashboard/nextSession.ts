@@ -82,7 +82,7 @@ export interface SessionCard {
   title: string
   /** Its planned km ("10"), the detail line's lead; null when the plan gives none. */
   km: string | null
-  /** What follows the km: "1h00 · ≤ 158 bpm". */
+  /** What follows the km: "1:00 h · ≤ 158 bpm". */
   detail: string | null
   /** The session, for its intensity bar; null when only its name is known. */
   workout: HeroWorkoutView | null

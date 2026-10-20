@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 /** The usual-range pill's fill, the accent dimmed under its own outline - its legend swatch too. */
 export const USUAL_PILL_FILL = 'color-mix(in srgb, var(--accent) 35%, transparent)'
@@ -60,13 +61,15 @@ export function RangeBar({
             style={{ left: `clamp(1.5px, ${clamp(marker) * 100}%, calc(100% - 1.5px))`, background: markerColor }}
           />
         )}
+        {/* Past either end the marker becomes a chevron pointing that way,
+            an icon rather than a glyph (3.0 override 3). */}
         {overflow && (
           <span
             aria-hidden
-            className="absolute top-1/2 -translate-y-1/2 text-[11px] font-bold leading-none"
-            style={{ color: markerColor, ...(overflow === 'high' ? { right: -10 } : { left: -10 }) }}
+            className="absolute top-1/2 flex -translate-y-1/2 items-center leading-none"
+            style={{ color: markerColor, ...(overflow === 'high' ? { right: -11 } : { left: -11 }) }}
           >
-            {overflow === 'high' ? '▸' : '◂'}
+            {overflow === 'high' ? <ChevronRight size={12} strokeWidth={3} /> : <ChevronLeft size={12} strokeWidth={3} />}
           </span>
         )}
       </div>

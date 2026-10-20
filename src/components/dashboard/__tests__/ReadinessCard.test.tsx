@@ -12,7 +12,8 @@ const STATUS = {
 } as unknown as TrainingStatus
 
 describe('the Form dial', () => {
-  // Design review 3.0: a 270° arc in the accent, filled as far as Form.
+  // Design review 3.0: a 270° arc filled as far as Form, in the band's own
+  // colour - the arc says how the athlete is, so it never takes the accent.
   it('fills as far as today’s Form on the scale and names its band', () => {
     render(<ReadinessCard status={STATUS} />)
     const dial = screen.getByTestId('form-dial')
@@ -21,7 +22,18 @@ describe('the Form dial', () => {
     expect(dial.getAttribute('aria-label')).toBe(t.dashboard.readiness.formOnDial('−6', t.formBand[formBand(-6)]))
     expect(dial).toHaveTextContent('−6')
     expect(dial).toHaveTextContent(t.dashboard.readiness.formLabel)
-    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--accent)')
+    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--form-band-neutral)')
+  })
+
+  // App Fixes review 5: -18 read mint on Today and "Tired · below -10" in
+  // amber on Analytics. One number, one tone.
+  it('takes the tone of the band it falls in, as Analytics does', () => {
+    const { unmount } = render(<ReadinessCard status={{ ...STATUS, tsbNow: -18 }} />)
+    expect(screen.getByTestId('form-dial-fill').dataset.band).toBe('tired')
+    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--form-band-tired)')
+    unmount()
+    render(<ReadinessCard status={{ ...STATUS, tsbNow: 12 }} />)
+    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--form-band-fresh)')
   })
 
   it('rests on the edge past the scale, with no fill at its foot', () => {
@@ -33,13 +45,36 @@ describe('the Form dial', () => {
 })
 
 describe('ReadinessCard', () => {
-  it('reads Fitness, Fatigue and Load on three tiles, and no Garmin status', () => {
+  it('reads Fitness, Fatigue and Load on three tiles, and no watch status', () => {
     render(<ReadinessCard status={STATUS} />)
 
     expect(screen.getByTestId('tile-fitness')).toHaveTextContent(`${t.dashboard.readiness.ctl}54`)
     expect(screen.getByTestId('tile-fatigue')).toHaveTextContent(`${t.dashboard.readiness.atl}60`)
     expect(screen.getByTestId('tile-load')).toHaveTextContent(`${t.dashboard.readiness.acwr}×0.98`)
     expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(t.trainingStatus.status.productive)
+  })
+
+  it('writes a dash where the load ratio has nothing', () => {
+    render(<ReadinessCard status={{ ...STATUS, acwr: null }} />)
+    expect(screen.getByTestId('tile-load')).toHaveTextContent(t.dashboard.readiness.noValue)
+  })
+
+  // App Fixes 1a: the line's second half is the load against its safe range,
+  // the reading Analytics prints, not a word chosen off Form.
+  it('says how the load sits against its safe range, in Analytics\' own words', () => {
+    render(<ReadinessCard status={STATUS} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79 }} />)
+    const line = screen.getByTestId('readiness-status')
+    expect(line.textContent).toBe(`${t.dashboard.readiness.eyebrowByTone.build} · ${t.dashboard.readiness.loadState.below}`)
+    expect(line.style.color).toBe('var(--warn)')
+    // And the tile reads the ratio off that same pair, not a second source.
+    expect(screen.getByTestId('tile-load')).toHaveTextContent(`${t.dashboard.readiness.acwr}×0.79`)
+  })
+
+  it('falls back to the tone\'s own line where the watch has no load pair', () => {
+    render(<ReadinessCard status={STATUS} />)
+    expect(screen.getByTestId('readiness-status').textContent).toBe(
+      `${t.dashboard.readiness.eyebrowByTone.build} · ${t.dashboard.readiness.lineByTone.build}`,
+    )
   })
 
   // Fitness climbing is good news, fatigue climbing is a caution.
@@ -92,11 +127,6 @@ describe('ReadinessCard', () => {
   it('draws nothing without a training status', () => {
     const { container } = render(<ReadinessCard status={null} />)
     expect(container).toBeEmptyDOMElement()
-  })
-
-  it('writes a dash where the load ratio has nothing', () => {
-    render(<ReadinessCard status={{ ...STATUS, acwr: null }} />)
-    expect(screen.getByTestId('tile-load')).toHaveTextContent(t.dashboard.readiness.noValue)
   })
 
   // 3.1.0: yesterday's verdict, until the night's sync writes today's, says so.

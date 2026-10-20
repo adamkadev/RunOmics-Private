@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { Check, ChevronRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { sessionZone } from '@/lib/colors'
-import { formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
+import { sessionHrCapBpm } from '@/domain/training/hrTarget'
+import { formatClock, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import type { PlanWorkoutView } from './planWorkoutView'
 import { kindLabel, type DayKind } from './sessionKind'
@@ -34,41 +35,81 @@ function Title({ children }: { children: ReactNode }) {
   return <h2 className="mt-1.5 break-words text-[25px] font-bold leading-tight tracking-[-0.01em] text-foreground text-pretty">{children}</h2>
 }
 
+/** A target of the session: its name on the left, the number on the right. */
+function TargetRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-border py-[7px] last:border-b-0" data-testid="plan-target">
+      <span className="min-w-0 text-[13px] text-muted-foreground">{label}</span>
+      <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">{value}</span>
+    </div>
+  )
+}
+
 /**
  * A session still to come (redesign 3.0, 1d): the eyebrow, the title, one
- * line of distance, time and target, then its intensity profile - each step
- * as wide as it lasts - and its steps. No send-to-watch and no list of the
- * week's other sessions: the day selector above already is the week (a rest
- * day lists them, 3.0.2, having nothing else to show).
+ * line of distance and time, then its intensity profile - each step as wide
+ * as it lasts - and its steps. No send-to-watch and no list of the week's
+ * other sessions: the day selector above already is the week (a rest day
+ * lists them, 3.0.2, having nothing else to show).
+ *
+ * A session of one step has no structure to draw (App Fixes 3b): a full-width
+ * block said "structured" about an easy run. It shows its targets instead -
+ * the pace range, and the zone and bpm cap to hold.
  */
-export function PlannedWorkoutCard({ workout, kind }: { workout: PlanWorkoutView; kind: DayKind }) {
+export function PlannedWorkoutCard({
+  workout,
+  kind,
+  hrZoneBoundsBpm = null,
+}: {
+  workout: PlanWorkoutView
+  kind: DayKind
+  hrZoneBoundsBpm?: readonly number[] | null
+}) {
+  const s = t.plan.session
   const summary = workoutSummary(workout)
   const totalSeconds = summary.durationSeconds ?? 0
+  const structured = (workout.structure?.length ?? 0) > 1
   const subline = [
     summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null,
     totalSeconds > 0 ? formatDurationWords(totalSeconds) : null,
-    ...summary.paces.map(paceLabel),
+    // A one-step session carries its paces as targets under the card instead.
+    ...(structured ? summary.paces.map(paceLabel) : []),
   ]
     .filter(Boolean)
     .join(' · ')
   const blocks = intensityBlocks(workout.structure, totalSeconds, kind.color)
   const rows = stepRows({ steps: workout.structure, type: kind.type, kind: kind.kind, color: kind.color, totalSeconds, pace: effortPace(workout.effort) })
+  // A one-step session has no structure to read a pace off (the coach's
+  // steps collapse to none), so its target comes from the effort line.
+  const paceTarget = structured
+    ? null
+    : (summary.paces[0] ? `${formatClock(summary.paces[0].pace[0])}–${formatClock(summary.paces[0].pace[1])}` : effortPaceRange(workout.effort))
+  const hrCap = sessionHrCapBpm(workout.hr, hrZoneBoundsBpm)
+  const hrZone = workout.hr?.zone ?? null
 
   return (
     <section data-testid={`plan-workout-${workout.key}`} className={CARD}>
       <Eyebrow date={workout.date} kind={kind} />
       <Title>{summary.title}</Title>
       {subline && <p className="mt-1 text-[13px] text-muted-foreground">{subline}</p>}
-      <div aria-hidden data-testid="intensity-profile" className="mt-4 flex h-[54px] items-end gap-[3px]">
-        {blocks.map((block, i) => (
-          <span
-            key={i}
-            data-tone={block.tone}
-            className="min-w-[3px] rounded-[4px]"
-            style={{ flexGrow: block.seconds, flexBasis: 0, height: PROFILE_HEIGHT[block.tone], background: block.fill }}
-          />
-        ))}
-      </div>
+      {structured && (
+        <div aria-hidden data-testid="intensity-profile" className="mt-4 flex h-[54px] items-end gap-[3px]">
+          {blocks.map((block, i) => (
+            <span
+              key={i}
+              data-tone={block.tone}
+              className="min-w-[3px] rounded-[4px]"
+              style={{ flexGrow: block.seconds, flexBasis: 0, height: PROFILE_HEIGHT[block.tone], background: block.fill }}
+            />
+          ))}
+        </div>
+      )}
+      {!structured && (paceTarget !== null || hrCap !== null) && (
+        <div className="mt-3.5 border-t border-border" data-testid="plan-targets">
+          {paceTarget !== null && <TargetRow label={s.paceTarget} value={`${paceTarget} ${t.units.perKm}`} />}
+          {hrCap !== null && <TargetRow label={hrZone ? s.hrTargetZone(hrZone) : s.hrTarget} value={`${s.hrCap(hrCap)} ${t.units.bpm}`} />}
+        </div>
+      )}
       <ol className="mt-3.5 border-t border-border" data-testid="workout-steps">
         {rows.map((row) => (
           <li key={row.key} className="flex items-center gap-3 border-b border-border py-[7px] last:border-b-0">
@@ -89,8 +130,14 @@ export function PlannedWorkoutCard({ workout, kind }: { workout: PlanWorkoutView
 const EFFORT_PACE = /(\d{1,2}:\d{2})[-–](\d{1,2}:\d{2})\s*\/km$/
 
 function effortPace(effort: string | null): string | null {
+  const range = effortPaceRange(effort)
+  return range ? t.plan.row.pace(range) : null
+}
+
+/** Just the range out of an effort line: "5:30–6:24". */
+function effortPaceRange(effort: string | null): string | null {
   const match = effort?.match(EFFORT_PACE)
-  return match ? t.plan.row.pace(`${match[1]}–${match[2]}`) : null
+  return match ? `${match[1]}–${match[2]}` : null
 }
 
 function Line({ label, children, testId }: { label: string; children: ReactNode; testId?: string }) {
@@ -104,7 +151,7 @@ function Line({ label, children, testId }: { label: string; children: ReactNode;
 
 /**
  * A day that is over, or run (redesign 3.0, 1d): what was planned against
- * what was done - "10 km easy" against "11.5 km · 5:47 /km · Z2 86% ✓" - and
+ * what was done - "10 km easy" against "11.5 km · 5:47 /km · Z2 86%", ticked - and
  * a way into each run. A missed session says so; a run nothing was planned
  * for says that.
  */
@@ -152,9 +199,13 @@ export function DoneDayCard({
                   .map((part) => ` · ${part}`)
                   .join('')}
                 {onPlan && (
-                  <span className="ml-1.5 text-[var(--pos)]" role="img" aria-label={t.plan.dayCard.asPlanned}>
-                    ✓
-                  </span>
+                  <Check
+                    size={13}
+                    strokeWidth={3}
+                    role="img"
+                    aria-label={t.plan.dayCard.asPlanned}
+                    className="ml-1.5 inline-block shrink-0 align-[-2px] text-[var(--pos)]"
+                  />
                 )}
               </Line>
             )
@@ -205,7 +256,7 @@ export interface ComingUpRow {
   key: string
   date: string
   title: string
-  /** "Tue 20 · 10 km · 1h00". */
+  /** "Tue 20 · 10 km · 1:00 h". */
   detail: string
   color: string
 }

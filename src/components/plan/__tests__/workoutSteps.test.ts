@@ -62,7 +62,7 @@ describe('the steps list', () => {
 
   it('is one row for a session without steps, its pace from the effort', () => {
     const rows = stepRows({ steps: null, type: 'Base', kind: 'long', color: 'var(--zone-2)', totalSeconds: 5_400, pace: '5:30–6:24 /km' })
-    expect(rows).toEqual([{ key: 'main', tone: 'work', fill: 'var(--zone-2)', title: t.plan.kinds.long, detail: 'Z2 · 5:30–6:24 /km', duration: '1h30' }])
+    expect(rows).toEqual([{ key: 'main', tone: 'work', fill: 'var(--zone-2)', title: t.plan.kinds.long, detail: 'Z2 · 5:30–6:24 /km', duration: `1:30 ${t.units.hour}` }])
   })
 
   it('writes whole minutes with a prime and the rest as a clock', () => {

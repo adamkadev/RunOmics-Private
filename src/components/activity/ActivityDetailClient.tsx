@@ -26,6 +26,7 @@ import type { SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
 import { SimilarRuns } from './SimilarRuns'
 import { ActivityNotes } from './ActivityNotes'
 import { conditionsText, garminActivityUrl } from './runConditions'
+import { isWatchId } from '@/lib/garminConnect'
 import type { ShoeTag } from '@/domain/shoe/types'
 import type { Insight } from '@/lib/gemini'
 import { t } from '@/i18n'
@@ -228,17 +229,27 @@ export function ActivityDetailClient({
         {activity.weather && (
           <span className={RUN_CHIP_CLASS} data-testid="run-conditions">{conditionsText(activity.weather)}</span>
         )}
-        {/* The pair comes from Garmin, so it is set and changed there. */}
-        <a
-          href={garminActivityUrl(activity.id)}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={shoe ? t.activity.shoe.changeInGarmin(shoe.name) : t.activity.shoe.addInGarmin}
-          className={cn(RUN_CHIP_CLASS, !shoe && 'font-medium text-accent-text')}
-          data-testid="run-shoe"
-        >
-          <span className="truncate">{shoe ? shoe.name : t.activity.shoe.add}</span>
-        </a>
+        {/* The pair is set on the watch, so the chip opens its app - but
+            only for a run the watch gave an id to; otherwise there is
+            nothing at the other end, so the pair just reads (3.0 override 1). */}
+        {isWatchId(activity.id) ? (
+          <a
+            href={garminActivityUrl(activity.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={shoe ? t.activity.shoe.changeInGarmin(shoe.name) : t.activity.shoe.addInGarmin}
+            className={cn(RUN_CHIP_CLASS, !shoe && 'font-medium text-accent-text')}
+            data-testid="run-shoe"
+          >
+            <span className="truncate">{shoe ? shoe.name : t.activity.shoe.add}</span>
+          </a>
+        ) : (
+          shoe && (
+            <span className={RUN_CHIP_CLASS} data-testid="run-shoe">
+              <span className="truncate">{shoe.name}</span>
+            </span>
+          )
+        )}
         <ActivityNotes activityId={activity.id} />
       </RunVerdict>
 

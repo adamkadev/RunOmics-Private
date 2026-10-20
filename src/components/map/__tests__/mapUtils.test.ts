@@ -4,8 +4,10 @@ import {
   buildHeatTracks,
   mercatorX,
   mercatorY,
+  HEAT_DARK_CAP_ALPHA,
   HEAT_STYLE,
   heatLineWidth,
+  heatLightFloor,
   heatPasses,
   rgba,
   reachKm,
@@ -16,6 +18,8 @@ import {
 } from '../mapUtils'
 import { distanceKm } from '@/lib/math'
 import { heatRamp } from '@/lib/heatRamp'
+import { CURATED_ACCENTS } from '@/lib/accentScale'
+import { hexToOklch } from '@/lib/oklch'
 import type { RouteCluster, RouteMeta } from '@/application/usecases/GetAllRoutes'
 
 const meta = (over: Partial<RouteMeta> = {}): RouteMeta => ({
@@ -115,17 +119,53 @@ describe('HEAT_STYLE (v4.17)', () => {
     expect(core!.width).toBe(1)
   })
 
-  it('draws light mode as one stroke, half opaque and wider, with no glow', () => {
-    expect(HEAT_STYLE.light.passes).toHaveLength(1)
-    const [only] = HEAT_STYLE.light.passes
-    expect(only!.alpha).toBeGreaterThanOrEqual(0.5)
-    expect(only!.width).toBeGreaterThan(1)
+  // App Fixes 4a: a blurred halo under a ramp that runs pale tint, accent,
+  // deep shade - so a route run many times multiplies down to ink.
+  it('draws light mode as a halo under a pale-to-deep ramp', () => {
+    const tones = HEAT_STYLE.light.passes.map((p) => p.tone)
+    expect(tones).toEqual(['halo', 'tint', 'accent', 'deep'])
+    const [halo, ...ramp] = HEAT_STYLE.light.passes
+    expect(halo!.blur).toBeGreaterThan(0)
+    expect(halo!.width).toBeGreaterThan(ramp[0]!.width)
+    // Each step of the ramp is narrower and more opaque than the one before.
+    for (let i = 1; i < ramp.length; i++) {
+      expect(ramp[i]!.width).toBeLessThan(ramp[i - 1]!.width)
+      expect(ramp[i]!.alpha).toBeGreaterThan(ramp[i - 1]!.alpha)
+    }
   })
 
   it('draws the tracks in the accent on dark, and its own ramp on light', () => {
     expect(heatPasses('dark', '#2dd4a7').map((p) => p.color)).toEqual(['rgba(45,212,167,0.035)', 'rgba(45,212,167,0.16)'])
-    const { light } = heatRamp('#4457d6')
-    expect(heatPasses('light', '#4457d6')).toEqual([{ width: HEAT_STYLE.light.passes[0]!.width, color: rgba(light, 0.5) }])
+    const { light, deep } = heatRamp('#0e7f9b')
+    const passes = heatPasses('light', '#0e7f9b')
+    expect(passes.map((p) => p.color)).toEqual([rgba(light, 0.05), rgba(light, 0.11), rgba('#0e7f9b', 0.18), rgba(deep, 0.24)])
+    expect(passes[0]!.blur).toBe(6)
+    expect(passes.slice(1).every((p) => p.blur === undefined)).toBe(true)
+  })
+
+  // 3.0 override 9: added light stacks, so enough runs over one street summed
+  // to white. The canvas washes the accent back over what it drew, which caps
+  // the busiest ground at the accent; heatLayer applies it with source-atop.
+  it('caps the dark canvas at the accent rather than letting it reach white', () => {
+    expect(HEAT_DARK_CAP_ALPHA).toBeGreaterThan(0)
+    expect(HEAT_DARK_CAP_ALPHA).toBeLessThan(1)
+  })
+
+  // App Fixes 4a: multiply compounds, so the light canvas ran past the deep
+  // shade to near-black. The floor is the accent half way to the ink, and no
+  // amount of overlap goes darker than it.
+  it('floors the light canvas at the accent half way to the ink', () => {
+    for (const accent of CURATED_ACCENTS) {
+      const floor = heatLightFloor(accent.light.acc)
+      const { l } = hexToOklch(floor)
+      // Darker than the deepest pass draws, and still a colour, not black.
+      expect(l).toBeLessThan(hexToOklch(heatRamp(accent.light.acc).deep).l)
+      expect(l).toBeGreaterThan(0.3)
+    }
+  })
+
+  it('keeps every light pass light enough that one run reads as a tint', () => {
+    for (const pass of heatPasses('light', '#0e7f9b')) expect(pass.color).toMatch(/0\.(0|1|2)\d*\)$/)
   })
 
   it('reads a short hex too', () => {

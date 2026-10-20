@@ -40,15 +40,17 @@ export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds'
 
 /**
  * A run as a list row (v4.17): its route on a tile, the name, then the type's
- * dot and the meta line - a structured name's structure first - and on the
- * right the distance over the pace, each with its unit.
+ * dot and the meta line - the date first, the structure after it - and on
+ * the right the distance over the pace, each with its unit.
  */
 export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
   // A structured name is its session's name on the first line, its
   // structure leading the meta on the second (3.0.2): one truncated line cut
   // the structure off.
   const { name: title, structure } = splitStructuredTitle(activityTitle(a))
-  const meta = [structure, thumbRowMeta(a, variant)].filter(Boolean).join(' · ')
+  // The date leads (App Fixes 3d): with the structure first, "2 × 7′ @ 4:25
+  // · Tue 13" lost its date to the ellipsis on a narrow row.
+  const meta = [thumbRowMeta(a, variant), structure].filter(Boolean).join(' · ')
   const inset = variant === 'inset'
 
   return (

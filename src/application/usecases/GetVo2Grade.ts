@@ -118,7 +118,11 @@ export function buildVo2Grade(input: Vo2GradeInput): Vo2GradeView {
     status: 'graded',
     grade,
     value,
-    topPercent: vo2maxTopPercent(value, age, sex, norms),
+    // The ranking the card prints is the grade's own band (App Fixes 1e), so
+    // "Top 5%" always agrees with the A+ row of the grade table. Read off the
+    // raw percentile it drifted from the grade, which holds for seven days
+    // while the value moves: an A+ could print "Top 7%".
+    topPercent: band.topPercent ?? vo2maxTopPercent(value, age, sex, norms),
     band: bandLabel(age, sex),
     delta30: change30,
     ladder,

@@ -172,6 +172,14 @@ describe('recoveryView', () => {
     expect(view.out).toBe(true)
   })
 
+  // App Fixes 2a: a resting HR under its baseline is good news, so it is
+  // named but never flagged.
+  it('does not flag a resting HR below its baseline', () => {
+    const view = recoveryView(nights(90, (i) => 58 + wobble(i), (i) => (i >= 88 ? 40 : 46 + (i % 3) - 1)), dayWindow(TODAY, '4w'))!
+    expect(view.restingHr!.side).toBe('low')
+    expect(view.out).toBe(false)
+  })
+
   it('calls a change inside ±3 ms or ±2 bpm no real change', () => {
     const view = recoveryView(nights(90, (i) => 58 + (i === 89 ? 2 : 0), (i) => 46 + (i === 89 ? 1 : 0)), dayWindow(TODAY, '4w'))!
     expect(view.hrv!.tone).toBe('flat')

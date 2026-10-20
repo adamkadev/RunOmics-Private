@@ -18,3 +18,24 @@ describe('RUN_TYPE_ZONE', () => {
     expect(runTypeColor(undefined)).toBe('var(--zone-2)')
   })
 })
+
+/**
+ * 3.0 override 2: "Good is always #2dd4a7 and warning is always amber.
+ * Lime #7fd13b is retired." Every delta, chip and bar the app calls good
+ * reads --pos, so this is the one place the rule can be held.
+ */
+describe('the status colours (3.0 override 2)', () => {
+  it('calls good mint, never lime', async () => {
+    const { STATUS_HEX } = await import('@/lib/themeTokens')
+    expect(STATUS_HEX.dark.pos).toBe('#2dd4a7')
+    expect(STATUS_HEX.dark.pos).not.toBe('#7fd13b')
+    // Light is the same hue at text grade, not an olive.
+    expect(STATUS_HEX.light.pos).toBe('#0f7a52')
+  })
+
+  it('keeps warning amber and bad coral', async () => {
+    const { STATUS_HEX } = await import('@/lib/themeTokens')
+    expect(STATUS_HEX.dark.warn).toBe('#f0b73c')
+    expect(STATUS_HEX.dark.neg).toBe('#ff8a80')
+  })
+})

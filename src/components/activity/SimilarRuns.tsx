@@ -11,6 +11,7 @@ import { ChartFigure } from '@/components/ui/ChartFigure'
 import { TooltipCard } from '@/components/ui/ChartTooltip'
 import { lineInterpolation } from '@/domain/timeWindow'
 import { CHART_COLORS } from '@/lib/colors'
+import { Medal } from 'lucide-react'
 import { paceAxis } from '@/lib/chartAxis'
 import { formatClock, formatDate, formatDuration, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -78,8 +79,10 @@ function RunRow({ run, bestPace }: { run: SimilarRun; bestPace: number }) {
 
   const content = (
     <>
-      <span className="w-6 shrink-0 text-center text-xs font-bold tabular-nums text-muted-foreground">
-        {run.rank === 1 ? '🥇' : `#${run.rank}`}
+      {/* The fastest of them takes a medal, drawn rather than typed (3.0
+          override 3): the emoji was the one picture in a list of numbers. */}
+      <span className="flex w-6 shrink-0 items-center justify-center text-xs font-bold tabular-nums text-muted-foreground">
+        {run.rank === 1 ? <Medal size={14} strokeWidth={2.2} role="img" aria-label={s.fastest} /> : `#${run.rank}`}
       </span>
       <span className={cn('min-w-0 flex-1 truncate text-sm', run.isCurrent ? 'font-semibold text-foreground' : 'text-foreground/80')}>
         {run.isCurrent ? s.thisRun : formatDate(run.date, { year: 'always' })}

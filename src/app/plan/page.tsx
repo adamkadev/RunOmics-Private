@@ -3,6 +3,7 @@ import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
+import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { PlanClient } from '@/components/plan/PlanClient'
 import { planCoachingView } from '@/components/plan/planCoachingView'
@@ -18,6 +19,7 @@ export default async function PlanPage() {
   const trainingZones = await getTrainingZones()
   const trainingPlan = getTrainingPlan()
   const coaching = getCoachingOverview(today)
+  const athlete = getAthleteProfile()
 
   return (
     <PlanClient
@@ -26,6 +28,7 @@ export default async function PlanPage() {
       planPhaseRanges={trainingPlan?.ranges ?? []}
       nextRace={nextRace}
       trainingZones={trainingZones}
+      hrZoneBoundsBpm={athlete.hrZoneBoundsBpm ?? null}
       coaching={coaching ? planCoachingView(coaching) : null}
       today={today}
     />

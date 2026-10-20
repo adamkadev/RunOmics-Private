@@ -11,12 +11,12 @@ import {
 
 describe('the v4.17 accents', () => {
   it('offers five palettes, teal first and by default', () => {
-    expect(ACCENT_IDS).toEqual(['teal', 'periwinkle', 'violet', 'pink', 'mono'])
+    expect(ACCENT_IDS).toEqual(['teal', 'cyan', 'violet', 'pink', 'mono'])
     expect(DEFAULT_ACCENT).toBe('teal')
   })
 
   it('knows its own ids only', () => {
-    expect(isAccentId('periwinkle')).toBe(true)
+    expect(isAccentId('cyan')).toBe(true)
     expect(isAccentId('lime')).toBe(false)
     expect(isAccentId('performance')).toBe(false)
     expect(isAccentId(null)).toBe(false)
@@ -40,8 +40,10 @@ describe('reading a stored preference', () => {
     expect(parseAccent('silver')).toBe('mono')
   })
 
-  it('reads v4.3\'s indigo and lavender as the v4.17 periwinkle and violet', () => {
-    expect(parseAccent('indigo')).toBe('periwinkle')
+  it('reads v4.3\'s indigo and lavender, and v4.17\'s periwinkle, as cyan and violet', () => {
+    expect(parseAccent('indigo')).toBe('cyan')
+    // Cyan replaced the periwinkle blue in 3.1 (App Fixes 5b).
+    expect(parseAccent('periwinkle')).toBe('cyan')
     expect(parseAccent('lavender')).toBe('violet')
   })
 
@@ -64,11 +66,11 @@ describe('persistAccent', () => {
     window.addEventListener(ACCENT_CHANGE_EVENT, onChange)
     localStorage.setItem('runomics-accent-css', 'stale')
 
-    persistAccent('periwinkle')
+    persistAccent('cyan')
 
-    expect(localStorage.getItem(ACCENT_STORAGE_KEY)).toBe('periwinkle')
+    expect(localStorage.getItem(ACCENT_STORAGE_KEY)).toBe('cyan')
     expect(localStorage.getItem('runomics-accent-css')).toBeNull()
-    expect(document.documentElement.getAttribute('data-accent')).toBe('periwinkle')
+    expect(document.documentElement.getAttribute('data-accent')).toBe('cyan')
     expect(onChange).toHaveBeenCalled()
     window.removeEventListener(ACCENT_CHANGE_EVENT, onChange)
   })

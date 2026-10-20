@@ -1,6 +1,7 @@
 import { getProfileData } from '@/application/usecases/GetProfileData'
 import { getHeatmapData } from '@/application/usecases/GetHeatmapData'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
+import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getRecords } from '@/application/usecases/GetRecords'
@@ -16,6 +17,7 @@ export default async function ProfilePage() {
   const today = appTodayIso()
   const data = await getProfileData(today)
   const goals = await getGoalsPageData(today)
+  const grade = getVo2Grade()
 
   const view = progressHubView({
     today,
@@ -27,6 +29,7 @@ export default async function ProfilePage() {
     goal: data.goal,
     spotlight: goals.nextRace,
     vo2max: { value: getLatestVO2max(), samples: getVo2maxSamples().days },
+    vo2Grade: grade?.status === 'graded' ? { letter: grade.grade, topPercent: grade.topPercent } : null,
     athlete: { lthrBpm: data.athlete.lthrBpm, thresholdPaceSecPerKm: data.athlete.thresholdPaceSecPerKm },
     records: await getRecords(),
     heatmapDays: getHeatmapData(),

@@ -84,12 +84,21 @@ describe('ProfileHrZones table', () => {
   ]
   const recent = [{ zone: 2, seconds: 125 * 60, percent: 0 }]
 
-  it('labels Pace, HR and Time as their own columns', () => {
+  it('labels Zone, Pace, HR and Time as their own columns', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
     const header = screen.getByTestId('zone-columns')
     for (const column of [z.columnZone, z.columnPace, z.columnHr, z.columnTime]) {
       expect(within(header).getByText(column)).toBeInTheDocument()
     }
+  })
+
+  // App Fixes 1e: the share left the bar, where a 1 % zone had no room to
+  // print it, and reads after the zone's time instead.
+  it('reads each zone\'s share after its time, not under the bar', () => {
+    render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
+    const row = screen.getByTestId('zone-row-2')
+    expect(within(row).getByTestId('zone-pct').textContent).toContain('%')
+    expect(within(screen.getByTestId('zone-stack')).queryByTestId('zone-pct')).toBeNull()
   })
 
   // 3.0 1j: four weeks first, whatever the week holds, and no line to say so.
@@ -138,8 +147,9 @@ describe('ProfileHrZones table', () => {
     expect(screen.getByTestId('zone-verdict').className).toContain('text-[var(--warn)]')
   })
 
-  // 3.0 1j: every zone with time draws, at least 3 % wide, its share under it.
-  it('draws each zone with time as wide as its share, at least 3 %, with its share under it', () => {
+  // 3.0 1j: every zone with time draws, at least 3 % wide; its share is read
+  // in the table beside it (App Fixes 1e).
+  it('draws each zone with time as wide as its share, at least 3 %, and reads the share in the table', () => {
     const withSliver = [
       { zone: 1, seconds: 26 * 60, percent: 0 },
       { zone: 2, seconds: 61 * 60, percent: 0 },
@@ -150,7 +160,7 @@ describe('ProfileHrZones table', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={[]} recentZoneTime={withSliver} />)
     const stack = screen.getByTestId('zone-stack')
     expect([...stack.querySelectorAll('[data-zone]')].map((el) => el.getAttribute('data-zone'))).toEqual(['1', '2', '3', '4', '5'])
-    expect(screen.getAllByTestId('zone-pct').map((el) => el.textContent)).toEqual(['26%', '61%', '8%', '5%', '1%'])
+    expect(screen.getAllByTestId('zone-pct').map((el) => el.textContent?.trim())).toEqual(['· 26%', '· 61%', '· 8%', '· 5%', '· 1%'])
   })
 
   it('has a single Week / 4 weeks toggle that switches the whole table', async () => {

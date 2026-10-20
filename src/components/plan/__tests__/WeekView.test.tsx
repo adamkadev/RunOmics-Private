@@ -8,7 +8,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { CoachingPlan } from '@/domain/coaching/types'
-import { plan } from '@/domain/coaching/__tests__/fixtures'
+import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
 import { t } from '@/i18n'
 import { WeekView } from '../WeekView'
 
@@ -235,7 +235,7 @@ describe('a session still to come', () => {
     const card = screen.getByTestId('plan-workout-workout-threshold')
     expect(card.textContent).toContain(t.activityTypes.Threshold)
     expect(within(card).getByRole('heading').textContent).toBe('3 × 8 min threshold')
-    expect(card.textContent).toContain('1h00')
+    expect(card.textContent).toContain(`1:00 ${t.units.hour}`)
     expect(card.textContent).toContain(t.plan.session.targetPace('4:25–4:30'))
   })
 
@@ -244,6 +244,34 @@ describe('a session still to come', () => {
 
     const tones = [...screen.getByTestId('intensity-profile').children].map((block) => block.getAttribute('data-tone'))
     expect(tones).toEqual(['ease', 'work', 'recovery', 'work', 'recovery', 'work', 'recovery', 'ease'])
+  })
+
+  // App Fixes 3b: a session of one step has no structure to draw - a
+  // full-width block said "structured" about an easy run - so it lists its
+  // targets instead.
+  it('drops the structure bar for a one-step session and lists its targets', () => {
+    const easy = workout({
+      id: 'workout-easy-single',
+      type: 'easy',
+      title: 'Easy run',
+      totalDurationSeconds: 3_600,
+      blocks: [{ kind: 'effort', target: { durationSeconds: 3_600, paceSecPerKm: { min: 330, max: 384 } } }],
+    })
+    const single = plan({
+      weeks: [{ id: 'week-1', index: 1, startDate: '2026-09-07', endDate: '2026-09-13', focus: 'Aerobic base', workouts: [easy] }],
+    })
+    renderWeek({ coaching: overview({ coachingPlan: single }), trainingZones: ZONES })
+
+    const card = screen.getByTestId('plan-workout-workout-easy-single')
+    expect(within(card).queryByTestId('intensity-profile')).toBeNull()
+    const targets = within(card).getAllByTestId('plan-target')
+    expect(targets[0]!.textContent).toBe(`${t.plan.session.paceTarget}5:30–6:24 ${t.units.perKm}`)
+  })
+
+  it('keeps the structure bar for a session of more than one step', () => {
+    renderWeek({ coaching: overview() })
+
+    expect(screen.getByTestId('plan-workout-workout-threshold')).toContainElement(screen.getByTestId('intensity-profile'))
   })
 
   it('lists its steps, the reps grouped', () => {

@@ -2,8 +2,10 @@
 
 import { useEffect, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import { Check } from 'lucide-react'
 import Link from 'next/link'
-import { formatDate, formatDistance, formatDurationCompact } from '@/lib/formatters'
+import { addDays, isoDate } from '@/lib/calendarDate'
+import { formatDate, formatDateRange, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
@@ -19,14 +21,17 @@ function dayStyle(day: SheetDay): CSSProperties {
   return {}
 }
 
-/** The runs column: "5 ✓" on target, the count under it, "0/3" for the week under way, a dash for one to come. */
+/** The runs column: "5" with a tick on target, "0/3" for the week under way, a dash for one to come. */
 function RunsChip({ row, target }: { row: SheetRow; target: number }) {
   if (row.status === 'future') return <span className="justify-self-center text-[11px] text-subtle">–</span>
   const chip = 'justify-self-center whitespace-nowrap rounded-[7px] px-1.5 py-[3px] text-[11px] font-semibold tabular-nums'
   if (row.status === 'hit') {
     return (
       <span className={chip} style={{ background: 'color-mix(in srgb, var(--accent) 18%, transparent)' }} data-status="hit">
-        <span className="text-accent-text">{row.runs} ✓</span>
+        <span className="inline-flex items-center gap-0.5 text-accent-text">
+          {row.runs}
+          <Check size={10} strokeWidth={3} aria-hidden className="shrink-0" />
+        </span>
       </span>
     )
   }
@@ -34,6 +39,11 @@ function RunsChip({ row, target }: { row: SheetRow; target: number }) {
     return <span className={cn(chip, 'border border-[var(--line-2)] text-foreground')} data-status="current">{`${row.runs}/${target}`}</span>
   }
   return <span className={cn(chip, 'bg-muted text-muted-foreground')} data-status="under">{row.runs}</span>
+}
+
+/** "Sep 14 – 20": a calendar row's week, for the reader and the screen reader. */
+function weekRangeLabel(start: string): string {
+  return formatDateRange(start, isoDate(addDays(new Date(`${start}T00:00:00`), 6)), { year: 'never' })
 }
 
 function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
@@ -48,11 +58,14 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
         <span>{t.consistency.sheet.runsColumn}</span>
       </div>
       {sheet.rows.map((row) => (
+        // Each row says which week it is (App Fixes 3d): the grid of days
+        // alone left the highlighted week unnamed.
         <div
           key={row.start}
           className={cn(columns, 'h-9 rounded-xl', row.selected && 'bg-muted')}
           data-testid="calendar-row"
           data-selected={row.selected || undefined}
+          aria-label={weekRangeLabel(row.start)}
         >
           {row.days.map((day) => (
             <span key={day.date} className={cn('flex items-center justify-center', !day.inMonth && 'opacity-50')}>
@@ -123,7 +136,7 @@ export function WeekSheet({ view, weekStart, today, onClose }: { view: Consisten
           <div className="flex min-w-0 flex-col gap-0.5">
             <h2 className="text-xl font-bold tracking-[-0.01em] text-foreground">{title}</h2>
             <p className="text-[12.5px] text-muted-foreground" data-testid="week-summary">
-              {s.summary(week.runs, formatDistance(week.km), formatDurationCompact(week.seconds))}
+              {s.summary(week.runs, formatDistance(week.km), formatDurationWords(week.seconds))}
             </p>
           </div>
           <span

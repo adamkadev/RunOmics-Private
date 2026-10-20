@@ -105,13 +105,13 @@ export const fr = {
     fitness: { term: 'Condition', definition: 'La condition (CTL) est ta charge moyenne sur 42 jours : le travail que ton corps a absorbé.' },
     fatigue: { term: 'Fatigue', definition: 'La fatigue (ATL) est ta charge moyenne sur 7 jours : ce que la dernière semaine t’a coûté.' },
     vma: { term: 'VMA', definition: 'Vitesse maximale aérobie : la vitesse atteinte à la VO₂max, tenue environ six minutes.' },
-    vo2Grade: { term: 'Sexe et âge', definition: 'Ta VO₂max face aux personnes de ton sexe et de ta tranche d’âge, d’après les normes âge/sexe de Garmin (percentiles ACSM / Cooper Institute). A+ correspond aux 5 % les meilleurs, C à moins du 45e percentile. La note ne change que si ta VO₂max reste 7 jours au-delà de la limite.' },
-    vo2max: { term: 'VO₂max', definition: 'La quantité maximale d’oxygène que ton corps utilise par kilo et par minute, estimée par Garmin à partir de tes sorties.' },
+    vo2Grade: { term: 'Sexe et âge', definition: 'Ta VO₂max face aux personnes de ton sexe et de ta tranche d’âge, d’après les normes âge/sexe qu’utilise ta montre (percentiles ACSM / Cooper Institute). A+ correspond aux 5 % les meilleurs, C à moins du 45e percentile. La note ne change que si ta VO₂max reste 7 jours au-delà de la limite.' },
+    vo2max: { term: 'VO₂max', definition: 'La quantité maximale d’oxygène que ton corps utilise par kilo et par minute, estimée par ta montre à partir de tes sorties.' },
     lthr: { term: 'FC seuil', definition: 'Fréquence cardiaque au seuil lactique (LTHR) : à peu près celle que tu tiendrais sur une course d’une heure.' },
     thresholdPace: { term: 'Allure seuil', definition: 'L’allure au seuil lactique : à peu près ce que tu tiendrais en course pendant une heure.' },
     rpe: { term: 'RPE', definition: 'Effort perçu, de 1 à 10, saisi sur la montre après la sortie.' },
-    aerobicEffect: { term: 'Effet aérobie', definition: 'Score Garmin de 0 à 5 : à quel point la sortie a développé ta capacité aérobie.' },
-    anaerobicEffect: { term: 'Effet anaérobie', definition: 'Score Garmin de 0 à 5 : à quel point la sortie a développé ta capacité à l’effort court et intense.' },
+    aerobicEffect: { term: 'Effet aérobie', definition: 'Score de 0 à 5 de ta montre : à quel point la sortie a développé ta capacité aérobie.' },
+    anaerobicEffect: { term: 'Effet anaérobie', definition: 'Score de 0 à 5 de ta montre : à quel point la sortie a développé ta capacité à l’effort court et intense.' },
     strideLength: { term: 'Longueur de foulée', definition: 'La distance parcourue à chaque pas, en moyenne sur la sortie.' },
     groundContact: { term: 'Temps de contact', definition: 'Le temps que chaque pied reste au sol à chaque pas. Plus il est court, plus la foulée est en général réactive.' },
     verticalOscillation: { term: 'Oscillation verticale', definition: 'L’amplitude de montée et de descente du corps à chaque pas : le rebond.' },
@@ -157,7 +157,7 @@ export const fr = {
   },
 
   paceAxis: {
-    caption: 'plus rapide ↑',
+    caption: 'vers le haut = plus rapide',
   },
 
   sessionState: {
@@ -280,8 +280,8 @@ export const fr = {
     athlete: {
       title: 'Athlète et zones',
       back: 'Progression',
-      fromGarmin: 'Via Garmin',
-      syncedAgo: (when: string) => `Via Garmin · synchronisé ${when}`,
+      fromGarmin: 'Via ta montre',
+      syncedAgo: (when: string) => `Via ta montre · synchronisé ${when}`,
     },
     notFound: {
       code: '404',
@@ -309,7 +309,7 @@ export const fr = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Infos de version copiées',
     sections: {
-      profile: 'Profil · depuis Garmin',
+      profile: 'Profil · depuis ta montre',
       appearance: 'Apparence',
       data: 'Données',
       account: 'Compte',
@@ -320,7 +320,7 @@ export const fr = {
       action: 'Synchroniser',
       running: 'Synchro…',
       starting: 'Lancement de la synchro…',
-      fetching: 'Récupération des données Garmin, puis reconstruction de l’app…',
+      fetching: 'Récupération des données de ta montre, puis reconstruction de l’app…',
       writing: 'Nouvelles données en ligne. Rédaction du verdict…',
       upToDate: 'Déjà à jour — aucune nouvelle sortie.',
       stillRunning: 'Toujours en cours. Le verdict apparaîtra tout seul.',
@@ -344,7 +344,7 @@ export const fr = {
       caption: 'graphiques et mises en avant',
       options: {
         teal:     { label: 'Sarcelle' },
-        periwinkle: { label: 'Pervenche' },
+        cyan: { label: 'Cyan' },
         violet:     { label: 'Violet' },
         pink:     { label: 'Rose' },
         mono:     { label: 'Mono' },
@@ -389,7 +389,7 @@ export const fr = {
       confirmCancel: 'Annuler',
     },
     dataSource: {
-      garmin: 'Garmin Connect',
+      garmin: 'l’app de ta montre',
       connected: (source: string) => `${source} connecté`,
       readOnly: 'Les sorties sont en lecture seule ici',
       readOnlySynced: (when: string, runs: string) => `synchronisé ${when} · ${runs} · lecture seule`,
@@ -411,7 +411,7 @@ export const fr = {
       notesUnavailable: 'Exporté sans tes notes ni tes tags : la base des notes n’a pas répondu. Réessaie.',
     },
     profile: {
-      readOnly: 'Depuis Garmin Connect : c’est là que tu les modifies.',
+      readOnly: 'Depuis ta montre : à modifier dans l’app de ta montre.',
       lthr: (bpm: number) => `FC seuil ${bpm}`,
       maxHr: (bpm: number) => `max ${bpm}`,
     },
@@ -456,6 +456,11 @@ export const fr = {
         caution: 'La fatigue s’accumule',
         hold: 'La fatigue dépasse la condition',
       },
+      loadState: {
+        below: 'Charge sous la zone',
+        in: 'Charge dans la zone',
+        above: 'Charge au-dessus de la zone',
+      },
       ctl: 'Condition',
       atl: 'Fatigue',
       // La charge de la semaine rapportée à l’habitude : « ×1,79 ».
@@ -465,7 +470,7 @@ export const fr = {
       noValue: '—',
     },
     stale: {
-      title: (hours: number) => `Données Garmin vieilles de ${hours} h`,
+      title: (hours: number) => `Données de la montre vieilles de ${hours} h`,
       line: (when: string) => `Dernière synchro ${when} · une sortie peut manquer`,
       sync: 'Synchroniser',
     },
@@ -515,6 +520,7 @@ export const fr = {
     loadStrip: {
       title: 'Charge · 7 derniers jours',
       band: (lo: number, hi: number) => `cible ${lo}–${hi}`,
+      safe: (lo: number, hi: number) => `· sûr ${lo}–${hi}`,
       day: (date: string, load: number) => `${date} · charge ${load}`,
     },
     celebration: {
@@ -548,7 +554,7 @@ export const fr = {
   analytics: {
     // Which load model a card reads, named in its head: the watch's
     // acute/chronic load, or the app's own stress (Fitness / Fatigue).
-    model: { garmin: 'Garmin', runomics: 'RunOmics' },
+    model: { garmin: 'Ta montre', runomics: 'RunOmics' },
     title: 'Analyses',
 
     aboutChart: 'Ce que mesure ce graphique',
@@ -577,8 +583,8 @@ export const fr = {
       scrubWeek: (date: string) => `Semaine du ${date}`,
       coachRead: {
         eyebrow: (span: string, tab: string) => `Lecture du coach · ${span} · ${tab}`,
-        why: 'Pourquoi →',
-        openPlan: 'Voir le plan →',
+        why: 'Pourquoi',
+        openPlan: 'Voir le plan',
         openPlanButton: 'Voir le plan',
         last: { '4w': 'les 4 dernières semaines', '12w': 'les 12 dernières semaines', '1y': 'la dernière année' } as Record<string, string>,
         ago: { '4w': 'il y a 4 semaines', '12w': 'il y a 12 semaines', '1y': 'il y a un an' } as Record<string, string>,
@@ -600,6 +606,8 @@ export const fr = {
         },
         load: {
           spikeAndDip: 'La charge a bondi et la récupération fléchit. Prévois 2 jours tranquilles.',
+          watchStillSays: (status: string) =>
+            `Ta montre affiche toujours ${status}, parce qu'elle regarde les 28 derniers jours et que ton bloc récent était solide.`,
           spike: (pct: number, span: string) => `La charge a bondi de ${pct} % en ${span}. Lève le pied avant qu’elle ne te rattrape.`,
           spikeAbove: "La charge dépasse ta zone sûre. Lève le pied avant qu’elle ne te rattrape.",
           dip: 'La récupération fléchit. Fais une semaine tranquille.',
@@ -662,8 +670,9 @@ export const fr = {
       loadTrend: {
         title: 'Tendance de charge',
         caption: 'charge aiguë sur 7 jours',
-        about: "Ta charge aiguë : les 7 derniers jours de charge Garmin, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
+        about: "Ta charge aiguë : les 7 derniers jours de charge mesurée par ta montre, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
         safe: (lo: number, hi: number) => `zone sûre ${lo}–${hi}`,
+        ratioSafe: (lo: number, hi: number) => `ratio · sûr ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 jour' : `${days} jours`) : Math.round(days / 7) === 1 ? '1 semaine' : `${Math.round(days / 7)} semaines`),
         today: 'aujourd’hui',
         onDay: (date: string) => `le ${date}`,
@@ -681,9 +690,9 @@ export const fr = {
       },
       recovery: {
         title: 'Récupération',
-        caption: 'Garmin · nuit',
-        captionDaily: 'FC au repos · Garmin',
-        captionHrv: 'VFC · Garmin',
+        caption: 'Ta montre · nuit',
+        captionDaily: 'FC au repos · ta montre',
+        captionHrv: 'VFC · ta montre',
         about: "La VFC nocturne et la fréquence cardiaque au repos de ta montre, chacune face à ta propre référence : les 80 % centraux de tes 60 dernières nuits. Une VFC plus haute et une FC au repos plus basse indiquent que tu récupères. Chacune s’affiche dès que la période en compte 7 jours. Sans la montre la nuit, il n’y a pas de VFC, et la FC au repos vient du moment le plus calme de la journée : elle est donc un peu plus haute.",
         hrv: 'VFC',
         restingHr: 'FC repos du jour',
@@ -709,10 +718,10 @@ export const fr = {
       },
       status: {
         title: "Statut d’entraînement",
-        caption: (span: string) => `Garmin · ${span}`,
+        caption: (span: string) => `Ta montre · ${span}`,
         span: { days28: '28 jours', weeks12: '12 semaines', months12: '12 mois' },
         spanLive: { days28: '28 derniers jours', weeks12: '12 dernières semaines', months12: '12 derniers mois' },
-        about: "Le statut d’entraînement Garmin : ta charge récente face à ce dont ton corps a l’habitude. Chaque case est un jour (une semaine sur les périodes longues).",
+        about: "Le statut d’entraînement de ta montre : ta charge récente face à ce dont ton corps a l’habitude. Chaque case est un jour (une semaine sur les périodes longues).",
         sentenceToday: (count: number, days: number) => ` aujourd’hui, et sur ${count} des ${days} derniers jours.`,
         sentenceOn: (date: string, count: number, days: number) => ` le ${date}, et sur ${count} de ces ${days} jours.`,
         days: (n: number) => `${n} j`,
@@ -740,7 +749,6 @@ export const fr = {
         threshold: 'Allure seuil',
         easyPace: 'Allure facile',
         in12w: (delta: string) => `${delta} en 12 semaines`,
-        noChange12w: '±0 sur 12 semaines',
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
@@ -749,7 +757,7 @@ export const fr = {
       predictions: {
         title: 'Prédictions de course',
         caption: (period: string) => `écart sur ${period}`,
-        about: 'Les temps de course prédits par Garmin. La ligne sous chacun est la tendance de la période, plus rapide en haut.',
+        about: 'Les temps de course prédits par ta montre. La ligne sous chacun est la tendance de la période, plus rapide en haut.',
         count: (n: number): string => (n === 4 ? 'Chacune des quatre' : n === 3 ? 'Chacune des trois' : n === 2 ? 'Chacune des deux' : 'La prédiction'),
         slipped: (who: string, range: string, period: string) => `${who} a reculé de ${range} sur ${period}.`,
         improved: (who: string, range: string, period: string) => `${who} a gagné ${range} sur ${period}.`,
@@ -818,7 +826,14 @@ export const fr = {
         ofPlanned: (n: number) => `sur ${n} prévue${n > 1 ? 's' : ''}`,
         withoutPlan: (n: number) => `${n} sem sans plan`,
         onOrAbove: 'Plan atteint ou dépassé',
-        belowPlan: 'Sous le plan / sans plan',
+        belowPlan: 'Sous le plan',
+        unplanned: 'Sans plan',
+        missed: 'Manquée',
+        underWeek: (when: string) => `km ${when.toLocaleLowerCase('fr')}`,
+        underWeekOfPlan: (km: string, when: string) => `sur ${km} km ${when.toLocaleLowerCase('fr')}`,
+        underAvg: (n: number) => (n >= 52 ? 'km/sem · moy.\u00a01\u00a0an' : `km/sem · moy.\u00a0${n}\u00a0sem`),
+        underOnPlan: 'semaines dans le plan',
+        underOnPlanOf: (n: number) => `sur ${n} semaine${n > 1 ? 's' : ''} dans le plan`,
         done: 'Fait',
         plan: 'Plan',
       },
@@ -863,8 +878,13 @@ export const fr = {
         readout: (week: string, done: number, planned: number | null) =>
           planned === null ? `${week} · ${done} faite(s), sans plan` : `${week} · ${done} sur ${planned} prévue(s)`,
         perWeek: ' par semaine',
-        threshold: 'Seuil',
-        intervals: 'Fractionné',
+        done: 'Faite',
+        doneNoPlan: 'faites',
+        // Les trois se lisent comme une somme : faites = au plan + en plus.
+        onPlan: (done: number, planned: number) => `${done} sur ${planned} prévues`,
+        extra: (n: number) => `${n} en plus`,
+        plannedLegend: 'Prévue',
+        missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
         missed: 'Manquée',
       },
       zoneRanges: {
@@ -917,7 +937,7 @@ export const fr = {
         title: 'Tendance d’allure',
         easy: 'Facile',
         workout: 'Qualité',
-        footnote: 'Allure moyenne pondérée par la distance, plus rapide ↑.',
+        footnote: 'Allure moyenne pondérée par la distance, vers le haut = plus rapide.',
         explains: {
           improving: (delta: string) => `Allure facile en progrès - ${delta} par rapport au début de la période`,
           stable: 'Allure facile stable sur la période',
@@ -1048,7 +1068,7 @@ export const fr = {
         title: 'Seuil lactique de course',
         pace: 'Allure au seuil',
         lthr: 'FC au seuil',
-        footnote: 'L’effort tenable avant l’accumulation de lactate, tel que mesuré par la montre. Garmin le révise à quelques semaines d’intervalle : la courbe avance donc par paliers.',
+        footnote: 'L’effort tenable avant l’accumulation de lactate, tel que mesuré par la montre. Elle le révise à quelques semaines d’intervalle : la courbe avance donc par paliers.',
         reading: {
           change: (delta: string, since: string) => `L’allure au seuil a évolué de ${delta} depuis ${since}.`,
           flat: (since: string) => `L’allure au seuil est stable depuis ${since}.`,
@@ -1063,7 +1083,7 @@ export const fr = {
           half: 'Semi',
           marathon: 'Marathon',
         } as Record<string, string>,
-        footnote: 'Temps de course prédits par la montre à partir de la VO₂max et de l’entraînement récent. Tracés en allure pour que les quatre distances tiennent sur une même échelle, plus rapide ↑.',
+        footnote: 'Temps de course prédits par la montre à partir de la VO₂max et de l’entraînement récent. Tracés en allure pour que les quatre distances tiennent sur une même échelle, vers le haut = plus rapide.',
         reading: {
           faster: (distance: string, gain: string, current: string) =>
             `Le potentiel sur ${distance} progresse de ${gain} sur la période, à ${current} aujourd’hui.`,
@@ -1079,7 +1099,7 @@ export const fr = {
         acute: 'Charge aiguë',
         daysUnit: 'j',
         distribution: 'Jours par statut',
-        footnote: 'Verdict quotidien de la montre, avec les charges aiguë et chronique mesurées par Firstbeat. La bande bleue est la plage de charge chronique que Garmin personnalise pour toi.',
+        footnote: 'Verdict quotidien de la montre, avec les charges aiguë et chronique qu’elle a mesurées. La bande bleue est la plage de charge chronique que ta montre personnalise pour toi.',
         reading: (status: string, days: number, windowDays: number, latest: string | null) =>
           `${status} sur ${days} des ${windowDays} derniers jours${latest ? `, ${latest} aujourd’hui` : ', et aujourd’hui'}.`,
       },
@@ -1103,6 +1123,7 @@ export const fr = {
   activities: {
     searchPlaceholder: 'Cherche une sortie, une note, une date…',
     all: 'Toutes',
+    longRun: 'Sortie longue',
     count: (n: number) => `${n} activité${n > 1 ? 's' : ''}`,
     countWithDistance: (runs: number, km: string) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km`,
     since: (month: string) => `depuis ${month}`,
@@ -1123,6 +1144,10 @@ export const fr = {
       reset: 'Réinitialiser',
       clearTypes: (types: string) => `Effacer le filtre : ${types}`,
       show: (n: number) => `Afficher ${n} sortie${n > 1 ? 's' : ''}`,
+      showAll: (n: number) => `Afficher les ${n} sorties`,
+      showing: 'Affiché :',
+      totalsCount: ' · les totaux ne comptent que celles-ci',
+      clear: 'Effacer',
     },
     sort: {
       label: 'Trier',
@@ -1271,6 +1296,7 @@ export const fr = {
         `Tu as couru ce parcours ${n} fois. Cette sortie : ${rank === 1 ? 'ta meilleure allure' : `ta ${rank}ᵉ meilleure allure`}.`,
       thisRun: 'Cette sortie',
       record: 'record',
+      fastest: 'La plus rapide sur ce parcours',
       paceDelta: (seconds: number) => `+${seconds} s/km`,
       chartSummary: (n: number, best: string) =>
         `Allure sur tes ${n} passages de ce parcours ; record ${best}.`,
@@ -1312,8 +1338,8 @@ export const fr = {
     },
     shoe: {
       add: 'Ajouter la chaussure',
-      changeInGarmin: (name: string) => `${name} - modifier dans Garmin Connect`,
-      addInGarmin: 'Choisir la chaussure dans Garmin Connect',
+      changeInGarmin: (name: string) => `${name} - modifier dans l’app de ta montre`,
+      addInGarmin: 'Choisir la chaussure dans l’app de ta montre',
     },
     weather: {
       wind: 'Vent',
@@ -1351,6 +1377,7 @@ export const fr = {
       vertOscillation: 'Oscillation verticale',
       vertRatio: 'Rapport vertical',
       vsUsual: 'vs d’habitude',
+      better: { higher: 'plus long, c’est mieux', lower: 'plus bas, c’est mieux' },
       level: 'Comme d’habitude',
       ratioUnit: 'pt',
       usualRange: (weeks: number) => `Ta plage habituelle, ${weeks} dernières semaines`,
@@ -1362,7 +1389,7 @@ export const fr = {
       max: 'max',
       bestSmoothed: 'meilleure 30 s',
       pace: 'Allure',
-      paceUnitHint: '/km ↑',
+      paceUnitHint: '/km, vers le haut = plus rapide',
       elevation: 'Altitude',
       cadence: 'Cadence',
       elevationGain: (m: string) => `${m} m D+`,
@@ -1376,7 +1403,7 @@ export const fr = {
       fullscreen: 'Plein écran',
       exitFullscreen: 'Quitter le plein écran',
       noTrace: 'Tracé GPS indisponible',
-      noTraceHint: 'Disponible après synchronisation Garmin',
+      noTraceHint: 'Disponible après la prochaine synchronisation',
       mapUnavailable: 'Carte indisponible',
       mapUnavailableHint: 'Aucune clé de carte configurée',
       routeMap: 'Carte du parcours de l’activité',
@@ -1402,6 +1429,10 @@ export const fr = {
       hrDrift: 'Dérive FC',
       title: 'Intervalles',
       lapTitle: 'Tours',
+      wholeRun: 'Sortie entière',
+      lapNumber: (n: number) => `Tour ${n}`,
+      noLapsPressed: "Aucun tour n'a été déclenché sur cette sortie. Les splits au km montrent comment ton allure a évolué.",
+      seeKmSplits: 'Voir les splits au km',
       cols: {
         km: 'Km',
         step: '#',
@@ -1531,9 +1562,9 @@ export const fr = {
   shoes: {
     tracked: (km: string) => `${km} km au compteur`,
     add: 'Ajouter',
-    addLabel: 'Ajouter une paire dans Garmin Connect',
+    addLabel: 'Ajouter une paire dans l’app de ta montre',
     edit: 'Modifier la paire',
-    editLabel: 'Modifier la limite ou le rôle, ou retirer la paire dans Garmin Connect',
+    editLabel: 'Modifier dans l’app de ta montre',
     inRotation: (n: number) => `En rotation · ${n}`,
     retiredSection: (n: number) => `Retraitées · ${n}`,
     kmLeftShort: 'km restants',
@@ -1659,6 +1690,9 @@ export const fr = {
   profile: {
     hub: {
       yearTitle: (year: number) => `Distance ${year}`,
+      goalsSeason: 'Objectifs & saison',
+      streakOf: (target: number) => `semaines d'affilée · ${target} sorties et plus`,
+      runsThisWeek: (runs: number, target: number) => `${runs} sur ${target} cette semaine`,
       records: 'Records',
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Semi' } as Record<string, string>,
       newRecord: 'NOUVEAU',
@@ -1721,7 +1755,7 @@ export const fr = {
       firstActivityDetail: (km: string) => `Le début de l’aventure · ${km} km`,
       lifetimeDistance: (km: string) => `${km} km au total`,
       lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} distances marathon`,
-      lifetimeDistanceWorldTour: '🌍 Le tour du monde à l’équateur',
+      lifetimeDistanceWorldTour: 'Le tour du monde à l’équateur',
       activityCount: (n: number) => `${n}ᵉ sortie`,
       activityCountDetail: (km: string) => `${km} km au total`,
     },
@@ -1784,7 +1818,7 @@ export const fr = {
       runCount: (n: number) => `${n} sortie${n > 1 ? 's' : ''}`,
       best: 'Record',
       trailKey: 'Une barre par sortie · plus haute = plus rapide',
-      trailSpan: (from: string, to: string) => `${from} → ${to}`,
+      trailSpan: (from: string, to: string) => `${from} – ${to}`,
       legendBest: 'record',
       legendLatest: 'dernière',
       bestPace: (pace: string) => `record ${pace}`,
@@ -1831,7 +1865,7 @@ export const fr = {
     },
     staleSync: {
       title: 'Pas de synchronisation récente',
-      body: (hours: number) => `Ta dernière synchro Garmin date d’il y a ${hours} h : vérifie qu’elle tourne toujours.`,
+      body: (hours: number) => `Ta dernière synchro date d’il y a ${hours} h : vérifie qu’elle tourne toujours.`,
     },
     newActivity: { title: (name: string) => `Nouvelle activité : ${name}` },
     weeklyGoal: {
@@ -1904,7 +1938,7 @@ export const fr = {
       ANAEROBIC_SHORTAGE: 'Manque d’anaérobie',
       NO_DATA: 'Pas assez de données',
     } as Record<string, string | undefined>,
-    footnote: 'Charge Firstbeat des 4 dernières semaines par intensité, face aux plages que Garmin personnalise à partir de ton historique. Le repère indique où tu te situes ; la zone verte est la cible.',
+    footnote: 'Charge d’entraînement des 4 dernières semaines par intensité, face aux plages que ta montre personnalise à partir de ton historique. Le repère indique où tu te situes ; la zone verte est la cible.',
   },
 
   loadRisk: {
@@ -1951,6 +1985,10 @@ export const fr = {
       easyPace: (range: string) => `facile, cible ${range}`,
       stridesPace: (pace: string) => `accélérations ${pace}`,
       targetPace: (range: string) => `cible ${range}`,
+      paceTarget: 'Allure',
+      hrTarget: 'Fréquence cardiaque',
+      hrTargetZone: (zone: number) => `Fréquence cardiaque · Z${zone}`,
+      hrCap: (bpm: number) => `≤ ${bpm}`,
     },
     continuous: 'continu',
     restCard: {
@@ -1989,6 +2027,8 @@ export const fr = {
       easyLong: 'Footing / Sortie longue',
       phaseWeek: (phase: string, n: number, total: number) => `${phase} · semaine ${n} sur ${total}`,
       kmOf: (ran: string, plan: string) => `${ran} sur ${plan} km`,
+      planCovers: (from: string, to: string) => `le plan couvre du ${from} au ${to}`,
+      monthTotal: (km: string) => `${km} km ce mois-ci`,
       nextKey: 'Prochaine séance clé',
       weekLabel: (monday: string, km: string) => `Semaine du ${monday} · ${km}`,
     },
@@ -2038,7 +2078,7 @@ export const fr = {
   },
 
   coaching: {
-    garminOutOfDate: 'Garmin pas à jour',
+    garminOutOfDate: 'Données de la montre pas à jour',
     states: {
       prescribed: 'Prescrite',
       adjusted: 'Ajustée',

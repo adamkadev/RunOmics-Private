@@ -21,6 +21,8 @@ interface Props {
   planPhaseRanges: PlanPhaseRange[]
   nextRace: UpcomingRace | null
   trainingZones: TrainingZonesData | null
+  /** The athlete's HR zone edges, for a planned session's bpm cap. */
+  hrZoneBoundsBpm: readonly number[] | null
   coaching: PlanCoachingView | null
   /** The date the page was prerendered on; see useToday. */
   today: string
@@ -43,7 +45,7 @@ const monthKeyOf = (date: string) => date.slice(0, 7)
  * workout opens straight onto its day, and a reload keeps the place. No date
  * is today, and follows it over midnight; no view is the week.
  */
-export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextRace, trainingZones, coaching, today: serverToday }: Props) {
+export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, today: serverToday }: Props) {
   const today = useToday(serverToday)
   const [viewParam, setViewParam] = useUrlParam('view')
   const [dateParam, setDateParam] = useUrlParam('date')
@@ -170,6 +172,7 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
             planPhaseRanges={planPhaseRanges}
             nextRace={nextRace}
             trainingZones={trainingZones}
+            hrZoneBoundsBpm={hrZoneBoundsBpm}
             coaching={coaching}
           />
         ) : (

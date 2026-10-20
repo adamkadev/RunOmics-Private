@@ -192,13 +192,14 @@ describe('the list at a phone', () => {
     expect(title.className).toContain('min-w-0')
   })
 
-  // 3.0.2: a structured name is its type on the first line, the structure
-  // leading the meta on the second, so the ellipsis no longer cuts it off.
-  it('puts a structured name’s structure on the second line', () => {
+  // 3.0.2: a structured name is its type on the first line, its structure on
+  // the second. The date leads that line (App Fixes 3d), so a long structure
+  // is what the ellipsis takes, never the date.
+  it('puts a structured name’s structure on the second line, after the date', () => {
     const name = 'Threshold 3 × 7:40 - 3 × 8\'@4:25'
     renderList([{ ...run('a', '2026-09-22', 10), description: name }])
     expect(screen.getByText('Threshold').className).toContain('truncate')
-    expect(screen.getByTestId('thumb-row').textContent).toContain(`3 × 7:40 - 3 × 8'@4:25 · ${formatWeekday('2026-09-22', true)}`)
+    expect(screen.getByTestId('thumb-row').textContent).toContain(`${formatWeekday('2026-09-22', true)} · 1:00:00 · 3 × 7:40 - 3 × 8'@4:25`)
   })
 })
 
@@ -225,7 +226,10 @@ describe('the filter sheet', () => {
 
   const sheetUser = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   const typeBox = (sheet: HTMLElement, type: ActivityType) =>
-    within(sheet).getByRole('checkbox', { name: new RegExp(t.activityTypes[type]) })
+    within(sheet).getByRole('checkbox', { name: new RegExp(`^${t.activityTypes[type]}`) })
+  /** The long run has a row of its own (App Fixes 3d). */
+  const longRunBox = (sheet: HTMLElement) =>
+    within(sheet).getByRole('checkbox', { name: new RegExp(t.activities.longRun) })
 
   async function openSheet(user: ReturnType<typeof sheetUser>) {
     await user.click(screen.getByRole('button', { name: t.activities.filter.title }))
@@ -238,7 +242,8 @@ describe('the filter sheet', () => {
     const sheet = await openSheet(user)
 
     expect(typeBox(sheet, 'Threshold').textContent).toContain('2')
-    expect(within(sheet).getByRole('button', { name: t.activities.filter.show(4) })).toBeInTheDocument()
+    // Nothing ticked: the button says what it opens (App Fixes 3d).
+    expect(within(sheet).getByRole('button', { name: t.activities.filter.showAll(4) })).toBeInTheDocument()
 
     await user.click(typeBox(sheet, 'Threshold'))
     await user.click(typeBox(sheet, 'VO2Max'))
@@ -269,7 +274,9 @@ describe('the filter sheet', () => {
     const user = sheetUser()
     renderList(archive())
     const sheet = await openSheet(user)
+    // Easy is the easy running and the long run together (App Fixes 3d).
     await user.click(typeBox(sheet, 'Base'))
+    await user.click(longRunBox(sheet))
     await user.click(within(sheet).getByRole('button', { name: t.activities.filter.show(1) }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
@@ -297,7 +304,7 @@ describe('the filter sheet', () => {
     renderList(archive())
     const sheet = await openSheet(user)
     await user.click(within(sheet).getByRole('tab', { name: t.activities.sort.longest }))
-    await user.click(within(sheet).getByRole('button', { name: t.activities.filter.show(4) }))
+    await user.click(within(sheet).getByRole('button', { name: t.activities.filter.showAll(4) }))
 
     await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain('sortBy=distance'))
     expect(new URLSearchParams(window.location.search).get('sort')).toBe('longest')

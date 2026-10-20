@@ -121,13 +121,13 @@ export const en = {
     fitness: { term: 'Fitness', definition: 'Fitness (CTL) is your 42-day average training load: the work your body has absorbed.' },
     fatigue: { term: 'Fatigue', definition: 'Fatigue (ATL) is your 7-day average training load: what the last week has cost you.' },
     vma: { term: 'VMA', definition: 'Maximal aerobic speed: the speed you reach at VO₂max, held for about six minutes.' },
-    vo2Grade: { term: 'Men / Women and age', definition: 'Your VO₂max against people of your sex and age decade, from Garmin’s age and sex norms (ACSM / Cooper Institute percentiles). A+ is the top 5%, C below the 45th percentile. The grade changes only once your VO₂max has stayed past the edge for 7 days.' },
-    vo2max: { term: 'VO₂max', definition: 'The most oxygen your body can use per kilo each minute, as Garmin estimates it from your runs.' },
+    vo2Grade: { term: 'Men / Women and age', definition: 'Your VO₂max against people of your sex and age decade, from the age and sex norms your watch uses (ACSM / Cooper Institute percentiles). A+ is the top 5%, C below the 45th percentile. The grade changes only once your VO₂max has stayed past the edge for 7 days.' },
+    vo2max: { term: 'VO₂max', definition: 'The most oxygen your body can use per kilo each minute, as your watch estimates it from your runs.' },
     lthr: { term: 'Threshold HR', definition: 'Lactate-threshold heart rate (LTHR): about the heart rate you could hold for an hour-long race.' },
     thresholdPace: { term: 'Threshold pace', definition: 'The pace at your lactate threshold: about what you could race for an hour.' },
     rpe: { term: 'RPE', definition: 'Rate of perceived exertion, 1 to 10, as logged on the watch after the run.' },
-    aerobicEffect: { term: 'Aerobic effect', definition: 'Garmin’s 0–5 score of how much the run built your aerobic fitness.' },
-    anaerobicEffect: { term: 'Anaerobic effect', definition: 'Garmin’s 0–5 score of how much the run built your capacity for short, hard efforts.' },
+    aerobicEffect: { term: 'Aerobic effect', definition: 'Your watch’s 0–5 score of how much the run built your aerobic fitness.' },
+    anaerobicEffect: { term: 'Anaerobic effect', definition: 'Your watch’s 0–5 score of how much the run built your capacity for short, hard efforts.' },
     strideLength: { term: 'Stride length', definition: 'How far you travel with each step, averaged over the run.' },
     groundContact: { term: 'Ground contact', definition: 'How long each foot stays on the ground per step. Shorter usually means a springier stride.' },
     verticalOscillation: { term: 'Vertical oscillation', definition: 'How far your body rises and falls with each step: the bounce.' },
@@ -176,7 +176,7 @@ export const en = {
   },
 
   paceAxis: {
-    caption: 'faster ↑',
+    caption: 'up = faster',
   },
 
   // A session's state, drawn in shape (see the .state-* recipes) and named the
@@ -305,8 +305,8 @@ export const en = {
     athlete: {
       title: 'Athlete & zones',
       back: 'Progress',
-      fromGarmin: 'From Garmin',
-      syncedAgo: (when: string) => `From Garmin · synced ${when}`,
+      fromGarmin: 'From your watch',
+      syncedAgo: (when: string) => `From your watch · synced ${when}`,
     },
     notFound: {
       code: '404',
@@ -334,7 +334,7 @@ export const en = {
     about: (version: string, commit: string) => `RunOmics ${version} · ${commit}`,
     buildCopied: 'Build info copied',
     sections: {
-      profile: 'Profile · from Garmin',
+      profile: 'Profile · from your watch',
       appearance: 'Appearance',
       data: 'Data',
       account: 'Account',
@@ -346,7 +346,7 @@ export const en = {
       // The button while the chain runs; the device line says which step.
       running: 'Syncing…',
       starting: 'Starting the workflow…',
-      fetching: 'Fetching from Garmin, then rebuilding the app…',
+      fetching: 'Fetching from your watch, then rebuilding the app…',
       writing: 'New data is live. Writing the verdict…',
       upToDate: 'Already up to date — no new run to fetch.',
       stillRunning: 'Still running. The verdict will appear on its own.',
@@ -371,7 +371,7 @@ export const en = {
       caption: 'charts & highlights',
       options: {
         teal:     { label: 'Teal' },
-        periwinkle: { label: 'Periwinkle' },
+        cyan: { label: 'Cyan' },
         violet:     { label: 'Violet' },
         pink:     { label: 'Pink' },
         mono:     { label: 'Mono' },
@@ -394,7 +394,7 @@ export const en = {
       details: 'Heart & body',
       vma: 'VMA',
       maxHr: 'Max HR',
-      // Garmin's setting the zones and the load are computed from, not a
+      // The watch's setting the zones and the load are computed from, not a
       // reading of today (Analytics > Recovery has that, "Daily resting HR").
       restingHr: 'Resting HR',
       vo2max: 'VO₂max',
@@ -418,7 +418,7 @@ export const en = {
       confirmCancel: 'Cancel',
     },
     dataSource: {
-      garmin: 'Garmin Connect',
+      garmin: 'your watch’s app',
       connected: (source: string) => `${source} connected`,
       readOnly: 'Runs are read-only here',
       readOnlySynced: (when: string, runs: string) => `last synced ${when} · ${runs} · read-only here`,
@@ -441,8 +441,10 @@ export const en = {
       notesUnavailable: 'Exported without your notes and tags: the notes store did not answer. Try again.',
     },
     profile: {
-      // Under the read-only height and weight, a link to Garmin Connect (design review, Oct 2026).
-      readOnly: 'From Garmin Connect - change them there.',
+      // Under the read-only height and weight, a link out to where the watch's data is kept
+      // (design review, Oct 2026). No brand in the words: the data is imported JSON, and the
+      // brand can change (3.0 override 1).
+      readOnly: 'From your watch - edit in your watch app.',
       // The Athlete & zones row's value: "LTHR 179 · Max 200" (3.0 1i).
       lthr: (bpm: number) => `LTHR ${bpm}`,
       maxHr: (bpm: number) => `Max ${bpm}`,
@@ -490,6 +492,13 @@ export const en = {
         caution: 'Fatigue building up',
         hold: 'Fatigue ahead of fitness',
       },
+      // The seven-day load against its safe range, the words Analytics' Load
+      // card uses for the same reading (App Fixes 1a).
+      loadState: {
+        below: 'Load below range',
+        in: 'Load in range',
+        above: 'Load above range',
+      },
       ctl: 'Fitness',
       atl: 'Fatigue',
       // This week's load against the usual: "×0.90".
@@ -500,7 +509,7 @@ export const en = {
       noValue: '—',
     },
     stale: {
-      title: (hours: number) => `Garmin data ${hours} h old`,
+      title: (hours: number) => `Watch data ${hours} h old`,
       line: (when: string) => `Last sync ${when} · a run may be missing`,
       sync: 'Sync',
     },
@@ -555,6 +564,7 @@ export const en = {
     loadStrip: {
       title: 'Load · last 7 days',
       band: (lo: number, hi: number) => `target ${lo}–${hi}`,
+      safe: (lo: number, hi: number) => `· safe ${lo}–${hi}`,
       day: (date: string, load: number) => `${date} · load ${load}`,
     },
     celebration: {
@@ -588,7 +598,7 @@ export const en = {
   analytics: {
     // Which load model a card reads, named in its head: the watch's
     // acute/chronic load, or the app's own stress (Fitness / Fatigue).
-    model: { garmin: 'Garmin', runomics: 'RunOmics' },
+    model: { garmin: 'Your watch', runomics: 'RunOmics' },
     title: 'Analytics',
 
     aboutChart: 'What this chart measures',
@@ -621,9 +631,9 @@ export const en = {
         // 2026): one 12-week read over every tab put "Load is up, keep
         // building" over race predictions that had all slipped.
         eyebrow: (span: string, tab: string) => `Coach read · ${span} · ${tab}`,
-        why: 'Why →',
+        why: 'Why',
         // Only a way to the plan: it is generated by the coach, never edited here.
-        openPlan: 'Open plan →',
+        openPlan: 'Open plan',
         openPlanButton: 'Open plan',
         last: { '4w': 'the last 4 weeks', '12w': 'the last 12 weeks', '1y': 'the last year' } as Record<string, string>,
         ago: { '4w': '4 weeks ago', '12w': '12 weeks ago', '1y': 'a year ago' } as Record<string, string>,
@@ -647,6 +657,9 @@ export const en = {
         },
         load: {
           spikeAndDip: 'Load spiked and recovery is dipping. Take 2 easy days.',
+          // Why the watch and the load disagree (App Fixes 2a).
+          watchStillSays: (status: string) =>
+            `Your watch's training status still says ${status}, because it looks at the last 28 days and your recent block was strong.`,
           spike: (pct: number, span: string) => `Load jumped ${pct}% in ${span}. Ease off before it catches up.`,
           spikeAbove: 'Load is above your safe range. Ease off before it catches up.',
           dip: 'Recovery is dipping. Keep this week easy.',
@@ -713,8 +726,9 @@ export const en = {
       loadTrend: {
         title: 'Load trend',
         caption: '7-day acute load',
-        about: 'Your acute load: the last 7 days of Garmin training load, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
+        about: 'Your acute load: the last 7 days of training load from your watch, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
         safe: (lo: number, hi: number) => `safe range ${lo}–${hi}`,
+        ratioSafe: (lo: number, hi: number) => `ratio · safe ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 day' : `${days} days`) : Math.round(days / 7) === 1 ? '1 week' : `${Math.round(days / 7)} weeks`),
         // When the range is read (design review, Oct 2026): "still inside
         // your safe range" beside "15 days went over" read as a contradiction.
@@ -736,10 +750,10 @@ export const en = {
       },
       recovery: {
         title: 'Recovery',
-        caption: 'Garmin · overnight',
+        caption: 'Your watch · overnight',
         // One series, named in the caption.
-        captionDaily: 'Resting HR · Garmin',
-        captionHrv: 'HRV · Garmin',
+        captionDaily: 'Resting HR · your watch',
+        captionHrv: 'HRV · your watch',
         about: 'Overnight HRV and resting heart rate from your watch, each against your own baseline: the middle 80% of your last 60 nights. Higher HRV and lower resting HR mean you are recovering. Each shows once the period has 7 days of it. Without the watch on overnight there is no HRV, and resting HR comes from your quietest stretch of the day, so it reads a little higher.',
         hrv: 'HRV',
         restingHr: 'Daily resting HR',
@@ -765,10 +779,10 @@ export const en = {
       },
       status: {
         title: 'Training status',
-        caption: (span: string) => `Garmin · ${span}`,
+        caption: (span: string) => `Your watch · ${span}`,
         span: { days28: '28 days', weeks12: '12 weeks', months12: '12 months' },
         spanLive: { days28: 'last 28 days', weeks12: 'last 12 weeks', months12: 'last 12 months' },
-        about: "Garmin's training status: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
+        about: "Your watch's training status: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
         sentenceToday: (count: number, days: number) => ` today, and on ${count} of the last ${days} days.`,
         sentenceOn: (date: string, count: number, days: number) => ` on ${date}, and on ${count} of those ${days} days.`,
         days: (n: number) => `${n} d`,
@@ -796,7 +810,6 @@ export const en = {
         threshold: 'Threshold pace',
         easyPace: 'Easy pace',
         in12w: (delta: string) => `${delta} in 12 weeks`,
-        noChange12w: '±0 in 12 weeks',
         slower: (s: string) => `${s} slower`,
         faster: (s: string) => `${s} faster`,
         same: 'No change',
@@ -805,7 +818,7 @@ export const en = {
       predictions: {
         title: 'Race predictions',
         caption: (period: string) => `change in ${period}`,
-        about: "Garmin's predicted race times. The line under each is the period's trend, faster up.",
+        about: "The race times your watch predicts. The line under each is the period's trend, faster up.",
         count: (n: number): string => (n === 4 ? 'All four' : n === 3 ? 'All three' : n === 2 ? 'Both' : 'It'),
         slipped: (who: string, range: string, period: string) => `${who} slipped ${range} over ${period}.`,
         improved: (who: string, range: string, period: string) => `${who} improved by ${range} over ${period}.`,
@@ -876,7 +889,21 @@ export const en = {
         ofPlanned: (n: number) => `of ${n} planned`,
         withoutPlan: (n: number) => `${n} wk unplanned`,
         onOrAbove: 'On or above plan',
-        belowPlan: 'Below plan / unplanned',
+        belowPlan: 'Below plan',
+        unplanned: 'Unplanned',
+        // A week the plan asked for with nothing run against it (App Fixes 2c).
+        missed: 'Missed',
+        // With the number first, its unit and name read as one line under it
+        // (App Fixes 1f). What the number is measured against goes in that
+        // line too: "12.1" over "of 53 km this week", never "12.1 / 53"
+        // broken over two lines in a column three wide.
+        underWeek: (when: string) => `km ${when.toLocaleLowerCase('en')}`,
+        underWeekOfPlan: (km: string, when: string) => `of ${km} km ${when.toLocaleLowerCase('en')}`,
+        // A non-breaking hyphen and space: the label is two words, and
+        // "12-" on one line over "wk avg" on the next is neither.
+        underAvg: (n: number) => (n >= 52 ? 'km/week · 1\u2011yr\u00a0avg' : `km/week · ${n}\u2011wk\u00a0avg`),
+        underOnPlan: 'weeks on plan',
+        underOnPlanOf: (n: number) => `of ${n} week${n === 1 ? '' : 's'} on plan`,
         done: 'Done',
         plan: 'Plan',
       },
@@ -923,8 +950,15 @@ export const en = {
         readout: (week: string, done: number, planned: number | null) =>
           planned === null ? `${week} · ${done} done, no plan` : `${week} · ${done} of ${planned} planned done`,
         perWeek: ' a week',
-        threshold: 'Threshold',
-        intervals: 'Intervals',
+        // App Fixes 2d: the dots say whether the plan was kept, not which
+        // kind of session it was.
+        done: 'Done',
+        doneNoPlan: 'done',
+        // The three read as one sum: done = on plan + extra.
+        onPlan: (done: number, planned: number) => `${done} of ${planned} planned`,
+        extra: (n: number) => `${n} extra`,
+        plannedLegend: 'Planned',
+        missedCount: (n: number) => `${n} missed`,
         missed: 'Missed',
       },
       zoneRanges: {
@@ -977,7 +1011,7 @@ export const en = {
         title: 'Pace Trend',
         easy: 'Easy',
         workout: 'Workout',
-        footnote: 'Distance-weighted average pace, faster ↑.',
+        footnote: 'Distance-weighted average pace, up = faster.',
         explains: {
           improving: (delta: string) => `Easy pace improving - ${delta} vs earlier in the period`,
           stable: 'Easy pace stable throughout the period',
@@ -1108,7 +1142,7 @@ export const en = {
         title: 'Running Lactate Threshold',
         pace: 'Threshold pace',
         lthr: 'Threshold HR',
-        footnote: 'The effort you can hold before lactate builds up, as the watch measures it. Garmin revises it every few weeks, so the line steps rather than drifts.',
+        footnote: 'The effort you can hold before lactate builds up, as the watch measures it. The watch revises it every few weeks, so the line steps rather than drifts.',
         reading: {
           change: (delta: string, since: string) => `Threshold pace is ${delta} since ${since}.`,
           flat: (since: string) => `Threshold pace is unchanged since ${since}.`,
@@ -1123,7 +1157,7 @@ export const en = {
           half: 'Half',
           marathon: 'Marathon',
         } as Record<string, string>,
-        footnote: 'Finish times the watch predicts from VO₂max and recent training. Plotted as pace so all four distances share one scale, faster ↑.',
+        footnote: 'Finish times the watch predicts from VO₂max and recent training. Plotted as pace so all four distances share one scale, up = faster.',
         reading: {
           faster: (distance: string, gain: string, current: string) =>
             `${distance} potential improved by ${gain} over this window, now ${current}.`,
@@ -1139,7 +1173,7 @@ export const en = {
         acute: 'Acute load',
         daysUnit: 'd',
         distribution: 'Days at each status',
-        footnote: 'The watch\'s daily verdict, with the acute and chronic load Firstbeat measured. The blue band is the chronic load range Garmin personalises for you.',
+        footnote: 'The watch\'s daily verdict, with the acute and chronic load it measured. The blue band is the chronic load range the watch personalises for you.',
         reading: (status: string, days: number, windowDays: number, latest: string | null) =>
           `${status} on ${days} of the last ${windowDays} days${latest ? `, reading ${latest} now` : ', and today'}.`,
       },
@@ -1164,6 +1198,8 @@ export const en = {
     // What the search reads: a run's name and notes, its weekday and date.
     searchPlaceholder: 'Search runs, notes, dates…',
     all: 'All',
+    // The long run as its own filter row (App Fixes 3d): a Base run the long-run rule picks out.
+    longRun: 'Long run',
     count: (n: number) => `${n} activit${n !== 1 ? 'ies' : 'y'}`,
     countWithDistance: (runs: number, km: string) => `${runs} run${runs === 1 ? '' : 's'} · ${km} km`,
     since: (month: string) => `since ${month}`,
@@ -1185,6 +1221,12 @@ export const en = {
       reset: 'Reset',
       clearTypes: (types: string) => `Clear the filter: ${types}`,
       show: (n: number) => `Show ${n} run${n === 1 ? '' : 's'}`,
+      // With nothing picked the button says so, rather than a bare count (App Fixes 3d).
+      showAll: (n: number) => `Show all ${n} runs`,
+      // The bar over a filtered list (App Fixes 1d): what the totals count.
+      showing: 'Showing',
+      totalsCount: ' · totals count these only',
+      clear: 'Clear',
     },
     sort: {
       label: 'Sort',
@@ -1338,6 +1380,8 @@ export const en = {
         `You've run this route ${n} times. This run: ${rank === 1 ? 'your best pace' : `your ${ordinal(rank)}-best pace`}.`,
       thisRun: 'This run',
       record: 'record',
+      // Read out for the medal beside the fastest of them.
+      fastest: 'Fastest on this route',
       paceDelta: (seconds: number) => `+${seconds}s/km`,
       chartSummary: (n: number, best: string) =>
         `Pace across your ${n} runs on this route; record ${best}.`,
@@ -1382,8 +1426,9 @@ export const en = {
     },
     shoe: {
       add: 'Add shoe',
-      changeInGarmin: (name: string) => `${name} - change in Garmin Connect`,
-      addInGarmin: 'Set the shoe in Garmin Connect',
+      // One way out to the watch's own app; the brand lives in the URL alone.
+      changeInGarmin: (name: string) => `${name} - edit in your watch app`,
+      addInGarmin: 'Set the shoe in your watch app',
     },
     weather: {
       wind: 'Wind',
@@ -1422,6 +1467,10 @@ export const en = {
       vertRatio: 'Vertical ratio',
       // The range scale (3.0.2): the pill is the usual range, the tick this run.
       vsUsual: 'vs your usual',
+      // Which way is better for the metric (App Fixes 3d). "Shorter" read
+      // as a length, which a bounce in centimetres and a ratio in points
+      // are not (review 9); lower is the word for all three.
+      better: { higher: 'longer is better', lower: 'lower is better' },
       level: 'Right on your usual',
       ratioUnit: 'pt',
       usualRange: (weeks: number) => `Your usual range, last ${weeks} weeks`,
@@ -1433,7 +1482,7 @@ export const en = {
       max: 'max',
       bestSmoothed: 'best 30 s',
       pace: 'Pace',
-      paceUnitHint: '/km ↑',
+      paceUnitHint: '/km, up = faster',
       elevation: 'Elevation',
       cadence: 'Cadence',
       elevationGain: (m: string) => `+${m} m gain`,
@@ -1449,7 +1498,7 @@ export const en = {
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
       noTrace: 'GPS trace unavailable',
-      noTraceHint: 'Available after Garmin sync',
+      noTraceHint: 'Available after the next sync',
       mapUnavailable: 'Map unavailable',
       mapUnavailableHint: 'No map token configured',
       routeMap: 'Activity route map',
@@ -1463,6 +1512,13 @@ export const en = {
     splits: {
       title: 'Intervals',
       lapTitle: 'Laps',
+      // A run the watch kept as one lap (App Fixes 1c): no laps were pressed,
+      // so it is named for what it is and sends the reader to the kilometres.
+      wholeRun: 'Whole run',
+      // A single lap that does not cover the run is just its first lap.
+      lapNumber: (n: number) => `Lap ${n}`,
+      noLapsPressed: 'No laps pressed on this run. Km splits show how your pace changed.',
+      seeKmSplits: 'See km splits',
       // The footer under the kilometres (3.0.2): the fastest km, and the
       // second half against the first.
       fastest: 'Fastest',
@@ -1621,9 +1677,9 @@ export const en = {
     // C4-C5, v4.4b: the list, the detail hero and the type mix.
     tracked: (km: string) => `${km} km tracked`,
     add: 'Add',
-    addLabel: 'Add a pair in Garmin Connect',
+    addLabel: 'Add a pair in your watch app',
     edit: 'Edit shoe',
-    editLabel: 'Edit limit, role or retire in Garmin Connect',
+    editLabel: 'Edit in your watch app',
     inRotation: (n: number) => `In rotation · ${n}`,
     retiredSection: (n: number) => `Retired · ${n}`,
     kmLeftShort: 'km left',
@@ -1786,6 +1842,11 @@ export const en = {
     hub: {
       // 3.0: the race, the year card, the records, then a row for each Progress page.
       yearTitle: (year: number) => `${year} distance`,
+      // The hub's cards preview their pages (App Fixes 1h): the year card is
+      // the way into Goals, not a second copy of its chart.
+      goalsSeason: 'Goals & season',
+      streakOf: (target: number) => `week streak · ${target}+ runs`,
+      runsThisWeek: (runs: number, target: number) => `${runs} of ${target} this week`,
       records: 'Records',
       recordLabels: { '1k': '1 km', '5k': '5 km', '10k': '10 km', half: 'Half' } as Record<string, string>,
       // The record set most recently, tagged while it is new (v4.3.3, 3.0).
@@ -1859,7 +1920,8 @@ export const en = {
       lifetimeDistance: (km: string) => `${km} km lifetime`,
       // Marathon equivalents, not races (G25).
       lifetimeDistanceDetail: (marathons: number) => `≈ ${marathons} marathon distances`,
-      lifetimeDistanceWorldTour: '🌍 A full trip around the Earth',
+      // The row's own globe icon says it; the glyph was a second one (3.0 override 3).
+      lifetimeDistanceWorldTour: 'A full trip around the Earth',
       activityCount: (n: number) => `${ordinal(n)} run`,
       activityCountDetail: (km: string) => `${km} km lifetime`,
     },
@@ -1926,7 +1988,7 @@ export const en = {
       // What a bar is, then the dates its first and last bars were run
       // (design review, Oct 2026): "taller = faster" alone named no axis.
       trailKey: 'One bar per run · taller = faster',
-      trailSpan: (from: string, to: string) => `${from} → ${to}`,
+      trailSpan: (from: string, to: string) => `${from} – ${to}`,
       legendBest: 'best',
       legendLatest: 'latest',
       bestPace: (pace: string) => `best ${pace}`,
@@ -1979,7 +2041,7 @@ export const en = {
     },
     staleSync: {
       title: 'No data synced in a while',
-      body: (hours: number) => `Your last Garmin sync was ${hours}h ago - check that sync is still running.`,
+      body: (hours: number) => `Your last sync was ${hours}h ago - check that sync is still running.`,
     },
     newActivity: { title: (name: string) => `New activity: ${name}` },
     weeklyGoal: {
@@ -2054,7 +2116,7 @@ export const en = {
       ANAEROBIC_SHORTAGE: 'Lacking anaerobic',
       NO_DATA: 'Not enough data',
     } as Record<string, string | undefined>,
-    footnote: 'Firstbeat load over the last 4 weeks split by intensity, against the ranges Garmin personalises from your history. The marker is where you sit; the green zone is the target.',
+    footnote: 'Training load over the last 4 weeks split by intensity, against the ranges your watch personalises from your history. The marker is where you sit; the green zone is the target.',
   },
 
   loadRisk: {
@@ -2104,6 +2166,11 @@ export const en = {
       easyPace: (range: string) => `easy target ${range}`,
       stridesPace: (pace: string) => `strides ${pace}`,
       targetPace: (range: string) => `target ${range}`,
+      // A one-step session's targets, listed rather than drawn (App Fixes 3b).
+      paceTarget: 'Pace',
+      hrTarget: 'Heart rate',
+      hrTargetZone: (zone: number) => `Heart rate · Z${zone}`,
+      hrCap: (bpm: number) => `≤ ${bpm}`,
     },
     continuous: 'continuous',
     // The rest day on one line, then the week's sessions still to come (3.0.2).
@@ -2146,6 +2213,12 @@ export const en = {
       easyLong: 'Easy / Long',
       phaseWeek: (phase: string, n: number, total: number) => `${phase} · week ${n} of ${total}`,
       kmOf: (ran: string, plan: string) => `${ran} of ${plan} km`,
+      // Where the plan starts partway through the month, the comparison is
+      // over the days it covers, and the month's own total is said beside it
+      // (review 8): a whole month's km against part of a month's plan read
+      // as "160 of 114 km".
+      planCovers: (from: string, to: string) => `plan covers ${from} – ${to}`,
+      monthTotal: (km: string) => `${km} km this month`,
       nextKey: 'Next key session',
       weekLabel: (monday: string, km: string) => `Week of ${monday} · ${km}`,
     },
@@ -2196,7 +2269,7 @@ export const en = {
   },
 
   coaching: {
-    garminOutOfDate: 'Garmin out of date',
+    garminOutOfDate: 'Watch data out of date',
     states: {
       prescribed: 'Prescribed',
       adjusted: 'Adjusted',

@@ -5,8 +5,11 @@ import { t } from '@/i18n'
 
 describe('SessionStateChip', () => {
   it('says each state in words, in its own tone', () => {
-    const { rerender } = render(<SessionStateChip state="done" />)
-    expect(screen.getByText(`✓ ${t.sessionState.done}`).className).toContain('text-delta-good')
+    // 3.0 override 3: the tick beside "Done" is an icon, not a glyph.
+    const { rerender, container } = render(<SessionStateChip state="done" />)
+    const done = screen.getByText(t.sessionState.done)
+    expect(done.className).toContain('text-delta-good')
+    expect(container.querySelector('svg.lucide-check')).not.toBeNull()
 
     rerender(<SessionStateChip state="missed" />)
     expect(screen.getByText(t.sessionState.missed).className).toContain('text-delta-warn')
