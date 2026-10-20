@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import { formatDate, formatKm, formatRanKm } from '@/lib/formatters'
+import { formatDate, formatKm, formatPercent, formatRanKm } from '@/lib/formatters'
 import { Stat, StatGrid, Unit } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Legend, LegendItem, Sentence, THIS_WEEK_BORDER } from './AnalyticsKit'
@@ -204,8 +204,14 @@ function LongRunCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; 
       >
         <div className="relative grid items-end" style={{ height: H, gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 2 : 6 }} data-testid="long-run-bars">
           {/* The 35% rule as a dashed guide across the weeks, over the bars;
-              out of the grid, it takes no week's cell. */}
-          <div aria-hidden className="pointer-events-none absolute z-[1] inset-x-0 border-t border-dashed border-muted-foreground" style={{ bottom: (LONG_RUN_SHARE / top) * H }} data-testid="long-run-guide" />
+              out of the grid, it takes no week's cell. The line says what it
+              is (review 13): a bare dash left the reader to work out which
+              height was the rule. */}
+          <div aria-hidden className="pointer-events-none absolute z-[1] inset-x-0 border-t border-dashed border-muted-foreground" style={{ bottom: (LONG_RUN_SHARE / top) * H }} data-testid="long-run-guide">
+            <span className="absolute right-0 -top-[7px] bg-card pl-1 text-[10px] font-medium leading-none tabular-nums text-muted-foreground" data-testid="long-run-guide-label">
+              {formatPercent(LONG_RUN_SHARE * 100)}
+            </span>
+          </div>
           {view.bars.map((bar, i) => {
             const current = bar.current && live
             return bar.km > 0 ? (

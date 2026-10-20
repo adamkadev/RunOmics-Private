@@ -173,7 +173,10 @@ export const WORKOUT_SEGMENT_COLORS = {
  */
 export const RUN_CHART_LINE = {
   hr: '#ff6b6b',
-  pace: '#4cc9f0',
+  // The same blue every other pace series takes (review 11). It was its own
+  // cyan, a hair off the cyan accent, so a run's pace line and the interface
+  // around it read as the same colour.
+  pace: c.blue500,
   cadence: runTypeColor('Threshold'),
 } as const
 

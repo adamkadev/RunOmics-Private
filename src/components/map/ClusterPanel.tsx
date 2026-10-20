@@ -65,14 +65,16 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
 
   return (
     <div className="max-w-full shrink-0">
-      {/* The area reads as a picker, not as a filter (App Fixes 3d): it is
-          always set, so the white fill said "filtered" about every map. The
-          whole name, never cut - the row scrolls instead. */}
+      {/* The area is a chip that is always set, so it is drawn set, like
+          the type chip beside it (App Fixes 3d, review 12): one filled pill
+          and the rest outlined read as one row, where an outlined area chip
+          read as a third state. The whole name, never cut - the row scrolls
+          instead. */}
       <button
         {...menu.chipProps}
         title={selectedName}
         aria-label={`${t.pages.map.area}: ${selectedName}`}
-        className={[MAP_CHIP_GEOMETRY, "map-chip max-w-full gap-1.5 font-semibold"].join(" ")}
+        className={[MAP_CHIP_GEOMETRY, "map-chip-selected max-w-full gap-1.5 font-semibold"].join(" ")}
         style={{ padding: MAP_CHIP_PADDING }}
       >
         <span className="min-w-0 truncate">{selectedName}</span>

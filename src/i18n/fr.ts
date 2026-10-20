@@ -749,7 +749,6 @@ export const fr = {
         threshold: 'Allure seuil',
         easyPace: 'Allure facile',
         in12w: (delta: string) => `${delta} en 12 semaines`,
-        noChange12w: '±0 sur 12 semaines',
         slower: (s: string) => `${s} plus lente`,
         faster: (s: string) => `${s} plus rapide`,
         same: 'Stable',
