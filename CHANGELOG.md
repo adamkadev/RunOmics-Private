@@ -5,9 +5,17 @@ All notable changes to this project are documented in this file.
 ## [Unreleased]
 
 The 3.1 handoff's audit pass (App Fixes), worked through badge by badge.
-The four items that need new data - rep pace, the temperature cost's cold
-end, the plan-based monthly target and route naming - are on their own
-branch, for review against real data.
+
+### Wave 4: the items that needed new data
+
+- Rep pace replaces "workout pace": the work intervals alone, not the
+  warm-up and recoveries around them (2b).
+- "Heat cost" is "Temperature cost", and says what the cold costs too (2b).
+- Goals: a month the plan covers takes the plan's own km as its target
+  (3c).
+- Records: routes are named after where they go - the point farthest from
+  the start - and the owner can rename one. The names live in a new
+  owner-only `routeNames` collection (1g).
 
 ### Today and Analytics agree
 

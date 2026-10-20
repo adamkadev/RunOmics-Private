@@ -14,6 +14,7 @@ const runs = (n: number) =>
 const route = (n: number): RecurringRoute => ({
   id: `r${n}`,
   start: null,
+  far: null,
   runCount: n,
   distanceKm: 7.6,
   outline: 'M0 0 L10 10',

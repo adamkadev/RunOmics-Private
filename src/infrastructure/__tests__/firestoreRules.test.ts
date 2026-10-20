@@ -44,6 +44,7 @@ describe.skipIf(!emulator)('firestore.rules', () => {
     await env.withSecurityRulesDisabled(async (context) => {
       const db = context.firestore()
       await setDoc(doc(db, 'activityNotes', '101'), { note: 'Felt sick', tags: ['illness'] })
+      await setDoc(doc(db, 'routeNames', 'route-1'), { name: 'Moselle riverside loop' })
       await setDoc(doc(db, 'pushTokens', 'token-1'), { createdAt: 1 })
       await setDoc(doc(db, 'aiInsights', 'today'), { text: 'x' })
     })
@@ -87,6 +88,32 @@ describe.skipIf(!emulator)('firestore.rules', () => {
     it('only lets the owner delete', async () => {
       await assertFails(deleteDoc(doc(stranger(), 'activityNotes', '101')))
       await assertSucceeds(deleteDoc(doc(owner(), 'activityNotes', '101')))
+    })
+  })
+
+  // App Fixes 1g: the athlete's own names for their routes, the owner's alone.
+  describe('routeNames', () => {
+    it('lets only the owner read and list them', async () => {
+      await assertFails(getDoc(doc(visitor(), 'routeNames', 'route-1')))
+      await assertFails(getDocs(collection(stranger(), 'routeNames')))
+      await assertSucceeds(getDoc(doc(owner(), 'routeNames', 'route-1')))
+      await assertSucceeds(getDocs(collection(owner(), 'routeNames')))
+    })
+
+    it('only lets the owner write, and only a well-formed name', async () => {
+      await assertFails(setDoc(doc(stranger(), 'routeNames', 'route-2'), { name: 'Theirs' }))
+      await assertSucceeds(setDoc(doc(owner(), 'routeNames', 'route-2'), { name: 'Hill loop' }))
+
+      const db = owner()
+      await assertFails(setDoc(doc(db, 'routeNames', 'route-3'), { name: '' }))
+      await assertFails(setDoc(doc(db, 'routeNames', 'route-3'), { name: 'x'.repeat(81) }))
+      await assertFails(setDoc(doc(db, 'routeNames', 'route-3'), { name: 42 }))
+      await assertFails(setDoc(doc(db, 'routeNames', 'route-3'), { name: 'x', extra: true }))
+    })
+
+    it('only lets the owner clear one', async () => {
+      await assertFails(deleteDoc(doc(stranger(), 'routeNames', 'route-1')))
+      await assertSucceeds(deleteDoc(doc(owner(), 'routeNames', 'route-1')))
     })
   })
 

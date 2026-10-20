@@ -12,12 +12,17 @@ export interface RouteRun {
 export interface RecurringRoute {
   id: string
   /**
-   * Where the route starts, for naming it after a place. The runs' own titles
-   * name the session - "Seuil", "1 h endurance" - so two routes that share a
-   * workout type end up sharing a name while two names for one route are a
-   * coin toss.
+   * Where the route starts. The runs' own titles name the session - "Seuil",
+   * "1 h endurance" - so two routes that share a workout type end up sharing
+   * a name while two names for one route are a coin toss.
    */
   start: Coord | null
+  /**
+   * The point of the route farthest from its start: where the route goes.
+   * It is what names it (App Fixes 1g) - named after the start, every route
+   * out of one front door shared the name of that street.
+   */
+  far: Coord | null
   runCount: number
   distanceKm: number
   outline: string
@@ -25,6 +30,30 @@ export interface RecurringRoute {
   bestPaceSecPerKm: number
   bestActivityId: string
   bestDate: string
+}
+
+/**
+ * The point farthest from the start, as the crow flies - a loop's far side,
+ * an out-and-back's turnaround. Degrees are good enough to compare one point
+ * with another over a few kilometres, with longitude narrowed by the
+ * latitude so east-west and north-south count alike.
+ */
+export function farthestPoint(route: readonly Coord[]): Coord | null {
+  const start = route[0]
+  if (!start) return null
+  const scale = Math.cos((start[1] * Math.PI) / 180)
+  let far = start
+  let best = 0
+  for (const point of route) {
+    const dx = (point[0] - start[0]) * scale
+    const dy = point[1] - start[1]
+    const d2 = dx * dx + dy * dy
+    if (d2 > best) {
+      best = d2
+      far = point
+    }
+  }
+  return far
 }
 
 const MIN_OVERLAP = 0.7
@@ -64,9 +93,11 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
 
   const best = timed.reduce((fastest, a) => (a.paceSecPerKm! < fastest.paceSecPerKm! ? a : fastest), latest)
 
+  const route = latest.route as Coord[]
   return {
     id: `${index}`,
-    start: (latest.route as Coord[])[0] ?? null,
+    start: route[0] ?? null,
+    far: farthestPoint(route),
     runCount: timed.length,
     distanceKm: round(timed.reduce((sum, a) => sum + a.distanceKm, 0) / timed.length, 1),
     outline: routeOutline(latest.route as Coord[]),

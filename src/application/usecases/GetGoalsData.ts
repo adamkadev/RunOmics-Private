@@ -1,5 +1,6 @@
 import type { Activity } from '@/domain/activity/types'
 import { yearDistanceKm } from '@/domain/activity/distance'
+import { getPlannedWorkouts } from './GetPlannedWorkouts'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
 import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
@@ -122,15 +123,35 @@ export function computeProjection(
   return { weeklyRate, weeklyNeeded, projectedYearKm, status, deltaKm }
 }
 
-export function computeMonthlyGoals(activities: Activity[], year: number, goals: GoalYear, now = new Date()): MonthGoal[] {
-  // A twelfth of the year for every month (3.1): the chart draws one target
-  // line, so a month's hit or short has to be read against that same line.
-  // Weighting by days put February's target 14 km under the line it was drawn
-  // against, a bar below the line coloured as a hit.
-  const targetKm = round(goals.annualDistanceKm / 12, 1)
+/** A month's planned km, by its "YYYY-MM": what the plan actually asks for. */
+export type PlannedKmByMonth = ReadonlyMap<string, number>
+
+export function plannedKmByMonth(planned: readonly { date: string; distanceM?: number }[]): PlannedKmByMonth {
+  const byMonth = new Map<string, number>()
+  for (const p of planned) {
+    if (!p.distanceM) continue
+    const key = p.date.slice(0, 7)
+    byMonth.set(key, (byMonth.get(key) ?? 0) + p.distanceM / 1000)
+  }
+  return new Map([...byMonth].map(([key, km]) => [key, round(km, 1)]))
+}
+
+export function computeMonthlyGoals(
+  activities: Activity[],
+  year: number,
+  goals: GoalYear,
+  now = new Date(),
+  planned: PlannedKmByMonth = new Map(),
+): MonthGoal[] {
+  // What the plan asks of a month is its target (App Fixes 3c): Goals read a
+  // twelfth of the year while Plan had 226 km in October, and the two
+  // disagreed about the same month. A month the plan does not cover keeps
+  // the twelfth, so a year without a plan reads as it always did.
+  const evenShare = round(goals.annualDistanceKm / 12, 1)
 
   return Array.from({ length: 12 }, (_, i) => {
     const month = i + 1
+    const targetKm = planned.get(`${year}-${String(month).padStart(2, '0')}`) ?? evenShare
     const monthStart = new Date(year, month - 1, 1)
     const monthEnd = new Date(year, month, 1)
     const daysInMonth = Math.round((monthEnd.getTime() - monthStart.getTime()) / DAY_MS)
@@ -296,6 +317,8 @@ export async function getGoalsPageData(today: string = appTodayIso()): Promise<G
   const goalYears = getGoalYears()
   const pbYears = getPbYears()
   const predictions = await getGoalPredictions()
+  // The plan's own km per month, so Goals and Plan cannot disagree (3c).
+  const plannedByMonth = plannedKmByMonth(await getPlannedWorkouts())
 
   const activityMap = new Map(activities.map((a) => [a.id, a]))
 
@@ -336,7 +359,7 @@ export async function getGoalsPageData(today: string = appTodayIso()): Promise<G
         ? computeProjection(activities, year, rawYearKm, goals, now)
         : null
 
-    const monthlyGoals = goals ? computeMonthlyGoals(activities, year, goals, now) : []
+    const monthlyGoals = goals ? computeMonthlyGoals(activities, year, goals, now, plannedByMonth) : []
 
     const nextRaceSpotlight =
       year === currentYear ? computeNextRaceSpotlight(upcomingRaces, predictions, today) : null

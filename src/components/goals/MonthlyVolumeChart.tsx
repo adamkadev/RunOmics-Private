@@ -40,11 +40,13 @@ export function inProgressMonth(months: MonthGoal[], year: number, now = new Dat
 }
 
 /**
- * The year's months against a twelfth of the goal (3.1): twelve bars under
- * one dashed target line, a month at or over it in the accent, one short of
- * it dim. The month still running is its km so far inside a dashed outline
- * of the target, and the legend says whether it is on pace; the months
- * still to come are empty columns.
+ * The year's months against what each one asks for (3.1, App Fixes 3c):
+ * twelve bars, a month at or over its target in the accent, one short of it
+ * dim. Where every month asks the same - a year with no plan behind it -
+ * one dashed line runs across them all; where the plan sets a month's own
+ * target, each bar carries its own tick instead. The month still running is
+ * its km so far inside a dashed outline of the target, and the legend says
+ * whether it is on pace; the months still to come are empty columns.
  */
 export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals: MonthGoal[]; year: number; today: string }) {
   const elapsed = monthlyGoals.filter((mg) => mg.status !== 'pending')
@@ -54,6 +56,8 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
   const scaleMax = volumePlotMaxKm(elapsed)
   const current = inProgressMonth(elapsed, year, new Date(`${today}T00:00:00`))
   const targetKm = elapsed[0]!.targetKm
+  // One line only while the months agree; otherwise each bar is ticked.
+  const oneTarget = elapsed.every((mg) => mg.targetKm === targetKm)
   const initials = monthInitials()
   const byMonth = new Map(monthlyGoals.map((mg) => [mg.month, mg]))
 
@@ -61,11 +65,13 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
     <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="monthly-volume">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[15px] font-semibold text-foreground">{m.title}</h2>
-        {targetKm > 0 && <span className="text-xs text-muted-foreground">{m.target(formatKm(targetKm))}</span>}
+        {targetKm > 0 && (
+          <span className="text-xs text-muted-foreground">{oneTarget ? m.target(formatKm(targetKm)) : m.targetFromPlan}</span>
+        )}
       </div>
 
       <div className="relative grid h-20 grid-cols-12 gap-1">
-        {targetKm > 0 && (
+        {oneTarget && targetKm > 0 && (
           <span
             aria-hidden
             data-testid="target-rule"
@@ -101,6 +107,14 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
           const hit = mg.actualKm >= mg.targetKm
           return (
             <div key={i} className="relative">
+              {!oneTarget && mg.targetKm > 0 && (
+                <span
+                  aria-hidden
+                  data-testid="month-target-tick"
+                  className="pointer-events-none absolute inset-x-0 z-10 border-t border-dashed"
+                  style={{ bottom: pct(mg.targetKm, scaleMax), borderColor: TARGET_RULE_COLOR }}
+                />
+              )}
               <div
                 className="absolute inset-x-0 bottom-0 rounded-[4px]"
                 title={title}
