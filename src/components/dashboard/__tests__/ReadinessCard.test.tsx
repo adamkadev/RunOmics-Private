@@ -50,10 +50,12 @@ describe('ReadinessCard', () => {
   // App Fixes 1a: the line's second half is the load against its safe range,
   // the reading Analytics prints, not a word chosen off Form.
   it('says how the load sits against its safe range, in Analytics\' own words', () => {
-    render(<ReadinessCard status={STATUS} load={{ acute: 456, lo: 462, hi: 750, state: 'below' }} />)
+    render(<ReadinessCard status={STATUS} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79 }} />)
     const line = screen.getByTestId('readiness-status')
     expect(line.textContent).toBe(`${t.dashboard.readiness.eyebrowByTone.build} · ${t.dashboard.readiness.loadState.below}`)
     expect(line.style.color).toBe('var(--warn)')
+    // And the tile reads the ratio off that same pair, not a second source.
+    expect(screen.getByTestId('tile-load')).toHaveTextContent(`${t.dashboard.readiness.acwr}×0.79`)
   })
 
   it('falls back to the tone\'s own line where the watch has no load pair', () => {

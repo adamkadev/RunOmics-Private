@@ -6,7 +6,7 @@ import { t } from '@/i18n'
 
 const RECENT: RecentLoad = {
   band: { lo: 42, hi: 69 },
-  reading: { acute: 456, lo: 462, hi: 750, state: 'below' },
+  reading: { acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79 },
   peak: 80,
   days: [
     { date: '2026-10-16', load: 60, isToday: false, type: 'Base' },

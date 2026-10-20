@@ -6,7 +6,7 @@ import { DAY_MS } from '@/lib/calendarDate'
 import { dailyTrimpByDate } from './GetTrainingLoad'
 import { getTrainingStatus } from './GetTrainingStatus'
 import { getLoadPairs } from './GetLoadRecovery'
-import { latestLoadPair, safeRange } from '@/domain/training/loadTrend'
+import { latestLoadPair, loadRatio, safeRange } from '@/domain/training/loadTrend'
 
 export const RECENT_LOAD_DAYS = 7
 
@@ -33,6 +33,8 @@ export interface LoadReading {
   lo: number
   hi: number
   state: 'below' | 'in' | 'above'
+  /** Acute over chronic, the ratio Analytics prints from the same pair. */
+  ratio: number
 }
 
 export interface RecentLoad {
@@ -47,7 +49,13 @@ export function loadReading(pairs: ReturnType<typeof getLoadPairs>): LoadReading
   const pair = latestLoadPair(pairs)
   if (!pair) return null
   const { lo, hi } = safeRange(pair.chronic)
-  return { acute: pair.acute, lo, hi, state: pair.acute < lo ? 'below' : pair.acute > hi ? 'above' : 'in' }
+  return {
+    acute: pair.acute,
+    lo,
+    hi,
+    state: pair.acute < lo ? 'below' : pair.acute > hi ? 'above' : 'in',
+    ratio: loadRatio(pair),
+  }
 }
 
 function lastDays(today: string, count: number): string[] {

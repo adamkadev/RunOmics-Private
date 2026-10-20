@@ -82,6 +82,7 @@ export function ReadinessCard({
   // card saying the opposite.
   const color = load && load.state !== 'in' ? 'var(--warn)' : STATUS_COLOR[tone]
   const line = load ? s.loadState[load.state] : s.lineByTone[tone]
+  const ratio = load?.ratio ?? status.acwr
 
   return (
     <Link href="/analytics" aria-label={s.open} className="block active:scale-[0.99]" data-testid="readiness-card-link">
@@ -125,7 +126,10 @@ export function ReadinessCard({
             value={Math.round(status.atl)}
             delta={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
-          <Tile testId="tile-load" label={s.acwr} value={status.acwr === null ? s.noValue : s.acwrValue(formatDecimal(status.acwr, 2))} />
+          {/* The ratio off the pair Analytics plots, where the watch has
+              one (App Fixes 1a): Today read ×1.10 from one source beside an
+              Analytics card reading 1.18 from another. */}
+          <Tile testId="tile-load" label={s.acwr} value={ratio === null ? s.noValue : s.acwrValue(formatDecimal(ratio, 2))} />
         </div>
       </section>
     </Link>
