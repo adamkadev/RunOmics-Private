@@ -411,7 +411,7 @@ export const fr = {
       notesUnavailable: 'Exporté sans tes notes ni tes tags : la base des notes n’a pas répondu. Réessaie.',
     },
     profile: {
-      readOnly: 'Depuis ta montre : c’est dans son app que tu les modifies.',
+      readOnly: 'Depuis ta montre : à modifier dans l’app de ta montre.',
       lthr: (bpm: number) => `FC seuil ${bpm}`,
       maxHr: (bpm: number) => `max ${bpm}`,
     },
@@ -1335,7 +1335,7 @@ export const fr = {
     },
     shoe: {
       add: 'Ajouter la chaussure',
-      changeInGarmin: (name: string) => `${name} - à modifier dans l’app de ta montre`,
+      changeInGarmin: (name: string) => `${name} - modifier dans l’app de ta montre`,
       addInGarmin: 'Choisir la chaussure dans l’app de ta montre',
     },
     weather: {
@@ -1560,7 +1560,7 @@ export const fr = {
     add: 'Ajouter',
     addLabel: 'Ajouter une paire dans l’app de ta montre',
     edit: 'Modifier la paire',
-    editLabel: 'Modifier la limite ou le rôle, ou retirer la paire dans l’app de ta montre',
+    editLabel: 'Modifier dans l’app de ta montre',
     inRotation: (n: number) => `En rotation · ${n}`,
     retiredSection: (n: number) => `Retraitées · ${n}`,
     kmLeftShort: 'km restants',

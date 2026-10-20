@@ -444,7 +444,7 @@ export const en = {
       // Under the read-only height and weight, a link out to where the watch's data is kept
       // (design review, Oct 2026). No brand in the words: the data is imported JSON, and the
       // brand can change (3.0 override 1).
-      readOnly: 'From your watch - change them in its app.',
+      readOnly: 'From your watch - edit in your watch app.',
       // The Athlete & zones row's value: "LTHR 179 · Max 200" (3.0 1i).
       lthr: (bpm: number) => `LTHR ${bpm}`,
       maxHr: (bpm: number) => `Max ${bpm}`,
@@ -1417,8 +1417,9 @@ export const en = {
     },
     shoe: {
       add: 'Add shoe',
-      changeInGarmin: (name: string) => `${name} - change it in your watch’s app`,
-      addInGarmin: 'Set the shoe in your watch’s app',
+      // One way out to the watch's own app; the brand lives in the URL alone.
+      changeInGarmin: (name: string) => `${name} - edit in your watch app`,
+      addInGarmin: 'Set the shoe in your watch app',
     },
     weather: {
       wind: 'Wind',
@@ -1663,9 +1664,9 @@ export const en = {
     // C4-C5, v4.4b: the list, the detail hero and the type mix.
     tracked: (km: string) => `${km} km tracked`,
     add: 'Add',
-    addLabel: 'Add a pair in your watch’s app',
+    addLabel: 'Add a pair in your watch app',
     edit: 'Edit shoe',
-    editLabel: 'Edit limit, role or retire in your watch’s app',
+    editLabel: 'Edit in your watch app',
     inRotation: (n: number) => `In rotation · ${n}`,
     retiredSection: (n: number) => `Retired · ${n}`,
     kmLeftShort: 'km left',

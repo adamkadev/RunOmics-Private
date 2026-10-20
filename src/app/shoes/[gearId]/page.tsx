@@ -15,6 +15,7 @@ import { VerdictBlock, type VerdictTone } from '@/components/ui/Verdict'
 import { zoneColor } from '@/lib/colors'
 import Link from 'next/link'
 import { GARMIN_GEAR_URL, WEAR_COLOR, shoeProjection, shoeWearCopy } from '@/components/shoes/shoeWear'
+import { isWatchId } from '@/lib/garminConnect'
 import { WearBar } from '@/components/shoes/WearBar'
 import { formatClock, formatDate, formatDateRange, formatDistance, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -160,8 +161,9 @@ export default async function ShoeDetailPage({
             </p>
             <h1 className="mt-1 text-display text-foreground">{shoe.name}</h1>
           </div>
-          {/* Limits, roles and retirement are Garmin's: Edit opens its gear page. */}
-          {!shoe.retired && (
+          {/* Limits, roles and retirement are set on the watch: Edit opens
+              its app, and only for a pair the watch gave an id to. */}
+          {!shoe.retired && isWatchId(shoe.gearId) && (
             <a
               href={GARMIN_GEAR_URL}
               target="_blank"
