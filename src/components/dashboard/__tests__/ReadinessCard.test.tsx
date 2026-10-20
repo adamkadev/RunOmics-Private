@@ -12,7 +12,8 @@ const STATUS = {
 } as unknown as TrainingStatus
 
 describe('the Form dial', () => {
-  // Design review 3.0: a 270° arc in the accent, filled as far as Form.
+  // Design review 3.0: a 270° arc filled as far as Form, in the band's own
+  // colour - the arc says how the athlete is, so it never takes the accent.
   it('fills as far as today’s Form on the scale and names its band', () => {
     render(<ReadinessCard status={STATUS} />)
     const dial = screen.getByTestId('form-dial')
@@ -21,7 +22,18 @@ describe('the Form dial', () => {
     expect(dial.getAttribute('aria-label')).toBe(t.dashboard.readiness.formOnDial('−6', t.formBand[formBand(-6)]))
     expect(dial).toHaveTextContent('−6')
     expect(dial).toHaveTextContent(t.dashboard.readiness.formLabel)
-    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--accent)')
+    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--form-band-neutral)')
+  })
+
+  // App Fixes review 5: -18 read mint on Today and "Tired · below -10" in
+  // amber on Analytics. One number, one tone.
+  it('takes the tone of the band it falls in, as Analytics does', () => {
+    const { unmount } = render(<ReadinessCard status={{ ...STATUS, tsbNow: -18 }} />)
+    expect(screen.getByTestId('form-dial-fill').dataset.band).toBe('tired')
+    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--form-band-tired)')
+    unmount()
+    render(<ReadinessCard status={{ ...STATUS, tsbNow: 12 }} />)
+    expect(screen.getByTestId('form-dial-fill').getAttribute('stroke')).toBe('var(--form-band-fresh)')
   })
 
   it('rests on the edge past the scale, with no fill at its foot', () => {
