@@ -838,15 +838,16 @@ export const en = {
       paceTrend: {
         title: 'Pace trend',
         caption: 'weekly average · higher is faster',
-        about: 'The weekly average pace of your easy runs and of your workouts (every run that is not easy). Faster is up.',
+        about: 'The weekly average pace of your easy runs, and of the hard reps inside your workouts - the warm-up, the recoveries and the cool-down are left out. Faster is up.',
         easyFaster: (s: string) => ['Easy runs got ', `${s}/km faster`, '.'] as [string, string, string],
         easySlower: (s: string) => ['Easy runs got ', `${s}/km slower`, '.'] as [string, string, string],
         easyHeld: ['Easy pace ', 'held', '.'] as [string, string, string],
-        workoutFaster: (s: string) => [' Workout pace got ', `${s}/km faster`, '.'] as [string, string, string],
-        workoutSlower: (s: string) => [' Workout pace got ', `${s}/km slower`, '.'] as [string, string, string],
-        workoutHeld: [' Workout pace ', 'held', '.'] as [string, string, string],
+        // The reps alone, not the session around them (App Fixes 2b).
+        workoutFaster: (s: string) => [' Rep pace got ', `${s}/km faster`, '.'] as [string, string, string],
+        workoutSlower: (s: string) => [' Rep pace got ', `${s}/km slower`, '.'] as [string, string, string],
+        workoutHeld: [' Rep pace ', 'held', '.'] as [string, string, string],
         easy: 'Easy',
-        workout: 'Workout',
+        workout: 'Reps',
       },
       efficiency: {
         title: 'Aerobic efficiency',
@@ -866,11 +867,13 @@ export const en = {
         rpeTrend: { easing: 'easing', rising: 'rising', steady: 'steady' } as Record<string, string>,
       },
       heatCost: {
-        title: 'Heat cost',
+        // Both ends of the thermometer (App Fixes 2b): the cold costs pace too.
+        title: 'Temperature cost',
         caption: (hr: number) => `pace at ${hr} bpm, vs your best band`,
         about: 'Your easy-run pace at the same heart rate, by the temperature it felt like. Each bar is the seconds per km you lose against your best temperature band.',
         lose: (range: string) => ['Above 20 °C you lose ', `${range} s/km`, ' at the same heart rate.'] as [string, string, string],
-        little: 'Heat has cost you little so far: under 5 s/km at the same heart rate.',
+        cold: (cost: number) => ['Below 5 °C you lose ', `${cost} s/km`, ' at the same heart rate.'] as [string, string, string],
+        little: 'Temperature has cost you little so far: under 5 s/km at the same heart rate.',
         noWarm: 'No easy runs above 20 °C yet to measure what heat costs you.',
         best: 'best',
         noRuns: 'no runs',

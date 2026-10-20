@@ -6,6 +6,7 @@ import { easyShare, type EasyHardSplit } from '@/domain/activity/easyShare'
 import { sumDistanceKm } from '@/domain/activity/distance'
 import { AXIS_TICK_DATE, formatDate, monthLabel } from '@/lib/formatters'
 import { round } from '@/lib/math'
+import { repSet } from '@/domain/activity/repSet'
 import { DAY_MS, appTodayIso, isoDate } from '@/lib/calendarDate'
 import { qualityKind } from '@/domain/training/qualitySession'
 
@@ -157,6 +158,33 @@ export function avgField(activities: Activity[], pick: (a: Activity) => number |
 }
 
 const weightedPace = (acts: Activity[]) => weightedAvg(acts, (a) => a.paceSecPerKm, (a) => a.distanceKm, 0)
+
+/**
+ * The pace of a quality week's hard reps (App Fixes 2b): the work intervals
+ * alone, distance-weighted. The whole-session average it replaces counted
+ * the warm-up, the recoveries and the cool-down, so a session whose reps got
+ * faster could read as a slower "workout pace" on a longer warm-up.
+ *
+ * A run the watch recorded without reps falls back to its own average, so a
+ * week of tempo runs still has a line.
+ */
+export function repPace(acts: Activity[]): number | null {
+  let metres = 0
+  let seconds = 0
+  for (const a of acts) {
+    const set = repSet(a.splits)
+    if (set) {
+      for (const rep of set.reps) {
+        metres += rep.distanceM
+        seconds += rep.durationSec
+      }
+    } else if (a.paceSecPerKm !== null && a.distanceKm > 0) {
+      metres += a.distanceKm * 1000
+      seconds += a.paceSecPerKm * a.distanceKm
+    }
+  }
+  return metres > 0 ? Math.round((seconds / metres) * 1000) : null
+}
 const weightedHr = (acts: Activity[]) => weightedAvg(acts, (a) => a.avgHeartRate, (a) => a.durationSeconds, 0)
 const weightedCadence = (acts: Activity[]) => weightedAvg(acts, (a) => a.cadenceSpm, (a) => a.durationSeconds)
 const weightedGroundContact = (acts: Activity[]) => weightedAvg(acts, (a) => a.groundContactMs, (a) => a.durationSeconds, 0)
@@ -300,7 +328,7 @@ export function buildWeeklyTrends(all: Activity[]): WeeklyTrendPoint[] {
         distanceKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)),
         sessionCount: acts.length,
         easyPace: weightedPace(easy),
-        hardPace: weightedPace(hard),
+        hardPace: repPace(hard),
         ef: efficiencyFactor(easy),
         efAdjusted: adjustedEfficiencyFactor(easy),
         apparentTempC: avgField(easy, (a) => a.weather?.apparentTempC ?? null),

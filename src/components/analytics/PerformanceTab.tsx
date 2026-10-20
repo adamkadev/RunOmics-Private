@@ -417,6 +417,9 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   )
 }
 
+/** A cost under this many seconds a km is noise, and goes unsaid. */
+const COST_WORTH_SAYING = 5
+
 /** A heat loss past this many seconds a km is worth a caution; less stays muted. */
 export const HEAT_WARN_SEC = 10
 
@@ -443,8 +446,11 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
   return (
     <Card className="gap-2.5" testId="heat-card">
       <CardHead title={s.title} caption={s.caption(view.refHeartRate)} about={s.about} />
-      <div className="mb-1">
+      <div className="mb-1 flex flex-col gap-1">
         {view.warm === null ? <Sentence>{s.noWarm}</Sentence> : view.warm.hi < 5 ? <Sentence>{s.little}</Sentence> : <BoldSentence parts={s.lose(range!)} />}
+        {/* The cold costs pace too, and the card used to say nothing about
+            it (App Fixes 2b). */}
+        {view.cold !== null && view.cold >= COST_WORTH_SAYING && <BoldSentence parts={s.cold(view.cold)} />}
       </div>
       <div className="flex flex-col gap-2.5">
         {view.rows.map((row) => {

@@ -9,6 +9,7 @@ import {
   distanceDistribution,
   computeTotals,
   buildWeeklyTrends,
+  repPace,
 } from '../GetAnalyticsData'
 import type { Activity, HrZone } from '@/domain/activity/types'
 
@@ -224,6 +225,37 @@ describe('buildWeeklyTrends', () => {
 
   it('is empty when there are no activities', () => {
     expect(buildWeeklyTrends([])).toEqual([])
+  })
+})
+
+// App Fixes 2b: a quality week's pace is its hard reps, not the session
+// around them - a longer warm-up used to read as a slower "workout pace".
+describe('repPace', () => {
+  const split = (type: string, durationSec: number, distanceM: number) =>
+    ({ type, durationSec, distanceM, avgSpeedMs: distanceM / durationSec, avgHr: null, laps: [] }) as never
+
+  it('counts the work intervals alone', () => {
+    const session = act({
+      distanceKm: 10,
+      paceSecPerKm: 300,
+      splits: [
+        split('interval_warmup', 1_200, 3_000),
+        split('interval_active', 480, 2_000),
+        split('interval_rest', 120, 300),
+        split('interval_active', 480, 2_000),
+        split('interval_cooldown', 900, 2_700),
+      ],
+    })
+    // 960 s over 4 000 m: 4:00 /km, where the whole run averages 5:00.
+    expect(repPace([session])).toBe(240)
+  })
+
+  it('falls back to a run the watch kept whole', () => {
+    expect(repPace([act({ distanceKm: 10, paceSecPerKm: 300, splits: null })])).toBe(300)
+  })
+
+  it('is null without a run to read', () => {
+    expect(repPace([])).toBeNull()
   })
 })
 
