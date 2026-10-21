@@ -87,8 +87,10 @@ export const viewport: Viewport = {
   userScalable: false,
   // Still `cover`, for the bottom inset the tab bar pads by.
   viewportFit: 'cover',
-  // Fixed, never rewritten at runtime: iOS stores it at install, and a value
-  // changed later (the accent, an in-app theme switch) never reaches the bar.
+  // The page's --background in each mode (F15): the opaque status bar iOS
+  // paints from it is the page itself, with no band above the header. Fixed,
+  // never rewritten at runtime: iOS stores it at install, and a value changed
+  // later (the accent, an in-app theme switch) never reaches the bar.
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: STATUS_BAR_COLOR.light },
     { media: '(prefers-color-scheme: dark)', color: STATUS_BAR_COLOR.dark },

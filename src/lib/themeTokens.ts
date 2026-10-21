@@ -2,14 +2,6 @@ import { HUE, ink, paper } from './palette'
 import { CURATED_ACCENTS, curatedAccent, type CuratedAccent } from './accentScale'
 import { contrastRatio, hexToOklch, oklchToHex } from './oklch'
 
-/**
- * The opaque status bar's colour in an installed iPhone app, one per mode.
- * iOS stores it from the theme-color meta at install and only picks light or
- * dark at launch, so it can't follow the accent: it is a neutral close to
- * every accent's background, and the page top fades from it (--status-bar).
- */
-export const STATUS_BAR_COLOR = { light: '#f3f4f3', dark: '#0b0c0c' } as const
-
 export type TokenBlock = {
   selector: string
   comment?: string
@@ -133,6 +125,16 @@ export const SURFACES = {
     shadowRaised: 'none',
   },
 } as const
+
+/**
+ * The opaque status bar's colour in an installed iPhone app, one per mode:
+ * the page's own --background, taken from it rather than restated (F15), so
+ * the band iOS paints from the theme-color meta reads as the page running
+ * under the notch. iOS stores it at install and only picks light or dark at
+ * launch, so it can't follow the accent - nor has to: the background is the
+ * same under every accent.
+ */
+export const STATUS_BAR_COLOR = { light: SURFACES.light.background, dark: SURFACES.dark.background } as const
 
 function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
   const n = SURFACES[mode]
