@@ -1643,7 +1643,6 @@ export const fr = {
 
   shoes: {
     tracked: (km: string) => `${km} km au compteur`,
-    add: 'Ajouter',
     addLabel: 'Ajouter une paire dans l’app de ta montre',
     edit: 'Modifier la paire',
     editLabel: 'Modifier dans l’app de ta montre',

@@ -1782,7 +1782,6 @@ export const en = {
   shoes: {
     // C4-C5, v4.4b: the list, the detail hero and the type mix.
     tracked: (km: string) => `${km} km tracked`,
-    add: 'Add',
     addLabel: 'Add a pair in your watch app',
     edit: 'Edit shoe',
     editLabel: 'Edit in your watch app',
