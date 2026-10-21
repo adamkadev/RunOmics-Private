@@ -57,6 +57,8 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
     <Link
       href={`/activities/${a.id}`}
       data-testid="thumb-row"
+      // Its separator starts under the title (.inset-group, F11).
+      data-row-thumb
       className={cn(
         'flex items-center text-left transition-colors active:bg-[var(--fill-4)]',
         // An inset-grouped row (Liquid Glass v3, G9): 64 pt, 10 x 16, the

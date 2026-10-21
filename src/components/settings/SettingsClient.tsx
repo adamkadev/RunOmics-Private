@@ -103,7 +103,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
             is the owner's, so there is no Sync here. */}
         <Section title={t.settings.sections.data}>
           <div className={GROUP_CARD}>
-            <div className="flex items-center gap-3 border-b border-border px-4 py-3" data-testid="garmin-row">
+            <div className="flex items-center gap-3 px-4 py-3" data-testid="garmin-row" data-row-thumb>
               <GarminTile />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{device?.name ?? t.settings.dataSource.garmin}</p>
@@ -252,19 +252,17 @@ function ProfileSection({ body, zones }: { body?: Body; zones?: Zones }) {
   return (
     <Section title={t.settings.sections.profile} testId="settings-profile">
       <div className={GROUP_CARD}>
-        {rows.length > 0 && (
-          <dl className="border-b border-border">
-            {rows.map((row) => (
-              <div key={row.label} className={`${GROUP_ROW} text-sm`}>
-                <dt className="text-foreground">{row.label}</dt>
-                <dd className="tabular-nums text-muted-foreground" data-testid="profile-value">
-                  {row.value}
-                  {row.unit && <span className="ml-1">{row.unit}</span>}
-                </dd>
-              </div>
-            ))}
+        {/* Each row the group's own child, a <dl> of one pair, so the
+            group draws every separator the same way (F11). */}
+        {rows.map((row) => (
+          <dl key={row.label} className={`${GROUP_ROW} text-sm`}>
+            <dt className="text-foreground">{row.label}</dt>
+            <dd className="tabular-nums text-muted-foreground" data-testid="profile-value">
+              {row.value}
+              {row.unit && <span className="ml-1">{row.unit}</span>}
+            </dd>
           </dl>
-        )}
+        ))}
         <Link href={ATHLETE_HREF} className={`${GROUP_ROW} text-sm transition-colors hover:bg-[var(--surface-2)]`} data-testid="athlete-zones-row">
           <span className="min-w-0 truncate text-foreground">{t.pages.athlete.title}</span>
           <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">

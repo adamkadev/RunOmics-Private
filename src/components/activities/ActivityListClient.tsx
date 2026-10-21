@@ -581,7 +581,9 @@ export function ActivityListClient({
                 )}
               </div>
             ) : (
-              <div className={cardClass({ padding: 'none', overflow: true, className: 'divide-y divide-border' })}>
+              // The search's results, one group (F11): its separators start
+              // under the titles, past the 48 pt thumbs - not full width.
+              <div className={cardClass({ padding: 'none', overflow: true, className: 'inset-group [--row-thumb-inset:78px]' })}>
                 {items.map((a) => (
                   <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
                 ))}

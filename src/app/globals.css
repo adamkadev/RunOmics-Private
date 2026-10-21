@@ -945,9 +945,11 @@
     background: var(--background);
   }
 
-  /* An inset-grouped list (G9): rows on one 24 pt card, 0.5 pt separators
-     inset 72 pt from the left (past a 44 pt thumbnail), none above the
-     first row. A row without a thumbnail sets --row-inset: 16px. */
+  /* An inset-grouped list (G9; one rule, round 2 F11): rows are the
+     group's direct children, a 0.5 pt --divider between each two - none
+     above the first, none below the last - inset 16 pt, or 72 pt under a
+     row with a 44 pt leading thumb (data-row-thumb; --row-thumb-inset where
+     its text starts elsewhere). A group may set its own --row-inset. */
   .inset-group > * + * {
     position: relative;
   }
@@ -955,11 +957,14 @@
     content: "";
     position: absolute;
     top: 0;
-    left: var(--row-inset, 72px);
+    left: var(--row-inset, 16px);
     right: 0;
     height: 0.5px;
-    background: var(--row-separator);
+    background: var(--divider);
     pointer-events: none;
+  }
+  .inset-group > [data-row-thumb] + *::before {
+    left: var(--row-thumb-inset, 72px);
   }
 
   /* The tab bar: the page colour and a top hairline. */

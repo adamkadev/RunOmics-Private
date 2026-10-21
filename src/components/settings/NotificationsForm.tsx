@@ -107,6 +107,7 @@ export function NotificationsForm() {
   // and the daily reminder's time beside its switch. That time is read-only:
   // the workflow's schedule sets it, nothing here stores one.
   return (
+    <>
     <section className={GROUP_CARD} data-testid="notifications-card">
       {NOTIF_TYPES.map(({ key }) => {
         const title = n.types[key].title
@@ -125,8 +126,9 @@ export function NotificationsForm() {
           </div>
         )
       })}
-
-      <Toast toast={toast} leaving={leaving} />
     </section>
+    {/* Outside the group, so it is never taken for a row (F11). */}
+    <Toast toast={toast} leaving={leaving} />
+    </>
   )
 }
