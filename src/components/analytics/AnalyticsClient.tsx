@@ -180,7 +180,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
 
       {/* Its 8 pt of padding is for when it sticks; at rest the tabs sit the
           page's 14 pt from the header and the coach read. */}
-      <StickyBar ref={tabsRef} top="var(--sticky-top, max(var(--safe-top), 8px))" className="-my-2">
+      <StickyBar ref={tabsRef} top="var(--sticky-top, var(--sticky-alone, max(var(--safe-top), 8px)))" className="-my-2">
         <SegmentedTabs tabs={analyticsTabs} items={TABS} label={t.analytics.title} size="md" fill />
       </StickyBar>
 

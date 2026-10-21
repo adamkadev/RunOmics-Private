@@ -540,11 +540,11 @@ export function ActivityListClient({
                     </section>
                   ) : (
                     <section key={block.key} data-testid="month">
-                      {/* Sticky under the compact title bar while it shows, under
-                          the status strip otherwise. */}
+                      {/* Sticky under the compact title bar while it shows; on a
+                          phone not otherwise (--sticky-alone, globals.css). */}
                       <div
                         className="sticky z-10 flex items-baseline justify-between gap-3 bg-background px-1 pb-2 pt-3.5"
-                        style={{ top: 'var(--sticky-top, var(--safe-top))' }}
+                        style={{ top: 'var(--sticky-top, var(--sticky-alone, var(--safe-top)))' }}
                       >
                         <h2 className="text-[15px] font-semibold capitalize text-foreground">{block.label}</h2>
                         <span className="text-[13px] text-muted-foreground" data-testid="month-line">

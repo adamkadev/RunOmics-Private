@@ -761,3 +761,15 @@ h1 {
 html[data-sheet-open] [data-testid='status-strip'] {
   box-shadow: inset 0 0 0 100vmax rgb(0 0 0 / 0.4);
 }
+
+/* On a phone a sticky strip (Analytics' tabs, Activities' month headings)
+   sticks only under the compact title bar, while it shows and sets
+   --sticky-top; otherwise its `top` falls through to this, so far up it never
+   sticks. Stuck on its own at the top edge, iOS 26 took it for the page's
+   bar and, after a scroll back up, left its blur over the large title
+   (owner, Oct 2026). Unset on a wide screen, which keeps each strip's own top. */
+@media (max-width: 63.99rem) {
+  :root {
+    --sticky-alone: -100000px;
+  }
+}
