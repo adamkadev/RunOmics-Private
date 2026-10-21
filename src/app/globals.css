@@ -640,7 +640,13 @@
     position: fixed;
     inset-inline: 0;
     top: 0;
-    height: calc(var(--safe-top) + var(--bar-h) + var(--sticky-h, 0px) + var(--edge-fade));
+    /* The bar's own edge, then a stuck strip's height on top of it (F4): every
+       stop below sits that much lower, so a strip under the bar is covered as
+       the bar is and only the last 30 pt under it fade - with percentages of
+       the whole, the fade began under the bar and the rows showed through. */
+    --edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-fade));
+    --edge-shift: var(--sticky-h, 0px);
+    height: calc(var(--edge-base) + var(--edge-shift));
     pointer-events: none;
     z-index: 25;
     transition: height 200ms ease-out;
@@ -655,24 +661,24 @@
   html[data-bar-shown] .scroll-edge > i { opacity: 1; }
   .scroll-edge > i:nth-child(1) {
     -webkit-backdrop-filter: blur(2px);  backdrop-filter: blur(2px);
-    -webkit-mask-image: linear-gradient(#000 72%, transparent);
-            mask-image: linear-gradient(#000 72%, transparent);
+    -webkit-mask-image: linear-gradient(#000 calc(var(--edge-shift) + var(--edge-base) * 0.72), transparent);
+            mask-image: linear-gradient(#000 calc(var(--edge-shift) + var(--edge-base) * 0.72), transparent);
   }
   .scroll-edge > i:nth-child(2) {
     -webkit-backdrop-filter: blur(8px);  backdrop-filter: blur(8px);
-    -webkit-mask-image: linear-gradient(#000 50%, transparent 82%);
-            mask-image: linear-gradient(#000 50%, transparent 82%);
+    -webkit-mask-image: linear-gradient(#000 calc(var(--edge-shift) + var(--edge-base) * 0.5), transparent calc(var(--edge-shift) + var(--edge-base) * 0.82));
+            mask-image: linear-gradient(#000 calc(var(--edge-shift) + var(--edge-base) * 0.5), transparent calc(var(--edge-shift) + var(--edge-base) * 0.82));
   }
   .scroll-edge > i:nth-child(3) {
     -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-    -webkit-mask-image: linear-gradient(#000 30%, transparent 62%);
-            mask-image: linear-gradient(#000 30%, transparent 62%);
+    -webkit-mask-image: linear-gradient(#000 calc(var(--edge-shift) + var(--edge-base) * 0.3), transparent calc(var(--edge-shift) + var(--edge-base) * 0.62));
+            mask-image: linear-gradient(#000 calc(var(--edge-shift) + var(--edge-base) * 0.3), transparent calc(var(--edge-shift) + var(--edge-base) * 0.62));
   }
   .scroll-edge > i:nth-child(4) {
     background: linear-gradient(
       var(--background) var(--top-scrim),
-      color-mix(in srgb, var(--background) 80%, transparent) 38%,
-      color-mix(in srgb, var(--background) 45%, transparent) 70%,
+      color-mix(in srgb, var(--background) 80%, transparent) calc(var(--edge-shift) + var(--edge-base) * 0.38),
+      color-mix(in srgb, var(--background) 45%, transparent) calc(var(--edge-shift) + var(--edge-base) * 0.7),
       transparent
     );
   }

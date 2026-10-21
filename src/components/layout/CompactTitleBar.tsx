@@ -375,12 +375,16 @@ export function CompactTitleBar() {
       root.style.removeProperty(STICKY_H_VAR)
       root.removeAttribute('data-bar-shown')
     }
-    return () => {
-      root.style.removeProperty(STICKY_TOP_VAR)
-      root.style.removeProperty(STICKY_H_VAR)
-      root.removeAttribute('data-bar-shown')
-    }
   }, [visible])
+  // Cleared on unmount only (F4): a cleanup on every change ran as the bar
+  // collapsed in and took away the stuck strip's height the same frame had
+  // just written, so the edge stopped at the bar until the next scroll.
+  useEffect(() => () => {
+    const root = document.documentElement
+    root.style.removeProperty(STICKY_TOP_VAR)
+    root.style.removeProperty(STICKY_H_VAR)
+    root.removeAttribute('data-bar-shown')
+  }, [])
 
   // The title, the chevron and the actions come in together, over the
   // title's cross-fade.

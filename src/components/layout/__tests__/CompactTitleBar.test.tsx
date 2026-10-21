@@ -109,6 +109,24 @@ describe('CompactTitleBar', () => {
     expect(document.documentElement.hasAttribute('data-bar-shown')).toBe(true)
   })
 
+  // Round 2 (F4): the scroll edge grows by a strip stuck under the bar, so
+  // the rows dissolve under the strip too (the chart's HR line showed there).
+  it('writes a stuck sticky strip\'s height for the scroll edge, and clears it', async () => {
+    tabPage()
+    const strip = document.createElement('div')
+    strip.setAttribute('data-sticky-strip', '')
+    document.querySelector('main')!.appendChild(strip)
+    // Pinned under the bar while the page scrolls: its top at the bar's foot.
+    strip.getBoundingClientRect = () => ({ top: DIVIDER, bottom: DIVIDER + STATUS_BAR }) as DOMRect
+    await mount(60)
+    expect(document.documentElement.style.getPropertyValue('--sticky-h')).toBe(`${STATUS_BAR}px`)
+
+    // Back in the flow, below the bar: no longer stuck.
+    strip.getBoundingClientRect = () => ({ top: DIVIDER + 200, bottom: DIVIDER + 200 + STATUS_BAR }) as DOMRect
+    await scrollTo(61)
+    expect(document.documentElement.style.getPropertyValue('--sticky-h')).toBe('')
+  })
+
   it("shows a page's short bar title where it has one (Goals & season)", async () => {
     tabPage()
     const heading = document.querySelector('h1')!
