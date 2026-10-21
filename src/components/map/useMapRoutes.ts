@@ -8,7 +8,7 @@ import { heatBasemapStyle, maptilerStyle } from "@/lib/maptiler";
 import { percentileBounds, type LngLatBounds } from "@/lib/routeFrame";
 import { firstSymbolLayerId, loadMapLibre } from "@/lib/maplibre";
 import { EDGE_FENCE_LAYER, EDGE_FENCE_SOURCE, addEdgeFence } from "@/lib/runMapLayers";
-import { heatAccent } from "@/lib/heatRamp";
+import { heatAccent, hexToRgb, rgbCss, scale } from "@/lib/heatRamp";
 import { parseAccent } from "@/lib/accent";
 import { HEAT_LAYER, HEAT_SOURCE, addHeatLayer, type HeatLayer } from "./heatLayer";
 import { buildHeatTracks, ringCoordinates } from "./mapUtils";
@@ -19,6 +19,14 @@ const FIT_MAX_ZOOM = 14;
 const FIT_MS = 800;
 
 const RING_SOURCE = "home-ring";
+/**
+ * The home ring, as 3.1.0 drew it in dark: 4 px dashes 6 px apart (a dash
+ * array counts line widths), 1.2 px wide, at 0.8. Light takes the same ring
+ * in scale(accent, 0.55) - rgb(25,117,92) for mint - which reads on the
+ * light ground where the accent itself was too pale.
+ */
+const RING = { width: 1.2, opacity: 0.8, dash: [4 / 1.2, 6 / 1.2] } as const;
+const RING_LIGHT_SHADE = 0.55;
 const DOT_SOURCE = "home-dot";
 
 /** The ring around home: what the card's sentence names. */
@@ -113,11 +121,12 @@ export function useMapRoutes(
           type: "line",
           source: RING_SOURCE,
           layout: { "line-join": "round", "line-cap": "round" },
-          // Dark keeps 3.1.0's ring (4 px dashes, 6 px apart, at 0.8); light
-          // takes 4d's, 6 px dashes at half strength. Dash arrays count line widths.
-          paint: isDark()
-            ? { "line-color": accent, "line-width": 1.2, "line-opacity": 0.8, "line-dasharray": [4 / 1.2, 6 / 1.2] }
-            : { "line-color": accent, "line-width": 1, "line-opacity": 0.5, "line-dasharray": [6, 6] },
+          paint: {
+            "line-color": isDark() ? accent : rgbCss(scale(hexToRgb(accent), RING_LIGHT_SHADE)),
+            "line-width": RING.width,
+            "line-opacity": RING.opacity,
+            "line-dasharray": [...RING.dash],
+          },
         },
         firstSymbolId,
       );

@@ -7,7 +7,6 @@ import {
   HEAT_DARK,
   heatLineWidth,
   heatFrequency,
-  heatZoomScale,
   reachKm,
   ringCoordinates,
   areaRows,
@@ -113,14 +112,6 @@ describe('the dark heatmap, variant A (Wave 6b)', () => {
   it('widens its lines from 1.2 px at city zoom to 4 px on a street', () => {
     expect(heatLineWidth(11)).toBe(1.2)
     expect(heatLineWidth(16)).toBe(4)
-  })
-})
-
-describe('heatZoomScale', () => {
-  it('scales the strokes with zoom around the city view', () => {
-    expect(heatZoomScale(12.5)).toBe(1)
-    expect(heatZoomScale(14.5)).toBe(1.6)
-    expect(heatZoomScale(8)).toBe(0.6)
   })
 })
 

@@ -150,14 +150,6 @@ export function heatFrequency(count: number, maxCount: number): number {
 }
 
 /**
- * The strokes' scale with zoom: 1 at the city view the mockup draws (about
- * zoom 12), thicker as the map closes in on a street, thinner out of town.
- */
-export function heatZoomScale(zoom: number): number {
-  return Math.min(1.6, Math.max(0.6, 2 ** ((zoom - 12.5) / 2)));
-}
-
-/**
  * Dark mode as 3.1.0 drew it (variant A, approved by the owner): every run
  * stroked on its own in the accent, a faint wide glow then a thin core, added
  * together ("lighter"), so a street glows by how many runs overlap on it.

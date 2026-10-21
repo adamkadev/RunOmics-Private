@@ -21,14 +21,19 @@ const TILE_SIZE = 512;
 /**
  * Light (mirrors dark A): each layer is every run stroked in white, its
  * transparency added up per run and capped at 1, then tinted. A soft glow
- * (full at ~33 runs), a mint line (full at ~8 runs) and a deep line on top
- * (full at ~28 runs), so one run is a faint mint thread and a corridor is
- * deep green over a mint glow. Vector strokes on the GPU, never read back.
+ * (full at ~33 runs), a mint line (full at 10 runs) and a deep line on top
+ * (full at ~45 runs), so one run is a faint mint thread, the streets in
+ * between a separate mint step, and only the top corridors deep green over
+ * a mint glow. Vector strokes on the GPU, never read back.
+ *
+ * `minM`: the mint and deep lines are never narrower than this many metres,
+ * so the runs on one street (GPS puts them 5-12 m apart) overlap into one
+ * line instead of showing as strands when zoomed in. The glow has none.
  */
 const HEAT_LIGHT = {
   glow: { width: 4, alpha: 0.03, opacity: 0.6, sigmaPx: 3.2 },
-  mint: { width: 1, alpha: 0.12 },
-  deep: { width: 1.2, alpha: 0.035 },
+  mint: { width: 1, alpha: 0.1, minM: 10 },
+  deep: { width: 1.2, alpha: 0.022, minM: 10 },
 } as const;
 
 /** ctx.filter exists and takes a blur: Safari before 18 has neither. */
@@ -151,8 +156,14 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
   /** The blur fallback's scratch canvas, made only where ctx.filter is missing. */
   let blurScratch: HTMLCanvasElement | null = null;
 
-  /** Every run stroked in white on its own, "lighter" so transparency builds up, then tinted. */
-  function strokeLayer(name: keyof typeof layers, widthMul: number, alpha: number, tint: string) {
+  /** CSS px for `m` metres at the current view. */
+  function metresToPx(m: number): number {
+    const lat = map.getCenter().lat;
+    return (m * view.world) / (40_075_016.686 * Math.cos((lat * Math.PI) / 180));
+  }
+
+  /** Every run stroked in white on its own, "lighter" so transparency builds up, then tinted; at least `minM` metres wide. */
+  function strokeLayer(name: keyof typeof layers, widthMul: number, alpha: number, tint: string, minM = 0) {
     const c = layers[name];
     if (c.width !== canvas.width || c.height !== canvas.height) { c.width = canvas.width; c.height = canvas.height; }
     const g = c.getContext("2d")!;
@@ -163,7 +174,7 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     g.globalCompositeOperation = "lighter";
     g.lineJoin = "round";
     g.lineCap = "round";
-    g.lineWidth = heatLineWidth(map.getZoom()) * widthMul;
+    g.lineWidth = Math.max(heatLineWidth(map.getZoom()) * widthMul, metresToPx(minM));
     g.strokeStyle = `rgba(255,255,255,${alpha})`;
     for (const track of tracks) { traceOn(g, track); g.stroke(); }
     g.setTransform(1, 0, 0, 1, 0, 0);
@@ -212,14 +223,14 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
   function drawLight() {
     if (!ctx) return;
     const A = hexToRgb(accent);
-    const deep = rgbCss(scale(A, 0.25), 1); // mint → rgb(13,51,41)
+    const deep = rgbCss(scale(A, 0.32), 1); // mint → rgb(14,68,53): dark green, not near-black
     const glowTint = rgbCss(mix(A, [0, 0, 0], 0.13), 1); // mint → ≈ rgb(39,183,144)
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "source-over";
     const L = HEAT_LIGHT;
     drawBlurred(strokeLayer("glow", L.glow.width, L.glow.alpha, glowTint), L.glow.sigmaPx * view.scale, L.glow.opacity, glowTint);
-    ctx.drawImage(strokeLayer("mint", L.mint.width, L.mint.alpha, rgbCss(A, 1)), 0, 0);
-    ctx.drawImage(strokeLayer("deep", L.deep.width, L.deep.alpha, deep), 0, 0);
+    ctx.drawImage(strokeLayer("mint", L.mint.width, L.mint.alpha, rgbCss(A, 1), L.mint.minM), 0, 0);
+    ctx.drawImage(strokeLayer("deep", L.deep.width, L.deep.alpha, deep, L.deep.minM), 0, 0);
   }
 
   function draw() {
