@@ -135,8 +135,16 @@ test('the top bar is the soft scroll edge, not a slab', async ({ page }) => {
   await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
   const layers = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-testid="scroll-edge"] > i')].map((i) => getComputedStyle(i).opacity))
   await expect.poll(layers).toEqual(['0', '0', '0', '0', '0'])
-  await page.evaluate(() => window.scrollTo(0, 600))
-  await expect.poll(() => page.evaluate(() => document.documentElement.hasAttribute('data-bar-shown'))).toBe(true)
+  // Scrolled again on each poll: while its charts still load the page is too
+  // short to reach 600, and the clamped scroll stops above the collapse point.
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        window.scrollTo(0, 600)
+        return document.documentElement.hasAttribute('data-bar-shown')
+      }),
+    )
+    .toBe(true)
   await expect.poll(layers).toEqual(['1', '1', '1', '1', '1'])
   const bar = await page.evaluate(() => {
     const style = getComputedStyle(document.querySelector('[data-testid="compact-title-bar"]')!)

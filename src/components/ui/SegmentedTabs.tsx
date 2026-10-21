@@ -74,6 +74,11 @@ const SIZE_CLASS = {
  * or md (36, page tabs); either way every tab has a 44 pt hit area.
  * `tabClassName` still carries a one-off size, and `fill` stretches the tabs
  * across the row.
+ *
+ * `barMirror` marks a header toggle (List | Map, Week | Month, 3M | 6M | 1Y):
+ * it is glass at rest, as its copy in the compact bar is (Liquid Glass v2,
+ * section 11) - a 44 pt capsule of 36 pt segments, 14 pt labels, the chosen
+ * one on the tab bar's pill - so the bar's copy lands on it with no jump.
  */
 export function SegmentedTabs<T extends string | number>({
   tabs,
@@ -101,7 +106,13 @@ export function SegmentedTabs<T extends string | number>({
       {...tabs.listProps}
       aria-label={label}
       data-bar-segments={barMirror ? '' : undefined}
-      className={cn('flex shrink-0 gap-0.5 rounded-[11px] border border-border bg-[var(--segmented-track)] p-[3px]', fill && 'w-full', className)}
+      className={cn(
+        barMirror
+          ? 'glass-float flex shrink-0 gap-0.5 rounded-full p-1'
+          : 'flex shrink-0 gap-0.5 rounded-[11px] border border-border bg-[var(--segmented-track)] p-[3px]',
+        fill && 'w-full',
+        className,
+      )}
     >
       {items.map((item) => {
         const props = tabs.tabProps(item.id)
@@ -111,18 +122,22 @@ export function SegmentedTabs<T extends string | number>({
             {...props}
             aria-label={item.ariaLabel}
             className={cn(
-              'hit-44 flex items-center justify-center whitespace-nowrap rounded-lg transition-colors',
-              size && SIZE_CLASS[size],
+              'hit-44 flex items-center justify-center whitespace-nowrap transition-colors',
+              barMirror ? 'h-9 rounded-full px-3.5 text-sm' : cn('rounded-lg', size && SIZE_CLASS[size]),
               // Fill mode shares the spare width out equally on top of each
               // label, with 12 pt padding as the floor: equal widths left
               // "Performance" touching its pill edge to edge (G21). 10 pt
               // on a phone, where 12 cut "Performance" at 360 pt (v4.17.2).
               fill && 'min-w-0 flex-auto px-1.5 min-[400px]:px-2.5 sm:px-3',
-              tabClassName,
-              // Selected is the card surface, lifted (v4.17).
-              props['aria-selected']
-                ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
-                : 'font-medium text-muted-foreground hover:text-foreground'
+              !barMirror && tabClassName,
+              barMirror
+                ? props['aria-selected']
+                  ? 'bg-[var(--tab-pill)] font-semibold text-foreground'
+                  : 'font-medium text-text-2 hover:text-foreground'
+                : // Selected is the card surface, lifted (v4.17).
+                  props['aria-selected']
+                  ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
+                  : 'font-medium text-muted-foreground hover:text-foreground'
             )}
           >
             <span className="truncate">{item.label}</span>

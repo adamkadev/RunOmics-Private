@@ -44,8 +44,9 @@ export function syncAgeMs(lastSyncedAt: string, now = Date.now()): number {
 /** Under this, a sync has just run: a tap says when the next can go, and asks GitHub for nothing. */
 const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
 
+/** A 44 pt glass circle (Liquid Glass v2, section 11), as its copy in the compact bar. */
 const BUTTON =
-  'hit-44 flex size-10 shrink-0 items-center justify-center rounded-full border border-border transition-opacity active:opacity-70 disabled:active:opacity-100'
+  'hit-44 glass-float flex size-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:active:scale-100'
 
 interface Line {
   text: string
@@ -191,20 +192,20 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
         </p>
         <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-foreground">{t.pages.dashboard.title}</h1>
       </div>
-      <div ref={sideRef} className="flex min-w-0 shrink items-center gap-2.5">
+      <div ref={sideRef} className="flex min-w-0 shrink items-center gap-2">
         {ago && lastSyncedAt && <SyncLine lastSyncedAt={lastSyncedAt} ago={ago} />}
-        {/* A link to Progress: the 40 pt disc, with a 44 pt hit area (hit-44)
-            that doesn't take space. */}
+        {/* A link to Progress: the 44 pt accent disc (Liquid Glass v2). */}
         <Link
           href="/profile"
           aria-label={t.nav.items.profile}
           // The compact bar keeps it at the top right once the page scrolls.
           data-bar-action="avatar"
-          className="hit-44 flex size-10 shrink-0 items-center justify-center rounded-full active:scale-95"
+          className="hit-44 flex size-11 shrink-0 items-center justify-center rounded-full active:scale-95"
         >
           <span
             aria-hidden="true"
-            className="flex size-10 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground"
+            // The accent disc, with the glass controls' drop shadow (Liquid Glass v2).
+            className="flex size-11 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-[0_6px_20px_rgb(0_0_0/0.2)]"
           >
             {initials(displayName)}
           </span>

@@ -125,16 +125,17 @@ export function AxisLabels({ labels, className }: { labels: string[]; className?
 }
 
 /**
- * The page's one period control (v4.17), right of the title: the quiet
- * SegmentedTabs `sm` recipe - a surface-2 track with a line, the chosen
- * period lifted onto the card in text ink. It stays a radiogroup: a period
- * filters the tab under it, it is not a tab of its own.
+ * The page's one period control (v4.17), right of the title: a header
+ * toggle in glass, as SegmentedTabs' barMirror recipe (Liquid Glass v2,
+ * section 11) - 36 pt segments in a 44 pt capsule, the chosen one on the tab
+ * bar's pill. It stays a radiogroup: a period filters the tab under it, it
+ * is not a tab of its own.
  */
 export function PeriodControl<P extends string>({ periods, value, onChange }: { periods: readonly P[]; value: P; onChange: (p: P) => void }) {
   const s = t.analytics.cards.period
   return (
     // data-bar-segments: the compact top bar carries it once it scrolls away.
-    <div role="radiogroup" aria-label={s.label} data-bar-segments className="flex shrink-0 gap-0.5 rounded-[10px] border border-border bg-[var(--segmented-track)] p-[3px]">
+    <div role="radiogroup" aria-label={s.label} data-bar-segments className="glass-float flex shrink-0 gap-0.5 rounded-full p-1">
       {periods.map((p) => (
         <button
           key={p}
@@ -145,10 +146,8 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
           aria-label={s.words[p]}
           onClick={() => onChange(p)}
           className={cn(
-            'hit-44 flex h-7 items-center justify-center whitespace-nowrap rounded-[7px] px-3 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            p === value
-              ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
-              : 'font-medium text-muted-foreground hover:text-foreground',
+            'hit-44 flex h-9 items-center justify-center whitespace-nowrap rounded-full px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            p === value ? 'bg-[var(--tab-pill)] font-semibold text-foreground' : 'font-medium text-text-2 hover:text-foreground',
           )}
         >
           {s.short[p]}

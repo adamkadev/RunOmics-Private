@@ -17,11 +17,12 @@ export function defaultGoalsYear(years: readonly number[], today: string): numbe
 }
 
 const STEP_BTN =
-  'hit-44 flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-35'
+  'hit-44 flex size-9 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-35'
 
 /**
  * ‹ 2026 › (3.1): the season on show, a step at a time - left to the year
- * before, right to the one after. `years` runs newest first.
+ * before, right to the one after. `years` runs newest first. Glass at rest,
+ * a 44 pt capsule, as its copy in the compact bar (Liquid Glass v2).
  */
 export function YearStepper({ years, value, onChange }: { years: readonly number[]; value: number; onChange: (year: number) => void }) {
   const i = years.indexOf(value)
@@ -30,13 +31,13 @@ export function YearStepper({ years, value, onChange }: { years: readonly number
   return (
     // data-bar-segments="stepper": the compact top bar carries it once it
     // scrolls away (Liquid Glass v2, round 2), its value the data-bar-value.
-    <div role="group" aria-label={t.goals.yearStepper} data-bar-segments="stepper" className="flex shrink-0 items-center gap-1 rounded-xl border border-border bg-card px-1 py-0.5" data-testid="year-stepper">
+    <div role="group" aria-label={t.goals.yearStepper} data-bar-segments="stepper" className="glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1" data-testid="year-stepper">
       <button type="button" className={STEP_BTN} aria-label={t.goals.prevYear} disabled={older === undefined} onClick={() => older !== undefined && onChange(older)}>
-        <ChevronLeft size={16} aria-hidden />
+        <ChevronLeft size={18} strokeWidth={2} aria-hidden />
       </button>
-      <span data-bar-value className="min-w-[4ch] text-center text-sm font-semibold tabular-nums text-foreground" aria-live="polite">{value}</span>
+      <span data-bar-value className="min-w-[4ch] px-1 text-center text-sm font-semibold tabular-nums text-foreground" aria-live="polite">{value}</span>
       <button type="button" className={STEP_BTN} aria-label={t.goals.nextYear} disabled={newer === undefined} onClick={() => newer !== undefined && onChange(newer)}>
-        <ChevronRight size={16} aria-hidden />
+        <ChevronRight size={18} strokeWidth={2} aria-hidden />
       </button>
     </div>
   )

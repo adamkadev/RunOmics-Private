@@ -36,7 +36,7 @@ describe('DashboardGreeting', () => {
     expect(link).toHaveAttribute('href', '/profile')
     // The disc is 40 pt; hit-44 grows its target without growing the row.
     expect(link.className).toContain('hit-44')
-    expect(link.className).toContain('size-10')
+    expect(link.className).toContain('size-11')
   })
 
   // Design review, Oct 2026 (mock 1b): the date over the title, which the
@@ -62,7 +62,7 @@ describe('DashboardGreeting', () => {
     const s = t.dashboard.syncStatus
     const button = await screen.findByRole('button', { name: s.synced(s.hoursAgo(2)) })
     expect(button).toBe(screen.getByTestId('sync-line'))
-    expect(button.className).toContain('size-10')
+    expect(button.className).toContain('size-11')
     expect(button.className).toContain('rounded-full')
     expect(button.className).toContain('hit-44')
     expect(button.textContent).toBe('')

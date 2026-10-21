@@ -143,8 +143,6 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
             { id: 'month', label: t.plan.switcher.month },
           ]}
           label={t.pages.plan.title}
-          size="sm"
-          tabClassName="px-3.5 text-[13px]"
           barMirror
         />
       </header>

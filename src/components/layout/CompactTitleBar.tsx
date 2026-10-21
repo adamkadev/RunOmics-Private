@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Plus, RotateCw, Settings, Share, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -105,13 +105,27 @@ interface BarAction {
 }
 
 /**
- * The bar's controls are 40 pt tall (owner, Oct 2026, after Claude's and
- * Bevel's tops): a circle, or a capsule of two 32 pt buttons, 4 pt apart in
- * 4 pt of glass, each 12 pt from the edge; 44 pt tap areas (hit-44),
- * centred in the 46 pt row under the edge sampler (Liquid Glass v2).
+ * Liquid Glass v2, section 11: the bar's controls are the page header's, at
+ * the same 44 pt - glass circles 8 pt apart, a segmented control a 44 pt
+ * capsule of 36 pt segments - 16 pt from each edge, in the 46 pt row under
+ * the edge sampler, so a mirrored copy lands on the original.
  */
-const SIDE = 56
-const CAPSULE_SIDE = 88
+const SIDE_PAD = 16
+/** The bar title's widest, truncated past it (the brief's 150 pt). */
+const TITLE_MAX = 150
+/** The least room between the title and either side's controls. */
+const TITLE_GAP = 8
+
+/**
+ * Where the title goes, as a UINavigationBar places it: centred on the
+ * screen when it fits between equal sides, else centred in the room the two
+ * sides leave (Analytics' 4W | 12W | 1Y, Goals' ‹ 2026 ›).
+ */
+export function titleColumns(barWidth: number, left: number, right: number, title: number): string {
+  const side = Math.max(left, right)
+  const fits = Math.min(title, TITLE_MAX) + 2 * TITLE_GAP <= barWidth - 2 * side
+  return fits ? `${side}px minmax(0,1fr) ${side}px` : `${left}px minmax(0,1fr) ${right}px`
+}
 
 /** The line under the large title that fades as it scrolls up. */
 function subtitleOf(heading: HTMLElement): HTMLElement[] {
@@ -356,9 +370,29 @@ export function CompactTitleBar() {
   // The title, the chevron and the actions come in together, over the
   // title's cross-fade.
   const fadeIn = 'animate-[fade-in_150ms_ease-out]'
-  // Both sides as wide, so the title stays centred: a capsule of two needs
-  // more than one circle's 56 pt.
-  const side = actions.length > 1 ? CAPSULE_SIDE : SIDE
+  // The title's columns, from what each side holds (titleColumns), measured
+  // after every render, before paint, and on a resize.
+  const barRef = useRef<HTMLDivElement>(null)
+  const leftRef = useRef<HTMLSpanElement>(null)
+  const rightRef = useRef<HTMLSpanElement>(null)
+  const titleRef = useRef<HTMLSpanElement>(null)
+  const [columns, setColumns] = useState('minmax(0,1fr) auto minmax(0,1fr)')
+  const layoutTitle = useCallback(() => {
+    const barEl = barRef.current
+    if (!barEl || !leftRef.current || !rightRef.current || !titleRef.current) return
+    const next = titleColumns(
+      barEl.clientWidth,
+      SIDE_PAD + leftRef.current.offsetWidth,
+      SIDE_PAD + rightRef.current.offsetWidth,
+      titleRef.current.scrollWidth,
+    )
+    setColumns((prev) => (prev === next ? prev : next))
+  }, [])
+  useLayoutEffect(layoutTitle)
+  useEffect(() => {
+    window.addEventListener('resize', layoutTitle)
+    return () => window.removeEventListener('resize', layoutTitle)
+  }, [layoutTitle])
 
   /** A stepper's arrow in the bar, pressing the page's own (button `i`). */
   const stepArrow = (stepper: BarSegments, i: number, Arrow: LucideIcon) => {
@@ -370,17 +404,16 @@ export function CompactTitleBar() {
         aria-label={item.name}
         disabled={item.disabled}
         onClick={() => segmentsRef.current[i]?.click()}
-        className="hit-44 flex size-8 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 disabled:opacity-35"
+        className="flex size-9 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 disabled:opacity-35"
       >
         <Arrow size={18} strokeWidth={2} aria-hidden="true" />
       </button>
     )
   }
 
-  /** One page action as the bar shows it, pressing the page's own control. */
-  const actionButton = (action: BarAction, i: number, inCapsule: boolean) => {
+  /** One page action as the bar shows it, a 44 pt circle pressing the page's own control. */
+  const actionButton = (action: BarAction, i: number) => {
     const Icon = ACTION_ICONS[action.kind]
-    const size = inCapsule ? 'size-8' : 'size-10'
     return (
       <button
         key={action.kind + i}
@@ -390,18 +423,17 @@ export function CompactTitleBar() {
         disabled={action.disabled}
         onClick={() => actionsRef.current[i]?.click()}
         className={cn(
-          'hit-44 flex shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-60',
-          size,
+          'flex size-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-60',
+          // The avatar keeps its accent disc and drop shadow, as on the page.
           action.kind === 'avatar'
-            ? cn('bg-accent font-bold text-accent-foreground', inCapsule ? 'text-sm' : 'text-base')
-            : cn('text-foreground', !inCapsule && 'glass-float'),
-          action.kind === 'avatar' && !inCapsule && 'shadow-[0_8px_28px_rgb(0_0_0/0.18)]',
+            ? 'bg-accent text-base font-bold text-accent-foreground shadow-[0_6px_20px_rgb(0_0_0/0.2)]'
+            : 'glass-float text-foreground',
         )}
       >
         {action.kind === 'avatar' ? (
           <span aria-hidden="true">{action.text}</span>
         ) : Icon ? (
-          <Icon size={inCapsule ? 18 : 20} strokeWidth={2} aria-hidden="true" className={cn(action.busy && 'animate-spin')} />
+          <Icon size={20} strokeWidth={2} aria-hidden="true" className={cn(action.busy && 'animate-spin')} />
         ) : null}
       </button>
     )
@@ -416,6 +448,7 @@ export function CompactTitleBar() {
         style={{ height: 'var(--safe-top)' }}
       />
       <div
+        ref={barRef}
         data-testid="compact-title-bar"
         data-shown={visible ? '' : undefined}
         // It starts under the status strip and never touches the top edge
@@ -435,72 +468,74 @@ export function CompactTitleBar() {
           top: 'var(--safe-top)',
           height: BAR_HEIGHT,
           paddingTop: SAMPLER,
-          // With a mirrored control the sides share what the title leaves,
-          // equally, so it stays centred whatever the control's width.
-          gridTemplateColumns: segments ? 'minmax(0,1fr) auto minmax(0,1fr)' : `${side}px minmax(0,1fr) ${side}px`,
+          gridTemplateColumns: columns,
         }}
       >
-        <span className="pointer-events-auto flex justify-start pl-3">
-          {back !== null && (
-            // The way back stays in reach once the page's own link has
-            // scrolled away (design review, Oct 2026): 44 x 44 around a 24 pt
-            // chevron, a glass circle as Bevel's buttons are (owner, Oct 2026).
-            <button
-              type="button"
-              data-testid="compact-bar-back"
-              aria-label={t.nav.backTo(back)}
-              onClick={() => backRef.current?.click()}
-              className={cn('hit-44 glass-float flex size-10 items-center justify-center rounded-full text-foreground', fadeIn)}
-            >
-              <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
-            </button>
-          )}
+        <span className="flex justify-start" style={{ paddingLeft: SIDE_PAD }}>
+          <span ref={leftRef} className="pointer-events-auto flex w-max">
+            {back !== null && (
+              // The way back stays in reach once the page's own link has
+              // scrolled away (design review, Oct 2026): the page's 44 pt
+              // glass chevron, as at rest (Liquid Glass v2).
+              <button
+                type="button"
+                data-testid="compact-bar-back"
+                aria-label={t.nav.backTo(back)}
+                onClick={() => backRef.current?.click()}
+                className={cn('glass-float flex size-11 items-center justify-center rounded-full text-foreground', fadeIn)}
+              >
+                <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
+              </button>
+            )}
+          </span>
         </span>
         {/* The page's own <h1> says it to a screen reader. */}
-        <span aria-hidden="true" className={cn('block truncate text-center text-[17px] font-semibold leading-[46px] text-foreground', fadeIn)}>
+        <span
+          ref={titleRef}
+          aria-hidden="true"
+          className={cn('mx-auto block truncate text-center text-[17px] font-semibold leading-[46px] text-foreground', fadeIn)}
+          style={{ maxWidth: TITLE_MAX, paddingInline: TITLE_GAP }}
+        >
           {title}
         </span>
-        <span className="pointer-events-auto flex items-center justify-end gap-2 pr-3">
-          {segments?.kind === 'segments' && (
-            // The page's segmented control, in glass: the chosen one on the
-            // tab bar's pill. A tap presses the page's own segment.
-            <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={cn('glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1', fadeIn)}>
-              {segments.items.map((item, i) => (
-                <button
-                  key={item.text + i}
-                  type="button"
-                  aria-label={item.name}
-                  aria-pressed={item.selected}
-                  onClick={() => segmentsRef.current[i]?.click()}
-                  className={cn(
-                    'flex h-8 items-center whitespace-nowrap rounded-full px-2.5 text-xs transition-colors',
-                    // 32 pt in the capsule's 4 pt of glass: 40 pt, as the circles.
-                    item.selected ? 'bg-[var(--tab-pill)] font-semibold text-foreground' : 'font-medium text-muted-foreground',
-                  )}
-                >
-                  {item.text}
-                </button>
-              ))}
-            </span>
-          )}
-          {segments?.kind === 'stepper' && (
-            // Goals' ‹ 2026 ›, in one glass capsule: the arrows press the
-            // page's own, the year between them.
-            <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={cn('glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1', fadeIn)}>
-              {stepArrow(segments, 0, ChevronLeft)}
-              <span aria-live="polite" className="min-w-[4ch] px-1 text-center text-sm font-semibold tabular-nums text-foreground">
-                {segments.value}
+        <span className="flex justify-end" style={{ paddingRight: SIDE_PAD }}>
+          <span ref={rightRef} className="pointer-events-auto flex w-max items-center gap-2">
+            {segments?.kind === 'segments' && (
+              // The page's segmented control, in glass: the chosen one on the
+              // tab bar's pill. A tap presses the page's own segment.
+              <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={cn('glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1', fadeIn)}>
+                {segments.items.map((item, i) => (
+                  <button
+                    key={item.text + i}
+                    type="button"
+                    aria-label={item.name}
+                    aria-pressed={item.selected}
+                    onClick={() => segmentsRef.current[i]?.click()}
+                    className={cn(
+                      // 36 pt in the capsule's 4 pt of glass: 44 pt, as at rest.
+                      'flex h-9 items-center whitespace-nowrap rounded-full px-3.5 text-sm transition-colors',
+                      item.selected ? 'bg-[var(--tab-pill)] font-semibold text-foreground' : 'font-medium text-text-2',
+                    )}
+                  >
+                    {item.text}
+                  </button>
+                ))}
               </span>
-              {stepArrow(segments, segments.items.length - 1, ChevronRight)}
-            </span>
-          )}
-          {actions.length === 1 && <span className={cn('flex', fadeIn)}>{actionButton(actions[0]!, 0, false)}</span>}
-          {actions.length > 1 && (
-            // Two or more in one glass capsule, as Bevel's share and avatar.
-            <span data-testid="compact-bar-capsule" className={cn('glass-float flex items-center gap-1 rounded-full p-1', fadeIn)}>
-              {actions.map((action, i) => actionButton(action, i, true))}
-            </span>
-          )}
+            )}
+            {segments?.kind === 'stepper' && (
+              // Goals' ‹ 2026 ›, in one glass capsule: the arrows press the
+              // page's own, the year between them.
+              <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={cn('glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1', fadeIn)}>
+                {stepArrow(segments, 0, ChevronLeft)}
+                <span aria-live="polite" className="min-w-[4ch] px-1 text-center text-sm font-semibold tabular-nums text-foreground">
+                  {segments.value}
+                </span>
+                {stepArrow(segments, segments.items.length - 1, ChevronRight)}
+              </span>
+            )}
+            {/* Each action its own glass circle, 8 pt apart, no capsule around them. */}
+            {actions.length > 0 && <span className={cn('flex items-center gap-2', fadeIn)}>{actions.map((action, i) => actionButton(action, i))}</span>}
+          </span>
         </span>
       </div>
     </>

@@ -1,7 +1,7 @@
 import { act, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
-import { CompactTitleBar } from '../CompactTitleBar'
+import { CompactTitleBar, titleColumns } from '../CompactTitleBar'
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/plan' }))
 
@@ -62,6 +62,22 @@ async function mount(y = 0) {
 
 const bar = () => screen.getByTestId('compact-title-bar')
 const shown = () => bar().hasAttribute('data-shown')
+
+// As a UINavigationBar places its title (Liquid Glass v2, section 11).
+describe('titleColumns', () => {
+  it('centres the title on the screen when it fits between equal sides', () => {
+    // A back circle (16 + 44) and a Share circle: equal sides, centred.
+    expect(titleColumns(393, 60, 60, 120)).toBe('60px minmax(0,1fr) 60px')
+    // A narrow left and a wider right that still leave room: equal sides.
+    expect(titleColumns(393, 16, 120, 80)).toBe('120px minmax(0,1fr) 120px')
+  })
+
+  it("centres it in the room left when a side is too wide (Analytics' 4W | 12W | 1Y)", () => {
+    expect(titleColumns(393, 16, 182, 80)).toBe('16px minmax(0,1fr) 182px')
+    // Goals & season beside its back circle and ‹ 2026 ›.
+    expect(titleColumns(393, 60, 150, 120)).toBe('60px minmax(0,1fr) 150px')
+  })
+})
 
 describe('CompactTitleBar', () => {
   beforeEach(() => {
@@ -160,9 +176,9 @@ describe('CompactTitleBar', () => {
     await scrollTo(24)
     expect(shown()).toBe(true)
     const chevron = within(bar()).getByRole('button', { name: t.nav.backTo('Progress') })
-    // 40 pt, as Claude's and Bevel's, with a 44 pt tap area.
-    expect(chevron.className).toContain('size-10')
-    expect(chevron.className).toContain('hit-44')
+    // The page's 44 pt glass chevron, as at rest (Liquid Glass v2).
+    expect(chevron.className).toContain('size-11')
+    expect(chevron.className).toContain('glass-float')
     chevron.click()
     expect(back).toHaveBeenCalledTimes(1)
     // The page's own link has faded out as the chevron came in, and takes
@@ -200,17 +216,21 @@ describe('CompactTitleBar', () => {
     expect(avatar.textContent).toBe('A')
     expect(avatar.className).toContain('bg-accent')
 
-    // Today's sync beside it: the two in one glass capsule, sync first.
+    // Today's sync beside it: two glass circles, sync first, no capsule
+    // around them (Liquid Glass v2, section 11).
     document.body.innerHTML = ''
     tabPage()
     document.querySelector('main')!.insertAdjacentHTML('beforeend', '<button data-bar-action="refresh" data-bar-busy aria-label="Synced 2h ago"></button><a data-bar-action="avatar" aria-label="Progress"><span>A</span></a>')
     const sync = vi.fn()
     document.querySelector('[data-bar-action="refresh"]')!.addEventListener('click', sync)
     await mount(60)
-    const capsule = within(bar()).getByTestId('compact-bar-capsule')
-    expect(capsule.className).toContain('glass-float')
-    const [refresh, disc] = within(capsule).getAllByRole('button')
+    expect(within(bar()).queryByTestId('compact-bar-capsule')).toBeNull()
+    const [refresh, disc] = within(bar()).getAllByTestId('compact-bar-action')
     expect(refresh!.getAttribute('aria-label')).toBe('Synced 2h ago')
+    expect(refresh!.className).toContain('glass-float')
+    expect(refresh!.className).toContain('size-11')
+    expect(disc!.className).toContain('size-11')
+    expect(refresh!.parentElement!.className).toContain('gap-2')
     expect(refresh!.querySelector('svg')!.getAttribute('class')).toContain('animate-spin')
     expect(disc!.textContent).toBe('A')
     refresh!.click()
@@ -291,7 +311,7 @@ describe('CompactTitleBar', () => {
     await mount(200)
 
     const action = within(bar()).getByRole('button', { name: 'Share' })
-    expect(action.className).toContain('size-10')
+    expect(action.className).toContain('size-11')
     action.click()
     expect(share).toHaveBeenCalledTimes(1)
     // The page's own button hands over to it rather than show cut under it.

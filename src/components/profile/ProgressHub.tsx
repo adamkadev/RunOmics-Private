@@ -225,7 +225,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
           data-testid="settings-gear"
           // The compact bar keeps it at the top right once the page scrolls.
           data-bar-action="settings"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition-transform active:scale-95 lg:hidden"
+          className="glass-float flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 lg:hidden"
         >
           <Settings size={18} aria-hidden="true" />
         </Link>
