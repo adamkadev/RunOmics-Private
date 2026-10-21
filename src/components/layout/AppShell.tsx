@@ -92,9 +92,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           data-testid="status-strip"
           className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
           style={{
-            // The notch zone exactly, under the translucent status bar: its
-            // colour is dark in both modes for iOS's white status-bar text
-            // (--status-bar), so it stops where the page starts showing.
+            // The safe area exactly, in the status bar's own colour: 0 in the
+            // installed app, whose opaque status bar sits above the page; it
+            // grows into the top glass while the page scrolls (globals.css).
             height: 'var(--safe-top)',
             background: 'var(--status-bar)',
           }}

@@ -128,7 +128,7 @@
 
 /* ─── Light tokens - Teal (default) ───────────────── */
 :root {
-  --status-bar:              #1f2221;
+  --status-bar:              #f3f4f3;
   --delta-good:              var(--pos);
   --delta-warn:              var(--warn);
   --good:                    var(--pos);
@@ -776,43 +776,27 @@ html[data-sheet-open] [data-testid='status-strip'] {
   }
 }
 
-/* The top glass, as Bevel draws it (owner, Oct 2026): once the page
-   scrolls and the compact bar shows, the status strip grows from the notch
-   down behind the bar (52 pt, BAR_HEIGHT) and turns to one frosted surface -
-   the content blurred behind the notch and the menu alike, one even tint, no
-   seam - ending in a hairline. The compact bar itself is clear: it holds
-   the page's title between its glass buttons.
+/* The top glass, as Bevel and Claude draw it (owner, Oct 2026): once the
+   page scrolls and the compact bar shows, the status strip grows down behind
+   the bar (52 pt, BAR_HEIGHT) and turns to one frosted surface in the page's
+   colour, ending in a hairline. The compact bar itself is clear: it holds
+   the page's title between its glass buttons. The status bar above it is
+   iOS's own, opaque (statusBarStyle 'default'), dark text in light mode.
    The strip carries the glass because it is the one fixed element at the
    top edge that is always drawn: iOS 26 takes that element for the page's
    bar, and one that hid (or went see-through at rest) left its blur over
-   the large title (see AppShell). At rest it is the notch zone, solid.
-   iOS draws the status-bar text white, so the notch part is --status-bar,
-   dark in both modes; in dark it is the page's black, so the surface is one
-   tint, while in light a graphite band stays over the page-coloured glass. */
+   the large title (see AppShell). At rest it is the safe area, solid. */
 /* The glass, everywhere (owner, Oct 2026, after iOS 26 / Claude's composer):
    a light tint over a strong blur, so what passes under it shows as soft
    shapes and colour, not as a grey panel; a light rim and a highlight on its
-   top edge make it read as glass. The notch part stays denser in light mode,
-   where iOS's white status-bar text sits on it. */
+   top edge make it read as glass. */
 :root {
   --glass-tint: 55%;
-  --glass-notch-tint: 72%;
   --glass-blur: blur(var(--blur-lg)) saturate(1.8);
-}
-.dark {
-  --glass-notch-tint: 55%;
 }
 html[data-bar-shown] [data-testid='status-strip'] {
   height: calc(var(--safe-top) + 52px) !important;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, var(--status-bar) var(--glass-notch-tint), transparent) 0,
-    color-mix(in srgb, var(--status-bar) var(--glass-notch-tint), transparent) var(--safe-top),
-    color-mix(in srgb, var(--background) var(--glass-tint), transparent) var(--safe-top)
-  ) !important;
-  /* Sized to the border box: from the padding box it repeated into the
-     hairline, the notch's graphite showing as a dark line in light mode. */
-  background-origin: border-box !important;
+  background: color-mix(in srgb, var(--background) var(--glass-tint), transparent) !important;
   border-bottom: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -830,10 +814,8 @@ html[data-bar-shown] [data-testid='status-strip'] {
     0 8px 28px rgb(0 0 0 / 0.22);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  /* Opaque: the notch keeps its dark colour (iOS's status-bar text is
-     white), the bar part the page's. */
   html[data-bar-shown] [data-testid='status-strip'] {
-    background: linear-gradient(to bottom, var(--status-bar) 0, var(--status-bar) var(--safe-top), var(--background) var(--safe-top)) !important;
+    background: var(--background) !important;
   }
   .glass-float {
     background: var(--tab-bar-bg);

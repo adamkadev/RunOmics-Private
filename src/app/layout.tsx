@@ -38,13 +38,14 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    // Translucent (owner, Oct 2026): the page runs under the notch, so the
-    // top glass blurs what scrolls behind the status bar too, as a native
-    // app's does. Its text is always white, so the notch zone is dark in
-    // both modes (NOTCH_COLOR, --status-bar). The opaque 'default' bar kept
-    // the notch out of reach of the page. Read at install time: an installed
-    // app must be re-added for a change to show.
-    statusBarStyle: 'black-translucent',
+    // Opaque, with dark text in light mode, as the Claude app's light top
+    // (owner, Oct 2026). black-translucent let the page blur behind the
+    // notch but always draws white status-bar text, which needed a dark band
+    // over a light page. The opaque bar takes its colour from theme-color at
+    // install, so that colour is a fixed neutral (STATUS_BAR_COLOR) the page
+    // top matches; the frosted top bar starts just under it. Read at install
+    // time: an installed app must be re-added for a change to show.
+    statusBarStyle: 'default',
     title: 'RunOmics',
     startupImage: [...appleStartupImages],
   },
