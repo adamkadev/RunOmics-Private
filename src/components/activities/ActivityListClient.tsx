@@ -418,7 +418,7 @@ export function ActivityListClient({
 
             {/* The search field (Liquid Glass v3, §6.7): a 44 pt capsule in
                 the system fill, no line; focus draws the ring. */}
-            <label className="flex h-11 items-center gap-2 rounded-full bg-[var(--fill-3)] px-3.5 text-muted-foreground transition-shadow focus-within:shadow-[0_0_0_2px_var(--ring)]">
+            <label className="on-aura flex h-11 items-center gap-2 rounded-full px-3.5 text-muted-foreground transition-shadow focus-within:shadow-[0_0_0_2px_var(--ring)]">
               <Search size={18} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
               <input
                 type="text"
@@ -443,7 +443,7 @@ export function ActivityListClient({
                     <Pill
                       key={group}
                       as="button"
-                      variant={filter.group === group ? 'selected' : 'neutral'}
+                      variant={filter.group === group ? 'selected' : 'onAura'}
                       aria-pressed={filter.group === group}
                       onClick={() => setFilter({ group, types: [] })}
                     >
@@ -457,7 +457,7 @@ export function ActivityListClient({
                 onClick={() => setSheetOpen(true)}
                 aria-label={t.activities.filter.title}
                 aria-haspopup="dialog"
-                className="hit-44 relative flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--fill-3)] text-foreground"
+                className="on-aura hit-44 relative flex size-9 shrink-0 items-center justify-center rounded-full text-foreground"
               >
                 <SlidersHorizontal size={17} aria-hidden="true" />
                 {/* The sort or a filter off its default (App Fixes 3f): an 8 px

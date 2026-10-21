@@ -8,11 +8,13 @@ import type { ElementType, HTMLAttributes, ReactNode } from 'react'
  * everything unselected: Liquid Glass v3's system fill (G7), no line, in
  * text ink. 36 pt capsules, 15 pt labels.
  */
-type PillVariant = 'selected' | 'neutral'
+type PillVariant = 'selected' | 'neutral' | 'onAura'
 
 const VARIANT_CLASS: Record<PillVariant, string> = {
   selected: 'bg-foreground px-4 text-background font-semibold',
   neutral:  'bg-[var(--fill-3)] text-foreground font-medium',
+  // Unselected, straight on the background glow (F6): frosted in light (globals.css .on-aura).
+  onAura:   'on-aura text-foreground font-medium',
 }
 
 interface PillProps extends HTMLAttributes<HTMLElement> {

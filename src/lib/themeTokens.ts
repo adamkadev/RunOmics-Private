@@ -323,6 +323,9 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         // System-style fills for controls on the content layer
         '--fill-3': 'rgb(118 118 128 / 0.12)',
         '--fill-4': 'rgb(118 118 128 / 0.08)',
+        // A control straight on the background glow (F6): frosted white, as
+        // the grey fill turns muddy over colour.
+        '--fill-on-aura': 'rgb(255 255 255 / 0.62)',
         '--segmented-track': 'var(--fill-3)',
         '--segmented-pill': '#ffffff',
         '--segmented-pill-shadow': '0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04)',
@@ -351,6 +354,7 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--tab-pill': 'rgb(255 255 255 / 0.11)',
         '--fill-3': 'rgb(118 118 128 / 0.24)',
         '--fill-4': 'rgb(118 118 128 / 0.18)',
+        '--fill-on-aura': 'var(--fill-3)',
         '--segmented-track': 'var(--fill-3)',
         '--segmented-pill': '#4b504f',
         '--segmented-pill-shadow': '0 2px 6px rgb(0 0 0 / 0.35)',

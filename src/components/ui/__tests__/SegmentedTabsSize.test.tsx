@@ -68,8 +68,21 @@ describe('SegmentedTabs sizes', () => {
           "hit-44 flex items-center justify-center whitespace-nowrap transition-colors h-[34px] text-[15px] tracking-[-0.015rem] min-w-0 flex-auto px-1.5 min-[400px]:px-2.5 sm:px-3 rounded-full bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]",
           "hit-44 flex items-center justify-center whitespace-nowrap transition-colors h-[34px] text-[15px] tracking-[-0.015rem] min-w-0 flex-auto px-1.5 min-[400px]:px-2.5 sm:px-3 rounded-full font-medium text-[var(--text-2)] hover:text-foreground",
         ],
-        "track": "flex shrink-0 gap-0.5 rounded-full bg-[var(--segmented-track)] p-[3px] w-full",
+        "track": "flex shrink-0 gap-0.5 rounded-full p-[3px] bg-[var(--segmented-track)] w-full",
       }
     `)
+  })
+
+  // Round 2 (F6): straight on the glow, the track is the frosted on-aura
+  // fill, not the grey that turned muddy over colour.
+  it('frosts its track on the background glow', () => {
+    function OnAura() {
+      const tabs = useSegmentedTabs({ ids: ['a', 'b'] as const, value: 'a', onChange: () => {} })
+      return <SegmentedTabs tabs={tabs} items={[{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }]} label="Tabs" size="md" onAura />
+    }
+    render(<OnAura />)
+    const track = screen.getByRole('tablist').className
+    expect(track).toMatch(/(^|\s)on-aura(\s|$)/)
+    expect(track).not.toContain('bg-[var(--segmented-track)]')
   })
 })
