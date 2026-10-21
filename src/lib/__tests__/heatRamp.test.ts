@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { heatAccent, heatLegendGradient, rampDark, rampLight, type Rgb } from '@/lib/heatRamp'
+import { heatAccent, heatHaloLight, heatLegendGradient, rampDark, rampLight, type Rgb } from '@/lib/heatRamp'
 
 const near = (actual: Rgb, expected: Rgb) => actual.forEach((v, i) => expect(Math.abs(v - expected[i]!)).toBeLessThanOrEqual(2))
 
@@ -10,17 +10,24 @@ describe('rampLight (App Fixes 4d)', () => {
     expect(mint).toBe('#2dd4a7')
   })
 
-  it('hits the stops of the mockup legend, ending deep but never black (Wave 6b)', () => {
+  it('hits the stops of the mockup legend', () => {
     near(rampLight(mint, 0), [140, 231, 207])
     near(rampLight(mint, 0.4), [45, 212, 167])
     near(rampLight(mint, 0.75), [26, 114, 90])
-    near(rampLight(mint, 1), [18, 85, 67])
+    near(rampLight(mint, 1), [13, 51, 41])
   })
 
   it('ramps the white accent in graphite on a light map', () => {
     const mono = heatAccent('mono')
     near(rampLight(mono, 0), [195, 201, 199])
     near(rampLight(mono, 1), [11, 12, 12])
+  })
+})
+
+describe('heatHaloLight (Wave 6b, 4d measured)', () => {
+  it('runs the vivid mint bloom from rare to busiest, never dimmed', () => {
+    near(heatHaloLight('#2dd4a7', 0), [124, 228, 200])
+    near(heatHaloLight('#2dd4a7', 1), [39, 183, 144])
   })
 })
 

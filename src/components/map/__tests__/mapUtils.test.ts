@@ -7,6 +7,7 @@ import {
   HEAT_DARK,
   heatLineWidth,
   countToT,
+  dilateMax,
   heatFrequency,
   heatZoomScale,
   reachKm,
@@ -126,6 +127,15 @@ describe('countToT (Wave 6b)', () => {
 
   it('rises monotonically in between', () => {
     for (let c = 2; c <= 12; c++) expect(countToT(c, 12)).toBeGreaterThan(countToT(c - 1, 12))
+  })
+})
+
+describe('dilateMax', () => {
+  it('raises each cell to the largest within r, in a square, without adding', () => {
+    // 5 × 3, a 3 and a 7 on the middle row.
+    const src = Uint8Array.from([0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 0, 0, 0, 0])
+    expect(Array.from(dilateMax(src, 5, 3, 1))).toEqual([3, 3, 0, 7, 7, 3, 3, 0, 7, 7, 3, 3, 0, 7, 7])
+    expect(Array.from(dilateMax(src, 5, 3, 0))).toEqual(Array.from(src))
   })
 })
 

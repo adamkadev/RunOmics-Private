@@ -1,8 +1,8 @@
 "use client";
 
 import type { CanvasSource, Coordinates, Map as MapLibreMap } from "maplibre-gl";
-import { HEAT_DARK, countToT, heatLineWidth, heatZoomScale, mercatorX, mercatorY } from "./mapUtils";
-import { hexToRgb, rampLight, rgbCss } from "@/lib/heatRamp";
+import { HEAT_DARK, countToT, dilateMax, heatLineWidth, heatZoomScale, mercatorX, mercatorY } from "./mapUtils";
+import { heatHaloLight, hexToRgb, rampLight, rgbCss } from "@/lib/heatRamp";
 
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
@@ -24,6 +24,13 @@ const MERGE_M = 15;
 const CORE_PX = 1.2;
 /** Light: from here the core is dilated (≈ 2.4–3.3 px). */
 const HOT_T = 0.5;
+/** Light (4d): the halo's half-width on a rare street and the outer, fainter ring's (6 px and 13 px across). */
+const HALO_HALF_PX = 3;
+const HALO_OUTER_HALF_PX = 6.5;
+/** Light: the outer ring's share of the halo's opacity, for a soft edge. */
+const HALO_OUTER_ALPHA = 0.55;
+/** Light: the halo's blur, σ ≈ 3.2 px (4d), as a down/up-scale by this. */
+const HALO_BLUR_PX = 3;
 /** Light: per-pixel work, so the canvas is capped at 2x. */
 const MAX_DPR = 2;
 /**
@@ -150,7 +157,7 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     for (let c = 0; c < 256; c++) {
       const t = countToT(c, p95);
       const cr = rampLight(accent, t);
-      const hr = rampLight(accent, t * 0.45);
+      const hr = heatHaloLight(accent, t);
       core.set([cr[0], cr[1], cr[2], 255 * (0.43 + 0.57 * t)], c * 4);
       halo.set([hr[0], hr[1], hr[2], 255 * (0.12 + 0.48 * t)], c * 4);
       hot[c] = t >= HOT_T ? 1 : 0;
@@ -196,7 +203,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     const count = surface("count", cw, ch, true);
     count.g.globalCompositeOperation = "lighter";
     count.g.lineCap = count.g.lineJoin = "round";
-    count.g.lineWidth = Math.max(3, MERGE_M / mPerPx);
+    const band = Math.max(3, MERGE_M / mPerPx);
+    count.g.lineWidth = band;
     count.g.strokeStyle = "rgba(255,255,255,0.0039215686)";
     for (const tr of tracks) { count.g.beginPath(); path(count.g, tr); count.g.stroke(); }
     const cd = count.g.getImageData(0, 0, cw, ch).data;
@@ -219,8 +227,21 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       if (!c) continue;
       const j = c * 4;
       co[i] = L.core[j]!; co[i + 1] = L.core[j + 1]!; co[i + 2] = L.core[j + 2]!; co[i + 3] = L.core[j + 3]!;
-      ho[i] = L.halo[j]!; ho[i + 1] = L.halo[j + 1]!; ho[i + 2] = L.halo[j + 2]!; ho[i + 3] = L.halo[j + 3]!;
       if (L.hot[c]) { bo[i] = co[i]!; bo[i + 1] = co[i + 1]!; bo[i + 2] = co[i + 2]!; bo[i + 3] = co[i + 3]!; anyHot = true; }
+    }
+    // The halo: the counts widened past the line (4d: 6 px across on a rare
+    // street, a fainter ring out to 13 px), each pixel taking the busiest run
+    // near it - a max, so overlapping glows never stack into ink.
+    const counts = new Uint8Array(cw * ch);
+    for (let p = 0; p < counts.length; p++) counts[p] = cd[p * 4 + 3]!;
+    const inner = dilateMax(counts, cw, ch, Math.max(1, Math.round(HALO_HALF_PX - band / 2)));
+    const outer = dilateMax(counts, cw, ch, Math.max(2, Math.round(HALO_OUTER_HALF_PX - band / 2)));
+    for (let p = 0, i = 0; p < counts.length; p++, i += 4) {
+      const ci = inner[p]!, cj = outer[p]!;
+      if (!cj) continue;
+      const ai = ci ? L.halo[ci * 4 + 3]! : 0, aj = L.halo[cj * 4 + 3]! * HALO_OUTER_ALPHA;
+      const j = (ai >= aj ? ci : cj) * 4;
+      ho[i] = L.halo[j]!; ho[i + 1] = L.halo[j + 1]!; ho[i + 2] = L.halo[j + 2]!; ho[i + 3] = Math.max(ai, aj);
     }
     const field = (name: string, img: ImageData) => { const f = surface(name, cw, ch); f.g.putImageData(img, 0, 0); return f.c; };
 
@@ -229,13 +250,12 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     ctx.globalCompositeOperation = "source-over";
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    // The halo: its field blurred by a down/up-scale (≈ 4 px), which works in Safari, unlike ctx.filter.
+    // The halo blurred by a down/up-scale (σ ≈ 3.2 px), which works in Safari, unlike ctx.filter. Once, not twice.
     const haloField = field("halo", halo);
-    const small = surface("haloSmall", Math.ceil(cw / 3), Math.ceil(ch / 3));
+    const small = surface("haloSmall", Math.ceil(cw / HALO_BLUR_PX), Math.ceil(ch / HALO_BLUR_PX));
     small.g.imageSmoothingQuality = "high";
     small.g.drawImage(haloField, 0, 0, small.c.width, small.c.height);
     ctx.drawImage(small.c, 0, 0, W, H);
-    ctx.drawImage(small.c, 0, 0, W, H);           // twice: 4d's halo reaches 0.75 at the top
 
     // A line: every run stroked once at full resolution, then filled with a field.
     const line = (width: number, colours: HTMLCanvasElement) => {
