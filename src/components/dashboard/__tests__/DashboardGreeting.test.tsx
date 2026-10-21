@@ -71,8 +71,10 @@ describe('DashboardGreeting', () => {
     // One 44 pt glass capsule with the avatar (owner, Oct 2026, as Bevel's
     // share and avatar), the sync's words outside it.
     const capsule = screen.getByTestId('today-capsule')
-    expect(capsule.className).toContain('glass-float')
-    expect(capsule.children[0]).toBe(button)
+    expect(capsule.className).toMatch(/(^|\s)lg(\s|$)/)
+    // The glass layers first (Liquid Glass v3, G1), then the ↻.
+    expect([...capsule.children].filter((c) => c.tagName === 'I').map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
+    expect([...capsule.children].find((c) => c.tagName !== 'I')).toBe(button)
     expect(capsule.contains(screen.getByRole('link', { name: t.nav.items.profile }))).toBe(true)
     expect(capsule.contains(screen.getByTestId('sync-note'))).toBe(false)
 

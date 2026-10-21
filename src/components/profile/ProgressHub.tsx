@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { ArrowDownRight, ArrowUpRight, ChevronRight, Settings } from 'lucide-react'
+import { GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
@@ -13,9 +14,9 @@ import type { ProgressHubView } from './progressHubView'
 import { shortDist } from '@/components/goals/shortDistance'
 import { WEAR_COLOR } from '@/components/shoes/shoeWear'
 
-const TITLE = 'text-[15px] font-semibold text-foreground'
+const TITLE = 'text-headline text-foreground'
 /** A card that opens its page: the whole surface is the target. */
-const LINK_CARD = 'text-left transition-[border-color,transform] hover:border-[var(--line-2)] active:scale-[0.99]'
+const LINK_CARD = 'text-left transition-transform duration-100 ease-out active:scale-[0.98]'
 
 /** A tile that opens its sub-page: its title, a chevron or a caption, then its figure. */
 function Tile({ href, title, aside, className, children, testId }: { href: string; title: string; aside?: ReactNode; className?: string; children: ReactNode; testId?: string }) {
@@ -72,7 +73,12 @@ function RaceCard({ race }: { race: ProgressHubView['race'] }) {
     <Link
       href="/goals"
       className={cardClass({ className: cn('flex items-center justify-between gap-3 px-4 py-3.5', LINK_CARD) })}
-      style={{ borderColor: 'color-mix(in srgb, var(--accent) 22%, var(--background))' }}
+      // An accent wash with a 1 pt accent edge (Liquid Glass v3, §7.14): the
+      // one card that is the season's news.
+      style={{
+        background: 'color-mix(in srgb, var(--accent) 12%, var(--card))',
+        boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent)',
+      }}
       data-testid="race-tile"
     >
       {race ? (
@@ -225,9 +231,10 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
           data-testid="settings-gear"
           // The compact bar keeps it at the top right once the page scrolls.
           data-bar-action="settings"
-          className="glass-float flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 lg:hidden"
+          className={glassClass('regular', cn(GLASS_CIRCLE, 'lg:hidden'))}
         >
-          <Settings size={18} aria-hidden="true" />
+          <GlassLayers />
+          <Settings size={20} strokeWidth={2} aria-hidden="true" />
         </Link>
       </header>
 

@@ -9,6 +9,7 @@ import { YearView } from './YearView'
 import type { SeasonBlock } from './SeasonTimeline'
 import { GoalsHistory } from './GoalsHistory'
 import { t } from '@/i18n'
+import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
 
 /** The season open on arrival: this year, or the newest one when it has no data. */
 export function defaultGoalsYear(years: readonly number[], today: string): number | undefined {
@@ -31,7 +32,8 @@ export function YearStepper({ years, value, onChange }: { years: readonly number
   return (
     // data-bar-segments="stepper": the compact top bar carries it once it
     // scrolls away (Liquid Glass v2, round 2), its value the data-bar-value.
-    <div role="group" aria-label={t.goals.yearStepper} data-bar-segments="stepper" className="glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1" data-testid="year-stepper">
+    <div role="group" aria-label={t.goals.yearStepper} data-bar-segments="stepper" className={glassClass('regular', 'flex h-11 shrink-0 items-center gap-0.5 p-1')} data-testid="year-stepper">
+      <GlassLayers />
       <button type="button" className={STEP_BTN} aria-label={t.goals.prevYear} disabled={older === undefined} onClick={() => older !== undefined && onChange(older)}>
         <ChevronLeft size={18} strokeWidth={2} aria-hidden />
       </button>

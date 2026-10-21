@@ -12,6 +12,8 @@ import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { useToday } from '@/lib/useToday'
 import { SYNC_LIMITS } from '@/lib/syncLimits'
 import { useSyncNow } from '@/components/settings/SyncNowCard'
+import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
+import { fadeElement } from '@/lib/glassFade'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -50,9 +52,9 @@ const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
  * 44 pt, then the 32 pt avatar 6 pt in from its end - about 96 pt wide, as
  * their copy in the compact bar.
  */
-const CAPSULE = 'glass-float flex h-11 shrink-0 items-center gap-3.5 rounded-full pr-1.5'
-const BUTTON =
-  'flex size-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:active:scale-100'
+const CAPSULE = glassClass('regular', 'flex h-11 shrink-0 items-center gap-1 pr-1.5')
+// Plain buttons in the glass (lg-press): the capsule swells as one (Liquid Glass v3, G2).
+const BUTTON = 'lg-press flex size-11 shrink-0 items-center justify-center rounded-full'
 
 interface Line {
   text: string
@@ -82,6 +84,7 @@ function SyncButton({ text, tone, spinning = false, onClick, disabled = false, s
       </span>
       {/* The avatar (children) beside it, in the same glass. */}
       <div data-testid="today-capsule" className={CAPSULE}>
+        <GlassLayers />
         <button
           type="button"
           onClick={onClick}
@@ -178,8 +181,9 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
       frame = 0
       const y = window.scrollY
       const opacity = y <= 0 ? 1 : Math.max(0, 1 - y / Math.max(1, side.offsetHeight))
-      if (opacity >= 1) side.style.removeProperty('opacity')
-      else side.style.opacity = String(opacity)
+      // The note and the capsule, each: the capsule fades its glass layers,
+      // never itself, which would flatten its blur (Liquid Glass v3).
+      for (const el of side.querySelectorAll<HTMLElement>('[data-testid="sync-note"], [data-testid="today-capsule"]')) fadeElement(el, opacity)
       if (opacity <= 0) side.style.pointerEvents = 'none'
       else side.style.removeProperty('pointer-events')
     }
@@ -199,7 +203,7 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
       aria-label={t.nav.items.profile}
       // The compact bar keeps it at the top right once the page scrolls.
       data-bar-action="avatar"
-      className="hit-44 flex size-8 shrink-0 items-center justify-center rounded-full active:scale-95"
+      className="lg-press hit-44 flex size-8 shrink-0 items-center justify-center rounded-full"
     >
       <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-accent text-[13px] font-bold text-accent-foreground">
         {initials(displayName)}
@@ -212,16 +216,19 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
     // the right the sync button (3.0.2) beside the avatar. The verdict below is still the news.
     <header data-testid="today-header" className="flex items-end justify-between gap-3">
       <div className="flex min-w-0 flex-col">
-        <p data-title-sub data-testid="today-date" className="text-[13px] text-muted-foreground">
+        <p data-title-sub data-testid="today-date" className="text-[15px] leading-5 text-muted-foreground">
           {headerDate(today)}
         </p>
-        <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-foreground">{t.pages.dashboard.title}</h1>
+        <h1 className="text-large-title text-foreground">{t.pages.dashboard.title}</h1>
       </div>
       <div ref={sideRef} className="flex min-w-0 shrink items-center">
         {ago && lastSyncedAt ? (
           <SyncLine lastSyncedAt={lastSyncedAt} ago={ago}>{avatar}</SyncLine>
         ) : (
-          <div data-testid="today-capsule" className={cn(CAPSULE, 'pl-1.5')}>{avatar}</div>
+          <div data-testid="today-capsule" className={cn(CAPSULE, 'pl-1.5')}>
+            <GlassLayers />
+            {avatar}
+          </div>
         )}
       </div>
     </header>

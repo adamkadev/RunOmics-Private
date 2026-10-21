@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { useNavigationOrigin } from '@/components/layout/NavigationHistory'
+import { GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -11,7 +12,7 @@ interface Props {
   /** The parent page. */
   fallbackHref?: string
   className?: string
-  /** `round`: the circle floating over a map hero (.map-round-button). */
+  /** `round`: the circle over a map hero, in clear glass (Liquid Glass v3, G11). */
   variant?: 'link' | 'round'
 }
 
@@ -27,7 +28,8 @@ interface Props {
  *
  * A 44 pt glass circle with the chevron alone, at rest as in the compact bar
  * (Liquid Glass v2, section 11): the parent's name is its accessible name,
- * no longer a text label beside it.
+ * no longer a text label beside it. Liquid Glass v3's object (G1): regular
+ * glass on a page, the large title 4 pt under it; clear glass over a map.
  */
 export function BackButton({ label, fallbackHref = '/', className, variant = 'link' }: Props) {
   const router = useRouter()
@@ -42,13 +44,9 @@ export function BackButton({ label, fallbackHref = '/', className, variant = 'li
         else router.push(fallbackHref)
       }}
       aria-label={label}
-      className={cn(
-        variant === 'round'
-          ? 'map-round-button hit-44'
-          : 'hit-44 glass-float mb-4 flex size-11 items-center justify-center rounded-full text-foreground transition-transform active:scale-95',
-        className,
-      )}
+      className={glassClass(variant === 'round' ? 'clear' : 'regular', cn(GLASS_CIRCLE, variant === 'link' && 'mb-1', className))}
     >
+      <GlassLayers />
       <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
     </button>
   )
