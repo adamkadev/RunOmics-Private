@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { useGlow } from '@/lib/glow'
+import { useUrlParam } from '@/lib/useUrlParam'
 
 /** A page's three colours, as CSS custom properties: the field's three glows. */
 type Palette = readonly [string, string, string]
@@ -9,7 +10,7 @@ type Palette = readonly [string, string, string]
 /**
  * Each page's aura (Liquid Glass v3, G14, README §6.11). Pages with a map
  * hero - an activity, the map, the share card - have the map itself, and the
- * rest none.
+ * rest none. So has Activities' Map view, where /map opens (F15).
  */
 const PALETTES: Record<string, Palette> = {
   '/': ['--accent', '--zone-2', '--zone-3'],
@@ -25,8 +26,10 @@ const PALETTES: Record<string, Palette> = {
   '/settings': ['--zone-1', '--accent', '--zone-3'],
 }
 
-export function auraPalette(pathname: string): Palette | null {
-  return PALETTES[pathname.replace(/\/+$/, '') || '/'] ?? null
+export function auraPalette(pathname: string, view: string | null = null): Palette | null {
+  const path = pathname.replace(/\/+$/, '') || '/'
+  if (path === '/activities' && view === 'map') return null
+  return PALETTES[path] ?? null
 }
 
 /**
@@ -38,7 +41,8 @@ export function auraPalette(pathname: string): Palette | null {
  * Reduce Transparency and Increase Contrast hide it (globals.css).
  */
 export function Aura() {
-  const palette = auraPalette(usePathname())
+  const [view] = useUrlParam('view')
+  const palette = auraPalette(usePathname(), view)
   const glow = useGlow()
   if (!palette || !glow) return null
   const [c1, c2, c3] = palette

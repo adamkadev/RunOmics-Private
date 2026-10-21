@@ -845,14 +845,19 @@
     position: absolute;
     left: -60px;
     right: -60px;
-    top: 0;
+    /* Below the safe area (F15): the status bar is opaque and exactly
+       --background, so nothing but the page colour may meet it. */
+    top: var(--safe-top);
     height: 380px;
     pointer-events: none;
     filter: blur(36px);
-    /* Clear down to the foot of the edge sampler (F1): a glow that started
-       there at full colour showed as a hard line under the status bar. */
-    -webkit-mask-image: linear-gradient(transparent 0, transparent calc(var(--safe-top) + var(--edge-sample-h)), #000 calc(var(--safe-top) + 96px), #000 55%, transparent 100%);
-            mask-image: linear-gradient(transparent 0, transparent calc(var(--safe-top) + var(--edge-sample-h)), #000 calc(var(--safe-top) + 96px), #000 55%, transparent 100%);
+    /* Clear under the edge sampler (F1), then in over 24 pt (F15): a glow
+       that started at the sampler's foot at full colour, or half way up a
+       fade the sampler hid, showed as a hard line under the status bar. The
+       fade eases in and out (smoothstep), as a straight ramp's two corners
+       still read as an edge over the date line. */
+    -webkit-mask-image: linear-gradient(transparent 0, transparent var(--edge-sample-h), rgb(0 0 0 / 0.16) calc(var(--edge-sample-h) + 6px), rgb(0 0 0 / 0.5) calc(var(--edge-sample-h) + 12px), rgb(0 0 0 / 0.84) calc(var(--edge-sample-h) + 18px), #000 calc(var(--edge-sample-h) + 24px), #000 55%, transparent 100%);
+            mask-image: linear-gradient(transparent 0, transparent var(--edge-sample-h), rgb(0 0 0 / 0.16) calc(var(--edge-sample-h) + 6px), rgb(0 0 0 / 0.5) calc(var(--edge-sample-h) + 12px), rgb(0 0 0 / 0.84) calc(var(--edge-sample-h) + 18px), #000 calc(var(--edge-sample-h) + 24px), #000 55%, transparent 100%);
     background:
       radial-gradient(60% 46% at 16% 20%, color-mix(in srgb, var(--aura-1) 55%, white) 0%, transparent 70%),
       radial-gradient(55% 42% at 88% 14%, color-mix(in srgb, var(--aura-2) 48%, white) 0%, transparent 70%),
