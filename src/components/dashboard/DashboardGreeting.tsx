@@ -44,8 +44,18 @@ export function syncAgeMs(lastSyncedAt: string, now = Date.now()): number {
 /** Under this, a sync has just run: a tap says when the next can go, and asks GitHub for nothing. */
 const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
 
-/** How far a pull at the top of the page has to travel before it syncs. */
-const PULL_TRIGGER_PX = 70
+/** How far the pull (not the finger: see PULL_RESISTANCE) has to travel before it syncs. */
+export const PULL_TRIGGER_PX = 100
+/** The pull moves half as far as the finger, so 100 px takes a 200 px drag. */
+export const PULL_RESISTANCE = 0.5
+/** The most the ring travels, past the trigger. */
+const PULL_MAX_PX = 130
+/** A gesture more than this far off vertical is a swipe, not a pull. */
+const PULL_MAX_ANGLE_DEG = 30
+/** Under this much finger travel the angle isn't read yet: a press wobbles. */
+const PULL_ANGLE_SLOP_PX = 10
+/** A scroll this recent at touchstart is still moving: a fling that reached the top doesn't arm. */
+const SCROLL_SETTLE_MS = 120
 
 interface Line {
   text: string
@@ -63,6 +73,12 @@ const NOTHING = () => {}
  * Pull-to-refresh (App Fixes 1a, Wave 5 A0): the header's ↻ button is gone,
  * and a pull down from the top of Today runs what it ran. A ring follows the
  * finger and turns while the sync runs.
+ *
+ * Deliberate only (it fired by accident): it arms only when the touch starts
+ * on a page at rest at the very top, never when a fling is still moving; it
+ * cancels on a swipe more than 30° off vertical, or once the page scrolls;
+ * and it syncs only when released past 100 px of pull (200 px of finger),
+ * with a haptic tick as the ring turns ready.
  */
 function usePullToRefresh(onPull: () => void, disabled: boolean) {
   const [pull, setPull] = useState(0)
@@ -73,31 +89,54 @@ function usePullToRefresh(onPull: () => void, disabled: boolean) {
   })
   useEffect(() => {
     if (disabled) return
-    let startY: number | null = null
-    const start = (e: TouchEvent) => {
-      startY = window.scrollY <= 0 && e.touches.length === 1 ? e.touches[0]!.clientY : null
-    }
-    const move = (e: TouchEvent) => {
-      if (startY === null) return
-      const dy = e.touches[0]!.clientY - startY
-      pullRef.current = dy > 0 && window.scrollY <= 0 ? Math.min(110, dy * 0.5) : 0
-      setPull(pullRef.current)
-    }
-    const end = () => {
-      if (pullRef.current >= PULL_TRIGGER_PX) onPullRef.current()
-      startY = null
+    let start: { x: number; y: number } | null = null
+    let lastScroll = -Infinity
+    const reset = () => {
+      start = null
       pullRef.current = 0
       setPull(0)
     }
-    window.addEventListener('touchstart', start, { passive: true })
-    window.addEventListener('touchmove', move, { passive: true })
-    window.addEventListener('touchend', end)
-    window.addEventListener('touchcancel', end)
+    const onScroll = () => {
+      lastScroll = performance.now()
+      // The page moved under the finger: this is a scroll, not a pull.
+      if (start && window.scrollY !== 0) reset()
+    }
+    const onStart = (e: TouchEvent) => {
+      const atRest = window.scrollY === 0 && performance.now() - lastScroll > SCROLL_SETTLE_MS
+      const touch = e.touches[0]
+      start = atRest && e.touches.length === 1 && touch ? { x: touch.clientX ?? 0, y: touch.clientY } : null
+    }
+    const onMove = (e: TouchEvent) => {
+      const touch = e.touches[0]
+      if (!start || !touch) return
+      const dx = (touch.clientX ?? 0) - start.x
+      const dy = touch.clientY - start.y
+      if (Math.hypot(dx, dy) >= PULL_ANGLE_SLOP_PX) {
+        // Upwards, or more sideways than 30° off vertical: not a pull, for the rest of this touch.
+        const offVertical = (Math.atan2(Math.abs(dx), dy) * 180) / Math.PI
+        if (dy <= 0 || offVertical > PULL_MAX_ANGLE_DEG || e.touches.length > 1) return reset()
+      }
+      const next = Math.min(PULL_MAX_PX, Math.max(0, dy * PULL_RESISTANCE))
+      if (pullRef.current < PULL_TRIGGER_PX && next >= PULL_TRIGGER_PX) navigator.vibrate?.(10)
+      pullRef.current = next
+      setPull(next)
+    }
+    const onEnd = () => {
+      // Released short of the trigger: nothing happens.
+      if (start && pullRef.current >= PULL_TRIGGER_PX) onPullRef.current()
+      reset()
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchmove', onMove, { passive: true })
+    window.addEventListener('touchend', onEnd)
+    window.addEventListener('touchcancel', reset)
     return () => {
-      window.removeEventListener('touchstart', start)
-      window.removeEventListener('touchmove', move)
-      window.removeEventListener('touchend', end)
-      window.removeEventListener('touchcancel', end)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('touchstart', onStart)
+      window.removeEventListener('touchmove', onMove)
+      window.removeEventListener('touchend', onEnd)
+      window.removeEventListener('touchcancel', reset)
     }
   }, [disabled])
   return pull
@@ -117,13 +156,28 @@ function SyncButton({ text, tone, spinning = false, onClick, disabled = false, s
         {shown ? text : ''}
       </span>
       {(pull > 0 || spinning) && (
+        // The ring grows with the pull, so it's seen before release, and turns
+        // the accent once a release would sync.
         <span
           aria-hidden
           data-testid="pull-indicator"
+          data-ready={!spinning && pull >= PULL_TRIGGER_PX ? 'true' : undefined}
           className="pointer-events-none fixed left-1/2 top-[calc(env(safe-area-inset-top)+8px)] z-50 flex size-9 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card shadow-card"
-          style={{ transform: `translate(-50%, ${spinning ? 0 : pull - 36}px)`, opacity: spinning ? 1 : Math.min(1, pull / PULL_TRIGGER_PX) }}
+          style={
+            spinning
+              ? { transform: 'translate(-50%, 0)' }
+              : {
+                  transform: `translate(-50%, ${Math.min(pull, PULL_TRIGGER_PX) * 0.6 - 36}px) scale(${0.4 + 0.6 * Math.min(1, pull / PULL_TRIGGER_PX)})`,
+                  opacity: Math.min(1, 0.3 + pull / PULL_TRIGGER_PX),
+                }
+          }
         >
-          <RotateCw size={16} strokeWidth={2.2} className={cn('text-muted-foreground', spinning && 'animate-spin')} style={spinning ? undefined : { rotate: `${pull * 3}deg` }} />
+          <RotateCw
+            size={16}
+            strokeWidth={2.2}
+            className={cn(spinning || pull < PULL_TRIGGER_PX ? 'text-muted-foreground' : 'text-accent-text', spinning && 'animate-spin')}
+            style={spinning ? undefined : { rotate: `${(Math.min(pull, PULL_TRIGGER_PX) / PULL_TRIGGER_PX) * 300}deg` }}
+          />
         </span>
       )}
     </>

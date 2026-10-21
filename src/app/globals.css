@@ -625,6 +625,9 @@ html {
 html,
 body {
   background-color: var(--background);
+  /* No native pull-to-refresh: Today's own pull is the only one (see the
+     html rule above for why html takes "none", not "contain"). */
+  overscroll-behavior-y: none;
 }
 
 body {

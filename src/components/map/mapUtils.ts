@@ -170,14 +170,14 @@ export function heatZoomScale(zoom: number): number {
  * Dark mode as 3.1.0 drew it (variant A, approved by the owner): every run
  * stroked on its own in the accent, a faint wide glow then a thin core, added
  * together ("lighter"), so a street glows by how many runs overlap on it.
- * Wave 6b: a street run once or twice fades into the basemap (1 run ≈ 9 %,
- * 5 runs ≈ 45 %, 11+ saturate) and the busy ones still burn.
+ * Wave 6b: a street run once or twice fades into the basemap and the busy
+ * ones still burn; taken a step fainter again after the owner's review.
  */
 export const HEAT_DARK = {
   composite: "lighter",
   passes: [
-    { width: 4, alpha: 0.03 },   // was 0.035
-    { width: 1, alpha: 0.09 },   // was 0.16: 1 run ≈ 9 %, 5 runs ≈ 45 %, 11+ saturate
+    { width: 4, alpha: 0.025 },  // 3.1.0: 0.035
+    { width: 1, alpha: 0.07 },   // 3.1.0: 0.16; 1 run ≈ 7 %, 5 runs ≈ 35 %, 14+ saturate
   ],
 } as const satisfies { composite: GlobalCompositeOperation; passes: readonly { width: number; alpha: number }[] };
 

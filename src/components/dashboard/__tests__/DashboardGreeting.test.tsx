@@ -104,6 +104,49 @@ describe('DashboardGreeting', () => {
     expect(screen.getByTestId('sync-note').dataset.tone).toBe('caution')
   })
 
+  // Deliberate pulls only (it fired by accident).
+  it('needs 100 px of pull, 200 px of finger, and shows the ring growing before release', async () => {
+    refresh.mockClear()
+    render(<DashboardGreeting name="Adam" lastSyncedAt={new Date(Date.now() - 23 * 3600_000).toISOString()} />)
+    await screen.findByTestId('sync-note')
+    fireEvent.touchStart(window, { touches: [{ clientX: 0, clientY: 0 }] })
+    fireEvent.touchMove(window, { touches: [{ clientX: 0, clientY: 120 }] })
+    const ring = screen.getByTestId('pull-indicator')
+    expect(ring.dataset.ready).toBeUndefined()
+    fireEvent.touchMove(window, { touches: [{ clientX: 0, clientY: 199 }] })
+    // Released short of the trigger: nothing.
+    fireEvent.touchEnd(window)
+    expect(refresh).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('pull-indicator')).toBeNull()
+
+    fireEvent.touchStart(window, { touches: [{ clientX: 0, clientY: 0 }] })
+    fireEvent.touchMove(window, { touches: [{ clientX: 0, clientY: 200 }] })
+    expect(screen.getByTestId('pull-indicator').dataset.ready).toBe('true')
+    fireEvent.touchEnd(window)
+    expect(refresh).toHaveBeenCalledTimes(1)
+  })
+
+  it('cancels a pull more than 30° off vertical', async () => {
+    refresh.mockClear()
+    render(<DashboardGreeting name="Adam" lastSyncedAt={new Date(Date.now() - 23 * 3600_000).toISOString()} />)
+    await screen.findByTestId('sync-note')
+    fireEvent.touchStart(window, { touches: [{ clientX: 0, clientY: 0 }] })
+    // 40° off vertical: a swipe, cancelled for the rest of the touch.
+    fireEvent.touchMove(window, { touches: [{ clientX: 50, clientY: 60 }] })
+    fireEvent.touchMove(window, { touches: [{ clientX: 50, clientY: 240 }] })
+    fireEvent.touchEnd(window)
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('does not arm while a scroll is still moving at the top', async () => {
+    refresh.mockClear()
+    render(<DashboardGreeting name="Adam" lastSyncedAt={new Date(Date.now() - 23 * 3600_000).toISOString()} />)
+    await screen.findByTestId('sync-note')
+    fireEvent.scroll(window)
+    pull()
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
   it('keeps a fresh sync as plain text', () => {
     const now = Date.parse('2026-09-26T08:00:00Z')
     expect(isSyncStale('2026-09-26T03:00:00Z', now)).toBe(false)

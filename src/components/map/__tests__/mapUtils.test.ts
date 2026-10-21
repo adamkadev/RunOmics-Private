@@ -106,8 +106,8 @@ describe('the dark heatmap, variant A (Wave 6b)', () => {
   it('adds every run on its own: a faint wide glow, then a thin core, faded for rare streets', () => {
     expect(HEAT_DARK.composite).toBe('lighter')
     expect(HEAT_DARK.passes).toEqual([
-      { width: 4, alpha: 0.03 },
-      { width: 1, alpha: 0.09 },
+      { width: 4, alpha: 0.025 },
+      { width: 1, alpha: 0.07 },
     ])
   })
 
