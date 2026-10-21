@@ -1,6 +1,8 @@
 'use client'
 
 import { Check, Copy, Download, Share2 } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 interface Props {
@@ -14,56 +16,27 @@ interface Props {
   onCopy: () => void
 }
 
-const BUTTON = {
-  height: 52, borderRadius: 16, fontSize: 16,
-  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-} as const
-
 /**
  * One row (v4.9), right under the option row: Share with the share-nodes
- * icon, or Download where the browser can't share a file, in the accent with
- * its own ink; Copy image beside it where images can be copied, outlined
- * (redesign, Oct 2026), and still outlined once it says Copied. Both grey
- * out while there is nothing to share.
+ * icon, or Download where the browser can't share a file - the 50 pt
+ * prominent button (Liquid Glass v3, G12); Copy image beside it where images
+ * can be copied, in the system fill, and still a fill once it says Copied.
+ * Both grey out while there is nothing to share.
  */
 export function ShareCardActions({ canShareFiles, canCopyImage, copyState, disabled = false, onShare, onSave, onCopy }: Props) {
   const copied = copyState === 'copied'
   return (
-    <div
-      className="grid shrink-0"
-      style={{
-        gridTemplateColumns: canCopyImage ? 'minmax(0, 1fr) auto' : 'minmax(0, 1fr)',
-        gap: 10,
-        marginTop: 4,
-      }}
-    >
-      <button
-        onClick={canShareFiles ? onShare : onSave}
-        disabled={disabled}
-        style={{
-          ...BUTTON, fontWeight: 700,
-          background: disabled ? 'var(--muted)' : 'var(--accent)',
-          color: disabled ? 'var(--muted-foreground)' : 'var(--accent-foreground)',
-        }}
-      >
-        {canShareFiles ? <Share2 size={17} /> : <Download size={17} />}
+    <div className={cn('mt-1 grid shrink-0 gap-2.5', canCopyImage ? 'grid-cols-2' : 'grid-cols-1')}>
+      <Button size="lg" onClick={canShareFiles ? onShare : onSave} disabled={disabled} className="gap-2">
+        {canShareFiles ? <Share2 size={18} /> : <Download size={18} />}
         {canShareFiles ? t.activity.shareMenu.share : t.activity.shareMenu.download}
-      </button>
+      </Button>
 
       {canCopyImage && (
-        <button
-          onClick={onCopy}
-          disabled={disabled}
-          aria-live="polite"
-          style={{
-            ...BUTTON, fontWeight: 600, padding: '0 20px',
-            background: 'transparent', border: '1px solid var(--line-2)',
-            color: disabled ? 'var(--muted-foreground)' : 'var(--foreground)',
-          }}
-        >
-          {copied ? <Check size={17} /> : <Copy size={17} />}
+        <Button size="lg" variant="secondary" onClick={onCopy} disabled={disabled} aria-live="polite" className="gap-2">
+          {copied ? <Check size={18} /> : <Copy size={18} />}
           {copied ? t.activity.shareMenu.copied : t.activity.shareMenu.copy}
-        </button>
+        </Button>
       )}
     </div>
   )

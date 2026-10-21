@@ -127,7 +127,9 @@ describe('ShareCardModal', () => {
     const sheet = screen.getByTestId('share-sheet')
     expect(sheet.className).toContain('max-h-full')
     expect(sheet.className).not.toMatch(/(^|\s)h-full/)
-    expect(sheet.style.background).toBe('var(--popover)')
+    // Liquid Glass v3's large detent: opaque on the raised surface, 38 pt top corners.
+    expect(sheet.style.background).toBe('var(--raised)')
+    expect(sheet.className).toContain('rounded-t-[var(--radius-sheet-large)]')
     expect(sheet.style.backdropFilter ?? '').toBe('')
     expect(screen.getByTestId('share-options').nextElementSibling?.textContent).toContain('Share')
   })
@@ -150,7 +152,9 @@ describe('ShareCardModal', () => {
   it('gives the close button a 44 pt target', () => {
     open()
     const close = screen.getByRole('button', { name: t.activity.shareCard.close })
-    expect([close.style.width, close.style.height]).toEqual(['44px', '44px'])
+    // A 44 pt filled circle, the sheet header's close (G10).
+    expect(close.className).toContain('size-11')
+    expect(close.className).toContain('bg-[var(--fill-3)]')
   })
 
   // At the owner's request: no VO₂max badge on a shared card, nor a switch for one.

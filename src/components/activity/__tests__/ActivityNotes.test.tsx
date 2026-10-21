@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ActivityNotes } from '@/components/activity/ActivityNotes'
 import { t } from '@/i18n'
@@ -171,8 +171,10 @@ describe('ActivityNotes sheet', () => {
     expect(sheet).toHaveAttribute('aria-modal', 'true')
     expect(screen.getByRole('heading', { name: t.activity.notes.sheetTitle })).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: t.settings.actions.confirmCancel }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // Liquid Glass v3's sheet header: the way out is the ✕, and the sheet
+    // slides away before it goes.
+    await userEvent.click(screen.getByRole('button', { name: t.common.close }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
   it('discards the draft on cancel rather than keeping it for next time', async () => {
@@ -180,7 +182,8 @@ describe('ActivityNotes sheet', () => {
     await openNotes()
 
     await userEvent.type(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder), 'felt heavy')
-    await userEvent.click(screen.getByRole('button', { name: t.settings.actions.confirmCancel }))
+    await userEvent.click(screen.getByRole('button', { name: t.common.close }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
     await openNotes()
 
     expect(await screen.findByPlaceholderText(t.activity.notes.notePlaceholder)).toHaveValue('')

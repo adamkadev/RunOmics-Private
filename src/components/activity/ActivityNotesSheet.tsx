@@ -1,11 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { Plus, X } from 'lucide-react'
-import { useFocusTrap } from '@/lib/useFocusTrap'
-import { useScrollLock } from '@/lib/useScrollLock'
 import { inputCls } from '@/lib/formStyles'
+import { Sheet } from '@/components/ui/Sheet'
 import { StatusPill } from '@/components/ui/StatusPill'
 import { SaveButton, type SaveState } from '@/components/ui/SaveButton'
 import { t } from '@/i18n'
@@ -42,48 +39,22 @@ export function NotesSheet({
   onRemoveTag,
   onSave,
 }: SheetProps) {
-  const trapRef = useFocusTrap<HTMLDivElement>()
-
-  useScrollLock()
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onCancel])
-
   const suggestions = (knownTags ?? []).filter((tag) => !draft.tags.includes(tag))
   const atTagLimit = draft.tags.length >= TAGS_MAX_COUNT
 
-  return createPortal(
-    <div
-      className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end sm:items-center sm:justify-center sm:p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t.activity.notes.sheetTitle}
+  // A medium-detent glass sheet (Liquid Glass v3, G10): close, the title,
+  // Save. Every control on it has a 44 pt target (design review, Oct 2026).
+  // The scrim no longer blurs: a blur behind a glass sheet would nest a
+  // backdrop-filter under another (README §4).
+  return (
+    <Sheet
+      onClose={onCancel}
+      title={t.activity.notes.sheetTitle}
+      titleId="activity-notes-title"
+      trailing={isOwner ? <SaveButton state={saveState} onClick={onSave} /> : undefined}
     >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" onClick={onCancel} />
-
-      <div
-        ref={trapRef}
-        className="relative w-full animate-sheet-up rounded-t-card-sm border-t border-border bg-card pb-[calc(0.75rem+var(--safe-bottom))] sm:max-w-sm sm:rounded-card-sm sm:border sm:pb-3"
-      >
-        {/* Every control on the sheet has a 44 pt target, however small it
-            is drawn (design review, Oct 2026). */}
-        <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2.5">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="hit-44 text-left text-sm font-medium text-muted-foreground transition-opacity active:opacity-60"
-          >
-            {t.settings.actions.confirmCancel}
-          </button>
-          <h2 className="truncate text-sm font-semibold text-foreground">{t.activity.notes.sheetTitle}</h2>
-          {isOwner ? <SaveButton state={saveState} onClick={onSave} /> : <span aria-hidden />}
-        </div>
-
         {isOwner ? (
-          <div className="space-y-3 p-3">
+          <div className="space-y-3 pt-3">
             <textarea
               value={draft.note}
               onChange={(e) => onNoteChange(e.target.value)}
@@ -98,7 +69,7 @@ export function NotesSheet({
                 {draft.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-[var(--segmented-track)] px-2.5 py-0.5 text-xs font-medium text-accent-text"
+                    className="inline-flex h-8 items-center gap-1 rounded-full bg-[var(--fill-3)] pl-3 pr-2 text-[13px] font-medium text-accent-text"
                   >
                     {tag}
                     <button
@@ -116,7 +87,7 @@ export function NotesSheet({
 
             {suggestions.length > 0 && !atTagLimit && (
               <div>
-                <p className="mb-1.5 text-caption font-semibold uppercase tracking-wide text-subtle">
+                <p className="mb-2.5 text-[13px] font-semibold text-muted-foreground">
                   {t.activity.notes.usedBefore}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
@@ -126,7 +97,7 @@ export function NotesSheet({
                       type="button"
                       onClick={() => onAddTag(tag)}
                       aria-label={t.activity.notes.addTag(tag)}
-                      className="hit-44 inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:border-accent hover:text-accent-text"
+                      className="hit-44 inline-flex h-8 items-center gap-1 rounded-full bg-[var(--fill-3)] px-3 text-[13px] font-medium text-foreground transition-colors hover:text-accent-text"
                     >
                       <Plus size={12} />
                       {tag}
@@ -157,7 +128,7 @@ export function NotesSheet({
             </div>
           </div>
         ) : (
-          <div className="space-y-2 p-3">
+          <div className="space-y-2 pt-3">
             {saved.note && <p className="text-sm text-foreground">{saved.note}</p>}
             {saved.tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -168,8 +139,6 @@ export function NotesSheet({
             )}
           </div>
         )}
-      </div>
-    </div>,
-    document.body,
+    </Sheet>
   )
 }
