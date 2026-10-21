@@ -248,6 +248,18 @@ describe('a session still to come', () => {
     expect(tones).toEqual(['ease', 'work', 'recovery', 'work', 'recovery', 'work', 'recovery', 'ease'])
   })
 
+  // Round 2 (F9): 44 pt tall, 10 pt under the detail line and 14 pt over the
+  // steps' divider - it touched the line and left 30 pt empty under it.
+  it('sits the profile 10 pt under the detail line and 14 pt over the steps, 44 pt tall', () => {
+    renderWeek({ coaching: overview() })
+    const profile = screen.getByTestId('intensity-profile')
+    expect(profile.className).toContain('mt-2.5')
+    expect(profile.className).toContain('h-[44px]')
+    const work = [...profile.children].find((block) => block.getAttribute('data-tone') === 'work') as HTMLElement
+    expect(work.style.height).toBe('44px')
+    expect(screen.getByTestId('workout-steps').className).toContain('mt-3.5')
+  })
+
   // App Fixes 3b: a session of one step has no structure to draw - a
   // full-width block said "structured" about an easy run - so it lists its
   // targets instead.
