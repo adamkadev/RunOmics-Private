@@ -358,7 +358,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           {/* Regular glass over the fullscreen map (Liquid Glass v3, G11):
               close as a circle, recenter and the basemap grouped in one
               capsule (G13). */}
-          <div className="absolute inset-x-0 top-3 z-20 flex items-start justify-between px-4">
+          <div className="absolute inset-x-0 top-3 z-20 flex items-start justify-between pl-[calc(1rem+var(--safe-left))] pr-[calc(1rem+var(--safe-right))]">
             <button type="button" onClick={close} aria-label={m.exitFullscreen} className={glassClass('regular', GLASS_CIRCLE)}>
               <GlassLayers />
               <X size={20} strokeWidth={2} aria-hidden="true" />
@@ -378,7 +378,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
               </button>
             </Glass>
           </div>
-          <div className="absolute inset-x-3 bottom-[calc(28px+var(--safe-bottom,0px))] z-20 flex flex-col items-end gap-2">
+          <div className="absolute left-[calc(0.75rem+var(--safe-left))] right-[calc(0.75rem+var(--safe-right))] bottom-[calc(28px+var(--safe-bottom,0px))] z-20 flex flex-col items-end gap-2">
             <MapAttribution />
             {card && (
               <Glass

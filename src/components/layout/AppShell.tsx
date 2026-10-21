@@ -101,7 +101,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar />
         {/* Positioned, with no z-index: not a stacking context, which would
             trap the maps' fullscreen overlays (z-50) under the top scrim. */}
-        <main className="relative min-h-screen overflow-x-clip lg:ml-[248px]">
+        {/* Padded by the side insets (F15): in landscape the content clears
+            the notch and the corners, while the aura, which bleeds past the
+            content, still runs to the screen's edge. */}
+        <main className="relative min-h-screen overflow-x-clip pl-[var(--safe-left)] pr-[var(--safe-right)] lg:ml-[248px]">
           {/* pb-28 alone is the nav's own height with room to spare on a
               home-button phone, but it's a fixed 112px - on a notched device
               --safe-bottom eats into that margin instead of adding to it, so

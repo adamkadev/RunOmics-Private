@@ -418,8 +418,11 @@ export function CompactTitleBar() {
     // the two on every render (React #185 on /activities).
     const style = getComputedStyle(titleEl)
     const text = titleEl.scrollWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
+    // Centred between the side insets (F15), which pad the bar in landscape.
+    const bar = getComputedStyle(barEl)
+    const inner = barEl.clientWidth - (parseFloat(bar.paddingLeft) || 0) - (parseFloat(bar.paddingRight) || 0)
     const next = titleColumns(
-      barEl.clientWidth,
+      inner,
       SIDE_PAD + leftRef.current.offsetWidth,
       SIDE_PAD + rightRef.current.offsetWidth,
       text + 2 * TITLE_GAP,
@@ -512,6 +515,9 @@ export function CompactTitleBar() {
           height: BAR_HEIGHT,
           paddingTop: SAMPLER,
           paddingBottom: BAR_FOOT,
+          // Clear of the notch and the corners in landscape (F15).
+          paddingLeft: 'var(--safe-left)',
+          paddingRight: 'var(--safe-right)',
           gridTemplateColumns: layout.columns,
         }}
       >

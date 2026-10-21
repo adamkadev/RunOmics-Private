@@ -229,7 +229,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
             §7.8). */}
         <div
           data-testid="heat-filter-row"
-          className={cn("absolute z-30 flex items-center gap-2", isFullscreen ? "inset-x-4 top-3" : "inset-x-2.5 top-2.5")}
+          className={cn("absolute z-30 flex items-center gap-2", isFullscreen ? "left-[calc(1rem+var(--safe-left))] right-[calc(1rem+var(--safe-right))] top-3" : "inset-x-2.5 top-2.5")}
         >
           <ClusterPanel rows={rows} names={names} selectedIdx={selectedIdx} onSelect={handleSelectCluster} />
           <button
@@ -283,8 +283,9 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
         {/* The scale bottom left, the credits' ⓘ bottom right (3.0): both
             always on the map, in the page and in fullscreen alike. */}
         {isFullscreen ? (
-          // The legend card, 24 pt from the edges (Liquid Glass v3, §6.10).
-          <div className="pointer-events-none absolute inset-x-6 bottom-[max(24px,var(--safe-bottom))] z-10 flex flex-col items-end gap-2">
+          // The legend card, 24 pt from the edges (Liquid Glass v3, §6.10),
+          // and from the side insets in landscape (F15), as the row above.
+          <div className="pointer-events-none absolute left-[calc(1.5rem+var(--safe-left))] right-[calc(1.5rem+var(--safe-right))] bottom-[max(24px,var(--safe-bottom))] z-10 flex flex-col items-end gap-2">
             <MapAttribution className="pointer-events-auto" />
             <HeatLegend
               className="pointer-events-auto w-full"

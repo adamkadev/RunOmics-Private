@@ -24,7 +24,8 @@ describe('GlassTabBar', () => {
     render(<GlassTabBar />)
     const nav = screen.getByRole('navigation')
     expect(nav.style.paddingBottom).toBe('var(--tab-bar-float)')
-    expect(nav.className).toContain('px-6')
+    // 24 pt from the sides, and from the side insets in landscape (F15).
+    expect(nav.className).toContain('pl-[calc(1.5rem+var(--safe-left))] pr-[calc(1.5rem+var(--safe-right))]')
     const capsule = screen.getByTestId('tab-bar-capsule')
     expect(capsule.className).toMatch(/\blg lg-tab\b/)
     expect(capsule.className).toContain('h-[var(--tab-bar-h)]')

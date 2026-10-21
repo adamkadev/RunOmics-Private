@@ -492,6 +492,10 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       // The soft fade under the top bar's hairline (Liquid Glass v2, round 3).
       '--bar-fade': '18px',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
+      // The sides, in landscape (F15): the notch's side and the rounded
+      // corners. Backgrounds run under them; text and controls stay clear.
+      '--safe-left': 'env(safe-area-inset-left, 0px)',
+      '--safe-right': 'env(safe-area-inset-right, 0px)',
       // The smallest touch target. `.hit-44` grows a control's hit area to it
       // without changing what it looks like.
       '--tap-min': '44px',
