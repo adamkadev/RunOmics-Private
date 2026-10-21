@@ -410,12 +410,19 @@ export function CompactTitleBar() {
   const [layout, setLayout] = useState<TitleLayout>({ columns: 'minmax(0,1fr) auto minmax(0,1fr)', lead: null })
   const layoutTitle = useCallback(() => {
     const barEl = barRef.current
-    if (!barEl || !leftRef.current || !rightRef.current || !titleRef.current) return
+    const titleEl = titleRef.current
+    if (!barEl || !leftRef.current || !rightRef.current || !titleEl) return
+    // The title's width as it is centred, whatever padding the current layout
+    // gave it: measured with a lead-aligned title's 0 pt padding, a title 8 pt
+    // too wide fitted, centred, no longer fitted, and the bar flipped between
+    // the two on every render (React #185 on /activities).
+    const style = getComputedStyle(titleEl)
+    const text = titleEl.scrollWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
     const next = titleColumns(
       barEl.clientWidth,
       SIDE_PAD + leftRef.current.offsetWidth,
       SIDE_PAD + rightRef.current.offsetWidth,
-      titleRef.current.scrollWidth,
+      text + 2 * TITLE_GAP,
     )
     setLayout((prev) => (prev.columns === next.columns && prev.lead === next.lead ? prev : next))
   }, [])
