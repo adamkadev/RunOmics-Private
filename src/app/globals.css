@@ -789,30 +789,45 @@ html[data-sheet-open] [data-testid='status-strip'] {
    iOS draws the status-bar text white, so the notch part is --status-bar,
    dark in both modes; in dark it is the page's black, so the surface is one
    tint, while in light a graphite band stays over the page-coloured glass. */
+/* The glass, everywhere (owner, Oct 2026, after iOS 26 / Claude's composer):
+   a light tint over a strong blur, so what passes under it shows as soft
+   shapes and colour, not as a grey panel; a light rim and a highlight on its
+   top edge make it read as glass. The notch part stays denser in light mode,
+   where iOS's white status-bar text sits on it. */
+:root {
+  --glass-tint: 55%;
+  --glass-notch-tint: 72%;
+  --glass-blur: blur(var(--blur-lg)) saturate(1.8);
+}
+.dark {
+  --glass-notch-tint: 55%;
+}
 html[data-bar-shown] [data-testid='status-strip'] {
   height: calc(var(--safe-top) + 52px) !important;
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--status-bar) 72%, transparent) 0,
-    color-mix(in srgb, var(--status-bar) 72%, transparent) var(--safe-top),
-    color-mix(in srgb, var(--background) 72%, transparent) var(--safe-top)
+    color-mix(in srgb, var(--status-bar) var(--glass-notch-tint), transparent) 0,
+    color-mix(in srgb, var(--status-bar) var(--glass-notch-tint), transparent) var(--safe-top),
+    color-mix(in srgb, var(--background) var(--glass-tint), transparent) var(--safe-top)
   ) !important;
   /* Sized to the border box: from the padding box it repeated into the
      hairline, the notch's graphite showing as a dark line in light mode. */
   background-origin: border-box !important;
   border-bottom: 1px solid color-mix(in srgb, var(--foreground) 9%, transparent);
-  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.4);
-  backdrop-filter: blur(var(--blur-md)) saturate(1.4);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 /* The floating tab bar, its shrunk button and the top bar's buttons (owner,
    Oct 2026, after Bevel): the same frosted glass as the top, a faint rim to
    lift them off the page and a soft shadow under them. */
 .glass-float {
-  background: color-mix(in srgb, var(--background) 66%, transparent);
-  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.4);
-  backdrop-filter: blur(var(--blur-md)) saturate(1.4);
-  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
-  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+  background: color-mix(in srgb, var(--background) var(--glass-tint), transparent);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 16%, transparent),
+    0 8px 28px rgb(0 0 0 / 0.22);
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   /* Opaque: the notch keeps its dark colour (iOS's status-bar text is
