@@ -1539,6 +1539,7 @@ export const fr = {
     back: 'Progression',
     prevYear: 'Année précédente',
     nextYear: 'Année suivante',
+    yearStepper: 'Année de la saison',
     distanceGoal: 'Objectif de distance',
     ofKm: (goal: string) => `sur ${goal} km`,
     reached: (over: string) => `Atteint · +${over} km`,

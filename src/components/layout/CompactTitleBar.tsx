@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { ChevronLeft, RotateCw, Settings, Share, type LucideIcon } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, RotateCw, Settings, Share, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -28,6 +28,9 @@ export const BAR_HEIGHT = 58
 
 /** The edge sampler's height (--edge-sample-h): the bar's first 12 pt sit under it. */
 const SAMPLER = 12
+
+/** A mirrored control comes into the bar this far before it reaches the bar's foot. */
+const MIRROR_LEAD = 24
 
 /** The property a stuck sticky strip's height is written to: the scroll edge grows by it. */
 export const STICKY_H_VAR = '--sticky-h'
@@ -70,7 +73,7 @@ const WIDE = '(min-width: 64rem)'
  * with two (Today: sync and avatar) gets them in one glass capsule, as
  * Bevel's share and avatar (owner, Oct 2026).
  */
-const ACTION_ICONS: Record<string, LucideIcon> = { share: Share, settings: Settings, refresh: RotateCw }
+const ACTION_ICONS: Record<string, LucideIcon> = { share: Share, settings: Settings, refresh: RotateCw, add: Plus }
 
 /**
  * A page's segmented control the bar mirrors (`data-bar-segments`: Activities'
@@ -78,8 +81,16 @@ const ACTION_ICONS: Record<string, LucideIcon> = { share: Share, settings: Setti
  * once the control itself has scrolled under the bar.
  */
 interface BarSegments {
+  /**
+   * `segments`: a toggle, each button a segment. `stepper` (Goals' ‹ 2026 ›,
+   * data-bar-segments="stepper"): its first and last buttons the arrows,
+   * the value the text between them.
+   */
+  kind: 'segments' | 'stepper'
   label: string
-  items: { text: string; name: string; selected: boolean }[]
+  items: { text: string; name: string; selected: boolean; disabled: boolean }[]
+  /** The stepper's value: the text that is not a button. */
+  value: string
 }
 
 /** A page control the bar mirrors, as it reads it from the DOM. */
@@ -203,17 +214,22 @@ export function CompactTitleBar() {
       const segmentsEl = document.querySelector<HTMLElement>('main [data-bar-segments]')
       const segmentButtons = segmentsEl ? [...segmentsEl.querySelectorAll<HTMLElement>('button')] : []
       segmentsRef.current = segmentButtons
-      // Mirrored once the control has gone under the bar, never beside it.
+      // Mirrored as the control reaches the bar, before the soft edge blurs
+      // it (Liquid Glass v2, round 2: 24 pt early), never beside it.
       const statusBarNow = probeRef.current?.offsetHeight ?? 0
-      const underBar = !!segmentsEl && segmentsEl.getBoundingClientRect().bottom <= statusBarNow + BAR_HEIGHT + 4
+      const underBar = !!segmentsEl && segmentsEl.getBoundingClientRect().bottom <= statusBarNow + BAR_HEIGHT + MIRROR_LEAD
+      const stepper = segmentsEl?.dataset.barSegments === 'stepper'
       const readSegments: BarSegments | null = segmentsEl && underBar
         ? {
+            kind: stepper ? 'stepper' : 'segments',
             label: segmentsEl.getAttribute('aria-label') ?? '',
             items: segmentButtons.map((b) => ({
               text: b.textContent?.trim() ?? '',
               name: nameOf(b),
               selected: b.getAttribute('aria-selected') === 'true' || b.getAttribute('aria-checked') === 'true',
+              disabled: b.hasAttribute('disabled'),
             })),
+            value: stepper ? (segmentsEl.querySelector<HTMLElement>('[data-bar-value]')?.textContent?.trim() ?? '') : '',
           }
         : null
       setSegments((prev) => (JSON.stringify(prev) === JSON.stringify(readSegments) ? prev : readSegments))
@@ -303,6 +319,7 @@ export function CompactTitleBar() {
     const observer = main ? new MutationObserver(schedule) : null
     // The sync's busy and disabled states are attributes on its button.
     if (main) observer!.observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-bar-busy', 'disabled', 'aria-selected', 'aria-checked'] })
+    // Goals' year changes as text, not an attribute: characterData covers it.
 
     schedule()
     window.addEventListener('scroll', schedule, { passive: true })
@@ -342,6 +359,23 @@ export function CompactTitleBar() {
   // Both sides as wide, so the title stays centred: a capsule of two needs
   // more than one circle's 56 pt.
   const side = actions.length > 1 ? CAPSULE_SIDE : SIDE
+
+  /** A stepper's arrow in the bar, pressing the page's own (button `i`). */
+  const stepArrow = (stepper: BarSegments, i: number, Arrow: LucideIcon) => {
+    const item = stepper.items[i]
+    if (!item) return null
+    return (
+      <button
+        type="button"
+        aria-label={item.name}
+        disabled={item.disabled}
+        onClick={() => segmentsRef.current[i]?.click()}
+        className="hit-44 flex size-8 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 disabled:opacity-35"
+      >
+        <Arrow size={18} strokeWidth={2} aria-hidden="true" />
+      </button>
+    )
+  }
 
   /** One page action as the bar shows it, pressing the page's own control. */
   const actionButton = (action: BarAction, i: number, inCapsule: boolean) => {
@@ -427,7 +461,7 @@ export function CompactTitleBar() {
           {title}
         </span>
         <span className="pointer-events-auto flex items-center justify-end gap-2 pr-3">
-          {segments && (
+          {segments?.kind === 'segments' && (
             // The page's segmented control, in glass: the chosen one on the
             // tab bar's pill. A tap presses the page's own segment.
             <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={cn('glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1', fadeIn)}>
@@ -447,6 +481,17 @@ export function CompactTitleBar() {
                   {item.text}
                 </button>
               ))}
+            </span>
+          )}
+          {segments?.kind === 'stepper' && (
+            // Goals' ‹ 2026 ›, in one glass capsule: the arrows press the
+            // page's own, the year between them.
+            <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={cn('glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1', fadeIn)}>
+              {stepArrow(segments, 0, ChevronLeft)}
+              <span aria-live="polite" className="min-w-[4ch] px-1 text-center text-sm font-semibold tabular-nums text-foreground">
+                {segments.value}
+              </span>
+              {stepArrow(segments, segments.items.length - 1, ChevronRight)}
             </span>
           )}
           {actions.length === 1 && <span className={cn('flex', fadeIn)}>{actionButton(actions[0]!, 0, false)}</span>}

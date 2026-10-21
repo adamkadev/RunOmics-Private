@@ -253,6 +253,37 @@ describe('CompactTitleBar', () => {
     expect(twelve).toHaveBeenCalledTimes(1)
   })
 
+  // Goals' ‹ 2026 › (Liquid Glass v2, round 2): one glass capsule, its
+  // arrows pressing the page's own, the year between them.
+  it("carries Goals' year stepper, and Shoes' add, in the bar", async () => {
+    tabPage()
+    document.querySelector('main')!.insertAdjacentHTML(
+      'beforeend',
+      '<div role="group" aria-label="Season year" data-bar-segments="stepper"><button aria-label="Previous year"></button><span data-bar-value>2026</span><button aria-label="Next year" disabled></button></div>',
+    )
+    const group = document.querySelector('[data-bar-segments]')!
+    place(group, STATUS_BAR + 4, 34)
+    const older = vi.fn()
+    group.querySelectorAll('button')[0]!.addEventListener('click', older)
+    await mount(60)
+    const mirror = within(bar()).getByTestId('compact-bar-segments')
+    expect(mirror.getAttribute('aria-label')).toBe('Season year')
+    expect(mirror.textContent).toBe('2026')
+    const [prev, next] = within(mirror).getAllByRole('button')
+    expect(prev!.getAttribute('aria-label')).toBe('Previous year')
+    expect(next).toBeDisabled()
+    prev!.click()
+    expect(older).toHaveBeenCalledTimes(1)
+
+    document.body.innerHTML = ''
+    tabPage()
+    document.querySelector('main')!.insertAdjacentHTML('beforeend', '<a data-bar-action="add" aria-label="Add a pair"></a>')
+    await mount(60)
+    const add = within(bar()).getByRole('button', { name: 'Add a pair' })
+    expect(add.className).toContain('glass-float')
+    expect(add.querySelector('svg')).not.toBeNull()
+  })
+
   it("puts the page's one action at the bar's trailing end", async () => {
     pushedPage()
     const share = vi.fn()

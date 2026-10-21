@@ -1662,6 +1662,8 @@ export const en = {
     // 3.1: the ‹ 2026 › stepper's arrows.
     prevYear: 'Previous year',
     nextYear: 'Next year',
+    // The stepper as a group, as the compact top bar names it.
+    yearStepper: 'Season year',
     // v4.17: the year's card is "Distance goal"; the year stepper says which year.
     distanceGoal: 'Distance goal',
     ofKm: (goal: string) => `of ${goal} km`,

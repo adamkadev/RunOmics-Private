@@ -12,6 +12,7 @@ import { PbAlertLine } from '@/components/ui/PbAlertLine'
 import { useToday } from '@/lib/useToday'
 import { useUrlParam } from '@/lib/useUrlParam'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
+import { StickyBar } from '@/components/ui/StickyBar'
 import { RECORD_TABS, parseRecordTab, type RecordTab } from './recordsView'
 import { t } from '@/i18n'
 
@@ -40,13 +41,17 @@ export function RecordsClient({ records, topEfforts, predictions, pbAlerts, mile
 
   return (
     <div className="space-y-3">
-      <SegmentedTabs
-        tabs={recordTabs}
-        items={RECORD_TABS.map((id) => ({ id, label: s[id] }))}
-        label={t.pages.records.title}
-        size="md"
-        fill
-      />
+      {/* A sticky tab strip, not mirrored in the bar (Liquid Glass v2,
+          round 2): under the compact bar while it shows, as Analytics'. */}
+      <StickyBar top="var(--sticky-top, var(--sticky-alone, max(var(--safe-top), 8px)))" className="-my-2">
+        <SegmentedTabs
+          tabs={recordTabs}
+          items={RECORD_TABS.map((id) => ({ id, label: s[id] }))}
+          label={t.pages.records.title}
+          size="md"
+          fill
+        />
+      </StickyBar>
 
       <div {...recordTabs.panelProps}>
         {tab === 'best' && (

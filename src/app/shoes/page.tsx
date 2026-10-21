@@ -47,6 +47,8 @@ export default async function ShoesPage() {
             target="_blank"
             rel="noreferrer"
             aria-label={t.shoes.addLabel}
+            // The compact top bar keeps it, a glass +, once the page scrolls.
+            data-bar-action="add"
             className="hit-44 inline-flex h-[34px] shrink-0 items-center gap-1.5 rounded-[9px] border border-[var(--line-2)] bg-card px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-[var(--surface-2)]"
           >
             <Plus size={16} strokeWidth={2.5} aria-hidden="true" />

@@ -28,11 +28,13 @@ export function YearStepper({ years, value, onChange }: { years: readonly number
   const older = years[i + 1]
   const newer = i > 0 ? years[i - 1] : undefined
   return (
-    <div className="flex shrink-0 items-center gap-1 rounded-xl border border-border bg-card px-1 py-0.5" data-testid="year-stepper">
+    // data-bar-segments="stepper": the compact top bar carries it once it
+    // scrolls away (Liquid Glass v2, round 2), its value the data-bar-value.
+    <div role="group" aria-label={t.goals.yearStepper} data-bar-segments="stepper" className="flex shrink-0 items-center gap-1 rounded-xl border border-border bg-card px-1 py-0.5" data-testid="year-stepper">
       <button type="button" className={STEP_BTN} aria-label={t.goals.prevYear} disabled={older === undefined} onClick={() => older !== undefined && onChange(older)}>
         <ChevronLeft size={16} aria-hidden />
       </button>
-      <span className="min-w-[4ch] text-center text-sm font-semibold tabular-nums text-foreground" aria-live="polite">{value}</span>
+      <span data-bar-value className="min-w-[4ch] text-center text-sm font-semibold tabular-nums text-foreground" aria-live="polite">{value}</span>
       <button type="button" className={STEP_BTN} aria-label={t.goals.nextYear} disabled={newer === undefined} onClick={() => newer !== undefined && onChange(newer)}>
         <ChevronRight size={16} aria-hidden />
       </button>

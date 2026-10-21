@@ -814,7 +814,9 @@ html[data-sheet-open] .edge-sampler {
   box-shadow: inset 0 0 0 100vmax rgb(0 0 0 / 0.4);
 }
 
-/* iOS 26 soft scroll edge: no hairline, no slab. Strongest at the top. */
+/* iOS 26 soft scroll edge: no hairline, no slab. Strongest at the top.
+   Round 2 (owner, Oct 2026): blur 3 / 8 / 16 / 28 px, top and bottom; never
+   past 28 px, where text smears instead of frosting and each layer costs GPU. */
 .scroll-edge {
   position: fixed;
   inset-inline: 0;
@@ -836,34 +838,34 @@ html[data-sheet-open] .edge-sampler {
 }
 html[data-bar-shown] .scroll-edge > i { opacity: 1; }
 
-.scroll-edge > i:nth-child(1) { -webkit-backdrop-filter: blur(2px);  backdrop-filter: blur(2px);  -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent);                  mask-image: linear-gradient(#000 calc(100% - 28px), transparent); }
-.scroll-edge > i:nth-child(2) { -webkit-backdrop-filter: blur(5px);  backdrop-filter: blur(5px);  -webkit-mask-image: linear-gradient(#000 calc(100% - 40px), transparent calc(100% - 14px)); mask-image: linear-gradient(#000 calc(100% - 40px), transparent calc(100% - 14px)); }
-.scroll-edge > i:nth-child(3) { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); -webkit-mask-image: linear-gradient(#000 calc(100% - 52px), transparent calc(100% - 26px)); mask-image: linear-gradient(#000 calc(100% - 52px), transparent calc(100% - 26px)); }
-.scroll-edge > i:nth-child(4) { -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); -webkit-mask-image: linear-gradient(#000 calc(100% - 64px), transparent calc(100% - 36px)); mask-image: linear-gradient(#000 calc(100% - 64px), transparent calc(100% - 36px)); }
+.scroll-edge > i:nth-child(1) { -webkit-backdrop-filter: blur(3px);  backdrop-filter: blur(3px);  -webkit-mask-image: linear-gradient(#000 calc(100% - 28px), transparent);                  mask-image: linear-gradient(#000 calc(100% - 28px), transparent); }
+.scroll-edge > i:nth-child(2) { -webkit-backdrop-filter: blur(8px);  backdrop-filter: blur(8px);  -webkit-mask-image: linear-gradient(#000 calc(100% - 40px), transparent calc(100% - 14px)); mask-image: linear-gradient(#000 calc(100% - 40px), transparent calc(100% - 14px)); }
+.scroll-edge > i:nth-child(3) { -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); -webkit-mask-image: linear-gradient(#000 calc(100% - 52px), transparent calc(100% - 26px)); mask-image: linear-gradient(#000 calc(100% - 52px), transparent calc(100% - 26px)); }
+.scroll-edge > i:nth-child(4) { -webkit-backdrop-filter: blur(28px); backdrop-filter: blur(28px); -webkit-mask-image: linear-gradient(#000 calc(100% - 64px), transparent calc(100% - 36px)); mask-image: linear-gradient(#000 calc(100% - 64px), transparent calc(100% - 36px)); }
 .scroll-edge > i:nth-child(5) {
   background: linear-gradient(
     var(--background) 0,
-    color-mix(in srgb, var(--background) 80%, transparent) calc(100% - var(--edge-fade)),
+    color-mix(in srgb, var(--background) 90%, transparent) calc(100% - var(--edge-fade)),
     transparent
   );
 }
 
-/* Bottom: the same edge, mirrored, from the screen edge to 44px over the capsule. */
+/* Bottom: the same edge, mirrored, from the screen edge to 56px over the capsule. */
 .bottom-edge {
   position: absolute;
   inset-inline: 0;
   bottom: 0;
-  height: calc(100% + 44px);
+  height: calc(100% + 56px);
   pointer-events: none;
 }
-.bottom-edge > i:nth-child(1) { -webkit-backdrop-filter: blur(2px);  backdrop-filter: blur(2px);  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 28px), transparent);                  mask-image: linear-gradient(to top, #000 calc(100% - 28px), transparent); }
-.bottom-edge > i:nth-child(2) { -webkit-backdrop-filter: blur(5px);  backdrop-filter: blur(5px);  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 44px), transparent calc(100% - 16px)); mask-image: linear-gradient(to top, #000 calc(100% - 44px), transparent calc(100% - 16px)); }
-.bottom-edge > i:nth-child(3) { -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 60px), transparent calc(100% - 30px)); mask-image: linear-gradient(to top, #000 calc(100% - 60px), transparent calc(100% - 30px)); }
-.bottom-edge > i:nth-child(4) { -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 75%);                             mask-image: linear-gradient(to top, #000 40%, transparent 75%); }
+.bottom-edge > i:nth-child(1) { -webkit-backdrop-filter: blur(3px);  backdrop-filter: blur(3px);  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 28px), transparent);                  mask-image: linear-gradient(to top, #000 calc(100% - 28px), transparent); }
+.bottom-edge > i:nth-child(2) { -webkit-backdrop-filter: blur(8px);  backdrop-filter: blur(8px);  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 44px), transparent calc(100% - 16px)); mask-image: linear-gradient(to top, #000 calc(100% - 44px), transparent calc(100% - 16px)); }
+.bottom-edge > i:nth-child(3) { -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 60px), transparent calc(100% - 30px)); mask-image: linear-gradient(to top, #000 calc(100% - 60px), transparent calc(100% - 30px)); }
+.bottom-edge > i:nth-child(4) { -webkit-backdrop-filter: blur(28px); backdrop-filter: blur(28px); -webkit-mask-image: linear-gradient(to top, #000 40%, transparent 75%);                             mask-image: linear-gradient(to top, #000 40%, transparent 75%); }
 .bottom-edge > i:nth-child(5) {
   background: linear-gradient(
     to top,
-    color-mix(in srgb, var(--background) 80%, transparent) 0,
+    color-mix(in srgb, var(--background) 90%, transparent) 0,
     color-mix(in srgb, var(--background) 45%, transparent) 55%,
     transparent
   );
@@ -896,7 +898,7 @@ html[data-bar-shown] .scroll-edge > i { opacity: 1; }
   .scroll-edge > i:not(:last-child),
   .bottom-edge > i:not(:last-child) { display: none; }
   .scroll-edge > i:last-child { background: var(--background); -webkit-mask-image: none; mask-image: none; border-bottom: 1px solid var(--border); height: calc(100% - var(--edge-fade)); }
-  .bottom-edge > i:last-child { background: var(--background); height: calc(100% - 44px); top: auto; border-top: 1px solid var(--border); }
+  .bottom-edge > i:last-child { background: var(--background); height: calc(100% - 56px); top: auto; border-top: 1px solid var(--border); }
   .glass-float { background: var(--raised); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 0 0 1px var(--border); }
 }
 html[data-glass="solid"] .scroll-edge > i:not(:last-child),

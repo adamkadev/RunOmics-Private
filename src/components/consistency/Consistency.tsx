@@ -298,6 +298,7 @@ export function Consistency({ views, today }: { views: Record<ConsistencyRange, 
           tabs={tabs}
           label={c.rangeLabel}
           size="sm"
+          barMirror
           items={CONSISTENCY_RANGES.map((id) => ({ id, label: c.ranges[id], ariaLabel: c.rangesSpoken[id] }))}
         />
       </header>
