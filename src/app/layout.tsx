@@ -38,12 +38,13 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    // Opaque, with dark text in light mode. black-translucent always draws
-    // white status-bar text (unreadable on the light theme) and iOS 26+ blurs
-    // the band under it. The opaque bar takes its colour from theme-color at
-    // install, so that colour is a fixed neutral (STATUS_BAR_COLOR) the page
-    // top matches. Read at install time: an installed app must be re-added.
-    statusBarStyle: 'default',
+    // Translucent (owner, Oct 2026): the page runs under the notch, so the
+    // top glass blurs what scrolls behind the status bar too, as a native
+    // app's does. Its text is always white, so the notch zone is dark in
+    // both modes (NOTCH_COLOR, --status-bar). The opaque 'default' bar kept
+    // the notch out of reach of the page. Read at install time: an installed
+    // app must be re-added for a change to show.
+    statusBarStyle: 'black-translucent',
     title: 'RunOmics',
     startupImage: [...appleStartupImages],
   },

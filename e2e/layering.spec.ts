@@ -68,6 +68,7 @@ test.describe('on a phone', () => {
       for (const y of [0, 600]) {
         await page.evaluate((top) => window.scrollTo(0, top), y)
         await page.waitForTimeout(300)
+        const barShown = await page.evaluate(() => document.documentElement.hasAttribute('data-bar-shown'))
         const atTop = await page.evaluate(() => {
           const alpha = (color: string) => {
             if (color === 'transparent') return 0
@@ -89,10 +90,14 @@ test.describe('on a phone', () => {
               }
             })
         })
+        // The strip is the notch zone; solid at rest, frosted glass while the
+        // compact bar shows (owner, Oct 2026), so the notch blurs what
+        // scrolls under the translucent status bar.
         expect(atTop, `scrolled to ${y}`).toEqual([
-          { id: 'status-strip', height: 63, opaque: true },
+          { id: 'status-strip', height: 59, opaque: !barShown },
           { id: 'top-edge-bar', height: 48, opaque: true },
         ])
+        if (y === 0) expect(barShown).toBe(false)
       }
       // Scrolled, the compact bar shows - under the strip, not over it, 52 pt
       // tall (design review, Oct 2026).

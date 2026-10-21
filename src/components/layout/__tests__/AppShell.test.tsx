@@ -79,7 +79,7 @@ describe('AppShell surface', () => {
     expect(bar.className).toContain('top-0')
     expect(bar.style.background).toBe('var(--background)')
     const strip = getByTestId('status-strip')
-    expect(strip.style.height).toBe('var(--top-scrim)')
+    expect(strip.style.height).toBe('var(--safe-top)')
     expect(strip.style.background).toBe('var(--status-bar)')
   })
 })

@@ -3,12 +3,19 @@ import { CURATED_ACCENTS, curatedAccent, type CuratedAccent } from './accentScal
 import { contrastRatio, hexToOklch, oklchToHex } from './oklch'
 
 /**
- * The opaque status bar's colour in an installed iPhone app, one per mode.
- * iOS stores it from the theme-color meta at install and only picks light or
- * dark at launch, so it can't follow the accent: it is a neutral close to
- * every accent's background, and the page top fades from it (--status-bar).
+ * The theme-color, one per mode: Safari's own bar in the browser. The
+ * installed app's status bar is translucent and ignores it (see NOTCH_COLOR).
  */
 export const STATUS_BAR_COLOR = { light: '#f3f4f3', dark: '#0b0c0c' } as const
+
+/**
+ * The notch zone under the installed app's translucent status bar
+ * (--status-bar; owner, Oct 2026). iOS draws that bar's text white in both
+ * modes, so in light mode the zone is a dark graphite, never the page's own
+ * near-white; in dark mode it is the page's black. Solid at rest, frosted
+ * glass while the page scrolls under it (globals.css).
+ */
+export const NOTCH_COLOR = { light: '#1f2221', dark: STATUS_BAR_COLOR.dark } as const
 
 export type TokenBlock = {
   selector: string
@@ -383,10 +390,10 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       // A missed session is bad news: the neg status (v4.17).
       '--color-missed': 'var(--neg)',
       '--safe-top': 'env(safe-area-inset-top, 0px)',
-      // Where a page starts: 4 px under the status bar. The bar is opaque
-      // (statusBarStyle 'default'), so the top inset is 0 in the installed
-      // app and the page begins below the bar, clear of the iOS blur - level
-      // with a native app's first row (Garmin Connect's header).
+      // Where a page starts: 4 px under the status bar. The bar is
+      // translucent (statusBarStyle 'black-translucent', owner, Oct 2026), so
+      // the top inset is the notch zone, which the status strip fills at
+      // rest; the page begins below it, level with a native app's first row.
       '--top-scrim': 'calc(var(--safe-top) + 4px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       // The floating tab bar's gap to the bottom edge (owner, Oct 2026, after
@@ -416,7 +423,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     selector: ':root',
     comment: 'Light tokens - Teal (default)',
     tokens: {
-      '--status-bar': STATUS_BAR_COLOR.light,
+      '--status-bar': NOTCH_COLOR.light,
       ...semanticTokens('light'),
       // Teal is the default accent, so the base block carries it.
       ...accentTokens(DEFAULT, 'light'),
@@ -427,7 +434,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     selector: '.dark',
     comment: 'Dark tokens - Teal (default)',
     tokens: {
-      '--status-bar': STATUS_BAR_COLOR.dark,
+      '--status-bar': NOTCH_COLOR.dark,
       ...semanticTokens('dark'),
       ...accentTokens(DEFAULT, 'dark'),
       ...surfaceTokens('dark'),

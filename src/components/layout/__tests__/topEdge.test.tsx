@@ -47,7 +47,8 @@ describe('the top edge (v4.8)', () => {
   it('keeps the top edge as it was when the device showed it sharp', () => {
     const shell = readFileSync(path.join(SRC, 'components/layout/AppShell.tsx'), 'utf8')
     const block = (id: string) => shell.slice(shell.indexOf(`data-testid="${id}"`), shell.indexOf('/>', shell.indexOf(`data-testid="${id}"`)))
-    expect(block('status-strip')).toContain("height: 'var(--top-scrim)'")
+    // The notch zone exactly, under the translucent status bar (owner, Oct 2026).
+    expect(block('status-strip')).toContain("height: 'var(--safe-top)'")
     expect(block('status-strip')).toContain("background: 'var(--status-bar)'")
     expect(block('status-strip')).toContain('z-20')
     expect(block('top-edge-bar')).toContain('h-12')
