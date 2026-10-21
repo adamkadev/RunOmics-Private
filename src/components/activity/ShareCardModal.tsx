@@ -18,7 +18,7 @@ import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
 import { cn } from '@/lib/utils'
-import { SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
+import { SEGMENTED_FILL_SEGMENT_CLASS, SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 import { ShareCardActions } from '@/components/activity/ShareCardActions'
 
@@ -258,8 +258,12 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         <div
           role="radiogroup"
           aria-label={s.designTitle}
-          className={cn('grid shrink-0', SEGMENTED_TRACK)}
-          style={{ gridTemplateColumns: `repeat(${designs.length}, minmax(0, 1fr))`, marginTop: 14 }}
+          // Equal segments across the row (F3): a grid here lost to the
+          // track's own flex when the classes merged, and the labels ran
+          // together at its start.
+          data-testid="share-designs"
+          className={cn(SEGMENTED_TRACK, 'w-full')}
+          style={{ marginTop: 14 }}
         >
           {designs.map((d) => (
             <button
@@ -268,7 +272,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               role="radio"
               aria-checked={d === design}
               onClick={() => setDesign(d)}
-              className={cn(segmentClass(d === design), 'h-[34px] text-[15px]')}
+              className={cn(segmentClass(d === design), SEGMENTED_FILL_SEGMENT_CLASS, 'h-[34px] text-[15px]')}
             >
               {s.designLabels[d]}
             </button>

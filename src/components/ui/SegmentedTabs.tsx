@@ -77,6 +77,12 @@ const SIZE_CLASS = {
 export const SEGMENTED_TRACK_CLASS = 'flex shrink-0 gap-0.5 rounded-full bg-[var(--segmented-track)] p-[3px]'
 export const SEGMENTED_THUMB_CLASS = 'rounded-full bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
 export const SEGMENTED_IDLE_CLASS = 'rounded-full font-medium text-[var(--text-2)] hover:text-foreground'
+/**
+ * A segment of a track that spans its row in equal parts (the share card's
+ * Route | Stats | Photo, round 2, F3): it grows from zero, so every segment
+ * is the same width whatever its label, and the thumb fills its segment.
+ */
+export const SEGMENTED_FILL_SEGMENT_CLASS = 'min-w-0 flex-[1_1_0%] justify-center'
 
 /**
  * The quiet switch (v4.17) - Plan's week/month, Goals' years, the activity's

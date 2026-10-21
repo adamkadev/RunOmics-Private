@@ -53,4 +53,23 @@ describe('SegmentedTabs sizes', () => {
     expect(screen.getAllByRole('tab')[0]!.className).toContain('flex-auto')
     expect(screen.getAllByRole('tab')[0]!.className).toContain('px-3')
   })
+
+  // Round 2 (F3): fill mode as a whole - the track across the row, each tab
+  // free to shrink, its label centred - so a refactor can't drop it unseen.
+  it('keeps fill mode whole (snapshot)', () => {
+    render(<Tabs size="md" />)
+    const list = screen.getByRole('tablist')
+    expect({
+      track: list.className,
+      tabs: screen.getAllByRole('tab').map((tab) => tab.className),
+    }).toMatchInlineSnapshot(`
+      {
+        "tabs": [
+          "hit-44 flex items-center justify-center whitespace-nowrap transition-colors h-[34px] text-[15px] tracking-[-0.015rem] min-w-0 flex-auto px-1.5 min-[400px]:px-2.5 sm:px-3 rounded-full bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]",
+          "hit-44 flex items-center justify-center whitespace-nowrap transition-colors h-[34px] text-[15px] tracking-[-0.015rem] min-w-0 flex-auto px-1.5 min-[400px]:px-2.5 sm:px-3 rounded-full font-medium text-[var(--text-2)] hover:text-foreground",
+        ],
+        "track": "flex shrink-0 gap-0.5 rounded-full bg-[var(--segmented-track)] p-[3px] w-full",
+      }
+    `)
+  })
 })
