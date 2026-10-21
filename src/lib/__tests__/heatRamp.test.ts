@@ -10,11 +10,11 @@ describe('rampLight (App Fixes 4d)', () => {
     expect(mint).toBe('#2dd4a7')
   })
 
-  it('hits the stops of the mockup legend', () => {
+  it('hits the stops of the mockup legend, ending deep but never black (Wave 6b)', () => {
     near(rampLight(mint, 0), [140, 231, 207])
     near(rampLight(mint, 0.4), [45, 212, 167])
     near(rampLight(mint, 0.75), [26, 114, 90])
-    near(rampLight(mint, 1), [13, 51, 41])
+    near(rampLight(mint, 1), [18, 85, 67])
   })
 
   it('ramps the white accent in graphite on a light map', () => {

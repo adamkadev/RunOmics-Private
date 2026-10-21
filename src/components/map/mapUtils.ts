@@ -1,7 +1,6 @@
 import type { ActivityType } from "@/domain/activity/types";
 import type { RouteMeta, RouteCluster } from "@/application/usecases/GetAllRoutes";
 import { distanceKm, median, round } from "@/lib/math";
-import { rampDark, rampLight, rgbCss } from "@/lib/heatRamp";
 import { t } from "@/i18n";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 
@@ -150,158 +149,13 @@ export function heatFrequency(count: number, maxCount: number): number {
   return Math.min(1, Math.max(0, t));
 }
 
-/** Frequencies drawn as this many steps: one canvas path each. */
-export const HEAT_LEVELS = 16;
-/** A street's width, for counting: runs within it share one count. */
-export const HEAT_CELL_M = 25;
-const EARTH_M = 40_075_016.686;
-/** t = (log(count) / log(p98))^this: one run is 0, the 98th-percentile street is 1. */
-export const HEAT_T_EXPONENT = 1.3;
-/** Two runs over the same cell are the same street if their headings differ by less than this. */
-const SAME_STREET_DEG = 35;
-
-const NEIGHBOURS = [-1, 0, 1].flatMap((dx) => [-1, 0, 1].map((dy) => [dx, dy] as const));
-
-/** The `t` a level is drawn at. */
-export function heatLevelT(level: number): number {
-  return level / (HEAT_LEVELS - 1);
-}
-
-/** Cell keys as numbers: a column times this, plus a row, stays exact. */
-const ROW_SPAN = 4_194_304;
-
-/** Latitude of a Mercator y (0 to 1). */
-function mercatorLat(y: number): number {
-  return (Math.atan(Math.sinh(Math.PI * (1 - 2 * y))) * 180) / Math.PI;
-}
-
 /**
- * Frequency on a log scale against a robust max (Wave 6 heatmap fix): the
- * rank scale let the count-1 jitter cells fill its bottom, so a street run
- * 3-5 times already read as frequent. The 98th percentile, not the busiest
- * cell, is 1, so one outlier can't flatten the rest.
+ * A pixel's frequency, 0 to 1 (Wave 6b): its run count on a log scale
+ * against the 95th percentile of the counts on the lines, so one run is 0,
+ * the p95 street is 1, and one outlier can't flatten the rest.
  */
-export function heatScale(counts: Iterable<number>): (count: number) => number {
-  const sorted = [...counts].sort((a, b) => a - b);
-  if (!sorted.length) return () => 0;
-  const p98 = Math.max(2, sorted[Math.floor((sorted.length - 1) * 0.98)]!);
-  const top = Math.log(p98);
-  return (count) => Math.min(1, Math.max(0, Math.log(Math.max(1, count)) / top)) ** HEAT_T_EXPONENT;
-}
-
-/**
- * The tracks as segments by frequency (Wave 4, App Fixes 4d): each level a
- * single path, NaN-broken, rarest first. A segment takes the lower count of
- * its two ends, so a side street leaving a busy one stays rare.
- *
- * Wave 6: GPS jitter put runs on one street 5-20 m apart, in parallel cells
- * each owned by a different run, so a street drew as a bundle of strands.
- * Now a run counts once in its cell and the 8 around it, and a segment is
- * skipped when another run already drew a near-parallel one next to it.
- */
-export function buildHeatLevels(tracks: Float64Array[]): Float64Array[] {
-  const levels: number[][] = Array.from({ length: HEAT_LEVELS }, () => []);
-  const first = tracks.find((tr) => tr.length >= 2 && !Number.isNaN(tr[1]!));
-  if (!first) return levels.map(() => new Float64Array());
-  const cell = HEAT_CELL_M / (EARTH_M * Math.cos((mercatorLat(first[1]!) * Math.PI) / 180));
-  const col = (x: number) => Math.floor(x / cell);
-  const row = (y: number) => Math.floor(y / cell);
-  const key = (c: number, r: number) => c * ROW_SPAN + r;
-
-  // 1. Count each run once per cell AND its 8 neighbours, so jitter on one street shares one count.
-  const counts = new Map<number, number>();
-  for (const track of tracks) {
-    const seen = new Set<number>();
-    for (let p = 0; p < track.length; p += 2) {
-      const x = track[p]!;
-      if (Number.isNaN(x)) continue;
-      const c = col(x), r = row(track[p + 1]!);
-      for (const [dx, dy] of NEIGHBOURS) seen.add(key(c + dx, r + dy));
-    }
-    for (const k of seen) counts.set(k, (counts.get(k) ?? 0) + 1);
-  }
-  // Scale against the cells actually run through, not the dilated halo.
-  const onPath = new Set<number>();
-  for (const track of tracks) for (let p = 0; p < track.length; p += 2) {
-    const x = track[p]!;
-    if (!Number.isNaN(x)) onPath.add(key(col(x), row(track[p + 1]!)));
-  }
-  const scale = heatScale([...onPath].map((k) => counts.get(k) ?? 1));
-  const levelOf = (k: number) => Math.round(scale(counts.get(k) ?? 1) * (HEAT_LEVELS - 1));
-
-  // 2. Draw each street once: a segment is skipped when another run already drew
-  //    a near-parallel segment through a neighbouring cell. Crossings still draw.
-  const drawn = new Map<number, { owner: number; heading: number }[]>();
-  const headingOf = (x0: number, y0: number, x1: number, y1: number) =>
-    ((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI + 180) % 180;
-  const sameStreet = (a: number, b: number) => { const d = Math.abs(a - b); return Math.min(d, 180 - d) < SAME_STREET_DEG; };
-  const covered = (c: number, r: number, owner: number, h: number) =>
-    NEIGHBOURS.some(([dx, dy]) => drawn.get(key(c + dx, r + dy))?.some((e) => e.owner !== owner && sameStreet(e.heading, h)));
-  const mark = (c: number, r: number, owner: number, h: number) => {
-    const k = key(c, r);
-    const list = drawn.get(k) ?? [];
-    if (!list.some((e) => e.owner === owner && sameStreet(e.heading, h))) list.push({ owner, heading: h });
-    drawn.set(k, list);
-  };
-
-  tracks.forEach((track, owner) => {
-    let open = -1;
-    const close = () => { if (open >= 0) levels[open]!.push(NaN, NaN); open = -1; };
-    for (let p = 2; p < track.length; p += 2) {
-      const x0 = track[p - 2]!, x1 = track[p]!;
-      if (Number.isNaN(x0) || Number.isNaN(x1)) { close(); continue; }
-      const y0 = track[p - 1]!, y1 = track[p + 1]!;
-      const c0 = col(x0), r0 = row(y0), c1 = col(x1), r1 = row(y1);
-      const h = headingOf(x0, y0, x1, y1);
-      if (covered(c0, r0, owner, h) && covered(c1, r1, owner, h)) { close(); continue; }
-      mark(c0, r0, owner, h);
-      mark(c1, r1, owner, h);
-      const level = Math.min(levelOf(key(c0, r0)), levelOf(key(c1, r1)));
-      if (level !== open) { close(); levels[level]!.push(x0, y0); open = level; }
-      levels[level]!.push(x1, y1);
-    }
-    close();
-  });
-  return levels.map((pts) => Float64Array.from(pts));
-}
-
-/** One stroke of a level: its width in px, colour (and its parts), and the halo's blur. */
-export interface HeatStroke {
-  width: number;
-  color: string;
-  rgb: readonly [number, number, number];
-  alpha: number;
-  blur: number;
-}
-
-/**
- * The halo's blur as stacked strokes, not a canvas filter (Wave 4): Safari
- * scales `ctx.filter` blur with the canvas transform, so at 3x it drew a
- * halo three times as wide and the city turned to fog. Three concentric
- * strokes - wider than the halo, as a blur spreads, down to inside it - at a third of the
- * opacity each build the same soft falloff in every browser.
- */
-export const HEAT_HALO_RINGS = [1.6, 1.15, 0.7] as const;
-
-/** Under this `t` a street has no halo at all (Wave 6): rare streets stay thin, dim lines. */
-export const HEAT_HALO_MIN_T = 0.6;
-
-/**
- * One stroke model for both modes (Wave 6): a core whose colour, opacity and
- * width rise with frequency, and a halo on the busy streets only.
- */
-export function heatCore(mode: "dark" | "light", accent: string, t: number): HeatStroke {
-  const rgb = mode === "light" ? rampLight(accent, t) : rampDark(accent, t);
-  const alpha = 0.35 + 0.65 * t;              // 0.35 rare → 1 frequent
-  return { width: 0.8 + 2.0 * t, color: rgbCss(rgb, alpha), rgb, alpha, blur: 0 }; // 0.8 → 2.8 px
-}
-
-export function heatHalo(mode: "dark" | "light", accent: string, t: number): HeatStroke | null {
-  if (t < HEAT_HALO_MIN_T) return null;
-  const k = (t - HEAT_HALO_MIN_T) / (1 - HEAT_HALO_MIN_T);   // 0 → 1 over the haloed range
-  const rgb = mode === "light" ? rampLight(accent, 0.4) : rampDark(accent, 0.75); // the plain accent, never ink or white
-  const alpha = (mode === "light" ? 0.35 : 0.45) * k;
-  return { width: 4 + 5 * k, color: rgbCss(rgb, alpha), rgb, alpha, blur: 3 };  // 4 → 9 px
+export function countToT(count: number, p95: number): number {
+  return Math.min(1, Math.max(0, Math.log(Math.max(1, count)) / Math.log(Math.max(2, p95))));
 }
 
 /**
@@ -310,6 +164,27 @@ export function heatHalo(mode: "dark" | "light", accent: string, t: number): Hea
  */
 export function heatZoomScale(zoom: number): number {
   return Math.min(1.6, Math.max(0.6, 2 ** ((zoom - 12.5) / 2)));
+}
+
+/**
+ * Dark mode as 3.1.0 drew it (variant A, approved by the owner): every run
+ * stroked on its own in the accent, a faint wide glow then a thin core, added
+ * together ("lighter"), so a street glows by how many runs overlap on it.
+ * Wave 6b: a street run once or twice fades into the basemap (1 run ≈ 9 %,
+ * 5 runs ≈ 45 %, 11+ saturate) and the busy ones still burn.
+ */
+export const HEAT_DARK = {
+  composite: "lighter",
+  passes: [
+    { width: 4, alpha: 0.03 },   // was 0.035
+    { width: 1, alpha: 0.09 },   // was 0.16: 1 run ≈ 9 %, 5 runs ≈ 45 %, 11+ saturate
+  ],
+} as const satisfies { composite: GlobalCompositeOperation; passes: readonly { width: number; alpha: number }[] };
+
+/** The dark tracks' line width: 1.2 px at city zoom, up to 4 px on a street. */
+export function heatLineWidth(zoom: number): number {
+  const t = Math.min(1, Math.max(0, (zoom - 12) / 4));
+  return 1.2 + t * (4 - 1.2);
 }
 
 export function ringCoordinates(center: [number, number], radiusKm: number, steps = 96): [number, number][] {

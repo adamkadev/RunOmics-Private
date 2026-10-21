@@ -4,13 +4,10 @@ import {
   buildHeatTracks,
   mercatorX,
   mercatorY,
-  HEAT_LEVELS,
-  HEAT_HALO_MIN_T,
-  heatScale,
-  buildHeatLevels,
-  heatCore,
+  HEAT_DARK,
+  heatLineWidth,
+  countToT,
   heatFrequency,
-  heatHalo,
   heatZoomScale,
   reachKm,
   ringCoordinates,
@@ -105,37 +102,34 @@ describe('GPS jumps (v5.6 #5)', () => {
   })
 })
 
-describe('heatScale (Wave 6)', () => {
-  it('puts one run at 0, the 98th-percentile street at 1, and a street run 5 times low', () => {
-    const counts = [...Array(80).fill(1), ...Array(10).fill(2), ...Array(5).fill(5), ...Array(3).fill(20), ...Array(2).fill(60)]
-    const scale = heatScale(counts)
-    expect(scale(1)).toBe(0)
-    expect(scale(60)).toBe(1)
-    expect(scale(5)).toBeLessThan(0.5)
+describe('the dark heatmap, variant A (Wave 6b)', () => {
+  it('adds every run on its own: a faint wide glow, then a thin core, faded for rare streets', () => {
+    expect(HEAT_DARK.composite).toBe('lighter')
+    expect(HEAT_DARK.passes).toEqual([
+      { width: 4, alpha: 0.03 },
+      { width: 1, alpha: 0.09 },
+    ])
+  })
+
+  it('widens its lines from 1.2 px at city zoom to 4 px on a street', () => {
+    expect(heatLineWidth(11)).toBe(1.2)
+    expect(heatLineWidth(16)).toBe(4)
   })
 })
 
-describe('the heat strokes (Wave 6)', () => {
-  it('widens the core from 0.8 px when rare to 2.8 px when busiest', () => {
-    for (const mode of ['light', 'dark'] as const) {
-      expect(heatCore(mode, '#2dd4a7', 0).width).toBe(0.8)
-      expect(heatCore(mode, '#2dd4a7', 1).width).toBe(2.8)
-    }
+describe('countToT (Wave 6b)', () => {
+  it('puts one run at 0 and the p95 count at 1', () => {
+    expect(countToT(1, 12)).toBe(0)
+    expect(countToT(12, 12)).toBe(1)
+    expect(countToT(40, 12)).toBe(1)
   })
 
-  it('draws no halo below t 0.6', () => {
-    for (const mode of ['light', 'dark'] as const) {
-      expect(heatHalo(mode, '#2dd4a7', 0)).toBeNull()
-      expect(heatHalo(mode, '#2dd4a7', 0.59)).toBeNull()
-      expect(heatHalo(mode, '#2dd4a7', HEAT_HALO_MIN_T)).not.toBeNull()
-    }
+  it('rises monotonically in between', () => {
+    for (let c = 2; c <= 12; c++) expect(countToT(c, 12)).toBeGreaterThan(countToT(c - 1, 12))
   })
+})
 
-  it('tops the dark halo out at 0.45 opacity', () => {
-    expect(heatHalo('dark', '#2dd4a7', 1)!.alpha).toBeCloseTo(0.45, 10)
-    expect(heatHalo('dark', '#2dd4a7', 1)!.color).toMatch(/,0\.45\)$/)
-  })
-
+describe('heatZoomScale', () => {
   it('scales the strokes with zoom around the city view', () => {
     expect(heatZoomScale(12.5)).toBe(1)
     expect(heatZoomScale(14.5)).toBe(1.6)
@@ -152,47 +146,6 @@ describe('heatFrequency', () => {
 
   it('leaves one run everywhere at the faint end', () => {
     expect(heatFrequency(1, 1)).toBeLessThan(1)
-  })
-})
-
-describe('buildHeatLevels', () => {
-  const street = (lat: number) =>
-    Float64Array.from([0, 1, 2, 3, 4, 5].flatMap((i) => [mercatorX(6.17 + i * 0.001), mercatorY(lat)]))
-
-  it('puts a street run often in a higher level than one run once, and draws each once', () => {
-    const busy = Array.from({ length: 10 }, () => street(49.12))
-    const levels = buildHeatLevels([...busy, street(49.13)])
-    expect(levels).toHaveLength(HEAT_LEVELS)
-    const used = levels.map((l, i) => (l.length ? i : -1)).filter((i) => i >= 0)
-    expect(used).toHaveLength(2)
-    expect(used[1]).toBe(HEAT_LEVELS - 1)
-    // Ten identical runs draw one path, not ten.
-    expect(levels[HEAT_LEVELS - 1]!.filter((v) => !Number.isNaN(v)).length).toBe(12)
-  })
-
-  /** The segments drawn across every level, a NaN breaking the path. */
-  const segments = (levels: Float64Array[]) =>
-    levels.reduce((n, path) => {
-      for (let p = 2; p < path.length; p += 2) if (!Number.isNaN(path[p - 2]!) && !Number.isNaN(path[p]!)) n++
-      return n
-    }, 0)
-
-  it('draws two runs 12 m apart on one street as one strand, at the count-2 level', () => {
-    const offset = 12 / 111_320
-    const levels = buildHeatLevels([street(49.12), street(49.12 + offset)])
-    const used = levels.map((l, i) => (l.length ? i : -1)).filter((i) => i >= 0)
-    expect(used).toEqual([Math.round(heatScale([2])(2) * (HEAT_LEVELS - 1))])
-    expect(segments(levels)).toBe(5)
-  })
-
-  it('draws both runs where they cross at 90°, with no gap', () => {
-    const across = street(49.12)
-    const down = Float64Array.from([-3, -2, -1, 0, 1, 2].flatMap((i) => [mercatorX(6.1725), mercatorY(49.12 + i * 0.001)]))
-    expect(segments(buildHeatLevels([across, down]))).toBe(10)
-  })
-
-  it('draws nothing for no tracks', () => {
-    expect(buildHeatLevels([]).every((l) => l.length === 0)).toBe(true)
   })
 })
 

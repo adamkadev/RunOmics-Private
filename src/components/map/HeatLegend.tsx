@@ -6,13 +6,16 @@ import { useAccent } from "@/lib/useAccent";
 import { t } from "@/i18n";
 
 /**
- * "Rare → Frequent" over the map's exact ramp (App Fixes 4d): four stops in
- * light; in dark (Wave 6) dim accent → accent at 75 % → light accent.
+ * "Rare → Frequent" over the map's exact ramp: light's four stops (App Fixes
+ * 4d); dark is variant A's, faint to full accent, burning to --heat-end.
  */
 export function HeatLegend({ className = "" }: { className?: string }) {
   const accent = heatAccent(useAccent());
   const { resolvedTheme } = useTheme();
-  const background = heatLegendGradient(resolvedTheme === "light" ? "light" : "dark", accent);
+  const background =
+    resolvedTheme === "light"
+      ? heatLegendGradient("light", accent)
+      : "linear-gradient(90deg, color-mix(in srgb, var(--accent) 20%, transparent), var(--accent) 55%, var(--heat-end))";
 
   return (
     <div className={`map-overlay flex items-center gap-2 rounded-full px-2.5 py-1.5 text-caption ${className}`}>
