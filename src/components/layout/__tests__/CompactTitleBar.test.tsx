@@ -156,8 +156,9 @@ describe('CompactTitleBar', () => {
     await scrollTo(24)
     expect(shown()).toBe(true)
     const chevron = within(bar()).getByRole('button', { name: t.nav.backTo('Progress') })
-    // 44 x 44, the glyph drawn smaller.
-    expect(chevron.className).toContain('size-11')
+    // 40 pt, as Claude's and Bevel's, with a 44 pt tap area.
+    expect(chevron.className).toContain('size-10')
+    expect(chevron.className).toContain('hit-44')
     chevron.click()
     expect(back).toHaveBeenCalledTimes(1)
     // The page's own link has faded out as the chevron came in, and takes
@@ -255,7 +256,7 @@ describe('CompactTitleBar', () => {
     await mount(200)
 
     const action = within(bar()).getByRole('button', { name: 'Share' })
-    expect(action.className).toContain('size-11')
+    expect(action.className).toContain('size-10')
     action.click()
     expect(share).toHaveBeenCalledTimes(1)
     // The page's own button hands over to it rather than show cut under it.

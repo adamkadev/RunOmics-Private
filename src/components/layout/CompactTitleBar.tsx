@@ -88,11 +88,15 @@ interface BarAction {
 }
 
 /**
- * The bar's side columns: a 44 pt circle 12 pt from the edge, or a capsule
- * of two (40 pt each, 4 pt apart, in 4 pt of glass) the same 12 pt in.
+ * The bar's controls are 40 pt tall (owner, Oct 2026, after Claude's and
+ * Bevel's tops): a circle, or a capsule of two 32 pt buttons, 4 pt apart in
+ * 4 pt of glass, each 12 pt from the edge; 44 pt tap areas (hit-44). The
+ * row's centre sits ROW_LIFT above the bar's, so they clear its hairline by
+ * about 9 pt rather than touching it.
  */
 const SIDE = 56
-const CAPSULE_SIDE = 108
+const CAPSULE_SIDE = 88
+const ROW_LIFT = 6
 
 /** The line under the large title that fades as it scrolls up. */
 function subtitleOf(heading: HTMLElement): HTMLElement[] {
@@ -322,7 +326,7 @@ export function CompactTitleBar() {
   /** One page action as the bar shows it, pressing the page's own control. */
   const actionButton = (action: BarAction, i: number, inCapsule: boolean) => {
     const Icon = ACTION_ICONS[action.kind]
-    const size = inCapsule ? 'size-10' : 'size-11'
+    const size = inCapsule ? 'size-8' : 'size-10'
     return (
       <button
         key={action.kind + i}
@@ -332,10 +336,10 @@ export function CompactTitleBar() {
         disabled={action.disabled}
         onClick={() => actionsRef.current[i]?.click()}
         className={cn(
-          'flex shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-60',
+          'hit-44 flex shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-60',
           size,
           action.kind === 'avatar'
-            ? 'bg-accent text-base font-bold text-accent-foreground'
+            ? cn('bg-accent font-bold text-accent-foreground', inCapsule ? 'text-sm' : 'text-base')
             : cn('text-foreground', !inCapsule && 'glass-float'),
           action.kind === 'avatar' && !inCapsule && 'shadow-[0_8px_28px_rgb(0_0_0/0.18)]',
         )}
@@ -343,7 +347,7 @@ export function CompactTitleBar() {
         {action.kind === 'avatar' ? (
           <span aria-hidden="true">{action.text}</span>
         ) : Icon ? (
-          <Icon size={20} strokeWidth={2} aria-hidden="true" className={cn(action.busy && 'animate-spin')} />
+          <Icon size={inCapsule ? 18 : 20} strokeWidth={2} aria-hidden="true" className={cn(action.busy && 'animate-spin')} />
         ) : null}
       </button>
     )
@@ -375,6 +379,7 @@ export function CompactTitleBar() {
         style={{
           top: 'var(--safe-top)',
           height: BAR_HEIGHT,
+          paddingBottom: ROW_LIFT,
           // With a mirrored control the sides share what the title leaves,
           // equally, so it stays centred whatever the control's width.
           gridTemplateColumns: segments ? 'minmax(0,1fr) auto minmax(0,1fr)' : `${side}px minmax(0,1fr) ${side}px`,
@@ -390,14 +395,14 @@ export function CompactTitleBar() {
               data-testid="compact-bar-back"
               aria-label={t.nav.backTo(back)}
               onClick={() => backRef.current?.click()}
-              className={cn('glass-float flex size-11 items-center justify-center rounded-full text-foreground', fadeIn)}
+              className={cn('hit-44 glass-float flex size-10 items-center justify-center rounded-full text-foreground', fadeIn)}
             >
-              <ChevronLeft size={24} strokeWidth={2.2} aria-hidden="true" />
+              <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
             </button>
           )}
         </span>
         {/* The page's own <h1> says it to a screen reader. */}
-        <span aria-hidden="true" className={cn('block truncate text-center text-[17px] font-semibold leading-[52px] text-foreground', fadeIn)}>
+        <span aria-hidden="true" className={cn('block truncate text-center text-[17px] font-semibold leading-[46px] text-foreground', fadeIn)}>
           {title}
         </span>
         <span className="flex items-center justify-end gap-2 pr-3">
@@ -414,6 +419,7 @@ export function CompactTitleBar() {
                   onClick={() => segmentsRef.current[i]?.click()}
                   className={cn(
                     'flex h-8 items-center whitespace-nowrap rounded-full px-2.5 text-xs transition-colors',
+                    // 32 pt in the capsule's 4 pt of glass: 40 pt, as the circles.
                     item.selected ? 'bg-[var(--tab-pill)] font-semibold text-foreground' : 'font-medium text-muted-foreground',
                   )}
                 >
