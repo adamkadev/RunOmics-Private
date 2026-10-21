@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { weekTarget, type WeekTargetDay } from '@/domain/training/weekTarget'
 import { t } from '@/i18n'
 import { ThisWeekCard, thisWeekBars } from '../ThisWeekCard'
@@ -20,6 +20,16 @@ const DAYS: WeekTargetDay[] = [
 const WEEK = weekTarget(DAYS, TODAY, null)
 
 describe('ThisWeekCard (App Fixes 1a v2)', () => {
+  // The card reads the reader's clock once mounted (useToday): pinned to the
+  // fixture's today, or the test fails on any other day.
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date(2026, 9, 20, 12))
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('scales km to the week\'s largest day, 92 px tall (Liquid Glass v3: a 120 pt area), never under 8', () => {
     const bars = thisWeekBars(WEEK, TODAY, {})
     expect(bars.map((b) => b.day.state)).toEqual(['done', 'planned', 'planned', 'rest', 'rest', 'rest', 'planned'])
@@ -39,6 +49,9 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     expect(bars[0]!.getAttribute('style')).not.toContain('dashed')
     expect(bars[2]!.getAttribute('style')).toContain('dashed')
     expect(screen.getAllByTestId('today-tint')).toHaveLength(1)
+    // Round 2 (F14): today's letter in the shared today ring.
+    expect(card.querySelectorAll('.state-today')).toHaveLength(1)
+    expect(card.querySelector('.state-today')!.textContent).toBe('T')
     expect(screen.queryByTestId('plan-tick')).toBeNull()
     // One swatch per session colour in the week, easiest first, in the bars' colours.
     expect(screen.getAllByTestId('legend-type').map((e) => e.textContent)).toEqual([
