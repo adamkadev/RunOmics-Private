@@ -9,14 +9,15 @@ import { t } from '@/i18n'
 /**
  * iOS's large-title behaviour (v4.3.2): once the page has scrolled, the bar
  * under the status bar shows the page's title again as a centred 17 pt
- * title, instead of leaving it cut in half under the status bar. Liquid
- * Glass v2 (owner's brief, Oct 2026): the bar has no surface; while it shows,
- * the soft scroll edge fades in under it (data-bar-shown, .scroll-edge), no
- * hairline, and its title sits between glass buttons.
+ * title, instead of leaving it cut in half under the status bar. The bar has
+ * no surface of its own; while it shows, the frosted material under it fades
+ * in (data-bar-shown, .scroll-edge), cut by a hairline as Bevel's top (owner,
+ * Oct 2026), and its title sits between glass buttons.
  *
- * Collapsed, it is 58 pt - the edge sampler's 12, then a 46 pt row - the
- * title centred, a 44 pt back chevron on a page reached from another, and
- * the page's actions and mirrored control at the trailing end.
+ * Collapsed, it is 68 pt - the edge sampler's 12, a 46 pt row, then 10 pt of
+ * material under the row before the hairline, as Bevel's - the title
+ * centred, a 44 pt back chevron on a page reached from another, and the
+ * page's actions and mirrored control at the trailing end.
  *
  * The bar draws nothing of its own. The title is the page's own <h1> (or
  * its `data-bar-title`, a shorter name where the whole one would crowd the
@@ -26,7 +27,10 @@ import { t } from '@/i18n'
  * the action press the page's own controls, so they do just what those do.
  * A page with no <h1> never shows the bar.
  */
-export const BAR_HEIGHT = 58
+export const BAR_HEIGHT = 68
+
+/** The room under the row, down to the hairline (owner, Oct 2026, as Bevel's). */
+const BAR_FOOT = 10
 
 /** The edge sampler's height (--edge-sample-h): the bar's first 12 pt sit under it. */
 const SAMPLER = 12
@@ -475,6 +479,7 @@ export function CompactTitleBar() {
           top: 'var(--safe-top)',
           height: BAR_HEIGHT,
           paddingTop: SAMPLER,
+          paddingBottom: BAR_FOOT,
           gridTemplateColumns: columns,
         }}
       >

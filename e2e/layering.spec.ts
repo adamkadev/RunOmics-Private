@@ -105,11 +105,12 @@ test.describe('on a phone', () => {
         if (y === 0) expect(barShown).toBe(false)
       }
       // Scrolled, the compact bar shows - under the status bar, not over it,
-      // 58 pt tall: the sampler's 12, then the 46 pt row.
+      // 68 pt tall: the sampler's 12, the 46 pt row, then 10 pt to the
+      // hairline, as Bevel's (owner, Oct 2026).
       if (route === '/analytics') {
         const bar = await page.getByTestId('compact-title-bar').boundingBox()
         expect(bar?.y).toBe(59)
-        expect(bar?.height).toBe(58)
+        expect(bar?.height).toBe(68)
       }
     })
   }

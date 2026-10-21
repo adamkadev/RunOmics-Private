@@ -1,13 +1,13 @@
 import { act, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
-import { CompactTitleBar, titleColumns } from '../CompactTitleBar'
+import { BAR_HEIGHT, CompactTitleBar, titleColumns } from '../CompactTitleBar'
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/plan' }))
 
-// A 47 pt status bar under which the 52 pt bar sits: its divider is at 99.
+// A 47 pt status bar under which the 68 pt bar sits: its hairline is at 115.
 const STATUS_BAR = 47
-const DIVIDER = STATUS_BAR + 58
+const DIVIDER = STATUS_BAR + BAR_HEIGHT
 
 let scrollY = 0
 
@@ -100,8 +100,8 @@ describe('CompactTitleBar', () => {
     // The page name, centred, as Bevel's top shows it (owner, Oct 2026).
     expect(bar().textContent).toBe('Plan')
     expect(within(bar()).getByText('Plan').className).toContain('text-[17px]')
-    // The design review's 52 pt bar (Oct 2026), under the status strip.
-    expect(bar().style.height).toBe('58px')
+    // 68 pt, under the status strip: 10 pt under the row to its hairline, as Bevel's.
+    expect(bar().style.height).toBe('68px')
     // No surface of its own: the soft scroll edge fades in under it
     // (data-bar-shown, Liquid Glass v2), and only its buttons take taps.
     expect(bar().className).not.toContain('glass')
@@ -344,7 +344,7 @@ describe('CompactTitleBar', () => {
   it('moves the sticky strips under the bar while it shows, and back after', async () => {
     tabPage()
     await mount(60)
-    expect(document.documentElement.style.getPropertyValue('--sticky-top')).toBe('calc(var(--safe-top) + 58px)')
+    expect(document.documentElement.style.getPropertyValue('--sticky-top')).toBe('calc(var(--safe-top) + 68px)')
     await scrollTo(0)
     expect(document.documentElement.style.getPropertyValue('--sticky-top')).toBe('')
   })
