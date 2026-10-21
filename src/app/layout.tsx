@@ -43,9 +43,12 @@ export const metadata: Metadata = {
     // (owner, Oct 2026). black-translucent let the page blur behind the
     // notch but always draws white status-bar text, which needed a dark band
     // over a light page. The opaque bar takes its colour from theme-color at
-    // install, so that colour is a fixed neutral (STATUS_BAR_COLOR) the page
-    // top matches; the frosted top bar starts just under it. Read at install
-    // time: an installed app must be re-added for a change to show.
+    // install, so that colour is the page's --background (STATUS_BAR_COLOR)
+    // and the page top meets it in that colour; the frosted top bar starts
+    // just under it. Read at install time: an installed app must be re-added
+    // for a change to show. 'default' in dark too (F15): this meta takes no
+    // media query, so dark can't have black-translucent on its own, and
+    // light can't have it at all.
     statusBarStyle: 'default',
     title: 'RunOmics',
     startupImage: [...appleStartupImages],

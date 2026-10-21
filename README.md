@@ -1217,8 +1217,14 @@ voice rather than the athlete's chosen tint.
   what happened, the other is intent.
 - `BOOT_COLORS` serves surfaces that render before, or entirely without, `globals.css` — the PWA
   launch screens and the root error boundary — so they carry their own deep-navy scheme.
-- The iOS `theme-color` meta tag and `accent.ts` read `PAGE_BACKGROUNDS` from `themeTokens`, the
-  same table `globals.css` was generated from, so the status bar can never drift from the canvas.
+- The iOS `theme-color` metas read `STATUS_BAR_COLOR` from `themeTokens`, which is
+  `SURFACES.light/dark.background` - the same table `globals.css` was generated from - so the
+  status bar can never drift from the canvas (F15). The installed app keeps
+  `statusBarStyle: 'default'` in both themes: an opaque bar in exactly that colour, dark text in
+  light and white in dark, with the page meeting it in `--background` alone (the edge sampler, the
+  aura clear under it). `black-translucent` would let dark run under the notch, but it always
+  draws white text, unreadable on the light Aura, and the style can't be split per theme: its meta
+  takes no media query and iOS reads it once, at install.
 - `statusColors` is for statuses with universal meaning (success, in-progress, pending, warning,
   danger). Accent-coloured elements — nav, CTAs, progress bars — stay in accent.
 - Elevation uses `roRust` rather than stone-500, which read as grey in the categorical set.

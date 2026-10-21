@@ -36,6 +36,16 @@ describe('the status bar colour (F15)', () => {
     expect(layout).toContain("'apple-mobile-web-app-capable': 'yes'")
   })
 
+  // Step 3 of F15 is skipped on purpose: the status-bar style is one value
+  // for both themes (no media query on its meta, read once at install), and
+  // black-translucent draws a white clock, unreadable on the light Aura.
+  it("keeps the opaque 'default' status bar in both themes", () => {
+    const layout = readFileSync(path.resolve(__dirname, '../../app/layout.tsx'), 'utf8')
+    expect(layout).toContain("statusBarStyle: 'default',")
+    expect(layout).not.toMatch(/statusBarStyle: ['"]black/)
+    expect(layout).not.toContain('apple-mobile-web-app-status-bar-style')
+  })
+
   it('runs on into the overscroll: html and body paint the same background', () => {
     const rule = css.slice(css.indexOf('html,\nbody {'), css.indexOf('}', css.indexOf('html,\nbody {')))
     expect(rule).toContain('background-color: var(--background)')
