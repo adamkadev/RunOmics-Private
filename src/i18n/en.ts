@@ -593,8 +593,6 @@ export const en = {
       title: 'This week',
       // "load 456 · safe 462–750" (App Fixes 1a v2).
       load: (acute: number, lo: number, hi: number) => `load ${acute} · safe ${lo}–${hi}`,
-      // "■ Easy ■ Threshold · done · planned · km" (Today legend).
-      key: 'done · planned · km',
       runsLeft: (n: number) => `${n} run${n !== 1 ? 's' : ''} left`,
       missed: 'missed',
       missedCount: (n: number) => `${n} missed`,

@@ -26,6 +26,12 @@ const CORE_PX = 1.2;
 const HOT_T = 0.5;
 /** Light: per-pixel work, so the canvas is capped at 2x. */
 const MAX_DPR = 2;
+/**
+ * Light: at most this many pixels. Each redraw reads and writes several
+ * buffers the canvas's size; at 8 M pixels that passed Safari's canvas
+ * memory limit and the tab crashed.
+ */
+const MAX_LIGHT_PIXELS = 2_500_000;
 
 export interface HeatLayer {
   /** Replace the tracks drawn, fading them in unless `reveal` is false. */
@@ -69,7 +75,7 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     const height = h + 2 * my;
     const scale = Math.min(
       mode === "light" ? Math.min(MAX_DPR, window.devicePixelRatio || 1) : window.devicePixelRatio || 1,
-      Math.sqrt(MAX_PIXELS / (width * height)),
+      Math.sqrt((mode === "light" ? MAX_LIGHT_PIXELS : MAX_PIXELS) / (width * height)),
       MAX_SIDE / width,
       MAX_SIDE / height,
     );
@@ -118,6 +124,11 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     g.globalAlpha = 1;
     g.clearRect(0, 0, w, h);
     return { c, g };
+  }
+
+  /** Give the scratch canvases' memory back: Safari counts every live canvas against one budget. */
+  function releaseScratch() {
+    for (const c of Object.values(scratch)) { c.width = 0; c.height = 0; }
   }
 
   function path(g: CanvasRenderingContext2D, track: Float64Array) {
@@ -198,21 +209,22 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     const hist = new Uint32Array(256);
     let n = 0;
     for (let i = 3; i < md.length; i += 4) if (md[i]) { hist[Math.max(1, cd[i]!)]!++; n++; }
-    if (!n) return;
+    if (!n) { releaseScratch(); return; }
     let acc = 0, p95 = 1;
     for (let c = 1; c < 256; c++) { acc += hist[c]!; if (acc >= 0.95 * n) { p95 = c; break; } }
     const L = luts(p95);
 
-    const core = new ImageData(W, H), hot = new ImageData(W, H), halo = new ImageData(W, H);
+    // No allocation per pixel: millions of pixels, and garbage per pixel stalled the tab.
+    const core = new ImageData(W, H), halo = new ImageData(W, H);
+    const co = core.data, ho = halo.data;
+    let anyHot = false;
     for (let i = 0; i < md.length; i += 4) {
       const m = md[i + 3]!;
       if (!m) continue;
       const c = Math.max(1, cd[i + 3]!), j = c * 4, cov = m / 255;
-      for (const [img, lut] of [[core, L.core], [halo, L.halo]] as const) {
-        img.data[i] = lut[j]!; img.data[i + 1] = lut[j + 1]!; img.data[i + 2] = lut[j + 2]!;
-        img.data[i + 3] = lut[j + 3]! * cov;
-      }
-      if (L.hot[c]) hot.data.set(core.data.subarray(i, i + 4), i);
+      co[i] = L.core[j]!; co[i + 1] = L.core[j + 1]!; co[i + 2] = L.core[j + 2]!; co[i + 3] = L.core[j + 3]! * cov;
+      ho[i] = L.halo[j]!; ho[i + 1] = L.halo[j + 1]!; ho[i + 2] = L.halo[j + 2]!; ho[i + 3] = L.halo[j + 3]! * cov;
+      if (L.hot[c]) anyHot = true;
     }
 
     // 4. compose: halo (down/up-scale blur, ≈ 4 px), dilated busy core, core
@@ -221,19 +233,30 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     const f = Math.max(2, Math.round(3 * s));
-    const hs = surface("haloFull", W, H); hs.g.putImageData(halo, 0, 0);
+    // Two full-size scratch canvases, reused: the count one holds the halo,
+    // then the core; the mask one the busy core.
+    const hs = surface("count", W, H, true); hs.g.putImageData(halo, 0, 0);
     const small = surface("haloSmall", Math.ceil(W / f), Math.ceil(H / f));
     small.g.imageSmoothingQuality = "high";
     small.g.drawImage(hs.c, 0, 0, small.c.width, small.c.height);
     ctx.drawImage(small.c, 0, 0, W, H);
     ctx.drawImage(small.c, 0, 0, W, H);           // twice: 4d's halo reaches 0.75 at the top
 
-    const hc = surface("hot", W, H); hc.g.putImageData(hot, 0, 0);
-    const r = Math.max(1, Math.round(s));
-    for (const [dx, dy] of [[-r, 0], [r, 0], [0, -r], [0, r], [-r, -r], [r, r], [-r, r], [r, -r]] as const) ctx.drawImage(hc.c, dx, dy);
+    if (anyHot) {
+      // The busy core: the core with every pixel under HOT_T cleared, in place.
+      for (let i = 0; i < md.length; i += 4) {
+        if (co[i + 3] && !L.hot[Math.max(1, cd[i + 3]!)]) ho[i + 3] = 0;
+        else ho[i + 3] = co[i + 3]!;
+        ho[i] = co[i]!; ho[i + 1] = co[i + 1]!; ho[i + 2] = co[i + 2]!;
+      }
+      const hc = surface("mask", W, H, true); hc.g.putImageData(halo, 0, 0);
+      const r = Math.max(1, Math.round(s));
+      for (const [dx, dy] of [[-r, 0], [r, 0], [0, -r], [0, r], [-r, -r], [r, r], [-r, r], [r, -r]] as const) ctx.drawImage(hc.c, dx, dy);
+    }
 
-    const cc = surface("core", W, H); cc.g.putImageData(core, 0, 0);
+    const cc = surface("count", W, H, true); cc.g.putImageData(core, 0, 0);
     ctx.drawImage(cc.c, 0, 0);
+    releaseScratch();
   }
 
   function draw() {
@@ -302,6 +325,7 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       redraw();
     },
     remove() {
+      releaseScratch();
       map.off("moveend", redraw);
       map.off("resize", redraw);
       map.off("render", onRender);

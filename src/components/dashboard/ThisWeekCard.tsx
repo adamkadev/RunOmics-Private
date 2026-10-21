@@ -199,14 +199,13 @@ export function ThisWeekCard({
 
       {/* Each entry on one line; with a miss in the week the count drops to its own line, right-aligned. */}
       <div className="pointer-events-none relative flex flex-wrap items-center gap-x-3.5 gap-y-1.5 whitespace-nowrap border-t border-[var(--track)] pt-2.5 text-[11.5px] text-muted-foreground">
-        {/* "■ Easy ■ Threshold · done · planned · km": a swatch per session colour in the week. */}
+        {/* "■ Easy ■ Threshold": a swatch per session colour in the week. */}
         {legend.map((entry) => (
           <span key={entry.color} className="flex items-center gap-[5px]" data-testid="legend-type">
             <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: entry.color }} />
             {entry.label}
           </span>
         ))}
-        <span>{legend.length > 0 && '· '}{s.key}</span>
         {missed > 0 && (
           <span className="flex items-center gap-[5px]" data-testid="legend-missed">
             <span aria-hidden className="box-border size-[9px] rounded-[2px] border border-dashed border-[var(--warn)]" />
