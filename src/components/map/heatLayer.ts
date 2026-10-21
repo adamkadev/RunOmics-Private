@@ -24,6 +24,8 @@ const MERGE_M = 15;
 const CORE_PX = 1.2;
 /** Light: from here the core is dilated (≈ 2.4–3.3 px). */
 const HOT_T = 0.5;
+/** Light: the busy core fades in over HOT_T ± this, rather than switching on. */
+const HOT_FADE = 0.1;
 /**
  * Light: from here up, and only here, the core runs on to its deepest shade
  * and the wide outer halo is drawn. Below it a line stays mint with the thin
@@ -37,9 +39,19 @@ const TOP_PERCENTILE = 0.98;
 /** Light (4d): the halo's half-width on a rare street and the outer, fainter ring's (6 px and 13 px across). */
 const HALO_HALF_PX = 3;
 const HALO_OUTER_HALF_PX = 6.5;
+/**
+ * Light: the halo's opacity, HALO_MAX_ALPHA × t^HALO_ALPHA_EXP - near 0 on a
+ * street run once, so rare lines read as thin mint without a fog, rising
+ * to 0.6 on the busiest (the owner's target, Oct 2026).
+ */
+const HALO_MAX_ALPHA = 0.6;
+const HALO_ALPHA_EXP = 1.5;
+/** Light: the busy core's extra width over the thin core, in CSS px. */
+const HOT_EXTRA_PX = 1;
 /** Light: the outer ring's share of the halo's opacity, for a soft edge. */
 const HALO_OUTER_ALPHA = 0.55;
-/** Light: the halo's blur, σ ≈ 3.2 px (4d), as a down/up-scale by this. */
+/** Light: the halo's blur (4d), σ in CSS px with ctx.filter, else a down/up-scale by HALO_BLUR_PX. */
+const HALO_SIGMA_PX = 3.2;
 const HALO_BLUR_PX = 3;
 /** Light: GPS points closer than this (CSS px) to the last one drawn add nothing to the line. */
 const LIGHT_MIN_STEP_PX = 0.75;
@@ -146,6 +158,7 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     g.filter = MASK_SOFTEN;
     return g.filter === MASK_SOFTEN;
   })();
+  const canBlur = canSoften;
   function surface(name: string, w: number, h: number, read = false) {
     const c = (scratch[name] ??= document.createElement("canvas"));
     if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
@@ -192,8 +205,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       const cr = rampLight(accent, t < DEEP_T ? (t / DEEP_T) * MINT_RAMP : MINT_RAMP + ((t - DEEP_T) / (1 - DEEP_T)) * (1 - MINT_RAMP));
       const hr = heatHaloLight(accent, t);
       core.set([cr[0], cr[1], cr[2], 255 * (0.43 + 0.57 * t)], c * 4);
-      halo.set([hr[0], hr[1], hr[2], 255 * (0.12 + 0.48 * t)], c * 4);
-      hot[c] = t >= HOT_T ? 1 : 0;
+      halo.set([hr[0], hr[1], hr[2], 255 * HALO_MAX_ALPHA * t ** HALO_ALPHA_EXP], c * 4);
+      hot[c] = 255 * Math.min(1, Math.max(0, (t - (HOT_T - HOT_FADE)) / (2 * HOT_FADE)));
       deep[c] = t >= DEEP_T ? 1 : 0;
     }
     return { core, halo, hot, deep };
@@ -253,32 +266,37 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     const L = luts(top);
 
     // 3. colour fields: core, halo and busy core, one pixel per CSS pixel
-    const core = new ImageData(cw, ch), halo = new ImageData(cw, ch), hot = new ImageData(cw, ch);
-    const co = core.data, ho = halo.data, bo = hot.data;
+    const counts = new Uint8Array(cw * ch);
+    for (let p = 0; p < counts.length; p++) counts[p] = cd[p * 4 + 3]!;
+    const core = new ImageData(cw, ch), hot = new ImageData(cw, ch);
+    const co = core.data, bo = hot.data;
     let anyHot = false;
-    for (let i = 0; i < cd.length; i += 4) {
-      const c = cd[i + 3]!;
+    for (let p = 0, i = 0; p < counts.length; p++, i += 4) {
+      const c = counts[p]!;
       if (!c) continue;
       const j = c * 4;
       co[i] = L.core[j]!; co[i + 1] = L.core[j + 1]!; co[i + 2] = L.core[j + 2]!; co[i + 3] = L.core[j + 3]!;
-      if (L.hot[c]) { bo[i] = co[i]!; bo[i + 1] = co[i + 1]!; bo[i + 2] = co[i + 2]!; bo[i + 3] = co[i + 3]!; anyHot = true; }
+      // The busy core fades in (HOT_FADE): switched on at a threshold, a
+      // count dipping along a jittery line broke it into beads.
+      const w = L.hot[c]!;
+      if (w) { bo[i] = co[i]!; bo[i + 1] = co[i + 1]!; bo[i + 2] = co[i + 2]!; bo[i + 3] = (co[i + 3]! * w) / 255; anyHot = true; }
     }
-    // The halo: the counts widened past the line (4d: 6 px across on a rare
-    // street, a fainter ring out to 13 px), each pixel taking the busiest run
-    // near it - a max, so overlapping glows never stack into ink.
-    const counts = new Uint8Array(cw * ch);
-    for (let p = 0; p < counts.length; p++) counts[p] = cd[p * 4 + 3]!;
-    const inner = dilateMax(counts, cw, ch, Math.max(1, Math.round(HALO_HALF_PX - band / 2)));
-    // The wide outer ring only around the deep corridors (t ≥ DEEP_T).
+    // The halo's colours: each pixel takes the colour and opacity of the
+    // busiest run near it - a max, so overlapping glows never stack into ink.
+    // Only its colour comes from here; its shape is the runs themselves (4).
     const deepCounts = counts.map((c) => (L.deep[c] ? c : 0));
-    const outer = dilateMax(deepCounts, cw, ch, Math.max(2, Math.round(HALO_OUTER_HALF_PX - band / 2)));
-    for (let p = 0, i = 0; p < counts.length; p++, i += 4) {
-      const ci = inner[p]!, cj = outer[p]!;
-      if (!ci && !cj) continue;
-      const ai = ci ? L.halo[ci * 4 + 3]! : 0, aj = cj ? L.halo[cj * 4 + 3]! * HALO_OUTER_ALPHA : 0;
-      const j = (ai >= aj ? ci : cj) * 4;
-      ho[i] = L.halo[j]!; ho[i + 1] = L.halo[j + 1]!; ho[i + 2] = L.halo[j + 2]!; ho[i + 3] = Math.max(ai, aj);
-    }
+    const haloColours = (src: Uint8Array, alpha: number) => {
+      const img = new ImageData(cw, ch), o = img.data;
+      for (let p = 0, i = 0; p < src.length; p++, i += 4) {
+        const c = src[p]!;
+        if (!c) continue;
+        o[i] = L.halo[c * 4]!; o[i + 1] = L.halo[c * 4 + 1]!; o[i + 2] = L.halo[c * 4 + 2]!; o[i + 3] = L.halo[c * 4 + 3]! * alpha;
+      }
+      return img;
+    };
+    const innerColours = haloColours(dilateMax(counts, cw, ch, Math.ceil(HALO_HALF_PX * k)), 1);
+    // The wide outer glow only around the deep corridors (t ≥ DEEP_T).
+    const outerColours = haloColours(dilateMax(deepCounts, cw, ch, Math.ceil(HALO_OUTER_HALF_PX * k)), HALO_OUTER_ALPHA);
     const field = (name: string, img: ImageData) => { const f = surface(name, cw, ch); f.g.putImageData(img, 0, 0); return f.c; };
 
     // 4. compose at full resolution: halo, dilated busy core, core
@@ -286,12 +304,34 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     ctx.globalCompositeOperation = "source-over";
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    // The halo blurred by a down/up-scale (σ ≈ 3.2 px), which works in Safari, unlike ctx.filter. Once, not twice.
-    const haloField = field("halo", halo);
-    const small = surface("haloSmall", Math.ceil(cw / HALO_BLUR_PX), Math.ceil(ch / HALO_BLUR_PX));
-    small.g.imageSmoothingQuality = "high";
-    small.g.drawImage(haloField, 0, 0, small.c.width, small.c.height);
-    ctx.drawImage(small.c, 0, 0, W, H);
+    // The halo: the runs stroked at its widths (13 px round the deep
+    // corridors, 6 px round every run, at CSS-pixel resolution: it is blurred
+    // anyway), each filled with its colours, then blurred, σ ≈ 3.2 px: by
+    // ctx.filter where the browser has it (drawn untransformed, so Safari's
+    // filter-scales-with-transform bug can't widen it), else a down/up-scale.
+    const glow = surface("glow", cw, ch);
+    const ring = (width: number, colours: ImageData, name: string) => {
+      const m = surface("glowRing", cw, ch);
+      m.g.lineCap = m.g.lineJoin = "round";
+      m.g.lineWidth = width;
+      m.g.strokeStyle = "#fff";
+      for (const tr of tracks) { m.g.beginPath(); path(m.g, tr); m.g.stroke(); }
+      m.g.globalCompositeOperation = "source-in";
+      m.g.drawImage(field(name, colours), 0, 0);
+      glow.g.drawImage(m.c, 0, 0);
+    };
+    ring(HALO_OUTER_HALF_PX * 2 * k, outerColours, "glowOuter");
+    ring(HALO_HALF_PX * 2 * k, innerColours, "glowInner");
+    if (canBlur) {
+      ctx.filter = `blur(${(HALO_SIGMA_PX * s).toFixed(2)}px)`;
+      ctx.drawImage(glow.c, 0, 0, W, H);
+      ctx.filter = "none";
+    } else {
+      const small = surface("glowSmall", Math.ceil(cw / HALO_BLUR_PX), Math.ceil(ch / HALO_BLUR_PX));
+      small.g.imageSmoothingQuality = "high";
+      small.g.drawImage(glow.c, 0, 0, small.c.width, small.c.height);
+      ctx.drawImage(small.c, 0, 0, W, H);
+    }
 
     // A line: every run stroked once at full resolution, then filled with a field.
     const line = (width: number, colours: HTMLCanvasElement) => {
@@ -311,8 +351,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       m.g.drawImage(colours, 0, 0, W, H);
       ctx.drawImage(m.c, 0, 0);
     };
-    // The busy core 1 px wider each side (≈ 2.4–3.3 px), then the core on top.
-    if (anyHot) line(CORE_PX * k + 2, field("hot", hot));
+    // The busy core half a pixel wider each side (≈ 2.2 px, the target's busiest), then the core on top.
+    if (anyHot) line(CORE_PX * k + HOT_EXTRA_PX, field("hot", hot));
     line(CORE_PX * k, field("core", core));
     releaseScratch();
   }
