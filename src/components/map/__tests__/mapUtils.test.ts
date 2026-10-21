@@ -5,11 +5,8 @@ import {
   mercatorX,
   mercatorY,
   HEAT_LEVELS,
-  HEAT_STYLE,
-  HEAT_DARK,
-  heatLineWidth,
   HEAT_HALO_MIN_T,
-  heatRankScale,
+  heatScale,
   buildHeatLevels,
   heatCore,
   heatFrequency,
@@ -108,61 +105,35 @@ describe('GPS jumps (v5.6 #5)', () => {
   })
 })
 
-describe('the dark heatmap, as 3.1.0 drew it', () => {
-  it('adds every run on its own: a faint wide glow, then a thin core', () => {
-    expect(HEAT_DARK.composite).toBe('lighter')
-    expect(HEAT_DARK.passes).toEqual([
-      { width: 4, alpha: 0.035 },
-      { width: 1, alpha: 0.16 },
-    ])
-  })
-
-  it('widens its lines from 1.2 px at city zoom to 4 px on a street', () => {
-    expect(heatLineWidth(11)).toBe(1.2)
-    expect(heatLineWidth(16)).toBe(4)
+describe('heatScale (Wave 6)', () => {
+  it('puts one run at 0, the 98th-percentile street at 1, and a street run 5 times low', () => {
+    const counts = [...Array(80).fill(1), ...Array(10).fill(2), ...Array(5).fill(5), ...Array(3).fill(20), ...Array(2).fill(60)]
+    const scale = heatScale(counts)
+    expect(scale(1)).toBe(0)
+    expect(scale(60)).toBe(1)
+    expect(scale(5)).toBeLessThan(0.5)
   })
 })
 
-describe('heat frequency by rank (Wave 5 B)', () => {
-  it('keeps the common counts low and only the busiest near the top', () => {
-    const counts = [...Array(60).fill(1), ...Array(25).fill(2), ...Array(10).fill(5), ...Array(5).fill(20)]
-    const rank = heatRankScale(counts)
-    expect(rank(20)).toBe(1)
-    expect(rank(1)).toBeLessThan(0.2)
-    // Only the top ~15 % past 0.6.
-    expect(counts.filter((c) => rank(c) > 0.6).length / counts.length).toBeLessThanOrEqual(0.16)
-  })
-})
-
-describe('the heat layers (Wave 4, App Fixes 4d)', () => {
-  it('multiplies on light and screens on dark', () => {
-    expect(HEAT_STYLE.light.composite).toBe('multiply')
-    expect(HEAT_STYLE.dark.composite).toBe('screen')
-  })
-
-  // Wave 5 B: no halo under t 0.35, then 6 to 13 px over the rest.
-  it('skips the halo on rare streets and grows it 6 to 13 px above, the core 1.2 to 3.3 px', () => {
+describe('the heat strokes (Wave 6)', () => {
+  it('widens the core from 0.8 px when rare to 2.8 px when busiest', () => {
     for (const mode of ['light', 'dark'] as const) {
-      expect(heatHalo(mode, '#2dd4a7', 0)).toBeNull()
-      expect(heatHalo(mode, '#2dd4a7', 0.34)).toBeNull()
-      expect(heatHalo(mode, '#2dd4a7', HEAT_HALO_MIN_T)!.width).toBe(6)
-      expect(heatHalo(mode, '#2dd4a7', 1)!.width).toBe(13)
-      expect(heatCore(mode, '#2dd4a7', 0).width).toBe(1.2)
-      expect(heatCore(mode, '#2dd4a7', 1).width).toBeCloseTo(3.3, 10)
-      expect(heatHalo(mode, '#2dd4a7', 1)!.blur).toBe(3.2)
+      expect(heatCore(mode, '#2dd4a7', 0).width).toBe(0.8)
+      expect(heatCore(mode, '#2dd4a7', 1).width).toBe(2.8)
     }
   })
 
-  it('takes the opacities the mockup draws', () => {
-    expect(heatHalo('light', '#2dd4a7', 1)!.color).toMatch(/,0\.6\)$/)
-    expect(heatHalo('dark', '#2dd4a7', 1)!.color).toMatch(/,0\.75\)$/)
-    expect(heatCore('dark', '#2dd4a7', 0).color).toMatch(/,0\.43\)$/)
-    expect(heatCore('dark', '#2dd4a7', 1).color).toBe('rgb(45,212,167)')
+  it('draws no halo below t 0.6', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      expect(heatHalo(mode, '#2dd4a7', 0)).toBeNull()
+      expect(heatHalo(mode, '#2dd4a7', 0.59)).toBeNull()
+      expect(heatHalo(mode, '#2dd4a7', HEAT_HALO_MIN_T)).not.toBeNull()
+    }
   })
 
-  it('keeps the light halo in the tint-to-accent half of the ramp', () => {
-    // rampLight(0.45) sits just past the accent, never near the ink.
-    expect(heatHalo('light', '#2dd4a7', 1)!.color).toMatch(/^rgba\(4\d,19\d,15\d,/)
+  it('tops the dark halo out at 0.45 opacity', () => {
+    expect(heatHalo('dark', '#2dd4a7', 1)!.alpha).toBeCloseTo(0.45, 10)
+    expect(heatHalo('dark', '#2dd4a7', 1)!.color).toMatch(/,0\.45\)$/)
   })
 
   it('scales the strokes with zoom around the city view', () => {
@@ -197,6 +168,27 @@ describe('buildHeatLevels', () => {
     expect(used[1]).toBe(HEAT_LEVELS - 1)
     // Ten identical runs draw one path, not ten.
     expect(levels[HEAT_LEVELS - 1]!.filter((v) => !Number.isNaN(v)).length).toBe(12)
+  })
+
+  /** The segments drawn across every level, a NaN breaking the path. */
+  const segments = (levels: Float64Array[]) =>
+    levels.reduce((n, path) => {
+      for (let p = 2; p < path.length; p += 2) if (!Number.isNaN(path[p - 2]!) && !Number.isNaN(path[p]!)) n++
+      return n
+    }, 0)
+
+  it('draws two runs 12 m apart on one street as one strand, at the count-2 level', () => {
+    const offset = 12 / 111_320
+    const levels = buildHeatLevels([street(49.12), street(49.12 + offset)])
+    const used = levels.map((l, i) => (l.length ? i : -1)).filter((i) => i >= 0)
+    expect(used).toEqual([Math.round(heatScale([2])(2) * (HEAT_LEVELS - 1))])
+    expect(segments(levels)).toBe(5)
+  })
+
+  it('draws both runs where they cross at 90°, with no gap', () => {
+    const across = street(49.12)
+    const down = Float64Array.from([-3, -2, -1, 0, 1, 2].flatMap((i) => [mercatorX(6.1725), mercatorY(49.12 + i * 0.001)]))
+    expect(segments(buildHeatLevels([across, down]))).toBe(10)
   })
 
   it('draws nothing for no tracks', () => {

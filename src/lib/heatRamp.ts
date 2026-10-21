@@ -5,8 +5,9 @@ import { curatedAccent, type AccentId } from './accentScale'
  * The heatmap's colour ramps (Wave 4, App Fixes 4d), built from the one
  * accent the reader picked. A route's frequency `t` (0 rare, 1 the busiest
  * street) picks its colour. Light runs from a pale tint through the accent
- * to a deep shade of it; dark runs from a dim shade up to the full accent,
- * never to white. Stops are mixed linearly in RGB.
+ * to a deep shade of it; dark runs from a dim shade through the full accent
+ * to a light accent, at most 25 % towards white (Wave 6). Stops are mixed
+ * linearly in RGB.
  */
 export type Rgb = readonly [number, number, number]
 export interface RampStop {
@@ -71,9 +72,9 @@ export function heatStops(mode: 'light' | 'dark', accent: string): readonly Ramp
         { at: 1, rgb: scale(A, 0.25) },
       ]
     : [
-        { at: 0, rgb: mix(A, GROUND_DARK, 0.6) },
-        { at: 0.5, rgb: mix(A, GROUND_DARK, 0.3) },
-        { at: 1, rgb: A },
+        { at: 0, rgb: mix(A, GROUND_DARK, 0.65) },
+        { at: 0.75, rgb: A },
+        { at: 1, rgb: mix(A, WHITE, 0.25) },
       ]
 }
 

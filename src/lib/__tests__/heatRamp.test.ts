@@ -25,9 +25,10 @@ describe('rampLight (App Fixes 4d)', () => {
 })
 
 describe('rampDark (App Fixes 4d)', () => {
-  it('ends on the full accent, never white', () => {
-    near(rampDark('#2dd4a7', 1), [45, 212, 167])
-    near(rampDark('#5fd4f0', 1), [95, 212, 240])
+  it('reaches the accent at 0.75 and ends on a light accent, never white (Wave 6)', () => {
+    near(rampDark('#2dd4a7', 0.75), [45, 212, 167])
+    near(rampDark('#2dd4a7', 1), [98, 223, 189])
+    near(rampDark('#5fd4f0', 1), [135, 223, 244])
     near(rampDark(heatAccent('mono'), 1), [233, 236, 234])
   })
 

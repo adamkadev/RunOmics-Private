@@ -10,7 +10,6 @@ import { firstSymbolLayerId, loadMapLibre } from "@/lib/maplibre";
 import { EDGE_FENCE_LAYER, EDGE_FENCE_SOURCE, addEdgeFence } from "@/lib/runMapLayers";
 import { heatAccent } from "@/lib/heatRamp";
 import { parseAccent } from "@/lib/accent";
-import { readHeatVariant } from "@/lib/heatVariant";
 import { HEAT_LAYER, HEAT_SOURCE, addHeatLayer, type HeatLayer } from "./heatLayer";
 import { buildHeatTracks, ringCoordinates } from "./mapUtils";
 
@@ -103,7 +102,7 @@ export function useMapRoutes(
       const accent = readAccent();
       const firstSymbolId = firstSymbolLayerId(map);
 
-      heatRef.current = addHeatLayer(map, isDark() ? "dark" : "light", accent, firstSymbolId, readHeatVariant());
+      heatRef.current = addHeatLayer(map, isDark() ? "dark" : "light", accent, firstSymbolId);
       heatRef.current.setTracks(tracksRef.current, false);
 
       const { ring: ringLine, dot } = ringData(ringRef.current);
@@ -156,7 +155,6 @@ export function useMapRoutes(
       if (!first) return;
       let dark = isDark();
       let accent = readAccent();
-      let variant = readHeatVariant();
       const map = new mgl.Map({
         container: containerRef.current!,
         style: heatBasemapStyle(maptilerStyle(dark, token), dark),
@@ -193,13 +191,12 @@ export function useMapRoutes(
           accent = readAccent();
           removeRunLayers(map);
           map.setStyle(heatBasemapStyle(maptilerStyle(dark, token), dark), { diff: false });
-        } else if (readAccent() !== accent || readHeatVariant() !== variant) {
+        } else if (readAccent() !== accent) {
           accent = readAccent();
-          variant = readHeatVariant();
           addRunLayers(map);
         }
       });
-      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-accent", "data-heat-variant"] });
+      observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-accent"] });
       stopObserving = () => observer.disconnect();
     }
 

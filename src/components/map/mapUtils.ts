@@ -145,27 +145,6 @@ export function buildHeatTracks(routes: [number, number][][], indices: number[])
  * scale against the busiest street, so one run and two read apart but fifty
  * and sixty do not. One run everywhere is still the faint end, not the full one.
  */
-/**
- * Frequency by rank (Wave 5 B): log/max put almost every street near the
- * top. `t` is a count's mid-rank among every cell in view, scaled so the
- * busiest is 1, then raised to 1.8, so only about the top 15 % go past 0.6.
- */
-export const HEAT_RANK_EXPONENT = 1.8;
-export function heatRankScale(counts: Iterable<number>): (count: number) => number {
-  const sorted = [...counts].sort((a, b) => a - b);
-  const n = sorted.length;
-  if (!n) return () => 0;
-  const rank = new Map<number, number>();
-  for (let i = 0; i < n; ) {
-    let j = i;
-    while (j < n && sorted[j] === sorted[i]) j++;
-    rank.set(sorted[i]!, (i + (j - i) / 2) / n);
-    i = j;
-  }
-  const top = rank.get(sorted[n - 1]!)!;
-  return (count) => Math.min(1, Math.max(0, ((rank.get(count) ?? 0) / top) ** HEAT_RANK_EXPONENT));
-}
-
 export function heatFrequency(count: number, maxCount: number): number {
   const t = Math.log1p(count) / Math.log1p(Math.max(2, maxCount));
   return Math.min(1, Math.max(0, t));
@@ -176,6 +155,12 @@ export const HEAT_LEVELS = 16;
 /** A street's width, for counting: runs within it share one count. */
 export const HEAT_CELL_M = 25;
 const EARTH_M = 40_075_016.686;
+/** t = (log(count) / log(p98))^this: one run is 0, the 98th-percentile street is 1. */
+export const HEAT_T_EXPONENT = 1.3;
+/** Two runs over the same cell are the same street if their headings differ by less than this. */
+const SAME_STREET_DEG = 35;
+
+const NEIGHBOURS = [-1, 0, 1].flatMap((dx) => [-1, 0, 1].map((dy) => [dx, dy] as const));
 
 /** The `t` a level is drawn at. */
 export function heatLevelT(level: number): number {
@@ -191,76 +176,93 @@ function mercatorLat(y: number): number {
 }
 
 /**
+ * Frequency on a log scale against a robust max (Wave 6 heatmap fix): the
+ * rank scale let the count-1 jitter cells fill its bottom, so a street run
+ * 3-5 times already read as frequent. The 98th percentile, not the busiest
+ * cell, is 1, so one outlier can't flatten the rest.
+ */
+export function heatScale(counts: Iterable<number>): (count: number) => number {
+  const sorted = [...counts].sort((a, b) => a - b);
+  if (!sorted.length) return () => 0;
+  const p98 = Math.max(2, sorted[Math.floor((sorted.length - 1) * 0.98)]!);
+  const top = Math.log(p98);
+  return (count) => Math.min(1, Math.max(0, Math.log(Math.max(1, count)) / top)) ** HEAT_T_EXPONENT;
+}
+
+/**
  * The tracks as segments by frequency (Wave 4, App Fixes 4d): each level a
- * single path, NaN-broken, rarest first. Every 25 m cell counts the runs that
- * crossed it; a segment takes the lower count of its two ends, so a side
- * street leaving a busy one stays rare. Each piece of street is drawn once,
- * by the first run over it, so overlapping runs never stack into ink: the
- * frequency, not the overlap, sets the colour.
+ * single path, NaN-broken, rarest first. A segment takes the lower count of
+ * its two ends, so a side street leaving a busy one stays rare.
+ *
+ * Wave 6: GPS jitter put runs on one street 5-20 m apart, in parallel cells
+ * each owned by a different run, so a street drew as a bundle of strands.
+ * Now a run counts once in its cell and the 8 around it, and a segment is
+ * skipped when another run already drew a near-parallel one next to it.
  */
 export function buildHeatLevels(tracks: Float64Array[]): Float64Array[] {
   const levels: number[][] = Array.from({ length: HEAT_LEVELS }, () => []);
   const first = tracks.find((tr) => tr.length >= 2 && !Number.isNaN(tr[1]!));
   if (!first) return levels.map(() => new Float64Array());
   const cell = HEAT_CELL_M / (EARTH_M * Math.cos((mercatorLat(first[1]!) * Math.PI) / 180));
-  const key = (x: number, y: number) => Math.floor(x / cell) * ROW_SPAN + Math.floor(y / cell);
+  const col = (x: number) => Math.floor(x / cell);
+  const row = (y: number) => Math.floor(y / cell);
+  const key = (c: number, r: number) => c * ROW_SPAN + r;
 
+  // 1. Count each run once per cell AND its 8 neighbours, so jitter on one street shares one count.
   const counts = new Map<number, number>();
   for (const track of tracks) {
     const seen = new Set<number>();
     for (let p = 0; p < track.length; p += 2) {
       const x = track[p]!;
       if (Number.isNaN(x)) continue;
-      seen.add(key(x, track[p + 1]!));
+      const c = col(x), r = row(track[p + 1]!);
+      for (const [dx, dy] of NEIGHBOURS) seen.add(key(c + dx, r + dy));
     }
     for (const k of seen) counts.set(k, (counts.get(k) ?? 0) + 1);
   }
-  const rankOf = heatRankScale(counts.values());
-  const levelOf = (k: number) => Math.round(rankOf(counts.get(k) ?? 1) * (HEAT_LEVELS - 1));
+  // Scale against the cells actually run through, not the dilated halo.
+  const onPath = new Set<number>();
+  for (const track of tracks) for (let p = 0; p < track.length; p += 2) {
+    const x = track[p]!;
+    if (!Number.isNaN(x)) onPath.add(key(col(x), row(track[p + 1]!)));
+  }
+  const scale = heatScale([...onPath].map((k) => counts.get(k) ?? 1));
+  const levelOf = (k: number) => Math.round(scale(counts.get(k) ?? 1) * (HEAT_LEVELS - 1));
 
-  const cellOwner = new Map<number, number>();
-  const edgeOwner = new Map<string, number>();
+  // 2. Draw each street once: a segment is skipped when another run already drew
+  //    a near-parallel segment through a neighbouring cell. Crossings still draw.
+  const drawn = new Map<number, { owner: number; heading: number }[]>();
+  const headingOf = (x0: number, y0: number, x1: number, y1: number) =>
+    ((Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI + 180) % 180;
+  const sameStreet = (a: number, b: number) => { const d = Math.abs(a - b); return Math.min(d, 180 - d) < SAME_STREET_DEG; };
+  const covered = (c: number, r: number, owner: number, h: number) =>
+    NEIGHBOURS.some(([dx, dy]) => drawn.get(key(c + dx, r + dy))?.some((e) => e.owner !== owner && sameStreet(e.heading, h)));
+  const mark = (c: number, r: number, owner: number, h: number) => {
+    const k = key(c, r);
+    const list = drawn.get(k) ?? [];
+    if (!list.some((e) => e.owner === owner && sameStreet(e.heading, h))) list.push({ owner, heading: h });
+    drawn.set(k, list);
+  };
+
   tracks.forEach((track, owner) => {
-    let open = -1; // the level of the polyline being built, or -1
+    let open = -1;
+    const close = () => { if (open >= 0) levels[open]!.push(NaN, NaN); open = -1; };
     for (let p = 2; p < track.length; p += 2) {
-      const x0 = track[p - 2]!;
-      const x1 = track[p]!;
-      if (Number.isNaN(x0) || Number.isNaN(x1)) {
-        if (open >= 0) levels[open]!.push(NaN, NaN);
-        open = -1;
-        continue;
-      }
-      const y0 = track[p - 1]!;
-      const y1 = track[p + 1]!;
-      const a = key(x0, y0);
-      const b = key(x1, y1);
-      let mine: boolean;
-      if (a === b) {
-        const o = cellOwner.get(a);
-        if (o === undefined) cellOwner.set(a, owner);
-        mine = o === undefined || o === owner;
-      } else {
-        const e = a < b ? `${a}_${b}` : `${b}_${a}`;
-        const o = edgeOwner.get(e);
-        if (o === undefined) edgeOwner.set(e, owner);
-        mine = o === undefined || o === owner;
-      }
-      if (!mine) {
-        if (open >= 0) levels[open]!.push(NaN, NaN);
-        open = -1;
-        continue;
-      }
-      const level = Math.min(levelOf(a), levelOf(b));
-      if (level !== open) {
-        if (open >= 0) levels[open]!.push(NaN, NaN);
-        levels[level]!.push(x0, y0);
-        open = level;
-      }
+      const x0 = track[p - 2]!, x1 = track[p]!;
+      if (Number.isNaN(x0) || Number.isNaN(x1)) { close(); continue; }
+      const y0 = track[p - 1]!, y1 = track[p + 1]!;
+      const c0 = col(x0), r0 = row(y0), c1 = col(x1), r1 = row(y1);
+      const h = headingOf(x0, y0, x1, y1);
+      if (covered(c0, r0, owner, h) && covered(c1, r1, owner, h)) { close(); continue; }
+      mark(c0, r0, owner, h);
+      mark(c1, r1, owner, h);
+      const level = Math.min(levelOf(key(c0, r0)), levelOf(key(c1, r1)));
+      if (level !== open) { close(); levels[level]!.push(x0, y0); open = level; }
       levels[level]!.push(x1, y1);
     }
-    if (open >= 0) levels[open]!.push(NaN, NaN);
+    close();
   });
-  return levels.map((points) => Float64Array.from(points));
+  return levels.map((pts) => Float64Array.from(pts));
 }
 
 /** One stroke of a level: its width in px, colour (and its parts), and the halo's blur. */
@@ -281,36 +283,25 @@ export interface HeatStroke {
  */
 export const HEAT_HALO_RINGS = [1.6, 1.15, 0.7] as const;
 
+/** Under this `t` a street has no halo at all (Wave 6): rare streets stay thin, dim lines. */
+export const HEAT_HALO_MIN_T = 0.6;
+
 /**
- * The two layers each level is drawn in (Wave 4, App Fixes 4d): a blurred
- * halo, then a sharp core. Light multiplies, dark screens. The halo in light
- * stays in the tint-to-accent half of the ramp, so it glows and never inks.
+ * One stroke model for both modes (Wave 6): a core whose colour, opacity and
+ * width rise with frequency, and a halo on the busy streets only.
  */
-export const HEAT_STYLE = {
-  light: { composite: "multiply", haloOpacity: [0.12, 0.48] },
-  dark: { composite: "screen", haloOpacity: [0.14, 0.61] },
-} as const satisfies Record<"dark" | "light", { composite: GlobalCompositeOperation; haloOpacity: readonly [number, number] }>;
-
-/** The halo's blur at the mockup's 354 px map width. */
-export const HEAT_HALO_BLUR = 3.2;
-
-/** Under this `t` a street has no halo at all (Wave 5 B): rare streets stay thin lines. */
-export const HEAT_HALO_MIN_T = 0.35;
+export function heatCore(mode: "dark" | "light", accent: string, t: number): HeatStroke {
+  const rgb = mode === "light" ? rampLight(accent, t) : rampDark(accent, t);
+  const alpha = 0.35 + 0.65 * t;              // 0.35 rare → 1 frequent
+  return { width: 0.8 + 2.0 * t, color: rgbCss(rgb, alpha), rgb, alpha, blur: 0 }; // 0.8 → 2.8 px
+}
 
 export function heatHalo(mode: "dark" | "light", accent: string, t: number): HeatStroke | null {
   if (t < HEAT_HALO_MIN_T) return null;
-  const [base, span] = HEAT_STYLE[mode].haloOpacity;
-  const rgb = mode === "light" ? rampLight(accent, t * 0.45) : rampDark(accent, t);
-  const alpha = base + span * t;
-  // 6 to 13 px over the haloed range only.
-  const width = 6 + (7 * (t - HEAT_HALO_MIN_T)) / (1 - HEAT_HALO_MIN_T);
-  return { width, color: rgbCss(rgb, alpha), rgb, alpha, blur: HEAT_HALO_BLUR };
-}
-
-export function heatCore(mode: "dark" | "light", accent: string, t: number): HeatStroke {
-  const rgb = mode === "light" ? rampLight(accent, t) : rampDark(accent, t);
-  const alpha = 0.43 + 0.57 * t;
-  return { width: 1.2 + 2.1 * t, color: rgbCss(rgb, alpha), rgb, alpha, blur: 0 };
+  const k = (t - HEAT_HALO_MIN_T) / (1 - HEAT_HALO_MIN_T);   // 0 → 1 over the haloed range
+  const rgb = mode === "light" ? rampLight(accent, 0.4) : rampDark(accent, 0.75); // the plain accent, never ink or white
+  const alpha = (mode === "light" ? 0.35 : 0.45) * k;
+  return { width: 4 + 5 * k, color: rgbCss(rgb, alpha), rgb, alpha, blur: 3 };  // 4 → 9 px
 }
 
 /**
@@ -319,26 +310,6 @@ export function heatCore(mode: "dark" | "light", accent: string, t: number): Hea
  */
 export function heatZoomScale(zoom: number): number {
   return Math.min(1.6, Math.max(0.6, 2 ** ((zoom - 12.5) / 2)));
-}
-
-/**
- * Dark mode as 3.1.0 drew it (restored, owner, Oct 2026): every run stroked
- * on its own in the accent, a faint wide glow then a thin core, added
- * together ("lighter"), so a street glows by how many runs overlap on it and
- * the busiest burn towards white. The level-based ramp fogged it on iPhone.
- */
-export const HEAT_DARK = {
-  composite: "lighter",
-  passes: [
-    { width: 4, alpha: 0.035 },
-    { width: 1, alpha: 0.16 },
-  ],
-} as const satisfies { composite: GlobalCompositeOperation; passes: readonly { width: number; alpha: number }[] };
-
-/** The dark tracks' line width: 1.2 px at city zoom, up to 4 px on a street. */
-export function heatLineWidth(zoom: number): number {
-  const t = Math.min(1, Math.max(0, (zoom - 12) / 4));
-  return 1.2 + t * (4 - 1.2);
 }
 
 export function ringCoordinates(center: [number, number], radiusKm: number, steps = 96): [number, number][] {
