@@ -530,11 +530,12 @@ export function ActivityListClient({
                     // Oct 2026): its km and runs, not the plan - Today and Plan
                     // show the week against plan. Only once it has a run (3.0).
                     <section key={block.week.key} id={`week-${block.week.key}`} className="scroll-mt-24" data-testid="current-week">
-                      <div className="flex items-baseline justify-between gap-3 px-1 pb-2">
-                        <h2 className="min-w-0 truncate text-title-3 text-foreground">
-                          {t.activities.thisWeek} · {formatDateRange(block.week.key, isoDate(addDays(new Date(`${block.week.key}T00:00:00`), 6)), { year: 'never' })}
-                        </h2>
-                        <span className="shrink-0 text-[13px] text-muted-foreground" data-testid="week-line">
+                      {/* "This week" alone, its line right-aligned; where the
+                          two don't fit, the line wraps under the title - a
+                          header is never cut (F10). */}
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-1 pb-2">
+                        <h2 className="text-title-3 text-foreground">{t.activities.thisWeek}</h2>
+                        <span className="text-[13px] text-muted-foreground" data-testid="week-line">
                           <span className={KM_STRONG}>{formatRanKm(block.week.totalKm)}</span> {t.units.km} · {t.activities.weekLine.runs(block.week.items.length)}
                           {!hasActiveFilter && block.week.easyPct !== null && ` · ${t.activities.weekLine.easy(block.week.easyPct)}`}
                         </span>
@@ -551,7 +552,7 @@ export function ActivityListClient({
                           scroll edge (Liquid Glass v2, data-sticky-strip). */}
                       <div
                         data-sticky-strip
-                        className="sticky z-30 flex items-baseline justify-between gap-3 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
+                        className="sticky z-30 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
                         style={{ top: 'var(--sticky-top, var(--sticky-alone, var(--safe-top)))' }}
                       >
                         <h2 className="text-title-3 capitalize text-foreground">{block.label}</h2>
