@@ -151,11 +151,12 @@ export function heatFrequency(count: number, maxCount: number): number {
 
 /**
  * A pixel's frequency, 0 to 1 (Wave 6b): its run count on a log scale
- * against the 95th percentile of the counts on the lines, so one run is 0,
- * the p95 street is 1, and one outlier can't flatten the rest.
+ * against `top`, a high percentile of the counts on the lines (light: the
+ * 98th), so one run is 0, the top street is 1, and one outlier can't
+ * flatten the rest.
  */
-export function countToT(count: number, p95: number): number {
-  return Math.min(1, Math.max(0, Math.log(Math.max(1, count)) / Math.log(Math.max(2, p95))));
+export function countToT(count: number, top: number): number {
+  return Math.min(1, Math.max(0, Math.log(Math.max(1, count)) / Math.log(Math.max(2, top))));
 }
 
 /**

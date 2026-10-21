@@ -24,6 +24,16 @@ const MERGE_M = 15;
 const CORE_PX = 1.2;
 /** Light: from here the core is dilated (≈ 2.4–3.3 px). */
 const HOT_T = 0.5;
+/**
+ * Light: from here up, and only here, the core runs on to its deepest shade
+ * and the wide outer halo is drawn. Below it a line stays mint with the thin
+ * 6 px halo, so only a few corridors go dark.
+ */
+const DEEP_T = 0.6;
+/** Light: the share of the ramp (tint → accent) a line covers below DEEP_T; the rest, accent → deep, is DEEP_T's. */
+const MINT_RAMP = 0.4;
+/** Light: the colour scale's top, as a percentile of the counts the runs cover. */
+const TOP_PERCENTILE = 0.98;
 /** Light (4d): the halo's half-width on a rare street and the outer, fainter ring's (6 px and 13 px across). */
 const HALO_HALF_PX = 3;
 const HALO_OUTER_HALF_PX = 6.5;
@@ -31,8 +41,15 @@ const HALO_OUTER_HALF_PX = 6.5;
 const HALO_OUTER_ALPHA = 0.55;
 /** Light: the halo's blur, σ ≈ 3.2 px (4d), as a down/up-scale by this. */
 const HALO_BLUR_PX = 3;
-/** Light: per-pixel work, so the canvas is capped at 2x. */
+/** Light: GPS points closer than this (CSS px) to the last one drawn add nothing to the line. */
+const LIGHT_MIN_STEP_PX = 0.75;
+/**
+ * Light: the canvas's resolution cap. 3x was tried (owner, Oct 2026) but the
+ * draw could not be shown under 50 ms, so 2x it stays, its line edges
+ * softened by MASK_SOFTEN where the browser has ctx.filter.
+ */
 const MAX_DPR = 2;
+const MASK_SOFTEN = "blur(0.5px)";
 /**
  * Light: at most this many pixels. Each redraw keeps a scratch canvas the
  * canvas's size; at 8 M pixels with several of them, Safari's canvas memory
@@ -122,6 +139,13 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
   }
 
   const scratch: Record<string, HTMLCanvasElement> = {};
+  /** ctx.filter exists and takes a blur: Safari before 18 has neither. */
+  const canSoften = (() => {
+    const g = document.createElement("canvas").getContext("2d");
+    if (!g || !("filter" in g)) return false;
+    g.filter = MASK_SOFTEN;
+    return g.filter === MASK_SOFTEN;
+  })();
   function surface(name: string, w: number, h: number, read = false) {
     const c = (scratch[name] ??= document.createElement("canvas"));
     if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
@@ -138,31 +162,41 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     for (const c of Object.values(scratch)) { c.width = 0; c.height = 0; }
   }
 
+  /**
+   * A run as a path, in CSS px. At city zoom many GPS points fall inside one
+   * pixel; a point closer than LIGHT_MIN_STEP_PX to the last one drawn is
+   * skipped (a run's last point before a gap or its end never is), which leaves the line as it was
+   * and cuts the stroking, the light draw's cost, several times over.
+   */
   function path(g: CanvasRenderingContext2D, track: Float64Array) {
     const { x0, y0, world } = view;
-    let down = false;
+    let down = false, lx = 0, ly = 0;
     for (let p = 0; p < track.length; p += 2) {
       const x = track[p]!;
       if (Number.isNaN(x)) { down = false; continue; }
       const px = (x - x0) * world, py = (track[p + 1]! - y0) * world;
-      if (down) g.lineTo(px, py);
-      else g.moveTo(px, py);
-      down = true;
+      if (!down) { g.moveTo(px, py); down = true; lx = px; ly = py; continue; }
+      const last = p + 2 >= track.length || Number.isNaN(track[p + 2]!);
+      if (!last && Math.abs(px - lx) < LIGHT_MIN_STEP_PX && Math.abs(py - ly) < LIGHT_MIN_STEP_PX) continue;
+      g.lineTo(px, py);
+      lx = px; ly = py;
     }
   }
 
-  // Colour + alpha for every count 0..255, given p95.
-  function luts(p95: number) {
-    const core = new Uint8ClampedArray(1024), halo = new Uint8ClampedArray(1024), hot = new Uint8Array(256);
+  // Colour + alpha for every count 0..255, given the scale's top count.
+  function luts(top: number) {
+    const core = new Uint8ClampedArray(1024), halo = new Uint8ClampedArray(1024), hot = new Uint8Array(256), deep = new Uint8Array(256);
     for (let c = 0; c < 256; c++) {
-      const t = countToT(c, p95);
-      const cr = rampLight(accent, t);
+      const t = countToT(c, top);
+      // Mint (tint → accent) under DEEP_T; only past it on to the deep shade.
+      const cr = rampLight(accent, t < DEEP_T ? (t / DEEP_T) * MINT_RAMP : MINT_RAMP + ((t - DEEP_T) / (1 - DEEP_T)) * (1 - MINT_RAMP));
       const hr = heatHaloLight(accent, t);
       core.set([cr[0], cr[1], cr[2], 255 * (0.43 + 0.57 * t)], c * 4);
       halo.set([hr[0], hr[1], hr[2], 255 * (0.12 + 0.48 * t)], c * 4);
       hot[c] = t >= HOT_T ? 1 : 0;
+      deep[c] = t >= DEEP_T ? 1 : 0;
     }
-    return { core, halo, hot };
+    return { core, halo, hot, deep };
   }
 
   /** Variant A: every glow before any core; additive, so order doesn't matter. */
@@ -209,14 +243,14 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     for (const tr of tracks) { count.g.beginPath(); path(count.g, tr); count.g.stroke(); }
     const cd = count.g.getImageData(0, 0, cw, ch).data;
 
-    // 2. p95 of the counts the runs cover
+    // 2. the scale's top: the 98th percentile of the counts the runs cover
     const hist = new Uint32Array(256);
     let n = 0;
     for (let i = 3; i < cd.length; i += 4) if (cd[i]) { hist[cd[i]!]!++; n++; }
     if (!n) { releaseScratch(); return; }
-    let acc = 0, p95 = 1;
-    for (let c = 1; c < 256; c++) { acc += hist[c]!; if (acc >= 0.95 * n) { p95 = c; break; } }
-    const L = luts(p95);
+    let acc = 0, top = 1;
+    for (let c = 1; c < 256; c++) { acc += hist[c]!; if (acc >= TOP_PERCENTILE * n) { top = c; break; } }
+    const L = luts(top);
 
     // 3. colour fields: core, halo and busy core, one pixel per CSS pixel
     const core = new ImageData(cw, ch), halo = new ImageData(cw, ch), hot = new ImageData(cw, ch);
@@ -235,11 +269,13 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     const counts = new Uint8Array(cw * ch);
     for (let p = 0; p < counts.length; p++) counts[p] = cd[p * 4 + 3]!;
     const inner = dilateMax(counts, cw, ch, Math.max(1, Math.round(HALO_HALF_PX - band / 2)));
-    const outer = dilateMax(counts, cw, ch, Math.max(2, Math.round(HALO_OUTER_HALF_PX - band / 2)));
+    // The wide outer ring only around the deep corridors (t ≥ DEEP_T).
+    const deepCounts = counts.map((c) => (L.deep[c] ? c : 0));
+    const outer = dilateMax(deepCounts, cw, ch, Math.max(2, Math.round(HALO_OUTER_HALF_PX - band / 2)));
     for (let p = 0, i = 0; p < counts.length; p++, i += 4) {
       const ci = inner[p]!, cj = outer[p]!;
-      if (!cj) continue;
-      const ai = ci ? L.halo[ci * 4 + 3]! : 0, aj = L.halo[cj * 4 + 3]! * HALO_OUTER_ALPHA;
+      if (!ci && !cj) continue;
+      const ai = ci ? L.halo[ci * 4 + 3]! : 0, aj = cj ? L.halo[cj * 4 + 3]! * HALO_OUTER_ALPHA : 0;
       const j = (ai >= aj ? ci : cj) * 4;
       ho[i] = L.halo[j]!; ho[i + 1] = L.halo[j + 1]!; ho[i + 2] = L.halo[j + 2]!; ho[i + 3] = Math.max(ai, aj);
     }
@@ -264,9 +300,10 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       m.g.lineCap = m.g.lineJoin = "round";
       m.g.lineWidth = width;
       m.g.strokeStyle = "#fff";
-      m.g.beginPath();
-      for (const tr of tracks) path(m.g, tr);
-      m.g.stroke();
+      if (canSoften) m.g.filter = MASK_SOFTEN;
+      // One path per run, as dark strokes them: one path of every run took a second to stroke.
+      for (const tr of tracks) { m.g.beginPath(); path(m.g, tr); m.g.stroke(); }
+      if (canSoften) m.g.filter = "none";
       m.g.setTransform(1, 0, 0, 1, 0, 0);
       m.g.globalCompositeOperation = "source-in";
       m.g.imageSmoothingEnabled = true;

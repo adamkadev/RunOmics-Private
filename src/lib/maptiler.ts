@@ -33,9 +33,14 @@ export const HEAT_BASEMAP = {
   dark: { land: '#0e1211', park: '#122019', water: '#13202a', road: '#1c2321' },
 } as const
 
-const HEAT_LABEL_OPACITY = 0.6
-/** Label text on the heatmap (Wave 5 B): one grey per mode, no halo, at 60 %. */
-const HEAT_LABEL = { light: '#6b7270', dark: '#8d9391' } as const
+/**
+ * Label text on the light heatmap (dark keeps its own): one grey, fully opaque, with a thin halo
+ * in the ground's colour. At 60 % with no halo (Wave 5 B) a dark-green
+ * corridor showed through the name, and the line read as crossing it. The
+ * halo is the land's own colour, so it cuts the line, not doubles the name.
+ */
+const HEAT_LABEL = '#5a615f'
+const HEAT_LABEL_HALO = { width: 1.4, blur: 0.4 } as const
 
 type Role = keyof (typeof HEAT_BASEMAP)['light'] | 'hide'
 
@@ -49,12 +54,6 @@ function heatRole(id: string): Role | null {
   return null
 }
 
-/** `#rrggbb` at an alpha. */
-function withAlpha(hex: string, alpha: number): string {
-  const n = parseInt(hex.slice(1, 7), 16)
-  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${alpha})`
-}
-
 export function heatBasemapStyle(style: StyleSpecification, isDark: boolean): StyleSpecification {
   // Dark keeps its own basemap, as 3.1.0 did: the additive tracks read on it as they are.
   if (isDark) return style
@@ -64,11 +63,10 @@ export function heatBasemapStyle(style: StyleSpecification, isDark: boolean): St
     layers: style.layers.map((layer) => {
       if (layer.type === 'symbol') {
         const paint = { ...(layer.paint ?? {}) } as Record<string, unknown>
-        // A halo doubled every street name ("Devant-les-Ponts"): none at all.
-        if (paint['text-color'] !== undefined) paint['text-color'] = withAlpha(HEAT_LABEL[isDark ? 'dark' : 'light'], HEAT_LABEL_OPACITY)
-        paint['text-halo-width'] = 0
-        delete paint['text-halo-color']
-        delete paint['text-halo-blur']
+        if (paint['text-color'] !== undefined) paint['text-color'] = HEAT_LABEL
+        paint['text-halo-color'] = colours.land
+        paint['text-halo-width'] = HEAT_LABEL_HALO.width
+        paint['text-halo-blur'] = HEAT_LABEL_HALO.blur
         return { ...layer, paint } as typeof layer
       }
       const role = heatRole(layer.id)

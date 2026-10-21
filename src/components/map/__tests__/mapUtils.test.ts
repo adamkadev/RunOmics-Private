@@ -119,7 +119,7 @@ describe('the dark heatmap, variant A (Wave 6b)', () => {
 })
 
 describe('countToT (Wave 6b)', () => {
-  it('puts one run at 0 and the p95 count at 1', () => {
+  it('puts one run at 0 and the top count at 1', () => {
     expect(countToT(1, 12)).toBe(0)
     expect(countToT(12, 12)).toBe(1)
     expect(countToT(40, 12)).toBe(1)
