@@ -285,10 +285,21 @@ export const en = {
       shareNote: '% = share of km, the same basis the card uses.',
       allYears: 'All years',
       allTypes: 'All types',
-      // The unset chips: short, so the row fits a phone (owner, Oct 2026).
+      // The filters sheet's sections (Heatmap Filters 1c, Oct 2026).
       year: 'Year',
       type: 'Type',
-      clearFilter: (label: string) => `Clear ${label}`,
+      // The Filters button and its sheet (Heatmap Filters 1b and 1c): type
+      // and year behind one glass circle, its badge the filters on.
+      filters: {
+        button: 'Filters',
+        buttonActive: (n: number) => `Filters, ${n} on`,
+        title: 'Filters',
+        reset: 'Reset',
+        all: 'All',
+        show: (n: number) => `Show ${n} run${n === 1 ? '' : 's'}`,
+        // The card's eyebrow, with more than one type ticked.
+        types: (n: number) => `${n} types`,
+      },
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',
       less: 'Rare',

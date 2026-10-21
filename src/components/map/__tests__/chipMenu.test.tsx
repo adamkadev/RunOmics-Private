@@ -3,14 +3,20 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { t } from '@/i18n'
 import { menuPlacement } from '../chipMenu'
 import { ClusterPanel } from '../ClusterPanel'
-import { FilterChip } from '../FilterChip'
 
-function YearPicker({ years, value, onChange }: { years: string[]; value: string | null; onChange: (v: string | null) => void }) {
-  return <FilterChip allLabel={t.pages.map.allYears} shortLabel={t.pages.map.year} options={years} value={value} label={(y) => y} onChange={onChange} />
-}
-
-function TypePicker({ types, value, onChange }: { types: string[]; value: string | null; onChange: (v: string | null) => void }) {
-  return <FilterChip allLabel={t.pages.map.allTypes} shortLabel={t.pages.map.type} options={types} value={value} label={(y) => y} onChange={onChange} />
+/** The location pill (Heatmap Filters 1b): the row's one chip with a menu. */
+function AreaPicker() {
+  return (
+    <ClusterPanel
+      rows={[
+        { idx: 0, runs: 12, km: 96, sharePercent: 82 },
+        { idx: 1, runs: 3, km: 21, sharePercent: 18 },
+      ]}
+      names={['Riverside', 'Old town']}
+      selectedIdx={0}
+      onSelect={() => {}}
+    />
+  )
 }
 
 describe('menuPlacement', () => {
@@ -58,42 +64,19 @@ function openMenu(chipName: string | RegExp) {
 
 describe('the map filter chips', () => {
   it('draw their menu outside the scrolling rail, where it cannot be clipped', () => {
-    const rail = inScrollingRail(<YearPicker years={['2025', '2026']} value={null} onChange={() => {}} />)
+    const rail = inScrollingRail(<AreaPicker />)
 
-    const { chip, menu } = openMenu(t.pages.map.allYears)
+    const { chip, menu } = openMenu(new RegExp(t.pages.map.area))
 
     expect(chip).toHaveAttribute('aria-expanded', 'true')
     expect(rail.contains(menu)).toBe(false)
     expect(menu.parentElement).toBe(document.body)
-    expect(menu).toHaveTextContent('2026')
-  })
-
-  // The row ran past a phone's width (owner, Oct 2026): unset, a chip shows
-  // its short name and is still called by the whole one, which holds it.
-  it('show "Year" while unset, named "All years", and the year once one is set', () => {
-    const { rerender } = render(<YearPicker years={['2026', '2025']} value={null} onChange={() => {}} />)
-    const chip = screen.getByRole('button', { name: t.pages.map.allYears })
-    expect(chip.textContent).toBe(t.pages.map.year)
-    expect(t.pages.map.allYears.toLowerCase()).toContain(t.pages.map.year.toLowerCase())
-    rerender(<YearPicker years={['2026', '2025']} value="2026" onChange={() => {}} />)
-    expect(screen.getByRole('button', { name: '2026' }).textContent).toBe('2026')
-  })
-
-  it('pick an option and close', () => {
-    const onChange = vi.fn()
-    inScrollingRail(<TypePicker types={['Base', 'Tempo']} value={null} onChange={onChange} />)
-
-    const { chip, menu } = openMenu(t.pages.map.allTypes)
-    fireEvent.click(menu.querySelectorAll('button')[2]!)
-
-    expect(onChange).toHaveBeenCalledWith('Tempo')
-    expect(chip).toHaveAttribute('aria-expanded', 'false')
-    expect(document.getElementById(menu.id)).toBeNull()
+    expect(menu).toHaveTextContent('Old town')
   })
 
   it('close on a tap outside, but not on one inside the menu', () => {
-    inScrollingRail(<YearPicker years={['2026']} value={null} onChange={() => {}} />)
-    const { chip, menu } = openMenu(t.pages.map.allYears)
+    inScrollingRail(<AreaPicker />)
+    const { chip, menu } = openMenu(new RegExp(t.pages.map.area))
 
     fireEvent.pointerDown(menu)
     expect(chip).toHaveAttribute('aria-expanded', 'true')
@@ -103,8 +86,8 @@ describe('the map filter chips', () => {
   })
 
   it('close on Escape and hand the focus back to the chip', () => {
-    inScrollingRail(<YearPicker years={['2026']} value={null} onChange={() => {}} />)
-    const { chip } = openMenu(t.pages.map.allYears)
+    inScrollingRail(<AreaPicker />)
+    const { chip } = openMenu(new RegExp(t.pages.map.area))
 
     fireEvent.keyDown(document, { key: 'Escape' })
 
@@ -115,29 +98,30 @@ describe('the map filter chips', () => {
   it('follow their chip when the rail scrolls, rather than closing', () => {
     // A chip partly outside the rail is scrolled into view by the tap that
     // opens it, and that scroll arrives after the menu has opened.
-    const rail = inScrollingRail(<YearPicker years={['2026']} value={null} onChange={() => {}} />)
-    const { chip, menu } = openMenu(t.pages.map.allYears)
+    const rail = inScrollingRail(<AreaPicker />)
+    const { chip, menu } = openMenu(new RegExp(t.pages.map.area))
     vi.spyOn(chip, 'getBoundingClientRect').mockReturnValue({ left: 100, right: 200, bottom: 50 } as DOMRect)
 
     fireEvent.scroll(rail)
 
     expect(chip).toHaveAttribute('aria-expanded', 'true')
     expect(menu.style.top).toBe('54px')
-    expect(menu.style.right).toBe(`${window.innerWidth - 200}px`)
+    expect(menu.style.left).toBe('100px')
+  })
+
+  // Heatmap Filters 1b (Oct 2026): the row's one wide control, glass, its
+  // name cut with an ellipsis rather than scrolled.
+  it('draw the area as a glass pill that takes the room left and cuts a long name', () => {
+    render(<AreaPicker />)
+    const chip = screen.getByRole('button', { name: new RegExp(t.pages.map.area) })
+    expect(chip.className).toContain('glass-float')
+    expect(chip.className).toContain('flex-1')
+    expect(chip.className).toContain('min-w-0')
+    expect(chip.querySelector('span.truncate')!.textContent).toBe('Riverside')
   })
 
   it('open the area list under the start of its chip, and close it from its own button', () => {
-    inScrollingRail(
-      <ClusterPanel
-        rows={[
-          { idx: 0, runs: 12, km: 96, sharePercent: 82 },
-          { idx: 1, runs: 3, km: 21, sharePercent: 18 },
-        ]}
-        names={['Riverside', 'Old town']}
-        selectedIdx={0}
-        onSelect={() => {}}
-      />
-    )
+    inScrollingRail(<AreaPicker />)
     const { chip, menu } = openMenu(new RegExp(t.pages.map.area))
 
     expect(menu.style.left).not.toBe('')
@@ -162,12 +146,5 @@ describe('the map filter chips', () => {
     expect(menu).not.toHaveTextContent('Nancy')
     fireEvent.click(screen.getByRole('button', { name: /2 more areas/ }))
     expect(menu).toHaveTextContent('Nancy')
-  })
-
-  it('fill a set filter with the accent and clear it from its ✕', () => {
-    const onChange = vi.fn()
-    render(<YearPicker years={['2025', '2026']} value="2026" onChange={onChange} />)
-    fireEvent.click(screen.getByRole('button', { name: t.pages.map.clearFilter('2026') }))
-    expect(onChange).toHaveBeenCalledWith(null)
   })
 })

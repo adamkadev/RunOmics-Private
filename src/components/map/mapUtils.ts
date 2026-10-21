@@ -4,16 +4,27 @@ import { distanceKm, median, round } from "@/lib/math";
 import { t } from "@/i18n";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 
+/**
+ * The heatmap's filters (Heatmap Filters 1c, Oct 2026): any number of types
+ * and years, ticked in the filters sheet. None ticked is "All".
+ */
 export interface HeatFilters {
-  year: string | null;
-  type: ActivityType | null;
+  years: readonly string[];
+  types: readonly ActivityType[];
 }
+
+export const NO_HEAT_FILTERS: HeatFilters = { years: [], types: [] };
 
 export function matchesFilters(meta: RouteMeta | undefined, filters: HeatFilters): boolean {
   if (!meta) return false;
-  if (filters.year && meta.year !== filters.year) return false;
-  if (filters.type && meta.type !== filters.type) return false;
+  if (filters.years.length > 0 && !filters.years.includes(meta.year)) return false;
+  if (filters.types.length > 0 && !filters.types.includes(meta.type)) return false;
   return true;
+}
+
+/** The Filters button's badge: how many of type and year are narrowed, 0 to 2. */
+export function activeFilterCount(filters: HeatFilters): number {
+  return (filters.types.length > 0 ? 1 : 0) + (filters.years.length > 0 ? 1 : 0);
 }
 
 export interface AreaTerritory {
@@ -95,14 +106,6 @@ export function areaRows(clusters: RouteCluster[], routeMeta: RouteMeta[], filte
 /** An area gets its own row in the list from this share of km; the rest fold into one. */
 export const OWN_ROW_SHARE = 10;
 
-// The area, type and year chips are the app's filter chips (v4.17): neutral
-// while unset, inverted once set. The area is always set.
-/** 44 pt tall, the minimum tap target (design review, Oct 2026: they were 31 pt). */
-export const MAP_CHIP_GEOMETRY = "flex h-11 items-center rounded-full text-sm transition-colors";
-export const MAP_CHIP_PADDING = "0 12px";
-/** An open menu outlines its unset chip in text ink. */
-export const MAP_CHIP_OPEN_BORDER = "1px solid var(--foreground)";
-export const MAP_CHIP_CARET_INK = "var(--subtle)";
 
 export function coordLabel(c: RouteCluster): string {
   const lat = `${formatDecimal(Math.abs(c.center[1]), 1)}${c.center[1] >= 0 ? "°N" : "°S"}`;

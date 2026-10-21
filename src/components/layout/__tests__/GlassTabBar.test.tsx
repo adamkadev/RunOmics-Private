@@ -21,9 +21,11 @@ describe('GlassTabBar', () => {
     const capsule = screen.getByTestId('tab-bar-capsule')
     expect(capsule.className).toContain('glass-float')
     expect(capsule.className).toContain('rounded-full')
-    // No band or tint around it, as Bevel's (owner, Oct 2026): the page
-    // stays sharp up to the capsule and shows below it.
-    expect(screen.queryByTestId('bottom-glass')).toBeNull()
+    // Blur and tint under it only, never over the page above (owner, Oct
+    // 2026): the edge is the nav's own height, the capsule's top its top.
+    const edge = screen.getByTestId('bottom-glass')
+    expect(edge.className).toContain('bottom-edge')
+    expect(edge.querySelectorAll(':scope > i')).toHaveLength(2)
   })
 
   it('writes the labels at the 11 px caption size, never text-micro', () => {

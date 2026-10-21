@@ -172,6 +172,8 @@
   --ro-blur:                 18px;
   --glass-fill:              color-mix(in srgb, #ffffff 36%, transparent);
   --tab-glass-fill:          color-mix(in srgb, #ffffff 50%, transparent);
+  --map-glass-fill:          color-mix(in srgb, #ffffff 58%, transparent);
+  --sheet-glass-fill:        color-mix(in srgb, #ffffff 88%, transparent);
   --glass-sheen:             rgb(255 255 255 / 0.50);
   --glass-rim:               rgb(0 0 0 / 0.07);
   --glass-spec:              rgb(255 255 255 / 0.90);
@@ -283,6 +285,8 @@
   --ro-blur:                 18px;
   --glass-fill:              color-mix(in srgb, #262a29 36%, transparent);
   --tab-glass-fill:          color-mix(in srgb, #262a29 50%, transparent);
+  --map-glass-fill:          color-mix(in srgb, #262a29 58%, transparent);
+  --sheet-glass-fill:        color-mix(in srgb, #262a29 88%, transparent);
   --glass-sheen:             rgb(255 255 255 / 0.07);
   --glass-rim:               rgb(255 255 255 / 0.12);
   --glass-spec:              rgb(255 255 255 / 0.22);
@@ -565,22 +569,7 @@
     opacity: 0.7;
   }
 
-  /* The heatmap's filter chips (v4.17): the app's filter chip, the surface
-     with a line and text-2 while unset... */
-  .map-chip {
-    background: var(--card);
-    border: 1px solid var(--border);
-    color: var(--text-2);
-  }
-
-  /* ...inverted once set - the area always, a type or year once picked. */
-  .map-chip-selected {
-    background: var(--foreground);
-    border: 1px solid var(--foreground);
-    color: var(--background);
-  }
-
-  /* What sits on the heatmap: its expand button and its legend. */
+  /* What sits on the heatmap: its legend. */
   .map-overlay {
     background: var(--card);
     border: 1px solid var(--border);
@@ -886,25 +875,94 @@ html[data-bar-shown] .scroll-edge > i { opacity: 1; }
 }
 
 /* The tab bar's capsule (round 3): a denser fill than the other glass, so
-   its labels stay readable over the page. */
+   its labels stay readable over the page. The heatmap's controls over the
+   map, and its filters sheet, denser still (Heatmap Filters 1b, 1c). */
 .tab-bar-glass { --glass-fill: var(--tab-glass-fill); }
+.map-glass { --glass-fill: var(--map-glass-fill); }
+.sheet-glass { --glass-fill: var(--sheet-glass-fill); }
+
+/* Under the tab bar only (owner, Oct 2026): blur and tint from the screen's
+   edge up to the capsule, fading out over its upper half, so nothing above
+   the bar is blurred and no line shows beside it. */
+.bottom-edge {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 100%;
+  pointer-events: none;
+}
+.bottom-edge > i {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.bottom-edge > i:nth-child(1) {
+  -webkit-backdrop-filter: var(--bar-filter);
+  backdrop-filter: var(--bar-filter);
+  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 29px), transparent);
+  mask-image: linear-gradient(to top, #000 calc(100% - 29px), transparent);
+}
+.bottom-edge > i:nth-child(2) {
+  background: linear-gradient(to top, var(--bar-tint) calc(100% - 29px), transparent);
+}
+
+/* The fullscreen heatmap's top (Heatmap Filters 1b, Oct 2026): its row
+   floats over the map on a soft edge - an even blur and the page colour at
+   55 %, fading out over 18 px - with no band or hairline. The first 12 px
+   are the solid strip WebKit samples (map-edge-sampler). */
+.map-top-edge {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: calc(16px + 44px + 8px + var(--bar-fade));
+  pointer-events: none;
+  z-index: 20;
+}
+.map-top-edge > i {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+.map-top-edge > i:nth-child(1) {
+  -webkit-backdrop-filter: var(--bar-filter);
+  backdrop-filter: var(--bar-filter);
+  -webkit-mask-image: linear-gradient(#000 calc(100% - var(--bar-fade)), transparent);
+  mask-image: linear-gradient(#000 calc(100% - var(--bar-fade)), transparent);
+}
+.map-top-edge > i:nth-child(2) {
+  background: linear-gradient(
+    var(--background) 12px,
+    color-mix(in srgb, var(--background) 55%, transparent) 36px,
+    color-mix(in srgb, var(--background) 55%, transparent) calc(100% - var(--bar-fade)),
+    transparent
+  );
+}
 
 /* Fallbacks: no backdrop-filter, Reduce Transparency, Increase Contrast,
    or the opt-in html[data-glass="solid"]. Same geometry, solid fills. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .scroll-edge > i:nth-child(1) { display: none; }
+  .scroll-edge > i:nth-child(1),
+  .bottom-edge > i:nth-child(1),
+  .map-top-edge > i:nth-child(1) { display: none; }
+  .map-top-edge > i:nth-child(2) { background: linear-gradient(var(--background) calc(100% - var(--bar-fade)), transparent 0); }
   .scroll-edge > i:nth-child(2) { background: linear-gradient(var(--background) calc(100% - var(--bar-fade)), transparent 0); }
   .glass-float,
   .map-round-button { background: var(--raised); box-shadow: inset 0 0 0 1px var(--border), var(--glass-drop); }
 }
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .scroll-edge > i:nth-child(1) { display: none; }
+  .scroll-edge > i:nth-child(1),
+  .bottom-edge > i:nth-child(1),
+  .map-top-edge > i:nth-child(1) { display: none; }
+  .map-top-edge > i:nth-child(2) { background: linear-gradient(var(--background) calc(100% - var(--bar-fade)), transparent 0); }
   .scroll-edge > i:nth-child(2) { background: linear-gradient(var(--background) calc(100% - var(--bar-fade)), transparent 0); }
   .scroll-edge > i:nth-child(3) { border-bottom-width: 1px; }
   .glass-float,
   .map-round-button { background: var(--raised); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 0 0 1px var(--border); }
 }
-html[data-glass="solid"] .scroll-edge > i:nth-child(1) { display: none; }
+html[data-glass="solid"] .scroll-edge > i:nth-child(1),
+html[data-glass="solid"] .bottom-edge > i:nth-child(1),
+html[data-glass="solid"] .map-top-edge > i:nth-child(1) { display: none; }
+html[data-glass="solid"] .map-top-edge > i:nth-child(2) { background: linear-gradient(var(--background) calc(100% - var(--bar-fade)), transparent 0); }
 html[data-glass="solid"] .scroll-edge > i:nth-child(2) { background: linear-gradient(var(--background) calc(100% - var(--bar-fade)), transparent 0); }
 html[data-glass="solid"] .glass-float,
 html[data-glass="solid"] .map-round-button { background: var(--raised); -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: inset 0 0 0 1px var(--border); }

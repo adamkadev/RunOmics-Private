@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, MapPin, X } from "lucide-react";
 import { t } from "@/i18n";
 import { formatKm } from "@/lib/formatters";
-import { MAP_CHIP_GEOMETRY, MAP_CHIP_PADDING, OWN_ROW_SHARE, type AreaRow } from "./mapUtils";
+import { OWN_ROW_SHARE, type AreaRow } from "./mapUtils";
 import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
 interface Props {
@@ -64,24 +64,24 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
   }
 
   return (
-    <div className="max-w-full shrink-0">
-      {/* The area is a chip that is always set, so it is drawn set, like
-          the type chip beside it (App Fixes 3d, review 12): one filled pill
-          and the rest outlined read as one row, where an outlined area chip
-          read as a third state. The whole name, never cut - the row scrolls
-          instead. */}
+    <div className="flex min-w-0 flex-1">
+      {/* The location pill (Heatmap Filters 1b, Oct 2026): the row's one
+          wide control, taking what the two circles leave, so any city name
+          fits - cut with an ellipsis, never scrolled. 44 pt glass, as the
+          other headers' controls. */}
       <button
         {...menu.chipProps}
         title={selectedName}
         aria-label={`${t.pages.map.area}: ${selectedName}`}
-        className={[MAP_CHIP_GEOMETRY, "map-chip-selected max-w-full gap-1.5 font-semibold"].join(" ")}
-        style={{ padding: MAP_CHIP_PADDING }}
+        className="map-glass glass-float flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full px-4 text-foreground"
       >
-        <span className="min-w-0 truncate">{selectedName}</span>
+        <MapPin size={18} strokeWidth={2} aria-hidden="true" className="shrink-0 text-accent" />
+        <span className="min-w-0 flex-1 truncate text-left text-base font-semibold">{selectedName}</span>
         <ChevronDown
           size={12}
           strokeWidth={2.5}
-          className={["shrink-0 transition-transform", menu.open ? "rotate-180" : ""].join(" ")}
+          aria-hidden="true"
+          className={["shrink-0 text-[var(--text-2)] transition-transform", menu.open ? "rotate-180" : ""].join(" ")}
         />
       </button>
 

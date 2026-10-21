@@ -305,13 +305,17 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
  * fading out under it (.scroll-edge; Liquid Glass v2, round 3); in dark mode
  * the colour is lifted by 6 % white, so the band reads as material, not a
  * dark strip. The tab bar's capsule is denser (--tab-glass-fill), so its
- * labels stay readable over the page.
+ * labels stay readable over the page; the heatmap's controls over the map
+ * denser still (--map-glass-fill, 58 %), and its filters sheet nearly solid
+ * (--sheet-glass-fill, 88 %), as Heatmap Filters 1b and 1c draw them.
  */
 function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
   return mode === 'light'
     ? {
         '--glass-fill': 'color-mix(in srgb, #ffffff 36%, transparent)',
         '--tab-glass-fill': 'color-mix(in srgb, #ffffff 50%, transparent)',
+        '--map-glass-fill': 'color-mix(in srgb, #ffffff 58%, transparent)',
+        '--sheet-glass-fill': 'color-mix(in srgb, #ffffff 88%, transparent)',
         '--glass-sheen': 'rgb(255 255 255 / 0.50)',
         '--glass-rim': 'rgb(0 0 0 / 0.07)',
         '--glass-spec': 'rgb(255 255 255 / 0.90)',
@@ -324,6 +328,8 @@ function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
     : {
         '--glass-fill': 'color-mix(in srgb, #262a29 36%, transparent)',
         '--tab-glass-fill': 'color-mix(in srgb, #262a29 50%, transparent)',
+        '--map-glass-fill': 'color-mix(in srgb, #262a29 58%, transparent)',
+        '--sheet-glass-fill': 'color-mix(in srgb, #262a29 88%, transparent)',
         '--glass-sheen': 'rgb(255 255 255 / 0.07)',
         '--glass-rim': 'rgb(255 255 255 / 0.12)',
         '--glass-spec': 'rgb(255 255 255 / 0.22)',

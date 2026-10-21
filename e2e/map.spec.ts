@@ -76,20 +76,58 @@ async function drawnWhereItClaims(option: Locator): Promise<boolean> {
   })
 }
 
-test('heatmap filter menus open where they can be seen', async ({ page }) => {
+test('heatmap filters open where they can be seen', async ({ page }) => {
   await page.goto('/map')
 
-  for (const name of [/^Area:/, 'All types', 'All years']) {
-    const chip = page.getByRole('button', { name }).first()
-    await chip.click()
-    const menu = page.locator(`[id="${await chip.getAttribute('aria-controls')}"]`)
+  const chip = page.getByRole('button', { name: /^Area:/ })
+  await chip.click()
+  const menu = page.locator(`[id="${await chip.getAttribute('aria-controls')}"]`)
+  await expect(menu).toBeVisible()
+  expect(await drawnWhereItClaims(menu.getByRole('button').last())).toBe(true)
+  await page.keyboard.press('Escape')
+  await expect(chip).toHaveAttribute('aria-expanded', 'false')
 
-    await expect(menu).toBeVisible()
-    expect(await drawnWhereItClaims(menu.getByRole('button').last())).toBe(true)
+  // Type and year behind one Filters circle, in a sheet (Heatmap Filters 1b,
+  // 1c): nothing changes until "Show N runs", then the badge counts it.
+  await page.getByRole('button', { name: 'Filters', exact: true }).click()
+  const sheet = page.getByRole('dialog', { name: 'Filters' })
+  await expect(sheet).toBeVisible()
+  const show = sheet.getByRole('button', { name: /^Show \d+ runs?$/ })
+  // Polled: the sheet slides up for 0.42 s.
+  await expect.poll(() => drawnWhereItClaims(show)).toBe(true)
+  await sheet.getByRole('region', { name: 'Year' }).getByRole('button').nth(1).click()
+  await expect(page.getByTestId('heat-filter-badge')).toHaveCount(0)
+  await show.click()
+  await expect(page.getByRole('button', { name: 'Filters, 1 on' })).toBeVisible()
+  await expect(page.getByTestId('heat-filter-badge')).toHaveText('1')
+})
 
-    await page.keyboard.press('Escape')
-    await expect(chip).toHaveAttribute('aria-expanded', 'false')
-  }
+// The row ran past an iPhone's width (owner, Oct 2026): the location pill,
+// Filters and fullscreen fit 393 pt with any city name, in the page and in
+// fullscreen, never scrolled and never cut.
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 393, height: 852 } })
+
+  test('the heatmap filter row fits, whatever the city', async ({ page }) => {
+    await page.goto('/map')
+    const row = page.getByTestId('heat-filter-row')
+    const fits = () =>
+      row.evaluate((el) => {
+        const boxes = [...el.querySelectorAll<HTMLElement>(':scope > *, :scope > * > button')].map((c) => c.getBoundingClientRect())
+        return el.scrollWidth <= el.clientWidth && boxes.every((r) => r.left >= 0 && r.right <= innerWidth)
+      })
+    // A long name, as the geocoder can give: the pill cuts it.
+    await row.evaluate((el) => { el.querySelector('span.truncate')!.textContent = 'Kuala Lumpur Federal Territory' })
+    expect(await fits()).toBe(true)
+
+    await page.getByRole('button', { name: 'Fullscreen' }).click()
+    await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible()
+    await row.evaluate((el) => { el.querySelector('span.truncate')!.textContent = 'Kuala Lumpur Federal Territory' })
+    expect(await fits()).toBe(true)
+    // It floats over the map, which fills the screen under it.
+    const mapBox = (await page.getByRole('img', { name: 'Heatmap' }).boundingBox())!
+    expect(mapBox.y).toBeLessThanOrEqual(0)
+  })
 })
 
 test('heatmap actually initialises a MapLibre canvas', async ({ page }) => {

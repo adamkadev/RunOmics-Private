@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   matchesFilters,
+  activeFilterCount,
   buildHeatTracks,
   mercatorX,
   mercatorY,
@@ -27,7 +28,17 @@ const meta = (over: Partial<RouteMeta> = {}): RouteMeta => ({
   ...over,
 })
 
-const f = (over: Partial<HeatFilters> = {}): HeatFilters => ({ year: null, type: null, ...over })
+const f = (over: Partial<HeatFilters> = {}): HeatFilters => ({ years: [], types: [], ...over })
+
+// The Filters button's badge (Heatmap Filters 1b): type and year, each
+// counted once however many of it are ticked; hidden at 0.
+describe('activeFilterCount', () => {
+  it('counts the narrowed filters, not the ticks', () => {
+    expect(activeFilterCount(f())).toBe(0)
+    expect(activeFilterCount(f({ types: ['Race', 'Tempo'] }))).toBe(1)
+    expect(activeFilterCount(f({ types: ['Race'], years: ['2026', '2025'] }))).toBe(2)
+  })
+})
 
 describe('matchesFilters', () => {
   it('false with no meta', () => {
@@ -39,18 +50,26 @@ describe('matchesFilters', () => {
   })
 
   it('filters by year', () => {
-    expect(matchesFilters(meta({ year: '2025' }), f({ year: '2026' }))).toBe(false)
-    expect(matchesFilters(meta({ year: '2026' }), f({ year: '2026' }))).toBe(true)
+    expect(matchesFilters(meta({ year: '2025' }), f({ years: ['2026'] }))).toBe(false)
+    expect(matchesFilters(meta({ year: '2026' }), f({ years: ['2026'] }))).toBe(true)
   })
 
   it('filters by type', () => {
-    expect(matchesFilters(meta({ type: 'Base' }), f({ type: 'Race' }))).toBe(false)
-    expect(matchesFilters(meta({ type: 'Race' }), f({ type: 'Race' }))).toBe(true)
+    expect(matchesFilters(meta({ type: 'Base' }), f({ types: ['Race'] }))).toBe(false)
+    expect(matchesFilters(meta({ type: 'Race' }), f({ types: ['Race'] }))).toBe(true)
+  })
+
+  // Heatmap Filters 1c (Oct 2026): any of the ticked types, in any of the
+  // ticked years.
+  it('takes any of several types or years', () => {
+    expect(matchesFilters(meta({ type: 'Tempo' }), f({ types: ['Race', 'Tempo'] }))).toBe(true)
+    expect(matchesFilters(meta({ type: 'Base' }), f({ types: ['Race', 'Tempo'] }))).toBe(false)
+    expect(matchesFilters(meta({ year: '2025' }), f({ years: ['2026', '2025'] }))).toBe(true)
   })
 
   it('combines year and type (both must match)', () => {
-    expect(matchesFilters(meta({ year: '2026', type: 'Base' }), f({ year: '2026', type: 'Base' }))).toBe(true)
-    expect(matchesFilters(meta({ year: '2026', type: 'Base' }), f({ year: '2026', type: 'Race' }))).toBe(false)
+    expect(matchesFilters(meta({ year: '2026', type: 'Base' }), f({ years: ['2026'], types: ['Base'] }))).toBe(true)
+    expect(matchesFilters(meta({ year: '2026', type: 'Base' }), f({ years: ['2026'], types: ['Race'] }))).toBe(false)
   })
 })
 
@@ -165,14 +184,14 @@ describe('areaRows', () => {
   const clusters = [cluster('many-short', [0, 1, 2]), cluster('one-long', [3])]
 
   it('orders areas by km and states each share of km, the card basis (v4.8)', () => {
-    expect(areaRows(clusters, routeMeta, { year: null, type: null })).toEqual([
+    expect(areaRows(clusters, routeMeta, { years: [], types: [] })).toEqual([
       { idx: 1, runs: 1, km: 18, sharePercent: 45 },
       { idx: 0, runs: 3, km: 22, sharePercent: 55 },
     ].sort((a, b) => b.km - a.km))
   })
 
   it('follows the filters and drops areas left empty', () => {
-    const rows = areaRows(clusters, routeMeta, { year: '2025', type: null })
+    const rows = areaRows(clusters, routeMeta, { years: ['2025'], types: [] })
     expect(rows).toEqual([{ idx: 0, runs: 1, km: 10, sharePercent: 100 }])
   })
 })
@@ -181,7 +200,7 @@ describe('computeAreaTerritory', () => {
   it('shares by km and carries the area km', () => {
     const routeMeta = [meta({ distanceKm: 30 }), meta({ distanceKm: 10 })]
     const routes: [number, number][][] = [[[0, 0], [0.001, 0.001]], [[1, 1], [1.001, 1.001]]]
-    const territory = computeAreaTerritory(cluster('a', [0]), routeMeta, routes, { year: null, type: null })
+    const territory = computeAreaTerritory(cluster('a', [0]), routeMeta, routes, { years: [], types: [] })
     expect(territory).toMatchObject({ percentVolume: 75, km: 30, routeCount: 1 })
   })
 
@@ -191,19 +210,19 @@ describe('computeAreaTerritory', () => {
   const routes = [east(1), east(2), east(5)]
 
   it('puts home where the runs start and the reach at the median furthest point (v4.17)', () => {
-    const territory = computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, routes, { year: null, type: null })!
+    const territory = computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, routes, { years: [], types: [] })!
     expect(territory.home).toEqual([7.75, 48.58])
     // Half the runs - two of three - never go past 2 km.
     expect(territory.medianReachKm).toBe(2)
   })
 
   it('reads the reach from the runs the filters keep', () => {
-    const territory = computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, routes, { year: '2025', type: null })!
+    const territory = computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, routes, { years: ['2025'], types: [] })!
     expect(territory.medianReachKm).toBe(5)
     expect(territory.routeCount).toBe(1)
   })
 
   it('has no card until the area\'s routes have arrived', () => {
-    expect(computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, [], { year: null, type: null })).toBeNull()
+    expect(computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, [], { years: [], types: [] })).toBeNull()
   })
 })
