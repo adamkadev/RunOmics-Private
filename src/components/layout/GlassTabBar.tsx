@@ -25,6 +25,8 @@ const TAB_HREFS = TABS.map((tab) => tab.href)
 export const COLLAPSE_AFTER = 80
 /** Scroll moves smaller than this neither shrink nor grow it: a finger's jitter. */
 const SCROLL_SLOP = 4
+/** iOS's own spring, as a curve: quick off the mark, settling softly. */
+const SPRING = 'cubic-bezier(0.32, 0.72, 0, 1)'
 
 /**
  * Shrunk while the page scrolls down, whole again on a scroll up, at the top,
@@ -56,9 +58,11 @@ function useCollapsed(pathname: string): [boolean, () => void] {
 
 /**
  * The tab bar (owner, Oct 2026, after Bevel): a floating glass capsule over
- * the page, the active tab on a soft pill in the accent. Scrolling down
- * shrinks it to one round glass button with the active tab's icon, which
- * brings the whole bar back on a tap; scrolling up brings it back too.
+ * the page, the active tab on a soft pill in the accent. The pill is one
+ * element that glides to the tab tapped, as it is tapped, not when the next
+ * page has loaded. Scrolling down shrinks the bar to one round glass button
+ * with the active tab's icon, which brings the whole bar back on a tap;
+ * scrolling up brings it back too.
  */
 export function GlassTabBar() {
   const pathname = usePathname()
@@ -66,6 +70,15 @@ export function GlassTabBar() {
   const hidden = useFullscreenChromeHidden()
   const haptic = useHaptic()
   const [collapsed, expand] = useCollapsed(pathname)
+  // The tab tapped, until its page is the one shown: the pill moves at once.
+  const [tapped, setTapped] = useState<string | null>(null)
+  const [shownPath, setShownPath] = useState(pathname)
+  if (shownPath !== pathname) {
+    setShownPath(pathname)
+    setTapped(null)
+  }
+  const activeHref = tapped ?? currentHref
+  const activeIndex = Math.max(0, TAB_HREFS.indexOf(activeHref as (typeof TAB_HREFS)[number]))
   const current = TABS.find((tab) => tab.href === currentHref) ?? TABS[0]
   const CurrentIcon = current.icon
 
@@ -88,26 +101,43 @@ export function GlassTabBar() {
           data-testid="tab-bar-capsule"
           aria-hidden={collapsed || undefined}
           className={cn(
-            'glass-float absolute inset-0 flex items-center gap-1 rounded-full p-1 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
+            'glass-float absolute inset-0 flex items-center gap-1 rounded-full p-1 transition-[opacity,transform] duration-300 motion-reduce:transition-none',
             // Shrinks towards the button it becomes, at the bottom left.
             collapsed ? 'pointer-events-none scale-[0.35] opacity-0' : 'scale-100 opacity-100',
             !hidden && !collapsed && 'pointer-events-auto',
           )}
-          style={{ transformOrigin: '28px 50%' }}
+          style={{ transformOrigin: '28px 50%', transitionTimingFunction: SPRING }}
         >
+          {/* The pill: one fifth of the row less the gaps, moved a tab and a
+              gap at a time (translateX's % is its own width). */}
+          <span
+            aria-hidden="true"
+            data-testid="tab-pill"
+            className="pointer-events-none absolute bottom-1 left-1 top-1 rounded-full bg-[var(--tab-pill)] transition-transform duration-[380ms] motion-reduce:transition-none"
+            style={{
+              width: `calc((100% - 8px - ${(TABS.length - 1) * 4}px) / ${TABS.length})`,
+              transform: `translateX(calc(${activeIndex} * (100% + 4px)))`,
+              transitionTimingFunction: SPRING,
+            }}
+          />
           {TABS.map(({ href, label, icon: Icon }) => {
             const active = currentHref === href
+            const lit = activeHref === href
             return (
               <Link
                 key={href}
                 href={href}
                 tabIndex={collapsed ? -1 : undefined}
-                onClick={() => { if (!active) haptic('light') }}
+                onClick={() => {
+                  if (active) return
+                  haptic('light')
+                  setTapped(href)
+                }}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex h-full flex-1 flex-col items-center justify-center gap-[3px] rounded-full transition-colors duration-150 active:scale-95',
+                  'relative flex h-full flex-1 flex-col items-center justify-center gap-[3px] rounded-full transition-[color,transform] duration-200 active:scale-95',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  active ? 'bg-[var(--tab-pill)] text-accent' : 'text-muted-foreground',
+                  lit ? 'text-accent' : 'text-muted-foreground',
                 )}
               >
                 <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
@@ -130,9 +160,10 @@ export function GlassTabBar() {
             expand()
           }}
           className={cn(
-            'glass-float absolute bottom-0 left-0 flex size-[58px] items-center justify-center rounded-full text-accent transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
+            'glass-float absolute bottom-0 left-0 flex size-[58px] items-center justify-center rounded-full text-accent transition-[opacity,transform] duration-300 motion-reduce:transition-none',
             collapsed && !hidden ? 'pointer-events-auto scale-100 opacity-100' : 'pointer-events-none scale-75 opacity-0',
           )}
+          style={{ transitionTimingFunction: SPRING }}
         >
           <CurrentIcon size={24} strokeWidth={1.8} aria-hidden="true" />
         </button>

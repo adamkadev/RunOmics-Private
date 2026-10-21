@@ -194,6 +194,8 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
         <Link
           href="/profile"
           aria-label={t.nav.items.profile}
+          // The compact bar keeps it at the top right once the page scrolls.
+          data-bar-action="avatar"
           className="hit-44 flex size-10 shrink-0 items-center justify-center rounded-full active:scale-95"
         >
           <span

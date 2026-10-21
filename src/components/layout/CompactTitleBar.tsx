@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { ChevronLeft, Share, type LucideIcon } from 'lucide-react'
+import { ChevronLeft, Settings, Share, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -58,8 +58,12 @@ const LABEL_FADE = 16
 /** The bar is a phone's (lg:hidden): a wide screen keeps the page's header. */
 const WIDE = '(min-width: 64rem)'
 
-/** The actions a page can hand the bar, as the icon it shows there. */
-const ACTION_ICONS: Record<string, LucideIcon> = { share: Share }
+/**
+ * The actions a page can hand the bar, as the icon it shows there: the
+ * activity's Share and Progress' Settings gear. `avatar` (Today's link to
+ * Progress) shows the page's own initials instead (owner, Oct 2026).
+ */
+const ACTION_ICONS: Record<string, LucideIcon> = { share: Share, settings: Settings }
 
 /** The line under the large title that fades as it scrolls up. */
 function subtitleOf(heading: HTMLElement): HTMLElement[] {
@@ -111,6 +115,7 @@ export function CompactTitleBar() {
   const [back, setBack] = useState<string | null>(null)
   const [action, setAction] = useState<string | null>(null)
   const [actionName, setActionName] = useState('')
+  const [actionText, setActionText] = useState('')
 
   useEffect(() => {
     let frame = 0
@@ -151,6 +156,7 @@ export function CompactTitleBar() {
       setBack(backLink ? nameOf(backLink) : null)
       setAction(pageAction?.dataset.barAction ?? null)
       setActionName(pageAction ? nameOf(pageAction) : '')
+      setActionText(pageAction?.textContent?.trim() ?? '')
       if (!heading || window.matchMedia(WIDE).matches) {
         clear()
         setShown(false)
@@ -308,6 +314,18 @@ export function CompactTitleBar() {
           {title}
         </span>
         <span className="flex justify-center">
+          {action === 'avatar' && (
+            // Today's disc, as on the page: the accent with the initials.
+            <button
+              type="button"
+              data-testid="compact-bar-action"
+              aria-label={actionName}
+              onClick={() => actionRef.current?.click()}
+              className={cn('flex size-11 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-[0_8px_28px_rgb(0_0_0/0.18)]', fadeIn)}
+            >
+              <span aria-hidden="true">{actionText}</span>
+            </button>
+          )}
           {ActionIcon && (
             <button
               type="button"

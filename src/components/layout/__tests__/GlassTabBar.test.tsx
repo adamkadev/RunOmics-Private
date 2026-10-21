@@ -41,13 +41,12 @@ describe('GlassTabBar', () => {
     const active = links.filter((link) => link.getAttribute('aria-current') === 'page')
     expect(active).toHaveLength(1)
     expect(active[0]!.className).toContain('text-accent')
-    expect(active[0]!.className).toContain('bg-[var(--tab-pill)]')
     expect(active[0]!.querySelector('span')!.className).toContain('font-medium')
-    for (const link of links) {
-      if (link === active[0]) continue
-      expect(link.className).toContain('text-muted-foreground')
-      expect(link.className).not.toContain('--tab-pill')
-    }
+    for (const link of links) if (link !== active[0]) expect(link.className).toContain('text-muted-foreground')
+    // One pill behind the row, on the first tab (Today).
+    const pill = screen.getByTestId('tab-pill')
+    expect(pill.className).toContain('bg-[var(--tab-pill)]')
+    expect(pill.style.transform).toBe('translateX(calc(0 * (100% + 4px)))')
   })
 
   // iOS 26's tab bar, as Bevel draws it: a scroll down shrinks it to the
@@ -76,6 +75,19 @@ describe('GlassTabBar', () => {
     fireEvent.click(shrunk)
     expect(capsule.className).toContain('opacity-100')
     scrollTo(0)
+  })
+
+  // The pill glides to the tab tapped at once, before its page has loaded,
+  // as Bevel's does (owner, Oct 2026).
+  it('slides the pill to the tab tapped, as it is tapped', () => {
+    render(<GlassTabBar />)
+    const plan = screen.getByRole('link', { name: /Plan/ })
+    plan.addEventListener('click', (e) => e.preventDefault())
+    fireEvent.click(plan)
+    expect(screen.getByTestId('tab-pill').style.transform).toBe('translateX(calc(2 * (100% + 4px)))')
+    expect(plan.className).toContain('text-accent')
+    // The page shown is still Today until the route changes.
+    expect(plan.getAttribute('aria-current')).toBeNull()
   })
 
   it('marks Progress with the trophy, not the person', () => {

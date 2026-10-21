@@ -186,6 +186,25 @@ describe('CompactTitleBar', () => {
     expect(title.style.opacity).toBe('0')
   })
 
+  // Today's avatar and Progress' gear stay at the top right once the page
+  // scrolls, as Bevel keeps its own (owner, Oct 2026).
+  it("keeps Today's avatar and Progress' gear in the bar", async () => {
+    tabPage()
+    document.querySelector('main')!.insertAdjacentHTML('beforeend', '<a data-bar-action="avatar" aria-label="Progress"><span>A</span></a>')
+    await mount(60)
+    const avatar = within(bar()).getByRole('button', { name: 'Progress' })
+    expect(avatar.textContent).toBe('A')
+    expect(avatar.className).toContain('bg-accent')
+
+    document.body.innerHTML = ''
+    tabPage()
+    document.querySelector('main')!.insertAdjacentHTML('beforeend', '<a data-bar-action="settings" aria-label="Settings"></a>')
+    await mount(60)
+    const gear = within(bar()).getByRole('button', { name: 'Settings' })
+    expect(gear.className).toContain('glass-float')
+    expect(gear.querySelector('svg')).not.toBeNull()
+  })
+
   it("puts the page's one action at the bar's trailing end", async () => {
     pushedPage()
     const share = vi.fn()
