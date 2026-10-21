@@ -34,7 +34,7 @@ import {
 } from './analyticsView'
 
 const tabLoading = () => (
-  <div className="flex flex-col gap-3.5">
+  <div className="flex flex-col gap-5">
     <ChartCardSkeleton />
     <ChartCardSkeleton />
   </div>
@@ -159,7 +159,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   const coachEyebrow = t.analytics.cards.coachRead.eyebrow(t.analytics.cards.period.words[current.period]!, t.analytics.tabs[tab])
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-5">
       {/* The v4.17 page header: the title with the window under it, and the
           page's one period control on the same row, on the right. */}
       <header className="mb-1.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">

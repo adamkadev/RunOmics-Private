@@ -390,7 +390,7 @@ export function ActivityListClient({
   const totalsLabel = onlyGroup ? t.activities.filter.groupTotals[onlyGroup] : t.activities.filter.totalsCount
 
   return (
-    <div className="flex flex-col gap-3.5">
+    <div className="flex flex-col gap-5">
       <header className="mb-1.5">
         <h1 className="text-display text-foreground">{t.pages.activities.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{archiveLine.join(' · ')}</p>
