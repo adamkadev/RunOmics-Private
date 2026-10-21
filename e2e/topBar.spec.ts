@@ -128,14 +128,15 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
 })
 
 // Bevel's top (owner, Oct 2026): the compact bar has no surface of its own -
-// no backdrop-filter, no hairline. The material under it (.scroll-edge) is
-// invisible at rest and shown while the bar is, an even blur and tint cut by
-// a hairline at the bar's foot, then an 18 pt soft fade (round 3).
-test('the top bar is one frosted material, cut by a hairline', async ({ page }) => {
+// no backdrop-filter, no hairline. Liquid Glass v3 (G5): the soft scroll edge
+// under it (.scroll-edge) is invisible at rest and shown while the bar is -
+// three blurs that grow stronger toward the top (2, 8, 20 px) and a tint, no
+// hairline - and reaches 30 pt past the bar's foot.
+test('the top bar is a soft scroll edge, with no hairline', async ({ page }) => {
   await page.goto('/analytics')
   await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
   const layers = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-testid="scroll-edge"] > i')].map((i) => getComputedStyle(i).opacity))
-  await expect.poll(layers).toEqual(['0', '0', '0'])
+  await expect.poll(layers).toEqual(['0', '0', '0', '0'])
   // Scrolled again on each poll: while its charts still load the page is too
   // short to reach 600, and the clamped scroll stops above the collapse point.
   await expect
@@ -146,21 +147,21 @@ test('the top bar is one frosted material, cut by a hairline', async ({ page }) 
       }),
     )
     .toBe(true)
-  await expect.poll(layers).toEqual(['1', '1', '1'])
-  // Polled: the material's height eases in with a stuck strip's.
+  await expect.poll(layers).toEqual(['1', '1', '1', '1'])
+  // Polled: the edge's height eases in with a stuck strip's.
   const edge = () => page.evaluate(() => {
-    const layers = [...document.querySelectorAll<HTMLElement>('[data-testid="scroll-edge"] > i')]
+    const wrapper = document.querySelector<HTMLElement>('[data-testid="scroll-edge"]')!
+    const layers = [...wrapper.querySelectorAll<HTMLElement>(':scope > i')]
     const bar = document.querySelector('[data-testid="compact-title-bar"]')!.getBoundingClientRect()
+    const stickyH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-h')) || 0
     return {
-      blur: getComputedStyle(layers[0]!).backdropFilter.includes('blur'),
-      hairline: getComputedStyle(layers[2]!).borderBottomStyle,
-      // Or a stuck sticky strip's, when one is under the bar (--sticky-h).
-      atTheBarsFoot: Math.abs(layers[2]!.getBoundingClientRect().bottom - bar.bottom - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-h')) || 0)) < 1,
-      // The soft fade under the line.
-      fade: Math.round(layers[0]!.getBoundingClientRect().bottom - layers[2]!.getBoundingClientRect().bottom),
+      blurs: layers.slice(0, 3).map((i) => getComputedStyle(i).backdropFilter),
+      hairline: layers.some((i) => parseFloat(getComputedStyle(i).borderBottomWidth) > 0),
+      // The 30 pt fade past the bar's foot, or past a stuck strip's.
+      fade: Math.round(wrapper.getBoundingClientRect().bottom - bar.bottom - stickyH),
     }
   })
-  await expect.poll(edge).toEqual({ blur: true, hairline: 'solid', atTheBarsFoot: true, fade: 18 })
+  await expect.poll(edge).toEqual({ blurs: ['blur(2px)', 'blur(8px)', 'blur(20px)'], hairline: false, fade: 30 })
   const bar = await page.evaluate(() => {
     const style = getComputedStyle(document.querySelector('[data-testid="compact-title-bar"]')!)
     return { backdrop: style.backdropFilter, border: style.borderBottomWidth, background: style.backgroundColor }
