@@ -12,8 +12,8 @@ test('the Background glow switch turns the aura off and the light cards white', 
   await page.goto('/')
   await expect(page.locator('.aura')).toHaveCount(1)
   const card = page.locator('main .content-card').first()
-  // On: frosted, translucent white.
-  await expect.poll(() => card.evaluate((el) => getComputedStyle(el).backgroundColor)).toMatch(/^rgba\(255, 255, 255, 0\.\d+\)$/)
+  // On: frosted, 86 % white (F5).
+  await expect.poll(() => card.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(255, 255, 255, 0.86)')
 
   await page.goto('/settings')
   const toggle = page.getByRole('switch', { name: 'Background glow' })
