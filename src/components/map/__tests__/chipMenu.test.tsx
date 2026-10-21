@@ -6,11 +6,11 @@ import { ClusterPanel } from '../ClusterPanel'
 import { FilterChip } from '../FilterChip'
 
 function YearPicker({ years, value, onChange }: { years: string[]; value: string | null; onChange: (v: string | null) => void }) {
-  return <FilterChip allLabel={t.pages.map.allYears} options={years} value={value} label={(y) => y} onChange={onChange} />
+  return <FilterChip allLabel={t.pages.map.allYears} shortLabel={t.pages.map.year} options={years} value={value} label={(y) => y} onChange={onChange} />
 }
 
 function TypePicker({ types, value, onChange }: { types: string[]; value: string | null; onChange: (v: string | null) => void }) {
-  return <FilterChip allLabel={t.pages.map.allTypes} options={types} value={value} label={(y) => y} onChange={onChange} />
+  return <FilterChip allLabel={t.pages.map.allTypes} shortLabel={t.pages.map.type} options={types} value={value} label={(y) => y} onChange={onChange} />
 }
 
 describe('menuPlacement', () => {
@@ -66,6 +66,17 @@ describe('the map filter chips', () => {
     expect(rail.contains(menu)).toBe(false)
     expect(menu.parentElement).toBe(document.body)
     expect(menu).toHaveTextContent('2026')
+  })
+
+  // The row ran past a phone's width (owner, Oct 2026): unset, a chip shows
+  // its short name and is still called by the whole one, which holds it.
+  it('show "Year" while unset, named "All years", and the year once one is set', () => {
+    const { rerender } = render(<YearPicker years={['2026', '2025']} value={null} onChange={() => {}} />)
+    const chip = screen.getByRole('button', { name: t.pages.map.allYears })
+    expect(chip.textContent).toBe(t.pages.map.year)
+    expect(t.pages.map.allYears.toLowerCase()).toContain(t.pages.map.year.toLowerCase())
+    rerender(<YearPicker years={['2026', '2025']} value="2026" onChange={() => {}} />)
+    expect(screen.getByRole('button', { name: '2026' }).textContent).toBe('2026')
   })
 
   it('pick an option and close', () => {

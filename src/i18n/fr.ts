@@ -261,6 +261,8 @@ export const fr = {
       shareNote: '% = part des km, la même base que la carte.',
       allYears: 'Toutes les années',
       allTypes: 'Tous les types',
+      year: 'Année',
+      type: 'Type',
       clearFilter: (label: string) => `Effacer ${label}`,
       fullscreen: 'Plein écran',
       exitFullscreen: 'Quitter le plein écran',

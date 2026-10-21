@@ -285,6 +285,9 @@ export const en = {
       shareNote: '% = share of km, the same basis the card uses.',
       allYears: 'All years',
       allTypes: 'All types',
+      // The unset chips: short, so the row fits a phone (owner, Oct 2026).
+      year: 'Year',
+      type: 'Type',
       clearFilter: (label: string) => `Clear ${label}`,
       fullscreen: 'Fullscreen',
       exitFullscreen: 'Exit fullscreen',

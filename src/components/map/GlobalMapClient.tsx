@@ -172,35 +172,36 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     >
       {/* The chips on their own row under the title (v4.17), scrolling
           sideways; their menus are fixed, so the scroll never clips them.
-          In fullscreen, the header row with the collapse button. */}
-      <div
-        className={[
-          "flex items-center gap-2 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          isFullscreen ? "shrink-0 border-b border-border bg-card px-3 py-2" : "mt-1",
-        ].join(" ")}
-      >
-        <ClusterPanel rows={rows} names={names} selectedIdx={selectedIdx} onSelect={handleSelectCluster} />
-        {availableTypes.length > 1 && (
+          In fullscreen, the header row, its collapse button pinned at the
+          end outside the scroll, so a long row never pushes it off screen
+          (owner, Oct 2026). */}
+      <div className={["flex items-center gap-2", isFullscreen ? "shrink-0 border-b border-border bg-card px-3 py-2" : "mt-1"].join(" ")}>
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <ClusterPanel rows={rows} names={names} selectedIdx={selectedIdx} onSelect={handleSelectCluster} />
+          {availableTypes.length > 1 && (
+            <FilterChip
+              allLabel={t.pages.map.allTypes}
+              shortLabel={t.pages.map.type}
+              options={availableTypes}
+              value={selectedType}
+              label={(ty) => t.activityTypes[ty]}
+              onChange={setSelectedType}
+            />
+          )}
           <FilterChip
-            allLabel={t.pages.map.allTypes}
-            options={availableTypes}
-            value={selectedType}
-            label={(ty) => t.activityTypes[ty]}
-            onChange={setSelectedType}
+            allLabel={t.pages.map.allYears}
+            shortLabel={t.pages.map.year}
+            options={data.years}
+            value={selectedYear}
+            label={(y) => y}
+            onChange={setSelectedYear}
           />
-        )}
-        <FilterChip
-          allLabel={t.pages.map.allYears}
-          options={data.years}
-          value={selectedYear}
-          label={(y) => y}
-          onChange={setSelectedYear}
-        />
+        </div>
         {isFullscreen && (
           <button
             onClick={() => setIsFullscreen(false)}
             aria-label={t.pages.map.exitFullscreen}
-            className="map-overlay ml-auto flex size-11 shrink-0 items-center justify-center rounded-[12px] text-[var(--text-2)]"
+            className="map-overlay flex size-11 shrink-0 items-center justify-center rounded-[12px] text-[var(--text-2)]"
           >
             <Minimize size={16} />
           </button>

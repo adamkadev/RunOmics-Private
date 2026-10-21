@@ -6,8 +6,10 @@ import { MAP_CHIP_CARET_INK, MAP_CHIP_GEOMETRY, MAP_CHIP_OPEN_BORDER, MAP_CHIP_P
 import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
 interface Props<T extends string> {
-  /** What the chip reads while nothing is set: "All types", "All years". */
+  /** The menu's first row, and the chip's name while nothing is set: "All types", "All years". */
   allLabel: string;
+  /** What the chip shows while nothing is set: "Type", "Year" - short, so the row fits a phone. */
+  shortLabel: string;
   options: readonly T[];
   value: T | null;
   label: (option: T) => string;
@@ -16,9 +18,12 @@ interface Props<T extends string> {
 
 /**
  * Type and year (v4.8): neutral until set, then the area chip's accent
- * (v4.17) with an ✕ that clears it. The menu lists "All" first.
+ * (v4.17) with an ✕ that clears it. The menu lists "All" first. Unset, the
+ * chip shows its short name - "Type ˅", not "All types ˅" (owner, Oct 2026:
+ * the row ran past the screen, the French past it further) - and is still
+ * called "All types", which holds the word it shows.
  */
-export function FilterChip<T extends string>({ allLabel, options, value, label, onChange }: Props<T>) {
+export function FilterChip<T extends string>({ allLabel, shortLabel, options, value, label, onChange }: Props<T>) {
   const menu = useChipMenu("end");
 
   function select(next: T | null) {
@@ -26,7 +31,7 @@ export function FilterChip<T extends string>({ allLabel, options, value, label, 
     menu.close();
   }
 
-  const text = value ? label(value) : allLabel;
+  const text = value ? label(value) : shortLabel;
 
   return (
     <div className="shrink-0">
@@ -36,8 +41,9 @@ export function FilterChip<T extends string>({ allLabel, options, value, label, 
       >
         <button
           {...menu.chipProps}
+          aria-label={value ? undefined : allLabel}
           className="flex h-full items-center gap-1.5"
-          style={{ padding: value ? "0 4px 0 14px" : MAP_CHIP_PADDING, color: "inherit" }}
+          style={{ padding: value ? "0 4px 0 12px" : MAP_CHIP_PADDING, color: "inherit" }}
         >
           <span className={value ? "font-semibold" : ""}>{text}</span>
           {!value && (
@@ -53,7 +59,7 @@ export function FilterChip<T extends string>({ allLabel, options, value, label, 
           <button
             onClick={() => onChange(null)}
             aria-label={t.pages.map.clearFilter(text)}
-            className="flex h-full items-center pl-1 pr-3.5"
+            className="flex h-full items-center pl-1 pr-3"
             style={{ color: "inherit", opacity: 0.7 }}
           >
             <X size={13} strokeWidth={2.5} />
