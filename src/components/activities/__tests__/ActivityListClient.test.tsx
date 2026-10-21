@@ -150,7 +150,9 @@ describe('the archive under its months', () => {
   it('says how far back the archive goes', () => {
     renderList([run('a', '2026-09-20', 25), run('b', '2025-05-14', 10)])
     const since = t.activities.since(formatDate('2025-05-14', { precision: 'month', year: 'always' }))
-    expect(screen.getByRole('heading', { level: 1 }).nextElementSibling!.textContent).toContain(since)
+    // The line under the title row, which List | Map shares (round 3).
+    const line = screen.getByRole('heading', { level: 1 }).closest('header')!.querySelector('[data-title-sub]')!
+    expect(line.textContent).toContain(since)
   })
 
   // 3.0: four group chips, no dots.

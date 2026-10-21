@@ -83,10 +83,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen">
         <ThemeSync />
         {/* The top bar's material, after Bevel's (owner, Oct 2026): a fixed
-            wrapper with no background, its two absolute layers an even blur
-            and the tint with its hairline, shown while the compact bar is
+            wrapper with no background, its three absolute layers the blur,
+            the tint and the hairline, shown while the compact bar is
             (globals.css, .scroll-edge). */}
-        <div aria-hidden data-testid="scroll-edge" className="scroll-edge lg:hidden"><i /><i /></div>
+        <div aria-hidden data-testid="scroll-edge" className="scroll-edge lg:hidden"><i /><i /><i /></div>
         {/* The edge sampler: solid, full width, over 10 px tall, at the top
             edge, never resized or hidden. WebKit samples 4 px in for such a
             bar, and finding one, iOS 26 draws no blur of its own over the

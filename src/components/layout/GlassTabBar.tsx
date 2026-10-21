@@ -104,7 +104,8 @@ export function GlassTabBar() {
           data-testid="tab-bar-capsule"
           data-collapsed={collapsed || undefined}
           className={cn(
-            'glass-float absolute bottom-0 left-0 h-[58px] overflow-hidden rounded-full motion-reduce:transition-none',
+            // tab-bar-glass: a denser fill, so the labels read over the page.
+            'glass-float tab-bar-glass absolute bottom-0 left-0 h-[58px] overflow-hidden rounded-full motion-reduce:transition-none',
             !hidden && 'pointer-events-auto',
           )}
           style={{ width: collapsed ? 58 : '100%', transition: `width 420ms ${SPRING}` }}

@@ -284,6 +284,34 @@ describe('CompactTitleBar', () => {
     expect(twelve).toHaveBeenCalledTimes(1)
   })
 
+  // Activities' List | Map in the header's trailing slot, as Plan's Week |
+  // Month (Liquid Glass v2, round 3): the bar's from the moment it collapses
+  // in, the page's own fading out with the large title, never both at once.
+  it('hands a header control to the bar as it collapses in', async () => {
+    document.body.innerHTML = `<main><header>
+      <div><h1>Activities</h1><div role="tablist" aria-label="View" data-bar-segments><button role="tab" aria-selected="true">List</button><button role="tab" aria-selected="false">Map</button></div></div>
+      <p data-title-sub>272 runs</p>
+    </header></main>`
+    place(document.querySelector('h1')!, STATUS_BAR + 4, 40)
+    place(document.querySelector('[data-bar-segments]')!, STATUS_BAR + 4, 44)
+    place(document.querySelector('p')!, STATUS_BAR + 48, 20)
+    const group = document.querySelector<HTMLElement>('[data-bar-segments]')!
+    await mount(0)
+    expect(group.style.opacity).toBe('')
+
+    await scrollTo(60)
+    expect(shown()).toBe(true)
+    expect(within(within(bar()).getByTestId('compact-bar-segments')).getAllByRole('button').map((b) => b.textContent)).toEqual(['List', 'Map'])
+    expect(group.style.opacity).toBe('0')
+    expect(group.style.pointerEvents).toBe('none')
+    // The archive line under the row is the title's subtitle, faded with it.
+    expect(document.querySelector<HTMLElement>('p')!.style.opacity).toBe('0')
+
+    await scrollTo(0)
+    expect(group.style.opacity).toBe('')
+    expect(group.style.pointerEvents).toBe('')
+  })
+
   // Goals' ‹ 2026 › (Liquid Glass v2, round 2): one glass capsule, its
   // arrows pressing the page's own, the year between them.
   it("carries Goals' year stepper, and Shoes' add, in the bar", async () => {

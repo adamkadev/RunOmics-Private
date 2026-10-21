@@ -301,31 +301,37 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
  * a sheen from the top, a 0.5 px rim, a specular top edge and a soft drop.
  * Clearer after Bevel's (owner, Oct 2026): the page reads through the tab
  * bar, softened, not smeared. The top bar's material (--bar-*) is the
- * page's colour over an even blur, cut by a hairline (.scroll-edge): 60 %,
- * so the page shows through it blurred, as through the tab bar (owner, Oct
- * 2026).
+ * page's colour at 78 % over a 30 px blur, cut by a hairline, then 32 %
+ * fading out under it (.scroll-edge; Liquid Glass v2, round 3); in dark mode
+ * the colour is lifted by 6 % white, so the band reads as material, not a
+ * dark strip. The tab bar's capsule is denser (--tab-glass-fill), so its
+ * labels stay readable over the page.
  */
 function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
   return mode === 'light'
     ? {
         '--glass-fill': 'color-mix(in srgb, #ffffff 36%, transparent)',
+        '--tab-glass-fill': 'color-mix(in srgb, #ffffff 50%, transparent)',
         '--glass-sheen': 'rgb(255 255 255 / 0.50)',
         '--glass-rim': 'rgb(0 0 0 / 0.07)',
         '--glass-spec': 'rgb(255 255 255 / 0.90)',
         '--glass-drop': '0 8px 24px rgb(0 0 0 / 0.10), 0 1px 2px rgb(0 0 0 / 0.06)',
         '--glass-filter': 'blur(16px) saturate(1.8)',
-        '--bar-tint': 'color-mix(in srgb, var(--background) 60%, transparent)',
-        '--bar-filter': 'blur(24px) saturate(1.8)',
+        '--bar-tint': 'color-mix(in srgb, var(--background) 78%, transparent)',
+        '--bar-tint-fade': 'color-mix(in srgb, var(--background) 32%, transparent)',
+        '--bar-filter': 'blur(30px) saturate(1.8)',
       }
     : {
         '--glass-fill': 'color-mix(in srgb, #262a29 36%, transparent)',
+        '--tab-glass-fill': 'color-mix(in srgb, #262a29 50%, transparent)',
         '--glass-sheen': 'rgb(255 255 255 / 0.07)',
         '--glass-rim': 'rgb(255 255 255 / 0.12)',
         '--glass-spec': 'rgb(255 255 255 / 0.22)',
         '--glass-drop': '0 10px 30px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.30)',
         '--glass-filter': 'blur(16px) saturate(1.8) brightness(1.12)',
-        '--bar-tint': 'color-mix(in srgb, var(--background) 60%, transparent)',
-        '--bar-filter': 'blur(24px) saturate(1.8)',
+        '--bar-tint': 'color-mix(in srgb, color-mix(in srgb, var(--background) 94%, #ffffff) 78%, transparent)',
+        '--bar-tint-fade': 'color-mix(in srgb, color-mix(in srgb, var(--background) 94%, #ffffff) 32%, transparent)',
+        '--bar-filter': 'blur(30px) saturate(1.8)',
       }
 }
 
@@ -429,6 +435,8 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       // The compact bar: the sampler's 12 px, a 46 px row, then 10 px to the
       // hairline (owner, Oct 2026, as Bevel's).
       '--bar-h': '68px',
+      // The soft fade under the top bar's hairline (Liquid Glass v2, round 3).
+      '--bar-fade': '18px',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       // The floating tab bar's gap to the bottom edge (owner, Oct 2026, after
       // Bevel): the inset less 15 px, about 19 pt on a notched iPhone, clear

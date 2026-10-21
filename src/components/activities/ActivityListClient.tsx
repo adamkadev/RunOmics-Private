@@ -391,22 +391,24 @@ export function ActivityListClient({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* List | Map in the header's trailing slot, as Plan's Week | Month
+          (Liquid Glass v2, round 3): the bar's copy lands on it. The archive
+          line runs the width under the row. */}
       <header className="mb-1.5">
-        <h1 className="text-display text-foreground">{t.pages.activities.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{archiveLine.join(' · ')}</p>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="min-w-0 text-display text-foreground">{t.pages.activities.title}</h1>
+          <SegmentedTabs
+            tabs={viewTabs}
+            items={[
+              { id: 'list', label: t.activities.view.list },
+              { id: 'map', label: t.activities.view.map },
+            ]}
+            label={t.activities.view.label}
+            barMirror
+          />
+        </div>
+        <p data-title-sub className="mt-1 text-sm text-muted-foreground">{archiveLine.join(' · ')}</p>
       </header>
-
-      <SegmentedTabs
-        tabs={viewTabs}
-        items={[
-          { id: 'list', label: t.activities.view.list },
-          { id: 'map', label: t.activities.view.map },
-        ]}
-        label={t.activities.view.label}
-        size="md"
-        fill
-        barMirror
-      />
 
       <div {...viewTabs.panelProps} className="flex flex-col gap-3.5 outline-none">
         {view === 'map' ? (

@@ -135,9 +135,10 @@ export function titleColumns(barWidth: number, left: number, right: number, titl
   return fits ? `${side}px minmax(0,1fr) ${side}px` : `${left}px minmax(0,1fr) ${right}px`
 }
 
-/** The line under the large title that fades as it scrolls up. */
+/** The line under the large title that fades as it scrolls up: the <p> right
+ *  after it, or one marked `data-title-sub` beside it or in its header. */
 function subtitleOf(heading: HTMLElement): HTMLElement[] {
-  const marked = [...(heading.parentElement?.querySelectorAll<HTMLElement>('[data-title-sub]') ?? [])]
+  const marked = [...((heading.closest('header') ?? heading.parentElement)?.querySelectorAll<HTMLElement>('[data-title-sub]') ?? [])]
   const next = heading.nextElementSibling
   return next instanceof HTMLElement && next.tagName === 'P' && !marked.includes(next) ? [next, ...marked] : marked
 }
@@ -164,6 +165,7 @@ function fadeTo(el: HTMLElement, opacity: number) {
 function unfade(el: HTMLElement) {
   el.style.removeProperty('opacity')
   el.style.removeProperty('pointer-events')
+  el.style.removeProperty('transition')
 }
 
 /** The large title as it is at the top: no inline style at all, not even
@@ -237,9 +239,13 @@ export function CompactTitleBar() {
       const segmentButtons = segmentsEl ? [...segmentsEl.querySelectorAll<HTMLElement>('button')] : []
       segmentsRef.current = segmentButtons
       // Mirrored as the control reaches the bar, before the soft edge blurs
-      // it (Liquid Glass v2, round 2: 24 pt early), never beside it.
+      // it (Liquid Glass v2, round 2: 24 pt early), never beside it. A
+      // control in the large title's header (List | Map, Week | Month,
+      // 4W | 12W | 1Y) is the bar's from the moment the bar collapses in,
+      // as the title is (round 3).
       const statusBarNow = probeRef.current?.offsetHeight ?? 0
-      const underBar = !!segmentsEl && segmentsEl.getBoundingClientRect().bottom <= statusBarNow + BAR_HEIGHT + MIRROR_LEAD
+      const inHeader = !!segmentsEl && !!current?.closest('header')?.contains(segmentsEl)
+      const underBar = !!segmentsEl && (inHeader || segmentsEl.getBoundingClientRect().bottom <= statusBarNow + BAR_HEIGHT + MIRROR_LEAD)
       const stepper = segmentsEl?.dataset.barSegments === 'stepper'
       const readSegments: BarSegments | null = segmentsEl && underBar
         ? {
@@ -314,6 +320,13 @@ export function CompactTitleBar() {
       for (const el of pageActions) {
         faded.add(el)
         fadeTo(el, collapsed ? 0 : 1)
+      }
+      // A header control cross-fades with its copy in the bar, over the
+      // title's fade, so the two are never seen at once (round 3).
+      if (segmentsEl && inHeader) {
+        faded.add(segmentsEl)
+        segmentsEl.style.transition = `opacity ${TITLE_FADE_MS}ms ease-out`
+        fadeTo(segmentsEl, collapsed ? 0 : 1)
       }
 
       // The subtitle fades with the scroll and is gone by the time its top
