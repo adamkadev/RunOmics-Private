@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { Aura, auraPalette } from '../Aura'
@@ -29,5 +31,16 @@ describe('the aura', () => {
     expect(aura.className).toBe('aura-field')
     expect(aura.style.getPropertyValue('--aura-1')).toBe('var(--zone-2)')
     expect(aura.children).toHaveLength(0)
+  })
+
+  // F1 (round 2): the glow started at full colour where the 12 pt edge
+  // sampler ends, a hard line under the status bar. It is clear down to the
+  // sampler's foot and comes in over the next 84 pt.
+  it('is clear down to the foot of the edge sampler', () => {
+    const css = readFileSync(path.resolve(__dirname, '../../../app/globals.css'), 'utf8')
+    const start = css.indexOf('.aura-field {')
+    const rule = css.slice(start, css.indexOf('}', start))
+    expect(rule).toMatch(/\btop: 0;/)
+    expect(rule).toContain('mask-image: linear-gradient(transparent 0, transparent calc(var(--safe-top) + var(--edge-sample-h)), #000 calc(var(--safe-top) + 96px)')
   })
 })

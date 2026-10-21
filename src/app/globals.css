@@ -829,12 +829,14 @@
     position: absolute;
     left: -60px;
     right: -60px;
-    top: calc(var(--safe-top) - 32px);
+    top: 0;
     height: 540px;
     pointer-events: none;
     filter: blur(36px);
-    -webkit-mask-image: linear-gradient(transparent 0, #000 70px, #000 50%, transparent 100%);
-            mask-image: linear-gradient(transparent 0, #000 70px, #000 50%, transparent 100%);
+    /* Clear down to the foot of the edge sampler (F1): a glow that started
+       there at full colour showed as a hard line under the status bar. */
+    -webkit-mask-image: linear-gradient(transparent 0, transparent calc(var(--safe-top) + var(--edge-sample-h)), #000 calc(var(--safe-top) + 96px), #000 55%, transparent 100%);
+            mask-image: linear-gradient(transparent 0, transparent calc(var(--safe-top) + var(--edge-sample-h)), #000 calc(var(--safe-top) + 96px), #000 55%, transparent 100%);
     background:
       radial-gradient(60% 46% at 16% 20%, color-mix(in srgb, var(--aura-1) 62%, white) 0%, transparent 70%),
       radial-gradient(55% 42% at 88% 14%, color-mix(in srgb, var(--aura-2) 56%, white) 0%, transparent 70%),
