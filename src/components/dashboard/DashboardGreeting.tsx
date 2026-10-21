@@ -81,6 +81,10 @@ function SyncButton({ text, tone, spinning = false, onClick, disabled = false, s
         title={text}
         data-testid="sync-line"
         data-tone={tone}
+        // The compact bar keeps it beside the avatar once the page scrolls,
+        // its arrows turning while the sync runs (data-bar-busy).
+        data-bar-action="refresh"
+        data-bar-busy={spinning ? '' : undefined}
         className={BUTTON}
         style={{ color }}
       >

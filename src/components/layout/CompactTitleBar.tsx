@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { ChevronLeft, Settings, Share, type LucideIcon } from 'lucide-react'
+import { ChevronLeft, RotateCw, Settings, Share, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -60,10 +60,30 @@ const WIDE = '(min-width: 64rem)'
 
 /**
  * The actions a page can hand the bar, as the icon it shows there: the
- * activity's Share and Progress' Settings gear. `avatar` (Today's link to
- * Progress) shows the page's own initials instead (owner, Oct 2026).
+ * activity's Share, Progress' Settings gear and Today's sync. `avatar`
+ * (Today's link to Progress) shows the page's own initials instead. A page
+ * with two (Today: sync and avatar) gets them in one glass capsule, as
+ * Bevel's share and avatar (owner, Oct 2026).
  */
-const ACTION_ICONS: Record<string, LucideIcon> = { share: Share, settings: Settings }
+const ACTION_ICONS: Record<string, LucideIcon> = { share: Share, settings: Settings, refresh: RotateCw }
+
+/** A page control the bar mirrors, as it reads it from the DOM. */
+interface BarAction {
+  kind: string
+  name: string
+  /** What the control says: the avatar's initials. */
+  text: string
+  /** `data-bar-busy` on the control: the sync running, its arrows turning. */
+  busy: boolean
+  disabled: boolean
+}
+
+/**
+ * The bar's side columns: a 44 pt circle 12 pt from the edge, or a capsule
+ * of two (40 pt each, 4 pt apart, in 4 pt of glass) the same 12 pt in.
+ */
+const SIDE = 56
+const CAPSULE_SIDE = 108
 
 /** The line under the large title that fades as it scrolls up. */
 function subtitleOf(heading: HTMLElement): HTMLElement[] {
@@ -109,13 +129,11 @@ export function CompactTitleBar() {
   const probeRef = useRef<HTMLSpanElement>(null)
   // The page's own back link and action, which the bar's buttons press.
   const backRef = useRef<HTMLElement | null>(null)
-  const actionRef = useRef<HTMLElement | null>(null)
+  const actionsRef = useRef<HTMLElement[]>([])
   const [title, setTitle] = useState<string | null>(null)
   const [shown, setShown] = useState(false)
   const [back, setBack] = useState<string | null>(null)
-  const [action, setAction] = useState<string | null>(null)
-  const [actionName, setActionName] = useState('')
-  const [actionText, setActionText] = useState('')
+  const [actions, setActions] = useState<BarAction[]>([])
 
   useEffect(() => {
     let frame = 0
@@ -150,13 +168,19 @@ export function CompactTitleBar() {
         }
       }
       const backLink = document.querySelector<HTMLElement>('main [data-bar-back]')
-      const pageAction = document.querySelector<HTMLElement>('main [data-bar-action]')
+      const pageActions = [...document.querySelectorAll<HTMLElement>('main [data-bar-action]')]
       backRef.current = backLink
-      actionRef.current = pageAction
+      actionsRef.current = pageActions
       setBack(backLink ? nameOf(backLink) : null)
-      setAction(pageAction?.dataset.barAction ?? null)
-      setActionName(pageAction ? nameOf(pageAction) : '')
-      setActionText(pageAction?.textContent?.trim() ?? '')
+      const read = pageActions.map((el) => ({
+        kind: el.dataset.barAction ?? '',
+        name: nameOf(el),
+        text: el.textContent?.trim() ?? '',
+        busy: el.hasAttribute('data-bar-busy'),
+        disabled: el.hasAttribute('disabled'),
+      }))
+      // Only a change re-renders: this runs on every scroll frame.
+      setActions((prev) => (JSON.stringify(prev) === JSON.stringify(read) ? prev : read))
       if (!heading || window.matchMedia(WIDE).matches) {
         clear()
         setShown(false)
@@ -196,12 +220,12 @@ export function CompactTitleBar() {
         faded.add(backLink)
         fadeTo(backLink, atTop ? 1 : 1 - scroll / collapseAt)
       }
-      // The page's action hands over to the bar's as the title does, rather
-      // than show cut under the bar beside its icon; the button's own
-      // transition fades it.
-      if (pageAction) {
-        faded.add(pageAction)
-        fadeTo(pageAction, collapsed ? 0 : 1)
+      // The page's actions hand over to the bar's as the title does, rather
+      // than show cut under the bar beside their icons; the buttons' own
+      // transitions fade them.
+      for (const el of pageActions) {
+        faded.add(el)
+        fadeTo(el, collapsed ? 0 : 1)
       }
 
       // The subtitle fades with the scroll and is gone by the time its top
@@ -227,7 +251,8 @@ export function CompactTitleBar() {
     // change, so the heading is looked up again whenever <main> changes.
     const main = document.querySelector('main')
     const observer = main ? new MutationObserver(schedule) : null
-    if (main) observer!.observe(main, { childList: true, subtree: true, characterData: true })
+    // The sync's busy and disabled states are attributes on its button.
+    if (main) observer!.observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-bar-busy', 'disabled'] })
 
     schedule()
     window.addEventListener('scroll', schedule, { passive: true })
@@ -259,10 +284,42 @@ export function CompactTitleBar() {
     }
   }, [visible])
 
-  const ActionIcon = action ? ACTION_ICONS[action] : undefined
-  // The title, the chevron and the action come in together, over the
+  // The title, the chevron and the actions come in together, over the
   // title's cross-fade.
   const fadeIn = 'animate-[fade-in_150ms_ease-out]'
+  // Both sides as wide, so the title stays centred: a capsule of two needs
+  // more than one circle's 56 pt.
+  const side = actions.length > 1 ? CAPSULE_SIDE : SIDE
+
+  /** One page action as the bar shows it, pressing the page's own control. */
+  const actionButton = (action: BarAction, i: number, inCapsule: boolean) => {
+    const Icon = ACTION_ICONS[action.kind]
+    const size = inCapsule ? 'size-10' : 'size-11'
+    return (
+      <button
+        key={action.kind + i}
+        type="button"
+        data-testid="compact-bar-action"
+        aria-label={action.name}
+        disabled={action.disabled}
+        onClick={() => actionsRef.current[i]?.click()}
+        className={cn(
+          'flex shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-60',
+          size,
+          action.kind === 'avatar'
+            ? 'bg-accent text-base font-bold text-accent-foreground'
+            : cn('text-foreground', !inCapsule && 'glass-float'),
+          action.kind === 'avatar' && !inCapsule && 'shadow-[0_8px_28px_rgb(0_0_0/0.18)]',
+        )}
+      >
+        {action.kind === 'avatar' ? (
+          <span aria-hidden="true">{action.text}</span>
+        ) : Icon ? (
+          <Icon size={20} strokeWidth={2} aria-hidden="true" className={cn(action.busy && 'animate-spin')} />
+        ) : null}
+      </button>
+    )
+  }
 
   return (
     <>
@@ -285,15 +342,16 @@ export function CompactTitleBar() {
         // under it. Above the sticky tab strips (z-30), which move under it
         // while it shows.
         className={cn(
-          'fixed inset-x-0 z-40 grid-cols-[56px_minmax(0,1fr)_56px] items-center lg:hidden',
+          'fixed inset-x-0 z-40 items-center lg:hidden',
           visible ? 'grid' : 'hidden',
         )}
         style={{
           top: 'var(--safe-top)',
           height: BAR_HEIGHT,
+          gridTemplateColumns: `${side}px minmax(0,1fr) ${side}px`,
         }}
       >
-        <span className="flex justify-center">
+        <span className="flex justify-start pl-3">
           {back !== null && (
             // The way back stays in reach once the page's own link has
             // scrolled away (design review, Oct 2026): 44 x 44 around a 24 pt
@@ -313,29 +371,13 @@ export function CompactTitleBar() {
         <span aria-hidden="true" className={cn('block truncate text-center text-[17px] font-semibold leading-[52px] text-foreground', fadeIn)}>
           {title}
         </span>
-        <span className="flex justify-center">
-          {action === 'avatar' && (
-            // Today's disc, as on the page: the accent with the initials.
-            <button
-              type="button"
-              data-testid="compact-bar-action"
-              aria-label={actionName}
-              onClick={() => actionRef.current?.click()}
-              className={cn('flex size-11 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-[0_8px_28px_rgb(0_0_0/0.18)]', fadeIn)}
-            >
-              <span aria-hidden="true">{actionText}</span>
-            </button>
-          )}
-          {ActionIcon && (
-            <button
-              type="button"
-              data-testid="compact-bar-action"
-              aria-label={actionName}
-              onClick={() => actionRef.current?.click()}
-              className={cn('glass-float flex size-11 items-center justify-center rounded-full text-foreground', fadeIn)}
-            >
-              <ActionIcon size={20} strokeWidth={2} aria-hidden="true" />
-            </button>
+        <span className="flex justify-end pr-3">
+          {actions.length === 1 && <span className={cn('flex', fadeIn)}>{actionButton(actions[0]!, 0, false)}</span>}
+          {actions.length > 1 && (
+            // Two or more in one glass capsule, as Bevel's share and avatar.
+            <span data-testid="compact-bar-capsule" className={cn('glass-float flex items-center gap-1 rounded-full p-1', fadeIn)}>
+              {actions.map((action, i) => actionButton(action, i, true))}
+            </span>
           )}
         </span>
       </div>

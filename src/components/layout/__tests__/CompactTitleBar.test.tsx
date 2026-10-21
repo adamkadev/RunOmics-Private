@@ -188,13 +188,29 @@ describe('CompactTitleBar', () => {
 
   // Today's avatar and Progress' gear stay at the top right once the page
   // scrolls, as Bevel keeps its own (owner, Oct 2026).
-  it("keeps Today's avatar and Progress' gear in the bar", async () => {
+  it("keeps Today's sync and avatar, and Progress' gear, in the bar", async () => {
     tabPage()
     document.querySelector('main')!.insertAdjacentHTML('beforeend', '<a data-bar-action="avatar" aria-label="Progress"><span>A</span></a>')
     await mount(60)
     const avatar = within(bar()).getByRole('button', { name: 'Progress' })
     expect(avatar.textContent).toBe('A')
     expect(avatar.className).toContain('bg-accent')
+
+    // Today's sync beside it: the two in one glass capsule, sync first.
+    document.body.innerHTML = ''
+    tabPage()
+    document.querySelector('main')!.insertAdjacentHTML('beforeend', '<button data-bar-action="refresh" data-bar-busy aria-label="Synced 2h ago"></button><a data-bar-action="avatar" aria-label="Progress"><span>A</span></a>')
+    const sync = vi.fn()
+    document.querySelector('[data-bar-action="refresh"]')!.addEventListener('click', sync)
+    await mount(60)
+    const capsule = within(bar()).getByTestId('compact-bar-capsule')
+    expect(capsule.className).toContain('glass-float')
+    const [refresh, disc] = within(capsule).getAllByRole('button')
+    expect(refresh!.getAttribute('aria-label')).toBe('Synced 2h ago')
+    expect(refresh!.querySelector('svg')!.getAttribute('class')).toContain('animate-spin')
+    expect(disc!.textContent).toBe('A')
+    refresh!.click()
+    expect(sync).toHaveBeenCalledTimes(1)
 
     document.body.innerHTML = ''
     tabPage()
