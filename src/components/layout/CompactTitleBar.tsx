@@ -10,10 +10,9 @@ import { t } from '@/i18n'
  * iOS's large-title behaviour (v4.3.2): once the page has scrolled, the bar
  * under the status bar shows the page's title again as a centred 17 pt
  * title, instead of leaving it cut in half under the status bar. While it
- * shows, the status strip grows down behind it as one frosted surface from
- * the notch to a hairline under the bar, as Bevel's top is (globals.css,
- * data-bar-shown; owner, Oct 2026): the bar itself is clear and holds the
- * title between its glass buttons.
+ * shows it is frosted glass ending in a hairline, as Bevel's top is, and the
+ * status strip above it turns to the same glass (globals.css, .top-glass,
+ * data-bar-shown; owner, Oct 2026). Its title sits between glass buttons.
  *
  * Collapsed, it is the design review's bar (Oct 2026): 52 pt, the title
  * centred, a 44 x 44 back chevron on a page reached from another, and the
@@ -335,14 +334,13 @@ export function CompactTitleBar() {
         // It starts under the status strip and never touches the top edge
         // (v4.8): iOS 26 takes the topmost fixed element at the top as the
         // page's bar and kept the zone of this one (safe area + 44 pt) over
-        // the large title after it hid again. Clear (owner, Oct 2026, after
-        // Bevel): the glass behind it is the status strip's, grown down over
-        // it and ending in a hairline.
+        // the large title after it hid again. Frosted glass ending in a
+        // hairline (.top-glass, owner, Oct 2026, after Bevel).
         // It takes the taps that land on it, so none reach the page hidden
         // under it. Above the sticky tab strips (z-30), which move under it
         // while it shows.
         className={cn(
-          'fixed inset-x-0 z-40 items-center lg:hidden',
+          'top-glass fixed inset-x-0 z-40 items-center lg:hidden',
           visible ? 'grid' : 'hidden',
         )}
         style={{

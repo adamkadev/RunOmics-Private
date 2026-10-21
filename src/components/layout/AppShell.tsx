@@ -92,10 +92,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           data-testid="status-strip"
           className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
           style={{
-            // The safe area exactly, in the status bar's own colour: 0 in the
-            // installed app, whose opaque status bar sits above the page; it
-            // grows into the top glass while the page scrolls (globals.css).
-            height: 'var(--safe-top)',
+            // Never resized (globals.css, the top glass): at the safe area
+            // alone (0 in the installed app) it vanished and iOS blurred every
+            // large title at rest. Glass while the compact bar shows.
+            height: 'var(--top-scrim)',
+            // The status bar's own colour, so content scrolled up passes
+            // under a strip that reads as part of the bar.
             background: 'var(--status-bar)',
           }}
         />

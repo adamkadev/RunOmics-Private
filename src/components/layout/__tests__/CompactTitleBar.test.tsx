@@ -86,10 +86,9 @@ describe('CompactTitleBar', () => {
     expect(within(bar()).getByText('Plan').className).toContain('text-[17px]')
     // The design review's 52 pt bar (Oct 2026), under the status strip.
     expect(bar().style.height).toBe('52px')
-    // The status strip grows behind it as the top glass (data-bar-shown,
-    // owner, Oct 2026); the bar itself is clear.
+    // Frosted glass, and the status strip turns to glass with it (owner, Oct 2026).
+    expect(bar().className).toContain('top-glass')
     expect(document.documentElement.hasAttribute('data-bar-shown')).toBe(true)
-    expect(bar().className).not.toContain('top-glass')
   })
 
   // At rest the large title sits under the status bar, inside the bar's
