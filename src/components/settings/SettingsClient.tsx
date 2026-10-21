@@ -271,12 +271,13 @@ function ProfileSection({ body, zones }: { body?: Body; zones?: Zones }) {
           </span>
         </Link>
       </div>
-      {/* Where they change, as a way there (design review, Oct 2026). */}
+      {/* Where they change, as a way there (design review, Oct 2026) - a
+          13 pt muted footnote, as iOS's, not an accent link (F12). */}
       <a
         href={GARMIN_CONNECT_URL}
         target="_blank"
         rel="noreferrer"
-        className="hit-44 self-start px-1 text-xs leading-snug text-accent-text transition-opacity hover:opacity-80"
+        className="hit-44 self-start px-1 text-[13px] leading-[18px] text-muted-foreground transition-opacity hover:opacity-80"
         data-testid="profile-garmin-link"
       >
         {t.settings.profile.readOnly}

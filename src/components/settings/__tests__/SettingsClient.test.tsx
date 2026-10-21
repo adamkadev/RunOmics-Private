@@ -125,6 +125,10 @@ describe('SettingsClient owner gate', () => {
     const garmin = within(profile).getByRole('link', { name: t.settings.profile.readOnly })
     expect(garmin.getAttribute('href')).toBe(GARMIN_CONNECT_URL)
     expect(garmin.className).toContain('hit-44')
+    // F12: a footnote, not an accent link.
+    expect(garmin.className).toContain('text-[13px]')
+    expect(garmin.className).toContain('text-muted-foreground')
+    expect(garmin.className).not.toContain('accent')
   })
 
   // Round 2 (F11): one separator rule. Height and Weight shared one child -
