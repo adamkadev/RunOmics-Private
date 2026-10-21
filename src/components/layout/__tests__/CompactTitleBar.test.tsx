@@ -81,8 +81,9 @@ describe('CompactTitleBar', () => {
     tabPage()
     await mount(60)
     expect(shown()).toBe(true)
-    // Glass only, no page name on it (owner, Oct 2026).
-    expect(bar().textContent).toBe('')
+    // The page name, centred, as Bevel's top shows it (owner, Oct 2026).
+    expect(bar().textContent).toBe('Plan')
+    expect(within(bar()).getByText('Plan').className).toContain('text-[17px]')
     // The design review's 52 pt bar (Oct 2026), under the status strip.
     expect(bar().style.height).toBe('52px')
     // The status strip grows behind it as the top glass (data-bar-shown,

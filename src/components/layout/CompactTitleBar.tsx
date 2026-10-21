@@ -7,22 +7,23 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 /**
- * iOS's large-title behaviour (v4.3.2): once the page has scrolled, a bar
- * comes in under the status bar, so the large title is never left cut in
- * half under it. While it shows, the status strip grows down behind it as
- * one frosted surface from the notch to the bar's foot, as Bevel's top is
- * (globals.css, data-bar-shown): the bar itself is clear, with no title on
- * it (owner, Oct 2026), and holds only its glass buttons.
+ * iOS's large-title behaviour (v4.3.2): once the page has scrolled, the bar
+ * under the status bar shows the page's title again as a centred 17 pt
+ * title, instead of leaving it cut in half under the status bar. While it
+ * shows, the status strip grows down behind it as one frosted surface from
+ * the notch to a hairline under the bar, as Bevel's top is (globals.css,
+ * data-bar-shown; owner, Oct 2026): the bar itself is clear and holds the
+ * title between its glass buttons.
  *
- * Collapsed, it is the design review's bar (Oct 2026): 52 pt, a 44 x 44 back
- * chevron on a page reached from another, and the page's one action at the
- * trailing end - the activity's Share.
+ * Collapsed, it is the design review's bar (Oct 2026): 52 pt, the title
+ * centred, a 44 x 44 back chevron on a page reached from another, and the
+ * page's one action at the trailing end - the activity's Share.
  *
- * The bar draws nothing of its own. The way back is the page's BackButton
- * (`data-bar-back`) and the action the control marked `data-bar-action`,
- * both read from the DOM: the chevron and the action press the page's own
- * controls, so they do just what those do. A page with no <h1> never shows
- * the bar.
+ * The bar draws nothing of its own. The title is the page's own <h1>, the
+ * way back the page's BackButton (`data-bar-back`) and the action the
+ * control marked `data-bar-action`, all read from the DOM: the chevron and
+ * the action press the page's own controls, so they do just what those do.
+ * A page with no <h1> never shows the bar.
  */
 export const BAR_HEIGHT = 52
 
@@ -253,7 +254,8 @@ export function CompactTitleBar() {
   }, [visible])
 
   const ActionIcon = action ? ACTION_ICONS[action] : undefined
-  // The chevron and the action come in together, as the large title fades.
+  // The title, the chevron and the action come in together, over the
+  // title's cross-fade.
   const fadeIn = 'animate-[fade-in_150ms_ease-out]'
 
   return (
@@ -272,8 +274,7 @@ export function CompactTitleBar() {
         // page's bar and kept the zone of this one (safe area + 44 pt) over
         // the large title after it hid again. Clear (owner, Oct 2026, after
         // Bevel): the glass behind it is the status strip's, grown down over
-        // it, whose blurred foot fades a line of text crossing it rather than
-        // leaving a cut glyph - the "₂" of VO₂MAX hung below its capitals.
+        // it and ending in a hairline.
         // It takes the taps that land on it, so none reach the page hidden
         // under it. Above the sticky tab strips (z-30), which move under it
         // while it shows.
@@ -302,8 +303,10 @@ export function CompactTitleBar() {
             </button>
           )}
         </span>
-        {/* No title on the glass (owner, Oct 2026): the middle stays empty. */}
-        <span aria-hidden="true" />
+        {/* The page's own <h1> says it to a screen reader. */}
+        <span aria-hidden="true" className={cn('block truncate text-center text-[17px] font-semibold leading-[52px] text-foreground', fadeIn)}>
+          {title}
+        </span>
         <span className="flex justify-center">
           {ActionIcon && (
             <button
