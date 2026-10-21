@@ -110,7 +110,7 @@
   --safe-top:              env(safe-area-inset-top, 0px);
   --top-scrim:             calc(var(--safe-top) + 4px);
   --safe-bottom:           env(safe-area-inset-bottom, 0px);
-  --tab-bar-bottom:        max(calc(var(--safe-bottom) - 10px), 0px);
+  --tab-bar-float:         max(calc(var(--safe-bottom) - 15px), 12px);
   --tap-min:               44px;
   --state-line:            1.5px;
   --state-hatch:           40%;
@@ -202,6 +202,7 @@
   --thumb-bg:                #f0f1f0;
   --tab-bar-bg:              #ffffff;
   --tab-bar-hairline:        #e4e6e5;
+  --tab-pill:                color-mix(in srgb, var(--foreground) 9%, transparent);
   --segmented-track:         #f0f1f0;
   --segmented-pill:          #ffffff;
   --segmented-pill-shadow:   0 1px 2px rgba(0, 0, 0, 0.18);
@@ -302,6 +303,7 @@
   --thumb-bg:                #0f1111;
   --tab-bar-bg:              #0d0f0f;
   --tab-bar-hairline:        #1f2222;
+  --tab-pill:                color-mix(in srgb, var(--foreground) 9%, transparent);
   --segmented-track:         #0f1111;
   --segmented-pill:          #2a2e2d;
   --segmented-pill-shadow:   0 1px 2px rgba(0, 0, 0, 0.18);
@@ -809,9 +811,22 @@ html[data-bar-shown] [data-testid='status-strip'] {
   -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
   mask-image: linear-gradient(to bottom, #000, transparent);
 }
+/* The floating tab bar and its shrunk button (owner, Oct 2026, after
+   Bevel): the same frosted glass as the top, a faint rim to lift it off the
+   page and a soft shadow under it. */
+.glass-float {
+  background: color-mix(in srgb, var(--background) 66%, transparent);
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.4);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.4);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.18);
+}
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .top-glass,
   html[data-bar-shown] [data-testid='status-strip'] {
     background: var(--background) !important;
+  }
+  .glass-float {
+    background: var(--tab-bar-bg);
   }
 }

@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { t } from '@/i18n'
 import { GlassTabBar } from '../GlassTabBar'
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }))
@@ -12,39 +13,69 @@ describe('GlassTabBar', () => {
     expect(screen.queryByRole('link', { name: /coach/i })).not.toBeInTheDocument()
   })
 
-  // 60 % of the inset put the labels in the swipe zone; the whole inset
-  // floated the bar. The token is the inset less the space under the indicator.
-  it('pads by the tab-bar share of the bottom safe area', () => {
+  // Floating, as Bevel draws it (owner, Oct 2026): about 19 pt off the
+  // bottom edge on a notched iPhone, clear of the home indicator's swipe zone.
+  it('floats a glass capsule off the bottom edge', () => {
     render(<GlassTabBar />)
-    const bar = screen.getByRole('navigation').firstElementChild as HTMLElement
-
-    expect(bar.style.paddingBottom).toBe('var(--tab-bar-bottom)')
+    expect(screen.getByRole('navigation').style.paddingBottom).toBe('var(--tab-bar-float)')
+    const capsule = screen.getByTestId('tab-bar-capsule')
+    expect(capsule.className).toContain('glass-float')
+    expect(capsule.className).toContain('rounded-full')
   })
 
   it('writes the labels at the 11 px caption size, never text-micro', () => {
     render(<GlassTabBar />)
 
     for (const link of screen.getAllByRole('link')) {
-      const label = link.querySelector('span > span')!
+      const label = link.querySelector('span')!
       expect(label.className).toContain('text-caption')
       expect(label.className).not.toContain('text-micro')
     }
   })
 
-  // v4.3.2: no pill in any state; the active tab is its icon and label in the
-  // accent. 3.0: one 500 weight for every label, the colour alone marks it.
-  it('colours only the active icon and label, with no pill', () => {
+  // The active tab is its icon and label in the accent on a soft pill (owner,
+  // Oct 2026, after Bevel); 3.0: one 500 weight for every label.
+  it('puts only the active tab on the pill, in the accent', () => {
     render(<GlassTabBar />)
     const links = screen.getAllByRole('link')
     const active = links.filter((link) => link.getAttribute('aria-current') === 'page')
     expect(active).toHaveLength(1)
     expect(active[0]!.className).toContain('text-accent')
-    expect(active[0]!.querySelector('span > span')!.className).toContain('font-medium')
+    expect(active[0]!.className).toContain('bg-[var(--tab-pill)]')
+    expect(active[0]!.querySelector('span')!.className).toContain('font-medium')
     for (const link of links) {
-      expect(link.innerHTML).not.toContain('--acc-soft')
-      expect(link.innerHTML).not.toMatch(/bg-accent|rounded-2xl/)
-      if (link !== active[0]) expect(link.className).toContain('text-muted-foreground')
+      if (link === active[0]) continue
+      expect(link.className).toContain('text-muted-foreground')
+      expect(link.className).not.toContain('--tab-pill')
     }
+  })
+
+  // iOS 26's tab bar, as Bevel draws it: a scroll down shrinks it to the
+  // active tab's icon; a scroll up, or a tap on that button, brings it back.
+  it('shrinks to the active tab on a scroll down and comes back', () => {
+    render(<GlassTabBar />)
+    const capsule = screen.getByTestId('tab-bar-capsule')
+    const shrunk = screen.getByTestId('tab-bar-collapsed')
+    const scrollTo = (y: number) => act(() => {
+      Object.defineProperty(window, 'scrollY', { value: y, configurable: true })
+      fireEvent.scroll(window)
+    })
+
+    scrollTo(60)
+    expect(capsule.className).toContain('opacity-100')
+    scrollTo(300)
+    expect(capsule.className).toContain('opacity-0')
+    expect(shrunk.className).toContain('opacity-100')
+    expect(shrunk.getAttribute('aria-label')).toBe(t.nav.showTabs(t.nav.items.dashboard))
+
+    scrollTo(250)
+    expect(capsule.className).toContain('opacity-100')
+
+    scrollTo(500)
+    expect(capsule.className).toContain('opacity-0')
+    fireEvent.click(shrunk)
+    expect(capsule.className).toContain('opacity-100')
+    scrollTo(0)
   })
 
   it('marks Progress with the trophy, not the person', () => {

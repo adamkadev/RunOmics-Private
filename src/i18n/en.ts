@@ -39,6 +39,8 @@ export const en = {
     },
     // The compact bar's back chevron, named for the page it goes to.
     backTo: (page: string) => `Back to ${page}`,
+    // The tab bar shrunk to its active tab: the button that brings it back.
+    showTabs: (page: string) => `${page} - show tabs`,
   },
   meta: {
     description: 'Your personal running training dashboard - stats, maps, trends.',

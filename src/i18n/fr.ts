@@ -30,6 +30,7 @@ export const fr = {
       settings: 'Réglages',
     },
     backTo: (page: string) => `Retour à ${page}`,
+    showTabs: (page: string) => `${page} - afficher les onglets`,
   },
   meta: {
     description: 'Ton tableau de bord personnel de course à pied - stats, cartes, tendances.',

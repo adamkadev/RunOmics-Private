@@ -170,6 +170,8 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--thumb-bg': n.seg,
     '--tab-bar-bg': n.tabBar,
     '--tab-bar-hairline': n.divider,
+    // The active tab's pill on the floating tab bar (owner, Oct 2026).
+    '--tab-pill': 'color-mix(in srgb, var(--foreground) 9%, transparent)',
     // Quiet tabs (v4.17): the track is surface-2, the active tab the card.
     '--segmented-track': n.seg,
     '--segmented-pill': n.pill,
@@ -387,10 +389,10 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       // with a native app's first row (Garmin Connect's header).
       '--top-scrim': 'calc(var(--safe-top) + 4px)',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
-      // The tab bar's bottom padding: the inset less the 10 px under the home
-      // indicator, so the labels stay clear of its swipe zone (the bar is 5 pt
-      // tall, 8 pt from the edge) without floating 34 pt above the edge.
-      '--tab-bar-bottom': 'max(calc(var(--safe-bottom) - 10px), 0px)',
+      // The floating tab bar's gap to the bottom edge (owner, Oct 2026, after
+      // Bevel): the inset less 15 px, about 19 pt on a notched iPhone, clear
+      // of the home indicator's swipe zone; 12 pt where there is no inset.
+      '--tab-bar-float': 'max(calc(var(--safe-bottom) - 15px), 12px)',
       // The smallest touch target. `.hit-44` grows a control's hit area to it
       // without changing what it looks like.
       '--tap-min': '44px',

@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Activity, CalendarDays, BarChart2 } from 'lucide-react'
@@ -20,53 +21,121 @@ const TABS = [
 
 const TAB_HREFS = TABS.map((tab) => tab.href)
 
+/** Scrolled past this, a scroll down shrinks the bar to its active tab. */
+export const COLLAPSE_AFTER = 80
+/** Scroll moves smaller than this neither shrink nor grow it: a finger's jitter. */
+const SCROLL_SLOP = 4
+
+/**
+ * Shrunk while the page scrolls down, whole again on a scroll up, at the top,
+ * or on a tap of the shrunk button - iOS 26's tab bar, as Bevel draws it.
+ */
+function useCollapsed(pathname: string): [boolean, () => void] {
+  const [collapsed, setCollapsed] = useState(false)
+  // A new page starts with the whole bar.
+  const [path, setPath] = useState(pathname)
+  if (path !== pathname) {
+    setPath(pathname)
+    setCollapsed(false)
+  }
+  useEffect(() => {
+    let last = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      if (y <= COLLAPSE_AFTER) setCollapsed(false)
+      else if (y > last + SCROLL_SLOP) setCollapsed(true)
+      else if (y < last - SCROLL_SLOP) setCollapsed(false)
+      else return
+      last = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [pathname])
+  return [collapsed, () => setCollapsed(false)]
+}
+
+/**
+ * The tab bar (owner, Oct 2026, after Bevel): a floating glass capsule over
+ * the page, the active tab on a soft pill in the accent. Scrolling down
+ * shrinks it to one round glass button with the active tab's icon, which
+ * brings the whole bar back on a tap; scrolling up brings it back too.
+ */
 export function GlassTabBar() {
   const pathname = usePathname()
   const currentHref = activeNavHref(pathname, TAB_HREFS)
   const hidden = useFullscreenChromeHidden()
   const haptic = useHaptic()
+  const [collapsed, expand] = useCollapsed(pathname)
+  const current = TABS.find((tab) => tab.href === currentHref) ?? TABS[0]
+  const CurrentIcon = current.icon
 
   return (
     // Above the sticky strips (z-30), as the compact bar is at the top (v5.5
     // #2): at the same z-index the later Overview/Splits control painted over
     // the tab bar whenever it sat low on the screen.
-    <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-40 lg:hidden">
-      <div
-        className={cn(
-          'glass-nav flex items-center border-x-0 border-b-0 transition-transform duration-200 ease-out',
-          hidden ? 'translate-y-full' : 'translate-y-0 pointer-events-auto'
-        )}
-        // Clear of the home indicator's swipe zone (at 60 % of the inset the
-        // labels sat in it), but not the full 34 pt, which floated the bar.
-        style={{ paddingBottom: 'var(--tab-bar-bottom)' }}
-      >
-        {TABS.map(({ href, label, icon: Icon }) => {
-        const active = currentHref === href
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={() => { if (!active) haptic('light') }}
-            aria-current={active ? 'page' : undefined}
-            // 3.0: five 64 px items on a 50 px row, which the bottom inset
-            // brings to the handoff's 84 px on a notched iPhone.
-            className={cn(
-              'flex h-[50px] flex-1 items-center justify-center pt-1.5 transition-colors duration-150 active:scale-95',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:rounded-xl',
-              active ? 'text-accent' : 'text-muted-foreground'
-            )}
-          >
-            {/* No pill (v4.3.2): the active tab is its icon and label in the
-                accent, both outline icons in either state. */}
-            <span data-testid={active ? 'tab-active' : undefined} className="flex w-16 flex-col items-center gap-[3px] py-1">
-              <Icon size={24} strokeWidth={1.8} aria-hidden="true" />
-              <span className="text-caption font-medium">
-                {label}
-              </span>
-            </span>
-          </Link>
-        )
-      })}
+    <nav
+      className={cn(
+        'pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 transition-transform duration-200 ease-out lg:hidden',
+        // Fullscreen maps take the whole screen: the bar slides away, gap and all.
+        hidden ? 'translate-y-[calc(100%+24px)]' : 'translate-y-0',
+      )}
+      // Clear of the home indicator's swipe zone, about 19 pt off the bottom
+      // edge on a notched iPhone, as Bevel floats it.
+      style={{ paddingBottom: 'var(--tab-bar-float)' }}
+    >
+      <div className="relative h-[58px]">
+        <div
+          data-testid="tab-bar-capsule"
+          aria-hidden={collapsed || undefined}
+          className={cn(
+            'glass-float absolute inset-0 flex items-center gap-1 rounded-full p-1 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
+            // Shrinks towards the button it becomes, at the bottom left.
+            collapsed ? 'pointer-events-none scale-[0.35] opacity-0' : 'scale-100 opacity-100',
+            !hidden && !collapsed && 'pointer-events-auto',
+          )}
+          style={{ transformOrigin: '28px 50%' }}
+        >
+          {TABS.map(({ href, label, icon: Icon }) => {
+            const active = currentHref === href
+            return (
+              <Link
+                key={href}
+                href={href}
+                tabIndex={collapsed ? -1 : undefined}
+                onClick={() => { if (!active) haptic('light') }}
+                aria-current={active ? 'page' : undefined}
+                className={cn(
+                  'flex h-full flex-1 flex-col items-center justify-center gap-[3px] rounded-full transition-colors duration-150 active:scale-95',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  active ? 'bg-[var(--tab-pill)] text-accent' : 'text-muted-foreground',
+                )}
+              >
+                <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
+                <span data-testid={active ? 'tab-active' : undefined} className="text-caption font-medium leading-none">
+                  {label}
+                </span>
+              </Link>
+            )
+          })}
+        </div>
+        {/* Shrunk: the active tab's icon alone, which brings the bar back. */}
+        <button
+          type="button"
+          data-testid="tab-bar-collapsed"
+          aria-label={t.nav.showTabs(current.label)}
+          aria-hidden={!collapsed || undefined}
+          tabIndex={collapsed ? undefined : -1}
+          onClick={() => {
+            haptic('light')
+            expand()
+          }}
+          className={cn(
+            'glass-float absolute bottom-0 left-0 flex size-[58px] items-center justify-center rounded-full text-accent transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none',
+            collapsed && !hidden ? 'pointer-events-auto scale-100 opacity-100' : 'pointer-events-none scale-75 opacity-0',
+          )}
+        >
+          <CurrentIcon size={24} strokeWidth={1.8} aria-hidden="true" />
+        </button>
       </div>
     </nav>
   )
