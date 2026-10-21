@@ -67,15 +67,17 @@ const shown = () => bar().hasAttribute('data-shown')
 describe('titleColumns', () => {
   it('centres the title on the screen when it fits between equal sides', () => {
     // A back circle (16 + 44) and a Share circle: equal sides, centred.
-    expect(titleColumns(393, 60, 60, 120)).toBe('60px minmax(0,1fr) 60px')
+    expect(titleColumns(393, 60, 60, 120)).toEqual({ columns: '60px minmax(0,1fr) 60px', lead: null })
     // A narrow left and a wider right that still leave room: equal sides.
-    expect(titleColumns(393, 16, 120, 80)).toBe('120px minmax(0,1fr) 120px')
+    expect(titleColumns(393, 16, 120, 80)).toEqual({ columns: '120px minmax(0,1fr) 120px', lead: null })
   })
 
-  it("centres it in the room left when a side is too wide (Analytics' 4W | 12W | 1Y)", () => {
-    expect(titleColumns(393, 16, 182, 80)).toBe('16px minmax(0,1fr) 182px')
-    // Goals & season beside its back circle and ‹ 2026 ›.
-    expect(titleColumns(393, 60, 150, 120)).toBe('60px minmax(0,1fr) 150px')
+  // Round 2 (F7): centred in the leftover gap it read as off-centre.
+  it("lead-aligns it when it can't be centred on screen (Analytics' 4W | 12W | 1Y)", () => {
+    // No back circle: at the page's 16 pt margin, as the large title.
+    expect(titleColumns(402, 16, 182, 80)).toEqual({ columns: '16px minmax(0,1fr) 182px', lead: 0 })
+    // Goals & season: 16 pt after its back circle, beside ‹ 2026 ›.
+    expect(titleColumns(393, 60, 150, 120)).toEqual({ columns: '60px minmax(0,1fr) 150px', lead: 16 })
   })
 })
 
