@@ -92,6 +92,8 @@ const eslintConfig = defineConfig([
     "scripts/**",
     // Agent worktrees nest a whole checkout under here; it is not our source.
     ".claude/**",
+    // Design handoffs: HTML mockups, their runtime and reference snippets.
+    "design_handoff_*/**",
     "coverage/**",
     // Vendored by `npm run maplibre:worker`, so it only exists after a build.
     "public/maplibre/**",
