@@ -85,8 +85,10 @@ describe('CompactTitleBar', () => {
     expect(within(bar()).getByText('Plan').className).toContain('text-[17px]')
     // The design review's 52 pt bar (Oct 2026), under the status strip.
     expect(bar().style.height).toBe('52px')
-    // Text crossing the divider fades out under it instead of showing cut.
-    expect(bar().className).toContain('after:bg-gradient-to-b')
+    // Frosted glass with a soft blurred foot (.top-glass, owner, Oct 2026),
+    // and the status strip turns to glass with it.
+    expect(bar().className).toContain('top-glass')
+    expect(document.documentElement.hasAttribute('data-bar-shown')).toBe(true)
   })
 
   // At rest the large title sits under the status bar, inside the bar's
@@ -95,6 +97,8 @@ describe('CompactTitleBar', () => {
     tabPage()
     await mount(0)
     expect(shown()).toBe(false)
+    // At rest the status strip stays opaque: no glass switch on <html>.
+    expect(document.documentElement.hasAttribute('data-bar-shown')).toBe(false)
     // Not drawn rather than transparent: iOS 26 blurred the page under an
     // invisible fixed bar at the top edge.
     expect(bar().className).toContain('hidden')

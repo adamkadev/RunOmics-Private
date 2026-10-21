@@ -9,8 +9,9 @@ import { t } from '@/i18n'
 /**
  * iOS's large-title behaviour (v4.3.2): once the page has scrolled, the bar
  * under the status bar shows the page's title again as a centred 17 pt
- * title, instead of leaving it cut in half under the status bar. The bar is
- * opaque and flat, so it also reads as the status bar's own strip.
+ * title, instead of leaving it cut in half under the status bar. The bar and
+ * the status strip above it are frosted glass while it shows (globals.css,
+ * .top-glass), so they read as one surface the page slides under.
  *
  * Collapsed, it is the design review's bar (Oct 2026): 52 pt, the title
  * centred, a 44 x 44 back chevron on a page reached from another, and the
@@ -236,10 +237,17 @@ export function CompactTitleBar() {
 
   useEffect(() => {
     const root = document.documentElement
-    if (visible) root.style.setProperty(STICKY_TOP_VAR, `calc(var(--safe-top) + ${BAR_HEIGHT}px)`)
-    else root.style.removeProperty(STICKY_TOP_VAR)
+    // data-bar-shown turns the status strip to glass with the bar (globals.css).
+    if (visible) {
+      root.style.setProperty(STICKY_TOP_VAR, `calc(var(--safe-top) + ${BAR_HEIGHT}px)`)
+      root.setAttribute('data-bar-shown', '')
+    } else {
+      root.style.removeProperty(STICKY_TOP_VAR)
+      root.removeAttribute('data-bar-shown')
+    }
     return () => {
       root.style.removeProperty(STICKY_TOP_VAR)
+      root.removeAttribute('data-bar-shown')
     }
   }, [visible])
 
@@ -265,20 +273,18 @@ export function CompactTitleBar() {
         // the large title after it hid again. Shown, it is fully opaque; only
         // what is on it fades in. It takes the taps that land on it, so none
         // reach the page hidden under it. Above the sticky tab strips (z-30),
-        // which move under it while it shows.
+        // which move under it while it shows. Frosted glass with a soft
+        // blurred foot, not a divider (.top-glass, owner, Oct 2026): the
+        // page slides under it, and a line of text crossing its foot fades
+        // rather than leaving a cut glyph - the "₂" of VO₂MAX hung below
+        // its capitals.
         className={cn(
-          'fixed inset-x-0 z-40 grid-cols-[56px_minmax(0,1fr)_56px] items-center border-b lg:hidden',
-          // A 12 pt fade under the divider: a line of text crossing it fades
-          // out rather than leaving a cut glyph under the bar - the "₂" of
-          // VO₂MAX hung below its capitals and stayed on its own.
-          "after:pointer-events-none after:absolute after:inset-x-0 after:top-[calc(100%+1px)] after:h-3 after:bg-gradient-to-b after:from-background after:to-transparent after:content-['']",
+          'top-glass fixed inset-x-0 z-40 grid-cols-[56px_minmax(0,1fr)_56px] items-center lg:hidden',
           visible ? 'grid' : 'hidden',
         )}
         style={{
           top: 'var(--safe-top)',
           height: BAR_HEIGHT,
-          background: 'var(--background)',
-          borderColor: 'var(--divider)',
         }}
       >
         <span className="flex justify-center">

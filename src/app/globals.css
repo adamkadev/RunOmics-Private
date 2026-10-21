@@ -773,3 +773,45 @@ html[data-sheet-open] [data-testid='status-strip'] {
     --sticky-alone: -100000px;
   }
 }
+
+/* The top glass (owner, Oct 2026): once the page scrolls and the compact
+   title bar shows, the bar and the status strip above it turn to frosted
+   glass - the page colour at 72 % over a blur - and the bar ends in a short
+   blurred fade instead of a hairline, so content slides under the top rather
+   than meeting a cut. At rest the strip stays opaque: iOS 26 takes the
+   topmost fixed element at the top edge for the page's bar, and a
+   see-through one blurred the large title (see AppShell). The strip never
+   hides, and only it touches the edge, so iOS's zone stays the status bar.
+   Without backdrop-filter, both stay the opaque page colour. */
+.top-glass,
+html[data-bar-shown] [data-testid='status-strip'] {
+  background: color-mix(in srgb, var(--background) 72%, transparent) !important;
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(1.4);
+  backdrop-filter: blur(var(--blur-md)) saturate(1.4);
+}
+/* The strip stops at the safe area while the bar shows: its 4 pt under the
+   status bar would lie over the bar's glass as a darker band. */
+html[data-bar-shown] [data-testid='status-strip'] {
+  height: var(--safe-top) !important;
+}
+/* The bar's soft foot: a 10 pt band, blurred and tinted at its top and
+   clear at its bottom, under the bar. */
+.top-glass::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  height: 10px;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--background) 72%, transparent), transparent);
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent);
+  mask-image: linear-gradient(to bottom, #000, transparent);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .top-glass,
+  html[data-bar-shown] [data-testid='status-strip'] {
+    background: var(--background) !important;
+  }
+}
