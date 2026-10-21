@@ -354,7 +354,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           {/* Full bleed (3.0): a fade under the buttons, close on the left,
               recenter and the basemap on the right, the run's card floating
               at the foot with the credits' ⓘ just above it. */}
-          <div aria-hidden className="map-top-edge pointer-events-none absolute inset-x-0 top-0 z-10" />
+          <div aria-hidden className="map-top-edge pointer-events-none absolute inset-x-0 top-0 z-10"><i /><i /></div>
           {/* Regular glass over the fullscreen map (Liquid Glass v3, G11):
               close as a circle, recenter and the basemap grouped in one
               capsule (G13). */}

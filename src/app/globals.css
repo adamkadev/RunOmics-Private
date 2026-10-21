@@ -76,7 +76,9 @@
   --radius-control:          9px;
   --shadow-card:             var(--shadow-card);
   --animate-fade-up:         fade-up 0.25s ease-out backwards;
-  --animate-fade-in:         fade-in 0.2s ease-out both;
+  /* backwards, not both (H1): a fill that kept the animation applied made
+     the element a backdrop root, which flattens any glass inside it. */
+  --animate-fade-in:         fade-in 0.2s ease-out backwards;
   --animate-sheet-up:        sheet-up 0.42s cubic-bezier(0.22, 1.04, 0.36, 1) both;
   --animate-cal-forward:     cal-slide-forward 0.22s ease-out backwards;
   --animate-cal-backward:    cal-slide-backward 0.22s ease-out backwards;
@@ -919,8 +921,12 @@
             backdrop-filter: none;
   }
 
-  /* The fullscreen maps' top edge under their glass controls (G11): the
-     page ground for 12 pt, 55 % by 40 %, gone by 96 pt. */
+  /* The fullscreen maps' top edge under their glass controls (G11; round
+     2, H1): over the map, under the controls - a sibling of their glass in
+     the map's root, never over it, where its tint greyed them out. A 12 px
+     blur that fades by 55 %, so names dissolve under the row rather than
+     show cut, and a tint: the page ground for 12 pt, 55 % by 40 %, gone by
+     96 pt. While the map moves, the blur goes (as the glass's does). */
   .map-top-edge {
     position: absolute;
     inset-inline: 0;
@@ -928,12 +934,30 @@
     z-index: 20;
     pointer-events: none;
     height: 96px;
+  }
+  .map-top-edge > i {
+    position: absolute;
+    inset: 0;
+    display: block;
+  }
+  .map-top-edge > i:nth-child(1) {
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    -webkit-mask-image: linear-gradient(#000 55%, transparent);
+            mask-image: linear-gradient(#000 55%, transparent);
+    transition: opacity 150ms ease-out;
+  }
+  .map-top-edge > i:nth-child(2) {
     background: linear-gradient(
       var(--background) 12px,
       color-mix(in srgb, var(--background) 55%, transparent) 40%,
       transparent
     );
   }
+  [data-map-moving] .map-top-edge > i:nth-child(1) { opacity: 0; transition: none; }
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+    .map-top-edge > i:nth-child(1) { display: none; }
+  }
+  html[data-glass="solid"] .map-top-edge > i:nth-child(1) { display: none; }
 
   /* The prominent button (G12): a top sheen, a lit top edge and a soft glow
      of its own accent under it. */
