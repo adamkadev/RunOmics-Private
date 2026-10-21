@@ -801,6 +801,17 @@ html[data-bar-shown] [data-testid='status-strip'] {
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
+/* The bottom glass behind the tab bar (owner, Oct 2026, the top's for the
+   footer): the same tint and blur across the screen, from the bottom edge
+   to 24 pt over the capsule, its top 24 pt fading in, so content dissolves
+   into it rather than meeting a line. */
+.bottom-glass {
+  background: color-mix(in srgb, var(--background) var(--glass-tint), transparent);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  -webkit-mask-image: linear-gradient(to top, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to top, #000 calc(100% - 24px), transparent);
+}
 /* The floating tab bar, its shrunk button and the top bar's buttons (owner,
    Oct 2026, after Bevel): the same frosted glass as the top, a faint rim to
    lift them off the page and a soft shadow under them. */
@@ -819,5 +830,8 @@ html[data-bar-shown] [data-testid='status-strip'] {
   }
   .glass-float {
     background: var(--tab-bar-bg);
+  }
+  .bottom-glass {
+    background: var(--background);
   }
 }

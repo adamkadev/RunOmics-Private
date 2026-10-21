@@ -96,6 +96,10 @@ export function GlassTabBar() {
       // edge on a notched iPhone, as Bevel floats it.
       style={{ paddingBottom: 'var(--tab-bar-float)' }}
     >
+      {/* The bottom glass, as the top's and Claude's composer's: a frosted
+          band across the screen behind the bar, from the bottom edge to a
+          little over the capsule, its top fading in (.bottom-glass). */}
+      <div aria-hidden="true" data-testid="bottom-glass" className="bottom-glass pointer-events-none absolute inset-x-0 bottom-0 h-[calc(100%+24px)]" />
       <div className="relative h-[58px]">
         <div
           data-testid="tab-bar-capsule"
