@@ -14,7 +14,7 @@ import { KmSplits } from './KmSplits'
 import { BestEfforts } from './BestEfforts'
 import { RunPlace } from './RunPlace'
 import type { ChartZones } from './chartStackLanes'
-import { formatClock, formatDistance, formatDurationRounded } from '@/lib/formatters'
+import { formatClock, formatDistance, formatDuration, formatDurationRounded } from '@/lib/formatters'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { StickyBar } from '@/components/ui/StickyBar'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
@@ -89,7 +89,9 @@ function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
   const s = t.activity.stats
   const stats: PrimaryStat[] = [
     { label: s.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
-    { label: s.duration, ...formatDurationRounded(activity.durationSeconds) },
+    // The time unitless (F8): "59:35 min" all but touched the pace beside
+    // it, and m:ss or h:mm:ss says what it is.
+    { label: s.duration, value: formatDuration(Math.round(activity.durationSeconds)) },
   ]
   if (activity.paceSecPerKm) stats.push({ label: s.pace, value: formatClock(activity.paceSecPerKm), unit: t.units.perKm })
   if (activity.avgHeartRate) stats.push({ label: s.avgHr, value: `${activity.avgHeartRate}`, unit: t.units.bpm })
@@ -98,7 +100,8 @@ function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
 
 function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; testId?: string }) {
   return (
-    <div className="grid grid-cols-4 gap-x-2" data-testid={testId}>
+    // Four equal columns 8 pt apart (F8), each number free to shrink.
+    <div className="grid grid-cols-[repeat(4,minmax(0,1fr))] gap-2" data-testid={testId}>
       {stats.map((stat) => (
         <div key={stat.label} className="flex min-w-0 flex-col gap-0.5">
           <span className="whitespace-nowrap text-[22px] font-bold leading-7 tracking-[-0.016rem] text-foreground">
