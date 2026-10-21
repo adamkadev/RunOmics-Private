@@ -7,6 +7,7 @@ import { PageTransition } from './PageTransition'
 import { ThemeSync } from './ThemeSync'
 import { NavigationHistoryProvider } from './NavigationHistory'
 import { CompactTitleBar } from './CompactTitleBar'
+import { Aura } from './Aura'
 import { SIGN_IN_PATH } from '@/lib/siteSession'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
@@ -82,11 +83,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <NavigationHistoryProvider>
       <div className="min-h-screen">
         <ThemeSync />
-        {/* The top bar's material, after Bevel's (owner, Oct 2026): a fixed
-            wrapper with no background, its three absolute layers the blur,
-            the tint and the hairline, shown while the compact bar is
-            (globals.css, .scroll-edge). */}
-        <div aria-hidden data-testid="scroll-edge" className="scroll-edge lg:hidden"><i /><i /><i /></div>
+        {/* The top soft scroll edge (Liquid Glass v3, G5): a fixed wrapper
+            with no background, its four absolute layers three blurs that
+            grow stronger toward the top and a tint - no hairline - shown
+            while the compact bar is (globals.css, .scroll-edge). */}
+        <div aria-hidden data-testid="scroll-edge" className="scroll-edge lg:hidden"><i /><i /><i /><i /></div>
         {/* The edge sampler: solid, full width, over 10 px tall, at the top
             edge, never resized or hidden. WebKit samples 4 px in for such a
             bar, and finding one, iOS 26 draws no blur of its own over the
@@ -100,7 +101,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Sidebar />
         {/* Positioned, with no z-index: not a stacking context, which would
             trap the maps' fullscreen overlays (z-50) under the top scrim. */}
-        <main className="relative min-h-screen lg:ml-[248px]">
+        <main className="relative min-h-screen overflow-x-clip lg:ml-[248px]">
           {/* pb-28 alone is the nav's own height with room to spare on a
               home-button phone, but it's a fixed 112px - on a notched device
               --safe-bottom eats into that margin instead of adding to it, so
@@ -109,8 +110,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               rather than assume the flat value already covers it. */}
           {/* Content up to 1120 pt wide, centred, 36 pt from the top and 32 at
               the sides on desktop (v4.17). */}
-          <div className="mx-auto max-w-5xl px-4 pb-[calc(7rem+var(--safe-bottom))] pt-[var(--top-scrim)] sm:px-6 lg:max-w-[1184px] lg:px-8 lg:pb-16 lg:pt-9">
-            <PageTransition>{children}</PageTransition>
+          {/* Relative, with no z-index, so the content paints over the aura
+              (positioned, before it) without becoming a stacking context. */}
+          <div className="relative mx-auto max-w-5xl px-4 pb-[calc(7rem+var(--safe-bottom))] pt-[var(--top-scrim)] sm:px-6 lg:max-w-[1184px] lg:px-8 lg:pb-16 lg:pt-9">
+            <Aura />
+            <div className="relative">
+              <PageTransition>{children}</PageTransition>
+            </div>
           </div>
         </main>
         {/* After <main>, so it paints over the content scrolled under it. */}

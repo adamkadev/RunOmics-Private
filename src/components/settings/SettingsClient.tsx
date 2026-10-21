@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
+import { LightStyleRow } from './LightStyleSegmented'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { ConnectedMark, GarminTile } from './GarminMark'
 import { NotificationsForm } from './NotificationsForm'
@@ -184,7 +185,7 @@ function SettingsHeader() {
   return (
     <header className="mb-1.5">
       {/* Settings is a sidebar row on a wide screen: the way back is on a phone only. */}
-      <BackButton label={t.pages.settings.back} fallbackHref="/profile" className="mb-3.5 lg:hidden" />
+      <BackButton label={t.pages.settings.back} fallbackHref="/profile" className="lg:hidden" />
       <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
     </header>
   )
@@ -204,8 +205,8 @@ function Section({ title, children, testId }: { title: string; children: ReactNo
 
 /**
  * The settings that are the user's own (v4.17; 3.0 1i): the theme on one
- * row, then the accent with its caption on the right and the swatches under
- * them.
+ * row, the light background (Liquid Glass v3, G14) under it, then the accent
+ * with its caption on the right and the swatches under them.
  */
 function AppearanceSection() {
   const a = t.settings
@@ -213,13 +214,14 @@ function AppearanceSection() {
     <Section title={a.sections.appearance}>
       <div className={GROUP_CARD} data-testid="settings-appearance">
         <div className={GROUP_ROW}>
-          <p className="text-sm text-foreground">{a.appearance.themeLabel}</p>
+          <p className="text-foreground">{a.appearance.themeLabel}</p>
           <ThemeSegmented />
         </div>
+        <LightStyleRow className={GROUP_ROW} />
         <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
           <div className="flex items-baseline justify-between gap-3">
-            <p className="text-sm text-foreground">{a.accent.title}</p>
-            <p className="text-xs text-muted-foreground">{a.accent.caption}</p>
+            <p className="text-[17px] tracking-[-0.027rem] text-foreground">{a.accent.title}</p>
+            <p className="text-[13px] text-muted-foreground">{a.accent.caption}</p>
           </div>
           <AccentPicker />
         </div>
