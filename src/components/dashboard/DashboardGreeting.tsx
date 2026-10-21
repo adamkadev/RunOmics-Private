@@ -45,13 +45,14 @@ export function syncAgeMs(lastSyncedAt: string, now = Date.now()): number {
 const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
 
 /**
- * The sync button and the avatar share one 40 pt glass capsule (owner, Oct
- * 2026, as Claude's and Bevel's tops pair theirs), 32 pt each in its 4 pt of
- * glass, as their copy in the compact bar; hit-44 keeps the targets 44 pt.
+ * The sync button and the avatar share one 44 pt glass capsule, as Bevel's
+ * share and avatar (owner, Oct 2026): the ↻ alone in the capsule's first
+ * 44 pt, then the 32 pt avatar 6 pt in from its end - about 96 pt wide, as
+ * their copy in the compact bar.
  */
-const CAPSULE = 'glass-float flex shrink-0 items-center gap-1 rounded-full p-1'
+const CAPSULE = 'glass-float flex h-11 shrink-0 items-center gap-3.5 rounded-full pr-1.5'
 const BUTTON =
-  'hit-44 flex size-8 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:active:scale-100'
+  'flex size-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:active:scale-100'
 
 interface Line {
   text: string
@@ -96,7 +97,7 @@ function SyncButton({ text, tone, spinning = false, onClick, disabled = false, s
           className={BUTTON}
           style={{ color }}
         >
-          <RotateCw size={17} strokeWidth={2.2} aria-hidden className={cn('shrink-0', spinning && 'animate-spin')} />
+          <RotateCw size={20} strokeWidth={2} aria-hidden className={cn('shrink-0', spinning && 'animate-spin')} />
         </button>
         {children}
       </div>
@@ -220,7 +221,7 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
         {ago && lastSyncedAt ? (
           <SyncLine lastSyncedAt={lastSyncedAt} ago={ago}>{avatar}</SyncLine>
         ) : (
-          <div data-testid="today-capsule" className={CAPSULE}>{avatar}</div>
+          <div data-testid="today-capsule" className={cn(CAPSULE, 'pl-1.5')}>{avatar}</div>
         )}
       </div>
     </header>

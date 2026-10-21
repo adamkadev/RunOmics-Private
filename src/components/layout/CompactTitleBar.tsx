@@ -109,8 +109,8 @@ interface BarAction {
 /**
  * Liquid Glass v2, section 11: the bar's controls are the page header's, at
  * the same 44 pt - glass circles 8 pt apart, a segmented control a 44 pt
- * capsule of 36 pt segments, Today's sync and avatar a 40 pt capsule of
- * 32 pt buttons (owner, Oct 2026) - 16 pt from each edge,
+ * capsule of 36 pt segments, Today's sync and avatar a 44 pt capsule as
+ * Bevel's share and avatar (owner, Oct 2026) - 16 pt from each edge,
  * in the 46 pt row under the edge sampler, so a mirrored copy lands on the
  * original.
  */
@@ -417,7 +417,7 @@ export function CompactTitleBar() {
 
   /**
    * One page action as the bar shows it, pressing the page's own control: a
-   * 44 pt circle, or 32 pt in Today's 40 pt capsule of sync and avatar.
+   * 44 pt circle, or in Today's capsule the ↻ in its 44 pt and the 32 pt avatar.
    */
   const actionButton = (action: BarAction, i: number, inCapsule: boolean) => {
     const Icon = ACTION_ICONS[action.kind]
@@ -431,17 +431,16 @@ export function CompactTitleBar() {
         onClick={() => actionsRef.current[i]?.click()}
         className={cn(
           'flex shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-60',
-          inCapsule ? 'hit-44 size-8' : 'size-11',
           // The avatar keeps its accent disc, as on the page.
           action.kind === 'avatar'
-            ? cn('bg-accent font-bold text-accent-foreground', inCapsule ? 'text-[13px]' : 'text-base shadow-[0_6px_20px_rgb(0_0_0/0.2)]')
-            : cn('text-foreground', !inCapsule && 'glass-float'),
+            ? cn('bg-accent font-bold text-accent-foreground', inCapsule ? 'hit-44 size-8 text-[13px]' : 'size-11 text-base shadow-[0_6px_20px_rgb(0_0_0/0.2)]')
+            : cn('size-11 text-foreground', !inCapsule && 'glass-float'),
         )}
       >
         {action.kind === 'avatar' ? (
           <span aria-hidden="true">{action.text}</span>
         ) : Icon ? (
-          <Icon size={inCapsule ? 17 : 20} strokeWidth={2} aria-hidden="true" className={cn(action.busy && 'animate-spin')} />
+          <Icon size={20} strokeWidth={2} aria-hidden="true" className={cn(action.busy && 'animate-spin')} />
         ) : null}
       </button>
     )
@@ -545,7 +544,7 @@ export function CompactTitleBar() {
             {actions.length > 1 && (
               // Two in one glass capsule, as on the page (owner, Oct 2026,
               // as Claude's and Bevel's tops pair theirs).
-              <span data-testid="compact-bar-capsule" className={cn('glass-float flex items-center gap-1 rounded-full p-1', fadeIn)}>
+              <span data-testid="compact-bar-capsule" className={cn('glass-float flex h-11 items-center gap-3.5 rounded-full pr-1.5', fadeIn)}>
                 {actions.map((action, i) => actionButton(action, i, true))}
               </span>
             )}

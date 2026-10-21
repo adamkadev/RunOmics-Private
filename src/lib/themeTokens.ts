@@ -299,24 +299,31 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
  * Liquid Glass v2 (owner's brief, Oct 2026): the glass objects - the tab
  * bar, the top bar's buttons and capsules. A light fill so the blur shows,
  * a sheen from the top, a 0.5 px rim, a specular top edge and a soft drop.
+ * Clearer after Bevel's (owner, Oct 2026): the page reads through the tab
+ * bar, softened, not smeared. The top bar's material (--bar-*) is the
+ * page's colour over an even blur, cut by a hairline (.scroll-edge).
  */
 function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
   return mode === 'light'
     ? {
-        '--glass-fill': 'color-mix(in srgb, #ffffff 52%, transparent)',
+        '--glass-fill': 'color-mix(in srgb, #ffffff 36%, transparent)',
         '--glass-sheen': 'rgb(255 255 255 / 0.50)',
         '--glass-rim': 'rgb(0 0 0 / 0.07)',
         '--glass-spec': 'rgb(255 255 255 / 0.90)',
         '--glass-drop': '0 8px 24px rgb(0 0 0 / 0.10), 0 1px 2px rgb(0 0 0 / 0.06)',
-        '--glass-filter': 'blur(28px) saturate(2)',
+        '--glass-filter': 'blur(16px) saturate(1.8)',
+        '--bar-tint': 'color-mix(in srgb, var(--background) 78%, transparent)',
+        '--bar-filter': 'blur(20px) saturate(1.8)',
       }
     : {
-        '--glass-fill': 'color-mix(in srgb, #262a29 42%, transparent)',
+        '--glass-fill': 'color-mix(in srgb, #262a29 36%, transparent)',
         '--glass-sheen': 'rgb(255 255 255 / 0.07)',
         '--glass-rim': 'rgb(255 255 255 / 0.12)',
         '--glass-spec': 'rgb(255 255 255 / 0.22)',
         '--glass-drop': '0 10px 30px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.30)',
-        '--glass-filter': 'blur(28px) saturate(2) brightness(1.12)',
+        '--glass-filter': 'blur(16px) saturate(1.8) brightness(1.12)',
+        '--bar-tint': 'color-mix(in srgb, var(--background) 78%, transparent)',
+        '--bar-filter': 'blur(20px) saturate(1.8)',
       }
 }
 
@@ -419,8 +426,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--edge-sample-h': '12px',
       // The compact bar: the sampler's 12 px, then a 46 px row.
       '--bar-h': '58px',
-      // How far the soft scroll edge fades out under the bar.
-      '--edge-fade': '28px',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       // The floating tab bar's gap to the bottom edge (owner, Oct 2026, after
       // Bevel): the inset less 15 px, about 19 pt on a notched iPhone, clear

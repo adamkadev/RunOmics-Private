@@ -225,8 +225,8 @@ describe('CompactTitleBar', () => {
     expect(avatar.textContent).toBe('A')
     expect(avatar.className).toContain('bg-accent')
 
-    // Today's sync beside it, sync first, both in one 40 pt glass capsule as
-    // on the page (owner, Oct 2026, as Claude's and Bevel's tops).
+    // Today's sync beside it, sync first, both in one 44 pt glass capsule as
+    // on the page (owner, Oct 2026, as Bevel's share and avatar).
     document.body.innerHTML = ''
     tabPage()
     document.querySelector('main')!.insertAdjacentHTML('beforeend', '<button data-bar-action="refresh" data-bar-busy aria-label="Synced 2h ago"></button><a data-bar-action="avatar" aria-label="Progress"><span>A</span></a>')
@@ -235,11 +235,11 @@ describe('CompactTitleBar', () => {
     await mount(60)
     const capsule = within(bar()).getByTestId('compact-bar-capsule')
     expect(capsule.className).toContain('glass-float')
-    expect(capsule.className).toContain('p-1')
+    expect(capsule.className).toContain('h-11')
     const [refresh, disc] = within(capsule).getAllByTestId('compact-bar-action')
     expect(refresh!.getAttribute('aria-label')).toBe('Synced 2h ago')
     expect(refresh!.className).not.toContain('glass-float')
-    expect(refresh!.className).toContain('size-8')
+    expect(refresh!.className).toContain('size-11')
     expect(disc!.className).toContain('size-8')
     expect(disc!.className).toContain('bg-accent')
     expect(refresh!.querySelector('svg')!.getAttribute('class')).toContain('animate-spin')

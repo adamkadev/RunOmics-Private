@@ -63,13 +63,13 @@ describe('DashboardGreeting', () => {
     const s = t.dashboard.syncStatus
     const button = await screen.findByRole('button', { name: s.synced(s.hoursAgo(2)) })
     expect(button).toBe(screen.getByTestId('sync-line'))
-    expect(button.className).toContain('size-8')
+    // The ↻ alone in the capsule's first 44 pt, as Bevel's share.
+    expect(button.className).toContain('size-11')
     expect(button.className).toContain('rounded-full')
-    expect(button.className).toContain('hit-44')
     expect(button.textContent).toBe('')
     expect(screen.getByTestId('sync-note').textContent).toBe('')
-    // One glass capsule with the avatar (owner, Oct 2026, as Claude's and
-    // Bevel's tops), the sync's words outside it.
+    // One 44 pt glass capsule with the avatar (owner, Oct 2026, as Bevel's
+    // share and avatar), the sync's words outside it.
     const capsule = screen.getByTestId('today-capsule')
     expect(capsule.className).toContain('glass-float')
     expect(capsule.children[0]).toBe(button)

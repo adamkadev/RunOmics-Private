@@ -96,9 +96,6 @@ export function GlassTabBar() {
       // edge on a notched iPhone, as Bevel floats it.
       style={{ paddingBottom: 'var(--tab-bar-float)' }}
     >
-      {/* A tint under the capsule, no blur over the page above it (owner,
-          Oct 2026): the content stays sharp up to the bar. */}
-      <div aria-hidden="true" data-testid="bottom-glass" className="bottom-edge" />
       <div className="relative h-[58px]">
         {/* One glass surface that morphs (owner's brief, Oct 2026): its width
             springs between the full row and the 58 pt bubble, never two

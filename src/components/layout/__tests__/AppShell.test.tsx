@@ -75,8 +75,9 @@ describe('AppShell surface', () => {
   it('keeps the edge sampler and the soft scroll edge at the top for iOS', () => {
     const { getByTestId } = render(<AppShell>page</AppShell>)
     expect(getByTestId('edge-sampler').className).toContain('edge-sampler')
-    // Five layers: four blurs and the tint (Liquid Glass v2).
-    expect(getByTestId('scroll-edge').querySelectorAll(':scope > i')).toHaveLength(5)
+    // Two layers, as Bevel's top (owner, Oct 2026): the blur, then the tint
+    // and its hairline.
+    expect(getByTestId('scroll-edge').querySelectorAll(':scope > i')).toHaveLength(2)
   })
 })
 
