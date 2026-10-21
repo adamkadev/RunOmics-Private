@@ -66,6 +66,16 @@ const WIDE = '(min-width: 64rem)'
  */
 const ACTION_ICONS: Record<string, LucideIcon> = { share: Share, settings: Settings, refresh: RotateCw }
 
+/**
+ * A page's segmented control the bar mirrors (`data-bar-segments`: Activities'
+ * List | Map, Analytics' 4W | 12W | 1Y, Plan's Week | Month; owner, Oct 2026),
+ * once the control itself has scrolled under the bar.
+ */
+interface BarSegments {
+  label: string
+  items: { text: string; name: string; selected: boolean }[]
+}
+
 /** A page control the bar mirrors, as it reads it from the DOM. */
 interface BarAction {
   kind: string
@@ -129,6 +139,8 @@ export function CompactTitleBar() {
   // The page's own back link and action, which the bar's buttons press.
   const backRef = useRef<HTMLElement | null>(null)
   const actionsRef = useRef<HTMLElement[]>([])
+  const segmentsRef = useRef<HTMLElement[]>([])
+  const [segments, setSegments] = useState<BarSegments | null>(null)
   const [title, setTitle] = useState<string | null>(null)
   const [shown, setShown] = useState(false)
   const [back, setBack] = useState<string | null>(null)
@@ -180,6 +192,23 @@ export function CompactTitleBar() {
       }))
       // Only a change re-renders: this runs on every scroll frame.
       setActions((prev) => (JSON.stringify(prev) === JSON.stringify(read) ? prev : read))
+      const segmentsEl = document.querySelector<HTMLElement>('main [data-bar-segments]')
+      const segmentButtons = segmentsEl ? [...segmentsEl.querySelectorAll<HTMLElement>('button')] : []
+      segmentsRef.current = segmentButtons
+      // Mirrored once the control has gone under the bar, never beside it.
+      const statusBarNow = probeRef.current?.offsetHeight ?? 0
+      const underBar = !!segmentsEl && segmentsEl.getBoundingClientRect().bottom <= statusBarNow + BAR_HEIGHT + 4
+      const readSegments: BarSegments | null = segmentsEl && underBar
+        ? {
+            label: segmentsEl.getAttribute('aria-label') ?? '',
+            items: segmentButtons.map((b) => ({
+              text: b.textContent?.trim() ?? '',
+              name: nameOf(b),
+              selected: b.getAttribute('aria-selected') === 'true' || b.getAttribute('aria-checked') === 'true',
+            })),
+          }
+        : null
+      setSegments((prev) => (JSON.stringify(prev) === JSON.stringify(readSegments) ? prev : readSegments))
       if (!heading || window.matchMedia(WIDE).matches) {
         clear()
         setShown(false)
@@ -251,7 +280,7 @@ export function CompactTitleBar() {
     const main = document.querySelector('main')
     const observer = main ? new MutationObserver(schedule) : null
     // The sync's busy and disabled states are attributes on its button.
-    if (main) observer!.observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-bar-busy', 'disabled'] })
+    if (main) observer!.observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-bar-busy', 'disabled', 'aria-selected', 'aria-checked'] })
 
     schedule()
     window.addEventListener('scroll', schedule, { passive: true })
@@ -346,7 +375,9 @@ export function CompactTitleBar() {
         style={{
           top: 'var(--safe-top)',
           height: BAR_HEIGHT,
-          gridTemplateColumns: `${side}px minmax(0,1fr) ${side}px`,
+          // With a mirrored control the sides share what the title leaves,
+          // equally, so it stays centred whatever the control's width.
+          gridTemplateColumns: segments ? 'minmax(0,1fr) auto minmax(0,1fr)' : `${side}px minmax(0,1fr) ${side}px`,
         }}
       >
         <span className="flex justify-start pl-3">
@@ -369,7 +400,28 @@ export function CompactTitleBar() {
         <span aria-hidden="true" className={cn('block truncate text-center text-[17px] font-semibold leading-[52px] text-foreground', fadeIn)}>
           {title}
         </span>
-        <span className="flex justify-end pr-3">
+        <span className="flex items-center justify-end gap-2 pr-3">
+          {segments && (
+            // The page's segmented control, in glass: the chosen one on the
+            // tab bar's pill. A tap presses the page's own segment.
+            <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={cn('glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1', fadeIn)}>
+              {segments.items.map((item, i) => (
+                <button
+                  key={item.text + i}
+                  type="button"
+                  aria-label={item.name}
+                  aria-pressed={item.selected}
+                  onClick={() => segmentsRef.current[i]?.click()}
+                  className={cn(
+                    'flex h-8 items-center whitespace-nowrap rounded-full px-2.5 text-xs transition-colors',
+                    item.selected ? 'bg-[var(--tab-pill)] font-semibold text-foreground' : 'font-medium text-muted-foreground',
+                  )}
+                >
+                  {item.text}
+                </button>
+              ))}
+            </span>
+          )}
           {actions.length === 1 && <span className={cn('flex', fadeIn)}>{actionButton(actions[0]!, 0, false)}</span>}
           {actions.length > 1 && (
             // Two or more in one glass capsule, as Bevel's share and avatar.

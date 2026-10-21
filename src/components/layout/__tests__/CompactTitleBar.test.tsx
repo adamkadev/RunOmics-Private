@@ -220,6 +220,34 @@ describe('CompactTitleBar', () => {
     expect(gear.querySelector('svg')).not.toBeNull()
   })
 
+  // List | Map, 4W | 12W | 1Y, Week | Month (owner, Oct 2026): mirrored in
+  // glass once the page's own control has gone under the bar, never beside it.
+  it("carries the page's segmented control once it is under the bar", async () => {
+    tabPage()
+    document.querySelector('main')!.insertAdjacentHTML(
+      'beforeend',
+      '<div role="radiogroup" aria-label="Period" data-bar-segments><button aria-checked="true" aria-label="4 weeks">4W</button><button aria-checked="false" aria-label="12 weeks">12W</button></div>',
+    )
+    const group = document.querySelector('[data-bar-segments]')!
+    place(group, STATUS_BAR + 200, 34)
+    const twelve = vi.fn()
+    group.querySelectorAll('button')[1]!.addEventListener('click', twelve)
+
+    await mount(60)
+    expect(shown()).toBe(true)
+    expect(within(bar()).queryByTestId('compact-bar-segments')).toBeNull()
+
+    await scrollTo(200)
+    const mirror = within(bar()).getByTestId('compact-bar-segments')
+    expect(mirror.getAttribute('aria-label')).toBe('Period')
+    const [four, twelveMirror] = within(mirror).getAllByRole('button')
+    expect(four!.textContent).toBe('4W')
+    expect(four!.getAttribute('aria-pressed')).toBe('true')
+    expect(twelveMirror!.getAttribute('aria-label')).toBe('12 weeks')
+    twelveMirror!.click()
+    expect(twelve).toHaveBeenCalledTimes(1)
+  })
+
   it("puts the page's one action at the bar's trailing end", async () => {
     pushedPage()
     const share = vi.fn()

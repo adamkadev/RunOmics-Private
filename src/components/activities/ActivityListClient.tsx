@@ -405,6 +405,7 @@ export function ActivityListClient({
         label={t.activities.view.label}
         size="md"
         fill
+        barMirror
       />
 
       <div {...viewTabs.panelProps} className="flex flex-col gap-3.5 outline-none">

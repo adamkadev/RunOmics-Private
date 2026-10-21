@@ -133,7 +133,8 @@ export function AxisLabels({ labels, className }: { labels: string[]; className?
 export function PeriodControl<P extends string>({ periods, value, onChange }: { periods: readonly P[]; value: P; onChange: (p: P) => void }) {
   const s = t.analytics.cards.period
   return (
-    <div role="radiogroup" aria-label={s.label} className="flex shrink-0 gap-0.5 rounded-[10px] border border-border bg-[var(--segmented-track)] p-[3px]">
+    // data-bar-segments: the compact top bar carries it once it scrolls away.
+    <div role="radiogroup" aria-label={s.label} data-bar-segments className="flex shrink-0 gap-0.5 rounded-[10px] border border-border bg-[var(--segmented-track)] p-[3px]">
       {periods.map((p) => (
         <button
           key={p}

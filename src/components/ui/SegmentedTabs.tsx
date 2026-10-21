@@ -83,6 +83,7 @@ export function SegmentedTabs<T extends string | number>({
   fill = false,
   className,
   tabClassName,
+  barMirror = false,
 }: {
   tabs: SegmentedTabsState<T>
   /** `ariaLabel` reads a short label in full: "4W" on screen, "last 4 weeks" aloud (3.1.0). */
@@ -92,11 +93,14 @@ export function SegmentedTabs<T extends string | number>({
   fill?: boolean
   className?: string
   tabClassName?: string
+  /** The compact top bar carries this control once it scrolls away (data-bar-segments). */
+  barMirror?: boolean
 }) {
   return (
     <div
       {...tabs.listProps}
       aria-label={label}
+      data-bar-segments={barMirror ? '' : undefined}
       className={cn('flex shrink-0 gap-0.5 rounded-[11px] border border-border bg-[var(--segmented-track)] p-[3px]', fill && 'w-full', className)}
     >
       {items.map((item) => {
