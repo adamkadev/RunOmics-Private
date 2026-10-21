@@ -9,7 +9,8 @@ import { formatRanKm } from '@/lib/formatters'
 import { useToday } from '@/lib/useToday'
 import { useSkippedDays } from '@/lib/skippedDays'
 import { cn } from '@/lib/utils'
-import { RUN_TYPE_ZONE, zoneColor } from '@/lib/colors'
+import { sessionZone, zoneColor } from '@/lib/colors'
+import type { ActivityType } from '@/domain/activity/types'
 import { weekStripDays, type WeekStripDay } from './weekStrip'
 import { t } from '@/i18n'
 
@@ -48,6 +49,42 @@ export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<st
   })
 }
 
+/** The session label each type is named by in the legend, as the day strip names it. */
+const TYPE_KIND: Record<ActivityType, keyof typeof t.dashboard.weeklyStreak.kinds> = {
+  Base: 'easy',
+  Tempo: 'tempo',
+  Threshold: 'threshold',
+  VO2Max: 'vo2max',
+  Anaerobic: 'anaerobic',
+  Sprint: 'sprint',
+  Race: 'race',
+}
+
+export interface LegendEntry {
+  color: string
+  label: string
+}
+
+/**
+ * The legend's swatches: one per colour the week's done and planned bars are
+ * drawn in, easiest zone first, named by its sessions ("Easy", "Threshold").
+ * Types that share a colour share a swatch ("VO₂ max / Race").
+ */
+export function weekLegend(target: WeekTarget, bars: Bar[]): LegendEntry[] {
+  const byZone = new Map<number, Set<string>>()
+  target.days.forEach((source, i) => {
+    const state = bars[i]?.day.state
+    if (state !== 'done' && state !== 'planned') return
+    const zone = sessionZone(source)
+    const names = byZone.get(zone) ?? new Set<string>()
+    names.add(t.dashboard.weeklyStreak.kinds[TYPE_KIND[source.type ?? 'Base'] ?? 'easy'])
+    byZone.set(zone, names)
+  })
+  return [...byZone.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([zone, names]) => ({ color: zoneColor(zone as 1 | 2 | 3 | 4 | 5), label: [...names].join(' / ') }))
+}
+
 function barStyle({ day, height }: Bar): CSSProperties {
   switch (day.state) {
     case 'rest':
@@ -83,6 +120,7 @@ export function ThisWeekCard({
   const targetKm = weeklyTargetKm(target)
   const left = target.days.filter((day) => day.state === 'planned').reduce((sum, day) => sum + day.plannedSessions, 0)
   const missed = bars.filter((bar) => bar.day.state === 'missed').length
+  const legend = weekLegend(target, bars)
 
   return (
     // The card opens Plan › Week; a missed bar opens its own day, above it.
@@ -161,16 +199,14 @@ export function ThisWeekCard({
 
       {/* Each entry on one line; with a miss in the week the count drops to its own line, right-aligned. */}
       <div className="pointer-events-none relative flex flex-wrap items-center gap-x-3.5 gap-y-1.5 whitespace-nowrap border-t border-[var(--track)] pt-2.5 text-[11.5px] text-muted-foreground">
-        {/* "■ easy ■ quality · done · planned · km", the swatches in the bars' own colours. */}
-        <span className="flex items-center gap-[5px]" data-testid="legend-easy">
-          <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: zoneColor(RUN_TYPE_ZONE.Base) }} />
-          {s.easy}
-        </span>
-        <span className="flex items-center gap-[5px]" data-testid="legend-quality">
-          <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: zoneColor(RUN_TYPE_ZONE.Threshold) }} />
-          {s.quality}
-        </span>
-        <span>· {s.key}</span>
+        {/* "■ Easy ■ Threshold · done · planned · km": a swatch per session colour in the week. */}
+        {legend.map((entry) => (
+          <span key={entry.color} className="flex items-center gap-[5px]" data-testid="legend-type">
+            <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: entry.color }} />
+            {entry.label}
+          </span>
+        ))}
+        <span>{legend.length > 0 && '· '}{s.key}</span>
         {missed > 0 && (
           <span className="flex items-center gap-[5px]" data-testid="legend-missed">
             <span aria-hidden className="box-border size-[9px] rounded-[2px] border border-dashed border-[var(--warn)]" />

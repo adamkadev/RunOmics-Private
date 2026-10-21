@@ -40,8 +40,11 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     expect(bars[2]!.getAttribute('style')).toContain('dashed')
     expect(screen.getAllByTestId('today-tint')).toHaveLength(1)
     expect(screen.queryByTestId('plan-tick')).toBeNull()
-    expect(screen.getByTestId('legend-easy')).toHaveTextContent(t.dashboard.thisWeek.easy)
-    expect(screen.getByTestId('legend-quality')).toHaveTextContent(t.dashboard.thisWeek.quality)
+    // One swatch per session colour in the week, easiest first, in the bars' colours.
+    expect(screen.getAllByTestId('legend-type').map((e) => e.textContent)).toEqual([
+      t.dashboard.weeklyStreak.kinds.easy,
+      t.dashboard.weeklyStreak.kinds.threshold,
+    ])
     const reading = screen.getByTestId('load-reading')
     expect(reading.textContent).toBe(t.dashboard.thisWeek.load(456, 462, 750))
     expect(reading.style.color).toBe('var(--warn)')
