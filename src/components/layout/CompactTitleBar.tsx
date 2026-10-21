@@ -15,12 +15,14 @@ import { t } from '@/i18n'
  * hairline, and its title sits between glass buttons.
  *
  * Collapsed, it is 58 pt - the edge sampler's 12, then a 46 pt row - the
- * title centred, a 40 pt back chevron on a page reached from another, and
+ * title centred, a 44 pt back chevron on a page reached from another, and
  * the page's actions and mirrored control at the trailing end.
  *
- * The bar draws nothing of its own. The title is the page's own <h1>, the
- * way back the page's BackButton (`data-bar-back`) and the action the
- * control marked `data-bar-action`, all read from the DOM: the chevron and
+ * The bar draws nothing of its own. The title is the page's own <h1> (or
+ * its `data-bar-title`, a shorter name where the whole one would crowd the
+ * bar's controls, as Goals & season beside its year stepper), the way back
+ * the page's BackButton (`data-bar-back`) and the action the control marked
+ * `data-bar-action`, all read from the DOM: the chevron and
  * the action press the page's own controls, so they do just what those do.
  * A page with no <h1> never shows the bar.
  */
@@ -205,7 +207,7 @@ export function CompactTitleBar() {
         clear()
         heading = current
         subtitles = []
-        setTitle(current?.textContent?.trim() || null)
+        setTitle(current?.dataset.barTitle || current?.textContent?.trim() || null)
         if (current) {
           headingRest = current.getBoundingClientRect().top + window.scrollY
           subtitles = subtitleOf(current).map((el) => ({ el, restTop: el.getBoundingClientRect().top + window.scrollY }))

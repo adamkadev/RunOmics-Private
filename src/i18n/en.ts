@@ -1657,6 +1657,8 @@ export const en = {
   goals: {
     // The hub row's name, so the row and the screen it opens agree.
     title: 'Goals & season',
+    // The compact top bar's, short enough to sit beside the ‹ 2026 › stepper.
+    barTitle: 'Goals',
     empty: 'No goals configured yet.',
     back: 'Progress',
     // 3.1: the ‹ 2026 › stepper's arrows.

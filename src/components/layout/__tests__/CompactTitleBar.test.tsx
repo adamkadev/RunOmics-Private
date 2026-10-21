@@ -109,6 +109,15 @@ describe('CompactTitleBar', () => {
     expect(document.documentElement.hasAttribute('data-bar-shown')).toBe(true)
   })
 
+  it("shows a page's short bar title where it has one (Goals & season)", async () => {
+    tabPage()
+    const heading = document.querySelector('h1')!
+    heading.textContent = 'Goals & season'
+    heading.dataset.barTitle = 'Goals'
+    await mount(60)
+    expect(bar().textContent).toBe('Goals')
+  })
+
   // At rest the large title sits under the status bar, inside the bar's
   // height: the bar waits until the title itself goes under the status bar.
   it('stays hidden, and not drawn at all, while the large title is in view', async () => {

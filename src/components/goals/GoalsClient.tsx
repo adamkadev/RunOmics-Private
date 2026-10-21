@@ -62,7 +62,7 @@ export function GoalsClient({ data, today: serverToday, block = null }: Props) {
       <header className="mb-1.5 flex items-center justify-between gap-4">
         {/* The year itself is redundant here - the stepper right next to it
             already says which season is showing. */}
-        <h1 className="min-w-0 text-display text-foreground">{t.goals.title}</h1>
+        <h1 data-bar-title={t.goals.barTitle} className="min-w-0 text-display text-foreground">{t.goals.title}</h1>
         {hasYearStepper && <YearStepper years={years} value={selectedYear} onChange={setSelectedYear} />}
       </header>
 

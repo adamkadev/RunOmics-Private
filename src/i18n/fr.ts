@@ -1535,6 +1535,7 @@ export const fr = {
 
   goals: {
     title: 'Objectifs et saison',
+    barTitle: 'Objectifs',
     empty: 'Aucun objectif configuré pour le moment.',
     back: 'Progression',
     prevYear: 'Année précédente',
