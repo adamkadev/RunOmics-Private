@@ -101,11 +101,11 @@ function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; test
     <div className="grid grid-cols-4 gap-x-2" data-testid={testId}>
       {stats.map((stat) => (
         <div key={stat.label} className="flex min-w-0 flex-col gap-0.5">
-          <span className="whitespace-nowrap text-[20px] font-bold leading-tight tracking-[-0.01em] text-foreground">
+          <span className="whitespace-nowrap text-[22px] font-bold leading-7 tracking-[-0.016rem] text-foreground">
             {stat.value}
-            {stat.unit && <span className="ml-0.5 text-xs font-normal tracking-normal text-muted-foreground">{stat.unit}</span>}
+            {stat.unit && <span className="ml-0.5 text-[13px] font-normal tracking-normal text-muted-foreground">{stat.unit}</span>}
           </span>
-          <span className="truncate text-[11px] text-muted-foreground">{stat.label}</span>
+          <span className="truncate text-[13px] leading-[18px] text-muted-foreground">{stat.label}</span>
         </div>
       ))}
     </div>
@@ -195,14 +195,14 @@ export function ActivityDetailClient({
       <header className="-mt-1 flex flex-col gap-1">
         {/* Type · date · town: the type as its dot and its name. Above the
             title, it fades as it nears the compact bar. */}
-        <p data-title-sub className="flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted-foreground" data-testid="activity-subtitle">
+        <p data-title-sub className="flex flex-wrap items-center gap-x-1.5 text-[15px] leading-5 text-muted-foreground" data-testid="activity-subtitle">
           <TypeDot type={activity.type} />
           {t.activityTypes[activity.type]}
           <span aria-hidden>·</span>
           {dateLabel}
           <RunPlace activityId={activity.id} start={activity.route?.[0] ?? null} />
         </p>
-        <h1 data-title-late className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-foreground">
+        <h1 data-title-late className="text-display text-foreground">
           {name}
         </h1>
         {/* Under the title too, so it fades with the date line rather than
@@ -263,7 +263,6 @@ export function ActivityDetailClient({
             label={t.activity.tabs.groupLabel}
             size="md"
             fill
-            tabClassName="h-[34px] text-[13px]"
           />
         </StickyBar>
       )}

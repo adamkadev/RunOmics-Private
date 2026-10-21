@@ -64,7 +64,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
   return (
     <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="monthly-volume">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[15px] font-semibold text-foreground">{m.title}</h2>
+        <h2 className="text-headline text-foreground">{m.title}</h2>
         {targetKm > 0 && (
           <span className="text-xs text-muted-foreground">{oneTarget ? m.target(formatKm(targetKm)) : m.targetFromPlan}</span>
         )}

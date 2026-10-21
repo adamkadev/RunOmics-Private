@@ -21,7 +21,7 @@ export function ActivityAchievements({ bestEfforts, qualifiedEfforts }: Props) {
     // A record is good news, so it reads in pos (v4.17): the gold it wore
     // was the caution colour.
     <section className={cardClass({ className: 'flex flex-col gap-3' })}>
-      <h3 className="text-[15px] font-semibold text-foreground">{t.activity.achievements.title}</h3>
+      <h3 className="text-headline text-foreground">{t.activity.achievements.title}</h3>
       <div className="flex flex-col gap-2.5">
         {ranked.map((effort) => {
           const seconds = bestEfforts[effort.key]

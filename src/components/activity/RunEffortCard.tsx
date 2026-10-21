@@ -105,7 +105,7 @@ export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: P
       {zones.length > 0 && (
         <>
           <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-[15px] font-semibold text-foreground">{t.activity.zones.short}</h3>
+            <h3 className="text-headline text-foreground">{t.activity.zones.short}</h3>
             <span className="text-xs text-muted-foreground">{t.activity.zones.shareOfTime}</span>
           </div>
           <div className="flex h-2.5 gap-[3px]" data-testid="zone-stack">

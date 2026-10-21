@@ -355,7 +355,7 @@ export function MonthView({
       </div>
 
       <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="month-summary">
-        <h2 className="text-[15px] font-semibold text-foreground">{monthName}</h2>
+        <h2 className="text-headline text-foreground">{monthName}</h2>
         {plannedKm > 0 && (
           <div aria-hidden className="h-2 overflow-hidden rounded-full bg-[var(--line-2)]">
             <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.round((againstPlanKm / plannedKm) * 100))}%` }} />
