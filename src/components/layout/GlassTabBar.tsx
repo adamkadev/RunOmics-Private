@@ -112,9 +112,12 @@ export function GlassTabBar() {
       // on a Face ID iPhone, as off the sides (Liquid Glass v3, G3).
       style={{ paddingBottom: 'var(--tab-bar-float)' }}
     >
-      {/* Blur and tint under the bar only, from the screen's edge to the
-          capsule, nothing over the page above it (owner, Oct 2026). */}
-      <div aria-hidden="true" data-testid="bottom-glass" className="bottom-edge"><i /><i /></div>
+      {/* The soft edge the page dissolves into (Liquid Glass v3, README
+          §6.2): 120 pt from the screen's foot, so a light blur and tint reach
+          ~34 pt above the capsule and fade out. A sibling of the capsule,
+          never its ancestor. Gone with the bar in a fullscreen map, where the
+          nav's slide would otherwise leave its top on screen. */}
+      {!hidden && <div aria-hidden="true" data-testid="bottom-glass" className="bottom-edge"><i /><i /></div>}
       <div className="relative h-[var(--tab-bar-h)]">
         {/* One glass surface that morphs (owner's brief, Oct 2026): its width
             springs between the full row and the 58 pt bubble, never two

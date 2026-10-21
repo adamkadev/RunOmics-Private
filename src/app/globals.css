@@ -659,10 +659,15 @@
     );
   }
 
-  /* Bottom soft edge under the tab bar: inside the bar's own stacking
-     context (GlassTabBar), under the capsule, over the page. */
+  /* Bottom soft edge (G5, README §6.2): content dissolves into the tab bar
+     over its last ~34 pt above the capsule - a light 6 px blur that fades
+     out by 45 % of its height, and a tint, no hairline. Anchored to the
+     bottom of the bar's <nav>, 120 pt tall, so it reaches above the nav; a
+     sibling before the capsule, under it in the nav's stacking context,
+     never an ancestor of its glass. GlassTabBar drops it with the bar in a
+     fullscreen map. Fallbacks keep the tint and drop the blur (below). */
   .bottom-edge {
-    position: fixed;
+    position: absolute;
     inset-inline: 0;
     bottom: 0;
     height: 120px;

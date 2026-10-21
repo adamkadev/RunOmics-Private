@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { t } from '@/i18n'
 import { GlassTabBar } from '../GlassTabBar'
+import { FullscreenChromeProvider, useSetFullscreenChromeHidden } from '../FullscreenChromeContext'
 
 const push = vi.fn()
 vi.mock('next/navigation', () => ({ usePathname: () => '/', useRouter: () => ({ push }) }))
@@ -26,11 +29,34 @@ describe('GlassTabBar', () => {
     expect(capsule.className).toMatch(/\blg lg-tab\b/)
     expect(capsule.className).toContain('h-[var(--tab-bar-h)]')
     expect([...capsule.querySelectorAll(':scope > i')].map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
-    // Blur and tint under it only, never over the page above (owner, Oct
-    // 2026): the edge is the nav's own height, the capsule's top its top.
+    // The soft edge (Liquid Glass v3, README §6.2): a sibling before the
+    // capsule, never its ancestor, so the capsule's blur has no backdrop root.
     const edge = screen.getByTestId('bottom-glass')
     expect(edge.className).toContain('bottom-edge')
     expect(edge.querySelectorAll(':scope > i')).toHaveLength(2)
+    expect(edge.contains(capsule)).toBe(false)
+    expect(edge.parentElement).toBe(nav)
+  })
+
+  // 120 pt from the foot: a light blur masked #000 45% → transparent and a
+  // tint 72% → 40% @45% → 0, no hairline; the fallbacks drop the blur only.
+  it('dissolves the page into the bar over a 120 pt soft edge, with no hairline', () => {
+    const css = readFileSync(path.join(process.cwd(), 'src/app/globals.css'), 'utf8')
+    const block = (selector: string) => {
+      const at = css.indexOf(`${selector} {`)
+      return css.slice(at, css.indexOf('}', at))
+    }
+    expect(block('.bottom-edge')).toContain('position: absolute')
+    expect(block('.bottom-edge')).toContain('height: 120px')
+    expect(block('.bottom-edge > i:nth-child(1)')).toContain('linear-gradient(to top, #000 45%, transparent)')
+    expect(block('.bottom-edge > i:nth-child(1)')).toContain('blur(6px)')
+    expect(block('.bottom-edge > i:nth-child(2)')).toMatch(/72%, transparent\) 0%,[\s\S]*40%, transparent\) 45%,[\s\S]*transparent 100%/)
+    expect(css.slice(css.indexOf('.bottom-edge {'), css.indexOf('.bottom-edge > i:nth-child(2)') + 400)).not.toMatch(/border/)
+    // Reduce Transparency, Increase Contrast, data-glass="solid" and no
+    // backdrop-filter: the blur goes, the tint stays.
+    expect(css.match(/\.bottom-edge > i:nth-child\(1\)[^{]*\{ display: none; \}/g)?.length ?? 0).toBeGreaterThanOrEqual(2)
+    expect(css).toMatch(/html\[data-glass="solid"\] \.bottom-edge > i:nth-child\(1\)/)
+    expect(css).not.toMatch(/\.bottom-edge > i:nth-child\(2\)[^{]*\{ display: none/)
   })
 
   // Liquid Glass v3 (G4): 10/12 labels, 600 when lit, 500 otherwise.
@@ -123,6 +149,22 @@ describe('GlassTabBar', () => {
     expect(plan.className).toContain('text-accent-text')
     // The page shown is still Today until the route changes.
     expect(plan.getAttribute('aria-current')).toBeNull()
+  })
+
+  // A fullscreen map hides the bar, and its soft edge with it: the nav's
+  // slide alone would leave the edge's top on screen.
+  it('drops the soft edge with the bar in a fullscreen map', () => {
+    function Fullscreen() {
+      useSetFullscreenChromeHidden(true)
+      return null
+    }
+    render(
+      <FullscreenChromeProvider>
+        <Fullscreen />
+        <GlassTabBar />
+      </FullscreenChromeProvider>,
+    )
+    expect(screen.queryByTestId('bottom-glass')).toBeNull()
   })
 
   it('marks Progress with the trophy, not the person', () => {
