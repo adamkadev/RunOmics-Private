@@ -18,7 +18,7 @@ export function OfficialResult({ result, garminDistanceKm, garminDurationSeconds
 
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3' })}>
-      <h3 className="text-[15px] font-semibold text-foreground">{s.title}</h3>
+      <h3 className="text-headline text-foreground">{s.title}</h3>
       <div className="flex items-center gap-3">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-[var(--surface-2)]">
           <Flag size={15} className="text-muted-foreground" />

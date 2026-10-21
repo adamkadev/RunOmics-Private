@@ -58,8 +58,11 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
       href={`/activities/${a.id}`}
       data-testid="thumb-row"
       className={cn(
-        'flex items-center gap-3.5 text-left transition-colors hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)]',
-        variant === 'card' ? 'px-4 py-3' : 'rounded-[10px] px-3 py-2.5',
+        'flex items-center text-left transition-colors active:bg-[var(--fill-4)]',
+        // An inset-grouped row (Liquid Glass v3, G9): 64 pt, 10 x 16, the
+        // 44 pt thumbnail 12 pt from the text - so the list's separators,
+        // inset 72 pt, start under the title.
+        variant === 'card' ? 'gap-3.5 px-4 py-3 hover:bg-[var(--surface-2)]' : 'min-h-16 gap-3 px-4 py-2.5',
       )}
     >
       <RouteThumb path={a.routeThumb} type={a.type} size={inset ? 44 : 48} />
@@ -72,7 +75,7 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
           <span
             className={cn(
               'min-w-0 font-semibold leading-tight text-foreground',
-              inset ? 'truncate text-[15px]' : 'line-clamp-2 break-words text-sm text-pretty',
+              inset ? 'truncate text-headline' : 'line-clamp-2 break-words text-sm text-pretty',
             )}
           >
             {title}
@@ -81,15 +84,15 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
         </span>
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
           <TypeDot type={a.type} size={6} />
-          <span className={cn('min-w-0', inset ? 'truncate text-[12.5px]' : 'break-words text-pretty')}>{meta}</span>
+          <span className={cn('min-w-0', inset ? 'truncate text-[13px]' : 'break-words text-pretty')}>{meta}</span>
         </span>
       </span>
       <span className="flex shrink-0 flex-col items-end gap-0.75">
-        <span className={cn('font-semibold leading-tight text-foreground', inset ? 'text-base' : 'text-[15px]')}>
+        <span className={cn('font-semibold leading-tight text-foreground', inset ? 'text-headline' : 'text-[15px]')}>
           {formatDistance(a.distanceKm)}
           <Unit>{t.units.km}</Unit>
         </span>
-        {a.paceSecPerKm !== null && <span className="text-xs text-muted-foreground">{formatPace(a.paceSecPerKm)}</span>}
+        {a.paceSecPerKm !== null && <span className={cn('text-muted-foreground', inset ? 'text-[13px]' : 'text-xs')}>{formatPace(a.paceSecPerKm)}</span>}
       </span>
     </Link>
   )

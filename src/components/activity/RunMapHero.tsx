@@ -4,14 +4,19 @@ import { Fragment, useState, type ReactNode } from 'react'
 import { Maximize2 } from 'lucide-react'
 import { ActivityMapClient } from './ActivityMapClient'
 import { NoRouteMap } from './ActivityMap'
+import { Glass, GLASS_GROUP_BUTTON } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
-/** Top and bottom fades into the page, so the buttons and the title read over any tile. */
+/**
+ * The fade at the hero's foot into the page, 64 pt (Liquid Glass v3, §7.2).
+ * The top needs none: the controls over it are clear glass, legible on any
+ * tile, and a light top wash only keeps the street labels off them.
+ */
 export function HeroFades() {
   return (
     <>
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24 bg-gradient-to-b from-background/80 to-transparent" />
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-20 bg-gradient-to-t from-background to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-gradient-to-b from-background/35 to-transparent" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-background to-transparent" />
     </>
   )
 }
@@ -19,9 +24,10 @@ export function HeroFades() {
 const FADES = <HeroFades />
 
 /**
- * The activity's map hero (3.0): edge to edge, 330 pt, fading into the page
- * at the top and bottom, with the way back on the left and expand and share
- * on the right as 40 pt round buttons. The route is the run's one colour,
+ * The activity's map hero (3.0): edge to edge, 300 pt (Liquid Glass v3), fading into the page
+ * at the top and bottom, with the way back on the left as a 44 pt clear-glass
+ * circle and expand and share on the right grouped in one clear-glass
+ * capsule (Liquid Glass v3). The route is the run's one colour,
  * with no km markers and no pace or heart-rate ramp. Expand opens the map
  * full screen, with `card` floating at its foot.
  */
@@ -41,7 +47,9 @@ export function RunMapHero({
   return (
     <section
       data-testid="run-hero"
-      className="relative -mx-4 h-[330px] overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-3xl lg:border lg:border-border"
+      // The canvas and its glass controls: marked while the map moves (README §6.12.2).
+      data-map-root
+      className="relative -mx-4 h-[300px] overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-[24px]"
     >
       {route ? (
         <ActivityMapClient
@@ -62,19 +70,20 @@ export function RunMapHero({
         {/* Keyed: back and share are elements the server page made, and React
             asks a key of one set beside other children of a client element. */}
         <Fragment key="back">{back ?? <span />}</Fragment>
-        <div className="flex gap-2">
+        {/* Expand and share grouped in one clear-glass capsule (G13). */}
+        <Glass material="clear" className="flex h-11">
           {route && (
             <button
               type="button"
               onClick={() => setFullscreen(true)}
               aria-label={t.activity.map.fullscreen}
-              className="map-round-button hit-44"
+              className={GLASS_GROUP_BUTTON}
             >
-              <Maximize2 size={17} strokeWidth={2} aria-hidden="true" />
+              <Maximize2 size={18} strokeWidth={2} aria-hidden="true" />
             </button>
           )}
           <Fragment key="share">{share}</Fragment>
-        </div>
+        </Glass>
       </div>
     </section>
   )

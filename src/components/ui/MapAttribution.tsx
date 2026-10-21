@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Info } from 'lucide-react'
 import { t } from '@/i18n'
+import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 
 const CREDIT_LINKS: Record<string, string> = {
@@ -22,9 +23,10 @@ function Credit({ text }: { text: string }) {
 }
 
 /**
- * Every map's credits (3.0 handoff): a 22 px ⓘ in the bottom-right corner,
- * on the card at 80 %, that opens the MapTiler and OpenStreetMap lines
- * above it. The full line used to run across the bottom of the map. The
+ * Every map's credits (3.0 handoff): an ⓘ in the bottom-right corner that
+ * opens the MapTiler and OpenStreetMap lines above it - a 28 pt clear-glass
+ * circle (Liquid Glass v3, README §6.12.5), 12 pt from the corner, which the
+ * parent places; on the hero it sits above the fade. The full line used to run across the bottom of the map. The
  * parent places it; it only needs a positioned ancestor.
  */
 export function MapAttribution({ className }: { className?: string }) {
@@ -49,7 +51,7 @@ export function MapAttribution({ className }: { className?: string }) {
       {open && (
         <p
           role="note"
-          className="absolute bottom-full right-0 mb-1.5 rounded-[10px] border border-[var(--line-2)] bg-[color-mix(in_srgb,var(--card)_92%,transparent)] px-2.5 py-1.5 text-right text-caption leading-snug text-muted-foreground"
+          className="absolute bottom-full right-0 mb-1.5 rounded-[12px] bg-[var(--raised)] px-2.5 py-1.5 text-right text-caption leading-snug text-muted-foreground shadow-[var(--shadow-raised)]"
         >
           {t.pages.map.attribution.split(' · ').map((credit, i) => (
             <Fragment key={credit}>
@@ -64,9 +66,10 @@ export function MapAttribution({ className }: { className?: string }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={t.pages.map.credits}
-        className="hit-44 flex size-[22px] items-center justify-center rounded-full border border-[var(--line-2)] bg-[color-mix(in_srgb,var(--card)_80%,transparent)] text-muted-foreground"
+        className={glassClass('clear', 'hit-44 flex size-7 items-center justify-center text-foreground')}
       >
-        <Info size={13} strokeWidth={2} aria-hidden="true" />
+        <GlassLayers />
+        <Info size={15} strokeWidth={2} aria-hidden="true" />
       </button>
     </div>
   )

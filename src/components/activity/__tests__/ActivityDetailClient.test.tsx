@@ -20,6 +20,7 @@ const strip = vi.hoisted(() => ({ pinned: false, restingTop: 0 }))
 vi.mock('@/lib/useStuck', () => ({
   isStuck: () => strip.pinned,
   restingTop: () => strip.restingTop,
+  useStuck: () => false,
 }))
 
 const { ActivityDetailClient } = await import('../ActivityDetailClient')

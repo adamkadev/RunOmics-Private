@@ -7,9 +7,12 @@ import type { LngLatBounds, Map as MapLibreMap } from 'maplibre-gl'
 import { cn } from '@/lib/utils'
 import { maptilerStyle } from '@/lib/maptiler'
 import { MapAttribution } from '@/components/ui/MapAttribution'
+import { Glass, GlassLayers, GLASS_CIRCLE, GLASS_GROUP_BUTTON, glassClass } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, showPlacesAtAnyZoom } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
+import { MAP_PADDING } from '@/lib/routeFrame'
+import { watchMapMoving } from '@/lib/mapMoving'
 import {
   ROUTE_FIT_PADDING,
   addEdgeFence,
@@ -57,8 +60,10 @@ type MapStyle = (typeof MAP_STYLES)[number]
 const themeStyle = (): MapStyle => (document.documentElement.classList.contains('dark') ? 'dark' : 'light')
 
 /** Clear of the top buttons, the sides and the floating card, so the route sits in what is left. */
+/** Clear of the fullscreen controls and the run's card at the foot (README §6.12.1). */
 function fullscreenPadding(cardHeight: number) {
-  return { top: 76, right: 32, bottom: cardHeight + 56, left: 32 }
+  const { top, right, bottom, left } = MAP_PADDING.fullscreen
+  return { top, right, bottom: Math.max(bottom, cardHeight + 48), left }
 }
 
 export default function ActivityMap({ route, hoverFraction, className, fullscreen = false, onFullscreenChange = noop, overlay, card }: Props) {
@@ -203,6 +208,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         attributionControl: false,
       })
       mapRef.current = map
+      // Cheaper glass over the canvas while it moves (README §6.12.2).
+      watchMapMoving(map)
 
       // A loop's start and finish are one marker while they would touch: asked
       // again at every zoom, so zooming in parts them.
@@ -327,6 +334,9 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
 
   const tree = (
     <div
+      // Fullscreen, the map holds its own glass controls, so the moving-map
+      // attribute goes here; on the page it goes on the hero (README §6.12.2).
+      data-map-root={isFullscreen ? '' : undefined}
       className={cn(
         // isolate: maplibre's z-index 20 controls would otherwise paint over the status strip.
         'activity-map relative isolate overflow-hidden rounded-xl',
@@ -344,13 +354,17 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           {/* Full bleed (3.0): a fade under the buttons, close on the left,
               recenter and the basemap on the right, the run's card floating
               at the foot with the credits' ⓘ just above it. */}
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-28 bg-gradient-to-b from-background/85 to-transparent" />
+          <div aria-hidden className="map-top-edge pointer-events-none absolute inset-x-0 top-0 z-10" />
+          {/* Regular glass over the fullscreen map (Liquid Glass v3, G11):
+              close as a circle, recenter and the basemap grouped in one
+              capsule (G13). */}
           <div className="absolute inset-x-0 top-3 z-20 flex items-start justify-between px-4">
-            <button type="button" onClick={close} aria-label={m.exitFullscreen} className="map-round-button hit-44 size-[42px]">
-              <X size={19} strokeWidth={2} aria-hidden="true" />
+            <button type="button" onClick={close} aria-label={m.exitFullscreen} className={glassClass('regular', GLASS_CIRCLE)}>
+              <GlassLayers />
+              <X size={20} strokeWidth={2} aria-hidden="true" />
             </button>
-            <div className="flex gap-2">
-              <button type="button" onClick={recenter} aria-label={m.recenter} className="map-round-button hit-44 size-[42px]">
+            <Glass className="flex h-11">
+              <button type="button" onClick={recenter} aria-label={m.recenter} className={GLASS_GROUP_BUTTON}>
                 <LocateFixed size={18} strokeWidth={2} aria-hidden="true" />
               </button>
               <button
@@ -358,22 +372,22 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
                 onClick={() => setStyleChoice(nextStyle)}
                 aria-label={m.style(m.styles[shownStyle])}
                 data-map-style={shownStyle}
-                className="map-round-button hit-44 size-[42px]"
+                className={GLASS_GROUP_BUTTON}
               >
                 <Layers size={18} strokeWidth={2} aria-hidden="true" />
               </button>
-            </div>
+            </Glass>
           </div>
           <div className="absolute inset-x-3 bottom-[calc(28px+var(--safe-bottom,0px))] z-20 flex flex-col items-end gap-2">
             <MapAttribution />
             {card && (
-              <div
+              <Glass
                 ref={cardRef}
                 data-testid="map-card"
-                className="w-full rounded-[22px] border border-border bg-[color-mix(in_srgb,var(--card)_95%,transparent)] px-4 py-3.5"
+                className="w-full rounded-[28px] px-[18px] py-3.5"
               >
-                {card}
-              </div>
+                <div>{card}</div>
+              </Glass>
             )}
           </div>
         </>

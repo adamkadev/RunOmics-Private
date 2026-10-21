@@ -33,7 +33,7 @@ function PhaseCard({ name, week, total, race }: { name: string; week: number; to
   return (
     <section className={cardClass({ padding: 'none', className: 'flex flex-col gap-2.5 px-3.5 py-3' })} data-testid="phase-line">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h2 className="text-[15px] font-semibold text-foreground">{name}</h2>
+        <h2 className="text-headline text-foreground">{name}</h2>
         <p className="text-xs text-muted-foreground">
           {/* All in the caption grey (App Fixes 3b): "Week 2 of 5". */}
           {weekOf.before} {week} {weekOf.after}

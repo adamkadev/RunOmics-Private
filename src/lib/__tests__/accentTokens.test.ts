@@ -138,13 +138,18 @@ describe('neutral surfaces', () => {
     // inset tile is darker than the card.
     expect(light['--track']).toBe(light['--surface-2'])
     expect(dark['--track']).toBe('#262a29')
+    // Liquid Glass v3 (G7): the segmented control's track is a system fill,
+    // not a bordered surface-2 well.
     for (const tokens of [light, dark]) {
-      expect(tokens['--segmented-track']).toBe(tokens['--surface-2'])
+      expect(tokens['--segmented-track']).toBe('var(--fill-3)')
       expect(tokens['--tone-caution']).toBe(tokens['--warn'])
     }
+    // The content layer stays flat; only the glass chrome's specular rim is a gradient.
     for (const tokens of [light, dark]) {
       expect(tokens['--canvas']).toBe(tokens['--background'])
-      for (const value of Object.values(tokens)) expect(value).not.toMatch(/gradient\(/)
+      for (const [key, value] of Object.entries(tokens)) {
+        if (!key.startsWith('--glass-rim')) expect(value, key).not.toMatch(/gradient\(/)
+      }
     }
   })
 })

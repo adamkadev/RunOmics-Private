@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useLayoutEffect } from "react";
 import type { FeatureCollection } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
@@ -12,9 +12,16 @@ import { heatAccent, hexToRgb, rgbCss, scale } from "@/lib/heatRamp";
 import { parseAccent } from "@/lib/accent";
 import { HEAT_LAYER, HEAT_SOURCE, addHeatLayer, type HeatLayer } from "./heatLayer";
 import { buildHeatTracks, ringCoordinates } from "./mapUtils";
+import { MAP_PADDING } from "@/lib/routeFrame";
+import { watchMapMoving } from "@/lib/mapMoving";
 
-/** The routes' breathing room inside the map (v4.17). */
-export const FIT_PADDING = 36;
+/**
+ * The routes' breathing room inside the map: clear of the glass over it, in
+ * the map card or in fullscreen (Liquid Glass v3, README §6.12.1).
+ */
+export function fitPadding(fullscreen: boolean) {
+  return fullscreen ? MAP_PADDING.fullscreen : MAP_PADDING.card;
+}
 const FIT_MAX_ZOOM = 14;
 const FIT_MS = 800;
 
@@ -62,7 +69,13 @@ export function useMapRoutes(
   selectedIdx: number,
   visibleIndices: number[],
   ring: HomeRing | null,
+  fullscreen = false,
 ) {
+  // Read when the map is made; the fit below follows it.
+  const fullscreenRef = useRef(fullscreen);
+  useLayoutEffect(() => {
+    fullscreenRef.current = fullscreen;
+  }, [fullscreen]);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const heatRef = useRef<HeatLayer | null>(null);
@@ -168,7 +181,7 @@ export function useMapRoutes(
         container: containerRef.current!,
         style: heatBasemapStyle(maptilerStyle(dark, token), dark),
         bounds: boundsArray(first.frame),
-        fitBoundsOptions: { padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM },
+        fitBoundsOptions: { padding: fitPadding(fullscreenRef.current), maxZoom: FIT_MAX_ZOOM },
         // The licence-required attribution is the map's own line of text
         // (GlobalMapClient), not an in-map control - drawing both printed
         // "© MapTiler" twice.
@@ -182,6 +195,8 @@ export function useMapRoutes(
       map.touchZoomRotate.disableRotation();
       map.keyboard.disableRotation();
       mapRef.current = map;
+      // Cheaper glass over the canvas while it moves (README §6.12.2).
+      watchMapMoving(map);
 
       // The first style and every one after it (v4.17): the camera stays,
       // the run layers come back.
@@ -254,14 +269,16 @@ export function useMapRoutes(
       return;
     }
     if (!mapRef.current || !frame) return;
+    // Sized to the box it is in now (fullscreen or not) before it fits.
+    mapRef.current.resize();
     mapRef.current.fitBounds(boundsArray(frame), {
-      padding: FIT_PADDING,
+      padding: fitPadding(fullscreen),
       maxZoom: FIT_MAX_ZOOM,
       duration: fittedOnce.current ? FIT_MS : 0,
     });
     fittedOnce.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [frameKey, mapReady]);
+  }, [frameKey, mapReady, fullscreen]);
 
   const resize = useCallback(() => {
     mapRef.current?.resize();

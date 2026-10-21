@@ -128,7 +128,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3.5 rounded-[18px]' })}>
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-[15px] font-semibold text-foreground">{s.title}</h2>
+        <h2 className="text-headline text-foreground">{s.title}</h2>
         <SegmentedTabs
           tabs={tabs}
           label={s.viewLabel}

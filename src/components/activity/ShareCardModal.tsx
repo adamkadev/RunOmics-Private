@@ -18,6 +18,7 @@ import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
 import { cn } from '@/lib/utils'
+import { SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 import { ShareCardActions } from '@/components/activity/ShareCardActions'
 
@@ -43,14 +44,12 @@ const SWIPE_PX = 40
  * a filled accent pill (design review, Oct 2026); the accent is the Share
  * button's. Both pickers stay radiogroups: a choice, not a tab.
  */
-const SEGMENTED_TRACK = 'gap-0.5 rounded-[11px] border border-border bg-[var(--segmented-track)] p-[3px]'
+const SEGMENTED_TRACK = SEGMENTED_TRACK_CLASS
 
 function segmentClass(selected: boolean): string {
   return cn(
-    'hit-44 flex items-center justify-center whitespace-nowrap rounded-lg transition-colors',
-    selected
-      ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
-      : 'font-medium text-muted-foreground hover:text-foreground',
+    'hit-44 flex items-center justify-center whitespace-nowrap transition-colors',
+    selected ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS,
   )
 }
 
@@ -173,13 +172,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const s = t.activity.shareCard
 
   const chip = {
-    height: 44, padding: '0 16px', borderRadius: 14, fontSize: 14, fontWeight: 600,
-    background: 'var(--muted)', border: '1px solid var(--border)',
+    height: 44, padding: '0 16px', borderRadius: 9999, fontSize: 15, fontWeight: 600,
+    background: 'var(--fill-3)',
   } as const
 
   return createPortal(
     <div
-      className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end justify-center bg-black/60 sm:items-center sm:p-4"
+      className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end justify-center bg-[var(--scrim-sheet)] sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={s.title}
@@ -188,36 +187,37 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       {/* A sheet as tall as what it holds (design review, Oct 2026): handle,
           title, card, tabs, one option row, the buttons - no spacer, the
           run still showing above it. It scrolls only on a phone too short.
-          The raised sheet surface, a step over the page's cards (redesign,
-          Oct 2026). */}
+          Liquid Glass v3's large detent (G10): full width, opaque on the
+          raised surface, top corners 38 pt - no glass under a photo card. */}
       <div
         ref={trapRef}
         data-testid="share-sheet"
-        className="relative flex max-h-full w-full max-w-md animate-sheet-up flex-col overflow-y-auto overscroll-contain rounded-t-[28px] [scrollbar-width:none] sm:rounded-[28px] [&::-webkit-scrollbar]:hidden"
+        className="relative flex max-h-full w-full max-w-md animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col overflow-y-auto overscroll-contain rounded-t-[var(--radius-sheet-large)] [scrollbar-width:none] sm:rounded-[var(--radius-sheet-large)] [&::-webkit-scrollbar]:hidden"
         style={{
           ...sheetStyle,
-          background: 'var(--popover)',
-          borderTop: '1px solid var(--border)',
-          padding: '8px 20px 0',
+          background: 'var(--raised)',
+          boxShadow: 'var(--shadow-modal)',
+          padding: '6px 22px 0',
           paddingBottom: 'max(26px, var(--safe-bottom))',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 justify-center" {...handleProps} style={{ ...handleProps.style }}>
-          <span aria-hidden="true" style={{ width: 36, height: 5, borderRadius: 3, background: 'var(--border)' }} />
+          <span aria-hidden="true" style={{ width: 36, height: 5, borderRadius: 2.5, background: 'rgb(127 127 127 / 0.45)' }} />
         </div>
 
-        <div className="flex shrink-0 items-center justify-between" style={{ marginTop: 10 }}>
-          <h2 className="font-display text-foreground" style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1 }}>{s.title}</h2>
+        {/* The sheet header (G10): close as a filled circle, the title centred. */}
+        <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center" style={{ marginTop: 10, height: 44 }}>
           <button
             type="button"
             onClick={close}
             aria-label={s.close}
-            className="flex items-center justify-center text-foreground"
-            style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--muted)' }}
+            className="flex size-11 items-center justify-center justify-self-start rounded-full bg-[var(--fill-3)] text-foreground"
           >
-            <X size={16} strokeWidth={2.5} />
+            <X size={20} strokeWidth={2.2} />
           </button>
+          <h2 className="text-headline text-foreground">{s.title}</h2>
+          <span />
         </div>
 
         <div
@@ -268,7 +268,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
               role="radio"
               aria-checked={d === design}
               onClick={() => setDesign(d)}
-              className={cn(segmentClass(d === design), 'h-9 text-sm')}
+              className={cn(segmentClass(d === design), 'h-[34px] text-[15px]')}
             >
               {s.designLabels[d]}
             </button>
@@ -280,14 +280,14 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
         <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
           {design === 'photo' ? (
             <>
-              <span className="text-foreground" style={{ fontSize: 16, fontWeight: 600 }}>{s.photo}</span>
+              <span className="text-foreground" style={{ fontSize: 17 }}>{s.photo}</span>
               <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center text-foreground" style={chip}>
                 {photoImage ? s.replacePhoto : s.choosePhoto}
               </button>
             </>
           ) : (
             <>
-              <span className="text-foreground" style={{ fontSize: 16, fontWeight: 600 }}>{s.background}</span>
+              <span className="text-foreground" style={{ fontSize: 17 }}>{s.background}</span>
               <div role="radiogroup" aria-label={s.background} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
                 {(['dark', 'light'] as const).map((mode) => (
                   <button
@@ -296,7 +296,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
                     role="radio"
                     aria-checked={theme === mode}
                     onClick={() => setTheme(mode)}
-                    className={cn(segmentClass(theme === mode), 'h-[30px] px-3.5 text-[13px]')}
+                    className={cn(segmentClass(theme === mode), 'h-[26px] px-3.5 text-[13px]')}
                   >
                     {s.themeLabels[mode]}
                   </button>

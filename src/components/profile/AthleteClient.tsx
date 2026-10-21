@@ -36,7 +36,7 @@ export function AthleteClient({ athlete, vo2Grade, weeklyZoneTime, recentZoneTim
   return (
     <div className="flex flex-col gap-3.5">
       <header className="mb-1.5">
-        <BackButton label={p.back} fallbackHref="/profile" className="mb-3.5" />
+        <BackButton label={p.back} fallbackHref="/profile" />
         <h1 className="text-display text-foreground">{p.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{source}</p>
       </header>

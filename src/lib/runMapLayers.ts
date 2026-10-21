@@ -3,6 +3,7 @@ import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl'
 import { distanceKm } from '@/lib/math'
 import { firstSymbolLayerId } from '@/lib/maplibre'
 import { JOIN_PX as JOIN_DISTANCE_PX, markerExtent, routeEnds, routeMarkerImage } from '@/lib/routeMarkers'
+import { MAP_PADDING } from './routeFrame'
 
 export const ROUTE_SOURCE = 'route'
 export const ROUTE_LINE_LAYER = 'route-line'
@@ -24,10 +25,10 @@ export const FINISH_ICON = 'run-finish'
 const FENCE_ICON = 'map-edge-fence'
 
 /**
- * The route fitted clear of the edges, a little more at the top for the
- * expand button and at the bottom for the attribution line (v4.17).
+ * The route fitted clear of the hero's glass: its buttons at the top, the
+ * fade at its foot (Liquid Glass v3, README §6.12.1).
  */
-export const ROUTE_FIT_PADDING = { top: 32, right: 24, bottom: 36, left: 24 } as const
+export const ROUTE_FIT_PADDING = MAP_PADDING.hero
 
 type LngLat = [number, number]
 type Image = { width: number; height: number; data: Uint8Array | Uint8ClampedArray }

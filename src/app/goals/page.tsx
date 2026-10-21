@@ -20,7 +20,7 @@ export default async function GoalsPage() {
 
   return (
     <div>
-      <BackButton label={t.goals.back} fallbackHref="/profile" className="mb-3.5" />
+      <BackButton label={t.goals.back} fallbackHref="/profile" />
       <GoalsClient data={data} today={today} block={block} />
     </div>
   )

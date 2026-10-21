@@ -4,6 +4,54 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-10-21
+
+### Liquid Glass v3: iOS 26 parity for the PWA
+
+A retune of Liquid Glass v2's chrome to the design handoff of 2026-10-21
+(G1-G14): surfaces, shapes, type and motion only, no data, route or feature
+changes.
+
+- **G1 Glass object.** `.glass-float` becomes `.lg`: a wrapper with sibling
+  blur, 3 pt edge-band and tint layers, a two-sided specular rim and an inner
+  glow, as `<Glass>` in `ui/GlassSurface`. Every glass control moves to it -
+  the tab bar, the compact bar's buttons and mirrored controls, the header
+  toggles, Today's capsule, the back circles, the map controls. Reduce
+  Transparency, Increase Contrast and `data-glass="solid"` fall back to the
+  raised fill and a line; Reduce Motion keeps a 150 ms fade.
+- **G2 Glass press.** Glass swells (1.06), brightens and lights its rim
+  instead of shrinking. The tab bar's pill turns into a clear lens that
+  follows a press-and-drag, with a haptic per tab.
+- **G3 Tab bar geometry.** 62 pt, 24 pt from the sides and foot, concentric
+  with the 55 pt display corner; it still minimizes to a circle on scroll.
+- **G4 Tab legibility.** Unselected tabs in label ink, the selected one in
+  the accent on the pill; 10/12 labels.
+- **G5 Top soft edge.** No hairline: three blurs that grow stronger toward
+  the top and a tint, 30 pt past the bar. A pinned segmented strip turns to
+  glass.
+- **G6 Type.** SF Pro through the system stack (Geist still loaded), the iOS
+  ramp: 34/41 large titles, 28/34 session titles, 17/22 card titles, 13 pt
+  sentence-case section labels.
+- **G7 Capsule controls.** Segmented tracks, chips, buttons and the search
+  field are capsules on the system fill, with no line.
+- **G8 Cards.** Borderless 24 pt cards with a hairline shadow; 12 pt inset
+  tiles, concentric with them.
+- **G9 Lists.** Inset-grouped rows: 64 pt, 44 pt thumbnails, 0.5 pt
+  separators inset 72 pt.
+- **G10 Sheets.** One `ui/Sheet`: a medium detent floats as glass 8 pt in with
+  a 47 pt corner and a 50 pt CTA; a large detent is full width, opaque, its
+  top corners 38 pt.
+- **G11 Glass over maps.** Clear glass on the activity's hero (now 300 pt);
+  regular glass over the heatmap, its controls inside the map card, and a
+  glass legend card in fullscreen.
+- **G12 Buttons.** A 50 pt prominent primary with a sheen and an accent glow;
+  a filled secondary.
+- **G13 Grouped actions.** The hero's expand and share in one capsule; the
+  fullscreen map's recenter and basemap too.
+- **G14 Light Aura.** Light mode gets a blurred per-page colour field behind
+  the top of each page and frosted cards over it; Settings › Appearance ›
+  Light background switches it to Plain.
+
 The 3.1 handoff's audit pass (App Fixes), worked through badge by badge.
 
 ### Wave 4: the items that needed new data

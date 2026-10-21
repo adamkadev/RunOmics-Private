@@ -205,7 +205,7 @@ function WholeRunLap({
   const isWholeRun = covers >= WHOLE_RUN_SHARE
   return (
     <section className={bare ? 'flex flex-col gap-3' : cardClass({ className: 'flex flex-col gap-3' })} data-testid="whole-run-lap" data-whole-run={isWholeRun || undefined}>
-      {!bare && <h3 className="text-[15px] font-semibold text-foreground">{sp.lapTitle}</h3>}
+      {!bare && <h3 className="text-headline text-foreground">{sp.lapTitle}</h3>}
       <div className="w-full">
         <div className={`${rowCls} pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground`} data-testid="whole-run-cols">
           <span className="truncate">{sp.cols.lap}</span>
@@ -262,7 +262,7 @@ function LapTable({ splits, bare = false }: { splits: ActivitySplit[]; bare?: bo
   return (
     <section className={bare ? 'flex flex-col gap-3' : cardClass({ className: 'flex flex-col gap-3' })}>
       {!bare && (
-        <h3 className="text-[15px] font-semibold text-foreground">
+        <h3 className="text-headline text-foreground">
           {lapsOnly ? t.activity.splits.lapTitle : t.activity.splits.title}
         </h3>
       )}

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useFocusTrap } from '@/lib/useFocusTrap'
 import { useScrollLock } from '@/lib/useScrollLock'
+import { GlassLayers } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/formatters'
 import type { DeltaTone } from '@/lib/deltaTone'
@@ -135,7 +136,8 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
   const s = t.analytics.cards.period
   return (
     // data-bar-segments: the compact top bar carries it once it scrolls away.
-    <div role="radiogroup" aria-label={s.label} data-bar-segments className="glass-float flex shrink-0 gap-0.5 rounded-full p-1">
+    <div role="radiogroup" aria-label={s.label} data-bar-segments className="lg flex h-11 shrink-0 p-1">
+      <GlassLayers />
       {periods.map((p) => (
         <button
           key={p}
@@ -146,8 +148,8 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
           aria-label={s.words[p]}
           onClick={() => onChange(p)}
           className={cn(
-            'hit-44 flex h-9 items-center justify-center whitespace-nowrap rounded-full px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            p === value ? 'bg-[var(--tab-pill)] font-semibold text-foreground' : 'font-medium text-text-2 hover:text-foreground',
+            'lg-press hit-44 flex h-9 items-center justify-center whitespace-nowrap rounded-full px-3.5 text-[15px] text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            p === value ? 'bg-[var(--tab-pill)] font-semibold' : 'font-medium',
           )}
         >
           {s.short[p]}
@@ -202,13 +204,13 @@ export function Dialog({
   // Under the status bar, as every sheet: the strip dims itself (useScrollLock).
   return createPortal(
     <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-center justify-center p-4 sm:p-6" style={{ touchAction: 'none' }}>
-      <div className="absolute inset-0 animate-fade-in bg-black/55 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
+      <div className="absolute inset-0 animate-fade-in bg-[var(--scrim-sheet)]" onClick={onClose} aria-hidden />
       <div
         ref={trapRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex max-h-full w-full max-w-[520px] animate-fade-up flex-col gap-3.5 overflow-y-auto overscroll-contain rounded-[18px] border border-[var(--line-2)] bg-card px-6 py-[22px] shadow-[var(--shadow-modal)]"
+        className="relative flex max-h-full w-full max-w-[520px] animate-fade-up flex-col gap-3.5 overflow-y-auto overscroll-contain rounded-[28px] bg-[var(--raised)] px-[22px] py-[22px] shadow-[var(--shadow-modal)]"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-1.5">
@@ -217,7 +219,7 @@ export function Dialog({
                 {eyebrow}
               </span>
             )}
-            <h2 id={titleId} className="text-[19px] font-semibold leading-[1.3] text-foreground text-pretty">
+            <h2 id={titleId} className="text-title-3 text-foreground text-pretty">
               {title}
             </h2>
           </div>
@@ -225,9 +227,9 @@ export function Dialog({
             type="button"
             onClick={onClose}
             aria-label={t.analytics.cards.close}
-            className="hit-44 flex size-[30px] shrink-0 items-center justify-center rounded-lg border border-border bg-[var(--surface-2)] text-[var(--text-2)] hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="-mr-2 -mt-2 flex size-11 shrink-0 items-center justify-center rounded-full bg-[var(--fill-3)] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <X size={14} strokeWidth={2.2} aria-hidden />
+            <X size={20} strokeWidth={2.2} aria-hidden />
           </button>
         </div>
         {children}

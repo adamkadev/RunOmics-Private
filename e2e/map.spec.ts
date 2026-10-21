@@ -21,8 +21,8 @@ test('heatmap: Activities on Map, chips, a 560 pt map with its legend and licenc
   await expect(card).toContainText('ring')
   await expect(card).toContainText('Median reach')
   const mapBox = (await map.boundingBox())!
-  // 560 pt with its 1 pt border inside.
-  expect(Math.round(mapBox.height)).toBe(558)
+  // 560 pt, borderless (Liquid Glass v3, G8).
+  expect(Math.round(mapBox.height)).toBe(560)
   expect((await card.boundingBox())!.y).toBeGreaterThan(mapBox.y + mapBox.height)
 
   await page.getByRole('button', { name: 'Fullscreen' }).click()

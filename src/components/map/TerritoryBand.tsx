@@ -21,7 +21,7 @@ export interface TerritoryCardContent {
 export function TerritoryBand({ eyebrow, headline, stats }: TerritoryCardContent) {
   return (
     <section
-      className="flex flex-col gap-3.5 rounded-2xl border border-border bg-card px-5 py-[18px]"
+      className="flex flex-col gap-3.5 content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4"
       data-testid="territory-card"
     >
       <div className="flex flex-col gap-1.5">

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { readdirSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -154,7 +154,7 @@ describe('Analytics (v4.5)', () => {
     expect(sheet.querySelector('[data-trend="declining"] svg')!.getAttribute('style')).toContain('var(--tone-caution)')
     expect(sheet.innerHTML).not.toContain('var(--accent')
     fireEvent.keyDown(document, { key: 'Escape' })
-    expect(screen.queryByRole('dialog')).toBeNull()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     // The period control is the read's period too.
     fireEvent.click(screen.getByRole('radio', { name: '4 weeks' }))
     expect(coach().textContent).toContain(s.eyebrow(words['4w']!, t.analytics.tabs.performance))
@@ -205,7 +205,11 @@ describe('Analytics (v4.5)', () => {
     fireEvent.click(screen.getByTestId('coach-read-why'))
     const dialog = screen.getByRole('dialog')
     expect(dialog.getAttribute('aria-modal')).toBe('true')
-    expect(dialog.className).toContain('rounded-t-[28px]')
+    // Liquid Glass v3 (G10): a medium-detent glass sheet, 8 pt in, r47.
+    const panel = screen.getByTestId('why-sheet')
+    expect(panel.getAttribute('data-detent')).toBe('medium')
+    expect(panel.className).toMatch(/\blg lg-sheet\b/)
+    expect(panel.className).toContain('rounded-[var(--radius-sheet)]')
     expect(dialog.contains(document.activeElement)).toBe(true)
     // Load, Fitness, Fatigue in that order, each a bold lead and what it means.
     const rows = [...dialog.querySelectorAll('li')].map((li) => li.textContent ?? '')
@@ -220,7 +224,8 @@ describe('Analytics (v4.5)', () => {
     const closes = within(dialog).getAllByRole('button', { name: t.analytics.cards.close })
     expect(closes).toHaveLength(1)
     fireEvent.click(closes[0]!)
-    expect(screen.queryByRole('dialog')).toBeNull()
+    // The sheet slides away before it goes.
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
   })
 
   it('widens the Form strip with the period, and resets the range', async () => {

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Share } from 'lucide-react'
 import type { ShareActivity } from '@/lib/shareCardStats'
+import { GLASS_GROUP_BUTTON } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 // The modal brings the 800-line canvas renderer and the map snapshot code
@@ -25,15 +26,15 @@ export function ShareButton({ activity }: Props) {
 
   return (
     <>
-      {/* The page's one action, a 40 pt circle on the map hero (3.0).
-          Once the hero has scrolled away, the compact title bar's share icon
-          presses it (design review, Oct 2026). */}
+      {/* The page's one action, in the hero's clear-glass group beside
+          expand (Liquid Glass v3, G13). Once the hero has scrolled away, the
+          compact title bar's share icon presses it (design review, Oct 2026). */}
       <button
         type="button"
         data-bar-action="share"
         aria-label={t.activity.share}
         onClick={() => setIsOpen(true)}
-        className="map-round-button hit-44"
+        className={GLASS_GROUP_BUTTON}
       >
         <Share size={18} strokeWidth={2} aria-hidden="true" />
       </button>

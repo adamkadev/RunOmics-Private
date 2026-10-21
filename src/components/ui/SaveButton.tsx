@@ -21,9 +21,9 @@ export function SaveButton({ state, onClick, type = 'button' }: Props) {
       type={type}
       onClick={onClick}
       disabled={state === 'saving'}
-      // Drawn at 36 pt, tapped at 44 (design review, Oct 2026).
+      // A 44 pt capsule, the size of a sheet header's controls (Liquid Glass v3).
       className={cn(
-        'hit-44 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50',
+        'hit-44 h-11 rounded-full px-4 text-[17px] font-semibold transition-colors disabled:opacity-50',
         state === 'error' ? 'bg-destructive text-white hover:bg-destructive/90' :
         'bg-accent text-accent-foreground hover:bg-accent/90'
       )}

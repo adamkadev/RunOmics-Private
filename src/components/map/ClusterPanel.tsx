@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, ChevronDown, ChevronRight, MapPin, X } from "lucide-react";
+import { GlassLayers, glassClass } from "@/components/ui/GlassSurface";
 import { t } from "@/i18n";
 import { formatKm } from "@/lib/formatters";
 import { OWN_ROW_SHARE, type AreaRow } from "./mapUtils";
@@ -68,20 +69,21 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
       {/* The location pill (Heatmap Filters 1b, Oct 2026): the row's one
           wide control, taking what the two circles leave, so any city name
           fits - cut with an ellipsis, never scrolled. 44 pt glass, as the
-          other headers' controls. */}
+          other headers' controls - regular Liquid Glass v3 (G11). */}
       <button
         {...menu.chipProps}
         title={selectedName}
         aria-label={`${t.pages.map.area}: ${selectedName}`}
-        className="map-glass glass-float flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full px-4 text-foreground"
+        className={glassClass("regular", "flex h-11 min-w-0 flex-1 items-center gap-2 pl-3.5 pr-3 text-foreground")}
       >
-        <MapPin size={18} strokeWidth={2} aria-hidden="true" className="shrink-0 text-accent" />
-        <span className="min-w-0 flex-1 truncate text-left text-base font-semibold">{selectedName}</span>
+        <GlassLayers />
+        <MapPin size={18} strokeWidth={2} aria-hidden="true" className="shrink-0 text-accent-text" />
+        <span className="min-w-0 flex-1 truncate text-left text-headline">{selectedName}</span>
         <ChevronDown
-          size={12}
-          strokeWidth={2.5}
+          size={16}
+          strokeWidth={2.2}
           aria-hidden="true"
-          className={["shrink-0 text-[var(--text-2)] transition-transform", menu.open ? "rotate-180" : ""].join(" ")}
+          className={["shrink-0 text-muted-foreground transition-transform", menu.open ? "rotate-180" : ""].join(" ")}
         />
       </button>
 

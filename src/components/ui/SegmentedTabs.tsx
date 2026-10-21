@@ -1,6 +1,8 @@
 'use client'
 
-import { useId, type KeyboardEvent, type ReactNode } from 'react'
+import { useContext, useId, type KeyboardEvent, type ReactNode } from 'react'
+import { GlassLayers } from '@/components/ui/GlassSurface'
+import { StickyStuckContext } from '@/components/ui/StickyBar'
 import { cn } from '@/lib/utils'
 
 const NEXT_KEY: Record<string, (index: number, count: number) => number> = {
@@ -61,24 +63,37 @@ export function useSegmentedTabs<T extends string | number>({
 
 export type SegmentedTabsState<T extends string | number> = ReturnType<typeof useSegmentedTabs<T>>
 
+/** Thumb heights in a 3 pt-padded track: sm 26 in 32, md 34 in 40 (Liquid Glass v3, G7). */
 const SIZE_CLASS = {
-  sm: 'h-[30px] px-3 text-xs',
-  md: 'h-9 px-4 text-sm',
+  sm: 'h-[26px] px-3 text-[13px]',
+  md: 'h-[34px] px-4 text-[15px] tracking-[-0.015rem]',
 } as const
 
 /**
+ * The content-layer segmented recipe, for the controls drawn by hand that
+ * must match it (Theme, Light background, the share card's options): a
+ * capsule system-fill track with no line, a lifted capsule thumb.
+ */
+export const SEGMENTED_TRACK_CLASS = 'flex shrink-0 gap-0.5 rounded-full bg-[var(--segmented-track)] p-[3px]'
+export const SEGMENTED_THUMB_CLASS = 'rounded-full bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
+export const SEGMENTED_IDLE_CLASS = 'rounded-full font-medium text-[var(--text-2)] hover:text-foreground'
+
+/**
  * The quiet switch (v4.17) - Plan's week/month, Goals' years, the activity's
- * and Analytics' sections, Records - one recipe everywhere: an inset track
- * with a line, the selected tab lifted onto the card surface in text ink.
- * The accent fill is kept for real actions. `size` is sm (30, small ranges)
- * or md (36, page tabs); either way every tab has a 44 pt hit area.
+ * and Analytics' sections, Records - one recipe everywhere. Liquid Glass v3
+ * (G7): a capsule track in the system fill with no line, the selected tab a
+ * lifted capsule in text ink, the others in text-2. The accent fill is kept
+ * for real actions. `size` is sm (a 32 pt track, small ranges) or md (40,
+ * page tabs); either way every tab has a 44 pt hit area.
  * `tabClassName` still carries a one-off size, and `fill` stretches the tabs
  * across the row.
  *
  * `barMirror` marks a header toggle (List | Map, Week | Month, 3M | 6M | 1Y):
  * it is glass at rest, as its copy in the compact bar is (Liquid Glass v2,
- * section 11) - a 44 pt capsule of 36 pt segments, 14 pt labels, the chosen
+ * section 11) - a 44 pt capsule of 36 pt segments, 15 pt labels, the chosen
  * one on the tab bar's pill - so the bar's copy lands on it with no jump.
+ * In a sticky strip (StickyBar) the control turns to the same glass while
+ * the strip is pinned (Liquid Glass v3, G5).
  */
 export function SegmentedTabs<T extends string | number>({
   tabs,
@@ -101,19 +116,17 @@ export function SegmentedTabs<T extends string | number>({
   /** The compact top bar carries this control once it scrolls away (data-bar-segments). */
   barMirror?: boolean
 }) {
+  const stuck = useContext(StickyStuckContext)
+  const glass = barMirror || stuck === true
   return (
     <div
       {...tabs.listProps}
       aria-label={label}
       data-bar-segments={barMirror ? '' : undefined}
-      className={cn(
-        barMirror
-          ? 'glass-float flex shrink-0 gap-0.5 rounded-full p-1'
-          : 'flex shrink-0 gap-0.5 rounded-[11px] border border-border bg-[var(--segmented-track)] p-[3px]',
-        fill && 'w-full',
-        className,
-      )}
+      data-variant={glass ? 'glass' : 'content'}
+      className={cn(glass ? 'lg flex h-11 shrink-0 p-1' : SEGMENTED_TRACK_CLASS, fill && 'w-full', className)}
     >
+      {glass && <GlassLayers />}
       {items.map((item) => {
         const props = tabs.tabProps(item.id)
         return (
@@ -123,21 +136,21 @@ export function SegmentedTabs<T extends string | number>({
             aria-label={item.ariaLabel}
             className={cn(
               'hit-44 flex items-center justify-center whitespace-nowrap transition-colors',
-              barMirror ? 'h-9 rounded-full px-3.5 text-sm' : cn('rounded-lg', size && SIZE_CLASS[size]),
+              glass ? 'lg-press h-9 rounded-full px-3.5 text-[15px] text-foreground' : cn('rounded-full', size && SIZE_CLASS[size]),
               // Fill mode shares the spare width out equally on top of each
               // label, with 12 pt padding as the floor: equal widths left
               // "Performance" touching its pill edge to edge (G21). 10 pt
               // on a phone, where 12 cut "Performance" at 360 pt (v4.17.2).
               fill && 'min-w-0 flex-auto px-1.5 min-[400px]:px-2.5 sm:px-3',
-              !barMirror && tabClassName,
-              barMirror
+              !glass && tabClassName,
+              glass && fill && 'px-1.5 min-[400px]:px-2.5',
+              glass
                 ? props['aria-selected']
-                  ? 'bg-[var(--tab-pill)] font-semibold text-foreground'
-                  : 'font-medium text-text-2 hover:text-foreground'
-                : // Selected is the card surface, lifted (v4.17).
-                  props['aria-selected']
-                  ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
-                  : 'font-medium text-muted-foreground hover:text-foreground'
+                  ? 'bg-[var(--tab-pill)] font-semibold'
+                  : 'font-medium'
+                : props['aria-selected']
+                  ? SEGMENTED_THUMB_CLASS
+                  : SEGMENTED_IDLE_CLASS
             )}
           >
             <span className="truncate">{item.label}</span>

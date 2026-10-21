@@ -1,5 +1,11 @@
-import { forwardRef, type ReactNode } from 'react'
+'use client'
+
+import { createContext, forwardRef, useCallback, useRef, type ReactNode } from 'react'
+import { useStuck } from '@/lib/useStuck'
 import { cn } from '@/lib/utils'
+
+/** Whether the strip around a control is pinned: a segmented control in it turns to glass. */
+export const StickyStuckContext = createContext<boolean | null>(null)
 
 /**
  * A sticky strip of controls - the Analytics and activity tabs. Opaque, on the
@@ -12,12 +18,24 @@ import { cn } from '@/lib/utils'
  * On a phone it is transparent (Liquid Glass v2): its text stays sharp at
  * z-30 over the soft scroll edge, which grows by its height while it is
  * stuck (data-sticky-strip, --sticky-h), and the rows dissolve under it.
+ * Pinned, the segmented control in it turns to glass (Liquid Glass v3, G5).
  */
 export const StickyBar = forwardRef<HTMLDivElement, { top: string; className?: string; children: ReactNode }>(
   function StickyBar({ top, className, children }, ref) {
+    const inner = useRef<HTMLDivElement | null>(null)
+    const stuck = useStuck(inner)
+    const setRef = useCallback(
+      (el: HTMLDivElement | null) => {
+        inner.current = el
+        if (typeof ref === 'function') ref(el)
+        else if (ref) ref.current = el
+      },
+      [ref],
+    )
     return (
       <div
-        ref={ref}
+        ref={setRef}
+        data-stuck={stuck ? '' : undefined}
         data-testid="sticky-bar"
         data-sticky-strip
         style={{ top }}
@@ -27,7 +45,7 @@ export const StickyBar = forwardRef<HTMLDivElement, { top: string; className?: s
           className,
         )}
       >
-        {children}
+        <StickyStuckContext.Provider value={stuck}>{children}</StickyStuckContext.Provider>
       </div>
     )
   },

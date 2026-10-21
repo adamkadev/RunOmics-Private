@@ -1,0 +1,197 @@
+'use client'
+
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { X } from 'lucide-react'
+import { GlassLayers } from '@/components/ui/GlassSurface'
+import { useDragToDismiss } from '@/lib/useDragToDismiss'
+import { useFocusTrap } from '@/lib/useFocusTrap'
+import { useScrollLock } from '@/lib/useScrollLock'
+import { cn } from '@/lib/utils'
+import { t } from '@/i18n'
+
+/** Content up to this share of the screen is a medium detent; more is large. */
+export const MEDIUM_DETENT_MAX = 0.75
+
+export type SheetDetent = 'medium' | 'large'
+
+/**
+ * Which detent a sheet takes (Liquid Glass v3, §9): medium while its content
+ * fits in three quarters of the screen, large beyond.
+ */
+export function detentFor(contentHeight: number, viewportHeight: number): SheetDetent {
+  return contentHeight <= MEDIUM_DETENT_MAX * viewportHeight ? 'medium' : 'large'
+}
+
+type Slot = ReactNode | ((close: () => void) => ReactNode)
+
+const render = (slot: Slot, close: () => void) => (typeof slot === 'function' ? slot(close) : slot)
+
+/** A 44 pt control in a sheet's header: a fill, never glass - glass is never nested in glass. */
+const HEADER_CONTROL = 'hit-44 flex h-11 shrink-0 items-center justify-center rounded-full bg-[var(--fill-3)]'
+
+/**
+ * A bottom sheet (Liquid Glass v3, G10). A medium detent - filters, a week,
+ * a note, the export - floats as glass: 8 pt from the screen's sides and
+ * foot, a 47 pt corner concentric with the display's, 22 pt in, so a 50 pt
+ * capsule CTA at its foot is concentric too. A large detent - the share card,
+ * long content - is full width and opaque, its top corners 38 pt. The detent
+ * is measured on open and again on a resize; `detent="large"` fixes it.
+ *
+ * Grabber, then a 44 pt header row: close as a filled circle, the title
+ * centred, a secondary action as a filled capsule. The scrim fades in; the
+ * page behind does not scale. Controls inside take fills, never glass.
+ * Above the fullscreen maps (z-50), whose filters open one.
+ */
+export function Sheet({
+  onClose,
+  title,
+  titleId,
+  label,
+  action,
+  trailing,
+  showClose = true,
+  footer,
+  detent: fixedDetent,
+  testId,
+  bodyClassName,
+  children,
+}: {
+  onClose: () => void
+  /** The header's title; omit it for a sheet named by `label` alone. */
+  title?: ReactNode
+  /** The heading that names the dialog: the header's title, or one in the content. */
+  titleId?: string
+  /** The dialog's accessible name when it has no visible title. */
+  label?: string
+  /** The header's trailing action, in the accent: Reset, Done. */
+  action?: { label: string; onClick: () => void; disabled?: boolean }
+  /** A trailing control of the sheet's own instead of `action` (the note's Save). */
+  trailing?: ReactNode
+  showClose?: boolean
+  /** Under the content, 24 pt below it: the CTA (Button size="lg"). */
+  footer?: Slot
+  detent?: SheetDetent
+  testId?: string
+  bodyClassName?: string
+  children: Slot
+}) {
+  const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
+  const trapRef = useFocusTrap<HTMLDivElement>()
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [measured, setMeasured] = useState<SheetDetent>('medium')
+  const detent = fixedDetent ?? measured
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close()
+    }
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [close])
+
+  useScrollLock()
+
+  // Measured once on open, and again on a resize (§9).
+  useLayoutEffect(() => {
+    if (fixedDetent) return
+    const measure = () => {
+      const el = contentRef.current
+      if (el) setMeasured(detentFor(el.scrollHeight, window.innerHeight))
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [fixedDetent])
+
+  const medium = detent === 'medium'
+
+  return createPortal(
+    <div
+      className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[60] flex items-end sm:items-center sm:justify-center sm:p-4"
+      style={{ touchAction: 'none' }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      aria-label={titleId ? undefined : label}
+    >
+      <div className="absolute inset-0 animate-[fade-in_250ms_ease-out_both] bg-[var(--scrim-sheet)]" onClick={close} />
+
+      <div
+        ref={trapRef}
+        data-testid={testId}
+        data-detent={detent}
+        className={cn(
+          'relative flex w-full animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col sm:max-w-sm',
+          'transition-[margin,border-radius] duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)]',
+          medium
+            ? 'lg lg-sheet m-[var(--sheet-inset)] max-h-[calc(100%_-_16px)] rounded-[var(--radius-sheet)] sm:rounded-[var(--radius-sheet)]'
+            : 'max-h-full rounded-t-[var(--radius-sheet-large)] bg-[var(--raised)] shadow-[var(--shadow-modal)] sm:rounded-[var(--radius-sheet-large)]',
+        )}
+        style={sheetStyle}
+      >
+        {medium && <GlassLayers />}
+        <div
+          ref={contentRef}
+          className="flex min-h-0 flex-1 flex-col px-[var(--sheet-pad)] pt-1.5"
+          style={{ paddingBottom: medium ? 'var(--sheet-pad)' : 'max(env(safe-area-inset-bottom), var(--sheet-pad))' }}
+        >
+          {/* The grabber: 36 x 5, 6 pt from the top, the drag handle. */}
+          <div className="-mx-[var(--sheet-pad)] flex justify-center pb-2.5" {...handleProps}>
+            <span aria-hidden="true" className="h-[5px] w-9 rounded-[2.5px] bg-[rgb(127_127_127/0.45)]" />
+          </div>
+
+          {(showClose || title || action || trailing) && (
+            <div className="grid h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2">
+              <span className="flex justify-start">
+                {showClose && (
+                  <button type="button" onClick={close} aria-label={t.common.close} className={cn(HEADER_CONTROL, 'w-11 text-foreground')}>
+                    <X size={20} strokeWidth={2.2} aria-hidden="true" />
+                  </button>
+                )}
+              </span>
+              {title ? (
+                <h2 id={titleId} className="min-w-0 truncate text-center text-headline text-foreground">
+                  {title}
+                </h2>
+              ) : (
+                <span />
+              )}
+              <span className="flex justify-end">
+                {trailing}
+                {!trailing && action && (
+                  <button
+                    type="button"
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                    className={cn(HEADER_CONTROL, 'px-4 text-[17px] text-accent-text disabled:opacity-40')}
+                  >
+                    {action.label}
+                  </button>
+                )}
+              </span>
+            </div>
+          )}
+
+          {/* The content scrolls on a short phone; the sheet itself does not. */}
+          <div className={cn('-mx-[var(--sheet-pad)] min-h-0 flex-1 overflow-y-auto px-[var(--sheet-pad)]', bodyClassName)} style={{ touchAction: 'pan-y' }}>
+            {render(children, close)}
+          </div>
+
+          {footer && <div className="shrink-0 pt-6">{render(footer, close)}</div>}
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
+/** A sheet's section label: 13 pt at 600 in sentence case, 18 pt above, 10 below. */
+export function SheetSection({ title, label, children, className }: { title: ReactNode; label?: string; children: ReactNode; className?: string }) {
+  return (
+    <section aria-label={label} className={cn('mt-[18px] first:mt-2.5', className)}>
+      <h3 className="mb-2.5 text-[13px] font-semibold leading-[18px] text-muted-foreground">{title}</h3>
+      {children}
+    </section>
+  )
+}

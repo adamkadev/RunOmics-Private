@@ -15,7 +15,7 @@ import { intensityBlocks, stepRows, type StepTone } from './workoutSteps'
 import { paceLabel, workoutSummary } from './workoutSummary'
 
 // Radius 24 and 18 pt padding: the selected day is the screen's hero card.
-const CARD = 'rounded-3xl border border-border bg-card p-[18px] shadow-card'
+const CARD = 'content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4'
 
 const PROFILE_HEIGHT: Record<StepTone, number> = { ease: 16, recovery: 16, work: 54 }
 
@@ -151,7 +151,7 @@ export function NextKeySessionCard({ weekday, title, color, onSelect }: { weekda
     <button
       type="button"
       onClick={onSelect}
-      className="flex w-full items-center justify-between gap-3 rounded-[18px] border border-border bg-card px-3.5 py-3 text-left transition-opacity active:opacity-70"
+      className="flex w-full items-center justify-between gap-3 content-card rounded-[24px] bg-card shadow-[var(--card-edge)] px-4 py-3 text-left transition-transform duration-100 ease-out active:scale-[0.98]"
       data-testid="next-key-session"
     >
       <span className="flex min-w-0 flex-col gap-0.5">
@@ -331,9 +331,9 @@ export interface ComingUpRow {
 export function ComingUpCard({ rows, selectedDate, onSelect }: { rows: ComingUpRow[]; selectedDate: string; onSelect: (date: string) => void }) {
   const c = t.plan.comingUp
   return (
-    <section className="rounded-3xl border border-border bg-card px-4 pb-1 pt-3.5 shadow-card" data-testid="coming-up">
+    <section className="content-card rounded-[24px] bg-card shadow-[var(--card-edge)] px-4 pb-1 pt-3.5" data-testid="coming-up">
       <div className="flex items-baseline justify-between gap-3 pb-2">
-        <h2 className="text-[15px] font-semibold text-foreground">{c.title}</h2>
+        <h2 className="text-headline text-foreground">{c.title}</h2>
         <span className="text-xs text-muted-foreground">{c.hint}</span>
       </div>
       <ul>

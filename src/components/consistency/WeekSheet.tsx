@@ -1,14 +1,11 @@
 'use client'
 
-import { useEffect, type CSSProperties } from 'react'
-import { createPortal } from 'react-dom'
+import type { CSSProperties } from 'react'
 import { Check } from 'lucide-react'
 import Link from 'next/link'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateRange, formatDistance, formatDurationWords } from '@/lib/formatters'
-import { useDragToDismiss } from '@/lib/useDragToDismiss'
-import { useFocusTrap } from '@/lib/useFocusTrap'
-import { useScrollLock } from '@/lib/useScrollLock'
+import { Sheet as BottomSheet } from '@/components/ui/Sheet'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { weekSheet, type ConsistencyView, type SheetDay, type SheetRow, type WeekSheet as Sheet } from './consistencyView'
@@ -50,7 +47,9 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
   const narrow = new Intl.DateTimeFormat(t.locale, { weekday: 'narrow', timeZone: 'UTC' })
   const columns = 'grid grid-cols-[repeat(7,minmax(0,1fr))_44px] items-center'
   return (
-    <div className="flex flex-col gap-0.5 rounded-[22px] border border-border bg-card px-3 py-2" data-testid="week-calendar">
+    // A fill inside the sheet, never a card or glass, its corner concentric
+    // with the sheet's (47 - 22).
+    <div className="flex flex-col gap-0.5 rounded-[25px] bg-[var(--fill-4)] px-3 py-2" data-testid="week-calendar">
       <div className={cn(columns, 'text-center text-[11px] text-subtle')} aria-hidden>
         {Array.from({ length: 7 }, (_, i) => (
           <span key={i}>{narrow.format(new Date(Date.UTC(2024, 0, 1 + i)))}</span>
@@ -62,7 +61,7 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
         // alone left the highlighted week unnamed.
         <div
           key={row.start}
-          className={cn(columns, 'h-9 rounded-xl', row.selected && 'bg-muted')}
+          className={cn(columns, 'h-9 rounded-full', row.selected && 'bg-[var(--fill-3)]')}
           data-testid="calendar-row"
           data-selected={row.selected || undefined}
           aria-label={weekRangeLabel(row.start)}
@@ -96,51 +95,29 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
  * ringed, a session to come dashed - with the way to its runs in Activities.
  */
 export function WeekSheet({ view, weekStart, today, onClose }: { view: ConsistencyView; weekStart: string; today: string; onClose: () => void }) {
-  const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
-  const trapRef = useFocusTrap<HTMLDivElement>()
   const s = t.consistency.sheet
   const sheet = weekSheet(view, weekStart, today)
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') close() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [close])
-
-  useScrollLock()
 
   if (!sheet) return null
   const { week } = sheet
   const title = s.title(formatDate(week.start, { style: 'bare' }))
   const hit = sheet.status === 'hit'
 
-  return createPortal(
-    <div
-      className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end sm:items-center sm:justify-center sm:p-4"
-      style={{ touchAction: 'none' }}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-      data-testid="week-sheet"
-    >
-      <div className="absolute inset-0 bg-black/45" onClick={close} />
-      <div
-        ref={trapRef}
-        className="relative flex w-full animate-sheet-up flex-col gap-2.5 rounded-t-[28px] border border-border px-4 pt-2 sm:max-w-md sm:rounded-[28px]"
-        style={{ background: 'var(--raised)', boxShadow: 'var(--shadow-modal)', paddingBottom: 'max(env(safe-area-inset-bottom), 16px)', ...sheetStyle }}
-      >
-        <div className="flex justify-center pb-1" {...handleProps}>
-          <div className="h-[5px] w-9 rounded-full" style={{ background: 'var(--muted-foreground)', opacity: 0.5 }} />
-        </div>
+  // A medium-detent sheet (Liquid Glass v3, G10). Its own title block and
+  // Close stay as they were; the sheet adds the glass and the grabber.
+  return (
+    <BottomSheet onClose={onClose} label={title} showClose={false} testId="week-sheet" bodyClassName="flex flex-col gap-2.5">
+      {(close) => (
+        <>
         <div className="flex items-end justify-between gap-3 px-1">
           <div className="flex min-w-0 flex-col gap-0.5">
-            <h2 className="text-xl font-bold tracking-[-0.01em] text-foreground">{title}</h2>
-            <p className="text-[12.5px] text-muted-foreground" data-testid="week-summary">
+            <h2 className="text-title-3 text-foreground">{title}</h2>
+            <p className="text-[13px] text-muted-foreground" data-testid="week-summary">
               {s.summary(week.runs, formatDistance(week.km), formatDurationWords(week.seconds))}
             </p>
           </div>
           <span
-            className={cn('shrink-0 rounded-[10px] px-2.5 py-1 text-xs font-semibold', hit ? 'text-accent-text' : 'bg-muted text-muted-foreground')}
+            className={cn('shrink-0 rounded-full px-3 py-1 text-[13px] font-semibold', hit ? 'text-accent-text' : 'bg-[var(--fill-3)] text-muted-foreground')}
             style={hit ? { background: 'color-mix(in srgb, var(--accent) 18%, transparent)' } : undefined}
             data-testid="week-status"
           >
@@ -156,12 +133,12 @@ export function WeekSheet({ view, weekStart, today, onClose }: { view: Consisten
           ) : (
             <span />
           )}
-          <button type="button" onClick={close} className="hit-44 text-[13px] font-medium text-muted-foreground">
+          <button type="button" onClick={close} className="hit-44 text-[15px] font-medium text-muted-foreground">
             {s.close}
           </button>
         </div>
-      </div>
-    </div>,
-    document.body,
+        </>
+      )}
+    </BottomSheet>
   )
 }

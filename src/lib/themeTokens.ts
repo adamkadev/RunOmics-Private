@@ -170,12 +170,6 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--thumb-bg': n.seg,
     '--tab-bar-bg': n.tabBar,
     '--tab-bar-hairline': n.divider,
-    // The active tab's pill on the floating tab bar (owner, Oct 2026).
-    '--tab-pill': 'color-mix(in srgb, var(--foreground) 9%, transparent)',
-    // Quiet tabs (v4.17): the track is surface-2, the active tab the card.
-    '--segmented-track': n.seg,
-    '--segmented-pill': n.pill,
-    '--segmented-pill-shadow': '0 1px 2px rgba(0, 0, 0, 0.18)',
     '--pos': status.pos,
     '--warn': status.warn,
     '--neg': status.neg,
@@ -231,12 +225,14 @@ export const MAP_STYLE_COLORS = {
   },
   light: {
     background: '#eef0ef',
-    land: '#e6eae7',
+    // A whisper more contrast under clear glass (README §6.12.3): the rim
+    // still reads as an edge over a white road.
+    land: '#e3e8e5',
     park: '#d3e6d0',
     water: '#c6dbee',
     waterway: '#c6dbee',
     building: SURFACES.light.line,
-    roadMajor: '#ffffff',
+    roadMajor: '#fbfcfb',
     roadMinor: '#f8f9f8',
     roadCasing: SURFACES.light.line,
     path: '#ffffff',
@@ -296,49 +292,95 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
  * is --pos, caution --warn, bad --neg, and a reference series is a grey.
  */
 /**
- * Liquid Glass v2 (owner's brief, Oct 2026): the glass objects - the tab
- * bar, the top bar's buttons and capsules. A light fill so the blur shows,
- * a sheen from the top, a 0.5 px rim, a specular top edge and a soft drop.
- * Clearer after Bevel's (owner, Oct 2026): the page reads through the tab
- * bar, softened, not smeared. The top bar's material (--bar-*) is the
- * page's colour at 78 % over a 30 px blur, cut by a hairline, then 32 %
- * fading out under it (.scroll-edge; Liquid Glass v2, round 3); in dark mode
- * the colour is lifted by 6 % white, so the band reads as material, not a
- * dark strip. The tab bar's capsule is denser (--tab-glass-fill), so its
- * labels stay readable over the page; the heatmap's controls over the map
- * denser still (--map-glass-fill, 58 %), and its filters sheet nearly solid
- * (--sheet-glass-fill, 88 %), as Heatmap Filters 1b and 1c draw them.
+ * Liquid Glass v3 (Oct 2026), per mode: the material of the navigation
+ * chrome - the tab bar, the bar's buttons, the controls over a map, a
+ * medium-detent sheet - and the system-style fills the content layer's
+ * controls take instead of a line. Content stays opaque; only chrome is
+ * glass. Tuned against SURFACES (bg #f3f4f3 / #0b0c0c, card #ffffff /
+ * #141616). The recipe that consumes them is the `.lg` object in globals.css.
  */
-function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
+export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
   return mode === 'light'
     ? {
-        '--glass-fill': 'color-mix(in srgb, #ffffff 36%, transparent)',
-        '--tab-glass-fill': 'color-mix(in srgb, #ffffff 50%, transparent)',
-        '--map-glass-fill': 'color-mix(in srgb, #ffffff 58%, transparent)',
-        '--sheet-glass-fill': 'color-mix(in srgb, #ffffff 88%, transparent)',
-        '--glass-sheen': 'rgb(255 255 255 / 0.50)',
-        '--glass-rim': 'rgb(0 0 0 / 0.07)',
-        '--glass-spec': 'rgb(255 255 255 / 0.90)',
-        '--glass-drop': '0 8px 24px rgb(0 0 0 / 0.10), 0 1px 2px rgb(0 0 0 / 0.06)',
-        '--glass-filter': 'blur(16px) saturate(1.8)',
-        '--bar-tint': 'color-mix(in srgb, var(--background) 78%, transparent)',
-        '--bar-tint-fade': 'color-mix(in srgb, var(--background) 32%, transparent)',
-        '--bar-filter': 'blur(30px) saturate(1.8)',
+        // Regular glass
+        '--glass-filter': 'blur(12px) saturate(1.8) brightness(1.04)',
+        '--glass-fill': 'rgb(255 255 255 / 0.52)',
+        '--glass-sheen': 'rgb(255 255 255 / 0.60)',
+        '--glass-rim': 'linear-gradient(135deg, rgb(255 255 255 / 0.98) 0%, rgb(255 255 255 / 0.5) 28%, rgb(255 255 255 / 0.2) 50%, rgb(255 255 255 / 0.5) 72%, rgb(255 255 255 / 0.9) 100%)',
+        '--glass-rim-pressed': 'linear-gradient(135deg, #ffffff 0%, rgb(255 255 255 / 0.6) 28%, rgb(255 255 255 / 0.3) 50%, rgb(255 255 255 / 0.6) 72%, #ffffff 100%)',
+        '--glass-inner': 'none',
+        '--glass-drop': '0 0 0 0.5px rgb(0 0 0 / 0.07), 0 8px 24px rgb(0 0 0 / 0.10), 0 1px 3px rgb(0 0 0 / 0.06)',
+        '--glass-edge-w': '3px',
+        '--glass-edge-filter': 'blur(1px) saturate(2) brightness(1.08)',
+        // Variants
+        '--tab-glass-fill': 'rgb(255 255 255 / 0.64)',
+        '--clear-glass-fill': 'rgb(255 255 255 / 0.20)',
+        '--clear-glass-filter': 'blur(5px) saturate(1.5) brightness(1.02)',
+        '--sheet-glass-fill': 'rgb(250 251 250 / 0.82)',
+        '--shadow-sheet': '0 24px 60px rgb(0 0 0 / 0.18)',
+        // Selection platter (tab bar, glass segmented)
+        '--tab-pill': 'rgb(0 0 0 / 0.07)',
+        // System-style fills for controls on the content layer
+        '--fill-3': 'rgb(118 118 128 / 0.12)',
+        '--fill-4': 'rgb(118 118 128 / 0.08)',
+        '--segmented-track': 'var(--fill-3)',
+        '--segmented-pill': '#ffffff',
+        '--segmented-pill-shadow': '0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04)',
+        // Content cards: no border
+        '--card-edge': '0 1px 2px rgb(0 0 0 / 0.04), 0 0 0 0.5px rgb(0 0 0 / 0.04)',
+        // An inset-grouped list's separator
+        '--row-separator': 'rgb(0 0 0 / 0.08)',
+        // Soft edges
+        '--scrim-sheet': 'rgb(0 0 0 / 0.20)',
       }
     : {
-        '--glass-fill': 'color-mix(in srgb, #262a29 36%, transparent)',
-        '--tab-glass-fill': 'color-mix(in srgb, #262a29 50%, transparent)',
-        '--map-glass-fill': 'color-mix(in srgb, #262a29 58%, transparent)',
-        '--sheet-glass-fill': 'color-mix(in srgb, #262a29 88%, transparent)',
-        '--glass-sheen': 'rgb(255 255 255 / 0.07)',
-        '--glass-rim': 'rgb(255 255 255 / 0.12)',
-        '--glass-spec': 'rgb(255 255 255 / 0.22)',
-        '--glass-drop': '0 10px 30px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.30)',
-        '--glass-filter': 'blur(16px) saturate(1.8) brightness(1.12)',
-        '--bar-tint': 'color-mix(in srgb, color-mix(in srgb, var(--background) 94%, #ffffff) 78%, transparent)',
-        '--bar-tint-fade': 'color-mix(in srgb, color-mix(in srgb, var(--background) 94%, #ffffff) 32%, transparent)',
-        '--bar-filter': 'blur(30px) saturate(1.8)',
+        '--glass-filter': 'blur(12px) saturate(1.9) brightness(1.1)',
+        '--glass-fill': 'rgb(42 46 45 / 0.46)',
+        '--glass-sheen': 'rgb(255 255 255 / 0.09)',
+        '--glass-rim': 'linear-gradient(135deg, rgb(255 255 255 / 0.42) 0%, rgb(255 255 255 / 0.1) 26%, rgb(255 255 255 / 0) 50%, rgb(255 255 255 / 0.06) 74%, rgb(255 255 255 / 0.24) 100%)',
+        '--glass-rim-pressed': 'linear-gradient(135deg, rgb(255 255 255 / 0.6) 0%, rgb(255 255 255 / 0.14) 26%, rgb(255 255 255 / 0) 50%, rgb(255 255 255 / 0.1) 74%, rgb(255 255 255 / 0.34) 100%)',
+        '--glass-inner': 'inset 0 0 8px rgb(255 255 255 / 0.05)',
+        '--glass-drop': '0 10px 30px rgb(0 0 0 / 0.45), 0 2px 6px rgb(0 0 0 / 0.30)',
+        '--glass-edge-w': '3px',
+        '--glass-edge-filter': 'blur(1px) saturate(2.2) brightness(1.25)',
+        '--tab-glass-fill': 'rgb(34 38 37 / 0.60)',
+        '--clear-glass-fill': 'rgb(16 18 18 / 0.22)',
+        '--clear-glass-filter': 'blur(5px) saturate(1.6) brightness(0.9)',
+        '--sheet-glass-fill': 'rgb(28 31 31 / 0.80)',
+        '--shadow-sheet': '0 24px 60px rgb(0 0 0 / 0.35)',
+        '--tab-pill': 'rgb(255 255 255 / 0.11)',
+        '--fill-3': 'rgb(118 118 128 / 0.24)',
+        '--fill-4': 'rgb(118 118 128 / 0.18)',
+        '--segmented-track': 'var(--fill-3)',
+        '--segmented-pill': '#4b504f',
+        '--segmented-pill-shadow': '0 2px 6px rgb(0 0 0 / 0.35)',
+        '--card-edge': 'inset 0 0 0 0.5px rgb(255 255 255 / 0.07)',
+        '--row-separator': 'rgb(255 255 255 / 0.08)',
+        '--scrim-sheet': 'rgb(0 0 0 / 0.45)',
       }
+}
+
+/**
+ * Liquid Glass v3's geometry, theme-independent. Concentric with the 55 pt
+ * display corner: a 62 pt capsule 24 pt from the edge (55 - 62/2), a sheet
+ * 8 pt in with a 47 pt corner (55 - 8). Inner radius = outer radius - inset.
+ */
+export const GEOMETRY_TOKENS: Record<string, string> = {
+  '--tab-bar-h': '62px',
+  '--tab-bar-side': '24px',
+  // 24 pt on Face ID iPhones (safe-bottom 34), 12 pt where there is no inset.
+  '--tab-bar-float': 'max(calc(var(--safe-bottom) - 10px), 12px)',
+  // Top soft edge fade under the bar.
+  '--edge-fade': '30px',
+  '--radius-card': '24px',
+  '--radius-tile': '12px',
+  // Medium detent at 8 pt inset.
+  '--radius-sheet': '47px',
+  // Large detent, top corners only.
+  '--radius-sheet-large': '38px',
+  '--sheet-inset': '8px',
+  // 47 - 22 = 25: a 50 pt capsule CTA is concentric with the sheet.
+  '--sheet-pad': '22px',
 }
 
 function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
@@ -444,10 +486,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       // The soft fade under the top bar's hairline (Liquid Glass v2, round 3).
       '--bar-fade': '18px',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
-      // The floating tab bar's gap to the bottom edge (owner, Oct 2026, after
-      // Bevel): the inset less 15 px, about 19 pt on a notched iPhone, clear
-      // of the home indicator's swipe zone; 12 pt where there is no inset.
-      '--tab-bar-float': 'max(calc(var(--safe-bottom) - 15px), 12px)',
       // The smallest touch target. `.hit-44` grows a control's hit area to it
       // without changing what it looks like.
       '--tap-min': '44px',
@@ -465,6 +503,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--shadow-thumb': `0 4px 12px ${ink(0.45)}`,
       '--map-attrib-bg': ink(0.5),
       '--map-attrib-fg': paper(0.75),
+      ...GEOMETRY_TOKENS,
     },
   },
   {

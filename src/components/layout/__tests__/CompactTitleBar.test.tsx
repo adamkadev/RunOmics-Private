@@ -99,7 +99,7 @@ describe('CompactTitleBar', () => {
     expect(shown()).toBe(true)
     // The page name, centred, as Bevel's top shows it (owner, Oct 2026).
     expect(bar().textContent).toBe('Plan')
-    expect(within(bar()).getByText('Plan').className).toContain('text-[17px]')
+    expect(within(bar()).getByText('Plan').className).toContain('text-headline')
     // 68 pt, under the status strip: 10 pt under the row to its hairline, as Bevel's.
     expect(bar().style.height).toBe('68px')
     // No surface of its own: the soft scroll edge fades in under it
@@ -187,7 +187,7 @@ describe('CompactTitleBar', () => {
     const chevron = within(bar()).getByRole('button', { name: t.nav.backTo('Progress') })
     // The page's 44 pt glass chevron, as at rest (Liquid Glass v2).
     expect(chevron.className).toContain('size-11')
-    expect(chevron.className).toContain('glass-float')
+    expect(chevron.className).toMatch(/(^|\s)lg(\s|$)/)
     chevron.click()
     expect(back).toHaveBeenCalledTimes(1)
     // The page's own link has faded out as the chevron came in, and takes
@@ -234,11 +234,11 @@ describe('CompactTitleBar', () => {
     document.querySelector('[data-bar-action="refresh"]')!.addEventListener('click', sync)
     await mount(60)
     const capsule = within(bar()).getByTestId('compact-bar-capsule')
-    expect(capsule.className).toContain('glass-float')
+    expect(capsule.className).toMatch(/(^|\s)lg(\s|$)/)
     expect(capsule.className).toContain('h-11')
     const [refresh, disc] = within(capsule).getAllByTestId('compact-bar-action')
     expect(refresh!.getAttribute('aria-label')).toBe('Synced 2h ago')
-    expect(refresh!.className).not.toContain('glass-float')
+    expect(refresh!.className).not.toMatch(/(^|\s)lg(\s|$)/)
     expect(refresh!.className).toContain('size-11')
     expect(disc!.className).toContain('size-8')
     expect(disc!.className).toContain('bg-accent')
@@ -252,7 +252,7 @@ describe('CompactTitleBar', () => {
     document.querySelector('main')!.insertAdjacentHTML('beforeend', '<a data-bar-action="settings" aria-label="Settings"></a>')
     await mount(60)
     const gear = within(bar()).getByRole('button', { name: 'Settings' })
-    expect(gear.className).toContain('glass-float')
+    expect(gear.className).toMatch(/(^|\s)lg(\s|$)/)
     expect(gear.querySelector('svg')).not.toBeNull()
   })
 
@@ -339,7 +339,7 @@ describe('CompactTitleBar', () => {
     document.querySelector('main')!.insertAdjacentHTML('beforeend', '<a data-bar-action="add" aria-label="Add a pair"></a>')
     await mount(60)
     const add = within(bar()).getByRole('button', { name: 'Add a pair' })
-    expect(add.className).toContain('glass-float')
+    expect(add.className).toMatch(/(^|\s)lg(\s|$)/)
     expect(add.querySelector('svg')).not.toBeNull()
   })
 

@@ -20,10 +20,10 @@ const DAYS: WeekTargetDay[] = [
 const WEEK = weekTarget(DAYS, TODAY, null)
 
 describe('ThisWeekCard (App Fixes 1a v2)', () => {
-  it('scales km to the week\'s largest day, 62 px tall, never under 8', () => {
+  it('scales km to the week\'s largest day, 92 px tall (Liquid Glass v3: a 120 pt area), never under 8', () => {
     const bars = thisWeekBars(WEEK, TODAY, {})
     expect(bars.map((b) => b.day.state)).toEqual(['done', 'planned', 'planned', 'rest', 'rest', 'rest', 'planned'])
-    expect(bars[6]!.height).toBe(62)
+    expect(bars[6]!.height).toBe(92)
     expect(bars[3]!.height).toBe(3)
     // A run day carries its run km above the bar, like a planned one.
     expect(bars[0]!.label).toBe('8')

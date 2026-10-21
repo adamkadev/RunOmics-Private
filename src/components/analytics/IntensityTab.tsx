@@ -250,7 +250,7 @@ export function IntensityTab({ rows, live, onShift, plan }: IntensityTabProps) {
       {/* A way out to the zone table on Athlete & zones, as a card row. */}
       <Link
         href="/athlete"
-        className="flex items-center gap-3.5 rounded-2xl border border-border bg-card px-5 py-4 transition-colors hover:bg-[var(--surface-2)]"
+        className="flex items-center gap-3.5 content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4 transition-transform duration-100 ease-out active:scale-[0.98]"
         data-testid="zone-ranges-link"
       >
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">

@@ -8,6 +8,7 @@ import { formatKm } from '@/lib/formatters'
 import { Plus } from 'lucide-react'
 import { t } from '@/i18n'
 import { GARMIN_GEAR_URL } from '@/components/shoes/shoeWear'
+import { GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
 
 const QUALITY_RUNS_WINDOW = 6
 
@@ -50,8 +51,9 @@ export default async function ShoesPage() {
             // A 44 pt glass +, as the compact top bar keeps it once the page
             // scrolls (owner, Oct 2026); its name is its aria-label.
             data-bar-action="add"
-            className="glass-float flex size-11 shrink-0 items-center justify-center rounded-full text-foreground transition-transform active:scale-95"
+            className={glassClass('regular', GLASS_CIRCLE)}
           >
+            <GlassLayers />
             <Plus size={20} strokeWidth={2} aria-hidden="true" />
           </a>
         </div>

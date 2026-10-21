@@ -1,14 +1,13 @@
 'use client'
 
-import { useEffect, useId, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useId, useState } from 'react'
 import Link from 'next/link'
 import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight } from 'lucide-react'
 import { DELTA_TONE_COLOR } from '@/lib/deltaTone'
 import { VerdictEyebrow } from '@/components/ui/Verdict'
 import { t } from '@/i18n'
-import { useFocusTrap } from '@/lib/useFocusTrap'
-import { useScrollLock } from '@/lib/useScrollLock'
+import { Button, ButtonLink } from '@/components/ui/Button'
+import { Sheet } from '@/components/ui/Sheet'
 import type { Direction, TabRead } from './coachReadTabs'
 import type { Trend } from './analyticsView'
 
@@ -55,7 +54,7 @@ export function CoachRead({ read, eyebrow }: { read: TabRead; eyebrow: string })
   const [open, setOpen] = useState(false)
   return (
     <>
-      <section data-testid="coach-read" data-tone={read.tone} className="flex flex-col gap-1 rounded-2xl border border-border bg-card px-5 pb-0.5 pt-4">
+      <section data-testid="coach-read" data-tone={read.tone} className="flex flex-col gap-1 content-card rounded-[24px] bg-card shadow-[var(--card-edge)] px-4 pb-0.5 pt-4">
         <VerdictEyebrow tone={read.tone}>{eyebrow}</VerdictEyebrow>
         <p className="text-[15px] font-semibold leading-snug text-foreground text-pretty" data-testid="coach-read-headline">
           {read.headline}
@@ -96,68 +95,53 @@ export function leadSplit(text: string): [string, string] {
  */
 function WhySheet({ read, eyebrow, onClose }: { read: TabRead; eyebrow: string; onClose: () => void }) {
   const s = t.analytics.cards.coachRead
-  const trapRef = useFocusTrap<HTMLDivElement>()
   const titleId = useId()
-  useScrollLock()
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [onClose])
 
-  return createPortal(
-    <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-end justify-center" style={{ touchAction: 'none' }}>
-      <div className="absolute inset-0 animate-fade-in bg-black/55" onClick={onClose} aria-hidden />
-      <div
-        ref={trapRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        data-testid="why-sheet"
-        className="relative flex max-h-[85dvh] w-full max-w-[520px] animate-fade-up flex-col gap-3.5 overflow-y-auto overscroll-contain rounded-t-[28px] border-t border-[var(--line-2)] bg-[var(--surface-sheet,var(--card))] px-5 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+20px)] shadow-[var(--shadow-modal)]"
-      >
-        <span aria-hidden className="h-1 w-10 self-center rounded-full bg-[var(--rest-bar)]" />
-        <VerdictEyebrow tone={read.tone} className="[&>span:first-child]:hidden">{eyebrow}</VerdictEyebrow>
-        <h2 id={titleId} className="text-xl font-semibold leading-[1.25] tracking-[-0.01em] text-foreground text-pretty">
-          {read.headline}
-        </h2>
-        <ul className="flex flex-col">
-          {read.rows.map((row, i) => {
-            const direction = row.direction ?? TREND_DIRECTION[row.trend]
-            const Icon = DIRECTION_ICON[direction]
-            const [lead, rest] = leadSplit(row.text)
-            return (
-              <li
-                key={i}
-                className="grid grid-cols-[28px_minmax(0,1fr)] gap-2.5 border-t border-border py-3 text-sm leading-[1.4] text-[var(--text-2)]"
-                data-trend={row.trend}
-                data-direction={direction}
-              >
-                <Icon size={16} strokeWidth={2} className="mt-0.5" style={{ color: TREND_COLOR[row.trend] }} aria-hidden />
-                <span>
-                  {lead && <b className="font-semibold text-foreground">{lead}</b>}
-                  {rest}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
+  // A Liquid Glass v3 sheet (ui/Sheet, G10): glass at a medium detent, its
+  // own Close beside Open plan as the 50 pt footer.
+  return (
+    <Sheet
+      onClose={onClose}
+      titleId={titleId}
+      showClose={false}
+      testId="why-sheet"
+      bodyClassName="flex flex-col gap-3.5"
+      footer={(close) => (
         <div className="flex gap-2.5">
-          <Link
-            href="/plan"
-            className="flex flex-1 items-center justify-center rounded-[14px] bg-accent py-3.5 text-[15px] font-semibold text-accent-foreground active:opacity-80"
-            data-testid="coach-open-plan-button"
-          >
+          <ButtonLink href="/plan" size="lg" className="flex-1" data-testid="coach-open-plan-button">
             {s.openPlanButton}
-          </Link>
-          <button type="button" onClick={onClose} className="rounded-[14px] bg-[var(--border)] px-5 py-3.5 text-[15px] font-medium text-foreground active:opacity-80">
+          </ButtonLink>
+          <Button size="lg" variant="secondary" onClick={close}>
             {t.analytics.cards.close}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>,
-    document.body,
+      )}
+    >
+      <VerdictEyebrow tone={read.tone} className="[&>span:first-child]:hidden">{eyebrow}</VerdictEyebrow>
+      <h2 id={titleId} className="text-title-3 text-foreground text-pretty">
+        {read.headline}
+      </h2>
+      <ul className="flex flex-col">
+        {read.rows.map((row, i) => {
+          const direction = row.direction ?? TREND_DIRECTION[row.trend]
+          const Icon = DIRECTION_ICON[direction]
+          const [lead, rest] = leadSplit(row.text)
+          return (
+            <li
+              key={i}
+              className="grid grid-cols-[28px_minmax(0,1fr)] gap-2.5 border-t-[0.5px] border-[var(--row-separator)] py-3 text-[15px] leading-5 text-[var(--text-2)]"
+              data-trend={row.trend}
+              data-direction={direction}
+            >
+              <Icon size={16} strokeWidth={2} className="mt-0.5" style={{ color: TREND_COLOR[row.trend] }} aria-hidden />
+              <span>
+                {lead && <b className="font-semibold text-foreground">{lead}</b>}
+                {rest}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </Sheet>
   )
 }

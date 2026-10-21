@@ -201,6 +201,7 @@ describe('the run map layers (v4.17)', () => {
   })
 
   it('fits the route clear of the expand button and the attribution line', () => {
-    expect(ROUTE_FIT_PADDING).toEqual({ top: 32, right: 24, bottom: 36, left: 24 })
+    // Clear of the hero's glass buttons and its 64 pt fade (Liquid Glass v3, §6.12.1).
+    expect(ROUTE_FIT_PADDING).toEqual({ top: 68, right: 24, bottom: 80, left: 24 })
   })
 })
