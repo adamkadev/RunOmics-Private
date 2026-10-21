@@ -187,7 +187,8 @@ describe('the day selector', () => {
 
     expect(within(screen.getByTestId('day-selector')).getAllByRole('button')).toHaveLength(7)
     expect(day(TODAY).getAttribute('aria-pressed')).toBe('true')
-    expect(day(TODAY).className).toContain('border-accent')
+    // Round 2 (F14): the shared today ring, on the column's edge.
+    expect(day(TODAY).className).toContain('state-today')
   })
 
   it('draws each day as a bar as long as its km, in its colour, and rest as a stub', () => {

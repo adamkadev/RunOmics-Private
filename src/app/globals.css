@@ -782,8 +782,13 @@
   background: color-mix(in oklab, var(--accent) 15%, transparent);
 }
 
+/* Today, one recipe everywhere (round 2, F14) - Today's and Plan's weeks,
+   Training status, Consistency: a 2 pt accent ring 2 pt off the mark. An
+   outline, so the gap is whatever is under it - a card, a frosted card, a
+   glass sheet - where a shadow ring had to guess the ground's colour. */
 @utility state-today {
-  box-shadow: 0 0 0 var(--state-ring) var(--background), 0 0 0 calc(var(--state-ring) * 2) var(--accent);
+  outline: var(--state-ring) solid var(--accent);
+  outline-offset: var(--state-ring);
 }
 
 /* A touch target of at least --tap-min around a control that is drawn

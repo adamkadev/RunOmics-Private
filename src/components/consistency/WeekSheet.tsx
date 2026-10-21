@@ -10,10 +10,9 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { weekSheet, type ConsistencyView, type SheetDay, type SheetRow, type WeekSheet as Sheet } from './consistencyView'
 
-/** A day's circle: a run filled in the accent, today ringed, a session to come dashed. */
+/** A day's circle: a run filled in the accent, a session to come dashed; today takes the shared ring (state-today, F14). */
 function dayStyle(day: SheetDay): CSSProperties {
   if (day.runs > 0) return { background: 'var(--accent)', color: 'var(--accent-foreground)' }
-  if (day.today) return { border: '2px solid var(--accent)' }
   if (day.planned) return { border: '1.5px dashed var(--accent)' }
   return {}
 }
@@ -72,6 +71,7 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
                 className={cn(
                   'box-border flex size-[30px] items-center justify-center rounded-full text-[11.5px] tabular-nums',
                   day.runs > 0 || day.today ? 'font-semibold' : 'text-muted-foreground',
+                  day.today && 'state-today',
                 )}
                 style={dayStyle(day)}
                 data-runs={day.runs || undefined}

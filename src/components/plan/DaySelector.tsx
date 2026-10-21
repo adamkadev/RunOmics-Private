@@ -66,8 +66,10 @@ export function DaySelector({
             className={cn(
               'flex w-full flex-col items-center gap-1.5 rounded-2xl border-[1.5px] py-2 transition-[background-color,transform] active:scale-95',
               selected && !day.isToday ? 'border-[var(--line-2)] bg-[var(--surface-2)]' : 'border-transparent',
-              // Today is a ring and its date in the accent, never a fill (App Fixes 5a).
-              day.isToday && 'border-accent',
+              // Today is a ring and its date in the accent, never a fill (App
+              // Fixes 5a): the shared ring (F14), drawn on the column's edge
+              // so it keeps clear of its neighbours, the column its gap.
+              day.isToday && 'state-today [outline-offset:-2px]',
             )}
           >
             <span className="text-xs leading-none text-muted-foreground">{(t.plan.weekdays[i] ?? '').slice(0, 1)}</span>
