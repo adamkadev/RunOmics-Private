@@ -4,6 +4,38 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-10-22
+
+### Liquid Glass v3, fix round 1 (on-device testing)
+
+Fixes from the first round on an iPhone, IDs from the round-2 handoff
+(FIXES.md). Surfaces and layout only, no data changes.
+
+- **F1** The glow is clear down to the edge sampler's foot: no hard line under
+  the status bar.
+- **F2** One **Background glow** switch (Settings › Appearance) for both
+  themes, `localStorage['ro-glow']` mirrored as `html[data-glow="off"]`. The
+  Aura | Plain setting is gone - its two names disagreed and dark ignored it.
+  Switches are iOS's 51 × 31.
+- **F3** The share sheet's Route | Stats | Photo in equal segments.
+- **F4** A stuck tab strip is covered by the soft scroll edge as the bar is;
+  the strip's height is no longer dropped as the bar collapses in.
+- **F5** Cards over the glow read white: .86 and saturate 1.6, over a shorter,
+  lighter glow (380 pt; 55/48/36 % white).
+- **F6** Controls straight on the glow - Activities' search, chips and filter
+  button, Analytics' section track - in a frosted white fill (`--fill-on-aura`).
+- **F7** The compact title is lead-aligned when it can't be centred on screen.
+- **F8** The activity's stats in four equal columns, the time with no "min".
+- **F9** Plan's structure bar 44 pt, 10 pt under the detail, 14 over the steps.
+- **F10** Activities' week headers wrap their line under the title, never cut.
+- **F11** One separator rule for inset groups: 0.5 pt, 16 pt in, 72 under a
+  thumb, none above the first or below the last.
+- **F12** Settings' Profile footnote in 13 pt muted ink.
+- **F13** The share card draws no place name cut at its sides.
+- **F14** One today ring everywhere: 2 pt accent, 2 pt off the mark.
+- **H1** The fullscreen heatmap's top row is live glass in full ink, over a
+  blurred soft edge that sits under it, not over it.
+
 ## [3.2.0] - 2026-10-21
 
 ### Liquid Glass v3: iOS 26 parity for the PWA
