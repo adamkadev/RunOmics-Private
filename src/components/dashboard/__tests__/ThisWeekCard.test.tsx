@@ -25,8 +25,8 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     expect(bars.map((b) => b.day.state)).toEqual(['done', 'planned', 'planned', 'rest', 'rest', 'rest', 'planned'])
     expect(bars[6]!.height).toBe(62)
     expect(bars[3]!.height).toBe(3)
-    // A run day that had a plan carries its tick at the planned height.
-    expect(bars[0]!.tick).toBe(Math.round((10 / 13) * 62))
+    // A run day carries its run km above the bar, like a planned one.
+    expect(bars[0]!.label).toBe('8')
     expect(bars[1]!.label).toBe('10')
   })
 
@@ -39,7 +39,9 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     expect(bars[0]!.getAttribute('style')).not.toContain('dashed')
     expect(bars[2]!.getAttribute('style')).toContain('dashed')
     expect(screen.getAllByTestId('today-tint')).toHaveLength(1)
-    expect(screen.getByTestId('plan-tick')).toBeInTheDocument()
+    expect(screen.queryByTestId('plan-tick')).toBeNull()
+    expect(screen.getByTestId('legend-easy')).toHaveTextContent(t.dashboard.thisWeek.easy)
+    expect(screen.getByTestId('legend-quality')).toHaveTextContent(t.dashboard.thisWeek.quality)
     const reading = screen.getByTestId('load-reading')
     expect(reading.textContent).toBe(t.dashboard.thisWeek.load(456, 462, 750))
     expect(reading.style.color).toBe('var(--warn)')

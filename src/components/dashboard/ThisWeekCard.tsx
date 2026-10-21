@@ -9,6 +9,7 @@ import { formatRanKm } from '@/lib/formatters'
 import { useToday } from '@/lib/useToday'
 import { useSkippedDays } from '@/lib/skippedDays'
 import { cn } from '@/lib/utils'
+import { RUN_TYPE_ZONE, zoneColor } from '@/lib/colors'
 import { weekStripDays, type WeekStripDay } from './weekStrip'
 import { t } from '@/i18n'
 
@@ -21,9 +22,7 @@ interface Bar {
   day: WeekStripDay
   /** Height of the bar itself: actual km on a day run, planned km otherwise. */
   height: number
-  /** The plan tick on a day run that had a plan, at the planned height. */
-  tick: number | null
-  /** Planned km written above a dashed bar. */
+  /** Km written above the bar: run km on a done day, planned km otherwise. */
   label: string | null
 }
 
@@ -31,7 +30,8 @@ interface Bar {
  * The week, Monday to Sunday, as one bar chart (App Fixes 1a v2). Heights
  * are km over the week's largest planned-or-run day, times 62 px, never under
  * 8 px. Done days are solid, planned days dashed in their type colour, a
- * missed day dashed amber, a rest day a 3 px stub.
+ * missed day dashed amber, a rest day a 3 px stub. Every bar but rest has
+ * its km above it: run km on a done day, planned km otherwise.
  */
 export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<string, string>, skipped: ReadonlySet<string> = new Set()): Bar[] {
   // A missed day marked "Skipped (sick / rest)" in Plan is a rest day here.
@@ -40,14 +40,11 @@ export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<st
   const px = (km: number) => Math.max(MIN_BAR_PX, Math.round((km / peak) * MAX_BAR_PX))
   return target.days.map((source, i) => {
     const day = strip[i]!
-    if (day.state === 'rest') return { day, height: 3, tick: null, label: null }
-    if (day.state === 'done') {
-      const planned = source.plannedSessions > 0 && source.plannedKm ? source.plannedKm : null
-      return { day, height: px(source.ranKm), tick: planned !== null ? px(planned) : null, label: null }
-    }
+    if (day.state === 'rest') return { day, height: 3, label: null }
+    if (day.state === 'done') return { day, height: px(source.ranKm), label: formatWeekKm(source.ranKm) }
     const km = source.plannedKm ?? 0
     // A missed day keeps its km over the amber bar, so it says what was missed.
-    return { day, height: px(km), tick: null, label: km > 0 ? formatWeekKm(km) : null }
+    return { day, height: px(km), label: km > 0 ? formatWeekKm(km) : null }
   })
 }
 
@@ -126,9 +123,6 @@ export function ThisWeekCard({
                 {bar.day.isToday && bar.day.state === 'planned' && (
                   <span className="absolute inset-0 rounded-[3.5px] opacity-[0.12]" data-testid="today-tint" style={{ background: bar.day.color }} />
                 )}
-                {bar.tick !== null && (
-                  <span className="absolute inset-x-0 h-0.5 rounded-full bg-foreground" data-testid="plan-tick" style={{ bottom: bar.tick - bar.height - 1 }} />
-                )}
               </span>
             </>
           )
@@ -167,14 +161,16 @@ export function ThisWeekCard({
 
       {/* Each entry on one line; with a miss in the week the count drops to its own line, right-aligned. */}
       <div className="pointer-events-none relative flex flex-wrap items-center gap-x-3.5 gap-y-1.5 whitespace-nowrap border-t border-[var(--track)] pt-2.5 text-[11.5px] text-muted-foreground">
-        <span className="flex items-center gap-[5px]">
-          <span aria-hidden className="size-[9px] rounded-[2px] bg-[var(--zone-2)]" />
-          {s.done}
+        {/* "■ easy ■ quality · done · planned · km", the swatches in the bars' own colours. */}
+        <span className="flex items-center gap-[5px]" data-testid="legend-easy">
+          <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: zoneColor(RUN_TYPE_ZONE.Base) }} />
+          {s.easy}
         </span>
-        <span className="flex items-center gap-[5px]">
-          <span aria-hidden className="box-border size-[9px] rounded-[2px] border border-dashed border-muted-foreground" />
-          {s.planned}
+        <span className="flex items-center gap-[5px]" data-testid="legend-quality">
+          <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: zoneColor(RUN_TYPE_ZONE.Threshold) }} />
+          {s.quality}
         </span>
+        <span>· {s.key}</span>
         {missed > 0 && (
           <span className="flex items-center gap-[5px]" data-testid="legend-missed">
             <span aria-hidden className="box-border size-[9px] rounded-[2px] border border-dashed border-[var(--warn)]" />

@@ -544,8 +544,9 @@ export const fr = {
     thisWeek: {
       title: 'Cette semaine',
       load: (acute: number, lo: number, hi: number) => `charge ${acute} · sûr ${lo}–${hi}`,
-      done: 'fait',
-      planned: 'prévu · km',
+      easy: 'facile',
+      quality: 'qualité',
+      key: 'fait · prévu · km',
       runsLeft: (n: number) => `${n} sortie${n > 1 ? 's' : ''} restante${n > 1 ? 's' : ''}`,
       missed: 'manquée',
       missedCount: (n: number) => `${n} manquée${n > 1 ? 's' : ''}`,
