@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { ChevronLeft, ChevronRight, Plus, RotateCw, Settings, Share, type LucideIcon } from 'lucide-react'
+import { GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
+import { fadeElement, unfadeElement } from '@/lib/glassFade'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -154,19 +156,11 @@ function nameOf(el: HTMLElement): string {
  * hydration mismatch. Faded out, it takes no taps either: the back link and
  * Today's sync line are controls, and an invisible one went on answering.
  */
-function fadeTo(el: HTMLElement, opacity: number) {
-  if (opacity >= 1) el.style.removeProperty('opacity')
-  else el.style.opacity = String(Math.max(0, opacity))
-  if (opacity <= 0) el.style.pointerEvents = 'none'
-  else el.style.removeProperty('pointer-events')
-}
+// Glass-aware (Liquid Glass v3): a glass control fades its layers, never itself.
+const fadeTo = fadeElement
 
 /** An element as the page drew it, whatever the bar faded. */
-function unfade(el: HTMLElement) {
-  el.style.removeProperty('opacity')
-  el.style.removeProperty('pointer-events')
-  el.style.removeProperty('transition')
-}
+const unfade = unfadeElement
 
 /** The large title as it is at the top: no inline style at all, not even
  *  opacity 1, so nothing keeps it on a layer of its own (v4.6). */
@@ -425,7 +419,7 @@ export function CompactTitleBar() {
         aria-label={item.name}
         disabled={item.disabled}
         onClick={() => segmentsRef.current[i]?.click()}
-        className="flex size-9 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 disabled:opacity-35"
+        className="lg-press flex size-9 items-center justify-center rounded-full text-foreground disabled:opacity-35"
       >
         <Arrow size={18} strokeWidth={2} aria-hidden="true" />
       </button>
@@ -447,13 +441,15 @@ export function CompactTitleBar() {
         disabled={action.disabled}
         onClick={() => actionsRef.current[i]?.click()}
         className={cn(
-          'flex shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:opacity-60',
+          'flex shrink-0 items-center justify-center rounded-full disabled:opacity-60',
           // The avatar keeps its accent disc, as on the page.
           action.kind === 'avatar'
             ? cn('bg-accent font-bold text-accent-foreground', inCapsule ? 'hit-44 size-8 text-[13px]' : 'size-11 text-base shadow-[0_6px_20px_rgb(0_0_0/0.2)]')
-            : cn('size-11 text-foreground', !inCapsule && 'glass-float'),
+            : cn('size-11 text-foreground', inCapsule ? 'lg-press' : glassClass('regular')),
+          action.kind === 'avatar' && inCapsule && 'lg-press',
         )}
       >
+        {action.kind !== 'avatar' && !inCapsule && <GlassLayers />}
         {action.kind === 'avatar' ? (
           <span aria-hidden="true">{action.text}</span>
         ) : Icon ? (
@@ -507,8 +503,9 @@ export function CompactTitleBar() {
                 data-testid="compact-bar-back"
                 aria-label={t.nav.backTo(back)}
                 onClick={() => backRef.current?.click()}
-                className={cn('glass-float flex size-11 items-center justify-center rounded-full text-foreground', fadeIn)}
+                className={glassClass('regular', cn(GLASS_CIRCLE, 'lg-fade-in'))}
               >
+                <GlassLayers />
                 <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
               </button>
             )}
@@ -518,7 +515,7 @@ export function CompactTitleBar() {
         <span
           ref={titleRef}
           aria-hidden="true"
-          className={cn('mx-auto block truncate text-center text-[17px] font-semibold leading-[46px] text-foreground', fadeIn)}
+          className={cn('mx-auto block truncate text-center text-headline leading-[46px] text-foreground', fadeIn)}
           style={{ maxWidth: TITLE_MAX, paddingInline: TITLE_GAP }}
         >
           {title}
@@ -528,7 +525,8 @@ export function CompactTitleBar() {
             {segments?.kind === 'segments' && (
               // The page's segmented control, in glass: the chosen one on the
               // tab bar's pill. A tap presses the page's own segment.
-              <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={cn('glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1', fadeIn)}>
+              <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={glassClass('regular', 'lg-fade-in flex h-11 shrink-0 items-center p-1')}>
+                <GlassLayers />
                 {segments.items.map((item, i) => (
                   <button
                     key={item.text + i}
@@ -538,8 +536,8 @@ export function CompactTitleBar() {
                     onClick={() => segmentsRef.current[i]?.click()}
                     className={cn(
                       // 36 pt in the capsule's 4 pt of glass: 44 pt, as at rest.
-                      'flex h-9 items-center whitespace-nowrap rounded-full px-3.5 text-sm transition-colors',
-                      item.selected ? 'bg-[var(--tab-pill)] font-semibold text-foreground' : 'font-medium text-text-2',
+                      'lg-press flex h-9 items-center whitespace-nowrap rounded-full px-3.5 text-[15px] text-foreground transition-colors',
+                      item.selected ? 'bg-[var(--tab-pill)] font-semibold' : 'font-medium',
                     )}
                   >
                     {item.text}
@@ -550,7 +548,8 @@ export function CompactTitleBar() {
             {segments?.kind === 'stepper' && (
               // Goals' ‹ 2026 ›, in one glass capsule: the arrows press the
               // page's own, the year between them.
-              <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={cn('glass-float flex shrink-0 items-center gap-0.5 rounded-full p-1', fadeIn)}>
+              <span role="group" aria-label={segments.label} data-testid="compact-bar-segments" className={glassClass('regular', 'lg-fade-in flex h-11 shrink-0 items-center gap-0.5 p-1')}>
+                <GlassLayers />
                 {stepArrow(segments, 0, ChevronLeft)}
                 <span aria-live="polite" className="min-w-[4ch] px-1 text-center text-sm font-semibold tabular-nums text-foreground">
                   {segments.value}
@@ -562,7 +561,8 @@ export function CompactTitleBar() {
             {actions.length > 1 && (
               // Two in one glass capsule, as on the page (owner, Oct 2026,
               // as Claude's and Bevel's tops pair theirs).
-              <span data-testid="compact-bar-capsule" className={cn('glass-float flex h-11 items-center gap-3.5 rounded-full pr-1.5', fadeIn)}>
+              <span data-testid="compact-bar-capsule" className={glassClass('regular', 'lg-fade-in flex h-11 items-center gap-1 pr-1.5')}>
+                <GlassLayers />
                 {actions.map((action, i) => actionButton(action, i, true))}
               </span>
             )}
