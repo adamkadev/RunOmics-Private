@@ -9,9 +9,10 @@ import { t } from '@/i18n'
 /**
  * iOS's large-title behaviour (v4.3.2): once the page has scrolled, a bar
  * comes in under the status bar, so the large title is never left cut in
- * half under it. The bar and the status strip above it are frosted glass
- * while it shows (globals.css, .top-glass): one surface the page slides
- * under, with no title on it (owner, Oct 2026) - the glass is the cue.
+ * half under it. While it shows, the status strip grows down behind it as
+ * one frosted surface from the notch to the bar's foot, as Bevel's top is
+ * (globals.css, data-bar-shown): the bar itself is clear, with no title on
+ * it (owner, Oct 2026), and holds only its glass buttons.
  *
  * Collapsed, it is the design review's bar (Oct 2026): 52 pt, a 44 x 44 back
  * chevron on a page reached from another, and the page's one action at the
@@ -269,16 +270,15 @@ export function CompactTitleBar() {
         // It starts under the status strip and never touches the top edge
         // (v4.8): iOS 26 takes the topmost fixed element at the top as the
         // page's bar and kept the zone of this one (safe area + 44 pt) over
-        // the large title after it hid again. Shown, it is fully opaque; only
-        // what is on it fades in. It takes the taps that land on it, so none
-        // reach the page hidden under it. Above the sticky tab strips (z-30),
-        // which move under it while it shows. Frosted glass with a soft
-        // blurred foot, not a divider (.top-glass, owner, Oct 2026): the
-        // page slides under it, and a line of text crossing its foot fades
-        // rather than leaving a cut glyph - the "₂" of VO₂MAX hung below
-        // its capitals.
+        // the large title after it hid again. Clear (owner, Oct 2026, after
+        // Bevel): the glass behind it is the status strip's, grown down over
+        // it, whose blurred foot fades a line of text crossing it rather than
+        // leaving a cut glyph - the "₂" of VO₂MAX hung below its capitals.
+        // It takes the taps that land on it, so none reach the page hidden
+        // under it. Above the sticky tab strips (z-30), which move under it
+        // while it shows.
         className={cn(
-          'top-glass fixed inset-x-0 z-40 grid-cols-[56px_minmax(0,1fr)_56px] items-center lg:hidden',
+          'fixed inset-x-0 z-40 grid-cols-[56px_minmax(0,1fr)_56px] items-center lg:hidden',
           visible ? 'grid' : 'hidden',
         )}
         style={{
@@ -290,13 +290,13 @@ export function CompactTitleBar() {
           {back !== null && (
             // The way back stays in reach once the page's own link has
             // scrolled away (design review, Oct 2026): 44 x 44 around a 24 pt
-            // chevron.
+            // chevron, a glass circle as Bevel's buttons are (owner, Oct 2026).
             <button
               type="button"
               data-testid="compact-bar-back"
               aria-label={t.nav.backTo(back)}
               onClick={() => backRef.current?.click()}
-              className={cn('flex size-11 items-center justify-center rounded-full text-foreground', fadeIn)}
+              className={cn('glass-float flex size-11 items-center justify-center rounded-full text-foreground', fadeIn)}
             >
               <ChevronLeft size={24} strokeWidth={2.2} aria-hidden="true" />
             </button>
@@ -311,7 +311,7 @@ export function CompactTitleBar() {
               data-testid="compact-bar-action"
               aria-label={actionName}
               onClick={() => actionRef.current?.click()}
-              className={cn('flex size-11 items-center justify-center rounded-full text-foreground', fadeIn)}
+              className={cn('glass-float flex size-11 items-center justify-center rounded-full text-foreground', fadeIn)}
             >
               <ActionIcon size={20} strokeWidth={2} aria-hidden="true" />
             </button>

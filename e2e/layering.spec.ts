@@ -90,11 +90,11 @@ test.describe('on a phone', () => {
               }
             })
         })
-        // The strip is the notch zone; solid at rest, frosted glass while the
-        // compact bar shows (owner, Oct 2026), so the notch blurs what
-        // scrolls under the translucent status bar.
+        // The strip is the notch zone, solid, at rest; while the compact bar
+        // shows it grows down behind it (52 pt) as one frosted surface
+        // (owner, Oct 2026, after Bevel).
         expect(atTop, `scrolled to ${y}`).toEqual([
-          { id: 'status-strip', height: 59, opaque: !barShown },
+          { id: 'status-strip', height: barShown ? 111 : 59, opaque: !barShown },
           { id: 'top-edge-bar', height: 48, opaque: true },
         ])
         if (y === 0) expect(barShown).toBe(false)
