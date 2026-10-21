@@ -9,6 +9,8 @@ import { formBand } from '@/domain/training/formBand'
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import type { LoadReading } from '@/application/usecases/GetRecentLoad'
+import { cardClass, insetTileClass, tileLabelClass } from '@/components/ui/Card'
+import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 /**
@@ -31,14 +33,15 @@ const TIRED_WORDS = /\b(tired|fatigued|fatiguée?)\b/i
 
 /**
  * A number on its inner tile (App Fixes 1a): the label in caps, the value at
- * 20 px bold, and a line under it - its band, or how it moved this week.
+ * 24/29 bold (Liquid Glass v3), and a line under it - its band, or how it
+ * moved this week.
  */
 function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; sub: ReactNode; testId: string }) {
   return (
-    <div data-testid={testId} className="flex min-w-0 flex-col gap-1 rounded-[14px] bg-background px-3 py-2.5">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</span>
-      <span className="text-xl font-bold leading-tight tabular-nums text-foreground">{value}</span>
-      <span className="text-[11px] text-muted-foreground">{sub}</span>
+    <div data-testid={testId} className={cn('flex min-w-0 flex-col gap-1', insetTileClass)}>
+      <span className={tileLabelClass}>{label}</span>
+      <span className="text-metric tabular-nums text-foreground">{value}</span>
+      <span className="text-xs text-muted-foreground">{sub}</span>
     </div>
   )
 }
@@ -93,27 +96,27 @@ export function ReadinessCard({
   const body = verdict ? verdict.body : (fallback?.body ?? null)
 
   return (
-    <Link href="/analytics" aria-label={s.open} className="block active:scale-[0.99]" data-testid="readiness-card-link">
-      <section className="flex flex-col gap-3 rounded-[22px] border border-border bg-card p-4 shadow-card" data-testid="readiness-card">
-        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color }} data-testid="readiness-status" data-tone={tone}>
+    <Link href="/analytics" aria-label={s.open} className="block transition-transform duration-100 ease-out active:scale-[0.98]" data-testid="readiness-card-link">
+      <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="readiness-card">
+        <p className="flex items-center gap-1.5 text-eyebrow uppercase" style={{ color }} data-testid="readiness-status" data-tone={tone}>
           <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ background: color }} />
           <span>
             {t.formBand[band]} · {line}
           </span>
         </p>
         {headline && (
-          <div className="flex flex-col gap-3" data-testid="readiness-verdict">
+          <div className="flex flex-col gap-2.5" data-testid="readiness-verdict">
             {verdict?.yesterday && (
-              <p className="-mb-1.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground" data-testid="verdict-yesterday">
+              <p className="-mb-1.5 text-eyebrow uppercase text-muted-foreground" data-testid="verdict-yesterday">
                 {s.yesterday}
               </p>
             )}
-            <p className="text-[19px] font-semibold leading-[1.25] tracking-[-0.01em] text-foreground [text-wrap:pretty]">{headline}</p>
-            {body && <p className="text-[13px] leading-[1.45] text-[var(--text-2)] [text-wrap:pretty]">{body}</p>}
+            <p className="text-title-3 text-foreground [text-wrap:pretty]">{headline}</p>
+            {body && <p className="text-[15px] leading-5 tracking-[-0.015rem] text-[var(--text-2)] [text-wrap:pretty]">{body}</p>}
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="-mx-1 -mb-1 grid grid-cols-3 gap-1.5">
           <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} sub={t.formBand[band].toLocaleLowerCase(t.locale)} />
           <Tile
             testId="tile-fitness"

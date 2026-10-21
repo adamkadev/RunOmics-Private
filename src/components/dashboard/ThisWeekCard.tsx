@@ -8,6 +8,7 @@ import { formatWeekKm } from '@/components/plan/weekPlanDays'
 import { formatRanKm } from '@/lib/formatters'
 import { useToday } from '@/lib/useToday'
 import { useSkippedDays } from '@/lib/skippedDays'
+import { cardClass } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import type { ActivityType } from '@/domain/activity/types'
@@ -15,8 +16,8 @@ import { weekStripDays, type WeekStripDay } from './weekStrip'
 import { t } from '@/i18n'
 
 /** The bars' track and the tallest bar (App Fixes 1a v2): 86 px, 62 px. */
-const TRACK_PX = 86
-const MAX_BAR_PX = 62
+const TRACK_PX = 120
+const MAX_BAR_PX = 92
 const MIN_BAR_PX = 8
 
 interface Bar {
@@ -88,16 +89,16 @@ export function weekLegend(target: WeekTarget, bars: Bar[]): LegendEntry[] {
 function barStyle({ day, height }: Bar): CSSProperties {
   switch (day.state) {
     case 'rest':
-      return { height, background: 'var(--segmented-pill)', borderRadius: 2 }
+      return { height, background: 'var(--track)', borderRadius: 2 }
     case 'done':
-      return { height, background: day.color, borderRadius: 5 }
+      return { height, background: day.color, borderRadius: 10 }
     case 'missed':
-      return { height, border: '1.5px dashed var(--warn)', borderRadius: 5 }
+      return { height, border: '1.5px dashed var(--warn)', borderRadius: 10 }
     default:
       return {
         height,
         border: `1.5px dashed ${day.color}`,
-        borderRadius: 5,
+        borderRadius: 10,
       }
   }
 }
@@ -124,11 +125,11 @@ export function ThisWeekCard({
 
   return (
     // The card opens Plan › Week; a missed bar opens its own day, above it.
-    <section className="relative flex flex-col gap-2.5 rounded-[22px] border border-border bg-card p-4 shadow-card" data-testid="this-week-card">
-      <Link href="/plan?view=week" aria-label={t.plan.openPlanner} className="absolute inset-0 rounded-[22px] active:bg-[var(--surface-2)]" data-testid="this-week-link" />
+    <section className={cardClass({ className: 'relative flex flex-col gap-3.5' })} data-testid="this-week-card">
+      <Link href="/plan?view=week" aria-label={t.plan.openPlanner} className="absolute inset-0 rounded-[24px] active:bg-[var(--fill-4)]" data-testid="this-week-link" />
       <div className="pointer-events-none relative flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h2 className="text-[15px] font-semibold text-foreground">{s.title}</h2>
-        <p className="text-xs tabular-nums text-text-2">
+        <h2 className="text-headline text-foreground">{s.title}</h2>
+        <p className="text-[13px] tabular-nums text-text-2">
           <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
           {targetKm !== null ? ` / ${formatWeekKm(targetKm)} ${t.units.km}` : ` ${t.units.km}`}
           {load && (
@@ -143,7 +144,7 @@ export function ThisWeekCard({
         </p>
       </div>
 
-      <ul className="pointer-events-none relative grid grid-cols-7 items-end gap-1.5" style={{ height: TRACK_PX }} data-testid="week-bars">
+      <ul className="pointer-events-none relative grid grid-cols-7 items-end gap-2" style={{ height: TRACK_PX }} data-testid="week-bars">
         {bars.map((bar) => {
           const isMissed = bar.day.state === 'missed'
           const content = (
@@ -151,7 +152,7 @@ export function ThisWeekCard({
               {bar.label && (
                 <span
                   aria-hidden
-                  className={cn('text-center text-[11px] font-semibold tabular-nums', isMissed ? 'text-[var(--warn)]' : bar.day.isToday ? 'text-foreground' : 'text-text-2')}
+                  className={cn('text-center text-[13px] font-semibold tabular-nums', isMissed ? 'text-[var(--warn)]' : bar.day.isToday ? 'text-foreground' : 'text-text-2')}
                 >
                   {bar.label}
                 </span>
@@ -183,13 +184,13 @@ export function ThisWeekCard({
         })}
       </ul>
 
-      <div aria-hidden className="pointer-events-none relative grid grid-cols-7 justify-items-center gap-1.5 text-[11px] text-[var(--axis-text)]">
+      <div aria-hidden className="pointer-events-none relative grid grid-cols-7 justify-items-center gap-2 text-[13px] text-[var(--axis-text)]">
         {bars.map(({ day }) => (
           <span
             key={day.date}
             className={cn(
-              'box-border flex size-[22px] items-center justify-center rounded-full',
-              day.isToday && 'border-[1.5px] border-[var(--accent)] font-semibold text-accent-text',
+              'box-border flex size-7 items-center justify-center rounded-full',
+              day.isToday && 'border-2 border-[var(--accent)] font-semibold text-accent-text',
             )}
           >
             {day.letter}
@@ -198,7 +199,7 @@ export function ThisWeekCard({
       </div>
 
       {/* Each entry on one line; with a miss in the week the count drops to its own line, right-aligned. */}
-      <div className="pointer-events-none relative flex flex-wrap items-center gap-x-3.5 gap-y-1.5 whitespace-nowrap border-t border-[var(--track)] pt-2.5 text-[11.5px] text-muted-foreground">
+      <div className="pointer-events-none relative flex flex-wrap items-center gap-x-3.5 gap-y-1.5 whitespace-nowrap border-t-[0.5px] border-[var(--row-separator)] pt-3 text-[13px] text-muted-foreground">
         {/* "■ Easy ■ Threshold": a swatch per session colour in the week. */}
         {legend.map((entry) => (
           <span key={entry.color} className="flex items-center gap-[5px]" data-testid="legend-type">

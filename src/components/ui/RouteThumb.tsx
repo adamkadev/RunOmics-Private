@@ -1,6 +1,5 @@
 import { ROUTE_THUMB_BOX } from '@/domain/activity/routeThumb'
 import { sessionZone, zoneColor } from '@/lib/colors'
-import { cn } from '@/lib/utils'
 
 interface Props {
   /** The stored path from routeThumbPath; null draws the neutral tile. */
@@ -21,7 +20,8 @@ const TRACK = 'M20 16 H36 A12 12 0 0 1 36 40 H20 A12 12 0 0 1 20 16 Z'
 export function RouteThumb({ path, type, size = 52 }: Props) {
   return (
     <div
-      className={cn('shrink-0 overflow-hidden bg-[var(--thumb-bg)]', size <= 48 ? 'rounded-[10px]' : 'rounded-[12px]')}
+      // The inset-tile recipe (Liquid Glass v3, G9): r12 on the page ground.
+      className="inset-tile shrink-0 overflow-hidden rounded-[12px]"
       style={{ width: size, height: size }}
       data-testid="route-thumb"
       data-neutral={path ? undefined : 'true'}

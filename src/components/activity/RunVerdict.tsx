@@ -13,9 +13,9 @@ interface Props {
   children?: ReactNode
 }
 
-/** One of the verdict card's chips (3.0): 12 px on the inset tile, 8 px radius. */
+/** One of the verdict card's note chips (Liquid Glass v3, §6.6): a 32 pt capsule, 13 pt, the system fill. */
 export const RUN_CHIP_CLASS =
-  'hit-44 inline-flex min-h-[30px] min-w-0 items-center gap-1.5 rounded-lg bg-background px-2.5 py-1 text-xs text-[var(--text-2)]'
+  'hit-44 inline-flex min-h-8 min-w-0 items-center gap-1.5 rounded-full bg-[var(--fill-3)] px-3 py-1 text-[13px] text-foreground'
 
 /** The verdict's tone as a status colour: a strong session is good news, a tough one a caution. */
 const STATUS_TONE: Record<RunTone, VerdictTone> = {

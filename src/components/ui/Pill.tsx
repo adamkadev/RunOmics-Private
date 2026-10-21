@@ -5,13 +5,14 @@ import type { ElementType, HTMLAttributes, ReactNode } from 'react'
  * The filter chip (v4.17). `selected` is the one "selected" treatment: text
  * ink with the page ground as its label, inverted - the accent is for the
  * athlete's own data and real actions, not for a filter. `neutral` is
- * everything unselected: the surface, a line, text-2.
+ * everything unselected: Liquid Glass v3's system fill (G7), no line, in
+ * text ink. 36 pt capsules, 15 pt labels.
  */
 type PillVariant = 'selected' | 'neutral'
 
 const VARIANT_CLASS: Record<PillVariant, string> = {
-  selected: 'border border-foreground bg-foreground text-background font-semibold',
-  neutral:  'border border-border bg-card text-[var(--text-2)] hover:text-foreground',
+  selected: 'bg-foreground px-4 text-background font-semibold',
+  neutral:  'bg-[var(--fill-3)] text-foreground font-medium',
 }
 
 interface PillProps extends HTMLAttributes<HTMLElement> {
@@ -35,7 +36,7 @@ export function Pill({
   return (
     <Tag
       className={cn(
-        'inline-flex h-8 flex-none items-center gap-1.5 rounded-full px-3.5 text-[13px] font-medium',
+        'inline-flex h-9 flex-none items-center gap-1.5 rounded-full px-3.5 text-[15px] tracking-[-0.015rem]',
         interactive && 'hit-44',
         'whitespace-nowrap transition-transform active:scale-95',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',

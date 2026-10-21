@@ -4,23 +4,28 @@ import { forwardRef, type ComponentProps } from 'react'
 import type { ButtonHTMLAttributes } from 'react'
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link'
-type ButtonSize = 'sm' | 'md'
+type ButtonSize = 'sm' | 'md' | 'lg'
 
 /**
- * The v4.17 buttons: primary is the accent with its ink - the one place the
- * accent fills, for real actions (Sync now, Adjust plan); secondary is an
- * outline in line-2; a link is accent text at 500.
+ * The buttons (Liquid Glass v3, G12), every one a capsule. Primary is the
+ * prominent button - the accent with its ink, a top sheen and a soft accent
+ * glow - the one place the accent fills, for real actions (Sync now, Adjust
+ * plan, a sheet's CTA). Secondary is the system fill with no line; a link is
+ * accent text at 500.
  */
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  primary: 'rounded-[9px] px-3.5 bg-accent text-accent-foreground hover:brightness-105 active:scale-[0.96]',
-  secondary:
-    'rounded-[9px] px-3.5 border border-[var(--line-2)] bg-transparent text-foreground hover:bg-[var(--surface-2)] active:scale-[0.96]',
-  ghost: 'rounded-[9px] px-3.5 bg-transparent text-foreground/80 hover:text-foreground active:opacity-60',
+  primary: 'btn-prominent rounded-full px-3.5 bg-accent text-accent-foreground hover:brightness-105',
+  secondary: 'rounded-full px-3.5 bg-[var(--fill-3)] text-foreground',
+  ghost: 'rounded-full px-3.5 bg-transparent text-foreground/80 hover:text-foreground active:opacity-60',
   link: 'font-medium! text-accent-text hover:opacity-80',
 }
 
-/** 36 pt, or 32 pt inside a card row. A link has no box, so no height. */
-const SIZE_CLASS: Record<ButtonSize, string> = { md: 'h-9', sm: 'h-8' }
+/**
+ * 36 pt, or 32 pt inside a card row; `lg` is the 50 pt full-width action -
+ * every sheet's footer CTA (concentric with the sheet: 47 - 22 = 25). A link
+ * has no box, so no height.
+ */
+const SIZE_CLASS: Record<ButtonSize, string> = { lg: 'h-[50px] px-6 text-[17px]', md: 'h-9', sm: 'h-8' }
 
 export function buttonClass({
   variant = 'primary',

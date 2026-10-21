@@ -3,6 +3,7 @@
 import { useTheme } from 'next-themes'
 import { useMounted } from '@/lib/useMounted'
 import { cn } from '@/lib/utils'
+import { SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 
 const OPTIONS = [
@@ -12,8 +13,8 @@ const OPTIONS = [
 ] as const
 
 /**
- * Light / Auto / Dark as the quiet tabs (v4.17): the inset track with its
- * line, the choice lifted onto the card surface in text ink. A choice, not
+ * Light / Auto / Dark as the quiet tabs (v4.17), in Liquid Glass v3's
+ * content recipe: a 32 pt capsule track, the choice lifted in text ink. A choice, not
  * a tablist - there is no panel - so the buttons are pressed or not. The
  * row around it carries the label.
  */
@@ -24,7 +25,7 @@ export function ThemeSegmented() {
 
   return (
     <div
-      className="flex shrink-0 gap-0.5 rounded-[11px] border border-border bg-[var(--segmented-track)] p-[3px]"
+      className={SEGMENTED_TRACK_CLASS}
       role="group"
       aria-label={t.settings.appearance.themeLabel}
     >
@@ -35,10 +36,8 @@ export function ThemeSegmented() {
           onClick={() => setTheme(value)}
           aria-pressed={current === value}
           className={cn(
-            'hit-44 h-[30px] rounded-lg px-3.5 text-[13px] transition-colors',
-            current === value
-              ? 'bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
-              : 'font-medium text-muted-foreground hover:text-foreground'
+            'hit-44 h-[26px] px-3 text-[13px] transition-colors',
+            current === value ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS
           )}
         >
           {label()}

@@ -84,7 +84,7 @@ function PastWeekLine({ group, showEasy, weekTotal }: { group: WeekRow; showEasy
 /** A week's runs as rounded rows in its card, each with its route (v4.17). */
 function InsetRows({ items, efforts }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]> }) {
   return (
-    <div className="flex flex-col px-2 pb-2">
+    <div className="inset-group flex flex-col">
       {items.map((a) => (
         <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={efforts[a.id]} variant="inset" />
       ))}
@@ -390,11 +390,11 @@ export function ActivityListClient({
   const totalsLabel = onlyGroup ? t.activities.filter.groupTotals[onlyGroup] : t.activities.filter.totalsCount
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3">
       {/* List | Map in the header's trailing slot, as Plan's Week | Month
           (Liquid Glass v2, round 3): the bar's copy lands on it. The archive
           line runs the width under the row. */}
-      <header className="mb-1.5">
+      <header>
         <div className="flex items-center justify-between gap-4">
           <h1 className="min-w-0 text-display text-foreground">{t.pages.activities.title}</h1>
           <SegmentedTabs
@@ -407,23 +407,25 @@ export function ActivityListClient({
             barMirror
           />
         </div>
-        <p data-title-sub className="mt-1 text-sm text-muted-foreground">{archiveLine.join(' · ')}</p>
+        <p data-title-sub className="mt-0.5 text-[15px] leading-5 text-muted-foreground">{archiveLine.join(' · ')}</p>
       </header>
 
-      <div {...viewTabs.panelProps} className="flex flex-col gap-3.5 outline-none">
+      <div {...viewTabs.panelProps} className="flex flex-col gap-3 outline-none">
         {view === 'map' ? (
           <GlobalMapWrapper data={mapData} />
         ) : (
           <>
 
-            <label className="flex h-[42px] items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 text-muted-foreground transition-colors focus-within:border-[var(--line-2)]">
-              <Search size={16} aria-hidden="true" className="shrink-0" />
+            {/* The search field (Liquid Glass v3, §6.7): a 44 pt capsule in
+                the system fill, no line; focus draws the ring. */}
+            <label className="flex h-11 items-center gap-2 rounded-full bg-[var(--fill-3)] px-3.5 text-muted-foreground transition-shadow focus-within:shadow-[0_0_0_2px_var(--ring)]">
+              <Search size={18} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
               <input
                 type="text"
                 placeholder={t.activities.searchPlaceholder}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-full min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+                className="h-full min-w-0 flex-1 bg-transparent text-[17px] text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
             </label>
 
@@ -455,7 +457,7 @@ export function ActivityListClient({
                 onClick={() => setSheetOpen(true)}
                 aria-label={t.activities.filter.title}
                 aria-haspopup="dialog"
-                className="hit-44 relative flex size-[38px] shrink-0 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:bg-[var(--surface-2)]"
+                className="hit-44 relative flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--fill-3)] text-foreground"
               >
                 <SlidersHorizontal size={17} aria-hidden="true" />
                 {/* The sort or a filter off its default (App Fixes 3f): an 8 px
@@ -529,7 +531,7 @@ export function ActivityListClient({
                     // show the week against plan. Only once it has a run (3.0).
                     <section key={block.week.key} id={`week-${block.week.key}`} className="scroll-mt-24" data-testid="current-week">
                       <div className="flex items-baseline justify-between gap-3 px-1 pb-2">
-                        <h2 className="min-w-0 truncate text-[15px] font-semibold text-foreground">
+                        <h2 className="min-w-0 truncate text-title-3 text-foreground">
                           {t.activities.thisWeek} · {formatDateRange(block.week.key, isoDate(addDays(new Date(`${block.week.key}T00:00:00`), 6)), { year: 'never' })}
                         </h2>
                         <span className="shrink-0 text-[13px] text-muted-foreground" data-testid="week-line">
@@ -537,7 +539,7 @@ export function ActivityListClient({
                           {!hasActiveFilter && block.week.easyPct !== null && ` · ${t.activities.weekLine.easy(block.week.easyPct)}`}
                         </span>
                       </div>
-                      <div className={cardClass({ padding: 'none', overflow: true, className: 'pt-2' })}>
+                      <div className={cardClass({ padding: 'none', overflow: true })}>
                         <InsetRows items={block.week.items} efforts={qualifiedEffortsByActivityId} />
                       </div>
                     </section>
@@ -552,7 +554,7 @@ export function ActivityListClient({
                         className="sticky z-30 flex items-baseline justify-between gap-3 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
                         style={{ top: 'var(--sticky-top, var(--sticky-alone, var(--safe-top)))' }}
                       >
-                        <h2 className="text-[15px] font-semibold capitalize text-foreground">{block.label}</h2>
+                        <h2 className="text-title-3 capitalize text-foreground">{block.label}</h2>
                         <span className="text-[13px] text-muted-foreground" data-testid="month-line">
                           {/* A group filter names its runs first (App Fixes 1d): "2 workouts · 18 km". */}
                           {onlyGroup
@@ -566,7 +568,7 @@ export function ActivityListClient({
                         {block.weeks.map((g) => (
                           <section key={g.key} id={`week-${g.key}`} className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24' })} data-testid="week">
                             <div className="flex items-baseline justify-between gap-4 px-4 pb-1.5 pt-3.5">
-                              <h3 className="whitespace-nowrap text-sm font-semibold text-foreground">{g.label}</h3>
+                              <h3 className="whitespace-nowrap text-headline text-foreground">{g.label}</h3>
                               <PastWeekLine group={g} showEasy={!hasActiveFilter} weekTotal={hasActiveFilter ? (weekTotals?.get(g.key) ?? null) : null} />
                             </div>
                             <InsetRows items={g.items} efforts={qualifiedEffortsByActivityId} />
