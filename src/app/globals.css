@@ -1232,8 +1232,11 @@ textarea,
 
 /* WebKit's sample point: one solid colour 4px in, >10px tall, full width.
    Found there, iOS 26 takes it for the page's bar and draws no scroll-edge
-   blur of its own over the large titles. A sheet's scrim stops under it, so
-   it dims itself while one is open (v5.6 #3), as the scrim's black 40 %. */
+   blur of its own over the large titles. A sheet's scrim starts at the safe
+   area's foot, so the strip dims the part above it itself while one is open
+   (v5.6 #3), in the scrim's own colour. Only that part (F15): under the
+   opaque status bar the safe area is 0 and the scrim covers the whole strip,
+   which, dimmed twice, showed as a darker 12 pt band under the status bar. */
 .edge-sampler {
   position: fixed;
   inset-inline: 0;
@@ -1243,5 +1246,5 @@ textarea,
   z-index: 45;
 }
 html[data-sheet-open] .edge-sampler {
-  box-shadow: inset 0 0 0 100vmax rgb(0 0 0 / 0.4);
+  box-shadow: inset 0 var(--safe-top) 0 0 var(--scrim-sheet);
 }
