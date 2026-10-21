@@ -81,8 +81,8 @@ describe('CompactTitleBar', () => {
     tabPage()
     await mount(60)
     expect(shown()).toBe(true)
-    expect(bar().textContent).toBe('Plan')
-    expect(within(bar()).getByText('Plan').className).toContain('text-[17px]')
+    // Glass only, no page name on it (owner, Oct 2026).
+    expect(bar().textContent).toBe('')
     // The design review's 52 pt bar (Oct 2026), under the status strip.
     expect(bar().style.height).toBe('52px')
     // Frosted glass with a soft blurred foot (.top-glass, owner, Oct 2026),

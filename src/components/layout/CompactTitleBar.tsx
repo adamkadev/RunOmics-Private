@@ -7,21 +7,21 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 /**
- * iOS's large-title behaviour (v4.3.2): once the page has scrolled, the bar
- * under the status bar shows the page's title again as a centred 17 pt
- * title, instead of leaving it cut in half under the status bar. The bar and
- * the status strip above it are frosted glass while it shows (globals.css,
- * .top-glass), so they read as one surface the page slides under.
+ * iOS's large-title behaviour (v4.3.2): once the page has scrolled, a bar
+ * comes in under the status bar, so the large title is never left cut in
+ * half under it. The bar and the status strip above it are frosted glass
+ * while it shows (globals.css, .top-glass): one surface the page slides
+ * under, with no title on it (owner, Oct 2026) - the glass is the cue.
  *
- * Collapsed, it is the design review's bar (Oct 2026): 52 pt, the title
- * centred, a 44 x 44 back chevron on a page reached from another, and the
- * page's one action at the trailing end - the activity's Share.
+ * Collapsed, it is the design review's bar (Oct 2026): 52 pt, a 44 x 44 back
+ * chevron on a page reached from another, and the page's one action at the
+ * trailing end - the activity's Share.
  *
- * The bar draws nothing of its own. The title is the page's own <h1>, the
- * way back the page's BackButton (`data-bar-back`) and the action the
- * control marked `data-bar-action`, all read from the DOM: the chevron and
- * the action press the page's own controls, so they do just what those do.
- * A page with no <h1> never shows the bar.
+ * The bar draws nothing of its own. The way back is the page's BackButton
+ * (`data-bar-back`) and the action the control marked `data-bar-action`,
+ * both read from the DOM: the chevron and the action press the page's own
+ * controls, so they do just what those do. A page with no <h1> never shows
+ * the bar.
  */
 export const BAR_HEIGHT = 52
 
@@ -252,8 +252,7 @@ export function CompactTitleBar() {
   }, [visible])
 
   const ActionIcon = action ? ACTION_ICONS[action] : undefined
-  // The title, the chevron and the action come in together, over the
-  // title's cross-fade.
+  // The chevron and the action come in together, as the large title fades.
   const fadeIn = 'animate-[fade-in_150ms_ease-out]'
 
   return (
@@ -303,10 +302,8 @@ export function CompactTitleBar() {
             </button>
           )}
         </span>
-        {/* The page's own <h1> says it to a screen reader. */}
-        <span aria-hidden="true" className={cn('block truncate text-center text-[17px] font-semibold leading-[52px] text-foreground', fadeIn)}>
-          {title}
-        </span>
+        {/* No title on the glass (owner, Oct 2026): the middle stays empty. */}
+        <span aria-hidden="true" />
         <span className="flex justify-center">
           {ActionIcon && (
             <button
