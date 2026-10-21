@@ -27,11 +27,11 @@ const HOT_T = 0.5;
 /** Light: per-pixel work, so the canvas is capped at 2x. */
 const MAX_DPR = 2;
 /**
- * Light: at most this many pixels. Each redraw reads and writes several
- * buffers the canvas's size; at 8 M pixels that passed Safari's canvas
- * memory limit and the tab crashed.
+ * Light: at most this many pixels. Each redraw keeps a scratch canvas the
+ * canvas's size; at 8 M pixels with several of them, Safari's canvas memory
+ * limit was passed and the tab crashed.
  */
-const MAX_LIGHT_PIXELS = 2_500_000;
+const MAX_LIGHT_PIXELS = 4_000_000;
 
 export interface HeatLayer {
   /** Replace the tracks drawn, fading them in unless `reveal` is false. */
@@ -176,6 +176,13 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     }
   }
 
+  /**
+   * Reading a canvas back is the expensive step (a GPU readback on iPhone):
+   * at full resolution it took seconds and blanked the map. So only the run
+   * counts are read back, at CSS-pixel resolution, and coloured there; the
+   * sharp line shape is stroked at full resolution and filled with that
+   * colour by the GPU ("source-in"), never read back.
+   */
   function drawLight() {
     if (!ctx) return;
     const W = canvas.width, H = canvas.height, s = view.scale;
@@ -183,79 +190,73 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     const lat = map.getCenter().lat;
     const mPerPx = (40_075_016.686 * Math.cos((lat * Math.PI) / 180)) / view.world;
 
-    // 1. count: one stroke per run, +1/255 alpha per run
-    const count = surface("count", W, H, true);
-    count.g.setTransform(s, 0, 0, s, 0, 0);
+    // 1. count, at CSS-pixel resolution: one stroke per run, +1/255 alpha per run.
+    //    At least 3 px wide, so the field covers the line it colours.
+    const cw = Math.max(1, Math.round(W / s)), ch = Math.max(1, Math.round(H / s));
+    const count = surface("count", cw, ch, true);
     count.g.globalCompositeOperation = "lighter";
     count.g.lineCap = count.g.lineJoin = "round";
-    count.g.lineWidth = Math.max(2, MERGE_M / mPerPx);
+    count.g.lineWidth = Math.max(3, MERGE_M / mPerPx);
     count.g.strokeStyle = "rgba(255,255,255,0.0039215686)";
     for (const tr of tracks) { count.g.beginPath(); path(count.g, tr); count.g.stroke(); }
+    const cd = count.g.getImageData(0, 0, cw, ch).data;
 
-    // 2. mask: every run, one path, thin and opaque
-    const mask = surface("mask", W, H, true);
-    mask.g.setTransform(s, 0, 0, s, 0, 0);
-    mask.g.lineCap = mask.g.lineJoin = "round";
-    mask.g.lineWidth = CORE_PX * k;
-    mask.g.strokeStyle = "#fff";
-    mask.g.beginPath();
-    for (const tr of tracks) path(mask.g, tr);
-    mask.g.stroke();
-
-    const cd = count.g.getImageData(0, 0, W, H).data;
-    const md = mask.g.getImageData(0, 0, W, H).data;
-
-    // 3. p95 of counts under the mask
+    // 2. p95 of the counts the runs cover
     const hist = new Uint32Array(256);
     let n = 0;
-    for (let i = 3; i < md.length; i += 4) if (md[i]) { hist[Math.max(1, cd[i]!)]!++; n++; }
+    for (let i = 3; i < cd.length; i += 4) if (cd[i]) { hist[cd[i]!]!++; n++; }
     if (!n) { releaseScratch(); return; }
     let acc = 0, p95 = 1;
     for (let c = 1; c < 256; c++) { acc += hist[c]!; if (acc >= 0.95 * n) { p95 = c; break; } }
     const L = luts(p95);
 
-    // No allocation per pixel: millions of pixels, and garbage per pixel stalled the tab.
-    const core = new ImageData(W, H), halo = new ImageData(W, H);
-    const co = core.data, ho = halo.data;
+    // 3. colour fields: core, halo and busy core, one pixel per CSS pixel
+    const core = new ImageData(cw, ch), halo = new ImageData(cw, ch), hot = new ImageData(cw, ch);
+    const co = core.data, ho = halo.data, bo = hot.data;
     let anyHot = false;
-    for (let i = 0; i < md.length; i += 4) {
-      const m = md[i + 3]!;
-      if (!m) continue;
-      const c = Math.max(1, cd[i + 3]!), j = c * 4, cov = m / 255;
-      co[i] = L.core[j]!; co[i + 1] = L.core[j + 1]!; co[i + 2] = L.core[j + 2]!; co[i + 3] = L.core[j + 3]! * cov;
-      ho[i] = L.halo[j]!; ho[i + 1] = L.halo[j + 1]!; ho[i + 2] = L.halo[j + 2]!; ho[i + 3] = L.halo[j + 3]! * cov;
-      if (L.hot[c]) anyHot = true;
+    for (let i = 0; i < cd.length; i += 4) {
+      const c = cd[i + 3]!;
+      if (!c) continue;
+      const j = c * 4;
+      co[i] = L.core[j]!; co[i + 1] = L.core[j + 1]!; co[i + 2] = L.core[j + 2]!; co[i + 3] = L.core[j + 3]!;
+      ho[i] = L.halo[j]!; ho[i + 1] = L.halo[j + 1]!; ho[i + 2] = L.halo[j + 2]!; ho[i + 3] = L.halo[j + 3]!;
+      if (L.hot[c]) { bo[i] = co[i]!; bo[i + 1] = co[i + 1]!; bo[i + 2] = co[i + 2]!; bo[i + 3] = co[i + 3]!; anyHot = true; }
     }
+    const field = (name: string, img: ImageData) => { const f = surface(name, cw, ch); f.g.putImageData(img, 0, 0); return f.c; };
 
-    // 4. compose: halo (down/up-scale blur, ≈ 4 px), dilated busy core, core
+    // 4. compose at full resolution: halo, dilated busy core, core
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "source-over";
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
-    const f = Math.max(2, Math.round(3 * s));
-    // Two full-size scratch canvases, reused: the count one holds the halo,
-    // then the core; the mask one the busy core.
-    const hs = surface("count", W, H, true); hs.g.putImageData(halo, 0, 0);
-    const small = surface("haloSmall", Math.ceil(W / f), Math.ceil(H / f));
+    // The halo: its field blurred by a down/up-scale (≈ 4 px), which works in Safari, unlike ctx.filter.
+    const haloField = field("halo", halo);
+    const small = surface("haloSmall", Math.ceil(cw / 3), Math.ceil(ch / 3));
     small.g.imageSmoothingQuality = "high";
-    small.g.drawImage(hs.c, 0, 0, small.c.width, small.c.height);
+    small.g.drawImage(haloField, 0, 0, small.c.width, small.c.height);
     ctx.drawImage(small.c, 0, 0, W, H);
     ctx.drawImage(small.c, 0, 0, W, H);           // twice: 4d's halo reaches 0.75 at the top
 
-    if (anyHot) {
-      // The busy core: the core with every pixel under HOT_T cleared, in place.
-      for (let i = 0; i < md.length; i += 4) {
-        if (co[i + 3] && !L.hot[Math.max(1, cd[i + 3]!)]) ho[i + 3] = 0;
-        else ho[i + 3] = co[i + 3]!;
-        ho[i] = co[i]!; ho[i + 1] = co[i + 1]!; ho[i + 2] = co[i + 2]!;
-      }
-      const hc = surface("mask", W, H, true); hc.g.putImageData(halo, 0, 0);
-      const r = Math.max(1, Math.round(s));
-      for (const [dx, dy] of [[-r, 0], [r, 0], [0, -r], [0, r], [-r, -r], [r, r], [-r, r], [r, -r]] as const) ctx.drawImage(hc.c, dx, dy);
-    }
-
-    const cc = surface("count", W, H, true); cc.g.putImageData(core, 0, 0);
-    ctx.drawImage(cc.c, 0, 0);
+    // A line: every run stroked once at full resolution, then filled with a field.
+    const line = (width: number, colours: HTMLCanvasElement) => {
+      const m = surface("line", W, H);
+      m.g.setTransform(s, 0, 0, s, 0, 0);
+      m.g.lineCap = m.g.lineJoin = "round";
+      m.g.lineWidth = width;
+      m.g.strokeStyle = "#fff";
+      m.g.beginPath();
+      for (const tr of tracks) path(m.g, tr);
+      m.g.stroke();
+      m.g.setTransform(1, 0, 0, 1, 0, 0);
+      m.g.globalCompositeOperation = "source-in";
+      m.g.imageSmoothingEnabled = true;
+      m.g.imageSmoothingQuality = "high";
+      m.g.drawImage(colours, 0, 0, W, H);
+      ctx.drawImage(m.c, 0, 0);
+    };
+    // The busy core 1 px wider each side (≈ 2.4–3.3 px), then the core on top.
+    if (anyHot) line(CORE_PX * k + 2, field("hot", hot));
+    line(CORE_PX * k, field("core", core));
     releaseScratch();
   }
 
@@ -286,11 +287,25 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     src.play();
   }
 
-  function redraw() {
+  function paint() {
     layout();
+    ctx?.setTransform(1, 0, 0, 1, 0, 0);
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
     draw();
     upload();
+  }
+
+  // Light's per-pixel draw runs on the next frame, not inside the map's
+  // style.load or moveend: the basemap finishes loading first, and a burst
+  // of moves draws once.
+  let pending = 0;
+  function redraw() {
+    if (mode === "dark") return paint();
+    if (pending) return;
+    pending = requestAnimationFrame(() => {
+      pending = 0;
+      if (map.getSource(HEAT_SOURCE)) paint();
+    });
   }
 
   layout();
@@ -325,6 +340,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       redraw();
     },
     remove() {
+      if (pending) cancelAnimationFrame(pending);
+      pending = 0;
       releaseScratch();
       map.off("moveend", redraw);
       map.off("resize", redraw);
