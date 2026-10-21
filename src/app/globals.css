@@ -821,11 +821,12 @@
     padding: 18px 20px;
   }
 
-  /* Light mode's Aura (G14, README §6.11): a blurred colour field behind
+  /* The background glow (G14, README §6.11): a blurred colour field behind
      the top of the page, from its palette (layout/Aura). A sibling under the
      content, never an ancestor of glass. Light: the palette mixed with white
-     under frosted cards. Dark: half strength, it only tints the header. */
-  .aura-field {
+     under frosted cards. Dark: half strength, it only tints the header. One
+     switch turns it off in both themes (html[data-glow="off"], F2). */
+  .aura {
     position: absolute;
     left: -60px;
     right: -60px;
@@ -843,31 +844,31 @@
       radial-gradient(70% 42% at 55% 56%, color-mix(in srgb, var(--aura-3) 42%, white) 0%, transparent 75%);
     transition: opacity 250ms ease-out;
   }
-  .dark .aura-field {
+  .dark .aura {
     opacity: 0.5;
     background:
       radial-gradient(60% 46% at 16% 20%, color-mix(in srgb, var(--aura-1) 40%, transparent) 0%, transparent 70%),
       radial-gradient(55% 42% at 88% 14%, color-mix(in srgb, var(--aura-2) 32%, transparent) 0%, transparent 70%),
       radial-gradient(70% 42% at 55% 56%, color-mix(in srgb, var(--aura-3) 24%, transparent) 0%, transparent 75%);
   }
-  html[data-light-style="plain"]:not(.dark) .aura-field { opacity: 0; }
+  html[data-glow="off"] .aura { display: none; }
 
   /* Frosted cards over the light Aura: still the content layer - no rim, no
      edge band, no press swell - and a static blur, never animated. Below the
      aura they read white, so the cost is only paid at the top of the page. */
-  html:not([data-light-style="plain"]):not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
+  html:not(.dark):not([data-glow="off"]) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
     --card: rgb(255 255 255 / 0.72);
     --card-edge: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.05), 0 8px 24px rgb(40 50 70 / 0.06);
     -webkit-backdrop-filter: blur(24px) saturate(1.8);
             backdrop-filter: blur(24px) saturate(1.8);
   }
-  html:not([data-light-style="plain"]):not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) .inset-tile {
+  html:not(.dark):not([data-glow="off"]) :is(.content-card, .glass-card, .glass-hero, .glass-row) .inset-tile {
     background: rgb(118 118 128 / 0.07);
   }
 
-  /* System overrides win: Plain whatever the setting. */
+  /* System overrides win: no glow and white cards whatever the setting. */
   @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-    .aura-field { display: none; }
+    .aura { display: none; }
     html:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
       --card: #ffffff;
       -webkit-backdrop-filter: none;
@@ -875,7 +876,7 @@
     }
     html:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) .inset-tile { background: var(--background); }
   }
-  html[data-glass="solid"] .aura-field { display: none; }
+  html[data-glass="solid"] .aura { display: none; }
   html[data-glass="solid"]:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
     --card: #ffffff;
     -webkit-backdrop-filter: none;

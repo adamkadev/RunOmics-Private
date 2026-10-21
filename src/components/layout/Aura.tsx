@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useGlow } from '@/lib/glow'
 
 /** A page's three colours, as CSS custom properties: the field's three glows. */
 type Palette = readonly [string, string, string]
@@ -33,17 +34,19 @@ export function auraPalette(pathname: string): Palette | null {
  * page's palette. A sibling under the content, never an ancestor of glass
  * (its filter would make it a backdrop root). In light it sits under frosted
  * cards; in dark it is shown at half strength and only tints the header.
- * Plain, Reduce Transparency and Increase Contrast hide it (globals.css).
+ * The Background glow switch turns it off in both themes (round 2, F2), and
+ * Reduce Transparency and Increase Contrast hide it (globals.css).
  */
 export function Aura() {
   const palette = auraPalette(usePathname())
-  if (!palette) return null
+  const glow = useGlow()
+  if (!palette || !glow) return null
   const [c1, c2, c3] = palette
   return (
     <div
       aria-hidden="true"
       data-testid="aura"
-      className="aura-field"
+      className="aura"
       style={{ '--aura-1': `var(${c1})`, '--aura-2': `var(${c2})`, '--aura-3': `var(${c3})` } as React.CSSProperties}
     />
   )

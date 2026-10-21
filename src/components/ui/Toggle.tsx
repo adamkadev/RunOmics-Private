@@ -3,8 +3,8 @@
 import { cn } from '@/lib/utils'
 
 /**
- * The switch (v4.17): 40 x 24 with an 18 px knob, the accent when on and
- * line-2 when off - off is a choice, never drawn as disabled.
+ * The switch: iOS's 51 x 31 with a 27 px knob (round 2, F2), the accent
+ * when on and line-2 when off - off is a choice, never drawn as disabled.
  */
 export function Toggle({
   checked,
@@ -28,7 +28,7 @@ export function Toggle({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cn(
-        'hit-44 relative h-6 w-10 shrink-0 rounded-full transition-colors',
+        'hit-44 relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40',
         checked ? 'bg-accent' : 'bg-[var(--band)]',
         className
@@ -37,8 +37,8 @@ export function Toggle({
       <span
         aria-hidden
         className={cn(
-          'absolute left-[3px] top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-[var(--shadow-toggle)] transition-transform',
-          checked && 'translate-x-4'
+          'absolute left-[2px] top-[2px] size-[27px] rounded-full bg-white shadow-[var(--shadow-toggle)] transition-transform',
+          checked && 'translate-x-5'
         )}
       />
     </button>

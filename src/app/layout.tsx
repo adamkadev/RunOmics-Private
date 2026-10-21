@@ -17,7 +17,7 @@ import {
 } from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
 import { STATUS_BAR_COLOR } from '@/lib/themeTokens'
-import { LIGHT_STYLE_ATTR, LIGHT_STYLE_STORAGE_KEY } from '@/lib/lightStyleKeys'
+import { GLOW_ATTR, GLOW_STORAGE_KEY } from '@/lib/glowKeys'
 
 // One family for everything, numbers included (v4.17): Geist, the variable
 // font whole (SIL OFL, fonts/Geist-LICENSE.txt). Google's latin subset left
@@ -116,8 +116,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             if(a!=='${DEFAULT_ACCENT}'&&${JSON.stringify(ACCENT_IDS)}.indexOf(a)>=0){
               document.documentElement.setAttribute('data-accent',a);
             }
-            if(localStorage.getItem('${LIGHT_STYLE_STORAGE_KEY}')==='plain'){
-              document.documentElement.setAttribute('${LIGHT_STYLE_ATTR}','plain');
+            if(localStorage.getItem('${GLOW_STORAGE_KEY}')==='off'){
+              document.documentElement.setAttribute('${GLOW_ATTR}','off');
             }
           }catch(e){}`}
         </Script>

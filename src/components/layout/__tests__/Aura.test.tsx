@@ -28,7 +28,7 @@ describe('the aura', () => {
     route.pathname = '/analytics'
     render(<Aura />)
     const aura = screen.getByTestId('aura')
-    expect(aura.className).toBe('aura-field')
+    expect(aura.className).toBe('aura')
     expect(aura.style.getPropertyValue('--aura-1')).toBe('var(--zone-2)')
     expect(aura.children).toHaveLength(0)
   })
@@ -38,7 +38,7 @@ describe('the aura', () => {
   // sampler's foot and comes in over the next 84 pt.
   it('is clear down to the foot of the edge sampler', () => {
     const css = readFileSync(path.resolve(__dirname, '../../../app/globals.css'), 'utf8')
-    const start = css.indexOf('.aura-field {')
+    const start = css.indexOf('.aura {')
     const rule = css.slice(start, css.indexOf('}', start))
     expect(rule).toMatch(/\btop: 0;/)
     expect(rule).toContain('mask-image: linear-gradient(transparent 0, transparent calc(var(--safe-top) + var(--edge-sample-h)), #000 calc(var(--safe-top) + 96px)')
