@@ -225,21 +225,23 @@ describe('CompactTitleBar', () => {
     expect(avatar.textContent).toBe('A')
     expect(avatar.className).toContain('bg-accent')
 
-    // Today's sync beside it: two glass circles, sync first, no capsule
-    // around them (Liquid Glass v2, section 11).
+    // Today's sync beside it, sync first, both in one 40 pt glass capsule as
+    // on the page (owner, Oct 2026, as Claude's and Bevel's tops).
     document.body.innerHTML = ''
     tabPage()
     document.querySelector('main')!.insertAdjacentHTML('beforeend', '<button data-bar-action="refresh" data-bar-busy aria-label="Synced 2h ago"></button><a data-bar-action="avatar" aria-label="Progress"><span>A</span></a>')
     const sync = vi.fn()
     document.querySelector('[data-bar-action="refresh"]')!.addEventListener('click', sync)
     await mount(60)
-    expect(within(bar()).queryByTestId('compact-bar-capsule')).toBeNull()
-    const [refresh, disc] = within(bar()).getAllByTestId('compact-bar-action')
+    const capsule = within(bar()).getByTestId('compact-bar-capsule')
+    expect(capsule.className).toContain('glass-float')
+    expect(capsule.className).toContain('p-1')
+    const [refresh, disc] = within(capsule).getAllByTestId('compact-bar-action')
     expect(refresh!.getAttribute('aria-label')).toBe('Synced 2h ago')
-    expect(refresh!.className).toContain('glass-float')
-    expect(refresh!.className).toContain('size-11')
-    expect(disc!.className).toContain('size-11')
-    expect(refresh!.parentElement!.className).toContain('gap-2')
+    expect(refresh!.className).not.toContain('glass-float')
+    expect(refresh!.className).toContain('size-8')
+    expect(disc!.className).toContain('size-8')
+    expect(disc!.className).toContain('bg-accent')
     expect(refresh!.querySelector('svg')!.getAttribute('class')).toContain('animate-spin')
     expect(disc!.textContent).toBe('A')
     refresh!.click()

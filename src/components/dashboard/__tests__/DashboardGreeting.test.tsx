@@ -34,9 +34,10 @@ describe('DashboardGreeting', () => {
     const link = screen.getByRole('link', { name: t.nav.items.profile })
 
     expect(link).toHaveAttribute('href', '/profile')
-    // The disc is 40 pt; hit-44 grows its target without growing the row.
+    // The disc is 32 pt in its capsule; hit-44 grows its target without growing the row.
     expect(link.className).toContain('hit-44')
-    expect(link.className).toContain('size-11')
+    expect(link.className).toContain('size-8')
+    expect(screen.getByTestId('today-capsule').contains(link)).toBe(true)
   })
 
   // Design review, Oct 2026 (mock 1b): the date over the title, which the
@@ -62,12 +63,18 @@ describe('DashboardGreeting', () => {
     const s = t.dashboard.syncStatus
     const button = await screen.findByRole('button', { name: s.synced(s.hoursAgo(2)) })
     expect(button).toBe(screen.getByTestId('sync-line'))
-    expect(button.className).toContain('size-11')
+    expect(button.className).toContain('size-8')
     expect(button.className).toContain('rounded-full')
     expect(button.className).toContain('hit-44')
     expect(button.textContent).toBe('')
     expect(screen.getByTestId('sync-note').textContent).toBe('')
-    expect(button.parentElement!.parentElement!.contains(screen.getByRole('link', { name: t.nav.items.profile }))).toBe(true)
+    // One glass capsule with the avatar (owner, Oct 2026, as Claude's and
+    // Bevel's tops), the sync's words outside it.
+    const capsule = screen.getByTestId('today-capsule')
+    expect(capsule.className).toContain('glass-float')
+    expect(capsule.children[0]).toBe(button)
+    expect(capsule.contains(screen.getByRole('link', { name: t.nav.items.profile }))).toBe(true)
+    expect(capsule.contains(screen.getByTestId('sync-note'))).toBe(false)
 
     // Signed out: the tap goes to Settings, where signing in lives.
     await userEvent.click(button)

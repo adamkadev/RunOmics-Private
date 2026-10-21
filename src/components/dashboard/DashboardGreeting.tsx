@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { RotateCw } from 'lucide-react'
@@ -44,9 +44,14 @@ export function syncAgeMs(lastSyncedAt: string, now = Date.now()): number {
 /** Under this, a sync has just run: a tap says when the next can go, and asks GitHub for nothing. */
 const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
 
-/** A 44 pt glass circle (Liquid Glass v2, section 11), as its copy in the compact bar. */
+/**
+ * The sync button and the avatar share one 40 pt glass capsule (owner, Oct
+ * 2026, as Claude's and Bevel's tops pair theirs), 32 pt each in its 4 pt of
+ * glass, as their copy in the compact bar; hit-44 keeps the targets 44 pt.
+ */
+const CAPSULE = 'glass-float flex shrink-0 items-center gap-1 rounded-full p-1'
 const BUTTON =
-  'hit-44 glass-float flex size-11 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:active:scale-100'
+  'hit-44 flex size-8 shrink-0 items-center justify-center rounded-full transition-transform active:scale-95 disabled:active:scale-100'
 
 interface Line {
   text: string
@@ -67,36 +72,40 @@ const NOTHING = () => {}
  * and what it answered. The arrows turn while it runs; amber, button and
  * words, once the data is a day old.
  */
-function SyncButton({ text, tone, spinning = false, onClick, disabled = false, shown = false }: Line) {
+function SyncButton({ text, tone, spinning = false, onClick, disabled = false, shown = false, children }: Line & { children: ReactNode }) {
   const color = tone === 'caution' ? 'var(--tone-caution)' : 'var(--muted-foreground)'
   return (
     <div className="flex min-w-0 items-center">
       <span role="status" data-testid="sync-note" className={cn('min-w-0 truncate text-right text-xs', shown && 'mr-2')} style={{ color }}>
         {shown ? text : ''}
       </span>
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={disabled}
-        aria-label={text}
-        title={text}
-        data-testid="sync-line"
-        data-tone={tone}
-        // The compact bar keeps it beside the avatar once the page scrolls,
-        // its arrows turning while the sync runs (data-bar-busy).
-        data-bar-action="refresh"
-        data-bar-busy={spinning ? '' : undefined}
-        className={BUTTON}
-        style={{ color }}
-      >
-        <RotateCw size={17} strokeWidth={2.2} aria-hidden className={cn('shrink-0', spinning && 'animate-spin')} />
-      </button>
+      {/* The avatar (children) beside it, in the same glass. */}
+      <div data-testid="today-capsule" className={CAPSULE}>
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={disabled}
+          aria-label={text}
+          title={text}
+          data-testid="sync-line"
+          data-tone={tone}
+          // The compact bar keeps it beside the avatar once the page scrolls,
+          // its arrows turning while the sync runs (data-bar-busy).
+          data-bar-action="refresh"
+          data-bar-busy={spinning ? '' : undefined}
+          className={BUTTON}
+          style={{ color }}
+        >
+          <RotateCw size={17} strokeWidth={2.2} aria-hidden className={cn('shrink-0', spinning && 'animate-spin')} />
+        </button>
+        {children}
+      </div>
     </div>
   )
 }
 
 /** The owner's line: the same sync, states and limits as Settings' button (useSyncNow). */
-function OwnerSyncLine({ user, lastSyncedAt, ago }: { user: User; lastSyncedAt: string; ago: string }) {
+function OwnerSyncLine({ user, lastSyncedAt, ago, children }: { user: User; lastSyncedAt: string; ago: string; children: ReactNode }) {
   const s = t.dashboard.syncStatus
   const sync = useSyncNow(user)
   const router = useRouter()
@@ -121,7 +130,7 @@ function OwnerSyncLine({ user, lastSyncedAt, ago }: { user: User; lastSyncedAt: 
   // Fresh: nothing to fetch yet, and the server would hold it back anyway.
   else if (age < FRESH_SYNC_MS) line = { text: freshNote ? s.nextIn(Math.ceil((FRESH_SYNC_MS - age) / 60_000)) : s.synced(ago), tone: 'muted', shown: freshNote, onClick: noteFresh }
   else line = { text: isSyncStale(lastSyncedAt) ? `${s.synced(ago)} · ${s.tapToSync}` : s.synced(ago), tone: late ? 'caution' : 'accent', onClick: sync.handleSync }
-  return <SyncButton {...line} />
+  return <SyncButton {...line}>{children}</SyncButton>
 }
 
 /**
@@ -131,13 +140,13 @@ function OwnerSyncLine({ user, lastSyncedAt, ago }: { user: User; lastSyncedAt: 
  * already say. Amber once the data is a day old (v4.3.4). The owner's tap starts the sync; anyone
  * else's goes to Settings, where signing in lives.
  */
-function SyncLine({ lastSyncedAt, ago }: { lastSyncedAt: string; ago: string }) {
+function SyncLine({ lastSyncedAt, ago, children }: { lastSyncedAt: string; ago: string; children: ReactNode }) {
   const s = t.dashboard.syncStatus
   const { user, isOwner } = useOwnerAuth()
   const router = useRouter()
-  if (user && isOwner) return <OwnerSyncLine user={user} lastSyncedAt={lastSyncedAt} ago={ago} />
+  if (user && isOwner) return <OwnerSyncLine user={user} lastSyncedAt={lastSyncedAt} ago={ago}>{children}</OwnerSyncLine>
   const text = isSyncStale(lastSyncedAt) ? `${s.synced(ago)} · ${s.tapToSync}` : s.synced(ago)
-  return <SyncButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.push('/settings')} />
+  return <SyncButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.push('/settings')}>{children}</SyncButton>
 }
 
 /** "Monday, Oct 19", « Lundi 19 oct. »: the header's date over the title. */
@@ -182,6 +191,21 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
     }
   }, [])
 
+  // A link to Progress: the accent disc, in the sync button's capsule.
+  const avatar = (
+    <Link
+      href="/profile"
+      aria-label={t.nav.items.profile}
+      // The compact bar keeps it at the top right once the page scrolls.
+      data-bar-action="avatar"
+      className="hit-44 flex size-8 shrink-0 items-center justify-center rounded-full active:scale-95"
+    >
+      <span aria-hidden="true" className="flex size-8 items-center justify-center rounded-full bg-accent text-[13px] font-bold text-accent-foreground">
+        {initials(displayName)}
+      </span>
+    </Link>
+  )
+
   return (
     // The page header (design review, Oct 2026): the date over the H1, and on
     // the right the sync button (3.0.2) beside the avatar. The verdict below is still the news.
@@ -192,24 +216,12 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
         </p>
         <h1 className="text-[30px] font-bold leading-tight tracking-[-0.02em] text-foreground">{t.pages.dashboard.title}</h1>
       </div>
-      <div ref={sideRef} className="flex min-w-0 shrink items-center gap-2">
-        {ago && lastSyncedAt && <SyncLine lastSyncedAt={lastSyncedAt} ago={ago} />}
-        {/* A link to Progress: the 44 pt accent disc (Liquid Glass v2). */}
-        <Link
-          href="/profile"
-          aria-label={t.nav.items.profile}
-          // The compact bar keeps it at the top right once the page scrolls.
-          data-bar-action="avatar"
-          className="hit-44 flex size-11 shrink-0 items-center justify-center rounded-full active:scale-95"
-        >
-          <span
-            aria-hidden="true"
-            // The accent disc, with the glass controls' drop shadow (Liquid Glass v2).
-            className="flex size-11 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-[0_6px_20px_rgb(0_0_0/0.2)]"
-          >
-            {initials(displayName)}
-          </span>
-        </Link>
+      <div ref={sideRef} className="flex min-w-0 shrink items-center">
+        {ago && lastSyncedAt ? (
+          <SyncLine lastSyncedAt={lastSyncedAt} ago={ago}>{avatar}</SyncLine>
+        ) : (
+          <div data-testid="today-capsule" className={CAPSULE}>{avatar}</div>
+        )}
       </div>
     </header>
   )
