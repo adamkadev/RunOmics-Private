@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { heatAccent, heatHaloLight, heatLegendGradient, rampDark, rampLight, type Rgb } from '@/lib/heatRamp'
+import { heatAccent, heatLegendGradient, rampDark, rampLight, type Rgb } from '@/lib/heatRamp'
 
 const near = (actual: Rgb, expected: Rgb) => actual.forEach((v, i) => expect(Math.abs(v - expected[i]!)).toBeLessThanOrEqual(2))
 
@@ -21,13 +21,6 @@ describe('rampLight (App Fixes 4d)', () => {
     const mono = heatAccent('mono')
     near(rampLight(mono, 0), [195, 201, 199])
     near(rampLight(mono, 1), [11, 12, 12])
-  })
-})
-
-describe('heatHaloLight (Wave 6b, 4d measured)', () => {
-  it('runs the vivid mint bloom from rare to busiest, never dimmed', () => {
-    near(heatHaloLight('#2dd4a7', 0), [124, 228, 200])
-    near(heatHaloLight('#2dd4a7', 1), [39, 183, 144])
   })
 })
 

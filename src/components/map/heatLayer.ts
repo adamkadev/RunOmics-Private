@@ -1,8 +1,8 @@
 "use client";
 
 import type { CanvasSource, Coordinates, Map as MapLibreMap } from "maplibre-gl";
-import { HEAT_DARK, countToT, dilateMax, heatLineWidth, heatZoomScale, mercatorX, mercatorY } from "./mapUtils";
-import { heatHaloLight, hexToRgb, rampLight, rgbCss } from "@/lib/heatRamp";
+import { HEAT_DARK, heatLineWidth, mercatorX, mercatorY } from "./mapUtils";
+import { hexToRgb, mix, rgbCss, scale } from "@/lib/heatRamp";
 
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
@@ -18,56 +18,26 @@ const MAX_SIDE = 4096;
 /** MapLibre's zoom 0 is one 512 px tile. */
 const TILE_SIZE = 512;
 
-/** Light (Wave 6b): runs closer than this share a count. */
-const MERGE_M = 15;
-/** Light: the core's width at city zoom (4d). */
-const CORE_PX = 1.2;
-/** Light: from here the core is dilated (≈ 2.4–3.3 px). */
-const HOT_T = 0.5;
-/** Light: the busy core fades in over HOT_T ± this, rather than switching on. */
-const HOT_FADE = 0.1;
 /**
- * Light: from here up, and only here, the core runs on to its deepest shade
- * and the wide outer halo is drawn. Below it a line stays mint with the thin
- * 6 px halo, so only a few corridors go dark.
+ * Light (mirrors dark A): each layer is every run stroked in white, its
+ * transparency added up per run and capped at 1, then tinted. A soft glow
+ * (full at ~33 runs), a mint line (full at ~8 runs) and a deep line on top
+ * (full at ~28 runs), so one run is a faint mint thread and a corridor is
+ * deep green over a mint glow. Vector strokes on the GPU, never read back.
  */
-const DEEP_T = 0.6;
-/** Light: the share of the ramp (tint → accent) a line covers below DEEP_T; the rest, accent → deep, is DEEP_T's. */
-const MINT_RAMP = 0.4;
-/** Light: the colour scale's top, as a percentile of the counts the runs cover. */
-const TOP_PERCENTILE = 0.98;
-/** Light (4d): the halo's half-width on a rare street and the outer, fainter ring's (6 px and 13 px across). */
-const HALO_HALF_PX = 3;
-const HALO_OUTER_HALF_PX = 6.5;
-/**
- * Light: the halo's opacity, HALO_MAX_ALPHA × t^HALO_ALPHA_EXP - near 0 on a
- * street run once, so rare lines read as thin mint without a fog, rising
- * to 0.6 on the busiest (the owner's target, Oct 2026).
- */
-const HALO_MAX_ALPHA = 0.6;
-const HALO_ALPHA_EXP = 1.5;
-/** Light: the busy core's extra width over the thin core, in CSS px. */
-const HOT_EXTRA_PX = 1;
-/** Light: the outer ring's share of the halo's opacity, for a soft edge. */
-const HALO_OUTER_ALPHA = 0.55;
-/** Light: the halo's blur (4d), σ in CSS px with ctx.filter, else a down/up-scale by HALO_BLUR_PX. */
-const HALO_SIGMA_PX = 3.2;
-const HALO_BLUR_PX = 3;
-/** Light: GPS points closer than this (CSS px) to the last one drawn add nothing to the line. */
-const LIGHT_MIN_STEP_PX = 0.75;
-/**
- * Light: the canvas's resolution cap. 3x was tried (owner, Oct 2026) but the
- * draw could not be shown under 50 ms, so 2x it stays, its line edges
- * softened by MASK_SOFTEN where the browser has ctx.filter.
- */
-const MAX_DPR = 2;
-const MASK_SOFTEN = "blur(0.5px)";
-/**
- * Light: at most this many pixels. Each redraw keeps a scratch canvas the
- * canvas's size; at 8 M pixels with several of them, Safari's canvas memory
- * limit was passed and the tab crashed.
- */
-const MAX_LIGHT_PIXELS = 4_000_000;
+const HEAT_LIGHT = {
+  glow: { width: 4, alpha: 0.03, opacity: 0.6, sigmaPx: 3.2 },
+  mint: { width: 1, alpha: 0.12 },
+  deep: { width: 1.2, alpha: 0.035 },
+} as const;
+
+/** ctx.filter exists and takes a blur: Safari before 18 has neither. */
+const hasFilter = typeof document !== "undefined" && (() => {
+  const g = document.createElement("canvas").getContext("2d");
+  if (!g || !("filter" in g)) return false;
+  g.filter = "blur(1px)";
+  return g.filter === "blur(1px)";
+})();
 
 export interface HeatLayer {
   /** Replace the tracks drawn, fading them in unless `reveal` is false. */
@@ -85,11 +55,12 @@ export interface HeatLayer {
  * Dark (variant A, Wave 6b): every run stroked on its own in the accent and
  * added together, so a street glows by how many runs overlap on it.
  *
- * Light (Wave 6b, mockup 4d): a density raster, as Strava draws one. Each
- * run adds 1/255 to a pixel's alpha, so a pixel holds how many distinct runs
- * crossed it; a thin mask of every run gives the line shape; the count
- * colours each pixel of the line through the ramp, with a soft halo under
- * it and the busy pixels thickened. Lines stay continuous, with no pieces.
+ * Light (mirrors dark A, Oct 2026): three layers of every run stroked on
+ * its own, transparency added up per run, each tinted - a blurred glow, a
+ * mint line, a deep line - see HEAT_LIGHT. The density raster it replaces
+ * read pixels back, which forced it to one dot per screen point: stair-step
+ * glow edges when zoomed in, notches along corridors, dark knots at
+ * junctions, and a slow frame on iPhone.
  */
 export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: string, beforeId: string | undefined): HeatLayer {
   const canvas = document.createElement("canvas");
@@ -110,8 +81,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     const width = w + 2 * mx;
     const height = h + 2 * my;
     const scale = Math.min(
-      mode === "light" ? Math.min(MAX_DPR, window.devicePixelRatio || 1) : window.devicePixelRatio || 1,
-      Math.sqrt((mode === "light" ? MAX_LIGHT_PIXELS : MAX_PIXELS) / (width * height)),
+      window.devicePixelRatio || 1,
+      Math.sqrt(MAX_PIXELS / (width * height)),
       MAX_SIDE / width,
       MAX_SIDE / height,
     );
@@ -131,10 +102,10 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     coordinates = [topLeft, corner(w + mx, -my), corner(w + mx, h + my), corner(-mx, h + my)];
   }
 
-  function trace(path: Float64Array) {
-    if (!ctx) return;
+  /** A run as one path on `g`, in CSS px. */
+  function traceOn(g: CanvasRenderingContext2D, path: Float64Array) {
     const { x0, y0, world } = view;
-    ctx.beginPath();
+    g.beginPath();
     let penDown = false;
     for (let p = 0; p < path.length; p += 2) {
       const x = path[p]!;
@@ -144,72 +115,14 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       }
       const px = (x - x0) * world;
       const py = (path[p + 1]! - y0) * world;
-      if (penDown) ctx.lineTo(px, py);
-      else ctx.moveTo(px, py);
+      if (penDown) g.lineTo(px, py);
+      else g.moveTo(px, py);
       penDown = true;
     }
   }
 
-  const scratch: Record<string, HTMLCanvasElement> = {};
-  /** ctx.filter exists and takes a blur: Safari before 18 has neither. */
-  const canSoften = (() => {
-    const g = document.createElement("canvas").getContext("2d");
-    if (!g || !("filter" in g)) return false;
-    g.filter = MASK_SOFTEN;
-    return g.filter === MASK_SOFTEN;
-  })();
-  const canBlur = canSoften;
-  function surface(name: string, w: number, h: number, read = false) {
-    const c = (scratch[name] ??= document.createElement("canvas"));
-    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
-    const g = c.getContext("2d", { willReadFrequently: read })!;
-    g.setTransform(1, 0, 0, 1, 0, 0);
-    g.globalCompositeOperation = "source-over";
-    g.globalAlpha = 1;
-    g.clearRect(0, 0, w, h);
-    return { c, g };
-  }
-
-  /** Give the scratch canvases' memory back: Safari counts every live canvas against one budget. */
-  function releaseScratch() {
-    for (const c of Object.values(scratch)) { c.width = 0; c.height = 0; }
-  }
-
-  /**
-   * A run as a path, in CSS px. At city zoom many GPS points fall inside one
-   * pixel; a point closer than LIGHT_MIN_STEP_PX to the last one drawn is
-   * skipped (a run's last point before a gap or its end never is), which leaves the line as it was
-   * and cuts the stroking, the light draw's cost, several times over.
-   */
-  function path(g: CanvasRenderingContext2D, track: Float64Array) {
-    const { x0, y0, world } = view;
-    let down = false, lx = 0, ly = 0;
-    for (let p = 0; p < track.length; p += 2) {
-      const x = track[p]!;
-      if (Number.isNaN(x)) { down = false; continue; }
-      const px = (x - x0) * world, py = (track[p + 1]! - y0) * world;
-      if (!down) { g.moveTo(px, py); down = true; lx = px; ly = py; continue; }
-      const last = p + 2 >= track.length || Number.isNaN(track[p + 2]!);
-      if (!last && Math.abs(px - lx) < LIGHT_MIN_STEP_PX && Math.abs(py - ly) < LIGHT_MIN_STEP_PX) continue;
-      g.lineTo(px, py);
-      lx = px; ly = py;
-    }
-  }
-
-  // Colour + alpha for every count 0..255, given the scale's top count.
-  function luts(top: number) {
-    const core = new Uint8ClampedArray(1024), halo = new Uint8ClampedArray(1024), hot = new Uint8Array(256), deep = new Uint8Array(256);
-    for (let c = 0; c < 256; c++) {
-      const t = countToT(c, top);
-      // Mint (tint → accent) under DEEP_T; only past it on to the deep shade.
-      const cr = rampLight(accent, t < DEEP_T ? (t / DEEP_T) * MINT_RAMP : MINT_RAMP + ((t - DEEP_T) / (1 - DEEP_T)) * (1 - MINT_RAMP));
-      const hr = heatHaloLight(accent, t);
-      core.set([cr[0], cr[1], cr[2], 255 * (0.43 + 0.57 * t)], c * 4);
-      halo.set([hr[0], hr[1], hr[2], 255 * HALO_MAX_ALPHA * t ** HALO_ALPHA_EXP], c * 4);
-      hot[c] = 255 * Math.min(1, Math.max(0, (t - (HOT_T - HOT_FADE)) / (2 * HOT_FADE)));
-      deep[c] = t >= DEEP_T ? 1 : 0;
-    }
-    return { core, halo, hot, deep };
+  function trace(path: Float64Array) {
+    if (ctx) traceOn(ctx, path);
   }
 
   /** Variant A: every glow before any core; additive, so order doesn't matter. */
@@ -230,131 +143,83 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     }
   }
 
+  const layers: Record<"glow" | "mint" | "deep", HTMLCanvasElement> = {
+    glow: document.createElement("canvas"),
+    mint: document.createElement("canvas"),
+    deep: document.createElement("canvas"),
+  };
+  /** The blur fallback's scratch canvas, made only where ctx.filter is missing. */
+  let blurScratch: HTMLCanvasElement | null = null;
+
+  /** Every run stroked in white on its own, "lighter" so transparency builds up, then tinted. */
+  function strokeLayer(name: keyof typeof layers, widthMul: number, alpha: number, tint: string) {
+    const c = layers[name];
+    if (c.width !== canvas.width || c.height !== canvas.height) { c.width = canvas.width; c.height = canvas.height; }
+    const g = c.getContext("2d")!;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = "source-over";
+    g.clearRect(0, 0, c.width, c.height);
+    g.setTransform(view.scale, 0, 0, view.scale, 0, 0);
+    g.globalCompositeOperation = "lighter";
+    g.lineJoin = "round";
+    g.lineCap = "round";
+    g.lineWidth = heatLineWidth(map.getZoom()) * widthMul;
+    g.strokeStyle = `rgba(255,255,255,${alpha})`;
+    for (const track of tracks) { traceOn(g, track); g.stroke(); }
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = "source-in";
+    g.fillStyle = tint;
+    g.fillRect(0, 0, c.width, c.height);
+    return c;
+  }
+
   /**
-   * Reading a canvas back is the expensive step (a GPU readback on iPhone):
-   * at full resolution it took seconds and blanked the map. So only the run
-   * counts are read back, at CSS-pixel resolution, and coloured there; the
-   * sharp line shape is stroked at full resolution and filled with that
-   * colour by the GPU ("source-in"), never read back.
+   * A gaussian blur that works in every Safari: ctx.filter where it exists
+   * (Safari 18+), else a shadow cast from off-screen. A shadow is painted in
+   * shadowColor, never the source's colours, so it is cast on a scratch
+   * canvas and tinted there before it is laid on.
    */
+  function drawBlurred(src: HTMLCanvasElement, sigmaDevicePx: number, opacity: number, tint: string) {
+    if (!ctx) return;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = opacity;
+    if (hasFilter) {
+      ctx.filter = `blur(${sigmaDevicePx}px)`;
+      ctx.drawImage(src, 0, 0);
+    } else {
+      const t = (blurScratch ??= document.createElement("canvas"));
+      if (t.width !== src.width || t.height !== src.height) { t.width = src.width; t.height = src.height; }
+      const g = t.getContext("2d")!;
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.globalCompositeOperation = "source-over";
+      g.clearRect(0, 0, t.width, t.height);
+      const OFF = 10_000;
+      g.save();
+      g.shadowColor = "rgba(0,0,0,1)";
+      g.shadowBlur = 2 * sigmaDevicePx; // shadowBlur ≈ 2σ
+      g.shadowOffsetX = OFF;
+      g.drawImage(src, -OFF, 0);
+      g.restore();
+      g.globalCompositeOperation = "source-in";
+      g.fillStyle = tint;
+      g.fillRect(0, 0, t.width, t.height);
+      ctx.drawImage(t, 0, 0);
+    }
+    ctx.restore();
+  }
+
   function drawLight() {
     if (!ctx) return;
-    const W = canvas.width, H = canvas.height, s = view.scale;
-    const k = heatZoomScale(map.getZoom());
-    const lat = map.getCenter().lat;
-    const mPerPx = (40_075_016.686 * Math.cos((lat * Math.PI) / 180)) / view.world;
-
-    // 1. count, at CSS-pixel resolution: one stroke per run, +1/255 alpha per run.
-    //    At least 3 px wide, so the field covers the line it colours.
-    const cw = Math.max(1, Math.round(W / s)), ch = Math.max(1, Math.round(H / s));
-    const count = surface("count", cw, ch, true);
-    count.g.globalCompositeOperation = "lighter";
-    count.g.lineCap = count.g.lineJoin = "round";
-    const band = Math.max(3, MERGE_M / mPerPx);
-    count.g.lineWidth = band;
-    count.g.strokeStyle = "rgba(255,255,255,0.0039215686)";
-    for (const tr of tracks) { count.g.beginPath(); path(count.g, tr); count.g.stroke(); }
-    const cd = count.g.getImageData(0, 0, cw, ch).data;
-
-    // 2. the scale's top: the 98th percentile of the counts the runs cover
-    const hist = new Uint32Array(256);
-    let n = 0;
-    for (let i = 3; i < cd.length; i += 4) if (cd[i]) { hist[cd[i]!]!++; n++; }
-    if (!n) { releaseScratch(); return; }
-    let acc = 0, top = 1;
-    for (let c = 1; c < 256; c++) { acc += hist[c]!; if (acc >= TOP_PERCENTILE * n) { top = c; break; } }
-    const L = luts(top);
-
-    // 3. colour fields: core, halo and busy core, one pixel per CSS pixel
-    const counts = new Uint8Array(cw * ch);
-    for (let p = 0; p < counts.length; p++) counts[p] = cd[p * 4 + 3]!;
-    const core = new ImageData(cw, ch), hot = new ImageData(cw, ch);
-    const co = core.data, bo = hot.data;
-    let anyHot = false;
-    for (let p = 0, i = 0; p < counts.length; p++, i += 4) {
-      const c = counts[p]!;
-      if (!c) continue;
-      const j = c * 4;
-      co[i] = L.core[j]!; co[i + 1] = L.core[j + 1]!; co[i + 2] = L.core[j + 2]!; co[i + 3] = L.core[j + 3]!;
-      // The busy core fades in (HOT_FADE): switched on at a threshold, a
-      // count dipping along a jittery line broke it into beads.
-      const w = L.hot[c]!;
-      if (w) { bo[i] = co[i]!; bo[i + 1] = co[i + 1]!; bo[i + 2] = co[i + 2]!; bo[i + 3] = (co[i + 3]! * w) / 255; anyHot = true; }
-    }
-    // The halo's colours: each pixel takes the colour and opacity of the
-    // busiest run near it - a max, so overlapping glows never stack into ink.
-    // Only its colour comes from here; its shape is the runs themselves (4).
-    const deepCounts = counts.map((c) => (L.deep[c] ? c : 0));
-    const haloColours = (src: Uint8Array, alpha: number) => {
-      const img = new ImageData(cw, ch), o = img.data;
-      for (let p = 0, i = 0; p < src.length; p++, i += 4) {
-        const c = src[p]!;
-        if (!c) continue;
-        o[i] = L.halo[c * 4]!; o[i + 1] = L.halo[c * 4 + 1]!; o[i + 2] = L.halo[c * 4 + 2]!; o[i + 3] = L.halo[c * 4 + 3]! * alpha;
-      }
-      return img;
-    };
-    const innerColours = haloColours(dilateMax(counts, cw, ch, Math.ceil(HALO_HALF_PX * k)), 1);
-    // The wide outer glow only around the deep corridors (t ≥ DEEP_T).
-    const outerColours = haloColours(dilateMax(deepCounts, cw, ch, Math.ceil(HALO_OUTER_HALF_PX * k)), HALO_OUTER_ALPHA);
-    const field = (name: string, img: ImageData) => { const f = surface(name, cw, ch); f.g.putImageData(img, 0, 0); return f.c; };
-
-    // 4. compose at full resolution: halo, dilated busy core, core
+    const A = hexToRgb(accent);
+    const deep = rgbCss(scale(A, 0.25), 1); // mint → rgb(13,51,41)
+    const glowTint = rgbCss(mix(A, [0, 0, 0], 0.13), 1); // mint → ≈ rgb(39,183,144)
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalCompositeOperation = "source-over";
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = "high";
-    // The halo: the runs stroked at its widths (13 px round the deep
-    // corridors, 6 px round every run, at CSS-pixel resolution: it is blurred
-    // anyway), each filled with its colours, then blurred, σ ≈ 3.2 px: by
-    // ctx.filter where the browser has it (drawn untransformed, so Safari's
-    // filter-scales-with-transform bug can't widen it), else a down/up-scale.
-    const glow = surface("glow", cw, ch);
-    const ring = (width: number, colours: ImageData, name: string) => {
-      const m = surface("glowRing", cw, ch);
-      m.g.lineCap = m.g.lineJoin = "round";
-      m.g.lineWidth = width;
-      m.g.strokeStyle = "#fff";
-      for (const tr of tracks) { m.g.beginPath(); path(m.g, tr); m.g.stroke(); }
-      m.g.globalCompositeOperation = "source-in";
-      m.g.drawImage(field(name, colours), 0, 0);
-      glow.g.drawImage(m.c, 0, 0);
-    };
-    ring(HALO_OUTER_HALF_PX * 2 * k, outerColours, "glowOuter");
-    ring(HALO_HALF_PX * 2 * k, innerColours, "glowInner");
-    if (canBlur) {
-      ctx.filter = `blur(${(HALO_SIGMA_PX * s).toFixed(2)}px)`;
-      ctx.drawImage(glow.c, 0, 0, W, H);
-      ctx.filter = "none";
-    } else {
-      const small = surface("glowSmall", Math.ceil(cw / HALO_BLUR_PX), Math.ceil(ch / HALO_BLUR_PX));
-      small.g.imageSmoothingQuality = "high";
-      small.g.drawImage(glow.c, 0, 0, small.c.width, small.c.height);
-      ctx.drawImage(small.c, 0, 0, W, H);
-    }
-
-    // A line: every run stroked once at full resolution, then filled with a field.
-    const line = (width: number, colours: HTMLCanvasElement) => {
-      const m = surface("line", W, H);
-      m.g.setTransform(s, 0, 0, s, 0, 0);
-      m.g.lineCap = m.g.lineJoin = "round";
-      m.g.lineWidth = width;
-      m.g.strokeStyle = "#fff";
-      if (canSoften) m.g.filter = MASK_SOFTEN;
-      // One path per run, as dark strokes them: one path of every run took a second to stroke.
-      for (const tr of tracks) { m.g.beginPath(); path(m.g, tr); m.g.stroke(); }
-      if (canSoften) m.g.filter = "none";
-      m.g.setTransform(1, 0, 0, 1, 0, 0);
-      m.g.globalCompositeOperation = "source-in";
-      m.g.imageSmoothingEnabled = true;
-      m.g.imageSmoothingQuality = "high";
-      m.g.drawImage(colours, 0, 0, W, H);
-      ctx.drawImage(m.c, 0, 0);
-    };
-    // The busy core half a pixel wider each side (≈ 2.2 px, the target's busiest), then the core on top.
-    if (anyHot) line(CORE_PX * k + HOT_EXTRA_PX, field("hot", hot));
-    line(CORE_PX * k, field("core", core));
-    releaseScratch();
+    const L = HEAT_LIGHT;
+    drawBlurred(strokeLayer("glow", L.glow.width, L.glow.alpha, glowTint), L.glow.sigmaPx * view.scale, L.glow.opacity, glowTint);
+    ctx.drawImage(strokeLayer("mint", L.mint.width, L.mint.alpha, rgbCss(A, 1)), 0, 0);
+    ctx.drawImage(strokeLayer("deep", L.deep.width, L.deep.alpha, deep), 0, 0);
   }
 
   function draw() {
@@ -384,25 +249,12 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     src.play();
   }
 
-  function paint() {
+  function redraw() {
     layout();
     ctx?.setTransform(1, 0, 0, 1, 0, 0);
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
     draw();
     upload();
-  }
-
-  // Light's per-pixel draw runs on the next frame, not inside the map's
-  // style.load or moveend: the basemap finishes loading first, and a burst
-  // of moves draws once.
-  let pending = 0;
-  function redraw() {
-    if (mode === "dark") return paint();
-    if (pending) return;
-    pending = requestAnimationFrame(() => {
-      pending = 0;
-      if (map.getSource(HEAT_SOURCE)) paint();
-    });
   }
 
   layout();
@@ -437,9 +289,8 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       redraw();
     },
     remove() {
-      if (pending) cancelAnimationFrame(pending);
-      pending = 0;
-      releaseScratch();
+      // Give the light layers' memory back: Safari counts every live canvas against one budget.
+      for (const c of [...Object.values(layers), blurScratch]) if (c) { c.width = 0; c.height = 0; }
       map.off("moveend", redraw);
       map.off("resize", redraw);
       map.off("render", onRender);

@@ -150,44 +150,6 @@ export function heatFrequency(count: number, maxCount: number): number {
 }
 
 /**
- * A pixel's frequency, 0 to 1 (Wave 6b): its run count on a log scale
- * against `top`, a high percentile of the counts on the lines (light: the
- * 98th), so one run is 0, the top street is 1, and one outlier can't
- * flatten the rest.
- */
-export function countToT(count: number, top: number): number {
-  return Math.min(1, Math.max(0, Math.log(Math.max(1, count)) / Math.log(Math.max(2, top))));
-}
-
-/**
- * Each cell of a w × h grid raised to the largest value within `r` cells
- * (a square), in two passes: rows, then columns. Light's halo widens the
- * run counts with it, so the glow is wider than the line and every pixel
- * keeps the colour and opacity of the busiest run near it, never a stack.
- */
-export function dilateMax(src: Uint8Array, w: number, h: number, r: number): Uint8Array {
-  if (r <= 0) return src.slice();
-  const rows = new Uint8Array(src.length);
-  for (let y = 0; y < h; y++) {
-    const o = y * w;
-    for (let x = 0; x < w; x++) {
-      let m = 0;
-      for (let k = Math.max(0, x - r), end = Math.min(w - 1, x + r); k <= end; k++) if (src[o + k]! > m) m = src[o + k]!;
-      rows[o + x] = m;
-    }
-  }
-  const out = new Uint8Array(src.length);
-  for (let x = 0; x < w; x++) {
-    for (let y = 0; y < h; y++) {
-      let m = 0;
-      for (let k = Math.max(0, y - r), end = Math.min(h - 1, y + r); k <= end; k++) if (rows[k * w + x]! > m) m = rows[k * w + x]!;
-      out[y * w + x] = m;
-    }
-  }
-  return out;
-}
-
-/**
  * The strokes' scale with zoom: 1 at the city view the mockup draws (about
  * zoom 12), thicker as the map closes in on a street, thinner out of town.
  */

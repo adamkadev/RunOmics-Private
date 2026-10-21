@@ -6,8 +6,6 @@ import {
   mercatorY,
   HEAT_DARK,
   heatLineWidth,
-  countToT,
-  dilateMax,
   heatFrequency,
   heatZoomScale,
   reachKm,
@@ -115,27 +113,6 @@ describe('the dark heatmap, variant A (Wave 6b)', () => {
   it('widens its lines from 1.2 px at city zoom to 4 px on a street', () => {
     expect(heatLineWidth(11)).toBe(1.2)
     expect(heatLineWidth(16)).toBe(4)
-  })
-})
-
-describe('countToT (Wave 6b)', () => {
-  it('puts one run at 0 and the top count at 1', () => {
-    expect(countToT(1, 12)).toBe(0)
-    expect(countToT(12, 12)).toBe(1)
-    expect(countToT(40, 12)).toBe(1)
-  })
-
-  it('rises monotonically in between', () => {
-    for (let c = 2; c <= 12; c++) expect(countToT(c, 12)).toBeGreaterThan(countToT(c - 1, 12))
-  })
-})
-
-describe('dilateMax', () => {
-  it('raises each cell to the largest within r, in a square, without adding', () => {
-    // 5 × 3, a 3 and a 7 on the middle row.
-    const src = Uint8Array.from([0, 0, 0, 0, 0, 3, 0, 0, 0, 7, 0, 0, 0, 0, 0])
-    expect(Array.from(dilateMax(src, 5, 3, 1))).toEqual([3, 3, 0, 7, 7, 3, 3, 0, 7, 7, 3, 3, 0, 7, 7])
-    expect(Array.from(dilateMax(src, 5, 3, 0))).toEqual(Array.from(src))
   })
 })
 

@@ -49,11 +49,12 @@ export function rgbCss([r, g, b]: Rgb, alpha = 1): string {
 }
 
 /** `a` moved a share `k` of the way to `b`. */
-function mix(a: Rgb, b: Rgb, k: number): Rgb {
+export function mix(a: Rgb, b: Rgb, k: number): Rgb {
   return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]
 }
 
-function scale(a: Rgb, k: number): Rgb {
+/** `a` scaled towards black: k = 1 is `a`, 0 is black. */
+export function scale(a: Rgb, k: number): Rgb {
   return [a[0] * k, a[1] * k, a[2] * k]
 }
 
@@ -94,19 +95,6 @@ export function rampLight(accent: string, t: number): Rgb {
 
 export function rampDark(accent: string, t: number): Rgb {
   return rampAt(heatStops('dark', accent), t)
-}
-
-/**
- * Light's halo colour by frequency (Wave 6b, 4d measured): a vivid mint
- * bloom under the dark core, never dimmed - mix(accent, white, 0.375) on a
- * rare street to scale(accent, 0.865) on the busiest, rgb(124,228,200) to
- * rgb(39,183,144) for mint. The white accent keeps a graphite halo.
- */
-export function heatHaloLight(accent: string, t: number): Rgb {
-  if (isNeutral(accent)) return rampLight(accent, t * 0.45)
-  const A = hexToRgb(accent)
-  const x = Math.min(1, Math.max(0, t))
-  return mix(mix(A, WHITE, 0.375), scale(A, 0.865), x)
 }
 
 /** The legend pill's gradient: the ramp's own stops, four in light, three in dark. */
