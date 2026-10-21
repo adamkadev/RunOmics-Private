@@ -12,6 +12,9 @@ describe('StickyBar', () => {
     expect(bar.className).not.toMatch(/bg-background\/|backdrop-blur/)
     expect(bar.className).toContain('border-b')
     expect(bar.style.top).toBe('12px')
+    // A phone's sticky strip is transparent over the soft scroll edge (Liquid Glass v2).
+    expect(bar.hasAttribute('data-sticky-strip')).toBe(true)
+    expect(bar.className).toContain('max-lg:bg-transparent')
   })
 })
 

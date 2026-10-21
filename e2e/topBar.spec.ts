@@ -36,7 +36,7 @@ async function textUnderTheBar(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const bar = document.querySelector<HTMLElement>('[data-testid="compact-title-bar"]')
     const shown = bar !== null && getComputedStyle(bar).display !== 'none'
-    const strip = document.querySelector<HTMLElement>('[data-testid="status-strip"]')!
+    const strip = document.querySelector<HTMLElement>('[data-testid="edge-sampler"]')!
     const band = shown ? bar!.getBoundingClientRect().bottom : strip.getBoundingClientRect().bottom
     const main = document.querySelector('main')!
     const leaks: string[] = []
@@ -125,4 +125,22 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
     }
     expect(await textUnderTheBar(page), `tab ${i}`).toEqual([])
   }
+})
+
+// Liquid Glass v2 (owner's brief, Oct 2026): the compact bar has no surface -
+// no backdrop-filter, no hairline - and the soft scroll edge under it is
+// invisible at rest and shown while the bar is.
+test('the top bar is the soft scroll edge, not a slab', async ({ page }) => {
+  await page.goto('/analytics')
+  await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
+  const layers = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-testid="scroll-edge"] > i')].map((i) => getComputedStyle(i).opacity))
+  await expect.poll(layers).toEqual(['0', '0', '0', '0', '0'])
+  await page.evaluate(() => window.scrollTo(0, 600))
+  await expect.poll(() => page.evaluate(() => document.documentElement.hasAttribute('data-bar-shown'))).toBe(true)
+  await expect.poll(layers).toEqual(['1', '1', '1', '1', '1'])
+  const bar = await page.evaluate(() => {
+    const style = getComputedStyle(document.querySelector('[data-testid="compact-title-bar"]')!)
+    return { backdrop: style.backdropFilter, border: style.borderBottomWidth, background: style.backgroundColor }
+  })
+  expect(bar).toEqual({ backdrop: 'none', border: '0px', background: 'rgba(0, 0, 0, 0)' })
 })

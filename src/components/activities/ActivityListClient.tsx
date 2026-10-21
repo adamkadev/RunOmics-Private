@@ -542,9 +542,12 @@ export function ActivityListClient({
                   ) : (
                     <section key={block.key} data-testid="month">
                       {/* Sticky under the compact title bar while it shows; on a
-                          phone not otherwise (--sticky-alone, globals.css). */}
+                          phone not otherwise (--sticky-alone, globals.css).
+                          Transparent on a phone, at z-30 over the soft
+                          scroll edge (Liquid Glass v2, data-sticky-strip). */}
                       <div
-                        className="sticky z-10 flex items-baseline justify-between gap-3 bg-background px-1 pb-2 pt-3.5"
+                        data-sticky-strip
+                        className="sticky z-30 flex items-baseline justify-between gap-3 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
                         style={{ top: 'var(--sticky-top, var(--sticky-alone, var(--safe-top)))' }}
                       >
                         <h2 className="text-[15px] font-semibold capitalize text-foreground">{block.label}</h2>

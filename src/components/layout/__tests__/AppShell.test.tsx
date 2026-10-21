@@ -72,15 +72,11 @@ describe('AppShell surface', () => {
   // installed app over the page (owner report, twice).
   // The top edge as a device showed it sharp: the status-bar scrim in front,
   // and a flat opaque bar behind the page.
-  it('keeps a flat, fixed bar at the top edge for iOS', () => {
+  it('keeps the edge sampler and the soft scroll edge at the top for iOS', () => {
     const { getByTestId } = render(<AppShell>page</AppShell>)
-    const bar = getByTestId('top-edge-bar')
-    expect(bar.className).toContain('fixed')
-    expect(bar.className).toContain('top-0')
-    expect(bar.style.background).toBe('var(--background)')
-    const strip = getByTestId('status-strip')
-    expect(strip.style.height).toBe('var(--top-scrim)')
-    expect(strip.style.background).toBe('var(--status-bar)')
+    expect(getByTestId('edge-sampler').className).toContain('edge-sampler')
+    // Five layers: four blurs and the tint (Liquid Glass v2).
+    expect(getByTestId('scroll-edge').querySelectorAll(':scope > i')).toHaveLength(5)
   })
 })
 
@@ -95,7 +91,7 @@ describe('AppShell on the sign-in page', () => {
     route.pathname = '/sign-in'
     const { getByText, queryByTestId } = render(<AppShell>sign in</AppShell>)
     expect(getByText('sign in')).toBeInTheDocument()
-    expect(queryByTestId('status-strip')).toBeNull()
-    expect(queryByTestId('top-edge-bar')).toBeNull()
+    expect(queryByTestId('edge-sampler')).toBeNull()
+    expect(queryByTestId('scroll-edge')).toBeNull()
   })
 })

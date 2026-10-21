@@ -7,7 +7,7 @@ vi.mock('next/navigation', () => ({ usePathname: () => '/plan' }))
 
 // A 47 pt status bar under which the 52 pt bar sits: its divider is at 99.
 const STATUS_BAR = 47
-const DIVIDER = STATUS_BAR + 52
+const DIVIDER = STATUS_BAR + 58
 
 let scrollY = 0
 
@@ -85,9 +85,11 @@ describe('CompactTitleBar', () => {
     expect(bar().textContent).toBe('Plan')
     expect(within(bar()).getByText('Plan').className).toContain('text-[17px]')
     // The design review's 52 pt bar (Oct 2026), under the status strip.
-    expect(bar().style.height).toBe('52px')
-    // Frosted glass, and the status strip turns to glass with it (owner, Oct 2026).
-    expect(bar().className).toContain('top-glass')
+    expect(bar().style.height).toBe('58px')
+    // No surface of its own: the soft scroll edge fades in under it
+    // (data-bar-shown, Liquid Glass v2), and only its buttons take taps.
+    expect(bar().className).not.toContain('glass')
+    expect(bar().className).toContain('pointer-events-none')
     expect(document.documentElement.hasAttribute('data-bar-shown')).toBe(true)
   })
 
@@ -109,8 +111,10 @@ describe('CompactTitleBar', () => {
   // half-faded on screen reads as a blurred one. At the top it is plainly
   // itself; it stays whole until the bar collapses in, then cross-fades with
   // the bar's title over 150 ms - never a filter (design review, Oct 2026).
+  // The bar collapses in as the title reaches the edge sampler, 12 pt under
+  // the status bar (Liquid Glass v2), before it can slide under it.
   it('keeps the large title sharp until the bar collapses in, then cross-fades it', async () => {
-    tabPage(STATUS_BAR + 12)
+    tabPage(STATUS_BAR + 12 + 12)
     await mount(0)
     const title = document.querySelector('h1')!
     expect(title.getAttribute('style') ?? '').toBe('')
@@ -125,7 +129,7 @@ describe('CompactTitleBar', () => {
     expect(title.style.opacity).toBe('')
     expect(shown()).toBe(false)
 
-    // Under the status bar: the bar is in, the title fades out under it.
+    // At the sampler: the bar is in, the title fades out under it.
     await scrollTo(13)
     expect(shown()).toBe(true)
     expect(title.style.opacity).toBe('0')
@@ -137,8 +141,8 @@ describe('CompactTitleBar', () => {
     expect(title.getAttribute('style') ?? '').toBe('')
   })
 
-  it('stays hidden with the title just below the status bar', async () => {
-    tabPage(STATUS_BAR + 30)
+  it('stays hidden with the title just below the edge sampler', async () => {
+    tabPage(STATUS_BAR + 12 + 30)
     await mount(20)
     expect(shown()).toBe(false)
   })
@@ -278,7 +282,7 @@ describe('CompactTitleBar', () => {
   it('moves the sticky strips under the bar while it shows, and back after', async () => {
     tabPage()
     await mount(60)
-    expect(document.documentElement.style.getPropertyValue('--sticky-top')).toBe('calc(var(--safe-top) + 52px)')
+    expect(document.documentElement.style.getPropertyValue('--sticky-top')).toBe('calc(var(--safe-top) + 58px)')
     await scrollTo(0)
     expect(document.documentElement.style.getPropertyValue('--sticky-top')).toBe('')
   })

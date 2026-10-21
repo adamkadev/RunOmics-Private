@@ -82,35 +82,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <NavigationHistoryProvider>
       <div className="min-h-screen">
         <ThemeSync />
-        {/* The top edge exactly as it was before v4.8, which a device showed
-            sharp on first open: v4.8 replaced these two with one strip, the
-            safe area tall and in front of the page, and every page's large
-            title went soft by default. Only the compact bar and the
-            fullscreen maps, which start under the status bar now, changed. */}
+        {/* Liquid Glass v2 (owner's brief, Oct 2026). The soft scroll edge:
+            a fixed wrapper with no background, its five absolute layers the
+            progressive blur and the tint, shown while the compact bar is
+            (globals.css, .scroll-edge). */}
+        <div aria-hidden data-testid="scroll-edge" className="scroll-edge lg:hidden"><i /><i /><i /><i /><i /></div>
+        {/* The edge sampler: solid, full width, over 10 px tall, at the top
+            edge, never resized or hidden. WebKit samples 4 px in for such a
+            bar, and finding one, iOS 26 draws no blur of its own over the
+            large titles. Taps stay on, so its hit test can't skip it. */}
         <div
-          aria-hidden
-          data-testid="status-strip"
-          className="pointer-events-none fixed inset-x-0 top-0 z-20 lg:hidden"
-          style={{
-            // Never resized (globals.css, the top glass): at the safe area
-            // alone (0 in the installed app) it vanished and iOS blurred every
-            // large title at rest. Glass while the compact bar shows.
-            height: 'var(--top-scrim)',
-            // The status bar's own colour, so content scrolled up passes
-            // under a strip that reads as part of the bar.
-            background: 'var(--status-bar)',
-          }}
-        />
-        {/* A solid bar at the page top, behind the page: iOS 26 draws its own
-            progressive blur over the top of a standalone web app unless a
-            fixed, opaque element touches the top edge, which it then treats
-            as the bar. <main> paints above it (it comes later and is
-            positioned), so it only ever shows as the flat page colour. */}
-        <div
-          aria-hidden
-          data-testid="top-edge-bar"
-          className="pointer-events-none fixed inset-x-0 top-0 h-12 lg:hidden"
-          style={{ background: 'var(--background)' }}
+          data-testid="edge-sampler"
+          className="edge-sampler lg:hidden"
+          // Under the status bar: a tap scrolls to the top, as the status bar does natively.
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         />
         <Sidebar />
         {/* Positioned, with no z-index: not a stacking context, which would

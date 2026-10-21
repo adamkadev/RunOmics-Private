@@ -49,12 +49,13 @@ for (const route of ['/', '/activities', '/plan', '/analytics', '/profile']) {
   })
 }
 
-// iOS 26 takes the topmost fixed element touching the top edge as the page's
-// bar, blurs content under it, and keeps the zone of the tallest one it has
-// seen (v4.8). So only the shell's two touch the edge - the opaque status
-// strip and the flat bar behind the page, as when a device showed the title
-// sharp - and everything else fixed starts under the status bar: the compact
-// title bar that shows once the page has scrolled included. A
+// iOS 26 draws its own blur over the page top unless WebKit finds a solid,
+// full-width fixed box over 10 px tall 4 px inside the top edge, and keeps
+// the zone of the tallest bar it has seen (v4.8). So only the shell's two
+// touch the edge - the solid edge sampler and the soft scroll edge, which has
+// no background of its own - and everything else fixed starts under the
+// status bar: the compact title bar that shows once the page has scrolled
+// included. A
 // desktop browser has no safe area, so the test gives it a 59 pt one, as on a
 // 16-series phone.
 test.describe('on a phone', () => {
@@ -90,20 +91,25 @@ test.describe('on a phone', () => {
               }
             })
         })
-        // The strip never changes size: solid at rest, glass while the
-        // compact bar shows (owner, Oct 2026).
-        expect(atTop, `scrolled to ${y}`).toEqual([
-          { id: 'status-strip', height: 63, opaque: !barShown },
-          { id: 'top-edge-bar', height: 48, opaque: true },
-        ])
+        // Liquid Glass v2 (owner's brief, Oct 2026): the edge sampler, the
+        // safe area + 12 pt, solid in every state, and the soft scroll edge,
+        // a wrapper with no background whose layers carry the blur.
+        expect(atTop.map(({ id }) => id).sort(), `scrolled to ${y}`).toEqual(['edge-sampler', 'scroll-edge'])
+        expect(atTop.find((el) => el.id === 'edge-sampler'), `scrolled to ${y}`).toEqual({ id: 'edge-sampler', height: 71, opaque: true })
+        expect(atTop.find((el) => el.id === 'scroll-edge')?.opaque, `scrolled to ${y}`).toBe(false)
+        // What WebKit samples 4 px in, at the top centre: the solid sampler.
+        expect(await page.evaluate(() => (document.elementFromPoint(innerWidth / 2, 4) as HTMLElement | null)?.dataset.testid)).toBe('edge-sampler')
+        expect(await page.evaluate(() => getComputedStyle(document.querySelector('[data-testid="edge-sampler"]')!).backgroundColor)).toBe(
+          await page.evaluate(() => getComputedStyle(document.body).backgroundColor),
+        )
         if (y === 0) expect(barShown).toBe(false)
       }
-      // Scrolled, the compact bar shows - under the strip, not over it, 52 pt
-      // tall (design review, Oct 2026).
+      // Scrolled, the compact bar shows - under the status bar, not over it,
+      // 58 pt tall: the sampler's 12, then the 46 pt row.
       if (route === '/analytics') {
         const bar = await page.getByTestId('compact-title-bar').boundingBox()
         expect(bar?.y).toBe(59)
-        expect(bar?.height).toBe(52)
+        expect(bar?.height).toBe(58)
       }
     })
   }

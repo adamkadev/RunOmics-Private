@@ -9,14 +9,14 @@ import { t } from '@/i18n'
 /**
  * iOS's large-title behaviour (v4.3.2): once the page has scrolled, the bar
  * under the status bar shows the page's title again as a centred 17 pt
- * title, instead of leaving it cut in half under the status bar. While it
- * shows it is frosted glass ending in a hairline, as Bevel's top is, and the
- * status strip above it turns to the same glass (globals.css, .top-glass,
- * data-bar-shown; owner, Oct 2026). Its title sits between glass buttons.
+ * title, instead of leaving it cut in half under the status bar. Liquid
+ * Glass v2 (owner's brief, Oct 2026): the bar has no surface; while it shows,
+ * the soft scroll edge fades in under it (data-bar-shown, .scroll-edge), no
+ * hairline, and its title sits between glass buttons.
  *
- * Collapsed, it is the design review's bar (Oct 2026): 52 pt, the title
- * centred, a 44 x 44 back chevron on a page reached from another, and the
- * page's one action at the trailing end - the activity's Share.
+ * Collapsed, it is 58 pt - the edge sampler's 12, then a 46 pt row - the
+ * title centred, a 40 pt back chevron on a page reached from another, and
+ * the page's actions and mirrored control at the trailing end.
  *
  * The bar draws nothing of its own. The title is the page's own <h1>, the
  * way back the page's BackButton (`data-bar-back`) and the action the
@@ -24,7 +24,13 @@ import { t } from '@/i18n'
  * the action press the page's own controls, so they do just what those do.
  * A page with no <h1> never shows the bar.
  */
-export const BAR_HEIGHT = 52
+export const BAR_HEIGHT = 58
+
+/** The edge sampler's height (--edge-sample-h): the bar's first 12 pt sit under it. */
+const SAMPLER = 12
+
+/** The property a stuck sticky strip's height is written to: the scroll edge grows by it. */
+export const STICKY_H_VAR = '--sticky-h'
 
 /**
  * How far the page scrolls before the bar collapses in (design review, Oct
@@ -90,13 +96,11 @@ interface BarAction {
 /**
  * The bar's controls are 40 pt tall (owner, Oct 2026, after Claude's and
  * Bevel's tops): a circle, or a capsule of two 32 pt buttons, 4 pt apart in
- * 4 pt of glass, each 12 pt from the edge; 44 pt tap areas (hit-44). The
- * row's centre sits ROW_LIFT above the bar's, so they clear its hairline by
- * about 9 pt rather than touching it.
+ * 4 pt of glass, each 12 pt from the edge; 44 pt tap areas (hit-44),
+ * centred in the 46 pt row under the edge sampler (Liquid Glass v2).
  */
 const SIDE = 56
 const CAPSULE_SIDE = 88
-const ROW_LIFT = 6
 
 /** The line under the large title that fades as it scrolls up. */
 function subtitleOf(heading: HTMLElement): HTMLElement[] {
@@ -229,9 +233,23 @@ export function CompactTitleBar() {
       // 24 pt, so the bar waits until the title reaches it.
       const collapseAt = heading.hasAttribute('data-title-late')
         ? Math.max(SCROLL_TOP_TOLERANCE + 1, headingRest - barBottom)
-        : Math.max(SCROLL_TOP_TOLERANCE + 1, Math.min(COLLAPSE_SCROLL, headingRest - statusBar))
+        : Math.max(SCROLL_TOP_TOLERANCE + 1, Math.min(COLLAPSE_SCROLL, headingRest - statusBar - SAMPLER))
       const collapsed = !atTop && scroll >= collapseAt
       setShown(collapsed)
+
+      // The scroll edge grows by the sticky strip stuck under the bar (its
+      // own height, whichever it is), so the rows dissolve under it too.
+      const stuck = collapsed
+        ? [...document.querySelectorAll<HTMLElement>('main [data-sticky-strip]')].find((el) => {
+            const box = el.getBoundingClientRect()
+            return box.top <= barBottom + 1 && box.bottom > barBottom
+          })
+        : undefined
+      const stickyH = stuck ? `${stuck.offsetHeight}px` : ''
+      if (document.documentElement.style.getPropertyValue(STICKY_H_VAR) !== stickyH) {
+        if (stickyH) document.documentElement.style.setProperty(STICKY_H_VAR, stickyH)
+        else document.documentElement.style.removeProperty(STICKY_H_VAR)
+      }
 
       if (atTop) {
         restTitle(heading)
@@ -302,16 +320,18 @@ export function CompactTitleBar() {
 
   useEffect(() => {
     const root = document.documentElement
-    // data-bar-shown turns the status strip to glass with the bar (globals.css).
+    // data-bar-shown fades the soft scroll edge in (globals.css, .scroll-edge).
     if (visible) {
       root.style.setProperty(STICKY_TOP_VAR, `calc(var(--safe-top) + ${BAR_HEIGHT}px)`)
       root.setAttribute('data-bar-shown', '')
     } else {
       root.style.removeProperty(STICKY_TOP_VAR)
+      root.style.removeProperty(STICKY_H_VAR)
       root.removeAttribute('data-bar-shown')
     }
     return () => {
       root.style.removeProperty(STICKY_TOP_VAR)
+      root.style.removeProperty(STICKY_H_VAR)
       root.removeAttribute('data-bar-shown')
     }
   }, [visible])
@@ -367,25 +387,26 @@ export function CompactTitleBar() {
         // It starts under the status strip and never touches the top edge
         // (v4.8): iOS 26 takes the topmost fixed element at the top as the
         // page's bar and kept the zone of this one (safe area + 44 pt) over
-        // the large title after it hid again. Frosted glass ending in a
-        // hairline (.top-glass, owner, Oct 2026, after Bevel).
-        // It takes the taps that land on it, so none reach the page hidden
-        // under it. Above the sticky tab strips (z-30), which move under it
-        // while it shows.
+        // the large title after it hid again. Liquid Glass v2 (owner's brief,
+        // Oct 2026): no surface of its own - the soft scroll edge under it is
+        // the bar (.scroll-edge), and only its glass buttons take taps; its
+        // first 12 pt sit under the edge sampler. display: none when hidden,
+        // never opacity, which WebKit still samples. Above the sticky tab
+        // strips (z-30), which move under it while it shows.
         className={cn(
-          'top-glass fixed inset-x-0 z-40 items-center lg:hidden',
+          'pointer-events-none fixed inset-x-0 z-40 items-center lg:hidden',
           visible ? 'grid' : 'hidden',
         )}
         style={{
           top: 'var(--safe-top)',
           height: BAR_HEIGHT,
-          paddingBottom: ROW_LIFT,
+          paddingTop: SAMPLER,
           // With a mirrored control the sides share what the title leaves,
           // equally, so it stays centred whatever the control's width.
           gridTemplateColumns: segments ? 'minmax(0,1fr) auto minmax(0,1fr)' : `${side}px minmax(0,1fr) ${side}px`,
         }}
       >
-        <span className="flex justify-start pl-3">
+        <span className="pointer-events-auto flex justify-start pl-3">
           {back !== null && (
             // The way back stays in reach once the page's own link has
             // scrolled away (design review, Oct 2026): 44 x 44 around a 24 pt
@@ -405,7 +426,7 @@ export function CompactTitleBar() {
         <span aria-hidden="true" className={cn('block truncate text-center text-[17px] font-semibold leading-[46px] text-foreground', fadeIn)}>
           {title}
         </span>
-        <span className="flex items-center justify-end gap-2 pr-3">
+        <span className="pointer-events-auto flex items-center justify-end gap-2 pr-3">
           {segments && (
             // The page's segmented control, in glass: the chosen one on the
             // tab bar's pill. A tap presses the page's own segment.

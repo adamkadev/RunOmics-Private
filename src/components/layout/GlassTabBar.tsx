@@ -96,81 +96,89 @@ export function GlassTabBar() {
       // edge on a notched iPhone, as Bevel floats it.
       style={{ paddingBottom: 'var(--tab-bar-float)' }}
     >
-      {/* The bottom glass, as the top's and Claude's composer's: a frosted
-          band across the screen behind the bar, from the bottom edge to a
-          little over the capsule, its top fading in (.bottom-glass). */}
-      <div aria-hidden="true" data-testid="bottom-glass" className="bottom-glass pointer-events-none absolute inset-x-0 bottom-0 h-[calc(100%+24px)]" />
+      {/* The soft bottom edge (Liquid Glass v2): the top's progressive blur
+          and tint, mirrored, from the screen edge to 44 pt over the capsule. */}
+      <div aria-hidden="true" data-testid="bottom-glass" className="bottom-edge"><i /><i /><i /><i /><i /></div>
       <div className="relative h-[58px]">
+        {/* One glass surface that morphs (owner's brief, Oct 2026): its width
+            springs between the full row and the 58 pt bubble, never two
+            objects cross-fading. */}
         <div
           data-testid="tab-bar-capsule"
-          aria-hidden={collapsed || undefined}
+          data-collapsed={collapsed || undefined}
           className={cn(
-            'glass-float absolute inset-0 flex items-center gap-1 rounded-full p-1 transition-[opacity,transform] duration-300 motion-reduce:transition-none',
-            // Shrinks towards the button it becomes, at the bottom left.
-            collapsed ? 'pointer-events-none scale-[0.35] opacity-0' : 'scale-100 opacity-100',
-            !hidden && !collapsed && 'pointer-events-auto',
+            'glass-float absolute bottom-0 left-0 h-[58px] overflow-hidden rounded-full motion-reduce:transition-none',
+            !hidden && 'pointer-events-auto',
           )}
-          style={{ transformOrigin: '28px 50%', transitionTimingFunction: SPRING }}
+          style={{ width: collapsed ? 58 : '100%', transition: `width 420ms ${SPRING}` }}
         >
-          {/* The pill: one fifth of the row less the gaps, moved a tab and a
-              gap at a time (translateX's % is its own width). */}
-          <span
-            aria-hidden="true"
-            data-testid="tab-pill"
-            className="pointer-events-none absolute bottom-1 left-1 top-1 rounded-full bg-[var(--tab-pill)] transition-transform duration-[380ms] motion-reduce:transition-none"
-            style={{
-              width: `calc((100% - 8px - ${(TABS.length - 1) * 4}px) / ${TABS.length})`,
-              transform: `translateX(calc(${activeIndex} * (100% + 4px)))`,
-              transitionTimingFunction: SPRING,
+          {/* The full row, at a fixed width so the tabs don't squash while the glass narrows. */}
+          <div
+            aria-hidden={collapsed || undefined}
+            className={cn(
+              'absolute inset-y-0 left-0 flex w-[calc(100vw-32px)] items-center gap-1 p-1 transition-opacity duration-150',
+              collapsed ? 'pointer-events-none opacity-0' : 'opacity-100 delay-75',
+            )}
+          >
+            {/* The pill: one fifth of the row less the gaps, moved a tab and a
+                gap at a time (translateX's % is its own width). */}
+            <span
+              aria-hidden="true"
+              data-testid="tab-pill"
+              className="pointer-events-none absolute bottom-1 left-1 top-1 rounded-full bg-[var(--tab-pill)] transition-transform duration-[380ms] motion-reduce:transition-none"
+              style={{
+                width: `calc((100% - 8px - ${(TABS.length - 1) * 4}px) / ${TABS.length})`,
+                transform: `translateX(calc(${activeIndex} * (100% + 4px)))`,
+                transitionTimingFunction: SPRING,
+              }}
+            />
+            {TABS.map(({ href, label, icon: Icon }) => {
+              const active = currentHref === href
+              const lit = activeHref === href
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  tabIndex={collapsed ? -1 : undefined}
+                  onClick={() => {
+                    if (active) return
+                    haptic('light')
+                    setTapped(href)
+                  }}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'relative flex h-full flex-1 flex-col items-center justify-center gap-[3px] rounded-full transition-[color,transform] duration-200 active:scale-95',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    lit ? 'text-accent' : 'text-muted-foreground',
+                  )}
+                >
+                  <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
+                  <span data-testid={active ? 'tab-active' : undefined} className="text-caption font-medium leading-none">
+                    {label}
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
+          {/* Minimized: the active icon inside the same glass, which brings the bar back. */}
+          <button
+            type="button"
+            data-testid="tab-bar-collapsed"
+            aria-label={t.nav.showTabs(current.label)}
+            aria-hidden={!collapsed || undefined}
+            tabIndex={collapsed ? undefined : -1}
+            onClick={() => {
+              haptic('light')
+              expand()
             }}
-          />
-          {TABS.map(({ href, label, icon: Icon }) => {
-            const active = currentHref === href
-            const lit = activeHref === href
-            return (
-              <Link
-                key={href}
-                href={href}
-                tabIndex={collapsed ? -1 : undefined}
-                onClick={() => {
-                  if (active) return
-                  haptic('light')
-                  setTapped(href)
-                }}
-                aria-current={active ? 'page' : undefined}
-                className={cn(
-                  'relative flex h-full flex-1 flex-col items-center justify-center gap-[3px] rounded-full transition-[color,transform] duration-200 active:scale-95',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                  lit ? 'text-accent' : 'text-muted-foreground',
-                )}
-              >
-                <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
-                <span data-testid={active ? 'tab-active' : undefined} className="text-caption font-medium leading-none">
-                  {label}
-                </span>
-              </Link>
-            )
-          })}
+            className={cn(
+              'absolute left-0 top-0 flex size-[58px] items-center justify-center rounded-full text-accent transition-opacity duration-150',
+              collapsed && !hidden ? 'pointer-events-auto opacity-100 delay-150' : 'pointer-events-none opacity-0',
+            )}
+          >
+            <CurrentIcon size={24} strokeWidth={1.8} aria-hidden="true" />
+          </button>
         </div>
-        {/* Shrunk: the active tab's icon alone, which brings the bar back. */}
-        <button
-          type="button"
-          data-testid="tab-bar-collapsed"
-          aria-label={t.nav.showTabs(current.label)}
-          aria-hidden={!collapsed || undefined}
-          tabIndex={collapsed ? undefined : -1}
-          onClick={() => {
-            haptic('light')
-            expand()
-          }}
-          className={cn(
-            'glass-float absolute bottom-0 left-0 flex size-[58px] items-center justify-center rounded-full text-accent transition-[opacity,transform] duration-300 motion-reduce:transition-none',
-            collapsed && !hidden ? 'pointer-events-auto scale-100 opacity-100' : 'pointer-events-none scale-75 opacity-0',
-          )}
-          style={{ transitionTimingFunction: SPRING }}
-        >
-          <CurrentIcon size={24} strokeWidth={1.8} aria-hidden="true" />
-        </button>
       </div>
     </nav>
   )

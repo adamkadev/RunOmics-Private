@@ -295,6 +295,31 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
  * (v4.17). Nothing here has a hue of its own: a type is its zone, good news
  * is --pos, caution --warn, bad --neg, and a reference series is a grey.
  */
+/**
+ * Liquid Glass v2 (owner's brief, Oct 2026): the glass objects - the tab
+ * bar, the top bar's buttons and capsules. A light fill so the blur shows,
+ * a sheen from the top, a 0.5 px rim, a specular top edge and a soft drop.
+ */
+function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
+  return mode === 'light'
+    ? {
+        '--glass-fill': 'color-mix(in srgb, #ffffff 52%, transparent)',
+        '--glass-sheen': 'rgb(255 255 255 / 0.50)',
+        '--glass-rim': 'rgb(0 0 0 / 0.07)',
+        '--glass-spec': 'rgb(255 255 255 / 0.90)',
+        '--glass-drop': '0 8px 24px rgb(0 0 0 / 0.10), 0 1px 2px rgb(0 0 0 / 0.06)',
+        '--glass-filter': 'blur(28px) saturate(2)',
+      }
+    : {
+        '--glass-fill': 'color-mix(in srgb, #262a29 42%, transparent)',
+        '--glass-sheen': 'rgb(255 255 255 / 0.07)',
+        '--glass-rim': 'rgb(255 255 255 / 0.12)',
+        '--glass-spec': 'rgb(255 255 255 / 0.22)',
+        '--glass-drop': '0 10px 30px rgb(0 0 0 / 0.45), 0 1px 3px rgb(0 0 0 / 0.30)',
+        '--glass-filter': 'blur(28px) saturate(2) brightness(1.12)',
+      }
+}
+
 function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
   return {
     // A delta is coloured by what it means (v4.7, v4.17).
@@ -387,7 +412,15 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       // (statusBarStyle 'default'), so the top inset is 0 in the installed
       // app and the page begins below the bar, clear of the iOS blur - level
       // with a native app's first row (Garmin Connect's header).
-      '--top-scrim': 'calc(var(--safe-top) + 4px)',
+      '--top-scrim': 'calc(var(--safe-top) + 12px)',
+      // Liquid Glass v2 (owner's brief, Oct 2026). The edge sampler: a solid
+      // strip at the top edge, over 10 px tall, so WebKit's scroll-edge check
+      // finds a bar and iOS 26 draws no blur of its own over the page top.
+      '--edge-sample-h': '12px',
+      // The compact bar: the sampler's 12 px, then a 46 px row.
+      '--bar-h': '58px',
+      // How far the soft scroll edge fades out under the bar.
+      '--edge-fade': '28px',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       // The floating tab bar's gap to the bottom edge (owner, Oct 2026, after
       // Bevel): the inset less 15 px, about 19 pt on a notched iPhone, clear
@@ -418,6 +451,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.light,
       ...semanticTokens('light'),
+      ...glassTokens('light'),
       // Teal is the default accent, so the base block carries it.
       ...accentTokens(DEFAULT, 'light'),
       ...surfaceTokens('light'),
@@ -429,6 +463,7 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
     tokens: {
       '--status-bar': STATUS_BAR_COLOR.dark,
       ...semanticTokens('dark'),
+      ...glassTokens('dark'),
       ...accentTokens(DEFAULT, 'dark'),
       ...surfaceTokens('dark'),
     },

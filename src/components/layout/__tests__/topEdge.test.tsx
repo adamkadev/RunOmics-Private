@@ -42,16 +42,27 @@ describe('the top edge (v4.8)', () => {
     expect(offenders).toEqual(shellLines().map((n) => `components/layout/AppShell.tsx:${n}`))
   })
 
-  // v4.8's single strip (the safe area tall, z-10000) left every title soft
-  // on a device; these two, unchanged, were sharp.
-  it('keeps the top edge as it was when the device showed it sharp', () => {
+  // Liquid Glass v2 (owner's brief, Oct 2026): iOS 26 draws no blur of its
+  // own over the page top only if WebKit finds, 4 px inside the top edge, a
+  // fixed box at least 90 % of the viewport wide, over 10 px tall, with a
+  // solid background-color (LocalFrameView::fixedContainerEdges). The 4 px
+  // status strip was too short, and a strip sized to the safe area (0 in the
+  // installed app) vanished: both left every large title blurred at rest.
+  it('keeps one solid edge sampler at the top, over 10 px tall, never resized', () => {
     const shell = readFileSync(path.join(SRC, 'components/layout/AppShell.tsx'), 'utf8')
-    const block = (id: string) => shell.slice(shell.indexOf(`data-testid="${id}"`), shell.indexOf('/>', shell.indexOf(`data-testid="${id}"`)))
-    expect(block('status-strip')).toContain("height: 'var(--top-scrim)'")
-    expect(block('status-strip')).toContain("background: 'var(--status-bar)'")
-    expect(block('status-strip')).toContain('z-20')
-    expect(block('top-edge-bar')).toContain('h-12')
-    expect(block('top-edge-bar')).toContain("background: 'var(--background)'")
+    expect(shell).toContain('data-testid="edge-sampler"')
+    expect(shell).toContain('className="edge-sampler lg:hidden"')
+    const css = readFileSync(path.join(SRC, 'app/globals.css'), 'utf8')
+    const rule = css.slice(css.indexOf('.edge-sampler {'), css.indexOf('}', css.indexOf('.edge-sampler {')))
+    expect(rule).toContain('position: fixed')
+    expect(rule).toContain('top: 0')
+    expect(rule).toContain('inset-inline: 0')
+    expect(rule).toContain('height: calc(var(--safe-top) + var(--edge-sample-h))')
+    expect(rule).toContain('background-color: var(--background)')
+    expect(rule).not.toMatch(/backdrop-filter|opacity|transition/)
+    expect(css).toMatch(/--edge-sample-h:\s+12px/)
+    // Nothing turns it to glass, hides it or resizes it.
+    expect(css).not.toMatch(/\[data-bar-shown\][^{]*\.edge-sampler/)
   })
 
   it('starts the compact title bar under the strip', () => {

@@ -22,7 +22,7 @@ describe('GlassTabBar', () => {
     expect(capsule.className).toContain('glass-float')
     expect(capsule.className).toContain('rounded-full')
     // Over a frosted band across the screen, as the top's (owner, Oct 2026).
-    expect(screen.getByTestId('bottom-glass').className).toContain('bottom-glass')
+    expect(screen.getByTestId('bottom-glass').className).toContain('bottom-edge')
   })
 
   it('writes the labels at the 11 px caption size, never text-micro', () => {
@@ -62,20 +62,24 @@ describe('GlassTabBar', () => {
       fireEvent.scroll(window)
     })
 
+    // One glass surface: its width morphs between the row and the 58 pt bubble.
     scrollTo(60)
-    expect(capsule.className).toContain('opacity-100')
+    expect(capsule.style.width).toBe('100%')
     scrollTo(300)
-    expect(capsule.className).toContain('opacity-0')
+    expect(capsule.style.width).toBe('58px')
+    expect(capsule.hasAttribute('data-collapsed')).toBe(true)
+    expect(capsule.contains(shrunk)).toBe(true)
     expect(shrunk.className).toContain('opacity-100')
     expect(shrunk.getAttribute('aria-label')).toBe(t.nav.showTabs(t.nav.items.dashboard))
 
     scrollTo(250)
-    expect(capsule.className).toContain('opacity-100')
+    expect(capsule.style.width).toBe('100%')
 
     scrollTo(500)
-    expect(capsule.className).toContain('opacity-0')
+    expect(capsule.style.width).toBe('58px')
     fireEvent.click(shrunk)
-    expect(capsule.className).toContain('opacity-100')
+    expect(capsule.style.width).toBe('100%')
+    expect(shrunk.className).toContain('opacity-0')
     scrollTo(0)
   })
 

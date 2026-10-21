@@ -22,7 +22,7 @@ describe('an open sheet dims the status strip (v5.6 #3)', () => {
 
   it('has the rule that dims the strip', () => {
     const css = readFileSync(path.join(__dirname, '../../app/globals.css'), 'utf8')
-    expect(css).toMatch(/html\[data-sheet-open\] \[data-testid='status-strip'\]/)
+    expect(css).toMatch(/html\[data-sheet-open\] \.edge-sampler/)
   })
 })
 
