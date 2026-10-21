@@ -225,12 +225,14 @@ export const MAP_STYLE_COLORS = {
   },
   light: {
     background: '#eef0ef',
-    land: '#e6eae7',
+    // A whisper more contrast under clear glass (README §6.12.3): the rim
+    // still reads as an edge over a white road.
+    land: '#e3e8e5',
     park: '#d3e6d0',
     water: '#c6dbee',
     waterway: '#c6dbee',
     building: SURFACES.light.line,
-    roadMajor: '#ffffff',
+    roadMajor: '#fbfcfb',
     roadMinor: '#f8f9f8',
     roadCasing: SURFACES.light.line,
     path: '#ffffff',

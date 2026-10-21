@@ -134,7 +134,7 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     onContentChange?.(cardContent);
   }, [onContentChange, cardContent]);
 
-  const { containerRef, resize } = useMapRoutes(data, routes, selectedIdx, visibleIndices, ring);
+  const { containerRef, resize } = useMapRoutes(data, routes, selectedIdx, visibleIndices, ring, isFullscreen);
 
   useSetFullscreenChromeHidden(isFullscreen);
 
@@ -205,6 +205,8 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
             ? "absolute inset-0 isolate bg-[var(--surface-2)]"
             : "relative isolate h-[360px] overflow-hidden rounded-[24px] bg-[var(--surface-2)] md:h-[560px]"
         }
+        // The canvas and its glass controls: marked while the map moves (README §6.12.2).
+        data-map-root
       >
         {/* Sized by a wrapper: MapLibre's own stylesheet makes its container
             position: relative, over any class set on it. */}

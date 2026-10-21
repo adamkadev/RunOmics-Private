@@ -11,6 +11,8 @@ import { Glass, GlassLayers, GLASS_CIRCLE, GLASS_GROUP_BUTTON, glassClass } from
 import { t } from '@/i18n'
 import { addLandmarkLabels, addParkLabels, addWaterLabels, loadMapLibre, showPlacesAtAnyZoom } from '@/lib/maplibre'
 import { SURFACES } from '@/lib/themeTokens'
+import { MAP_PADDING } from '@/lib/routeFrame'
+import { watchMapMoving } from '@/lib/mapMoving'
 import {
   ROUTE_FIT_PADDING,
   addEdgeFence,
@@ -58,8 +60,10 @@ type MapStyle = (typeof MAP_STYLES)[number]
 const themeStyle = (): MapStyle => (document.documentElement.classList.contains('dark') ? 'dark' : 'light')
 
 /** Clear of the top buttons, the sides and the floating card, so the route sits in what is left. */
+/** Clear of the fullscreen controls and the run's card at the foot (README §6.12.1). */
 function fullscreenPadding(cardHeight: number) {
-  return { top: 76, right: 32, bottom: cardHeight + 56, left: 32 }
+  const { top, right, bottom, left } = MAP_PADDING.fullscreen
+  return { top, right, bottom: Math.max(bottom, cardHeight + 48), left }
 }
 
 export default function ActivityMap({ route, hoverFraction, className, fullscreen = false, onFullscreenChange = noop, overlay, card }: Props) {
@@ -204,6 +208,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         attributionControl: false,
       })
       mapRef.current = map
+      // Cheaper glass over the canvas while it moves (README §6.12.2).
+      watchMapMoving(map)
 
       // A loop's start and finish are one marker while they would touch: asked
       // again at every zoom, so zooming in parts them.
@@ -328,6 +334,9 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
 
   const tree = (
     <div
+      // Fullscreen, the map holds its own glass controls, so the moving-map
+      // attribute goes here; on the page it goes on the hero (README §6.12.2).
+      data-map-root={isFullscreen ? '' : undefined}
       className={cn(
         // isolate: maplibre's z-index 20 controls would otherwise paint over the status strip.
         'activity-map relative isolate overflow-hidden rounded-xl',

@@ -40,7 +40,7 @@
       },
       "paint": {
         "fill-antialias": true,
-        "fill-color": "#e6eae7",
+        "fill-color": "#e3e8e5",
         "fill-opacity": [
           "interpolate",
           [
@@ -882,7 +882,7 @@
             "primary",
             "secondary"
           ],
-          "#ffffff",
+          "#fbfcfb",
           "#f8f9f8"
         ],
         "line-width": [
@@ -1760,7 +1760,7 @@
             "primary",
             "secondary"
           ],
-          "#ffffff",
+          "#fbfcfb",
           "#f8f9f8"
         ],
         "line-width": [
@@ -2907,7 +2907,7 @@
             "primary",
             "secondary"
           ],
-          "#ffffff",
+          "#fbfcfb",
           "#f8f9f8"
         ],
         "line-width": [

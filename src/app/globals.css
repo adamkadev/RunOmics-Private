@@ -570,7 +570,7 @@
       linear-gradient(180deg, var(--glass-sheen) 0%, transparent 55%),
       var(--glass-fill);
     box-shadow: var(--glass-inner);
-    transition: filter 120ms ease-out;
+    transition: filter 120ms ease-out, box-shadow 150ms ease-out;
   }
   .lg > .lg-tint::after {
     content: "";
@@ -583,6 +583,24 @@
     -webkit-mask-composite: xor;
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
     transition: opacity 120ms ease-out;
+  }
+
+  /* Cheaper glass while a map moves (README §6.12.2): a blur over a WebGL
+     canvas is redrawn on every frame of a pan or zoom, so under
+     [data-map-moving] (lib/mapMoving) the glass over the map drops its blur
+     and edge band and its tint is 25 % denser; both come back over 150 ms
+     once the camera stops. The blur's radius is never animated - its layer's
+     opacity is. */
+  .lg > .lg-blur,
+  .lg > .lg-edge { transition: opacity 150ms ease-out; }
+  [data-map-moving] .lg {
+    --glass-filter: none;
+    --glass-edge-filter: none;
+  }
+  [data-map-moving] .lg > .lg-blur,
+  [data-map-moving] .lg > .lg-edge { opacity: 0; transition: none; }
+  [data-map-moving] .lg > .lg-tint {
+    box-shadow: inset 0 0 0 100vmax color-mix(in srgb, var(--raised) 25%, transparent);
   }
 
   /* Variants: only the fill and filter change; geometry and rim are shared. */

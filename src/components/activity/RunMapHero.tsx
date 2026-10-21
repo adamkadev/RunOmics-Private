@@ -47,6 +47,8 @@ export function RunMapHero({
   return (
     <section
       data-testid="run-hero"
+      // The canvas and its glass controls: marked while the map moves (README §6.12.2).
+      data-map-root
       className="relative -mx-4 h-[300px] overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-[24px]"
     >
       {route ? (
