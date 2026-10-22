@@ -496,7 +496,8 @@ export const fr = {
       acwr: 'Charge',
       acwrValue: (ratio: string) => `×${ratio}`,
       deltaIn: (days: number) => `en ${days} jours`,
-      deltaWeek: (n: number, days: number) => (days === 7 ? `${n} cette semaine` : `${n} en ${days} jours`),
+      // « 21 cette semaine » ran out of its third of the card at 393 pt.
+      deltaWeek: (n: number, days: number) => `${n} en ${days} j`,
       fallback: {
         below: (acute: number, lo: number, hi: number, fresh = false) => ({
           headline: fresh ? 'Tu es frais. Il est temps de reconstruire.' : 'La charge est sous ta zone. Il est temps de reconstruire.',
@@ -1859,7 +1860,9 @@ export const fr = {
     milestones: {
       distanceTier: (km: string) => `${km} km cette année`,
       streak: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
-      streakDetail: 'Toujours en cours · une sortie chaque semaine depuis',
+      // The milestone's date reads after it; « Toujours en cours · une sortie
+      // chaque semaine depuis » was cut beside that date.
+      streakDetail: 'En cours · chaque semaine depuis',
       record: (label: string) => `Record ${label}`,
       firstActivity: 'Premier pas',
       firstActivityDetail: (km: string) => `Le début de l’aventure · ${km} km`,
@@ -1916,6 +1919,8 @@ export const fr = {
       marathon: 'Marathon',
       longest: 'Plus longue sortie',
     } as Record<string, string>,
+    // « RP Plus longue sortie » left the run's own name « Race … » at 393 pt.
+    badgeLabels: { longest: 'Distance' } as Record<string, string>,
     raceTag: 'course',
     trainingTag: 'entraînement',
     notYetRun: 'Pas encore couru',

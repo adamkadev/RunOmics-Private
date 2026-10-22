@@ -20,9 +20,10 @@ const HR_PERCENTS = [0.65, 0.8, 0.89, 0.95, 1.0]
  * Zone, HR, pace and time: one grid for the header and every row. The share
  * moved out from under the bar (App Fixes 1e), where a zone of 1 % had no
  * room to print it, and reads small after the zone's time - "4h58 · 27%" -
- * rather than taking a column of its own.
+ * rather than taking a column of its own. The time column holds French's
+ * spaced « 10 h 48 · 32 % » at 393 pt, which ran out of the card at 4.5rem.
  */
-const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.75rem_4.5rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_110px_90px_96px] sm:gap-3'
+const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.75rem_5.5rem] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_110px_90px_96px] sm:gap-3'
 
 /** No zone with time in it draws narrower than this share of the bar (3.0 1j), so 1 % still shows. */
 const MIN_SEGMENT_PCT = 3
