@@ -20,7 +20,10 @@ All notable changes to this project are documented in this file.
 - Goals & season's title on one line (L3): the ‹ 2026 › stepper shared the
   large title's row and broke it onto two, pushing the first card 50 pt
   down. The stepper is in the button row, opposite the back button, in the
-  same 44 pt glass, and the title has the full width.
+  same 44 pt glass, and the title has the full width. The rule for large
+  titles: a control may sit beside one only while the title stays on one
+  line; if it would wrap, the control moves to the button row. Goals is the
+  one page that wrapped.
 
 - An activity's four numbers share one baseline (L2): "Time", with no
   unit, sat about 7 pt higher than Distance, Avg pace and Avg HR. Every

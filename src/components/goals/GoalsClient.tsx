@@ -63,11 +63,13 @@ export function GoalsClient({ data, today: serverToday, block = null, back }: Pr
 
   return (
     <div className="flex flex-col gap-3.5">
-      {/* No control shares a row with a large title (L3): beside the stepper
-          "Goals & season" broke onto two lines and pushed the first card
-          50 pt down. The stepper sits in the button row, opposite the back
-          button, and the title takes the full width under it. The year is
-          not in the title: the stepper says which season is showing. */}
+      {/* A control may sit beside a large title only while the title stays
+          on one line; if it would wrap, the control moves to the button row
+          (L3). Beside the stepper "Goals & season" broke onto two lines and
+          pushed the first card 50 pt down, so the stepper sits in the button
+          row, opposite the back button, and the title takes the full width
+          under it. The year is not in the title: the stepper says which
+          season is showing. */}
       <header className="mb-1.5 flex flex-col">
         <div className="flex items-start justify-between gap-3">
           {back}
