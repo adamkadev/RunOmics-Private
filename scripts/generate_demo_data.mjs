@@ -40,9 +40,11 @@ function pad(n, width) {
 function isoDate(d) {
   return d.toISOString().slice(0, 10)
 }
+// In UTC: the dates are UTC midnights, and a local-time step drifts an hour
+// across a daylight-saving change, so `isoDate` lands on the previous day.
 function addDays(d, days) {
   const copy = new Date(d)
-  copy.setDate(copy.getDate() + days)
+  copy.setUTCDate(copy.getUTCDate() + days)
   return copy
 }
 function dayOfWeekName(d) {
