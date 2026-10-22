@@ -15,6 +15,8 @@ const ACCENT_TOKEN_NAMES = [
   '--accent',
   '--accent-foreground',
   '--accent-text',
+  // F16: accent text on light glass, 4.5:1 on its darkest ground.
+  '--accent-text-glass',
   '--accent-hover',
   // v4.17: the active nav row and soft fills (--acc-soft is its old name).
   '--accent-soft',

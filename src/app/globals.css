@@ -224,24 +224,25 @@
   --ro-accent-hi:            var(--accent-hover);
   --ro-ink:                  #0b1f17;
   --ro-blur:                 18px;
-  --glass-filter:            blur(12px) saturate(1.8) brightness(1.04);
-  --glass-fill:              rgb(255 255 255 / 0.52);
-  --glass-sheen:             rgb(255 255 255 / 0.60);
+  --glass-filter:            blur(18px) saturate(2.1) brightness(1.02);
+  --glass-fill:              rgb(255 255 255 / 0.22);
+  --glass-sheen:             rgb(255 255 255 / 0.45);
   --glass-rim:               linear-gradient(135deg, rgb(255 255 255 / 0.98) 0%, rgb(255 255 255 / 0.5) 28%, rgb(255 255 255 / 0.2) 50%, rgb(255 255 255 / 0.5) 72%, rgb(255 255 255 / 0.9) 100%);
   --glass-rim-pressed:       linear-gradient(135deg, #ffffff 0%, rgb(255 255 255 / 0.6) 28%, rgb(255 255 255 / 0.3) 50%, rgb(255 255 255 / 0.6) 72%, #ffffff 100%);
   --glass-inner:             none;
-  --glass-drop:              0 0 0 0.5px rgb(0 0 0 / 0.07), 0 8px 24px rgb(0 0 0 / 0.10), 0 1px 3px rgb(0 0 0 / 0.06);
+  --glass-drop:              0 0 0 0.5px rgb(0 0 0 / 0.14), 0 10px 28px rgb(30 40 60 / 0.16), 0 2px 4px rgb(0 0 0 / 0.08);
   --glass-edge-w:            3px;
   --glass-edge-filter:       blur(1px) saturate(2) brightness(1.08);
-  --tab-glass-fill:          rgb(255 255 255 / 0.64);
-  --clear-glass-fill:        rgb(255 255 255 / 0.20);
-  --clear-glass-filter:      blur(5px) saturate(1.5) brightness(1.02);
-  --sheet-glass-fill:        rgb(250 251 250 / 0.82);
+  --tab-glass-fill:          rgb(255 255 255 / 0.36);
+  --clear-glass-fill:        rgb(255 255 255 / 0.10);
+  --clear-glass-filter:      blur(8px) saturate(1.8);
+  --sheet-glass-fill:        rgb(250 251 250 / 0.55);
+  --sheet-glass-filter:      blur(28px) saturate(2.1) brightness(1.02);
+  --glass-text2:             #575c5a;
   --shadow-sheet:            0 24px 60px rgb(0 0 0 / 0.18);
   --tab-pill:                rgb(0 0 0 / 0.07);
   --fill-3:                  rgb(118 118 128 / 0.12);
   --fill-4:                  rgb(118 118 128 / 0.08);
-  --fill-on-aura:            rgb(255 255 255 / 0.62);
   --segmented-track:         var(--fill-3);
   --segmented-pill:          #ffffff;
   --segmented-pill-shadow:   0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04);
@@ -251,6 +252,7 @@
   --accent:                  #0e8468;
   --accent-foreground:       #ffffff;
   --accent-text:             #007c61;
+  --accent-text-glass:       #006951;
   --accent-hover:            color-mix(in oklab, #0e8468 88%, black);
   --accent-soft:             #0e84681f;
   --acc-soft:                #0e84681f;
@@ -358,11 +360,11 @@
   --clear-glass-fill:        rgb(16 18 18 / 0.22);
   --clear-glass-filter:      blur(5px) saturate(1.6) brightness(0.9);
   --sheet-glass-fill:        rgb(28 31 31 / 0.80);
+  --sheet-glass-filter:      blur(12px) saturate(1.9) brightness(1.1);
   --shadow-sheet:            0 24px 60px rgb(0 0 0 / 0.35);
   --tab-pill:                rgb(255 255 255 / 0.11);
   --fill-3:                  rgb(118 118 128 / 0.24);
   --fill-4:                  rgb(118 118 128 / 0.18);
-  --fill-on-aura:            var(--fill-3);
   --segmented-track:         var(--fill-3);
   --segmented-pill:          #4b504f;
   --segmented-pill-shadow:   0 2px 6px rgb(0 0 0 / 0.35);
@@ -372,6 +374,7 @@
   --accent:                  #2dd4a7;
   --accent-foreground:       #07261d;
   --accent-text:             #2dd4a7;
+  --accent-text-glass:       #2dd4a7;
   --accent-hover:            color-mix(in oklab, #2dd4a7 88%, white);
   --accent-soft:             #2dd4a71f;
   --acc-soft:                #2dd4a71f;
@@ -429,6 +432,7 @@
   --accent:             #0e7f9b;
   --accent-foreground:  #ffffff;
   --accent-text:        #007793;
+  --accent-text-glass:  #00657c;
   --accent-hover:       color-mix(in oklab, #0e7f9b 88%, black);
   --accent-soft:        #0e7f9b1f;
   --acc-soft:           #0e7f9b1f;
@@ -440,6 +444,7 @@
   --accent:             #5fd4f0;
   --accent-foreground:  #07261d;
   --accent-text:        #5fd4f0;
+  --accent-text-glass:  #5fd4f0;
   --accent-hover:       color-mix(in oklab, #5fd4f0 88%, white);
   --accent-soft:        #5fd4f01f;
   --acc-soft:           #5fd4f01f;
@@ -451,6 +456,7 @@
   --accent:             #7a4fd1;
   --accent-foreground:  #ffffff;
   --accent-text:        #7a4fd1;
+  --accent-text-glass:  #6d40c2;
   --accent-hover:       color-mix(in oklab, #7a4fd1 88%, black);
   --accent-soft:        #7a4fd11f;
   --acc-soft:           #7a4fd11f;
@@ -462,6 +468,7 @@
   --accent:             #b794f6;
   --accent-foreground:  #07261d;
   --accent-text:        #b794f6;
+  --accent-text-glass:  #b794f6;
   --accent-hover:       color-mix(in oklab, #b794f6 88%, white);
   --accent-soft:        #b794f61f;
   --acc-soft:           #b794f61f;
@@ -473,6 +480,7 @@
   --accent:             #c23a83;
   --accent-foreground:  #ffffff;
   --accent-text:        #bf3780;
+  --accent-text-glass:  #aa206e;
   --accent-hover:       color-mix(in oklab, #c23a83 88%, black);
   --accent-soft:        #c23a831f;
   --acc-soft:           #c23a831f;
@@ -484,6 +492,7 @@
   --accent:             #f58ac0;
   --accent-foreground:  #07261d;
   --accent-text:        #f58ac0;
+  --accent-text-glass:  #f58ac0;
   --accent-hover:       color-mix(in oklab, #f58ac0 88%, white);
   --accent-soft:        #f58ac01f;
   --acc-soft:           #f58ac01f;
@@ -495,6 +504,7 @@
   --accent:             #1a1c1b;
   --accent-foreground:  #ffffff;
   --accent-text:        #1a1c1b;
+  --accent-text-glass:  #1a1c1b;
   --accent-hover:       color-mix(in oklab, #1a1c1b 88%, black);
   --accent-soft:        #1a1c1b1f;
   --acc-soft:           #1a1c1b1f;
@@ -506,6 +516,7 @@
   --accent:             #edefee;
   --accent-foreground:  #0c0d0d;
   --accent-text:        #edefee;
+  --accent-text-glass:  #edefee;
   --accent-hover:       color-mix(in oklab, #edefee 88%, white);
   --accent-soft:        #edefee1f;
   --acc-soft:           #edefee1f;
@@ -609,10 +620,20 @@
 
   /* Variants: only the fill and filter change; geometry and rim are shared. */
   .lg-tab   { --glass-fill: var(--tab-glass-fill); }
-  .lg-sheet { --glass-fill: var(--sheet-glass-fill); box-shadow: var(--shadow-sheet); }
+  .lg-sheet { --glass-fill: var(--sheet-glass-fill); --glass-filter: var(--sheet-glass-filter); box-shadow: var(--shadow-sheet); }
   .lg-clear {
     --glass-fill: var(--clear-glass-fill);
     --glass-filter: var(--clear-glass-filter);
+  }
+
+  /* Labels on light glass (F16): translucent, the glass reads darker than
+     the page under a sheet's scrim or a selected platter, so its secondary
+     and accent text take their glass shades, 4.5:1 there - as iOS's
+     vibrant labels do. --text needs none. */
+  html:not(.dark) :is(.lg, .on-aura) {
+    --muted-foreground: var(--glass-text2);
+    --subtle: var(--glass-text2);
+    --accent-text: var(--accent-text-glass);
   }
 
   /* Press (G2): glass swells and brightens. Never opacity. */
@@ -890,13 +911,15 @@
 
   /* A control straight on the glow (F6) - Activities' search, chips and
      filter button, Analytics' section track: the system fill, and in light
-     over the glow a frosted white, as the grey turned muddy over colour.
+     over the glow the regular glass's tint, sheen, blur and drop (F16), as
+     the grey turned muddy over colour and a 62 % white read as a flat pill.
      Never inside a frosted card: that would nest one blur in another. */
   .on-aura { background-color: var(--fill-3); }
   html:not(.dark):not([data-glow="off"]) .on-aura {
-    background-color: var(--fill-on-aura);
-    -webkit-backdrop-filter: blur(12px);
-            backdrop-filter: blur(12px);
+    background: linear-gradient(180deg, var(--glass-sheen) 0%, transparent 55%), var(--glass-fill);
+    box-shadow: var(--glass-drop);
+    -webkit-backdrop-filter: var(--glass-filter);
+            backdrop-filter: var(--glass-filter);
   }
 
   /* System overrides win: no glow and white cards whatever the setting. */

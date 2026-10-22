@@ -15,9 +15,12 @@ const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/analytics'
  * default the top 12 pt), or, with `scrimmed`, from --background under the
  * sheet's scrim (black at --scrim-sheet's alpha).
  */
-async function topEdgeDelta(page: Page, { scrimmed = false, y = 0, height = 12 } = {}): Promise<number> {
+async function topEdgeDelta(
+  page: Page,
+  { scrimmed = false, y = 0, height = 12, skip = [] as [number, number][] } = {},
+): Promise<number> {
   const shot = await page.screenshot({ clip: { x: 0, y, width: 393, height } })
-  return page.evaluate(async ({ b64, scrimmed }) => {
+  return page.evaluate(async ({ b64, scrimmed, skip }) => {
     const img = new Image()
     img.src = `data:image/png;base64,${b64}`
     await img.decode()
@@ -37,12 +40,28 @@ async function topEdgeDelta(page: Page, { scrimmed = false, y = 0, height = 12 }
     probe.remove()
     const alpha = scrimmed ? Number(resolved.match(/rgba\([^)]*,\s*([\d.]+)\)/)?.[1] ?? 1) : 0
     const want = [1, 3, 5].map((i) => parseInt(bg.slice(i, i + 2), 16) * (1 - alpha))
+    const scale = img.width / 393
     let max = 0
     for (let i = 0; i < data.length; i += 4) {
+      const x = ((i / 4) % img.width) / scale
+      if (skip.some(([from, to]) => x >= from && x <= to)) continue
       for (let c = 0; c < 3; c++) max = Math.max(max, Math.abs((data[i + c] ?? 0) - (want[c] ?? 0)))
     }
     return max
-  }, { b64: shot.toString('base64'), scrimmed })
+  }, { b64: shot.toString('base64'), scrimmed, skip })
+}
+
+/**
+ * The columns a glass control's own drop reaches (F16: 0 10px 28px in
+ * light), which may darken a row above the control by design.
+ */
+async function glassDropSpans(page: Page, scope: string): Promise<[number, number][]> {
+  return page.locator(`${scope} .lg`).evaluateAll((els) =>
+    els.map((el) => {
+      const r = el.getBoundingClientRect()
+      return [r.left - 28, r.right + 28] as [number, number]
+    }),
+  )
 }
 
 for (const theme of ['light', 'dark'] as const) {
@@ -108,6 +127,10 @@ for (const theme of ['light', 'dark'] as const) {
     expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(12)
     expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(330)
     await page.waitForTimeout(300)
-    expect(await topEdgeDelta(page, { y: 12, height: 2 })).toBeLessThanOrEqual(2)
+    // The tiles, not the hero's glass controls 12 pt lower, whose drop
+    // reaches this row faintly (3 of 255 under the capsule, F16).
+    const skip = await glassDropSpans(page, '[data-testid="run-hero"]')
+    expect(skip.length).toBeGreaterThan(0)
+    expect(await topEdgeDelta(page, { y: 12, height: 2, skip })).toBeLessThanOrEqual(2)
   })
 }

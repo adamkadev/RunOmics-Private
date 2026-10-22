@@ -265,6 +265,15 @@ export function readableOn(hex: string, ground: string, ratio = TEXT_CONTRAST): 
 }
 
 /**
+ * The darkest ground a label on light glass sits on (F16): a medium sheet's
+ * 55 % glass over the 20 % scrim on the page, under a control's 12 % fill -
+ * #f3f4f3 dimmed, then frosted, then filled. The tab bar's selected platter
+ * over a card (#e6e8e6) and a toggle under the bar (#bfddd6, measured)
+ * read lighter. Light glass's own label shades reach 4.5:1 on it.
+ */
+const GLASS_LABEL_GROUND = '#d4d5d5'
+
+/**
  * One accent block (v4.3, v4.17): the palette's accent and its ink, and the
  * derived tints - `--accent-soft` (the accent at 1F alpha) for the active nav
  * row and soft fills, `--acc-line` for an accent outline. Accent text uses
@@ -280,6 +289,8 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
     '--accent': acc,
     '--accent-foreground': onAcc,
     '--accent-text': mode === 'light' ? readableOn(acc, SURFACES.light.seg) : acc,
+    // On light glass, darker again (F16); dark glass keeps the accent.
+    '--accent-text-glass': mode === 'light' ? readableOn(acc, GLASS_LABEL_GROUND) : acc,
     '--accent-hover': `color-mix(in oklab, ${acc} 88%, ${mode === 'dark' ? 'white' : 'black'})`,
     '--accent-soft': `${acc}1f`,
     '--acc-soft': `${acc}1f`,
@@ -301,33 +312,40 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
  * glass. Tuned against SURFACES (bg #f3f4f3 / #0b0c0c, card #ffffff /
  * #141616). The recipe that consumes them is the `.lg` object in globals.css.
  */
+const DARK_GLASS_FILTER = 'blur(12px) saturate(1.9) brightness(1.1)'
+
 export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
   return mode === 'light'
     ? {
-        // Regular glass
-        '--glass-filter': 'blur(12px) saturate(1.8) brightness(1.04)',
-        '--glass-fill': 'rgb(255 255 255 / 0.52)',
-        '--glass-sheen': 'rgb(255 255 255 / 0.60)',
+        // Regular glass. Translucent (F16): at .52-.82 white the glass read
+        // as a flat opaque pill on the near-white page; at .22 the Aura and
+        // the cards show through, and the hairline and drop draw its edge.
+        '--glass-filter': 'blur(18px) saturate(2.1) brightness(1.02)',
+        '--glass-fill': 'rgb(255 255 255 / 0.22)',
+        '--glass-sheen': 'rgb(255 255 255 / 0.45)',
         '--glass-rim': 'linear-gradient(135deg, rgb(255 255 255 / 0.98) 0%, rgb(255 255 255 / 0.5) 28%, rgb(255 255 255 / 0.2) 50%, rgb(255 255 255 / 0.5) 72%, rgb(255 255 255 / 0.9) 100%)',
         '--glass-rim-pressed': 'linear-gradient(135deg, #ffffff 0%, rgb(255 255 255 / 0.6) 28%, rgb(255 255 255 / 0.3) 50%, rgb(255 255 255 / 0.6) 72%, #ffffff 100%)',
         '--glass-inner': 'none',
-        '--glass-drop': '0 0 0 0.5px rgb(0 0 0 / 0.07), 0 8px 24px rgb(0 0 0 / 0.10), 0 1px 3px rgb(0 0 0 / 0.06)',
+        '--glass-drop': '0 0 0 0.5px rgb(0 0 0 / 0.14), 0 10px 28px rgb(30 40 60 / 0.16), 0 2px 4px rgb(0 0 0 / 0.08)',
         '--glass-edge-w': '3px',
         '--glass-edge-filter': 'blur(1px) saturate(2) brightness(1.08)',
         // Variants
-        '--tab-glass-fill': 'rgb(255 255 255 / 0.64)',
-        '--clear-glass-fill': 'rgb(255 255 255 / 0.20)',
-        '--clear-glass-filter': 'blur(5px) saturate(1.5) brightness(1.02)',
-        '--sheet-glass-fill': 'rgb(250 251 250 / 0.82)',
+        '--tab-glass-fill': 'rgb(255 255 255 / 0.36)',
+        '--clear-glass-fill': 'rgb(255 255 255 / 0.10)',
+        '--clear-glass-filter': 'blur(8px) saturate(1.8)',
+        '--sheet-glass-fill': 'rgb(250 251 250 / 0.55)',
+        // A sheet sits over text: wider, so the page's headings and the tab
+        // bar's labels under it no longer read through (F16).
+        '--sheet-glass-filter': 'blur(28px) saturate(2.1) brightness(1.02)',
+        // Secondary labels on glass, as iOS's vibrant label: the page's grey
+        // fell to 3.9:1 on a sheet over the scrim (F16).
+        '--glass-text2': readableOn(SURFACES.light.text2, GLASS_LABEL_GROUND),
         '--shadow-sheet': '0 24px 60px rgb(0 0 0 / 0.18)',
         // Selection platter (tab bar, glass segmented)
         '--tab-pill': 'rgb(0 0 0 / 0.07)',
         // System-style fills for controls on the content layer
         '--fill-3': 'rgb(118 118 128 / 0.12)',
         '--fill-4': 'rgb(118 118 128 / 0.08)',
-        // A control straight on the background glow (F6): frosted white, as
-        // the grey fill turns muddy over colour.
-        '--fill-on-aura': 'rgb(255 255 255 / 0.62)',
         '--segmented-track': 'var(--fill-3)',
         '--segmented-pill': '#ffffff',
         '--segmented-pill-shadow': '0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04)',
@@ -339,7 +357,7 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--scrim-sheet': 'rgb(0 0 0 / 0.20)',
       }
     : {
-        '--glass-filter': 'blur(12px) saturate(1.9) brightness(1.1)',
+        '--glass-filter': DARK_GLASS_FILTER,
         '--glass-fill': 'rgb(42 46 45 / 0.46)',
         '--glass-sheen': 'rgb(255 255 255 / 0.09)',
         '--glass-rim': 'linear-gradient(135deg, rgb(255 255 255 / 0.42) 0%, rgb(255 255 255 / 0.1) 26%, rgb(255 255 255 / 0) 50%, rgb(255 255 255 / 0.06) 74%, rgb(255 255 255 / 0.24) 100%)',
@@ -352,11 +370,11 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--clear-glass-fill': 'rgb(16 18 18 / 0.22)',
         '--clear-glass-filter': 'blur(5px) saturate(1.6) brightness(0.9)',
         '--sheet-glass-fill': 'rgb(28 31 31 / 0.80)',
+        '--sheet-glass-filter': DARK_GLASS_FILTER,
         '--shadow-sheet': '0 24px 60px rgb(0 0 0 / 0.35)',
         '--tab-pill': 'rgb(255 255 255 / 0.11)',
         '--fill-3': 'rgb(118 118 128 / 0.24)',
         '--fill-4': 'rgb(118 118 128 / 0.18)',
-        '--fill-on-aura': 'var(--fill-3)',
         '--segmented-track': 'var(--fill-3)',
         '--segmented-pill': '#4b504f',
         '--segmented-pill-shadow': '0 2px 6px rgb(0 0 0 / 0.35)',
