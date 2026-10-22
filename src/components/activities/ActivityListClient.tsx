@@ -433,9 +433,12 @@ export function ActivityListClient({
             </label>
 
             {/* Four groups, or the one chip for the types picked in the sheet,
-                then the sheet's button (3.0). */}
+                then the sheet's button (3.0). The rail reaches past its row -
+                to the screen's edges and 36 pt down, behind the next row - so
+                its scroll box does not cut the chips' glass drop (F16); what
+                follows it paints, and takes taps, over that margin. */}
             <div className="flex items-center gap-2">
-              <div className="-my-1.5 flex min-w-0 flex-1 gap-2 overflow-x-auto py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-testid="type-chips">
+              <div className="-mx-4 -mb-9 -mt-1.5 flex min-w-0 flex-1 gap-2 overflow-x-auto px-4 pb-9 pt-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-testid="type-chips">
                 {filter.types.length > 0 ? (
                   <Pill as="button" variant="selected" className="min-w-0 gap-1.5" onClick={() => setFilter(ALL_RUNS)} aria-label={t.activities.filter.clearTypes(pickedLabel)}>
                     <span className="truncate">{pickedLabel}</span>

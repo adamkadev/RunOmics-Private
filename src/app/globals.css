@@ -241,7 +241,6 @@
   --tab-pill:                rgb(0 0 0 / 0.07);
   --fill-3:                  rgb(118 118 128 / 0.12);
   --fill-4:                  rgb(118 118 128 / 0.08);
-  --fill-on-aura:            rgb(255 255 255 / 0.62);
   --segmented-track:         var(--fill-3);
   --segmented-pill:          #ffffff;
   --segmented-pill-shadow:   0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04);
@@ -362,7 +361,6 @@
   --tab-pill:                rgb(255 255 255 / 0.11);
   --fill-3:                  rgb(118 118 128 / 0.24);
   --fill-4:                  rgb(118 118 128 / 0.18);
-  --fill-on-aura:            var(--fill-3);
   --segmented-track:         var(--fill-3);
   --segmented-pill:          #4b504f;
   --segmented-pill-shadow:   0 2px 6px rgb(0 0 0 / 0.35);
@@ -890,13 +888,15 @@
 
   /* A control straight on the glow (F6) - Activities' search, chips and
      filter button, Analytics' section track: the system fill, and in light
-     over the glow a frosted white, as the grey turned muddy over colour.
+     over the glow the regular glass's tint, sheen, blur and drop (F16), as
+     the grey turned muddy over colour and a 62 % white read as a flat pill.
      Never inside a frosted card: that would nest one blur in another. */
   .on-aura { background-color: var(--fill-3); }
   html:not(.dark):not([data-glow="off"]) .on-aura {
-    background-color: var(--fill-on-aura);
-    -webkit-backdrop-filter: blur(12px);
-            backdrop-filter: blur(12px);
+    background: linear-gradient(180deg, var(--glass-sheen) 0%, transparent 55%), var(--glass-fill);
+    box-shadow: var(--glass-drop);
+    -webkit-backdrop-filter: var(--glass-filter);
+            backdrop-filter: var(--glass-filter);
   }
 
   /* System overrides win: no glow and white cards whatever the setting. */
