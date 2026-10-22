@@ -21,9 +21,9 @@ describe('restingNights', () => {
     expect(restingNights([night('2026-08-01', 62, null), night('2026-08-02', null, 58)])).toEqual([night('2026-08-01', 62, null)])
   })
 
-  // A watch that records no HRV gives no way to tell a worn night from a run.
-  it('keeps every day from a watch that records no HRV', () => {
-    const nights = [night('2026-10-20', null, 68), night('2026-10-21', null, 70)]
-    expect(restingNights(nights)).toEqual(nights)
+  // The owner's watch has never been worn to sleep (a Fitbit is, at night):
+  // a history with no HRV has no resting HR in it at all.
+  it('keeps no resting HR from a watch never worn through a night', () => {
+    expect(restingNights([night('2026-10-20', null, 58), night('2026-10-21', null, 142), night('2026-10-22', null, 60)])).toEqual([])
   })
 })
