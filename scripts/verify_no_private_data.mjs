@@ -81,6 +81,20 @@ for (const prefix of ['public/fit', FIT_CACHE_DIR]) {
 const eventFiles = trackedUnder(files, 'public/events')
 if (eventFiles.length) critical('public/events/ is tracked', `${eventFiles.length} file(s) - race-day photos belong in the data repository.`)
 
+// A screenshot of the running app shows whatever data it ran on, and on a
+// real dataset the Activities map is the tracks and the home marker. Captures
+// meant for the repo are made from the demo dataset and named for what they
+// show; a file named the way macOS names a screenshot, or pasted into a
+// design tool's uploads/ folder, is a capture nobody chose to publish. No text
+// scan above can see into an image, so the name is what is checked.
+const IMAGE = /\.(png|jpe?g|webp|gif|heic|avif)$/i
+const RAW_CAPTURE = /(^|\/)uploads\/|(^|\/)(screen ?shot|pasted-)[^/]*$/i
+for (const f of files) {
+  if (IMAGE.test(f) && RAW_CAPTURE.test(f)) {
+    critical('A raw screenshot or pasted image is tracked', `${f} - it may show real tracks; use a demo-data capture named for what it shows`)
+  }
+}
+
 // The coaching CLI writes these wherever --prompt-out points; both carry the
 // athlete's health data (see .gitignore).
 for (const f of files) {
