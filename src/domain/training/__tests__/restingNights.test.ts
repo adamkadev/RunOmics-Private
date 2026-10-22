@@ -3,27 +3,40 @@ import { restingNights, type RecoveryNight } from '../recovery'
 
 const night = (date: string, hrv: number | null, restingHr: number | null): RecoveryNight => ({ date, hrv, restingHr })
 
-// Round 2, the owner's watch, worn only to run: Garmin's resting HR on those
-// days is a warm-up's, 55 to 60 against a true 45 - and 142 on a hard day.
+// Round 2: Garmin's resting HR is the lowest half hour the watch was worn. The
+// owner's watch is worn only to run (a Fitbit at night): its resting HR is a
+// warm-up's, 50 to 60 against a true 45. The second athlete's is worn all day
+// but not to sleep: 59 to 70, on run days too.
 describe('restingNights', () => {
-  it('keeps a resting HR only where the watch was worn through the night', () => {
+  it('keeps no resting HR from a watch worn only to run', () => {
+    const runs = new Set(['2026-10-16', '2026-10-18', '2026-10-21'])
+    const nights = [night('2026-10-16', null, 58), night('2026-10-18', null, 55), night('2026-10-21', null, 60)]
+    expect(restingNights(nights, runs)).toEqual([])
+  })
+
+  it('keeps a watch worn all day but not to sleep, run days included', () => {
+    const runs = new Set(['2026-10-16', '2026-10-18', '2026-10-21'])
     const nights = [
-      night('2026-08-01', 62, 45),
-      night('2026-08-02', 60, 46),
-      night('2026-10-20', null, 58),
-      night('2026-10-21', null, 142),
-      night('2026-10-22', null, 60),
+      night('2026-10-15', null, 59),
+      night('2026-10-16', null, 68),
+      night('2026-10-17', null, 68),
+      night('2026-10-18', null, 67),
+      night('2026-10-19', null, 61),
+      night('2026-10-20', null, 64),
+      night('2026-10-21', null, 67),
     ]
-    expect(restingNights(nights)).toEqual([night('2026-08-01', 62, 45), night('2026-08-02', 60, 46)])
+    expect(restingNights(nights, runs)).toEqual(nights)
   })
 
-  it('keeps an HRV night whose resting HR is missing', () => {
-    expect(restingNights([night('2026-08-01', 62, null), night('2026-08-02', null, 58)])).toEqual([night('2026-08-01', 62, null)])
+  it('drops a run day with fewer than two run-free days within a week of it', () => {
+    const runs = new Set(['2026-10-21'])
+    const nights = [night('2026-10-01', null, 61), night('2026-10-02', null, 62), night('2026-10-20', null, 64), night('2026-10-21', null, 89)]
+    expect(restingNights(nights, runs)).toEqual(nights.slice(0, 3))
   })
 
-  // The owner's watch has never been worn to sleep (a Fitbit is, at night):
-  // a history with no HRV has no resting HR in it at all.
-  it('keeps no resting HR from a watch never worn through a night', () => {
-    expect(restingNights([night('2026-10-20', null, 58), night('2026-10-21', null, 142), night('2026-10-22', null, 60)])).toEqual([])
+  it('keeps any night the watch was worn through, run or not', () => {
+    const runs = new Set(['2026-08-01', '2026-10-21'])
+    const nights = [night('2026-08-01', 62, 45), night('2026-08-02', 60, null), night('2026-10-21', null, 58)]
+    expect(restingNights(nights, runs)).toEqual(nights.slice(0, 2))
   })
 })

@@ -4,13 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-- Resting HR is read only from nights the watch was worn through (the night
-  has an HRV reading). Garmin's daily resting HR is the lowest 30 minutes of
-  the hours worn, so a watch worn only to run reported a warm-up's 50-60 - and
-  142 on a hard day - against a true 45. A watch never worn to sleep has no
-  resting-HR series at all: Analytics' Recovery card hides and the Load "Why"
-  sheet leaves resting HR out. Athlete & zones keeps the resting HR from the
-  Garmin settings, which the load maths use.
+- Resting HR is read only where the watch was on for more than a run.
+  Garmin's daily resting HR is the lowest 30 minutes of the hours worn, so a
+  watch worn only to run reported a warm-up's 50-60 - and 142 on a hard day -
+  against a true 45. A day's value now counts on a night worn to sleep (it has
+  an HRV reading), on a day without a run, or on a run day with two run-free
+  days worn within a week of it: a watch worn all day but not to sleep keeps
+  its series, run days included; a watch worn only to run has none, and
+  Analytics' Recovery card and the Load "Why" sheet leave resting HR out.
+  Athlete & zones keeps the resting HR from the Garmin settings, which the
+  load maths use.
 
 - The maps keep the page's theme when you leave the app and come back. iOS
   draws its app-switcher snapshots in both appearances, flipping the page to

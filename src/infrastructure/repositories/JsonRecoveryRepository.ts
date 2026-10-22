@@ -1,6 +1,6 @@
 import { dataPath } from '../dataPath'
 import { readJsonFile } from '../readJsonFile'
-import { restingNights, type RecoveryNight } from '@/domain/training/recovery'
+import type { RecoveryNight } from '@/domain/training/recovery'
 
 export type { RecoveryNight }
 
@@ -20,16 +20,11 @@ const restingHr = (v: unknown): number | null => {
   return bpm !== null && bpm >= RESTING_HR_BPM.min && bpm <= RESTING_HR_BPM.max ? bpm : null
 }
 
-/**
- * The synced nights, oldest first; empty until the recovery sync has run.
- * A resting HR stays only where it was measured at rest (restingNights).
- */
+/** The synced nights, oldest first; empty until the recovery sync has run. */
 export function getRecoveryNights(): RecoveryNight[] {
   const stored = readJsonFile<Stored>(dataPath('recovery_history.json'), {})
-  return restingNights(
-    Object.entries(stored.days ?? {})
-      .map(([date, night]) => ({ date, hrv: value(night?.hrv), restingHr: restingHr(night?.restingHr) }))
-      .filter((n) => n.hrv !== null || n.restingHr !== null)
-      .sort((a, b) => a.date.localeCompare(b.date)),
-  )
+  return Object.entries(stored.days ?? {})
+    .map(([date, night]) => ({ date, hrv: value(night?.hrv), restingHr: restingHr(night?.restingHr) }))
+    .filter((n) => n.hrv !== null || n.restingHr !== null)
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
