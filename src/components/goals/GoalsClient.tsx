@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { GoalsPageData } from '@/application/usecases/GetGoalsData'
 import { cardClass } from '@/components/ui/Card'
@@ -50,9 +50,11 @@ interface Props {
   /** The date the page was prerendered on; see useToday. */
   today: string
   block?: SeasonBlock | null
+  /** The way back, the button row's leading control; the year stepper takes its trailing end. */
+  back?: ReactNode
 }
 
-export function GoalsClient({ data, today: serverToday, block = null }: Props) {
+export function GoalsClient({ data, today: serverToday, block = null, back }: Props) {
   const today = useToday(serverToday)
   const { years, byYear, history } = data
   const [selectedYear, setSelectedYear] = useState(() => defaultGoalsYear(years, serverToday))
@@ -61,11 +63,17 @@ export function GoalsClient({ data, today: serverToday, block = null }: Props) {
 
   return (
     <div className="flex flex-col gap-3.5">
-      <header className="mb-1.5 flex items-center justify-between gap-4">
-        {/* The year itself is redundant here - the stepper right next to it
-            already says which season is showing. */}
-        <h1 data-bar-title={t.goals.barTitle} className="min-w-0 text-display text-foreground">{t.goals.title}</h1>
-        {hasYearStepper && <YearStepper years={years} value={selectedYear} onChange={setSelectedYear} />}
+      {/* No control shares a row with a large title (L3): beside the stepper
+          "Goals & season" broke onto two lines and pushed the first card
+          50 pt down. The stepper sits in the button row, opposite the back
+          button, and the title takes the full width under it. The year is
+          not in the title: the stepper says which season is showing. */}
+      <header className="mb-1.5 flex flex-col">
+        <div className="flex items-start justify-between gap-3">
+          {back}
+          {hasYearStepper && <YearStepper years={years} value={selectedYear} onChange={setSelectedYear} />}
+        </div>
+        <h1 data-bar-title={t.goals.barTitle} className="text-display text-foreground">{t.goals.title}</h1>
       </header>
 
       <div>
