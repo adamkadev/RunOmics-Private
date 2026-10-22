@@ -14,6 +14,17 @@ All notable changes to this project are documented in this file.
   serves the file at `/api/explore/areas/<id>`, cached by version; nothing
   real is committed to this repo.
 
+- Explore, coverage (X2): a Web Worker turns each run into 150 m cells
+  (steps filled in every 75 m, a jump over 300 m left open) and counts, per
+  unit, the runnable cells visited, the share (complete at 90 %, fog under
+  15 %), the km run there and the last run. All 317 runs take about 30 ms.
+  The area file and each run's cells are kept in IndexedDB, so a new
+  deployment only works through its new runs. The next quartier to explore
+  is the incomplete one with the lowest coverage plus distance from home
+  (6 km weighs as much as the whole 0–100 % range), within 5 km, quartiers
+  before neighbouring communes. `/api/map/routes` also returns each track's
+  activity id. The demo dataset gets a fictional seven-unit area.
+
 - Cards are never blurred (D1): over the light glow each card had its own
   24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
   Activities. They are now 88 % white with no blur, so the glow still tints
