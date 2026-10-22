@@ -75,6 +75,20 @@ describe('capability-driven athlete metrics', () => {
     expect(cells.map((cell) => cell.className.includes('border-l'))).toEqual([false, true, true, false, true, true])
     expect(cells.map((cell) => cell.className.includes('border-t'))).toEqual([false, false, false, true, true, true])
   })
+
+  // Round 2: the second athlete's card has four tiles, and her fitness age,
+  // alone on the second row, was cut to a third: « 22 pour 2… ».
+  it('gives a tile alone on the last row the whole row', () => {
+    render(<AthleteStats athlete={{ restingHrBpm: 76, maxHrBpm: 206, vmaKmh: 10.6, fitnessAgeYrs: 22, age: 25 }} />)
+    const cells = screen.getAllByTestId('athlete-stat')
+    expect(cells).toHaveLength(4)
+    expect(cells.map((cell) => cell.className.includes('col-span-3'))).toEqual([false, false, false, true])
+  })
+
+  it('leaves a full last row as thirds', () => {
+    render(<AthleteStats athlete={{ restingHrBpm: 45, lthrBpm: 179, maxHrBpm: 200, vmaKmh: 16.3, thresholdPaceSecPerKm: 261, fitnessAgeYrs: 18 }} />)
+    expect(screen.getAllByTestId('athlete-stat').some((cell) => cell.className.includes('col-span-3'))).toBe(false)
+  })
 })
 
 describe('ProfileHrZones table', () => {
