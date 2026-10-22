@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Explore, quartier boundaries (X1): `npm run explore:areas` builds the
+  home city's units into the data repo as `explore/<id>.geojson`: the
+  city's quartiers (OpenStreetMap admin_level 10, then the city's open
+  data, then IGN IRIS, then the commune) and every other commune the home
+  area touches, simplified to 5 m, with the 150 m cells that hold a
+  runnable way (OpenStreetMap footways, paths, streets) as each unit's
+  denominator. Metz comes from the Eurométropole's 14 quartiers. The app
+  serves the file at `/api/explore/areas/<id>`, cached by version; nothing
+  real is committed to this repo.
+
 - Cards are never blurred (D1): over the light glow each card had its own
   24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
   Activities. They are now 88 % white with no blur, so the glow still tints
