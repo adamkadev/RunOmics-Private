@@ -14,6 +14,7 @@ const SERVER_ONLY_LIB = [
   '@/lib/internalRoute',
   '@/lib/ownerRoute',
   '@/lib/verifyFirebaseIdToken',
+  '@/lib/exploreAccess',
 ]
 
 const layer = (files, patterns, ignores = []) => ({

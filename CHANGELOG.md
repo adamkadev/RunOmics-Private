@@ -25,6 +25,15 @@ All notable changes to this project are documented in this file.
   before neighbouring communes. `/api/map/routes` also returns each track's
   activity id. The demo dataset gets a fictional seven-unit area.
 
+- Explore, loop routes (X3): `POST /api/explore/route` asks
+  OpenRouteService for round trips on foot from a quartier's public centre
+  (home is never sent), five seeds at a time, and re-asks once when a loop
+  misses the distance by more than 15 %. The key (`ORS_API_KEY`) stays on
+  the server; on a private site any signed-in session may call it, on a
+  public one only the owner, 12 batches a minute. Loops are scored on
+  distance, the share of new ground and the share on busy roads, and leave
+  as GPX 1.1 files that Garmin Connect, Coros and Suunto import.
+
 - Cards are never blurred (D1): over the light glow each card had its own
   24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
   Activities. They are now 88 % white with no blur, so the glow still tints

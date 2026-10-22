@@ -13,6 +13,8 @@ export interface IntegrationStatus {
   gemini: boolean
   /** The owner's Sync button. Optional: nothing else depends on it. */
   syncButton: boolean
+  /** Explore's route generator (OpenRouteService). Optional: coverage and the map work without it. */
+  routing: boolean
 }
 
 export function integrationStatus(env: Readonly<Record<string, string | undefined>> = process.env): IntegrationStatus {
@@ -24,5 +26,6 @@ export function integrationStatus(env: Readonly<Record<string, string | undefine
       : set('FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'),
     gemini: set('GEMINI_API_KEY'),
     syncButton: set('GITHUB_SYNC_TOKEN', 'GITHUB_SYNC_REPO'),
+    routing: set('ORS_API_KEY'),
   }
 }

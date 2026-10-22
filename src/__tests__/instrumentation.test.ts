@@ -82,6 +82,15 @@ describe('onRequestError', () => {
     expect(logged()[0]?.error).toEqual({ name: 'Error', message: 'request to ?key=[redacted] failed' })
   })
 
+  it('redacts the routing key as well', async () => {
+    vi.stubEnv('ORS_API_KEY', 'ors-a-real-looking-key')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await onRequestError(new Error('openrouteservice refused ors-a-real-looking-key'), REQUEST, CONTEXT)
+
+    expect(logged()[0]?.error).toEqual({ name: 'Error', message: 'openrouteservice refused [redacted]' })
+  })
+
   it('still says something useful when what was thrown is not an Error', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
 
