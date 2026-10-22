@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Activities' search, chips and filter button are glass in dark too (F19):
+  in the header zone, they were flat grey in dark beside the glass List |
+  Map. Over the glow they take the regular glass's tint, sheen, rim and
+  drop in both themes, the selected chip still solid. The search field and
+  the chip row each sit on one shared blur, not one per chip, which also
+  takes three blurs off the light list.
+
 - The glow on the Shoes pages (F17): Shoes, a shoe's page and Compare were
   the one Progress family on the flat ground. They take Records' glow, amber
   left and teal right, in both themes; the Background glow switch turns it

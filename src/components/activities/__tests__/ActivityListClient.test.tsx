@@ -167,6 +167,27 @@ describe('the archive under its months', () => {
     expect(names).toEqual([t.activities.all, t.activities.groups.easy, t.activities.groups.workouts, t.activities.groups.races])
     expect(rail.querySelector('span[aria-hidden]')).toBeNull()
   })
+
+  // F19: search, chips and the filter button are glass over the glow in both
+  // themes, on one blur per group - the search field, the chip row - laid
+  // under them, never one per chip. The selected chip stays solid.
+  it('lays the search field and the chip row each on one blur, the chips tint only', () => {
+    renderList([run('a', '2026-09-20', 25)])
+    const search = screen.getByPlaceholderText(t.activities.searchPlaceholder).closest('label')!
+    const row = screen.getByTestId('type-chips').parentElement!
+    for (const group of [search.parentElement!, row]) {
+      expect(group.className).toContain('on-aura-group')
+      expect(group.querySelectorAll(':scope > i.on-aura-blur')).toHaveLength(1)
+      expect(group.querySelectorAll('.on-aura-blur')).toHaveLength(1)
+    }
+    expect(search.className).toContain('on-aura')
+    const chips = within(screen.getByTestId('type-chips')).getAllByRole('button')
+    expect(chips.filter((c) => c.className.includes('on-aura'))).toHaveLength(3)
+    const selected = chips.find((c) => c.getAttribute('aria-pressed') === 'true')!
+    expect(selected.className).toContain('bg-foreground')
+    expect(selected.className).not.toContain('on-aura')
+    expect(screen.getByRole('button', { name: t.activities.filter.title }).className).toContain('on-aura')
+  })
 })
 
 describe('the list at a phone', () => {

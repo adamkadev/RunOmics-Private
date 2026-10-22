@@ -968,6 +968,50 @@
             backdrop-filter: var(--glass-filter);
   }
 
+  /* Activities' search, chips and filter button (F19): they sit in the
+     header zone, so they are the control layer in both themes, not only
+     light - over the glow, each the regular glass's tint, sheen, rim and
+     drop. A group's controls share one blur, .on-aura-blur, a sibling laid
+     under them, rather than one each: the search field is one group, the
+     chip row with the filter button another. A selected chip stays solid. */
+  .on-aura-group { position: relative; }
+  .on-aura-group > .on-aura-blur {
+    position: absolute;
+    pointer-events: none;
+    display: none;
+  }
+  html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group > .on-aura-blur {
+    display: block;
+    -webkit-backdrop-filter: var(--glass-filter);
+            backdrop-filter: var(--glass-filter);
+  }
+  /* The chip row's blur spans the gaps between its chips too: a plain blur
+     there, no saturate or brightness, which drew the whole row as a band of
+     stronger colour across the glow. A blur of the glow is the glow. */
+  html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group > .on-aura-blur.on-aura-blur-row {
+    -webkit-backdrop-filter: blur(var(--blur-md));
+            backdrop-filter: blur(var(--blur-md));
+  }
+  html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group .on-aura {
+    position: relative;
+    background: linear-gradient(180deg, var(--glass-sheen) 0%, transparent 55%), var(--glass-fill);
+    box-shadow: var(--glass-drop);
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+  }
+  html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group .on-aura::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--glass-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
+  }
+
   /* System overrides win: no glow and white cards whatever the setting. */
   @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
     .aura { display: none; }
@@ -982,6 +1026,9 @@
               backdrop-filter: none;
     }
     html:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) .inset-tile { background: var(--background); }
+    html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group > .on-aura-blur { display: none; }
+    html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group .on-aura { background: var(--fill-3); box-shadow: none; }
+    html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group .on-aura::before { content: none; }
   }
   html[data-glass="solid"] .aura { display: none; }
   html[data-glass="solid"]:not(.dark) .on-aura {
