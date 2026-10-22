@@ -10,10 +10,19 @@ vi.mock('next-themes', () => ({ useTheme: () => ({ resolvedTheme: theme.resolved
 vi.mock('@/lib/useShareCardMap', () => ({ useShareCardMap: () => ({ image: null, points: null, failed: false }) }))
 vi.mock('@/lib/useShareCardGeocode', () => ({ useShareCardGeocode: () => ({ locationName: null }) }))
 // jsdom decodes no image: a chosen photo loads as soon as it is picked.
-vi.mock('@/lib/shareCard', async (load) => ({
-  ...(await load<typeof import('@/lib/shareCard')>()),
-  loadImage: () => Promise.resolve({ width: 1000, height: 800 }),
-}))
+// Each draw's run is kept, to see which card the preview drew.
+const drawn = vi.hoisted(() => ({ runs: [] as unknown[] }))
+vi.mock('@/lib/shareCard', async (load) => {
+  const actual = await load<typeof import('@/lib/shareCard')>()
+  return {
+    ...actual,
+    loadImage: () => Promise.resolve({ width: 1000, height: 800 }),
+    renderShareCard: (...args: Parameters<typeof actual.renderShareCard>) => {
+      drawn.runs.push(args[1].activity)
+      return actual.renderShareCard(...args)
+    },
+  }
+})
 
 const RUN: ShareActivity = {
   id: '1', date: '2026-09-26', dayOfWeek: 'Saturday', description: 'Easy',
@@ -31,11 +40,20 @@ const checked = (group: string) =>
   screen.getByRole('radiogroup', { name: group }).querySelector('[aria-checked="true"]')?.textContent
 
 beforeEach(() => {
+  drawn.runs = []
   localStorage.clear()
   theme.resolved = 'dark'
   URL.createObjectURL = () => 'blob:photo'
   URL.revokeObjectURL = () => {}
 })
+
+const REP_RUN: ShareActivity = {
+  ...RUN,
+  type: 'Threshold',
+  reps: { count: 3, repSeconds: 480, paceSecPerKm: 274, paces: [275, 275, 274], target: { min: 270, max: 282 }, windows: [[0.2, 0.3], [0.4, 0.5], [0.6, 0.7]] },
+}
+
+const lastDrawn = () => drawn.runs.at(-1) as ShareActivity
 
 describe('ShareCardModal', () => {
   it('offers Route, Stats and Photo, opening on Route when the run has one', () => {
@@ -179,5 +197,40 @@ describe('ShareCardModal', () => {
     open()
     expect(screen.queryByRole('switch')).toBeNull()
     expect(screen.getByTestId('share-sheet').textContent).not.toContain('VO₂max')
+  })
+
+  // The owner's ask (round 2): an interval session shared as an easy run's card.
+  it("offers an interval session's rep pace as a switch, on every tab; off, the card is drawn without the reps", async () => {
+    open({ activity: REP_RUN })
+    const toggle = screen.getByRole('switch', { name: 'Rep pace' })
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    expect(lastDrawn().reps?.count).toBe(3)
+
+    await userEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    expect(lastDrawn().reps).toBeNull()
+    expect(lastDrawn().route).toEqual(REP_RUN.route)
+
+    // Still there, and still off, on Stats and Photo, which draw the rep pace too.
+    await userEvent.click(screen.getByRole('radio', { name: 'Stats' }))
+    expect(screen.getByRole('switch', { name: 'Rep pace' })).toHaveAttribute('aria-checked', 'false')
+    expect(lastDrawn().reps).toBeNull()
+
+    await userEvent.click(screen.getByRole('switch', { name: 'Rep pace' }))
+    expect(lastDrawn().reps?.count).toBe(3)
+  })
+
+  it('opens the rep pace on every time, like the background', async () => {
+    const { unmount } = open({ activity: REP_RUN })
+    await userEvent.click(screen.getByRole('switch', { name: 'Rep pace' }))
+    unmount()
+    open({ activity: REP_RUN })
+    expect(screen.getByRole('switch', { name: 'Rep pace' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('offers no rep-pace switch on a run without reps', () => {
+    open()
+    expect(screen.queryByRole('switch', { name: 'Rep pace' })).toBeNull()
+    expect(screen.queryByTestId('share-reps')).toBeNull()
   })
 })

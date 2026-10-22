@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTheme } from 'next-themes'
 import { Camera, X } from 'lucide-react'
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { SEGMENTED_FILL_SEGMENT_CLASS, SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 import { ShareCardActions } from '@/components/activity/ShareCardActions'
+import { Toggle } from '@/components/ui/Toggle'
 
 interface Props {
   activity: ShareActivity
@@ -60,14 +61,17 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
   const hasRoute = (activity.route?.length ?? 0) > 1
   const designs = hasRoute ? SHARE_DESIGNS : SHARE_DESIGNS.filter((d) => d !== 'route')
 
-  const { design: chosen, setDesign, theme, setTheme } = useShareCardPrefs(appTheme, hasRoute)
+  const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps } = useShareCardPrefs(appTheme, hasRoute)
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
+  // An interval session's card, with its reps or as an easy run's: one
+  // colour on the route, no rep pace, the average pace back in the stats.
+  const card = useMemo(() => (showReps || !activity.reps ? activity : { ...activity, reps: null }), [activity, showReps])
   const { locationName } = useShareCardGeocode(activity)
   const [fontsReady, setFontsReady] = useState(0)
   // The map fills the card, the route fitted between the header and the
   // stats, whose height the title's lines set: measured again once Geist
   // has loaded, as the card will be drawn in it.
-  const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(activity, pageFonts()))
+  const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(card, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
   const { image: mapImage, points: mapPoints, labels: mapLabels } = useShareCardMap({
     route: activity.route,
@@ -109,13 +113,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     document.fonts?.ready.then(() => {
       if (!alive) return
       setFontsReady((n) => n + 1)
-      setMapFrame(shareCardMapFrame(activity, pageFonts()))
+      setMapFrame(shareCardMapFrame(card, pageFonts()))
     }).catch(() => {})
     return () => { alive = false }
-  }, [activity])
+  }, [card])
 
   const renderOptions = useCallback((): RenderOptions => ({
-    activity,
+    activity: card,
     design,
     accent,
     theme,
@@ -125,7 +129,7 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
     mapPoints,
     mapLabels,
     fonts: pageFonts(),
-  }), [activity, design, accent, theme, photoImage, locationName, mapImage, mapPoints, mapLabels])
+  }), [card, design, accent, theme, photoImage, locationName, mapImage, mapPoints, mapLabels])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -309,6 +313,15 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             </>
           )}
         </div>
+
+        {/* An interval session's rep pace, on every tab: off, the card is an
+            easy run's - the route in one colour, the average pace instead. */}
+        {activity.reps && (
+          <div data-testid="share-reps" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
+            <span className="text-foreground" style={{ fontSize: 17 }}>{s.showReps}</span>
+            <Toggle checked={showReps} onChange={setShowReps} label={s.showReps} />
+          </div>
+        )}
 
         <ShareCardActions
           canShareFiles={canShareFiles}
