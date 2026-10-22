@@ -7,7 +7,7 @@ import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepositor
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
 import { officialResultsByActivityId } from '@/domain/activity/raceResult'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
-import { activityDetailView, runName, shareActivity, shareSession } from '@/components/activity/activityViews'
+import { activityDetailView, runName, shareActivity, shareSession, shownType } from '@/components/activity/activityViews'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
@@ -102,6 +102,7 @@ export default async function ActivityDetailPage({
         // The session as its set: the type is the dot over it (round 2). The
         // tab's title keeps the whole name, with no dot beside it.
         name={sessionLabel(runName(activity, session))}
+        shownType={shownType(activity, session)}
         dateLabel={formatDate(activity.date)}
         comment={activity.comment || undefined}
         qualifiedEfforts={qualifiedEfforts}

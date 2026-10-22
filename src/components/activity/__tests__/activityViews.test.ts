@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { WorkoutPrescription } from '@/domain/coaching/types'
-import { activityDetailView, runName, shareActivity, shareSession } from '../activityViews'
+import { activityDetailView, runName, sessionTypes, shareActivity, shareSession, shownType } from '../activityViews'
 
 const ACTIVITY = {
   id: '90000273',
@@ -202,5 +202,29 @@ describe('shareSession', () => {
     expect(shareSession([at('2026-10-06', 'threshold', { status: 'cancelled' })], run)).toBeNull()
     expect(shareSession([at('2026-10-06', 'easy')], run)).toBeNull()
     expect(shareSession([at('2026-10-06', 'threshold'), at('2026-10-06', 'tempo')], run)).toBeNull()
+  })
+})
+
+// Round 2, the owner's run of Oct 13: a threshold session Garmin filed as
+// tempo, its heart rate too low. It shows as the threshold it was set as.
+describe('the type a run is shown as', () => {
+  const at = (date: string, type: WorkoutPrescription['type'], activityId: string | null = null) => ({
+    prescription: { id: `w-${date}-${type}`, date, type, status: 'planned' } as unknown as WorkoutPrescription,
+    activityId,
+  })
+  const run = { id: 'run-1', date: '2026-10-13', type: 'Tempo' as const }
+
+  it("is the session's, where it has one, else the watch's", () => {
+    expect(shownType(run, at('2026-10-13', 'threshold').prescription)).toBe('Threshold')
+    expect(shownType(run, null)).toBe('Tempo')
+  })
+
+  it('lists only the runs whose session differs from the watch, matched as the share card matches them', () => {
+    const easy = { id: 'run-2', date: '2026-10-14', type: 'Base' as const }
+    const tempo = { id: 'run-3', date: '2026-10-15', type: 'Tempo' as const }
+    const workouts = [at('2026-10-13', 'threshold'), at('2026-10-14', 'easy'), at('2026-10-15', 'tempo')]
+    expect(sessionTypes(workouts, [run, easy, tempo])).toEqual({ 'run-1': 'Threshold' })
+    // An easy run on a hard day takes no session, and keeps its own type.
+    expect(sessionTypes([at('2026-10-14', 'threshold')], [easy])).toEqual({})
   })
 })

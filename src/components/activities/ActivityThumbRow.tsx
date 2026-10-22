@@ -3,7 +3,7 @@ import { PrBadge } from './PrBadge'
 import { RouteThumb } from '@/components/ui/RouteThumb'
 import { TypeDot } from '@/components/ui/TypeDot'
 import { Unit } from '@/components/ui/Stat'
-import type { ActivitySummary } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDate, formatDistance, formatDuration, formatPace, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -13,6 +13,8 @@ import { activityTitle, sessionLabel } from '@/lib/activityTitle'
 interface Props {
   activity: ActivitySummary
   qualifiedEfforts?: QualifiedEffort[]
+  /** The type the row shows, its session's where it is not the watch's (round 2); else the run's. */
+  type?: ActivityType
   /**
    * `card`: a row of a list card, divided by the card (Activities sorted by
    * something other than date). `inset`: a rounded row inside an
@@ -43,7 +45,7 @@ export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds'
  * type's dot and the meta line, and on the right the distance over the pace,
  * each with its unit.
  */
-export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
+export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.type, variant = 'card' }: Props) {
   // The session on the first line, its type the dot beside the meta (round
   // 2, the owner's ask): "3 × 8′ @ 4:25", not "Threshold" over a meta line
   // whose structure the ellipsis cut. A name with no set stays whole.
@@ -65,7 +67,7 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
         variant === 'card' ? 'gap-3.5 px-4 py-3 hover:bg-[var(--surface-2)]' : 'min-h-16 gap-3 px-4 py-2.5',
       )}
     >
-      <RouteThumb path={a.routeThumb} type={a.type} size={inset ? 44 : 48} />
+      <RouteThumb path={a.routeThumb} type={type} size={inset ? 44 : 48} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
         <span className="flex min-w-0 items-center gap-1.5">
           {/* A long name - a legacy workout's, a past plan's - wraps to two
@@ -79,13 +81,13 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
             )}
           >
             {/* The dot is the type on screen; VoiceOver reads it here. */}
-            <span className="sr-only">{`${t.activityTypes[a.type]} `}</span>
+            <span className="sr-only">{`${t.activityTypes[type]} `}</span>
             {title}
           </span>
           <PrBadge efforts={qualifiedEfforts} />
         </span>
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <TypeDot type={a.type} size={6} />
+          <TypeDot type={type} size={6} />
           <span className={cn('min-w-0', inset ? 'truncate text-[13px]' : 'break-words text-pretty')}>{meta}</span>
         </span>
       </span>

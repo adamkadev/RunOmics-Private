@@ -167,6 +167,30 @@ export function shareSession(
 }
 
 /**
+ * The type a run is shown as, its dot and its name (round 2, the owner's
+ * ask): its session's, where the coach set one. A threshold session the
+ * watch filed as tempo - its heart rate too low by Garmin's reading - was
+ * still a threshold session; how it went is the zones' and the verdict's to
+ * say. The run keeps the watch's type: analytics and filters read that.
+ */
+export function shownType(activity: Pick<Activity, 'type'>, session: WorkoutPrescription | null): ActivityType {
+  return session ? COACHING_TO_ACTIVITY_TYPE[session.type] : activity.type
+}
+
+/** The runs a list shows as their session's type, where it is not the watch's: id to type. */
+export function sessionTypes(
+  workouts: readonly { prescription: WorkoutPrescription; activityId: string | null }[],
+  activities: readonly Pick<Activity, 'id' | 'date' | 'type'>[],
+): Record<string, ActivityType> {
+  const types: Record<string, ActivityType> = {}
+  for (const activity of activities) {
+    const type = shownType(activity, shareSession(workouts, activity))
+    if (type !== activity.type) types[activity.id] = type
+  }
+  return types
+}
+
+/**
  * The session's name as Plan and Today write it (design review, Oct 2026):
  * "Easy 63 min + 6 × 20s strides", not the watch's "Strides 6 x 20s" - the
  * share card never derives a name of its own.

@@ -41,6 +41,13 @@ describe('ActivityThumbRow', () => {
     expect(spoken.nextSibling?.textContent ?? spoken.parentElement?.textContent).toContain('2 × 7′')
   })
 
+  // Round 2: the session's type where the watch filed another, on the dot and for VoiceOver.
+  it("shows the session's type where it is not the watch's", () => {
+    render(<ActivityThumbRow activity={{ ...activity, type: 'Tempo' }} type="Threshold" variant="inset" />)
+    expect(screen.getByText('Threshold', { exact: false, selector: '.sr-only' })).toBeInTheDocument()
+    expect(screen.queryByText('Tempo', { exact: false, selector: '.sr-only' })).toBeNull()
+  })
+
   it('keeps a name with no set whole', () => {
     render(<ActivityThumbRow activity={{ ...activity, type: 'Base', description: 'Long run' }} variant="inset" />)
     expect(screen.getByTestId('thumb-row').textContent).toContain('Long run')

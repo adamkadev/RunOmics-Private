@@ -12,6 +12,10 @@ All notable changes to this project are documented in this file.
   not the type stay: `6 × 20s strides`. Plan's "Planned" line gives the
   amount, `10 km · 58 min`, and the session only when the run is called
   something else. A row's meta line is the date, time and HR, never cut.
+- A run shows its session's type where the watch filed another: a threshold
+  session Garmin labelled tempo (heart rate too low) reads `● Threshold`, on the
+  activity page and its Activities row, as the share card already had it. The
+  run keeps the watch's type, so Analytics and the filters are unchanged.
 - Share: a **Rep pace** switch on an interval session's card. Off, the card is
   an easy run's: the route in one colour, no rep pace, the average pace back.
 - The fullscreen heatmap's Filters badge is whole: the edge sampler cut its top.
