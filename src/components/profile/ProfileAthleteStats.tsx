@@ -62,7 +62,14 @@ export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
         <div
           key={cell.label}
           data-testid="athlete-stat"
-          className={cn('flex min-w-0 flex-col gap-1 px-4 py-3.5', i % 3 > 0 && 'border-l border-border', i >= 3 && 'border-t border-border')}
+          className={cn(
+            'flex min-w-0 flex-col gap-1 px-4 py-3.5',
+            i % 3 > 0 && 'border-l border-border',
+            i >= 3 && 'border-t border-border',
+            // A tile alone on the last row takes the row: Fitness age's
+            // « 27 pour 32 ans » ran out of a third (round 2).
+            i === cells.length - 1 && i % 3 === 0 && 'col-span-3',
+          )}
         >
           <div className="truncate text-xs text-muted-foreground">
             {cell.label}

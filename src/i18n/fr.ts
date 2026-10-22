@@ -66,7 +66,9 @@ export const fr = {
   },
 
   zoneLabels: {
-    1: 'Récupération',
+    // « Récup », as runners say it: « Récupération » ran out of the zone
+    // table's name column, which never wraps.
+    1: 'Récup',
     2: 'Facile',
     3: 'Aérobie',
     4: 'Seuil',
@@ -396,8 +398,9 @@ export const fr = {
       weight: 'Poids',
       height: 'Taille',
       fitnessAge: 'Âge physique',
-      // Fitness age against the real age: « 18 pour 29 ans » (C2, v4.4; 3.0 1j).
-      ofAge: (age: number) => `pour ${age} ans`,
+      // Fitness age against the real age: « 18 (29 ans) » (C2, v4.4; 3.0 1j;
+      // round 2: « 18 pour 29 ans » ran out of its third of the card).
+      ofAge: (age: number) => `(${age} ans)`,
       achievableFitnessAge: 'Potentiel',
       fitnessAgeBand: {
         younger: (years: number) => `−${years} ans`,
@@ -436,7 +439,9 @@ export const fr = {
     },
     profile: {
       readOnly: 'Depuis ta montre : à modifier dans l’app de ta montre.',
-      lthr: (bpm: number) => `FC seuil ${bpm}`,
+      // « Seuil 172 · max 189 » beside « Athlète et zones »: « FC seuil »
+      // cut the row's name.
+      lthr: (bpm: number) => `Seuil ${bpm}`,
       maxHr: (bpm: number) => `max ${bpm}`,
     },
     offlineCache: {
@@ -1194,7 +1199,9 @@ export const fr = {
 
   activities: {
     searchPlaceholder: 'Cherche une sortie, une note, une date…',
-    all: 'Toutes',
+    // « Tout », as the heatmap's filter says it: « Toutes » put the fourth
+    // chip under the filter button at 393 pt.
+    all: 'Tout',
     longRun: 'Sortie longue',
     count: (n: number) => `${n} activité${n > 1 ? 's' : ''}`,
     countWithDistance: (runs: number, km: string) => `${runs} sortie${runs > 1 ? 's' : ''} · ${km} km`,
@@ -1238,8 +1245,10 @@ export const fr = {
       // Four segments at 390 pt (App Fixes 3e).
       newest: 'Récentes',
       oldest: 'Anciennes',
-      longest: 'Plus longues',
-      fastest: 'Plus rapides',
+      // One word each, as « Récentes » and « Anciennes »: « Plus longues »
+      // and « Plus rapides » cut all four labels in the sheet's control.
+      longest: 'Longues',
+      fastest: 'Rapides',
     },
     row: {
       rpeValue: (n: number) => `RPE ${n}`,
@@ -1468,7 +1477,7 @@ export const fr = {
       better: { higher: 'plus long, c’est mieux', lower: 'plus bas, c’est mieux' },
       level: 'Comme d’habitude',
       ratioUnit: 'pt',
-      usualRange: (weeks: number) => `Ta plage habituelle, ${weeks} dernières semaines`,
+      usualRange: (weeks: number) => `Ta plage habituelle sur ${weeks} semaines`,
       thisRun: 'Cette sortie',
     },
     charts: {
