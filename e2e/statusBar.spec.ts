@@ -11,12 +11,12 @@ test.use({ viewport: { width: 393, height: 793 } })
 const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/analytics', '/settings']
 
 /**
- * The largest channel difference in the top 12 pt from --background, or,
- * with `scrimmed`, from --background under the sheet's scrim (black at
- * --scrim-sheet's alpha).
+ * The largest channel difference from --background in a full-width band (by
+ * default the top 12 pt), or, with `scrimmed`, from --background under the
+ * sheet's scrim (black at --scrim-sheet's alpha).
  */
-async function topEdgeDelta(page: Page, scrimmed = false): Promise<number> {
-  const shot = await page.screenshot({ clip: { x: 0, y: 0, width: 393, height: 12 } })
+async function topEdgeDelta(page: Page, { scrimmed = false, y = 0, height = 12 } = {}): Promise<number> {
+  const shot = await page.screenshot({ clip: { x: 0, y, width: 393, height } })
   return page.evaluate(async ({ b64, scrimmed }) => {
     const img = new Image()
     img.src = `data:image/png;base64,${b64}`
@@ -88,6 +88,26 @@ for (const theme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Share' }).first().click()
     await expect(page.getByTestId('share-sheet')).toBeVisible()
     await page.waitForTimeout(400)
-    expect(await topEdgeDelta(page, true)).toBeLessThanOrEqual(2)
+    expect(await topEdgeDelta(page, { scrimmed: true })).toBeLessThanOrEqual(2)
+  })
+}
+
+// The activity's map hero starts at the edge sampler's foot. Its tiles must
+// fade in from the page ground there: Liquid Glass v3's 35 % wash let them
+// meet the sampler at nearly full strength, a hard line 12 pt under the
+// status bar on the phone (F15, round 2).
+for (const theme of ['light', 'dark'] as const) {
+  test(`the map hero fades in from the page ground under the edge sampler (${theme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
+    await page.addInitScript((t) => localStorage.setItem('theme', t), theme)
+    await page.goto('/activities')
+    await page.locator('main a[href^="/activities/"]').first().click()
+    await expect(page).toHaveURL(/\/activities\/\d+/)
+    const hero = page.getByTestId('run-hero')
+    await expect(hero).toBeVisible()
+    expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(12)
+    expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(330)
+    await page.waitForTimeout(300)
+    expect(await topEdgeDelta(page, { y: 12, height: 2 })).toBeLessThanOrEqual(2)
   })
 }

@@ -200,8 +200,8 @@ describe('the run map layers (v4.17)', () => {
     expect(edgePoints(32, 32)).toEqual([[0, 0], [0, 32], [16, 0], [16, 32], [32, 0], [32, 32], [0, 16], [32, 16]])
   })
 
-  it('fits the route clear of the expand button and the attribution line', () => {
-    // Clear of the hero's glass buttons and its 64 pt fade (Liquid Glass v3, §6.12.1).
-    expect(ROUTE_FIT_PADDING).toEqual({ top: 68, right: 24, bottom: 80, left: 24 })
+  it('fits the route as large as 3.0 drew it in the hero', () => {
+    // Round 2: Liquid Glass v3's 68 and 80 pt drew the route at about 60 % of its size.
+    expect(ROUTE_FIT_PADDING).toEqual({ top: 32, right: 24, bottom: 36, left: 24 })
   })
 })

@@ -326,7 +326,9 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     if (map && layersReadyRef.current) setRunCursor(map, cursorRef.current)
   }, [hoverFraction, route])
 
-  if (!hasToken) return <MapUnavailable className={className} />
+  // The overlay (the hero's fades) over the placeholder too, as over a map:
+  // the hero's edges are the same whatever it shows.
+  if (!hasToken) return <><MapUnavailable className={className} />{overlay}</>
 
   const m = t.activity.map
   const shownStyle = styleChoice ?? (isFullscreen ? themeStyle() : 'dark')

@@ -8,14 +8,21 @@ import { Glass, GLASS_GROUP_BUTTON } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 /**
- * The fade at the hero's foot into the page, 64 pt (Liquid Glass v3, §7.2).
- * The top needs none: the controls over it are clear glass, legible on any
- * tile, and a light top wash only keeps the street labels off them.
+ * The hero's top meets the edge sampler, the status bar above it the page's
+ * own colour: it fades in from the solid page ground over 96 pt, eased
+ * (F15). The light 35 % wash Liquid Glass v3 left let full-strength tiles
+ * meet the sampler's foot, a hard line 12 pt under the status bar. The foot
+ * fades into the page over 64 pt (Liquid Glass v3, §7.2).
  */
+const TOP_FADE = {
+  background:
+    'linear-gradient(var(--background), color-mix(in srgb, var(--background) 84%, transparent) 25%, color-mix(in srgb, var(--background) 50%, transparent) 50%, color-mix(in srgb, var(--background) 16%, transparent) 75%, transparent)',
+}
+
 export function HeroFades() {
   return (
     <>
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-gradient-to-b from-background/35 to-transparent" />
+      <div aria-hidden data-testid="hero-top-fade" className="pointer-events-none absolute inset-x-0 top-0 z-10 h-24" style={TOP_FADE} />
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16 bg-gradient-to-t from-background to-transparent" />
     </>
   )
@@ -24,7 +31,8 @@ export function HeroFades() {
 const FADES = <HeroFades />
 
 /**
- * The activity's map hero (3.0): edge to edge, 300 pt (Liquid Glass v3), fading into the page
+ * The activity's map hero (3.0): edge to edge, 330 pt (3.0's height, back from
+ * Liquid Glass v3's 300 at the owner's ask, round 2), fading into the page
  * at the top and bottom, with the way back on the left as a 44 pt clear-glass
  * circle and expand and share on the right grouped in one clear-glass
  * capsule (Liquid Glass v3). The route is the run's one colour,
@@ -49,7 +57,7 @@ export function RunMapHero({
       data-testid="run-hero"
       // The canvas and its glass controls: marked while the map moves (README §6.12.2).
       data-map-root
-      className="relative -mx-4 h-[300px] overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-[24px]"
+      className="relative -mx-4 h-[330px] overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-[24px]"
     >
       {route ? (
         <ActivityMapClient
