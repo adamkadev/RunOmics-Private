@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- One rule for a card's caption (L5): at the right of its title only while
+  it fits there on one line, otherwise under the title from the left, 13 pt
+  muted - never a right-aligned caption wrapped under the title, as
+  Temperature cost's was. Its caption reads "Pace at 149 bpm vs your best
+  band".
+
 - No empty bands in Analytics' Load and Aerobic efficiency cards (L4): the
   Load sparkline was drawn from zero, so its line and band sat in the top
   half, and the efficiency chart padded a flat 0.05 m a beat either side of

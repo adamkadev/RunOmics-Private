@@ -28,7 +28,15 @@ export function Card({ children, className, testId }: { children: ReactNode; cla
   )
 }
 
-/** A card title: 15 px at 600, with its caption 12 px muted on the right. */
+/**
+ * A card title: 15 px at 600, with its caption 13 px muted. One rule for the
+ * caption (L5): on the title's line, at the right, only while the whole of
+ * it fits there; otherwise on its own line under the title, from the left -
+ * never a right-aligned caption wrapped under the title, as Temperature
+ * cost's was. No measuring: in a wrapping row the caption moves down when
+ * its one-line width does not fit beside the title, and alone on its line
+ * `justify-between` puts it at the start.
+ */
 export function CardHead({ title, caption, about, right }: { title: string; caption?: ReactNode; about?: string; right?: ReactNode }) {
   const [open, setOpen] = useState(false)
   // Never truncated: « Coût de la chaleur » lost half its width on a phone.
@@ -37,7 +45,7 @@ export function CardHead({ title, caption, about, right }: { title: string; capt
   // letter by letter.
   const titleClass = 'min-w-0 text-pretty text-left text-[15px] font-semibold leading-snug text-foreground'
   return (
-    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1" data-card-head>
       {about ? (
         <button
           type="button"
@@ -50,7 +58,7 @@ export function CardHead({ title, caption, about, right }: { title: string; capt
       ) : (
         <h2 className={titleClass}>{title}</h2>
       )}
-      {right ?? (caption && <span className="ml-auto min-w-0 text-right text-xs text-pretty text-muted-foreground">{caption}</span>)}
+      {right ?? (caption && <span data-card-caption className="min-w-0 text-left text-[13px] leading-[18px] text-pretty text-muted-foreground">{caption}</span>)}
       {open && about && (
         <Dialog title={title} onClose={() => setOpen(false)}>
           <p className="text-sm leading-normal text-[var(--text-2)]">{about}</p>
