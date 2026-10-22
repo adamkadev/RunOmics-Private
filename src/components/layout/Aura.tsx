@@ -24,12 +24,19 @@ const PALETTES: Record<string, Palette> = {
   '/athlete/vo2max': ['--accent', '--zone-3', '--zone-2'],
   '/goals': ['--accent', '--warn', '--zone-2'],
   '/settings': ['--zone-1', '--accent', '--zone-3'],
+  // A Progress page, as Records: amber left, teal right (F17). Compare is a
+  // section of it.
+  '/shoes': ['--warn', '--accent', '--zone-3'],
 }
+
+/** Pages whose children take their palette: every shoe's page is the Shoes family's (F17). */
+const FAMILIES = ['/shoes']
 
 export function auraPalette(pathname: string, view: string | null = null): Palette | null {
   const path = pathname.replace(/\/+$/, '') || '/'
   if (path === '/activities' && view === 'map') return null
-  return PALETTES[path] ?? null
+  const family = FAMILIES.find((root) => path.startsWith(`${root}/`))
+  return PALETTES[path] ?? (family ? PALETTES[family] : undefined) ?? null
 }
 
 /**

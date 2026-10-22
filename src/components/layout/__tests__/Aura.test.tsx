@@ -15,6 +15,19 @@ describe('the aura', () => {
     expect(auraPalette('/settings/')).toEqual(['--zone-1', '--accent', '--zone-3'])
   })
 
+  // F17: Shoes, a shoe's page and Compare (a section of Shoes) were the one
+  // Progress family on the flat ground: Records' amber left, teal right.
+  it("takes Records' palette on Shoes and every shoe's page", () => {
+    expect(auraPalette('/shoes')).toEqual(auraPalette('/records'))
+    expect(auraPalette('/shoes')).toEqual(['--warn', '--accent', '--zone-3'])
+    expect(auraPalette('/shoes/demo-shoe-0000000000000001')).toEqual(['--warn', '--accent', '--zone-3'])
+    expect(auraPalette('/shoes/abc/')).toEqual(['--warn', '--accent', '--zone-3'])
+    expect(auraPalette('/shoesx')).toBeNull()
+    route.pathname = '/shoes/abc'
+    render(<Aura />)
+    expect(screen.getByTestId('aura').style.getPropertyValue('--aura-1')).toBe('var(--warn)')
+  })
+
   // An activity, the map and the share card have the map itself.
   it('draws nothing on a page with a map hero', () => {
     expect(auraPalette('/activities/123')).toBeNull()

@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The glow on the Shoes pages (F17): Shoes, a shoe's page and Compare were
+  the one Progress family on the flat ground. They take Records' glow, amber
+  left and teal right, in both themes; the Background glow switch turns it
+  off as everywhere else.
+
 - No ghosts under the light compact bar (F21): on an activity, the chips and
   the hero card's foot showed through the light scroll edge as a smudge.
   In light the edge is now the page's ground, solid from the screen's top -
