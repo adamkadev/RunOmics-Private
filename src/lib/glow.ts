@@ -6,7 +6,7 @@ import { GLOW_ATTR, GLOW_STORAGE_KEY } from './glowKeys'
 /**
  * The background glow (Liquid Glass v3, G14; round 2, F2): the aura - a
  * blurred colour field behind the top of each page - in both themes, and
- * frosted cards over it in light. One switch, on by default, stored like the
+ * 88 % white cards over it in light. One switch, on by default, stored like the
  * accent: the attribute is written only when it is off, and layout.tsx's
  * accent-init script sets it before first paint, so the glow never flashes.
  */

@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures'
 
 // Round 2 (F2): Settings › Background glow off ⇒ no aura is rendered, and in
-// light the cards are plain white, not frosted over a glow.
+// light the cards are plain white, not 88 % white over a glow.
 test.use({ viewport: { width: 402, height: 874 } })
 
 test.beforeEach(async ({ page }) => {
@@ -12,8 +12,9 @@ test('the Background glow switch turns the aura off and the light cards white', 
   await page.goto('/')
   await expect(page.locator('.aura')).toHaveCount(1)
   const card = page.locator('main .content-card').first()
-  // On: frosted, 86 % white (F5).
-  await expect.poll(() => card.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(255, 255, 255, 0.86)')
+  // On: 88 % white, never blurred (D1), so the glow tints it a little.
+  await expect.poll(() => card.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(255, 255, 255, 0.88)')
+  expect(await card.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe('none')
 
   await page.goto('/settings')
   const toggle = page.getByRole('switch', { name: 'Background glow' })

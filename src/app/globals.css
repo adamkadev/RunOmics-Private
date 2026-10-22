@@ -869,7 +869,7 @@
 
 /* Today, one recipe everywhere (round 2, F14) - Today's and Plan's weeks,
    Training status, Consistency: a 2 pt accent ring 2 pt off the mark. An
-   outline, so the gap is whatever is under it - a card, a frosted card, a
+   outline, so the gap is whatever is under it - a card, a tinted card, a
    glass sheet - where a shadow ring had to guess the ground's colour. */
 @utility state-today {
   outline: var(--state-ring) solid var(--accent);
@@ -922,7 +922,7 @@
   /* The background glow (G14, README §6.11): a blurred colour field behind
      the top of the page, from its palette (layout/Aura). A sibling under the
      content, never an ancestor of glass. Light: the palette mixed with white
-     under frosted cards. Dark: half strength, it only tints the header. One
+     under 88 % white cards. Dark: half strength, it only tints the header. One
      switch turns it off in both themes (html[data-glow="off"], F2). */
   .aura {
     position: absolute;
@@ -956,16 +956,14 @@
   }
   html[data-glow="off"] .aura { display: none; }
 
-  /* Frosted cards over the light Aura: still the content layer - no rim, no
-     edge band, no press swell - and a static blur, never animated. Below the
-     aura they read white, so the cost is only paid at the top of the page. */
+  /* Cards over the light Aura: the content layer, never glass and never
+     blurred (D1) - no rim, no edge band, no press swell, no backdrop-filter.
+     88 % white, so the glow still tints the first card a little through it,
+     and below the aura they read all but white. A blur per card (F5) put a
+     live backdrop-filter on every card in the list, on screen or not. */
   html:not(.dark):not([data-glow="off"]) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
-    /* .86 and 1.6 (F5): at .72 and 1.8 the cards over the glow read
-       lavender, pink and peach rather than white. */
-    --card: rgb(255 255 255 / 0.86);
+    --card: rgb(255 255 255 / 0.88);
     --card-edge: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.05), 0 8px 24px rgb(40 50 70 / 0.06);
-    -webkit-backdrop-filter: blur(24px) saturate(1.6);
-            backdrop-filter: blur(24px) saturate(1.6);
   }
   html:not(.dark):not([data-glow="off"]) :is(.content-card, .glass-card, .glass-hero, .glass-row) .inset-tile {
     background: rgb(118 118 128 / 0.07);
@@ -975,7 +973,7 @@
      filter button, Analytics' section track: the system fill, and in light
      over the glow the regular glass's tint, sheen, blur and drop (F16), as
      the grey turned muddy over colour and a 62 % white read as a flat pill.
-     Never inside a frosted card: that would nest one blur in another. */
+     Only straight on the glow, never inside a card. */
   .on-aura { background-color: var(--fill-3); }
   html:not(.dark):not([data-glow="off"]) .on-aura {
     background: linear-gradient(180deg, var(--glass-sheen) 0%, transparent 55%), var(--glass-fill);
@@ -1036,11 +1034,7 @@
       -webkit-backdrop-filter: none;
               backdrop-filter: none;
     }
-    html:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
-      --card: #ffffff;
-      -webkit-backdrop-filter: none;
-              backdrop-filter: none;
-    }
+    html:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) { --card: #ffffff; }
     html:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) .inset-tile { background: var(--background); }
     html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group > .on-aura-blur { display: none; }
     html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group .on-aura { background: var(--fill-3); box-shadow: none; }
@@ -1052,11 +1046,7 @@
     -webkit-backdrop-filter: none;
             backdrop-filter: none;
   }
-  html[data-glass="solid"]:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
-    --card: #ffffff;
-    -webkit-backdrop-filter: none;
-            backdrop-filter: none;
-  }
+  html[data-glass="solid"]:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) { --card: #ffffff; }
 
   /* The fullscreen maps' top edge under their glass controls (G11; round
      2, H1): over the map, under the controls - a sibling of their glass in

@@ -42,8 +42,8 @@ export function auraPalette(pathname: string, view: string | null = null): Palet
 /**
  * The aura: a blurred colour field behind the top of the page, from the
  * page's palette. A sibling under the content, never an ancestor of glass
- * (its filter would make it a backdrop root). In light it sits under frosted
- * cards; in dark it is shown at half strength and only tints the header.
+ * (its filter would make it a backdrop root). In light it sits under 88 %
+ * white cards, which it tints a little; in dark it is shown at half strength and only tints the header.
  * The Background glow switch turns it off in both themes (round 2, F2), and
  * Reduce Transparency and Increase Contrast hide it (globals.css).
  */

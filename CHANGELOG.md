@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Cards are never blurred (D1): over the light glow each card had its own
+  24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
+  Activities. They are now 88 % white with no blur, so the glow still tints
+  the first card a little through them; dark is unchanged.
+
 - One rule for a card's caption (L5): at the right of its title only while
   it fits there on one line, otherwise under the title from the left, 13 pt
   muted - never a right-aligned caption wrapped under the title, as

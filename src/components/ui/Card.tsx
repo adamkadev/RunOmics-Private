@@ -18,8 +18,8 @@ export function cardClass({
   return cn(
     // Liquid Glass v3 (G8): radius 24, no line - the surface and a hairline
     // shadow (--card-edge) - and 16 pt padding. Cards are the content layer:
-    // never glass, never blurred (the light Aura's frosted cards aside).
-    // content-card: the hook the light Aura frosts (globals.css).
+    // never glass, never blurred (D1).
+    // content-card: the hook the light Aura's 88 % white takes (globals.css).
     'content-card rounded-[24px] bg-card shadow-[var(--card-edge)]',
     padding === 'sm'   && 'p-3',
     padding === 'base' && 'p-4',
@@ -34,7 +34,7 @@ export function cardClass({
 
 /**
  * A tile inset in a card (G8): radius 12, the page ground (a faint fill on
- * the light Aura's frosted cards), 12 pt from the card's edge - so with the
+ * the light Aura's cards), 12 pt from the card's edge - so with the
  * card's 16 pt padding the tile grid takes `-mx-1 -mb-1`, and the two corners
  * are concentric (24 - 12).
  */

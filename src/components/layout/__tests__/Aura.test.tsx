@@ -69,4 +69,18 @@ describe('the aura', () => {
     expect(rule).toMatch(/\btop: var\(--safe-top\);/)
     expect(rule).toContain('mask-image: linear-gradient(transparent 0, transparent var(--edge-sample-h), rgb(0 0 0 / 0.16) calc(var(--edge-sample-h) + 6px), rgb(0 0 0 / 0.5) calc(var(--edge-sample-h) + 12px), rgb(0 0 0 / 0.84) calc(var(--edge-sample-h) + 18px), #000 calc(var(--edge-sample-h) + 24px)')
   })
+
+  // D1: cards are the content layer, never blurred. Over the light glow they
+  // are 88 % white with no backdrop-filter of their own (F5 gave each one a
+  // 24 px blur), so the glow still tints the first card a little.
+  it('lays 88 % white cards over the light glow, with no blur', () => {
+    const css = readFileSync(path.resolve(__dirname, '../../../app/globals.css'), 'utf8')
+    const selector = 'html:not(.dark):not([data-glow="off"]) :is(.content-card, .glass-card, .glass-hero, .glass-row) {'
+    const start = css.indexOf(selector)
+    expect(start).toBeGreaterThan(-1)
+    const rule = css.slice(start, css.indexOf('}', start))
+    expect(rule).toContain('--card: rgb(255 255 255 / 0.88);')
+    expect(rule).not.toContain('backdrop-filter')
+    expect(css).not.toMatch(/:is\(\.content-card[^{]*\{[^}]*backdrop-filter:\s*blur/)
+  })
 })
