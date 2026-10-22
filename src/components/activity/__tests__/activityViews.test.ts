@@ -212,19 +212,24 @@ describe('the type a run is shown as', () => {
     prescription: { id: `w-${date}-${type}`, date, type, status: 'planned' } as unknown as WorkoutPrescription,
     activityId,
   })
-  const run = { id: 'run-1', date: '2026-10-13', type: 'Tempo' as const }
+  const run = { id: 'run-1', date: '2026-10-13', type: 'Tempo' as const, description: 'Morning Run' }
 
-  it("is the session's, where it has one, else the watch's", () => {
+  it("is the session's, where it has one, else the one its name says, else the watch's", () => {
     expect(shownType(run, at('2026-10-13', 'threshold').prescription)).toBe('Threshold')
     expect(shownType(run, null)).toBe('Tempo')
+    // The owner's runs: no session the app can match, the name says what each was set as.
+    expect(shownType({ ...run, description: "Threshold 2 x 7:00 - 2x7'@4:25" }, null)).toBe('Threshold')
+    expect(shownType({ ...run, description: 'Base' }, null)).toBe('Base')
   })
 
   it('lists only the runs whose session differs from the watch, matched as the share card matches them', () => {
-    const easy = { id: 'run-2', date: '2026-10-14', type: 'Base' as const }
-    const tempo = { id: 'run-3', date: '2026-10-15', type: 'Tempo' as const }
+    const easy = { id: 'run-2', date: '2026-10-14', type: 'Base' as const, description: 'Morning Run' }
+    const tempo = { id: 'run-3', date: '2026-10-15', type: 'Tempo' as const, description: 'Morning Run' }
     const workouts = [at('2026-10-13', 'threshold'), at('2026-10-14', 'easy'), at('2026-10-15', 'tempo')]
     expect(sessionTypes(workouts, [run, easy, tempo])).toEqual({ 'run-1': 'Threshold' })
     // An easy run on a hard day takes no session, and keeps its own type.
     expect(sessionTypes([at('2026-10-14', 'threshold')], [easy])).toEqual({})
+    // With no session, by its name: Oct 13's threshold the watch filed as tempo.
+    expect(sessionTypes([], [{ ...run, description: "Threshold 2 x 7:00 - 2x7'@4:25" }])).toEqual({ 'run-1': 'Threshold' })
   })
 })

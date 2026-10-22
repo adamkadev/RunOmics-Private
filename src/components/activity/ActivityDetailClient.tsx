@@ -207,11 +207,16 @@ export function ActivityDetailClient({
 
       <header className="-mt-1 flex flex-col gap-1">
         {/* Type · date · town: the type as its dot and its name. Above the
-            title, it fades as it nears the compact bar. */}
+            title, it fades as it nears the compact bar. A title that is the
+            type's name alone ("Base") leaves the dot to say it (round 2). */}
         <p data-title-sub className="flex flex-wrap items-center gap-x-1.5 text-[15px] leading-5 text-muted-foreground" data-testid="activity-subtitle">
           <TypeDot type={type} />
-          {t.activityTypes[type]}
-          <span aria-hidden>·</span>
+          {name.trim().toLowerCase() !== t.activityTypes[type].toLowerCase() && (
+            <>
+              {t.activityTypes[type]}
+              <span aria-hidden>·</span>
+            </>
+          )}
           {dateLabel}
           <RunPlace activityId={activity.id} start={activity.route?.[0] ?? null} />
         </p>

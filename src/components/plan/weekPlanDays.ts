@@ -4,9 +4,10 @@ import { weekTarget, type WeekTarget, type WeekTargetDay } from '@/domain/traini
 import { prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { formatKm } from '@/lib/formatters'
+import { intendedType } from '@/lib/activityTitle'
 import type { PlanPrescriptionView } from './planCoachingView'
 
-type Run = Pick<ActivitySummary, 'date' | 'distanceKm'> & Partial<Pick<ActivitySummary, 'type'>>
+type Run = Pick<ActivitySummary, 'date' | 'distanceKm'> & Partial<Pick<ActivitySummary, 'type' | 'description'>>
 type Prescription = Pick<PlanPrescriptionView, 'state'> & {
   prescription: Pick<PlanPrescriptionView['prescription'], 'date' | 'type'> & Parameters<typeof prescriptionDistanceMeters>[0]
 }
@@ -41,11 +42,13 @@ export interface DayTypeResolution {
 // One source of truth for a day's colour: the week strip and the "this week"
 // rows both call this rather than each resolving a planned or recorded type on
 // their own - which is how the same day used to end up two different hues in
-// two places. A day that was actually run always shows what happened, not what
-// was scheduled.
-export function resolveDayType(acts: readonly { type: ActivityType }[], plannedType: ActivityType | undefined): DayTypeResolution | null {
+// two places. A day that was actually run shows its run, not what was
+// scheduled - the run as it was set, by its name (round 2): a threshold
+// session the watch filed as tempo is the threshold the Activities list and
+// the run's page show (intendedType).
+export function resolveDayType(acts: readonly { type: ActivityType; description?: string }[], plannedType: ActivityType | undefined): DayTypeResolution | null {
   if (acts.length > 0) {
-    const recorded = hardestType(acts.map((a) => a.type))
+    const recorded = hardestType(acts.map((a) => intendedType(a)))
     return recorded !== plannedType && plannedType ? { type: recorded, planned: plannedType } : { type: recorded }
   }
   return plannedType ? { type: plannedType } : null

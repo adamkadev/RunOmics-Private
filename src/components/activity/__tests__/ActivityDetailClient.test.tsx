@@ -74,6 +74,14 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByTestId('activity-subtitle').textContent).toContain(`${t.activityTypes.Threshold}·Sun, Oct 18`)
   })
 
+  // Round 2, the owner's Aug 14: "Base" over "● Base" said it twice; the dot says it.
+  it('leaves the type to its dot when the title is the type alone', () => {
+    renderDetail({ activity: { ...ACTIVITY, type: 'Tempo' } as ActivityDetailView, name: 'Base', shownType: 'Base' })
+    const line = screen.getByTestId('activity-subtitle').textContent ?? ''
+    expect(line.startsWith('Sun, Oct 18')).toBe(true)
+    expect(line).not.toContain(t.activityTypes.Tempo)
+  })
+
   // Round 2: a threshold session the watch filed as tempo is shown as threshold.
   it("names the session's type over the title where it is not the watch's", () => {
     renderDetail({ activity: { ...ACTIVITY, type: 'Tempo' } as ActivityDetailView, shownType: 'Threshold' })

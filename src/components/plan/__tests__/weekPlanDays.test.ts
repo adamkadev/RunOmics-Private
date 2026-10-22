@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { PlannedWorkout } from '@/domain/activity/types'
-import { currentWeekTarget, formatWeekKm, planMaps, weekPlanDays } from '../weekPlanDays'
+import { currentWeekTarget, formatWeekKm, planMaps, resolveDayType, weekPlanDays } from '../weekPlanDays'
 
 const run = (date: string, distanceKm: number) => ({ date, distanceKm })
 const garmin = (date: string, km: number): PlannedWorkout => ({ date, name: 'Run', distanceM: km * 1000 })
@@ -49,5 +49,15 @@ describe('formatWeekKm', () => {
     expect(formatWeekKm(6.1)).toBe('6.1')
     expect(formatWeekKm(6)).toBe('6')
     expect(formatWeekKm(52.4)).toBe('52')
+  })
+})
+
+// Round 2, the owner's Oct 13: a threshold session the watch filed as tempo.
+// A run day shows the run as it was set, by its name, as Activities does.
+describe('a run day\'s type', () => {
+  it('is the run as its name set it, over the watch\'s filing', () => {
+    expect(resolveDayType([{ type: 'Tempo', description: "Threshold 2 x 7:00 - 2x7'@4:25" }], 'Tempo')).toEqual({ type: 'Threshold', planned: 'Tempo' })
+    expect(resolveDayType([{ type: 'Tempo', description: 'Base' }], undefined)).toEqual({ type: 'Base' })
+    expect(resolveDayType([{ type: 'Tempo', description: 'Morning Run' }], undefined)).toEqual({ type: 'Tempo' })
   })
 })

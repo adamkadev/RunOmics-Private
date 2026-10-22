@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sessionLabel } from '@/lib/activityTitle'
+import { intendedType, sessionLabel } from '@/lib/activityTitle'
 
 // Round 2, the owner's ask: where a type's dot or eyebrow is beside it, a
 // session reads as its set, said once.
@@ -37,6 +37,25 @@ describe('sessionLabel', () => {
   it('keeps a name with no set whole', () => {
     for (const title of ['Easy run', 'Long run', 'Recovery run', 'Intervals', '5K Race', 'Morning Run 10 km', 'Wine Route - Luxemburg', '10K de Metz', 'Sunday Run']) {
       expect(sessionLabel(title)).toBe(title)
+    }
+  })
+})
+
+// Round 2, the owner's runs: Garmin files a run by how it went; its name says
+// what it was set as, and that is the type it is shown as.
+describe('intendedType', () => {
+  it('reads the type a name leads with, over the watch\'s', () => {
+    expect(intendedType({ type: 'Tempo', description: "Threshold 2 x 7:00 - 2x7'@4:25" })).toBe('Threshold')
+    expect(intendedType({ type: 'Tempo', description: 'Base' })).toBe('Base')
+    expect(intendedType({ type: 'Tempo', description: 'Seuil - 3x8\'@4:20' })).toBe('Threshold')
+    expect(intendedType({ type: 'Threshold', description: 'Tempo · 20′ @ 4:40' })).toBe('Tempo')
+    expect(intendedType({ type: 'Tempo', description: 'Easy · 54 min + 6 strides' })).toBe('Base')
+    expect(intendedType({ type: 'Threshold', description: 'VO₂ max · 5 × 3′ @ 3:55' })).toBe('VO2Max')
+  })
+
+  it("keeps the watch's type where the name names none, or names no one type", () => {
+    for (const description of ['Morning Run', '10K de Metz', 'Strides 6 × 20s', 'Intervals', 'Recovery Jog', '', undefined]) {
+      expect(intendedType({ type: 'Tempo', description })).toBe('Tempo')
     }
   })
 })
