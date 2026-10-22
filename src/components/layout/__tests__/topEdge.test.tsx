@@ -86,6 +86,27 @@ describe('the top edge (v4.8)', () => {
     }
   })
 
+  // F21: in light the edge's 80-45 % tint let the run's chips and the hero
+  // card's foot show under the bar. Light's edge is the ground, solid from the
+  // screen's top to the bar's foot, then a 24 pt fade blurred 6 px in it only.
+  it("draws light's edge solid to the bar's foot, blurred only in its 24 pt fade", () => {
+    const css = readFileSync(path.join(SRC, 'app/globals.css'), 'utf8')
+    const rule = (selector: string) => {
+      const at = css.indexOf(`${selector} {`)
+      expect(at, selector).toBeGreaterThan(-1)
+      return css.slice(at, css.indexOf('}', at))
+    }
+    expect(css).toMatch(/--edge-band:\s+24px/)
+    const edge = rule('html:not(.dark) .scroll-edge')
+    expect(edge).toContain('--edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-band))')
+    expect(edge).toContain('--edge-solid: calc(var(--edge-shift) + var(--safe-top) + var(--bar-h))')
+    const blur = rule('html:not(.dark) .scroll-edge > i:nth-child(1)')
+    expect(blur).toContain('backdrop-filter: blur(6px)')
+    expect(blur).toContain('mask-image: linear-gradient(transparent var(--edge-solid), #000 var(--edge-solid), transparent)')
+    expect(rule('html:not(.dark) .scroll-edge > i:nth-child(2),\n  html:not(.dark) .scroll-edge > i:nth-child(3)')).toContain('display: none')
+    expect(rule('html:not(.dark) .scroll-edge > i:nth-child(4)')).toContain('background: linear-gradient(var(--background) var(--edge-solid), transparent)')
+  })
+
   it('starts the compact title bar under the strip', () => {
     const bar = readFileSync(path.join(SRC, 'components/layout/CompactTitleBar.tsx'), 'utf8')
     expect(bar).toContain("top: 'var(--safe-top)'")

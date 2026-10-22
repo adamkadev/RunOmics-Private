@@ -129,42 +129,97 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
 
 // Bevel's top (owner, Oct 2026): the compact bar has no surface of its own -
 // no backdrop-filter, no hairline. Liquid Glass v3 (G5): the soft scroll edge
-// under it (.scroll-edge) is invisible at rest and shown while the bar is -
-// three blurs that grow stronger toward the top (2, 8, 20 px) and a tint, no
-// hairline - and reaches 30 pt past the bar's foot.
-test('the top bar is a soft scroll edge, with no hairline', async ({ page }) => {
-  await page.goto('/analytics')
+// under it (.scroll-edge) is invisible at rest and shown while the bar is, a
+// tint and no hairline. In dark, three blurs that grow stronger toward the
+// top (2, 8, 20 px), reaching 30 pt past the bar's foot. In light (F21), the
+// ground solid to the bar's foot, then a 24 pt fade, blurred 6 px in it only.
+const EDGES = {
+  dark: { blurs: ['blur(2px)', 'blur(8px)', 'blur(20px)'], shown: ['block', 'block', 'block', 'block'], fade: 30 },
+  light: { blurs: ['blur(6px)'], shown: ['block', 'none', 'none', 'block'], fade: 24 },
+}
+for (const theme of ['light', 'dark'] as const) {
+  test(`the top bar is a soft scroll edge, with no hairline (${theme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme })
+    await page.addInitScript((t) => localStorage.setItem('theme', t), theme)
+    await page.goto('/analytics')
+    await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`))
+    await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
+    const layers = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-testid="scroll-edge"] > i')].map((i) => getComputedStyle(i).opacity))
+    await expect.poll(layers).toEqual(['0', '0', '0', '0'])
+    // Scrolled again on each poll: while its charts still load the page is too
+    // short to reach 600, and the clamped scroll stops above the collapse point.
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          window.scrollTo(0, 600)
+          return document.documentElement.hasAttribute('data-bar-shown')
+        }),
+      )
+      .toBe(true)
+    await expect.poll(layers).toEqual(['1', '1', '1', '1'])
+    // Polled: the edge's height eases in with a stuck strip's.
+    const edge = () => page.evaluate((count) => {
+      const wrapper = document.querySelector<HTMLElement>('[data-testid="scroll-edge"]')!
+      const layers = [...wrapper.querySelectorAll<HTMLElement>(':scope > i')]
+      const bar = document.querySelector('[data-testid="compact-title-bar"]')!.getBoundingClientRect()
+      const stickyH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-h')) || 0
+      return {
+        blurs: layers.slice(0, count).map((i) => getComputedStyle(i).backdropFilter),
+        shown: layers.map((i) => getComputedStyle(i).display),
+        hairline: layers.some((i) => parseFloat(getComputedStyle(i).borderBottomWidth) > 0),
+        // The fade past the bar's foot, or past a stuck strip's.
+        fade: Math.round(wrapper.getBoundingClientRect().bottom - bar.bottom - stickyH),
+      }
+    }, EDGES[theme].blurs.length)
+    await expect.poll(edge).toEqual({ ...EDGES[theme], hairline: false })
+    const bar = await page.evaluate(() => {
+      const style = getComputedStyle(document.querySelector('[data-testid="compact-title-bar"]')!)
+      return { backdrop: style.backdropFilter, border: style.borderBottomWidth, background: style.backgroundColor }
+    })
+    expect(bar).toEqual({ backdrop: 'none', border: '0px', background: 'rgba(0, 0, 0, 0)' })
+  })
+}
+
+// F21: in light, the run's chips and the hero card's foot showed through the
+// edge under the compact bar as a smudge. With the bar's own controls hidden,
+// the screen from its top to the bar's foot is the page's ground, nothing else.
+test('nothing shows through the light edge under the compact bar (F21)', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' })
+  await page.addInitScript(() => localStorage.setItem('theme', 'light'))
+  await page.goto('/activities')
+  await page.locator('main a[href^="/activities/"]').first().click()
+  await expect(page).toHaveURL(/\/activities\/\d+/)
+  await expect(page.getByTestId('run-chips')).toBeVisible()
   await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
-  const layers = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-testid="scroll-edge"] > i')].map((i) => getComputedStyle(i).opacity))
-  await expect.poll(layers).toEqual(['0', '0', '0', '0'])
-  // Scrolled again on each poll: while its charts still load the page is too
-  // short to reach 600, and the clamped scroll stops above the collapse point.
+  // The chips half under the bar's foot, the bar shown.
   await expect
     .poll(() =>
       page.evaluate(() => {
-        window.scrollTo(0, 600)
+        const chip = document.querySelector<HTMLElement>('[data-testid="run-chips"]')!
+        window.scrollTo(0, chip.getBoundingClientRect().top + window.scrollY - (59 + 68) + 10)
         return document.documentElement.hasAttribute('data-bar-shown')
       }),
     )
     .toBe(true)
-  await expect.poll(layers).toEqual(['1', '1', '1', '1'])
-  // Polled: the edge's height eases in with a stuck strip's.
-  const edge = () => page.evaluate(() => {
-    const wrapper = document.querySelector<HTMLElement>('[data-testid="scroll-edge"]')!
-    const layers = [...wrapper.querySelectorAll<HTMLElement>(':scope > i')]
-    const bar = document.querySelector('[data-testid="compact-title-bar"]')!.getBoundingClientRect()
-    const stickyH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-h')) || 0
-    return {
-      blurs: layers.slice(0, 3).map((i) => getComputedStyle(i).backdropFilter),
-      hairline: layers.some((i) => parseFloat(getComputedStyle(i).borderBottomWidth) > 0),
-      // The 30 pt fade past the bar's foot, or past a stuck strip's.
-      fade: Math.round(wrapper.getBoundingClientRect().bottom - bar.bottom - stickyH),
-    }
-  })
-  await expect.poll(edge).toEqual({ blurs: ['blur(2px)', 'blur(8px)', 'blur(20px)'], hairline: false, fade: 30 })
-  const bar = await page.evaluate(() => {
-    const style = getComputedStyle(document.querySelector('[data-testid="compact-title-bar"]')!)
-    return { backdrop: style.backdropFilter, border: style.borderBottomWidth, background: style.backgroundColor }
-  })
-  expect(bar).toEqual({ backdrop: 'none', border: '0px', background: 'rgba(0, 0, 0, 0)' })
+  await page.waitForTimeout(400)
+  await page.addStyleTag({ content: '[data-testid="compact-title-bar"], [data-testid="compact-title-bar"] *, [data-testid^="compact-bar"], [data-testid^="compact-bar"] * { visibility: hidden !important; }' })
+  const barBottom = await page.evaluate(() => Math.floor(document.querySelector('[data-testid="compact-title-bar"]')!.getBoundingClientRect().bottom))
+  const shot = await page.screenshot({ clip: { x: 0, y: 0, width: 393, height: barBottom } })
+  const delta = await page.evaluate(async (b64) => {
+    const img = new Image()
+    img.src = `data:image/png;base64,${b64}`
+    await img.decode()
+    const canvas = document.createElement('canvas')
+    canvas.width = img.width
+    canvas.height = img.height
+    const g = canvas.getContext('2d')!
+    g.drawImage(img, 0, 0)
+    const { data } = g.getImageData(0, 0, img.width, img.height)
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--background').trim()
+    const want = [1, 3, 5].map((i) => parseInt(bg.slice(i, i + 2), 16))
+    let max = 0
+    for (let i = 0; i < data.length; i += 4) for (let c = 0; c < 3; c++) max = Math.max(max, Math.abs((data[i + c] ?? 0) - (want[c] ?? 0)))
+    return max
+  }, shot.toString('base64'))
+  expect(delta).toBeLessThanOrEqual(1)
 })

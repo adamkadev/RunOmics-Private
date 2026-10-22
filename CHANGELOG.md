@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- No ghosts under the light compact bar (F21): on an activity, the chips and
+  the hero card's foot showed through the light scroll edge as a smudge.
+  In light the edge is now the page's ground, solid from the screen's top -
+  status bar and bar one surface - to the bar's foot, then gone over 24 pt,
+  with a 6 px blur in that band only. Dark keeps its edge.
+
 - One sheet material (F18): Filter & sort and Share run were opaque panels
   beside the glass of Map Filters, Coach "Why" and Week of…. Every sheet, in
   either detent, is now the same glass: the sheet fill under a 28 % sheen,

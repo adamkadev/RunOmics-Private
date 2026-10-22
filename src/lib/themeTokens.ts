@@ -411,6 +411,8 @@ export const GEOMETRY_TOKENS: Record<string, string> = {
   '--tab-bar-float': 'max(calc(var(--safe-bottom) - 10px), 12px)',
   // Top soft edge fade under the bar.
   '--edge-fade': '30px',
+  // Light's top edge (F21): solid to the bar's foot, then this fade, blurred in it only.
+  '--edge-band': '24px',
   '--radius-card': '24px',
   '--radius-tile': '12px',
   // Medium detent at 8 pt inset.
