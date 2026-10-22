@@ -304,21 +304,23 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
 export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
   return mode === 'light'
     ? {
-        // Regular glass
-        '--glass-filter': 'blur(12px) saturate(1.8) brightness(1.04)',
-        '--glass-fill': 'rgb(255 255 255 / 0.52)',
-        '--glass-sheen': 'rgb(255 255 255 / 0.60)',
+        // Regular glass. Translucent (F16): at .52-.82 white the glass read
+        // as a flat opaque pill on the near-white page; at .22 the Aura and
+        // the cards show through, and the hairline and drop draw its edge.
+        '--glass-filter': 'blur(18px) saturate(2.1) brightness(1.02)',
+        '--glass-fill': 'rgb(255 255 255 / 0.22)',
+        '--glass-sheen': 'rgb(255 255 255 / 0.45)',
         '--glass-rim': 'linear-gradient(135deg, rgb(255 255 255 / 0.98) 0%, rgb(255 255 255 / 0.5) 28%, rgb(255 255 255 / 0.2) 50%, rgb(255 255 255 / 0.5) 72%, rgb(255 255 255 / 0.9) 100%)',
         '--glass-rim-pressed': 'linear-gradient(135deg, #ffffff 0%, rgb(255 255 255 / 0.6) 28%, rgb(255 255 255 / 0.3) 50%, rgb(255 255 255 / 0.6) 72%, #ffffff 100%)',
         '--glass-inner': 'none',
-        '--glass-drop': '0 0 0 0.5px rgb(0 0 0 / 0.07), 0 8px 24px rgb(0 0 0 / 0.10), 0 1px 3px rgb(0 0 0 / 0.06)',
+        '--glass-drop': '0 0 0 0.5px rgb(0 0 0 / 0.14), 0 10px 28px rgb(30 40 60 / 0.16), 0 2px 4px rgb(0 0 0 / 0.08)',
         '--glass-edge-w': '3px',
         '--glass-edge-filter': 'blur(1px) saturate(2) brightness(1.08)',
         // Variants
-        '--tab-glass-fill': 'rgb(255 255 255 / 0.64)',
-        '--clear-glass-fill': 'rgb(255 255 255 / 0.20)',
-        '--clear-glass-filter': 'blur(5px) saturate(1.5) brightness(1.02)',
-        '--sheet-glass-fill': 'rgb(250 251 250 / 0.82)',
+        '--tab-glass-fill': 'rgb(255 255 255 / 0.36)',
+        '--clear-glass-fill': 'rgb(255 255 255 / 0.10)',
+        '--clear-glass-filter': 'blur(8px) saturate(1.8)',
+        '--sheet-glass-fill': 'rgb(250 251 250 / 0.55)',
         '--shadow-sheet': '0 24px 60px rgb(0 0 0 / 0.18)',
         // Selection platter (tab bar, glass segmented)
         '--tab-pill': 'rgb(0 0 0 / 0.07)',

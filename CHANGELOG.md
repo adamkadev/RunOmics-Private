@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Light-mode glass reads as glass (F16): the bar's buttons, the tab bar,
+  the map's controls and the medium sheets were 52-82 % white, a flat
+  opaque pill on the near-white page. They are now 22 % (tab bar 36 %,
+  sheets 55 %, clear 10 %) with a wider, more saturated blur, so the Aura
+  and the cards show through; a darker hairline and drop keep every edge
+  visible on the plain page. Dark mode is unchanged.
+
 - Resting HR is read only where the watch was on for more than a run.
   Garmin's daily resting HR is the lowest 30 minutes of the hours worn, so a
   watch worn only to run reported a warm-up's 50-60 - and 142 on a hard day -
