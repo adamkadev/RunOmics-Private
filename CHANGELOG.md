@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- No empty bands in Analytics' Load and Aerobic efficiency cards (L4): the
+  Load sparkline was drawn from zero, so its line and band sat in the top
+  half, and the efficiency chart padded a flat 0.05 m a beat either side of
+  a range near 0.04, leaving it in the middle third. Both charts are 72 pt
+  and fit what they draw (at least 0.04 m a beat for efficiency, so a level
+  month is not stretched into noise); gaps in the Load card are 12 pt.
+
 - Goals & season's title on one line (L3): the ‹ 2026 › stepper shared the
   large title's row and broke it onto two, pushing the first card 50 pt
   down. The stepper is in the button row, opposite the back button, in the

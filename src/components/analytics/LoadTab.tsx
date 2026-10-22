@@ -123,7 +123,7 @@ function Move({ delta, metric, decimals = 0 }: { delta: number; metric: 'fitness
 
 /**
  * Load, compact (App Fixes 2a): the seven-day load, the ratio and fitness a
- * week, each amber while it is out of range, over a 40 px line of acute load
+ * week, each amber while it is out of range, over a 72 px line of acute load
  * against its safe band.
  */
 function LoadCard({ pairs, load, window, yMax }: { pairs: AnalyticsBoardData['loads']; load: LoadDay[]; window: DayWindow; yMax: number }) {
@@ -136,14 +136,18 @@ function LoadCard({ pairs, load, window, yMax }: { pairs: AnalyticsBoardData['lo
   const out = view.state !== 'in'
   const ratioOut = view.ratio < SAFE_RATIO_LO || view.ratio > SAFE_RATIO_HI
   const W = 320
-  const H = 40
+  const H = 72
   const pts = view.points
-  const top = Math.max(1, ...pts.map((p) => Math.max(p.acute, p.hi))) * 1.1
+  // The domain is what is drawn, 10 % either side (L4): from zero, the line
+  // and its band sat in the chart's top half and left the rest empty.
+  const lowest = Math.min(...pts.map((p) => Math.min(p.acute, p.lo)))
+  const highest = Math.max(...pts.map((p) => Math.max(p.acute, p.hi)))
+  const pad = Math.max(1, (highest - lowest) * 0.1)
   const x = (i: number) => (pts.length > 1 ? (i / (pts.length - 1)) * W : W / 2)
-  const y = (v: number) => H - (v / top) * H
+  const y = (v: number) => H - ((v - lowest + pad) / (highest - lowest + 2 * pad)) * H
   const band = `${pts.map((p, i) => `${x(i)},${y(p.hi)}`).join(' ')} ${[...pts].reverse().map((p, i) => `${x(pts.length - 1 - i)},${y(p.lo)}`).join(' ')}`
   return (
-    <Card className="gap-2.5" testId="load-card">
+    <Card testId="load-card">
       <CardHead title={s.title} caption={s.caption} about={t.analytics.cards.loadTrend.about} />
       <div className="grid grid-cols-3 gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
@@ -168,18 +172,21 @@ function LoadCard({ pairs, load, window, yMax }: { pairs: AnalyticsBoardData['lo
           </div>
         )}
       </div>
-      <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden data-testid="load-mini">
-        <polygon points={band} fill="color-mix(in srgb, var(--accent) 8%, transparent)" />
-        <polyline points={pts.map((p, i) => `${x(i)},${y(p.hi)}`).join(' ')} fill="none" stroke="color-mix(in srgb, var(--accent) 40%, transparent)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
-        <polyline points={pts.map((p, i) => `${x(i)},${y(p.lo)}`).join(' ')} fill="none" stroke="color-mix(in srgb, var(--accent) 40%, transparent)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
-        <polyline points={pts.map((p, i) => `${x(i)},${y(p.acute)}`).join(' ')} fill="none" stroke="var(--foreground)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-      </svg>
-      <div className="relative -mt-[46px] h-10" aria-hidden>
-        {pts.map((p, i) =>
-          p.out && i >= pts.length - 3 ? (
-            <span key={p.date} className="absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ left: `${(x(i) / W) * 100}%`, top: y(p.acute), background: WARN }} />
-          ) : null,
-        )}
+      {/* The chart sets its height (L4); the out-of-range dots lie over it. */}
+      <div className="relative">
+        <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden data-testid="load-mini">
+          <polygon points={band} fill="color-mix(in srgb, var(--accent) 8%, transparent)" />
+          <polyline points={pts.map((p, i) => `${x(i)},${y(p.hi)}`).join(' ')} fill="none" stroke="color-mix(in srgb, var(--accent) 40%, transparent)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+          <polyline points={pts.map((p, i) => `${x(i)},${y(p.lo)}`).join(' ')} fill="none" stroke="color-mix(in srgb, var(--accent) 40%, transparent)" strokeDasharray="3 3" vectorEffect="non-scaling-stroke" />
+          <polyline points={pts.map((p, i) => `${x(i)},${y(p.acute)}`).join(' ')} fill="none" stroke="var(--foreground)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+        </svg>
+        <div className="absolute inset-0" aria-hidden>
+          {pts.map((p, i) =>
+            p.out && i >= pts.length - 3 ? (
+              <span key={p.date} className="absolute size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ left: `${(x(i) / W) * 100}%`, top: y(p.acute), background: WARN }} />
+            ) : null,
+          )}
+        </div>
       </div>
     </Card>
   )
