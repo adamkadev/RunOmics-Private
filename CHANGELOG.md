@@ -35,6 +35,18 @@ Fixes from the first round on an iPhone, IDs from the round-2 handoff
 - **F14** One today ring everywhere: 2 pt accent, 2 pt off the mark.
 - **H1** The fullscreen heatmap's top row is live glass in full ink, over a
   blurred soft edge that sits under it, not over it.
+- **F7** The compact title is measured without its own padding, so a title
+  within 8 pt of fitting no longer flips between centred and lead-aligned on
+  every render (React #185 on /activities).
+- **F15** The status bar blends into the header. Both theme-color metas are the
+  page's `--background`, read from the token table. The glow starts below the
+  safe area and comes in over an eased 24 pt after the edge sampler. Activities'
+  Map view has no glow, and an open sheet dims the top edge once, not twice.
+  The status bar stays opaque (`'default'`) in both themes: its style can't be
+  set per theme, and `black-translucent` draws a white clock on light pages.
+- The activity's map is back to 3.0's size: 330 pt tall, with the route framed
+  as 3.0 did, about 1.7× larger. Its top fades in from the page, with no line
+  under the status bar.
 
 ## [3.2.0] - 2026-10-21
 
