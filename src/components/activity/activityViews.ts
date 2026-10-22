@@ -6,7 +6,7 @@ import type { ShareActivity, ShareReps } from '@/lib/shareCardStats'
 import { pickDefined } from '@/components/pickDefined'
 import { workoutSummary } from '@/components/plan/workoutSummary'
 import { prescriptionDistanceMeters, prescriptionDuration, prescriptionStructure } from '@/components/coaching/presentation'
-import { activityTitle } from '@/lib/activityTitle'
+import { activityTitle, intendedType } from '@/lib/activityTitle'
 
 /**
  * The activity page handed the whole Activity to its client components, so
@@ -168,19 +168,20 @@ export function shareSession(
 
 /**
  * The type a run is shown as, its dot and its name (round 2, the owner's
- * ask): its session's, where the coach set one. A threshold session the
- * watch filed as tempo - its heart rate too low by Garmin's reading - was
- * still a threshold session; how it went is the zones' and the verdict's to
- * say. The run keeps the watch's type: analytics and filters read that.
+ * ask): its session's, where the coach set one, else the one its name says
+ * (intendedType). A threshold session the watch filed as tempo - its heart
+ * rate too low by Garmin's reading - was still a threshold session; how it
+ * went is the zones' and the verdict's to say. The run keeps the watch's
+ * type: analytics and filters read that.
  */
-export function shownType(activity: Pick<Activity, 'type'>, session: WorkoutPrescription | null): ActivityType {
-  return session ? COACHING_TO_ACTIVITY_TYPE[session.type] : activity.type
+export function shownType(activity: Pick<Activity, 'type' | 'description'>, session: WorkoutPrescription | null): ActivityType {
+  return session ? COACHING_TO_ACTIVITY_TYPE[session.type] : intendedType(activity)
 }
 
 /** The runs a list shows as their session's type, where it is not the watch's: id to type. */
 export function sessionTypes(
   workouts: readonly { prescription: WorkoutPrescription; activityId: string | null }[],
-  activities: readonly Pick<Activity, 'id' | 'date' | 'type'>[],
+  activities: readonly Pick<Activity, 'id' | 'date' | 'type' | 'description'>[],
 ): Record<string, ActivityType> {
   const types: Record<string, ActivityType> = {}
   for (const activity of activities) {

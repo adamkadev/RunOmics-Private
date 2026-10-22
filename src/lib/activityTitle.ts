@@ -1,5 +1,6 @@
 import { t } from '@/i18n'
 import { formatWeekdayLong } from '@/lib/formatters'
+import type { ActivityType } from '@/domain/activity/types'
 
 /** A run's name: Garmin's, or "Sunday Run" / "Sortie du dimanche" from its date when Garmin gave none. */
 export function activityTitle(activity: { description: string; date: string }): string {
@@ -7,17 +8,43 @@ export function activityTitle(activity: { description: string; date: string }): 
 }
 
 /**
- * The words a name leads with that only say its type, in either language:
- * the type's dot or eyebrow beside the name says it already.
+ * The words a name leads with that only say its type, in either language,
+ * and the type each names - null where a word is a type's but not one type
+ * ("Intervals" is VO₂ max or threshold). The dot or eyebrow beside the name
+ * says it already; and where the watch filed the run as another type, the
+ * name is what still says what the session was.
  */
-const TYPE_WORDS = new Set([
-  'threshold', 'seuil', 'tempo', 'intervals', 'interval', 'fractionné', 'fractionne',
-  'vo2 max', 'vo2max', 'sprint', 'anaerobic', 'anaérobie', 'race', 'course',
-  'easy', 'easy run', 'base', 'footing', 'recovery', 'recovery run', 'récupération', 'long run', 'sortie longue',
+const TYPE_WORDS = new Map<string, ActivityType | null>([
+  ['threshold', 'Threshold'], ['threshold run', 'Threshold'], ['seuil', 'Threshold'],
+  ['tempo', 'Tempo'], ['tempo run', 'Tempo'],
+  ['vo2 max', 'VO2Max'], ['vo2max', 'VO2Max'],
+  ['sprint', 'Sprint'], ['anaerobic', 'Anaerobic'], ['anaérobie', 'Anaerobic'],
+  ['easy', 'Base'], ['easy run', 'Base'], ['base', 'Base'], ['footing', 'Base'], ['endurance', 'Base'],
+  ['recovery', 'Base'], ['recovery run', 'Base'], ['récupération', 'Base'], ['long run', 'Base'], ['sortie longue', 'Base'],
+  ['intervals', null], ['interval', null], ['fractionné', null], ['fractionne', null], ['race', null], ['course', null],
 ])
 
+function typeKey(words: string): string {
+  return words.trim().replace(/[·:,\-–—]+$/, '').trim().toLowerCase().replace('₂', '2').replace(/\s+/g, ' ')
+}
+
 function isTypeWord(words: string): boolean {
-  return TYPE_WORDS.has(words.trim().replace(/[·:,\-–—]+$/, '').trim().toLowerCase().replace('₂', '2').replace(/\s+/g, ' '))
+  return TYPE_WORDS.has(typeKey(words))
+}
+
+/**
+ * What a run was set as (round 2, the owner's ask): the type its name leads
+ * with - "Threshold 2 x 7:00 - 2x7'@4:25", "Seuil - 3x8'@4:20", "Base" - else
+ * the watch's. Garmin files a run by how it went: a threshold session run
+ * with too low a heart rate becomes tempo, a base run pushed becomes tempo.
+ * The session was what it was named; how it went is the zones' and the
+ * verdict's to say. A name that names no type ("Morning Run", "10K de
+ * Metz") leaves the watch's.
+ */
+export function intendedType(activity: { type: ActivityType; description?: string | null }): ActivityType {
+  const name = activity.description?.trim() ?? ''
+  const leading = name.split(/\s[-–—·]\s|\d/u)[0] ?? ''
+  return TYPE_WORDS.get(typeKey(leading)) ?? activity.type
 }
 
 /** A set of reps ("3 × 8", "4x3"), a length in minutes or seconds ("8′", "7'"), a pace ("@ 4:25") or a body and its extras ("54 min + 6 strides"). */

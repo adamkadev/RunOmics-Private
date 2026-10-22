@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The maps keep the page's theme when you leave the app and come back. iOS
+  draws its app-switcher snapshots in both appearances, flipping the page to
+  light and back; the flip back came while the map's light style loaded, and
+  went unseen. The activity map and the heatmap check the theme again once a
+  style has loaded.
+
+- A run shows the type it was set as, by its name, where no coach session is
+  matched: `Threshold 2 x 7:00 - …` that Garmin filed as tempo reads
+  `● Threshold`, a Garmin Coach `Base` pushed into tempo reads as base - on the
+  run's page, its Activities row, the shoe page and Plan, whose day strip and
+  card now agree with them. A title that is the type's name alone leaves the
+  type to its dot. The run keeps the watch's type for Analytics and filters.
+
 - Sessions read as their set where their type is shown beside them: Activities'
   rows, the activity page's title and Plan's day cards say `3 × 8′ @ 4:25`, the
   type left to the dot or the eyebrow (and read out by VoiceOver on a row). A

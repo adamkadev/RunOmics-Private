@@ -277,6 +277,12 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           drawnRef.current = 0
           animateRoute()
         }
+        // The theme again, now this style has loaded (round 2, the owner's
+        // phone): leaving the app, iOS draws its switcher snapshots in both
+        // appearances, so the theme flips and flips back while the first
+        // swap loads - and the observer, which waits for a loaded style, let
+        // the flip back go, leaving a light map on a dark page.
+        if (styleChoiceRef.current === null && isDark() !== dark) applyStyleRef.current?.(themeStyle())
       })
 
       // A theme, or the fullscreen style button, swaps the whole style in

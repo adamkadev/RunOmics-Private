@@ -19,7 +19,7 @@ import { isWatchId } from '@/lib/garminConnect'
 import { WearBar } from '@/components/shoes/WearBar'
 import { formatClock, formatDate, formatDateRange, formatDistance, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { activityTitle } from '@/lib/activityTitle'
+import { activityTitle, intendedType } from '@/lib/activityTitle'
 
 export const revalidate = 3600
 
@@ -296,7 +296,7 @@ export default async function ShoeDetailPage({
                 href={`/activities/${a.id}`}
                 className="flex items-center gap-3 border-b border-border px-5 py-[13px] transition-colors last:border-b-0 hover:bg-[var(--surface-2)] active:bg-[var(--surface-2)]"
               >
-                <TypeDot type={a.type} size={8} />
+                <TypeDot type={intendedType(a)} size={8} />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="break-words text-sm font-semibold text-pretty text-foreground">{activityTitle(a)}</span>
                   <span className="truncate text-xs text-muted-foreground">
