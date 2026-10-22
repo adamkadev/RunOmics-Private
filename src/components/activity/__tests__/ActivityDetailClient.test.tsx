@@ -100,9 +100,36 @@ describe('ActivityDetailClient', () => {
     )
     // F8: four equal columns 8 pt apart, the time with no "min".
     expect(stats.className).toContain('grid-cols-[repeat(4,minmax(0,1fr))]')
-    expect(stats.className).toContain('gap-2')
+    expect(stats.className).toContain('gap-x-2')
     expect(screen.queryByTestId('run-summary')).toBeNull()
     expect(screen.getAllByText(t.activity.stats.distance)).toHaveLength(1)
+  })
+
+  // L2: "Time" has no unit, so its cell was shorter and its label rode up
+  // about 7 pt. Two rows across the grid: every value in a fixed 44 pt row,
+  // its 32 pt box at the row's foot, then every label, so no cell sets
+  // another's height; each value still comes before its label.
+  it('puts every value in one fixed row and every label in the next, unit or not', () => {
+    renderDetail()
+    const stats = screen.getByTestId('run-stats')
+    expect(stats.className).toContain('grid-rows-[44px_auto]')
+    expect(stats.className).toContain('grid-flow-col')
+    expect(stats.className).not.toContain('items-center')
+    const values = [...stats.querySelectorAll<HTMLElement>('[data-stat-value]')]
+    const labels = [...stats.querySelectorAll<HTMLElement>('[data-stat-label]')]
+    expect(values).toHaveLength(4)
+    expect(labels.map((l) => l.textContent)).toEqual([t.activity.stats.distance, t.activity.stats.duration, t.activity.stats.pace, t.activity.stats.avgHr])
+    for (const value of values) {
+      expect(value.className).toMatch(/\bh-8\b/)
+      expect(value.className).toContain('leading-8')
+      expect(value.className).toContain('self-end')
+      expect(value.className).toContain('text-[length:min(28px,')
+      expect(value.nextElementSibling?.hasAttribute('data-stat-label')).toBe(true)
+    }
+    // The time, unitless, in the same 32 pt box; a unit is an inline 14 pt span at line-height 1.
+    expect(values[1]!.children).toHaveLength(0)
+    expect(values[0]!.querySelector('span')!.className).toContain('leading-none')
+    expect(labels[0]!.className).toContain('text-[15px]')
   })
 
   // 3.0: the four full-width rows became one row of chips.

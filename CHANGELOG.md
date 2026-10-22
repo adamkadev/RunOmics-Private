@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- An activity's four numbers share one baseline (L2): "Time", with no
+  unit, sat about 7 pt higher than Distance, Avg pace and Avg HR. Every
+  value now sits in one fixed 44 pt row, every label in the row under it,
+  at 15 pt. The value is 28 pt where its column allows and the size that
+  fits "1:10:31" on a phone, the same across the row.
+
 - The page ends clear of the tab bar's pill (L1): the bottom padding is the
   bar's float, its 62 pt and 24 pt of air over the home indicator's inset,
   read from the bar's own tokens, on every page, so at scroll end the last

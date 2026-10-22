@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { Fragment, useLayoutEffect, useRef, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
 import type { ActivityType } from '@/domain/activity/types'
@@ -101,18 +101,39 @@ function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
   return stats
 }
 
+/**
+ * The value's size: 28 pt where its column allows, else what fits the widest
+ * value, h:mm:ss (3.65 em at 700), the same across the row. A phone's 84 pt
+ * column holds it at about 23; at 28 "1:10:31" is 102 pt and "5:39 /km" 88.
+ */
+const STAT_VALUE_SIZE = 'text-[length:min(28px,calc((100cqi_-_24px)_/_14.6))]'
+
 function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; testId?: string }) {
   return (
-    // Four equal columns 8 pt apart (F8), each number free to shrink.
-    <div className="grid grid-cols-[repeat(4,minmax(0,1fr))] gap-2" data-testid={testId}>
+    // Four equal columns 8 pt apart (F8) in two rows (L2): every value in a
+    // fixed 44 pt row, its 32 pt box at the row's foot, then every label. A
+    // unit's inline box was taller than a bare value's, so "Time", with no
+    // unit, sat about 7 pt higher; now no cell sets another's height. Column
+    // flow keeps each value before its label for VoiceOver.
+    <div
+      className="grid grid-flow-col grid-cols-[repeat(4,minmax(0,1fr))] grid-rows-[44px_auto] gap-x-2 gap-y-0.5 [container-type:inline-size]"
+      data-testid={testId}
+    >
       {stats.map((stat) => (
-        <div key={stat.label} className="flex min-w-0 flex-col gap-0.5">
-          <span className="whitespace-nowrap text-[22px] font-bold leading-7 tracking-[-0.016rem] text-foreground">
+        <Fragment key={stat.label}>
+          <span
+            data-stat-value
+            className={cn(
+              'block h-8 min-w-0 self-end whitespace-nowrap font-bold tracking-[-0.02em] text-foreground',
+              STAT_VALUE_SIZE,
+              'leading-8',
+            )}
+          >
             {stat.value}
-            {stat.unit && <span className="ml-0.5 text-[13px] font-normal tracking-normal text-muted-foreground">{stat.unit}</span>}
+            {stat.unit && <span className="ml-[3px] text-[14px] font-normal leading-none tracking-normal text-muted-foreground">{stat.unit}</span>}
           </span>
-          <span className="truncate text-[13px] leading-[18px] text-muted-foreground">{stat.label}</span>
-        </div>
+          <span data-stat-label className="min-w-0 truncate text-[15px] leading-5 text-muted-foreground">{stat.label}</span>
+        </Fragment>
       ))}
     </div>
   )
