@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The page ends clear of the tab bar's pill (L1): the bottom padding is the
+  bar's float, its 62 pt and 24 pt of air over the home indicator's inset,
+  read from the bar's own tokens, on every page, so at scroll end the last
+  card - an activity's Previous run - sits whole above the pill.
+
 - A stuck tab strip is glass over the rows (F20): Activity detail's
   Overview / Splits / Charts / Dynamics strip, Analytics' and Records' turn
   to glass as they stick, now fading in over 120 ms, but the soft scroll
