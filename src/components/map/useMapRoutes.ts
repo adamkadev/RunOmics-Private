@@ -198,12 +198,24 @@ export function useMapRoutes(
       // Cheaper glass over the canvas while it moves (README §6.12.2).
       watchMapMoving(map);
 
+      // A theme swaps the whole style in place.
+      const swapTheme = () => {
+        dark = isDark();
+        accent = readAccent();
+        removeRunLayers(map);
+        map.setStyle(heatBasemapStyle(maptilerStyle(dark, token), dark), { diff: false });
+      };
+
       // The first style and every one after it (v4.17): the camera stays,
-      // the run layers come back.
+      // the run layers come back. Then the theme again (round 2): leaving
+      // the app, iOS draws its switcher snapshots in both appearances, and a
+      // flip back that came while this style loaded went unseen, leaving a
+      // light map on a dark page.
       map.on("style.load", () => {
         if (cancelled) return;
         addRunLayers(map);
         setMapReady(true);
+        if (isDark() !== dark) swapTheme();
       });
 
       // A theme swaps the whole style in place; an accent only repaints the
@@ -211,10 +223,7 @@ export function useMapRoutes(
       const observer = new MutationObserver(() => {
         if (cancelled || !map.isStyleLoaded()) return;
         if (isDark() !== dark) {
-          dark = isDark();
-          accent = readAccent();
-          removeRunLayers(map);
-          map.setStyle(heatBasemapStyle(maptilerStyle(dark, token), dark), { diff: false });
+          swapTheme();
         } else if (readAccent() !== accent) {
           accent = readAccent();
           addRunLayers(map);
