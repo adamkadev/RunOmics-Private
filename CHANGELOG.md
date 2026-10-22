@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- One sheet material (F18): Filter & sort and Share run were opaque panels
+  beside the glass of Map Filters, Coach "Why" and Week of…. Every sheet, in
+  either detent, is now the same glass: the sheet fill under a 28 % sheen,
+  a 28 px blur (saturate 1.8 dark, 2 light), the rim and the sheet's drop.
+  The light scrim is a 16 % tint of the page's ink, not a 20 % grey wash.
+  Close, Reset and the segmented controls on a sheet take a light
+  translucent fill, an unticked type in Filter & sort is a 1.5 pt ring, and
+  Share run's card - the image it exports - stays opaque.
+
 - Light-mode glass reads as glass (F16): the bar's buttons, the tab bar,
   the map's controls and the medium sheets were 52-82 % white, a flat
   opaque pill on the near-white page. They are now 22 % (tab bar 36 %,

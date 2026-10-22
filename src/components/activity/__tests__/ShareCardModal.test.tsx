@@ -140,16 +140,28 @@ describe('ShareCardModal', () => {
   })
 
   // Design review, Oct 2026: a full-height sheet left ~300 px of nothing above the buttons.
-  it('sizes the sheet to what it holds, the buttons right under the options, no glass', () => {
+  it('sizes the sheet to what it holds, the buttons right under the options', () => {
     open()
     const sheet = screen.getByTestId('share-sheet')
     expect(sheet.className).toContain('max-h-full')
     expect(sheet.className).not.toMatch(/(^|\s)h-full/)
-    // Liquid Glass v3's large detent: opaque on the raised surface, 38 pt top corners.
-    expect(sheet.style.background).toBe('var(--raised)')
     expect(sheet.className).toContain('rounded-t-[var(--radius-sheet-large)]')
-    expect(sheet.style.backdropFilter ?? '').toBe('')
     expect(screen.getByTestId('share-options').nextElementSibling?.textContent).toContain('Share')
+  })
+
+  // F18: one sheet material. The share sheet was the opaque raised panel the
+  // other sheets left behind; it is the sheets' glass, its layers on the
+  // wrapper and the scroll inside, and the card it exports stays opaque.
+  it('is the sheets\' glass, the scroll inside it, the card opaque', () => {
+    open()
+    const sheet = screen.getByTestId('share-sheet')
+    expect(sheet.className).toMatch(/\blg lg-sheet\b/)
+    expect(sheet.style.background).toBe('')
+    expect([...sheet.querySelectorAll(':scope > i')].map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
+    expect(sheet.className).not.toContain('overflow-y-auto')
+    expect(screen.getByTestId('share-sheet-body').className).toContain('overflow-y-auto')
+    expect(screen.getByTestId('share-preview').closest('.lg')).toBe(sheet)
+    expect(screen.getByTestId('share-preview').querySelector('canvas')).not.toBeNull()
   })
 
   // Design review, Oct 2026: the design picker was a filled accent pill, unlike
@@ -187,9 +199,10 @@ describe('ShareCardModal', () => {
   it('gives the close button a 44 pt target', () => {
     open()
     const close = screen.getByRole('button', { name: t.activity.shareCard.close })
-    // A 44 pt filled circle, the sheet header's close (G10).
-    expect(close.className).toContain('size-11')
-    expect(close.className).toContain('bg-[var(--fill-3)]')
+    // A 44 pt filled circle, the sheet header's close (G10), in the sheets' translucent fill (F18).
+    expect(close.className).toContain('h-11')
+    expect(close.className).toContain('w-11')
+    expect(close.className).toContain('bg-[var(--sheet-fill)]')
   })
 
   // At the owner's request: no VO₂max badge on a shared card, nor a switch for one.
