@@ -58,6 +58,48 @@ function ringData(ring: HomeRing | null): { ring: FeatureCollection; dot: Featur
   };
 }
 
+/**
+ * Extra layers drawn with the run layers (Explore's Districts): added after
+ * the heat, ring, dot and edge fence on every style load and accent change,
+ * and removed before them, so a theme or accent swap redraws them in the
+ * same order. `add` gets the mode the run layers were just drawn in.
+ */
+export interface MapOverlay {
+  add(map: MapLibreMap, ctx: { dark: boolean }): void;
+  remove(map: MapLibreMap): void;
+}
+
+export interface MapRoutesOptions {
+  /** Drawn over the heat; see MapOverlay. Its identity may change; the hook swaps it in place. */
+  overlay?: MapOverlay;
+  /** Fit to this box instead of the runs' frame while it is set. */
+  fitOverride?: LngLatBounds | null;
+}
+
+const boundsKey = (b: LngLatBounds | null | undefined) =>
+  b ? [b.minLon, b.minLat, b.maxLon, b.maxLat].map((v) => v.toFixed(5)).join() : "";
+
+const isDarkPage = () => document.documentElement.classList.contains("dark");
+
+/** An overlay's failure never takes the heat down with it. */
+function drawOverlay(overlay: MapOverlay, map: MapLibreMap): boolean {
+  try {
+    overlay.add(map, { dark: isDarkPage() });
+    return true;
+  } catch (err) {
+    console.warn("Map overlay failed to draw", err);
+    return false;
+  }
+}
+
+function eraseOverlay(overlay: MapOverlay | null, map: MapLibreMap): void {
+  try {
+    overlay?.remove(map);
+  } catch (err) {
+    console.warn("Map overlay failed to clear", err);
+  }
+}
+
 const boundsArray = (b: LngLatBounds): [[number, number], [number, number]] => [
   [b.minLon, b.minLat],
   [b.maxLon, b.maxLat],
@@ -70,6 +112,7 @@ export function useMapRoutes(
   visibleIndices: number[],
   ring: HomeRing | null,
   fullscreen = false,
+  { overlay, fitOverride }: MapRoutesOptions = {},
 ) {
   // Read when the map is made; the fit below follows it.
   const fullscreenRef = useRef(fullscreen);
@@ -80,6 +123,14 @@ export function useMapRoutes(
   const mapRef = useRef<MapLibreMap | null>(null);
   const heatRef = useRef<HeatLayer | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  // The overlay to draw, and the one drawn on the current style (if any).
+  const overlayRef = useRef<MapOverlay | undefined>(overlay);
+  const drawnOverlayRef = useRef<MapOverlay | null>(null);
+  // False from a theme swap's setStyle until its style.load: no layer can be added meanwhile.
+  const styleLoadedRef = useRef(false);
+  useLayoutEffect(() => {
+    overlayRef.current = overlay;
+  }, [overlay]);
 
   const { clusters } = data;
   const selected = clusters[selectedIdx];
@@ -91,7 +142,9 @@ export function useMapRoutes(
     const loaded = visibleIndices.map((i) => routes[i]).filter((coords): coords is [number, number][] => !!coords);
     return (loaded.length ? percentileBounds(loaded) : null) ?? selected?.frame ?? null;
   }, [routes, visibleIndices, selected]);
-  const frameKey = frame ? [frame.minLon, frame.minLat, frame.maxLon, frame.maxLat].map((v) => v.toFixed(5)).join() : "";
+  const frameKey = boundsKey(frame);
+  const fitTarget = fitOverride ?? frame;
+  const fitKey = fitOverride ? `override:${boundsKey(fitOverride)}` : frameKey;
 
   // What the run layers draw, kept so a new style or accent can redraw it.
   const tracksRef = useRef<Float64Array[]>([]);
@@ -101,12 +154,14 @@ export function useMapRoutes(
     if (!containerRef.current || !clusters.length) return;
     let cancelled = false;
     let fenceCleanup: (() => void) | null = null;
-    const isDark = () => document.documentElement.classList.contains("dark");
+    const isDark = isDarkPage;
     // The heat ramps start from the accent's full colour in both modes
     // (App Fixes 4d), not the darker light-mode UI accent.
     const readAccent = () => heatAccent(parseAccent(document.documentElement.getAttribute("data-accent")));
 
     function removeRunLayers(map: MapLibreMap) {
+      eraseOverlay(drawnOverlayRef.current, map);
+      drawnOverlayRef.current = null;
       heatRef.current?.remove();
       heatRef.current = null;
       fenceCleanup?.();
@@ -161,6 +216,9 @@ export function useMapRoutes(
       );
 
       fenceCleanup = addEdgeFence(map);
+
+      const extra = overlayRef.current;
+      if (extra && drawOverlay(extra, map)) drawnOverlayRef.current = extra;
     }
 
     async function initMap() {
@@ -202,6 +260,7 @@ export function useMapRoutes(
       const swapTheme = () => {
         dark = isDark();
         accent = readAccent();
+        styleLoadedRef.current = false;
         removeRunLayers(map);
         map.setStyle(heatBasemapStyle(maptilerStyle(dark, token), dark), { diff: false });
       };
@@ -214,6 +273,7 @@ export function useMapRoutes(
       map.on("style.load", () => {
         if (cancelled) return;
         addRunLayers(map);
+        styleLoadedRef.current = true;
         setMapReady(true);
         if (isDark() !== dark) swapTheme();
       });
@@ -242,6 +302,8 @@ export function useMapRoutes(
       heatRef.current?.remove();
       heatRef.current = null;
       fenceCleanup?.();
+      drawnOverlayRef.current = null;
+      styleLoadedRef.current = false;
       mapRef.current?.remove();
       mapRef.current = null;
       setMapReady(false);
@@ -268,6 +330,18 @@ export function useMapRoutes(
     (map.getSource(DOT_SOURCE) as GeoJSONSource | undefined)?.setData(dot);
   }, [ring, mapReady]);
 
+  // An overlay that arrives, leaves or changes once the map is up: swapped
+  // in place, over the run layers already drawn. During a theme swap the
+  // next style.load draws whichever overlay is current then.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map || !styleLoadedRef.current) return;
+    if (drawnOverlayRef.current === (overlay ?? null)) return;
+    eraseOverlay(drawnOverlayRef.current, map);
+    drawnOverlayRef.current = null;
+    if (overlay && drawOverlay(overlay, map)) drawnOverlayRef.current = overlay;
+  }, [overlay, mapReady]);
+
   // The first fit on a new map lands at once; later ones - another area, a
   // filter - fly there. Keyed on the frame's numbers, so a routes array
   // rebuilt unchanged doesn't move the camera.
@@ -277,21 +351,21 @@ export function useMapRoutes(
       fittedOnce.current = false;
       return;
     }
-    if (!mapRef.current || !frame) return;
+    if (!mapRef.current || !fitTarget) return;
     // Sized to the box it is in now (fullscreen or not) before it fits.
     mapRef.current.resize();
-    mapRef.current.fitBounds(boundsArray(frame), {
+    mapRef.current.fitBounds(boundsArray(fitTarget), {
       padding: fitPadding(fullscreen),
       maxZoom: FIT_MAX_ZOOM,
       duration: fittedOnce.current ? FIT_MS : 0,
     });
     fittedOnce.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [frameKey, mapReady, fullscreen]);
+  }, [fitKey, mapReady, fullscreen]);
 
   const resize = useCallback(() => {
     mapRef.current?.resize();
   }, []);
 
-  return { containerRef, resize };
+  return { containerRef, resize, mapRef, mapReady };
 }

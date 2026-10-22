@@ -34,6 +34,18 @@ All notable changes to this project are documented in this file.
   distance, the share of new ground and the share on busy roads, and leave
   as GPX 1.1 files that Garmin Connect, Coros and Suunto import.
 
+- Explore, Districts on the map (X4): a round glass layers button above
+  the ⓘ switches the Activities map between Heat and Districts and
+  remembers the choice; it turns accent while Districts is on and only
+  shows where the area has quartiers. Districts draws each unit over the
+  heat: accent outline and a light fill when complete, a neutral outline
+  when partly run, a veil with a dashed edge under 15 %. Name and share are
+  map labels (the base map's own name for a quartier gives way to them),
+  the legend reads Fog / Partly / Complete and is solid, not glass, and the
+  insight card counts quartiers: "1 of 21 quartiers complete. Bellecroix is
+  next, 3.0 km from home." Heat is unchanged; `?layer=districts` opens the
+  map on Districts.
+
 - Cards are never blurred (D1): over the light glow each card had its own
   24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
   Activities. They are now 88 % white with no blur, so the glow still tints

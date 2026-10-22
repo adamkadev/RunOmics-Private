@@ -1,6 +1,7 @@
 import { queryActivities } from '@/application/usecases/QueryActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
 import { getMapShellData } from '@/application/usecases/GetAllRoutes'
+import { getExploreAreas } from '@/application/usecases/GetExploreAreas'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 import { appTodayIso } from '@/lib/calendarDate'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
@@ -24,6 +25,7 @@ export default async function ActivitiesPage() {
       today={today}
       shoeNames={Object.fromEntries(getShoeStats().map((shoe) => [shoe.gearId, shoe.name]))}
       mapData={getMapShellData()}
+      exploreAreas={getExploreAreas()}
       sessionTypes={sessionTypes(getCoachingOverview(today)?.workouts ?? [], items)}
     />
   )

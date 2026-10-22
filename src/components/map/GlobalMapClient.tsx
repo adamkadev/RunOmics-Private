@@ -4,10 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Maximize, Minimize, SlidersHorizontal } from "lucide-react";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { ACTIVITY_TYPES } from "@/domain/activity/types";
+import { areaForCluster } from "@/domain/explore/areaForCluster";
+import { medianStart } from "@/domain/explore/home";
+import type { ExploreAreaRef } from "@/domain/explore/types";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { formatKm, formatNumber } from "@/lib/formatters";
+import { useUrlParam } from "@/lib/useUrlParam";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
 import type { TerritoryCardContent } from "./TerritoryBand";
 import { ClusterPanel } from "./ClusterPanel";
@@ -16,6 +20,12 @@ import { HeatLegend } from "./HeatLegend";
 import { MapAttribution } from "@/components/ui/MapAttribution";
 import { GlassLayers, GLASS_CIRCLE, glassClass } from "@/components/ui/GlassSurface";
 import { useMapRoutes, type HomeRing } from "./useMapRoutes";
+import { LayersButton } from "@/components/explore/LayersButton";
+import { DistrictsLegend } from "@/components/explore/DistrictsLegend";
+import { useDistrictsCoverage } from "@/components/explore/useDistrictsCoverage";
+import { districtsCardContent } from "@/components/explore/districtsCard";
+import { useDistrictsOverlay, useDistrictsSync } from "@/components/explore/useDistrictsOverlay";
+import { initialMapLayer, parseMapLayer, readStoredMapLayer, storeMapLayer, type MapLayer } from "@/components/explore/mapLayer";
 import {
   activeFilterCount,
   areaRows,
@@ -31,9 +41,16 @@ import {
 interface Props {
   data: MapShellData;
   onContentChange?: (content: TerritoryCardContent | null) => void;
+  /** The areas this deployment has Districts for (Explore); none hides the layers button. */
+  exploreAreas?: readonly ExploreAreaRef[];
+  /** "Plan a run in …" on the Districts card; without it the card has no button. */
+  onPlanRun?: (unitId: string) => void;
 }
 
-export function GlobalMapClient({ data, onContentChange }: Props) {
+const NO_AREAS: readonly ExploreAreaRef[] = [];
+const NO_RUNS: readonly number[] = [];
+
+export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS, onPlanRun }: Props) {
   const { clusters, routeMeta } = data;
   const [selectedIdx, setSelectedIdx] = useState(data.defaultClusterIdx);
   // Any number of types and years (Heatmap Filters 1c), set in the sheet.
@@ -41,6 +58,18 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [names, setNames] = useState<string[]>(() => clusters.map(coordLabel));
+
+  // Heat or Districts (Explore): the last choice, unless the link asks for
+  // one - read once, when the map mounts, and remembered from then on. Never
+  // written on load; a change by hand takes the link's layer out of the
+  // address, so a remount (List and back, Back to this entry) keeps the hand's
+  // choice instead of applying the link again.
+  const [layerParam, setLayerParam] = useUrlParam("layer");
+  const [linkedLayer] = useState<MapLayer | null>(() => parseMapLayer(layerParam));
+  const [layer, setLayer] = useState<MapLayer>(() => initialMapLayer(layerParam, readStoredMapLayer()));
+  useEffect(() => {
+    if (linkedLayer) storeMapLayer(linkedLayer);
+  }, [linkedLayer]);
 
   const [routes, setRoutes] = useState<[number, number][][]>([]);
   const loadedClusterIds = useRef<Set<string>>(new Set());
@@ -88,6 +117,43 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
 
   const handleSelectCluster = useCallback((idx: number) => setSelectedIdx(idx), []);
 
+  // Districts exist only where an area was built for the area on screen;
+  // elsewhere the button hides and the map is the heat.
+  const districtsArea = useMemo(() => {
+    const cluster = clusters[selectedIdx];
+    return cluster && exploreAreas.length > 0 ? areaForCluster(exploreAreas, cluster) : null;
+  }, [clusters, selectedIdx, exploreAreas]);
+  const districtsOn = layer === "districts" && !!districtsArea;
+  const toggleLayer = useCallback(() => {
+    const next: MapLayer = layer === "districts" ? "heat" : "districts";
+    setLayer(next);
+    storeMapLayer(next);
+    if (layerParam !== null) setLayerParam(null);
+  }, [layer, layerParam, setLayerParam]);
+
+  // Distances run from where the runs start, whatever the filters (the
+  // heat's ring follows them; a quartier's distance from home doesn't).
+  const districtsHome = useMemo(() => {
+    const cluster = clusters[selectedIdx];
+    if (!districtsOn || !cluster) return null;
+    return medianStart(cluster.routeIndices.flatMap((i) => (routes[i]?.[0] ? [routes[i]![0]!] : [])));
+  }, [districtsOn, clusters, selectedIdx, routes]);
+
+  const districts = useDistrictsCoverage({
+    enabled: districtsOn,
+    area: districtsArea,
+    routes,
+    clusterIndices: clusters[selectedIdx]?.routeIndices ?? NO_RUNS,
+    visibleIndices,
+    routeMeta,
+    home: districtsHome,
+  });
+  const districtsState = useMemo(
+    () => ({ area: districts.area, coverage: districts.coverage, visible: true, selectedId: null }),
+    [districts.area, districts.coverage],
+  );
+  const overlay = useDistrictsOverlay(districtsState, districtsOn);
+
   const territory = useMemo(() => {
     const cluster = clusters[selectedIdx];
     return cluster ? computeAreaTerritory(cluster, routeMeta, routes, filters) : null;
@@ -130,11 +196,23 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
     };
   }, [clusters, selectedIdx, territory, names, filters, data.defaultClusterIdx]);
 
-  useEffect(() => {
-    onContentChange?.(cardContent);
-  }, [onContentChange, cardContent]);
+  // In Districts the card talks about quartiers, under the same eyebrow.
+  const { coverage: districtsCoverage, status: districtsStatus } = districts;
+  const districtsCard = useMemo(
+    () =>
+      districtsOn && cardContent
+        ? districtsCardContent(cardContent.eyebrow, { coverage: districtsCoverage, status: districtsStatus }, onPlanRun)
+        : null,
+    [districtsOn, cardContent, districtsCoverage, districtsStatus, onPlanRun],
+  );
+  const shownCard = districtsCard ?? cardContent;
 
-  const { containerRef, resize } = useMapRoutes(data, routes, selectedIdx, visibleIndices, ring, isFullscreen);
+  useEffect(() => {
+    onContentChange?.(shownCard);
+  }, [onContentChange, shownCard]);
+
+  const { containerRef, resize, mapRef, mapReady } = useMapRoutes(data, routes, selectedIdx, visibleIndices, ring, isFullscreen, { overlay });
+  useDistrictsSync(mapRef, mapReady, districtsState);
 
   useSetFullscreenChromeHidden(isFullscreen);
 
@@ -168,6 +246,9 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
 
   // Bottom overlays sit clear of the home indicator in fullscreen.
   const bottom = isFullscreen ? "bottom-[max(env(safe-area-inset-bottom),12px)]" : "bottom-3";
+  const heatSummary = territory
+    ? { runs: territory.routeCount, km: formatKm(territory.km), year: filters.years.length > 0 ? [...filters.years].sort().reverse().join(", ") : t.pages.map.allYears }
+    : undefined;
   const filterCount = activeFilterCount(filters);
   const f = t.pages.map.filters;
   const circle = glassClass("regular", GLASS_CIRCLE);
@@ -288,20 +369,37 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
         {isFullscreen ? (
           // The legend card, 24 pt from the edges (Liquid Glass v3, §6.10).
           <div className="pointer-events-none absolute inset-x-6 bottom-[max(24px,var(--safe-bottom))] z-10 flex flex-col items-end gap-2">
+            {/* The layers button above the ⓘ, in the same right-hand column. */}
+            {districtsArea && <LayersButton on={districtsOn} onToggle={toggleLayer} className="pointer-events-auto" />}
             <MapAttribution className="pointer-events-auto" />
-            <HeatLegend
-              className="pointer-events-auto w-full"
-              summary={
-                territory
-                  ? { runs: territory.routeCount, km: formatKm(territory.km), year: filters.years.length > 0 ? [...filters.years].sort().reverse().join(", ") : t.pages.map.allYears }
-                  : undefined
-              }
-            />
+            {districtsOn ? (
+              // Districts keeps the heat card's box (drawn by nothing), so the
+              // layers button and the ⓘ stay where the finger left them; its
+              // solid legend sits at the foot, left (until S1, Phase 4).
+              <div className="grid w-full">
+                <HeatLegend space className="col-start-1 row-start-1 w-full" summary={heatSummary} />
+                <DistrictsLegend className="pointer-events-auto col-start-1 row-start-1 self-end justify-self-start" />
+              </div>
+            ) : (
+              <HeatLegend className="pointer-events-auto w-full" summary={heatSummary} />
+            )}
           </div>
         ) : (
           <div className={`pointer-events-none absolute inset-x-3 z-10 flex flex-wrap items-end gap-x-3 gap-y-1.5 ${bottom}`}>
-            <HeatLegend className="shrink-0" />
-            <MapAttribution className="pointer-events-auto ml-auto" />
+            {districtsOn ? <DistrictsLegend className="shrink-0" /> : <HeatLegend className="shrink-0" />}
+            {districtsArea ? (
+              // Explore's layers button (V1/V2) 10 pt above the ⓘ, in one
+              // flex item with it: a legend that wraps to its own line (a long
+              // one on a narrow phone) moves up alone, never under the button.
+              // Its right edge lines up with the Expand circle's (10 pt in;
+              // the ⓘ is 12). After it in the DOM, the ⓘ's credits open over it.
+              <div className="ml-auto flex flex-col items-end gap-2.5">
+                <LayersButton on={districtsOn} onToggle={toggleLayer} className="pointer-events-auto -mr-0.5" />
+                <MapAttribution className="pointer-events-auto" />
+              </div>
+            ) : (
+              <MapAttribution className="pointer-events-auto ml-auto" />
+            )}
           </div>
         )}
       </div>

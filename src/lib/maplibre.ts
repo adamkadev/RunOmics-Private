@@ -18,7 +18,7 @@ const NEIGHBOURHOOD_LAYER_ID = /\b(suburb|neighbou?rhood|hamlet|quarter|isolated
  */
 const DISTRICT_FILTER = /"(suburb|quarter|neighbou?rhood|hamlet)"/
 
-function isDistrictLayer(layer: StyleLayer): boolean {
+export function isDistrictLayer(layer: StyleLayer): boolean {
   return NEIGHBOURHOOD_LAYER_ID.test(layer.id) || DISTRICT_FILTER.test(JSON.stringify(layer.filter ?? null))
 }
 const STYLE_MAX_ZOOM = 24

@@ -321,6 +321,34 @@ export const en = {
         kmStat: 'Distance',
         reachStat: 'Median reach',
       },
+      // Explore's Districts layer (Oct 2026): the quartiers of the home city,
+      // and the communes around it, by how much of each the runs have covered.
+      districts: {
+        // The layers button: a toggle, pressed while the layer shows.
+        layersButton: 'Show quartiers',
+        legend: 'Quartier coverage',
+        fog: 'Fog',
+        partly: 'Partly',
+        complete: 'Complete',
+        // The insight card. `distance` is "1.9 km", or null without a home.
+        headline: (done: number, total: number, next: string, distance: string | null) => ({
+          lead: `${done} of ${total} quartier${total === 1 ? '' : 's'} complete. `,
+          accent: next,
+          tail: distance ? ` is next, ${distance} from home.` : ' is next.',
+        }),
+        allComplete: (total: number) => ({
+          lead: total === 1 ? 'Your quartier is complete.' : `All ${total} quartiers complete.`,
+          accent: '',
+          tail: '',
+        }),
+        loading: { lead: 'Counting the quartiers you’ve run…', accent: '', tail: '' },
+        failed: { lead: 'Your quartiers couldn’t be counted just now.', accent: '', tail: '' },
+        completeStat: 'Complete',
+        ofTotal: (total: number) => `of ${total}`,
+        exploredStat: 'Explored',
+        nextStat: 'Next quartier',
+        planRunIn: (name: string) => `Plan a run in ${name}`,
+      },
     },
     shoes: {
       title: 'Shoes',
