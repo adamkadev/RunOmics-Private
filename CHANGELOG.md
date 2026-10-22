@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Resting HR is read only from days the watch was worn through the night (the
+  night has an HRV reading). Garmin's daily resting HR is the lowest 30 minutes
+  of the hours worn, so a watch worn only to run reported a warm-up's 50-60 -
+  and 142 on a hard day - against a true 45. Analytics' Recovery card and the
+  Load "Why" sheet drop resting HR when no such night falls in the window. A
+  watch that records no HRV keeps every day.
+
 - The maps keep the page's theme when you leave the app and come back. iOS
   draws its app-switcher snapshots in both appearances, flipping the page to
   light and back; the flip back came while the map's light style loaded, and
