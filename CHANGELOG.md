@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A stuck tab strip is glass over the rows (F20): Activity detail's
+  Overview / Splits / Charts / Dynamics strip, Analytics' and Records' turn
+  to glass as they stick, now fading in over 120 ms, but the soft scroll
+  edge grew by the strip's height (F4) and painted the page's ground behind
+  the glass, so on Activity detail it read as a flat grey track. The edge
+  is now the bar's own under a glass strip, and the rows pass visibly under
+  it; dark takes light's edge while one is stuck, solid above the strip.
+  Activities' month headings still grow it. In-card switches stay flat.
+
 - Activities' search, chips and filter button are glass in dark too (F19):
   in the header zone, they were flat grey in dark beside the glass List |
   Map. Over the glow they take the regular glass's tint, sheen, rim and

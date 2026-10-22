@@ -141,7 +141,9 @@ for (const theme of ['light', 'dark'] as const) {
   test(`the top bar is a soft scroll edge, with no hairline (${theme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: theme })
     await page.addInitScript((t) => localStorage.setItem('theme', t), theme)
-    await page.goto('/analytics')
+    // A page with no glass strip to stick (F20 gives dark light's edge under one);
+    // its month headings still grow the edge by their height (F4).
+    await page.goto('/activities')
     await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`))
     await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
     const layers = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-testid="scroll-edge"] > i')].map((i) => getComputedStyle(i).opacity))
@@ -223,3 +225,44 @@ test('nothing shows through the light edge under the compact bar (F21)', async (
   }, shot.toString('base64'))
   expect(delta).toBeLessThanOrEqual(1)
 })
+
+// F20: Activity detail's strip turns to glass as it sticks, as Analytics'
+// does, and the rows pass visibly under it: the scroll edge stays the bar's
+// own (it grew by the strip, F4, and painted the ground behind the glass).
+for (const theme of ['light', 'dark'] as const) {
+  test(`a stuck activity strip is glass over the rows, not over the edge (${theme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
+    await page.addInitScript((t) => localStorage.setItem('theme', t), theme)
+    await page.goto('/activities')
+    await page.locator('main a[href^="/activities/"]').first().click()
+    await expect(page).toHaveURL(/\/activities\/\d+/)
+    await expect(page.getByTestId('sticky-bar')).toBeVisible()
+    await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
+    const tabs = page.getByTestId('sticky-bar').getByRole('tablist')
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const strip = document.querySelector<HTMLElement>('[data-testid="sticky-bar"]')!
+          const pinned = strip.getBoundingClientRect().top + window.scrollY - (59 + 68)
+          window.scrollTo(0, pinned + 160)
+          return strip.querySelector('[role="tablist"]')!.getAttribute('data-variant')
+        }),
+      )
+      .toBe('glass')
+    await expect(tabs).toHaveClass(/\blg-stuck-in\b/)
+    const under = await page.evaluate(() => {
+      const edge = document.querySelector<HTMLElement>('[data-testid="scroll-edge"]')!.getBoundingClientRect()
+      const bar = document.querySelector<HTMLElement>('[data-testid="compact-title-bar"]')!.getBoundingClientRect()
+      const list = document.querySelector<HTMLElement>('[data-testid="sticky-bar"] [role="tablist"]')!.getBoundingClientRect()
+      const below = document.elementsFromPoint(list.left + 8, list.bottom - 4)
+      return {
+        edgeFade: Math.round(edge.bottom - bar.bottom),
+        stickyH: getComputedStyle(document.documentElement).getPropertyValue('--sticky-h'),
+        // What paints under the glass, just above its foot: the panel's content.
+        content: below.some((el) => el.closest('[data-testid="activity-panel"]') !== null),
+      }
+    })
+    // Dark takes light's edge while a glass strip is stuck: solid to the bar's foot, a 24 pt band.
+    expect(under).toEqual({ edgeFade: 24, stickyH: '', content: true })
+  })
+}

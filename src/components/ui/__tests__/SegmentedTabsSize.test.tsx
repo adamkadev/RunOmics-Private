@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { SegmentedTabs, useSegmentedTabs } from '../SegmentedTabs'
+import { StickyStuckContext } from '../StickyBar'
 
 function Tabs({ size }: { size?: 'sm' | 'md' }) {
   const tabs = useSegmentedTabs({ ids: ['a', 'b'] as const, value: 'a', onChange: () => {} })
@@ -43,6 +44,27 @@ describe('SegmentedTabs sizes', () => {
     expect(list.className).toContain('h-11')
     expect([...list.querySelectorAll(':scope > i')].map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
     expect(screen.getByRole('tab', { name: 'A' }).className).toContain('bg-[var(--tab-pill)]')
+    expect(list.className).not.toContain('lg-stuck-in')
+  })
+
+  // F20: a strip's control is the flat track until it sticks, then the
+  // same glass, its layers fading in over 120 ms; the bar's copy, glass from
+  // the start, does not fade.
+  it("turns a pinned strip's control to glass that fades in, and back to the track", () => {
+    const { rerender } = render(<StickyStuckContext.Provider value={false}><Tabs size="md" /></StickyStuckContext.Provider>)
+    const list = () => screen.getByRole('tablist')
+    expect(list().dataset.variant).toBe('content')
+    expect(list().className).not.toMatch(/\blg\b|lg-stuck-in/)
+
+    rerender(<StickyStuckContext.Provider value={true}><Tabs size="md" /></StickyStuckContext.Provider>)
+    expect(list().dataset.variant).toBe('glass')
+    expect(list().className).toMatch(/\blg\b/)
+    expect(list().className).toContain('lg-stuck-in')
+    expect(list().querySelectorAll(':scope > i')).toHaveLength(3)
+
+    rerender(<StickyStuckContext.Provider value={false}><Tabs size="md" /></StickyStuckContext.Provider>)
+    expect(list().dataset.variant).toBe('content')
+    expect(list().querySelectorAll(':scope > i')).toHaveLength(0)
   })
 
   it('stretches across the row when asked to fill', () => {

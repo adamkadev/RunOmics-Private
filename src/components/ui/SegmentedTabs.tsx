@@ -100,7 +100,8 @@ export const SEGMENTED_FILL_SEGMENT_CLASS = 'min-w-0 flex-[1_1_0%] justify-cente
  * section 11) - a 44 pt capsule of 36 pt segments, 15 pt labels, the chosen
  * one on the tab bar's pill - so the bar's copy lands on it with no jump.
  * In a sticky strip (StickyBar) the control turns to the same glass while
- * the strip is pinned (Liquid Glass v3, G5).
+ * the strip is pinned (Liquid Glass v3, G5), over 120 ms (F20). Unpinned,
+ * and inside a card (Km | Laps, Smoothed | Raw), it is the flat track.
  */
 export function SegmentedTabs<T extends string | number>({
   tabs,
@@ -134,7 +135,13 @@ export function SegmentedTabs<T extends string | number>({
       aria-label={label}
       data-bar-segments={barMirror ? '' : undefined}
       data-variant={glass ? 'glass' : 'content'}
-      className={cn(glass ? 'lg flex h-11 shrink-0 p-1' : onAura ? `on-aura ${SEGMENTED_TRACK_SHAPE}` : SEGMENTED_TRACK_CLASS, fill && 'w-full', className)}
+      className={cn(
+        glass ? 'lg flex h-11 shrink-0 p-1' : onAura ? `on-aura ${SEGMENTED_TRACK_SHAPE}` : SEGMENTED_TRACK_CLASS,
+        // A strip's glass fades in as it sticks (F20); the bar's copy is glass from the start.
+        glass && !barMirror && 'lg-stuck-in',
+        fill && 'w-full',
+        className,
+      )}
     >
       {glass && <GlassLayers />}
       {items.map((item) => {

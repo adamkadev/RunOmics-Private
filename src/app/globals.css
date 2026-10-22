@@ -676,6 +676,17 @@
      take the animation, never the wrapper, whose opacity would flatten the blur. */
   .lg.lg-fade-in > * { animation: fade-in 150ms ease-out both; }
 
+  /* A sticky strip's control as it sticks (F20): its glass layers fade in
+     over 120 ms, never the wrapper, and the track's fill gives way to the
+     glass's drop over the same. Its labels stay put. */
+  .lg.lg-stuck-in > i { animation: fade-in 120ms ease-out backwards; }
+  .lg.lg-stuck-in {
+    transition:
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 120ms ease-out,
+      background-color 120ms ease-out;
+  }
+
   /* A glass group (the hero's expand + share): the buttons inside are plain,
      so the group swells as one when either is pressed. */
   .lg:has(> .lg-press:not(:disabled):active) { transform: scale(1.06); transition-duration: 120ms; transition-timing-function: ease-out; }
@@ -738,19 +749,24 @@
      the edge is the page's ground, solid from the screen's top - under the
      status bar, one surface with it (F15) - to the bar's foot, then gone
      over 24 pt, with a 6 px blur in that band only, never across the bar.
-     The bar's buttons and title sit above it (z-40). Dark keeps its edge. */
-  html:not(.dark) .scroll-edge {
+     The bar's buttons and title sit above it (z-40). Dark keeps its edge,
+     but for one case (F20): a glass strip stuck under the bar (StickyBar,
+     data-stuck) no longer grows the edge, so the rows pass under its glass,
+     and dark's own 45 % foot would then let them show between the bar and
+     the strip. While one is stuck, dark takes this shape too: as solid above
+     the strip as the grown edge was, the band the only fade over it. */
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge {
     --edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-band));
     --edge-solid: calc(var(--edge-shift) + var(--safe-top) + var(--bar-h));
   }
-  html:not(.dark) .scroll-edge > i:nth-child(1) {
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge > i:nth-child(1) {
     -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
     -webkit-mask-image: linear-gradient(transparent var(--edge-solid), #000 var(--edge-solid), transparent);
             mask-image: linear-gradient(transparent var(--edge-solid), #000 var(--edge-solid), transparent);
   }
-  html:not(.dark) .scroll-edge > i:nth-child(2),
-  html:not(.dark) .scroll-edge > i:nth-child(3) { display: none; }
-  html:not(.dark) .scroll-edge > i:nth-child(4) {
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge > i:nth-child(2),
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge > i:nth-child(3) { display: none; }
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge > i:nth-child(4) {
     background: linear-gradient(var(--background) var(--edge-solid), transparent);
   }
 
