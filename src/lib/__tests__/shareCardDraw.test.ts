@@ -328,7 +328,8 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
     const all = texts(ops)
     expect(all).not.toContain('80%')
     expect(all).not.toContain('easy · Z1–Z2')
-    expect(all).toEqual(expect.arrayContaining(['Z2 80%', 'Z3 20%']))
+    // Z1 and Z2 are one row (round 2): "Z1–Z2 80%".
+    expect(all).toEqual(expect.arrayContaining(['Z1–Z2 80%', 'Z3 20%']))
     expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
   })
 
@@ -367,7 +368,7 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
 describe('the Stats design without a written verdict (design review, Oct 2026)', () => {
   it('heads with the share the run is judged on, then a row for each zone it used', () => {
     const all = texts(draw({ design: 'stats', activity: { ...RUN, type: 'Base' } }))
-    expect(all).toEqual(expect.arrayContaining(['80%', 'easy · Z1–Z2', 'Z2 Easy', 'Z3 Aerobic', '20%']))
+    expect(all).toEqual(expect.arrayContaining(['80%', 'easy · Z1–Z2', 'Z1–Z2 Easy', 'Z3 Aerobic', '20%']))
     expect(all).not.toContain('Z1 Recovery')
     expect(all).not.toContain('Z5 Max')
   })

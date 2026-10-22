@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  percentsTo100, repLength, shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones, type ShareActivity, shareRepDetail, shareStructure,
+  percentsTo100, repLength, zoneName, shareCardSubtitle, shareCardTitle, shareRepHero, shareStats, shareZones, type ShareActivity, shareRepDetail, shareStructure,
 } from '@/lib/shareCardStats'
 import { formatDate } from '@/lib/formatters'
 
@@ -47,11 +47,14 @@ describe('shareStats', () => {
 })
 
 describe('shareZones', () => {
-  it('rows the zones the run spent time in, Z1 first, in whole percents that sum to 100', () => {
+  // Round 2, the owner's ask: Z1 and Z2 in one row, so the Stats card's
+  // legend takes two lines, not three the rep pace cut.
+  it('rows the zones the run spent time in, Z1 and Z2 as one, in whole percents that sum to 100', () => {
     const zones = shareZones(RUN)!
     expect(zones.rows).toEqual([
-      { zone: 1, percent: 7 }, { zone: 2, percent: 72 }, { zone: 3, percent: 14 }, { zone: 4, percent: 5 }, { zone: 5, percent: 2 },
+      { zone: 2, from: 1, percent: 79 }, { zone: 3, percent: 14 }, { zone: 4, percent: 5 }, { zone: 5, percent: 2 },
     ])
+    expect(zones.rows.map(zoneName)).toEqual(['Z1–Z2', 'Z3', 'Z4', 'Z5'])
   })
 
   // Design review, Oct 2026: 10 + 77 + 10 + 4 read 101%, and 86% easy beside a Z1 + Z2 of 87.
@@ -59,7 +62,7 @@ describe('shareZones', () => {
     const at = (shares: number[]) => ({ ...RUN, type: 'Base' as const, hrZones: shares.map((sec, i) => ({ ...RUN.hrZones[i]!, seconds: sec })) })
     const zones = shareZones(at([96, 766, 96, 42, 0]))!
     // The mock's own run: 10 / 76 / 10 / 4, and 86% easy.
-    expect(zones.rows.map((r) => r.percent)).toEqual([10, 76, 10, 4])
+    expect(zones.rows.map((r) => r.percent)).toEqual([86, 10, 4])
     expect(zones.headline.percent).toBe(86)
 
     // Any split: the rows sum to 100, and the headline is their Z1 + Z2.
@@ -77,7 +80,7 @@ describe('shareZones', () => {
 
   it('leaves out a zone that rounds to nothing', () => {
     const zones = shareZones({ ...RUN, hrZones: RUN.hrZones.map((z) => (z.zone === 5 ? { ...z, seconds: 5 } : z)) })!
-    expect(zones.rows.map((r) => r.zone)).toEqual([1, 2, 3, 4])
+    expect(zones.rows.map((r) => r.zone)).toEqual([2, 3, 4])
     expect(zones.rows.reduce((sum, r) => sum + r.percent, 0)).toBe(100)
   })
 

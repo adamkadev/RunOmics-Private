@@ -15,6 +15,8 @@ All notable changes to this project are documented in this file.
 - Share: a **Rep pace** switch on an interval session's card. Off, the card is
   an easy run's: the route in one colour, no rep pace, the average pace back.
 - The fullscreen heatmap's Filters badge is whole: the edge sampler cut its top.
+- Share's Stats card: Z1 and Z2 are one row, `Z1–Z2 Easy`, in the bar and the
+  legend, so the legend takes two lines and the rep pace no longer cuts Z5.
 
 ## [3.2.1] - 2026-10-22
 
