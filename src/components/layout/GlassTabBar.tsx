@@ -104,8 +104,7 @@ export function GlassTabBar() {
     // the tab bar whenever it sat low on the screen.
     <nav
       className={cn(
-        // 24 pt in from the sides, past the side insets in landscape (F15).
-        'pointer-events-none fixed inset-x-0 bottom-0 z-40 pl-[calc(1.5rem+var(--safe-left))] pr-[calc(1.5rem+var(--safe-right))] transition-transform duration-200 ease-out lg:hidden',
+        'pointer-events-none fixed inset-x-0 bottom-0 z-40 px-6 transition-transform duration-200 ease-out lg:hidden',
         // Fullscreen maps take the whole screen: the bar slides away, gap and all.
         hidden ? 'translate-y-[calc(100%+24px)]' : 'translate-y-0',
       )}
@@ -136,12 +135,11 @@ export function GlassTabBar() {
           style={{ width: collapsed ? 'var(--tab-bar-h)' : '100%', transition: `width 420ms ${SPRING}, transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1)` }}
         >
           <GlassLayers />
-          {/* The full row, at a fixed width so the tabs don't squash while the
-              glass narrows: the screen less the nav's padding, side insets and all. */}
+          {/* The full row, at a fixed width so the tabs don't squash while the glass narrows. */}
           <div
             aria-hidden={collapsed || undefined}
             className={cn(
-              'absolute inset-y-0 left-0 w-[calc(100vw_-_48px_-_var(--safe-left)_-_var(--safe-right))] p-1 transition-opacity duration-150',
+              'absolute inset-y-0 left-0 w-[calc(100vw-48px)] p-1 transition-opacity duration-150',
               collapsed ? 'pointer-events-none opacity-0' : 'opacity-100 delay-75',
             )}
           >
