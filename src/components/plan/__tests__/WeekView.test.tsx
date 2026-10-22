@@ -242,6 +242,17 @@ describe('a session still to come', () => {
     expect(card.textContent).toContain(t.plan.session.targetPace('4:25–4:30'))
   })
 
+  // Round 2: the eyebrow says "THRESHOLD"; the title says the set alone.
+  it('titles it by its set under the naming rules, its type left to the eyebrow', () => {
+    const coachingPlan = plan()
+    coachingPlan.weeks[0]!.workouts[0]!.title = 'Threshold · 3 × 8′ @ 4:25'
+    renderWeek({ coaching: overview({ coachingPlan }), trainingZones: ZONES })
+
+    const card = screen.getByTestId('plan-workout-workout-threshold')
+    expect(within(card).getByRole('heading').textContent).toBe('3 × 8′ @ 4:25')
+    expect(card.textContent?.toUpperCase()).toContain(t.activityTypes.Threshold.toUpperCase())
+  })
+
   it('draws its intensity profile step by step, work full height', () => {
     renderWeek({ coaching: overview() })
 
@@ -320,11 +331,41 @@ describe('a day that is over', () => {
 
     await user.click(day('2026-09-07'))
     const card = screen.getByTestId('plan-day-done-2026-09-07')
-    expect(within(card).getByTestId('planned-line').textContent).toContain(`5 ${t.units.km} · Tempo`)
+    // The run's title says the session already: the plan's line keeps to its amount (round 2).
+    expect(within(card).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}5 ${t.units.km}`)
     const done = within(card).getByTestId('done-line').textContent
     expect(done).toContain(`4.8 ${t.units.km} · 5:00 /km · Z3 68%`)
     expect(within(card).getByRole('img', { name: t.plan.dayCard.asPlanned })).toBeInTheDocument()
     expect(within(card).getByRole('link', { name: t.plan.dayCard.viewActivity }).getAttribute('href')).toBe('/activities/a-tempo')
+  })
+
+  // Round 2, the owner's phone: "Threshold 3 × 7:15 - 3 × 7'@4:25" over
+  // "Planned 10 km · Threshold 3 x 7:15 - 3x7'@4:25", the set said four times.
+  it("names a run by its session's set once, the plan's line its amount alone", async () => {
+    const user = userEvent.setup()
+    const name = "Threshold 3 x 7:15 - 3x7'@4:25"
+    renderWeek({
+      activities: [activity({ ...TEMPO, type: 'Threshold', description: name })],
+      planned: [{ date: '2026-09-07', name, type: 'Threshold', distanceM: 10_000, durationSecs: 3_480 }],
+    })
+
+    await user.click(day('2026-09-07'))
+    const card = screen.getByTestId('plan-day-done-2026-09-07')
+    expect(within(card).getByRole('heading').textContent).toBe('3 × 7′ @ 4:25')
+    expect(within(card).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}10 ${t.units.km} · 58 min`)
+  })
+
+  it("names the plan's session on its line when the run is called something else", async () => {
+    const user = userEvent.setup()
+    renderWeek({
+      activities: [activity({ ...TEMPO, type: 'Threshold', description: 'Easy run' })],
+      planned: [{ date: '2026-09-07', name: 'Threshold · 3 × 8′ @ 4:25', type: 'Threshold', distanceM: 10_000 }],
+    })
+
+    await user.click(day('2026-09-07'))
+    const card = screen.getByTestId('plan-day-done-2026-09-07')
+    expect(within(card).getByRole('heading').textContent).toBe('Easy run')
+    expect(within(card).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}10 ${t.units.km} · 3 × 8′ @ 4:25`)
   })
 
   it('says a run nothing was planned for was not planned', async () => {

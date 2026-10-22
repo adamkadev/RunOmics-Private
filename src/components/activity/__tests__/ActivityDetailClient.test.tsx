@@ -74,6 +74,13 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByTestId('activity-subtitle').textContent).toContain(`${t.activityTypes.Threshold}·Sun, Oct 18`)
   })
 
+  // Round 2: a threshold session the watch filed as tempo is shown as threshold.
+  it("names the session's type over the title where it is not the watch's", () => {
+    renderDetail({ activity: { ...ACTIVITY, type: 'Tempo' } as ActivityDetailView, shownType: 'Threshold' })
+    expect(screen.getByTestId('activity-subtitle').textContent).toContain(`${t.activityTypes.Threshold}·Sun, Oct 18`)
+    expect(screen.getByTestId('activity-subtitle').textContent).not.toContain(t.activityTypes.Tempo)
+  })
+
   // 3.0 cut the 2 x 2 card under the map and the strip pinned under the tabs:
   // one strip of four numbers.
   it('shows the four numbers once, as a four-column strip', () => {

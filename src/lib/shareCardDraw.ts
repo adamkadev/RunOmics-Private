@@ -1,5 +1,5 @@
 import {
-  shareCardSubtitle, shareCardTitle, shareRepDetail, shareRepHero, shareStats, shareStructure, shareZones,
+  shareCardSubtitle, shareCardTitle, shareRepDetail, shareRepHero, shareStats, shareStructure, shareZones, zoneName,
   type ShareActivity, type ShareRepDetail, type ShareRepHero, type ShareVerdict, type ShareZoneRow,
 } from '@/lib/shareCardStats'
 import { W, H, type ShareDesign, type SharePalette } from '@/lib/shareCardPalette'
@@ -627,7 +627,7 @@ function drawZones(ctx: Ctx, { activity, palette, fonts }: ShareCardScene, { mid
     ctx.textAlign = 'left'
     ctx.font = `400 11px ${fonts.text}`
     ctx.fillStyle = palette.mu
-    ctx.fillText(`Z${row.zone} ${t.zoneLabels[row.zone] ?? ''}`.trim(), x + SWATCH + 7, mid)
+    ctx.fillText(`${zoneName(row)} ${t.zoneLabels[row.zone] ?? ''}`.trim(), x + SWATCH + 7, mid)
     ctx.textAlign = 'right'
     ctx.font = `700 11px ${fonts.text}`
     ctx.fillStyle = palette.tx
@@ -728,7 +728,7 @@ export function zoneBarLabels(rows: readonly ShareZoneRow[], left: number, width
   let at = left
   const all = rows.map((row, i) => {
     const w = (row.percent / 100) * width
-    const text = `Z${row.zone} ${formatPercent(row.percent)}`
+    const text = `${zoneName(row)} ${formatPercent(row.percent)}`
     const textW = measure(text)
     const align: ZoneBarLabel['align'] = i === 0 ? 'left' : i === rows.length - 1 ? 'right' : 'center'
     const x = align === 'left' ? at : align === 'right' ? at + w : at + w / 2

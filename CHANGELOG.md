@@ -4,6 +4,24 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Sessions read as their set where their type is shown beside them: Activities'
+  rows, the activity page's title and Plan's day cards say `3 × 8′ @ 4:25`, the
+  type left to the dot or the eyebrow (and read out by VoiceOver on a row). A
+  name from before the naming rules said its set twice -
+  `Threshold 2 x 7:00 - 2x7'@4:25` - and reads `2 × 7′ @ 4:25`. Words that are
+  not the type stay: `6 × 20s strides`. Plan's "Planned" line gives the
+  amount, `10 km · 58 min`, and the session only when the run is called
+  something else. A row's meta line is the date, time and HR, never cut.
+- A run shows its session's type where the watch filed another: a threshold
+  session Garmin labelled tempo (heart rate too low) reads `● Threshold`, on the
+  activity page and its Activities row, as the share card already had it. The
+  run keeps the watch's type, so Analytics and the filters are unchanged.
+- Share: a **Rep pace** switch on an interval session's card. Off, the card is
+  an easy run's: the route in one colour, no rep pace, the average pace back.
+- The fullscreen heatmap's Filters badge is whole: the edge sampler cut its top.
+- Share's Stats card: Z1 and Z2 are one row, `Z1–Z2 Easy`, in the bar and the
+  legend, so the legend takes two lines and the rep pace no longer cuts Z5.
+
 ## [3.2.1] - 2026-10-22
 
 ### Liquid Glass v3, fix round 1 (on-device testing)

@@ -1388,6 +1388,8 @@ export const en = {
       repRange: (fastest: string, slowest: string) => `Fastest ${fastest} · Slowest ${slowest}`,
       // The route's legend on an interval session: the reps are what it marks.
       repsLegend: 'Reps',
+      // The switch on an interval session: off, the card is an easy run's.
+      showReps: 'Rep pace',
       photo: 'Photo',
       choosePhoto: 'Choose photo',
       photoHint: 'This frame is the exact crop',

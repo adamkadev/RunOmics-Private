@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { sessionZone } from '@/lib/colors'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
+import { sessionLabel } from '@/lib/activityTitle'
 import { formatClock, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import type { PlanWorkoutView } from './planWorkoutView'
@@ -68,6 +69,8 @@ export function PlannedWorkoutCard({
 }) {
   const s = t.plan.session
   const summary = workoutSummary(workout)
+  // The session as its set: the eyebrow says its type (round 2).
+  const title = sessionLabel(summary.title)
   const totalSeconds = summary.durationSeconds ?? 0
   const structured = (workout.structure?.length ?? 0) > 1
   const km = summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null
@@ -88,14 +91,14 @@ export function PlannedWorkoutCard({
       <Eyebrow date={workout.date} kind={kind} />
       {structured ? (
         <>
-          <Title>{summary.title}</Title>
+          <Title>{title}</Title>
           {subline && <p className="mt-1 text-[13px] text-muted-foreground">{subline}</p>}
         </>
       ) : (
         // One step (App Fixes 3b): the distance and time across from the
         // title, "10 km · 1:00 h", the km in ink.
         <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-          <h2 className="break-words text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground text-pretty">{summary.title}</h2>
+          <h2 className="break-words text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground text-pretty">{title}</h2>
           {(km || time) && (
             <span className="text-sm text-[var(--text-2)]" data-testid="plan-amount">
               {km && <b className="font-semibold text-foreground">{km}</b>}

@@ -21,6 +21,7 @@ import { phaseWeek, planPhaseSpans, raceCountdown } from './planPhaseSpans'
 import { planRace } from './planRace'
 import { workoutSummary } from './workoutSummary'
 import { DaySelector, type SelectorDay } from './DaySelector'
+import { sessionLabel } from '@/lib/activityTitle'
 import { ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 
 // 30 pt squares with the 44 pt hit area round them, beside the week's dates.
@@ -67,14 +68,17 @@ function findNextPlanned(
 }
 
 /** "10 km · Easy run": what a day's plan said, for its planned-against-done line. */
-function plannedText(workout: PlanWorkoutView): string {
+/**
+ * What the plan said for a day that is over, under the run's own title: "10
+ * km · 58 min", and the planned session only where the title above names
+ * another (round 2: it said "Threshold 3 x 7:15 - 3x7'@4:25" twice).
+ */
+function plannedText(workout: PlanWorkoutView, title: string): string {
   const summary = workoutSummary(workout)
-  const amount = summary.distanceM
-    ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}`
-    : summary.durationSeconds
-      ? formatDurationWords(summary.durationSeconds)
-      : null
-  return [amount, summary.shortTitle].filter(Boolean).join(' · ')
+  const km = summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null
+  const time = summary.durationSeconds ? formatDurationWords(summary.durationSeconds) : null
+  const session = sessionLabel(summary.shortTitle)
+  return [km, time, session === title ? null : session].filter(Boolean).join(' · ')
 }
 
 /** A day's planned sessions: the coach's where it has any, else Garmin's. */
@@ -216,12 +220,14 @@ export function WeekView({
 
   let dayCard
   if (acts.length > 0 || (selected < today && workouts.length > 0)) {
+    // The session as its set: the eyebrow says its type (round 2).
+    const title = sessionLabel(acts.length > 0 ? activityTitle(acts[0]!) : workoutSummary(workouts[0]!).title)
     dayCard = (
       <DoneDayCard
         date={selected}
         kind={kind}
-        title={acts.length > 0 ? activityTitle(acts[0]!) : workoutSummary(workouts[0]!).title}
-        planned={workouts[0] ? plannedText(workouts[0]) : null}
+        title={title}
+        planned={workouts[0] ? plannedText(workouts[0], title) : null}
         acts={acts}
         onPlan={workouts.length > 0}
       />

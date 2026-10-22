@@ -186,7 +186,10 @@ describe('the list at a phone', () => {
     renderList([{ ...run('a', '2026-09-20', 12), avgHeartRate: 145 }])
     const row = screen.getByTestId('thumb-row')
     expect(row.textContent).toContain(`${formatWeekday('2026-09-20', true)} · 1:00:00 · 145 ${t.units.bpm}`)
-    expect(row.textContent).not.toContain(t.activityTypes.Base)
+    // On screen the type is the dot; only VoiceOver reads its name.
+    const shown = row.cloneNode(true) as HTMLElement
+    shown.querySelectorAll('.sr-only').forEach((el) => el.remove())
+    expect(shown.textContent).not.toContain(t.activityTypes.Base)
   })
 
   // A long name stays on one line in a week, ellipsed (3.0).
@@ -201,11 +204,14 @@ describe('the list at a phone', () => {
   // 3.0.2: a structured name is its type on the first line, its structure on
   // the second. The date leads that line (App Fixes 3d), so a long structure
   // is what the ellipsis takes, never the date.
-  it('puts a structured name’s structure on the second line, after the date', () => {
+  // Round 2, the owner's ask: the session as its set on the first line, said
+  // once; the meta line the date, the time and the HR, nothing after them.
+  it('names a structured session by its set, the meta line left to the date, time and HR', () => {
     const name = 'Threshold 3 × 7:40 - 3 × 8\'@4:25'
     renderList([{ ...run('a', '2026-09-22', 10), description: name }])
-    expect(screen.getByText('Threshold').className).toContain('truncate')
-    expect(screen.getByTestId('thumb-row').textContent).toContain(`${formatWeekday('2026-09-22', true)} · 1:00:00 · 3 × 7:40 - 3 × 8'@4:25`)
+    expect(screen.getByText('3 × 8′ @ 4:25').className).toContain('truncate')
+    expect(screen.getByText(`${formatWeekday('2026-09-22', true)} · 1:00:00`)).toBeInTheDocument()
+    expect(screen.getByTestId('thumb-row').textContent).not.toContain('7:40')
   })
 })
 

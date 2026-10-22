@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import type { ActivityDetailView } from './activityViews'
+import type { ActivityType } from '@/domain/activity/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { DynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
@@ -41,6 +42,8 @@ interface Props {
   activity: ActivityDetailView
   /** The run's name: the title under the map. */
   name: string
+  /** The type its dot and the line over the title show: its session's, where it has one. */
+  shownType?: ActivityType
   /** The run's date as the page shows it, in the line over the title. */
   dateLabel: string
   /** The watch's own comment, under the title. */
@@ -118,6 +121,7 @@ function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; test
 export function ActivityDetailClient({
   activity,
   name,
+  shownType,
   dateLabel,
   comment,
   qualifiedEfforts,
@@ -130,6 +134,8 @@ export function ActivityDetailClient({
   share,
   chartZones = null,
 }: Props) {
+  // The session's type over the watch's, where they differ (round 2).
+  const type = shownType ?? activity.type
   // The tab lives in ?tab=, so going back from Charts or Dynamics lands on it
   // again rather than on Overview.
   const [tabParam, setTabParam] = useUrlParam('tab')
@@ -187,7 +193,11 @@ export function ActivityDetailClient({
         card={
           <div className="flex flex-col gap-2.5">
             <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 truncate text-[17px] font-bold text-foreground">{name}</span>
+              {/* The type as its dot, as over the page's title: the name is the session's set. */}
+              <span className="flex min-w-0 items-center gap-1.5">
+                <TypeDot type={type} />
+                <span className="min-w-0 truncate text-[17px] font-bold text-foreground">{name}</span>
+              </span>
               <span className="shrink-0 text-[13px] text-muted-foreground">{dateLabel}</span>
             </div>
             <StatStrip stats={buildMapStats(activity)} testId="map-card-stats" />
@@ -199,8 +209,8 @@ export function ActivityDetailClient({
         {/* Type · date · town: the type as its dot and its name. Above the
             title, it fades as it nears the compact bar. */}
         <p data-title-sub className="flex flex-wrap items-center gap-x-1.5 text-[15px] leading-5 text-muted-foreground" data-testid="activity-subtitle">
-          <TypeDot type={activity.type} />
-          {t.activityTypes[activity.type]}
+          <TypeDot type={type} />
+          {t.activityTypes[type]}
           <span aria-hidden>·</span>
           {dateLabel}
           <RunPlace activityId={activity.id} start={activity.route?.[0] ?? null} />

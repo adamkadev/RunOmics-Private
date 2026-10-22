@@ -172,9 +172,17 @@ export function shareRepDetail(activity: ShareActivity): ShareRepDetail | null {
 }
 
 export interface ShareZoneRow {
+  /** The zone, or the last of the zones the row joins: its colour and its name. */
   zone: number
+  /** The first zone of a row that joins two: Z1 and Z2 are one, "Z1–Z2 Easy". */
+  from?: number
   /** The run's whole percent in this zone: the zones shown always sum to 100. */
   percent: number
+}
+
+/** "Z4", or "Z1–Z2" for the row that joins them. */
+export function zoneName(row: Pick<ShareZoneRow, 'zone' | 'from'>): string {
+  return row.from ? `Z${row.from}–Z${row.zone}` : `Z${row.zone}`
 }
 
 export interface ShareZones {
@@ -240,7 +248,13 @@ export function shareZones(activity: ShareActivity): ShareZones | null {
 
   const s = t.activity.shareCard
   const percents = percentsTo100(seconds)
-  const rows = percents.map((percent, i) => ({ zone: i + 1, percent })).filter((row) => row.percent > 0)
+  // Z1 and Z2 in one row (round 2, the owner's ask): five rows took a third
+  // line of the Stats card's legend, which the rep pace cut. Rounded first,
+  // so the rows still sum to 100.
+  const rows: ShareZoneRow[] = [
+    { zone: 2, from: 1, percent: percents[0]! + percents[1]! },
+    ...percents.slice(2).map((percent, i) => ({ zone: i + 3, percent })),
+  ].filter((row) => row.percent > 0)
   const zones = headlineZones(activity.type)
   if (zones) {
     const percent = zones.reduce((sum, z) => sum + (percents[z - 1] ?? 0), 0)

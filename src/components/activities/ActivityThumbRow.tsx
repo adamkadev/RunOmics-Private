@@ -3,16 +3,18 @@ import { PrBadge } from './PrBadge'
 import { RouteThumb } from '@/components/ui/RouteThumb'
 import { TypeDot } from '@/components/ui/TypeDot'
 import { Unit } from '@/components/ui/Stat'
-import type { ActivitySummary } from '@/domain/activity/types'
+import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDate, formatDistance, formatDuration, formatPace, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { activityTitle, splitStructuredTitle } from '@/lib/activityTitle'
+import { activityTitle, sessionLabel } from '@/lib/activityTitle'
 
 interface Props {
   activity: ActivitySummary
   qualifiedEfforts?: QualifiedEffort[]
+  /** The type the row shows, its session's where it is not the watch's (round 2); else the run's. */
+  type?: ActivityType
   /**
    * `card`: a row of a list card, divided by the card (Activities sorted by
    * something other than date). `inset`: a rounded row inside an
@@ -39,18 +41,16 @@ export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds'
 }
 
 /**
- * A run as a list row (v4.17): its route on a tile, the name, then the type's
- * dot and the meta line - the date first, the structure after it - and on
- * the right the distance over the pace, each with its unit.
+ * A run as a list row (v4.17): its route on a tile, the session, then the
+ * type's dot and the meta line, and on the right the distance over the pace,
+ * each with its unit.
  */
-export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
-  // A structured name is its session's name on the first line, its
-  // structure leading the meta on the second (3.0.2): one truncated line cut
-  // the structure off.
-  const { name: title, structure } = splitStructuredTitle(activityTitle(a))
-  // The date leads (App Fixes 3d): with the structure first, "2 × 7′ @ 4:25
-  // · Tue 13" lost its date to the ellipsis on a narrow row.
-  const meta = [thumbRowMeta(a, variant), structure].filter(Boolean).join(' · ')
+export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.type, variant = 'card' }: Props) {
+  // The session on the first line, its type the dot beside the meta (round
+  // 2, the owner's ask): "3 × 8′ @ 4:25", not "Threshold" over a meta line
+  // whose structure the ellipsis cut. A name with no set stays whole.
+  const title = sessionLabel(activityTitle(a))
+  const meta = thumbRowMeta(a, variant)
   const inset = variant === 'inset'
 
   return (
@@ -67,7 +67,7 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
         variant === 'card' ? 'gap-3.5 px-4 py-3 hover:bg-[var(--surface-2)]' : 'min-h-16 gap-3 px-4 py-2.5',
       )}
     >
-      <RouteThumb path={a.routeThumb} type={a.type} size={inset ? 44 : 48} />
+      <RouteThumb path={a.routeThumb} type={type} size={inset ? 44 : 48} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
         <span className="flex min-w-0 items-center gap-1.5">
           {/* A long name - a legacy workout's, a past plan's - wraps to two
@@ -80,12 +80,14 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
               inset ? 'truncate text-headline' : 'line-clamp-2 break-words text-sm text-pretty',
             )}
           >
+            {/* The dot is the type on screen; VoiceOver reads it here. */}
+            <span className="sr-only">{`${t.activityTypes[type]} `}</span>
             {title}
           </span>
           <PrBadge efforts={qualifiedEfforts} />
         </span>
         <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <TypeDot type={a.type} size={6} />
+          <TypeDot type={type} size={6} />
           <span className={cn('min-w-0', inset ? 'truncate text-[13px]' : 'break-words text-pretty')}>{meta}</span>
         </span>
       </span>
