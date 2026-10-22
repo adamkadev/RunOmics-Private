@@ -205,3 +205,31 @@ test('heatmap fullscreen: the top row is live glass in full ink over a soft edge
   expect(z.edge).toBeLessThan(z.row)
   expect(await edge.evaluate((el) => getComputedStyle(el.children[0]!).backdropFilter)).toContain('blur(12px)')
 })
+
+// The Filters badge sits on the circle's top edge. In fullscreen the row
+// starts at the map's 12 pt edge sampler's foot, and the sampler paints over
+// the row: a badge 3 pt above the circle lost its top to it, cut flat on the
+// phone. Nothing of it may reach above the row.
+test('heatmap fullscreen: the filter badge is whole, clear of the edge sampler', async ({ page }) => {
+  await page.goto('/map')
+  await page.getByRole('button', { name: 'Filters', exact: true }).click()
+  const sheet = page.getByRole('dialog', { name: 'Filters' })
+  await sheet.getByRole('region', { name: 'Year' }).getByRole('button').nth(1).click()
+  await sheet.getByRole('button', { name: /^Show \d+ runs?$/ }).click()
+  await expect(sheet).toHaveCount(0)
+  await page.getByRole('button', { name: 'Fullscreen' }).click()
+  await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible()
+
+  const badge = page.getByTestId('heat-filter-badge')
+  await expect(badge).toHaveText('1')
+  const { badgeTop, samplerBottom, topHit } = await badge.evaluate((el) => {
+    const box = el.getBoundingClientRect()
+    const sampler = document.querySelector('[data-testid="map-edge-sampler"]')!.getBoundingClientRect()
+    // The row paints the badge's top, not the sampler over it (the hit lands
+    // on the circle's 44 pt hit area, which covers its own badge).
+    const hit = document.elementFromPoint(box.left + box.width / 2, box.top + 1)
+    return { badgeTop: box.top, samplerBottom: sampler.bottom, topHit: !!hit && el.closest('[data-testid="heat-filter-row"]')!.contains(hit) }
+  })
+  expect(badgeTop).toBeGreaterThanOrEqual(samplerBottom)
+  expect(topHit).toBe(true)
+})

@@ -241,12 +241,15 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
           >
             <GlassLayers />
             <SlidersHorizontal size={20} strokeWidth={2} aria-hidden="true" />
-            {/* How many of type and year are narrowed; none, no badge. */}
+            {/* How many of type and year are narrowed; none, no badge. On
+                the circle's top edge, never above it: in fullscreen the
+                row starts at the edge sampler's foot, and the sampler,
+                painted over the row, cut a badge 3 pt higher flat. */}
             {filterCount > 0 && (
               <span
                 aria-hidden="true"
                 data-testid="heat-filter-badge"
-                className="absolute -right-[3px] -top-[3px] flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-accent-foreground"
+                className="absolute -right-[3px] top-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-accent px-1 text-[11px] font-bold text-accent-foreground"
               >
                 {filterCount}
               </span>
