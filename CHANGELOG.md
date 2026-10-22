@@ -9,7 +9,12 @@ All notable changes to this project are documented in this file.
   opaque pill on the near-white page. They are now 22 % (tab bar 36 %,
   sheets 55 %, clear 10 %) with a wider, more saturated blur, so the Aura
   and the cards show through; a darker hairline and drop keep every edge
-  visible on the plain page. Dark mode is unchanged.
+  visible on the plain page. Activities' search, chips and filter button
+  and Analytics' section track take the same glass. A medium sheet blurs
+  28 px, so the page's headings and the tab bar's labels no longer read
+  through it, and labels on light glass keep 4.5:1: secondary and accent
+  text take a darker glass shade (the active tab, a sheet's Reset, its
+  section titles), as iOS's vibrant labels do. Dark mode is unchanged.
 
 - Resting HR is read only where the watch was on for more than a run.
   Garmin's daily resting HR is the lowest 30 minutes of the hours worn, so a
