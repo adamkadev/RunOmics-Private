@@ -18,6 +18,7 @@ import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsigh
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { sessionLabel } from '@/lib/activityTitle'
 import { appTodayIso } from '@/lib/calendarDate'
 import { paceZones } from '@/application/usecases/GetTrainingZones'
 import { chartZones } from '@/components/activity/chartStackLanes'
@@ -98,7 +99,9 @@ export default async function ActivityDetailPage({
     <div className="flex flex-col gap-3.5">
       <ActivityDetailClient
         activity={activityDetailView(activity)}
-        name={runName(activity, session)}
+        // The session as its set: the type is the dot over it (round 2). The
+        // tab's title keeps the whole name, with no dot beside it.
+        name={sessionLabel(runName(activity, session))}
         dateLabel={formatDate(activity.date)}
         comment={activity.comment || undefined}
         qualifiedEfforts={qualifiedEfforts}

@@ -8,7 +8,7 @@ import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import { formatDate, formatDistance, formatDuration, formatPace, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { activityTitle, splitStructuredTitle } from '@/lib/activityTitle'
+import { activityTitle, sessionLabel } from '@/lib/activityTitle'
 
 interface Props {
   activity: ActivitySummary
@@ -39,18 +39,16 @@ export function thumbRowMeta(a: Pick<ActivitySummary, 'date' | 'durationSeconds'
 }
 
 /**
- * A run as a list row (v4.17): its route on a tile, the name, then the type's
- * dot and the meta line - the date first, the structure after it - and on
- * the right the distance over the pace, each with its unit.
+ * A run as a list row (v4.17): its route on a tile, the session, then the
+ * type's dot and the meta line, and on the right the distance over the pace,
+ * each with its unit.
  */
 export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant = 'card' }: Props) {
-  // A structured name is its session's name on the first line, its
-  // structure leading the meta on the second (3.0.2): one truncated line cut
-  // the structure off.
-  const { name: title, structure } = splitStructuredTitle(activityTitle(a))
-  // The date leads (App Fixes 3d): with the structure first, "2 × 7′ @ 4:25
-  // · Tue 13" lost its date to the ellipsis on a narrow row.
-  const meta = [thumbRowMeta(a, variant), structure].filter(Boolean).join(' · ')
+  // The session on the first line, its type the dot beside the meta (round
+  // 2, the owner's ask): "3 × 8′ @ 4:25", not "Threshold" over a meta line
+  // whose structure the ellipsis cut. A name with no set stays whole.
+  const title = sessionLabel(activityTitle(a))
+  const meta = thumbRowMeta(a, variant)
   const inset = variant === 'inset'
 
   return (
@@ -80,6 +78,8 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], variant =
               inset ? 'truncate text-headline' : 'line-clamp-2 break-words text-sm text-pretty',
             )}
           >
+            {/* The dot is the type on screen; VoiceOver reads it here. */}
+            <span className="sr-only">{`${t.activityTypes[a.type]} `}</span>
             {title}
           </span>
           <PrBadge efforts={qualifiedEfforts} />

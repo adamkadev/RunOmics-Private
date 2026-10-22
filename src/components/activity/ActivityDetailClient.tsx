@@ -187,7 +187,11 @@ export function ActivityDetailClient({
         card={
           <div className="flex flex-col gap-2.5">
             <div className="flex items-baseline justify-between gap-3">
-              <span className="min-w-0 truncate text-[17px] font-bold text-foreground">{name}</span>
+              {/* The type as its dot, as over the page's title: the name is the session's set. */}
+              <span className="flex min-w-0 items-center gap-1.5">
+                <TypeDot type={activity.type} />
+                <span className="min-w-0 truncate text-[17px] font-bold text-foreground">{name}</span>
+              </span>
               <span className="shrink-0 text-[13px] text-muted-foreground">{dateLabel}</span>
             </div>
             <StatStrip stats={buildMapStats(activity)} testId="map-card-stats" />
