@@ -375,16 +375,25 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
   )
 }
 
+/** The smallest efficiency range the chart spreads over its height, in m a beat. */
+const EFFICIENCY_MIN_SPAN = 0.04
+
 function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTrendPoint[]; weeks: WeeklyTrendPoint[]; end: string; onShift: (step: 1 | -1) => void }) {
   const s = t.analytics.cards.efficiency
   const view = efficiencyView(allWeeks, weeks, end)
   if (!view) return null
   const rpe = rpeView(allWeeks, end)
   const values = [...view.adjusted, ...view.measured].filter((v): v is number => v !== null)
-  const min = Math.min(...values) - 0.05
-  const max = Math.max(...values) + 0.05
+  // The lines' own range, at least 0.04 m a beat, 10 % either side (L4): a
+  // flat 0.05 either side left a 0.04 range in the middle third of the
+  // chart, an empty band over and under it; the floor keeps a level month
+  // from filling the chart with noise.
+  const mid = (Math.min(...values) + Math.max(...values)) / 2
+  const half = Math.max(Math.max(...values) - Math.min(...values), EFFICIENCY_MIN_SPAN) * 0.6
+  const min = mid - half
+  const max = mid + half
   const W = 1000
-  const H = 80
+  const H = 72
   const d = (v: number | null) => (v === null ? '–' : formatDeltaFixed(v, 2))
   const sentence =
     view.trend === 'dipping'

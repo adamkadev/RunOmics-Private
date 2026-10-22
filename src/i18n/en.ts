@@ -942,7 +942,7 @@ export const en = {
       heatCost: {
         // Both ends of the thermometer (App Fixes 2b): the cold costs pace too.
         title: 'Temperature cost',
-        caption: (hr: number) => `pace at ${hr} bpm, vs your best band`,
+        caption: (hr: number) => `Pace at ${hr} bpm vs your best band`,
         about: 'Your easy-run pace at the same heart rate, by the temperature it felt like. Each bar is the seconds per km you lose against your best temperature band.',
         lose: (range: string) => ['Above 20 °C you lose ', `${range} s/km`, ' at the same heart rate.'] as [string, string, string],
         cold: (cost: number) => ['Below 5 °C you lose ', `${cost} s/km`, ' at the same heart rate.'] as [string, string, string],

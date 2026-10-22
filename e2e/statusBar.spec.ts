@@ -13,7 +13,8 @@ const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/analytics'
 /**
  * The largest channel difference from --background in a full-width band (by
  * default the top 12 pt), or, with `scrimmed`, from --background under the
- * sheet's scrim (black at --scrim-sheet's alpha).
+ * sheet's scrim (--scrim-sheet's colour at its alpha: black in dark, the
+ * page's ink in light, F18).
  */
 async function topEdgeDelta(
   page: Page,
@@ -38,8 +39,10 @@ async function topEdgeDelta(
     document.body.append(probe)
     const resolved = getComputedStyle(probe).color
     probe.remove()
-    const alpha = scrimmed ? Number(resolved.match(/rgba\([^)]*,\s*([\d.]+)\)/)?.[1] ?? 1) : 0
-    const want = [1, 3, 5].map((i) => parseInt(bg.slice(i, i + 2), 16) * (1 - alpha))
+    const [r = 0, g2 = 0, b = 0, a = '1'] = resolved.match(/[\d.]+/g) ?? []
+    const alpha = scrimmed ? Number(a) : 0
+    const ink = [r, g2, b].map(Number)
+    const want = [1, 3, 5].map((i, c) => parseInt(bg.slice(i, i + 2), 16) * (1 - alpha) + (ink[c] ?? 0) * alpha)
     const scale = img.width / 393
     let max = 0
     for (let i = 0; i < data.length; i += 4) {

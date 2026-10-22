@@ -27,16 +27,17 @@ type Slot = ReactNode | ((close: () => void) => ReactNode)
 
 const render = (slot: Slot, close: () => void) => (typeof slot === 'function' ? slot(close) : slot)
 
-/** A 44 pt control in a sheet's header: a fill, never glass - glass is never nested in glass. */
-const HEADER_CONTROL = 'hit-44 flex h-11 shrink-0 items-center justify-center rounded-full bg-[var(--fill-3)]'
+/** A 44 pt control in a sheet's header: a light translucent fill (F18), never glass - glass is never nested in glass. */
+export const SHEET_CONTROL = 'hit-44 flex h-11 shrink-0 items-center justify-center rounded-full bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]'
 
 /**
  * A bottom sheet (Liquid Glass v3, G10). A medium detent - filters, a week,
  * a note, the export - floats as glass: 8 pt from the screen's sides and
  * foot, a 47 pt corner concentric with the display's, 22 pt in, so a 50 pt
- * capsule CTA at its foot is concentric too. A large detent - the share card,
- * long content - is full width and opaque, its top corners 38 pt. The detent
- * is measured on open and again on a resize; `detent="large"` fixes it.
+ * capsule CTA at its foot is concentric too. A large detent - long content,
+ * Filter & sort - is full width, its top corners 38 pt. Both are the same
+ * glass (F18): one sheet material, whatever the detent. The detent is
+ * measured on open and again on a resize; `detent="large"` fixes it.
  *
  * Grabber, then a 44 pt header row: close as a filled circle, the title
  * centred, a secondary action as a filled capsule. The scrim fades in; the
@@ -122,15 +123,15 @@ export function Sheet({
         data-testid={testId}
         data-detent={detent}
         className={cn(
-          'relative flex w-full animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col sm:max-w-sm',
+          'lg lg-sheet relative flex w-full animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col sm:max-w-sm',
           'transition-[margin,border-radius] duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)]',
           medium
-            ? 'lg lg-sheet m-[var(--sheet-inset)] max-h-[calc(100%_-_16px)] rounded-[var(--radius-sheet)] sm:rounded-[var(--radius-sheet)]'
-            : 'max-h-full rounded-t-[var(--radius-sheet-large)] bg-[var(--raised)] shadow-[var(--shadow-modal)] sm:rounded-[var(--radius-sheet-large)]',
+            ? 'm-[var(--sheet-inset)] max-h-[calc(100%_-_16px)] rounded-[var(--radius-sheet)] sm:rounded-[var(--radius-sheet)]'
+            : 'max-h-full rounded-t-[var(--radius-sheet-large)] rounded-b-none sm:rounded-[var(--radius-sheet-large)]',
         )}
         style={sheetStyle}
       >
-        {medium && <GlassLayers />}
+        <GlassLayers />
         <div
           ref={contentRef}
           className="flex min-h-0 flex-1 flex-col px-[var(--sheet-pad)] pt-1.5"
@@ -145,7 +146,7 @@ export function Sheet({
             <div className="grid h-11 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2">
               <span className="flex justify-start">
                 {showClose && (
-                  <button type="button" onClick={close} aria-label={t.common.close} className={cn(HEADER_CONTROL, 'w-11 text-foreground')}>
+                  <button type="button" onClick={close} aria-label={t.common.close} className={cn(SHEET_CONTROL, 'w-11 text-foreground')}>
                     <X size={20} strokeWidth={2.2} aria-hidden="true" />
                   </button>
                 )}
@@ -164,7 +165,7 @@ export function Sheet({
                     type="button"
                     onClick={action.onClick}
                     disabled={action.disabled}
-                    className={cn(HEADER_CONTROL, 'px-4 text-[17px] text-accent-text disabled:opacity-40')}
+                    className={cn(SHEET_CONTROL, 'px-4 text-[17px] text-accent-text disabled:opacity-40')}
                   >
                     {action.label}
                   </button>

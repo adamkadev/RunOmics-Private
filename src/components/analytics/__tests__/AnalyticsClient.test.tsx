@@ -710,6 +710,22 @@ describe('Load trend and Recovery (v5.4)', () => {
     expect(ids).toEqual(['coach-read', 'load-card', 'form-card', 'status-card'])
   })
 
+  // L4: about 40 pt empty under the sparkline - drawn from zero, the line and
+  // its band sat in the chart's top half. 72 pt, its domain what is drawn,
+  // its dots laid over it rather than in a box of their own under it.
+  it('draws the load line 72 pt tall, spread over its height', async () => {
+    await renderWith({})
+    const card = screen.getByTestId('load-card')
+    const svg = screen.getByTestId('load-mini')
+    expect(svg.getAttribute('height')).toBe('72')
+    expect(card.className).not.toContain('gap-2.5')
+    expect(card.querySelector('[class*="-mt-"]')).toBeNull()
+    const ys = [...svg.querySelectorAll('polygon, polyline')].flatMap((el) => el.getAttribute('points')!.split(' ').map((pt) => Number(pt.split(',')[1])))
+    expect(Math.min(...ys)).toBeGreaterThanOrEqual(0)
+    expect(Math.max(...ys)).toBeLessThanOrEqual(72)
+    expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(72 * 0.75)
+  })
+
   it('prints the load, its ratio and fitness a week, with their safe ranges', async () => {
     await renderWith({})
     expect(screen.getByTestId('load-trend-value').textContent).toBe('412')

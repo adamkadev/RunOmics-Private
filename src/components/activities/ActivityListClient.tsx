@@ -419,25 +419,32 @@ export function ActivityListClient({
         ) : (
           <>
 
-            {/* The search field (Liquid Glass v3, §6.7): a 44 pt capsule in
-                the system fill, no line; focus draws the ring. */}
-            <label className="on-aura flex h-11 items-center gap-2 rounded-full px-3.5 text-muted-foreground transition-shadow focus-within:shadow-[0_0_0_2px_var(--ring)]">
-              <Search size={18} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
-              <input
-                type="text"
-                placeholder={t.activities.searchPlaceholder}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-full min-w-0 flex-1 bg-transparent text-[17px] text-foreground placeholder:text-muted-foreground focus:outline-none"
-              />
-            </label>
+            {/* The search field (Liquid Glass v3, §6.7): a 44 pt capsule, no
+                line; focus draws the ring. Over the glow, glass in both
+                themes, on a blur of its own (F19). */}
+            <div className="on-aura-group">
+              <i aria-hidden="true" className="on-aura-blur inset-0 rounded-full" />
+              <label className="on-aura flex h-11 items-center gap-2 rounded-full px-3.5 text-muted-foreground transition-shadow focus-within:shadow-[0_0_0_2px_var(--ring)]">
+                <Search size={18} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
+                <input
+                  type="text"
+                  placeholder={t.activities.searchPlaceholder}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="h-full min-w-0 flex-1 bg-transparent text-[17px] text-foreground placeholder:text-muted-foreground focus:outline-none"
+                />
+              </label>
+            </div>
 
             {/* Four groups, or the one chip for the types picked in the sheet,
                 then the sheet's button (3.0). The rail reaches past its row -
                 to the screen's edges and 36 pt down, behind the next row - so
                 its scroll box does not cut the chips' glass drop (F16); what
-                follows it paints, and takes taps, over that margin. */}
-            <div className="flex items-center gap-2">
+                follows it paints, and takes taps, over that margin. Over
+                the glow the chips and the button are glass, on one blur
+                laid under the row, edge to edge, not one each (F19). */}
+            <div className="on-aura-group flex items-center gap-2">
+              <i aria-hidden="true" className="on-aura-blur on-aura-blur-row -inset-x-4 inset-y-0" />
               <div className="-mx-4 -mb-9 -mt-1.5 flex min-w-0 flex-1 gap-2 overflow-x-auto px-4 pb-9 pt-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-testid="type-chips">
                 {filter.types.length > 0 ? (
                   <Pill as="button" variant="selected" className="min-w-0 gap-1.5" onClick={() => setFilter(ALL_RUNS)} aria-label={t.activities.filter.clearTypes(pickedLabel)}>

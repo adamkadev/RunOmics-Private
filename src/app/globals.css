@@ -175,6 +175,7 @@
   --tab-bar-side:          24px;
   --tab-bar-float:         max(calc(var(--safe-bottom) - 10px), 12px);
   --edge-fade:             30px;
+  --edge-band:             24px;
   --radius-card:           24px;
   --radius-tile:           12px;
   --radius-sheet:          47px;
@@ -237,7 +238,12 @@
   --clear-glass-fill:        rgb(255 255 255 / 0.10);
   --clear-glass-filter:      blur(8px) saturate(1.8);
   --sheet-glass-fill:        rgb(250 251 250 / 0.55);
-  --sheet-glass-filter:      blur(28px) saturate(2.1) brightness(1.02);
+  --sheet-glass-filter:      blur(28px) saturate(2);
+  --sheet-fill:              rgb(0 0 0 / 0.05);
+  --sheet-fill-rim:          none;
+  --sheet-pill:              #ffffff;
+  --sheet-pill-shadow:       0 2px 6px rgb(0 0 0 / 0.08);
+  --radio-ring:              rgb(0 0 0 / 0.22);
   --glass-text2:             #575c5a;
   --shadow-sheet:            0 24px 60px rgb(0 0 0 / 0.18);
   --tab-pill:                rgb(0 0 0 / 0.07);
@@ -248,7 +254,7 @@
   --segmented-pill-shadow:   0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04);
   --card-edge:               0 1px 2px rgb(0 0 0 / 0.04), 0 0 0 0.5px rgb(0 0 0 / 0.04);
   --row-separator:           rgb(0 0 0 / 0.08);
-  --scrim-sheet:             rgb(0 0 0 / 0.20);
+  --scrim-sheet:             rgb(20 24 22 / 0.16);
   --accent:                  #0e8468;
   --accent-foreground:       #ffffff;
   --accent-text:             #007c61;
@@ -360,7 +366,12 @@
   --clear-glass-fill:        rgb(16 18 18 / 0.22);
   --clear-glass-filter:      blur(5px) saturate(1.6) brightness(0.9);
   --sheet-glass-fill:        rgb(28 31 31 / 0.80);
-  --sheet-glass-filter:      blur(12px) saturate(1.9) brightness(1.1);
+  --sheet-glass-filter:      blur(28px) saturate(1.8);
+  --sheet-fill:              rgb(255 255 255 / 0.10);
+  --sheet-fill-rim:          inset 0 0.5px 0 rgb(255 255 255 / 0.25);
+  --sheet-pill:              rgb(255 255 255 / 0.18);
+  --sheet-pill-shadow:       inset 0 0.5px 0 rgb(255 255 255 / 0.3);
+  --radio-ring:              rgb(255 255 255 / 0.35);
   --shadow-sheet:            0 24px 60px rgb(0 0 0 / 0.35);
   --tab-pill:                rgb(255 255 255 / 0.11);
   --fill-3:                  rgb(118 118 128 / 0.24);
@@ -621,6 +632,19 @@
   /* Variants: only the fill and filter change; geometry and rim are shared. */
   .lg-tab   { --glass-fill: var(--tab-glass-fill); }
   .lg-sheet { --glass-fill: var(--sheet-glass-fill); --glass-filter: var(--sheet-glass-filter); box-shadow: var(--shadow-sheet); }
+  /* One sheet material (F18): every sheet, either detent, is this glass -
+     its sheen a shorter 28 % - and the segmented controls on it take a light
+     translucent fill, not the content layer's grey. */
+  .lg-sheet > .lg-tint {
+    background:
+      linear-gradient(180deg, var(--glass-sheen) 0%, transparent 28%),
+      var(--glass-fill);
+  }
+  .lg-sheet {
+    --segmented-track: var(--sheet-fill);
+    --segmented-pill: var(--sheet-pill);
+    --segmented-pill-shadow: var(--sheet-pill-shadow);
+  }
   .lg-clear {
     --glass-fill: var(--clear-glass-fill);
     --glass-filter: var(--clear-glass-filter);
@@ -651,6 +675,17 @@
   /* Glass that fades in (the compact bar's circles): its layers and content
      take the animation, never the wrapper, whose opacity would flatten the blur. */
   .lg.lg-fade-in > * { animation: fade-in 150ms ease-out both; }
+
+  /* A sticky strip's control as it sticks (F20): its glass layers fade in
+     over 120 ms, never the wrapper, and the track's fill gives way to the
+     glass's drop over the same. Its labels stay put. */
+  .lg.lg-stuck-in > i { animation: fade-in 120ms ease-out backwards; }
+  .lg.lg-stuck-in {
+    transition:
+      transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 120ms ease-out,
+      background-color 120ms ease-out;
+  }
 
   /* A glass group (the hero's expand + share): the buttons inside are plain,
      so the group swells as one when either is pressed. */
@@ -706,6 +741,33 @@
       color-mix(in srgb, var(--background) 45%, transparent) calc(var(--edge-shift) + var(--edge-base) * 0.7),
       transparent
     );
+  }
+
+  /* Light's top edge (F21): the dark edge's tint is 80-45 % ground under the
+     bar, which hides what scrolls there on black; on the near-white page the
+     run's chips and the hero card's foot read through as a smudge. In light
+     the edge is the page's ground, solid from the screen's top - under the
+     status bar, one surface with it (F15) - to the bar's foot, then gone
+     over 24 pt, with a 6 px blur in that band only, never across the bar.
+     The bar's buttons and title sit above it (z-40). Dark keeps its edge,
+     but for one case (F20): a glass strip stuck under the bar (StickyBar,
+     data-stuck) no longer grows the edge, so the rows pass under its glass,
+     and dark's own 45 % foot would then let them show between the bar and
+     the strip. While one is stuck, dark takes this shape too: as solid above
+     the strip as the grown edge was, the band the only fade over it. */
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge {
+    --edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-band));
+    --edge-solid: calc(var(--edge-shift) + var(--safe-top) + var(--bar-h));
+  }
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge > i:nth-child(1) {
+    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+    -webkit-mask-image: linear-gradient(transparent var(--edge-solid), #000 var(--edge-solid), transparent);
+            mask-image: linear-gradient(transparent var(--edge-solid), #000 var(--edge-solid), transparent);
+  }
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge > i:nth-child(2),
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge > i:nth-child(3) { display: none; }
+  :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge > i:nth-child(4) {
+    background: linear-gradient(var(--background) var(--edge-solid), transparent);
   }
 
   /* Bottom soft edge (G5, README §6.2): content dissolves into the tab bar
@@ -807,7 +869,7 @@
 
 /* Today, one recipe everywhere (round 2, F14) - Today's and Plan's weeks,
    Training status, Consistency: a 2 pt accent ring 2 pt off the mark. An
-   outline, so the gap is whatever is under it - a card, a frosted card, a
+   outline, so the gap is whatever is under it - a card, a tinted card, a
    glass sheet - where a shadow ring had to guess the ground's colour. */
 @utility state-today {
   outline: var(--state-ring) solid var(--accent);
@@ -860,7 +922,7 @@
   /* The background glow (G14, README §6.11): a blurred colour field behind
      the top of the page, from its palette (layout/Aura). A sibling under the
      content, never an ancestor of glass. Light: the palette mixed with white
-     under frosted cards. Dark: half strength, it only tints the header. One
+     under 88 % white cards. Dark: half strength, it only tints the header. One
      switch turns it off in both themes (html[data-glow="off"], F2). */
   .aura {
     position: absolute;
@@ -894,16 +956,14 @@
   }
   html[data-glow="off"] .aura { display: none; }
 
-  /* Frosted cards over the light Aura: still the content layer - no rim, no
-     edge band, no press swell - and a static blur, never animated. Below the
-     aura they read white, so the cost is only paid at the top of the page. */
+  /* Cards over the light Aura: the content layer, never glass and never
+     blurred (D1) - no rim, no edge band, no press swell, no backdrop-filter.
+     88 % white, so the glow still tints the first card a little through it,
+     and below the aura they read all but white. A blur per card (F5) put a
+     live backdrop-filter on every card in the list, on screen or not. */
   html:not(.dark):not([data-glow="off"]) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
-    /* .86 and 1.6 (F5): at .72 and 1.8 the cards over the glow read
-       lavender, pink and peach rather than white. */
-    --card: rgb(255 255 255 / 0.86);
+    --card: rgb(255 255 255 / 0.88);
     --card-edge: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.05), 0 8px 24px rgb(40 50 70 / 0.06);
-    -webkit-backdrop-filter: blur(24px) saturate(1.6);
-            backdrop-filter: blur(24px) saturate(1.6);
   }
   html:not(.dark):not([data-glow="off"]) :is(.content-card, .glass-card, .glass-hero, .glass-row) .inset-tile {
     background: rgb(118 118 128 / 0.07);
@@ -913,13 +973,57 @@
      filter button, Analytics' section track: the system fill, and in light
      over the glow the regular glass's tint, sheen, blur and drop (F16), as
      the grey turned muddy over colour and a 62 % white read as a flat pill.
-     Never inside a frosted card: that would nest one blur in another. */
+     Only straight on the glow, never inside a card. */
   .on-aura { background-color: var(--fill-3); }
   html:not(.dark):not([data-glow="off"]) .on-aura {
     background: linear-gradient(180deg, var(--glass-sheen) 0%, transparent 55%), var(--glass-fill);
     box-shadow: var(--glass-drop);
     -webkit-backdrop-filter: var(--glass-filter);
             backdrop-filter: var(--glass-filter);
+  }
+
+  /* Activities' search, chips and filter button (F19): they sit in the
+     header zone, so they are the control layer in both themes, not only
+     light - over the glow, each the regular glass's tint, sheen, rim and
+     drop. A group's controls share one blur, .on-aura-blur, a sibling laid
+     under them, rather than one each: the search field is one group, the
+     chip row with the filter button another. A selected chip stays solid. */
+  .on-aura-group { position: relative; }
+  .on-aura-group > .on-aura-blur {
+    position: absolute;
+    pointer-events: none;
+    display: none;
+  }
+  html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group > .on-aura-blur {
+    display: block;
+    -webkit-backdrop-filter: var(--glass-filter);
+            backdrop-filter: var(--glass-filter);
+  }
+  /* The chip row's blur spans the gaps between its chips too: a plain blur
+     there, no saturate or brightness, which drew the whole row as a band of
+     stronger colour across the glow. A blur of the glow is the glow. */
+  html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group > .on-aura-blur.on-aura-blur-row {
+    -webkit-backdrop-filter: blur(var(--blur-md));
+            backdrop-filter: blur(var(--blur-md));
+  }
+  html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group .on-aura {
+    position: relative;
+    background: linear-gradient(180deg, var(--glass-sheen) 0%, transparent 55%), var(--glass-fill);
+    box-shadow: var(--glass-drop);
+    -webkit-backdrop-filter: none;
+            backdrop-filter: none;
+  }
+  html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group .on-aura::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--glass-rim);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    pointer-events: none;
   }
 
   /* System overrides win: no glow and white cards whatever the setting. */
@@ -930,12 +1034,11 @@
       -webkit-backdrop-filter: none;
               backdrop-filter: none;
     }
-    html:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
-      --card: #ffffff;
-      -webkit-backdrop-filter: none;
-              backdrop-filter: none;
-    }
+    html:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) { --card: #ffffff; }
     html:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) .inset-tile { background: var(--background); }
+    html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group > .on-aura-blur { display: none; }
+    html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group .on-aura { background: var(--fill-3); box-shadow: none; }
+    html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group .on-aura::before { content: none; }
   }
   html[data-glass="solid"] .aura { display: none; }
   html[data-glass="solid"]:not(.dark) .on-aura {
@@ -943,11 +1046,7 @@
     -webkit-backdrop-filter: none;
             backdrop-filter: none;
   }
-  html[data-glass="solid"]:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
-    --card: #ffffff;
-    -webkit-backdrop-filter: none;
-            backdrop-filter: none;
-  }
+  html[data-glass="solid"]:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) { --card: #ffffff; }
 
   /* The fullscreen maps' top edge under their glass controls (G11; round
      2, H1): over the map, under the controls - a sibling of their glass in

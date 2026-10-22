@@ -22,6 +22,8 @@ import { SEGMENTED_FILL_SEGMENT_CLASS, SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLA
 import { t } from '@/i18n'
 import { ShareCardActions } from '@/components/activity/ShareCardActions'
 import { Toggle } from '@/components/ui/Toggle'
+import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
+import { SHEET_CONTROL } from '@/components/ui/Sheet'
 
 interface Props {
   activity: ShareActivity
@@ -191,155 +193,158 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       {/* A sheet as tall as what it holds (design review, Oct 2026): handle,
           title, card, tabs, one option row, the buttons - no spacer, the
           run still showing above it. It scrolls only on a phone too short.
-          Liquid Glass v3's large detent (G10): full width, opaque on the
-          raised surface, top corners 38 pt - no glass under a photo card. */}
+          Liquid Glass v3's large detent (G10): full width, top corners 38 pt,
+          and the one sheet material (F18) - the glass on the wrapper, the
+          scroll inside it, so the glass never scrolls away. The card in it
+          stays opaque: it is the image that is exported. */}
       <div
         ref={trapRef}
         data-testid="share-sheet"
-        className="relative flex max-h-full w-full max-w-md animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col overflow-y-auto overscroll-contain rounded-t-[var(--radius-sheet-large)] [scrollbar-width:none] sm:rounded-[var(--radius-sheet-large)] [&::-webkit-scrollbar]:hidden"
-        style={{
-          ...sheetStyle,
-          background: 'var(--raised)',
-          boxShadow: 'var(--shadow-modal)',
-          padding: '6px 22px 0',
-          paddingBottom: 'max(26px, var(--safe-bottom))',
-        }}
+        className={cn(glassClass('sheet'), 'flex max-h-full w-full max-w-md animate-[sheet-rise_520ms_cubic-bezier(0.22,1,0.36,1)_both] flex-col rounded-t-[var(--radius-sheet-large)] rounded-b-none sm:rounded-[var(--radius-sheet-large)]')}
+        style={sheetStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 justify-center" {...handleProps} style={{ ...handleProps.style }}>
-          <span aria-hidden="true" style={{ width: 36, height: 5, borderRadius: 2.5, background: 'rgb(127 127 127 / 0.45)' }} />
-        </div>
-
-        {/* The sheet header (G10): close as a filled circle, the title centred. */}
-        <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center" style={{ marginTop: 10, height: 44 }}>
-          <button
-            type="button"
-            onClick={close}
-            aria-label={s.close}
-            className="flex size-11 items-center justify-center justify-self-start rounded-full bg-[var(--fill-3)] text-foreground"
-          >
-            <X size={20} strokeWidth={2.2} />
-          </button>
-          <h2 className="text-headline text-foreground">{s.title}</h2>
-          <span />
-        </div>
-
+        <GlassLayers />
         <div
-          data-testid="share-preview"
-          className="relative shrink-0 self-center overflow-hidden"
-          style={{
-            width: CARD_BOX_W, aspectRatio: '4 / 5', marginTop: 14, borderRadius: 24, touchAction: 'pan-y',
-            boxShadow: awaitingPhoto ? 'none' : '0 0 0 1px var(--border)',
-          }}
-          onPointerDown={(e) => { swipeX.current = e.clientX }}
-          onPointerUp={(e) => {
-            const from = swipeX.current
-            swipeX.current = null
-            if (from === null) return
-            const dx = e.clientX - from
-            if (Math.abs(dx) >= SWIPE_PX) step(dx < 0 ? 1 : -1)
-            else if (design === 'photo' && photoImage) fileInputRef.current?.click()
-          }}
-          onPointerCancel={() => { swipeX.current = null }}
+          data-testid="share-sheet-body"
+          className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          style={{ padding: '6px 22px 0', paddingBottom: 'max(26px, var(--safe-bottom))' }}
         >
-          <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: awaitingPhoto ? 'none' : 'block' }} />
-          {/* The empty frame is the picker, and the exact crop the photo gets. */}
-          {awaitingPhoto && (
-            <button
-              type="button"
-              data-testid="share-photo-picker"
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground"
-              style={{ gap: 10, borderRadius: 24, border: '1.5px dashed var(--muted-foreground)', background: 'var(--background)' }}
-            >
-              <Camera size={34} strokeWidth={1.8} className="text-foreground" aria-hidden="true" />
-              <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.choosePhoto}</span>
-              <span style={{ fontSize: 11 }}>{s.photoHint}</span>
-            </button>
-          )}
-        </div>
-
-        <div
-          role="radiogroup"
-          aria-label={s.designTitle}
-          // Equal segments across the row (F3): a grid here lost to the
-          // track's own flex when the classes merged, and the labels ran
-          // together at its start.
-          data-testid="share-designs"
-          className={cn(SEGMENTED_TRACK, 'w-full')}
-          style={{ marginTop: 14 }}
-        >
-          {designs.map((d) => (
-            <button
-              key={d}
-              type="button"
-              role="radio"
-              aria-checked={d === design}
-              onClick={() => setDesign(d)}
-              className={cn(segmentClass(d === design), SEGMENTED_FILL_SEGMENT_CLASS, 'h-[34px] text-[15px]')}
-            >
-              {s.designLabels[d]}
-            </button>
-          ))}
-        </div>
-
-        {/* One option row, at one height on every tab: the background, or -
-            a photo covers the whole card - the photo itself. */}
-        <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
-          {design === 'photo' ? (
-            <>
-              <span className="text-foreground" style={{ fontSize: 17 }}>{s.photo}</span>
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center text-foreground" style={chip}>
-                {photoImage ? s.replacePhoto : s.choosePhoto}
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="text-foreground" style={{ fontSize: 17 }}>{s.background}</span>
-              <div role="radiogroup" aria-label={s.background} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
-                {(['dark', 'light'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    role="radio"
-                    aria-checked={theme === mode}
-                    onClick={() => setTheme(mode)}
-                    className={cn(segmentClass(theme === mode), 'h-[26px] px-3.5 text-[13px]')}
-                  >
-                    {s.themeLabels[mode]}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* An interval session's rep pace, on every tab: off, the card is an
-            easy run's - the route in one colour, the average pace instead. */}
-        {activity.reps && (
-          <div data-testid="share-reps" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
-            <span className="text-foreground" style={{ fontSize: 17 }}>{s.showReps}</span>
-            <Toggle checked={showReps} onChange={setShowReps} label={s.showReps} />
+          <div className="flex shrink-0 justify-center" {...handleProps} style={{ ...handleProps.style }}>
+            <span aria-hidden="true" style={{ width: 36, height: 5, borderRadius: 2.5, background: 'rgb(127 127 127 / 0.45)' }} />
           </div>
-        )}
 
-        <ShareCardActions
-          canShareFiles={canShareFiles}
-          canCopyImage={canCopyImage}
-          copyState={copyState}
-          disabled={awaitingPhoto}
-          onShare={handleShare}
-          onSave={handleSave}
-          onCopy={handleCopy}
-        />
+          {/* The sheet header (G10): close as a filled circle, the title centred. */}
+          <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center" style={{ marginTop: 10, height: 44 }}>
+            <button
+              type="button"
+              onClick={close}
+              aria-label={s.close}
+              className={cn(SHEET_CONTROL, 'w-11 justify-self-start text-foreground')}
+            >
+              <X size={20} strokeWidth={2.2} />
+            </button>
+            <h2 className="text-headline text-foreground">{s.title}</h2>
+            <span />
+          </div>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handlePhotoChange}
-        />
+          <div
+            data-testid="share-preview"
+            className="relative shrink-0 self-center overflow-hidden"
+            style={{
+              width: CARD_BOX_W, aspectRatio: '4 / 5', marginTop: 14, borderRadius: 24, touchAction: 'pan-y',
+              boxShadow: awaitingPhoto ? 'none' : '0 0 0 1px var(--border)',
+            }}
+            onPointerDown={(e) => { swipeX.current = e.clientX }}
+            onPointerUp={(e) => {
+              const from = swipeX.current
+              swipeX.current = null
+              if (from === null) return
+              const dx = e.clientX - from
+              if (Math.abs(dx) >= SWIPE_PX) step(dx < 0 ? 1 : -1)
+              else if (design === 'photo' && photoImage) fileInputRef.current?.click()
+            }}
+            onPointerCancel={() => { swipeX.current = null }}
+          >
+            <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: awaitingPhoto ? 'none' : 'block' }} />
+            {/* The empty frame is the picker, and the exact crop the photo gets. */}
+            {awaitingPhoto && (
+              <button
+                type="button"
+                data-testid="share-photo-picker"
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground"
+                style={{ gap: 10, borderRadius: 24, border: '1.5px dashed var(--muted-foreground)', background: 'var(--background)' }}
+              >
+                <Camera size={34} strokeWidth={1.8} className="text-foreground" aria-hidden="true" />
+                <span className="text-foreground" style={{ fontSize: 15, fontWeight: 600 }}>{s.choosePhoto}</span>
+                <span style={{ fontSize: 11 }}>{s.photoHint}</span>
+              </button>
+            )}
+          </div>
+
+          <div
+            role="radiogroup"
+            aria-label={s.designTitle}
+            // Equal segments across the row (F3): a grid here lost to the
+            // track's own flex when the classes merged, and the labels ran
+            // together at its start.
+            data-testid="share-designs"
+            className={cn(SEGMENTED_TRACK, 'w-full')}
+            style={{ marginTop: 14 }}
+          >
+            {designs.map((d) => (
+              <button
+                key={d}
+                type="button"
+                role="radio"
+                aria-checked={d === design}
+                onClick={() => setDesign(d)}
+                className={cn(segmentClass(d === design), SEGMENTED_FILL_SEGMENT_CLASS, 'h-[34px] text-[15px]')}
+              >
+                {s.designLabels[d]}
+              </button>
+            ))}
+          </div>
+
+          {/* One option row, at one height on every tab: the background, or -
+              a photo covers the whole card - the photo itself. */}
+          <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
+            {design === 'photo' ? (
+              <>
+                <span className="text-foreground" style={{ fontSize: 17 }}>{s.photo}</span>
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="flex items-center text-foreground" style={chip}>
+                  {photoImage ? s.replacePhoto : s.choosePhoto}
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-foreground" style={{ fontSize: 17 }}>{s.background}</span>
+                <div role="radiogroup" aria-label={s.background} className={cn('flex shrink-0', SEGMENTED_TRACK)}>
+                  {(['dark', 'light'] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      role="radio"
+                      aria-checked={theme === mode}
+                      onClick={() => setTheme(mode)}
+                      className={cn(segmentClass(theme === mode), 'h-[26px] px-3.5 text-[13px]')}
+                    >
+                      {s.themeLabels[mode]}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* An interval session's rep pace, on every tab: off, the card is an
+              easy run's - the route in one colour, the average pace instead. */}
+          {activity.reps && (
+            <div data-testid="share-reps" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
+              <span className="text-foreground" style={{ fontSize: 17 }}>{s.showReps}</span>
+              <Toggle checked={showReps} onChange={setShowReps} label={s.showReps} />
+            </div>
+          )}
+
+          <ShareCardActions
+            canShareFiles={canShareFiles}
+            canCopyImage={canCopyImage}
+            copyState={copyState}
+            disabled={awaitingPhoto}
+            onShare={handleShare}
+            onSave={handleSave}
+            onCopy={handleCopy}
+          />
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handlePhotoChange}
+          />
+        </div>
       </div>
     </div>,
     document.body

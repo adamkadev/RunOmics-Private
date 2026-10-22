@@ -335,8 +335,17 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--clear-glass-filter': 'blur(8px) saturate(1.8)',
         '--sheet-glass-fill': 'rgb(250 251 250 / 0.55)',
         // A sheet sits over text: wider, so the page's headings and the tab
-        // bar's labels under it no longer read through (F16).
-        '--sheet-glass-filter': 'blur(28px) saturate(2.1) brightness(1.02)',
+        // bar's labels under it no longer read through (F16). Every sheet,
+        // in both detents, takes it (F18).
+        '--sheet-glass-filter': 'blur(28px) saturate(2)',
+        // Controls on a sheet's glass (F18): a light translucent fill - the
+        // header's close and Reset, a segmented track - and its lifted pick.
+        '--sheet-fill': 'rgb(0 0 0 / 0.05)',
+        '--sheet-fill-rim': 'none',
+        '--sheet-pill': '#ffffff',
+        '--sheet-pill-shadow': '0 2px 6px rgb(0 0 0 / 0.08)',
+        // An unticked tick box on a sheet: a 1.5 pt ring, not a grey blob (F18).
+        '--radio-ring': 'rgb(0 0 0 / 0.22)',
         // Secondary labels on glass, as iOS's vibrant label: the page's grey
         // fell to 3.9:1 on a sheet over the scrim (F16).
         '--glass-text2': readableOn(SURFACES.light.text2, GLASS_LABEL_GROUND),
@@ -353,8 +362,9 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--card-edge': '0 1px 2px rgb(0 0 0 / 0.04), 0 0 0 0.5px rgb(0 0 0 / 0.04)',
         // An inset-grouped list's separator
         '--row-separator': 'rgb(0 0 0 / 0.08)',
-        // Soft edges
-        '--scrim-sheet': 'rgb(0 0 0 / 0.20)',
+        // Soft edges. A sheet's scrim in light is a tint of the page's ink,
+        // not a grey wash over the glow (F18).
+        '--scrim-sheet': 'rgb(20 24 22 / 0.16)',
       }
     : {
         '--glass-filter': DARK_GLASS_FILTER,
@@ -370,7 +380,12 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--clear-glass-fill': 'rgb(16 18 18 / 0.22)',
         '--clear-glass-filter': 'blur(5px) saturate(1.6) brightness(0.9)',
         '--sheet-glass-fill': 'rgb(28 31 31 / 0.80)',
-        '--sheet-glass-filter': DARK_GLASS_FILTER,
+        '--sheet-glass-filter': 'blur(28px) saturate(1.8)',
+        '--sheet-fill': 'rgb(255 255 255 / 0.10)',
+        '--sheet-fill-rim': 'inset 0 0.5px 0 rgb(255 255 255 / 0.25)',
+        '--sheet-pill': 'rgb(255 255 255 / 0.18)',
+        '--sheet-pill-shadow': 'inset 0 0.5px 0 rgb(255 255 255 / 0.3)',
+        '--radio-ring': 'rgb(255 255 255 / 0.35)',
         '--shadow-sheet': '0 24px 60px rgb(0 0 0 / 0.35)',
         '--tab-pill': 'rgb(255 255 255 / 0.11)',
         '--fill-3': 'rgb(118 118 128 / 0.24)',
@@ -396,6 +411,8 @@ export const GEOMETRY_TOKENS: Record<string, string> = {
   '--tab-bar-float': 'max(calc(var(--safe-bottom) - 10px), 12px)',
   // Top soft edge fade under the bar.
   '--edge-fade': '30px',
+  // Light's top edge (F21): solid to the bar's foot, then this fade, blurred in it only.
+  '--edge-band': '24px',
   '--radius-card': '24px',
   '--radius-tile': '12px',
   // Medium detent at 8 pt inset.

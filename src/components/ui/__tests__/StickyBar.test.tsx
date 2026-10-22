@@ -13,8 +13,14 @@ describe('StickyBar', () => {
     expect(bar.className).toContain('border-b')
     expect(bar.style.top).toBe('12px')
     // A phone's sticky strip is transparent over the soft scroll edge (Liquid Glass v2).
-    expect(bar.hasAttribute('data-sticky-strip')).toBe(true)
     expect(bar.className).toContain('max-lg:bg-transparent')
+  })
+
+  // F20: stuck, its control is glass and the rows pass visibly under it, so
+  // the scroll edge must not grow by it and paint the ground behind the glass.
+  it('does not grow the scroll edge by its height', () => {
+    render(<StickyBar top="12px">tabs</StickyBar>)
+    expect(screen.getByTestId('sticky-bar').hasAttribute('data-sticky-strip')).toBe(false)
   })
 })
 

@@ -25,8 +25,8 @@ const GROUPS = Object.keys(FILTER_GROUPS) as (keyof typeof FILTER_GROUPS)[]
 /**
  * Filter & sort (3.0): the sort, then every type under its group with a tick
  * and its count. Nothing changes behind the sheet until "Show N runs". A
- * Liquid Glass v3 sheet (ui/Sheet): it floats as glass while it fits in
- * three quarters of the screen and goes large and opaque past that.
+ * Liquid Glass v3 sheet (ui/Sheet): it floats while it fits in three
+ * quarters of the screen and goes large past that, glass either way (F18).
  */
 export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: Props) {
   const [picked, setPicked] = useState<FilterKind[]>(types)
@@ -90,11 +90,12 @@ export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: P
                     onClick={() => toggle(type)}
                     className="flex h-11 w-full items-center gap-3 text-left"
                   >
+                    {/* Ticked, the accent; unticked, a 1.5 pt ring on the glass (F18). */}
                     <span
                       aria-hidden="true"
                       className={cn(
                         'flex size-[22px] shrink-0 items-center justify-center rounded-full transition-colors',
-                        checked ? 'bg-accent text-accent-foreground' : 'bg-[var(--fill-3)]',
+                        checked ? 'bg-accent text-accent-foreground' : 'shadow-[inset_0_0_0_1.5px_var(--radio-ring)]',
                       )}
                     >
                       {checked && <Check size={14} strokeWidth={3} />}

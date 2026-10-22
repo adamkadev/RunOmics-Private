@@ -18,6 +18,9 @@ import { describe, expect, it } from 'vitest'
  */
 const SRC = path.resolve(__dirname, '../../..')
 
+/** The light edge's selector, which dark takes while a glass strip is stuck (F21, F20). */
+const LIGHT_OR_STUCK = ':is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck]))'
+
 function sources(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const full = path.join(dir, name)
@@ -84,6 +87,40 @@ describe('the top edge (v4.8)', () => {
       expect(layer).toContain('calc(var(--edge-shift) + var(--edge-base) *')
       expect(layer).not.toMatch(/(#000|transparent\)?) \d+%/)
     }
+  })
+
+  // F21: in light the edge's 80-45 % tint let the run's chips and the hero
+  // card's foot show under the bar. Light's edge is the ground, solid from the
+  // screen's top to the bar's foot, then a 24 pt fade blurred 6 px in it only.
+  it("draws light's edge solid to the bar's foot, blurred only in its 24 pt fade", () => {
+    const css = readFileSync(path.join(SRC, 'app/globals.css'), 'utf8')
+    const rule = (selector: string) => {
+      selector = selector.replaceAll('LIGHT_OR_STUCK', LIGHT_OR_STUCK)
+      const at = css.indexOf(`${selector} {`)
+      expect(at, selector).toBeGreaterThan(-1)
+      return css.slice(at, css.indexOf('}', at))
+    }
+    expect(css).toMatch(/--edge-band:\s+24px/)
+    const edge = rule('LIGHT_OR_STUCK .scroll-edge')
+    expect(edge).toContain('--edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-band))')
+    expect(edge).toContain('--edge-solid: calc(var(--edge-shift) + var(--safe-top) + var(--bar-h))')
+    const blur = rule('LIGHT_OR_STUCK .scroll-edge > i:nth-child(1)')
+    expect(blur).toContain('backdrop-filter: blur(6px)')
+    expect(blur).toContain('mask-image: linear-gradient(transparent var(--edge-solid), #000 var(--edge-solid), transparent)')
+    expect(rule('LIGHT_OR_STUCK .scroll-edge > i:nth-child(2),\n  LIGHT_OR_STUCK .scroll-edge > i:nth-child(3)')).toContain('display: none')
+    expect(rule('LIGHT_OR_STUCK .scroll-edge > i:nth-child(4)')).toContain('background: linear-gradient(var(--background) var(--edge-solid), transparent)')
+  })
+
+  // F20: a glass strip stuck under the bar no longer grows the edge, so its
+  // rows show under the glass; dark then takes light's shape while one is
+  // stuck, solid above the strip, or its 45 % foot let them show there.
+  it("gives dark light's edge while a glass strip is stuck", () => {
+    const css = readFileSync(path.join(SRC, 'app/globals.css'), 'utf8')
+    expect(css).toContain(`${LIGHT_OR_STUCK} .scroll-edge {`)
+    expect(LIGHT_OR_STUCK).toContain('[data-stuck]')
+    const bar = readFileSync(path.join(SRC, 'components/ui/StickyBar.tsx'), 'utf8')
+    expect(bar).toContain("data-stuck={stuck ? '' : undefined}")
+    expect(bar).toContain('data-testid="sticky-bar"')
   })
 
   it('starts the compact title bar under the strip', () => {

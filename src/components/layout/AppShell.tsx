@@ -102,17 +102,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Positioned, with no z-index: not a stacking context, which would
             trap the maps' fullscreen overlays (z-50) under the top scrim. */}
         <main className="relative min-h-screen overflow-x-clip lg:ml-[248px]">
-          {/* pb-28 alone is the nav's own height with room to spare on a
-              home-button phone, but it's a fixed 112px - on a notched device
-              --safe-bottom eats into that margin instead of adding to it, so
-              a page whose last section lands right at the edge (e.g. Plan's
-              race cards) can still finish behind the nav. Add the inset
-              rather than assume the flat value already covers it. */}
+          {/* Clear of the tab bar, whole or shrunk to its pill (L1): the
+              bar's float off the foot (24 pt on a Face ID phone), its 62 pt,
+              24 pt of air, and the home indicator's inset on top - so at
+              scroll end the last card (an activity's Previous run) sits whole
+              above the pill on every page. From the bar's own tokens, so it
+              follows them. */}
           {/* Content up to 1120 pt wide, centred, 36 pt from the top and 32 at
               the sides on desktop (v4.17). */}
           {/* Relative, with no z-index, so the content paints over the aura
               (positioned, before it) without becoming a stacking context. */}
-          <div className="relative mx-auto max-w-5xl px-4 pb-[calc(7rem+var(--safe-bottom))] pt-[var(--top-scrim)] sm:px-6 lg:max-w-[1184px] lg:px-8 lg:pb-16 lg:pt-9">
+          <div className="relative mx-auto max-w-5xl px-4 pb-[calc(var(--tab-bar-float)+var(--tab-bar-h)+24px+var(--safe-bottom))] pt-[var(--top-scrim)] sm:px-6 lg:max-w-[1184px] lg:px-8 lg:pb-16 lg:pt-9">
             <Aura />
             <div className="relative">
               <PageTransition>{children}</PageTransition>

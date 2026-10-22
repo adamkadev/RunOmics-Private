@@ -4,6 +4,79 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Cards are never blurred (D1): over the light glow each card had its own
+  24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
+  Activities. They are now 88 % white with no blur, so the glow still tints
+  the first card a little through them; dark is unchanged.
+
+- One rule for a card's caption (L5): at the right of its title only while
+  it fits there on one line, otherwise under the title from the left, 13 pt
+  muted - never a right-aligned caption wrapped under the title, as
+  Temperature cost's was. Its caption reads "Pace at 149 bpm vs your best
+  band".
+
+- No empty bands in Analytics' Load and Aerobic efficiency cards (L4): the
+  Load sparkline was drawn from zero, so its line and band sat in the top
+  half, and the efficiency chart padded a flat 0.05 m a beat either side of
+  a range near 0.04, leaving it in the middle third. Both charts are 72 pt
+  and fit what they draw (at least 0.04 m a beat for efficiency, so a level
+  month is not stretched into noise); gaps in the Load card are 12 pt.
+
+- Goals & season's title on one line (L3): the ‹ 2026 › stepper shared the
+  large title's row and broke it onto two, pushing the first card 50 pt
+  down. The stepper is in the button row, opposite the back button, in the
+  same 44 pt glass, and the title has the full width. The rule for large
+  titles: a control may sit beside one only while the title stays on one
+  line; if it would wrap, the control moves to the button row. Goals is the
+  one page that wrapped.
+
+- An activity's four numbers share one baseline (L2): "Time", with no
+  unit, sat about 7 pt higher than Distance, Avg pace and Avg HR. Every
+  value now sits in one fixed 44 pt row, every label in the row under it,
+  at 15 pt. The value is 28 pt where its column allows and the size that
+  fits "1:10:31" on a phone, the same across the row.
+
+- The page ends clear of the tab bar's pill (L1): the bottom padding is the
+  bar's float, its 62 pt and 24 pt of air over the home indicator's inset,
+  read from the bar's own tokens, on every page, so at scroll end the last
+  card - an activity's Previous run - sits whole above the pill.
+
+- A stuck tab strip is glass over the rows (F20): Activity detail's
+  Overview / Splits / Charts / Dynamics strip, Analytics' and Records' turn
+  to glass as they stick, now fading in over 120 ms, but the soft scroll
+  edge grew by the strip's height (F4) and painted the page's ground behind
+  the glass, so on Activity detail it read as a flat grey track. The edge
+  is now the bar's own under a glass strip, and the rows pass visibly under
+  it; dark takes light's edge while one is stuck, solid above the strip.
+  Activities' month headings still grow it. In-card switches stay flat.
+
+- Activities' search, chips and filter button are glass in dark too (F19):
+  in the header zone, they were flat grey in dark beside the glass List |
+  Map. Over the glow they take the regular glass's tint, sheen, rim and
+  drop in both themes, the selected chip still solid. The search field and
+  the chip row each sit on one shared blur, not one per chip, which also
+  takes three blurs off the light list.
+
+- The glow on the Shoes pages (F17): Shoes, a shoe's page and Compare were
+  the one Progress family on the flat ground. They take Records' glow, amber
+  left and teal right, in both themes; the Background glow switch turns it
+  off as everywhere else.
+
+- No ghosts under the light compact bar (F21): on an activity, the chips and
+  the hero card's foot showed through the light scroll edge as a smudge.
+  In light the edge is now the page's ground, solid from the screen's top -
+  status bar and bar one surface - to the bar's foot, then gone over 24 pt,
+  with a 6 px blur in that band only. Dark keeps its edge.
+
+- One sheet material (F18): Filter & sort and Share run were opaque panels
+  beside the glass of Map Filters, Coach "Why" and Week of…. Every sheet, in
+  either detent, is now the same glass: the sheet fill under a 28 % sheen,
+  a 28 px blur (saturate 1.8 dark, 2 light), the rim and the sheet's drop.
+  The light scrim is a 16 % tint of the page's ink, not a 20 % grey wash.
+  Close, Reset and the segmented controls on a sheet take a light
+  translucent fill, an unticked type in Filter & sort is a 1.5 pt ring, and
+  Share run's card - the image it exports - stays opaque.
+
 - French fits a phone (393 pt), found by scanning every page, tab and
   sheet for cut text: the sort is Récentes · Anciennes · Longues · Rapides
   (four ellipses before), Z1 is « Récup », fitness age reads « 27 (32 ans) »

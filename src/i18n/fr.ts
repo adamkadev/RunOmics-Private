@@ -870,7 +870,7 @@ export const fr = {
       },
       heatCost: {
         title: 'Coût de la température',
-        caption: (hr: number) => `allure à ${hr} bpm, face à ta meilleure tranche`,
+        caption: (hr: number) => `Allure à ${hr} bpm face à ta meilleure tranche`,
         about: "Ton allure de footing à fréquence cardiaque égale, selon la température ressentie. Chaque barre est le nombre de secondes par km que tu perds face à ta meilleure tranche de température.",
         lose: (range: string) => ['Au-dessus de 20 °C, tu perds ', `${range} s/km`, ' à FC égale.'] as [string, string, string],
         cold: (cost: number) => ['En dessous de 5 °C, tu perds ', `${cost} s/km`, ' à FC égale.'] as [string, string, string],
