@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- French fits a phone (393 pt), found by scanning every page, tab and
+  sheet for cut text: the sort is Récentes · Anciennes · Longues · Rapides
+  (four ellipses before), Z1 is « Récup », fitness age reads « 27 (32 ans) »
+  and a tile alone on the card's last row takes the row, the Activities
+  chips read « Tout » with 12 pt sides so all four sit beside the filter
+  button, Settings' row reads « Seuil 172 · max 189 », and the dynamics
+  legend « Ta plage habituelle sur 8 semaines ».
+
 - Light-mode glass reads as glass (F16): the bar's buttons, the tab bar,
   the map's controls and the medium sheets were 52-82 % white, a flat
   opaque pill on the near-white page. They are now 22 % (tab bar 36 %,

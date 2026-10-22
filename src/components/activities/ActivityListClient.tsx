@@ -450,6 +450,8 @@ export function ActivityListClient({
                       key={group}
                       as="button"
                       variant={filter.group === group ? 'selected' : 'onAura'}
+                      // 12 pt a side, so French's four fit beside the button at 393 pt.
+                      className="px-3"
                       aria-pressed={filter.group === group}
                       onClick={() => setFilter({ group, types: [] })}
                     >
