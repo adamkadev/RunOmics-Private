@@ -359,11 +359,8 @@ export const fr = {
       auto: 'Auto',
       dark: 'Sombre',
       // Le fond du mode clair (Liquid Glass v3, G14).
-      lightStyleLabel: 'Fond en mode clair',
-      aura: 'Aura',
-      plain: 'Uni',
-      auraHint: 'Un halo de couleur en haut de chaque page',
-      plainHint: 'Cartes blanches unies, sans halo',
+      glowLabel: "Lueur d'arrière-plan",
+      glowHint: 'Couleur derrière le haut de chaque page',
       reducedTransparencyNote: ' · désactivé tant que Réduire la transparence est activé',
     },
     accent: {

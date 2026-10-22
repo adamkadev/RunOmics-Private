@@ -189,8 +189,9 @@ export function ThisWeekCard({
           <span
             key={day.date}
             className={cn(
+              // Today in the shared ring (F14): 20 pt, its ring 28 across.
               'box-border flex size-7 items-center justify-center rounded-full',
-              day.isToday && 'border-2 border-[var(--accent)] font-semibold text-accent-text',
+              day.isToday && 'size-5 state-today my-1 font-semibold text-accent-text',
             )}
           >
             {day.letter}

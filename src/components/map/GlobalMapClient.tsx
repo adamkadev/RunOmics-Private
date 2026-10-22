@@ -183,8 +183,6 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
               so iOS draws no blur of its own over the row (the app's edge
               sampler, which the fullscreen map covers). */}
           <div data-testid="map-edge-sampler" className="fixed inset-x-0 top-[var(--safe-top)] z-40 h-3 bg-background" />
-          {/* The soft edge the row floats on: blur and tint, no band, no hairline. */}
-          <div aria-hidden="true" className="map-top-edge" />
         </>
       )}
 
@@ -213,6 +211,16 @@ export function GlobalMapClient({ data, onContentChange }: Props) {
         <div className="absolute inset-0">
           <div ref={containerRef} role="img" aria-label={t.pages.map.title} className="h-full w-full" />
         </div>
+
+        {/* The soft edge the row floats on (H1): over the map, under the
+            row - in the map's root beside the row's glass. Outside it, over
+            the whole root, its tint greyed the row out. */}
+        {isFullscreen && (
+          <div aria-hidden="true" data-testid="map-top-edge" className="map-top-edge">
+            <i />
+            <i />
+          </div>
+        )}
 
         {/* The filter row (Heatmap Filters 1b, Oct 2026): the location pill,
             one Filters circle for type and year, and fullscreen - three 44 pt

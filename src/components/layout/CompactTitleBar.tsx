@@ -125,16 +125,28 @@ const SIDE_PAD = 16
 const TITLE_MAX = 150
 /** The least room between the title and either side's controls. */
 const TITLE_GAP = 8
+/** A lead-aligned title's room after the back circle (round 2, F7). */
+const TITLE_LEAD = 16
+
+/** The bar's three columns, and whether the title is lead-aligned in the middle one. */
+export interface TitleLayout {
+  columns: string
+  /** The title's left padding when lead-aligned; null when it is centred. */
+  lead: number | null
+}
 
 /**
- * Where the title goes, as a UINavigationBar places it: centred on the
- * screen when it fits between equal sides, else centred in the room the two
- * sides leave (Analytics' 4W | 12W | 1Y, Goals' ‹ 2026 ›).
+ * Where the title goes: centred on the screen when it fits between equal
+ * sides, as a UINavigationBar places it. Where it doesn't (Analytics' 4W |
+ * 12W | 1Y, Goals' ‹ 2026 ›), lead-aligned (round 2, F7) - at the page's
+ * 16 pt margin, or 16 pt after the back circle - rather than floating
+ * centred in the gap left, which read as off-centre.
  */
-export function titleColumns(barWidth: number, left: number, right: number, title: number): string {
+export function titleColumns(barWidth: number, left: number, right: number, title: number): TitleLayout {
   const side = Math.max(left, right)
   const fits = Math.min(title, TITLE_MAX) + 2 * TITLE_GAP <= barWidth - 2 * side
-  return fits ? `${side}px minmax(0,1fr) ${side}px` : `${left}px minmax(0,1fr) ${right}px`
+  if (fits) return { columns: `${side}px minmax(0,1fr) ${side}px`, lead: null }
+  return { columns: `${left}px minmax(0,1fr) ${right}px`, lead: left > SIDE_PAD ? TITLE_LEAD : 0 }
 }
 
 /** The line under the large title that fades as it scrolls up: the <p> right
@@ -375,12 +387,16 @@ export function CompactTitleBar() {
       root.style.removeProperty(STICKY_H_VAR)
       root.removeAttribute('data-bar-shown')
     }
-    return () => {
-      root.style.removeProperty(STICKY_TOP_VAR)
-      root.style.removeProperty(STICKY_H_VAR)
-      root.removeAttribute('data-bar-shown')
-    }
   }, [visible])
+  // Cleared on unmount only (F4): a cleanup on every change ran as the bar
+  // collapsed in and took away the stuck strip's height the same frame had
+  // just written, so the edge stopped at the bar until the next scroll.
+  useEffect(() => () => {
+    const root = document.documentElement
+    root.style.removeProperty(STICKY_TOP_VAR)
+    root.style.removeProperty(STICKY_H_VAR)
+    root.removeAttribute('data-bar-shown')
+  }, [])
 
   // The title, the chevron and the actions come in together, over the
   // title's cross-fade.
@@ -391,17 +407,24 @@ export function CompactTitleBar() {
   const leftRef = useRef<HTMLSpanElement>(null)
   const rightRef = useRef<HTMLSpanElement>(null)
   const titleRef = useRef<HTMLSpanElement>(null)
-  const [columns, setColumns] = useState('minmax(0,1fr) auto minmax(0,1fr)')
+  const [layout, setLayout] = useState<TitleLayout>({ columns: 'minmax(0,1fr) auto minmax(0,1fr)', lead: null })
   const layoutTitle = useCallback(() => {
     const barEl = barRef.current
-    if (!barEl || !leftRef.current || !rightRef.current || !titleRef.current) return
+    const titleEl = titleRef.current
+    if (!barEl || !leftRef.current || !rightRef.current || !titleEl) return
+    // The title's width as it is centred, whatever padding the current layout
+    // gave it: measured with a lead-aligned title's 0 pt padding, a title 8 pt
+    // too wide fitted, centred, no longer fitted, and the bar flipped between
+    // the two on every render (React #185 on /activities).
+    const style = getComputedStyle(titleEl)
+    const text = titleEl.scrollWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight)
     const next = titleColumns(
       barEl.clientWidth,
       SIDE_PAD + leftRef.current.offsetWidth,
       SIDE_PAD + rightRef.current.offsetWidth,
-      titleRef.current.scrollWidth,
+      text + 2 * TITLE_GAP,
     )
-    setColumns((prev) => (prev === next ? prev : next))
+    setLayout((prev) => (prev.columns === next.columns && prev.lead === next.lead ? prev : next))
   }, [])
   useLayoutEffect(layoutTitle)
   useEffect(() => {
@@ -489,7 +512,7 @@ export function CompactTitleBar() {
           height: BAR_HEIGHT,
           paddingTop: SAMPLER,
           paddingBottom: BAR_FOOT,
-          gridTemplateColumns: columns,
+          gridTemplateColumns: layout.columns,
         }}
       >
         <span className="flex justify-start" style={{ paddingLeft: SIDE_PAD }}>
@@ -515,8 +538,9 @@ export function CompactTitleBar() {
         <span
           ref={titleRef}
           aria-hidden="true"
-          className={cn('mx-auto block truncate text-center text-headline leading-[46px] text-foreground', fadeIn)}
-          style={{ maxWidth: TITLE_MAX, paddingInline: TITLE_GAP }}
+          data-align={layout.lead === null ? 'center' : 'lead'}
+          className={cn('block truncate text-headline leading-[46px] text-foreground', layout.lead === null ? 'mx-auto text-center' : 'mr-auto text-left', fadeIn)}
+          style={{ maxWidth: TITLE_MAX + (layout.lead ?? TITLE_GAP), paddingLeft: layout.lead ?? TITLE_GAP, paddingRight: TITLE_GAP }}
         >
           {title}
         </span>

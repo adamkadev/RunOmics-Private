@@ -24,10 +24,7 @@ export const START_ICON = 'run-start'
 export const FINISH_ICON = 'run-finish'
 const FENCE_ICON = 'map-edge-fence'
 
-/**
- * The route fitted clear of the hero's glass: its buttons at the top, the
- * fade at its foot (Liquid Glass v3, README §6.12.1).
- */
+/** The route fitted in the hero, as large as 3.0 drew it (MAP_PADDING.hero). */
 export const ROUTE_FIT_PADDING = MAP_PADDING.hero
 
 type LngLat = [number, number]

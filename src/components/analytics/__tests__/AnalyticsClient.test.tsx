@@ -256,9 +256,11 @@ describe('Analytics (v4.5)', () => {
     render(<AnalyticsClient data={{ ...data, status }} today={TODAY} />)
     await screen.findByTestId('form-card')
     const cells = [...screen.getByTestId('training-status-strip').children] as HTMLElement[]
-    // v4.17.2: today at full strength and outlined, the rest at 60%.
+    // v4.17.2: today at full strength, the rest at 60%. Round 2 (F14): in
+    // the shared today ring, not a heavy ink outline.
     expect(cells.at(-1)!.style.background).toBe('var(--pos)')
-    expect(cells.at(-1)!.style.outline).toContain('solid var(--foreground)')
+    expect(cells.at(-1)!.className).toContain('state-today')
+    expect(cells.at(-2)!.className).not.toContain('state-today')
     expect(cells.at(-2)!.style.background).toBe('color-mix(in srgb, var(--neg) 60%, transparent)')
     expect(cells.at(-3)!.style.background).toBe('color-mix(in srgb, var(--zone-1) 60%, transparent)')
     expect(cells.at(-2)!.style.outline).toBe('')

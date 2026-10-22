@@ -230,7 +230,7 @@ export function SyncVerdict({ sync }: { sync: SyncNow }) {
   const { phase } = sync
   if (phase.kind !== 'done' || !phase.status.verdict) return null
   return (
-    <div className="border-b border-border px-4 py-3" data-testid="sync-verdict">
+    <div className="px-4 py-3" data-testid="sync-verdict">
       <p className="text-sm font-semibold leading-snug text-foreground">{phase.status.verdict.headline}</p>
       <p className="mt-1 text-xs leading-snug text-muted-foreground">{phase.status.verdict.body}</p>
       {phase.status.activity && (

@@ -74,9 +74,16 @@ const SIZE_CLASS = {
  * must match it (Theme, Light background, the share card's options): a
  * capsule system-fill track with no line, a lifted capsule thumb.
  */
-export const SEGMENTED_TRACK_CLASS = 'flex shrink-0 gap-0.5 rounded-full bg-[var(--segmented-track)] p-[3px]'
+const SEGMENTED_TRACK_SHAPE = 'flex shrink-0 gap-0.5 rounded-full p-[3px]'
+export const SEGMENTED_TRACK_CLASS = `${SEGMENTED_TRACK_SHAPE} bg-[var(--segmented-track)]`
 export const SEGMENTED_THUMB_CLASS = 'rounded-full bg-[var(--segmented-pill)] font-semibold text-foreground shadow-[var(--segmented-pill-shadow)]'
 export const SEGMENTED_IDLE_CLASS = 'rounded-full font-medium text-[var(--text-2)] hover:text-foreground'
+/**
+ * A segment of a track that spans its row in equal parts (the share card's
+ * Route | Stats | Photo, round 2, F3): it grows from zero, so every segment
+ * is the same width whatever its label, and the thumb fills its segment.
+ */
+export const SEGMENTED_FILL_SEGMENT_CLASS = 'min-w-0 flex-[1_1_0%] justify-center'
 
 /**
  * The quiet switch (v4.17) - Plan's week/month, Goals' years, the activity's
@@ -104,6 +111,7 @@ export function SegmentedTabs<T extends string | number>({
   className,
   tabClassName,
   barMirror = false,
+  onAura = false,
 }: {
   tabs: SegmentedTabsState<T>
   /** `ariaLabel` reads a short label in full: "4W" on screen, "last 4 weeks" aloud (3.1.0). */
@@ -115,6 +123,8 @@ export function SegmentedTabs<T extends string | number>({
   tabClassName?: string
   /** The compact top bar carries this control once it scrolls away (data-bar-segments). */
   barMirror?: boolean
+  /** Straight on the background glow (F6): the track frosted in light (globals.css .on-aura). */
+  onAura?: boolean
 }) {
   const stuck = useContext(StickyStuckContext)
   const glass = barMirror || stuck === true
@@ -124,7 +134,7 @@ export function SegmentedTabs<T extends string | number>({
       aria-label={label}
       data-bar-segments={barMirror ? '' : undefined}
       data-variant={glass ? 'glass' : 'content'}
-      className={cn(glass ? 'lg flex h-11 shrink-0 p-1' : SEGMENTED_TRACK_CLASS, fill && 'w-full', className)}
+      className={cn(glass ? 'lg flex h-11 shrink-0 p-1' : onAura ? `on-aura ${SEGMENTED_TRACK_SHAPE}` : SEGMENTED_TRACK_CLASS, fill && 'w-full', className)}
     >
       {glass && <GlassLayers />}
       {items.map((item) => {

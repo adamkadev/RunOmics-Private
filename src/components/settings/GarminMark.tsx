@@ -4,7 +4,7 @@ import { t } from '@/i18n'
 /** The Garmin mark on an inset tile, the device row's icon. */
 export function GarminTile() {
   return (
-    <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] border border-border bg-[var(--surface-2)]">
+    <div className="flex size-11 shrink-0 items-center justify-center rounded-[12px] border border-border bg-[var(--surface-2)]">
       <svg role="img" viewBox="0 0 24 24" width={28} height={28} fill="currentColor" className="text-foreground">
         <title>{t.settings.dataSource.garmin}</title>
         <path d={siGarmin.path} />

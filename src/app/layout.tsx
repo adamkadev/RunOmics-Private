@@ -17,7 +17,7 @@ import {
 } from '@/lib/accent'
 import { appleStartupImages } from '@/lib/splashScreens'
 import { STATUS_BAR_COLOR } from '@/lib/themeTokens'
-import { LIGHT_STYLE_ATTR, LIGHT_STYLE_STORAGE_KEY } from '@/lib/lightStyleKeys'
+import { GLOW_ATTR, GLOW_STORAGE_KEY } from '@/lib/glowKeys'
 
 // One family for everything, numbers included (v4.17): Geist, the variable
 // font whole (SIL OFL, fonts/Geist-LICENSE.txt). Google's latin subset left
@@ -43,9 +43,12 @@ export const metadata: Metadata = {
     // (owner, Oct 2026). black-translucent let the page blur behind the
     // notch but always draws white status-bar text, which needed a dark band
     // over a light page. The opaque bar takes its colour from theme-color at
-    // install, so that colour is a fixed neutral (STATUS_BAR_COLOR) the page
-    // top matches; the frosted top bar starts just under it. Read at install
-    // time: an installed app must be re-added for a change to show.
+    // install, so that colour is the page's --background (STATUS_BAR_COLOR)
+    // and the page top meets it in that colour; the frosted top bar starts
+    // just under it. Read at install time: an installed app must be re-added
+    // for a change to show. 'default' in dark too (F15): this meta takes no
+    // media query, so dark can't have black-translucent on its own, and
+    // light can't have it at all.
     statusBarStyle: 'default',
     title: 'RunOmics',
     startupImage: [...appleStartupImages],
@@ -87,8 +90,10 @@ export const viewport: Viewport = {
   userScalable: false,
   // Still `cover`, for the bottom inset the tab bar pads by.
   viewportFit: 'cover',
-  // Fixed, never rewritten at runtime: iOS stores it at install, and a value
-  // changed later (the accent, an in-app theme switch) never reaches the bar.
+  // The page's --background in each mode (F15): the opaque status bar iOS
+  // paints from it is the page itself, with no band above the header. Fixed,
+  // never rewritten at runtime: iOS stores it at install, and a value changed
+  // later (the accent, an in-app theme switch) never reaches the bar.
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: STATUS_BAR_COLOR.light },
     { media: '(prefers-color-scheme: dark)', color: STATUS_BAR_COLOR.dark },
@@ -116,8 +121,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             if(a!=='${DEFAULT_ACCENT}'&&${JSON.stringify(ACCENT_IDS)}.indexOf(a)>=0){
               document.documentElement.setAttribute('data-accent',a);
             }
-            if(localStorage.getItem('${LIGHT_STYLE_STORAGE_KEY}')==='plain'){
-              document.documentElement.setAttribute('${LIGHT_STYLE_ATTR}','plain');
+            if(localStorage.getItem('${GLOW_STORAGE_KEY}')==='off'){
+              document.documentElement.setAttribute('${GLOW_ATTR}','off');
             }
           }catch(e){}`}
         </Script>

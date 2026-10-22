@@ -98,8 +98,9 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
   ]
 
   return (
+    <>
     <section className={GROUP_CARD} data-testid="data-card">
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3" data-testid="garmin-row">
+      <div className="flex items-center gap-3 px-4 py-3" data-testid="garmin-row" data-row-thumb>
         <GarminTile />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-foreground">
@@ -164,8 +165,9 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
       )}
 
       {pickingFormat && <ExportSheet options={exportOptions} onClose={() => setPickingFormat(false)} />}
-
-      <Toast toast={toast} leaving={leaving} />
     </section>
+    {/* Outside the group, so it is never taken for a row (F11). */}
+    <Toast toast={toast} leaving={leaving} />
+    </>
   )
 }

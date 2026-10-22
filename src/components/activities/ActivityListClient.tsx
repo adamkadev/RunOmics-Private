@@ -418,7 +418,7 @@ export function ActivityListClient({
 
             {/* The search field (Liquid Glass v3, §6.7): a 44 pt capsule in
                 the system fill, no line; focus draws the ring. */}
-            <label className="flex h-11 items-center gap-2 rounded-full bg-[var(--fill-3)] px-3.5 text-muted-foreground transition-shadow focus-within:shadow-[0_0_0_2px_var(--ring)]">
+            <label className="on-aura flex h-11 items-center gap-2 rounded-full px-3.5 text-muted-foreground transition-shadow focus-within:shadow-[0_0_0_2px_var(--ring)]">
               <Search size={18} strokeWidth={2.2} aria-hidden="true" className="shrink-0" />
               <input
                 type="text"
@@ -443,7 +443,7 @@ export function ActivityListClient({
                     <Pill
                       key={group}
                       as="button"
-                      variant={filter.group === group ? 'selected' : 'neutral'}
+                      variant={filter.group === group ? 'selected' : 'onAura'}
                       aria-pressed={filter.group === group}
                       onClick={() => setFilter({ group, types: [] })}
                     >
@@ -457,7 +457,7 @@ export function ActivityListClient({
                 onClick={() => setSheetOpen(true)}
                 aria-label={t.activities.filter.title}
                 aria-haspopup="dialog"
-                className="hit-44 relative flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--fill-3)] text-foreground"
+                className="on-aura hit-44 relative flex size-9 shrink-0 items-center justify-center rounded-full text-foreground"
               >
                 <SlidersHorizontal size={17} aria-hidden="true" />
                 {/* The sort or a filter off its default (App Fixes 3f): an 8 px
@@ -530,11 +530,12 @@ export function ActivityListClient({
                     // Oct 2026): its km and runs, not the plan - Today and Plan
                     // show the week against plan. Only once it has a run (3.0).
                     <section key={block.week.key} id={`week-${block.week.key}`} className="scroll-mt-24" data-testid="current-week">
-                      <div className="flex items-baseline justify-between gap-3 px-1 pb-2">
-                        <h2 className="min-w-0 truncate text-title-3 text-foreground">
-                          {t.activities.thisWeek} · {formatDateRange(block.week.key, isoDate(addDays(new Date(`${block.week.key}T00:00:00`), 6)), { year: 'never' })}
-                        </h2>
-                        <span className="shrink-0 text-[13px] text-muted-foreground" data-testid="week-line">
+                      {/* "This week" alone, its line right-aligned; where the
+                          two don't fit, the line wraps under the title - a
+                          header is never cut (F10). */}
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-1 pb-2">
+                        <h2 className="text-title-3 text-foreground">{t.activities.thisWeek}</h2>
+                        <span className="text-[13px] text-muted-foreground" data-testid="week-line">
                           <span className={KM_STRONG}>{formatRanKm(block.week.totalKm)}</span> {t.units.km} · {t.activities.weekLine.runs(block.week.items.length)}
                           {!hasActiveFilter && block.week.easyPct !== null && ` · ${t.activities.weekLine.easy(block.week.easyPct)}`}
                         </span>
@@ -551,7 +552,7 @@ export function ActivityListClient({
                           scroll edge (Liquid Glass v2, data-sticky-strip). */}
                       <div
                         data-sticky-strip
-                        className="sticky z-30 flex items-baseline justify-between gap-3 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
+                        className="sticky z-30 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
                         style={{ top: 'var(--sticky-top, var(--sticky-alone, var(--safe-top)))' }}
                       >
                         <h2 className="text-title-3 capitalize text-foreground">{block.label}</h2>
@@ -580,7 +581,9 @@ export function ActivityListClient({
                 )}
               </div>
             ) : (
-              <div className={cardClass({ padding: 'none', overflow: true, className: 'divide-y divide-border' })}>
+              // The search's results, one group (F11): its separators start
+              // under the titles, past the 48 pt thumbs - not full width.
+              <div className={cardClass({ padding: 'none', overflow: true, className: 'inset-group [--row-thumb-inset:78px]' })}>
                 {items.map((a) => (
                   <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} />
                 ))}

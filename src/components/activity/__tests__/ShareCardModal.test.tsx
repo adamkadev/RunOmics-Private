@@ -149,6 +149,23 @@ describe('ShareCardModal', () => {
     }
   })
 
+  // Round 2 (F3): the design row read "RouteStatsPhoto" at its start, the
+  // thumb under "Route" alone - its grid lost to the track's flex.
+  it('spans the design row in equal segments, each label centred in its own', () => {
+    open()
+    const picker = screen.getByRole('radiogroup', { name: 'Design' })
+    expect(picker.className).toMatch(/(^|\s)flex(\s|$)/)
+    expect(picker.className).not.toMatch(/(^|\s)grid(\s|$)/)
+    expect(picker.className).toContain('w-full')
+    const options = within(picker).getAllByRole('radio')
+    expect(options).toHaveLength(3)
+    for (const option of options) {
+      expect(option.className).toContain('flex-[1_1_0%]')
+      expect(option.className).toContain('min-w-0')
+      expect(option.className).toContain('justify-center')
+    }
+  })
+
   it('gives the close button a 44 pt target', () => {
     open()
     const close = screen.getByRole('button', { name: t.activity.shareCard.close })

@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { AccentPicker } from './AccentPicker'
 import { ThemeSegmented } from './ThemeSegmented'
-import { LightStyleRow } from './LightStyleSegmented'
+import { GlowRow } from './GlowRow'
 import { DataSourceInfo, type SyncDevice } from './DataSourceInfo'
 import { ConnectedMark, GarminTile } from './GarminMark'
 import { NotificationsForm } from './NotificationsForm'
@@ -103,7 +103,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
             is the owner's, so there is no Sync here. */}
         <Section title={t.settings.sections.data}>
           <div className={GROUP_CARD}>
-            <div className="flex items-center gap-3 border-b border-border px-4 py-3" data-testid="garmin-row">
+            <div className="flex items-center gap-3 px-4 py-3" data-testid="garmin-row" data-row-thumb>
               <GarminTile />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{device?.name ?? t.settings.dataSource.garmin}</p>
@@ -205,7 +205,7 @@ function Section({ title, children, testId }: { title: string; children: ReactNo
 
 /**
  * The settings that are the user's own (v4.17; 3.0 1i): the theme on one
- * row, the light background (Liquid Glass v3, G14) under it, then the accent
+ * row, the background glow (round 2, F2) under it, then the accent
  * with its caption on the right and the swatches under them.
  */
 function AppearanceSection() {
@@ -217,7 +217,7 @@ function AppearanceSection() {
           <p className="text-foreground">{a.appearance.themeLabel}</p>
           <ThemeSegmented />
         </div>
-        <LightStyleRow className={GROUP_ROW} />
+        <GlowRow className={GROUP_ROW} />
         <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
           <div className="flex items-baseline justify-between gap-3">
             <p className="text-[17px] tracking-[-0.027rem] text-foreground">{a.accent.title}</p>
@@ -252,19 +252,17 @@ function ProfileSection({ body, zones }: { body?: Body; zones?: Zones }) {
   return (
     <Section title={t.settings.sections.profile} testId="settings-profile">
       <div className={GROUP_CARD}>
-        {rows.length > 0 && (
-          <dl className="border-b border-border">
-            {rows.map((row) => (
-              <div key={row.label} className={`${GROUP_ROW} text-sm`}>
-                <dt className="text-foreground">{row.label}</dt>
-                <dd className="tabular-nums text-muted-foreground" data-testid="profile-value">
-                  {row.value}
-                  {row.unit && <span className="ml-1">{row.unit}</span>}
-                </dd>
-              </div>
-            ))}
+        {/* Each row the group's own child, a <dl> of one pair, so the
+            group draws every separator the same way (F11). */}
+        {rows.map((row) => (
+          <dl key={row.label} className={`${GROUP_ROW} text-sm`}>
+            <dt className="text-foreground">{row.label}</dt>
+            <dd className="tabular-nums text-muted-foreground" data-testid="profile-value">
+              {row.value}
+              {row.unit && <span className="ml-1">{row.unit}</span>}
+            </dd>
           </dl>
-        )}
+        ))}
         <Link href={ATHLETE_HREF} className={`${GROUP_ROW} text-sm transition-colors hover:bg-[var(--surface-2)]`} data-testid="athlete-zones-row">
           <span className="min-w-0 truncate text-foreground">{t.pages.athlete.title}</span>
           <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
@@ -273,12 +271,13 @@ function ProfileSection({ body, zones }: { body?: Body; zones?: Zones }) {
           </span>
         </Link>
       </div>
-      {/* Where they change, as a way there (design review, Oct 2026). */}
+      {/* Where they change, as a way there (design review, Oct 2026) - a
+          13 pt muted footnote, as iOS's, not an accent link (F12). */}
       <a
         href={GARMIN_CONNECT_URL}
         target="_blank"
         rel="noreferrer"
-        className="hit-44 self-start px-1 text-xs leading-snug text-accent-text transition-opacity hover:opacity-80"
+        className="hit-44 self-start px-1 text-[13px] leading-[18px] text-muted-foreground transition-opacity hover:opacity-80"
         data-testid="profile-garmin-link"
       >
         {t.settings.profile.readOnly}

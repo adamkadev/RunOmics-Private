@@ -391,11 +391,8 @@ export const en = {
       auto: 'Auto',
       dark: 'Dark',
       // Light mode's background (Liquid Glass v3, G14).
-      lightStyleLabel: 'Light background',
-      aura: 'Aura',
-      plain: 'Plain',
-      auraHint: 'Colour glow behind the top of each page',
-      plainHint: 'Solid white cards, no glow',
+      glowLabel: 'Background glow',
+      glowHint: 'Colour behind the top of each page',
       reducedTransparencyNote: ' · off while Reduce Transparency is on',
     },
     accent: {

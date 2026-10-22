@@ -65,6 +65,27 @@ describe('the top edge (v4.8)', () => {
     expect(css).not.toMatch(/\[data-bar-shown\][^{]*\.edge-sampler/)
   })
 
+  // Round 2 (F4): with a strip stuck under the bar, the edge is safe-top +
+  // 68 + the strip + 30, and every stop of its blurs and tint sits the strip's
+  // height lower - percentages of the whole began the fade under the bar.
+  it("grows the scroll edge by a stuck strip, its fade still the last 30 pt", () => {
+    const css = readFileSync(path.join(SRC, 'app/globals.css'), 'utf8')
+    const start = css.indexOf('.scroll-edge {')
+    const rule = css.slice(start, css.indexOf('}', start))
+    expect(rule).toContain('--edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-fade))')
+    expect(rule).toContain('--edge-shift: var(--sticky-h, 0px)')
+    expect(rule).toContain('height: calc(var(--edge-base) + var(--edge-shift))')
+    expect(css).toMatch(/--bar-h:\s+68px/)
+    expect(css).toMatch(/--edge-fade:\s+30px/)
+    for (const n of [1, 2, 3, 4]) {
+      const at = css.indexOf(`.scroll-edge > i:nth-child(${n}) {`)
+      const layer = css.slice(at, css.indexOf('}', at))
+      // No bare percentage stop left: each is offset by the strip.
+      expect(layer).toContain('calc(var(--edge-shift) + var(--edge-base) *')
+      expect(layer).not.toMatch(/(#000|transparent\)?) \d+%/)
+    }
+  })
+
   it('starts the compact title bar under the strip', () => {
     const bar = readFileSync(path.join(SRC, 'components/layout/CompactTitleBar.tsx'), 'utf8')
     expect(bar).toContain("top: 'var(--safe-top)'")

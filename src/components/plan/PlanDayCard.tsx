@@ -17,7 +17,8 @@ import { paceLabel, workoutSummary } from './workoutSummary'
 // Radius 24 and 18 pt padding: the selected day is the screen's hero card.
 const CARD = 'content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4'
 
-const PROFILE_HEIGHT: Record<StepTone, number> = { ease: 16, recovery: 16, work: 54 }
+// 44 pt at its tallest (F9), easy and recovery steps a third of it.
+const PROFILE_HEIGHT: Record<StepTone, number> = { ease: 14, recovery: 14, work: 44 }
 
 /** "WED 21 · THRESHOLD", in the session's colour (App Fixes 3b: no dot). */
 function Eyebrow({ date, kind }: { date: string; kind: DayKind | null }) {
@@ -105,7 +106,8 @@ export function PlannedWorkoutCard({
         </div>
       )}
       {structured && (
-        <div aria-hidden data-testid="intensity-profile" className="mt-4 flex h-[54px] items-end gap-[3px]">
+        // 10 pt under the detail line, 14 pt over the steps' divider (F9).
+        <div aria-hidden data-testid="intensity-profile" className="mt-2.5 flex h-[44px] items-end gap-[3px]">
           {blocks.map((block, i) => (
             <span
               key={i}

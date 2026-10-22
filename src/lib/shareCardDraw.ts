@@ -464,7 +464,10 @@ function drawRoute(ctx: Ctx, scene: ShareCardScene, layout: ShareCardLayout) {
  * Towns and districts over the route (3.0.3, at the owner's request): the
  * map captured without them, they are drawn after the line on a halo of the
  * card's ground, so a district the run crossed keeps its name. Only between
- * the bands, where no fade can cut one.
+ * the bands, where no fade can cut one, and only a name whole inside the
+ * card's 16 px side margins (F13): MapLibre placed a name beside its point,
+ * the card centres it on the point, and "Longeville-lès-Metz" showed as
+ * "es-Metz" at the edge.
  */
 function drawPlaceLabels(ctx: Ctx, { mapLabels, palette, fonts }: ShareCardScene, { textTop, textBottom }: ShareCardLayout) {
   if (!mapLabels?.length) return
@@ -476,6 +479,8 @@ function drawPlaceLabels(ctx: Ctx, { mapLabels, palette, fonts }: ShareCardScene
     const half = label.size / 2
     if (label.y - half < textTop + ROUTE_TEXT_GAP || label.y + half > textBottom - ROUTE_TEXT_GAP) continue
     ctx.font = `600 ${label.size}px ${fonts.text}`
+    const halfWidth = ctx.measureText(label.text).width / 2
+    if (label.x - halfWidth < PAD_X || label.x + halfWidth > W - PAD_X) continue
     ctx.globalAlpha = label.opacity
     ctx.lineWidth = 3
     ctx.strokeStyle = palette.bg

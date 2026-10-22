@@ -90,13 +90,17 @@ describe('the current week on /activities', () => {
     expect(screen.getByTestId('thumb-row').textContent).toContain('6:00 /km')
   })
 
-  // Design review, Oct 2026: "This week · Sep 21 – 27", its km and runs on
-  // the right, and no plan target or bar.
+  // Design review, Oct 2026: its km and runs on the right, and no plan
+  // target or bar. Round 2 (F10): "This week" alone - with its dates it was
+  // cut at 402 pt - and the line wraps under it rather than ever cut.
   it('counts this week once it has a run, over its runs as rows', () => {
     renderList([run('c', '2026-09-22', 12), run('a', '2026-09-20', 25)])
 
     const week = screen.getByTestId('current-week')
-    expect(within(week).getByRole('heading').textContent).toBe(`${t.activities.thisWeek} · ${formatDateRange('2026-09-21', '2026-09-27', { year: 'never' })}`)
+    const heading = within(week).getByRole('heading')
+    expect(heading.textContent).toBe(t.activities.thisWeek)
+    expect(heading.className).not.toContain('truncate')
+    expect(heading.parentElement!.className).toContain('flex-wrap')
     expect(screen.getByTestId('week-line').textContent).toMatch(new RegExp(`^12 ${t.units.km} · ${t.activities.weekLine.runs(1)}`))
     expect(screen.queryByTestId('week-target-bar')).toBeNull()
     const card = screen.getByTestId('current-week')

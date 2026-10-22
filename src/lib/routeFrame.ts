@@ -8,14 +8,16 @@ export interface LngLatBounds {
 /**
  * Camera padding that keeps every route clear of the glass over a map
  * (Liquid Glass v3, README §6.12.1), for each fitBounds / easeTo.
- * - hero: the 12 pt gap, the 44 pt buttons and 12 pt of air at the top; the
- *   64 pt fade and 16 more at the foot.
+ * - hero: 3.0's frame (round 2, the owner's ask): 68 and 80 pt kept the
+ *   route clear of the buttons and the foot's fade but drew it at about
+ *   60 % of its size in a 300 pt hero. The buttons sit in the top corners,
+ *   so a route reaches them only at a corner of its own.
  * - fullscreen: the row of controls at the top; the legend card and its
  *   24 pt inset at the foot.
  * - card: the Activities map card's controls and legend capsule.
  */
 export const MAP_PADDING = {
-  hero: { top: 68, right: 24, bottom: 80, left: 24 },
+  hero: { top: 32, right: 24, bottom: 36, left: 24 },
   fullscreen: { top: 80, right: 24, bottom: 124, left: 24 },
   card: { top: 64, right: 16, bottom: 52, left: 16 },
 } as const

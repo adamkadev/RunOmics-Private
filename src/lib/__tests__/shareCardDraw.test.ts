@@ -479,4 +479,24 @@ describe('the place names on the Route card', () => {
     expect(ops.find((o) => o.op === 'strokeText' && o.args[0] === 'Devant-les-Ponts')?.stroke).toBe(sharePalette('violet', 'dark').bg)
     expect(texts(ops)).not.toContain('Under the header')
   })
+
+  // Round 2 (F13): "es-Metz" and "E" at the card's sides - names centred on
+  // a point near the edge ran off it. A name not whole inside the 16 px
+  // margins is dropped.
+  it('drops a name that would run past the card\'s side margins', () => {
+    const l = layout()
+    const y = (l.textTop + l.textBottom) / 2
+    // 7 px a character in the test canvas: "Longeville-lès-Metz" is 133 px wide.
+    const ops = draw({
+      design: 'route',
+      mapLabels: [
+        { ...label('Longeville-lès-Metz', y), x: 40 },
+        { ...label('Bellecroix', y + 20), x: W - 20 },
+        { ...label('Metz', y + 40), x: W / 2 },
+      ],
+    })
+    expect(texts(ops)).toContain('Metz')
+    expect(texts(ops)).not.toContain('Longeville-lès-Metz')
+    expect(texts(ops)).not.toContain('Bellecroix')
+  })
 })

@@ -24,7 +24,9 @@ describe('the session state recipes', () => {
     expect(css).toMatch(/@utility state-done \{\s+background: var\(--state-color\);/)
     expect(css).toMatch(/@utility state-planned \{\s+border: var\(--state-line\) dashed var\(--state-color\);/)
     expect(css).toMatch(/@utility state-missed \{\s+border: var\(--state-line\) solid var\(--state-color\);\s+background: repeating-linear-gradient\(\s+135deg/)
-    expect(css).toMatch(/@utility state-today \{\s+box-shadow: [^;]*var\(--accent\);/)
+    // Round 2 (F14): one today ring everywhere, 2 pt of accent 2 pt off the mark.
+    expect(css).toMatch(/@utility state-today \{\s+outline: var\(--state-ring\) solid var\(--accent\);\s+outline-offset: var\(--state-ring\);/)
+    expect(css).toMatch(/--state-ring:\s+2px/)
   })
 })
 

@@ -125,6 +125,30 @@ describe('SettingsClient owner gate', () => {
     const garmin = within(profile).getByRole('link', { name: t.settings.profile.readOnly })
     expect(garmin.getAttribute('href')).toBe(GARMIN_CONNECT_URL)
     expect(garmin.className).toContain('hit-44')
+    // F12: a footnote, not an accent link.
+    expect(garmin.className).toContain('text-[13px]')
+    expect(garmin.className).toContain('text-muted-foreground')
+    expect(garmin.className).not.toContain('accent')
+  })
+
+  // Round 2 (F11): one separator rule. Height and Weight shared one child -
+  // no line between them - and a full-width border cut them from Athlete &
+  // zones; the Data card's Garmin row drew its own full-width line.
+  it('lays every grouped row out as the group\'s own child, with no lines of its own', async () => {
+    render(<SettingsClient lastSyncedAt={null} activityCount={0} body={{ heightCm: 178, weightKg: 70 }} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
+    await screen.findByText(t.settings.auth.signIn)
+
+    const groups = document.querySelectorAll<HTMLElement>('.inset-group')
+    expect(groups.length).toBeGreaterThan(0)
+    for (const group of groups) {
+      expect(group.querySelectorAll('.border-b, .border-t, .divide-y')).toHaveLength(0)
+    }
+    const profile = within(screen.getByTestId('settings-profile')).getAllByTestId('profile-value').map((v) => v.closest('dl')!)
+    const group = profile[0]!.parentElement!
+    expect(group.className).toContain('inset-group')
+    expect([...group.children]).toEqual([...profile, screen.getByTestId('athlete-zones-row')])
+    // The Garmin row's thumb: the line under it starts under its text.
+    expect(screen.getByTestId('garmin-row').hasAttribute('data-row-thumb')).toBe(true)
   })
 
   it('names only the heart rate Garmin has on the Athlete & zones row', () => {

@@ -150,3 +150,58 @@ test('heatmap actually initialises a MapLibre canvas', async ({ page }) => {
 
   expect(errors).toEqual([])
 })
+
+// Round 2 (H1): the fullscreen top row looked disabled - grey ink, a flat
+// fill with no blur - and names showed cut under it. Its glass blurs, no
+// ancestor is a backdrop root, its ink is the text's, and the soft edge sits
+// over the map but under the row.
+test('heatmap fullscreen: the top row is live glass in full ink over a soft edge', async ({ page }) => {
+  await page.setViewportSize({ width: 402, height: 874 })
+  await page.goto('/map')
+  await page.getByRole('button', { name: 'Fullscreen' }).click()
+  await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible()
+
+  const row = page.getByTestId('heat-filter-row')
+  const capsule = page.getByRole('button', { name: /^Area:/ })
+  // The blur layer is live.
+  expect(await capsule.evaluate((el) => {
+    const blur = el.querySelector(':scope > .lg-blur')!
+    const cs = getComputedStyle(blur)
+    return cs.backdropFilter || cs.getPropertyValue('-webkit-backdrop-filter')
+  })).not.toBe('none')
+
+  // No backdrop root above it: no opacity under 1, filter, mask or backdrop-filter.
+  const roots = await row.evaluate((el) => {
+    const found: string[] = []
+    for (let a = el.parentElement; a; a = a.parentElement) {
+      const cs = getComputedStyle(a)
+      if (Number(cs.opacity) < 1 || cs.filter !== 'none' || (cs.maskImage && cs.maskImage !== 'none') || (cs.backdropFilter && cs.backdropFilter !== 'none')) {
+        found.push(`${a.tagName}.${a.className}`)
+      }
+    }
+    return found
+  })
+  expect(roots).toEqual([])
+
+  // Full ink: the label is the text colour, nothing in the row faded.
+  const ink = await page.getByTestId('area-label').evaluate((el) => {
+    const probe = document.createElement('span')
+    probe.style.color = 'var(--foreground)'
+    document.body.appendChild(probe)
+    const want = getComputedStyle(probe).color
+    probe.remove()
+    return { got: getComputedStyle(el).color, want }
+  })
+  expect(ink.got).toBe(ink.want)
+  expect(await row.evaluate((el) => [...el.querySelectorAll('*')].every((n) => Number(getComputedStyle(n).opacity) === 1))).toBe(true)
+
+  // The soft edge: in the row's own root, under the row, with its blur.
+  const edge = page.getByTestId('map-top-edge')
+  expect(await edge.evaluate((el, rowEl) => el.parentElement === rowEl!.parentElement, await row.elementHandle())).toBe(true)
+  const z = await page.evaluate(() => ({
+    edge: Number(getComputedStyle(document.querySelector('[data-testid="map-top-edge"]')!).zIndex),
+    row: Number(getComputedStyle(document.querySelector('[data-testid="heat-filter-row"]')!).zIndex),
+  }))
+  expect(z.edge).toBeLessThan(z.row)
+  expect(await edge.evaluate((el) => getComputedStyle(el.children[0]!).backdropFilter)).toContain('blur(12px)')
+})

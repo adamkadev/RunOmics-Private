@@ -1,0 +1,113 @@
+import { test, expect } from './fixtures'
+import type { Page } from '@playwright/test'
+
+// F15: the installed app's status bar is opaque (statusBarStyle 'default'),
+// iOS fills it with the theme-color meta - the page's --background - and the
+// web view starts under it, its safe-area inset 0. The web view's first 12 pt,
+// the edge sampler's, must be that same colour, at rest and scrolled, over the
+// glow or not, or the status bar reads as a band above the header.
+test.use({ viewport: { width: 393, height: 793 } })
+
+const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/analytics', '/settings']
+
+/**
+ * The largest channel difference from --background in a full-width band (by
+ * default the top 12 pt), or, with `scrimmed`, from --background under the
+ * sheet's scrim (black at --scrim-sheet's alpha).
+ */
+async function topEdgeDelta(page: Page, { scrimmed = false, y = 0, height = 12 } = {}): Promise<number> {
+  const shot = await page.screenshot({ clip: { x: 0, y, width: 393, height } })
+  return page.evaluate(async ({ b64, scrimmed }) => {
+    const img = new Image()
+    img.src = `data:image/png;base64,${b64}`
+    await img.decode()
+    const canvas = document.createElement('canvas')
+    canvas.width = img.width
+    canvas.height = img.height
+    const g = canvas.getContext('2d')!
+    g.drawImage(img, 0, 0)
+    const { data } = g.getImageData(0, 0, img.width, img.height)
+    const root = getComputedStyle(document.documentElement)
+    const bg = root.getPropertyValue('--background').trim()
+    // The scrim's alpha, as the browser resolves it (the build may minify it to #0003).
+    const probe = document.createElement('i')
+    probe.style.color = 'var(--scrim-sheet)'
+    document.body.append(probe)
+    const resolved = getComputedStyle(probe).color
+    probe.remove()
+    const alpha = scrimmed ? Number(resolved.match(/rgba\([^)]*,\s*([\d.]+)\)/)?.[1] ?? 1) : 0
+    const want = [1, 3, 5].map((i) => parseInt(bg.slice(i, i + 2), 16) * (1 - alpha))
+    let max = 0
+    for (let i = 0; i < data.length; i += 4) {
+      for (let c = 0; c < 3; c++) max = Math.max(max, Math.abs((data[i + c] ?? 0) - (want[c] ?? 0)))
+    }
+    return max
+  }, { b64: shot.toString('base64'), scrimmed })
+}
+
+for (const theme of ['light', 'dark'] as const) {
+  test(`the status bar's colour runs on under it, at rest and scrolled (${theme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
+    await page.addInitScript((t) => localStorage.setItem('theme', t), theme)
+    for (const url of PAGES) {
+      await page.goto(url)
+      await expect(page.locator('h1').first()).toBeVisible()
+      await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`))
+
+      // The meta iOS stores at install is this mode's --background.
+      const { themeColor, background } = await page.evaluate(() => {
+        const meta = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].find(
+          (m) => !m.media || matchMedia(m.media).matches,
+        )
+        return {
+          themeColor: meta?.content,
+          background: getComputedStyle(document.documentElement).getPropertyValue('--background').trim(),
+        }
+      })
+      expect(themeColor, url).toBe(background)
+
+      await page.waitForTimeout(300)
+      expect(await topEdgeDelta(page), `${url} at rest`).toBeLessThanOrEqual(1)
+      await page.evaluate(() => window.scrollTo(0, 400))
+      await page.waitForTimeout(400)
+      expect(await topEdgeDelta(page), `${url} scrolled`).toBeLessThanOrEqual(1)
+    }
+  })
+}
+
+// The sheet's scrim starts at the safe area's foot - the top edge, under the
+// opaque status bar - so it covers the edge sampler, which must not dim
+// itself as well: dimmed twice, its 12 pt read as a dark band (F15).
+for (const theme of ['light', 'dark'] as const) {
+  test(`a sheet dims the top edge once, as the rest of the page (${theme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
+    await page.addInitScript((t) => localStorage.setItem('theme', t), theme)
+    await page.goto('/activities')
+    await page.locator('main a[href^="/activities/"]').first().click()
+    await expect(page).toHaveURL(/\/activities\/\d+/)
+    await page.getByRole('button', { name: 'Share' }).first().click()
+    await expect(page.getByTestId('share-sheet')).toBeVisible()
+    await page.waitForTimeout(400)
+    expect(await topEdgeDelta(page, { scrimmed: true })).toBeLessThanOrEqual(2)
+  })
+}
+
+// The activity's map hero starts at the edge sampler's foot. Its tiles must
+// fade in from the page ground there: Liquid Glass v3's 35 % wash let them
+// meet the sampler at nearly full strength, a hard line 12 pt under the
+// status bar on the phone (F15, round 2).
+for (const theme of ['light', 'dark'] as const) {
+  test(`the map hero fades in from the page ground under the edge sampler (${theme})`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
+    await page.addInitScript((t) => localStorage.setItem('theme', t), theme)
+    await page.goto('/activities')
+    await page.locator('main a[href^="/activities/"]').first().click()
+    await expect(page).toHaveURL(/\/activities\/\d+/)
+    const hero = page.getByTestId('run-hero')
+    await expect(hero).toBeVisible()
+    expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(12)
+    expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(330)
+    await page.waitForTimeout(300)
+    expect(await topEdgeDelta(page, { y: 12, height: 2 })).toBeLessThanOrEqual(2)
+  })
+}

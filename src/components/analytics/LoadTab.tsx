@@ -72,14 +72,13 @@ function StatusCard({ days, window, period, onShift }: { days: StatusDay[]; wind
             return (
               <div
                 key={cell.date}
-                className="rounded-[4px]"
+                className={cn('rounded-[4px]', today && 'state-today')}
                 data-today={today || undefined}
                 style={{
                   // The strip at 60% so the card reads lighter (v4.17.2);
-                  // today alone at full strength, outlined in text ink.
+                  // today alone at full strength, in the shared today ring
+                  // (F14) - a heavy ink outline read as a different mark.
                   background: cell.status ? (today ? STATUS_COLOR[cell.status] : statusTint(cell.status)) : 'var(--track)',
-                  outline: today ? '2px solid var(--foreground)' : undefined,
-                  outlineOffset: 1,
                 }}
               />
             )
