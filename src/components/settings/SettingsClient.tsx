@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
 import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { SectionDivider } from '@/components/ui/SectionLabel'
@@ -46,6 +47,7 @@ export const ATHLETE_HREF = '/athlete'
 
 export function SettingsClient({ lastSyncedAt, activityCount, device, body, zones }: Props) {
   const { user, isOwner, loading } = useOwnerAuth()
+  const router = useRouter()
   const [signingIn, setSigningIn] = useState(false)
   const { toast, leaving, showToast } = useToast()
 
@@ -150,7 +152,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
       <ProfileSection body={body} zones={zones} />
 
       <Section title={t.settings.sections.data}>
-        <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} user={user} />
+        <DataSourceInfo lastSyncedAt={lastSyncedAt} activityCount={activityCount} device={device} user={user} onDataLive={router.refresh} />
       </Section>
 
       <Section title={t.settings.sections.notifications}>

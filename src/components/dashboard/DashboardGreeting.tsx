@@ -11,7 +11,7 @@ import { useMounted } from '@/lib/useMounted'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { useToday } from '@/lib/useToday'
 import { SYNC_LIMITS } from '@/lib/syncLimits'
-import { useSyncNow } from '@/components/settings/SyncNowCard'
+import { useRefreshWhenLive, useSyncNow } from '@/components/settings/SyncNowCard'
 import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
 import { fadeElement } from '@/lib/glassFade'
 import { cn } from '@/lib/utils'
@@ -101,11 +101,7 @@ function OwnerSyncLine({ user, lastSyncedAt, ago, children }: { user: User; last
   const [freshNote, setFreshNote] = useState(false)
   const { phase } = sync
 
-  // Read the run once its data is live, then again for its verdict, rather than leave yesterday's numbers up.
-  const live = phase.kind === 'done' ? 'verdict' : phase.kind === 'waiting' && phase.synced ? 'data' : null
-  useEffect(() => {
-    if (live) router.refresh()
-  }, [live, router])
+  useRefreshWhenLive(phase, router.refresh)
 
   const age = syncAgeMs(lastSyncedAt)
   const late = isSyncLate(lastSyncedAt)

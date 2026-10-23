@@ -67,6 +67,14 @@ function progressText(phase: Phase, s: typeof t.settings.sync): string | null {
   }
 }
 
+/** Reads the run once its data is live, then again for its verdict, rather than leave yesterday's numbers up. */
+export function useRefreshWhenLive(phase: Phase, refresh: (() => void) | undefined) {
+  const live = phase.kind === 'done' ? 'verdict' : phase.kind === 'waiting' && phase.synced ? 'data' : null
+  useEffect(() => {
+    if (live) refresh?.()
+  }, [live, refresh])
+}
+
 /** `pollIntervalMs` lets the tests, which run on real timers, skip the ten-second wait. */
 export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
   const [phase, setPhase] = useState<Phase>(() => (readStoredSince() ? { kind: 'waiting', synced: false } : { kind: 'idle' }))

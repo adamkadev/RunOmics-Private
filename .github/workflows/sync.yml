@@ -370,7 +370,7 @@ jobs:
           DATA_SOURCE: ${{ vars.DATA_SOURCE }}
         run: |
           # The checks read what the app serves: before it serves this sync, they would judge the data before it.
-          if [ "$DATA_CHANGED" = "true" ]; then
+          if [ "$DATA_CHANGED" = "true" ] || [ "$DATA_SOURCE" = "github" ]; then
             INTERVAL=15
             [ "$DATA_SOURCE" = "github" ] && INTERVAL=3
             DEPLOYED=false

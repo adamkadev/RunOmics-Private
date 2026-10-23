@@ -13,7 +13,8 @@ const owner = vi.hoisted(() => ({ signedIn: false, phase: { kind: 'idle' } as { 
 vi.mock('@/lib/useOwnerAuth', () => ({
   useOwnerAuth: () => (owner.signedIn ? { user: {}, isOwner: true, loading: false } : { user: null, isOwner: false, loading: false }),
 }))
-vi.mock('@/components/settings/SyncNowCard', () => ({
+vi.mock('@/components/settings/SyncNowCard', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/components/settings/SyncNowCard')>()),
   useSyncNow: () => ({ phase: owner.phase, running: false, progress: null, handleSync: owner.handleSync }),
 }))
 

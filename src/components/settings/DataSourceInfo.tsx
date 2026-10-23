@@ -9,7 +9,7 @@ import { saveFileWithFallback } from '@/lib/fileExport'
 import { authorizedFetch } from '@/lib/ownerFetch'
 import { NOTES_UNAVAILABLE_HEADER } from '@/lib/exportHeaders'
 import { formatRelativeAgo } from '@/lib/formatters'
-import { SyncNowButton, SyncVerdict, useSyncNow } from './SyncNowCard'
+import { SyncNowButton, SyncVerdict, useRefreshWhenLive, useSyncNow } from './SyncNowCard'
 import { ConnectedMark, GarminTile } from './GarminMark'
 import { ExportSheet, type ExportOption } from './ExportSheet'
 import { formatCacheSize, offlineCacheBytes } from './offlineCache'
@@ -25,6 +25,7 @@ interface Props {
   device?: SyncDevice
   /** Signs the ID token both owner-only routes, export and sync, require. */
   user: User
+  onDataLive?: () => void
   /** Tests only; see useSyncNow. */
   pollIntervalMs?: number
 }
@@ -38,8 +39,9 @@ const EXPORT_FILE: Record<ExportFormat, { name: string; type: string }> = {
 
 const CHEVRON = <ChevronRight size={16} aria-hidden className="shrink-0 text-subtle" />
 
-export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, pollIntervalMs }: Props) {
+export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, onDataLive, pollIntervalMs }: Props) {
   const sync = useSyncNow(user, pollIntervalMs)
+  useRefreshWhenLive(sync.phase, onDataLive)
   const [loading, setLoading] = useState<ExportFormat | null>(null)
   const [pickingFormat, setPickingFormat] = useState(false)
   const [confirmingClear, setConfirmingClear] = useState(false)
