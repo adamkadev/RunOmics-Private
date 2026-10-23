@@ -78,6 +78,7 @@
     "@types/node": "^26",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript/native": "npm:typescript@^7.0.2",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/coverage-v8": "^4.1.11",
     "axe-core": "^4.14.0",
@@ -87,7 +88,7 @@
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^7",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
     "vitest": "^4.1.11"
   },
   "overrides": {
