@@ -340,12 +340,23 @@ jobs:
           fi
 
       - name: Trigger Vercel redeploy
-        if: steps.commit.outputs.committed == 'true'
+        if: steps.commit.outputs.committed == 'true' && vars.DATA_SOURCE != 'github'
         continue-on-error: true
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: |
           curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          date +%s > "$RUNNER_TEMP/deploy_hook_at"
+
+      # A deployment that reads the data repository itself needs no rebuild, only its cached commit expired.
+      - name: Expire the app's data cache
+        if: steps.commit.outputs.committed == 'true' && vars.DATA_SOURCE == 'github'
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          printf 'x-internal-secret: %s\n' "$SECRET" | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/data-revalidate" -H @-
           date +%s > "$RUNNER_TEMP/deploy_hook_at"
 
       # Also after a timestamp-only commit, to retry the AI work an earlier sync left unfinished.
@@ -356,34 +367,35 @@ jobs:
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
           EXPECTED_SYNC: ${{ steps.commit.outputs.last_synced_at }}
           DATA_CHANGED: ${{ steps.commit.outputs.data_changed }}
+          DATA_SOURCE: ${{ vars.DATA_SOURCE }}
         run: |
-          # Everything these endpoints read comes off the build's own filesystem,
-          # so they answer for whatever deployment is live - and the previous one
-          # answers 200 within a second of the push above, while Vercel is still
-          # building this one. Waiting on a bare 200 therefore ran every check
-          # against the data as it was *before* this sync: the insight generator
-          # saw no new activity, reported "outstanding: 0", and the run it had
-          # just synced had to wait for the next night to get its verdict.
-          #
-          # Wait for the deployment carrying this run's own sync timestamp. A
-          # sync that only moved the timestamp has nothing to wait for: the
-          # deployment live already serves the same data.
+          # The checks read what the app serves: before it serves this sync, they would judge the data before it.
           if [ "$DATA_CHANGED" = "true" ]; then
+            INTERVAL=15
+            [ "$DATA_SOURCE" = "github" ] && INTERVAL=3
             DEPLOYED=false
-            for i in $(seq 1 24); do
-              LIVE=$(printf 'x-internal-secret: %s\n' "$SECRET" \
-                | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
-                | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
+            for i in $(seq 1 $((360 / INTERVAL))); do
+              HEALTH=$(printf 'x-internal-secret: %s\n' "$SECRET" | curl -sS --max-time 20 "$APP_URL/api/internal/health" -H @- || true)
+              LIVE=$(printf '%s' "$HEALTH" | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
+              REFUSED=$(printf '%s' "$HEALTH" | python -c "import json,sys; r=json.load(sys.stdin).get('rejectedData'); print(r['commit'] + ': ' + '; '.join(r['errors'][:3]) if r else '')" 2>/dev/null || true)
+              if [ -n "$REFUSED" ]; then
+                echo "::error::The app refused the data repository's commit $REFUSED"
+                exit 1
+              fi
               if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
                 DEPLOYED=true
                 date +%s > "$RUNNER_TEMP/live_at"
-                echo "Deployment carrying $EXPECTED_SYNC is live after $(((i - 1) * 15))s."
+                echo "The app serves $EXPECTED_SYNC after $(((i - 1) * INTERVAL))s."
                 break
               fi
-              sleep 15
+              sleep "$INTERVAL"
             done
             if [ "$DEPLOYED" != "true" ]; then
               echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
+            elif [ "$DATA_SOURCE" = "github" ]; then
+              # Again, for a page whose render began before the first ping and ended after it, with the old commit.
+              printf 'x-internal-secret: %s\n' "$SECRET" | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/data-revalidate" -H @- || true
+              echo
             fi
           fi
 

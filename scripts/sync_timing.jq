@@ -11,7 +11,7 @@ def clock: if . == null then "-" else (. / 60 | floor | tostring) + ":" + (. % 6
   "|---|---:|",
   "| the sync job running | \(($me.started_at | secs) - $t0 | clock) |",
   "| the data pushed | \($pushed | clock) |",
-  "| **the run visible** (deployment live) | \(if $live then $live - $t0 else null end | clock) |",
+  "| **the run visible** (app serving it) | \(if $live then $live - $t0 else null end | clock) |",
   "| **the Sync button done** (first ai-insights pass) | \(if $verdict then $verdict - $t0 else null end | clock) |",
   "",
   "| Stage | Starts at | Took |",
@@ -20,4 +20,4 @@ def clock: if . == null then "-" else (. / 60 | floor | tostring) + ":" + (. % 6
     | "| job: \(.name) | \((.started_at | secs) - $t0 | clock) | \((.completed_at | secs) - (.started_at | secs) | clock) |"),
   "| queued: \($job) | \(($me.created_at | secs) - $t0 | clock) | \(($me.started_at | secs) - ($me.created_at | secs) | clock) |",
   ($done[] | "| \(.name) | \((.started_at | secs) - $t0 | clock) | \((.completed_at | secs) - (.started_at | secs) | clock) |"),
-  (if $hook and $live then "| Vercel build (deploy hook to live) | \($hook - $t0 | clock) | \($live - $hook | clock) |" else empty end)
+  (if $hook and $live then "| Vercel build or data ping, to live | \($hook - $t0 | clock) | \($live - $hook | clock) |" else empty end)
