@@ -1,3 +1,9 @@
+from datetime import date
+
+import pytest
+
+from garmin import recovery_history
+from garmin.errors import GarminAPIError
 from garmin.recovery_history import merge_days, normalize_daily_summaries, normalize_resting_hr
 
 # Trimmed from the shapes the Personal API's daily summaries and Connect's
@@ -58,3 +64,33 @@ class TestMergeDays:
 
     def test_is_sorted_by_date(self):
         assert list(merge_days({}, {"2026-09-25": 48, "2026-09-01": 60})) == ["2026-09-01", "2026-09-25"]
+
+
+class TestSync:
+    @pytest.fixture
+    def out(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(recovery_history, "_OUT_PATH", tmp_path / "recovery_history.json")
+        monkeypatch.setattr(recovery_history.time, "sleep", lambda _s: None)
+        return tmp_path / "recovery_history.json"
+
+    def test_a_refused_window_is_a_gap_the_next_night_fills(self, out, monkeypatch):
+        answers = iter([GarminAPIError(404, "u")] + [{"allMetrics": None}] * 20)
+
+        class Connect:
+            def get_resting_hr_range(self, _start, _end):
+                answer = next(answers)
+                if isinstance(answer, Exception):
+                    raise answer
+                return answer
+
+        assert recovery_history.sync_recovery_history(Connect(), date(2026, 10, 23)) == 0
+        assert out.exists()
+
+    def test_every_window_refused_fails_the_step_rather_than_going_stale_silently(self, out):
+        class Gone:
+            def get_resting_hr_range(self, _start, _end):
+                raise GarminAPIError(404, "u")
+
+        with pytest.raises(RuntimeError, match="refused all"):
+            recovery_history.sync_recovery_history(Gone(), date(2026, 10, 23))
+        assert not out.exists()

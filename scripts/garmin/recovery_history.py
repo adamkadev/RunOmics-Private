@@ -94,7 +94,8 @@ def merge_days(stored: dict[str, Any], resting: dict[str, int]) -> dict[str, Any
     return dict(sorted(merged.items()))
 
 
-def _fetch_resting_hr(client: GarminClient | PersonalApiClient, window_start: date, window_end: date) -> dict[str, int]:
+def _fetch_resting_hr(client: GarminClient | PersonalApiClient, window_start: date, window_end: date) -> dict[str, int] | None:
+    """One window's resting HRs; None when Garmin refused it."""
     start, end = window_start.isoformat(), window_end.isoformat()
     try:
         if isinstance(client, PersonalApiClient):
@@ -102,7 +103,7 @@ def _fetch_resting_hr(client: GarminClient | PersonalApiClient, window_start: da
         return normalize_resting_hr(retry_transient(client.get_resting_hr_range, start, end))
     except GarminAPIError as exc:
         print(f"  Warning: resting HR {window_start}…{window_end} failed: {exc}")
-        return {}
+        return None
 
 
 def sync_recovery_history(client: GarminClient | PersonalApiClient, today: date | None = None) -> int:
@@ -117,9 +118,19 @@ def sync_recovery_history(client: GarminClient | PersonalApiClient, today: date 
 
     print(f"Syncing resting HR over {len(windows)} window(s)…")
     resting: dict[str, int] = {}
+    refused = 0
     for window_start, window_end in windows:
-        resting.update(_fetch_resting_hr(client, window_start, window_end))
+        fetched = _fetch_resting_hr(client, window_start, window_end)
+        if fetched is None:
+            refused += 1
+        else:
+            resting.update(fetched)
         time.sleep(_RATE_LIMIT_PAUSE)
+    # One refused window is a gap the next night fills; all of them is the
+    # endpoint gone, and a step that said nothing would leave the reading
+    # stale for good.
+    if windows and refused == len(windows):
+        raise RuntimeError(f"Garmin refused all {refused} resting HR window(s)")
 
     days = merge_days(stored, resting)
     write_history(_OUT_PATH, {"days": days})

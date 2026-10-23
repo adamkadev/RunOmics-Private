@@ -78,12 +78,25 @@ class TestToken:
         api.client().get_activities()
         assert api.requests[-1].headers["Authorization"] == "Bearer token-1"
 
-    @pytest.mark.parametrize("status", [400, 401, 403])
-    def test_a_refused_key_says_how_to_replace_it_and_never_echoes_it(self, status):
+    @pytest.mark.parametrize(
+        "status,hint",
+        [(400, "malformed"), (401, "create a new one at https://connect.garmin.com/app/settings/personalApiToken"),
+         (403, "is WARP connected?")],
+    )
+    def test_a_refused_key_says_what_it_most_likely_means_and_never_echoes_it(self, status, hint):
+        # A 403 is also how Garmin answers a blocked address: a valid key,
+        # shown once, is not to be thrown away over a dropped tunnel.
         with pytest.raises(GarminAuthError) as raised:
             FakeApi(token=httpx.Response(status)).client()
-        assert "Create a new key at https://connect.garmin.com/app/settings/personalApiToken" in str(raised.value)
+        assert f"(HTTP {status})" in str(raised.value) and hint in str(raised.value)
         assert _KEY not in str(raised.value)
+
+    def test_a_failed_exchange_closes_the_connection_it_opened(self, monkeypatch):
+        closed = []
+        monkeypatch.setattr(httpx.Client, "close", lambda self: closed.append(self))
+        with pytest.raises(GarminAuthError):
+            FakeApi(token=httpx.Response(401)).client()
+        assert len(closed) == 1
 
     def test_a_token_that_expires_mid_sync_is_exchanged_again_once(self):
         api = FakeApi(**{LIST: [httpx.Response(401), httpx.Response(200, json=[ROW])]})
@@ -139,12 +152,22 @@ class TestHrZones:
         zones = api.client().get_hr_zones("101")
 
         assert len(zones) == 5
+        # A day either side: the filter's day may be GMT's where the run's is local.
         listed = [dict(r.url.params) for r in api.requests if r.url.path == LIST]
-        assert listed == [{"start": "0", "limit": "100", "startDate": "2026-10-21", "endDate": "2026-10-21"}]
+        assert listed == [{"start": "0", "limit": "100", "startDate": "2026-10-20", "endDate": "2026-10-22"}]
 
-    def test_no_row_is_no_zones(self):
+    def test_a_row_not_found_raises_rather_than_passing_for_no_zones(self):
+        # "No zones" would be stored over the zones on file.
         api = FakeApi(**{"/activity-service/activity/999": _detail("2026-10-21 07:00:00")})
-        assert api.client().get_hr_zones("999") == []
+        with pytest.raises(LookupError):
+            api.client().get_hr_zones("999")
+
+
+def test_an_empty_activity_detail_raises_rather_than_passing_for_an_activity():
+    # Mapped, {} was stored for good under the id "".
+    api = FakeApi(**{"/activity-service/activity/101": httpx.Response(204)})
+    with pytest.raises(ValueError):
+        api.client().get_activity_detail("101")
 
 
 def test_daily_summaries_are_the_data_rows_and_a_204_is_none():

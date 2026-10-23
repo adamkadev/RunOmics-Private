@@ -23,6 +23,7 @@ most - the athlete creates another in Garmin Connect.
 
 from __future__ import annotations
 
+from datetime import date, timedelta
 from typing import Any
 
 import httpx
@@ -32,39 +33,49 @@ from .retry import retry_transient
 from .shared import collect_activity_ids, fit_from_archive, zone_floors
 
 DEFAULT_BASE_URL = "https://personal.connectapi.garmin.com"
-_TOKEN_PATH = "/personalapitoken-service/personal-api/personal-api-key/token"
-_LIST_PATH = "/activitylist-service/activities/search/activities"
-_TIMEOUT = httpx.Timeout(120.0, connect=30.0)
+TOKEN_PATH = "/personalapitoken-service/personal-api/personal-api-key/token"
+KEY_PAGE = "https://connect.garmin.com/app/settings/personalApiToken"
 # The download is served as application/x-zip-compressed: an Accept list
 # without it is answered 406.
-_ZIP_ACCEPT = "application/zip, application/x-zip-compressed, application/octet-stream"
+ZIP_ACCEPT = "application/zip, application/x-zip-compressed, application/octet-stream"
+_LIST_PATH = "/activitylist-service/activities/search/activities"
+_TIMEOUT = httpx.Timeout(120.0, connect=30.0)
 
-_KEY_REFUSED = (
-    "Garmin refused GARMIN_PERSONAL_API_KEY (HTTP {status}): it has expired or "
-    "was revoked. Create a new key at https://connect.garmin.com/app/settings/personalApiToken, "
-    "then replace the secret in this profile's GitHub Environment."
-)
+# What each refusal of the key most likely means. A 403 is also how Garmin
+# answers an address it blocks, and a valid key shown once is not one to
+# throw away over a dropped tunnel.
+_KEY_REFUSED = {
+    400: "the key is malformed - check the secret holds the whole of it",
+    401: f"it has expired or was revoked - create a new one at {KEY_PAGE}",
+    403: f"either it was revoked (create a new one at {KEY_PAGE}) or Garmin blocks the address the "
+    "request came from (is WARP connected?)",
+}
 
 
 class PersonalApiClient:
     def __init__(self, api_key: str, *, base_url: str = DEFAULT_BASE_URL, transport: httpx.BaseTransport | None = None) -> None:
         self._key = api_key
         self._http = httpx.Client(base_url=base_url, timeout=_TIMEOUT, transport=transport)
-        self._token = retry_transient(self._exchange_key)
+        try:
+            self._token = retry_transient(self._exchange_key)
+        except Exception:
+            self._http.close()
+            raise
         # The list rows seen so far, by id: they carry each activity's time in
         # HR zones, which the Personal API serves nowhere else.
         self._rows: dict[str, dict[str, Any]] = {}
         self._zones: list[dict[str, Any]] | None = None
 
     def _exchange_key(self) -> str:
-        resp = self._http.post(_TOKEN_PATH, headers={"Accept": "*/*", "Authorization": f"ApiKey {self._key}"})
-        if resp.status_code in (400, 401, 403):
-            raise GarminAuthError(_KEY_REFUSED.format(status=resp.status_code))
+        resp = self._http.post(TOKEN_PATH, headers={"Accept": "*/*", "Authorization": f"ApiKey {self._key}"})
+        reason = _KEY_REFUSED.get(resp.status_code)
+        if reason:
+            raise GarminAuthError(f"Garmin refused GARMIN_PERSONAL_API_KEY (HTTP {resp.status_code}): {reason}.")
         if resp.status_code >= 400:
-            raise GarminAPIError(resp.status_code, _TOKEN_PATH)
+            raise GarminAPIError(resp.status_code, TOKEN_PATH)
         token = resp.text.strip()
         if not token:
-            raise GarminAuthError(_KEY_REFUSED.format(status=resp.status_code))
+            raise GarminAPIError(resp.status_code, TOKEN_PATH)
         return token
 
     def _get(self, path: str, *, params: dict[str, Any] | None = None, accept: str = "application/json") -> httpx.Response:
@@ -99,7 +110,9 @@ class PersonalApiClient:
         return collect_activity_ids(self.get_activities, running_only=running_only)
 
     def get_activity_detail(self, activity_id: str) -> dict[str, Any]:
-        return self._get_json(f"/activity-service/activity/{activity_id}") or {}
+        # An empty answer raises rather than passing for an activity: mapped,
+        # {} would be stored for good under the id "".
+        return self._get(f"/activity-service/activity/{activity_id}").json()
 
     def download_fit(self, activity_id: str, *, strict_errors: bool = False) -> bytes | None:
         """The activity's original FIT file, or None for an activity without one.
@@ -109,7 +122,7 @@ class PersonalApiClient:
         download that is not an archive raises zipfile.BadZipFile.
         """
         try:
-            resp = self._get(f"/download-service/files/activity/{activity_id}", accept=_ZIP_ACCEPT)
+            resp = self._get(f"/download-service/files/activity/{activity_id}", accept=ZIP_ACCEPT)
         except GarminAPIError as exc:
             if exc.status_code == 404 and not strict_errors:
                 return None
@@ -125,8 +138,6 @@ class PersonalApiClient:
         the activity unless the zones were changed since it was recorded.
         """
         row = self._rows.get(activity_id) or self._find_row(activity_id)
-        if row is None:
-            return []
         floors = zone_floors(self.get_heart_rate_zones())
         zones: list[dict[str, Any]] = []
         for n in range(1, 6):
@@ -139,16 +150,22 @@ class PersonalApiClient:
             zones.append(zone)
         return zones
 
-    def _find_row(self, activity_id: str) -> dict[str, Any] | None:
+    def _find_row(self, activity_id: str) -> dict[str, Any]:
         """The list row of an activity not paged through yet (sync.py --id):
-        the list filtered to the day the activity started."""
+        the list filtered to the days around its start. Not finding it raises:
+        "no zones" would be stored over the zones on file."""
         summary = self.get_activity_detail(activity_id).get("summaryDTO") or {}
-        day = str(summary.get("startTimeLocal") or "")[:10]
-        if not day:
-            return None
-        rows = self._get_json(_LIST_PATH, start=0, limit=100, startDate=day, endDate=day) or []
+        try:
+            started = date.fromisoformat(str(summary.get("startTimeLocal") or "")[:10])
+        except ValueError:
+            raise LookupError(f"activity {activity_id} has no start date to find its list row by") from None
+        # A day either side: the filter's day may be GMT's where the run's is local.
+        around = {"startDate": (started - timedelta(days=1)).isoformat(), "endDate": (started + timedelta(days=1)).isoformat()}
+        rows = self._get_json(_LIST_PATH, start=0, limit=100, **around) or []
         self._rows.update((str(row["activityId"]), row) for row in rows)
-        return self._rows.get(activity_id)
+        if activity_id not in self._rows:
+            raise LookupError(f"activity {activity_id} is not in the activity list around {started}")
+        return self._rows[activity_id]
 
     # --- the athlete -----------------------------------------------------
 

@@ -23,7 +23,6 @@ from __future__ import annotations
 import argparse
 import base64
 import hashlib
-import io
 import json
 import os
 import re
@@ -43,14 +42,14 @@ import httpx
 
 from diagnostics.fit_inspector import inspect_fit_capabilities
 from diagnostics.model import InvalidProbePayload
+from garmin.personal_api import DEFAULT_BASE_URL, TOKEN_PATH, ZIP_ACCEPT
+from garmin.shared import fit_from_archive as extract_fit
 from processing.fit_parser import parse_fit
 
 # The official client's defaults (garmin/connect-personal-api-python), so the
 # same environment serves both.
-DEFAULT_BASE_URL = "https://personal.connectapi.garmin.com"
 BASE_URL_ENV = "GARMIN_PERSONAL_API_BASE_URL"
 KEY_ENV = "GARMIN_PERSONAL_API_KEY"
-TOKEN_PATH = "/personalapitoken-service/personal-api/personal-api-key/token"
 
 _TIMEOUT = httpx.Timeout(60.0, connect=30.0)
 _PAUSE_SECONDS = 1.0
@@ -168,9 +167,7 @@ class PersonalApiProbe:
         if missing:
             return Result(probe, status=None, error=f"skipped: no {missing}")
         self.sleep(_PAUSE_SECONDS)
-        # Garmin's own client's list: the download is served as
-        # application/x-zip-compressed, and without it the answer is a 406.
-        accept = "application/zip, application/x-zip-compressed, application/octet-stream" if probe.binary else "application/json"
+        accept = ZIP_ACCEPT if probe.binary else "application/json"
         try:
             resp = self.http.get(probe.path, params=probe.params, headers={**self.headers, "Accept": accept})
         except httpx.HTTPError as exc:
@@ -338,15 +335,6 @@ def _key_list(mapping: dict[str, Any]) -> str:
     names = key_names(mapping)
     shown = ", ".join(names[:_MAX_KEYS_SHOWN])
     return shown + (f", +{len(names) - _MAX_KEYS_SHOWN} more" if len(names) > _MAX_KEYS_SHOWN else "")
-
-
-def extract_fit(content: bytes) -> bytes | None:
-    """The .fit inside an activity download, as the sync's client reads it."""
-    with zipfile.ZipFile(io.BytesIO(content)) as zf:
-        for name in zf.namelist():
-            if name.lower().endswith(".fit"):
-                return zf.read(name)
-    return None
 
 
 def fit_features(fit: bytes) -> set[str]:

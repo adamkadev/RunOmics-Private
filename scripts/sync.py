@@ -10,13 +10,13 @@ from collections.abc import Callable
 from contextlib import ExitStack
 from datetime import date, datetime, timezone
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.athlete import fetch_athlete_metrics, fetch_personal_athlete_metrics, record_athlete_history
 from data_directory import get_data_dir, get_fit_cache_dir
 from garmin.client import GarminClient
-from garmin.errors import GarminAuthError
 from garmin.personal_api import PersonalApiClient
 from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
@@ -82,19 +82,19 @@ def main() -> int:
     failed_steps: list[str] = []
 
     with ExitStack() as stack:
-        personal = stack.enter_context(PersonalApiClient(api_key)) if api_key else None
-        connect: GarminClient | None = None
-        if secret:
-            try:
-                connect = stack.enter_context(GarminClient(secret))
-            except GarminAuthError as exc:
-                if personal is None:
-                    raise
-                # The activities come from the Personal API: a dead garth token
-                # costs only what Connect alone serves, and says so every night.
-                print(f"Warning: Garmin Connect sign-in failed; gear and Connect's metrics are skipped.\n{exc}")
-                failed_steps.append("Garmin Connect sign-in")
-        # Never None: without a key, a failed Connect sign-in raised above.
+        # Either sign-in may fail while the other carries the night, which then
+        # counts as partial. With nothing left to read the runs, it raises.
+        personal = (
+            _open_client(stack, "Personal API", lambda: PersonalApiClient(api_key), failed_steps, fallback=bool(secret))
+            if api_key
+            else None
+        )
+        connect = (
+            _open_client(stack, "Garmin Connect", lambda: GarminClient(secret), failed_steps, fallback=personal is not None)
+            if secret
+            else None
+        )
+        # Never None: _open_client raises when there is no fallback.
         client: ActivitySource = personal or connect
 
         # Fetched early (before the activity loop) so newly-synced activities can be
@@ -141,7 +141,7 @@ def main() -> int:
                     detail = retry_transient(client.get_activity_detail, activity_id)
                     parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
                     hr_zones = parse_hr_zones(retry_transient(client.get_hr_zones, activity_id))
-                    gear = retry_transient(connect.get_activity_gear, activity_id) if connect else None
+                    gear, gear_known = _fetch_gear(connect, activity_id, required=client is connect)
 
                     time.sleep(_RATE_LIMIT_PAUSE)
 
@@ -167,7 +167,7 @@ def main() -> int:
                     continue
 
                 is_new = store.upsert(
-                    activity_data, replace=args.force, keep_gear=connect is None, keep_zone_bounds=client is personal
+                    activity_data, replace=args.force, keep_gear=not gear_known, keep_zone_bounds=client is personal
                 )
                 if is_new:
                     added += 1
@@ -196,6 +196,40 @@ def main() -> int:
     if failed_steps:
         print(f"\n{len(failed_steps)} step(s) failed: {', '.join(failed_steps)}.")
     return 0 if failed == 0 and not failed_steps else _EXIT_PARTIAL_FAILURE
+
+
+def _open_client(
+    stack: ExitStack, name: str, open_client: Callable[[], Any], failed_steps: list[str], *, fallback: bool
+) -> Any:
+    """One Garmin client entered into the run, or None when its sign-in fails
+    and the other client can read the runs instead."""
+    try:
+        return stack.enter_context(open_client())
+    except Exception as exc:
+        if not fallback:
+            raise
+        print(f"Warning: {name} sign-in failed ({type(exc).__name__}: {exc}); carrying on without it.")
+        failed_steps.append(f"{name} sign-in")
+        return None
+
+
+def _fetch_gear(connect: GarminClient | None, activity_id: str, *, required: bool) -> tuple[list[dict] | None, bool]:
+    """The activity's gear and whether it is known.
+
+    Only Connect knows it. When Connect also read the activity, an error
+    fails the activity as any other would. When the Personal API read it,
+    the run does not hang on Connect: it is stored with the shoe on file,
+    and the nightly gear refresh asks again.
+    """
+    if connect is None:
+        return None, False
+    try:
+        return retry_transient(connect.get_activity_gear, activity_id), True
+    except Exception as exc:
+        if required:
+            raise
+        print(f"(gear unavailable: {type(exc).__name__})", end=" ", flush=True)
+        return None, False
 
 
 def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip: set[str]) -> int:
@@ -296,8 +330,15 @@ def _sync_athlete_metrics(connect: GarminClient | None, personal: PersonalApiCli
     # Connect's are the fuller set (sex, height, threshold pace, VO2max, the
     # watch); where both have a value it is the same one.
     metrics = fetch_personal_athlete_metrics(personal) if personal else {}
+    connect_failure: Exception | None = None
     if connect:
-        metrics.update(fetch_athlete_metrics(connect))
+        try:
+            metrics.update(fetch_athlete_metrics(connect))
+        except Exception as exc:
+            if not personal:
+                raise
+            # The Personal API's values are still written; the step still fails.
+            connect_failure = exc
     # The history snapshots the athlete as now known: what this run fetched
     # over what is on file, so a value only Connect serves is not dropped
     # from the trend the first night without it.
@@ -305,6 +346,8 @@ def _sync_athlete_metrics(connect: GarminClient | None, personal: PersonalApiCli
     if record_athlete_history(known):
         print("Athlete threshold metrics changed - recorded a history entry.")
     _merge_athlete_metrics(metrics)
+    if connect_failure:
+        raise connect_failure
 
 
 def _first_activity_date(store: JsonActivityStore) -> date | None:

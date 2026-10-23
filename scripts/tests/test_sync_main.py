@@ -413,3 +413,63 @@ class TestPersonalApi:
         monkeypatch.setattr(sync, "PersonalApiClient", _refuse_garmin)
 
         assert _run(monkeypatch) == 1
+
+
+class TestEitherClientCarriesTheNight:
+    """Either sign-in may fail while the other reads the runs; the night then
+    counts as partial. A Connect error on the gear of a run the key read does
+    not cost the run."""
+
+    def test_a_refused_key_falls_back_to_garth_for_everything(self, workspace, garmin, steps, monkeypatch, capsys):
+        def refused(_key):
+            raise GarminAuthError("Garmin refused GARMIN_PERSONAL_API_KEY (HTTP 401)")
+
+        monkeypatch.setenv("GARMIN_PERSONAL_API_KEY", "GCDC_expired")
+        monkeypatch.setattr(sync, "PersonalApiClient", refused)
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert _stored_ids(workspace) == {"101", "102"}
+        assert steps == list(_STEP_RESULTS)
+        assert "Personal API sign-in failed" in capsys.readouterr().out
+
+    def test_a_malformed_garth_secret_leaves_the_runs_to_the_key(self, workspace, personal, steps, monkeypatch):
+        def malformed(_secret):
+            raise ValueError("Incorrect padding")
+
+        monkeypatch.setenv("GARMIN_SECRET", "truncated")
+        monkeypatch.setattr(sync, "GarminClient", malformed)
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert _stored_ids(workspace) == {"101", "102"}
+
+    def test_a_connect_gear_error_keeps_a_run_the_key_read(
+        self, workspace, personal, garmin, steps, monkeypatch, activity_factory
+    ):
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+        run = activity_factory("101", "2026-09-20")
+        run.gear_id = "shoe1"
+        store = JsonActivityStore(workspace / "activities")
+        store.upsert(run)
+        store.save()
+        garmin.failures[("get_activity_gear", "101")] = GarminAPIError(403, "https://example.test/gear")
+        garmin.failures[("get_activity_gear", "102")] = GarminAPIError(503, "https://example.test/gear")
+
+        assert _run(monkeypatch, "--force") == 0
+
+        assert _stored_ids(workspace) == {"101", "102"}
+        assert _stored_gear(workspace, "101") == "shoe1"
+
+    def test_connects_athlete_failure_still_writes_the_keys_values(self, workspace, personal, garmin, steps, monkeypatch):
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+        monkeypatch.setattr(sync, "fetch_personal_athlete_metrics", lambda _client: {"lthrBpm": 172})
+
+        def connect_down(_client):
+            raise httpx.ConnectError("connection reset")
+
+        monkeypatch.setattr(sync, "fetch_athlete_metrics", connect_down)
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert json.loads((workspace / "athlete.json").read_text())["lthrBpm"] == 172
