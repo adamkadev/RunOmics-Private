@@ -80,6 +80,7 @@ export interface Activity {
   avgTemperature: number | null
   cadenceSamples: number[] | null
   gearId: string | null
+  gearPending?: true
   weather: ActivityWeather | null
 }
 
