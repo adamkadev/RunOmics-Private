@@ -47,11 +47,16 @@ function testFiles(dir: string): string[] {
 // character class.
 const asGlob = (file: string) => file.replace(/[[\](){}*?!]/g, '\\$&')
 
+// The tooling tests under scripts/ run against the real file system, child
+// processes and git; they stay isolated too, whatever they import.
 const ISOLATED = ['src', 'scripts']
   .flatMap(testFiles)
-  .filter((file) => SWAPS_MODULES.test(fs.readFileSync(file, 'utf8')))
+  .filter((file) => file.startsWith('scripts/') || SWAPS_MODULES.test(fs.readFileSync(file, 'utf8')))
 const ISOLATED_NODE = ISOLATED.filter((file) => !isDomTest(file)).map(asGlob)
 const ISOLATED_DOM = ISOLATED.filter(isDomTest).map(asGlob)
+
+// Each shared file still gets its own copy of the app's modules: see the file.
+const FRESH_MODULES = './vitest.fresh-modules.ts'
 
 const node = { environment: 'node' as const }
 const dom = {
@@ -71,11 +76,19 @@ export default defineConfig({
         ...node,
         name: 'node',
         isolate: false,
+        setupFiles: [FRESH_MODULES],
         include: ['**/*.test.{ts,mts,js,mjs}'],
         exclude: [...SHARED_EXCLUDE, ...DOM_TESTS, ...ISOLATED_NODE],
       }),
       project({ ...node, name: 'node:isolated', include: ISOLATED_NODE, exclude: SHARED_EXCLUDE }),
-      project({ ...dom, name: 'dom', isolate: false, include: DOM_TESTS, exclude: [...SHARED_EXCLUDE, ...ISOLATED_DOM] }),
+      project({
+        ...dom,
+        name: 'dom',
+        isolate: false,
+        setupFiles: [...dom.setupFiles, FRESH_MODULES],
+        include: DOM_TESTS,
+        exclude: [...SHARED_EXCLUDE, ...ISOLATED_DOM],
+      }),
       project({ ...dom, name: 'dom:isolated', include: ISOLATED_DOM, exclude: SHARED_EXCLUDE }),
     ],
     coverage: {
