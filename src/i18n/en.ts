@@ -821,15 +821,6 @@ export const en = {
         legend: { acute: 'Acute load', safe: 'Safe range', outside: 'Outside range' },
         readout: (date: string, acute: number, lo: number, hi: number) => `${date} · ${acute} · safe ${lo}–${hi}`,
       },
-      // The coach read's recovery row: resting HR against its baseline.
-      recovery: {
-        bpm: 'bpm',
-        insideBaseline: (lo: number, hi: number, unit: string) => ['Inside your ', `${lo}–${hi} ${unit} baseline`, ". You're absorbing the load."] as [string, string, string],
-        rhrLead: 'Resting HR ',
-        rhrUpBold: (d: number) => `up ${d} bpm`,
-        rhrHighBold: 'above baseline',
-        takeEasy: '. Take tomorrow easy.',
-      },
       status: {
         title: 'Training status',
         caption: (span: string) => `Your watch · ${span}`,

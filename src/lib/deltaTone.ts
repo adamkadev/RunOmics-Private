@@ -18,7 +18,6 @@ export type DeltaMetric =
   | 'race'
   | 'efficiency'
   | 'distance'
-  | 'restingHr'
   | 'loadRatio'
   | 'rampRate'
 
@@ -90,8 +89,6 @@ export function deltaTone(metric: DeltaMetric, delta: number | null | undefined,
       if (!base || base <= 0) return delta > 0 ? 'good' : delta < 0 ? 'worse' : 'flat'
       return Math.abs(delta) / base < 0.02 ? 'flat' : delta > 0 ? 'good' : 'worse'
     }
-    case 'restingHr':
-      return Math.abs(delta) < (ctx.flatBelow ?? 1) ? 'flat' : delta < 0 ? 'good' : 'worse'
     case 'loadRatio':
     case 'rampRate': {
       const range = SAFE_RANGE[metric]!

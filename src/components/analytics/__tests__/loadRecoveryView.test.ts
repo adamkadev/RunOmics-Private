@@ -145,10 +145,9 @@ describe('recoveryView', () => {
     expect(view.out).toBe(false)
   })
 
-  it('flags a resting HR above its baseline as worse', () => {
+  it('flags a resting HR above its baseline', () => {
     const view = recoveryView(days(90, (i) => (i >= 88 ? 52 : steady(i))), dayWindow(TODAY, '4w'))!
-    expect(view.restingHr.side).toBe('high')
-    expect(view.restingHr.tone).toBe('worse')
+    expect(view.restingHr).toEqual({ now: 52, lo: 45, hi: 47, side: 'high' })
     expect(view.out).toBe(true)
   })
 
@@ -158,11 +157,6 @@ describe('recoveryView', () => {
     const view = recoveryView(days(90, (i) => (i >= 88 ? 40 : steady(i))), dayWindow(TODAY, '4w'))!
     expect(view.restingHr.side).toBe('low')
     expect(view.out).toBe(false)
-  })
-
-  it('calls a change inside ±2 bpm no real change', () => {
-    const view = recoveryView(days(90, (i) => 46 + (i === 89 ? 1 : 0)), dayWindow(TODAY, '4w'))!
-    expect(view.restingHr.tone).toBe('flat')
   })
 })
 

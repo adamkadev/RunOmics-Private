@@ -1,7 +1,6 @@
 import { loadRatio, safeRange, type LoadPair } from '@/domain/training/loadTrend'
 import type { RecoveryDay } from '@/domain/training/recovery'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
-import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
 import type { DayWindow } from './analyticsView'
 
 /**
@@ -143,35 +142,22 @@ export function loadTrendView(pairs: LoadPair[], window: DayWindow, yMax: number
 
 // ─── Recovery ──────────────────────────────────────────────────────────────
 
-/**
- * Under this many days of resting HR in the window, the card is hidden, never
- * drawn empty.
- */
+/** Under this many days of resting HR in the window there is no reading. */
 export const RECOVERY_MIN_DAYS = 7
 /** The baseline is the athlete's own range over the last 60 days. */
 export const BASELINE_DAYS = 60
-/** A change inside this reads as no real change (v4.7 rule). */
-export const RESTING_HR_FLAT_BPM = 2
 
-export interface RecoverySeries {
-  /** One value per chart date. */
-  values: number[]
-  outside: boolean[]
+/** The last resting HR in the window against the athlete's own baseline. */
+export interface RestingHrReading {
+  now: number
   lo: number
   hi: number
-  now: number
-  /** The last day against the 7 days before it, whole bpm. */
-  delta: number | null
-  tone: DeltaTone
   /** The last day sat outside the baseline, and on which side. */
   side: 'low' | 'high' | null
-  yMin: number
-  yMax: number
 }
 
 export interface RecoveryView {
-  dates: string[]
-  restingHr: RecoverySeries
+  restingHr: RestingHrReading
   out: boolean
 }
 
@@ -201,30 +187,9 @@ export function recoveryView(days: RecoveryDay[], window: DayWindow): RecoveryVi
   const band = baseline(days, last.date)
   if (!band) return null
 
-  const weekFrom = isoDate(addDays(day(last.date), -7))
-  const week = days.filter((d) => d.date >= weekFrom && d.date < last.date).map((d) => d.restingHr)
-  const delta = week.length ? Math.round(last.restingHr - mean(week)) : null
-
-  const points = weekly(window)
-    ? byWeek(inWindow).map((w) => ({ date: w.at(-1)!.date, v: Math.round(mean(w.map((d) => d.restingHr))) }))
-    : inWindow.map((d) => ({ date: d.date, v: d.restingHr }))
-  const values = points.map((p) => p.v)
-  const span = Math.max(...values, band.hi) - Math.min(...values, band.lo) || 1
   const side = last.restingHr < band.lo ? 'low' : last.restingHr > band.hi ? 'high' : null
   return {
-    dates: points.map((p) => p.date),
-    restingHr: {
-      values,
-      outside: values.map((v) => v < band.lo || v > band.hi),
-      lo: band.lo,
-      hi: band.hi,
-      now: last.restingHr,
-      delta,
-      tone: deltaTone('restingHr', delta, { flatBelow: RESTING_HR_FLAT_BPM }),
-      side,
-      yMin: Math.min(...values, band.lo) - span * 0.15,
-      yMax: Math.max(...values, band.hi) + span * 0.15,
-    },
+    restingHr: { now: last.restingHr, lo: band.lo, hi: band.hi, side },
     // Only the bad side is a flag (App Fixes 2a): a resting HR below its
     // baseline is a recovered athlete, not a dip.
     out: side === 'high',

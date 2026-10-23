@@ -13,7 +13,6 @@ describe('deltaTone (v4.7)', () => {
     expect(deltaTone('pace', 9)).toBe('worse')
     expect(deltaTone('efficiency', -0.03)).toBe('worse')
     expect(deltaTone('efficiency', 0.03)).toBe('good')
-    expect(deltaTone('restingHr', -2)).toBe('good')
   })
 
   it('calls a change under its threshold no change', () => {
@@ -25,7 +24,6 @@ describe('deltaTone (v4.7)', () => {
     // Up to 0.02 as printed, so -0.015 (printed -0.02) is noise too (v4.16.4).
     expect(deltaTone('efficiency', -0.02)).toBe('flat')
     expect(deltaTone('efficiency', -0.015)).toBe('flat')
-    expect(deltaTone('restingHr', 0.5)).toBe('flat')
     // A race time: level only when it prints as 0 s; 2% of last year's distance.
     expect(deltaTone('race', 0.4, { value: 2570 })).toBe('flat')
     expect(deltaTone('race', 61, { value: 1224 })).toBe('worse')

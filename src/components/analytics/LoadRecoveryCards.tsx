@@ -5,11 +5,11 @@ import { formatDate, formatDecimal } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, Legend, LegendItem, linePath, windowLabels } from './AnalyticsKit'
 import type { DayWindow } from './analyticsView'
-import { loadTrendView, type LoadTrendView, type RecoveryView } from './loadRecoveryView'
+import { loadTrendView, type LoadTrendView } from './loadRecoveryView'
 
 /**
- * Load trend (v5.4, v4.17), and the sentences the coach read borrows from it
- * and from Recovery. Lines are text ink over a band in the pos status's tint -
+ * Load trend (v5.4, v4.17), and the sentence the coach read borrows from it.
+ * Lines are text ink over a band in the pos status's tint -
  * the range that is good for you; warn marks the points outside it. Four
  * colours and no others: --foreground, --muted-foreground, --pos (the band)
  * and --warn.
@@ -129,13 +129,4 @@ export function LoadTrendCard({ pairs, window, yMax, onShift }: { pairs: LoadPai
       </div>
     </Card>
   )
-}
-
-/** The coach read's recovery row: resting HR against its baseline. */
-export function recoverySentence(view: RecoveryView): readonly [string, string, string] {
-  const s = t.analytics.cards.recovery
-  const rhr = view.restingHr
-  if (!view.out) return s.insideBaseline(rhr.lo, rhr.hi, s.bpm)
-  const up = rhr.delta !== null && rhr.delta > 0 ? rhr.delta : null
-  return [s.rhrLead, up ? s.rhrUpBold(up) : s.rhrHighBold, s.takeEasy]
 }

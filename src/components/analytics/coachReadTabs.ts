@@ -3,8 +3,8 @@ import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
 import type { StatTone } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 import type { AnalyticsBoardData } from './AnalyticsClient'
-import { loadSentence, recoverySentence } from './LoadRecoveryCards'
-import { loadCoachHeadline, loadTrendView, loadTrendYMax, recoveryView, type LoadCoachHeadline, type RecoveryView } from './loadRecoveryView'
+import { loadSentence } from './LoadRecoveryCards'
+import { loadCoachHeadline, loadTrendView, loadTrendYMax, recoveryView, type LoadCoachHeadline } from './loadRecoveryView'
 import {
   coachRead,
   easyHardView,
@@ -95,10 +95,6 @@ export function loadHeadlineText(h: LoadCoachHeadline): string {
   }
 }
 
-/** Resting HR out of its baseline is out on the high side: up, and a caution. */
-const recoveryDirection = (view: RecoveryView): Direction => (view.out ? 'up' : 'level')
-const recoveryTrend = (view: RecoveryView): Trend => (view.out ? 'declining' : 'flat')
-
 export function loadRead(data: AnalyticsBoardData, today: string, window: DayWindow, period: Period): TabRead | null {
   const s = t.analytics.cards.coachRead
   const within = s.within[period]!
@@ -137,7 +133,6 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
     })
   const rhr = recovery?.restingHr
   if (rhr) rows.push({ trend: rhr.side === 'high' ? 'declining' : rhr.side === 'low' ? 'improving' : 'flat', text: s.restingHrRow(rhr.side, rhr.now, rhr.lo, rhr.hi), direction: rhr.side === 'high' ? 'up' : rhr.side === 'low' ? 'down' : 'level' })
-  else if (recovery) rows.push({ trend: recoveryTrend(recovery), text: joined(recoverySentence(recovery)), direction: recoveryDirection(recovery) })
 
   // No note on the watch's own status: the Training status chart under
   // Form shows it (owner, Oct 2026).

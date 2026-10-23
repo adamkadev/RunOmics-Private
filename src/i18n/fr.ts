@@ -755,14 +755,6 @@ export const fr = {
         legend: { acute: 'Charge aiguë', safe: 'Zone sûre', outside: 'Hors de la zone' },
         readout: (date: string, acute: number, lo: number, hi: number) => `${date} · ${acute} · zone sûre ${lo}–${hi}`,
       },
-      recovery: {
-        bpm: 'bpm',
-        insideBaseline: (lo: number, hi: number, unit: string) => ['Dans ta ', `référence de ${lo}–${hi} ${unit}`, '. Tu assimiles la charge.'] as [string, string, string],
-        rhrLead: 'FC au repos ',
-        rhrUpBold: (d: number) => `en hausse de ${d} bpm`,
-        rhrHighBold: 'au-dessus de la référence',
-        takeEasy: '. Vas-y doucement demain.',
-      },
       status: {
         title: "Statut d’entraînement",
         caption: (span: string) => `Ta montre · ${span}`,
