@@ -26,6 +26,8 @@ interface Props {
   coaching: PlanCoachingView | null
   /** The date the page was prerendered on; see useToday. */
   today: string
+  /** The athlete's home area has quartiers (Explore): sessions to come get "Find a route". */
+  exploreAvailable?: boolean
 }
 
 type ViewMode = 'week' | 'month'
@@ -45,7 +47,7 @@ const monthKeyOf = (date: string) => date.slice(0, 7)
  * workout opens straight onto its day, and a reload keeps the place. No date
  * is today, and follows it over midnight; no view is the week.
  */
-export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, today: serverToday }: Props) {
+export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, today: serverToday, exploreAvailable = false }: Props) {
   const today = useToday(serverToday)
   const [viewParam, setViewParam] = useUrlParam('view')
   const [dateParam, setDateParam] = useUrlParam('date')
@@ -173,6 +175,7 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
             trainingZones={trainingZones}
             hrZoneBoundsBpm={hrZoneBoundsBpm}
             coaching={coaching}
+            exploreAvailable={exploreAvailable}
           />
         ) : (
           <MonthView

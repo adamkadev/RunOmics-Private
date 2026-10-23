@@ -10,6 +10,7 @@
     "validate:data": "dotenv -e .env.local -- node --import tsx scripts/validate-data.ts",
     "maplibre:worker": "node scripts/copy-maplibre-worker.mjs",
     "map:styles": "dotenv -e .env.local -- node --import tsx scripts/build-map-styles.ts",
+    "explore:areas": "dotenv -e .env.local -- node --conditions=react-server --import tsx scripts/build-explore-areas.ts",
     "predev": "npm run prepare:data && npm run maplibre:worker",
     "dev": "next dev",
     "prebuild": "npm run prepare:data && npm run validate:data && npm run maplibre:worker",

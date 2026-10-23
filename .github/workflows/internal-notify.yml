@@ -40,7 +40,7 @@ jobs:
         profile: [adam, lamiaa]
 
     # APP_URL and INTERNAL_NOTIFY_SECRET below resolve to this profile's own
-    # deployment. See docs/personal-deployments.md.
+    # deployment.
     environment: ${{ matrix.profile }}
 
     steps:
@@ -52,7 +52,7 @@ jobs:
           DECLARED_PROFILE: ${{ vars.PROFILE }}
         run: |
           if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
-            echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}'). See docs/personal-deployments.md."
+            echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}')."
             exit 1
           fi
 

@@ -9,14 +9,23 @@ import { cn } from '@/lib/utils'
 const CREDIT_LINKS: Record<string, string> = {
   MapTiler: 'https://www.maptiler.com/copyright/',
   OpenStreetMap: 'https://www.openstreetmap.org/copyright',
+  // Explore's loops (the route generator), credited wherever one is drawn.
+  openrouteservice: 'https://openrouteservice.org/terms-of-service/',
+}
+
+/** A credit beyond the map's own: its line, and its page when it isn't one CREDIT_LINKS knows. */
+export interface MapCredit {
+  text: string
+  href?: string
 }
 
 /** Each credit, linked to its licence page where it names one. */
-function Credit({ text }: { text: string }) {
-  const name = Object.keys(CREDIT_LINKS).find((n) => text.includes(n))
-  if (!name) return <span className="whitespace-nowrap">{text}</span>
+function Credit({ text, href }: MapCredit) {
+  const name = href ? null : Object.keys(CREDIT_LINKS).find((n) => text.includes(n))
+  const link = href ?? (name ? CREDIT_LINKS[name] : undefined)
+  if (!link) return <span className="whitespace-nowrap">{text}</span>
   return (
-    <a href={CREDIT_LINKS[name]} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap underline-offset-2 hover:underline">
+    <a href={link} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap underline-offset-2 hover:underline">
       {text}
     </a>
   )
@@ -27,11 +36,14 @@ function Credit({ text }: { text: string }) {
  * opens the MapTiler and OpenStreetMap lines above it - a 28 pt clear-glass
  * circle (Liquid Glass v3, README §6.12.5), 12 pt from the corner, which the
  * parent places; on the hero it sits above the fade. The full line used to run across the bottom of the map. The
- * parent places it; it only needs a positioned ancestor.
+ * parent places it; it only needs a positioned ancestor. A map that draws
+ * more than the base map - Explore's quartier shapes, its loops - names
+ * those sources too (`extraCredits`), after the map's own.
  */
-export function MapAttribution({ className }: { className?: string }) {
+export function MapAttribution({ className, extraCredits }: { className?: string; extraCredits?: readonly MapCredit[] }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const credits: readonly MapCredit[] = [...t.pages.map.attribution.split(' · ').map((text): MapCredit => ({ text })), ...(extraCredits ?? [])]
 
   useEffect(() => {
     if (!open) return
@@ -53,10 +65,16 @@ export function MapAttribution({ className }: { className?: string }) {
           role="note"
           className="absolute bottom-full right-0 mb-1.5 rounded-[12px] bg-[var(--raised)] px-2.5 py-1.5 text-right text-caption leading-snug text-muted-foreground shadow-[var(--shadow-raised)]"
         >
-          {t.pages.map.attribution.split(' · ').map((credit, i) => (
-            <Fragment key={credit}>
-              {i > 0 && ' · '}
-              <Credit text={credit} />
+          {/* Each credit keeps its separator at its end, so a line breaks
+              after a "·", never before one: as narrow as its widest credit,
+              the note wraps at every gap between credits. */}
+          {credits.map((credit, i) => (
+            <Fragment key={`${i}:${credit.text}`}>
+              {i > 0 && ' '}
+              <span className="whitespace-nowrap">
+                <Credit {...credit} />
+                {i < credits.length - 1 && ' ·'}
+              </span>
             </Fragment>
           ))}
         </p>

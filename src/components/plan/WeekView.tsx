@@ -140,6 +140,8 @@ interface Props {
   nextRace?: UpcomingRace | null
   trainingZones?: TrainingZonesData | null
   hrZoneBoundsBpm?: readonly number[] | null
+  /** The athlete's home area has quartiers: a session still to come can find a route there. */
+  exploreAvailable?: boolean
 }
 
 export function WeekView({
@@ -160,6 +162,7 @@ export function WeekView({
   nextRace,
   trainingZones = null,
   hrZoneBoundsBpm = null,
+  exploreAvailable = false,
 }: Props) {
   const dates = useMemo(() => Array.from({ length: 7 }, (_, i) => isoDate(addDays(weekStart, i))), [weekStart])
   const firstDay = dates[0]!
@@ -236,7 +239,7 @@ export function WeekView({
     dayCard = (
       <div className="flex flex-col gap-3">
         {workouts.map((workout) => (
-          <PlannedWorkoutCard key={workout.key} workout={workout} kind={kind} hrZoneBoundsBpm={hrZoneBoundsBpm} />
+          <PlannedWorkoutCard key={workout.key} workout={workout} kind={kind} hrZoneBoundsBpm={hrZoneBoundsBpm} exploreAvailable={exploreAvailable} />
         ))}
       </div>
     )

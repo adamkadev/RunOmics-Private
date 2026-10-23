@@ -1,0 +1,59 @@
+/**
+ * A fixed-window rate limiter: at most `max` takes per key in each window
+ * of `windowMs`, the window starting at a key's first take.
+ *
+ * It lives in one server instance's memory, so it is best effort - each
+ * instance counts on its own, and a cold start forgets. It is there to stop
+ * a stuck client or a loop in the UI from spending a shared daily quota in a
+ * minute, not to be a security boundary.
+ *
+ * The clock is passed in, so a test needs no fake timers.
+ */
+
+export type RateLimitDecision = { ok: true } | { ok: false; retryAfterS: number }
+
+export interface RateLimiter {
+  take(key: string, now: number): RateLimitDecision
+}
+
+export interface RateLimitOptions {
+  max: number
+  windowMs: number
+  /**
+   * How many keys to remember. Past it, windows that have closed are
+   * forgotten first, then the oldest open ones: memory stays bounded however
+   * many keys (forwarded IPs, say) a caller can invent.
+   */
+  maxKeys: number
+}
+
+export function createRateLimiter({ max, windowMs, maxKeys }: RateLimitOptions): RateLimiter {
+  // Insertion order is window-start order: a key whose window restarts is
+  // deleted and set again, so it moves to the end.
+  const windows = new Map<string, { count: number; start: number }>()
+
+  function prune(now: number): void {
+    for (const [key, window] of windows) {
+      if (windows.size < maxKeys && now - window.start < windowMs) break
+      windows.delete(key)
+    }
+  }
+
+  return {
+    take(key, now) {
+      const window = windows.get(key)
+      if (window && now - window.start < windowMs) {
+        if (window.count >= max) {
+          return { ok: false, retryAfterS: Math.max(1, Math.ceil((window.start + windowMs - now) / 1000)) }
+        }
+        window.count += 1
+        return { ok: true }
+      }
+
+      windows.delete(key)
+      if (windows.size >= maxKeys) prune(now)
+      windows.set(key, { count: 1, start: now })
+      return { ok: true }
+    },
+  }
+}

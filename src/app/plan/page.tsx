@@ -5,6 +5,7 @@ import { getNextRace } from '@/application/usecases/GetNextRace'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getExploreHome } from '@/application/usecases/GetExploreAreas'
 import { PlanClient } from '@/components/plan/PlanClient'
 import { planCoachingView } from '@/components/plan/planCoachingView'
 import { appTodayIso } from '@/lib/calendarDate'
@@ -31,6 +32,8 @@ export default async function PlanPage() {
       hrZoneBoundsBpm={athlete.hrZoneBoundsBpm ?? null}
       coaching={coaching ? planCoachingView(coaching) : null}
       today={today}
+      // Only whether there is one: the area and the runs stay on the server.
+      exploreAvailable={getExploreHome() !== null}
     />
   )
 }

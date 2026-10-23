@@ -145,6 +145,7 @@ Vercel supports any number of projects per repository. Give it its own domain.
 | `GITHUB_SYNC_TOKEN`, `GITHUB_SYNC_REPO` | the Sync button's PAT (Actions: Read and write on this repository) and this repository - may be shared |
 | `GITHUB_SYNC_PROFILE` | her profile name, `lamiaa`: her Sync button then syncs her data only, and its limits (one run at a time, 10 min apart, 12 a day) count her runs only. Unset, a tap syncs both athletes |
 | `NEXT_PUBLIC_MAPTILER_TOKEN` | may be shared, subject to the plan's request quota |
+| `ORS_API_KEY` | optional, Explore's route generator: may be shared, but a shared key is a shared quota (2000 directions a day on the free plan, 5 per generated batch). Her data repo also needs `explore/` files built with `npm run explore:areas -- --data-dir ../runomics-data-lamiaa/data` |
 | `RUNOMICS_PRIVATE` | optional, `1` to make the deployment private - see [A private deployment](#a-private-deployment) |
 | `SESSION_SECRET` | with `RUNOMICS_PRIVATE`: a fresh random string of 32+ characters (`openssl rand -base64 32`), **not** another profile's |
 | `RUNOMICS_VIEWERS` | optional, with `RUNOMICS_PRIVATE`: Google accounts that may view without being the owner, comma-separated - yours, on her deployment |
@@ -178,8 +179,6 @@ Under **Settings → Environments**, create an environment named after the profi
 | `APP_URL` | her Vercel domain, no trailing slash |
 | `INTERNAL_NOTIFY_SECRET` | must match the Vercel value from step 5 |
 | `VERCEL_DEPLOY_HOOK_URL` | step 5 |
-| `PRIVACY_ZONES`, `PRIVACY_RADIUS_M` | required, per athlete - the sync refuses to write a GPS route without them. `PRIVACY_ZONES=off` (no radius needed) stores routes as recorded instead - see [A private deployment](#a-private-deployment) |
-| `PRIVACY_SALT` | optional but recommended: a long random string, so the zone's hidden offsets cannot be reproduced from the coordinates alone (see `scripts/processing/privacy.py`) |
 
 Add one environment **variable** as well - `PROFILE`, set to the environment's own
 name. Naming an environment does not hide the repository-level secrets: an
@@ -226,8 +225,7 @@ Then add the profile to the matrices in `.github/workflows/`:
 - **Reprocessable.** `reprocess` rebuilds that profile's stored runs from the
   cached FIT files with the current parser (`scripts/reprocess.py`), asking
   Garmin for nothing - for runs stored before a parser fix, such as the best
-  efforts that moved to the moving clock in v5.5. The privacy steps after it
-  crop and verify every route as on any sync.
+  efforts that moved to the moving clock in v5.5.
 
 ---
 
@@ -288,13 +286,9 @@ Settings ends the session and clears the pages the device cached.
 
 What it does not cover:
 
-- **The privacy zones are separate.** The gate decides who opens the site,
+- **Routes are stored as recorded.** The gate decides who opens the site,
   not what the data says: a shared card or screenshot, the data repository,
-  and anyone invited see the routes as stored. To see real starts and
-  finishes, set the GitHub Environment secret `PRIVACY_ZONES=off` and run
-  *Sync Garmin Activities* with `reprocess`: every route with a cached FIT
-  file is rebuilt as recorded. Setting the zones back and reprocessing again
-  crops them again.
+  and anyone invited see every route with its real start and finish.
 - **The workflow's routes** (`/api/internal/*`) keep their own shared secret
   and stay reachable, as the sync needs them.
 - **Notes come through the app.** The activity page reads a note from

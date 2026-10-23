@@ -23,6 +23,8 @@ import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import type { ActivityQueryResult } from '@/application/usecases/QueryActivities'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { MapShellData } from '@/application/usecases/GetAllRoutes'
+import type { ExploreAreaRef } from '@/domain/explore/types'
+import type { ExplorePlan } from '@/components/explore/routeGenerator'
 import { cardClass } from '@/components/ui/Card'
 import { Pill } from '@/components/ui/Pill'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
@@ -187,6 +189,10 @@ interface Props {
   shoeNames?: Record<string, string>
   /** The map's runs and areas, for the Map tab. */
   mapData: MapShellData
+  /** The areas with a Districts layer (Explore); none leaves the map as the heat alone. */
+  exploreAreas?: ExploreAreaRef[]
+  /** The planned sessions from the server's today on, trimmed, for the route generator. */
+  explorePlans?: ExplorePlan[]
   /** The runs shown as their session's type, where it is not the watch's (round 2). */
   sessionTypes?: Record<string, ActivityType>
 }
@@ -199,6 +205,8 @@ export function ActivityListClient({
   today: serverToday,
   shoeNames = {},
   mapData,
+  exploreAreas,
+  explorePlans,
   sessionTypes = {},
 }: Props) {
   const today = useToday(serverToday)
@@ -415,7 +423,8 @@ export function ActivityListClient({
 
       <div {...viewTabs.panelProps} className="flex flex-col gap-3 outline-none">
         {view === 'map' ? (
-          <GlobalMapWrapper data={mapData} />
+          // The plans are looked up by day, against this device's today: a page kept from another day still finds the right one.
+          <GlobalMapWrapper data={mapData} exploreAreas={exploreAreas} explorePlans={explorePlans} today={today} />
         ) : (
           <>
 

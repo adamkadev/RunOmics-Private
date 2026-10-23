@@ -9,6 +9,7 @@ vi.mock('@/application/usecases/GetAllRoutes', () => ({
       [[50.0, 7.0]],
       [[49.6, 6.1]],
     ],
+    routeMeta: [{ id: 'run-a' }, { id: 'run-b' }, { id: 'run-c' }],
   }),
 }))
 
@@ -17,11 +18,14 @@ const { GET } = await import('../route')
 const request = (cluster: string) => new NextRequest(`https://example.com/api/map/routes?cluster=${cluster}`)
 
 describe('GET /api/map/routes', () => {
-  it("returns the cluster's routes, cached at the edge: they only change with a deployment", async () => {
+  it("returns the cluster's routes with their activity ids, cached at the edge: they only change with a deployment", async () => {
     const res = await GET(request('home'))
 
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({ routes: { 0: [[49.61, 6.13], [49.62, 6.14]], 2: [[49.6, 6.1]] } })
+    expect(await res.json()).toEqual({
+      routes: { 0: [[49.61, 6.13], [49.62, 6.14]], 2: [[49.6, 6.1]] },
+      ids: { 0: 'run-a', 2: 'run-c' },
+    })
     expect(res.headers.get('cache-control')).toBe('public, s-maxage=3600, stale-while-revalidate=86400')
   })
 

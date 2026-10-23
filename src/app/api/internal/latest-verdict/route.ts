@@ -4,7 +4,7 @@ import { parseSince, verdictStatus } from '@/lib/verdictStatus'
 
 /**
  * What the iOS shortcut polls while it waits for a freshly synced run to get
- * its AI verdict. See docs/ios-shortcut.md. The Sync button in Settings asks
+ * its AI verdict. The Sync button in Settings asks
  * the same question through `/api/sync/status`, which is owner-authenticated
  * rather than secret-guarded; both answer from `verdictStatus`.
  */

@@ -11,6 +11,7 @@ A personal running dashboard that pulls your data from Garmin Connect and turns 
 - **Goals & PBs** - annual distance goal, race targets, official personal bests
 - **All-time records** - best 1K/5K/10K/half/marathon detected from FIT files
 - **Race predictor** - Riegel formula projections from your best efforts
+- **Explore** - quartier coverage on the Activities map (Districts layer), a loop-route generator for unexplored quartiers, GPX export
 - **Dark mode** - system preference + manual toggle
 
 ## Architecture
@@ -155,6 +156,11 @@ NEXT_PUBLIC_LOCALE=en
 # GEMINI_COACH_API_KEY=...    # adaptive coaching only, separate project
 # GEMINI_MODEL=
 # GEMINI_COACH_MODEL= # optional coaching-specific override
+
+# OpenRouteService key (optional) for Explore's route generator, server-side
+# only. Free "Standard" plan at https://account.heigit.org: 2000 directions a
+# day, 40 a minute. Without it the generator says it isn't set up.
+# ORS_API_KEY=...
 ```
 
 > `.env.local` is gitignored. Never commit your secrets.
@@ -370,10 +376,9 @@ push/PR, plus the Python suite (`pytest scripts/tests/`) as a separate job. It d
 run `next build`. The production build is exercised by the E2E workflow
 (`.github/workflows/e2e.yml`), which runs `npm run test:e2e` — Playwright's `webServer`
 runs `e2e:build` (`next build`) and serves it with `e2e:start`. So a change that only
-breaks the build fails E2E, not CI.
-
-The improvement backlog lives in
-[`docs/product-improvement-todolist.md`](docs/product-improvement-todolist.md).
+breaks the build fails E2E, not CI. E2E runs on pushes to main and on demand, not on pull
+requests (a run is about 3 minutes): run it on a branch from Actions → E2E → Run workflow
+before merging a change that could break the build.
 
 ### End-to-end tests
 
@@ -455,6 +460,7 @@ from your `.env.local` *except* `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
 | `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](#date-handling) |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts |
+| `ORS_API_KEY` | Optional: Explore's route generator (OpenRouteService round trips) - see [Explore](#explore) |
 
 > `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
 > `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: the adaptive coach is a local
@@ -467,16 +473,13 @@ The scheduled workflows read their secrets from a **GitHub Environment** named
 after the deployment's profile (GitHub → Settings → Environments), not from
 repository secrets: `GARMIN_SECRET`, `RUNOMICS_DATA_REPO_URL`,
 `RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash),
-`INTERNAL_NOTIFY_SECRET`, `VERCEL_DEPLOY_HOOK_URL`, `PRIVACY_ZONES` /
-`PRIVACY_RADIUS_M` (required: the sync refuses to write a GPS route without
-them) and the optional but recommended `PRIVACY_SALT`, plus an environment
+`INTERNAL_NOTIFY_SECRET` and `VERCEL_DEPLOY_HOOK_URL`, plus an environment
 *variable* `PROFILE` holding the environment's own name. These are separate from the Vercel env vars
 above, and `INTERNAL_NOTIFY_SECRET` must match on both sides.
 
 That indirection is what lets one repository drive several deployments - one per
 athlete, each with its own data repository, Firebase project, domain and UI
-language. See [Running more than one deployment](docs/personal-deployments.md);
-with a single profile it is just a place to keep the secrets.
+language; with a single profile it is just a place to keep the secrets.
 
 ### 4. Sync and deploy
 
@@ -494,8 +497,7 @@ node scripts/push_private_data.mjs data
 The source passed to `push_private_data.mjs` must be a complete hydrated dataset;
 the command refuses a workspace that could erase existing coaching state. The
 fetch is what makes the push safe: it records the commit the workspace came
-from, and the push refuses if the data repository has moved on since - see
-[Concurrent writes](docs/personal-deployments.md#concurrent-writes-to-a-data-repository).
+from, and the push refuses if the data repository has moved on since.
 
 Vercel picks up the redeploy within ~30 seconds. Nothing real is ever committed to
 this repository.
@@ -1256,6 +1258,47 @@ World-view bubbles scale radius with `sqrt(count)`, because humans read bubble c
 zone with 4× the runs should look 4× the weight, not 4× the diameter. A floor keeps single-route
 zones tappable, and markers are added smallest-first so busier zones stack on top instead of being
 buried under one-off bubbles.
+
+### Explore
+
+Explore is a layer of the Activities map, not a tab: the layers button above the ⓘ switches Heat
+↔ Districts (remembered in `localStorage`), Expand shows every quartier, a tap opens a quartier's
+sheet, and "Plan a run" opens the route generator. Plan's session cards ("Find a route") and
+Progress's Explored card link into it.
+
+**Boundaries are built offline into the data repo**, never at deploy time (Overpass is slow and
+flaky, and a failed fetch must not block a sync deploy): `npm run explore:areas [-- --cluster N]
+[--insee <code>] [--data-dir <dir>] [--refresh]` writes `explore/<id>.geojson` and
+`explore/index.json` into `RUNOMICS_DATA_DIR`. The city is the most populous commune the home
+cluster's frame touches; its quartiers come from OpenStreetMap `admin_level=10`, else the city's
+open data (`scripts/explore/cities.ts`, Metz's WFS), else IGN IRIS, else the commune itself; every
+other commune the frame touches is one whole unit. Shapes are simplified to 5 m. Nothing real is
+committed to this repo, and the median start is computed in memory and never sent anywhere.
+
+**Coverage** runs in a Web Worker (`src/components/explore/explore.worker.ts` over the pure
+`src/domain/explore/*`). Each track is projected to metres about the area's public origin,
+interpolated so samples are at most 75 m apart (a step over 300 m is a dropout or a privacy cut and
+is left open), and binned into 150 m cells. A unit's denominator is its *runnable* cells - those
+holding an OpenStreetMap footway, path, track or street, precomputed by the build - so rivers, rail
+and woods never count as unexplored. `pct = floor(100 · visited / runnable)`: complete at 90 %, fog
+under 15 %. Km run are credited to the unit owning each step's midpoint. The area file and each
+run's cells are cached in IndexedDB, keyed by area version and a fingerprint of the track.
+
+**Next quartier:** the incomplete unit with at least 5 runnable cells and at most 5 km from home
+that minimises `pct/100 + km/6` (quartiers before neighbouring communes; ties go to the nearer,
+then by name). With none in range, the lowest score among every incomplete unit.
+
+**Routes:** `POST /api/explore/route` calls OpenRouteService (`foot-walking`, `round_trip` with 4
+points) once per seed, five seeds a batch, and re-asks once when a loop misses the distance by more
+than 15 %. The start is the centre of the quartier's runnable cell nearest its public label point -
+home is never sent. The key stays on the server; on a private site any signed-in session may call
+it, on a public one only the owner, 12 batches a minute per caller. Loops are ranked by
+`|d − target|/target + wNew·(1 − new share) + wBusy·busy share`, with `wNew` 0.6 ("New streets
+first") or 0.15 and `wBusy` 0.8 ("Avoid busy roads") or 0, where busy share counts state roads fully
+and other roads half. The GPX is GPX 1.1, the loop only, closed on its start.
+
+**Credits:** OpenStreetMap (ODbL), the Metz quartiers and IGN ADMIN EXPRESS (Licence Ouverte 2.0),
+and openrouteservice (CC BY-SA) are listed in the map's ⓘ while Districts or the generator shows.
 
 ### Share card
 

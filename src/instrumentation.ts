@@ -24,6 +24,8 @@ const SECRET_ENV = [
   'GITHUB_SYNC_TOKEN',
   // Vercel holds the data repository's token too, for the build's fetch.
   'RUNOMICS_DATA_REPO_TOKEN',
+  // Explore's route generator (OpenRouteService).
+  'ORS_API_KEY',
 ]
 
 // Short values are not worth it: replacing a two-letter value would shred the message.

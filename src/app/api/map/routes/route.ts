@@ -15,11 +15,18 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unknown cluster' }, { status: 404 })
   }
 
+  // Each track's activity id beside it: a page built before this deployment
+  // holds route indices that a newer run may have shifted, and the Explore
+  // worker caches tracks by id, so it checks which run each index now is.
   const routes: Record<number, [number, number][]> = {}
+  const ids: Record<number, string> = {}
   for (const i of cluster.routeIndices) {
     const coords = data.routes[i]
-    if (coords) routes[i] = coords
+    const id = data.routeMeta[i]?.id
+    if (!coords) continue
+    routes[i] = coords
+    if (id) ids[i] = id
   }
 
-  return NextResponse.json({ routes }, { headers: { 'Cache-Control': CACHED } })
+  return NextResponse.json({ routes, ids }, { headers: { 'Cache-Control': CACHED } })
 }

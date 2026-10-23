@@ -4,6 +4,71 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Explore, quartier boundaries (X1): `npm run explore:areas` builds the
+  home city's units into the data repo as `explore/<id>.geojson`: the
+  city's quartiers (OpenStreetMap admin_level 10, then the city's open
+  data, then IGN IRIS, then the commune) and every other commune the home
+  area touches, simplified to 5 m, with the 150 m cells that hold a
+  runnable way (OpenStreetMap footways, paths, streets) as each unit's
+  denominator. Metz comes from the Eurométropole's 14 quartiers. The app
+  serves the file at `/api/explore/areas/<id>`, cached by version; nothing
+  real is committed to this repo.
+
+- Explore, coverage (X2): a Web Worker turns each run into 150 m cells
+  (steps filled in every 75 m, a jump over 300 m left open) and counts, per
+  unit, the runnable cells visited, the share (complete at 90 %, fog under
+  15 %), the km run there and the last run. All 317 runs take about 30 ms.
+  The area file and each run's cells are kept in IndexedDB, so a new
+  deployment only works through its new runs. The next quartier to explore
+  is the incomplete one with the lowest coverage plus distance from home
+  (6 km weighs as much as the whole 0–100 % range), within 5 km, quartiers
+  before neighbouring communes. `/api/map/routes` also returns each track's
+  activity id. The demo dataset gets a fictional seven-unit area.
+
+- Explore, loop routes (X3): `POST /api/explore/route` asks
+  OpenRouteService for round trips on foot from a quartier's public centre
+  (home is never sent), five seeds at a time, and re-asks once when a loop
+  misses the distance by more than 15 %. The key (`ORS_API_KEY`) stays on
+  the server; on a private site any signed-in session may call it, on a
+  public one only the owner, 12 batches a minute. Loops are scored on
+  distance, the share of new ground and the share on busy roads, and leave
+  as GPX 1.1 files that Garmin Connect, Coros and Suunto import.
+
+- Explore, Districts on the map (X4): a round glass layers button above
+  the ⓘ switches the Activities map between Heat and Districts and
+  remembers the choice; it turns accent while Districts is on and only
+  shows where the area has quartiers. Districts draws each unit over the
+  heat: accent outline and a light fill when complete, a neutral outline
+  when partly run, a veil with a dashed edge under 15 %. Name and share are
+  map labels (the base map's own name for a quartier gives way to them),
+  the legend reads Fog / Partly / Complete and is solid, not glass, and the
+  insight card counts quartiers: "1 of 21 quartiers complete. Bellecroix is
+  next, 3.0 km from home." Heat is unchanged; `?layer=districts` opens the
+  map on Districts.
+
+- Explore, expand and a quartier's sheet (X5): on Districts, Expand fits
+  the map to every quartier, with the legend at the bottom left, layers and
+  ⓘ at the right, and a glass card naming the next quartier at the foot.
+  Tapping a quartier (after 300 ms, so a double tap still zooms) opens its
+  sheet: the share explored on a bar with the 90 % mark, the km run there,
+  the last run and the distance from home. The camera keeps the quartier in
+  the free part of the map, above the sheet on a phone, beside it where the
+  sheet is a centred card, and the controls under a sheet are taken away
+  rather than blurred. `?quartier=<id>` opens a quartier's sheet.
+
+- Explore, plan a run (X6): "Plan a run" (insight card, expanded map,
+  quartier sheet) opens the route generator on that quartier: the loop in
+  accent for new ground and the foreground colour for streets already run,
+  a dashed line back home, and a panel with the planned session, a 0.5 km
+  distance stepper, Avoid busy roads and New streets first, the distance,
+  time at the plan's pace, climb and share of new ground. Regenerate shows
+  the next best loop; Download GPX saves (or, in the iPhone app, shares)
+  `RunOmics-<Quartier>-<km>km.gpx`, then reads Saved with a Share button.
+  Plan's session cards get "Find a route", which opens it with that
+  session's whole distance and pace, and Progress gets an Explored card:
+  the share explored, quartiers complete, one segment per quartier and the
+  next one to run.
+
 - French fits a 393 pt phone, round 3, from a probe of every route for text
   cut, off screen or out of its card:
   - Athlete & zones: the time column holds « 4 h 48 · 32 % », which ran

@@ -2,7 +2,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
-// Layer boundaries - see docs/audit-2026-09.md §3.2. Each block names what a
+// Layer boundaries. Each block names what a
 // layer may not import; everything else stays allowed. Every rule here holds
 // today, so an error means a new violation, not an old one.
 const SERVER_ONLY_LIB = [
@@ -14,6 +14,7 @@ const SERVER_ONLY_LIB = [
   '@/lib/internalRoute',
   '@/lib/ownerRoute',
   '@/lib/verifyFirebaseIdToken',
+  '@/lib/exploreAccess',
 ]
 
 const layer = (files, patterns, ignores = []) => ({

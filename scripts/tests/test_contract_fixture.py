@@ -22,8 +22,8 @@ from repository.json_store import JsonActivityStore
 
 _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "contract" / "activities"
 
-# Fictional throughout: an activity id no Garmin account has, and a route far
-# from any privacy zone's centre (conftest.py puts them at (0, 0) and (10, 10)).
+# Fictional throughout: an activity id no Garmin account has, and a route
+# nowhere near anywhere either athlete runs.
 _GARMIN_SUMMARY = {
     "activityId": 424242,
     "activityName": "Morning Run",

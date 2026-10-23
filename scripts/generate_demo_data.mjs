@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -40,9 +41,11 @@ function pad(n, width) {
 function isoDate(d) {
   return d.toISOString().slice(0, 10)
 }
+// In UTC: the dates are UTC midnights, and a local-time step drifts an hour
+// across a daylight-saving change, so `isoDate` lands on the previous day.
 function addDays(d, days) {
   const copy = new Date(d)
-  copy.setDate(copy.getDate() + days)
+  copy.setUTCDate(copy.getUTCDate() + days)
   return copy
 }
 function dayOfWeekName(d) {
@@ -732,6 +735,123 @@ function buildRecoveryHistory(endDate) {
   return { days }
 }
 
+// Explore's Districts layer needs quartier boundaries, and the demo runs
+// circle a point in the Pacific where no real quartier exists. So the dataset
+// brings a town of its own, "Fictional Bay": six rectangular quartiers around
+// the home runs and one neighbouring commune, in the shape
+// scripts/build-explore-areas.ts writes a real area in. Nothing here draws
+// from an rng, so adding it moved no other demo number.
+//
+// The shapes are fitted to the runs. The home runs are concentric ellipses
+// about ROUTE_CENTERS.home, about 6 km wide and 2 km tall, around a hole of
+// a few cells that none of them crosses; only the marathon goes further out.
+// So the quartiers inside the ellipses are complete, the one with the hole
+// and the ones reaching past the ellipses' edge are partly explored, and
+// Millbrook, which only the marathon crosses, is fog. The routes depend on
+// `now` only through its weekday, and all seven weekdays give the same states
+// (scripts/__tests__/demoExploreArea.test.ts).
+
+const EXPLORE_SCHEMA = 1
+// The build date is fixed, so the version (the cache key) only changes when
+// the shapes do.
+const DEMO_AREA = { id: 'demo', name: 'Fictional Bay', generatedAt: '2026-10-22' }
+// The grid of src/domain/explore/grid.ts, which this script cannot import: an
+// equirectangular projection about the origin at 111 320 m per degree, and
+// 150 m cells numbered from it.
+const EXPLORE_CELL_M = 150
+const M_PER_DEGREE = 111_320
+// The origin is the town hall, a public point about 400 m south-west of home.
+// Never home itself, as in a real area.
+const DEMO_TOWN_HALL = [-150.003, -0.002]
+// Each unit as [west, south, east, north) in whole cells from the origin, so
+// every border runs along cell edges, 75 m from the nearest centre.
+const DEMO_TOWN_UNITS = [
+  { slug: 'westbrook', name: 'Westbrook', kind: 'quartier', cells: [-11, -2, -2, 4] },
+  { slug: 'old-harbour', name: 'Old Harbour', kind: 'quartier', cells: [-2, -2, 6, 4] },
+  { slug: 'eastgate', name: 'Eastgate', kind: 'quartier', cells: [6, -2, 15, 4] },
+  { slug: 'riverside', name: 'Riverside', kind: 'quartier', cells: [-11, -8, -2, -2] },
+  { slug: 'hillcrest', name: 'Hillcrest', kind: 'quartier', cells: [-2, -8, 6, -2] },
+  { slug: 'southfield', name: 'Southfield', kind: 'quartier', cells: [6, -8, 15, -2] },
+  { slug: 'millbrook', name: 'Millbrook', kind: 'commune', cells: [-11, -18, 15, -8] },
+]
+// A unit's runnable cells are those whose centre lies in it, less the ones no
+// path crosses, as the build script leaves out rivers and woods: the river,
+// one cell wide, running north through Millbrook, Riverside and Westbrook,
+// and the woods on top of the hill in Hillcrest ([west, south, east, north)).
+export const DEMO_TOWN_GAPS = { riverColumn: -7, woods: [2, -6, 5, -3] }
+
+function isTownGap(i, j) {
+  const [west, south, east, north] = DEMO_TOWN_GAPS.woods
+  return i === DEMO_TOWN_GAPS.riverColumn || (i >= west && i < east && j >= south && j < north)
+}
+
+function exploreCellKey(i, j) {
+  return (i + 32_768) * 65_536 + (j + 32_768)
+}
+
+function buildDemoExploreArea() {
+  const [lon0, lat0] = DEMO_TOWN_HALL
+  const kx = M_PER_DEGREE * Math.cos((lat0 * Math.PI) / 180)
+  // A point given in cells from the origin, with an area file's 6 decimals.
+  const at = (i, j) => [round(lon0 + (i * EXPLORE_CELL_M) / kx, 6), round(lat0 + (j * EXPLORE_CELL_M) / M_PER_DEGREE, 6)]
+  const kindOrder = { quartier: 0, commune: 1 }
+
+  // In the build script's order: the town's quartiers, then the communes, each by name.
+  const features = [...DEMO_TOWN_UNITS]
+    .sort((a, b) => kindOrder[a.kind] - kindOrder[b.kind] || a.name.localeCompare(b.name, 'fr'))
+    .map(({ slug, name, kind, cells: [west, south, east, north] }) => {
+      const id = `${DEMO_AREA.id}-${slug}`
+      const runnable = []
+      for (let i = west; i < east; i++) {
+        for (let j = south; j < north; j++) if (!isTownGap(i, j)) runnable.push(exploreCellKey(i, j))
+      }
+      return {
+        type: 'Feature',
+        id,
+        properties: {
+          id,
+          name,
+          kind,
+          commune: kind === 'commune' ? name : DEMO_AREA.name,
+          label: at((west + east) / 2, (south + north) / 2),
+          runnable: runnable.sort((a, b) => a - b),
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[at(west, south), at(east, south), at(east, north), at(west, north), at(west, south)]],
+        },
+      }
+    })
+
+  const corners = features.flatMap((f) => f.geometry.coordinates[0])
+  const lons = corners.map(([lon]) => lon)
+  const lats = corners.map(([, lat]) => lat)
+  const bbox = [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)]
+  const { id, name, generatedAt } = DEMO_AREA
+  const area = {
+    type: 'FeatureCollection',
+    runomics: {
+      schema: EXPLORE_SCHEMA,
+      id,
+      name,
+      version: '',
+      generatedAt,
+      grid: { origin: [...DEMO_TOWN_HALL], cellM: EXPLORE_CELL_M },
+      bbox,
+      sources: [{ id: 'demo', label: 'RunOmics demo data: a fictional town', licence: '', url: '', version: generatedAt }],
+    },
+    features,
+  }
+  // The build script's version: the date, then a hash of the file with the version left empty.
+  const hash = createHash('sha256').update(JSON.stringify(area)).digest('hex').slice(0, 8)
+  area.runomics.version = `${id}-${generatedAt.replaceAll('-', '')}-${hash}`
+
+  return {
+    'explore/index.json': { schema: EXPLORE_SCHEMA, areas: [{ id, name, version: area.runomics.version, bbox, file: `${id}.geojson` }] },
+    [`explore/${id}.geojson`]: area,
+  }
+}
+
 export function generateDemoDataset({ now = new Date() } = {}) {
   const rng = makeRng(SEED)
   const endDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
@@ -774,6 +894,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
     'activities/index.json': { months: monthKeys },
     'planned_workouts/index.json': { years: plannedYears },
     ...buildCoachingData(endDate, activities),
+    ...buildDemoExploreArea(),
   }
   for (const [month, acts] of Object.entries(months)) {
     files[`activities/${month}.json`] = { activities: acts.sort((a, b) => b.date.localeCompare(a.date)) }
