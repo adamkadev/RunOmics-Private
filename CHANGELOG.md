@@ -4,6 +4,15 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Routes are stored as recorded, start and finish included: privacy zones are
+  gone. Both deployments are private, so only a signed-in owner or invited
+  viewer ever sees a route, and the zones cost a required secret per athlete,
+  two workflow steps and a crop that hid where every run began. The sync no
+  longer reads `PRIVACY_ZONES`, `PRIVACY_RADIUS_M` or `PRIVACY_SALT`; delete
+  them from the GitHub Environments. *Sync Garmin Activities* with
+  `reprocess` rebuilds the routes already stored, in full, from their cached
+  FIT files.
+
 - French fits a 393 pt phone, round 3, from a probe of every route for text
   cut, off screen or out of its card:
   - Athlete & zones: the time column holds « 4 h 48 · 32 % », which ran

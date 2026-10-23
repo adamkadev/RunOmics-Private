@@ -467,9 +467,7 @@ The scheduled workflows read their secrets from a **GitHub Environment** named
 after the deployment's profile (GitHub → Settings → Environments), not from
 repository secrets: `GARMIN_SECRET`, `RUNOMICS_DATA_REPO_URL`,
 `RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash),
-`INTERNAL_NOTIFY_SECRET`, `VERCEL_DEPLOY_HOOK_URL`, `PRIVACY_ZONES` /
-`PRIVACY_RADIUS_M` (required: the sync refuses to write a GPS route without
-them) and the optional but recommended `PRIVACY_SALT`, plus an environment
+`INTERNAL_NOTIFY_SECRET` and `VERCEL_DEPLOY_HOOK_URL`, plus an environment
 *variable* `PROFILE` holding the environment's own name. These are separate from the Vercel env vars
 above, and `INTERNAL_NOTIFY_SECRET` must match on both sides.
 
