@@ -8,6 +8,7 @@ import {
 } from '@/application/usecases/GetTrainingWorkbook'
 import { NOTES_UNAVAILABLE_HEADER } from '@/lib/exportHeaders'
 import { requireOwner } from '@/lib/ownerRoute'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const runtime = 'nodejs'
 
@@ -21,6 +22,7 @@ export const runtime = 'nodejs'
 export async function GET(req: NextRequest) {
   const denied = await requireOwner(req)
   if (denied) return denied
+  await loadData()
 
   const format = req.nextUrl?.searchParams.get('format') ?? 'xlsx'
   if (format !== 'xlsx' && format !== 'csv') return new Response('Unknown format', { status: 400 })

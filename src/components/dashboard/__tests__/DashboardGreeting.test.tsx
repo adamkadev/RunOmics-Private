@@ -5,10 +5,11 @@ import { t } from '@/i18n'
 import { DashboardGreeting, headerDate, isSyncStale } from '../DashboardGreeting'
 
 const push = vi.fn()
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh: vi.fn() }) }))
+const refresh = vi.fn()
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, refresh }) }))
 
 // Signed out unless a test signs the owner in, with the sync in the phase it sets.
-const owner = vi.hoisted(() => ({ signedIn: false, phase: { kind: 'idle' } as { kind: string }, handleSync: vi.fn() }))
+const owner = vi.hoisted(() => ({ signedIn: false, phase: { kind: 'idle' } as { kind: string; synced?: boolean }, handleSync: vi.fn() }))
 vi.mock('@/lib/useOwnerAuth', () => ({
   useOwnerAuth: () => (owner.signedIn ? { user: {}, isOwner: true, loading: false } : { user: null, isOwner: false, loading: false }),
 }))
@@ -112,6 +113,22 @@ describe('DashboardGreeting', () => {
     rerender(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
     expect(screen.getByTestId('sync-note').textContent).toBe(s.failed)
     expect(screen.getByTestId('sync-line').dataset.tone).toBe('caution')
+  })
+
+  it('reads the run as soon as its data is live, and again once its verdict lands', () => {
+    owner.signedIn = true
+    owner.phase = { kind: 'waiting', synced: false }
+    const lastSyncedAt = new Date(Date.now() - 14 * 3600_000).toISOString()
+    const { rerender } = render(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
+    expect(refresh).not.toHaveBeenCalled()
+
+    owner.phase = { kind: 'waiting', synced: true }
+    rerender(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
+    expect(refresh).toHaveBeenCalledTimes(1)
+
+    owner.phase = { kind: 'done' }
+    rerender(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
+    expect(refresh).toHaveBeenCalledTimes(2)
   })
 
   it('keeps a fresh sync as plain text', () => {

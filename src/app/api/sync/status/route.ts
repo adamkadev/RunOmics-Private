@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleOwnerRoute } from '@/lib/ownerRoute'
 import { parseSince, verdictStatus } from '@/lib/verdictStatus'
+import { loadData } from '@/application/usecases/LoadData'
 
 /**
  * The owner-authenticated twin of `/api/internal/latest-verdict`, reached with the browser's Firebase ID token instead
@@ -9,6 +10,7 @@ import { parseSince, verdictStatus } from '@/lib/verdictStatus'
  */
 export async function GET(req: NextRequest) {
   return handleOwnerRoute('sync-status', req, async () => {
+    await loadData()
     const since = parseSince(req.nextUrl.searchParams.get('since'))
     if (since === 'invalid') {
       return NextResponse.json({ error: 'since must be an ISO 8601 timestamp' }, { status: 400 })

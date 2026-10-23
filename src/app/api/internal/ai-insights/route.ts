@@ -13,6 +13,7 @@ import {
 import { openSpender } from '@/lib/aiSpend'
 import { generateInsight } from '@/lib/gemini'
 import { sendPushToAllDevices } from '@/lib/sendPushNotification'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const maxDuration = 300
 
@@ -21,6 +22,7 @@ const MAX_RUN_VERDICTS_PER_RUN = 60
 
 export async function POST(req: NextRequest) {
   return handleInternalRoute('ai-insights', req, async () => {
+    await loadData()
     if (!process.env.GEMINI_API_KEY) {
       return NextResponse.json({ skipped: 'no api key' })
     }

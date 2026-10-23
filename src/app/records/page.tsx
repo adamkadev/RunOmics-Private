@@ -8,10 +8,12 @@ import { appTodayIso } from '@/lib/calendarDate'
 import { EFFORT_LIST_MAX } from '@/components/records/recordsView'
 import { BackButton } from '@/components/ui/BackButton'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
 export default async function RecordsPage() {
+  await loadData()
   const today = appTodayIso()
   const records = await getRecords()
   const topEfforts = getTopEfforts(undefined, EFFORT_LIST_MAX)

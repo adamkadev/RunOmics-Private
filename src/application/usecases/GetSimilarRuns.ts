@@ -27,13 +27,14 @@ export interface SimilarRunsData {
 
 const MIN_MATCHED_RUNS = 3
 
-const cellSetCache = new Map<string, RouteCellSet>()
+// Keyed by the activity object, so a new commit's runs start fresh and the old ones are collected.
+const cellSetCache = new WeakMap<Activity, RouteCellSet>()
 
 function cellSetFor(activity: Activity): RouteCellSet {
-  let cellSet = cellSetCache.get(activity.id)
+  let cellSet = cellSetCache.get(activity)
   if (!cellSet) {
     cellSet = buildRouteCellSet(activity.route ?? [])
-    cellSetCache.set(activity.id, cellSet)
+    cellSetCache.set(activity, cellSet)
   }
   return cellSet
 }

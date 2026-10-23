@@ -5,9 +5,11 @@ import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { appTodayIso } from '@/lib/calendarDate'
 import { formatNumber } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export async function POST(req: NextRequest) {
   return handleInternalRoute('weekly-reminder', req, async () => {
+    await loadData()
     const today = appTodayIso()
     const { byYear } = await getGoalsPageData(today)
     const projection = byYear[Number(today.slice(0, 4))]?.projection

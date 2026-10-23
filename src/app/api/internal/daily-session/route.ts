@@ -4,9 +4,11 @@ import { sendPushToAllDevices } from '@/lib/sendPushNotification'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { formatDurationWords, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export async function POST(req: NextRequest) {
   return handleInternalRoute('daily-session', req, async () => {
+    await loadData()
     const workout = await getTodayPlannedWorkout()
 
     if (!workout) {

@@ -40,11 +40,12 @@ export function routeThumbPath(route: LonLat[] | null | undefined): string | nul
   return cmds.length < 2 ? null : cmds.join('')
 }
 
-const cache = new Map<string, string | null>()
+// Keyed by the route array: a new commit brings new arrays, and the old ones are collected.
+const cache = new WeakMap<object, string | null>()
 
-/** Cached: the route never changes after sync. */
 export function activityRouteThumb(activity: Pick<Activity, 'id' | 'route'>): string | null {
-  const key = `${activity.id}:${activity.route?.length ?? 0}`
-  if (!cache.has(key)) cache.set(key, routeThumbPath(activity.route))
-  return cache.get(key) ?? null
+  const { route } = activity
+  if (!route) return null
+  if (!cache.has(route)) cache.set(route, routeThumbPath(route))
+  return cache.get(route) ?? null
 }

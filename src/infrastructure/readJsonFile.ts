@@ -1,5 +1,5 @@
 import 'server-only'
-import fs from 'fs'
+import { DataNotLoadedError, dataFs } from './dataFs'
 
 const isAbsent = (error: unknown) => (error as NodeJS.ErrnoException).code === 'ENOENT'
 
@@ -10,8 +10,9 @@ const isAbsent = (error: unknown) => (error as NodeJS.ErrnoException).code === '
 export function readJsonFile<T>(filePath: string, fallback: T): T {
   let raw: string
   try {
-    raw = fs.readFileSync(filePath, 'utf-8')
+    raw = dataFs.readFileSync(filePath, 'utf-8')
   } catch (error) {
+    if (error instanceof DataNotLoadedError) throw error
     if (!isAbsent(error)) console.warn(`[data] could not read ${filePath}:`, error)
     return fallback
   }

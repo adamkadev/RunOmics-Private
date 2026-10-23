@@ -321,6 +321,18 @@ class TestGearRefresh:
         assert _stored_ids(workspace) == {"090", "101", "102"}
         assert _stored_gear(workspace, "090") == "shoe1"
 
+    def test_a_run_quick_synced_gets_its_shoe_from_the_next_full_sync_however_old(
+        self, workspace, personal, garmin, steps, monkeypatch
+    ):
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+        assert _run(monkeypatch, "--quick") == 0
+        garmin.gear = {"101": [{"uuid": "shoe1"}]}
+
+        assert _run(monkeypatch) == 0
+
+        assert _stored_gear(workspace, "101") == "shoe1"
+        assert JsonActivityStore(workspace / "activities").get_gear_pending_ids() == []
+
 
 def _garmin_whose_gear_request_fails(monkeypatch, error) -> GarminClient:
     """The real client over a fake transport: what is under test is its own reading of an error answer."""
@@ -389,6 +401,29 @@ class TestPersonalApi:
         assert _run(monkeypatch, "--force") == 0
 
         assert _stored_gear(workspace, "101") == "shoe1"
+
+    def test_a_quick_sync_leaves_connect_to_the_next_full_one_and_exits_0(self, workspace, personal, steps, monkeypatch):
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+
+        assert _run(monkeypatch, "--quick") == 0
+
+        assert _stored_ids(workspace) == {"101", "102"}
+        assert steps == _PERSONAL_ONLY_STEPS
+
+    def test_a_quick_sync_whose_key_is_refused_stops_rather_than_open_connect(self, workspace, personal, monkeypatch):
+        def refused(_key):
+            raise GarminAuthError("Garmin refused GARMIN_PERSONAL_API_KEY (HTTP 401)")
+
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+        monkeypatch.setattr(sync, "PersonalApiClient", refused)
+
+        with pytest.raises(GarminAuthError):
+            _run(monkeypatch, "--quick")
+
+    def test_without_a_key_a_quick_sync_is_a_full_one(self, workspace, garmin, steps, monkeypatch):
+        assert _run(monkeypatch, "--quick") == 0
+
+        assert steps == list(_STEP_RESULTS)
 
     def test_without_either_credential_nothing_reaches_garmin(self, workspace, monkeypatch):
         monkeypatch.delenv("GARMIN_SECRET")

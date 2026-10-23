@@ -4,6 +4,7 @@ import { BackButton } from '@/components/ui/BackButton'
 import { appTodayIso } from '@/lib/calendarDate'
 import { formatDate } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
@@ -11,7 +12,8 @@ export const metadata = {
   title: t.allTime.title,
 }
 
-export default function AllTimePage() {
+export default async function AllTimePage() {
+  await loadData()
   const view = getAllTime(appTodayIso())
   const a = t.allTime
   return (

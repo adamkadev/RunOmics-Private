@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { readSyncGate, syncConfig } from '../route'
+import { dispatchBody, readSyncGate, syncConfig } from '../route'
 
 const CONFIGURED = {
   GITHUB_SYNC_TOKEN: 'ghp_test',
@@ -37,6 +37,14 @@ describe('syncConfig', () => {
   it('treats an empty override as unset rather than as an empty workflow name', () => {
     const config = syncConfig(env({ GITHUB_SYNC_WORKFLOW: '', GITHUB_SYNC_REF: '', GITHUB_SYNC_PROFILE: '' }))
     expect(config).toMatchObject({ workflow: 'sync.yml', ref: 'main', profile: null })
+  })
+})
+
+describe('dispatchBody', () => {
+  it('asks for a quick sync, of the deployment’s profile when it has one', () => {
+    const config = { repo: 'adamkadev/RunOmics-Private', workflow: 'sync.yml', ref: 'main', token: 'ghp_test', profile: 'adam' }
+    expect(dispatchBody(config)).toEqual({ ref: 'main', inputs: { quick: 'true', profile: 'adam' } })
+    expect(dispatchBody({ ...config, profile: null })).toEqual({ ref: 'main', inputs: { quick: 'true' } })
   })
 })
 

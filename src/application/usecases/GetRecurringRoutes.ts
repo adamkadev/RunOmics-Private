@@ -115,17 +115,17 @@ function toRecurringRoute(cluster: Cluster, index: number): RecurringRoute | nul
   }
 }
 
-let cache: RecurringRoute[] | null = null
+let cache: { source: Activity[]; routes: RecurringRoute[] } | null = null
 
 export function getRecurringRoutes(): RecurringRoute[] {
-  if (cache) return cache
+  const source = getAllActivities()
+  if (cache?.source === source) return cache.routes
 
-  const withRoutes = getAllActivities().filter((a) => a.route && a.route.length > 1)
-
-  cache = clusterByRoute(withRoutes)
+  const routes = clusterByRoute(source.filter((a) => a.route && a.route.length > 1))
     .map(toRecurringRoute)
     .filter((route): route is RecurringRoute => route !== null)
     .sort((a, b) => b.runCount - a.runCount || a.distanceKm - b.distanceKm)
 
-  return cache
+  cache = { source, routes }
+  return routes
 }

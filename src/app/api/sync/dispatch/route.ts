@@ -31,6 +31,10 @@ export function syncConfig(env: NodeJS.ProcessEnv): SyncConfig | { missing: stri
   }
 }
 
+export function dispatchBody(config: SyncConfig) {
+  return { ref: config.ref, inputs: { quick: 'true', ...(config.profile ? { profile: config.profile } : {}) } }
+}
+
 const GITHUB_HEADERS = (token: string) => ({
   accept: 'application/vnd.github+json',
   authorization: `Bearer ${token}`,
@@ -90,10 +94,7 @@ export async function POST(req: NextRequest) {
       {
         method: 'POST',
         headers: { ...GITHUB_HEADERS(config.token), 'content-type': 'application/json' },
-        body: JSON.stringify({
-          ref: config.ref,
-          ...(config.profile ? { inputs: { profile: config.profile } } : {}),
-        }),
+        body: JSON.stringify(dispatchBody(config)),
       }
     )
 

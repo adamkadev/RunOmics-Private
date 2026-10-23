@@ -10,7 +10,7 @@ import { t } from '@/i18n'
 
 const POLL_INTERVAL_MS = 10_000
 
-/** Back off: nearly every answer in the chain's five minutes is "still going". */
+/** Only once the data is live: the verdict can take minutes, and nearly every answer until then is "still going". */
 const POLL_BACKOFF = 1.25
 const POLL_MAX_INTERVALS = 3
 
@@ -82,6 +82,7 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
       const deadline = Date.parse(since) + POLL_CEILING_MS
       // The same answer again comes back as an empty 304.
       let etag: string | null = null
+      let live = false
 
       async function checkOnce(): Promise<'done' | 'continue'> {
         try {
@@ -105,6 +106,7 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
             setPhase({ kind: 'upToDate' })
             return 'done'
           }
+          live = status.synced
           setPhase({ kind: 'waiting', synced: status.synced })
           return 'continue'
         } catch {
@@ -122,7 +124,7 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
       let wait = pollIntervalMs
       while (!cancelled.current && Date.now() < deadline) {
         await new Promise((resolve) => setTimeout(resolve, wait))
-        wait = Math.min(wait * POLL_BACKOFF, pollIntervalMs * POLL_MAX_INTERVALS)
+        if (live) wait = Math.min(wait * POLL_BACKOFF, pollIntervalMs * POLL_MAX_INTERVALS)
         await whenVisible()
         if (cancelled.current) return
         if ((await checkOnce()) === 'done') return

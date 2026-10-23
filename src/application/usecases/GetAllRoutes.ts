@@ -1,5 +1,5 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
-import type { ActivityType } from '@/domain/activity/types'
+import type { Activity, ActivityType } from '@/domain/activity/types'
 import { distanceKm } from '@/lib/math'
 import { percentileBounds, type LngLatBounds } from '@/lib/routeFrame'
 
@@ -72,12 +72,14 @@ function findNearestClusterIdx(
   return nearestIdx
 }
 
-let cache: AllRoutesData | null = null
+// Keyed by the activity list itself, which stays the same array until the data changes.
+let cache: { source: Activity[]; routes: AllRoutesData } | null = null
 
 export function getAllRoutes(): AllRoutesData {
-  if (cache) return cache
+  const source = getAllActivities()
+  if (cache?.source === source) return cache.routes
 
-  const activities = getAllActivities().filter((a) => a.route && a.route.length > 1)
+  const activities = source.filter((a) => a.route && a.route.length > 1)
 
   type ClusterAcc = {
     indices: number[]
@@ -140,7 +142,7 @@ export function getAllRoutes(): AllRoutesData {
   const clusters = unsorted.sort((a, b) => b.totalKm - a.totalKm || b.routeCount - a.routeCount)
   const defaultClusterIdx = 0
 
-  cache = {
+  const routes: AllRoutesData = {
     routes: activities.map((a) => a.route!),
     routeMeta: activities.map((a) => ({
       id: a.id,
@@ -157,7 +159,8 @@ export function getAllRoutes(): AllRoutesData {
     totalKm: Math.round(activities.reduce((s, a) => s + a.distanceKm, 0)),
     years: Array.from(new Set(activities.map((a) => a.date.slice(0, 4)))).sort(),
   }
-  return cache
+  cache = { source, routes }
+  return routes
 }
 
 export function getMapShellData(): MapShellData {

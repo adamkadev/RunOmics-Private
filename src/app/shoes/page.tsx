@@ -9,12 +9,14 @@ import { Plus } from 'lucide-react'
 import { t } from '@/i18n'
 import { GARMIN_GEAR_URL } from '@/components/shoes/shoeWear'
 import { GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
+import { loadData } from '@/application/usecases/LoadData'
 
 const QUALITY_RUNS_WINDOW = 6
 
 export const revalidate = 3600
 
 export default async function ShoesPage() {
+  await loadData()
   const shoes = getShoeStats()
 
   const hero = pickHeroShoe(shoes)

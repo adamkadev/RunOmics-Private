@@ -1,6 +1,6 @@
 name: Sync Garmin Activities
-# The app's Sync button reads this name back to tell which profile a run syncs (src/lib/syncLimits.ts).
-run-name: Sync Garmin Activities (${{ inputs.profile || 'all' }})
+# The app's Sync button reads the trailing (profile) back to tell which profile a run syncs (src/lib/syncLimits.ts).
+run-name: ${{ inputs.quick && 'Quick sync' || 'Sync' }} Garmin Activities (${{ inputs.profile || 'all' }})
 
 on:
   schedule:
@@ -29,6 +29,10 @@ on:
         type: choice
         options: [all, adam, lamiaa]
         default: all
+      quick:
+        description: "Quick: only the new runs, through the Personal API key (no WARP, no Garmin Connect)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -58,6 +62,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
+      actions: read
 
     strategy:
       # One profile's Garmin login expiring must not cancel everyone else's sync.
@@ -68,10 +73,11 @@ jobs:
     # Per-profile secrets live in a GitHub Environment of the same name.
     environment: ${{ matrix.profile }}
 
-    # A manual run must never overlap the nightly one for the same profile: both push to its data repository.
+    # Runs for one profile take turns and never cancel the one waiting: all push to its data repository.
     concurrency:
       group: sync-${{ matrix.profile }}
       cancel-in-progress: false
+      queue: max
 
     env:
       RUNOMICS_DATA_DIR: data
@@ -93,6 +99,7 @@ jobs:
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
           GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          QUICK: ${{ inputs.quick }}
         run: |
           if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
             echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}')."
@@ -117,6 +124,14 @@ jobs:
             echo "personal_api=false" >> "$GITHUB_OUTPUT"
           else
             echo "personal_api=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$QUICK" != "true" ]; then
+            echo "quick=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$GARMIN_PERSONAL_API_KEY" ]; then
+            echo "quick=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::A quick sync needs GARMIN_PERSONAL_API_KEY: this one runs as a full sync."
+            echo "quick=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Node
@@ -152,6 +167,7 @@ jobs:
       # WARP's package pulls ~120 MB of desktop dependencies from a mirror that can crawl; the
       # downloaded .debs are cached, so a run downloads only what changed since the last one.
       - name: Restore WARP packages
+        if: steps.config.outputs.quick != 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/warp-apt
@@ -162,6 +178,7 @@ jobs:
       # failed install or connect is a partial night (no gear, calendar or Connect metrics).
       - name: Install Cloudflare WARP
         id: warp_install
+        if: steps.config.outputs.quick != 'true'
         timeout-minutes: 10
         continue-on-error: ${{ steps.config.outputs.personal_api == 'true' }}
         run: |
@@ -221,7 +238,7 @@ jobs:
           exit 1
 
       - name: Note WARP unavailable
-        if: steps.warp.outcome != 'success'
+        if: steps.config.outputs.quick != 'true' && steps.warp.outcome != 'success'
         run: echo "::warning::WARP is unavailable, so runs come through the Personal API alone; garth (gear, calendar, Connect metrics) will likely fail from GitHub's network and the night counts as partial."
 
       # Dispatch inputs arrive through `env:`, never interpolated into `run:`:
@@ -236,6 +253,7 @@ jobs:
           SYNC_LIMIT: ${{ inputs.limit }}
           SYNC_DRY_RUN: ${{ inputs.dry_run }}
           SYNC_FORCE: ${{ inputs.force }}
+          SYNC_QUICK: ${{ steps.config.outputs.quick }}
         run: |
           set -eo pipefail
           ARGS=()
@@ -254,6 +272,9 @@ jobs:
           if [ "${SYNC_FORCE:-}" = "true" ]; then
             ARGS+=(--force)
           fi
+          if [ "${SYNC_QUICK:-}" = "true" ]; then
+            ARGS+=(--quick)
+          fi
 
           # Exit 3 is "some activities or steps failed, everything else is on
           # disk". Failing the step here would skip the commit below and
@@ -271,12 +292,12 @@ jobs:
           fi
 
       - name: Disconnect Cloudflare WARP
-        if: always()
+        if: always() && steps.warp_install.outcome == 'success'
         run: warp-cli --accept-tos disconnect || true
 
       # Rebuilds stored runs from the FIT files cached above, asking Garmin for nothing.
       - name: Reprocess cached runs
-        if: inputs.reprocess == true && inputs.dry_run != true
+        if: inputs.reprocess == true && inputs.dry_run != true && steps.config.outputs.quick != 'true'
         run: python scripts/reprocess.py
 
       - name: Backfill missing weather
@@ -319,11 +340,24 @@ jobs:
           fi
 
       - name: Trigger Vercel redeploy
-        if: steps.commit.outputs.committed == 'true'
+        if: steps.commit.outputs.committed == 'true' && vars.DATA_SOURCE != 'github'
         continue-on-error: true
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
-        run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+        run: |
+          curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          date +%s > "$RUNNER_TEMP/deploy_hook_at"
+
+      # A deployment that reads the data repository itself needs no rebuild, only its cached commit expired.
+      - name: Expire the app's data cache
+        if: steps.commit.outputs.committed == 'true' && vars.DATA_SOURCE == 'github'
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          printf 'x-internal-secret: %s\n' "$SECRET" | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/data-revalidate" -H @-
+          date +%s > "$RUNNER_TEMP/deploy_hook_at"
 
       # Also after a timestamp-only commit, to retry the AI work an earlier sync left unfinished.
       - name: Trigger post-sync checks
@@ -333,33 +367,35 @@ jobs:
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
           EXPECTED_SYNC: ${{ steps.commit.outputs.last_synced_at }}
           DATA_CHANGED: ${{ steps.commit.outputs.data_changed }}
+          DATA_SOURCE: ${{ vars.DATA_SOURCE }}
         run: |
-          # Everything these endpoints read comes off the build's own filesystem,
-          # so they answer for whatever deployment is live - and the previous one
-          # answers 200 within a second of the push above, while Vercel is still
-          # building this one. Waiting on a bare 200 therefore ran every check
-          # against the data as it was *before* this sync: the insight generator
-          # saw no new activity, reported "outstanding: 0", and the run it had
-          # just synced had to wait for the next night to get its verdict.
-          #
-          # Wait for the deployment carrying this run's own sync timestamp. A
-          # sync that only moved the timestamp has nothing to wait for: the
-          # deployment live already serves the same data.
+          # The checks read what the app serves: before it serves this sync, they would judge the data before it.
           if [ "$DATA_CHANGED" = "true" ]; then
+            INTERVAL=15
+            [ "$DATA_SOURCE" = "github" ] && INTERVAL=3
             DEPLOYED=false
-            for i in $(seq 1 24); do
-              LIVE=$(printf 'x-internal-secret: %s\n' "$SECRET" \
-                | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
-                | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
+            for i in $(seq 1 $((360 / INTERVAL))); do
+              HEALTH=$(printf 'x-internal-secret: %s\n' "$SECRET" | curl -sS --max-time 20 "$APP_URL/api/internal/health" -H @- || true)
+              LIVE=$(printf '%s' "$HEALTH" | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
+              REFUSED=$(printf '%s' "$HEALTH" | python -c "import json,sys; r=json.load(sys.stdin).get('rejectedData'); print(r['commit'] + ': ' + '; '.join(r['errors'][:3]) if r else '')" 2>/dev/null || true)
+              if [ -n "$REFUSED" ]; then
+                echo "::error::The app refused the data repository's commit $REFUSED"
+                exit 1
+              fi
               if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
                 DEPLOYED=true
-                echo "Deployment carrying $EXPECTED_SYNC is live after $(((i - 1) * 15))s."
+                date +%s > "$RUNNER_TEMP/live_at"
+                echo "The app serves $EXPECTED_SYNC after $(((i - 1) * INTERVAL))s."
                 break
               fi
-              sleep 15
+              sleep "$INTERVAL"
             done
             if [ "$DEPLOYED" != "true" ]; then
               echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
+            elif [ "$DATA_SOURCE" = "github" ]; then
+              # Again, for a page whose render began before the first ping and ended after it, with the old commit.
+              printf 'x-internal-secret: %s\n' "$SECRET" | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/data-revalidate" -H @- || true
+              echo
             fi
           fi
 
@@ -421,6 +457,9 @@ jobs:
           for i in 1 2 3 4 5; do
             OUT=$(check ai-insights 310)
             echo "$OUT"
+            if [ "$i" = 1 ]; then
+              date +%s > "$RUNNER_TEMP/verdict_at"
+            fi
             SPEND=$(printf '%s' "$OUT" \
               | python -c "import json,sys; print(json.dumps(json.load(sys.stdin).get('spend') or {}, sort_keys=True))" 2>/dev/null || true)
             if [ -n "$SPEND" ] && [ "$SPEND" = "$LAST_SPEND" ]; then
@@ -451,3 +490,24 @@ jobs:
           printf 'x-internal-secret: %s\ncontent-type: application/json\n' "$SECRET" \
             | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/workflow-failure" -H @- \
                 --data @"$RUNNER_TEMP/workflow-failure.json"
+
+      - name: Time the run
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_NAME: sync (${{ matrix.profile }})
+          MODE: ${{ steps.config.outputs.quick == 'true' && 'quick' || 'full' }}
+        run: |
+          api() {
+            printf 'authorization: Bearer %s\n' "$GH_TOKEN" \
+              | curl -fsS --max-time 20 -H @- -H 'accept: application/vnd.github+json' \
+                  "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID$1"
+          }
+          mark() { cat "$RUNNER_TEMP/$1" 2>/dev/null || echo null; }
+          api "" > "$RUNNER_TEMP/run.json"
+          api "/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" > "$RUNNER_TEMP/jobs.json"
+          jq -rn --slurpfile run "$RUNNER_TEMP/run.json" --slurpfile jobs "$RUNNER_TEMP/jobs.json" \
+            --arg job "$JOB_NAME" --arg mode "$MODE" \
+            --argjson hook "$(mark deploy_hook_at)" --argjson live "$(mark live_at)" --argjson verdict "$(mark verdict_at)" \
+            -f scripts/sync_timing.jq >> "$GITHUB_STEP_SUMMARY"

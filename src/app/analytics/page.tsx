@@ -16,10 +16,12 @@ import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics
 import { yearOverYear } from '@/lib/yearOverYear'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
 import { getLoadPairs, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
 export default async function AnalyticsPage() {
+  await loadData()
   const today = appTodayIso()
   const year = Number(today.slice(0, 4))
   const [data, trainingLoad, risk, goals] = await Promise.all([getAnalyticsData(today), getTrainingLoad(), getLoadRiskPanel(), getGoalsPageData(today)])

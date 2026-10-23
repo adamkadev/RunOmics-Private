@@ -201,23 +201,22 @@ describe('Sync now, while it waits', () => {
   const STILL_GOING = { ...VERDICT_STATUS, ready: false, synced: false, reason: 'waiting for the deployment carrying this sync' }
 
 
-  it('waits a little longer before each question, up to half a minute', async () => {
+  it('asks every 10 s until the data is live, then a little longer each time, up to half a minute', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
     const start = Date.now()
     localStorage.setItem(STORAGE_KEY, new Date(start).toISOString())
     const times: number[] = []
     const fetchMock = vi.fn(async () => {
       times.push(Date.now() - start)
-      return jsonResponse(STILL_GOING)
+      return jsonResponse(times.length > 2 ? { ...STILL_GOING, synced: true, reason: 'no verdict yet' } : STILL_GOING)
     })
     vi.stubGlobal('fetch', fetchMock)
 
     renderCard()
     await settle(150_000)
 
-    // Asked at once on resume, then 10 s, 12.5 s, 15.6 s... apart, never more than 30 s.
     const gaps = times.slice(1).map((at, i) => at - times[i]!)
-    expect(gaps.slice(0, 3)).toEqual([10_000, 12_500, 15_625])
+    expect(gaps.slice(0, 5)).toEqual([10_000, 10_000, 10_000, 12_500, 15_625])
     expect(Math.max(...gaps)).toBe(30_000)
   })
 

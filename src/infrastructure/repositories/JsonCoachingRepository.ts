@@ -9,13 +9,14 @@ import {
   parseWorkoutEvaluation,
 } from '@/domain/coaching/validation'
 import { dataPath } from '../dataPath'
+import { dataFs } from '../dataFs'
 
 interface HistoryIndex {
   keys: string[]
 }
 
 function readJson(filePath: string): unknown {
-  return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as unknown
+  return JSON.parse(dataFs.readFileSync(filePath, 'utf-8')) as unknown
 }
 
 function writeJsonAtomic(filePath: string, value: unknown): void {
@@ -31,7 +32,7 @@ function historyKey(date: string, precision: 'year' | 'month'): string {
 
 function readIndex(dir: string): string[] {
   const filePath = path.join(dir, 'index.json')
-  if (!fs.existsSync(filePath)) return []
+  if (!dataFs.existsSync(filePath)) return []
   const raw = readJson(filePath) as Partial<HistoryIndex>
   return Array.isArray(raw.keys) ? raw.keys.filter((key): key is string => typeof key === 'string') : []
 }
@@ -49,7 +50,7 @@ export class JsonCoachingRepository implements CoachingRepository {
 
   getCurrentPlan(): CoachingPlan | null {
     const filePath = path.join(this.coachingDir, 'current_plan.json')
-    return fs.existsSync(filePath) ? parseCoachingPlan(readJson(filePath), filePath) : null
+    return dataFs.existsSync(filePath) ? parseCoachingPlan(readJson(filePath), filePath) : null
   }
 
   saveCurrentPlan(plan: CoachingPlan): void {
@@ -66,8 +67,8 @@ export class JsonCoachingRepository implements CoachingRepository {
   /** The plans archivePlan kept, newest first: the only record of a finished block's sessions. */
   getArchivedPlans(): CoachingPlan[] {
     const dir = path.join(this.coachingDir, 'superseded')
-    if (!fs.existsSync(dir)) return []
-    return fs
+    if (!dataFs.existsSync(dir)) return []
+    return dataFs
       .readdirSync(dir)
       .filter((file) => file.endsWith('.json'))
       .map((file) => parseCoachingPlan(readJson(path.join(dir, file)), path.join(dir, file)))
@@ -76,7 +77,7 @@ export class JsonCoachingRepository implements CoachingRepository {
 
   getState(): CoachState | null {
     const filePath = path.join(this.coachingDir, 'coach_state.json')
-    return fs.existsSync(filePath) ? parseCoachState(readJson(filePath), filePath) : null
+    return dataFs.existsSync(filePath) ? parseCoachState(readJson(filePath), filePath) : null
   }
 
   saveState(state: CoachState): void {
@@ -113,16 +114,16 @@ export class JsonCoachingRepository implements CoachingRepository {
     parser: (value: unknown, path?: string) => T,
   ): T[] {
     const dir = path.join(this.coachingDir, directory)
-    if (!fs.existsSync(dir)) return []
+    if (!dataFs.existsSync(dir)) return []
     const keys = readIndex(dir)
     const files = keys.length
       ? keys.map((key) => `${key}.json`)
-      : fs.readdirSync(dir).filter((file) => file.endsWith('.json') && file !== 'index.json')
+      : dataFs.readdirSync(dir).filter((file) => file.endsWith('.json') && file !== 'index.json')
 
     return files
       .flatMap((file) => {
         const filePath = path.join(dir, file)
-        if (!fs.existsSync(filePath)) return []
+        if (!dataFs.existsSync(filePath)) return []
         const raw = readJson(filePath) as Record<string, unknown>
         const entries = raw[field]
         if (!Array.isArray(entries)) throw new Error(`${filePath}: ${field} must be an array`)
@@ -144,7 +145,7 @@ export class JsonCoachingRepository implements CoachingRepository {
     const dir = path.join(this.coachingDir, directory)
     const key = historyKey(entry.createdAt, precision)
     const filePath = path.join(dir, `${key}.json`)
-    const raw = fs.existsSync(filePath) ? (readJson(filePath) as Record<string, unknown>) : {}
+    const raw = dataFs.existsSync(filePath) ? (readJson(filePath) as Record<string, unknown>) : {}
     const current = Array.isArray(raw[field]) ? (raw[field] as T[]) : []
     const entries = [...current.filter((candidate) => candidate.id !== entry.id), entry]
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))

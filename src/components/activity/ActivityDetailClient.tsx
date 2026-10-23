@@ -242,7 +242,7 @@ export function ActivityDetailClient({
         )}
         {/* The pair is set on the watch, so the chip opens Garmin Connect, but only
             for a run with a watch id: otherwise there is nothing at the other end. */}
-        {isWatchId(activity.id) ? (
+        {isWatchId(activity.id) && !activity.gearPending ? (
           <a
             href={garminActivityUrl(activity.id)}
             target="_blank"

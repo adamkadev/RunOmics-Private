@@ -25,6 +25,7 @@ const DETAIL_FIELDS = [
   'splits',
   'route',
   'weather',
+  'gearPending',
   'elevationGain',
   'elevationProfile',
   'hrSamples',

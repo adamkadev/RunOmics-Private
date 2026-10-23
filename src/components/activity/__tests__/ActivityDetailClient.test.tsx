@@ -142,6 +142,11 @@ describe('ActivityDetailClient', () => {
     expect(chip.getAttribute('aria-label')).toBe(t.activity.shoe.addInGarmin)
   })
 
+  it('asks for no shoe while the sync has yet to read it from Garmin', () => {
+    renderDetail({ activity: { ...ACTIVITY, id: '90000276', gearPending: true } as ActivityDetailView })
+    expect(screen.queryByTestId('run-shoe')).toBeNull()
+  })
+
   it('reads the pair without a link on a run the watch never gave an id', () => {
     renderDetail({ shoe: { name: 'Vomero Plus', dotColor: '#fff' } })
     const chip = screen.getByTestId('run-shoe')

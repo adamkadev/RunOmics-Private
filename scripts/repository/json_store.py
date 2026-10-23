@@ -70,6 +70,9 @@ class JsonActivityStore:
         cutoff = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
         return [aid for aid, a in self._by_id.items() if a.get("date", "") >= cutoff]
 
+    def get_gear_pending_ids(self) -> list[str]:
+        return [aid for aid, a in self._by_id.items() if a.get("gearPending")]
+
     def all_activities(self) -> list[dict[str, Any]]:
         return list(self._by_id.values())
 
@@ -80,14 +83,23 @@ class JsonActivityStore:
 
     def update_gear(self, activity_id: str, gear_id: str | None) -> bool:
         activity = self._by_id.get(activity_id)
-        if activity is None or activity.get("gearId") == gear_id:
+        if activity is None:
             return False
+        answered = activity.pop("gearPending", None) is not None
+        changed = activity.get("gearId") != gear_id
         activity["gearId"] = gear_id
-        self.touch(activity_id)
-        return True
+        if changed or answered:
+            self.touch(activity_id)
+        return changed
 
     def upsert(
-        self, activity: ActivityData, *, replace: bool = False, keep_gear: bool = False, keep_zone_bounds: bool = False
+        self,
+        activity: ActivityData,
+        *,
+        replace: bool = False,
+        keep_gear: bool = False,
+        gear_pending: bool = False,
+        keep_zone_bounds: bool = False,
     ) -> bool:
         """Store one activity; True when it is new.
 
@@ -107,12 +119,15 @@ class JsonActivityStore:
                 new_dict["rpe"] = existing["rpe"]
             if keep_gear:
                 new_dict["gearId"] = existing.get("gearId")
+                gear_pending = bool(existing.get("gearPending"))
             if keep_zone_bounds and _zone_seconds(existing.get("hrZones")) == _zone_seconds(new_dict.get("hrZones")):
                 new_dict["hrZones"] = existing.get("hrZones")
             # Weather can be re-derived (backfill_weather.py), so replace
             # starts it over with everything else Garmin sends.
             if not replace and new_dict.get("weather") is None:
                 new_dict["weather"] = existing.get("weather")
+        if keep_gear and gear_pending:
+            new_dict["gearPending"] = True
 
         self._by_id[activity.id] = new_dict
         self.touch(activity.id)

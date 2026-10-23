@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A deployment can read its data repository at run time
+  (`RUNOMICS_DATA_SOURCE=github`), so a sync shows within seconds of the push
+  instead of after a Vercel rebuild: the sync pings the app instead of firing
+  the deploy hook, and waits seconds for it rather than minutes. Each new
+  commit is checked against the data contract before it goes live; a refused
+  one leaves the previous data up and fails the sync, naming the error. The
+  dashboard refreshes as soon as the run's data is live, before its verdict.
+  The map's routes are revalidated on every request rather than cached for an
+  hour at the edge, since a sync no longer starts a fresh deployment.
+
+- The Sync button starts a quick sync: the new runs come through the
+  Personal API key alone, with no WARP install and no garth sign-in, while
+  the nightly sync keeps doing everything. A run synced this way has no shoe
+  until the next full sync, which now asks Connect for the shoe of every run
+  it has not answered yet, however old, rather than only the last ten days'
+  (a run read on a night Connect was down gets the same); until then its
+  page shows no prompt to add one. A profile without a key syncs in full,
+  and a quick sync whose key is refused fails rather than fall back to
+  garth. Runs for one profile now wait in turn: a newly queued one no longer
+  cancels the one already waiting.
+
 - The sync no longer stops when Cloudflare WARP will not install or
   connect, as long as the profile has a `GARMIN_PERSONAL_API_KEY`: the runs
   come through the Personal API, and only garth (gear, the calendar,
@@ -11,6 +32,11 @@ All notable changes to this project are documented in this file.
   package, which now pulls about 120 MB of desktop libraries, is cached
   between runs and gets 10 minutes and retries instead of 5. Without a key,
   WARP is still required.
+
+- Each sync's summary page on GitHub times it from the tap: when the job
+  started, the data was pushed, the deployment carrying it went live and the
+  first AI pass wrote the run's verdict (the Sync button's "done"), then
+  every step and the Vercel build on their own.
 
 - VO2max keeps moving on a night without Garmin Connect (no `GARMIN_SECRET`,
   or a garth token past saving): each run's FIT file carries Garmin's own

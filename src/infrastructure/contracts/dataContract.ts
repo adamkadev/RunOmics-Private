@@ -1,5 +1,5 @@
-import fs from 'node:fs'
 import path from 'node:path'
+import { diskFiles, type DataFiles } from '../dataFiles'
 
 /**
  * `error`: the app dereferences the field unconditionally, so the build refuses the dataset.
@@ -16,6 +16,8 @@ export interface Problem {
 }
 
 type JsonObject = Record<string, unknown>
+
+let files: DataFiles = diskFiles
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const ISO_MONTH = /^\d{4}-\d{2}$/
@@ -63,7 +65,7 @@ class Report {
 
 function readJson(file: string, report: Report): unknown {
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf-8'))
+    return JSON.parse(files.readFileSync(file, 'utf-8'))
   } catch (error) {
     report.error('$', `unreadable: ${(error as Error).message}`)
     return undefined
@@ -131,7 +133,7 @@ function checkActivity(activity: unknown, at: string, month: string, report: Rep
 
 function checkActivities(dir: string, problems: Problem[]) {
   const indexFile = path.join(dir, 'activities', 'index.json')
-  if (!fs.existsSync(indexFile)) return
+  if (!files.existsSync(indexFile)) return
 
   const indexReport = new Report('activities/index.json')
   const index = readJson(indexFile, indexReport)
@@ -149,7 +151,7 @@ function checkActivities(dir: string, problems: Problem[]) {
     const name = `activities/${month}.json`
     const report = new Report(name)
     const file = path.join(dir, name)
-    if (!fs.existsSync(file)) {
+    if (!files.existsSync(file)) {
       report.error('$', 'listed in index.json but missing')
     } else {
       const data = readJson(file, report)
@@ -175,7 +177,7 @@ function checkRecords(
   problems: Problem[]
 ) {
   const file = path.join(dir, name)
-  if (!fs.existsSync(file)) return
+  if (!files.existsSync(file)) return
   const report = new Report(name)
   const data = readJson(file, report)
   if (data !== undefined) {
@@ -192,7 +194,7 @@ function checkRecords(
 
 function checkAthlete(dir: string, problems: Problem[]) {
   const file = path.join(dir, 'athlete.json')
-  if (!fs.existsSync(file)) return
+  if (!files.existsSync(file)) return
   const report = new Report('athlete.json')
   const athlete = readJson(file, report)
   if (athlete !== undefined && !isObject(athlete)) report.error('$', 'expected an object')
@@ -217,8 +219,8 @@ function checkAthlete(dir: string, problems: Problem[]) {
 
 function checkPlannedWorkouts(dir: string, problems: Problem[]) {
   const plannedDir = path.join(dir, 'planned_workouts')
-  if (!fs.existsSync(plannedDir)) return
-  for (const name of fs.readdirSync(plannedDir).filter((f) => f.endsWith('.json') && f !== 'index.json')) {
+  if (!files.existsSync(plannedDir)) return
+  for (const name of files.readdirSync(plannedDir).filter((f) => f.endsWith('.json') && f !== 'index.json')) {
     checkRecords(dir, `planned_workouts/${name}`, 'planned', (workout, at, report) => {
       if (!isIsoDate(workout.date)) report.error(`${at}.date`, 'expected YYYY-MM-DD')
       if (typeof workout.name !== 'string') report.error(`${at}.name`, 'expected a string')
@@ -230,7 +232,16 @@ function checkPlannedWorkouts(dir: string, problems: Problem[]) {
   }
 }
 
-export function checkDataDirectory(dir: string): Problem[] {
+export function checkDataDirectory(dir: string, using: DataFiles = diskFiles): Problem[] {
+  files = using
+  try {
+    return checkAll(dir)
+  } finally {
+    files = diskFiles
+  }
+}
+
+function checkAll(dir: string): Problem[] {
   const problems: Problem[] = []
 
   checkActivities(dir, problems)
@@ -270,7 +281,7 @@ export function checkDataDirectory(dir: string): Problem[] {
   checkPlannedWorkouts(dir, problems)
 
   const syncMeta = path.join(dir, 'sync_meta.json')
-  if (fs.existsSync(syncMeta)) {
+  if (files.existsSync(syncMeta)) {
     const report = new Report('sync_meta.json')
     const meta = readJson(syncMeta, report)
     if (meta !== undefined && !(isObject(meta) && typeof meta.lastSyncedAt === 'string' && !Number.isNaN(Date.parse(meta.lastSyncedAt)))) {

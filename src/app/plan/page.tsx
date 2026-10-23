@@ -9,10 +9,12 @@ import { getExploreHome } from '@/application/usecases/GetExploreAreas'
 import { PlanClient } from '@/components/plan/PlanClient'
 import { planCoachingView } from '@/components/plan/planCoachingView'
 import { appTodayIso } from '@/lib/calendarDate'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
 export default async function PlanPage() {
+  await loadData()
   const today = appTodayIso()
   const activities = getActivitySummaries()
   const plannedWorkouts = await getPlannedWorkouts()
