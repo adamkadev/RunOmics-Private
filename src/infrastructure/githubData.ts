@@ -3,6 +3,9 @@ import type { DataSnapshot } from './dataFs'
 
 const API = 'https://api.github.com'
 const POINTER_TTL_SECONDS = 600
+const TIMEOUT_MS = 15_000
+// Addressed by SHA, so never stale; and an ISR render may cache them, where no-store would make the page dynamic.
+const IMMUTABLE = { cache: 'force-cache' } as const
 const PARALLEL_READS = 8
 
 interface DataRepo {
@@ -22,11 +25,12 @@ function dataRepo(): DataRepo {
 /** Per repository: the Hobby plan shares one Data Cache across projects, and a tag expires everywhere it is used. */
 export const dataTag = () => `data:${dataRepo().slug}`
 
-async function github(path: string, accept: string, init: RequestInit = { cache: 'no-store' }): Promise<Response> {
+async function github(path: string, accept: string, caching: Pick<RequestInit, 'cache' | 'next'>): Promise<Response> {
   const { slug, token } = dataRepo()
   const response = await fetch(`${API}/repos/${slug}${path}`, {
-    ...init,
+    ...caching,
     headers: { accept, authorization: `Bearer ${token}`, 'x-github-api-version': '2022-11-28' },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
   })
   if (!response.ok) throw new Error(`GitHub answered ${response.status} for ${path.split('?')[0]}`)
   return response
@@ -47,11 +51,11 @@ interface TreeEntry {
 }
 
 export async function readSnapshot(commit: string, previous: DataSnapshot | null): Promise<DataSnapshot> {
-  const { tree, committer } = (await (await github(`/git/commits/${commit}`, 'application/vnd.github+json')).json()) as {
+  const { tree, committer } = (await (await github(`/git/commits/${commit}`, 'application/vnd.github+json', IMMUTABLE)).json()) as {
     tree: { sha: string }
     committer: { date: string }
   }
-  const listing = (await (await github(`/git/trees/${tree.sha}?recursive=1`, 'application/vnd.github+json')).json()) as {
+  const listing = (await (await github(`/git/trees/${tree.sha}?recursive=1`, 'application/vnd.github+json', IMMUTABLE)).json()) as {
     tree: TreeEntry[]
     truncated: boolean
   }
@@ -69,7 +73,7 @@ export async function readSnapshot(commit: string, previous: DataSnapshot | null
       while (next < entries.length) {
         const entry = entries[next++]!
         const file = entry.path.slice('data/'.length)
-        const text = known.get(entry.sha) ?? (await (await github(`/git/blobs/${entry.sha}`, 'application/vnd.github.raw+json')).text())
+        const text = known.get(entry.sha) ?? (await (await github(`/git/blobs/${entry.sha}`, 'application/vnd.github.raw+json', IMMUTABLE)).text())
         files.set(file, text)
         blobs.set(file, entry.sha)
       }
