@@ -1,8 +1,9 @@
+import { createHash } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getAllRoutes } from '@/application/usecases/GetAllRoutes'
 
-// The routes change only with a deployment, and a new deployment starts with an empty edge cache.
-const CACHED = 'public, s-maxage=3600, stale-while-revalidate=86400'
+// Revalidated on every request: a sync can change the routes without a deployment emptying any cache.
+const CACHED = 'private, no-cache'
 
 export async function GET(req: NextRequest) {
   const clusterId = req.nextUrl.searchParams.get('cluster')
@@ -25,5 +26,9 @@ export async function GET(req: NextRequest) {
     if (id) ids[i] = id
   }
 
-  return NextResponse.json({ routes, ids }, { headers: { 'Cache-Control': CACHED } })
+  const body = JSON.stringify({ routes, ids })
+  const etag = `"${createHash('sha1').update(body).digest('base64url')}"`
+  const headers = { 'Cache-Control': CACHED, etag }
+  if (req.headers.get('if-none-match') === etag) return new NextResponse(null, { status: 304, headers })
+  return new NextResponse(body, { headers: { ...headers, 'content-type': 'application/json' } })
 }
