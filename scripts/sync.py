@@ -63,7 +63,8 @@ def main() -> int:
     secret = os.environ.get("GARMIN_SECRET", "").strip()
     if not api_key and not secret:
         print("Error: neither GARMIN_PERSONAL_API_KEY nor GARMIN_SECRET is set.", file=sys.stderr)
-        print("Create a Personal API key in Garmin Connect (Settings > Personal API); see README.md.", file=sys.stderr)
+        print("Create a Personal API key at https://connect.garmin.com/app/settings/personalApiToken", file=sys.stderr)
+        print("(see README.md).", file=sys.stderr)
         return 1
 
     _FIT_DIR.mkdir(parents=True, exist_ok=True)

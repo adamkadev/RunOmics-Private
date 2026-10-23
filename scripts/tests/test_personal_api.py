@@ -82,7 +82,7 @@ class TestToken:
     def test_a_refused_key_says_how_to_replace_it_and_never_echoes_it(self, status):
         with pytest.raises(GarminAuthError) as raised:
             FakeApi(token=httpx.Response(status)).client()
-        assert "Create a new key in Garmin Connect" in str(raised.value)
+        assert "Create a new key at https://connect.garmin.com/app/settings/personalApiToken" in str(raised.value)
         assert _KEY not in str(raised.value)
 
     def test_a_token_that_expires_mid_sync_is_exchanged_again_once(self):

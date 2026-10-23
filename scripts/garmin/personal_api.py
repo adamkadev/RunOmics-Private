@@ -41,7 +41,7 @@ _ZIP_ACCEPT = "application/zip, application/x-zip-compressed, application/octet-
 
 _KEY_REFUSED = (
     "Garmin refused GARMIN_PERSONAL_API_KEY (HTTP {status}): it has expired or "
-    "was revoked. Create a new key in Garmin Connect (Settings > Personal API), "
+    "was revoked. Create a new key at https://connect.garmin.com/app/settings/personalApiToken, "
     "then replace the secret in this profile's GitHub Environment."
 )
 

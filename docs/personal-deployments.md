@@ -70,17 +70,21 @@ mkdir -p data && touch data/.gitkeep
 git add -A && git commit -m "chore: initial data directory" && git push
 ```
 
-### 2. The Garmin token
+### 2. The Garmin key
 
-On your machine, signed out of your own Garmin session:
+The athlete creates a Personal API key on
+[Garmin Connect's Personal API page](https://connect.garmin.com/app/settings/personalApiToken),
+signed in to their own account, with the longest lifetime offered, and passes
+it to you once (Garmin shows it only at creation). That is
+`GARMIN_PERSONAL_API_KEY`: it reads the runs, resting HR and the athlete's
+zones, it never reaches Vercel, and a new one replaces it when it expires.
+Nobody's password leaves their hands.
 
-```bash
-python scripts/get_secret.py     # prompts for her Garmin Connect login
-```
-
-Keep the printed `GARMIN_SECRET`. It never reaches Vercel - only the sync workflow
-uses it. The underlying OAuth1 token lasts about a year; see the README's note on
-`garth` before it expires.
+`GARMIN_SECRET`, garth's token, is optional on top of it: gear, the Garmin
+calendar, training status, race predictions and VO2max history come only from
+Connect's private API. `python scripts/get_secret.py` mints it from the
+athlete's login - when it works: Garmin's March 2026 login change broke it, so a
+new athlete may have to go without. See the README's note on `garth`.
 
 ### 3. The first sync
 
@@ -92,7 +96,8 @@ whole Garmin history and is worth doing by hand, in a scratch clone so your own
 git clone https://github.com/<you>/RunOmics-Private.git /tmp/first-sync
 cd /tmp/first-sync && npm ci && pip install -r scripts/requirements.txt
 
-export GARMIN_SECRET="<from step 2>"
+export GARMIN_PERSONAL_API_KEY="<from step 2>"
+export GARMIN_SECRET="<from step 2, if you have one>"
 export RUNOMICS_DATA_DIR="$PWD/data"          # server-only scratch workspace
 export RUNOMICS_DATA_REPO_URL="https://github.com/<you>/runomics-data-<profile>.git"
 export RUNOMICS_DATA_REPO_TOKEN="<from step 1>"
@@ -173,7 +178,8 @@ Under **Settings → Environments**, create an environment named after the profi
 
 | Secret | From |
 |--------|------|
-| `GARMIN_SECRET` | step 2 |
+| `GARMIN_PERSONAL_API_KEY` | step 2 |
+| `GARMIN_SECRET` | step 2, optional |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | step 1 |
 | `APP_URL` | her Vercel domain, no trailing slash |
 | `INTERNAL_NOTIFY_SECRET` | must match the Vercel value from step 5 |
@@ -209,8 +215,10 @@ Then add the profile to the matrices in `.github/workflows/`:
 - **Independent.** `fail-fast: false` everywhere: an expired Garmin token or an
   unreachable deployment on one profile leaves the others alone.
 - **Guarded.** Every workflow fails before doing anything if the environment
-  doesn't declare `PROFILE`, and `sync.yml` additionally requires `GARMIN_SECRET`
-  and both `RUNOMICS_DATA_REPO_*` values - checked before Garmin is contacted.
+  doesn't declare `PROFILE`, and `sync.yml` additionally requires a Garmin
+  credential (`GARMIN_PERSONAL_API_KEY`, or `GARMIN_SECRET` alone, with a
+  warning) and both `RUNOMICS_DATA_REPO_*` values - checked before Garmin is
+  contacted.
   Without the second check a typo'd secret name would start from an incomplete
   default workspace. The workflow now hydrates the complete private dataset into
   server-only `data/`, syncs it in place, and pushes that same complete workspace.

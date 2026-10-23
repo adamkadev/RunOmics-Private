@@ -16,9 +16,9 @@ A personal running dashboard that pulls your data from Garmin Connect and turns 
 ## Architecture
 
 ```
-Garmin Connect API
+Garmin Personal API · Garmin Connect (garth, optional)
        │
-  scripts/sync.py          ← Python pipeline (garth + garmin-fit-sdk)
+  scripts/sync.py          ← Python pipeline (Personal API + garth + garmin-fit-sdk)
        │
   RunOmics-data            ← private repository holding the real dataset
        │
@@ -62,40 +62,57 @@ npm install
 pip install -r scripts/requirements.txt
 ```
 
-### 2. Generate your Garmin secret
+### 2. Create your Garmin Personal API key
 
-The sync script authenticates with Garmin Connect using [garth](https://github.com/matin/garth), which stores an OAuth token as a base64 string.
+The sync reads your runs through Garmin's **Personal API**, with a key you create
+yourself, on [Garmin Connect's Personal API page](https://connect.garmin.com/app/settings/personalApiToken): accept the terms and
+create a key. Garmin shows it once; copy it as
+`GARMIN_PERSONAL_API_KEY`. Choose the longest lifetime offered (a year at most)
+and diary its renewal: an expired key stops the sync with a message saying so,
+and a new one from the same page is all it takes.
+
+The key reads the activity list, each run's detail and FIT file, its time in HR
+zones, the daily resting HR and your zones, LTHR, age, fitness age and weight.
+`scripts/diagnostics/probe_personal_api.py` lists what it reaches for your
+account (see [docs/capability-audit.md](docs/capability-audit.md)).
+
+#### Optional: the garth token, for what only Garmin Connect serves
+
+Each run's shoe, the Garmin calendar (planned workouts, races), training status,
+race predictions, VO2max and threshold history, and pushing a coaching plan to
+the watch are only on Garmin Connect's private API, which the sync reaches with
+[garth](https://github.com/matin/garth) and a `GARMIN_SECRET`:
 
 ```bash
 python scripts/get_secret.py
 ```
 
-This will prompt for your Garmin Connect email and password, then print a `GARMIN_SECRET` string. Copy it - you'll need it as an environment variable.
+It prompts for your Garmin Connect email and password and prints the string.
+Without it the sync still reads every run through the key; those pages keep
+what they last showed. With it, a failed garth sign-in no longer stops the
+night - the runs sync and the night is reported as a partial one.
 
 > **Note on garth's deprecation**: garth is [no longer maintained](https://github.com/matin/garth/discussions/222)
-> because Garmin keeps breaking its *login* flow. This project only uses that flow
-> here, once, to mint the token - `sync.py` merely loads and refreshes the existing
-> OAuth token, which continues to work (the underlying OAuth1 token lasts ~1 year).
-> No migration is planned while this holds: the community alternatives are
-> browser-automation or TLS-impersonation workarounds in an ongoing cat-and-mouse
-> game, i.e. no more future-proof than staying put. If `get_secret.py` stops
-> working when your token expires, check that discussion for the current
-> workaround before switching libraries.
+> because Garmin keeps breaking its *login* flow, and since March 2026
+> `get_secret.py` can no longer mint a token at all. A token minted before keeps
+> working until its OAuth1 token expires (about a year); nothing can replace it
+> after that, which is why the runs moved to the Personal API key.
 >
 > `npm run coach:garmin-auth` reports what is knowable: whether a token exchange
 > succeeds right now, and when the OAuth2 tokens minted from your OAuth1 token
 > expire. It cannot tell you when the OAuth1 token itself dies - Garmin does not
-> return an expiry and garth records none - so the honest answer is that a
-> working exchange today is the only evidence there is. Run it before a long
-> trip rather than discovering the failure through a silent nightly sync.
+> return an expiry and garth records none.
 
 ### 3. Configure environment variables
 
 Create a `.env.local` file at the root:
 
 ```env
-# Garmin Connect auth token (from get_secret.py) - used only by scripts/sync.py, never on Vercel
-GARMIN_SECRET=eyJ...
+# Garmin Personal API key (https://connect.garmin.com/app/settings/personalApiToken) - used only by
+# scripts/sync.py, never on Vercel
+GARMIN_PERSONAL_API_KEY=GCDC_...
+# Optional: garth token (from get_secret.py) for gear, the calendar and Connect's metrics
+# GARMIN_SECRET=eyJ...
 
 # Canonical local dataset (a sibling private checkout)
 RUNOMICS_DATA_DIR=../runomics-data-adam/data
@@ -443,7 +460,7 @@ Go to [vercel.com/new](https://vercel.com/new), import your GitHub repo, and kee
 ### 3. Set environment variables
 
 In your Vercel project → **Settings** → **Environment Variables**, add every variable
-from your `.env.local` *except* `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
+from your `.env.local` *except* `GARMIN_PERSONAL_API_KEY`, `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
 
 | Variable | Used for |
 |----------|----------|
@@ -456,7 +473,7 @@ from your `.env.local` *except* `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
 | `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](#date-handling) |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts |
 
-> `GARMIN_SECRET` is only used locally by the sync script - it never runs on Vercel.
+> `GARMIN_PERSONAL_API_KEY` and `GARMIN_SECRET` are only used by the sync script - neither runs on Vercel.
 > `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: the adaptive coach is a local
 > CLI (`npm run coach`) for now, so nothing deployed reads them. Add them here only if a
 > server-side coaching route ever ships. No workflow runs a coaching generation either, so
@@ -465,7 +482,7 @@ from your `.env.local` *except* `GARMIN_SECRET` and `GEMINI_COACH_API_KEY`:
 
 The scheduled workflows read their secrets from a **GitHub Environment** named
 after the deployment's profile (GitHub → Settings → Environments), not from
-repository secrets: `GARMIN_SECRET`, `RUNOMICS_DATA_REPO_URL`,
+repository secrets: `GARMIN_PERSONAL_API_KEY` (and optionally `GARMIN_SECRET`), `RUNOMICS_DATA_REPO_URL`,
 `RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash),
 `INTERNAL_NOTIFY_SECRET` and `VERCEL_DEPLOY_HOOK_URL`, plus an environment
 *variable* `PROFILE` holding the environment's own name. These are separate from the Vercel env vars
@@ -511,7 +528,7 @@ this repository.
 | Maps | [MapLibre GL](https://maplibre.org/) + [MapTiler](https://www.maptiler.com/) |
 | Icons | [Lucide](https://lucide.dev/) |
 | Dark mode | [next-themes](https://github.com/pacocoursey/next-themes) |
-| Garmin auth | [garth](https://github.com/matin/garth) |
+| Garmin data | Garmin's Personal API, and [garth](https://github.com/matin/garth) for what only Connect serves |
 | FIT parsing | [garmin-fit-sdk](https://pypi.org/project/garmin-fit-sdk/) |
 
 ### Map styles

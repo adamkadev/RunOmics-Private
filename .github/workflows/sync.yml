@@ -113,6 +113,7 @@ jobs:
           DECLARED_PROFILE: ${{ vars.PROFILE }}
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
+          GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
         run: |
           if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
@@ -125,12 +126,16 @@ jobs:
           MISSING=""
           [ -n "$RUNOMICS_DATA_REPO_URL" ]   || MISSING="$MISSING RUNOMICS_DATA_REPO_URL"
           [ -n "$RUNOMICS_DATA_REPO_TOKEN" ] || MISSING="$MISSING RUNOMICS_DATA_REPO_TOKEN"
-          [ -n "$GARMIN_SECRET" ]            || MISSING="$MISSING GARMIN_SECRET"
+          # Either reads the runs; the key is the one that can be renewed.
+          [ -n "$GARMIN_PERSONAL_API_KEY$GARMIN_SECRET" ] || MISSING="$MISSING GARMIN_PERSONAL_API_KEY"
           if [ -n "$MISSING" ]; then
             echo "::error::Environment '${{ matrix.profile }}' is missing secret(s):$MISSING"
             echo "Every profile syncs into its own private data repository and never"
             echo "commits anything back here. See docs/personal-deployments.md."
             exit 1
+          fi
+          if [ -z "$GARMIN_PERSONAL_API_KEY" ]; then
+            echo "::warning::Environment '${{ matrix.profile }}' has no GARMIN_PERSONAL_API_KEY: every run is read through garth, whose token cannot be renewed. See docs/personal-deployments.md."
           fi
 
       - name: Set up Node
@@ -224,6 +229,7 @@ jobs:
       - name: Run sync
         id: sync
         env:
+          GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
           GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
           GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
