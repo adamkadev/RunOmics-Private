@@ -181,7 +181,11 @@ def main() -> int:
                     continue
 
                 is_new = store.upsert(
-                    activity_data, replace=args.force, keep_gear=gear is None, keep_zone_bounds=client is personal
+                    activity_data,
+                    replace=args.force,
+                    keep_gear=gear is None,
+                    gear_pending=gear is None and bool(secret),
+                    keep_zone_bounds=client is personal,
                 )
                 if connect and gear is None:
                     gear_unanswered.append(activity_id)
@@ -256,17 +260,10 @@ def _fetch_gear(connect: GarminClient, activity_id: str, *, required: bool) -> l
 
 
 def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip: set[str]) -> int:
-    """Re-read the gear of the last days' activities; return how many changed.
-
-    Picks up a shoe assigned in Garmin Connect after the activity was first
-    synced. Only a successful answer may change what is stored, since "no
-    gear" writes None over the gearId on file: strict_errors makes a 404
-    raise like any other error, and an error of any kind - a network one
-    included, which used to escape main() before store.save() and take the
-    night's activities with it - keeps the stored value for the next run to
-    ask again.
-    """
-    recent_ids = [aid for aid in store.get_ids_since(_REGEAR_WINDOW_DAYS) if aid not in skip]
+    """Only a successful answer may overwrite the stored gearId; a pending run has none to lose, so its 404 is an answer."""
+    pending = set(store.get_gear_pending_ids())
+    candidates = dict.fromkeys([*store.get_ids_since(_REGEAR_WINDOW_DAYS), *pending])
+    recent_ids = [aid for aid in candidates if aid not in skip]
     if not recent_ids:
         return 0
 
@@ -274,7 +271,7 @@ def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip
     changed = 0
     for activity_id in recent_ids:
         try:
-            raw_gear = retry_transient(client.get_activity_gear, activity_id, strict_errors=True)
+            raw_gear = retry_transient(client.get_activity_gear, activity_id, strict_errors=activity_id not in pending)
         except Exception as exc:
             print(f"  Warning: gear of {activity_id} not refreshed ({type(exc).__name__}: {exc}); kept as stored.")
             continue

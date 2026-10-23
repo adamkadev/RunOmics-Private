@@ -321,6 +321,18 @@ class TestGearRefresh:
         assert _stored_ids(workspace) == {"090", "101", "102"}
         assert _stored_gear(workspace, "090") == "shoe1"
 
+    def test_a_run_quick_synced_gets_its_shoe_from_the_next_full_sync_however_old(
+        self, workspace, personal, garmin, steps, monkeypatch
+    ):
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+        assert _run(monkeypatch, "--quick") == 0
+        garmin.gear = {"101": [{"uuid": "shoe1"}]}
+
+        assert _run(monkeypatch) == 0
+
+        assert _stored_gear(workspace, "101") == "shoe1"
+        assert JsonActivityStore(workspace / "activities").get_gear_pending_ids() == []
+
 
 def _garmin_whose_gear_request_fails(monkeypatch, error) -> GarminClient:
     """The real client over a fake transport: what is under test is its own reading of an error answer."""
