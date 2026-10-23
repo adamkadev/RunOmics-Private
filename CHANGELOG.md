@@ -23,6 +23,11 @@ All notable changes to this project are documented in this file.
   between runs and gets 10 minutes and retries instead of 5. Without a key,
   WARP is still required.
 
+- Each sync's summary page on GitHub times it from the tap: when the job
+  started, the data was pushed, the deployment carrying it went live and the
+  first AI pass wrote the run's verdict (the Sync button's "done"), then
+  every step and the Vercel build on their own.
+
 - VO2max keeps moving on a night without Garmin Connect (no `GARMIN_SECRET`,
   or a garth token past saving): each run's FIT file carries Garmin's own
   reading, within 0.1 of Connect's daily value. The runs after Connect's

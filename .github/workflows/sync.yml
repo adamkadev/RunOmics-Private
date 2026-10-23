@@ -62,6 +62,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
+      actions: read
 
     strategy:
       # One profile's Garmin login expiring must not cancel everyone else's sync.
@@ -343,7 +344,9 @@ jobs:
         continue-on-error: true
         env:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
-        run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+        run: |
+          curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
+          date +%s > "$RUNNER_TEMP/deploy_hook_at"
 
       # Also after a timestamp-only commit, to retry the AI work an earlier sync left unfinished.
       - name: Trigger post-sync checks
@@ -373,6 +376,7 @@ jobs:
                 | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
               if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
                 DEPLOYED=true
+                date +%s > "$RUNNER_TEMP/live_at"
                 echo "Deployment carrying $EXPECTED_SYNC is live after $(((i - 1) * 15))s."
                 break
               fi
@@ -441,6 +445,9 @@ jobs:
           for i in 1 2 3 4 5; do
             OUT=$(check ai-insights 310)
             echo "$OUT"
+            if [ "$i" = 1 ]; then
+              date +%s > "$RUNNER_TEMP/verdict_at"
+            fi
             SPEND=$(printf '%s' "$OUT" \
               | python -c "import json,sys; print(json.dumps(json.load(sys.stdin).get('spend') or {}, sort_keys=True))" 2>/dev/null || true)
             if [ -n "$SPEND" ] && [ "$SPEND" = "$LAST_SPEND" ]; then
@@ -471,3 +478,24 @@ jobs:
           printf 'x-internal-secret: %s\ncontent-type: application/json\n' "$SECRET" \
             | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/workflow-failure" -H @- \
                 --data @"$RUNNER_TEMP/workflow-failure.json"
+
+      - name: Time the run
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_NAME: sync (${{ matrix.profile }})
+          MODE: ${{ steps.config.outputs.quick == 'true' && 'quick' || 'full' }}
+        run: |
+          api() {
+            printf 'authorization: Bearer %s\n' "$GH_TOKEN" \
+              | curl -fsS --max-time 20 -H @- -H 'accept: application/vnd.github+json' \
+                  "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID$1"
+          }
+          mark() { cat "$RUNNER_TEMP/$1" 2>/dev/null || echo null; }
+          api "" > "$RUNNER_TEMP/run.json"
+          api "/attempts/$GITHUB_RUN_ATTEMPT/jobs?per_page=100" > "$RUNNER_TEMP/jobs.json"
+          jq -rn --slurpfile run "$RUNNER_TEMP/run.json" --slurpfile jobs "$RUNNER_TEMP/jobs.json" \
+            --arg job "$JOB_NAME" --arg mode "$MODE" \
+            --argjson hook "$(mark deploy_hook_at)" --argjson live "$(mark live_at)" --argjson verdict "$(mark verdict_at)" \
+            -f scripts/sync_timing.jq >> "$GITHUB_STEP_SUMMARY"
