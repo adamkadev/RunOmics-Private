@@ -51,6 +51,11 @@ for (const endpoint of ['pr-check', 'ai-insights', 'daily-session', 'stale-sync-
   })
 }
 
+test('loop routes cannot be generated without the owner token', async ({ request }) => {
+  const response = await request.post('/api/explore/route', { data: { start: [-150, 0], distanceM: 8000, seeds: [1] } })
+  expect([401, 403, 503]).toContain(response.status())
+})
+
 test('an unknown map cluster is a 404, not a dump of every route', async ({ request }) => {
   const response = await request.get('/api/map/routes?cluster=does-not-exist')
   expect(response.status()).toBe(404)
