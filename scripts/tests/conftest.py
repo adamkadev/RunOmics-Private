@@ -14,7 +14,6 @@ os.environ["RUNOMICS_DATA_DIR"] = _SESSION_DATA_DIR.name
 # The pipeline modules import each other as top-level packages, as sync.py runs them with scripts/ on sys.path.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-
 class NetworkBlocked(RuntimeError):
     """A test reached for the network."""
 

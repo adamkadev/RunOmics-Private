@@ -56,6 +56,8 @@ def test_a_404_is_an_activity_without_that_resource(method, empty):
     ids=["5xx", "429", "network"],
 )
 def test_any_other_error_raises_so_it_is_retried_not_stored_as_empty(method, empty, error):
+    # A 503 read as "no data" stored the activity without its GPS, samples,
+    # splits and best efforts, and nothing ever fetched them again.
     client = _client(error)
 
     with pytest.raises(type(error)):
@@ -86,27 +88,18 @@ class TestDownloadFit:
         assert _client(_Response(content=b"")).download_fit("123") is None
 
     def test_a_download_that_is_not_an_archive_raises(self):
-        # A corrupt transfer, not a missing file.
+        # A corrupt transfer, not a missing file: returning None stored the
+        # activity without its track and never fetched it again.
         client = _client(_Response(content=b"<html>Service Unavailable</html>"))
 
         with pytest.raises(zipfile.BadZipFile):
             client.download_fit("123")
 
 
-@pytest.mark.parametrize(
-    "method,args",
-    [("get_hrv_range", ("2025-09-28", "2025-10-25")), ("get_hrv_night", ("2025-09-28",)),
-     ("get_resting_hr_range", ("2025-09-28", "2025-10-25"))],
-)
-def test_a_body_less_no_data_answer_is_empty_not_a_decode_error(method, args):
-    # Garmin answers a period without HRV with 204 and no body.
+def test_a_body_less_no_data_answer_is_empty_not_a_decode_error():
+    # Garmin answers a period without data with 204 and no body. Reading it as
+    # JSON raised a JSONDecodeError that failed the recovery step every night.
     client = _client(httpx.Response(204, content=b""))
     client.get_profile_uuid = lambda: "uuid"
 
-    assert getattr(client, method)(*args) == {}
-
-
-def test_a_recovery_payload_is_still_read():
-    client = _client(httpx.Response(200, json={"hrvSummaries": []}))
-
-    assert client.get_hrv_range("2025-09-28", "2025-10-25") == {"hrvSummaries": []}
+    assert client.get_resting_hr_range("2025-09-28", "2025-10-25") == {}

@@ -869,10 +869,7 @@ export const en = {
         check: 'Check',
       },
       loadTrend: {
-        title: 'Load trend',
-        caption: '7-day acute load',
         about: 'Your acute load: the last 7 days of training load from your watch, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
-        safe: (lo: number, hi: number) => `safe range ${lo}–${hi}`,
         ratioSafe: (lo: number, hi: number) => `ratio · safe ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 day' : `${days} days`) : Math.round(days / 7) === 1 ? '1 week' : `${Math.round(days / 7)} weeks`),
         // Today, or the period's last day once it is swiped back.
@@ -888,37 +885,6 @@ export const en = {
         // The days before it that were above the range: history, said as such.
         wentOver: (days: number, last: string) =>
           days === 1 ? ` Earlier in this period, one day was above it, on ${last}.` : ` Earlier in this period, ${days} days were above it, the last on ${last}.`,
-        legend: { acute: 'Acute load', safe: 'Safe range', outside: 'Outside range' },
-        readout: (date: string, acute: number, lo: number, hi: number) => `${date} · ${acute} · safe ${lo}–${hi}`,
-      },
-      recovery: {
-        title: 'Recovery',
-        caption: 'Your watch · overnight',
-        // One series, named in the caption.
-        captionDaily: 'Resting HR · your watch',
-        captionHrv: 'HRV · your watch',
-        about: 'Overnight HRV and resting heart rate from your watch, each against your own baseline: the middle 80% of your last 60 nights. Higher HRV and lower resting HR mean you are recovering. Each shows once the period has 7 days of it. Without the watch on overnight there is no HRV, and resting HR comes from your quietest stretch of the day, so it reads a little higher.',
-        hrv: 'HRV',
-        restingHr: 'Daily resting HR',
-        ms: 'ms',
-        bpm: 'bpm',
-        vsWeek: (delta: string) => `${delta} vs 7-day avg`,
-        noChange: 'no change',
-        baseline: (lo: number, hi: number) => `baseline ${lo}–${hi}`,
-        bothInside: ['Both ', 'inside your baseline', ". You're absorbing the load."] as [string, string, string],
-        insideBaseline: (lo: number, hi: number, unit: string) => ['Inside your ', `${lo}–${hi} ${unit} baseline`, ". You're absorbing the load."] as [string, string, string],
-        hrvLead: 'HRV ',
-        hrvLow: (n: number) => (n <= 1 ? 'below baseline last night' : `below baseline ${n} nights running`),
-        hrvHigh: 'above baseline',
-        rhrLead: 'Resting HR ',
-        rhrUpBold: (d: number) => `up ${d} bpm`,
-        rhrHighBold: 'above baseline',
-        rhrLowBold: 'below baseline',
-        andRhrUp: (d: number) => ` and resting HR up ${d} bpm`,
-        andRhrHigh: ' and resting HR above baseline',
-        andRhrLow: ' and resting HR below baseline',
-        takeEasy: '. Take tomorrow easy.',
-        readout: (date: string, value: number, unit: string) => `${date} · ${value} ${unit}`,
       },
       status: {
         title: 'Training status',

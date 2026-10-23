@@ -90,6 +90,7 @@ jobs:
           DECLARED_PROFILE: ${{ vars.PROFILE }}
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
+          GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
         run: |
           if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
@@ -102,12 +103,16 @@ jobs:
           MISSING=""
           [ -n "$RUNOMICS_DATA_REPO_URL" ]   || MISSING="$MISSING RUNOMICS_DATA_REPO_URL"
           [ -n "$RUNOMICS_DATA_REPO_TOKEN" ] || MISSING="$MISSING RUNOMICS_DATA_REPO_TOKEN"
-          [ -n "$GARMIN_SECRET" ]            || MISSING="$MISSING GARMIN_SECRET"
+          # Either reads the runs; the key is the one that can be renewed.
+          [ -n "$GARMIN_PERSONAL_API_KEY$GARMIN_SECRET" ] || MISSING="$MISSING GARMIN_PERSONAL_API_KEY"
           if [ -n "$MISSING" ]; then
             echo "::error::Environment '${{ matrix.profile }}' is missing secret(s):$MISSING"
             echo "Every profile syncs into its own private data repository and never"
             echo "commits anything back here."
             exit 1
+          fi
+          if [ -z "$GARMIN_PERSONAL_API_KEY" ]; then
+            echo "::warning::Environment '${{ matrix.profile }}' has no GARMIN_PERSONAL_API_KEY: every run is read through garth, whose token cannot be renewed."
           fi
 
       - name: Set up Node
@@ -197,6 +202,7 @@ jobs:
       - name: Run sync
         id: sync
         env:
+          GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
           GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
           GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
@@ -241,6 +247,7 @@ jobs:
         if: always()
         run: warp-cli --accept-tos disconnect || true
 
+      # Rebuilds stored runs from the FIT files cached above, asking Garmin for nothing.
       - name: Reprocess cached runs
         if: inputs.reprocess == true && inputs.dry_run != true
         run: python scripts/reprocess.py
@@ -337,6 +344,14 @@ jobs:
             | python -c "import json,sys; i=json.load(sys.stdin).get('integrations') or {}; print(' '.join(k for k in ('firebaseAdmin', 'gemini') if i.get(k) is False))" 2>/dev/null || true)
           if [ -n "$MISSING" ]; then
             echo "::warning::This deployment has no credentials for: $MISSING."
+          fi
+          # Routes are stored as recorded, start and finish included: on a public
+          # site, anyone sees where every run begins.
+          PUBLIC=$(printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
+            | python -c "import json,sys; print('yes' if (json.load(sys.stdin).get('integrations') or {}).get('privateSite') is False else '')" 2>/dev/null || true)
+          if [ -n "$PUBLIC" ]; then
+            echo "::warning::This deployment is public and serves every route in full, start and finish included. Set RUNOMICS_PRIVATE=1."
           fi
 
           # No check may take another one down with it. They are independent, and

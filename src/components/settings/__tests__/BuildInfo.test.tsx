@@ -25,7 +25,9 @@ describe('BuildInfo', () => {
   const writeText = vi.fn(() => Promise.resolve())
   beforeEach(() => {
     vi.useFakeTimers()
-    Object.assign(navigator, { clipboard: { writeText } })
+    // Defined, not assigned: a file before this one in the worker may have
+    // left a getter-only clipboard behind (user-event installs one).
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
   })
   afterEach(() => {
     vi.useRealTimers()

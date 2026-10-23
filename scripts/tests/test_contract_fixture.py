@@ -1,4 +1,11 @@
-"""src/infrastructure/contracts/__tests__/pythonFixture.test.ts checks the same fixture against the app's contract.
+"""The Python half of the data contract with the app.
+
+A realistic activity goes through the real mapper and the real store, and
+the files the store writes must equal fixtures/contract/ byte for byte. The
+TypeScript half (src/infrastructure/contracts/__tests__/pythonFixture.test.ts)
+checks those same files against the app's contract. Between them, a change to
+what the sync writes cannot reach the app unnoticed: it fails here first, and
+once the fixture is regenerated it fails there if the app cannot read it.
 
 When the change here is intended, regenerate the fixture and commit it:
 
@@ -15,7 +22,8 @@ from repository.json_store import JsonActivityStore
 
 _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "contract" / "activities"
 
-# Fictional throughout: an activity id no Garmin account has, and a route nowhere near where either athlete runs.
+# Fictional throughout: an activity id no Garmin account has, and a route
+# nowhere near anyone's.
 _GARMIN_SUMMARY = {
     "activityId": 424242,
     "activityName": "Morning Run",

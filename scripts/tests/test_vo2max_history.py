@@ -1,7 +1,11 @@
 from datetime import date
 from itertools import pairwise
 
-from garmin.vo2max_history import monthly_windows, normalize_max_met
+import pytest
+
+from garmin import vo2max_history
+from garmin.vo2max_history import monthly_windows, normalize_max_met, samples_from_runs
+from repository.history_file import read_history, write_history
 
 # Trimmed from a real maxmet/monthly response.
 PAYLOAD = [
@@ -75,3 +79,84 @@ class TestMonthlyWindows:
         for (_, end), (next_start, _) in pairwise(windows):
             assert (next_start - end).days == 1
         assert all((end - start).days <= 366 for start, end in windows)
+
+
+class TestCarriedOnFromRuns:
+    """Without Connect, the runs' own FIT readings carry the series on: within
+    0.1 of Connect's daily value, so they fill only what Connect never had."""
+
+    @pytest.fixture
+    def out(self, tmp_path, monkeypatch):
+        path = tmp_path / "vo2max_history.json"
+        monkeypatch.setattr(vo2max_history, "_OUT_PATH", path)
+        return path
+
+    def test_takes_each_days_last_run_and_only_runs(self):
+        # Stored dates carry no time: the later run of a day has the larger id.
+        runs = [
+            {"id": "200", "date": "2026-10-21", "sport": "running", "vo2maxGarmin": 37.4},
+            {"id": "199", "date": "2026-10-21", "sport": "trail_running", "vo2maxGarmin": 37.2},
+            {"id": "201", "date": "2026-10-22", "sport": "cycling", "vo2maxGarmin": 51.0},
+            {"id": "202", "date": "2026-10-23", "vo2maxGarmin": None},
+        ]
+        assert samples_from_runs(runs) == {"2026-10-21": {"date": "2026-10-21", "vo2max": 37.4, "source": "fit"}}
+
+    def test_carries_on_only_after_connects_last_sample(self, out):
+        # Before it, Connect was answering: a run it left unsampled had not
+        # moved VO2max, and its closed months stay as it sampled them.
+        connect = {
+            "months": {"2026-10": {"date": "2026-10-16", "vo2max": 37.2, "fitnessAge": 24.4}},
+            "days": {"2026-10-16": {"date": "2026-10-16", "vo2max": 37.2}},
+        }
+        write_history(out, connect)
+        runs = [_run("1", "2026-09-30", 36.9), _run("2", "2026-10-16", 37.1), _run("3", "2026-10-18", 37.4)]
+
+        assert vo2max_history.sync_vo2max_from_runs(runs, date(2026, 10, 23)) == 1
+
+        stored = read_history(out)
+        # The month keeps the fitness age only Connect knows.
+        assert stored["months"] == {"2026-10": {"date": "2026-10-18", "vo2max": 37.4, "source": "fit", "fitnessAge": 24.4}}
+        assert stored["days"] == {**connect["days"], "2026-10-18": {"date": "2026-10-18", "vo2max": 37.4, "source": "fit"}}
+
+    def test_a_later_run_on_a_day_already_carried_still_counts(self, out):
+        # The Sync button carried the morning run; the evening one comes at night.
+        write_history(out, {"months": {}, "days": {}})
+        vo2max_history.sync_vo2max_from_runs([_run("1", "2026-10-21", 37.2)], date(2026, 10, 23))
+
+        vo2max_history.sync_vo2max_from_runs([_run("1", "2026-10-21", 37.2), _run("2", "2026-10-21", 37.4)], date(2026, 10, 23))
+
+        assert read_history(out)["days"]["2026-10-21"]["vo2max"] == 37.4
+
+    def test_nothing_after_connects_last_sample_rewrites_nothing(self, out):
+        write_history(out, {"months": {"2026-10": {"date": "2026-10-21", "vo2max": 37.4}}, "days": {}})
+        before = out.read_text()
+
+        vo2max_history.sync_vo2max_from_runs([_run("1", "2026-10-21", 37.3)], date(2026, 10, 23))
+
+        assert out.read_text() == before
+        assert vo2max_history.newest_carried_vo2max() is None
+
+    def test_the_newest_carried_reading_is_what_the_athlete_takes(self, out):
+        write_history(out, {"months": {"2026-10": {"date": "2026-10-16", "vo2max": 37.2}}, "days": {}})
+        vo2max_history.sync_vo2max_from_runs([_run("1", "2026-10-21", 37.3)], date(2026, 10, 23))
+
+        assert vo2max_history.newest_carried_vo2max() == 37.3
+
+    def test_connect_back_replaces_every_carried_sample(self, out, monkeypatch):
+        write_history(out, {
+            "months": {"2026-10": {"date": "2026-10-21", "vo2max": 37.3, "source": "fit"}},
+            "days": {"2026-10-21": {"date": "2026-10-21", "vo2max": 37.3, "source": "fit"}},
+        })
+        monkeypatch.setattr(vo2max_history, "_fetch_months", lambda *_: {"2026-10": {"date": "2026-10-22", "vo2max": 37.4}})
+        monkeypatch.setattr(vo2max_history, "_fetch_days", lambda *_: {"2026-10-22": {"date": "2026-10-22", "vo2max": 37.4}})
+
+        vo2max_history.sync_vo2max_history(object(), date(2026, 9, 1), date(2026, 10, 23))
+
+        assert read_history(out) == {
+            "months": {"2026-10": {"date": "2026-10-22", "vo2max": 37.4}},
+            "days": {"2026-10-22": {"date": "2026-10-22", "vo2max": 37.4}},
+        }
+
+
+def _run(activity_id, day, vo2max):
+    return {"id": activity_id, "date": day, "sport": "running", "vo2maxGarmin": vo2max}

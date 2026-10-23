@@ -61,7 +61,7 @@ const servedDirsThatMustNotExist = [
   },
   {
     dir: 'public/fit',
-    detail: `Raw FIT holds every GPS sample of the run. The cache lives in ${FIT_CACHE_DIR}/ - move it there and delete public/fit/.`,
+    detail: `Raw FIT holds every GPS point of every run, and public/ is served without sign-in. The cache lives in ${FIT_CACHE_DIR}/ - move it there and delete public/fit/.`,
   },
 ]
 for (const { dir, detail } of servedDirsThatMustNotExist) {
@@ -110,6 +110,9 @@ const secretChecks = [
   // A pasted one is a write credential for the only copy of the history.
   { name: 'GitHub token', pattern: /\b(gh[pousr]_[0-9A-Za-z]{36,}|github_pat_[0-9A-Za-z_]{50,})\b/ },
   { name: 'Vercel deploy hook URL', pattern: /api\.vercel\.com\/v1\/integrations\/deploy\/prj_[0-9A-Za-z]+\/[0-9A-Za-z]+/ },
+  // Garmin shows a Personal API key once; a pasted one reads the athlete's
+  // whole account until it expires or is revoked.
+  { name: 'Garmin Personal API key', pattern: /\bGCDC_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\./ },
 ]
 for (const { name, pattern, exclude } of secretChecks) {
   const hits = grepTracked(files, pattern, { exclude: exclude ?? [] })

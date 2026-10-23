@@ -21,9 +21,9 @@ def get_data_dir() -> Path:
 def get_fit_cache_dir() -> Path:
     """Where the raw Garmin .fit downloads are cached.
 
-    Never under public/: these are the source binaries, carrying every GPS
-    sample at full resolution, and everything under public/ is served as a
-    static asset.
+    Never under public/: these are the source binaries, every GPS sample of
+    every run, and everything under public/ is served as a static asset,
+    past the sign-in that guards the data.
     """
 
     return _REPOSITORY_ROOT / ".fit-cache"

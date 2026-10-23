@@ -1,6 +1,12 @@
 /**
- * The arrow says which way a delta went, the colour whether that is good, so
- * "Fatigue ↓4" is a green down arrow. Never the accent: a trend is not a "now" marker.
+ * What a delta means, coloured by it (v4.7): improving is --good, getting
+ * worse is amber, and a change too small to mean anything is muted. The arrow
+ * still says which way; the colour says whether that is good, so "Fatigue ↓4"
+ * is a green down arrow. Every screen reads a metric's delta through here, so
+ * the same metric is the same colour on Today, Analytics and Progress.
+ *
+ * Only the arrow and the delta text take the colour; the value beside it stays
+ * ink. Never the accent: a trend is not a "now" marker.
  */
 
 export type DeltaMetric =
@@ -12,8 +18,6 @@ export type DeltaMetric =
   | 'race'
   | 'efficiency'
   | 'distance'
-  | 'restingHr'
-  | 'hrv'
   | 'loadRatio'
   | 'rampRate'
 
@@ -28,13 +32,23 @@ export const DELTA_TONE_COLOR: Record<DeltaTone, string> = {
 /** Form's neutral band, which "better" moves toward. */
 const FORM_BAND = { lo: -10, hi: 5 } as const
 
+/** Where a load marker is safe; outside it is worse, inside it says nothing. */
 const SAFE_RANGE: Partial<Record<DeltaMetric, { lo: number; hi: number }>> = {
   loadRatio: { lo: 0.8, hi: 1.3 },
   rampRate: { lo: -5, hi: 5 },
 }
 
 export interface DeltaContext {
+  /**
+   * The value now. Form needs it to tell whether the change moved toward the
+   * neutral band; a distance needs it for its percentage threshold; the load
+   * markers need it for their safe range.
+   */
   value?: number
+  /**
+   * A tighter or looser neutral band for one screen: the VO₂max grade's
+   * 30-day change reads 0.3 as noise (v5.3) where the 12-week tiles use 0.5.
+   */
   flatBelow?: number
 }
 
@@ -59,10 +73,14 @@ export function deltaTone(metric: DeltaMetric, delta: number | null | undefined,
     // Seconds, positive when slower.
     case 'pace':
       return Math.abs(delta) < 3 ? 'flat' : delta < 0 ? 'good' : 'worse'
-    // No noise band: a percentage band left a 10K's +8 s grey beside an amber 5K +16 s.
+    // A predicted race time: any slower time is a caution, any faster good
+    // news (design review, Oct 2026) - a 0.5 % band left the 10K's +8 s grey
+    // beside an amber 5K +16 s. Level only when it prints as 0 s.
     case 'race':
       return Math.round(delta) === 0 ? 'flat' : delta < 0 ? 'good' : 'worse'
-    // m per heartbeat, compared as printed (hundredths) so the colour agrees with the number.
+    // m per heartbeat, printed to two decimals: up to 0.02 is week-to-week
+    // noise (v4.16.4). Compared as printed, in hundredths, so the colour always
+    // agrees with the number beside it.
     case 'efficiency':
       return Math.round(Math.abs(delta) * 100) <= 2 ? 'flat' : delta > 0 ? 'good' : 'worse'
     // Against last year's figure: under 2% of it is the same year.
@@ -71,11 +89,6 @@ export function deltaTone(metric: DeltaMetric, delta: number | null | undefined,
       if (!base || base <= 0) return delta > 0 ? 'good' : delta < 0 ? 'worse' : 'flat'
       return Math.abs(delta) / base < 0.02 ? 'flat' : delta > 0 ? 'good' : 'worse'
     }
-    case 'restingHr':
-      return Math.abs(delta) < (ctx.flatBelow ?? 1) ? 'flat' : delta < 0 ? 'good' : 'worse'
-    // Overnight HRV, ms.
-    case 'hrv':
-      return Math.abs(delta) < (ctx.flatBelow ?? 3) ? 'flat' : delta > 0 ? 'good' : 'worse'
     case 'loadRatio':
     case 'rampRate': {
       const range = SAFE_RANGE[metric]!

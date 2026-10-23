@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import io
 import os
-import zipfile
 from datetime import datetime, timezone
 from typing import Any
 
 import garth
 import httpx
+
+from .errors import GarminAPIError, GarminAuthError
+from .shared import collect_activity_ids, fit_from_archive
 
 os.environ.setdefault("GARTH_TELEMETRY_ENABLED", "false")
 
@@ -17,14 +18,7 @@ _TIMEOUT = httpx.Timeout(120.0, connect=30.0)
 _USER_AGENT = "Mozilla/5.0 (RunOmics/1.0)"
 
 
-class GarminAuthError(Exception):
-    pass
-
-
-class GarminAPIError(Exception):
-    def __init__(self, status_code: int, url: str) -> None:
-        super().__init__(f"HTTP {status_code} from {url}")
-        self.status_code = status_code
+__all__ = ["GarminAPIError", "GarminAuthError", "GarminClient"]
 
 
 def _json_or_empty(resp: httpx.Response) -> dict[str, Any]:
@@ -35,8 +29,15 @@ def _json_or_empty(resp: httpx.Response) -> dict[str, Any]:
 _CONSUMER_KEY_ENV = "GARMIN_OAUTH_CONSUMER_KEY"
 _CONSUMER_SECRET_ENV = "GARMIN_OAUTH_CONSUMER_SECRET"
 
-# Garmin's own Android client credentials: the same for every Garmin user, and not secret. Pinned here because
-# garth otherwise fetches them on every run from the S3 bucket of a project its author has abandoned.
+# Garmin's own Android client credentials. Not this athlete's, and not secret:
+# they are the same for every Garmin user, they ship inside Garmin's Android
+# app, and garth's bucket serves them to anyone who asks. Configuration, so
+# they live in the repository where they are visible and need no setup.
+#
+# They are here at all because garth fetches them at runtime from
+# thegarth.s3.amazonaws.com - a bucket belonging to a project its author has
+# abandoned - once per process, which means every nightly run. The day that
+# bucket goes, a sync that would otherwise have worked for another year stops.
 _OAUTH_CONSUMER = {
     "consumer_key": "fc3e99d2-118c-44b8-8ae3-03370dde24c0",
     "consumer_secret": "E08WAR897WEy2knn7aFBrvegVAf0AFdWBBF",
@@ -44,7 +45,12 @@ _OAUTH_CONSUMER = {
 
 
 def _seed_oauth_consumer() -> None:
-    """garth fetches only while its module global is empty; the env vars are the escape hatch if Garmin rotates the pair."""
+    """Fill in the OAuth1 consumer before garth can go looking for it.
+
+    garth fetches only while its module global is still empty, so filling it
+    first settles the question. The environment variables are the escape hatch
+    for the day Garmin rotates the pair and a released constant is stale.
+    """
     key = os.environ.get(_CONSUMER_KEY_ENV, "").strip()
     secret = os.environ.get(_CONSUMER_SECRET_ENV, "").strip()
 
@@ -55,7 +61,11 @@ def _seed_oauth_consumer() -> None:
     )
 
 
-# garth's login flow is broken and the package unmaintained, so the recovery is not obvious and the message carries it.
+# The day this fires is the day the pipeline stops, and a bare exception would
+# send the reader looking for a network fault. garth's login flow - the only
+# supported way to mint a replacement - was broken by a Garmin auth change in
+# March 2026 and the package is unmaintained, so the recovery is not obvious
+# and the message has to carry it.
 _REFRESH_FAILED = (
     "Token refresh failed: {exc}\n"
     "\n"
@@ -99,7 +109,13 @@ class GarminClient:
         self._profile_uuid: str | None = None
 
     def auth_state(self) -> dict[str, Any]:
-        """The OAuth1 token carries no expiry: only that it still works, proved by this call running at all."""
+        """What is knowable about the tokens, for `npm run coach:garmin-auth`.
+
+        The OAuth1 token carries no expiry - garth does not record one and
+        Garmin does not return one - so its remaining life cannot be reported,
+        only whether it still works. That it does is proved by this call having
+        got far enough to run at all.
+        """
         oauth2 = garth.client.oauth2_token
         return {
             "oauth1": {
@@ -137,7 +153,8 @@ class GarminClient:
     def _get(self, url: str, **kwargs: Any) -> httpx.Response:
         return self._request("GET", url, **kwargs)
 
-    # Every caller is an explicit, single-resource mutation: there is deliberately no bulk variant of either.
+    # Write verbs. Every caller is an explicit, single-resource mutation - there
+    # is deliberately no bulk/list-wide variant of either.
     def _post(self, url: str, **kwargs: Any) -> httpx.Response:
         return self._request("POST", url, **kwargs)
 
@@ -160,22 +177,7 @@ class GarminClient:
         ).json()
 
     def get_all_activity_ids(self, *, running_only: bool = True) -> list[str]:
-        ids: list[str] = []
-        start = 0
-        limit = 100
-
-        while True:
-            batch = self.get_activities(start=start, limit=limit, running_only=running_only)
-            if not batch:
-                break
-            ids.extend(str(a["activityId"]) for a in batch)
-            print(f"  Fetched {len(ids)} activity IDs...", end="\r", flush=True)
-            if len(batch) < limit:
-                break
-            start += limit
-
-        print(f"  Found {len(ids)} total activities on Garmin.       ")
-        return ids
+        return collect_activity_ids(self.get_activities, running_only=running_only)
 
     def get_activity_detail(self, activity_id: str) -> dict[str, Any]:
         return self._get(
@@ -183,9 +185,17 @@ class GarminClient:
         ).json()
 
     def _get_optional(self, url: str, *, strict_errors: bool, **kwargs: Any) -> httpx.Response | None:
-        """Only a 404 means "not there": any other error raises, so the activity is fetched again rather than stored without it.
+        """GET a per-activity resource the activity may simply not have.
 
-        strict_errors raises the 404 too, where a missing resource must not pass for an empty one.
+        Only a 404 means "not there", and comes back as None. Every other
+        error - a 5xx, a 429, a dropped connection - raises, so that
+        retry_transient retries it and, failing that, the activity fails and
+        is fetched again next run. Reading a 503 as "no data" stored the
+        activity without its track, zones or gear for good.
+
+        strict_errors raises the 404 too: for diagnostics, where a missing
+        resource must not pass for an empty one, and for a caller whose
+        "nothing" would overwrite a value already on file.
         """
         try:
             return self._get(url, **kwargs)
@@ -220,25 +230,28 @@ class GarminClient:
         ).json()
 
     def download_fit(self, activity_id: str, *, strict_errors: bool = False) -> bytes | None:
-        """A download that is not an archive raises zipfile.BadZipFile: a broken transfer, not a missing file."""
+        """The activity's original FIT file, or None for an activity without one.
+
+        None is a 404, an empty download, or an archive with no .fit inside
+        (an activity imported from a GPX, say). A download that is not an
+        archive at all raises zipfile.BadZipFile: that is a broken transfer,
+        not a missing file, and it must fail the activity like any other error.
+        """
         resp = self._get_optional(
             f"{self._base}/download-service/files/activity/{activity_id}",
             strict_errors=strict_errors,
         )
         if resp is None or not resp.content:
             return None
-
-        with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
-            for name in zf.namelist():
-                if name.lower().endswith(".fit"):
-                    return zf.read(name)
-        return None
+        return fit_from_archive(resp.content)
 
     def get_user_settings(self) -> dict[str, Any]:
         return self._get(f"{self._base}/userprofile-service/userprofile/user-settings").json()
 
-    # The web front-end's /gc-api/ prefix does not exist on connectapi.garmin.com.
-    # `weekly` names the four-week view, whose records are daily; `monthly` is the same series sampled weekly.
+    # Garmin Connect's web front-end calls both of these under a /gc-api/ prefix
+    # on connect.garmin.com; on connectapi.garmin.com the prefix does not exist.
+    # `weekly` names the view, not the granularity: it is the four-week view and
+    # its records are daily. (`monthly` is the same series sampled once a week.)
     def get_training_status_daily(self, start: str, end: str) -> dict[str, Any]:
         return self._get(
             f"{self._base}/metrics-service/metrics/trainingstatus/weekly/{self.get_profile_uuid()}",
@@ -261,7 +274,11 @@ class GarminClient:
         return self._get(f"{self._base}/userprofile-service/socialProfile").json()
 
     def get_profile_uuid(self) -> str:
-        """Garmin calls it `displayName` on the social profile; it is neither the numeric user id nor the email."""
+        """The account's profile UUID, which keys the race-prediction endpoint.
+
+        Not the numeric user id and not the email: Garmin calls it `displayName`
+        on the social profile, and it is the only accepted path segment there.
+        """
         if self._profile_uuid is None:
             self._profile_uuid = str(self.get_social_profile()["displayName"])
         return self._profile_uuid
@@ -313,14 +330,8 @@ class GarminClient:
             },
         ).json()
 
-    # The per-night endpoint is the fallback when a range is refused; both answer a period without data with a bare 204.
-    def get_hrv_range(self, start: str, end: str) -> dict[str, Any]:
-        return _json_or_empty(self._get(f"{self._base}/hrv-service/hrv/daily/{start}/{end}"))
-
-    def get_hrv_night(self, day: str) -> dict[str, Any]:
-        return _json_or_empty(self._get(f"{self._base}/hrv-service/hrv/{day}"))
-
-    # Metric 60 is the daily resting heart rate, over any date range.
+    # Metric 60 is the daily resting heart rate, over any date range. A period
+    # without data answers 204 and no body, which .json() cannot read.
     def get_resting_hr_range(self, start: str, end: str) -> dict[str, Any]:
         return _json_or_empty(
             self._get(
@@ -368,22 +379,30 @@ class GarminClient:
         url = f"{self._base}/trainingplan-service/trainingplan/fbt-adaptive/{plan_id}"
         return self._get(url).json()
 
+    # --- workout writes -------------------------------------------------
+    # Garmin's private workout-service. Creating and scheduling are two calls:
+    # the first stores a workout template in the library, the second puts that
+    # template on a calendar date. Deleting mirrors it in reverse.
+
     def create_workout(self, payload: dict[str, Any]) -> dict[str, Any]:
-        """Garmin's saved workout carries the assigned `workoutId`."""
+        """Create one workout template. Returns Garmin's saved workout, which
+        carries the assigned `workoutId`."""
         return self._post(f"{self._base}/workout-service/workout", json=payload).json()
 
     def schedule_workout(self, workout_id: str, day: str) -> dict[str, Any]:
-        """`day` is YYYY-MM-DD; the calendar entry returned carries `workoutScheduleId`."""
+        """Put an existing workout template on `day` (YYYY-MM-DD). Returns the
+        calendar entry, which carries `workoutScheduleId`."""
         return self._post(
             f"{self._base}/workout-service/schedule/{workout_id}",
             json={"date": day},
         ).json()
 
     def unschedule_workout(self, schedule_id: str) -> None:
-        """Leaves its workout template in place."""
+        """Remove one calendar entry, leaving its workout template in place."""
         self._delete(f"{self._base}/workout-service/schedule/{schedule_id}")
 
     def delete_workout(self, workout_id: str) -> None:
+        """Delete one workout template from the library."""
         self._delete(f"{self._base}/workout-service/workout/{workout_id}")
 
     def close(self) -> None:

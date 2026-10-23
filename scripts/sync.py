@@ -7,14 +7,20 @@ import os
 import sys
 import time
 from collections.abc import Callable
+from contextlib import ExitStack
 from datetime import date, datetime, timezone
 from pathlib import Path
+from typing import TypeVar
+
+import httpx
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from garmin.athlete import fetch_athlete_metrics, record_athlete_history
+from garmin.athlete import fetch_athlete_metrics, fetch_personal_athlete_metrics, record_athlete_history, vo2max_metrics
 from data_directory import get_data_dir, get_fit_cache_dir
 from garmin.client import GarminClient
+from garmin.errors import GarminAPIError, GarminAuthError
+from garmin.personal_api import KEY_PAGE, PersonalApiClient
 from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
@@ -22,7 +28,7 @@ from garmin.recovery_history import sync_recovery_history
 from garmin.training_plan import sync_training_plan
 from garmin.threshold_history import sync_threshold_history
 from garmin.training_status import sync_load_balance, sync_training_status
-from garmin.vo2max_history import sync_vo2max_history
+from garmin.vo2max_history import newest_carried_vo2max, sync_vo2max_from_runs, sync_vo2max_history
 from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
 from sync_workouts import enrich_description_from_plan, fetch_planned_workouts, write_planned_workouts
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
@@ -39,20 +45,28 @@ _ATHLETE_PATH = _DATA_DIR / "athlete.json"
 _RATE_LIMIT_PAUSE = 1.0
 _REGEAR_WINDOW_DAYS = 10
 
-# The workflow commits what succeeded, then fails the run. Not 2: argparse exits 2 for a usage error, and the workflow
-# would read that as a partial failure.
+# "Some activities or steps failed; everything that succeeded is on disk" - the
+# workflow commits it, then fails the run. Not 2: argparse already exits 2 for
+# a usage error, and the workflow would read that as a partial failure and
+# commit and deploy an unchanged workspace.
 _EXIT_PARTIAL_FAILURE = 3
 
 Step = tuple[str, Callable[[], object]]
+ActivitySource = PersonalApiClient | GarminClient
 
 
 def main() -> int:
     args = _parse_args()
 
+    # The Personal API key reads the activities, resting HR and the athlete's
+    # zones. GARMIN_SECRET (garth) adds what only Connect's private API
+    # serves - gear, the calendar, training status, race predictions - and,
+    # alone, reads everything as it did before the key existed.
+    api_key = os.environ.get("GARMIN_PERSONAL_API_KEY", "").strip()
     secret = os.environ.get("GARMIN_SECRET", "").strip()
-    if not secret:
-        print("Error: GARMIN_SECRET environment variable is not set.", file=sys.stderr)
-        print("Run scripts/get_secret.py to generate it.", file=sys.stderr)
+    if not api_key and not secret:
+        print("Error: neither GARMIN_PERSONAL_API_KEY nor GARMIN_SECRET is set.", file=sys.stderr)
+        print(f"Create a Personal API key at {KEY_PAGE} (see README.md).", file=sys.stderr)
         return 1
 
     _FIT_DIR.mkdir(parents=True, exist_ok=True)
@@ -69,17 +83,37 @@ def main() -> int:
     weather_client = WeatherClient()
     failed_steps: list[str] = []
 
-    with GarminClient(secret) as client:
-        # Fetched before the activity loop, which is enriched against it; a calendar API hiccup must not block it.
-        if not args.dry_run and not args.id:
+    with ExitStack() as stack:
+        # Either sign-in may fail while the other carries the night, which then
+        # counts as partial. With nothing left to read the runs, it raises.
+        personal = (
+            _open_client(stack, "Personal API", lambda: PersonalApiClient(api_key), failed_steps, fallback=bool(secret))
+            if api_key
+            else None
+        )
+        connect = (
+            _open_client(stack, "Garmin Connect", lambda: GarminClient(secret), failed_steps, fallback=personal is not None)
+            if secret
+            else None
+        )
+        # Never None: _open_client raises when there is no fallback.
+        client: ActivitySource = personal or connect
+
+        # Fetched early (before the activity loop) so newly-synced activities can be
+        # enriched against it below - but must not block the more important activity
+        # sync if Garmin's calendar API hiccups, so it falls back to whatever's
+        # already on disk rather than aborting the whole run. Like any other
+        # step, a failure here still makes the night a partial one.
+        if connect and not args.dry_run and not args.id:
             failed_steps += _run_isolated(
-                [("planned workouts", lambda: _sync_planned_workouts(client, planned_store))]
+                [("planned workouts", lambda: _sync_planned_workouts(connect, planned_store))]
             )
 
         if args.id:
             new_ids = [args.id]
         else:
-            print("Fetching activity list from Garmin Connect…")
+            source = "the Personal API" if personal else "Garmin Connect"
+            print(f"Fetching activity list from {source}…")
             all_ids = client.get_all_activity_ids(running_only=not args.all_types)
 
             if args.force:
@@ -90,6 +124,10 @@ def main() -> int:
                 new_ids = new_ids[: args.limit]
 
         added = updated = failed = 0
+        # Runs the key read whose gear Connect did not answer: stored with the
+        # shoe on file, offered to the gear refresh below, and the night counts
+        # as partial. After the first, Connect is not asked again tonight.
+        gear_unanswered: list[str] = []
 
         if not new_ids:
             print("No new activities to sync.")
@@ -99,13 +137,19 @@ def main() -> int:
             for i, activity_id in enumerate(new_ids, 1):
                 print(f"  [{i}/{len(new_ids)}] Activity {activity_id} …", end=" ", flush=True)
 
-                # One bad activity must not abort the run, nor be saved without its track, zones or gear: the next
-                # run fetches it again.
+                # One bad activity (API error, corrupt FIT, mapping bug) must
+                # not abort the run and lose everything synced before it. It
+                # is not saved either: the next run fetches it again, where
+                # storing it without its track, zones or gear was for good.
+                # (An activity that has none of them gets a 404, which the
+                # client reads as empty.)
                 try:
                     detail = retry_transient(client.get_activity_detail, activity_id)
                     parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
                     hr_zones = parse_hr_zones(retry_transient(client.get_hr_zones, activity_id))
-                    gear = retry_transient(client.get_activity_gear, activity_id)
+                    gear = None
+                    if connect and not gear_unanswered:
+                        gear = _fetch_gear(connect, activity_id, required=client is connect)
 
                     time.sleep(_RATE_LIMIT_PAUSE)
 
@@ -130,7 +174,11 @@ def main() -> int:
                     added += 1
                     continue
 
-                is_new = store.upsert(activity_data, replace=args.force)
+                is_new = store.upsert(
+                    activity_data, replace=args.force, keep_gear=gear is None, keep_zone_bounds=client is personal
+                )
+                if connect and gear is None:
+                    gear_unanswered.append(activity_id)
                 if is_new:
                     added += 1
                     print(f"added   → {status}")
@@ -138,9 +186,12 @@ def main() -> int:
                     updated += 1
                     print(f"updated → {status}")
 
+        if gear_unanswered:
+            failed_steps.append(f"gear of {len(gear_unanswered)} run(s)")
+
         regeared = 0
-        if not args.force and not args.id:
-            regeared = _refresh_recent_gear(client, store, skip=set(new_ids))
+        if connect and not args.force and not args.id:
+            regeared = _refresh_recent_gear(connect, store, skip=set(new_ids) - set(gear_unanswered))
 
         if not args.dry_run:
             store.save()
@@ -150,7 +201,7 @@ def main() -> int:
             print(f"\nDry run: {added} would be added, {failed} would fail.")
 
         if not args.dry_run and not args.id:
-            failed_steps += _run_isolated(_post_save_steps(client, store))
+            failed_steps += _run_isolated(_post_save_steps(connect, personal, store))
 
         if not args.dry_run:
             _write_sync_meta()
@@ -160,8 +211,55 @@ def main() -> int:
     return 0 if failed == 0 and not failed_steps else _EXIT_PARTIAL_FAILURE
 
 
+# What a sign-in that failed raises: a refused credential, Garmin or the
+# network down, a secret that does not parse (garth's requests errors are
+# OSErrors). Anything else is a bug, and stops the night like one.
+_SIGN_IN_ERRORS = (GarminAuthError, GarminAPIError, httpx.HTTPError, OSError, ValueError)
+_Client = TypeVar("_Client", PersonalApiClient, GarminClient)
+
+
+def _open_client(
+    stack: ExitStack, name: str, open_client: Callable[[], _Client], failed_steps: list[str], *, fallback: bool
+) -> _Client | None:
+    """One Garmin client entered into the run, or None when its sign-in fails
+    and the other client can read the runs instead."""
+    try:
+        return stack.enter_context(open_client())
+    except _SIGN_IN_ERRORS as exc:
+        if not fallback:
+            raise
+        print(f"Warning: {name} sign-in failed ({type(exc).__name__}: {exc}); carrying on without it.")
+        failed_steps.append(f"{name} sign-in")
+        return None
+
+
+def _fetch_gear(connect: GarminClient, activity_id: str, *, required: bool) -> list[dict] | None:
+    """The activity's gear ([] for none), or None when Connect did not answer.
+
+    Only Connect knows it. When Connect also read the activity, an error
+    fails the activity as any other would. When the Personal API read it,
+    the run does not hang on Connect.
+    """
+    try:
+        return retry_transient(connect.get_activity_gear, activity_id)
+    except Exception as exc:
+        if required:
+            raise
+        print(f"(gear unavailable: {type(exc).__name__})", end=" ", flush=True)
+        return None
+
+
 def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip: set[str]) -> int:
-    """Only a successful answer may change what is stored, since "no gear" writes None over the gearId on file."""
+    """Re-read the gear of the last days' activities; return how many changed.
+
+    Picks up a shoe assigned in Garmin Connect after the activity was first
+    synced. Only a successful answer may change what is stored, since "no
+    gear" writes None over the gearId on file: strict_errors makes a 404
+    raise like any other error, and an error of any kind - a network one
+    included, which used to escape main() before store.save() and take the
+    night's activities with it - keeps the stored value for the next run to
+    ask again.
+    """
     recent_ids = [aid for aid in store.get_ids_since(_REGEAR_WINDOW_DAYS) if aid not in skip]
     if not recent_ids:
         return 0
@@ -181,7 +279,16 @@ def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip
 
 
 def _run_isolated(steps: list[Step]) -> list[str]:
-    """A step raising must not end main() with exit 1, which makes the workflow skip the commit of the saved activities."""
+    """Run every step, whatever happens to the ones before it; return the names that failed.
+
+    The activities are already saved by the time these run, and each step
+    writes files of its own. One of them raising used to end main() with
+    exit 1, which makes the workflow skip the commit - so a single 5xx from
+    race predictions discarded every activity synced that night. Now a step
+    that fails has written only what it completed, each file whole (and a
+    history file that will not parse still refuses to be rewritten), the
+    others carry on, and main() exits 3.
+    """
     failed: list[str] = []
     for name, step in steps:
         try:
@@ -192,10 +299,28 @@ def _run_isolated(steps: list[Step]) -> list[str]:
     return failed
 
 
-def _post_save_steps(client: GarminClient, store: JsonActivityStore) -> list[Step]:
+def _post_save_steps(
+    connect: GarminClient | None, personal: PersonalApiClient | None, store: JsonActivityStore
+) -> list[Step]:
+    """The steps after the activities, each from the API that serves it.
+
+    Athlete metrics read both; resting HR comes from the Personal API when
+    there is a key. Everything else is Connect's alone, and without a
+    Connect session keeps what it last wrote - but VO2max, which the runs'
+    own FIT readings carry on.
+    """
+    recovery_source: ActivitySource = personal or connect
+    athlete: list[Step] = [("athlete metrics", lambda: _sync_athlete_metrics(connect, personal))]
+    recovery: list[Step] = [("recovery history", lambda: sync_recovery_history(recovery_source))]
+    if connect is None:
+        # The runs' own FIT readings keep VO2max current until Connect is back:
+        # the series first, as the athlete's VO2max is read from it.
+        return [("VO2max history", lambda: sync_vo2max_from_runs(store.all_activities())), *athlete, *recovery]
+
+    client = connect
     steps: list[Step] = [
         ("upcoming races", lambda: write_upcoming_races(fetch_upcoming_races(client))),
-        ("athlete metrics", lambda: _sync_athlete_metrics(client)),
+        *athlete,
         ("fitness age history", lambda: sync_fitness_age_history(client)),
         ("VO2max norms", lambda: write_vo2max_norms(fetch_vo2max_norms(client))),
     ]
@@ -210,7 +335,7 @@ def _post_save_steps(client: GarminClient, store: JsonActivityStore) -> list[Ste
 
     return steps + [
         ("race predictions", lambda: sync_race_predictions(client)),
-        ("recovery history", lambda: sync_recovery_history(client)),
+        *recovery,
         ("load balance", lambda: sync_load_balance(client)),
         ("training plan", lambda: sync_training_plan(client)),
     ]
@@ -221,15 +346,37 @@ def _sync_planned_workouts(client: GarminClient, planned_store: PlannedWorkoutSt
     write_planned_workouts(planned, store=planned_store, stale_candidates=stale_candidates)
 
 
-def _sync_athlete_metrics(client: GarminClient) -> None:
-    metrics = fetch_athlete_metrics(client)
-    if record_athlete_history(metrics):
+def _sync_athlete_metrics(connect: GarminClient | None, personal: PersonalApiClient | None) -> None:
+    # Connect's are the fuller set (sex, height, threshold pace, VO2max, the
+    # watch); where both have a value it is the same one. Without Connect,
+    # VO2max follows the series carried on from the runs - only once a run
+    # newer than Connect's last sample has moved it.
+    metrics = fetch_personal_athlete_metrics(personal) if personal else {}
+    carried = newest_carried_vo2max() if connect is None else None
+    if carried:
+        metrics.update(vo2max_metrics(carried))
+    connect_failure: Exception | None = None
+    if connect:
+        try:
+            metrics.update(fetch_athlete_metrics(connect))
+        except Exception as exc:
+            if not personal:
+                raise
+            # The Personal API's values are still written; the step still fails.
+            connect_failure = exc
+    # The history snapshots the athlete as now known: what this run fetched
+    # over what is on file, so a value only Connect serves is not dropped
+    # from the trend the first night without it.
+    known = {**read_history(_ATHLETE_PATH), **metrics}
+    if record_athlete_history(known):
         print("Athlete threshold metrics changed - recorded a history entry.")
     _merge_athlete_metrics(metrics)
+    if connect_failure:
+        raise connect_failure
 
 
 def _first_activity_date(store: JsonActivityStore) -> date | None:
-    """There is no training status worth having before it."""
+    """Earliest activity date - there is no training status worth having before it."""
     dates = [a["date"] for a in store.all_activities() if a.get("date")]
     return date.fromisoformat(min(dates)) if dates else None
 
@@ -257,7 +404,7 @@ def _merge_athlete_metrics(metrics: dict) -> None:
 
 
 def _fetch_track_file(
-    client: GarminClient, activity_id: str, *, dry_run: bool
+    client: ActivitySource, activity_id: str, *, dry_run: bool
 ) -> tuple[ParsedFit | None, str | None]:
     fit_path = _FIT_DIR / f"{activity_id}.fit"
     if fit_path.exists():
@@ -265,7 +412,9 @@ def _fetch_track_file(
         if parsed.has_data:
             return parsed, fit_path.name
 
-    # None is an activity without a FIT file; a failed or empty download raises, since storing it trackless is for good.
+    # None is an activity without a FIT file (a 404, or an archive holding
+    # none). A download that fails, or one that decodes to nothing, raises
+    # instead: storing the activity without its track would be for good.
     fit_bytes = retry_transient(client.download_fit, activity_id)
     if fit_bytes is None:
         return None, None
