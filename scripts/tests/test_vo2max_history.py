@@ -1,7 +1,11 @@
 from datetime import date
 from itertools import pairwise
 
-from garmin.vo2max_history import monthly_windows, normalize_max_met
+import pytest
+
+from garmin import vo2max_history
+from garmin.vo2max_history import monthly_windows, normalize_max_met, samples_from_runs
+from repository.history_file import read_history, write_history
 
 # Trimmed from a real maxmet/monthly response.
 PAYLOAD = [
@@ -75,3 +79,56 @@ class TestMonthlyWindows:
         for (_, end), (next_start, _) in pairwise(windows):
             assert (next_start - end).days == 1
         assert all((end - start).days <= 366 for start, end in windows)
+
+
+class TestCarriedOnFromRuns:
+    """Without Connect, the runs' own FIT readings carry the series on: within
+    0.1 of Connect's daily value, so they fill only what Connect never had."""
+
+    @pytest.fixture
+    def out(self, tmp_path, monkeypatch):
+        path = tmp_path / "vo2max_history.json"
+        monkeypatch.setattr(vo2max_history, "_OUT_PATH", path)
+        return path
+
+    def test_takes_each_days_last_reading_and_skips_runs_without_one(self):
+        runs = [
+            {"date": "2026-10-21T07:00:00", "vo2maxGarmin": 37.25},
+            {"date": "2026-10-21T18:00:00", "vo2maxGarmin": 37.31},
+            {"date": "2026-10-22", "vo2maxGarmin": None},
+            {"date": "2026-10-23"},
+        ]
+        assert samples_from_runs(runs) == {"2026-10-21": {"date": "2026-10-21", "vo2max": 37.3}}
+
+    def test_carries_on_only_after_connects_last_sample(self, out):
+        # Before it, Connect was answering: a run it left unsampled had not
+        # moved VO2max, and its closed months stay as it sampled them.
+        connect = {
+            "months": {"2026-10": {"date": "2026-10-16", "vo2max": 37.2, "fitnessAge": 24.4}},
+            "days": {"2026-10-16": {"date": "2026-10-16", "vo2max": 37.2}},
+        }
+        write_history(out, connect)
+        runs = [
+            {"date": "2026-09-30", "vo2maxGarmin": 36.9},
+            {"date": "2026-10-16", "vo2maxGarmin": 37.1},
+            {"date": "2026-10-18", "vo2maxGarmin": 37.4},
+        ]
+
+        assert vo2max_history.sync_vo2max_from_runs(runs, date(2026, 10, 23)) == 1
+
+        stored = read_history(out)
+        assert stored["months"] == {"2026-10": {"date": "2026-10-18", "vo2max": 37.4}}
+        assert stored["days"] == {**connect["days"], "2026-10-18": {"date": "2026-10-18", "vo2max": 37.4}}
+
+    def test_nothing_after_connects_last_sample_rewrites_nothing(self, out):
+        connect = {"months": {"2026-10": {"date": "2026-10-21", "vo2max": 37.4}}, "days": {}}
+        write_history(out, connect)
+        before = out.read_text()
+
+        vo2max_history.sync_vo2max_from_runs([{"date": "2026-10-21", "vo2maxGarmin": 37.3}], date(2026, 10, 23))
+
+        assert out.read_text() == before
+
+    def test_no_reading_writes_nothing(self, out):
+        assert vo2max_history.sync_vo2max_from_runs([{"date": "2026-10-21"}], date(2026, 10, 23)) == 0
+        assert not out.exists()

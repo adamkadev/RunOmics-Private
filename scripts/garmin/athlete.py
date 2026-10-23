@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
@@ -335,3 +336,17 @@ def fetch_personal_athlete_metrics(client: PersonalApiClient, today: date | None
     if metrics:
         metrics["lastUpdate"] = datetime.now(timezone.utc).isoformat()
     return metrics
+
+
+def vo2max_from_runs(activities: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """VO2max and VMA from the newest run's FIT reading, for a night without
+    Connect's user settings. Rounded to the whole point Connect reports: the
+    reading is within 0.1 of Connect's precise value, so 37.3 is the 37 it
+    shows."""
+    readings = [a for a in activities if isinstance(a.get("vo2maxGarmin"), (int, float)) and a["vo2maxGarmin"] > 0]
+    if not readings:
+        return {}
+    latest = max(readings, key=lambda a: str(a.get("date") or ""))
+    # Half up, as Garmin rounds - round() would take 36.5 to 36.
+    vo2max = float(int(latest["vo2maxGarmin"] + 0.5))
+    return {"vo2maxMlKgMin": vo2max, "vmaKmh": round(vo2max / _VO2_PER_KMH, 1)}

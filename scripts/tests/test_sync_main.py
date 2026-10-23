@@ -39,8 +39,10 @@ _STEP_RESULTS = {
     "sync_training_plan": False,
 }
 # Run only with a Personal API key.
-_PERSONAL_STEP_RESULTS = {"fetch_personal_athlete_metrics": {}}
-_PERSONAL_ONLY_STEPS = ["fetch_personal_athlete_metrics", "record_athlete_history", "sync_recovery_history"]
+_PERSONAL_STEP_RESULTS = {"fetch_personal_athlete_metrics": {}, "sync_vo2max_from_runs": 0}
+_PERSONAL_ONLY_STEPS = [
+    "fetch_personal_athlete_metrics", "record_athlete_history", "sync_recovery_history", "sync_vo2max_from_runs",
+]
 
 
 class FakeGarmin:

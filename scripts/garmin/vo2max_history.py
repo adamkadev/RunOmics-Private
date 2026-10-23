@@ -17,10 +17,16 @@ serving once it ages out of its retention window stays in ours.
 The monthly series feeds the six-month and one-year views; the daily one, kept
 to a recent window, feeds the four-week view. The daily endpoint is
 undocumented, so a failure there is a warning, not a failed sync.
+
+Without a Connect session - no GARMIN_SECRET, or a garth token past saving -
+sync_vo2max_from_runs carries both series on from the runs themselves: each
+FIT file's own VO2max reading (message 140), within 0.1 of Connect's daily
+value (Lamiaa, Oct 2026: 37.1/37.1, 37.1/37.2, 37.4/37.4, 37.3/37.4).
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import date, timedelta
 from typing import Any
 
@@ -148,4 +154,48 @@ def sync_vo2max_history(client: GarminClient, start: date, today: date | None = 
         f"  {len(months)} month(s) and {len(days)} day(s) stored, "
         f"latest {latest['vo2max']} ml/kg/min."
     )
+    return len(months)
+
+
+def samples_from_runs(activities: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Each day's last FIT VO2max reading, keyed by date."""
+    days: dict[str, dict[str, Any]] = {}
+    for activity in sorted(activities, key=lambda a: str(a.get("date") or "")):
+        day = str(activity.get("date") or "")[:10]
+        value = activity.get("vo2maxGarmin")
+        if day and isinstance(value, (int, float)) and value > 0:
+            days[day] = {"date": day, "vo2max": round(value, 1)}
+    return days
+
+
+def sync_vo2max_from_runs(activities: Iterable[dict[str, Any]], today: date | None = None) -> int:
+    """Carry the stored series on from the runs' readings; returns the month count.
+
+    Connect's series stands up to its last sample: on the days before it,
+    Connect was answering, and a run it left unsampled had not moved VO2max.
+    Only the runs after it are carried on - a day each, and the month they
+    fall in.
+    """
+    today = today or date.today()
+    stored = _load_stored()
+    months: dict[str, Any] = dict(stored.get("months") or {})
+    days: dict[str, Any] = dict(stored.get("days") or {})
+    last_sampled = max((str(s.get("date") or "") for s in (*months.values(), *days.values())), default="")
+    since = (today - timedelta(days=_DAILY_WINDOW_DAYS)).isoformat()
+
+    carried = 0
+    for day, sample in samples_from_runs(activities).items():
+        if day <= last_sampled:
+            continue
+        months[day[:7]] = sample
+        if day >= since:
+            days[day] = sample
+        carried += 1
+
+    if not months:
+        print("  No VO2max readings in the runs.")
+        return 0
+    if carried:
+        write_history(_OUT_PATH, {"months": dict(sorted(months.items())), "days": dict(sorted(days.items()))})
+    print(f"VO2max carried on from {carried} run day(s) after Connect's last sample, latest {months[max(months)]['vo2max']}.")
     return len(months)

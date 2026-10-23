@@ -16,7 +16,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from garmin.athlete import fetch_athlete_metrics, fetch_personal_athlete_metrics, record_athlete_history
+from garmin.athlete import fetch_athlete_metrics, fetch_personal_athlete_metrics, record_athlete_history, vo2max_from_runs
 from data_directory import get_data_dir, get_fit_cache_dir
 from garmin.client import GarminClient
 from garmin.errors import GarminAPIError, GarminAuthError
@@ -28,7 +28,7 @@ from garmin.recovery_history import sync_recovery_history
 from garmin.training_plan import sync_training_plan
 from garmin.threshold_history import sync_threshold_history
 from garmin.training_status import sync_load_balance, sync_training_status
-from garmin.vo2max_history import sync_vo2max_history
+from garmin.vo2max_history import sync_vo2max_from_runs, sync_vo2max_history
 from garmin.vo2max_norms import fetch_vo2max_norms, write_vo2max_norms
 from sync_workouts import enrich_description_from_plan, fetch_planned_workouts, write_planned_workouts
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
@@ -306,13 +306,15 @@ def _post_save_steps(
 
     Athlete metrics read both; resting HR comes from the Personal API when
     there is a key. Everything else is Connect's alone, and without a
-    Connect session keeps what it last wrote.
+    Connect session keeps what it last wrote - but VO2max, which the runs'
+    own FIT readings carry on.
     """
     recovery_source: ActivitySource = personal or connect
-    athlete: list[Step] = [("athlete metrics", lambda: _sync_athlete_metrics(connect, personal))]
+    athlete: list[Step] = [("athlete metrics", lambda: _sync_athlete_metrics(connect, personal, store))]
     recovery: list[Step] = [("recovery history", lambda: sync_recovery_history(recovery_source))]
     if connect is None:
-        return athlete + recovery
+        # The runs' own FIT readings keep VO2max current until Connect is back.
+        return athlete + recovery + [("VO2max history", lambda: sync_vo2max_from_runs(store.all_activities()))]
 
     client = connect
     steps: list[Step] = [
@@ -343,10 +345,15 @@ def _sync_planned_workouts(client: GarminClient, planned_store: PlannedWorkoutSt
     write_planned_workouts(planned, store=planned_store, stale_candidates=stale_candidates)
 
 
-def _sync_athlete_metrics(connect: GarminClient | None, personal: PersonalApiClient | None) -> None:
+def _sync_athlete_metrics(
+    connect: GarminClient | None, personal: PersonalApiClient | None, store: JsonActivityStore
+) -> None:
     # Connect's are the fuller set (sex, height, threshold pace, VO2max, the
-    # watch); where both have a value it is the same one.
+    # watch); where both have a value it is the same one. Without Connect,
+    # VO2max comes from the newest run's FIT reading.
     metrics = fetch_personal_athlete_metrics(personal) if personal else {}
+    if connect is None:
+        metrics.update(vo2max_from_runs(store.all_activities()))
     connect_failure: Exception | None = None
     if connect:
         try:

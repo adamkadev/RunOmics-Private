@@ -1,6 +1,6 @@
 from datetime import date
 
-from garmin.athlete import fetch_personal_athlete_metrics, latest_weight_kg
+from garmin.athlete import fetch_personal_athlete_metrics, latest_weight_kg, vo2max_from_runs
 from garmin.errors import GarminAPIError
 
 TODAY = date(2026, 10, 23)
@@ -88,3 +88,16 @@ def test_latest_weight_kg_takes_the_newest_weigh_in_in_kg():
     assert latest_weight_kg(FakePersonal().answers["weight"]) == 68.4
     assert latest_weight_kg({"dailyWeightSummaries": [{"summaryDate": "2026-10-20", "latestWeight": {}}]}) is None
     assert latest_weight_kg(None) is None
+
+
+def test_vo2max_from_runs_is_the_newest_reading_in_connects_whole_points():
+    runs = [
+        {"date": "2026-10-18", "vo2maxGarmin": 37.4},
+        {"date": "2026-10-21", "vo2maxGarmin": 37.3},
+        {"date": "2026-10-22", "vo2maxGarmin": None},
+    ]
+    # Stored by Connect as 37.0 the same week, and its VMA as 10.6.
+    assert vo2max_from_runs(runs) == {"vo2maxMlKgMin": 37.0, "vmaKmh": 10.6}
+    # Half up, as Garmin rounds.
+    assert vo2max_from_runs([{"date": "2026-10-21", "vo2maxGarmin": 36.5}])["vo2maxMlKgMin"] == 37.0
+    assert vo2max_from_runs([{"date": "2026-10-21"}]) == {}
