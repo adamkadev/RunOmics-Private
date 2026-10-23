@@ -69,6 +69,10 @@ def main() -> int:
         print(f"Create a Personal API key at {KEY_PAGE} (see README.md).", file=sys.stderr)
         return 1
 
+    quick = args.quick and bool(api_key)
+    if args.quick and not quick:
+        print("No GARMIN_PERSONAL_API_KEY: a quick sync reads through it alone, so this is a full sync.")
+
     _FIT_DIR.mkdir(parents=True, exist_ok=True)
     try:
         store = JsonActivityStore()
@@ -87,13 +91,15 @@ def main() -> int:
         # Either sign-in may fail while the other carries the night, which then
         # counts as partial. With nothing left to read the runs, it raises.
         personal = (
-            _open_client(stack, "Personal API", lambda: PersonalApiClient(api_key), failed_steps, fallback=bool(secret))
+            _open_client(
+                stack, "Personal API", lambda: PersonalApiClient(api_key), failed_steps, fallback=bool(secret) and not quick
+            )
             if api_key
             else None
         )
         connect = (
             _open_client(stack, "Garmin Connect", lambda: GarminClient(secret), failed_steps, fallback=personal is not None)
-            if secret
+            if secret and not quick
             else None
         )
         # Never None: _open_client raises when there is no fallback.
@@ -436,6 +442,7 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--id", default=None, metavar="ACTIVITY_ID", help="Re-fetch a single activity by id")
+    parser.add_argument("--quick", action="store_true", help="Personal API key only, no Garmin Connect")
     return parser.parse_args()
 
 

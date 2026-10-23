@@ -390,6 +390,29 @@ class TestPersonalApi:
 
         assert _stored_gear(workspace, "101") == "shoe1"
 
+    def test_a_quick_sync_leaves_connect_to_the_next_full_one_and_exits_0(self, workspace, personal, steps, monkeypatch):
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+
+        assert _run(monkeypatch, "--quick") == 0
+
+        assert _stored_ids(workspace) == {"101", "102"}
+        assert steps == _PERSONAL_ONLY_STEPS
+
+    def test_a_quick_sync_whose_key_is_refused_stops_rather_than_open_connect(self, workspace, personal, monkeypatch):
+        def refused(_key):
+            raise GarminAuthError("Garmin refused GARMIN_PERSONAL_API_KEY (HTTP 401)")
+
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+        monkeypatch.setattr(sync, "PersonalApiClient", refused)
+
+        with pytest.raises(GarminAuthError):
+            _run(monkeypatch, "--quick")
+
+    def test_without_a_key_a_quick_sync_is_a_full_one(self, workspace, garmin, steps, monkeypatch):
+        assert _run(monkeypatch, "--quick") == 0
+
+        assert steps == list(_STEP_RESULTS)
+
     def test_without_either_credential_nothing_reaches_garmin(self, workspace, monkeypatch):
         monkeypatch.delenv("GARMIN_SECRET")
         monkeypatch.setattr(sync, "GarminClient", _refuse_garmin)
