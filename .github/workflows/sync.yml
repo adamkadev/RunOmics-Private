@@ -86,6 +86,7 @@ jobs:
       # Naming an environment does not hide repository-level secrets, so a half-configured profile would
       # sync someone else's Garmin account; a PROFILE variable matching the environment's name proves it is set up.
       - name: Check the sync configuration
+        id: config
         env:
           DECLARED_PROFILE: ${{ vars.PROFILE }}
           RUNOMICS_DATA_REPO_URL: ${{ secrets.RUNOMICS_DATA_REPO_URL }}
@@ -113,6 +114,9 @@ jobs:
           fi
           if [ -z "$GARMIN_PERSONAL_API_KEY" ]; then
             echo "::warning::Environment '${{ matrix.profile }}' has no GARMIN_PERSONAL_API_KEY: every run is read through garth, whose token cannot be renewed."
+            echo "personal_api=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "personal_api=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Node
@@ -145,22 +149,41 @@ jobs:
       - name: Install Python dependencies
         run: pip install --require-hashes -r scripts/requirements.txt
 
+      # WARP's package pulls ~120 MB of desktop dependencies from a mirror that can crawl; the
+      # downloaded .debs are cached, so a run downloads only what changed since the last one.
+      - name: Restore WARP packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/warp-apt
+          key: warp-apt-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: warp-apt-${{ runner.os }}-
+
+      # Only garth needs WARP: with a Personal API key the runs still sync without it, so a
+      # failed install or connect is a partial night (no gear, calendar or Connect metrics).
       - name: Install Cloudflare WARP
-        timeout-minutes: 5
+        id: warp_install
+        timeout-minutes: 10
+        continue-on-error: ${{ steps.config.outputs.personal_api == 'true' }}
         run: |
           set -euo pipefail
           curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
           echo "deb [signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/cloudflare-client.list
+          mkdir -p ~/.cache/warp-apt/partial
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends cloudflare-warp
+          sudo apt-get install -y --no-install-recommends \
+            -o Acquire::Retries=3 -o Dir::Cache::Archives="$HOME/.cache/warp-apt" cloudflare-warp
+          sudo chown -R "$(id -u):$(id -g)" ~/.cache/warp-apt
           # Recorded, not pinned: the repository keeps only current versions, so
           # a pin breaks the sync the day Cloudflare publishes the next one. The
           # log is what makes "which build started failing" answerable later.
           echo "cloudflare-warp $(dpkg-query -W -f='${Version}' cloudflare-warp)"
 
-      # Garmin refuses GitHub's datacenter ranges, so the sync only reaches it through WARP.
+      # Connect's private API refuses GitHub's datacenter ranges, so garth only reaches it through WARP.
       - name: Connect Cloudflare WARP
+        id: warp
+        if: steps.warp_install.outcome == 'success'
         timeout-minutes: 5
+        continue-on-error: ${{ steps.config.outputs.personal_api == 'true' }}
         run: |
           set -euo pipefail
 
@@ -196,6 +219,10 @@ jobs:
           warp-cli --accept-tos status || true
           echo "::error::WARP never carried traffic; Garmin would see a datacenter IP."
           exit 1
+
+      - name: Note WARP unavailable
+        if: steps.warp.outcome != 'success'
+        run: echo "::warning::WARP is unavailable, so runs come through the Personal API alone; garth (gear, calendar, Connect metrics) will likely fail from GitHub's network and the night counts as partial."
 
       # Dispatch inputs arrive through `env:`, never interpolated into `run:`:
       # Actions substitutes those textually, before bash parses the line.

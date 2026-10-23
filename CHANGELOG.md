@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The sync no longer stops when Cloudflare WARP will not install or
+  connect, as long as the profile has a `GARMIN_PERSONAL_API_KEY`: the runs
+  come through the Personal API, and only garth (gear, the calendar,
+  Connect's metrics) misses the night, which counts as partial. WARP's
+  package, which now pulls about 120 MB of desktop libraries, is cached
+  between runs and gets 10 minutes and retries instead of 5. Without a key,
+  WARP is still required.
+
 - VO2max keeps moving on a night without Garmin Connect (no `GARMIN_SECRET`,
   or a garth token past saving): each run's FIT file carries Garmin's own
   reading, within 0.1 of Connect's daily value. The runs after Connect's
