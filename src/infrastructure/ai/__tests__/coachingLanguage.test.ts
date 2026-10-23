@@ -19,7 +19,6 @@ describe('the coach writes in the deployment’s language', () => {
     expect(withCoachingLanguage('Review the plan.')).toBe('Review the plan.')
   })
 
-  // A French deployment asked for nothing got an English plan: titles on the watch included.
   it('asks a French build for French text and English JSON', async () => {
     const { BOOTSTRAP_SYSTEM_INSTRUCTION, withCoachingLanguage } = await promptIn('fr')
     expect(BOOTSTRAP_SYSTEM_INSTRUCTION.startsWith(BOOTSTRAP_RULES)).toBe(true)

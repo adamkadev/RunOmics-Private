@@ -1,21 +1,12 @@
 import { test, expect } from './fixtures'
 import type { Page } from '@playwright/test'
 
-// F15: the installed app's status bar is opaque (statusBarStyle 'default'),
-// iOS fills it with the theme-color meta - the page's --background - and the
-// web view starts under it, its safe-area inset 0. The web view's first 12 pt,
-// the edge sampler's, must be that same colour, at rest and scrolled, over the
-// glow or not, or the status bar reads as a band above the header.
+// iOS fills the installed app's opaque status bar with the theme-color meta, so the edge sampler's 12 pt must match it.
 test.use({ viewport: { width: 393, height: 793 } })
 
 const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/analytics', '/settings']
 
-/**
- * The largest channel difference from --background in a full-width band (by
- * default the top 12 pt), or, with `scrimmed`, from --background under the
- * sheet's scrim (--scrim-sheet's colour at its alpha: black in dark, the
- * page's ink in light, F18).
- */
+/** With `scrimmed`, the difference is from --background under the sheet's scrim. */
 async function topEdgeDelta(
   page: Page,
   { scrimmed = false, y = 0, height = 12, skip = [] as [number, number][] } = {},
@@ -54,10 +45,7 @@ async function topEdgeDelta(
   }, { b64: shot.toString('base64'), scrimmed, skip })
 }
 
-/**
- * The columns a glass control's own drop reaches (F16: 0 10px 28px in
- * light), which may darken a row above the control by design.
- */
+/** A glass control's 28px drop shadow may darken a row above the control by design. */
 async function glassDropSpans(page: Page, scope: string): Promise<[number, number][]> {
   return page.locator(`${scope} .lg`).evaluateAll((els) =>
     els.map((el) => {
@@ -76,7 +64,6 @@ for (const theme of ['light', 'dark'] as const) {
       await expect(page.locator('h1').first()).toBeVisible()
       await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`))
 
-      // The meta iOS stores at install is this mode's --background.
       const { themeColor, background } = await page.evaluate(() => {
         const meta = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')].find(
           (m) => !m.media || matchMedia(m.media).matches,
@@ -97,9 +84,7 @@ for (const theme of ['light', 'dark'] as const) {
   })
 }
 
-// The sheet's scrim starts at the safe area's foot - the top edge, under the
-// opaque status bar - so it covers the edge sampler, which must not dim
-// itself as well: dimmed twice, its 12 pt read as a dark band (F15).
+// The sheet's scrim covers the edge sampler, which must not dim itself as well or it reads as a dark band.
 for (const theme of ['light', 'dark'] as const) {
   test(`a sheet dims the top edge once, as the rest of the page (${theme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
@@ -114,10 +99,7 @@ for (const theme of ['light', 'dark'] as const) {
   })
 }
 
-// The activity's map hero starts at the edge sampler's foot. Its tiles must
-// fade in from the page ground there: Liquid Glass v3's 35 % wash let them
-// meet the sampler at nearly full strength, a hard line 12 pt under the
-// status bar on the phone (F15, round 2).
+// Tiles meeting the edge sampler at full strength draw a hard line 12 pt under the status bar.
 for (const theme of ['light', 'dark'] as const) {
   test(`the map hero fades in from the page ground under the edge sampler (${theme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
@@ -130,8 +112,7 @@ for (const theme of ['light', 'dark'] as const) {
     expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().top))).toBe(12)
     expect(await hero.evaluate((el) => Math.round(el.getBoundingClientRect().height))).toBe(330)
     await page.waitForTimeout(300)
-    // The tiles, not the hero's glass controls 12 pt lower, whose drop
-    // reaches this row faintly (3 of 255 under the capsule, F16).
+    // The hero's glass controls 12 pt lower cast a drop that reaches this row faintly.
     const skip = await glassDropSpans(page, '[data-testid="run-hero"]')
     expect(skip.length).toBeGreaterThan(0)
     expect(await topEdgeDelta(page, { y: 12, height: 2, skip })).toBeLessThanOrEqual(2)

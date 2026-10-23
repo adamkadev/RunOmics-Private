@@ -6,20 +6,9 @@ export interface LngLatBounds {
 }
 
 /**
- * Camera padding that keeps every route clear of the glass over a map
- * (Liquid Glass v3, README §6.12.1), for each fitBounds / easeTo.
- * - hero: 3.0's frame (round 2, the owner's ask): 68 and 80 pt kept the
- *   route clear of the buttons and the foot's fade but drew it at about
- *   60 % of its size in a 300 pt hero. The buttons sit in the top corners,
- *   so a route reaches them only at a corner of its own.
- * - fullscreen: the row of controls at the top; the legend card and its
- *   24 pt inset at the foot.
- * - card: the Activities map card's controls and legend capsule.
- * - districtsFullscreen: Explore's expanded Districts map (S1), fitted to
- *   every quartier: the row at the top; at the foot the whole stack - the
- *   next-quartier card (77) on its 24 pt inset, the legend and ⓘ row, the
- *   layers button over the ⓘ (about 190 in all) - and a name's height more,
- *   so no quartier lands under any of them.
+ * Keeps every route clear of the glass over a map. The hero's buttons sit in
+ * its top corners, so a route reaches them only at a corner of its own;
+ * districtsFullscreen clears the ~190 pt stack at its foot plus a name's height.
  */
 export const MAP_PADDING = {
   hero: { top: 32, right: 24, bottom: 36, left: 24 },
@@ -28,7 +17,7 @@ export const MAP_PADDING = {
   districtsFullscreen: { top: 80, right: 24, bottom: 216, left: 24 },
 } as const
 
-/** Room kept clear on each side of a fitted box, in CSS pixels. */
+/** CSS pixels. */
 export interface CameraPadding {
   top: number
   right: number
@@ -36,19 +25,13 @@ export interface CameraPadding {
   left: number
 }
 
-/** The share of points each side of the heatmap's frame leaves out. */
 export const FRAME_TRIM = 0.04
 
 function quantile(sorted: number[], p: number): number {
   return sorted[Math.floor(p * (sorted.length - 1))]!
 }
 
-/**
- * The box the heatmap opens on (v4.17): the 4th to 96th percentile of every
- * point's longitude and latitude, so one long run out of town doesn't zoom
- * the area out until the streets run most fill a twentieth of the map.
- * Null when there is no point.
- */
+/** Percentiles, so one long run out of town doesn't zoom the map out until the usual streets fill a twentieth of it. */
 export function percentileBounds(tracks: Iterable<readonly (readonly [number, number])[]>, trim = FRAME_TRIM): LngLatBounds | null {
   const lons: number[] = []
   const lats: number[] = []

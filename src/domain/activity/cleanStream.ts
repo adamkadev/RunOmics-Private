@@ -4,25 +4,17 @@ export interface CleanStreamOptions {
   /** Values outside these bounds are the watch reporting a stop, not a run. */
   min?: number
   max?: number
-  /** Leading samples to drop while GPS settles, as a distance. */
+  /** Leading distance to drop while GPS settles. */
   settleKm?: number
   distanceKm?: number
-  /**
-   * A spike has to clear both this many MADs and this absolute gap, so a flat
-   * series with a tiny MAD does not have its ordinary wobble filtered away.
-   */
+  /** An absolute gap a spike must also clear, so a flat series' tiny MAD doesn't filter out its ordinary wobble. */
   spikeFloor?: number
 }
 
 const SPIKE_MAD_FACTOR = 6
 const MIN_SAMPLES_FOR_SPIKES = 12
 
-/**
- * One cleaning pass for every recorded stream. The km-0 GPS settle and mid-run
- * dropouts are artifacts of the watch, not of the run, and a figure that plots
- * them argues about the wrong thing - so every figure drawn from a stream goes
- * through here first, and the gaps come back as nulls for the chart to skip.
- */
+/** Every figure drawn from a stream goes through here: the GPS settle and dropouts are the watch's artifacts, not the run's. */
 export function cleanStream(
   samples: number[] | null | undefined,
   options: CleanStreamOptions = {},
@@ -51,13 +43,10 @@ export function cleanStream(
   return bridgeShortGaps(despiked)
 }
 
-/** The longest dropout worth drawing through rather than breaking the line for. */
+/** In samples; a longer dropout breaks the line. */
 const MAX_BRIDGED_GAP = 2
 
-/**
- * A one-sample dropout is the watch blinking, not the runner stopping, and a
- * break drawn for it reads as a cliff. Longer gaps stay gaps.
- */
+/** A one-sample dropout is the watch blinking, not the runner stopping; a break drawn for it reads as a cliff. */
 function bridgeShortGaps(values: (number | null)[]): (number | null)[] {
   const out = [...values]
 
@@ -82,10 +71,7 @@ function bridgeShortGaps(values: (number | null)[]): (number | null)[] {
   return out
 }
 
-/**
- * A domain that never amplifies a flat series: a 5 m elevation wobble drawn
- * edge to edge reads as a mountain range.
- */
+/** A 5 m elevation wobble drawn edge to edge reads as a mountain range. */
 export function paddedDomain(
   values: (number | null)[],
   minSpan: number,

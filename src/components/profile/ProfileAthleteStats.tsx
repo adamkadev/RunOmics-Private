@@ -17,16 +17,9 @@ type AvailableMetric = MetricData & { value: string | number }
 function available(metrics: MetricData[]): AvailableMetric[] {
   return metrics
     .filter((metric): metric is AvailableMetric => metric.value !== undefined)
-    // A VMA or a weight has a decimal, which follows the locale.
     .map((metric) => (typeof metric.value === 'number' ? { ...metric, value: formatNumber(metric.value) } : metric))
 }
 
-/**
- * The six numbers under the grade card (3.0 1j), two rows of three: the
- * heart first - resting, threshold and max HR, all Garmin's own, so nothing
- * says estimated - then threshold pace, VMA and fitness age against the real
- * one. A number Garmin does not have is left out, not drawn as a dash.
- */
 export function athleteStats(athlete: AthletePageView): AvailableMetric[] {
   const a = t.settings.athlete
   return available([
@@ -47,11 +40,6 @@ export function athleteStats(athlete: AthletePageView): AvailableMetric[] {
   ])
 }
 
-/**
- * The stats as one card of cells, three to a row, a line between them
- * (v4.17; 3.0 1j), under plain labels (design review, Oct 2026: no
- * definitions - they clipped inside the label's truncate).
- */
 export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
   const cells = athleteStats(athlete)
   if (cells.length === 0) return null
@@ -66,8 +54,7 @@ export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
             'flex min-w-0 flex-col gap-1 px-4 py-3.5',
             i % 3 > 0 && 'border-l border-border',
             i >= 3 && 'border-t border-border',
-            // A tile alone on the last row takes the row: Fitness age's
-            // « 27 pour 32 ans » ran out of a third (round 2).
+            // A tile alone on the last row spans it: French fitness age overflows a third.
             i === cells.length - 1 && i % 3 === 0 && 'col-span-3',
           )}
         >
@@ -84,7 +71,6 @@ export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
   )
 }
 
-/** Height and weight, for Settings > Profile (3.0 1i: no BMI). */
 export function bodyMetrics(athlete: Pick<AthleteProfile, 'heightCm' | 'weightKg'>): AvailableMetric[] {
   const a = t.settings.athlete
   return available([

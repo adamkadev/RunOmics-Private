@@ -42,10 +42,6 @@ export function NotesSheet({
   const suggestions = (knownTags ?? []).filter((tag) => !draft.tags.includes(tag))
   const atTagLimit = draft.tags.length >= TAGS_MAX_COUNT
 
-  // A medium-detent glass sheet (Liquid Glass v3, G10): close, the title,
-  // Save. Every control on it has a 44 pt target (design review, Oct 2026).
-  // The scrim no longer blurs: a blur behind a glass sheet would nest a
-  // backdrop-filter under another (README §4).
   return (
     <Sheet
       onClose={onCancel}

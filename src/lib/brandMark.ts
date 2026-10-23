@@ -1,9 +1,6 @@
 /**
- * The RunOmics mark, v5.2: the stacked-ellipse mark with its side walls and
- * opacity steps gone - one 6-unit stroke on a 44 grid, round caps, each
- * layer offset 3.5 units and tapering 29 → 26 → 23 so the stack leans
- * forward. At 24 px or smaller the ring's front arc drops and the stroke
- * goes to 7. Colour always comes from the accent tokens.
+ * Each layer is offset 3.5 units and tapers 29 → 26 → 23 so the stack leans forward.
+ * Colour always comes from the accent tokens.
  */
 export const MARK_VIEWBOX = 44
 export const MARK_STROKE = 6
@@ -31,11 +28,9 @@ const SMALL_ARCS = [ARCS[0]!, ARCS[2]!, ARCS[3]!]
 
 const toPath = ({ x, y, rx, ry, up }: Arc) => `M ${x} ${y} A ${rx} ${ry} 0 0 ${up ? 1 : 0} ${x + 2 * rx} ${y}`
 
-/** "M 11 12 A 14.5 6.5 0 0 1 40 12", ... - the SVG geometry for the asset generator. */
 export const MARK_PATHS = ARCS.map(toPath)
 export const MARK_SMALL_PATHS = SMALL_ARCS.map(toPath)
 
-/** The mark on a canvas, `size` px square with its top-left at (x, y). */
 export function drawMark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string): void {
   const small = size <= MARK_SMALL_MAX_PX
   ctx.save()

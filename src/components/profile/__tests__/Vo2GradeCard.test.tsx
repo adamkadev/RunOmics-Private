@@ -34,22 +34,18 @@ const GRADED: Vo2GradeView = {
 }
 
 describe('Vo2GradeCard (v5.3 G1; 3.0 1j)', () => {
-  // 3.0 1j: one compact row - tile, value, percentile in its band, the
-  // 30-day change - and the whole card opens the grade page.
   it('shows grade, value, percentile in its band and delta, the whole card opening the grade page', () => {
     render(<Vo2GradeCard view={GRADED} />)
     const card = screen.getByTestId('vo2-grade-card')
     expect(card.tagName).toBe('A')
     expect(card.getAttribute('href')).toBe('/athlete/vo2max')
     expect(screen.getByTestId('grade-letter').textContent).toBe('A−')
-    // v4.17: the grade on an accent-soft tile, the athlete's own mark.
     expect(screen.getByTestId('grade-letter').className).toContain('bg-[var(--accent-soft)]')
     expect(screen.getByTestId('grade-letter').className).toContain('text-accent-text')
     expect(card.textContent).toContain(`54.0${t.vo2Grade.valueLabel}`)
     expect(screen.getByTestId('grade-band').textContent).toBe('Top 10% · men 20–29')
     expect(screen.getByTestId('grade-delta').textContent).toBe(`+0.8 ${t.vo2Grade.in30d}`)
     expect(screen.getByTestId('grade-delta').getAttribute('style')).toContain('var(--good)')
-    // The bar to the next grade and its footer are gone from this card.
     expect(screen.queryByTestId('grade-progress')).toBeNull()
     expect(screen.queryByTestId('grade-footer')).toBeNull()
   })
@@ -89,7 +85,6 @@ describe('Vo2GradeDetail (G2)', () => {
     expect(screen.getByTestId('grade-row-A+').textContent).toContain(t.vo2Grade.andAbove('55.4'))
     expect(screen.getByTestId('grade-row-C').textContent).toContain(t.vo2Grade.below('42.6'))
     expect(screen.getByTestId('grade-season').textContent).toContain('B+')
-    // Design review, Oct 2026: no coach line on the way to the next grade.
     expect(screen.queryByTestId('grade-coach')).toBeNull()
   })
 })
@@ -105,7 +100,6 @@ describe('Vo2GradeTodayRow (G3)', () => {
     expect(container.innerHTML).toBe('')
   })
 
-  // Design review, Oct 2026: dismissible, and remembered per grade change.
   it('puts the row away until the grade changes again', () => {
     localStorage.clear()
     const up = (date: string): Vo2GradeView => ({ ...GRADED, change: { kind: 'up', from: 'B+', date, regained: false } })

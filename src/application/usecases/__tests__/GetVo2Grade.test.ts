@@ -27,8 +27,6 @@ describe('buildVo2Grade (v5.3)', () => {
     expect(view).toMatchObject({ status: 'graded', grade: 'A', value: 55, floor: 54.5, next: { grade: 'A+', min: 55.4, gap: 0.4 }, band: { sex: 'male', bracket: '20-29' } })
   })
 
-  // App Fixes 1e: the ranking is the grade's own row of the table, so the
-  // card's "Top 5%" and the A+ row cannot drift apart while the grade holds.
   it('ranks the athlete by the grade\'s band, not the raw percentile', () => {
     const ladder = gradeLadder(29, 'male', NORMS)
     const view = buildVo2Grade(input({ value: 57, samples: [{ date: '2026-08-01', vo2max: 56.8 }] }))
@@ -46,8 +44,6 @@ describe('buildVo2Grade (v5.3)', () => {
     expect(day4.status === 'graded' && day4.change).toBeNull()
   })
 
-  // Oct 2026: A+ from April to Sep 12, A- then A through September, A+ again
-  // on Oct 7 - which read "New grade, up from A".
   it('calls a grade that comes back after a dip regained, not new', () => {
     const samples = [
       { date: '2026-04-20', vo2max: 55.6 },

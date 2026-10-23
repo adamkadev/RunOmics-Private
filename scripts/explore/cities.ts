@@ -1,17 +1,7 @@
-/**
- * Cities whose quartiers are not in OpenStreetMap but are published as open
- * data. The build tries OSM `admin_level=10` first, then this registry, then
- * IGN IRIS, then the commune itself (scripts/build-explore-areas.ts).
- *
- * Add a city here when its own boundaries read better than IRIS: IRIS are
- * census blocks of about 2 000 people (49 in Metz), too small to feel like
- * quartiers and named after streets as often as places.
- */
+// Add a city here when its own boundaries read better than IRIS, census blocks of about 2 000 people named after streets.
 
 export interface CityWfsSource {
-  /** INSEE code of the commune the quartiers tile. */
   insee: string
-  /** `ExploreSource.id`, e.g. 'metz-wfs'. */
   sourceId: string
   /** Credit line shown with the map. */
   label: string
@@ -25,16 +15,11 @@ export interface CityWfsSource {
   wfs: {
     url: string
     typeName: string
-    /** CQL filter keeping this commune's quartiers only. */
     cqlFilter: string
     idField: string
     nameField: string
   }
-  /**
-   * The published names as people write them. Metz's layer drops capitals
-   * and accents ("Les Iles", "Metz-centre"); the spellings here follow the
-   * OSM place nodes for the same quartiers.
-   */
+  /** The published names as people write them, spelt as the OSM place nodes for the same quartiers. */
   nameOverrides: Record<string, string>
 }
 

@@ -6,13 +6,6 @@ import type { ButtonHTMLAttributes } from 'react'
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'link'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
-/**
- * The buttons (Liquid Glass v3, G12), every one a capsule. Primary is the
- * prominent button - the accent with its ink, a top sheen and a soft accent
- * glow - the one place the accent fills, for real actions (Sync now, Adjust
- * plan, a sheet's CTA). Secondary is the system fill with no line; a link is
- * accent text at 500.
- */
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
   primary: 'btn-prominent rounded-full px-3.5 bg-accent text-accent-foreground hover:brightness-105',
   secondary: 'rounded-full px-3.5 bg-[var(--fill-3)] text-foreground',
@@ -20,11 +13,7 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
   link: 'font-medium! text-accent-text hover:opacity-80',
 }
 
-/**
- * 36 pt, or 32 pt inside a card row; `lg` is the 50 pt full-width action -
- * every sheet's footer CTA (concentric with the sheet: 47 - 22 = 25). A link
- * has no box, so no height.
- */
+/** `lg`, the sheet footer CTA, is 50 pt so its capsule is concentric with the sheet's corner (47 - 22 = 25). */
 const SIZE_CLASS: Record<ButtonSize, string> = { lg: 'h-[50px] px-6 text-[17px]', md: 'h-9', sm: 'h-8' }
 
 export function buttonClass({
@@ -55,7 +44,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return <button ref={ref} type={type} className={buttonClass({ variant, size, className })} {...rest} />
 })
 
-/** The same buttons for something that goes somewhere: a link, drawn as a button. */
 export function ButtonLink({
   variant = 'primary',
   size = 'md',

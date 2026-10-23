@@ -1,14 +1,4 @@
-/**
- * Checks a data workspace against the contract between the Python sync and
- * this app (src/infrastructure/contracts/dataContract.ts).
- *
- * Runs before every build: a dataset that would crash a page fails the build,
- * so the deployment already live keeps serving; warnings are printed and never
- * fail it.
- *
- *   npm run validate:data                  # RUNOMICS_DATA_DIR, else ./data
- *   npm run validate:data -- path/to/data
- */
+// Runs before every build: a dataset that would crash a page fails the build, so the live deployment keeps serving.
 import path from 'node:path'
 import { checkDataDirectory, type Problem } from '@/infrastructure/contracts/dataContract'
 

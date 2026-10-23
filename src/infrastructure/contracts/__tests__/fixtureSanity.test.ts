@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { generateDemoDataset, Z5_PACE_FLOOR_SEC } from '../../../../scripts/generate_demo_data.mjs'
 
-/**
- * G31: the e2e fixture broke its own rules - a Threshold run at 115 bpm, below
- * Z1; 1K bests and route paces faster than Z5; Base week 1 three weeks before
- * the race - so the screenshots could not validate the UI. Every rule the
- * screens read the data by is checked here, on the dataset the capture uses.
- */
+/** Every rule the screens read the data by, checked on the dataset the screenshots capture. */
 
 interface Run {
   id: string

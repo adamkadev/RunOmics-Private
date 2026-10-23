@@ -3,12 +3,7 @@ import { round } from '@/lib/math'
 
 export type WearStatus = 'ok' | 'watch' | 'replace'
 
-/**
- * How much of a shoe's intended life is used, 0-100. A retired shoe is spent
- * whatever its mileage. One with no lifespan set cannot be measured, so it
- * reads as unworn - the two copies this replaces divided by zero there and
- * showed NaN%.
- */
+/** 0-100. A shoe with no lifespan set cannot be measured, so it reads as unworn. */
 export function wearPercent(shoe: { totalKm: number; maxKm: number; retired: boolean }): number {
   if (shoe.retired) return 100
   if (!(shoe.maxKm > 0)) return 0
@@ -36,11 +31,6 @@ export function wearOutlook(shoe: { totalKm: number; maxKm: number; wearPercent:
   }
 }
 
-/**
- * How many weeks a pair has been in rotation, from its first outing to its
- * most recent one (or to itself, for a pair worn exactly once). Shared by the
- * retired list row and the detail page so both count the same way.
- */
 export function weeksInRotation(firstUsedDate: string | null, lastDate: string | null): number {
   if (!firstUsedDate) return 0
   const end = lastDate ?? firstUsedDate
@@ -54,14 +44,8 @@ export function weeksInRotation(firstUsedDate: string | null, lastDate: string |
 }
 
 /**
- * The weekly rate over a pair's working life: total km divided by the weeks
- * between its first and most recent outing. `GetShoeStats` and `GetShoeDetail`
- * both need it - one for the list row's subline, the other for the wear
- * projection sentence and stat row - so it lives here instead of twice.
- *
  * Anchored to the last activity, not to today: a retired pair stopped
- * accumulating weeks the day it was last worn, so dividing by weeks-to-now
- * would keep diluting its rate the longer ago it retired.
+ * accumulating weeks the day it was last worn.
  */
 export function kmPerWeek(firstUsedDate: string | null, lastUsedDate: string | null, totalKm: number): number {
   if (!firstUsedDate) return 0

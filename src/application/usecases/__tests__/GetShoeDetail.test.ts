@@ -74,8 +74,7 @@ describe('getShoeDetail', () => {
   it('averages the weekly mileage over the weeks between the first and most recent run, not weeks to today', () => {
     getAllActivities.mockReturnValue([run('daily', '2026-06-03', 10), run('daily', '2026-07-01', 50)])
 
-    // 28 days between the two runs = 4 weeks, over 60 km total - regardless of
-    // how long ago '2026-07-01' was relative to the mocked "now".
+    // 28 days between the two runs = 4 weeks, over 60 km total.
     expect(getShoeDetail('daily')?.kmPerWeek).toBe(15)
   })
 
@@ -128,7 +127,6 @@ describe('getShoeDetail', () => {
     })
   })
 
-  // v4.4.1: one bucket per session zone, so every run dot has its colour in the bar.
   it('splits the distance by session zone: base, tempo, threshold, intervals', () => {
     const typed = (type: Activity['type'], date: string, km: number) => ({ ...run('daily', date, km), type }) as Activity
     getAllActivities.mockReturnValue([

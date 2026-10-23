@@ -1,7 +1,6 @@
 /**
- * Every activity type, hardest effort first. The order is a contract: the
- * activities filter chips break ties in it, /api/activities accepts exactly
- * these, and the type style map is declared in it.
+ * Hardest effort first. The order is a contract: the filter chips break ties in it,
+ * /api/activities accepts exactly these, and the type style map is declared in it.
  */
 export const ACTIVITY_TYPES = ['Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tempo', 'Base', 'Race'] as const
 
@@ -101,7 +100,7 @@ export type ActivitySummary = Pick<
   | 'week'
   | 'elevationGain'
 > & {
-  /** The route as a 56 pt SVG path, null for a treadmill run (routeThumb). */
+  /** From routeThumbPath; null for a treadmill run. */
   routeThumb?: string | null
 }
 

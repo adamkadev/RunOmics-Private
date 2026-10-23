@@ -3,19 +3,12 @@ import type { MilestoneType } from '@/application/usecases/GetMilestones'
 
 export interface MilestoneIcon {
   Icon: LucideIcon
-  /** The circle's tint and the glyph's colour, together. */
   className: string
 }
 
 const NEUTRAL = 'bg-[var(--track)] text-muted-foreground'
 
-/**
- * Two marks with a meaning, the rest neutral. This year's distance takes
- * the accent - it is the one the NEXT UP card above is counting towards - and
- * a record takes the warm amber, a meaning no accent the user picks in
- * Settings may take over. A count, a lifetime total, a streak and the first
- * run are told apart by their glyph alone.
- */
+/** A record takes the warm amber, a meaning no accent picked in Settings may take over. */
 export function milestoneIcon(type: MilestoneType): MilestoneIcon {
   switch (type) {
     case 'distance-tier':

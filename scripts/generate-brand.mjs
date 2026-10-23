@@ -1,6 +1,3 @@
-// RunOmics logo v5.2: every brand asset from the mark in src/lib/brandMark.ts,
-// coloured from the code's tokens - the default accent (teal, dark value),
-// its on-accent ink and the darkest background. No hex lives here.
 // Usage: node scripts/generate-brand.mjs   (then npm run splash)
 import sharp from 'sharp'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -23,7 +20,7 @@ const group = (color, paths = MARK_PATHS, width = MARK_STROKE) =>
   `<g fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round">${paths.map((d) => `<path d="${d}"/>`).join('')}</g>`
 const mark = (color, paths, width) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="44" height="44">${group(color, paths, width)}</svg>\n`
-// The mark at 74% of the icon; the square is left unrounded (iOS masks it).
+// The square is left unrounded: iOS masks it.
 const icon = (bg, fg, size = 1024, ratio = 0.74) => {
   const m = size * ratio
   const o = (size - m) / 2
@@ -51,7 +48,6 @@ await Promise.all([
   png(favicon, 16, 'web-16.png'),
 ])
 
-// The installed app's colours follow the same tokens.
 const manifestPath = join(ROOT, 'public/manifest.json')
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
 manifest.background_color = BG

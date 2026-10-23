@@ -13,7 +13,6 @@ export interface DayKind {
   color: string
 }
 
-/** The coach's long_run, or a Garmin session its name calls the long run. */
 export function plannedLong(
   date: string,
   byDatePlanned: ReadonlyMap<string, PlannedWorkout>,
@@ -30,10 +29,7 @@ export function kindOf(type: ActivityType, long: boolean): SessionKind {
   return long ? 'long' : 'easy'
 }
 
-/**
- * A session's colour: its zone's. The long run is an easy run and shares the
- * easy blue (3.0.2, by design); its letter tells it apart.
- */
+/** The long run shares the easy blue by design; its letter tells it apart. */
 export function kindColor(type: ActivityType): string {
   return zoneColor(sessionZone({ type }))
 }
@@ -43,16 +39,10 @@ export function kindLetter(type: ActivityType, kind: SessionKind): string {
   return kind === 'quality' ? (letters[type] ?? letters.easy!) : (letters[kind] ?? letters.easy!)
 }
 
-/** "Easy", "Long run", or the quality session's type: "Threshold". */
 export function kindLabel(type: ActivityType, kind: SessionKind): string {
   return kind === 'quality' ? t.activityTypes[type] : t.plan.kinds[kind]
 }
 
-/**
- * A day's kind, by what was run when it was run and by what is planned
- * otherwise - the same priority as resolveDayType. A day run as an easy run
- * is the long run when the run was long or the plan said so.
- */
 export function dayKind(
   date: string,
   acts: readonly Pick<ActivitySummary, 'type' | 'durationSeconds' | 'description'>[],

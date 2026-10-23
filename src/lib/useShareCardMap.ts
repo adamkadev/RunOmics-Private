@@ -13,7 +13,6 @@ import { addEdgeFence, addRunMarkers, clearMarkerImage, setRunFinish } from '@/l
 export interface ShareCardMap {
   image: HTMLCanvasElement | null
   points: [number, number][] | null
-  /** The towns and districts, for the card to draw over its route (3.0.3). */
   labels: ShareMapLabel[] | null
   failed: boolean
 }
@@ -27,7 +26,7 @@ interface Render {
 export interface ShareCardMapOptions {
   route: LngLat[] | null | undefined
   theme: ThemeMode
-  /** The whole card: the map runs under the header and the stats (redesign, Oct 2026). */
+  /** The whole card: the map runs under the header and the stats. */
   width: number
   height: number
   /** The route's room, clear of the header's words and the stats. */
@@ -37,10 +36,7 @@ export interface ShareCardMapOptions {
   enabled?: boolean
 }
 
-// The export is 1080 px wide, 3.6x the 300 px card. 3, a phone's own ratio,
-// not 4: the basemap went missing from the card on the owner's phone when
-// it went to 4 (Oct 2026), and grey streets lose nothing to the 1.2x the
-// export scales them by.
+// A phone's own ratio, not 4: at 4 the basemap goes missing from the card on a phone.
 const PIXEL_RATIO = 3
 
 const RENDER_TIMEOUT_MS = 15_000
@@ -54,10 +50,8 @@ const CARD_LABEL_SIZE = 10
 const MAP_LANG = t.locale.split('-')[0] ?? 'en'
 
 /**
- * Once the map has drawn all it will: 'idle'. A tile, glyph or sprite that
- * fails to load is not the map failing - MapLibre draws the rest and still
- * goes idle - so such an error is logged, where it used to cost the card its
- * whole basemap. Only a map that never settles fails, at the timeout.
+ * A tile, glyph or sprite that fails to load is only logged: MapLibre draws
+ * the rest and still goes idle. Only a map that never settles fails.
  */
 function settled(map: import('maplibre-gl').Map, timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -80,19 +74,15 @@ const LABEL_FENCE_SOURCE = 'share-label-fence'
 const LABEL_FENCE_LAYER = 'share-label-fence'
 const LABEL_FENCE_ICON = 'share-label-fence'
 /**
- * The fence's clear icon, as wide as the line it stands for and no wider: the
- * 3 px trace and its casing. At 10 px it reached a name's own point, and a
- * name can only step a few px off that point, so every district the run went
- * through was dropped - the card came back with no names at all.
+ * As wide as the 3 px trace and its casing, no wider: a wider icon reaches a
+ * name's own point and drops every district the run went through.
  */
 const LABEL_FENCE_PX = 6
 
 /**
- * The card's place names (redesign, Oct 2026): towns and the river, never
- * touching the route. The route is painted on the card afterwards, so here
- * a clear icon every 6 px along it - and along the edges of the header's
- * and the stats' bands - placed above the labels, makes MapLibre drop a
- * name that would sit on the line or be cut by a band.
+ * The route is painted on the card afterwards, so clear icons along it and
+ * along the bands' edges make MapLibre drop a name that would sit on the
+ * line or be cut by a band.
  */
 function fenceLabels(map: import('maplibre-gl').Map, points: LngLat[], width: number, bands: readonly number[]) {
   const screen = points.map((c): [number, number] => { const p = map.project(c); return [p.x, p.y] })
@@ -115,7 +105,6 @@ function placeLayerIds(map: import('maplibre-gl').Map): string[] {
   return map.getStyle().layers.filter((layer) => isPlaceLabelLayer(layer as { id: string; type: string; 'source-layer'?: string })).map((layer) => layer.id)
 }
 
-/** Each town and district MapLibre placed, once, in the card's px, with its size, ink and opacity. */
 function placedLabels(map: import('maplibre-gl').Map, mode: ThemeMode): ShareMapLabel[] {
   const ids = placeLayerIds(map)
   if (ids.length === 0) return []
@@ -149,7 +138,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
 
   const container = document.createElement('div')
   Object.assign(container.style, {
-    // Off screen on both axes: nothing fixed sits at the top edge (v4.8).
+    // Off screen on both axes: nothing fixed sits at the top edge.
     position: 'fixed', left: '-10000px', top: '-10000px',
     width: `${width}px`, height: `${height}px`, pointerEvents: 'none',
   })
@@ -168,11 +157,8 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     fadeDuration: 0,
   })
 
-  // The Activity map's label rules (v4.10), with the halo in the card's own
-  // background, and the river's name kept. The card paints the route and
-  // markers on top afterwards, so clear icons stand in for them here: a name
-  // that would sit under one is dropped, as on the Activity map, and so is
-  // one cut by the edge or by the header's and stats' bands.
+  // The card paints the route and markers on top afterwards, so clear icons
+  // stand in for them here: a name under one, or cut by an edge, is dropped.
   const surface = SURFACES[isDark ? 'dark' : 'light']
   map.on('load', () => {
     styleRunMapLabels(map, { halo: surface.background, town: surface.text2, neighbourhood: surface.text2, districtOpacity: DISTRICT_OPACITY[theme] })
@@ -185,8 +171,7 @@ async function renderRouteMap(opts: RenderOptions): Promise<Render> {
     if (last && last !== first) setRunFinish(map, first, last)
     addEdgeFence(map)
     fenceLabels(map, points, width, bands)
-    // Towns and districts above the fence (3.0.3): placed first, so the line
-    // drops none of them; the card draws them over its route afterwards.
+    // Places above the fence are placed first, so the line drops none of them.
     for (const id of placeLayerIds(map)) map.moveLayer(id)
   })
 
@@ -234,9 +219,7 @@ export function useShareCardMap({
   // The bands follow the frame: the key holds both.
   const key = wanted ? cacheKey(route!, theme, width, height, frame) : null
   const [, bump] = useState(0)
-  // A failed map is this sheet's, not the session's: one that timed out once
-  // - the phone busy, the network slow - left every later share without its
-  // map until the app was closed. The next sheet tries again.
+  // A failed map is this sheet's, not the session's: the next sheet tries again.
   const [failedKey, setFailedKey] = useState<string | null>(null)
 
   useEffect(() => {
@@ -253,8 +236,8 @@ export function useShareCardMap({
       .catch(() => { if (alive) setFailedKey(key) })
       .finally(() => inFlight.delete(key))
     return () => { alive = false }
-    // key already encodes route, theme, size and frame - listing them again
-    // would re-render the map on every parent render that rebuilds the array.
+    // key encodes route, theme, size and frame; listing the arrays would
+    // re-render the map on every parent render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 

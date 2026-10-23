@@ -52,7 +52,7 @@ interface ColumnDefinition {
 
 export interface TrainingWorkbookData {
   activities: Activity[]
-  /** The notes and tags typed in the app, by activity id. Firestore is their only home. */
+  /** The notes and tags typed in the app. Firestore is their only home. */
   activityNotes: ReadonlyMap<string, ActivityNote>
   /** False when Firestore could not be asked: an empty `activityNotes` then means "unknown", not "none". */
   notesAvailable: boolean
@@ -362,12 +362,9 @@ const SEGMENT: Record<Exclude<ActivitySplit['type'], 'lap'>, string> = {
 }
 
 /**
- * Each structured segment on its own row, so a session reads rep by rep
- * rather than through a whole-run average that the warm-up and recoveries
- * dilute. Reps and strides are told apart as sessionExecution does: a short
- * effort beside a continuous block is a stride, and a single continuous
- * block is the run itself rather than one rep. Sessions with neither reps nor
- * strides are left out, since one row would only repeat the Activities sheet.
+ * One row per structured segment, reps and strides told apart as
+ * sessionExecution does. A session with neither would only repeat the
+ * Activities sheet, so it is left out.
  */
 function intervalRows(data: TrainingWorkbookData): RowData[] {
   return [...data.activities].sort((a, b) => a.date.localeCompare(b.date)).flatMap((activity) => {
@@ -816,7 +813,6 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
   return workbook
 }
 
-/** Everything the exports read: the JSON data, plus the notes from Firestore. */
 export async function loadTrainingWorkbookData(): Promise<TrainingWorkbookData> {
   const notes = await getActivityNotes()
   return {
@@ -854,16 +850,7 @@ function csvCell(value: Primitive | undefined): string {
   return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 
-/**
- * The Activities sheet as CSV, for pasting or uploading to an LLM: the same
- * columns and rows as the workbook, UTF-8, RFC 4180 quoting, dates as
- * yyyy-mm-dd and blanks for missing values.
- *
- * It starts with a UTF-8 byte order mark. Without one, Numbers and Excel on
- * a Mac read the file as Mac Roman and "à pied" comes out "√† pied" - and a
- * CSV is opened there to check it before it is uploaded. LLMs and CSV
- * parsers skip the mark.
- */
+/** Starts with a UTF-8 BOM: without one, Numbers and Excel on a Mac read the file as Mac Roman. */
 export function buildActivitiesCsv(data: TrainingWorkbookData): string {
   const athleteHrBounds: HrBounds = {
     maxHr: data.athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr,

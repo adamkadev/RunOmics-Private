@@ -48,9 +48,8 @@ class FakeGarmin implements GarminWorkoutGateway {
   private deleteFailures: number
 
   /**
-   * `gone` lists ids Garmin no longer has, and anything this fake removes joins
-   * them: like Garmin, it answers 404 to removing the same thing twice. Ids it
-   * has never heard of stand for workouts pushed before the test began.
+   * `gone` holds ids Garmin no longer has, removals included: like Garmin, a second removal answers 404.
+   * Unknown ids stand for workouts pushed before the test began.
    */
   constructor(
     private readonly failures: { schedule?: boolean; create?: boolean; rateLimitAfter?: number; delete?: number } = {},
@@ -446,8 +445,6 @@ describe('result rendering', () => {
 
 describe('crash safety', () => {
   it('records every workout as it is pushed, not once at the end', async () => {
-    // A run killed mid-loop used to leave no trace of what Garmin had accepted,
-    // so the next --apply created duplicates RunOmics could no longer delete.
     const workouts = ['2026-09-08', '2026-09-09', '2026-09-10', '2026-09-11'].map((date, i) =>
       workout({ id: `w${i}`, date })
     )

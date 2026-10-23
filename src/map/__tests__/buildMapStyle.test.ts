@@ -83,7 +83,6 @@ describe('buildMapStyle (v4.17)', () => {
     expect(layer('Place labels').layout!['text-field']).toEqual(['coalesce', ['get', 'name:en'], ['get', 'name']])
   })
 
-  // 3.0 handoff: relief at 7 % or less, under the water.
   it('adds a faint hillshade once, above the land and below the water', () => {
     const ids = built.layers.map((l) => l.id)
     expect(ids.indexOf(HILLSHADE_LAYER)).toBeGreaterThan(ids.indexOf('Stadium'))
@@ -96,7 +95,7 @@ describe('buildMapStyle (v4.17)', () => {
     expect(rebuilt).toEqual(built)
   })
 
-  // 3.0.1: a run's map sits at zoom 12-13, where Metz's districts were hidden.
+  // A run's map sits at zoom 12-13.
   it('names a city\'s suburbs and quarters from zoom 11, its neighbourhoods from 13', () => {
     const district = layer('District labels')
     expect(district.minzoom).toBe(11)

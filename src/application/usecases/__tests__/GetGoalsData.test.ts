@@ -59,8 +59,7 @@ describe('computeProjection', () => {
     expect(result?.status).toBe('on_track')
   })
 
-  // v4.6: the app's one weekly average - the last 12 complete weeks, the
-  // week under way (from Monday Jul 1) left out.
+  // The week under way (from Monday Jul 1) is left out.
   it('reads the rate over the last 12 complete weeks only', () => {
     const old = act('2024-04-07', 1000)
     const thisWeek = act('2024-07-01', 1000)
@@ -251,15 +250,11 @@ describe('computeMonthlyGoals', () => {
     expect(Math.round(september.progress!.proRataTargetKm)).toBe(89)
   })
 
-  // 3.1: with no plan behind the year, one target line on the chart, so one
-  // target for every month.
   it('asks a twelfth of the year of every month without a plan', () => {
     const months = computeMonthlyGoals([], 2024, goal(2000))
     expect(new Set(months.map((mg) => mg.targetKm))).toEqual(new Set([166.7]))
   })
 
-  // App Fixes 3c: Goals read a twelfth of the year while Plan had 226 km in
-  // October, and the two disagreed about the same month.
   it('takes a month\'s target from the plan where the plan covers it', () => {
     const planned = plannedKmByMonth([
       { date: '2024-10-01', distanceM: 120_000 },

@@ -4,44 +4,29 @@ import type { LngLatBounds } from '@/lib/routeFrame'
 import { median } from '@/lib/math'
 import { ROUTE_KM_MAX, ROUTE_KM_MIN, stepKm, type ExploreFrom, type ExploreRouteParams } from './exploreHref'
 
-/**
- * The route generator's rules (S3/S4), kept pure: which quartier, which
- * distance and pace it opens on, the seeds of each batch, what its back
- * button does, and the numbers its panel shows.
- */
-
-/** Loops asked for at once (PLAN: N = 5, seeds base..base+4). */
 export const ROUTE_BATCH = 5
-/** The first batch's first seed. */
 export const FIRST_SEED = 1
-/** How long the stepper rests before a new distance is asked for. */
 export const ROUTE_DEBOUNCE_MS = 400
-/** No plan, no runs: the distance the stepper starts on. */
 export const FALLBACK_ROUTE_KM = 8
 
-/** Seeds `base` up to `base + ROUTE_BATCH − 1`. */
 export function batchSeeds(base: number): number[] {
   return Array.from({ length: ROUTE_BATCH }, (_, k) => base + k)
 }
 
-/** A planned session, as the Activities page hands it over (a trimmed copy, never the coach's overview). */
+/** A trimmed copy, never the coach's overview. */
 export interface ExplorePlan {
-  /** 'YYYY-MM-DD': the session's day. */
+  /** 'YYYY-MM-DD'. */
   date: string
   /** "Easy · 8 km + 6 strides". */
   label: string
-  /** The whole session, strides and recoveries included; null when the plan gives none. */
+  /** The whole session, strides and recoveries included. */
   distanceM: number | null
-  /** Duration over distance; null when either is missing. */
   paceSecPerKm: number | null
 }
 
 /**
- * The plan the generator shows and sizes the loop by: the day a Plan link
- * names (its "Find a route" is for that session), else today's; null when
- * that day has none. A link that brings a distance but no day (an older
- * one) has no plan: that distance may be any day's, and today's session
- * would lend the loop another workout's name and pace.
+ * A link that brings a distance but no day has no plan: that distance may be any day's, and today's
+ * session would lend the loop another workout's name and pace.
  */
 export function generatorPlan(
   plans: readonly ExplorePlan[],
@@ -53,24 +38,15 @@ export function generatorPlan(
   return day ? (plans.find((plan) => plan.date === day) ?? null) : null
 }
 
-/** What the generator opens on. */
 export interface GeneratorTarget {
   /** null: the next quartier. */
   unitId: string | null
-  /** On the stepper's grid. */
   km: number
-  /** Seconds a km for the time stat; null: unknown. */
+  /** Seconds per km. */
   pace: number | null
   from: ExploreFrom | null
 }
 
-/**
- * The opening state: the link's distance and pace when it carries them
- * (Plan's "Find a route" does), else the plan's - the linked session's,
- * or today's (`generatorPlan`; decision 4: the whole session, to the nearest
- * 0.5 km) - else the athlete's median run here, else 8 km. The pace
- * likewise: the link's, the plan's, the median run's here.
- */
 export function generatorTarget(
   link: Pick<ExploreRouteParams, 'quartier' | 'km' | 'pace' | 'from'> | null,
   {
@@ -90,7 +66,6 @@ export function generatorTarget(
   }
 }
 
-/** The median of the runs' distances (km) or paces (s/km) among `indices`; null without one. */
 export function medianOf<T>(rows: readonly (T | undefined)[], indices: readonly number[], pick: (row: T) => number | null | undefined): number | null {
   const values = indices.flatMap((i) => {
     const row = rows[i]
@@ -100,7 +75,6 @@ export function medianOf<T>(rows: readonly (T | undefined)[], indices: readonly 
   return values.length > 0 ? median(values) : null
 }
 
-/** The stepper one step (0.5 km) shorter or longer, within its bounds. */
 export function stepRouteKm(km: number, direction: -1 | 1): number {
   return stepKm(km + direction * 0.5)
 }
@@ -108,16 +82,11 @@ export function stepRouteKm(km: number, direction: -1 | 1): number {
 export const canStepDown = (km: number) => km > ROUTE_KM_MIN
 export const canStepUp = (km: number) => km < ROUTE_KM_MAX
 
-/** What the back button does: back through history, to a page, or the generator closes in place. */
 export type GeneratorBack = { kind: 'back' } | { kind: 'push'; href: string } | { kind: 'close' }
 
 const FROM_HREF: Record<ExploreFrom, string> = { plan: '/plan', profile: '/profile' }
 
-/**
- * A generator opened from Plan or Progress goes back there: through history
- * when that page is the one just left (its state - Plan's day - intact),
- * else by opening it. Opened on the map, it closes in place.
- */
+/** Back through history when that page is the one just left, so its state (Plan's day) stays intact. */
 export function generatorBack(from: ExploreFrom | null, origin: NavigationOrigin | null): GeneratorBack {
   if (!from) return { kind: 'close' }
   const href = FROM_HREF[from]
@@ -125,12 +94,10 @@ export function generatorBack(from: ExploreFrom | null, origin: NavigationOrigin
   return { kind: 'push', href }
 }
 
-/** The numbers under the stepper (S3), from the loop on screen. */
 export interface RouteStats {
   distanceKm: number
-  /** At the pace given; null without one. */
   timeSeconds: number | null
-  /** Metres up; null when the provider gave no elevation. */
+  /** null when the provider gave no elevation. */
   climbM: number | null
   /** Whole per cent of the loop on new ground. */
   newPct: number
@@ -147,7 +114,6 @@ export function routeStats(route: ScoredRoute, paceSecPerKm: number | null): Rou
   }
 }
 
-/** The box around a loop's points; null for fewer than one usable point. */
 export function lineBounds(points: readonly (readonly number[])[]): LngLatBounds | null {
   let minLon = Infinity
   let minLat = Infinity
@@ -163,7 +129,6 @@ export function lineBounds(points: readonly (readonly number[])[]): LngLatBounds
   return Number.isFinite(minLon) ? { minLon, minLat, maxLon, maxLat } : null
 }
 
-/** Both boxes in one; either may be missing. */
 export function unionBounds(a: LngLatBounds | null, b: LngLatBounds | null): LngLatBounds | null {
   if (!a) return b
   if (!b) return a

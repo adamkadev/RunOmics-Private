@@ -3,11 +3,8 @@ import fs from 'fs'
 import path from 'path'
 
 /**
- * The worker is its own bundle. Anything it imports ships inside it, so one
- * stray import of `@/i18n` or `@/lib/formatters` would pull both locale
- * tables into a script that never shows a word, and React or MapLibre would
- * not even run there. This walks the worker's static imports, the way the
- * bundler will, and fails on any of them.
+ * The worker is its own bundle: a stray import of `@/i18n` or `@/lib/formatters` would pull both locale tables
+ * into a script that never shows a word, and React or MapLibre would not even run there.
  */
 
 const SRC = path.resolve(__dirname, '../../..')

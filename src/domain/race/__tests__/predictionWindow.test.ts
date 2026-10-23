@@ -53,7 +53,6 @@ describe('bestTrend', () => {
 })
 
 describe('trailingMonths', () => {
-  // G06: the race-time tiles measured three years of history without naming it.
   it('keeps the readings in the months before the latest one', () => {
     const points = ['2024-09-20', '2025-09-19', '2025-09-20', '2026-03-01', '2026-09-20'].map((d) => ({ date: d }))
     expect(trailingMonths(points, 12).map((p) => p.date)).toEqual(['2025-09-20', '2026-03-01', '2026-09-20'])

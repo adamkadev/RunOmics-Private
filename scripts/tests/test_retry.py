@@ -8,14 +8,13 @@ from garmin.retry import retry_transient
 
 @pytest.fixture(autouse=True)
 def pauses(monkeypatch):
-    """Backoff pauses are real seconds - record them instead of waiting."""
+    """Backoff pauses are real seconds: record them instead of waiting."""
     taken: list[float] = []
     monkeypatch.setattr(retry_mod.time, "sleep", taken.append)
     return taken
 
 
 def test_passes_arguments_through():
-    # So a call inside a loop needs no closure over the loop variable.
     assert retry_transient(lambda a, *, b: (a, b), 1, b=2) == (1, 2)
 
 

@@ -68,7 +68,6 @@ function ids() {
   return () => `generated-${++value}`
 }
 
-// The fixture plan's sessions, named as a block is named now (design review, Oct 2026).
 const NAMED = {
   threshold: { title: 'Threshold · 3 × 8′', shortName: 'Threshold 3×8′' },
   easy: { title: 'Easy run', shortName: 'Easy run' },
@@ -814,9 +813,7 @@ describe('coaching workflows', () => {
       reviewWeek: async () => { throw new Error('not called') },
     }
     const context = buildCoachingContext(contextInput(repository.plan), '2026-09-09')
-    // Pin the clock like every other case in this file: the workout being adjusted
-    // is dated 2026-09-15, so on the real clock this test started throwing
-    // "past prescriptions are immutable" the day the calendar passed it.
+    // Pinned clock: on the real one the 2026-09-15 workout is past, and past prescriptions are immutable.
     const proposal = await createPostActivityProposal(context, latestActivity, {
       repository, advisor, id: ids(), now: () => new Date('2026-09-09T08:00:00Z'),
     })
@@ -851,9 +848,7 @@ describe('coaching workflows', () => {
   })
 
   it('never lets a model-supplied id rewrite a prescription outside the future it replaces', async () => {
-    // Replanning from Thursday, the model reuses the id of Wednesday's session -
-    // already run - for a new one on Saturday. Trusted, it silently replaced
-    // the past prescription the evaluations point at.
+    // Replanning from Thursday, the model reuses the id of Wednesday's session - already run - for a new one on Saturday.
     const repository = new MemoryRepository()
     repository.plan = plan()
     const [thisWeek, nextWeek] = repository.plan.weeks
@@ -1069,9 +1064,6 @@ describe('replacing a plan that is already active', () => {
   })
 
   it('supersedes the active plan when asked, and writes nothing until applied', async () => {
-    // Blocks get rewritten - a rejected draft, a changed goal, a week that
-    // turned out wrong - and deleting current_plan.json by hand was the only
-    // way through before this.
     const repository = new MemoryRepository()
     repository.plan = plan()
     const outgoing = repository.plan.id
@@ -1080,7 +1072,6 @@ describe('replacing a plan that is already active', () => {
     const proposal = await createBootstrapProposal(context, [2, 3], services(repository), undefined, undefined, undefined, true)
 
     expect(proposal.proposedPlan?.id).not.toBe(outgoing)
-    // A preview has no side effects: nothing saved, nothing archived.
     expect(repository.plan?.id).toBe(outgoing)
     expect(repository.archived).toEqual([])
   })
@@ -1148,8 +1139,6 @@ describe('repairing a rejected draft', () => {
   })
 
   it('asks again when one session is written wrong, as it does for any other rule', async () => {
-    // These rules used to run while the answer was parsed, so breaking one
-    // ended the bootstrap on the first answer with no chance to correct it.
     const asks: (string | undefined)[] = []
     const withBareStrides = () => {
       const draft = fourWeekPlan()

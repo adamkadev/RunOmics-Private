@@ -2,18 +2,14 @@ import type { MultiPolygon, Polygon } from 'geojson'
 import type { GridSpec } from './grid'
 
 /**
- * Explore: quartier coverage and loop routes.
- *
- * An *area* is the set of units (quartiers of the home city, whole communes
- * around it) built offline by `scripts/build-explore-areas.ts` into the data
- * repo as `explore/<id>.geojson`, listed in `explore/index.json`.
+ * An area is the set of units (quartiers of the home city, whole communes around
+ * it) built offline by `scripts/build-explore-areas.ts` into the data repo as
+ * `explore/<id>.geojson`, listed in `explore/index.json`.
  */
 
 export const EXPLORE_SCHEMA = 1
 
-/** "complete" at 90% or more of a unit's runnable cells. */
 export const COMPLETE_PCT = 90
-/** Under 15% a unit is drawn as fog. */
 export const FOG_PCT = 15
 
 export type UnitKind = 'quartier' | 'commune'
@@ -30,7 +26,6 @@ export interface ExploreSource {
   version: string
 }
 
-/** `properties` of one unit feature in an area file. */
 export interface ExploreUnitProperties {
   /** Stable across rebuilds of the same source, e.g. 'metz-5746332', 'insee-57049'. */
   id: string
@@ -43,9 +38,8 @@ export interface ExploreUnitProperties {
   label: [number, number]
   /**
    * The denominator: sorted `cellKey`s of the cells whose centre lies in this
-   * unit and that hold at least one runnable OSM way (footway, path, track,
-   * residential, service, …). Rivers, rail and woods without paths are left
-   * out so they never count as unexplored.
+   * unit and that hold a runnable OSM way, so rivers, rail and pathless woods
+   * never count as unexplored.
    */
   runnable: number[]
 }
@@ -73,7 +67,6 @@ export interface ExploreAreaMeta {
   sources: ExploreSource[]
 }
 
-/** An area file: a GeoJSON FeatureCollection with a `runomics` foreign member. */
 export interface ExploreAreaFile {
   type: 'FeatureCollection'
   runomics: ExploreAreaMeta
@@ -95,7 +88,6 @@ export interface ExploreIndexFile {
 
 export type UnitState = 'complete' | 'partly' | 'fog'
 
-/** One unit's coverage, as the worker reports it. */
 export interface UnitCoverage {
   id: string
   name: string
@@ -126,7 +118,6 @@ export interface AreaCoverage {
   completeCount: number
   /** Units with at least one runnable cell; the M in "N of M quartiers complete". */
   unitCount: number
-  /** The "Next quartier": see `nextUnit`. */
   nextId: string | null
   home: [number, number] | null
 }

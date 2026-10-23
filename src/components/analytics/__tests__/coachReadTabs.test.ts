@@ -48,8 +48,7 @@ describe('the Volume read', () => {
   })
 })
 
-// Design review, Oct 2026: missed sessions that came together - 3 or more
-// in 7 days - are part of the Volume case, never its claim.
+// Missed sessions that came together, 3 or more in 7 days, are part of the Volume case, never its claim.
 describe('missed sessions in the Volume read', () => {
   const weeks = rows([...Array(4)].map(() => ({ km: 40, planKm: 40, longestKm: 12 })).concat({ km: 10, planKm: 40, longestKm: 10 }))
   const without = volumeRead(data, weeks, true)!

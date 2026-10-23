@@ -53,9 +53,8 @@ describe('authorizeExploreCaller', () => {
   })
 })
 
-// The private-site branch above asks for nothing because the proxy already
-// did. Were /api/explore/* ever left out of its matcher or made a public
-// path, that branch would open the routing key to anyone: this holds it.
+// The private-site branch above trusts the proxy's gate: /api/explore/* left out of its matcher, or made
+// a public path, would open the routing key to anyone.
 describe('the gate a private site relies on', () => {
   afterEach(() => {
     vi.unstubAllEnvs()

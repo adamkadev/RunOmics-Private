@@ -8,11 +8,8 @@ import { Glass, GLASS_GROUP_BUTTON } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
 /**
- * The hero's top meets the edge sampler, the status bar above it the page's
- * own colour: it fades in from the solid page ground over 96 pt, eased
- * (F15). The light 35 % wash Liquid Glass v3 left let full-strength tiles
- * meet the sampler's foot, a hard line 12 pt under the status bar. The foot
- * fades into the page over 64 pt (Liquid Glass v3, §7.2).
+ * Fades in from the solid page ground over 96 pt, so full-strength tiles never
+ * meet the edge sampler in a hard line under the status bar.
  */
 const TOP_FADE = {
   background:
@@ -30,15 +27,6 @@ export function HeroFades() {
 
 const FADES = <HeroFades />
 
-/**
- * The activity's map hero (3.0): edge to edge, 330 pt (3.0's height, back from
- * Liquid Glass v3's 300 at the owner's ask, round 2), fading into the page
- * at the top and bottom, with the way back on the left as a 44 pt clear-glass
- * circle and expand and share on the right grouped in one clear-glass
- * capsule (Liquid Glass v3). The route is the run's one colour,
- * with no km markers and no pace or heart-rate ramp. Expand opens the map
- * full screen, with `card` floating at its foot.
- */
 export function RunMapHero({
   route,
   back,
@@ -55,7 +43,7 @@ export function RunMapHero({
   return (
     <section
       data-testid="run-hero"
-      // The canvas and its glass controls: marked while the map moves (README §6.12.2).
+      // Marks the canvas and its glass controls while the map moves.
       data-map-root
       className="relative -mx-4 h-[330px] overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-[24px]"
     >
@@ -78,7 +66,6 @@ export function RunMapHero({
         {/* Keyed: back and share are elements the server page made, and React
             asks a key of one set beside other children of a client element. */}
         <Fragment key="back">{back ?? <span />}</Fragment>
-        {/* Expand and share grouped in one clear-glass capsule (G13). */}
         <Glass material="clear" className="flex h-11">
           {route && (
             <button

@@ -5,18 +5,10 @@ import { wearPercent, wearStatus, type WearStatus } from '@/domain/shoe/wearStat
 import type { ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
 
-/**
- * What a pair has left, or how far past its limit it is. A pair at 1,375 of
- * 500 km read "0 km left", "1375 / 500 km" and "About 0 more weeks": the
- * overrun, which is the news, appeared nowhere, and the total had no
- * thousands separator where the rest of the app writes 1,247.
- */
 export function shoeWearCopy(shoe: { totalKm: number; maxKm: number }): {
   over: boolean
   ratio: string
-  /** "~120 km left", or "875 km over". */
   short: string
-  /** "120 km left", or "875 km past its 500 km limit". */
   exact: string
 } {
   const total = Math.round(shoe.totalKm)
@@ -33,38 +25,24 @@ export function shoeWearCopy(shoe: { totalKm: number; maxKm: number }): {
   }
 }
 
-/**
- * A pair's wear as its bar and tag draw it (v4.17), from the status its own
- * page reads: the accent while it has life in it - its km are the athlete's
- * own data - and amber once it is worn. Replace used to be neg, the app's
- * red, which is the tone of something gone wrong (App Fixes, review 7); a
- * pair at the end of its life is a warning, and the tag's own words -
- * "Replace soon" against "Replace" - say how far along it is.
- */
+/** Replace is a warning, not the app's red for something gone wrong; the tag's words say how far along it is. */
 export const WEAR_COLOR: Record<WearStatus, string> = {
   ok: 'var(--accent)',
   watch: 'var(--warn)',
   replace: 'var(--warn)',
 }
 
-/** A pair's wear status from its km, as its page and the Progress card read it. */
 export function shoeWearStatus(shoe: { totalKm: number; maxKm: number }): WearStatus {
   return wearStatus(wearPercent({ ...shoe, retired: false }))
 }
 
-/** Past its limit: the overrun is the news (C4, v4.4b). */
 export function isPastLimit(shoe: { totalKm: number; maxKm: number }): boolean {
   return shoeWearCopy(shoe).over
 }
 
-/**
- * Where the bar's tick sits when a pair has no threshold of its own: 80% of
- * the limit, as the registry sets `alertThresholdKm` - past it, a pair is
- * kept for easy runs and retired from workouts.
- */
+/** Matches the registry's default `alertThresholdKm`: past it, a pair is kept for easy runs. */
 export const RETIRE_FROM_WORKOUTS_SHARE = 0.8
 
-/** A pair's role, from the session it is worn for most. */
 export function shoeRole(type: ActivityType | null): string | null {
   if (!type) return null
   const r = t.shoes.roles
@@ -74,17 +52,12 @@ export function shoeRole(type: ActivityType | null): string | null {
   return r.intervals
 }
 
-/** Pairs, limits and retirement are Garmin's: the list's Add and the detail's Edit open its gear page. */
+/** Pairs, limits and retirement are edited in Garmin, not here. */
 export const GARMIN_GEAR_URL = `${GARMIN_CONNECT_URL}/gear`
 
-/** Past a year out, a projection is a handful of runs extrapolated into noise: no date. */
+/** Past a year out a projection is noise, so it gets no date. */
 const FAR_OUT_WEEKS = 52
 
-/**
- * When a pair reaches its limit at its rate, on one line (design review, Oct
- * 2026): "1,000 km ≈ Jan ’27 · 11 wk at 25 km/wk". None for a retired pair,
- * or one with no rate to project from.
- */
 export function shoeProjection(
   shoe: { retired: boolean; kmPerWeek: number; maxKm: number },
   weeksRemaining: number | null,

@@ -1,14 +1,7 @@
-"""The coaching bridge's framing, over a real pipe, with no network.
+"""A stray print or a lost response shifts every answer after it onto the wrong request, unnoticed by the TypeScript side.
 
-The bridge is the coaching CLI's only way into Garmin: newline-delimited JSON,
-one response per request, in order, until stdin closes. A stray print or a
-lost response shifts every answer after it onto the wrong request, and
-nothing on the TypeScript side could tell.
-
-No seam was needed: the `auth` operation answers from the tokens alone, and a
-token that has not expired is never refreshed, so a made-up one starts the
-bridge without a request. The child runs under the same socket guard as the
-tests, so a change that did reach for Garmin would fail here.
+The `auth` operation answers from the tokens alone and an unexpired token is never refreshed, so a made-up one starts
+the bridge without a request.
 """
 
 import base64
@@ -21,7 +14,6 @@ from pathlib import Path
 _BRIDGE = Path(__file__).resolve().parents[1] / "garmin" / "sync_bridge.py"
 _IN_2100 = 4_102_444_800  # epoch seconds, 2100-01-01
 
-# Runs the bridge as __main__ once connecting and resolving are refused.
 _GUARDED = """
 import runpy, socket, sys
 

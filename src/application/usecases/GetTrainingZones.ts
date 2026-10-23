@@ -15,13 +15,7 @@ export interface TrainingZonesData {
   zones: TrainingZone[]
 }
 
-/**
- * Pace zones from threshold pace with shared edges (v5.5 #11), the way the HR
- * zones work: each zone starts one second after the faster one ends. They
- * were four separate multiplier pairs, which left gaps at 3:59→4:18,
- * 4:28→4:31 and 5:02→5:08. Threshold stays tight around threshold pace
- * (0.97-1.03); the gap below it goes to VO₂max.
- */
+/** Zone edges as multiples of threshold pace, shared like the HR zones' so no pace falls between two zones. */
 const EDGES = [0.86, 0.97, 1.03, 1.16, 1.46] as const
 const ZONE_DEFS = [
   { key: 'vo2max', hrZone: 5 },
@@ -38,8 +32,6 @@ export function paceZones(thresholdPaceSecPerKm: number): (Pick<TrainingZone, 'h
     key,
     hrZone,
     paceMinSecPerKm: edges[i]!,
-    // The slowest zone keeps its own end; every other one stops a second
-    // short of the next.
     paceMaxSecPerKm: i === ZONE_DEFS.length - 1 ? edges[i + 1]! : edges[i + 1]! - 1,
   }))
 }

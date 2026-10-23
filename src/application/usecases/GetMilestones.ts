@@ -24,7 +24,6 @@ export interface Milestone {
   type: MilestoneType
   date: string
   label: string
-  /** Omitted when the row's own label and date already say everything there is. */
   detail?: string
 }
 
@@ -116,17 +115,13 @@ export interface WeekStreak {
   startDate: string
 }
 
-/** The weeks, by `key`, with `minRuns` runs or more. */
 function weeksWith<T>(activities: Activity[], key: (a: Activity) => T, minRuns: number): Set<T> {
   const counts = new Map<T, number>()
   for (const a of activities) counts.set(key(a), (counts.get(key(a)) ?? 0) + 1)
   return new Set([...counts].filter(([, runs]) => runs >= minRuns).map(([week]) => week))
 }
 
-/**
- * The weeks in a row, to this one, with `minRuns` runs or more. A week under
- * way that has not reached them yet carries the streak from the week before.
- */
+/** A week under way that has not reached `minRuns` yet carries the streak from the week before. */
 export function currentWeekStreak(activities: Activity[], now: Date, minRuns = 1): WeekStreak | null {
   const activeWeeks = weeksWith(activities, (a) => a.week, minRuns)
   let cursor = activeWeeks.has(isoWeekNumber(now)) ? now : addDays(now, -7)
@@ -172,9 +167,8 @@ export function computeWeekPlannedDays(planned: { date: string }[], now: Date): 
 }
 
 /**
- * The weekly streak (3.1): weeks in a row with three runs or more - the same
- * count on Today, the Progress hub and Consistency. The milestone's streak
- * stays a run every week, as its copy says.
+ * The streak Today, the Progress hub and Consistency count. The milestone's
+ * own streak stays a run every week, as its copy says.
  */
 export function getWeeklyStreakData(now = new Date(`${appTodayIso()}T12:00:00`)): WeeklyStreakData | null {
   const activities = getAllActivities()
@@ -193,15 +187,10 @@ export interface NextMilestone {
   label: string
   /** What is left, in the milestone's own unit: runs or km. */
   remaining: number
-  /** 0-1, how far along the way to it from zero. */
+  /** 0-1, measured from zero rather than from the last tier. */
   progress: number
 }
 
-/**
- * The two milestones that are always on their way (Records > Milestones,
- * NEXT UP): the next run-count tier and the next tier of this year's
- * distance. Either drops out past the last tier.
- */
 export function findNextMilestones(
   activitiesAscByDate: { date: string; distanceKm: number }[],
   year: number,
@@ -254,8 +243,7 @@ export async function getMilestones(today: string = appTodayIso()): Promise<Mile
       type: 'distance-tier',
       date: crossing.date,
       label: t.profile.milestones.distanceTier(formatKm(crossing.tierKm)),
-      // The year under it: the rows sit under a month heading now, which
-      // says which year only when it is not this one.
+      // The month heading above says the year only when it is not this one.
       detail: String(crossing.year),
     })
   }
@@ -308,8 +296,7 @@ export async function getMilestones(today: string = appTodayIso()): Promise<Mile
         type: 'record',
         date: r.date,
         label: t.profile.milestones.record(r.label),
-        // Longest Run is a distance record: its headline is how far, not how
-        // long, so a duration here read as a time four seconds off the Half.
+        // Longest Run is a distance record: its headline is how far, not how long.
         detail:
           r.distanceKm != null
             ? `${formatDistance(r.distanceKm)} ${t.units.km}`

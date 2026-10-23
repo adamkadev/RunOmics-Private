@@ -6,19 +6,12 @@ import type { Commune } from './communes'
 import { assembleMultipolygon, type OsmMember } from './rings'
 import { overpassProblem, runnableWaysQuery, tileBBox, wayCoords, type OverpassResponse } from './runnable'
 
-/**
- * Every outside source the build reads, one function each. All of them are
- * public, keyless and called only from this offline script, never from the
- * app (the CSP would refuse them anyway). Only public things are sent: INSEE
- * codes, the union bbox of whole communes, and the cluster's frame rounded
- * out to 0.01° (communes.ts `roundOutward`). Never home.
- */
+// Only public things are sent: INSEE codes, the bbox of whole communes, and the cluster's frame rounded out. Never home.
 
 export const GEOPF_WFS = 'https://data.geopf.fr/wfs/ows'
 export const GEO_API = 'https://geo.api.gouv.fr'
 export const DEFAULT_OVERPASS = 'https://overpass-api.de/api/interpreter'
 
-/** One line of the timing report. */
 export interface FetchRecord {
   label: string
   ms: number
@@ -108,12 +101,7 @@ export interface CommuneSet {
   edition: string
 }
 
-/**
- * IGN ADMIN EXPRESS COG communes matching a CQL filter, from the latest
- * yearly edition the Géoplateforme has: this year's, else last year's (the
- * COG is published each spring). Asking for the year rather than the
- * LATEST alias names the edition in the file's sources.
- */
+/** The COG is published each spring; asking for the year rather than the LATEST alias names the edition in the sources. */
 async function adminExpress(sources: Sources, label: string, filter: string, year: number): Promise<CommuneSet> {
   for (const edition of [year, year - 1]) {
     try {
@@ -137,7 +125,7 @@ async function adminExpress(sources: Sources, label: string, filter: string, yea
   throw new Error(`${label}: no ADMIN EXPRESS COG edition for ${year} or ${year - 1}`)
 }
 
-/** Every commune whose shape meets the box (the WFS tests envelopes; communes.ts tests the shapes). */
+/** The WFS tests envelopes; communes.ts tests the shapes. */
 export function communesInBBox(sources: Sources, [minLon, minLat, maxLon, maxLat]: BBox, year: number): Promise<CommuneSet> {
   return adminExpress(sources, 'IGN communes around the cluster', `BBOX(geometrie,${minLon},${minLat},${maxLon},${maxLat},'EPSG:4326')`, year)
 }
@@ -155,10 +143,7 @@ interface GeoApiCommune {
   population?: number
 }
 
-/**
- * The commune's public centre from the API Découpage administratif: the
- * grid's origin. Asked by INSEE code, so nothing about the runs is sent.
- */
+/** Asked by INSEE code, so nothing about the runs is sent. */
 export async function communeCentre(sources: Sources, insee: string): Promise<[number, number]> {
   const commune = await sources.json<GeoApiCommune>({
     label: `geo.api.gouv.fr centre of ${insee}`,
@@ -176,12 +161,7 @@ export interface SourcedShape {
   geometry: Polygon | MultiPolygon
 }
 
-/**
- * OSM `admin_level=10` boundaries of the commune (Paris's quartiers, for
- * one). The area filter matches relations with any member in the commune,
- * so a neighbour's quartier sharing a border way comes back too: the caller
- * keeps those whose label point is inside the commune.
- */
+/** A neighbour's quartier sharing a border way comes back too: the caller keeps those whose label point is inside. */
 export async function osmAdmin10(sources: Sources, insee: string): Promise<{ shapes: SourcedShape[]; base: string | undefined; open: number }> {
   const query = [
     '[out:json][timeout:180];',
@@ -206,7 +186,6 @@ interface CityFeatureProperties {
   [field: string]: unknown
 }
 
-/** A city's quartiers from its own WFS (cities.ts). */
 export async function cityQuartiers(sources: Sources, city: CityWfsSource): Promise<SourcedShape[]> {
   const collection = await sources.json<WfsCollection<CityFeatureProperties>>({
     label: `${city.sourceId} quartiers`,
@@ -220,7 +199,6 @@ export async function cityQuartiers(sources: Sources, city: CityWfsSource): Prom
   }))
 }
 
-/** The dataset's `last_modified` on data.gouv.fr, 'YYYY-MM-DD', or the registry's date when it can't be read. */
 export async function dataGouvDate(sources: Sources, city: CityWfsSource): Promise<string> {
   if (!city.dataGouvId) return city.fallbackVersion
   try {
@@ -241,7 +219,6 @@ interface IrisProperties {
   type_iris: string
 }
 
-/** IGN's large-scale IRIS of the commune: the national fallback when there is nothing better. */
 export async function irisQuartiers(sources: Sources, insee: string): Promise<SourcedShape[]> {
   const collection = await sources.json<WfsCollection<IrisProperties>>({
     label: `IGN IRIS of ${insee}`,
@@ -259,11 +236,7 @@ export async function irisQuartiers(sources: Sources, insee: string): Promise<So
 const TILE_LON = 0.09
 const TILE_LAT = 0.06
 
-/**
- * The runnable ways (runnable.ts) over the box, tile by tile, as flat
- * coordinate arrays. A way crossing a tile edge comes back from both tiles
- * and is kept once.
- */
+/** A way crossing a tile edge comes back from both tiles and is kept once. */
 export async function runnableWays(sources: Sources, bbox: BBox): Promise<{ ways: number[][]; base: string | undefined }> {
   const tiles = tileBBox(bbox, TILE_LON, TILE_LAT)
   const seen = new Set<number>()

@@ -16,9 +16,7 @@ export interface NominatimAddress {
 }
 
 export interface RunPlace {
-  /** The town: the share card's "Sat, Sep 26 · Hoenheim". */
   town: string | null
-  /** The quartier inside it, when the address has one: "Robertsau". */
   quartier: string | null
 }
 
@@ -31,7 +29,6 @@ export function runPlace(address: NominatimAddress | undefined): RunPlace {
   return { town: town ?? quartier, quartier: quartier && quartier !== town ? quartier : null }
 }
 
-/** The start's town, for the share card. */
 export function placeName(address: NominatimAddress | undefined): string | null {
   return runPlace(address).town
 }
@@ -47,15 +44,9 @@ function readCache(id: string): RunPlace | null {
   }
 }
 
-/**
- * Where a run started: one reverse geocode of its first point, at street
- * grain so the address carries the quartier as well as the town, kept per
- * run in this browser. The map's own labels only name a quartier when
- * zoomed right in, so the header and the share card read it from here.
- */
+/** Geocoded at street grain (zoom=16) so the address carries the quartier as well as the town. */
 export function useRunPlace(activityId: string, start: [number, number] | null | undefined): RunPlace {
-  // Read after mount: the server has no storage, and a cached name drawn on
-  // the first render would not match its HTML (React #418).
+  // Read after mount: a cached name drawn on the first render would not match the server's HTML.
   const mounted = useMounted()
   const cached = mounted ? readCache(activityId) : null
   const [fetched, setFetched] = useState<{ id: string; place: RunPlace } | null>(null)

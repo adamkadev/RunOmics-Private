@@ -1,13 +1,6 @@
 import type { TrackBuffers } from './workerProtocol'
 
-/**
- * Tracks packed for the Explore worker: two typed arrays that move across by
- * transfer, plus the ids and dates beside them (see `TrackBuffers`).
- *
- * Points that are not two finite numbers are dropped on the way in, so a
- * NaN never reaches the cell grid; a track left with no point at all is
- * dropped whole.
- */
+// Points that are not two finite numbers are dropped on the way in, so a NaN never reaches the cell grid.
 
 function isFinitePoint(point: unknown): point is [number, number] {
   return Array.isArray(point) && Number.isFinite(point[0]) && Number.isFinite(point[1])
@@ -30,10 +23,7 @@ function copyPoints(route: readonly unknown[], into: Float64Array, at: number): 
   return k
 }
 
-/**
- * One route as it arrives in JSON (`[lon, lat][]`, unchecked) to flat
- * [lon, lat, …]. Anything that is not a list gives an empty array.
- */
+/** `route` is `[lon, lat][]` from JSON, unchecked. */
 export function flattenRoute(route: unknown): Float64Array {
   if (!Array.isArray(route)) return new Float64Array(0)
   const coords = new Float64Array(2 * countPoints(route))
@@ -41,11 +31,7 @@ export function flattenRoute(route: unknown): Float64Array {
   return coords
 }
 
-/**
- * The map page's sparse `routes` (indexed by global route index) for the
- * runs in `indices`, with their ids and dates from `meta` (same indexing).
- * Missing or empty routes, routes without meta and repeated ids are skipped.
- */
+/** `routes` and `meta` are sparse, indexed by global route index. */
 export function flattenTracks(
   routes: readonly ([number, number][] | undefined)[],
   indices: readonly number[],
@@ -78,10 +64,7 @@ export function flattenTracks(
   return { ids: picked.map((t) => t.id), dates: picked.map((t) => t.date), offsets, coords }
 }
 
-/**
- * The tracks at positions `keep` (in that order), in fresh buffers, so the
- * caller's own buffers are neither sent nor detached.
- */
+/** Fresh buffers, so the caller's own are neither sent nor detached. */
 export function selectTracks(tracks: TrackBuffers, keep: readonly number[]): TrackBuffers {
   let total = 0
   for (const k of keep) total += tracks.offsets[k + 1]! - tracks.offsets[k]!
@@ -101,7 +84,6 @@ export function selectTracks(tracks: TrackBuffers, keep: readonly number[]): Tra
   return { ids: keep.map((k) => tracks.ids[k]!), dates: keep.map((k) => tracks.dates[k]!), offsets, coords }
 }
 
-/** Whether the buffers describe `ids.length` tracks that fit inside `coords`, so the worker can trust them. */
 export function isValidTrackBuffers(tracks: TrackBuffers): boolean {
   const { ids, dates, offsets, coords } = tracks
   if (!Array.isArray(ids) || !Array.isArray(dates) || ids.length !== dates.length) return false

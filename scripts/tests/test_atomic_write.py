@@ -59,8 +59,7 @@ class _PlanClient:
         return {"planPhases": [{"startDate": "2026-07-01", "endDate": "2026-09-05", "trainingPhase": "BUILD"}]}
 
 
-# Each case: (target file, what it held before, the write). Every writer of a
-# data file is here - these files are the only copy of the history they hold.
+# Each case: (target file, what it held before, the write), one per writer of a data file.
 def _history_file(tmp_path, _monkeypatch, _factory):
     target = tmp_path / "history.json"
     return target, '{"old": true}\n', lambda: write_history(target, {"new": True})
@@ -104,9 +103,7 @@ def _training_plan(tmp_path, monkeypatch, _factory):
     ids=lambda case: case.__name__.strip("_"),
 )
 def test_a_write_that_dies_leaves_the_previous_file_whole(case, tmp_path, monkeypatch, activity_factory):
-    # The disk fills after the new content went out and before the rename:
-    # what is on disk must still be the last complete file, with no
-    # temporary file left over for the data push to pick up.
+    # The disk fills after the new content went out and before the rename.
     target, previous, write = case(tmp_path, monkeypatch, activity_factory)
     target.write_text(previous, encoding="utf-8")
     monkeypatch.setattr(os, "fsync", _disk_full)

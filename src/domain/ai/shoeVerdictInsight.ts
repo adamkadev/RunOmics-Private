@@ -55,7 +55,6 @@ export function shoeVerdictInsightPrompt(context: ShoeVerdictContext, recentHead
   return [
     'Facts:',
     `- Wear status: ${f.status === 'replace' ? 'past its usable life' : 'approaching the end of its life'}`,
-    // v4.16.4: a pair past its limit read "0 km left, about 0 weeks".
     f.kmLeft > 0 ? `- Kilometres left before the limit, printed on the page: ${f.kmLeft}` : '- Already past its kilometre limit',
     f.kmLeft <= 0
       ? null

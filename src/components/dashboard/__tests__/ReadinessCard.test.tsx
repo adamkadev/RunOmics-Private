@@ -22,7 +22,6 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(t.trainingStatus.status.productive)
   })
 
-  // The line is the form state, then the load against its safe range.
   it('names the form state and the load against its range, amber while out of it', () => {
     render(<ReadinessCard status={STATUS} load={{ acute: 456, lo: 462, hi: 750, state: 'below', ratio: 0.79 }} />)
     const line = screen.getByTestId('readiness-status')
@@ -35,7 +34,7 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(screen.getByTestId('readiness-status').textContent).toBe(`${t.formBand.neutral} · ${t.dashboard.readiness.lineByTone.build}`)
   })
 
-  // Rule 04: the arrow follows the number, the colour what it means.
+  // The arrow follows the number, the colour what it means.
   it('colours each delta by what it means', () => {
     render(<ReadinessCard status={STATUS} />)
     const [fitness, fatigue] = screen.getAllByTestId('readiness-delta')
@@ -60,7 +59,6 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(line.querySelector<HTMLElement>('[aria-hidden]')!.style.background).toBe('var(--warn)')
   })
 
-  // Wave 5 A0: the headline follows the form state the line names.
   it('writes its own headline and body from the load, matching the form state', () => {
     const load = { acute: 456, lo: 462, hi: 750, state: 'below' as const, ratio: 0.79 }
     const { rerender } = render(<ReadinessCard status={{ ...STATUS, tsbNow: 4 }} load={load} />)
@@ -74,7 +72,6 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.dashboard.readiness.fallback.below(456, 462, 750, true).headline)
   })
 
-  // The coach's headline and body, with no "generated" label.
   it('puts the written verdict under the line', () => {
     render(<ReadinessCard status={STATUS} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.' }} />)
     const verdict = screen.getByTestId('readiness-verdict')
@@ -84,7 +81,6 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(/generated/i)
   })
 
-  // Without a verdict or a load reading there is nothing to say.
   it('shows no sentence without a written verdict or a load', () => {
     render(<ReadinessCard status={STATUS} />)
     expect(screen.queryByTestId('readiness-verdict')).toBeNull()
@@ -95,7 +91,7 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  // 3.1.0: yesterday's verdict, until the night's sync writes today's, says so.
+  // Yesterday's verdict stands until the night's sync writes today's.
   it("labels yesterday's verdict, and only that one", () => {
     const { rerender } = render(<ReadinessCard status={STATUS} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.', yesterday: true }} />)
     expect(screen.getByTestId('verdict-yesterday')).toHaveTextContent(t.dashboard.readiness.yesterday)

@@ -73,9 +73,7 @@ describe('JsonExploreAreaRepository', () => {
     'never follows the file name %j out of the explore directory',
     (file) => {
       vi.spyOn(console, 'warn').mockImplementation(() => {})
-      // Each case has the fresh workspace beforeEach made, so the index is
-      // read for this case: the cache is keyed by directory. The index
-      // parser refuses these names first; `areaFilePath` is the guard behind it.
+      // The index parser refuses these names first; `areaFilePath` is the guard behind it.
       fs.mkdirSync(path.join(explore, 'sub'), { recursive: true })
       fs.writeFileSync(path.join(root, 'secret.json'), areaFile('escape'))
       fs.writeFileSync(path.join(explore, 'sub', 'nested.geojson'), areaFile('escape'))

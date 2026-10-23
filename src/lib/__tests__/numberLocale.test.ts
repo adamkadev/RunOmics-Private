@@ -21,15 +21,12 @@ describe('formatDeltaFixed', () => {
 })
 
 describe('formatClock', () => {
-  // The race predictor's pace axis had its own copy, which rounded the seconds
-  // after splitting off the minutes: 299.6 s printed as "4:60".
   it('rounds before it splits, so a minute never has sixty seconds', () => {
     expect(formatClock(299.6)).toBe('5:00')
     expect(formatClock(1199.5)).toBe('20:00')
   })
 })
 
-// 3.0.2 hotfix: a 5K's time keeps its seconds; from an hour, to the minute.
 describe('formatDurationRounded', () => {
   it('keeps the seconds under an hour', () => {
     expect(formatDurationRounded(1334)).toEqual({ value: '22:14', unit: 'min' })
@@ -55,8 +52,6 @@ describe('in the French build', () => {
     vi.resetModules()
   })
 
-  // toFixed always wrote a point, so a run read "9.26" beside a total of
-  // "1 321,5" on the same screen.
   it('writes a distance with the decimal comma', () => {
     expect(fr.formatDistance(9.26)).toBe('9,3')
     expect(fr.formatDistance(12.34)).toBe('12,3')
@@ -66,7 +61,6 @@ describe('in the French build', () => {
     expect(fr.formatDeltaFixed(-1.44, 1)).toBe(`${MINUS}1,4`)
   })
 
-  // 3.0 handoff: the map card read "1.306 km" beside "2,684 km".
   it('groups thousands with the French space', () => {
     expect(fr.formatKm(2684)).toMatch(/^2\s684$/)
     expect(fr.formatKm(1306)).toMatch(/^1\s306$/)
@@ -79,7 +73,6 @@ describe('in the French build', () => {
   })
 })
 
-/** Every .ts/.tsx file under dir, tests aside. */
 function sources(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const path = join(dir, entry.name)
@@ -88,17 +81,15 @@ function sources(dir: string): string[] {
   })
 }
 
-// 3.0 handoff: one locale formatter for every km value. A component that
-// called toLocaleString itself skipped stableSpaces and drifted from the rest.
+// A component calling toLocaleString itself skips stableSpaces and drifts from the rest.
 describe('number formatting', () => {
   it('goes through lib/formatters in every component', () => {
     const offenders = sources(join(process.cwd(), 'src', 'components')).filter((file) => /\.toLocaleString\(/.test(readFileSync(file, 'utf8')))
     expect(offenders).toEqual([])
   })
 
-  // 3.0.2: toFixed always writes a point, so "9.5" sat beside the French
-  // build's "9,5". A figure on screen goes through formatDecimal; toFixed
-  // stays for SVG paths, CSS percents and cache keys, never a JSX child.
+  // toFixed always writes a point: a figure on screen goes through formatDecimal, and toFixed stays
+  // for SVG paths, CSS percents and cache keys.
   it('never renders a toFixed figure as text', () => {
     const offenders = sources(join(process.cwd(), 'src', 'components')).filter((file) =>
       /(?<![$=])\{[^{}]*\.toFixed\(\d\)\}/.test(readFileSync(file, 'utf8')),

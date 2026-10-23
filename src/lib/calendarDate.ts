@@ -1,4 +1,3 @@
-/** One calendar day, in milliseconds. */
 export const DAY_MS = 86_400_000
 
 export function isoDate(d: Date): string {
@@ -26,11 +25,7 @@ export function isoWeekNumber(d: Date): number {
   return isoYear * 100 + isoWeek
 }
 
-/**
- * Today's date in `timeZone`, an IANA name such as 'Europe/Luxembourg'. With
- * no zone it is the local date of whichever machine runs this - what
- * isoDate(new Date()) has always meant.
- */
+/** `timeZone` is an IANA name such as 'Europe/Luxembourg'; without one it is the local date of whichever machine runs this. */
 export function todayIso(timeZone?: string, now: Date = new Date()): string {
   if (!timeZone) return isoDate(now)
   const parts = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now)
@@ -38,12 +33,7 @@ export function todayIso(timeZone?: string, now: Date = new Date()): string {
   return `${part('year')}-${part('month')}-${part('day')}`
 }
 
-/**
- * The app's today. A page is prerendered on a server (UTC on Vercel) and read
- * in a browser, and each used to take the date from its own clock; with
- * NEXT_PUBLIC_TIME_ZONE set, both read it in the athlete's zone. Unset, it is
- * the local date, as before.
- */
+/** A page is prerendered on a server (UTC on Vercel) and read in a browser; NEXT_PUBLIC_TIME_ZONE makes both read today in the athlete's zone. */
 export function appTodayIso(now: Date = new Date()): string {
   return todayIso(process.env.NEXT_PUBLIC_TIME_ZONE || undefined, now)
 }

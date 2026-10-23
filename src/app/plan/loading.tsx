@@ -1,8 +1,6 @@
 import { Skeleton } from '@/components/ui/Skeleton'
 import { cardClass } from '@/components/ui/Card'
 
-// The week view's shape (v4.17): the header, the phase card, the week's
-// chart card and its session list, so the page does not jump on arrival.
 export default function PlanLoading() {
   return (
     <div className="flex flex-col gap-5">

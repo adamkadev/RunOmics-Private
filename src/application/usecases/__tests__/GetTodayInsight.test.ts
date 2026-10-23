@@ -109,7 +109,6 @@ describe('getTodayInsight', () => {
     expect(await getTodayInsight(status(), WORKOUT)).toBeNull()
   })
 
-  // 3.1.0: between midnight and the night's sync, yesterday's card stands in.
   it("shows yesterday's card, marked, until today's is written - and nothing older", async () => {
     readVerifiedInsight.mockResolvedValue(null)
     readLatestInsight.mockResolvedValue({ insight: INSIGHT, generatedAt: '2026-07-19T12:00:00.000Z' })
@@ -258,9 +257,6 @@ describe('todayInsightSession', () => {
   })
 
   it('hashes the same context the generator wrote, so a prescribed day still resolves', async () => {
-    // The bug this replaced: the page suppressed the card outright on a
-    // prescribed day and fell back to deterministic copy, discarding an insight
-    // the generator had already paid Gemini for.
     getTodayPrescription.mockReturnValue(PRESCRIPTION)
     withHistory([summary('2026-07-18')])
     readVerifiedInsight.mockResolvedValue(INSIGHT)

@@ -4,14 +4,10 @@ import { usePathname } from 'next/navigation'
 import { useGlow } from '@/lib/glow'
 import { useUrlParam } from '@/lib/useUrlParam'
 
-/** A page's three colours, as CSS custom properties: the field's three glows. */
+/** CSS custom property names, one per glow. */
 type Palette = readonly [string, string, string]
 
-/**
- * Each page's aura (Liquid Glass v3, G14, README §6.11). Pages with a map
- * hero - an activity, the map, the share card - have the map itself, and the
- * rest none. So has Activities' Map view, where /map opens (F15).
- */
+/** Pages with a map hero (an activity, the map, the share card) have none, and nor has Activities' Map view. */
 const PALETTES: Record<string, Palette> = {
   '/': ['--accent', '--zone-2', '--zone-3'],
   '/activities': ['--accent', '--zone-2', '--zone-1'],
@@ -24,12 +20,11 @@ const PALETTES: Record<string, Palette> = {
   '/athlete/vo2max': ['--accent', '--zone-3', '--zone-2'],
   '/goals': ['--accent', '--warn', '--zone-2'],
   '/settings': ['--zone-1', '--accent', '--zone-3'],
-  // A Progress page, as Records: amber left, teal right (F17). Compare is a
-  // section of it.
+  // A Progress page, as Records.
   '/shoes': ['--warn', '--accent', '--zone-3'],
 }
 
-/** Pages whose children take their palette: every shoe's page is the Shoes family's (F17). */
+/** Pages whose children take their palette. */
 const FAMILIES = ['/shoes']
 
 export function auraPalette(pathname: string, view: string | null = null): Palette | null {
@@ -40,11 +35,7 @@ export function auraPalette(pathname: string, view: string | null = null): Palet
 }
 
 /**
- * The aura: a blurred colour field behind the top of the page, from the
- * page's palette. A sibling under the content, never an ancestor of glass
- * (its filter would make it a backdrop root). In light it sits under 88 %
- * white cards, which it tints a little; in dark it is shown at half strength and only tints the header.
- * The Background glow switch turns it off in both themes (round 2, F2), and
+ * A sibling under the content, never an ancestor of glass: its filter would make it a backdrop root.
  * Reduce Transparency and Increase Contrast hide it (globals.css).
  */
 export function Aura() {

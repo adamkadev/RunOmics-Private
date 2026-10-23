@@ -3,13 +3,8 @@ import path from 'path'
 import ts from 'typescript'
 
 /**
- * The import graph of src/, as TypeScript itself resolves it with this
- * repository's tsconfig - so the "@/" alias is followed like any other path.
- *
- * Only imports that exist at runtime count: `import type`, `export type` and
- * all-type specifier lists are erased before anything runs, and a dynamic
- * import() never takes part in module initialisation order. Test files are
- * left out, as are modules outside src/.
+ * Only imports that exist at runtime count: type-only imports are erased, and a dynamic import() never takes part
+ * in module initialisation order.
  */
 export function importGraph(root = process.cwd()): Map<string, string[]> {
   const configPath = path.join(root, 'tsconfig.json')
@@ -68,11 +63,7 @@ function runtimeSpecifiers(file: ts.SourceFile): string[] {
   return specifiers
 }
 
-/**
- * Every set of modules that import one another in a ring, each listed in
- * sorted order: the strongly connected components of more than one module,
- * plus any module that imports itself (Tarjan's algorithm).
- */
+/** The strongly connected components of more than one module, plus any module that imports itself (Tarjan's algorithm). */
 export function findCycles(graph: Map<string, string[]>): string[][] {
   let counter = 0
   const index = new Map<string, number>()

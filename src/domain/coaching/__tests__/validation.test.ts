@@ -8,8 +8,6 @@ describe('coaching validation', () => {
     expect(parsed.blocks[1]).toMatchObject({ kind: 'repeat', repetitions: 3 })
   })
 
-  // Design review, Oct 2026: optional, so a plan written before them reads
-  // exactly as it did.
   it('reads a short name and a structure, and a plan without them as before', () => {
     const named = parseWorkoutPrescription(workout({
       title: 'Threshold · 3 × 8′ @ 4:28',

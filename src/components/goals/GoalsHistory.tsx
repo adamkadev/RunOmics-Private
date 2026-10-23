@@ -5,10 +5,6 @@ import { formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { OutcomePill } from './OutcomePill'
 
-/**
- * Past seasons (v4.17): a row a year - its distance against the goal and
- * its race targets, then the outcome as a pill, Achieved in pos.
- */
 export function GoalsHistory({ history }: { history: YearOutcome[] }) {
   if (history.length === 0) return null
   const h = t.goals.history
@@ -28,7 +24,6 @@ export function GoalsHistory({ history }: { history: YearOutcome[] }) {
 
         return (
           <div key={outcome.year} className={cardClass({ className: 'flex items-center gap-3 py-3' })} data-testid="goals-history-year">
-            {/* The year, its distance and race targets under it; the outcome to its right (3.1). */}
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-[15px] font-semibold text-foreground">{outcome.year}</span>
               {summary.length > 0 && <span className="text-xs text-muted-foreground">{summary.join(' · ')}</span>}

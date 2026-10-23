@@ -65,7 +65,6 @@ describe('sessionExecution', () => {
     expect(withStub).toMatchObject({ spreadSecPerKm: 3 })
   })
 
-  // v4.16.4: "Strides 6 x 20s" read as 7 reps, the easy block as rep 1.
   it('reads strides after an easy block as strides, and the block as a steady run', () => {
     const easy = split('interval_active', 2963, 8500, 151, [lap(348), lap(347), lap(349), lap(350), lap(346)])
     const stride = (seconds: number) => split('interval_active', 20, (20 / seconds) * 1000, 160)

@@ -29,9 +29,6 @@ export function Sidebar() {
   const pathname = usePathname()
   const currentHref = activeNavHref(pathname, NAV_HREFS)
 
-  // One row recipe for the six sections and Settings (v4.17): 40 px tall,
-  // an 18 px icon 12 px from its label; the section on screen takes the
-  // accent on its soft tint.
   const row = (href: string, label: string, Icon: ComponentType<{ size?: number; strokeWidth?: number; 'aria-hidden'?: boolean | 'true' }>) => {
     const active = currentHref === href
     return (
@@ -72,8 +69,6 @@ export function Sidebar() {
           {NAV_ITEMS.map(({ href, label, icon }) => row(href, label, icon))}
         </nav>
 
-        {/* Settings is a nav row of its own, pinned above the version and
-            the theme toggle (v4.17). */}
         <div className="flex shrink-0 flex-col gap-0.5 border-t border-border pt-3">
           {row('/settings', t.nav.items.settings, Settings)}
           <div className="flex items-center justify-between px-2.5 pb-0.5 pt-2">

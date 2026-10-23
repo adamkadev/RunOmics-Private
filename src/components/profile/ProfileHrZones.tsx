@@ -16,25 +16,17 @@ type View = 'week' | 'recent'
 const VIEWS = ['week', 'recent'] as const
 const HR_PERCENTS = [0.65, 0.8, 0.89, 0.95, 1.0]
 
-/**
- * Zone, HR, pace and time: one grid for the header and every row. The share
- * moved out from under the bar (App Fixes 1e), where a zone of 1 % had no
- * room to print it, and reads small after the zone's time - "4h58 · 27%" -
- * rather than taking a column of its own. The time column holds French's
- * spaced « 10 h 48 · 32 % » at 393 pt, which ran out of the card at 4.5rem.
- */
+/** The time column fits French's « 10 h 48 · 32 % » on a 393 pt screen. */
 const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_4.75rem_3.75rem_5.5rem] items-center gap-1.5 sm:grid-cols-[minmax(0,1fr)_110px_90px_96px] sm:gap-3'
 
-/** No zone with time in it draws narrower than this share of the bar (3.0 1j), so 1 % still shows. */
+/** So a 1 % zone still shows on the bar. */
 const MIN_SEGMENT_PCT = 3
 
-/** "22 min" under an hour, "8 h 37" over: the table's time column (v4.17). */
 export function zoneTimeLabel(seconds: number): string {
   const minutes = Math.round(seconds / 60)
   return minutes < 60 ? `${minutes} ${t.units.min}` : `${Math.floor(minutes / 60)} ${t.units.hour} ${String(minutes % 60).padStart(2, '0')}`
 }
 
-/** The window's time, "19 h 11 min", or "42 min" under the hour. */
 export function windowTotalLabel(seconds: number): string {
   const minutes = Math.round(seconds / 60)
   const h = Math.floor(minutes / 60)
@@ -43,13 +35,11 @@ export function windowTotalLabel(seconds: number): string {
 
 export interface ZoneSegment {
   zone: number
-  /** Its share of the window, for the label under it: at least 1 %, never a 0 % beside a segment. */
+  /** At least 1 %: never a 0 % beside a visible segment. */
   pct: number
-  /** Its width: the share, floored at MIN_SEGMENT_PCT. */
   flex: number
 }
 
-/** Z1 to Z5 as the bar draws them: the zones with time, each as wide as its share (3.0 1j). */
 export function zoneSegments(zoneTime: ZoneShare[]): ZoneSegment[] {
   const total = zoneTime.reduce((sum, z) => sum + z.seconds, 0)
   if (total <= 0) return []
@@ -79,13 +69,6 @@ interface Props {
   paceZones?: TrainingZonesData | null
 }
 
-/**
- * One zone table under one Week / 4 weeks toggle (C2, v4.4; 3.0 1j), four
- * weeks first: the hard share and the verdict Analytics gives the same time
- * as the headline, the window's total and the 80/20 target under it, one bar
- * of Z1-Z5 with each share under its segment, then zone, pace, HR and time
- * as tabular columns.
- */
 export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZones }: Props) {
   const s = t.profile.trainingZones
   const [view, setView] = useState<View>('recent')
@@ -101,8 +84,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
   const easyZone = paceByHrZone.get(2)
   const warmupPaceSecPerKm = easyZone ? easyZone.paceMaxSecPerKm + 1 : null
 
-  // Z1 at the top, as the bar above reads left to right and every zone list
-  // in the app runs (design review, Oct 2026: one order everywhere).
+  // Z1 first, the order every zone list in the app uses.
   const zones = [
     { zone: 1, min: bounds[0], max: bounds[1] - 1, pace: undefined },
     { zone: 2, min: bounds[1], max: bounds[2] - 1, pace: paceByHrZone.get(2) },
@@ -114,9 +96,7 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
   const timeByZone = new Map(zoneTime.map((z) => [z.zone, z]))
   const windowTotal = totalSeconds(zoneTime)
 
-  // One split and one verdict with Analytics > Intensity (design review, Oct
-  // 2026): this card read "Hard 7 %" in amber against its own 10-15 % target
-  // while Intensity read the same time "In range".
+  // The same split and verdict as Analytics > Intensity.
   const mix = intensityMix(Object.fromEntries(zoneTime.map((z) => [z.zone, z.seconds])))
   const segments = zoneSegments(zoneTime)
 
@@ -154,9 +134,6 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
                 {s.totalLine(windowTotalLabel(windowTotal))}
               </p>
             </div>
-            {/* Z1 to Z5 as one bar, 3 pt apart, each as wide as its share and
-                no narrower than 3 %. The shares are read in the table under
-                it, where a 1 % zone has room for its number (App Fixes 1e). */}
             <div className="flex gap-[3px]" data-testid="zone-stack">
               {segments.map((z) => (
                 <div key={z.zone} data-zone={z.zone} className="flex min-w-0 flex-col" style={{ flexGrow: z.flex, flexBasis: 0 }}>
@@ -197,7 +174,6 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
               <div key={zone} className={`${ROW_GRID} min-h-[38px] border-t border-border py-1.5`} data-testid={`zone-row-${zone}`}>
                 <span className="flex min-w-0 items-center gap-2 text-[13px] text-foreground">
                   <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: `var(--zone-${zone})` }} />
-                  {/* One line (Wave 5 G): "Z1 Recovery" never wraps; the name column is minmax(0,1fr). */}
                   <span className="min-w-0 truncate whitespace-nowrap">
                     <b className="font-semibold">{t.trainingZones.zoneNumber(zone)}</b> {t.zoneLabels[zone]}
                   </span>

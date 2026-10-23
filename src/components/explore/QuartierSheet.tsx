@@ -11,36 +11,19 @@ import { SHEET_CONTROL, Sheet } from '@/components/ui/Sheet'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { QUARTIER_SHEET_TEST_ID } from './quartierCamera'
 
-/** A stat with nothing to show. */
 const NO_VALUE = '—'
 /** Less than this run in a quartier rounds to "0.0 km": a dash says it better. */
 const MIN_KM_RUN = 0.05
-/**
- * The stats' values (spec §5, 24/30), a step down on the narrowest phones:
- * "10.9 km" on one line in a third of a 320 pt sheet, where it broke in two
- * and dropped its label below the other two.
- */
+/** A step down on the narrowest phones, so "10.9 km" stays on one line in a third of a 320 pt sheet. */
 const STAT_VALUE_STYLE = { fontSize: 'clamp(22px, 6.875vw, 24px)', lineHeight: '30px' } as const
 
-/**
- * The last run here: "Aug 14" this year; from an earlier year, the month and
- * the year ("Aug 2025"), which a third of the sheet holds on one line where
- * "Aug 14, 2025" broke in two.
- */
+/** From an earlier year, the month and the year ("Aug 2025"): "Aug 14, 2025" breaks in two in a third of the sheet. */
 export function lastRunLabel(date: string, now: Date = new Date()): string {
   return date.slice(0, 4) === String(now.getFullYear())
     ? formatDate(date, { style: 'bare', year: 'never', now })
     : formatDate(date, { style: 'bare', precision: 'month', year: 'always', now })
 }
 
-/**
- * One quartier's sheet (S2), opened by a tap on it, the expanded map's card
- * or a `?quartier=` link: its name and kind, how much of it the runs have
- * covered against the 90% that completes it, and the run in it, the last
- * run and the distance from home. The standard glass sheet with a header of
- * its own - the name large on the left, close on the right. "Plan a run
- * here" only once there is a way to plan one (`onPlanRun`).
- */
 export function QuartierSheet({
   unit,
   onClose,
@@ -74,8 +57,7 @@ export function QuartierSheet({
       }
     >
       {(close) => (
-        // 4 pt down the sheet's scroller: room for the close button's focus
-        // ring (2 pt out, 2 pt off), which the scroller's top edge cut.
+        // 4 pt down the sheet's scroller: room for the close button's focus ring, which the scroller's top edge cuts.
         <div className="flex flex-col gap-4 pt-1">
           <div className="flex items-start justify-between gap-3">
             <div className="flex min-w-0 flex-col">
@@ -94,7 +76,7 @@ export function QuartierSheet({
               <span className="text-headline text-foreground">{s.explored(formatPercent(unit.pct))}</span>
               <span className="text-[14px] text-muted-foreground tabular-nums">{s.cells(unit.visited, unit.total, (n) => formatNumber(n, 0))}</span>
             </div>
-            {/* The share covered, and the tick it completes at: the line above says both. */}
+            {/* Hidden from screen readers: the line above says both. */}
             <div aria-hidden="true" className="relative h-2 rounded-full bg-[var(--fill-3)]">
               <div
                 data-testid="quartier-progress"
@@ -110,7 +92,7 @@ export function QuartierSheet({
             <p className="text-right text-footnote leading-4 text-muted-foreground">{s.completeAt(formatPercent(COMPLETE_PCT))}</p>
           </div>
 
-          {/* 8 pt between the columns (spec §5), not the grid's 16. */}
+          {/* 8 pt between the columns, not the grid's 16. */}
           <StatGrid columns={3} className="gap-2">
             {stats.map((stat) => (
               <Stat key={stat.label} labelPosition="bottom" label={stat.label} value={stat.value} valueStyle={STAT_VALUE_STYLE} />

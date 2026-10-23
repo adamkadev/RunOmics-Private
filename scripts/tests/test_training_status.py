@@ -117,8 +117,7 @@ class TestNormalizeStatusReport:
                 ],
             }
         }
-        # deviceId itself is never stored (see _flatten_day) - "RECOVERY_2" only
-        # appears on the 222 entry, so this still proves it won over map order.
+        # deviceId is never stored, but "RECOVERY_2" only appears on the 222 entry, so this proves it won over map order.
         assert normalize_status_report(payload)["2026-07-21"]["feedback"] == "RECOVERY_2"
 
     def test_status_label_strips_only_the_variant_number(self):

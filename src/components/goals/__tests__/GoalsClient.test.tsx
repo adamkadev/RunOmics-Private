@@ -54,9 +54,6 @@ describe('GoalsClient', () => {
     expect(screen.getByTestId('goal-card')).toBeTruthy()
   })
 
-  // L3: beside the stepper the large title broke onto two lines. The stepper
-  // is in the button row, opposite the back button; the title has a row of
-  // its own.
   it('puts the year stepper in the button row, the title on its own row', () => {
     render(<GoalsClient data={data()} today={TODAY} back={<button type="button">Back</button>} />)
     const title = screen.getByRole('heading', { level: 1 })
@@ -69,7 +66,6 @@ describe('GoalsClient', () => {
     expect(title.previousElementSibling).toBe(row)
   })
 
-  // 3.1: ‹ 2026 › - left to the year before, right to the one after, stopping at the ends.
   it('steps through the years, past ones included', () => {
     render(<GoalsClient data={data()} today={TODAY} />)
     fireEvent.click(screen.getByRole('button', { name: t.goals.prevYear }))

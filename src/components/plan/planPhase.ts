@@ -9,16 +9,11 @@ import {
 } from '@/components/coaching/presentation'
 import { t } from '@/i18n'
 
-/** Where the plan is in a week: "General preparation" and "week 2", or "Build" and "week 9 of 12". */
 export interface PlanPhaseLine {
   phase: string | null
   week: string | null
 }
 
-/**
- * The phase and the week count of the week a date falls in - the coaching
- * block's, else Garmin's phase ranges, as Progress's race tile names it.
- */
 export function planPhaseLine(
   plan: MacrocycleSpan | null,
   planPhaseRanges: readonly PlanPhaseRange[],
@@ -33,9 +28,7 @@ export function planPhaseLine(
   const ranges = plan ? coachRanges : [...planPhaseRanges]
   const phase = weekPlanPhase(dates, coachRanges.length > 0 ? coachRanges : [...planPhaseRanges])
   const targetWeek = plan ? macrocycleWeek(plan, firstDay) : null
-  // General preparation has no race to count toward, so it counts its own weeks.
   const prepWeek = plan ? preparationWeek(plan, firstDay) : null
-  // Before the ranges reach this week: its own label, and no week count.
   const isPrePlan = phase === null && ranges.length > 0 && lastDay < ranges[0]!.startDate
 
   const w = t.plan.weekPurpose

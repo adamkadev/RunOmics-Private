@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { formatDate, formatDateRange, formatKm } from '@/lib/formatters'
 
-// Node's ICU and the browser's ICU disagree on the space character around a
-// range dash: Node emits U+2009 THIN SPACE, Chrome emits U+0020. The two render
-// identically and compare unequal, so a date formatted during SSR and again on
-// hydration made React throw the whole subtree away. These lock the output to
-// characters both engines agree on.
+// Node's ICU puts U+2009 around a range dash where Chrome puts U+0020, and the mismatch makes React
+// discard the subtree on hydration: these lock the output to characters both engines agree on.
 const EXOTIC_SPACE = /[\u00a0\u1680\u2000-\u200a\u202f\u205f\u3000]/
 
 describe('date output is byte-stable across ICU builds', () => {

@@ -22,8 +22,7 @@ class TestReadHistory:
         assert read_history(path) == {"days": {"2026-09-01": {"vo2max": 54}}}
 
     def test_refuses_a_file_that_exists_but_does_not_parse(self, tmp_path):
-        # Returning {} here made the caller rewrite the file with only the weeks
-        # Garmin still serves, destroying every older entry.
+        # Returning {} would make the caller rewrite the file with only the weeks Garmin still serves.
         path = tmp_path / "history.json"
         path.write_text('{"days": {"2026-09-01": {"vo2ma')
 
@@ -77,8 +76,7 @@ class TestWriteHistory:
         assert [p.name for p in tmp_path.iterdir()] == ["history.json"]
 
     def test_a_failed_write_leaves_the_previous_file_intact(self, tmp_path, monkeypatch):
-        # The reason for tmp+rename: an interrupted write must not be able to
-        # produce the truncated file that read_history would then refuse.
+        # The reason for tmp+rename: an interrupted write must not produce a truncated file.
         path = tmp_path / "history.json"
         write_history(path, {"days": {"2026-09-01": {"vo2max": 54}}})
 

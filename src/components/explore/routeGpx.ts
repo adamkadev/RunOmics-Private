@@ -4,10 +4,7 @@ import { formatDecimal } from '@/lib/formatters'
 
 export const GPX_MIME = 'application/gpx+xml'
 
-/**
- * The loop on screen as a GPX file: the loop alone, closed on its start -
- * never the way from home, which only the map draws.
- */
+/** The loop alone, never the way from home, which only the map draws. */
 export function routeGpxFile({
   unitName,
   coordinates,

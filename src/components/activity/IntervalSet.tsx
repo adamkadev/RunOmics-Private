@@ -10,7 +10,7 @@ import { t } from '@/i18n'
 
 interface Props {
   set: RepSet
-  /** Inside the Splits card, behind Km / Laps: no card of its own. */
+  /** No card of its own: it sits inside the Splits card. */
   bare?: boolean
 }
 
@@ -25,7 +25,6 @@ function paceOf(split: ActivitySplit): number | null {
   return split.distanceM > 0 ? Math.round((split.durationSec / split.distanceM) * 1000) : null
 }
 
-/** Warm-up, the recoveries and the cool-down: one quiet row each. */
 function QuietRow({ label, pace, hr }: { label: string; pace: number | null; hr: number | null }) {
   return (
     <div className={cn(ROW, 'min-h-6 text-subhead')}>
@@ -51,10 +50,7 @@ function standingOf(pace: number | null, band: RepSet['band']): RepStanding {
   return pace <= band.max ? 'inBand' : 'slower'
 }
 
-/**
- * The rep on a track (H15): the band is the shaded zone, the rep's pace a
- * tick - faster to the right. A filled bar read as a score out of 100.
- */
+/** A tick on a track, faster to the right: a filled bar would read as a score out of 100. */
 function RepTrack({ pace, track, band, standing }: { pace: number | null; track: Track; band: RepSet['band']; standing: RepStanding }) {
   const at = pace !== null ? trackPosition(pace, track) * 100 : null
   const bandStart = band ? trackPosition(band.max, track) * 100 : null
@@ -82,10 +78,6 @@ function RepTrack({ pace, track, band, standing }: { pace: number | null; track:
   )
 }
 
-/**
- * The set per M10: three numbers, then warm-up, a track per rep, the
- * recoveries as one average row, and the cool-down, in one card.
- */
 export function IntervalSet({ set, bare = false }: Props) {
   const s = t.activity.splits
   const inBandAll = set.band !== null && set.inBand === set.reps.length
@@ -97,8 +89,6 @@ export function IntervalSet({ set, bare = false }: Props) {
 
   return (
     <section className={bare ? 'flex flex-col gap-3' : cardClass({ className: 'flex flex-col gap-3' })} data-testid="interval-set">
-      {/* The set in three numbers, at the top, with no sentence (H14), in
-          the stat pattern (v4.17). All reps in the band is good news. */}
       <div data-testid="set-summary">
         <StatGrid columns={3}>
           {band ? (
@@ -109,7 +99,7 @@ export function IntervalSet({ set, bare = false }: Props) {
             />
           ) : null}
           <Stat label={s.spread} value={set.spreadSecPerKm ?? '—'} unit={set.spreadSecPerKm != null ? t.units.sec : undefined} />
-          {/* A drift, not a verdict: neutral ink and its unit (v4.3). */}
+          {/* A drift, not a verdict: neutral ink. */}
           <Stat
             label={s.hrDrift}
             value={set.hrDriftBpm === null ? '—' : formatDelta(set.hrDriftBpm)}

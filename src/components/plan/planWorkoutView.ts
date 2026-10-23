@@ -29,9 +29,7 @@ import { sessionTitle } from './sessionTitle'
 export interface PlanWorkoutView {
   key: string
   date: string
-  /** The session's name, as the coach or Garmin wrote it. */
   title: string
-  /** The coach's name for a tight row, when the session was named under the naming rules (design review, Oct 2026). */
   shortName?: string
   type?: ActivityType
   scheduledTime?: ScheduledTimeOfDay
@@ -100,10 +98,7 @@ export function plannedWorkoutView(
   }
 }
 
-/**
- * /plan hands this the trimmed view, which has no description or notes; the
- * dashboard hands it the whole prescription.
- */
+/** /plan passes the trimmed view without description or notes; the dashboard passes the whole prescription. */
 type CoachWorkoutSource = Omit<PlanPrescriptionView, 'prescription'> & {
   prescription: PlanPrescriptionView['prescription'] & Partial<Pick<WorkoutPrescription, 'description' | 'notes'>>
 }
@@ -121,10 +116,8 @@ export function coachWorkoutView(
   const label = (pace: string | null) =>
     [band, pace ?? zoneBand].filter(Boolean).join(' · ') || null
 
-  // Two readings of the same session. The row gets the work pace, because a
-  // range that also spans the warm-up prescribes nothing; the sheet gets the
-  // whole envelope, because there the warm-up is listed and the span explains
-  // it. For a continuous run the two are the same string.
+  // The row gets the work pace, since a range spanning the warm-up prescribes
+  // nothing; the sheet lists the warm-up, so it gets the whole envelope.
   const effort = label(prescriptionEffortPace(workout))
   const target = label(prescriptionPace(workout))
 
@@ -152,11 +145,7 @@ export function coachWorkoutView(
 
 const HERO_FIELDS = ['title', 'shortName', 'type', 'duration', 'distanceM', 'scheduledTime', 'target', 'activityId', 'structure', 'hr'] as const satisfies readonly (keyof PlanWorkoutView)[]
 
-/**
- * What the dashboard hero shows of today's session. The full view also holds
- * the coach's description and notes, which the hero never draws, so they stay
- * out of the page payload.
- */
+/** The coach's description and notes stay out of the dashboard's page payload. */
 export type HeroWorkoutView = Pick<PlanWorkoutView, (typeof HERO_FIELDS)[number]>
 
 export function heroWorkoutView(view: PlanWorkoutView): HeroWorkoutView {

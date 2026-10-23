@@ -53,14 +53,13 @@ describe('heatBasemapStyle (Wave 4, App Fixes 4d)', () => {
       expect(paintOf(muted, 'Water')['fill-color']).toBe(colours.water)
       expect(paintOf(muted, 'Road network')['line-color']).toBe(colours.road)
       expect(layoutOf(muted, 'Building').visibility).toBe('none')
-      // Labels fully opaque over the routes, with a thin halo in the ground's colour.
       expect(paintOf(muted, 'City labels')['text-color']).toBe('#5a615f')
       expect(paintOf(muted, 'City labels')['text-halo-color']).toBe(colours.land)
       expect(paintOf(muted, 'City labels')['text-halo-width']).toBeGreaterThan(0)
     }
   })
 
-  // Restored from 3.1.0: the additive dark tracks read on the dark basemap as it is.
+  // The additive dark tracks read on the dark basemap as it is.
   it('keeps the dark basemap as it is', () => {
     const dark = maptilerStyle(true, 'k')
     expect(heatBasemapStyle(dark, true)).toBe(dark)

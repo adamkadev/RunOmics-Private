@@ -12,7 +12,6 @@ import {
   bootstrapUserPrompt,
 } from './coachingPrompt'
 
-/** Raised once the prompt is on disk: the answer has to come from a human now. */
 export class ManualPromptWritten extends Error {
   constructor(readonly promptPath: string) {
     super(`Coaching prompt written to ${promptPath}`)
@@ -54,14 +53,8 @@ export function renderManualPrompt(input: BootstrapRequest): string {
   ].join('\n')
 }
 
-/**
- * Coaching runs about once a month, which is too rarely to be worth an API key
- * and a quota. This advisor renders the identical prompt to a file, waits for a
- * human to paste the reply back, and then hands it to the same validation and
- * preview path an API answer would take.
- */
+/** Coaching runs about once a month, too rarely to be worth an API key: the prompt goes to a file and a human pastes the reply back. */
 export class ManualCoachingAdvisor implements CoachingAdvisor {
-  // The answer is pasted from a chat, or written by hand: not a Gemini call.
   readonly source = 'manual' as const
   private consumed = false
 

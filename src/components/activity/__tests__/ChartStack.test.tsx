@@ -41,8 +41,7 @@ function renderStack(onScrub?: (fraction: number | null) => void) {
 }
 
 describe('ChartStack scrub', () => {
-  // Every pointer move used to rebuild all the lanes - a cleanup pass over
-  // every sample of every stream - and re-render every chart.
+  // Building the lanes is a cleanup pass over every sample of every stream.
   it('moves the reading without rebuilding the lanes', async () => {
     streamCleanups.count = 0
     const { area } = renderStack()
@@ -58,7 +57,6 @@ describe('ChartStack scrub', () => {
     expect(streamCleanups.count).toBe(afterMount)
   })
 
-  // v4.17: the reading sits beside each lane's name; no readout card.
   it('reads each lane at the scrub point beside its name, and the map follows', async () => {
     const onScrub = vi.fn()
     const { area, unmount } = renderStack(onScrub)
@@ -77,8 +75,6 @@ describe('ChartStack scrub', () => {
     expect(onScrub).toHaveBeenCalledWith(null)
   })
 
-  // 3.0.2: the cursor is drawn inside each plot, never across a lane's header
-  // and the numbers in it.
   it('keeps the scrub cursor inside the plots, under the lane headers', async () => {
     const { area } = renderStack()
     expect(screen.queryByTestId('scrub-cursor')).toBeNull()
@@ -91,8 +87,6 @@ describe('ChartStack scrub', () => {
     }
   })
 
-  // 3.0: the scrub row bolds the distance, heart rate is drawn in ink and pace
-  // in the accent, and the legend under the charts is gone.
   it('bolds the distance in the scrub row and colours each lane its own way', async () => {
     const { area } = renderStack()
     fireEvent.pointerMove(area, { clientX: 175, pointerId: 1, pointerType: 'mouse' })
@@ -101,7 +95,7 @@ describe('ChartStack scrub', () => {
     const line = (lane: string) => screen.getByTestId(`lane-${lane}`).querySelectorAll('path')[2]!.getAttribute('stroke')
     expect(line('hr')).toBe(RUN_CHART_LINE.hr)
     expect(line('pace')).toBe(RUN_CHART_LINE.pace)
-    // App Fixes 3d: the direction is in words, not an arrow glyph.
+    // The direction is in words, not an arrow glyph.
     expect(screen.getByTestId('lane-pace').textContent).toContain(`${t.activity.charts.pace} ${t.activity.charts.paceUnitHint}`)
     expect(screen.getByTestId('chart-stack').textContent).not.toContain('Run average')
   })

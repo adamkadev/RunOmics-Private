@@ -12,15 +12,14 @@ import { CONSISTENCY_RANGES, DEFAULT_RANGE, parseRange, type ConsistencyRange, t
 import { WeekSheet } from './WeekSheet'
 
 const CARD_TITLE = 'text-[15px] font-semibold text-foreground'
-/** A weekday's accent, a step under the anchor's (3.1): the ramp's mid tint. */
+/** A weekday's accent, a step under the anchor's: the ramp's mid tint. */
 export const ACCENT_DIM = 'color-mix(in srgb, var(--accent) var(--level-mid), transparent)'
 
-/** The day a weekday index names, in the locale: 2024-01-01 was a Monday. */
+/** 2024-01-01 was a Monday. */
 function weekdayName(index: number): string {
   return formatWeekdayLong(`2024-01-0${index + 1}`)
 }
 
-/** The streak, this week's runs against three, and the window's three counts. */
 function StreakCard({ view }: { view: ConsistencyView }) {
   const c = t.consistency
   const { runs, planned } = view.thisWeek
@@ -81,18 +80,13 @@ const CHART_W = 324
 /** Room around the dots for the tapped week's outline. */
 const PAD = 4
 
-/** The dot-matrix geometry for `n` columns: the dot, the step between columns and between rows. */
+/** `step` is the distance between columns, `pitch` between rows. */
 export function dotGeometry(columns: number): { dot: number; step: number; pitch: number } {
   const dot = Math.min(9, CHART_W / Math.max(1, columns) - 2)
   const step = columns > 1 ? (CHART_W - dot) / (columns - 1) : 0
   return { dot, step, pitch: dot + dot / 3 }
 }
 
-/**
- * Runs per week (3.1): a column a week, a dot a run - the accent on target,
- * grey under it, the sessions still to come this week dashed - against a
- * dashed line at three, the current streak underlined. A column opens its week.
- */
 function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; selected: string | null; onSelect: (week: string) => void }) {
   const c = t.consistency
   const { weeks, target } = view
@@ -221,16 +215,9 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
   )
 }
 
-/** The bar's height at most, in px. */
 const WEEKDAY_BAR_PX = 70
-/** A weekday run in a tenth of the weeks or fewer is a stub. */
 const STUB_SHARE = 0.1
 
-/**
- * Your running week (3.1): the weeks with a run on each weekday, the most
- * run day brightest, a day hardly run a stub; then which day anchors the
- * week and which stays a rest day.
- */
 function RunningWeek({ view }: { view: ConsistencyView }) {
   const c = t.consistency
   const narrow = new Intl.DateTimeFormat(t.locale, { weekday: 'narrow', timeZone: 'UTC' })
@@ -277,10 +264,6 @@ function RunningWeek({ view }: { view: ConsistencyView }) {
   )
 }
 
-/**
- * The Consistency page (3.1): a window of 3, 6 or 12 months (?range=), its
- * weekly streak, runs per week against three, and the running week.
- */
 export function Consistency({ views, today }: { views: Record<ConsistencyRange, ConsistencyView>; today: string }) {
   const c = t.consistency
   const [rangeParam, setRangeParam] = useUrlParam('range')

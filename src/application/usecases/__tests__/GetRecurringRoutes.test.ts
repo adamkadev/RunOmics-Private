@@ -45,8 +45,6 @@ describe('clusterByRoute', () => {
   })
 })
 
-// App Fixes 1g: a route is named after where it goes, so it has to know
-// which point that is - a loop's far side, an out-and-back's turnaround.
 describe('farthestPoint', () => {
   it('finds the turnaround of an out-and-back', () => {
     const out: [number, number][] = [[6.1, 49.6], [6.11, 49.6], [6.12, 49.6], [6.11, 49.6], [6.1, 49.6]]

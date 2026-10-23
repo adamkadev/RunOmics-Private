@@ -12,12 +12,7 @@ const OPTIONS = [
   { value: 'dark',   label: () => t.settings.appearance.dark   },
 ] as const
 
-/**
- * Light / Auto / Dark as the quiet tabs (v4.17), in Liquid Glass v3's
- * content recipe: a 32 pt capsule track, the choice lifted in text ink. A choice, not
- * a tablist - there is no panel - so the buttons are pressed or not. The
- * row around it carries the label.
- */
+/** A choice, not a tablist (there is no panel), so the buttons are pressed or not. */
 export function ThemeSegmented() {
   const { theme, setTheme } = useTheme()
   const mounted = useMounted()

@@ -1,11 +1,4 @@
-"""Tests for the pure-logic core of the FIT parser.
-
-These functions compute the best efforts that feed the Records/PR pages and
-the route/pace data shown on every activity - a silent regression here
-corrupts the whole dashboard, so they are pinned by tests even though the
-FIT decoding itself (garmin_fit_sdk) is exercised only via the corrupt-input
-path (building valid FIT binaries in a test isn't worth the machinery).
-"""
+"""FIT decoding itself is exercised only via the corrupt-input path: building valid FIT binaries isn't worth the machinery."""
 
 import random
 from datetime import datetime, timezone
@@ -30,7 +23,6 @@ from processing.fit_parser import (
 
 
 def constant_speed_samples(total_m: float, pace_sec_per_km: float, step_m: float = 10.0):
-    """Distance/time sample arrays for a perfectly steady run."""
     dists, times = [], []
     d = 0.0
     while d <= total_m:
@@ -141,9 +133,8 @@ class TestDecimate:
     @pytest.mark.parametrize("max_points", [2, 40, 150, 400], ids=lambda m: f"cap {m}")
     @pytest.mark.parametrize("route", ["random walk", "zigzag"])
     def test_keeps_exactly_the_points_the_epsilon_ladder_kept(self, route, max_points):
-        # The reference is the loop _decimate replaced, re-running
-        # Douglas-Peucker at 0.5 m, then x1.5 per step until under the cap:
-        # every stored route came out of it, so the result must not move.
+        # The reference re-runs Douglas-Peucker at 0.5 m, then x1.5 per step until under the cap: every stored route
+        # came out of it, so the result must not move.
         coords = _random_walk(400) if route == "random walk" else _zigzag(200)
 
         assert _decimate(coords, max_points) == _ladder_decimate(coords, max_points)
@@ -379,8 +370,7 @@ class TestParseFitRobustness:
         assert not parse_fit(b"").has_data
 
     def test_what_the_decoder_rejected_is_reported(self, capsys):
-        # The SDK hands its errors back rather than raising; ignoring them
-        # made a rejected file indistinguishable from an activity without one.
+        # The SDK hands its errors back rather than raising.
         parse_fit(b"definitely not a FIT file")
 
         assert "not a fit file" in capsys.readouterr().out
@@ -396,7 +386,7 @@ class TestParseFitRobustness:
 
 
 class TestMovingClock:
-    """v5.5 #5: best efforts on the timer, never across a stop."""
+    """Best efforts on the timer, never across a stop."""
 
     def test_timer_pauses_come_out_of_the_clock(self):
         from datetime import datetime, timezone

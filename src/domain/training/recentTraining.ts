@@ -2,12 +2,7 @@ import { DAY_MS } from '@/lib/calendarDate'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 
 export interface RecentTraining {
-  /**
-   * Monday to today - the calendar week the dashboard's weekly ring counts,
-   * not the last seven days. A rolling window reaches back into last week,
-   * and the Today insight called that total "this week" right beside a ring
-   * showing the smaller figure.
-   */
+  /** Monday to today, the calendar week the dashboard's weekly ring counts, not the last seven days. */
   weekRuns: number
   weekKm: number
   lastRun: { type: ActivityType; daysAgo: number; distanceKm: number } | null

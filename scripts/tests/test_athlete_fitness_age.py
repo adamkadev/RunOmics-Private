@@ -30,8 +30,7 @@ def test_skips_trailing_days_without_a_fitness_age():
 
 
 def test_ignores_the_resting_hr_garmin_bundles_in():
-    # The fitness-age series carries its own rhr, computed differently from the
-    # zone config one we already sync - keeping it would silently overwrite it.
+    # Its rhr is computed differently from the zone config one; keeping it would silently overwrite that.
     days = [_day("2026-07-21", fitnessAge=22.0, rhr=66, bmi=20.7)]
 
     assert "restingHrBpm" not in extract_fitness_age(days)

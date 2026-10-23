@@ -3,11 +3,7 @@ import type { Limits } from '@/domain/ai/prompt'
 import { activeLocale } from '@/i18n'
 
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models'
-/**
- * 3.8 Flash thinks for longer than the models before it, even at 'low', and
- * its calls ran into a 30 s limit (Oct 2026); 45 s still leaves a 280 s pass
- * room for a fallback model after a call that times out.
- */
+/** 3.8 Flash thinks long even at 'low'; 45 s still leaves a 280 s pass room for a fallback model after a timeout. */
 export const CALL_TIMEOUT_MS = 45_000
 
 const FRENCH_ELISION_MISSING = /\b(?:[LldDsScCnNjJtTmM]|[Qq]ue)\s+(?=[aeiouyàâäéèêëïîôöùûühAEIOUYÀÂÄÉÈÊËÏÎÔÖÙÛÜH])/
@@ -116,10 +112,8 @@ function parseInsight(raw: unknown, limits: Limits, bulletCount?: number): Insig
 }
 
 /**
- * One request per call. The insight pass walks a model pool after reserving
- * one request of a model's daily budget - 20 on the flash tier - so the pool is
- * the retry. Retrying in here as well sent up to three requests against that
- * one reservation, and could hold a single call for 95 s of a 300 s function.
+ * No retries: the insight pass reserves one request of a model's daily budget
+ * (20 on the flash tier) and walks a model pool, so the pool is the retry.
  */
 export async function generateInsight(request: InsightRequest): Promise<InsightResult> {
   const apiKey = process.env.GEMINI_API_KEY
@@ -142,12 +136,7 @@ export async function generateInsight(request: InsightRequest): Promise<InsightR
   }
 }
 
-/**
- * Google answers a share of perfectly valid calls with 503 "high demand" -
- * measured at roughly one in six against a model that was otherwise serving
- * fine. A single attempt therefore fails a nightly insight or a whole
- * coaching bootstrap on a coin toss.
- */
+/** Google answers roughly one valid call in six with 503 "high demand", so a single attempt fails on a coin toss. */
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504])
 const RETRY_DELAYS_MS = [1_000, 4_000]
 
@@ -178,12 +167,7 @@ function modelVersion(model: string): { major: number; minor: number } | null {
   return version ? { major: Number(version[1]), minor: Number(version[2] ?? 0) } : null
 }
 
-/**
- * Gemini 3.8 Flash and later take no sampling settings - temperature, top_p
- * and top_k are deprecated there, its thinking level and the response
- * schema steer it instead (Google's 3.8 Flash migration notes) - so only an
- * older model is sent one.
- */
+/** Gemini 3.8 Flash and later deprecate sampling settings (temperature, top_p, top_k). */
 export function takesTemperature(model: string): boolean {
   const version = modelVersion(model)
   if (!version) return true

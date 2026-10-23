@@ -7,11 +7,8 @@ export function kmTicks(distanceKm: number): number[] {
 }
 
 /**
- * The distance axis: from 0 to the run's own distance, which carries the unit
- * ("0 2 4 6.1 km"). It had no 0 and no unit, so the reader had to guess what
- * the numbers counted. A round tick within a step of the end gives way to it:
- * the end label carries its unit, so half a step still ran the two together
- * ("1011.5 km" on a 11.5 km run).
+ * "0 2 4 6.1 km". A round tick within a step of the end gives way to it: the end label carries its unit, so half a
+ * step still runs the two together ("1011.5 km" on a 11.5 km run).
  */
 export function distanceAxis(distanceKm: number): { ticks: number[]; format: (v: number) => string } {
   const round = kmTicks(distanceKm)

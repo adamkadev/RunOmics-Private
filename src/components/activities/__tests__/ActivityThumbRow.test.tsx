@@ -5,7 +5,6 @@ import { t } from '@/i18n'
 import { formatDate } from '@/lib/formatters'
 import { ActivityThumbRow, thumbRowMeta } from '../ActivityThumbRow'
 
-// Design review, Oct 2026: date · moving time · avg HR, the type left to the dot.
 describe('thumbRowMeta', () => {
   const run = { date: '2026-10-20', durationSeconds: 3443, avgHeartRate: 139 }
 
@@ -28,8 +27,6 @@ describe('ActivityThumbRow', () => {
     distanceKm: 10.2, durationSeconds: 3443, paceSecPerKm: 337, avgHeartRate: 139, rpe: null, hrZones: [], week: 0, elevationGain: null, routeThumb: null,
   } as ActivitySummary
 
-  // Round 2, the owner's ask: the session on the first line, the type its
-  // dot, and the meta line the date, the time and the HR alone.
   it('names the session by its set, its type left to the dot and to VoiceOver', () => {
     render(<ActivityThumbRow activity={activity} variant="inset" />)
     const row = screen.getByTestId('thumb-row')
@@ -41,7 +38,6 @@ describe('ActivityThumbRow', () => {
     expect(spoken.nextSibling?.textContent ?? spoken.parentElement?.textContent).toContain('2 × 7′')
   })
 
-  // Round 2: the session's type where the watch filed another, on the dot and for VoiceOver.
   it("shows the session's type where it is not the watch's", () => {
     render(<ActivityThumbRow activity={{ ...activity, type: 'Tempo' }} type="Threshold" variant="inset" />)
     expect(screen.getByText('Threshold', { exact: false, selector: '.sr-only' })).toBeInTheDocument()

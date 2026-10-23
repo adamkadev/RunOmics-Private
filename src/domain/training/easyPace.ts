@@ -16,11 +16,7 @@ export interface EasyPaceReading {
   start: { pace: number; date: string } | null
 }
 
-/**
- * The one easy-pace number Analytics prints. The headline and the Easy pace
- * tile both read it, so they can't disagree (5:23 in one, 5:18 in the other,
- * because one pooled four weeks and the other took the last week alone).
- */
+/** The headline and the Easy pace tile both read this, so they can't disagree. */
 export function easyPaceReading(weeks: EasyWeek[], block = EASY_PACE_BLOCK_WEEKS): EasyPaceReading | null {
   const known = weeks.filter((w): w is EasyWeek & { easyPace: number } => w.easyPace !== null)
   if (!known.length) return null

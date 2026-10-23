@@ -2,18 +2,11 @@ import { t } from '@/i18n'
 import { formatWeekdayLong } from '@/lib/formatters'
 import type { ActivityType } from '@/domain/activity/types'
 
-/** A run's name: Garmin's, or "Sunday Run" / "Sortie du dimanche" from its date when Garmin gave none. */
 export function activityTitle(activity: { description: string; date: string }): string {
   return activity.description || t.activity.runTitle(formatWeekdayLong(activity.date))
 }
 
-/**
- * The words a name leads with that only say its type, in either language,
- * and the type each names - null where a word is a type's but not one type
- * ("Intervals" is VO₂ max or threshold). The dot or eyebrow beside the name
- * says it already; and where the watch filed the run as another type, the
- * name is what still says what the session was.
- */
+/** Leading words that only name a session type; null where a word fits several types ("Intervals" is VO₂ max or threshold). */
 const TYPE_WORDS = new Map<string, ActivityType | null>([
   ['threshold', 'Threshold'], ['threshold run', 'Threshold'], ['seuil', 'Threshold'],
   ['tempo', 'Tempo'], ['tempo run', 'Tempo'],
@@ -33,13 +26,8 @@ function isTypeWord(words: string): boolean {
 }
 
 /**
- * What a run was set as (round 2, the owner's ask): the type its name leads
- * with - "Threshold 2 x 7:00 - 2x7'@4:25", "Seuil - 3x8'@4:20", "Base" - else
- * the watch's. Garmin files a run by how it went: a threshold session run
- * with too low a heart rate becomes tempo, a base run pushed becomes tempo.
- * The session was what it was named; how it went is the zones' and the
- * verdict's to say. A name that names no type ("Morning Run", "10K de
- * Metz") leaves the watch's.
+ * The type a run's name leads with, else the watch's: Garmin files a run by how it went (a threshold
+ * session at too low a heart rate becomes tempo), but the session was what it was named.
  */
 export function intendedType(activity: { type: ActivityType; description?: string | null }): ActivityType {
   const name = activity.description?.trim() ?? ''
@@ -72,15 +60,9 @@ function lowerFirst(words: string): string {
 }
 
 /**
- * What a run or a planned session is, where its type is shown beside it - a
- * dot, an eyebrow - so the name need not say it again (round 2, the owner's
- * ask): "Threshold · 3 × 8′ @ 4:25" reads "3 × 8′ @ 4:25".
- * - A name from before the naming rules said its set twice, the coach's then
- *   Garmin's - "Threshold 2 x 7:00 - 2x7'@4:25" - and keeps Garmin's half,
- *   "2 × 7′ @ 4:25", the simpler of the two.
- * - Words that are not the type stay, after the set: "Strides 6 × 20s" reads
- *   "6 × 20s strides", as an easy run's dot does not say strides.
- * - A name with no set - "Easy run", "Long run", "10K de Metz" - stays whole.
+ * A name without the type its dot or eyebrow already shows: "Threshold · 3 × 8′ @ 4:25" reads "3 × 8′ @ 4:25".
+ * A coach-then-Garmin name ("Threshold 2 x 7:00 - 2x7'@4:25") keeps Garmin's half; other words follow the
+ * set ("Strides 6 × 20s" reads "6 × 20s strides"); a name with no set stays whole.
  */
 export function sessionLabel(title: string): string {
   const name = title.trim()

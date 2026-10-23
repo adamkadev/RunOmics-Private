@@ -32,7 +32,7 @@ export const HUE = {
   green600: '#16a34a',
   green700: '#15803d',
 
-  // The cadence line (v4.3.2): a grey sage, clear of Pace's blue.
+  // Cadence: a grey sage, clear of Pace's blue.
   cadenceDark: '#8fb3b0',
   cadenceLight: '#4f7471',
 
@@ -78,11 +78,7 @@ export const HUE = {
   roEmeraldDeep:  '#0e9f6e',
   roEmeraldLift:  '#14b886',
 
-  /**
-   * Semantic hues at text grade on a light ground. The dark-mode values are
-   * tuned for a dark card and fail as text on white - #34d399 is 1.8:1 - so the
-   * light theme takes the same hue, darkened. Fills keep the dark values.
-   */
+  /** Text grade on a light ground: the dark-mode values fail as text on white (#34d399 is 1.8:1). */
   semGreenLight:  '#0f7a52',
   semOrangeLight: '#c2560f',
   semBlueLight:   '#2563eb',
@@ -99,30 +95,22 @@ export const HUE = {
   roRed:     '#ff7676',
   roRust:    '#a1662f',
   roSage:    '#a7b1aa',
-  // Zone 1 (warmup) used to share the grey the app reserves for "no time
-  // logged", so a dominant Z1 read as an empty bar. A desaturated step below
-  // Z2's blue keeps the Z1→Z5 ramp reading as rising intensity in both themes.
+  // Not the "no time logged" grey, so a dominant Z1 never reads as an empty bar.
   roZone1:   '#7fb2c9',
   // Z1 a step darker for light mode: 3.2:1 on white, where #7fb2c9 is 2.3.
   roZone1Light: '#5f97b0',
-  // v4.3 zone fills: never replaced by the accent.
+  // Zone fills: never replaced by the accent.
   zone2Dark: '#7ab8ff',
   zone4Dark: '#ff9a57',
   zone5Dark: '#f0524f',
   zone4Light: '#e8590c',
   zone5Light: '#e03131',
 
-  /**
-   * The ink ramp, one per theme rather than one inverted. Dark-mode greys read
-   * as near-white on white: #b9c4cf on #ffffff is 1.9:1, so a caption drawn in
-   * it was invisible in light mode. Each step is its own colour, matched in hue
-   * and re-darkened for the ground it sits on.
-   */
+  /** One ink ramp per theme, not one inverted: dark-mode greys read as near-white on white (#b9c4cf is 1.9:1). */
   inkLight:  '#111b28',
   inkLight2: '#3c4a59',
   inkLight3: '#5c6773',
-  // Spec said #76828f, which measures 3.92:1 on white - under the 4.5 this
-  // ramp exists to reach. Same hue, one step down: 4.69:1.
+  // 4.69:1 on white: the ramp exists to reach 4.5.
   inkLight4: '#6a7581',
   inkDark:   '#e9eff7',
   inkDark2:  '#b9c4cf',
@@ -136,9 +124,7 @@ export const HUE = {
   roInkInv2:  '#a8b4ae',
   roInkInv3:  '#8a978f',
   roInkInv4:  '#6f7f79',
-  // The light muted scale. Every tier clears 4.5:1 on the darkest light ground
-  // (--background #eef3f0); the old slate400/slate500/#b0bec5 set sat at
-  // 2.28, 4.24 and 1.70 respectively.
+  // Every tier clears 4.5:1 on the darkest light ground (--background #eef3f0).
   roMuted:    '#3a4757',
   roSubtle:   '#4e5a6b',
   roSubtle2:  '#606e82',

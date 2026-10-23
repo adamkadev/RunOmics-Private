@@ -22,7 +22,6 @@ describe('getTrainingStatusDaysBar', () => {
     expect(getTrainingStatusDaysBar(28, TODAY)).toEqual([])
   })
 
-  // G05: 28 calendar days, not the last 28 records.
   it('covers the last 28 calendar days to today, oldest first', () => {
     getTrainingStatusDays.mockReturnValue(series(30))
     const bar = getTrainingStatusDaysBar(28, TODAY)

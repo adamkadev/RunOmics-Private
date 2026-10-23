@@ -1,11 +1,4 @@
-"""Sync shoe gear from Garmin Connect into the private data workspace.
-
-Garmin's gear-service/gear/v2/list (queried once for ACTIVE and once for
-RETIRED) returns each shoe's brand, model, status and odometer cap directly,
-so none of it is copied by hand. `alertThresholdKm` and
-`dotColor` have no Garmin source and aren't stored here - src/domain/shoe/types.ts
-derives them from maxKm/order when it builds SHOE_REGISTRY from this file.
-"""
+"""`alertThresholdKm` and `dotColor` have no Garmin source: src/domain/shoe/types.ts derives them from maxKm/order."""
 
 from __future__ import annotations
 
@@ -45,7 +38,7 @@ class ShoeGear:
 
 
 def fetch_shoe_gear(client: GarminClient) -> list[ShoeGear]:
-    """Active shoes (newest first) followed by retired shoes (newest first)."""
+    """Garmin returns each list newest first."""
     active = retry_transient(lambda: client.get_gear_list("ACTIVE"))
     retired = retry_transient(lambda: client.get_gear_list("RETIRED"))
 
@@ -81,12 +74,11 @@ def _split_combined_name(combined: str) -> tuple[str, str]:
 
 
 def _normalize_brand(brand: str) -> str:
-    """Garmin lowercases some brands ("adidas") but not others ("Nike") - title-case only the former."""
+    """Garmin lowercases some brands ("adidas") but not others ("Nike")."""
     return brand.title() if brand.islower() else brand
 
 
 def write_shoes_json(shoes: list[ShoeGear], *, path: Path = _OUT_PATH) -> bool:
-    """Write shoes.json, returning True if it changed."""
     payload = {"shoes": [shoe.to_dict() for shoe in shoes]}
 
     existing: dict[str, Any] | None = None
@@ -94,8 +86,7 @@ def write_shoes_json(shoes: list[ShoeGear], *, path: Path = _OUT_PATH) -> bool:
         try:
             existing = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
-            # Garmin's gear list is the whole of this file, so rewriting it
-            # loses nothing; a file that stopped parsing is still worth a line.
+            # Garmin's gear list is the whole of this file, so rewriting it loses nothing.
             print(f"  Warning: {path} could not be read ({exc}); rewriting it from Garmin's gear list.")
 
     if existing == payload:

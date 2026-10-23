@@ -25,9 +25,7 @@ export function buildTodayContext(
 }
 
 /**
- * A prescription carries the session the plan actually asked for; the Garmin
- * entry for the same day is that session after `coach:sync-garmin` pushed it to
- * the watch. Reading the prescription first is what lets the verdict name the
+ * Read before the Garmin entry, the prescription lets the verdict name the
  * workout rather than whatever the watch called it.
  */
 function asPlannedWorkout(prescription: WorkoutPrescription): PlannedWorkout {
@@ -45,31 +43,22 @@ function asPlannedWorkout(prescription: WorkoutPrescription): PlannedWorkout {
 }
 
 /**
- * The session today's verdict is written about.
- *
- * Both sides of the cache resolve it here and neither may resolve it its own
- * way: the generator hashes the context it wrote, the page hashes the context
- * it wants, and two resolutions of "today's session" are two hashes, so the
- * page would look up a card that exists under another key and fall back to the
- * deterministic copy forever. The same holds for the date: both read
- * appTodayIso(), the athlete's day, not the server's.
+ * The generator and the page must both resolve today's session here, from
+ * appTodayIso(): two resolutions are two cache hashes, and the page would never
+ * find the card.
  */
 export async function todayInsightSession(today: string = appTodayIso()): Promise<PlannedWorkout | null> {
   const prescription = getTodayPrescription(today)
   return prescription ? asPlannedWorkout(prescription) : await getTodayPlannedWorkout(today)
 }
 
-/** Today's card, or yesterday's while today's is not written yet (3.1.0). */
 export interface TodayVerdict extends Insight {
-  /** Written on the athlete's previous day: Today labels it "Yesterday". */
   yesterday?: boolean
 }
 
 /**
- * Today's verdict. Between midnight and the night's sync no card matches the
- * new day, and the hero used to sit empty; the latest card, when it was
- * written yesterday (the athlete's day), stands in, marked as yesterday's.
- * An older one is not shown.
+ * Between midnight and the night's sync no card matches the new day:
+ * yesterday's card stands in, an older one never does.
  */
 export async function getTodayInsight(
   status: TrainingStatus | null,

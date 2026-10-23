@@ -1,5 +1,3 @@
-"""Normalize Garmin's 52-week Fitness Age series without storing raw payloads."""
-
 from __future__ import annotations
 
 from datetime import date
@@ -43,8 +41,7 @@ def normalize_weekly_fitness_age(rows: Any) -> dict[str, dict[str, Any]]:
             if isinstance(value, (int, float)) and not isinstance(value, bool):
                 sample[target] = round(value, 1)
 
-        # The weekly payload also contains an RHR derivative. It is
-        # intentionally excluded: canonical RHR comes from the HR-zone config.
+        # The payload's RHR derivative is left out on purpose: canonical RHR comes from the HR-zone config.
         if sample:
             weeks[normalized_date] = sample
 
@@ -56,7 +53,6 @@ def _load_existing() -> dict[str, dict[str, Any]]:
 
 
 def sync_fitness_age_history(client: GarminClient, today: date | None = None) -> int:
-    """Merge the latest weekly window, retaining older valid observations."""
     as_of = today or date.today()
     existing = _load_existing()
     print("Syncing Fitness Age history…")

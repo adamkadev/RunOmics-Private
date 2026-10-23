@@ -12,9 +12,8 @@ import { readVerifiedCachedInsight, readVerifiedInsight } from '@/infrastructure
 import type { Insight } from '@/lib/gemini'
 
 /**
- * The current coaching plan, then the ones it replaced: a finished block's
- * sessions live only in the archive. A plan file that fails to parse costs the
- * verdicts their coaching intent, never the verdicts themselves.
+ * Archived plans too: a finished block's sessions live only there. A plan that
+ * fails to parse costs the verdicts their coaching intent, never the verdicts.
  */
 function coachingPlans(): CoachingPlan[] {
   try {
@@ -63,11 +62,8 @@ export interface LatestRunVerdict {
 }
 
 /**
- * The newest run on this deployment together with the state of its verdict.
- *
- * A caller waiting on a just-synced run needs all three parts: which run is
- * newest, whether its verdict has been written, and when - because the verdict
- * that was already there before the sync is not the one it is waiting for.
+ * With `generatedAt`: a caller waiting on a just-synced run must tell its
+ * verdict from the one that was there before the sync.
  */
 export async function getLatestRunVerdict(): Promise<LatestRunVerdict | null> {
   const activities = getAllActivities()

@@ -48,8 +48,6 @@ def run(tmp_path, monkeypatch):
 
 
 def test_lists_the_shoes_and_writes_shoes_json_to_the_workspace(run, tmp_path, capsys):
-    # It printed shoe.name, which ShoeGear has never had: the script crashed
-    # whenever a shoe existed, from 28 July on.
     assert run() == 0
 
     assert "Nike Vomero Plus  (active, max 800 km)  7b9054faaffb4305a63ac38d2e72909b" in capsys.readouterr().out

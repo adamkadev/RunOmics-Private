@@ -2,19 +2,13 @@
 
 import { useEffect } from 'react'
 
-/** Elements that run their own pinch gesture: the maps zoom themselves. */
 const OWN_PINCH = '.maplibregl-map'
 
 export function allowsPinch(target: EventTarget | null): boolean {
   return target instanceof Element && target.closest(OWN_PINCH) !== null
 }
 
-/**
- * No two-finger page zoom. iOS Safari ignores `user-scalable=no`, so the page
- * cancels its pinch itself: Safari's own gesture events, and any touchmove
- * with two fingers down. The maps keep their pinch, and iOS's system Zoom
- * (Settings > Accessibility) still works for anyone who needs it.
- */
+/** iOS Safari ignores `user-scalable=no`, so the page cancels two-finger pinches itself. */
 export function NoPinchZoom() {
   useEffect(() => {
     const blockGesture = (event: Event) => {

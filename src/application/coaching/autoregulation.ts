@@ -6,13 +6,10 @@ import { thresholdPaceFromVdot, vdotFromEffort } from '@/domain/training/vdot'
 import { CONTROLLED_THRESHOLD, repLengthClass, type RepLengthClass } from './controlledThreshold'
 
 /**
- * Reads the athlete's own runs against the controlled threshold targets, and proposes - never
- * applies - the changes the athlete's rules call for: a pace guide moved when
- * two sessions of one repetition length agree, a lighter week when an easy run
- * says fatigue. Every threshold it judges by lives in CONTROLLED_THRESHOLD.
+ * Proposes - never applies - the changes the athlete's rules call for.
+ * Every threshold it judges by lives in CONTROLLED_THRESHOLD.
  */
 
-/** A controlled threshold session's repetition: a threshold session's capped, timed and guided effort. */
 export function controlledStep(workout: WorkoutPrescription): { repetitions: number; step: WorkoutSegment } | null {
   if (workout.type !== 'threshold' || workout.status === 'cancelled') return null
   for (const block of workout.blocks) {
@@ -26,11 +23,7 @@ export function controlledStep(workout: WorkoutPrescription): { repetitions: num
   return null
 }
 
-/**
- * Every prescription by date, the newest plan's first: the current plan, then
- * the archived ones it replaced, so the session before a block boundary is
- * still found.
- */
+/** Newest plan first, then the archived ones it replaced, so a session before a block boundary is still found. */
 function prescriptionsByDate(plans: CoachingPlan[]): Map<string, WorkoutPrescription[]> {
   const byDate = new Map<string, WorkoutPrescription[]>()
   const claimed = new Set<string>()
@@ -82,9 +75,8 @@ export interface ControlledSessionReading {
 const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length
 
 /**
- * The heart-rate samples are spread evenly over the recording, which the
- * splits' durations add up to, so a repetition's window maps onto them by
- * time. Checked against Garmin's own per-repetition average: within 1 bpm.
+ * The HR samples are spread evenly over the recording, so a repetition's window maps onto them
+ * by time (within 1 bpm of Garmin's own per-repetition average).
  */
 function readReps(activity: Activity, repSeconds: number): RepReading[] {
   const samples = activity.hrSamples ?? []
@@ -156,11 +148,6 @@ export interface GuideProposal {
   sessions: Pick<ControlledSessionReading, 'date' | 'activityId' | 'verdict' | 'reps' | 'tempC'>[]
 }
 
-/**
- * Two sessions of one repetition length in a row, at the same guide, that
- * agree: both well under target, or both past it. Anything else - one of each,
- * a session run off the guide, a guide changed between them - proposes nothing.
- */
 export function proposeGuideChanges(readings: ControlledSessionReading[]): GuideProposal[] {
   const { sessionsInARow, paceStepSecPerKm } = CONTROLLED_THRESHOLD.autoregulation
   const step = Math.round((paceStepSecPerKm.min + paceStepSecPerKm.max) / 2)
@@ -210,11 +197,7 @@ export interface FatigueReading {
 const EASY_TYPES = new Set(['easy', 'recovery', 'long_run'])
 const STRIDE_MAX_SECONDS = 60
 
-/**
- * Planned easy, or - with nothing planned that day - what Garmin read as a
- * base run without repetitions in it. A watch workout records an easy run as
- * one long active step, so it is a second long one that says intervals.
- */
+/** A watch workout records an easy run as one long active step, so it takes a second long one to say intervals. */
 function easyRuns(activities: Activity[], byDate: Map<string, WorkoutPrescription[]>): EasyRunReading[] {
   return activities.filter(isRun).flatMap((activity) => {
     const planned = byDate.get(dayOf(activity))
@@ -238,11 +221,7 @@ function median(values: number[]): number {
   return sorted.length % 2 ? sorted[middle]! : (sorted[middle - 1]! + sorted[middle]!) / 2
 }
 
-/**
- * The latest easy run against the athlete's recent normal: runs of similar
- * pace, temperature and length over the look-back. Heat is controlled for by
- * comparing only like days, not by correcting for it.
- */
+/** Heat is controlled for by comparing only like days, not by correcting for it. */
 export function assessFatigue(runs: EasyRunReading[]): FatigueReading | null {
   const ordered = [...runs].sort((left, right) => left.date.localeCompare(right.date))
   const run = ordered.at(-1)
@@ -273,7 +252,6 @@ export interface FitnessCheck {
 
 const daysBefore = (date: string, days: number) => new Date(Date.parse(`${date}T00:00:00Z`) - days * DAY_MS).toISOString().slice(0, 10)
 
-/** The guide each repetition length is on now: its latest prescription up to the reference date, else its first. */
 function currentGuides(byDate: Map<string, WorkoutPrescription[]>, referenceDate: string): Map<RepLengthClass, NumberRange> {
   const guides = new Map<RepLengthClass, NumberRange>()
   const dates = [...byDate.keys()].sort()
@@ -289,12 +267,7 @@ function currentGuides(byDate: Map<string, WorkoutPrescription[]>, referenceDate
   return guides
 }
 
-/**
- * The latest 5K - a race, or a time trial the plan prescribed as one - read
- * as a fitness check: the threshold it implies, and the guides moved by as
- * much as the 5K moved since the check before it. The first check only sets
- * the baseline.
- */
+/** The latest 5K, raced or prescribed as a time trial; the first check only sets the baseline. */
 export function readFitnessCheck(
   activities: Activity[],
   byDate: Map<string, WorkoutPrescription[]>,
@@ -309,8 +282,7 @@ export function readFitnessCheck(
     .sort((left, right) => dayOf(left).localeCompare(dayOf(right)))
   const latest = checks.at(-1)
   if (!latest || dayOf(latest) < daysBefore(referenceDate, rules.withinDays)) return null
-  // A 5K is a measured course: the official chip time when there is one,
-  // over 5 km, never the GPS distance - 5.25 km of GPS made a 4:18 race read 4:10.
+  // A 5K is a measured course: the chip time when there is one, over 5 km, never the GPS distance.
   const official = new Map(officialResults.filter((result) => result.distanceMeters === 5_000).map((result) => [result.activityId, result.chipTimeSeconds]))
   const seconds = (activity: Activity) => official.get(activity.id) ?? activity.durationSeconds
   const pace = (activity: Activity) => Math.round(seconds(activity) / 5)
@@ -340,7 +312,7 @@ export interface AutoregulationReport {
   fitnessCheck: FitnessCheck | null
 }
 
-/** Plans newest first: the current one, then the archive. Only runs up to the reference date are read. */
+/** `plans` newest first: the current one, then the archive. */
 export function autoregulationReport(
   activities: Activity[],
   plans: CoachingPlan[],
@@ -369,7 +341,6 @@ const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.ro
 const middle = (range: NumberRange) => Math.round((range.min + range.max) / 2)
 const replaceAll = (text: string, from: string, to: string) => text.split(from).join(to)
 
-/** Every note a session carries, at any depth, rewritten. */
 function rewriteNotes(workout: WorkoutPrescription, rewrite: (note: string) => string): WorkoutPrescription {
   return {
     ...workout,
@@ -380,11 +351,7 @@ function rewriteNotes(workout: WorkoutPrescription, rewrite: (note: string) => s
   }
 }
 
-/**
- * A controlled threshold session moved to a new guide, with its name, structure and the guide quoted
- * in its notes following - a name is not allowed to state a pace the blocks
- * no longer prescribe. Null for a session not on the guide being moved.
- */
+/** The name and notes follow the guide: a name may not state a pace the blocks no longer prescribe. */
 export function withGuide(workout: WorkoutPrescription, from: NumberRange, to: NumberRange): WorkoutPrescription | null {
   const controlled = controlledStep(workout)
   const guide = controlled?.step.target.paceSecPerKm
@@ -403,12 +370,6 @@ export function withGuide(workout: WorkoutPrescription, from: NumberRange, to: N
 
 const km = (metres: number) => `${Number((metres / 1_000).toFixed(1))} km`
 
-/**
- * The athlete's lighter week, session by session: a controlled threshold session keeps about two
- * thirds of its repetitions, easy running about four fifths of its length;
- * every run stays, strides and pace guides with it. Null for a session it
- * leaves alone.
- */
 export function lighterWorkout(workout: WorkoutPrescription): WorkoutPrescription | null {
   const { thresholdCut, easyCut } = CONTROLLED_THRESHOLD.lighterWeek
   const controlled = controlledStep(workout)
@@ -441,10 +402,6 @@ export function lighterWorkout(workout: WorkoutPrescription): WorkoutPrescriptio
   return { ...workout, title, blocks }
 }
 
-/**
- * The sessions a lighter week would take: the rest of the flagged run's week,
- * or the whole of the next one when fewer than two of this week's remain.
- */
 export function lighterWeekSessions(plan: CoachingPlan, flaggedDate: string, referenceDate: string): WorkoutPrescription[] {
   const after = flaggedDate > referenceDate ? flaggedDate : referenceDate
   const upcoming = plan.weeks

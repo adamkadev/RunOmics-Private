@@ -5,9 +5,8 @@ import type { GarminWorkoutPayload } from './garminWorkoutMapping'
 export const GARMIN_SYNC_SCHEMA_VERSION = 1 as const
 
 /**
- * What RunOmics knows of its workout on Garmin: on the calendar, in the library
- * but not on the calendar, or pushed but not where Garmin was asked to put it
- * when verified. The ids stay in every case - they name what to clean up.
+ * scheduled: on the calendar; workout_created: in the library only; unverified: pushed but not where
+ * Garmin was asked to put it. The ids stay in every case: they name what to clean up.
  */
 export type GarminSyncEntryStatus = 'scheduled' | 'workout_created' | 'unverified'
 

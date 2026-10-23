@@ -66,7 +66,7 @@ const mondays = (n: number, last = '2026-09-21') =>
 
 describe('the tab windows', () => {
   it('ends the load window today and steps back a whole window per swipe', () => {
-    // v4.8: the last 28 / 84 / 365 days ending today.
+    // The last 28 / 84 / 365 days ending today.
     expect(dayWindow(TODAY, '4w')).toEqual({ start: '2026-08-30', end: TODAY, days: 28, live: true })
     expect(dayWindow(TODAY, '4w', 1)).toMatchObject({ start: '2026-08-02', end: '2026-08-29', days: 28, live: false })
     expect(dayWindow(TODAY, '12w')).toMatchObject({ start: '2026-07-05', days: 84 })
@@ -114,7 +114,7 @@ describe('D1 Load', () => {
     const view = statusView(days, dayWindow(TODAY, '4w'))!
     expect(view.current).toBe('productive')
     expect(view.count).toBe(14)
-    // "13 of the last 28 days", not 27 (v4.8).
+    // "13 of the last 28 days", not 27.
     expect(view.days).toBe(28)
     expect(view.cells).toHaveLength(28)
     expect(view.totals.map((t) => t.status)).toEqual(['productive', 'overreaching', 'detraining', 'recovery'])
@@ -123,8 +123,7 @@ describe('D1 Load', () => {
   it('marks a risk out of range as caution, and beyond the alert limit as an alert', () => {
     const panel = { acwr: 1.13, monotony: 1.5, rampRate: 2.4 } as LoadRiskPanel
     expect(riskRows(panel).map((r) => r.state)).toEqual(['ok', 'ok'])
-    // App Fixes 2a: the load ratio is read beside the load on Load trend,
-    // not as one of the injury checks.
+    // The load ratio is read beside the load on Load trend, not as one of the injury checks.
     expect(riskRows(panel).map((r) => r.key)).toEqual(['monotony', 'rampRate'])
     expect(riskRows({ ...panel, rampRate: -6 }).find((r) => r.key === 'rampRate')!.state).toBe('out')
     expect(riskRows({ ...panel, monotony: 2.3 }).find((r) => r.key === 'monotony')!.state).toBe('alert')
@@ -134,7 +133,6 @@ describe('D1 Load', () => {
 })
 
 describe('D2 Performance', () => {
-  // The data bug: Load printed the last monthly average, Progress Garmin's latest.
   it("reads Garmin's latest VO2max and its 90-day change, as Progress does", () => {
     const samples = [
       { date: '2026-06-01', vo2max: 57 },
@@ -165,13 +163,11 @@ describe('D2 Performance', () => {
       ['5k', 70],
       ['10k', 125],
     ])
-    // In seconds, printed like each row's change (v4.8).
+    // In seconds, printed like each row's change.
     expect(predictionTrend(rows)).toEqual({ kind: 'slipped', lo: 70, hi: 125, count: 2, of: 2 })
   })
 
-  // Oct 7: the 10K's +8 s was grey on its row (under 0.5 % of 42:24) and
-  // "slipped" in the sentence above it, which had a fixed 5 s of its own.
-  // One rule since (design review, Oct 2026): any slower time is a caution.
+  // One rule for the row and the sentence: any slower time is a caution.
   it('reads a prediction as moved by the same rule its row is coloured by', () => {
     const days = [
       { date: '2026-07-16', seconds: { '5k': 1208, '10k': 2544, half: 5712, marathon: 12611 } },
@@ -199,7 +195,6 @@ describe('D2 Performance', () => {
     expect(rpeView(all, '2026-09-27')).toEqual({ avg: 3.4, trend: 'easing', bars: [4, 4, 4, 4, 3.4, 3.4, 3.4, 3.4] })
   })
 
-  // The copy bug: "about 13 s/km" above a table that said 11 s.
   it('takes the heat range from the same bands the bars draw, with a gap for a band with too few runs', () => {
     const view = heatView({
       refHeartRate: 149,
@@ -237,8 +232,7 @@ describe('D3 Volume', () => {
     expect(weeklyDistanceView(made)!.onPlan).toEqual({ hit: 12, of: 12 })
   })
 
-  // Design review, Oct 2026: two runs into a week, its long run is half of it,
-  // so the week under way read "went over" every week.
+  // Two runs into a week, its long run is half of it.
   it('flags every finished week whose long run is over 35% of it, never the week under way', () => {
     const view = longRunView(rows)!
     expect(view.km).toBe(14.2)
@@ -255,8 +249,7 @@ describe('D3 Volume', () => {
     expect(weeklyDistanceView(sparse)!.withoutPlan).toBe(4)
   })
 
-  // Design review, Oct 2026: 3 or more planned sessions missed in 7 days, as
-  // July 13-19 had, are a stretch the Volume read names - not one-offs.
+  // A stretch the Volume read names, not one-offs.
   it('finds the missed sessions that came together inside the window, 3 in 7 days', () => {
     expect(MISSED_CLUSTER).toEqual({ sessions: 3, days: 7 })
     expect(missedClusters(['2026-09-18', '2026-09-19', '2026-09-24'], rows)).toEqual([{ from: '2026-09-18', to: '2026-09-24', sessions: 3 }])
@@ -296,8 +289,7 @@ describe('D4 Intensity', () => {
     const weeks = window.weeks.map((d, i) => week(d, { thresholdSessions: 1, intervalSessions: i % 2 }))
     const plan = window.weeks.map((d) => ({ week: d, planKm: null, planQuality: 2 }))
     const view = qualityView(weekRows(weeks, plan, window, TODAY), plan)!
-    // App Fixes 2d: a dot says whether the plan was kept, not which kind of
-    // session it was.
+    // A dot says whether the plan was kept, not which kind of session it was.
     expect(view.weeks[0]).toEqual(['done', 'missed'])
     expect(view.weeks[1]).toEqual(['done', 'done'])
     expect(view.weeks[3]).toEqual(['done', 'done'])
@@ -306,9 +298,8 @@ describe('D4 Intensity', () => {
     expect(view.avg).toBe(1.3)
   })
 
-  // A session past the plan was still run, so it is drawn as run; "extra" is
-  // said in the totals, where done splits into on-plan plus extra and the
-  // three add up (App Fixes 2d).
+  // A session past the plan was still run, so it is drawn as run; "extra" is said in the totals, where done splits
+  // into on-plan plus extra and the three add up.
   it('draws every session run, and totals done as on plan plus extra', () => {
     const weeks = window.weeks.map((d, i) => week(d, { thresholdSessions: i === 0 ? 3 : 1, intervalSessions: 0 }))
     const plan = window.weeks.map((d) => ({ week: d, planKm: null, planQuality: 2 }))
@@ -346,8 +337,7 @@ describe('the coach read (v4.6)', () => {
     expect(coachRead({ easy: { now: 352, delta: 1 }, predictions: [], efficiency: null, fitnessDelta: 0, ytd: null })!.tone).toBe('neutral')
   })
 
-  // v4.16.4: both are Garmin's estimate of one fitness. Counted twice, one slower
-  // estimate outvoted faster easy runs on its own.
+  // Both are Garmin's estimate of one fitness: counted twice, one slower estimate would outvote faster easy runs.
   it('gives threshold and the race predictions one vote between them', () => {
     const both = coachRead({ threshold: { now: 263, delta: 9 }, easy: { now: 352, delta: -10 }, predictions, efficiency: null, fitnessDelta: 11, ytd: null })!
     expect(both.tone).toBe('neutral')
@@ -361,8 +351,6 @@ describe('the coach read (v4.6)', () => {
     ])
   })
 
-  // v4.16.4: "2 s faster" in green beside an Easy pace tile that printed "same",
-  // and -0.02 in amber on a card whose band calls 0.02 noise.
   it('calls a change on the edge of its card band level, as the card does', () => {
     const efficiency = (delta12w: number) => ({ now: 1.15, delta4w: 0, delta12w, heatCost: null, trend: 'steady' as const, adjusted: [], measured: [], dates: [] })
     const trends = (easyDelta: number, efDelta: number) =>
@@ -388,7 +376,7 @@ describe('year over year (v4.16.4)', () => {
     expect(yearOverYear(runs, TODAY)).toEqual({ km: 26, lastYearKm: 20, since: null })
   })
 
-  // The history began in May 2025: January to April read as growth.
+  // The history begins in May 2025, so January to April must not read as growth.
   it('counts both years from the first synced run when it falls partway through last year', () => {
     const runs = [run('2025-05-03', 10), run('2025-09-26', 5), run('2026-02-10', 40), run('2026-05-02', 7), run('2026-05-03', 9), run('2026-09-26', 11)]
     expect(yearOverYear(runs, TODAY)).toEqual({ km: 20, lastYearKm: 15, since: '2025-05-03' })

@@ -1,21 +1,8 @@
 import { t } from '@/i18n'
 
 /**
- * Recharts only picks round ticks when it is left to choose the domain itself.
- * Charts that pad a data-derived domain instead - `[min - 5, max + 5]`,
- * `['dataMin - 3', 'dataMax + 3']`, `min * 0.97` - pin the axis ends to two
- * readings, and every tick between them lands on an arbitrary fraction of the
- * gap: 146/155/164/173/180 rather than 150/160/170/180.
- *
- * roundAxis snaps the domain outward to whole multiples of `step` and returns
- * the ticks that fall on them. It doubles the step - 5 -> 10 -> 20, 15 -> 30 ->
- * 60 - until the axis holds at most MAX_TICKS, so a wide window widens the
- * spacing instead of crowding the gutter. Doubling keeps every tick a multiple
- * of the original step, which is what makes the labels readable.
- *
- * Static ticks (HrChart's HR_TICKS, CadenceChart's CADENCE_TICKS) stay static:
- * they cover a fixed physiological range. This is for the windowed charts,
- * where the range moves with the data and a fixed one would flatten the line.
+ * Recharts picks round ticks only when it chooses the domain itself; a padded data-derived domain lands
+ * them on arbitrary fractions (146/155/164). Doubling the step keeps every tick a multiple of the original.
  */
 
 const MAX_TICKS = 6
@@ -23,8 +10,7 @@ const MAX_TICKS = 6
 export interface RoundAxis {
   domain: [number, number]
   ticks: number[]
-  /** How many decimals a tick label needs. A formatter coarser than the step
-   *  prints the same label twice - 1.05 and 1.10 both become "1.1". */
+  /** A formatter coarser than the step prints 1.05 and 1.10 both as "1.1". */
   decimals: number
 }
 
@@ -43,8 +29,7 @@ export function roundAxis(values: (number | null | undefined)[], step: number): 
   const hi = Math.max(...finite)
   const decimals = decimalsOf(step)
   const tidy = (v: number) => Number(v.toFixed(decimals))
-  // Snapping divides by the step, so 1.2 / 0.05 = 23.999999999999996 would
-  // floor a whole step too low. Settle the quotient before rounding it.
+  // Settle the quotient before rounding: 1.2 / 0.05 is 23.999999999999996.
   const quotient = (v: number, size: number) => Number((v / size).toFixed(9))
 
   let size = step
@@ -64,12 +49,7 @@ export function roundAxis(values: (number | null | undefined)[], step: number): 
   return { domain: [from, to], ticks, decimals }
 }
 
-/**
- * One rule for every pace axis: faster is up. Pace is seconds per km, so up
- * means the axis runs reversed - and the caption says so, because Similar runs
- * put slow at the top while the Charts tab put fast there, and the footnotes
- * said "lower is faster" on one chart and "higher = faster" on another.
- */
+/** Faster is up on every pace axis: pace is seconds per km, so the axis runs reversed. */
 export function paceAxis(): { reversed: true; caption: string } {
   return { reversed: true, caption: t.paceAxis.caption }
 }
@@ -77,10 +57,7 @@ export function paceAxis(): { reversed: true; caption: string } {
 /** Past this many months a full label no longer fits every tick at 393 pt. */
 const MONTH_INITIALS_OVER = 6
 
-/**
- * A tick on every month (G19): Recharts dropped AUG to make room. Past six
- * months each tick shortens to its initial, so every month keeps one.
- */
+/** `interval: 0`, or Recharts drops a month to make room; past six months each tick shortens to its initial. */
 export function monthAxis(count: number): { interval: 0; tickFormatter: (label: string) => string } {
   return {
     interval: 0,

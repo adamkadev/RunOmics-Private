@@ -330,7 +330,6 @@ describe('course-aware races', () => {
   })
 })
 
-// Design review, Oct 2026: the coach's names carry primes the watch fonts lack.
 describe('garminWorkoutName', () => {
   it('writes the primes as the apostrophe and quote a watch can draw', () => {
     expect(garminWorkoutName('Threshold · 3 × 8′ @ 4:25')).toBe("Threshold · 3 × 8' @ 4:25")

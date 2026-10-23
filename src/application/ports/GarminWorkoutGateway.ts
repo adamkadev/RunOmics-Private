@@ -18,11 +18,7 @@ export class GarminRateLimitError extends Error {
   }
 }
 
-/**
- * Garmin answered 404. Its own class because for a removal it is success: the
- * thing is already gone, whether the athlete deleted it by hand or an earlier
- * run got that far before it died.
- */
+/** Garmin answered 404: its own class because for a removal that is success, the thing is already gone. */
 export class GarminNotFoundError extends Error {
   constructor(message = 'Garmin has no such item') {
     super(message)

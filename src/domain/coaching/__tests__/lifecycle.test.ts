@@ -93,8 +93,7 @@ describe('coaching plan lifecycle', () => {
   })
 
   it('refuses a replacement that reuses the id of a past prescription', () => {
-    // Past prescriptions are immutable here as they are for ADJUST; reusing the
-    // id used to drop the past session from history without a word.
+    // Past prescriptions are immutable here as they are for ADJUST.
     const current = plan()
     const reused = workout({ date: '2026-09-12', revision: 2, status: 'adjusted' })
 

@@ -26,9 +26,7 @@ describe('getLocationOverride', () => {
 
   it('answers null when the dataset carries no overrides file', async () => {
     vi.mocked(fs.readFileSync).mockImplementation(() => {
-      // Shaped like the real thing: readJsonFile tells absence apart from a
-      // genuine read failure by the `code`, and only the latter is worth a log
-      // line - an overrides file is optional.
+      // Shaped like the real thing: readJsonFile tells absence from a read failure by the `code`.
       throw Object.assign(new Error('ENOENT: no such file'), { code: 'ENOENT' })
     })
     vi.resetModules()

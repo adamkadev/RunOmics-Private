@@ -5,11 +5,6 @@ import type { PlanCoachingView } from './planCoachingView'
 
 export type PlanRace = Pick<UpcomingRace, 'date' | 'name' | 'distance' | 'location'>
 
-/**
- * The race the plan builds to: the coaching block's target, else its next
- * tune-up still to come; Garmin's next race when there is no coaching. The
- * week's phase card counts down to it (redesign 3.0).
- */
 export function planRace(coaching: PlanCoachingView | null, nextRace: UpcomingRace | null | undefined, today: string): PlanRace | null {
   if (!coaching) return nextRace && nextRace.date >= today ? nextRace : null
   const { targetEvent, tuneUpEvents } = coaching.plan
@@ -19,7 +14,6 @@ export function planRace(coaching: PlanCoachingView | null, nextRace: UpcomingRa
 
 const DISTANCE_ONLY = /^\s*\d+(?:[.,]\d+)?\s*(?:k|km|m|mi|miles?)\s*$/i
 
-/** "10K Wintzenheim": a name that only restates the distance gives way to the distance and the place. */
 export function raceTitle(race: PlanRace): string {
   if (!DISTANCE_ONLY.test(race.name) && race.name !== race.distance) return race.name
   return [shortDist(race.distance) || race.name, race.location].filter(Boolean).join(' ')

@@ -75,7 +75,6 @@ describe('ShareCardModal', () => {
     expect(document.querySelectorAll('canvas')).toHaveLength(1)
   })
 
-  // The owner's report, Oct 2026: a background picked on one share stayed on the next.
   it('opens the background on the app theme every time, a pick lasting only while the sheet is open', async () => {
     theme.resolved = 'light'
     const { unmount } = open()
@@ -97,13 +96,12 @@ describe('ShareCardModal', () => {
     expect(screen.queryByRole('button', { name: 'Copy image' })).toBeNull()
   })
 
-  // Design review, Oct 2026: the segmented control is the only selector.
   it('has no page dots under the preview: the design picker comes straight after it', () => {
     open()
     expect(screen.getByTestId('share-preview').nextElementSibling?.getAttribute('aria-label')).toBe('Design')
   })
 
-  // Design review, Oct 2026: the card changed height per tab and the controls under it jumped.
+  // A card that changes height per tab makes the controls under it jump.
   it('keeps one 4:5 card box, and one option row, on every tab', async () => {
     open()
     // jsdom drops a min() width; the box's ratio, margin and corners are what it can read.
@@ -139,7 +137,6 @@ describe('ShareCardModal', () => {
     expect(screen.getByRole('button', { name: 'Copy image' })).toBeEnabled()
   })
 
-  // Design review, Oct 2026: a full-height sheet left ~300 px of nothing above the buttons.
   it('sizes the sheet to what it holds, the buttons right under the options', () => {
     open()
     const sheet = screen.getByTestId('share-sheet')
@@ -149,9 +146,6 @@ describe('ShareCardModal', () => {
     expect(screen.getByTestId('share-options').nextElementSibling?.textContent).toContain('Share')
   })
 
-  // F18: one sheet material. The share sheet was the opaque raised panel the
-  // other sheets left behind; it is the sheets' glass, its layers on the
-  // wrapper and the scroll inside, and the card it exports stays opaque.
   it('is the sheets\' glass, the scroll inside it, the card opaque', () => {
     open()
     const sheet = screen.getByTestId('share-sheet')
@@ -164,8 +158,7 @@ describe('ShareCardModal', () => {
     expect(screen.getByTestId('share-preview').querySelector('canvas')).not.toBeNull()
   })
 
-  // Design review, Oct 2026: the design picker was a filled accent pill, unlike
-  // every other segmented control; the accent is the Share button's.
+  // The accent is the Share button's.
   it('draws both pickers in the app\'s segmented style, the pick lifted, never the accent', () => {
     open()
     for (const group of ['Design', 'Background']) {
@@ -179,8 +172,6 @@ describe('ShareCardModal', () => {
     }
   })
 
-  // Round 2 (F3): the design row read "RouteStatsPhoto" at its start, the
-  // thumb under "Route" alone - its grid lost to the track's flex.
   it('spans the design row in equal segments, each label centred in its own', () => {
     open()
     const picker = screen.getByRole('radiogroup', { name: 'Design' })
@@ -199,20 +190,18 @@ describe('ShareCardModal', () => {
   it('gives the close button a 44 pt target', () => {
     open()
     const close = screen.getByRole('button', { name: t.activity.shareCard.close })
-    // A 44 pt filled circle, the sheet header's close (G10), in the sheets' translucent fill (F18).
     expect(close.className).toContain('h-11')
     expect(close.className).toContain('w-11')
     expect(close.className).toContain('bg-[var(--sheet-fill)]')
   })
 
-  // At the owner's request: no VO₂max badge on a shared card, nor a switch for one.
   it('offers no VO₂max badge', () => {
     open()
     expect(screen.queryByRole('switch')).toBeNull()
     expect(screen.getByTestId('share-sheet').textContent).not.toContain('VO₂max')
   })
 
-  // The owner's ask (round 2): an interval session shared as an easy run's card.
+  // So an interval session can be shared as an easy run's card.
   it("offers an interval session's rep pace as a switch, on every tab; off, the card is drawn without the reps", async () => {
     open({ activity: REP_RUN })
     const toggle = screen.getByRole('switch', { name: 'Rep pace' })

@@ -4,12 +4,7 @@ import type { Activity } from '@/domain/activity/types'
 import { median, round } from '@/lib/math'
 import { isRunningActivity } from '@/domain/training/trainingHistory'
 
-/**
- * A metric's own eight-week range. The median alone says whether this run sat
- * above or below usual; the range says whether that gap is unusual at all.
- * The middle half of the runs (quartile to quartile) is the baseline band
- * the Dynamics tab shades (v4.17).
- */
+/** A metric's eight-week range; low and high are the quartiles, the band the Dynamics tab shades. */
 export interface BaselineRange {
   median: number
   min: number
@@ -18,7 +13,6 @@ export interface BaselineRange {
   high: number
 }
 
-/** The value a share of the way through the sorted runs, between neighbours. */
 function quantile(sorted: number[], q: number): number {
   const at = (sorted.length - 1) * q
   const below = Math.floor(at)
@@ -59,8 +53,7 @@ export function getDynamicsBaseline(activity: Activity): DynamicsBaseline | null
   const end = Date.parse(activity.date + 'T00:00:00')
   const start = end - BASELINE_WEEKS * 7 * DAY_MS
 
-  // Runs only, and no races: a 5K at race pace stretched the stride range to
-  // 0.96–1.40 m, a range no training run lives in (H17).
+  // No races: a race-pace 5K stretches the stride range past anything a training run reaches.
   const runs = getAllActivities().filter((a) => {
     const at = Date.parse(a.date + 'T00:00:00')
     return at >= start && at < end && isRunningActivity(a) && a.type !== 'Race'

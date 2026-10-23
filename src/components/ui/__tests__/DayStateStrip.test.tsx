@@ -24,14 +24,12 @@ describe('the session state recipes', () => {
     expect(css).toMatch(/@utility state-done \{\s+background: var\(--state-color\);/)
     expect(css).toMatch(/@utility state-planned \{\s+border: var\(--state-line\) dashed var\(--state-color\);/)
     expect(css).toMatch(/@utility state-missed \{\s+border: var\(--state-line\) solid var\(--state-color\);\s+background: repeating-linear-gradient\(\s+135deg/)
-    // Round 2 (F14): one today ring everywhere, 2 pt of accent 2 pt off the mark.
     expect(css).toMatch(/@utility state-today \{\s+outline: var\(--state-ring\) solid var\(--accent\);\s+outline-offset: var\(--state-ring\);/)
     expect(css).toMatch(/--state-ring:\s+2px/)
   })
 })
 
 describe('DayStateStrip', () => {
-  // Plan drew a missed session as the same solid bar as one still to come.
   it('gives missed, done and planned days three different shapes', () => {
     const { container } = render(<DayStateStrip variant="bars" days={[...WEEK, cell('2026-09-25', { state: 'planned', km: 12 })]} />)
     const bars = [...container.querySelectorAll('button > span:nth-child(2)')]
@@ -42,8 +40,6 @@ describe('DayStateStrip', () => {
     expect(bars[4]!.className).toContain('state-planned')
   })
 
-  // H19, M11: done is the run alone; today still to run is the accent outline
-  // over a 15% accent wash (v4.3.1), not dashed; a rest day is the stub with no word.
   it('outlines today solid and caps no done day', () => {
     const { container } = render(<DayStateStrip variant="bars" days={[...WEEK, cell('2026-09-26', { state: 'done', km: 10.24 })]} />)
     const bars = [...container.querySelectorAll('button > span:nth-child(2)')]
@@ -55,8 +51,6 @@ describe('DayStateStrip', () => {
     expect(container.textContent).not.toContain(t.sessionState.rest.toLowerCase())
   })
 
-  // v4.3.2: today still to run is the accent outline and wash with its km; no
-  // other tile carries a glyph.
   it('fills today with the accent and its km, and draws no other glyph', () => {
     const { container } = render(<DayStateStrip variant="dots" days={WEEK} />)
     const marks = [...container.querySelectorAll('li > span:first-child')]

@@ -3,17 +3,12 @@ import { MAX_STEP_M, cellIndices, cellCentre, cellOf, cellOfXY, projectX, projec
 import type { RouteCandidate, RoutePreferences, ScoredRoute } from './types'
 
 /**
- * Picks the loop to show from a batch the routing provider returned. Lower
- * scores are better:
- *
  *   score = |distance − target| / target
  *         + wNew · (1 − newShare)
  *         + wBusy · busyShare
  *
- * Distance always matters most: a loop 20% off target costs as much as one
- * entirely on known streets with "New streets first" on. The toggles only
- * move the weights, so every candidate stays comparable and Regenerate can
- * walk down the same ranking.
+ * The toggles only move the weights, so every candidate stays comparable and
+ * Regenerate can walk down the same ranking.
  */
 
 export const ROUTE_W_DISTANCE = 1
@@ -23,10 +18,7 @@ export const ROUTE_W_NEW_OFF = 0.15
 /** Weight on busy roads with "Avoid busy roads" on; off, they are not scored at all. */
 export const ROUTE_W_BUSY_ON = 0.8
 
-/**
- * How busy each ORS waytype counts: a state road fully, a plain road half.
- * Streets (3) and everything quieter count nothing.
- */
+/** ORS waytypes: 1 state road, 2 road; streets (3) and everything quieter count nothing. */
 const BUSY_WEIGHT: Readonly<Record<number, number>> = { 1: 1, 2: 0.5 }
 
 export interface RouteMeasure {
@@ -53,12 +45,9 @@ function busyWeights(steps: number, waytypes: RouteCandidate['waytypes']): Float
 }
 
 /**
- * How much of a loop is new ground and how much runs on busy roads.
- *
- * Each coordinate step is cut into pieces of at most 75 m, like a run's
- * track, and a piece is new when the cell of its midpoint holds no sample of
- * any run. Unlike a run there is no gap rule: the provider draws a long
- * straight avenue as one step, and it is still a street.
+ * A piece is new when the cell of its midpoint holds no sample of any run.
+ * Unlike a run there is no gap rule: the provider draws a long straight avenue
+ * as one step, and it is still a street.
  */
 export function measureRoute(index: AreaIndex, visited: ReadonlySet<number>, candidate: RouteCandidate): RouteMeasure {
   const { proj } = index
@@ -109,7 +98,6 @@ export function measureRoute(index: AreaIndex, visited: ReadonlySet<number>, can
   }
 }
 
-/** The score of one measured loop; see the formula at the top. */
 export function routeScore(
   measure: Pick<RouteMeasure, 'newShare' | 'busyShare'>,
   distanceM: number,
@@ -123,10 +111,9 @@ export function routeScore(
 }
 
 /**
- * Every candidate scored, best first. `visited` is the union of the cells of
- * every run (all of them, whatever the map filters say): new ground means
- * ground never run, not ground outside this year's runs. Ties keep the
- * lower seed first, so a ranking never reshuffles between renders.
+ * `visited` holds every run's cells, whatever the map filters say: new ground
+ * means ground never run. Ties keep the lower seed first, so a ranking never
+ * reshuffles between renders.
  */
 export function scoreRoutes(
   index: AreaIndex,
@@ -154,21 +141,10 @@ export function scoreRoutes(
 }
 
 /**
- * Where a loop into a unit starts: the centre of its runnable cell nearest
- * the unit's label. A runnable cell is on a street or path, and its centre is
- * a point of the public grid, so the provider is sent somewhere inside the
- * quartier, on a way it can route from.
- *
- * It reads the area file and nothing else: home is not even a parameter.
- * Starting at the cell nearest home sent the provider home's own cell for
- * the quartier home is in, and for the others the edge cell facing home;
- * asked for one quartier after another, those edges pin home down (each says
- * on which side of that quartier home lies). The label is the same public
- * point for anyone, so a request says which quartier the athlete wants to
- * run in and nothing about where they live. The map draws the way from home
- * to the start on the device.
- *
- * Null for an unknown unit or one without a runnable cell.
+ * The centre of the runnable cell nearest the unit's label: a public grid point
+ * on a way the provider can route from. Privacy: home is deliberately not a
+ * parameter, since starts that lean towards home pin it down across requests;
+ * the label says only which quartier the athlete wants to run in.
  */
 export function routeStart(index: AreaIndex, unitId: string): [number, number] | null {
   const unit = index.units.find((u) => u.id === unitId)

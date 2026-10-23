@@ -30,17 +30,14 @@ interface Props {
   today: string
   atPresent: boolean
   onToday: () => void
-  /** Opens the Week view on a day. */
   onSelectDay: (date: string) => void
   onPrev: () => void
   onNext: () => void
   canGoForward: boolean
 }
 
-// Seven day columns, then the week's km in a 56 pt column (redesign 3.0, 1g).
 const GRID = 'grid grid-cols-[repeat(7,minmax(0,1fr))_56px]'
 
-/** What a session was planned at: its km, or its minutes when it has none. */
 interface Planned {
   km: number | null
   minutes: number | null
@@ -74,7 +71,6 @@ interface Row {
   monday: string
   cells: Cell[]
   span: PhaseSpan | null
-  /** The phase's label, over the first of its weeks on screen. */
   label: string | null
   ranKm: number
   plannedKm: number
@@ -82,7 +78,6 @@ interface Row {
   future: boolean
 }
 
-/** A day's tile (redesign 3.0, 1g): a run in its colour at 20%, a session still to come dashed in it, rest empty. */
 function tileStyle(cell: Cell): CSSProperties | null {
   const color = cell.kind?.color ?? 'var(--muted-foreground)'
   if (cell.state === 'done' || cell.state === 'extra')
@@ -101,7 +96,6 @@ function tileFigure(cell: Cell): string | null {
   return cell.planned.km !== null ? formatWeekKm(cell.planned.km) : cell.planned.minutes !== null ? t.plan.steps.minutes(cell.planned.minutes) : null
 }
 
-/** The next quality session from `from`: the coach's key sessions, else Garmin's typed ones. */
 function nextKeySession(
   from: string,
   byDatePlanned: Map<string, PlannedWorkout>,
@@ -151,7 +145,6 @@ export function MonthView({
     const first = new Date(year, month, 1)
     const startOffset = (first.getDay() || 7) - 1
     const daysInMonth = new Date(year, month + 1, 0).getDate()
-    // Only the weeks the month needs, each a whole Monday-to-Sunday week.
     const cellCount = Math.ceil((startOffset + daysInMonth) / 7) * 7
     const dates = Array.from({ length: cellCount }, (_, i) => isoDate(new Date(year, month, 1 - startOffset + i)))
     const states = monthDays(dates, (d) => (byDate.get(d)?.length ?? 0) > 0, (d) => plannedFor(d, byDatePlanned, byDateCoach) !== null, today)
@@ -185,8 +178,6 @@ export function MonthView({
       const monday = cells[0]!.date
       const sunday = cells[6]!.date
       const span = spanOfWeek(spans, monday)
-      // Named once, over its first week: "BASE · ENDS OCT 11" for a phase
-      // already under way, "GENERAL PREP · 6 WEEKS" for one that starts here.
       const label =
         span && span !== previous
           ? span.startDate < monday && r === 0
@@ -205,9 +196,8 @@ export function MonthView({
         future: monday > today,
       })
     }
-    // The days the plan actually covers, and what was run over them: a plan
-    // that starts partway through the month is not something the whole
-    // month's km can be measured against (review 8).
+    // A plan that starts partway through the month can't be measured against
+    // the whole month's km.
     const covered = rows.flatMap((row) => row.cells).filter((c) => !c.outside && c.planned !== null)
     const firstPlanned = covered[0]
     const lastPlanned = covered[covered.length - 1]
@@ -225,7 +215,6 @@ export function MonthView({
   const phaseColor = (span: PhaseSpan | null) => (!span ? 'transparent' : span === currentSpan ? 'var(--accent)' : 'var(--zone-1)')
 
   function openRow(row: Row, event: MouseEvent<HTMLButtonElement>) {
-    // A tap on a day opens the week on that day; anywhere else, on today or the week's Monday.
     const date = (event.target as HTMLElement).closest<HTMLElement>('[data-date]')?.dataset.date
     onSelectDay(date ?? (row.current ? today : row.monday))
   }
@@ -305,11 +294,8 @@ export function MonthView({
                         )}
                         style={style ?? undefined}
                       >
-                        {/* A quality day says which session it is (review
-                            10): VO2 Max, Sprint, Anaerobic and Race are all
-                            zone 5, so two tiles of the same pink are a race
-                            and a set of reps otherwise. The letter sits over
-                            the day's km, both at the type scale's floor. */}
+                        {/* VO2 Max, Sprint, Anaerobic and Race share zone 5's
+                            colour: the letter tells them apart. */}
                         {style && cell.kind?.kind === 'quality' ? (
                           <span className="flex flex-col items-center leading-none">
                             <span className="text-[11px] font-bold" style={{ color: cell.kind.color }}>
@@ -337,7 +323,7 @@ export function MonthView({
       </div>
 
       <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 text-xs text-muted-foreground" data-testid="month-legend">
-        {/* Easy and Long share the blue by design (3.0.2): one entry, named for both when the month has a long run. */}
+        {/* Easy and Long share the blue by design: one entry, named for both. */}
         <span className="flex items-center gap-1.5" data-testid="legend-easy">
           <Swatch style={{ background: zoneColor(2) }} />
           {hasLong ? m.easyLong : t.plan.kinds.easy}
@@ -363,8 +349,6 @@ export function MonthView({
         )}
         <p className="text-xs text-muted-foreground" data-testid="month-km">
           {plannedKm > 0 ? m.kmOf(formatRanKm(againstPlanKm), formatWeekKm(plannedKm)) : `${formatRanKm(ranKm)} ${t.units.km}`}
-          {/* Where the plan is only part of the month, the ratio is over its
-              own days and the month's total is said beside it (review 8). */}
           {plannedKm > 0 && planSpan !== null && (
             <>
               {' · '}

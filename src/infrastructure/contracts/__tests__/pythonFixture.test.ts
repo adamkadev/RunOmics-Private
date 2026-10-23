@@ -3,11 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { checkDataDirectory } from '../dataContract'
 
 /**
- * The TypeScript half of the Python contract test. fixtures/contract/ holds
- * exactly what the real Python mapper and store write for a realistic
- * activity - scripts/tests/test_contract_fixture.py fails the moment that
- * output changes - and this test holds those same files to the app's
- * contract. A field the sync renames or retypes fails one of the two.
+ * The TypeScript half of the contract test: scripts/tests/test_contract_fixture.py pins
+ * fixtures/contract/ to the Python sync's output, and this holds it to the app's contract.
  */
 const FIXTURE = path.resolve(__dirname, '../../../../fixtures/contract')
 

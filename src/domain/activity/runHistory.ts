@@ -17,7 +17,6 @@ export interface TypeBaseline {
   runs: number
   paceSecPerKm: number
   avgHr: number | null
-  /** What was averaged: whole runs, or the reps of structured sessions. */
   measure: 'runs' | 'reps'
 }
 
@@ -26,32 +25,21 @@ export interface EffortStanding {
   daysSinceBetter: number | null
 }
 
-/** The run before this one: what an easy day came after is half its story. */
 export interface PreviousRun {
   type: Activity['type']
   description: string
   daysAgo: number
 }
 
-/**
- * The last session of the same type, rep for rep (v4.16.6): a threshold block
- * progresses session to session - longer reps at the same pace - which an
- * average of the last five blurs.
- */
+/** Rep for rep: a threshold block progresses session to session, which an average of the last five blurs. */
 export interface PreviousSession extends RepStats {
   daysAgo: number
 }
 
-/**
- * The longest run of the last 90 days, which a long run is measured against:
- * the coaching plan builds durability against that recent maximum. Races are
- * left out - a half marathon raced in May is no long run to measure an easy
- * Sunday against.
- */
+/** Races are left out: a half marathon raced in May is no long run to measure an easy Sunday against. */
 export interface LongestRun {
   km: number
   daysAgo: number
-  /** Days back to a run at least as long as this one; null when there is none. */
   daysSinceAsLong: number | null
 }
 
@@ -70,7 +58,7 @@ function dayNumber(date: string): number {
   return Math.floor(new Date(date.slice(0, 10) + 'T00:00:00Z').getTime() / DAY_MS)
 }
 
-/** Sessions whose reps are comparable from one to the next: a 7-minute threshold rep is, a 400 m and a 1 km VO2max rep are not. */
+/** A 7-minute threshold rep compares from one session to the next; a 400 m and a 1 km VO2max rep do not. */
 const REP_BASELINE_TYPES: ReadonlySet<Activity['type']> = new Set(['Tempo', 'Threshold'])
 
 function recentPeers(activity: Activity, before: Activity[], day: number, alike: (a: Activity) => boolean): Activity[] {
@@ -79,12 +67,7 @@ function recentPeers(activity: Activity, before: Activity[], day: number, alike:
     .slice(0, BASELINE_RUNS)
 }
 
-/**
- * Earlier runs to hold this one against, like for like (v4.16.4): a threshold
- * session against earlier threshold reps, not whole-run averages the warm-up
- * and recoveries dilute; a long run against long runs; and no average for a
- * race, whose peers are other distances.
- */
+/** Threshold reps, not whole-run averages the warm-up and recoveries dilute; no average for a race, whose peers are other distances. */
 function typeBaseline(activity: Activity, before: Activity[], day: number): TypeBaseline | null {
   if (activity.type === 'Race') return null
 

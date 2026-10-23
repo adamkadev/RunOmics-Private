@@ -36,13 +36,7 @@ function isRateLimited(ip: string, now = Date.now()): boolean {
 
 export type RejectionReason = 'unauthorized' | 'rate-limited' | 'forbidden' | 'not-configured'
 
-/**
- * One line per refused request: which route and why, never who or with what.
- * No header value - the secret, a token, the forwarded IP - reaches the log.
- * A run of these is what a guessed secret, a stale one left in a workflow or
- * the Shortcut, or a deployment missing its config looks like, and none of
- * that used to leave a trace.
- */
+/** Which route and why, never who or with what: no header value (secret, token, forwarded IP) reaches the log. */
 export function logRejectedRequest(req: NextRequest, reason: RejectionReason): void {
   console.warn(JSON.stringify({ level: 'warn', event: 'request-rejected', route: req.nextUrl.pathname, reason }))
 }

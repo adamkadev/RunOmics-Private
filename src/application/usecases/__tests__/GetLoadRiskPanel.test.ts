@@ -71,7 +71,6 @@ describe('acwrZone', () => {
   })
 })
 
-// G02: the ratio is worked out from the pair the card prints.
 describe('acwrFromPair', () => {
   it('equals round(acute / chronic, 2)', () => {
     expect(acwrFromPair(412, 295)).toBe(Math.round((412 / 295) * 100) / 100)

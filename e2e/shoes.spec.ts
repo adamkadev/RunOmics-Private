@@ -10,10 +10,7 @@ test('shoes list renders and links into a detail page', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/shoes\/[^/]+$/)
   await expect(page.locator('h1')).toBeVisible()
-  // Opened from Shoes, it goes back to Shoes (design review, Oct 2026).
   await expect(page.getByRole('button', { name: 'Shoes' })).toBeVisible()
-  // The runs section, whichever pair the list happened to open: the rebuilt
-  // detail screen titles it for the pair's state rather than calling every one
-  // of them "Tracked Activities".
+  // Titled for the pair's state, whichever pair the list happened to open.
   await expect(page.getByText(/Recent runs|Last runs before retiring/)).toBeVisible()
 })

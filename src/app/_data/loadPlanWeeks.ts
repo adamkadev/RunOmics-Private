@@ -8,7 +8,6 @@ import { monthDays } from '@/components/plan/monthDays'
 import { planMaps, resolvePlannedType, weekDates, weekPlanDays, type PlanMaps } from '@/components/plan/weekPlanDays'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 
-/** What the plan scheduled in one week: its km, and its quality sessions. */
 export interface PlanWeek {
   /** Monday of the week. */
   week: string
@@ -18,19 +17,11 @@ export interface PlanWeek {
 
 export interface PlanReading {
   weeks: PlanWeek[]
-  /**
-   * The days with a planned session that was missed, by Plan's own day
-   * states (monthDays): past, and no run on the day or inside its match
-   * window. The Volume coach read finds where they came together.
-   */
+  /** Missed by Plan's own day states (monthDays): past, and no run on the day or inside its match window. */
   missed: string[]
 }
 
-/**
- * Every week the plan covers, read the way Plan reads a week (the coach's
- * prescriptions before Garmin's, a cancelled one is no plan), so Analytics'
- * "weeks on plan" and "plan asks for" agree with the Plan screen.
- */
+/** Read the way Plan reads a week, so Analytics' "weeks on plan" and "plan asks for" agree with the Plan screen. */
 export async function loadPlanWeeks(coaching: CoachingOverview | null, today: string): Promise<PlanReading> {
   const planned = await getPlannedWorkouts()
   const coach = coaching?.workouts ?? []
@@ -38,7 +29,6 @@ export async function loadPlanWeeks(coaching: CoachingOverview | null, today: st
   return planReading(planMaps(getActivitySummaries(), planned, coach), dates, today)
 }
 
-/** The reading from the plan's own per-day lookups, over the dates it has sessions on. */
 export function planReading(maps: PlanMaps, dates: readonly string[], today: string): PlanReading {
   const first = dates[0]
   const last = dates[dates.length - 1]
@@ -60,8 +50,7 @@ export function planReading(maps: PlanMaps, dates: readonly string[], today: str
     })
   }
 
-  // Plan's day states, not a second reading of them: a run the day before
-  // or after a session stands in for it, and today is never missed.
+  // Plan's own day states, not a second reading of them.
   const plannedOn = new Set(days.filter((d) => d.plannedSessions > 0).map((d) => d.date))
   const states = monthDays(
     days.map((d) => d.date),

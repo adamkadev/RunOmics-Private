@@ -1,17 +1,8 @@
 import type { Instrumentation } from 'next'
 
 /**
- * One JSON line for every error a request throws past its handler, so a
- * failing page or route turns up in the Vercel logs as something that can be
- * searched and counted, not only as a stack trace among thousands of lines.
- *
- * It says what was asked - the method, the path without its query, the route
- * it matched - and what broke. Never the headers, cookies or body that came
- * with the request, and never a secret the message happens to quote.
- *
- * The guarded routes catch their own errors and log them under their
- * `[internal:…]` / `[owner:…]` tag, so what lands here is everything else:
- * page renders and the public API routes.
+ * One JSON line per error a request throws past its handler, searchable in the Vercel logs. Never the
+ * headers, cookies or body, nor a secret the message quotes; the guarded routes log their own errors.
  */
 
 const MESSAGE_LIMIT = 300
@@ -24,7 +15,6 @@ const SECRET_ENV = [
   'GITHUB_SYNC_TOKEN',
   // Vercel holds the data repository's token too, for the build's fetch.
   'RUNOMICS_DATA_REPO_TOKEN',
-  // Explore's route generator (OpenRouteService).
   'ORS_API_KEY',
 ]
 

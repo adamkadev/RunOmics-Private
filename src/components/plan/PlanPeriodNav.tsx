@@ -4,15 +4,10 @@ import type { ReactNode } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { t } from '@/i18n'
 
-// Bare chevrons either side of the period (redesign 3.0, 1g), with the 44 pt hit area around them.
 const NAV_BUTTON =
   'hit-44 flex size-[30px] shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 
-/**
- * The month's navigator: previous, the period, next. The
- * jump back to today sits beside the period's name, in the same row, so the
- * chart under it never moves as it appears and disappears.
- */
+/** Today's chip sits in the period's row, so the chart under it never moves as it comes and goes. */
 export function PlanPeriodNav({
   label,
   onPrev,
@@ -24,7 +19,6 @@ export function PlanPeriodNav({
   onPrev: () => void
   onNext: () => void
   nextDisabled?: boolean
-  /** Shown while the period on screen is not today's. */
   onToday?: (() => void) | null
 }) {
   return (
@@ -35,8 +29,6 @@ export function PlanPeriodNav({
       <div className="flex min-w-0 items-center gap-1.5 text-[17px] font-semibold text-foreground">
         <span className="truncate">{label}</span>
         {onToday && (
-          // A chip with the 44 pt hit area round it (design review, Oct 2026):
-          // the bare "· Today" was a 20 pt target.
           <button
             type="button"
             onClick={onToday}

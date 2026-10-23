@@ -2,9 +2,6 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
-// Layer boundaries. Each block names what a
-// layer may not import; everything else stays allowed. Every rule here holds
-// today, so an error means a new violation, not an old one.
 const SERVER_ONLY_LIB = [
   '@/lib/gemini',
   '@/lib/firebase-admin',
@@ -63,8 +60,7 @@ const boundaries = [
         message: 'Pages and routes go through a use case in src/application, not straight to a repository.',
       },
     ],
-    // Routes that wire adapters into a use case (composition roots), and the
-    // pages that read a repository directly today. Shrink this list; never grow it.
+    // Composition roots, and pages that still read a repository directly: shrink this list, never grow it.
     [
       'src/app/api/internal/ai-insights/route.ts',
       'src/app/api/internal/health/route.ts',
@@ -93,7 +89,6 @@ const eslintConfig = defineConfig([
     "scripts/**",
     // Agent worktrees nest a whole checkout under here; it is not our source.
     ".claude/**",
-    // Design handoffs: HTML mockups, their runtime and reference snippets.
     "design_handoff_*/**",
     "coverage/**",
     // Vendored by `npm run maplibre:worker`, so it only exists after a build.

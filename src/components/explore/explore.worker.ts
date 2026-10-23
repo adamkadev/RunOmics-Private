@@ -3,15 +3,10 @@ import { createWorkerState, handleMessage, type WorkerDeps } from './workerCore'
 import type { ExploreRequest, ExploreResponse } from './workerProtocol'
 
 /**
- * The Explore worker: coverage and route scoring off the main thread.
+ * Turbopack bundles this file as a classic worker (it drops `type: 'module'` and loads the chunks with `importScripts`),
+ * so it uses plain static imports and nothing at the top level that would need a module worker.
  *
- * Only the wiring lives here; the logic is `workerCore.ts`, tested in node.
- * Turbopack bundles this file as a classic worker (it drops `type: 'module'`
- * and loads the chunks with `importScripts`), so it uses plain static
- * imports and nothing at the top level that would need a module worker.
- *
- * `self` is typed through a cast rather than the `webworker` lib, which
- * would apply to the whole program and clash with the DOM types.
+ * `self` is typed through a cast rather than the `webworker` lib, which would apply to the whole program and clash with the DOM types.
  */
 
 interface WorkerScope {

@@ -58,13 +58,13 @@ export interface AnalyticsBoardData {
   load: LoadDay[]
   status: StatusDay[]
   risk: LoadRiskPanel | null
-  /** Garmin's acute/chronic pair per day: Load trend and the Load ratio. */
+  /** Garmin's acute/chronic pair per day. */
   loads: LoadPair[]
   /** Overnight HRV and resting HR; empty until the recovery sync has run. */
   recovery: RecoveryNight[]
   weeks: WeeklyTrendPoint[]
   plan: PlanWeekInput[]
-  /** Days whose planned session was missed, by Plan's own day states: the Volume read's clusters. */
+  /** Days whose planned session was missed, by Plan's own day states. */
   missed: string[]
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
   threshold: { date: string; pace: number }[]
@@ -95,9 +95,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   const tabsRef = useRef<HTMLDivElement>(null)
 
   function selectTab(id: TabId) {
-    // Every swap starts at the very top, and before the new tab paints (v5.5
-    // #1): scrolling back to the tabs left the page scrolled, and a page left
-    // even 1-2 pt down sets off iOS's scroll-edge blur over the large title.
+    // Before the new tab paints: a page left even 1-2 pt down sets off iOS's scroll-edge blur over the large title.
     if (window.scrollY !== 0) window.scrollTo({ top: 0, behavior: 'instant' })
     setTab(id)
   }
@@ -143,14 +141,10 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
   }
 
   const rows = weeks ? weekRows(data.weeks, data.plan, weeks, today) : []
-  // One range line on every tab (v4.6): first Monday to today, or to the
-  // window's last Sunday once swiped back. The control beside it says "12 wk".
   const range = days ?? weeks!
   const rangeLabel = formatDateRange(range.start, range.live ? today : range.end, { year: 'always' })
 
-  // Each tab's own coach read, over its own window (design review, Oct 2026):
-  // one 12-week read over every tab put the Load verdict over slipping race
-  // predictions, and said "12 weeks" on a tab set to 4.
+  // Each tab's own coach read over its own window, so a tab set to 4 weeks never reads "12 weeks".
   const coach = useMemo(() => {
     const live = loadTab ? dayWindow(today, current.period as LoadPeriod, current.offset) : weekWindow(today, current.period as WeekPeriod, current.offset)
     const weekly = loadTab ? [] : weekRows(data.weeks, data.plan, live as ReturnType<typeof weekWindow>, today)
@@ -160,12 +154,8 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
 
   return (
     <div className="flex flex-col gap-5">
-      {/* The v4.17 page header: the title with the window under it, and the
-          page's one period control on the same row, on the right. */}
       <header className="mb-1.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
         <div className="flex min-w-0 flex-col gap-1">
-          {/* The one large title, above the tabs; only the content under the
-              tabs changes on a switch. */}
           <h1 data-testid="analytics-title" className="text-display text-foreground">
             {t.analytics.title}
           </h1>

@@ -4,10 +4,10 @@ import { formatClock, formatNumber } from '@/lib/formatters'
 import { paceAxis } from '@/lib/chartAxis'
 import { t } from '@/i18n'
 
-/** Every lane is drawn in a 1000 x 72 box and stretched to the page (3.0). */
+/** Every lane is drawn in a 1000 x 72 box and stretched to the page. */
 export const VIEW_WIDTH = 1000
 export const LANE_HEIGHT = 72
-/** Elevation is only context: a 44 px strip under the three lanes, last. */
+/** Elevation is only context: a shorter strip under the three lanes. */
 export const ELEVATION_HEIGHT = 44
 /** The line stays this far off the lane's top and bottom edges. */
 const LANE_PAD = 4
@@ -24,21 +24,13 @@ export interface ZoneBand {
   to: number
 }
 
-/**
- * The athlete's zones, as the lanes draw them behind the line: heart rate's
- * lower edge of Z1 to Z5 (the run's own, from the watch), and each pace
- * zone's fastest and slowest pace (from threshold pace).
- */
+/** Heart rate's lower edge of Z1 to Z5, and each pace zone's fastest and slowest pace. */
 export interface ChartZones {
   hrMinBpm: number[] | null
   pace: { zone: ZoneNumber; fastest: number; slowest: number }[] | null
 }
 
-/**
- * The zones the lanes are banded with. Heart rate takes the run's own zones,
- * as the watch scored it, and the athlete's current ones when the run has
- * none; pace takes the zones built from threshold pace, the Athlete page's.
- */
+/** The run's own heart-rate zones come first: they are the ones the watch scored it with. */
 export function chartZones(
   runZones: readonly { zone: number; minBpm: number }[] | null | undefined,
   athleteBounds: readonly number[] | null | undefined,
@@ -66,7 +58,7 @@ export interface Lane {
   domain: [number, number]
   /** Pace: the smaller number is the higher point, so faster is up. */
   reversed: boolean
-  /** The lane's summary - avg, max or best - computed from the recorded samples. */
+  /** Avg, max or best, from the recorded samples. */
   summary: string
   average: number | null
   format: (v: number) => string
@@ -90,11 +82,7 @@ function present(values: (number | null)[]): number[] {
   return values.filter((v): v is number => v !== null)
 }
 
-/**
- * The lane's scale in round steps, from its smoothed line: HR 120-170 in
- * tens, pace 4:40-7:00 in twenty seconds. The raw line shares it, so the
- * toggle never rescales the lane; a raw spike past the end is clipped there.
- */
+/** From the smoothed line; the raw line shares it, so the toggle never rescales the lane and a raw spike is clipped. */
 export function niceDomain(values: (number | null)[], step: number, minSpan: number): [number, number] | null {
   const seen = present(values)
   if (seen.length === 0) return null
@@ -117,10 +105,7 @@ function hrBands(minBpm: number[] | null | undefined): ZoneBand[] {
   }))
 }
 
-/**
- * Pace zones as continuous stretches: each runs to the next one's fastest
- * pace, Z5 takes everything faster and Z1 everything slower than easy.
- */
+/** Continuous stretches: each zone runs to the next one's fastest pace, Z5 takes everything faster, Z1 everything slower. */
 function paceBands(zones: ChartZones['pace'] | undefined): ZoneBand[] {
   if (!zones || zones.length === 0) return []
   const sorted = [...zones].sort((a, b) => a.fastest - b.fastest)
@@ -135,13 +120,8 @@ function paceBands(zones: ChartZones['pace'] | undefined): ZoneBand[] {
 }
 
 /**
- * The stack's lanes, cleaned, smoothed and scaled. Pure, and costly enough -
- * a cleanup and a smoothing pass over every sample of every stream - that the
- * component builds it once per activity rather than on each pointer move.
- *
- * Summaries come from the recorded samples, whichever line is drawn, except
- * HR's and pace's averages, which are the stat row's so the two can't
- * disagree. A "best" is never slower than the average beside it.
+ * Costly - a cleanup and a smoothing pass over every sample of every stream - so the component builds it once per
+ * activity, never on a pointer move.
  */
 export function buildLanes(input: ChartStackInput): Lane[] {
   const { distanceKm, hrSamples, paceSamples, cadenceSamples, elevationProfile, elevationGain, zones } = input
@@ -178,8 +158,7 @@ export function buildLanes(input: ChartStackInput): Lane[] {
       format: (v) => `${Math.round(v)}`,
       domain: (s) => niceDomain(s, 10, 30),
       summarize: ({ average, max }) => `${c.avg} ${Math.round(average)} · ${c.max} ${Math.round(max)}`,
-      // The stat row's average (G10): the downsampled stream read 113 beside
-      // the row's 115 for the same run.
+      // The stat row's, which the downsampled stream's mean would not match.
       recordedAverage: input.avgHr,
       bands: hrBands(zones?.hrMinBpm),
     })
@@ -192,21 +171,18 @@ export function buildLanes(input: ChartStackInput): Lane[] {
       unit: c.paceUnitHint,
       valueUnit: t.units.perKm,
       values: cleanStream(paceSamples, { min: 150, max: 900, settleKm: 0.1, distanceKm, spikeFloor: 90 }),
-      // Faster is up, on this chart as on every pace axis (lib/chartAxis).
+      // Faster is up, as on every pace axis.
       reversed: paceAxis().reversed,
       despike: true,
       format: (v) => formatClock(Math.round(v)),
       domain: (s) => niceDomain(s, 20, 60),
-      // "best" is the fastest recorded sample, which the watch already
-      // averages over about 30 s, so it says so (v5.6 #4). Never a "best"
-      // slower than the average beside it: an even run's samples can sit
-      // above its moving pace, and then it's left out.
+      // The watch already averages each sample over about 30 s, hence "best 30 s"; an even run's samples can
+      // sit above its moving pace, and then the best is left out.
       summarize: ({ average, min }) =>
         Math.round(min) < Math.round(average)
           ? `${c.avg} ${formatClock(Math.round(average))} · ${c.bestSmoothed} ${formatClock(Math.round(min))}`
           : `${c.avg} ${formatClock(Math.round(average))}`,
-      // The Overview's moving pace (v5.5 #6): the samples' plain mean read
-      // 5:38 beside the header's 5:33 for the same run.
+      // The Overview's moving pace, which the samples' plain mean would not match.
       recordedAverage: input.avgPaceSecPerKm,
       bands: paceBands(zones?.pace),
     })
@@ -253,11 +229,7 @@ function share(lane: Pick<Lane, 'domain' | 'reversed'>, value: number): number {
   return lane.reversed ? s : 1 - s
 }
 
-/**
- * How far down its lane a value sits, in the lane's 72-unit box: the domain
- * spread over the plot, flipped for pace, and clipped 2 units inside the
- * edges so a raw spike past the scale still shows where it went.
- */
+/** Clipped 2 units inside the edges, so a raw spike past the scale still shows where it went. */
 export function laneY(lane: Pick<Lane, 'domain' | 'reversed'>, value: number): number {
   const y = LANE_PAD + share(lane, value) * (LANE_HEIGHT - 2 * LANE_PAD)
   return Math.min(LANE_HEIGHT - 2, Math.max(2, y))
@@ -338,11 +310,7 @@ export function bandRect(lane: Pick<Lane, 'domain' | 'reversed'>, band: ZoneBand
   return { top, height, labelled: height >= BAND_LABEL_MIN }
 }
 
-/**
- * The sample a readout refers to. The mark and the number are taken from the
- * same index here so a lane can never draw its dot at one place and report the
- * value from another.
- */
+/** One index for the mark and the number, so a lane never draws its dot at one place and reports the value of another. */
 export function sampleAt(
   values: (number | null)[],
   fraction: number,
@@ -355,10 +323,7 @@ export function sampleAt(
 }
 
 /**
- * Time into the run at a point on the stack, from the pace samples: each one
- * covers an equal share of the distance, so the time to reach a sample is the
- * sum of pace x distance before it. A gap in the stream takes the run's
- * average pace. Null without pace samples - a guess from the total duration
+ * Each pace sample covers an equal share of the distance. Null without pace samples: a guess from the total duration
  * would assume an even pace the run did not have.
  */
 export function elapsedAt(pace: Lane | undefined, fraction: number, distanceKm: number): number | null {

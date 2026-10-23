@@ -6,7 +6,6 @@ import { getTrainingLoad } from './GetTrainingLoad'
 import { round } from '@/lib/math'
 import { LOAD_TREND_DAYS, STATUS_DELTA_DAYS, type TrainingStatusType, type RiskLevel, type LoadTrend, type TrainingStatus } from '@/domain/training/status'
 
-// Moved to the domain; re-exported so every existing importer keeps working.
 export type { TrainingStatusType, RiskLevel, LoadTrend, TrainingStatus } from '@/domain/training/status'
 
 export function acwr(activities: Activity[], refDate: Date): number | null {

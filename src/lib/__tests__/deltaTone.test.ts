@@ -22,7 +22,7 @@ describe('deltaTone (v4.7)', () => {
     expect(deltaTone('vo2max', 0.4)).toBe('flat')
     expect(deltaTone('pace', -1)).toBe('flat')
     expect(deltaTone('efficiency', 0.005)).toBe('flat')
-    // Up to 0.02 as printed, so -0.015 (printed -0.02) is noise too (v4.16.4).
+    // Up to 0.02 as printed, so -0.015 (printed -0.02) is noise too.
     expect(deltaTone('efficiency', -0.02)).toBe('flat')
     expect(deltaTone('efficiency', -0.015)).toBe('flat')
     expect(deltaTone('restingHr', 0.5)).toBe('flat')
@@ -35,8 +35,6 @@ describe('deltaTone (v4.7)', () => {
     expect(deltaTone(null as unknown as 'fitness', null)).toBe('flat')
   })
 
-  // Design review, Oct 2026: the 10K's +8 s (0.3 % of 42:32) was grey beside
-  // an amber 5K +16 s. Any slower predicted time is a caution.
   it('reads any slower race time as worse, however small', () => {
     expect(deltaTone('race', 8, { value: 2552 })).toBe('worse')
     expect(deltaTone('race', 1, { value: 12765 })).toBe('worse')

@@ -17,10 +17,7 @@ export interface Rep {
   recovery: RepRecovery | null
 }
 
-/**
- * The recoveries as one row (H15): their total time over their total
- * distance, and heart rate weighted by time. Null without a recovery.
- */
+/** Pooled: total time over total distance, heart rate weighted by time. */
 export function recoveryAverage(reps: Rep[]): { paceSecPerKm: number | null; avgHr: number | null } | null {
   const recs = reps.map((r) => r.recovery).filter((r): r is RepRecovery => r !== null)
   if (recs.length === 0) return null
@@ -38,14 +35,11 @@ export interface RepSet {
   reps: Rep[]
   warmup: ActivitySplit | null
   cooldown: ActivitySplit | null
-  /** The rep length the set is built on, as seconds. */
   repDurationSec: number
-  /** The window the reps are judged against: their own median, give or take. */
   band: { min: number; max: number } | null
   inBand: number
   spreadSecPerKm: number | null
   hrDriftBpm: number | null
-  /** Mean pace across the recoveries between reps. The cooldown is not one. */
   meanRecoverySecPerKm: number | null
   firstRecoverySecPerKm: number | null
   lastRecoverySecPerKm: number | null
@@ -54,23 +48,17 @@ export interface RepSet {
 const RECOVERY_TYPES = new Set(['interval_rest', 'interval_recovery'])
 const MIN_REPS = 2
 
-/**
- * How much slower than the rest of the set a first rep has to be before it is
- * read as a lead-in rather than as work. Not every watch types its warm-up as
- * one, and an untyped lead-in lap dragged into the set wrecks the band, the
- * spread and the count all at once.
- */
+/** A first rep this much slower than the rest is a lead-in: not every watch types its warm-up as one. */
 const LEAD_IN_RATIO = 1.15
 const MIN_REPS_TO_DROP_LEAD_IN = 3
 
-/** Half-width of the consistency window, in seconds per km. */
+/** Half-width, in seconds per km. */
 export const BAND_TOLERANCE_SEC = 10
 
 function paceSecPerKm(durationSec: number, distanceM: number): number | null {
   return distanceM > 0 ? Math.round((durationSec / distanceM) * 1000) : null
 }
 
-/** The first rep, when it is plainly a lead-in and not part of the work. */
 function takeLeadIn(reps: Rep[]): Rep | null {
   if (reps.length < MIN_REPS_TO_DROP_LEAD_IN) return null
 
@@ -169,7 +157,7 @@ const HR_DRIFT_LIMIT_BPM = 3
 const RECOVERY_SLOWED_SEC = 60
 const BUILD_SEC_PER_KM = 8
 
-/** How much the reps moved first to last: positive slowed, negative got faster. */
+/** Positive slowed, negative got faster. */
 export function repFadeSecPerKm(set: RepSet): number | null {
   const paces = set.reps.map((r) => r.paceSecPerKm).filter((p): p is number => p !== null)
   if (paces.length < 2) return null
@@ -177,10 +165,8 @@ export function repFadeSecPerKm(set: RepSet): number | null {
 }
 
 /**
- * Whether the set held is a question about the reps landing in the band and
- * heart rate staying put, not about raw spread: one slow opener can widen the
- * spread of a set that was otherwise repeated exactly. A set that got faster
- * is judged before any of that - a progression is not a consistency failure.
+ * The band and heart rate, not raw spread: one slow opener can widen the spread of an otherwise exact set.
+ * A progression is not a consistency failure, so it is judged first.
  */
 export function setVerdict(set: RepSet): SetVerdict {
   const fade = repFadeSecPerKm(set)
@@ -199,7 +185,6 @@ export function setVerdict(set: RepSet): SetVerdict {
   return slowed ? 'repsHeldRecoveriesSlowed' : 'repsHeld'
 }
 
-/** The pace range a rep bar is drawn across: every rep and the whole band, padded. */
 export interface Track {
   slow: number
   fast: number
@@ -216,7 +201,7 @@ export function trackDomain(set: RepSet): Track | null {
   return { slow: slowest + TRACK_PAD_SEC, fast: fastest - TRACK_PAD_SEC }
 }
 
-/** Where a pace sits across the track, 0 at the slow end and 1 at the fast end. */
+/** 0 at the slow end, 1 at the fast end. */
 export function trackPosition(paceSecPerKm: number, track: Track): number {
   const span = track.slow - track.fast
   if (span <= 0) return 0.5

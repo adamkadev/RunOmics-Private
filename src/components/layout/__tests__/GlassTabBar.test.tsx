@@ -17,9 +17,6 @@ describe('GlassTabBar', () => {
     expect(screen.queryByRole('link', { name: /coach/i })).not.toBeInTheDocument()
   })
 
-  // Floating, as Bevel draws it (owner, Oct 2026). Liquid Glass v3 (G3): a
-  // 62 pt capsule 24 pt from the sides and the foot, concentric with the
-  // display's corner, and a glass object - blur, edge and tint as siblings.
   it('floats a 62 pt glass capsule 24 pt in from the sides and the bottom', () => {
     render(<GlassTabBar />)
     const nav = screen.getByRole('navigation')
@@ -29,8 +26,8 @@ describe('GlassTabBar', () => {
     expect(capsule.className).toMatch(/\blg lg-tab\b/)
     expect(capsule.className).toContain('h-[var(--tab-bar-h)]')
     expect([...capsule.querySelectorAll(':scope > i')].map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
-    // The soft edge (Liquid Glass v3, README §6.2): a sibling before the
-    // capsule, never its ancestor, so the capsule's blur has no backdrop root.
+    // A sibling, never the capsule's ancestor, so the capsule's blur has no
+    // backdrop root.
     const edge = screen.getByTestId('bottom-glass')
     expect(edge.className).toContain('bottom-edge')
     expect(edge.querySelectorAll(':scope > i')).toHaveLength(2)
@@ -38,8 +35,6 @@ describe('GlassTabBar', () => {
     expect(edge.parentElement).toBe(nav)
   })
 
-  // 120 pt from the foot: a light blur masked #000 45% → transparent and a
-  // tint 72% → 40% @45% → 0, no hairline; the fallbacks drop the blur only.
   it('dissolves the page into the bar over a 120 pt soft edge, with no hairline', () => {
     const css = readFileSync(path.join(process.cwd(), 'src/app/globals.css'), 'utf8')
     const block = (selector: string) => {
@@ -52,14 +47,13 @@ describe('GlassTabBar', () => {
     expect(block('.bottom-edge > i:nth-child(1)')).toContain('blur(6px)')
     expect(block('.bottom-edge > i:nth-child(2)')).toMatch(/72%, transparent\) 0%,[\s\S]*40%, transparent\) 45%,[\s\S]*transparent 100%/)
     expect(css.slice(css.indexOf('.bottom-edge {'), css.indexOf('.bottom-edge > i:nth-child(2)') + 400)).not.toMatch(/border/)
-    // Reduce Transparency, Increase Contrast, data-glass="solid" and no
-    // backdrop-filter: the blur goes, the tint stays.
+    // Reduced transparency, increased contrast and solid glass drop the blur,
+    // never the tint.
     expect(css.match(/\.bottom-edge > i:nth-child\(1\)[^{]*\{ display: none; \}/g)?.length ?? 0).toBeGreaterThanOrEqual(2)
     expect(css).toMatch(/html\[data-glass="solid"\] \.bottom-edge > i:nth-child\(1\)/)
     expect(css).not.toMatch(/\.bottom-edge > i:nth-child\(2\)[^{]*\{ display: none/)
   })
 
-  // Liquid Glass v3 (G4): 10/12 labels, 600 when lit, 500 otherwise.
   it('writes the labels at the 10 pt tab size, never text-micro', () => {
     render(<GlassTabBar />)
 
@@ -70,9 +64,7 @@ describe('GlassTabBar', () => {
     }
   })
 
-  // The active tab is its icon and label in the accent on a soft pill (owner,
-  // Oct 2026, after Bevel). Liquid Glass v3 (G4): the others in label ink,
-  // which reads 4.5:1 over a busy map where the muted grey did not.
+  // Label ink, not muted grey: only it reads 4.5:1 over a busy map.
   it('puts only the active tab on the pill, in the accent, the rest in label ink', () => {
     render(<GlassTabBar />)
     const links = screen.getAllByRole('link')
@@ -85,14 +77,12 @@ describe('GlassTabBar', () => {
       expect(link.className).toContain('text-foreground')
       expect(link.className).not.toContain('text-muted-foreground')
     }
-    // One pill behind the row, on the first tab (Today).
     const pill = screen.getByTestId('tab-pill')
     expect(pill.style.background).toBe('var(--tab-pill)')
     expect(pill.style.transform).toBe('translateX(0%)')
   })
 
-  // G2: pressed, the pill becomes a clear lens that grows past the bar; a
-  // plain tap is still the link's own.
+  // A plain tap is still the link's own.
   it('turns the pill into a clear lens while pressed', () => {
     render(<GlassTabBar />)
     const row = screen.getByTestId('tab-pill').parentElement!
@@ -106,8 +96,6 @@ describe('GlassTabBar', () => {
     expect(push).not.toHaveBeenCalled()
   })
 
-  // iOS 26's tab bar, as Bevel draws it: a scroll down shrinks it to the
-  // active tab's icon; a scroll up, or a tap on that button, brings it back.
   it('shrinks to the active tab on a scroll down and comes back', () => {
     render(<GlassTabBar />)
     const capsule = screen.getByTestId('tab-bar-capsule')
@@ -117,7 +105,6 @@ describe('GlassTabBar', () => {
       fireEvent.scroll(window)
     })
 
-    // One glass surface: its width morphs between the row and the 62 pt bubble.
     scrollTo(60)
     expect(capsule.style.width).toBe('100%')
     scrollTo(300)
@@ -138,8 +125,6 @@ describe('GlassTabBar', () => {
     scrollTo(0)
   })
 
-  // The pill glides to the tab tapped at once, before its page has loaded,
-  // as Bevel's does (owner, Oct 2026).
   it('slides the pill to the tab tapped, as it is tapped', () => {
     render(<GlassTabBar />)
     const plan = screen.getByRole('link', { name: /Plan/ })
@@ -147,12 +132,10 @@ describe('GlassTabBar', () => {
     fireEvent.click(plan)
     expect(screen.getByTestId('tab-pill').style.transform).toBe('translateX(200%)')
     expect(plan.className).toContain('text-accent-text')
-    // The page shown is still Today until the route changes.
+    // Still Today's page until the route changes.
     expect(plan.getAttribute('aria-current')).toBeNull()
   })
 
-  // A fullscreen map hides the bar, and its soft edge with it: the nav's
-  // slide alone would leave the edge's top on screen.
   it('drops the soft edge with the bar in a fullscreen map', () => {
     function Fullscreen() {
       useSetFullscreenChromeHidden(true)

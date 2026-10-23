@@ -1,12 +1,9 @@
 /**
- * Where Form (TSB) sits, named. "+2" on its own said nothing about whether it
- * was good or bad. The thresholds live here once, so Today's Body card, the
- * Analytics load chart and anything else that names a band agree:
- * - tired: below -10, fatigue well ahead of fitness;
- * - neutral: -10 to +5, the ordinary training range;
- * - fresh: above +5 up to +25, rested and ready for quality or a race;
- * - very fresh: above +25, rested long enough that fitness starts to slip
- *   (the same ceiling the taper reads as over-rested).
+ * - tired: fatigue well ahead of fitness;
+ * - neutral: the ordinary training range;
+ * - fresh: rested and ready for quality or a race;
+ * - very fresh: rested long enough that fitness starts to slip (the same
+ *   ceiling the taper reads as over-rested).
  */
 export type FormBand = 'tired' | 'neutral' | 'fresh' | 'veryFresh'
 

@@ -21,19 +21,13 @@ import { buildTimeSeries } from '@/application/usecases/GetTrainingLoad'
 import { DEFAULT_HR_BOUNDS } from '@/domain/training/trimp'
 import { ctlTrajectory, metricTrajectory, type Trajectories } from '@/domain/training/trajectories'
 
-/**
- * Every series here is already on disk; the context simply never carried them,
- * so the planner saw a threshold of 263 with no way to know it was 252 in
- * April and is being rebuilt rather than capped.
- */
 function buildTrajectories(
   activities: Activity[],
   referenceDate: string,
   records: RecordEntry[],
   athlete: AthleteProfile,
 ): Trajectories {
-  // The athlete's own bounds, so this CTL is the same number the context
-  // already reports as load.ctl rather than a second opinion.
+  // The athlete's own HR bounds, so this CTL matches the context's load.ctl.
   const loadSeries = buildTimeSeries(activities, {
     maxHr: athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr,
     restingHr: athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr,
@@ -88,9 +82,7 @@ export async function getCoachingContext(plan: CoachingPlan | null, referenceDat
   const activities = getAllActivities()
   const athlete = getAthleteProfile()
 
-  // Silence here would be indistinguishable from an athlete who annotates
-  // nothing, and a plan built without an illness tag it could have had is
-  // worse than one whose author knew the tag was missing.
+  // Without this warning, missing notes would look like an athlete who annotates nothing.
   if (!activityNotes.available) {
     console.warn(
       '[coaching] activity notes unavailable - no FIREBASE_PROJECT_ID, or Firestore did not answer. '

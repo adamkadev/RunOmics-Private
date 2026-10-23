@@ -10,13 +10,10 @@ import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
 import { intensityMix, type IntensityMix } from '@/domain/training/intensityMix'
 
 /**
- * Analytics v4.5 (D1-D4): one question per tab, one answer per card. Every
- * number a card prints is worked out here, from the same series and the same
- * window, so the headline, its sentence and its chart can't disagree - the
- * old tiles said "+0:55 in 12 m" above a chart that said "slipped 1:10 in 6 m".
+ * Every number a card prints is worked out here, from the same series and the same window, so the headline, its
+ * sentence and its chart can't disagree.
  */
 
-/** One set of periods on every tab (v4.6); Performance's 6m became 12w. */
 export type Period = '4w' | '12w' | '1y'
 export type LoadPeriod = Period
 export type WeekPeriod = Period
@@ -47,14 +44,10 @@ function day(iso: string): Date {
   return new Date(`${iso}T00:00:00`)
 }
 
-/** The period's window, `offset` whole windows back from today. */
-/** The day-by-day tabs' spans (v4.8): the last 28, 84 or 365 days. */
 const PERIOD_DAYS: Record<Period, number> = { '4w': 28, '12w': 84, '1y': 365 }
 
 /**
- * A day-by-day tab's window (Load, Performance): the last 28, 84 or 365 days
- * ending today, `offset` whole windows back. Monday-aligned weeks read "13 of
- * the last 27 days" on a Saturday (v4.8); the week-based charts (Volume,
+ * Not Monday-aligned: Monday weeks read "13 of the last 27 days" on a Saturday. The week-based charts (Volume,
  * Intensity) keep their Monday weeks.
  */
 export function dayWindow(today: string, period: LoadPeriod, offset = 0): DayWindow {
@@ -72,8 +65,6 @@ export function weekWindow(today: string, period: WeekPeriod, offset = 0): WeekW
 
 const mean = (values: number[]): number | null => (values.length ? values.reduce((s, v) => s + v, 0) / values.length : null)
 const known = (values: (number | null | undefined)[]): number[] => values.filter((v): v is number => v !== null && v !== undefined)
-
-// ─── Inputs ────────────────────────────────────────────────────────────────
 
 export interface LoadDay {
   date: string
@@ -104,11 +95,7 @@ export interface GoalRaceInput {
   targetSeconds: number | null
 }
 
-/**
- * Year to date, as Goals reads it: Goals is its home (design review, Oct
- * 2026), so Volume prints its distance and projection from the same figures,
- * in a row that opens Goals, and the coach read takes last year's comparison.
- */
+/** Year to date as Goals reads it: Goals is its home, so Volume prints its distance and projection from the same figures. */
 export interface YtdInput {
   /** The year's distance, Goals' own total. */
   km: number
@@ -117,13 +104,11 @@ export interface YtdInput {
   projection: { projectedYearKm: number } | null
 }
 
-// Shared with Progress, so the two pages state one comparison (v4.17).
+// Shared with Progress, so the two pages state one comparison.
 import type { YearOverYear } from '@/lib/yearOverYear'
 export { yearOverYear, type YearOverYear } from '@/lib/yearOverYear'
 
-// ─── D1 Load ───────────────────────────────────────────────────────────────
-
-/** 12 pt of a 110 pt chart. */
+/** The top label needs 12 pt clear of the lines on a 110 pt chart. */
 const FORM_LABEL_CLEARANCE = 12 / 110
 
 export interface FormView {
@@ -165,7 +150,6 @@ export function formView(load: LoadDay[], window: DayWindow): FormView | null {
     ctl: points.map((p) => p.ctl),
     atl: points.map((p) => p.atl),
     bars: barPoints.map((p) => ({ form: formOf(p), band: formBand(formOf(p)), date: p.date })),
-    // The top label needs 12 pt clear of the lines on a 110 pt chart.
     yMax: Math.max(75, Math.ceil(peak / (1 - FORM_LABEL_CLEARANCE) / 25) * 25),
     dates: points.map((p) => p.date),
   }
@@ -212,11 +196,7 @@ export function statusView(days: StatusDay[], window: DayWindow): StatusView | n
 export type RiskState = 'ok' | 'out' | 'alert'
 
 export interface RiskRow {
-  /**
-   * The load ratio left this panel (App Fixes 2a): a ratio under 0.8 is
-   * detraining, not an injury risk, so it is read beside the load it comes
-   * from, on the Load trend card.
-   */
+  /** No load ratio: under 0.8 it is detraining, not an injury risk, so it is read beside its load on the Load trend card. */
   key: 'monotony' | 'rampRate'
   value: number
   state: RiskState
@@ -234,15 +214,11 @@ interface RiskScale {
   max: number
   lo: number
   hi: number
-  /** Beyond this the value reads neg rather than warn (v4.17: never a zone). */
+  /** Beyond this the value reads neg rather than warn. */
   alert: (v: number) => boolean
 }
 
-/**
- * The same bands as the domain's risk zones (GetLoadRiskPanel): a ratio of
- * 0.8-1.3 is safe and above 1.5 is risk; monotony above 2 is risk; a ramp
- * beyond ±5 a week is caution and beyond ±8 risk.
- */
+/** The same bands as the domain's risk zones (GetLoadRiskPanel). */
 const RISK_SCALES: Record<RiskRow['key'], RiskScale> = {
   monotony: { min: 0, max: 3, lo: 0, hi: 2, alert: (v) => v > 2 },
   rampRate: { min: -10, max: 10, lo: -5, hi: 5, alert: (v) => Math.abs(v) > 8 },
@@ -263,24 +239,16 @@ export function riskRows(risk: LoadRiskPanel | null): RiskRow[] {
   })
 }
 
-// ─── D2 Performance ────────────────────────────────────────────────────────
-
 /** VO2max's change is read over 12 weeks, the Performance tab's default. */
 const VO2_WINDOW_DAYS = 84
 
 export interface Vo2View {
   value: number
-  /**
-   * Over the window, to one decimal as the value is printed: whole numbers
-   * read 55.8 to 56.0 as "No change" beside a grade that had just come back.
-   */
+  /** To one decimal, as the value is printed: whole numbers read 55.8 to 56.0 as "No change". */
   delta: number | null
 }
 
-/**
- * Garmin's latest VO2max, and its change over 90 days - the reading Progress
- * shows. Analytics used to print the last monthly average (54.8 beside 55.0).
- */
+/** Garmin's latest VO2max, the reading Progress shows, not a monthly average. */
 export function vo2View(value: number | null, samples: { date: string; vo2max: number }[], today: string): Vo2View | null {
   const since = isoDate(addDays(day(today), -VO2_WINDOW_DAYS))
   const recent = samples.filter((s) => s.date >= since && s.date <= today)
@@ -301,11 +269,7 @@ export function weeksIn(weeks: WeeklyTrendPoint[], window: { start: string; end:
   return weeks.filter((w) => w.date >= from && w.date <= window.end)
 }
 
-/**
- * A pace now against the window's start: the median of its last few weeks
- * against the median of its first few. The summary strip and the Pace trend
- * sentence both read this, so "28 s faster" is the same 28 s in both.
- */
+/** The summary strip and the Pace trend sentence both read this, so "28 s faster" is the same 28 s in both. */
 export function paceShift(weeks: WeeklyTrendPoint[], pick: (w: WeeklyTrendPoint) => number | null): PaceShift | null {
   const values = known(weeks.map(pick))
   if (!values.length) return null
@@ -340,12 +304,7 @@ export function predictionRows(days: PredictionDay[], window: DayWindow): Predic
   })
 }
 
-/**
- * A prediction's change by the one delta rule, the one its row is coloured by:
- * any slower time is a caution, and only a change printed as 0 s is holding
- * (design review, Oct 2026). The sentence had a fixed 5 s of its own, so a
- * 10K 8 s slower was grey on its row and "slipped" in the sentence above.
- */
+/** The rule its row is coloured by: any slower time is a caution, and only a change printed as 0 s is holding. */
 export function predictionTone(row: PredictionRow): DeltaTone {
   return deltaTone('race', row.delta, { value: row.seconds })
 }
@@ -366,8 +325,7 @@ export function predictionTrend(rows: PredictionRow[]): PredictionTrend | null {
   if (slower.length && faster.length) return { kind: 'mixed', faster: faster.length, count }
   const changed = slower.length ? slower : faster
   const abs = changed.map((r) => Math.abs(r.delta!))
-  // Seconds, as each row prints its change: the card said "1-9 min" above a
-  // 5K that lost 33 s (v4.8).
+  // Seconds, as each row prints its change.
   return { kind: slower.length ? 'slipped' : 'improved', lo: Math.round(Math.min(...abs)), hi: Math.round(Math.max(...abs)), count: changed.length, of: count }
 }
 
@@ -411,9 +369,8 @@ export function efficiencyView(allWeeks: WeeklyTrendPoint[], windowWeeks: Weekly
 }
 
 /**
- * A centred three-week mean, for drawing only: a single week's pace or
- * efficiency swings with its weather and its one workout, and the line is
- * there to show the trend. The numbers printed come from the raw weeks.
+ * For drawing only: a single week's pace or efficiency swings with its weather and its one workout. The numbers
+ * printed come from the raw weeks.
  */
 export function smooth(values: (number | null)[]): (number | null)[] {
   if (values.length <= 8) return values
@@ -456,7 +413,7 @@ export function rpeView(allWeeks: WeeklyTrendPoint[], end: string): RpeView | nu
 
 export const HEAT_BAND_ORDER: HeatBandId[] = ['cold', 'cool', 'mild', 'warm', 'hot']
 const WARM_BANDS: HeatBandId[] = ['warm', 'hot']
-/** Cold costs pace too (App Fixes 2b), so the card names both ends. */
+/** Cold costs pace too, so the card names both ends. */
 const COLD_BANDS: HeatBandId[] = ['cold']
 
 export interface HeatRow {
@@ -492,8 +449,6 @@ export function heatView(data: HeatImpactData | null): HeatView | null {
     scale: Math.max(20, ...known(rows.map((r) => r.cost))),
   }
 }
-
-// ─── D3 Volume ─────────────────────────────────────────────────────────────
 
 /** A week is on plan once it reaches 90% of its planned distance. */
 export const ON_PLAN_SHARE = 0.9
@@ -533,9 +488,8 @@ export interface WeeklyDistanceView {
 export function weeklyDistanceView(rows: WeekRow[], avgKm: number | null = null): WeeklyDistanceView | null {
   const last = rows.at(-1)
   if (!last) return null
-  // The week under way is not a week's distance yet, so it stays out of the
-  // average, and out of "on plan" until it has made its plan: three days into
-  // a week, it read as a week missed.
+  // The week under way is not a week's distance yet, so it stays out of the average, and out of "on plan" until
+  // it has made its plan, or three days in it reads as a week missed.
   const done = rows.filter((r) => !r.current)
   const planned = rows.filter((r) => r.planKm !== null && r.planKm > 0 && (!r.current || r.km >= r.planKm * ON_PLAN_SHARE))
   const peak = Math.max(...rows.map((r) => Math.max(r.km, r.planKm ?? 0)), 10)
@@ -548,11 +502,7 @@ export function weeklyDistanceView(rows: WeekRow[], avgKm: number | null = null)
   }
 }
 
-/**
- * Missed sessions that came together rather than one at a time (design
- * review, Oct 2026): this many planned sessions missed inside this many days,
- * as July 13-19 had. Proposal; tune here.
- */
+/** This many planned sessions missed inside this many days came together rather than one at a time; tune here. */
 export const MISSED_CLUSTER = { sessions: 3, days: 7 } as const
 
 export interface MissedCluster {
@@ -564,11 +514,7 @@ export interface MissedCluster {
 const DAY_MS = 86_400_000
 const daysApart = (from: string, to: string) => Math.round((day(to).getTime() - day(from).getTime()) / DAY_MS)
 
-/**
- * The weeks' missed sessions that came in clusters: any 3 or more inside 7
- * days, and groups that share a session joined into one stretch. Sessions
- * missed outside the weeks are another period's case.
- */
+/** Groups that share a session join into one stretch; sessions missed outside the weeks are another period's case. */
 export function missedClusters(missed: readonly string[], rows: WeekRow[]): MissedCluster[] {
   const first = rows[0]
   const last = rows.at(-1)
@@ -604,8 +550,7 @@ export function longRunView(rows: WeekRow[]): LongRunView | null {
   if (!last || rows.every((r) => !r.point || r.point.longestKm === 0)) return null
   const bars = rows.map((r) => {
     const km = r.point?.longestKm ?? 0
-    // Never the week under way: its first runs are all of its distance so far,
-    // so two runs in, it read "went over" every week.
+    // Never the week under way: its first runs are all of its distance so far.
     return { km, over: !r.current && r.km > 0 && km / r.km > LONG_RUN_SHARE, current: r.current }
   })
   return {
@@ -617,8 +562,6 @@ export function longRunView(rows: WeekRow[]): LongRunView | null {
     yMax: Math.max(...bars.map((b) => b.km), 1),
   }
 }
-
-// ─── D4 Intensity ──────────────────────────────────────────────────────────
 
 export type EasyHardView = IntensityMix
 
@@ -653,9 +596,7 @@ export function zonesView(rows: WeekRow[]): ZonesView | null {
   const done = rows.map((r, i) => ({ r, i })).filter(({ r }) => !r.current)
   const hardMin = done.map(({ i }) => (weeks[i]!.hours[3]! + weeks[i]!.hours[4]!) * 60)
   const doneTotals = done.map(({ i }) => totals[i]!)
-  // A dip and a return (a week off, then back to full weeks) is neither
-  // "grew" nor "dropped": halves averaged over it said "dropped" beside
-  // three of the highest weeks (v4.6).
+  // A dip and a return (a week off, then back to full weeks) is neither "grew" nor "dropped".
   const trough = doneTotals.length >= 4 ? doneTotals.slice(1, -1).reduce((lo, v, k) => (v < doneTotals[lo]! ? k + 1 : lo), 1) : -1
   const before = trough > 0 ? mean(doneTotals.slice(0, trough)) : null
   // Back to full weeks by the end - a lighter week of coming back is normal.
@@ -678,11 +619,7 @@ export function zonesView(rows: WeekRow[]): ZonesView | null {
 }
 
 /**
- * A week's quality sessions against what the plan asked for (App Fixes 2d):
- * one run, one still to come this week, or one asked for and never run. The
- * dots used to name the session's type, which said nothing about whether the
- * plan was kept - a plan of 0.9 a week with two weeks missed read as "on
- * target". Sessions past what the plan asked for are drawn as run, because
+ * Whether the plan was kept, not the session's type. Sessions past what the plan asked for are drawn as run, because
  * they were; the headline is where "extra" is said.
  */
 export type QualityDot = 'done' | 'planned' | 'missed'
@@ -693,12 +630,7 @@ export interface QualityView {
   planAsks: number | null
   /** What the plan had each week, for the readout; null for a week without one. */
   planned: (number | null)[]
-  /**
-   * The window's totals, the card's own headline, and they add up:
-   * `done = onPlan + extra`. The old `done` counted every session in the
-   * window but `planned` only summed the weeks the plan covered, so the
-   * card read "16 done of 6 planned".
-   */
+  /** The card's own headline, and they add up: `done = onPlan + extra`. */
   totals: {
     /** Every quality session run in the window. */
     done: number
@@ -746,15 +678,12 @@ export function qualityView(rows: WeekRow[], plan: PlanWeekInput[]): QualityView
   return {
     weeks,
     avg: finished.length ? Math.round((mean(finished.map((r) => (r.point?.thresholdSessions ?? 0) + (r.point?.intervalSessions ?? 0))) ?? 0) * 10) / 10 : null,
-    // One decimal: plans ran from 1 to 3 a week, and a rounded "1" read as
-    // every week's plan beside a week that had 3 (v4.6 item 4).
+    // One decimal: plans run from 1 to 3 a week, and a rounded "1" reads as every week's plan.
     planAsks: planned.length ? Math.round(mean(planned)! * 10) / 10 : null,
     planned: rows.map((r) => planByWeek.get(r.week) ?? null),
     totals: { done, onPlan, extra: done - onPlan, missed: missedTotal, planned: plannedTotal },
   }
 }
-
-// ─── Coach read (v4.6, v4.16.4) ────────────────────────────────────────────
 
 export type Trend = 'improving' | 'flat' | 'declining'
 
@@ -779,16 +708,14 @@ export interface CoachReadView {
 }
 
 /**
- * Each arrow in the band its card colours the same number by (v4.16.4), so the
- * read never calls "2 s faster" an improvement beside an Easy pace tile that
- * prints it as the same.
+ * Each arrow in the band its card colours the same number by, so the read never calls "2 s faster" an improvement
+ * beside an Easy pace tile that prints it as the same.
  */
 const TREND: Record<DeltaTone, Trend> = { good: 'improving', worse: 'declining', flat: 'flat' }
 
 /**
- * Threshold pace and the race predictions are both Garmin's estimate of the
- * same fitness and move together, so they share one vote (v4.16.4): counted
- * twice, one slower estimate outvoted faster easy runs on its own.
+ * Threshold pace and the race predictions are both Garmin's estimate of the same fitness, so they share one vote:
+ * counted twice, one slower estimate would outvote faster easy runs on its own.
  */
 function garminVote(threshold: Trend | undefined, predictions: Trend | undefined): Trend | undefined {
   if (!threshold || !predictions) return threshold ?? predictions
@@ -796,20 +723,14 @@ function garminVote(threshold: Trend | undefined, predictions: Trend | undefined
   return threshold === 'flat' ? predictions : 'flat'
 }
 
-/**
- * The coach read, from the values the cards print (v4.6): threshold, the Pace
- * trend's easy shift, the race predictions and aerobic efficiency, all over
- * the same 12 weeks as the fitness it sets them against, then Year to date.
- * The headline used to be hard-coded praise ("yielding real speed") above
- * four slower predictions.
- */
+/** From the values the cards print, all over the same 12 weeks as the fitness it sets them against. */
 export function coachRead(input: {
   easy: PaceShift | null
   predictions: PredictionRow[]
   efficiency: EfficiencyView | null
   /** Efficiency's change over the read's own window; its 12-week change when not given. */
   efficiencyDelta?: number | null
-  /** Fitness now and its change over the 12 weeks, for the load fact the headline is built on (v5.6 #3). */
+  /** Fitness now and its change over the 12 weeks, for the load fact the headline is built on. */
   fitness?: number | null
   fitnessDelta: number | null
   threshold?: PaceShift | null
@@ -817,8 +738,7 @@ export function coachRead(input: {
 }): CoachReadView | null {
   const signals: CoachSignal[] = []
   const { easy, predictions, efficiency, threshold, ytd } = input
-  // The load fact first: the headline says "Load is up", so the sheet says by
-  // how much before anything else (v5.6 #3).
+  // The load fact first: the headline says "Load is up", so the sheet says by how much before anything else.
   if (input.fitness != null && input.fitnessDelta !== null) {
     signals.push({ key: 'fitness', trend: TREND[deltaTone('fitness', input.fitnessDelta)], value: input.fitness, delta: input.fitnessDelta })
   }

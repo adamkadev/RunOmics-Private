@@ -12,10 +12,7 @@ export const revalidate = 3600
 /** How far ahead the plan is read: to the end of the last week a month's calendar can show. */
 const PLAN_DAYS_AHEAD = 42
 
-// Consistency is its own Progress page, reached from the hub (3.1): the
-// weekly streak, runs per week against three, and the running week, over a
-// window the page keeps in ?range=. Each window is worked out here; the
-// switch only picks one.
+// Each ?range= window is worked out here; the switch only picks one.
 export default async function ConsistencyPage() {
   const today = appTodayIso()
   const data = getConsistencyData(today)

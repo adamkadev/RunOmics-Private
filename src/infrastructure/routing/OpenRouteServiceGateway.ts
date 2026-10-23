@@ -8,18 +8,9 @@ import type {
 import type { RouteCandidate } from '@/domain/explore/types'
 
 /**
- * Explore's loops from OpenRouteService (HeiGIT), the one free provider that
- * makes round trips: `options.round_trip` on the foot-walking profile, one
- * request per loop, the seed choosing which.
- *
- * Server-side only, by the provider's terms as much as by the CSP: an ORS key
- * belongs to one person and must never reach a browser. The free Standard
- * plan allows 2000 directions a day and 40 a minute.
- *
- * `avoidBusyRoads` is not sent. ORS's `quiet` weighting has not been tried
- * together with `round_trip`, and a combination it refuses would fail every
- * loop the moment the toggle is on; route scoring penalises state roads and
- * roads from the `waytype` extra instead.
+ * Server-side only: an ORS key belongs to one person and must never reach a browser.
+ * `avoidBusyRoads` is not sent: ORS's `quiet` weighting is untried with `round_trip`, and a refused
+ * combination would fail every loop; route scoring penalises busy roads instead.
  */
 
 export const ORS_DIRECTIONS_URL = 'https://api.openrouteservice.org/v2/directions/foot-walking/geojson'
@@ -51,11 +42,7 @@ function isTimeout(error: unknown): boolean {
   return name === 'TimeoutError' || name === 'AbortError'
 }
 
-/**
- * An error body is only ever logged, and trimmed and stripped of every
- * decimal number first: ORS quotes the coordinates it could not route from,
- * and a server log is no place for where an athlete runs.
- */
+/** Trimmed and stripped of decimals: ORS quotes the coordinates it could not route from, and a log is no place for where an athlete runs. */
 function forLog(text: string): string {
   return text.replace(/-?\d+\.\d+/g, '#').slice(0, LOG_BODY_LIMIT)
 }
@@ -70,24 +57,17 @@ function orsError(text: string): { code: number | null; message: string } {
       return { code: typeof code === 'number' ? code : null, message: typeof message === 'string' ? message : '' }
     }
   } catch {
-    // Not JSON: a proxy's error page. The text is the message.
+    // Not JSON: a proxy's error page.
   }
   return { code: null, message: text }
 }
 
-/**
- * ORS's gateway (Tyk) answers two different things with a 403: a spent daily
- * allowance ("Quota exceeded") and a key it does not accept ("Access to this
- * API has been disallowed", what a wrong or revoked key gets), while 401
- * only means no key was sent at all. Only the first is the athlete's to wait
- * out; any other 403 is our key, for the owner to fix.
- */
+/** ORS's gateway answers 403 to a spent daily allowance ("Quota exceeded") and to a refused key alike; 401 means no key was sent. */
 const QUOTA_MESSAGE = /quota/i
 
 function failureKind(status: number, text: string): RoutingErrorKind {
   if (status === 401) return 'unauthorized'
   if (status === 403) return QUOTA_MESSAGE.test(orsError(text).message) ? 'quota' : 'unauthorized'
-  // The per-minute limit.
   if (status === 429) return 'rateLimit'
   if (status === 400 || status === 404) {
     const { code, message } = orsError(text)
@@ -109,11 +89,7 @@ interface OrsProperties {
   extras?: { waytype?: { values?: unknown } }
 }
 
-/**
- * The first feature of a GeoJSON answer, read field by field: an answer that
- * moves a field, or drops one, costs that field and not the whole loop.
- * Only the line and its length are required.
- */
+/** Read field by field, so an answer that moves or drops a field costs that field and not the loop; only the line and its length are required. */
 export function parseCandidate(json: unknown, seed: number): RouteCandidate | null {
   const feature = (json as { features?: unknown } | null)?.features
   const first = Array.isArray(feature) ? (feature[0] as { geometry?: { coordinates?: unknown }; properties?: OrsProperties } | undefined) : undefined
@@ -168,7 +144,6 @@ export class OpenRouteServiceGateway implements RoutingGateway {
           Accept: 'application/geo+json',
         },
         body: JSON.stringify(requestBody(req)),
-        // The call's own time limit, and the caller leaving: whichever comes first.
         signal: req.signal ? AbortSignal.any([req.signal, AbortSignal.timeout(CALL_TIMEOUT_MS)]) : AbortSignal.timeout(CALL_TIMEOUT_MS),
         cache: 'no-store',
       })
@@ -214,13 +189,7 @@ export class OpenRouteServiceGateway implements RoutingGateway {
     return { ok: false, kind: 'upstream' }
   }
 
-  /**
-   * `forLog`, with the key cut out first. fetch quotes a header value it
-   * refuses ("Headers.append: "…" is an invalid header value") in its error,
-   * and this log is written here, past the redaction instrumentation applies
-   * to errors a request throws. `routingConfig` refuses such a key already;
-   * this is the second lock.
-   */
+  /** fetch quotes a header value it refuses in its error, and this log is past instrumentation's redaction: the second lock after `routingConfig`. */
   private logSafe(text: string): string {
     return forLog(this.apiKey ? text.split(this.apiKey).join('[ORS_API_KEY]') : text)
   }

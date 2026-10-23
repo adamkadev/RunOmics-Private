@@ -1,13 +1,6 @@
 /**
- * Builds RunOmics' two basemaps (v4.17) from MapTiler's Dataviz styles and
- * writes them to src/map/styles, where they are committed. Run it by hand
- * after a MapTiler style update: `npm run map:styles`, with MAPTILER_KEY (or
- * NEXT_PUBLIC_MAPTILER_TOKEN) set. The key never reaches the files: every URL
- * carries `{key}`, which lib/maptiler fills in at run time.
- *
- * `npm run map:styles -- --restyle` needs no key: it repaints the committed
- * styles with the current MAP_STYLE_COLORS, for a colour change alone. The
- * builder matches layers by pattern, so a built style rebuilds the same way.
+ * Run by hand after a MapTiler style update; the styles are committed. The key never reaches the files: every
+ * URL carries `{key}`, which lib/maptiler fills in at run time.
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'

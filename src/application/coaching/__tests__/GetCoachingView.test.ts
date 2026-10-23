@@ -18,9 +18,7 @@ describe('reading the coaching plan', () => {
     expect(getTodayPrescription('2026-09-15', empty)).toBeNull()
   })
 
-  // In a child process because the zone is process-wide. At 20:00 UTC on
-  // Sunday the 13th it is already Monday in Auckland: a UTC "today" put the
-  // overview a week behind the prescription shown beside it.
+  // In a child process because the time zone is process-wide; 20:00 UTC on Sunday is already Monday in Auckland.
   function currentWeekAt(env: Record<string, string>): string {
     const script = `
       const RealDate = Date

@@ -1,5 +1,4 @@
-// Tokens only, and no tinted fills: a status is its text or dot colour on a
-// neutral chip (neutral surfaces). Success is the accent's positive delta.
+// No tinted fills: a status is its text or dot colour on a neutral chip.
 const CHIP = 'bg-[var(--segmented-track)]'
 
 export const STATUS = {

@@ -8,12 +8,7 @@ import { workoutSummary } from '@/components/plan/workoutSummary'
 import { prescriptionDistanceMeters, prescriptionDuration, prescriptionStructure } from '@/components/coaching/presentation'
 import { activityTitle, intendedType } from '@/lib/activityTitle'
 
-/**
- * The activity page handed the whole Activity to its client components, so
- * every field went into the page payload whether or not anything drew it -
- * the encoded polyline, calories, gear id, the comment and title the server
- * already rendered. Each client component gets the fields it reads instead.
- */
+/** Only the fields a client component reads: every field handed to it goes into the page payload, drawn or not. */
 const DETAIL_FIELDS = [
   // The note row reads and writes the activity's note by id.
   'id',
@@ -57,7 +52,6 @@ const SHARE_FIELDS = [
   'type',
 ] as const satisfies readonly (keyof ShareActivity)[]
 
-/** The map, stats, tabs and charts of the activity detail. */
 export type ActivityDetailView = Pick<Activity, (typeof DETAIL_FIELDS)[number]>
 
 export function activityDetailView(activity: Activity): ActivityDetailView {
@@ -73,12 +67,7 @@ function paceOf(text: string | undefined): number | null {
   return m ? Number(m[1]) * 60 + Number(m[2]) : null
 }
 
-/**
- * The pace the reps were set at: the coach's prescription first - its named
- * pace, else its repeat's effort step - and failing that the planned workout
- * the watch carried, whose effort steps hold the same band. A run the coach
- * matched to nothing still has its target, which is what the watch beeped at.
- */
+/** Falls back to the planned workout the watch carried: a run the coach matched to nothing still has the band it beeped at. */
 function repTarget(prescription: WorkoutPrescription | null, planned: PlannedWorkout | null): ShareReps['target'] {
   const named = paceOf(prescription?.structure?.targetPace)
   if (named !== null) return { min: named, max: named }
@@ -92,11 +81,7 @@ function repTarget(prescription: WorkoutPrescription | null, planned: PlannedWor
   return band ? { min: Math.round(band[0]), max: Math.round(band[1]) } : null
 }
 
-/**
- * Where the rep laps ran, as shares of the run's distance, the laps laid end
- * to end. A lead-in the Splits tab moved to the warm-up is the first active
- * lap, so the reps are the last of them.
- */
+/** A lead-in the Splits tab moved to the warm-up is the first active lap, so the reps are the last of them. */
 function repWindows(splits: ActivitySplit[], reps: number): [number, number][] {
   const total = splits.reduce((sum, split) => sum + split.distanceM, 0)
   if (total <= 0) return []
@@ -109,13 +94,6 @@ function repWindows(splits: ActivitySplit[], reps: number): [number, number][] {
   return windows.slice(windows.length - reps)
 }
 
-/**
- * An interval session's work (design review, Oct 2026): the work laps the
- * Splits tab reads as reps, their time over their distance - recoveries,
- * warm-up and cool-down out - the plan's pace for them, and where on the
- * run they fell. Null for any other kind of run, or one the watch kept no
- * rep laps for.
- */
 export function shareReps(
   activity: Pick<Activity, 'type' | 'splits'>,
   prescription: WorkoutPrescription | null,
@@ -137,18 +115,14 @@ export function shareReps(
   }
 }
 
-/** A run's kind in the coach's broad terms: easy, quality, or neither (a race, a sprint). */
 function family(type: ActivityType): 'easy' | 'quality' | null {
   if (type === 'Base') return 'easy'
   return isIntervalType(type) ? 'quality' : null
 }
 
 /**
- * The coach's session a run is shared as: the one the coach matched it to,
- * else - as Today pairs a run with its day - the one session set for its day
- * of the run's own kind. The coach matches on exact kind, so a threshold
- * session the watch filed as tempo matched nothing; an easy run on a hard
- * day still takes no session.
+ * Falls back to the day's one session of the run's kind, as Today pairs them: the coach matches on exact kind, so a
+ * threshold session the watch filed as tempo matches nothing.
  */
 export function shareSession(
   workouts: readonly { prescription: WorkoutPrescription; activityId: string | null }[],
@@ -167,18 +141,13 @@ export function shareSession(
 }
 
 /**
- * The type a run is shown as, its dot and its name (round 2, the owner's
- * ask): its session's, where the coach set one, else the one its name says
- * (intendedType). A threshold session the watch filed as tempo - its heart
- * rate too low by Garmin's reading - was still a threshold session; how it
- * went is the zones' and the verdict's to say. The run keeps the watch's
- * type: analytics and filters read that.
+ * A threshold session the watch filed as tempo, its heart rate too low by Garmin's reading, is still shown as a
+ * threshold session; the run itself keeps the watch's type, which analytics and filters read.
  */
 export function shownType(activity: Pick<Activity, 'type' | 'description'>, session: WorkoutPrescription | null): ActivityType {
   return session ? COACHING_TO_ACTIVITY_TYPE[session.type] : intendedType(activity)
 }
 
-/** The runs a list shows as their session's type, where it is not the watch's: id to type. */
 export function sessionTypes(
   workouts: readonly { prescription: WorkoutPrescription; activityId: string | null }[],
   activities: readonly Pick<Activity, 'id' | 'date' | 'type' | 'description'>[],
@@ -191,11 +160,7 @@ export function sessionTypes(
   return types
 }
 
-/**
- * The session's name as Plan and Today write it (design review, Oct 2026):
- * "Easy 63 min + 6 × 20s strides", not the watch's "Strides 6 x 20s" - the
- * share card never derives a name of its own.
- */
+/** As Plan and Today write it: "Easy 63 min + 6 × 20s strides", not the watch's "Strides 6 x 20s". */
 function sessionName(session: WorkoutPrescription): string {
   return workoutSummary({
     title: session.title,
@@ -206,21 +171,14 @@ function sessionName(session: WorkoutPrescription): string {
   }).title
 }
 
-/**
- * The run's name on its page (design review, Oct 2026, round 2): its
- * session's, where the coach set one - the header read "Strides 6 × 20s"
- * over a card that read "Easy 54 min + 6 × 20s strides" - else the watch's.
- */
+/** The session's name, where the coach set one, so the page's header agrees with its share card. */
 export function runName(activity: Pick<Activity, 'description' | 'date'>, session: WorkoutPrescription | null): string {
   return session ? sessionName(session) : activityTitle(activity)
 }
 
 /**
- * The share card's run, with the coach's session when it has one: its name,
- * as the plan shows it; its kind - a threshold session the watch filed as
- * tempo is read as the threshold it was set as - and its reps' target. The
- * Stats card leads with the run's written verdict (redesign, Oct 2026), its
- * tone the Overview card's; a run without one keeps the zones headline.
+ * A threshold session the watch filed as tempo is read as the threshold it was set as; a run without a written
+ * verdict keeps the zones headline.
  */
 export function shareActivity(
   activity: Activity,

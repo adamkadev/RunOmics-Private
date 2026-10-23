@@ -33,7 +33,6 @@ def infer_type_with_source(
     hr_zones: Sequence[Any] = (),
     duration_seconds: int | None = None,
 ) -> TypeInference:
-    """Classify from Garmin evidence first, then conservative local evidence."""
     del name  # Names are intentionally not used as device/profile-specific hints.
 
     if parsed and parsed.is_race:
@@ -57,7 +56,6 @@ def infer_type(
     hr_zones: Sequence[Any] = (),
     duration_seconds: int | None = None,
 ) -> str:
-    """Backward-compatible type-only API used by older scripts/tests."""
     return infer_type_with_source(
         name,
         parsed,
@@ -102,8 +100,7 @@ def _infer_runomics_type(
         if z3 >= 35 and high < 30:
             return "Tempo"
 
-    # Missing or ambiguous evidence remains an easy/base classification. This
-    # is intentionally conservative and never fabricates Training Effect.
+    # Missing or ambiguous evidence stays Base: this never fabricates a Training Effect.
     return "Base"
 
 

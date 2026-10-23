@@ -17,7 +17,6 @@ const hours = (sec: number) => formatKm(sec / 3600, 1)
 /** Heart-rate zones are categories: the one zone scale, Z1 to Z5. */
 const ZONE_COLOR = ([1, 2, 3, 4, 5] as SessionZone[]).map(zoneColor)
 
-/** The split's 80/20 target, marked on the bar. */
 const EASY_TARGET_PCT = 80
 
 function EasyHardCard({ rows }: { rows: WeekRow[] }) {
@@ -34,7 +33,6 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
   return (
     <Card className="gap-3.5" testId="easy-hard-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      {/* In range is good news; off the 80/20 target a caution. */}
       <Headline value={`${view.easyPct} / ${100 - view.easyPct}`} note={status} noteStyle={{ color: view.status === 'inRange' ? 'var(--pos)' : 'var(--warn)' }} />
       <div className="relative flex h-3 gap-[3px]" data-testid="easy-hard-bar">
         {shown.map((p) => (
@@ -57,12 +55,7 @@ function EasyHardCard({ rows }: { rows: WeekRow[] }) {
   )
 }
 
-/**
- * The zones' key, a figure under each (design review, Oct 2026): in a stacked
- * week Z3 and Z4 read as one colour, so each zone is named with its hours -
- * the window's, or the held week's while a finger is on the chart - and
- * every segment can be read in words, not by its colour alone.
- */
+/** In a stacked week Z3 and Z4 read as one colour, so each zone is named with its hours. */
 function ZoneKey({ zoneHours, held }: { zoneHours: number[]; held: boolean }) {
   return (
     <div className="grid grid-cols-5 gap-2" data-testid="zone-key" data-held={held || undefined}>
@@ -92,8 +85,7 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
   return (
     <Card testId="zones-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
-      {/* What changed (App Fixes 2d): "36 h in all. Weekly time dropped
-          mid-August, then climbed back from Aug 31. Hard time stayed under 25 min a week." */}
+      {/* "36 h in all. Weekly time dropped mid-August, then climbed back from Aug 31. Hard time stayed under 25 min a week." */}
       <p className="text-[12.5px] leading-[1.45] text-[var(--text-2)] text-pretty" data-testid="zones-summary">
         {s.summaryHours(formatKm(view.totalHours))}
         {view.total === 'recovered' && view.recoveredAfter && view.backFrom
@@ -117,9 +109,7 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
             return (
               <div key={rows[i]!.week} className="flex flex-col justify-end" style={{ height: H }}>
                 {total > 0 ? (
-                  // Zone colours at full strength in every week, never faded.
-                  // The week under way takes the one "this week" mark, the
-                  // dashed accent outline, around its stack (v4.17).
+                  // Zone colours at full strength in every week, never faded: the week under way is marked by its outline.
                   <div
                     data-current={current ? '' : undefined}
                     className="flex flex-col-reverse gap-px rounded-[3px]"
@@ -145,19 +135,6 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
   )
 }
 
-/**
- * Threshold sessions a Z4 circle, intervals a Z5 diamond (v4.17.2) - two
- * neighbouring zones as two dots of one size read alike - and a planned one
- * not run a dashed ring. 12 px on a phone, 10 px from sm up; the diamond a
- * square turned 45°, 9 px from sm up. Each sits in a box the diamond's
- * diagonal fits, so a column of them never touches.
- */
-/**
- * One rounded square a week (App Fixes 2d): filled when a quality session was
- * run - with the count when there were more than one - dashed amber when the
- * plan's session was missed, dashed in the Z4 colour while this week's is
- * still to come, and an empty track otherwise.
- */
 function weekSquare(dots: QualityDot[]): { state: 'done' | 'missed' | 'planned' | 'none'; count: number; style: React.CSSProperties } {
   const done = dots.filter((d) => d === 'done').length
   if (done > 0) return { state: 'done', count: done, style: { background: 'var(--zone-4)' } }
@@ -171,8 +148,7 @@ function QualityCard({ rows, live, plan }: { rows: WeekRow[]; live: boolean; pla
   const view = qualityView(rows, plan)
   if (!view || view.avg === null) return null
   const { totals } = view
-  // Done is the headline; "of 10 planned · 1 extra" in grey beside it, and
-  // the missed weeks in amber in the header (App Fixes 2d).
+  // "of 10 planned · 1 extra", beside the done count.
   const note = [totals.planned !== null ? s.ofPlanned(totals.planned) : null, totals.extra > 0 && totals.planned !== null ? s.extra(totals.extra) : null]
     .filter(Boolean)
     .join(' · ')
@@ -247,7 +223,6 @@ export function IntensityTab({ rows, live, onShift, plan }: IntensityTabProps) {
       <EasyHardCard rows={rows} />
       <ZonesCard rows={rows} live={live} onShift={onShift} />
       <QualityCard rows={rows} live={live} plan={plan} />
-      {/* A way out to the zone table on Athlete & zones, as a card row. */}
       <Link
         href="/athlete"
         className="flex items-center gap-3.5 content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4 transition-transform duration-100 ease-out active:scale-[0.98]"

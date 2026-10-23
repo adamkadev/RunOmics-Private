@@ -14,13 +14,6 @@ import { t } from '@/i18n'
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), back: vi.fn() }) }))
 
-/**
- * The ⓘ buttons were about 18 pt, the window chevrons 24, the range chips 32
- * and the filter pills 36. `.hit-44` gives each a 44 pt target without
- * changing how it is drawn, and it lives in the primitives so no page has to
- * remember it.
- */
-
 const css = fs.readFileSync(path.join(process.cwd(), 'src/app/globals.css'), 'utf8')
 
 describe('the 44 pt hit area', () => {
@@ -76,8 +69,6 @@ describe('the 44 pt hit area', () => {
     }
   })
 
-  // Design review, Oct 2026: the back link, Share and the note's Save were
-  // drawn at 22-36 pt and tapped there.
   it('wraps the back link, Share and Save', () => {
     render(
       <>

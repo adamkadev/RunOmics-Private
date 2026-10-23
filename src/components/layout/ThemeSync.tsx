@@ -14,8 +14,8 @@ export function ThemeSync() {
 
       document.documentElement.style.backgroundColor = bg
       document.body.style.backgroundColor = bg
-      // theme-color is left alone: it is fixed in the layout (see
-      // STATUS_BAR_COLOR), because iOS keeps whatever it held at install.
+      // theme-color is left as the layout fixed it: iOS keeps whatever it
+      // held at install.
     }
 
     sync()
@@ -25,7 +25,6 @@ export function ThemeSync() {
 
     function onStorage(e: StorageEvent) {
       if (e.key !== ACCENT_STORAGE_KEY) return
-      // Another tab changed the accent.
       document.documentElement.setAttribute('data-accent', parseAccent(e.newValue))
     }
     window.addEventListener('storage', onStorage)

@@ -1,13 +1,4 @@
-"""Reprocessing writes freshly parsed fields back over activities that were
-synced by an older parser. Splits are the field that motivated these tests: a
-run synced before the parser understood plain lap_mesgs sits on disk as
-`"splits": null`, and reprocessing is the only thing that can fill it in without
-re-downloading from Garmin.
-
-parse_fit itself is stubbed - building a valid FIT binary in a test isn't worth
-the machinery, and what is under test here is what reprocess.py persists, not
-how the bytes are decoded (that is test_fit_parser.py's job).
-"""
+"""parse_fit is stubbed: what is under test is what reprocess.py persists, not how the bytes decode (test_fit_parser.py)."""
 
 import json
 import sys
@@ -47,8 +38,6 @@ def interval_splits():
 
 @pytest.fixture
 def reprocess_run(tmp_path, activity_factory, monkeypatch):
-    """Seeds one stored activity, points reprocess at a stubbed FIT cache and
-    parser, and returns the activity as it was written back to disk."""
     activities_dir = tmp_path / "activities"
     fit_dir = tmp_path / "fit"
     fit_dir.mkdir()
@@ -82,7 +71,6 @@ def reprocess_run(tmp_path, activity_factory, monkeypatch):
 
 class TestReprocessSplits:
     def test_lap_splits_fill_in_an_activity_stored_without_any(self, reprocess_run):
-        # The Escher case: a race synced before the parser read plain lap_mesgs.
         activity = reprocess_run(
             ParsedFit(duration_seconds=1_800, distance_m=5_250.0, splits=lap_splits())
         )

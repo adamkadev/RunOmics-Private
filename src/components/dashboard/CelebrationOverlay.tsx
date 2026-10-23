@@ -33,10 +33,7 @@ export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | n
   const haptic = useHaptic()
   const trapRef = useFocusTrap<HTMLDivElement>()
 
-  // Whether to celebrate depends on the reader's clock and on what this
-  // browser has already seen, and the server knows neither, so it is decided
-  // after mount. Reading localStorage in a state initializer drew an overlay
-  // on hydration that the server's HTML did not have.
+  // Decided after mount: it depends on the reader's clock and this browser's localStorage, which the server knows neither of.
   const mounted = useMounted()
   const [dismissed, setDismissed] = useState(false)
   const storageKey =
@@ -46,8 +43,7 @@ export function CelebrationOverlay({ record, aiTake }: { record: RecordEntry | n
   const visible = !dismissed && storageKey !== null && !window.localStorage.getItem(storageKey)
 
   useEffect(() => {
-    // visible only ever turns true once - dismissing is final - so this buzzes
-    // once, on the render that reveals the overlay.
+    // visible only ever turns true once (dismissing is final), so this buzzes once.
     if (visible) haptic('celebration')
   }, [visible, haptic])
 

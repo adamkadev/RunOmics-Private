@@ -52,21 +52,13 @@ class WeatherSnapshot:
 
 
 def weather_hour(start: datetime, duration_seconds: int) -> str:
-    """The hourly bucket nearest the middle of the run, as the API's local
-    `YYYY-MM-DDTHH:00` key. One bucket per activity: representative of a 30-90
-    min effort, and unambiguous where averaging a circular quantity like wind
-    direction across buckets would not be."""
+    """One bucket per activity: averaging a circular quantity like wind direction across buckets is ambiguous."""
     mid = start + timedelta(seconds=max(duration_seconds, 0) / 2)
     return (mid + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:00")
 
 
 class WeatherClient:
-    """Hourly conditions from Open-Meteo, batched by start area and calendar month.
-
-    Every lookup for the same area and month is served from a single response, so
-    a backfill over a season of runs from the same place costs a handful of
-    requests. Errors resolve to "no weather" instead of raising: the daily sync
-    must not lose an activity because a weather API blipped."""
+    """Errors resolve to "no weather": the daily sync must not lose an activity because a weather API blipped."""
 
     def __init__(
         self,
@@ -97,8 +89,7 @@ class WeatherClient:
         return self._groups[key]
 
     def _load(self, source: str, lat: float, lon: float, month: str) -> dict[str, WeatherSnapshot]:
-        # Padded by a day on each side: a run late on the last of the month can
-        # round its bucket into the next one.
+        # Padded by a day on each side: a run late on the last of the month can round into the next one.
         start, end = _month_bounds(month)
         params: dict[str, Any] = {
             "latitude": lat,
@@ -108,8 +99,7 @@ class WeatherClient:
         }
 
         if source == "archive":
-            # The archive rejects a future end_date outright, and the padding
-            # above pushes the current month one day past today.
+            # The archive rejects a future end_date, and the padding pushes the current month one day past today.
             end = min(end, self._today)
             if start > end:
                 return {}
@@ -141,8 +131,6 @@ class WeatherClient:
 
 
 def weather_for_activity(client: WeatherClient, parsed: ParsedFit) -> dict[str, Any] | None:
-    """Conditions at the middle of the run, or None when the FIT carries nothing
-    to look them up with (no GPS start point, or no local start time)."""
     if not parsed.route or parsed.start_time_local is None:
         return None
 
@@ -160,8 +148,7 @@ def _parse_hourly(payload: dict[str, Any]) -> dict[str, WeatherSnapshot]:
     result: dict[str, WeatherSnapshot] = {}
     for i, hour in enumerate(times):
         values = [column[i] if i < len(column) else None for column in columns]
-        # A partially null hour is what makes the archive fall through to the
-        # forecast endpoint, so it must not land in the map at all.
+        # A partially null hour must stay out: it is what makes the archive fall through to the forecast.
         if any(value is None for value in values):
             continue
         temp, apparent, humidity, wind, wind_dir, precipitation, code = values

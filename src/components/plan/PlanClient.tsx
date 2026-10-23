@@ -21,19 +21,17 @@ interface Props {
   planPhaseRanges: PlanPhaseRange[]
   nextRace: UpcomingRace | null
   trainingZones: TrainingZonesData | null
-  /** The athlete's HR zone edges, for a planned session's bpm cap. */
   hrZoneBoundsBpm: readonly number[] | null
   coaching: PlanCoachingView | null
   /** The date the page was prerendered on; see useToday. */
   today: string
-  /** The athlete's home area has quartiers (Explore): sessions to come get "Find a route". */
   exploreAvailable?: boolean
 }
 
 type ViewMode = 'week' | 'month'
 const VIEW_MODES = ['week', 'month'] as const
 
-/** A `?date=` worth reading: a real calendar day, "2026-10-21". */
+/** A real calendar day ("2026-02-31" is not), else null. */
 export function planDateParam(value: string | null): string | null {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
   return isoDate(new Date(`${value}T00:00:00`)) === value ? value : null
@@ -41,12 +39,7 @@ export function planDateParam(value: string | null): string | null {
 
 const monthKeyOf = (date: string) => date.slice(0, 7)
 
-/**
- * Plan (redesign 3.0): the week or the month, and the day selected in it.
- * Both live in the URL - `?view=month`, `?date=2026-10-21` - so Today's next
- * workout opens straight onto its day, and a reload keeps the place. No date
- * is today, and follows it over midnight; no view is the week.
- */
+/** No `?date=` is today, following it over midnight; no `?view=` is the week. */
 export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, today: serverToday, exploreAvailable = false }: Props) {
   const today = useToday(serverToday)
   const [viewParam, setViewParam] = useUrlParam('view')
@@ -54,7 +47,7 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
   const mode: ViewMode = viewParam === 'month' ? 'month' : 'week'
   const selectedDate = planDateParam(dateParam) ?? today
   const weekStart = useMemo(() => startOfWeek(new Date(`${selectedDate}T00:00:00`)), [selectedDate])
-  // The month paged to, apart from the selected day; null is the selected day's month.
+  // null: the selected day's month.
   const [pagedMonth, setPagedMonth] = useState<string | null>(null)
   const monthKey = pagedMonth ?? monthKeyOf(selectedDate)
   const year = Number(monthKey.slice(0, 4))
@@ -103,7 +96,6 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
   function shift(delta: number) {
     setDirection(delta > 0 ? 'forward' : 'backward')
     if (mode === 'week') {
-      // The same weekday a week on, or today when the week it lands on holds it.
       const monday = isoDate(addDays(weekStart, delta * 7))
       const next = isoDate(addDays(new Date(`${selectedDate}T00:00:00`), delta * 7))
       selectDate(monday === thisWeek ? today : next)
@@ -119,7 +111,6 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
     setDateParam(null)
   }
 
-  /** A month's day, or its week: the Week view, on that day. */
   function openWeekAt(date: string) {
     setDirection('forward')
     setPagedMonth(null)
@@ -134,8 +125,6 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
 
   return (
     <div className="flex flex-col gap-5">
-      {/* The title and the switch on one row (redesign 3.0): the phase card
-          names the race, so the header carries no subtitle. */}
       <header className="flex items-center justify-between gap-4">
         <h1 className="min-w-0 text-display text-foreground">{t.pages.plan.title}</h1>
         <SegmentedTabs

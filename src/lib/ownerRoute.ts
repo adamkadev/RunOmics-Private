@@ -4,17 +4,8 @@ import { logRejectedRequest } from '@/lib/internalAuth'
 import { verifyFirebaseIdToken } from '@/lib/verifyFirebaseIdToken'
 
 /**
- * The browser-side counterpart to `guardInternalRequest`.
- *
- * `/api/internal/*` is called by the sync workflow, which carries a shared
- * secret no browser may ever hold. A route the owner's own phone calls needs
- * the other half: the Firebase ID token behind `useOwnerAuth`, verified here
- * against the same `owner` custom claim `firestore.rules` enforces, so the
- * answer to "is this the owner" is the one claim set once by
- * `npm run set-owner-claim` rather than a second notion of who is privileged.
- *
- * Verified by hand rather than through firebase-admin/auth - see
- * verifyFirebaseIdToken for why that import broke this route in production.
+ * Checks the same `owner` custom claim firestore.rules enforces. Verified by
+ * hand, not through firebase-admin/auth: see verifyFirebaseIdToken.
  */
 export async function requireOwner(req: NextRequest): Promise<NextResponse | null> {
   const projectId = process.env.FIREBASE_PROJECT_ID
@@ -37,9 +28,7 @@ export async function requireOwner(req: NextRequest): Promise<NextResponse | nul
     }
     return null
   } catch {
-    // A revoked, expired or forged token all land here, and all mean the same
-    // thing to the caller: sign in again. The log keeps to the same reason -
-    // the verifier's message can quote the expected audience.
+    // The log keeps to the reason: the verifier's message can quote the expected audience.
     logRejectedRequest(req, 'unauthorized')
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }

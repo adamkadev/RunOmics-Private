@@ -1,23 +1,4 @@
-"""Sync Garmin's own VO2max series to the private data workspace.
-
-  metrics-service/metrics/maxmet/monthly/{start}/{end}
-  metrics-service/metrics/maxmet/daily/{start}/{end}
-
-This is the series Garmin Connect plots itself, and it carries two things the
-per-activity readings on activities.json do not: `vo2MaxPreciseValue`, which
-keeps a decimal where the activity payload only exposes the rounded integer,
-and a fitness age per month. A rounded series turns a slow physiological drift
-into a staircase of whole points, so this is the source worth charting.
-
-Garmin's own front-end never asks for more than twelve months at a time, so a
-longer history is fetched as consecutive twelve-month windows. Samples are
-merged into the stored file rather than replacing it: whatever Garmin stops
-serving once it ages out of its retention window stays in ours.
-
-The monthly series feeds the six-month and one-year views; the daily one, kept
-to a recent window, feeds the four-week view. The daily endpoint is
-undocumented, so a failure there is a warning, not a failed sync.
-"""
+"""Garmin's own front-end never asks for more than twelve months at a time, so a longer history is fetched in windows."""
 
 from __future__ import annotations
 
@@ -46,7 +27,6 @@ def _end_of_month(day: date) -> date:
 
 
 def monthly_windows(start: date, today: date) -> list[tuple[date, date]]:
-    """The whole span split into month-aligned windows of at most a year."""
     windows: list[tuple[date, date]] = []
     last = _end_of_month(today)
     cursor = _first_of_month(start)
@@ -60,12 +40,7 @@ def monthly_windows(start: date, today: date) -> list[tuple[date, date]]:
 
 
 def normalize_max_met(entries: Any) -> dict[str, dict[str, Any]]:
-    """Garmin's monthly records keyed by `YYYY-MM`.
-
-    Keying by month rather than by the sample's own date makes a re-fetch
-    idempotent: the running month is sampled on the last day Garmin has data
-    for, so its date moves as the month fills in.
-    """
+    """Keyed by month so a re-fetch is idempotent: Garmin dates the running month on its latest day, which moves."""
     samples: dict[str, dict[str, Any]] = {}
 
     for entry in entries or []:
@@ -110,7 +85,6 @@ def _fetch_months(client: GarminClient, start: date, today: date) -> dict[str, d
 
 
 def _fetch_days(client: GarminClient, today: date) -> dict[str, dict[str, Any]]:
-    """The recent daily samples, which only the four-week view plots."""
     start = today - timedelta(days=_DAILY_WINDOW_DAYS)
     try:
         payload = retry_transient(
@@ -124,12 +98,7 @@ def _fetch_days(client: GarminClient, today: date) -> dict[str, dict[str, Any]]:
 
 
 def sync_vo2max_history(client: GarminClient, start: date, today: date | None = None) -> int:
-    """Merge the monthly and recent daily series into vo2max_history.json.
-
-    Returns the month count. Both series are re-fetched whole on every run -
-    that is three requests or so - and merged over what is stored, so nothing
-    Garmin has aged out is lost.
-    """
+    """Merged over what is stored, so what Garmin ages out of its retention window stays in ours."""
     today = today or date.today()
     print("Syncing VO2max history…")
 

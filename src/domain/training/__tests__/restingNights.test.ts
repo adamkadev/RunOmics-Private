@@ -3,10 +3,8 @@ import { restingNights, type RecoveryNight } from '../recovery'
 
 const night = (date: string, hrv: number | null, restingHr: number | null): RecoveryNight => ({ date, hrv, restingHr })
 
-// Round 2: Garmin's resting HR is the lowest half hour the watch was worn. The
-// owner's watch is worn only to run (a Fitbit at night): its resting HR is a
-// warm-up's, 50 to 60 against a true 45. The second athlete's is worn all day
-// but not to sleep: 59 to 70, on run days too.
+// Garmin's resting HR is the lowest half hour the watch was worn: a watch worn
+// only to run reads a warm-up's 50 to 60 against a true 45.
 describe('restingNights', () => {
   it('keeps no resting HR from a watch worn only to run', () => {
     const runs = new Set(['2026-10-16', '2026-10-18', '2026-10-21'])

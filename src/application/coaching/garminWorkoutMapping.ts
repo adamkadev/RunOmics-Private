@@ -220,11 +220,8 @@ function workoutDescription(workout: WorkoutPrescription): string | null {
 }
 
 /**
- * The name as the watch gets it. The coach writes minutes with a prime
- * ("3 × 8′ @ 4:25", design review, Oct 2026); × and · are Latin-1, which the
- * watch fonts carry - accented names round-trip - but the primes are not, so
- * they go as the apostrophe and quote a watch can draw. A name without them
- * is unchanged, and so is its content hash: nothing already pushed moves.
+ * Watch fonts carry Latin-1 (×, ·, accents) but not primes, so those go as the apostrophe and quote.
+ * A name without primes is unchanged, and so is its content hash: nothing already pushed moves.
  */
 export function garminWorkoutName(title: string): string {
   return title.replaceAll('′', "'").replaceAll('″', '"')

@@ -2,12 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from 'react'
 
-/**
- * What `removeUrlParams` tells the readers by: the address changed in place,
- * and nothing went Back. A popstate would say Back - the app shell
- * (NavigationHistory, AppShell) takes every one for Back, and then reads the
- * next page opened as a page come back to.
- */
+/** Not a popstate: the app shell (NavigationHistory, AppShell) takes every popstate for Back. */
 export const URL_PARAMS_EVENT = 'runomics:url-params'
 
 function subscribe(onChange: () => void) {
@@ -20,11 +15,8 @@ function subscribe(onChange: () => void) {
 }
 
 /**
- * One search param, read from the address bar and written back with
- * history.replaceState - which the Next router picks up - so a statically
- * rendered page can keep a tab in its URL without a Suspense boundary around
- * useSearchParams. The server snapshot is null: the first paint is the
- * default, and the URL's value takes over after hydration.
+ * history.replaceState, which the Next router picks up, lets a statically
+ * rendered page keep a tab in its URL without a Suspense boundary around useSearchParams.
  */
 export function useUrlParam(name: string): [string | null, (value: string | null) => void] {
   const value = useSyncExternalStore(
@@ -47,13 +39,7 @@ export function useUrlParam(name: string): [string | null, (value: string | null
   return [value, set]
 }
 
-/**
- * Takes params out of the address - one history entry replaced - and tells
- * every `useUrlParam` reader, as its setter does, but with no popstate: the
- * app shell hears nothing, so the page opened next is a push, at its top.
- * (The setter's own popstate, which List | Map and the tabs still send, is
- * heard as Back.) Nothing happens when none of them is there.
- */
+/** No popstate, unlike the setter: the app shell hears nothing, so the page opened next is a push, at its top. */
 export function removeUrlParams(names: readonly string[]): void {
   const url = new URL(window.location.href)
   const present = names.filter((name) => url.searchParams.has(name))

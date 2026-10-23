@@ -23,11 +23,7 @@ export interface GarminApplyOptions {
   now: () => string
   pause?: (ms: number) => Promise<void>
   pauseMs?: number
-  /**
-   * Called after every mutation. Required, not optional: a run that forgets it
-   * loses the record of workouts Garmin has already accepted and re-creates
-   * them next time, which is the failure this exists to prevent.
-   */
+  /** Called after every mutation: a run that skips it forgets what Garmin accepted and re-creates it next time. */
   persist: (state: GarminSyncState) => void
 }
 
@@ -81,8 +77,8 @@ async function createAndSchedule(
     }
   } catch (error) {
     if (error instanceof GarminRateLimitError) throw error
-    // The workout a retry meant to reuse is gone, deleted by hand most likely.
-    // Retrying it would 404 on every run from now on; push it again instead.
+    // The workout a retry meant to reuse is gone, deleted by hand most likely: retrying would 404 on every
+    // run from now on, so push it again.
     if (error instanceof GarminNotFoundError && knownWorkoutId) return createAndSchedule(gateway, operation, now, null)
     return {
       entry: partial,
@@ -98,7 +94,6 @@ async function createAndSchedule(
   }
 }
 
-/** A removal Garmin answers 404 to has nothing left to do. */
 async function alreadyGoneIsDone(removal: Promise<void>): Promise<void> {
   try {
     await removal
@@ -137,9 +132,7 @@ export async function applyGarminSyncPlan(
     options.persist(snapshot())
   }
 
-  // Two mutations, so the first is recorded before the second is tried: an
-  // entry that kept its spent schedule id would fail on it every run after,
-  // and the workout behind it would never be deleted.
+  // Recorded between the two mutations: an entry that kept its spent schedule id would fail on it every run after.
   const removeManaged = async (entry: GarminSyncEntry) => {
     if (entry.garminWorkoutScheduleId) {
       await alreadyGoneIsDone(gateway.unscheduleWorkout(entry.garminWorkoutScheduleId))
@@ -242,8 +235,7 @@ export async function verifyGarminSync(
     }),
   )
 
-  // A failed verification that left the entry "scheduled" would read as done:
-  // the next run would keep it and the athlete would never get the session.
+  // Left "scheduled", a failed verification would read as done and the athlete would never get the session.
   const entries = report.state.entries.map((entry) =>
     unconfirmed.has(entry.prescriptionId) ? { ...entry, status: 'unverified' as const } : entry,
   )

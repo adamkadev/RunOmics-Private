@@ -45,7 +45,6 @@ function yearData(overrides: Partial<YearData> = {}): YearData {
 const BLOCK = { startDate: '2026-07-24', raceDate: '2026-10-16', week: 9, weeks: 12 }
 
 describe('SeasonTimeline', () => {
-  // v4.17: what is ahead, next first, then what is done; today is on the strip.
   it('lists the races ahead next first, then the ones done', () => {
     render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
     const items = [...screen.getByTestId('season-card').querySelectorAll('li')].map((li) => li.getAttribute('data-testid'))
@@ -81,7 +80,7 @@ describe('SeasonTimeline', () => {
   it('states a done race against its target, in pos when beaten', () => {
     render(<SeasonTimeline yearData={yearData()} today={TODAY} block={BLOCK} />)
     const done = screen.getByTestId('timeline-done')
-    // 3.1: "MAY 10 · HALF" over the race's own name, not "· DONE" over "Half · …".
+    // Named by the race itself, not "5K · …".
     expect(done.textContent).toContain('5K')
     expect(done.textContent).not.toContain(`5K · `)
     const delta = within(done).getByTestId('timeline-delta')
@@ -100,7 +99,6 @@ describe('SeasonTimeline', () => {
     expect(screen.getByTestId('season-marker-done').querySelector('.bg-foreground')).not.toBeNull()
   })
 
-  // 3.0: a goal with no date only ever read "no target set"; it is left out.
   it('leaves a goal with no date out', () => {
     const data = yearData()
     data.goals!.targets.push({ distance: 'Marathon', targetSeconds: null })
@@ -147,11 +145,10 @@ describe('targetsHit (3.1)', () => {
 })
 
 describe('seasonRaceRows', () => {
-  // R7d: the column is the prediction, labelled as one, and the half is "Half".
   it('prints the watch prediction as predicted, even where the best is faster', () => {
     const rows = seasonRaceRows(yearData(), TODAY)
     const half = rows.find((row) => row.distance === 'Half-Marathon')!
-    // Garmin predicts 1:28:20; the best (1:27:44) no longer stands in for it.
+    // Garmin predicts 1:28:20; the best (1:27:44) does not stand in for it.
     expect(half.value).toBe('1:28:20')
     expect(half.valueSub).toBe(t.goals.predictedTag)
     expect(half.title.startsWith(`${t.goals.half} · `)).toBe(true)

@@ -2,16 +2,7 @@ import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-/**
- * The build script's one way out to the network: an honest User-Agent, a
- * patient retry, and a disk cache so a rerun after a flaky Overpass reply
- * does not ask for the 30 MB it already has.
- *
- * Overpass answers 406 to every generic agent (curl, node's fetch, even a
- * browser's) and asks automated clients to name themselves, so every request
- * carries this one. Its public endpoint is often at capacity (502/504 on
- * about 40% of attempts in Oct 2026) and asks for exponential backoff.
- */
+/** Overpass answers 406 to every generic agent (curl, node's fetch, even a browser's): clients must name themselves. */
 export const USER_AGENT = 'RunOmics explore-areas build script (+https://github.com/adamkadev)'
 
 /** Gitignored with node_modules, and survives `npm ci` only by accident: it is a cache. */
@@ -32,21 +23,15 @@ export interface FetchRequest {
   /** Printed in the log instead of the URL, which can carry a bbox. */
   label: string
   url: string
-  /** A form-encoded POST when set (Overpass), a GET otherwise. */
   form?: Record<string, string>
   timeoutMs?: number
-  /**
-   * A 200 can still be a failure: Overpass reports a query that ran out of
-   * time or memory as a `remark` beside partial data. Return a reason to
-   * retry (and not cache), or null to accept.
-   */
+  /** Overpass reports a query that ran out of time or memory as a `remark` beside a 200: return a reason to retry. */
   validate?: (text: string) => string | null
 }
 
 export interface FetchOptions {
   /** Ignore the cache (the response is still written back). */
   refresh: boolean
-  /** CACHE_DIR unless a test points it elsewhere. */
   cacheDir?: string
   attempts?: number
   sleep?: (ms: number) => Promise<void>
@@ -60,10 +45,7 @@ export interface FetchResult {
   ms: number
 }
 
-/**
- * The key covers the URL and the body: two Overpass queries differ only in
- * their body. Only the hash names the file, so no bbox is written to disk.
- */
+/** Two Overpass queries differ only in their body; only the hash names the file, so no bbox is written to disk. */
 export function cacheKey(url: string, body: string): string {
   return createHash('sha256').update(`${url}\n${body}`).digest('hex')
 }
@@ -90,8 +72,7 @@ export async function cachedFetch(request: FetchRequest, options: FetchOptions):
     } catch {
       // Not cached yet.
     }
-    // Checked again on the way out: a cache written by an older build of this
-    // script, or edited by hand, is refetched rather than trusted.
+    // A cache written by an older build of this script, or edited by hand, is refetched rather than trusted.
     if (text !== null && !request.validate?.(text)) return { text, cached: true, attempts: 0, ms: Date.now() - started }
   }
 
@@ -115,8 +96,7 @@ export async function cachedFetch(request: FetchRequest, options: FetchOptions):
       if (response.ok) {
         const invalid = request.validate?.(text) ?? null
         if (!invalid) {
-          // Written aside and renamed, so an interrupted run never leaves half
-          // a response that the next run would read as cached.
+          // Written aside and renamed, so an interrupted run never leaves half a response to read as cached.
           mkdirSync(cacheDir, { recursive: true })
           writeFileSync(`${file}.part`, text)
           renameSync(`${file}.part`, file)

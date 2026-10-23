@@ -24,7 +24,6 @@ describe('prompt rules by locale', () => {
     expect(promptVersion(4)).toMatch(/^4-fr\d+$/)
   })
 
-  // A French deployment read translated English, adjectives agreed with an athlete of unknown gender.
   it('asks a French build for French as a coach says it, agreeing nothing with the athlete', async () => {
     const { systemInstruction } = await promptIn('fr')
     const rules = systemInstruction('Coach.', 'one sentence', LIMITS)

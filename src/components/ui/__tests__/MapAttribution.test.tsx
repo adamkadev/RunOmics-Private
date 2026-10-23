@@ -45,7 +45,6 @@ describe('MapAttribution (3.0)', () => {
   it('keeps each separator at the end of its credit, so no line of the note starts with one', () => {
     render(<MapAttribution extraCredits={[{ text: 'IGN – ADMIN EXPRESS COG' }, { text: '© openrouteservice by HeiGIT' }]} />)
     fireEvent.click(screen.getByRole('button', { name: 'Map credits' }))
-    // The only places a line can break: the spaces between the unbreakable groups.
     const groups = [...screen.getByRole('note').children].map((group) => [group.textContent, group.className])
     expect(groups).toEqual([
       ['© MapTiler ·', 'whitespace-nowrap'],

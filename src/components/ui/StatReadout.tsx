@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 export interface StatReadoutItem {
   key: string
   label: string
-  /** The series' own colour, as a swatch - never the only key to the value. */
+  /** Drawn as a swatch beside the label, never the only key to the value. */
   color: string
   value: string | null
   unit: string
@@ -13,11 +13,6 @@ export interface StatReadoutItem {
 
 const COLUMNS: Record<number, string> = { 1: 'grid-cols-1', 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' }
 
-/**
- * Labelled, swatched, unit-bearing values that follow a chart's cursor. The row
- * it replaces was four coloured numbers - "113 · 4:25 · 171 · 24" - with no
- * names and no units, so colour was the only key.
- */
 export function StatReadout({ heading, items, className }: { heading: ReactNode; items: StatReadoutItem[]; className?: string }) {
   return (
     <GlassSurface variant="card" className={cn('rounded-2xl px-3.5 py-2.5', className)} aria-live="polite">

@@ -63,8 +63,7 @@ describe('readJsonFile', () => {
 
   it('falls back when the file is valid JSON but not an object', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    // `null` parses, so it used to be handed straight back as T - and
-    // `const { years } = readJsonFile(...)` threw out of a server component.
+    // `null` parses as JSON, yet is no usable T.
     const filePath = write('null.json', 'null')
 
     expect(readJsonFile(filePath, { years: [] })).toEqual({ years: [] })
@@ -76,7 +75,7 @@ describe('readJsonFile', () => {
 
     expect(readJsonFile(write('scalar.json', '42'), null)).toBeNull()
     expect(readJsonFile(write('string.json', '"nope"'), null)).toBeNull()
-    // An array is `typeof 'object'`, so this needs the explicit check below.
+    // An array is `typeof 'object'` too.
     expect(readJsonFile(write('array.json', '[1, 2]'), null)).toBeNull()
   })
 })

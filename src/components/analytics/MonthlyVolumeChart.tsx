@@ -19,7 +19,7 @@ const VOLUME_STACK_ORDER: ActivityType[] = ['Base', 'Tempo', 'Threshold', 'VO2Ma
 interface Props {
   data: MonthlyVolume[]
   typesPresent: ActivityType[]
-  /** The year choice, in the head of the first card it scopes (G30). */
+  /** The year choice, in the head of the first card it scopes. */
   controls?: ReactNode
 }
 

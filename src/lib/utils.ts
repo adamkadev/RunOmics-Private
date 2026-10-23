@@ -8,7 +8,6 @@ const twMerge = extendTailwindMerge({
         {
           text: [
             'micro', 'caption', 'footnote', 'subhead', 'body', 'title1', 'title2',
-            // Liquid Glass v3's iOS ramp (globals.css @theme).
             'large-title', 'title-1', 'metric', 'title-3', 'headline', 'eyebrow', 'tab',
           ],
         },

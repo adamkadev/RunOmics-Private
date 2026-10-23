@@ -1,12 +1,7 @@
 /**
- * OKLCH conversions, used to generate an accent's whole token block from one
- * hue. Björn Ottosson's matrices (https://bottosson.github.io/posts/oklab/).
- *
- * The accent scale fixes lightness and chroma per token role and varies only
- * hue, so contrast against a given surface is a property of the scale rather
- * than of the user's pick. Gamut mapping keeps that true: when oklch(L C h)
- * falls outside sRGB, chroma is reduced and L is left alone, so the generated
- * colour is never lighter or darker than the role says it is.
+ * Björn Ottosson's matrices (https://bottosson.github.io/posts/oklab/). Gamut
+ * mapping reduces chroma and leaves L alone, so a generated colour is never
+ * lighter or darker than its token role says.
  */
 
 export interface Oklch {
@@ -74,11 +69,7 @@ function inGamut(linear: [number, number, number]): boolean {
   return linear.every((channel) => channel >= -1e-4 && channel <= 1 + 1e-4)
 }
 
-/**
- * The largest chroma at this lightness and hue that still fits in sRGB. Twenty
- * bisections land within ~1e-7 of the boundary, which is far below an 8-bit
- * step, so the result is stable across runs and platforms.
- */
+/** Twenty bisections land within ~1e-7 of the sRGB boundary, far below an 8-bit step. */
 export function clampChromaToGamut(l: number, c: number, h: number): number {
   if (inGamut(oklchToLinearSrgb({ l, c, h }))) return c
   let low = 0
@@ -91,7 +82,6 @@ export function clampChromaToGamut(l: number, c: number, h: number): number {
   return low
 }
 
-/** Hex for oklch(l c h), with chroma reduced if that hue cannot hold it in sRGB. */
 export function oklchToHex({ l, c, h }: Oklch): string {
   const linear = oklchToLinearSrgb({ l, c: clampChromaToGamut(l, c, h), h })
   return `#${linear.map((channel) => toHex(linearToSrgb(channel))).join('')}`

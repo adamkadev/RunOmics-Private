@@ -1,13 +1,7 @@
 /**
- * An element faded to `opacity` as an inline style, and none at all once
- * fully shown; faded out, it takes no taps.
- *
- * A glass object (`.lg`) is never faded itself: an opacity under 1 on the
- * wrapper makes it a backdrop root, and WebKit then blurs nothing behind it
- * - the glass goes flat while it fades. Its children (the blur, edge and tint
- * layers and the content) take the opacity instead, with the wrapper's own
- * transition if it has one, and the wrapper's drop shadow goes once the glass
- * is mostly gone (Liquid Glass v3, README §4).
+ * A glass object (`.lg`) is never faded itself: opacity under 1 makes it a
+ * backdrop root and WebKit then blurs nothing behind it, so its children take
+ * the opacity instead.
  */
 export function fadeElement(el: HTMLElement, opacity: number) {
   const glass = el.classList.contains('lg')
@@ -25,7 +19,6 @@ export function fadeElement(el: HTMLElement, opacity: number) {
   else el.style.removeProperty('pointer-events')
 }
 
-/** An element as the page drew it, whatever fadeElement did to it. */
 export function unfadeElement(el: HTMLElement) {
   fadeElement(el, 1)
   el.style.removeProperty('pointer-events')

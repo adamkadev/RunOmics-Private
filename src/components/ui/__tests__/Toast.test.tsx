@@ -24,8 +24,6 @@ describe('useToast', () => {
     expect(screen.getByRole('status')).toHaveTextContent('First')
   })
 
-  // The first toast's timers used to keep running: at 2 s they faded the
-  // second toast out, and 200 ms later removed it, 1.5 s early.
   it('gives a newer toast its whole time on screen', () => {
     render(<Harness />)
     fireEvent.click(screen.getByText('first'))
@@ -40,7 +38,6 @@ describe('useToast', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 
-  // Neutral surfaces: a success toast is a raised neutral card, no accent fill.
   it('writes a success toast on a neutral raised surface', () => {
     render(<Toast toast={{ msg: 'Saved', ok: true }} />)
     const cls = screen.getByRole('status').className

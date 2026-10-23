@@ -7,12 +7,8 @@ import { parseAreaFile, parseIndexFile } from '@/domain/explore/areaFile'
 import type { ExploreAreaRef, ExploreIndexFile } from '@/domain/explore/types'
 
 /**
- * The Explore areas the build script wrote into the data repository:
- * `explore/index.json` and one GeoJSON file per area beside it.
- *
- * They are optional. A dataset without them - the demo, an athlete nobody
- * built areas for yet - has no Districts layer, not a broken page, so a
- * missing directory or index reads as no areas at all.
+ * Optional: a dataset without Explore areas has no Districts layer, not a broken page,
+ * so a missing directory or index reads as no areas at all.
  */
 
 type IndexedArea = ExploreIndexFile['areas'][number]
@@ -28,9 +24,7 @@ const ETAG_SAFE = /^[A-Za-z0-9._-]{1,128}$/
 
 const isAbsent = (error: unknown) => (error as NodeJS.ErrnoException).code === 'ENOENT'
 
-// Keyed by directory, like the activity cache: a cache that outlived a change
-// of RUNOMICS_DATA_DIR would serve the other workspace. The data only changes
-// with a deployment, so each workspace is read once.
+// Keyed by directory, like the activity cache; the data only changes with a deployment, so each workspace is read once.
 let cache: {
   dir: string
   areas: IndexedArea[]
@@ -39,10 +33,8 @@ let cache: {
 } | null = null
 
 /**
- * The index as `parseIndexFile` reads it - whole or not at all - less any
- * area whose version could not be sent as an ETag. An entry is only ever
- * trusted for the file it names, and that name is a bare one beside the
- * index, so nothing outside `explore/` can be reached through it.
+ * The index whole or not at all, less any area whose version cannot be an ETag. Its file names
+ * are bare ones beside the index, so nothing outside `explore/` can be reached through them.
  */
 function readIndex(dir: string): IndexedArea[] {
   const indexPath = path.join(dir, 'index.json')
@@ -72,20 +64,13 @@ function load() {
   return cache
 }
 
-/** Every area this deployment has, as the index lists them. Small enough for a page payload. */
 export function listExploreAreas(): ExploreAreaRef[] {
   return load().refs
 }
 
 /**
- * One area file, with the version its cache entries go by.
- *
- * The file is checked before it is served: whole, as the worker will check
- * it, so a file it would refuse fails here as a 404 rather than as a broken
- * layer; and against the index, because the version is the ETag and the
- * browser's cache key, and a file rebuilt without its index (or the other
- * way round) would otherwise be cached for good under a version it does not
- * have. Read and checked once per workspace.
+ * Checked whole, as the worker will check it, so a refused file is a 404 rather than a broken layer;
+ * and against the index, because the version is the ETag and a mismatch would be cached for good.
  */
 export function readExploreAreaFile(id: string): ExploreAreaFileRead | null {
   const { dir, areas, files } = load()
@@ -99,11 +84,7 @@ export function readExploreAreaFile(id: string): ExploreAreaFileRead | null {
   return read
 }
 
-/**
- * Where an index entry's file sits, or null unless that is directly inside
- * `dir`. The index's file-name rule already rules out anything else; this is
- * the check where it matters, at the read.
- */
+/** Null unless the file sits directly inside `dir`: the index already rules that out, and this is the check at the read. */
 export function areaFilePath(dir: string, file: string): string | null {
   const root = path.resolve(dir)
   const filePath = path.resolve(root, file)

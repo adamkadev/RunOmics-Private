@@ -22,7 +22,6 @@ describe('monthDays', () => {
     expect(day('2026-07-21')).toEqual({ state: 'planned' })
   })
 
-  // A Tuesday session run on Wednesday is one session done, not missed plus extra.
   it('counts a run a day off its session as that session', () => {
     const day = states(['2026-07-14'], ['2026-07-15'])
     expect(day('2026-07-14')).toEqual({ state: 'done', ranOn: '2026-07-15' })

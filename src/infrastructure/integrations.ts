@@ -1,11 +1,6 @@
 import 'server-only'
 
-/**
- * Which of the server's integrations this deployment has credentials for, by
- * name only - never a value. The health probe reports it, so a deployment
- * whose reminders answer 500 can be told apart, without opening its logs,
- * from one whose Firebase Admin credentials were never set.
- */
+/** Which integrations this deployment has credentials for, by name only - never a value; the health probe reports it. */
 export interface IntegrationStatus {
   /** Firestore, and every push notification. */
   firebaseAdmin: boolean

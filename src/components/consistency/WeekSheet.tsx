@@ -10,14 +10,12 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { weekSheet, type ConsistencyView, type SheetDay, type SheetRow, type WeekSheet as Sheet } from './consistencyView'
 
-/** A day's circle: a run filled in the accent, a session to come dashed; today takes the shared ring (state-today, F14). */
 function dayStyle(day: SheetDay): CSSProperties {
   if (day.runs > 0) return { background: 'var(--accent)', color: 'var(--accent-foreground)' }
   if (day.planned) return { border: '1.5px dashed var(--accent)' }
   return {}
 }
 
-/** The runs column: "5" with a tick on target, "0/3" for the week under way, a dash for one to come. */
 function RunsChip({ row, target }: { row: SheetRow; target: number }) {
   if (row.status === 'future') return <span className="justify-self-center text-[11px] text-subtle">–</span>
   const chip = 'justify-self-center whitespace-nowrap rounded-[7px] px-1.5 py-[3px] text-[11px] font-semibold tabular-nums'
@@ -37,7 +35,7 @@ function RunsChip({ row, target }: { row: SheetRow; target: number }) {
   return <span className={cn(chip, 'bg-muted text-muted-foreground')} data-status="under">{row.runs}</span>
 }
 
-/** "Sep 14 – 20": a calendar row's week, for the reader and the screen reader. */
+/** "Sep 14 – 20" */
 function weekRangeLabel(start: string): string {
   return formatDateRange(start, isoDate(addDays(new Date(`${start}T00:00:00`), 6)), { year: 'never' })
 }
@@ -46,8 +44,7 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
   const narrow = new Intl.DateTimeFormat(t.locale, { weekday: 'narrow', timeZone: 'UTC' })
   const columns = 'grid grid-cols-[repeat(7,minmax(0,1fr))_44px] items-center'
   return (
-    // A fill inside the sheet, never a card or glass, its corner concentric
-    // with the sheet's (47 - 22).
+    // A fill, never a card or glass; its corner is concentric with the sheet's (47 - 22).
     <div className="flex flex-col gap-0.5 rounded-[25px] bg-[var(--fill-4)] px-3 py-2" data-testid="week-calendar">
       <div className={cn(columns, 'text-center text-[11px] text-subtle')} aria-hidden>
         {Array.from({ length: 7 }, (_, i) => (
@@ -56,8 +53,6 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
         <span>{t.consistency.sheet.runsColumn}</span>
       </div>
       {sheet.rows.map((row) => (
-        // Each row says which week it is (App Fixes 3d): the grid of days
-        // alone left the highlighted week unnamed.
         <div
           key={row.start}
           className={cn(columns, 'h-9 rounded-full', row.selected && 'bg-[var(--fill-3)]')}
@@ -89,11 +84,6 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
   )
 }
 
-/**
- * A tapped week (3.1, mock 6): its runs, km and time, whether it hit three,
- * and the month around it - the week picked out, a run day filled, today
- * ringed, a session to come dashed - with the way to its runs in Activities.
- */
 export function WeekSheet({ view, weekStart, today, onClose }: { view: ConsistencyView; weekStart: string; today: string; onClose: () => void }) {
   const s = t.consistency.sheet
   const sheet = weekSheet(view, weekStart, today)
@@ -103,8 +93,7 @@ export function WeekSheet({ view, weekStart, today, onClose }: { view: Consisten
   const title = s.title(formatDate(week.start, { style: 'bare' }))
   const hit = sheet.status === 'hit'
 
-  // A medium-detent sheet (Liquid Glass v3, G10). Its own title block and
-  // Close stay as they were; the sheet adds the glass and the grabber.
+  // It draws its own title block and Close; the sheet adds only the glass and the grabber.
   return (
     <BottomSheet onClose={onClose} label={title} showClose={false} testId="week-sheet" bodyClassName="flex flex-col gap-2.5">
       {(close) => (

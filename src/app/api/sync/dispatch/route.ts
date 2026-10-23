@@ -3,13 +3,8 @@ import { handleOwnerRoute } from '@/lib/ownerRoute'
 import { SYNC_LIMITS, syncGate, type SyncGate, type SyncRun } from '@/lib/syncLimits'
 
 /**
- * Starts the Garmin sync from the app, so the Sync button in Settings does what
- * the iOS shortcut does without the phone holding a GitHub token.
- *
- * The token lives here instead: a shortcut keeps its PAT in a Shortcuts
- * dictionary that syncs to iCloud and shows in plain text to anyone holding an
- * unlocked phone, while this one is a server env var the browser never sees,
- * reachable only behind the owner claim.
+ * The GitHub token is a server env var the browser never sees, behind the owner claim, unlike the iOS shortcut's PAT,
+ * which syncs to iCloud in plain text.
  */
 
 interface SyncConfig {
@@ -31,8 +26,7 @@ export function syncConfig(env: NodeJS.ProcessEnv): SyncConfig | { missing: stri
     workflow: env.GITHUB_SYNC_WORKFLOW || 'sync.yml',
     ref: env.GITHUB_SYNC_REF || 'main',
     token: env.GITHUB_SYNC_TOKEN!,
-    // One deployment is one athlete, so a dispatch from this app should sync
-    // that athlete and not the whole matrix. Unset keeps the workflow default.
+    // One deployment is one athlete, so a dispatch syncs that athlete, not the whole matrix.
     profile: env.GITHUB_SYNC_PROFILE || null,
   }
 }
@@ -44,10 +38,8 @@ const GITHUB_HEADERS = (token: string) => ({
 })
 
 /**
- * What a new sync may do, from the workflow's runs over the last day (design
- * review, Oct 2026): GitHub keeps the record, so no store of our own can
- * drift from it. A list that cannot be read lets the sync through - the
- * workflow's per-profile concurrency still keeps two runs from overlapping.
+ * GitHub keeps the record of runs, so no store of our own can drift from it. A list that cannot be read lets the sync
+ * through: the workflow's per-profile concurrency still keeps two runs from overlapping.
  */
 export async function readSyncGate(config: SyncConfig, now = Date.now()): Promise<SyncGate> {
   const since = new Date(now - SYNC_LIMITS.dailyWindowMs).toISOString().replace(/\.\d{3}Z$/, 'Z')

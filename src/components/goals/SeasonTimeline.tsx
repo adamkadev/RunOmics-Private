@@ -10,7 +10,7 @@ import { t } from '@/i18n'
 import { seasonRaceRows, type SeasonRaceRow } from './SeasonRaces'
 import { monthInitials } from './monthInitials'
 
-/** The training block the next race closes: its span and where today is in it. */
+/** The training block the next race closes. */
 export interface SeasonBlock {
   startDate: string
   raceDate: string
@@ -24,7 +24,6 @@ function utcDay(iso: string): number {
   return Date.parse(`${iso}T00:00:00Z`)
 }
 
-/** Where a date sits along the year, 0 at Jan 1 and 1 at Dec 31, clamped. */
 export function yearFraction(iso: string, year: number): number {
   const start = Date.UTC(year, 0, 1)
   const end = Date.UTC(year + 1, 0, 1)
@@ -45,11 +44,7 @@ const LABEL_AIR_PX = 6
 
 export type Lane = 'above' | 'below'
 
-/**
- * Which side of the line each label goes: races first, on their preferred side
- * unless it would touch a label there; Today last, and null (tick, no label)
- * when neither side is free. Laid out for the narrowest strip.
- */
+/** Optional marks (Today) are placed last, and get null (a tick, no label) when neither side is free. */
 export function stripLanes(
   marks: readonly { at: number; label: string; prefer: Lane; optional?: boolean }[],
   widthPx = MIN_STRIP_PX,
@@ -83,7 +78,7 @@ function Mark({
   testId,
 }: {
   at: number
-  /** Null draws the mark alone: Today when both sides are taken. */
+  /** Null draws the mark alone. */
   label: string | null
   lane: Lane
   /** The mark's own height, so its centre lands on the line. */
@@ -103,11 +98,6 @@ function Mark({
   )
 }
 
-/**
- * Jan-Dec as one strip (v4.17): the year so far in the accent to today, a
- * race done a filled circle in text ink, one ahead an outlined one. Labels sit
- * above the line, Today's too (3.1), and the month running is in the accent.
- */
 function SeasonStrip({ year, today, rows }: { year: number; today: string; rows: SeasonRaceRow[] }) {
   const thisYear = Number(today.slice(0, 4)) === year
   const done = today.slice(0, 4) > String(year) ? 1 : thisYear ? yearFraction(today, year) : 0
@@ -155,7 +145,6 @@ function SeasonStrip({ year, today, rows }: { year: number; today: string; rows:
   )
 }
 
-/** A time's meaning under it: the gap to target, coloured by what it means. */
 function outcome(row: SeasonRaceRow): { text: string; tone: 'pos' | 'warn' | 'muted' } {
   const s = t.goals.season
   const upcoming = row.kind === 'scheduled'
@@ -167,7 +156,6 @@ function outcome(row: SeasonRaceRow): { text: string; tone: 'pos' | 'warn' | 'mu
 
 const TONE_CLASS = { pos: 'text-[var(--pos)]', warn: 'text-[var(--warn)]', muted: 'text-muted-foreground' } as const
 
-/** One race: its date, distance and countdown, name, target and plan week; its prediction or result. */
 function RaceRow({ row, block }: { row: SeasonRaceRow; block: SeasonBlock | null }) {
   const s = t.goals.season
   const upcoming = row.kind === 'scheduled'
@@ -197,23 +185,13 @@ function RaceRow({ row, block }: { row: SeasonRaceRow; block: SeasonBlock | null
   )
 }
 
-/**
- * How many races run so far met their target, out of those that had one
- * and a result (3.1); null when none has both yet.
- */
 export function targetsHit(rows: readonly SeasonRaceRow[]): { hit: number; total: number } | null {
   const judged = rows.filter((row) => row.kind === 'done' && row.targetSeconds !== null && row.seconds !== null)
   if (judged.length === 0) return null
   return { hit: judged.filter((row) => row.seconds! <= row.targetSeconds!).length, total: judged.length }
 }
 
-/**
- * The season (C3, v4.4; v4.17): Jan-Dec as a strip with today and the
- * races on it, then the races as rows - what is ahead, next first, then
- * what is done, most recent first - each with its prediction or result. A
- * goal with no date has no place on either and is left out (3.0): its rows
- * only ever read "no target set".
- */
+/** A goal with no date is left out: its rows would only ever read "no target set". */
 export function SeasonTimeline({ yearData, today, block }: { yearData: YearData; today: string; block: SeasonBlock | null }) {
   const rows = seasonRaceRows(yearData, today)
   const dated = rows.filter((row) => row.date !== null)

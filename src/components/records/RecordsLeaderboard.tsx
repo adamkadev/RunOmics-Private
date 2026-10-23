@@ -15,7 +15,6 @@ import { EFFORT_LIST_FIRST, allEffortsLabel, effortGap, predictionGap } from './
 
 const ROW_GRID = 'grid grid-cols-[minmax(0,1fr)_76px_84px] items-center gap-2'
 
-/** Gold, silver and bronze circles for the podium; 4th and 5th sit on the track. */
 function medalClass(i: number): string {
   if (i === 0) return cn(STATUS.gold.dot, 'text-black/80')
   if (i === 1) return cn(STATUS.silver.dot, 'text-black/80')
@@ -63,7 +62,6 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
   }
 
   return (
-    // No section label (design review, Oct 2026): "Top times" repeated the H1 and the tab.
     <section className={cardClass({ padding: 'none', className: 'px-4 py-1' })}>
       <div className={cn(ROW_GRID, EYEBROW_CLASS, 'border-b border-border py-2.5 text-muted-foreground')}>
         <span>{t.records.cols.distance}</span>
@@ -79,8 +77,6 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
             <div key={r.key} className={cn(ROW_GRID, 'min-h-14.5 py-2.5', divider)}>
               <div className="min-w-0">
                 <p className="truncate text-subhead font-semibold text-subtle">{r.label}</p>
-                {/* The dash under Best already says there is no record, so
-                    the line is free for the one thing to do about it. */}
                 {prediction ? (
                   <Link href="/goals" className="block truncate text-xs font-semibold text-accent-text">
                     {t.records.findRace(r.label)}
@@ -123,8 +119,6 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
 
         return (
           <div key={r.key} className={cn(divider)}>
-            {/* The whole row is the target - it opens the distance's top
-                efforts - and the chevron beside the name says there is more. */}
             {expandable ? (
               <button
                 type="button"
@@ -165,8 +159,7 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
                           {formatDuration(e.seconds)}
                           {gap && <span className="ml-1 text-xs font-medium text-muted-foreground">{gap}</span>}
                         </span>
-                        {/* Two efforts from the same session read as one row
-                            twice without the date that separates them. */}
+                        {/* The date tells apart two efforts from the same session. */}
                         <span className="block truncate text-xs text-muted-foreground" title={e.eventName}>
                           {[e.eventName, formatDate(e.date, { style: 'bare' })].filter(Boolean).join(' · ')}
                         </span>
@@ -174,8 +167,7 @@ export function RecordsLeaderboard({ records, topEfforts, predictions = [] }: Pr
                     </Link>
                   )
                 })}
-                {/* Activities has no effort filter, so the rest of the
-                    distance's efforts open here, under the five. */}
+                {/* Activities has no effort filter, so the rest open here. */}
                 {!showAll && entries.length > EFFORT_LIST_FIRST && (
                   <button
                     type="button"

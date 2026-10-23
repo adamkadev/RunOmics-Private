@@ -9,7 +9,7 @@ const SESSION: SessionCard = {
 }
 
 describe('TodayBoard', () => {
-  // 3.0.2 (mock 5f): the next workout alone - the last run is the top of Activities.
+  // The last run is the top of Activities.
   it('draws the next session and no last-run row', () => {
     render(<TodayBoard session={SESSION} />)
     expect([...screen.getByTestId('today-board').children].map((child) => child.getAttribute('data-testid'))).toEqual(['session-card'])

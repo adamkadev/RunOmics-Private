@@ -47,8 +47,6 @@ describe('styleRunMapLabels (v4.10)', () => {
     expect(layout.Water).toBeUndefined()
   })
 
-  // v4.13.1: on device the zoom gate and the class filter left the map with no
-  // names at all; towns, villages and quartiers all show, at any zoom.
   it('shows every kind of place at any zoom, filtering none out', () => {
     const { map, zooms, setFilters } = fakeMap(layers)
     styleRunMapLabels(map, COLORS)
@@ -56,14 +54,12 @@ describe('styleRunMapLabels (v4.10)', () => {
     expect(setFilters).toEqual({})
   })
 
-  // 3.0.1: the style's zoom steps faded districts out, so the share card had none.
   it('draws every place name it keeps fully opaque', () => {
     const { map, paint } = fakeMap(layers)
     styleRunMapLabels(map, COLORS)
     for (const id of ['Town', 'Neighbourhood', 'Place labels']) expect(paint[id]?.['text-opacity'], id).toBe(1)
   })
 
-  // The share card asks for its districts a step fainter than its towns.
   it('fades only the districts when the caller asks for it', () => {
     const { map, paint } = fakeMap(layers)
     styleRunMapLabels(map, { ...COLORS, districtOpacity: 0.7 })
@@ -74,7 +70,7 @@ describe('styleRunMapLabels (v4.10)', () => {
   it('makes every name collide, on or beside its point, muted, with a halo in the surface colour', () => {
     const { map, layout, paint } = fakeMap(layers)
     styleRunMapLabels(map, COLORS)
-    // 3.0.1: a step smaller on the card's 300 px map, and free to sit beside its point.
+    // A step smaller on the card's 300 px map, and free to sit beside its point.
     expect(layout.Town).toMatchObject({
       'text-allow-overlap': false,
       'text-padding': 2,
@@ -119,8 +115,7 @@ describe('addWaterLabels (3.0.1)', () => {
     expect(added.source).toBe('planet')
     expect(added['source-layer']).toBe('water_label')
     expect(added.layout!['symbol-placement']).toBe('line')
-    // A line label carries no icon: text-optional would let MapLibre "place"
-    // the symbol with neither, and the river's name never drew.
+    // A line label carries no icon: with text-optional MapLibre "places" the symbol with neither, and the name never draws.
     expect(added.layout!['text-optional']).toBeUndefined()
     expect(String(added.layout!['text-font'])).toContain('Italic')
     expect(added.paint!['text-color']).toBe('#5b7d99')
@@ -216,8 +211,7 @@ describe('addLandmarkLabels (3.0.1)', () => {
 })
 
 describe('showPlacesAtAnyZoom (3.0.1)', () => {
-  // The style fades hamlets in at zoom 14, and drops a city label above it:
-  // the small places never showed, and the big ones went as you zoomed in.
+  // The style fades hamlets in at zoom 14 and drops a city label above it.
   const layers = (): Layer[] => [
     { id: 'Place labels', type: 'symbol', 'source-layer': 'place_label', filter: ['match', ['get', 'class'], ['hamlet', 'suburb', 'quarter'], true, false] },
     { id: 'City labels', type: 'symbol', 'source-layer': 'city_label' },
@@ -230,7 +224,6 @@ describe('showPlacesAtAnyZoom (3.0.1)', () => {
     showPlacesAtAnyZoom(map)
 
     expect(zooms['Place labels']).toEqual([0, 24])
-    // A city kept maxzoom 14, so its name went the moment you zoomed in.
     expect(zooms['City labels']).toEqual([0, 24])
     expect(paint['City labels']?.['text-opacity']).toBe(1)
     // Street names and this app's own layers are not place names.
@@ -247,9 +240,8 @@ describe('showPlacesAtAnyZoom (3.0.1)', () => {
 })
 
 describe('where the app puts its own labels', () => {
-  // Across layers it is the order that decides, not symbol-sort-key: MapLibre
-  // places the earlier layer first, so ours must sit above the style's names
-  // and above the street names they used to lose to.
+  // Across layers the order decides, not symbol-sort-key: MapLibre places the earlier layer first,
+  // so ours must sit above the style's names and the street names.
   it('places park, then landmark, then water, all before the style\'s own names', () => {
     const layers: Layer[] = [
       { id: 'Water', type: 'fill', 'source-layer': 'water', source: 'planet' },

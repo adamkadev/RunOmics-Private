@@ -22,10 +22,7 @@ describe('buildShoeRegistry', () => {
     expect(buildShoeRegistry([record('a', 750)]).a?.alertThresholdKm).toBe(600)
   })
 
-  // The ramp used to be eight hues, three of which (amber, violet, pink) read as
-  // status on a dot that only ever carried pair identity. It is now four neutral
-  // steps - four because the registry holds four pairs - so the cycle is shorter
-  // and the assertion moved with it.
+  // The ramp has four neutral steps, one per pair the registry holds.
   it('gives consecutive pairs distinct dots, cycling once the ramp runs out', () => {
     const registry = buildShoeRegistry(Array.from({ length: 5 }, (_, i) => record(`s${i}`)))
     const dots = Object.values(registry).map((info) => info.dotColor)

@@ -49,11 +49,6 @@ class TestLoadEasyPaceSecPerKm:
 
 
 class TestContinuousBaseWorkoutGetsTheSameFields:
-    """A plain Base run (single pace-zone step, no structure) should surface
-    distance/duration/pace exactly like a structured quality session does -
-    matching what Garmin Connect itself shows for such a run (e.g. "1:25:00 /
-    15.80 km / 5:03-5:43 min/km" for a time-goal footing session)."""
-
     def test_distance_duration_and_pace_are_all_populated(self, monkeypatch):
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         detail = {
@@ -76,9 +71,6 @@ class TestContinuousBaseWorkoutGetsTheSameFields:
 
 
 class _FakeClient:
-    """Minimal stand-in for the GarminClient detail calls used by _build_entries.
-    Records which endpoint each workout id was resolved through."""
-
     def __init__(self, detail: dict):
         self._detail = detail
         self.calls: list[tuple[str, str]] = []
@@ -93,9 +85,6 @@ class _FakeClient:
 
 
 class _CalendarRecordingClient:
-    """Records which calendar months fetch_planned_workouts asks for, so the
-    window it derives can be asserted without any workout detail round-trip."""
-
     def __init__(self):
         self.months: list[tuple[int, int]] = []
 
@@ -117,8 +106,7 @@ class TestFetchWindow:
         assert client.months[-1] == (expected_last.year, expected_last.month)
 
     def test_an_explicit_range_widens_the_window(self):
-        # The store keeps every date it's given, so a historical backfill is
-        # just a wider fetch - no separate one-off script needed.
+        # The store keeps every date it's given, so a historical backfill is just a wider fetch.
         client = _CalendarRecordingClient()
 
         fetch_planned_workouts(
@@ -138,13 +126,8 @@ class TestFetchWindow:
 class TestBuildEntriesPrefersStepSum:
     def test_ignores_garmins_incomplete_top_level_estimate(self, monkeypatch):
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
-        # Real Kiprun/Decathlon Pacer structure: warmup, a RepeatGroupDTO for
-        # the 9x400m block, then a trailing rest (cool-down). Garmin's own
-        # estimatedDistanceInMeters/estimatedDurationInSecs cover only the
-        # warm-up + cool-down here (the exact bug from the bug report - and
-        # also what a repeat-group-blind step collector would independently
-        # arrive at, which is why this must use a real RepeatGroupDTO and not
-        # a flattened step list).
+        # A real RepeatGroupDTO, not a flattened list: Garmin's own top-level estimate covers only the warm-up and
+        # cool-down here, as a repeat-group-blind step collector would.
         detail = {
             "workoutName": "9 x 400m (R=1 min)",
             "sportType": {"sportTypeKey": "running"},
@@ -172,12 +155,10 @@ class TestBuildEntriesPrefersStepSum:
 
         assert len(entries) == 1
         entry = entries[0]
-        # Full sum (warm-up + 9x400m + recovery jogs + cool-down) is well
-        # above Garmin's 30 min / 4.9 km top-level estimate.
+        # Garmin's top-level estimate is 30 min / 4.9 km.
         assert entry["durationSecs"] > 1800
         assert entry["distanceM"] > 4933
-        # The cool-down block must show up as its own row, not folded into
-        # "recovery" (which would inflate the main interval row's minutes).
+        # Its own row, not folded into "recovery", which would inflate the main interval row's minutes.
         assert entry["steps"][-1]["kind"] == "cooldown"
 
     def test_falls_back_to_garmin_top_level_when_no_steps(self, monkeypatch):
@@ -270,8 +251,7 @@ class TestAdaptiveWorkoutFallback:
         assert entries == [{"date": "2026-07-21", "name": "Seuil"}]
 
     def test_reports_the_date_even_without_a_fallback_title(self, monkeypatch):
-        # Dropping it made the date look free, and the stale-entry pruning
-        # then deleted whatever complete entry was on file for it.
+        # A dropped date looks free, and the stale-entry pruning would delete the entry on file for it.
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
 
         class _FailingClient:
@@ -304,7 +284,6 @@ class TestAdaptiveWorkoutFallback:
         assert entries[0]["durationSecs"] == 2700
 
     def test_uses_adaptive_detail_when_it_succeeds(self, monkeypatch):
-        # With the real detail resolved, use it rather than the bare calendar title.
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         detail = {
             "workoutName": "Seuil",
@@ -323,9 +302,7 @@ class TestAdaptiveWorkoutFallback:
         assert entries[0]["durationSecs"] == 2880
 
     def test_trusts_the_top_level_estimate_over_the_step_sum(self, monkeypatch):
-        # Garmin Coach's own numbers are first-party, unlike third-party plans
-        # (see module docstring) - they win even when the step-derived sum
-        # would give a different total.
+        # Garmin Coach's own numbers are first-party, unlike third-party plans'.
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         detail = {
             "workoutName": "Seuil",
@@ -380,8 +357,7 @@ class TestAdaptiveWorkoutFallback:
 
 
 class TestCoachingPlanTypes:
-    """A workout the coaching plan pushed to Garmin is typed by the plan, not
-    guessed from the free-text title the planner wrote for it (v4.16.4)."""
+    """A workout the coaching plan pushed to Garmin is typed by the plan, not guessed from its free-text title."""
 
     @staticmethod
     def _coaching_dir(tmp_path):
@@ -430,9 +406,7 @@ class TestCoachingPlanTypes:
 
 
 class TestCoachNamedWorkouts:
-    """A session the coach named under the naming rules (design review, Oct
-    2026) already states its main set, and the run it becomes inherits the
-    name: it is kept as written, never cut at " + " nor given a descriptor."""
+    """A name the coach wrote under the naming rules is kept as written, never cut at " + " nor given a descriptor."""
 
     @staticmethod
     def _coaching_dir(tmp_path):
@@ -521,9 +495,7 @@ class TestCoachNamedWorkouts:
 
 
 class TestGarminSuppliedMetadata:
-    """Garmin Coach's adaptive workouts state their own training-effect target
-    and a terse structure description; third-party plans (Kiprun) carry neither,
-    so those keep falling back to name-based inference."""
+    """Third-party plans (Kiprun) carry no training-effect target nor structure description, so they use the name."""
 
     def test_training_effect_label_sets_the_type(self, monkeypatch):
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
@@ -541,9 +513,7 @@ class TestGarminSuppliedMetadata:
         assert entries[0]["type"] == "VO2Max"
 
     def test_workout_phrase_is_not_used_as_a_type(self, monkeypatch):
-        # workoutPhrase is a finer-grained coaching taxonomy on a different
-        # axis (LONG_WORKOUT, AEROBIC_LOW_SHORTAGE_BASE, ...) - only
-        # trainingEffectLabel maps onto ActivityType.
+        # workoutPhrase is a coaching taxonomy on a different axis; only trainingEffectLabel maps onto ActivityType.
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         detail = {
             "workoutName": "Longue course",
@@ -666,10 +636,7 @@ class TestGarminSuppliedMetadata:
 
 
 class TestMainSetDescriptorInTitle:
-    """Unit coverage for the descriptor logic itself lives in
-    test_garmin_workout.py - these exercise the orchestration decision of
-    *when* _build_entries puts it in the title, and whether it replaces the
-    Garmin name or is appended to it."""
+    """The descriptor itself is covered in test_garmin_workout.py; these test when _build_entries puts it in the title."""
 
     def test_replaces_a_coach_type_word_name_with_the_interval_block(self, monkeypatch):
         # Garmin Coach names a session after its type ("Seuil"), which the UI
@@ -701,9 +668,7 @@ class TestMainSetDescriptorInTitle:
         assert entries[0]["name"] == "3x8'@4:16"
 
     def test_no_descriptor_for_base_session_even_with_repeats(self, monkeypatch):
-        # A repeated structure alone shouldn't grow a title for an easy/base
-        # session - only sessions infer_planned_type already classifies as
-        # quality get the interval summary.
+        # Only sessions infer_planned_type classifies as quality get the interval summary.
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         detail = {
             "workoutName": "Footing fractionne",
@@ -780,10 +745,7 @@ class TestMainSetDescriptorInTitle:
 
 
 class _RescheduleClient:
-    """Fake client for a calendar month that now only lists a workout on the
-    *new* date - simulates a session rescheduled in Garmin Connect between two
-    syncs. `get_calendar_month` answers for every month in the window so the
-    caller can tell the fetch succeeded everywhere."""
+    """A session rescheduled in Garmin Connect between two syncs; every month in the window answers."""
 
     def __init__(self, year: int, month: int, day: int, workout_id: str, detail: dict):
         self._year, self._month, self._day = year, month, day
@@ -841,9 +803,7 @@ class TestStaleEntryPruning:
         assert dates == {"2026-07-12"}
 
     def test_a_failed_calendar_month_does_not_prune_that_months_entries(self, monkeypatch, tmp_path):
-        # If Garmin's calendar API hiccups for a month, absence of data there
-        # must not be read as "nothing scheduled" - that would wipe out real
-        # entries on a transient failure.
+        # A month that failed to fetch must not be read as "nothing scheduled".
         monkeypatch.setattr("sync_workouts.time.sleep", lambda *_: None)
         prior = PlannedWorkoutStore(tmp_path)
         prior.upsert({"date": "2026-07-10", "name": "Seuil", "type": "Threshold", "scheduledTime": "19:00"})
@@ -882,10 +842,7 @@ class _DetailDownClient:
 
 
 class TestFailedWorkoutDetail:
-    """A workout's detail can fail after its calendar item loaded. The calendar
-    alone yields a date and a name; the complete entry already on file for
-    that date is kept over it, and past the 7-day look-back nothing would
-    ever repair a stub. Only where nothing is on file does the stub stand in."""
+    """The complete entry on file is kept over a calendar-only stub: past the 7-day look-back nothing would repair it."""
 
     _COMPLETE = {
         "date": "2026-07-21",
@@ -936,9 +893,7 @@ class TestFailedWorkoutDetail:
 
 class TestWritePlannedWorkouts:
     def test_reinfers_type_when_workout_name_at_that_date_changed(self, tmp_path):
-        # The plan was reordered upstream (Kiprun): a VO2Max session that used
-        # to be on this date was replaced by a footing. The date-keyed "type"
-        # from the old workout must not leak onto the new one.
+        # The plan was reordered upstream: a footing replaced the VO2Max session on this date.
         prior = PlannedWorkoutStore(tmp_path)
         prior.upsert({"date": "2026-07-14", "name": "9 x 400m (R=1 min)", "type": "VO2Max", "scheduledTime": "19:00"})
         prior.save()
@@ -962,23 +917,19 @@ class TestWritePlannedWorkouts:
         )
 
         written = json.loads((tmp_path / "2026.json").read_text())
-        # A manual correction (or a prior sync's inference) for the *same*
-        # workout name survives the resync even though it disagrees with
-        # what infer_planned_type would guess from the name alone.
+        # A correction for the same workout name survives, though infer_planned_type would guess otherwise.
         assert written["planned"][0]["type"] == "Tempo"
         assert written["planned"][0]["scheduledTime"] == "Morning"
 
     def test_reads_the_coaching_plans_english_titles(self):
-        # The coaching plan pushes English titles to Garmin; "Threshold 3 x
-        # 7:00" fell through the French keywords to the Base fallback.
+        # The coaching plan pushes English titles to Garmin.
         assert infer_planned_type("Threshold 3 x 7:00") == "Threshold"
         assert infer_planned_type("VO2max 5 x 3:00") == "VO2Max"
         assert infer_planned_type("Strides 6 x 20s") == "Base"
         assert infer_planned_type("Long run") == "Base"
 
     def test_retypes_a_stored_base_the_name_now_reads_across_the_whole_history(self, tmp_path):
-        # Stored Base by the old rules, outside this sync's window, same name:
-        # Base was the fallback, not a correction, so the name wins.
+        # Stored Base outside this sync's window, same name: Base was the fallback, not a correction.
         prior = PlannedWorkoutStore(tmp_path)
         prior.upsert({"date": "2026-06-18", "name": "Threshold 3 x 7:00", "type": "Base", "scheduledTime": "Evening"})
         prior.upsert({"date": "2026-06-20", "name": "Long run", "type": "Base", "scheduledTime": "Evening"})

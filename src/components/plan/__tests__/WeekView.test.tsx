@@ -73,7 +73,7 @@ interface Options {
   onSelectDate?: (date: string) => void
 }
 
-// The selected day is PlanClient's (it lives in the URL); here a plain state stands in for it.
+// The selected day lives in PlanClient's URL; a plain state stands in for it.
 function Harness(options: Options) {
   const [selected, setSelected] = useState(options.selected ?? TODAY)
   const activities = options.activities ?? []
@@ -161,7 +161,6 @@ describe('the phase card', () => {
 })
 
 describe('the week row', () => {
-  // 3.0.2: km only; the runs are in Coming up and the selector.
   it('reads what was run against what the plan scheduled, in km', () => {
     renderWeek({
       activities: [TEMPO],
@@ -187,18 +186,17 @@ describe('the day selector', () => {
 
     expect(within(screen.getByTestId('day-selector')).getAllByRole('button')).toHaveLength(7)
     expect(day(TODAY).getAttribute('aria-pressed')).toBe('true')
-    // Round 2 (F14): the shared today ring, on the column's edge.
     expect(day(TODAY).className).toContain('state-today')
   })
 
   it('draws each day as a bar as long as its km, in its colour, and rest as a stub', () => {
     renderWeek({ activities: [TEMPO], planned: [{ date: '2026-09-12', name: 'Long run', type: 'Base', distanceM: 18_000 }] })
 
-    // App Fixes 3b: 5 px a km in a 70 px track, the long run capped at 68 px.
+    // 5 px a km, capped at 68 px.
     expect(bar('2026-09-07').style.height).toBe(`${Math.round(4.79 * 5)}px`)
     expect(bar('2026-09-07').style.background).toBe('var(--zone-3)')
     expect(bar('2026-09-12').style.height).toBe('68px')
-    // The long run shares the easy blue (3.0.2).
+    // The long run shares the easy blue.
     expect(bar('2026-09-12').style.background).toBe('var(--zone-2)')
     expect(bar('2026-09-10').getAttribute('data-bar-state')).toBe('rest')
     expect(bar('2026-09-10').style.height).toBe('5px')
@@ -212,7 +210,6 @@ describe('the day selector', () => {
     expect(day('2026-09-10').textContent).toContain('–')
   })
 
-  // Wave 5: amber, as on Today.
   it('draws a missed session as a dashed amber outline', () => {
     renderWeek({ planned: [{ date: '2026-09-08', name: 'Easy', type: 'Base', distanceM: 8_000 }] })
 
@@ -242,7 +239,6 @@ describe('a session still to come', () => {
     expect(card.textContent).toContain(t.plan.session.targetPace('4:25–4:30'))
   })
 
-  // Round 2: the eyebrow says "THRESHOLD"; the title says the set alone.
   it('titles it by its set under the naming rules, its type left to the eyebrow', () => {
     const coachingPlan = plan()
     coachingPlan.weeks[0]!.workouts[0]!.title = 'Threshold · 3 × 8′ @ 4:25'
@@ -260,8 +256,6 @@ describe('a session still to come', () => {
     expect(tones).toEqual(['ease', 'work', 'recovery', 'work', 'recovery', 'work', 'recovery', 'ease'])
   })
 
-  // Round 2 (F9): 44 pt tall, 10 pt under the detail line and 14 pt over the
-  // steps' divider - it touched the line and left 30 pt empty under it.
   it('sits the profile 10 pt under the detail line and 14 pt over the steps, 44 pt tall', () => {
     renderWeek({ coaching: overview() })
     const profile = screen.getByTestId('intensity-profile')
@@ -272,9 +266,6 @@ describe('a session still to come', () => {
     expect(screen.getByTestId('workout-steps').className).toContain('mt-3.5')
   })
 
-  // App Fixes 3b: a session of one step has no structure to draw - a
-  // full-width block said "structured" about an easy run - so it lists its
-  // targets instead.
   it('drops the structure bar for a one-step session and lists its targets', () => {
     const easy = workout({
       id: 'workout-easy-single',
@@ -331,7 +322,7 @@ describe('a day that is over', () => {
 
     await user.click(day('2026-09-07'))
     const card = screen.getByTestId('plan-day-done-2026-09-07')
-    // The run's title says the session already: the plan's line keeps to its amount (round 2).
+    // The run's title names the session already: the plan's line keeps to its amount.
     expect(within(card).getByTestId('planned-line').textContent).toBe(`${t.plan.dayCard.planned}5 ${t.units.km}`)
     const done = within(card).getByTestId('done-line').textContent
     expect(done).toContain(`4.8 ${t.units.km} · 5:00 /km · Z3 68%`)
@@ -339,8 +330,6 @@ describe('a day that is over', () => {
     expect(within(card).getByRole('link', { name: t.plan.dayCard.viewActivity }).getAttribute('href')).toBe('/activities/a-tempo')
   })
 
-  // Round 2, the owner's phone: "Threshold 3 × 7:15 - 3 × 7'@4:25" over
-  // "Planned 10 km · Threshold 3 x 7:15 - 3x7'@4:25", the set said four times.
   it("names a run by its session's set once, the plan's line its amount alone", async () => {
     const user = userEvent.setup()
     const name = "Threshold 3 x 7:15 - 3x7'@4:25"
@@ -400,7 +389,6 @@ describe('a rest day', () => {
     expect(within(card).getByTestId('rest-next').textContent).toBe(`${t.plan.restCard.next('Sat')}Long run`)
   })
 
-  // 3.0.2: the rest day is one line, and the week's sessions still to come are listed under it.
   it('lists the week’s sessions still to come, each selecting its day', async () => {
     const user = userEvent.setup()
     const onSelectDate = vi.fn()

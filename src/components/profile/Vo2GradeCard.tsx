@@ -9,18 +9,16 @@ import { MINUS, PLUS_MINUS, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 export const VO2_GRADE_HREF = '/athlete/vo2max'
-/** The grade card's own neutral band for the 30-day change (v5.3). */
+/** A 30-day change under this reads as flat. */
 export const GRADE_DELTA_FLAT = 0.3
 
 const one = (n: number) => formatKm(n, 1)
 
-/** "+0.8", "−0.4", or "±0.2" when the change is inside the neutral band (v4.17: signed, as every delta). */
 export function gradeDelta(delta: number): string {
   if (Math.abs(delta) < GRADE_DELTA_FLAT) return `${PLUS_MINUS}${one(Math.abs(delta))}`
   return `${delta > 0 ? '+' : MINUS}${one(Math.abs(delta))}`
 }
 
-/** "Men 20–29" with the (i) that says where the bands come from. */
 export function GradeBandLabel({ band }: { band: { sex: 'male' | 'female'; bracket: string } }) {
   return (
     <span className="text-xs text-muted-foreground" data-testid="grade-band">
@@ -29,7 +27,6 @@ export function GradeBandLabel({ band }: { band: { sex: 'male' | 'female'; brack
   )
 }
 
-/** The grade on its tile (v4.17): the accent on its soft tint, the athlete's own mark. */
 function GradeTile({ children, testId }: { children: string; testId?: string }) {
   return (
     <span
@@ -44,13 +41,6 @@ function GradeTile({ children, testId }: { children: string; testId?: string }) 
 
 const TITLE = 'text-[15px] font-semibold text-foreground'
 
-/**
- * The grade card on Athlete & zones (v5.3 G1, states in G4; 3.0 1j): one
- * tappable row that opens the grade page. The letter on an accent-soft tile,
- * the value, the percentile in its band, and the 30-day change coloured by
- * what it means. A level-up says so in pos for three days; a drop is muted,
- * never amber. Calibrating, it is the dots, here and on the grade page alike.
- */
 export function Vo2GradeCard({ view }: { view: Vo2GradeView }) {
   const g = t.vo2Grade
 

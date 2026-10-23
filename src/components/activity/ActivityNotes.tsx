@@ -16,21 +16,16 @@ const SUGGESTED_TAGS_MAX = 12
 
 const NotesSheet = dynamic(() => import('./ActivityNotesSheet').then((m) => m.NotesSheet), { ssr: false })
 
-/**
- * Firestore, loaded on first use. Only the owner writes, and only the owner
- * lists tags, so the SDK stays out of the activity page's first load.
- */
+/** Loaded on first use: only the owner writes and lists tags, so the SDK stays out of the page's first load. */
 async function notesStore() {
   const [firestore, { getClientFirestore }] = await Promise.all([import('firebase/firestore'), import('@/lib/firebase')])
   return { firestore, db: getClientFirestore() }
 }
 
 /**
- * The note, through the app (design review, Oct 2026): a private site's gate
- * then covers it, and Firestore lets only the owner read notes directly. A
- * server without the admin credentials answers `available: false`, and the
- * owner - whom the rules still let in - reads it straight from Firestore, so
- * an editor never opens empty over a note it could not fetch.
+ * Through the app, so a private site's gate covers the note. A server without
+ * the admin credentials answers `available: false`, and the owner, whom the
+ * Firestore rules still let in, reads it directly.
  */
 async function readNote(activityId: string): Promise<ActivityNote | null> {
   const response = await fetch(`/api/activities/${encodeURIComponent(activityId)}/note`)
@@ -66,9 +61,8 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
   const [activityInState, setActivityInState] = useState(activityId)
   const { toast, leaving, showToast } = useToast()
 
-  // ActivityNav navigates with a <Link>, so this stays mounted and only the
-  // prop changes. Resetting during render rather than in an effect means the
-  // previous activity's note is never painted under the new run's header.
+  // ActivityNav's <Link> keeps this mounted: resetting during render, not in an
+  // effect, never paints the previous run's note under the new run's header.
   function showNewActivity() {
     setActivityInState(activityId)
     setSaved(EMPTY)
@@ -152,9 +146,6 @@ export function ActivityNotes({ activityId }: { activityId: string }) {
     }
   }
 
-  // A chip in the verdict card's row (3.0): with a note it expands in place
-  // to show it, without one it opens the editor for the owner and is not
-  // drawn for anyone else - there is nothing to read.
   const r = t.activity.noteRow
   if (!hasNote && !isOwner) return null
 

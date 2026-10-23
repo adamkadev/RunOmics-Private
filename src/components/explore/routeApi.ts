@@ -2,14 +2,7 @@ import type { User } from 'firebase/auth'
 import type { RouteCandidate } from '@/domain/explore/types'
 import { authorizedFetch } from '@/lib/ownerFetch'
 
-/**
- * The browser side of `POST /api/explore/route`: one batch of loops from one
- * start, or a typed failure the generator words for the athlete.
- *
- * On a public site the route wants the owner's Firebase token, so it goes
- * through `authorizedFetch` when an owner is signed in; on a private site the
- * session cookie is enough, and a plain fetch carries it.
- */
+// On a public site the route wants the owner's Firebase token; on a private site the session cookie is enough.
 
 export const ROUTE_ENDPOINT = '/api/explore/route'
 
@@ -27,14 +20,9 @@ export interface RouteBatch {
 }
 
 /**
- * Why a batch failed, as the panel words it:
  * - notConfigured: no routing key (or no owner auth) on this deployment;
- * - auth: the route wants the owner, and this is not them (401/403);
  * - rateLimited / providerLimit: ours, or the provider's per-minute limit;
- * - dailyQuota: the provider's day is used up;
- * - noRoute: no loop from this start;
- * - invalid: the request itself was refused (a bug, worded as "try again");
- * - upstream: the provider failed, timed out, or the network did.
+ * - invalid: the request itself was refused (a bug, worded as "try again").
  */
 export type RouteFailure =
   | 'notConfigured'
@@ -61,7 +49,6 @@ export class RouteRequestError extends Error {
 
 const REASONS: ReadonlySet<string> = new Set(['notConfigured', 'rateLimited', 'providerLimit', 'dailyQuota', 'noRoute', 'invalid', 'upstream'])
 
-/** An answer's status and body as a failure; the body's `reason` wins where it names one. */
 export function routeFailure(status: number, body: unknown): RouteFailure {
   const reason = typeof body === 'object' && body !== null ? (body as { reason?: unknown }).reason : undefined
   if (typeof reason === 'string' && REASONS.has(reason)) return reason as RouteFailure
@@ -87,12 +74,6 @@ function isCandidate(value: unknown): value is RouteCandidate {
   return Array.isArray(c.coordinates) && c.coordinates.length >= 2 && typeof c.distanceM === 'number' && Array.isArray(c.waytypes)
 }
 
-/**
- * Asks for one batch. Resolves with the loops; rejects with a
- * `RouteRequestError` - a network failure or an unreadable answer as
- * `upstream`, an answer with no loop in it as `noRoute`. An abort rejects
- * with the abort's own error.
- */
 export async function requestRouteBatch(
   request: RouteBatchRequest,
   { user, signal }: { user?: User | null; signal?: AbortSignal } = {},

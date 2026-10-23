@@ -3,25 +3,19 @@ import type { CoachingWorkoutType, WorkoutSegment } from '@/domain/coaching/type
 import { segmentMeters, segments, trainingWeekShare, weekKm } from './volume'
 import { CONTROLLED_THRESHOLD } from './controlledThreshold'
 
-// Daniels' per-workout rules of thumb, re-keyed to the week's own planned
-// distance: a denominator taken from a historical average would stop binding
-// in the lightest week, which is the week it matters in.
+// Daniels' per-workout rules of thumb, applied to the week's own planned distance: a historical
+// average would stop binding in the lightest week, the week it matters in.
 const THRESHOLD_SHARE = 0.1
 const INTERVAL_SHARE = 0.08
-// Seiler's 80/20, read as a conservative ceiling rather than a law. Against
-// the week actually prescribed, so scaling a partial week up cannot let hard
-// running swallow it: at full weeks 10 + 8 never reaches 20 and this never
-// fires, but a two-day week scaled to full size would without it.
+// Seiler's 80/20 as a ceiling on the week actually prescribed: it never fires at full weeks (10 + 8 < 20),
+// but stops a short week scaled to full size from being swallowed by hard running.
 const COMBINED_SHARE = 0.2
 
-// The zone multipliers in GetTrainingZones: threshold is 0.98-1.02 of the
-// measured pace, so its slow edge divides quality from aerobic running and its
-// fast edge divides threshold from everything sharper.
+// GetTrainingZones' threshold zone: 0.98-1.02 of the measured pace.
 const THRESHOLD_SLOW_MULTIPLIER = 1.02
 const THRESHOLD_FAST_MULTIPLIER = 0.98
 
-// Held fixed for the whole block; the tolerance is for rounding a rep, not for
-// getting fitter mid-block. Faster only - a slower week is not a hazard.
+// Rounding tolerance in s/km, faster only: pace is held for the whole block, and a slower week is no hazard.
 const DRIFT_SEC: Partial<Record<CoachingWorkoutType, number>> = {
   tempo: 3,
   threshold: 3,
@@ -30,18 +24,14 @@ const DRIFT_SEC: Partial<Record<CoachingWorkoutType, number>> = {
   sprint: 4,
 }
 
-// Time at threshold has to rise across the loading weeks or the block trains
-// nothing, but not by more than this in a week, nor this over any two.
+// Growth ceilings for time at threshold: in one week, and over any two.
 const STEP_CEILING = 1.25
 const TWO_WEEK_CEILING = 1.4
 
-// A stride is neuromuscular, not a quality dose, and the schema already pins
-// it at about 20 seconds. Anything longer wearing the label is an effort.
+// A stride (about 20 s) is neuromuscular, not a quality dose; anything longer wearing the label is an effort.
 const STRIDE_MAX_SECONDS = 60
 
-// As with volume.ts's long-run allowance, a proportion of a week this small
-// polices nothing: the week is not a training week, and validateDraftVolume's
-// floor - which runs first - is what has something to say about it.
+// A proportion of a week this small polices nothing; validateDraftVolume's floor, run first, judges it.
 const MEANINGFUL_WEEK_KM = 10
 
 export type Intensity = 'easy' | 'threshold' | 'controlled' | 'interval'
@@ -61,11 +51,6 @@ export function intensityBand(thresholdPaceSecPerKm: number | null | undefined):
   }
 }
 
-/**
- * Warm-ups, cool-downs and recovery jogs are easy volume: they count toward
- * the week and sit outside the caps, so a session is judged on the work it
- * prescribes rather than on the running that surrounds it.
- */
 function classify(segment: WorkoutSegment, type: CoachingWorkoutType, band: IntensityBand): Intensity {
   if (segment.kind === 'warmup' || segment.kind === 'cooldown' || segment.kind === 'recovery') return 'easy'
   if (segment.kind === 'strides') {
@@ -74,10 +59,8 @@ function classify(segment: WorkoutSegment, type: CoachingWorkoutType, band: Inte
   }
 
   const fastest = segment.target.paceSecPerKm?.min
-  // A controlled threshold session is run by pace with heart rate as its limit, so its guide may sit
-  // slower than the threshold band and it is quality all the same: read it
-  // from the session's type and its cap, never from the guide. Only a guide
-  // reaching interval pace makes it something else.
+  // A controlled threshold guide may sit slower than the band and still be quality: read it from the
+  // session's type and its HR cap, never from the guide, unless the guide reaches interval pace.
   if (type === 'threshold' && segment.kind === 'effort' && segment.target.hrBpm !== undefined) {
     return fastest !== undefined && fastest < band.intervalSecPerKm ? 'interval' : 'controlled'
   }
@@ -111,11 +94,8 @@ interface WorkoutDose {
   /** Everything prescribed but a race, the denominator of the controlled threshold share. */
   runningSeconds: number
   /**
-   * The fastest repetition prescribed in each kind of quality session, keyed
-   * by the session's own type rather than by which side of the threshold band
-   * it landed on - drifting out of the band is the drift being looked for. A
-   * controlled threshold guide is set by repetition length, slower for longer, so each of
-   * its lengths is a kind of its own.
+   * Keyed by the session's type, not by where it landed in the band: drifting out of the band is the drift
+   * looked for. Controlled threshold guides are set per repetition length, so each length is its own key.
    */
   fastest: Map<string, { type: CoachingWorkoutType; pace: number; label: string }>
 }
@@ -124,7 +104,6 @@ function emptyDose(): WorkoutDose {
   return { thresholdMeters: 0, intervalMeters: 0, thresholdSeconds: 0, controlledSeconds: 0, runningSeconds: 0, fastest: new Map() }
 }
 
-/** The mirror of segmentMeters: whichever of the two the segment was written in. Shared with workoutNames.ts. */
 export function segmentSeconds(segment: WorkoutSegment): number {
   const { durationSeconds, distanceMeters, paceSecPerKm } = segment.target
   if (durationSeconds !== undefined) return durationSeconds
@@ -183,44 +162,31 @@ interface WeekDose {
   dose: WorkoutDose
 }
 
-/**
- * A week can pass every volume check and still be the wrong week: the total
- * says nothing about how much of it was hard, nor about how fast "hard" was
- * this time. Two bounds on the dose, one on the pace, one on the shape of the
- * block. Everything is counted by distance, converting a timed segment through
- * its own prescribed pace, the same basis validateDraftVolume uses.
- */
+/** Counted by distance, a timed segment converted through its own prescribed pace, as validateDraftVolume counts. */
 export function validateDraftIntensity(
   draft: CoachingPlanDraft,
   band: IntensityBand | null,
   availableWeekdays: number[],
   before?: CoachingPlanDraft,
-  // A pace-guide change the athlete's own runs called for, and they accepted,
-  // is the one way a guide may move inside a block; drift is everything else.
+  // An accepted pace-guide change is the one way a guide may move inside a block.
   options: { guideChange?: boolean } = {},
 ): void {
   if (band === null) return
 
-  // An adaptation, as in validateDraftVolume: only a week the change made
-  // harder is judged. Taking easy running out of a week raises its hard share
-  // without adding a metre of hard running, and refusing that would leave the
-  // heavier week in place. Progression is a demand on a block being written.
+  // An adaptation is judged only on the weeks it made harder: cutting easy running raises the hard share,
+  // and refusing that would leave the heavier week in place.
   const previous = new Map(before?.weeks.map((week) => [week.startDate, weekDose(week, band)]))
   const judged = ({ week, dose }: WeekDose) => before === undefined || hardened(dose, previous.get(week.startDate))
 
   const doses: WeekDose[] = draft.weeks.map((week) => ({
     week,
     km: weekKm(week),
-    // A block opening on a Wednesday loses a running day the athlete has
-    // already trained, so judging the session against the stub understates
-    // the week it belongs to. The same full-week scaling volume.ts applies to
-    // the cutback and to the long run.
+    // A block opening midweek loses a day already trained, so the session is judged against the full week.
     share: trainingWeekShare(week, availableWeekdays),
     dose: weekDose(week, band),
   }))
 
-  // Before the caps, because a repetition that drifted out of the threshold
-  // band trips the interval cap first and reports the wrong problem.
+  // Before the caps: a repetition drifted out of the threshold band trips the interval cap first and reports the wrong problem.
   if (!options.guideChange) driftCheck(doses, judged)
 
   for (const entry of doses) {
@@ -228,8 +194,7 @@ export function validateDraftIntensity(
     if (km < MEANINGFUL_WEEK_KM || share === 0 || !judged(entry)) continue
     const thresholdKm = round(dose.thresholdMeters / 1_000)
     const intervalKm = round(dose.intervalMeters / 1_000)
-    // Scaled to the week the session really sits in, but never past the
-    // ceiling on hard running in the distance actually prescribed.
+    // Scaled to the full week, but never past the ceiling on hard running in the distance actually prescribed.
     const cap = (portion: number) => round(Math.min((km / share) * portion, km * COMBINED_SHARE))
 
     if (thresholdKm > cap(THRESHOLD_SHARE)) {
@@ -254,20 +219,14 @@ export function validateDraftIntensity(
   if (before === undefined) progressionCheck(doses)
 }
 
-/**
- * The weeks whose dose can be compared: a full training week, at volume, not
- * a declared reduction. A part week at either end of the block always looks
- * like a drop or a jump, so it is no evidence of either.
- */
+/** A part week at either end of the block always looks like a drop or a jump, so it is no evidence of either. */
 function loadingWeeks(doses: WeekDose[]): WeekDose[] {
   return doses.filter(({ week, km, share }) => km >= MEANINGFUL_WEEK_KM && share >= 1 && week.reducedVolume === undefined)
 }
 
 /**
- * Controlled threshold time may grow, or hold - a repeated week is the point of the method -
- * but never by more than CONTROLLED_THRESHOLD.dose allows in a week, nor past the ceilings
- * time at threshold answers to. A week after a lighter one is measured
- * against the loading week before it, so returning to the dose is no jump.
+ * Controlled threshold time may hold - a repeated week is the point of the method - and its growth is bounded.
+ * A week after a lighter one is measured against the loading week before it, so returning to the dose is no jump.
  */
 function controlledRampCheck(doses: WeekDose[], judged: (entry: WeekDose) => boolean): void {
   const loading = loadingWeeks(doses)
@@ -290,7 +249,6 @@ function controlledRampCheck(doses: WeekDose[], judged: (entry: WeekDose) => boo
   }
 }
 
-/** More hard running than the same week held before, or a faster repetition. */
 function hardened(dose: WorkoutDose, prior: WorkoutDose | undefined): boolean {
   if (prior === undefined) return true
   if (dose.thresholdMeters > prior.thresholdMeters || dose.intervalMeters > prior.intervalMeters) return true
@@ -302,12 +260,7 @@ function hardened(dose: WorkoutDose, prior: WorkoutDose | undefined): boolean {
   return false
 }
 
-/**
- * The documented failure of controlled-intensity training is repetitions
- * creeping faster week by week until a sub-threshold block is three threshold
- * sessions. Measured against the block's first prescription rather than the
- * week before, so three tolerable steps cannot add up to an intolerable drift.
- */
+/** Against the block's first prescription, not the week before, so tolerable steps cannot add up to an intolerable drift. */
 function driftCheck(doses: WeekDose[], judged: (entry: WeekDose) => boolean): void {
   const baselines = new Map<string, { pace: number; startDate: string }>()
   for (const entry of doses) {
@@ -326,17 +279,13 @@ function driftCheck(doses: WeekDose[], judged: (entry: WeekDose) => boolean): vo
 }
 
 /**
- * Progress by repetition count first, then repetition length, holding pace
- * fixed - which leaves time at threshold as the quantity that has to move. A
- * block going 4.8, 4.0, 3.6, 4.8 km develops nothing. Reduced weeks are
- * exempt: shedding quality is what they are for. Pace-led threshold only: a
- * controlled threshold session may repeat its week, and controlledRampCheck bounds how fast it grows.
+ * Pace is held, so time at threshold is what has to move across the loading weeks. Pace-led threshold only:
+ * a controlled threshold session may repeat its week, and controlledRampCheck bounds its growth.
  */
 function progressionCheck(doses: WeekDose[]): void {
   const loading = loadingWeeks(doses)
   if (loading.length < 2) return
-  // A block may legitimately carry no threshold work at all, as post-race
-  // recovery does. It may not carry some and leave it flat.
+  // A block may carry no threshold work at all, as post-race recovery does, but not some left flat.
   if (loading.every(({ dose }) => dose.thresholdSeconds === 0)) return
 
   for (let index = 1; index < loading.length; index++) {

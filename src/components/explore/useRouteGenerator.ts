@@ -9,17 +9,14 @@ import { FIRST_SEED, ROUTE_BATCH, ROUTE_DEBOUNCE_MS, batchSeeds } from './routeG
 import { areaKey } from './workerProtocol'
 
 export interface RouteGeneratorInput {
-  /** Only then does anything run. */
   enabled: boolean
   area: ExploreAreaRef | null
-  /** The quartier to loop in; null until it is known. */
   unitId: string | null
-  /** The distance asked for, on the stepper's grid. */
   km: number
   prefs: RoutePreferences
-  /** The runs are in the worker (the coverage is in): before that every street would score as new. */
+  /** The runs are in the worker: before that every street would score as new. */
   tracksReady: boolean
-  /** The signed-in owner, whose token the route wants on a public site; null for none. */
+  /** Whose token the route wants on a public site. */
   user: User | null
   /** False while the owner check is still running: a request then would go out without the token. */
   authReady: boolean
@@ -30,15 +27,13 @@ export type RouteGeneratorStatus = 'idle' | 'generating' | 'ready' | 'error'
 export interface RouteGenerator {
   status: RouteGeneratorStatus
   failure: RouteFailure | null
-  /** The loop the panel's numbers are for; null while generating or failed. */
+  /** The loop the panel's numbers are for. */
   route: ScoredRoute | null
-  /** The loop to draw: the one shown, or the last one for this quartier while the next is found. */
+  /** Also the last one for this quartier while the next is found. */
   drawn: ScoredRoute | null
   /** Changes with every loop shown. */
   routeKey: string | null
-  /** The next best loop; past the batch's last, a new batch (seeds + 5). */
   regenerate: () => void
-  /** The same batch again, after a failure. */
   retry: () => void
 }
 
@@ -49,7 +44,6 @@ export interface RouteGeneratorDeps {
 }
 
 interface Cursor {
-  /** The request these seeds are for; another request starts again at the first seed. */
   forKey: string
   seedBase: number
   attempt: number
@@ -68,16 +62,7 @@ interface Result {
 
 const prefsKeyOf = (p: RoutePreferences) => `${p.avoidBusyRoads ? 1 : 0}${p.newStreetsFirst ? 1 : 0}`
 
-/**
- * The route generator's loops (S3): the quartier's public start from the
- * worker, a batch of five loops from the routing proxy, ranked by the worker
- * against every run, best first.
- *
- * A new distance waits for the stepper to rest; "Avoid busy roads" asks for
- * a new batch (the provider routes around them), "New streets first" only
- * re-ranks the one in hand. Regenerate walks down the ranking, then asks
- * for the next five seeds. An answer to an older question is dropped.
- */
+/** "Avoid busy roads" asks for a new batch: the provider routes around them. */
 export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGeneratorDeps = {}): RouteGenerator {
   const { enabled, area, unitId, km, prefs, tracksReady, user, authReady } = input
   const { engineFor = getExploreEngine, request = requestRouteBatch, debounceMs = ROUTE_DEBOUNCE_MS } = deps
@@ -104,14 +89,11 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
     if (!active) return
     const { area: ref, unitId: unit, km: distanceKm, prefs: wanted, user: owner, seedBase, result: shown, unitKey: forUnit } = inputs.current
     if (!ref || !unit) return
-    // Back on the question the batch in hand answers (the stepper went there
-    // and back): nothing to ask, and the loop shown - Regenerate's place, a
-    // save - stays.
+    // Back on the question the batch in hand answers (the stepper went there and back): the loop shown stays.
     if (shown && shown.fetchKey === fetchKey && !shown.failure) return
     const controller = new AbortController()
-    // The first loops of a quartier at once; any change after that - even
-    // before they come back - once the stepper rests. An aborted request
-    // still costs the provider's quota on the server.
+    // Any change after a quartier's first batch, even before it comes back, waits for the stepper to rest:
+    // an aborted request still costs the provider's quota on the server.
     const delay = sentFor.current === forUnit ? debounceMs : 0
     const timer = setTimeout(() => {
       sentFor.current = forUnit

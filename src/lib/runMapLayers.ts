@@ -24,7 +24,6 @@ export const START_ICON = 'run-start'
 export const FINISH_ICON = 'run-finish'
 const FENCE_ICON = 'map-edge-fence'
 
-/** The route fitted in the hero, as large as 3.0 drew it (MAP_PADDING.hero). */
 export const ROUTE_FIT_PADDING = MAP_PADDING.hero
 
 type LngLat = [number, number]
@@ -32,20 +31,15 @@ type Image = { width: number; height: number; data: Uint8Array | Uint8ClampedArr
 
 const EMPTY: FeatureCollection = { type: 'FeatureCollection', features: [] }
 
-/** What the Activity map shows of the run: the route drawn so far, its start and finish, and the scrub's point. */
 export interface RunLayersState {
   /** The accent, as a literal colour: MapLibre paints values, not CSS variables. */
   accent: string
-  /**
-   * The ring round the start and the scrub marker, and the route's halo:
-   * the page ground (3.0), so the line and its dots lift off the tiles.
-   */
+  /** The page ground, so the line and its dots lift off the tiles. */
   ring: string
   route: LngLat[]
   start: LngLat
-  /** Where the run ended - the drawn line's own last point - once the route has been drawn that far. */
+  /** Null until the draw-in reaches the end. */
   finish: LngLat | null
-  /** Whether start and finish sit under 20 px apart at the current zoom: one loop marker then. */
   joined: boolean
   cursor: LngLat | null
 }
@@ -75,7 +69,6 @@ function setOrAddSource(map: MapLibreMap, id: string, data: FeatureCollection): 
 
 const ICON_PIXEL_RATIO = 2
 
-/** The ends as features: the start alone, or the finish or loop marker (routeMarkers). */
 function endsData(start: LngLat, finish: LngLat | null, joined: boolean) {
   const ends = routeEnds(start, finish, joined)
   const startAt = ends.find((end) => end.kind === 'start')?.at ?? null
@@ -97,15 +90,8 @@ function addClearIcon(map: MapLibreMap): void {
 }
 
 /**
- * The run on the Activity map (v4.17), in one call that can be made again
- * after a style change: the route as one accent line, width 4, on a 3 px
- * halo in the page ground (3.0), under the style's labels as the heatmap's
- * tracks are (3.0.3, at the owner's request): every name stays, drawn over
- * the line on its own halo, so a district the run crossed is named. The
- * start as a 7 px accent dot in a 2.5 px ring of the ground; the finish
- * as the checkered dot of routeMarkers on the line's last point, or one
- * loop marker on the start where the two would touch; and the scrub's
- * marker, a larger accent dot that follows the Charts tab, on top.
+ * Can be called again after a style change. The route goes under the style's
+ * labels, so every name stays, drawn over the line on its own halo.
  */
 export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   const newSource = setOrAddSource(map, ROUTE_SOURCE, routeData(state.route))
@@ -144,7 +130,6 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
     })
   }
   if (setOrAddSource(map, RUN_START_SOURCE, ends.start) || !map.getLayer(RUN_START_LAYER)) {
-    // A 7 px dot, the 2.5 px ring drawn outside it (3.0).
     map.addLayer({
       id: RUN_START_LAYER,
       type: 'circle',
@@ -162,14 +147,13 @@ export function addRunLayers(map: MapLibreMap, state: RunLayersState): void {
   }
 }
 
-/** A new accent on the run's layers, without re-adding them (v4.17); the loop marker's ring is in it. */
+/** The loop marker's ring is in the accent, so its image is redrawn too. */
 export function setRunAccent(map: MapLibreMap, accent: string): void {
   if (map.getLayer(ROUTE_LINE_LAYER)) map.setPaintProperty(ROUTE_LINE_LAYER, 'line-color', accent)
   for (const id of [RUN_START_LAYER, RUN_CURSOR_LAYER]) if (map.getLayer(id)) map.setPaintProperty(id, 'circle-color', accent)
   if (map.hasImage(LOOP_MARK_ICON)) map.updateImage(LOOP_MARK_ICON, routeMarkerImage('loop', accent, ICON_PIXEL_RATIO))
 }
 
-/** Whether the ends' centres sit under 20 px apart at the map's current zoom. */
 export function runEndsJoined(map: Pick<MapLibreMap, 'project'>, start: LngLat, finish: LngLat): boolean {
   const a = map.project(start)
   const b = map.project(finish)
@@ -180,23 +164,17 @@ export function setRunRoute(map: MapLibreMap, route: LngLat[]): void {
   ;(map.getSource(ROUTE_SOURCE) as GeoJSONSource | undefined)?.setData(routeData(route))
 }
 
-/** The ends as they now stand: the finish once the draw-in has reached it, joined into one marker on a loop. */
 export function setRunEnds(map: MapLibreMap, start: LngLat, finish: LngLat | null, joined: boolean): void {
   const ends = endsData(start, finish, joined)
   ;(map.getSource(RUN_START_SOURCE) as GeoJSONSource | undefined)?.setData(ends.start)
   ;(map.getSource(RUN_FINISH_SOURCE) as GeoJSONSource | undefined)?.setData(ends.marks)
 }
 
-/** The scrub's point on the route, or none. */
 export function setRunCursor(map: MapLibreMap, at: LngLat | null): void {
   ;(map.getSource(RUN_CURSOR_SOURCE) as GeoJSONSource | undefined)?.setData(pointData(at))
 }
 
-/**
- * The point a share of the way along the route by distance, not by index:
- * GPS points come by time, so a slow stretch has more of them, and the
- * charts' samples are spread by distance.
- */
+/** By distance, not by index: GPS points come by time, and the charts' samples are spread by distance. */
 export function pointAlongRoute(route: readonly LngLat[], fraction: number): LngLat | null {
   if (route.length === 0) return null
   if (route.length === 1 || fraction <= 0) return route[0]!
@@ -234,11 +212,7 @@ export function markerPoints(start: LngLat, finish: LngLat | null): FeatureColle
   return { type: 'FeatureCollection', features: [point(start, START_ICON), ...(finish ? [point(finish, FINISH_ICON)] : [])] }
 }
 
-/**
- * Start and finish as a symbol layer on top of everything, not DOM markers
- * (v4.10): they are always drawn and take part in label placement, so a
- * place name that would touch one is dropped by MapLibre itself.
- */
+/** A symbol layer, not DOM markers: they take part in label placement, so MapLibre drops a name that would touch one. */
 export function addRunMarkers(map: MapLibreMap, start: LngLat, images: { start: Image; finish: Image }): void {
   if (!map.hasImage(START_ICON)) map.addImage(START_ICON, images.start, { pixelRatio: 2 })
   if (!map.hasImage(FINISH_ICON)) map.addImage(FINISH_ICON, images.finish, { pixelRatio: 2 })
@@ -259,7 +233,6 @@ export function setRunFinish(map: MapLibreMap, start: LngLat, finish: LngLat | n
   ;(map.getSource(RUN_MARKERS_SOURCE) as GeoJSONSource | undefined)?.setData(markerPoints(start, finish))
 }
 
-/** Every `step` px along the four edges of a w x h canvas. */
 export function edgePoints(w: number, h: number, step = 16): [number, number][] {
   const points: [number, number][] = []
   for (let x = 0; x <= w; x += step) points.push([x, 0], [x, h])
@@ -268,10 +241,9 @@ export function edgePoints(w: number, h: number, step = 16): [number, number][] 
 }
 
 /**
- * No label cut at the canvas edge (v4.10). MapLibre draws a name that runs
- * past the edge; an invisible icon every 16 px along it, placed above the
- * labels, makes such a name collide and be dropped instead. The fence
- * follows the view as it moves. Returns the cleanup.
+ * MapLibre draws a name that runs past the canvas edge; an invisible icon
+ * every 16 px along it, placed above the labels, makes such a name collide and
+ * be dropped instead.
  */
 export function addEdgeFence(map: MapLibreMap): () => void {
   addClearIcon(map)
@@ -303,7 +275,7 @@ export function addEdgeFence(map: MapLibreMap): () => void {
   }
 }
 
-/** A clear square the size of the largest marker: collision without paint, for maps whose markers are drawn elsewhere. */
+/** Collision without paint, for maps whose markers are drawn elsewhere. */
 export function clearMarkerImage(diameter = markerExtent('loop')): Image {
   const size = (diameter + 2) * 2
   return { width: size, height: size, data: new Uint8Array(size * size * 4) }

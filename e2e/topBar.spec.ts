@@ -1,19 +1,12 @@
 import { test, expect } from './fixtures'
 import type { Page } from '@playwright/test'
 
-// v4.3.3: scrolled to its midpoint, no page shows text under the top bar -
-// the compact title bar when it shows, the status-bar strip when it doesn't.
-// Every piece of text that reaches into that band must be hidden by the bar
-// (or a sticky tab strip under it), or faded out.
 test.use({ viewport: { width: 393, height: 852 } })
 
 async function textUnderTheBar(page: Page): Promise<string[]> {
-  // A phone's safe area (v4.8): the status strip is exactly that tall, and
-  // the compact bar starts under it. A desktop browser has none.
+  // A phone's safe area; a desktop browser has none.
   await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
-  // After the page transition, as the layering spec does: scrolled while the
-  // page still animated in, the midpoint was taken from a shorter page and
-  // the text sampled while it was still moving.
+  // After the page transition: scrolled while the page still animates in, the midpoint comes from a shorter page.
   await page.waitForFunction(() => {
     const wrapper = document.querySelector('main .animate-fade-up')
     return !wrapper || wrapper.getAnimations().length === 0
@@ -55,9 +48,7 @@ async function textUnderTheBar(page: Page): Promise<string[]> {
         if (Number(getComputedStyle(node).opacity) === 0) faded = true
       }
       if (faded) continue
-      // Sample the text's part inside the band, top and bottom - both inside
-      // it: a text box starting 1 px above the band's foot sampled its top
-      // at top + 1, the first pixel under the bar, and read as a leak there.
+      // Both samples inside the band: a box starting 1 px above the band's foot would sample under the bar.
       for (const y of [Math.min(Math.max(box.top, 0) + 1, band - 1), Math.min(box.bottom, band) - 1]) {
         const hit = document.elementFromPoint(box.left + Math.min(box.width / 2, 20), y)
         if (hit && main.contains(hit) && !hit.closest('[data-testid="sticky-bar"]')) {
@@ -66,8 +57,7 @@ async function textUnderTheBar(page: Page): Promise<string[]> {
         }
       }
     }
-    // The large title's subtitle is gone by the time it reaches the divider:
-    // straddling it, it would show clipped glyphs under the bar.
+    // Straddling the divider, the large title's subtitle would show clipped glyphs under the bar.
     const heading = main.querySelector('h1')
     const subtitle = heading?.nextElementSibling
     if (shown && subtitle instanceof HTMLElement && subtitle.tagName === 'P') {
@@ -98,9 +88,7 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
   }).toPass({ timeout: 30_000 })
   await expect(page.locator('h1')).toBeVisible()
 
-  // The subtitle at the divider: scrolled until the bar has collapsed in and
-  // the subtitle reaches its divider. The title sits under the map hero
-  // (3.0), its type and date line above it, so the sweep is around the title.
+  // Swept around the title, where the subtitle reaches its divider once the bar has collapsed in.
   const titleTop = await page.evaluate(() => document.querySelector('main h1')!.getBoundingClientRect().top + window.scrollY)
   for (const y of [-24, -8, 8, 24].map((d) => Math.max(0, Math.round(titleTop - 110 + d)))) {
     await page.evaluate((top) => window.scrollTo(0, top), y)
@@ -127,12 +115,6 @@ test('each activity tab shows no text under the top bar at its midpoint', async 
   }
 })
 
-// Bevel's top (owner, Oct 2026): the compact bar has no surface of its own -
-// no backdrop-filter, no hairline. Liquid Glass v3 (G5): the soft scroll edge
-// under it (.scroll-edge) is invisible at rest and shown while the bar is, a
-// tint and no hairline. In dark, three blurs that grow stronger toward the
-// top (2, 8, 20 px), reaching 30 pt past the bar's foot. In light (F21), the
-// ground solid to the bar's foot, then a 24 pt fade, blurred 6 px in it only.
 const EDGES = {
   dark: { blurs: ['blur(2px)', 'blur(8px)', 'blur(20px)'], shown: ['block', 'block', 'block', 'block'], fade: 30 },
   light: { blurs: ['blur(6px)'], shown: ['block', 'none', 'none', 'block'], fade: 24 },
@@ -141,15 +123,13 @@ for (const theme of ['light', 'dark'] as const) {
   test(`the top bar is a soft scroll edge, with no hairline (${theme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: theme })
     await page.addInitScript((t) => localStorage.setItem('theme', t), theme)
-    // A page with no glass strip to stick (F20 gives dark light's edge under one);
-    // its month headings still grow the edge by their height (F4).
+    // A page with no glass strip to stick, which would give dark the light edge.
     await page.goto('/activities')
     await expect(page.locator('html')).toHaveClass(new RegExp(`\\b${theme}\\b`))
     await page.evaluate(() => document.documentElement.style.setProperty('--safe-top', '59px'))
     const layers = () => page.evaluate(() => [...document.querySelectorAll<HTMLElement>('[data-testid="scroll-edge"] > i')].map((i) => getComputedStyle(i).opacity))
     await expect.poll(layers).toEqual(['0', '0', '0', '0'])
-    // Scrolled again on each poll: while its charts still load the page is too
-    // short to reach 600, and the clamped scroll stops above the collapse point.
+    // Scrolled again on each poll: while its charts load, the page is too short to reach 600.
     await expect
       .poll(() =>
         page.evaluate(() => {
@@ -169,7 +149,6 @@ for (const theme of ['light', 'dark'] as const) {
         blurs: layers.slice(0, count).map((i) => getComputedStyle(i).backdropFilter),
         shown: layers.map((i) => getComputedStyle(i).display),
         hairline: layers.some((i) => parseFloat(getComputedStyle(i).borderBottomWidth) > 0),
-        // The fade past the bar's foot, or past a stuck strip's.
         fade: Math.round(wrapper.getBoundingClientRect().bottom - bar.bottom - stickyH),
       }
     }, EDGES[theme].blurs.length)
@@ -182,9 +161,6 @@ for (const theme of ['light', 'dark'] as const) {
   })
 }
 
-// F21: in light, the run's chips and the hero card's foot showed through the
-// edge under the compact bar as a smudge. With the bar's own controls hidden,
-// the screen from its top to the bar's foot is the page's ground, nothing else.
 test('nothing shows through the light edge under the compact bar (F21)', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' })
   await page.addInitScript(() => localStorage.setItem('theme', 'light'))
@@ -226,9 +202,6 @@ test('nothing shows through the light edge under the compact bar (F21)', async (
   expect(delta).toBeLessThanOrEqual(1)
 })
 
-// F20: Activity detail's strip turns to glass as it sticks, as Analytics'
-// does, and the rows pass visibly under it: the scroll edge stays the bar's
-// own (it grew by the strip, F4, and painted the ground behind the glass).
 for (const theme of ['light', 'dark'] as const) {
   test(`a stuck activity strip is glass over the rows, not over the edge (${theme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' })
@@ -258,7 +231,6 @@ for (const theme of ['light', 'dark'] as const) {
       return {
         edgeFade: Math.round(edge.bottom - bar.bottom),
         stickyH: getComputedStyle(document.documentElement).getPropertyValue('--sticky-h'),
-        // What paints under the glass, just above its foot: the panel's content.
         content: below.some((el) => el.closest('[data-testid="activity-panel"]') !== null),
       }
     })

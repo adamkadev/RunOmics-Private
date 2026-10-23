@@ -11,7 +11,7 @@ import { t } from '@/i18n'
 import { FILTER_GROUPS, LONG_RUN, SORT_IDS, kindLabel, matchingCount, type ActivitySort, type FilterKind } from './activityFilter'
 
 interface Props {
-  /** The types ticked when the sheet opens: the picked types, or the chip's group. */
+  /** The types ticked when the sheet opens. */
   types: FilterKind[]
   sort: ActivitySort
   /** Runs per type across the archive. */
@@ -22,12 +22,6 @@ interface Props {
 
 const GROUPS = Object.keys(FILTER_GROUPS) as (keyof typeof FILTER_GROUPS)[]
 
-/**
- * Filter & sort (3.0): the sort, then every type under its group with a tick
- * and its count. Nothing changes behind the sheet until "Show N runs". A
- * Liquid Glass v3 sheet (ui/Sheet): it floats while it fits in three
- * quarters of the screen and goes large past that, glass either way (F18).
- */
 export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: Props) {
   const [picked, setPicked] = useState<FilterKind[]>(types)
   const [pendingSort, setPendingSort] = useState<ActivitySort>(sort)
@@ -59,7 +53,6 @@ export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: P
             close()
           }}
         >
-          {/* With nothing ticked the button says what it opens, not a bare count (App Fixes 3d). */}
           {picked.length === 0 ? f.showAll(matchingCount(counts, picked)) : f.show(matchingCount(counts, picked))}
         </Button>
       )}
@@ -79,7 +72,7 @@ export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: P
           <ul className="inset-group [--row-inset:34px]">
             {FILTER_GROUPS[group].map((type) => {
               const checked = picked.includes(type)
-              // The long run takes the easy run's dot: it is one (App Fixes 3d).
+              // A long run is an easy run, so it takes its dot.
               const dotType = type === LONG_RUN ? 'Base' : type
               return (
                 <li key={type}>
@@ -90,7 +83,6 @@ export function ActivityFilterSheet({ types, sort, counts, onApply, onClose }: P
                     onClick={() => toggle(type)}
                     className="flex h-11 w-full items-center gap-3 text-left"
                   >
-                    {/* Ticked, the accent; unticked, a 1.5 pt ring on the glass (F18). */}
                     <span
                       aria-hidden="true"
                       className={cn(

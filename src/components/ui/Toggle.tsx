@@ -2,10 +2,7 @@
 
 import { cn } from '@/lib/utils'
 
-/**
- * The switch: iOS's 51 x 31 with a 27 px knob (round 2, F2), the accent
- * when on and line-2 when off - off is a choice, never drawn as disabled.
- */
+/** Off is a choice, never drawn as disabled. */
 export function Toggle({
   checked,
   onChange,

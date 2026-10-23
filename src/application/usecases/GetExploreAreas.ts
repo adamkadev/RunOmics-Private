@@ -4,7 +4,6 @@ import { areaForCluster } from '@/domain/explore/areaForCluster'
 import type { ExploreAreaRef } from '@/domain/explore/types'
 import { getMapShellData } from './GetAllRoutes'
 
-/** One run of the home cluster, as the coverage worker asks for its track. */
 export interface ExploreRun {
   /** Index into `routeMeta` and the `/api/map/routes` answer. Not stable across deployments. */
   routeIdx: number
@@ -14,15 +13,13 @@ export interface ExploreRun {
   date: string
 }
 
-/** What a page needs to start Explore without fetching anything first. */
 export interface ExploreHome {
   area: ExploreAreaRef
   clusterId: string
   runs: ExploreRun[]
   /**
-   * Changes when, and only when, the set of runs does. Route indices and
-   * cluster ids both shift when a run is added, and the build commit stays
-   * the same across a data-only redeploy, so neither can key a cache.
+   * Changes when, and only when, the set of runs does: route indices and cluster
+   * ids shift when a run is added, and the build commit survives a data-only redeploy.
    */
   dataVersion: string
 }
@@ -40,11 +37,6 @@ function runsVersion(ids: string[]): string {
   return createHash('sha256').update([...ids].sort().join('\n')).digest('hex').slice(0, 12)
 }
 
-/**
- * Explore for the cluster the map opens on, or null when this deployment has
- * no area for it - a city nobody built areas for, or a cluster outside
- * France - so the page leaves the Districts layer and its entry points out.
- */
 export function getExploreHome(): ExploreHome | null {
   const areas = listExploreAreas()
   if (areas.length === 0) return null

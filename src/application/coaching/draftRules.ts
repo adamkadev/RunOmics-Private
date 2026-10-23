@@ -14,16 +14,7 @@ import { intensityBand, validateDraftIntensity } from './intensity'
 import { validateDraftVolume, volumeBand } from './volume'
 import { validateDraftNames, validateWorkoutName } from './workoutNames'
 
-/**
- * Every rule a proposed plan has to satisfy, and which of them apply when.
- *
- * The advisors only build prompts and read answers. Judging an answer happens
- * here, so a reply from the API, a reply pasted from a chat and a change to the
- * live plan all answer to the same rules. The checks themselves stay beside
- * their reasoning - frequency.ts, volume.ts, intensity.ts,
- * bootstrapValidation.ts and workoutNames.ts - and this module is the one
- * place that calls them.
- */
+/** The one place that judges a plan, so an API reply, a pasted chat reply and a live-plan change answer to the same rules. */
 
 function flattenedSegments(blocks: WorkoutBlock[]): WorkoutSegment[] {
   return blocks.flatMap((block) => block.kind === 'repeat' ? block.steps : [block])
@@ -49,12 +40,6 @@ function hasStructuredProgression(segments: WorkoutSegment[]): boolean {
   return false
 }
 
-/**
- * How one session is written, whichever path wrote it: strides as a repeat
- * group with recovery and a timed, HR-free stride; hills by effort rather than
- * by a pace the gradient makes meaningless; and "progressive" only when the
- * targets actually progress.
- */
 export function validateWorkoutDraft(workout: BootstrapWorkoutDraft, label: string): void {
   const mentionsStrides = /\bstrides?\b|\bacc[ée]l[ée]rations\b|\blignes droites\b/i.test([workout.title, workout.description, ...(workout.notes ?? [])].join('\n'))
   const strideRepeats = workout.blocks.filter((block): block is WorkoutRepeatBlock =>
@@ -88,8 +73,7 @@ export function validateWorkoutDraft(workout: BootstrapWorkoutDraft, label: stri
   ].join('\n')
   const isHillWorkout = workout.type !== 'race'
     && /\b(?:hill|hills|uphill|incline)\b|(?:côte|côtes|montee|montée|montées)/i.test(workoutProse)
-  // The hill is in the repetitions - every stride, every repeated effort. The
-  // easy running a session of hill sprints opens with keeps its pace.
+  // The hill is in the repetitions; the easy running around them keeps its pace.
   const repeated = workout.blocks.flatMap((block) => block.kind === 'repeat' ? block.steps : [])
   const hillEfforts = [...repeated, ...workout.blocks.filter((block) => block.kind === 'strides')]
   if (isHillWorkout && hillEfforts.some((segment) =>
@@ -121,7 +105,6 @@ export interface BootstrapRules {
   events: BootstrapEvents
 }
 
-/** A block being written answers to every rule, in the order a draft meets them. */
 export function validateBootstrapDraft(draft: CoachingPlanDraft, rules: BootstrapRules): void {
   draft.weeks.forEach((week, weekIndex) => week.workouts.forEach((workout, workoutIndex) =>
     validateWorkoutDraft(workout, `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`)
@@ -140,7 +123,6 @@ function active(week: TrainingWeek): WorkoutPrescription[] {
   return week.workouts.filter((workout) => workout.status !== 'cancelled')
 }
 
-/** The plan's weeks as the volume and intensity checks read a draft: what is still to be run. */
 function asDraft(plan: CoachingPlan): CoachingPlanDraft {
   return {
     name: plan.block.name,
@@ -149,11 +131,7 @@ function asDraft(plan: CoachingPlan): CoachingPlanDraft {
   }
 }
 
-/**
- * One run a day and no more than the athlete's weekly count - judged on what
- * the change added, so a week the change did not add to is never refused for
- * how it already stood.
- */
+/** Judged on what the change added, so a week it did not add to is never refused for how it already stood. */
 function validateAdaptedFrequency(before: CoachingPlan, after: CoachingPlan, changed: WorkoutPrescription[], runsPerWeek: number): void {
   const running = after.weeks.flatMap(active)
   for (const workout of changed) {
@@ -171,17 +149,8 @@ function validateAdaptedFrequency(before: CoachingPlan, after: CoachingPlan, cha
 }
 
 /**
- * The rules a change to the live plan answers to, measured on the plan it
- * would produce. Every session it adds or rewrites is held to how a session is
- * written and to the athlete's weekdays. Beyond that it may always take load
- * away - that is what an adjustment for fatigue or illness is for, and a
- * refusal would leave the heavier plan standing - but whatever it adds must
- * fit the bounds a bootstrap plan answers to, measured across the whole block.
- *
- * Rules that demand a minimum stay with bootstrap: the volume floor, the
- * reduced-week rules, the "fewer runs" explanation and threshold progression
- * refuse exactly the easing an adaptation exists for, and the race rules
- * judge how a block is laid around its events, which an adaptation inherits.
+ * A change may always take load away - that is what an adaptation for fatigue or illness is for -
+ * but whatever it adds must fit the bootstrap bounds. Rules that demand a minimum stay with bootstrap.
  */
 export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, context: CoachingContext, options: { guideChange?: boolean } = {}): void {
   const previous = new Map(before.weeks.flatMap((week) => week.workouts).map((workout) => [workout.id, workout]))
@@ -201,9 +170,7 @@ export function validateAdaptation(before: CoachingPlan, after: CoachingPlan, co
   validateDraftVolume(draft, volumeBand(context.trainingHistory), weekdays, prior)
   validateDraftIntensity(draft, intensityBand(context.athlete.thresholdPaceSecPerKm), weekdays, prior, options)
 
-  // What the change names is held to the naming rules (design review, Oct
-  // 2026); a title the plan already held keeps the rules it was written
-  // under, wherever the change moved its session.
+  // A title the plan already held keeps the rules it was written under, wherever its session moved.
   const titles = new Set(before.weeks.flatMap((week) => week.workouts).map((workout) => workout.title))
   for (const workout of changed) validateWorkoutName(workout, `workout ${workout.id}`, { titleAsWritten: titles.has(workout.title) })
 }

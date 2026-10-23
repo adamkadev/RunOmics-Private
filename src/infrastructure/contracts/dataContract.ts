@@ -2,23 +2,9 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 /**
- * The contract between the Python sync, which writes the dataset, and this
- * app, which reads it. Until now it existed only as `as T` casts in the
- * repositories, so a renamed or retyped field surfaced as a TypeError deep in
- * a server render instead of as an error naming the file.
- *
- * Two severities, chosen by what the app does with the field:
- *
- * - `error`: the app dereferences it unconditionally, so a page would crash
- *   (an activity without an id or a date, a goals year without a `targets`
- *   array). The build refuses such a dataset, and the deployment already live
- *   keeps serving.
- * - `warning`: the app tolerates it (an activity type it does not know, a
- *   metric of the wrong type it would render as blank). Reported, never
- *   fatal - so a dataset that renders today can never start failing the build.
- *
- * It covers the files every page reads. The history files and the coaching
- * state are validated by their own readers.
+ * `error`: the app dereferences the field unconditionally, so the build refuses the dataset.
+ * `warning`: the app tolerates it, so it is reported and a dataset that renders today never fails the build.
+ * The history files and the coaching state are validated by their own readers.
  */
 export type Severity = 'error' | 'warning'
 
@@ -64,7 +50,6 @@ class Report {
     this.problems.push({ file: this.file, path: at, message, severity: 'warning' })
   }
 
-  /** The field as an array to walk, or null after reporting why it is not one. */
   list(owner: JsonObject, key: string, at: string, { required = true } = {}): unknown[] | null {
     const value = owner[key]
     if (value === undefined && !required) return null
@@ -182,7 +167,6 @@ function checkActivities(dir: string, problems: Problem[]) {
   }
 }
 
-/** A top-level object file whose one key holds a list of records. */
 function checkRecords(
   dir: string,
   name: string,
@@ -246,7 +230,6 @@ function checkPlannedWorkouts(dir: string, problems: Problem[]) {
   }
 }
 
-/** Every problem found in a data directory; an empty list means the app can read it. */
 export function checkDataDirectory(dir: string): Problem[] {
   const problems: Problem[] = []
 

@@ -1,8 +1,4 @@
-/**
- * How a save ended: handed to the share sheet, downloaded, or closed by the
- * athlete in the share sheet (nothing saved). Callers that only need the
- * file out can ignore it; the route generator's "Saved" state reads it.
- */
+/** `cancelled`: the athlete closed the share sheet without saving. */
 export type SaveOutcome = 'shared' | 'downloaded' | 'cancelled'
 
 export async function saveFileWithFallback(file: File): Promise<SaveOutcome> {

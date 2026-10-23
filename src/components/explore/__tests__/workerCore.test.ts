@@ -44,7 +44,6 @@ function buffers(ids: string[]) {
   )
 }
 
-/** An in-memory `ExploreCache`, with every call recorded. */
 class MemoryCache implements ExploreCache {
   stores: Record<ExploreStore, Map<string, unknown>> = { areas: new Map(), tracks: new Map() }
   calls: string[] = []

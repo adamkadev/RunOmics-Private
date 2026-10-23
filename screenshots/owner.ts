@@ -1,7 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { t } from '@/i18n'
 
-/** Settings signed in as the owner, against the local Auth emulator: no real account. */
 export const AUTH_EMULATOR_HOST = '127.0.0.1:9099'
 
 const PROJECT_ID = 'runomics-dev'

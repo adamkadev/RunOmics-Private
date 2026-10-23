@@ -14,17 +14,11 @@ import {
 } from './types'
 
 /**
- * Quartier coverage: which runnable cells the runs have touched, and how far
- * they ran inside each unit.
- *
- * The work is split so a new run costs one pass over its own points. Each
- * activity is reduced once to its cells and its metres per unit
- * (`activityCells`), which the worker caches by activity id; the totals are
- * then re-added from those small results whenever the selection changes
- * (`aggregateCoverage`), which is cheap enough to do on every filter tap.
+ * Split so a new run costs one pass over its own points: `activityCells` reduces
+ * each activity once (the worker caches it by id), and `aggregateCoverage`
+ * re-adds those small results, cheap enough for every filter tap.
  */
 
-/** `cellOwner` for a cell no unit claims. */
 export const NO_UNIT = -1
 
 export interface IndexedUnit {
@@ -48,11 +42,7 @@ export interface AreaIndex {
   runnableUnit: ReadonlyMap<number, number>
   /** Union of the unit boxes: a cell centre outside it belongs to no unit. */
   bbox: BBox
-  /**
-   * Owners already worked out for cells that are not runnable. Runs keep
-   * crossing the same few hundred cells, so each point-in-polygon test is
-   * paid once per area, not once per sample.
-   */
+  /** Owners of non-runnable cells, so each point-in-polygon test is paid once per area, not once per sample. */
   ownerCache: Map<number, number>
 }
 
@@ -63,7 +53,6 @@ export interface ActivityCells {
   metresByUnit: Float64Array
 }
 
-/** One activity's cached result, as `aggregateCoverage` adds them up. */
 export interface ActivityCoverageInput {
   id: string
   /** 'YYYY-MM-DD' */
@@ -84,11 +73,8 @@ function unionBBox(boxes: BBox[]): BBox {
 }
 
 /**
- * Everything coverage needs from an area file, built once per area.
- *
- * A cell listed as runnable by two units (the build script never writes one,
- * but a hand-edited file could) stays with the first, and only counts in that
- * unit's total: otherwise the second unit could never reach 100%.
+ * A cell listed as runnable by two units (only a hand-edited file could) stays
+ * with the first: otherwise the second unit could never reach 100%.
  */
 export function buildAreaIndex(area: ExploreAreaFile): AreaIndex {
   const runnableUnit = new Map<number, number>()
@@ -114,12 +100,7 @@ export function buildAreaIndex(area: ExploreAreaFile): AreaIndex {
   }
 }
 
-/**
- * The unit a cell belongs to, or `NO_UNIT`. Runnable membership comes first,
- * so the denominator and the owner always agree; any other cell goes to the
- * unit whose (simplified) shape holds its centre. A centre exactly on a shared
- * edge goes to one side only (`pointInGeometry`).
- */
+/** Runnable membership comes first, so the denominator and the owner always agree. */
 export function cellOwner(index: AreaIndex, cell: number): number {
   const runnable = index.runnableUnit.get(cell)
   if (runnable !== undefined) return runnable
@@ -142,12 +123,9 @@ export function cellOwner(index: AreaIndex, cell: number): number {
 }
 
 /**
- * One run reduced to what coverage needs. A cell counts as visited when an
- * interpolated sample falls in it; each step's length goes to the unit that
- * owns the cell of the step's midpoint, so a street along a boundary is split
- * where it actually runs rather than credited twice.
- *
- * `coords` is flat [lon, lat, lon, lat, …], as the worker receives it.
+ * Each step's length goes to the unit owning its midpoint's cell, so a street
+ * along a boundary is split where it runs rather than credited twice. `coords`
+ * is flat [lon, lat, lon, lat, …], as the worker receives it.
  */
 export function activityCells(index: AreaIndex, coords: ArrayLike<number>): ActivityCells {
   const { proj } = index
@@ -181,15 +159,7 @@ function floorPct(part: number, whole: number): number {
   return whole > 0 ? Math.floor((100 * part) / whole) : 0
 }
 
-/**
- * Adds up cached activity results into the area's coverage. `activities` is
- * whatever selection the caller wants counted (the heat filters on the map,
- * every run for the Progress card); `home` only feeds distances and the next
- * quartier.
- *
- * Units without a single runnable cell are left out entirely: a unit that can
- * never be explored is not one of the "M quartiers".
- */
+/** Units without a runnable cell are left out: one that can never be explored is not one of the "M quartiers". */
 export function aggregateCoverage(
   index: AreaIndex,
   activities: readonly ActivityCoverageInput[],

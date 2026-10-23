@@ -6,10 +6,6 @@ import { useMounted } from '@/lib/useMounted'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-/**
- * Light or dark, whichever is not on screen. `compact` is the sidebar's 30 px
- * square on the inset surface (v4.17); its hit area still reaches 44 px.
- */
 export function ThemeToggle({ className, compact = false }: { className?: string; compact?: boolean }) {
   const { resolvedTheme, setTheme } = useTheme()
   const mounted = useMounted()

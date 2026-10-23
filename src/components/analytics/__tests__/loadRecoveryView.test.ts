@@ -172,8 +172,7 @@ describe('recoveryView', () => {
     expect(view.out).toBe(true)
   })
 
-  // App Fixes 2a: a resting HR under its baseline is good news, so it is
-  // named but never flagged.
+  // A resting HR under its baseline is good news, so it is named but never flagged.
   it('does not flag a resting HR below its baseline', () => {
     const view = recoveryView(nights(90, (i) => 58 + wobble(i), (i) => (i >= 88 ? 40 : 46 + (i % 3) - 1)), dayWindow(TODAY, '4w'))!
     expect(view.restingHr!.side).toBe('low')

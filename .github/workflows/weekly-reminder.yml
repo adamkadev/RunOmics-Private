@@ -1,8 +1,7 @@
 name: Weekly Goal Reminder
 
 on:
-  # 15:37 UTC = 17:37 Paris time (CEST), 16:37 in winter (CET). Off the hour on
-  # purpose - see daily-session-reminder.yml.
+  # 17:37 in Paris in summer, 16:37 in winter; off the hour on purpose.
   schedule:
     - cron: "37 15 * * 5"
   workflow_dispatch:
@@ -13,8 +12,7 @@ permissions:
 jobs:
   notify:
     uses: ./.github/workflows/internal-notify.yml
-    # Only the two secrets the job reads, not every one this repository
-    # holds. Each profile's environment secret still wins over these.
+    # Only the secrets the job reads, not every one this repository holds.
     secrets:
       APP_URL: ${{ secrets.APP_URL }}
       INTERNAL_NOTIFY_SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}

@@ -1,12 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { test, expect } from './fixtures'
 
-/**
- * Explore on the demo dataset's fictional seven-unit area. The e2e build has
- * no MapTiler token, so there is no MapLibre map: these walk the DOM paths
- * (layer toggle, a quartier's sheet by link, the generator by link) and mock
- * the routing proxy, which has no OpenRouteService key here either.
- */
+// The e2e build has no MapTiler or OpenRouteService key, so these walk the DOM paths and mock the routing proxy.
 test.use({ viewport: { width: 393, height: 852 } })
 
 test('the layers button switches to Districts, remembers it, and a link opens a quartier', async ({ page }) => {
@@ -34,7 +29,7 @@ test('a loop from the routing proxy leaves as a closed GPX 1.1 track', async ({ 
   await page.route('**/api/explore/route', async (route) => {
     request = route.request().postDataJSON()
     const [lon, lat] = request!.start
-    // A ring that starts and ends on the requested start, with a little climb.
+    // A ring through the requested start, with a little climb.
     const ring = Array.from({ length: 120 }, (_, k) => {
       const a = (2 * Math.PI * k) / 120
       return [lon + 0.012 * Math.cos(a) - 0.012, lat + 0.008 * Math.sin(a), 20 + 5 * Math.sin(a)]

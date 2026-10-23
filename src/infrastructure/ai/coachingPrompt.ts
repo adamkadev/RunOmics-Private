@@ -12,12 +12,8 @@ import { BOOTSTRAP_SYSTEM_INSTRUCTION as BOOTSTRAP_RULES, WORKOUT_NAMING_INSTRUC
 import { activeLocale } from '@/i18n'
 
 /**
- * The athlete reads what the coach writes - the plan's name and focus, each
- * week's focus, every workout's title, description and notes - and the rules
- * are English, so a French deployment asked for nothing got an English plan.
- * The JSON stays English: its keys and enums are read by code, not by her.
- * The French wording for "fewer runs" and its reasons is one
- * validateDraftFrequency accepts.
+ * The athlete's text follows the locale; the JSON stays English, its keys and enums read by code.
+ * The French wording for "fewer runs" and its reasons must stay one validateDraftFrequency accepts.
  */
 export const COACHING_LANGUAGE_RULE = activeLocale === 'fr'
   ? 'Write every text the athlete reads in French, tutoiement, as a French-speaking running coach would say it: the plan name and focus, every week.focus and reducedVolume explanation, every workout title, shortName, description, notes and structure extras, every segment note, and the summary and evidence messages of a decision. ' +
@@ -27,26 +23,15 @@ export const COACHING_LANGUAGE_RULE = activeLocale === 'fr'
     'Where these rules ask week.focus to say "fewer runs" with a recovery, taper, fatigue, illness or injury reason, write « moins de sorties » with « récupération », « affûtage », « fatigue », « maladie » or « blessure ».'
   : ''
 
-/** A coaching instruction, with the language rule when the deployment needs one. */
 export function withCoachingLanguage(instruction: string): string {
   return COACHING_LANGUAGE_RULE ? `${instruction} ${COACHING_LANGUAGE_RULE}` : instruction
 }
 
 export const BOOTSTRAP_SYSTEM_INSTRUCTION = withCoachingLanguage(BOOTSTRAP_RULES)
 
-/**
- * A change to the live plan names what it adds or rewrites as a block does
- * (design review, Oct 2026), and is held to the same rules; a session it
- * leaves alone keeps the name it was written with.
- */
 export const ADAPTATION_NAMING_RULE = `Name every workout you add or rewrite by these rules, and keep the title of one you leave unchanged: ${WORKOUT_NAMING_INSTRUCTION}`
 
-/**
- * What the coach asks for and the shape it must come back in, kept apart from
- * the transport that sends it. A second advisor renders the same instruction
- * and prompt into a file for a human to paste into a chat, and the two must
- * not be allowed to drift.
- */
+/** Shared by the Gemini and the manual advisor, so the prompt the two send cannot drift apart. */
 
 const RANGE_SCHEMA = {
   type: 'OBJECT',
@@ -95,9 +80,7 @@ const BOOTSTRAP_BLOCK_SCHEMA = {
   },
 }
 
-// What a name states, as fields (design review, Oct 2026). Optional in the
-// schema, so a plan written before it still reads; the naming rules ask for
-// it wherever a session has repetitions or extras.
+// Optional, so a plan written before name structures still reads.
 const NAME_STRUCTURE_SCHEMA = {
   type: 'OBJECT',
   properties: {
@@ -120,8 +103,7 @@ const BOOTSTRAP_WORKOUT_SCHEMA = {
     blocks: { type: 'ARRAY', items: BOOTSTRAP_BLOCK_SCHEMA },
     notes: { type: 'ARRAY', items: { type: 'STRING' } },
   },
-  // Every session of a new block is named under the naming rules, so each
-  // carries its short name.
+  // A new block is named under the naming rules, so every session has a short name.
   required: ['date', 'type', 'title', 'shortName', 'description', 'blocks'],
 }
 
@@ -134,8 +116,7 @@ export const ADAPTATION_WORKOUT_SCHEMA = {
     totalDistanceMeters: { type: 'INTEGER' },
     blocks: { type: 'ARRAY', items: BLOCK_SCHEMA },
   },
-  // A session a change carries over keeps the name it was written with, which
-  // may predate short names.
+  // A session a change carries over keeps its name, which may predate short names.
   required: ['date', 'type', 'title', 'description', 'blocks'],
 }
 
@@ -193,9 +174,8 @@ export function bootstrapEventPrompt(event: BootstrapRequest['tuneUpEvents'][num
 function macrocyclePrompt(input: BootstrapRequest, windows: { startDate: string; endDate: string }[]): string {
   const start = input.macrocycleStartDate
   if (!input.primaryTargetEvent) {
-    // No race date to divide toward, so no phases: the count of weeks since
-    // general preparation began is what the block can still be told. Counted
-    // in Monday weeks, so a Thursday start and the Monday after are not both week 1.
+    // No race, so no phases: the block is told the weeks since general preparation
+    // began, counted in Monday weeks so a Thursday start and the Monday after are not both week 1.
     const monday = (date: string) => {
       const time = Date.parse(`${date}T00:00:00Z`)
       return time - ((new Date(time).getUTCDay() + 6) % 7) * DAY_MS
@@ -220,9 +200,7 @@ function macrocyclePrompt(input: BootstrapRequest, windows: { startDate: string;
 export function bootstrapUserPrompt(input: BootstrapRequest): string {
   const windows = isoWeekWindows(input.planningStartDate, input.horizonEndDate)
   const weekCount = windows.length
-  // The season's shape, and which part of it each planned week falls in. A
-  // rolling block regenerated toward the present cannot otherwise tell a base
-  // block from a peak one, so every block came out looking the same.
+  // Without the season's phases, a rolling block cannot tell a base block from a peak one.
   const primary = input.primaryTargetEvent
   const recovery = bootstrapRecoveryFacts(input.context, input.planningStartDate)
   const target = primary

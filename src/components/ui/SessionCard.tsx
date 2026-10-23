@@ -12,11 +12,6 @@ const CHIP_TONE: Record<WeekDayState, StatusTone> = {
   rest: 'neutral',
 }
 
-/**
- * Done, planned, missed or rest, in the one chip recipe every screen uses.
- * A day that was run carries a tick, drawn as an icon rather than a glyph
- * (3.0 override 3).
- */
 export function SessionStateChip({ state, label: override, className }: { state: WeekDayState; label?: string; className?: string }) {
   const label = override ?? t.sessionState[state]
   return (
@@ -27,12 +22,7 @@ export function SessionStateChip({ state, label: override, className }: { state:
   )
 }
 
-/**
- * A session and its state: the chip, what it was, and planned against what
- * was run. Read-only - everything here comes from Garmin, so there is nothing
- * to mark, move or start. Used under the AI insight on Today, and as the
- * "vs plan" row on an activity.
- */
+/** Read-only: everything here comes from Garmin, so there is nothing to mark, move or start. */
 export function SessionCard({
   state,
   chipLabel,
@@ -42,7 +32,7 @@ export function SessionCard({
   className,
 }: {
   state: WeekDayState
-  /** The chip's words, when the state alone says less ("On plan"). */
+  /** Overrides the state's words, e.g. "On plan". */
   chipLabel?: string
   title: string
   detail?: string | null
@@ -54,8 +44,7 @@ export function SessionCard({
       <SessionStateChip state={state} label={chipLabel} />
       <div className="min-w-0 flex-1">
         <div className="break-words text-sm font-semibold text-pretty text-foreground">{title}</div>
-        {/* Wraps to a second line rather than cutting "planned 6…": the planned
-            figure is the point of the line (G28). */}
+        {/* Wraps rather than truncates: the planned figure is the point of the line. */}
         {detail && <div className="text-xs leading-snug text-muted-foreground">{detail}</div>}
       </div>
       {href && <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-subtle" />}

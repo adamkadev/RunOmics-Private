@@ -9,35 +9,20 @@ import { sessionLabel } from '@/lib/activityTitle'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import type { ExplorePlan } from './routeGenerator'
 
-/**
- * A planned session as the route generator shows it (S3's "TODAY'S PLAN"
- * row): its name, its whole distance and the pace it averages - and nothing
- * else. Built on the server from the session Today and Plan pick (the
- * coach's over Garmin's, a cancelled one none), so the coach's reasoning
- * never reaches the page payload (see planCoachingView).
- */
-
-/**
- * How far ahead the map knows the plan: the coach's rolling four weeks, so
- * Plan's "Find a route" on a session to come opens on that session.
- */
+/** The coach's rolling four weeks. */
 export const EXPLORE_PLAN_DAYS = 28
 
 const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
-/**
- * "Easy · 8 km + 6 strides": the kind, then the set. A session with no set
- * is named by its title alone - "Long run", "Easy run", as the coach names
- * them - and a title that already starts with its kind keeps it once.
- */
+/** "Easy · 8 km + 6 strides"; a title with no set ("Long run") or already starting with its kind stands alone. */
 function planLabel(kind: string | null, title: string): string {
   if (!kind || !/\d/.test(title) || fold(title).startsWith(fold(kind))) return title
   return `${kind} · ${title}`
 }
 
 /**
- * The plan for `date`, or null - none, or a race (a race is run where it is
- * held, not on a generated loop).
+ * Only label, distance and pace, so the coach's reasoning never reaches the page payload.
+ * A race gets none: it is run where it is held, not on a generated loop.
  */
 export function explorePlanOn(
   date: string,
@@ -64,7 +49,6 @@ export function explorePlanOn(
   }
 }
 
-/** The plans of `days` days from `today` on ('YYYY-MM-DD'), a day with none (or a race) left out. */
 export function explorePlansFrom(
   today: string,
   coach: readonly PlanPrescriptionView[],

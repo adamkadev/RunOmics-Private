@@ -1,10 +1,4 @@
 #!/usr/bin/env node
-/**
- * Fails when modules under src/ import one another in a ring - see
- * scripts/importCycles.ts for what counts as an import.
- *
- *   npm run check:cycles
- */
 import { findCycles, importGraph } from './importCycles'
 
 const graph = importGraph()

@@ -62,7 +62,6 @@ describe('French plurals', () => {
   })
 })
 
-// Design review, Oct 2026: the new lines in French, with its plurals and spacing.
 describe('French design review copy', () => {
   it('writes the plan phase card, the week line and the race tile', () => {
     expect(fr.plan.phase.raceInWeeks('Semi', 29)).toBe('Semi dans 29 sem.')
@@ -79,8 +78,7 @@ describe('French design review copy', () => {
   })
 })
 
-// The readiness card names its numbers in everyday words, in both
-// languages: CTL, ATL, ACWR and TSB mean nothing to most runners (Oct 2026).
+// CTL, ATL, ACWR and TSB mean nothing to most runners.
 describe('the readiness card, in plain words', () => {
   it('names the numbers without acronyms', () => {
     for (const r of [en.dashboard.readiness, fr.dashboard.readiness]) {

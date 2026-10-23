@@ -35,15 +35,11 @@ export interface ExploredCardProps {
   engineFor?: () => ExploreEngine
 }
 
-// The hub's card press (ProgressHub's LINK_CARD).
+// The same press as ProgressHub's LINK_CARD.
 const LINK_CARD = 'text-left transition-transform duration-100 ease-out active:scale-[0.98]'
-/** A quartier under 90%: the accent at 60% up to its share, the track after it (E5). */
 const PARTIAL_FILL = 'color-mix(in srgb, var(--accent) 60%, transparent)'
 
-/**
- * Summaries being worked out, by cache key: a second mount meanwhile (Strict
- * Mode, a quick return to the page) waits for the same answer.
- */
+/** By cache key, so a second mount meanwhile (Strict Mode, a quick return to the page) waits for the same answer. */
 const inflight = new Map<string, Promise<ExploredSummary>>()
 
 function summarise(
@@ -56,10 +52,8 @@ function summarise(
   const work = (async () => {
     await engine.loadArea(area)
     await engine.fetchClusterTracks(area, clusterId, runs)
-    // No home is sent from here: the worker takes the runs' median start,
-    // and only the summary - no coordinate - comes back to be kept. This
-    // cluster's runs alone: the map may have added another cluster's to the
-    // same area in this session, and the summary is kept by this key.
+    // No home is sent: the worker takes the runs' median start, and only the summary, no coordinate, is kept.
+    // This cluster's runs alone: the map may have added another cluster's to the same area in this session.
     const coverage = await engine.coverage(area, { activityIds: runs.map((run) => run.id), home: null, homeFromTracks: true })
     const summary = exploredSummary(coverage)
     writeExploredCache(key, summary)
@@ -83,12 +77,7 @@ function readRaw(key: string): string | null {
   }
 }
 
-/**
- * The card's summary: the stored one when the area and the runs are the same
- * as last time (drawn at once, no worker started), else worked out by the
- * Explore worker. The server and the first client render have no storage, so
- * both draw the skeleton and hydration matches.
- */
+/** The server and the first client render have no storage, so both draw the skeleton and hydration matches. */
 function useExploredSummary(props: ExploredCardProps): { summary: ExploredSummary | null; failed: boolean } {
   const { area, clusterId, runs, dataVersion, engineFor = getExploreEngine } = props
   const key = exploredCacheKey(area.version, dataVersion)
@@ -128,7 +117,6 @@ function safeParse(raw: string): unknown {
   }
 }
 
-/** One segment per quartier, best first; past MAX_SEGMENTS one bar of the whole area. */
 function SegmentBar({ summary }: { summary: ExploredSummary | null }) {
   if (!summary || summary.segments.length > MAX_SEGMENTS) {
     return (
@@ -140,7 +128,7 @@ function SegmentBar({ summary }: { summary: ExploredSummary | null }) {
   return (
     <div className="flex h-2 gap-1" aria-hidden="true" data-testid="explored-bar">
       {summary.segments.map((pct, i) => {
-        // Complete reads whole, even at 96% (E5).
+        // Complete reads whole, even at 96%.
         const complete = isComplete(pct)
         return (
           <span
@@ -160,15 +148,7 @@ function SegmentBar({ summary }: { summary: ExploredSummary | null }) {
   )
 }
 
-/**
- * Progress › Explored (Explore, E5): how much of the home area's quartiers
- * the runs cover, a segment per quartier, and the next one to run. The card
- * opens the map on Districts; its last row opens the next quartier's sheet.
- * Two sibling links, as the records card does, never one inside the other.
- *
- * Its height is fixed from the first paint: the skeleton has the same rows.
- * If the coverage can't be worked out the card leaves the hub quietly.
- */
+/** Two sibling links, never one inside the other; the skeleton has the same rows, so the height is fixed from the first paint. */
 export function ExploredCard(props: ExploredCardProps) {
   const h = t.profile.hub
   const { summary, failed } = useExploredSummary(props)
