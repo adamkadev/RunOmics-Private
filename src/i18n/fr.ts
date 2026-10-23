@@ -735,10 +735,7 @@ export const fr = {
         check: 'À surveiller',
       },
       loadTrend: {
-        title: 'Tendance de charge',
-        caption: 'charge aiguë sur 7 jours',
         about: "Ta charge aiguë : les 7 derniers jours de charge mesurée par ta montre, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
-        safe: (lo: number, hi: number) => `zone sûre ${lo}–${hi}`,
         ratioSafe: (lo: number, hi: number) => `ratio · sûr ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 jour' : `${days} jours`) : Math.round(days / 7) === 1 ? '1 semaine' : `${Math.round(days / 7)} semaines`),
         today: 'aujourd’hui',
@@ -752,8 +749,6 @@ export const fr = {
         below: ['La charge est ', 'sous ta zone sûre', '. La condition va commencer à baisser.'] as [string, string, string],
         wentOver: (days: number, last: string) =>
           days === 1 ? ` Plus tôt sur la période, un jour au-dessus, le ${last}.` : ` Plus tôt sur la période, ${days} jours au-dessus, le dernier le ${last}.`,
-        legend: { acute: 'Charge aiguë', safe: 'Zone sûre', outside: 'Hors de la zone' },
-        readout: (date: string, acute: number, lo: number, hi: number) => `${date} · ${acute} · zone sûre ${lo}–${hi}`,
       },
       status: {
         title: "Statut d’entraînement",

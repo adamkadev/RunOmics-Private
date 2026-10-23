@@ -3,8 +3,7 @@ import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
 import type { StatTone } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 import type { AnalyticsBoardData } from './AnalyticsClient'
-import { loadSentence } from './LoadRecoveryCards'
-import { loadCoachHeadline, loadTrendView, loadTrendYMax, recoveryView, type LoadCoachHeadline } from './loadRecoveryView'
+import { loadCoachHeadline, loadTrendView, loadTrendYMax, recoveryView, type LoadCoachHeadline, type LoadTrendView } from './loadRecoveryView'
 import {
   coachRead,
   easyHardView,
@@ -93,6 +92,29 @@ export function loadHeadlineText(h: LoadCoachHeadline): string {
     case 'building':
       return h.recovery ? s.building(h.change.pct, span(h.change.days)) : s.buildingLoad(h.change.pct, span(h.change.days))
   }
+}
+
+/**
+ * The load sentence. In range, it says when - today, or the period's last
+ * day once swiped back - and the days that went over come after it as what
+ * they are, earlier days (design review, Oct 2026): "still inside your safe
+ * range. 15 days went over" read as one claim taking back the other.
+ */
+export function loadSentence(view: LoadTrendView, live: boolean): readonly [string, string, string] {
+  const s = t.analytics.cards.loadTrend
+  const change = view.change
+  if (view.state === 'below') return s.below
+  if (view.state === 'above') return change && change.pct > 0 ? s.jumped(change.pct, s.span(change.days)) : s.above
+  const when = live ? s.today : s.onDay(bare(view.last.date))
+  const parts =
+    !change ? s.inRange(when)
+    : Math.abs(change.pct) < 5 ? s.steady(when)
+    : change.pct > 0 ? s.upIn(change.pct, s.span(change.days), when)
+    : s.downIn(Math.abs(change.pct), s.span(change.days), when)
+  // In range now, but the window had days over: say so, so the warn dots
+  // under an "inside your safe range" sentence read as history (v5.5 R1).
+  if (!view.over) return parts
+  return [parts[0], parts[1], `${parts[2]}${s.wentOver(view.over.days, bare(view.over.last))}`]
 }
 
 export function loadRead(data: AnalyticsBoardData, today: string, window: DayWindow, period: Period): TabRead | null {

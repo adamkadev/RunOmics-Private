@@ -767,13 +767,6 @@ describe('Load trend and Recovery (v5.4)', () => {
     expect(screen.getByTestId('coach-read').getAttribute('data-tone')).toBe('warn')
     expect(screen.getByTestId('coach-read-headline').textContent).toBe(t.analytics.cards.coachRead.load.dip)
   })
-
-  it('uses only the four v4.17 colours in the Load trend card', () => {
-    const source = readFileSync(path.join(__dirname, '../LoadRecoveryCards.tsx'), 'utf8')
-    const vars = new Set([...source.matchAll(/var\(--([a-z-]+)\)/g)].map((m) => m[1]))
-    expect([...vars].sort()).toEqual(['foreground', 'muted-foreground', 'pos', 'warn'])
-    expect(source).not.toMatch(/#[0-9a-f]{3,6}\b/i)
-  })
 })
 
 describe('the pace axis (v4.17.3)', () => {

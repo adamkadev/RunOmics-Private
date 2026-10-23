@@ -797,10 +797,7 @@ export const en = {
         check: 'Check',
       },
       loadTrend: {
-        title: 'Load trend',
-        caption: '7-day acute load',
         about: 'Your acute load: the last 7 days of training load from your watch, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
-        safe: (lo: number, hi: number) => `safe range ${lo}–${hi}`,
         ratioSafe: (lo: number, hi: number) => `ratio · safe ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 day' : `${days} days`) : Math.round(days / 7) === 1 ? '1 week' : `${Math.round(days / 7)} weeks`),
         // When the range is read (design review, Oct 2026): "still inside
@@ -818,8 +815,6 @@ export const en = {
         // The days before it that were above the range: history, said as such.
         wentOver: (days: number, last: string) =>
           days === 1 ? ` Earlier in this period, one day was above it, on ${last}.` : ` Earlier in this period, ${days} days were above it, the last on ${last}.`,
-        legend: { acute: 'Acute load', safe: 'Safe range', outside: 'Outside range' },
-        readout: (date: string, acute: number, lo: number, hi: number) => `${date} · ${acute} · safe ${lo}–${hi}`,
       },
       status: {
         title: 'Training status',
