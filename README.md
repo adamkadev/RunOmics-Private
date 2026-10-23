@@ -370,7 +370,9 @@ push/PR, plus the Python suite (`pytest scripts/tests/`) as a separate job. It d
 run `next build`. The production build is exercised by the E2E workflow
 (`.github/workflows/e2e.yml`), which runs `npm run test:e2e` — Playwright's `webServer`
 runs `e2e:build` (`next build`) and serves it with `e2e:start`. So a change that only
-breaks the build fails E2E, not CI.
+breaks the build fails E2E, not CI. E2E runs on pushes to main and on demand, not on pull
+requests (a run is about 3 minutes): run it on a branch from Actions → E2E → Run workflow
+before merging a change that could break the build.
 
 The improvement backlog lives in
 [`docs/product-improvement-todolist.md`](docs/product-improvement-todolist.md).
