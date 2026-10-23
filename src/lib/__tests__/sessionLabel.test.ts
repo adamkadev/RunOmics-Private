@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { intendedType, sessionLabel } from '@/lib/activityTitle'
 
-// Round 2, the owner's ask: where a type's dot or eyebrow is beside it, a
-// session reads as its set, said once.
+// Beside a type's dot or eyebrow, a session reads as its set, said once.
 describe('sessionLabel', () => {
   it('drops the type a name leads with: the dot says it', () => {
     expect(sessionLabel('Threshold · 3 × 8′ @ 4:25')).toBe('3 × 8′ @ 4:25')
@@ -12,8 +11,7 @@ describe('sessionLabel', () => {
     expect(sessionLabel('Seuil · 3 × 8′ @ 4:20')).toBe('3 × 8′ @ 4:20')
   })
 
-  // A name from before the naming rules (Oct 7) says its set twice: the
-  // coach's, then Garmin's. Garmin's half is kept, the simpler one.
+  // An older name says its set twice, the coach's then Garmin's; Garmin's simpler half is kept.
   it("keeps an older name's simpler half, in the rules' notation", () => {
     expect(sessionLabel("Threshold 3 x 7:15 - 3x7'@4:25")).toBe('3 × 7′ @ 4:25')
     expect(sessionLabel("Threshold 3 × 7:00 - 3 × 7'@4:25")).toBe('3 × 7′ @ 4:25')
@@ -41,8 +39,7 @@ describe('sessionLabel', () => {
   })
 })
 
-// Round 2, the owner's runs: Garmin files a run by how it went; its name says
-// what it was set as, and that is the type it is shown as.
+// Garmin files a run by how it went; its name says what it was set as, and that is the type shown.
 describe('intendedType', () => {
   it('reads the type a name leads with, over the watch\'s', () => {
     expect(intendedType({ type: 'Tempo', description: "Threshold 2 x 7:00 - 2x7'@4:25" })).toBe('Threshold')

@@ -148,8 +148,7 @@ class FeatureAccumulator:
         if samples > 0:
             support: CapabilitySupport = "observed"
         elif self.successes:
-            # A successful, structurally valid empty response is evidence only
-            # that nothing was observed in this window. It is never unsupported.
+            # A valid empty response only means nothing was observed in this window, never unsupported.
             support = "not_observed"
         elif any(item.status == "unsupported" for item in self.failures):
             support = "unsupported"

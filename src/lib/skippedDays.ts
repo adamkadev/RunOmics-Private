@@ -2,11 +2,6 @@
 
 import { useEffect, useState } from 'react'
 
-/**
- * Missed days the reader marked "Skipped (sick / rest)" from Plan (Wave 5,
- * Today › missed day). Kept on the device, like route names: Today's week
- * card then draws the day as a rest stub and stops counting it as missed.
- */
 const KEY = 'runomics-skipped-days'
 const EVENT = 'runomics:skipped-change'
 
@@ -31,7 +26,6 @@ export function setDaySkipped(date: string, skipped: boolean): void {
   window.dispatchEvent(new Event(EVENT))
 }
 
-/** The skipped days, read after mount and kept in step across components. */
 export function useSkippedDays(): Set<string> {
   const [days, setDays] = useState<Set<string>>(() => new Set())
   useEffect(() => {

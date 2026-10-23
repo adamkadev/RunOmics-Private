@@ -23,28 +23,21 @@ export function maptilerStyle(isDark: boolean, token: string): StyleSpecificatio
   return withLanguage(style, MAP_LANGUAGE)
 }
 
-/**
- * The heatmap's muted ground (Wave 4, App Fixes 4d): land, parks, water and
- * roads in four near-greys, so the routes carry the only colour. Building
- * fills, casings, hillshade and borders drop out; labels stay, at 60 %.
- */
+/** Near-greys, so the routes carry the only colour. */
 export const HEAT_BASEMAP = {
   light: { land: '#eef0ef', park: '#e2eae3', water: '#dde6ea', road: '#ffffff' },
   dark: { land: '#0e1211', park: '#122019', water: '#13202a', road: '#1c2321' },
 } as const
 
 /**
- * Label text on the light heatmap (dark keeps its own): one grey, fully opaque, with a thin halo
- * in the ground's colour. At 60 % with no halo (Wave 5 B) a dark-green
- * corridor showed through the name, and the line read as crossing it. The
- * halo is the land's own colour, so it cuts the line, not doubles the name.
+ * Opaque, with a halo in the land's colour: a translucent label let a corridor
+ * show through the name, and the line read as crossing it.
  */
 const HEAT_LABEL = '#5a615f'
 const HEAT_LABEL_HALO = { width: 1.4, blur: 0.4 } as const
 
 type Role = keyof (typeof HEAT_BASEMAP)['light'] | 'hide'
 
-/** What each layer of the RunOmics style becomes on the heatmap, by its id. */
 function heatRole(id: string): Role | null {
   if (id === 'Background' || id === 'Residential' || id === 'Pier' || id === 'Bridge') return 'land'
   if (['Cemetery', 'Wood', 'Grass', 'Forest', 'Stadium'].includes(id)) return 'park'
@@ -55,7 +48,7 @@ function heatRole(id: string): Role | null {
 }
 
 export function heatBasemapStyle(style: StyleSpecification, isDark: boolean): StyleSpecification {
-  // Dark keeps its own basemap, as 3.1.0 did: the additive tracks read on it as they are.
+  // Dark keeps its own basemap: the additive tracks read on it as they are.
   if (isDark) return style
   const colours = HEAT_BASEMAP.light
   return {

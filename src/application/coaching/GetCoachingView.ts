@@ -76,9 +76,7 @@ export function buildCoachingOverview(
   return { plan, currentWeekId: currentWeek?.id ?? null, workouts: views, latestDecision, latestEvaluation, nextKeyWorkout }
 }
 
-// Both readers date "today" by appTodayIso(), as the pages that call them do.
-// The overview used UTC while getTodayPrescription used local time, so after
-// local midnight they disagreed on the day - and on a Monday, the week.
+// Both readers must date "today" by appTodayIso(), as their pages do, or they disagree on the day after local midnight.
 export function getCoachingOverview(
   today = appTodayIso(),
   repository: Pick<CoachingRepository, 'getCurrentPlan' | 'getDecisions' | 'getEvaluations'> = new JsonCoachingRepository(),
@@ -95,14 +93,7 @@ export function getCoachingOverview(
   )
 }
 
-/**
- * Today's live prescription, read straight off the plan.
- *
- * The overview above answers a screen's worth of questions - display state,
- * Garmin scheduling, the matched activity - by walking every week against every
- * evaluation. A caller that only wants to know what today asks for pays all of
- * that for one row, so this reads the plan and nothing else.
- */
+/** Reads the plan alone: the overview walks every week against every evaluation, too much for one row. */
 export function getTodayPrescription(
   today = appTodayIso(),
   repository: Pick<CoachingRepository, 'getCurrentPlan'> = new JsonCoachingRepository(),

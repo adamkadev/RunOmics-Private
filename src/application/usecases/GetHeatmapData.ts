@@ -7,9 +7,8 @@ export type HeatmapDay = {
   date: string
   distanceKm: number
   sessionCount: number
-  /** At least one run that day lasted 90 minutes or more. */
   longRun: boolean
-  /** The day's longest run, to open from a day cell (Consistency). */
+  /** The day's longest run. */
   activityId: string | null
 }
 
@@ -30,8 +29,8 @@ export function getHeatmapData(): HeatmapDay[] {
     })
   }
 
-  // The app's calendar day, and local dates throughout: toISOString on a
-  // local midnight named the day before east of UTC.
+  // Local dates throughout: toISOString on a local midnight names the day
+  // before east of UTC.
   const today = new Date(`${appTodayIso()}T00:00:00`)
   const from = startOfWeek(addDays(today, -364))
 

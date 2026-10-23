@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { StatReadout } from '../StatReadout'
 
 describe('StatReadout', () => {
-  // "113 · 4:25 · 171 · 24" relied on colour alone.
   it('gives every value a label, a swatch and a unit', () => {
     render(
       <StatReadout

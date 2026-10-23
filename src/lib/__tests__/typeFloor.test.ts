@@ -2,12 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-/**
- * No readable text below 11 px. One-off sizes of 9.5, 10 and 10.5 px sat next
- * to text-micro (10 px) in the status strip and the week card. text-micro is
- * kept for chart ticks, which are set through Recharts' tick props, so no
- * component uses the class; ticks may stay at 10.
- */
+/** No readable text below 11 px; text-micro (10 px) is kept for chart ticks, set through Recharts' tick props. */
 function sources(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name)

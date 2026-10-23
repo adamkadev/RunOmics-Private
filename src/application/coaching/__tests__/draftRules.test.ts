@@ -174,8 +174,6 @@ describe('a change to the live plan', () => {
     expect(() => validateAdaptation(before, changed(cancel, before), context)).not.toThrow()
   })
 
-  // Design review, Oct 2026: a change names what it writes by the naming
-  // rules, and past plans keep their names.
   it('holds a title the change writes to the naming rules, and keeps one the plan held', () => {
     const before = current()
     const shortened = structuredClone(before)

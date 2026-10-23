@@ -6,7 +6,7 @@ import { t } from '@/i18n'
 const W = 100
 const H = 64
 const PAD = 2
-/** Pace above, heart rate below (3.0.2): drawn over each other, the two lines tangled into one. */
+/** Pace and heart rate in lanes of their own: drawn over each other, the two lines tangle into one. */
 const LANE_GAP = 8
 const LANE_H = (H - LANE_GAP) / 2
 
@@ -26,10 +26,6 @@ function path(samples: number[], invert: boolean, top: number): string | null {
     .join(' ')
 }
 
-/**
- * The run's pace and heart rate at a glance, on Overview: each in a lane of
- * its own, so the two read apart, over the distance from start to finish.
- */
 export function PaceHrPreview({
   paceSamples,
   hrSamples,
@@ -74,7 +70,6 @@ export function PaceHrPreview({
         {pace && <path d={pace} fill="none" stroke={RUN_CHART_LINE.pace} strokeWidth="1.4" vectorEffect="non-scaling-stroke" data-testid="preview-pace" />}
         {hr && <path d={hr} fill="none" stroke={RUN_CHART_LINE.hr} strokeWidth="1.4" vectorEffect="non-scaling-stroke" data-testid="preview-hr" />}
       </svg>
-      {/* Where the lines start and end: the start and the run's distance. */}
       <div aria-hidden className="flex justify-between text-[11px] leading-none text-muted-foreground" data-testid="preview-ends">
         <span>{s.start}</span>
         <span>{`${formatDistance(distanceKm)} ${t.units.km}`}</span>

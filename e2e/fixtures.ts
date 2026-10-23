@@ -1,30 +1,14 @@
 import { test as base, expect } from '@playwright/test'
 
-/**
- * Every spec imports `test` from here instead of @playwright/test, so every
- * test also fails on an uncaught exception or a console error on the page.
- *
- * The specs used to assert that `[data-nextjs-dialog]` was absent - but that
- * is the development error overlay, and this suite runs a production build,
- * where it never exists. Those checks could not fail; these can.
- *
- * Console errors that are about the test environment rather than the app are
- * ignored by pattern, each with its reason. Anything else fails the test.
- */
+// Specs import `test` from here, not @playwright/test, so every test also fails on a page error or console error.
 const EXPECTED_CONSOLE_NOISE: RegExp[] = [
-  // The e2e env points Firebase at a demo project with no network access to
-  // it guaranteed, and push is never enabled; a failed Firestore channel is
-  // the environment, not the app.
+  // The e2e env points Firebase at a demo project with no network access to it guaranteed.
   /firestore\.googleapis\.com|Could not reach Cloud Firestore backend|FirebaseError: \[code=(unavailable|permission-denied)\]/i,
-  // NEXT_PUBLIC_MAPTILER_TOKEN is deliberately unset for e2e (see .env.e2e),
-  // so tile requests are refused.
+  // NEXT_PUBLIC_MAPTILER_TOKEN is deliberately unset for e2e, so tile requests are refused.
   /api\.maptiler\.com/i,
-  // The Activity header reverse-geocodes the run's start (useRunPlace); the
-  // e2e runner may have no route to OpenStreetMap, and the header then
-  // simply shows no place.
+  // The e2e runner may have no route to OpenStreetMap for the Activity header's reverse geocoding.
   /nominatim\.openstreetmap\.org/i,
-  // Vercel Analytics and Speed Insights load scripts only a Vercel deployment
-  // serves; under `next start` they 404.
+  // Vercel Analytics and Speed Insights scripts 404 under `next start`.
   /\/_vercel\/(insights|speed-insights)\/script\.js/,
 ]
 

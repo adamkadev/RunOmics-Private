@@ -1,6 +1,5 @@
 import type { Activity, ActivitySplit, SplitLap } from './types'
 
-/** Strides after the easy running: how many, and how fast they went. */
 export interface Strides {
   count: number
   fastestSecPerKm: number
@@ -11,7 +10,6 @@ export type SessionExecution =
   | {
       kind: 'intervals'
       reps: number
-      /** Each rep's pace in order, rounded - what a target band is checked against. */
       repPaces: number[]
       fadeSecPerKm: number
       spreadSecPerKm: number
@@ -21,7 +19,7 @@ export type SessionExecution =
   | {
       kind: 'steady'
       spreadSecPerKm: number
-      /** Second half's pace against the first's, positive when it slowed. */
+      /** Second half against the first, positive when it slowed. */
       fadeSecPerKm: number
       hrDriftBpm: number | null
       strides?: Strides
@@ -31,10 +29,8 @@ export type SessionExecution =
 export const MIN_FULL_LAP_METRES = 900
 
 /**
- * A rep under a minute beside a continuous block of running is a stride, not
- * a quality rep: the 20 s strides after an easy run read as "7 reps, 135 s/km
- * faster from first to last" with the easy block as rep 1. With no continuous
- * block, short reps are the session itself - a sprint session.
+ * Beside a continuous block of running, a shorter rep is a stride, not a quality rep.
+ * With no continuous block, short reps are the session itself.
  */
 export const MIN_REP_SECONDS = 60
 
@@ -109,14 +105,8 @@ export function sessionExecution(activity: Pick<Activity, 'splits'>): SessionExe
   return main && strides ? { ...main, strides } : main
 }
 
-/**
- * The reps of a structured session as one reading - mean pace and heart rate
- * across them - so a threshold session is compared with earlier ones rep for
- * rep, not by a whole-run average that the warm-up and recoveries dilute.
- */
 export interface RepStats {
   reps: number
-  /** How long a rep lasted, on average: what a progression lengthens. */
   secondsPerRep: number
   paceSecPerKm: number
   avgHr: number | null

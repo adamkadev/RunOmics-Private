@@ -1,7 +1,6 @@
 import type { DocumentData } from 'firebase-admin/firestore'
 import { getAdminFirestore } from '@/lib/firebase-admin'
 
-/** One dedup document under `notifications/`, read once and written once by the cron route that owns it. */
 function notificationDocument<T extends DocumentData>(documentId: string) {
   const document = () => getAdminFirestore().collection('notifications').doc(documentId)
 
@@ -21,9 +20,7 @@ export type PrState = Record<string, { seconds: number; activityId: string }>
 
 export type ShoeWearState = Record<string, { alerted: boolean }>
 
-// Written as type aliases rather than interfaces so they satisfy Firestore's
-// DocumentData constraint: TypeScript gives an object type alias an implicit
-// index signature and an interface none.
+// Type aliases, not interfaces: only an alias gets the implicit index signature Firestore's DocumentData needs.
 export type OverreachingState = { alerted: boolean }
 
 export type StaleSyncState = { alerted: boolean }

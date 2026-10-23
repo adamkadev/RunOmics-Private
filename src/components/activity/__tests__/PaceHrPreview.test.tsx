@@ -6,7 +6,7 @@ import { PaceHrPreview } from '../PaceHrPreview'
 const ys = (d: string) => [...d.matchAll(/[ML][\d.]+ ([\d.]+)/g)].map((m) => Number(m[1]))
 
 describe('PaceHrPreview', () => {
-  // 3.0.2: drawn over each other the two lines tangled; each has a lane.
+  // Drawn over each other, the two lines tangle.
   it('draws pace and heart rate in lanes of their own, pace above', () => {
     render(<PaceHrPreview paceSamples={[300, 290, 310, 305]} hrSamples={[130, 150, 145, 160]} distanceKm={11.51} />)
 

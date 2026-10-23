@@ -18,7 +18,6 @@ describe('getDynamicsBaseline', () => {
     activities.length = 0
   })
 
-  // H17: a 5K race stretched the stride range to 0.96–1.40 m.
   it('leaves races and other sports out of the range', () => {
     activities.push(
       run('2026-08-01', { strideLengthM: 0.96 }),
@@ -92,7 +91,6 @@ describe('getDynamicsBaseline', () => {
     })
   })
 
-  // v4.17: the band the Dynamics tab shades is the middle half of the runs.
   it('carries the middle half of the runs as the baseline band', () => {
     activities.push(
       ...[250, 255, 260, 262, 270, 280, 300].map((ms, i) => run(`2026-08-0${i + 1}`, { groundContactMs: ms })),

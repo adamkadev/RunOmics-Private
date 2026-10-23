@@ -23,6 +23,8 @@ import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import type { ActivityQueryResult } from '@/application/usecases/QueryActivities'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { MapShellData } from '@/application/usecases/GetAllRoutes'
+import type { ExploreAreaRef } from '@/domain/explore/types'
+import type { ExplorePlan } from '@/components/explore/routeGenerator'
 import { cardClass } from '@/components/ui/Card'
 import { Pill } from '@/components/ui/Pill'
 import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
@@ -41,7 +43,6 @@ const GlobalMapWrapper = dynamic(() => import('@/components/map/GlobalMapWrapper
 export type ActivitiesView = 'list' | 'map'
 const VIEWS = ['list', 'map'] as const
 
-/** The view the address bar names: ?view=map opens the map; anything else, the list. */
 export function activitiesView(param: string | null): ActivitiesView {
   return param === 'map' ? 'map' : 'list'
 }
@@ -56,15 +57,9 @@ interface WeekRow extends WeekGroup<ActivitySummary> {
 
 const KM_STRONG = 'font-semibold text-foreground'
 
-/**
- * "45 km · 5 runs · 88% easy": every aggregate says what it counts (v4.17).
- * Under a filter the share is dropped (App Fixes 1d): "88% easy" of the
- * threshold runs alone says nothing about the week.
- */
+/** Under a filter the easy share is dropped: "88% easy" of the threshold runs alone says nothing about the week. */
 function PastWeekLine({ group, showEasy, weekTotal }: { group: WeekRow; showEasy: boolean; weekTotal: number | null }) {
   const w = t.activities.weekLine
-  // Under a filter (App Fixes 1d): "1 of 5 runs", the week's km being the
-  // rows' own under it.
   if (weekTotal !== null) {
     return (
       <span className="min-w-0 text-right text-[13px] text-muted-foreground text-pretty" data-testid="past-week-line">
@@ -73,7 +68,7 @@ function PastWeekLine({ group, showEasy, weekTotal }: { group: WeekRow; showEasy
     )
   }
   return (
-    // The line gives way on a narrow phone, wrapping, so the week's dates never do (v4.17.2).
+    // The line wraps on a narrow phone so the week's dates never do.
     <span className="min-w-0 text-right text-footnote text-muted-foreground text-pretty" data-testid="past-week-line">
       <span className={KM_STRONG}>{formatKm(group.totalKm)}</span> {t.units.km} · {w.runs(group.items.length)}
       {showEasy && group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
@@ -81,7 +76,6 @@ function PastWeekLine({ group, showEasy, weekTotal }: { group: WeekRow; showEasy
   )
 }
 
-/** A week's runs as rounded rows in its card, each with its route (v4.17). */
 function InsetRows({ items, efforts, types }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]>; types: Record<string, ActivityType> }) {
   return (
     <div className="inset-group flex flex-col">
@@ -94,8 +88,7 @@ function InsetRows({ items, efforts, types }: { items: ActivitySummary[]; effort
 
 function weekRows(groups: WeekGroup<ActivitySummary>[], currentWeekStart: string): WeekRow[] {
   return groups.map((group) => {
-    // Every past week is its date range (v4.17), "Sep 21 - 27", with no
-    // year: the month heading above it has one (G22).
+    // No year: the month heading above has one.
     const range = formatDateRange(group.key, isoDate(addDays(new Date(group.key + 'T00:00:00'), 6)), { year: 'never' })
     return {
       ...group,
@@ -109,12 +102,7 @@ type ListBlock =
   | { kind: 'current'; week: WeekRow }
   | { kind: 'month'; key: string; label: string; km: number; runs: number; weeks: WeekRow[] }
 
-/**
- * The weeks under their months (v4.17): consecutive past weeks that start in
- * the same month share a sticky heading, which totals the weeks under it -
- * so "132 km · 15 runs" is the sum of the cards it heads. The current week is
- * its own card, once it has a run.
- */
+/** A month heading totals the weeks under it, so its km is the sum of the cards it heads. */
 function listBlocks(weeks: WeekRow[]): ListBlock[] {
   const blocks: ListBlock[] = []
   for (const week of weeks) {
@@ -157,7 +145,7 @@ interface QueryState {
   sort: ActivitySort
 }
 
-/** What the page's server render answered: every run, newest first. */
+/** The query the server render answered. */
 const INITIAL_QUERY = JSON.stringify({ types: '', gearId: null, search: '', sort: 'newest' } satisfies QueryState)
 
 async function fetchActivities(query: QueryState, offset: number): Promise<ActivityQueryResult> {
@@ -183,11 +171,12 @@ interface Props {
   qualifiedEffortsByActivityId?: Record<string, QualifiedEffort[]>
   /** The date the page was prerendered on; see useToday. */
   today: string
-  /** Shoe names by gear id, to name the ?shoe= filter. */
+  /** By gear id. */
   shoeNames?: Record<string, string>
-  /** The map's runs and areas, for the Map tab. */
   mapData: MapShellData
-  /** The runs shown as their session's type, where it is not the watch's (round 2). */
+  exploreAreas?: ExploreAreaRef[]
+  explorePlans?: ExplorePlan[]
+  /** Session types that override the watch's, by activity id. */
   sessionTypes?: Record<string, ActivityType>
 }
 
@@ -199,15 +188,16 @@ export function ActivityListClient({
   today: serverToday,
   shoeNames = {},
   mapData,
+  exploreAreas,
+  explorePlans,
   sessionTypes = {},
 }: Props) {
   const today = useToday(serverToday)
-  // List or Map, in the address bar (?view=map), so /map can open on the map.
+  // In the URL so /map can open on the map.
   const [viewParam, setViewParam] = useUrlParam('view')
   const view = activitiesView(viewParam)
   const viewTabs = useSegmentedTabs({ ids: VIEWS, value: view, onChange: (next) => setViewParam(next === 'map' ? 'map' : null) })
   const [search, setSearch] = useState('')
-  // ?shoe= narrows the list to one pair; it is the shoe page's way in.
   const [gearId, setGearId] = useUrlParam('shoe')
   const [groupParam, setGroupParam] = useUrlParam('group')
   const [typesParam, setTypesParam] = useUrlParam('types')
@@ -225,8 +215,7 @@ export function ActivityListClient({
   )
 
   const [items, setItems] = useState(initialItems)
-  // How many runs the current filter matches, as the query itself counted
-  // them: the list only holds a page of them (App Fixes 1d).
+  // The query's own count: the list only holds a page of them.
   const [matched, setMatched] = useState(totalCount)
   const [nextOffset, setNextOffset] = useState(initialNextOffset)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -256,9 +245,8 @@ export function ActivityListClient({
     hasRestored.current = true
     const stored = readStoredSearch()
     if (!stored) return
-    // Restored from sessionStorage once, behind hasRestored, and only into a
-    // still-empty field, so it can never clobber a user edit. It cannot be a
-    // state initializer: the server render has no sessionStorage.
+    // Once, and only into a still-empty field, so it never clobbers a user edit.
+    // Not a state initializer: the server render has no sessionStorage.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSearch((cur) => (cur === '' ? stored : cur))
     setDebouncedSearch((cur) => (cur === '' ? stored : cur))
@@ -278,10 +266,8 @@ export function ActivityListClient({
     [typesKey, gearId, debouncedSearch, sort],
   )
 
-  // The list asks again whenever the query moves off what it last showed -
-  // the server's answer at first. A URL filter reached by a client-side
-  // navigation is there from the first render, so a first-render skip would
-  // have shown it every run.
+  // Compared with the query last shown, not skipped on first render: a URL
+  // filter reached by a client-side navigation is there from the first render.
   const requestSeq = useRef(0)
   const shownQuery = useRef(INITIAL_QUERY)
   useEffect(() => {
@@ -307,18 +293,14 @@ export function ActivityListClient({
   const hasMore = nextOffset !== null
   const hasActiveFilter = activeTypes !== null || gearId !== null || search.trim() !== ''
   const currentWeekStart = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
-  // Weeks only for newest-first. A week with no run yet - this one, on a
-  // Monday morning - has no card at all (3.0).
   const groups = useMemo(
-    // Weeks for either date order (groupByWeek keeps the order it is given).
+    // groupByWeek keeps the order it is given.
     () => (sort === 'newest' || sort === 'oldest' ? weekRows(groupByWeek(items, currentWeekStart), currentWeekStart) : null),
     [items, sort, currentWeekStart],
   )
   const blocks = useMemo(() => (groups ? listBlocks(groups) : null), [groups])
 
-  // ?week= (a Monday) brings that week's card into view; it is All time's
-  // way in from its biggest week (3.0). Every week is open, so it only
-  // scrolls, once the list holding it has loaded.
+  // ?week= (a Monday) scrolls that week's card into view once the list holding it has loaded.
   const [weekParam] = useUrlParam('week')
   useEffect(() => {
     if (!weekParam || !blocks) return
@@ -355,7 +337,6 @@ export function ActivityListClient({
     return () => observer.disconnect()
   }, [hasMore, loadMore])
 
-  // Clear resets the sort with the filters (App Fixes 3f).
   function resetFilters() {
     setFilter(ALL_RUNS)
     setGearId(null)
@@ -369,13 +350,8 @@ export function ActivityListClient({
   ].filter((part): part is string => part !== null)
 
   const pickedLabel = typesLabel(filter.types)
-  // What the filter bar names: every run the filter matches, not the page
-  // of them on screen.
-  // A group chip alone, nothing else narrowing the list, names what the
-  // totals count (App Fixes 1d); anything else is "activities".
   const onlyGroup = filter.types.length === 0 && filter.group !== 'all' && gearId === null && search.trim() === '' ? filter.group : null
-  // Every run in each week, from the archive the page handed over - only
-  // when it handed all of it, so "1 of 5 runs" is never a page's count.
+  // Only when the page handed over the whole archive, so "1 of 5 runs" is never a page's count.
   const weekTotals = useMemo(() => {
     if (initialItems.length < totalCount) return null
     const totals = new Map<string, number>()
@@ -394,9 +370,6 @@ export function ActivityListClient({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* List | Map in the header's trailing slot, as Plan's Week | Month
-          (Liquid Glass v2, round 3): the bar's copy lands on it. The archive
-          line runs the width under the row. */}
       <header>
         <div className="flex items-center justify-between gap-4">
           <h1 className="min-w-0 text-display text-foreground">{t.pages.activities.title}</h1>
@@ -415,13 +388,11 @@ export function ActivityListClient({
 
       <div {...viewTabs.panelProps} className="flex flex-col gap-3 outline-none">
         {view === 'map' ? (
-          <GlobalMapWrapper data={mapData} />
+          // This device's today, so a page kept from another day still finds the right plan.
+          <GlobalMapWrapper data={mapData} exploreAreas={exploreAreas} explorePlans={explorePlans} today={today} />
         ) : (
           <>
 
-            {/* The search field (Liquid Glass v3, §6.7): a 44 pt capsule, no
-                line; focus draws the ring. Over the glow, glass in both
-                themes, on a blur of its own (F19). */}
             <div className="on-aura-group">
               <i aria-hidden="true" className="on-aura-blur inset-0 rounded-full" />
               <label className="on-aura flex h-11 items-center gap-2 rounded-full px-3.5 text-muted-foreground transition-shadow focus-within:shadow-[0_0_0_2px_var(--ring)]">
@@ -436,13 +407,10 @@ export function ActivityListClient({
               </label>
             </div>
 
-            {/* Four groups, or the one chip for the types picked in the sheet,
-                then the sheet's button (3.0). The rail reaches past its row -
-                to the screen's edges and 36 pt down, behind the next row - so
-                its scroll box does not cut the chips' glass drop (F16); what
-                follows it paints, and takes taps, over that margin. Over
-                the glow the chips and the button are glass, on one blur
-                laid under the row, edge to edge, not one each (F19). */}
+            {/* The rail reaches past its row, to the screen's edges and 36 pt down, so
+                its scroll box does not clip the chips' glass drop; what follows paints,
+                and takes taps, over that margin. One blur lies under the whole row, not
+                one per chip. */}
             <div className="on-aura-group flex items-center gap-2">
               <i aria-hidden="true" className="on-aura-blur on-aura-blur-row -inset-x-4 inset-y-0" />
               <div className="-mx-4 -mb-9 -mt-1.5 flex min-w-0 flex-1 gap-2 overflow-x-auto px-4 pb-9 pt-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" data-testid="type-chips">
@@ -475,8 +443,6 @@ export function ActivityListClient({
                 className="on-aura hit-44 relative flex size-9 shrink-0 items-center justify-center rounded-full text-foreground"
               >
                 <SlidersHorizontal size={17} aria-hidden="true" />
-                {/* The sort or a filter off its default (App Fixes 3f): an 8 px
-                    accent dot in a 2 px ring of the ground. */}
                 {(sort !== 'newest' || hasActiveFilter) && (
                   <span aria-hidden="true" data-testid="sheet-dot" className="absolute right-0.5 top-0.5 box-content size-2 rounded-full border-2 border-[var(--background)] bg-accent" />
                 )}
@@ -492,11 +458,7 @@ export function ActivityListClient({
               </div>
             )}
 
-            {/* What the totals below are counting, and one tap to stop
-                counting it (App Fixes 1d): a week's "45 km" under a filter is
-                the filter's km, and said nothing about it. */}
             {(hasActiveFilter || sort !== 'newest') && (
-              // An accent-tinted panel (App Fixes 1d): mint's #0f1d19 on a #1d3b32 line.
               <div
                 className="flex items-center justify-between gap-3 rounded-xl border px-3 py-[9px] text-[12.5px]"
                 style={{
@@ -509,7 +471,6 @@ export function ActivityListClient({
                   {t.activities.filter.showing}{' '}
                   <b className="font-semibold text-foreground">{countedLabel}</b>
                   {hasActiveFilter && totalsLabel}
-                  {/* The sort names itself (App Fixes 3f): "· oldest first". */}
                   {sort !== 'newest' && ` · ${t.activities.filter.sortedBy[sort]}`}
                 </p>
                 <button type="button" onClick={resetFilters} className="hit-44 shrink-0 font-medium text-accent-text">
@@ -541,13 +502,8 @@ export function ActivityListClient({
               <div className="flex flex-col gap-3.5">
                 {blocks.map((block) =>
                   block.kind === 'current' ? (
-                    // This week as a heading line over its runs (design review,
-                    // Oct 2026): its km and runs, not the plan - Today and Plan
-                    // show the week against plan. Only once it has a run (3.0).
+                    // Its km and runs, not the plan: Today and Plan show the week against plan.
                     <section key={block.week.key} id={`week-${block.week.key}`} className="scroll-mt-24" data-testid="current-week">
-                      {/* "This week" alone, its line right-aligned; where the
-                          two don't fit, the line wraps under the title - a
-                          header is never cut (F10). */}
                       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-1 pb-2">
                         <h2 className="text-title-3 text-foreground">{t.activities.thisWeek}</h2>
                         <span className="text-[13px] text-muted-foreground" data-testid="week-line">
@@ -561,10 +517,8 @@ export function ActivityListClient({
                     </section>
                   ) : (
                     <section key={block.key} data-testid="month">
-                      {/* Sticky under the compact title bar while it shows; on a
-                          phone not otherwise (--sticky-alone, globals.css).
-                          Transparent on a phone, at z-30 over the soft
-                          scroll edge (Liquid Glass v2, data-sticky-strip). */}
+                      {/* Sticky under the compact title bar while it shows; on a phone not
+                          otherwise (--sticky-alone, globals.css). */}
                       <div
                         data-sticky-strip
                         className="sticky z-30 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 bg-background px-1 pb-2 pt-3.5 max-lg:bg-transparent"
@@ -572,14 +526,11 @@ export function ActivityListClient({
                       >
                         <h2 className="text-title-3 capitalize text-foreground">{block.label}</h2>
                         <span className="text-[13px] text-muted-foreground" data-testid="month-line">
-                          {/* A group filter names its runs first (App Fixes 1d): "2 workouts · 18 km". */}
                           {onlyGroup
                             ? `${t.activities.filter.groupCount[onlyGroup](block.runs)} · ${formatKm(block.km)} ${t.units.km}`
                             : `${formatKm(block.km)} ${t.units.km} · ${t.activities.weekLine.runs(block.runs)}`}
                         </span>
                       </div>
-                      {/* Every week a card of its runs (3.0): a row of type dots
-                          said nothing of what each run was. */}
                       <div className="flex flex-col gap-3">
                         {block.weeks.map((g) => (
                           <section key={g.key} id={`week-${g.key}`} className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24' })} data-testid="week">
@@ -596,8 +547,7 @@ export function ActivityListClient({
                 )}
               </div>
             ) : (
-              // The search's results, one group (F11): its separators start
-              // under the titles, past the 48 pt thumbs - not full width.
+              // Separators start under the titles, past the 48 pt thumbs.
               <div className={cardClass({ padding: 'none', overflow: true, className: 'inset-group [--row-thumb-inset:78px]' })}>
                 {items.map((a) => (
                   <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} type={sessionTypes[a.id]} />

@@ -16,8 +16,7 @@ const HISTORY = {
   daysSinceLastRun: 1, longestRecentGapDays: 7,
   // Adam's longest ever is a half; his longest training run is 16 km.
   longestRunLast30DaysKm: 16, longestRunLast90DaysKm: 21.1,
-  // The band is drawn from the aggregates above; the series is here to satisfy
-  // the type, and these tests say nothing about it.
+  // Only satisfies the type: the band is drawn from the aggregates above.
   weeklySeries: { firstWeekStart: '2026-08-31', km: [45], runs: [5] },
 } satisfies TrainingHistory
 
@@ -57,10 +56,8 @@ describe('counting a week', () => {
 
 describe('volumeBand', () => {
   it('reads the last completed week, not only the rolling one', () => {
-    // Regenerating on a Wednesday, the trailing 7 days straddle two calendar
-    // weeks and miss a run; the week he actually finished was 45 km. Anchoring
-    // on the rolling figure alone makes the whole block's ramp depend on which
-    // weekday it happened to be built.
+    // Built on a Wednesday, the trailing 7 days straddle two calendar weeks and miss a run;
+    // the week he finished was 45 km.
     const midweek = {
       ...HISTORY, recent7DaysKm: 37.4, daysSinceLastRun: 0,
       weeklySeries: { firstWeekStart: '2026-09-14', km: [45, 8.5], runs: [5, 1] },
@@ -89,7 +86,6 @@ describe('validateDraftVolume', () => {
   })
 
   it('rejects the week that claimed 52 km and prescribed 62', () => {
-    // The real week 4: warmup 2 km, 4 x 20 min threshold, cooldown 2 km.
     const overcooked = week('Progress volume to 52 km.', [[easy(9000)], [easy(6000)], [easy(2000), timedThreshold(4, 1200), easy(2000)], [easy(9000)], [easy(16000)]])
     expect(() => validateDraftVolume(draft(overcooked), band, DAYS)).toThrow(/says 52 km .* prescribes/)
   })
@@ -110,8 +106,6 @@ describe('validateDraftVolume', () => {
   })
 
   it('ignores the word cutback in a week that has not taken one', () => {
-    // The old regex read the generator's own prose as evidence about the
-    // generator's own output, so writing the keyword switched the floor off.
     const asserted = week('Planned cutback week to absorb the block.', [[easy(8000)], [easy(6000)], [easy(7000)], [easy(8000)]])
     expect(() => validateDraftVolume(draft(asserted), band, DAYS)).toThrow(/against a recent 45 km/)
   })
@@ -193,8 +187,7 @@ describe('a week measured in training days, not calendar days', () => {
   const band = volumeBand(HISTORY)
 
   it('judges a block starting mid-week when every training day still falls in it', () => {
-    // Tue 22 to Sun 27 spans five calendar days but holds all five running days,
-    // so it must carry a whole week - this is the 40.9 km week that slipped through.
+    // Tue 22 to Sun 27 spans five calendar days but holds all five running days, so it must carry a whole week.
     const tuesdayStart: BootstrapWeekDraft = {
       startDate: '2026-09-22', endDate: '2026-09-27', focus: 'Re-establishing consistency',
       workouts: [[easy(8000)], [easy(6000)], [easy(6900)], [easy(8000)], [easy(12000)]]

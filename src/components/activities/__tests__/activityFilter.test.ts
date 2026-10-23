@@ -35,7 +35,7 @@ describe('the sheet ticks as a filter', () => {
   })
 
   it("is a group's chip when they are exactly its types", () => {
-    // Easy is the easy running and the long run (App Fixes 3d).
+    // Easy is the easy running and the long run.
     expect(normalizeTypes(['Base', LONG_RUN])).toEqual({ group: 'easy', types: [] })
     expect(normalizeTypes(['Base'])).toEqual({ group: 'all', types: ['Base'] })
     expect(normalizeTypes(['Sprint', 'Tempo', 'VO2Max', 'Anaerobic', 'Threshold'])).toEqual({ group: 'workouts', types: [] })
@@ -49,7 +49,6 @@ describe('the sheet ticks as a filter', () => {
 
   it('opens the sheet on a group chip with its types ticked', () => {
     expect(checkedTypes({ group: 'workouts', types: [] })).toEqual(['Tempo', 'Threshold', 'VO2Max', 'Anaerobic', 'Sprint'])
-    // Easy holds the easy running and the long run (App Fixes 3d).
     expect(checkedTypes({ group: 'easy', types: [] })).toEqual(['Base', LONG_RUN])
     expect(checkedTypes(ALL_RUNS)).toEqual([])
     expect(filterTypes(ALL_RUNS)).toBeNull()
@@ -66,7 +65,6 @@ describe('the sheet counts', () => {
     expect(matchingCount(counts, [])).toBe(4)
   })
 
-  // App Fixes 3d: a long run counts as the long run, not as plain easy.
   it('counts a long Base run under the long run', () => {
     const withLong = countByType([run('Base'), run('Base', 95 * 60), run('Base', 2_400, 'Long run')])
     expect(withLong.get('Base')).toBe(1)

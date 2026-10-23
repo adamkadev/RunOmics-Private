@@ -47,8 +47,7 @@ describe('buildLanes', () => {
     expect(hr?.smoothed).toHaveLength(3)
   })
 
-  // v4.17: pace goes through a rolling median first, so a GPS spike is gone
-  // from the smoothed line but still in the raw one.
+  // Pace goes through a rolling median first.
   it('takes a GPS spike out of the smoothed pace, not the raw', () => {
     const pace = Array.from({ length: 40 }, (_, i) => (i === 20 ? 380 : 300))
     const [lane] = buildLanes({ ...NONE, paceSamples: pace })
@@ -99,7 +98,7 @@ describe('the lane paths', () => {
   })
 })
 
-// v4.17: the athlete's zones behind heart rate and pace, Z1-Z3 of an easy run.
+// The athlete's zones behind heart rate and pace, Z1-Z3 of an easy run.
 describe('zone bands', () => {
   const zones = chartZones(
     [1, 2, 3, 4, 5].map((zone, i) => ({ zone, minBpm: [119, 147, 165, 175, 185][i]! })),
@@ -149,8 +148,7 @@ describe('sampleAt', () => {
 })
 
 describe('lane summaries', () => {
-  // Pace printed "avg 4:10 · best 4:14": the average came from the activity and
-  // the best from the samples, so the best could read slower than the average.
+  // An average from the activity and a best from the samples can disagree, the best reading slower.
   it("averages to the Overview's moving pace, and never prints a best slower than it", () => {
     const pace = [250, 240, 260, 245, 255, 250, 248, 252]
     const lane = (avgPaceSecPerKm: number) =>
@@ -179,7 +177,6 @@ describe('lane summaries', () => {
     expect(elapsedAt(undefined, 0.5, 2)).toBeNull()
   })
 
-  // G10: Charts gave the average as 113 beside the stat row's 115.
   it('prints the stat row\'s average heart rate, in whole bpm', () => {
     const lane = buildLanes({
       distanceKm: 2, hrSamples: [110, 112, 114, 116, 120.2], avgHr: 115, paceSamples: null, avgPaceSecPerKm: null,
@@ -191,7 +188,6 @@ describe('lane summaries', () => {
 
 
 describe('distanceAxis', () => {
-  // R5: the axis had no 0 and no unit.
   it('runs from 0 to the run distance, which carries the unit', async () => {
     const { distanceAxis } = await import('../chartAxis')
     const axis = distanceAxis(6.11)

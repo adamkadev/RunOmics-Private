@@ -4,10 +4,7 @@ import { distanceKm, median, round } from "@/lib/math";
 import { t } from "@/i18n";
 import { formatDecimal, formatNumber } from "@/lib/formatters";
 
-/**
- * The heatmap's filters (Heatmap Filters 1c, Oct 2026): any number of types
- * and years, ticked in the filters sheet. None ticked is "All".
- */
+/** None ticked is "All". */
 export interface HeatFilters {
   years: readonly string[];
   types: readonly ActivityType[];
@@ -22,7 +19,6 @@ export function matchesFilters(meta: RouteMeta | undefined, filters: HeatFilters
   return true;
 }
 
-/** The Filters button's badge: how many of type and year are narrowed, 0 to 2. */
 export function activeFilterCount(filters: HeatFilters): number {
   return (filters.types.length > 0 ? 1 : 0) + (filters.years.length > 0 ? 1 : 0);
 }
@@ -53,11 +49,9 @@ export function computeAreaTerritory(
     .filter((coords): coords is [number, number][] => !!coords && coords.length > 0);
   if (!traces.length) return null;
 
-  // Home is where the runs start, not the middle of where they go (v4.17):
-  // a centre between two favourite loops can sit in a river.
+  // Where the runs start, not their middle: a centre between two favourite
+  // loops can sit in a river.
   const home: [number, number] = [median(traces.map((c) => c[0]![0])), median(traces.map((c) => c[0]![1]))];
-  // A run's reach is the furthest it got from home, so half the runs stay
-  // inside the median reach - the ring the map draws.
   const reaches = traces.map((coords) =>
     coords.reduce((far, [lon, lat]) => Math.max(far, distanceKm(lon, lat, home[0], home[1])), 0)
   );
@@ -103,7 +97,7 @@ export function areaRows(clusters: RouteCluster[], routeMeta: RouteMeta[], filte
     }));
 }
 
-/** An area gets its own row in the list from this share of km; the rest fold into one. */
+/** % of km from which an area gets its own row in the list. */
 export const OWN_ROW_SHARE = 10;
 
 
@@ -143,31 +137,22 @@ export function buildHeatTracks(routes: [number, number][][], indices: number[])
 }
 
 /**
- * How busy a route is, 0 to 1 (Wave 4, App Fixes 4d): runs over it on a log
- * scale against the busiest street, so one run and two read apart but fifty
- * and sixty do not. One run everywhere is still the faint end, not the full one.
+ * Log scale, so one run and two read apart but fifty and sixty do not; the
+ * floor of 2 keeps one run everywhere the faint end.
  */
 export function heatFrequency(count: number, maxCount: number): number {
   const t = Math.log1p(count) / Math.log1p(Math.max(2, maxCount));
   return Math.min(1, Math.max(0, t));
 }
 
-/**
- * Dark mode as 3.1.0 drew it (variant A, approved by the owner): every run
- * stroked on its own in the accent, a faint wide glow then a thin core, added
- * together ("lighter"), so a street glows by how many runs overlap on it.
- * Wave 6b: a street run once or twice fades into the basemap and the busy
- * ones still burn; taken a step fainter again after the owner's review.
- */
 export const HEAT_DARK = {
   composite: "lighter",
   passes: [
-    { width: 4, alpha: 0.025 },  // 3.1.0: 0.035
-    { width: 1, alpha: 0.07 },   // 3.1.0: 0.16; 1 run ≈ 7 %, 5 runs ≈ 35 %, 14+ saturate
+    { width: 4, alpha: 0.025 },
+    { width: 1, alpha: 0.07 }, // 1 run ≈ 7 %, 5 runs ≈ 35 %, 14+ saturate
   ],
 } as const satisfies { composite: GlobalCompositeOperation; passes: readonly { width: number; alpha: number }[] };
 
-/** The dark tracks' line width: 1.2 px at city zoom, up to 4 px on a street. */
 export function heatLineWidth(zoom: number): number {
   const t = Math.min(1, Math.max(0, (zoom - 12) / 4));
   return 1.2 + t * (4 - 1.2);

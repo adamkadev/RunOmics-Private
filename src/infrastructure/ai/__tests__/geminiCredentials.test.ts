@@ -87,8 +87,7 @@ async function coachingFailure(): Promise<string> {
 beforeEach(() => {
   vi.stubEnv('GEMINI_API_KEY', GENERAL_KEY)
   vi.stubEnv('GEMINI_COACH_API_KEY', COACH_KEY)
-  // Real pacing spaces calls 13 seconds apart; these tests assert which key is
-  // sent, not when, and a second call would otherwise outlast the timeout.
+  // Real pacing spaces calls 13 seconds apart; a second call would outlast the test timeout.
   pacing.lastRequestAt = 0
   pacing.sleep = () => Promise.resolve()
 })

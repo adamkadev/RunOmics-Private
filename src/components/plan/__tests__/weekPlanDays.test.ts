@@ -52,8 +52,8 @@ describe('formatWeekKm', () => {
   })
 })
 
-// Round 2, the owner's Oct 13: a threshold session the watch filed as tempo.
-// A run day shows the run as it was set, by its name, as Activities does.
+// A threshold session the watch filed as tempo: a run day shows the run by
+// its name, as Activities does.
 describe('a run day\'s type', () => {
   it('is the run as its name set it, over the watch\'s filing', () => {
     expect(resolveDayType([{ type: 'Tempo', description: "Threshold 2 x 7:00 - 2x7'@4:25" }], 'Tempo')).toEqual({ type: 'Threshold', planned: 'Tempo' })

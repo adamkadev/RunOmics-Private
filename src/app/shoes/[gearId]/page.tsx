@@ -25,12 +25,9 @@ export const revalidate = 3600
 
 const TITLE = 'text-[15px] font-semibold text-foreground'
 
-/** Replace soon is a caution, Replace is bad (v4.17). */
 const VERDICT_TONE: Record<'watch' | 'replace', VerdictTone> = { watch: 'warn', replace: 'neg' }
 
-// The type mix wears the activity-type colours, so every dot in the run list
-// has its colour in the bar and legend (v4.4.1): easy Z2, tempo Z3,
-// threshold Z4, and the intervals, VO2 and race bucket Z5.
+// Activity-type colours, so each dot in the run list has its colour in the bar and legend.
 const BUCKET_COLOR: Record<ShoeTypeBucket, string> = {
   base: zoneColor(2),
   tempo: zoneColor(3),
@@ -44,7 +41,6 @@ function typeShareLabel(bucket: ShoeTypeBucket): string {
   return t.activityTypes[bucket === 'tempo' ? 'Tempo' : 'Threshold']
 }
 
-/** Runs listed on the page; the rest are one link away, in Activities. */
 const RECENT_RUNS = 5
 
 function verdictBody(status: 'watch' | 'replace', weeksRemaining: number | null): string {
@@ -68,7 +64,6 @@ export async function generateStaticParams() {
   return Object.keys(getShoeRegistry()).map((gearId) => ({ gearId }))
 }
 
-/** "Mar 2026": when a pair came into rotation, for its eyebrow. */
 function formatMonthYear(iso: string): string {
   return formatDate(iso, { precision: 'month', year: 'always' })
 }
@@ -91,16 +86,11 @@ export default async function ShoeDetailPage({
 
   const runOutLine = shoeProjection(shoe, weeksRemaining)
 
-  // "Ran out its life" only fits a pair that actually reached the end of it -
-  // one retired well short of its max km gets the honest percentage instead.
+  // "Ran out its life" only fits a pair worn to its max km; one retired well short gets the percentage.
   const RAN_OUT_RATIO = 0.95
   const wearRatio = shoe.maxKm > 0 ? shoe.totalKm / shoe.maxKm : 0
   const reallyRanOut = wearRatio >= RAN_OUT_RATIO
 
-  // "Fastest you've worn a pair through" only means something measured
-  // against the rest of the retired fleet, and only for a pair that actually
-  // ran its life out - a lone retired pair, a tie, or an early swap makes no
-  // such claim.
   const isFastestRetirement =
     shoe.retired &&
     reallyRanOut &&
@@ -120,9 +110,7 @@ export default async function ShoeDetailPage({
       ? null
       : await getShoeVerdictInsight({ shoe, status, kmLeft, weeksRemaining })
 
-  // A bucket under ~3% is rounding noise from a handful of sessions, not a
-  // real part of the mix - it earns neither a sliver of the bar nor a "0%"
-  // line in the legend.
+  // Under 3% is rounding noise from a handful of sessions: no sliver in the bar, no "0%" in the legend.
   const TYPE_SHARE_FLOOR = 3
   const typeShareEntries: { bucket: ShoeTypeBucket; percent: number }[] = (
     [
@@ -133,8 +121,6 @@ export default async function ShoeDetailPage({
     ] as const
   ).filter((entry) => entry.percent >= TYPE_SHARE_FLOOR)
 
-  // One threshold check, not a taxonomy: a pair either leans hard toward
-  // quality work, leans toward easy miles, or says nothing distinctive.
   const keySessionShare = shoe.typeShare.tempo + shoe.typeShare.threshold + shoe.typeShare.intervals
   const usageInsight = shoe.retired
     ? keySessionShare > 50
@@ -161,8 +147,7 @@ export default async function ShoeDetailPage({
             </p>
             <h1 className="mt-1 text-display text-foreground">{shoe.name}</h1>
           </div>
-          {/* Limits, roles and retirement are set on the watch: Edit opens
-              its app, and only for a pair the watch gave an id to. */}
+          {/* Limits, roles and retirement are set on the watch, so Edit opens its app. */}
           {!shoe.retired && isWatchId(shoe.gearId) && (
             <a
               href={GARMIN_GEAR_URL}
@@ -177,7 +162,6 @@ export default async function ShoeDetailPage({
         </div>
       </header>
 
-      {/* One hero: where the pair is in its life, and its four numbers. */}
       <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="shoe-hero">
         {shoe.retired ? (
           <>
@@ -201,13 +185,10 @@ export default async function ShoeDetailPage({
                 {formatKm(shoe.totalKm)}
                 <span className="ml-1.5 text-sm font-normal tracking-normal text-muted-foreground">{s.ofLimit(formatKm(shoe.maxKm))}</span>
               </p>
-              {/* Past the limit, the overrun is the news, in the wear's colour. */}
               <span className="shrink-0 text-sm font-semibold text-foreground" style={wear.over ? { color: WEAR_COLOR[status] } : undefined} data-testid="shoe-left">
                 {wear.over ? wear.short : wear.exact}
               </span>
             </div>
-            {/* The threshold is named under its tick, as on the list (design
-                review, Oct 2026), not at the row's far end. */}
             <WearBar
               totalKm={shoe.totalKm}
               maxKm={shoe.maxKm}
@@ -219,7 +200,6 @@ export default async function ShoeDetailPage({
             {runOutLine && <p className="text-xs leading-snug text-muted-foreground" data-testid="shoe-projection">{runOutLine}</p>}
           </>
         )}
-        {/* Its four numbers as one row (design review, Oct 2026). */}
         <dl className="mt-0.5 grid grid-cols-4 gap-2 border-t border-border pt-3.5" data-testid="shoe-hero-stats">
           {[
             { label: s.heroStats.runs, value: String(shoe.activities.length), unit: null },
@@ -238,7 +218,6 @@ export default async function ShoeDetailPage({
         </dl>
       </section>
 
-      {/* The standard verdict (v4.17): a status eyebrow on a plain card, no tint. */}
       {!shoe.retired && status !== 'ok' && (
         <section className={cardClass()} data-testid="shoe-verdict">
           <VerdictBlock
@@ -256,7 +235,6 @@ export default async function ShoeDetailPage({
             <h2 className={TITLE}>{shoe.retired ? d.whatItWasFor.title : d.whatYouRunIn.title}</h2>
             <span className="shrink-0 text-xs text-muted-foreground">{s.shareOfDistance}</span>
           </div>
-          {/* The session categories' zone colours (v4.4.1): each run dot below has its colour here. */}
           <div className="flex h-2.5 gap-[3px]">
             {typeShareEntries.map((entry) => (
               <span key={entry.bucket} data-bucket={entry.bucket} className="h-full rounded-full" style={{ flexGrow: entry.percent, flexBasis: 0, background: BUCKET_COLOR[entry.bucket] }} />

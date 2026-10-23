@@ -43,7 +43,7 @@ export const PB_CELEBRATION_SYSTEM_INSTRUCTION = [
     PB_CELEBRATION_LIMITS
   ),
   'The distance and the time are already printed in large type under your text: never state them.',
-  // v4.16.4: said unconditionally, it pushed the model to invent a mark for a first record.
+  // Conditional: said unconditionally, it pushes the model to invent a mark for a first record.
   'When the mark it replaced is given, it is not printed anywhere, so naming it - and how long it stood - is the one number worth writing. When none is given, this is the first time on record at this distance: say so, and never invent an earlier time.',
   'Be warm and direct, never breathless. No exclamation marks stacked up, no emoji.',
 ].join(' ')

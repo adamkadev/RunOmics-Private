@@ -69,7 +69,6 @@ describe('shareActivity', () => {
     )
   })
 
-  // Redesign, Oct 2026: the Stats card leads with the verdict the Overview shows.
   it('carries the written verdict\'s headline and the Overview card\'s tone', () => {
     expect(shareActivity(ACTIVITY, null, { headline: ' Usual long-run pace, 7 bpm cheaper. ' }).verdict)
       .toEqual({ tone: 'positive', headline: 'Usual long-run pace, 7 bpm cheaper.' })
@@ -112,7 +111,6 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
     expect(shareActivity(run, SESSION).reps).toMatchObject({ count: 3, repSeconds: 480, paceSecPerKm: 264, target: { min: 265, max: 265 } })
   })
 
-  // The route draws the reps where they ran (design review, Oct 2026).
   it('places each rep along the run, the laps laid end to end', () => {
     const total = 2500 + 3 * (1818 + 300) + 1600
     const windows = shareActivity(run, SESSION).reps!.windows
@@ -146,7 +144,6 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
     expect(shareActivity(run, session).reps?.target).toEqual({ min: 262, max: 269 })
   })
 
-  // Design review, Oct 2026: the plan's name for the session, never one the card derives.
   it('titles the card with the session\'s name as the plan shows it', () => {
     const legacy = { ...SESSION, title: 'Threshold 3 x 7:40', structure: undefined } as unknown as WorkoutPrescription
     expect(shareActivity(run, legacy).sessionTitle).toBe('Threshold 3 x 7:40')
@@ -164,7 +161,7 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
       ],
     } as unknown as WorkoutPrescription
     expect(shareActivity({ ...ACTIVITY, description: 'Strides 6 x 20s' }, strides).sessionTitle).toBe('Easy 54 min + 6 × 20s strides')
-    // Round 2: the page's header reads the same name, the watch's only without a session.
+    // The page's header reads the same name, the watch's only without a session.
     expect(runName({ ...ACTIVITY, description: 'Strides 6 x 20s' }, strides)).toBe('Easy 54 min + 6 × 20s strides')
     expect(runName({ ...ACTIVITY, description: 'Strides 6 x 20s' }, null)).toBe('Strides 6 x 20s')
   })
@@ -185,13 +182,13 @@ describe('shareSession', () => {
     expect(shareSession([at('2026-10-06', 'threshold'), matched], run)).toBe(matched.prescription)
   })
 
-  // The coach matches on kind: a threshold session the watch filed as tempo matched nothing.
+  // The coach matches on kind, so a threshold session the watch filed as tempo matches nothing.
   it('else takes the one quality session set for a quality run\'s day', () => {
     const day = at('2026-10-06', 'threshold')
     expect(shareSession([at('2026-10-05', 'easy'), day], run)).toBe(day.prescription)
   })
 
-  // As Today pairs them (design review, Oct 2026): the strides day's easy run is that session.
+  // As Today pairs them: the strides day's easy run is that session.
   it('takes the day\'s easy session for an easy run', () => {
     const day = at('2026-10-06', 'easy')
     expect(shareSession([day], { ...run, type: 'Base' })).toBe(day.prescription)
@@ -205,8 +202,7 @@ describe('shareSession', () => {
   })
 })
 
-// Round 2, the owner's run of Oct 13: a threshold session Garmin filed as
-// tempo, its heart rate too low. It shows as the threshold it was set as.
+// A threshold session Garmin files as tempo, its heart rate too low, shows as the threshold it was set as.
 describe('the type a run is shown as', () => {
   const at = (date: string, type: WorkoutPrescription['type'], activityId: string | null = null) => ({
     prescription: { id: `w-${date}-${type}`, date, type, status: 'planned' } as unknown as WorkoutPrescription,
@@ -217,7 +213,7 @@ describe('the type a run is shown as', () => {
   it("is the session's, where it has one, else the one its name says, else the watch's", () => {
     expect(shownType(run, at('2026-10-13', 'threshold').prescription)).toBe('Threshold')
     expect(shownType(run, null)).toBe('Tempo')
-    // The owner's runs: no session the app can match, the name says what each was set as.
+    // No session the app can match: the name says what each was set as.
     expect(shownType({ ...run, description: "Threshold 2 x 7:00 - 2x7'@4:25" }, null)).toBe('Threshold')
     expect(shownType({ ...run, description: 'Base' }, null)).toBe('Base')
   })
@@ -229,7 +225,7 @@ describe('the type a run is shown as', () => {
     expect(sessionTypes(workouts, [run, easy, tempo])).toEqual({ 'run-1': 'Threshold' })
     // An easy run on a hard day takes no session, and keeps its own type.
     expect(sessionTypes([at('2026-10-14', 'threshold')], [easy])).toEqual({})
-    // With no session, by its name: Oct 13's threshold the watch filed as tempo.
+    // With no session, by its name: a threshold the watch filed as tempo.
     expect(sessionTypes([], [{ ...run, description: "Threshold 2 x 7:00 - 2x7'@4:25" }])).toEqual({ 'run-1': 'Threshold' })
   })
 })

@@ -18,18 +18,13 @@ import {
 } from '@/domain/coaching/validation'
 import { MAX_BOOTSTRAP_WEEKS } from '@/domain/coaching/weekWindows'
 
-/**
- * A coach's answer read into the port's types, the same way whichever advisor
- * received it - an API response or a reply pasted from a chat. Reading only:
- * whether the plan is any good is for application/coaching/draftRules.ts.
- */
+/** Reads a coach's answer into the port's types; judging the plan is for application/coaching/draftRules.ts. */
 
 const PLACEHOLDER_TIME = '2000-01-01T00:00:00.000Z'
 const PLACEHOLDER_PROVENANCE = { source: 'gemini' as const, trigger: 'bootstrap' as const, createdAt: PLACEHOLDER_TIME }
 
 type Trigger = 'bootstrap' | 'post_activity' | 'weekly_review'
 
-/** The name's optional fields, a null from the model read as left out. */
 function nameFields(raw: Record<string, unknown>): Record<string, unknown> {
   return {
     ...(raw.shortName === undefined || raw.shortName === null ? {} : { shortName: raw.shortName }),
@@ -64,7 +59,6 @@ function bootstrapWorkoutDraft(value: unknown, label: string): BootstrapWorkoutD
   }
 }
 
-/** Optional, and only meaningful when the week's arithmetic backs it up - see volume.ts. */
 function weekReduction(value: unknown, label: string): WeekVolumeReduction | undefined {
   if (value === undefined || value === null) return undefined
   const raw = parseObject(value, label)

@@ -1,0 +1,155 @@
+'use client'
+
+import { useEffect, useLayoutEffect, useMemo, useRef, type Ref } from 'react'
+import { useRouter } from 'next/navigation'
+import { ChevronLeft } from 'lucide-react'
+import { t } from '@/i18n'
+import type { ExploreAreaRef, RoutePreferences, ScoredRoute } from '@/domain/explore/types'
+import { formatPercent, formatWeekday } from '@/lib/formatters'
+import { useOwnerAuth } from '@/lib/useOwnerAuth'
+import { useNavigationOrigin } from '@/components/layout/NavigationHistory'
+import { Glass, GlassLayers, GLASS_CIRCLE, glassClass } from '@/components/ui/GlassSurface'
+import { MapAttribution, type MapCredit } from '@/components/ui/MapAttribution'
+import { planRouteKm, type ExploreFrom } from './exploreHref'
+import { RouteGeneratorPanel } from './RouteGeneratorPanel'
+import { generatorBack, routeStats, type ExplorePlan } from './routeGenerator'
+import { routeGpxFile } from './routeGpx'
+import { useFitsWhole } from './useFitsWhole'
+import { useRouteGenerator } from './useRouteGenerator'
+
+/** The loops' credit, shown in the ⓘ while the generator is open (the routing proxy's own line). */
+export const ROUTE_CREDIT: MapCredit = { text: '© openrouteservice by HeiGIT' }
+
+export interface RouteGeneratorModeProps {
+  area: ExploreAreaRef
+  /** The quartier to loop in; null until the area (or its coverage, for the next one) is in. */
+  target: { id: string; name: string } | null
+  /** The runs are in the worker: loops can be scored against them. */
+  tracksReady: boolean
+  distanceKm: number
+  onDistanceChange: (km: number) => void
+  prefs: RoutePreferences
+  onPrefsChange: (prefs: RoutePreferences) => void
+  paceSecPerKm: number | null
+  /** The session it plans for (the linked day's, or today's), or null. */
+  plan: ExplorePlan | null
+  /** 'YYYY-MM-DD' on this device: whether that session is today's. */
+  today: string | null
+  /** Where the link came from: Back goes there. */
+  from: ExploreFrom | null
+  /** The area's own credits, beside the map's. */
+  credits: readonly MapCredit[]
+  onClose: () => void
+  /** The loop to draw on the map (the parent owns the map), or null. */
+  onDrawnChange: (route: ScoredRoute | null) => void
+  /** The panel, for the camera to keep the loop above it. */
+  panelRef?: Ref<HTMLDivElement>
+}
+
+/** Mounted only while it is open, so the owner check and the requests start with it, never for the heat. */
+export function RouteGeneratorMode({
+  area,
+  target,
+  tracksReady,
+  distanceKm,
+  onDistanceChange,
+  prefs,
+  onPrefsChange,
+  paceSecPerKm,
+  plan,
+  today,
+  from,
+  credits,
+  onClose,
+  onDrawnChange,
+  panelRef,
+}: RouteGeneratorModeProps) {
+  const e = t.pages.map.explore
+  const router = useRouter()
+  const origin = useNavigationOrigin()
+  const owner = useOwnerAuth()
+  const generator = useRouteGenerator({
+    enabled: true,
+    area,
+    unitId: target?.id ?? null,
+    km: distanceKm,
+    prefs,
+    tracksReady,
+    user: owner.isOwner ? owner.user : null,
+    authReady: !owner.loading,
+  })
+  const { route, drawn } = generator
+
+  const onDrawnRef = useRef(onDrawnChange)
+  useLayoutEffect(() => {
+    onDrawnRef.current = onDrawnChange
+  })
+  useEffect(() => {
+    onDrawnRef.current(drawn)
+  }, [drawn])
+  // Closed, the map draws no loop.
+  useEffect(() => () => onDrawnRef.current(null), [])
+
+  const stats = useMemo(() => (route ? routeStats(route, paceSecPerKm) : null), [route, paceSecPerKm])
+  const allCredits = useMemo(() => [...credits, ROUTE_CREDIT], [credits])
+
+  const back = () => {
+    const action = generatorBack(from, origin)
+    if (action.kind === 'back') router.back()
+    else if (action.kind === 'push') router.push(action.href)
+    else onClose()
+  }
+
+  const gpxFile = () =>
+    route && target
+      ? routeGpxFile({ unitName: target.name, coordinates: route.candidate.coordinates, distanceM: route.candidate.distanceM, time: new Date().toISOString() })
+      : null
+
+  const name = target?.name ?? area.name
+  const newText = stats ? e.newShare(formatPercent(stats.newPct)) : null
+  // "Loop" stays while the name fits whole beside it.
+  const { textRef: nameRef, whole: loopShown } = useFitsWhole<HTMLSpanElement>(`${name}|${newText ?? ''}`)
+  const tail = [...(loopShown ? [e.loop] : []), ...(newText ? [newText] : [])].join(' · ')
+
+  return (
+    <>
+      <div data-testid="route-generator-bar" className="absolute inset-x-4 top-3 z-30 flex items-center gap-3">
+        <button type="button" onClick={back} aria-label={e.back} className={glassClass('regular', GLASS_CIRCLE)}>
+          <GlassLayers />
+          <ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" />
+        </button>
+        <Glass data-testid="route-generator-pill" className="flex h-11 min-w-0 flex-1 items-center justify-center gap-2 px-4 text-[16px] leading-5">
+          {/* "N% new" always whole: short of room, "Loop" goes first (the
+              panel says it too), then the name gives way. */}
+          <span ref={nameRef} className="min-w-0 truncate font-semibold text-foreground">
+            {name}
+          </span>
+          {tail && <span className="shrink-0 whitespace-nowrap text-[var(--text-2)]">· {tail}</span>}
+        </Glass>
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-[var(--sheet-inset)] bottom-[var(--sheet-inset)] z-40 mx-auto flex max-w-[420px] flex-col items-end gap-2">
+        <MapAttribution className="pointer-events-auto mr-3" extraCredits={allCredits} />
+        <RouteGeneratorPanel
+          ref={panelRef}
+          unitName={target?.name ?? null}
+          distanceKm={distanceKm}
+          onDistanceChange={onDistanceChange}
+          plan={plan ? { heading: !today || plan.date === today ? e.todaysPlan : e.planFor(formatWeekday(plan.date, true)), label: plan.label, km: planRouteKm(plan.distanceM) } : null}
+          prefs={prefs}
+          onPrefsChange={onPrefsChange}
+          status={generator.status === 'idle' ? 'generating' : generator.status}
+          failure={generator.failure}
+          stats={stats}
+          paceSecPerKm={paceSecPerKm}
+          routeKey={generator.routeKey}
+          gpxFile={gpxFile}
+          onRegenerate={generator.regenerate}
+          onRetry={generator.retry}
+          onClose={onClose}
+        />
+      </div>
+    </>
+  )
+}
+

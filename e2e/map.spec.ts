@@ -2,7 +2,6 @@ import type { Locator } from '@playwright/test'
 import { test, expect } from './fixtures'
 
 test('heatmap: Activities on Map, chips, a 560 pt map with its legend and licence on it, the card under it', async ({ page }) => {
-  // /map is a deep link to the Map view of Activities (design review, Oct 2026).
   await page.goto('/map')
   await expect(page).toHaveURL(/\/activities\?view=map$/)
   await expect(page.getByRole('heading', { name: 'Activities', exact: true })).toBeVisible()
@@ -10,18 +9,15 @@ test('heatmap: Activities on Map, chips, a 560 pt map with its legend and licenc
 
   await expect(page.getByText('Rare')).toBeVisible()
   await expect(page.getByText('Frequent')).toBeVisible()
-  // The credits sit behind an ⓘ (3.0) and open on a tap.
   await page.getByRole('button', { name: 'Map credits' }).click()
   await expect(page.getByTestId('map-attribution')).toContainText('OpenStreetMap')
   await expect(page.getByRole('button', { name: 'World view' })).toHaveCount(0)
 
   const map = page.getByRole('img', { name: 'Heatmap' })
   const card = page.getByTestId('territory-card')
-  // Runs, km and the median reach the sentence's ring is drawn at.
   await expect(card).toContainText('ring')
   await expect(card).toContainText('Median reach')
   const mapBox = (await map.boundingBox())!
-  // 560 pt, borderless (Liquid Glass v3, G8).
   expect(Math.round(mapBox.height)).toBe(560)
   expect((await card.boundingBox())!.y).toBeGreaterThan(mapBox.y + mapBox.height)
 
@@ -34,8 +30,7 @@ test('heatmap: Activities on Map, chips, a 560 pt map with its legend and licenc
 test('heatmap area list switches the selected area', async ({ page }) => {
   await page.goto('/map')
 
-  // By its purpose, not its contents: the chip shows the selected zone's
-  // name, which is data.
+  // By its purpose, not its contents: the chip shows the selected zone's name, which is data.
   const zoneChip = page.getByRole('button', { name: /^Area:/ })
   await zoneChip.click()
 
@@ -65,9 +60,7 @@ test('heatmap area list switches the selected area', async ({ page }) => {
   await expect(page.locator('ul li button').nth(before)).toHaveAttribute('aria-current', 'false')
 })
 
-// toBeVisible() and click() both pass on a menu the scrolling chip rail clips:
-// the menu still has a box, and click() scrolls it into view first. What a
-// person sees is what hit-testing finds at the centre of an option.
+// toBeVisible() and click() both pass on a menu the scrolling chip rail clips, so hit-testing decides.
 async function drawnWhereItClaims(option: Locator): Promise<boolean> {
   return option.evaluate((el) => {
     const r = el.getBoundingClientRect()
@@ -87,8 +80,6 @@ test('heatmap filters open where they can be seen', async ({ page }) => {
   await page.keyboard.press('Escape')
   await expect(chip).toHaveAttribute('aria-expanded', 'false')
 
-  // Type and year behind one Filters circle, in a sheet (Heatmap Filters 1b,
-  // 1c): nothing changes until "Show N runs", then the badge counts it.
   await page.getByRole('button', { name: 'Filters', exact: true }).click()
   const sheet = page.getByRole('dialog', { name: 'Filters' })
   await expect(sheet).toBeVisible()
@@ -102,9 +93,6 @@ test('heatmap filters open where they can be seen', async ({ page }) => {
   await expect(page.getByTestId('heat-filter-badge')).toHaveText('1')
 })
 
-// The row ran past an iPhone's width (owner, Oct 2026): the location pill,
-// Filters and fullscreen fit 393 pt with any city name, in the page and in
-// fullscreen, never scrolled and never cut.
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 393, height: 852 } })
 
@@ -116,7 +104,6 @@ test.describe('on a phone', () => {
         const boxes = [...el.querySelectorAll<HTMLElement>(':scope > *, :scope > * > button')].map((c) => c.getBoundingClientRect())
         return el.scrollWidth <= el.clientWidth && boxes.every((r) => r.left >= 0 && r.right <= innerWidth)
       })
-    // A long name, as the geocoder can give: the pill cuts it.
     await row.evaluate((el) => { el.querySelector('span.truncate')!.textContent = 'Kuala Lumpur Federal Territory' })
     expect(await fits()).toBe(true)
 
@@ -124,7 +111,6 @@ test.describe('on a phone', () => {
     await expect(page.getByRole('button', { name: 'Exit fullscreen' })).toBeVisible()
     await row.evaluate((el) => { el.querySelector('span.truncate')!.textContent = 'Kuala Lumpur Federal Territory' })
     expect(await fits()).toBe(true)
-    // It floats over the map, which fills the screen under it.
     const mapBox = (await page.getByRole('img', { name: 'Heatmap' }).boundingBox())!
     expect(mapBox.y).toBeLessThanOrEqual(0)
   })
@@ -151,10 +137,6 @@ test('heatmap actually initialises a MapLibre canvas', async ({ page }) => {
   expect(errors).toEqual([])
 })
 
-// Round 2 (H1): the fullscreen top row looked disabled - grey ink, a flat
-// fill with no blur - and names showed cut under it. Its glass blurs, no
-// ancestor is a backdrop root, its ink is the text's, and the soft edge sits
-// over the map but under the row.
 test('heatmap fullscreen: the top row is live glass in full ink over a soft edge', async ({ page }) => {
   await page.setViewportSize({ width: 402, height: 874 })
   await page.goto('/map')
@@ -163,7 +145,6 @@ test('heatmap fullscreen: the top row is live glass in full ink over a soft edge
 
   const row = page.getByTestId('heat-filter-row')
   const capsule = page.getByRole('button', { name: /^Area:/ })
-  // The blur layer is live.
   expect(await capsule.evaluate((el) => {
     const blur = el.querySelector(':scope > .lg-blur')!
     const cs = getComputedStyle(blur)
@@ -183,7 +164,6 @@ test('heatmap fullscreen: the top row is live glass in full ink over a soft edge
   })
   expect(roots).toEqual([])
 
-  // Full ink: the label is the text colour, nothing in the row faded.
   const ink = await page.getByTestId('area-label').evaluate((el) => {
     const probe = document.createElement('span')
     probe.style.color = 'var(--foreground)'
@@ -195,7 +175,6 @@ test('heatmap fullscreen: the top row is live glass in full ink over a soft edge
   expect(ink.got).toBe(ink.want)
   expect(await row.evaluate((el) => [...el.querySelectorAll('*')].every((n) => Number(getComputedStyle(n).opacity) === 1))).toBe(true)
 
-  // The soft edge: in the row's own root, under the row, with its blur.
   const edge = page.getByTestId('map-top-edge')
   expect(await edge.evaluate((el, rowEl) => el.parentElement === rowEl!.parentElement, await row.elementHandle())).toBe(true)
   const z = await page.evaluate(() => ({
@@ -206,10 +185,7 @@ test('heatmap fullscreen: the top row is live glass in full ink over a soft edge
   expect(await edge.evaluate((el) => getComputedStyle(el.children[0]!).backdropFilter)).toContain('blur(12px)')
 })
 
-// The Filters badge sits on the circle's top edge. In fullscreen the row
-// starts at the map's 12 pt edge sampler's foot, and the sampler paints over
-// the row: a badge 3 pt above the circle lost its top to it, cut flat on the
-// phone. Nothing of it may reach above the row.
+// In fullscreen the edge sampler paints over the row, so a badge reaching above the row loses its top.
 test('heatmap fullscreen: the filter badge is whole, clear of the edge sampler', async ({ page }) => {
   await page.goto('/map')
   await page.getByRole('button', { name: 'Filters', exact: true }).click()
@@ -225,8 +201,7 @@ test('heatmap fullscreen: the filter badge is whole, clear of the edge sampler',
   const { badgeTop, samplerBottom, topHit } = await badge.evaluate((el) => {
     const box = el.getBoundingClientRect()
     const sampler = document.querySelector('[data-testid="map-edge-sampler"]')!.getBoundingClientRect()
-    // The row paints the badge's top, not the sampler over it (the hit lands
-    // on the circle's 44 pt hit area, which covers its own badge).
+    // The hit lands on the circle's 44 pt hit area, which covers its own badge.
     const hit = document.elementFromPoint(box.left + box.width / 2, box.top + 1)
     return { badgeTop: box.top, samplerBottom: sampler.bottom, topHit: !!hit && el.closest('[data-testid="heat-filter-row"]')!.contains(hit) }
   })

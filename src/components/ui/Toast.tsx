@@ -18,8 +18,7 @@ export function useToast() {
   }, [])
 
   function showToast(msg: string, ok: boolean) {
-    // A newer toast replaces the one on screen, timers and all: the older
-    // one's would otherwise fade and remove the newer one early.
+    // Clear the older toast's timers, or they would fade and remove the newer one early.
     timers.current.forEach(clearTimeout)
     setLeaving(false)
     setToast({ msg, ok })
@@ -41,7 +40,7 @@ export function Toast({ toast, leaving }: { toast: ToastData; leaving?: boolean 
       role="status"
       className={cn(
         'fixed inset-x-4 z-50 animate-fade-up rounded-lg px-4 py-2.5 text-center text-sm font-semibold shadow-lg transition-opacity duration-200 ease-out sm:inset-x-auto sm:right-4 sm:text-left',
-        // A neutral raised surface; the red keeps white, which it was tuned for.
+        // White on red: the destructive red is tuned for it.
         toast.ok ? 'surface-raised border border-border text-foreground' : 'bg-destructive text-white',
         leaving && 'opacity-0'
       )}

@@ -12,9 +12,7 @@ type Prescription = Pick<PlanPrescriptionView, 'state'> & {
   prescription: Pick<PlanPrescriptionView['prescription'], 'date' | 'type'> & Parameters<typeof prescriptionDistanceMeters>[0]
 }
 
-// Hardest-first, matching ACTIVITY_TYPES' own declaration order - a day with
-// more than one logged activity (or a race day) resolves to whichever one is
-// hardest, not just whichever came first.
+// Hardest first: hardestType ranks by this order.
 const RAMP_ORDER: ActivityType[] = ['Race', 'Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tempo', 'Base']
 
 export function hardestType(types: ActivityType[]): ActivityType {
@@ -35,17 +33,11 @@ export function resolvePlannedType(
 
 export interface DayTypeResolution {
   type: ActivityType
-  /** Set only when the day was run and it differs from what was planned. */
   planned?: ActivityType
 }
 
-// One source of truth for a day's colour: the week strip and the "this week"
-// rows both call this rather than each resolving a planned or recorded type on
-// their own - which is how the same day used to end up two different hues in
-// two places. A day that was actually run shows its run, not what was
-// scheduled - the run as it was set, by its name (round 2): a threshold
-// session the watch filed as tempo is the threshold the Activities list and
-// the run's page show (intendedType).
+// The one place a day's type is resolved, so the week strip and the week rows
+// agree. A run counts as it was set (intendedType), not as the watch filed it.
 export function resolveDayType(acts: readonly { type: ActivityType; description?: string }[], plannedType: ActivityType | undefined): DayTypeResolution | null {
   if (acts.length > 0) {
     const recorded = hardestType(acts.map((a) => intendedType(a)))
@@ -60,7 +52,6 @@ export interface PlanMaps<A extends Run = Run, P extends Prescription = Prescrip
   byDateCoach: ReadonlyMap<string, P[]>
 }
 
-/** The three per-day lookups Plan draws from, built once for any screen. */
 export function planMaps<A extends Run, P extends Prescription>(
   activities: readonly A[],
   plannedWorkouts: readonly PlannedWorkout[],
@@ -84,11 +75,6 @@ export function weekDates(weekStart: Date): string[] {
   return Array.from({ length: 7 }, (_, i) => isoDate(addDays(weekStart, i)))
 }
 
-/**
- * What each day planned and what it ran, in Plan's own priority: the coach's
- * prescriptions for a day win over Garmin's, and a cancelled prescription is
- * no plan at all.
- */
 export function weekPlanDays(
   dates: readonly string[],
   { byDate, byDatePlanned, byDateCoach }: PlanMaps,
@@ -124,16 +110,11 @@ export function weekPlanDays(
   })
 }
 
-/** The week that holds `today`, measured against its plan and the volume goal. */
 export function currentWeekTarget(maps: PlanMaps, today: string, goalKm: number | null): WeekTarget {
   const monday = startOfWeek(new Date(`${today}T00:00:00`))
   return weekTarget(weekPlanDays(weekDates(monday), maps), today, goalKm)
 }
 
-/**
- * A week's km as the week cards write them: "6.1" for a short week, "52" once
- * a decimal stops telling the reader anything.
- */
 export function formatWeekKm(km: number): string {
   const decimals = km < 10 && Math.round(km * 10) % 10 !== 0 ? 1 : 0
   return formatKm(km, decimals)

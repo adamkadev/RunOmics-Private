@@ -3,9 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { CardHead } from '../AnalyticsKit'
 import { t } from '@/i18n'
 
-// L5: one rule for a card's caption. On the title's line, at the right, only
-// while it fits there whole; otherwise under the title, from the left, 13 pt
-// muted - Temperature cost's wrapped and floated right under its title.
+// A caption sits on the title's line, at the right, only while it fits there whole; otherwise under the title, from
+// the left.
 describe('a card head', () => {
   it('lets the caption sit right of the title or drop under it from the left, never wrapped at the right', () => {
     render(<CardHead title="Temperature cost" caption={t.analytics.cards.heatCost.caption(149)} />)

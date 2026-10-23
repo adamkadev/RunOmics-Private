@@ -5,12 +5,8 @@ export interface RouteSpec {
   name: string
   hasTabs?: boolean
   waitFor?: string
-  /**
-   * A detail page, opened from the first link on `path` whose href starts
-   * with this - so it has content in whichever dataset is being served.
-   */
+  /** A detail page, opened from the first link on `path` starting with this, so it has content in any dataset. */
   firstLinkTo?: string
-  /** Captured signed in as the owner, through the Auth emulator (owner.ts). */
   asOwner?: boolean
   /** Waited for, not required, before shooting: a mark set once something slow is done. */
   settledWhen?: string

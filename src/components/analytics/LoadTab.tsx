@@ -15,11 +15,8 @@ import type { AnalyticsBoardData } from './AnalyticsClient'
 import { formView, statusView, type DayWindow, type LoadDay, type LoadPeriod, type StatusDay } from './analyticsView'
 
 /**
- * Form's bars and their legend (v4.17): Fresh pos, Neutral line-2, Tired
- * warn, at the Training status cells' strength (v4.17.3) - the full #7bd64a
- * Fresh bars were the loudest thing on the tab. 60% in dark, 70% in light,
- * set on the card as --form-fill; the zero line and the labels keep full
- * contrast.
+ * At the Training status cells' strength, set on the card as --form-fill: full-strength Fresh bars would be the
+ * loudest thing on the tab.
  */
 const formFill = (band: string) => `color-mix(in srgb, var(--form-band-fill-${band}) var(--form-fill), transparent)`
 export const FORM_FILL: Record<FormBand, string> = {
@@ -30,21 +27,17 @@ export const FORM_FILL: Record<FormBand, string> = {
 }
 export const FORM_FILL_STRENGTH = '[--form-fill:70%] dark:[--form-fill:60%]'
 
-/**
- * What Form's band means: tired is caution, fresh good news, and very fresh
- * caution again - fitness starts to slip - as its token (--form-band-very-fresh).
- */
+/** Very fresh is caution again: fitness starts to slip. */
 const FORM_TONE: Record<FormBand, StatTone> = { tired: 'warn', neutral: 'muted', fresh: 'pos', veryFresh: 'warn' }
 
 const signed = (n: number) => (n < 0 ? `${MINUS}${Math.abs(n)}` : n > 0 ? `+${n}` : '0')
 
 export { windowLabels }
 
-/** Garmin's statuses as cells, in the one status map (lib/colors). */
 const STATUS_COLOR = TRAINING_STATUS_COLORS
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
-/** A status cell's fill at 60% (v4.17.2): the strip, and its legend, lighter than today's cell. */
+/** The strip and its legend, lighter than today's full-strength cell. */
 export function statusTint(status: keyof typeof STATUS_COLOR): string {
   return `color-mix(in srgb, ${STATUS_COLOR[status]} 60%, transparent)`
 }
@@ -75,9 +68,7 @@ function StatusCard({ days, window, period, onShift }: { days: StatusDay[]; wind
                 className={cn('rounded-[4px]', today && 'state-today')}
                 data-today={today || undefined}
                 style={{
-                  // The strip at 60% so the card reads lighter (v4.17.2);
-                  // today alone at full strength, in the shared today ring
-                  // (F14) - a heavy ink outline read as a different mark.
+                  // Today alone at full strength, in the shared today ring: a heavy ink outline reads as a different mark.
                   background: cell.status ? (today ? STATUS_COLOR[cell.status] : statusTint(cell.status)) : 'var(--track)',
                 }}
               />
@@ -85,8 +76,7 @@ function StatusCard({ days, window, period, onShift }: { days: StatusDay[]; wind
           })}
         </div>
       </ChartScrub>
-      {/* Each count right after its name (v4.17.2), the items 20 px apart:
-          spread across the card, a count read as the next item's. */}
+      {/* Each count right after its name: spread across the card, a count reads as the next item's. */}
       <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground" data-testid="status-legend">
         {view.totals.map(({ status, days: n }) => (
           <span key={status} className="flex items-center gap-1.5" data-testid="status-legend-item">
@@ -109,7 +99,7 @@ export interface LoadTabProps {
 
 const WARN = 'var(--warn)'
 
-/** A move as an arrow and its size: ↗ 6, ↘ 23, → 0 (rule 04). */
+/** A move as an arrow and its size: ↗ 6, ↘ 23, → 0. */
 function Move({ delta, metric, decimals = 0 }: { delta: number; metric: 'fitness' | 'fatigue'; decimals?: number }) {
   const r = decimals ? Math.round(delta * 10) / 10 : Math.round(delta)
   const Arrow = r > 0 ? ArrowUpRight : r < 0 ? ArrowDownRight : ArrowRight
@@ -121,11 +111,6 @@ function Move({ delta, metric, decimals = 0 }: { delta: number; metric: 'fitness
   )
 }
 
-/**
- * Load, compact (App Fixes 2a): the seven-day load, the ratio and fitness a
- * week, each amber while it is out of range, over a 72 px line of acute load
- * against its safe band.
- */
 function LoadCard({ pairs, load, window, yMax }: { pairs: AnalyticsBoardData['loads']; load: LoadDay[]; window: DayWindow; yMax: number }) {
   const s = t.analytics.cards.loadCompact
   const view = loadTrendView(pairs, window, yMax)
@@ -138,8 +123,7 @@ function LoadCard({ pairs, load, window, yMax }: { pairs: AnalyticsBoardData['lo
   const W = 320
   const H = 72
   const pts = view.points
-  // The domain is what is drawn, 10 % either side (L4): from zero, the line
-  // and its band sat in the chart's top half and left the rest empty.
+  // The domain is what is drawn, 10 % either side: from zero, the line and its band sit in the chart's top half.
   const lowest = Math.min(...pts.map((p) => Math.min(p.acute, p.lo)))
   const highest = Math.max(...pts.map((p) => Math.max(p.acute, p.hi)))
   const pad = Math.max(1, (highest - lowest) * 0.1)
@@ -172,7 +156,7 @@ function LoadCard({ pairs, load, window, yMax }: { pairs: AnalyticsBoardData['lo
           </div>
         )}
       </div>
-      {/* The chart sets its height (L4); the out-of-range dots lie over it. */}
+      {/* The chart sets its height; the out-of-range dots lie over it. */}
       <div className="relative">
         <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden data-testid="load-mini">
           <polygon points={band} fill="color-mix(in srgb, var(--accent) 8%, transparent)" />
@@ -192,11 +176,6 @@ function LoadCard({ pairs, load, window, yMax }: { pairs: AnalyticsBoardData['lo
   )
 }
 
-/**
- * Form, compact (App Fixes 2a): one line - form, fitness and fatigue with
- * their moves - a daily strip in the three band colours, and resting HR
- * against its baseline in a divider row.
- */
 function FormCard({ load, nights, window, period }: { load: LoadDay[]; nights: AnalyticsBoardData['recovery']; window: DayWindow; period: LoadPeriod }) {
   const s = t.analytics.cards.form
   const view = formView(load, window)
@@ -246,18 +225,13 @@ function FormCard({ load, nights, window, period }: { load: LoadDay[]; nights: A
   )
 }
 
-/**
- * The Load tab, compact (App Fixes 2a): the coach card above it, then Load
- * and Form, then the watch's Training status. Injury risk and the large
- * Load trend are gone; what they argued is in the coach's "Why ›".
- */
 export function LoadTab({ window, period, onShift, today, data }: LoadTabProps) {
   const yMax = loadTrendYMax(data.loads, today)
   return (
     <div className="flex flex-col gap-3.5">
       <LoadCard pairs={data.loads} load={data.load} window={window} yMax={yMax} />
       <FormCard load={data.load} nights={data.recovery} window={window} period={period} />
-      {/* The watch's own status as its chart, not a sentence in the coach card (owner, Oct 2026). */}
+      {/* The watch's own status as its chart, not a sentence in the coach card. */}
       <StatusCard days={data.status} window={window} period={period} onShift={onShift} />
     </div>
   )

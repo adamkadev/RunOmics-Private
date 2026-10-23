@@ -3,14 +3,9 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { STATUS_BAR_COLOR, TOKEN_BLOCKS } from '@/lib/themeTokens'
 
-/**
- * F15: the installed app's status bar is opaque (statusBarStyle 'default') and
- * iOS fills it from the theme-color meta for the launch's mode. Any colour but
- * the page's own --background shows as a flat band above the header.
- */
+/** iOS fills the installed app's opaque status bar from the theme-color meta: any colour but --background shows as a band. */
 const css = readFileSync(path.resolve(__dirname, '../../app/globals.css'), 'utf8')
 
-/** A token's value in the generated block that starts at `marker`. */
 function generated(marker: string, token: string): string | undefined {
   const at = css.indexOf(marker)
   const block = css.slice(at, css.indexOf('\n}', at))
@@ -36,9 +31,8 @@ describe('the status bar colour (F15)', () => {
     expect(layout).toContain("'apple-mobile-web-app-capable': 'yes'")
   })
 
-  // Step 3 of F15 is skipped on purpose: the status-bar style is one value
-  // for both themes (no media query on its meta, read once at install), and
-  // black-translucent draws a white clock, unreadable on the light Aura.
+  // One status-bar style serves both themes, read once at install, and black-translucent draws a white
+  // clock, unreadable on the light Aura.
   it("keeps the opaque 'default' status bar in both themes", () => {
     const layout = readFileSync(path.resolve(__dirname, '../../app/layout.tsx'), 'utf8')
     expect(layout).toContain("statusBarStyle: 'default',")

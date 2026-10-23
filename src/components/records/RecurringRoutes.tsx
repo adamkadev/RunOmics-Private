@@ -20,49 +20,30 @@ interface Props {
 }
 
 
-/** Routes listed before "Show all". */
 const TOP_ROUTES = 6
-/**
- * A route's distance by the app's one rule (design review, Oct 2026): one
- * decimal under 100 km, none above. formatDistance's second decimal under
- * 10 km put "7.20 km" in the same list as "12.9 km".
- */
+/** Not formatDistance: its second decimal under 10 km put "7.20 km" beside "12.9 km". */
 function routeKm(km: number): string {
   return formatKm(km, km >= 100 ? 0 : 1)
 }
 
-/**
- * A date in as little width as it can take - the latest run's line is
- * narrow: a day this year, a month and year before that.
- */
 function compactDate(isoDate: string, thisYear: number): string {
   return Number(isoDate.slice(0, 4)) === thisYear
     ? formatDate(isoDate, { style: 'bare', year: 'never' })
     : formatMonthShortYear(isoDate)
 }
 
-/** The trail's colours (App Fixes 1g): the other runs dim, the best in the accent, the latest in ink. */
 const BAR_TONE = {
   best: 'bg-accent',
   latest: 'bg-foreground',
   other: 'bg-[var(--rest-bar)]',
 } as const
 
-/**
- * With the white accent the best bar and the latest one are both near-white
- * and the pair reads as one (App Fixes 5a, rule 4). The latest becomes an
- * outline then, so the two still tell apart; every other accent keeps the
- * filled ink bar.
- */
+/** Under the white accent the best and latest bars are both near-white, so the latest becomes an outline. */
 function barTone(tone: TrailTone, monoAccent: boolean): string {
   if (tone === 'latest' && monoAccent) return 'border border-foreground bg-transparent'
   return BAR_TONE[tone]
 }
 
-/**
- * The last six runs in date order, taller for faster (App Fixes 1g): a fixed
- * 74 x 36 px trail, square-ended bars sharing the width 2 px apart.
- */
 function PaceTrail({ route, monoAccent }: { route: RecurringRoute; monoAccent: boolean }) {
   return (
     <div data-testid="pace-trail" className="flex h-9 w-[74px] items-end justify-end gap-0.5" aria-hidden="true">
@@ -78,7 +59,6 @@ function PaceTrail({ route, monoAccent }: { route: RecurringRoute; monoAccent: b
   )
 }
 
-/** The key to the bars' two colours, beside the line that says what a bar is: 4 x 10 px swatches. */
 function TrailKey({ monoAccent }: { monoAccent: boolean }) {
   const r = t.records.recurring
   return (
@@ -98,7 +78,6 @@ function TrailKey({ monoAccent }: { monoAccent: boolean }) {
   )
 }
 
-/** "best 5:07 · last 5:19 +12s", or "best 5:16 · new best Sep 17" when the latest run set it. */
 function BestAndLast({ route, thisYear }: { route: RecurringRoute; thisYear: number }) {
   const r = t.records.recurring
   const latest = routeLatest(route)
@@ -126,13 +105,7 @@ function BestAndLast({ route, thisYear }: { route: RecurringRoute; thisYear: num
   )
 }
 
-/**
- * Where each route goes, named (Wave 4, App Fixes 1g): the street, park or
- * place at its far point, with its shape - "… loop", "… out & back". Every
- * route from home shares the start street, so naming by the start gave a
- * list of one name. The lookup is cached in localStorage for a month by
- * reverseGeocode.
- */
+/** Named by the far point: every route from home shares the start street. */
 function usePlaceNames(routes: RecurringRoute[]): Record<string, string> {
   const [places, setPlaces] = useState<Record<string, string>>({})
 
@@ -161,7 +134,6 @@ function usePlaceNames(routes: RecurringRoute[]): Record<string, string> {
   return places
 }
 
-/** The names the athlete gave their routes, by route key (App Fixes 1g). */
 function useRouteNames(): { names: Map<string, string>; save: (key: string, name: string) => Promise<void> } {
   const [names, setNames] = useState<Map<string, string>>(new Map())
 
@@ -189,7 +161,6 @@ function useRouteNames(): { names: Map<string, string>; save: (key: string, name
   return { names, save }
 }
 
-/** The owner's rename, in place: tap the name, type, Enter or blur to save. */
 function RouteName({ name, onRename }: { name: string; onRename: ((name: string) => Promise<void>) | null }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(name)
@@ -253,13 +224,10 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
   const [all, setAll] = useState(false)
 
   if (routes.length === 0) return null
-  // The top six, then a row that opens the rest (Wave 5 G).
   const shown = all ? routes : routes.slice(0, TOP_ROUTES)
 
   return (
     <section className="space-y-3">
-      {/* The key above the list, not below it: at the foot of fifteen rows it
-          arrives long after the bars it explains. */}
       <TrailKey monoAccent={monoAccent} />
 
       <ul className={cardClass({ padding: 'none', className: 'px-4 py-0.5' })}>
@@ -273,7 +241,6 @@ export function RecurringRoutes({ routes, thisYear }: Props) {
             >
               <div data-testid="route-text" className="flex min-w-0 flex-col gap-0.5">
                 <RouteName name={custom ?? places[route.id] ?? t.records.recurring.unnamed(i + 1)} onRename={isOwner && key ? (name) => save(key, name) : null} />
-                {/* The distance leads, so similar loops tell apart. */}
                 <p className="truncate text-[12.5px] text-muted-foreground">
                   {routeKm(route.distanceKm)} {t.units.km} · {t.records.recurring.runCount(route.runCount)}
                 </p>

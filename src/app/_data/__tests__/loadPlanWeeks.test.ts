@@ -10,8 +10,6 @@ const garmin = (date: string): PlannedWorkout => ({ date, name: 'Easy', type: 'B
 const PLANNED = ['2026-09-14', '2026-09-16', '2026-09-18', '2026-09-19', '2026-09-22', '2026-09-24', '2026-09-26']
 
 describe('the plan as Analytics reads it', () => {
-  // Design review, Oct 2026: the Volume read names missed sessions that came
-  // together, by the same day states Plan's month draws (monthDays).
   it('misses a session only as Plan does: past, and no run on the day or beside it', () => {
     // Thursday's run stands in for Wednesday, the next Wednesday's for that
     // Tuesday; today's session is still to come.

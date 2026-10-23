@@ -2,17 +2,21 @@
 
 import { useCallback, useSyncExternalStore } from 'react'
 
+/** Not a popstate: the app shell (NavigationHistory, AppShell) takes every popstate for Back. */
+export const URL_PARAMS_EVENT = 'runomics:url-params'
+
 function subscribe(onChange: () => void) {
   window.addEventListener('popstate', onChange)
-  return () => window.removeEventListener('popstate', onChange)
+  window.addEventListener(URL_PARAMS_EVENT, onChange)
+  return () => {
+    window.removeEventListener('popstate', onChange)
+    window.removeEventListener(URL_PARAMS_EVENT, onChange)
+  }
 }
 
 /**
- * One search param, read from the address bar and written back with
- * history.replaceState - which the Next router picks up - so a statically
- * rendered page can keep a tab in its URL without a Suspense boundary around
- * useSearchParams. The server snapshot is null: the first paint is the
- * default, and the URL's value takes over after hydration.
+ * history.replaceState, which the Next router picks up, lets a statically
+ * rendered page keep a tab in its URL without a Suspense boundary around useSearchParams.
  */
 export function useUrlParam(name: string): [string | null, (value: string | null) => void] {
   const value = useSyncExternalStore(
@@ -33,4 +37,14 @@ export function useUrlParam(name: string): [string | null, (value: string | null
   )
 
   return [value, set]
+}
+
+/** No popstate, unlike the setter: the app shell hears nothing, so the page opened next is a push, at its top. */
+export function removeUrlParams(names: readonly string[]): void {
+  const url = new URL(window.location.href)
+  const present = names.filter((name) => url.searchParams.has(name))
+  if (present.length === 0) return
+  for (const name of present) url.searchParams.delete(name)
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+  window.dispatchEvent(new Event(URL_PARAMS_EVENT))
 }

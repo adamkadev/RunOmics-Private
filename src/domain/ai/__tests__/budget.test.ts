@@ -60,7 +60,6 @@ describe('budget', () => {
     expect(BACKFILL_POOL.filter((model) => MODEL_POOL.includes(model))).toEqual([])
   })
 
-  // Oct 2026: 3.7 Flash was retired into 3.8, which is the case this budget is for.
   it('carries two worst nights of read surfaces, and one with another model retired', () => {
     const poolBudget = MODEL_POOL.reduce((sum, model) => sum + dailyBudget(model), 0)
     expect(poolBudget).toBeGreaterThanOrEqual(SURFACE_CALLS_PER_NIGHT * 2)

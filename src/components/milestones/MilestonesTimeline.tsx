@@ -33,11 +33,6 @@ function MilestoneRow({ milestone }: { milestone: Milestone }) {
   )
 }
 
-/**
- * What is on its way: the next run count and this year's next distance,
- * each with how far along it is - the timeline below only says what has
- * been done.
- */
 export function NextUpCard({ next }: { next: NextMilestone[] }) {
   if (next.length === 0) return null
   return (
@@ -65,10 +60,7 @@ export function NextUpCard({ next }: { next: NextMilestone[] }) {
   )
 }
 
-/**
- * Milestones by month, newest first. The heading names the month alone this
- * year and adds the year before it, so a row needs only its day.
- */
+/** The month heading carries the year outside this one, so a row shows only its day. */
 export function MilestonesTimeline({ milestones, today }: { milestones: Milestone[]; today: string }) {
   if (milestones.length === 0) return null
   const now = new Date(`${today}T12:00:00`)

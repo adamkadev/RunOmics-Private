@@ -53,7 +53,7 @@ describe('getHeatmapData', () => {
       distanceKm: 16.3,
       sessionCount: 3,
       longRun: false,
-      // The day's longest run, which Consistency's day cell opens.
+      // The day's longest run.
       activityId: `${A_DAY_IN_WINDOW}-8.2`,
     })
   })

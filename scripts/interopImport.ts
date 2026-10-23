@@ -1,8 +1,5 @@
 /**
- * tsx compiles these modules to CommonJS, and only Node >=24 hoists their named
- * exports onto a dynamic-import namespace. Below that the namespace is
- * `{ default: exports }` and every destructure yields undefined.
- *
+ * tsx compiles these modules to CommonJS, and below Node 24 a dynamic-import namespace is `{ default: exports }`.
  * The caller keeps the literal specifier: `interopImport(import('@/x'))`.
  */
 export async function interopImport<T>(loading: Promise<T>): Promise<T> {

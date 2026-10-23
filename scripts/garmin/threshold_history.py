@@ -1,17 +1,3 @@
-"""Sync Garmin's lactate-threshold series to the private data workspace.
-
-  biometric-service/stats/lactateThresholdHeartRate/range/{start}/{end}
-  biometric-service/stats/lactateThresholdSpeed/range/{start}/{end}
-
-Unlike user-settings, which only carries the current threshold, this range
-endpoint serves the history - so the trend is backfillable rather than starting
-the day the sync began snapshotting it (see athlete.py's record_athlete_history,
-which stays as the fallback for anything predating this).
-
-Records are spans, not days: Garmin revises the threshold every few weeks and
-returns one entry per revision, keyed here on the day it took effect.
-"""
-
 from __future__ import annotations
 
 from datetime import date
@@ -30,7 +16,7 @@ _SPEED_METRIC = "lactateThresholdSpeed"
 
 
 def normalize_stat(entries: Any) -> dict[str, float]:
-    """Garmin's span records as {day the value took effect: value}."""
+    """Garmin returns one span per threshold revision; it is keyed on the day it took effect."""
     samples: dict[str, float] = {}
 
     for entry in entries or []:
@@ -61,7 +47,6 @@ def _fetch_metric(client: GarminClient, metric: str, start: date, today: date) -
 
 
 def build_days(hr: dict[str, float], speed: dict[str, float]) -> dict[str, dict[str, Any]]:
-    """One entry per day either metric moved, each field present only if measured."""
     days: dict[str, dict[str, Any]] = {}
 
     for day in sorted(set(hr) | set(speed)):
@@ -69,8 +54,7 @@ def build_days(hr: dict[str, float], speed: dict[str, float]) -> dict[str, dict[
         if day in hr:
             sample["lthrBpm"] = round(hr[day])
         if day in speed:
-            # Same conversion as athlete.py: Garmin's threshold speed maps to
-            # seconds per kilometre through 100 / speed.
+            # Same conversion as athlete.py: Garmin's threshold speed gives s/km as 100 / speed.
             sample["thresholdPaceSecPerKm"] = round(100 / speed[day])
         days[day] = sample
 
@@ -82,11 +66,7 @@ def _load_stored() -> dict[str, dict[str, Any]]:
 
 
 def sync_threshold_history(client: GarminClient, start: date, today: date | None = None) -> int:
-    """Merge the lactate-threshold series into threshold_history.json.
-
-    Returns the day count. Merged over what is stored rather than replacing it,
-    so anything Garmin ages out of its retention window stays in ours.
-    """
+    """Merged over what is stored, so what Garmin ages out of its retention window stays in ours."""
     today = today or date.today()
     print("Syncing lactate threshold history…")
 

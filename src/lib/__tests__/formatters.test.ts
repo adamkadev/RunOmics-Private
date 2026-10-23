@@ -62,8 +62,6 @@ describe('formatPace', () => {
 })
 
 describe('formatDistance', () => {
-  // Design review, Oct 2026: one rule everywhere - "7.2 km" beside "12.9 km",
-  // never "7.20".
   it('shows 1 decimal under 100 km', () => {
     expect(formatDistance(5.123)).toBe('5.1')
     expect(formatDistance(7.2)).toBe('7.2')

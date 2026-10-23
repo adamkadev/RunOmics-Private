@@ -59,11 +59,7 @@ export function servableInsight(cached: CachedInsight | undefined, key: string |
   return servable(cached, wanted, now) ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null
 }
 
-/**
- * The whole stored document, not just the three fields a card renders - callers
- * that need to know *when* a surface was last written (and not only what it
- * says) would otherwise have to read it a second time.
- */
+/** The whole stored document, so a caller needing *when* a surface was written need not read it twice. */
 export async function readVerifiedCachedInsight(
   surface: string,
   key: string | InsightKey
@@ -80,11 +76,7 @@ export async function readVerifiedCachedInsight(
   }
 }
 
-/**
- * The surface's latest card whatever it was written from, with the moment it
- * was written: what Today shows, marked as yesterday's, between midnight and
- * the night's sync (3.1.0). Null without Firestore or on a slow read.
- */
+/** What Today shows, marked as yesterday's, between midnight and the night's sync. */
 export async function readLatestInsight(surface: string): Promise<{ insight: Insight; generatedAt: string } | null> {
   if (!process.env.FIREBASE_PROJECT_ID) return null
   try {
@@ -123,13 +115,13 @@ export async function listCachedKeys(prefix: string): Promise<Map<string, Cached
 }
 
 const PHRASING_SURFACE = 'verdictPhrasing'
-/** Enough for the latest few of each kind of session, which the pass shows first (v4.16.6). */
+/** Enough for the latest few of each kind of session, which the pass shows first. */
 const PHRASING_SIZE = 40
 
 export interface VerdictPhrasing {
   headline: string
   body: string
-  /** The kind of session it was written for; absent on phrasing kept before v4.16.6. */
+  /** Optional: phrasing stored before kinds were recorded has none. */
   kind?: string
 }
 

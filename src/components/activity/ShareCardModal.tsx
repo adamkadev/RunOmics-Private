@@ -33,20 +33,13 @@ interface Props {
 }
 
 /**
- * The card box (design review, Oct 2026): one 4:5 box on every tab, so the
- * controls under it never move - 300 x 375, or narrower on a small phone,
- * the sheet's 20 px margins and 14 px more on each side.
+ * One 4:5 box on every tab, so the controls under it never move; 68 px is the
+ * sheet's 20 px margins and 14 px more on each side.
  */
 const CARD_BOX_W = `min(${W}px, calc(100vw - 68px))`
 const SWIPE_PX = 40
 
-/**
- * The quiet segmented recipe of every other choice in the app (ui/
- * SegmentedTabs, as Settings' theme draws it): an inset track with a line,
- * the pick lifted onto the card surface in text ink. The design picker wore
- * a filled accent pill (design review, Oct 2026); the accent is the Share
- * button's. Both pickers stay radiogroups: a choice, not a tab.
- */
+/** Both pickers stay radiogroups: a choice, not a tab. */
 const SEGMENTED_TRACK = SEGMENTED_TRACK_CLASS
 
 function segmentClass(selected: boolean): string {
@@ -65,14 +58,13 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   const { design: chosen, setDesign, theme, setTheme, showReps, setShowReps } = useShareCardPrefs(appTheme, hasRoute)
   const design: ShareDesign = designs.includes(chosen) ? chosen : 'stats'
-  // An interval session's card, with its reps or as an easy run's: one
-  // colour on the route, no rep pace, the average pace back in the stats.
+  // Without its reps the card is an easy run's: one colour on the route, the
+  // average pace back in the stats.
   const card = useMemo(() => (showReps || !activity.reps ? activity : { ...activity, reps: null }), [activity, showReps])
   const { locationName } = useShareCardGeocode(activity)
   const [fontsReady, setFontsReady] = useState(0)
-  // The map fills the card, the route fitted between the header and the
-  // stats, whose height the title's lines set: measured again once Geist
-  // has loaded, as the card will be drawn in it.
+  // Measured again once Geist has loaded: the title's lines set the stats'
+  // height, and the card is drawn in Geist.
   const [mapFrame, setMapFrame] = useState(() => shareCardMapFrame(card, pageFonts()))
   // Drawn as soon as the sheet opens, so a swipe to Route finds it ready.
   const { image: mapImage, points: mapPoints, labels: mapLabels } = useShareCardMap({
@@ -87,7 +79,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
 
   const [photoImage, setPhotoImage] = useState<HTMLImageElement | null>(null)
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle')
-  // Photo with none chosen yet: the frame is the picker, and there is nothing to share.
   const awaitingPhoto = design === 'photo' && !photoImage
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -190,13 +181,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
       aria-label={s.title}
       onClick={close}
     >
-      {/* A sheet as tall as what it holds (design review, Oct 2026): handle,
-          title, card, tabs, one option row, the buttons - no spacer, the
-          run still showing above it. It scrolls only on a phone too short.
-          Liquid Glass v3's large detent (G10): full width, top corners 38 pt,
-          and the one sheet material (F18) - the glass on the wrapper, the
-          scroll inside it, so the glass never scrolls away. The card in it
-          stays opaque: it is the image that is exported. */}
+      {/* The glass on the wrapper and the scroll inside it, so the glass never
+          scrolls away. */}
       <div
         ref={trapRef}
         data-testid="share-sheet"
@@ -214,7 +200,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             <span aria-hidden="true" style={{ width: 36, height: 5, borderRadius: 2.5, background: 'rgb(127 127 127 / 0.45)' }} />
           </div>
 
-          {/* The sheet header (G10): close as a filled circle, the title centred. */}
           <div className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center" style={{ marginTop: 10, height: 44 }}>
             <button
               type="button"
@@ -266,9 +251,8 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
           <div
             role="radiogroup"
             aria-label={s.designTitle}
-            // Equal segments across the row (F3): a grid here lost to the
-            // track's own flex when the classes merged, and the labels ran
-            // together at its start.
+            // Equal segments come from SEGMENTED_FILL_SEGMENT_CLASS: a grid here loses
+            // to the track's own flex when the classes merge.
             data-testid="share-designs"
             className={cn(SEGMENTED_TRACK, 'w-full')}
             style={{ marginTop: 14 }}
@@ -287,8 +271,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             ))}
           </div>
 
-          {/* One option row, at one height on every tab: the background, or -
-              a photo covers the whole card - the photo itself. */}
           <div data-testid="share-options" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52, marginTop: 4 }}>
             {design === 'photo' ? (
               <>
@@ -318,8 +300,6 @@ export function ShareCardModal({ activity, canShareFiles, canCopyImage, onClose 
             )}
           </div>
 
-          {/* An interval session's rep pace, on every tab: off, the card is an
-              easy run's - the route in one colour, the average pace instead. */}
           {activity.reps && (
             <div data-testid="share-reps" className="flex shrink-0 items-center justify-between" style={{ minHeight: 52 }}>
               <span className="text-foreground" style={{ fontSize: 17 }}>{s.showReps}</span>

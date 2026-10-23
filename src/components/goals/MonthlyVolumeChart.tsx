@@ -8,11 +8,7 @@ import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 import { monthInitials } from './monthInitials'
 
-/**
- * A month's volume is the athlete's own data (v4.17): the accent where it
- * met its target, the accent at 40% where it fell short - the Analytics
- * weekly bars' rule.
- */
+/** The Analytics weekly bars' rule. */
 const MONTH_BAR: Record<'hit' | 'short', string> = {
   hit: 'var(--accent)',
   short: 'color-mix(in srgb, var(--accent) 40%, transparent)',
@@ -23,31 +19,17 @@ const TARGET_RULE_COLOR = 'var(--muted-foreground)'
 
 const pct = (km: number, max: number) => `${Math.min((km / max) * 100, 100)}%`
 
-/**
- * One vertical scale for every bar, so heights are comparable month to
- * month. Normalising each bar to its own target instead makes a month that
- * beat its target indistinguishable from one that met it.
- */
+/** One scale for every bar: normalised to its own target, a month that beat it would look like one that met it. */
 export function volumePlotMaxKm(months: MonthGoal[]): number {
   const peak = months.reduce((max, mg) => Math.max(max, mg.actualKm, mg.targetKm), 0)
   return peak > 0 ? peak * 1.08 : 1
 }
 
-/** The month still being run, or null when the chart shows a year that is over. */
 export function inProgressMonth(months: MonthGoal[], year: number, now = new Date()): MonthGoal | null {
   if (year !== now.getFullYear()) return null
   return months.find((mg) => mg.month === now.getMonth() + 1) ?? null
 }
 
-/**
- * The year's months against what each one asks for (3.1, App Fixes 3c):
- * twelve bars, a month at or over its target in the accent, one short of it
- * dim. Where every month asks the same - a year with no plan behind it -
- * one dashed line runs across them all; where the plan sets a month's own
- * target, each bar carries its own tick instead. The month still running is
- * its km so far inside a dashed outline of the target, and the legend says
- * whether it is on pace; the months still to come are empty columns.
- */
 export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals: MonthGoal[]; year: number; today: string }) {
   const elapsed = monthlyGoals.filter((mg) => mg.status !== 'pending')
   if (elapsed.length === 0) return null
@@ -84,9 +66,7 @@ export function MonthlyVolumeChart({ monthlyGoals, year, today }: { monthlyGoals
           if (!mg || mg.status === 'pending') return <div key={i} />
           const title = `${monthName(mg.month)}: ${m.km(formatKm(mg.actualKm), formatKm(mg.targetKm))} ${t.units.km}`
           if (current?.month === mg.month) {
-            // The month in progress: its km so far, solid, inside a dashed
-            // outline of what the month asks - short because it is unfinished,
-            // not because it failed.
+            // A dashed outline of the target: the month is short because it is unfinished, not because it failed.
             const outline = Math.max(mg.targetKm, mg.actualKm)
             return (
               <div key={i} className="relative">

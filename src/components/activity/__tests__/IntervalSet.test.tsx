@@ -26,7 +26,6 @@ const SET: RepSet = {
 }
 
 describe('IntervalSet', () => {
-  // H15, M10: band in the header, the rep as a tick on a track, one recovery row.
   it('draws each rep as a tick on a banded track, under "band 4:15–4:35"', () => {
     render(<IntervalSet set={SET} />)
 

@@ -19,15 +19,13 @@ export interface StepRow {
   fill: string
   title: string
   detail: string | null
-  /** "15′", "3×8′", "6×20s". */
   duration: string
 }
 
 const EASE_FILL = WORKOUT_SEGMENT_COLORS.warmup
-/** Strides inside an easy run are drawn at max, as Today's bar draws them. */
+/** Strides draw in Z5, as Today's bar draws them. */
 const STRIDE_FILL = zoneColor(5)
 
-/** "15′" for whole minutes, "20s" and "1:30" otherwise. */
 export function stepLength(seconds: number): string {
   return seconds >= 60 && seconds % 60 === 0 ? t.plan.steps.minutes(seconds / 60) : stepClock(seconds)
 }
@@ -44,12 +42,10 @@ function setSpanSeconds(list: WorkoutStep[], reps: WorkoutStep[]): number {
   return list.slice(first, last + 1).reduce((sum, step) => sum + stepSeconds(step), 0)
 }
 
-/** A session never ends on the jog after its last rep. */
 function trimmed(steps: WorkoutStep[]): WorkoutStep[] {
   return steps.at(-1)?.kind === 'recovery' ? steps.slice(0, -1) : steps
 }
 
-/** The profile's blocks: a session without steps is one block of work. */
 export function intensityBlocks(steps: WorkoutStep[] | null, totalSeconds: number, color: string): ProfileBlock[] {
   const list = trimmed(steps ?? [])
   if (list.length <= 1) return [{ tone: 'work', seconds: Math.max(totalSeconds, 1), fill: color }]
@@ -74,14 +70,9 @@ interface StepSession {
   kind: SessionKind
   color: string
   totalSeconds: number
-  /** The session's pace when it has no steps to carry one: "5:10–6:27 /km". */
   pace?: string | null
 }
 
-/**
- * The steps as rows: the warm-up, the work - its reps grouped into one row,
- * "3 × 8′ threshold", or the easy body and its strides - then the cool-down.
- */
 export function stepRows({ steps, type, kind, color, totalSeconds, pace = null }: StepSession): StepRow[] {
   const s = t.plan.steps
   const zone = t.trainingZones.zoneNumber(sessionZone({ type }))

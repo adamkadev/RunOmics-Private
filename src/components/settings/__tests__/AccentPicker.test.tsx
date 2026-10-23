@@ -3,17 +3,13 @@ import { render, screen } from '@testing-library/react'
 import { AccentPicker } from '@/components/settings/AccentPicker'
 import { ACCENT_IDS } from '@/lib/accent'
 
-/** Tailwind gap step -> px, for the phone gap classes this row is allowed to use. */
 const GAP_PX: Record<string, number> = { 'gap-2.5': 10, 'gap-4': 16 }
 
 /**
- * Width available to the swatch row on the narrowest device we ship a splash
- * screen for (375px, scripts/generate-splash.mjs): 375 - 32 (main's px-4,
- * AppShell) - 32 (the group row's px-4, settingsGroup) - 2 (1px border either
- * side). On a phone the row sits under its label, so it has the whole width.
+ * The narrowest splash-screen device (375px, scripts/generate-splash.mjs), less
+ * main's px-4, the group row's px-4 and its 1px borders.
  */
 const NARROWEST_ROW_PX = 375 - 32 - 32 - 2
-/** The visible swatch (3.0 1i), and the target every button keeps (hit-44). */
 const SWATCH_PX = 30
 const TARGET_PX = 44
 
@@ -25,7 +21,6 @@ function swatchRow(): HTMLElement {
 }
 
 describe('AccentPicker swatch row', () => {
-  // v4.3: five palettes and no custom hue, which could land on a zone colour.
   it('renders one swatch per accent and no custom wheel', () => {
     render(<AccentPicker />)
     expect(screen.getAllByRole('button')).toHaveLength(ACCENT_IDS.length)
@@ -36,8 +31,6 @@ describe('AccentPicker swatch row', () => {
     expect(swatchRow().classList.contains('flex-wrap')).toBe(false)
   })
 
-  // 3.0 1i: 30 pt swatches, each with a 44 pt target; on a phone the row's gap
-  // spaces the targets so they never overlap, and the row still fits.
   it('keeps every 44 pt target apart and on one row at the narrowest supported width', () => {
     render(<AccentPicker />)
     const row = swatchRow()

@@ -7,7 +7,6 @@ import { formatDurationWords, formatPlannedKm, formatWeekday } from '@/lib/forma
 import { t } from '@/i18n'
 import { kindOfType, type SessionKind } from './sessionKind'
 
-/** The next session on the plan after today, as the hero's rest row names it. */
 export interface NextSession {
   date: string
   /** Its name for a line of prose: the coach's short name where there is one. */
@@ -16,14 +15,13 @@ export interface NextSession {
   km: string | null
   /** Days after today: 1 is tomorrow. */
   inDays: number
-  /** The session's kind, the coach's own type over the plan's, for the verdict's words. */
+  /** The coach's own type over the plan's. */
   kind: SessionKind | null
-  /** The session itself, for the hero's tile: its line and its structure bar. */
   workout?: HeroWorkoutView
 }
 
-/** The plan's session on a day, in Plan's priority: the coach's over Garmin's, a cancelled one none. */
-function sessionOn(
+/** In Plan's priority: the coach's over Garmin's, a cancelled one none. */
+export function sessionOn(
   date: string,
   coach: readonly Parameters<typeof coachWorkoutView>[0][],
   garmin: readonly PlannedWorkout[],
@@ -39,11 +37,7 @@ function sessionOn(
 /** A week ahead: past that, "next" is no longer what today's rest is for. */
 const HORIZON_DAYS = 7
 
-/**
- * The first day after today with a session on it, in Plan's priority - the
- * coach's prescription over Garmin's, a cancelled one is no session - and in
- * Plan's words (workoutSummary), so the two screens name it alike.
- */
+/** In Plan's words (workoutSummary), so the two screens name it alike. */
 export function findNextSession(
   today: string,
   coach: readonly Parameters<typeof coachWorkoutView>[0][],
@@ -68,12 +62,11 @@ export function findNextSession(
   return null
 }
 
-/** Plan's week on a day, with that day selected: PlanClient reads the date from the URL. */
+/** PlanClient reads the selected day from the URL. */
 export function planDayHref(date: string): string {
   return `/plan?date=${date}`
 }
 
-/** The next-workout card: the session, when it is, and the phase it falls in. */
 export interface SessionCard {
   date: string
   /** "Tomorrow · Tue 20", "Today · Mon 19", or the day alone further out. */
@@ -91,12 +84,6 @@ export interface SessionCard {
   href: string
 }
 
-/**
- * The session the card shows (design review 3.0, mock 1b): today's until it
- * is run, then the next one in the week ahead; none in a week with nothing
- * left. Its length, then its heart-rate ceiling where the session has one,
- * else its one pace.
- */
 export function sessionCard(
   today: string,
   todayWorkout: HeroWorkoutView | null,
@@ -122,8 +109,7 @@ export function sessionCard(
   const when = date === today ? s.today : date === tomorrow ? s.tomorrow : null
   const day = formatWeekday(date, true)
   const hrCap = hrCapOf(workout)
-  // A ceiling says how to run it; without one, a single pace does. A session
-  // with several paces is Plan's to list.
+  // A ceiling says how to run it; without one, a single pace does; several paces are Plan's to list.
   const limit = hrCap ? `${s.hrCap(hrCap)} ${t.units.bpm}` : summary?.paces.length === 1 ? paceLabel(summary.paces[0]!) : null
   return {
     date,

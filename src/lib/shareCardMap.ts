@@ -1,11 +1,6 @@
 export type LngLat = [number, number]
 
-/**
- * The route's room on each side of the share card's map, in px. The map
- * fills the whole card under the header and the stats (redesign, Oct 2026),
- * so the route is fitted between them: 16 px under the header's words and
- * 16 px over the stats, ROUTE_INSET from the card's sides.
- */
+/** The route's room on each side of the card's map, in px. */
 export interface RouteFrame {
   top: number
   right: number
@@ -13,14 +8,9 @@ export interface RouteFrame {
   left: number
 }
 
-/**
- * The route's room from the card's sides. Wide enough that an end marker
- * centred on the frame's edge still clears the card's text margin: the
- * finish flag sat a few px off the border while the words kept 16.
- */
+/** Wide enough that an end marker centred on the frame's edge still clears the card's 16 px text margin. */
 export const ROUTE_INSET = 27
 
-/** The route's clearance from the header's words and from the stats. */
 export const ROUTE_TEXT_GAP = 16
 
 const MAX_POINTS = 150
@@ -40,7 +30,6 @@ const MIN_EXTENT = 1e-7
 
 const UNIFORM: RouteFrame = { top: ROUTE_INSET, right: ROUTE_INSET, bottom: ROUTE_INSET, left: ROUTE_INSET }
 
-/** The route fitted into a w x h box, `frame` clear of its edges: the card without its basemap. */
 export function projectRoute(route: LngLat[], w: number, h: number, frame: RouteFrame = UNIFORM): [number, number][] {
   const simplified = simplifyRoute(route)
   const pts = simplified.map(mercator)
@@ -63,10 +52,9 @@ export function projectRoute(route: LngLat[], w: number, h: number, frame: Route
 }
 
 /**
- * Points every `step` px along a line drawn on screen (redesign, Oct 2026):
- * an invisible icon on each, placed above the place names, makes a name that
- * would touch the route collide and be dropped, as the edge fence does at
- * the canvas edge. Vertices are kept, so a corner is fenced too.
+ * An invisible icon on each point, placed above the place names, makes a name
+ * that would touch the route collide and be dropped. Vertices are kept, so a
+ * corner is fenced too.
  */
 export function routeFencePoints(pts: readonly [number, number][], step = 6): [number, number][] {
   const out: [number, number][] = []
@@ -82,11 +70,7 @@ export function routeFencePoints(pts: readonly [number, number][], step = 6): [n
   return out
 }
 
-/**
- * Points every `step` px across the card where the header's band and the
- * stats' band meet the map, out to the far edge: a name cut by either fade
- * is dropped, as one cut by the canvas edge is.
- */
+/** A name cut by either band's fade is dropped, as one cut by the canvas edge is. */
 export function bandFencePoints(w: number, ys: readonly number[], step = 16): [number, number][] {
   const out: [number, number][] = []
   for (const y of ys) {

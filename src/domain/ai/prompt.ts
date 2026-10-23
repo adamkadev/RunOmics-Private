@@ -1,33 +1,19 @@
 import { activeLocale } from '@/i18n'
 
 /**
- * Part of the hash of every single-card surface (Today, PB celebration, shoe
- * verdict): bump it with a change to their prompts or the shared rules below,
- * and each card is written again on the next pass instead of keeping copy
- * from the old prompt. Run verdicts carry their own (RUN_VERDICT_PROMPT_VERSION).
- * 4: Today's copy is one claim and one piece of advice, in two lines at most
- * (design review, Oct 2026).
+ * Part of every single-card surface's hash: bump it with a change to their prompts or the shared rules below,
+ * so each card is written again. Run verdicts carry their own (RUN_VERDICT_PROMPT_VERSION).
  */
 export const CARD_PROMPT_VERSION = 4
 
-/**
- * The French writing rules carry their own version, folded into every
- * surface's prompt version on a French build only: tightening them writes the
- * French cards and verdicts again without spending an English deployment's
- * daily budget on copy that did not change.
- */
+/** Folded into prompt versions on a French build only, so tightening the French rules spends no English deployment's daily budget. */
 const FRENCH_RULES_VERSION = 1
 
 export function promptVersion(version: number): number | string {
   return activeLocale === 'fr' ? `${version}-fr${FRENCH_RULES_VERSION}` : version
 }
 
-/**
- * Translated English read as translated English (a French deployment, Oct
- * 2026): the facts and rules are English, so the model carried their turns of
- * phrase over word for word, and it agreed adjectives with an athlete whose
- * gender it is never told.
- */
+/** The facts and rules are English, so the model carries their phrasing over word for word; it is never told the athlete's gender. */
 const FRENCH_RULES = [
   'Write in French, tutoiement, as a French-speaking running coach would say it out loud: never as a translation of the English facts and rules you are given.',
   'Use the words French runners use (footing, sortie longue, endurance, fractionné, séance au seuil, allure, récup) and never carry an English turn of phrase over word for word: no « garder le facile facile », « faire compter », « payer » for a benefit, « construire de la condition ».',
@@ -55,14 +41,7 @@ export function systemInstruction(role: string, bodySpec: string, limits: Limits
   ].join(' ')
 }
 
-/**
- * What the model must not repeat (v4.16.4). A card's own earlier headlines
- * are its history, which it should not echo; other runs' verdicts are cards
- * around it, whose wording it must not reuse. Their angle too, unless the run
- * leaves no other (v4.16.6): "the same angle is fine" had every threshold
- * verdict lead on the reps' evenness. Banning it outright left no angle once a
- * backfill had written thirty verdicts; the pass shows only a few now.
- */
+/** Another run's lead fact is avoided only while this run has another: a ban leaves no angle once many verdicts are shown. */
 export function avoidClause(recent: string[], source: 'thisCard' | 'otherRuns' = 'thisCard'): string {
   if (recent.length === 0) return ''
   const quoted = recent.map((line) => `"${line}"`).join(', ')

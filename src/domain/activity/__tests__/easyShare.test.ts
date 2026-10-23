@@ -33,7 +33,6 @@ describe('easyShare', () => {
     expect(easyShare([zones(1_800, 0, 1_800), { type: 'Base', seconds: 3_600 }])).toEqual({ easy: 75, hard: 25 })
   })
 
-  // G09: the mean of monthly shares is not the share of the period.
   it('weights by time, so a long month counts for more than a short one', () => {
     expect(easyShare([zones(9_000, 0, 1_000), zones(0, 0, 1_000)])).toEqual({ easy: 82, hard: 18 })
   })

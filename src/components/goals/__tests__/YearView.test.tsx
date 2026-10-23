@@ -9,10 +9,7 @@ const p = t.goals.projection
 const YEAR = new Date().getFullYear()
 const TODAY = isoDate(new Date())
 
-/**
- * The annual goal card on its own: no targets and no races, so the season
- * timeline and the monthly chart stay out of the tree.
- */
+/** No targets and no races, so the season timeline and the monthly chart stay out of the tree. */
 function yearData(projection: GoalProjection): YearData {
   return {
     year: YEAR,
@@ -36,7 +33,6 @@ const BEHIND: GoalProjection = {
 }
 
 describe('YearView annual goal card', () => {
-  // v4.17: the year's km are the athlete's own data - the accent, whatever the projection says.
   it('fills in the accent regardless of projection status - the fill states progress, not a verdict', () => {
     const onTrack: GoalProjection = {
       weeklyRate: 30,
@@ -48,8 +44,6 @@ describe('YearView annual goal card', () => {
     for (const projection of [BEHIND, onTrack]) {
       const { container } = render(<YearView yearData={yearData(projection)} today={TODAY} />)
       const fill = container.querySelector<HTMLElement>('[data-testid="goal-fill"]')
-      // Amber would fire in January on a healthy year; the verdict lives only
-      // in the projection line.
       expect(fill!.className).toContain('bg-accent')
     }
   })
@@ -59,21 +53,19 @@ describe('YearView annual goal card', () => {
     const marker = container.querySelector<HTMLElement>('[aria-label*="1,705"]')
     expect(marker).not.toBeNull()
     expect(marker!.style.left).toBe('85.25%')
-    // Falling short is a caution: the marker and its label are warn.
     expect(marker!.style.background).toBe('var(--warn)')
     expect(screen.getByText(p.projectedMark('1,705')).getAttribute('style')).toContain('var(--warn)')
-    // C3: no "proj." label under it; the sentence below names the projection.
+    // No "proj." label under it: the sentence below names the projection.
     expect(screen.queryByText(p.projectedTick)).toBeNull()
   })
 
   it('names the projection as the headline under the bar, in the shortfall tone', () => {
     const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
 
-    // C3: only the short verdict is in the tone; the need follows in text-2.
+    // Only the short verdict is in the tone; the need follows in text-2.
     const headline = screen.getByTestId('projection-verdict')
     expect(headline.textContent).toBe(p.shortAtPace('295'))
     expect(headline.getAttribute('style')).toContain('var(--warn)')
-    // 3.1: a shortfall says what closes it.
     expect(screen.getByTestId('projection-line').textContent).toContain(p.closes('29', '25'))
     expect(screen.getByTestId('goal-left').textContent).toBe(p.toGo('679'))
     // No small top-right chip repeating the same verdict a second time.
@@ -94,7 +86,6 @@ describe('YearView annual goal card', () => {
 
   it('has no second progress readout competing with the bar', () => {
     const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
-    // The emerald "66%" duplicated the bar and clashed with the amber verdict.
     expect(container.textContent).not.toContain('%')
   })
 
@@ -107,14 +98,12 @@ describe('YearView annual goal card', () => {
       deltaKm: 30,
     }
     const { container } = render(<YearView yearData={yearData(surplus)} today={TODAY} />)
-    // 2030 against a 2000 goal is a surplus; reading the sign off `status`
-    // (which is merely 'on_track' here) would have called this "short" instead.
+    // 2030 against a 2000 goal is a surplus, though `status` is merely 'on_track'.
     expect(container.textContent).toContain(p.overAtPace('30'))
     expect(container.textContent).not.toContain(p.shortAtPace('30'))
     expect(screen.getByTestId('projection-verdict').getAttribute('style')).toContain('var(--pos)')
   })
 
-  // R7d: a reached goal says so, with the surplus, in a pos pill (v4.17).
   it('marks a reached goal with a pill', () => {
     const data = yearData(BEHIND)
     const { container } = render(<YearView yearData={{ ...data, totalDistanceKm: 2047 }} today={TODAY} />)

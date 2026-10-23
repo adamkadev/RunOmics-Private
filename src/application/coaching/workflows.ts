@@ -32,8 +32,6 @@ import { coachingContextHash, type CoachingContext } from './context'
 import type { CoachingProposal } from './proposal'
 import { parseCoachingProposal } from './proposal'
 
-// v2: workouts named by the naming rules, with a shortName and a structure
-// (design review, Oct 2026).
 const PROMPT_VERSION = 'coaching-v2'
 const NEAR_TERM_RACE_DAYS = 7
 
@@ -51,7 +49,7 @@ function defaultId(): string {
 type Source = CoachingProvenance['source']
 type AdaptationTrigger = 'post_activity' | 'weekly_review' | 'autoregulation'
 
-/** Whoever wrote the advice: an advisor that does not say is the Gemini one every plan came from before. */
+/** An advisor that does not say is the Gemini one. */
 function sourceOf(services: WorkflowServices): Source {
   return services.advisor.source ?? 'gemini'
 }
@@ -87,7 +85,7 @@ function eventFromRace(race: CoachingContext['upcomingRaces'][number], role: Coa
 }
 
 interface BootstrapTargetStrategy {
-  /** Null for general preparation: the block progresses fitness toward no race. */
+  /** Null for general preparation. */
   primary: TargetEvent | null
   tuneUps: TargetEvent[]
   planningStartDate: string
@@ -125,8 +123,6 @@ function selectBootstrapTarget(context: CoachingContext, targetEventId?: string,
     : undefined
   if (targetEventId && !overridden) throw new Error(`Upcoming race not found: ${targetEventId}`)
   const nearest = races.find((race) => race.date >= planningStartDate)
-  // With no race to aim at, or none wanted, the block is general preparation:
-  // the full four weeks, and any race inside them run as a supporting one.
   if (general || !nearest) {
     const tuneUps = races
       .filter((race) => race.date >= planningStartDate && race.date <= fullHorizonEnd)
@@ -162,7 +158,6 @@ function selectGoal(context: CoachingContext, event: TargetEvent | null): Traini
     : { kind: 'finish', description: `Complete ${event.name}.` }
 }
 
-/** A session's totals, where every segment gives one; a mixed session has none. */
 function calculatedTotals(blocks: WorkoutBlock[]): Pick<WorkoutPrescription, 'totalDurationSeconds' | 'totalDistanceMeters'> {
   const segments = blocks.flatMap((block) => block.kind === 'repeat'
     ? block.steps.map((step) => ({ segment: step, multiplier: block.repetitions }))
@@ -175,12 +170,7 @@ function calculatedTotals(blocks: WorkoutBlock[]): Pick<WorkoutPrescription, 'to
   }
 }
 
-/**
- * The current plan's sessions from today until a later --start, kept exactly
- * as written - ids, titles and all - in the weeks they already sat in, cut to
- * those days. They were judged when they were written, as an adaptation keeps
- * a title the plan already held.
- */
+/** Kept exactly as written, ids and titles included: they were judged when they were written. */
 function carriedWeeks(plan: CoachingPlan | null, from: string, before: string): TrainingWeek[] {
   if (!plan || before <= from) return []
   const lastDay = new Date(Date.parse(`${before}T00:00:00Z`) - DAY_MS).toISOString().slice(0, 10)
@@ -214,8 +204,8 @@ function normalizeBootstrapPlan(
     }
   })
   const planId = id()
-  // Kept weeks come first and take the first indexes; their workouts keep the
-  // ids they were written with, which carry the outgoing plan's id.
+  // Kept weeks take the first indexes; their workouts keep the ids they were written with, which carry
+  // the outgoing plan's id.
   const keptWeeks = carried.map((week, weekIndex) => ({ ...week, id: `${planId}:week:${weekIndex + 1}`, index: weekIndex + 1 }))
   const normalizedWeeks = draft.weeks.map((week, draftIndex) => {
     const weekIndex = keptWeeks.length + draftIndex
@@ -315,10 +305,8 @@ function normalizeWeeks(
   decisionId: string,
   id: () => string,
 ): TrainingWeek[] {
-  // Identity is the model's claim, so it is honoured only where it can be
-  // true: a prescription in the future being replaced. An id naming one that
-  // is already past is not a continuation of it - the past is fixed - and the
-  // draft is a new prescription with an id of our own.
+  // The model's ids are honoured only for future prescriptions being replaced: the past is fixed, so an id
+  // naming a past one gets a new prescription with an id of our own.
   const existing = new Map(plan.weeks
     .flatMap((week) => week.workouts)
     .filter((workout) => workout.date >= effectiveDate)
@@ -479,12 +467,7 @@ function evaluationFor(
   })
 }
 
-/**
- * Our own rules reject a draft over wording as often as over substance - a week
- * that says "freshness" where the validator wants "taper", a title using the
- * word progressive. Throwing the draft away leaves an expensive answer unused
- * and the model none the wiser, so the complaint goes back with the next ask.
- */
+/** Drafts fail over wording as often as substance, so the complaint goes back with the next ask instead of the draft being thrown away. */
 const REPAIR_ATTEMPTS = 2
 
 async function draftUntilAccepted(
@@ -515,9 +498,6 @@ export async function createBootstrapProposal(
   general = false,
   start?: string,
 ): Promise<CoachingProposal> {
-  // Bootstrap is how a block is written, and blocks are rewritten - a rejected
-  // plan, a changed goal, a week that turned out wrong. Refusing outright left
-  // deleting current_plan.json by hand as the only way through.
   const existing = services.repository.getCurrentPlan()
   if (existing && !replace) {
     throw new Error('A current coaching plan already exists; pass --replace to supersede it')
@@ -582,8 +562,7 @@ export async function createBootstrapProposal(
     createdAt,
     referenceDate: context.referenceDate,
     contextHash: coachingContextHash(context),
-    // Null for a first block; when replacing, the plan being superseded, so
-    // the proposal still goes stale if that plan moves under it.
+    // When replacing, the superseded plan, so the proposal goes stale if that plan moves under it.
     basePlanId: existing?.id ?? null,
     basePlanRevision: existing?.revision ?? null,
     proposedPlan,
@@ -613,8 +592,6 @@ async function createAdaptationProposal(
     ? await services.advisor.evaluateActivity({ context, activity, prescription: matched })
     : await services.advisor.reviewWeek({ context })
   const decision = decisionFromAdvice(advice, plan, sourceOf(services), kind, effectiveDate, createdAt, id(), id)
-  // Judged on the plan it would produce, by the rules a bootstrap answers to:
-  // until this, only the decision's own shape was checked.
   validateAdaptation(plan, applyCoachDecision(plan, decision), context)
   const hash = coachingContextHash(context)
   const evaluation = activity ? evaluationFor(plan, activity, decision, hash, createdAt, id, sourceOf(services)) : undefined
@@ -676,7 +653,6 @@ function lighterWeekAdvice(plan: CoachingPlan, fatigue: FatigueReading, referenc
   const changes = lighterWeekSessions(plan, fatigue.run.date, referenceDate).flatMap((workout) => {
     const lighter = lighterWorkout(workout)
     if (!lighter) return []
-    // A shorter run's old totals would misstate it, so they are worked out again.
     const recounted: WorkoutPrescription = { ...lighter }
     delete recounted.totalDistanceMeters
     delete recounted.totalDurationSeconds
@@ -696,11 +672,7 @@ function lighterWeekAdvice(plan: CoachingPlan, fatigue: FatigueReading, referenc
   }
 }
 
-/**
- * A change the athlete's own runs call for, written as a proposal and never
- * applied here: the athlete reads it and applies it, as any other. Null when
- * there is nothing in the plan for it to change.
- */
+/** Written as a proposal, never applied here: the athlete reads it and applies it, as any other. */
 export function createAutoregulationProposal(
   context: CoachingContext,
   services: Omit<WorkflowServices, 'advisor'>,

@@ -35,11 +35,7 @@ import {
   type ShoeVerdictContext,
 } from '@/domain/ai/shoeVerdictInsight'
 
-/**
- * One card the insight pass may write: the document it lives in, what the
- * model is asked, the hash that says the stored copy is still current, and the
- * pages to revalidate once it changes.
- */
+/** `surface` is the document it is stored in, `hash` says whether the stored copy is current, `paths` are revalidated once it changes. */
 export interface SurfaceJob {
   surface: string
   limits: Limits
@@ -50,38 +46,21 @@ export interface SurfaceJob {
   paths: string[]
 }
 
-/** A surface with nothing to write about this pass says why, and the reason goes into the report. */
+/** A string is the reason a surface has nothing to write this pass, for the report. */
 export type SurfacePlan = SurfaceJob | string
 
-/**
- * A read several surfaces share, made the first time one of them asks. Lazy
- * rather than up front, so a data file that makes one of these throw still
- * ends the pass where it always did - after the fresh verdicts - instead of
- * before anything is written.
- */
+/** Lazy, so a read that throws ends the pass after the fresh verdicts are written, not before. */
 function once<T>(read: () => T): () => T {
   let result: { value: T } | undefined
   return () => (result ??= { value: read() }).value
 }
 
-/**
- * Everything the insight pass writes about, built from the app's own data.
- * One instance per pass: training status and records are each computed once
- * here, where the surfaces used to compute them twice. Only cards a page
- * displays: the season headline and the four Analytics tab cards went when
- * v4.6 replaced them with the rule-based coach read, and stopped being
- * written in v4.16.4.
- */
 export function insightSurfaces() {
   const records = once(getRecords)
   const status = once(getTrainingStatus)
 
   return {
-    /**
-     * Every run's context, with the athlete's note where there is one. A pass
-     * that cannot read the notes leaves them undefined - never an empty note,
-     * which would read as the athlete having written nothing (v4.16.5).
-     */
+    /** Unreadable notes stay undefined, never empty: an empty note would read as the athlete having written nothing. */
     async runVerdicts(): Promise<{ contexts: RunVerdictContext[]; recordActivityIds: ReadonlySet<string> }> {
       const [notes, recordEfforts] = await Promise.all([getActivityNotes(), records()])
       return {
@@ -126,7 +105,6 @@ export function insightSurfaces() {
       }
     },
 
-    /** Only the pairs worn far enough to deserve a verdict appear at all. */
     shoeVerdicts(): Record<string, SurfaceJob> {
       const jobs: Record<string, SurfaceJob> = {}
 

@@ -11,7 +11,6 @@ import { GoalsHistory } from './GoalsHistory'
 import { t } from '@/i18n'
 import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
 
-/** The season open on arrival: this year, or the newest one when it has no data. */
 export function defaultGoalsYear(years: readonly number[], today: string): number | undefined {
   const current = Number(today.slice(0, 4))
   return years.includes(current) ? current : years[0]
@@ -20,18 +19,13 @@ export function defaultGoalsYear(years: readonly number[], today: string): numbe
 const STEP_BTN =
   'hit-44 flex size-9 items-center justify-center rounded-full text-foreground transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-35'
 
-/**
- * ‹ 2026 › (3.1): the season on show, a step at a time - left to the year
- * before, right to the one after. `years` runs newest first. Glass at rest,
- * a 44 pt capsule, as its copy in the compact bar (Liquid Glass v2).
- */
+/** `years` runs newest first. */
 export function YearStepper({ years, value, onChange }: { years: readonly number[]; value: number; onChange: (year: number) => void }) {
   const i = years.indexOf(value)
   const older = years[i + 1]
   const newer = i > 0 ? years[i - 1] : undefined
   return (
-    // data-bar-segments="stepper": the compact top bar carries it once it
-    // scrolls away (Liquid Glass v2, round 2), its value the data-bar-value.
+    // data-bar-segments: the compact top bar carries the stepper once it scrolls away, its value the data-bar-value.
     <div role="group" aria-label={t.goals.yearStepper} data-bar-segments="stepper" className={glassClass('regular', 'flex h-11 shrink-0 items-center gap-0.5 p-1')} data-testid="year-stepper">
       <GlassLayers />
       <button type="button" className={STEP_BTN} aria-label={t.goals.prevYear} disabled={older === undefined} onClick={() => older !== undefined && onChange(older)}>
@@ -47,10 +41,9 @@ export function YearStepper({ years, value, onChange }: { years: readonly number
 
 interface Props {
   data: GoalsPageData
-  /** The date the page was prerendered on; see useToday. */
+  /** The date the page was prerendered on. */
   today: string
   block?: SeasonBlock | null
-  /** The way back, the button row's leading control; the year stepper takes its trailing end. */
   back?: ReactNode
 }
 
@@ -63,13 +56,7 @@ export function GoalsClient({ data, today: serverToday, block = null, back }: Pr
 
   return (
     <div className="flex flex-col gap-3.5">
-      {/* A control may sit beside a large title only while the title stays
-          on one line; if it would wrap, the control moves to the button row
-          (L3). Beside the stepper "Goals & season" broke onto two lines and
-          pushed the first card 50 pt down, so the stepper sits in the button
-          row, opposite the back button, and the title takes the full width
-          under it. The year is not in the title: the stepper says which
-          season is showing. */}
+      {/* The stepper sits in the button row, not beside the title: there the title would wrap onto two lines. */}
       <header className="mb-1.5 flex flex-col">
         <div className="flex items-start justify-between gap-3">
           {back}

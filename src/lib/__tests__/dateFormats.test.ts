@@ -13,12 +13,7 @@ describe('formatDate', () => {
     expect(formatDate('2025-06-27', { now })).toBe('Fri, Jun 27, 2025')
   })
 
-  /*
-   * The formatter this replaces fell back to `{month, year:'2-digit'}` for
-   * prior years, which dropped the day: a record set in March 2023 rendered
-   * `Mar 23` and read as the 23rd of March. Whatever else a past date loses,
-   * it keeps its day.
-   */
+  // `Mar 23` would read as the 23rd of March: a past date keeps its day.
   it('never drops the day from a prior-year date', () => {
     for (const options of [{ now }, { now, style: 'bare' as const }, { now, style: 'full' as const }]) {
       expect(formatDate('2023-03-04', options)).toMatch(/\b4\b/)
@@ -59,10 +54,7 @@ describe('formatDateRange', () => {
     expect(formatDateRange('2026-09-01', '2026-09-16', { now, precision: 'month' })).toBe('Sep')
   })
 
-  /*
-   * formatRange repeats every field on both sides, so a weekday would be paid
-   * for twice - `Mon, Sep 7 - Sun, Sep 13` for what `Sep 7 - 13` already says.
-   */
+  // formatRange repeats every field on both sides, so a weekday would be paid for twice.
   it('carries no weekday, even at the default style', () => {
     expect(formatDateRange('2026-09-07', '2026-09-13', { now })).not.toMatch(/Mon|Sun/)
   })

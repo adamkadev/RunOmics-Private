@@ -14,8 +14,7 @@ vi.mock('../RunPlace', () => ({ RunPlace: () => null }))
 vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: false }))
 vi.mock('@/lib/useOwnerAuth', () => ({ useOwnerAuth: () => ({ isOwner: true }) }))
 
-// jsdom lays nothing out, so whether the tabs are pinned, and where they rest,
-// are set here.
+// jsdom lays nothing out, so whether the tabs are pinned, and where they rest, are set here.
 const strip = vi.hoisted(() => ({ pinned: false, restingTop: 0 }))
 vi.mock('@/lib/useStuck', () => ({
   isStuck: () => strip.pinned,
@@ -61,8 +60,6 @@ describe('ActivityDetailClient', () => {
     vi.restoreAllMocks()
   })
 
-  // 3.0: map, title, the four numbers, the verdict with its chips, then the
-  // tabs right after it.
   it('keeps the run in reading order: map, title, stats, verdict, tabs', () => {
     const { container } = renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView })
     const order = ['run-hero', 'activity-subtitle', 'run-stats', 'run-verdict', 'sticky-bar'].map((id) => screen.getByTestId(id))
@@ -70,11 +67,9 @@ describe('ActivityDetailClient', () => {
       expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     }
     expect(container.querySelector('h1')!.textContent).toBe('Threshold run')
-    // Type · date above the 30 pt title.
     expect(screen.getByTestId('activity-subtitle').textContent).toContain(`${t.activityTypes.Threshold}·Sun, Oct 18`)
   })
 
-  // Round 2, the owner's Aug 14: "Base" over "● Base" said it twice; the dot says it.
   it('leaves the type to its dot when the title is the type alone', () => {
     renderDetail({ activity: { ...ACTIVITY, type: 'Tempo' } as ActivityDetailView, name: 'Base', shownType: 'Base' })
     const line = screen.getByTestId('activity-subtitle').textContent ?? ''
@@ -82,15 +77,12 @@ describe('ActivityDetailClient', () => {
     expect(line).not.toContain(t.activityTypes.Tempo)
   })
 
-  // Round 2: a threshold session the watch filed as tempo is shown as threshold.
   it("names the session's type over the title where it is not the watch's", () => {
     renderDetail({ activity: { ...ACTIVITY, type: 'Tempo' } as ActivityDetailView, shownType: 'Threshold' })
     expect(screen.getByTestId('activity-subtitle').textContent).toContain(`${t.activityTypes.Threshold}·Sun, Oct 18`)
     expect(screen.getByTestId('activity-subtitle').textContent).not.toContain(t.activityTypes.Tempo)
   })
 
-  // 3.0 cut the 2 x 2 card under the map and the strip pinned under the tabs:
-  // one strip of four numbers.
   it('shows the four numbers once, as a four-column strip', () => {
     strip.pinned = true
     renderDetail()
@@ -98,17 +90,13 @@ describe('ActivityDetailClient', () => {
     expect(stats.textContent).toBe(
       `${formatDistance(6.11)}${t.units.km}${t.activity.stats.distance}25:24${t.activity.stats.duration}4:10${t.units.perKm}${t.activity.stats.pace}115${t.units.bpm}${t.activity.stats.avgHr}`,
     )
-    // F8: four equal columns 8 pt apart, the time with no "min".
     expect(stats.className).toContain('grid-cols-[repeat(4,minmax(0,1fr))]')
     expect(stats.className).toContain('gap-x-2')
     expect(screen.queryByTestId('run-summary')).toBeNull()
     expect(screen.getAllByText(t.activity.stats.distance)).toHaveLength(1)
   })
 
-  // L2: "Time" has no unit, so its cell was shorter and its label rode up
-  // about 7 pt. Two rows across the grid: every value in a fixed 44 pt row,
-  // its 32 pt box at the row's foot, then every label, so no cell sets
-  // another's height; each value still comes before its label.
+  // "Time" has no unit: a cell sized by its content would lift its label above the others.
   it('puts every value in one fixed row and every label in the next, unit or not', () => {
     renderDetail()
     const stats = screen.getByTestId('run-stats')
@@ -126,13 +114,11 @@ describe('ActivityDetailClient', () => {
       expect(value.className).toContain('text-[length:min(28px,')
       expect(value.nextElementSibling?.hasAttribute('data-stat-label')).toBe(true)
     }
-    // The time, unitless, in the same 32 pt box; a unit is an inline 14 pt span at line-height 1.
     expect(values[1]!.children).toHaveLength(0)
     expect(values[0]!.querySelector('span')!.className).toContain('leading-none')
     expect(labels[0]!.className).toContain('text-[15px]')
   })
 
-  // 3.0: the four full-width rows became one row of chips.
   it('reads Effort, conditions, shoe and note as chips in the verdict card', () => {
     const weather = { tempC: 18, apparentTempC: 18, humidityPct: 60, windKph: 2, windDirDeg: 0, precipitationMm: 0, code: 0 }
     renderDetail({ activity: { ...ACTIVITY, rpe: 1, weather } as ActivityDetailView, shoe: { name: 'Vomero Plus', dotColor: '#fff' } })
@@ -148,8 +134,6 @@ describe('ActivityDetailClient', () => {
     expect(screen.queryByTestId('run-conditions')).toBeNull()
   })
 
-  // 3.0 override 1: the way out to the watch's app is drawn only for a run
-  // the watch gave an id to; the brand then lives in the URL alone.
   it('asks to add a shoe on a run the watch has a page for', () => {
     renderDetail({ activity: { ...ACTIVITY, id: '90000276' } as ActivityDetailView })
     const chip = screen.getByTestId('run-shoe')
@@ -175,7 +159,7 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByTestId('run-effort').textContent).toBe(`${t.activity.effort.label} ${t.activity.effort.notLogged}`)
   })
 
-  // The tab lived in useState: going back from Charts reset it to Overview.
+  // Going back to the run must land on the tab it was left on, not Overview.
   it('keeps the selected tab in ?tab=', () => {
     renderDetail()
 
@@ -191,8 +175,7 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByRole('tab', { name: t.activity.tabs.intervals })).toHaveAttribute('aria-selected', 'true')
   })
 
-  // 3.0: everything above the tabs is the same on every tab, so a switch
-  // never moves the page under the hero.
+  // So a tab switch never moves the page under the hero.
   it('keeps the map, title, numbers and verdict above every tab', () => {
     window.history.replaceState(null, '', '/activities/a1?tab=intervals')
     renderDetail({ activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]] } as ActivityDetailView })
@@ -203,7 +186,6 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByTestId('run-verdict')).toBeInTheDocument()
   })
 
-  // The hero's buttons: back on the left, expand and share on the right.
   it('floats back, expand and share on the map, and expand opens it full screen', () => {
     renderDetail({
       activity: { ...ACTIVITY, route: [[6.17, 49.12], [6.18, 49.13]], elevationGain: 64.4 } as ActivityDetailView,
@@ -215,7 +197,6 @@ describe('ActivityDetailClient', () => {
 
     act(() => hero.getByRole('button', { name: t.activity.map.fullscreen }).click())
     expect(hero.getByTestId('map').hasAttribute('data-fullscreen')).toBe(true)
-    // The floating card: name, date, then distance, time, pace and the climb.
     expect(hero.getByTestId('map').textContent).toContain('Threshold runSun, Oct 18')
     expect(hero.getByTestId('map-card-stats').textContent).toBe(
       `${formatDistance(6.11)}${t.units.km}${t.activity.map.stats.distance}25:24${t.units.min}${t.activity.map.stats.time}4:10${t.units.perKm}${t.activity.map.stats.pace}+64${t.units.m}${t.activity.map.stats.elevation}`,
@@ -238,9 +219,6 @@ describe('ActivityDetailClient', () => {
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 480, behavior: 'instant' })
   })
 
-  // 3.0.2 (5c): a short tab left the page too short for the strip to reach
-  // the title bar, a sliver of the card above showing between them. The
-  // panel is a phone screen less the bars, the strip and the page's foot.
   it('makes the panel tall enough for the strip to pin on a short tab', () => {
     renderDetail()
     act(() => screen.getByRole('tab', { name: t.activity.tabs.intervals }).click())
@@ -256,7 +234,6 @@ describe('ActivityDetailClient', () => {
     expect(scrollTo).not.toHaveBeenCalled()
   })
 
-  // v4.17: the insight's eyebrow says how the session went, in its status colour.
   it('heads the verdict with one accent label: how it went and what it was', () => {
     renderDetail({ activity: { ...ACTIVITY, rpe: 7 } as ActivityDetailView })
 

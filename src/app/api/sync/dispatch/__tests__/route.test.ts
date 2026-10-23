@@ -40,7 +40,6 @@ describe('syncConfig', () => {
   })
 })
 
-// Design review, Oct 2026: the limits come from GitHub's own record of the runs.
 describe('readSyncGate', () => {
   const config = { repo: 'adamkadev/RunOmics-Private', workflow: 'sync.yml', ref: 'main', token: 'ghp_test', profile: 'adam' }
   const NOW = Date.parse('2026-10-07T12:00:00Z')

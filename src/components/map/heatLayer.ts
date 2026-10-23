@@ -7,28 +7,20 @@ import { hexToRgb, mix, rgbCss, scale } from "@/lib/heatRamp";
 export const HEAT_SOURCE = "heat";
 export const HEAT_LAYER = "heat";
 
-/** A new set of routes fades in over this long. */
 const REVEAL_MS = 600;
 
 /** Canvas drawn past each edge, a quarter of the view, so a pan shows tracks before the redraw. */
 const MARGIN = 0.25;
-/** The canvas is uploaded as a texture on every redraw: at most this many pixels, and 4096 a side. */
+/** The canvas is uploaded as a texture on every redraw. */
 const MAX_PIXELS = 8_000_000;
 const MAX_SIDE = 4096;
 /** MapLibre's zoom 0 is one 512 px tile. */
 const TILE_SIZE = 512;
 
 /**
- * Light (mirrors dark A): each layer is every run stroked in white, its
- * transparency added up per run and capped at 1, then tinted. A soft glow
- * (full at ~33 runs), a mint line (full at 10 runs) and a deep line on top
- * (full at ~45 runs), so one run is a faint mint thread, the streets in
- * between a separate mint step, and only the top corridors deep green over
- * a mint glow. Vector strokes on the GPU, never read back.
- *
- * `minM`: the mint and deep lines are never narrower than this many metres,
- * so the runs on one street (GPS puts them 5-12 m apart) overlap into one
- * line instead of showing as strands when zoomed in. The glow has none.
+ * Each layer adds up every run's transparency, capped at 1, then is tinted:
+ * the glow is full at ~33 runs, mint at 10, deep at ~45. `minM` keeps the runs
+ * on one street, which GPS puts 5-12 m apart, one line when zoomed in.
  */
 const HEAT_LIGHT = {
   glow: { width: 4, alpha: 0.03, opacity: 0.6, sigmaPx: 3.2 },
@@ -45,38 +37,23 @@ const hasFilter = typeof document !== "undefined" && (() => {
 })();
 
 export interface HeatLayer {
-  /** Replace the tracks drawn, fading them in unless `reveal` is false. */
   setTracks(tracks: Float64Array[], reveal: boolean): void;
   remove(): void;
 }
 
 /**
- * The heat tracks as a canvas the map georeferences (v4.17). Additive and
- * multiplied blending are a 2D canvas's, not a style layer's, so the tracks
- * are stroked onto a canvas over the view and MapLibre draws that canvas as
- * a raster under the place names. Panning and zooming move the raster with
- * the map; when the view settles it is redrawn sharp for the new view.
- *
- * Dark (variant A, Wave 6b): every run stroked on its own in the accent and
- * added together, so a street glows by how many runs overlap on it.
- *
- * Light (mirrors dark A, Oct 2026): three layers of every run stroked on
- * its own, transparency added up per run, each tinted - a blurred glow, a
- * mint line, a deep line - see HEAT_LIGHT. The density raster it replaces
- * read pixels back, which forced it to one dot per screen point: stair-step
- * glow edges when zoomed in, notches along corridors, dark knots at
- * junctions, and a slow frame on iPhone.
+ * Additive blending is a 2D canvas's, not a style layer's, so the tracks are
+ * stroked onto a canvas MapLibre draws as a raster. Never read pixels back: it
+ * forces one dot per screen point and a slow frame on iPhone.
  */
 export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: string, beforeId: string | undefined): HeatLayer {
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
-  /** Every run on its own. */
   let tracks: Float64Array[] = [];
   let view = { x0: 0, y0: 0, world: 1, scale: 1, width: 1, height: 1 };
   let coordinates: Coordinates = [[0, 0], [0, 0], [0, 0], [0, 0]];
 
-  // The view plus its margin, in the map's own Mercator space.
   function layout() {
     const container = map.getContainer();
     const w = Math.max(1, container.clientWidth);
@@ -107,7 +84,7 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     coordinates = [topLeft, corner(w + mx, -my), corner(w + mx, h + my), corner(-mx, h + my)];
   }
 
-  /** A run as one path on `g`, in CSS px. */
+  /** In CSS px. */
   function traceOn(g: CanvasRenderingContext2D, path: Float64Array) {
     const { x0, y0, world } = view;
     g.beginPath();
@@ -130,7 +107,6 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     if (ctx) traceOn(ctx, path);
   }
 
-  /** Variant A: every glow before any core; additive, so order doesn't matter. */
   function drawDark() {
     if (!ctx) return;
     ctx.setTransform(view.scale, 0, 0, view.scale, 0, 0);
@@ -153,16 +129,14 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     mint: document.createElement("canvas"),
     deep: document.createElement("canvas"),
   };
-  /** The blur fallback's scratch canvas, made only where ctx.filter is missing. */
   let blurScratch: HTMLCanvasElement | null = null;
 
-  /** CSS px for `m` metres at the current view. */
+  /** 40 075 016.686 m: the Earth's equatorial circumference. */
   function metresToPx(m: number): number {
     const lat = map.getCenter().lat;
     return (m * view.world) / (40_075_016.686 * Math.cos((lat * Math.PI) / 180));
   }
 
-  /** Every run stroked in white on its own, "lighter" so transparency builds up, then tinted; at least `minM` metres wide. */
   function strokeLayer(name: keyof typeof layers, widthMul: number, alpha: number, tint: string, minM = 0) {
     const c = layers[name];
     if (c.width !== canvas.width || c.height !== canvas.height) { c.width = canvas.width; c.height = canvas.height; }
@@ -185,10 +159,9 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
   }
 
   /**
-   * A gaussian blur that works in every Safari: ctx.filter where it exists
-   * (Safari 18+), else a shadow cast from off-screen. A shadow is painted in
-   * shadowColor, never the source's colours, so it is cast on a scratch
-   * canvas and tinted there before it is laid on.
+   * ctx.filter where it exists (Safari 18+), else a shadow cast from
+   * off-screen. A shadow is painted in shadowColor, never the source's
+   * colours, so it is cast on a scratch canvas and tinted there.
    */
   function drawBlurred(src: HTMLCanvasElement, sigmaDevicePx: number, opacity: number, tint: string) {
     if (!ctx) return;
@@ -242,9 +215,9 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     return map.getSource(HEAT_SOURCE) as CanvasSource | undefined;
   }
 
-  // A paused canvas source keeps the texture it has; playing re-reads the
-  // canvas on every frame. So play for two frames after a draw - the new
-  // corners take one to settle - then stop, and the map goes back to idle.
+  // A paused canvas source keeps its texture; a playing one re-reads the
+  // canvas every frame. So play for two frames after a draw (the new corners
+  // take one to settle), then pause and let the map go idle.
   let framesLeft = 0;
   function onRender() {
     if (--framesLeft > 0) return;

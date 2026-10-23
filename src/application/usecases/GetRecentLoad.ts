@@ -10,30 +10,26 @@ import { latestLoadPair, loadRatio, safeRange } from '@/domain/training/loadTren
 
 export const RECENT_LOAD_DAYS = 7
 
-/** Where a day's load sits while the week holds its load steady: ACWR's safe range, against fitness. */
+/** ACWR's safe range, as a share of fitness (chronic load). */
 export const LOAD_BAND = { lo: 0.8, hi: 1.3 } as const
 
 export interface RecentLoadDay {
   date: string
   load: number
   isToday: boolean
-  /** The day's run, by its longest, for the bar's colour; null on a day without one. */
+  /** The type of the day's longest run. */
   type: ActivityType | null
 }
 
 /**
- * The seven-day load against the range the watch calls safe: the very pair
- * Analytics' Load card reads (`getLoadPairs`), so Today and Analytics can no
- * longer print different numbers for the same thing (App Fixes 1a). Null
- * where the watch has no acute/chronic pair; the strip then says nothing
- * about a range it cannot source.
+ * The seven-day load against the watch's safe range, from the same pair
+ * Analytics' Load card reads (`getLoadPairs`).
  */
 export interface LoadReading {
   acute: number
   lo: number
   hi: number
   state: 'below' | 'in' | 'above'
-  /** Acute over chronic, the ratio Analytics prints from the same pair. */
   ratio: number
 }
 
@@ -65,7 +61,6 @@ function lastDays(today: string, count: number): string[] {
   return days
 }
 
-/** Each day's longest run's type: the session the day was, as Plan colours it. */
 export function dayTypes(activities: readonly Pick<Activity, 'date' | 'type' | 'durationSeconds'>[]): Map<string, ActivityType> {
   const longest = new Map<string, { type: ActivityType; seconds: number }>()
   for (const a of activities) {

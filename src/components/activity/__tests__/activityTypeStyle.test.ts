@@ -8,7 +8,6 @@ describe('ACTIVITY_TYPE_STYLE', () => {
     expect(Object.keys(ACTIVITY_TYPE_STYLE)).toEqual([...ACTIVITY_TYPES])
   })
 
-  // v4.3.2: a type is drawn in its session zone's token, never its own hex.
   it("colours each type with its session zone's token, and gives it an icon", () => {
     for (const type of ACTIVITY_TYPES) {
       expect(ACTIVITY_TYPE_STYLE[type].chartColor, type).toBe(zoneColor(sessionZone({ type })))

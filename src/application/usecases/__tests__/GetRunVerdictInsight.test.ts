@@ -112,7 +112,6 @@ describe('getRunVerdictContexts', () => {
     expect(getRunVerdictContexts()[0]?.history.daysSinceLastRun).toBe(2)
   })
 
-  // v4.16.6: the coach's words are what set one session apart from the last of its kind.
   it("attaches what the coaching plan wrote the session for, from an archived plan when it has been replaced", () => {
     const current = plan({ id: 'current', weeks: [] })
     const archived = plan({ id: 'archived', status: 'superseded' })

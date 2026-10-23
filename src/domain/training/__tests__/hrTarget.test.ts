@@ -4,13 +4,12 @@ import { hrZoneCapBpm, sessionHrCapBpm } from '../hrTarget'
 const BOUNDS = [128, 145, 160, 172, 182]
 
 describe('hrZoneCapBpm', () => {
-  // A zone stops one beat under the next one, as the zone table reads it.
   it('caps a zone one beat under the next', () => {
     expect(hrZoneCapBpm(2, BOUNDS)).toBe(159)
     expect(hrZoneCapBpm(4, BOUNDS)).toBe(181)
   })
 
-  // Z5 is open-ended, and without the athlete's bounds there is no cap to give.
+  // Z5 is open-ended.
   it('has no cap for the top zone or without bounds', () => {
     expect(hrZoneCapBpm(5, BOUNDS)).toBeNull()
     expect(hrZoneCapBpm(2, null)).toBeNull()

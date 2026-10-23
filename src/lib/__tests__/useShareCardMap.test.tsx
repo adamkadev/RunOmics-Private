@@ -125,7 +125,6 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-// The owner's report, Oct 2026: the card came without its basemap.
 describe('the share card basemap', () => {
   it('is drawn though a tile or a font failed to load', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
@@ -142,8 +141,7 @@ describe('the share card basemap', () => {
     expect(warn).toHaveBeenCalledWith('Share card basemap:', 'glyphs 404')
   })
 
-  // The names sit over a dark map, so they take the muted ink a step more
-  // opaque than on light, where the ground is pale.
+  // Over a dark map the names need the muted ink a step more opaque than on a pale one.
   it('names the districts in the muted ink, fainter on light than on dark', async () => {
     labelCalls.length = 0
     maps.FakeMap.script = (map) => { map.emit('load'); map.emit('idle') }
@@ -184,7 +182,6 @@ describe('the share card basemap', () => {
     expect(next.result.current.image).not.toBeNull()
   })
 
-  // Redesign, Oct 2026: the map fills the card, the route fitted between the header and the stats.
   it('fits the route into the card\'s frame, its labels fenced off the route and the bands', async () => {
     maps.FakeMap.script = (map) => { map.emit('load'); map.emit('idle') }
     renderHook(() => useShareCardMap({ route: route(2.48), theme: 'light', width: 300, height: 375, frame: FRAME, bands: [79, 307] }))
@@ -199,7 +196,6 @@ describe('the share card basemap', () => {
   })
 })
 
-// 3.0.3, the owner's request: a district the run crossed keeps its name.
 describe('the share card names', () => {
   it('lifts the towns and districts over the fence, reads where they were placed, and captures the map without them', async () => {
     const drawnMaps: { moved: string[]; hidden: string[] }[] = []

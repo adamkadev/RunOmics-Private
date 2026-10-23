@@ -14,11 +14,7 @@ import {
 
 export const runtime = 'nodejs'
 
-/**
- * The private site's way in (src/lib/siteAccess.ts): /sign-in sends the
- * Firebase ID token here once, verified as every owner route verifies it,
- * and gets back the cookie the proxy reads on each request after.
- */
+// /sign-in sends the Firebase ID token here once and gets back the cookie the proxy reads (src/lib/siteAccess.ts).
 
 function cookieOptions(req: NextRequest, maxAge: number) {
   return {
@@ -65,7 +61,7 @@ export async function POST(req: NextRequest) {
   return response
 }
 
-/** Sign-out: the cookie goes, and the answer says whether the site is private, for the page to send the reader to /sign-in. */
+/** The answer says whether the site is private, for the page to send the reader to /sign-in. */
 export async function DELETE(req: NextRequest) {
   const response = NextResponse.json({ private: isSitePrivate(process.env) })
   response.cookies.set(SESSION_COOKIE, '', cookieOptions(req, 0))

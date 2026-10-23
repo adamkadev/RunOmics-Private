@@ -30,10 +30,8 @@ function storedAccent(): string | null {
 }
 
 /**
- * The accent the reader picked. The server has no localStorage, so it and the
- * hydrating render both see the default and the stored accent arrives right
- * after; reading storage in a state initializer drew a different accent on
- * hydration than the server's HTML had.
+ * The server has no localStorage, so it and the hydrating render both see the
+ * default, and the stored accent arrives right after.
  */
 export function useAccent(): AccentId {
   const stored = useSyncExternalStore(subscribe, storedAccent, () => null)

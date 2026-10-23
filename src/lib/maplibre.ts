@@ -6,44 +6,32 @@ export type MapLibre = typeof import('maplibre-gl')
 
 type StyleLayer = { id: string; type: string; 'source-layer'?: string; filter?: unknown }
 
-/** Where a style keeps its town and neighbourhood names (OpenMapTiles and the older v4 styles). */
+/** OpenMapTiles and the older Planet v4 schemas. */
 const PLACE_SOURCE_LAYERS = ['place', 'city_label', 'town_label', 'place_label']
 const PLACE_LAYER_ID = /\b(place|city|town|village|suburb|neighbou?rhood|hamlet|quarter|locality)\b/i
-/** Neighbourhoods and quartiers: drawn a step smaller and quieter than towns. */
 const NEIGHBOURHOOD_LAYER_ID = /\b(suburb|neighbou?rhood|hamlet|quarter|isolated)\b/i
-/**
- * A district layer the style names by its filter, not its id: OpenMapTiles
- * keeps suburbs and quarters in the same "Place labels" layer as towns, so
- * matching on the id alone left every district at the town's size and ink.
- */
+/** OpenMapTiles keeps suburbs and quarters in the same "Place labels" layer as towns, so a district is told by its filter. */
 const DISTRICT_FILTER = /"(suburb|quarter|neighbou?rhood|hamlet)"/
 
-function isDistrictLayer(layer: StyleLayer): boolean {
+export function isDistrictLayer(layer: StyleLayer): boolean {
   return NEIGHBOURHOOD_LAYER_ID.test(layer.id) || DISTRICT_FILTER.test(JSON.stringify(layer.filter ?? null))
 }
 const STYLE_MAX_ZOOM = 24
-/** The layers this app adds to a MapTiler style; styleRunMapLabels leaves them be. */
 const OWN_LAYER_PREFIX = 'runomics-'
 
 export const WATER_LABEL_LAYER = 'runomics-water-label'
-/**
- * The tiles name a river on `water_label`, as a line, with its kind in
- * `class`: the Planet v4 schema, not OpenMapTiles - `waterway` carries the
- * geometry and no name at all, and there is no `water_name` layer.
- */
+/** Planet v4 schema, not OpenMapTiles: a river is named on `water_label`, kind in `class`; `waterway` carries no name. */
 const WATER_LABEL_SOURCE_LAYER = 'water_label'
 const WATER_LINE_CLASSES = ['river', 'canal'] as const
 const ITALIC_FONT = ['Metropolis Semi Bold Italic', 'Noto Sans Italic']
 const PLACE_FONT = ['Metropolis Semi Bold', 'Noto Sans Semi Bold']
 
-/** The name in the reader's language where the tiles carry one. */
 function localName(lang: string | undefined): unknown {
   return lang && lang !== 'en' ? ['coalesce', ['get', `name:${lang}`], ['get', 'name']] : ['get', 'name']
 }
-/** Park over water over district, where two names want the same room. */
+/** Lower wins where two names want the same room. */
 export const LABEL_SORT = { park: 1, landmark: 2, water: 3 } as const
 
-/** The vector source a style keeps a given source-layer on. */
 function vectorSourceOf(map: MapLibreMap, sourceLayer: string): string | null {
   for (const raw of map.getStyle().layers) {
     const layer = raw as StyleLayer & { source?: string }
@@ -54,11 +42,9 @@ function vectorSourceOf(map: MapLibreMap, sourceLayer: string): string | null {
 
 export const PARK_LABEL_LAYER = 'runomics-park-label'
 /**
- * A park's name is a POI point in the Planet v4 tiles - `poi_public`, class
- * `public`, subclass `park` - not a `park` source-layer and not OpenMapTiles'
- * `poi` class. The polygon layers (`leisure`, `forest`, `wood`) carry no name
- * and no area, so a park cannot be skipped by how big it is: zoom and the
- * collision between labels are the only handles.
+ * A park's name is a POI point in the Planet v4 tiles (subclass `park`); the
+ * polygon layers carry no name and no area, so zoom and label collision are
+ * the only handles.
  */
 const PARK_SOURCE_LAYER = 'poi_public'
 const PARK_ICON = 'park'
@@ -66,19 +52,12 @@ const PARK_MIN_ZOOM = 12
 
 export interface ParkLabelOptions {
   halo: string
-  /** The name's ink, and the tree's: a muted green-grey. */
   park: string
   size?: number
   lang?: string
 }
 
-/**
- * Every place name the style keeps, at any zoom, big or small. The tiles hold
- * hamlets and isolated dwellings, but the style fades them in at zoom 14; a
- * city label is dropped above 14 and a town above 16. So a run through a
- * hamlet passed through nothing named, and zooming into a city lost its name.
- * The route's own fence still decides which of them find room.
- */
+/** The style fades hamlets in at zoom 14 and drops a city above 14 and a town above 16. */
 export function showPlacesAtAnyZoom(map: MapLibreMap, options: { districtOpacity?: number } = {}): void {
   for (const raw of map.getStyle().layers) {
     const layer = raw as StyleLayer
@@ -89,13 +68,7 @@ export function showPlacesAtAnyZoom(map: MapLibreMap, options: { districtOpacity
 }
 
 export const LANDMARK_LABEL_LAYER = 'runomics-landmark-label'
-/**
- * The places a city is known for. The tiles split POIs by category, so a
- * landmark is a castle or an attraction on `poi_tourism` and a museum or a
- * theatre on `poi_culture`; each class has its own icon in the sprite. Kept
- * to a short list, so a run through a city centre names a handful of
- * landmarks rather than every shop on the way.
- */
+/** A short list, so a run through a city centre names a handful of landmarks rather than every shop. */
 const LANDMARK_LAYERS = [
   { sourceLayer: 'poi_tourism', classes: ['attraction', 'castle', 'monument', 'artwork', 'viewpoint'] },
   { sourceLayer: 'poi_culture', classes: ['museum', 'theatre'] },
@@ -105,28 +78,19 @@ const LANDMARK_MIN_ZOOM = 13
 
 export interface LandmarkLabelOptions {
   halo: string
-  /** The name's ink and its icon's. */
   landmark: string
   size?: number
   lang?: string
 }
 
 export interface WaterLabelOptions {
-  /** The surface under the map, for the halo. */
   halo: string
-  /** The name's ink: a pale blue-grey, never the water's own fill. */
+  /** Never the water's own fill. */
   water: string
-  /** 11 px in the app; the card draws a step smaller. */
   size?: number
-  /** The locale's name field, e.g. `name:fr`; the plain name is the fallback. */
   lang?: string
 }
 
-/**
- * Rivers and canals named along their line (Bevel's reading of a city map):
- * italic, pale, and optional - a name that finds no room is dropped rather
- * than pushed over the route. Placed under the place names, which win.
- */
 export function addParkLabels(map: MapLibreMap, options: ParkLabelOptions): void {
   if (map.getLayer(PARK_LABEL_LAYER)) return
   const source = vectorSourceOf(map, PARK_SOURCE_LAYER)
@@ -235,12 +199,9 @@ export function addWaterLabels(map: MapLibreMap, options: WaterLabelOptions): vo
     },
   } as Parameters<MapLibreMap['addLayer']>[0], firstSymbolLayerId(map))
 }
-/** On its point first, then beside it, so a name next to the route still finds room. */
+/** Beside its point too, so a name next to the route still finds room. */
 const LABEL_ANCHORS: ('center' | 'top' | 'bottom' | 'left' | 'right')[] = ['center', 'top', 'bottom', 'left', 'right']
-/**
- * How far a name may step off its own point, in ems: far enough to clear the
- * route's fence, which runs right through the districts a run passes.
- */
+/** Ems: far enough to clear the route's fence, which runs right through the districts a run passes. */
 const LABEL_RADIAL_OFFSET = 1.2
 
 export function isPlaceLabelLayer(layer: StyleLayer): boolean {
@@ -250,28 +211,16 @@ export function isPlaceLabelLayer(layer: StyleLayer): boolean {
 }
 
 export interface PlaceLabelColors {
-  /** The surface under the map: the halo that keeps a name readable over the route. */
   halo: string
-  /** Towns and villages, --muted-foreground. */
   town: string
-  /** Neighbourhoods, a step quieter. */
   neighbourhood: string
-  /** How opaque a district's name is; 1 unless the caller wants them fainter. */
   districtOpacity?: number
 }
 
 /**
- * Place names only (v4.10, v4.13.1): towns, villages and quartiers at any
- * zoom, so even a short loop inside one town names where it was. A name
- * may sit on the route line - its halo keeps it readable there - but the
- * start and finish markers and the edge fence sit above it and win, so a
- * name under a marker or cut by the edge is dropped rather than drawn.
- * Streets, POIs and house numbers stay off. Every name is muted, never
- * bold white. Every name kept is fully opaque (3.0.1): the style's zoom
- * steps faded districts out below 13, which left the share card with none.
- * On the card's 300 px map a name at the app's 11-12 px took a third of the
- * width and found no room beside a loop, so names are a step smaller and
- * may sit beside their point, not only on it.
+ * A name may sit on the route line, its halo keeps it readable, but the
+ * markers and the edge fence sit above it and win. On the card's 300 px map a
+ * name at 11-12 px found no room beside a loop, so names are a step smaller.
  */
 export function styleRunMapLabels(map: MapLibreMap, colors: PlaceLabelColors): void {
   for (const raw of map.getStyle().layers) {

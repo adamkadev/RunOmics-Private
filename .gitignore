@@ -54,6 +54,11 @@
 /data/
 /public/data/
 
+# the Explore design handoff's uploads are screenshots of the real Activities
+# map (real tracks, the home marker) the mock-ups were drawn over: they stay on
+# the machine that has them (verify_no_private_data.mjs flags any tracked one).
+/design_handoff_explore/design/uploads/
+
 # the throwaway demo workspace `npm run e2e:data` regenerates before every
 # Playwright build - never a real dataset, never worth committing.
 /.e2e-data/
@@ -99,3 +104,4 @@ next-env.d.ts
 # Python
 __pycache__/
 *.pyc
+.venv/

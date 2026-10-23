@@ -9,29 +9,30 @@ import { cn } from '@/lib/utils'
 const CREDIT_LINKS: Record<string, string> = {
   MapTiler: 'https://www.maptiler.com/copyright/',
   OpenStreetMap: 'https://www.openstreetmap.org/copyright',
+  // Explore's generated loops, credited wherever one is drawn.
+  openrouteservice: 'https://openrouteservice.org/terms-of-service/',
 }
 
-/** Each credit, linked to its licence page where it names one. */
-function Credit({ text }: { text: string }) {
-  const name = Object.keys(CREDIT_LINKS).find((n) => text.includes(n))
-  if (!name) return <span className="whitespace-nowrap">{text}</span>
+export interface MapCredit {
+  text: string
+  href?: string
+}
+
+function Credit({ text, href }: MapCredit) {
+  const name = href ? null : Object.keys(CREDIT_LINKS).find((n) => text.includes(n))
+  const link = href ?? (name ? CREDIT_LINKS[name] : undefined)
+  if (!link) return <span className="whitespace-nowrap">{text}</span>
   return (
-    <a href={CREDIT_LINKS[name]} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap underline-offset-2 hover:underline">
+    <a href={link} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap underline-offset-2 hover:underline">
       {text}
     </a>
   )
 }
 
-/**
- * Every map's credits (3.0 handoff): an ⓘ in the bottom-right corner that
- * opens the MapTiler and OpenStreetMap lines above it - a 28 pt clear-glass
- * circle (Liquid Glass v3, README §6.12.5), 12 pt from the corner, which the
- * parent places; on the hero it sits above the fade. The full line used to run across the bottom of the map. The
- * parent places it; it only needs a positioned ancestor.
- */
-export function MapAttribution({ className }: { className?: string }) {
+export function MapAttribution({ className, extraCredits }: { className?: string; extraCredits?: readonly MapCredit[] }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const credits: readonly MapCredit[] = [...t.pages.map.attribution.split(' · ').map((text): MapCredit => ({ text })), ...(extraCredits ?? [])]
 
   useEffect(() => {
     if (!open) return
@@ -53,10 +54,14 @@ export function MapAttribution({ className }: { className?: string }) {
           role="note"
           className="absolute bottom-full right-0 mb-1.5 rounded-[12px] bg-[var(--raised)] px-2.5 py-1.5 text-right text-caption leading-snug text-muted-foreground shadow-[var(--shadow-raised)]"
         >
-          {t.pages.map.attribution.split(' · ').map((credit, i) => (
-            <Fragment key={credit}>
-              {i > 0 && ' · '}
-              <Credit text={credit} />
+          {/* The separator stays inside its credit's nowrap span, so a line breaks after a "·", never before. */}
+          {credits.map((credit, i) => (
+            <Fragment key={`${i}:${credit.text}`}>
+              {i > 0 && ' '}
+              <span className="whitespace-nowrap">
+                <Credit {...credit} />
+                {i < credits.length - 1 && ' ·'}
+              </span>
             </Fragment>
           ))}
         </p>

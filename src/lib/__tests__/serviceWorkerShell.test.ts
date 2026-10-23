@@ -5,8 +5,7 @@ import { describe, expect, it } from 'vitest'
 const PUBLIC = join(process.cwd(), 'public')
 
 describe('the service worker shell', () => {
-  // One missing file fails cache.addAll and with it the whole install, so the
-  // phone kept the old worker after 4.12.0 removed /icons/logo.svg.
+  // One missing file fails cache.addAll and with it the whole install.
   it('pre-caches only files that exist', () => {
     const sw = readFileSync(join(PUBLIC, 'sw.js'), 'utf8')
     const list = sw.match(/const SHELL_URLS = \[([^\]]*)\]/)?.[1]

@@ -28,7 +28,6 @@ function barWidths(container: HTMLElement): string[] {
 }
 
 describe('ShoesGrid', () => {
-  // C4, v4.4b: past the limit the meta line says so; v4.17: the bar is neg.
   it('flags every pair past its limit in its meta line and its bar', () => {
     render(
       <ShoesGrid
@@ -86,7 +85,6 @@ describe('ShoesGrid', () => {
     expect(meta).toBe(`${t.shoes.kmOf('150', '1,000')} · ${t.shoes.runs(12)} · ${t.shoes.lastRun('Sep 17')} · ${t.shoes.roles.daily}`)
   })
 
-  // Design review, Oct 2026: the key once, by the section's label, not under every bar.
   it('keys the retire-from-workouts tick once when every pair shares it', () => {
     render(<ShoesGrid shoes={[shoe({ gearId: 'a' }), shoe({ gearId: 'b', totalKm: 300, wearPercent: 30 })]} />)
 
@@ -106,7 +104,6 @@ describe('ShoesGrid', () => {
     expect(soon!.getAttribute('href')).toBe('/shoes/a?from=shoes')
   })
 
-  // Pairs with their own thresholds keep a label under each bar.
   it('names each pair\'s tick under it when the thresholds differ', () => {
     render(<ShoesGrid shoes={[shoe({ gearId: 'a' }), shoe({ gearId: 'b', maxKm: 800, alertThresholdKm: 640 })]} />)
 

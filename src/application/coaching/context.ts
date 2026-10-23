@@ -39,7 +39,7 @@ export interface CompactActivity {
   aerobicTrainingEffect: number | null
   anaerobicTrainingEffect: number | null
   execution: SessionExecution
-  /** What the athlete wrote about this session in the RunOmics UI, when they wrote anything. */
+  /** Written by the athlete in the RunOmics UI. */
   note?: string
   tags?: string[]
   performance?: ResolvedPerformance
@@ -88,10 +88,6 @@ export interface CoachingContext {
     trainingZones: TrainingZonesData | null
     injuryHistory: InjuryHistory | null
   }
-  /**
-   * Where the numbers have been. A current value alone cannot tell a ceiling
-   * from a figure still climbing back after a fortnight off.
-   */
   trajectories: Trajectories | null
   goals: GoalYear[]
   personalBests: PbYear[]
@@ -99,11 +95,7 @@ export interface CoachingContext {
   racePredictions: GarminRacePredictionsData['latest'] | null
   adherence: { prescribed: number; completed: number; percent: number } | null
   currentPlan: CoachingPlan | null
-  /**
-   * The controlled threshold sessions read against their targets, the guide changes and the lighter
-   * week they call for - proposals the athlete has not accepted. Present only
-   * while the plan prescribes them.
-   */
+  /** Proposals the athlete has not accepted; present only while the plan prescribes controlled threshold sessions. */
   autoregulation?: AutoregulationReport
 }
 
@@ -188,10 +180,7 @@ function adherence(plan: CoachingPlan | null, activities: Activity[], referenceD
   return { prescribed: prescribed.length, completed, percent: Math.round((completed / prescribed.length) * 100) }
 }
 
-/**
- * Omitted rather than emitted empty: a `note: ""` on every run is noise in a
- * prompt, and the few sessions the athlete actually wrote on are the point.
- */
+/** Omitted rather than emitted empty: a `note: ""` on every run is prompt noise. */
 function annotation(note: { note: string; tags: string[] } | undefined): Partial<CompactActivity> {
   if (note === undefined) return {}
   return {
@@ -264,16 +253,15 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       lthrBpm: input.athlete.lthrBpm ?? null,
       hrZoneBoundsBpm: input.athlete.hrZoneBoundsBpm ?? null,
       vmaKmh: input.athlete.vmaKmh ?? null,
-      // maxHrBpm stays out on purpose: withholding it is a stronger guard
-      // against zones recomputed as a percentage of it than instructing against.
+      // maxHrBpm stays out on purpose: withholding it guards better against zones recomputed
+      // as a percentage of it than instructing against that.
       ageYears: input.athlete.age ?? null,
       sex: input.athlete.sex ?? null,
       restingHrBpm: input.athlete.restingHrBpm ?? null,
       weightKg: input.athlete.weightKg ?? null,
       heightCm: input.athlete.heightCm ?? null,
       trainingZones: input.trainingZones,
-      // The one evidenced predictor in this whole context. Null means nobody
-      // has asked, which is not the same as none.
+      // Null means nobody has asked, which is not the same as none.
       injuryHistory: input.athlete.injuryHistory ?? null,
     },
     trajectories: input.trajectories,

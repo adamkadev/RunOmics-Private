@@ -1,15 +1,6 @@
 /**
- * A route's start and finish, one look for every map that draws them - the
- * Activity map and the share card (design review, Oct 2026):
- *
- * - start: a 16 px dot in the accent, a 2.5 px white ring;
- * - finish: an 18 px checkered dot, ink and white, a 2.5 px white ring and a
- *   thin dark outline, so it still shows on light tiles. It replaced a dark
- *   square that read as a checkbox or a stop button;
- * - loop: where the two would sit under 20 px apart, one 22 px checkered dot
- *   in a 3 px accent ring, never two markers stacked.
- *
- * The accent is a point marker's only: no trace or data colour takes it.
+ * The finish's thin dark outline keeps it visible on light tiles. The accent
+ * is a point marker's only: no trace or data colour takes it.
  */
 
 export type MarkerKind = 'start' | 'finish' | 'loop'
@@ -20,7 +11,6 @@ interface MarkerSpec {
   /** Across, ring included, outline not. */
   diameter: number
   ring: number
-  /** The thin dark line outside the ring; 0 for none. */
   outline: number
 }
 
@@ -30,22 +20,18 @@ export const MARKER_SPECS: Record<MarkerKind, MarkerSpec> = {
   loop: { diameter: 22, ring: 3, outline: 1.5 },
 }
 
-/** Centres closer than this draw as one loop marker. */
 export const JOIN_PX = 20
 /** The checkers' side, in px. */
 const CHECKER = 3
 export const MARKER_INK = '#0c0d0d'
 const WHITE = '#ffffff'
-/** The finish's outline is a soft line; the loop's, in the ring's accent, the ink itself. */
 const FINISH_OUTLINE = 'rgba(12, 13, 13, 0.6)'
 
-/** Across, outline included: the room a marker takes. */
 export function markerExtent(kind: MarkerKind): number {
   const spec = MARKER_SPECS[kind]
   return spec.diameter + spec.outline * 2
 }
 
-/** Whether a start and a finish this far apart, in px, are one place. */
 export function endsJoined(start: Point, finish: Point): boolean {
   return Math.hypot(finish[0] - start[0], finish[1] - start[1]) < JOIN_PX
 }
@@ -55,18 +41,13 @@ export interface RouteEnd<P> {
   at: P
 }
 
-/**
- * The markers a route's ends draw as, finish first so the start sits on top:
- * the finish on the drawn line's own last point, or - a loop - one marker on
- * the start. `joined` says whether, at the scale drawn, the two would touch.
- */
+/** Finish first, so the start sits on top. */
 export function routeEnds<P>(start: P, finish: P | null, joined: boolean): RouteEnd<P>[] {
   if (!finish) return [{ kind: 'start', at: start }]
   if (joined) return [{ kind: 'loop', at: start }]
   return [{ kind: 'finish', at: finish }, { kind: 'start', at: start }]
 }
 
-/** The colours a marker is made of, from the rim in, its radii at `scale`. */
 function layers(kind: MarkerKind, accent: string, scale = 1) {
   const spec = MARKER_SPECS[kind]
   const r = (spec.diameter / 2) * scale
@@ -78,22 +59,17 @@ function layers(kind: MarkerKind, accent: string, scale = 1) {
   }
 }
 
-/** The checkers across the inner disc, and where their grid starts from its centre: centred, so the rim is even. */
+/** Centred on the disc, so the rim is even. */
 function checkerGrid(radius: number, size: number) {
   const cells = Math.ceil((radius * 2) / size)
   return { cells, origin: -(cells * size) / 2 }
 }
 
-/** Whether the point (x, y) from the marker's centre is an ink checker. */
 function inkChecker(x: number, y: number, radius: number): boolean {
   const { origin } = checkerGrid(radius, CHECKER)
   return (Math.floor((x - origin) / CHECKER) + Math.floor((y - origin) / CHECKER)) % 2 === 1
 }
 
-/**
- * A marker on a 2D canvas, centred on (x, y): the share card's, at `scale` -
- * the 300 px card is a phone map's width less its margins.
- */
 export function drawRouteMarker(ctx: CanvasRenderingContext2D, kind: MarkerKind, [x, y]: Point, accent: string, scale = 1) {
   const { outline, ring, inner, checker } = layers(kind, accent, scale)
   const disc = (radius: number, color: string) => {
@@ -146,9 +122,8 @@ export interface MarkerImage {
 const SUPERSAMPLE = 4
 
 /**
- * The same marker as RGBA pixels, for a MapLibre icon: a map draws icons, not
- * canvas paths, and has no checkered fill. Its centre is the image's centre,
- * so the icon's default anchor puts it on the point.
+ * For a MapLibre icon: a map draws icons, not canvas paths. Centred, so the
+ * icon's default anchor puts it on the point.
  */
 export function routeMarkerImage(kind: MarkerKind, accent: string, pixelRatio = 2): MarkerImage {
   const { outline, ring, inner } = layers(kind, accent)

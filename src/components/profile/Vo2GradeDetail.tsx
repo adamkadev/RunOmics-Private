@@ -18,11 +18,6 @@ function rangeText(min: number | null, max: number | null): string {
   return g.range(one(min), one(Math.round((max - 0.1) * 10) / 10))
 }
 
-/**
- * The grade detail (v5.3 G2): the ladder for the athlete's sex and age with
- * their row marked, the season's grades, and one coach line. The marked row
- * is a neutral band, not the accent: the grade is ink everywhere.
- */
 export function Vo2GradeDetail({ view }: { view: Vo2GradeView }) {
   const g = t.vo2Grade
 
@@ -75,8 +70,7 @@ function Ladder({ view }: { view: Graded }) {
 
       <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5" data-testid="grade-season">
         <p className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{g.season}</p>
-        {/* Every month of the season (Oct 2026): up to twelve narrow cells, so
-            past six the letters step down a size to keep "A−" on one line. */}
+        {/* Past six months the letters step down a size to keep "A−" on one line. */}
         <div className={cn('mt-2.5 grid', view.season.length > 6 ? 'gap-1' : 'gap-2')} style={{ gridTemplateColumns: `repeat(${view.season.length}, minmax(0, 1fr))` }}>
           {view.season.map(({ month, grade }) => (
             <div key={month} className="flex min-w-0 flex-col items-center gap-0.5" data-testid="season-month">
@@ -87,7 +81,6 @@ function Ladder({ view }: { view: Graded }) {
         </div>
       </GlassSurface>
 
-      {/* Only at the top of the scale: the way to the next grade is the table above. */}
       {!view.next && (
         <GlassSurface variant="card" className="rounded-card-sm px-4 py-3.5" data-testid="grade-coach">
           <p className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{g.coach}</p>

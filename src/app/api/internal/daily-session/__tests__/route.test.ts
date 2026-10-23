@@ -54,7 +54,6 @@ describe('POST /api/internal/daily-session', () => {
     expect(sendPushToAllDevices).toHaveBeenCalledWith("Today's session", 'Strides 6 x 20s (8.0 km · 45 min)')
   })
 
-  // Lamiaa's deployment is French, and got "Rest day / No session scheduled today" in English.
   it('speaks the deployment’s language', async () => {
     getTodayPlannedWorkout.mockResolvedValue(null)
     const { POST: restDay } = await routeIn('fr')

@@ -10,10 +10,6 @@ export interface Metric {
   valueClassName?: string
 }
 
-/**
- * A row of stats in the v4.17 pattern: the label on top, the value with its
- * unit inline. Values truncate, so a 10-hour ultra clips instead of spilling.
- */
 export function MetricGrid({
   metrics,
   className,

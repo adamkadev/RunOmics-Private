@@ -83,7 +83,6 @@ describe('ActivityMap layers (v4.17)', () => {
 
   beforeAll(() => { process.env.NEXT_PUBLIC_MAPTILER_TOKEN = 'test' })
 
-  // 3.0.3: every name over the line, as on the heatmap; the markers over them.
   it('draws the route in the accent under the place names, the start and the scrub marker as circle layers, no DOM markers', async () => {
     render(<ActivityMap route={[[7.7, 48.6], [7.72, 48.62]]} />)
     await waitFor(() => expect(seen.layers.some((l) => l.id === 'run-cursor')).toBe(true))
@@ -98,7 +97,6 @@ describe('ActivityMap layers (v4.17)', () => {
     expect(seen.markers).toBe(0)
   })
 
-  // 3.0: the credits fold behind the app's own 22 pt ⓘ, not MapLibre's line.
   it('credits MapTiler and OpenStreetMap behind an ⓘ, with no MapLibre control', async () => {
     render(<ActivityMap route={[[7.7, 48.6], [7.72, 48.62]]} />)
     await waitFor(() => expect(seen.layers.some((l) => l.id === 'route-line')).toBe(true))

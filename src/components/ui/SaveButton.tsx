@@ -21,7 +21,6 @@ export function SaveButton({ state, onClick, type = 'button' }: Props) {
       type={type}
       onClick={onClick}
       disabled={state === 'saving'}
-      // A 44 pt capsule, the size of a sheet header's controls (Liquid Glass v3).
       className={cn(
         'hit-44 h-11 rounded-full px-4 text-[17px] font-semibold transition-colors disabled:opacity-50',
         state === 'error' ? 'bg-destructive text-white hover:bg-destructive/90' :

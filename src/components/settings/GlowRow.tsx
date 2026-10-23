@@ -5,10 +5,8 @@ import { setGlow, useGlow, useReducedTransparency } from '@/lib/glow'
 import { t } from '@/i18n'
 
 /**
- * Settings › Appearance › Background glow (round 2, F2): one switch for
- * both themes, its hint under the title. With iOS's Reduce Transparency or
- * Increase Contrast on, the glow is off whatever it says; the switch keeps
- * the saved value and the hint says so.
+ * Under iOS Reduce Transparency or Increase Contrast the glow is off whatever
+ * the switch says; the switch keeps the saved value and the hint says why.
  */
 export function GlowRow({ className }: { className?: string }) {
   const a = t.settings.appearance

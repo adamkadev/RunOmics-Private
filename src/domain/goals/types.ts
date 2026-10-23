@@ -1,8 +1,4 @@
-/**
- * Goals, official PBs and upcoming races, as the repositories read them and
- * the use cases, pages and coaching context consume them. They live in the
- * domain so a repository never has to import a use case to know its own shape.
- */
+/** In the domain so a repository never has to import a use case to know its own shape. */
 
 export interface PbEntry {
   distance: string

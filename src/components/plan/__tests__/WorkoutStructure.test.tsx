@@ -16,8 +16,6 @@ const INTERVALS: WorkoutStep[] = [
 ]
 
 describe('the session structure bar', () => {
-  // "25 min · Z4 continuous" was navy on mid-blue, about 3:1, and the blue said
-  // Z2 on a Z4 session.
   it('fills a continuous session in its zone and writes it in zone ink', () => {
     render(<SessionStructureBar steps={[]} zoneWord="Z4" zone={4} totalSeconds={1_500} />)
     const label = screen.getByText(/Z4/)
@@ -34,10 +32,8 @@ describe('the session structure bar', () => {
   })
 })
 
-// Design review, Oct 2026 (mock 1a): Today's tile draws the session as it
-// runs, 12 pt tall, and says under it what it draws.
 describe("Today's session bar", () => {
-  // Oct 8 as the plan writes it: 9 km easy, about 54 minutes, then six strides.
+  // 9 km easy, about 54 minutes, then six strides.
   const STRIDES: WorkoutStep[] = [
     { kind: 'effort', minutes: 54, seconds: 3_213, paceSecPerKm: [330, 384] },
     ...Array.from({ length: 6 }, (_, i) => [
@@ -45,7 +41,7 @@ describe("Today's session bar", () => {
       { kind: 'recovery' as const, minutes: 1, seconds: 60, rep: i + 1 },
     ]).flat(),
   ]
-  // Oct 6: 3 × 7:40 with 4:00 easy between, warm-up and cool-down.
+  // 3 × 7:40 with 4:00 easy between, warm-up and cool-down.
   const THRESHOLD: WorkoutStep[] = [
     { kind: 'warmup', minutes: 12, seconds: 714 },
     ...Array.from({ length: 3 }, (_, i) => [

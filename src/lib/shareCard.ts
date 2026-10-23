@@ -30,24 +30,16 @@ export function pageFonts(): ShareFonts {
   return display ? { ...FALLBACK_FONTS, display: `${display}, ${FALLBACK_FONTS.display}` } : FALLBACK_FONTS
 }
 
-/**
- * Where there is no canvas to measure the title on: every word fits, so the
- * title takes its one line.
- */
+/** No canvas to measure on: every word fits, so the title takes its one line. */
 const UNMEASURED = { font: '', measureText: () => ({ width: 0 }) } as unknown as CanvasRenderingContext2D
 
 export interface ShareCardMapFrame {
-  /** The route's room on the full-card map, between the header and the stats. */
   frame: RouteFrame
-  /** Where the header's band and the stats' band meet the map, half way down each fade. */
+  /** Half way down each fade. */
   bands: [number, number]
 }
 
-/**
- * The Route card's map as drawShareCard will lay it out (redesign, Oct
- * 2026): the basemap is drawn for the whole card, the route fitted into
- * this frame, so it sits between the header and the stats.
- */
+/** The basemap is drawn for the whole card; the route is fitted into this frame, between the header and the stats. */
 export function shareCardMapFrame(activity: ShareActivity, fonts: ShareFonts): ShareCardMapFrame {
   const ctx = (typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d')) ?? UNMEASURED
   const { routeFrame, textTop, textBottom } = shareCardLayout(ctx, activity, fonts, 'route')

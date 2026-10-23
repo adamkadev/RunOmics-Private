@@ -95,8 +95,8 @@ describe('heroWorkoutView', () => {
   it("keeps the coach's description and notes off the dashboard", () => {
     const hero = heroWorkoutView(coachWorkoutView(overview.workouts[0]!))
 
-    // Type and distance are what the hero's session row needs to say "25 min
-    // Z4" and "planned 6 km"; the prose stays behind.
+    // What the hero's session row needs ("25 min Z4", "planned 6 km"); the
+    // prose stays behind.
     expect(hero).toEqual({
       title: '3 × 8 min threshold',
       type: 'Threshold',

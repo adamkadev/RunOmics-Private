@@ -11,8 +11,8 @@ export function ServiceWorkerRegistration() {
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') return
     if (!('serviceWorker' in navigator)) return
-    // Not before the private site's sign-in: the worker's install caches the
-    // app's first page, which a signed-out visitor is only redirected from.
+    // Not on sign-in: the install caches the app's first page, which only
+    // redirects a signed-out visitor.
     if (window.location.pathname === SIGN_IN_PATH) return
 
     let cancelled = false

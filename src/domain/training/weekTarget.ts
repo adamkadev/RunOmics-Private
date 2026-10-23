@@ -1,27 +1,15 @@
 import type { ActivityType } from '@/domain/activity/types'
 
 /**
- * One answer to "am I on track this week", for every screen that asks it.
- *
- * Today's ring, the Activities "This week" card and Plan's week summary used to
- * each count the week their own way: Today read the annual goal's weekly share
- * as "of 23 km", Activities called that same number "23 km planned", and Plan
- * added what was run to what was still planned (missed days included) and
- * called the sum the week's volume. Three screens, three targets, and the word
- * "planned" meaning two things.
- *
  * Two numbers exist, and they are named apart:
  * - the plan: the km and sessions the coach or Garmin scheduled this week;
  * - the volume goal: the weekly share of the annual distance goal.
  * What was run is measured against each of them, never blended into either.
  */
 
-/** A day of the week as the plan and the watch saw it. */
 export interface WeekTargetDay {
   date: string
-  /** Kilometres recorded that day, over every run. */
   ranKm: number
-  /** Runs recorded that day. */
   runs: number
   /** Kilometres the plan scheduled that day, when it said. */
   plannedKm: number | null
@@ -49,11 +37,7 @@ export interface WeekTarget {
   /** The plan's total, missed sessions included; null when nothing is planned. */
   planKm: number | null
   planSessions: number
-  /**
-   * Planned sessions that were run on their day (v5.5 #7). "2 of 2" used to
-   * count every run against the plan, so two unplanned runs beside two missed
-   * sessions read "2 of 2 · 2 missed".
-   */
+  /** Planned sessions that were run on their day; unplanned runs never count here. */
   plannedDone: number
   /** Runs on a day the plan left empty. */
   unplannedRuns: number
@@ -92,11 +76,7 @@ function round1(km: number): number {
   return Math.round(km * 10) / 10
 }
 
-/**
- * The week's one target: the plan's km (H04). Today ringed a 38 km goal (the
- * annual goal's weekly share) beside the plan's 48, two answers to one
- * question. The goal share stands in only when nothing is planned.
- */
+/** One target per week: the goal share stands in only when nothing is planned. */
 export function weeklyTargetKm(target: Pick<WeekTarget, 'planKm' | 'goalKm'>): number | null {
   return target.planKm ?? target.goalKm
 }

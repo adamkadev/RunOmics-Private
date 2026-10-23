@@ -1,9 +1,4 @@
-/**
- * The web config and whether it is set, without the SDK. lib/firebase imports
- * firebase/app, auth and firestore, so a component that only asks "is Firebase
- * configured?" asks here, and the SDKs stay out of its first load until it
- * actually calls one.
- */
+/** Kept apart from lib/firebase so a component that only asks "is Firebase configured?" does not load the SDKs. */
 export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,

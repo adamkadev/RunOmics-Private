@@ -4,14 +4,9 @@ import path from 'path'
 export const RULES_PATH = path.join('.claude', 'skills', 'coaching-plan', 'rules.md')
 export const GENERATED_PATH = path.join('src', 'infrastructure', 'ai', 'coachingRules.generated.ts')
 
-/**
- * The section whose bullets also go out on their own: a change to the live
- * plan names the sessions it writes too, and is held to the same rules
- * (design review, Oct 2026).
- */
+/** Its bullets also go out on their own: a change to the live plan names its sessions by the same rules. */
 export const NAMING_SECTION = 'Naming the workouts'
 
-/** The lines under `## heading`, up to the next heading of that level. */
 function sectionLines(markdown: string, heading: string): string[] {
   const lines = markdown.split('\n')
   const start = lines.findIndex((line) => line.trim() === `## ${heading}`)
@@ -20,12 +15,7 @@ function sectionLines(markdown: string, heading: string): string[] {
   return lines.slice(start + 1, end === -1 ? undefined : end)
 }
 
-/**
- * Each bullet is one instruction and they are sent as one paragraph, so document
- * order is the order the planner reads them in. Headings and prose around them
- * are for the human editing the file and never reach the model. With a
- * section, only that section's bullets.
- */
+/** The bullets go out as one paragraph in document order; headings and prose around them never reach the model. */
 export function rulesFromMarkdown(markdown: string, section?: string): string {
   const lines = section ? sectionLines(markdown, section) : markdown.split('\n')
   const bullets = lines.filter((line) => line.startsWith('- ')).map((line) => line.slice(2).trim())

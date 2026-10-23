@@ -1,14 +1,9 @@
 import { DAY_MS } from '@/lib/calendarDate'
 
 /**
- * Where the athlete's numbers have been, not only where they are.
- *
- * The coaching context passes current values: a threshold pace, a VO2max, a
- * CTL, a race prediction. Each is a single number with no past, so a figure
- * depressed by a fortnight off reads exactly like a ceiling. This module turns
- * the history files the data workspace already holds into short series the
- * planner can read, and states plainly how far each metric sits below its own
- * recent best.
+ * A current value has no past, so a figure depressed by a fortnight off reads
+ * exactly like a ceiling: these series give the planner the shape, and how far
+ * each metric sits below its own recent best.
  */
 
 /** A year is enough to hold a season's shape without bloating the prompt. */
@@ -17,7 +12,6 @@ const WINDOW_DAYS = 365
 const CTL_WEEKS = 26
 
 export interface MetricTrajectory {
-  /** Most recent value, and the date it was measured. */
   current: number | null
   currentDate: string | null
   /** Best value inside the window - lowest for a pace, highest for a score. */
@@ -34,11 +28,7 @@ export interface CtlTrajectory {
   peak: number | null
   peakDate: string | null
   offPeakPct: number | null
-  /**
-   * Weekly CTL with the weeks that carry no running left in as zero
-   * kilometres, because an interruption is the thing worth seeing and an
-   * average over it hides exactly that.
-   */
+  /** Weeks without running stay in as zero kilometres: an average over an interruption hides it. */
   weeks: { weekStart: string; ctl: number; km: number }[]
 }
 
@@ -51,11 +41,7 @@ export interface Trajectories {
    */
   predicted10kPaceSecPerKm: MetricTrajectory
   ctl: CtlTrajectory
-  /**
-   * Bests including efforts taken from ordinary training runs, which the
-   * official personal-best list leaves out. An athlete's fastest 10 km may
-   * never have happened in a race.
-   */
+  /** Includes efforts from ordinary training runs, which the official personal-best list leaves out. */
   bestEfforts: { distance: string; seconds: number; date: string | null; official: boolean }[]
 }
 
@@ -70,20 +56,13 @@ function monday(date: string): string {
   return iso(ms - (((weekday + 6) % 7) * DAY_MS))
 }
 
-/**
- * One point per month, keeping the last reading of each, which is what the
- * source files already record for VO2max and is the right grain for the rest.
- */
+/** The last reading of each month, the grain the source files already record for VO2max. */
 function monthly(samples: { date: string; value: number }[]): { date: string; value: number }[] {
   const byMonth = new Map<string, { date: string; value: number }>()
   for (const sample of samples) byMonth.set(sample.date.slice(0, 7), sample)
   return [...byMonth.values()].sort((a, b) => a.date.localeCompare(b.date))
 }
 
-/**
- * `lowerIsBetter` for a pace or a finish time, where the best value is the
- * smallest; false for a score like VO2max.
- */
 export function metricTrajectory(
   samples: { date: string; value: number }[],
   referenceDate: string,
@@ -100,7 +79,6 @@ export function metricTrajectory(
 
   const latest = within.at(-1)!
   const best = within.reduce((a, b) => (lowerIsBetter ? (b.value < a.value ? b : a) : (b.value > a.value ? b : a)))
-  // Always a positive distance from the best, whichever direction better is.
   const offBestPct = best.value === 0
     ? null
     : round(Math.abs((latest.value - best.value) / best.value) * 100)
@@ -121,8 +99,7 @@ export function ctlTrajectory(
   referenceDate: string,
 ): CtlTrajectory {
   const cutoff = iso(utc(referenceDate) - CTL_WEEKS * 7 * DAY_MS)
-  // Last reading of each week, plus every kilometre run inside it. A week the
-  // athlete did not run keeps its row and shows zero.
+  // A week the athlete did not run keeps its row and shows zero kilometres.
   const byWeek = new Map<string, { weekStart: string; ctl: number; km: number }>()
   for (const [date, snapshot] of series) {
     if (date <= cutoff || date > referenceDate) continue

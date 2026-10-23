@@ -7,8 +7,6 @@ import { loadLibModules } from './loadPalette.mjs'
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const outDir = join(root, 'public/icons/splash')
 
-// v5.2: the new mark in the default accent on the app's darkest background,
-// both read from the tokens (the old navy and mint are gone).
 const { SURFACES } = await loadLibModules('themeTokens', ['palette', 'accentScale', 'themeTokens'])
 const { CURATED_ACCENTS, DEFAULT_ACCENT } = await loadLibModules('accent', ['accentScale', 'accent'])
 const BG = SURFACES.dark.background

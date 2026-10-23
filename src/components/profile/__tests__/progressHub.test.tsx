@@ -69,9 +69,6 @@ describe('progressHubView', () => {
     expect(progressHubView({ ...INPUT, goal: null }).hero.projection).toBeNull()
   })
 
-  // v4.17: a history that starts in May of last year was read as this year to
-  // date against last year to date - +771 km where Analytics said +19. Both
-  // now count from the day the history starts, in both years.
   it('states the same year-over-year delta as Analytics when the history starts mid-year', () => {
     const activities = [
       { date: '2025-05-21', distanceKm: 100 },
@@ -93,7 +90,6 @@ describe('progressHubView', () => {
     expect(progressHubView({ ...INPUT, today: '2026-11-20' }).records.some((r) => r.recent)).toBe(false)
   })
 
-  // v4.17: the pair's own wear status, Replace soon from 70%, as its page reads it.
   it('reads each shoe\'s wear status, active pairs only, most worn first', () => {
     expect(view.shoes.map((s) => [s.name, s.status])).toEqual([['Pegasus 41', 'watch'], ['Vomero Plus', 'ok']])
   })
@@ -104,13 +100,12 @@ describe('progressHubView', () => {
     expect(named.race!.name).toBe('Wintzenheim')
   })
 
-  // 3.0.1: the tiles from before 3.0 are back under the records.
   it('draws km by year from the first run to this year, and VO2 max over 12 weeks', () => {
     expect(view.allTime.years.map(({ year, km }) => ({ year, km }))).toEqual([
       { year: 2022, km: 95 }, { year: 2023, km: 0 }, { year: 2024, km: 0 }, { year: 2025, km: 640 }, { year: 2026, km: 1_394 },
     ])
     expect(view.allTime).toMatchObject({ km: 2_509, runs: 297, hours: 243, since: '2022-03-10' })
-    // Over 12 weeks, as Analytics reads it (v4.7): Jul 1 is outside that.
+    // Over 12 weeks, as Analytics reads it: Jul 1 is outside that.
     expect(view.vo2max).toMatchObject({ value: 55, delta: 1, series: [54, 55], thresholdPaceSecPerKm: 263, lthrBpm: 185 })
     expect(view.consistency).toMatchObject({ activeDays: 2, streakWeeks: 12 })
     // Without Garmin's value, the latest sample to date.
@@ -132,7 +127,6 @@ describe('the hub helpers', () => {
     expect(weeks.at(-1)).toEqual([rest, rest, mid, mid, rest, { level: 0, today: true, future: false }, { level: 0, today: false, future: true }])
   })
 
-  // 3.0.2: the bar is where the predicted pace stands when the target clock stops.
   it('reads the race gap per km and how far the predicted pace gets by the target time', () => {
     const race = { daysUntil: 201, distance: 'Half-Marathon', distanceKm: 21.0975, name: null, date: '2027-05-08', targetSeconds: 5700, predictedSeconds: 5746 }
     const gap = raceGapView(race)!
@@ -154,23 +148,17 @@ describe('ProgressHub (3.0)', () => {
 
     expect(screen.getByTestId('race-tile').getAttribute('href')).toBe('/goals')
     expect(screen.getByTestId('year-hero').getAttribute('href')).toBe('/goals')
-    // 3.0.1: the records are one card, its four times side by side.
     expect(within(screen.getByTestId('records-tile')).getAllByRole('link')[0]!.getAttribute('href')).toBe('/records')
     expect(screen.getAllByTestId('record')).toHaveLength(3)
-    // App Fixes 1h: VO2 max is a row of the records card, and opens Athlete.
     expect(screen.getByTestId('vo2-row').getAttribute('href')).toBe('/athlete')
     expect(screen.getByTestId('consistency-tile').getAttribute('href')).toBe('/consistency')
     expect(screen.getByTestId('all-time').getAttribute('href')).toBe('/all-time')
-    // v4.17: each pair opens its own page; the card's header opens the list.
     expect(screen.getAllByTestId('shoe-row').map((row) => row.getAttribute('href'))).toEqual(['/shoes/p', '/shoes/v'])
     expect(screen.getByTestId('shoes-all').getAttribute('href')).toBe('/shoes')
     expect(screen.getByRole('link', { name: t.profile.hub.settings }).getAttribute('href')).toBe('/settings')
-    // Design review, Oct 2026: 44 pt, like every control.
     expect(screen.getByTestId('settings-gear').className).toContain('size-11')
   })
 
-  // App Fixes 1h: one compact row - distance, date and countdown over the
-  // name, the predicted time across from them.
   it('leads with the race as one row: eyebrow with the countdown, the name, the predicted time', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     expect(screen.getByTestId('race-eyebrow').textContent).toContain(t.profile.hub.inDays(64))
@@ -210,7 +198,6 @@ describe('ProgressHub (3.0)', () => {
     expect(vomero!.querySelector('[data-testid="shoe-status"]')).toBeNull()
   })
 
-  // Wave 4, App Fixes 1h: a 26-week strip replaces the active-days line.
   it('draws the last 26 weeks as a strip, the week under way an outline', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     const strip = screen.getByTestId('streak-strip')
@@ -223,8 +210,6 @@ describe('ProgressHub (3.0)', () => {
     expect(screen.getByTestId('records-tile').textContent).toContain(t.profile.hub.vo2Delta('1'))
   })
 
-  // App Fixes 1h: the hub previews Consistency's own reading - the weekly
-  // streak - rather than drawing a daily heatmap the page itself dropped.
   it('previews Consistency as the weekly streak and this week against the target', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     const tile = screen.getByTestId('consistency-tile')
@@ -233,7 +218,6 @@ describe('ProgressHub (3.0)', () => {
     expect(screen.queryByTestId('heatmap')).toBeNull()
   })
 
-  // App Fixes 1h: Goals owns the distance chart; the hub card is its preview.
   it('previews Goals without a second distance chart', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     const card = screen.getByTestId('year-hero')
@@ -244,6 +228,20 @@ describe('ProgressHub (3.0)', () => {
   it('shows this year and last on the All time card', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     expect(screen.getAllByTestId('year-row').map((row) => row.textContent)).toEqual([expect.stringContaining('2026'), expect.stringContaining('2025')])
+  })
+
+  it('puts the Explored card beside Consistency when the page gives one', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} explored={<section data-testid="explored-slot" />} />)
+    const columns = [...screen.getByTestId('progress-columns').children]
+    expect(columns.map((child) => child.getAttribute('data-testid'))).toEqual(['consistency-tile', 'explored-slot'])
+  })
+
+  it('keeps Consistency alone in its row without one', () => {
+    const { container } = render(<ProgressHub view={progressHubView(INPUT)} />)
+    const columns = [...screen.getByTestId('progress-columns').children]
+    expect(columns.map((child) => child.getAttribute('data-testid'))).toEqual(['consistency-tile'])
+    const { container: empty } = render(<ProgressHub view={progressHubView(INPUT)} explored={undefined} />)
+    expect(empty.innerHTML).toBe(container.innerHTML)
   })
 })
 
@@ -259,5 +257,3 @@ describe('one consistency count (v5.5 #9)', () => {
     expect(progressHubView(input).consistency.activeDays).toBe(2)
   })
 })
-
-// v4.17: the accent marks the athlete's own data in charts.

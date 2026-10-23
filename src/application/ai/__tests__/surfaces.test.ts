@@ -21,8 +21,6 @@ vi.mock('@/application/usecases/GetShoeDetail', () => ({ getShoeDetail: vi.fn() 
 const { insightSurfaces } = await import('../surfaces')
 
 describe('insightSurfaces', () => {
-  // Nothing reads the week-purpose card, the season headline or the four
-  // Analytics tab cards (v4.16.4): they spent the verdicts' quota on nothing.
   it('writes only cards a page displays', () => {
     expect(Object.keys(insightSurfaces())).toEqual(['runVerdicts', 'today', 'pbCelebration', 'shoeVerdicts'])
   })

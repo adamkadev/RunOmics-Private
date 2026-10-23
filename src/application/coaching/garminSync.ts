@@ -28,10 +28,7 @@ function completedPrescriptionIds(evaluations: WorkoutEvaluation[]): Set<string>
   )
 }
 
-/**
- * The dates this run may touch, resolved once and then the only thing consulted.
- * `--from` never reaches back before today: the past is already run.
- */
+/** The only thing consulted for dates; `--from` never reaches back before today, the past is already run. */
 interface SyncRange {
   contains(date: string): boolean
 }
@@ -111,9 +108,7 @@ function operationFor(
 
   if (!existing) return { ...base, action: 'create', payload, contentHash, reason: note }
 
-  // Content before the retry: retrying a failed schedule reuses the workout
-  // Garmin already holds, which is the old prescription, while the state
-  // records the new hash - after which nothing would see the two disagree.
+  // Content before the retry: a retry would reuse the old workout Garmin holds while the state records the new hash.
   if (existing.contentHash !== contentHash) {
     const moved = existing.date !== workout.date
     return {
@@ -125,8 +120,7 @@ function operationFor(
     }
   }
 
-  // From scratch rather than a retry: what Garmin holds is unknown, and the
-  // replace removes whatever the recorded ids still name before pushing.
+  // From scratch, not a retry: what Garmin holds is unknown, and the replace removes whatever the recorded ids name.
   if (existing.status === 'unverified') {
     return { ...base, action: 'replace', payload, contentHash, reason: 'Garmin did not confirm the last push' }
   }
@@ -178,10 +172,8 @@ export function buildGarminSyncPlan(
   options: GarminSyncOptions = {},
 ): GarminSyncPlan {
   const current = state ?? emptyGarminSyncState()
-  // A new plan claims the entries of the sessions it kept from the plan the
-  // mapping was written for - bootstrap --start keeps them under their own
-  // ids, which carry that plan's id - so they are kept or moved on Garmin
-  // rather than pushed a second time. Nothing else of the old plan's is its own.
+  // Sessions a new plan kept from the old one keep ids prefixed with the old plan's id (bootstrap --start),
+  // so their entries are kept or moved on Garmin rather than pushed a second time.
   const recorded = entriesByPrescription(current)
   const kept = new Set(plan.weeks.flatMap((week) => week.workouts.map((workout) => workout.id))
     .filter((id) => current.planId !== null && id.startsWith(`${current.planId}:`)))

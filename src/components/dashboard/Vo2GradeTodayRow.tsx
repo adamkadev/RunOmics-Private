@@ -5,12 +5,7 @@ import { formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { DismissibleRow } from './DismissibleRow'
 
-/**
- * Today's one grade row (v5.3 G3): only for the three days after the grade
- * goes up - never for a drop or a steady grade. The letter sits on the
- * segmented grey in ink, no accent; the "↑ from B+" is --good. Tap → G2;
- * the × puts it away until the grade changes again (design review, Oct 2026).
- */
+/** Only in the three days after the grade goes up; the × puts it away until the grade changes again. */
 export function Vo2GradeTodayRow({ view }: { view: Vo2GradeView | null }) {
   if (view?.status !== 'graded' || view.change?.kind !== 'up') return null
   const g = t.vo2Grade

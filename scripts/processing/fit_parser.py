@@ -102,12 +102,7 @@ class ParsedFit:
 
 
 def parse_fit(content: bytes) -> ParsedFit:
-    """Everything RunOmics reads out of one FIT file; empty when it cannot be read.
-
-    An empty result looks the same as an activity with nothing in it, so what
-    the SDK objected to is printed: it mostly hands its errors back rather
-    than raising them.
-    """
+    """The SDK mostly hands its errors back rather than raising them; they are printed, as an empty result looks like no data."""
     try:
         stream = Stream.from_byte_array(bytearray(content))
         messages, errors = Decoder(stream).read()
@@ -170,9 +165,7 @@ def parse_fit(content: bytes) -> ParsedFit:
         elevation_samples=elevation_samples,
         elevation_gain_m=round(record_ascent, 1),
         is_race=bool(messages.get("310")),
-        # On the moving clock: a best effort can't include a stop the run's
-        # own (timer) duration leaves out (v5.5 #5: a 10K at 1:02:18 on a
-        # 56:27 run).
+        # On the moving clock: a best effort can't include a stop the run's own (timer) duration leaves out.
         best_efforts=_best_efforts(
             dist_samples,
             _moving_clock(dist_samples, time_samples, _timer_pauses(messages.get("event_mesgs", []))),
@@ -257,8 +250,6 @@ def parse_fit(content: bytes) -> ParsedFit:
 
 
 def _extract_splits(messages: dict) -> list[ActivitySplit]:
-    """Interval splits when the watch recorded a structured workout, otherwise
-    the plain laps Garmin records for an ordinary run or a race."""
     raw_splits = messages.get("split_mesgs", [])
     raw_laps = messages.get("lap_mesgs", [])
 
@@ -281,7 +272,7 @@ def _extract_splits(messages: dict) -> list[ActivitySplit]:
     for split_type, s, duration in interval_splits:
         distance = float(s.get("total_distance") or 0)
         speed = float(s.get("avg_speed") or 0)
-        # field 15 = avg_heart_rate (undocumented in garmin_fit_sdk for split_mesgs)
+        # Field 15 is avg_heart_rate, undocumented in garmin_fit_sdk for split_mesgs.
         raw_hr = s.get(15) or s.get("avg_heart_rate")
         avg_hr = int(raw_hr) if raw_hr else None
 
@@ -311,7 +302,6 @@ def _extract_splits(messages: dict) -> list[ActivitySplit]:
 
 
 def _parse_laps(raw_laps: list[dict]) -> list[dict]:
-    """Laps that carry a usable start time and a non-zero duration."""
     parsed_laps = []
     for lap in raw_laps:
         start = lap.get("start_time")
@@ -332,9 +322,7 @@ def _parse_laps(raw_laps: list[dict]) -> list[dict]:
 
 
 def _lap_splits(parsed_laps: list[dict]) -> list[ActivitySplit]:
-    """Garmin's own laps as top-level splits. A lap covering no ground carries no
-    pace to show, and a single lap is just the activity total restated - neither
-    is a split, so neither is invented into one."""
+    """A lap covering no ground carries no pace, and a single lap restates the activity total: neither is a split."""
     laps = [lap for lap in parsed_laps if lap["distance_m"] > 0]
     if len(laps) < _MIN_LAP_SPLITS:
         return []
@@ -353,9 +341,7 @@ def _lap_splits(parsed_laps: list[dict]) -> list[ActivitySplit]:
 
 
 def _naive_datetime(value: object) -> datetime | None:
-    """`timestamp` comes back decoded, but `local_timestamp` stays a raw FIT
-    timestamp (seconds since 1989-12-31) - comparing the two as datetimes
-    silently yields no offset at all."""
+    """`timestamp` comes back decoded, but `local_timestamp` stays a raw FIT timestamp (seconds since 1989-12-31)."""
     if isinstance(value, datetime):
         return value.replace(tzinfo=None)
     if isinstance(value, (int, float)):
@@ -380,7 +366,6 @@ def _local_start_time(session: dict, activities: list[dict]) -> datetime | None:
 
 
 def _extract_vo2max(messages: dict) -> float | None:
-    """Extract Garmin VO2max from FIT message 140, field 7. Formula: raw * 3.5 / 65536."""
     entries = (
         messages.get("max_met_data_mesgs")
         or messages.get(140)
@@ -391,13 +376,13 @@ def _extract_vo2max(messages: dict) -> float | None:
         raw = entry.get(7) or entry.get("7") or entry.get("vo2_max_setting") or entry.get("calibrated_data")
         if raw:
             value = round(int(raw) * 3.5 / 65536, 1)
-            if 20.0 <= value <= 90.0:  # sanity check: plausible VO2max range
+            if 20.0 <= value <= 90.0:
                 return value
     return None
 
 
 def _pace_samples(dists: list[float], times: list[float]) -> list[float]:
-    """Smoothed pace in sec/km using a 30-second backward rolling window."""
+    """Pace in sec/km over a 30-second backward window."""
     n = len(dists)
     if n < 2:
         return []
@@ -410,17 +395,15 @@ def _pace_samples(dists: list[float], times: list[float]) -> list[float]:
         dd = dists[i] - dists[j]
         dt = times[i] - times[j]
         if dd > 1.0 and dt > 0.0:
-            pace = dt / dd * 1000.0  # sec/km
+            pace = dt / dd * 1000.0
             if 90.0 <= pace <= 1200.0:  # 1:30–20:00 /km
                 raw[i] = round(pace, 1)
-    # Forward-fill
     last: float | None = None
     out: list[float] = []
     for v in raw:
         if v is not None:
             last = v
         out.append(last if last is not None else 0.0)
-    # Backward-fill leading zeros with first valid value
     first_valid = next((v for v in out if v > 0.0), None)
     if first_valid is not None:
         for i in range(len(out)):
@@ -438,7 +421,7 @@ _PAUSE_SPEED_MS = 0.5
 
 
 def _timer_pauses(events: list[dict]) -> list[tuple[float, float]]:
-    """The spans the timer was stopped, as (stop, restart) epoch seconds."""
+    """(stop, restart) spans in epoch seconds."""
     pauses: list[tuple[float, float]] = []
     stopped: float | None = None
     timed = [e for e in events if e.get("event") == "timer" and isinstance(e.get("timestamp"), datetime)]
@@ -454,11 +437,6 @@ def _timer_pauses(events: list[dict]) -> list[tuple[float, float]]:
 
 
 def _moving_clock(dists: list[float], times: list[float], pauses: list[tuple[float, float]]) -> list[float]:
-    """Record times with the stopped spans taken out, so they run on the timer.
-
-    Timer events are the watch's own record of a pause. A file without them
-    falls back to the record gaps: a long gap that covers almost no ground.
-    """
     out: list[float] = []
     offset = 0.0
     k = 0
@@ -516,7 +494,7 @@ _METERS_PER_DEGREE = 111_320.0
 
 
 def _project_meters(lon: float, lat: float, lon0: float, lat0: float) -> tuple[float, float]:
-    """Equirectangular projection centered on the route, accurate enough at a single-run scale."""
+    """Equirectangular, accurate enough at a single-run scale."""
     x = (lon - lon0) * math.cos(math.radians(lat0)) * _METERS_PER_DEGREE
     y = (lat - lat0) * _METERS_PER_DEGREE
     return x, y
@@ -534,20 +512,10 @@ def _perpendicular_distance(point: tuple[float, float], start: tuple[float, floa
 
 
 def _rdp_significance(points: list[tuple[float, float]], floor: float) -> list[float]:
-    """For each point, the largest epsilon at which Douglas-Peucker keeps it.
+    """For each point, the largest epsilon at which Douglas-Peucker keeps it, exact for every epsilon from `floor` up.
 
-    Douglas-Peucker drops points close to the line between their neighbours
-    and keeps the turns: a segment's farthest point is kept, and the halves
-    either side of it examined in turn, while that distance exceeds epsilon.
-    Which point is farthest does not depend on epsilon, so a larger epsilon
-    only prunes the same recursion earlier - a point survives exactly while
-    its own distance and every ancestor's exceed epsilon. One pass recording
-    that minimum answers the simplification for every epsilon at once:
-    kept(epsilon) is the points whose significance is above it. The first and
-    last are always kept.
-
-    Exact for every epsilon from `floor` up; the recursion stops where the
-    distance does, so below it every point reads 0.
+    Which point is farthest does not depend on epsilon, so a point survives exactly while its own distance and every
+    ancestor's exceed epsilon: one pass answers the simplification for every epsilon at once.
     """
     significance = [0.0] * len(points)
     significance[0] = significance[-1] = math.inf
@@ -571,14 +539,7 @@ def _rdp_significance(points: list[tuple[float, float]], floor: float) -> list[f
 
 
 def _decimate(coords: list[list[float]], max_points: int) -> list[list[float]]:
-    """Douglas-Peucker at the smallest epsilon of the ladder 0.5 m, x1.5, x1.5...
-    that brings the route down to max_points.
-
-    That ladder used to be climbed by re-running the simplification at every
-    step, which is what made a long jittery route slow. It is now walked on
-    the significance values alone - the same epsilon, and so the same points,
-    for one pass over the route.
-    """
+    """Douglas-Peucker at the smallest epsilon of the ladder 0.5 m, x1.5, x1.5... that brings the route down to max_points."""
     if len(coords) < 3:
         return coords
     if max_points < 2:

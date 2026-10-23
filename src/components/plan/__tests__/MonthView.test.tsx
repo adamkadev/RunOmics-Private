@@ -70,13 +70,12 @@ describe('the month grid', () => {
     expect(tile('2026-10-13').style.border).toBe('1px solid color-mix(in srgb, var(--zone-2) 50%, transparent)')
     expect(tile('2026-10-14').style.background).toBe('color-mix(in srgb, var(--zone-4) 25%, transparent)')
     expect(tile('2026-10-21').style.border).toBe('1px dashed var(--zone-4)')
-    // The long run shares the easy blue (3.0.2).
+    // The long run shares the easy blue.
     expect(tile('2026-10-25').style.border).toBe('1px dashed var(--zone-2)')
     expect(tile('2026-10-15').getAttribute('style')).toBeNull()
     expect(tile('2026-10-15').textContent).toBe('')
   })
 
-  // Wave 5: amber, as on Today.
   it('names a past session that was not run missed, in amber', () => {
     renderMonth()
 
@@ -145,11 +144,10 @@ describe('the quality letter on a tile (review 10)', () => {
   it('letters a quality day and leaves an easy one to its number', () => {
     renderMonth()
 
-    // 14 Oct was run as a Threshold, 13 Oct as an easy run: one colour
-    // cannot tell a VO2 Max from a race, so the letter does.
+    // 14 Oct was run as a Threshold, 13 Oct as an easy run.
     expect(tile('2026-10-14').textContent).toContain(t.plan.typeLetters.Threshold)
     expect(tile('2026-10-13').textContent).not.toContain(t.plan.typeLetters.Threshold)
-    // Still planned, not yet run: the letter says which session is coming.
+    // 21 Oct is a Threshold still to come.
     expect(tile('2026-10-21').textContent).toContain(t.plan.typeLetters.Threshold)
   })
 })
@@ -172,9 +170,6 @@ describe('the legend and the summary', () => {
     expect(summary.textContent).not.toContain(t.plan.month.phaseWeek(t.plan.weekPurpose.planPhase.build, 2, 6))
   })
 
-  // Review 8: a whole month's km against a plan that covers 13-25 Oct read
-  // as "160 of 114 km". The ratio is over the plan's own days, and the
-  // month's total is said beside it.
   it('compares the plan’s own days, and says the month’s total beside them', () => {
     renderMonth()
 

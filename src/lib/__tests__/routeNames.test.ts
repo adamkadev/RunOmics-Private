@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { routeKey } from '@/lib/routeNames'
 
-// App Fixes 1g: a route's id is only its place in the list, which moves as
-// routes come and go, so a name is kept against the route's own shape.
+// A route's id is only its place in the list, so a name is kept against the route's own shape.
 describe('routeKey', () => {
   const route = { start: [6.1234, 49.6001] as const, far: [6.1501, 49.6204] as const, distanceKm: 7.3 }
 

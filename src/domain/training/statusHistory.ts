@@ -35,11 +35,8 @@ function isNextDay(previous: string, current: string): boolean {
 }
 
 /**
- * The last `windowDays` calendar days to `endIso`, one entry per day, with the
- * status Garmin rated it or null. Today and Analytics both count from this:
- * Today used to take the last 28 records (which can span months when the
- * watch skips days) and Analytics the last 28 days, so the same four weeks
- * read "11 of 28 days" on one and "6 days" on the other.
+ * Calendar days, not the last N records, which can span months when the watch
+ * skips days. Today and Analytics both count from this.
  */
 export function trainingStatusDays<S extends string>(
   points: ReadonlyArray<{ date: string; status: S | null }>,

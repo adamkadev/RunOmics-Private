@@ -38,11 +38,7 @@ export function macrocyclePhaseRanges(plan: MacrocycleSpan): PlanPhaseRange[] {
   return plan.targetEvent ? macrocyclePhases(macrocycleStart(plan), plan.targetEvent.date) : []
 }
 
-/**
- * The block week a date falls in, counted by the Monday of its week (v5.5
- * #8). Plan asked with the week's Monday and Goals with today, so on a Sunday
- * start (Sep 6) the same week read "week 3" on Plan and "wk 4" on Goals.
- */
+/** Counted by the Monday of the date's week, so Plan (asking with a Monday) and Goals (asking with today) agree. */
 export function macrocycleWeek(plan: MacrocycleSpan, date: string): { done: number; total: number } | null {
   if (!plan.targetEvent) return null
   const start = macrocycleStart(plan)
@@ -52,7 +48,7 @@ export function macrocycleWeek(plan: MacrocycleSpan, date: string): { done: numb
   return { done: Math.min(Math.max(done, 1), total), total }
 }
 
-/** General preparation's week: Monday weeks from the start, as coachingPrompt counts them. Null with a race. */
+/** Monday weeks from the start, as coachingPrompt counts them. */
 export function preparationWeek(plan: MacrocycleSpan, date: string): number | null {
   if (plan.targetEvent) return null
   const startMonday = isoDate(startOfWeek(new Date(`${macrocycleStart(plan)}T00:00:00`)))
@@ -65,10 +61,7 @@ export function garminAlert(view: Pick<PrescriptionView, 'garminStatus'>): strin
   return view.garminStatus === 'scheduled_different' ? t.coaching.garminOutOfDate : null
 }
 
-// A literal ['easy', 'recovery'] exclusion list here missed 'long_run' -
-// COACHING_TO_ACTIVITY_TYPE already maps every easy-effort prescription type
-// (easy, recovery, long_run) to the 'Base' activity type, so reusing it keeps
-// this in sync with that map instead of drifting from it again.
+// Reuses the map that sends every easy-effort type (easy, recovery, long_run) to 'Base', so a literal list cannot drift from it.
 export function isKeyPrescription(workout: Pick<WorkoutPrescription, 'type'>): boolean {
   return COACHING_TO_ACTIVITY_TYPE[workout.type] !== 'Base'
 }
@@ -100,12 +93,7 @@ function eachSegment(
   return true
 }
 
-/**
- * What a segment is worth in metres. A repetition prescribed as time still
- * covers ground, and counting only `distanceMeters` drops it: a threshold
- * session of 3 x 7:00 either side of a warm-up reads 5 km when it is 10.
- * The same conversion weekKm uses, through the segment's own prescribed pace.
- */
+/** A repetition prescribed as time still covers ground: converted through its own prescribed pace, as weekKm does. */
 function segmentMeters(target: WorkoutTarget): number {
   if (target.distanceMeters !== undefined) return target.distanceMeters
   if (target.durationSeconds && target.paceSecPerKm) {
@@ -160,18 +148,11 @@ function paceSpan(
   return min !== undefined && max !== undefined ? `${formatClock(min)}–${formatClock(max)}/km` : null
 }
 
-/** The pace envelope of the whole session, warm-up and cool-down included. */
 export function prescriptionPace(workout: Segmented): string | null {
   return paceSpan(workout, () => true)
 }
 
-/**
- * The pace of the work only. Collapsing every segment into one span turns a
- * threshold session into `4:20-6:27/km`, a range so wide it prescribes nothing:
- * the slow end is the warm-up and the fast end the reps. On a glanceable row
- * the reps are the session, so the bookends are dropped. Returns null when the
- * coach paced no effort segment, leaving the caller on its zone-band fallback.
- */
+/** The work only: a span over the warm-up and the reps together is too wide to prescribe anything. */
 export function prescriptionEffortPace(workout: Segmented): string | null {
   return paceSpan(workout, (kind) => STEP_KIND[kind] === 'effort')
 }

@@ -11,12 +11,9 @@ export interface LoadDay {
 }
 
 /**
- * Fitness (CTL), fatigue (ATL) and form (TSB) for every calendar day from
- * `from` to `through`, from each day's load keyed by date. The one model the
- * app and the exported workbook both use - they had a copy each, stepping days
- * differently. Days are stepped as calendar dates, so the series is the same
- * in any time zone and across a clock change. Unrounded: each reader rounds
- * for its own display.
+ * The one model the app and the exported workbook share. Days are stepped as
+ * calendar dates, so the series is the same in any time zone and across a clock
+ * change. Unrounded: each reader rounds for its own display.
  */
 export function loadSeries(dailyLoad: ReadonlyMap<string, number>, from: string, through: string): Map<string, LoadDay> {
   const series = new Map<string, LoadDay>()

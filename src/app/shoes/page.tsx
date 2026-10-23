@@ -17,8 +17,6 @@ export const revalidate = 3600
 export default async function ShoesPage() {
   const shoes = getShoeStats()
 
-  // The pair most in need of replacing gets the one line that needs the
-  // activity log: how much of the recent quality work it still carries.
   const hero = pickHeroShoe(shoes)
   const insights: Record<string, string> = {}
   if (hero) {
@@ -48,8 +46,7 @@ export default async function ShoesPage() {
             target="_blank"
             rel="noreferrer"
             aria-label={t.shoes.addLabel}
-            // A 44 pt glass +, as the compact top bar keeps it once the page
-            // scrolls (owner, Oct 2026); its name is its aria-label.
+            // The compact top bar keeps this button once the page scrolls.
             data-bar-action="add"
             className={glassClass('regular', GLASS_CIRCLE)}
           >

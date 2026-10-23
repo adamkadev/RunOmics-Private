@@ -4,24 +4,11 @@ import { createContext, forwardRef, useCallback, useRef, type ReactNode } from '
 import { useStuck } from '@/lib/useStuck'
 import { cn } from '@/lib/utils'
 
-/** Whether the strip around a control is pinned: a segmented control in it turns to glass. */
 export const StickyStuckContext = createContext<boolean | null>(null)
 
 /**
- * A sticky strip of controls - the Analytics and activity tabs. Opaque, on the
- * page's own background, with a hairline and a 12 pt fade into the content:
- * the glass fill let axis labels and "Stride length 1.06" read through the tab
- * labels, and blur can't be relied on (the reason the status bar went opaque).
- * Its `top` reads --sticky-top first: while the compact title bar shows, the
- * strip sits under it rather than over its title (v4.3.3). Then, on a phone,
- * --sticky-alone, which keeps it from sticking on its own (globals.css).
- * On a phone it is transparent (Liquid Glass v2), at z-30 over the soft
- * scroll edge. Pinned, the segmented control in it turns to glass (Liquid
- * Glass v3, G5), fading in over 120 ms, and the rows pass visibly under it
- * (F20): the strip is no data-sticky-strip, so the scroll edge stays the
- * bar's own. Grown by the strip's height (F4), the edge painted the ground
- * behind the glass, which read as a flat grey track. Activities' month
- * headings, plain text, still grow it.
+ * Opaque from lg up rather than glass: content would read through the tab labels, and blur can't be relied on.
+ * No data-sticky-strip: a scroll edge grown by its height would paint the ground behind the pinned glass.
  */
 export const StickyBar = forwardRef<HTMLDivElement, { top: string; className?: string; children: ReactNode }>(
   function StickyBar({ top, className, children }, ref) {

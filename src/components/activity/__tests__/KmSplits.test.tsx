@@ -20,7 +20,7 @@ function activityWith(splits: ActivitySplit[] | null): Activity {
   return { splits } as Activity
 }
 
-/** A run of laps opens on its kilometres (3.0); the laps are one tap away. */
+/** A run of laps opens on its kilometres; the laps are one tap away. */
 function showLaps() {
   act(() => screen.getByRole('tab', { name: t.activity.splits.lapTitle }).click())
 }
@@ -67,7 +67,7 @@ describe('KmSplits', () => {
       />,
     )
 
-    // 3.0.2: a structured session opens on its laps, its kilometres a tap away.
+    // A structured session opens on its laps.
     expect(screen.getByRole('tab', { name: t.activity.splits.lapTitle })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_warmup!)).toBeInTheDocument()
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()
@@ -99,10 +99,7 @@ describe('KmSplits', () => {
   })
 
   it('colours the segment labels the way the plan structure bar does', () => {
-    // The two surfaces disagreed: blue meant warm-up here and recovery on the
-    // structure bar, and cool-down spent a violet nothing else in the app
-    // uses. The structure bar draws the two bookends as one neutral, so they
-    // match here, and the cool tone belongs to the segments it names.
+    // The plan structure bar draws warm-up and cool-down as one neutral and keeps blue for recovery.
     render(
       <KmSplits
         activity={activityWith([
@@ -163,9 +160,7 @@ describe('KmSplits on a continuous run', () => {
     expect(screen.getByText(t.activity.splits.intervalTypes.interval_active!)).toBeInTheDocument()
   })
 
-  // 5c: a long run started from a workout comes as one interval. It is a
-  // steady run, so it opens on its kilometres. Under Laps it reads as the
-  // whole run, never "Interval" (App Fixes 1c): no laps were pressed.
+  // A long run started from a workout comes as one interval, though no laps were pressed.
   it('opens a run kept as one interval on its kilometres, and calls it the whole run under Laps', async () => {
     const user = userEvent.setup()
     const autoLaps = [1, 2, 3, 4, 5].map(() => ({ durationSec: 300, distanceM: 1000, avgSpeedMs: 1000 / 300, avgHr: 150 }))
@@ -181,14 +176,11 @@ describe('KmSplits on a continuous run', () => {
     expect(whole.textContent).not.toContain(t.activity.splits.intervalTypes.interval_active!)
     expect(whole.textContent).toContain(t.activity.splits.noLapsPressed)
 
-    // And it hands the reader back to the kilometres.
     await user.click(within(whole).getByRole('button', { name: new RegExp(t.activity.splits.seeKmSplits) }))
     expect(screen.getAllByTestId('km-split')).toHaveLength(5)
   })
 
-  // App Fixes 1c: a session started as one interval records its work block
-  // as that lap - 1.6 km of a 9.3 km threshold run - and calling that the
-  // whole run lied about the distance printed beside it.
+  // A session started as one interval records its work block as that lap: 1.6 km of a 9.3 km threshold run.
   it('calls a single lap that is only part of the run its first lap, not the whole run', () => {
     const autoLaps = [1, 2, 3, 4].map(() => ({ durationSec: 93, distanceM: 400, avgSpeedMs: 400 / 93, avgHr: 185 }))
     render(<KmSplits activity={{ ...continuous, distanceKm: 9.3, splits: [split('interval_active', 372, 1600, 185, autoLaps)] } as Activity} />)
@@ -223,7 +215,6 @@ describe('isStructured', () => {
 })
 
 describe('per-km splits', () => {
-  // 5c: KM · PACE · the speed bar · ELEV · HR; the fastest km is the full bar.
   it('compares each km: a speed bar, longer when faster, and its climb', () => {
     render(
       <KmSplits
@@ -249,8 +240,7 @@ describe('per-km splits', () => {
     expect(screen.getAllByTestId('km-elev').map((el) => el.textContent)).toEqual(['-', '-', '-'])
   })
 
-  // The footer: the fastest km in the accent on the left, the split verdict
-  // on the right - here the run faded, a positive split.
+  // Here the run faded: a positive split.
   it('names the fastest km and the split in the footer', () => {
     render(
       <KmSplits
@@ -292,7 +282,6 @@ describe('per-km splits', () => {
     expect(screen.getByTestId('split-verdict').textContent).toBe(t.activity.splits.negativeSplit('−0:30'))
   })
 
-  // The fastest km in the accent, its pace and its bar; each km's metres climbed.
   it('marks the fastest km and signs the climb', () => {
     render(
       <KmSplits

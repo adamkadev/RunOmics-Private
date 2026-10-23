@@ -20,12 +20,6 @@ import type { Spender } from '@/lib/aiSpend'
 import type { Insight, InsightRequest, InsightResult } from '@/lib/gemini'
 import type { InsightSurfaces, SurfaceJob, SurfacePlan } from './surfaces'
 
-/**
- * Everything the pass does to the world, passed in so the loop that spends
- * the Gemini quota can be tested without Firestore, Gemini, Next or FCM. The
- * route hands over the real ones; `insights` is the Firestore repository's
- * own functions, not a second definition of them.
- */
 export interface InsightPassDeps {
   spender: Spender
   insights: Pick<
@@ -45,28 +39,15 @@ export interface InsightPassOptions {
   ignoreHorizon: boolean
 }
 
-/**
- * Runs from the last three days are written before any other surface: behind
- * the rest, the one insight the athlete is waiting for is the first thing the
- * quota or the clock drops. Three is a week's running, never a backfill.
- */
+/** Fresh runs are written before any other surface, or the quota or the clock drops them first; three is never a backfill. */
 const FRESH_RUN_VERDICTS_PER_RUN = 3
 
 const MAX_ATTEMPTS_PER_SURFACE = 3
 
-/**
- * How many earlier verdicts the model is shown, newest first. Every one is
- * still checked for a repeated headline; a backfill used to hand the model
- * thirty of them, and a list that long leaves it no wording at all.
- */
+/** Every earlier verdict is still checked for a repeat, but a much longer list leaves the model no wording at all. */
 const AVOID_VERDICTS_SHOWN = 8
 
-/**
- * Of those, how many are the latest verdicts of the same kind of session
- * (v4.16.6). Newest first alone, a threshold session in a backfill was shown
- * the easy runs written around it and none of the threshold verdicts before
- * it, so each one came out as the last.
- */
+/** Of those, the latest of the same kind: newest first alone, a backfilled threshold session would see only the easy runs around it. */
 const SAME_KIND_SHOWN = 5
 
 export function verdictsToShow(kind: string, avoid: VerdictPhrasing[]): VerdictPhrasing[] {
@@ -79,11 +60,7 @@ function isModelClosed(reason: string): boolean {
   return reason.startsWith('http 429') || reason.startsWith('http 404')
 }
 
-/**
- * A call that ran out its time is the same luck as a 503 (Oct 2026): 3.8
- * Flash ran into the call timeout on every surface of a day, and with the
- * walk stopping there the next model in the pool was never asked.
- */
+/** A call that ran out its time is the same luck as a 503, so the next model gets asked. */
 function isTransient(reason: string): boolean {
   return reason.startsWith('http 500') || reason.startsWith('http 503') || reason.startsWith('TimeoutError')
 }
@@ -103,15 +80,8 @@ type PoolAttempt =
   | { ok: false; reason: string; reserved: boolean }
 
 /**
- * One request, walked across the pool: a model that is closed for the day or
- * answered with a transient error hands the same request to the next one.
- * Copy the validator rejected is not retried - another model would only buy
- * the same odds. `reserved: false` means the spender refused outright, which
- * is the only failure that should stop a caller looping.
- *
- * Each model is asked once (Oct 2026): with two in the pool the third attempt
- * went back to the one that had just answered 503, and in a day of Google's
- * 503s that third request was a third of the budget spent for nothing.
+ * Copy the validator rejected is not retried: another model would only buy the same odds.
+ * `reserved: false` means the spender refused outright, the only failure that should stop a caller looping.
  */
 export async function generateFromPool(
   deps: InsightPassDeps,
@@ -127,8 +97,7 @@ export async function generateFromPool(
     const model = await deps.spender.reserve(untried)
     if (!model) {
       attempts.push(noReserveReason(deps.spender, untried))
-      // Refused only the models not yet asked: the ones that were may still
-      // answer the next item, so the caller goes on.
+      // Only the untried models were refused; the tried ones may still answer the next item.
       return { ok: false, reason: attempts.join(' | '), reserved: tried.size > 0 }
     }
     // A model the pool does not name is GEMINI_MODEL standing in for all of it: one model, one chance.
@@ -150,7 +119,6 @@ interface SurfaceOutcome {
   reason?: string
 }
 
-/** Writes one card, unless the stored copy was written from the same facts. */
 export async function runSurface(deps: InsightPassDeps, job: SurfaceJob): Promise<SurfaceOutcome> {
   const cached = await deps.insights.getCachedInsight(job.surface)
   if (cached?.hash === job.hash) return { generated: false, reason: 'unchanged' }
@@ -189,12 +157,7 @@ export interface VerdictQueue {
   eligible: number
 }
 
-/**
- * The runs whose stored verdict is missing, was written from other facts, or
- * was written before the athlete's note said otherwise - split into the ones
- * that just landed and the backlog. A verdict stored before notes were kept
- * counts as written without one, so only the runs that have a note go again.
- */
+/** A verdict stored before notes were kept counts as written without one, so only runs that have a note go again. */
 export function verdictQueue(
   source: { contexts: RunVerdictContext[]; recordActivityIds: ReadonlySet<string> },
   cached: ReadonlyMap<string, CachedKeys>,
@@ -218,12 +181,7 @@ export function verdictQueue(
   }
 }
 
-/**
- * `written` spans both calls of one pass and `phrasing` the passes before it,
- * so neither the avoid list nor the repeated-headline check starts from
- * nothing. A repeat is rejected, not saved: the run stays queued for the next
- * pass, as over-long copy does.
- */
+/** `written` spans both calls of a pass and `phrasing` the passes before, so the repeat check never starts from nothing. */
 export async function writeVerdicts(
   deps: InsightPassDeps,
   pending: RunVerdictContext[],
@@ -270,18 +228,7 @@ export async function writeVerdicts(
   return { generated: written.length - before, failures }
 }
 
-/**
- * The push for a run that just got its AI verdict - the payoff the ~5-minute
- * sync-to-verdict wait exists for, sent the moment it lands rather than
- * making the shortcut or the Settings card the only way to find out.
- *
- * Only the fresh verdicts are pushed: the backfill covers runs up to 90 days
- * old, and a push about one of those in the middle of the night would be
- * noise, not news.
- *
- * A push failure must never fail the pass it is reporting on - the verdict is
- * already saved and the activity page already has it either way.
- */
+/** A push failure must never fail the pass: the verdict is already saved. */
 async function notifyFreshVerdict(deps: InsightPassDeps, insight: Insight): Promise<void> {
   try {
     await deps.notify(insight)
@@ -290,12 +237,7 @@ async function notifyFreshVerdict(deps: InsightPassDeps, insight: Insight): Prom
   }
 }
 
-/**
- * One pass over every AI surface, in priority order: the verdicts for runs
- * that just landed, then the cards a reader looks at, then the verdict
- * backlog on the cheaper pool. What the clock or the quota cuts off here, the
- * next pass picks up - every surface is keyed on the facts it was written from.
- */
+/** Priority order: fresh verdicts, the displayed cards, then the backlog; what the clock or quota cuts off, the next pass picks up. */
 export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSurfaces, options: InsightPassOptions) {
   const cached = await deps.insights.listCachedKeys(RUN_VERDICT_PREFIX)
   const queue = verdictQueue(await surfaces.runVerdicts(), cached, deps.now(), options.ignoreHorizon)
@@ -305,8 +247,7 @@ export async function runInsightPass(deps: InsightPassDeps, surfaces: InsightSur
 
   const fresh = options.limit === 0 ? [] : queue.fresh.slice(0, FRESH_RUN_VERDICTS_PER_RUN)
 
-  // Only a run's first verdict is news: one written again after a prompt
-  // change or a new note is not worth a second push (v4.16.5).
+  // A verdict written again after a prompt change or a new note is not worth a second push.
   const firstVerdicts = new Set(fresh.filter((c) => !cached.has(runVerdictSurface(c.activity.id))).map((c) => c.activity.id))
   const freshVerdicts = await writeVerdicts(deps, fresh, written, phrasing, MODEL_POOL, firstVerdicts)
   const today = await runPlan(deps, await surfaces.today())

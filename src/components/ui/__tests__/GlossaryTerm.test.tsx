@@ -12,7 +12,6 @@ describe('glossaryDefinition', () => {
     for (const term of TERMS) expect(glossaryDefinition(term).length, term).toBeGreaterThan(20)
   })
 
-  // The same thresholds as the named bands, so the (i) and the band agree.
   it("defines Form with the bands' own thresholds", () => {
     expect(glossaryDefinition('form')).toContain(String(FORM_BAND_THRESHOLDS.tiredBelow))
     expect(glossaryDefinition('form')).toContain(`+${FORM_BAND_THRESHOLDS.veryFreshAbove}`)

@@ -1,18 +1,4 @@
-"""Sync Garmin's own race time predictions.
-
-  metrics-service/metrics/racepredictions/daily/{profileUuid}
-      ?fromCalendarDate=…&toCalendarDate=…
-
-Firstbeat re-estimates a finish time for 5 km, 10 km, half and full marathon
-from VO2max and recent training, one record per day. RunOmics has no way to
-derive these - our own best-effort table only knows distances actually raced -
-so this is the one Garmin series with no local equivalent at all.
-
-Garmin only serves a few recent weeks whatever range is asked for, so there is
-nothing to backfill: one request per sync for a generous window is enough, and
-the stored file accumulates the history run after run. Re-fetched days overwrite
-stored ones, since Garmin revises recent estimates as new activities land.
-"""
+"""Garmin serves only a few recent weeks whatever range is asked, and revises recent days: re-fetched days overwrite."""
 
 from __future__ import annotations
 
@@ -27,11 +13,9 @@ from repository.history_file import read_history_section, write_history
 _DATA_DIR = get_data_dir()
 _PATH = _DATA_DIR / "race_predictions.json"
 
-# Comfortably wider than the window Garmin actually returns, so a long gap
-# between syncs still picks up everything on offer.
+# Wider than the window Garmin returns, so a long gap between syncs still gets everything on offer.
 _LOOKBACK_DAYS = 120
 
-# Garmin's field names, in the order we want them stored.
 _DISTANCES = {
     "time5K": "5k",
     "time10K": "10k",
@@ -41,12 +25,7 @@ _DISTANCES = {
 
 
 def normalize_prediction(entry: Any) -> tuple[str, dict[str, int]] | None:
-    """One day's predictions as `(date, {distance: seconds})`.
-
-    Days before the watch had enough data come back with the keys present but
-    null; those are not a prediction and are dropped rather than stored as a
-    hole in the series.
-    """
+    """Days before the watch had enough data come back with null keys; they are dropped, not stored as holes."""
     if not isinstance(entry, dict):
         return None
 
@@ -68,7 +47,6 @@ def _load_days() -> dict[str, Any]:
 
 
 def merge_days(stored: dict[str, Any], payload: Any) -> int:
-    """Fold one response into the stored days. Returns how many days it carried."""
     fetched = 0
     for entry in payload or []:
         normalized = normalize_prediction(entry)
@@ -81,7 +59,6 @@ def merge_days(stored: dict[str, Any], payload: Any) -> int:
 
 
 def sync_race_predictions(client: GarminClient, today: date | None = None) -> int:
-    """Merge the window Garmin offers into race_predictions.json. Returns the day count stored."""
     today = today or date.today()
     start = today - timedelta(days=_LOOKBACK_DAYS)
     stored = _load_days()

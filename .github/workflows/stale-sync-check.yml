@@ -1,8 +1,7 @@
 name: Stale Sync Check
 
 on:
-  # 05:41 UTC daily - independent of sync.yml so a broken/silent sync still gets
-  # caught. Off the hour on purpose - see daily-session-reminder.yml.
+  # Independent of sync.yml so a broken or silent sync still gets caught; off the hour on purpose.
   schedule:
     - cron: "41 5 * * *"
   workflow_dispatch:
@@ -13,8 +12,7 @@ permissions:
 jobs:
   notify:
     uses: ./.github/workflows/internal-notify.yml
-    # Only the two secrets the job reads, not every one this repository
-    # holds. Each profile's environment secret still wins over these.
+    # Only the secrets the job reads, not every one this repository holds.
     secrets:
       APP_URL: ${{ secrets.APP_URL }}
       INTERNAL_NOTIFY_SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}

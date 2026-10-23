@@ -22,16 +22,11 @@
   --color-delta-warn:        var(--delta-warn);
   --color-zone-ink:          var(--zone-ink);
   --color-ring:              var(--ring);
-  /* SF Pro through the system stack (Liquid Glass v3, G6 Option A): Safari
-     switches between the Text and Display optical sizes itself. Geist is
-     still loaded (layout.tsx, --font-geist): to switch back, set both lines
-     to var(--font-geist) and take the Geist tracking (the ramp below). */
+  /* SF Pro through the system stack: Safari switches between the Text and Display optical sizes itself. */
   --font-sans:               -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   --font-display:            -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   --font-mono:               var(--font-geist);
-  /* rem, not px: these sizes must follow the browser/OS text-size setting the
-     same way Tailwind's own text-xs/text-sm do, otherwise half the UI scales
-     and half stays pinned. */
+  /* rem, not px: these sizes must follow the OS text-size setting as Tailwind's own text-xs/text-sm do. */
   --text-micro:              0.625rem;
   --text-caption:            0.6875rem;
   --text-footnote:           0.8125rem;
@@ -39,10 +34,7 @@
   --text-body:               1.0625rem;
   --text-title2:             1.375rem;
   --text-title1:             1.75rem;
-  /* The iOS ramp (Liquid Glass v3, G6), SF Pro tracking. With Geist
-     (--font-sans back to var(--font-geist)) the tracking column is README
-     §5.4's Geist one: large title -0.68px, title 1 -0.4px, metric and
-     title 3 -0.3px, headline -0.17px. */
+  /* The iOS type ramp, with SF Pro's tracking. */
   --text-large-title:                2.125rem;
   --text-large-title--line-height:   2.5625rem;
   --text-large-title--letter-spacing: 0.025rem;
@@ -76,18 +68,16 @@
   --radius-control:          9px;
   --shadow-card:             var(--shadow-card);
   --animate-fade-up:         fade-up 0.25s ease-out backwards;
-  /* backwards, not both (H1): a fill that kept the animation applied made
-     the element a backdrop root, which flattens any glass inside it. */
+  /* backwards, not both: a fill that keeps the animation applied makes the element a backdrop root, which flattens
+     any glass inside it. */
   --animate-fade-in:         fade-in 0.2s ease-out backwards;
   --animate-sheet-up:        sheet-up 0.42s cubic-bezier(0.22, 1.04, 0.36, 1) both;
   --animate-cal-forward:     cal-slide-forward 0.22s ease-out backwards;
   --animate-cal-backward:    cal-slide-backward 0.22s ease-out backwards;
 }
 
-/* margin-left (not transform): see the fade-up comment below - the activity
-   detail page (the forward/backward target here) hosts the map's `fixed
-   inset-0` fullscreen overlay, so this pair needs the same non-transform
-   workaround. */
+/* margin-left, not transform: the activity detail page hosts the map's `fixed inset-0` fullscreen overlay (see
+   fade-up). */
 @keyframes cal-slide-forward {
   from { opacity: 0; margin-left: 28px; }
   to   { opacity: 1; margin-left: 0;    }
@@ -97,15 +87,9 @@
   to   { opacity: 1; margin-left: 0;     }
 }
 
-/* margin-top (not transform), and filled backwards only: PageTransition
-   wraps every page, including the maps' `fixed inset-0` fullscreen overlays.
-   While an animation applies - and a forwards fill applies forever - the
-   browser treats what it animates as will-change. A transform makes this div
-   the containing block of fixed descendants, so the "fullscreen" map sized
-   itself to the page; an opacity makes it a stacking context, which kept the
-   overlay's z-50 under the app's z-20 top scrim and dimmed the map's chips.
-   Every end value here is the element's own style, so ending the animation
-   changes nothing on screen - and a toast's exit fade can now run. */
+/* margin-top, not transform, and filled backwards only: PageTransition wraps the maps' `fixed inset-0` fullscreen
+   overlays, and while an animation applies the browser treats what it animates as will-change. A transform would
+   make this div the containing block of fixed descendants; an opacity, a stacking context under the top scrim. */
 @keyframes fade-up {
   from { opacity: 0; margin-top: 8px; }
   to   { opacity: 1; margin-top: 0;   }
@@ -121,8 +105,7 @@
   to   { opacity: 1; transform: none;             }
 }
 
-/* A sheet rising from below (Liquid Glass v3, G10): transform only - an
-   opacity on a glass sheet would flatten its blur while it animates. */
+/* Transform only: an opacity on a glass sheet would flatten its blur while it animates. */
 @keyframes sheet-rise {
   from { transform: translateY(100%); }
   to   { transform: none;             }
@@ -537,10 +520,8 @@
 
 /* ─── END GENERATED ─── */
 
-/* ─── Liquid Glass v3 (Oct 2026) ──────────────────── */
-/* Ported from the design handoff's liquid-glass.css. In the components
-   layer, not unlayered: a utility on the wrapper (fixed, rounded-[47px])
-   has to beat the object's own position and radius.
+/* In the components layer, not unlayered: a utility on the wrapper (fixed, rounded-[47px]) has to beat the object's
+   own position and radius.
 
    WebKit rules this obeys (do not break them):
    1. A glass object is a positioned wrapper - no backdrop-filter, opacity
@@ -573,14 +554,11 @@
   }
   .lg > :not(i) { position: relative; }
 
-  /* Blur and vibrancy. */
   .lg > .lg-blur {
     -webkit-backdrop-filter: var(--glass-filter);
     backdrop-filter: var(--glass-filter);
   }
 
-  /* The edge light band: a 3 px ring just inside the rim, brighter and more
-     saturated than the body - the cue that reads as a lens at 3x. */
   .lg > .lg-edge {
     padding: var(--glass-edge-w);
     -webkit-backdrop-filter: var(--glass-edge-filter);
@@ -590,7 +568,6 @@
     mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
   }
 
-  /* Tint, top sheen and inner glow, and the 1 px two-sided specular rim. */
   .lg > .lg-tint {
     background:
       linear-gradient(180deg, var(--glass-sheen) 0%, transparent 55%),
@@ -611,12 +588,8 @@
     transition: opacity 120ms ease-out;
   }
 
-  /* Cheaper glass while a map moves (README §6.12.2): a blur over a WebGL
-     canvas is redrawn on every frame of a pan or zoom, so under
-     [data-map-moving] (lib/mapMoving) the glass over the map drops its blur
-     and edge band and its tint is 25 % denser; both come back over 150 ms
-     once the camera stops. The blur's radius is never animated - its layer's
-     opacity is. */
+  /* A blur over a WebGL canvas is redrawn on every frame of a pan or zoom, so under [data-map-moving] the glass drops
+     its blur and edge band. The blur's radius is never animated, its layer's opacity is. */
   .lg > .lg-blur,
   .lg > .lg-edge { transition: opacity 150ms ease-out; }
   [data-map-moving] .lg {
@@ -629,12 +602,8 @@
     box-shadow: inset 0 0 0 100vmax color-mix(in srgb, var(--raised) 25%, transparent);
   }
 
-  /* Variants: only the fill and filter change; geometry and rim are shared. */
   .lg-tab   { --glass-fill: var(--tab-glass-fill); }
   .lg-sheet { --glass-fill: var(--sheet-glass-fill); --glass-filter: var(--sheet-glass-filter); box-shadow: var(--shadow-sheet); }
-  /* One sheet material (F18): every sheet, either detent, is this glass -
-     its sheen a shorter 28 % - and the segmented controls on it take a light
-     translucent fill, not the content layer's grey. */
   .lg-sheet > .lg-tint {
     background:
       linear-gradient(180deg, var(--glass-sheen) 0%, transparent 28%),
@@ -650,17 +619,15 @@
     --glass-filter: var(--clear-glass-filter);
   }
 
-  /* Labels on light glass (F16): translucent, the glass reads darker than
-     the page under a sheet's scrim or a selected platter, so its secondary
-     and accent text take their glass shades, 4.5:1 there - as iOS's
-     vibrant labels do. --text needs none. */
+  /* Light glass reads darker than the page under a sheet's scrim or a selected platter, so its secondary and accent
+     text take their glass shades, 4.5:1 there. */
   html:not(.dark) :is(.lg, .on-aura) {
     --muted-foreground: var(--glass-text2);
     --subtle: var(--glass-text2);
     --accent-text: var(--accent-text-glass);
   }
 
-  /* Press (G2): glass swells and brightens. Never opacity. */
+  /* Glass swells and brightens when pressed, never fades: an opacity would flatten its blur. */
   .lg:is(button, a):not(:disabled):active,
   .lg[data-pressed] {
     transform: scale(1.06);
@@ -672,13 +639,10 @@
   .lg:is(button, a):not(:disabled):active > .lg-tint::after,
   .lg[data-pressed] > .lg-tint::after { opacity: 1; background: var(--glass-rim-pressed); }
 
-  /* Glass that fades in (the compact bar's circles): its layers and content
-     take the animation, never the wrapper, whose opacity would flatten the blur. */
+  /* Its layers and content take the animation, never the wrapper, whose opacity would flatten the blur. */
   .lg.lg-fade-in > * { animation: fade-in 150ms ease-out both; }
 
-  /* A sticky strip's control as it sticks (F20): its glass layers fade in
-     over 120 ms, never the wrapper, and the track's fill gives way to the
-     glass's drop over the same. Its labels stay put. */
+  /* A sticky strip's control as it sticks: its glass layers fade in, never the wrapper. */
   .lg.lg-stuck-in > i { animation: fade-in 120ms ease-out backwards; }
   .lg.lg-stuck-in {
     transition:
@@ -687,23 +651,16 @@
       background-color 120ms ease-out;
   }
 
-  /* A glass group (the hero's expand + share): the buttons inside are plain,
-     so the group swells as one when either is pressed. */
+  /* A glass group (the hero's expand + share): its buttons are plain, so the group swells as one. */
   .lg:has(> .lg-press:not(:disabled):active) { transform: scale(1.06); transition-duration: 120ms; transition-timing-function: ease-out; }
   .lg:has(> .lg-press:not(:disabled):active) > .lg-tint { filter: brightness(1.12); }
 
-  /* Top soft scroll edge (G5): no hairline, a three-step progressive blur
-     and a tint, shown while the compact bar is. Its first 12 pt sit under
-     the edge sampler, the tint solid there, so the two meet without a seam.
-     A fixed wrapper with no background; the layers are its children. */
+  /* Its first 12 pt sit under the edge sampler, the tint solid there, so the two meet without a seam. */
   .scroll-edge {
     position: fixed;
     inset-inline: 0;
     top: 0;
-    /* The bar's own edge, then a stuck strip's height on top of it (F4): every
-       stop below sits that much lower, so a strip under the bar is covered as
-       the bar is and only the last 30 pt under it fade - with percentages of
-       the whole, the fade began under the bar and the rows showed through. */
+    /* Every stop sits a stuck strip's height lower, so a strip under the bar is covered as the bar is. */
     --edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-fade));
     --edge-shift: var(--sticky-h, 0px);
     height: calc(var(--edge-base) + var(--edge-shift));
@@ -743,18 +700,9 @@
     );
   }
 
-  /* Light's top edge (F21): the dark edge's tint is 80-45 % ground under the
-     bar, which hides what scrolls there on black; on the near-white page the
-     run's chips and the hero card's foot read through as a smudge. In light
-     the edge is the page's ground, solid from the screen's top - under the
-     status bar, one surface with it (F15) - to the bar's foot, then gone
-     over 24 pt, with a 6 px blur in that band only, never across the bar.
-     The bar's buttons and title sit above it (z-40). Dark keeps its edge,
-     but for one case (F20): a glass strip stuck under the bar (StickyBar,
-     data-stuck) no longer grows the edge, so the rows pass under its glass,
-     and dark's own 45 % foot would then let them show between the bar and
-     the strip. While one is stuck, dark takes this shape too: as solid above
-     the strip as the grown edge was, the band the only fade over it. */
+  /* In light the edge is solid page ground to the bar's foot: the dark edge's translucent tint reads as a smudge on
+     the near-white page. Dark takes this shape too while a glass strip is stuck under the bar, or its 45 % foot would
+     show the rows between the bar and the strip. */
   :is(html:not(.dark), html:has(main [data-testid="sticky-bar"][data-stuck])) .scroll-edge {
     --edge-base: calc(var(--safe-top) + var(--bar-h) + var(--edge-band));
     --edge-solid: calc(var(--edge-shift) + var(--safe-top) + var(--bar-h));
@@ -770,13 +718,7 @@
     background: linear-gradient(var(--background) var(--edge-solid), transparent);
   }
 
-  /* Bottom soft edge (G5, README §6.2): content dissolves into the tab bar
-     over its last ~34 pt above the capsule - a light 6 px blur that fades
-     out by 45 % of its height, and a tint, no hairline. Anchored to the
-     bottom of the bar's <nav>, 120 pt tall, so it reaches above the nav; a
-     sibling before the capsule, under it in the nav's stacking context,
-     never an ancestor of its glass. GlassTabBar drops it with the bar in a
-     fullscreen map. Fallbacks keep the tint and drop the blur (below). */
+  /* A sibling before the tab bar's capsule, under it in the nav's stacking context, never an ancestor of its glass. */
   .bottom-edge {
     position: absolute;
     inset-inline: 0;
@@ -802,10 +744,9 @@
       transparent 100%);
   }
 
-  /* Rounded numerals (Bevel-style), optional. Safari maps ui-rounded to SF Pro Rounded. */
+  /* Safari maps ui-rounded to SF Pro Rounded. */
   .num-rounded { font-family: ui-rounded, "SF Pro Rounded", var(--font-sans); }
 
-  /* Fallbacks: a raised fill and a 1 px line, no blur, no edge band. */
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .lg > .lg-blur, .lg > .lg-edge { display: none; }
     .lg > .lg-tint { background: var(--raised); box-shadow: inset 0 0 0 1px var(--border); }
@@ -832,13 +773,7 @@
   }
 }
 
-/* ─── Liquid glass surfaces ────────────────────────── */
-/* Session state as recipes, shared by Today's week, Plan's week and the
-   legends that explain them. Shape carries the state and --state-color, set
-   by the caller to the session's zone, carries its intensity:
-   done is a solid fill, planned a dashed outline, missed an outline over a
-   135deg hatch, rest a neutral track, and today an accent ring clear of the
-   canvas. */
+/* Shape carries the state; --state-color, set by the caller to the session's zone, carries its intensity. */
 @utility state-done {
   background: var(--state-color);
 }
@@ -860,26 +795,18 @@
   background: var(--track);
 }
 
-/* Plan's today bar and its legend swatch: the accent outline over a 15%
-   accent fill, so it still reads as a bar (v4.3.1). */
 @utility today-bar {
   border: 2px solid var(--accent);
   background: color-mix(in oklab, var(--accent) 15%, transparent);
 }
 
-/* Today, one recipe everywhere (round 2, F14) - Today's and Plan's weeks,
-   Training status, Consistency: a 2 pt accent ring 2 pt off the mark. An
-   outline, so the gap is whatever is under it - a card, a tinted card, a
-   glass sheet - where a shadow ring had to guess the ground's colour. */
+/* An outline, so the gap is whatever is under it, where a shadow ring had to guess the ground's colour. */
 @utility state-today {
   outline: var(--state-ring) solid var(--accent);
   outline-offset: var(--state-ring);
 }
 
-/* A touch target of at least --tap-min around a control that is drawn
-   smaller: a transparent ::after centred on it, so the visual size and the
-   touch size come apart. Applied inside the ui/ primitives, not per page. A
-   neighbour's area can overlap it by a few points; the later one wins there. */
+/* A transparent ::after centred on the control, so the visual size and the touch size come apart. */
 @utility hit-44 {
   position: relative;
 
@@ -895,8 +822,7 @@
 }
 
 @layer components {
-  /* Neutral surfaces (the class names are the old glass ones): opaque, flat,
-     no blur and no accent. Colour is for data and the active state. */
+  /* Neutral surfaces despite the old glass class names: opaque, flat, no blur and no accent. */
   .glass-nav,
   .glass-sheet,
   .glass-chip {
@@ -904,8 +830,6 @@
     background: var(--card);
   }
 
-  /* The content layer (Liquid Glass v3, G8): a fill and a hairline shadow,
-     not a line - borderless 24 pt cards. */
   .glass-card,
   .glass-hero,
   .glass-row {
@@ -919,26 +843,18 @@
     padding: 18px 20px;
   }
 
-  /* The background glow (G14, README §6.11): a blurred colour field behind
-     the top of the page, from its palette (layout/Aura). A sibling under the
-     content, never an ancestor of glass. Light: the palette mixed with white
-     under 88 % white cards. Dark: half strength, it only tints the header. One
-     switch turns it off in both themes (html[data-glow="off"], F2). */
+  /* A sibling under the content, never an ancestor of glass. */
   .aura {
     position: absolute;
     left: -60px;
     right: -60px;
-    /* Below the safe area (F15): the status bar is opaque and exactly
-       --background, so nothing but the page colour may meet it. */
+    /* The status bar is opaque and exactly --background, so nothing but the page colour may meet it. */
     top: var(--safe-top);
     height: 380px;
     pointer-events: none;
     filter: blur(36px);
-    /* Clear under the edge sampler (F1), then in over 24 pt (F15): a glow
-       that started at the sampler's foot at full colour, or half way up a
-       fade the sampler hid, showed as a hard line under the status bar. The
-       fade eases in and out (smoothstep), as a straight ramp's two corners
-       still read as an edge over the date line. */
+    /* Clear under the edge sampler, then in over 24 pt with a smoothstep: anything harder reads as a line under the
+       status bar. */
     -webkit-mask-image: linear-gradient(transparent 0, transparent var(--edge-sample-h), rgb(0 0 0 / 0.16) calc(var(--edge-sample-h) + 6px), rgb(0 0 0 / 0.5) calc(var(--edge-sample-h) + 12px), rgb(0 0 0 / 0.84) calc(var(--edge-sample-h) + 18px), #000 calc(var(--edge-sample-h) + 24px), #000 55%, transparent 100%);
             mask-image: linear-gradient(transparent 0, transparent var(--edge-sample-h), rgb(0 0 0 / 0.16) calc(var(--edge-sample-h) + 6px), rgb(0 0 0 / 0.5) calc(var(--edge-sample-h) + 12px), rgb(0 0 0 / 0.84) calc(var(--edge-sample-h) + 18px), #000 calc(var(--edge-sample-h) + 24px), #000 55%, transparent 100%);
     background:
@@ -956,11 +872,7 @@
   }
   html[data-glow="off"] .aura { display: none; }
 
-  /* Cards over the light Aura: the content layer, never glass and never
-     blurred (D1) - no rim, no edge band, no press swell, no backdrop-filter.
-     88 % white, so the glow still tints the first card a little through it,
-     and below the aura they read all but white. A blur per card (F5) put a
-     live backdrop-filter on every card in the list, on screen or not. */
+  /* Never glass and never blurred: a blur per card would put a live backdrop-filter on every card in the list. */
   html:not(.dark):not([data-glow="off"]) :is(.content-card, .glass-card, .glass-hero, .glass-row) {
     --card: rgb(255 255 255 / 0.88);
     --card-edge: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 0 0 0.5px rgb(0 0 0 / 0.05), 0 8px 24px rgb(40 50 70 / 0.06);
@@ -969,11 +881,7 @@
     background: rgb(118 118 128 / 0.07);
   }
 
-  /* A control straight on the glow (F6) - Activities' search, chips and
-     filter button, Analytics' section track: the system fill, and in light
-     over the glow the regular glass's tint, sheen, blur and drop (F16), as
-     the grey turned muddy over colour and a 62 % white read as a flat pill.
-     Only straight on the glow, never inside a card. */
+  /* In light over the glow, the regular glass: the system grey turns muddy over colour. Never inside a card. */
   .on-aura { background-color: var(--fill-3); }
   html:not(.dark):not([data-glow="off"]) .on-aura {
     background: linear-gradient(180deg, var(--glass-sheen) 0%, transparent 55%), var(--glass-fill);
@@ -982,12 +890,7 @@
             backdrop-filter: var(--glass-filter);
   }
 
-  /* Activities' search, chips and filter button (F19): they sit in the
-     header zone, so they are the control layer in both themes, not only
-     light - over the glow, each the regular glass's tint, sheen, rim and
-     drop. A group's controls share one blur, .on-aura-blur, a sibling laid
-     under them, rather than one each: the search field is one group, the
-     chip row with the filter button another. A selected chip stays solid. */
+  /* A group's controls share one blur, .on-aura-blur, a sibling laid under them, rather than one each. */
   .on-aura-group { position: relative; }
   .on-aura-group > .on-aura-blur {
     position: absolute;
@@ -999,9 +902,7 @@
     -webkit-backdrop-filter: var(--glass-filter);
             backdrop-filter: var(--glass-filter);
   }
-  /* The chip row's blur spans the gaps between its chips too: a plain blur
-     there, no saturate or brightness, which drew the whole row as a band of
-     stronger colour across the glow. A blur of the glow is the glow. */
+  /* The chip row's blur spans the gaps too, so no saturate or brightness: they draw the row as a band across the glow. */
   html:not([data-glow="off"]):not([data-glass="solid"]) .on-aura-group > .on-aura-blur.on-aura-blur-row {
     -webkit-backdrop-filter: blur(var(--blur-md));
             backdrop-filter: blur(var(--blur-md));
@@ -1048,12 +949,7 @@
   }
   html[data-glass="solid"]:not(.dark) :is(.content-card, .glass-card, .glass-hero, .glass-row) { --card: #ffffff; }
 
-  /* The fullscreen maps' top edge under their glass controls (G11; round
-     2, H1): over the map, under the controls - a sibling of their glass in
-     the map's root, never over it, where its tint greyed them out. A 12 px
-     blur that fades by 55 %, so names dissolve under the row rather than
-     show cut, and a tint: the page ground for 12 pt, 55 % by 40 %, gone by
-     96 pt. While the map moves, the blur goes (as the glass's does). */
+  /* A sibling of the map controls' glass in the map's root, never over it, where its tint greys them out. */
   .map-top-edge {
     position: absolute;
     inset-inline: 0;
@@ -1086,8 +982,6 @@
   }
   html[data-glass="solid"] .map-top-edge > i:nth-child(1) { display: none; }
 
-  /* The prominent button (G12): a top sheen, a lit top edge and a soft glow
-     of its own accent under it. */
   .btn-prominent {
     background-image: linear-gradient(180deg, rgb(255 255 255 / 0.24), transparent 60%);
     box-shadow:
@@ -1096,16 +990,10 @@
       0 8px 20px color-mix(in srgb, var(--accent) 30%, transparent);
   }
 
-  /* A tile inset in a card (G8): the page ground. */
   .inset-tile {
     background: var(--background);
   }
 
-  /* An inset-grouped list (G9; one rule, round 2 F11): rows are the
-     group's direct children, a 0.5 pt --divider between each two - none
-     above the first, none below the last - inset 16 pt, or 72 pt under a
-     row with a 44 pt leading thumb (data-row-thumb; --row-thumb-inset where
-     its text starts elsewhere). A group may set its own --row-inset. */
   .inset-group > * + * {
     position: relative;
   }
@@ -1123,14 +1011,14 @@
     left: var(--row-thumb-inset, 72px);
   }
 
-  /* The tab bar: the page colour and a top hairline. */
+  /* The tab bar. */
   .glass-nav {
     background: var(--tab-bar-bg);
     border: 0;
     border-top: 1px solid var(--tab-bar-hairline);
   }
 
-  /* The desktop sidebar (v4.17): a card on the page, the surface and a line. */
+  /* The desktop sidebar. */
   .glass-chrome {
     background: var(--card);
     border: 1px solid var(--border);
@@ -1148,7 +1036,6 @@
     color: var(--ro-text);
   }
 
-  /* A raised surface on a card: a sheet, a popover, a selected pill. */
   .surface-raised {
     background: var(--raised);
     box-shadow: var(--shadow-raised);
@@ -1166,7 +1053,6 @@
     animation: ro-shimmer 1.8s ease-in-out infinite;
   }
 
-  /* The page title: iOS's large title (Liquid Glass v3, G6), 34/41 at 700. */
   .text-display {
     font-family: var(--font-display);
     font-size: var(--text-large-title);
@@ -1175,13 +1061,12 @@
     line-height: var(--text-large-title--line-height);
   }
 
-  /* HIG touch target minimum (44x44pt) for nav controls */
+  /* HIG touch target minimum. */
   .btn-nav {
     min-width: 44px;
     min-height: 44px;
   }
 
-  /* Accessible metric progress bars (8px, previously 4px) */
   .metric-bar {
     height: 8px;
     border-radius: 4px;
@@ -1191,39 +1076,29 @@
 
 html {
   scroll-behavior: smooth;
-  /* Blocks iOS Safari's rubber-band bounce at the document edge, which is
-     enough residual touch scroll to trigger the toolbar's show/hide
-     animation (and drag every `position: fixed` element along with it) even
-     while useScrollLock has the body pinned. */
+  /* Blocks iOS Safari's rubber-band bounce, which triggers the toolbar's show/hide animation even while
+     useScrollLock pins the body. */
   overscroll-behavior-y: none;
-  /* No double-tap zoom, and no wait after a tap for a possible second one.
-     Pinch is cancelled in NoPinchZoom, so a double-tap zoom would have no
-     way back out. The maps set their own touch-action. */
+  /* No double-tap zoom: pinch is cancelled in NoPinchZoom, so a double-tap zoom would have no way back out. */
   touch-action: manipulation;
 }
 
 html,
 body {
   background-color: var(--background);
-  /* No native pull-to-refresh: Today's own pull is the only one (see the
-     html rule above for why html takes "none", not "contain"). */
+  /* No native pull-to-refresh: Today's own pull is the only one. */
   overscroll-behavior-y: none;
 }
 
 body {
   color: var(--foreground);
   line-height: 1.5;
-  /* Tabular figures everywhere (v4.17): numbers line up in every column and
-     tick in place. Geist's tnum leaves the hyphen alone, where Inter's gave
-     it a figure's width ("Warm - up", v4.3.2). */
   font-variant-numeric: tabular-nums;
   overflow-x: hidden;
   -webkit-user-select: none;
   user-select: none;
 }
 
-/* Text selection stays available where it's actually useful: editable
-   fields and free-form notes, not the app chrome. */
 input,
 textarea,
 [contenteditable="true"] {
@@ -1231,9 +1106,7 @@ textarea,
   user-select: text;
 }
 
-/* Desktop browser tabs get free text selection back. Mouse + hover rules out
-   touch/mobile browsers, and `display-mode: browser` rules out the installed
-   PWA, where selection still fights the app-like chrome. */
+/* Mouse + hover rules out touch browsers, and `display-mode: browser` rules out the installed PWA. */
 @media (hover: hover) and (pointer: fine) and (display-mode: browser) {
   body {
     -webkit-user-select: text;
@@ -1259,7 +1132,6 @@ textarea,
   min-width: 22px !important;
   border-radius: 11px !important;
 }
-/* The collapsed attribution is a 22 pt ⓘ (H13, M9). */
 .maplibregl-ctrl-attrib.maplibregl-compact .maplibregl-ctrl-attrib-button {
   width: 22px !important;
   height: 22px !important;
@@ -1274,7 +1146,7 @@ textarea,
 }
 
 @layer base {
-  /* In base, not unlayered: unlayered, it beat every title's own tracking. */
+  /* In base, not unlayered: unlayered, it would beat every title's own tracking. */
   h1 {
     line-height: 1.2;
   }
@@ -1284,19 +1156,15 @@ textarea,
     cursor: pointer;
   }
 
-  /* Prevent iOS's long-press link-preview/share menu on in-app navigation -
-     it reads as a native browser affordance, not part of the PWA. Also
-     disable the native drag-lift preview Safari shows when a long-press
-     turns into a finger move over a link. */
+  /* No iOS long-press link preview nor Safari drag-lift preview: they read as browser affordances, not the PWA. */
   a {
     -webkit-touch-callout: none;
     -webkit-user-drag: none;
     user-drag: none;
   }
 
-  /* Content press (G2). Glass is left out: it swells instead, never fades
-     (the .lg press in the Liquid Glass block), and an opacity under 1 would
-     make the button a backdrop root and flatten its own blur. */
+  /* Glass is left out: it swells instead, and an opacity under 1 would make the button a backdrop root and flatten
+     its blur. */
   button:not(:disabled):not(.lg):not(.lg-press):active {
     transform: scale(0.96);
     opacity: 0.85;
@@ -1317,10 +1185,8 @@ textarea,
   }
 }
 
-/* Unlayered, deliberately: iOS Safari zooms the page when a field under 16px
-   takes focus and never zooms back out, and Tailwind's utilities layer beats
-   anything in `base` whatever its specificity - so a `text-sm` on an input was
-   silently reinstating the zoom. Only unlayered rules outrank a utility. */
+/* Unlayered, deliberately: iOS Safari zooms on focusing a field under 16px and never zooms back out, and Tailwind's
+   utilities layer beats anything in `base` whatever its specificity. */
 @media (pointer: coarse) {
   input,
   textarea,
@@ -1329,34 +1195,23 @@ textarea,
   }
 }
 
-/* Chart tooltips: above every series, dot and reference label in their chart
-   (the SVG is below the wrapper already, the z-index keeps it there when a
-   chart sets its own), but under the sticky tabs (z-30), so a tooltip slides
-   behind the bar instead of over it. Unlayered, like the rule above, because
-   Recharts writes its own z-index inline. */
+/* Under the sticky tabs (z-30), so a tooltip slides behind the bar. Unlayered, because Recharts writes its own
+   z-index inline. */
 .recharts-tooltip-wrapper {
   z-index: 20 !important;
 }
 
-/* On a phone a sticky strip (Analytics' tabs, Activities' month headings)
-   sticks only under the compact title bar, while it shows and sets
-   --sticky-top; otherwise its `top` falls through to this, so far up it never
-   sticks. Stuck on its own at the top edge, iOS 26 took it for the page's
-   bar and, after a scroll back up, left its blur over the large title
-   (owner, Oct 2026). Unset on a wide screen, which keeps each strip's own top. */
+/* On a phone a sticky strip sticks only under the compact title bar: stuck alone at the top edge, iOS 26 takes it
+   for the page's bar and leaves its blur over the large title. */
 @media (max-width: 63.99rem) {
   :root {
     --sticky-alone: -100000px;
   }
 }
 
-/* WebKit's sample point: one solid colour 4px in, >10px tall, full width.
-   Found there, iOS 26 takes it for the page's bar and draws no scroll-edge
-   blur of its own over the large titles. A sheet's scrim starts at the safe
-   area's foot, so the strip dims the part above it itself while one is open
-   (v5.6 #3), in the scrim's own colour. Only that part (F15): under the
-   opaque status bar the safe area is 0 and the scrim covers the whole strip,
-   which, dimmed twice, showed as a darker 12 pt band under the status bar. */
+/* WebKit's sample point: one solid colour 4px in, >10px tall, full width. Found there, iOS 26 takes it for the
+   page's bar and draws no scroll-edge blur of its own over the large titles. A sheet's scrim starts at the safe
+   area's foot, so the strip dims the part above it itself while one is open. */
 .edge-sampler {
   position: fixed;
   inset-inline: 0;

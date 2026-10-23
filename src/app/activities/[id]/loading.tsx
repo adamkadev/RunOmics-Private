@@ -1,7 +1,6 @@
 import { Skeleton, ChartCardSkeleton } from '@/components/ui/Skeleton'
 import { cardClass } from '@/components/ui/Card'
 
-/** The page's own shape while it loads (3.0): map hero, title, four numbers, verdict, tabs, a card. */
 export default function ActivityDetailLoading() {
   return (
     <div className="flex flex-col gap-3.5">

@@ -1,22 +1,12 @@
 import { DAY_MS } from '@/lib/calendarDate'
 import type { CoachState, CoachingPlan } from './types'
 
-/**
- * The season's shape between the macrocycle start and the target race. The
- * proportions are convention - 45% base, 35% build, the rest peak, with the
- * last week to the race itself - but the block needs to know which of them it
- * sits in, because a rolling four-week block regenerated toward the present
- * otherwise has no way to tell a base block from a peak one.
- */
+/** Conventional proportions: a rolling block regenerated toward the present needs them to tell a base block from a peak one. */
 const SHAPE = { raceWeekDays: 7, base: 0.45, build: 0.35 } as const
 
 export type MacrocyclePhase = 'base' | 'build' | 'peak' | 'raceDay'
 
-/**
- * The macrocycle a block belongs to when no race is its target. Carrying it
- * as the target id lets consecutive general blocks share one start date, and
- * marking a race primary later opens a fresh run-up toward it.
- */
+/** The target id when no race is the target, so consecutive general blocks share one start date and a race marked primary opens a fresh run-up. */
 export const GENERAL_PREPARATION = 'general'
 
 export interface MacrocyclePhaseRange {
@@ -56,7 +46,6 @@ export function macrocyclePhases(startDate: string, raceDate: string): Macrocycl
   })
 }
 
-/** Which phase a date falls in, or null outside the macrocycle entirely. */
 export function phaseOn(ranges: MacrocyclePhaseRange[], date: string): MacrocyclePhase | null {
   return ranges.find((range) => date >= range.startDate && date <= range.endDate)?.phase ?? null
 }
@@ -68,8 +57,7 @@ export function resolveMacrocycleStart(
 ): string {
   const carried = state?.macrocycle
   if (!carried || carried.targetEventId !== primaryTargetId) return planningStartDate
-  // A block rewritten to start earlier than the journey it continues moves the
-  // journey's start back with it: a macrocycle never starts after its block.
+  // A block rewritten to start earlier moves the journey's start back with it: a macrocycle never starts after its block.
   return carried.startDate < planningStartDate ? carried.startDate : planningStartDate
 }
 

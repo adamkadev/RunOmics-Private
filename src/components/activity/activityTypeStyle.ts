@@ -8,15 +8,7 @@ export interface ActivityTypeStyle {
   icon: LucideIcon
 }
 
-/**
- * A type's colour is its session zone's token (v4.3.2), the one the dots,
- * bars and tiles already wear: this map used to keep its own ramp, which left
- * a fixed green on Base runs that no token owns any more. The icon is the
- * type's own.
- *
- * This lives with the components rather than in the domain: a colour and an
- * icon are how a screen draws a type, not what the type is.
- */
+/** This lives with the components rather than in the domain: a colour and an icon are how a screen draws a type, not what it is. */
 const ICONS: Record<ActivityType, LucideIcon> = {
   Sprint: Zap,
   Anaerobic: Flame,
@@ -31,12 +23,7 @@ export const ACTIVITY_TYPE_STYLE: Record<ActivityType, ActivityTypeStyle> = Obje
   (Object.keys(ICONS) as ActivityType[]).map((type) => [type, { chartColor: zoneColor(sessionZone({ type })), icon: ICONS[type] }]),
 ) as Record<ActivityType, ActivityTypeStyle>
 
-/**
- * How to draw a type read off disk. Activity JSON is cast rather than parsed,
- * so a type string the Python classifier starts emitting before this map
- * learns it arrives here unchecked. It draws as Base instead of throwing in
- * every list, calendar and chart that colours by type.
- */
+/** Activity JSON is cast rather than parsed, so a type the Python classifier emits before this map learns it arrives unchecked. */
 export function activityTypeStyle(type: string | null | undefined): ActivityTypeStyle {
   return isActivityType(type) ? ACTIVITY_TYPE_STYLE[type] : ACTIVITY_TYPE_STYLE.Base
 }

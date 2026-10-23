@@ -39,12 +39,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     isPopNavigation.current = false
   }, [pathname])
 
-  // Every scroll event used to parse and rewrite sessionStorage. It only has
-  // to be written when the page is left - a route change or the tab going
-  // away - so a scroll just notes the offset. Noting it, rather than reading
-  // scrollY on the way out, also keeps the value the page had: by the time a
-  // route change's cleanup runs, the next page is mounted and a shorter one
-  // has already clamped the offset.
+  // A scroll only notes the offset, written when the page is left: by the time a route change's cleanup
+  // runs, the next page is mounted and a shorter one has already clamped scrollY.
   const lastScrollY = useRef(0)
   useLayoutEffect(() => {
     lastScrollY.current = window.scrollY
@@ -68,8 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [pathname])
 
-  // The private site's sign-in (src/proxy.ts) is a page on its own: no tab
-  // bar or sidebar pointing at pages it cannot open yet.
+  // The sign-in is a page on its own: no tab bar or sidebar pointing at pages it cannot open yet.
   if (pathname === SIGN_IN_PATH) {
     return (
       <div className="min-h-screen">
@@ -83,15 +78,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <NavigationHistoryProvider>
       <div className="min-h-screen">
         <ThemeSync />
-        {/* The top soft scroll edge (Liquid Glass v3, G5): a fixed wrapper
-            with no background, its four absolute layers three blurs that
-            grow stronger toward the top and a tint - no hairline - shown
-            while the compact bar is (globals.css, .scroll-edge). */}
+        {/* Four layers: three blurs growing stronger toward the top, and a tint (globals.css, .scroll-edge). */}
         <div aria-hidden data-testid="scroll-edge" className="scroll-edge lg:hidden"><i /><i /><i /><i /></div>
-        {/* The edge sampler: solid, full width, over 10 px tall, at the top
-            edge, never resized or hidden. WebKit samples 4 px in for such a
-            bar, and finding one, iOS 26 draws no blur of its own over the
-            large titles. Taps stay on, so its hit test can't skip it. */}
+        {/* Solid, full width, over 10 px tall, at the top edge, never resized or hidden: WebKit samples
+            4 px in for such a bar, and finding one, iOS 26 draws no blur of its own over the large titles.
+            Taps stay on, so its hit test can't skip it. */}
         <div
           data-testid="edge-sampler"
           className="edge-sampler lg:hidden"
@@ -102,16 +93,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Positioned, with no z-index: not a stacking context, which would
             trap the maps' fullscreen overlays (z-50) under the top scrim. */}
         <main className="relative min-h-screen overflow-x-clip lg:ml-[248px]">
-          {/* Clear of the tab bar, whole or shrunk to its pill (L1): the
-              bar's float off the foot (24 pt on a Face ID phone), its 62 pt,
-              24 pt of air, and the home indicator's inset on top - so at
-              scroll end the last card (an activity's Previous run) sits whole
-              above the pill on every page. From the bar's own tokens, so it
-              follows them. */}
-          {/* Content up to 1120 pt wide, centred, 36 pt from the top and 32 at
-              the sides on desktop (v4.17). */}
-          {/* Relative, with no z-index, so the content paints over the aura
-              (positioned, before it) without becoming a stacking context. */}
+          {/* The bottom padding clears the tab bar (its float, its height, 24 pt of air, the home indicator)
+              from the bar's own tokens. Relative, with no z-index, so the content paints over the aura
+              without becoming a stacking context. */}
           <div className="relative mx-auto max-w-5xl px-4 pb-[calc(var(--tab-bar-float)+var(--tab-bar-h)+24px+var(--safe-bottom))] pt-[var(--top-scrim)] sm:px-6 lg:max-w-[1184px] lg:px-8 lg:pb-16 lg:pt-9">
             <Aura />
             <div className="relative">

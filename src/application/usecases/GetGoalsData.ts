@@ -13,7 +13,6 @@ import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { round } from '@/lib/math'
 import type { PbEntry, GoalYear, UpcomingRace } from '@/domain/goals/types'
 
-// Moved to the domain; re-exported so every existing importer keeps working.
 export type { PbEntry, PbYear, GoalTarget, GoalYear, UpcomingRace, UpcomingRaceYear } from '@/domain/goals/types'
 
 export interface PbData {
@@ -109,7 +108,6 @@ export function computeProjection(
 
   if (weeksElapsed < 4 || remainingWeeks <= 0) return null
 
-  // The app's one weekly average: the last 12 complete weeks (v4.6).
   const weeklyRate = weeklyAverageKm(activities, isoDate(now))
 
   const weeklyNeeded = round((goal - totalDistanceKm) / remainingWeeks, 1)
@@ -123,7 +121,7 @@ export function computeProjection(
   return { weeklyRate, weeklyNeeded, projectedYearKm, status, deltaKm }
 }
 
-/** A month's planned km, by its "YYYY-MM": what the plan actually asks for. */
+/** Planned km by "YYYY-MM" month. */
 export type PlannedKmByMonth = ReadonlyMap<string, number>
 
 export function plannedKmByMonth(planned: readonly { date: string; distanceM?: number }[]): PlannedKmByMonth {
@@ -143,10 +141,8 @@ export function computeMonthlyGoals(
   now = new Date(),
   planned: PlannedKmByMonth = new Map(),
 ): MonthGoal[] {
-  // What the plan asks of a month is its target (App Fixes 3c): Goals read a
-  // twelfth of the year while Plan had 226 km in October, and the two
-  // disagreed about the same month. A month the plan does not cover keeps
-  // the twelfth, so a year without a plan reads as it always did.
+  // A month's target is what the plan asks of it, so Goals and Plan agree; a
+  // month the plan does not cover keeps a twelfth of the year.
   const evenShare = round(goals.annualDistanceKm / 12, 1)
 
   return Array.from({ length: 12 }, (_, i) => {
@@ -317,7 +313,6 @@ export async function getGoalsPageData(today: string = appTodayIso()): Promise<G
   const goalYears = getGoalYears()
   const pbYears = getPbYears()
   const predictions = await getGoalPredictions()
-  // The plan's own km per month, so Goals and Plan cannot disagree (3c).
   const plannedByMonth = plannedKmByMonth(await getPlannedWorkouts())
 
   const activityMap = new Map(activities.map((a) => [a.id, a]))

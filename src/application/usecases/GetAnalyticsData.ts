@@ -63,12 +63,10 @@ export interface WeeklyTrendPoint {
   aer: number | null
   ana: number | null
   zoneSeconds: Record<number, number>
-  /** The week's longest run and the day it was run on (D3, v4.5). */
   longestKm: number
   longestDate: string | null
   /** Moving time over every run of the week. */
   durationSeconds: number
-  /** Quality sessions run that week, by kind (D4, v4.5). */
   thresholdSessions: number
   intervalSessions: number
 }
@@ -209,8 +207,7 @@ export function adjustedEfficiencyFactor(activities: Activity[]): number | null 
 }
 
 const DISTANCE_BRACKETS = [
-  // No unit in the bucket: "5–10 km" wrapped to two lines under its bar. The
-  // card head says km once (G19).
+  // No unit in the label: "5–10 km" wraps to two lines under its bar.
   { label: '< 5',   min: 0,  max: 5  },
   { label: '5–10',  min: 5,  max: 10 },
   { label: '10–15', min: 10, max: 15 },
@@ -303,7 +300,6 @@ export function buildWeeklyTrends(all: Activity[], z4FloorBpm = DEFAULT_Z4_FLOOR
         distanceKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)),
         sessionCount: acts.length,
         easyPace: weightedPace(easy),
-        // Rep pace (App Fixes 2b): the work laps of the week's quality sessions only.
         hardPace: repPaceSecPerKm(hard, z4FloorBpm),
         ef: efficiencyFactor(easy),
         efAdjusted: adjustedEfficiencyFactor(easy),

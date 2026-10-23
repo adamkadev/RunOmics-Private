@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
-"""Sync upcoming Garmin race events into the private data workspace.
+"""Garmin is the source of truth: a stored value is kept only when the event carries no eventCustomization at all.
 
-Uses Garmin's dedicated upcoming-events endpoint so RunOmics can retain richer
-race metadata such as:
-
-- custom time goals
-- primary-event designation
-- training-event designation
-
-Garmin is the source of truth when it supplies these fields. Existing locally
-persisted values are used only as a fallback when Garmin stays silent - and
-silence means the event carried no eventCustomization at all. Once Garmin sends
-one, it is answering about the goal, so clearing a time goal in Garmin Connect
-clears it here. The cost of that, deliberately accepted: a targetSeconds set by
-hand in the data file no longer survives a sync of an event Garmin customizes.
-
-Can be run standalone or imported by sync.py.
+Deliberately accepted: a targetSeconds set by hand does not survive a sync of an event Garmin customizes.
 """
 
 from __future__ import annotations
@@ -83,8 +69,6 @@ def main() -> int:
 
 
 def fetch_upcoming_races(client: GarminClient) -> list[dict]:
-    """Fetch upcoming Garmin races for the configured future horizon."""
-
     print(f"Syncing upcoming races for the next {_FUTURE_DAYS} days…")
 
     events = retry_transient(
@@ -126,13 +110,9 @@ def write_upcoming_races(
     *,
     data_dir: Path | None = None,
 ) -> None:
-    """Persist races while retaining local values only when Garmin omits them."""
-
     out_path = (data_dir or get_data_dir()) / "upcoming_races.json"
 
-    # A file that does not parse stops here rather than reading as empty: it
-    # holds the goals typed in by hand, and a rewrite from Garmin's list
-    # alone would throw them away.
+    # A file that does not parse stops here rather than reading as empty: it holds the goals typed in by hand.
     stored = read_history(out_path).get("races", [])
     if not isinstance(stored, list) or not all(isinstance(entry, dict) for entry in stored):
         raise HistoryFileError(
@@ -165,15 +145,12 @@ def write_upcoming_races(
         if not prior:
             continue
 
-        # Garmin wins when it provides a goal.
-        # Preserve the previous value only if Garmin omitted it.
         if (
             "targetSeconds" not in entry
             and prior.get("targetSeconds") is not None
         ):
             entry["targetSeconds"] = prior["targetSeconds"]
 
-        # Same fallback principle for optional customization metadata.
         if (
             "isPrimaryEvent" not in entry
             and prior.get("isPrimaryEvent") is not None
@@ -231,24 +208,18 @@ def _map_race(item: dict) -> dict:
     if item.get("location"):
         entry["location"] = _simplify_location(item["location"])
 
-    # Garmin exposes whether an event is the athlete's primary event.
     if customization.get("isPrimaryEvent") is not None:
         entry["isPrimaryEvent"] = bool(
             customization["isPrimaryEvent"]
         )
 
-    # Garmin also identifies events involved in training planning.
     if customization.get("isTrainingEvent") is not None:
         entry["isTrainingEvent"] = bool(
             customization["isTrainingEvent"]
         )
 
-    # Three states, not two. A customization object means Garmin is speaking
-    # about this event's goal, so no customGoal is a deletion and is recorded as
-    # None - the tombstone write_upcoming_races needs to tell it apart from
-    # silence. No customization object at all is silence. A goal Garmin sent but
-    # this code cannot read (a distance goal, say) is neither: leaving the key
-    # off keeps whatever was already on file.
+    # Three states: in a customization, no customGoal is a deletion (the None tombstone); no customization is
+    # silence; a goal this code cannot read (a distance goal, say) leaves the key off to keep what is on file.
     reported = item.get("eventCustomization")
 
     if isinstance(reported, dict):
@@ -264,7 +235,7 @@ def _map_race(item: dict) -> dict:
 
 
 def _event_uuid(item: dict) -> str | None:
-    """Return a real Garmin shareable UUID, never a synthesized fallback."""
+    """Never a synthesized fallback."""
 
     value = item.get("garminEventUuid")
     if value is None:
@@ -276,8 +247,6 @@ def _event_uuid(item: dict) -> str | None:
 
 
 def _numeric_event_id(item: dict) -> int | None:
-    """Normalize Garmin's numeric event id from API or persisted data."""
-
     value = item.get("garminEventId")
     if value is None:
         value = item.get("id")
@@ -299,14 +268,7 @@ def _event_identity_keys(
     *,
     include_fallback: bool = False,
 ) -> list[tuple[str, str]]:
-    """Return event identities in Garmin-preferred lookup order.
-
-    UUID and numeric id are both retained as aliases when both are present, so
-    differently shaped copies of the same Garmin event still deduplicate. The
-    date/name identity is used as the primary identity only when Garmin supplied
-    neither stable identifier. Persistence lookup may opt into it as a final
-    compatibility fallback for older files.
-    """
+    """UUID and numeric id are both kept as aliases, so differently shaped copies of the same event still deduplicate."""
 
     keys: list[tuple[str, str]] = []
     event_uuid = _event_uuid(item)
@@ -332,8 +294,6 @@ def _event_identity_keys(
 
 
 def _event_identity_rank(item: dict) -> int:
-    """Rank identities so deduplication retains the strongest representation."""
-
     if _event_uuid(item) is not None:
         return 0
     if _numeric_event_id(item) is not None:
@@ -342,8 +302,6 @@ def _event_identity_rank(item: dict) -> int:
 
 
 def _extract_target_seconds(custom_goal: dict | None) -> int | None:
-    """Extract a Garmin custom time goal as whole seconds."""
-
     if not isinstance(custom_goal, dict):
         return None
 

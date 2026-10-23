@@ -3,11 +3,8 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * The activity page's first load used to carry the Firestore and auth SDKs,
- * the share-card renderer and the tab-only charts: 559 kB gzip, down to 351
- * once they load on demand. A single static import in one of these modules
- * would quietly put a whole SDK back into every activity page, and no test
- * would notice - so the imports themselves are checked.
+ * A single static import in one of these modules would quietly put the Firestore or auth SDK, the share-card
+ * renderer or a tab-only chart back into every activity page's first load, so the imports themselves are checked.
  */
 const EAGER_MODULES = [
   'src/components/activity/ActivityNotes.tsx',

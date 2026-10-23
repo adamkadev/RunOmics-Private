@@ -16,13 +16,6 @@ interface Props {
   onCopy: () => void
 }
 
-/**
- * One row (v4.9), right under the option row: Share with the share-nodes
- * icon, or Download where the browser can't share a file - the 50 pt
- * prominent button (Liquid Glass v3, G12); Copy image beside it where images
- * can be copied, in the system fill, and still a fill once it says Copied.
- * Both grey out while there is nothing to share.
- */
 export function ShareCardActions({ canShareFiles, canCopyImage, copyState, disabled = false, onShare, onSave, onCopy }: Props) {
   const copied = copyState === 'copied'
   return (

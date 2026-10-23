@@ -3,14 +3,7 @@ import { cn } from '@/lib/utils'
 
 export type LegendSwatch = 'square' | 'dot' | 'diamond' | 'line' | 'dash' | 'ring' | 'dashRing' | 'dashCircle' | 'tint' | 'outline'
 
-/**
- * A legend entry (v4.17): an 8 px swatch - a square for bars, a circle for
- * points, a 14 px line for series; a ring for an outline-only mark such as
- * a race; a tinted square for a soft fill (a missed day) and an outlined one
- * for an outline (today); a diamond and a dashed circle for marks drawn in
- * those shapes (v4.17.2) - then a 12 px muted label.
- */
-export function LegendItem({ swatch, color, children, size = 8 }: { swatch: LegendSwatch; color: string; children: ReactNode; /** A square or dashed square's side, 8 px by default. */ size?: number }) {
+export function LegendItem({ swatch, color, children, size = 8 }: { swatch: LegendSwatch; color: string; children: ReactNode; size?: number }) {
   const style: CSSProperties =
     swatch === 'line'
       ? { width: 14, height: 2, background: color }

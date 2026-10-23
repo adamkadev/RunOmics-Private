@@ -102,8 +102,7 @@ function applyReplan(plan: CoachingPlan, decision: CoachDecision): TrainingWeek[
   const history = plan.weeks
     .map((week) => ({ ...clone(week), workouts: week.workouts.filter((workout) => workout.date < decision.effectiveDate) }))
     .filter((week) => week.workouts.length > 0)
-  // Merged by id, a replacement workout carrying a past prescription's id
-  // used to take its place in history without a word.
+  // Merged by id, a replacement carrying a past prescription's id would silently take its place in history.
   const pastIds = new Set(history.flatMap((week) => week.workouts.map((workout) => workout.id)))
   for (const week of replacement) {
     for (const workout of week.workouts) {

@@ -18,7 +18,7 @@ export interface ShoeStats {
   kmPerWeek: number
   wearPercent: number
   nearingLimit: boolean
-  /** The session type worn in most often: the pair's role (C4, v4.4b). */
+  /** The session type worn in most often. */
   mainType?: ActivityType | null
 }
 
@@ -36,8 +36,7 @@ export function getShoeStats(): ShoeStats[] {
     byGear.set(a.gearId, (byGear.get(a.gearId) ?? 0) + a.distanceKm)
     sessionsByGear.set(a.gearId, (sessionsByGear.get(a.gearId) ?? 0) + 1)
     if (!lastUsedByGear.has(a.gearId)) lastUsedByGear.set(a.gearId, a.date)
-    // getAllActivities is newest-first, so the last use is whichever date is
-    // seen first per gear; the first use needs an explicit min instead.
+    // getAllActivities is newest-first: the first date seen per gear is its last use.
     const earliest = firstUsedByGear.get(a.gearId)
     if (!earliest || a.date < earliest) firstUsedByGear.set(a.gearId, a.date)
     const types = typesByGear.get(a.gearId) ?? new Map<ActivityType, number>()

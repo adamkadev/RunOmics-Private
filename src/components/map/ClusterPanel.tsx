@@ -9,7 +9,7 @@ import { OWN_ROW_SHARE, type AreaRow } from "./mapUtils";
 import { ChipMenuPanel, useChipMenu } from "./chipMenu";
 
 interface Props {
-  /** Every area with a run under the filters, busiest by km first. */
+  /** Busiest by km first. */
   rows: AreaRow[];
   names: string[];
   selectedIdx: number;
@@ -38,11 +38,6 @@ function AreaOption({ row, name, selected, onPick }: { row: AreaRow; name: strin
   );
 }
 
-/**
- * The area chip and its list (v4.8): the world view's bubbles became this.
- * Each area reads runs, km and its share of km; the small ones fold into one
- * row that opens in place.
- */
 export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
   const menu = useChipMenu("start");
   const [unfolded, setUnfolded] = useState(false);
@@ -51,7 +46,6 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
   const totalRuns = rows.reduce((s, r) => s + r.runs, 0);
   const totalKm = rows.reduce((s, r) => s + r.km, 0);
 
-  // The top area always has its own row, and so does the one on screen.
   const own = rows.filter((r, i) => i === 0 || r.sharePercent >= OWN_ROW_SHARE || r.idx === selectedIdx);
   const folded = rows.filter((r) => !own.includes(r));
   const showAll = unfolded || folded.length < 2;
@@ -66,10 +60,6 @@ export function ClusterPanel({ rows, names, selectedIdx, onSelect }: Props) {
 
   return (
     <div className="flex min-w-0 flex-1">
-      {/* The location pill (Heatmap Filters 1b, Oct 2026): the row's one
-          wide control, taking what the two circles leave, so any city name
-          fits - cut with an ellipsis, never scrolled. 44 pt glass, as the
-          other headers' controls - regular Liquid Glass v3 (G11). */}
       <button
         {...menu.chipProps}
         title={selectedName}

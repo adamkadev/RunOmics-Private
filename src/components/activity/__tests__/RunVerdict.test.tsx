@@ -25,7 +25,6 @@ describe('RunVerdict', () => {
     expect(screen.queryByTestId('run-verdict-body')).toBeNull()
   })
 
-  // v4.8 2e: the coach's sentence is back under the headline; still no label.
   it('shows the AI headline and body', () => {
     render(<RunVerdict activity={activity} aiVerdict={{ headline: 'Strong threshold', body: 'Held the range.' }} />)
 

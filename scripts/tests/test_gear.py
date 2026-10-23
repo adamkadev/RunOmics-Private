@@ -58,8 +58,7 @@ class TestMapGear:
         assert shoe.max_km == 1000
 
     def test_splits_combined_name_out_of_brand_when_model_is_empty(self):
-        """Custom (non-catalog) gear can come back with `model` empty and the
-        full name stuffed into `brand` - seen in production on an older shoe."""
+        """Custom (non-catalog) gear can come back with `model` empty and the full name in `brand`."""
         item = {"uuid": "abc-123", "brand": "Nike Pegasus 40", "model": ""}
         shoe = _map_gear(item, retired=True)
 
@@ -105,8 +104,7 @@ class TestWriteShoesJson:
         assert changed is False
 
     def test_an_unreadable_file_is_rewritten_and_reported(self, tmp_path, capsys):
-        # Garmin's list is the whole of it, so rewriting loses nothing - but
-        # a file that stopped parsing is worth a line in the log.
+        # Garmin's list is the whole of it, so rewriting loses nothing.
         path = tmp_path / "shoes.json"
         path.write_text('{"shoes": [')
 

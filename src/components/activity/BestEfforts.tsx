@@ -12,12 +12,6 @@ interface Props {
   qualifiedEfforts?: QualifiedEffort[]
 }
 
-/**
- * The run's best efforts as a three-column grid of inset tiles (v4.17): the
- * distance with its unit, the time, then the pace in muted - but for the
- * 1 km, whose time is its pace (3.0.2). A record carries its rank, a PR in
- * pos.
- */
 export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
   const s = t.activity.bestEfforts
   const rankByKey = new Map(qualifiedEfforts.map((e) => [e.key, e.rank]))
@@ -36,9 +30,7 @@ export function BestEfforts({ bestEfforts, qualifiedEfforts = [] }: Props) {
           <div key={key} className="relative flex min-w-0 flex-col gap-0.5 rounded-xl bg-[var(--surface-2)] px-3 py-3 sm:px-3.5">
             <span className="truncate text-xs text-muted-foreground">{s.distances[key] ?? label}</span>
             <span className="text-lg font-semibold leading-tight text-foreground sm:text-xl">{formatDuration(seconds)}</span>
-            {/* A kilometre's time is its pace: the 1 km tile printed 5:38
-                over 5:38 /km (3.0.2), so it says it once. The grid row
-                keeps the tile as tall as its neighbours. */}
+            {/* A kilometre's time is its pace, so the 1 km tile says it once. */}
             {km !== 1 && <span className="truncate text-xs text-muted-foreground">{formatPace(Math.round(seconds / km))}</span>}
             {rank != null && (
               <span

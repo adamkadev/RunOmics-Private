@@ -14,7 +14,7 @@ export interface SeasonRaceRow {
   sortKey: string
   kind: 'done' | 'scheduled' | 'open'
   title: string
-  /** The race's own name, or the distance where it has none: the row's title under its "MAY 16 · HALF" eyebrow. */
+  /** The race's own name, or the distance where it has none. */
   name: string
   /** Date, then target or outcome - joined with a middle dot. */
   sub: string[]
@@ -27,7 +27,7 @@ export interface SeasonRaceRow {
   achieved: boolean
   /** The race day; null for a target with no date yet. */
   date: string | null
-  /** "10K", "Half": the strip's label and the no-date row's name. */
+  /** "10K", "Half". */
   short: string
   targetSeconds: number | null
   /** The prediction ahead of a race, the result after it. */
@@ -40,11 +40,6 @@ function outcomeLine(seconds: number, targetSeconds: number): string {
   return gap <= 0 ? t.goals.beatenBy(formatDuration(Math.abs(gap))) : t.goals.missedBy(formatDuration(gap))
 }
 
-/**
- * The season's races as rows, split into what is still ahead and what is
- * done. The timeline mixed the two in one date-sorted column, so the race you
- * were training for sat below the ones already run.
- */
 export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow[] {
   const { goals, pbs, upcomingRaces, nextRaceSpotlight, predictions } = yearData
   const s = t.goals
@@ -72,11 +67,7 @@ export function seasonRaceRows(yearData: YearData, today: string): SeasonRaceRow
     const targetLine = target.targetSeconds !== null ? s.targetTime(formatDuration(target.targetSeconds)) : null
     const rawPredicted = predictions.find((p) => p.key === DISTANCE_KEY[target.distance])?.predictedSeconds ?? null
 
-    // One prediction source (Garmin's, via GetGoalsData). Where the best is
-    // already faster, the best stands in - and the row says so rather than
-    // present it as a forecast.
-    // The watch's prediction, labelled as one. Standing the best in for it
-    // printed "= best" under a number the column heads as predicted.
+    // The watch's prediction, never the best standing in for it: the column heads the number as predicted.
     const predictedSeconds = isSpotlight ? nextRaceSpotlight!.predictedSeconds : rawPredicted
     const predictedSub = s.predictedTag
 

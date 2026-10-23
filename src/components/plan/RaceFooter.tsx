@@ -17,10 +17,7 @@ const DISTANCE_ONLY = /^\s*\d+(?:[.,]\d+)?\s*(?:k|km|m|mi|miles?)\s*$/i
 
 const NEXT_CHIP_FILL = 'var(--tone-caution)'
 const NEXT_CHIP_INK = 'var(--zone-ink)'
-// Derived straight from --foreground rather than the muted/subtle tokens -
-// on white this chip was a pale-grey outline around pale-grey text, quiet
-// enough to disappear; it can stay quieter than the amber "next" chip
-// without going invisible.
+// From --foreground, not the muted tokens: on white those fade the chip out.
 const LATER_CHIP_BORDER = 'color-mix(in srgb, var(--foreground) 30%, transparent)'
 const LATER_CHIP_TEXT = 'color-mix(in srgb, var(--foreground) 65%, transparent)'
 
@@ -28,11 +25,7 @@ function daysBetween(from: string, to: string): number {
   return Math.round((new Date(to + 'T00:00:00').getTime() - new Date(from + 'T00:00:00').getTime()) / DAY_MS)
 }
 
-// Line 1 is the race itself - name and distance, the same read as an
-// Activities row. Line 2 is everything about when and why: date, target time,
-// then whichever one of role or block-end applies (a race is never both).
-// The sync stores the distance in Garmin's English ("Half-Marathon"); the
-// footer prints it in the locale, as the best-effort tiles do.
+// The sync stores the distance in Garmin's English ("Half-Marathon").
 function distanceName(distance: string): string {
   const key = DISTANCE_KEY[distance]
   return (key && t.activity.bestEfforts.distances[key]) || distance
@@ -56,8 +49,6 @@ function raceDetail({ race, role, blockEndsHere }: FooterRace): string {
     .join(' · ')
 }
 
-// Each race is its own standalone card on the page background - not rows
-// sharing one outer card, which read as a card inside a card.
 export function RaceFooter({ races, today }: { races: FooterRace[]; today: string }) {
   const ordered = [...races].sort((a, b) => a.race.date.localeCompare(b.race.date))
   if (!ordered.length) return null

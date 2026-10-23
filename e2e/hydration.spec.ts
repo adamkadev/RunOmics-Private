@@ -1,11 +1,6 @@
 import { test } from './fixtures'
 
-// Pages are served from an ISR cache, and the first visit after a quiet spell
-// hydrates HTML rendered hours before the browser's own clock. Text worked out
-// from the server's clock - "synced 56m ago" - then differs from the browser's
-// first render and React throws #418, which the runtime-error fixture fails
-// on. A fresh build hides that; running the browser's clock hours ahead of the
-// render stands in for the cache.
+// Stands in for the ISR cache: HTML rendered hours earlier makes clock-based text differ and React throw #418.
 const HOURS_SINCE_RENDER = 3
 
 const ROUTES = [

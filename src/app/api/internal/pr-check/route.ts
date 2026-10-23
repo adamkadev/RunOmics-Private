@@ -9,10 +9,7 @@ export async function POST(req: NextRequest) {
   return handleInternalRoute('pr-check', req, async () => {
     const { newPrs, commit } = await getNewPrs()
 
-    // Every PR is pushed even if one before it failed, and the marks are
-    // stored only once all of them went out. A failure therefore offers the
-    // whole batch again next run, announcing the PRs that did get through a
-    // second time: a rare duplicate beats a PR that is never announced.
+    // The marks are stored only once every push went out: a rare duplicate beats a PR that is never announced.
     await sendPushesToAllDevices(
       newPrs.map((pr) => ({ title: t.notifications.newPr.title(pr.label), body: t.notifications.newPr.body(formatDuration(pr.seconds)) }))
     )

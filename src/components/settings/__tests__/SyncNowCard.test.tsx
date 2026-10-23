@@ -8,19 +8,9 @@ import { t } from '@/i18n'
 const STORAGE_KEY = 'runomics_sync_since'
 const s = t.settings.sync
 
-// Real time, deliberately: `userEvent.click` deadlocks under fake timers
-// (React's own `act()` flushing needs setTimeout/MessageChannel to actually
-// fire on their own, and nothing outside the awaited click can advance a fake
-// clock while the click itself is what's being awaited), and switching to
-// fake timers partway through a test left a poll iteration waiting on a real
-// timer a fake-clock advance afterward can't touch. The two tests below that
-// wait a genuine poll interval hand the card a short one instead of sitting
-// through production's ten seconds - long enough that a dispatch's stored
-// timestamp is still observable before the first poll clears it, short enough
-// not to dominate the suite. Only those two override it: the fake-timer tests
-// keep the real interval, so that `runAllTimersAsync` still drains the poll
-// loop in the few dozen iterations the twelve-minute ceiling allows at 10s
-// rather than the thousands it would take at a few hundred milliseconds.
+// Real timers here: `userEvent.click` deadlocks under fake timers. The two
+// real-timer tests pass a short poll interval; the fake-timer tests keep the
+// real one so `runAllTimersAsync` drains the loop in a few dozen iterations.
 const REAL_POLL_INTERVAL_MS = 500
 const CLICK_TEST_TIMEOUT_MS = 5_000
 
@@ -38,21 +28,10 @@ function jsonResponse(body: unknown, ok = true, etag?: string) {
 }
 
 function renderCard(pollIntervalMs?: number) {
-  // The sync lives on the Garmin card's device row (v5.6 #6).
   return render(<DataSourceInfo lastSyncedAt={null} activityCount={0} user={USER} pollIntervalMs={pollIntervalMs} />)
 }
 
-/**
- * Advancing the fake clock by 0ms still walks its queue and, on the way, lets
- * every pending microtask (a mocked fetch's promise chain, in every test that
- * uses this) settle - the standard way to flush "nothing left to do yet"
- * under fake timers without waiting on real wall-clock time.
- *
- * `@testing-library`'s own `waitFor` is not used for these: it polls on a
- * real interval, and once fake timers are active that real interval never
- * fires. It is used further down, in the two tests that stay on real timers
- * throughout, where it works exactly as documented.
- */
+/** Flushes pending microtasks under fake timers, where `waitFor`'s real-interval polling never fires. */
 async function settle(ms = 0) {
   await vi.advanceTimersByTimeAsync(ms)
 }
@@ -62,12 +41,7 @@ beforeEach(() => {
 })
 
 afterEach(async () => {
-  // A resumed-poll test that doesn't drive its loop to a terminal state
-  // leaves it running past its own end - and the next test's fetch/
-  // localStorage stubs are still there to answer it. Draining every pending
-  // fake timer here forces every such loop closed before those stubs change
-  // out from under it. A no-op for the two tests that never install fake
-  // timers at all.
+  // Drain fake timers so a poll loop left running can't answer the next test's stubs.
   if (vi.isFakeTimers()) await vi.runAllTimersAsync()
   vi.useRealTimers()
   vi.unstubAllGlobals()
@@ -78,7 +52,6 @@ describe('Sync now, on the Garmin card', () => {
     renderCard()
     expect(screen.getByText(s.action)).toBeInTheDocument()
     expect(screen.getByTestId('sync-line').textContent).toBe(s.subtitle)
-    // One Garmin card: the sync has no card of its own.
     expect(screen.getAllByTestId('garmin-row')).toHaveLength(1)
   })
 
@@ -98,8 +71,7 @@ describe('Sync now, on the Garmin card', () => {
 
       await waitFor(() => expect(localStorage.getItem(STORAGE_KEY)).toBe(since))
 
-      // Let the poll's one real interval pass so the loop reaches its own
-      // natural end rather than leaking past this test.
+      // Let the loop reach its end rather than leak past this test.
       await waitFor(() => expect(screen.getByText(VERDICT_STATUS.verdict.headline)).toBeInTheDocument(), {
         timeout: REAL_POLL_INTERVAL_MS + 2_000,
       })
@@ -118,7 +90,6 @@ describe('Sync now, on the Garmin card', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 
-  // Design review, Oct 2026: held back by the server's limits is not a failure.
   it('says when the next sync can go when the server holds one back', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 429, json: async () => ({ reason: 'cooldown', retryAfter: 290 }) }))
 
@@ -163,10 +134,6 @@ describe('Sync now, on the Garmin card', () => {
   )
 
   it('resumes a sync left running when the card remounts, without waiting a poll interval first', async () => {
-    // The regression this whole file exists for: leaving Settings mid-sync and
-    // coming back used to show idle, with nothing to say a sync was already
-    // running - inviting a second dispatch. A fresh mount with a stored
-    // timestamp must ask immediately, not wait out a full interval first.
     localStorage.setItem(STORAGE_KEY, new Date().toISOString())
     const fetchMock = vi
       .fn()
@@ -175,7 +142,6 @@ describe('Sync now, on the Garmin card', () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] })
 
     renderCard()
-    // v4.17: the button says it is syncing; the device line says which step.
     expect(screen.getByText(s.running)).toBeInTheDocument()
     expect(screen.getByTestId('sync-line').textContent).toBe(s.fetching)
 
@@ -231,7 +197,6 @@ describe('Sync now, on the Garmin card', () => {
   })
 })
 
-// Design review, Oct 2026: fewer questions while the chain runs.
 describe('Sync now, while it waits', () => {
   const STILL_GOING = { ...VERDICT_STATUS, ready: false, synced: false, reason: 'waiting for the deployment carrying this sync' }
 

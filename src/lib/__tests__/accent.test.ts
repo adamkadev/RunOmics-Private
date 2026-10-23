@@ -28,7 +28,6 @@ describe('reading a stored preference', () => {
     expect(parseAccent('pink')).toBe('pink')
   })
 
-  // v4.3.2: lime left the set; whoever picked it gets the default.
   it('reads the retired lime as the default', () => {
     expect(parseAccent('lime')).toBe(DEFAULT_ACCENT)
   })
@@ -42,7 +41,6 @@ describe('reading a stored preference', () => {
 
   it('reads v4.3\'s indigo and lavender, and v4.17\'s periwinkle, as cyan and violet', () => {
     expect(parseAccent('indigo')).toBe('cyan')
-    // Cyan replaced the periwinkle blue in 3.1 (App Fixes 5b).
     expect(parseAccent('periwinkle')).toBe('cyan')
     expect(parseAccent('lavender')).toBe('violet')
   })

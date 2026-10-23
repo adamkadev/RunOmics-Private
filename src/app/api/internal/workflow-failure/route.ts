@@ -6,9 +6,7 @@ import { t } from '@/i18n'
 const MAX_LENGTH = 200
 const RUN_URL_PREFIX = 'https://github.com/'
 
-// Anything a notification can show on one line. Control, format and line
-// separator characters are out: they could split the title, or - a bidi
-// override - make it read as something else.
+// Control, format and line separator characters could split the title or, as a bidi override, disguise it.
 const PRINTABLE = /^[^\p{C}\p{Zl}\p{Zp}]+$/u
 // The rest of a run URL is visible ASCII: no spaces, nothing to hide behind.
 const URL_PATH = /^[\x21-\x7E]+$/
@@ -26,13 +24,7 @@ function isRunUrl(value: unknown): value is string {
   )
 }
 
-/**
- * Called from a scheduled workflow's failure step, so a run that fails is a
- * push on the phone rather than a red cross in an Actions tab nobody opens -
- * which is how two reminder workflows failed every day for more than a week.
- *
- * Body: `{ "workflow": "<name>", "runUrl": "https://github.com/…" }`.
- */
+/** Called from a scheduled workflow's failure step. Body: `{ "workflow": "<name>", "runUrl": "https://github.com/…" }`. */
 export async function POST(req: NextRequest) {
   return handleInternalRoute('workflow-failure', req, async () => {
     const body: unknown = await req.json().catch(() => undefined)

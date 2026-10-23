@@ -1,5 +1,3 @@
-/** One row of the records board: a best effort, or an official result. */
-
 export interface RecordEntry {
   key: string
   label: string

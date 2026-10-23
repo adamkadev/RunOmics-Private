@@ -48,8 +48,6 @@ describe('reading an adaptation', () => {
   })
 })
 
-// Design review, Oct 2026: a session's short name and structure travel with
-// it; a model that answers null for one has left it out.
 describe('reading the name a session comes with', () => {
   const week = (workouts: unknown[]) => ({ startDate: '2026-09-14', endDate: '2026-09-20', focus: 'Week 1', workouts })
 

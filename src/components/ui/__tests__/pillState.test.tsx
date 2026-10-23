@@ -6,16 +6,6 @@ import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 import { t } from '@/i18n'
 
-/**
- * "Selected" used to be said two ways: the accent fill on the year and window
- * pickers, and a neutral 14 % foreground tint (`Pill` variant `active`) on the
- * Activities filter row and the profile period toggle. These lock the v4.17
- * languages in, one per control, and keep the accent out of both - it is for
- * the athlete's own data and real actions:
- * - a chip is inverted: text ink, with the page ground as its label;
- * - a tab is lifted onto the card surface, in text ink.
- */
-
 const CHIP_SELECTED = 'bg-foreground'
 const TAB_SELECTED = 'bg-[var(--segmented-pill)]'
 const ACCENT_FILL = 'bg-accent'

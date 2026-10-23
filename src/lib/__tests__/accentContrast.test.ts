@@ -22,7 +22,6 @@ const DARK_BG = SURFACES.dark.background
 const LIGHT_BG = white
 
 describe('accent palette contrast', () => {
-  // v4.3: the ink on a selected state passes 4.5:1 for every accent.
   it.each(CURATED_ACCENTS.flatMap((a) => (['dark', 'light'] as const).map((mode) => ({ id: a.id, mode, ...a[mode] }))))(
     '$mode $id: on-accent ink on the accent is >= 4.5:1',
     ({ acc, onAcc }) => {
@@ -39,10 +38,8 @@ describe('accent palette contrast', () => {
   })
 })
 
-// The `impact` theme shipped a rose --accent alongside a red --destructive only
-// 10.5 dE76 apart, so a "go" button and a delete button were the same colour.
-// WCAG contrast cannot catch this - two hues can differ wildly and still share a
-// luminance - so compare perceptual distance instead.
+// WCAG contrast cannot tell an accent from --destructive: two hues can differ wildly and share a
+// luminance, so compare perceptual distance instead.
 function lab(hex: string): [number, number, number] {
   const [r, g, b] = [1, 3, 5].map((i) => {
     const c = parseInt(hex.slice(i, i + 2), 16) / 255
@@ -76,9 +73,7 @@ function resolved(selector: string, base: string, token: string): string | undef
 
 const MIN_DELTA_E = 30
 
-// Derived from TOKEN_BLOCKS rather than ACCENT_IDS: the blocks are what actually
-// ships as CSS, so a variant that is added here but never registered as a
-// selectable accent is still covered.
+// From TOKEN_BLOCKS, not ACCENT_IDS: the blocks are what ships as CSS, registered as an accent or not.
 function accentCases() {
   const seen = new Map<string, { id: string; mode: string; selector: string; base: string }>()
   for (const block of TOKEN_BLOCKS) {
@@ -102,7 +97,7 @@ describe('accent never collides with the danger signal', () => {
     expect(cases).toHaveLength(ACCENT_IDS.filter((id: AccentId) => id !== DEFAULT_ACCENT).length * 2)
   })
 
-  // --destructive is var(--neg) since v4.17: the danger signal is the neg status.
+  // --destructive is var(--neg): the danger signal is the neg status.
   it.each(cases)('$mode accent "$id" is distinguishable from --neg', ({ mode, selector, base }) => {
     const accent = resolved(selector, base, '--accent')
     expect(accent, 'accent token').toBeDefined()
@@ -118,8 +113,7 @@ function tint(fg: string, bg: string, share: number): string {
   return `#${[1, 3, 5].map((i) => Math.round(channel(fg, i) * share + channel(bg, i) * (1 - share)).toString(16).padStart(2, '0')).join('')}`
 }
 
-// Design review, Oct 2026: a missed day's "✕ 10 km" on Month sits on the neg
-// status at 12 % over the card, and light read 4.35:1 there.
+// A missed day's "✕ 10 km" on Month sits on the neg status at 12 % over the card.
 describe('missed text', () => {
   it.each(['dark', 'light'] as const)('reads at 4.5:1 or more on its own tint, %s', (mode) => {
     const neg = STATUS_HEX[mode].neg
@@ -151,11 +145,8 @@ describe('screen audit contrast floors', () => {
   })
 })
 
-// 3.0.2: amber text and accent labels clear 4.5:1 wherever light theme puts
-// them - a white card, the page ground and an inset tile. On a card every
-// accent already did; the teal read 4.2:1 on the ground and 4.1:1 on a tile,
-// the pink 4.4:1 on a tile, so light --accent-text is the accent a step
-// darker (readableOn) while fills keep the accent itself.
+// Light --accent-text is the accent a step darker (readableOn), to clear 4.5:1 on a card, the ground
+// and an inset tile; fills keep the accent itself.
 describe('light theme text on its surfaces', () => {
   const s = SURFACES.light
   const grounds = { card: s.card, ground: s.background, tile: s.seg }

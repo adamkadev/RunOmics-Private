@@ -2,7 +2,6 @@ import { round } from '@/lib/math'
 import { cleanStream } from './cleanStream'
 
 export interface FormFade {
-  /** Distance at which cadence dropped away and stayed down, or null if it held. */
   fadedFromKm: number | null
   referenceSpm: number
 }
@@ -21,15 +20,11 @@ function mean(values: number[]): number {
   return values.reduce((sum, v) => sum + v, 0) / values.length
 }
 
-/**
- * Where in the run cadence gave out. Cadence is the only form metric recorded
- * per sample, so it stands in for the mechanics the scalar dynamics summarise.
- */
+/** Cadence is the only form metric recorded per sample, so it stands in for the mechanics the scalar dynamics summarise. */
 export function formFade(cadenceSamples: number[] | null, distanceKm: number): FormFade | null {
   if (!cadenceSamples || cadenceSamples.length < MIN_SAMPLES || distanceKm <= 0) return null
 
-  // The figure and this verdict read the same cleaned stream, so a dropout can
-  // never sit in the picture under a verdict that did not see it.
+  // The figure reads the same cleaned stream, so it never shows a dropout this verdict didn't see.
   const values = cleanStream(cadenceSamples, { min: MIN_CADENCE_SPM, max: 250, spikeFloor: 25 })
   const n = values.length
   const running = (v: number | null | undefined): v is number => v != null
@@ -44,8 +39,7 @@ export function formFade(cadenceSamples: number[] | null, distanceKm: number): F
   const threshold = reference * FADE_RATIO
   const windowSize = Math.max(3, Math.round(n * WINDOW_FRACTION))
 
-  // A fade is only a fade if it was still there at the finish; a dip that came
-  // back is a hill or a road crossing, not the mechanics giving out.
+  // A dip that came back by the finish is a hill or a road crossing, not the mechanics giving out.
   const tail = values.slice(n - windowSize).filter(running)
   if (tail.length === 0 || mean(tail) >= threshold) return { fadedFromKm: null, referenceSpm }
 

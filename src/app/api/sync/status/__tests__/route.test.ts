@@ -18,7 +18,6 @@ function get(etag?: string) {
   return GET(new NextRequest(`https://run.example/api/sync/status?since=${encodeURIComponent(SINCE)}`, { headers: etag ? { 'if-none-match': etag } : {} }))
 }
 
-// Design review, Oct 2026: most of a sync's polls are "still going".
 describe('/api/sync/status', () => {
   beforeEach(() => {
     verdictStatus.mockReset()

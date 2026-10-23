@@ -11,30 +11,22 @@ import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 import { DISTANCE_KEY, EFFORTS } from '@/domain/activity/effort'
 
-/** The Progress hub (H01, M12; 3.0): every figure the page draws, worked out once. */
 export interface ProgressHubView {
   year: number
   hero: {
     km: number
     goalKm: number | null
-    /** Against the same dates last year; null without last year's runs. */
     deltaKm: number | null
-    /** This year's km over those same dates, which the delta is read against. */
     compareKm: number | null
-    /** Where those dates start when the history began after 1 January last year; null otherwise. */
     compareSince: string | null
-    /** Cumulative km by day of the year, this year up to today. */
     current: YearPoint[]
     daysInYear: number
-    /** Where the year lands at the current weekly average, and what the goal needs; null without a goal still open. */
     projection: { yearKm: number; weeklyNeeded: number; weeklyRate: number } | null
   }
   race: {
     daysUntil: number
     distance: string
-    /** The race's length, for the gap per km; null for a distance the app does not know. */
     distanceKm: number | null
-    /** The event's name, or its place where the name only restates the distance; null when neither says more. */
     name: string | null
     date: string
     predictedSeconds: number | null
@@ -46,30 +38,16 @@ export interface ProgressHubView {
     series: number[]
     thresholdPaceSecPerKm: number | null
     lthrBpm: number | null
-    /** The grade and its ranking, the grade card's own (App Fixes 1h). */
     grade: { letter: string; topPercent: number | null } | null
   } | null
-  /** `recent` marks the record set most recently when it is new, set in the last few weeks. */
   records: { key: string; label: string; seconds: number; recent: boolean }[]
   consistency: {
-    /** Twelve weeks, oldest first, Monday to Sunday, on the page's distance ramp. */
     weeks: HeatCell[][]
     activeDays: number
     streakWeeks: number
-    /**
-     * The week under way against the target a week has to hit to keep the
-     * streak (App Fixes 1h): the hub previews Consistency's own reading
-     * rather than drawing a second daily heatmap of its own.
-     */
     thisWeek: { runs: number; target: number }
-    /**
-     * The last 26 weeks, oldest first, the week under way last (Wave 4, App
-     * Fixes 1h): runs as a share of the busiest week, never under 20 %, and
-     * whether the week hit its target.
-     */
     strip: StreakWeek[]
   }
-  /** `status` is the pair's wear, as its own page reads it: Replace soon from 70%. */
   shoes: { gearId: string; name: string; km: number; maxKm: number; status: WearStatus }[]
   allTime: {
     km: number
@@ -88,11 +66,9 @@ export interface StreakWeek {
   current: boolean
 }
 
-/** The streak strip's length: half a year of weeks. */
 export const STREAK_STRIP_WEEKS = 26
 const STRIP_MIN_PCT = 20
 
-/** The last 26 weeks of runs from the year of days, the week under way last (App Fixes 1h). */
 export function streakStrip(days: readonly HeatmapDay[], today: string, target: number): StreakWeek[] {
   const thisMonday = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
   const runsByWeek = new Map<string, number>()
@@ -135,7 +111,6 @@ export interface HubInput {
   goal: ProfileGoal | null
   spotlight: NextRaceSpotlight | null
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
-  /** The grade on screen, where the athlete has one; the hub never grades. */
   vo2Grade?: { letter: string; topPercent: number | null } | null
   athlete: { lthrBpm?: number | null; thresholdPaceSecPerKm?: number | null }
   records: RecordEntry[]
@@ -144,17 +119,15 @@ export interface HubInput {
   shoes: ShoeStats[]
 }
 
-/** Runs since this week's Monday: the streak tile's "0 of 3 this week". */
 function runsThisWeek(activities: HubInput['activities'], today: string): number {
   const monday = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
   return activities.filter((a) => a.date >= monday && a.date <= today).length
 }
 
 const HUB_RECORDS = ['1k', '5k', '10k', 'half']
-/** 12 weeks, as Analytics reads VO2max's change (v4.7). */
+/** 12 weeks, the window Analytics reads VO2max's change over. */
 const VO2_WINDOW_DAYS = 84
 const HEAT_WEEKS = 12
-/** A record set within this many days is a new one. */
 const NEW_RECORD_DAYS = 30
 
 function raceName(race: NextRaceSpotlight['race']): string | null {
@@ -167,7 +140,6 @@ function dayOfYear(iso: string): number {
   return Math.round((d - Date.UTC(Number(iso.slice(0, 4)), 0, 1)) / 86_400_000) + 1
 }
 
-/** Cumulative km through the year, one point a week and one for the last day. */
 export function cumulativeYear(activities: HubInput['activities'], year: number, throughDay: number): YearPoint[] {
   const byDay = new Map<number, number>()
   for (const a of activities) {
@@ -188,11 +160,9 @@ export function cumulativeYear(activities: HubInput['activities'], year: number,
 export interface HeatCell {
   level: DayLevel
   today: boolean
-  /** Still to come this week. */
   future: boolean
 }
 
-/** Twelve weeks to this one, a column per week, on the page's distance ramp (v4.17). */
 export function heatWeeks(days: HeatmapDay[], today: string): HeatCell[][] {
   const byDate = new Map(days.map((d) => [d.date, d]))
   const monday = startOfWeek(new Date(`${today}T00:00:00`))
@@ -206,12 +176,7 @@ export function heatWeeks(days: HeatmapDay[], today: string): HeatCell[][] {
   )
 }
 
-/**
- * The race card's gap row (3.0.2): the prediction against the target, the gap
- * per km, and how far along the course the predicted pace is when the target
- * clock stops - the bar's fill. 1:35:46 against 1:35:00 is 99%: 170 m short
- * on a half. Null without both times.
- */
+/** `reached`: the share of the course the predicted pace covers when the target clock stops. */
 export function raceGapView(race: NonNullable<ProgressHubView['race']>): { gapSeconds: number; perKmSeconds: number | null; reached: number } | null {
   if (race.predictedSeconds === null || !race.targetSeconds) return null
   const gapSeconds = race.predictedSeconds - race.targetSeconds
@@ -251,7 +216,6 @@ export function progressHubView(input: HubInput): ProgressHubView {
     hero: {
       km: Math.round(input.ytd.distanceKm),
       goalKm: input.goal && input.goal.goalYear.annualDistanceKm > 0 ? input.goal.goalYear.annualDistanceKm : null,
-      // The same dates in both years, from where the history starts (v4.17).
       deltaKm: yoy ? yoy.km - yoy.lastYearKm : null,
       compareKm: yoy ? yoy.km : null,
       compareSince: yoy?.since ?? null,
@@ -283,7 +247,6 @@ export function progressHubView(input: HubInput): ProgressHubView {
             lthrBpm: input.athlete.lthrBpm ?? null,
           }
         : null,
-    // Only the newest record is tagged, and only while it is new (3.0).
     records: records.map((r) => ({
       key: r.key,
       label: r.label,
@@ -292,8 +255,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
     })),
     consistency: {
       weeks: heatWeeks(input.heatmapDays, input.today),
-      // The Consistency page's own count (v5.5 #9): the card said 204 over a
-      // rolling 365 days, the page 202 over its twelve month columns.
+      // The Consistency page's own count, so the two agree.
       activeDays: activeDaysInYear(input.heatmapDays, input.today),
       streakWeeks: input.streakWeeks,
       thisWeek: { runs: runsThisWeek(input.activities, input.today), target: WEEKLY_RUN_TARGET },

@@ -2,9 +2,7 @@ name: Daily Session Reminder
 
 on:
   schedule:
-    # 06:11 UTC is 08:11 in Paris in summer. Scheduled runs on the hour are the
-    # ones GitHub delays most (this one arrived four to seven hours late), so
-    # every schedule here sits off the hour.
+    # 08:11 in Paris in summer; off the hour because GitHub delays on-the-hour schedules the most.
     - cron: "11 6 * * *"
   workflow_dispatch:
 
@@ -14,8 +12,7 @@ permissions:
 jobs:
   notify:
     uses: ./.github/workflows/internal-notify.yml
-    # Only the two secrets the job reads, not every one this repository
-    # holds. Each profile's environment secret still wins over these.
+    # Only the secrets the job reads, not every one this repository holds.
     secrets:
       APP_URL: ${{ secrets.APP_URL }}
       INTERNAL_NOTIFY_SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}

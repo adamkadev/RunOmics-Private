@@ -10,18 +10,11 @@ import { t } from '@/i18n'
 
 const POLL_INTERVAL_MS = 10_000
 
-/**
- * Each wait a quarter longer than the last, up to three intervals (design
- * review, Oct 2026): nearly every answer in the chain's five minutes is
- * "still going", and asking every ten seconds throughout bought nothing.
- */
+/** Back off: nearly every answer in the chain's five minutes is "still going". */
 const POLL_BACKOFF = 1.25
 const POLL_MAX_INTERVALS = 3
 
-/**
- * Resolves once the page is in front. A page in the background asks nothing -
- * the run goes on without it - and the first look back asks at once.
- */
+/** A hidden page asks nothing; the sync runs on without it. */
 function whenVisible(): Promise<void> {
   if (typeof document === 'undefined' || document.visibilityState !== 'hidden') return Promise.resolve()
   return new Promise((resolve) => {
@@ -34,11 +27,7 @@ function whenVisible(): Promise<void> {
   })
 }
 
-/**
- * Twelve minutes. The chain measures about five - Garmin, a Vercel rebuild,
- * then the ai-insights pass - and the slack is for a queued runner or a slow
- * build. Past that the run is still going; it just finishes without us.
- */
+/** The chain (Garmin, a Vercel rebuild, ai-insights) takes about five minutes; the rest is slack for a queued runner or a slow build. */
 const POLL_CEILING_MS = 12 * 60_000
 
 interface VerdictStatus {
@@ -57,7 +46,6 @@ type Phase =
   | { kind: 'upToDate' }
   | { kind: 'timedOut' }
   | { kind: 'failed' }
-  /** The server held the sync back: synced moments ago, or the day's syncs used up. */
   | { kind: 'limited'; reason: 'cooldown' | 'dailyCap'; retryAfterSec: number }
 
 function progressText(phase: Phase, s: typeof t.settings.sync): string | null {
@@ -79,12 +67,7 @@ function progressText(phase: Phase, s: typeof t.settings.sync): string | null {
   }
 }
 
-/**
- * The Garmin sync, as state (v5.6 #6: it lives on the device row now, not a
- * card of its own). `pollIntervalMs` exists for the tests, which drive this
- * loop on real timers (see the test file for why fake ones deadlock
- * `userEvent`) and would otherwise each sit through a genuine ten-second wait.
- */
+/** `pollIntervalMs` lets the tests, which run on real timers, skip the ten-second wait. */
 export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
   const [phase, setPhase] = useState<Phase>(() => (readStoredSince() ? { kind: 'waiting', synced: false } : { kind: 'idle' }))
   const cancelled = useRef(false)
@@ -97,7 +80,7 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
   const pollForVerdict = useCallback(
     async (since: string, resuming: boolean) => {
       const deadline = Date.parse(since) + POLL_CEILING_MS
-      // The last answer's tag: the same answer again comes back as an empty 304.
+      // The same answer again comes back as an empty 304.
       let etag: string | null = null
 
       async function checkOnce(): Promise<'done' | 'continue'> {
@@ -116,9 +99,7 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
             setPhase({ kind: 'done', status })
             return 'done'
           }
-          // The app is live on this sync and the newest run still holds a
-          // card written before it: nothing new came in, so there is nothing
-          // to wait for. Every other reason is the chain still moving.
+          // Synced, but the newest run's card predates it: nothing new came in.
           if (status.synced && status.reason === 'verdict predates this sync') {
             clearStoredSince()
             setPhase({ kind: 'upToDate' })
@@ -132,11 +113,7 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
         }
       }
 
-      // A resumed poll asks immediately, deadline or not: the wait it is
-      // resuming into may already be over by the time Settings is reopened,
-      // and a page reopened well past the ceiling still deserves one real
-      // answer instead of an assumed timeout the loop below would otherwise
-      // hand out without ever asking.
+      // A resumed poll asks once right away, even past the deadline, rather than assume a timeout.
       if (resuming) {
         if (cancelled.current) return
         if ((await checkOnce()) === 'done') return
@@ -160,9 +137,7 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
   )
 
   useEffect(() => {
-    // A sync left running when Settings closes must not keep polling on a
-    // card that is gone - but the sync itself, and the fact that one is
-    // running, both outlive this component. Resume it rather than forget it.
+    // The sync outlives this component: stop polling on unmount, resume from storage on mount.
     cancelled.current = false
     const since = readStoredSince()
     if (since) void pollForVerdict(since, true)
@@ -178,8 +153,7 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
     let since: string
     try {
       const response = await authorized('/api/sync/dispatch', { method: 'POST' })
-      // Held back by the server's limits (design review, Oct 2026): not a
-      // failure, and nothing to wait on - say when the next one can go.
+      // 429: held back by the server's limits, not a failure.
       if (response.status === 429) {
         const body = (await response.json().catch(() => ({}))) as { reason?: string; retryAfter?: number }
         setPhase({ kind: 'limited', reason: body.reason === 'dailyCap' ? 'dailyCap' : 'cooldown', retryAfterSec: body.retryAfter ?? 60 })
@@ -204,11 +178,6 @@ export function useSyncNow(user: User, pollIntervalMs = POLL_INTERVAL_MS) {
 
 export type SyncNow = ReturnType<typeof useSyncNow>
 
-/**
- * The device row's action (3.0 1i): "Sync" as a text link in the accent on
- * the row's right, not a full-width button; "Syncing…" with its spinner
- * while the chain runs, and the device line says which step.
- */
 export function SyncNowButton({ sync }: { sync: SyncNow }) {
   const s = t.settings.sync
   return (
@@ -224,7 +193,6 @@ export function SyncNowButton({ sync }: { sync: SyncNow }) {
   )
 }
 
-/** What the last sync brought in: its verdict and a link to the run. */
 export function SyncVerdict({ sync }: { sync: SyncNow }) {
   const s = t.settings.sync
   const { phase } = sync

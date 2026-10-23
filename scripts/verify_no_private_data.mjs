@@ -53,8 +53,7 @@ for (const prefix of ['data', 'public/data']) {
   }
 }
 
-// Everything under public/ is served as a static asset, so neither of these may
-// exist there at all - not merely be untracked.
+// Everything under public/ is served, so these may not exist there at all, not merely be untracked.
 const servedDirsThatMustNotExist = [
   {
     dir: 'public/data',
@@ -75,14 +74,21 @@ for (const prefix of ['public/fit', FIT_CACHE_DIR]) {
 }
 
 
-// Race-day photos are real people at real places, and a phone photo's EXIF can
-// carry where it was taken. Everything under public/ ships to every deployment,
-// past the sign-in.
+// A phone photo's EXIF can carry the GPS position it was taken at, and everything under public/ ships to every deployment.
 const eventFiles = trackedUnder(files, 'public/events')
 if (eventFiles.length) critical('public/events/ is tracked', `${eventFiles.length} file(s) - race-day photos belong in the data repository.`)
 
-// The coaching CLI writes these wherever --prompt-out points; both carry the
-// athlete's health data (see .gitignore).
+// A screenshot shows whatever data the app ran on, and no text scan can see into an image, so the file name is checked:
+// macOS screenshot names and a design tool's uploads/ folder are captures nobody chose to publish.
+const IMAGE = /\.(png|jpe?g|webp|gif|heic|avif)$/i
+const RAW_CAPTURE = /(^|\/)uploads\/|(^|\/)(screen ?shot|pasted-)[^/]*$/i
+for (const f of files) {
+  if (IMAGE.test(f) && RAW_CAPTURE.test(f)) {
+    critical('A raw screenshot or pasted image is tracked', `${f} - it may show real tracks; use a demo-data capture named for what it shows`)
+  }
+}
+
+// The coaching CLI writes these wherever --prompt-out points; both carry the athlete's health data.
 for (const f of files) {
   if (/(^|\/)(coach-prompt\.md|answer\.json)$/.test(f)) critical('A coaching prompt or reply is tracked', f)
 }
@@ -101,8 +107,7 @@ const secretChecks = [
   { name: 'AWS access key (AKIA...)', pattern: /AKIA[0-9A-Z]{16}/ },
   { name: 'PEM private key header', pattern: /BEGIN (RSA )?PRIVATE KEY/, exclude: ['.env.example', 'README.md'] },
   { name: 'Firebase service-account JSON shape', pattern: /"type"\s*:\s*"service_account"/ },
-  // The data repository PAT and the sync-dispatch token both live in env vars;
-  // a pasted one is a write credential for the only copy of the history.
+  // A pasted one is a write credential for the only copy of the history.
   { name: 'GitHub token', pattern: /\b(gh[pousr]_[0-9A-Za-z]{36,}|github_pat_[0-9A-Za-z_]{50,})\b/ },
   { name: 'Vercel deploy hook URL', pattern: /api\.vercel\.com\/v1\/integrations\/deploy\/prj_[0-9A-Za-z]+\/[0-9A-Za-z]+/ },
   // Garmin shows a Personal API key once; a pasted one reads the athlete's

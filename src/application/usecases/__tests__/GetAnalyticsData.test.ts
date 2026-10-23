@@ -186,8 +186,7 @@ describe('buildWeeklyTrends', () => {
     expect(points.map((p) => p.date)).toEqual(['2024-06-03', '2024-07-01'])
   })
 
-  // App Fixes 2b: rep pace is the work laps of the quality sessions only;
-  // a session without laps says nothing about its reps.
+  // A session without laps says nothing about its reps.
   it('splits easy pace from rep pace, the reps read off the work laps', () => {
     const work = { type: 'interval_active' as const, durationSec: 1.8 * 270, distanceM: 1800, avgSpeedMs: 1000 / 270, avgHr: 172, laps: [] }
     const warm = { type: 'interval_warmup' as const, durationSec: 2 * 350, distanceM: 2000, avgSpeedMs: 1000 / 350, avgHr: 140, laps: [] }
@@ -208,7 +207,6 @@ describe('buildWeeklyTrends', () => {
       act({ date: '2024-06-10', distanceKm: 5 }),
     ])
 
-    // One decimal (v4.5): the week under way reads "18.6 of 48".
     expect(points[0]?.distanceKm).toBe(18.6)
     expect(points[0]?.sessionCount).toBe(2)
     expect(points[1]?.distanceKm).toBe(5)
@@ -232,8 +230,6 @@ describe('buildWeeklyTrends', () => {
   })
 })
 
-// App Fixes 2b: a quality week's pace is its hard reps, not the session
-// around them - a longer warm-up used to read as a slower "workout pace".
 describe('computeTotals', () => {
   it('sums distance, duration, elevation and calories', () => {
     const acts = [

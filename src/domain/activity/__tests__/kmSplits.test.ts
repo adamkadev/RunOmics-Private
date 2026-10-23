@@ -140,9 +140,7 @@ describe('kmElevationDeltas', () => {
   })
 })
 
-// The Oct 7 recovery run: Garmin's 1 km auto laps, then a 46 m lap press and
-// the last 968 m. The splits rebuilt from its pace samples read km 10 at 5:43,
-// faster than the run's best kilometre (5:45), and a 100 s "negative split".
+// Garmin's 1 km auto laps, then a 46 m lap press and the last 968 m.
 const OCT7_LAPS = [
   { durationSec: 362, distanceM: 1000, avgHr: 130 },
   { durationSec: 358, distanceM: 1000, avgHr: 139 },
@@ -201,8 +199,7 @@ describe('kmSplitsOf', () => {
 })
 
 describe('kmSplitsFromSamples, stops', () => {
-  // A stop and the backfilled start are on the wall clock but not on the
-  // timer the splits are scaled to: kept in, they shaved every other km.
+  // A stop and the backfilled start are on the wall clock but not on the timer the splits are scaled to.
   it('leaves stop samples out rather than spreading their time over every km', () => {
     const paceSamples = evenSamples(101, 300)
     paceSamples[0] = 1200
@@ -215,7 +212,6 @@ describe('kmSplitsFromSamples, stops', () => {
 describe('halfSplitSec', () => {
   const km = (durationSec: number, distanceKm = 1) => ({ distanceKm, durationSec })
 
-  // 3.0.2: the second half against the first, by distance.
   it('is negative when the second half is the faster', () => {
     expect(halfSplitSec([km(310), km(300), km(290), km(280)])).toBe(-40)
   })

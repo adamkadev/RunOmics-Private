@@ -18,9 +18,6 @@ import {
 } from '../insightPass'
 import type { InsightSurfaces, SurfaceJob } from '../surfaces'
 
-// Every collaborator is a plain fake: the pass never reaches Firestore, Gemini,
-// Next or FCM here, so what is asserted is the loop that spends the quota.
-
 const NOW = new Date('2026-09-24T12:00:00')
 const [BEST, SECOND] = MODEL_POOL as [string, string]
 
@@ -28,11 +25,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-/**
- * Hands out models in pool order, like the real one minus the pacing, until
- * `reservations` runs out - which is how the real spender answers once the
- * invocation's clock is spent.
- */
+/** The real spender minus the pacing; running out of `reservations` stands for the invocation's clock being spent. */
 function fakeSpender({ reservations = Infinity, spent = {} as Record<string, number> } = {}) {
   const ledger = { ...spent }
   const exhausted: string[] = []
@@ -166,7 +159,6 @@ describe('shouldTryAnotherModel', () => {
     expect(shouldTryAnotherModel('http 500: internal')).toBe(true)
   })
 
-  // Oct 2026: 3.8 Flash timed out on every surface of a day and 3.6 was never asked.
   it('moves on from a call that ran out its time', () => {
     expect(shouldTryAnotherModel('TimeoutError: TimeoutError: The operation was aborted due to timeout')).toBe(true)
   })
@@ -220,7 +212,6 @@ describe('generateFromPool', () => {
     expect(generate).toHaveBeenCalledTimes(1)
   })
 
-  // Oct 2026: with two models the third attempt went back to the one that had just said 503.
   it('asks each model once, three at most, then gives up naming each', async () => {
     const generate = vi.fn().mockResolvedValue(fail('http 503: busy'))
 
@@ -350,7 +341,6 @@ describe('verdictQueue', () => {
     expect(queue.outstanding).toBe(2)
   })
 
-  // v4.16.5: the athlete wrote "sick" after the verdict was written.
   it('queues a run again once its note changes, and only then', () => {
     const noted = { ...LAST_MONTH, note: { note: 'sick', tags: [] } }
     const plain = { ...JUST_RUN, note: null }
@@ -463,7 +453,6 @@ describe('writeVerdicts', () => {
     expect(generate).toHaveBeenCalledTimes(1)
   })
 
-  // v4.16.4: a backfill handed the model thirty verdicts not to echo.
   it('shows the model the eight newest verdicts, and still rejects a repeat of any of them', async () => {
     const generate = writer()
     const phrasing = Array.from({ length: 12 }, (_, i) => ({ headline: `Stored ${i}`, body: `Stored body ${i}.` }))
@@ -483,7 +472,6 @@ describe('writeVerdicts', () => {
     expect(result.generated).toBe(0)
   })
 
-  // v4.16.6: a threshold session in a backfill saw only the easy runs written around it.
   it('shows the latest verdicts of the same kind of session first', async () => {
     const generate = writer()
     const easy = Array.from({ length: 10 }, (_, i) => ({ headline: `Easy ${i}`, body: 'e', kind: 'easy' }))
@@ -539,7 +527,6 @@ describe('runInsightPass', () => {
     ])
   })
 
-  // v4.16.5: the prompt-version rewrite pushed 26 and 27 Sep all over again.
   it('pushes a fresh run only for its first verdict, never for one written again', async () => {
     const notify = vi.fn(async () => {})
     const store = memoryInsights({ [runVerdictSurface('just-run')]: { hash: 'written-by-an-older-prompt' } })

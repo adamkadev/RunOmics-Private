@@ -1,9 +1,4 @@
-"""sync.main() end to end, against a fake Garmin client.
-
-What is under test is the orchestration: which activities reach the store,
-which steps run, and the exit code the workflow acts on - 0 clean, 3 partial
-("commit what succeeded, then fail"), anything else a stop before the commit.
-"""
+"""The workflow acts on the exit code: 0 clean, 3 partial ("commit what succeeded, then fail"), else a stop before the commit."""
 
 import copy
 import json
@@ -18,9 +13,7 @@ import sync
 from garmin.client import GarminAPIError, GarminAuthError, GarminClient
 from repository.json_store import JsonActivityStore
 
-# Every step main() runs besides the activities themselves, as the names it
-# imports them under. Each module has tests of its own; here they only record
-# that they ran.
+# Every step main() runs besides the activities, under the names it imports them as; here they only record that they ran.
 _STEP_RESULTS = {
     "fetch_planned_workouts": ([], set()),
     "write_planned_workouts": None,
@@ -47,9 +40,7 @@ _PERSONAL_ONLY_STEPS = [
 
 
 class FakeGarmin:
-    """Two running activities known to Garmin by their API summary alone: no
-    FIT file, no HR zones, no gear. A test breaks one call for one activity
-    through `failures`, keyed by (method name, activity id)."""
+    """Two activities known by their API summary alone; a test breaks one call through `failures`."""
 
     def __init__(self) -> None:
         self.details = {
@@ -111,7 +102,6 @@ def garmin(monkeypatch) -> FakeGarmin:
 
 @pytest.fixture
 def steps(monkeypatch) -> list[str]:
-    """The names of the steps that ran, in order."""
     ran: list[str] = []
 
     def recorder(name, result):
@@ -138,7 +128,6 @@ def _stored_gear(workspace, activity_id: str) -> str | None:
 
 
 def _store_todays_run(workspace, activity_factory, *, gear_id: str) -> None:
-    """A run synced earlier, recent enough for the nightly gear refresh."""
     run = activity_factory("090", date.today().isoformat())
     run.gear_id = gear_id
     store = JsonActivityStore(workspace / "activities")
@@ -148,7 +137,6 @@ def _store_todays_run(workspace, activity_factory, *, gear_id: str) -> None:
 
 @pytest.fixture
 def workspace(tmp_path, monkeypatch):
-    """A data workspace of its own, and none of the pauses a real run takes."""
     monkeypatch.setenv("RUNOMICS_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
     monkeypatch.delenv("GARMIN_PERSONAL_API_KEY", raising=False)
@@ -232,9 +220,7 @@ class TestCleanRun:
 
 
 class TestFailingStep:
-    """Each step after store.save() writes a file of its own. One of them
-    raising used to exit 1 from main(), which made the workflow skip the
-    commit and discard the night's activities with the runner."""
+    """Each step after store.save() writes a file of its own, so one raising must not cost the commit."""
 
     def test_the_other_steps_still_run_and_it_exits_3(self, workspace, garmin, steps, monkeypatch, capsys):
         def unavailable(_client):
@@ -252,8 +238,7 @@ class TestFailingStep:
     def test_a_corrupt_history_file_stops_only_the_step_that_reads_it(
         self, workspace, garmin, steps, monkeypatch
     ):
-        # athlete.json is the only copy of what was merged into it; its step
-        # must refuse to rewrite it, and nothing else may be held up by that.
+        # athlete.json is the only copy of what was merged into it, so its step must refuse to rewrite it.
         athlete = workspace / "athlete.json"
         athlete.write_text('{"lthrBpm": 17')
         monkeypatch.setattr(sync, "fetch_athlete_metrics", lambda _client: {"lthrBpm": 172})
@@ -277,9 +262,7 @@ class TestFailingStep:
 
 
 class TestOptionalActivityResources:
-    """Only a 404 means an activity has no FIT file, HR zones or gear. Anything
-    else fails the activity - counted, not saved - so the next run fetches it
-    again, where it used to be stored without them for good."""
+    """Only a 404 means an activity has no FIT file, HR zones or gear; anything else fails it, so the next run retries."""
 
     @pytest.mark.parametrize("method", ["download_fit", "get_hr_zones", "get_activity_gear"])
     def test_a_5xx_fails_the_activity_rather_than_storing_it_without(
@@ -303,9 +286,7 @@ class TestOptionalActivityResources:
 
 
 class TestGearRefresh:
-    """Every night re-reads the gear of the last days' runs, to pick up a shoe
-    assigned after the first sync. Only a successful answer may change what is
-    on file: an error used to come back as "no gear" and write None over it."""
+    """Only a successful answer may change the stored gear: "no gear" writes None over it."""
 
     @pytest.mark.parametrize(
         "error", [GarminAPIError(503, "u"), GarminAPIError(404, "u")], ids=["5xx", "404"]
@@ -332,8 +313,6 @@ class TestGearRefresh:
     def test_a_network_error_does_not_lose_the_nights_activities(
         self, workspace, garmin, steps, monkeypatch, activity_factory
     ):
-        # It used to escape main() before store.save(), taking every
-        # activity synced that night with it.
         _store_todays_run(workspace, activity_factory, gear_id="shoe1")
         garmin.failures[("get_activity_gear", "090")] = httpx.ConnectError("connection reset")
 
@@ -344,8 +323,7 @@ class TestGearRefresh:
 
 
 def _garmin_whose_gear_request_fails(monkeypatch, error) -> GarminClient:
-    """The real client over a fake transport, with no new activity to sync:
-    what is under test is its own reading of an error answer."""
+    """The real client over a fake transport: what is under test is its own reading of an error answer."""
     client = object.__new__(GarminClient)
     client._base = "https://example.test"
     client._http = SimpleNamespace(close=lambda: None)

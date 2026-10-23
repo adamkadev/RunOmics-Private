@@ -18,8 +18,6 @@ afterEach(() => {
 })
 
 describe('Clear offline cache', () => {
-  // Design review, Oct 2026: clearing the cache asks first. 3.0 1i: a
-  // neutral row with the cache's size, never the error colour.
   it('shows its size, asks before it clears anything, and Cancel leaves the cache alone', async () => {
     const keys = vi.fn(async () => ['pages', 'maps'])
     const remove = vi.fn<(key: string) => Promise<boolean>>(async () => true)
@@ -56,7 +54,6 @@ describe('Clear offline cache', () => {
 })
 
 describe('The device row', () => {
-  // 3.0 1i: a green dot, "Synced 2h ago · N runs", and Sync as a text link on the row.
   it('says when it last synced after a green dot, with Sync as a text action on the row', () => {
     const twoHoursAgo = new Date(Date.now() - 2 * 3600_000).toISOString()
     render(<DataSourceInfo lastSyncedAt={twoHoursAgo} activityCount={315} device={{ name: 'Forerunner 255 Music' }} user={USER} />)

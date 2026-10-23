@@ -19,7 +19,7 @@ describe('RunPlace in the Activity header', () => {
     vi.restoreAllMocks()
   })
 
-  // 3.0: one place rule everywhere - the town, as the share card names it.
+  // One place rule everywhere: the town, as the share card names it.
   it('names the town the run started in, from one lookup, and keeps it', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ address: { suburb: 'Robertsau', city: 'Strasbourg' } })),

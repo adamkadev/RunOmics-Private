@@ -4,10 +4,8 @@ import { formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { activityTitle } from '@/lib/activityTitle'
 
 /**
- * How far a sync has got, answered the same way for the iOS shortcut polling
- * `/api/internal/latest-verdict` and for the Sync button in Settings polling
- * `/api/sync/status`. One implementation, because the two would otherwise
- * disagree about what "done" means.
+ * Shared by the iOS shortcut's poll and the Settings Sync button's, so the two
+ * agree on what "done" means.
  */
 
 interface VerdictState {
@@ -23,17 +21,9 @@ export interface Readiness {
 }
 
 /**
- * `ready` is not "a verdict exists" but "a verdict written since you asked".
- *
- * The verdict is written by the ai-insights pass, which cannot see a new run
- * until Vercel has redeployed with the new data - about five minutes after the
- * workflow starts. Until then the poll is answered by the *previous*
- * deployment, serving the previous run and the card that run already had, so
- * without `since` every wait would end instantly on the wrong run.
- *
- * `synced` is reported alongside so a poll that never finishes can say which
- * half of the chain it is stuck on: an app still serving pre-sync data, or a
- * live deployment whose run has not been written up yet.
+ * `ready` means a verdict written since you asked: until Vercel redeploys with
+ * the new data, the previous deployment answers with the previous run's card.
+ * `synced` tells which half of the chain a stuck poll is waiting on.
  */
 export function verdictReadiness(state: VerdictState, since: number | null): Readiness {
   const synced = isAfter(state.lastSyncedAt, since)
@@ -48,7 +38,6 @@ export function verdictReadiness(state: VerdictState, since: number | null): Rea
   return { ready: false, synced, reason }
 }
 
-/** Without a `since` to measure against, whatever is stored counts as current. */
 function isAfter(timestamp: string | null, since: number | null): boolean {
   if (timestamp === null) return false
   if (since === null) return true
@@ -57,7 +46,6 @@ function isAfter(timestamp: string | null, since: number | null): boolean {
   return Number.isFinite(parsed) && parsed > since
 }
 
-/** `null` when absent, `'invalid'` when it is not a timestamp we can compare. */
 export function parseSince(raw: string | null): number | null | 'invalid' {
   if (raw === null) return null
 
@@ -66,10 +54,8 @@ export function parseSince(raw: string | null): number | null | 'invalid' {
 }
 
 /**
- * Shortcuts formats a date in local time - `2026-09-19T23:04:07+02:00` - and an
- * unencoded `+` in a query string arrives here as a space. Rather than make the
- * shortcut carry a URL-encode step that is easy to leave out and gives a 400
- * five minutes later, put the plus back when that is all that is wrong.
+ * Shortcuts sends a local-time offset (`+02:00`) unencoded, so its `+` arrives
+ * as a space: put the plus back.
  */
 function parseTimestamp(raw: string): number | null {
   const direct = Date.parse(raw)
@@ -103,10 +89,7 @@ export async function verdictStatus(origin: string, since: number | null) {
       pace: activity.paceSecPerKm === null ? null : formatPace(activity.paceSecPerKm),
       url: `${origin}/activities/${activity.id}`,
     },
-    // Only ever the verdict that was asked for. Handing back the previous run's
-    // card on a poll that is still waiting invites a client to announce it, and
-    // makes "headline has a value" a sound ready test for one that cannot match
-    // a JSON boolean cleanly.
+    // Never the previous run's card while waiting, or a client could announce it.
     verdict: readiness.ready ? verdict : null,
   }
 }

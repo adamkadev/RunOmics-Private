@@ -1,15 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-/**
- * The API surface against the production build, with no credentials at all -
- * the position of any visitor. None of this needs a page, so these tests use
- * Playwright's request context directly rather than ./fixtures.
- *
- * The e2e build configures neither FIREBASE_PROJECT_ID nor
- * INTERNAL_NOTIFY_SECRET, so owner routes answer 503 and internal routes 401.
- * What must hold either way is that nothing is served: the assertions are on
- * "not a success", plus the codes the routes are documented to return.
- */
+// The e2e build configures neither FIREBASE_PROJECT_ID nor INTERNAL_NOTIFY_SECRET, so owner routes answer 503.
 
 test('the activity list never carries route geometry', async ({ request }) => {
   const response = await request.get('/api/activities?limit=50')
@@ -50,6 +41,11 @@ for (const endpoint of ['pr-check', 'ai-insights', 'daily-session', 'stale-sync-
     expect(wrong.status()).toBe(401)
   })
 }
+
+test('loop routes cannot be generated without the owner token', async ({ request }) => {
+  const response = await request.post('/api/explore/route', { data: { start: [-150, 0], distanceM: 8000, seeds: [1] } })
+  expect([401, 403, 503]).toContain(response.status())
+})
 
 test('an unknown map cluster is a 404, not a dump of every route', async ({ request }) => {
   const response = await request.get('/api/map/routes?cluster=does-not-exist')

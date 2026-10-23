@@ -25,14 +25,12 @@ describe('projectRoute', () => {
   const H = 236
   const route: LngLat[] = [[2.33, 48.85], [2.36, 48.87], [2.35, 48.84], [2.33, 48.85]]
 
-  // Wide enough for an end marker on the frame's edge to clear the card's
-  // own 16 px text margin (3.0.1: the finish flag sat on the border).
+  // Wide enough for an end marker on the frame's edge to clear the card's 16 px text margin.
   it('keeps the route clear of the card\'s text margin', () => {
     expect(ROUTE_INSET).toBe(27)
     expect(ROUTE_INSET - MARKER_RADIUS).toBeGreaterThanOrEqual(16)
   })
 
-  // Design review, Oct 2026: the route ran into the card's edge and the image read as cropped.
   it('fits the route clear of every edge, filling one axis, centred on the other', () => {
     const pts = projectRoute(route, W, H)
     const xs = pts.map(p => p[0])
@@ -66,7 +64,6 @@ describe('projectRoute', () => {
     }
   })
 
-  // Redesign, Oct 2026: the map fills the card, the route between the header and the stats.
   it('fits the route inside a frame of its own, top and bottom clear of the text', () => {
     const frame = { top: 90, right: 14, bottom: 80, left: 14 }
     const pts = projectRoute(route, 300, 375, frame)

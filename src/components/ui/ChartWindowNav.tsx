@@ -32,12 +32,7 @@ export interface ChartWindow<T extends { date: string }> {
   goForward: () => void
 }
 
-/**
- * The date every chart window ends on. A page's client root fills it with what
- * useToday returned, so the windows agree with the server's HTML on hydration
- * and move at midnight; eleven charts deep, a prop through each would not be
- * simpler. Outside a provider it falls back to reading the clock.
- */
+/** Filled from useToday by a page's client root, so chart windows match the server's HTML on hydration and roll over at midnight. */
 export const ChartTodayContext = createContext<string | null>(null)
 
 export function useChartToday(): string {
@@ -158,8 +153,6 @@ export function WindowedChartCard<T extends { date: string }>({
   children,
 }: {
   title: ReactNode
-  /** What the plotted values are counted in, shown beside the title so the
-   *  axis numbers are not the only place the reader can look for it. */
   unit?: string
   controls?: ReactNode
   legend?: ReactNode | ((visible: T[]) => ReactNode)
@@ -167,9 +160,7 @@ export function WindowedChartCard<T extends { date: string }>({
   initialRange?: ChartRange
   sample?: boolean
   footnote?: ReactNode
-  /** The card's takeaway, rendered above the chart. It takes the window that is
-   *  actually on screen - not the whole series - so a card can never lead with
-   *  a number the reader cannot find in the picture below it. */
+  /** Given the window on screen, not the whole series, so the takeaway never cites a number the chart doesn't show. */
   reading?: (visible: T[]) => ReactNode
   value?: (visible: T[]) => ReactNode
   children: (visible: T[], shape: SeriesShape) => ReactNode

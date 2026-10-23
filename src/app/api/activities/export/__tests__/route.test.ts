@@ -81,9 +81,7 @@ describe('GET /api/activities/export', () => {
   })
 
   it('refuses a caller who is not the owner', async () => {
-    // The workbook's Athlete sheet carries weight, resting and max HR, age and
-    // sex. Settings only shows the download behind `isOwner`, but the route
-    // itself used to answer anyone who asked.
+    // The workbook's Athlete sheet carries weight, resting and max HR, age and sex.
     mocks.requireOwner.mockResolvedValue(new Response('Unauthorized', { status: 401 }))
 
     const response = await GET(request())
@@ -94,8 +92,6 @@ describe('GET /api/activities/export', () => {
 
   it('checks authorization before doing the expensive work', async () => {
     // Building the workbook walks the entire activity history through exceljs.
-    // An anonymous caller must not be able to make the server do that at all,
-    // let alone in a loop.
     const order: string[] = []
     mocks.requireOwner.mockImplementation(async () => {
       order.push('auth')

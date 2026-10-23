@@ -65,9 +65,6 @@ class TestPlannedWorkoutStore:
 
 
 class TestJsonActivityStoreSmoke:
-    """Light coverage for the shared _atomic_write_json path, added while
-    extracting it - JsonActivityStore had no direct tests before this."""
-
     def test_upsert_and_save_creates_year_file_and_index(self, tmp_path):
         from processing.mapper import ActivityData
 
@@ -135,9 +132,7 @@ class TestJsonActivityStoreSmoke:
         assert store.all_activities()[0]["weather"] is None
 
     def test_replace_keeps_the_hand_entered_comment_and_rpe(self, tmp_path, activity_factory):
-        # sync.py --force re-fetches everything to pick up parser changes.
-        # What was typed into the data repository has no Garmin source to
-        # come back from, so it used to be wiped by that.
+        # sync.py --force re-fetches everything, and what was typed into the data repository has no Garmin source.
         store = JsonActivityStore(tmp_path)
         stored = activity_factory("1", "2026-07-18")
         stored.comment = "Legs heavy after Sunday"
@@ -239,15 +234,9 @@ class TestJsonActivityStoreSmoke:
 
 
 class TestUnreadableFilesStopTheStore:
-    """save() rewrites every dirty file, and index.json, from what is in memory.
-    A file skipped at load is therefore rewritten with only this sync's entries,
-    and dropped from the index when none land in it - so a store must refuse to
-    load at all rather than start from a partial view. Same rule as the history
-    files: absent is empty, present and unreadable is a stop."""
+    """save() rewrites every dirty file from memory, so a store must refuse to load rather than start from a partial view."""
 
     def test_a_truncated_year_file_is_refused_not_overwritten(self, tmp_path):
-        # The reproduction from the audit: a truncated 2026.json holding seven
-        # sessions came out of one sync holding one.
         seeded = PlannedWorkoutStore(tmp_path)
         for day in range(1, 8):
             seeded.upsert({"date": f"2026-07-0{day}", "name": "Footing"})

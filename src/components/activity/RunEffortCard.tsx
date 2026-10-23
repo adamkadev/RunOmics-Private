@@ -15,12 +15,11 @@ interface Props {
   aer: number | null
   ana: number | null
   decoupling: AerobicDecoupling | null
-  /** Opens Charts, where heart rate sits over pace and the drift shows. */
   onShowCharts?: () => void
 }
 
 /** Under this share a zone is left out of the bar and the legend alike, so
- *  every zone drawn has its label (v4.3.1): a 0.4% sliver had none. */
+ *  every zone drawn has its label. */
 const MIN_ZONE_PCT = 1
 
 const TE_LEVELS = [
@@ -40,11 +39,6 @@ export function trainingEffectLevel(value: number): string {
   return level(value).label
 }
 
-/**
- * What a training effect means, as a colour (v4.17): improving is good news
- * in pos, overreaching a caution in warn, and the rest - no benefit, minor,
- * maintaining - is a note in muted.
- */
 export function trainingEffectTone(value: number): StatTone {
   return level(value).tone
 }
@@ -53,14 +47,12 @@ function scored(value: number | null): value is number {
   return value != null && value > 0
 }
 
-/** A detail row (v4.17): the name in muted on the left, the value and its meaning on the right. */
 function Row({ term, label, value, word, tone, onClick, actionLabel }: {
   term: GlossaryKey
   label: string
   value: string
   word: string
   tone: StatTone
-  /** The value opens something (decoupling opens Charts). */
   onClick?: () => void
   actionLabel?: string
 }) {
@@ -87,11 +79,6 @@ function Row({ term, label, value, word, tone, onClick, actionLabel }: {
   )
 }
 
-/**
- * How hard the run was, in one card (H12, M9, v4.17): time in each HR zone
- * as a bar with a labelled legend, then aerobic and anaerobic effect and
- * decoupling as rows - a value and what it means, coloured by that meaning.
- */
 export function RunEffortCard({ hrZones, aer, ana, decoupling, onShowCharts }: Props) {
   const zones = [...hrZones].sort((a, b) => a.zone - b.zone).filter((z) => z.percent >= MIN_ZONE_PCT)
   const hasEffect = scored(aer) || scored(ana)

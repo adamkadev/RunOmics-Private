@@ -1,12 +1,7 @@
 import 'server-only'
 import { isSitePrivate } from '@/lib/siteAccess'
 
-/**
- * Which of the server's integrations this deployment has credentials for, by
- * name only - never a value. The health probe reports it, so a deployment
- * whose reminders answer 500 can be told apart, without opening its logs,
- * from one whose Firebase Admin credentials were never set.
- */
+/** Which integrations this deployment has credentials for, by name only - never a value; the health probe reports it. */
 export interface IntegrationStatus {
   /** Firestore, and every push notification. */
   firebaseAdmin: boolean
@@ -20,6 +15,8 @@ export interface IntegrationStatus {
    * start and finish included, and a public site serves them to anyone.
    */
   privateSite: boolean
+  /** Explore's route generator (OpenRouteService). Optional: coverage and the map work without it. */
+  routing: boolean
 }
 
 export function integrationStatus(env: Readonly<Record<string, string | undefined>> = process.env): IntegrationStatus {
@@ -32,5 +29,6 @@ export function integrationStatus(env: Readonly<Record<string, string | undefine
     gemini: set('GEMINI_API_KEY'),
     syncButton: set('GITHUB_SYNC_TOKEN', 'GITHUB_SYNC_REPO'),
     privateSite: isSitePrivate(env),
+    routing: set('ORS_API_KEY'),
   }
 }

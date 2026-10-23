@@ -11,8 +11,7 @@ export type RiskZone = 'low' | 'safe' | 'caution' | 'risk'
 
 export interface LoadRiskPanel {
   acwr: number | null
-  /** The pair the ratio is worked out from, printed beside it, so the ratio
-   *  can't disagree with the loads the Training status card shows. */
+  /** The pair the ratio is worked out from, printed beside it so the two can't disagree. */
   acute: number | null
   chronic: number | null
   acwrZone: RiskZone | null
@@ -46,7 +45,6 @@ export function rampRate(ctlToday: number, ctl7dAgo: number): number {
   return round(ctlToday - ctl7dAgo, 1)
 }
 
-/** ACWR from the acute and chronic loads it is printed with. */
 export function acwrFromPair(acute: number | null | undefined, chronic: number | null | undefined): number | null {
   if (acute == null || chronic == null || !(chronic > 0)) return null
   return round(acute / chronic, 2)
@@ -102,10 +100,8 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
   const daysOfHistory =
     Math.round((refDate.getTime() - new Date(earliest.date + 'T00:00:00').getTime()) / DAY_MS) + 1
 
-  // The ratio is worked out from Garmin's acute and chronic loads, the pair
-  // it is printed with and the last point of Load trend (v5.4): one series,
-  // so the chart and the ratio can't disagree. Garmin's own acwr field
-  // disagreed with its loads (0.8 beside 412 and 295).
+  // From the pair Load trend plots: Garmin's own acwr field disagrees with its
+  // loads (0.8 beside 412 and 295).
   const pair = latestLoadPair(getLoadPairs())
   const pairAcwr = pair ? loadRatio(pair) : null
   const localAcwr = acwr(activities, refDate)

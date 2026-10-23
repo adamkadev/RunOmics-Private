@@ -62,7 +62,6 @@ describe('the sign-in page', () => {
     expect(screen.getByRole('heading', { name: t.signIn.heading })).toBeInTheDocument()
   })
 
-  // The monthly renewal: no tap, just a short load.
   it('opens the page the reader came for with an account Firebase still holds', async () => {
     const owner = account('adam@example.com')
     auth.user = owner

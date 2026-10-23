@@ -5,7 +5,6 @@ import { t } from '@/i18n'
 
 describe('SessionStateChip', () => {
   it('says each state in words, in its own tone', () => {
-    // 3.0 override 3: the tick beside "Done" is an icon, not a glyph.
     const { rerender, container } = render(<SessionStateChip state="done" />)
     const done = screen.getByText(t.sessionState.done)
     expect(done.className).toContain('text-delta-good')
@@ -26,8 +25,6 @@ describe('SessionCard', () => {
     expect(screen.getByRole('link')).toHaveAttribute('href', '/activities/a1')
   })
 
-  // Read-only: everything comes from Garmin, so there is nothing to press
-  // without a destination.
   it('has no control at all without a destination', () => {
     render(<SessionCard state="rest" title="Rest day" />)
 

@@ -8,11 +8,6 @@ export type MenuAlign = "start" | "end";
 const GAP_PX = 4;
 const EDGE_PX = 8;
 
-/**
- * Where a chip's menu goes: just under the chip, lined up with its start or
- * end edge, at least 8px inside the viewport, and no taller than the room
- * left below it.
- */
 export function menuPlacement(
   chip: Pick<DOMRect, "left" | "right" | "bottom">,
   align: MenuAlign,
@@ -35,7 +30,6 @@ function placeUnder(chip: Element, align: MenuAlign): CSSProperties {
 export interface ChipMenu {
   open: boolean;
   close: () => void;
-  /** Spread on the chip's button. */
   chipProps: {
     id: string;
     onClick: (e: MouseEvent<HTMLElement>) => void;
@@ -47,10 +41,8 @@ export interface ChipMenu {
 }
 
 /**
- * Open state for one of the map's filter chips. The chips sit in a rail that
- * scrolls sideways, and a box that scrolls on one axis clips on both, so a
- * menu drawn inside the rail opened invisibly. ChipMenuPanel draws it on
- * document.body instead, and it stays placed under the chip while open.
+ * The chips sit in a rail that scrolls sideways, and a box that scrolls on one
+ * axis clips on both: ChipMenuPanel draws the menu on document.body instead.
  */
 export function useChipMenu(align: MenuAlign): ChipMenu {
   const id = useId();
@@ -81,10 +73,8 @@ export function useChipMenu(align: MenuAlign): ChipMenu {
       setPlacement(null);
       document.getElementById(chipId)?.focus();
     }
-    // The menu follows its chip: the rail scrolling sideways, the page
-    // scrolling or a rotation moves the chip, and a chip partly outside the
-    // rail is scrolled into view by the very tap that opens it - that scroll
-    // lands after the menu has opened, so closing on it lost the menu.
+    // Follows the chip rather than closing: the tap that opens a chip partly
+    // outside the rail scrolls it into view after the menu has opened.
     function follow() {
       const chip = document.getElementById(chipId);
       if (chip) setPlacement(placeUnder(chip, align));

@@ -66,8 +66,7 @@ describe('ActivityMap fullscreen', () => {
   })
   afterEach(() => vi.unstubAllEnvs())
 
-  // Fullscreen portals the map to <body>, and the new host node used to cost
-  // a whole new MapLibre instance: style, tiles and the route animation again.
+  // Fullscreen portals the map to <body>; a new MapLibre instance there would reload the style, tiles and route animation.
   it('moves the map it has into fullscreen and resizes it, rather than building another', async () => {
     const user = userEvent.setup()
     render(<Hero />)
@@ -83,7 +82,7 @@ describe('ActivityMap fullscreen', () => {
     expect(screen.getByRole('img', { name: t.activity.map.routeMap }).contains(map!.container)).toBe(true)
   })
 
-  // Owner report: a pinch-zoom in fullscreen stayed on the card after exit.
+  // Otherwise a pinch-zoom made in fullscreen stays on the card after exit.
   it('fits the route again on leaving fullscreen', async () => {
     const user = userEvent.setup()
     render(<Hero />)
@@ -99,8 +98,7 @@ describe('ActivityMap fullscreen', () => {
     expect(map!.fits).toBe(before + 1)
   })
 
-  // 3.0: the hero draws its own back, expand and share; the map in the page
-  // has only its credits' ⓘ, and no km markers or colour toggle.
+  // The hero draws its own back, expand and share.
   it('draws no button of its own in the page but the credits', async () => {
     render(<ActivityMap route={ROUTE} />)
 
@@ -108,8 +106,6 @@ describe('ActivityMap fullscreen', () => {
     expect(screen.getAllByRole('button').map((b) => b.getAttribute('aria-label'))).toEqual([t.pages.map.credits])
   })
 
-  // 3.0 2g: close on the left, recenter and the basemap on the right, and the
-  // run's card floating at the foot.
   it('recenters on the route and cycles the basemap in fullscreen, the card at its foot', async () => {
     const user = userEvent.setup()
     render(<Hero />)

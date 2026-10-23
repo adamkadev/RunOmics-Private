@@ -67,11 +67,9 @@ describe('queryActivities', () => {
     ])
 
     expect(ids(queryActivities({ types: ['Threshold'] }).items)).toEqual(['threshold'])
-    // The filter sheet's picks: "Threshold, VO₂ Max".
     expect(ids(queryActivities({ types: ['Threshold', 'VO2Max'] }).items).sort()).toEqual(['threshold', 'vo2'])
   })
 
-  // G29: the shoe page links to Activities filtered to that pair.
   it('keeps only the runs in the requested shoe', () => {
     withHistory([
       activity({ id: 'racer', gearId: 'g1' } as Partial<Activity>),

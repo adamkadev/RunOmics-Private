@@ -25,8 +25,6 @@ function renderTabs() {
   }
 }
 
-// The tablists had no keyboard support beyond Tab reaching every button, and
-// no panel for a screen reader to land on.
 describe('segmented tabs', () => {
   it('keeps only the selected tab in the Tab order', () => {
     const { year, allTime } = renderTabs()

@@ -7,7 +7,6 @@ import { EFFORTS, DISTANCE_KEY } from '@/domain/activity/effort'
 import { t } from '@/i18n'
 import type { RecordEntry } from '@/domain/race/records'
 
-// Moved to the domain; re-exported so every existing importer keeps working.
 export type { RecordEntry } from '@/domain/race/records'
 
 export { EFFORTS, DISTANCE_KEY }
@@ -85,9 +84,8 @@ export async function getRecords(): Promise<RecordEntry[]> {
     }
 
     const best = computed.get(key) ?? null
-    // creditedEffortSeconds already credits a chip time into the computed set, so
-    // the winning effort can itself be official. Hardcoding false here labelled
-    // real races as training runs.
+    // The winning effort can itself be official: creditedEffortSeconds credits
+    // chip times into the computed set.
     const bestResult = best?.activityId ? officialByActivityId.get(best.activityId) : undefined
     return {
       key,

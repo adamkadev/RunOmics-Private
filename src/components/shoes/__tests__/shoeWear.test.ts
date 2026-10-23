@@ -3,7 +3,6 @@ import { t } from '@/i18n'
 import { shoeProjection, shoeWearCopy } from '../shoeWear'
 
 describe('shoeWearCopy', () => {
-  // 1,375 of 500 km read "0 km left" and "1375 / 500 km".
   it('states the overrun past the limit, with thousands separators', () => {
     const wear = shoeWearCopy({ totalKm: 1_375, maxKm: 500 })
 
@@ -26,7 +25,6 @@ describe('shoeWearCopy', () => {
   })
 })
 
-// Design review, Oct 2026: the projection on one line.
 describe('shoeProjection', () => {
   const NOW = new Date(2026, 9, 19, 12)
   const pair = { retired: false, kmPerWeek: 25.2, maxKm: 1000 }

@@ -39,8 +39,7 @@ describe('verdictReadiness', () => {
   })
 
   it('holds while the previous deployment answers, verdict and all', () => {
-    // The five minutes this whole endpoint exists for: the app still serves
-    // yesterday's run, which has had its card since yesterday.
+    // The five minutes this endpoint exists for: the app still serves yesterday's run and its card.
     expect(
       verdictReadiness(
         {

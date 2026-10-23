@@ -1,9 +1,6 @@
 import { test, expect } from './fixtures'
 
-// L1: the tab bar shrinks to its 62 pt pill, 24 pt off the screen's foot and
-// side, as the page scrolls down. At scroll end the last card - an activity's
-// Previous run - must sit whole above it with 24 pt clear, on every tab, in
-// both themes, with a Face ID phone's 34 pt home indicator inset.
+// The tab bar shrinks to its pill only as the page scrolls down; the insets are a Face ID phone's.
 test.use({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true })
 
 for (const theme of ['light', 'dark'] as const) {
@@ -21,9 +18,7 @@ for (const theme of ['light', 'dark'] as const) {
     for (let i = 0; i < count; i++) {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }))
       await tabs.nth(i).click()
-      // Instant, as the page scrolls smoothly and a smooth scroll is measured
-      // mid-way; and from 200 pt short of the end, a scroll down that shrinks
-      // the bar however far the tab's lazy content had let the page scroll.
+      // Instant, as a smooth scroll is measured mid-way; from 200 pt short of the end, so a scroll down shrinks the bar.
       const gap = () =>
         page.evaluate(async () => {
           const frame = () => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)))

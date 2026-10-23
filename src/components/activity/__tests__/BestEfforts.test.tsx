@@ -32,8 +32,7 @@ describe('BestEfforts', () => {
     expect(screen.getByText('PR')).toBeInTheDocument()
   })
 
-  // v4.17: three columns of tiles, each the distance with its unit, the time
-  // and the pace. 3.0.2: the 1 km's time is its pace, so it is said once.
+  // The 1 km's time is its pace, so it is said once.
   it('lays efforts out in three columns of distance, time and pace', () => {
     render(<BestEfforts bestEfforts={{ '1k': 223, '5k': 1205 }} qualifiedEfforts={[]} />)
 

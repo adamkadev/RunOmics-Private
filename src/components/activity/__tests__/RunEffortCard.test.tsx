@@ -11,12 +11,10 @@ const ZONES = [
 ]
 
 describe('RunEffortCard', () => {
-  // H12, M9: zones, aerobic effect and decoupling in one card, no sentences.
   it('holds the zone bar, the aerobic effect and the decoupling rows', () => {
     render(<RunEffortCard hrZones={ZONES} aer={3.1} ana={0} decoupling={{ percent: 3.1, drift: 'stable' } as never} />)
 
     const card = screen.getByTestId('run-effort')
-    // v4.17: the bar's legend names each zone and its share.
     expect(card.textContent).toContain(`Z1 ${t.zoneLabels[1]} 42%`)
     expect(card.textContent).toContain(`Z2 ${t.zoneLabels[2]} 58%`)
     expect(screen.getByTestId('zone-stack').children).toHaveLength(2)
@@ -27,7 +25,6 @@ describe('RunEffortCard', () => {
     expect(card.textContent).not.toContain(t.activity.trainingEffect.anaerobic)
   })
 
-  // v4.3.1: every zone the bar draws has its label; under 1% is dropped from both.
   it('labels every zone it draws and drops those under 1%', () => {
     const zones = [
       { zone: 1, seconds: 100, percent: 60, minBpm: 100, maxBpm: 130 },
@@ -51,8 +48,6 @@ describe('RunEffortCard', () => {
     expect(onShowCharts).toHaveBeenCalled()
   })
 
-  // v4.17: coloured by what it means - improving is pos, no benefit muted,
-  // a faded decoupling warn.
   it('colours the effects and the decoupling by meaning', () => {
     render(<RunEffortCard hrZones={ZONES} aer={3.4} ana={0.1} decoupling={{ percent: 7.2, drift: 'drifting' } as never} />)
 

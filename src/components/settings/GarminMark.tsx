@@ -1,7 +1,6 @@
 import { siGarmin } from 'simple-icons'
 import { t } from '@/i18n'
 
-/** The Garmin mark on an inset tile, the device row's icon. */
 export function GarminTile() {
   return (
     <div className="flex size-11 shrink-0 items-center justify-center rounded-[12px] border border-border bg-[var(--surface-2)]">
@@ -13,10 +12,6 @@ export function GarminTile() {
   )
 }
 
-/**
- * The green dot before the sync line (3.0 1i): the source is live. The word
- * is for a screen reader; on screen the dot says it.
- */
 export function ConnectedMark() {
   return (
     <span className="text-[var(--pos)]" data-testid="garmin-connected">

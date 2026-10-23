@@ -58,7 +58,6 @@ describe('typeBaseline', () => {
     expect(runHistory(current, [current, ...later]).baseline).toBeNull()
   })
 
-  // v4.16.4: like for like, or the comparison says nothing.
   const reps = (pace: number, hr: number) =>
     [0, 1, 2].map(() => ({ type: 'interval_active', durationSec: 420, distanceM: (420 / pace) * 1000, avgSpeedMs: 0, avgHr: hr, laps: [] }))
   const threshold = (id: string, date: string, pace: number, hr: number) =>
@@ -203,7 +202,6 @@ describe('effortStanding with official race results', () => {
   })
 })
 
-// v4.16.6: what sets one session apart from the last of its kind.
 describe('previousSession', () => {
   const reps = (count: number, seconds: number, pace: number, hr: number) =>
     Array.from({ length: count }, () => ({ type: 'interval_active', durationSec: seconds, distanceM: (seconds / pace) * 1000, avgSpeedMs: 0, avgHr: hr, laps: [] }))

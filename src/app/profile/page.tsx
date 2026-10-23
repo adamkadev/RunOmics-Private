@@ -5,9 +5,11 @@ import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getRecords } from '@/application/usecases/GetRecords'
+import { getExploreHome } from '@/application/usecases/GetExploreAreas'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { ProgressHub } from '@/components/profile/ProgressHub'
+import { ExploredCard } from '@/components/explore/ExploredCard'
 import { progressHubView } from '@/components/profile/progressHubView'
 import { appTodayIso } from '@/lib/calendarDate'
 
@@ -37,5 +39,11 @@ export default async function ProfilePage() {
     shoes: data.shoes,
   })
 
-  return <ProgressHub view={view} />
+  // Only the area, the cluster and its runs reach the card: no home, no tracks.
+  const explore = getExploreHome()
+  const explored = explore ? (
+    <ExploredCard area={explore.area} clusterId={explore.clusterId} runs={explore.runs} dataVersion={explore.dataVersion} />
+  ) : undefined
+
+  return <ProgressHub view={view} explored={explored} />
 }

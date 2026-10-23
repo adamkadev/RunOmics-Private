@@ -42,7 +42,6 @@ describe('buildSegments', () => {
 })
 
 describe('trainingStatusDays', () => {
-  // G05: Today took the last 28 records, Analytics the last 28 days.
   it('gives one entry per calendar day, unrated days as null', () => {
     const points = [
       { date: '2026-09-01', status: 'recovery' as const },

@@ -1,6 +1,16 @@
 import type { ActivityType } from '@/domain/activity/types'
 import type { Strings } from './en'
 
+/**
+ * « à » devant un nom de lieu : « à Metz », mais « au Ban-Saint-Martin » et
+ * « aux Arènes » - l’article se contracte (« La » et « L’ » restent).
+ */
+export function aLieu(name: string): string {
+  const article = /^(les?)\s+(.+)$/iu.exec(name)
+  if (!article) return `à ${name}`
+  return `${article[1]!.toLowerCase() === 'le' ? 'au' : 'aux'} ${article[2]}`
+}
+
 /** "+6" as "up 6", "−23" as "down 23", "0" as level. */
 function moveWords(delta: string, up: string, down: string, level: string): string {
   const sign = delta.charAt(0)
@@ -66,8 +76,7 @@ export const fr = {
   },
 
   zoneLabels: {
-    // « Récup », as runners say it: « Récupération » ran out of the zone
-    // table's name column, which never wraps.
+    // « Récupération » overflows the zone table's name column, which never wraps.
     1: 'Récup',
     2: 'Facile',
     3: 'Aérobie',
@@ -225,7 +234,6 @@ export const fr = {
     refresh: 'Actualiser',
   },
 
-  // The private site's way in (RUNOMICS_PRIVATE, src/proxy.ts).
   signIn: {
     title: 'Connexion',
     heading: 'Ce RunOmics est privé',
@@ -292,6 +300,84 @@ export const fr = {
         runsStat: 'Sorties',
         kmStat: 'Distance',
         reachStat: 'Rayon médian',
+      },
+      districts: {
+        layersButton: 'Afficher les quartiers',
+        legend: 'Couverture des quartiers',
+        fog: 'Brouillard',
+        partly: 'En partie',
+        complete: 'Complet',
+        headline: (done: number, total: number, next: string, distance: string | null) => ({
+          lead: `${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}. `,
+          accent: next,
+          tail: distance ? ` est le prochain, à ${distance} de chez toi.` : ' est le prochain.',
+        }),
+        allComplete: (total: number) => ({
+          lead: total > 1 ? `Les ${total} quartiers sont complets.` : 'Ton quartier est complet.',
+          accent: '',
+          tail: '',
+        }),
+        loading: { lead: 'Calcul de tes quartiers…', accent: '', tail: '' },
+        failed: { lead: 'Impossible de calculer tes quartiers pour l’instant.', accent: '', tail: '' },
+        completeStat: 'Complets',
+        ofTotal: (total: number) => `sur ${total}`,
+        exploredStat: 'Exploré',
+        nextStat: 'Prochain quartier',
+        planRunIn: (name: string) => `Prévoir une sortie ${aLieu(name)}`,
+        nextToExplore: 'Prochain à explorer',
+        nextMeta: (pct: string, distance: string | null) => (distance ? `${pct} exploré · à ${distance} de chez toi` : `${pct} exploré`),
+        nextMetaShort: (pct: string, distance: string | null) => (distance ? `${pct} exploré · à ${distance}` : `${pct} exploré`),
+        // Le bouton de la carte du plan agrandi : court, pour que la ligne d’à côté reste entière.
+        planRun: 'Y courir',
+        sheet: {
+          quartierOf: (commune: string) => `Quartier · ${commune}`,
+          commune: 'Commune',
+          explored: (pct: string) => `${pct} exploré`,
+          cells: (visited: number, total: number, n: (count: number) => string) => `${n(visited)} case${visited > 1 ? 's' : ''} sur ${n(total)}`,
+          completeAt: (pct: string) => `Complet à ${pct}`,
+          runHere: 'Courus ici',
+          lastRun: 'Dernière sortie',
+          fromHome: 'Depuis chez toi',
+          planRunHere: 'Prévoir une sortie ici',
+        },
+      },
+      explore: {
+        back: 'Retour',
+        title: (name: string) => `Courir ${aLieu(name)}`,
+        loop: 'Boucle',
+        newShare: (pct: string) => `${pct} inédit`,
+        todaysPlan: 'Au programme',
+        planFor: (day: string) => `Programme du ${day}`,
+        usePlanDistance: (km: string) => `Reprendre la distance du programme, ${km}`,
+        distance: 'Distance',
+        shorter: 'Plus court',
+        longer: 'Plus long',
+        options: 'Options du parcours',
+        avoidBusyRoads: 'Éviter les grands axes',
+        newStreetsFirst: 'Rues nouvelles d’abord',
+        summary: { avoidBusyRoads: 'Sans grands axes', newStreetsFirst: 'Rues inédites' },
+        distanceStat: 'Distance',
+        timeStat: 'Durée',
+        atPace: (pace: string) => `À ${pace}`,
+        climbStat: 'Dénivelé',
+        newStat: 'Inédit',
+        regenerate: 'Autre boucle',
+        download: 'Télécharger',
+        saved: 'Enregistré',
+        share: 'Partager le GPX',
+        footnote: 'Fichier GPX · à importer dans Garmin Connect, Coros ou Suunto',
+        generating: 'Recherche de boucles…',
+        retry: 'Réessayer',
+        errors: {
+          notConfigured: 'La génération de parcours n’est pas configurée sur ce déploiement.',
+          auth: 'Connecte-toi en tant que propriétaire pour prévoir un parcours.',
+          rateLimited: 'Trop de demandes. Réessaie dans une minute.',
+          dailyQuota: 'Le quota de parcours du jour est épuisé.',
+          noRoute: 'Aucune boucle trouvée ici. Essaie une autre distance.',
+          upstream: 'Le service d’itinéraires n’a pas répondu. Réessaie.',
+        },
+        gpxName: (name: string, km: string) => `RunOmics · ${name} · ${km} km`,
+        gpxDescription: (name: string) => `Une boucle ${aLieu(name)}, prévue avec RunOmics.`,
       },
     },
     shoes: {
@@ -360,7 +446,7 @@ export const fr = {
       light: 'Clair',
       auto: 'Auto',
       dark: 'Sombre',
-      // Le fond du mode clair (Liquid Glass v3, G14).
+      // Le fond du mode clair.
       glowLabel: "Lueur d'arrière-plan",
       glowHint: 'Couleur derrière le haut de chaque page',
       reducedTransparencyNote: ' · désactivé tant que Réduire la transparence est activé',
@@ -398,8 +484,7 @@ export const fr = {
       weight: 'Poids',
       height: 'Taille',
       fitnessAge: 'Âge physique',
-      // Fitness age against the real age: « 18 (29 ans) » (C2, v4.4; 3.0 1j;
-      // round 2: « 18 pour 29 ans » ran out of its third of the card).
+      // Fitness age against the real age: « 18 (29 ans) ».
       ofAge: (age: number) => `(${age} ans)`,
       achievableFitnessAge: 'Potentiel',
       fitnessAgeBand: {
@@ -439,8 +524,7 @@ export const fr = {
     },
     profile: {
       readOnly: 'Depuis ta montre : à modifier dans l’app de ta montre.',
-      // « Seuil 172 · max 189 » beside « Athlète et zones »: « FC seuil »
-      // cut the row's name.
+      // « Seuil 172 · max 189 »: « FC seuil » would cut the row's name.
       lthr: (bpm: number) => `Seuil ${bpm}`,
       maxHr: (bpm: number) => `max ${bpm}`,
     },
@@ -469,7 +553,7 @@ export const fr = {
     headerDate: (weekday: string, date: string) => `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${date}`,
     readiness: {
       open: 'Ouvrir la charge dans Analyses',
-      // Des mots de tous les jours, pas des sigles (Lamiaa, oct. 2026).
+      // Des mots de tous les jours, pas des sigles.
       formLabel: 'Forme',
       yesterday: 'Hier',
       formOnDial: (form: string, band: string) => `Forme ${form} : ${band}`,
@@ -496,7 +580,7 @@ export const fr = {
       acwr: 'Charge',
       acwrValue: (ratio: string) => `×${ratio}`,
       deltaIn: (days: number) => `en ${days} jours`,
-      // « 21 cette semaine » ran out of its third of the card at 393 pt.
+      // Short: « 21 cette semaine » overflows its third of the card at 393 pt.
       deltaWeek: (n: number, days: number) => `${n} en ${days} j`,
       fallback: {
         below: (acute: number, lo: number, hi: number, fresh = false) => ({
@@ -604,8 +688,7 @@ export const fr = {
   },
 
   analytics: {
-    // Which load model a card reads, named in its head: the watch's
-    // acute/chronic load, or the app's own stress (Fitness / Fatigue).
+    // The load model a card reads: the watch's acute/chronic load or the app's own stress.
     model: { garmin: 'Ta montre', runomics: 'RunOmics' },
     title: 'Analyses',
 
@@ -619,7 +702,6 @@ export const fr = {
       volume: 'Volume',
       health: 'Intensité',
     },
-    // v4.5 : une question par onglet, une réponse par carte (D1-D4).
     cards: {
       period: {
         label: 'Période',
@@ -1167,8 +1249,7 @@ export const fr = {
 
   activities: {
     searchPlaceholder: 'Cherche une sortie, une note, une date…',
-    // « Tout », as the heatmap's filter says it: « Toutes » put the fourth
-    // chip under the filter button at 393 pt.
+    // Not « Toutes »: it pushes the fourth chip under the filter button at 393 pt.
     all: 'Tout',
     longRun: 'Sortie longue',
     count: (n: number) => `${n} activité${n > 1 ? 's' : ''}`,
@@ -1210,11 +1291,9 @@ export const fr = {
     },
     sort: {
       label: 'Trier',
-      // Four segments at 390 pt (App Fixes 3e).
+      // One word each: four segments share the sheet's control at 390 pt.
       newest: 'Récentes',
       oldest: 'Anciennes',
-      // One word each, as « Récentes » and « Anciennes »: « Plus longues »
-      // and « Plus rapides » cut all four labels in the sheet's control.
       longest: 'Longues',
       fastest: 'Rapides',
     },
@@ -1488,7 +1567,7 @@ export const fr = {
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
       bandLabel: (range: string) => `plage ${range}`,
       recoveryAvg: 'Récup moyenne',
-      // The set's summary at the top of its card: three numbers, no sentence (H14).
+      // The set's summary at the top of its card: three numbers, no sentence.
       inBandLabel: 'Dans la zone',
       spread: 'Écart',
       hrDrift: 'Dérive FC',
@@ -1813,6 +1892,11 @@ export const fr = {
       time: 'Temps',
       hours: 'h',
       openYears: 'Kilomètres par année',
+      explored: 'Exploré',
+      // 0 et 1 au singulier.
+      exploredComplete: (done: number, total: number) => `${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}`,
+      exploredNext: (name: string, pct: string) => ({ lead: 'Prochain : ', name, tail: ` · ${pct}` }),
+      exploredAllComplete: (total: number) => (total > 1 ? `Les ${total} quartiers sont complets` : 'Ton quartier est complet'),
     },
     hero: {
       namePlaceholder: 'Ton nom',
@@ -1827,8 +1911,7 @@ export const fr = {
     milestones: {
       distanceTier: (km: string) => `${km} km cette année`,
       streak: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
-      // The milestone's date reads after it; « Toujours en cours · une sortie
-      // chaque semaine depuis » was cut beside that date.
+      // Reads before the milestone's date; a longer phrase is cut beside it.
       streakDetail: 'En cours · chaque semaine depuis',
       record: (label: string) => `Record ${label}`,
       firstActivity: 'Premier pas',
@@ -1886,7 +1969,7 @@ export const fr = {
       marathon: 'Marathon',
       longest: 'Plus longue sortie',
     } as Record<string, string>,
-    // « RP Plus longue sortie » left the run's own name « Race … » at 393 pt.
+    // One word: « RP Plus longue sortie » cuts the run's name to « Race … » at 393 pt.
     badgeLabels: { longest: 'Distance' } as Record<string, string>,
     raceTag: 'course',
     trainingTag: 'entraînement',
@@ -2078,6 +2161,7 @@ export const fr = {
       hrTarget: 'Fréquence cardiaque',
       hrTargetZone: (zone: number) => `Fréquence cardiaque · Z${zone}`,
       hrCap: (bpm: number) => `≤ ${bpm}`,
+      findRoute: 'Trouver un parcours',
     },
     continuous: 'continu',
     restCard: {

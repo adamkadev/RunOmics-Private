@@ -40,26 +40,20 @@ const RunningDynamics = dynamic(() => import('./RunningDynamics').then((m) => m.
 
 interface Props {
   activity: ActivityDetailView
-  /** The run's name: the title under the map. */
   name: string
-  /** The type its dot and the line over the title show: its session's, where it has one. */
+  /** Its session's type, where it has one. */
   shownType?: ActivityType
-  /** The run's date as the page shows it, in the line over the title. */
   dateLabel: string
-  /** The watch's own comment, under the title. */
+  /** The watch's own comment. */
   comment?: string
   qualifiedEfforts?: QualifiedEffort[]
   aiVerdict: Insight | null
   dynamicsBaseline: DynamicsBaseline | null
-  /** The pair it was run in, as the shoe chip of the verdict card. */
   shoe?: ShoeTag | null
   similarRuns?: SimilarRunsData | null
-  /** Race result and achievements, at the head of Overview. */
   extras?: ReactNode
-  /** The way back and Share, floating on the map. */
   back?: ReactNode
   share?: ReactNode
-  /** The athlete's zones, banded behind the Charts lanes. */
   chartZones?: ChartZones | null
 }
 
@@ -76,7 +70,6 @@ interface PrimaryStat {
   unit?: string
 }
 
-/** The fullscreen map's card (3.0): distance, time, pace and the climb. */
 function buildMapStats(activity: ActivityDetailView): PrimaryStat[] {
   const s = t.activity.map.stats
   const stats: PrimaryStat[] = [
@@ -92,8 +85,7 @@ function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
   const s = t.activity.stats
   const stats: PrimaryStat[] = [
     { label: s.distance, value: formatDistance(activity.distanceKm), unit: t.units.km },
-    // The time unitless (F8): "59:35 min" all but touched the pace beside
-    // it, and m:ss or h:mm:ss says what it is.
+    // No unit: m:ss or h:mm:ss says what it is, and "min" crowded the pace beside it.
     { label: s.duration, value: formatDuration(Math.round(activity.durationSeconds)) },
   ]
   if (activity.paceSecPerKm) stats.push({ label: s.pace, value: formatClock(activity.paceSecPerKm), unit: t.units.perKm })
@@ -102,19 +94,15 @@ function buildPrimaryStats(activity: ActivityDetailView): PrimaryStat[] {
 }
 
 /**
- * The value's size: 28 pt where its column allows, else what fits the widest
- * value, h:mm:ss (3.65 em at 700), the same across the row. A phone's 84 pt
- * column holds it at about 23; at 28 "1:10:31" is 102 pt and "5:39 /km" 88.
+ * 28 pt where its column allows, else what fits h:mm:ss (3.65 em at 700) in
+ * one of four columns 8 pt apart: (100cqi - 24px) / 4 / 3.65.
  */
 const STAT_VALUE_SIZE = 'text-[length:min(28px,calc((100cqi_-_24px)_/_14.6))]'
 
 function StatStrip({ stats, testId = 'run-stats' }: { stats: PrimaryStat[]; testId?: string }) {
   return (
-    // Four equal columns 8 pt apart (F8) in two rows (L2): every value in a
-    // fixed 44 pt row, its 32 pt box at the row's foot, then every label. A
-    // unit's inline box was taller than a bare value's, so "Time", with no
-    // unit, sat about 7 pt higher; now no cell sets another's height. Column
-    // flow keeps each value before its label for VoiceOver.
+    // A fixed 44 pt value row, so a unit's taller inline box cannot lift its
+    // neighbours; column flow keeps each value before its label for VoiceOver.
     <div
       className="grid grid-flow-col grid-cols-[repeat(4,minmax(0,1fr))] grid-rows-[44px_auto] gap-x-2 gap-y-0.5 [container-type:inline-size]"
       data-testid={testId}
@@ -155,10 +143,8 @@ export function ActivityDetailClient({
   share,
   chartZones = null,
 }: Props) {
-  // The session's type over the watch's, where they differ (round 2).
   const type = shownType ?? activity.type
-  // The tab lives in ?tab=, so going back from Charts or Dynamics lands on it
-  // again rather than on Overview.
+  // In ?tab=, so going back from Charts or Dynamics lands on it again.
   const [tabParam, setTabParam] = useUrlParam('tab')
   const stats = buildPrimaryStats(activity)
   const stripRef = useRef<HTMLDivElement>(null)
@@ -191,8 +177,6 @@ export function ActivityDetailClient({
 
   // A tab picked with the strip pinned keeps it pinned, the new tab from its
   // top; one picked lower down never opens the new tab under the strip.
-  // Everything above the tabs is the same on every tab (3.0), so the reader
-  // stays below the hero.
   useLayoutEffect(() => {
     const switched = switchRef.current
     switchRef.current = null
@@ -204,9 +188,6 @@ export function ActivityDetailClient({
 
   return (
     <>
-      {/* Map first, edge to edge, then the run's name, its four numbers and
-          the verdict, the tabs right under it (3.0). The same on every tab,
-          so a tab switch keeps the page under the hero where it was. */}
       <RunMapHero
         route={activity.route ?? null}
         back={back}
@@ -214,7 +195,6 @@ export function ActivityDetailClient({
         card={
           <div className="flex flex-col gap-2.5">
             <div className="flex items-baseline justify-between gap-3">
-              {/* The type as its dot, as over the page's title: the name is the session's set. */}
               <span className="flex min-w-0 items-center gap-1.5">
                 <TypeDot type={type} />
                 <span className="min-w-0 truncate text-[17px] font-bold text-foreground">{name}</span>
@@ -227,9 +207,6 @@ export function ActivityDetailClient({
       />
 
       <header className="-mt-1 flex flex-col gap-1">
-        {/* Type · date · town: the type as its dot and its name. Above the
-            title, it fades as it nears the compact bar. A title that is the
-            type's name alone ("Base") leaves the dot to say it (round 2). */}
         <p data-title-sub className="flex flex-wrap items-center gap-x-1.5 text-[15px] leading-5 text-muted-foreground" data-testid="activity-subtitle">
           <TypeDot type={type} />
           {name.trim().toLowerCase() !== t.activityTypes[type].toLowerCase() && (
@@ -253,9 +230,6 @@ export function ActivityDetailClient({
 
       <StatStrip stats={stats} />
 
-      {/* The verdict, then how it felt - the watch's RPE, the conditions, the
-          pair and the note, the one thing here the user writes - as chips
-          (3.0): four full-width rows pushed the tabs a screen down. */}
       <RunVerdict activity={activity} aiVerdict={aiVerdict}>
         {!activity.avgHeartRate && (
           <span className={cn(RUN_CHIP_CLASS, 'font-semibold text-[var(--warn)]')}>{t.activity.dataQuality.estimated}</span>
@@ -263,14 +237,11 @@ export function ActivityDetailClient({
         <span className={RUN_CHIP_CLASS} data-testid="run-effort">
           {activity.rpe !== null ? t.activities.row.rpeValue(activity.rpe) : `${e.label} ${e.notLogged}`}
         </span>
-        {/* The weather and the pair explain effort and heart rate, so they
-            sit with them (v4.8 2h). No wind reading, no wind. */}
         {activity.weather && (
           <span className={RUN_CHIP_CLASS} data-testid="run-conditions">{conditionsText(activity.weather)}</span>
         )}
-        {/* The pair is set on the watch, so the chip opens its app - but
-            only for a run the watch gave an id to; otherwise there is
-            nothing at the other end, so the pair just reads (3.0 override 1). */}
+        {/* The pair is set on the watch, so the chip opens Garmin Connect, but only
+            for a run with a watch id: otherwise there is nothing at the other end. */}
         {isWatchId(activity.id) ? (
           <a
             href={garminActivityUrl(activity.id)}
@@ -292,8 +263,6 @@ export function ActivityDetailClient({
         <ActivityNotes activityId={activity.id} />
       </RunVerdict>
 
-      {/* Straight after the verdict, pinned under the compact title bar once
-          it reaches it. */}
       {tabs.length > 1 && (
         <StickyBar ref={stripRef} top="var(--sticky-top, var(--top-scrim))" className="-mb-2">
           <SegmentedTabs
@@ -306,12 +275,8 @@ export function ActivityDetailClient({
         </StickyBar>
       )}
 
-      {/* The panel stands in for the cards it holds, 14 pt apart like the
-          page's own. On a phone it is at least a screen less the bars, the
-          strip and the page's foot tall (3.0.2): a short tab - one Splits
-          card - left the page too short to scroll the strip up to the title
-          bar, so it stopped a little below it with a sliver of the card
-          above showing between them. */}
+      {/* At least a screen tall on a phone, so a short tab still lets the strip
+          scroll up to the title bar. */}
       <div
         {...(tabs.length > 1 ? detailTabs.panelProps : {})}
         className={cn(

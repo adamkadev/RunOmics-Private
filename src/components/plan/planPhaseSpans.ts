@@ -6,12 +6,9 @@ import { t } from '@/i18n'
 import type { PlanCoachingView } from './planCoachingView'
 import { daysUntil, raceTitle, type PlanRace } from './planRace'
 
-/** A phase of the plan, as the week's card and the month's labels name it. */
 export interface PhaseSpan {
   key: string
-  /** "General preparation": the week card's heading. */
   name: string
-  /** "General prep": the month grid's caps label. */
   shortName: string
   startDate: string
   endDate: string
@@ -30,12 +27,6 @@ function rangeSpans(ranges: PlanPhaseRange[]): PhaseSpan[] {
   }))
 }
 
-/**
- * The plan's phases, whichever plan there is: the coaching macrocycle's
- * toward its race, else - a coaching block with no race - one general
- * preparation phase from its first Monday to the block's end, else Garmin's
- * training plan.
- */
 export function planPhaseSpans(coaching: PlanCoachingView | null, garminRanges: PlanPhaseRange[]): PhaseSpan[] {
   if (coaching) {
     const ranges = macrocyclePhaseRanges(coaching.plan)
@@ -53,12 +44,10 @@ export function planPhaseSpans(coaching: PlanCoachingView | null, garminRanges: 
   return rangeSpans(garminRanges)
 }
 
-/** A phase's length in weeks, a one-week phase included. */
 export function spanWeeks(span: Pick<PhaseSpan, 'startDate' | 'endDate'>): number {
   return Math.max(1, Math.round((daysBetween(span.startDate, span.endDate) + 1) / 7))
 }
 
-/** The phase that holds most of the week starting `monday`; the later on a tie. */
 export function spanOfWeek(spans: PhaseSpan[], monday: string): PhaseSpan | null {
   let best: PhaseSpan | null = null
   let bestDays = 0
@@ -78,12 +67,10 @@ export function spanOfWeek(spans: PhaseSpan[], monday: string): PhaseSpan | null
 
 export interface PhaseWeek {
   span: PhaseSpan
-  /** The week's number in its phase, from 1. */
   week: number
   total: number
 }
 
-/** "General preparation, week 2 of 6": the week starting `monday` in its phase. */
 export function phaseWeek(spans: PhaseSpan[], monday: string): PhaseWeek | null {
   const span = spanOfWeek(spans, monday)
   if (!span) return null
@@ -92,7 +79,6 @@ export function phaseWeek(spans: PhaseSpan[], monday: string): PhaseWeek | null 
   return { span, week: Math.min(Math.max(week, 1), total), total }
 }
 
-/** "Half in 29 wk", "10K in 5 days": the race the plan builds to, from `today`. */
 export function raceCountdown(race: PlanRace, today: string): string | null {
   const days = daysUntil(race.date, today)
   if (days < 0) return null

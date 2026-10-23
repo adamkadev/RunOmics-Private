@@ -1,7 +1,6 @@
 import { getTrainingPlan as readTrainingPlan } from '@/infrastructure/repositories/JsonTrainingPlanRepository'
 import type { TrainingPlanPhase, PlanPhaseRange } from '@/domain/training/planPhase'
 
-// Moved to the domain; re-exported so every existing importer keeps working.
 export type { TrainingPlanPhase, PlanPhaseRange } from '@/domain/training/planPhase'
 
 const GARMIN_PHASE: Record<string, TrainingPlanPhase> = {

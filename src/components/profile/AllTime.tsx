@@ -8,7 +8,6 @@ import type { AllTimeMonth, AllTimeView, AllTimeYear } from '@/application/useca
 
 const TITLE = 'text-[15px] font-semibold text-foreground'
 
-/** The three totals (App Fixes 1i): the label on top, the unit inline, as on the home card. */
 function Totals({ view }: { view: AllTimeView }) {
   const a = t.allTime
   const cells: [string, string, string | null][] = [
@@ -33,25 +32,16 @@ function Totals({ view }: { view: AllTimeView }) {
   )
 }
 
-/** A change in percent with its sign: "+12%", "−8%". */
 function signedPercent(pct: number): string {
   return `${pct > 0 ? '+' : pct < 0 ? '−' : '±'}${formatPercent(Math.abs(pct))}`
 }
 
-/** Years listed before "All years ›" (App Fixes 1i, multi-year rules). */
 export const YEARS_SHOWN = 3
 
-/**
- * The years by km a month (App Fixes 1i), newest first, one layout per row:
- * year · bar · km a month · the change on the year before. Every bar is on
- * the best year's scale; a first year that started after January says from
- * when. Past three years, the latest three and "All years ›" for the rest.
- */
 export function YearRows({ years, currentYear, since }: { years: AllTimeYear[]; currentYear: number; since: string | null }) {
   const best = Math.max(1, ...years.map((y) => y.kmPerMonth))
   const newestFirst = [...years].reverse()
   const byYear = new Map(years.map((y) => [y.year, y]))
-  // A first year from its first run's month, when that is not January.
   const lateStart = since && since.slice(5, 7) !== '01' ? since : null
   const row = (y: AllTimeYear) => {
     const isCurrent = y.year === currentYear
@@ -73,7 +63,6 @@ export function YearRows({ years, currentYear, since }: { years: AllTimeYear[]; 
             style={{ width: `${(y.kmPerMonth / best) * 100}%`, background: isCurrent ? 'var(--accent)' : 'var(--band)' }}
           />
         </span>
-        {/* The values in one column, the change beside them. */}
         <span className="flex items-baseline gap-2 tabular-nums" aria-hidden>
           <span className={cn('text-[15px]', isCurrent ? 'font-bold text-foreground' : 'text-muted-foreground')}>{formatKm(y.kmPerMonth)}</span>
           {changePct !== null && (
@@ -112,21 +101,14 @@ export function YearRows({ years, currentYear, since }: { years: AllTimeYear[]; 
   )
 }
 
-/** The monthly chart's height, in px. */
+/** In px. */
 const MONTHLY_H = 110
-/** The months it draws (3.0): a year and a half. */
 const MONTHS_SHOWN = 18
-/** Round steps for its scale, in km. */
+/** In km. */
 const SCALE_STEPS = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000]
-/** Lines up the side at most: on a 110 px chart, more would crowd it. */
+/** More lines would crowd a 110 px chart. */
 const SCALE_LINES = 3
 
-/**
- * The monthly chart's scale (design review, Oct 2026; 3.0): the smallest
- * round step that needs three lines at most, and a top a half step over the
- * best month - 250 for a best of 236, its lines at 100 and 200 - so the best
- * month reaches near the top.
- */
 export function monthlyScale(bestKm: number): { top: number; ticks: number[] } {
   const best = Math.max(1, bestKm)
   const step = SCALE_STEPS.find((s) => Math.ceil(best / s) <= SCALE_LINES) ?? Math.ceil(best / SCALE_LINES)
@@ -135,17 +117,10 @@ export function monthlyScale(bestKm: number): { top: number; ticks: number[] } {
   return { top, ticks: Array.from({ length: Math.floor(top / step) }, (_, i) => (i + 1) * step) }
 }
 
-/** A month's initial under its bar: "O" for October. */
 function initial(key: string): string {
   return formatDate(`${key}-01`, { precision: 'month', year: 'never' }).charAt(0).toUpperCase()
 }
 
-/**
- * The last 18 months (3.0, 3.1): earlier years in the band grey, this year in
- * the accent, the best month's km over its bar, and the month still running
- * filled so far inside a dashed outline at its pace. Under the months, each
- * year's name, a line where a new one starts, and this month's km so far.
- */
 function MonthlyBars({ view }: { view: AllTimeView }) {
   const a = t.allTime
   const shown = view.monthly.slice(-MONTHS_SHOWN)
@@ -155,7 +130,6 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
   const at = (km: number) => `${(km / scale.top) * 100}%`
   const px = (km: number) => `${Math.max(3, Math.round((km / scale.top) * MONTHLY_H))}px`
   const grid = { gridTemplateColumns: `repeat(${shown.length}, minmax(0, 1fr))` }
-  // Each year's months, in order: the years named under the chart.
   const years = shown.reduce<{ year: number; months: number }[]>((list, m) => {
     const last = list.at(-1)
     if (last && last.year === m.year) last.months += 1
@@ -176,7 +150,6 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
         <div className="relative" style={{ height: MONTHLY_H }}>
           {scale.ticks.map((km) => (
             <span key={km} data-testid="monthly-gridline" className="absolute inset-x-0 border-t border-border" style={{ bottom: at(km) }}>
-              {/* Labelled (App Fixes 1i): the km over the line, at the left. */}
               <span className="absolute bottom-0.5 left-0 text-[11px] leading-none tabular-nums text-[var(--axis-text)]">{km}</span>
             </span>
           ))}
@@ -185,12 +158,10 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
               const isBest = m === best && m.km > 0
               return (
                 <div key={m.key} className="relative flex h-full min-w-0 flex-col items-center justify-end">
-                  {/* A 1 px line before every January (multi-year rules). */}
                   {i > 0 && m.key.endsWith('-01') && (
                     <span aria-hidden className="absolute -left-[2px] inset-y-0 w-px bg-[var(--line-2)]" data-testid="january-divider" />
                   )}
                   {m.partial && m.projectedKm !== null && m.projectedKm > m.km && (
-                    // October's projection on top of its dashed bar (App Fixes 1i).
                     <span className="mb-1 text-caption font-semibold leading-none tabular-nums text-accent-text" data-testid="month-projection">
                       {formatKm(m.projectedKm)}
                     </span>
@@ -228,8 +199,6 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
             <span key={m.key} className={cn('min-w-0', m.partial && 'font-semibold text-accent-text')}>{initial(m.key)}</span>
           ))}
         </div>
-        {/* Each year under its own months: the columns split by the months
-            of each year in view (multi-year rules). */}
         <div className="mt-2.5 grid gap-[3px] border-t border-border pt-2.5 text-caption leading-[14px] text-muted-foreground" style={grid} data-testid="monthly-years">
           {years.map((y) => (
             <span key={y.year} className="min-w-0 whitespace-nowrap" style={{ gridColumn: `span ${y.months}` }} data-testid="monthly-year">
@@ -242,7 +211,6 @@ function MonthlyBars({ view }: { view: AllTimeView }) {
   )
 }
 
-/** Longest run and biggest week (3.0): each opens what it names, the run or that week in Activities. */
 function Bests({ view }: { view: AllTimeView }) {
   const a = t.allTime
   const cells = [

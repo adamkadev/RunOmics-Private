@@ -13,13 +13,6 @@ import { cardClass, insetTileClass, tileLabelClass } from '@/components/ui/Card'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-/**
- * The status line's colour (design review 3.0): the accent while the block
- * goes as planned, the warn colour once it asks for care - Caution and Hold
- * back - on the dot and the words both, which also say it. A load outside
- * its safe range is the same kind of news, so it takes the warn colour too
- * (App Fixes 1a).
- */
 const STATUS_COLOR: Record<ReadinessTone, string> = {
   go: 'var(--accent-text)',
   build: 'var(--accent-text)',
@@ -27,15 +20,10 @@ const STATUS_COLOR: Record<ReadinessTone, string> = {
   hold: 'var(--warn)',
 }
 
-/** Words that name a form state, in either language. */
+/** Words that name a form state, in English or French. */
 const FRESH_WORDS = /\b(fresh|rested|frais|fraîche|reposée?)\b/i
 const TIRED_WORDS = /\b(tired|fatigued|fatiguée?)\b/i
 
-/**
- * A number on its inner tile (App Fixes 1a): the label in caps, the value at
- * 24/29 bold (Liquid Glass v3), and a line under it - its band, or how it
- * moved this week.
- */
 function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; sub: ReactNode; testId: string }) {
   return (
     <div data-testid={testId} className={cn('flex min-w-0 flex-col gap-1', insetTileClass)}>
@@ -46,10 +34,7 @@ function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; 
   )
 }
 
-/**
- * A week's move (rule 04): the arrow follows the number, the colour says
- * whether that is good - fatigue falling is mint, fitness falling amber.
- */
+/** The arrow follows the number; the colour says whether that is good: fatigue falling is mint, fitness falling amber. */
 function Delta({ metric, delta, current, days }: { metric: DeltaMetric; delta: number; current: number; days: number }) {
   const tone = deltaTone(metric, delta, { value: current })
   const rounded = Math.round(delta)
@@ -62,13 +47,6 @@ function Delta({ metric, delta, current, days }: { metric: DeltaMetric; delta: n
   )
 }
 
-/**
- * Today's status (App Fixes 1a): the line - in amber while the load is
- * outside its safe range, from the one reading Analytics prints - then the
- * coach's headline and body, then Form, Fitness and Fatigue on three tiles.
- * Without a written verdict the card says the same from the load itself, so
- * it is never just a line. The card opens Analytics › Load.
- */
 export function ReadinessCard({
   status,
   verdict = null,
@@ -89,8 +67,7 @@ export function ReadinessCard({
   const line = load ? s.loadState[load.state] : s.lineByTone[tone]
   const fresh = band === 'fresh' || band === 'veryFresh'
   const fallback = load ? s.fallback[load.state](load.acute, load.lo, load.hi, fresh) : null
-  // A written headline that names a form state the status line doesn't
-  // ("You're fresh" over NEUTRAL) gives way to the load's own (Wave 5 A0).
+  // A written headline that names a form state the status line doesn't ("You're fresh" over NEUTRAL) gives way to the load's own.
   const contradicts = verdict ? (!fresh && FRESH_WORDS.test(verdict.headline)) || (band !== 'tired' && TIRED_WORDS.test(verdict.headline)) : false
   const headline = (contradicts ? fallback?.headline : verdict?.headline) ?? fallback?.headline ?? verdict?.headline ?? null
   const body = verdict ? verdict.body : (fallback?.body ?? null)

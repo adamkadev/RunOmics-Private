@@ -15,7 +15,7 @@ const KIND_OF_TYPE: Record<ActivityType, SessionKind> = {
   Race: 'race',
 }
 
-/** An activity type as a session kind; a type this build does not know reads as easy. */
+/** A type this build does not know reads as easy. */
 export function kindOfType(type: string | null | undefined): SessionKind {
   return isActivityType(type) ? KIND_OF_TYPE[type] : 'easy'
 }

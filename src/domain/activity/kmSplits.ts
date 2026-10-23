@@ -16,11 +16,7 @@ export interface KmSplitInput {
 
 const MIN_PARTIAL_KM = 0.05
 
-/**
- * A pace sample this much slower than the run's median is a stop, or the
- * start backfilled with the first reading: on the wall clock but not on the
- * timer the splits are scaled to, so kept in, its time leaks into every km.
- */
+/** A sample this much slower than the median is a stop or the backfilled start: on the wall clock, not the timer the splits are scaled to. */
 const STOP_PACE_FACTOR = 1.5
 
 function sampleAt(samples: (number | null)[], fraction: number): number | null {
@@ -29,7 +25,6 @@ function sampleAt(samples: (number | null)[], fraction: number): number | null {
   return typeof v === 'number' && v > 0 ? v : null
 }
 
-/** The samples with stops left out, as gaps the neighbouring readings fill. */
 function withoutStops(samples: number[]): (number | null)[] {
   const valid = samples.filter((v) => typeof v === 'number' && v > 0).sort((a, b) => a - b)
   if (!valid.length) return samples
@@ -99,25 +94,16 @@ export function kmSplitsFromSamples({
     }))
 }
 
-/** A watch's own laps, on its timer: the one record of where each kilometre ended. */
+/** On the watch's timer: the one record of where each kilometre ended. */
 export interface LapInput {
   durationSec: number
   distanceM: number
   avgHr: number | null
 }
 
-/** Laps that leave more than this share of the run's distance unaccounted for are not its laps. */
 const LAP_COVERAGE_TOLERANCE = 0.03
 
-/**
- * Kilometres from the watch's laps (design review, Oct 2026): the time at
- * each 1000 m, interpolated inside the lap that crosses it, and each km's
- * heart rate weighted by the time it spent in each lap. The 150 pace samples
- * the splits were rebuilt from are one wall-clock reading every ~67 m, so a
- * backfilled start and one stop leaked ~95 s into every km through the
- * calibration: km 10 of a 6:00 /km run read 5:43, faster than the run's
- * best kilometre.
- */
+/** Preferred to the pace samples: those are wall-clock readings every ~67 m, which a stop skews. */
 export function kmSplitsFromLaps(laps: readonly LapInput[], distanceKm: number): KmSplit[] {
   const totalM = laps.reduce((sum, lap) => sum + Math.max(0, lap.distanceM), 0)
   if (laps.length < 2 || totalM <= 0) return []
@@ -162,13 +148,12 @@ export function kmSplitsFromLaps(laps: readonly LapInput[], distanceKm: number):
     }))
 }
 
-/** A run's kilometres: from its laps when the watch kept them, else rebuilt from its pace samples. */
 export function kmSplitsOf(input: KmSplitInput & { laps?: readonly LapInput[] | null }): KmSplit[] {
   const fromLaps = input.laps ? kmSplitsFromLaps(input.laps, input.distanceKm) : []
   return fromLaps.length > 1 ? fromLaps : kmSplitsFromSamples(input)
 }
 
-/** A point of a stream spread evenly over the distance, read between its two neighbouring samples. */
+/** Assumes the stream is spread evenly over the distance. */
 function streamAt(values: readonly (number | null)[], fraction: number): number | null {
   const last = values.length - 1
   if (last < 0) return null
@@ -180,12 +165,7 @@ function streamAt(values: readonly (number | null)[], fraction: number): number 
   return a + (b - a) * (at - i)
 }
 
-/**
- * Each kilometre's climb (3.0): the elevation at its end less the elevation
- * at its start, in whole metres, from the run's elevation stream laid evenly
- * over the distance - the line the Charts tab draws. It is what explains a
- * slow kilometre on a hill. Null where the stream has no reading.
- */
+/** In whole metres, from the stream laid evenly over the distance, as the Charts tab draws it. */
 export function kmElevationDeltas(
   splits: readonly Pick<KmSplit, 'distanceKm'>[],
   elevation: readonly (number | null)[] | null,
@@ -201,15 +181,9 @@ export function kmElevationDeltas(
   })
 }
 
-/** Under this many seconds apart, the two halves of a run are an even split. */
 export const EVEN_SPLIT_SEC = 5
 
-/**
- * The run's second half against its first (3.0.2), by distance: the time to
- * the halfway mark, read inside the kilometre that crosses it, against the
- * time from there to the finish. Negative is a negative split - the second
- * half the faster. Null without two kilometres to halve.
- */
+/** Negative when the second half, by distance, is the faster. */
 export function halfSplitSec(splits: readonly Pick<KmSplit, 'distanceKm' | 'durationSec'>[]): number | null {
   const totalKm = splits.reduce((sum, split) => sum + split.distanceKm, 0)
   const totalSec = splits.reduce((sum, split) => sum + split.durationSec, 0)

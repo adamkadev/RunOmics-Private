@@ -5,7 +5,7 @@ import type { FeatureCollection } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { heatBasemapStyle, maptilerStyle } from "@/lib/maptiler";
-import { percentileBounds, type LngLatBounds } from "@/lib/routeFrame";
+import { percentileBounds, type CameraPadding, type LngLatBounds } from "@/lib/routeFrame";
 import { firstSymbolLayerId, loadMapLibre } from "@/lib/maplibre";
 import { EDGE_FENCE_LAYER, EDGE_FENCE_SOURCE, addEdgeFence } from "@/lib/runMapLayers";
 import { heatAccent, hexToRgb, rgbCss, scale } from "@/lib/heatRamp";
@@ -15,10 +15,6 @@ import { buildHeatTracks, ringCoordinates } from "./mapUtils";
 import { MAP_PADDING } from "@/lib/routeFrame";
 import { watchMapMoving } from "@/lib/mapMoving";
 
-/**
- * The routes' breathing room inside the map: clear of the glass over it, in
- * the map card or in fullscreen (Liquid Glass v3, README §6.12.1).
- */
 export function fitPadding(fullscreen: boolean) {
   return fullscreen ? MAP_PADDING.fullscreen : MAP_PADDING.card;
 }
@@ -26,17 +22,12 @@ const FIT_MAX_ZOOM = 14;
 const FIT_MS = 800;
 
 const RING_SOURCE = "home-ring";
-/**
- * The home ring, as 3.1.0 drew it in dark: 4 px dashes 6 px apart (a dash
- * array counts line widths), 1.2 px wide, at 0.8. Light takes the same ring
- * in scale(accent, 0.55) - rgb(25,117,92) for mint - which reads on the
- * light ground where the accent itself was too pale.
- */
+/** 4 px dashes 6 px apart: a dash array counts in line widths. */
 const RING = { width: 1.2, opacity: 0.8, dash: [4 / 1.2, 6 / 1.2] } as const;
+/** The accent itself reads too pale on the light ground. */
 const RING_LIGHT_SHADE = 0.55;
 const DOT_SOURCE = "home-dot";
 
-/** The ring around home: what the card's sentence names. */
 export interface HomeRing {
   center: [number, number];
   radiusKm: number;
@@ -58,6 +49,48 @@ function ringData(ring: HomeRing | null): { ring: FeatureCollection; dot: Featur
   };
 }
 
+/**
+ * Added after the run layers on every style load and accent change, and
+ * removed before them, so a swap redraws them in the same order.
+ */
+export interface MapOverlay {
+  add(map: MapLibreMap, ctx: { dark: boolean }): void;
+  remove(map: MapLibreMap): void;
+}
+
+export interface MapRoutesOptions {
+  /** May change identity; the hook swaps it in place. */
+  overlay?: MapOverlay;
+  fitOverride?: LngLatBounds | null;
+  /** Defaults to the frame's own padding. */
+  fitOverridePadding?: CameraPadding;
+}
+
+const boundsKey = (b: LngLatBounds | null | undefined) =>
+  b ? [b.minLon, b.minLat, b.maxLon, b.maxLat].map((v) => v.toFixed(5)).join() : "";
+const paddingKey = (p: CameraPadding | undefined) => (p ? [p.top, p.right, p.bottom, p.left].join() : "");
+
+const isDarkPage = () => document.documentElement.classList.contains("dark");
+
+/** An overlay's failure never takes the heat down with it. */
+function drawOverlay(overlay: MapOverlay, map: MapLibreMap): boolean {
+  try {
+    overlay.add(map, { dark: isDarkPage() });
+    return true;
+  } catch (err) {
+    console.warn("Map overlay failed to draw", err);
+    return false;
+  }
+}
+
+function eraseOverlay(overlay: MapOverlay | null, map: MapLibreMap): void {
+  try {
+    overlay?.remove(map);
+  } catch (err) {
+    console.warn("Map overlay failed to clear", err);
+  }
+}
+
 const boundsArray = (b: LngLatBounds): [[number, number], [number, number]] => [
   [b.minLon, b.minLat],
   [b.maxLon, b.maxLat],
@@ -70,6 +103,7 @@ export function useMapRoutes(
   visibleIndices: number[],
   ring: HomeRing | null,
   fullscreen = false,
+  { overlay, fitOverride, fitOverridePadding }: MapRoutesOptions = {},
 ) {
   // Read when the map is made; the fit below follows it.
   const fullscreenRef = useRef(fullscreen);
@@ -80,20 +114,26 @@ export function useMapRoutes(
   const mapRef = useRef<MapLibreMap | null>(null);
   const heatRef = useRef<HeatLayer | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const overlayRef = useRef<MapOverlay | undefined>(overlay);
+  const drawnOverlayRef = useRef<MapOverlay | null>(null);
+  // False from a theme swap's setStyle until its style.load: no layer can be added meanwhile.
+  const styleLoadedRef = useRef(false);
+  useLayoutEffect(() => {
+    overlayRef.current = overlay;
+  }, [overlay]);
 
   const { clusters } = data;
   const selected = clusters[selectedIdx];
 
-  // The view follows the runs on the map: the area's own frame until its
-  // routes arrive, then the frame of the ones the filters keep - the same
-  // box, until a filter narrows it.
   const frame = useMemo(() => {
     const loaded = visibleIndices.map((i) => routes[i]).filter((coords): coords is [number, number][] => !!coords);
     return (loaded.length ? percentileBounds(loaded) : null) ?? selected?.frame ?? null;
   }, [routes, visibleIndices, selected]);
-  const frameKey = frame ? [frame.minLon, frame.minLat, frame.maxLon, frame.maxLat].map((v) => v.toFixed(5)).join() : "";
+  const frameKey = boundsKey(frame);
+  const fitTarget = fitOverride ?? frame;
+  const fitKey = fitOverride ? `override:${boundsKey(fitOverride)}:${paddingKey(fitOverridePadding)}` : frameKey;
 
-  // What the run layers draw, kept so a new style or accent can redraw it.
+  // Kept so a new style or accent can redraw them.
   const tracksRef = useRef<Float64Array[]>([]);
   const ringRef = useRef<HomeRing | null>(ring);
 
@@ -101,12 +141,13 @@ export function useMapRoutes(
     if (!containerRef.current || !clusters.length) return;
     let cancelled = false;
     let fenceCleanup: (() => void) | null = null;
-    const isDark = () => document.documentElement.classList.contains("dark");
-    // The heat ramps start from the accent's full colour in both modes
-    // (App Fixes 4d), not the darker light-mode UI accent.
+    const isDark = isDarkPage;
+    // The accent's full colour in both modes, not the darker light-mode UI accent.
     const readAccent = () => heatAccent(parseAccent(document.documentElement.getAttribute("data-accent")));
 
     function removeRunLayers(map: MapLibreMap) {
+      eraseOverlay(drawnOverlayRef.current, map);
+      drawnOverlayRef.current = null;
       heatRef.current?.remove();
       heatRef.current = null;
       fenceCleanup?.();
@@ -115,9 +156,8 @@ export function useMapRoutes(
       for (const id of [DOT_SOURCE, RING_SOURCE, HEAT_SOURCE, EDGE_FENCE_SOURCE]) if (map.getSource(id)) map.removeSource(id);
     }
 
-    // The heat, the home ring and its dot, under the place names, in the
-    // accent: the athlete's own data. A new style wipes them, and a new
-    // accent repaints them, so both call this again with what is on screen.
+    // A new style wipes the run layers and a new accent repaints them: both
+    // call this again with what is on screen.
     function addRunLayers(map: MapLibreMap) {
       removeRunLayers(map);
       const accent = readAccent();
@@ -150,7 +190,6 @@ export function useMapRoutes(
           type: "circle",
           source: DOT_SOURCE,
           paint: {
-            // Home: the accent in a 2 px white ring, 10 px across, as 3.1.0 drew it.
             "circle-radius": 3,
             "circle-color": accent,
             "circle-stroke-width": 2,
@@ -161,6 +200,9 @@ export function useMapRoutes(
       );
 
       fenceCleanup = addEdgeFence(map);
+
+      const extra = overlayRef.current;
+      if (extra && drawOverlay(extra, map)) drawnOverlayRef.current = extra;
     }
 
     async function initMap() {
@@ -182,9 +224,8 @@ export function useMapRoutes(
         style: heatBasemapStyle(maptilerStyle(dark, token), dark),
         bounds: boundsArray(first.frame),
         fitBoundsOptions: { padding: fitPadding(fullscreenRef.current), maxZoom: FIT_MAX_ZOOM },
-        // The licence-required attribution is the map's own line of text
-        // (GlobalMapClient), not an in-map control - drawing both printed
-        // "© MapTiler" twice.
+        // The licence-required attribution is MapAttribution's line of text:
+        // an in-map control too printed "© MapTiler" twice.
         attributionControl: false,
         // North stays up: the heat canvas is drawn for a flat, unrotated view.
         dragRotate: false,
@@ -195,31 +236,27 @@ export function useMapRoutes(
       map.touchZoomRotate.disableRotation();
       map.keyboard.disableRotation();
       mapRef.current = map;
-      // Cheaper glass over the canvas while it moves (README §6.12.2).
+      // Cheaper glass over the canvas while it moves.
       watchMapMoving(map);
 
-      // A theme swaps the whole style in place.
       const swapTheme = () => {
         dark = isDark();
         accent = readAccent();
+        styleLoadedRef.current = false;
         removeRunLayers(map);
         map.setStyle(heatBasemapStyle(maptilerStyle(dark, token), dark), { diff: false });
       };
 
-      // The first style and every one after it (v4.17): the camera stays,
-      // the run layers come back. Then the theme again (round 2): leaving
-      // the app, iOS draws its switcher snapshots in both appearances, and a
-      // flip back that came while this style loaded went unseen, leaving a
-      // light map on a dark page.
+      // iOS draws its app switcher snapshots in both appearances: a flip back
+      // while this style loaded went unseen, so the theme is checked again.
       map.on("style.load", () => {
         if (cancelled) return;
         addRunLayers(map);
+        styleLoadedRef.current = true;
         setMapReady(true);
         if (isDark() !== dark) swapTheme();
       });
 
-      // A theme swaps the whole style in place; an accent only repaints the
-      // run layers.
       const observer = new MutationObserver(() => {
         if (cancelled || !map.isStyleLoaded()) return;
         if (isDark() !== dark) {
@@ -242,13 +279,13 @@ export function useMapRoutes(
       heatRef.current?.remove();
       heatRef.current = null;
       fenceCleanup?.();
+      drawnOverlayRef.current = null;
+      styleLoadedRef.current = false;
       mapRef.current?.remove();
       mapRef.current = null;
       setMapReady(false);
     };
-    // Building the map creates the MapLibre instance, so it keys off `data`
-    // alone; the routes and clusters it reads are all derived from that
-    // same `data`.
+    // Keyed on `data` alone: the routes and clusters it reads all derive from it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
@@ -268,30 +305,40 @@ export function useMapRoutes(
     (map.getSource(DOT_SOURCE) as GeoJSONSource | undefined)?.setData(dot);
   }, [ring, mapReady]);
 
-  // The first fit on a new map lands at once; later ones - another area, a
-  // filter - fly there. Keyed on the frame's numbers, so a routes array
-  // rebuilt unchanged doesn't move the camera.
+  // During a theme swap, the next style.load draws whichever overlay is
+  // current then.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!mapReady || !map || !styleLoadedRef.current) return;
+    if (drawnOverlayRef.current === (overlay ?? null)) return;
+    eraseOverlay(drawnOverlayRef.current, map);
+    drawnOverlayRef.current = null;
+    if (overlay && drawOverlay(overlay, map)) drawnOverlayRef.current = overlay;
+  }, [overlay, mapReady]);
+
+  // Keyed on the frame's numbers, so a routes array rebuilt unchanged doesn't
+  // move the camera.
   const fittedOnce = useRef(false);
   useEffect(() => {
     if (!mapReady) {
       fittedOnce.current = false;
       return;
     }
-    if (!mapRef.current || !frame) return;
-    // Sized to the box it is in now (fullscreen or not) before it fits.
+    if (!mapRef.current || !fitTarget) return;
+    // The box may just have gone fullscreen or back.
     mapRef.current.resize();
-    mapRef.current.fitBounds(boundsArray(frame), {
-      padding: fitPadding(fullscreen),
+    mapRef.current.fitBounds(boundsArray(fitTarget), {
+      padding: (fitOverride && fitOverridePadding) || fitPadding(fullscreen),
       maxZoom: FIT_MAX_ZOOM,
       duration: fittedOnce.current ? FIT_MS : 0,
     });
     fittedOnce.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [frameKey, mapReady, fullscreen]);
+  }, [fitKey, mapReady, fullscreen]);
 
   const resize = useCallback(() => {
     mapRef.current?.resize();
   }, []);
 
-  return { containerRef, resize };
+  return { containerRef, resize, mapRef, mapReady };
 }

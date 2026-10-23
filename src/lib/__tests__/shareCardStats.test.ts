@@ -25,7 +25,7 @@ const RUN: ShareActivity = {
 }
 
 describe('shareStats', () => {
-  // Design review, Oct 2026: the activity page's order, one order everywhere.
+  // The activity page's order: one order everywhere.
   it('reads Distance, Time, Pace, Avg HR, units apart from the values', () => {
     expect(shareStats(RUN)).toEqual([
       { value: '10.0', unit: ' km', label: 'Distance' },
@@ -35,7 +35,7 @@ describe('shareStats', () => {
     ])
   })
 
-  // 3.0.2: to the minute, as the activity page writes it.
+  // To the minute, as the activity page writes it.
   it('writes an hour-long run as h:mm, not to the second', () => {
     expect(shareStats({ ...RUN, durationSeconds: 3999 })[1]).toEqual({ value: '1:07', unit: ' h', label: 'Time' })
   })
@@ -47,8 +47,7 @@ describe('shareStats', () => {
 })
 
 describe('shareZones', () => {
-  // Round 2, the owner's ask: Z1 and Z2 in one row, so the Stats card's
-  // legend takes two lines, not three the rep pace cut.
+  // Z1 and Z2 share a row, so the Stats card's legend takes two lines, not three.
   it('rows the zones the run spent time in, Z1 and Z2 as one, in whole percents that sum to 100', () => {
     const zones = shareZones(RUN)!
     expect(zones.rows).toEqual([
@@ -57,11 +56,10 @@ describe('shareZones', () => {
     expect(zones.rows.map(zoneName)).toEqual(['Z1–Z2', 'Z3', 'Z4', 'Z5'])
   })
 
-  // Design review, Oct 2026: 10 + 77 + 10 + 4 read 101%, and 86% easy beside a Z1 + Z2 of 87.
   it('rounds once, to the total, and heads with the rows\' own sum', () => {
     const at = (shares: number[]) => ({ ...RUN, type: 'Base' as const, hrZones: shares.map((sec, i) => ({ ...RUN.hrZones[i]!, seconds: sec })) })
     const zones = shareZones(at([96, 766, 96, 42, 0]))!
-    // The mock's own run: 10 / 76 / 10 / 4, and 86% easy.
+    // 10 / 76 / 10 / 4, and 86% easy.
     expect(zones.rows.map((r) => r.percent)).toEqual([86, 10, 4])
     expect(zones.headline.percent).toBe(86)
 
@@ -120,7 +118,7 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(shareRepHero(RUN)).toBeNull()
   })
 
-  // 4b: up to three reps that differ read as chips, more as bars, identical ones say nothing.
+  // Up to three reps that differ read as chips, more as bars, identical ones say nothing.
   it('reads the reps as chips, as bars, or not at all', () => {
     expect(shareRepDetail({ ...RUN, reps: REPS })).toEqual({
       kind: 'chips',

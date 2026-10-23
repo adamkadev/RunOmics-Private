@@ -24,7 +24,6 @@ async function loadAuth() {
   return { ...authSdk, auth: getClientAuth() }
 }
 
-/** Trades the account's token for the session cookie, then opens the page the reader came for. */
 async function openSite(account: User, setPhase: (phase: Phase) => void) {
   setPhase({ kind: 'opening' })
   let token: string
@@ -44,12 +43,7 @@ async function openSite(account: User, setPhase: (phase: Phase) => void) {
   setPhase(answer === 'notInvited' ? { kind: 'notInvited', email: account.email } : { kind: answer })
 }
 
-/**
- * The private site's one public page (RUNOMICS_PRIVATE). An account Firebase
- * still holds opens the site without a tap - the monthly session renewal
- * looks like a short load. Anyone else gets the Google sign-in, and an
- * account nobody invited is told so, with the way to try another.
- */
+/** The private site's one public page: an account Firebase still holds opens the site without a tap, so the monthly session renewal looks like a short load. */
 export function SignInClient() {
   const [phase, setPhase] = useState<Phase>(isClientFirebaseConfigured ? { kind: 'loading' } : { kind: 'unavailable' })
   const user = useRef<User | null>(null)

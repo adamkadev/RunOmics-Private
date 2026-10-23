@@ -66,11 +66,10 @@ async function openNotes() {
 
 let mockNotesUnavailable = false
 let mockFirestoreReads = 0
-/** The rules: only the owner reads a note straight from Firestore. */
+/** Firestore's rules: only the owner reads a note straight from Firestore. */
 let mockFirestoreDenied = false
 
-// The page reads a note through the app (/api/activities/[id]/note), so the
-// private site's gate covers it; Firestore is the owner's fallback.
+// The page reads a note through the app, so the private site's gate covers it; Firestore is the owner's fallback.
 function noteApi(url: string) {
   const id = decodeURIComponent(url.split('/')[3] ?? '')
   mockLastRequestedId = id
@@ -94,7 +93,6 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('ActivityNotes owner gate', () => {
 
-  // 3.0: a chip in the verdict card. A visitor with nothing to read gets none.
   it('draws no chip for a signed-out visitor when there is no note', async () => {
     render(<ActivityNotes activityId="a1" />)
     await vi.waitFor(() => expect(fetch).toHaveBeenCalled())
@@ -171,8 +169,7 @@ describe('ActivityNotes sheet', () => {
     expect(sheet).toHaveAttribute('aria-modal', 'true')
     expect(screen.getByRole('heading', { name: t.activity.notes.sheetTitle })).toBeInTheDocument()
 
-    // Liquid Glass v3's sheet header: the way out is the ✕, and the sheet
-    // slides away before it goes.
+    // The sheet slides away before it goes.
     await userEvent.click(screen.getByRole('button', { name: t.common.close }))
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
@@ -205,9 +202,6 @@ describe('ActivityNotes sheet', () => {
     expect(screen.getByRole('button', { name: t.activity.notes.addTag('trail') })).toBeInTheDocument()
   })
 
-  // Design review, Oct 2026: the chip that opens the sheet and every control
-  // on the sheet is a 44 pt target, however small it is drawn - Cancel,
-  // Save, a tag's ✕ and each suggested tag.
   it('gives every control a 44 pt target', async () => {
     mockAllNotes = [{ note: '', tags: ['rain', 'trail'] }]
     render(<ActivityNotes activityId="a1" />)
@@ -227,10 +221,8 @@ describe('ActivityNotes across a client-side navigation', () => {
   })
 
   it('does not carry one activity\'s note onto the next one', async () => {
-    // ActivityNav navigates with a <Link>, so the component stays mounted and
-    // only activityId changes. It used to `return` early on a missing note,
-    // leaving the previous activity's text on screen - and saving would then
-    // write it to the new activity's document.
+    // ActivityNav navigates with a <Link>, so the component stays mounted and only activityId changes:
+    // a note left on screen would be saved to the new activity's document.
     mockNotesById = { a1: { note: 'legs were dead', tags: ['tired'] } }
     const { rerender } = render(<ActivityNotes activityId="a1" />)
 

@@ -10,15 +10,10 @@ import { useScrollLock } from '@/lib/useScrollLock'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-/** Content up to this share of the screen is a medium detent; more is large. */
 export const MEDIUM_DETENT_MAX = 0.75
 
 export type SheetDetent = 'medium' | 'large'
 
-/**
- * Which detent a sheet takes (Liquid Glass v3, §9): medium while its content
- * fits in three quarters of the screen, large beyond.
- */
 export function detentFor(contentHeight: number, viewportHeight: number): SheetDetent {
   return contentHeight <= MEDIUM_DETENT_MAX * viewportHeight ? 'medium' : 'large'
 }
@@ -27,23 +22,10 @@ type Slot = ReactNode | ((close: () => void) => ReactNode)
 
 const render = (slot: Slot, close: () => void) => (typeof slot === 'function' ? slot(close) : slot)
 
-/** A 44 pt control in a sheet's header: a light translucent fill (F18), never glass - glass is never nested in glass. */
+/** A fill, never glass: glass is never nested in glass. */
 export const SHEET_CONTROL = 'hit-44 flex h-11 shrink-0 items-center justify-center rounded-full bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]'
 
-/**
- * A bottom sheet (Liquid Glass v3, G10). A medium detent - filters, a week,
- * a note, the export - floats as glass: 8 pt from the screen's sides and
- * foot, a 47 pt corner concentric with the display's, 22 pt in, so a 50 pt
- * capsule CTA at its foot is concentric too. A large detent - long content,
- * Filter & sort - is full width, its top corners 38 pt. Both are the same
- * glass (F18): one sheet material, whatever the detent. The detent is
- * measured on open and again on a resize; `detent="large"` fixes it.
- *
- * Grabber, then a 44 pt header row: close as a filled circle, the title
- * centred, a secondary action as a filled capsule. The scrim fades in; the
- * page behind does not scale. Controls inside take fills, never glass.
- * Above the fullscreen maps (z-50), whose filters open one.
- */
+/** z-[60]: above the fullscreen maps (z-50), whose filters open a sheet. */
 export function Sheet({
   onClose,
   title,
@@ -59,18 +41,13 @@ export function Sheet({
   children,
 }: {
   onClose: () => void
-  /** The header's title; omit it for a sheet named by `label` alone. */
   title?: ReactNode
   /** The heading that names the dialog: the header's title, or one in the content. */
   titleId?: string
-  /** The dialog's accessible name when it has no visible title. */
   label?: string
-  /** The header's trailing action, in the accent: Reset, Done. */
   action?: { label: string; onClick: () => void; disabled?: boolean }
-  /** A trailing control of the sheet's own instead of `action` (the note's Save). */
   trailing?: ReactNode
   showClose?: boolean
-  /** Under the content, 24 pt below it: the CTA (Button size="lg"). */
   footer?: Slot
   detent?: SheetDetent
   testId?: string
@@ -93,7 +70,6 @@ export function Sheet({
 
   useScrollLock()
 
-  // Measured once on open, and again on a resize (§9).
   useLayoutEffect(() => {
     if (fixedDetent) return
     const measure = () => {
@@ -137,7 +113,6 @@ export function Sheet({
           className="flex min-h-0 flex-1 flex-col px-[var(--sheet-pad)] pt-1.5"
           style={{ paddingBottom: medium ? 'var(--sheet-pad)' : 'max(env(safe-area-inset-bottom), var(--sheet-pad))' }}
         >
-          {/* The grabber: 36 x 5, 6 pt from the top, the drag handle. */}
           <div className="-mx-[var(--sheet-pad)] flex justify-center pb-2.5" {...handleProps}>
             <span aria-hidden="true" className="h-[5px] w-9 rounded-[2.5px] bg-[rgb(127_127_127/0.45)]" />
           </div>
@@ -174,7 +149,6 @@ export function Sheet({
             </div>
           )}
 
-          {/* The content scrolls on a short phone; the sheet itself does not. */}
           <div className={cn('-mx-[var(--sheet-pad)] min-h-0 flex-1 overflow-y-auto px-[var(--sheet-pad)]', bodyClassName)} style={{ touchAction: 'pan-y' }}>
             {render(children, close)}
           </div>
@@ -187,7 +161,6 @@ export function Sheet({
   )
 }
 
-/** A sheet's section label: 13 pt at 600 in sentence case, 18 pt above, 10 below. */
 export function SheetSection({ title, label, children, className }: { title: ReactNode; label?: string; children: ReactNode; className?: string }) {
   return (
     <section aria-label={label} className={cn('mt-[18px] first:mt-2.5', className)}>

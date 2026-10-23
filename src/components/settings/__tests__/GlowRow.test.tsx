@@ -6,9 +6,6 @@ import { GlowRow } from '../GlowRow'
 
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }))
 
-// Round 2 (F2): Settings › Appearance › Background glow, one switch for both
-// themes. Aura | Plain changed nothing: the two halves of the code disagreed
-// on the value's name, and dark ignored it.
 describe('Background glow', () => {
   afterEach(() => {
     localStorage.clear()

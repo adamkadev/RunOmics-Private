@@ -7,8 +7,6 @@ describe('hrBoundsFor', () => {
     expect(hrBoundsFor({ maxHrBpm: 189, restingHrBpm: 50 })).toEqual({ maxHr: 189, restingHr: 50 })
   })
 
-  // /plan used to drop to both defaults here, while the training load kept
-  // the 189: one athlete, two weekly loads.
   it('keeps a known value when only the other one is missing', () => {
     expect(hrBoundsFor({ maxHrBpm: 189 })).toEqual({ maxHr: 189, restingHr: DEFAULT_HR_BOUNDS.restingHr })
     expect(hrBoundsFor({ restingHrBpm: 50 })).toEqual({ maxHr: DEFAULT_HR_BOUNDS.maxHr, restingHr: 50 })
