@@ -66,8 +66,25 @@ jobs:
           echo "JAVA_HOME=$JAVA_HOME_21_X64" >> "$GITHUB_ENV"
           echo "$JAVA_HOME_21_X64/bin" >> "$GITHUB_PATH"
 
+      # Shared with E2E under the same key: a hit skips `npm ci`.
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
+
+      # The emulator jar is a download of its own on every run otherwise.
+      - name: Restore the Firestore emulator
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-${{ hashFiles('package.json') }}
+          restore-keys: firebase-emulators-${{ runner.os }}-
 
       - name: Test the Firestore rules against the emulator
         run: npm run test:rules
@@ -87,7 +104,16 @@ jobs:
           node-version: 24
           cache: "npm"
 
+      # Shared with E2E under the same key: a hit skips `npm ci`.
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Audit production dependencies
