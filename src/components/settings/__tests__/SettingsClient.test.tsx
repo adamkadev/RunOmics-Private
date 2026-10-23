@@ -30,6 +30,7 @@ function signedIn(email: string, claims: Record<string, unknown> = {}): MockUser
 }
 
 vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: true }))
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 
 vi.mock('@/lib/firebase', () => ({
   isClientFirebaseConfigured: true,
