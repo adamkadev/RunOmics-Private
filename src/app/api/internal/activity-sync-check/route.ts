@@ -4,9 +4,11 @@ import { sendPushesToAllDevices } from '@/lib/sendPushNotification'
 import { getNewActivities } from '@/application/usecases/GetNewActivities'
 import { formatDistance, formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export async function POST(req: NextRequest) {
   return handleInternalRoute('activity-sync-check', req, async () => {
+    await loadData()
     const { newActivities, commit } = await getNewActivities()
 
     // Stored only once every push went out, as in pr-check.

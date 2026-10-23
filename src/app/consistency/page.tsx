@@ -6,6 +6,7 @@ import { CONSISTENCY_RANGES, consistencyView, mondayOf, plusDays, type Consisten
 import { BackButton } from '@/components/ui/BackButton'
 import { loadPlannedDates } from '../_data/loadWeekTarget'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
@@ -14,6 +15,7 @@ const PLAN_DAYS_AHEAD = 42
 
 // Each ?range= window is worked out here; the switch only picks one.
 export default async function ConsistencyPage() {
+  await loadData()
   const today = appTodayIso()
   const data = getConsistencyData(today)
   const plannedDates = await loadPlannedDates(today, plusDays(mondayOf(today), PLAN_DAYS_AHEAD), getCoachingOverview(today))

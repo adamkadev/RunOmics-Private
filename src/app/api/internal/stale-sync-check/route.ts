@@ -3,9 +3,11 @@ import { handleInternalRoute } from '@/lib/internalRoute'
 import { sendPushToAllDevices } from '@/lib/sendPushNotification'
 import { getStaleSyncAlert } from '@/application/usecases/GetStaleSyncAlert'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export async function POST(req: NextRequest) {
   return handleInternalRoute('stale-sync-check', req, async () => {
+    await loadData()
     const { alert, commit } = await getStaleSyncAlert()
 
     if (alert) {

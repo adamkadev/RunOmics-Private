@@ -4,9 +4,11 @@ import { sendPushesToAllDevices } from '@/lib/sendPushNotification'
 import { getShoeWearAlerts } from '@/application/usecases/GetShoeWearAlerts'
 import { formatNumber } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export async function POST(req: NextRequest) {
   return handleInternalRoute('shoe-wear-check', req, async () => {
+    await loadData()
     const { newAlerts, commit } = await getShoeWearAlerts()
 
     // Stored only once every alert went out, as in pr-check.

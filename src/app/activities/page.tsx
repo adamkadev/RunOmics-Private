@@ -10,10 +10,12 @@ import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { sessionTypes } from '@/components/activity/activityViews'
 import { explorePlansFrom } from '@/components/explore/explorePlan'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
 export default async function ActivitiesPage() {
+  await loadData()
   const { items, total, nextOffset } = queryActivities({ limit: 9999 })
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)

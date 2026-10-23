@@ -3,12 +3,14 @@ import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const metadata = {
   title: t.pages.settings.title,
 }
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  await loadData()
   const lastSyncedAt = getLastSyncedAt()
   const activityCount = getAllActivities().length
   const { deviceName, heightCm, weightKg, lthrBpm, maxHrBpm } = getAthleteProfile()

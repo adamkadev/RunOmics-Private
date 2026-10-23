@@ -12,10 +12,12 @@ import { ProgressHub } from '@/components/profile/ProgressHub'
 import { ExploredCard } from '@/components/explore/ExploredCard'
 import { progressHubView } from '@/components/profile/progressHubView'
 import { appTodayIso } from '@/lib/calendarDate'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
 export default async function ProfilePage() {
+  await loadData()
   const today = appTodayIso()
   const data = await getProfileData(today)
   const goals = await getGoalsPageData(today)

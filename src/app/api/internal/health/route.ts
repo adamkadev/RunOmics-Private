@@ -4,11 +4,13 @@ import { handleInternalRoute } from '@/lib/internalRoute'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { integrationStatus } from '@/infrastructure/integrations'
+import { dataVersion, loadData } from '@/application/usecases/LoadData'
 
 const STALE_AFTER_DAYS = 7
 
 export async function GET(req: NextRequest) {
   return handleInternalRoute('health', req, async () => {
+    await loadData()
     const activities = getAllActivities()
     const latest = activities[0] ?? null
 
@@ -23,6 +25,7 @@ export async function GET(req: NextRequest) {
       lastActivityDate,
       daysSinceLastActivity,
       lastSyncedAt: getLastSyncedAt(),
+      ...dataVersion(),
       version: process.env.NEXT_PUBLIC_APP_VERSION ?? null,
       integrations: integrationStatus(),
     })

@@ -4,9 +4,11 @@ import { sendPushesToAllDevices } from '@/lib/sendPushNotification'
 import { getOverreachingAlerts } from '@/application/usecases/GetOverreachingAlerts'
 import { formatNumber } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export async function POST(req: NextRequest) {
   return handleInternalRoute('overreaching-check', req, async () => {
+    await loadData()
     const { newAlerts, commit } = await getOverreachingAlerts()
 
     // Stored only once the warning went out, so a failed push stays armed.

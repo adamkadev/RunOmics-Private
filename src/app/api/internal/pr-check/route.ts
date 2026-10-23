@@ -4,9 +4,11 @@ import { sendPushesToAllDevices } from '@/lib/sendPushNotification'
 import { getNewPrs } from '@/application/usecases/GetNewPrs'
 import { formatDuration } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export async function POST(req: NextRequest) {
   return handleInternalRoute('pr-check', req, async () => {
+    await loadData()
     const { newPrs, commit } = await getNewPrs()
 
     // The marks are stored only once every push went out: a rare duplicate beats a PR that is never announced.

@@ -7,10 +7,12 @@ import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { appTodayIso, isoWeekNumber } from '@/lib/calendarDate'
 import { AthleteClient } from '@/components/profile/AthleteClient'
 import { athletePageView } from '@/components/profile/athleteView'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
 export default async function AthletePage() {
+  await loadData()
   const athlete = getAthleteProfile()
   const activities = getAllActivities()
 

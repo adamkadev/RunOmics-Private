@@ -25,10 +25,12 @@ import { CelebrationOverlay } from '@/components/dashboard/CelebrationOverlay'
 import { findNextSession, sessionCard } from '@/components/dashboard/nextSession'
 import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
 export default async function DashboardPage() {
+  await loadData()
   // One date for the whole render, in the athlete's zone when one is set: the server's UTC date is off around midnight.
   const today = appTodayIso()
   const data = getDashboardData(today)

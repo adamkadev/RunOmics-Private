@@ -24,10 +24,12 @@ import { paceZones } from '@/application/usecases/GetTrainingZones'
 import { chartZones } from '@/components/activity/chartStackLanes'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  await loadData()
   const { id } = await params
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) return { title: t.activity.metaFallbackTitle }
@@ -49,6 +51,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 
 export async function generateStaticParams() {
+  await loadData()
   const activities = getActivities()
   return activities.map((a) => ({ id: a.id }))
 }
@@ -58,6 +61,7 @@ export default async function ActivityDetailPage({
 }: {
   params: Promise<{ id: string }>
 }) {
+  await loadData()
   const { id } = await params
   const activities = getActivities()
   const index = activities.findIndex((a) => a.id === id)

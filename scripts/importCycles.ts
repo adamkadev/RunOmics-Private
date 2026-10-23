@@ -102,3 +102,21 @@ export function findCycles(graph: Map<string, string[]>): string[][] {
   for (const node of [...graph.keys()].sort()) if (!index.has(node)) visit(node)
   return cycles.sort((a, b) => a[0]!.localeCompare(b[0]!))
 }
+
+/** Pages, layouts and routes that reach the data layer without awaiting loadData() themselves. */
+export function entryPointsWithoutLoadData(graph: Map<string, string[]>, root = process.cwd()): string[] {
+  const reaches = new Map<string, boolean>()
+  function reachesData(file: string): boolean {
+    if (file === 'src/infrastructure/dataFs.ts') return true
+    if (!reaches.has(file)) {
+      reaches.set(file, false)
+      reaches.set(file, (graph.get(file) ?? []).some(reachesData))
+    }
+    return reaches.get(file)!
+  }
+
+  return [...graph.keys()]
+    .filter((file) => /^src\/app\/(?:.+\/)?(?:page|layout|route)\.tsx?$/.test(file) && reachesData(file))
+    .filter((file) => !/\bawait loadData\(\)/.test(fs.readFileSync(path.join(root, file), 'utf-8')))
+    .sort()
+}

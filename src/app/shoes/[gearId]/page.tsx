@@ -20,6 +20,7 @@ import { WearBar } from '@/components/shoes/WearBar'
 import { formatClock, formatDate, formatDateRange, formatDistance, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { activityTitle, intendedType } from '@/lib/activityTitle'
+import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
@@ -55,12 +56,14 @@ export async function generateMetadata({
 }: {
   params: Promise<{ gearId: string }>
 }): Promise<Metadata> {
+  await loadData()
   const { gearId } = await params
   const shoe = getShoeDetail(gearId)
   return { title: shoe?.name ?? t.pages.shoes.title }
 }
 
 export async function generateStaticParams() {
+  await loadData()
   return Object.keys(getShoeRegistry()).map((gearId) => ({ gearId }))
 }
 
@@ -73,6 +76,7 @@ export default async function ShoeDetailPage({
 }: {
   params: Promise<{ gearId: string }>
 }) {
+  await loadData()
   const { gearId } = await params
   const shoe = getShoeDetail(gearId)
   if (!shoe) notFound()
