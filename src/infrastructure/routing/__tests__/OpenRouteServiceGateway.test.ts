@@ -157,6 +157,20 @@ describe('OpenRouteServiceGateway', () => {
     expect(await roundTrip()).toEqual({ ok: false, kind: 'upstream' })
   })
 
+  it('stops waiting when the caller goes, quietly: nothing wrong with the provider', async () => {
+    const caller = new AbortController()
+    fetchMock.mockImplementation(
+      (_url: string, init: RequestInit) =>
+        new Promise((_resolve, reject) => init.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))),
+    )
+
+    const pending = new OpenRouteServiceGateway('ors-test-key').roundTrip({ ...REQUEST, signal: caller.signal })
+    caller.abort()
+
+    expect(await pending).toEqual({ ok: false, kind: 'upstream' })
+    expect(logged()).toEqual([])
+  })
+
   it('reads a 200 without a usable line as upstream', async () => {
     fetchMock.mockResolvedValue(json({ type: 'FeatureCollection', features: [] }))
     expect(await roundTrip()).toEqual({ ok: false, kind: 'upstream' })

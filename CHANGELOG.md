@@ -56,6 +56,19 @@ All notable changes to this project are documented in this file.
   sheet is a centred card, and the controls under a sheet are taken away
   rather than blurred. `?quartier=<id>` opens a quartier's sheet.
 
+- Explore, plan a run (X6): "Plan a run" (insight card, expanded map,
+  quartier sheet) opens the route generator on that quartier: the loop in
+  accent for new ground and the foreground colour for streets already run,
+  a dashed line back home, and a panel with the planned session, a 0.5 km
+  distance stepper, Avoid busy roads and New streets first, the distance,
+  time at the plan's pace, climb and share of new ground. Regenerate shows
+  the next best loop; Download GPX saves (or, in the iPhone app, shares)
+  `RunOmics-<Quartier>-<km>km.gpx`, then reads Saved with a Share button.
+  Plan's session cards get "Find a route", which opens it with that
+  session's whole distance and pace, and Progress gets an Explored card:
+  the share explored, quartiers complete, one segment per quartier and the
+  next one to run.
+
 - Cards are never blurred (D1): over the light glow each card had its own
   24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
   Activities. They are now 88 % white with no blur, so the glow still tints

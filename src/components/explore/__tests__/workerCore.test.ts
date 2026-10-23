@@ -251,6 +251,17 @@ describe('addTracks and coverage', () => {
     expect(given.home).toEqual([1, 2])
   })
 
+  it('takes that home from the runs asked for alone, not from every run the area holds', async () => {
+    const { send } = await loaded()
+    // Another cluster's runs, added by the map in the same session, sit in the same area.
+    await send({ type: 'addTracks', areaKey: KEY, ...buffers(['r1', 'r2', 'r3']) })
+    const own = medianStart(['r1', 'r2'].map((id) => lonLatRoute(id)[0]!))
+    expect(own).not.toEqual(medianStart(['r1', 'r2', 'r3'].map((id) => lonLatRoute(id)[0]!)))
+
+    const coverage = ok<{ home: unknown }>(await send({ type: 'coverage', areaKey: KEY, activityIds: ['r1', 'r2'], home: null, homeFromTracks: true }))
+    expect(coverage.home).toEqual(own)
+  })
+
   it('answers a coverage sent right after addTracks with the new runs counted', async () => {
     const { send, cache } = await loaded()
     cache.hold()

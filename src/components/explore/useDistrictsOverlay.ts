@@ -9,6 +9,7 @@ import {
   addDistrictsLayers,
   removeDistrictsLayers,
   setDistrictsData,
+  setDistrictsLabelOnly,
   setDistrictsVisible,
   setSelectedUnit,
 } from './districtsLayer'
@@ -18,10 +19,12 @@ export interface DistrictsOverlayState {
   coverage: AreaCoverage | null
   visible: boolean
   selectedId: string | null
+  /** The one unit named on the map (the route generator's); null or absent names every unit. */
+  labelOnly?: string | null
 }
 
 /** The accent the page is painted in now, as the heat reads it. */
-function pageAccent() {
+export function pageAccent() {
   return parseAccent(document.documentElement.getAttribute('data-accent'))
 }
 
@@ -45,6 +48,7 @@ export function useDistrictsOverlay(state: DistrictsOverlayState, enabled: boole
           accent: pageAccent(),
           visible: current.visible,
           selectedId: current.selectedId,
+          labelOnly: current.labelOnly ?? null,
         })
         setDistrictsData(map, current.coverage, current.area)
       },
@@ -64,6 +68,7 @@ export function useDistrictsOverlay(state: DistrictsOverlayState, enabled: boole
  */
 export function useDistrictsSync(mapRef: RefObject<MapLibreMap | null>, mapReady: boolean, state: DistrictsOverlayState): void {
   const { area, coverage, visible, selectedId } = state
+  const labelOnly = state.labelOnly ?? null
   useEffect(() => {
     const map = mapRef.current
     if (mapReady && map) setDistrictsData(map, coverage, area)
@@ -76,4 +81,8 @@ export function useDistrictsSync(mapRef: RefObject<MapLibreMap | null>, mapReady
     const map = mapRef.current
     if (mapReady && map) setSelectedUnit(map, selectedId)
   }, [mapRef, mapReady, selectedId])
+  useEffect(() => {
+    const map = mapRef.current
+    if (mapReady && map) setDistrictsLabelOnly(map, labelOnly)
+  }, [mapRef, mapReady, labelOnly])
 }

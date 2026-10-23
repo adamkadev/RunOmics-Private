@@ -1,6 +1,16 @@
 import type { ActivityType } from '@/domain/activity/types'
 import type { Strings } from './en'
 
+/**
+ * « à » devant un nom de lieu : « à Metz », mais « au Ban-Saint-Martin » et
+ * « aux Arènes » - l’article se contracte (« La » et « L’ » restent).
+ */
+export function aLieu(name: string): string {
+  const article = /^(les?)\s+(.+)$/iu.exec(name)
+  if (!article) return `à ${name}`
+  return `${article[1]!.toLowerCase() === 'le' ? 'au' : 'aux'} ${article[2]}`
+}
+
 /** "+6" as "up 6", "−23" as "down 23", "0" as level. */
 function moveWords(delta: string, up: string, down: string, level: string): string {
   const sign = delta.charAt(0)
@@ -315,10 +325,12 @@ export const fr = {
         ofTotal: (total: number) => `sur ${total}`,
         exploredStat: 'Exploré',
         nextStat: 'Prochain quartier',
-        planRunIn: (name: string) => `Prévoir une sortie à ${name}`,
+        planRunIn: (name: string) => `Prévoir une sortie ${aLieu(name)}`,
         nextToExplore: 'Prochain à explorer',
         nextMeta: (pct: string, distance: string | null) => (distance ? `${pct} exploré · à ${distance} de chez toi` : `${pct} exploré`),
-        planRun: 'Prévoir une sortie',
+        nextMetaShort: (pct: string, distance: string | null) => (distance ? `${pct} exploré · à ${distance}` : `${pct} exploré`),
+        // Le bouton de la carte du plan agrandi (S1) : court, pour que la ligne d’à côté reste entière.
+        planRun: 'Y courir',
         sheet: {
           quartierOf: (commune: string) => `Quartier · ${commune}`,
           commune: 'Commune',
@@ -330,6 +342,44 @@ export const fr = {
           fromHome: 'Depuis chez toi',
           planRunHere: 'Prévoir une sortie ici',
         },
+      },
+      explore: {
+        back: 'Retour',
+        title: (name: string) => `Courir ${aLieu(name)}`,
+        loop: 'Boucle',
+        newShare: (pct: string) => `${pct} inédit`,
+        todaysPlan: 'Au programme',
+        planFor: (day: string) => `Programme du ${day}`,
+        usePlanDistance: (km: string) => `Reprendre la distance du programme, ${km}`,
+        distance: 'Distance',
+        shorter: 'Plus court',
+        longer: 'Plus long',
+        options: 'Options du parcours',
+        avoidBusyRoads: 'Éviter les grands axes',
+        newStreetsFirst: 'Rues nouvelles d’abord',
+        summary: { avoidBusyRoads: 'Sans grands axes', newStreetsFirst: 'Rues inédites' },
+        distanceStat: 'Distance',
+        timeStat: 'Durée',
+        atPace: (pace: string) => `À ${pace}`,
+        climbStat: 'Dénivelé',
+        newStat: 'Inédit',
+        regenerate: 'Autre boucle',
+        download: 'Télécharger',
+        saved: 'Enregistré',
+        share: 'Partager le GPX',
+        footnote: 'Fichier GPX · à importer dans Garmin Connect, Coros ou Suunto',
+        generating: 'Recherche de boucles…',
+        retry: 'Réessayer',
+        errors: {
+          notConfigured: 'La génération de parcours n’est pas configurée sur ce déploiement.',
+          auth: 'Connecte-toi en tant que propriétaire pour prévoir un parcours.',
+          rateLimited: 'Trop de demandes. Réessaie dans une minute.',
+          dailyQuota: 'Le quota de parcours du jour est épuisé.',
+          noRoute: 'Aucune boucle trouvée ici. Essaie une autre distance.',
+          upstream: 'Le service d’itinéraires n’a pas répondu. Réessaie.',
+        },
+        gpxName: (name: string, km: string) => `RunOmics · ${name} · ${km} km`,
+        gpxDescription: (name: string) => `Une boucle ${aLieu(name)}, prévue avec RunOmics.`,
       },
     },
     shoes: {
@@ -1883,6 +1933,11 @@ export const fr = {
       time: 'Temps',
       hours: 'h',
       openYears: 'Kilomètres par année',
+      explored: 'Exploré',
+      // 0 et 1 au singulier.
+      exploredComplete: (done: number, total: number) => `${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}`,
+      exploredNext: (name: string, pct: string) => ({ lead: 'Prochain : ', name, tail: ` · ${pct}` }),
+      exploredAllComplete: (total: number) => (total > 1 ? `Les ${total} quartiers sont complets` : 'Ton quartier est complet'),
     },
     hero: {
       namePlaceholder: 'Ton nom',
@@ -2144,6 +2199,7 @@ export const fr = {
       hrTarget: 'Fréquence cardiaque',
       hrTargetZone: (zone: number) => `Fréquence cardiaque · Z${zone}`,
       hrCap: (bpm: number) => `≤ ${bpm}`,
+      findRoute: 'Trouver un parcours',
     },
     continuous: 'continu',
     restCard: {

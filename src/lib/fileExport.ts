@@ -1,4 +1,11 @@
-export async function saveFileWithFallback(file: File): Promise<void> {
+/**
+ * How a save ended: handed to the share sheet, downloaded, or closed by the
+ * athlete in the share sheet (nothing saved). Callers that only need the
+ * file out can ignore it; the route generator's "Saved" state reads it.
+ */
+export type SaveOutcome = 'shared' | 'downloaded' | 'cancelled'
+
+export async function saveFileWithFallback(file: File): Promise<SaveOutcome> {
   const isIosPwa =
     /iPhone|iPad/.test(navigator.userAgent) &&
     'standalone' in navigator &&
@@ -6,10 +13,10 @@ export async function saveFileWithFallback(file: File): Promise<void> {
   if (isIosPwa && navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file] })
-      return
+      return 'shared'
     } catch (err) {
       if ((err as Error).name !== 'AbortError') console.error(err)
-      else return
+      else return 'cancelled'
     }
   }
 
@@ -21,4 +28,5 @@ export async function saveFileWithFallback(file: File): Promise<void> {
   a.click()
   document.body.removeChild(a)
   setTimeout(() => URL.revokeObjectURL(url), 1000)
+  return 'downloaded'
 }

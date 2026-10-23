@@ -2,7 +2,7 @@
 import { setDaySkipped, useSkippedDays } from '@/lib/skippedDays'
 
 import Link from 'next/link'
-import { Check, ChevronRight } from 'lucide-react'
+import { Check, ChevronRight, MapPin } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { sessionZone } from '@/lib/colors'
@@ -10,6 +10,9 @@ import { sessionHrCapBpm } from '@/domain/training/hrTarget'
 import { sessionLabel } from '@/lib/activityTitle'
 import { formatClock, formatDurationWords, formatPace, formatPercent, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
+import { ButtonLink } from '@/components/ui/Button'
+import { exploreRouteHref, planRouteKm } from '@/components/explore/exploreHref'
+import { planPaceSecPerKm } from './planPace'
 import type { PlanWorkoutView } from './planWorkoutView'
 import { kindLabel, type DayKind } from './sessionKind'
 import { intensityBlocks, stepRows, type StepTone } from './workoutSteps'
@@ -57,15 +60,22 @@ function TargetTile({ label, value }: { label: string; value: string }) {
  * A session of one step has no structure to draw (App Fixes 3b): a full-width
  * block said "structured" about an easy run. It shows its targets instead -
  * the pace range, and the zone and bpm cap to hold.
+ *
+ * "Find a route" (Explore, E5) closes the card when the athlete's home area
+ * has quartiers (`exploreAvailable`): it opens the map's route generator with
+ * the session's distance. Not on a race, and not on a session with no
+ * distance to fill in.
  */
 export function PlannedWorkoutCard({
   workout,
   kind,
   hrZoneBoundsBpm = null,
+  exploreAvailable = false,
 }: {
   workout: PlanWorkoutView
   kind: DayKind
   hrZoneBoundsBpm?: readonly number[] | null
+  exploreAvailable?: boolean
 }) {
   const s = t.plan.session
   const summary = workoutSummary(workout)
@@ -85,6 +95,7 @@ export function PlannedWorkoutCard({
     : (summary.paces[0] ? `${formatClock(summary.paces[0].pace[0])}–${formatClock(summary.paces[0].pace[1])}` : effortPaceRange(workout.effort))
   const hrCap = sessionHrCapBpm(workout.hr, hrZoneBoundsBpm)
   const hrZone = workout.hr?.zone ?? null
+  const routeHref = exploreAvailable && kind.type !== 'Race' ? findRouteHref(workout) : null
 
   return (
     <section data-testid={`plan-workout-${workout.key}`} className={CARD}>
@@ -142,8 +153,36 @@ export function PlannedWorkoutCard({
         ))}
       </ol>
       )}
+      {routeHref && (
+        // A tinted secondary button: the card stays solid, no glass (E5).
+        // Not prefetched: Activities carries every run.
+        <ButtonLink
+          href={routeHref}
+          prefetch={false}
+          variant="secondary"
+          size="lg"
+          className="mt-3.5 w-full gap-2 text-accent-text"
+          data-testid="find-route"
+        >
+          <MapPin size={18} strokeWidth={2.2} aria-hidden="true" />
+          {s.findRoute}
+        </ButtonLink>
+      )}
     </section>
   )
+}
+
+/**
+ * The route generator for a session: its whole distance (strides and
+ * recoveries included) on the stepper's 0.5 km grid, at the session's
+ * average pace (its duration over its distance, else its easy or target
+ * pace), and its day - so the generator names this session, not today's.
+ * Null when it has no distance.
+ */
+function findRouteHref(workout: PlanWorkoutView): string | null {
+  const km = planRouteKm(workout.distanceM)
+  if (km === null) return null
+  return exploreRouteHref({ km, paceSecPerKm: planPaceSecPerKm(workout), date: workout.date, from: 'plan' })
 }
 
 /**

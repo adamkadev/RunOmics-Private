@@ -64,9 +64,10 @@ export interface CoverageOptions {
   /** For distances and the next quartier; null when unknown. */
   home: LonLat | null
   /**
-   * With no `home`, use the median start of every run added to the area
-   * (`medianStart`): a page that never loads the map can still rank the
-   * next quartier, and the start points never leave the worker's memory.
+   * With no `home`, use the median start of the runs counted - `activityIds`,
+   * or every run added to the area (`medianStart`): a page that never loads
+   * the map can still rank the next quartier, and the start points never
+   * leave the worker's memory.
    */
   homeFromTracks?: boolean
 }

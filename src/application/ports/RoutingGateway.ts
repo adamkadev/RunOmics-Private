@@ -16,6 +16,12 @@ export interface RoundTripRequest {
    * way, so an adapter that cannot ask for quiet streets loses nothing.
    */
   avoidBusyRoads: boolean
+  /**
+   * The caller has gone (the athlete asked for another distance): stop
+   * waiting. The provider may well have counted the call already; nothing
+   * more is asked of it after this.
+   */
+  signal?: AbortSignal
 }
 
 /**

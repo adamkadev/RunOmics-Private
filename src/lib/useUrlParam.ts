@@ -34,3 +34,17 @@ export function useUrlParam(name: string): [string | null, (value: string | null
 
   return [value, set]
 }
+
+/**
+ * Takes several params out of the address at once - one history entry
+ * replaced, one popstate - as `useUrlParam`'s setter does for one. Nothing
+ * happens when none of them is there.
+ */
+export function removeUrlParams(names: readonly string[]): void {
+  const url = new URL(window.location.href)
+  const present = names.filter((name) => url.searchParams.has(name))
+  if (present.length === 0) return
+  for (const name of present) url.searchParams.delete(name)
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+  window.dispatchEvent(new PopStateEvent('popstate'))
+}

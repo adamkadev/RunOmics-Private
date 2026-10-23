@@ -210,11 +210,14 @@ function Records({ records, vo2max }: { records: ProgressHubView['records']; vo2
 /**
  * Progress · Season (H01, M12; 3.0): the race dominates, then the year
  * against its goal and the records. Under them, at the owner's request
- * (3.0.1), the tiles from before 3.0: VO₂ max and Consistency side by side,
- * the shoes, and all time with its km by year; each opens its page.
- * Settings is the gear.
+ * (3.0.1), the tiles from before 3.0: Consistency, and beside it the
+ * Explored card when there is one (Explore, E5), the shoes, and all time
+ * with its km by year; each opens its page. Settings is the gear.
+ *
+ * `explored` is a slot: the card is a client island (it asks the Explore
+ * worker), and the page leaves it out when the home area has no quartiers.
  */
-export function ProgressHub({ view }: { view: ProgressHubView }) {
+export function ProgressHub({ view, explored }: { view: ProgressHubView; explored?: ReactNode }) {
   const h = t.profile.hub
   const { vo2max, consistency, shoes, allTime } = view
   const bestYearKm = Math.max(1, ...allTime.years.slice(-2).map((y) => y.km))
@@ -241,7 +244,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
       <RaceCard race={view.race} />
       <YearCard view={view} />
 
-      {/* VO2 max and Consistency side by side on a wide screen, stacked on a
+      {/* Consistency and Explored side by side on a wide screen, stacked on a
           phone; then the shoes and all time (as before 3.0). */}
       <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2 sm:items-start" data-testid="progress-columns">
         <Tile href="/consistency" title={h.consistency} testId="consistency-tile">
@@ -277,6 +280,7 @@ export function ProgressHub({ view }: { view: ProgressHubView }) {
             ))}
           </div>
         </Tile>
+        {explored}
       </div>
 
       <Records records={view.records} vo2max={vo2max} />

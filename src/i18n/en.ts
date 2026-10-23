@@ -351,6 +351,8 @@ export const en = {
         // The expanded map's card (S1). `pct` is "8%"; `distance` "1.9 km", or null without a home.
         nextToExplore: 'Next to explore',
         nextMeta: (pct: string, distance: string | null) => (distance ? `${pct} explored · ${distance} from home` : `${pct} explored`),
+        // The same, when it can't show whole beside the Plan a run button (a long name, two digits).
+        nextMetaShort: (pct: string, distance: string | null) => (distance ? `${pct} explored · ${distance} away` : `${pct} explored`),
         planRun: 'Plan a run',
         // A quartier's sheet (S2), opened by a tap on it.
         sheet: {
@@ -365,6 +367,52 @@ export const en = {
           fromHome: 'From home',
           planRunHere: 'Plan a run here',
         },
+      },
+      // Explore's route generator (S3/S4): a loop in one quartier, sized to
+      // today's plan, new streets in the accent, out as a GPX file.
+      explore: {
+        back: 'Back',
+        title: (name: string) => `Run in ${name}`,
+        loop: 'Loop',
+        // The title pill's tail: `pct` is "94%".
+        newShare: (pct: string) => `${pct} new`,
+        todaysPlan: 'Today’s plan',
+        // The row for another day's session, from Plan's "Find a route". `day` is "Sat 24".
+        planFor: (day: string) => `Plan for ${day}`,
+        // The plan row as a button: back to the plan's distance. `km` is "9.5 km".
+        usePlanDistance: (km: string) => `Use the plan’s distance, ${km}`,
+        distance: 'Distance',
+        shorter: 'Shorter',
+        longer: 'Longer',
+        options: 'Route options',
+        avoidBusyRoads: 'Avoid busy roads',
+        newStreetsFirst: 'New streets first',
+        // The options row's summary, "Loop · Avoid busy roads · New streets first": one line on a 393 pt phone.
+        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first' },
+        distanceStat: 'Distance',
+        timeStat: 'Time',
+        // Under the time: the pace it is worked out at, "5:50".
+        atPace: (pace: string) => `At ${pace}`,
+        climbStat: 'Climb',
+        newStat: 'New',
+        regenerate: 'Regenerate',
+        download: 'Download GPX',
+        saved: 'Saved',
+        share: 'Share GPX',
+        footnote: 'GPX file · import into Garmin Connect, Coros or Suunto',
+        generating: 'Finding loops…',
+        retry: 'Try again',
+        errors: {
+          notConfigured: 'Route generation isn’t set up on this deployment.',
+          auth: 'Sign in as the owner to plan routes.',
+          rateLimited: 'Too many requests. Try again in a minute.',
+          dailyQuota: 'Today’s route quota is used up.',
+          noRoute: 'No loop found here. Try another distance.',
+          upstream: 'The routing service didn’t answer. Try again.',
+        },
+        // The GPX's name and description. `km` is "8.1".
+        gpxName: (name: string, km: string) => `RunOmics · ${name} · ${km} km`,
+        gpxDescription: (name: string) => `A loop in ${name}, planned with RunOmics.`,
       },
     },
     shoes: {
@@ -2075,6 +2123,13 @@ export const en = {
       time: 'Time',
       hours: 'h',
       openYears: 'Kilometres by year',
+      // The Explored card (Explore, E5): how much of the home area has been
+      // run, and the next quartier to run. Opens the map's Districts layer.
+      explored: 'Explored',
+      exploredComplete: (done: number, total: number) => `${done} of ${total} quartier${total === 1 ? '' : 's'} complete`,
+      // "Next: Borny · 12%", the name in ink. `pct` is formatted ("12%").
+      exploredNext: (name: string, pct: string) => ({ lead: 'Next: ', name, tail: ` · ${pct}` }),
+      exploredAllComplete: (total: number) => (total === 1 ? 'Your quartier is complete' : `All ${total} quartiers complete`),
     },
     hero: {
       namePlaceholder: 'Your name',
@@ -2355,6 +2410,8 @@ export const en = {
       hrTarget: 'Heart rate',
       hrTargetZone: (zone: number) => `Heart rate · Z${zone}`,
       hrCap: (bpm: number) => `≤ ${bpm}`,
+      // Opens the map's route generator with the session's distance (Explore, E5).
+      findRoute: 'Find a route',
     },
     continuous: 'continuous',
     // The rest day on one line, then the week's sessions still to come (3.0.2).

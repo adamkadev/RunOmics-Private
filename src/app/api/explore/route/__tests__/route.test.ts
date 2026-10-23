@@ -92,7 +92,8 @@ describe('POST /api/explore/route', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ candidates: [loop(1), loop(2), loop(3)], attribution: ATTRIBUTION })
     expect(res.headers.get('cache-control')).toBe('private, no-store')
-    expect(mocks.roundTrip).toHaveBeenCalledWith({ start: [-150, 0], lengthM: 8000, seed: 1, avoidBusyRoads: true })
+    // With the request's own signal: a client that moves on stops the batch.
+    expect(mocks.roundTrip).toHaveBeenCalledWith({ start: [-150, 0], lengthM: 8000, seed: 1, avoidBusyRoads: true, signal: expect.any(AbortSignal) })
   })
 
   it.each([

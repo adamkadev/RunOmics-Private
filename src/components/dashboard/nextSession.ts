@@ -22,8 +22,11 @@ export interface NextSession {
   workout?: HeroWorkoutView
 }
 
-/** The plan's session on a day, in Plan's priority: the coach's over Garmin's, a cancelled one none. */
-function sessionOn(
+/**
+ * The plan's session on a day, in Plan's priority: the coach's over Garmin's,
+ * a cancelled one none. Today's, as Today shows it, is `sessionOn(today, …)`.
+ */
+export function sessionOn(
   date: string,
   coach: readonly Parameters<typeof coachWorkoutView>[0][],
   garmin: readonly PlannedWorkout[],

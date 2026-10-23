@@ -109,6 +109,30 @@ describe('generateLoopRoutes', () => {
     expect(await generateLoopRoutes(gateway, REQUEST)).toEqual({ ok: false, kind: worst })
   })
 
+  it('asks the provider nothing more once the caller has gone: no second try, each call told', async () => {
+    const caller = new AbortController()
+    const { gateway, calls } = fakeGateway((req) => {
+      // The client moves on while the first answer (far off the target) comes back.
+      caller.abort()
+      return found(req.seed, 10_000)
+    })
+
+    const result = await generateLoopRoutes(gateway, { ...REQUEST, seeds: [1] }, { signal: caller.signal })
+
+    expect(calls).toHaveLength(1)
+    expect(calls[0]!.signal).toBe(caller.signal)
+    expect(result).toEqual({ ok: true, candidates: [loop(1, 10_000)] })
+  })
+
+  it('asks for nothing when the caller is gone before the batch starts', async () => {
+    const caller = new AbortController()
+    caller.abort()
+    const { gateway, calls } = fakeGateway((req) => found(req.seed, 8000))
+
+    expect(await generateLoopRoutes(gateway, REQUEST, { signal: caller.signal })).toEqual({ ok: false, kind: 'upstream' })
+    expect(calls).toHaveLength(0)
+  })
+
   it('reads a gateway that throws as a provider failure', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const gateway: RoutingGateway = { roundTrip: async () => Promise.reject(new Error('bug')) }

@@ -331,33 +331,25 @@ describe('a quartier’s sheet on the map (S2) and the expanded Districts map (S
     await waitFor(() => expect(map.fits.at(-1)?.options.padding).toEqual(MAP_PADDING.card))
   })
 
-  it('in the expanded map, opens the next quartier’s sheet from its card, and frames it above the sheet', async () => {
+  it('in the expanded map, frames a tapped quartier above its sheet, and takes the next quartier’s card off; Escape closes the sheet alone', async () => {
     localStorage.setItem(MAP_LAYER_KEY, 'districts')
     const map = await openMap()
     await districtsReady(map)
     fireEvent.click(screen.getByRole('button', { name: t.pages.map.fullscreen }))
-    fireEvent.click(await screen.findByTestId('next-quartier-card'))
+    await screen.findByTestId('next-quartier-card')
+    map.drawn = [{ layer: DISTRICTS_FILL_LAYER, properties: { id: 'test-bravo', name: 'Bravo' } }]
+
+    await tap(map)
 
     expect(screen.getByRole('dialog', { name: 'Bravo' })).toBeInTheDocument()
     expect(selected(map)).toContain('"test-bravo"')
     expect(map.cameraQueries.at(-1)?.options.padding).toMatchObject({ bottom: SCREEN.bottom - SHEET_TOP + ABOVE_SHEET })
     expect(screen.queryByTestId('next-quartier-card')).toBeNull()
-  })
 
-  it('gives focus back to the next quartier’s card when the sheet it opened closes', async () => {
-    localStorage.setItem(MAP_LAYER_KEY, 'districts')
-    const map = await openMap()
-    await districtsReady(map)
-    fireEvent.click(screen.getByRole('button', { name: t.pages.map.fullscreen }))
-    const card = await screen.findByTestId('next-quartier-card')
-    card.focus()
-    fireEvent.click(card)
-    expect(screen.getByRole('dialog', { name: 'Bravo' })).toBeInTheDocument()
-
-    // Escape closes the sheet alone; the card is back, a new one, focused.
+    // Escape closes the sheet alone; the card is back and the map stays expanded.
     fireEvent.keyDown(document, { key: 'Escape' })
     await waitFor(() => expect(sheet()).toBeNull())
-    expect(document.activeElement).toBe(screen.getByTestId('next-quartier-card'))
+    expect(screen.getByTestId('next-quartier-card')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: t.pages.map.exitFullscreen })).toBeInTheDocument()
   })
 

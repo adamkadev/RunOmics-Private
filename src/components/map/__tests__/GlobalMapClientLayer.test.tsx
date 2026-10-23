@@ -109,7 +109,8 @@ describe('the map’s layer: Heat or Districts', () => {
     expect(screen.queryByTestId('heat-legend')).toBeNull()
     await waitFor(() => expect(lastCard()?.headline.accent).toBe('Bravo'))
     expect(lastCard()?.eyebrow).toContain(t.pages.map.allYears)
-    expect(lastCard()?.action).toBeUndefined()
+    // Its button plans a run in the next quartier (the route generator).
+    expect(lastCard()?.action?.label).toBe(t.pages.map.districts.planRunIn('Bravo'))
     expect(engine.coverage).toHaveBeenCalledWith(REF, expect.objectContaining({ activityIds: ['run-a', 'run-b'] }))
 
     // And back: the heat card, the heat legend.
@@ -202,8 +203,8 @@ describe('the map’s layer: Heat or Districts', () => {
     expect(next).toHaveTextContent(t.pages.map.districts.nextToExplore)
     expect(next).toHaveTextContent('Bravo')
     expect(next).toHaveTextContent('50% explored · 0.6 km from home')
-    // No way to plan a run yet (Phase 5): no button for it.
-    expect(screen.queryByRole('button', { name: t.pages.map.districts.planRun })).toBeNull()
+    // Its button plans a run there (the route generator).
+    expect(next).toContainElement(screen.getByRole('button', { name: t.pages.map.districts.planRun }))
 
     // Back to the heat: its card again, in the same column.
     fireEvent.click(layersButton()!)
@@ -211,12 +212,12 @@ describe('the map’s layer: Heat or Districts', () => {
     expect(screen.queryByTestId('next-quartier-card')).toBeNull()
   })
 
-  it('in fullscreen, opens the next quartier’s sheet from its card; Escape closes the sheet and keeps the map expanded', async () => {
-    localStorage.setItem(MAP_LAYER_KEY, 'districts')
+  it('in fullscreen, Escape closes a quartier’s sheet alone and keeps the map expanded', async () => {
+    window.history.replaceState(null, '', '/activities?view=map&layer=districts&quartier=test-bravo')
     renderMap()
+    // Expanded before the coverage is in; the link's sheet opens over the expanded map.
     fireEvent.click(screen.getByRole('button', { name: t.pages.map.fullscreen }))
-    fireEvent.click(await screen.findByTestId('next-quartier-card'))
-    expect(screen.getByRole('dialog', { name: 'Bravo' })).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: 'Bravo' })).toBeInTheDocument()
     // The controls under the sheet are off the map, not just covered.
     for (const id of ['next-quartier-card', 'layers-button', 'map-attribution', 'districts-legend']) expect(screen.queryByTestId(id)).toBeNull()
 

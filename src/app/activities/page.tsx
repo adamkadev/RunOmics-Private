@@ -6,7 +6,10 @@ import { ActivityListClient } from '@/components/activities/ActivityListClient'
 import { appTodayIso } from '@/lib/calendarDate'
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
+import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { sessionTypes } from '@/components/activity/activityViews'
+import { explorePlansFrom } from '@/components/explore/explorePlan'
 
 export const revalidate = 3600
 
@@ -15,6 +18,15 @@ export default async function ActivitiesPage() {
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const today = appTodayIso()
+  const coaching = getCoachingOverview(today)
+  const exploreAreas = getExploreAreas()
+  // The sessions of the next four weeks for the route generator's plan row
+  // (today's, or the one Plan's "Find a route" names): trimmed copies (name,
+  // distance, pace), never the coach's overview. Only where the map has
+  // Districts to plan a run in.
+  const explorePlans = exploreAreas.length > 0
+    ? explorePlansFrom(today, coaching?.workouts ?? [], await getPlannedWorkouts(), await getTrainingZones())
+    : []
 
   return (
     <ActivityListClient
@@ -25,8 +37,9 @@ export default async function ActivitiesPage() {
       today={today}
       shoeNames={Object.fromEntries(getShoeStats().map((shoe) => [shoe.gearId, shoe.name]))}
       mapData={getMapShellData()}
-      exploreAreas={getExploreAreas()}
-      sessionTypes={sessionTypes(getCoachingOverview(today)?.workouts ?? [], items)}
+      exploreAreas={exploreAreas}
+      explorePlans={explorePlans}
+      sessionTypes={sessionTypes(coaching?.workouts ?? [], items)}
     />
   )
 }

@@ -37,7 +37,8 @@ import type { AreaCoverage, ExploreAreaFile, UnitKind, UnitState } from '@/domai
  *
  * While the layer shows, the base map's place names that name a unit are
  * filtered out (one name per quartier); the original filters come back when
- * it hides or is removed.
+ * it hides or is removed. The route generator (S3) names one unit alone:
+ * `setDistrictsLabelOnly`.
  */
 
 export const DISTRICTS_SOURCE = 'runomics-districts'
@@ -80,7 +81,8 @@ const NAME_SIZE = 12
  * Where a label may go when its point is taken: on it, else just under or
  * over it, in ems - a step that clears a town name without leaving the unit.
  */
-const LABEL_ANCHORS = ['center', 'top', 'bottom']
+type LabelAnchor = 'center' | 'top' | 'bottom' | 'right' | 'left'
+const LABEL_ANCHORS: LabelAnchor[] = ['center', 'top', 'bottom']
 /**
  * A complete unit's label may also step aside, left or right of its point:
  * next to the next quartier's at the whole area's zoom (Metz-Centre beside
@@ -89,6 +91,13 @@ const LABEL_ANCHORS = ['center', 'top', 'bottom']
  */
 const COMPLETE_LABEL_ANCHORS = [...LABEL_ANCHORS, 'right', 'left']
 const LABEL_RADIAL_OFFSET = 0.25
+/**
+ * The route generator's one label: on its point when that is free, else
+ * beside it, a dot's width away - the loop's start dot (a symbol that keeps
+ * its place) sits near the label point, which is where the start is picked.
+ */
+const LABEL_ONLY_ANCHORS: LabelAnchor[] = ['center', 'top', 'bottom', 'right', 'left']
+const LABEL_ONLY_RADIAL_OFFSET = 1.1
 /** 11 px under a 12 px name. */
 const PCT_SCALE = 11 / 12
 const LABEL_LINE_HEIGHT = 14 / 12
@@ -319,6 +328,8 @@ interface MapDistricts {
   names: string[]
   visible: boolean
   selectedId: string | null
+  /** The one unit named (the route generator's), or null for every unit. */
+  labelOnly: string | null
   /** The base label layers' own filters, while ours stand in for them. */
   baseFilters: Map<string, FilterSpecification | null>
 }
@@ -333,6 +344,7 @@ function stateOf(map: MapLibreMap): MapDistricts {
       names: [],
       visible: true,
       selectedId: null,
+      labelOnly: null,
       baseFilters: new Map(),
     }
     maps.set(map, state)
@@ -369,6 +381,27 @@ function selectionFilter(id: string | null): FilterSpecification {
   return ['==', ['get', 'id'], id ?? ''] as FilterSpecification
 }
 
+/**
+ * Each label layer's filter. Every unit: the lead labels (next, complete) in
+ * their layers, the rest in the plain one. One unit alone: its label in the
+ * top layer, so no town name takes its place, and the other two empty.
+ */
+function labelFilters(labelOnly: string | null): Record<(typeof DISTRICTS_LABEL_LAYERS)[number], FilterSpecification> {
+  if (labelOnly !== null) {
+    const none = ['==', ['get', 'id'], ''] as FilterSpecification
+    return {
+      [DISTRICTS_LABEL_LAYER]: none,
+      [DISTRICTS_COMPLETE_LABEL_LAYER]: none,
+      [DISTRICTS_NEXT_LABEL_LAYER]: ['==', ['get', 'id'], labelOnly] as FilterSpecification,
+    }
+  }
+  return {
+    [DISTRICTS_LABEL_LAYER]: ['>', ['get', 'sort'], COMPLETE_SORT] as FilterSpecification,
+    [DISTRICTS_COMPLETE_LABEL_LAYER]: ['==', ['get', 'sort'], COMPLETE_SORT] as FilterSpecification,
+    [DISTRICTS_NEXT_LABEL_LAYER]: ['==', ['get', 'sort'], NEXT_SORT] as FilterSpecification,
+  }
+}
+
 function byState(values: Record<UnitState, string | number>): ExpressionSpecification {
   return ['match', ['get', 'state'], 'complete', values.complete, 'partly', values.partly, values.fog] as ExpressionSpecification
 }
@@ -392,10 +425,11 @@ function labelText(c: DistrictsColors): ExpressionSpecification {
   ] as unknown as ExpressionSpecification
 }
 
-function districtLayers(c: DistrictsColors, visible: boolean, selectedId: string | null): LayerSpecification[] {
+function districtLayers(c: DistrictsColors, visible: boolean, selectedId: string | null, labelOnly: string | null): LayerSpecification[] {
   const visibility = visible ? 'visible' : 'none'
+  const labels = labelFilters(labelOnly)
   // One label spec, two layers: the lead units' and the rest.
-  const labelLayer = (id: string, filter: FilterSpecification, anchors: string[]): LayerSpecification =>
+  const labelLayer = (id: string, filter: FilterSpecification, anchors: string[], radialOffset = LABEL_RADIAL_OFFSET): LayerSpecification =>
     ({
       id,
       type: 'symbol',
@@ -409,7 +443,7 @@ function districtLayers(c: DistrictsColors, visible: boolean, selectedId: string
         'text-line-height': LABEL_LINE_HEIGHT,
         'text-max-width': 14,
         'text-variable-anchor': anchors,
-        'text-radial-offset': LABEL_RADIAL_OFFSET,
+        'text-radial-offset': radialOffset,
         'text-justify': 'center',
         'text-allow-overlap': false,
         'text-padding': 2,
@@ -464,9 +498,11 @@ function districtLayers(c: DistrictsColors, visible: boolean, selectedId: string
       layout: { visibility, 'line-join': 'round' },
       paint: { 'line-color': c.selected.line, 'line-width': 2 },
     },
-    labelLayer(DISTRICTS_LABEL_LAYER, ['>', ['get', 'sort'], COMPLETE_SORT] as FilterSpecification, LABEL_ANCHORS),
-    labelLayer(DISTRICTS_COMPLETE_LABEL_LAYER, ['==', ['get', 'sort'], COMPLETE_SORT] as FilterSpecification, COMPLETE_LABEL_ANCHORS),
-    labelLayer(DISTRICTS_NEXT_LABEL_LAYER, ['==', ['get', 'sort'], NEXT_SORT] as FilterSpecification, LABEL_ANCHORS),
+    labelLayer(DISTRICTS_LABEL_LAYER, labels[DISTRICTS_LABEL_LAYER], LABEL_ANCHORS),
+    labelLayer(DISTRICTS_COMPLETE_LABEL_LAYER, labels[DISTRICTS_COMPLETE_LABEL_LAYER], COMPLETE_LABEL_ANCHORS),
+    labelOnly === null
+      ? labelLayer(DISTRICTS_NEXT_LABEL_LAYER, labels[DISTRICTS_NEXT_LABEL_LAYER], LABEL_ANCHORS)
+      : labelLayer(DISTRICTS_NEXT_LABEL_LAYER, labels[DISTRICTS_NEXT_LABEL_LAYER], LABEL_ONLY_ANCHORS, LABEL_ONLY_RADIAL_OFFSET),
   ] as LayerSpecification[]
 }
 
@@ -476,6 +512,8 @@ export interface DistrictsLayerOptions {
   /** Shown or not; hidden keeps the data and the layers. Default true. */
   visible?: boolean
   selectedId?: string | null
+  /** Name this unit alone (the route generator's); null names every unit. Default: as last set. */
+  labelOnly?: string | null
 }
 
 /**
@@ -488,6 +526,7 @@ export function addDistrictsLayers(map: MapLibreMap, options: DistrictsLayerOpti
   const state = stateOf(map)
   state.visible = options.visible ?? true
   if (options.selectedId !== undefined) state.selectedId = options.selectedId
+  if (options.labelOnly !== undefined) state.labelOnly = options.labelOnly
   const colors = districtsColors(options.mode, options.accent)
 
   map.addImage(DISTRICTS_CHECK_IMAGE, checkImage(colors.check, colors.label.halo), { pixelRatio: 2 })
@@ -504,7 +543,7 @@ export function addDistrictsLayers(map: MapLibreMap, options: DistrictsLayerOpti
     [DISTRICTS_COMPLETE_LABEL_LAYER]: top,
     [DISTRICTS_NEXT_LABEL_LAYER]: top,
   }
-  for (const layer of districtLayers(colors, state.visible, state.selectedId)) {
+  for (const layer of districtLayers(colors, state.visible, state.selectedId, state.labelOnly)) {
     map.addLayer(layer, layer.id in before ? before[layer.id] : shapesBefore)
   }
   hideUnitNamesFromBase(map, state)
@@ -534,6 +573,18 @@ export function setSelectedUnit(map: MapLibreMap, id: string | null): void {
   state.selectedId = id
   for (const layer of [DISTRICTS_SELECTED_FILL_LAYER, DISTRICTS_SELECTED_LAYER]) {
     if (map.getLayer(layer)) map.setFilter(layer, selectionFilter(id))
+  }
+}
+
+/** Names one unit alone (the route generator's target); null names them all again. */
+export function setDistrictsLabelOnly(map: MapLibreMap, id: string | null): void {
+  const state = stateOf(map)
+  state.labelOnly = id
+  const filters = labelFilters(id)
+  for (const layer of DISTRICTS_LABEL_LAYERS) if (map.getLayer(layer)) map.setFilter(layer, filters[layer])
+  if (map.getLayer(DISTRICTS_NEXT_LABEL_LAYER)) {
+    map.setLayoutProperty(DISTRICTS_NEXT_LABEL_LAYER, 'text-variable-anchor', id === null ? LABEL_ANCHORS : LABEL_ONLY_ANCHORS)
+    map.setLayoutProperty(DISTRICTS_NEXT_LABEL_LAYER, 'text-radial-offset', id === null ? LABEL_RADIAL_OFFSET : LABEL_ONLY_RADIAL_OFFSET)
   }
 }
 

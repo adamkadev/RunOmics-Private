@@ -324,9 +324,15 @@ async function fetchClusterTracks(
   return addActivities(area, tracks, deps)
 }
 
-function homeOf(area: AreaState, home: LonLat | null, fromTracks: boolean | undefined): LonLat | null {
+/** The home given, else (asked for) the median start of the runs counted - `ids`, or every run added. */
+function homeOf(area: AreaState, home: LonLat | null, fromTracks: boolean | undefined, ids: readonly string[] | undefined): LonLat | null {
   if (home) return home
-  return fromTracks ? medianStart([...area.starts.values()]) : null
+  if (!fromTracks) return null
+  const starts = ids === undefined ? [...area.starts.values()] : ids.flatMap((id): LonLat[] => {
+    const start = area.starts.get(id)
+    return start ? [start] : []
+  })
+  return medianStart(starts)
 }
 
 function visitedCells(area: AreaState): Set<number> {
@@ -340,11 +346,9 @@ function visitedCells(area: AreaState): Set<number> {
 }
 
 function coverage(area: AreaState, msg: RequestOf<'coverage'>): ExploreResults['coverage'] {
-  const selected =
-    msg.activityIds === undefined
-      ? [...area.activities.values()]
-      : [...new Set(msg.activityIds)].flatMap((id) => area.activities.get(id) ?? [])
-  return aggregateCoverage(area.index, selected, homeOf(area, msg.home, msg.homeFromTracks))
+  const ids = msg.activityIds === undefined ? undefined : [...new Set(msg.activityIds)]
+  const selected = ids === undefined ? [...area.activities.values()] : ids.flatMap((id) => area.activities.get(id) ?? [])
+  return aggregateCoverage(area.index, selected, homeOf(area, msg.home, msg.homeFromTracks, ids))
 }
 
 function score(area: AreaState, msg: RequestOf<'scoreRoutes'>): ExploreResults['scoreRoutes'] {

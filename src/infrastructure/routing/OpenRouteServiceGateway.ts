@@ -168,11 +168,12 @@ export class OpenRouteServiceGateway implements RoutingGateway {
           Accept: 'application/geo+json',
         },
         body: JSON.stringify(requestBody(req)),
-        signal: AbortSignal.timeout(CALL_TIMEOUT_MS),
+        // The call's own time limit, and the caller leaving: whichever comes first.
+        signal: req.signal ? AbortSignal.any([req.signal, AbortSignal.timeout(CALL_TIMEOUT_MS)]) : AbortSignal.timeout(CALL_TIMEOUT_MS),
         cache: 'no-store',
       })
     } catch (error) {
-      return this.failed(error)
+      return this.failed(error, req.signal)
     }
 
     if (!response.ok) {
@@ -191,7 +192,7 @@ export class OpenRouteServiceGateway implements RoutingGateway {
       json = await response.json()
     } catch (error) {
       // The timeout covers the body too, and a cut-off body is not JSON.
-      return this.failed(error)
+      return this.failed(error, req.signal)
     }
 
     const candidate = parseCandidate(json, req.seed)
@@ -202,7 +203,9 @@ export class OpenRouteServiceGateway implements RoutingGateway {
     return { ok: true, candidate }
   }
 
-  private failed(error: unknown): RoundTripResult {
+  private failed(error: unknown, caller: AbortSignal | undefined): RoundTripResult {
+    // The caller left: no one to answer, nothing wrong with the provider.
+    if (caller?.aborted) return { ok: false, kind: 'upstream' }
     if (isTimeout(error)) {
       console.error(`[explore] openrouteservice gave no answer within ${CALL_TIMEOUT_MS / 1000} s`)
       return { ok: false, kind: 'timeout' }

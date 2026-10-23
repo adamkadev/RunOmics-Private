@@ -97,13 +97,15 @@ const drift = (distanceM: number, targetM: number) => Math.abs(distanceM - targe
  * with the length scaled by how far it missed, same seed, and the closer of
  * the two kept. Once: a second miss is the network, not the arithmetic.
  */
-async function loopFor(gateway: RoutingGateway, request: LoopRequest, seed: number): Promise<RoundTripResult> {
+async function loopFor(gateway: RoutingGateway, request: LoopRequest, seed: number, signal: AbortSignal | undefined): Promise<RoundTripResult> {
   const { start, distanceM: target, avoidBusyRoads } = request
-  const first = await gateway.roundTrip({ start, lengthM: target, seed, avoidBusyRoads })
-  if (!first.ok || drift(first.candidate.distanceM, target) <= MAX_DRIFT) return first
+  if (signal?.aborted) return { ok: false, kind: 'upstream' }
+  const first = await gateway.roundTrip({ start, lengthM: target, seed, avoidBusyRoads, signal })
+  // Close enough - or nobody is waiting for a closer one any more.
+  if (!first.ok || drift(first.candidate.distanceM, target) <= MAX_DRIFT || signal?.aborted) return first
 
   const correction = Math.min(MAX_CORRECTION, Math.max(1 / MAX_CORRECTION, target / first.candidate.distanceM))
-  const second = await gateway.roundTrip({ start, lengthM: target * correction, seed, avoidBusyRoads })
+  const second = await gateway.roundTrip({ start, lengthM: target * correction, seed, avoidBusyRoads, signal })
   if (!second.ok) return first
   return drift(second.candidate.distanceM, target) < drift(first.candidate.distanceM, target) ? second : first
 }
@@ -111,9 +113,17 @@ async function loopFor(gateway: RoutingGateway, request: LoopRequest, seed: numb
 /**
  * Every seed at once. Any loop found makes the batch a success - the client
  * scores what it has - and only a batch with nothing answers with a reason.
+ *
+ * `signal` is the caller's request: once it is gone (a new distance asked
+ * for), nothing more goes to the provider for this batch - no second try -
+ * and the calls still out stop waiting.
  */
-export async function generateLoopRoutes(gateway: RoutingGateway, request: LoopRequest): Promise<LoopRoutesResult> {
-  const settled = await Promise.allSettled(request.seeds.map((seed) => loopFor(gateway, request, seed)))
+export async function generateLoopRoutes(
+  gateway: RoutingGateway,
+  request: LoopRequest,
+  { signal }: { signal?: AbortSignal } = {},
+): Promise<LoopRoutesResult> {
+  const settled = await Promise.allSettled(request.seeds.map((seed) => loopFor(gateway, request, seed, signal)))
 
   const candidates: RouteCandidate[] = []
   const failures = new Set<RoutingErrorKind>()

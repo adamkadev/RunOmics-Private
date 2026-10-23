@@ -12,6 +12,7 @@ import {
   DISTRICTS_NEXT_LABEL_LAYER,
   DISTRICTS_LABEL_SOURCE,
   DISTRICTS_LAYERS,
+  DISTRICTS_LABEL_LAYERS,
   DISTRICTS_LINE_LAYER,
   DISTRICTS_SELECTED_FILL_LAYER,
   DISTRICTS_SELECTED_LAYER,
@@ -24,6 +25,7 @@ import {
   hasDistrictsLayers,
   removeDistrictsLayers,
   setDistrictsData,
+  setDistrictsLabelOnly,
   setDistrictsVisible,
   setSelectedUnit,
   unitNameVariants,
@@ -245,6 +247,28 @@ describe('the data, visibility and selection', () => {
     expect(map.getFilter(DISTRICTS_SELECTED_FILL_LAYER)).toEqual(['==', ['get', 'id'], 'test-bravo'])
     setSelectedUnit(asMap(map), null)
     expect(map.getFilter(DISTRICTS_SELECTED_LAYER)).toEqual(['==', ['get', 'id'], ''])
+  })
+  it('names one unit alone for the route generator, in the top label layer, a dot’s width off its point; then every unit again', () => {
+    const map = heatMap()
+    addDistrictsLayers(asMap(map), { mode: 'light', accent: 'teal' })
+    const before = Object.fromEntries(DISTRICTS_LABEL_LAYERS.map((id) => [id, map.getFilter(id)]))
+    const offset = map.getLayoutProperty(DISTRICTS_NEXT_LABEL_LAYER, 'text-radial-offset')
+
+    setDistrictsLabelOnly(asMap(map), 'test-delta')
+    expect(map.getFilter(DISTRICTS_NEXT_LABEL_LAYER)).toEqual(['==', ['get', 'id'], 'test-delta'])
+    expect(map.getFilter(DISTRICTS_LABEL_LAYER)).toEqual(['==', ['get', 'id'], ''])
+    expect(map.getFilter(DISTRICTS_COMPLETE_LABEL_LAYER)).toEqual(['==', ['get', 'id'], ''])
+    expect(map.getLayoutProperty(DISTRICTS_NEXT_LABEL_LAYER, 'text-radial-offset')).toBeGreaterThan(1)
+    expect(map.getLayoutProperty(DISTRICTS_NEXT_LABEL_LAYER, 'text-variable-anchor')).toContain('center')
+
+    // Kept across a re-add (a theme swap).
+    map.setStyle({})
+    addDistrictsLayers(asMap(map), { mode: 'dark', accent: 'teal' })
+    expect(map.getFilter(DISTRICTS_NEXT_LABEL_LAYER)).toEqual(['==', ['get', 'id'], 'test-delta'])
+
+    setDistrictsLabelOnly(asMap(map), null)
+    for (const id of DISTRICTS_LABEL_LAYERS) expect(map.getFilter(id)).toEqual(before[id])
+    expect(map.getLayoutProperty(DISTRICTS_NEXT_LABEL_LAYER, 'text-radial-offset')).toBe(offset)
   })
 })
 

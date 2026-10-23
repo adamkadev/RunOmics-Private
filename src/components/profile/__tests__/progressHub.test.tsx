@@ -245,6 +245,22 @@ describe('ProgressHub (3.0)', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
     expect(screen.getAllByTestId('year-row').map((row) => row.textContent)).toEqual([expect.stringContaining('2026'), expect.stringContaining('2025')])
   })
+
+  // Explore, E5: the Explored card is the page's to give (a client island);
+  // it sits beside Consistency, and without it the hub is as it was.
+  it('puts the Explored card beside Consistency when the page gives one', () => {
+    render(<ProgressHub view={progressHubView(INPUT)} explored={<section data-testid="explored-slot" />} />)
+    const columns = [...screen.getByTestId('progress-columns').children]
+    expect(columns.map((child) => child.getAttribute('data-testid'))).toEqual(['consistency-tile', 'explored-slot'])
+  })
+
+  it('keeps Consistency alone in its row without one', () => {
+    const { container } = render(<ProgressHub view={progressHubView(INPUT)} />)
+    const columns = [...screen.getByTestId('progress-columns').children]
+    expect(columns.map((child) => child.getAttribute('data-testid'))).toEqual(['consistency-tile'])
+    const { container: empty } = render(<ProgressHub view={progressHubView(INPUT)} explored={undefined} />)
+    expect(empty.innerHTML).toBe(container.innerHTML)
+  })
 })
 
 describe('one consistency count (v5.5 #9)', () => {

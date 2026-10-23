@@ -23,6 +23,18 @@ const UNIT: UnitCoverage = {
 
 const card = () => screen.getByTestId('next-quartier-card')
 
+/** A line of `width` px, its text 6.5 px a character: what a browser measures, where jsdom lays nothing out. */
+function layoutLine(width: number) {
+  const scroll = vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) {
+    return (this.textContent?.length ?? 0) * 6.5
+  })
+  const client = vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(() => width)
+  return () => {
+    scroll.mockRestore()
+    client.mockRestore()
+  }
+}
+
 describe('NextQuartierCard', () => {
   afterEach(cleanup)
 
@@ -31,6 +43,21 @@ describe('NextQuartierCard', () => {
     expect(card()).toHaveTextContent(d.nextToExplore)
     expect(card()).toHaveTextContent('Bravo')
     expect(card()).toHaveTextContent('8% explored · 1.9 km from home')
+  })
+
+  it('beside the Plan a run button, says "away" rather than cut "from home" short', () => {
+    const restore = layoutLine(196)
+    try {
+      // 30 characters fit 196 px whole.
+      const { rerender } = render(<NextQuartierCard unit={UNIT} onOpen={() => {}} onPlanRun={() => {}} />)
+      expect(screen.getByTestId('next-quartier-meta')).toHaveTextContent('8% explored · 1.9 km from home')
+      // Two digits don't: the shorter line, whole.
+      rerender(<NextQuartierCard unit={{ ...UNIT, pct: 12, distanceKm: 3 }} onOpen={() => {}} onPlanRun={() => {}} />)
+      expect(screen.getByTestId('next-quartier-meta')).toHaveTextContent(/^12% explored · 3\.0 km away$/)
+      expect(d.nextMetaShort('12%', '3.0 km')).toBe('12% explored · 3.0 km away')
+    } finally {
+      restore()
+    }
   })
 
   it('leaves the distance out without a home', () => {

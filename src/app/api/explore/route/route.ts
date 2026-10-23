@@ -76,7 +76,8 @@ export async function POST(req: NextRequest) {
       return answer({ error: `Route generation is not configured: ${config.malformed.join(', ')} malformed`, reason: 'notConfigured' }, 503)
     }
 
-    const result = await generateLoopRoutes(createRoutingGateway(config), request)
+    // A client that moved on (a new distance) aborts its request: the batch stops asking the provider.
+    const result = await generateLoopRoutes(createRoutingGateway(config), request, { signal: req.signal })
     if (!result.ok) {
       if (result.kind === 'unauthorized') console.error('[explore:route] the route provider refuses ORS_API_KEY')
       const { status, error, reason, retryAfter } = FAILURES[result.kind]
