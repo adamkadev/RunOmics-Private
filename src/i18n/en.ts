@@ -2205,6 +2205,8 @@ export const en = {
       marathon: 'Marathon',
       longest: 'Longest Run',
     } as Record<string, string>,
+    /** A shorter name for a record on a run's row badge, where the run's own name must fit beside it. */
+    badgeLabels: { longest: 'Longest Run' } as Record<string, string>,
     raceTag: 'race',
     trainingTag: 'training',
     notYetRun: 'Not yet run',

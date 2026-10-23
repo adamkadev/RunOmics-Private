@@ -69,6 +69,18 @@ All notable changes to this project are documented in this file.
   the share explored, quartiers complete, one segment per quartier and the
   next one to run.
 
+- French fits a 393 pt phone, round 3, from a probe of every route for text
+  cut, off screen or out of its card:
+  - Athlete & zones: the time column holds « 4 h 48 · 32 % », which ran
+    past the card at 4.5rem (5.5rem, tighter gaps).
+  - Today's Condition and Fatigue tiles: « ↘ 21 en 7 j », where « 21 cette
+    semaine » ran out of the tile.
+  - Milestones' streak: « En cours · chaque semaine depuis », no longer cut
+    beside its date.
+  - A run's PR badge on its row reads « RP Distance » for the longest run,
+    which left a name like « Race Day » as « Race … »; Records keeps « Plus
+    longue sortie ».
+
 - Cards are never blurred (D1): over the light glow each card had its own
   24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
   Activities. They are now 88 % white with no blur, so the glow still tints
