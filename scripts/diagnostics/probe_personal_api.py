@@ -168,7 +168,9 @@ class PersonalApiProbe:
         if missing:
             return Result(probe, status=None, error=f"skipped: no {missing}")
         self.sleep(_PAUSE_SECONDS)
-        accept = "application/zip, application/octet-stream" if probe.binary else "application/json"
+        # Garmin's own client's list: the download is served as
+        # application/x-zip-compressed, and without it the answer is a 406.
+        accept = "application/zip, application/x-zip-compressed, application/octet-stream" if probe.binary else "application/json"
         try:
             resp = self.http.get(probe.path, params=probe.params, headers={**self.headers, "Accept": accept})
         except httpx.HTTPError as exc:

@@ -51,6 +51,8 @@ def _handler(requests, *, sync_status=403, overrides=None):
         if path == "/activitylist-service/activities/search/activities":
             return httpx.Response(200, json=[{"activityId": _ACTIVITY_ID, "activityName": _SENTINEL}])
         if path.startswith("/download-service/"):
+            if "application/x-zip-compressed" not in request.headers["Accept"]:
+                return httpx.Response(406)
             return httpx.Response(200, content=_zip_without_fit())
         if path == "/userprofile-service/socialProfile":
             return httpx.Response(200, json={"displayName": _PROFILE_ID, "fullName": _SENTINEL})
