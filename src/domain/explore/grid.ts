@@ -15,9 +15,9 @@ export const CELL_M = 150
 /** Interpolate track segments so samples are at most this far apart. */
 export const MAX_STEP_M = 75
 /**
- * A step longer than this is a GPS dropout or a privacy-zone cut, not a
- * street: it is not interpolated, so it paints no straight line of cells.
- * Real tracks (Douglas-Peucker at 0.5 m) top out around 160 m.
+ * A step longer than this is a GPS dropout, not a street: it is not
+ * interpolated, so it paints no straight line of cells. Real tracks
+ * (Douglas-Peucker at 0.5 m) top out around 160 m.
  */
 export const BREAK_M = 300
 export const M_PER_DEGREE = 111_320

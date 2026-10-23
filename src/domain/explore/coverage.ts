@@ -22,15 +22,6 @@ import {
  * (`activityCells`), which the worker caches by activity id; the totals are
  * then re-added from those small results whenever the selection changes
  * (`aggregateCoverage`), which is cheap enough to do on every filter tap.
- *
- * Privacy zones stay in the denominators. The sync drops every track point
- * near a zone (scripts/processing/privacy.py), and the gap left is longer
- * than `BREAK_M`, so the runnable cells deep inside a zone are never
- * visited: a quartier holding one tops out below 100%, and is only ever
- * complete if the zone covers under a tenth of its runnable cells. Taking
- * those cells out would need the zones, and only the sync knows them. Home
- * here is the median start, which with a zone on is where runs leave it, not
- * its centre; and a hole cut into the area file would point straight at it.
  */
 
 /** `cellOwner` for a cell no unit claims. */

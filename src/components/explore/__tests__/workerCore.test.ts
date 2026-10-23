@@ -317,7 +317,7 @@ describe('addTracks and coverage', () => {
   })
 
   it('recomputes and overwrites a run whose track was rewritten under the same id', async () => {
-    // A privacy-zone change or a reprocess re-crops r1: same id, other points.
+    // A reprocess rewrites r1: same id, other points.
     const { send, cache } = await loaded()
     const before = activityCells(INDEX, track(RUNS.r3!.points))
     cache.stores.tracks.set(`${VERSION}:r1`, {

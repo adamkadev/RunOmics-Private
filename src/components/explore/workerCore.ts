@@ -91,7 +91,7 @@ export interface CachedTrack {
  * the same digest whether they came packed from the page or as JSON here.
  *
  * It is what ties a cached result to its track. The activity id does not:
- * a privacy-zone change or a reprocess rewrites routes under the same ids,
+ * a reprocess rewrites routes under the same ids,
  * and a page left open across a data deployment can pair an id with a
  * neighbour's track. Hashing every point costs a fraction of the walk it
  * saves.
