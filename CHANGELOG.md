@@ -4,6 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A deployment can read its data repository at run time
+  (`RUNOMICS_DATA_SOURCE=github`), so a sync shows within seconds of the push
+  instead of after a Vercel rebuild: the sync pings the app instead of firing
+  the deploy hook, and waits seconds for it rather than minutes. Each new
+  commit is checked against the data contract before it goes live; a refused
+  one leaves the previous data up and fails the sync, naming the error. The
+  dashboard refreshes as soon as the run's data is live, before its verdict.
+  The map's routes are revalidated on every request rather than cached for an
+  hour at the edge, since a sync no longer starts a fresh deployment.
+
 - The Sync button starts a quick sync: the new runs come through the
   Personal API key alone, with no WARP install and no garth sign-in, while
   the nightly sync keeps doing everything. A run synced this way has no shoe

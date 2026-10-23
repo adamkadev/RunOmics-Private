@@ -481,6 +481,8 @@ from your `.env.local` *except* `GARMIN_PERSONAL_API_KEY`, `GARMIN_SECRET` and `
 | `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](#date-handling) |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts |
 | `ORS_API_KEY` | Optional: Explore's route generator (OpenRouteService round trips) - see [Explore](#explore) |
+| `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | The private data repository the build clones; a fine-grained token with Contents: Read only |
+| `RUNOMICS_DATA_SOURCE` | Optional: `github` reads that repository at run time, so a sync shows without a rebuild - see [Reading the data at run time](#reading-the-data-at-run-time) |
 
 > `GARMIN_PERSONAL_API_KEY` and `GARMIN_SECRET` are only used by the sync script - neither runs on Vercel.
 > `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: the adaptive coach is a local
@@ -494,7 +496,8 @@ after the deployment's profile (GitHub → Settings → Environments), not from
 repository secrets: `GARMIN_PERSONAL_API_KEY` (and optionally `GARMIN_SECRET`), `RUNOMICS_DATA_REPO_URL`,
 `RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash),
 `INTERNAL_NOTIFY_SECRET` and `VERCEL_DEPLOY_HOOK_URL`, plus an environment
-*variable* `PROFILE` holding the environment's own name. These are separate from the Vercel env vars
+*variable* `PROFILE` holding the environment's own name, and `DATA_SOURCE=github`
+once that deployment reads its data at run time. These are separate from the Vercel env vars
 above, and `INTERNAL_NOTIFY_SECRET` must match on both sides.
 
 That indirection is what lets one repository drive several deployments - one per
@@ -678,6 +681,30 @@ refusal leaves both the clone and the remote untouched.
 `scripts/loadPalette.mjs` stages `src/lib/<entry>.ts` for use from plain Node. Every
 module it is asked to load must be alias-free (`./x`, never `@/x`), and dependencies
 must be listed before the modules that import them.
+
+### Reading the data at run time
+
+With `RUNOMICS_DATA_SOURCE=github` on Vercel, a deployment reads its data
+repository through GitHub's API instead of the copy its build cloned, so a sync
+shows in about the time the sync takes, with no rebuild. The data repository
+stays the only copy: every writer pushes to it as before.
+
+- **Each page and route that reads data awaits `loadData()` first.** It asks
+  GitHub for HEAD (cached ten minutes, tagged), and when HEAD moved it reads the
+  commit's tree and the files that changed, then swaps the new commit in whole.
+  `npm run check:cycles` fails on a page or route that reads data without it.
+- **The sync expires that cache** with `POST /api/internal/data-revalidate`
+  instead of firing the deploy hook, when its GitHub Environment sets
+  `DATA_SOURCE=github`, then waits a few seconds rather than minutes for health
+  to report the new sync.
+- **A commit is checked before it goes live,** with the same data contract the
+  build ran. A refused commit leaves the previous one serving, and health
+  reports it as `rejectedData`, which fails the sync.
+- **If GitHub is unreachable,** an instance keeps serving the commit it has;
+  a new one cannot start serving and answers with an error, and cached pages
+  stay up.
+- **Local runs never read GitHub:** the mode needs `VERCEL=1`, and the build
+  reads its clone, so dev, E2E and the CLIs work from files as before.
 
 ### Garmin write path (coaching sync)
 
