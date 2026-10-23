@@ -5,8 +5,9 @@ import type { DayWindow } from './analyticsView'
 
 /**
  * v5.4 Load trend and Recovery: how the load got where Injury risk says it
- * is, and whether the body is absorbing it. Both follow the tab's window, day
- * by day on 4 and 12 weeks and as weekly averages on a year.
+ * is, and whether the body is absorbing it. Load trend follows the tab's
+ * window, day by day on 4 and 12 weeks and as weekly averages on a year;
+ * Recovery is the window's last resting HR against its baseline.
  */
 
 const DAY_MS = 86_400_000

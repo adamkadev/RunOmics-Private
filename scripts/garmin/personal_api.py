@@ -64,6 +64,8 @@ class PersonalApiClient:
         # The list rows seen so far, by id: they carry each activity's time in
         # HR zones, which the Personal API serves nowhere else.
         self._rows: dict[str, dict[str, Any]] = {}
+        # Each detail's start, which finds a row not paged through (--id).
+        self._starts: dict[str, str] = {}
         self._zones: list[dict[str, Any]] | None = None
 
     def _exchange_key(self) -> str:
@@ -75,7 +77,10 @@ class PersonalApiClient:
             raise GarminAPIError(resp.status_code, TOKEN_PATH)
         token = resp.text.strip()
         if not token:
-            raise GarminAPIError(resp.status_code, TOKEN_PATH)
+            raise GarminAuthError(
+                f"Garmin answered the key exchange with no token (HTTP {resp.status_code}): something "
+                "between the sync and Garmin - a proxy, a captive page - answered instead (is WARP connected?)."
+            )
         return token
 
     def _get(self, path: str, *, params: dict[str, Any] | None = None, accept: str = "application/json") -> httpx.Response:
@@ -112,7 +117,11 @@ class PersonalApiClient:
     def get_activity_detail(self, activity_id: str) -> dict[str, Any]:
         # An empty answer raises rather than passing for an activity: mapped,
         # {} would be stored for good under the id "".
-        return self._get(f"/activity-service/activity/{activity_id}").json()
+        detail = self._get(f"/activity-service/activity/{activity_id}").json()
+        start = (detail.get("summaryDTO") or {}).get("startTimeLocal") if isinstance(detail, dict) else None
+        if isinstance(start, str):
+            self._starts[activity_id] = start
+        return detail
 
     def download_fit(self, activity_id: str, *, strict_errors: bool = False) -> bytes | None:
         """The activity's original FIT file, or None for an activity without one.
@@ -154,9 +163,10 @@ class PersonalApiClient:
         """The list row of an activity not paged through yet (sync.py --id):
         the list filtered to the days around its start. Not finding it raises:
         "no zones" would be stored over the zones on file."""
-        summary = self.get_activity_detail(activity_id).get("summaryDTO") or {}
+        if activity_id not in self._starts:
+            self.get_activity_detail(activity_id)
         try:
-            started = date.fromisoformat(str(summary.get("startTimeLocal") or "")[:10])
+            started = date.fromisoformat(self._starts.get(activity_id, "")[:10])
         except ValueError:
             raise LookupError(f"activity {activity_id} has no start date to find its list row by") from None
         # A day either side: the filter's day may be GMT's where the run's is local.

@@ -10,14 +10,17 @@ from collections.abc import Callable
 from contextlib import ExitStack
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import TypeVar
+
+import httpx
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from garmin.athlete import fetch_athlete_metrics, fetch_personal_athlete_metrics, record_athlete_history
 from data_directory import get_data_dir, get_fit_cache_dir
 from garmin.client import GarminClient
-from garmin.personal_api import PersonalApiClient
+from garmin.errors import GarminAPIError, GarminAuthError
+from garmin.personal_api import KEY_PAGE, PersonalApiClient
 from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
@@ -63,8 +66,7 @@ def main() -> int:
     secret = os.environ.get("GARMIN_SECRET", "").strip()
     if not api_key and not secret:
         print("Error: neither GARMIN_PERSONAL_API_KEY nor GARMIN_SECRET is set.", file=sys.stderr)
-        print("Create a Personal API key at https://connect.garmin.com/app/settings/personalApiToken", file=sys.stderr)
-        print("(see README.md).", file=sys.stderr)
+        print(f"Create a Personal API key at {KEY_PAGE} (see README.md).", file=sys.stderr)
         return 1
 
     _FIT_DIR.mkdir(parents=True, exist_ok=True)
@@ -122,6 +124,10 @@ def main() -> int:
                 new_ids = new_ids[: args.limit]
 
         added = updated = failed = 0
+        # Runs the key read whose gear Connect did not answer: stored with the
+        # shoe on file, offered to the gear refresh below, and the night counts
+        # as partial. After the first, Connect is not asked again tonight.
+        gear_unanswered: list[str] = []
 
         if not new_ids:
             print("No new activities to sync.")
@@ -141,7 +147,9 @@ def main() -> int:
                     detail = retry_transient(client.get_activity_detail, activity_id)
                     parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
                     hr_zones = parse_hr_zones(retry_transient(client.get_hr_zones, activity_id))
-                    gear, gear_known = _fetch_gear(connect, activity_id, required=client is connect)
+                    gear = None
+                    if connect and not gear_unanswered:
+                        gear = _fetch_gear(connect, activity_id, required=client is connect)
 
                     time.sleep(_RATE_LIMIT_PAUSE)
 
@@ -167,8 +175,10 @@ def main() -> int:
                     continue
 
                 is_new = store.upsert(
-                    activity_data, replace=args.force, keep_gear=not gear_known, keep_zone_bounds=client is personal
+                    activity_data, replace=args.force, keep_gear=gear is None, keep_zone_bounds=client is personal
                 )
+                if connect and gear is None:
+                    gear_unanswered.append(activity_id)
                 if is_new:
                     added += 1
                     print(f"added   → {status}")
@@ -176,9 +186,12 @@ def main() -> int:
                     updated += 1
                     print(f"updated → {status}")
 
+        if gear_unanswered:
+            failed_steps.append(f"gear of {len(gear_unanswered)} run(s)")
+
         regeared = 0
         if connect and not args.force and not args.id:
-            regeared = _refresh_recent_gear(connect, store, skip=set(new_ids))
+            regeared = _refresh_recent_gear(connect, store, skip=set(new_ids) - set(gear_unanswered))
 
         if not args.dry_run:
             store.save()
@@ -198,14 +211,21 @@ def main() -> int:
     return 0 if failed == 0 and not failed_steps else _EXIT_PARTIAL_FAILURE
 
 
+# What a sign-in that failed raises: a refused credential, Garmin or the
+# network down, a secret that does not parse (garth's requests errors are
+# OSErrors). Anything else is a bug, and stops the night like one.
+_SIGN_IN_ERRORS = (GarminAuthError, GarminAPIError, httpx.HTTPError, OSError, ValueError)
+_Client = TypeVar("_Client", PersonalApiClient, GarminClient)
+
+
 def _open_client(
-    stack: ExitStack, name: str, open_client: Callable[[], Any], failed_steps: list[str], *, fallback: bool
-) -> Any:
+    stack: ExitStack, name: str, open_client: Callable[[], _Client], failed_steps: list[str], *, fallback: bool
+) -> _Client | None:
     """One Garmin client entered into the run, or None when its sign-in fails
     and the other client can read the runs instead."""
     try:
         return stack.enter_context(open_client())
-    except Exception as exc:
+    except _SIGN_IN_ERRORS as exc:
         if not fallback:
             raise
         print(f"Warning: {name} sign-in failed ({type(exc).__name__}: {exc}); carrying on without it.")
@@ -213,23 +233,20 @@ def _open_client(
         return None
 
 
-def _fetch_gear(connect: GarminClient | None, activity_id: str, *, required: bool) -> tuple[list[dict] | None, bool]:
-    """The activity's gear and whether it is known.
+def _fetch_gear(connect: GarminClient, activity_id: str, *, required: bool) -> list[dict] | None:
+    """The activity's gear ([] for none), or None when Connect did not answer.
 
     Only Connect knows it. When Connect also read the activity, an error
     fails the activity as any other would. When the Personal API read it,
-    the run does not hang on Connect: it is stored with the shoe on file,
-    and the nightly gear refresh asks again.
+    the run does not hang on Connect.
     """
-    if connect is None:
-        return None, False
     try:
-        return retry_transient(connect.get_activity_gear, activity_id), True
+        return retry_transient(connect.get_activity_gear, activity_id)
     except Exception as exc:
         if required:
             raise
         print(f"(gear unavailable: {type(exc).__name__})", end=" ", flush=True)
-        return None, False
+        return None
 
 
 def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip: set[str]) -> int:

@@ -68,8 +68,9 @@ The sync reads your runs through Garmin's **Personal API**, with a key you creat
 yourself, on [Garmin Connect's Personal API page](https://connect.garmin.com/app/settings/personalApiToken): accept the terms and
 create a key. Garmin shows it once; copy it as
 `GARMIN_PERSONAL_API_KEY`. Choose the longest lifetime offered (a year at most)
-and diary its renewal: an expired key stops the sync with a message saying so,
-and a new one from the same page is all it takes.
+and diary its renewal: an expired key fails the night with a message saying so
+(with `GARMIN_SECRET` also set, garth reads the runs meanwhile and the night is
+reported as a partial one), and a new key from the same page is all it takes.
 
 The key reads the activity list, each run's detail and FIT file, its time in HR
 zones, the daily resting HR and your zones, LTHR, age, fitness age and weight.

@@ -73,8 +73,11 @@ class TestSync:
         monkeypatch.setattr(recovery_history.time, "sleep", lambda _s: None)
         return tmp_path / "recovery_history.json"
 
-    def test_a_refused_window_is_a_gap_the_next_night_fills(self, out, monkeypatch):
-        answers = iter([GarminAPIError(404, "u")] + [{"allMetrics": None}] * 20)
+    def test_a_refused_window_fails_the_step_after_writing_the_others(self, out):
+        # A refusal that lasts must be seen, not leave the reading stale
+        # without a word; what was fetched is kept all the same.
+        resting = {"allMetrics": {"metricsMap": {"WELLNESS_RESTING_HEART_RATE": [{"calendarDate": "2026-10-20", "value": 47}]}}}
+        answers = iter([GarminAPIError(404, "u")] + [resting] * 20)
 
         class Connect:
             def get_resting_hr_range(self, _start, _end):
@@ -83,14 +86,6 @@ class TestSync:
                     raise answer
                 return answer
 
-        assert recovery_history.sync_recovery_history(Connect(), date(2026, 10, 23)) == 0
-        assert out.exists()
-
-    def test_every_window_refused_fails_the_step_rather_than_going_stale_silently(self, out):
-        class Gone:
-            def get_resting_hr_range(self, _start, _end):
-                raise GarminAPIError(404, "u")
-
-        with pytest.raises(RuntimeError, match="refused all"):
-            recovery_history.sync_recovery_history(Gone(), date(2026, 10, 23))
-        assert not out.exists()
+        with pytest.raises(RuntimeError, match="refused 1 of"):
+            recovery_history.sync_recovery_history(Connect(), date(2026, 10, 23))
+        assert recovery_history.read_history(out)["days"] == {"2026-10-20": {"restingHr": 47}}

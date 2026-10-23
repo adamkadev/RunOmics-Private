@@ -444,8 +444,8 @@ class TestEitherClientCarriesTheNight:
 
         assert _stored_ids(workspace) == {"101", "102"}
 
-    def test_a_connect_gear_error_keeps_a_run_the_key_read(
-        self, workspace, personal, garmin, steps, monkeypatch, activity_factory
+    def test_a_connect_gear_error_keeps_the_runs_the_key_read_and_reports_it(
+        self, workspace, personal, garmin, steps, monkeypatch, activity_factory, capsys
     ):
         monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
         run = activity_factory("101", "2026-09-20")
@@ -453,13 +453,22 @@ class TestEitherClientCarriesTheNight:
         store = JsonActivityStore(workspace / "activities")
         store.upsert(run)
         store.save()
-        garmin.failures[("get_activity_gear", "101")] = GarminAPIError(403, "https://example.test/gear")
-        garmin.failures[("get_activity_gear", "102")] = GarminAPIError(503, "https://example.test/gear")
+        asked = []
 
-        assert _run(monkeypatch, "--force") == 0
+        def gear_down(activity_id, **_kwargs):
+            asked.append(activity_id)
+            raise GarminAPIError(503, "https://example.test/gear")
+
+        monkeypatch.setattr(garmin, "get_activity_gear", gear_down)
+
+        assert _run(monkeypatch, "--force") == sync._EXIT_PARTIAL_FAILURE
 
         assert _stored_ids(workspace) == {"101", "102"}
         assert _stored_gear(workspace, "101") == "shoe1"
+        # Asked for the first run only (its retries included), not once per
+        # run: each ask waits through the retries.
+        assert set(asked) == {"101"}
+        assert "gear of 2 run(s)" in capsys.readouterr().out
 
     def test_connects_athlete_failure_still_writes_the_keys_values(self, workspace, personal, garmin, steps, monkeypatch):
         monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")

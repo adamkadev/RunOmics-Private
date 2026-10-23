@@ -126,13 +126,12 @@ def sync_recovery_history(client: GarminClient | PersonalApiClient, today: date 
         else:
             resting.update(fetched)
         time.sleep(_RATE_LIMIT_PAUSE)
-    # One refused window is a gap the next night fills; all of them is the
-    # endpoint gone, and a step that said nothing would leave the reading
-    # stale for good.
-    if windows and refused == len(windows):
-        raise RuntimeError(f"Garmin refused all {refused} resting HR window(s)")
-
     days = merge_days(stored, resting)
     write_history(_OUT_PATH, {"days": days})
     print(f"  {len(resting)} resting HR day(s) recorded, {len(days)} total.")
+    # What was fetched is written; a refused window still fails the step, as
+    # in every other one, so a refusal that lasts is seen rather than leaving
+    # the reading stale without a word.
+    if refused:
+        raise RuntimeError(f"Garmin refused {refused} of {len(windows)} resting HR window(s)")
     return len(days)

@@ -6,8 +6,8 @@ const FIREBASE = { FIREBASE_PROJECT_ID: 'demo', FIREBASE_CLIENT_EMAIL: 'sa@demo.
 describe('integrationStatus', () => {
   it('reports each integration whose every variable is set', () => {
     expect(
-      integrationStatus({ ...FIREBASE, GEMINI_API_KEY: 'g', GITHUB_SYNC_TOKEN: 't', GITHUB_SYNC_REPO: 'o/r' })
-    ).toEqual({ firebaseAdmin: true, gemini: true, syncButton: true })
+      integrationStatus({ ...FIREBASE, GEMINI_API_KEY: 'g', GITHUB_SYNC_TOKEN: 't', GITHUB_SYNC_REPO: 'o/r', RUNOMICS_PRIVATE: '1' })
+    ).toEqual({ firebaseAdmin: true, gemini: true, syncButton: true, privateSite: true })
   })
 
   it('counts a half-configured or blank integration as missing', () => {
@@ -18,7 +18,7 @@ describe('integrationStatus', () => {
         GEMINI_API_KEY: '  ',
         GITHUB_SYNC_TOKEN: 't',
       })
-    ).toEqual({ firebaseAdmin: false, gemini: false, syncButton: false })
+    ).toEqual({ firebaseAdmin: false, gemini: false, syncButton: false, privateSite: false })
   })
 
   it('needs only the project id against the Firestore emulator', () => {

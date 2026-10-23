@@ -91,6 +91,10 @@ class TestToken:
         assert f"(HTTP {status})" in str(raised.value) and hint in str(raised.value)
         assert _KEY not in str(raised.value)
 
+    def test_an_empty_token_says_something_else_answered(self):
+        with pytest.raises(GarminAuthError, match="no token"):
+            FakeApi(token=httpx.Response(200, text="")).client()
+
     def test_a_failed_exchange_closes_the_connection_it_opened(self, monkeypatch):
         closed = []
         monkeypatch.setattr(httpx.Client, "close", lambda self: closed.append(self))
@@ -155,6 +159,15 @@ class TestHrZones:
         # A day either side: the filter's day may be GMT's where the run's is local.
         listed = [dict(r.url.params) for r in api.requests if r.url.path == LIST]
         assert listed == [{"start": "0", "limit": "100", "startDate": "2026-10-20", "endDate": "2026-10-22"}]
+
+    def test_reuses_the_detail_the_sync_already_fetched(self):
+        api = FakeApi(**{"/activity-service/activity/101": _detail("2026-10-21 07:00:00")})
+        client = api.client()
+        client.get_activity_detail("101")
+
+        client.get_hr_zones("101")
+
+        assert [r.url.path for r in api.requests].count("/activity-service/activity/101") == 1
 
     def test_a_row_not_found_raises_rather_than_passing_for_no_zones(self):
         # "No zones" would be stored over the zones on file.

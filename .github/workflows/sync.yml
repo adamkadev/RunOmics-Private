@@ -382,6 +382,14 @@ jobs:
           if [ -n "$MISSING" ]; then
             echo "::warning::This deployment has no credentials for: $MISSING. See docs/personal-deployments.md."
           fi
+          # Routes are stored as recorded, start and finish included: on a public
+          # site, anyone sees where every run begins.
+          PUBLIC=$(printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
+            | python -c "import json,sys; print('yes' if (json.load(sys.stdin).get('integrations') or {}).get('privateSite') is False else '')" 2>/dev/null || true)
+          if [ -n "$PUBLIC" ]; then
+            echo "::warning::This deployment is public and serves every route in full, start and finish included. Set RUNOMICS_PRIVATE=1 - see docs/personal-deployments.md."
+          fi
 
           # No check may take another one down with it. They are independent, and
           # a 504 on one of these used to abort the step under `bash -e` - which

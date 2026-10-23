@@ -1,4 +1,5 @@
 import 'server-only'
+import { isSitePrivate } from '@/lib/siteAccess'
 
 /**
  * Which of the server's integrations this deployment has credentials for, by
@@ -13,6 +14,12 @@ export interface IntegrationStatus {
   gemini: boolean
   /** The owner's Sync button. Optional: nothing else depends on it. */
   syncButton: boolean
+  /**
+   * The site answers only to the owner and invited viewers. Not a credential,
+   * but the sync's check reads it from here: routes are stored as recorded,
+   * start and finish included, and a public site serves them to anyone.
+   */
+  privateSite: boolean
 }
 
 export function integrationStatus(env: Readonly<Record<string, string | undefined>> = process.env): IntegrationStatus {
@@ -24,5 +31,6 @@ export function integrationStatus(env: Readonly<Record<string, string | undefine
       : set('FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY'),
     gemini: set('GEMINI_API_KEY'),
     syncButton: set('GITHUB_SYNC_TOKEN', 'GITHUB_SYNC_REPO'),
+    privateSite: isSitePrivate(env),
   }
 }
