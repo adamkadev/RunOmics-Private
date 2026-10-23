@@ -34,7 +34,6 @@ describe('WindowedChartCard: reading and footnote', () => {
       Node.DOCUMENT_POSITION_FOLLOWING
     )
 
-    // The definition is reference material: it is not ink until it is asked for.
     expect(screen.queryByText('Duration-weighted average HR.')).not.toBeInTheDocument()
 
     const disclosure = screen.getByRole('button', { name: t.analytics.aboutChart })
@@ -75,9 +74,7 @@ describe('WindowedChartCard: reading and footnote', () => {
       </WindowedChartCard>
     )
 
-    // The default window is 4 weeks, so a point 200 days old must not reach the
-    // reading - promoting a whole-series number to the top of the card would
-    // make it contradict the chart under it.
+    // The default 4-week window keeps a 200-day-old point out of the reading, or it would contradict the chart.
     expect(seen.at(-1)).toEqual([daysAgo(5), daysAgo(4), daysAgo(3)])
     expect(screen.getByText('3 weeks')).toBeInTheDocument()
   })
@@ -131,7 +128,6 @@ describe('WindowedChartCard: sparse windows', () => {
 
     const chart = screen.getByTestId('chart')
     expect(chart).toHaveAttribute('data-shape', 'sparse')
-    // Nothing under the card (v4.1 G32): no "N complete weeks" note.
     expect(screen.queryByText(/complete week/)).not.toBeInTheDocument()
   })
 

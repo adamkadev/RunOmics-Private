@@ -23,8 +23,6 @@ function activityLabel(activity: AdjacentActivity): string {
   return activityTitle(activity)
 }
 
-// A missing side takes no room: the latest run showed Previous beside an
-// empty half (G23).
 function NavLink({ activity, direction }: { activity: AdjacentActivity | null; direction: 'prev' | 'next' }) {
   if (!activity) return null
 
@@ -43,8 +41,7 @@ function NavLink({ activity, direction }: { activity: AdjacentActivity | null; d
         <span className={cn(EYEBROW_CLASS, 'font-normal text-muted-foreground')}>
           {isPrev ? t.activity.nav.previous : t.activity.nav.next}
         </span>
-        {/* The run and its date, so the link says which run it opens
-            (v4.17); a phone's half-width link keeps the name. */}
+        {/* A phone's half-width link keeps only the name. */}
         <span className="truncate text-sm font-semibold text-foreground">
           {activityLabel(activity)}
           <span className="hidden sm:inline"> · {formatDate(activity.date)}</span>

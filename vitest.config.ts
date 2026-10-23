@@ -8,16 +8,8 @@ const alias = {
 }
 
 /**
- * Building a jsdom window costs far more than most of these tests do, and only
- * the component tests need one. Splitting the suite in two lets the ~165 pure
- * logic files run in a bare node environment, which is most of why a full run
- * takes about a minute rather than three.
- *
- * The rule is the extension: a `.tsx` test renders something, so it gets a DOM.
- * A `.ts` test that reaches for `document`, `localStorage` or `navigator` has
- * to be listed here by hand - the alternative is giving all 198 files a window
- * on the chance a couple of them want one. A missing entry fails loudly (the
- * global is simply undefined), so it is a two-second fix, not a silent one.
+ * A jsdom window costs more than most tests do, so only these get one: a `.ts`
+ * test that reaches for `document`, `localStorage` or `navigator` is listed by hand.
  */
 const DOM_TESTS = [
   'src/**/*.test.tsx',
@@ -30,8 +22,7 @@ const SHARED_EXCLUDE = ['**/node_modules/**', '**/dist/**', 'e2e/**', 'screensho
 
 export default defineConfig({
   test: {
-    // Worker threads rather than child processes: on Windows especially, the
-    // per-file process spawn that `forks` pays is a large share of a run.
+    // Not `forks`: its per-file process spawn is a large share of a run, on Windows especially.
     pool: 'threads',
     projects: [
       {
@@ -60,10 +51,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
-      // All of src, the routes and adapters included. CI's weekly run reports
-      // the totals, with no threshold yet (.github/workflows/ci.yml).
       include: ['src/**/*.{ts,tsx}'],
-      // Test helpers, and the locale tables, which are data.
+      // The locale tables are data.
       exclude: ['src/**/__tests__/**', 'src/i18n/{en,fr}.ts'],
     },
   },

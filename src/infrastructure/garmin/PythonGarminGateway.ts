@@ -21,13 +21,8 @@ interface BridgeResponse {
 interface Bridge {
   child: BridgeProcess
   lines: AsyncIterator<string>
-  /**
-   * `spawn` reports a missing interpreter asynchronously, and readline's async
-   * iterator never ends on a destroyed stdin - so a dead bridge is something
-   * every read has to race, not something a listener can throw out of.
-   */
+  /** A failed spawn is reported asynchronously and readline never ends on a destroyed stdin, so every read races this. */
   died: Promise<never>
-  /** Resolves when the child exits: its error if the code was non-zero, else null. */
   ended: Promise<Error | null>
 }
 
@@ -37,8 +32,7 @@ export class PythonGarminGateway implements GarminWorkoutGateway {
 
   constructor(
     private readonly scriptPath = 'scripts/garmin/sync_bridge.py',
-    // Windows has no python3 on PATH - the name resolves to a Microsoft Store
-    // stub that exits 9009, which surfaces as every workout failing at once.
+    // On Windows, python3 resolves to a Microsoft Store stub that exits 9009.
     private readonly python = process.env.RUNOMICS_PYTHON?.trim()
       || (process.platform === 'win32' ? 'python' : 'python3'),
   ) {}
@@ -88,8 +82,7 @@ export class PythonGarminGateway implements GarminWorkoutGateway {
 
       const next = await Promise.race([lines.next(), died.catch((error: Error) => error)])
       if (next instanceof Error) throw next
-      // stdout closing can beat the 'exit' event, so wait for the real reason
-      // rather than racing it.
+      // stdout closing can beat the 'exit' event, so wait for the real reason.
       if (next.done) throw (await ended) ?? new Error('The Garmin bridge closed before answering')
 
       const response = JSON.parse(next.value) as BridgeResponse

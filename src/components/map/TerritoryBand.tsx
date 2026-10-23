@@ -11,22 +11,13 @@ interface TerritoryStat {
 
 export interface TerritoryCardContent {
   eyebrow: string
-  /** The sentence, with the ring it names set apart in the accent. */
   headline: { lead: string; accent: string; tail: string }
   stats: TerritoryStat[]
-  /** One action under the stats, full width (Districts' "Plan a run in …"); Heat sets none. */
   action?: { label: string; onClick: () => void }
-  /**
-   * The headline stands in for one on its way (Districts while its coverage
-   * loads): it holds two lines, the height of the sentence it replaces and of
-   * the one coming, so the card neither shrinks nor grows back. Heat sets none.
-   */
+  /** Holds two lines while the headline loads, so the card neither shrinks nor grows back. */
   pending?: boolean
 }
 
-// A pure renderer: whoever owns the current area and filters decides what
-// fact and which stats belong here, so the card never states something the
-// map above it disagrees with.
 export function TerritoryBand({ eyebrow, headline, stats, action, pending }: TerritoryCardContent) {
   return (
     <section
@@ -42,7 +33,6 @@ export function TerritoryBand({ eyebrow, headline, stats, action, pending }: Ter
           {headline.tail}
         </p>
       </div>
-      {/* The v4.17 stat: label on top, the value with its unit. */}
       <StatGrid columns={stats.length} className="border-t border-border pt-3.5">
         {stats.map((stat) => (
           <Stat key={stat.label} label={stat.label} value={stat.value} unit={stat.unit} valueStyle={{ fontSize: 24 }} />

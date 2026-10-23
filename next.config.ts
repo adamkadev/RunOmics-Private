@@ -29,16 +29,12 @@ const csp = [
 const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
-    // The deployed commit, for Settings › About: a device check names the
-    // build it was made on (v4.8). Vercel sets the SHA; a local build says so.
     NEXT_PUBLIC_BUILD_COMMIT: (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7) || "local",
   },
   outputFileTracingIncludes: {
     "/**": ["./data/**/*"],
   },
-  // Milestones moved into Records as a tab (3.1.0). A config redirect rather
-  // than a page that calls redirect(): the client router's redirect lands
-  // before the address bar shows ?tab=, so the tab read the old URL.
+  // A config redirect, not a page calling redirect(): the client router's redirect lands before the URL shows ?tab=.
   async redirects() {
     return [{ source: "/milestones", destination: "/records?tab=milestones", permanent: false }];
   },

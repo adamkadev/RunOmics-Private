@@ -1,10 +1,5 @@
 import type { SVGProps } from 'react'
 
-/**
- * Progress's tab icon (RunOmics 3.0): a trophy, drawn to the handoff's path
- * in the same outline style as the lucide icons beside it. Takes lucide's
- * `size` and `strokeWidth` so a nav list can treat it as one of them.
- */
 export function TrophyIcon({ size = 24, strokeWidth = 1.8, ...props }: SVGProps<SVGSVGElement> & { size?: number; strokeWidth?: number }) {
   return (
     <svg

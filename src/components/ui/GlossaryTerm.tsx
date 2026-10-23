@@ -8,7 +8,6 @@ import { t } from '@/i18n'
 
 export type GlossaryKey = Exclude<keyof typeof t.glossary, 'about' | 'aboutThese'>
 
-/** A term's one definition, the same wherever the term is shown. */
 export function glossaryDefinition(term: GlossaryKey): string {
   const entry = t.glossary[term]
   if (term === 'form') {
@@ -18,10 +17,6 @@ export function glossaryDefinition(term: GlossaryKey): string {
   return (entry as { definition: string }).definition
 }
 
-/**
- * The (i): an aria-expanded button with a 44 pt hit area. ChartCardHead had
- * one, about 18 pt; everything else with jargon on it had none.
- */
 export function InfoButton({
   open,
   onToggle,
@@ -54,10 +49,6 @@ export function InfoButton({
   )
 }
 
-/**
- * A term with its definition behind an (i). Form, CTL, ATL, VMA, LTHR, RPE and
- * the training effects were explained on some charts and nowhere else.
- */
 export function GlossaryTerm({
   term,
   children,
@@ -67,7 +58,7 @@ export function GlossaryTerm({
   term: GlossaryKey
   children?: ReactNode
   className?: string
-  /** No (i): the label itself opens the definition on a tap (C2, v4.4). */
+  /** No (i): the label itself opens the definition on a tap. */
   quiet?: boolean
 }) {
   const [open, setOpen] = useState(false)
@@ -98,8 +89,6 @@ export function GlossaryTerm({
 
   return (
     <span className={cn('inline', className)}>
-      {/* The label and its (i) never part: the (i) wrapped onto a line of its
-          own under "Effort (RPE)" and every Dynamics label (H11). */}
       <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
         {children ?? name}
         <InfoButton open={open} onToggle={() => setOpen((v) => !v)} label={t.glossary.about(name)} controls={id} className="-my-0.5" />
@@ -113,7 +102,6 @@ export function GlossaryTerm({
   )
 }
 
-/** One (i) for several terms side by side - a card's header over its numbers. */
 export function GlossaryInfo({ terms, className }: { terms: GlossaryKey[]; className?: string }) {
   const [open, setOpen] = useState(false)
   const id = useId()

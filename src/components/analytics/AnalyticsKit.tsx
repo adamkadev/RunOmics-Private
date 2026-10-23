@@ -14,12 +14,6 @@ import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
 import type { StatTone } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 
-/**
- * The v4.5 card recipe (D1-D4): a title with its source or unit on the right,
- * then the number, one sentence, the chart and its legend. The (i) icons are
- * gone; the title itself opens the card's explanation. The card itself is the
- * app's one (v4.17): radius 16, a line border, the surface, 18 x 20 padding.
- */
 export function Card({ children, className, testId }: { children: ReactNode; className?: string; testId?: string }) {
   return (
     <section data-testid={testId} className={cardClass({ className: cn('flex flex-col gap-3', className) })}>
@@ -29,20 +23,12 @@ export function Card({ children, className, testId }: { children: ReactNode; cla
 }
 
 /**
- * A card title: 15 px at 600, with its caption 13 px muted. One rule for the
- * caption (L5): on the title's line, at the right, only while the whole of
- * it fits there; otherwise on its own line under the title, from the left -
- * never a right-aligned caption wrapped under the title, as Temperature
- * cost's was. No measuring: in a wrapping row the caption moves down when
- * its one-line width does not fit beside the title, and alone on its line
- * `justify-between` puts it at the start.
+ * No measuring: in a wrapping row the caption moves under the title when its one-line width does not fit beside it,
+ * and alone on its line `justify-between` puts it at the start.
  */
 export function CardHead({ title, caption, about, right }: { title: string; caption?: ReactNode; about?: string; right?: ReactNode }) {
   const [open, setOpen] = useState(false)
-  // Never truncated: « Coût de la chaleur » lost half its width on a phone.
-  // The title keeps its words whole and the caption moves under it when the
-  // two do not fit one line - squeezed beside a long caption, the title broke
-  // letter by letter.
+  // Never truncated: the title keeps its words whole and the caption moves under it when the two do not fit one line.
   const titleClass = 'min-w-0 text-pretty text-left text-[15px] font-semibold leading-snug text-foreground'
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1" data-card-head>
@@ -68,7 +54,6 @@ export function CardHead({ title, caption, about, right }: { title: string; capt
   )
 }
 
-/** One sentence, 14 pt body in text-2, its key figure in bold text ink. */
 export function Sentence({ children, className, testId }: { children: ReactNode; className?: string; testId?: string }) {
   return (
     <p data-testid={testId} className={cn('text-sm leading-normal text-[var(--text-2)] text-pretty [&_b]:font-semibold [&_b]:text-foreground', className)}>
@@ -88,10 +73,6 @@ export function BoldSentence({ parts, className, boldColor }: { parts: readonly 
   )
 }
 
-/**
- * A card's one number (v4.17 stat value): 26 px at 600, its unit inline at
- * 13 px muted, and a note beside it - 12 px, muted unless it says something.
- */
 export function Headline({ value, unit, note, noteStyle, valueStyle, testId }: { value: ReactNode; unit?: ReactNode; note?: ReactNode; noteStyle?: CSSProperties; valueStyle?: CSSProperties; testId?: string }) {
   return (
     <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
@@ -108,13 +89,10 @@ export function Headline({ value, unit, note, noteStyle, valueStyle, testId }: {
   )
 }
 
-/** A delta's meaning as a stat tone: good news pos, worse warn, noise muted. */
 export const STAT_TONE: Record<DeltaTone, StatTone> = { good: 'pos', worse: 'warn', flat: 'muted' }
 
-// The legend is the app's one recipe (v4.17), shared with every page.
 export { Legend, LegendItem } from '@/components/ui/Legend'
 
-/** Start, middle and end of a window, the end read as Today while it is. */
 export function windowLabels(dates: string[], live: boolean): string[] {
   if (!dates.length) return []
   const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
@@ -122,7 +100,6 @@ export function windowLabels(dates: string[], live: boolean): string[] {
   return [bare(dates[0]!), bare(mid), live ? t.analytics.cards.today : bare(dates[dates.length - 1]!)]
 }
 
-/** Axis labels under a chart, spread end to end: 11 px muted. */
 export function AxisLabels({ labels, className }: { labels: string[]; className?: string }) {
   return (
     <div className={cn('flex justify-between text-caption leading-none text-muted-foreground', className)} aria-hidden>
@@ -133,13 +110,7 @@ export function AxisLabels({ labels, className }: { labels: string[]; className?
   )
 }
 
-/**
- * The page's one period control (v4.17), right of the title: a header
- * toggle in glass, as SegmentedTabs' barMirror recipe (Liquid Glass v2,
- * section 11) - 36 pt segments in a 44 pt capsule, the chosen one on the tab
- * bar's pill. It stays a radiogroup: a period filters the tab under it, it
- * is not a tab of its own.
- */
+/** A radiogroup, not tabs: a period filters the tab under it, it is not a tab of its own. */
 export function PeriodControl<P extends string>({ periods, value, onChange }: { periods: readonly P[]; value: P; onChange: (p: P) => void }) {
   const s = t.analytics.cards.period
   return (
@@ -152,7 +123,7 @@ export function PeriodControl<P extends string>({ periods, value, onChange }: { 
           type="button"
           role="radio"
           aria-checked={p === value}
-          // "4W" on screen, "4 weeks" read aloud (3.1.0).
+          // "4W" on screen, "4 weeks" read aloud.
           aria-label={s.words[p]}
           onClick={() => onChange(p)}
           className={cn(
@@ -174,13 +145,6 @@ const DIALOG_TONE: Record<StatTone, string> = {
   muted: 'var(--muted-foreground)',
 }
 
-/**
- * The page's one dialog (v4.17): a centred modal, 520 wide at most, radius
- * 18, over a 55% scrim blurred 2 px - no bottom-sheet handle. An eyebrow and
- * a 19 px title with a close button, the body, then its actions on the right
- * (Close alone unless it has its own). Focus stays inside, Escape closes it
- * and the page under it does not scroll.
- */
 export function Dialog({
   title,
   eyebrow,
@@ -209,7 +173,7 @@ export function Dialog({
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
 
-  // Under the status bar, as every sheet: the strip dims itself (useScrollLock).
+  // Under the status bar, as every sheet: useScrollLock dims the strip itself.
   return createPortal(
     <div className="fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-50 flex items-center justify-center p-4 sm:p-6" style={{ touchAction: 'none' }}>
       <div className="absolute inset-0 animate-fade-in bg-[var(--scrim-sheet)]" onClick={onClose} aria-hidden />
@@ -241,8 +205,7 @@ export function Dialog({
           </button>
         </div>
         {children}
-        {/* One way to dismiss (design review, Oct 2026): the × above, the
-            backdrop and Escape. A second "Close" beside it said the same. */}
+        {/* No second "Close" here: the ×, the backdrop and Escape already dismiss. */}
         {actions && <div className="flex justify-end gap-2">{actions}</div>}
       </div>
     </div>,
@@ -250,10 +213,7 @@ export function Dialog({
   )
 }
 
-/**
- * An SVG path through values on a w×h box. A missing value is stepped over,
- * so a week without a workout doesn't cut the line in two.
- */
+/** A missing value is stepped over, so a week without a workout doesn't cut the line in two. */
 export function linePath(values: (number | null)[], min: number, max: number, w: number, h: number): string {
   const n = values.length
   const range = max - min || 1
@@ -274,10 +234,8 @@ const MOVE_TOLERANCE_PX = 8
 const SWIPE_PX = 56
 
 /**
- * Press and hold on a chart for a hairline and a value chip; let go and it
- * goes. A horizontal swipe instead moves the tab's window back or forward in
- * time (v4.5): the charts are the only place history is browsed now that the
- * cards' own date arrows are gone. A mouse gets the readout on hover.
+ * Press and hold for a hairline and a value chip; a horizontal swipe instead moves the tab's window in time. A mouse
+ * gets the readout on hover.
  */
 export function ChartScrub({
   count,
@@ -394,22 +352,15 @@ export function ChartScrub({
   )
 }
 
-/**
- * The one "this week" mark on a weekly bar (v4.17): a week still under way is
- * dashed, as a planned session is. Weekly distance draws it as a dashed accent
- * outline over no fill; Long run and Time in zones keep their colours inside
- * the same dashed outline.
- */
+/** A week still under way is dashed, as a planned session is. */
 export const THIS_WEEK_BORDER = '1.5px dashed var(--accent)'
 
 /** A missed week's outline: a plan it had, and nothing run against it. */
 export const MISSED_WEEK_BORDER = '1.5px dashed var(--muted-foreground)'
 
 /**
- * A week with nothing run: a 2 pt stub on the baseline, so it reads as a
- * zero, not as no data. A week that had a plan and missed it is drawn taller
- * as a dashed outline instead, with a legend entry of its own (App Fixes 2c),
- * so a missed week and a week the plan never asked for stop looking alike.
+ * A stub on the baseline, so a week with nothing run reads as a zero, not as no data; a missed week is a taller
+ * dashed outline, so it never looks like a week the plan never asked for.
  */
 export function EmptyWeek({ missed = false }: { missed?: boolean } = {}) {
   if (!missed) return <div aria-hidden data-testid="empty-week" className="h-0.5 rounded-[1px] bg-[var(--band)]" />

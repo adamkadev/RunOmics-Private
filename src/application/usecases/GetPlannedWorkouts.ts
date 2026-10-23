@@ -101,10 +101,8 @@ export async function getPlannedWorkouts(): Promise<PlannedWorkout[]> {
 }
 
 /**
- * The Garmin session dated `today`. The date is the caller's: read from the
- * server's own clock (UTC on Vercel), it was still yesterday for the first
- * hours after the athlete's midnight, and Today showed Sunday's long run on
- * Monday's rest day.
+ * The date is the caller's: the server's clock is UTC on Vercel, still
+ * yesterday for the first hours after the athlete's midnight.
  */
 export async function getTodayPlannedWorkout(today: string = appTodayIso()): Promise<PlannedWorkout | null> {
   const planned = await getPlannedWorkouts()

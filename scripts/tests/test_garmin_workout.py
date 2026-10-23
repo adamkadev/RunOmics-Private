@@ -35,10 +35,9 @@ class TestEstimateFromSteps:
 
         total_dist, total_dur = estimate_from_steps(steps)
 
-        interval_secs = 400 / (1000 / 225)  # distance / speed
-        # Warm-up + 9x400m + 9x1' recovery + cool-down: none of it should be dropped.
+        interval_secs = 400 / (1000 / 225)
         assert total_dur == 20 * 60 + 9 * interval_secs + 9 * 60 + 10 * 60
-        assert total_dist > 9 * 400  # warm-up/cool-down/recovery jogging adds real km on top of the 9x400m
+        assert total_dist > 9 * 400
 
     def test_time_step_without_pace_target_uses_fallback_pace(self):
         steps = [_open_time_step("interval", 45 * 60)]
@@ -61,10 +60,6 @@ class TestEstimateFromSteps:
 
 
 class TestResolveDistanceDuration:
-    """The two strategies _build_entries picks between by is_adaptive - see
-    their docstrings for why each trusts (or distrusts) Garmin's top-level
-    estimatedDistanceInMeters/estimatedDurationInSecs."""
-
     def test_manual_sums_steps_over_garmins_incomplete_top_level_estimate(self):
         steps = [
             _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
@@ -97,10 +92,8 @@ class TestResolveDistanceDuration:
 
 class TestBuildWorkoutSteps:
     def test_trailing_standalone_rest_step_is_relabeled_cooldown(self):
-        # Garmin's stepTypeKey "rest" is used both for the in-repeat recovery
-        # jog and, in Decathlon Pacer/Kiprun plans, for the final cool-down -
-        # RunOmics can only tell them apart by position (standalone vs. inside
-        # the RepeatGroupDTO).
+        # "rest" is both the in-repeat recovery jog and, in Decathlon Pacer/Kiprun plans, the final cool-down: only
+        # position tells them apart.
         detail = _detail_with_steps(
             _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
             _repeat_group(
@@ -118,7 +111,6 @@ class TestBuildWorkoutSteps:
         assert steps[0]["kind"] == "warmup"
         assert steps[-1]["kind"] == "cooldown"
         assert "rep" not in steps[-1]
-        # The 9 in-repeat recovery jogs keep their "recovery" kind and rep number.
         in_repeat_recoveries = [s for s in steps if s["kind"] == "recovery"]
         assert len(in_repeat_recoveries) == 9
         assert all("rep" in s for s in in_repeat_recoveries)
@@ -135,8 +127,7 @@ class TestBuildWorkoutSteps:
         assert steps[-1]["kind"] == "cooldown"
 
     def test_no_trailing_standalone_step_leaves_last_in_repeat_recovery_alone(self):
-        # Workout ends right on the last recovery jog inside the repeat group -
-        # there's no separate cool-down to infer, so it must stay "recovery".
+        # The workout ends on the last recovery jog inside the repeat group: there is no cool-down to infer.
         detail = _detail_with_steps(
             _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
             _repeat_group(
@@ -154,10 +145,6 @@ class TestBuildWorkoutSteps:
         assert steps[-1]["rep"] == 3
 
     def test_single_continuous_block_is_still_returned(self):
-        # A plain "Base" run with just a pace-zone goal (no warm-up/cool-down,
-        # no repeats) is one lone ExecutableStepDTO - Garmin Connect itself
-        # shows an estimated pace range for it, so RunOmics shouldn't drop it
-        # either: the frontend renders a single effort step as "X' @ pace".
         detail = _detail_with_steps(
             _pace_zone_step("interval", "time", 85 * 60, 323, 343),
         )
@@ -174,9 +161,7 @@ class TestBuildWorkoutSteps:
 
 class TestCollectSteps:
     def test_expands_repeat_group_children_per_iteration(self):
-        # Real Garmin/Kiprun interval workouts wrap the reps in a single
-        # RepeatGroupDTO (type != "ExecutableStepDTO"), not a flat list - a
-        # naive top-level filter drops the whole interval block.
+        # Real Garmin/Kiprun interval workouts wrap the reps in a single RepeatGroupDTO, not a flat list.
         detail = _detail_with_steps(
             _pace_zone_step("warmup", "time", 20 * 60, 346, 375),
             _repeat_group(

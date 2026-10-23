@@ -15,11 +15,7 @@ import { avoidClause, promptVersion, systemInstruction } from './prompt'
 export const RUN_VERDICT_PREFIX = 'runVerdict_'
 export const RUN_VERDICT_LIMITS = { headline: 56, body: 150 }
 
-/**
- * Part of every verdict's hash: bump it with a change to the prompt, and the
- * runs inside the verdict horizon are written again on the next pass instead
- * of keeping copy from the old prompt (v4.16.4).
- */
+/** Part of every verdict's hash: bump it with a prompt change, so runs inside the horizon are written again. */
 export const RUN_VERDICT_PROMPT_VERSION = 4
 
 export function runVerdictSurface(activityId: string): string {
@@ -54,7 +50,6 @@ function verdictTemperature(activity: Activity): number | null {
   return Math.round(activity.weather.apparentTempC)
 }
 
-/** The note and tags the athlete wrote on the run in the app. */
 export interface AthleteNote {
   note: string
   tags: string[]
@@ -65,19 +60,12 @@ export interface RunVerdictContext {
   history: RunHistory
   planned: PlannedWorkout | null
   official?: OfficialRaceResult | null
-  /** The athlete's note: null when there is none, undefined when the notes could not be read. */
+  /** Null when there is none, undefined when the notes could not be read. */
   note?: AthleteNote | null
-  /** What the coaching plan wrote this session for, when it planned one. */
   intent?: SessionIntent | null
 }
 
-/**
- * The note a verdict was written with, stored beside it (v4.16.5). Kept out of
- * the facts hash, which the activity page rebuilds on every render and which
- * would then need a Firestore read of its own; the insight pass compares it
- * instead, and writes the verdict again when the athlete adds "sick" to a
- * session it had already judged.
- */
+/** Kept out of the facts hash, which the activity page rebuilds on every render and would then need a Firestore read of its own. */
 export function runVerdictNoteKey(note: AthleteNote | null): string {
   if (!note || (!note.note.trim() && !note.tags.length)) return ''
   return insightHash({ note: note.note.trim(), tags: [...note.tags].sort().join(',') })
@@ -85,14 +73,7 @@ export function runVerdictNoteKey(note: AthleteNote | null): string {
 
 const NOTE_PROMPT_CHARS = 300
 
-// ─── What the session was for ──────────────────────────────────────────────
-
-/**
- * What the run was for, which is what it is judged against (v4.16.4): an
- * easy run's job is to stay easy, a threshold session's to hold its reps on
- * target. The plan says what the session was for when there is one; Garmin's
- * read of the effort only when there is not.
- */
+/** What the run is judged against: the plan's purpose when there is one, Garmin's read of the effort only when there is not. */
 export type RunKind = 'easy' | 'long' | 'strides' | 'tempo' | 'threshold' | 'intervals' | 'race'
 
 const KIND_BY_TYPE: Partial<Record<ActivityType, RunKind>> = {
@@ -114,13 +95,7 @@ const KIND_LABEL: Record<RunKind, string> = {
   race: 'a race',
 }
 
-/**
- * The type a run is judged as - what it was for - for its expected effort and
- * the runs it is compared with. Never Garmin's training-effect label: that is
- * the watch's estimate, and it called an easy run spent entirely in zones 1-2
- * "Tempo", which the verdict then wrote up as "turned into a tempo session"
- * (v4.16.5).
- */
+/** Never Garmin's training-effect label: the watch's estimate can call an easy run spent entirely in zones 1-2 "Tempo". */
 function judgedType(kind: RunKind, activity: Activity): ActivityType {
   switch (kind) {
     case 'easy':
@@ -140,11 +115,7 @@ function judgedType(kind: RunKind, activity: Activity): ActivityType {
 
 const stepSeconds = (step: WorkoutStep) => step.seconds ?? step.minutes * 60
 
-/**
- * The plan's reps, split as the run's own are (see MIN_REP_SECONDS): short
- * reps beside a continuous block are strides, and with no such block they
- * are the session.
- */
+/** Split as the run's own reps are (see MIN_REP_SECONDS). */
 function plannedReps(planned: PlannedWorkout | null): { quality: WorkoutStep[]; strides: WorkoutStep[] } {
   const efforts = planned?.steps?.filter((step) => step.kind === 'effort') ?? []
   const reps = efforts.filter((step) => step.rep !== undefined)
@@ -156,7 +127,6 @@ function plannedReps(planned: PlannedWorkout | null): { quality: WorkoutStep[]; 
   }
 }
 
-/** The kind a verdict is written for, which the pass groups earlier verdicts by. */
 export function runVerdictKind({ activity, planned }: Pick<RunVerdictContext, 'activity' | 'planned'>): RunKind {
   return runKind(activity, planned, sessionExecution(activity))
 }
@@ -172,8 +142,6 @@ export function runKind(activity: Activity, planned: PlannedWorkout | null, exec
   const description = [planned?.name, activity.description].filter(Boolean).join(' ')
   return isLongSession({ durationSeconds: activity.durationSeconds, description }) ? 'long' : 'easy'
 }
-
-// ─── Reps against the plan ─────────────────────────────────────────────────
 
 /** A GPS rep reads a couple of seconds either side of its true pace. */
 const REP_PACE_TOLERANCE = 2
@@ -207,13 +175,8 @@ function repAdherence(execution: SessionExecution, planned: WorkoutStep[]): RepA
 }
 
 /**
- * The tone the numbers support, with perceived effort read against what the
- * run was for. It is not the whole story on a structured session: reps off
- * the target, or fewer than planned, are no "the session landed" whatever the
- * RPE says - and reps faster than asked count as off, a threshold session run
- * as VO2max being a harder day than the plan wanted. The other way round, reps
- * on target at a lower effort than the band are fitness showing, not a
- * shortfall: "reps achieved at lower than target exertion" (v4.16.5).
+ * Reps off target, faster included, or fewer than planned cap the tone whatever the RPE says.
+ * Reps on target at a lower effort than the band are fitness showing, not a shortfall.
  */
 function verdictTone(activity: Activity, kind: RunKind, reps: RepAdherence | null, repsRun: boolean): VerdictTone {
   const judged = { ...activity, type: judgedType(kind, activity) }
@@ -224,15 +187,11 @@ function verdictTone(activity: Activity, kind: RunKind, reps: RepAdherence | nul
     if (!onTarget) return tone === 'positive' ? 'neutral' : tone
     return tone === 'neutral' && easier ? 'positive' : tone
   }
-  // The athlete rates the whole session, warm-up and cool-down included: RPE 6
-  // around seven 60 s reps is no sign they were run soft, and read against the
-  // 8-10 of the reps alone it came back as "intensity fell short" (v4.16.5).
+  // The athlete rates the whole session, warm-up and cool-down included, so a lower RPE is no sign the reps were run soft.
   return QUALITY_KINDS.has(kind) && repsRun && tone === 'neutral' && easier ? 'positive' : tone
 }
 
 const QUALITY_KINDS: ReadonlySet<RunKind> = new Set(['tempo', 'threshold', 'intervals'])
-
-// ─── Fact lines ────────────────────────────────────────────────────────────
 
 const pace = (secPerKm: number) => formatClock(secPerKm)
 const bandText = ([fast, slow]: Band) => `${pace(fast)}-${pace(slow)} /km`
@@ -253,10 +212,7 @@ function repsLine(reps: RepAdherence): string {
 const PACE_NOISE_SEC_PER_KM = 3
 const HR_NOISE_BPM = 3
 
-/**
- * A change in words, never a sign: "-12s/km from first to last" - the last rep
- * the quicker - was written up as "the pace faded by 12 s/km" (v4.16.5).
- */
+/** In words, never a sign: the model reads "-12s/km from first to last" as a fade. */
 function paceChange(secPerKm: number, than: string): string {
   return Math.abs(secPerKm) < PACE_NOISE_SEC_PER_KM
     ? `at the pace of ${than}`
@@ -274,8 +230,7 @@ function executionLine(execution: NonNullable<SessionExecution>, kind: RunKind):
   }
   const drift = heartChange(execution.hrDriftBpm, 'in the second half')
   const halves = `the second half ${paceChange(execution.fadeSecPerKm, 'the first')}`
-  // Kilometre-to-kilometre spread on an easy day is terrain and traffic, not
-  // execution; given as a fact, it came back as one ("22s/km spread") (v4.16.5).
+  // Spread on an easy day is terrain and traffic, not execution; given as a fact, the model reports it as one.
   const spread = EASY_KINDS.has(kind) ? '' : `, ${execution.spreadSecPerKm}s/km between the fastest and slowest kilometre`
   return `- How it held: ${halves}${drift}${spread}`
 }
@@ -304,17 +259,12 @@ function zoneMinutes(activity: Activity, zones: (zone: number) => boolean): numb
 }
 
 /**
- * An easy day belongs in zones 1-2, and zone 3 - the grey zone an easy run
- * drifts into - counts against it. When it held, that is the default and says
- * so: handed over as the measure, it became every easy verdict's headline -
- * "Full zone discipline protects the easy effort", "Strict zone control keeps
- * the easy effort intact" - over "zero time in zones 4-5" (v4.16.5).
+ * Zone 3 is the grey zone an easy run drifts into.
+ * Zones that held are labelled the default, or the model makes them every easy verdict's headline.
  */
 const GREY_SHARE_ALLOWED = 0.1
 function zonesLine(kind: RunKind, activity: Activity, hardMinutes: number | null, reps: RepAdherence | null): string | null {
-  // Reps against their target say how hard a structured session was better
-  // than zone time does - and the zones themselves were set on another model
-  // before September, which counted 17 Sep's 175 bpm reps as zone 3 (v4.16.5).
+  // Reps against their target say how hard a structured session was better than zone time does.
   if (hardMinutes === null || (reps && reps.done > 0)) return null
   const easy = zoneMinutes(activity, (zone) => zone <= 2)
   const grey = zoneMinutes(activity, (zone) => zone === 3)
@@ -331,9 +281,8 @@ function zonesLine(kind: RunKind, activity: Activity, hardMinutes: number | null
 }
 
 /**
- * The Conditions row of the verdict card prints the air temperature and the
- * wind (runConditions.ts); the rest of the weather is only here, as a cause.
- * The watch's own sensor, for runs without weather, reads the body's heat.
+ * The card prints the air temperature and the wind (runConditions.ts); the rest of the weather is only here, as a cause.
+ * The watch's own sensor reads the body's heat.
  */
 function conditionsLine(activity: Activity): string | null {
   const w = activity.weather
@@ -382,14 +331,7 @@ function noteLine(note: AthleteNote | null | undefined): string | null {
 
 const INTENT_PROMPT_CHARS = 400
 
-/**
- * The coach's words for this session and its week (v4.16.6). Without them a
- * threshold session was judged on what every threshold session is judged on -
- * reps on target, even, little drift - and every one read "Precise threshold
- * control maintains target speed". The plan says what this one was for: a
- * first measurement of the pace, the easy day after the reps, a long run kept
- * inside its recent maximum.
- */
+/** Without the coach's words, every session of a kind is judged on the same things and reads the same. */
 function intentLines(intent: SessionIntent): string[] {
   const clip = (text: string) => text.trim().slice(0, INTENT_PROMPT_CHARS)
   return [
@@ -410,7 +352,6 @@ const REP_LENGTH_NOISE_SECONDS = 5
 
 const daysBefore = (days: number) => (days === 0 ? 'earlier the same day' : `${days} day${days === 1 ? '' : 's'} before`)
 
-/** Session to session, in words: how a block progresses - longer reps at the same pace - or slips. */
 function previousSessionLine(activity: Activity, last: PreviousSession): string | null {
   const now = repStats(activity)
   const word = SESSION_WORD[activity.type]
@@ -433,7 +374,6 @@ function previousSessionLine(activity: Activity, last: PreviousSession): string 
 /** Under half a kilometre past the longest run is the same distance, not a new longest. */
 const LONGER_BY_KM = 0.5
 
-/** A long run against the longest of the last three months, which the plan builds durability against. */
 function longestLine(activity: Activity, longest: LongestRun): string {
   if (activity.distanceKm - longest.km >= LONGER_BY_KM) {
     return longest.daysSinceAsLong === null
@@ -456,8 +396,7 @@ function plannedLine(planned: PlannedWorkout): string {
     return `- The plan asked for ${shape} that day`
   }
 
-  // "Base" is Garmin's word for an easy session, and came back as jargon
-  // ("base running", "your recent base average") (v4.16.5).
+  // "Base" is Garmin's word for an easy session; the model echoes it as jargon.
   const type = planned.type && planned.type !== 'Base' ? planned.type : null
   const detail = [type, minutes].filter((part) => part !== null).join(', ')
   return `- The plan asked for "${planned.name}" that day${detail ? ` (${detail})` : ''}`
@@ -495,8 +434,6 @@ function cadenceLine(runs: number, previous: PreviousRun): string {
   const what = previous.description && !COACH_TYPE_WORDS.test(previous.description.trim()) ? `"${previous.description}"` : TYPE_LABEL[previous.type]
   return `- ${runs} run${runs === 1 ? '' : 's'} in the 7 days up to it; the previous one, ${when}, was ${what}`
 }
-
-// ─── Facts, hash and prompt ────────────────────────────────────────────────
 
 function facts({ activity, history, planned, official, intent }: RunVerdictContext) {
   const execution = sessionExecution(activity)
@@ -539,9 +476,7 @@ function facts({ activity, history, planned, official, intent }: RunVerdictConte
     planned: planned?.name ?? null,
     plannedType: planned?.type ?? null,
     plannedMinutes: planned?.durationSecs ? Math.round(planned.durationSecs / 60) : null,
-    // Earlier runs of the same Garmin type are only like for like when that
-    // type is what the run was for: an easy run Garmin called "Tempo" is no
-    // peer of the tempo sessions.
+    // The same Garmin type is only like for like when it is what the run was for: an easy run Garmin called "Tempo" is no tempo peer.
     baseline:
       history.baseline && judgedType(kind, activity) === activity.type ? baselineLine(kind, activity.type, history.baseline, activity) : null,
     standing: history.standing?.label ?? null,
@@ -572,11 +507,7 @@ function headlineKey(headline: string): string {
 
 const opening = (headline: string) => headlineKey(headline).split(/\s+/).slice(0, 2).join(' ')
 
-/**
- * A headline another verdict already used, or one opening on the same two
- * words as a verdict the model was shown ("Full zone discipline...", "Full
- * zone control..."): a lite model handed a list not to echo still echoes it.
- */
+/** Also matches the first two words of a shown verdict: a lite model handed a list not to echo still echoes it. */
 export function repeatsEarlierVerdict(
   candidate: Pick<WrittenVerdict, 'headline'>,
   written: Pick<WrittenVerdict, 'headline'>[],
@@ -587,11 +518,7 @@ export function repeatsEarlierVerdict(
   return written.some((earlier) => headlineKey(earlier.headline) === key) || shown.some((earlier) => opening(earlier.headline) === start)
 }
 
-/**
- * "Say so on the strongest fact that shows it" (v4.16.4) picked the same fact
- * for every good session of a kind - the spread for a threshold session, the
- * zones for an easy run - and with it the same headline (v4.16.6).
- */
+/** Never "the strongest fact": the model picks the same one, and the same headline, for every good session of a kind. */
 const TONE_RULES: Record<VerdictTone, string> = {
   positive:
     'The run did what this session was for. Say it on what matters most about this run today, never on what is true of every good session of its kind.',
@@ -608,9 +535,7 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   ),
   'Never contradict the tone you are given: it is the judgement the numbers support.',
   'Judge whether this run did its job. The days around it are context for judging it, never the subject, and never advise what to do next.',
-  // v4.16.4: RPE and the conditions sit in the same card, right under the text.
   "The card already prints the distance, duration, average pace, average heart rate, perceived effort (RPE) and the conditions: never state those numbers. A difference against earlier runs or against the plan's target is fine (\"8s/km quicker\", \"inside the 4:22-4:28 target\"); repeating this run's own printed numbers is not.",
-  // v4.16.6: the job is what every run of a kind is judged on; the verdict is what this one did with it.
   "What the job is depends on the session. How a session is judged is not the verdict: when its job held, that is expected, and what sets this run apart is the story.",
   "An easy run's job is to stay easy: nearly all of it in zones 1-2. That is the default, not news: when it held, give it a few words at most, never the headline, and never mention an empty zone 4-5. Lead instead with what sets this run apart - its heart rate against earlier easy runs at the same pace, its drift, where it sat in the week (the day after a hard session, a second run that day), or conditions that cost something. Only when zone 3 or above crept in is the zone time the verdict. Pace is never the achievement on an easy day, and quicker is only good news when the heart rate did not rise with it. With strides, the easy running is what you judge; the strides only count as done.",
   "A long run's job is time on feet at an easy effort: judge how the second half held, its heart rate drift and fade, and how far it went against the longest run of recent months. Kilometre-to-kilometre pace spread is terrain, not execution.",
@@ -618,15 +543,11 @@ export const RUN_VERDICT_SYSTEM_INSTRUCTION = [
   'An interval session is judged on the reps completed and held at the target, and the fade from first to last; when they held, the story is elsewhere, as for a threshold session.',
   "On a structured session the athlete's RPE covers the whole run, warm-up and cool-down included: judge the reps by their pace and heart rate, never by that number, and never call a session short of its intensity because of it.",
   'A race is judged on its pacing - an even or negative split is the skill - its result against earlier bests, and its placing.',
-  // v4.16.6: the coaching plan writes each session's purpose.
   "When the coach's words for the session are given, they say what this particular session was for - a first measurement of a pace, easy running the day after the reps, a long run kept inside its recent maximum - and whether it did that is the verdict. Never quote them back.",
   'Lead with what this run makes the most of; never default to the comparison with earlier runs because it is there.',
   'When the effort sits outside the expected band, look for a cause in the other facts - heat, humidity, wind, elevation - and name it rather than assuming the athlete misjudged the session. Name the cause, never its number.',
   'When a planned session is given, judge what was run against what was asked, and say so plainly if they differ.',
-  // v4.16.5: 23 Sep read "Precise threshold control" over the athlete's own note, "sick".
   "The athlete's note, when there is one, is what the numbers cannot tell you: never quote it back, it is printed on the card, but judge the run in its light. A session run sick, tired or sore is never written up as if nothing happened.",
-  // v4.16.6: "Precise threshold control maintains target speed", "Controlled threshold pace delivered" - a label of adjectives
-  // and nouns fits every session of a kind, and a body of comma-separated numbers read the same under each.
   'Write as a coach talks to the athlete, not as a report. The headline is a full sentence with a verb, something you would say to them once they stop - never a label of adjectives and nouns. If it would fit any other session of its kind, it is not this run\'s verdict yet.',
   'The body gives the one or two facts the headline rests on and what they mean, as one or two plain sentences - never a list of numbers.',
   'Vary the shape from one verdict to the next: a plain statement, a contrast, a comparison with last time, one moment of the run.',

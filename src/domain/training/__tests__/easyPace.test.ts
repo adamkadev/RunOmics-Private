@@ -8,7 +8,6 @@ describe('easyPaceReading', () => {
     expect(easyPaceReading([week(0, null)])).toBeNull()
   })
 
-  // G06: the tile took the last week (5:18) while the headline pooled four (5:23).
   it('reads the median of the latest four weeks with an easy run', () => {
     const weeks = [330, 331, 332, 333, 325, 326, 320, 318].map((p, i) => week(i, p))
     expect(easyPaceReading(weeks)?.now).toBe(322.5)

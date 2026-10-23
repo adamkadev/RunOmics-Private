@@ -26,7 +26,7 @@ describe('StaleSyncBanner', () => {
     expect(banner.getAttribute('style')).toContain('var(--warn)')
   })
 
-  // Signed out, the sync lives in Settings, as the header's line has it.
+  // Signed out, the sync lives in Settings.
   it('offers a 44 pt sync that sends a visitor to Settings', async () => {
     render(<StaleSyncBanner lastSyncedAt={hoursAgo(31)} />)
     const sync = await screen.findByRole('button', { name: t.dashboard.stale.sync })

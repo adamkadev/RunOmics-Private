@@ -8,32 +8,18 @@ import type {
 } from '@/domain/explore/types'
 
 /**
- * The messages between the Explore engine (main thread) and its worker.
- *
- * Every request carries an `id` and is answered exactly once with the same
- * `id`, either `{ id, result }` or `{ id, error }`, so the engine can keep
- * several requests in flight and still hand each answer to its own caller.
- *
- * This module holds types and one pure helper only: the worker imports it,
- * and nothing it pulls in may reach the locale tables.
+ * Every request is answered exactly once with its own `id`, so several can be in flight.
+ * Types and one pure helper only: the worker imports this, and nothing it pulls in may reach the locale tables.
  */
 
 export type LonLat = [number, number]
 
-/**
- * How an area is named on both sides: id and version, so a rebuilt area file
- * is a different area and never mixes with results computed on the old one.
- */
+/** The version is part of it, so a rebuilt area never mixes with results computed on the old one. */
 export function areaKey(ref: Pick<ExploreAreaRef, 'id' | 'version'>): string {
   return `${ref.id}:${ref.version}`
 }
 
-/**
- * A run's place in a cluster's routes. `/api/map/routes` keys its tracks by
- * route index, which shifts with every new run; coverage keys them by
- * activity id, which never does. The answer names the run at each index, so
- * the worker only takes `routeIdx` where the two agree (`locateClusterTracks`).
- */
+/** `/api/map/routes` keys its tracks by route index, which shifts with every new run; the activity id never does. */
 export interface ClusterTrackRef {
   routeIdx: number
   id: string
@@ -41,10 +27,7 @@ export interface ClusterTrackRef {
   date: string
 }
 
-/**
- * Many tracks in two flat buffers, so they cross to the worker by transfer
- * instead of as 200 000 small arrays to clone.
- */
+/** Two flat buffers, so the tracks cross to the worker by transfer instead of as 200 000 small arrays to clone. */
 export interface TrackBuffers {
   ids: string[]
   /** 'YYYY-MM-DD', one per id. */
@@ -59,27 +42,20 @@ export interface TrackBuffers {
 }
 
 export interface CoverageOptions {
-  /** Count only these runs (the map's heat filters); undefined counts every run added to the area. */
+  /** undefined counts every run added to the area. */
   activityIds?: string[]
-  /** For distances and the next quartier; null when unknown. */
   home: LonLat | null
-  /**
-   * With no `home`, use the median start of the runs counted - `activityIds`,
-   * or every run added to the area (`medianStart`): a page that never loads
-   * the map can still rank the next quartier, and the start points never
-   * leave the worker's memory.
-   */
+  /** With no `home`, the median start of the runs counted, so the start points never leave the worker's memory. */
   homeFromTracks?: boolean
 }
 
 export interface ScoreRoutesRequest {
   candidates: RouteCandidate[]
-  /** The distance asked for, in metres. */
   targetM: number
   prefs: RoutePreferences
 }
 
-/** No home: the start is worked out from the area file alone (see `routeStart` in the domain). */
+/** No home: the start is worked out from the area file alone. */
 export interface RouteStartRequest {
   unitId: string
 }
@@ -103,7 +79,6 @@ export interface AddedTracks {
   added: string[]
 }
 
-/** What each request resolves to. */
 export interface ExploreResults {
   /** The main thread needs the shapes for MapLibre. */
   loadArea: ExploreAreaFile
@@ -112,7 +87,7 @@ export interface ExploreResults {
   coverage: AreaCoverage
   /** Best first. */
   scoreRoutes: ScoredRoute[]
-  /** See `routeStart` in the domain: a public point inside the unit, never home. */
+  /** A public point inside the unit, never home. */
   routeStart: LonLat | null
 }
 

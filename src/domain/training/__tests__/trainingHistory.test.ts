@@ -15,9 +15,8 @@ describe('training history', () => {
     expect(result).toMatchObject({ historicalPeakWeekKm: 40, best4WeekAverageKm: 12, recent28DaysKm: 48, recent28DaysRuns: 2, recentWeeklyAverageKm: 12, recentWeeklyAverageRuns: 0.5, daysSinceLastRun: 5, longestRecentGapDays: 20 })
   })
   it('reports the weekly series in order, with the empty weeks that the averages hide', () => {
-    // Three 50 km weeks, a fortnight away, then 45 back. The 28-day mean reads
-    // 23.75 and looks like decline; the series shows an interruption the
-    // athlete has already recovered from.
+    // Three 50 km weeks, a fortnight away, then 45 back: the 28-day mean reads
+    // 23.75 and looks like decline.
     const weeks = ['2026-01-05', '2026-01-12', '2026-01-19'].map((date) => run(date, 50))
     const { weeklySeries, recentWeeklyAverageKm } = trainingHistory([...weeks, run('2026-02-09', 45)], '2026-02-15')
 

@@ -22,7 +22,6 @@ export interface BootstrapRequest {
   primaryTargetEvent: TargetEvent | null
   tuneUpEvents: TargetEvent[]
   horizonEndDate: string
-  /** Where the season began, so the block can be told which phase it sits in. */
   macrocycleStartDate: string
   targetEventId?: string
 }
@@ -38,11 +37,7 @@ export interface BootstrapWorkoutDraft {
   notes?: string[]
 }
 
-/**
- * Why a week sits below the volume floor. A field rather than a phrase in
- * `focus`, because the validator cannot take the generator's own prose as
- * evidence about the generator's own output.
- */
+/** A field, not a phrase in `focus`: the validator cannot take the generator's own prose as evidence about its output. */
 export const WEEK_REDUCTION_REASONS = ['cutback', 'deload', 'taper', 'recovery', 'illness', 'injury'] as const
 export type WeekReductionReason = (typeof WEEK_REDUCTION_REASONS)[number]
 
@@ -79,7 +74,7 @@ export interface AdvisorRecommendation {
 }
 
 export interface CoachingAdvisor {
-  /** Who writes the advice, recorded as its provenance; Gemini when unsaid. */
+  /** Recorded as the advice's provenance; Gemini when unsaid. */
   readonly source?: CoachingProvenance['source']
   bootstrap(request: BootstrapRequest): Promise<CoachingPlanDraft>
   evaluateActivity(input: {

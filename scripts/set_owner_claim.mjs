@@ -20,10 +20,8 @@ initializeApp({
 const auth = getAuth()
 const user = await auth.getUserByEmail(email)
 
-// The claim is looked up by email, so the account behind that email has to
-// be the one Google vouches for. If another sign-in provider is ever enabled,
-// anyone could otherwise register the owner's address first, unverified, and
-// be handed the claim by this script.
+// The claim is looked up by email, so the account must be one Google vouches for: with another provider enabled,
+// anyone could register the owner's address first, unverified.
 const signsInWithGoogle = user.providerData.some((provider) => provider.providerId === 'google.com')
 const reasons = [
   ...(user.emailVerified ? [] : ['its email is not verified']),

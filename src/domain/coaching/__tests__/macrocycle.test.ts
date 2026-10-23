@@ -55,7 +55,7 @@ describe('macrocycle progress', () => {
     const next = NEXT_BLOCK()
 
     expect(next.block.startDate).toBe('2026-10-04')
-    // Counted by the app's Mon-Sun week (v5.5 #8): Sunday Oct 4 closes week 4.
+    // Counted by the app's Mon-Sun week: Sunday Oct 4 closes week 4.
     expect(macrocycleWeek(next, '2026-10-04')).toEqual({ done: 4, total: 12 })
     expect(macrocycleWeek(next, '2026-10-05')).toEqual({ done: 5, total: 12 })
   })
@@ -159,9 +159,7 @@ describe('phaseOn', () => {
   const ranges = macrocyclePhases(MACROCYCLE_START, TARGET_DATE)
 
   it('places a rolling block that straddles a boundary', () => {
-    // The block generated on 2026-09-23 opens in base and crosses into build
-    // before it ends - which is exactly what the planner could not previously
-    // be told.
+    // The block generated on 2026-09-23 opens in base and crosses into build before it ends.
     expect(phaseOn(ranges, '2026-09-23')).toBe('base')
     expect(phaseOn(ranges, '2026-10-05')).toBe('base')
     expect(phaseOn(ranges, '2026-10-12')).toBe('build')

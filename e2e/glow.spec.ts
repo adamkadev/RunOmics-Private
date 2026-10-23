@@ -1,7 +1,5 @@
 import { test, expect } from './fixtures'
 
-// Round 2 (F2): Settings › Background glow off ⇒ no aura is rendered, and in
-// light the cards are plain white, not 88 % white over a glow.
 test.use({ viewport: { width: 402, height: 874 } })
 
 test.beforeEach(async ({ page }) => {
@@ -12,7 +10,6 @@ test('the Background glow switch turns the aura off and the light cards white', 
   await page.goto('/')
   await expect(page.locator('.aura')).toHaveCount(1)
   const card = page.locator('main .content-card').first()
-  // On: 88 % white, never blurred (D1), so the glow tints it a little.
   await expect.poll(() => card.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(255, 255, 255, 0.88)')
   expect(await card.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe('none')
 
@@ -30,9 +27,6 @@ test('the Background glow switch turns the aura off and the light cards white', 
   expect(await page.locator('main .content-card').first().evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgb(255, 255, 255)')
 })
 
-// F17: Shoes and a shoe's page (Compare is a section of Shoes) were the one
-// Progress family on the flat ground. They take the aura in both themes, and
-// the glow switch still turns it off.
 for (const theme of ['light', 'dark'] as const) {
   test(`Shoes and a shoe's page have the glow, off with the switch (${theme})`, async ({ page }) => {
     await page.addInitScript((t) => localStorage.setItem('theme', t), theme)

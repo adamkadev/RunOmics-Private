@@ -16,13 +16,9 @@ import { repSet } from '@/domain/activity/repSet'
 import { IntervalSet } from './IntervalSet'
 
 /**
- * The same four segment kinds are coloured by WORKOUT_SEGMENT_COLORS on the
- * plan's structure bar, and the two disagreed: blue meant "warm-up" here and
- * "recovery" there, two taps apart on one activity, while cool-down spent a
- * violet nothing else in the app uses. The structure bar draws warm-up and
- * cool-down as the same neutral, so they share one here too, and the cool tone
- * goes back to the segments it names. Each row prints its own segment label,
- * so the ink ranks the segments rather than identifying them.
+ * In step with WORKOUT_SEGMENT_COLORS on the plan's structure bar: warm-up and
+ * cool-down share its neutral. Each row prints its own label, so the ink ranks
+ * the segments rather than identifying them.
  */
 const TYPE_COLORS: Record<string, string> = {
   interval_warmup:   'text-subtle',
@@ -39,10 +35,8 @@ const ROW_NO_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem
 const ROW_HR = 'grid w-full items-center gap-x-1.5 grid-cols-[1.1rem_1fr_3rem_2.5rem_2.75rem_1.75rem]'
 
 /**
- * How much of the run a single lap has to cover before it is the run (App
- * Fixes 1c). A session started as one interval records its work block as
- * that lap - 1.6 km of a 9.3 km threshold run - and calling that "Whole
- * run" was a plain lie about the distance printed beside it.
+ * The share of the run a single lap must cover to be the whole run: a session
+ * started as one interval records its work block as that lap.
  */
 const WHOLE_RUN_SHARE = 0.95
 
@@ -55,7 +49,7 @@ function distStr(distanceM: number): string {
   return formatKm(distanceM / 1000, 2)
 }
 
-// KM 30 · PACE 44 · the pace bar · ELEV 38 · HR 34 (3.0.2, 5c).
+// KM 30 · PACE 44 · the pace bar · ELEV 38 · HR 34
 const PER_KM_ROW = 'grid w-full items-center gap-x-2 grid-cols-[30px_44px_minmax(0,1fr)_38px_34px]'
 const PER_KM_ROW_NO_HR = 'grid w-full items-center gap-x-2 grid-cols-[30px_44px_minmax(0,1fr)_38px]'
 
@@ -70,23 +64,18 @@ function signed(delta: number): string {
 type View = 'km' | 'laps'
 const VIEWS = ['km', 'laps'] as const
 
-/**
- * A session with a structure to read (3.0.2): a warm-up, a recovery or a
- * cool-down, or more than one work interval. A run the watch kept as one
- * interval - a long run started from a workout - is a steady run.
- */
+/** A run the watch kept as one interval (a long run started from a workout) is a steady run. */
 export function isStructured(splits: readonly ActivitySplit[]): boolean {
   if (splits.some((s) => s.type !== 'lap' && s.type !== 'interval_active')) return true
   return splits.filter((s) => s.type === 'interval_active').length > 1
 }
 
-/** The fastest whole kilometre, the one the accent marks; a partial last km is not one to crown. */
+/** A partial last km is not one to crown. */
 function fastestKm(splits: KmSplit[]): KmSplit | null {
   const full = splits.filter((s) => s.distanceKm >= 0.99)
   return full.length > 1 ? full.reduce((a, b) => (b.paceSecPerKm < a.paceSecPerKm ? b : a)) : null
 }
 
-/** "Negative split −0:20": the second half against the first, even within a few seconds. */
 function splitVerdict(splits: KmSplit[]): string | null {
   const sp = t.activity.splits
   const delta = halfSplitSec(splits)
@@ -96,14 +85,6 @@ function splitVerdict(splits: KmSplit[]): string | null {
   return delta < 0 ? sp.negativeSplit(gap) : sp.positiveSplit(gap)
 }
 
-/**
- * A continuous run's kilometres, compared with each other (3.0.2, 5c): a bar
- * per km as long as its speed - the fastest km the full bar, as the mockup
- * draws it and 3.0's "bar length ∝ speed" set it, so a drift reads at a
- * glance - the fastest km in the accent, its pace too, the metres
- * climbed, which is what explains a slow km on a hill, and the heart rate.
- * The footer names the fastest km and how the second half went.
- */
 function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits: KmSplit[] }) {
   const sp = t.activity.splits
   const showHr = splits.some((s) => s.avgHr !== null)
@@ -114,7 +95,7 @@ function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits:
     activity.distanceKm,
   )
 
-  // Bars run from the fastest km (12 %) to the slowest (full), so the
+  // Bars run from 12 % for the slowest km to full for the fastest, so
   // differences a few seconds apart can be seen.
   const paces = splits.map((s) => s.paceSecPerKm)
   const lo = Math.min(...paces)
@@ -180,12 +161,7 @@ function PerKmRows({ activity, splits }: { activity: ActivityDetailView; splits:
   )
 }
 
-/**
- * A run the watch kept as a single lap (App Fixes 1c): nobody pressed the
- * lap button, so there are no laps to list. It says so and offers the
- * kilometres instead - it used to draw one row headed "Intervals" and typed
- * "Interval", which named a session the run never was.
- */
+/** Nobody pressed the lap button, so there are no laps to list. */
 function WholeRunLap({
   split,
   activityDistanceKm,
@@ -199,7 +175,7 @@ function WholeRunLap({
 }) {
   const sp = t.activity.splits
   const showHr = split.avgHr !== null
-  // One row, so no number in front of it: the mockup's own columns (App Fixes 1c).
+  // One row, so no number in front of it.
   const rowCls = cn('grid w-full items-center gap-1', showHr ? 'grid-cols-[minmax(0,1fr)_64px_46px_44px_36px]' : 'grid-cols-[minmax(0,1fr)_64px_46px_44px]')
   const covers = activityDistanceKm > 0 ? split.distanceM / 1000 / activityDistanceKm : 0
   const isWholeRun = covers >= WHOLE_RUN_SHARE
@@ -214,7 +190,6 @@ function WholeRunLap({
           <span className="text-right">{sp.cols.pace}</span>
           {showHr && <span className="text-right">{sp.cols.hr}</span>}
         </div>
-        {/* Lined up with its header, a divider between them. */}
         <div className={`${rowCls} border-t border-border py-1.5 text-[13px] text-foreground tabular-nums`}>
           <span className="truncate font-semibold">{isWholeRun ? sp.wholeRun : sp.lapNumber(1)}</span>
           <span className="text-right">{formatDuration(split.durationSec)}</span>
@@ -223,7 +198,6 @@ function WholeRunLap({
           {showHr && <span className="text-right">{split.avgHr ?? '-'}</span>}
         </div>
       </div>
-      {/* The note in a dark inset panel (App Fixes 1c). */}
       <p className="rounded-[14px] bg-background p-3 text-[13px] leading-[1.45] text-[var(--text-2)] text-pretty" data-testid="no-laps-note">
         {sp.noLapsPressed}{' '}
         {onKmSplits && (
@@ -237,7 +211,6 @@ function WholeRunLap({
   )
 }
 
-/** The watch's laps or the session's intervals, a row each, with a total. */
 function LapTable({ splits, bare = false }: { splits: ActivitySplit[]; bare?: boolean }) {
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const showHr = splits.some((s) => s.avgHr !== null)
@@ -350,12 +323,6 @@ function LapTable({ splits, bare = false }: { splits: ActivitySplit[]; bare?: bo
   )
 }
 
-/**
- * Splits (3.0.2, 5c): one card, the run's kilometres and its laps behind
- * Km / Laps when it has both. A steady run opens on its kilometres, a
- * structured session on its laps - its rep set or its interval table. A run
- * with no kilometres to rebuild keeps its laps alone.
- */
 export function KmSplits({ activity }: Props) {
   const splits = activity.splits
   const [view, setView] = useState<View>(splits && isStructured(splits) ? 'laps' : 'km')
@@ -382,7 +349,6 @@ export function KmSplits({ activity }: Props) {
   // interval a run was started as, its auto laps folded under it.
   const lapRows = lapsOnly ? laps : splits
   const hasLaps = set !== null || lapRows.length > 1 || (lapRows[0]?.laps.length ?? 0) > 1
-  // One lap and no rep set: the watch recorded the run whole (App Fixes 1c).
   const wholeRun = set === null && lapRows.length === 1 ? lapRows[0]! : null
   const lapsView = set ? (
     <IntervalSet set={set} bare={hasKm} />

@@ -19,7 +19,7 @@ import { t } from '@/i18n'
 
 const LIST_MAX_ROWS = 4
 
-/** The athlete's own runs, so the line is the accent (v4.17); the record line stays neutral. */
+/** The athlete's own runs, so the line is the accent; the record line stays neutral. */
 const ROUTE_LINE = 'var(--accent)'
 
 interface ChartPoint {
@@ -70,17 +70,13 @@ function RunDot({ cx, cy, payload, onSelect }: DotProps) {
   )
 }
 
-// Ranked by pace, so the bold number is the pace. A run's total time is
-// secondary text: the column used to hold total times ("19:50") next to
-// per-km deltas ("+57s/km") under a ranking the reader could not see.
+// Ranked by pace, so the bold number is the pace; the total time is secondary.
 function RunRow({ run, bestPace }: { run: SimilarRun; bestPace: number }) {
   const s = t.activity.similarRuns
   const deltaSec = Math.round(run.paceSecPerKm - bestPace)
 
   const content = (
     <>
-      {/* The fastest of them takes a medal, drawn rather than typed (3.0
-          override 3): the emoji was the one picture in a list of numbers. */}
       <span className="flex w-6 shrink-0 items-center justify-center text-xs font-bold tabular-nums text-muted-foreground">
         {run.rank === 1 ? <Medal size={14} strokeWidth={2.2} role="img" aria-label={s.fastest} /> : `#${run.rank}`}
       </span>
@@ -117,7 +113,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
   const s = t.activity.similarRuns
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  // Faster is up here too: this chart used to put the slowest run at the top.
+  // Faster is up, as on the app's other pace charts.
   const pace = paceAxis()
   const bestPaceLabel = formatPace(data.bestPaceSecPerKm)
 
@@ -138,8 +134,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
   const current = data.runs.find((run) => run.isCurrent)
   const deltaSec = current ? Math.round(current.paceSecPerKm - data.bestPaceSecPerKm) : 0
 
-  // One row on Overview, opening to the chart and the ranking: the card used to
-  // be the first thing after a run, which put other runs ahead of this one.
+  // Folded to one row, so other runs never come ahead of this one on Overview.
   return (
     <section className={cardClass({ padding: 'none' })}>
       <button

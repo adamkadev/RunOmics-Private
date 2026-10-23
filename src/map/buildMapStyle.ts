@@ -1,33 +1,21 @@
 import type { MapStyleColors } from '@/lib/themeTokens'
 
 /**
- * RunOmics' own basemaps (v4.17), built from MapTiler's Dataviz styles by
- * scripts/build-map-styles.ts and kept in src/map/styles: the MapTiler API can
- * serve a style but not save one. Every layer is matched by a pattern on its
- * id and source layer, never by a list of names - those change between style
- * versions - and repainted in greys, so the accent-coloured run is the one
- * bright colour on the map. Parks and water keep a muted hue (3.0), and a
- * faint hillshade sits under them. Footpaths stay visible from zoom 13:
- * runners use them.
+ * Built into src/map/styles because the MapTiler API can serve a style but not
+ * save one. Layers are matched by pattern, never by name - names change between
+ * style versions - and repainted grey so the run is the one bright colour.
  */
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json }
 type Layer = { id: string; type: string; source?: string; 'source-layer'?: string; minzoom?: number; maxzoom?: number; filter?: Json; paint?: Record<string, Json>; layout?: Record<string, Json> }
 export type StyleJson = { version: number; name?: string; layers: Layer[]; sources: Record<string, Json>; [key: string]: Json | Layer[] | undefined }
 
-/** The road classes drawn as major roads; every other class is minor. */
 const MAJOR_ROADS = ['motorway', 'trunk', 'primary', 'secondary']
 
-/** Hidden outright: points of interest, transit, house numbers, airports, fake 3D and shadows. */
 const HIDE = /poi|transit|housenumber|house_num|aeroway|aviation|aerodrome|mountain_peak|shadow|building top|3d|hatching/
 const PLACE_LABEL = /place|city|town|village|state|country|continent|capital/
 const STREET_LABEL = /road_label|pathway_label|pedestrian_label|transportation_name|street/
-/**
- * A city's districts (3.0.1): MapTiler shows them from zoom 13, and a run's
- * map sits at 12 to 13, so a loop round Metz named only "Metz". Suburbs and
- * quarters (Devant-les-Ponts, Sablon) now show from 11 and neighbourhoods
- * from 13; hamlets and the rest keep their zoom 14.
- */
+/** MapTiler shows districts from zoom 13, but a run's map sits at 12 to 13. */
 const DISTRICT_MINZOOM = 11
 const DISTRICT_OPACITY: Json = [
   'step', ['zoom'], 0,
@@ -36,22 +24,19 @@ const DISTRICT_OPACITY: Json = [
   14, 1,
 ]
 
-/** Whether a place layer draws districts: its filter names suburbs or quarters. */
 function isDistrictLayer(layer: Layer): boolean {
   return /"(suburb|quarter)"/.test(JSON.stringify(layer.filter ?? null))
 }
 
-/** Green space, drawn in the park colour (3.0). */
 const PARK = /park|wood|forest|grass|cemetery|leisure|pitch|golf|garden|meadow|scrub/
-/** The only layers that may keep a hue: parks and water (3.0). */
+/** The only layers that may keep a hue. */
 const NATURE = new RegExp(`${PARK.source}|water|river|stream|canal`)
 
 export const HILLSHADE_SOURCE = 'runomics-terrain'
 export const HILLSHADE_LAYER = 'Hillshade'
-/** MapTiler's terrain, for the hillshade; lib/maptiler fills the key in. */
+/** lib/maptiler fills the key in. */
 const TERRAIN_URL = 'https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key={key}'
 
-/** Where a layer matches: its id and source layer, lower-cased. */
 function key(layer: Layer): string {
   return `${layer.id} ${layer['source-layer'] ?? ''}`.toLowerCase()
 }
@@ -64,13 +49,12 @@ function paint(layer: Layer, props: Record<string, Json>): void {
   layer.paint = { ...layer.paint, ...props }
 }
 
-/** A fill in one grey, its outline too if it draws one. */
 function fill(layer: Layer, color: string): void {
   delete layer.paint?.['fill-translate']
   paint(layer, { 'fill-color': color, ...(layer.paint?.['fill-outline-color'] !== undefined ? { 'fill-outline-color': color } : {}) })
 }
 
-/** A text field in the English name with the local name behind it; lib/maptiler swaps the language. */
+/** lib/maptiler swaps the language. */
 const NAME_FIELD: Json = ['coalesce', ['get', 'name:en'], ['get', 'name']]
 
 function isNameField(field: Json | undefined): boolean {
@@ -104,7 +88,7 @@ function styleLayer(layer: Layer, c: MapStyleColors): void {
     return
   }
 
-  // Borders: only countries (admin level 2), in a neutral line.
+  // Only country borders (admin level 2).
   if (/sub_border|admin_sub/.test(k)) return hide(layer)
   if (/border|boundary/.test(k)) {
     if (source === 'boundary' && !JSON.stringify(layer.filter ?? null).includes('admin_level')) {
@@ -147,16 +131,11 @@ function styleLayer(layer: Layer, c: MapStyleColors): void {
   }
 }
 
-/** The key in every source, sprite and glyph URL, as the `{key}` lib/maptiler fills in. */
 export function withKeyPlaceholder(style: StyleJson): StyleJson {
   return JSON.parse(JSON.stringify(style).replace(/([?&]key=)[A-Za-z0-9_-]+/g, '$1{key}'))
 }
 
-/**
- * Relief under the parks and water (3.0): MapTiler's terrain as a hillshade
- * at a few per cent, above the land fills and below the first water layer.
- * Added once: a rebuild of a built style keeps the one it has, repainted.
- */
+/** Added once: a rebuild of a built style repaints the hillshade it has. */
 function addHillshade(style: StyleJson, c: MapStyleColors): void {
   style.sources[HILLSHADE_SOURCE] = { type: 'raster-dem', url: TERRAIN_URL, tileSize: 256 }
   const shade: Layer = {
@@ -192,7 +171,7 @@ export function buildMapStyle(source: StyleJson, name: string, colors: MapStyleC
 
 const HUED = /^(?:hsla?\(\s*[\d.]+\s*,\s*([\d.]+)%|#([0-9a-f]{6}))/i
 
-/** Every colour left in a visible layer that has a hue, parks and water aside: the build fails on any. */
+/** The build fails on any colour this returns. */
 export function huedColors(style: StyleJson): string[] {
   const found: string[] = []
   const visit = (value: Json, where: string) => {
@@ -202,7 +181,7 @@ export function huedColors(style: StyleJson): string[] {
       const saturated = m[1] !== undefined ? Number(m[1]) > 0 : (() => {
         const n = parseInt(m[2]!, 16)
         const [r, g, b] = [n >> 16, (n >> 8) & 255, n & 255]
-        // 10, not 8 (3.0): the handoff's greys lean green by a few steps (#4f5856).
+        // 10, not 8: the theme's greys lean green by a few steps (#4f5856).
         return Math.max(r, g, b) - Math.min(r, g, b) > 10
       })()
       if (saturated) found.push(`${where}: ${value}`)

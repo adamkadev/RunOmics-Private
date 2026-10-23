@@ -75,15 +75,12 @@ export default async function ActivityDetailPage({
   const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
-  // The coach's session this run was, for the run's name - in the header and
-  // on the share card alike - and its reps' target pace (design review, Oct
-  // 2026). Older runs had none.
+  // The coach's session this run was, for its name in the header and on the share card, and its reps' target pace.
   const session = shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity)
   // The watch's own plan for the day, for a rep target the coach never matched.
   const plannedForDay = (await getPlannedWorkouts()).find((w) => w.date === activity.date.slice(0, 10)) ?? null
 
-  // The Charts lanes are banded with the run's own HR zones and the
-  // athlete's pace zones; only the edges reach the page, not the profile.
+  // Only the zone edges reach the page, not the athlete profile.
   const athlete = getAthleteProfile()
   const zones = chartZones(
     activity.hrZones,
@@ -91,16 +88,11 @@ export default async function ActivityDetailPage({
     athlete.thresholdPaceSecPerKm ? paceZones(athlete.thresholdPaceSecPerKm) : null,
   )
 
-  // After a run the page opens on the run (3.0): the map edge to edge with
-  // the way back and Share on it, the title, the four numbers, the verdict
-  // with effort, conditions, shoe and note as chips, then the tabs. The same
-  // on every tab.
   return (
     <div className="flex flex-col gap-3.5">
       <ActivityDetailClient
         activity={activityDetailView(activity)}
-        // The session as its set: the type is the dot over it (round 2). The
-        // tab's title keeps the whole name, with no dot beside it.
+        // The set alone: the type is the dot over it, and the tab's title keeps the whole name.
         name={sessionLabel(runName(activity, session))}
         shownType={shownType(activity, session)}
         dateLabel={formatDate(activity.date)}

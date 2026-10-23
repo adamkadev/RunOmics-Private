@@ -4,19 +4,15 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Lets a branch be checked without opening a pull request, and lets
-  # security-autofix run the checks on the branch it pushes: runs started by
-  # GITHUB_TOKEN never trigger push or pull_request workflows, dispatch excepted.
+  # security-autofix dispatches this: runs started by GITHUB_TOKEN never trigger push or pull_request.
   workflow_dispatch:
-  # Weekly, for the coverage figure (see the verify job's Test steps), and
-  # so that main is re-checked against the week's dependency and clock drift.
+  # Weekly, for the coverage figure and to re-check main against dependency drift.
   schedule:
     - cron: "13 5 * * 1"
 
 permissions:
   contents: read
 
-# A newer push to the same pull request makes the older run's result moot.
 # Runs on main always finish, so every commit there keeps its own verdict.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -39,7 +35,6 @@ jobs:
           cache: "pip"
           cache-dependency-path: scripts/requirements-dev.txt
 
-      # Hash-locked: pip refuses anything whose hash is not in the lock.
       - name: Install Python dependencies
         run: pip install --require-hashes -r scripts/requirements-dev.txt
 
@@ -49,8 +44,7 @@ jobs:
       - name: Run pytest
         run: python -m pytest scripts/tests/ -q
 
-  # firestore.rules is the only guard on what the public web config can
-  # reach, so it runs against the real rules engine, in parallel with verify.
+  # firestore.rules is the only guard on what the public web config can reach.
   firestore-rules:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -108,15 +102,10 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      # No new dependency: TypeScript resolves the imports, so the "@/" alias
-      # is followed like any other path. About 2s.
       - name: Check import cycles
         run: npm run check:cycles
 
-      # Coverage doubles the suite here (53s -> 101s) and would make this the
-      # slowest check, so the runs someone waits on - a push, a pull request -
-      # skip it. The weekly and manual runs report it: a baseline to watch,
-      # with no threshold yet.
+      # Coverage doubles the suite's time, so only the weekly and manual runs collect it.
       - name: Test
         if: github.event_name == 'push' || github.event_name == 'pull_request'
         run: npm test

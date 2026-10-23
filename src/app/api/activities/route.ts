@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { queryActivities, LONG_RUN_KIND, type ActivityQueryKind, type ActivitySortKey, type ActivitySortOrder } from '@/application/usecases/QueryActivities'
 import { isActivityType } from '@/domain/activity/types'
 
-/** A kind the list can ask for: a type, or the long run it derives (App Fixes 3d). */
 function isQueryKind(value: string): value is ActivityQueryKind {
   return value === LONG_RUN_KIND || isActivityType(value)
 }

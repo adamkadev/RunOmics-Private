@@ -3,8 +3,6 @@ import { roundAxis } from '@/lib/chartAxis'
 
 describe('roundAxis', () => {
   it('snaps the domain outward so every tick is a whole multiple of the step', () => {
-    // The Avg Heart Rate axis used to read 146/155/164/173/180 because its
-    // domain was pinned to [min - 5, max + 5].
     const axis = roundAxis([146, 158, 163, 168], 5)
     expect(axis).toEqual({ domain: [145, 170], ticks: [145, 150, 155, 160, 165, 170], decimals: 0 })
   })
@@ -51,7 +49,6 @@ describe('roundAxis', () => {
 })
 
 describe('monthAxis', () => {
-  // G19: Recharts dropped AUG from the month axes.
   it('keeps a tick on every month, shortened to its initial past six', async () => {
     const { monthAxis } = await import('../chartAxis')
     expect(monthAxis(9).interval).toBe(0)

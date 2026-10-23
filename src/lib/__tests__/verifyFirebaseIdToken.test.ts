@@ -2,9 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { generateKeyPairSync } from 'crypto'
 import jwt from 'jsonwebtoken'
 
-// A real RSA pair and real jwt.sign/verify throughout - this module's whole job
-// is a cryptographic check, so a test that mocks jsonwebtoken would verify
-// nothing but its own mock.
+// Real RSA keys and jwt.sign/verify: a test that mocks jsonwebtoken would verify nothing but its own mock.
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 })
 const PUBLIC_PEM = publicKey.export({ type: 'spki', format: 'pem' }).toString()
 const PRIVATE_PEM = privateKey.export({ type: 'pkcs8', format: 'pem' }).toString()
@@ -17,7 +15,7 @@ function sign(payload: Record<string, unknown>, kid = KID): string {
   return jwt.sign(payload, PRIVATE_PEM, { algorithm: 'RS256', keyid: kid })
 }
 
-/** kid omitted from the header entirely - a default parameter would substitute on an explicit `undefined` too, so this needs its own call rather than `sign(payload, undefined)`. */
+/** A default parameter substitutes on an explicit `undefined` too, so omitting kid needs its own call. */
 function signWithoutKid(payload: Record<string, unknown>): string {
   return jwt.sign(payload, PRIVATE_PEM, { algorithm: 'RS256' })
 }
@@ -116,9 +114,7 @@ describe('verifyFirebaseIdToken', () => {
   })
 
   it('rejects a token issued in the future', async () => {
-    // jsonwebtoken checks exp for us; this is the one Firebase's own spec asks
-    // for that it does not - a token that hasn't started yet would otherwise
-    // pass every other check.
+    // jsonwebtoken checks exp but not iat, which Firebase's spec asks for.
     stubCertsEndpoint({ [KID]: PUBLIC_PEM })
     const { verifyFirebaseIdToken } = await subject()
     const now = Math.floor(Date.now() / 1000)
@@ -210,7 +206,7 @@ describe('verifyFirebaseIdToken', () => {
   })
 
   it('does not refetch for unknown kids while its certs are under a minute old', async () => {
-    // Each forged kid used to cost one outbound call to Google.
+    // Otherwise each forged kid costs one outbound call to Google.
     const fetchSpy = countingCertsEndpoint({ [KID]: PUBLIC_PEM })
     const { verifyFirebaseIdToken } = await subject()
 

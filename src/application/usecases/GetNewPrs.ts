@@ -11,9 +11,8 @@ export interface NewPr {
 }
 
 /**
- * Nothing is stored until `commit()`: the caller sends the pushes first and
- * commits once they are out, so a failed push is offered again next run
- * instead of being marked as sent.
+ * Nothing is stored until `commit()`: commit once the pushes are out, so a
+ * failed push is offered again next run.
  */
 export async function getNewPrs(): Promise<{ newPrs: NewPr[]; commit: () => Promise<void> }> {
   const activities = getAllActivities()

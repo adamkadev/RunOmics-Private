@@ -4,22 +4,18 @@ import { formatClock, formatDate, formatDurationRounded, formatKm } from '@/lib/
 import { t } from '@/i18n'
 import { activityTitle } from '@/lib/activityTitle'
 
-/** What a share card reads of a run - all the share modal is handed. */
 export type ShareActivity = Pick<
   Activity,
   | 'id' | 'date' | 'dayOfWeek' | 'description' | 'distanceKm' | 'durationSeconds' | 'paceSecPerKm'
   | 'avgHeartRate' | 'elevationGain' | 'route' | 'hrZones'
 > & {
   type?: ActivityType
-  /** The coach's name for the session this run matched, written to its naming rules. */
+  /** The coach's name for the session this run matched. */
   sessionTitle?: string | null
-  /** The work of an interval session: its reps and their pace, against the plan's. */
   reps?: ShareReps | null
-  /** The run's verdict, as its Overview card reads it; null without a written one. */
   verdict?: ShareVerdict | null
 }
 
-/** The Stats card's lead (redesign, Oct 2026): the verdict's tone for the eyebrow, the coach's headline as the hero. */
 export interface ShareVerdict {
   tone: VerdictTone
   headline: string
@@ -27,38 +23,33 @@ export interface ShareVerdict {
 
 export interface ShareReps {
   count: number
-  /** One rep's length, in seconds. */
   repSeconds: number
-  /** The work laps only: their time over their distance. */
+  /** The work laps only. */
   paceSecPerKm: number
-  /** Each rep's own pace, in seconds per km, in the order they were run. */
+  /** Seconds per km, in the order the reps were run. */
   paces: number[]
-  /** The plan's pace for the reps, when the run matched a session that set one. */
   target: { min: number; max: number } | null
-  /** Where each rep ran, as shares of the run's distance: the Route card draws them over the run. */
+  /** Shares of the run's distance. */
   windows: [number, number][]
 }
 
-/** A rep session is titled by its type alone; its structure goes to the subtitle (4b). */
+/** A rep session is titled by its type alone; its structure goes to the subtitle. */
 export function shareCardTitle(activity: ShareActivity): string {
   if (activity.reps && activity.type) return t.activityTypes[activity.type]
   return activity.sessionTitle?.trim() || activityTitle(activity)
 }
 
-/** "2 × 7′ @ 4:25": the session's shape, for the subtitle. */
 export function shareStructure(activity: ShareActivity): string | null {
   const reps = activity.reps
   if (!reps) return null
   const set = `${reps.count} × ${repLength(reps.repSeconds)}`
   const target = reps.target
   if (!target) return set
-  // The band's centre, as the session's own name writes it ("2 × 7′ @ 4:25");
-  // the hero beside it carries the band in full.
+  // The band's centre, as the session's own name writes it; the hero carries the band in full.
   const pace = formatClock(Math.round((target.min + target.max) / 2))
   return t.activity.shareCard.structure(set, pace)
 }
 
-/** "Sat, Sep 26 · Hoenheim": the app's date, then the town when it is known. */
 export function shareCardSubtitle(activity: ShareActivity, place: string | null | undefined): string {
   const date = formatDate(activity.date.slice(0, 10))
   return place ? `${date} · ${place}` : date
@@ -70,12 +61,6 @@ export interface ShareStat {
   label: string
 }
 
-/**
- * The stat row: Distance, Time, Pace, Avg HR - the ones the run has, in the
- * activity page's order (design review, Oct 2026: one order everywhere). An
- * interval session drops the average pace: over reps and recoveries it
- * describes neither, and the rep pace leads instead.
- */
 function shareDuration(seconds: number): { value: string; unit: string } {
   const { value, unit } = formatDurationRounded(seconds)
   return { value, unit: ` ${unit}` }
@@ -85,9 +70,9 @@ export function shareStats(activity: ShareActivity): ShareStat[] {
   const s = t.activity.shareCard
   const stats: ShareStat[] = [
     { value: formatKm(activity.distanceKm, 1), unit: ` ${t.units.km}`, label: s.distance },
-    // To the minute, as the activity page writes it (3.0.2): "1:07 h", "46 min".
     { ...shareDuration(activity.durationSeconds), label: s.time },
   ]
+  // An interval session drops the average pace: over reps and recoveries it describes neither.
   if (!activity.reps && activity.paceSecPerKm && activity.paceSecPerKm > 0) {
     stats.push({ value: formatClock(activity.paceSecPerKm), unit: ` ${t.units.perKm}`, label: s.pace })
   }
@@ -97,22 +82,17 @@ export function shareStats(activity: ShareActivity): ShareStat[] {
   return stats
 }
 
-/** "8′" for a rep in whole minutes, "45″" for one under a minute. */
 export function repLength(seconds: number): string {
   return seconds >= 60 ? `${Math.round(seconds / 60)}′` : `${Math.round(seconds)}″`
 }
 
 export interface ShareRepHero {
-  /** "REP PACE · 3 × 8′" */
   eyebrow: string
   pace: string
-  /** The unit beside the pace. */
   unit: string
-  /** "target 4:25 · +0:01", or null with no target. */
   target: string | null
 }
 
-/** The interval session's headline: the reps' own pace, and the plan's beside it. */
 export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
   const reps = activity.reps
   if (!reps) return null
@@ -131,7 +111,6 @@ export function shareRepHero(activity: ShareActivity): ShareRepHero | null {
   }
 }
 
-/** How far off the plan the reps ran: "+0:01" slower, "−0:03" faster, nothing when inside the band. */
 function repDelta(pace: number, target: { min: number; max: number }): string | null {
   const off = pace < target.min ? pace - target.min : pace > target.max ? pace - target.max : 0
   if (off === 0) return null
@@ -140,7 +119,6 @@ function repDelta(pace: number, target: { min: number; max: number }): string | 
   return `${sign}${Math.floor(abs / 60)}:${String(abs % 60).padStart(2, '0')}`
 }
 
-/** One rep as a chip: "Rep 1" and its pace. */
 export interface ShareRepChip {
   label: string
   pace: string
@@ -150,11 +128,6 @@ export type ShareRepDetail =
   | { kind: 'chips'; chips: ShareRepChip[] }
   | { kind: 'bars'; bars: number[]; range: string }
 
-/**
- * What the card says about the reps under the hero: up to three that differ
- * as chips, four or more as a bar each with the spread under them, and
- * nothing at all when every rep ran the same pace.
- */
 export function shareRepDetail(activity: ShareActivity): ShareRepDetail | null {
   const paces = activity.reps?.paces ?? []
   if (paces.length < 2) return null
@@ -165,38 +138,32 @@ export function shareRepDetail(activity: ShareActivity): ShareRepDetail | null {
   if (paces.length <= 3) {
     return { kind: 'chips', chips: paces.map((pace, i) => ({ label: s.rep(i + 1), pace: formatClock(pace) })) }
   }
-  // Taller is faster: the fastest rep fills the bar, the slowest keeps a stub.
+  // Taller is faster.
   const span = slowest - fastest
   const bars = paces.map((pace) => (span > 0 ? 1 - (pace - fastest) / span : 1))
   return { kind: 'bars', bars, range: s.repRange(formatClock(fastest), formatClock(slowest)) }
 }
 
 export interface ShareZoneRow {
-  /** The zone, or the last of the zones the row joins: its colour and its name. */
+  /** The last of the zones a row joins. */
   zone: number
-  /** The first zone of a row that joins two: Z1 and Z2 are one, "Z1–Z2 Easy". */
+  /** The first zone of a row that joins two. */
   from?: number
-  /** The run's whole percent in this zone: the zones shown always sum to 100. */
+  /** Whole percent: the rows always sum to 100. */
   percent: number
 }
 
-/** "Z4", or "Z1–Z2" for the row that joins them. */
 export function zoneName(row: Pick<ShareZoneRow, 'zone' | 'from'>): string {
   return row.from ? `Z${row.from}–Z${row.zone}` : `Z${row.zone}`
 }
 
 export interface ShareZones {
-  /** The zones with a percent to show, Z1 first. */
   rows: ShareZoneRow[]
-  /** The headline: the share of time in the zones this kind of run is about, summed from the rows' own percents. */
+  /** Summed from the rows' own percents. */
   headline: { percent: number; label: string }
 }
 
-/**
- * Whole percents that sum to exactly 100 (largest remainder): each value
- * floored, then the points left go to the largest remainders. Rounding each
- * on its own read 10 + 77 + 10 + 4 = 101% (design review, Oct 2026).
- */
+/** Largest remainder, so the rows never read 10 + 77 + 10 + 4 = 101%. */
 export function percentsTo100(values: readonly number[]): number[] {
   const total = values.reduce((a, b) => a + b, 0)
   if (total <= 0) return values.map(() => 0)
@@ -212,11 +179,6 @@ export function percentsTo100(values: readonly number[]): number[] {
   return floors
 }
 
-/**
- * The zones a run's kind is about (design review, Oct 2026): an easy or long
- * run is judged on Z1-Z2, a threshold session on Z4, a tempo on Z3, a VO₂ or
- * faster session on Z5. A race, or a run of no known kind, on its main zone.
- */
 function headlineZones(type: ActivityType | undefined): number[] | null {
   switch (type) {
     case 'Base':
@@ -234,13 +196,7 @@ function headlineZones(type: ActivityType | undefined): number[] | null {
   }
 }
 
-/**
- * Z1 to Z5 from the run's own zone times - the Overview's Time in zones -
- * or null when the run has no heart rate to split. Rounded once, to the
- * total, and the headline summed from those rounded percents, so 86% easy
- * is the 10 + 76 the rows show (design review, Oct 2026). A zone that
- * rounds to 0% is not shown.
- */
+/** Rounded once, and the headline summed from the rounded percents, so 86% easy is the 10 + 76 the rows show. */
 export function shareZones(activity: ShareActivity): ShareZones | null {
   const seconds = [1, 2, 3, 4, 5].map((zone) =>
     activity.hrZones.filter((z) => z.zone === zone).reduce((sum, z) => sum + z.seconds, 0))
@@ -248,9 +204,7 @@ export function shareZones(activity: ShareActivity): ShareZones | null {
 
   const s = t.activity.shareCard
   const percents = percentsTo100(seconds)
-  // Z1 and Z2 in one row (round 2, the owner's ask): five rows took a third
-  // line of the Stats card's legend, which the rep pace cut. Rounded first,
-  // so the rows still sum to 100.
+  // Z1 and Z2 in one row: five rows took a third legend line, which the rep pace cut.
   const rows: ShareZoneRow[] = [
     { zone: 2, from: 1, percent: percents[0]! + percents[1]! },
     ...percents.slice(2).map((percent, i) => ({ zone: i + 3, percent })),

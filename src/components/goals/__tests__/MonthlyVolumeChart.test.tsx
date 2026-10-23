@@ -21,11 +21,6 @@ const THIS_MONTH = NOW.getMonth() + 1
 const DAYS_ELAPSED = NOW.getDate()
 const PRO_RATA_KM = 87
 
-/**
- * Every elapsed month up to and including the running one, plus the rest of the
- * year as `pending`. The first elapsed month beat its target, the running month
- * is only part-filled.
- */
 function goalsForThisYear(): MonthGoal[] {
   return Array.from({ length: 12 }, (_, i) => {
     const month = i + 1
@@ -90,8 +85,6 @@ describe('MonthlyVolumeChart (3.1)', () => {
     expect(screen.getByTestId('running-legend').textContent).toBe(s.running(monthName(THIS_MONTH), '40', s.pace.behind))
   })
 
-  // v4.17: a month's km are the athlete's own data - the accent at or above
-  // its target, the accent at 40% below it, as the Analytics weekly bars.
   it('draws a short month in the accent at 40%, never a status colour', () => {
     const { container } = render(
       <MonthlyVolumeChart

@@ -17,8 +17,7 @@ function activity(overrides: Partial<ActivitySummary> & Pick<ActivitySummary, 'i
   }
 }
 
-// A Garmin workout named after one type and typed as another: the case that
-// drew "Threshold" in Z5 red.
+// A Garmin workout named after one type and typed as another.
 const PLANNED: PlannedWorkout[] = [
   { date: '2026-09-10', name: 'Threshold', type: 'VO2Max', distanceM: 10_000, durationSecs: 3_000 },
   { date: '2026-09-11', name: '3 × 8 min threshold', type: 'Threshold', distanceM: 9_000, durationSecs: 3_000 },
@@ -75,8 +74,6 @@ describe('sessionTitle', () => {
 })
 
 describe('one session colour across the week', () => {
-  // Redesign 3.0: every day's bar is its session's colour, run or still to
-  // come - the same zone its type is drawn in on every other screen.
   it('colours every bar with zoneColor(sessionZone(session))', () => {
     const { container } = renderWeek()
 

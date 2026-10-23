@@ -1,11 +1,7 @@
 /**
- * This year's distance against last year's over the same dates, both rounded
- * as the Year to date card prints them. From 1 January, unless the synced
- * history only starts later in last year: then both years count from that
- * date (`since`), so the months before it never read as growth (v4.16.4).
- * Progress and Analytics both read it (v4.17): Progress used to set this
- * year to date against last year to date over a history that began in May,
- * and read +771 km where Analytics read +19.
+ * From 1 January, unless the synced history starts later in last year: then
+ * both years count from that date (`since`), so the months before it never
+ * read as growth.
  */
 export interface YearOverYear {
   km: number

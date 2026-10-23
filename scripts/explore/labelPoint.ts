@@ -3,14 +3,7 @@ import { pointInGeometry } from '@/domain/explore/geometry'
 import { projectX, projectY, unproject, type Projection } from '@/domain/explore/grid'
 import { round6, type XY } from './simplify'
 
-/**
- * Where a unit's name is drawn and its distance from home is measured: the
- * point inside it furthest from any edge (the pole of inaccessibility, found
- * as Mapbox's polylabel does, on the area's flat projection so "furthest" is
- * in metres). A centroid would not do: a crescent-shaped quartier has its
- * centroid in the neighbour it wraps around, and a holed commune can have it
- * in the hole.
- */
+// The pole of inaccessibility, as Mapbox's polylabel finds it: a crescent-shaped quartier's centroid lies in its neighbour.
 
 interface Cell {
   x: number
@@ -162,12 +155,7 @@ function projectRings(p: Projection, rings: readonly Position[][]): XY[][] {
   return rings.map((ring) => ring.map(([lon, lat]) => [projectX(p, lon!), projectY(p, lat!)] as XY))
 }
 
-/**
- * The label point of a unit: the polylabel of whichever of its polygons has
- * the deepest interior, rounded to 6 decimals. It is checked against
- * `pointInGeometry`, the test the app itself uses, and every shape given in
- * `mustBeIn` (the unsimplified outline, say), so it can't land on a sliver.
- */
+/** Checked against `pointInGeometry`, the test the app itself uses, and every shape in `mustBeIn`, so it can't land on a sliver. */
 export function labelPoint(
   geometry: Polygon | MultiPolygon,
   p: Projection,
@@ -191,9 +179,7 @@ export function labelPoint(
   const label = rounded(best.x, best.y)
   if (inside(label)) return label
 
-  // Only a unit thinner than the simplification tolerance gets here, where
-  // the simplified and the original outlines barely overlap: take the
-  // deepest point of a fine scan that both agree on.
+  // Only a unit thinner than the simplification tolerance gets here: the deepest point of a fine scan both outlines agree on.
   let fallback: [number, number] | null = null
   let depth = -Infinity
   for (const rings of polygons) {

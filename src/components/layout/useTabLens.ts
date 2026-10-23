@@ -2,21 +2,6 @@
 
 import { useCallback, useRef, useState } from 'react'
 
-/**
- * The tab bar's press-and-drag lens (Liquid Glass v3, G2/G3/G4), from the
- * design handoff's reference hook.
- *
- * - pointerdown on the row: the platter becomes a clear lens, grows past the
- *   bar and follows the finger 1:1, clamped to the row.
- * - crossing a tab boundary fires haptic('light') once per boundary.
- * - pointerup after a drag: snaps to the tab under the finger and navigates
- *   if it changed. pointercancel: snaps back, no navigation.
- * - a plain tap (under 6 pt of travel and 250 ms) is the <Link>'s own click,
- *   exactly as before. The pointer is only captured once the finger has
- *   moved past the slop: captured from the start, the tap's click would land
- *   on the row instead of the link.
- * - prefers-reduced-motion: no lens and no follow; tap only.
- */
 export const SPRING = 'cubic-bezier(0.32, 0.72, 0, 1)'
 const TAP_SLOP = 6
 const TAP_MS = 250
@@ -56,12 +41,14 @@ export function useTabLens(opts: {
     const s = start.current
     if (!s) return
     const x = local(e)
+    // Captured only past the slop: from the start, a tap's click would land on
+    // the row instead of the link.
     if (!s.captured && Math.abs(x - s.x) >= TAP_SLOP) {
       s.captured = true
       rowRef.current?.setPointerCapture?.(e.pointerId)
     }
     const idx = indexAt(x)
-    // Once per boundary, outside the state update (an updater runs twice in StrictMode).
+    // Outside the state update: an updater runs twice in StrictMode.
     if (idx !== s.idx) {
       s.idx = idx
       haptic('light')
@@ -84,7 +71,6 @@ export function useTabLens(opts: {
 
   return {
     rowRef,
-    /** null at rest; { x, idx } while pressed or dragging. */
     lens,
     rowHandlers: {
       onPointerDown,

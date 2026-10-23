@@ -1,10 +1,6 @@
 /**
- * Just enough of a MapLibre map for the Districts layer and the map hook:
- * an ordered layer list with `beforeId` insertion, sources with `setData`,
- * images, filters and layout properties, events, and a `setStyle` that wipes
- * everything back to the base style until `finish()` fires `style.load`.
- * Like MapLibre, it throws on a duplicate id or on removing a source a layer
- * still uses, so a wrong order fails the test.
+ * Like MapLibre, it throws on a duplicate id or on removing a source a layer still uses, so a wrong order fails the test;
+ * `setStyle` wipes everything back to the base style until `finish()` fires `style.load`.
  */
 
 export interface FakeLayer {
@@ -66,7 +62,6 @@ export class FakeMap {
     this.container = given ?? (typeof document === 'undefined' ? null : document.createElement('div'))
   }
 
-  // --- style ---------------------------------------------------------------
   getStyle() {
     return { layers: this.layers.map((layer) => ({ ...layer })) }
   }
@@ -86,7 +81,6 @@ export class FakeMap {
     return this.loaded
   }
 
-  // --- layers --------------------------------------------------------------
   ids(): string[] {
     return this.layers.map((layer) => layer.id)
   }
@@ -133,7 +127,6 @@ export class FakeMap {
   }
   setLayerZoomRange() {}
 
-  // --- sources -------------------------------------------------------------
   addSource(id: string, spec: Record<string, unknown>) {
     if (this.sources.has(id)) throw new Error(`Source "${id}" already exists`)
     const source: FakeSource = {
@@ -157,7 +150,6 @@ export class FakeMap {
     this.sources.delete(id)
   }
 
-  // --- images --------------------------------------------------------------
   addImage(id: string, image: { width: number; height: number; data: Uint8Array }, options?: unknown) {
     if (this.images.has(id)) throw new Error(`An image named "${id}" already exists`)
     this.images.set(id, { image, options })
@@ -172,7 +164,6 @@ export class FakeMap {
     this.images.set(id, { image, options: this.images.get(id)?.options })
   }
 
-  // --- events and camera ---------------------------------------------------
   on(event: string, cb: (event?: unknown) => void) {
     this.handlers.set(event, [...(this.handlers.get(event) ?? []), cb])
     return this
@@ -222,7 +213,6 @@ export class FakeMap {
     this.eases.push(options)
   }
 
-  // --- what is drawn under a point -----------------------------------------
   /** The features drawn under any point, by layer: what a tap or the pointer finds. */
   drawn: { layer: string; properties: Record<string, unknown> }[] = []
   renderQueries: { point: unknown; options?: { layers?: string[] } }[] = []

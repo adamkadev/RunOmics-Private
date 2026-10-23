@@ -10,13 +10,10 @@ from repository.history_file import read_history_section, write_history
 
 _HISTORY_PATH = get_data_dir() / "athlete_history.json"
 
-# Threshold and capacity metrics worth a trend line. Garmin exposes only the
-# current value of each - there is no history endpoint - so the series is built
-# by snapshotting them here, one entry per day the numbers actually move.
+# Garmin exposes only the current value of each, with no history endpoint, so the series is built by snapshotting.
 _TRACKED_METRICS = ("lthrBpm", "thresholdPaceSecPerKm", "vo2maxMlKgMin", "weightKg")
 
-# Fallback zone floors as a fraction of LTHR, used only when Garmin's own
-# zone config is unavailable.
+# Fractions of LTHR, used only when Garmin's own zone config is unavailable.
 _ZONE_PERCENTS = (0.65, 0.80, 0.89, 0.95, 1.00)
 _VO2_PER_KMH = 3.5
 
@@ -28,7 +25,6 @@ def _age_from_birthdate(birth_date: date) -> int:
 
 
 def _fetch_zone_config(client: GarminClient) -> dict[str, Any] | None:
-    """Garmin's heart rate zone config for running, falling back to the all-sport default."""
     try:
         zones = client.get_heart_rate_zones()
     except GarminAPIError:
@@ -39,12 +35,7 @@ def _fetch_zone_config(client: GarminClient) -> dict[str, Any] | None:
 
 
 def extract_fitness_age(days: list[dict[str, Any]]) -> dict[str, Any]:
-    """Latest fitness age and BMI from Garmin's daily fitness-age series.
-
-    Garmin only recomputes these every few days, so the last entries of a range
-    can repeat or carry no values at all - walk backwards to the freshest day
-    that actually holds a fitness age.
-    """
+    """Garmin only recomputes these every few days, so the last entries of a range can carry no values."""
     for day in reversed(days or []):
         values = day.get("values") or {}
         fitness_age = values.get("fitnessAge")
@@ -132,8 +123,7 @@ def _fetch_fitness_age(client: GarminClient) -> dict[str, Any]:
     if current:
         return current
 
-    # The daily endpoint remains a valid fallback. A successful [] is simply
-    # an empty result and must not be treated as an error or unsupported data.
+    # A successful [] from the daily fallback is an empty result, not an error or unsupported data.
     try:
         days = client.get_fitness_age(
             (today - timedelta(days=6)).isoformat(), today.isoformat()
@@ -144,13 +134,7 @@ def _fetch_fitness_age(client: GarminClient) -> dict[str, Any]:
 
 
 def extract_primary_device(payload: dict[str, Any]) -> dict[str, Any]:
-    """Name, firmware and registration date of the watch the metrics come from.
-
-    Garmin returns every device ever registered; only the primary training one
-    is the source of the numbers we display, so the rest is dropped. The serial
-    number and Garmin's own numeric deviceId are deliberately not kept -
-    athlete.json is served publicly and a hardware id buys us nothing.
-    """
+    """The serial number and Garmin's numeric deviceId are deliberately not kept: a hardware id buys us nothing."""
     registered = payload.get("RegisteredDevices") or []
     if not registered:
         return {}
@@ -192,12 +176,7 @@ def tracked_snapshot(metrics: dict[str, Any]) -> dict[str, Any]:
 
 
 def record_athlete_history(metrics: dict[str, Any], today: date | None = None) -> bool:
-    """Append today's threshold metrics when they differ from the last entry.
-
-    Returns True when a new entry was written. Writing only on change keeps the
-    file a change log rather than one identical row per sync, which is what a
-    trend line wants: Garmin revises these every few weeks at most.
-    """
+    """Writing only on change keeps the file a change log rather than one identical row per sync."""
     snapshot = tracked_snapshot(metrics)
     if not snapshot:
         return False
@@ -228,10 +207,7 @@ def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:
     zone_config = _fetch_zone_config(client)
     if zone_config:
         floors = [zone_config.get(f"zone{n}Floor") for n in range(1, 6)]
-        # `all()` would discard the whole set over a zone 1 floor of 0, which
-        # Garmin reports for %maxHR-based profiles, and fall back to zones
-        # derived from LTHR percentages. Latent rather than observed: this
-        # athlete is on %LTHR, where the fallback happens to agree.
+        # Not a truthy `all()`: Garmin reports a zone 1 floor of 0 for %maxHR-based profiles.
         if all(floor is not None for floor in floors):
             metrics["hrZoneBoundsBpm"] = [round(floor) for floor in floors]
 

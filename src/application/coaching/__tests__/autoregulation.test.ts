@@ -6,7 +6,6 @@ import { assessFatigue, autoregulationReport, proposeGuideChanges, readControlle
 
 const LONG: NumberRange = { min: 272, max: 280 }
 
-/** A controlled threshold session as the October block writes it: capped at 156-173, timed, guided. */
 function controlledPrescription(date: string, reps = 3, minutes = 10, guide: NumberRange = LONG): WorkoutPrescription {
   return workout({
     id: `threshold-${date}`,
@@ -32,10 +31,6 @@ interface RepPlan {
   paceSecPerKm: number
 }
 
-/**
- * A run recorded one sample every ten seconds: 10 minutes warming up at 140,
- * each repetition climbing for three minutes then settling, 90 s jogs at 145.
- */
 function controlledRun(date: string, reps: RepPlan[], minutes = 10, tempC = 15): Activity {
   const splits: ActivitySplit[] = []
   const samples: number[] = []

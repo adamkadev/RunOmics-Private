@@ -128,8 +128,7 @@ describe('generateInsight', () => {
   })
 
   it('sends one request per call, however transient the failure: the model pool is the retry', async () => {
-    // The insight pass reserves a model's daily budget one request at a time.
-    // A retry in here would spend two more requests on that one reservation.
+    // The insight pass reserves a model's daily budget one request at a time; a retry here would overspend it.
     const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 503, text: async () => 'high demand' })
     vi.stubGlobal('fetch', fetchSpy)
 

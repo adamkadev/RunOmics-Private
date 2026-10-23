@@ -4,7 +4,6 @@ import { t } from '@/i18n'
 import { menuPlacement } from '../chipMenu'
 import { ClusterPanel } from '../ClusterPanel'
 
-/** The location pill (Heatmap Filters 1b): the row's one chip with a menu. */
 function AreaPicker() {
   return (
     <ClusterPanel
@@ -44,7 +43,7 @@ describe('menuPlacement', () => {
   })
 })
 
-/** The map's chips sit in a rail that scrolls sideways - and so clips on both axes. */
+/** A rail that scrolls sideways clips on both axes. */
 function inScrollingRail(ui: React.ReactElement) {
   render(
     <div data-testid="rail" style={{ overflowX: 'auto' }}>
@@ -96,8 +95,8 @@ describe('the map filter chips', () => {
   })
 
   it('follow their chip when the rail scrolls, rather than closing', () => {
-    // A chip partly outside the rail is scrolled into view by the tap that
-    // opens it, and that scroll arrives after the menu has opened.
+    // The tap that opens a chip partly outside the rail scrolls it into view
+    // after the menu has opened.
     const rail = inScrollingRail(<AreaPicker />)
     const { chip, menu } = openMenu(new RegExp(t.pages.map.area))
     vi.spyOn(chip, 'getBoundingClientRect').mockReturnValue({ left: 100, right: 200, bottom: 50 } as DOMRect)
@@ -109,8 +108,6 @@ describe('the map filter chips', () => {
     expect(menu.style.left).toBe('100px')
   })
 
-  // Heatmap Filters 1b (Oct 2026): the row's one wide control, glass, its
-  // name cut with an ellipsis rather than scrolled.
   it('draw the area as a glass pill that takes the room left and cuts a long name', () => {
     render(<AreaPicker />)
     const chip = screen.getByRole('button', { name: new RegExp(t.pages.map.area) })

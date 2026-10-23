@@ -1,11 +1,8 @@
 /**
- * GPX export of a generated loop, for watches and other apps.
- *
  * Plain GPX 1.1 with one track and no extensions: Garmin Connect, Strava and
- * Komoot all import it as a course. The time is passed in (the domain never
- * reads the clock), and the loop is always closed, because a course whose
- * end is a few metres short of its start shows up as a point-to-point route
- * on some watches.
+ * Komoot all import it as a course. The loop is always closed, because a course
+ * ending a few metres short of its start shows up as point-to-point on some
+ * watches.
  */
 
 export interface GpxInput {

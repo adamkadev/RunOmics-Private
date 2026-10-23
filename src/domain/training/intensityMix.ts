@@ -1,12 +1,6 @@
 /**
- * Easy, moderate and hard on every screen (design review, Oct 2026): easy is
- * Z1-Z2, moderate Z3, hard Z4-Z5, by time. The Athlete page read "Hard (Z4-Z5)
- * 7 %" in amber against a 10-15 % target while Analytics > Intensity read the
- * same weeks "In range" against 80/20, so one week had two verdicts.
- *
- * The verdict is Analytics' 80/20 read, which the coaching rules treat as a
- * ceiling on hard work rather than a quota (see EASY_SHARE_GUIDE): too little
- * hard is never a caution.
+ * 80/20 is a ceiling on hard work rather than a quota (see EASY_SHARE_GUIDE):
+ * too little hard is never a caution.
  */
 
 export type IntensityStatus = 'inRange' | 'tooModerate' | 'tooHard'

@@ -1,11 +1,7 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-/**
- * An outcome as a pill (v4.17): its status colour on a 16% tint of it -
- * Achieved and Reached in pos, Missed in neg. A label, not a card, so the
- * tint is allowed.
- */
+/** A label, not a card, so the tint is allowed. */
 export function OutcomePill({ children, tone, className }: { children: ReactNode; tone: 'pos' | 'neg'; className?: string }) {
   return (
     <span

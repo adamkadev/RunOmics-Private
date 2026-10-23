@@ -9,19 +9,15 @@ import { formatWeekKm } from './weekPlanDays'
 export interface SelectorDay {
   date: string
   state: WeekDayState
-  /** What was run on a done day, what is planned otherwise; null for a session planned by time alone. */
+  /** Run on a done day, planned otherwise; null for a session planned by time alone. */
   km: number | null
-  /** The session's colour (sessionKind); null on a rest day. */
+  /** null on a rest day. */
   color: string | null
-  /** The session's letter under the bar ("E", "T", "Tm", "L"); null on a rest day. */
+  /** "E", "T", "Tm", "L"; null on a rest day. */
   letter: string | null
   isToday: boolean
 }
 
-/**
- * Each km is 5 px of a 20 px wide bar in a 70 px track (App Fixes 3b): an
- * easy 10 km stands 50 px, a long run fills the track.
- */
 const PX_PER_KM = 5
 const TRACK_PX = 70
 const MAX_BAR_PX = 68
@@ -66,9 +62,7 @@ export function DaySelector({
             className={cn(
               'flex w-full flex-col items-center gap-1.5 rounded-2xl border-[1.5px] py-2 transition-[background-color,transform] active:scale-95',
               selected && !day.isToday ? 'border-[var(--line-2)] bg-[var(--surface-2)]' : 'border-transparent',
-              // Today is a ring and its date in the accent, never a fill (App
-              // Fixes 5a): the shared ring (F14), drawn on the column's edge
-              // so it keeps clear of its neighbours, the column its gap.
+              // The ring drawn inside the column's edge, clear of its neighbours.
               day.isToday && 'state-today [outline-offset:-2px]',
             )}
           >

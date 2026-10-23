@@ -74,8 +74,7 @@ def inspect_fit_capabilities(content: bytes) -> set[str]:
     if parsed.ana_training_effect is not None:
         features.add("anaerobicTrainingEffect")
 
-    # Production does not yet map these fields. The diagnostic deliberately
-    # checks only their allowlisted names and discards the decoded messages.
+    # Only these fields' allowlisted names are checked; the decoded messages are discarded.
     messages = _decode_messages(content)
     if _contains_field(messages, _GROUND_CONTACT_BALANCE_FIELDS):
         features.add("groundContactBalance")

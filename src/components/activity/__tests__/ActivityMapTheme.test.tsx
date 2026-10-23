@@ -70,10 +70,8 @@ const isDarkStyle = (style: unknown) => JSON.stringify(style) === JSON.stringify
 /** The observer runs after a microtask. */
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-// Round 2, the owner's phone: leaving the app and coming back left a light
-// map on the dark page. iOS draws its app-switcher snapshots in both
-// appearances, so a page that follows the system flips to light and back -
-// and the flip back came while the light style still loaded.
+// iOS draws its app-switcher snapshots in both appearances, so a page that follows the system flips to light and back,
+// the flip back landing while the light style still loads.
 describe('the activity map across a theme that flips and flips back', () => {
   beforeEach(() => {
     maps.built.length = 0

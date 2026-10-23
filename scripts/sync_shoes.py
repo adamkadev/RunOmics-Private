@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Sync shoe gear from Garmin Connect into the private data workspace.
-
-Run this whenever a shoe is added or retired in Garmin Connect. Unlike
-sync.py it is not run on a schedule, since shoes only change a few times a
-year.
-"""
+"""Not scheduled like sync.py: run it whenever a shoe is added or retired in Garmin Connect."""
 
 from __future__ import annotations
 
@@ -51,8 +46,8 @@ def main() -> int:
         print(json.dumps({"shoes": [shoe.to_dict() for shoe in shoes]}, indent=2))
         return 0
 
-    # Passed on rather than left to write_shoes_json's default, which was
-    # resolved at import and could name another workspace than the message.
+    # Passed on rather than left to write_shoes_json's default, which is resolved at import and could name another
+    # workspace than the message.
     output_path = get_data_dir() / "shoes.json"
     if write_shoes_json(shoes, path=output_path):
         print(f"\n{output_path} updated - review it before pushing private data.")

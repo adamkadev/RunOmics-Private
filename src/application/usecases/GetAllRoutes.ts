@@ -18,18 +18,10 @@ export interface RouteCluster {
   routeCount: number
   totalKm: number
   center: [number, number]
-  /**
-   * Where the area is named from: the centre of the run that sits closest to
-   * all the others. `center` is a mean, and an area made of two or three
-   * separate spots averages to somewhere between them - a village with no
-   * run in it, which reverse geocoding then names.
-   */
+  /** The centre of the run closest to all the others: the mean `center` of separate spots can land on a village with no run in it. */
   labelPoint: [number, number]
   bounds: LngLatBounds
-  /**
-   * What the map opens on (v4.17): the 4th to 96th percentile of the area's
-   * points, where `bounds` holds every one of them.
-   */
+  /** What the map opens on: the 4th to 96th percentile of the area's points, where `bounds` holds them all. */
   frame: LngLatBounds
   routeIndices: number[]
 }
@@ -49,7 +41,6 @@ export interface AllRoutesData extends MapShellData {
 
 const CLUSTER_RADIUS_KM = 12
 
-/** The point with the smallest summed distance to every other: always one of `points`. */
 export function medoid(points: [number, number][]): [number, number] {
   let best = points[0]!
   let bestSum = Infinity
@@ -145,8 +136,7 @@ export function getAllRoutes(): AllRoutesData {
     }
   })
 
-  // By km, the one share basis the page uses (v4.8): the busiest area comes
-  // first and the page opens on it.
+  // By km, the share basis the page uses: the busiest area comes first and the page opens on it.
   const clusters = unsorted.sort((a, b) => b.totalKm - a.totalKm || b.routeCount - a.routeCount)
   const defaultClusterIdx = 0
 

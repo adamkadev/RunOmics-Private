@@ -1,23 +1,17 @@
 /**
- * The Explore cell grid: 150 m squares on a local flat projection.
- *
- * Shared by the boundary build script (runnable cells), the coverage worker
- * (visited cells) and route scoring (new ground), so a cell key means the same
- * square everywhere. Each area file names its own `origin`, a public point
- * such as the commune centre (never home), and every key is relative to it.
- *
- * The projection is equirectangular about the origin, the same 111 320 m per
- * degree as `distanceKm` (lib/math). Web Mercator units would make a "150 m"
- * cell about 98 m on the ground at 49°N.
+ * Shared by the boundary build script, the coverage worker and route scoring,
+ * so a cell key means the same square everywhere. Each area file's `origin` is
+ * a public point such as the commune centre, never home. Equirectangular about
+ * the origin, as `distanceKm`: Web Mercator units would make a "150 m" cell
+ * about 98 m on the ground at 49°N.
  */
 
 export const CELL_M = 150
 /** Interpolate track segments so samples are at most this far apart. */
 export const MAX_STEP_M = 75
 /**
- * A step longer than this is a GPS dropout, not a street: it is not
- * interpolated, so it paints no straight line of cells. Real tracks
- * (Douglas-Peucker at 0.5 m) top out around 160 m.
+ * A longer step is a GPS dropout, not a street, so it is not interpolated into
+ * a straight line of cells. Real tracks top out around 160 m.
  */
 export const BREAK_M = 300
 export const M_PER_DEGREE = 111_320
@@ -93,12 +87,10 @@ export function cellCentre(p: Projection, key: number): [number, number] {
 }
 
 /**
- * Walks a line given as flat [lon, lat, lon, lat, …] pairs and reports
- * samples in projected metres, at most `maxStepM` apart along each segment.
- *
- * `step` is the distance from the previous sample, 0 for the first sample
- * of a run of samples. A segment longer than `breakM` is skipped: its end
- * starts a new run (step 0), so nothing is drawn across the gap.
+ * `coords` is flat [lon, lat, lon, lat, …]; samples come back in projected
+ * metres. `step` is the distance from the previous sample, 0 where a run of
+ * samples starts: a segment longer than `breakM` starts a new run, so nothing is
+ * drawn across the gap.
  */
 export function sampleLine(
   coords: ArrayLike<number>,

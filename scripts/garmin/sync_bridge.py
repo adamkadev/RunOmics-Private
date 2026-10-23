@@ -1,29 +1,5 @@
 #!/usr/bin/env python3
-"""Authenticated Garmin transport for `npm run coach:sync-garmin`.
-
-The coaching plan, the Garmin mapping and every sync decision live in
-TypeScript; this bridge only performs the HTTP calls, reusing the same
-authenticated GarminClient (and therefore the same GARMIN_SECRET token) as the
-rest of the sync pipeline. There is no second login flow and no credential
-handling here.
-
-Protocol: newline-delimited JSON. One request object per line on stdin, one
-response object per line on stdout, in order, until stdin closes. The client is
-authenticated once and reused for every request, so a full sync costs one
-Garmin session rather than one per workout.
-
-    {"op": "create", "payload": {...}}
-    {"op": "schedule", "workoutId": "...", "date": "2026-09-08"}
-    {"op": "unschedule", "scheduleId": "..."}
-    {"op": "delete", "workoutId": "..."}
-    {"op": "get", "workoutId": "..."}
-    {"op": "scheduled", "year": 2026, "month": 9}
-    {"op": "auth"}
-
-Responses are {"ok": true, ...} or {"ok": false, "error": "...",
-"rateLimited": bool}. Errors carry Garmin's status code and URL only - never a
-token, and never the request body.
-"""
+"""Garmin transport for `npm run coach:sync-garmin`: every sync decision lives in TypeScript, this only makes HTTP calls."""
 
 from __future__ import annotations
 

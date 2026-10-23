@@ -1,28 +1,17 @@
 import { t } from '@/i18n'
 import { cn } from '@/lib/utils'
 
-/**
- * Each state's swatch, a step more opaque than its fill on the map so it
- * reads at 10 pt (design spec §3): fog a dark square in a dashed rim, partly
- * a breath of the accent in a neutral rim, complete the accent in its own.
- */
+/** Each swatch is a step more opaque than its fill on the map, so it reads at 10 pt. */
 const SWATCH = {
   fog: 'border border-dashed bg-[color-mix(in_srgb,var(--foreground)_35%,transparent)] border-[color:color-mix(in_srgb,var(--foreground)_40%,transparent)] dark:bg-[color-mix(in_srgb,var(--background)_80%,transparent)]',
   partly:
     'border bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] border-[color:color-mix(in_srgb,var(--foreground)_30%,transparent)] dark:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] dark:border-[color:color-mix(in_srgb,var(--foreground)_40%,transparent)]',
-  // Light mono's accent is near-black: a wash of it was the fog's grey, so the
-  // swatch lifts to the capsule's paper inside the accent rim, as on the map.
+  // Light mono's accent is near-black and a wash of it reads as the fog's grey, so the swatch lifts to the capsule's paper, as on the map.
   complete:
     'border-[1.5px] border-accent bg-[color-mix(in_srgb,var(--accent)_30%,transparent)] dark:bg-[color-mix(in_srgb,var(--accent)_25%,transparent)] [:root[data-accent=mono]:not(.dark)_&]:bg-[var(--raised)]',
 } as const
 
-/**
- * Fog / Partly / Complete, in the heat legend's place while Districts is on.
- * Solid, not glass (the blur budget): the raised surface with the glass's
- * drop, the capsule's own geometry. In dark the drop is lost on the map, so
- * the capsule takes the solid glass's hairline rim (the reduce-transparency
- * fallback's), V4's edge.
- */
+/** Solid, not glass, for the blur budget; in dark the drop is lost on the map, so it takes the solid glass's hairline rim. */
 export function DistrictsLegend({ className }: { className?: string }) {
   const d = t.pages.map.districts
   const items = [

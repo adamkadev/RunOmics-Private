@@ -257,7 +257,7 @@ describe('what the run was for (v4.16.4)', () => {
     ...(seconds === undefined ? {} : { seconds }),
   })
 
-  // 23 Sep: 3 x 7:00 at 4:25, 4:25, 4:24 against 4:22-4:28.
+  // 3 x 7:00 at 4:25, 4:25, 4:24 against 4:22-4:28.
   const thresholdPlan = {
     date: '2026-09-23',
     name: 'Threshold 3 x 7:00',
@@ -302,7 +302,6 @@ describe('what the run was for (v4.16.4)', () => {
     expect(prompt).toContain('Tone: neutral.')
   })
 
-  // 26 Sep: an easy block and 6 x 20 s strides, which read as "7 reps".
   it('judges a strides day as an easy run and counts the strides', () => {
     const strides = run({
       id: 's',
@@ -328,19 +327,15 @@ describe('what the run was for (v4.16.4)', () => {
     expect(prompt).toContain('- How it held:')
   })
 
-  // An easy day belongs in zones 1-2; "little time above zone 3" let half of
-  // one sit in zone 3.
   it('measures an easy run by its time in zones 1-2, with zone 3 counting against it', () => {
     const zone = (n: number, minutes: number) => ({ zone: n, seconds: minutes * 60, percent: 0, minBpm: 0 })
     const easy = run({ id: 'z', date: '2026-09-27', durationSeconds: 73 * 60, hrZones: [zone(1, 21), zone(2, 49), zone(3, 3), zone(4, 0), zone(5, 0)] as never })
 
-    // v4.16.5: held, it is the default and says so - not the measure every
-    // easy verdict led with.
     expect(verdict(easy, null)).toContain('- Zones: 96% in zones 1-2, as an easy run should be - the default, not news')
     const grey = run({ id: 'g', date: '2026-09-27', hrZones: [zone(1, 20), zone(2, 25), zone(3, 25), zone(4, 2)] as never })
     expect(verdict(grey, null)).toContain('- Zones: 63% in zones 1-2, 25 min in zone 3, 2 min in zones 4-5 - more than an easy day should hold')
     expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('nearly all of it in zones 1-2. That is the default, not news')
-    // With its reps known, a structured session is read from them, not its zones (v4.16.5).
+    // With its reps known, a structured session is read from them, not its zones.
     const withReps = verdict({ ...thresholdRun([265, 265, 264]), hrZones: [zone(2, 29), zone(3, 6), zone(4, 16)] as never }, thresholdPlan)
     expect(withReps).not.toContain('zones 4-5')
     expect(withReps).toContain('- Reps: 3 of 3 planned')
@@ -348,7 +343,6 @@ describe('what the run was for (v4.16.4)', () => {
     expect(verdict(unplanned, null)).toContain('- Time in zones 4-5: 16 min')
   })
 
-  // On LTHR zones a tempo effort sits in zone 3: there it is the work.
   it('gives a tempo session its zone 3 time as well', () => {
     const zone = (n: number, minutes: number) => ({ zone: n, seconds: minutes * 60, percent: 0, minBpm: 0 })
     const tempo = run({ id: 'tp', date: '2026-07-07', type: 'Tempo', hrZones: [zone(2, 28), zone(3, 12), zone(4, 12), zone(5, 3)] as never })
@@ -374,7 +368,6 @@ describe('what the run was for (v4.16.4)', () => {
     expect(prompt).toContain('- Conditions, printed on the card: 16°C, wind 10 km/h. Not printed: feels like 14°C, humidity 55%')
   })
 
-  // v4.16.6: "the same angle is fine" had every threshold verdict lead on the reps' evenness.
   it("keeps a verdict off another run's wording, opening, shape and lead fact", () => {
     const prompt = runVerdictInsightPrompt({ activity: run({}), history: runHistory(run({}), []), planned: null }, ['Easy and steady / 0 min in zone 4.'])
 
@@ -394,7 +387,6 @@ describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
     ...(note === undefined ? {} : { note }),
   })
 
-  // 9 Sep: planned easy, all of it in zones 1-2 at RPE 2, and Garmin called it "Tempo".
   it("never judges an easy run by Garmin's label for it", () => {
     const easy = run({ id: 'e', date: '2026-09-09', type: 'Tempo', rpe: 2, hrZones: [zone(1, 11), zone(2, 23)] as never, splits: steady as never })
     const prompt = runVerdictInsightPrompt(context(easy, { date: '2026-09-09', name: 'Easy Aerobic Run', type: 'Base' }), [])
@@ -412,7 +404,6 @@ describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
     expect(prompt).not.toContain('between the fastest and slowest kilometre')
   })
 
-  // 17 Sep: all three reps on target at RPE 4, written up as "lower than target exertion".
   it('reads reps on target at a lower effort than expected as good news', () => {
     const rep = { type: 'interval_active', durationSec: 420, distanceM: 1585, avgSpeedMs: 0, avgHr: 176, laps: [] }
     const threshold = run({ id: 't', date: '2026-09-17', type: 'Threshold', rpe: 4, splits: [rep, rep, rep] as never })
@@ -435,7 +426,6 @@ describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
     expect(prompt).toContain('the previous one, 1 day before, was "Threshold 3 x 7:00"')
   })
 
-  // 23 Sep: "Precise threshold control" over the athlete's own note, "sick".
   it("hands the model the athlete's note, to judge the run in its light", () => {
     const prompt = runVerdictInsightPrompt(context(run({ id: 'n', date: '2026-09-23' }), null, { note: 'sick', tags: [] }), [])
 
@@ -452,9 +442,6 @@ describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
     expect(runVerdictNoteKey({ note: 'sick', tags: [] })).not.toBe(runVerdictNoteKey({ note: 'fine', tags: [] }))
   })
 
-  // 7 Aug: seven 60 s reps, the last 12 s/km quicker than the first, read as
-  // "the pace faded by 12 s/km" from "-12s/km from first to last"; and RPE 6
-  // for the whole session read against the reps' 8-10 as "fell short".
   it('says which way the reps went in words, and never judges them by the session RPE', () => {
     const rep = (metres: number, hr: number) => ({ type: 'interval_active', durationSec: 60, distanceM: metres, avgSpeedMs: 0, avgHr: hr, laps: [] })
     const anaerobic = run({
@@ -490,7 +477,6 @@ describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
   })
 })
 
-// v4.16.6: every threshold verdict read "Precise threshold control maintains target speed".
 describe('what sets this run apart (v4.16.6)', () => {
   const rep = (seconds: number, pace: number, hr: number) => ({ type: 'interval_active', durationSec: seconds, distanceM: (seconds / pace) * 1000, avgSpeedMs: 0, avgHr: hr, laps: [] })
   const threshold = (id: string, date: string, seconds: number, pace: number, hr: number) =>

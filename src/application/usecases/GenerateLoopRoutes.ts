@@ -2,17 +2,11 @@ import type { RoundTripResult, RoutingErrorKind, RoutingGateway } from '@/applic
 import type { RouteCandidate } from '@/domain/explore/types'
 import { OpenRouteServiceGateway } from '@/infrastructure/routing/OpenRouteServiceGateway'
 
-/**
- * Explore's loop generator: a batch of round trips from one start, one per
- * seed, for the client to score against the athlete's own coverage. Scoring
- * stays on the client because only the coverage worker knows which streets
- * are new; this side only fetches.
- */
+/** Scoring stays on the client, where the coverage worker knows which streets are new: this side only fetches. */
 
 export interface LoopRequest {
   /** [lon, lat]: a public point inside the target quartier, never home. */
   start: [number, number]
-  /** The planned session's whole distance. */
   distanceM: number
   /** One loop per seed. A new batch is new seeds. */
   seeds: number[]
@@ -35,21 +29,12 @@ const MAX_DRIFT = 0.15
 /** How far the retry may stretch or shrink its ask, so one wild loop cannot make a wilder request. */
 const MAX_CORRECTION = 2
 
-/**
- * What a batch that found nothing answers with, worst first: a spent quota
- * or a rate limit says when to try again, a refused key is ours to fix, and
- * "no loop from here" only means try another start - so it loses to every
- * other reason for the batch failing.
- */
+/** Worst first: "no loop from here" only means try another start, so it loses to every other reason. */
 const SEVERITY: RoutingErrorKind[] = ['quota', 'rateLimit', 'unauthorized', 'upstream', 'timeout', 'noRoute']
 
 const finite = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value)
 
-/**
- * A request body as JSON parsed it, checked whole: anything else is a 400.
- * Repeated seeds are folded together rather than refused - each would spend
- * a request on a loop already in the batch.
- */
+/** Repeated seeds are folded together rather than refused: each would spend a request on a loop already in the batch. */
 export function parseLoopRequest(body: unknown): LoopRequest | null {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return null
   const { start, distanceM, seeds, avoidBusyRoads } = body as Record<string, unknown>
@@ -69,10 +54,8 @@ export function parseLoopRequest(body: unknown): LoopRequest | null {
 }
 
 /**
- * A key is one run of visible ASCII. Anything else (a line break from two
- * keys pasted into a multi-line field, a NUL, a space) cannot travel in a
- * header: fetch refuses it with an error that quotes the whole value, and
- * that error would land in a log. So such a key counts as no key.
+ * Visible ASCII only: anything else cannot travel in a header, and fetch's error quotes the whole value,
+ * which would land in a log. Such a key counts as no key.
  */
 const PLAIN_KEY = /^[\x21-\x7E]+$/
 
@@ -92,16 +75,13 @@ export function createRoutingGateway(config: { apiKey: string }): RoutingGateway
 const drift = (distanceM: number, targetM: number) => Math.abs(distanceM - targetM) / targetM
 
 /**
- * One seed's loop. A round trip's length is a wish - a loop that crosses a
- * river comes back far longer - so a loop too far off is asked for again
- * with the length scaled by how far it missed, same seed, and the closer of
- * the two kept. Once: a second miss is the network, not the arithmetic.
+ * A round trip's length is a wish, so a loop too far off is asked for once more, scaled by its miss,
+ * and the closer kept. Only once: a second miss is the network, not the arithmetic.
  */
 async function loopFor(gateway: RoutingGateway, request: LoopRequest, seed: number, signal: AbortSignal | undefined): Promise<RoundTripResult> {
   const { start, distanceM: target, avoidBusyRoads } = request
   if (signal?.aborted) return { ok: false, kind: 'upstream' }
   const first = await gateway.roundTrip({ start, lengthM: target, seed, avoidBusyRoads, signal })
-  // Close enough - or nobody is waiting for a closer one any more.
   if (!first.ok || drift(first.candidate.distanceM, target) <= MAX_DRIFT || signal?.aborted) return first
 
   const correction = Math.min(MAX_CORRECTION, Math.max(1 / MAX_CORRECTION, target / first.candidate.distanceM))
@@ -110,14 +90,7 @@ async function loopFor(gateway: RoutingGateway, request: LoopRequest, seed: numb
   return drift(second.candidate.distanceM, target) < drift(first.candidate.distanceM, target) ? second : first
 }
 
-/**
- * Every seed at once. Any loop found makes the batch a success - the client
- * scores what it has - and only a batch with nothing answers with a reason.
- *
- * `signal` is the caller's request: once it is gone (a new distance asked
- * for), nothing more goes to the provider for this batch - no second try -
- * and the calls still out stop waiting.
- */
+/** Any loop found makes the batch a success; once `signal` aborts, nothing more goes to the provider for this batch. */
 export async function generateLoopRoutes(
   gateway: RoutingGateway,
   request: LoopRequest,

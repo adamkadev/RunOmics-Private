@@ -68,25 +68,21 @@ const RUN = {
 }
 
 describe('the run map layers (v4.17)', () => {
-  // Design review, Oct 2026: a place name sat over the finish.
   it('draws the accent route and its markers over the place names', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
-    // 3.0.3: under every label, as the heatmap's tracks are; the markers on top.
+    // The route under every label, as the heatmap's tracks are; the markers on top.
     expect(layers.map((l) => l.id)).toEqual(['Water', ROUTE_HALO_LAYER, ROUTE_LINE_LAYER, 'Road labels', 'Town labels', RUN_FINISH_LAYER, RUN_START_LAYER, RUN_CURSOR_LAYER])
     const route = layers.find((l) => l.id === ROUTE_LINE_LAYER)!
     expect(route).toMatchObject({ type: 'line', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': RUN.accent, 'line-width': 4 } })
   })
 
-  // 3.0 handoff: one colour, width 4, on a 3 px halo of the ground.
   it('lays a 3 px halo in the ring colour under the route', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
     expect(layers.find((l) => l.id === ROUTE_HALO_LAYER)).toMatchObject({ type: 'line', paint: { 'line-color': RUN.ring, 'line-width': 10 } })
   })
 
-  // 3.0 handoff: "Metz" sat under the line.
-  // 3.0.3, the owner's request: a district the run crossed keeps its name.
   it('drops no name for the line: no guard, the route under the labels however often it is called', () => {
     const { map, layers } = fakeMap()
     addRunLayers(map, RUN)
@@ -110,7 +106,6 @@ describe('the run map layers (v4.17)', () => {
     })
   })
 
-  // At the owner's request: the Activity map had no end marker at all.
   it('puts the checkered finish on the drawn line\'s own last point', () => {
     const { map, layers, images, data } = fakeMap()
     addRunLayers(map, RUN)
@@ -125,7 +120,6 @@ describe('the run map layers (v4.17)', () => {
     expect((data[RUN_START_SOURCE] as { features: unknown[] }).features).toHaveLength(1)
   })
 
-  // Design review, Oct 2026: never two markers stacked.
   it('draws a loop as one combined marker on the start while the ends touch, then both once apart', () => {
     const { map, data } = fakeMap()
     addRunLayers(map, { ...RUN, joined: true })
@@ -164,7 +158,7 @@ describe('the run map layers (v4.17)', () => {
     expect((data[RUN_CURSOR_SOURCE] as { features: unknown[] }).features).toHaveLength(0)
   })
 
-  // GPS points come by time: an index halfway was not halfway along.
+  // GPS points come by time, so an index halfway is not halfway along.
   it('finds the point a share of the way along by distance', () => {
     const route: [number, number][] = [[0, 0], [0, 0.001], [0, 0.002], [0, 0.01]]
     expect(pointAlongRoute(route, 0)).toEqual([0, 0])
@@ -201,7 +195,6 @@ describe('the run map layers (v4.17)', () => {
   })
 
   it('fits the route as large as 3.0 drew it in the hero', () => {
-    // Round 2: Liquid Glass v3's 68 and 80 pt drew the route at about 60 % of its size.
     expect(ROUTE_FIT_PADDING).toEqual({ top: 32, right: 24, bottom: 36, left: 24 })
   })
 })

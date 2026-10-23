@@ -17,12 +17,7 @@ function hasStrides(blocks: readonly WorkoutBlock[]): boolean {
   )
 }
 
-/**
- * What each planned day of the week is, in the one or two words a day's
- * accessible name says: "Threshold", "Easy + strides", "Long run". Plan's
- * priority - the coach's prescription over Garmin's, a cancelled one is no
- * plan - so the strip names the day Plan draws.
- */
+/** In Plan's priority (the coach's over Garmin's, a cancelled one is no plan), so the strip names the day Plan draws. */
 export function plannedSessionKinds(
   dates: readonly string[],
   coach: readonly CoachDay[],
@@ -68,10 +63,7 @@ export interface WeekStripDay {
   label: string
 }
 
-/**
- * The seven days as Today's week strip draws them, from the same WeekTarget
- * the "0 / 51 km" beside it reads, so the circles and the total agree.
- */
+/** From the same WeekTarget as the week's km total, so the circles and the total agree. */
 export function weekStripDays(days: WeekTarget['days'], today: string, kinds: Record<string, string>): WeekStripDay[] {
   return days.map((day, i) => {
     const km = day.state === 'done' ? day.ranKm : day.state === 'rest' ? null : day.plannedKm

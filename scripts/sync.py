@@ -39,10 +39,8 @@ _ATHLETE_PATH = _DATA_DIR / "athlete.json"
 _RATE_LIMIT_PAUSE = 1.0
 _REGEAR_WINDOW_DAYS = 10
 
-# "Some activities or steps failed; everything that succeeded is on disk" - the
-# workflow commits it, then fails the run. Not 2: argparse already exits 2 for
-# a usage error, and the workflow would read that as a partial failure and
-# commit and deploy an unchanged workspace.
+# The workflow commits what succeeded, then fails the run. Not 2: argparse exits 2 for a usage error, and the workflow
+# would read that as a partial failure.
 _EXIT_PARTIAL_FAILURE = 3
 
 Step = tuple[str, Callable[[], object]]
@@ -72,11 +70,7 @@ def main() -> int:
     failed_steps: list[str] = []
 
     with GarminClient(secret) as client:
-        # Fetched early (before the activity loop) so newly-synced activities can be
-        # enriched against it below - but must not block the more important activity
-        # sync if Garmin's calendar API hiccups, so it falls back to whatever's
-        # already on disk rather than aborting the whole run. Like any other
-        # step, a failure here still makes the night a partial one.
+        # Fetched before the activity loop, which is enriched against it; a calendar API hiccup must not block it.
         if not args.dry_run and not args.id:
             failed_steps += _run_isolated(
                 [("planned workouts", lambda: _sync_planned_workouts(client, planned_store))]
@@ -105,12 +99,8 @@ def main() -> int:
             for i, activity_id in enumerate(new_ids, 1):
                 print(f"  [{i}/{len(new_ids)}] Activity {activity_id} …", end=" ", flush=True)
 
-                # One bad activity (API error, corrupt FIT, mapping bug) must
-                # not abort the run and lose everything synced before it. It
-                # is not saved either: the next run fetches it again, where
-                # storing it without its track, zones or gear was for good.
-                # (An activity that has none of them gets a 404, which the
-                # client reads as empty.)
+                # One bad activity must not abort the run, nor be saved without its track, zones or gear: the next
+                # run fetches it again.
                 try:
                     detail = retry_transient(client.get_activity_detail, activity_id)
                     parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
@@ -171,16 +161,7 @@ def main() -> int:
 
 
 def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip: set[str]) -> int:
-    """Re-read the gear of the last days' activities; return how many changed.
-
-    Picks up a shoe assigned in Garmin Connect after the activity was first
-    synced. Only a successful answer may change what is stored, since "no
-    gear" writes None over the gearId on file: strict_errors makes a 404
-    raise like any other error, and an error of any kind - a network one
-    included, which used to escape main() before store.save() and take the
-    night's activities with it - keeps the stored value for the next run to
-    ask again.
-    """
+    """Only a successful answer may change what is stored, since "no gear" writes None over the gearId on file."""
     recent_ids = [aid for aid in store.get_ids_since(_REGEAR_WINDOW_DAYS) if aid not in skip]
     if not recent_ids:
         return 0
@@ -200,16 +181,7 @@ def _refresh_recent_gear(client: GarminClient, store: JsonActivityStore, *, skip
 
 
 def _run_isolated(steps: list[Step]) -> list[str]:
-    """Run every step, whatever happens to the ones before it; return the names that failed.
-
-    The activities are already saved by the time these run, and each step
-    writes files of its own. One of them raising used to end main() with
-    exit 1, which makes the workflow skip the commit - so a single 5xx from
-    race predictions discarded every activity synced that night. Now a step
-    that fails has written only what it completed, each file whole (and a
-    history file that will not parse still refuses to be rewritten), the
-    others carry on, and main() exits 3.
-    """
+    """A step raising must not end main() with exit 1, which makes the workflow skip the commit of the saved activities."""
     failed: list[str] = []
     for name, step in steps:
         try:
@@ -257,7 +229,7 @@ def _sync_athlete_metrics(client: GarminClient) -> None:
 
 
 def _first_activity_date(store: JsonActivityStore) -> date | None:
-    """Earliest activity date - there is no training status worth having before it."""
+    """There is no training status worth having before it."""
     dates = [a["date"] for a in store.all_activities() if a.get("date")]
     return date.fromisoformat(min(dates)) if dates else None
 
@@ -293,9 +265,7 @@ def _fetch_track_file(
         if parsed.has_data:
             return parsed, fit_path.name
 
-    # None is an activity without a FIT file (a 404, or an archive holding
-    # none). A download that fails, or one that decodes to nothing, raises
-    # instead: storing the activity without its track would be for good.
+    # None is an activity without a FIT file; a failed or empty download raises, since storing it trackless is for good.
     fit_bytes = retry_transient(client.download_fit, activity_id)
     if fit_bytes is None:
         return None, None

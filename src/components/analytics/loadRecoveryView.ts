@@ -4,12 +4,6 @@ import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
 import type { DayWindow } from './analyticsView'
 
-/**
- * v5.4 Load trend and Recovery: how the load got where Injury risk says it
- * is, and whether the body is absorbing it. Both follow the tab's window, day
- * by day on 4 and 12 weeks and as weekly averages on a year.
- */
-
 const DAY_MS = 86_400_000
 const day = (iso: string) => new Date(`${iso}T00:00:00`)
 const daysBetween = (from: string, to: string) => Math.round((day(to).getTime() - day(from).getTime()) / DAY_MS)
@@ -25,8 +19,6 @@ function byWeek<T extends { date: string }>(items: T[]): T[][] {
   }
   return [...groups.values()]
 }
-
-// ─── Load trend ────────────────────────────────────────────────────────────
 
 export type LoadState = 'in' | 'above' | 'below'
 
@@ -59,22 +51,15 @@ export interface LoadTrendView {
   /** Days before the last one that went over the band, and the latest of them. */
   over: { days: number; last: string } | null
   yMax: number
-  /** Three grid lines, labelled on the right (v5.5 R1). */
+  /** Three grid lines, labelled on the right. */
   ticks: number[]
 }
 
 const stateOf = (acute: number, lo: number, hi: number): LoadState => (acute > hi ? 'above' : acute < lo ? 'below' : 'in')
 
-/** The change the sentence quotes looks back this far. */
 const CHANGE_LOOKBACK_DAYS = 28
-/** A change past this is not quoted. */
 export const MAX_QUOTED_PCT = 100
 
-/**
- * How far acute load has moved to get here: from the lowest point of the last
- * four weeks when it is up on four weeks ago, from the highest when it is
- * down. "Load jumped 31% in 10 days" is the climb out of the last trough.
- */
 export function loadChange(pairs: LoadPair[], last: LoadPair): LoadChange | null {
   const from = isoDate(addDays(day(last.date), -CHANGE_LOOKBACK_DAYS))
   const back = pairs.filter((p) => p.date >= from && p.date < last.date)
@@ -84,18 +69,14 @@ export function loadChange(pairs: LoadPair[], last: LoadPair): LoadChange | null
   const base = back.reduce((pick, p) => (up ? (p.acute < pick.acute ? p : pick) : p.acute > pick.acute ? p : pick), first)
   if (base.acute <= 0) return null
   const pct = Math.round(((last.acute - base.acute) / base.acute) * 100)
-  // Out of a week off, "up 327%" says less than the band does: past doubling
-  // the sentence reads the range alone.
+  // Out of a week off, "up 327%" says less than the band does: past doubling the sentence reads the range alone.
   if (Math.abs(pct) > MAX_QUOTED_PCT) return null
   return { pct, days: daysBetween(base.date, last.date) }
 }
 
 const TICK_STEPS = [20, 25, 50, 100, 150, 200, 250, 300, 400, 500]
 
-/**
- * One y range per athlete: the year's highest acute load or safe edge, with
- * room for the today dot, split into three round grid steps (300 · 600 · 900).
- */
+/** One y range per athlete over the year; the 6% headroom leaves room for the today dot. */
 export function loadTrendYMax(pairs: LoadPair[], today: string): number {
   const from = isoDate(addDays(day(today), -364))
   const year = pairs.filter((p) => p.date >= from && p.date <= today)
@@ -141,17 +122,10 @@ export function loadTrendView(pairs: LoadPair[], window: DayWindow, yMax: number
   }
 }
 
-// ─── Recovery ──────────────────────────────────────────────────────────────
-
-/**
- * Under this many days of a series in the window, that series is left out;
- * with neither, the card is hidden, never drawn empty. A watch not worn
- * overnight records no HRV at all, but still a daytime resting HR.
- */
+/** Each series needs this many days on its own: a watch not worn overnight records no HRV but still a daytime resting HR. */
 export const RECOVERY_MIN_NIGHTS = 7
-/** The baseline is the athlete's own range over the last 60 nights. */
 export const BASELINE_NIGHTS = 60
-/** Changes inside these read as no real change (v4.7 rule). */
+/** Changes inside these read as no real change. */
 export const HRV_FLAT_MS = 3
 export const RESTING_HR_FLAT_BPM = 2
 
@@ -187,11 +161,7 @@ function quantile(sorted: number[], q: number): number {
   return sorted[lo]! + (sorted[hi]! - sorted[lo]!) * (at - lo)
 }
 
-/**
- * The baseline: the middle 80% of the athlete's own last 60 nights before
- * last night, so last night is judged against what came before it rather
- * than against itself.
- */
+/** Leaves last night out, so it is judged against what came before it rather than against itself. */
 function baseline(values: { date: string; v: number }[], lastDate: string): { lo: number; hi: number } | null {
   const from = isoDate(addDays(day(lastDate), -BASELINE_NIGHTS))
   const sample = values.filter((x) => x.date >= from && x.date < lastDate).map((x) => x.v).sort((a, b) => a - b)
@@ -272,15 +242,10 @@ export function recoveryView(nights: RecoveryNight[], window: DayWindow): Recove
     hrv: hrv ? onDates(dates, hrv.dates, hrv.series) : null,
     restingHr: rhr ? onDates(dates, rhr.dates, rhr.series) : null,
     hrvLowStreak,
-    // Only the bad side is a flag (App Fixes 2a): a resting HR below its
-    // baseline is a recovered athlete, and HRV above it is the same news.
-    // Both used to raise "Recovery is dipping" over a number that had
-    // improved.
+    // Only the bad side is a flag: a resting HR below its baseline, or HRV above it, is a recovered athlete.
     out: hrv?.series.side === 'low' || rhr?.series.side === 'high',
   }
 }
-
-// ─── Coach read (v5.4) ─────────────────────────────────────────────────────
 
 export type LoadCoachHeadline =
   | { kind: 'spikeAndDip' }
@@ -288,11 +253,7 @@ export type LoadCoachHeadline =
   | { kind: 'dip' }
   | { kind: 'building'; change: LoadChange; recovery: boolean }
 
-/**
- * The coach read's headline once load and recovery are known; first match
- * wins. Null leaves the speed-based headline in place: the load is not up and
- * nothing is out of range.
- */
+/** First match wins. */
 export function loadCoachHeadline(load: LoadTrendView | null, recovery: RecoveryView | null): LoadCoachHeadline | null {
   const above = load?.state === 'above'
   if (above && recovery?.out) return { kind: 'spikeAndDip' }

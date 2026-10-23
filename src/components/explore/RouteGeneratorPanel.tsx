@@ -15,7 +15,7 @@ import { Toggle } from '@/components/ui/Toggle'
 import type { RouteFailure } from './routeApi'
 import { canStepDown, canStepUp, stepRouteKm, type RouteStats } from './routeGenerator'
 
-/** The panel, for the camera to measure (as the quartier sheet's). */
+/** For the camera to measure, as the quartier sheet's. */
 export const ROUTE_PANEL_TEST_ID = 'route-generator'
 
 export type RouteGeneratorStatus = 'generating' | 'ready' | 'error'
@@ -44,42 +44,31 @@ export function failureMessage(failure: RouteFailure): string {
 }
 
 const km = (value: number) => `${formatDistance(value)} ${t.units.km}`
-/** The stepper's value: always one decimal, "8.0 km". */
 const stepperKm = (value: number) => `${formatDecimal(value, 1)} ${t.units.km}`
 
-/** A row on the sheet: its grouped fill (no glass inside glass). */
+/** A grouped fill: no glass inside glass. */
 const GROUPED = 'rounded-[20px] bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]'
-/**
- * The row's buttons: one line each, a label that can't fit cut short rather
- * than wrapped; on a 320 pt phone a size down, so the row holds in both
- * languages (Download loses its icon there).
- */
+/** A label that can't fit is cut short, not wrapped, and a size down on a 320 pt phone, so the row holds in both languages. */
 const ROW_BUTTON = 'min-w-0 whitespace-nowrap px-3 max-[359px]:text-[14px]'
-/** The stepper's ± circles: 38 pt, a 44 pt hit. */
+/** 38 pt, a 44 pt hit. */
 const STEP_BUTTON = cn(SHEET_CONTROL, 'size-[38px] h-[38px] text-foreground disabled:opacity-35')
 
 export interface RouteGeneratorPanelProps {
-  /** The quartier's name; null until it is known. */
   unitName: string | null
   /** On the stepper's 0.5 km grid. */
   distanceKm: number
   onDistanceChange: (km: number) => void
-  /**
-   * The session it plans for, when there is one: its row - "TODAY'S PLAN",
-   * or the day of the one Plan linked - and its distance, for the check.
-   */
+  /** The session it plans for; its km is what the check compares the distance with. */
   plan: { heading: string; label: string; km: number | null } | null
   prefs: RoutePreferences
   onPrefsChange: (prefs: RoutePreferences) => void
   status: RouteGeneratorStatus
   failure: RouteFailure | null
-  /** The loop on screen; null while none is. */
   stats: RouteStats | null
-  /** The pace the time is worked out at; null: unknown. */
+  /** The pace the time is worked out at. */
   paceSecPerKm: number | null
   /** Changes with every loop shown: a save is for one loop. */
   routeKey: string | null
-  /** The loop as a GPX file; null without one. */
   gpxFile: () => File | null
   onRegenerate: () => void
   onRetry: () => void
@@ -87,11 +76,7 @@ export interface RouteGeneratorPanelProps {
   ref?: Ref<HTMLDivElement>
 }
 
-/**
- * The route generator's sheet (S3/S4): the sheet material, floating 8 pt in
- * like a medium-detent sheet, but not modal - no scrim, nothing made inert,
- * the map above it still pans and zooms. Its controls are fills, never glass.
- */
+/** Not modal: no scrim and nothing made inert, so the map above it still pans and zooms. */
 export function RouteGeneratorPanel({
   unitName,
   distanceKm,
@@ -114,9 +99,7 @@ export function RouteGeneratorPanel({
   const titleId = useId()
   const optionsId = useId()
   const { close, handleProps, sheetStyle } = useDragToDismiss(onClose)
-  // Open, focus comes into the panel - the dialog itself, which names it - as
-  // a sheet takes it; the control that opened it is usually gone. Closed,
-  // the map gives it back to that control (GlobalMapClient).
+  // Focus comes into the dialog on open, since the control that opened it is usually gone; on close the map gives it back (GlobalMapClient).
   const dialogRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
     dialogRef.current?.focus({ preventScroll: true })
@@ -181,7 +164,6 @@ export function RouteGeneratorPanel({
     >
       <GlassLayers />
       <div className="flex min-h-0 flex-1 flex-col px-[var(--sheet-pad)] pb-[var(--sheet-pad)] pt-1.5">
-        {/* The grabber: drag it down to close, as on every sheet. */}
         <div className="-mx-[var(--sheet-pad)] flex justify-center pb-2.5" {...handleProps}>
           <span aria-hidden="true" className="h-[5px] w-9 rounded-[2.5px] bg-[rgb(127_127_127/0.45)]" />
         </div>
@@ -230,7 +212,7 @@ export function RouteGeneratorPanel({
               >
                 <Minus size={16} strokeWidth={2.4} aria-hidden="true" />
               </button>
-              {/* As wide as "30.0 km", so the − circle stays put past 10 km (72 pt, S3's, on a 320 pt phone). */}
+              {/* As wide as "30.0 km", so the − circle stays put past 10 km. */}
               <span
                 data-testid="route-distance"
                 aria-live="polite"
@@ -259,7 +241,7 @@ export function RouteGeneratorPanel({
               aria-label={`${e.options}: ${options}`}
               className={cn(GROUPED, 'flex h-[46px] items-center gap-2 pl-4 pr-3.5 text-left')}
             >
-              {/* 14 pt, a point under S3's 15: the three options fit a 393 pt phone's row. */}
+              {/* 14 pt, so the three options fit a 393 pt phone's row. */}
               <span className="min-w-0 flex-1 truncate text-[14px] text-foreground">{options}</span>
               <ChevronRight
                 size={16}
@@ -287,21 +269,19 @@ export function RouteGeneratorPanel({
               {failureMessage(failure)}
             </p>
           ) : (
-            // Four columns as S3 draws them, shared by the widest each takes -
-            // "30.0 km", "+148 m", "100%" - so a plan's 10.5 km or a hilly
-            // loop holds whole; fixed shares, so nothing shifts as loops come and go.
+            // Fixed shares sized for the widest each takes ("30.0 km", "+148 m", "100%"), so nothing shifts as loops come and go.
             <dl
               data-testid="route-stats"
               aria-busy={status === 'generating'}
               className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,1.05fr)_minmax(0,0.85fr)] gap-2 max-[359px]:gap-1.5"
             >
               {statCells.map((cell) => (
-                // The value over its label, as S3 draws them; the label first for a screen reader.
+                // The label first for a screen reader; CSS order draws the value over it.
                 <div key={cell.label} className="flex min-w-0 flex-col">
                   <dt className="order-2 truncate text-[13px] leading-[18px] text-muted-foreground">{cell.label}</dt>
                   <dd
                     className={cn(
-                      // 22 pt (S3) from a 393 pt phone, down to 17 pt on a 320 pt one, where four columns hold about 60 pt each.
+                      // 22 pt from a 393 pt phone, down to 17 pt on a 320 pt one, where four columns hold about 60 pt each.
                       'order-1 truncate text-[clamp(16px,calc(7.5vw_-_7px),22px)] font-bold leading-7 tracking-[-0.02em] tabular-nums',
                       cell.accent && ready ? 'text-accent-text' : 'text-foreground',
                     )}
@@ -313,8 +293,7 @@ export function RouteGeneratorPanel({
             </dl>
           )}
 
-          {/* S3's 1 : 1.4 shares of the room their labels leave - a long
-              French label takes what it needs first. */}
+          {/* 1 : 1.4 shares of the room their labels leave, so a long French label takes what it needs first. */}
           <div className="flex gap-2.5">
             {status === 'error' && failure && RETRYABLE.has(failure) ? (
               <Button size="lg" variant="secondary" onClick={onRetry} className={cn('flex-[1_1_auto] bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]', ROW_BUTTON)}>

@@ -18,7 +18,6 @@ function card(overrides: Partial<SessionCard> = {}): SessionCard {
   return { date: '2026-10-20', eyebrow: 'Tomorrow · Tue 20', title: 'Easy run', km: '10', detail: '1:00 h · ≤ 158 bpm', workout: EASY, phase: 'Base', href: '/plan?date=2026-10-20', ...overrides }
 }
 
-// Design review 3.0 (mock 1b): the next workout opens Plan on its day.
 describe('TodaySessionCard', () => {
   it('is one link to Plan with the day selected, and nothing to send to a watch', () => {
     render(<TodaySessionCard card={card()} />)
@@ -27,7 +26,7 @@ describe('TodaySessionCard', () => {
     expect(link.tagName).toBe('A')
     expect(link).toHaveAttribute('href', '/plan?date=2026-10-20')
     expect(link).toHaveTextContent('Tomorrow · Tue 20')
-    // Wave 5 A0: no phase label and no "Open in Plan" - the card is the tap target.
+    // No phase label and no "Open in Plan": the card is the tap target.
     expect(link).not.toHaveTextContent('Base')
     expect(screen.getByTestId('session-detail').textContent).toBe(`10 ${t.units.km} · 1:00 h · ≤ 158 bpm`)
     expect(link).not.toHaveTextContent(t.dashboard.todayHero.openInPlan)

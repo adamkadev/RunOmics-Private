@@ -5,7 +5,6 @@ import { kmPerWeek as computeKmPerWeek, wearPercent } from '@/domain/shoe/wearSt
 import { round } from '@/lib/math'
 import type { ShoeTypeBucket, ShoeDetail } from '@/domain/shoe/types'
 
-// Moved to the domain; re-exported so every existing importer keeps working.
 export type { ShoeTypeBucket, ShoeDetail } from '@/domain/shoe/types'
 
 function mean(values: (number | null)[]): number | null {
@@ -14,10 +13,7 @@ function mean(values: (number | null)[]): number | null {
   return present.reduce((sum, v) => sum + v, 0) / present.length
 }
 
-// One bucket per session zone, the colours the run dots wear (v4.4.1): Base
-// Z2, Tempo Z3, Threshold Z4, and everything harder (Sprint, Anaerobic,
-// VO2Max) or a Race Z5 as "intervals". Tempo and Threshold shared a bucket,
-// so a list of green Z3 dots sat under a bar with no green in it.
+// One bucket per zone colour the run dots wear, so the bar matches the dots.
 function typeBucket(type: ActivityType): ShoeTypeBucket {
   if (type === 'Base') return 'base'
   if (type === 'Tempo') return 'tempo'
@@ -41,11 +37,7 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
   const avgPaceSecPerKm = mean(activities.map((a) => a.paceSecPerKm))
   const avgHeartRate = mean(activities.map((a) => a.avgHeartRate))
 
-  // By distance, not session count: the bar and the "more than half its X was
-  // tempo" sentence both read as a share of the miles actually run in this
-  // pair, matching how the rest of the app (TypeDistribution) already splits
-  // a type mix - a count basis would let three short strides sessions and one
-  // 30 km long run count the same.
+  // By distance, not session count, as TypeDistribution splits a type mix.
   const bucketDistance: Record<ShoeTypeBucket, number> = { base: 0, tempo: 0, threshold: 0, intervals: 0 }
   for (const a of activities) bucketDistance[typeBucket(a.type)] += a.distanceKm
   const share = (bucket: ShoeTypeBucket) => (totalKm === 0 ? 0 : Math.round((bucketDistance[bucket] / totalKm) * 100))

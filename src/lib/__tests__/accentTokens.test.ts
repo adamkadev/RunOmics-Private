@@ -5,20 +5,15 @@ import { TRAINING_METRIC_COLORS, ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { milestoneIcon } from '@/components/milestones/milestoneVisuals'
 
-/**
- * What an accent is allowed to paint. The accent owns links, selected states,
- * the week ring, progress fills and the tab bar's active item; it owns no
- * meaning. Adding a semantic token to accentTokens - a metric, a zone, the
- * injury red, the heat ramp - fails here rather than in someone's eyes.
- */
+/** The accent owns links, selected states, the week ring, progress fills and the active tab item; it owns no meaning. */
 const ACCENT_TOKEN_NAMES = [
   '--accent',
   '--accent-foreground',
   '--accent-text',
-  // F16: accent text on light glass, 4.5:1 on its darkest ground.
+  // 4.5:1 on the darkest light glass.
   '--accent-text-glass',
   '--accent-hover',
-  // v4.17: the active nav row and soft fills (--acc-soft is its old name).
+  // --acc-soft is the old name, still read.
   '--accent-soft',
   '--acc-soft',
   '--acc-line',
@@ -47,8 +42,6 @@ describe('what an accent may paint', () => {
   })
 
   it('leaves the semantic tokens identical whichever accent block is applied', () => {
-    // The metric and zone ramps live in the base blocks and no accent block
-    // redeclares them, so switching accent cannot move them.
     const accentSelectors = TOKEN_BLOCKS.filter((block) => block.selector.includes('data-accent'))
     expect(accentSelectors.length).toBeGreaterThan(0)
     for (const block of accentSelectors) {
@@ -63,9 +56,6 @@ describe('what an accent may paint', () => {
 })
 
 describe('markers that mean something do not move with the accent', () => {
-  // The accent owns links, selected states, the week ring, progress fills and
-  // the active tab item. A medal rank, an injury, a caution, a metric or a zone
-  // means the same thing on every theme, so none of them may read the token.
   const FIXED_MARKERS = {
     'medal gold': STATUS.gold.dot,
     'medal silver': STATUS.silver.dot,
@@ -117,8 +107,7 @@ describe('the generated accent blocks', () => {
 })
 
 describe('neutral surfaces', () => {
-  // Colour is for data and the active state: every accent shares one set of
-  // surfaces, flat, and paints none of them.
+  // Colour is for data and the active state: no accent paints a surface.
   const SURFACE_TOKENS = ['--background', '--canvas', '--card', '--raised', '--border', '--divider', '--glass-bg', '--glass-bg-nav', '--hero-gradient']
 
   it('lets no accent block set a surface', () => {
@@ -130,18 +119,14 @@ describe('neutral surfaces', () => {
   it('draws the spec surfaces, flat, in both modes', () => {
     const light = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Light tokens'))!.tokens
     const dark = TOKEN_BLOCKS.find((b) => b.comment?.startsWith('Dark tokens'))!.tokens
-    // The v4.17 table: bg, surface, surface-2, line, line-2, text, text-2, muted, faint, warn.
+    // The design table's bg, surface, surface-2, line, line-2, text, text-2, muted, faint, warn.
     const table = (t: Record<string, string>) =>
       ['--background', '--card', '--surface-2', '--border', '--line-2', '--foreground', '--text-2', '--muted-foreground', '--subtle', '--warn'].map((k) => t[k])
     expect(table(dark)).toEqual(['#0b0c0c', '#141616', '#0f1111', '#232626', '#303432', '#f2f4f3', '#a3aaa7', '#8d9391', '#7f8482', '#f0b73c'])
     expect(table(light)).toEqual(['#f3f4f3', '#ffffff', '#f0f1f0', '#e4e6e5', '#d3d6d4', '#141615', '#434846', '#6b706e', '#6b706e', '#9a5b00'])
-    // The segmented control sits on surface-2, caution is warn. Light's
-    // tracks are surface-2 too; dark's (3.0) are a lighter step, as its
-    // inset tile is darker than the card.
+    // Dark's track is a lighter step than surface-2, as its inset tile is darker than the card.
     expect(light['--track']).toBe(light['--surface-2'])
     expect(dark['--track']).toBe('#262a29')
-    // Liquid Glass v3 (G7): the segmented control's track is a system fill,
-    // not a bordered surface-2 well.
     for (const tokens of [light, dark]) {
       expect(tokens['--segmented-track']).toBe('var(--fill-3)')
       expect(tokens['--tone-caution']).toBe(tokens['--warn'])

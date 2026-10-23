@@ -50,7 +50,6 @@ describe('weekStripDays', () => {
     const strip = weekStripDays(days, '2026-09-24', kinds)
     expect(strip.map((d) => d.kmText)).toEqual(['12.8', '6.4', '9.2', null])
     expect(strip.map((d) => d.weekday)).toEqual(t.plan.weekdays.slice(0, 4))
-    // The letter under each circle (design review, Oct 2026).
     expect(strip.map((d) => d.letter)).toEqual(t.plan.weekdays.slice(0, 4).map((w) => w.charAt(0)))
   })
 

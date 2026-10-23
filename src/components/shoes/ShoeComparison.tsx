@@ -23,19 +23,16 @@ type MetricRow = {
   value: (row: ShoeComparisonRow) => string
   raw: (row: ShoeComparisonRow) => number | null
   formatDelta: (diff: number) => string
-  // Only "how it ran" metrics get a noise floor - counts are exact, so any
-  // gap between them is a real difference, never a rounding artefact.
+  // Only averages get a noise floor: counts are exact.
   noise?: { key: NoiseMetric; threshold: number }
 }
 
 const COMPARED_PAIRS = 2
 
-// Below this many runs, an average is six or seven data points pretending to
-// be a rate - real enough to display, not solid enough to call a difference.
-// Counts don't need this floor: 130 vs 87 is a fact regardless of sample size.
+// Below this many runs an average is too thin to call a difference.
 const MIN_SESSIONS_FOR_AVERAGES = 15
 
-/** "pace differs…" opened the footnote in lower case. */
+/** The averages sentence starts lower case ("pace differs…"). */
 function sentenceCase(text: string): string {
   return text.charAt(0).toLocaleUpperCase(t.locale) + text.slice(1)
 }
@@ -45,9 +42,7 @@ function fmtSigned(n: number, unit = ''): string {
   return `${n > 0 ? '+' : MINUS}${formatNumber(Math.abs(n))}${unit}`
 }
 
-// The unit lives in the row label (see i18n `comparison.metrics`), not a
-// second span next to every value - a 78px label column has no room to also
-// print "km"/"bpm" per row.
+// Units live in the row labels (i18n `comparison.metrics`): the value columns have no room for them.
 const METRICS: MetricRow[] = [
   {
     key: 'sessions',
@@ -61,9 +56,7 @@ const METRICS: MetricRow[] = [
     key: 'distance',
     group: 'howMuch',
     label: t.shoes.comparison.metrics.distance,
-    // Whole kilometres here, not the one-decimal `formatDistance` used for a
-    // single run's own distance - a 620.1 km lifetime total is one rounding
-    // step of false precision past what anyone reads off this row.
+    // Whole km, not formatDistance's decimal: a lifetime total's tenth is false precision.
     value: (r) => `${Math.round(r.totalKm)}`,
     raw: (r) => r.totalKm,
     formatDelta: (d) => fmtSigned(Math.round(d)),
@@ -125,9 +118,7 @@ const METRICS: MetricRow[] = [
 
 const METRIC_GROUPS: MetricGroup[] = ['howMuch', 'howItRan']
 
-// 78px label / 1fr / 1fr / 48px delta, 6px gaps - fixed so the table never
-// scrolls. A value that would clip at this width is the table's problem to
-// fix (shorten the label, drop the unit), never the viewport's.
+// Fixed so the table never scrolls: a value that clips is fixed in its label, never by widening.
 const GRID_COLS = 'grid-cols-[78px_1fr_1fr_48px]'
 
 function metricDelta(
@@ -140,20 +131,14 @@ function metricDelta(
   const va = metric.raw(a)
   const vb = metric.raw(b)
   if (va == null || vb == null) return null
-  // First column minus second, not the other way round - the column order
-  // reads left to right as the reference, so a bigger first-column number
-  // shows positive rather than a "the bigger pair reads negative" reversal.
+  // First minus second, so a bigger first-column value reads positive.
   const diff = va - vb
   if (!metric.noise) return { text: metric.formatDelta(diff), beyond: true }
-  // Strictly greater than, not "at least": a gap that lands exactly on the
-  // threshold is still within it, not past it.
+  // Strictly greater: a gap exactly at the threshold is within it.
   const beyond = Math.abs(diff) > metric.noise.threshold
   return { text: beyond ? metric.formatDelta(diff) : t.shoes.comparison.same, beyond }
 }
 
-// The pairs still in rotation are the ones a runner is actually deciding
-// between - a retired pair only belongs in the default pick when there
-// aren't two active ones to fill it with.
 function defaultPicks(rows: ShoeComparisonRow[]): string[] {
   const active = rows.filter((r) => !r.retired)
   const retired = rows.filter((r) => r.retired)
@@ -194,8 +179,6 @@ export function ShoeComparison({ rows }: Props) {
     .filter((m): m is MetricRow & { noise: NonNullable<MetricRow['noise']> } => m.noise !== undefined)
     .filter((m) => metricDelta(m, compared[0]!, compared[1]!, enoughForAverages)?.beyond)
     .map((m) => t.shoes.comparison.metricNames[m.noise.key])
-  // With too few runs, no averages claim is safe to make at all - the season
-  // caveat still applies, but it's the only sentence left standing.
   const averagesSentence = !enoughForAverages
     ? null
     : beyondNoiseNames.length > 0
@@ -204,7 +187,7 @@ export function ShoeComparison({ rows }: Props) {
 
   return (
     <section className="space-y-2.5">
-      {/* The row that opens this carries the title. */}
+      {/* No title: the row that opens this carries it. */}
       <div className="flex justify-end">
         <button
           type="button"
@@ -246,7 +229,7 @@ export function ShoeComparison({ rows }: Props) {
           <div key={row.gearId} className="min-w-0">
             <span className="flex items-start gap-1.5">
               <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: row.dotColor }} />
-              {/* Wraps rather than truncating: "Tempo Ra…" named neither pair. */}
+              {/* Wraps, not truncates: "Tempo Ra…" named neither pair. */}
               <span className="min-w-0 break-words text-sm font-semibold leading-tight text-foreground">
                 {row.name}
               </span>
@@ -289,8 +272,6 @@ export function ShoeComparison({ rows }: Props) {
             )}
           </Fragment>
         ))}
-        {/* In the card, not under it. The season caveat only qualifies an
-            averages claim - with too few runs there's nothing for it to hedge. */}
         {averagesSentence && (
           <p className="col-span-4 border-t border-border pt-2 text-caption text-subtle-2">
             {sentenceCase(averagesSentence)} {t.shoes.comparison.note}

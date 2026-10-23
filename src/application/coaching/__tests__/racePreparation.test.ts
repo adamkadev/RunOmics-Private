@@ -51,7 +51,6 @@ it('rejects constant exact race pace with course context but retains generic fla
   expect(() => validateBootstrapDraftSemantics(plan, course, context)).not.toThrow()
 })
 
-// A French deployment's coach writes the race prose in French.
 describe('French race prose', () => {
   const raceWith = (description: string, paced = false, events: BootstrapEvents = strategy) => {
     const plan = draft([])

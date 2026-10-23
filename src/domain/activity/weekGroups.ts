@@ -1,6 +1,6 @@
 import { isoDate, startOfWeek } from '@/lib/calendarDate'
 
-/** The Monday a date's week starts on, as an ISO date: the key a week groups under. */
+/** The week's Monday, as an ISO date. */
 export function weekStartOf(date: string): string {
   return isoDate(startOfWeek(new Date(date + 'T00:00:00')))
 }
@@ -10,20 +10,11 @@ export interface WeekGroup<T> {
   key: string
   items: T[]
   totalKm: number
-  /**
-   * The calendar week that contains today. It used to mean "whichever week
-   * the list happened to show first", so until a new week's first run last
-   * week took the current card, and an oldest-first sort or a type filter
-   * handed it to a week from months ago.
-   */
+  /** The calendar week that contains today, not whichever week the list shows first. */
   isCurrent: boolean
 }
 
-/**
- * Consecutive items of the same week, in the order the caller already sorted
- * them: the archive can be read newest- or oldest-first, and grouping must not
- * decide that for it.
- */
+/** In the caller's order: the archive reads newest- or oldest-first, and grouping must not decide that. */
 export function groupByWeek<T extends { date: string; distanceKm: number }>(
   items: readonly T[],
   currentWeekStart: string,

@@ -2,21 +2,8 @@ import 'server-only'
 import jwt from 'jsonwebtoken'
 
 /**
- * Verifies a Firebase ID token without going through firebase-admin/auth.
- *
- * firebase-admin/auth pulls in jwks-rsa, which in its current release requires
- * jose - a pure-ESM package - with a plain CJS require(). That throws
- * ERR_REQUIRE_ESM on any Node runtime whose require() doesn't understand ESM
- * (most of them), independent of bundling: the crash happens inside jwks-rsa's
- * own unbundled source in node_modules, not in anything Next.js generates. It
- * broke this route in production the first time anything imported
- * firebase-admin/auth in this codebase.
- *
- * This does the same verification Firebase's own docs describe as the
- * third-party-library path (see "Verify ID tokens using a third-party JWT
- * library"), against jsonwebtoken - a long-stable, pure-CJS package firebase-
- * admin itself already depends on - and Google's plain x509 cert endpoint,
- * which is a flat { kid: pemCert } map and needs no JWKS-to-PEM conversion.
+ * Firebase's third-party JWT library path, not firebase-admin/auth: its
+ * jwks-rsa require()s the pure-ESM jose and throws ERR_REQUIRE_ESM on Node.
  */
 
 const CERTS_URL =
@@ -31,10 +18,8 @@ interface CachedCerts {
 const DEFAULT_CERT_TTL_MS = 60 * 60 * 1000
 
 /**
- * The key id comes from the token, so anyone can send one Google never
- * issued. Without a floor, each forged kid cost an outbound call; with it, a
- * burst of them costs at most one a minute, and a real rotation still lands
- * on the first unknown kid after that minute.
+ * The key id comes from the token, so anyone can forge one: this floor caps
+ * the outbound calls a burst of forged kids costs at one a minute.
  */
 const MIN_REFETCH_INTERVAL_MS = 60_000
 
@@ -58,7 +43,6 @@ async function downloadCerts(now: number): Promise<CachedCerts> {
   return cached
 }
 
-/** Requests that need the certs at the same moment wait on one fetch rather than each sending their own. */
 function refreshCerts(now: number): Promise<CachedCerts> {
   if (!inFlight) {
     lastFetchAt = now
@@ -75,11 +59,7 @@ function certIn(certs: Record<string, unknown>, kid: string): string | undefined
   return typeof cert === 'string' ? cert : undefined
 }
 
-/**
- * Google rotates signing keys with an overlap, so a token can arrive signed by
- * one the cached map predates. A miss is worth a second look only once the
- * last fetch is a minute old: before that, the map in hand is the answer.
- */
+/** Google rotates signing keys with an overlap, so a token can be signed by one the cached map predates. */
 async function certFor(kid: string, now: number): Promise<string | undefined> {
   const current = cached && cached.expiresAt > now ? cached : await refreshCerts(now)
   const cert = certIn(current.certs, kid)
@@ -91,12 +71,10 @@ async function certFor(kid: string, now: number): Promise<string | undefined> {
 export interface FirebaseIdTokenClaims extends jwt.JwtPayload {
   sub: string
   owner?: boolean
-  /** The account's address, when it has one; email_verified says whether its provider checked it. */
   email?: string
   email_verified?: boolean
 }
 
-/** Throws on anything that doesn't check out - a bad signature, wrong project, an expired or not-yet-valid token. */
 export async function verifyFirebaseIdToken(
   idToken: string,
   projectId: string
@@ -115,15 +93,10 @@ export async function verifyFirebaseIdToken(
   })
   if (typeof payload === 'string' || !payload.sub) throw new Error('token payload missing subject')
 
-  // jsonwebtoken checks exp only when the token carries one, so a token
-  // without it would never expire. Firebase always sets it.
+  // jsonwebtoken checks exp only when the token carries one.
   if (typeof payload.exp !== 'number') throw new Error('token has no expiry')
 
-  // iat and auth_time in the future are the two Firebase asks for that
-  // jsonwebtoken does not check, and either is otherwise a silent way to
-  // smuggle a token that hasn't started yet past a check that only looks at
-  // expiry. Same comparison for both: auth_time never follows iat in a real
-  // token, so this cannot turn away one the iat check lets through.
+  // Firebase requires iat and auth_time not in the future; jsonwebtoken does not check them.
   const nowSeconds = Date.now() / 1000
   if (typeof payload.iat === 'number' && payload.iat > nowSeconds) {
     throw new Error('token issued in the future')

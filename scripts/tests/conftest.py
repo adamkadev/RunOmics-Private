@@ -6,16 +6,12 @@ from pathlib import Path
 
 import pytest
 
-# Before anything imports a pipeline module: most of them resolve their data
-# paths at import time, from this variable. Left unset, a test that forgot to
-# re-point one would read - or write - the developer's real dataset under
-# ./data. The directory is removed when the session ends.
+# Before anything imports a pipeline module, which resolve their data paths at import time: a test must never
+# read or write the developer's real dataset under ./data.
 _SESSION_DATA_DIR = tempfile.TemporaryDirectory(prefix="runomics-test-data-")
 os.environ["RUNOMICS_DATA_DIR"] = _SESSION_DATA_DIR.name
 
-# The pipeline modules import each other as top-level packages
-# (`from processing.fit_parser import ...`), mirroring how sync.py runs them:
-# it prepends scripts/ to sys.path. Do the same for the tests.
+# The pipeline modules import each other as top-level packages, as sync.py runs them with scripts/ on sys.path.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
@@ -25,15 +21,10 @@ class NetworkBlocked(RuntimeError):
 
 @pytest.fixture(autouse=True)
 def no_network(monkeypatch):
-    """Fail any test that opens a connection or resolves a host name.
+    """httpx, urllib and garth's requests all end in socket.create_connection, which resolves through getaddrinfo.
 
-    Garmin, Open-Meteo and the proxy all sit behind these three calls
-    (httpx, urllib and garth's requests all end in socket.create_connection,
-    which resolves through socket.getaddrinfo). The refusal raises - so
-    nothing goes out - and is also recorded, because much of the pipeline
-    catches broad exceptions on purpose: a test whose code swallowed it still
-    fails at teardown. The record is what the fixture yields, for the one
-    test that trips it on purpose.
+    The refusal is also recorded, because much of the pipeline catches broad exceptions on purpose: a test whose code
+    swallowed it still fails at teardown.
     """
     attempts: list[str] = []
 
@@ -51,8 +42,6 @@ def no_network(monkeypatch):
 
 @pytest.fixture
 def activity_factory():
-    """Builds an ActivityData with only id and date meaningful - every other
-    field is a placeholder, so a store test reads as the two values it is about."""
     from processing.mapper import ActivityData
 
     def make(activity_id: str, date: str):

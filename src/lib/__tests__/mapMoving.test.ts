@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import type { Map as MapLibreMap } from 'maplibre-gl'
 import { MAP_MOVING_ATTR, watchMapMoving } from '../mapMoving'
 
-/** A map's events, enough for the hook: on, off, fire. */
 function fakeMap(container: HTMLElement) {
   const handlers = new Map<string, Set<() => void>>()
   const map = {
@@ -15,8 +14,7 @@ function fakeMap(container: HTMLElement) {
   return { map: map as unknown as MapLibreMap, fire }
 }
 
-// Liquid Glass v3 (README §6.12.2): the glass over a map drops its blur while
-// the camera moves, on the element that holds both the canvas and the glass.
+// The glass over a map drops its blur while the camera moves, on the element holding both canvas and glass.
 describe('watchMapMoving', () => {
   it('marks the map root while the camera moves, and clears it once it stops', () => {
     const root = document.createElement('section')

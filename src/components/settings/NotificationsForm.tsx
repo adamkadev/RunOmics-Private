@@ -45,7 +45,7 @@ export function NotificationsForm() {
   const { toast, leaving, showToast } = useToast()
   const n = t.settings.notifications
 
-  // The device's clock, so after mount: the server would read its own zone.
+  // After mount: on the server it would read the server's time zone.
   const reminderAt = useMounted() ? dailyReminderTime(new Date(), process.env.NEXT_PUBLIC_TIME_ZONE || undefined) : null
 
   useEffect(() => {
@@ -83,11 +83,8 @@ export function NotificationsForm() {
       return
     }
 
-    // Not enabled yet, whatever the reason (never asked, previously denied, or
-    // this browser turns out not to support it) - a toggle tap is the request.
-    // The browser's own permission prompt is the only "blocked" messaging a
-    // user needs; a persistent banner above it was redundant with UI it can't
-    // act on.
+    // Not enabled yet, whatever the reason: the tap is the permission request, and
+    // the browser's own prompt is the only messaging needed.
     setStatus('busy')
     try {
       await enablePushNotifications()
@@ -103,9 +100,7 @@ export function NotificationsForm() {
 
   const busy = status === 'loading' || status === 'busy'
 
-  // One group of rows, a shared Toggle each (v4.17; 3.0 1i): the title alone,
-  // and the daily reminder's time beside its switch. That time is read-only:
-  // the workflow's schedule sets it, nothing here stores one.
+  // The reminder's time is read-only: the workflow's cron sets it.
   return (
     <>
     <section className={GROUP_CARD} data-testid="notifications-card">
@@ -127,7 +122,7 @@ export function NotificationsForm() {
         )
       })}
     </section>
-    {/* Outside the group, so it is never taken for a row (F11). */}
+    {/* Outside the group, so its separators never count it as a row. */}
     <Toast toast={toast} leaving={leaving} />
     </>
   )

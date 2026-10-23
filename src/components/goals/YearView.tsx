@@ -19,7 +19,6 @@ const TITLE = 'text-[15px] font-semibold text-foreground'
 interface Props {
   yearData: YearData
   today: string
-  /** The training block the next race closes, for the season strip. */
   block?: SeasonBlock | null
 }
 
@@ -34,26 +33,18 @@ export function YearView({ yearData, today, block = null }: Props) {
   const projectedPercent = projection && annualDistanceKm > 0
     ? Math.min((projection.projectedYearKm / annualDistanceKm) * 100, 100)
     : null
-  // deltaKm arrives absolute, so the sign has to be recomputed from the
-  // projection itself. Reading it off `status` renders an on-track projection
-  // that lands above the goal as "On track −30 km" - a minus on a surplus.
+  // deltaKm arrives absolute and `status` can be on track above the goal, so the sign comes from the projection.
   const signedDeltaKm = projection ? projection.projectedYearKm - annualDistanceKm : 0
-  // The year's km is the athlete's own data, so the fill is the accent
-  // (v4.17); the projection is the verdict, warn when it falls short.
   const projectionColor = signedDeltaKm < 0 ? 'var(--warn)' : 'var(--pos)'
   const verdict = signedDeltaKm < 0
     ? p.shortAtPace(formatKm(Math.abs(signedDeltaKm)))
     : signedDeltaKm > 0
       ? p.overAtPace(formatKm(signedDeltaKm))
       : p.onPace
-  // Reached is a state the card says outright, with the surplus, rather than a
-  // full bar the reader has to decode.
   const reachedByKm = annualDistanceKm > 0 && totalDistanceKm >= annualDistanceKm ? Math.round(totalDistanceKm - annualDistanceKm) : null
   const hasRaceDistanceCards = (goals?.targets.length ?? 0) > 0 || upcomingRaces.length > 0
-  // A year not yet started has nothing to show against its goal (3.0): "0 of 2,500 km" was an empty state.
+  // A year not yet started has nothing to show against its goal.
   const notStarted = yearData.year > Number(today.slice(0, 4)) && totalDistanceKm === 0
-  // Under the bar (3.1): what is left this year, or, for a year that is over
-  // short of its goal, by how much - no projection there to set beside it.
   const leftKm = annualDistanceKm > 0 && reachedByKm === null ? Math.round(annualDistanceKm - totalDistanceKm) : null
   const yearOver = yearData.year < Number(today.slice(0, 4))
   const leftLine = leftKm === null ? null : yearOver ? p.finalShort(formatKm(leftKm)) : p.toGo(formatKm(leftKm))
@@ -65,7 +56,7 @@ export function YearView({ yearData, today, block = null }: Props) {
           <h2 className={cn(EYEBROW_CLASS, 'text-muted-foreground')}>{t.goals.distanceGoal}</h2>
           <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span className="text-[38px] font-bold leading-none tracking-[-0.03em] text-foreground">
-              {/* No count-up (v5.6 #1): a frame mid-way read 1,040 of a 1,116 year, beside "+116 km". */}
+              {/* No count-up: a frame mid-way would read 1,040 of a 1,116 year beside "+116 km". */}
               {formatKm(totalDistanceKm)}
             </span>
             <span className="text-[15px] text-[var(--text-2)]">{t.goals.ofKm(formatKm(annualDistanceKm))}</span>
@@ -90,7 +81,6 @@ export function YearView({ yearData, today, block = null }: Props) {
             </div>
           )}
           {projection && (
-            // The verdict in its tone, then what closes the gap, or what the goal needs (C3, v4.17; 3.1).
             <p className="border-t border-border pt-2.5 text-[13px] leading-normal text-[var(--text-2)] text-pretty" data-testid="projection-line">
               <b className="font-semibold" style={{ color: projectionColor }} data-testid="projection-verdict">{verdict}</b>{' '}
               {(signedDeltaKm < 0 ? p.closes : p.needs)(formatKm(projection.weeklyNeeded), formatKm(projection.weeklyRate))}

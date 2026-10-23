@@ -41,9 +41,8 @@ export function changeAmount(seconds: number): string {
 }
 
 /**
- * "9 s slower", "28 s faster", or "1:10 slower" once it is past a minute.
- * Inside `flatBelow` it is "no change" (v5.6 #3): a pace tile said "1 s
- * faster" beside a muted, flat delta.
+ * "9 s slower", "28 s faster", or "1:10 slower" once it is past a minute. Inside `flatBelow` it is "no change", so a
+ * tile never says "1 s faster" beside a muted, flat delta.
  */
 export function shiftWords(delta: number | null, flatBelow = 1): string | null {
   const s = t.analytics.cards.summary
@@ -52,7 +51,7 @@ export function shiftWords(delta: number | null, flatBelow = 1): string | null {
   return delta > 0 ? s.slower(changeAmount(delta)) : s.faster(changeAmount(delta))
 }
 
-/** Under this a threshold move is "flat" (App Fixes 2b): grey "+4 s · flat", not an amber slowdown. */
+/** Under this a threshold move is "flat": grey "+4 s · flat", not an amber slowdown. */
 const THRESHOLD_FLAT_SEC = 5
 
 /** Threshold's note: "no change", "+4 s · flat" under 5 s, else "9 s slower". */
@@ -90,10 +89,9 @@ export function timeLabels(dates: string[]): string[] {
   return shown.filter((_, i) => i % step === 0)
 }
 
-/** VO₂max's home is Athlete & zones (design review, Oct 2026): its stat here is a summary that opens it. */
+/** VO₂max's home is Athlete & zones: its stat here is a summary that opens it. */
 const VO2_HOME = '/athlete'
 
-/** The tab's stat row (v4.17): VO₂max, threshold and easy pace, each with what its change means. */
 function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View>; threshold: PaceShift | null; easy: PaceShift | null }) {
   const s = t.analytics.cards.summary
   const cells = [
@@ -101,8 +99,8 @@ function SummaryStrip({ vo2, threshold, easy }: { vo2: ReturnType<typeof vo2View
       label: s.vo2max,
       value: formatDecimal(vo2.value, 1),
       unit: undefined,
-      // A flat VO2max is "±0.0", the decimal every other VO2max number on
-      // the screen carries, and in the reader's own decimal mark (review 13).
+      // A flat VO2max is "±0.0", the decimal every other VO2max number on the screen carries, in the reader's own
+      // decimal mark.
       note:
         vo2.delta === null
           ? null
@@ -186,7 +184,7 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
   const trend = predictionTrend(rows)
   const words = t.analytics.cards.period.words[period]!
   const who = s.count(trend?.count ?? rows.length)
-  // Each end in the rows' own format: "33 s-9:17" (v4.8).
+  // Each end in the rows' own format: "33 s-9:17".
   const range = trend && 'lo' in trend ? s.range(changeAmount(trend.lo), changeAmount(trend.hi)) : ''
   const lead =
     trend === null
@@ -200,9 +198,7 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
             : s.held(who, words)
   const goalRow = race ? rows.find((r) => r.distance === race.distance) : undefined
   const gap = goalRow && race?.targetSeconds ? goalRow.seconds - race.targetSeconds : null
-  // The goal race's gap to its target, after the trend (design review, Oct
-  // 2026): its figure in bold, warn off the target and pos inside it, as
-  // Goals' season rows colour the same gap.
+  // Warn off the target and pos inside it, as Goals' season rows colour the same gap.
   const goal =
     gap !== null && race?.targetSeconds
       ? (gap > 0 ? s.offTarget : s.onTarget)(names[race.distance]!, formatDuration(Math.round(Math.abs(gap))), formatDuration(race.targetSeconds))
@@ -225,11 +221,7 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
           )}
         </Sentence>
       )}
-      {/* One grid for every row, each row a subgrid, so the time column
-          sizes to the widest time and the times align (v4.17.3): the
-          distance, a spacer, the sparkline right up against the time - no
-          600 px gap between them - and the time with its change. On a
-          phone the spacer goes and the row stays as it was. */}
+      {/* One grid for every row, each row a subgrid, so the time column sizes to the widest time and the times align. */}
       <div className="grid grid-cols-[76px_minmax(0,1fr)_auto] gap-x-3 sm:grid-cols-[120px_1fr_minmax(0,360px)_auto] sm:gap-x-3.5" data-testid="predictions-grid">
         {rows.map((row) => (
           <div
@@ -242,10 +234,7 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
             <Spark values={thin(row.series)} />
             <span className="flex items-baseline justify-end gap-3" data-testid="prediction-time">
               <span className="min-w-[72px] text-right text-[15px] font-semibold leading-none text-foreground sm:min-w-0">{formatDuration(Math.round(row.seconds))}</span>
-              {/* Slower is the caution; faster is good news, by the one delta rule. */}
-              {/* One line, signed (v5.5 #21): "33 s / slower" wrapped, and the
-                  header already says "change in 12 weeks". A fixed width, so
-                  the times above and below line up. */}
+              {/* Signed, on one line: the header already says "change in 12 weeks". A fixed width, so the times line up. */}
               <span
                 className="w-[52px] whitespace-nowrap text-right text-xs leading-tight sm:w-[60px]"
                 style={{ color: deltaColor('race', row.delta, { value: row.seconds }) }}
@@ -258,7 +247,7 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
         ))}
       </div>
       {race && (
-        // A date, not a warning: muted, as every caption (v4.17).
+        // A date, not a warning: muted, as every caption.
         <span className="pt-1.5 text-xs text-muted-foreground" data-testid="predictions-race">
           {s.race(names[race.distance]!)}
           {bare(race.date)} · {s.inDays(race.daysUntil)}
@@ -268,19 +257,15 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
   )
 }
 
-/** The least air above and below the lines, in s/km; 5% of their range when that is more (v4.17.3). */
+/** The least air above and below the lines, in s/km; 5% of their range when that is more. */
 export const PACE_PAD_MIN = 5
 const PACE_PAD_SHARE = 0.05
 /** The domain's limits land on a multiple of this many seconds. */
 const PACE_ROUND = 5
 
 /**
- * The pace chart's domain and its three y labels (v4.17.3): the drawn paces
- * - the smoothed lines, not the raw weeks, whose outliers left the lines in
- * the top half - with 5% of their range either side, at least 5 s/km,
- * rounded out to 5 s. The labels are its two edges and its middle, so every
- * drawn pace sits between two labelled lines; the domain grows by 5 s when
- * needed to keep the middle on a 5 s pace. Faster is up.
+ * From the drawn, smoothed paces, not the raw weeks, whose outliers leave the lines in the top half. The labels are
+ * the two edges and the middle; the domain grows by 5 s when needed to keep the middle on a 5 s pace.
  */
 export function paceAxis(paces: readonly number[]): { lo: number; hi: number; ticks: [number, number, number] } {
   const min = Math.min(...paces)
@@ -292,7 +277,6 @@ export function paceAxis(paces: readonly number[]): { lo: number; hi: number; ti
   return { lo, hi, ticks: [lo, (lo + hi) / 2, hi] }
 }
 
-/** A pace sentence part with its figure in bold, coloured by what the change means. */
 function PacePart({ parts, delta }: { parts: readonly [string, string, string]; delta: number | null }) {
   return (
     <>
@@ -329,9 +313,8 @@ function PaceTrendCard({ weeks, easy, workout, onShift }: { weeks: WeeklyTrendPo
         <PacePart parts={easyParts} delta={shift} />
         {workoutParts && <PacePart parts={workoutParts} delta={wHeld ? null : wShift} />}
       </Sentence>
-      {/* Three paces up the left (v4.17.2), outside the scrub so a touch
-          still reads the week under it; higher is faster. The outer two sit
-          on the chart's edges, so a little room above and below for them. */}
+      {/* Outside the scrub, so a touch still reads the week under it; the outer two paces sit on the chart's edges, so
+          a little room above and below for them. */}
       <div className="flex gap-2 py-1.5">
         <div className="relative w-8 shrink-0 text-[11px] leading-none text-muted-foreground" style={{ height: H }} aria-hidden data-testid="pace-axis">
           {ticks.map((pace) => (
@@ -384,10 +367,7 @@ function EfficiencyCard({ allWeeks, weeks, end, onShift }: { allWeeks: WeeklyTre
   if (!view) return null
   const rpe = rpeView(allWeeks, end)
   const values = [...view.adjusted, ...view.measured].filter((v): v is number => v !== null)
-  // The lines' own range, at least 0.04 m a beat, 10 % either side (L4): a
-  // flat 0.05 either side left a 0.04 range in the middle third of the
-  // chart, an empty band over and under it; the floor keeps a level month
-  // from filling the chart with noise.
+  // The lines' own range, 10 % either side; the floor keeps a level month from filling the chart with noise.
   const mid = (Math.min(...values) + Math.max(...values)) / 2
   const half = Math.max(Math.max(...values) - Math.min(...values), EFFICIENCY_MIN_SPAN) * 0.6
   const min = mid - half
@@ -462,19 +442,14 @@ const COST_WORTH_SAYING = 5
 /** A heat loss past this many seconds a km is worth a caution; less stays muted. */
 export const HEAT_WARN_SEC = 10
 
-/** A band's colour by what its loss means: the best band pos, over 10 s warn, the rest muted. */
 export function heatColor(row: { best: boolean; cost: number | null }): string {
   if (row.best) return 'var(--pos)'
   return row.cost !== null && row.cost > HEAT_WARN_SEC ? 'var(--warn)' : 'var(--muted-foreground)'
 }
 
 /**
- * Heat cost, redesigned (v4.17): each band's bar is the seconds a km it loses
- * against your best temperature band at the same heart rate. The best band
- * is the zero the others are measured from: a dot at the track's start and
- * "best" in pos. A band without runs has a dashed, empty track - drawn like
- * the best band's, it read as the best (design review, Oct 2026) - and a
- * line under the rows says what a bar's length is.
+ * Each band's bar is the seconds a km it loses against your best temperature band at the same heart rate. A band
+ * without runs has a dashed, empty track: drawn like the best band's, it would read as the best.
  */
 function HeatCostCard({ data }: { data: HeatImpactData | null }) {
   const s = t.analytics.cards.heatCost
@@ -487,7 +462,6 @@ function HeatCostCard({ data }: { data: HeatImpactData | null }) {
       <CardHead title={s.title} caption={s.caption(view.refHeartRate)} about={s.about} />
       <div className="mb-1">
         {(() => {
-          // App Fixes 2b: the best band, then the cold cost and the warm one.
           const best = view.rows.find((row) => row.best)
           const cold = view.cold !== null && view.cold >= COST_WORTH_SAYING ? view.cold : null
           const warm = view.warm !== null && view.warm.hi >= COST_WORTH_SAYING ? range : null

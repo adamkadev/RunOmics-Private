@@ -77,7 +77,6 @@ describe('SettingsClient owner gate', () => {
     expect(screen.queryByTestId('notifications-form')).not.toBeInTheDocument()
   })
 
-  // 3.0 1i: Appearance, Profile, Data and Notifications, even signed out; the theme comes first.
   it('groups the page into Appearance, Profile, Data and Notifications, even signed out', async () => {
     renderSettings()
     await screen.findByText(t.settings.auth.signIn)
@@ -92,21 +91,16 @@ describe('SettingsClient owner gate', () => {
     const appearance = screen.getByTestId('settings-appearance').textContent!
     expect(appearance.indexOf(t.settings.appearance.themeLabel)).toBeLessThan(appearance.indexOf(t.settings.accent.title))
     expect(appearance).toContain(t.settings.accent.caption)
-    // Where the runs come from, that it is live, and what signing in unlocks.
     expect(screen.getByTestId('garmin-row').textContent).toContain(t.settings.dataSource.garmin)
     expect(screen.getByTestId('garmin-connected').className).toContain('text-[var(--pos)]')
     // The sync is the owner's: signed out there is no Sync.
     expect(screen.queryByText(t.settings.sync.action)).not.toBeInTheDocument()
     expect(screen.getAllByText(new RegExp(t.common.runs(12))).length).toBeGreaterThan(0)
     expect(screen.getByText(t.settings.auth.signInToManage)).toBeInTheDocument()
-    // R7f: export is on the page signed out too, asking for the sign-in.
     expect(screen.getByText(t.settings.dataExport.title)).toBeInTheDocument()
     expect(screen.getByText(t.settings.rowAction.signIn)).toBeInTheDocument()
   })
 
-  // Height and weight are Garmin's, so they read as facts - nothing to tap,
-  // no chevron (design review, Oct 2026). 3.0 1i: no BMI, and one row on to
-  // Athlete & zones with the two heart rates its zones hang from.
   it('draws height and weight as read-only facts, then the row to Athlete & zones', async () => {
     render(<SettingsClient lastSyncedAt={null} activityCount={0} body={{ heightCm: 178, weightKg: 70 }} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
     await screen.findByText(t.settings.auth.signIn)
@@ -121,19 +115,14 @@ describe('SettingsClient owner gate', () => {
     const athlete = screen.getByTestId('athlete-zones-row')
     expect(athlete.getAttribute('href')).toBe('/athlete')
     expect(athlete.textContent).toBe(`${t.pages.athlete.title}LTHR 179 · Max 200`)
-    // Design review, Oct 2026: the note is the way to Garmin Connect, where they change.
     const garmin = within(profile).getByRole('link', { name: t.settings.profile.readOnly })
     expect(garmin.getAttribute('href')).toBe(GARMIN_CONNECT_URL)
     expect(garmin.className).toContain('hit-44')
-    // F12: a footnote, not an accent link.
     expect(garmin.className).toContain('text-[13px]')
     expect(garmin.className).toContain('text-muted-foreground')
     expect(garmin.className).not.toContain('accent')
   })
 
-  // Round 2 (F11): one separator rule. Height and Weight shared one child -
-  // no line between them - and a full-width border cut them from Athlete &
-  // zones; the Data card's Garmin row drew its own full-width line.
   it('lays every grouped row out as the group\'s own child, with no lines of its own', async () => {
     render(<SettingsClient lastSyncedAt={null} activityCount={0} body={{ heightCm: 178, weightKg: 70 }} zones={{ lthrBpm: 179, maxHrBpm: 200 }} />)
     await screen.findByText(t.settings.auth.signIn)
@@ -147,7 +136,7 @@ describe('SettingsClient owner gate', () => {
     const group = profile[0]!.parentElement!
     expect(group.className).toContain('inset-group')
     expect([...group.children]).toEqual([...profile, screen.getByTestId('athlete-zones-row')])
-    // The Garmin row's thumb: the line under it starts under its text.
+    // data-row-thumb: the separator under the row starts under its text.
     expect(screen.getByTestId('garmin-row').hasAttribute('data-row-thumb')).toBe(true)
   })
 
@@ -158,7 +147,6 @@ describe('SettingsClient owner gate', () => {
     expect(zonesSummary(undefined)).toBeNull()
   })
 
-  // v4.8 2g: the build line ends the page signed out too, after the last group.
   it('ends on the build line signed in and signed out', async () => {
     const { unmount } = renderSettings()
     await screen.findByText(t.settings.auth.signIn)
@@ -195,7 +183,6 @@ describe('SettingsClient owner gate', () => {
     renderSettings()
 
     expect(await screen.findByTestId('notifications-form')).toBeInTheDocument()
-    // 3.0 1i: sign out is red text, not a box.
     expect(screen.getByText(t.settings.auth.signOut).className).toContain('text-[var(--neg)]')
     expect(screen.getByText(t.settings.auth.signOut).className).not.toContain('border')
     expect(screen.queryByText(t.settings.auth.accessDenied)).not.toBeInTheDocument()
@@ -210,8 +197,7 @@ describe('SettingsClient owner gate', () => {
     expect(container.querySelector('.animate-spin')).not.toBeNull()
     expect(screen.queryByText(t.settings.auth.accessDenied)).not.toBeInTheDocument()
 
-    // The claim is only asked for once the auth SDK has loaded, which is now
-    // after mount rather than with the page.
+    // The claim is asked for only once the auth SDK has loaded, after mount.
     await vi.waitFor(() => expect(resolveClaims).not.toBe(notAskedYet))
     expect(container.querySelector('.animate-spin')).not.toBeNull()
     resolveClaims!()

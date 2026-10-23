@@ -1,9 +1,8 @@
 import { round } from '@/lib/math'
 
 /**
- * The acute/chronic pair (v5.4): Garmin's 7-day and 28-day loads for one day.
- * Load trend, Injury risk's Load ratio and the coach read all read this one
- * series, so the ratio printed beside "333 ÷ 295" is the last point of the
+ * Garmin's 7-day and 28-day loads for one day. Load trend, Injury risk and the
+ * coach all read this one series, so a printed ratio is the last point of the
  * chart above it.
  */
 export interface LoadPair {

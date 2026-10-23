@@ -4,14 +4,8 @@ import { rgbTriplet } from '@/lib/palette'
 import { SURFACES, TOKEN_BLOCKS, ZONE_HEX } from '@/lib/themeTokens'
 
 /**
- * Neighbouring zones stay apart in colour (design review, Oct 2026).
- * Distances are OKLab ΔE ×100. The second review chose a mid violet for Z3
- * over the first's lightness step, which kept Z3 15 apart from Z2 and Z4
- * even under protanopia and deuteranopia (Machado, Oliveira & Fernandes,
- * 2009): the mid violet is about 9.5 apart for normal vision and close to
- * its neighbours for a red-green colour-blind eye, so the share card names
- * each zone beside its colour. The simulation stays, to keep that trade
- * measured.
+ * Distances are OKLab ΔE ×100; colour-blind vision is simulated after Machado, Oliveira & Fernandes (2009).
+ * Z3's violet sits close to its neighbours for a red-green colour-blind eye, so the share card names each zone.
  */
 const NORMAL_MIN = 9
 const CVD_FLOOR = 2.5
@@ -23,7 +17,6 @@ const DEUTAN: Matrix = [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.
 const toLinear = (c: number) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
 const toSrgb = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055)
 
-/** The colour as the eye the matrix models sees it, as a hex. */
 function simulate(hex: string, m: Matrix): string {
   const lin = rgbTriplet(hex).map((v) => toLinear(v / 255))
   const out = m.map((row) => Math.min(1, Math.max(0, row[0]! * lin[0]! + row[1]! * lin[1]! + row[2]! * lin[2]!)))
@@ -52,7 +45,6 @@ describe('the zone scale (design reviews, Oct 2026)', () => {
     }
   })
 
-  // The 3.0 handoff's dark scale; light keeps the second review's mid violet.
   it('takes the 3.0 dark scale and the reviewed light Z3', () => {
     expect(ZONE_HEX.dark).toEqual(['#8a9bb0', '#5b9cf5', '#8f7cf0', '#c77ae6', '#f07aa8'])
     expect(ZONE_HEX.light[2]).toBe('#6a52d9')

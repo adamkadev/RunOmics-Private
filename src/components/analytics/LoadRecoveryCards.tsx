@@ -17,10 +17,8 @@ import {
 } from './loadRecoveryView'
 
 /**
- * The two Load cards (v5.4, v4.17). Lines are text ink over a band in the
- * pos status's tint - the range that is good for you; warn marks the points
- * outside it. Four colours and no others: --foreground, --muted-foreground,
- * --pos (the band) and --warn, plus the delta rule's own through deltaTone.
+ * Four colours and no others: --foreground, --muted-foreground, --pos (the band, the range that is good for you) and
+ * --warn, plus the delta rule's own through deltaTone.
  */
 const INK = 'var(--foreground)'
 const MUTED = 'var(--muted-foreground)'
@@ -36,7 +34,7 @@ const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 const at = (i: number, n: number) => (n <= 1 ? 50 : (i / (n - 1)) * 100)
 const heightPct = (v: number, min: number, max: number) => (1 - (v - min) / (max - min || 1)) * 100
 
-/** A point outside its range: a 7 pt warn dot, HTML over the SVG so it stays round on a stretched chart. */
+/** HTML over the SVG, so the dot stays round on a stretched chart. */
 function OutsideDot({ left, top, today }: { left: number; top: number; today?: boolean }) {
   return (
     <span
@@ -58,12 +56,6 @@ function bandPath(lo: number[], hi: number[], min: number, max: number, h: numbe
   return `${top}${bottom}Z`
 }
 
-/**
- * The load sentence. In range, it says when - today, or the period's last
- * day once swiped back - and the days that went over come after it as what
- * they are, earlier days (design review, Oct 2026): "still inside your safe
- * range. 15 days went over" read as one claim taking back the other.
- */
 export function loadSentence(view: LoadTrendView, live: boolean): readonly [string, string, string] {
   const s = t.analytics.cards.loadTrend
   const change = view.change
@@ -75,8 +67,8 @@ export function loadSentence(view: LoadTrendView, live: boolean): readonly [stri
     : Math.abs(change.pct) < 5 ? s.steady(when)
     : change.pct > 0 ? s.upIn(change.pct, s.span(change.days), when)
     : s.downIn(Math.abs(change.pct), s.span(change.days), when)
-  // In range now, but the window had days over: say so, so the warn dots
-  // under an "inside your safe range" sentence read as history (v5.5 R1).
+  // In range now, but the window had days over: say so, so the warn dots under an "inside your safe range" sentence
+  // read as history.
   if (!view.over) return parts
   return [parts[0], parts[1], `${parts[2]}${s.wentOver(view.over.days, bare(view.over.last))}`]
 }
@@ -94,15 +86,12 @@ export function LoadTrendCard({ pairs, window, yMax, onShift }: { pairs: LoadPai
     <Card testId="load-trend-card">
       <CardHead title={s.title} caption={s.caption} about={s.about} />
       <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-        {/* Outside the range the number itself is the caution. */}
         <span className="text-[26px] font-semibold leading-tight" style={{ color: out ? WARN : INK }} data-testid="load-trend-value" data-state={view.state}>
           {view.acute}
         </span>
         <span className="text-[13px]" style={{ color: MUTED }}>{s.safe(view.lo, view.hi)}</span>
       </div>
-      {/* The ratio reads beside the load it is made of (App Fixes 2a). Under
-          Injury risk it said "risk" about a number whose low end is simply
-          detraining. */}
+      {/* Not under "Injury risk": the ratio's low end is simply detraining. */}
       <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[13px]" data-testid="load-ratio">
         <b className="text-sm font-semibold" style={{ color: ratioOut ? WARN : INK }}>{formatDecimal(view.ratio, 2)}</b>
         <span style={{ color: MUTED }}>{s.ratioSafe(SAFE_RATIO_LO, SAFE_RATIO_HI)}</span>
@@ -121,8 +110,7 @@ export function LoadTrendCard({ pairs, window, yMax, onShift }: { pairs: LoadPai
           </svg>
           {points.map((p, i) => {
             const today = window.live && i === n - 1
-            // Today outside the band is still a point outside it (v4.17: no
-            // accent "now" dot; the axis says Today).
+            // Today outside the band is still a point outside it; the axis says Today.
             const outside = today ? out : p.out
             return outside ? <OutsideDot key={p.date} left={at(i, n)} top={heightPct(p.acute, 0, yMax)} today={today} /> : null
           })}
@@ -218,8 +206,7 @@ export function RecoveryCard({ nights, window }: { nights: RecoveryNight[]; wind
           </div>
         </StatGrid>
       ) : (
-        // One series (v4.17): the card names it, so the value and its change
-        // sit on one line.
+        // One series: the card names it, so the value and its change sit on one line.
         <div data-testid={hrv ? 'recovery-hrv' : 'recovery-rhr'}>
           <Headline
             value={one.now}

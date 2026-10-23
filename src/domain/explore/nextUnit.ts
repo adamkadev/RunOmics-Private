@@ -1,18 +1,10 @@
 import type { UnitCoverage } from './types'
 
 /**
- * The "Next quartier": the one unit worth suggesting for the next run.
- *
- * Least explored wins, but distance counts against it: 6 km away costs as
- * much as 100 points of coverage, so a half-done quartier next door beats an
- * untouched one across the river. Units under 5 cells are too small to be a
- * goal of their own, and anything beyond 5 km is a trip rather than a run
- * from the door; both only come back when nothing else is left.
- *
- * Quartiers go before whole communes: the card names a "Next quartier", and
- * the communes around the city are there for context. A neighbouring village
- * on a wooded hillside would otherwise win on distance alone. A commune is
- * suggested only when no quartier is a candidate.
+ * Distance counts against coverage, so a half-done quartier next door beats an
+ * untouched one across the river. Quartiers go before communes: the card names a
+ * "Next quartier", and a neighbouring village would otherwise win on distance
+ * alone. Small or far units only come back when nothing else is left.
  */
 
 /** A suggestion needs at least this many runnable cells. */
@@ -22,18 +14,10 @@ export const NEXT_MAX_KM = 5
 /** Kilometres that weigh as much as the whole 0–100% coverage range. */
 export const NEXT_KM_PER_POINT = 6
 
-/**
- * Two scores closer than this are a tie. `pct/100 + km/6` lands on values
- * like 0.49999999999999994 for what is arithmetically 0.5, and a tie should
- * fall through to distance and name, not to rounding noise.
- */
+/** `pct/100 + km/6` lands on 0.49999999999999994 for 0.5: a tie falls through to distance and name, not to rounding noise. */
 const SCORE_EPSILON = 1e-9
 
-/**
- * Lower is better. A unit with no known distance (no home yet) is scored on
- * coverage alone; it only ever competes in the fallback, where every unit is
- * in the same position.
- */
+/** Lower is better. With no home yet, a unit is scored on coverage alone. */
 export function nextUnitScore(unit: Pick<UnitCoverage, 'pct' | 'distanceKm'>): number {
   return unit.pct / 100 + (unit.distanceKm ?? 0) / NEXT_KM_PER_POINT
 }
@@ -57,7 +41,6 @@ function best(units: UnitCoverage[]): UnitCoverage | null {
   return winner
 }
 
-/** The suggested unit, or null when every unit is complete. */
 export function nextUnit(units: readonly UnitCoverage[]): UnitCoverage | null {
   const incomplete = units.filter((u) => u.state !== 'complete')
   const nearby = incomplete.filter(

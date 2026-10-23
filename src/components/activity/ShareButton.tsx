@@ -7,8 +7,8 @@ import type { ShareActivity } from '@/lib/shareCardStats'
 import { GLASS_GROUP_BUTTON } from '@/components/ui/GlassSurface'
 import { t } from '@/i18n'
 
-// The modal brings the 800-line canvas renderer and the map snapshot code
-// with it. It is only ever drawn after a tap, so it loads then.
+// Loaded on the first tap: the modal brings the canvas renderer and the map
+// snapshot code with it.
 const ShareCardModal = dynamic(() => import('./ShareCardModal').then((m) => m.ShareCardModal), { ssr: false })
 
 interface Props {
@@ -26,9 +26,8 @@ export function ShareButton({ activity }: Props) {
 
   return (
     <>
-      {/* The page's one action, in the hero's clear-glass group beside
-          expand (Liquid Glass v3, G13). Once the hero has scrolled away, the
-          compact title bar's share icon presses it (design review, Oct 2026). */}
+      {/* Once the hero has scrolled away, the compact title bar's share icon
+          presses this button (data-bar-action). */}
       <button
         type="button"
         data-bar-action="share"

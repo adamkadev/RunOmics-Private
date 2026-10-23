@@ -29,7 +29,6 @@ describe('capability-driven athlete metrics', () => {
     expect(within(screen.getByTestId('zone-row-4')).getByText('163–171')).toBeInTheDocument()
   })
 
-  // Design review, Oct 2026: one order everywhere, Z1 to Z5 top to bottom.
   it('lists the zones Z1 first, as the bar above them reads', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={[]} recentZoneTime={[]} />)
     const rows = [...document.querySelectorAll('[data-testid^="zone-row-"]')].map((row) => row.getAttribute('data-testid'))
@@ -44,8 +43,6 @@ describe('capability-driven athlete metrics', () => {
     expect(screen.queryByText(t.profile.athlete.notSet)).not.toBeInTheDocument()
   })
 
-  // 3.0 1j: one card, two rows of three - the heart, then pace, VMA and
-  // fitness age - every HR Garmin's own, so nothing says estimated.
   it('shows the heart row, then threshold pace, VMA and fitness age, in one card of three columns', () => {
     render(
       <AthleteStats
@@ -65,7 +62,6 @@ describe('capability-driven athlete metrics', () => {
     expect(card.className).toContain('grid-cols-3')
     expect(card.textContent).not.toMatch(/estimated|zones\)/i)
     expect(screen.queryByText(a.vo2max)).not.toBeInTheDocument()
-    // Design review, Oct 2026: no definitions behind the labels.
     expect(screen.queryByRole('button')).toBeNull()
   })
 
@@ -76,8 +72,6 @@ describe('capability-driven athlete metrics', () => {
     expect(cells.map((cell) => cell.className.includes('border-t'))).toEqual([false, false, false, true, true, true])
   })
 
-  // Round 2: the second athlete's card has four tiles, and her fitness age,
-  // alone on the second row, was cut to a third: « 22 pour 2… ».
   it('gives a tile alone on the last row the whole row', () => {
     render(<AthleteStats athlete={{ restingHrBpm: 76, maxHrBpm: 206, vmaKmh: 10.6, fitnessAgeYrs: 22, age: 25 }} />)
     const cells = screen.getAllByTestId('athlete-stat')
@@ -106,8 +100,6 @@ describe('ProfileHrZones table', () => {
     }
   })
 
-  // App Fixes 1e: the share left the bar, where a 1 % zone had no room to
-  // print it, and reads after the zone's time instead.
   it('reads each zone\'s share after its time, not under the bar', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
     const row = screen.getByTestId('zone-row-2')
@@ -115,7 +107,6 @@ describe('ProfileHrZones table', () => {
     expect(within(screen.getByTestId('zone-stack')).queryByTestId('zone-pct')).toBeNull()
   })
 
-  // 3.0 1j: four weeks first, whatever the week holds, and no line to say so.
   it('opens on 4 weeks, even with time this week', () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
     expect(screen.getByRole('tab', { name: z.fourWeeksSpoken })).toHaveAttribute('aria-selected', 'true')
@@ -123,8 +114,6 @@ describe('ProfileHrZones table', () => {
     expect(screen.queryByText(/no sessions yet/i)).toBeNull()
   })
 
-  // v4.17: time is "9 min" under an hour, "2 h 05" over. The week under way
-  // is not a week's split yet: no verdict colour.
   it('writes time with its units, and reads the week under way without a verdict colour', async () => {
     render(<ProfileHrZones athlete={{ lthrBpm: 172 }} weeklyZoneTime={week} recentZoneTime={recent} />)
     await userEvent.click(screen.getByRole('tab', { name: z.weekSpoken }))
@@ -136,10 +125,6 @@ describe('ProfileHrZones table', () => {
     expect([...stack.querySelectorAll('[data-zone]')].map((el) => el.getAttribute('data-zone'))).toEqual(['4', '5'])
   })
 
-  // Design review, Oct 2026: "Hard 7 %" read amber here against a 10-15 %
-  // target while Analytics > Intensity read the same weeks "In range". One
-  // split and one verdict now, and too little hard is never a caution.
-  // 3.0 1j: it is the headline, "Hard 7% · in range", the verdict in pos.
   it('heads four weeks with the hard share and the verdict Analytics gives the same time', () => {
     const inRange = [
       { zone: 2, seconds: 93 * 60, percent: 0 },
@@ -161,8 +146,6 @@ describe('ProfileHrZones table', () => {
     expect(screen.getByTestId('zone-verdict').className).toContain('text-[var(--warn)]')
   })
 
-  // 3.0 1j: every zone with time draws, at least 3 % wide; its share is read
-  // in the table beside it (App Fixes 1e).
   it('draws each zone with time as wide as its share, at least 3 %, and reads the share in the table', () => {
     const withSliver = [
       { zone: 1, seconds: 26 * 60, percent: 0 },

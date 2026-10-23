@@ -287,8 +287,7 @@ describe('Gemini bootstrap draft boundary', () => {
   })
 
   it('reads a session it would be wrong to run, and leaves the judging to the draft rules', () => {
-    // Rejected here, a rule broken by one session skipped the repair loop that
-    // every other rule gets; see draftRules.ts.
+    // Left to the draft rules, a broken rule gets the repair loop every other rule gets.
     const raw = rawBootstrap(false)
     const workout = raw.weeks[0]!.workouts[0]! as { title: string; blocks: unknown[] }
     workout.title = 'Hill intervals'
@@ -552,8 +551,6 @@ describe('pacing against the per-minute limit', () => {
   })
 })
 
-// Design review, Oct 2026: a change to the live plan names the sessions it
-// writes, so it is told the naming rules a block is.
 describe('a change to the live plan', () => {
   it('is asked to name what it adds or rewrites by the naming rules', async () => {
     gemini.generateStructuredJson.mockReset().mockResolvedValue({

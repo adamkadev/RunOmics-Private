@@ -2,20 +2,12 @@ import type { CoachingOverview, PrescriptionView } from '@/application/coaching/
 import type { TargetEvent, TrainingBlock, WorkoutBlock, WorkoutPrescription } from '@/domain/coaching/types'
 import { pickDefined } from '@/components/pickDefined'
 
-/**
- * What /plan draws of the coaching block. The overview it is built from also
- * carries the coach's reasoning - the latest decision's summary and evidence,
- * the latest evaluation, the block's and each week's focus, and every
- * prescription's description, notes and provenance - and none of it is on
- * this screen. Handing the overview to PlanClient put all of it in the public
- * page payload; the week and month views get this instead.
- */
+/** Only what /plan draws: the overview also carries the coach's reasoning, which must stay out of the public page payload. */
 const PRESCRIPTION_FIELDS = [
   'id',
   'date',
   'type',
   'title',
-  // A tight row's name (design review, Oct 2026), where the coach wrote one.
   'shortName',
   'totalDurationSeconds',
   'totalDistanceMeters',
@@ -49,8 +41,6 @@ export interface PlanCoachingView {
   workouts: PlanPrescriptionView[]
 }
 
-// A segment's notes are the coach's words about it, and the structure bar
-// draws only its kind and target.
 function withoutNotes(block: WorkoutBlock): WorkoutBlock {
   if (block.kind === 'repeat') {
     return { kind: 'repeat', repetitions: block.repetitions, steps: block.steps.map(({ kind, target }) => ({ kind, target })) }

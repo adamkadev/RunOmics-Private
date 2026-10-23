@@ -13,7 +13,6 @@ describe('a French build', () => {
     vi.unstubAllEnvs()
   })
 
-  // toFixed wrote "8.5 km" beside "1 321,5" on the same French screen.
   it('writes decimals with a comma', async () => {
     const { formatDecimal, formatNumber } = await inFrench()
     expect(formatDecimal(8.5, 1)).toBe('8,5')
@@ -21,7 +20,7 @@ describe('a French build', () => {
     expect(formatNumber(17.5)).toBe('17,5')
   })
 
-  // The sync stores the weekday in English: "Sortie du Sunday".
+  // The sync stores the weekday in English.
   it('names a run with no Garmin name by its French weekday', async () => {
     const { activityTitle } = await inFrench()
     expect(activityTitle({ description: '', date: '2026-10-04' })).toBe('Sortie du dimanche')

@@ -1,12 +1,7 @@
 import type { MultiPolygon, Polygon, Position } from 'geojson'
 import { pointInGeometry } from '@/domain/explore/geometry'
 
-/**
- * OSM multipolygon relations as polygons. Overpass's `out geom` gives a
- * boundary relation as its member ways, each a piece of a ring, in no
- * particular order or direction; this joins them back end to end. Shared
- * nodes come back with identical coordinates, so ends are matched exactly.
- */
+// Overpass gives a relation's member ways in no particular order or direction; shared nodes have identical coordinates.
 
 export interface OsmPoint {
   lat: number
@@ -29,11 +24,7 @@ function isClosed(line: readonly Position[]): boolean {
   return line.length >= 4 && !!first && !!last && key(first) === key(last)
 }
 
-/**
- * Joins open lines into closed rings, reversing a line where its direction
- * disagrees. A line that never closes (an incomplete relation, or one cut by
- * a bbox) is counted in `open` and dropped rather than closed by a guess.
- */
+/** A line that never closes (an incomplete relation, or one cut by a bbox) is dropped rather than closed by a guess. */
 export function joinRings(lines: readonly (readonly Position[])[]): { rings: Position[][]; open: number } {
   const rings: Position[][] = []
   const pool: Position[][] = []
@@ -80,11 +71,7 @@ function probe(inner: readonly Position[], outer: readonly Position[]): Position
   return inner.find((p) => !shared.has(key(p)))
 }
 
-/**
- * The relation's outer rings (role `outer`, or none, as old relations have)
- * with each inner ring under the outer that contains it. Null when no outer
- * ring closes.
- */
+/** Outer rings have the role `outer`, or none, as old relations have. */
 export function assembleMultipolygon(members: readonly OsmMember[]): { geometry: Polygon | MultiPolygon | null; open: number } {
   const outers = joinRings(memberLines(members, ['outer', '']))
   const inners = joinRings(memberLines(members, ['inner']))

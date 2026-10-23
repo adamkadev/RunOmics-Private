@@ -1,9 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getAllRoutes } from '@/application/usecases/GetAllRoutes'
 
-// The routes are read from the deployment's own data, so they change only
-// when a new deployment ships - and a new deployment starts with an empty
-// edge cache. An hour fresh, then a day served stale while it revalidates.
+// The routes change only with a deployment, and a new deployment starts with an empty edge cache.
 const CACHED = 'public, s-maxage=3600, stale-while-revalidate=86400'
 
 export async function GET(req: NextRequest) {
@@ -15,9 +13,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unknown cluster' }, { status: 404 })
   }
 
-  // Each track's activity id beside it: a page built before this deployment
-  // holds route indices that a newer run may have shifted, and the Explore
-  // worker caches tracks by id, so it checks which run each index now is.
+  // A page built before this deployment holds route indices a newer run may have shifted, and the Explore worker
+  // caches tracks by id.
   const routes: Record<number, [number, number][]> = {}
   const ids: Record<number, string> = {}
   for (const i of cluster.routeIndices) {

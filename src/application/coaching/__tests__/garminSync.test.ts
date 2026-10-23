@@ -172,8 +172,6 @@ describe('removed prescriptions', () => {
   })
 
   it('never deletes outside the requested window', () => {
-    // `--to` used to filter which prescriptions counted as synced but not which
-    // mapping entries could be deleted, so everything beyond it was wiped.
     const inside = workout({ id: 'a', date: '2026-09-08' })
     const beyond = workout({ id: 'b', date: '2026-09-15' })
     const state = syncedState([
@@ -432,9 +430,7 @@ describe('partial failure recovery', () => {
   })
 
   it('replaces instead of retrying when the prescription changed since the failed schedule', () => {
-    // A retry would schedule the workout Garmin already holds - the old
-    // prescription - while the state recorded the new hash, so no later run
-    // would ever see the two disagree.
+    // A retry would schedule the old workout Garmin holds under the new hash, hiding the mismatch for good.
     const prescribed = workout({ id: 'a', date: '2026-09-08' })
     const state: GarminSyncState = {
       ...syncedState([{ id: 'a', date: '2026-09-08', workout: prescribed }]),

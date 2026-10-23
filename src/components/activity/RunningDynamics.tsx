@@ -23,12 +23,7 @@ interface Props {
   baseline: DynamicsBaseline | null
 }
 
-/**
- * The run on its 8-week range scale (H17, 3.0.2 5e): the ends are the lowest
- * and highest of those weeks (stretched to take this run), the pill the
- * middle half of them - the usual range - and the tick this run. The ends'
- * values and what the run says against the usual go under it.
- */
+/** The ends are the 8-week range stretched to take this run; the pill is its middle half, the tick this run. */
 function RangeTrack({ label, value, band, decimals, note, noteInk }: { label: string; value: number; band: BaselineRange; decimals: number; note: string | null; noteInk: string }) {
   const lo = Math.min(band.min, value)
   const hi = Math.max(band.max, value)
@@ -53,12 +48,6 @@ function RangeTrack({ label, value, band, decimals, note, noteInk }: { label: st
   )
 }
 
-/**
- * Which way is better for each metric (App Fixes 3d): a longer stride is
- * better, a shorter ground contact is, and less bounce - vertical
- * oscillation and the ratio - is too. Said beside the metric, so the reader
- * does not have to know.
- */
 const BETTER: Record<Metric['term'], 'higher' | 'lower'> = {
   strideLength: 'higher',
   groundContact: 'lower',
@@ -66,12 +55,6 @@ const BETTER: Record<Metric['term'], 'higher' | 'lower'> = {
   verticalRatio: 'lower',
 }
 
-/**
- * "−0.04 m vs your usual": a delta against the usual range's median, with
- * its unit. Mint when it moved the better way and amber when it moved the
- * other (App Fixes 3d); level is muted. It used to be a note in one colour,
- * which left the reader to know which way was good.
- */
 export function deltaSentence(m: Pick<Metric, 'value' | 'band' | 'decimals' | 'deltaUnit'>): string | null {
   const d = t.activity.dynamics
   if (!m.band) return null
@@ -79,7 +62,6 @@ export function deltaSentence(m: Pick<Metric, 'value' | 'band' | 'decimals' | 'd
   return delta === 0 ? d.level : `${formatDelta(delta)} ${m.deltaUnit} ${d.vsUsual}`
 }
 
-/** The delta's tone: good the better way, caution the other, muted on level. */
 export function deltaTone(m: Pick<Metric, 'value' | 'band' | 'decimals' | 'term'>): 'good' | 'worse' | 'flat' {
   if (!m.band) return 'flat'
   const delta = Number((m.value - m.band.median).toFixed(m.decimals))
@@ -94,10 +76,6 @@ const DELTA_INK: Record<'good' | 'worse' | 'flat', string> = {
   flat: 'var(--text-2)',
 }
 
-/**
- * What the pill and the tick are, once, over the scales (5e): the footer
- * sentence under them went.
- */
 function Legend({ weeks }: { weeks: number }) {
   const d = t.activity.dynamics
   return (
@@ -178,13 +156,11 @@ export function RunningDynamics({ activity: a, baseline }: Props) {
         return (
           <div key={m.label} className="flex flex-col gap-2.5 border-b border-border py-4 last:border-b-0">
             <div className="flex items-baseline justify-between gap-2">
-              {/* The title stays clean (5e): no (i) beside it - the name
-                  itself is the button that opens its definition. */}
+              {/* No (i) beside the title: the name itself opens its definition. */}
               <span className="flex min-w-0 flex-col">
                 <span className="text-sm font-semibold text-foreground">
                   <GlossaryTerm term={m.term} quiet>{m.label}</GlossaryTerm>
                 </span>
-                {/* Which way is better, said rather than assumed (App Fixes 3d). */}
                 <span className="text-[11px] text-muted-foreground" data-testid="dynamics-better">
                   {d.better[BETTER[m.term]]}
                 </span>

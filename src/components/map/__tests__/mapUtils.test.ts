@@ -30,8 +30,6 @@ const meta = (over: Partial<RouteMeta> = {}): RouteMeta => ({
 
 const f = (over: Partial<HeatFilters> = {}): HeatFilters => ({ years: [], types: [], ...over })
 
-// The Filters button's badge (Heatmap Filters 1b): type and year, each
-// counted once however many of it are ticked; hidden at 0.
 describe('activeFilterCount', () => {
   it('counts the narrowed filters, not the ticks', () => {
     expect(activeFilterCount(f())).toBe(0)
@@ -59,8 +57,6 @@ describe('matchesFilters', () => {
     expect(matchesFilters(meta({ type: 'Race' }), f({ types: ['Race'] }))).toBe(true)
   })
 
-  // Heatmap Filters 1c (Oct 2026): any of the ticked types, in any of the
-  // ticked years.
   it('takes any of several types or years', () => {
     expect(matchesFilters(meta({ type: 'Tempo' }), f({ types: ['Race', 'Tempo'] }))).toBe(true)
     expect(matchesFilters(meta({ type: 'Base' }), f({ types: ['Race', 'Tempo'] }))).toBe(false)
@@ -108,7 +104,7 @@ describe('GPS jumps (v5.6 #5)', () => {
     ]
     const [track] = buildHeatTracks([route], [0])
     const xs = Array.from({ length: track!.length / 2 }, (_, i) => track![2 * i]!)
-    // Six points and one break, and the break sits between the two stretches.
+    // Six points and one NaN break, between the two stretches.
     expect(xs).toHaveLength(7)
     expect(xs.findIndex(Number.isNaN)).toBe(3)
   })
@@ -212,7 +208,6 @@ describe('computeAreaTerritory', () => {
   it('puts home where the runs start and the reach at the median furthest point (v4.17)', () => {
     const territory = computeAreaTerritory(cluster('a', [0, 1, 2]), routeMeta, routes, { years: [], types: [] })!
     expect(territory.home).toEqual([7.75, 48.58])
-    // Half the runs - two of three - never go past 2 km.
     expect(territory.medianReachKm).toBe(2)
   })
 

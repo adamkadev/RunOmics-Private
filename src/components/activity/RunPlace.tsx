@@ -3,10 +3,8 @@
 import { useRunPlace } from '@/lib/useRunPlace'
 
 /**
- * "· Metz" after the type and date in the Activity title line: the town the
- * run started in (3.0), the one place rule the share card follows too - the
- * quartier read as a different place on each screen. Nothing until the
- * lookup answers; nothing without a route.
+ * The town the run started in: the place rule the share card follows too, so a
+ * run names one place on every screen.
  */
 export function RunPlace({ activityId, start }: { activityId: string; start: [number, number] | null }) {
   const { town } = useRunPlace(activityId, start)

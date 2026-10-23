@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { RUN_TYPE_ZONE, runTypeColor } from '@/lib/colors'
 
 describe('RUN_TYPE_ZONE', () => {
-  // Threshold was salmon on one day and orange on the next, and salmon also
-  // meant Z5, heart rate and "destructive". A type is now the zone it targets.
   it('maps each run type to the zone it targets', () => {
     expect(RUN_TYPE_ZONE).toEqual({ Sprint: 5, Anaerobic: 5, VO2Max: 5, Threshold: 4, Tempo: 3, Base: 2, Race: 5 })
   })
@@ -19,11 +17,7 @@ describe('RUN_TYPE_ZONE', () => {
   })
 })
 
-/**
- * 3.0 override 2: "Good is always #2dd4a7 and warning is always amber.
- * Lime #7fd13b is retired." Every delta, chip and bar the app calls good
- * reads --pos, so this is the one place the rule can be held.
- */
+/** Every delta, chip and bar the app calls good reads --pos, so this is the one place the rule can be held. */
 describe('the status colours (3.0 override 2)', () => {
   it('calls good mint, never lime', async () => {
     const { STATUS_HEX } = await import('@/lib/themeTokens')

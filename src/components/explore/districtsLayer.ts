@@ -17,28 +17,12 @@ import { SURFACES, accentTokens } from '@/lib/themeTokens'
 import type { AreaCoverage, ExploreAreaFile, UnitKind, UnitState } from '@/domain/explore/types'
 
 /**
- * The Districts layer on the Activities map (Explore, V2/V4): every unit of
- * the area as a fill and an outline by how much of it the runs have covered,
- * and its name over its percentage.
+ * MapLibre glue only, so it can be driven by a fake map in tests. Colours are literal (MapLibre reads no CSS
+ * variable), so a theme or accent change removes and re-adds the whole layer.
  *
- * MapLibre glue only, so it can be driven by a fake map in tests. Colours are
- * literal (MapLibre reads no CSS variable), resolved from the tokens for the
- * mode and accent they are drawn in; a theme or accent change removes and
- * re-adds the whole layer (the `useMapRoutes` overlay).
- *
- * Order, bottom to top:
- * - over the heat raster and under the home ring and dot: fills (the fog
- *   veils the heat), the fog's dashed outline, the outlines, the selection;
- * - over the base map's quartier names and under its village, town and city
- *   names (upper layers place first): the labels, so a quartier wins over the
- *   base map's own name for it but "Metz" keeps its place - a label steps
- *   above or below its point to make room rather than drop. Under the edge
- *   fence, so none is cut at the edge.
- *
- * While the layer shows, the base map's place names that name a unit are
- * filtered out (one name per quartier); the original filters come back when
- * it hides or is removed. The route generator (S3) names one unit alone:
- * `setDistrictsLabelOnly`.
+ * Order, bottom to top: the shapes over the heat raster and under the home ring; the labels over the base map's
+ * quartier names and under its town and city names (upper layers place first), so a quartier wins over the base
+ * map's own name for it but "Metz" keeps its place; everything under the edge fence, so no label is cut at the edge.
  */
 
 export const DISTRICTS_SOURCE = 'runomics-districts'
@@ -49,13 +33,7 @@ export const DISTRICTS_LINE_LAYER = 'runomics-districts-line'
 export const DISTRICTS_SELECTED_FILL_LAYER = 'runomics-districts-selected-fill'
 export const DISTRICTS_SELECTED_LAYER = 'runomics-districts-selected'
 export const DISTRICTS_LABEL_LAYER = 'runomics-districts-label'
-/**
- * The labels that lead - the next unit's, then the complete ones' - in layers
- * of their own above the base map's town and city names (upper layers place
- * first): where "Metz" sat on them, the expanded map named neither the
- * quartier its card points to nor the complete one. The rest stay under the
- * town names (the plain layer), which keep their place over them.
- */
+/** The next unit's and the complete ones' labels sit in layers of their own above the town names, so "Metz" cannot hide them. */
 export const DISTRICTS_NEXT_LABEL_LAYER = 'runomics-districts-label-next'
 export const DISTRICTS_COMPLETE_LABEL_LAYER = 'runomics-districts-label-complete'
 export const DISTRICTS_CHECK_IMAGE = 'runomics-check'
@@ -77,25 +55,16 @@ const HOME_RING_LAYER = 'home-ring'
 /** The base style's place font: the one stack every label here is known to be served in. */
 const LABEL_FONT = ['Metropolis Semi Bold', 'Noto Sans Semi Bold']
 const NAME_SIZE = 12
-/**
- * Where a label may go when its point is taken: on it, else just under or
- * over it, in ems - a step that clears a town name without leaving the unit.
- */
+/** On its point, else just under or over it, by an offset in ems that clears a town name without leaving the unit. */
 type LabelAnchor = 'center' | 'top' | 'bottom' | 'right' | 'left'
 const LABEL_ANCHORS: LabelAnchor[] = ['center', 'top', 'bottom']
 /**
- * A complete unit's label may also step aside, left or right of its point:
- * next to the next quartier's at the whole area's zoom (Metz-Centre beside
- * Bellecroix), it found no place over or under it. The next one keeps to the
- * three, so it never takes the side a complete one needs.
+ * Beside the next quartier's label, a complete unit's can find no place over or under its point, so it may also step
+ * aside; the next one keeps to the three, so it never takes the side a complete one needs.
  */
 const COMPLETE_LABEL_ANCHORS = [...LABEL_ANCHORS, 'right', 'left']
 const LABEL_RADIAL_OFFSET = 0.25
-/**
- * The route generator's one label: on its point when that is free, else
- * beside it, a dot's width away - the loop's start dot (a symbol that keeps
- * its place) sits near the label point, which is where the start is picked.
- */
+/** The route generator's one label steps a dot's width away: the loop's start dot sits near the label point. */
 const LABEL_ONLY_ANCHORS: LabelAnchor[] = ['center', 'top', 'bottom', 'right', 'left']
 const LABEL_ONLY_RADIAL_OFFSET = 1.1
 /** 11 px under a 12 px name. */
@@ -113,18 +82,12 @@ export interface DistrictsColors {
   check: string
 }
 
-/**
- * Every paint colour for one mode and accent (design spec §2): complete in
- * the accent, partly in a neutral line over a breath of the accent, fog a
- * veil that dims the heat under it.
- */
 export function districtsColors(mode: DistrictsMode, accent: AccentId): DistrictsColors {
   const acc = accentColor(accent, mode)
   const s = SURFACES[mode]
   if (mode === 'light') {
     const accText = accentTokens(curatedAccent(accent), 'light')['--accent-text-glass'] ?? acc
-    // Light mono's accent is near-black: a 14% wash of it read as a lighter
-    // fog. Complete lifts the map to paper instead, under the same outline.
+    // Light mono's accent is near-black and a 14% wash of it reads as a lighter fog, so complete lifts the map to paper.
     const complete = accent === 'mono' ? paper(0.55) : withAlpha(acc, 0.14)
     return {
       fill: { complete, partly: withAlpha(acc, 0.04), fog: withAlpha(s.text, 0.26) },
@@ -169,11 +132,7 @@ function emptyCollection<G extends Polygon | MultiPolygon | Point>(): FeatureCol
   return { type: 'FeatureCollection', features: [] }
 }
 
-/**
- * The area's units joined with their coverage. Nothing until both are in and
- * agree on the area's version; a unit the coverage dropped (no runnable
- * cell) is not drawn.
- */
+/** Nothing until the area and the coverage agree on the area's version; a unit the coverage dropped (no runnable cell) is not drawn. */
 export function districtsGeoJson(area: ExploreAreaFile | null, coverage: AreaCoverage | null): DistrictsGeoJson {
   const shapes = emptyCollection<Polygon | MultiPolygon>()
   const labels = emptyCollection<Point>()
@@ -204,11 +163,7 @@ export function districtsGeoJson(area: ExploreAreaFile | null, coverage: AreaCov
   return { shapes, labels }
 }
 
-/**
- * A check mark, rasterised at `pixelRatio` 2: the accent stroke over a halo
- * ring of the label's halo, so it reads over the heat like the text beside
- * it. 10 x 10 pt; straight (not premultiplied) RGBA, as MapLibre takes it.
- */
+/** Straight (not premultiplied) RGBA, as MapLibre takes it; the halo ring lets it read over the heat like the text beside it. */
 export function checkImage(color: string, halo: string, pixelRatio = 2): { width: number; height: number; data: Uint8Array } {
   const size = 10 * pixelRatio
   const data = new Uint8Array(size * size * 4)
@@ -266,18 +221,11 @@ function rgba(color: string): [number, number, number, number] {
   return [0, 0, 0, 1]
 }
 
-// --- base place names ------------------------------------------------------
-
 function stripDiacritics(text: string): string {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').normalize('NFC')
 }
 
-/**
- * The lower-case spellings a base map may give a unit's name: as written,
- * with hyphens and spaces swapped, and without accents ("Les Îles", "les
- * iles", "metz-centre", "metz centre"). The tiles' names can only be
- * lower-cased in a filter, so every other variant is listed here.
- */
+/** A MapLibre filter can only lower-case the tiles' names, so every other spelling (no accents, hyphens and spaces swapped) is listed here. */
 export function unitNameVariants(names: readonly string[]): string[] {
   const out = new Set<string>()
   for (const name of names) {
@@ -293,17 +241,13 @@ export function unitNameVariants(names: readonly string[]): string[] {
   return [...out].sort()
 }
 
-/** Not one of `variants`, read off `field` lower-cased. */
 function notNamed(field: unknown, variants: string[]): ExpressionSpecification {
   return ['!', ['in', ['downcase', ['to-string', field]], ['literal', variants]]] as unknown as ExpressionSpecification
 }
 
 type BaseLayer = Parameters<typeof isPlaceLabelLayer>[0]
 
-/**
- * The base style's first village, town or city name layer above its quartier
- * names: ours go just under it. None (a style without them): undefined.
- */
+/** The first village, town or city name layer above the quartier names: ours go just under it. */
 function townLabelLayerId(map: MapLibreMap): string | undefined {
   const layers = map.getStyle().layers.filter((layer) => !layer.id.startsWith('runomics-')) as BaseLayer[]
   let lastDistrict = -1
@@ -313,15 +257,12 @@ function townLabelLayerId(map: MapLibreMap): string | undefined {
   return layers.slice(lastDistrict + 1).find((layer) => isPlaceLabelLayer(layer) && !isDistrictLayer(layer))?.id
 }
 
-/** The base style's place-name layers: towns, villages, quartiers - never ours. */
 function baseLabelLayerIds(map: MapLibreMap): string[] {
   return map
     .getStyle()
     .layers.filter((layer) => !layer.id.startsWith('runomics-') && isPlaceLabelLayer(layer as Parameters<typeof isPlaceLabelLayer>[0]))
     .map((layer) => layer.id)
 }
-
-// --- per-map state ---------------------------------------------------------
 
 interface MapDistricts {
   data: DistrictsGeoJson
@@ -357,7 +298,6 @@ function restoreBaseLabels(map: MapLibreMap, state: MapDistricts): void {
   state.baseFilters.clear()
 }
 
-/** Drops every base place name that names a unit, on top of its own filter. */
 function hideUnitNamesFromBase(map: MapLibreMap, state: MapDistricts): void {
   if (!state.visible || state.names.length === 0) {
     restoreBaseLabels(map, state)
@@ -375,17 +315,11 @@ function hideUnitNamesFromBase(map: MapLibreMap, state: MapDistricts): void {
   }
 }
 
-// --- layers ----------------------------------------------------------------
-
 function selectionFilter(id: string | null): FilterSpecification {
   return ['==', ['get', 'id'], id ?? ''] as FilterSpecification
 }
 
-/**
- * Each label layer's filter. Every unit: the lead labels (next, complete) in
- * their layers, the rest in the plain one. One unit alone: its label in the
- * top layer, so no town name takes its place, and the other two empty.
- */
+/** One unit alone goes in the top layer, so no town name takes its place. */
 function labelFilters(labelOnly: string | null): Record<(typeof DISTRICTS_LABEL_LAYERS)[number], FilterSpecification> {
   if (labelOnly !== null) {
     const none = ['==', ['get', 'id'], ''] as FilterSpecification
@@ -406,7 +340,6 @@ function byState(values: Record<UnitState, string | number>): ExpressionSpecific
   return ['match', ['get', 'state'], 'complete', values.complete, 'partly', values.partly, values.fog] as ExpressionSpecification
 }
 
-/** Name over percentage; a complete unit's percentage in the accent with its check. */
 function labelText(c: DistrictsColors): ExpressionSpecification {
   const name = ['get', 'name']
   const pct = ['get', 'pctText']
@@ -428,7 +361,6 @@ function labelText(c: DistrictsColors): ExpressionSpecification {
 function districtLayers(c: DistrictsColors, visible: boolean, selectedId: string | null, labelOnly: string | null): LayerSpecification[] {
   const visibility = visible ? 'visible' : 'none'
   const labels = labelFilters(labelOnly)
-  // One label spec, two layers: the lead units' and the rest.
   const labelLayer = (id: string, filter: FilterSpecification, anchors: string[], radialOffset = LABEL_RADIAL_OFFSET): LayerSpecification =>
     ({
       id,
@@ -509,18 +441,14 @@ function districtLayers(c: DistrictsColors, visible: boolean, selectedId: string
 export interface DistrictsLayerOptions {
   mode: DistrictsMode
   accent: AccentId
-  /** Shown or not; hidden keeps the data and the layers. Default true. */
+  /** Hidden keeps the data and the layers. Default true. */
   visible?: boolean
   selectedId?: string | null
-  /** Name this unit alone (the route generator's); null names every unit. Default: as last set. */
+  /** Names this unit alone (the route generator's); null names every unit. Default: as last set. */
   labelOnly?: string | null
 }
 
-/**
- * Adds the sources, the check image and the layers, in place, with the data
- * last set on this map. Calling it again replaces them (a new mode or
- * accent).
- */
+/** With the data last set on this map; calling it again replaces everything (a new mode or accent). */
 export function addDistrictsLayers(map: MapLibreMap, options: DistrictsLayerOptions): void {
   removeDistrictsLayers(map)
   const state = stateOf(map)
@@ -549,7 +477,7 @@ export function addDistrictsLayers(map: MapLibreMap, options: DistrictsLayerOpti
   hideUnitNamesFromBase(map, state)
 }
 
-/** The units and their coverage; null draws nothing (still loading). */
+/** Null draws nothing (still loading). */
 export function setDistrictsData(map: MapLibreMap, coverage: AreaCoverage | null, area: ExploreAreaFile | null): void {
   const state = stateOf(map)
   state.data = districtsGeoJson(area, coverage)
@@ -588,7 +516,6 @@ export function setDistrictsLabelOnly(map: MapLibreMap, id: string | null): void
   }
 }
 
-/** Takes every layer, source and image off the map and gives the base names their filters back. */
 export function removeDistrictsLayers(map: MapLibreMap): void {
   const state = maps.get(map)
   if (state) restoreBaseLabels(map, state)
@@ -597,7 +524,7 @@ export function removeDistrictsLayers(map: MapLibreMap): void {
   if (map.hasImage(DISTRICTS_CHECK_IMAGE)) map.removeImage(DISTRICTS_CHECK_IMAGE)
 }
 
-/** Whether the layers are on this map now (a theme swap takes them off until its style loads). */
+/** A theme swap takes the layers off until its style loads. */
 export function hasDistrictsLayers(map: MapLibreMap): boolean {
   return !!map.getSource(DISTRICTS_SOURCE)
 }

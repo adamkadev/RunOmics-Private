@@ -24,8 +24,6 @@ describe('coaching rules generation', () => {
     expect(() => rulesFromMarkdown('# Coaching rules\n\nProse only.\n')).toThrow(/No rules found/)
   })
 
-  // Design review, Oct 2026: a change to the live plan names what it writes
-  // by the same rules a block does, from the same file.
   it('hands a change to the live plan the naming rules, and only those', () => {
     const markdown = fs.readFileSync('.claude/skills/coaching-plan/rules.md', 'utf-8')
     expect(WORKOUT_NAMING_INSTRUCTION).toBe(rulesFromMarkdown(markdown, NAMING_SECTION))

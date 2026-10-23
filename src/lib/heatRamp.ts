@@ -1,14 +1,6 @@
 import { hexToOklch } from './oklch'
 import { curatedAccent, type AccentId } from './accentScale'
 
-/**
- * The heatmap's colour ramps (Wave 4, App Fixes 4d), built from the one
- * accent the reader picked. A route's frequency `t` (0 rare, 1 the busiest
- * street) picks its colour. Light runs from a pale tint through the accent
- * to a deep shade of it (4d's rgb(13,51,41) for mint); dark runs from a dim shade through the full accent
- * to a light accent, at most 25 % towards white (Wave 6). Stops are mixed
- * linearly in RGB.
- */
 export type Rgb = readonly [number, number, number]
 export interface RampStop {
   at: number
@@ -16,14 +8,10 @@ export interface RampStop {
 }
 
 const WHITE: Rgb = [255, 255, 255]
-/** The dark page ground the dark ramp dims towards. */
+/** The dark page ground. */
 const GROUND_DARK: Rgb = [11, 12, 12]
 
-/**
- * Under this chroma an accent has no hue worth ramping: the white accent.
- * White lines vanish on a white map, so light mode takes a graphite ramp,
- * and dark mode a fixed grey one (App Fixes 4d).
- */
+/** Under this chroma (the white accent) there is no hue to ramp, and white lines vanish on a white map. */
 const NEUTRAL_CHROMA = 0.02
 const GRAPHITE_LIGHT: readonly RampStop[] = [
   { at: 0, rgb: [195, 201, 199] },
@@ -48,12 +36,10 @@ export function rgbCss([r, g, b]: Rgb, alpha = 1): string {
   return a >= 1 ? `rgb(${R},${G},${B})` : `rgba(${R},${G},${B},${a})`
 }
 
-/** `a` moved a share `k` of the way to `b`. */
 export function mix(a: Rgb, b: Rgb, k: number): Rgb {
   return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]
 }
 
-/** `a` scaled towards black: k = 1 is `a`, 0 is black. */
 export function scale(a: Rgb, k: number): Rgb {
   return [a[0] * k, a[1] * k, a[2] * k]
 }
@@ -79,6 +65,7 @@ export function heatStops(mode: 'light' | 'dark', accent: string): readonly Ramp
       ]
 }
 
+/** `t` is a route's frequency: 0 rare, 1 the busiest street. */
 function rampAt(stops: readonly RampStop[], t: number): Rgb {
   const x = Math.min(1, Math.max(0, t))
   for (let i = 1; i < stops.length; i++) {
@@ -97,13 +84,12 @@ export function rampDark(accent: string, t: number): Rgb {
   return rampAt(heatStops('dark', accent), t)
 }
 
-/** The legend pill's gradient: the ramp's own stops, four in light, three in dark. */
 export function heatLegendGradient(mode: 'light' | 'dark', accent: string): string {
   const stops = heatStops(mode, accent).map((stop) => `${rgbCss(stop.rgb)} ${Math.round(stop.at * 100)}%`)
   return `linear-gradient(90deg, ${stops.join(', ')})`
 }
 
-/** The colour a ramp is built from: the palette's full accent, in both modes. */
+/** The full accent, in both modes. */
 export function heatAccent(id: AccentId): string {
   return curatedAccent(id).dark.acc
 }

@@ -12,7 +12,6 @@ it('keeps desired frequency separate from availability and permits five runs', (
 it('permits explained recovery and taper frequency reductions', () => {
   for (const reason of ['recovery', 'taper']) expect(() => validateDraftFrequency(draft(4, `Fewer runs for ${reason} after fatigue assessment`), 5)).not.toThrow()
 })
-// A French deployment's coach writes the week's focus in French.
 it('reads a reduction explained in French', () => {
   for (const focus of ['Moins de sorties cette semaine : récupération après la course', 'Fréquence réduite pour l’affûtage', 'Moins de sorties à cause d’une blessure au mollet']) {
     expect(() => validateDraftFrequency(draft(4, focus), 5), focus).not.toThrow()

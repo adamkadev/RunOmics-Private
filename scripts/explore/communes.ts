@@ -1,19 +1,9 @@
 import type { MultiPolygon, Polygon, Position } from 'geojson'
 import { geometryBBox, inBBox, pointInGeometry, type BBox } from '@/domain/explore/geometry'
 
-/**
- * Which communes an area is made of. The runs of one cluster rarely stay in
- * one commune, and often start in a small one next to the city: a suburb
- * across the river is a commune of its own in France. So the area is named
- * after, and split into quartiers by, the most populous commune the
- * cluster's frame touches (the city its runs are "in"), and every other
- * commune the frame touches is a unit of its own, whole.
- */
-
 export interface Commune {
   /** INSEE code, e.g. '57463'. */
   code: string
-  /** Official name, e.g. 'Le Ban-Saint-Martin'. */
   name: string
   population: number
   geometry: Polygon | MultiPolygon
@@ -23,7 +13,7 @@ export function communeContaining(lon: number, lat: number, communes: readonly C
   return communes.find((commune) => pointInGeometry(lon, lat, commune.geometry))
 }
 
-/** The area's city: most people first, then the lower INSEE code so a tie always resolves the same way. */
+/** The lower INSEE code breaks a tie, so it always resolves the same way. */
 export function mostPopulous(communes: readonly Commune[]): Commune | undefined {
   return [...communes].sort((a, b) => b.population - a.population || a.code.localeCompare(b.code))[0]
 }
@@ -44,12 +34,7 @@ function segmentsCross(p1: Position, p2: Position, q1: Position, q2: Position): 
   return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
 }
 
-/**
- * Whether the shape and the box share any ground: a vertex in the box, a
- * corner of the box in the shape, or an edge crossing an edge. A WFS BBOX
- * filter only promises the shapes' envelopes overlap the box; this is the
- * exact test on what came back.
- */
+/** A WFS BBOX filter only promises the shapes' envelopes overlap the box; this is the exact test on what came back. */
 export function geometryIntersectsBBox(geometry: Polygon | MultiPolygon, bbox: BBox): boolean {
   if (!overlaps(geometryBBox(geometry), bbox)) return false
   const rings = (geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates).flat()
@@ -69,11 +54,7 @@ export function geometryIntersectsBBox(geometry: Polygon | MultiPolygon, bbox: B
   return false
 }
 
-/**
- * Grows a box outward to the next multiple of `step` degrees (0.01°, about
- * 1 km). The cluster's frame comes from track points: what goes to IGN and
- * into the cache is this coarse box, and the exact frame is applied locally.
- */
+/** 0.01° is about 1 km: IGN and the cache only see this coarse box, never the frame drawn from track points. */
 export function roundOutward([minLon, minLat, maxLon, maxLat]: BBox, step = 0.01): BBox {
   const down = (v: number) => Math.floor(v / step - 1e-9) * step
   const up = (v: number) => Math.ceil(v / step + 1e-9) * step

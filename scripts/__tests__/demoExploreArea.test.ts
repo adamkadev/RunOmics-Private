@@ -9,13 +9,7 @@ import type { ExploreAreaFile, UnitState } from '@/domain/explore/types'
 import { buildAreaFile, type UnitInput } from '../explore/area'
 import { DEMO_TOWN_GAPS, generateDemoDataset } from '../generate_demo_data.mjs'
 
-/**
- * The demo dataset's Explore area, "Fictional Bay": the only one e2e has, so
- * the Districts layer, the quartier sheet and the route generator are
- * exercised on it. The generator is plain JavaScript and cannot import the
- * domain, so it re-implements the grid; these checks hold it to the real
- * one, and to the build script's file format, and pin what e2e can rely on.
- */
+// The demo generator is plain JavaScript and re-implements the grid; these checks hold it to the domain's.
 
 type Dataset = Record<string, unknown>
 interface Run {
@@ -37,7 +31,7 @@ const runsOf = (data: Dataset): Run[] =>
 const data = dataset(NOW)
 const area = areaOf(data)
 
-/** What every weekday's runs make of each unit (see the generator's note). */
+/** What every weekday's runs make of each unit. */
 const EXPECTED: Record<string, UnitState> = {
   Eastgate: 'complete',
   Westbrook: 'complete',
@@ -88,7 +82,6 @@ describe('demo Explore area', () => {
         expect(others.some((f) => pointInGeometry(lon, lat, f.geometry)), `${name} ${key}`).toBe(false)
       }
 
-      // Every cell whose centre lies in the unit, less the river and the woods.
       const [minLon, minLat, maxLon, maxLat] = geometryBBox(feature.geometry)
       const [i0, j0] = cellIndices(cellOf(p, minLon, minLat))
       const [i1, j1] = cellIndices(cellOf(p, maxLon, maxLat))

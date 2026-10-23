@@ -1,12 +1,7 @@
 /**
- * The Explore worker's IndexedDB cache: area files and per-run cell results,
- * so a second visit neither downloads the area again nor walks 300 tracks.
- *
- * IndexedDB rather than Cache Storage: the service worker deletes every cache
- * it does not own on each release, and Settings › Clear offline cache deletes
- * them all. Nothing here is required: private browsing, a full disk or a
- * browser without IndexedDB all turn the cache into a no-op (every read a
- * miss, every write dropped), never into an error the page has to handle.
+ * IndexedDB rather than Cache Storage: the service worker deletes every cache it does not own on each
+ * release, and Settings › Clear offline cache deletes them all. Without IndexedDB (private browsing,
+ * a full disk) the cache is a no-op, never an error the page has to handle.
  */
 
 export const EXPLORE_DB = 'runomics-explore'
@@ -25,25 +20,23 @@ export function trackCacheKey(areaVersion: string, activityId: string): string {
   return `${areaVersion}:${activityId}`
 }
 
-/** Every string key that starts with `prefix`: the last BMP code point sorts after anything a key holds. */
+/** The upper bound is the last BMP code point, which sorts after anything a key holds. */
 export function prefixBounds(prefix: string): [string, string] {
   return [prefix, `${prefix}￿`]
 }
 
-/** Key-value access to the two stores. None of these ever rejects. */
+/** None of these ever rejects. */
 export interface ExploreCache {
   get(store: ExploreStore, key: string): Promise<unknown>
-  /** One value per key, `undefined` for a miss, in the order asked. */
+  /** `undefined` for a miss, in the order asked. */
   getMany(store: ExploreStore, keys: readonly string[]): Promise<unknown[]>
   put(store: ExploreStore, key: string, value: unknown): Promise<void>
   putMany(store: ExploreStore, entries: readonly (readonly [string, unknown])[]): Promise<void>
-  /** Keys starting with `prefix`. */
   keys(store: ExploreStore, prefix: string): Promise<string[]>
   delete(store: ExploreStore, key: string): Promise<void>
   deletePrefix(store: ExploreStore, prefix: string): Promise<void>
 }
 
-/** The cache when there is no IndexedDB: everything misses. */
 export const NO_CACHE: ExploreCache = {
   get: async () => undefined,
   getMany: async (_, keys) => keys.map(() => undefined),
@@ -61,7 +54,7 @@ export function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   })
 }
 
-/** Resolves once a write transaction has committed, which is later than its last request succeeding. */
+/** A write transaction commits later than its last request succeeds. */
 export function transactionDone(tx: IDBTransaction): Promise<void> {
   return new Promise((resolve, reject) => {
     tx.oncomplete = () => resolve()
@@ -70,7 +63,6 @@ export function transactionDone(tx: IDBTransaction): Promise<void> {
   })
 }
 
-/** Opens (and on first use creates) the Explore database, or null if the browser won't. */
 export async function openExploreDb(factory: IDBFactory | undefined): Promise<IDBDatabase | null> {
   if (!factory) return null
   try {
@@ -90,12 +82,7 @@ export async function openExploreDb(factory: IDBFactory | undefined): Promise<ID
   }
 }
 
-/**
- * The cache over IndexedDB. The database is opened on first use, once; if
- * that fails the cache stays a no-op for the life of the worker.
- *
- * `keyRange` is `IDBKeyRange`, passed in so tests can stand in a fake.
- */
+/** `keyRange` is passed in so tests can stand in a fake. */
 export function createIdbCache(
   factory: IDBFactory | undefined,
   keyRange: Pick<typeof IDBKeyRange, 'bound'> | undefined = globalThis.IDBKeyRange,
@@ -124,7 +111,7 @@ export function createIdbCache(
     try {
       act(tx.objectStore(store))
     } catch (err) {
-      // The transaction settles on its own; nobody is left to hear it.
+      // The transaction still settles; nobody is left to hear it, so keep it from going unhandled.
       done.catch(() => {})
       throw err
     }

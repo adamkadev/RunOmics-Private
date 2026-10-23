@@ -3,8 +3,7 @@ const STATIC_CACHE = `runomics-static-${VERSION}`
 const PAGE_CACHE = `runomics-pages-${VERSION}`
 const CURRENT_CACHES = [STATIC_CACHE, PAGE_CACHE]
 
-// Every file here must exist: cache.addAll fails the whole install on one 404,
-// and the old worker then keeps the app (4.12.0 deleted /icons/logo.svg).
+// Every file here must exist: cache.addAll fails the whole install on one 404, and the old worker keeps the app.
 const SHELL_URLS = ['/', '/manifest.json', '/icons/favicon.svg', '/icons/apple-touch-icon.png']
 
 self.addEventListener('install', (event) => {
@@ -26,9 +25,7 @@ self.addEventListener('message', (event) => {
 })
 
 self.addEventListener('activate', (event) => {
-  // A worker left behind on localhost by an earlier local production build
-  // drops everything it cached and retires itself, so a dev server is never
-  // shadowed by chunks from a build that no longer exists.
+  // A worker left on localhost by a local production build retires itself so it never shadows a dev server.
   if (isLocalDev) {
     event.waitUntil(
       caches
@@ -47,11 +44,7 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// Dev builds reuse the same /_next/static/chunks/... URLs across rebuilds, so
-// the cache-first branch below would pin whatever chunk this worker saw first
-// and keep serving it past every rebuild, restart and refresh. Registration is
-// already production-only, but a worker registered once by a local production
-// build outlives it and keeps controlling localhost - so it steps aside here.
+// Dev builds reuse the same /_next/static/chunks/... URLs across rebuilds, so cache-first would pin stale chunks.
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 const isLocalDev = LOCAL_HOSTS.includes(self.location.hostname)
 
@@ -73,8 +66,7 @@ async function cacheFirst(request) {
 async function networkFirst(request, { isNavigation }) {
   try {
     const response = await fetch(request)
-    // Never one that was redirected: on a private site that is /sign-in,
-    // which must not be kept as the page that sent there.
+    // Never a redirected one: on a private site that is /sign-in, which must not be cached as the page.
     if (response.ok && !response.redirected) {
       const cache = await caches.open(PAGE_CACHE)
       cache.put(request, response.clone())

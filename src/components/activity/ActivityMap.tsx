@@ -29,26 +29,18 @@ type LngLat = [number, number]
 
 interface Props {
   route: LngLat[]
-  /** The Charts scrub, as a share of the distance: the accent marker stands there. */
+  /** The Charts scrub, as a share of the distance. */
   hoverFraction?: number | null
   className?: string
-  /** Whether the map fills the screen. The page's own expand button opens it. */
   fullscreen?: boolean
   onFullscreenChange?: (fullscreen: boolean) => void
   /** Drawn over the tiles and under the map's own controls while in the page. */
   overlay?: ReactNode
-  /** The run's name, date and numbers, floating at the foot of the fullscreen map. */
   card?: ReactNode
 }
 
 const noop = () => {}
 
-/**
- * The basemaps the fullscreen style button cycles through (3.0). The design
- * asks for dark, light and satellite; the app's MapTiler styles are the dark
- * and light RunOmics greys, with no satellite one built yet, so the button
- * cycles the two that exist.
- */
 const WATER_INK = { light: '#5f7f9a', dark: '#5b7d99' } as const
 const PARK_INK = { light: '#5e7f65', dark: '#5f8a6d' } as const
 const LANDMARK_INK = { light: '#7d6f8c', dark: '#9a8ca8' } as const
@@ -60,7 +52,6 @@ type MapStyle = (typeof MAP_STYLES)[number]
 const themeStyle = (): MapStyle => (document.documentElement.classList.contains('dark') ? 'dark' : 'light')
 
 /** Clear of the top buttons, the sides and the floating card, so the route sits in what is left. */
-/** Clear of the fullscreen controls and the run's card at the foot (README §6.12.1). */
 function fullscreenPadding(cardHeight: number) {
   const { top, right, bottom, left } = MAP_PADDING.fullscreen
   return { top, right, bottom: Math.max(bottom, cardHeight + 48), left }
@@ -68,15 +59,12 @@ function fullscreenPadding(cardHeight: number) {
 
 export default function ActivityMap({ route, hoverFraction, className, fullscreen = false, onFullscreenChange = noop, overlay, card }: Props) {
   const hostRef = useRef<HTMLDivElement>(null)
-  // The element MapLibre draws into. Fullscreen portals the map to <body>,
-  // which gives React a new host node; this one moves between hosts, so the
-  // map is resized rather than rebuilt - style, tiles and the route animation
-  // survive the toggle.
+  // The element MapLibre draws into. It moves between hosts when fullscreen
+  // portals the map to <body>, so the map is resized rather than rebuilt.
   const mapElRef = useRef<HTMLDivElement | null>(null)
   const hasToken = !!process.env.NEXT_PUBLIC_MAPTILER_TOKEN
   const mapRef = useRef<MapLibreMap | null>(null)
-  // What the run layers show, kept here so they can be drawn again as they
-  // were: the route drawn so far and the scrub's point (v4.17).
+  // What the run layers show, so a new style can draw them again as they were.
   const drawnRef = useRef(0)
   const cursorRef = useRef<LngLat | null>(null)
   const layersReadyRef = useRef(false)
@@ -89,7 +77,6 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
   const [styleChoice, setStyleChoice] = useState<MapStyle | null>(null)
   const styleChoiceRef = useRef<MapStyle | null>(null)
   const applyStyleRef = useRef<((style: MapStyle) => void) | null>(null)
-  // Leaving fullscreen gives the page's map back its theme's style.
   const close = useCallback(() => {
     setStyleChoice(null)
     onFullscreenChange(false)
@@ -106,11 +93,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     map.fitBounds(boundsRef.current, { padding: fullscreenPadding(cardRef.current?.offsetHeight ?? 0), maxZoom: 15 })
   }, [])
 
-  // Fullscreen takes the map out of the page, which moves the scroll under
-  // it; leaving puts the page back where it was, to the pixel (v5.5 #1): left
-  // 1-2 pt down, iOS blurs the header under the status bar. The hero keeps
-  // its height while the map is away, so the offset read on the way in is
-  // still the page's own.
+  // Leaving fullscreen puts the page back where it was, to the pixel: left 1-2 pt
+  // down, iOS blurs the header under the status bar.
   const scrollBeforeFullscreen = useRef<number | null>(null)
   useLayoutEffect(() => {
     if (isFullscreen) {
@@ -137,10 +121,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     const map = mapRef.current
     if (!map) return
     map.resize()
-    // Leaving fullscreen puts the route back as the card first showed it: a
-    // pinch-zoom in fullscreen used to stay on the small map, with the route
-    // cut off at the card's edges. Entering centres it between the buttons
-    // and the floating card.
+    // Refit on every toggle, or a pinch-zoom in fullscreen stays on the small map
+    // with the route cut off at the card's edges.
     if (!boundsRef.current) return
     const padding = isFullscreen ? fullscreenPadding(cardRef.current?.offsetHeight ?? 0) : ROUTE_FIT_PADDING
     map.fitBounds(boundsRef.current, { padding, maxZoom: 15, animate: false })
@@ -163,9 +145,8 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     const readAccent = () =>
       getComputedStyle(hostRef.current ?? document.documentElement).getPropertyValue('--accent').trim() ||
       SURFACES[isDark() ? 'dark' : 'light'].text
-    // The route's halo and the start's ring are the page behind the map
-    // (3.0): the theme's --background, or the picked basemap's own page
-    // colour while fullscreen shows the other one.
+    // The route's halo and the start's ring are the page behind the map: the
+    // theme's --background, or the picked basemap's own page colour.
     const readRing = (darkMap: boolean) =>
       (styleChoiceRef.current === null &&
         getComputedStyle(hostRef.current ?? document.documentElement).getPropertyValue('--background').trim()) ||
@@ -183,8 +164,6 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
       const first = route[0]
       if (!first) return
       const start: LngLat = first
-      // The finish is the drawn line's own last point (design review, Oct 2026),
-      // shown once the draw-in reaches it.
       const finish: LngLat | null = route.length > 1 ? route[route.length - 1]! : null
 
       if (animFrameRef.current) { cancelAnimationFrame(animFrameRef.current); animFrameRef.current = null }
@@ -208,7 +187,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         attributionControl: false,
       })
       mapRef.current = map
-      // Cheaper glass over the canvas while it moves (README §6.12.2).
+      // Cheaper glass over the canvas while it moves.
       watchMapMoving(map)
 
       // A loop's start and finish are one marker while they would touch: asked
@@ -245,14 +224,11 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         animFrameRef.current = requestAnimationFrame(animate)
       }
 
-      // The first style and every one after it (v4.17): the camera stays and
-      // the run comes back as far as it was drawn. Place names are the
-      // style's own - quiet greys, street names from zoom 14.
+      // The first style and every one after it: the camera stays and the run comes
+      // back as far as it was drawn.
       let drawn = false
       map.on('style.load', () => {
         if (cancelled) return
-        // The route is the athlete's own data, so it is the accent (v4.17);
-        // it was coloured by pace.
         accent = readAccent()
         joined = finishShown() && finish !== null && runEndsJoined(map, start, finish)
         addRunLayers(map, {
@@ -277,11 +253,9 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           drawnRef.current = 0
           animateRoute()
         }
-        // The theme again, now this style has loaded (round 2, the owner's
-        // phone): leaving the app, iOS draws its switcher snapshots in both
-        // appearances, so the theme flips and flips back while the first
-        // swap loads - and the observer, which waits for a loaded style, let
-        // the flip back go, leaving a light map on a dark page.
+        // The theme again, now this style has loaded: iOS flips the theme and back
+        // for its app-switcher snapshots while the first swap loads, and the observer,
+        // which waits for a loaded style, misses the flip back.
         if (styleChoiceRef.current === null && isDark() !== dark) applyStyleRef.current?.(themeStyle())
       })
 
@@ -324,16 +298,14 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
     }
   }, [route])
 
-  // The Charts scrub's point on the route, by distance - the charts' samples
-  // are spread by distance, the GPS points by time.
+  // By distance: the charts' samples are spread by distance, the GPS points by time.
   useEffect(() => {
     cursorRef.current = hoverFraction == null ? null : pointAlongRoute(route, hoverFraction)
     const map = mapRef.current
     if (map && layersReadyRef.current) setRunCursor(map, cursorRef.current)
   }, [hoverFraction, route])
 
-  // The overlay (the hero's fades) over the placeholder too, as over a map:
-  // the hero's edges are the same whatever it shows.
+  // The overlay over the placeholder too, so the hero's edges are the same whatever it shows.
   if (!hasToken) return <><MapUnavailable className={className} />{overlay}</>
 
   const m = t.activity.map
@@ -343,14 +315,14 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
   const tree = (
     <div
       // Fullscreen, the map holds its own glass controls, so the moving-map
-      // attribute goes here; on the page it goes on the hero (README §6.12.2).
+      // attribute goes here; on the page it goes on the hero.
       data-map-root={isFullscreen ? '' : undefined}
       className={cn(
         // isolate: maplibre's z-index 20 controls would otherwise paint over the status strip.
         'activity-map relative isolate overflow-hidden rounded-xl',
         className,
-        // Under the status strip, never touching the top edge (v4.8): iOS
-        // kept the blur zone of a fullscreen map over the page's title.
+        // Under the status strip, never touching the top edge: iOS kept the blur
+        // zone of a fullscreen map over the page's title.
         isFullscreen && 'activity-map-fullscreen fixed inset-x-0 bottom-0 top-[var(--safe-top)] z-[9999] h-auto rounded-none',
       )}
     >
@@ -359,13 +331,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
 
       {isFullscreen ? (
         <>
-          {/* Full bleed (3.0): a fade under the buttons, close on the left,
-              recenter and the basemap on the right, the run's card floating
-              at the foot with the credits' ⓘ just above it. */}
           <div aria-hidden className="map-top-edge pointer-events-none absolute inset-x-0 top-0 z-10"><i /><i /></div>
-          {/* Regular glass over the fullscreen map (Liquid Glass v3, G11):
-              close as a circle, recenter and the basemap grouped in one
-              capsule (G13). */}
           <div className="absolute inset-x-0 top-3 z-20 flex items-start justify-between px-4">
             <button type="button" onClick={close} aria-label={m.exitFullscreen} className={glassClass('regular', GLASS_CIRCLE)}>
               <GlassLayers />
@@ -400,7 +366,6 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           </div>
         </>
       ) : (
-        // The MapTiler and OpenStreetMap credits behind a 22 pt ⓘ (3.0).
         <MapAttribution className="absolute bottom-3 right-3 z-20" />
       )}
     </div>

@@ -1,42 +1,10 @@
 #!/usr/bin/env node
 /**
- * Builds an Explore area for one of the athlete's run clusters and writes it
- * into the data repo: `<data dir>/explore/<id>.geojson` and its row in
- * `<data dir>/explore/index.json`. Run it by hand, then commit the two files
- * in the data repo; the app only ever reads them.
+ * Run by hand, then commit the two files it writes in the data repo; the app only ever reads them.
  *
- *   npm run explore:areas
- *   npm run explore:areas -- --cluster 1          (another cluster than the map's default)
- *   npm run explore:areas -- --insee 67482        (name the city instead of choosing it)
- *   npm run explore:areas -- --refresh            (ignore the download cache)
- *   npm run explore:areas -- --data-dir ../runomics-data-lamiaa/data
- *   npm run explore:areas -- --overpass https://overpass.example/api/interpreter
- *
- * What it does, and why each step is that way:
- * 1. The cluster is the map's: `getAllRoutes()` with the same 12 km grouping,
- *    `defaultClusterIdx` unless `--cluster`. Its median start (median lon,
- *    median lat of every run's first point, as the map's home) is computed in
- *    memory to check the runs start in France, and is never printed, written
- *    or sent anywhere: the commune holding it is found locally, against IGN
- *    shapes fetched for the frame.
- * 2. The communes are those IGN ADMIN EXPRESS shapes that meet the cluster's
- *    frame (the 4th-96th percentile box the map opens on). The city is the
- *    most populous of them, or `--insee`: runs that start in a small commune
- *    next to a city still belong to the city.
- * 3. The city is split into quartiers from the first source that has them:
- *    OSM admin_level=10 boundaries covering most of the commune, then a city
- *    open-data WFS (scripts/explore/cities.ts), then IGN IRIS, else the
- *    commune is one unit. Every other commune of the frame is a unit, whole.
- * 4. The grid's origin is the city's public centre (geo.api.gouv.fr), never
- *    home, with 150 m cells.
- * 5. Runnable cells: OSM ways a runner can use (scripts/explore/runnable.ts)
- *    over the union bbox of the units, sampled every 25 m, each cell given to
- *    the unit whose unsimplified shape holds its centre.
- * 6. Shapes are simplified at 5 m on the flat grid projection and rounded to
- *    6 decimals; each unit's label is its pole of inaccessibility.
- *
- * Network: Overpass is slow and often at capacity, so every request retries
- * with backoff and every response is cached under node_modules/.cache.
+ * The cluster's median start never leaves memory: its commune is found locally, and the grid's origin is the
+ * city's public centre, never home. The city is the frame's most populous commune, as runs that start in a
+ * small commune next to a city still belong to the city.
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -111,7 +79,6 @@ function parseArgs(args: string[]): Options {
   return options
 }
 
-/** A unit before simplification: the shape as its source drew it. */
 interface RawUnit {
   id: string
   name: string
@@ -127,11 +94,7 @@ interface Quartiers {
   via: string
 }
 
-/**
- * The city's quartiers from the first source that has them (see the header).
- * An unreachable source fails the build rather than falling through: a
- * silent fallback would swap 14 quartiers for 49 IRIS with new ids.
- */
+/** An unreachable source fails the build rather than falling through: a silent fallback would swap quartiers for IRIS with new ids. */
 async function quartiersOf(sources: Sources, city: Commune, areaId: string, p: Projection, year: number): Promise<Quartiers> {
   const cityArea = geometryAreaM2(city.geometry, p)
 
@@ -192,11 +155,7 @@ async function quartiersOf(sources: Sources, city: Commune, areaId: string, p: P
   return { units: [{ id: communeUnitId(city.code), name: city.name, kind: 'commune', commune: city.name, geometry: city.geometry }], sources: [], via: 'the commune itself' }
 }
 
-/**
- * The index as it stands, or null when there is none yet. One that is there
- * but unreadable stops the build: rewriting it from scratch would drop the
- * other areas it lists.
- */
+/** One that is there but unreadable stops the build: rewriting it from scratch would drop the other areas it lists. */
 function readIndex(indexPath: string): ExploreIndexFile | null {
   if (!fs.existsSync(indexPath)) return null
   const index = parseIndexFile(JSON.parse(fs.readFileSync(indexPath, 'utf8')))
@@ -214,8 +173,7 @@ const kb = (bytes: number) => `${(bytes / 1024).toFixed(1)} KB`
 
 async function main(): Promise<void> {
   const options = parseArgs(process.argv.slice(2))
-  // Set before anything reads the data: dataPath() and the activity cache
-  // both take the directory from the environment on each call.
+  // Set before anything reads the data: dataPath() and the activity cache take the directory from the environment.
   if (options.dataDir) process.env.RUNOMICS_DATA_DIR = path.resolve(options.dataDir)
   const { dataPath } = await interopImport(import('@/infrastructure/dataPath'))
   const dir = dataPath('explore')
@@ -225,7 +183,6 @@ async function main(): Promise<void> {
   const year = Number(generatedAt.slice(0, 4))
   const sources = new Sources({ refresh: options.refresh }, options.overpass)
 
-  // 1. The cluster, exactly as the map groups it.
   const { getAllRoutes } = await interopImport(import('@/application/usecases/GetAllRoutes'))
   const all = getAllRoutes()
   const clusterIdx = options.cluster ?? all.defaultClusterIdx
@@ -233,15 +190,13 @@ async function main(): Promise<void> {
   if (!cluster) throw new Error(`No cluster ${clusterIdx}: there are ${all.clusters.length} (0 is the busiest)`)
   console.log(`[explore] cluster ${clusterIdx} of ${all.clusters.length}: ${cluster.routeCount} runs, ${cluster.totalKm} km`)
 
-  // The map's home rule (domain/explore/home.ts), in memory only.
+  // In memory only.
   const start = medianStart(cluster.routeIndices.flatMap((i) => (all.routes[i]?.[0] ? [all.routes[i]![0]!] : [])))
   if (!start) throw new Error(`Cluster ${clusterIdx} has no run with a start`)
   const { minLon, minLat, maxLon, maxLat } = cluster.frame
   const frame: BBox = [minLon, minLat, maxLon, maxLat]
 
-  // 2. The communes the frame meets, and the city among them. The query box
-  // also covers the start, so a cluster whose start falls outside its own
-  // frame is still checked; it is rounded out to whole 0.01°.
+  // The query box also covers the start, so a cluster whose start falls outside its own frame is still checked.
   const queryBox = roundOutward(inBBox(start[0], start[1], frame) ? frame : unionBBox([frame, [start[0], start[1], start[0], start[1]]]))
   const nearby = await communesInBBox(sources, queryBox, year)
   const home = communeContaining(start[0], start[1], nearby.communes)
@@ -265,8 +220,7 @@ async function main(): Promise<void> {
       (options.insee ? ', from --insee' : `, the most populous of the ${inFrame.length} communes the frame meets`),
   )
 
-  // 3-4. The grid, then the units: the city's quartiers first (they win a
-  // cell over a neighbouring commune where the sources overlap).
+  // The city's quartiers first: they win a cell over a neighbouring commune where the sources overlap.
   const origin = await communeCentre(sources, city.code)
   const grid: GridSpec = { origin, cellM: CELL_M }
   const p = projection(grid)
@@ -279,7 +233,6 @@ async function main(): Promise<void> {
     .map((commune) => ({ id: communeUnitId(commune.code), name: commune.name, kind: 'commune', commune: commune.name, geometry: commune.geometry }))
   const raw = [...quartiers.units, ...others]
 
-  // 5. Runnable cells.
   const union = unionBBox(raw.map((unit) => geometryBBox(unit.geometry)))
   const runnable = await runnableWays(sources, union)
   const cells = new Set<number>()
@@ -287,7 +240,6 @@ async function main(): Promise<void> {
   const assigned = assignCells(cells, raw, p)
   console.log(`[explore] ${runnable.ways.length} runnable ways -> ${cells.size} cells in the box`)
 
-  // 6. Simplified shapes and labels.
   const units: UnitInput[] = raw.map((unit) => {
     const geometry = simplifyGeometry(unit.geometry, p, SIMPLIFY_M)
     return {
@@ -320,7 +272,6 @@ async function main(): Promise<void> {
     console.warn(`[explore] warning: the cluster's label point is outside this area's bbox, so the map will not pick it for cluster ${clusterIdx}`)
   }
 
-  // Write.
   fs.mkdirSync(dir, { recursive: true })
   const indexPath = path.join(dir, 'index.json')
   const index = upsertIndex(readIndex(indexPath), areaRef(area))

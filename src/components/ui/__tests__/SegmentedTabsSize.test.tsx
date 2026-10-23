@@ -9,9 +9,6 @@ function Tabs({ size }: { size?: 'sm' | 'md' }) {
 }
 
 describe('SegmentedTabs sizes', () => {
-  // Liquid Glass v3 (G7): a 3 pt-padded capsule track, so sm is a 26 pt
-  // thumb in a 32 pt track and md a 34 pt thumb in a 40 pt one - each with a
-  // 44 pt hit area. The track has no line.
   it('draws sm at 26 and md at 34 in a borderless capsule, with a 44 pt hit area either way', () => {
     const { rerender } = render(<Tabs size="sm" />)
     for (const tab of screen.getAllByRole('tab')) {
@@ -32,7 +29,6 @@ describe('SegmentedTabs sizes', () => {
     expect(track).not.toMatch(/\bborder\b/)
   })
 
-  // The header switches (barMirror: List | Map, Week | Month) are glass: a 44 pt capsule.
   it('draws the glass variant as a 44 pt .lg capsule with its layers', () => {
     function Glassy() {
       const tabs = useSegmentedTabs({ ids: ['a', 'b'] as const, value: 'a', onChange: () => {} })
@@ -47,9 +43,6 @@ describe('SegmentedTabs sizes', () => {
     expect(list.className).not.toContain('lg-stuck-in')
   })
 
-  // F20: a strip's control is the flat track until it sticks, then the
-  // same glass, its layers fading in over 120 ms; the bar's copy, glass from
-  // the start, does not fade.
   it("turns a pinned strip's control to glass that fades in, and back to the track", () => {
     const { rerender } = render(<StickyStuckContext.Provider value={false}><Tabs size="md" /></StickyStuckContext.Provider>)
     const list = () => screen.getByRole('tablist')
@@ -71,13 +64,11 @@ describe('SegmentedTabs sizes', () => {
     render(<Tabs size="md" />)
 
     expect(screen.getByRole('tablist').className).toContain('w-full')
-    // G21: the spare width is shared out on top of each label, 12 pt padding the floor.
     expect(screen.getAllByRole('tab')[0]!.className).toContain('flex-auto')
     expect(screen.getAllByRole('tab')[0]!.className).toContain('px-3')
   })
 
-  // Round 2 (F3): fill mode as a whole - the track across the row, each tab
-  // free to shrink, its label centred - so a refactor can't drop it unseen.
+  // A snapshot, so a refactor can't drop fill mode unseen.
   it('keeps fill mode whole (snapshot)', () => {
     render(<Tabs size="md" />)
     const list = screen.getByRole('tablist')
@@ -95,8 +86,6 @@ describe('SegmentedTabs sizes', () => {
     `)
   })
 
-  // Round 2 (F6): straight on the glow, the track is the frosted on-aura
-  // fill, not the grey that turned muddy over colour.
   it('frosts its track on the background glow', () => {
     function OnAura() {
       const tabs = useSegmentedTabs({ ids: ['a', 'b'] as const, value: 'a', onChange: () => {} })

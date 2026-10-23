@@ -19,21 +19,15 @@ export interface DistrictsOverlayState {
   coverage: AreaCoverage | null
   visible: boolean
   selectedId: string | null
-  /** The one unit named on the map (the route generator's); null or absent names every unit. */
+  /** The one unit named on the map; null or absent names every unit. */
   labelOnly?: string | null
 }
 
-/** The accent the page is painted in now, as the heat reads it. */
 export function pageAccent() {
   return parseAccent(document.documentElement.getAttribute('data-accent'))
 }
 
-/**
- * The Districts layer as a `useMapRoutes` overlay: drawn with the run layers
- * on every style load and accent change, from whatever is current then.
- * Undefined while `enabled` is false, so a map that never shows Districts
- * never gets a layer of it.
- */
+/** Drawn on every style load and accent change from whatever state is current then. */
 export function useDistrictsOverlay(state: DistrictsOverlayState, enabled: boolean): MapOverlay | undefined {
   const stateRef = useRef(state)
   useLayoutEffect(() => {
@@ -61,11 +55,7 @@ export function useDistrictsOverlay(state: DistrictsOverlayState, enabled: boole
   return enabled ? overlay : undefined
 }
 
-/**
- * Pushes new data, visibility and selection onto a map that already has the
- * layer. Every call is a no-op while the layer is off the map (mid theme
- * swap, or Districts off): the next draw reads the same state.
- */
+/** Every call is a no-op while the layer is off the map (mid theme swap, or Districts off): the next draw reads the same state. */
 export function useDistrictsSync(mapRef: RefObject<MapLibreMap | null>, mapReady: boolean, state: DistrictsOverlayState): void {
   const { area, coverage, visible, selectedId } = state
   const labelOnly = state.labelOnly ?? null

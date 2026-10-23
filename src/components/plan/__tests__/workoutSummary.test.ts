@@ -4,8 +4,6 @@ import { paceLabel, repCaption, workoutSummary } from '../workoutSummary'
 import { heroWorkoutView } from '../planWorkoutView'
 import { t } from '@/i18n'
 
-// The session that read "Strides 6 × 20s · 59 min · 3:35–7:00/km" on Today
-// and "6 × 1:00 · 1:00 rec · 3:35–6:24" on Plan (H02).
 const STRIDES = {
   state: 'planned',
   activityId: null,
@@ -51,8 +49,6 @@ describe('workoutSummary', () => {
   })
 })
 
-// Design review, Oct 2026: a name the coach wrote under the naming rules is
-// printed as given, and a tight row takes its short name.
 describe('a session named under the naming rules', () => {
   const named = {
     ...STRIDES,

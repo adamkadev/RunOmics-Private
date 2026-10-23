@@ -4,21 +4,12 @@ import { segmentSeconds } from './intensity'
 import { segmentMeters, segments } from './volume'
 
 /**
- * How a workout is named (design review, Oct 2026): its type, then " · " and
- * its structure - "Threshold · 3 × 8′ @ 4:25" - or the type alone, "Long
- * run". The name is what the watch, Plan, Today and the run it becomes all
- * show, and the app prints it as given, never reading a figure back out of it.
- * So the rules are held here, where the name is written.
+ * A name is its type, then " · " and its structure ("Threshold · 3 × 8′ @ 4:25"), or the type alone.
+ * The app prints it as given and never reads a figure back out of it, so the rules are held here.
  */
 
-/**
- * Garmin publishes no limit on a workout's name, and Connect keeps longer
- * ones: 30-character names come back from its calendar intact. A watch shows
- * only the first 15 or so, which is why the type leads. 28 is the design
- * review's, so that a name fits a row on a phone.
- */
+/** Garmin keeps 30-character names intact and a watch shows about 15, so the type leads; 28 fits a phone row. */
 export const WORKOUT_NAME_MAX = 28
-/** A tight row's name: "Threshold 3×8′", "Easy + strides". */
 export const WORKOUT_SHORT_NAME_MAX = 18
 
 type Named = Pick<BootstrapWorkoutDraft, 'type' | 'title' | 'shortName' | 'structure' | 'blocks'>
@@ -61,7 +52,6 @@ function repeats(blocks: WorkoutBlock[]): WorkoutRepeatBlock[] {
   return blocks.filter((block): block is WorkoutRepeatBlock => block.kind === 'repeat')
 }
 
-/** How long one repetition of each repeat run that many times lasts, where it is timed. */
 function repLengths(blocks: WorkoutBlock[], reps: number): number[] {
   return repeats(blocks)
     .filter((block) => block.repetitions === reps)
@@ -76,11 +66,7 @@ function kilometres(value: string | undefined): number {
   return Number((value ?? '').replace(',', '.'))
 }
 
-/**
- * A length outside the repetitions is a block's own - "54 min" and "9 km" are
- * the easy body of "Easy · 54 min + 6 strides" - so it is one the blocks have,
- * to the minute or the quarter kilometre.
- */
+/** A length outside the repetitions is a block's own: "54 min" in "Easy · 54 min + 6 strides". */
 function blockLengthProblem(name: string, blocks: WorkoutBlock[]): string | null {
   const work = blocks.filter((block): block is WorkoutSegment => block.kind !== 'repeat' && isWork(block))
   for (const [, times, minutes] of name.matchAll(MINUTES)) {
@@ -96,7 +82,6 @@ function blockLengthProblem(name: string, blocks: WorkoutBlock[]): string | null
   return null
 }
 
-/** The session's own totals, when every segment gives one. */
 function totals(blocks: WorkoutBlock[]): { minutes: number | null; km: number | null } {
   let seconds = 0
   let meters = 0
@@ -113,11 +98,7 @@ function totals(blocks: WorkoutBlock[]): { minutes: number | null; km: number | 
   return { minutes: timed ? seconds / 60 : null, km: measured ? meters / 1_000 : null }
 }
 
-/**
- * "Easy run · 54 min" for a 54-minute run, "Long run · 13 km" for a 13 km one:
- * Plan and Today print both totals beside the name already. A body's own
- * length is not the total - "Easy · 54 min + 6 strides" runs 62 minutes.
- */
+/** Plan and Today print the totals beside the name already; a body's own length is not the total. */
 function statesTotal(name: string, blocks: WorkoutBlock[]): boolean {
   const { minutes, km } = totals(blocks)
   if (minutes !== null) {
@@ -136,16 +117,11 @@ function statesTotal(name: string, blocks: WorkoutBlock[]): boolean {
   return false
 }
 
-/**
- * A race goes by its event's own name, "10K de Metz" or "Wine Route -
- * Luxemburg": the type-first shape, sentence case, " · " and the totals are
- * for the sessions the coach names. Its length and its signs are not.
- */
+/** A race goes by its event's own name ("10K de Metz"): exempt from the shape, case and totals rules, not from length and signs. */
 function isRace(type: Named['type']): boolean {
   return type === 'race'
 }
 
-/** What a name and a short name answer to alike. */
 function writingProblem(text: string, type: Named['type']): string | null {
   if (!isRace(type)) {
     if (SPACED_DASH.test(text)) return 'never " - ": the type and its structure are separated by " · "'
@@ -207,12 +183,10 @@ function shortNameProblem(shortName: string, type: Named['type']): string | null
   return writingProblem(shortName, type)
 }
 
-/** The structure's figures are the blocks', to the minute the name rounds a repetition to. */
 function structureProblem(structure: WorkoutNameStructure, blocks: WorkoutBlock[]): string | null {
   const reps = structure.reps ?? 1
   if (reps > 1 && !repeats(blocks).some((block) => block.repetitions === reps)) return `reps ${reps} is not a repetition count the blocks prescribe`
   if (structure.repMinutes !== undefined) {
-    // One repetition: a repeat's work step, or a single block of work.
     const lengths = reps > 1
       ? repLengths(blocks, reps)
       : blocks.flatMap((block) => (block.kind !== 'repeat' && isWork(block) && block.target.durationSeconds !== undefined ? [block.target.durationSeconds] : []))
@@ -231,11 +205,7 @@ function structureProblem(structure: WorkoutNameStructure, blocks: WorkoutBlock[
   return null
 }
 
-/**
- * One workout's name, short name and structure. A title written before the
- * naming rules - one a change to the live plan kept - is left as it was: past
- * plans keep their names, and only what it adds is held to them.
- */
+/** A title the live plan already held (`titleAsWritten`) is left as it was: past plans keep their names. */
 export function validateWorkoutName(workout: Named, label: string, { titleAsWritten = false }: { titleAsWritten?: boolean } = {}): void {
   if (!titleAsWritten) {
     const problem = titleProblem(workout)
@@ -254,7 +224,6 @@ export function validateWorkoutName(workout: Named, label: string, { titleAsWrit
   }
 }
 
-/** Every workout of a block being written. */
 export function validateDraftNames(draft: CoachingPlanDraft): void {
   draft.weeks.forEach((week, weekIndex) => week.workouts.forEach((workout, workoutIndex) =>
     validateWorkoutName(workout, `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`)

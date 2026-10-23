@@ -1,9 +1,7 @@
 name: Internal notify
 
-# The one job behind the three scheduled reminders. They differ only in when
-# they run and which endpoint they call; everything else - and in particular the
-# profile guard, which is what keeps one athlete's reminder off another
-# athlete's deployment - is the same and must stay that way.
+# Shared by every scheduled reminder so the profile guard, which keeps one athlete's reminder off
+# another athlete's deployment, stays the same for all of them.
 on:
   workflow_call:
     inputs:
@@ -15,10 +13,8 @@ on:
         description: "Step name, for the run log"
         required: true
         type: string
-    # Passed by name rather than `secrets: inherit`, so the Garmin, data-repo
-    # and deploy-hook secrets never reach this job. Not `required`: a value
-    # may live only in the profile's environment, which a job that names
-    # that environment reads in place of whatever the caller passed.
+    # Passed by name rather than `secrets: inherit`, so the Garmin, data-repo and deploy-hook secrets
+    # never reach this job. Not `required`: a value may live only in the profile's environment.
     secrets:
       APP_URL:
         required: false
@@ -39,14 +35,11 @@ jobs:
       matrix:
         profile: [adam, lamiaa]
 
-    # APP_URL and INTERNAL_NOTIFY_SECRET below resolve to this profile's own
-    # deployment.
     environment: ${{ matrix.profile }}
 
     steps:
-      # Repository secrets stay visible to a job that names an environment, so an
-      # unpopulated one would aim this profile's reminder at another profile's
-      # deployment. The variable proves the environment is really configured.
+      # Repository secrets stay visible to a job that names an environment, so an unpopulated one
+      # would aim this profile's reminder at another profile's deployment.
       - name: Check the profile environment
         env:
           DECLARED_PROFILE: ${{ vars.PROFILE }}
@@ -61,16 +54,12 @@ jobs:
           APP_URL: ${{ secrets.APP_URL }}
           INTERNAL_NOTIFY_SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
           ENDPOINT: ${{ inputs.endpoint }}
-        # The header is read from stdin (-H @-), so the secret never appears
-        # in curl's argv, where any process on the runner could read it.
+        # The header is read from stdin (-H @-), so the secret never appears in curl's argv.
         run: |
           printf 'x-internal-secret: %s\n' "$INTERNAL_NOTIFY_SECRET" \
             | curl -fsS -X POST "$APP_URL/api/internal/$ENDPOINT" -H @-
 
-      # A failed run used to be a red cross in an Actions tab nobody opens -
-      # two reminders failed every day for over a week that way. Best effort:
-      # if the app itself is what broke, this fails too, and the run is red
-      # either way.
+      # Best effort: if the app itself is what broke, this fails too.
       - name: Push the failure to the owner's devices
         if: failure()
         continue-on-error: true

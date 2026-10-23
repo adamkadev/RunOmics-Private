@@ -1,17 +1,5 @@
 #!/usr/bin/env node
-/**
- * What is knowable about the Garmin credentials, and what is not.
- *
- * The sync rests on one long-lived OAuth1 token carried in GARMIN_SECRET.
- * Every run exchanges it for a short-lived OAuth2 token; the OAuth1 token
- * itself carries no expiry, so the honest answer to "when does this break" is
- * that it cannot be read from the token - only that a refresh still works
- * today. This command performs that refresh and says so.
- *
- * It matters because the recovery path is broken: garth was deprecated in
- * March 2026 when Garmin changed the auth flow, and minting a replacement
- * token is exactly what that change broke.
- */
+// The OAuth1 token in GARMIN_SECRET carries no expiry, so all this can prove is that a refresh still works today.
 import { spawn } from 'child_process'
 
 const PYTHON = process.env.RUNOMICS_PYTHON?.trim() || (process.platform === 'win32' ? 'python' : 'python3')
@@ -48,17 +36,13 @@ console.log(`     expiry  : not recorded - ${oauth1.note}`)
 console.log(`\n  OAuth2 (minted from it on every run)`)
 console.log(`     access token expires  : ${oauth2.expiresAt ?? 'unknown'}${oauth2.expired ? '  (expired, refreshed on use)' : ''}`)
 if (oauth2.refreshTokenExpiresAt) {
-  // Shown so nobody goes looking for it, and labelled so nobody reads it as a
-  // deadline: refresh_oauth2() re-exchanges the OAuth1 token every time, so
-  // this refresh token is minted and never used.
+  // Labelled so nobody reads it as a deadline: refresh_oauth2() re-exchanges the OAuth1 token every time.
   const left = days(oauth2.refreshTokenExpiresAt)
   console.log(`     refresh token expires : ${oauth2.refreshTokenExpiresAt}  (${left} days, unused)`)
   console.log(`                             every run re-exchanges the OAuth1 token instead,`)
   console.log(`                             so this date has no bearing on the sync`)
 }
 
-// Getting this far means loads() and, where needed, refresh_oauth2() both
-// succeeded - which is the only real evidence the OAuth1 token is still good.
 console.log(`\n  A token exchange succeeded just now, so the credentials work today.`)
 console.log(`  They will keep working until Garmin expires the OAuth1 token, which`)
 console.log(`  is not something this command - or garth - can see in advance.\n`)

@@ -5,7 +5,7 @@ export const metadata = {
   title: t.signIn.title,
 }
 
-/** The private site's way in (src/proxy.ts): static, and with none of the athlete's data. */
+/** Reachable signed out (src/proxy.ts): keep it static, with none of the athlete's data. */
 export default function SignInPage() {
   return <SignInClient />
 }

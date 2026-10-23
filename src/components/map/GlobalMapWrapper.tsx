@@ -21,9 +21,6 @@ const GlobalMapClient = dynamic(
   }
 )
 
-// The card sits under the map (v4.8, v4.17), as its own card rather than
-// inside the map's box. GlobalMapClient reports the card's content back up as the
-// athlete changes area or filters, so the two never disagree.
 export function GlobalMapWrapper({
   data,
   exploreAreas,
@@ -32,9 +29,8 @@ export function GlobalMapWrapper({
 }: {
   data: MapShellData
   exploreAreas?: ExploreAreaRef[]
-  /** The planned sessions to come, for the route generator. */
   explorePlans?: readonly ExplorePlan[]
-  /** 'YYYY-MM-DD' on this device: which of them is today's. */
+  /** 'YYYY-MM-DD', on this device's clock. */
   today?: string
 }) {
   const [content, setContent] = useState<TerritoryCardContent | null>(null)

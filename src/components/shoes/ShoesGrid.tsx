@@ -10,7 +10,6 @@ import { WEAR_COLOR, isPastLimit, shoeRole } from './shoeWear'
 import { WearBar } from './WearBar'
 import { t } from '@/i18n'
 
-/** The pair most in need of replacing, for the one context line that needs the activity log. */
 export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
   return (
     shoes
@@ -20,10 +19,9 @@ export function pickHeroShoe(shoes: ShoeStats[]): ShoeStats | null {
 }
 
 const SECTION = 'px-1 text-caption font-bold uppercase tracking-[0.1em] text-muted-foreground'
-/** A row divider inset to the text; the row's press tint stays full width. */
+/** A pseudo-element divider insets to the text while the press tint stays full width. */
 const ROW_DIVIDER = 'relative before:absolute before:inset-x-5 before:top-0 before:h-px before:bg-border first:before:hidden'
 
-/** "676 / 1,000 km · 73 runs · last Sep 24 · daily trainer", or the overrun. */
 export function shoeMeta(shoe: ShoeStats): string {
   const s = t.shoes
   if (isPastLimit(shoe)) return `${s.kmOf(formatKm(shoe.totalKm), formatKm(shoe.maxKm))} · ${s.overLimit}`
@@ -37,16 +35,12 @@ export function shoeMeta(shoe: ShoeStats): string {
     .join(' · ')
 }
 
-/**
- * A pair in rotation, as one row of the shared card (C4, v4.4b): brand,
- * model and km left, the wear bar, then what it has done and what it is for.
- */
 function RotationRow({ shoe, context, tickLabel }: { shoe: ShoeStats; context: string | null; tickLabel: boolean }) {
   const left = Math.max(0, Math.round(shoe.maxKm - shoe.totalKm))
   const over = isPastLimit(shoe)
   const status = wearStatus(shoe.wearPercent)
   return (
-    // ?from=shoes: the pair's page goes back here, not to Progress.
+    // ?from=shoes sends the pair's back button here, not to Progress.
     <Link href={`/shoes/${shoe.gearId}?from=shoes`} className={cn(ROW_DIVIDER, 'block px-5 py-3.5 transition-colors active:bg-foreground/[0.04]')} data-testid="shoe-card">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -60,7 +54,6 @@ function RotationRow({ shoe, context, tickLabel }: { shoe: ShoeStats; context: s
                 <span className="font-display text-body font-bold tabular-nums text-foreground">{formatKm(left)}</span> {t.shoes.kmLeftShort}
               </p>
             )}
-            {/* The verdict, where there is one, as a small pill in its tone (design review, Oct 2026). */}
             {status !== 'ok' && (
               <span
                 data-testid="shoe-verdict-pill"
@@ -99,9 +92,7 @@ function retiredSubline(shoe: ShoeStats): string {
 
 interface Props {
   shoes: ShoeStats[]
-  /** A context line per pair, by gear id, where the page has one. */
   insights?: Record<string, string>
-  /** The comparison, opened from its row. */
   compare?: ReactNode
 }
 
@@ -115,11 +106,7 @@ export function ShoesGrid({ shoes, insights = {}, compare }: Props) {
   }
 
   const active = shoes.filter((shoe) => !shoe.retired).sort((a, b) => b.wearPercent - a.wearPercent)
-  // The tick's key once, by the section's label (design review, Oct 2026),
-  // when every pair in rotation retires from workouts at the same km; else
-  // each bar names its own.
   const sharedTickKm = active.length > 0 && active.every((shoe) => shoe.alertThresholdKm === active[0]!.alertThresholdKm) ? active[0]!.alertThresholdKm : null
-  // Newest retired first.
   const retired = shoes
     .filter((shoe) => shoe.retired)
     .sort((a, b) => (b.lastUsedDate ?? '').localeCompare(a.lastUsedDate ?? ''))

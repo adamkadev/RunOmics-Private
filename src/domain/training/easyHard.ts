@@ -2,8 +2,7 @@ import type { HrZone } from '@/domain/activity/types'
 import { easyTime } from '@/domain/activity/easyShare'
 import { round } from '@/lib/math'
 
-/** Easy time (Z1-Z2) to one decimal, for the monthly series. The whole-percent
- *  figure every screen prints is easyShare(); both read easyTime(). */
+/** To one decimal, for the monthly series; the whole-percent figure screens print is easyShare(). */
 export function easyHardShare(
   activities: ReadonlyArray<{ hrZones: HrZone[] }>,
 ): { easyPct: number | null; hardPct: number | null } {

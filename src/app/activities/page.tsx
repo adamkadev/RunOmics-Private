@@ -20,10 +20,7 @@ export default async function ActivitiesPage() {
   const today = appTodayIso()
   const coaching = getCoachingOverview(today)
   const exploreAreas = getExploreAreas()
-  // The sessions of the next four weeks for the route generator's plan row
-  // (today's, or the one Plan's "Find a route" names): trimmed copies (name,
-  // distance, pace), never the coach's overview. Only where the map has
-  // Districts to plan a run in.
+  // Trimmed copies (name, distance, pace), never the coach's overview, and only where the map has Districts.
   const explorePlans = exploreAreas.length > 0
     ? explorePlansFrom(today, coaching?.workouts ?? [], await getPlannedWorkouts(), await getTrainingZones())
     : []

@@ -11,14 +11,8 @@ import { logRejectedRequest } from '@/lib/internalAuth'
 import { createRateLimiter } from '@/lib/rateLimit'
 
 /**
- * Explore's loop generator: a batch of round trips from one start, fetched
- * from OpenRouteService with the server's key so no browser ever holds it.
- *
- * Every failure answers with a `reason` the client words for the athlete: a
- * provider limit says when to try again, "no loop" says to try elsewhere. The
- * provider's own message never leaves the server - it can quote the start.
- *
- * Nothing here may be cached anywhere: a batch is one person's start point.
+ * OpenRouteService is called with the server's key so no browser ever holds it, and its own message never leaves the
+ * server: it can quote the start. Nothing here may be cached anywhere: a batch is one person's start point.
  */
 
 const NO_STORE = { 'Cache-Control': 'private, no-store' }
@@ -26,12 +20,7 @@ const NO_STORE = { 'Cache-Control': 'private, no-store' }
 /** The routes are CC BY-SA from ORS, over ODbL map data: shown wherever they are. */
 const ATTRIBUTION = '© openrouteservice by HeiGIT | © OpenStreetMap contributors'
 
-/**
- * Twelve batches a minute per caller: a batch is up to six loops, each
- * perhaps asked for twice, against a provider limit of 40 a minute and 2000
- * a day for the whole deployment. Generous for a person tapping Regenerate,
- * short for a stuck client.
- */
+/** A batch is up to six loops, each perhaps asked for twice, against a provider limit of 40 a minute for the deployment. */
 const limiter = createRateLimiter({ max: 12, windowMs: 60_000, maxKeys: 1000 })
 
 /** ORS's per-minute window, for a client that should wait out the provider's limit. */

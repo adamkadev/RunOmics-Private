@@ -23,9 +23,7 @@ export function useOwnerAuth(): OwnerAuth {
     let latest = 0
     let cancelled = false
     let unsubscribe: (() => void) | undefined
-    // Loaded here rather than imported: every visitor pays for the owner
-    // check, so it comes after the page has painted rather than in its
-    // first load.
+    // Loaded lazily: every visitor pays for the owner check, so it stays out of the first load.
     Promise.all([import('firebase/auth'), import('@/lib/firebase')])
       .then(([{ onIdTokenChanged }, { getClientAuth }]) => {
         if (cancelled) return

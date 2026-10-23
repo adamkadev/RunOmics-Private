@@ -1,22 +1,4 @@
-"""Sync overnight HRV and resting heart rate: the Recovery card's two series.
-
-  hrv-service/hrv/daily/{start}/{end}              one summary per night
-  hrv-service/hrv/{date}                           one night, the fallback
-  userstats-service/wellness/daily/{profileUuid}   metric 60, resting HR per day
-
-Stored as recovery_history.json, one entry per calendar date:
-
-  {"days": {"2026-09-25": {"hrv": 61, "restingHr": 46}}}
-
-`hrv` is Garmin's last-night average in ms and `restingHr` the day's resting
-heart rate in bpm; either may be missing on a night the watch was not worn.
-Garmin's own HRV baseline is not stored: the card draws the athlete's own
-60-day range instead.
-
-Only the last year is fetched, which is the longest period the card plots.
-Nights already stored are skipped, except the trailing refresh window, which
-Garmin fills in late when the watch syncs the next morning.
-"""
+"""`hrv` is Garmin's last-night average in ms and `restingHr` the day's resting heart rate in bpm."""
 
 from __future__ import annotations
 
@@ -34,9 +16,7 @@ _OUT_PATH = get_data_dir() / "recovery_history.json"
 
 _HISTORY_DAYS = 365
 _RATE_LIMIT_PAUSE = 1.0
-# A resting heart rate a person can have. Garmin's daily value carries
-# workout readings on some days (142 and 144 bpm in Aug 2026), which the
-# Recovery card's baseline then took for resting.
+# Garmin's daily resting HR sometimes carries a workout reading; outside this range it is not resting.
 _RESTING_HR_BPM = (30, 100)
 
 
@@ -45,7 +25,6 @@ def _whole(value: Any) -> int | None:
 
 
 def normalize_hrv(payload: Any) -> dict[str, int]:
-    """Last-night HRV averages keyed by date, from a range or a one-night response."""
     if not isinstance(payload, dict):
         return {}
     summaries = payload.get("hrvSummaries")
@@ -65,7 +44,6 @@ def normalize_hrv(payload: Any) -> dict[str, int]:
 
 
 def normalize_resting_hr(payload: Any) -> dict[str, int]:
-    """Resting heart rates keyed by date, from the wellness metric 60 response."""
     if not isinstance(payload, dict):
         return {}
     metrics = (payload.get("allMetrics") or {}).get("metricsMap") or {}
@@ -83,11 +61,7 @@ def normalize_resting_hr(payload: Any) -> dict[str, int]:
 
 
 def merge_nights(stored: dict[str, Any], hrv: dict[str, int], resting: dict[str, int]) -> dict[str, Any]:
-    """The stored nights with the fetched values laid over them, one field at a time.
-
-    A fetch that returned HRV but no resting HR for a night keeps the resting HR
-    already stored, rather than dropping it.
-    """
+    """Field by field, so a night fetched without resting HR keeps the stored one."""
     merged: dict[str, dict[str, int]] = {iso: dict(night) for iso, night in stored.items() if isinstance(night, dict)}
     for iso, value in hrv.items():
         merged.setdefault(iso, {})["hrv"] = value
@@ -127,10 +101,6 @@ def _fetch_resting_hr(client: GarminClient, window_start: date, window_end: date
 
 
 def sync_recovery_history(client: GarminClient, today: date | None = None) -> int:
-    """Merge the last year of HRV and resting HR into recovery_history.json.
-
-    Returns the night count stored.
-    """
     today = today or date.today()
     stored = read_history(_OUT_PATH).get("days") or {}
     start = today - timedelta(days=_HISTORY_DAYS - 1)

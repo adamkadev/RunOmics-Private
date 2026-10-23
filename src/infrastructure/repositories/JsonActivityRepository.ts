@@ -5,8 +5,7 @@ import type { Activity } from '@/domain/activity/types'
 import { displayTitle } from '@/domain/activity/title'
 import { plausibleBestEfforts } from '@/domain/activity/bestEfforts'
 
-// Keyed by directory because the workspace is resolved per call: a cache that
-// outlived a change of RUNOMICS_DATA_DIR would serve the other workspace.
+// Keyed by directory: the workspace is resolved per call, and RUNOMICS_DATA_DIR can change.
 let cache: { dir: string; activities: Activity[] } | null = null
 
 /**

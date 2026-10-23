@@ -5,13 +5,8 @@ on:
     - cron: "29 6 * * 1"
   workflow_dispatch:
 
-# Two jobs, so that no job both runs dependency code and holds a write token.
-# `audit` installs, fixes and tests - npm runs every package's install
-# scripts - with a read-only token and no stored credentials. `propose` never
-# runs npm: it turns audit's two files into a commit and a pull request.
-#
-# It opens a pull request rather than pushing: the checks prove the tree still
-# builds, not that the app still behaves.
+# Two jobs, so that no job both runs dependency code (npm install scripts) and holds a write token.
+# A pull request rather than a push: the checks prove the tree still builds, not that the app behaves.
 permissions:
   contents: read
 
@@ -83,16 +78,13 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      # To start CI and E2E on the branch: a push made with GITHUB_TOKEN
-      # triggers no push or pull_request workflow, so the PR would otherwise
-      # show no checks at all.
+      # To start CI and E2E on the branch: a push made with GITHUB_TOKEN triggers no workflow.
       actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Into its own directory, then only the two expected files are copied
-      # over: whatever else the audit job's environment produced stays out.
+      # Into its own directory, so only the two expected files from the audit job get copied over.
       - name: Download the fix
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:

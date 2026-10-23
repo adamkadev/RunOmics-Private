@@ -10,11 +10,7 @@ export interface RunningInjury {
   resolved?: boolean
 }
 
-/**
- * Prior injury is the most consistently replicated predictor of running
- * injury, so an empty list is only worth anything alongside the date someone
- * last checked: it distinguishes "none" from "never asked".
- */
+/** `reviewedOn` tells "no injuries" from "never asked", and prior injury is the best-replicated predictor of the next. */
 export interface InjuryHistory {
   reviewedOn: string
   injuries: RunningInjury[]

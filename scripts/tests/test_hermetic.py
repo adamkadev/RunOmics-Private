@@ -1,5 +1,3 @@
-"""What conftest.py promises every other test: no real dataset, no network."""
-
 import os
 import socket
 from pathlib import Path
@@ -25,7 +23,6 @@ def test_a_connection_is_refused_and_recorded(no_network):
     with pytest.raises(NetworkBlocked):
         socket.create_connection(("connectapi.garmin.example", 443))
 
-    # Recorded, so that code catching the error could not hide it; cleared
-    # here only because this test tripped the guard on purpose.
+    # Cleared only because this test tripped the guard on purpose.
     assert no_network == ["'connectapi.garmin.example'"]
     no_network.clear()

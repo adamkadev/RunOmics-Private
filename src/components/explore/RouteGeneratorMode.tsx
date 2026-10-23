@@ -46,12 +46,7 @@ export interface RouteGeneratorModeProps {
   panelRef?: Ref<HTMLDivElement>
 }
 
-/**
- * The route generator over the expanded Districts map (S3/S4): its own top
- * row - back and a title pill naming the quartier and how new the loop is -
- * then the ⓘ and the panel at the foot. Mounted only while it is open, so
- * the owner check and the requests start with it, never for the heat.
- */
+/** Mounted only while it is open, so the owner check and the requests start with it, never for the heat. */
 export function RouteGeneratorMode({
   area,
   target,
@@ -118,7 +113,6 @@ export function RouteGeneratorMode({
 
   return (
     <>
-      {/* Back and the title pill, where the filter row stands on the map (S3). */}
       <div data-testid="route-generator-bar" className="absolute inset-x-4 top-3 z-30 flex items-center gap-3">
         <button type="button" onClick={back} aria-label={e.back} className={glassClass('regular', GLASS_CIRCLE)}>
           <GlassLayers />
@@ -134,7 +128,6 @@ export function RouteGeneratorMode({
         </Glass>
       </div>
 
-      {/* The ⓘ over the panel's right shoulder, then the panel: one column at the foot. */}
       <div className="pointer-events-none absolute inset-x-[var(--sheet-inset)] bottom-[var(--sheet-inset)] z-40 mx-auto flex max-w-[420px] flex-col items-end gap-2">
         <MapAttribution className="pointer-events-auto mr-3" extraCredits={allCredits} />
         <RouteGeneratorPanel

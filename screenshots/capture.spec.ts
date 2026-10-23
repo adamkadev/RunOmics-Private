@@ -17,15 +17,10 @@ const OUTPUT_DIR = path.join(__dirname, 'output')
 
 const THEME_STORAGE_KEY = 'theme'
 
-// iPhone 15 Pro in portrait, opened from the home screen: the status bar and
-// the home indicator sit over the page, which pads itself clear of them with
-// env(safe-area-inset-*) - 0 in headless Chromium unless it is told otherwise.
+// An iPhone 15 Pro's insets: env(safe-area-inset-*) is 0 in headless Chromium unless it is told otherwise.
 const SAFE_AREA = { top: 59, bottom: 34, left: 0, right: 0 }
 
-// Consecutive screens, each overlapping the last by more than the fixed
-// header and tab bar cover, so every line of the page is clear of both in one
-// of them. The tall full-page image is kept too, but a tool reading
-// screenshots shrinks it until its text is illegible.
+// More than the fixed header and tab bar cover, so every line of the page is clear of both in one screen.
 const SCREEN_OVERLAP = 220
 const MAX_SCREENS = 6
 
@@ -151,7 +146,6 @@ for (const accent of selectedAccents()) {
           await preparePage(page, theme, accent)
           await gotoAndSettle(page, await resolvePath(page, route), route, theme, accent)
           if (route.asOwner) {
-            // A deployment has no emulator to sign in against.
             test.skip(!!process.env.SCREENSHOT_BASE_URL, 'the owner capture needs the local Auth emulator')
             await signInAsOwner(page)
             await page.waitForTimeout(600)

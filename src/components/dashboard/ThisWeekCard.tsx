@@ -15,26 +15,17 @@ import type { ActivityType } from '@/domain/activity/types'
 import { weekStripDays, type WeekStripDay } from './weekStrip'
 import { t } from '@/i18n'
 
-/** The bars' track and the tallest bar (App Fixes 1a v2): 86 px, 62 px. */
 const TRACK_PX = 120
 const MAX_BAR_PX = 92
 const MIN_BAR_PX = 8
 
 interface Bar {
   day: WeekStripDay
-  /** Height of the bar itself: actual km on a day run, planned km otherwise. */
+  /** In px. */
   height: number
-  /** Km written above the bar: run km on a done day, planned km otherwise. */
   label: string | null
 }
 
-/**
- * The week, Monday to Sunday, as one bar chart (App Fixes 1a v2). Heights
- * are km over the week's largest planned-or-run day, times 62 px, never under
- * 8 px. Done days are solid, planned days dashed in their type colour, a
- * missed day dashed amber, a rest day a 3 px stub. Every bar but rest has
- * its km above it: run km on a done day, planned km otherwise.
- */
 export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<string, string>, skipped: ReadonlySet<string> = new Set()): Bar[] {
   // A missed day marked "Skipped (sick / rest)" in Plan is a rest day here.
   const strip = weekStripDays(target.days, today, kinds).map((day) => (day.state === 'missed' && skipped.has(day.date) ? { ...day, state: 'rest' as const } : day))
@@ -50,7 +41,7 @@ export function thisWeekBars(target: WeekTarget, today: string, kinds: Record<st
   })
 }
 
-/** The session label each type is named by in the legend, as the day strip names it. */
+/** Named as the day strip names them. */
 const TYPE_KIND: Record<ActivityType, keyof typeof t.dashboard.weeklyStreak.kinds> = {
   Base: 'easy',
   Tempo: 'tempo',
@@ -66,11 +57,6 @@ export interface LegendEntry {
   label: string
 }
 
-/**
- * The legend's swatches: one per colour the week's done and planned bars are
- * drawn in, easiest zone first, named by its sessions ("Easy", "Threshold").
- * Types that share a colour share a swatch ("VO₂ max / Race").
- */
 export function weekLegend(target: WeekTarget, bars: Bar[]): LegendEntry[] {
   const byZone = new Map<number, Set<string>>()
   target.days.forEach((source, i) => {
@@ -135,7 +121,7 @@ export function ThisWeekCard({
           {load && (
             <>
               {' · '}
-              {/* Amber while out of range (App Fixes 1a v2): the load stays a number, not a band on km bars. */}
+              {/* The load stays a number, not a band on km bars. */}
               <span data-testid="load-reading" data-state={load.state} style={{ color: load.state === 'in' ? undefined : 'var(--warn)' }}>
                 {s.load(load.acute, load.lo, load.hi)}
               </span>
@@ -158,7 +144,6 @@ export function ThisWeekCard({
                 </span>
               )}
               <span aria-hidden className="relative box-border block" data-state={bar.day.state} data-testid="week-bar" style={barStyle(bar)}>
-                {/* Today's planned bar: a faint 12 % tint of its type colour (App Fixes 1a v2). */}
                 {bar.day.isToday && bar.day.state === 'planned' && (
                   <span className="absolute inset-0 rounded-[3.5px] opacity-[0.12]" data-testid="today-tint" style={{ background: bar.day.color }} />
                 )}
@@ -189,7 +174,7 @@ export function ThisWeekCard({
           <span
             key={day.date}
             className={cn(
-              // Today in the shared ring (F14): 20 pt, its ring 28 across.
+              // Today: 20 pt, its ring 28 across.
               'box-border flex size-7 items-center justify-center rounded-full',
               day.isToday && 'size-5 state-today my-1 font-semibold text-accent-text',
             )}
@@ -201,7 +186,6 @@ export function ThisWeekCard({
 
       {/* Each entry on one line; with a miss in the week the count drops to its own line, right-aligned. */}
       <div className="pointer-events-none relative flex flex-wrap items-center gap-x-3.5 gap-y-1.5 whitespace-nowrap border-t-[0.5px] border-[var(--row-separator)] pt-3 text-[13px] text-muted-foreground">
-        {/* "■ Easy ■ Threshold": a swatch per session colour in the week. */}
         {legend.map((entry) => (
           <span key={entry.color} className="flex items-center gap-[5px]" data-testid="legend-type">
             <span aria-hidden className="size-[9px] rounded-[2px]" style={{ background: entry.color }} />

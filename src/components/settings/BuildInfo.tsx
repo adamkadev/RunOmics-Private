@@ -4,16 +4,13 @@ import { useEffect, useRef } from 'react'
 import { t } from '@/i18n'
 import { APP_VERSION, BUILD_COMMIT } from '@/lib/version'
 
-/** How long a press has to last before it copies (v4.8 2g). */
 export const LONG_PRESS_MS = 500
 
 interface Env {
   userAgent: string
-  /** Launched from the home screen: iOS's navigator.standalone or display-mode standalone. */
   standalone: boolean
 }
 
-/** "iOS 26.0 · Safari PWA", "macOS · Chrome": what a bug report needs to know about the device. */
 export function deviceSummary({ userAgent: ua, standalone }: Env): string {
   const ios = ua.match(/(?:iPhone|iPad|iPod).*? OS (\d+)_(\d+)/)
   const android = ua.match(/Android (\d+(?:\.\d+)?)/)
@@ -40,7 +37,6 @@ export function deviceSummary({ userAgent: ua, standalone }: Env): string {
   return `${os} · ${browser}${standalone ? ' PWA' : ''}`
 }
 
-/** What a long-press copies: "RunOmics 4.9.0 (22687eb) · iOS 26.0 · Safari PWA". */
 export function buildReport(env: Env, version = APP_VERSION, commit = BUILD_COMMIT): string {
   return `RunOmics ${version} (${commit}) · ${deviceSummary(env)}`
 }
@@ -52,11 +48,6 @@ function currentEnv(): Env {
   return { userAgent: navigator.userAgent, standalone }
 }
 
-/**
- * The one place the app names its build (v4.8 2g): centred under the last
- * group of Settings, signed in or out. A long press copies the version, the
- * commit and the device for a bug report; nothing on screen says so.
- */
 export function BuildInfo({ onCopied }: { onCopied: () => void }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 

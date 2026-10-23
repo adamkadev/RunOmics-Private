@@ -11,7 +11,6 @@ export const metadata = {
   title: t.allTime.title,
 }
 
-// Progress > All time (C6, v4.4b): the totals, the years, every month, the bests.
 export default function AllTimePage() {
   const view = getAllTime(appTodayIso())
   const a = t.allTime

@@ -7,8 +7,6 @@ import { AllTime, monthlyScale } from '../AllTime'
 const run = (date: string, distanceKm: number) => ({ id: `a-${date}`, date, distanceKm, durationSeconds: distanceKm * 330 })
 
 describe('monthlyScale', () => {
-  // Design review, Oct 2026: the monthly km had no scale to read a month by.
-  // 3.0: the top a half step over the best month, so a best of 236 reads against 250.
   it('picks the smallest round step that needs three lines at most, the top a half step up', () => {
     expect(monthlyScale(236)).toEqual({ top: 250, ticks: [100, 200] })
     expect(monthlyScale(194)).toEqual({ top: 200, ticks: [100, 200] })
@@ -33,12 +31,10 @@ describe('AllTime monthly km', () => {
     const bars = Object.fromEntries(screen.getAllByTestId('month-bar').map((bar) => [bar.dataset.month, bar.style.height]))
     expect(bars).toEqual({ '2026-08': '55px', '2026-09': '107px', '2026-10': '75px' })
     expect(screen.getByTestId('month-so-far').style.height).toBe('17px')
-    // App Fixes 1i: October's projection over its dashed bar.
     expect(screen.getByTestId('month-projection').textContent).toBe('137')
     expect(screen.getByTestId('monthly-years').textContent).toBe('2026')
   })
 
-  // 3.1: 18 months at most; the best with its km over it, the month under way dashed.
   it('draws the last 18 months, the best with its value, the month under way dashed', () => {
     const runs = Array.from({ length: 24 }, (_, i) => {
       const d = new Date(Date.UTC(2024, 10 + i, 10)).toISOString().slice(0, 10)
@@ -55,7 +51,7 @@ describe('AllTime monthly km', () => {
     expect(bars.at(-1)!.className).toContain('border-dashed')
     expect(bars[0]!.style.background).toBe('var(--band)')
     expect(bars.find((bar) => bar.dataset.month === '2026-03')!.style.background).toBe('var(--accent)')
-    // A line before January, and each year under its own months: 2025 (May–Dec, 8) | 2026 (Jan–Oct, 10).
+    // 2025 spans May–Dec (8 months), 2026 Jan–Oct (10).
     expect(screen.getAllByTestId('january-divider')).toHaveLength(1)
     expect(screen.getAllByTestId('monthly-year').map((y) => [y.textContent, y.style.gridColumn])).toEqual([
       ['2025', 'span 8'],
@@ -78,7 +74,6 @@ describe('AllTime by year (3.0)', () => {
     ])
   })
 
-  // Multi-year rules: the latest three, newest first, then "All years ›"; every change on the year before.
   it('lists the latest three years, the rest behind All years, each changed on the year before', () => {
     const runs = [2022, 2023, 2024, 2025, 2026].flatMap((y, i) => [run(`${y}-01-10`, 100 + i * 50), run(`${y}-06-10`, 100)])
     render(<AllTime view={allTimeView(runs, '2026-06-20')} />)

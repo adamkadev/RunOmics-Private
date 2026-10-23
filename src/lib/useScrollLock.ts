@@ -10,11 +10,8 @@ function isStandalone(): boolean {
 }
 
 /**
- * Sheets start under the status bar, so their scrim never reached it and the
- * status strip stayed bright above a dimmed page (v5.6 #3). A scrim at top 0
- * would be the fixed element at the top edge that iOS blurs under, so the
- * strip dims itself instead, while any sheet holds the lock
- * (globals.css: html[data-sheet-open]).
+ * A scrim at top 0 would be the fixed element iOS blurs under, so the status
+ * strip dims itself (globals.css html[data-sheet-open]) while any sheet is open.
  */
 let openSheets = 0
 function markSheetOpen(): () => void {

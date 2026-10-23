@@ -171,8 +171,7 @@ function workoutBlock(value: unknown, path: string): WorkoutBlock {
 const PACE_CLOCK = /^\d{1,2}:[0-5]\d$/
 
 /**
- * The fields a name states (design review, Oct 2026). Optional, and only
- * their shape is read here: whether they agree with the blocks is
+ * Only the shape is checked here: whether the fields agree with the blocks is
  * application/coaching/workoutNames.ts's to judge, where the name is written.
  */
 function nameStructure(value: unknown, path: string): WorkoutNameStructure {

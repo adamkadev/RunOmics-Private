@@ -101,7 +101,7 @@ class TestParseHrZones:
             {"zoneNumber": 1, "secsInZone": 700, "zoneLowBoundary": 0, "zoneHighBoundary": 120},
         ])
 
-        assert [z.zone for z in zones] == [1, 2]  # sorted by zone number
+        assert [z.zone for z in zones] == [1, 2]
         assert zones[0].percent == 70.0
         assert zones[1].percent == 30.0
         assert zones[1].max_bpm == 145
@@ -139,7 +139,6 @@ class TestMapActivity:
         data = map_activity(self._garmin_activity(), None)
 
         assert data.id == "12345"
-        # Garmin's "City - Name" prefix is stripped.
         assert data.description == "Morning Run"
         assert data.date == "2026-07-01"
         assert data.day_of_week == "Wednesday"
@@ -256,8 +255,6 @@ class TestParseDatetime:
         assert _parse_datetime("2026-07-01T08:30:00.500") == datetime(2026, 7, 1, 8, 30, 0, 500000)
 
     def test_an_unparseable_value_raises_rather_than_dating_it_1970(self):
-        # The 1970-01-01 fallback filed a real run under a month that does
-        # not exist in the index, out of sight of every weekly total.
         with pytest.raises(ValueError, match="'not a date'"):
             _parse_datetime("not a date")
 

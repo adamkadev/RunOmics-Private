@@ -23,9 +23,9 @@ interface Props {
   lastSyncedAt: string | null
   activityCount: number
   device?: SyncDevice
-  /** Needed for the export's and the sync's ID token - both routes are owner-only. */
+  /** Signs the ID token both owner-only routes, export and sync, require. */
   user: User
-  /** For the tests; see useSyncNow. */
+  /** Tests only; see useSyncNow. */
   pollIntervalMs?: number
 }
 
@@ -38,11 +38,6 @@ const EXPORT_FILE: Record<ExportFormat, { name: string; type: string }> = {
 
 const CHEVRON = <ChevronRight size={16} aria-hidden className="shrink-0 text-subtle" />
 
-/**
- * The one Garmin card (v5.6 #6; 3.0 1i): the device, when it last synced and
- * "Sync" as a text link on the same row, then export and the offline cache,
- * each a plain row with its chevron.
- */
 export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, pollIntervalMs }: Props) {
   const sync = useSyncNow(user, pollIntervalMs)
   const [loading, setLoading] = useState<ExportFormat | null>(null)
@@ -83,7 +78,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
       const stamp = new Date().toISOString().slice(0, 10)
       const file = new File([body], `${EXPORT_FILE[format].name}-${stamp}.${format}`, { type: EXPORT_FILE[format].type })
       await saveFileWithFallback(file)
-      // The file is saved either way; a blank comment column must not pass for "no notes".
+      // A blank notes column must not pass for "no notes".
       if (res.headers.get(NOTES_UNAVAILABLE_HEADER)) showToast(s.dataExport.notesUnavailable, false)
     } catch {
       showToast(s.dataExport.failed, false)
@@ -132,8 +127,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
         {CHEVRON}
       </button>
 
-      {/* Neutral, not red (3.0 1i): it costs a reload, it loses nothing. One
-          tap asks, the second clears. */}
+      {/* Neutral, not red: clearing costs a reload and loses nothing. */}
       {confirmingClear ? (
         <div className={GROUP_ROW} data-testid="cache-confirm">
           <span className="min-w-0">
@@ -166,7 +160,7 @@ export function DataSourceInfo({ lastSyncedAt, activityCount, device, user, poll
 
       {pickingFormat && <ExportSheet options={exportOptions} onClose={() => setPickingFormat(false)} />}
     </section>
-    {/* Outside the group, so it is never taken for a row (F11). */}
+    {/* Outside the group, so its separators never count it as a row. */}
     <Toast toast={toast} leaving={leaving} />
     </>
   )

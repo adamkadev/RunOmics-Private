@@ -1,20 +1,14 @@
 import { isClientFirebaseConfigured } from '@/lib/firebase'
 
 /**
- * The names the athlete gave their routes (App Fixes 1g). A route is found
- * by its shape, not by an id the import carries, so its id is only its place
- * in the list - a name is stored against the route's own fingerprint
- * instead, which survives a new run joining the cluster.
+ * A route is found by its shape, not an id the import carries, so a name is
+ * stored against its fingerprint, which survives a new run joining the cluster.
  */
 export const ROUTE_NAMES_COLLECTION = 'routeNames'
 
 export const ROUTE_NAME_MAX_LENGTH = 80
 
-/**
- * A route's fingerprint: where it starts, where it goes and how long it is,
- * rounded coarsely enough that another run of the same route lands on the
- * same key.
- */
+/** Rounded coarsely enough that another run of the same route lands on the same key. */
 export function routeKey(route: {
   start: readonly [number, number] | null
   far: readonly [number, number] | null
@@ -33,7 +27,6 @@ async function store() {
   return { firestore, db: getClientFirestore() }
 }
 
-/** Every route name the athlete has saved, by route key. */
 export async function readRouteNames(): Promise<Map<string, string>> {
   if (!isClientFirebaseConfigured) return new Map()
   try {
@@ -51,7 +44,7 @@ export async function readRouteNames(): Promise<Map<string, string>> {
   }
 }
 
-/** Save one route's name, or clear it back to the place it is named after. */
+/** An empty name clears it back to the place the route is named after. */
 export async function writeRouteName(key: string, name: string): Promise<void> {
   const { firestore: { doc, deleteDoc, setDoc }, db } = await store()
   const trimmed = name.trim().slice(0, ROUTE_NAME_MAX_LENGTH)

@@ -72,7 +72,6 @@ describe('PlanClient week/month switching', () => {
     expect(screen.getByTestId('day-selector')).toBeInTheDocument()
   })
 
-  // Redesign 3.0: the phase card counts down to the race; the header is the title and the switch.
   it('carries no subtitle under the title', () => {
     render(planClient(planCoachingView(buildCoachingOverview(plan(), [], [], [], [], '2026-09-09'))))
 
@@ -98,7 +97,6 @@ describe('PlanClient selected day', () => {
     window.history.replaceState(null, '', '/')
   })
 
-  // Today's next-workout card links to /plan?date=: the Week view, on that day.
   it('opens on the day the URL names', () => {
     window.history.replaceState(null, '', '/plan?date=2026-09-17')
     renderPlan()
@@ -150,8 +148,8 @@ describe('PlanClient across midnight', () => {
     document.body.innerHTML = ''
   })
 
-  // Built on Tuesday night, opened on Wednesday: the week is the same, but the
-  // selected day and its label were read from two different clocks.
+  // Built on Tuesday night, hydrated on Wednesday: the selected day and its
+  // label must read the same clock.
   it('hydrates the page it was built as', async () => {
     const { recoverableErrors } = await hydrateAcrossMidnight(planClient(null, '2026-09-08'), {
       serverTime: new Date(2026, 8, 8, 23, 50),
@@ -173,7 +171,6 @@ describe('PlanClient across midnight', () => {
   })
 })
 
-// Today's next workout opens Plan on its day (design review, Oct 2026).
 describe('PlanClient on a linked day', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true })

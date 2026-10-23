@@ -34,15 +34,12 @@ afterEach(() => {
 })
 
 describe('RecurringRoutes row', () => {
-  // G13: the busiest routes squeezed their own text to "9.…".
   it('caps the trail at the latest runs, one bar each', () => {
     render(<RecurringRoutes routes={[route(60)]} thisYear={2026} />)
 
     expect(screen.getByTestId('pace-trail').children).toHaveLength(TRAIL_RUNS)
   })
 
-  // App Fixes 5a, rule 4: with the white accent the best bar and the latest
-  // one are both near-white, so the latest becomes an outline.
   it('outlines the latest bar under the white accent, and fills it under every other', () => {
     const latest = () => [...screen.getByTestId('pace-trail').children].find((bar) => bar.getAttribute('data-tone') === 'latest')!
 
@@ -58,7 +55,6 @@ describe('RecurringRoutes row', () => {
     localStorage.removeItem('runomics-accent')
   })
 
-  // Design review, Oct 2026: "7.20 km" sat in the list with "12.9 km".
   it('writes every distance to one decimal, beside the run count', () => {
     render(
       <RecurringRoutes
@@ -82,7 +78,6 @@ describe('RecurringRoutes row', () => {
     ])
   })
 
-  // App Fixes 1g: named by where it goes, with its shape, not the start street.
   it('names a route after the place at its far point', async () => {
     vi.stubEnv('NEXT_PUBLIC_MAPTILER_TOKEN', 'test-token')
     geocode.name = 'Moselle riverside'
@@ -91,7 +86,6 @@ describe('RecurringRoutes row', () => {
     expect(await screen.findByText(t.records.recurring.named.loop('Moselle riverside'))).toHaveAttribute('data-testid', 'route-name')
   })
 
-  // Stored against the route's own shape (lib/routeNames), not its place in the list.
   it('keeps a name the athlete gave the route', async () => {
     const named = { ...route(5), start: [6.17, 49.12] as [number, number], far: [6.18, 49.13] as [number, number] }
     saved.names = new Map([[routeKey(named)!, 'Home loop']])
@@ -100,7 +94,6 @@ describe('RecurringRoutes row', () => {
     saved.names = new Map()
   })
 
-  // Final mockups (3.1.0): "best 5:07 · last 5:19 +12s", the gap in amber.
   it('gives the best and the latest, with how far the latest is off it', () => {
     render(<RecurringRoutes routes={[route(5)]} thisYear={2026} />)
 
@@ -125,7 +118,6 @@ describe('RecurringRoutes row', () => {
     expect(tones).toEqual(['best', 'other', 'other', 'other', 'latest'])
   })
 
-  // App Fixes 1g: the last six runs, no date range under them.
   it('says what a bar is, keys its colours, and shows the last six runs with no dates', () => {
     render(<RecurringRoutes routes={[route(20)]} thisYear={2026} />)
 

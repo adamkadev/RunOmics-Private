@@ -28,23 +28,11 @@ import {
   type WeekRow,
 } from './analyticsView'
 
-/**
- * The coach read, one per tab and period (design review, Oct 2026). One
- * 12-week read sat over all four tabs: the Load headline, "Load is up 21%...
- * Keep building", over race predictions that had all slipped, and a sheet
- * whose bold line said "Speed has slipped". Each tab now reads its own cards'
- * numbers over its own window - the headline is one claim and the rows are
- * the case for it, worse first - so the read and the cards cannot disagree.
- */
+/** Each tab reads its own cards' numbers over its own window, so the read and the cards cannot disagree. */
 
 export type CoachTab = 'fitness' | 'performance' | 'volume' | 'health'
 
-/**
- * Which way the row's own number moved (App Fixes, rule 04): the arrow
- * follows the number, the colour says whether that is good news. A fatigue
- * of 48, down 23, is a drop drawn in mint - it used to point up, because the
- * arrow was read off the meaning.
- */
+/** The arrow follows the row's own number; the trend's colour says whether that is good news. */
 export type Direction = 'up' | 'down' | 'level'
 
 export function directionOf(delta: number): Direction {
@@ -62,7 +50,7 @@ export interface TabRead {
   tone: StatTone
   headline: string
   rows: CoachRow[]
-  /** A second line under the claim, where the claim needs one (App Fixes 2a). */
+  /** A second line under the headline, where it needs one. */
   note?: string
 }
 
@@ -72,14 +60,11 @@ const joined = (parts: readonly [string, string, string]) => parts.join('')
 const TREND_OF: Record<DeltaTone, Trend> = { good: 'improving', worse: 'declining', flat: 'flat' }
 const ORDER: Record<Trend, number> = { declining: 0, flat: 1, improving: 2 }
 
-/** Worse first, then level, then better: the sheet reads as the case for its headline. */
+/** Worse first, so the sheet reads as the case for its headline. */
 function ordered(rows: CoachRow[]): CoachRow[] {
   return rows.map((row, i) => ({ row, i })).sort((a, b) => ORDER[a.row.trend] - ORDER[b.row.trend] || a.i - b.i).map(({ row }) => row)
 }
 
-// ─── Load ──────────────────────────────────────────────────────────────────
-
-/** The load headline's words (v5.4), first match of load and recovery. */
 export function loadHeadlineText(h: LoadCoachHeadline): string {
   const s = t.analytics.cards.coachRead.load
   const span = t.analytics.cards.loadTrend.span
@@ -95,14 +80,12 @@ export function loadHeadlineText(h: LoadCoachHeadline): string {
   }
 }
 
-/** Which way the recovery number that left its baseline went. */
 function recoveryDirection(view: RecoveryView): Direction | undefined {
   if (!view.out) return 'level'
   const side = view.restingHr?.side ?? view.hrv?.side
   return side === 'high' ? 'up' : side === 'low' ? 'down' : undefined
 }
 
-/** Recovery outside its baseline the bad way is a caution; the good way, good news. */
 function recoveryTrend(view: RecoveryView): Trend {
   if (!view.out) return 'flat'
   return view.hrv?.side === 'low' || view.restingHr?.side === 'high' ? 'declining' : 'improving'
@@ -111,16 +94,13 @@ function recoveryTrend(view: RecoveryView): Trend {
 export function loadRead(data: AnalyticsBoardData, today: string, window: DayWindow, period: Period): TabRead | null {
   const s = t.analytics.cards.coachRead
   const within = s.within[period]!
-  // Load trend, the Load ratio and the read share one acute/chronic series
-  // and one y range per athlete (v5.4).
+  // The Load trend card, the Load ratio and this read share one acute/chronic series and one y range per athlete.
   const trend = loadTrendView(data.loads, window, loadTrendYMax(data.loads, today))
   const recovery = recoveryView(data.recovery, window)
   const head = loadCoachHeadline(trend, recovery)
   const form = formView(data.load, window)
 
-  // The Why rows in the sheet's fixed order (App Fixes 1b): Load, Fitness,
-  // Fatigue, Resting HR, each a bold lead and what it means. Not sorted worse
-  // first, so the sheet reads the same way every time.
+  // Fixed order, not sorted worse first, so the sheet reads the same way every time.
   const rows: CoachRow[] = []
   if (trend) {
     rows.push({
@@ -129,7 +109,7 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
       direction: trend.change ? directionOf(trend.change.pct) : trend.state === 'below' ? 'down' : trend.state === 'above' ? 'up' : undefined,
     })
   }
-  // Fitness a week: the last seven days of the window's fitness line.
+  // Fitness change over the last seven days of the window.
   const ramp = form && form.ctl.length > 7 ? Math.round((form.ctl.at(-1)! - form.ctl.at(-8)!) * 10) / 10 : null
   const fitness: CoachRow | null = form
     ? {
@@ -148,8 +128,7 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
   if (rhr) rows.push({ trend: rhr.side === 'high' ? 'declining' : rhr.side === 'low' ? 'improving' : 'flat', text: s.restingHrRow(rhr.side, rhr.now, rhr.lo, rhr.hi), direction: rhr.side === 'high' ? 'up' : rhr.side === 'low' ? 'down' : 'level' })
   else if (recovery) rows.push({ trend: recoveryTrend(recovery), text: joined(recoverySentence(recovery)), direction: recoveryDirection(recovery) })
 
-  // No note on the watch's own status: the Training status chart under
-  // Form shows it (owner, Oct 2026).
+  // No note on the watch's own status: the Training status chart under Form shows it.
   if (head) return { tone: head.kind === 'building' ? 'pos' : 'warn', headline: loadHeadlineText(head), rows }
   if (trend) return { tone: trend.state !== 'in' ? 'warn' : 'muted', headline: joined(loadSentence(trend, window.live)), rows }
   // Without Garmin's load pair, Fitness is the claim and the rest its case.
@@ -157,9 +136,6 @@ export function loadRead(data: AnalyticsBoardData, today: string, window: DayWin
   return { tone: 'muted', headline: fitness.text, rows: rows.filter((row) => row !== fitness) }
 }
 
-// ─── Performance ───────────────────────────────────────────────────────────
-
-/** The speed reads a headline names, joined as the locale lists them. */
 function named(keys: SpeedKey[]): { names: string; plural: boolean } {
   const words = keys.map((key) => t.analytics.cards.coachRead.names[key])
   return {
@@ -170,11 +146,6 @@ function named(keys: SpeedKey[]): { names: string; plural: boolean } {
 
 const capitalized = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
-/**
- * The headline the signals back (v4.16.4): it names only the reads that moved
- * the way it says. "Load is up, but threshold and race predictions haven't
- * followed" was one fixed sentence, printed whichever reads had slipped.
- */
 export function readHeadline(view: CoachReadView, period: Period): string {
   const s = t.analytics.cards.coachRead.headline
   const last = t.analytics.cards.coachRead.last[period]!
@@ -187,12 +158,10 @@ export function readHeadline(view: CoachReadView, period: Period): string {
     case 'caution':
       return view.loadUp ? s.cautionLoadUp(slipped.names, slipped.plural) : s.caution(last)
     case 'neutral':
-      // Level on one vote only because the reads moved both ways.
       return improved.names && slipped.names ? s.mixed(capitalized(improved.names), improved.plural, slipped.names, slipped.plural) : s.neutral(last)
   }
 }
 
-/** Each signal as the sentence the sheet prints, over the read's own period. */
 export function signalRows(view: CoachReadView, period: Period): CoachRow[] {
   const s = t.analytics.cards.coachRead
   const ago = s.ago[period]!
@@ -209,8 +178,7 @@ export function signalRows(view: CoachReadView, period: Period): CoachRow[] {
       }
       case 'easy': {
         const pace = formatClock(signal.pace)
-        // Inside the noise band it is level, in words and arrow alike (v5.6
-        // #3): "1 s faster" sat beside a flat arrow.
+        // Inside the noise band it is level, in words and arrow alike.
         const text = signal.trend === 'flat' ? s.easyLevel(pace, ago) : signal.delta < 0 ? s.easyFaster(pace, Math.abs(signal.delta), ago) : s.easySlower(pace, signal.delta, ago)
         return { trend: signal.trend, text, direction: signal.trend === 'flat' ? 'level' : directionOf(signal.delta) }
       }
@@ -257,13 +225,10 @@ export function performanceRead(data: AnalyticsBoardData, window: DayWindow, per
   }
 }
 
-// ─── Volume ────────────────────────────────────────────────────────────────
-
-/** At or above this share of planned weeks on plan, the volume is on plan. */
+/** Share of planned weeks run on plan. */
 const ON_PLAN_WEEKS = 0.75
-/** Under this share, the plan is mostly not being run. */
 const UNDER_PLAN_WEEKS = 0.5
-/** The long run over its share in this many finished weeks is a pattern, not a week; off plan, the claim. */
+/** Finished weeks with the long run over its share that make a pattern, not a one-off. */
 const LONG_RUN_PATTERN = 2
 
 export function volumeRead(data: AnalyticsBoardData, rows: WeekRow[], live: boolean): TabRead | null {
@@ -281,8 +246,7 @@ export function volumeRead(data: AnalyticsBoardData, rows: WeekRow[], live: bool
   if (plan && planShare !== null) {
     out.push({ trend: planShare >= ON_PLAN_WEEKS ? 'improving' : planShare < UNDER_PLAN_WEEKS ? 'declining' : 'flat', text: s.onPlanRow(plan.hit, plan.of) })
   }
-  // Missed sessions that came together are part of the case, never the
-  // claim: the headline keeps its own rules (design review, Oct 2026).
+  // Missed sessions that came together are part of the case, never the headline.
   const clusters = missedClusters(data.missed, rows)
   const latest = clusters.at(-1)
   if (latest) {
@@ -298,17 +262,13 @@ export function volumeRead(data: AnalyticsBoardData, rows: WeekRow[], live: bool
     out.push({ trend: TREND_OF[deltaTone('distance', delta, { value: ytd.km })], text, direction: directionOf(delta) })
   }
 
-  // The plan first: the coach sets each week's long run against its week, so
-  // on plan, a long run over its share (three light weeks of a break, Aug
-  // 2026) is the case's first line rather than the claim.
+  // The plan first: the coach sets each long run against its week, so on plan a long run over its share is a row, not the headline.
   if (plan && plan.of >= 2 && planShare !== null && planShare < UNDER_PLAN_WEEKS) return { tone: 'warn', headline: s.underPlan(plan.hit, plan.of), rows: ordered(out) }
   if (plan && plan.of >= 2 && planShare !== null && planShare >= ON_PLAN_WEEKS) return { tone: 'pos', headline: s.onPlan(plan.hit, plan.of), rows: ordered(out) }
   if (long && long.over >= LONG_RUN_PATTERN) return { tone: 'warn', headline: s.longRunOver(long.over, finished), rows: ordered(out) }
   if (weekly.avg !== null) return { tone: 'muted', headline: s.average(formatKm(weekly.avg)), rows: ordered(out.slice(1)) }
   return null
 }
-
-// ─── Intensity ─────────────────────────────────────────────────────────────
 
 const sessions = (n: number) => formatKm(n, Number.isInteger(n) ? 0 : 1)
 
@@ -327,8 +287,6 @@ export function intensityRead(data: AnalyticsBoardData, rows: WeekRow[]): TabRea
   const headline = mix.status === 'inRange' ? s.inRange(mix.easyPct) : mix.status === 'tooModerate' ? s.tooModerate(mix.moderatePct) : s.tooHard(mix.easyPct)
   return { tone: mix.status === 'inRange' ? 'pos' : 'warn', headline, rows: ordered(out) }
 }
-
-// ─── The read for the tab on screen ────────────────────────────────────────
 
 export interface TabReadInput {
   tab: CoachTab

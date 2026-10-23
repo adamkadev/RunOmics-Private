@@ -6,9 +6,8 @@ import { intensityBand, validateDraftIntensity } from '../intensity'
 // Adam runs Tue, Wed, Thu, Sat, Sun.
 const DAYS = [2, 3, 4, 6, 0]
 
-// Adam's measured threshold: 4:23/km. The zones fall out of it, so the band
-// divides quality from aerobic running at 268 s/km and threshold from sharper
-// work at 258 s/km.
+// Threshold 4:23/km: the band splits quality from aerobic running at 268 s/km and
+// threshold from sharper work at 258 s/km.
 const BAND = intensityBand(263)
 
 const easy = (metres: number): WorkoutBlock => ({ kind: 'effort', target: { distanceMeters: metres, paceSecPerKm: { min: 308, max: 384 } } })
@@ -52,11 +51,7 @@ function week(start: string, workouts: ReturnType<typeof workout>[], reducedVolu
 
 const draft = (...weeks: BootstrapWeekDraft[]): CoachingPlanDraft => ({ name: 'block', focus: 'build', weeks })
 
-/**
- * A week of the shape this athlete actually trains: five runs, one threshold
- * session of three repetitions, the rest easy. The 10% cap binds hard at this
- * volume, so the session grows only as the week does.
- */
+/** The 10% cap binds hard at this volume, so the session grows only as the week does. */
 function soundWeek(start: string, repMetres: number, totalKm: number, pace = 263): BootstrapWeekDraft {
   const filler = Math.round((totalKm * 1_000 - 3_500 - 3 * (repMetres + 400)) / 4)
   return week(start, [
@@ -116,8 +111,7 @@ describe('what counts as hard', () => {
 
 describe('the dose of hard running', () => {
   it('refuses a week running 40% of its distance at threshold', () => {
-    // The gap this exists for: every volume check passes and the week is a
-    // race, not a training week.
+    // Every volume check passes, yet the week is a race, not a training week.
     const hard = week('2026-09-28', [
       workout('threshold', [warmup(2000), reps(6, 1600, 263), cooldown(2000)]),
       workout('threshold', [warmup(2000), reps(6, 1600, 263), cooldown(2000)]),
@@ -262,10 +256,8 @@ describe('time at threshold across the block', () => {
   })
 })
 
-// Controlled threshold: a threshold session run by pace with heart rate as its limit. Its
-// repetitions carry an hrBpm cap, and their guide is set by length - the
-// 8-10 minute ones at 272-280 s/km, slower than the 268 s/km edge of the
-// threshold band, which is how the October block's sessions used to read as easy.
+// Controlled threshold: run by pace with an hrBpm cap. The 8-10 minute repetitions'
+// 272-280 s/km guide is slower than the band's 268 s/km edge, so pace alone reads them as easy.
 const CAP = { min: 156, max: 173 }
 const LONG = { min: 272, max: 280 }
 const MEDIUM = { min: 268, max: 274 }
@@ -282,7 +274,6 @@ const controlledReps = (count: number, minutes: number, pace: { min: number; max
 const controlled = (count: number, minutes: number, pace = LONG, jogSeconds = 90) =>
   workout('threshold', [warmup(1700), warmup(1000), warmup(1000), controlledReps(count, minutes, pace, jogSeconds), cooldown(1700)])
 
-/** The repeatable week: jog, long-repetition session, jog with strides, medium-repetition session, long run. */
 function controlledWeek(start: string, wednesday: ReturnType<typeof workout>, saturday: ReturnType<typeof workout>, easyKm = [9, 8], longKm = 14): BootstrapWeekDraft {
   return week(start, [
     workout('easy', [easy(easyKm[0]! * 1_000)]),

@@ -26,7 +26,7 @@ import {
 } from './chartStackLanes'
 
 type Props = ChartStackInput & {
-  /** Where the scrub is, as a share of the distance, for a marker to follow. */
+  /** Where the scrub is, as a share of the distance. */
   onScrub?: (fraction: number | null) => void
 }
 
@@ -35,16 +35,15 @@ const LINE_MODES = ['smoothed', 'raw'] as const
 
 const pct = (v: number, of: number) => `${((v / of) * 100).toFixed(2)}%`
 
-/** Each lane's line: the run chart's own hues, fixed and not the accent. */
+/** The run chart's own fixed hues, not the accent. */
 const LINE_COLOR: Record<Exclude<LaneKey, 'elevation'>, string> = RUN_CHART_LINE
 
-/** The axis and zone labels: 11 px, the app's type floor (the handoff's 10 px is under it). */
+/** 11 px, the app's type floor. */
 const AXIS_LABEL = 'text-caption leading-none'
 
 /**
- * One lane with nothing in it that moves: its zone bands, the km ticks, the
- * run average and the line. The scrub cursor and dot are drawn over it by the
- * stack, so a pointer move never redraws a path.
+ * Nothing in it moves: the stack draws the scrub cursor and dot over it, so a
+ * pointer move never redraws a path.
  */
 const LanePlot = memo(function LanePlot({ lane, series, distanceKm, color }: { lane: Lane; series: (number | null)[]; distanceKm: number; color: string }) {
   const y = (v: number) => laneY(lane, v)
@@ -65,12 +64,10 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm, color }: { l
               top: pct(rect.top, LANE_HEIGHT),
               height: pct(rect.height, LANE_HEIGHT),
               background: `color-mix(in srgb, var(--zone-${band.zone}) 11%, transparent)`,
-              // The boundary with the next zone as a hairline (3.0).
               borderTop: rect.top > 0.5 ? `1px solid color-mix(in srgb, var(--zone-${band.zone}) 45%, transparent)` : undefined,
             }}
           >
-            {/* 11 px like the axis labels, at the top right. On a chip
-                above the lines, so the average line can't strike it out. */}
+            {/* On a chip above the lines, so the average line can't strike it out. */}
             {rect.labelled && (
               <span
                 className={`absolute right-1 top-px z-[1] rounded-sm bg-card px-0.5 font-semibold ${AXIS_LABEL}`}
@@ -110,7 +107,6 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm, color }: { l
   )
 })
 
-/** Elevation (3.0): a quiet area with its outline, context for the lanes above. */
 const ElevationPlot = memo(function ElevationPlot({ lane }: { lane: Lane }) {
   const y = (v: number) => elevationY(lane, v)
   return (
@@ -121,7 +117,6 @@ const ElevationPlot = memo(function ElevationPlot({ lane }: { lane: Lane }) {
   )
 })
 
-/** The scrub's mark on one lane: a 9 px dot in the lane's own colour, ringed in the page. */
 function Dot({ left, top, color }: { left: string; top: string; color?: string }) {
   return (
     <span
@@ -132,10 +127,7 @@ function Dot({ left, top, color }: { left: string; top: string; color?: string }
   )
 }
 
-/**
- * The scrub's cursor, drawn inside each plot (3.0.2): one line down the
- * whole stack crossed every lane's header and struck through its numbers.
- */
+/** Drawn inside each plot: one line down the whole stack would strike through every lane's header. */
 function Cursor({ left }: { left: string }) {
   return (
     <span
@@ -232,10 +224,8 @@ export function ChartStack({ onScrub, ...input }: Props) {
     schedule(snap(Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))))
   }
 
-  // A tap commits the reading and a drag moves it: one state, two ways in. A
-  // mouse reads wherever it hovers and lets go when it leaves; a finger's
-  // reading stays after it lifts, because a dot with no number beside it is
-  // the thing this scrub exists to avoid.
+  // A mouse reads where it hovers and lets go when it leaves; a finger's reading
+  // stays after it lifts, so a dot never shows without its number.
   function handleDown(event: ReactPointerEvent<HTMLDivElement>) {
     draggingRef.current = true
     event.currentTarget.setPointerCapture?.(event.pointerId)
@@ -365,7 +355,6 @@ export function ChartStack({ onScrub, ...input }: Props) {
         </ChartFigure>
       </div>
 
-      {/* Each label at its own km, the last one right-aligned to the end (3.0). */}
       <div aria-hidden className={`relative h-3.5 text-muted-foreground ${AXIS_LABEL}`} data-testid="km-axis">
         {axis.ticks.map((km, i) => (
           <span

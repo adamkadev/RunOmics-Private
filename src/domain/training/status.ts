@@ -1,5 +1,3 @@
-/** The training status the dashboard, readiness and the AI verdicts all read. */
-
 export type TrainingStatusType =
   | 'productive'
   | 'fresh'
@@ -36,11 +34,7 @@ export interface TrainingStatus {
   chronicLoadMax: number | null
 }
 
-/**
- * The window each delta Today prints is measured over, written beside the
- * arrow ("↑1 in 7 d"). One week for all three: Fitness read "in 14 d" beside
- * Form and Fatigue "in 7 d", so the trio compared different spans.
- */
+/** Written beside each arrow Today prints ("↑1 in 7 d"); one span for all three so the trio compares alike. */
 export const STATUS_DELTA_DAYS = { form: 7, fitness: 7, fatigue: 7 } as const
 
 /** The fitness trend the status is classified on: two weeks, so one heavy

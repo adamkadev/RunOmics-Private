@@ -166,8 +166,7 @@ describe('routeStart', () => {
   })
 
   it('is not home’s cell in the quartier home is in: the provider is never sent home', () => {
-    // Home in R's runnable corner cell (0,0) was the start itself when the
-    // start leaned towards home; now it is the label's cell, across the quartier.
+    // Home (60, 60) is in R's runnable corner cell (0,0); the start is the label's cell, across the quartier.
     const start = routeStart(area, 'test-r')!
     const metres = Math.hypot(projectX(PROJ, start[0]) - 60, projectY(PROJ, start[1]) - 60)
     expect(metres).toBeGreaterThan(600)

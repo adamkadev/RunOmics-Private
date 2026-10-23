@@ -27,7 +27,7 @@ interface Props {
 /** Past this the sync button's name says it can be tapped. */
 export const STALE_SYNC_MS = 6 * 3600_000
 
-/** Past this the data is a day behind: the line turns amber (v4.3.4). */
+/** Past this the data is a day behind: the line turns amber. */
 export const LATE_SYNC_MS = 24 * 3600_000
 
 export function isSyncStale(lastSyncedAt: string, now = Date.now()): boolean {
@@ -38,7 +38,7 @@ export function isSyncLate(lastSyncedAt: string, now = Date.now()): boolean {
   return now - Date.parse(lastSyncedAt) > LATE_SYNC_MS
 }
 
-/** How long ago the data synced, in ms: read after mount, as every age here is. */
+/** Read after mount, as every age here is. */
 export function syncAgeMs(lastSyncedAt: string, now = Date.now()): number {
   return now - Date.parse(lastSyncedAt)
 }
@@ -46,14 +46,9 @@ export function syncAgeMs(lastSyncedAt: string, now = Date.now()): number {
 /** Under this, a sync has just run: a tap says when the next can go, and asks GitHub for nothing. */
 const FRESH_SYNC_MS = SYNC_LIMITS.cooldownAfterSuccessMs
 
-/**
- * The sync button and the avatar share one 44 pt glass capsule, as Bevel's
- * share and avatar (owner, Oct 2026): the ↻ alone in the capsule's first
- * 44 pt, then the 32 pt avatar 6 pt in from its end - about 96 pt wide, as
- * their copy in the compact bar.
- */
+/** The sync button and the avatar share one 44 pt glass capsule, about 96 pt wide, as their copy in the compact bar. */
 const CAPSULE = glassClass('regular', 'flex h-11 shrink-0 items-center gap-1 pr-1.5')
-// Plain buttons in the glass (lg-press): the capsule swells as one (Liquid Glass v3, G2).
+// Plain buttons in the glass, so the capsule swells as one.
 const BUTTON = 'lg-press flex size-11 shrink-0 items-center justify-center rounded-full'
 
 interface Line {
@@ -68,13 +63,6 @@ interface Line {
 
 const NOTHING = () => {}
 
-/**
- * The sync control (3.0.2, mock 5f; back in place of the pull, Oct 2026): a
- * round ↻ beside the avatar, its words - "Synced 14h ago" - its accessible
- * name at rest, and on screen beside it once pressed: while the sync runs,
- * and what it answered. The arrows turn while it runs; amber, button and
- * words, once the data is a day old.
- */
 function SyncButton({ text, tone, spinning = false, onClick, disabled = false, shown = false, children }: Line & { children: ReactNode }) {
   const color = tone === 'caution' ? 'var(--tone-caution)' : 'var(--muted-foreground)'
   return (
@@ -82,7 +70,6 @@ function SyncButton({ text, tone, spinning = false, onClick, disabled = false, s
       <span role="status" data-testid="sync-note" className={cn('min-w-0 truncate text-right text-xs', shown && 'mr-2')} style={{ color }}>
         {shown ? text : ''}
       </span>
-      {/* The avatar (children) beside it, in the same glass. */}
       <div data-testid="today-capsule" className={CAPSULE}>
         <GlassLayers />
         <button
@@ -93,8 +80,7 @@ function SyncButton({ text, tone, spinning = false, onClick, disabled = false, s
           title={text}
           data-testid="sync-line"
           data-tone={tone}
-          // The compact bar keeps it beside the avatar once the page scrolls,
-          // its arrows turning while the sync runs (data-bar-busy).
+          // The compact bar copies it once the page scrolls, its arrows turning on data-bar-busy.
           data-bar-action="refresh"
           data-bar-busy={spinning ? '' : undefined}
           className={BUTTON}
@@ -108,7 +94,6 @@ function SyncButton({ text, tone, spinning = false, onClick, disabled = false, s
   )
 }
 
-/** The owner's line: the same sync, states and limits as Settings' button (useSyncNow). */
 function OwnerSyncLine({ user, lastSyncedAt, ago, children }: { user: User; lastSyncedAt: string; ago: string; children: ReactNode }) {
   const s = t.dashboard.syncStatus
   const sync = useSyncNow(user)
@@ -137,13 +122,7 @@ function OwnerSyncLine({ user, lastSyncedAt, ago, children }: { user: User; last
   return <SyncButton {...line}>{children}</SyncButton>
 }
 
-/**
- * The header's sync control (design review, Oct 2026; a button in 3.0.2):
- * when the data last synced, and the way to sync it - at any age, not only
- * past 6 h, and without the date, which "Today" and every session's own date
- * already say. Amber once the data is a day old (v4.3.4). The owner's tap starts the sync; anyone
- * else's goes to Settings, where signing in lives.
- */
+/** No date in its words: "Today" and every session's own date already say it. */
 function SyncLine({ lastSyncedAt, ago, children }: { lastSyncedAt: string; ago: string; children: ReactNode }) {
   const s = t.dashboard.syncStatus
   const { user, isOwner } = useOwnerAuth()
@@ -153,7 +132,7 @@ function SyncLine({ lastSyncedAt, ago, children }: { lastSyncedAt: string; ago: 
   return <SyncButton text={text} tone={isSyncLate(lastSyncedAt) ? 'caution' : 'muted'} onClick={() => router.push('/settings')}>{children}</SyncButton>
 }
 
-/** "Monday, Oct 19", « Lundi 19 oct. »: the header's date over the title. */
+/** "Monday, Oct 19", « Lundi 19 oct. » */
 export function headerDate(isoDate: string): string {
   return t.dashboard.headerDate(formatWeekdayLong(isoDate), formatDate(isoDate, { style: 'bare', year: 'never' }))
 }
@@ -162,16 +141,11 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
   const displayName = name ?? t.profile.hero.namePlaceholder
   const today = useToday(serverToday ?? appTodayIso())
 
-  // After mount: an age worked out on the server is as old as the cached
-  // page, and the browser's differs - React #418.
+  // After mount: an age worked out on the server is as old as the cached page (React #418 hydration mismatch).
   const mounted = useMounted()
   const ago = mounted && lastSyncedAt ? formatRelativeAgo(lastSyncedAt) : null
 
-  // The avatar and the sync button beside it fade as they scroll under the
-  // status strip (v5.5 #3): the strip is only the safe area tall, and the
-  // disc's lower edge showed under it as a sliver of accent. The title and
-  // the date are the compact title bar's to fade, as on every page. At the
-  // top they carry no inline style; faded out, they take no taps.
+  // The status strip is only the safe area tall, so the avatar and sync button fade as they scroll under it; the title and date are the compact bar's to fade.
   const sideRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const side = sideRef.current
@@ -181,8 +155,7 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
       frame = 0
       const y = window.scrollY
       const opacity = y <= 0 ? 1 : Math.max(0, 1 - y / Math.max(1, side.offsetHeight))
-      // The note and the capsule, each: the capsule fades its glass layers,
-      // never itself, which would flatten its blur (Liquid Glass v3).
+      // Each on its own: the capsule fades its glass layers, never itself, which would flatten its blur.
       for (const el of side.querySelectorAll<HTMLElement>('[data-testid="sync-note"], [data-testid="today-capsule"]')) fadeElement(el, opacity)
       if (opacity <= 0) side.style.pointerEvents = 'none'
       else side.style.removeProperty('pointer-events')
@@ -196,7 +169,6 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
     }
   }, [])
 
-  // A link to Progress: the accent disc, in the sync button's capsule.
   const avatar = (
     <Link
       href="/profile"
@@ -212,8 +184,6 @@ export function DashboardGreeting({ name, lastSyncedAt, today: serverToday }: Pr
   )
 
   return (
-    // The page header (design review, Oct 2026): the date over the H1, and on
-    // the right the sync button (3.0.2) beside the avatar. The verdict below is still the news.
     <header data-testid="today-header" className="flex items-end justify-between gap-3">
       <div className="flex min-w-0 flex-col">
         <p data-title-sub data-testid="today-date" className="text-[15px] leading-5 text-muted-foreground">

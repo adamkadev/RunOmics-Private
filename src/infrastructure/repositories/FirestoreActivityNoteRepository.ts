@@ -3,13 +3,7 @@ import { withTimeout } from '../withTimeout'
 
 const COLLECTION = 'activityNotes'
 
-/**
- * Generous on purpose. The only caller is the coaching CLI, a batch job where
- * ten seconds is free, and its first Firestore call is always cold: the admin
- * SDK fetches an OAuth token before the query. A request-path budget here
- * would report "no notes" for a correctly configured install that was merely
- * starting up, which is the one failure this read must not invent.
- */
+/** Generous: the only caller is a batch CLI whose first Firestore call is cold, and a short budget would invent "no notes". */
 const READ_TIMEOUT_MS = 10_000
 
 export interface ActivityNote {
@@ -17,13 +11,7 @@ export interface ActivityNote {
   tags: string[]
 }
 
-/**
- * `available` separates "the athlete has annotated nothing" from "this process
- * could not ask". Both produce an empty map, and a coaching prompt built from
- * the second while believing the first is worse than one that never had notes
- * at all: it reads an unexplained RPE as fitness when the athlete wrote
- * "sick" on the session. Callers are expected to say so out loud.
- */
+/** `available` tells "annotated nothing" from "could not ask": a prompt built from the second reads an unexplained RPE as fitness. */
 export interface ActivityNotesRead {
   notes: Map<string, ActivityNote>
   available: boolean
@@ -36,11 +24,7 @@ function read(data: Record<string, unknown>): ActivityNote {
   return { note: typeof data.note === 'string' ? data.note : '', tags }
 }
 
-/**
- * Notes and tags are written from the RunOmics UI only - Garmin Connect's own
- * comment field is never used here, and the activity JSON's `comment` is left
- * empty by the importer - so this collection is their only source.
- */
+/** Notes and tags come from the RunOmics UI only - Garmin Connect's comment field is never used - so this collection is their only source. */
 export async function getActivityNotes(): Promise<ActivityNotesRead> {
   if (!process.env.FIREBASE_PROJECT_ID) return UNAVAILABLE
 
@@ -59,11 +43,7 @@ export async function getActivityNotes(): Promise<ActivityNotesRead> {
   }
 }
 
-/**
- * One note, for the activity page (src/app/api/activities/[id]/note): a
- * request path, so a short budget. The page reads it through the app rather
- * than from Firestore, so a private site's gate covers notes too.
- */
+/** A request path, so a short budget; the page reads notes through the app so a private site's gate covers them. */
 const NOTE_TIMEOUT_MS = 4_000
 
 export type ActivityNoteRead = { available: false } | { available: true; note: ActivityNote | null }

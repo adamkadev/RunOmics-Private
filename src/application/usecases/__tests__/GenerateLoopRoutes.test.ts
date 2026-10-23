@@ -18,7 +18,6 @@ function loop(seed: number, distanceM: number): RouteCandidate {
   return { seed, coordinates: [[-150, 0], [-150.01, 0], [-150, 0]], distanceM, durationS: 0, ascentM: null, descentM: null, waytypes: [] }
 }
 
-/** A gateway answering each call from `answer`, and keeping every request it was sent. */
 function fakeGateway(answer: (req: RoundTripRequest, call: number) => RoundTripResult | Promise<RoundTripResult>) {
   const calls: RoundTripRequest[] = []
   const gateway: RoutingGateway = {

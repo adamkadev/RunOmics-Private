@@ -2,24 +2,9 @@ import type { MultiPolygon, Polygon, Position } from 'geojson'
 import { projectX, projectY, unproject, type Projection } from '@/domain/explore/grid'
 
 /**
- * Douglas-Peucker on the area's own flat projection, so the tolerance is in
- * metres on the ground. Degrees would not do: at 49°N a degree of longitude
- * is two thirds of a degree of latitude, and a "5 m" tolerance in degrees
- * would be 5 m one way and 3.3 m the other.
- *
- * Each ring is simplified on its own, so two neighbours can open a sliver of
- * up to the tolerance between them. At 5 m that is under a pixel at the
- * zooms the map shows a city at, and cells are assigned on the unsimplified
- * shapes (runnable.ts), so it never moves a count.
- *
- * What a ring may never do is cross itself. Douglas-Peucker only promises
- * that every dropped point lies within the tolerance of what is kept; a chord
- * that cuts a corner can still pass through a narrow part of the same ring
- * (a quay, a needle of land between two roads) and leave a bow-tie, which is
- * no longer a valid polygon: MapLibre fills it with a sliver, and the
- * even-odd test the worker gives cells by turns inside out there. So a ring
- * that comes out crossed is simplified again with half the tolerance, until
- * it no longer does.
+ * Douglas-Peucker on the area's flat projection, so the tolerance is in metres on the ground. A ring that comes out
+ * crossing itself is not a valid polygon (MapLibre fills a sliver, the even-odd cell test turns inside out), so it is
+ * simplified again with half the tolerance.
  */
 
 export type XY = [number, number]
@@ -35,7 +20,6 @@ function segmentDistance([px, py]: XY, [ax, ay]: XY, [bx, by]: XY): number {
   return Math.hypot(px - (ax + t * dx), py - (ay + t * dy))
 }
 
-/** Keeps the first and last points, and every point further than `tolerance` from the line kept so far. */
 export function douglasPeucker(points: readonly XY[], tolerance: number): XY[] {
   const n = points.length
   if (n <= 2) return points.slice()
@@ -84,12 +68,7 @@ function segmentsMeet(a: XY, b: XY, c: XY, d: XY): boolean {
   return (s1 === 0 && within(a, b, c)) || (s2 === 0 && within(a, b, d)) || (s3 === 0 && within(c, d, a)) || (s4 === 0 && within(c, d, b))
 }
 
-/**
- * Whether a ring, given without its closing point, crosses or touches itself
- * anywhere other than where neighbouring edges meet. Every pair of edges is
- * tried: a simplified quartier has a few hundred vertices, and this runs
- * offline.
- */
+/** Given without its closing point. Every pair of edges is tried: a quartier has a few hundred vertices, and this runs offline. */
 export function ringSelfIntersects(ring: readonly XY[]): boolean {
   const n = ring.length
   if (n < 4) return false
@@ -132,17 +111,7 @@ function toPositions(p: Projection, ring: readonly XY[]): Position[] {
   return out
 }
 
-/**
- * One closed ring, simplified, rounded and wound as RFC 7946 asks (outer
- * rings anticlockwise, holes clockwise), and never crossing itself (see the
- * top of this file). Null when nothing ring-like is left: fewer than four
- * positions, or less area than a tolerance-sided square.
- *
- * The check is made on the rounded positions, the ones the file will hold.
- * Halving stops once the tolerance is below what rounding moves; what comes
- * out then is the source ring itself, rounded, crossed only if the source
- * already was.
- */
+/** Wound as RFC 7946 asks; the crossing check is made on the rounded positions, the ones the file will hold. */
 export function simplifyRing(
   ring: readonly Position[],
   p: Projection,
@@ -164,13 +133,8 @@ export function simplifyRing(
 }
 
 /**
- * One pass of `simplifyRing` at one tolerance. `minAreaM` stays the asked
- * tolerance's: a tighter retry must not keep a ring the first pass dropped.
- *
- * A closed ring's first and last points coincide, so Douglas-Peucker on it
- * as one line would measure everything against a zero-length segment. It is
- * split at the point furthest from the start and each half simplified, which
- * also keeps it from ever collapsing to a line.
+ * `minAreaM` stays the asked tolerance's: a tighter retry must not keep a ring the first pass dropped. The ring is
+ * split at the point furthest from the start: as one line, its coinciding ends would make a zero-length segment.
  */
 function simplifyRingOnce(
   points: readonly XY[],
@@ -217,11 +181,7 @@ function roundRings(rings: readonly Position[][]): Position[][] {
   return rings.map((ring) => ring.map(([lon, lat]) => [round6(lon!), round6(lat!)]))
 }
 
-/**
- * Simplifies every polygon of the shape. Islands smaller than the tolerance
- * square go, and so do holes; if nothing at all would be left (a unit
- * smaller than 25 m²), the shape is kept whole, only rounded.
- */
+/** If nothing at all would be left (a unit smaller than the tolerance square), the shape is kept whole, only rounded. */
 export function simplifyGeometry(
   geometry: Polygon | MultiPolygon,
   p: Projection,
@@ -240,7 +200,7 @@ export function simplifyGeometry(
     : { type: 'MultiPolygon', coordinates: simplified }
 }
 
-/** Ground area in m², holes taken out. */
+/** Holes taken out. */
 export function geometryAreaM2(geometry: Polygon | MultiPolygon, p: Projection): number {
   const polygons = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates
   let total = 0

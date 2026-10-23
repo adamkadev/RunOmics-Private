@@ -8,11 +8,7 @@ type Stored = { days?: Record<string, { hrv?: number; restingHr?: number }> }
 
 const value = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null)
 
-/**
- * A resting heart rate a person can have: Garmin's daily value carries
- * workout readings on some days (142 and 144 bpm in Aug 2026, 19 days over
- * 100), which pulled the baseline up to 50-69 and could read as a dip.
- */
+/** A resting heart rate a person can have: Garmin's daily value carries workout readings on some days. */
 const RESTING_HR_BPM = { min: 30, max: 100 } as const
 
 const restingHr = (v: unknown): number | null => {

@@ -1,10 +1,6 @@
 import type { ExploreRequest, ExploreResponse } from '../workerProtocol'
 
-/**
- * Just enough of `Worker` for the engine: listeners, postMessage with a
- * transfer list, terminate. Replies come from `respond` (on a later task,
- * as a real worker's would) or from the test calling `reply` itself.
- */
+/** Replies come from `respond`, on a later task as a real worker's would, or from the test calling `reply` itself. */
 export class FakeWorker {
   posted: { message: ExploreRequest; transfer: Transferable[] }[] = []
   terminated = false

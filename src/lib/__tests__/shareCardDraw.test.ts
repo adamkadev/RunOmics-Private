@@ -77,8 +77,6 @@ describe('drawShareCard', () => {
     }
   })
 
-  // Design review, Oct 2026: the accent is a point marker's, never a trace or a word.
-  // 3.0.1 polish (mock 3f): the accent is the logo mark and the trace, never a word.
   it('keeps the accent to the logo mark and the route: off every word and every marker', () => {
     for (const activity of [RUN, { ...RUN, type: 'Threshold' as const, reps: REPS }]) {
       const ops = draw({ design: 'route', activity })
@@ -135,8 +133,6 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(all.slice(-9)).toEqual(['10.0', ' km', 'Distance', '57:33', ' min', 'Time', '153', ' bpm', 'Avg HR'])
   })
 
-  // 4b: the title is the type, the structure moves to the subtitle, and the
-  // reps that differ read as chips under the hero.
   it('titles the card by type, with the structure and the reps under it', () => {
     const all = texts(draw({ design: 'route', activity: session }))
     expect(all).toContain('Threshold')
@@ -145,8 +141,7 @@ describe('an interval session (design review, Oct 2026)', () => {
     expect(all.some((text) => text.includes('× 8′ @') && text.startsWith('Threshold'))).toBe(false)
   })
 
-  // The reps take the session's own type, as the hero's caption does: a tempo
-  // session is Z3's violet, not the threshold magenta.
+  // A tempo session is Z3's violet, not the threshold magenta.
   it('draws the reps in the session\'s type, on the route, the legend and the bars', () => {
     const tempo = { ...RUN, type: 'Tempo' as const, reps: { ...REPS, count: 5, paces: [260, 265, 270, 262, 268] } }
     const ops = draw({ design: 'route', activity: tempo })
@@ -181,7 +176,6 @@ describe('the route (redesign, Oct 2026)', () => {
   /** The route's own points: every lineTo but the lockup's. */
   const trace = (ops: Op[]) => ops.filter((o) => o.op === 'lineTo' && o.stroke !== acc).map((o) => o.args as [number, number])
 
-  // 3.0.1 polish (mock 3f): the trace is the accent, as the app draws it.
   it('draws one trace in the accent, with no legend', () => {
     for (const mode of ['dark', 'light'] as const) {
       const colours = sharePalette('violet', mode)
@@ -195,7 +189,6 @@ describe('the route (redesign, Oct 2026)', () => {
     expect(SHARE_MARKER_HEX.dark).toBe('#f2f4f3')
   })
 
-  // At the owner's request (3.0): an interval session keeps its reps marked.
   it('draws an interval session grey, its reps over it in Z4 and 1.6x as wide, under a "Reps" legend', () => {
     const run = { ...RUN, type: 'Threshold' as const, reps: REPS }
     const ops = draw({ design: 'route', activity: run })
@@ -237,8 +230,8 @@ describe('the route (redesign, Oct 2026)', () => {
     }
   })
 
-  // A rep session is titled by its type alone (4b), so the two-line title is
-  // another run's; the rep pace and its chips take the room at the foot.
+  // A rep session is titled by its type alone, so the two-line title is another run's; the rep pace
+  // and its chips take the room at the foot.
   it('keeps the route clear of a two-line title and of the rep pace', () => {
     const long = { ...RUN, sessionTitle: 'Broschtkriibslaf an der Stad Lëtzebuerg, mat de Kollegen' }
     expect(layout(long).routeFrame.top).toBeGreaterThan(layout().routeFrame.top)
@@ -265,7 +258,6 @@ describe('the route (redesign, Oct 2026)', () => {
     expect(header).toBeGreaterThan(band)
   })
 
-  // 3.0.1 polish (mock 3f): the strip is the card's own ground, ruled off edge to edge.
   it('rules the stat row off and sets it on the card colour', () => {
     const { ruleY } = layout()
     const ops = draw({ design: 'route' })
@@ -312,7 +304,6 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
     const hero = ops.filter((o) => o.op === 'fillText' && o.font.startsWith('700 27px'))
     expect(hero.map((o) => o.args[0]).join(' ')).toBe(VERDICT.headline)
     expect(hero.length).toBeGreaterThan(1)
-    // A 1.08 line height.
     expect((hero[1]!.args[2] as number) - (hero[0]!.args[2] as number)).toBe(Math.round(27 * 1.08))
   })
 
@@ -328,7 +319,6 @@ describe('the verdict-led Stats design (redesign, Oct 2026)', () => {
     const all = texts(ops)
     expect(all).not.toContain('80%')
     expect(all).not.toContain('easy · Z1–Z2')
-    // Z1 and Z2 are one row (round 2): "Z1–Z2 80%".
     expect(all).toEqual(expect.arrayContaining(['Z1–Z2 80%', 'Z3 20%']))
     expect(ops.filter((o) => o.op === 'roundRect' && o.args[3] === 6)).toHaveLength(2)
   })
@@ -379,7 +369,6 @@ describe('the Stats design without a written verdict (design review, Oct 2026)',
     expect(texts(ops)).not.toContain('Z4 Threshold')
   })
 
-  // Design review, Oct 2026: one bar and a two-column legend, not a bar and then a bar per zone.
   it('draws one bar of edge-to-edge segments and a legend, no bar per zone', () => {
     const ops = draw({ design: 'stats' }).filter((o) => o.ty === layout(RUN, 'stats').middleTop)
     const segments = ops.filter((o) => o.op === 'fillRect' && (o.fill === palette.zones[1] || o.fill === palette.zones[2]))
@@ -390,7 +379,6 @@ describe('the Stats design without a written verdict (design review, Oct 2026)',
     expect(ops.filter((o) => o.op === 'roundRect')).toHaveLength(1)
   })
 
-  // Design review, Oct 2026: one 4:5 box on every tab, the stat row ruled off but under a photo.
   it('is the same 4:5 card as every design, the stat row ruled off', () => {
     const stats = layout(RUN, 'stats')
     const route = layout(RUN, 'route')
@@ -404,7 +392,6 @@ describe('the Stats design without a written verdict (design review, Oct 2026)',
     expect(ops.some((o) => o.op === 'fillRect' && o.fill === palette.line && o.args[1] === stats.ruleY && o.args[2] === W)).toBe(true)
   })
 
-  // Round 2: the block sat small in the middle, ~150 px empty above it.
   it('spreads a 64 px headline, a 16 px bar and the legend evenly down the middle', () => {
     const { middleH } = layout(RUN, 'stats')
     const block = zoneBlockLayout(middleH, 2)
@@ -443,7 +430,6 @@ describe('the Photo design (design review, Oct 2026)', () => {
     expect(ops.find((o) => o.op === 'fillText' && o.args[0] === '10.0')?.fill).toBe('#ffffff')
   })
 
-  // Round 2: the title and date sat on a bright sky with no scrim behind them.
   it('darkens the top enough for the date line to read 4.5:1 on a white photo, then clears', () => {
     const linear = (c: number) => { const v = c / 255; return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4 }
     const contrast = (a: number, b: number) => (Math.max(linear(a), linear(b)) + 0.05) / (Math.min(linear(a), linear(b)) + 0.05)
@@ -466,7 +452,6 @@ describe('the Photo design (design review, Oct 2026)', () => {
   })
 })
 
-// 3.0.3, the owner's request: a district the run crossed keeps its name.
 describe('the place names on the Route card', () => {
   const label = (text: string, y: number) => ({ text, x: 150, y, size: 9, color: '#8d9391', opacity: 0.8 })
 
@@ -481,9 +466,6 @@ describe('the place names on the Route card', () => {
     expect(texts(ops)).not.toContain('Under the header')
   })
 
-  // Round 2 (F13): "es-Metz" and "E" at the card's sides - names centred on
-  // a point near the edge ran off it. A name not whole inside the 16 px
-  // margins is dropped.
   it('drops a name that would run past the card\'s side margins', () => {
     const l = layout()
     const y = (l.textTop + l.textBottom) / 2

@@ -10,12 +10,10 @@ const TONE_COLOR: Record<VerdictTone, string> = {
   warn: 'var(--warn)',
   neg: 'var(--neg)',
   muted: 'var(--muted-foreground)',
-  // A state that is neither good nor bad news - Building - in body ink, so
-  // it reads as a word, not as a dimmed or disabled one.
+  // Neither good nor bad news (Building): body ink, so it doesn't read as dimmed or disabled.
   neutral: 'var(--text-2)',
 }
 
-/** The dot carries the tone's colour; a neutral one is a quiet grey. */
 const DOT_COLOR: Record<VerdictTone, string> = { ...TONE_COLOR, neutral: 'var(--muted-foreground)' }
 
 export function VerdictEyebrow({ tone, children, className }: { tone: VerdictTone; children: ReactNode; className?: string }) {
@@ -27,7 +25,6 @@ export function VerdictEyebrow({ tone, children, className }: { tone: VerdictTon
   )
 }
 
-/** Eyebrow, headline (17-22 px, 600) and body (14 px, text-2): the insight block. */
 export function VerdictBlock({
   tone,
   eyebrow,
@@ -40,7 +37,6 @@ export function VerdictBlock({
   eyebrow: ReactNode
   headline: ReactNode
   body?: ReactNode
-  /** md 17 px, lg 22 px headline. */
   size?: 'md' | 'lg'
   className?: string
 }) {

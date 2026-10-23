@@ -7,8 +7,8 @@ function day(date: string, overrides: Partial<WeekTargetDay> = {}): WeekTargetDa
   return { date, ranKm: 0, runs: 0, plannedKm: null, plannedSessions: 0, ...overrides }
 }
 
-// The week the audit read: Mon-Wed planned and not run, Thu rest, Fri's 6 km
-// threshold run 6.11 km, Sat 13 km still to come, Sun rest.
+// Mon-Wed planned and not run, Thu rest, Fri's 6 km threshold run 6.11 km, Sat
+// 13 km still to come, Sun rest.
 const WEEK: WeekTargetDay[] = [
   day('2026-09-21', { plannedKm: 11, plannedSessions: 1 }),
   day('2026-09-22', { plannedKm: 9, plannedSessions: 1 }),
@@ -65,8 +65,7 @@ describe('weekDayState', () => {
 })
 
 describe('planned sessions done (v5.5 #7)', () => {
-  // Aug 17-23: two unplanned runs (Tue, Wed), both planned sessions (Sat,
-  // Sun) missed. It read "2 of 2 · 2 missed".
+  // Aug 17-23: two unplanned runs (Tue, Wed), both planned sessions (Sat, Sun) missed.
   const week = [
     day('2026-08-18', { ranKm: 10.95, runs: 1 }),
     day('2026-08-19', { ranKm: 10.02, runs: 1 }),

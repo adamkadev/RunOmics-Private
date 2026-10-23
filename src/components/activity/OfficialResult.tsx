@@ -45,7 +45,7 @@ export function OfficialResult({ result, garminDistanceKm, garminDurationSeconds
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {isPersonalBest && (
-            // A record is good news: pos, not the caution gold (v4.17).
+            // A record is good news: pos, not the caution gold.
             <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-caption font-semibold text-[var(--pos)]">
               {t.activity.bestEfforts.prBadge}
             </span>

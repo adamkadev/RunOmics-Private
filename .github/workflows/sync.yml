@@ -1,14 +1,10 @@
 name: Sync Garmin Activities
-# Each run names the profile it syncs, "(all)" for the nightly one: the app's
-# Sync button reads the runs back to hold a second sync while one is going and
-# to space manual ones out (src/lib/syncLimits.ts), and one workflow serves
-# every athlete's deployment.
+# The app's Sync button reads this name back to tell which profile a run syncs (src/lib/syncLimits.ts).
 run-name: Sync Garmin Activities (${{ inputs.profile || 'all' }})
 
 on:
   schedule:
-    # Off the hour on purpose: scheduled runs on the hour are the ones GitHub
-    # delays most - "0 0" started around 03:05 UTC night after night.
+    # Off the hour on purpose: scheduled runs on the hour are the ones GitHub delays most.
     - cron: "23 1 * * *"
   workflow_dispatch:
     inputs:
@@ -38,9 +34,7 @@ permissions:
   contents: read
 
 jobs:
-  # Which profiles this run covers. A manual dispatch carries options that only
-  # ever make sense for one dataset (--force rebuilds every record), so it can
-  # target a single profile; the nightly schedule always runs them all.
+  # A manual dispatch can target one profile: its options only ever make sense for one dataset.
   profiles:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -60,8 +54,7 @@ jobs:
   sync:
     needs: profiles
     runs-on: ubuntu-latest
-    # A hung WARP connect or a Garmin call that never returns would otherwise
-    # hold a runner for the default six hours, nightly, per profile.
+    # A hung WARP connect or Garmin call would otherwise hold a runner for the default six hours.
     timeout-minutes: 60
     permissions:
       contents: read
@@ -72,41 +65,26 @@ jobs:
       matrix:
         profile: ${{ fromJSON(needs.profiles.outputs.matrix) }}
 
-    # Per-profile secrets live in a GitHub Environment of the same name, so every
-    # `secrets.*` below resolves to that profile's own value with no renaming.
+    # Per-profile secrets live in a GitHub Environment of the same name.
     environment: ${{ matrix.profile }}
 
-    # A manual run must never overlap the nightly one for the same profile: both
-    # push to that profile's data repository. Different profiles are independent.
+    # A manual run must never overlap the nightly one for the same profile: both push to its data repository.
     concurrency:
       group: sync-${{ matrix.profile }}
       cancel-in-progress: false
 
     env:
-      # One complete, server-only workspace for fetch -> Garmin sync -> push.
       RUNOMICS_DATA_DIR: data
 
     steps:
-      # The sync pushes with the data repository's own token, never with
-      # GITHUB_TOKEN, so nothing needs the checkout's credentials afterwards -
-      # and third-party code (garth, pip packages) runs in this job.
+      # Third-party code (garth, pip packages) runs in this job; the sync pushes with the data repository's own token.
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      # Two failure modes worth stopping before Garmin is ever contacted.
-      #
-      # First: naming an environment does NOT hide the repository-level secrets.
-      # An environment that doesn't exist yet, or that was created but never
-      # populated, therefore falls back to whatever is set repository-wide - so a
-      # half-configured profile would sync someone else's Garmin account into
-      # someone else's data repository. Every environment must declare a variable
-      # PROFILE matching its own name; nothing inherited can satisfy that for more
-      # than one profile.
-      #
-      # Second: without the data repository configured, the sync would start
-      # from an incomplete workspace instead of the canonical private dataset.
+      # Naming an environment does not hide repository-level secrets, so a half-configured profile would
+      # sync someone else's Garmin account; a PROFILE variable matching the environment's name proves it is set up.
       - name: Check the sync configuration
         env:
           DECLARED_PROFILE: ${{ vars.PROFILE }}
@@ -158,8 +136,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: scripts/requirements.txt
 
-      # Hash-locked: this job holds GARMIN_SECRET and the data repository's
-      # write token, so nothing may be installed that the lock did not pin.
+      # Hash-locked: this job holds GARMIN_SECRET and the data repository's write token.
       - name: Install Python dependencies
         run: pip install --require-hashes -r scripts/requirements.txt
 
@@ -176,10 +153,7 @@ jobs:
           # log is what makes "which build started failing" answerable later.
           echo "cloudflare-warp $(dpkg-query -W -f='${Version}' cloudflare-warp)"
 
-      # Garmin refuses GitHub's datacenter ranges, so the sync only reaches it
-      # through WARP. This step used to sleep 3 seconds and print the status
-      # without reading it: a tunnel that never came up surfaced minutes later
-      # as a Garmin auth error, which is the wrong thing to go looking at.
+      # Garmin refuses GitHub's datacenter ranges, so the sync only reaches it through WARP.
       - name: Connect Cloudflare WARP
         timeout-minutes: 5
         run: |
@@ -267,11 +241,6 @@ jobs:
         if: always()
         run: warp-cli --accept-tos disconnect || true
 
-      # Runs stored under an older parser keep what it computed until rebuilt:
-      # before v5.5, best efforts ran on the elapsed clock, so a run with a stop
-      # in it shows a best km slower than its fastest split. This rebuilds them
-      # from the FIT files cached above - nothing is asked of Garmin, unlike
-      # `force`.
       - name: Reprocess cached runs
         if: inputs.reprocess == true && inputs.dry_run != true
         run: python scripts/reprocess.py
@@ -322,12 +291,7 @@ jobs:
           VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
         run: curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
 
-      # On every sync that wrote anything, the timestamp alone included (Oct
-      # 2026): a run's verdict and Today's card that Google refused with 503s
-      # had used up the day's budget, the next sync fell before the quota's
-      # reset, and the one after brought no new activity - so nothing asked
-      # again, and the run stayed without its verdict. With no new data only
-      # the AI passes run, on the deployment already live.
+      # Also after a timestamp-only commit, to retry the AI work an earlier sync left unfinished.
       - name: Trigger post-sync checks
         if: steps.commit.outputs.committed == 'true'
         env:
@@ -431,10 +395,7 @@ jobs:
           echo "::error::sync.py reported failed activities or steps. Whatever synced successfully was committed and deployed; see the 'Run sync' log for what failed."
           exit 1
 
-      # A failed run used to be a red cross in an Actions tab nobody opens -
-      # two reminders failed every day for over a week that way. Best effort:
-      # if the app itself is what broke, this fails too, and the run is red
-      # either way.
+      # Best effort: if the app itself is what broke, this fails too.
       - name: Push the failure to the owner's devices
         if: failure()
         continue-on-error: true

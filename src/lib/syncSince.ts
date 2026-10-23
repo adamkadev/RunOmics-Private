@@ -1,8 +1,4 @@
-/**
- * Which sync is running: the dispatch time a resumed poll asks about. Settings'
- * sync card and Today's sync pill share it, so a sync started from either is
- * picked up by the card when Settings opens instead of dispatched twice.
- */
+/** Shared by Settings' sync card and Today's sync pill, so a sync started from either is resumed, not dispatched twice. */
 const STORAGE_KEY = 'runomics_sync_since'
 
 export function readStoredSince(): string | null {
@@ -17,8 +13,7 @@ export function writeStoredSince(since: string): void {
   try {
     localStorage.setItem(STORAGE_KEY, since)
   } catch {
-    // Worst case, a page reload mid-sync shows idle again - the sync itself
-    // is unaffected, it just runs without a card watching it.
+    // A reload mid-sync shows idle again; the sync itself is unaffected.
   }
 }
 

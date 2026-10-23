@@ -1,13 +1,7 @@
 /**
- * A fixed-window rate limiter: at most `max` takes per key in each window
- * of `windowMs`, the window starting at a key's first take.
- *
- * It lives in one server instance's memory, so it is best effort - each
- * instance counts on its own, and a cold start forgets. It is there to stop
- * a stuck client or a loop in the UI from spending a shared daily quota in a
- * minute, not to be a security boundary.
- *
- * The clock is passed in, so a test needs no fake timers.
+ * Best effort, not a security boundary: it lives in one instance's memory, so
+ * each instance counts on its own and a cold start forgets. The clock is passed
+ * in, so a test needs no fake timers.
  */
 
 export type RateLimitDecision = { ok: true } | { ok: false; retryAfterS: number }
@@ -19,11 +13,7 @@ export interface RateLimiter {
 export interface RateLimitOptions {
   max: number
   windowMs: number
-  /**
-   * How many keys to remember. Past it, windows that have closed are
-   * forgotten first, then the oldest open ones: memory stays bounded however
-   * many keys (forwarded IPs, say) a caller can invent.
-   */
+  /** Bounds memory however many keys (forwarded IPs, say) a caller can invent. */
   maxKeys: number
 }
 

@@ -1,18 +1,12 @@
 import { COMPLETE_PCT, type AreaCoverage } from '@/domain/explore/types'
 
-/**
- * What Progress's "Explored" card shows (E5): the area's explored share, how
- * many quartiers are complete, a segment per quartier and the next one to
- * run. Small and free of any coordinate - home included - so it can be kept
- * in localStorage and drawn at once on the next visit.
- */
+/** Free of any coordinate, home included, so it can be kept in localStorage. */
 export interface ExploredSummary {
   /** floor(100 · Σvisited / Σtotal) */
   pct: number
   complete: number
   /** Units with at least one runnable cell. */
   total: number
-  /** Each unit's pct, highest first: one segment each. */
   segments: number[]
   next: { id: string; name: string; pct: number } | null
 }
@@ -37,10 +31,6 @@ export function exploredSummary(coverage: AreaCoverage): ExploredSummary {
 
 const CACHE_PREFIX = 'runomics-explored:'
 
-/**
- * The summary only changes when the area file or the set of runs does, so
- * the two versions are the whole key.
- */
 export function exploredCacheKey(areaVersion: string, dataVersion: string): string {
   return `${CACHE_PREFIX}${areaVersion}:${dataVersion}`
 }
@@ -48,7 +38,6 @@ export function exploredCacheKey(areaVersion: string, dataVersion: string): stri
 const isPct = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 0
 
-/** A stored summary, or null when it is missing or not one (an older shape, a hand edit). */
 export function parseExploredSummary(value: unknown): ExploredSummary | null {
   if (!value || typeof value !== 'object') return null
   const { pct, complete, total, segments, next } = value as Record<string, unknown>
@@ -73,7 +62,6 @@ export function readExploredCache(key: string): ExploredSummary | null {
   }
 }
 
-/** Stores the summary under `key` and drops the ones of older runs or areas. */
 export function writeExploredCache(key: string, summary: ExploredSummary): void {
   try {
     for (let i = localStorage.length - 1; i >= 0; i--) {

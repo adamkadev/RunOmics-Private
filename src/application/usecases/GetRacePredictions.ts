@@ -26,10 +26,8 @@ export interface RacePrediction {
   trendDeltaSeconds: number | null
   trendWeeks: number
   /**
-   * Where the number comes from. Garmin's prediction wherever the watch makes
-   * one - the source Goals and the Analytics predictor read, so the same 10K is
-   * one time on every screen (Goals said 39:46 while Records said 39:47).
-   * Riegel from your bests for the distances Garmin does not predict.
+   * Garmin's prediction wherever the watch makes one, so a time reads the same
+   * as on Goals and Analytics; Riegel from your bests for the other distances.
    */
   source: 'garmin' | 'riegel'
 }

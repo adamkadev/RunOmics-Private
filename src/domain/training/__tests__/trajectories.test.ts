@@ -20,8 +20,7 @@ describe('metricTrajectory', () => {
     expect(trajectory.current).toBe(263)
     expect(trajectory.best).toBe(252)
     expect(trajectory.bestDate).toBe('2026-04-04')
-    // 263 against 252 is 4.4% slower - the number that says "rebuilding",
-    // which a bare 263 cannot.
+    // 263 against 252 is 4.4% slower: the number that says "rebuilding".
     expect(trajectory.offBestPct).toBeCloseTo(4.4, 1)
   })
 
@@ -84,8 +83,7 @@ describe('ctlTrajectory', () => {
     const trajectory = ctlTrajectory(series, km, '2026-09-27')
     const empty = trajectory.weeks.filter((week) => week.km === 0)
 
-    // An interruption is the thing worth seeing; averaging over it is how a
-    // month lost to travel came to look like reduced capacity.
+    // Averaging over an interruption makes a month lost to travel look like reduced capacity.
     expect(empty).toHaveLength(2)
     expect(empty.map((week) => week.weekStart)).toEqual(['2026-08-31', '2026-09-07'])
   })

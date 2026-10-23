@@ -25,8 +25,7 @@ describe('an open sheet dims the status strip (v5.6 #3)', () => {
     expect(css).toMatch(/html\[data-sheet-open\] \.edge-sampler/)
   })
 
-  // F15: only the safe area above the scrim, in the scrim's colour. Dimmed
-  // whole, the strip's last 12 pt, under the scrim too, read as a dark band.
+  // Dimmed whole, the strip's last 12 pt under the scrim would read as a dark band.
   it('dims only the part of the strip above the scrim, as the scrim does', () => {
     const css = readFileSync(path.join(__dirname, '../../app/globals.css'), 'utf8')
     const at = css.indexOf('html[data-sheet-open] .edge-sampler {')

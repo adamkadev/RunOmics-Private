@@ -6,7 +6,6 @@ import type { ExploreAreaFile } from '@/domain/explore/types'
 import { DISTRICTS_FILL_LAYER } from './districtsLayer'
 import { QUARTIER_SHEET_TEST_ID, easeToUnit, quartierPadding, sheetBoxOf, unitBounds } from './quartierCamera'
 
-/** The unit drawn under a point, if the Districts fill is on the map and showing there. */
 export function unitAt(map: MapLibreMap, point: PointLike): string | null {
   if (!map.getLayer(DISTRICTS_FILL_LAYER)) return null
   const id = map.queryRenderedFeatures(point, { layers: [DISTRICTS_FILL_LAYER] })[0]?.properties?.id
@@ -14,25 +13,17 @@ export function unitAt(map: MapLibreMap, point: PointLike): string | null {
 }
 
 /**
- * How long a tap on a quartier waits before its sheet opens: past the gap
- * between the two taps or clicks of a double-tap or double-click, which zoom
- * the map instead. Opened at once, the sheet's scrim took the second tap and
- * closed it, and the map never zoomed.
+ * Past the gap of a double-tap, which zooms the map instead: opened at once, the sheet's scrim would
+ * take the second tap and the map would never zoom.
  */
 export const TAP_OPEN_DELAY_MS = 300
 
-/** A popover open over the map - the place pill's menu, the credits - says so on its trigger. */
+/** A popover open over the map (the place menu, the credits) says so on its trigger. */
 const OPEN_POPOVER = '[aria-expanded="true"]'
 
 /**
- * A tap on a quartier (S2): `onTap` with its id, once no second tap or click
- * has followed it (`TAP_OPEN_DELAY_MS`) - a double-tap or double-click zooms,
- * as it does everywhere else on the map. A tap that only closes a popover
- * over the map (the place menu, the credits) is that and nothing more, as in
- * Heat. Listens once per map, not per style - the layer comes and goes with
- * the theme, the listener stays - and asks the map what is drawn under the
- * finger, so in Heat (the layer hidden or absent) a tap is nothing. With a
- * mouse, the pointer over a quartier says it can be clicked.
+ * A tap that only closes a popover over the map is that and nothing more. Listens once per map, not
+ * per style: the layer comes and goes with the theme, the listener stays.
  */
 export function useDistrictsTap(mapRef: RefObject<MapLibreMap | null>, mapReady: boolean, onTap: (unitId: string) => void): void {
   const onTapRef = useRef(onTap)
@@ -90,12 +81,7 @@ export function useDistrictsTap(mapRef: RefObject<MapLibreMap | null>, mapReady:
   }, [mapRef, mapReady])
 }
 
-/**
- * When a quartier's sheet opens, the camera eases so the quartier sits in
- * the map the sheet leaves: measured on the sheet's panel and the map's box,
- * then one move to the centre and zoom that frame it. Nothing to undo on
- * close - the map keeps no padding.
- */
+/** Nothing to undo on close: the map keeps no padding. */
 export function useQuartierCamera(
   mapRef: RefObject<MapLibreMap | null>,
   mapReady: boolean,

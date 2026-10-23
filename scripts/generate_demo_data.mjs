@@ -41,8 +41,7 @@ function pad(n, width) {
 function isoDate(d) {
   return d.toISOString().slice(0, 10)
 }
-// In UTC: the dates are UTC midnights, and a local-time step drifts an hour
-// across a daylight-saving change, so `isoDate` lands on the previous day.
+// In UTC: a local-time step drifts an hour across a daylight-saving change, so `isoDate` lands on the previous day.
 function addDays(d, days) {
   const copy = new Date(d)
   copy.setUTCDate(copy.getUTCDate() + days)
@@ -90,20 +89,16 @@ const SESSION_TYPES = [
   { type: 'Base', weight: 45, paceMult: [1.25, 1.42], descriptions: ['Morning Run', 'Easy Run', 'Recovery Jog'] },
   { type: 'Tempo', weight: 15, paceMult: [1.05, 1.12], descriptions: ['Tempo Run'] },
   { type: 'Threshold', weight: 15, paceMult: [0.98, 1.03], descriptions: ['Threshold'] },
-  // A session's average pace includes its recoveries, so the hard sessions
-  // average near threshold, never faster than the Z5 floor (G31).
+  // A session's average pace includes its recoveries, so the hard sessions average near threshold.
   { type: 'VO2Max', weight: 10, paceMult: [0.95, 1.02], descriptions: ['Intervals'] },
   { type: 'Sprint', weight: 5, paceMult: [1.0, 1.1], descriptions: ['Sprint Session'] },
 ]
 
-// The zone model the app reads the fixture with (GetTrainingZones): Z5 pace
-// is 0.86-0.91 x threshold pace, so no run or best may be faster than this.
+// GetTrainingZones puts Z5 pace at 0.86-0.91 x threshold pace, so no run or best may be faster than this.
 export const Z5_PACE_FLOOR_SEC = Math.round(ATHLETE.thresholdPaceSecPerKm * 0.86)
 
-// Average heart rate per session type, inside the athlete's own zones
-// (hrZoneBoundsBpm are the lower bounds of Z1-Z5): easy runs in Z2, tempo in
-// Z3, threshold in Z4. It came from pace alone, which put a Threshold run at
-// 115 bpm, below Z1 (G31).
+// Inside the athlete's own zones (hrZoneBoundsBpm are the lower bounds of Z1-Z5): easy runs in Z2, tempo in Z3,
+// threshold in Z4.
 const HR_BY_TYPE = {
   Base: [146, 156],
   Tempo: [161, 170],
@@ -113,7 +108,6 @@ const HR_BY_TYPE = {
 }
 const RACE_HR = { '5k': 181, '10k': 178, half: 172, marathon: 164 }
 
-/** Shift a noisy series so it averages to the value it stands for. */
 function centered(series, mean) {
   const avg = series.reduce((sum, v) => sum + v, 0) / series.length
   return series.map((v) => round(v - avg + mean, 1))
@@ -233,7 +227,6 @@ function buildActivities(rng, endDate) {
     if (isRaceDay) {
       bestEfforts[raceKey] = durationSeconds
     } else {
-      // A best is faster than the run's average, but never past the Z5 floor.
       if (distanceKm >= 1) bestEfforts['1k'] = round(Math.max(Z5_PACE_FLOOR_SEC, paceSecPerKm * between(rng, 0.9, 0.96)), 1)
       if (distanceKm >= 5 && (session.type === 'Tempo' || session.type === 'Threshold')) {
         bestEfforts['5k'] = round(Math.max(Z5_PACE_FLOOR_SEC * 5, paceSecPerKm * 5 * between(rng, 0.97, 1.0)), 1)
@@ -261,8 +254,7 @@ function buildActivities(rng, endDate) {
       elevationGain: round(between(rng, 10, 120), 1),
       aerTrainingEffect: round(between(rng, 1.5, 4.2), 1),
       anaTrainingEffect: round(between(rng, 0.3, 2.5), 1),
-      // Samples average to the recorded values, as a watch's do, so Charts and
-      // the stat row read the same run.
+      // Samples average to the recorded values, as a watch's do, so Charts and the stat row agree.
       hrSamples: centered(smoothSeries(rng, sampleLen, avgHeartRate, 4), avgHeartRate),
       elevationProfile: smoothSeries(rng, sampleLen, 20, 3),
       calories: Math.round(distanceKm * 62),
@@ -281,8 +273,7 @@ function buildActivities(rng, endDate) {
       weather: (() => {
         const tempC = round(between(rng, 8, 24), 1)
         const humidityPct = Math.round(between(rng, 40, 85))
-        // Feels-like and wind, which the heat adjustment and the map's wind
-        // chip read; without them one printed nothing and the other NaN.
+        // The heat adjustment reads the feels-like and the map's wind chip the wind.
         return {
           tempC,
           apparentTempC: round(tempC + (humidityPct - 60) * 0.05 + between(rng, -1, 1), 1),
@@ -314,7 +305,6 @@ function buildHrZones(rng, durationSeconds, type) {
       zone: i + 1,
       seconds: Math.max(0, seconds),
       percent: round(w * 100, 1),
-      // hrZoneBoundsBpm holds each zone's lower bound, as Athlete & zones reads it.
       minBpm: bounds[i],
       maxBpm: i + 1 < bounds.length ? bounds[i + 1] - 1 : null,
     }
@@ -346,9 +336,7 @@ function buildTrainingStatusAndBalance(rng, activities, endDate) {
   const weeks = {}
   const statuses = ['productive', 'maintaining', 'peaking', 'recovery']
 
-  // The watch rates every day, not only the days with a run, and its verdict
-  // holds for days at a time: a status that changed at random on 70 % of
-  // run days read "3 of the last 28 days" (G31).
+  // The watch rates every day, not only the days with a run, and its verdict holds for days at a time.
   const first = activities[0]
   const dates = []
   if (first) {
@@ -496,7 +484,7 @@ function formatHms(totalSeconds) {
 }
 
 function buildTrainingPlan(endDate) {
-  // Nine weeks that end on the race (21 days out): base, build, peak, taper.
+  // Nine weeks that end on the race: base, build, peak, taper.
   const race = addDays(endDate, 21)
   const start = addDays(race, -62)
   return {
@@ -524,8 +512,6 @@ function buildUpcomingRaces(endDate) {
 
 function buildPlannedWorkouts(rng, endDate) {
   const byYear = {}
-  // The name follows the type: "Threshold" typed VO2Max drew a Z5 bar under a
-  // Z4 title (G31).
   const NAMES_BY_TYPE = { Base: ['Easy Run', 'Long Run'], Tempo: ['Tempo'], Threshold: ['Threshold'], VO2Max: ['Intervals'] }
   for (let i = -7; i <= 30; i++) {
     if (rng() < 0.55) continue
@@ -582,8 +568,7 @@ function buildCoachingData(endDate, activities) {
     },
     { kind: 'cooldown', target: { durationSeconds: 600 } },
   ]
-  // What the plan asked for, in the round numbers a plan uses; the run
-  // differs from it. A copy of the run made planned and ran always agree (G31).
+  // In the round numbers a plan uses, so planned and ran differ as they really do.
   const plannedMeters = latest ? Math.max(1, Math.round(latest.distanceKm)) * 1_000 : 8_000
   const plannedSeconds = latest ? Math.max(1, Math.round(latest.durationSeconds / 300)) * 300 : 2_700
   const weeks = Array.from({ length: 4 }, (_, index) => {
@@ -610,8 +595,7 @@ function buildCoachingData(endDate, activities) {
     id: planId,
     revision: 1,
     status: 'active',
-    // The block is the last four weeks of a twelve-week build: three weeks out
-    // is peak, not "Base week 1 of 3" with Build and Peak still to come (G31).
+    // The block is the last four weeks of a twelve-week build.
     macrocycleStartDate: isoDate(addDays(targetDate, -MACROCYCLE_DAYS)),
     block: {
       id: 'demo-coaching-block',
@@ -719,7 +703,7 @@ function buildSyncMeta(endDate) {
 }
 
 function buildRecoveryHistory(endDate) {
-  // Its own generator, so adding it moved no other demo number.
+  // Its own generator, so it moves no other demo number.
   const rng = makeRng(SEED + 54)
   const days = {}
   for (let i = 364; i >= 0; i--) {
@@ -735,36 +719,19 @@ function buildRecoveryHistory(endDate) {
   return { days }
 }
 
-// Explore's Districts layer needs quartier boundaries, and the demo runs
-// circle a point in the Pacific where no real quartier exists. So the dataset
-// brings a town of its own, "Fictional Bay": six rectangular quartiers around
-// the home runs and one neighbouring commune, in the shape
-// scripts/build-explore-areas.ts writes a real area in. Nothing here draws
-// from an rng, so adding it moved no other demo number.
-//
-// The shapes are fitted to the runs. The home runs are concentric ellipses
-// about ROUTE_CENTERS.home, about 6 km wide and 2 km tall, around a hole of
-// a few cells that none of them crosses; only the marathon goes further out.
-// So the quartiers inside the ellipses are complete, the one with the hole
-// and the ones reaching past the ellipses' edge are partly explored, and
-// Millbrook, which only the marathon crosses, is fog. The routes depend on
-// `now` only through its weekday, and all seven weekdays give the same states
-// (scripts/__tests__/demoExploreArea.test.ts).
+// The demo runs circle a point in the Pacific where no real quartier exists, so the dataset brings a town of its own,
+// in the shape scripts/build-explore-areas.ts writes. Its shapes are fitted to the home runs so that some quartiers
+// are complete, some partly explored and Millbrook is fog (scripts/__tests__/demoExploreArea.test.ts).
 
 const EXPLORE_SCHEMA = 1
-// The build date is fixed, so the version (the cache key) only changes when
-// the shapes do.
+// The build date is fixed, so the version (the cache key) only changes when the shapes do.
 const DEMO_AREA = { id: 'demo', name: 'Fictional Bay', generatedAt: '2026-10-22' }
-// The grid of src/domain/explore/grid.ts, which this script cannot import: an
-// equirectangular projection about the origin at 111 320 m per degree, and
-// 150 m cells numbered from it.
+// The grid of src/domain/explore/grid.ts, which this script cannot import.
 const EXPLORE_CELL_M = 150
 const M_PER_DEGREE = 111_320
-// The origin is the town hall, a public point about 400 m south-west of home.
-// Never home itself, as in a real area.
+// The origin is a public point about 400 m from home, never home itself, as in a real area.
 const DEMO_TOWN_HALL = [-150.003, -0.002]
-// Each unit as [west, south, east, north) in whole cells from the origin, so
-// every border runs along cell edges, 75 m from the nearest centre.
+// [west, south, east, north) in whole cells from the origin, so every border runs along cell edges.
 const DEMO_TOWN_UNITS = [
   { slug: 'westbrook', name: 'Westbrook', kind: 'quartier', cells: [-11, -2, -2, 4] },
   { slug: 'old-harbour', name: 'Old Harbour', kind: 'quartier', cells: [-2, -2, 6, 4] },
@@ -774,10 +741,8 @@ const DEMO_TOWN_UNITS = [
   { slug: 'southfield', name: 'Southfield', kind: 'quartier', cells: [6, -8, 15, -2] },
   { slug: 'millbrook', name: 'Millbrook', kind: 'commune', cells: [-11, -18, 15, -8] },
 ]
-// A unit's runnable cells are those whose centre lies in it, less the ones no
-// path crosses, as the build script leaves out rivers and woods: the river,
-// one cell wide, running north through Millbrook, Riverside and Westbrook,
-// and the woods on top of the hill in Hillcrest ([west, south, east, north)).
+// Cells no path crosses, as the build script leaves out rivers and woods: a one-cell river column and the Hillcrest
+// woods ([west, south, east, north)).
 export const DEMO_TOWN_GAPS = { riverColumn: -7, woods: [2, -6, 5, -3] }
 
 function isTownGap(i, j) {
@@ -792,11 +757,10 @@ function exploreCellKey(i, j) {
 function buildDemoExploreArea() {
   const [lon0, lat0] = DEMO_TOWN_HALL
   const kx = M_PER_DEGREE * Math.cos((lat0 * Math.PI) / 180)
-  // A point given in cells from the origin, with an area file's 6 decimals.
   const at = (i, j) => [round(lon0 + (i * EXPLORE_CELL_M) / kx, 6), round(lat0 + (j * EXPLORE_CELL_M) / M_PER_DEGREE, 6)]
   const kindOrder = { quartier: 0, commune: 1 }
 
-  // In the build script's order: the town's quartiers, then the communes, each by name.
+  // In the build script's order: quartiers, then communes, each by name.
   const features = [...DEMO_TOWN_UNITS]
     .sort((a, b) => kindOrder[a.kind] - kindOrder[b.kind] || a.name.localeCompare(b.name, 'fr'))
     .map(({ slug, name, kind, cells: [west, south, east, north] }) => {

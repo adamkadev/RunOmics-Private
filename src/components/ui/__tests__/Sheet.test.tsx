@@ -7,8 +7,6 @@ import { ActivityFilterSheet } from '@/components/activities/ActivityFilterSheet
 
 const css = readFileSync(path.resolve(__dirname, '../../../app/globals.css'), 'utf8')
 
-// F18: one sheet material. Filter & sort and Share run went large and opaque
-// while Map Filters, Coach "Why" and Week of... floated as glass.
 describe('a sheet', () => {
   it.each(['medium', 'large'] as const)('is the same glass at a %s detent', (detent) => {
     render(<Sheet onClose={() => {}} title="Filter & sort" testId="sheet" detent={detent}>body</Sheet>)

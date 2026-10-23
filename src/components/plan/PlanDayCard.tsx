@@ -18,13 +18,10 @@ import { kindLabel, type DayKind } from './sessionKind'
 import { intensityBlocks, stepRows, type StepTone } from './workoutSteps'
 import { paceLabel, workoutSummary } from './workoutSummary'
 
-// Radius 24 and 18 pt padding: the selected day is the screen's hero card.
 const CARD = 'content-card rounded-[24px] bg-card shadow-[var(--card-edge)] p-4'
 
-// 44 pt at its tallest (F9), easy and recovery steps a third of it.
 const PROFILE_HEIGHT: Record<StepTone, number> = { ease: 14, recovery: 14, work: 44 }
 
-/** "WED 21 · THRESHOLD", in the session's colour (App Fixes 3b: no dot). */
 function Eyebrow({ date, kind }: { date: string; kind: DayKind | null }) {
   return (
     <p
@@ -40,7 +37,6 @@ function Title({ children }: { children: ReactNode }) {
   return <h2 className="mt-1.5 break-words text-[25px] font-bold leading-tight tracking-[-0.01em] text-foreground text-pretty">{children}</h2>
 }
 
-/** A target of the session as a tile (App Fixes 3b): its name over the number. */
 function TargetTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex min-w-0 flex-col gap-[3px] rounded-[14px] bg-[var(--background)] px-3 py-2.5" data-testid="plan-target">
@@ -51,20 +47,8 @@ function TargetTile({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * A session still to come (redesign 3.0, 1d): the eyebrow, the title, one
- * line of distance and time, then its intensity profile - each step as wide
- * as it lasts - and its steps. No send-to-watch and no list of the week's
- * other sessions: the day selector above already is the week (a rest day
- * lists them, 3.0.2, having nothing else to show).
- *
- * A session of one step has no structure to draw (App Fixes 3b): a full-width
- * block said "structured" about an easy run. It shows its targets instead -
- * the pace range, and the zone and bpm cap to hold.
- *
- * "Find a route" (Explore, E5) closes the card when the athlete's home area
- * has quartiers (`exploreAvailable`): it opens the map's route generator with
- * the session's distance. Not on a race, and not on a session with no
- * distance to fill in.
+ * A one-step session shows its targets instead of a profile: one full-width
+ * block would call an easy run structured.
  */
 export function PlannedWorkoutCard({
   workout,
@@ -79,7 +63,6 @@ export function PlannedWorkoutCard({
 }) {
   const s = t.plan.session
   const summary = workoutSummary(workout)
-  // The session as its set: the eyebrow says its type (round 2).
   const title = sessionLabel(summary.title)
   const totalSeconds = summary.durationSeconds ?? 0
   const structured = (workout.structure?.length ?? 0) > 1
@@ -88,8 +71,8 @@ export function PlannedWorkoutCard({
   const subline = [km, time, ...(structured ? summary.paces.map(paceLabel) : [])].filter(Boolean).join(' · ')
   const blocks = intensityBlocks(workout.structure, totalSeconds, kind.color)
   const rows = stepRows({ steps: workout.structure, type: kind.type, kind: kind.kind, color: kind.color, totalSeconds, pace: effortPace(workout.effort) })
-  // A one-step session has no structure to read a pace off (the coach's
-  // steps collapse to none), so its target comes from the effort line.
+  // A one-step session's steps collapse to none, so its pace comes from the
+  // effort line.
   const paceTarget = structured
     ? null
     : (summary.paces[0] ? `${formatClock(summary.paces[0].pace[0])}–${formatClock(summary.paces[0].pace[1])}` : effortPaceRange(workout.effort))
@@ -106,8 +89,6 @@ export function PlannedWorkoutCard({
           {subline && <p className="mt-1 text-[13px] text-muted-foreground">{subline}</p>}
         </>
       ) : (
-        // One step (App Fixes 3b): the distance and time across from the
-        // title, "10 km · 1:00 h", the km in ink.
         <div className="mt-2.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
           <h2 className="break-words text-2xl font-bold leading-tight tracking-[-0.02em] text-foreground text-pretty">{title}</h2>
           {(km || time) && (
@@ -120,7 +101,6 @@ export function PlannedWorkoutCard({
         </div>
       )}
       {structured && (
-        // 10 pt under the detail line, 14 pt over the steps' divider (F9).
         <div aria-hidden data-testid="intensity-profile" className="mt-2.5 flex h-[44px] items-end gap-[3px]">
           {blocks.map((block, i) => (
             <span
@@ -138,7 +118,6 @@ export function PlannedWorkoutCard({
           {hrCap !== null && <TargetTile label={hrZone ? s.hrTargetZone(hrZone) : s.hrTarget} value={`${s.hrCap(hrCap)} ${t.units.bpm}`} />}
         </div>
       )}
-      {/* The steps only when there is more than one to read. */}
       {structured && (
       <ol className="mt-3.5 border-t border-border" data-testid="workout-steps">
         {rows.map((row) => (
@@ -154,7 +133,6 @@ export function PlannedWorkoutCard({
       </ol>
       )}
       {routeHref && (
-        // A tinted secondary button: the card stays solid, no glass (E5).
         // Not prefetched: Activities carries every run.
         <ButtonLink
           href={routeHref}
@@ -172,24 +150,13 @@ export function PlannedWorkoutCard({
   )
 }
 
-/**
- * The route generator for a session: its whole distance (strides and
- * recoveries included) on the stepper's 0.5 km grid, at the session's
- * average pace (its duration over its distance, else its easy or target
- * pace), and its day - so the generator names this session, not today's.
- * Null when it has no distance.
- */
+/** With its day, so the generator names this session, not today's. */
 function findRouteHref(workout: PlanWorkoutView): string | null {
   const km = planRouteKm(workout.distanceM)
   if (km === null) return null
   return exploreRouteHref({ km, paceSecPerKm: planPaceSecPerKm(workout), date: workout.date, from: 'plan' })
 }
 
-/**
- * The week's next quality session (App Fixes 3b), under the day card: its
- * label in the session's colour, then "Wed 21 · Threshold 3 × 8′". A tap
- * selects its day.
- */
 export function NextKeySessionCard({ weekday, title, color, onSelect }: { weekday: string; title: string; color: string; onSelect?: () => void }) {
   return (
     <button
@@ -207,7 +174,7 @@ export function NextKeySessionCard({ weekday, title, color, onSelect }: { weekda
   )
 }
 
-// effort reads "Z2 easy · 5:10-6:27 /km": a session without steps takes its pace from it.
+// An effort line reads "Z2 easy · 5:10-6:27 /km".
 const EFFORT_PACE = /(\d{1,2}:\d{2})[-–](\d{1,2}:\d{2})\s*\/km$/
 
 function effortPace(effort: string | null): string | null {
@@ -215,7 +182,6 @@ function effortPace(effort: string | null): string | null {
   return range ? t.plan.row.pace(range) : null
 }
 
-/** Just the range out of an effort line: "5:30–6:24". */
 function effortPaceRange(effort: string | null): string | null {
   const match = effort?.match(EFFORT_PACE)
   return match ? `${match[1]}–${match[2]}` : null
@@ -230,11 +196,7 @@ function Line({ label, children, testId }: { label: string; children: ReactNode;
   )
 }
 
-/**
- * A missed session (Wave 5, Today › missed day): "Missed", and the way to say
- * it was skipped on purpose - sick or resting - which Today then draws as a
- * rest day and stops counting. Undone the same way.
- */
+/** A skipped day is drawn as rest on Today and stops counting as missed. */
 function MissedLine({ date }: { date: string }) {
   const skipped = useSkippedDays().has(date)
   const s = t.plan.dayCard
@@ -257,12 +219,6 @@ function MissedLine({ date }: { date: string }) {
   )
 }
 
-/**
- * A day that is over, or run (redesign 3.0, 1d): what was planned against
- * what was done - "10 km easy" against "11.5 km · 5:47 /km · Z2 86%", ticked - and
- * a way into each run. A missed session says so; a run nothing was planned
- * for says that.
- */
 export function DoneDayCard({
   date,
   kind,
@@ -274,10 +230,9 @@ export function DoneDayCard({
   date: string
   kind: DayKind | null
   title: string
-  /** "10 km · Easy run": what the plan said for the day. */
+  /** "10 km · Easy run". */
   planned: string | null
   acts: ActivitySummary[]
-  /** The day was planned and run: a check by what was done. */
   onPlan: boolean
 }) {
   const zone = sessionZone({ type: kind?.type })
@@ -332,11 +287,6 @@ export function DoneDayCard({
   )
 }
 
-/**
- * Rest is a prescribed state, not a missing render (3.0.2: one line). The
- * day and "Rest day" on the left, the next session on the right; the week's
- * sessions are in Coming up under it.
- */
 export function RestDayCard({ date, next }: { date: string; next: { weekday: string; title: string } | null }) {
   const r = t.plan.restCard
   return (
@@ -367,11 +317,6 @@ export interface ComingUpRow {
   color: string
 }
 
-/**
- * The week's sessions still to come (3.0.2), under a rest day: each row its
- * type's colour, its title and its day, distance and time; a tap selects
- * the day, as the day selector does.
- */
 export function ComingUpCard({ rows, selectedDate, onSelect }: { rows: ComingUpRow[]; selectedDate: string; onSelect: (date: string) => void }) {
   const c = t.plan.comingUp
   return (

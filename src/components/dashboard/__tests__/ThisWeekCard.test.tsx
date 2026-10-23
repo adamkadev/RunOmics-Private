@@ -20,8 +20,7 @@ const DAYS: WeekTargetDay[] = [
 const WEEK = weekTarget(DAYS, TODAY, null)
 
 describe('ThisWeekCard (App Fixes 1a v2)', () => {
-  // The card reads the reader's clock once mounted (useToday): pinned to the
-  // fixture's today, or the test fails on any other day.
+  // The card reads the reader's clock once mounted (useToday): pinned to the fixture's today, or the test fails on any other day.
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.setSystemTime(new Date(2026, 9, 20, 12))
@@ -49,7 +48,6 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     expect(bars[0]!.getAttribute('style')).not.toContain('dashed')
     expect(bars[2]!.getAttribute('style')).toContain('dashed')
     expect(screen.getAllByTestId('today-tint')).toHaveLength(1)
-    // Round 2 (F14): today's letter in the shared today ring.
     expect(card.querySelectorAll('.state-today')).toHaveLength(1)
     expect(card.querySelector('.state-today')!.textContent).toBe('T')
     expect(screen.queryByTestId('plan-tick')).toBeNull()
@@ -64,7 +62,6 @@ describe('ThisWeekCard (App Fixes 1a v2)', () => {
     expect(card).toHaveTextContent(t.dashboard.thisWeek.runsLeft(3))
   })
 
-  // Wave 5, Today › missed day.
   const MISSED = weekTarget([day('2026-10-19', { plannedKm: 8, plannedSessions: 1 }), ...DAYS.slice(1)], TODAY, null)
 
   it('dashes a missed day in amber, keeps its km, keys it and counts it', () => {

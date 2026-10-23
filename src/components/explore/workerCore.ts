@@ -24,16 +24,9 @@ import {
 } from './workerProtocol'
 
 /**
- * Everything the Explore worker does, as plain functions over a state object.
- *
- * `explore.worker.ts` only wires `handleMessage` to `self`, so this module
- * runs in node under test with a fake fetch and cache. It keeps one entry per
- * area (the parsed file, its index and each run's reduced result) for the
- * life of the worker, which lives as long as the page.
- *
- * Requests for one area run one after another, in the order they arrived:
- * a `coverage` sent right after `addTracks` must count the tracks just
- * added, even when adding them waited on IndexedDB.
+ * `explore.worker.ts` only wires `handleMessage` to `self`, so this module runs in node under test.
+ * Requests for one area run one after another, in the order they arrived: a `coverage` sent right
+ * after `addTracks` must count the tracks just added, even when adding them waited on IndexedDB.
  */
 
 /**
@@ -42,7 +35,6 @@ import {
  */
 export const COVERAGE_ALGO = 1
 
-/** A response just big enough for the worker: same-origin JSON. */
 export interface FetchResponse {
   ok: boolean
   status: number
@@ -57,11 +49,11 @@ export interface WorkerDeps {
 export interface AreaState {
   area: ExploreAreaFile
   index: AreaIndex
-  /** Each run's cells and metres, by activity id. */
+  /** By activity id. */
   activities: Map<string, ActivityCoverageInput>
   /** Each run's first point, kept in memory only: their median is close to home. */
   starts: Map<string, LonLat>
-  /** Union of every run's cells, built on demand and dropped when a run is added. */
+  /** Built on demand, dropped when a run is added. */
   visited: Set<number> | null
 }
 
@@ -86,15 +78,8 @@ export interface CachedTrack {
 }
 
 /**
- * A short digest of a track's points: their count and a 32-bit MurmurHash3
- * of the coordinates at 1e-7° (about 1 cm), so the same points always give
- * the same digest whether they came packed from the page or as JSON here.
- *
- * It is what ties a cached result to its track. The activity id does not:
- * a reprocess rewrites routes under the same ids,
- * and a page left open across a data deployment can pair an id with a
- * neighbour's track. Hashing every point costs a fraction of the walk it
- * saves.
+ * A 32-bit MurmurHash3 of the coordinates at 1e-7° (about 1 cm). It, not the activity id, ties a
+ * cached result to its track: a reprocess rewrites routes under the same ids.
  */
 export function trackFingerprint(coords: ArrayLike<number>): string {
   let h = 0x9747b28c
@@ -111,10 +96,6 @@ export function trackFingerprint(coords: ArrayLike<number>): string {
   return `${Math.floor(coords.length / 2)}:${(h >>> 0).toString(36)}`
 }
 
-/**
- * A cached run result, or null when the entry is missing, stale, not ours,
- * or was computed from other points than `fingerprint` names.
- */
 export function readCachedTrack(
   value: unknown,
   unitCount: number,
@@ -133,7 +114,6 @@ function errorMessage(err: unknown): string {
   return typeof err === 'string' && err ? err : 'Explore worker error'
 }
 
-/** Runs `task` after every earlier task queued under `key`, whether they succeeded or not. */
 function serial<T>(state: WorkerState, key: string, task: () => Promise<T>): Promise<T> {
   const previous = state.queues.get(key) ?? Promise.resolve()
   const next = previous.then(task, task)
@@ -158,10 +138,6 @@ function areaUrl(ref: ExploreAreaRef): string {
   return `/api/explore/areas/${encodeURIComponent(ref.id)}?v=${encodeURIComponent(ref.version)}`
 }
 
-/**
- * Drops cached files of the area's other versions, and the run results
- * computed on them: a rebuilt area makes them dead weight.
- */
 async function pruneStale(cache: ExploreCache, id: string, current: string): Promise<void> {
   const keep = areaCacheKey(id, current)
   for (const key of await cache.keys('areas', `${id}:`)) {
@@ -207,12 +183,6 @@ interface IncomingTrack {
   coords: ArrayLike<number>
 }
 
-/**
- * Reduces new runs to their cells, from the cache where it has them. Runs
- * the area already holds are skipped, so sending one twice costs nothing.
- * A cached result is used only for the very points it was computed from,
- * and one that is not is computed again and overwritten.
- */
 async function addActivities(area: AreaState, tracks: readonly IncomingTrack[], deps: WorkerDeps): Promise<string[]> {
   const fresh: IncomingTrack[] = []
   const seen = new Set<string>()
@@ -264,15 +234,8 @@ function addTracks(area: AreaState, msg: RequestOf<'addTracks'>, deps: WorkerDep
 }
 
 /**
- * Where each wanted run's track sits in a `/api/map/routes` answer, by the
- * activity ids the answer itself gives.
- *
- * The page's `routeIdx` comes from the data the page was built with, the
- * answer from whichever deployment serves it now, and one run synced in
- * between moves every index by one (the newest run comes first). So an
- * index is taken only where the answer names the same run; otherwise the run
- * is found by its id, and a run the answer does not hold is left out rather
- * than given another run's track.
+ * The page's `routeIdx` comes from the data the page was built with, the answer from whichever
+ * deployment serves it now, so an index is trusted only where the answer names the same run.
  */
 export function locateClusterTracks(
   wanted: readonly ClusterTrackRef[],
@@ -295,11 +258,7 @@ export function locateClusterTracks(
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null
 
-/**
- * Fetches a cluster's tracks itself, so the 2 MB of JSON is parsed here
- * rather than on the main thread, and adds the runs of `index` it lacks,
- * each with the track the answer gives under its own id.
- */
+/** Fetched here so the 2 MB of JSON is parsed off the main thread. */
 async function fetchClusterTracks(
   area: AreaState,
   msg: RequestOf<'fetchClusterTracks'>,
@@ -324,7 +283,6 @@ async function fetchClusterTracks(
   return addActivities(area, tracks, deps)
 }
 
-/** The home given, else (asked for) the median start of the runs counted - `ids`, or every run added. */
 function homeOf(area: AreaState, home: LonLat | null, fromTracks: boolean | undefined, ids: readonly string[] | undefined): LonLat | null {
   if (home) return home
   if (!fromTracks) return null
@@ -386,10 +344,6 @@ function dispatch(
   }
 }
 
-/**
- * Answers one request. Never rejects: a failure comes back as `{ id, error }`
- * for the engine to reject that one caller with.
- */
 export async function handleMessage(state: WorkerState, msg: ExploreRequest, deps: WorkerDeps): Promise<ExploreResponse> {
   const id = typeof msg === 'object' && msg !== null && typeof msg.id === 'number' ? msg.id : -1
   try {

@@ -64,7 +64,6 @@ describe('the current week on /activities', () => {
   beforeEach(freshPage)
   afterEach(() => vi.useRealTimers())
 
-  // 3.0: before this week's first run there is no "This week · 0 km" card.
   it('leaves this week out until its first run', () => {
     renderList([run('a', '2026-09-20', 25), run('b', '2026-09-13', 10)])
 
@@ -72,7 +71,6 @@ describe('the current week on /activities', () => {
     expect(screen.queryByTestId('current-week')).not.toBeInTheDocument()
   })
 
-  // 3.0: every week is a card of its runs, none folded away.
   it('shows every week as a card of its runs', () => {
     renderList([run('a', '2026-09-20', 25), run('b', '2026-09-13', 10)])
 
@@ -84,15 +82,11 @@ describe('the current week on /activities', () => {
     expect(within(weeks[1]!).getByText('Run b')).toBeInTheDocument()
   })
 
-  // v4.17: a week's runs show their pace per km.
   it('writes the pace per km on a week', () => {
     renderList([run('a', '2026-09-20', 25)])
     expect(screen.getByTestId('thumb-row').textContent).toContain('6:00 /km')
   })
 
-  // Design review, Oct 2026: its km and runs on the right, and no plan
-  // target or bar. Round 2 (F10): "This week" alone - with its dates it was
-  // cut at 402 pt - and the line wraps under it rather than ever cut.
   it('counts this week once it has a run, over its runs as rows', () => {
     renderList([run('c', '2026-09-22', 12), run('a', '2026-09-20', 25)])
 
@@ -114,8 +108,7 @@ describe('a type this build does not know', () => {
   afterEach(() => vi.useRealTimers())
 
   // Activity JSON is cast, not parsed, so a new classifier type reaches the
-  // list unchecked. It used to throw on the colour lookup and take the page
-  // down; it draws as Base instead.
+  // list unchecked; it draws as Base.
   it('still draws the week and the run', () => {
     renderList([{ ...run('h', '2026-09-22', 9), type: 'HillRepeats' as ActivityType }])
 
@@ -130,8 +123,6 @@ describe('the archive under its months', () => {
   beforeEach(freshPage)
   afterEach(() => vi.useRealTimers())
 
-  // v4.17: sticky month headings, each totalling the weeks under it - a week
-  // sits under the month it starts in.
   it('heads the weeks with their month and its total', () => {
     renderList([
       run('a', '2026-09-20', 25),
@@ -147,19 +138,16 @@ describe('the archive under its months', () => {
     expect(within(months[0]!).getByTestId('month-line').textContent).toBe(`35 ${t.units.km} · ${t.activities.weekLine.runs(2)}`)
     // Aug 31 - Sep 6 starts in August, so it counts there.
     expect(within(months[1]!).getByTestId('month-line').textContent).toBe(`25 ${t.units.km} · ${t.activities.weekLine.runs(3)}`)
-    // Every week spells its line out.
     for (const line of screen.getAllByTestId('past-week-line')) expect(line.textContent).toMatch(new RegExp(t.activities.weekLine.runs(1)))
   })
 
   it('says how far back the archive goes', () => {
     renderList([run('a', '2026-09-20', 25), run('b', '2025-05-14', 10)])
     const since = t.activities.since(formatDate('2025-05-14', { precision: 'month', year: 'always' }))
-    // The line under the title row, which List | Map shares (round 3).
     const line = screen.getByRole('heading', { level: 1 }).closest('header')!.querySelector('[data-title-sub]')!
     expect(line.textContent).toContain(since)
   })
 
-  // 3.0: four group chips, no dots.
   it('filters by four groups, without dots', () => {
     renderList([run('a', '2026-09-20', 25)])
     const rail = screen.getByTestId('type-chips')
@@ -168,9 +156,6 @@ describe('the archive under its months', () => {
     expect(rail.querySelector('span[aria-hidden]')).toBeNull()
   })
 
-  // F19: search, chips and the filter button are glass over the glow in both
-  // themes, on one blur per group - the search field, the chip row - laid
-  // under them, never one per chip. The selected chip stays solid.
   it('lays the search field and the chip row each on one blur, the chips tint only', () => {
     renderList([run('a', '2026-09-20', 25)])
     const search = screen.getByPlaceholderText(t.activities.searchPlaceholder).closest('label')!
@@ -194,7 +179,6 @@ describe('the list at a phone', () => {
   beforeEach(freshPage)
   afterEach(() => vi.useRealTimers())
 
-  // 3.0: no sort menu in the header; the sort lives in the filter sheet.
   it('keeps no sort menu, and a 44 pt filter button', () => {
     renderList([run('a', '2026-09-20', 25)])
 
@@ -202,7 +186,6 @@ describe('the list at a phone', () => {
     expect(screen.getByRole('button', { name: t.activities.filter.title }).className).toContain('hit-44')
   })
 
-  // 3.0: "Sun 20 · 1:00:00 · 145 bpm" - the type is the dot beside it.
   it("writes a week's run as its day, time and heart rate", () => {
     renderList([{ ...run('a', '2026-09-20', 12), avgHeartRate: 145 }])
     const row = screen.getByTestId('thumb-row')
@@ -213,7 +196,6 @@ describe('the list at a phone', () => {
     expect(shown.textContent).not.toContain(t.activityTypes.Base)
   })
 
-  // A long name stays on one line in a week, ellipsed (3.0).
   it('ellipses a long name', () => {
     const name = 'Long progressive Sunday run along the river with friends from the club'
     renderList([{ ...run('a', '2026-09-22', 10), description: name }])
@@ -222,11 +204,6 @@ describe('the list at a phone', () => {
     expect(title.className).toContain('min-w-0')
   })
 
-  // 3.0.2: a structured name is its type on the first line, its structure on
-  // the second. The date leads that line (App Fixes 3d), so a long structure
-  // is what the ellipsis takes, never the date.
-  // Round 2, the owner's ask: the session as its set on the first line, said
-  // once; the meta line the date, the time and the HR, nothing after them.
   it('names a structured session by its set, the meta line left to the date, time and HR', () => {
     const name = 'Threshold 3 × 7:40 - 3 × 8\'@4:25'
     renderList([{ ...run('a', '2026-09-22', 10), description: name }])
@@ -260,7 +237,6 @@ describe('the filter sheet', () => {
   const sheetUser = () => userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
   const typeBox = (sheet: HTMLElement, type: ActivityType) =>
     within(sheet).getByRole('checkbox', { name: new RegExp(`^${t.activityTypes[type]}`) })
-  /** The long run has a row of its own (App Fixes 3d). */
   const longRunBox = (sheet: HTMLElement) =>
     within(sheet).getByRole('checkbox', { name: new RegExp(t.activities.longRun) })
 
@@ -275,7 +251,6 @@ describe('the filter sheet', () => {
     const sheet = await openSheet(user)
 
     expect(typeBox(sheet, 'Threshold').textContent).toContain('2')
-    // Nothing ticked: the button says what it opens (App Fixes 3d).
     expect(within(sheet).getByRole('button', { name: t.activities.filter.showAll(4) })).toBeInTheDocument()
 
     await user.click(typeBox(sheet, 'Threshold'))
@@ -283,7 +258,6 @@ describe('the filter sheet', () => {
     expect(within(sheet).getByRole('button', { name: t.activities.filter.show(3) })).toBeInTheDocument()
   })
 
-  // 3.0: picked types stand in for the groups as one chip whose ✕ clears them.
   it('applies picked types as one removable chip, kept in the URL', async () => {
     const user = sheetUser()
     renderList(archive())
@@ -307,7 +281,7 @@ describe('the filter sheet', () => {
     const user = sheetUser()
     renderList(archive())
     const sheet = await openSheet(user)
-    // Easy is the easy running and the long run together (App Fixes 3d).
+    // Easy is the easy running and the long run together.
     await user.click(typeBox(sheet, 'Base'))
     await user.click(longRunBox(sheet))
     await user.click(within(sheet).getByRole('button', { name: t.activities.filter.show(1) }))
@@ -330,7 +304,6 @@ describe('the filter sheet', () => {
     expect(within(sheet).getByRole('tab', { name: t.activities.sort.newest }).getAttribute('aria-selected')).toBe('true')
   })
 
-  // Longest and Fastest are one ranked list, with no weeks.
   it('sorts by the longest run as a flat list', async () => {
     const user = sheetUser()
     fetchMock.mockResolvedValue({ json: async () => ({ items: archive(), total: 4, nextOffset: null }) })
@@ -346,7 +319,6 @@ describe('the filter sheet', () => {
   })
 })
 
-// Design review, Oct 2026: List | Map under the title, the view in the URL.
 describe('List and Map', () => {
   beforeEach(() => {
     sessionStorage.clear()

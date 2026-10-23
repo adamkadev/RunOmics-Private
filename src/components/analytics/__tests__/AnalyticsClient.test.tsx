@@ -103,7 +103,6 @@ describe('Analytics (v4.5)', () => {
     ])
   })
 
-  // v4.6: one set of periods on every tab; Performance defaults to 12w.
   it('has one period control per tab, 4 wk / 12 wk / 1 yr on all four', async () => {
     await renderBoard()
     const periods = () => within(screen.getByRole('radiogroup')).getAllByRole('radio').map((r) => r.textContent)
@@ -116,14 +115,12 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('predictions-card').textContent).toContain('change in 12 weeks')
     await openTab(t.analytics.tabs.volume, 'weekly-card')
     expect(periods()).toEqual(['4W', '12W', '1Y'])
-    // One range line on every tab, under the title: first Monday to today.
+    // First Monday to today.
     expect(screen.getByTestId('analytics-range').textContent).toMatch(/^Jul 6 – Sep 26, 2026$/)
     await openTab(t.analytics.tabs.health, 'easy-hard-card')
     expect(screen.getAllByRole('radiogroup')).toHaveLength(1)
   })
 
-  // Design review, Oct 2026: one 12-week read sat over every tab, the Load
-  // verdict over race predictions that had slipped, "12 weeks" under 4 wk.
   it('reads each tab over its own period, and says which', async () => {
     await renderBoard()
     const s = t.analytics.cards.coachRead
@@ -137,9 +134,8 @@ describe('Analytics (v4.5)', () => {
     // Outside the tab panel: it stays put across a switch.
     expect(screen.getByRole('tabpanel').contains(coach())).toBe(false)
 
-    // Performance, at its 12 weeks: easy pace faster, threshold and the
-    // predictions slower; Garmin's two estimates share a vote, so it reads
-    // mixed and names each side (v4.16.4).
+    // Performance, at its 12 weeks: easy pace faster, threshold and the predictions slower; Garmin's two estimates
+    // share a vote, so it reads mixed and names each side.
     await openTab(t.analytics.tabs.performance, 'predictions-card')
     expect(coach().textContent).toContain(s.eyebrow(words['12w']!, t.analytics.tabs.performance))
     expect(headline()).toBe(s.headline.mixed('Easy pace', false, 'threshold and race predictions', true))
@@ -176,8 +172,6 @@ describe('Analytics (v4.5)', () => {
     expect(coach().getAttribute('data-tone')).toBe('pos')
   })
 
-  // Design review, Oct 2026: the header's range, the period control and the
-  // coach read's eyebrow name one period, on every tab and every period.
   it('dates the header range by the period chosen, as the coach eyebrow names it', async () => {
     await renderBoard()
     const s = t.analytics.cards.coachRead
@@ -197,15 +191,12 @@ describe('Analytics (v4.5)', () => {
     }
   })
 
-  // App Fixes 1b: a bottom sheet with a grab handle, the lead number bold,
-  // and "Open plan" beside one "Close".
   it('opens the coach read in a bottom sheet with Open plan beside Close', async () => {
     await renderBoard()
     expect(screen.getByTestId('coach-open-plan').getAttribute('href')).toBe('/plan')
     fireEvent.click(screen.getByTestId('coach-read-why'))
     const dialog = screen.getByRole('dialog')
     expect(dialog.getAttribute('aria-modal')).toBe('true')
-    // Liquid Glass v3 (G10): a medium-detent glass sheet, 8 pt in, r47.
     const panel = screen.getByTestId('why-sheet')
     expect(panel.getAttribute('data-detent')).toBe('medium')
     expect(panel.className).toMatch(/\blg lg-sheet\b/)
@@ -243,8 +234,6 @@ describe('Analytics (v4.5)', () => {
     expect(document.querySelector('[aria-label="' + t.analytics.aboutChart + '"]')).toBeNull()
   })
 
-  // Wave 5 D: Injury risk and the large Load trend no longer sit on the tab,
-  // and the coach card says nothing of the watch's status: its chart does.
   it('drops Injury risk and the large Load trend, and the note on the watch status', async () => {
     await renderBoard()
     for (const id of ['risk-card', 'load-trend-card', 'recovery-card']) expect(screen.queryByTestId(id)).toBeNull()
@@ -256,8 +245,7 @@ describe('Analytics (v4.5)', () => {
     render(<AnalyticsClient data={{ ...data, status }} today={TODAY} />)
     await screen.findByTestId('form-card')
     const cells = [...screen.getByTestId('training-status-strip').children] as HTMLElement[]
-    // v4.17.2: today at full strength, the rest at 60%. Round 2 (F14): in
-    // the shared today ring, not a heavy ink outline.
+    // Today in the shared today ring, not a heavy ink outline.
     expect(cells.at(-1)!.style.background).toBe('var(--pos)')
     expect(cells.at(-1)!.className).toContain('state-today')
     expect(cells.at(-2)!.className).not.toContain('state-today')
@@ -266,8 +254,7 @@ describe('Analytics (v4.5)', () => {
     expect(cells.at(-2)!.style.outline).toBe('')
   })
 
-  // v4.17.2: each count right after its name, the items 20 px apart - not
-  // spread across the card, where a count read as the next item's.
+  // Spread across the card, a count reads as the next item's.
   it('puts each status count right after its name', async () => {
     render(<AnalyticsClient data={data} today={TODAY} />)
     await screen.findByTestId('form-card')
@@ -310,7 +297,7 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('vo2-link').textContent).toContain('55.0')
     expect(screen.getByTestId('performance-summary').textContent).toContain('−1.0 in 12 weeks')
     expect(screen.getByTestId('performance-summary').textContent).toContain(`4:23${t.units.perKm}`)
-    // v4.7: slower is amber, faster --good, by the same helper everywhere.
+    // Slower is amber, faster --good, by the same helper everywhere.
     for (const delta of screen.getAllByTestId('prediction-delta')) expect(delta.getAttribute('style')).toContain('var(--tone-caution)')
     // VO2max fell by 1 in 12 weeks: warn on the meaning line, the value stays ink.
     const [vo2] = screen.getAllByTestId('summary-delta')
@@ -319,12 +306,10 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('performance-summary').innerHTML).not.toContain('var(--accent')
   })
 
-  // One subgrid keeps the times and changes aligned; from sm up the sparkline
-  // sits right against the time, the slack after the distance.
   it('draws each prediction as one line, the sparkline next to its time', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.performance, 'predictions-card')
-    // v4.17.3: distance, spacer, sparkline up against the time, time with its change.
+    // Distance, spacer, sparkline up against the time, time with its change.
     expect(screen.getByTestId('predictions-grid').className).toContain('sm:grid-cols-[120px_1fr_minmax(0,360px)_auto]')
     for (const row of screen.getByTestId('predictions-grid').children) {
       expect(row.className).toContain('grid-cols-subgrid')
@@ -334,7 +319,6 @@ describe('Analytics (v4.5)', () => {
     }
   })
 
-  // v4.17.2: the chart fits its paces, with three of them up the left.
   it('fits the pace trend to its paces and labels three of them', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.performance, 'pace-trend-card')
@@ -354,7 +338,6 @@ describe('Analytics (v4.5)', () => {
     expect(ys.at(-1)!).toBeGreaterThan(ys[0]!)
   })
 
-  // v4.17: each bar is the seconds lost against the best temperature band.
   it('draws heat cost as seconds lost vs the best band: best in pos, over 10 s warn, less muted', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.performance, 'heat-card')
@@ -372,8 +355,7 @@ describe('Analytics (v4.5)', () => {
     expect(loss('mild').textContent).toBe('+4 s')
     expect(loss('mild').getAttribute('style')).toContain('var(--muted-foreground)')
     expect(row('hot').textContent).toContain(t.analytics.cards.heatCost.noRuns)
-    // Design review, Oct 2026: the best band is the zero, marked; a band
-    // without runs is an empty dashed track, never drawn like the best.
+    // The best band is the zero, marked; a band without runs is an empty dashed track, never drawn like the best.
     expect(within(row('cool')).getByTestId('heat-zero').style.background).toBe('var(--pos)')
     expect(within(row('hot')).getByTestId('heat-empty').className).toContain('border-dashed')
     expect(within(row('cool')).queryByTestId('heat-empty')).toBeNull()
@@ -404,11 +386,10 @@ describe('Analytics (v4.5)', () => {
     expect(longRun.style.background).not.toBe('var(--warn)')
     expect(longRun.style.outline).toBe('1.5px dashed var(--accent)')
     expect(screen.getByTestId('long-run-guide')).toBeTruthy()
-    // App Fixes 2c: the count over across from the title, no axis under the bars.
+    // The count over across from the title, no axis under the bars.
     expect(screen.getByTestId('long-run-over')).toBeTruthy()
   })
 
-  // One large title, in the shell above the tabs, never styled at rest.
   it('keeps one large title above the tabs across a switch', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.performance, 'predictions-card')
@@ -419,8 +400,7 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByRole('tabpanel').contains(after)).toBe(false)
   })
 
-  // v4.6 2b: a tab switched to was left a point or two down, enough on iOS
-  // for the scroll-edge blur over the large title.
+  // A point or two down is enough on iOS for the scroll-edge blur over the large title.
   it('starts a switched-to tab at the very top', async () => {
     await renderBoard()
     const scrollTo = vi.fn()
@@ -439,16 +419,15 @@ describe('Analytics (v4.5)', () => {
     await renderBoard()
     await openTab(t.analytics.tabs.health, 'zones-card')
     expect(screen.getByTestId('zone-ranges-link').getAttribute('href')).toBe('/athlete')
-    // This week keeps full-strength zone colours and takes the one "this week"
-    // mark used on Volume: the dashed accent outline (v4.17).
+    // This week keeps full-strength zone colours and takes the one "this week" mark used on Volume: the dashed
+    // accent outline.
     const current = screen.getByTestId('zone-bars').querySelector<HTMLElement>('[data-current]')!
     expect(current.style.outline).toBe('1.5px dashed var(--accent)')
     expect(screen.getByTestId('zone-bars').innerHTML).not.toContain('opacity')
     expect(screen.getByTestId('zone-bars').innerHTML).toContain('var(--zone-5)')
   })
 
-  // Design review, Oct 2026: Z3 and Z4 read as one colour in a stacked week.
-  // Each zone is named with its hours, so a segment never rests on its colour.
+  // Z3 and Z4 read as one colour in a stacked week.
   it('names every zone under Time in zones with its hours, and follows a held week', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.health, 'zones-card')
@@ -482,7 +461,7 @@ describe('the v4.5 colour rules', () => {
     }
   })
 
-  // v4.7: delta colours come from lib/deltaTone only.
+  // Delta colours come from lib/deltaTone only.
   it('hard-codes no delta colour', () => {
     for (const [file, src] of sources) expect(src, file).not.toMatch(/var\(--good\)/)
   })
@@ -495,7 +474,7 @@ describe('the v4.5 colour rules', () => {
 })
 
 describe('the French tab names', () => {
-  // FR called the load tab "Forme", the word it uses for Form (TSB).
+  // FR uses "Forme" for Form (TSB), so the load tab can't take it.
   it('names the load tab Charge', async () => {
     const { fr } = await import('@/i18n/fr')
     expect(fr.analytics.tabs).toEqual({ fitness: 'Charge', performance: 'Performance', volume: 'Volume', health: 'Intensité' })
@@ -520,7 +499,7 @@ describe('a week with nothing run (v4.6)', () => {
       </>,
     )
     expect(within(screen.getByTestId('weekly-bars')).getAllByTestId('empty-week')).toHaveLength(1)
-    // Without a plan every week is the dark accent (App Fixes 1f): nothing to be on.
+    // Without a plan every week is the dark accent: nothing to be on.
     const done = [...screen.getByTestId('weekly-bars').querySelectorAll<HTMLElement>('[style*="background"]:not([data-current])')]
     expect(done.length).toBeGreaterThan(0)
     for (const bar of done) expect(bar.style.background).toBe('color-mix(in srgb, var(--accent) 40%, var(--background))')
@@ -530,8 +509,7 @@ describe('a week with nothing run (v4.6)', () => {
 })
 
 describe('the coach read wording (v4.6, v5.6 #3)', () => {
-  // "1 s faster" sat beside a flat arrow: inside the band it is level, in the
-  // coach read and on the Easy pace tile alike.
+  // Inside the noise band a change is level, so "1 s faster" never sits beside a flat arrow.
   it('words a change inside the noise band as level, like the Easy pace tile', async () => {
     const { signalRows } = await import('../coachReadTabs')
     const { shiftWords } = await import('../PerformanceTab')
@@ -543,8 +521,6 @@ describe('the coach read wording (v4.6, v5.6 #3)', () => {
     expect(signalRows(faster, '4w')[0]!.text).toBe(s.easyFaster('5:52', 8, s.ago['4w']!))
   })
 
-  // v4.16.4: "threshold and race predictions haven't followed" was one fixed
-  // sentence, printed whichever reads had slipped.
   it('names only the reads that slipped', async () => {
     const { readHeadline } = await import('../coachReadTabs')
     const { coachRead } = await import('../analyticsView')
@@ -598,8 +574,7 @@ describe('the coach read under a load headline (v4.16.4)', () => {
   })
   afterAll(() => vi.useRealTimers())
 
-  // "Load jumped 30%" sat over six lines about pace that do not back it: the
-  // Load tab's read is load, its case load and recovery.
+  // The Load tab's read is load, its case load and recovery.
   it('heads the Load read with the load headline and backs it with load', async () => {
     const loads = Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), acute: i < 50 ? 360 : 360 + (i - 49) * 20, chronic: 365 }))
     render(<AnalyticsClient data={{ ...data, loads }} today={TODAY} />)
@@ -624,9 +599,7 @@ describe('the coach read under a load headline (v4.16.4)', () => {
   })
 })
 
-// Design review, Oct 2026: year to date is Goals' metric. Volume had a full
-// card of its own that said "243 km short at your current 26 km/week" where
-// Goals says "243 km short at this pace".
+// Year to date is Goals' metric: Volume takes its figures and its words.
 describe('Year to date on Volume', () => {
   async function renderBoth(ytd: NonNullable<AnalyticsBoardData['ytd']>, projection: { projectedYearKm: number } | null) {
     const { VolumeTab } = await import('../VolumeTab')
@@ -656,7 +629,7 @@ describe('Year to date on Volume', () => {
     return { goals, volume }
   }
 
-  // App Fixes 2c: "Year to date · 1,394 km" over "243 km short of 2,000 at this pace".
+  // "Year to date · 1,394 km" over "243 km short of 2,000 at this pace".
   it('is a row that opens Goals, with its km and the verdict in Goals’ tone', async () => {
     const { goals, volume } = await renderBoth(data.ytd!, data.ytd!.projection)
     expect(volume.queryByTestId('ytd-card')).toBeNull()
@@ -675,7 +648,6 @@ describe('Year to date on Volume', () => {
 })
 
 describe('the race prediction range (v4.8)', () => {
-  // "All four slipped 1-9 min" above a 5K that lost 33 s.
   it('prints each end the way its row prints its change', async () => {
     const { changeAmount } = await import('../PerformanceTab')
     const s = t.analytics.cards.predictions
@@ -685,8 +657,8 @@ describe('the race prediction range (v4.8)', () => {
 })
 
 describe('Load trend and Recovery (v5.4)', () => {
-  // Pinned like the board's other blocks: unpinned, the live window ended on
-  // the real date and lost the fixture's first days above range from Oct 9.
+  // Pinned like the board's other blocks: unpinned, the live window ends on the real date and loses the fixture's
+  // first days above range from Oct 9.
   beforeAll(() => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(`${TODAY}T12:00:00`))
@@ -703,16 +675,12 @@ describe('Load trend and Recovery (v5.4)', () => {
     await screen.findByTestId('form-card')
   }
 
-  // App Fixes 2a: the coach card, then Load, then Form; the watch's status chart last (owner).
   it('orders the Load cards coach read, Load, Form, Training status', async () => {
     await renderWith({ recovery: steady })
     const ids = [...document.querySelectorAll('[data-testid$="-card"], [data-testid="coach-read"]')].map((el) => el.getAttribute('data-testid'))
     expect(ids).toEqual(['coach-read', 'load-card', 'form-card', 'status-card'])
   })
 
-  // L4: about 40 pt empty under the sparkline - drawn from zero, the line and
-  // its band sat in the chart's top half. 72 pt, its domain what is drawn,
-  // its dots laid over it rather than in a box of their own under it.
   it('draws the load line 72 pt tall, spread over its height', async () => {
     await renderWith({})
     const card = screen.getByTestId('load-card')

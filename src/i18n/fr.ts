@@ -76,8 +76,7 @@ export const fr = {
   },
 
   zoneLabels: {
-    // « Récup », as runners say it: « Récupération » ran out of the zone
-    // table's name column, which never wraps.
+    // « Récupération » overflows the zone table's name column, which never wraps.
     1: 'Récup',
     2: 'Facile',
     3: 'Aérobie',
@@ -235,7 +234,6 @@ export const fr = {
     refresh: 'Actualiser',
   },
 
-  // The private site's way in (RUNOMICS_PRIVATE, src/proxy.ts).
   signIn: {
     title: 'Connexion',
     heading: 'Ce RunOmics est privé',
@@ -329,7 +327,7 @@ export const fr = {
         nextToExplore: 'Prochain à explorer',
         nextMeta: (pct: string, distance: string | null) => (distance ? `${pct} exploré · à ${distance} de chez toi` : `${pct} exploré`),
         nextMetaShort: (pct: string, distance: string | null) => (distance ? `${pct} exploré · à ${distance}` : `${pct} exploré`),
-        // Le bouton de la carte du plan agrandi (S1) : court, pour que la ligne d’à côté reste entière.
+        // Le bouton de la carte du plan agrandi : court, pour que la ligne d’à côté reste entière.
         planRun: 'Y courir',
         sheet: {
           quartierOf: (commune: string) => `Quartier · ${commune}`,
@@ -448,7 +446,7 @@ export const fr = {
       light: 'Clair',
       auto: 'Auto',
       dark: 'Sombre',
-      // Le fond du mode clair (Liquid Glass v3, G14).
+      // Le fond du mode clair.
       glowLabel: "Lueur d'arrière-plan",
       glowHint: 'Couleur derrière le haut de chaque page',
       reducedTransparencyNote: ' · désactivé tant que Réduire la transparence est activé',
@@ -486,8 +484,7 @@ export const fr = {
       weight: 'Poids',
       height: 'Taille',
       fitnessAge: 'Âge physique',
-      // Fitness age against the real age: « 18 (29 ans) » (C2, v4.4; 3.0 1j;
-      // round 2: « 18 pour 29 ans » ran out of its third of the card).
+      // Fitness age against the real age: « 18 (29 ans) ».
       ofAge: (age: number) => `(${age} ans)`,
       achievableFitnessAge: 'Potentiel',
       fitnessAgeBand: {
@@ -527,8 +524,7 @@ export const fr = {
     },
     profile: {
       readOnly: 'Depuis ta montre : à modifier dans l’app de ta montre.',
-      // « Seuil 172 · max 189 » beside « Athlète et zones »: « FC seuil »
-      // cut the row's name.
+      // « Seuil 172 · max 189 »: « FC seuil » would cut the row's name.
       lthr: (bpm: number) => `Seuil ${bpm}`,
       maxHr: (bpm: number) => `max ${bpm}`,
     },
@@ -557,7 +553,7 @@ export const fr = {
     headerDate: (weekday: string, date: string) => `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${date}`,
     readiness: {
       open: 'Ouvrir la charge dans Analyses',
-      // Des mots de tous les jours, pas des sigles (Lamiaa, oct. 2026).
+      // Des mots de tous les jours, pas des sigles.
       formLabel: 'Forme',
       yesterday: 'Hier',
       formOnDial: (form: string, band: string) => `Forme ${form} : ${band}`,
@@ -584,7 +580,7 @@ export const fr = {
       acwr: 'Charge',
       acwrValue: (ratio: string) => `×${ratio}`,
       deltaIn: (days: number) => `en ${days} jours`,
-      // « 21 cette semaine » ran out of its third of the card at 393 pt.
+      // Short: « 21 cette semaine » overflows its third of the card at 393 pt.
       deltaWeek: (n: number, days: number) => `${n} en ${days} j`,
       fallback: {
         below: (acute: number, lo: number, hi: number, fresh = false) => ({
@@ -692,8 +688,7 @@ export const fr = {
   },
 
   analytics: {
-    // Which load model a card reads, named in its head: the watch's
-    // acute/chronic load, or the app's own stress (Fitness / Fatigue).
+    // The load model a card reads: the watch's acute/chronic load or the app's own stress.
     model: { garmin: 'Ta montre', runomics: 'RunOmics' },
     title: 'Analyses',
 
@@ -707,7 +702,6 @@ export const fr = {
       volume: 'Volume',
       health: 'Intensité',
     },
-    // v4.5 : une question par onglet, une réponse par carte (D1-D4).
     cards: {
       period: {
         label: 'Période',
@@ -1288,8 +1282,7 @@ export const fr = {
 
   activities: {
     searchPlaceholder: 'Cherche une sortie, une note, une date…',
-    // « Tout », as the heatmap's filter says it: « Toutes » put the fourth
-    // chip under the filter button at 393 pt.
+    // Not « Toutes »: it pushes the fourth chip under the filter button at 393 pt.
     all: 'Tout',
     longRun: 'Sortie longue',
     count: (n: number) => `${n} activité${n > 1 ? 's' : ''}`,
@@ -1331,11 +1324,9 @@ export const fr = {
     },
     sort: {
       label: 'Trier',
-      // Four segments at 390 pt (App Fixes 3e).
+      // One word each: four segments share the sheet's control at 390 pt.
       newest: 'Récentes',
       oldest: 'Anciennes',
-      // One word each, as « Récentes » and « Anciennes »: « Plus longues »
-      // and « Plus rapides » cut all four labels in the sheet's control.
       longest: 'Longues',
       fastest: 'Rapides',
     },
@@ -1609,7 +1600,7 @@ export const fr = {
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
       bandLabel: (range: string) => `plage ${range}`,
       recoveryAvg: 'Récup moyenne',
-      // The set's summary at the top of its card: three numbers, no sentence (H14).
+      // The set's summary at the top of its card: three numbers, no sentence.
       inBandLabel: 'Dans la zone',
       spread: 'Écart',
       hrDrift: 'Dérive FC',
@@ -1953,8 +1944,7 @@ export const fr = {
     milestones: {
       distanceTier: (km: string) => `${km} km cette année`,
       streak: (weeks: number) => `${weeks} semaine${weeks > 1 ? 's' : ''} d’affilée`,
-      // The milestone's date reads after it; « Toujours en cours · une sortie
-      // chaque semaine depuis » was cut beside that date.
+      // Reads before the milestone's date; a longer phrase is cut beside it.
       streakDetail: 'En cours · chaque semaine depuis',
       record: (label: string) => `Record ${label}`,
       firstActivity: 'Premier pas',
@@ -2012,7 +2002,7 @@ export const fr = {
       marathon: 'Marathon',
       longest: 'Plus longue sortie',
     } as Record<string, string>,
-    // « RP Plus longue sortie » left the run's own name « Race … » at 393 pt.
+    // One word: « RP Plus longue sortie » cuts the run's name to « Race … » at 393 pt.
     badgeLabels: { longest: 'Distance' } as Record<string, string>,
     raceTag: 'course',
     trainingTag: 'entraînement',

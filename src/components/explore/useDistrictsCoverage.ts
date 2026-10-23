@@ -11,16 +11,15 @@ export type DistrictsStatus = 'idle' | 'loading' | 'ready' | 'error'
 export interface DistrictsCoverageInput {
   /** Only then does anything run: Heat users never start the worker. */
   enabled: boolean
-  /** The selected cluster's area; null when it has none. */
   area: ExploreAreaRef | null
   /** The map's sparse routes, by global route index. */
   routes: readonly ([number, number][] | undefined)[]
-  /** Every run of the selected cluster: what is sent to the worker once loaded. */
+  /** What is sent to the worker once loaded. */
   clusterIndices: readonly number[]
   /** The runs the heat filters keep: what coverage counts. */
   visibleIndices: readonly number[]
   routeMeta: readonly ({ id: string; date: string } | undefined)[]
-  /** The unfiltered median start; null when unknown. */
+  /** The unfiltered median start. */
   home: [number, number] | null
 }
 
@@ -38,15 +37,7 @@ interface Settled {
   failed: boolean
 }
 
-/**
- * The Districts coverage of the area on the map, from the Explore worker.
- *
- * Sends the cluster's loaded runs the worker doesn't have yet, then asks for
- * coverage of the runs the filters keep, measured from `home`. A filter tap
- * or a new run asks again; an answer to an older question is dropped. While
- * a new answer is on its way the last one for the same area stays, so the
- * map doesn't flash empty between filters.
- */
+/** While a new answer is on its way the last one for the same area stays, so the map doesn't flash empty between filters. */
 export function useDistrictsCoverage(
   input: DistrictsCoverageInput,
   engineFor: () => ExploreEngine = getExploreEngine,
@@ -54,7 +45,6 @@ export function useDistrictsCoverage(
   const { enabled, area, routes, clusterIndices, visibleIndices, routeMeta, home } = input
   const currentArea = area ? areaKey(area) : null
 
-  // The cluster's runs whose tracks are in, and the ids the filters keep.
   const loaded = useMemo(() => clusterIndices.filter((i) => !!routes[i]?.length && !!routeMeta[i]), [clusterIndices, routes, routeMeta])
   const activityIds = useMemo(
     () => visibleIndices.flatMap((i) => (routeMeta[i] ? [routeMeta[i]!.id] : [])),

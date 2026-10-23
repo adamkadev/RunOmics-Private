@@ -24,7 +24,6 @@ import { DaySelector, type SelectorDay } from './DaySelector'
 import { sessionLabel } from '@/lib/activityTitle'
 import { ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, RestDayCard, type ComingUpRow } from './PlanDayCard'
 
-// 30 pt squares with the 44 pt hit area round them, beside the week's dates.
 const NAV_BUTTON =
   'hit-44 flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 
@@ -36,7 +35,6 @@ function PhaseCard({ name, week, total, race }: { name: string; week: number; to
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <h2 className="text-headline text-foreground">{name}</h2>
         <p className="text-xs text-muted-foreground">
-          {/* All in the caption grey (App Fixes 3b): "Week 2 of 5". */}
           {weekOf.before} {week} {weekOf.after}
           {race && ` · ${race}`}
         </p>
@@ -60,19 +58,12 @@ function findNextPlanned(
     if (date <= fromDate) continue
     const coach = byDateCoach?.get(date)?.find((v) => v.state !== 'cancelled')
     const plan = byDatePlanned.get(date)
-    // A line of prose: the coach's short name where there is one.
     const title = coach?.prescription.shortName ?? coach?.prescription.title ?? sessionTitle(plan?.name, plan?.type as ActivityType | undefined) ?? null
     if (title) return { weekday: formatWeekday(date), title }
   }
   return null
 }
 
-/** "10 km · Easy run": what a day's plan said, for its planned-against-done line. */
-/**
- * What the plan said for a day that is over, under the run's own title: "10
- * km · 58 min", and the planned session only where the title above names
- * another (round 2: it said "Threshold 3 x 7:15 - 3x7'@4:25" twice).
- */
 function plannedText(workout: PlanWorkoutView, title: string): string {
   const summary = workoutSummary(workout)
   const km = summary.distanceM ? `${formatPlannedKm(summary.distanceM / 1000)} ${t.units.km}` : null
@@ -81,7 +72,6 @@ function plannedText(workout: PlanWorkoutView, title: string): string {
   return [km, time, session === title ? null : session].filter(Boolean).join(' · ')
 }
 
-/** A day's planned sessions: the coach's where it has any, else Garmin's. */
 function selectedWorkouts(
   date: string,
   byDatePlanned: Map<string, PlannedWorkout>,
@@ -94,10 +84,6 @@ function selectedWorkouts(
   return plan ? [plannedWorkoutView(plan, trainingZones)] : []
 }
 
-/**
- * Coming up (3.0.2): every session planned from today to Sunday that has not
- * been run, in order - "Tue 20 · 10 km · 1:00 h", in its type's colour.
- */
 function comingUpRows(
   dates: string[],
   today: string,
@@ -140,7 +126,6 @@ interface Props {
   nextRace?: UpcomingRace | null
   trainingZones?: TrainingZonesData | null
   hrZoneBoundsBpm?: readonly number[] | null
-  /** The athlete's home area has quartiers: a session still to come can find a route there. */
   exploreAvailable?: boolean
 }
 
@@ -208,7 +193,6 @@ export function WeekView({
   const w = t.plan.weekRow
   const planKm = target.planKm
 
-  // The week's next quality session after the day on screen and not yet run (App Fixes 3b).
   const nextKey = (() => {
     for (const date of dates) {
       if (date <= selected || date < today || (byDate.get(date) ?? []).length > 0) continue
@@ -223,7 +207,6 @@ export function WeekView({
 
   let dayCard
   if (acts.length > 0 || (selected < today && workouts.length > 0)) {
-    // The session as its set: the eyebrow says its type (round 2).
     const title = sessionLabel(acts.length > 0 ? activityTitle(acts[0]!) : workoutSummary(workouts[0]!).title)
     dayCard = (
       <DoneDayCard
@@ -276,7 +259,7 @@ export function WeekView({
             </button>
           )}
         </div>
-        {/* Km only (3.0.2): the runs are counted in Coming up and the selector. */}
+        {/* Km only: Coming up and the selector count the runs. */}
         <p className="text-[13px] tabular-nums text-muted-foreground" data-testid="week-summary">
           <b className="font-semibold text-foreground">{formatRanKm(target.ranKm)}</b>
           {planKm === null ? ` ${t.units.km}` : ` ${w.kmOf(formatWeekKm(planKm))}`}

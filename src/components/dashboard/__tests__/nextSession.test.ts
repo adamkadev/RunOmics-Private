@@ -22,7 +22,6 @@ describe('findNextSession', () => {
     const garmin: PlannedWorkout[] = [{ date: '2026-09-30', name: 'Tempo', type: 'Tempo', distanceM: 8000 }]
     const next = findNextSession('2026-09-28', [view(prescription('2026-09-30', 'Recovery run', 9229))], garmin)
     expect(next).toMatchObject({ date: '2026-09-30', title: 'Recovery run', km: '9', inDays: 2, kind: 'easy' })
-    // The session itself, for the hero's tile.
     expect(next!.workout).toMatchObject({ title: 'Recovery run', distanceM: 9229 })
   })
 
@@ -46,7 +45,6 @@ const run = (date: string, km: number): ActivitySummary => ({
 
 const EASY = { title: 'Easy run', type: 'Base' as const, duration: { seconds: 3_600, estimated: false }, distanceM: 10_000, activityId: null, target: null, structure: null, hr: null }
 
-// Design review 3.0 (mock 1b): the next-workout card.
 describe('sessionCard', () => {
   it("is today's session until it is run, opening Plan on today", () => {
     const card = sessionCard('2026-10-19', EASY, null, null, { phaseOn: () => 'Base', hrCapOf: () => 158 })
@@ -74,8 +72,7 @@ describe('sessionCard', () => {
   })
 })
 
-// Design review, Oct 2026: the card names a session by the coach's short
-// name, where it has one.
+// The card names a session by the coach's short name, where it has one.
 describe('a session named under the naming rules', () => {
   const named = (date: string): WorkoutPrescription => ({
     ...prescription(date, 'Threshold · 3 × 8′ @ 4:25', 10_665),

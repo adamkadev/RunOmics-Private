@@ -2,17 +2,11 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-/**
- * Whether a one-line, truncating text shows whole: true until a measure
- * finds it cut (`scrollWidth > clientWidth`), when the caller makes room -
- * a shorter wording, a word dropped beside it. Measured again before paint
- * for a new text (`key`), and whenever its row changes width (a phone
- * turned), so the longer form comes back when it fits again.
- */
+/** A change of the row's width resets it to whole, so the longer form comes back when it fits again. */
 export function useFitsWhole<T extends HTMLElement>(key: string) {
   const textRef = useRef<T>(null)
   const [fit, setFit] = useState({ key, whole: true })
-  // A new text: whole again, to be measured (state follows props while rendering).
+  // State follows props while rendering: a new text is whole again until measured.
   if (fit.key !== key) setFit({ key, whole: true })
   const whole = fit.key === key ? fit.whole : true
 

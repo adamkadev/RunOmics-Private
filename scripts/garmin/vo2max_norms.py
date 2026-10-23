@@ -1,19 +1,6 @@
-"""Sync Garmin's VO2max reference table to the private data workspace.
-
-Garmin serves the Cooper Institute age/sex percentile anchors as a static JSON
-table. It is the source of truth for the athlete rank badge and the "top X%"
-band in the UI, so rather than keeping a hand-copied duplicate in TypeScript we
-pull it on every sync and report when Garmin changes it.
-
-The API shape is a list of open-ended bands per bracket:
+"""Garmin serves the Cooper Institute table as open-ended bands whose `min` is the lower anchor:
 
     {"MALE": {"20-29": [{"category": "Superior", "min": "55.4", "max": ""}, ...]}}
-
-Each band's `min` is its lower anchor, so the four thresholds we need are just
-the `min` of Superior/Excellent/Good/Fair. We flatten to the shape the domain
-layer consumes:
-
-    {"male": {"20-29": {"superior": 55.4, "excellent": 51.1, ...}}}
 """
 
 from __future__ import annotations
@@ -37,11 +24,7 @@ class Vo2maxNormsError(Exception):
 
 
 def fetch_vo2max_norms(client: GarminClient) -> dict[str, Any] | None:
-    """Return the normalized norms table, or None if it could not be fetched.
-
-    A failure here must never abort a sync: the committed JSON stays valid
-    reference data indefinitely, so we degrade to "keep what we have".
-    """
+    """A failure here must never abort a sync: the committed JSON stays valid reference data indefinitely."""
     print("Syncing VO2max norms…")
     try:
         raw = client.get_vo2max_norms()
@@ -93,7 +76,6 @@ def normalize_vo2max_norms(raw: dict[str, Any]) -> dict[str, Any]:
 
 
 def write_vo2max_norms(norms: dict[str, Any] | None) -> bool:
-    """Write the norms table, returning True when the values actually changed."""
     if norms is None:
         return False
 
@@ -102,8 +84,7 @@ def write_vo2max_norms(norms: dict[str, Any] | None) -> bool:
         try:
             existing = json.loads(_OUT_PATH.read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
-            # Garmin serves the whole table every time, so rewriting it loses
-            # nothing; a file that stopped parsing is still worth a line.
+            # Garmin serves the whole table every time, so rewriting it loses nothing.
             print(f"  Warning: {_OUT_PATH} could not be read ({exc}); rewriting it from Garmin's table.")
 
     if existing == norms:

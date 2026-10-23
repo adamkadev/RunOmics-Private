@@ -5,10 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest'
 import { GarminNotFoundError } from '@/application/ports/GarminWorkoutGateway'
 import { PythonGarminGateway } from '@/infrastructure/garmin/PythonGarminGateway'
 
-/**
- * Answers every request the way sync_bridge.py relays a GarminAPIError: the
- * status survives only inside the message. Workout "gone" is a 404.
- */
+/** Fails every request as sync_bridge.py relays a GarminAPIError, the status only inside the message; a gone workout is a 404. */
 const FAILING_BRIDGE = `
 const lines = require('readline').createInterface({ input: process.stdin })
 lines.on('line', (line) => {
@@ -44,17 +41,11 @@ describe('PythonGarminGateway error translation', () => {
   })
 })
 
-/**
- * Real processes, not a `child_process` mock: the bug is about *when* Node
- * reports a failed spawn, and a mock that rejects synchronously would pass
- * against the broken code.
- */
+/** Real processes, not a mock: what matters is *when* Node reports a failed spawn, and a mock rejects synchronously. */
 describe('PythonGarminGateway failure reporting', () => {
   it('rejects the pending call when the interpreter does not exist', async () => {
     const gateway = new PythonGarminGateway('scripts/garmin/sync_bridge.py', 'definitely-not-an-interpreter')
 
-    // Before: the 'error' listener threw, which no promise was watching, so
-    // this took the process down instead of rejecting.
     await expect(gateway.getWorkout('1')).rejects.toThrow(/Could not start the Garmin bridge/)
     gateway.close()
   })

@@ -23,7 +23,6 @@ describe('MilestonesTimeline', () => {
     expect(container.querySelectorAll('.overflow-x-auto')).toHaveLength(0)
   })
 
-  // Final mockups (3.1.0): OCTOBER, SEPTEMBER, JUNE - the year only before this one.
   it('groups by month, naming the year only outside this one', () => {
     render(<MilestonesTimeline milestones={MILESTONES} today={TODAY} />)
 

@@ -6,7 +6,7 @@ import { NO_HEAT_FILTERS, type HeatFilters } from '../mapUtils'
 
 const f = t.pages.map.filters
 
-/** Every run counts once per filter it passes: two types, two years, eight runs in all. */
+/** Two runs per type and year: eight in all. */
 const count = (filters: HeatFilters) => (filters.types.length || 2) * (filters.years.length || 2) * 2
 
 function open(onApply = vi.fn(), value: HeatFilters = NO_HEAT_FILTERS) {
@@ -16,8 +16,6 @@ function open(onApply = vi.fn(), value: HeatFilters = NO_HEAT_FILTERS) {
   return { sheet, types: section(t.pages.map.type), years: section(t.pages.map.year), onApply }
 }
 
-// Heatmap Filters 1c (Oct 2026): wrapped chips, any number ticked, "All"
-// being none, and nothing changes on the map until "Show N runs".
 describe('the heatmap filters sheet', () => {
   it('lights "All" while nothing is ticked, and counts every run', () => {
     const { sheet, types, years } = open()

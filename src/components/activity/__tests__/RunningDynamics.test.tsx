@@ -7,7 +7,6 @@ import type { ActivityDetailView } from '../activityViews'
 const d = t.activity.dynamics
 
 describe('deltaSentence', () => {
-  // H17: the delta against the baseline tick, with its unit, in grey.
   it('writes the delta with its unit against the baseline', () => {
     expect(deltaSentence({ value: 1.0, band: { min: 0.96, median: 1.04, max: 1.14, low: 1.0, high: 1.08 }, decimals: 2, deltaUnit: 'm' })).toBe(
       `−0.04 m ${d.vsUsual}`,
@@ -31,8 +30,7 @@ describe('RunningDynamics', () => {
     groundContactMs: null, verticalOscillationMm: null, verticalRatioPct: null,
   }
 
-  // 3.0.2 (5e): a range scale - the 8-week ends, the middle half as the
-  // accent pill of the usual range, the run as the tick - the note in text-2.
+  // The track spans the 8-week range, the pill its middle half, the tick the run.
   it('draws the range scale with a usual-range pill, the note in text-2 and no cadence chart', () => {
     render(<RunningDynamics activity={activity} baseline={baseline} />)
 
@@ -45,8 +43,7 @@ describe('RunningDynamics', () => {
     expect(band.style.background).toContain('var(--accent)')
     expect(card.textContent).toContain('0.96')
     expect(card.textContent).toContain('1.14')
-    // App Fixes 3d: the line says which way is better and takes mint or
-    // amber by it - a shorter stride than usual is the amber way.
+    // A shorter stride than usual is the amber way.
     const delta = screen.getByText(`−0.04 m ${d.vsUsual}`)
     expect(delta.style.color).toBe('var(--tone-caution)')
     expect(card.textContent).toContain(d.better.higher)
@@ -61,7 +58,6 @@ describe('RunningDynamics', () => {
     expect(deltaTone({ term: 'strideLength', value: 246, band, decimals: 0 })).toBe('good')
   })
 
-  // One line of legend over the scales replaces the footer sentence.
   it('says what the pill and the tick are once, at the top', () => {
     render(<RunningDynamics activity={activity} baseline={baseline} />)
 
@@ -76,7 +72,6 @@ describe('RunningDynamics', () => {
     expect(screen.queryByTestId('dynamics-legend')).toBeNull()
   })
 
-  // The title stays clean: no (i) beside it, the name itself opens the definition.
   it('opens a metric definition from its name, with no info icon on the title', () => {
     render(<RunningDynamics activity={activity} baseline={baseline} />)
 

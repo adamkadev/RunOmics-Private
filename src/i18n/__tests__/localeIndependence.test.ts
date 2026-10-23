@@ -28,10 +28,6 @@ describe('locale strings never depend on the ambient locale', () => {
     }
   }
 
-  // The projection used to group its own thousands, with 'en-US' hardcoded in
-  // en.ts and 'fr-FR' in fr.ts. Grouping now happens once, in formatKm, and the
-  // strings take the formatted value - so the guarantee to lock in is that no
-  // locale file formats a number itself any more.
   it('leaves every number format to src/lib/formatters', () => {
     for (const { file, source } of SOURCES) {
       const hits = [...source.matchAll(/\.toLocaleString\(/g)].map(

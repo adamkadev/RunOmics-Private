@@ -22,13 +22,11 @@ describe('DashboardGreeting', () => {
     owner.phase = { kind: 'idle' }
   })
 
-  // v4.17: Today has a page header like every page - the H1 and its line.
   it('heads the page with its title', () => {
     render(<DashboardGreeting name="Adam" />)
     expect(screen.getByRole('heading', { level: 1, name: t.pages.dashboard.title })).toBeInTheDocument()
   })
 
-  // The avatar looked tappable and was a plain div.
   it('makes the avatar a 44 pt link to Progress', () => {
     render(<DashboardGreeting name="Adam" />)
     const link = screen.getByRole('link', { name: t.nav.items.profile })
@@ -40,8 +38,7 @@ describe('DashboardGreeting', () => {
     expect(screen.getByTestId('today-capsule').contains(link)).toBe(true)
   })
 
-  // Design review, Oct 2026 (mock 1b): the date over the title, which the
-  // compact bar fades with it.
+  // data-title-sub: the compact bar fades the date with the title.
   it('writes the date over the title', () => {
     // A client render reads the reader's clock (useToday).
     vi.useFakeTimers({ shouldAdvanceTime: true })
@@ -54,8 +51,6 @@ describe('DashboardGreeting', () => {
     expect(date.hasAttribute('data-title-sub')).toBe(true)
   })
 
-  // 3.0.2 (mock 5f): sync is a round ↻ button beside the avatar, tappable at
-  // any age; its words are its name at rest, not a line on screen.
   it('carries the sync button beside the avatar, tappable at any age', async () => {
     const lastSyncedAt = new Date(Date.now() - 2 * 3600_000).toISOString()
     render(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
@@ -63,16 +58,15 @@ describe('DashboardGreeting', () => {
     const s = t.dashboard.syncStatus
     const button = await screen.findByRole('button', { name: s.synced(s.hoursAgo(2)) })
     expect(button).toBe(screen.getByTestId('sync-line'))
-    // The ↻ alone in the capsule's first 44 pt, as Bevel's share.
+    // The ↻ alone in the capsule's first 44 pt.
     expect(button.className).toContain('size-11')
     expect(button.className).toContain('rounded-full')
     expect(button.textContent).toBe('')
     expect(screen.getByTestId('sync-note').textContent).toBe('')
-    // One 44 pt glass capsule with the avatar (owner, Oct 2026, as Bevel's
-    // share and avatar), the sync's words outside it.
+    // One 44 pt glass capsule with the avatar, the sync's words outside it.
     const capsule = screen.getByTestId('today-capsule')
     expect(capsule.className).toMatch(/(^|\s)lg(\s|$)/)
-    // The glass layers first (Liquid Glass v3, G1), then the ↻.
+    // The glass layers first, then the ↻.
     expect([...capsule.children].filter((c) => c.tagName === 'I').map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
     expect([...capsule.children].find((c) => c.tagName !== 'I')).toBe(button)
     expect(capsule.contains(screen.getByRole('link', { name: t.nav.items.profile }))).toBe(true)
@@ -83,7 +77,6 @@ describe('DashboardGreeting', () => {
     expect(push).toHaveBeenCalledWith('/settings')
   })
 
-  // H06 and v4.3.4: past 6 h its name says it can be tapped, amber once a day old.
   it('offers the sync past 6 h, muted, and turns amber once the data is a day old', async () => {
     const { unmount } = render(<DashboardGreeting name="Adam" lastSyncedAt={new Date(Date.now() - 23 * 3600_000).toISOString()} />)
     const button = await screen.findByTestId('sync-line')
@@ -97,7 +90,6 @@ describe('DashboardGreeting', () => {
     expect(late.getAttribute('style')).toContain('--tone-caution')
   })
 
-  // The owner's press starts the sync; its words come on screen while it runs.
   it('shows the sync’s words beside the button once pressed, and turns the arrows while it runs', async () => {
     owner.signedIn = true
     const s = t.dashboard.syncStatus

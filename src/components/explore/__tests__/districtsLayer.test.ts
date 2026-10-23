@@ -147,8 +147,7 @@ describe('addDistrictsLayers', () => {
       DISTRICTS_LABEL_LAYER,
       'Town labels',
       // The complete units' labels, then over them the next one's, place
-      // before the town names: "Metz" gives way to them (S1 named neither),
-      // not to the rest.
+      // before the town names: "Metz" gives way to them, not to the rest.
       DISTRICTS_COMPLETE_LABEL_LAYER,
       DISTRICTS_NEXT_LABEL_LAYER,
       'map-edge-fence',

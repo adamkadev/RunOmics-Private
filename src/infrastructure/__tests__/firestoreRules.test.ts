@@ -10,13 +10,8 @@ import {
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore'
 
 /**
- * firestore.rules is the only thing standing between the public web config
- * (it ships in every page) and the database, so it is tested against the
- * real rules engine rather than read and trusted.
- *
- * Needs the Firestore emulator: `npm run test:rules` starts it and runs this
- * file. Under a plain `npm test` there is no emulator and the suite skips
- * itself rather than failing.
+ * firestore.rules alone stands between the public web config and the database.
+ * Needs the Firestore emulator (`npm run test:rules`); a plain `npm test` skips the suite.
  */
 const emulator = process.env.FIRESTORE_EMULATOR_HOST
 
@@ -91,7 +86,6 @@ describe.skipIf(!emulator)('firestore.rules', () => {
     })
   })
 
-  // App Fixes 1g: the athlete's own names for their routes, the owner's alone.
   describe('routeNames', () => {
     it('lets only the owner read and list them', async () => {
       await assertFails(getDoc(doc(visitor(), 'routeNames', 'route-1')))

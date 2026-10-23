@@ -11,21 +11,9 @@ export type TokenBlock = {
 const c = HUE
 
 /**
- * Z1 to Z5 per mode, the values behind `--zone-1..5` (v4.17): one intensity
- * scale - recovery slate, easy blue, aerobic violet, threshold magenta, max
- * rose - that also colours every session type (lib/colors TYPE_ZONE). It is
- * a category scale only: status is --pos, --warn and --neg. The share card
- * paints on a canvas and cannot read a token, so it takes the same table.
- *
- * The second design review (Oct 2026) set Z1 to #8499b0 and Z3 to a mid
- * violet, #8f7cf2 dark and #6a52d9 light: the pale lavender Z3 had read as
- * no colour beside Z2 and Z4 on the share card's route. Light Z1 keeps its
- * deeper slate, as #8499b0 is 2.9:1 on a white card and a zone is a mark
- * (3:1). Z5 stays rose, clear of --neg's coral.
- *
- * RunOmics 3.0 (Oct 2026) took the dark scale from the redesign handoff:
- * a cooler Z1, a softer orchid Z4 and a lighter rose Z5. Light keeps its
- * deeper steps, which a zone mark needs for 3:1 on a white card.
+ * A category scale, never a status (that is --pos, --warn and --neg). The
+ * share card paints on a canvas and cannot read a token, so it reads this
+ * table. Light keeps deeper steps: a zone mark needs 3:1 on a white card.
  */
 export const ZONE_HEX = {
   light: ['#61788f', '#2f74e0', '#6a52d9', '#ae3cc2', '#d63a77'],
@@ -33,22 +21,11 @@ export const ZONE_HEX = {
 } as const
 
 /**
- * Status, and only status (v4.17): good, caution, bad. Never a category - a
- * session type, a zone - and a delta takes one by what it means, not by
- * which way it moved: fatigue +6 is warn, fitness +4 is pos.
- *
- * Good is mint, fixed (3.0 override 2): "good is always #2dd4a7 and warning
- * always amber; lime #7fd13b is retired". v4.17.2 had made pos a yellower
- * green so it would not read as the teal accent's own data - but that put
- * lime on every delta the app prints, and the handoff would rather good and
- * the default accent match than have a third green. Mint matches the lime's
- * contrast exactly on a dark card (9.59:1), and light takes the palette's
- * own text-grade mint, 5.35:1 on a white card where the olive was 5.32.
- *
- * Light neg is #c0352a, not #c8372d: a missed day's "✕ 10 km" sits on its
- * own 12 % tint, where #c8372d read 4.35:1; now 4.6:1. Light warn is
- * #9a5b00, 5.4:1 on a card. Dark takes the 3.0 handoff's values: a softer
- * coral neg, so an error no longer reads as Z5.
+ * Status only, never a category: a delta takes one by what it means, not by
+ * which way it moved (fatigue +6 is warn, fitness +4 is pos). Good is mint, to
+ * match the default accent rather than add a third green. Light neg clears
+ * 4.5:1 on its own 12 % tint (a missed day's "✕ 10 km"); dark neg is a soft
+ * coral so an error does not read as Z5.
  */
 export const STATUS_HEX = {
   light: { pos: c.semGreenLight, warn: '#9a5b00', neg: '#c0352a' },
@@ -56,9 +33,8 @@ export const STATUS_HEX = {
 } as const
 
 /**
- * Neutral surfaces, the same under every accent (Whoop / Runna / Strava):
- * colour is for data and the active state, never for a background, a card, a
- * border or a shadow. The accent blocks below carry the accent roles only.
+ * The same under every accent: colour is for data and the active state, never
+ * for a background, a card, a border or a shadow.
  */
 export const SURFACES = {
   light: {
@@ -67,41 +43,34 @@ export const SURFACES = {
     raised: '#ffffff',
     line: '#e4e6e5',
     divider: '#e4e6e5',
-    // Outline buttons and neutral bars (v4.17 line-2).
+    // Outline buttons and neutral bars.
     line2: '#d3d6d4',
     text: '#141615',
-    // Body and secondary text (v4.17 text-2).
     body: '#434846',
-    // Labels and meta (v4.17 muted).
+    // Labels and meta.
     text2: '#6b706e',
-    // The map's street labels (v4.17 faint). Not for UI text: see subtle.
+    // The map's street labels. Not for UI text: see subtle.
     text3: '#9aa09d',
-    // Faint UI text at 4.5:1; on the light ground nothing lighter than the label grey reaches it.
+    // Faint UI text at 4.5:1: on the light ground nothing lighter than text2 reaches it.
     subtle: '#6b706e',
     tabBar: '#ffffff',
-    // Tracks, inset tiles, the segmented control's ground (v4.17 surface-2).
+    // Tracks, inset tiles, the segmented control's ground.
     seg: '#f0f1f0',
     pill: '#ffffff',
     faint: '#f0f1f0',
     // Reference series and neutral bars: 3:1 or more on a card.
     band: '#8e9491',
-    // Wave 4 (App Fixes 1f, 1g, 1h): a sparkline's other runs, a neutral or
-    // under-target bar, and a chart's axis labels.
     restBar: '#d9dcdb',
     neutralBar: '#b4b9b7',
     axisText: '#8d9391',
     amber: STATUS_HEX.light.warn,
     shadowRaised: '0 1px 3px rgba(0, 0, 0, 0.06)',
   },
-  // RunOmics 3.0 (Oct 2026): the redesign handoff's dark ground - a
-  // darker inset tile than the card, a sheet a step above it, and a
-  // hairline divider a step under the card border.
   dark: {
     background: '#0b0c0c',
     card: '#141616',
     raised: '#1a1d1d',
     line: '#232626',
-    // Dividers inside a card and the tab bar's top edge.
     divider: '#1f2222',
     line2: '#303432',
     text: '#f2f4f3',
@@ -111,7 +80,6 @@ export const SURFACES = {
     // A step under text2 that still reaches 4.5:1.
     subtle: '#7f8482',
     tabBar: '#0d0f0f',
-    // The inset tile and the segmented control's ground.
     seg: '#0f1111',
     // The active segment.
     pill: '#2a2e2d',
@@ -127,12 +95,9 @@ export const SURFACES = {
 } as const
 
 /**
- * The opaque status bar's colour in an installed iPhone app, one per mode:
- * the page's own --background, taken from it rather than restated (F15), so
- * the band iOS paints from the theme-color meta reads as the page running
- * under the notch. iOS stores it at install and only picks light or dark at
- * launch, so it can't follow the accent - nor has to: the background is the
- * same under every accent.
+ * The page's own background, so the band iOS paints from the theme-color meta
+ * reads as the page under the notch. iOS stores it at install and only picks
+ * light or dark at launch, so it cannot follow the accent.
  */
 export const STATUS_BAR_COLOR = { light: SURFACES.light.background, dark: SURFACES.dark.background } as const
 
@@ -141,17 +106,14 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
   const status = STATUS_HEX[mode]
   return {
     '--background': n.background,
-    // Flat: the page is one colour, no gradient and no aurora.
     '--canvas': n.background,
     '--card': n.card,
     '--raised': n.raised,
     '--popover': n.raised,
     '--muted': n.seg,
     '--surface-2': n.seg,
-    // One line colour for borders, dividers and chart grids (v4.3 --line).
     '--border': n.line,
     '--divider': n.divider,
-    // A second, stronger line: outline buttons, neutral bars (v4.17).
     '--line-2': n.line2,
     '--foreground': n.text,
     '--text-2': n.body,
@@ -161,10 +123,8 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--ro-text': n.text,
     '--ro-text-2': n.text2,
     '--ro-text-3': n.subtle,
-    // Empty tracks, rest days and empty heatmap cells (--fa).
     '--track': n.faint,
     '--heat-empty': n.faint,
-    // Neutral bars and reference series.
     '--band': n.band,
     '--rest-bar': n.restBar,
     '--neutral-bar': n.neutralBar,
@@ -175,7 +135,7 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--pos': status.pos,
     '--warn': status.warn,
     '--neg': status.neg,
-    // Caution and race only (--amb): the warn status.
+    // Caution and race only.
     '--tone-caution': status.warn,
     '--shadow-card': 'none',
     '--shadow-raised': n.shadowRaised,
@@ -196,14 +156,8 @@ function surfaceTokens(mode: 'light' | 'dark'): Record<string, string> {
 }
 
 /**
- * The basemap's colours (v4.17), per theme. scripts/build-map-styles.ts bakes
- * these into the styles kept in src/map/styles, so the map can't drift from
- * the UI; labels and their halo are the UI's own muted, faint and ground.
- *
- * RunOmics 3.0 (Oct 2026): the map was "just tiles with a line on top".
- * Parks and water take a muted green and blue, and a hillshade under 7 %
- * gives the ground some relief; everything else stays grey, so the accent
- * route is still the one bright colour. Street names are fainter still.
+ * Baked into src/map/styles by scripts/build-map-styles.ts. Only parks and
+ * water take a muted hue, so the accent route stays the one bright colour.
  */
 export const MAP_STYLE_COLORS = {
   dark: {
@@ -227,8 +181,7 @@ export const MAP_STYLE_COLORS = {
   },
   light: {
     background: '#eef0ef',
-    // A whisper more contrast under clear glass (README §6.12.3): the rim
-    // still reads as an edge over a white road.
+    // A whisper more contrast under clear glass: the rim still reads as an edge over a white road.
     land: '#e3e8e5',
     park: '#d3e6d0',
     water: '#c6dbee',
@@ -253,10 +206,6 @@ export type MapStyleColors = { [K in keyof (typeof MAP_STYLE_COLORS)['dark']]: s
 /** Text's AA floor: small accent labels must clear it. */
 const TEXT_CONTRAST = 4.5
 
-/**
- * A colour as text on a ground, darkened in OKLCH lightness - hue and chroma
- * kept - only as far as 4.5:1 needs; a colour that already reads is itself.
- */
 export function readableOn(hex: string, ground: string, ratio = TEXT_CONTRAST): string {
   const colour = hexToOklch(hex)
   let text = hex
@@ -265,23 +214,14 @@ export function readableOn(hex: string, ground: string, ratio = TEXT_CONTRAST): 
 }
 
 /**
- * The darkest ground a label on light glass sits on (F16): a medium sheet's
- * 55 % glass over the 20 % scrim on the page, under a control's 12 % fill -
- * #f3f4f3 dimmed, then frosted, then filled. The tab bar's selected platter
- * over a card (#e6e8e6) and a toggle under the bar (#bfddd6, measured)
- * read lighter. Light glass's own label shades reach 4.5:1 on it.
+ * The darkest ground a label on light glass sits on: a medium sheet's 55 %
+ * glass over the 20 % scrim on the page, under a control's 12 % fill.
  */
 const GLASS_LABEL_GROUND = '#d4d5d5'
 
 /**
- * One accent block (v4.3, v4.17): the palette's accent and its ink, and the
- * derived tints - `--accent-soft` (the accent at 1F alpha) for the active nav
- * row and soft fills, `--acc-line` for an accent outline. Accent text uses
- * `--accent-text`: the accent itself, except in light mode where the accent
- * reads under 4.5:1 on the page ground and inset tiles (3.0.2: teal was
- * 4.2:1 on #f3f4f3, 4.1:1 on #f0f1f0; pink 4.4:1 on a tile) - there it is
- * the accent a step darker, enough for the darkest light surface. On a
- * white card every accent already read; fills and rings keep the accent.
+ * In light mode an accent reads under 4.5:1 on the page ground and inset
+ * tiles, so its text is darkened; fills and rings keep the accent.
  */
 export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode: 'light' | 'dark'): Record<string, string> {
   const { acc, onAcc } = accent[mode]
@@ -289,7 +229,6 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
     '--accent': acc,
     '--accent-foreground': onAcc,
     '--accent-text': mode === 'light' ? readableOn(acc, SURFACES.light.seg) : acc,
-    // On light glass, darker again (F16); dark glass keeps the accent.
     '--accent-text-glass': mode === 'light' ? readableOn(acc, GLASS_LABEL_GROUND) : acc,
     '--accent-hover': `color-mix(in oklab, ${acc} 88%, ${mode === 'dark' ? 'white' : 'black'})`,
     '--accent-soft': `${acc}1f`,
@@ -300,26 +239,15 @@ export function accentTokens(accent: Pick<CuratedAccent, 'dark' | 'light'>, mode
 }
 
 /**
- * The roles the app names, each read off a status, a zone or a neutral
- * (v4.17). Nothing here has a hue of its own: a type is its zone, good news
- * is --pos, caution --warn, bad --neg, and a reference series is a grey.
- */
-/**
- * Liquid Glass v3 (Oct 2026), per mode: the material of the navigation
- * chrome - the tab bar, the bar's buttons, the controls over a map, a
- * medium-detent sheet - and the system-style fills the content layer's
- * controls take instead of a line. Content stays opaque; only chrome is
- * glass. Tuned against SURFACES (bg #f3f4f3 / #0b0c0c, card #ffffff /
- * #141616). The recipe that consumes them is the `.lg` object in globals.css.
+ * Only the navigation chrome is glass; content stays opaque. Tuned against
+ * SURFACES, and consumed by the `.lg` recipe in globals.css.
  */
 const DARK_GLASS_FILTER = 'blur(12px) saturate(1.9) brightness(1.1)'
 
 export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
   return mode === 'light'
     ? {
-        // Regular glass. Translucent (F16): at .52-.82 white the glass read
-        // as a flat opaque pill on the near-white page; at .22 the Aura and
-        // the cards show through, and the hairline and drop draw its edge.
+        // Any more white and the glass reads as an opaque pill on the near-white page.
         '--glass-filter': 'blur(18px) saturate(2.1) brightness(1.02)',
         '--glass-fill': 'rgb(255 255 255 / 0.22)',
         '--glass-sheen': 'rgb(255 255 255 / 0.45)',
@@ -329,28 +257,20 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--glass-drop': '0 0 0 0.5px rgb(0 0 0 / 0.14), 0 10px 28px rgb(30 40 60 / 0.16), 0 2px 4px rgb(0 0 0 / 0.08)',
         '--glass-edge-w': '3px',
         '--glass-edge-filter': 'blur(1px) saturate(2) brightness(1.08)',
-        // Variants
         '--tab-glass-fill': 'rgb(255 255 255 / 0.36)',
         '--clear-glass-fill': 'rgb(255 255 255 / 0.10)',
         '--clear-glass-filter': 'blur(8px) saturate(1.8)',
         '--sheet-glass-fill': 'rgb(250 251 250 / 0.55)',
-        // A sheet sits over text: wider, so the page's headings and the tab
-        // bar's labels under it no longer read through (F16). Every sheet,
-        // in both detents, takes it (F18).
+        // Wider: a sheet sits over text that must not read through.
         '--sheet-glass-filter': 'blur(28px) saturate(2)',
-        // Controls on a sheet's glass (F18): a light translucent fill - the
-        // header's close and Reset, a segmented track - and its lifted pick.
         '--sheet-fill': 'rgb(0 0 0 / 0.05)',
         '--sheet-fill-rim': 'none',
         '--sheet-pill': '#ffffff',
         '--sheet-pill-shadow': '0 2px 6px rgb(0 0 0 / 0.08)',
-        // An unticked tick box on a sheet: a 1.5 pt ring, not a grey blob (F18).
         '--radio-ring': 'rgb(0 0 0 / 0.22)',
-        // Secondary labels on glass, as iOS's vibrant label: the page's grey
-        // fell to 3.9:1 on a sheet over the scrim (F16).
+        // The page's grey falls under 4.5:1 on a sheet over the scrim.
         '--glass-text2': readableOn(SURFACES.light.text2, GLASS_LABEL_GROUND),
         '--shadow-sheet': '0 24px 60px rgb(0 0 0 / 0.18)',
-        // Selection platter (tab bar, glass segmented)
         '--tab-pill': 'rgb(0 0 0 / 0.07)',
         // System-style fills for controls on the content layer
         '--fill-3': 'rgb(118 118 128 / 0.12)',
@@ -358,12 +278,9 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
         '--segmented-track': 'var(--fill-3)',
         '--segmented-pill': '#ffffff',
         '--segmented-pill-shadow': '0 3px 8px rgb(0 0 0 / 0.12), 0 1px 1px rgb(0 0 0 / 0.04)',
-        // Content cards: no border
         '--card-edge': '0 1px 2px rgb(0 0 0 / 0.04), 0 0 0 0.5px rgb(0 0 0 / 0.04)',
-        // An inset-grouped list's separator
         '--row-separator': 'rgb(0 0 0 / 0.08)',
-        // Soft edges. A sheet's scrim in light is a tint of the page's ink,
-        // not a grey wash over the glow (F18).
+        // A tint of the page's ink, not a grey wash.
         '--scrim-sheet': 'rgb(20 24 22 / 0.16)',
       }
     : {
@@ -400,18 +317,16 @@ export function glassTokens(mode: 'light' | 'dark'): Record<string, string> {
 }
 
 /**
- * Liquid Glass v3's geometry, theme-independent. Concentric with the 55 pt
- * display corner: a 62 pt capsule 24 pt from the edge (55 - 62/2), a sheet
- * 8 pt in with a 47 pt corner (55 - 8). Inner radius = outer radius - inset.
+ * Concentric with the 55 pt display corner (inner radius = outer radius -
+ * inset): a 62 pt capsule 24 pt from the edge, a sheet 8 pt in with a 47 pt corner.
  */
 export const GEOMETRY_TOKENS: Record<string, string> = {
   '--tab-bar-h': '62px',
   '--tab-bar-side': '24px',
   // 24 pt on Face ID iPhones (safe-bottom 34), 12 pt where there is no inset.
   '--tab-bar-float': 'max(calc(var(--safe-bottom) - 10px), 12px)',
-  // Top soft edge fade under the bar.
   '--edge-fade': '30px',
-  // Light's top edge (F21): solid to the bar's foot, then this fade, blurred in it only.
+  // Light's top edge: solid to the bar's foot, then this fade, blurred in it only.
   '--edge-band': '24px',
   '--radius-card': '24px',
   '--radius-tile': '12px',
@@ -426,23 +341,18 @@ export const GEOMETRY_TOKENS: Record<string, string> = {
 
 function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
   return {
-    // A delta is coloured by what it means (v4.7, v4.17).
     '--delta-good': 'var(--pos)',
     '--delta-warn': 'var(--warn)',
     '--good': 'var(--pos)',
     '--destructive': 'var(--neg)',
-    // Fitness is the solid text line, fatigue the dashed muted one; form is
-    // drawn by its bands.
+    // Form is drawn by its bands; fitness is the solid line, fatigue the dashed one.
     '--metric-form': 'var(--foreground)',
     '--metric-fitness': 'var(--foreground)',
     '--metric-fatigue': 'var(--muted-foreground)',
-    // The readiness tone on the Today hero's eyebrow: go is pos, hold warn.
     '--tone-go': 'var(--pos)',
     '--tone-hold': 'var(--warn)',
-    // Garmin's "peaking" status (the app's `fresh`): good news.
+    // Garmin's "peaking", the app's `fresh`.
     '--status-peaking': 'var(--pos)',
-    // Form's named bands (domain/training/formBand): fresh pos, neutral
-    // grey, tired warn - on Analytics and Today alike.
     '--form-band-tired': 'var(--warn)',
     '--form-band-neutral': 'var(--muted-foreground)',
     '--form-band-fresh': 'var(--pos)',
@@ -450,22 +360,14 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--form-band-fill-fresh': 'var(--pos)',
     '--form-band-fill-neutral': 'var(--band)',
     '--form-band-fill-tired': 'var(--warn)',
-    // Reference series set against the athlete's own (last year, done
-    // weeks): the band grey, 3:1 or more on a card, and a muted third.
     '--series-2': 'var(--band)',
     '--series-3': 'var(--muted-foreground)',
-    // The consistency ramp (v4.17.1): a rest day, then a day run as the
-    // accent at a share per step - 8 km, 15 km, full. The two lowest steps
-    // blurred on the pale ground, so light takes a lighter rest and a wider
-    // gap between them. Shares, not colours, so the mix follows the accent
-    // wherever a cell is drawn.
-    // Steps wide enough to tell a rest day from the first level, in both themes.
+    // Accent shares, not colours, so the ramp follows the accent; light sets
+    // its steps wider apart to stay distinct on the pale ground.
     '--level-rest': mode === 'dark' ? '#262928' : '#eceeed',
     '--level-low': mode === 'dark' ? '35%' : '40%',
     '--level-mid': mode === 'dark' ? '65%' : '70%',
-    // Ink for text on a zone fill (v4.17), per theme: white on the deeper
-    // light-theme zones (4.4-8.7:1), the dark ink on the bright dark-theme
-    // ones (5.6-9.3:1).
+    // White on the deep light zones (4.4-8.7:1), ink on the bright dark ones (5.6-9.3:1).
     '--zone-ink': mode === 'dark' ? c.roInk : '#ffffff',
     '--zone-1': ZONE_HEX[mode][0],
     '--zone-2': ZONE_HEX[mode][1],
@@ -473,16 +375,11 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--zone-4': ZONE_HEX[mode][3],
     '--zone-5': ZONE_HEX[mode][4],
     '--chart-cadence': mode === 'dark' ? c.cadenceDark : c.cadenceLight,
-    // Easy runs are Z2, workouts Z4, wherever the two are set side by side.
     '--chart-easy': 'var(--zone-2)',
     '--chart-hard': 'var(--zone-4)',
     '--chart-ground-contact': mode === 'dark' ? c.amber500 : c.amberLine,
-    // The athlete's own data is the accent.
     '--chart-brand': 'var(--accent)',
-    // Where the heat legend ends, the busiest street: a deep accent shade in
-    // light; in dark, the near-white the additive map burns to on the
-    // riverside (variant A), not the plain accent, which read as one step
-    // short of what the map shows.
+    // The busiest street's colour: in dark, the near-white the additive heat map burns to.
     '--heat-end': mode === 'dark' ? 'color-mix(in srgb, var(--accent) 35%, #ffffff)' : 'color-mix(in srgb, var(--accent) 45%, #000000)',
     '--ro-accent': 'var(--accent)',
     '--ro-accent-hi': 'var(--accent-hover)',
@@ -509,29 +406,19 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--blur-md': '18px',
       '--blur-lg': '28px',
       '--saturate': '1.6',
-      // A missed session is bad news: the neg status (v4.17).
       '--color-missed': 'var(--neg)',
       '--safe-top': 'env(safe-area-inset-top, 0px)',
-      // Where a page starts: 4 px under the status bar. The bar is opaque
-      // (statusBarStyle 'default'), so the top inset is 0 in the installed
-      // app and the page begins below the bar, clear of the iOS blur - level
-      // with a native app's first row (Garmin Connect's header).
+      // The status bar is opaque (statusBarStyle 'default'), so the top inset is 0 in the installed app.
       '--top-scrim': 'calc(var(--safe-top) + 12px)',
-      // Liquid Glass v2 (owner's brief, Oct 2026). The edge sampler: a solid
-      // strip at the top edge, over 10 px tall, so WebKit's scroll-edge check
-      // finds a bar and iOS 26 draws no blur of its own over the page top.
+      // Over 10 px tall, so WebKit's scroll-edge check finds a bar and iOS 26
+      // draws no blur of its own over the page top.
       '--edge-sample-h': '12px',
-      // The compact bar: the sampler's 12 px, a 46 px row, then 10 px to the
-      // hairline (owner, Oct 2026, as Bevel's).
+      // The sampler's 12 px, a 46 px row, then 10 px to the hairline.
       '--bar-h': '68px',
-      // The soft fade under the top bar's hairline (Liquid Glass v2, round 3).
       '--bar-fade': '18px',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
-      // The smallest touch target. `.hit-44` grows a control's hit area to it
-      // without changing what it looks like.
       '--tap-min': '44px',
-      // Session state is drawn in shape, so colour is free to mean intensity:
-      // the .state-* recipes take the zone colour from --state-color.
+      // Session state is drawn in shape, so colour is free to mean intensity.
       '--state-line': '1.5px',
       '--state-hatch': '40%',
       '--state-ring': '2px',
@@ -554,7 +441,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--status-bar': STATUS_BAR_COLOR.light,
       ...semanticTokens('light'),
       ...glassTokens('light'),
-      // Teal is the default accent, so the base block carries it.
       ...accentTokens(DEFAULT, 'light'),
       ...surfaceTokens('light'),
     },

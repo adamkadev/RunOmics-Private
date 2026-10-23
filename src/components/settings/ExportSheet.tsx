@@ -8,7 +8,6 @@ import { Sheet } from '@/components/ui/Sheet'
 export interface ExportOption {
   key: string
   title: string
-  /** File type, shown beside the title. */
   extension: string
   hint: string
   onSelect: () => void
@@ -19,11 +18,6 @@ interface Props {
   onClose: () => void
 }
 
-/**
- * The export's choice of file (Liquid Glass v3, G10): a medium-detent glass
- * sheet, the title centred, the formats as an inset-grouped list, and Cancel
- * as the 50 pt footer button it was.
- */
 export function ExportSheet({ options, onClose }: Props) {
   const s = t.settings
 

@@ -13,12 +13,7 @@ function resolved(value: string): string[] {
   return name ? THEME_BLOCKS.map((b) => b.tokens[name]!) : [value]
 }
 
-/**
- * A hue family, named off the HSL hue angle. Two colours in the same family
- * are two depths of one hue; two colours in different families are a second
- * hue the app has to spend. Grey-ish colours carry no hue, so they are not
- * part of the budget.
- */
+/** Two colours in one hue family are two depths of one hue; grey-ish colours carry no hue and spend none. */
 function hueFamily(hex: string): string {
   const [r255, g255, b255] = rgbTriplet(hex)
   const r = r255 / 255
@@ -46,8 +41,6 @@ const TYPES = ACTIVITY_TYPES
 const typeHue = (type: ActivityType) => ACTIVITY_TYPE_STYLE[type].chartColor
 
 describe('activity type hue budget', () => {
-  // v4.3.2: a type is drawn in its zone's token, so the types spend exactly
-  // the zones' families, in both themes.
   it('spends the zone families, and no other, across the seven types', () => {
     for (const block of THEME_BLOCKS) {
       const families = new Set(TYPES.map((type) => hueFamily(block.tokens[typeHue(type).slice(4, -1)]!)))
@@ -76,8 +69,7 @@ describe('training status colours (v4.17)', () => {
   const statuses = Object.entries(TRAINING_STATUS_COLORS)
 
   it('reads a status off the status tokens, never a zone, Recovery aside', () => {
-    // Overreaching was the Z5 a VO2max session is drawn in: a status is good,
-    // caution or bad news, or a neutral grey, and never a category.
+    // A status is good, caution or bad news, or a neutral grey, and never a category.
     for (const [status, color] of statuses) {
       if (status === 'recovery') continue
       expect(color, status).not.toMatch(/--zone-/)

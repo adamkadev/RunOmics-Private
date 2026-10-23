@@ -10,13 +10,9 @@ import {
 } from './types'
 
 /**
- * Checks an area or index file before anything trusts it.
- *
- * The files come from the data repo through an API route and then sit in
- * IndexedDB for months, so a hand-edited file, a half-written cache entry or
- * a schema from a later build must fail here, as one `null`, rather than as
- * a NaN deep inside coverage. Nothing is repaired: a file is either used as
- * it is or not at all.
+ * Area and index files sit in IndexedDB for months, so a hand-edited file, a
+ * half-written cache entry or a later schema must fail here as one `null`
+ * rather than as a NaN deep inside coverage. Nothing is repaired.
  */
 
 /** Area ids name a file and a URL segment, so they stay this plain. */

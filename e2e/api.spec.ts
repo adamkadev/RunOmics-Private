@@ -1,15 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-/**
- * The API surface against the production build, with no credentials at all -
- * the position of any visitor. None of this needs a page, so these tests use
- * Playwright's request context directly rather than ./fixtures.
- *
- * The e2e build configures neither FIREBASE_PROJECT_ID nor
- * INTERNAL_NOTIFY_SECRET, so owner routes answer 503 and internal routes 401.
- * What must hold either way is that nothing is served: the assertions are on
- * "not a success", plus the codes the routes are documented to return.
- */
+// The e2e build configures neither FIREBASE_PROJECT_ID nor INTERNAL_NOTIFY_SECRET, so owner routes answer 503.
 
 test('the activity list never carries route geometry', async ({ request }) => {
   const response = await request.get('/api/activities?limit=50')

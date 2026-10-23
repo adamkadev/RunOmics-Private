@@ -43,9 +43,9 @@ export type Vo2GradeView =
       /** 30-day change of the value, ml/kg/min. */
       delta30: number | null
       ladder: GradeBand[]
-      /** The band's own floor, for the progress bar's left end; null at C. */
+      /** The band's own floor; null at C. */
       floor: number | null
-      /** The next grade up, its floor and the gap to it; null at A+. */
+      /** The next grade up; null at A+. */
       next: { grade: Vo2Grade; min: number; gap: number } | null
       etaWeeks: number | null
       change: GradeChangeView | null
@@ -55,10 +55,7 @@ export type Vo2GradeView =
 /** A grade held this recently and lost is regained when it comes back, not new. */
 const REGAINED_DAYS = 90
 
-/**
- * Oct 2026: A+ from April to Sep 12, A- then A, A+ again on Oct 7 read "New
- * grade, up from A". Each timeline entry holds until the next one starts.
- */
+/** Each timeline entry holds until the next one starts. */
 function regained(timeline: { date: string; grade: Vo2Grade }[], grade: Vo2Grade, since: string): boolean {
   return timeline.slice(0, -2).some((entry, i) => {
     const end = timeline[i + 1]!.date
@@ -73,17 +70,15 @@ const daysSince = (date: string, today: string) =>
 export interface Vo2GradeInput {
   age: number
   sex: 'male' | 'female'
-  /** Garmin's current VO₂max, the value the page shows. */
+  /** Garmin's current VO₂max. */
   value: number
   samples: Vo2Sample[]
-  /** Dates of runs recorded with heart rate. */
   hrRunDates: string[]
   runDates: string[]
   norms: Parameters<typeof gradeLadder>[2]
   today: string
 }
 
-/** The grade, pure: everything the hero, the detail page and Today read. */
 export function buildVo2Grade(input: Vo2GradeInput): Vo2GradeView {
   const { age, sex, value, norms, today } = input
   const cal = calibration(input.hrRunDates)
@@ -118,10 +113,8 @@ export function buildVo2Grade(input: Vo2GradeInput): Vo2GradeView {
     status: 'graded',
     grade,
     value,
-    // The ranking the card prints is the grade's own band (App Fixes 1e), so
-    // "Top 5%" always agrees with the A+ row of the grade table. Read off the
-    // raw percentile it drifted from the grade, which holds for seven days
-    // while the value moves: an A+ could print "Top 7%".
+    // The band's own ranking, so "Top 5%" agrees with the A+ row: the raw
+    // percentile drifts while the grade holds for seven days.
     topPercent: band.topPercent ?? vo2maxTopPercent(value, age, sex, norms),
     band: bandLabel(age, sex),
     delta30: change30,
@@ -140,7 +133,6 @@ export function buildVo2Grade(input: Vo2GradeInput): Vo2GradeView {
   }
 }
 
-/** The grade from the synced files, or null without an age, a sex or a VO₂max. */
 export function getVo2Grade(today = appTodayIso()): Vo2GradeView | null {
   const athlete = getAthleteProfile()
   const activities = getAllActivities()

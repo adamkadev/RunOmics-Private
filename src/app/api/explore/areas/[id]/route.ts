@@ -3,16 +3,8 @@ import { getExploreAreaFile } from '@/application/usecases/GetExploreAreas'
 import { AREA_ID_PATTERN } from '@/domain/explore/areaFile'
 
 /**
- * One Explore area file: quartier shapes and their runnable cells.
- *
- * It sits in the data repository and only changes with a deployment, and the
- * coverage worker asks for it by version (`?v=`), so a request naming the
- * current version can be kept for good - a new build changes the version,
- * and with it the URL. Without one, or with an old one, the browser must ask
- * again each time and is answered 304 while nothing changed.
- *
- * `private` throughout: it outlines the athlete's home city, which no shared
- * cache should hold. A private site's proxy gates it like every other path.
+ * The file only changes with a deployment, which changes its version, so a request naming the current `?v=` can be
+ * kept for good. `private` throughout: it outlines the athlete's home city, which no shared cache should hold.
  */
 
 const IMMUTABLE = 'private, max-age=31536000, immutable'

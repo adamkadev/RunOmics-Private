@@ -33,7 +33,6 @@ describe('getTrainingZones', () => {
     expect(threshold?.paceMaxSecPerKm).toBe(Math.round(240 * 1.03) - 1)
   })
 
-  // v5.5 #11: 3:59→4:18, 4:28→4:31 and 5:02→5:08 were gaps at a 4:23 threshold.
   it.each([240, 263, 300, 331])('leaves no gap and no overlap between zones at a %i s threshold', async (threshold) => {
     const { paceZones } = await import('../GetTrainingZones')
     const zones = paceZones(threshold)

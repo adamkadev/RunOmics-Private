@@ -112,7 +112,7 @@ describe('setVerdict', () => {
   })
 
   it('calls a set that got faster built, not drifted', () => {
-    // 4:00 -> 3:59 -> 3:32 -> 3:33: a progression, which no band was ever going to fit.
+    // 4:00 -> 3:59 -> 3:32 -> 3:33: a progression no band fits.
     const set = build([rep(72, 168), rep(71, 172), rep(64, 178), rep(64, 181)])
 
     expect(setVerdict(set)).toBe('repsBuilt')

@@ -168,7 +168,6 @@ def test_fetch_uses_a_multi_event_limit_and_keeps_all_returned_races(monkeypatch
 
 
 def test_fetch_retries_a_transient_failure_not_only_a_rate_limit(monkeypatch):
-    # Its own retry helper retried a 429 once and raised anything else.
     monkeypatch.setattr("garmin.retry.time.sleep", lambda _seconds: None)
     calls = []
 
@@ -390,8 +389,7 @@ def test_map_keeps_a_goal_it_cannot_read_out_of_the_entry():
     ids=["does not parse", "races not a list"],
 )
 def test_write_refuses_to_overwrite_a_file_it_cannot_read(tmp_path, stored):
-    # The file is the only place a goal typed in by hand survives; reading
-    # it as empty and rewriting it from Garmin's list threw those away.
+    # The file is the only place a goal typed in by hand survives.
     path = tmp_path / "upcoming_races.json"
     path.write_text(stored)
 
@@ -406,7 +404,6 @@ def test_write_refuses_to_overwrite_a_file_it_cannot_read(tmp_path, stored):
 
 
 def test_write_drops_a_goal_the_athlete_cleared_in_garmin(tmp_path):
-    """The regression: clearing a time goal in Garmin never reached the data file."""
     path = tmp_path / "upcoming_races.json"
     path.write_text(
         json.dumps(
@@ -436,7 +433,6 @@ def test_write_drops_a_goal_the_athlete_cleared_in_garmin(tmp_path):
 
 
 def test_write_still_preserves_a_goal_when_garmin_reports_no_customization(tmp_path):
-    """The fallback the clearing fix must not break."""
     path = tmp_path / "upcoming_races.json"
     path.write_text(
         json.dumps(

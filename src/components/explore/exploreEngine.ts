@@ -16,19 +16,8 @@ import {
 } from './workerProtocol'
 
 /**
- * The main thread's handle on the Explore worker: one promise per request,
- * matched to its answer by id.
- *
- * The worker is created on the first call, so a page that never shows
- * Districts never starts one. Areas are loaded once per `${id}:${version}`
- * and every other call waits for that load, so callers never have to order
- * them. The engine also remembers which runs it has already handed to the
- * worker for each area, so re-rendering a hook with the same runs sends
- * nothing.
- *
- * If the worker dies (its script fails to load, or it throws outside a
- * request), every pending call is rejected and the next call starts a fresh
- * worker, which has to be sent the area and runs again.
+ * The worker is created on the first call, so a page that never shows Districts never starts one.
+ * Every call waits for its area's load, so callers never have to order them.
  */
 
 export interface ExploreEngine {
@@ -235,10 +224,7 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
 
 let shared: ExploreEngine | null = null
 
-/**
- * The page-wide engine. The `new Worker(new URL(…, import.meta.url))` call is
- * written out literally so Turbopack can find the worker and bundle it.
- */
+/** The `new Worker(new URL(…, import.meta.url))` call is written out literally so Turbopack can find the worker and bundle it. */
 export function getExploreEngine(): ExploreEngine {
   shared ??= createExploreEngine(
     () => new Worker(new URL('./explore.worker.ts', import.meta.url), { type: 'module' }),

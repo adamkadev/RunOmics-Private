@@ -18,18 +18,15 @@ interface Props {
   weeklyZoneTime: ZoneShare[]
   recentZoneTime: ZoneShare[]
   paceZones: TrainingZonesData | null
-  /** The last Garmin sync, the time Today shows. */
   lastSyncedAt?: string | null
 }
 
-/** Athlete & zones (3.0 1j): the grade card, the six numbers in one card, then the zones. */
 export function AthleteClient({ athlete, vo2Grade, weeklyZoneTime, recentZoneTime, paceZones, lastSyncedAt = null }: Props) {
   const p = t.pages.athlete
-  // The sync's age is read from the browser's clock after mount: worked out on
-  // the server it is as old as the cached page, and the two differ - React #418.
+  // Relative time only after mount: on the server it is as old as the cached
+  // page, and the mismatch is React error #418.
   const mounted = useMounted()
-  // One sync time (v5.6 #7): the profile's own lastUpdate only moves when a
-  // metric changes, so it read "synced 13h ago" beside Today's "3h ago".
+  // The sync time, not the profile's lastUpdate, which only moves when a metric changes.
   const synced = lastSyncedAt ?? athlete.lastUpdate
   const source = mounted && synced ? p.syncedAgo(formatRelativeAgo(synced)) : p.fromGarmin
 

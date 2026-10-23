@@ -4,8 +4,6 @@ import { WearBar } from '../WearBar'
 import { shoeWearStatus } from '../shoeWear'
 
 describe('WearBar', () => {
-  // v4.17: the accent while the pair has life in it, warn from Replace soon
-  // at 70%, neg from Replace at 90% and past the limit - the page's status.
   it('changes colour at 70% and at 90% of the limit', () => {
     expect(shoeWearStatus({ totalKm: 690, maxKm: 1000 })).toBe('ok')
     expect(shoeWearStatus({ totalKm: 699, maxKm: 1000 })).toBe('watch')
@@ -50,17 +48,14 @@ describe('WearBar', () => {
     expect(screen.queryByTestId('wear-overrun')).toBeNull()
   })
 
-  // C5: a retired pair's bar is full and muted, with no tick.
   it('draws a retired pair full width in muted ink', () => {
     render(<WearBar totalKm={994} maxKm={1000} retired tickLabel="800 km" />)
     expect(screen.getByTestId('wear-fill').style.background).toBe('var(--muted-foreground)')
     expect(screen.getByTestId('wear-fill').style.width).toBe('100%')
     expect(screen.queryByTestId('wear-tick')).toBeNull()
-    // No tick, nothing to name.
     expect(screen.queryByTestId('wear-tick-label')).toBeNull()
   })
 
-  // Design review, Oct 2026: the tick said nothing of what it marked.
   it('names the tick under it, starting where the tick is', () => {
     const { unmount } = render(<WearBar totalKm={676} maxKm={1000} tickKm={800} tickLabel="800 km · retire from workouts" />)
     let label = screen.getByTestId('wear-tick-label')

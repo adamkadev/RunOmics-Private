@@ -3,12 +3,9 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * Hard-coded text colours were dark-theme values sitting on surfaces that
- * follow the system theme: #c3ccd6 reads at 1.5:1 on the light background and
- * #9cc4ff at 1.6:1, against WCAG AA's 4.5:1. Text takes a theme token, or one
- * Tailwind step per theme, instead. A surface that is dark in both themes (the
- * map chrome, the dashboard hero) names its fixed ink as a constant beside it,
- * so the choice is visible where the surface is.
+ * Hex text colours fail WCAG AA on surfaces that follow the system theme: text
+ * takes a theme token, and a surface dark in both themes names its fixed ink as
+ * a constant beside it.
  */
 const COMPONENTS = path.join(process.cwd(), 'src/components')
 

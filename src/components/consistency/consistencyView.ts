@@ -1,7 +1,7 @@
 import type { ConsistencyRun } from '@/application/usecases/GetConsistencyData'
 import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 
-/** The window the page counts (3.1), in the URL as ?range=. */
+/** In the URL as ?range=. */
 export type ConsistencyRange = '3m' | '6m' | '1y'
 export const CONSISTENCY_RANGES: readonly ConsistencyRange[] = ['3m', '6m', '1y']
 export const DEFAULT_RANGE: ConsistencyRange = '6m'
@@ -12,7 +12,6 @@ export function parseRange(value: string | null | undefined): ConsistencyRange {
   return CONSISTENCY_RANGES.find((range) => range === value) ?? DEFAULT_RANGE
 }
 
-/** Under this share of the weeks, a weekday reads as a rest day. */
 const REST_DAY_SHARE = 0.1
 
 export interface ConsistencyWeek {
@@ -23,11 +22,8 @@ export interface ConsistencyWeek {
   seconds: number
   /** Sessions still to come in the week under way; 0 for a week done. */
   planned: number
-  /** The week under way. */
   current: boolean
-  /** Three runs or more. */
   onTarget: boolean
-  /** One of the current streak's weeks. */
   inStreak: boolean
   /** YYYY-MM-01 of the month whose first day the week holds, when it is named under the chart; null otherwise. */
   month: string | null
@@ -97,11 +93,6 @@ function monthStart(date: string): string {
   return `${date.slice(0, 7)}-01`
 }
 
-/**
- * The Consistency page (3.1): the window's weeks against three runs a week -
- * how many were on target, runs a week, the streak drawn under its weeks -
- * and which weekdays carry the running.
- */
 export function consistencyView(range: ConsistencyRange, input: ConsistencyInput): ConsistencyView {
   const { today, streakWeeks, bestStreakWeeks } = input
   const target = WEEKLY_RUN_TARGET
@@ -191,7 +182,6 @@ export function consistencyView(range: ConsistencyRange, input: ConsistencyInput
   }
 }
 
-/** A week as its sheet reads it: on target, under it, the week under way, or one to come. */
 export type WeekStatus = 'hit' | 'under' | 'current' | 'future'
 
 function weekStatus(start: string, runs: number, target: number, current: string): WeekStatus {
@@ -217,7 +207,6 @@ export interface SheetRow {
   days: SheetDay[]
   runs: number
   status: WeekStatus
-  /** The week tapped. */
   selected: boolean
 }
 
@@ -229,10 +218,6 @@ export interface WeekSheet {
   rows: SheetRow[]
 }
 
-/**
- * A tapped week (3.1): its runs against the target, and the month around it
- * as a calendar - every week a row with its runs, the week tapped picked out.
- */
 export function weekSheet(view: ConsistencyView, weekStart: string, today: string): WeekSheet | null {
   const week = view.weeks.find((w) => w.start === weekStart)
   if (!week) return null

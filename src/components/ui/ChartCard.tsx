@@ -7,14 +7,6 @@ import { cn } from '@/lib/utils'
 import { formatDelta } from '@/lib/formatters'
 import { t } from '@/i18n'
 
-/**
- * A chart card's takeaway - the one sentence that says what the picture means.
- *
- * It used to render at text-caption (11px) *under* the chart, and under it sat
- * the definition footnote at text-xs (12px), so every card set its
- * documentation larger than the conclusion that documentation was burying. The
- * reading leads the card now, as the subhead under its title.
- */
 export function ChartReading({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <p className={cn('mb-3 text-footnote leading-snug text-muted-foreground', className)}>
@@ -23,11 +15,6 @@ export function ChartReading({ children, className }: { children: ReactNode; cla
   )
 }
 
-/**
- * One plotted series named in the legend, carrying its current value in the
- * series' own colour. Lived in TrainingLoadChart until Training Status needed
- * the same thing to name its chronic and acute lines.
- */
 export function LegendValue({
   label,
   value,
@@ -48,16 +35,6 @@ export function LegendValue({
   )
 }
 
-/**
- * One chart card's header: its name, what its values are counted in, its own
- * controls, and - behind an (i) - the definition of what is being plotted.
- *
- * The definition is reference material: needed once, then never again. Left as
- * permanent ink at the foot of the card it competed with the reading for the
- * last thing the eye landed on. The disclosure is the one already shipping in
- * LoadRiskPanel - an aria-expanded button next to the label and a paragraph
- * that exists only while open.
- */
 export function ChartCardHead({
   title,
   unit,
@@ -66,8 +43,6 @@ export function ChartCardHead({
   className,
 }: {
   title: ReactNode
-  /** What the plotted values are counted in, shown beside the title so the
-   *  axis numbers are not the only place the reader can look for it. */
   unit?: string
   footnote?: ReactNode
   controls?: ReactNode

@@ -13,14 +13,7 @@ function stored(key: string): boolean {
   }
 }
 
-/**
- * A Today row the athlete can put away (design review, Oct 2026), remembered
- * on this device under `storageKey` - the VO₂max row keys it to the grade
- * change, so the next change shows again. What this browser has put away is
- * read after mount, as the celebration overlay reads what it has seen: the
- * server's HTML cannot know it. Blocked storage just shows the row, which
- * goes away by itself within days.
- */
+/** Read after mount, since the server's HTML cannot know what this browser has put away; blocked storage just shows the row. */
 export function DismissibleRow({ storageKey, dismissLabel, children }: { storageKey: string; dismissLabel: string; children: ReactNode }) {
   const mounted = useMounted()
   const [dismissedKey, setDismissedKey] = useState<string | null>(null)

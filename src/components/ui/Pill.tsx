@@ -1,19 +1,13 @@
 import { cn } from '@/lib/utils'
 import type { ElementType, HTMLAttributes, ReactNode } from 'react'
 
-/**
- * The filter chip (v4.17). `selected` is the one "selected" treatment: text
- * ink with the page ground as its label, inverted - the accent is for the
- * athlete's own data and real actions, not for a filter. `neutral` is
- * everything unselected: Liquid Glass v3's system fill (G7), no line, in
- * text ink. 36 pt capsules, 15 pt labels.
- */
+/** `selected` is inverted ink, never the accent: the accent is for the athlete's own data and real actions. */
 type PillVariant = 'selected' | 'neutral' | 'onAura'
 
 const VARIANT_CLASS: Record<PillVariant, string> = {
   selected: 'bg-foreground px-4 text-background font-semibold',
   neutral:  'bg-[var(--fill-3)] text-foreground font-medium',
-  // Unselected, straight on the background glow (F6): frosted in light (globals.css .on-aura).
+  // Unselected, straight on the background glow.
   onAura:   'on-aura text-foreground font-medium',
 }
 
@@ -31,9 +25,7 @@ export function Pill({
   children,
   ...rest
 }: PillProps) {
-  // A pill drawn at about 30 pt is a filter or a picker the thumb has to hit.
-  // A plain span is a label, and its hit area would only steal taps from
-  // whatever sits next to it.
+  // A plain span is a label; a hit area would only steal taps from its neighbours.
   const interactive = Tag !== 'span' || rest.onClick !== undefined
   return (
     <Tag

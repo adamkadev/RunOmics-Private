@@ -11,10 +11,6 @@ interface Hydrated {
   recoverableErrors: unknown[]
 }
 
-/**
- * Prerender `ui`, let `beforeHydrate` change what the browser holds (its
- * clock, its storage), then hydrate the same tree over the server's HTML.
- */
 export async function hydrateOver(ui: ReactElement, beforeHydrate: () => void = () => {}): Promise<Hydrated> {
   const html = renderToString(ui)
   beforeHydrate()
@@ -30,11 +26,7 @@ export async function hydrateOver(ui: ReactElement, beforeHydrate: () => void = 
   return { container, html, recoverableErrors }
 }
 
-/**
- * Prerender `ui` with the clock at `serverTime`, then hydrate it with the
- * clock at `clientTime` - an ISR page built on one day and opened on the next.
- * Needs fake timers.
- */
+/** An ISR page built on one day and opened on the next. Needs fake timers. */
 export async function hydrateAcrossMidnight(
   ui: ReactElement,
   { serverTime, clientTime }: { serverTime: Date; clientTime: Date }

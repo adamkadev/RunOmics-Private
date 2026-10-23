@@ -24,11 +24,7 @@ import {
 
 export { BOOTSTRAP_PLAN_RESPONSE_SCHEMA, bootstrapEventPrompt } from './coachingPrompt'
 
-/**
- * An explicit choice is the only choice; otherwise the whole pool is available,
- * because a 503 is Google declining this model right now rather than a verdict
- * on the request, and the next model in the pool usually answers.
- */
+/** Unpinned, the whole pool is tried: a 503 is Google declining this model right now, and the next one usually answers. */
 const MODELS = (): string[] => {
   const chosen = process.env.GEMINI_COACH_MODEL || process.env.GEMINI_MODEL
   return chosen ? [chosen] : [...MODEL_POOL]
@@ -100,12 +96,7 @@ export function completedActivityPrompt(context: CoachingContext, activity: Acti
   }
 }
 
-/**
- * Google allows five requests a minute on these models and reports going over
- * as 503 "high demand", the same words it uses for a spent daily quota. One
- * bootstrap can ask several times - once per pooled model, again per repair -
- * so without pacing a single command outruns the minute by itself.
- */
+/** Google reports going over its per-minute limit as 503 "high demand", and one bootstrap can ask several times. */
 export const pacing = {
   lastRequestAt: 0,
   now: () => Date.now(),
@@ -127,9 +118,7 @@ async function request(schema: Record<string, unknown>, systemInstruction: strin
 
   for (const model of models) {
     await pace(model)
-    // No per-model retry: walking the pool already gives one independent
-    // chance per model, and the pooled models allow only 20 requests a day
-    // each, so retrying one of them is the expensive way to buy the same odds.
+    // No per-model retry: the pool already gives each model one chance, and daily allowances are small.
     const result = await generateStructuredJson({ apiKey, model, systemInstruction, prompt, responseSchema: schema, temperature: 0.2 }, undefined, 0)
     if (result.ok) return result.value
     reasons.push(`${model}: ${result.reason}`)
@@ -138,12 +127,7 @@ async function request(schema: Record<string, unknown>, systemInstruction: strin
   throw new Error(`Gemini coaching request failed: ${reasons.join(' | ')}.${quotaHint(models, reasons)}`)
 }
 
-/**
- * Google reports an exhausted daily quota as 503 "high demand", which reads as
- * a passing outage and sends the operator back to re-run it - spending more of
- * the quota that ran out. Each model carries its own allowance, so a pinned
- * model is also a third of the capacity.
- */
+/** Google reports an exhausted daily quota as 503 "high demand", which reads as a passing outage worth re-running. */
 function quotaHint(models: string[], reasons: string[]): string {
   if (!reasons.every((reason) => reason.includes('503'))) return ''
 

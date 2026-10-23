@@ -9,7 +9,7 @@ export interface AllTimeYear {
   hours: number
   /** The year's months from the first run on, this one included: 8 for a first year from May. */
   months: number
-  /** Km a month over those months (3.0), which compares a partial first year fairly. */
+  /** Km a month over those months, which compares a partial first year fairly. */
   kmPerMonth: number
 }
 
@@ -18,9 +18,9 @@ export interface AllTimeMonth {
   key: string
   year: number
   km: number
-  /** The month still running, drawn as an outline. */
+  /** The month still running. */
   partial: boolean
-  /** The month still running at its pace so far, never under its km (3.1): its outline. Null for a month done. */
+  /** The month still running at its pace so far, never under its km; null for a month done. */
   projectedKm: number | null
 }
 
@@ -28,7 +28,6 @@ export interface AllTimeView {
   km: number
   runs: number
   hours: number
-  /** The first run's date; null with no runs. */
   since: string | null
   /** Months from the first run's month to this one, both counted. */
   months: number
@@ -36,7 +35,6 @@ export interface AllTimeView {
   years: AllTimeYear[]
   monthly: AllTimeMonth[]
   bestMonth: AllTimeMonth | null
-  /** The run a tap opens; its id is null only for a run without one. */
   longestRun: { km: number; date: string; activityId: string | null } | null
   biggestWeek: { km: number; weekStart: string } | null
   currentYear: number
@@ -62,10 +60,6 @@ function monthsBetween(from: string, to: string): string[] {
   return keys
 }
 
-/**
- * Everything since the first run (C6, v4.4b; 3.0): the totals, each year's
- * km a month, every month's km, and the two bests.
- */
 export function allTimeView(
   activities: (Pick<Activity, 'date' | 'distanceKm' | 'durationSeconds'> & { id?: string })[],
   today: string,

@@ -100,9 +100,8 @@ describe('getAllRoutes', () => {
   })
 
   it('names an area after a place that was run, not the empty middle of its spots', async () => {
-    // Five runs in Lampertheim, three in Bischheim, one in Neudorf: all within
-    // 12 km, so one area, whose mean lands in Souffelweyersheim, where none of
-    // them went (Lamiaa's map, Oct 2026).
+    // Nine runs within 12 km, so one area, whose mean lands in Souffelweyersheim,
+    // where none of them went.
     const at = (lon: number, lat: number): [number, number][] => [[lon - 0.005, lat - 0.003], [lon + 0.005, lat + 0.003]]
     const runs = [
       ...[0, 1, 2, 3, 4].map((i) => activity(`lampertheim-${i}`, `2025-09-2${i}`, at(7.698 + i * 0.002, 48.649), 4)),

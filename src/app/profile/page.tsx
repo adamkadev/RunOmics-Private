@@ -39,8 +39,7 @@ export default async function ProfilePage() {
     shoes: data.shoes,
   })
 
-  // The Explored card only where the home area has quartiers; it gets the
-  // area, the cluster and its runs, nothing more (no home, no tracks).
+  // Only the area, the cluster and its runs reach the card: no home, no tracks.
   const explore = getExploreHome()
   const explored = explore ? (
     <ExploredCard area={explore.area} clusterId={explore.clusterId} runs={explore.runs} dataVersion={explore.dataVersion} />

@@ -11,17 +11,9 @@ export interface RouteRun {
 
 export interface RecurringRoute {
   id: string
-  /**
-   * Where the route starts. The runs' own titles name the session - "Seuil",
-   * "1 h endurance" - so two routes that share a workout type end up sharing
-   * a name while two names for one route are a coin toss.
-   */
+  /** Routes are named by place: the runs' own titles name the session, not the route. */
   start: Coord | null
-  /**
-   * Where the route goes: its point furthest from the start (Wave 4, App
-   * Fixes 1g). Every route from home shares its start street, so the name
-   * comes from here.
-   */
+  /** Its point furthest from the start, which names the route: every route from home shares its start street. */
   far: Coord | null
   /** A loop, an out-and-back that retraces itself, or a run that ends elsewhere. */
   shape: RouteShape
@@ -36,7 +28,6 @@ export interface RecurringRoute {
 
 export type RouteShape = 'loop' | 'out-back' | 'point'
 
-/** A run that ends further than this from its start went somewhere. */
 const POINT_TO_POINT_KM = 0.4
 /** Halves that share this much of their ground retrace each other. */
 const RETRACE_OVERLAP = 0.6

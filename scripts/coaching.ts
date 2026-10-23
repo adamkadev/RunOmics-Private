@@ -50,7 +50,6 @@ function option(args: string[], name: string): string | undefined {
   return index >= 0 ? args[index + 1] : undefined
 }
 
-/** A path that is not there should name the flag that asked for it. */
 function fileOption(args: string[], name: string): string | undefined {
   const given = option(args, name)
   if (given === undefined) return undefined
@@ -188,11 +187,7 @@ async function applyPreview(args: string[], proposalPath: string): Promise<void>
 
 const pace = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`
 
-/**
- * Reads the athlete's runs against the controlled threshold targets and writes a preview for
- * each change they call for. Nothing is applied: each preview is applied, or
- * not, by hand with --apply.
- */
+/** Nothing is applied: each preview is applied, or not, by hand with --apply. */
 async function autoregulate(args: string[]): Promise<void> {
   const { JsonCoachingRepository } = await interopImport(import('@/infrastructure/repositories/JsonCoachingRepository'))
   const { getAllActivities } = await interopImport(import('@/infrastructure/repositories/JsonActivityRepository'))

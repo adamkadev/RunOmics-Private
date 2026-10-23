@@ -18,8 +18,7 @@ export function ActivityAchievements({ bestEfforts, qualifiedEfforts }: Props) {
   const ranked = [...qualifiedEfforts].sort((a, b) => a.rank - b.rank)
 
   return (
-    // A record is good news, so it reads in pos (v4.17): the gold it wore
-    // was the caution colour.
+    // A record is good news, so it reads in pos: gold is the caution colour.
     <section className={cardClass({ className: 'flex flex-col gap-3' })}>
       <h3 className="text-headline text-foreground">{t.activity.achievements.title}</h3>
       <div className="flex flex-col gap-2.5">

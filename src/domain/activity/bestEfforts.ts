@@ -1,9 +1,4 @@
-/**
- * A best effort can't take longer than the run's moving time (v5.5 #5). The
- * sync measured efforts on the wall clock, pauses included, so a stop could
- * make a 10K "1:02:18" on a run that took 56:27. Such an effort is dropped
- * until the FIT file is reprocessed on the moving clock.
- */
+/** The sync measured efforts on the wall clock, pauses included, so one longer than the moving time is dropped. */
 export function plausibleBestEfforts<E extends Record<string, number> | null | undefined>(
   efforts: E,
   movingSeconds: number | undefined,

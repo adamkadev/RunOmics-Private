@@ -4,16 +4,9 @@ import type { TerritoryCardContent } from '@/components/map/TerritoryBand'
 import type { AreaCoverage } from '@/domain/explore/types'
 import type { DistrictsStatus } from './useDistrictsCoverage'
 
-/** A stat with nothing to show yet. */
 const NO_VALUE = '—'
 
-/**
- * The card under the map while Districts is on (V2/V4): the heat card's
- * eyebrow, how many quartiers are complete and which is next, and - only
- * once there is a way to plan it (`onPlanRun`) - a button that does. Dashes
- * while the coverage is on its way, and a sentence marked pending, so the
- * card keeps its shape and its height.
- */
+/** Dashes and a pending sentence while the coverage is on its way, so the card keeps its shape and its height. */
 export function districtsCardContent(
   eyebrow: string,
   { coverage, status }: { coverage: AreaCoverage | null; status: DistrictsStatus },

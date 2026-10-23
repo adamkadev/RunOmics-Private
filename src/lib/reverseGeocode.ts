@@ -11,11 +11,7 @@ type GeoFeature = {
   context?: Array<{ id: string; text: string }>;
 };
 
-/**
- * "place" answers which town this is, which is what a map cluster wants.
- * "street" answers which corner, which is what two routes starting in the same
- * town need before they can be told apart.
- */
+/** "street" tells apart two routes that start in the same town. */
 export type GeocodeGrain = "place" | "street";
 
 export async function reverseGeocode(
@@ -81,10 +77,6 @@ function writeCache(key: string, value: string | null): string | null {
   return value;
 }
 
-/**
- * The nearest named thing - a street, a park, an address - falling back to the
- * town when the point sits somewhere with no name of its own.
- */
 function extractStreet(features: GeoFeature[]): string | null {
   for (const type of ["street", "address", "poi"]) {
     const match = features.find((f) => f.place_type?.includes(type));

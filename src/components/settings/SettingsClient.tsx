@@ -29,7 +29,6 @@ interface Body {
   weightKg?: number
 }
 
-/** The heart rates the Athlete & zones row names. */
 interface Zones {
   lthrBpm?: number
   maxHrBpm?: number
@@ -39,7 +38,6 @@ interface Props {
   lastSyncedAt: string | null
   activityCount: number
   device?: SyncDevice
-  /** Height and weight from Garmin: moved here from Athlete (C2, v4.4). */
   body?: Body
   zones?: Zones
 }
@@ -61,7 +59,6 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
       const provider = new GoogleAuthProvider()
       provider.setCustomParameters({ prompt: 'select_account' })
       const auth = getClientAuth()
-      // Google's own sign-in window, in the app's language.
       auth.languageCode = t.locale
       await signInWithPopup(auth, provider)
     } catch (err) {
@@ -76,8 +73,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
   }
 
   async function handleSignOut() {
-    // The private site's session first: on a private site, signing out ends
-    // at /sign-in, and the pages this device cached go too.
+    // The private site's session first: it ends at /sign-in and clears this device's cached pages.
     const site = await endSiteSession()
     await signOut(getClientAuth())
     if (site.private) replacePage(SIGN_IN_PATH)
@@ -98,9 +94,6 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
         <AppearanceSection />
         <ProfileSection body={body} zones={zones} />
 
-        {/* Signed out, the page still says where the data comes from and what
-            signing in unlocks, instead of ending on a bare button. The sync
-            is the owner's, so there is no Sync here. */}
         <Section title={t.settings.sections.data}>
           <div className={GROUP_CARD}>
             <div className="flex items-center gap-3 px-4 py-3" data-testid="garmin-row" data-row-thumb>
@@ -115,8 +108,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
                 </p>
               </div>
             </div>
-            {/* The hub promises export, so the row is here signed out too; the
-                workbook is owner-only, so it asks for the sign-in first. */}
+            {/* The export is owner-only, so signed out the row asks for the sign-in. */}
             <button type="button" onClick={handleSignIn} className={`${GROUP_ROW} transition-colors hover:bg-[var(--surface-2)]`}>
               <span className="min-w-0 truncate text-sm text-foreground">{t.settings.dataExport.title}</span>
               <span className="shrink-0 text-sm font-medium text-accent-text">{t.settings.rowAction.signIn}</span>
@@ -165,8 +157,6 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
         <NotificationsForm />
       </Section>
 
-      {/* Sign out as red text, not a box (3.0 1i): it ends the session, and
-          it is the page's last word before the build line. */}
       <button
         type="button"
         onClick={handleSignOut}
@@ -184,14 +174,12 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
 function SettingsHeader() {
   return (
     <header className="mb-1.5">
-      {/* Settings is a sidebar row on a wide screen: the way back is on a phone only. */}
       <BackButton label={t.pages.settings.back} fallbackHref="/profile" className="lg:hidden" />
       <h1 className="text-display text-foreground">{t.pages.settings.title}</h1>
     </header>
   )
 }
 
-/** A group of settings: its eyebrow, then its card. */
 function Section({ title, children, testId }: { title: string; children: ReactNode; testId?: string }) {
   return (
     <section className="flex flex-col gap-2" data-testid={testId}>
@@ -203,11 +191,6 @@ function Section({ title, children, testId }: { title: string; children: ReactNo
   )
 }
 
-/**
- * The settings that are the user's own (v4.17; 3.0 1i): the theme on one
- * row, the background glow (round 2, F2) under it, then the accent
- * with its caption on the right and the swatches under them.
- */
 function AppearanceSection() {
   const a = t.settings
   return (
@@ -230,7 +213,6 @@ function AppearanceSection() {
   )
 }
 
-/** "LTHR 179 · Max 200", or whichever of the two Garmin has. */
 export function zonesSummary(zones: Zones | undefined): string | null {
   const p = t.settings.profile
   const parts = [
@@ -240,20 +222,13 @@ export function zonesSummary(zones: Zones | undefined): string | null {
   return parts.length > 0 ? parts.join(' · ') : null
 }
 
-/**
- * Height and weight, as Garmin has them (the eyebrow says so): read-only
- * rows, the value quiet on the right with no chevron. Then the one row that
- * goes somewhere, Athlete & zones, with the two heart rates its zones hang
- * from (3.0 1i). BMI is gone: it said nothing a runner acts on.
- */
 function ProfileSection({ body, zones }: { body?: Body; zones?: Zones }) {
   const rows = body ? bodyMetrics(body) : []
   const summary = zonesSummary(zones)
   return (
     <Section title={t.settings.sections.profile} testId="settings-profile">
       <div className={GROUP_CARD}>
-        {/* Each row the group's own child, a <dl> of one pair, so the
-            group draws every separator the same way (F11). */}
+        {/* One <dl> per row: the group draws a separator between its direct children. */}
         {rows.map((row) => (
           <dl key={row.label} className={`${GROUP_ROW} text-sm`}>
             <dt className="text-foreground">{row.label}</dt>
@@ -271,8 +246,6 @@ function ProfileSection({ body, zones }: { body?: Body; zones?: Zones }) {
           </span>
         </Link>
       </div>
-      {/* Where they change, as a way there (design review, Oct 2026) - a
-          13 pt muted footnote, as iOS's, not an accent link (F12). */}
       <a
         href={GARMIN_CONNECT_URL}
         target="_blank"

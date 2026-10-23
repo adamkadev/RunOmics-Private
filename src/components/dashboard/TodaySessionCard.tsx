@@ -29,7 +29,6 @@ export function TodaySessionCard({ card }: { card: SessionCard }) {
       data-date={card.date}
       className={cardClass({ clickable: true, className: 'flex flex-col gap-1.5' })}
     >
-      {/* The whole card opens Plan (rule 03): a grey › beside the eyebrow (App Fixes 1a). */}
       <span className="flex items-center justify-between gap-3">
         <span className="text-eyebrow uppercase text-accent-text">{card.eyebrow}</span>
         <ChevronRight size={18} aria-hidden className="shrink-0 text-muted-foreground" />

@@ -24,15 +24,13 @@ interface Props {
   milestones: Milestone[]
   nextMilestones: NextMilestone[]
   recurringRoutes: RecurringRoute[]
-  /** The date the page was prerendered on; see useToday. */
   today: string
 }
 
 export function RecordsClient({ records, topEfforts, predictions, pbAlerts, milestones, nextMilestones, recurringRoutes, today: serverToday }: Props) {
   const today = useToday(serverToday)
   const thisYear = Number(today.slice(0, 4))
-  // The tab lives in the URL (?tab=milestones), so /milestones can land on
-  // it and a visit to a run comes back to the tab it left.
+  // The tab lives in the URL, so /milestones can land on it and a run's page comes back to it.
   const [tabParam, setTabParam] = useUrlParam('tab')
   const tab = parseRecordTab(tabParam)
   const setTab = (next: RecordTab) => setTabParam(next === 'best' ? null : next)
@@ -41,8 +39,6 @@ export function RecordsClient({ records, topEfforts, predictions, pbAlerts, mile
 
   return (
     <div className="space-y-3">
-      {/* A sticky tab strip, not mirrored in the bar (Liquid Glass v2,
-          round 2): under the compact bar while it shows, as Analytics'. */}
       <StickyBar top="var(--sticky-top, var(--sticky-alone, max(var(--safe-top), 8px)))" className="-my-2">
         <SegmentedTabs
           tabs={recordTabs}
