@@ -95,18 +95,9 @@ export function loadHeadlineText(h: LoadCoachHeadline): string {
   }
 }
 
-/** Which way the recovery number that left its baseline went. */
-function recoveryDirection(view: RecoveryView): Direction | undefined {
-  if (!view.out) return 'level'
-  const side = view.restingHr?.side ?? view.hrv?.side
-  return side === 'high' ? 'up' : side === 'low' ? 'down' : undefined
-}
-
-/** Recovery outside its baseline the bad way is a caution; the good way, good news. */
-function recoveryTrend(view: RecoveryView): Trend {
-  if (!view.out) return 'flat'
-  return view.hrv?.side === 'low' || view.restingHr?.side === 'high' ? 'declining' : 'improving'
-}
+/** Resting HR out of its baseline is out on the high side: up, and a caution. */
+const recoveryDirection = (view: RecoveryView): Direction => (view.out ? 'up' : 'level')
+const recoveryTrend = (view: RecoveryView): Trend => (view.out ? 'declining' : 'flat')
 
 export function loadRead(data: AnalyticsBoardData, today: string, window: DayWindow, period: Period): TabRead | null {
   const s = t.analytics.cards.coachRead

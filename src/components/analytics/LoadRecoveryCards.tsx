@@ -1,31 +1,22 @@
 'use client'
 
 import { SAFE_RATIO_HI, SAFE_RATIO_LO, type LoadPair } from '@/domain/training/loadTrend'
-import type { RecoveryNight } from '@/domain/training/recovery'
-import { formatDate, formatDecimal, MINUS } from '@/lib/formatters'
-import { DELTA_TONE_COLOR } from '@/lib/deltaTone'
-import { Stat, StatGrid } from '@/components/ui/Stat'
+import { formatDate, formatDecimal } from '@/lib/formatters'
 import { t } from '@/i18n'
-import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, STAT_TONE, linePath, windowLabels } from './AnalyticsKit'
+import { AxisLabels, BoldSentence, Card, CardHead, ChartScrub, Legend, LegendItem, linePath, windowLabels } from './AnalyticsKit'
 import type { DayWindow } from './analyticsView'
-import {
-  loadTrendView,
-  recoveryView,
-  type LoadTrendView,
-  type RecoverySeries,
-  type RecoveryView,
-} from './loadRecoveryView'
+import { loadTrendView, type LoadTrendView, type RecoveryView } from './loadRecoveryView'
 
 /**
- * The two Load cards (v5.4, v4.17). Lines are text ink over a band in the
- * pos status's tint - the range that is good for you; warn marks the points
- * outside it. Four colours and no others: --foreground, --muted-foreground,
- * --pos (the band) and --warn, plus the delta rule's own through deltaTone.
+ * Load trend (v5.4, v4.17), and the sentences the coach read borrows from it
+ * and from Recovery. Lines are text ink over a band in the pos status's tint -
+ * the range that is good for you; warn marks the points outside it. Four
+ * colours and no others: --foreground, --muted-foreground, --pos (the band)
+ * and --warn.
  */
 const INK = 'var(--foreground)'
 const MUTED = 'var(--muted-foreground)'
 const SAFE_BAND = 'color-mix(in srgb, var(--pos) 14%, transparent)'
-const BASELINE_BAND = 'color-mix(in srgb, var(--pos) 12%, transparent)'
 const LEGEND_BAND = 'color-mix(in srgb, var(--pos) 20%, transparent)'
 const WARN = 'var(--warn)'
 
@@ -140,103 +131,11 @@ export function LoadTrendCard({ pairs, window, yMax, onShift }: { pairs: LoadPai
   )
 }
 
-const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `${MINUS}${Math.abs(n)}` : '0')
-
-function deltaWords(series: RecoverySeries): string {
-  const s = t.analytics.cards.recovery
-  return series.delta === null || series.delta === 0 ? s.noChange : s.vsWeek(signed(series.delta))
-}
-
+/** The coach read's recovery row: resting HR against its baseline. */
 export function recoverySentence(view: RecoveryView): readonly [string, string, string] {
   const s = t.analytics.cards.recovery
-  const { hrv, restingHr: rhr } = view
-  if (!view.out) {
-    if (hrv && rhr) return s.bothInside
-    // One series: its baseline in the sentence, as the chart has no label row.
-    const one = (hrv ?? rhr)!
-    return s.insideBaseline(one.lo, one.hi, hrv ? s.ms : s.bpm)
-  }
-  const rhrUp = rhr && rhr.delta !== null && rhr.delta > 0 ? rhr.delta : null
-  if (hrv?.side) {
-    const and = !rhr?.side ? '' : rhr.side === 'high' ? (rhrUp ? s.andRhrUp(rhrUp) : s.andRhrHigh) : s.andRhrLow
-    return [s.hrvLead, hrv.side === 'low' ? s.hrvLow(view.hrvLowStreak) : s.hrvHigh, `${and}${s.takeEasy}`]
-  }
-  const bold = rhr!.side === 'high' ? (rhrUp ? s.rhrUpBold(rhrUp) : s.rhrHighBold) : s.rhrLowBold
-  return [s.rhrLead, bold, s.takeEasy]
-}
-
-function MiniChart({ label, series, dates, height, live, unit, testId }: { label?: string; series: RecoverySeries; dates: string[]; height: number; live: boolean; unit: string; testId: string }) {
-  const s = t.analytics.cards.recovery
-  const { values, yMin, yMax } = series
-  const n = values.length
-  const last = values.findLastIndex((v) => v !== null)
-  const y = (v: number) => height - ((v - yMin) / (yMax - yMin || 1)) * height
-  return (
-    <div className="flex flex-col gap-1.5" data-testid={testId}>
-      {label && (
-        <div className="flex items-baseline justify-between gap-3 text-xs">
-          <span className="font-medium" style={{ color: INK }}>{label}</span>
-          <span style={{ color: MUTED }}>{s.baseline(series.lo, series.hi)}</span>
-        </div>
-      )}
-      <ChartScrub
-        count={n}
-        mode="line"
-        readout={(i) => (values[i] === null ? bare(dates[i]!) : s.readout(bare(dates[i]!), values[i]!, unit))}
-      >
-        <div className="relative" style={{ height }}>
-          <svg width="100%" height={height} viewBox={`0 0 ${W} ${height}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden>
-            <rect x="0" width={W} y={y(series.hi)} height={Math.max(1, y(series.lo) - y(series.hi))} fill={BASELINE_BAND} data-testid="baseline-band" />
-            <path d={linePath(values, yMin, yMax, W, height)} fill="none" stroke={INK} strokeWidth="1.8" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-          </svg>
-          {values.map((v, i) =>
-            v !== null && series.outside[i] ? <OutsideDot key={i} left={at(i, n)} top={heightPct(v, yMin, yMax)} today={live && i === last} /> : null,
-          )}
-        </div>
-      </ChartScrub>
-    </div>
-  )
-}
-
-export function RecoveryCard({ nights, window }: { nights: RecoveryNight[]; window: DayWindow }) {
-  const s = t.analytics.cards.recovery
-  const view = recoveryView(nights, window)
-  if (!view) return null
-  const { hrv, restingHr: rhr } = view
-  const both = !!hrv && !!rhr
-  const one = hrv ?? rhr!
-  return (
-    <Card testId="recovery-card">
-      <CardHead title={s.title} caption={both ? s.caption : hrv ? s.captionHrv : s.captionDaily} about={s.about} />
-      {both ? (
-        <StatGrid columns={2}>
-          <div data-testid="recovery-hrv">
-            <Stat size="lg" label={s.hrv} value={hrv.now} unit={s.ms} meaning={<span data-tone={hrv.tone}>{deltaWords(hrv)}</span>} tone={STAT_TONE[hrv.tone]} />
-          </div>
-          <div data-testid="recovery-rhr">
-            <Stat size="lg" label={s.restingHr} value={rhr.now} unit={s.bpm} meaning={<span data-tone={rhr.tone}>{deltaWords(rhr)}</span>} tone={STAT_TONE[rhr.tone]} />
-          </div>
-        </StatGrid>
-      ) : (
-        // One series (v4.17): the card names it, so the value and its change
-        // sit on one line.
-        <div data-testid={hrv ? 'recovery-hrv' : 'recovery-rhr'}>
-          <Headline
-            value={one.now}
-            unit={hrv ? s.ms : s.bpm}
-            note={<span data-tone={one.tone}>{deltaWords(one)}</span>}
-            noteStyle={{ color: DELTA_TONE_COLOR[one.tone] }}
-          />
-        </div>
-      )}
-      <BoldSentence parts={recoverySentence(view)} />
-      {hrv && (
-        <MiniChart label={both ? s.hrv : undefined} unit={s.ms} series={hrv} dates={view.dates} height={both ? 64 : 80} live={window.live} testId="recovery-hrv-chart" />
-      )}
-      {rhr && (
-        <MiniChart label={both ? s.restingHr : undefined} unit={s.bpm} series={rhr} dates={view.dates} height={both ? 44 : 80} live={window.live} testId="recovery-rhr-chart" />
-      )}
-      <AxisLabels labels={windowLabels(view.dates, window.live)} />
-    </Card>
-  )
+  const rhr = view.restingHr
+  if (!view.out) return s.insideBaseline(rhr.lo, rhr.hi, s.bpm)
+  const up = rhr.delta !== null && rhr.delta > 0 ? rhr.delta : null
+  return [s.rhrLead, up ? s.rhrUpBold(up) : s.rhrHighBold, s.takeEasy]
 }

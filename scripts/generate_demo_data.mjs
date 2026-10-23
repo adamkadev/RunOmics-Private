@@ -720,14 +720,11 @@ function buildRecoveryHistory(endDate) {
   const rng = makeRng(SEED + 54)
   const days = {}
   for (let i = 364; i >= 0; i--) {
-    // A night in ten without the watch on.
+    // A day in ten without the watch on.
     if (rng() < 0.1) continue
     const d = addDays(endDate, -i)
     const season = Math.sin((i / 365) * Math.PI * 2)
-    days[isoDate(d)] = {
-      hrv: Math.round(58 + season * 3 + between(rng, -5, 5)),
-      restingHr: Math.round(46 - season + between(rng, -1.5, 1.5)),
-    }
+    days[isoDate(d)] = { restingHr: Math.round(46 - season + between(rng, -1.5, 1.5)) }
   }
   return { days }
 }

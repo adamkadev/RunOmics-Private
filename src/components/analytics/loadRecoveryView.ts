@@ -1,5 +1,5 @@
 import { loadRatio, safeRange, type LoadPair } from '@/domain/training/loadTrend'
-import type { RecoveryNight } from '@/domain/training/recovery'
+import type { RecoveryDay } from '@/domain/training/recovery'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { deltaTone, type DeltaTone } from '@/lib/deltaTone'
 import type { DayWindow } from './analyticsView'
@@ -144,28 +144,26 @@ export function loadTrendView(pairs: LoadPair[], window: DayWindow, yMax: number
 // ─── Recovery ──────────────────────────────────────────────────────────────
 
 /**
- * Under this many days of a series in the window, that series is left out;
- * with neither, the card is hidden, never drawn empty. A watch not worn
- * overnight records no HRV at all, but still a daytime resting HR.
+ * Under this many days of resting HR in the window, the card is hidden, never
+ * drawn empty.
  */
-export const RECOVERY_MIN_NIGHTS = 7
-/** The baseline is the athlete's own range over the last 60 nights. */
-export const BASELINE_NIGHTS = 60
-/** Changes inside these read as no real change (v4.7 rule). */
-export const HRV_FLAT_MS = 3
+export const RECOVERY_MIN_DAYS = 7
+/** The baseline is the athlete's own range over the last 60 days. */
+export const BASELINE_DAYS = 60
+/** A change inside this reads as no real change (v4.7 rule). */
 export const RESTING_HR_FLAT_BPM = 2
 
 export interface RecoverySeries {
-  /** One value per chart date; null where the watch recorded nothing. */
-  values: (number | null)[]
+  /** One value per chart date. */
+  values: number[]
   outside: boolean[]
   lo: number
   hi: number
   now: number
-  /** Last night against the 7 nights before it, whole units. */
+  /** The last day against the 7 days before it, whole bpm. */
   delta: number | null
   tone: DeltaTone
-  /** Last night sat outside the baseline, and on which side. */
+  /** The last day sat outside the baseline, and on which side. */
   side: 'low' | 'high' | null
   yMin: number
   yMax: number
@@ -173,10 +171,7 @@ export interface RecoverySeries {
 
 export interface RecoveryView {
   dates: string[]
-  hrv: RecoverySeries | null
-  restingHr: RecoverySeries | null
-  /** Nights in a row, up to last night, with HRV below baseline. */
-  hrvLowStreak: number
+  restingHr: RecoverySeries
   out: boolean
 }
 
@@ -188,95 +183,51 @@ function quantile(sorted: number[], q: number): number {
 }
 
 /**
- * The baseline: the middle 80% of the athlete's own last 60 nights before
- * last night, so last night is judged against what came before it rather
+ * The baseline: the middle 80% of the athlete's own last 60 days before the
+ * last one, so the last day is judged against what came before it rather
  * than against itself.
  */
-function baseline(values: { date: string; v: number }[], lastDate: string): { lo: number; hi: number } | null {
-  const from = isoDate(addDays(day(lastDate), -BASELINE_NIGHTS))
-  const sample = values.filter((x) => x.date >= from && x.date < lastDate).map((x) => x.v).sort((a, b) => a - b)
-  if (sample.length < RECOVERY_MIN_NIGHTS) return null
+function baseline(days: RecoveryDay[], lastDate: string): { lo: number; hi: number } | null {
+  const from = isoDate(addDays(day(lastDate), -BASELINE_DAYS))
+  const sample = days.filter((d) => d.date >= from && d.date < lastDate).map((d) => d.restingHr).sort((a, b) => a - b)
+  if (sample.length < RECOVERY_MIN_DAYS) return null
   return { lo: Math.round(quantile(sample, 0.1)), hi: Math.round(quantile(sample, 0.9)) }
 }
 
-function series(
-  nights: RecoveryNight[],
-  pick: (n: RecoveryNight) => number | null,
-  window: DayWindow,
-  metric: 'hrv' | 'restingHr',
-  flat: number,
-): { series: RecoverySeries; dates: string[]; raw: { date: string; v: number }[] } | null {
-  const all = nights.flatMap((n) => (pick(n) !== null ? [{ date: n.date, v: pick(n)! }] : []))
-  const inWindow = all.filter((x) => x.date >= window.start && x.date <= window.end)
+export function recoveryView(days: RecoveryDay[], window: DayWindow): RecoveryView | null {
+  const inWindow = days.filter((d) => d.date >= window.start && d.date <= window.end)
   const last = inWindow.at(-1)
-  if (!last) return null
-  const band = baseline(all, last.date)
+  if (!last || inWindow.length < RECOVERY_MIN_DAYS) return null
+  const band = baseline(days, last.date)
   if (!band) return null
 
   const weekFrom = isoDate(addDays(day(last.date), -7))
-  const week = all.filter((x) => x.date >= weekFrom && x.date < last.date).map((x) => x.v)
-  const delta = week.length ? Math.round(last.v - mean(week)) : null
-  const tone: DeltaTone = deltaTone(metric, delta, { flatBelow: flat })
+  const week = days.filter((d) => d.date >= weekFrom && d.date < last.date).map((d) => d.restingHr)
+  const delta = week.length ? Math.round(last.restingHr - mean(week)) : null
 
   const points = weekly(window)
-    ? byWeek(inWindow).map((w) => ({ date: w.at(-1)!.date, v: Math.round(mean(w.map((x) => x.v))) }))
-    : inWindow
+    ? byWeek(inWindow).map((w) => ({ date: w.at(-1)!.date, v: Math.round(mean(w.map((d) => d.restingHr))) }))
+    : inWindow.map((d) => ({ date: d.date, v: d.restingHr }))
   const values = points.map((p) => p.v)
   const span = Math.max(...values, band.hi) - Math.min(...values, band.lo) || 1
+  const side = last.restingHr < band.lo ? 'low' : last.restingHr > band.hi ? 'high' : null
   return {
-    raw: inWindow,
     dates: points.map((p) => p.date),
-    series: {
+    restingHr: {
       values,
       outside: values.map((v) => v < band.lo || v > band.hi),
       lo: band.lo,
       hi: band.hi,
-      now: last.v,
+      now: last.restingHr,
       delta,
-      tone,
-      side: last.v < band.lo ? 'low' : last.v > band.hi ? 'high' : null,
+      tone: deltaTone('restingHr', delta, { flatBelow: RESTING_HR_FLAT_BPM }),
+      side,
       yMin: Math.min(...values, band.lo) - span * 0.15,
       yMax: Math.max(...values, band.hi) + span * 0.15,
     },
-  }
-}
-
-/** Align a series onto the chart's dates, null where it has no point. */
-function onDates(dates: string[], own: string[], s: RecoverySeries): RecoverySeries {
-  const at = new Map(own.map((d, i) => [d, i]))
-  const index = dates.map((d) => at.get(d))
-  return {
-    ...s,
-    values: index.map((i) => (i === undefined ? null : s.values[i]!)),
-    outside: index.map((i) => (i === undefined ? false : s.outside[i]!)),
-  }
-}
-
-function enough(nights: RecoveryNight[], pick: (n: RecoveryNight) => number | null, window: DayWindow): boolean {
-  return nights.filter((n) => pick(n) !== null && n.date >= window.start && n.date <= window.end).length >= RECOVERY_MIN_NIGHTS
-}
-
-export function recoveryView(nights: RecoveryNight[], window: DayWindow): RecoveryView | null {
-  const hrvOf = (n: RecoveryNight) => n.hrv
-  const rhrOf = (n: RecoveryNight) => n.restingHr
-  const hrv = enough(nights, hrvOf, window) ? series(nights, hrvOf, window, 'hrv', HRV_FLAT_MS) : null
-  const rhr = enough(nights, rhrOf, window) ? series(nights, rhrOf, window, 'restingHr', RESTING_HR_FLAT_BPM) : null
-  if (!hrv && !rhr) return null
-
-  const dates = [...new Set([...(hrv?.dates ?? []), ...(rhr?.dates ?? [])])].sort()
-  let hrvLowStreak = 0
-  if (hrv) for (let i = hrv.raw.length - 1; i >= 0 && hrv.raw[i]!.v < hrv.series.lo; i--) hrvLowStreak++
-
-  return {
-    dates,
-    hrv: hrv ? onDates(dates, hrv.dates, hrv.series) : null,
-    restingHr: rhr ? onDates(dates, rhr.dates, rhr.series) : null,
-    hrvLowStreak,
     // Only the bad side is a flag (App Fixes 2a): a resting HR below its
-    // baseline is a recovered athlete, and HRV above it is the same news.
-    // Both used to raise "Recovery is dipping" over a number that had
-    // improved.
-    out: hrv?.series.side === 'low' || rhr?.series.side === 'high',
+    // baseline is a recovered athlete, not a dip.
+    out: side === 'high',
   }
 }
 

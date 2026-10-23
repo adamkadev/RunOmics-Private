@@ -693,10 +693,9 @@ describe('Load trend and Recovery (v5.4)', () => {
   })
   afterAll(() => vi.useRealTimers())
 
-  const nights = (n: number, hrv: (i: number) => number, rhr: (i: number) => number) =>
-    Array.from({ length: n }, (_, i) => ({ date: day(n - 1 - i), hrv: hrv(i), restingHr: rhr(i) }))
-  const wobble = (i: number) => [0, 2, -1, 3, -2, 1, -3, 2][i % 8]!
-  const steady = nights(90, (i) => 58 + wobble(i), (i) => 46 + (i % 3) - 1)
+  const restingDays = (n: number, rhr: (i: number) => number) =>
+    Array.from({ length: n }, (_, i) => ({ date: day(n - 1 - i), restingHr: rhr(i) }))
+  const steady = restingDays(90, (i) => 46 + (i % 3) - 1)
 
   async function renderWith(extra: Partial<AnalyticsBoardData>) {
     render(<AnalyticsClient data={{ ...data, ...extra }} today={TODAY} />)
@@ -751,25 +750,25 @@ describe('Load trend and Recovery (v5.4)', () => {
   })
 
   it('reads resting HR in the Form card, inside its baseline', async () => {
-    await renderWith({ recovery: steady.map((n) => ({ ...n, hrv: null })) })
+    await renderWith({ recovery: steady })
     const row = screen.getByTestId('form-rhr')
     expect(row.textContent).toContain(t.analytics.cards.loadCompact.baseline(null, 45, 47))
     expect(row.textContent).toContain(t.analytics.cards.loadCompact.ok)
   })
 
-  it('leaves the resting HR row out without enough nights', async () => {
+  it('leaves the resting HR row out without enough days', async () => {
     await renderWith({ recovery: steady.slice(-6) })
     expect(screen.queryByTestId('form-rhr')).toBeNull()
   })
 
-  it('lets the coach read take a run of low HRV nights into account', async () => {
-    const low = nights(90, (i) => (i >= 87 ? 44 : 58 + wobble(i)), (i) => (i >= 87 ? 51 : 46 + (i % 3) - 1))
-    await renderWith({ recovery: low })
+  it('lets the coach read take resting HR above its baseline into account', async () => {
+    const high = restingDays(90, (i) => (i >= 87 ? 51 : 46 + (i % 3) - 1))
+    await renderWith({ recovery: high })
     expect(screen.getByTestId('coach-read').getAttribute('data-tone')).toBe('warn')
     expect(screen.getByTestId('coach-read-headline').textContent).toBe(t.analytics.cards.coachRead.load.dip)
   })
 
-  it('uses only the four v4.17 colours in the two cards', () => {
+  it('uses only the four v4.17 colours in the Load trend card', () => {
     const source = readFileSync(path.join(__dirname, '../LoadRecoveryCards.tsx'), 'utf8')
     const vars = new Set([...source.matchAll(/var\(--([a-z-]+)\)/g)].map((m) => m[1]))
     expect([...vars].sort()).toEqual(['foreground', 'muted-foreground', 'pos', 'warn'])

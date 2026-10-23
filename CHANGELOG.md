@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- HRV is gone from the app and the sync: neither athlete sleeps with the
+  watch on, so Garmin recorded it a handful of nights a year. The coach
+  read's recovery row and the Form card read resting HR alone, against the
+  same 60-day baseline; a dip is resting HR above it. The unused two-series
+  Recovery card is deleted.
+
 - Routes are stored as recorded, start and finish included: privacy zones are
   gone. Both deployments are private, so only a signed-in owner or invited
   viewer ever sees a route, and the zones cost a required secret per athlete,

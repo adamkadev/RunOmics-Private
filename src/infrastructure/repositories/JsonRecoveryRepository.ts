@@ -1,12 +1,11 @@
 import { dataPath } from '../dataPath'
 import { readJsonFile } from '../readJsonFile'
-import type { RecoveryNight } from '@/domain/training/recovery'
+import type { RecoveryDay } from '@/domain/training/recovery'
 
-export type { RecoveryNight }
+export type { RecoveryDay }
 
-type Stored = { days?: Record<string, { hrv?: number; restingHr?: number }> }
-
-const value = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null)
+// Files synced before HRV was dropped still carry an `hrv` field; it is ignored.
+type Stored = { days?: Record<string, { restingHr?: number }> }
 
 /**
  * A resting heart rate a person can have: Garmin's daily value carries
@@ -15,16 +14,16 @@ const value = (v: unknown): number | null => (typeof v === 'number' && Number.is
  */
 const RESTING_HR_BPM = { min: 30, max: 100 } as const
 
-const restingHr = (v: unknown): number | null => {
-  const bpm = value(v)
-  return bpm !== null && bpm >= RESTING_HR_BPM.min && bpm <= RESTING_HR_BPM.max ? bpm : null
-}
+const restingHr = (v: unknown): number | null =>
+  typeof v === 'number' && Number.isFinite(v) && v >= RESTING_HR_BPM.min && v <= RESTING_HR_BPM.max ? v : null
 
-/** The synced nights, oldest first; empty until the recovery sync has run. */
-export function getRecoveryNights(): RecoveryNight[] {
+/** The synced days with a resting HR, oldest first; empty until the recovery sync has run. */
+export function getRecoveryDays(): RecoveryDay[] {
   const stored = readJsonFile<Stored>(dataPath('recovery_history.json'), {})
   return Object.entries(stored.days ?? {})
-    .map(([date, night]) => ({ date, hrv: value(night?.hrv), restingHr: restingHr(night?.restingHr) }))
-    .filter((n) => n.hrv !== null || n.restingHr !== null)
+    .flatMap(([date, day]) => {
+      const bpm = restingHr(day?.restingHr)
+      return bpm === null ? [] : [{ date, restingHr: bpm }]
+    })
     .sort((a, b) => a.date.localeCompare(b.date))
 }
