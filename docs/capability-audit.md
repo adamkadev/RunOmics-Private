@@ -67,3 +67,25 @@ python scripts/diagnostics/probe_garmin_capabilities.py \
 
 Only reports produced by this diagnostic schema are accepted as baselines. Run
 `unset GARMIN_SECRET` when the local audit is complete.
+
+## Personal API probe
+
+`probe_personal_api.py` asks the same question of Garmin's Personal API
+(`personal.connectapi.garmin.com`): which of its documented endpoints answer,
+and whether its gateway also serves the private paths the sync reads today
+(gear, metrics, calendar). It exchanges `GARMIN_PERSONAL_API_KEY` for a token
+- the only POST - and then only reads. It prints the HTTP status, size and
+key names of each answer, never a value, a URL, the key or the token, so the
+output can be pasted into an issue.
+
+```bash
+read -r -s GARMIN_PERSONAL_API_KEY
+export GARMIN_PERSONAL_API_KEY
+python scripts/diagnostics/probe_personal_api.py --as-of 2026-10-23
+```
+
+`--compare`, with `GARMIN_SECRET` exported as well, fetches the newest run's
+detail and FIT file from both sources. It reports the keys only one of them
+has, whether the FIT files are identical - including the VO2max message the
+sync reads per run - and which fields the mapper fills from Connect but not
+from the Personal API. Run `unset GARMIN_PERSONAL_API_KEY` afterwards.
