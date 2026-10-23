@@ -72,10 +72,11 @@ jobs:
     # Per-profile secrets live in a GitHub Environment of the same name.
     environment: ${{ matrix.profile }}
 
-    # A manual run must never overlap the nightly one for the same profile: both push to its data repository.
+    # Runs for one profile take turns and never cancel the one waiting: all push to its data repository.
     concurrency:
       group: sync-${{ matrix.profile }}
       cancel-in-progress: false
+      queue: max
 
     env:
       RUNOMICS_DATA_DIR: data
