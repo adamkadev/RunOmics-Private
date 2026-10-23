@@ -348,6 +348,23 @@ export const en = {
         exploredStat: 'Explored',
         nextStat: 'Next quartier',
         planRunIn: (name: string) => `Plan a run in ${name}`,
+        // The expanded map's card (S1). `pct` is "8%"; `distance` "1.9 km", or null without a home.
+        nextToExplore: 'Next to explore',
+        nextMeta: (pct: string, distance: string | null) => (distance ? `${pct} explored · ${distance} from home` : `${pct} explored`),
+        planRun: 'Plan a run',
+        // A quartier's sheet (S2), opened by a tap on it.
+        sheet: {
+          quartierOf: (commune: string) => `Quartier · ${commune}`,
+          commune: 'Commune',
+          explored: (pct: string) => `${pct} explored`,
+          // `n` formats a count for the reader's locale.
+          cells: (visited: number, total: number, n: (count: number) => string) => `${n(visited)} of ${n(total)} cell${total === 1 ? '' : 's'}`,
+          completeAt: (pct: string) => `Complete at ${pct}`,
+          runHere: 'Run here',
+          lastRun: 'Last run',
+          fromHome: 'From home',
+          planRunHere: 'Plan a run here',
+        },
       },
     },
     shoes: {

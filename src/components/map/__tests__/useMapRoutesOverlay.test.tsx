@@ -7,6 +7,8 @@ import { accentColor } from '@/lib/accent'
 import {
   DISTRICTS_CHECK_IMAGE,
   DISTRICTS_LABEL_LAYER,
+  DISTRICTS_COMPLETE_LABEL_LAYER,
+  DISTRICTS_NEXT_LABEL_LAYER,
   DISTRICTS_LINE_LAYER,
   DISTRICTS_SHAPE_LAYERS,
   districtsColors,
@@ -47,7 +49,7 @@ vi.mock('../heatLayer', () => ({
   },
 }))
 
-const { useMapRoutes } = await import('../useMapRoutes')
+const { useMapRoutes, fitPadding } = await import('../useMapRoutes')
 
 const AREA = testArea()
 const COVERAGE: AreaCoverage = {
@@ -96,8 +98,9 @@ function expectDrawnInOrder(map: FakeMap) {
   const at = (id: string) => ids.indexOf(id)
   for (let k = 1; k < RUN_ORDER.length; k++) expect(at(RUN_ORDER[k]!), RUN_ORDER[k]).toBe(at(RUN_ORDER[k - 1]!) + 1)
   // The labels over the base quartier names and under the town names (so
-  // "Metz" keeps its place), all under the fence that drops the cut ones.
-  expect(ids.slice(-3)).toEqual([DISTRICTS_LABEL_LAYER, 'Town labels', 'map-edge-fence'])
+  // "Metz" keeps its place), the lead ones (complete, next) over the town
+  // names, all under the fence that drops the cut ones.
+  expect(ids.slice(-5)).toEqual([DISTRICTS_LABEL_LAYER, 'Town labels', DISTRICTS_COMPLETE_LABEL_LAYER, DISTRICTS_NEXT_LABEL_LAYER, 'map-edge-fence'])
   expect(at(DISTRICTS_LABEL_LAYER)).toBe(at('Place labels') + 1)
   expect(map.hasImage(DISTRICTS_CHECK_IMAGE)).toBe(true)
 }
@@ -186,5 +189,34 @@ describe('the Districts overlay on the heat map', () => {
     expect(map.getStyle().layers).toEqual(heatOnly)
     expect(map.hasImage(DISTRICTS_CHECK_IMAGE)).toBe(false)
     expect([...map.sources.keys()].filter((id) => id.startsWith('runomics'))).toEqual([])
+  })
+
+  it('fits an override box with its own padding while it is set, and the frame again once it goes', async () => {
+    const OVERRIDE = { minLon: -150.05, minLat: 44.95, maxLon: -149.9, maxLat: 45.1 }
+    const PADDING = { top: 80, right: 24, bottom: 216, left: 24 }
+    function Fit({ override, padding }: { override: typeof OVERRIDE | null; padding?: typeof PADDING }) {
+      const { containerRef } = useMapRoutes(DATA, NO_ROUTES, 0, NO_RUNS, null, true, { fitOverride: override, fitOverridePadding: padding })
+      return <div ref={containerRef} />
+    }
+    const box = (b: typeof OVERRIDE) => [
+      [b.minLon, b.minLat],
+      [b.maxLon, b.maxLat],
+    ]
+    const { rerender } = render(<Fit override={OVERRIDE} padding={PADDING} />)
+    await waitFor(() => expect(maps.built).toHaveLength(1))
+    const map = maps.built[0]!
+    map.finish()
+    await waitFor(() => expect(map.fits).toHaveLength(1))
+    expect(map.fits[0]).toMatchObject({ bounds: box(OVERRIDE), options: { padding: PADDING, duration: 0 } })
+
+    // Without a padding of its own, the override takes the frame's (fullscreen here).
+    rerender(<Fit override={OVERRIDE} />)
+    await waitFor(() => expect(map.fits).toHaveLength(2))
+    expect(map.fits[1]).toMatchObject({ bounds: box(OVERRIDE), options: { padding: fitPadding(true) } })
+
+    // Gone: the cluster's own frame, as the heat always fitted.
+    rerender(<Fit override={null} />)
+    await waitFor(() => expect(map.fits).toHaveLength(3))
+    expect(map.fits[2]).toMatchObject({ bounds: box(BOUNDS), options: { padding: fitPadding(true) } })
   })
 })

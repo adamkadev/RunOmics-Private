@@ -8,6 +8,8 @@ import {
   DISTRICTS_CHECK_IMAGE,
   DISTRICTS_FILL_LAYER,
   DISTRICTS_LABEL_LAYER,
+  DISTRICTS_COMPLETE_LABEL_LAYER,
+  DISTRICTS_NEXT_LABEL_LAYER,
   DISTRICTS_LABEL_SOURCE,
   DISTRICTS_LAYERS,
   DISTRICTS_LINE_LAYER,
@@ -126,7 +128,7 @@ describe('unitNameVariants', () => {
 })
 
 describe('addDistrictsLayers', () => {
-  it('puts the shapes over the heat and under the home ring, the labels over the quartier names and under the town and city names', () => {
+  it('puts the shapes over the heat and under the home ring, the labels over the quartier names and under the town and city names - the lead ones over them', () => {
     const map = heatMap()
     addDistrictsLayers(asMap(map), { mode: 'light', accent: 'teal' })
     expect(map.ids()).toEqual([
@@ -142,8 +144,30 @@ describe('addDistrictsLayers', () => {
       // "Metz" keeps its place; before the suburbs' and quarters' own names.
       DISTRICTS_LABEL_LAYER,
       'Town labels',
+      // The complete units' labels, then over them the next one's, place
+      // before the town names: "Metz" gives way to them (S1 named neither),
+      // not to the rest.
+      DISTRICTS_COMPLETE_LABEL_LAYER,
+      DISTRICTS_NEXT_LABEL_LAYER,
       'map-edge-fence',
     ])
+    expect(map.getFilter(DISTRICTS_NEXT_LABEL_LAYER)).toEqual(['==', ['get', 'sort'], 0])
+    expect(map.getFilter(DISTRICTS_COMPLETE_LABEL_LAYER)).toEqual(['==', ['get', 'sort'], 1])
+    expect(map.getFilter(DISTRICTS_LABEL_LAYER)).toEqual(['>', ['get', 'sort'], 1])
+    // The same label in all three; a complete one may also step aside, left
+    // or right - never the next one, which would take that side from it.
+    const anchorsOf = (id: string) => {
+      const { 'text-variable-anchor': anchors, ...rest } = map.getLayer(id)!.layout!
+      return { anchors, rest }
+    }
+    const plain = anchorsOf(DISTRICTS_LABEL_LAYER)
+    expect(anchorsOf(DISTRICTS_NEXT_LABEL_LAYER)).toEqual(plain)
+    expect(anchorsOf(DISTRICTS_COMPLETE_LABEL_LAYER).rest).toEqual(plain.rest)
+    expect(plain.anchors).toEqual(['center', 'top', 'bottom'])
+    expect(anchorsOf(DISTRICTS_COMPLETE_LABEL_LAYER).anchors).toEqual(['center', 'top', 'bottom', 'right', 'left'])
+    for (const id of [DISTRICTS_COMPLETE_LABEL_LAYER, DISTRICTS_NEXT_LABEL_LAYER]) {
+      expect(map.getLayer(id)!.paint).toEqual(map.getLayer(DISTRICTS_LABEL_LAYER)!.paint)
+    }
     expect(map.images.get(DISTRICTS_CHECK_IMAGE)?.options).toEqual({ pixelRatio: 2 })
   })
 
@@ -158,7 +182,7 @@ describe('addDistrictsLayers', () => {
     const map = heatMap()
     map.layers = map.layers.filter((layer) => layer.id !== 'Town labels')
     addDistrictsLayers(asMap(map), { mode: 'light', accent: 'teal' })
-    expect(map.ids().slice(-2)).toEqual([DISTRICTS_LABEL_LAYER, 'map-edge-fence'])
+    expect(map.ids().slice(-4)).toEqual([DISTRICTS_LABEL_LAYER, DISTRICTS_COMPLETE_LABEL_LAYER, DISTRICTS_NEXT_LABEL_LAYER, 'map-edge-fence'])
   })
 
   it('lets a label step beside its point rather than drop, when a town name is in the way', () => {
@@ -244,7 +268,10 @@ describe('one name per quartier', () => {
     expect((map.getFilter('Town labels') as unknown[]).slice(0, 1)).toEqual(['all'])
     // Never another layer: water names, and our own labels.
     expect(map.getFilter('Ocean labels')).toBeUndefined()
-    expect(map.getFilter(DISTRICTS_LABEL_LAYER)).toBeUndefined()
+    // (ours keep their own: which units each one labels).
+    expect(map.getFilter(DISTRICTS_LABEL_LAYER)).toEqual(['>', ['get', 'sort'], 1])
+    expect(map.getFilter(DISTRICTS_COMPLETE_LABEL_LAYER)).toEqual(['==', ['get', 'sort'], 1])
+    expect(map.getFilter(DISTRICTS_NEXT_LABEL_LAYER)).toEqual(['==', ['get', 'sort'], 0])
   })
 
   it('gives the base names back when the layer hides, and drops them again when it shows', () => {

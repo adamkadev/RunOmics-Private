@@ -55,12 +55,15 @@ export class FakeMap {
   styles: unknown[] = []
   loaded = false
   removed = false
-  container = typeof document === 'undefined' ? null : document.createElement('div')
+  /** The element the map was built in, like MapLibre's; a detached one without. */
+  container: HTMLElement | null
   touchZoomRotate = { disableRotation() {} }
   keyboard = { disableRotation() {} }
 
-  constructor(options?: { style?: unknown }) {
+  constructor(options?: { style?: unknown; container?: unknown }) {
     if (options?.style) this.styles.push(options.style)
+    const given = typeof HTMLElement !== 'undefined' && options?.container instanceof HTMLElement ? options.container : null
+    this.container = given ?? (typeof document === 'undefined' ? null : document.createElement('div'))
   }
 
   // --- style ---------------------------------------------------------------
@@ -191,8 +194,9 @@ export class FakeMap {
   getContainer() {
     return this.container
   }
+  canvas = { clientWidth: 320, clientHeight: 320, style: { cursor: '' } }
   getCanvas() {
-    return { clientWidth: 320, clientHeight: 320 }
+    return this.canvas
   }
   unproject() {
     return { lng: 0, lat: 0 }
@@ -201,7 +205,38 @@ export class FakeMap {
     return { x: 0, y: 0 }
   }
   resize() {}
-  fitBounds() {}
+  /** Every fitBounds, in order. */
+  fits: { bounds: unknown; options: Record<string, unknown> }[] = []
+  fitBounds(bounds: unknown, options: Record<string, unknown> = {}) {
+    this.fits.push({ bounds, options })
+  }
+  /** What cameraForBounds answers (MapLibre's centre and zoom for the box). */
+  camera: { center: [number, number]; zoom: number } | undefined = { center: [1, 2], zoom: 14 }
+  cameraQueries: { bounds: unknown; options: Record<string, unknown> }[] = []
+  cameraForBounds(bounds: unknown, options: Record<string, unknown> = {}) {
+    this.cameraQueries.push({ bounds, options })
+    return this.camera
+  }
+  eases: Record<string, unknown>[] = []
+  easeTo(options: Record<string, unknown>) {
+    this.eases.push(options)
+  }
+
+  // --- what is drawn under a point -----------------------------------------
+  /** The features drawn under any point, by layer: what a tap or the pointer finds. */
+  drawn: { layer: string; properties: Record<string, unknown> }[] = []
+  renderQueries: { point: unknown; options?: { layers?: string[] } }[] = []
+  /** Like MapLibre: only layers on the map and showing, and only the ones asked for. */
+  queryRenderedFeatures(point: unknown, options?: { layers?: string[] }) {
+    this.renderQueries.push({ point, options })
+    return this.drawn
+      .filter(({ layer }) => {
+        const on = this.getLayer(layer)
+        return !!on && on.layout?.visibility !== 'none' && (!options?.layers || options.layers.includes(layer))
+      })
+      .map(({ layer, properties }) => ({ layer: { id: layer }, properties }))
+  }
+
   remove() {
     this.removed = true
   }

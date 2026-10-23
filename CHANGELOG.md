@@ -46,6 +46,16 @@ All notable changes to this project are documented in this file.
   next, 3.0 km from home." Heat is unchanged; `?layer=districts` opens the
   map on Districts.
 
+- Explore, expand and a quartier's sheet (X5): on Districts, Expand fits
+  the map to every quartier, with the legend at the bottom left, layers and
+  ⓘ at the right, and a glass card naming the next quartier at the foot.
+  Tapping a quartier (after 300 ms, so a double tap still zooms) opens its
+  sheet: the share explored on a bar with the 90 % mark, the km run there,
+  the last run and the distance from home. The camera keeps the quartier in
+  the free part of the map, above the sheet on a phone, beside it where the
+  sheet is a centred card, and the controls under a sheet are taken away
+  rather than blurred. `?quartier=<id>` opens a quartier's sheet.
+
 - Cards are never blurred (D1): over the light glow each card had its own
   24 px backdrop blur (F5) - every card in a list, on screen or not, 77 on
   Activities. They are now 88 % white with no blur, so the glow still tints

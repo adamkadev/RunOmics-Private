@@ -15,12 +15,26 @@ export interface LngLatBounds {
  * - fullscreen: the row of controls at the top; the legend card and its
  *   24 pt inset at the foot.
  * - card: the Activities map card's controls and legend capsule.
+ * - districtsFullscreen: Explore's expanded Districts map (S1), fitted to
+ *   every quartier: the row at the top; at the foot the whole stack - the
+ *   next-quartier card (77) on its 24 pt inset, the legend and ⓘ row, the
+ *   layers button over the ⓘ (about 190 in all) - and a name's height more,
+ *   so no quartier lands under any of them.
  */
 export const MAP_PADDING = {
   hero: { top: 32, right: 24, bottom: 36, left: 24 },
   fullscreen: { top: 80, right: 24, bottom: 124, left: 24 },
   card: { top: 64, right: 16, bottom: 52, left: 16 },
+  districtsFullscreen: { top: 80, right: 24, bottom: 216, left: 24 },
 } as const
+
+/** Room kept clear on each side of a fitted box, in CSS pixels. */
+export interface CameraPadding {
+  top: number
+  right: number
+  bottom: number
+  left: number
+}
 
 /** The share of points each side of the heatmap's frame leaves out. */
 export const FRAME_TRIM = 0.04

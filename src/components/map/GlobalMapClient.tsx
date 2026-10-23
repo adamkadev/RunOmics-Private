@@ -12,6 +12,7 @@ import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { formatKm, formatNumber } from "@/lib/formatters";
 import { useUrlParam } from "@/lib/useUrlParam";
+import { MAP_PADDING, type LngLatBounds } from "@/lib/routeFrame";
 import { useSetFullscreenChromeHidden } from "@/components/layout/FullscreenChromeContext";
 import type { TerritoryCardContent } from "./TerritoryBand";
 import { ClusterPanel } from "./ClusterPanel";
@@ -26,6 +27,9 @@ import { useDistrictsCoverage } from "@/components/explore/useDistrictsCoverage"
 import { districtsCardContent } from "@/components/explore/districtsCard";
 import { useDistrictsOverlay, useDistrictsSync } from "@/components/explore/useDistrictsOverlay";
 import { initialMapLayer, parseMapLayer, readStoredMapLayer, storeMapLayer, type MapLayer } from "@/components/explore/mapLayer";
+import { NextQuartierCard } from "@/components/explore/NextQuartierCard";
+import { QuartierSheet } from "@/components/explore/QuartierSheet";
+import { useDistrictsTap, useQuartierCamera } from "@/components/explore/useQuartierMap";
 import {
   activeFilterCount,
   areaRows,
@@ -43,12 +47,18 @@ interface Props {
   onContentChange?: (content: TerritoryCardContent | null) => void;
   /** The areas this deployment has Districts for (Explore); none hides the layers button. */
   exploreAreas?: readonly ExploreAreaRef[];
-  /** "Plan a run in …" on the Districts card; without it the card has no button. */
+  /**
+   * "Plan a run" on the Districts card, the expanded map's next-quartier card
+   * and a quartier's sheet; without it none of them has the button.
+   */
   onPlanRun?: (unitId: string) => void;
 }
 
 const NO_AREAS: readonly ExploreAreaRef[] = [];
 const NO_RUNS: readonly number[] = [];
+
+/** An area's [minLon, minLat, maxLon, maxLat] as a box to fit. */
+const bboxBounds = ([minLon, minLat, maxLon, maxLat]: readonly [number, number, number, number]): LngLatBounds => ({ minLon, minLat, maxLon, maxLat });
 
 export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS, onPlanRun }: Props) {
   const { clusters, routeMeta } = data;
@@ -70,6 +80,14 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
   useEffect(() => {
     if (linkedLayer) storeMapLayer(linkedLayer);
   }, [linkedLayer]);
+
+  // A quartier's sheet (S2): the one tapped, or the link's. The link's
+  // `?quartier=` is read once, like its layer, and opens that sheet once the
+  // coverage is in; an id the area doesn't hold is let go. Closing the sheet
+  // or changing the layer by hand takes it out of the address.
+  const [quartierParam, setQuartierParam] = useUrlParam("quartier");
+  const [linkedQuartier, setLinkedQuartier] = useState<string | null>(() => quartierParam);
+  const [openUnitId, setOpenUnitId] = useState<string | null>(null);
 
   const [routes, setRoutes] = useState<[number, number][][]>([]);
   const loadedClusterIds = useRef<Set<string>>(new Set());
@@ -129,7 +147,10 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
     setLayer(next);
     storeMapLayer(next);
     if (layerParam !== null) setLayerParam(null);
-  }, [layer, layerParam, setLayerParam]);
+    setLinkedQuartier(null);
+    setOpenUnitId(null);
+    if (quartierParam !== null) setQuartierParam(null);
+  }, [layer, layerParam, setLayerParam, quartierParam, setQuartierParam]);
 
   // Distances run from where the runs start, whatever the filters (the
   // heat's ring follows them; a quartier's distance from home doesn't).
@@ -148,9 +169,43 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
     routeMeta,
     home: districtsHome,
   });
+  const { area: districtsFile, coverage: districtsCoverage, status: districtsStatus } = districts;
+
+  // The link's quartier, once there is coverage to show it with (adjusted
+  // while rendering, as React has state follow state): read once, then let
+  // go whether the area holds it or not.
+  if (linkedQuartier !== null && districtsOn && districtsStatus === "ready" && districtsCoverage) {
+    setLinkedQuartier(null);
+    if (districtsCoverage.units.some((u) => u.id === linkedQuartier)) setOpenUnitId(linkedQuartier);
+  }
+  const openUnit = (districtsOn && openUnitId && districtsCoverage?.units.find((u) => u.id === openUnitId)) || null;
+  const sheetOpen = openUnit !== null;
+  const nextUnit = (districtsOn && districtsCoverage?.nextId && districtsCoverage.units.find((u) => u.id === districtsCoverage.nextId)) || null;
+  // Closed by hand: the selection goes, and a link's quartier leaves the address.
+  const closeQuartier = useCallback(() => {
+    setOpenUnitId(null);
+    if (quartierParam !== null) setQuartierParam(null);
+  }, [quartierParam, setQuartierParam]);
+
+  // The expanded map's card goes while the sheet it opened is up (S2), so
+  // the sheet's focus trap finds nothing to hand focus back to: on close it
+  // goes back to the card, in its place again - or, gone, to Collapse.
+  const nextCardRef = useRef<HTMLButtonElement>(null);
+  const expandRef = useRef<HTMLButtonElement>(null);
+  const openedFromNextCard = useRef(false);
+  const openFromNextCard = useCallback((unitId: string) => {
+    openedFromNextCard.current = true;
+    setOpenUnitId(unitId);
+  }, []);
+  useEffect(() => {
+    if (sheetOpen || !openedFromNextCard.current) return;
+    openedFromNextCard.current = false;
+    (nextCardRef.current ?? expandRef.current)?.focus({ preventScroll: true });
+  }, [sheetOpen]);
+
   const districtsState = useMemo(
-    () => ({ area: districts.area, coverage: districts.coverage, visible: true, selectedId: null }),
-    [districts.area, districts.coverage],
+    () => ({ area: districtsFile, coverage: districtsCoverage, visible: true, selectedId: openUnit?.id ?? null }),
+    [districtsFile, districtsCoverage, openUnit?.id],
   );
   const overlay = useDistrictsOverlay(districtsState, districtsOn);
 
@@ -197,7 +252,6 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
   }, [clusters, selectedIdx, territory, names, filters, data.defaultClusterIdx]);
 
   // In Districts the card talks about quartiers, under the same eyebrow.
-  const { coverage: districtsCoverage, status: districtsStatus } = districts;
   const districtsCard = useMemo(
     () =>
       districtsOn && cardContent
@@ -211,8 +265,20 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
     onContentChange?.(shownCard);
   }, [onContentChange, shownCard]);
 
-  const { containerRef, resize, mapRef, mapReady } = useMapRoutes(data, routes, selectedIdx, visibleIndices, ring, isFullscreen, { overlay });
+  // Expanded, Districts fits every quartier of the area (S1), clear of its
+  // card and legend; the heat keeps its own frame.
+  const districtsBbox = districtsOn && isFullscreen ? districtsArea?.bbox : undefined;
+  const fitOverride = useMemo(() => (districtsBbox ? bboxBounds(districtsBbox) : null), [districtsBbox]);
+  const { containerRef, resize, mapRef, mapReady } = useMapRoutes(data, routes, selectedIdx, visibleIndices, ring, isFullscreen, {
+    overlay,
+    fitOverride,
+    fitOverridePadding: MAP_PADDING.districtsFullscreen,
+  });
   useDistrictsSync(mapRef, mapReady, districtsState);
+  useDistrictsTap(mapRef, mapReady, (unitId) => {
+    if (districtsOn) setOpenUnitId(unitId);
+  });
+  useQuartierCamera(mapRef, mapReady, openUnit?.id ?? null, districtsFile);
 
   useSetFullscreenChromeHidden(isFullscreen);
 
@@ -220,14 +286,15 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
     resize();
   }, [isFullscreen, resize]);
 
+  // Escape leaves fullscreen - unless a quartier's sheet is open: then it closes the sheet alone.
   useEffect(() => {
-    if (!isFullscreen) return;
+    if (!isFullscreen || sheetOpen) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setIsFullscreen(false);
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [isFullscreen]);
+  }, [isFullscreen, sheetOpen]);
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN;
@@ -277,6 +344,8 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
           onClose={() => setFiltersOpen(false)}
         />
       )}
+
+      {openUnit && <QuartierSheet unit={openUnit} onClose={closeQuartier} onPlanRun={onPlanRun} />}
 
       <div
         className={
@@ -337,6 +406,7 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
             )}
           </button>
           <button
+            ref={expandRef}
             type="button"
             onClick={() => setIsFullscreen((on) => !on)}
             aria-label={isFullscreen ? t.pages.map.exitFullscreen : t.pages.map.fullscreen}
@@ -365,20 +435,47 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
         )}
 
         {/* The scale bottom left, the credits' ⓘ bottom right (3.0): both
-            always on the map, in the page and in fullscreen alike. */}
-        {isFullscreen ? (
+            always on the map, in the page and in fullscreen alike - and off
+            it while a quartier's sheet is open (S2), or in Districts the
+            filters' (the heat keeps its own): under the sheet or its scrim
+            they would only cost blur. */}
+        {sheetOpen || (filtersOpen && districtsOn) ? null : isFullscreen ? (
           // The legend card, 24 pt from the edges (Liquid Glass v3, §6.10).
+          // Expanded Districts (S1) keeps this column, so the layers button
+          // and the ⓘ never move under the finger when the layer changes.
           <div className="pointer-events-none absolute inset-x-6 bottom-[max(24px,var(--safe-bottom))] z-10 flex flex-col items-end gap-2">
             {/* The layers button above the ⓘ, in the same right-hand column. */}
             {districtsArea && <LayersButton on={districtsOn} onToggle={toggleLayer} className="pointer-events-auto" />}
-            <MapAttribution className="pointer-events-auto" />
             {districtsOn ? (
-              // Districts keeps the heat card's box (drawn by nothing), so the
-              // layers button and the ⓘ stay where the finger left them; its
-              // solid legend sits at the foot, left (until S1, Phase 4).
+              // S1: the solid legend bottom left, its foot level with the
+              // ⓘ's. Taller than the ⓘ, it stands up into the gap, so the row
+              // keeps the ⓘ's height. Too long for the room beside the ⓘ
+              // (French at 320 pt), it takes a second line upward, rather
+              // than run under the ⓘ - its width kept 16 pt short of the
+              // layers button (44 pt) that its second line rises beside.
+              <div className="relative flex w-full justify-end">
+                <DistrictsLegend className="pointer-events-auto absolute bottom-0 left-0 h-auto min-h-9 max-w-[calc(100%-60px)] flex-wrap gap-y-1 rounded-[18px] py-2" />
+                <MapAttribution className="pointer-events-auto" />
+              </div>
+            ) : (
+              <MapAttribution className="pointer-events-auto" />
+            )}
+            {districtsOn ? (
+              // S1: the next quartier's card in the heat card's box (drawn by
+              // nothing), at its foot. No taller than the heat card, it never
+              // grows the box - card or none (loading, all complete), the
+              // controls above stay put.
               <div className="grid w-full">
                 <HeatLegend space className="col-start-1 row-start-1 w-full" summary={heatSummary} />
-                <DistrictsLegend className="pointer-events-auto col-start-1 row-start-1 self-end justify-self-start" />
+                {nextUnit && (
+                  <NextQuartierCard
+                    ref={nextCardRef}
+                    unit={nextUnit}
+                    onOpen={openFromNextCard}
+                    onPlanRun={onPlanRun}
+                    className="pointer-events-auto col-start-1 row-start-1 self-end"
+                  />
+                )}
               </div>
             ) : (
               <HeatLegend className="pointer-events-auto w-full" summary={heatSummary} />

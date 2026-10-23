@@ -48,6 +48,15 @@ export const DISTRICTS_LINE_LAYER = 'runomics-districts-line'
 export const DISTRICTS_SELECTED_FILL_LAYER = 'runomics-districts-selected-fill'
 export const DISTRICTS_SELECTED_LAYER = 'runomics-districts-selected'
 export const DISTRICTS_LABEL_LAYER = 'runomics-districts-label'
+/**
+ * The labels that lead - the next unit's, then the complete ones' - in layers
+ * of their own above the base map's town and city names (upper layers place
+ * first): where "Metz" sat on them, the expanded map named neither the
+ * quartier its card points to nor the complete one. The rest stay under the
+ * town names (the plain layer), which keep their place over them.
+ */
+export const DISTRICTS_NEXT_LABEL_LAYER = 'runomics-districts-label-next'
+export const DISTRICTS_COMPLETE_LABEL_LAYER = 'runomics-districts-label-complete'
 export const DISTRICTS_CHECK_IMAGE = 'runomics-check'
 
 /** Shapes and lines, bottom to top, all under the home ring. */
@@ -58,7 +67,8 @@ export const DISTRICTS_SHAPE_LAYERS = [
   DISTRICTS_SELECTED_FILL_LAYER,
   DISTRICTS_SELECTED_LAYER,
 ] as const
-export const DISTRICTS_LAYERS = [...DISTRICTS_SHAPE_LAYERS, DISTRICTS_LABEL_LAYER] as const
+export const DISTRICTS_LABEL_LAYERS = [DISTRICTS_LABEL_LAYER, DISTRICTS_COMPLETE_LABEL_LAYER, DISTRICTS_NEXT_LABEL_LAYER] as const
+export const DISTRICTS_LAYERS = [...DISTRICTS_SHAPE_LAYERS, ...DISTRICTS_LABEL_LAYERS] as const
 
 /** The heat map's home ring (useMapRoutes): the shapes go under it, over the heat. */
 const HOME_RING_LAYER = 'home-ring'
@@ -71,6 +81,13 @@ const NAME_SIZE = 12
  * over it, in ems - a step that clears a town name without leaving the unit.
  */
 const LABEL_ANCHORS = ['center', 'top', 'bottom']
+/**
+ * A complete unit's label may also step aside, left or right of its point:
+ * next to the next quartier's at the whole area's zoom (Metz-Centre beside
+ * Bellecroix), it found no place over or under it. The next one keeps to the
+ * three, so it never takes the side a complete one needs.
+ */
+const COMPLETE_LABEL_ANCHORS = [...LABEL_ANCHORS, 'right', 'left']
 const LABEL_RADIAL_OFFSET = 0.25
 /** 11 px under a 12 px name. */
 const PCT_SCALE = 11 / 12
@@ -135,6 +152,9 @@ export interface DistrictsGeoJson {
 }
 
 const STATE_SORT: Record<UnitState, number> = { complete: 1, partly: 2, fog: 3 }
+/** The `sort` of the next unit and of a complete one: the lead labels. */
+const NEXT_SORT = 0
+const COMPLETE_SORT = STATE_SORT.complete
 
 function emptyCollection<G extends Polygon | MultiPolygon | Point>(): FeatureCollection<G, DistrictShapeProps> {
   return { type: 'FeatureCollection', features: [] }
@@ -162,7 +182,7 @@ export function districtsGeoJson(area: ExploreAreaFile | null, coverage: AreaCov
       pct: unit.pct,
       state: unit.state,
       pctText: formatPercent(unit.pct),
-      sort: unit.id === coverage.nextId ? 0 : STATE_SORT[unit.state],
+      sort: unit.id === coverage.nextId ? NEXT_SORT : STATE_SORT[unit.state],
     }
     shapes.features.push({ type: 'Feature', id: unit.id, properties, geometry: feature.geometry })
     labels.features.push({
@@ -374,6 +394,34 @@ function labelText(c: DistrictsColors): ExpressionSpecification {
 
 function districtLayers(c: DistrictsColors, visible: boolean, selectedId: string | null): LayerSpecification[] {
   const visibility = visible ? 'visible' : 'none'
+  // One label spec, two layers: the lead units' and the rest.
+  const labelLayer = (id: string, filter: FilterSpecification, anchors: string[]): LayerSpecification =>
+    ({
+      id,
+      type: 'symbol',
+      source: DISTRICTS_LABEL_SOURCE,
+      filter,
+      layout: {
+        visibility,
+        'text-field': labelText(c),
+        'text-font': LABEL_FONT,
+        'text-size': NAME_SIZE,
+        'text-line-height': LABEL_LINE_HEIGHT,
+        'text-max-width': 14,
+        'text-variable-anchor': anchors,
+        'text-radial-offset': LABEL_RADIAL_OFFSET,
+        'text-justify': 'center',
+        'text-allow-overlap': false,
+        'text-padding': 2,
+        'symbol-sort-key': ['get', 'sort'],
+      },
+      paint: {
+        'text-color': c.label.name,
+        'text-halo-color': c.label.halo,
+        'text-halo-width': 1.5,
+        'text-halo-blur': 1,
+      },
+    }) as LayerSpecification
   return [
     {
       id: DISTRICTS_FILL_LAYER,
@@ -416,31 +464,9 @@ function districtLayers(c: DistrictsColors, visible: boolean, selectedId: string
       layout: { visibility, 'line-join': 'round' },
       paint: { 'line-color': c.selected.line, 'line-width': 2 },
     },
-    {
-      id: DISTRICTS_LABEL_LAYER,
-      type: 'symbol',
-      source: DISTRICTS_LABEL_SOURCE,
-      layout: {
-        visibility,
-        'text-field': labelText(c),
-        'text-font': LABEL_FONT,
-        'text-size': NAME_SIZE,
-        'text-line-height': LABEL_LINE_HEIGHT,
-        'text-max-width': 14,
-        'text-variable-anchor': LABEL_ANCHORS,
-        'text-radial-offset': LABEL_RADIAL_OFFSET,
-        'text-justify': 'center',
-        'text-allow-overlap': false,
-        'text-padding': 2,
-        'symbol-sort-key': ['get', 'sort'],
-      },
-      paint: {
-        'text-color': c.label.name,
-        'text-halo-color': c.label.halo,
-        'text-halo-width': 1.5,
-        'text-halo-blur': 1,
-      },
-    },
+    labelLayer(DISTRICTS_LABEL_LAYER, ['>', ['get', 'sort'], COMPLETE_SORT] as FilterSpecification, LABEL_ANCHORS),
+    labelLayer(DISTRICTS_COMPLETE_LABEL_LAYER, ['==', ['get', 'sort'], COMPLETE_SORT] as FilterSpecification, COMPLETE_LABEL_ANCHORS),
+    labelLayer(DISTRICTS_NEXT_LABEL_LAYER, ['==', ['get', 'sort'], NEXT_SORT] as FilterSpecification, LABEL_ANCHORS),
   ] as LayerSpecification[]
 }
 
@@ -469,9 +495,17 @@ export function addDistrictsLayers(map: MapLibreMap, options: DistrictsLayerOpti
   map.addSource(DISTRICTS_LABEL_SOURCE, { type: 'geojson', data: state.data.labels })
 
   const shapesBefore = map.getLayer(HOME_RING_LAYER) ? HOME_RING_LAYER : firstSymbolLayerId(map)
-  const labelsBefore = townLabelLayerId(map) ?? (map.getLayer(EDGE_FENCE_LAYER) ? EDGE_FENCE_LAYER : undefined)
+  // Upper layers place first: the lead labels on top, under the fence - the
+  // next one's added last, so over the complete ones'; the rest under the
+  // first town name, which keeps its place over them.
+  const top = map.getLayer(EDGE_FENCE_LAYER) ? EDGE_FENCE_LAYER : undefined
+  const before: Record<string, string | undefined> = {
+    [DISTRICTS_LABEL_LAYER]: townLabelLayerId(map) ?? top,
+    [DISTRICTS_COMPLETE_LABEL_LAYER]: top,
+    [DISTRICTS_NEXT_LABEL_LAYER]: top,
+  }
   for (const layer of districtLayers(colors, state.visible, state.selectedId)) {
-    map.addLayer(layer, layer.id === DISTRICTS_LABEL_LAYER ? labelsBefore : shapesBefore)
+    map.addLayer(layer, layer.id in before ? before[layer.id] : shapesBefore)
   }
   hideUnitNamesFromBase(map, state)
 }

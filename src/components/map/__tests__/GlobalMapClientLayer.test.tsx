@@ -167,28 +167,105 @@ describe('the map’s layer: Heat or Districts', () => {
     expect(layersButton()).toHaveClass('-mr-0.5')
   })
 
-  it('in fullscreen, keeps the heat card’s place in Districts, so the layers button doesn’t move under the finger', async () => {
+  it('in fullscreen, lays Districts out as S1 in the heat card’s column, so the layers button doesn’t move under the finger', async () => {
     const { lastCard } = renderMap()
     await waitFor(() => expect(lastCard()?.headline.accent).toContain('ring'))
     fireEvent.click(screen.getByRole('button', { name: t.pages.map.fullscreen }))
+    // The heat, as before Explore's S1: the layers button, the ⓘ and the glass heat card, one column.
     const heatCard = screen.getByTestId('heat-legend')
     expect(heatCard).toHaveClass('lg')
+    const column = layersButton()!.parentElement!
+    expect([...column.children]).toEqual([layersButton(), screen.getByTestId('map-attribution'), heatCard])
 
     fireEvent.click(layersButton()!)
     expect(screen.queryByTestId('heat-legend')).toBeNull()
-    expect(screen.getByTestId('districts-legend')).toBeInTheDocument()
+    // The same column, in the same order: the button, the ⓘ's row (the legend
+    // at its left, solid), then the heat card's box.
+    expect(layersButton()!.parentElement).toBe(column)
+    const [, infoRow, foot] = [...column.children]
+    expect(infoRow).toContainElement(screen.getByTestId('map-attribution'))
+    expect(infoRow).toContainElement(screen.getByTestId('districts-legend'))
+    expect(screen.getByTestId('districts-legend')).toHaveClass('absolute', 'left-0', 'bottom-0')
+    expect(screen.getByTestId('districts-legend')).not.toHaveClass('lg')
     // The heat card's box, drawn by nothing: invisible, unread, and no glass (no blur).
     const space = screen.getByTestId('heat-legend-space')
     expect(space).toHaveClass('invisible')
     expect(space).toHaveAttribute('aria-hidden', 'true')
     expect(space).not.toHaveClass('lg')
     expect(space.querySelector('.lg-blur, .lg-edge')).toBeNull()
-    // The same box as the heat card it stands in for.
     for (const cls of ['rounded-[28px]', 'px-[18px]', 'py-3.5', 'gap-2']) expect(space).toHaveClass(cls)
-    // Under the layers button and the ⓘ, in the same column the heat card was in.
-    expect(layersButton()!.parentElement).toBe(screen.getByTestId('map-attribution').parentElement)
-    expect(space.parentElement!.parentElement).toBe(layersButton()!.parentElement)
-    expect(screen.getByTestId('districts-legend').parentElement).toBe(space.parentElement)
+    expect(space.parentElement).toBe(foot)
+    // And in it, at its foot, the next quartier's glass card once the coverage is in.
+    const next = await screen.findByTestId('next-quartier-card')
+    expect(next.parentElement).toBe(foot)
+    expect(next).toHaveClass('lg', 'lg-sheet', 'self-end')
+    expect(next).toHaveTextContent(t.pages.map.districts.nextToExplore)
+    expect(next).toHaveTextContent('Bravo')
+    expect(next).toHaveTextContent('50% explored · 0.6 km from home')
+    // No way to plan a run yet (Phase 5): no button for it.
+    expect(screen.queryByRole('button', { name: t.pages.map.districts.planRun })).toBeNull()
+
+    // Back to the heat: its card again, in the same column.
+    fireEvent.click(layersButton()!)
+    expect([...column.children]).toEqual([layersButton(), screen.getByTestId('map-attribution'), screen.getByTestId('heat-legend')])
+    expect(screen.queryByTestId('next-quartier-card')).toBeNull()
+  })
+
+  it('in fullscreen, opens the next quartier’s sheet from its card; Escape closes the sheet and keeps the map expanded', async () => {
+    localStorage.setItem(MAP_LAYER_KEY, 'districts')
+    renderMap()
+    fireEvent.click(screen.getByRole('button', { name: t.pages.map.fullscreen }))
+    fireEvent.click(await screen.findByTestId('next-quartier-card'))
+    expect(screen.getByRole('dialog', { name: 'Bravo' })).toBeInTheDocument()
+    // The controls under the sheet are off the map, not just covered.
+    for (const id of ['next-quartier-card', 'layers-button', 'map-attribution', 'districts-legend']) expect(screen.queryByTestId(id)).toBeNull()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByTestId('quartier-sheet')).toBeNull())
+    expect(screen.getByRole('button', { name: t.pages.map.exitFullscreen })).toBeInTheDocument()
+    expect(screen.getByTestId('next-quartier-card')).toBeInTheDocument()
+    // Then Escape leaves fullscreen, as it always has.
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.getByRole('button', { name: t.pages.map.fullscreen })).toBeInTheDocument()
+  })
+
+  it('opens ?quartier= once the coverage is in, never writes the address on load, and takes it out on close', async () => {
+    window.history.replaceState(null, '', '/activities?view=map&layer=districts&quartier=test-bravo')
+    renderMap()
+    // Nothing to show until the coverage is in.
+    expect(screen.queryByTestId('quartier-sheet')).toBeNull()
+    expect(await screen.findByRole('dialog', { name: 'Bravo' })).toBeInTheDocument()
+    expect(screen.getByText('50% explored')).toBeInTheDocument()
+    expect(window.location.search).toBe('?view=map&layer=districts&quartier=test-bravo')
+
+    fireEvent.click(screen.getByRole('button', { name: t.common.close }))
+    await waitFor(() => expect(screen.queryByTestId('quartier-sheet')).toBeNull())
+    // The link's quartier has done its job; its layer stays.
+    expect(window.location.search).toBe('?view=map&layer=districts')
+  })
+
+  it('reads ?quartier= once: a layer changed by hand takes it out, and coming back opens nothing', async () => {
+    window.history.replaceState(null, '', '/activities?view=map&layer=districts&quartier=test-bravo')
+    renderMap()
+    expect(await screen.findByRole('dialog', { name: 'Bravo' })).toBeInTheDocument()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    await waitFor(() => expect(screen.queryByTestId('quartier-sheet')).toBeNull())
+
+    fireEvent.click(layersButton()!)
+    fireEvent.click(layersButton()!)
+    await waitFor(() => expect(screen.getByTestId('districts-legend')).toBeInTheDocument())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(screen.queryByTestId('quartier-sheet')).toBeNull()
+    expect(window.location.search).toBe('?view=map')
+  })
+
+  it('lets an unknown ?quartier= go: no sheet, and the address as it came', async () => {
+    window.history.replaceState(null, '', '/activities?view=map&layer=districts&quartier=test-zulu')
+    const { lastCard } = renderMap()
+    await waitFor(() => expect(lastCard()?.headline.accent).toBe('Bravo'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(screen.queryByTestId('quartier-sheet')).toBeNull()
+    expect(window.location.search).toBe('?view=map&layer=districts&quartier=test-zulu')
   })
 
   it('has no layers button, and draws the heat, where the area on screen has no Districts', async () => {

@@ -5,7 +5,7 @@ import type { FeatureCollection } from "geojson";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { MapShellData } from "@/application/usecases/GetAllRoutes";
 import { heatBasemapStyle, maptilerStyle } from "@/lib/maptiler";
-import { percentileBounds, type LngLatBounds } from "@/lib/routeFrame";
+import { percentileBounds, type CameraPadding, type LngLatBounds } from "@/lib/routeFrame";
 import { firstSymbolLayerId, loadMapLibre } from "@/lib/maplibre";
 import { EDGE_FENCE_LAYER, EDGE_FENCE_SOURCE, addEdgeFence } from "@/lib/runMapLayers";
 import { heatAccent, hexToRgb, rgbCss, scale } from "@/lib/heatRamp";
@@ -74,10 +74,13 @@ export interface MapRoutesOptions {
   overlay?: MapOverlay;
   /** Fit to this box instead of the runs' frame while it is set. */
   fitOverride?: LngLatBounds | null;
+  /** The room kept around `fitOverride`; the frame's own (card or fullscreen) when unset. */
+  fitOverridePadding?: CameraPadding;
 }
 
 const boundsKey = (b: LngLatBounds | null | undefined) =>
   b ? [b.minLon, b.minLat, b.maxLon, b.maxLat].map((v) => v.toFixed(5)).join() : "";
+const paddingKey = (p: CameraPadding | undefined) => (p ? [p.top, p.right, p.bottom, p.left].join() : "");
 
 const isDarkPage = () => document.documentElement.classList.contains("dark");
 
@@ -112,7 +115,7 @@ export function useMapRoutes(
   visibleIndices: number[],
   ring: HomeRing | null,
   fullscreen = false,
-  { overlay, fitOverride }: MapRoutesOptions = {},
+  { overlay, fitOverride, fitOverridePadding }: MapRoutesOptions = {},
 ) {
   // Read when the map is made; the fit below follows it.
   const fullscreenRef = useRef(fullscreen);
@@ -144,7 +147,7 @@ export function useMapRoutes(
   }, [routes, visibleIndices, selected]);
   const frameKey = boundsKey(frame);
   const fitTarget = fitOverride ?? frame;
-  const fitKey = fitOverride ? `override:${boundsKey(fitOverride)}` : frameKey;
+  const fitKey = fitOverride ? `override:${boundsKey(fitOverride)}:${paddingKey(fitOverridePadding)}` : frameKey;
 
   // What the run layers draw, kept so a new style or accent can redraw it.
   const tracksRef = useRef<Float64Array[]>([]);
@@ -355,7 +358,7 @@ export function useMapRoutes(
     // Sized to the box it is in now (fullscreen or not) before it fits.
     mapRef.current.resize();
     mapRef.current.fitBounds(boundsArray(fitTarget), {
-      padding: fitPadding(fullscreen),
+      padding: (fitOverride && fitOverridePadding) || fitPadding(fullscreen),
       maxZoom: FIT_MAX_ZOOM,
       duration: fittedOnce.current ? FIT_MS : 0,
     });
