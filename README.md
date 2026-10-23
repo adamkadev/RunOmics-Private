@@ -528,7 +528,7 @@ this repository.
 | Layer | Tech |
 |-------|------|
 | Framework | [Next.js 16](https://nextjs.org/) (App Router, SSG) |
-| Language | TypeScript 5 |
+| Language | TypeScript 7 (`tsc`), with the TypeScript 6 API for typescript-eslint and Next until 7.1 ships one |
 | Styling | Tailwind CSS v4 |
 | Charts | [Recharts](https://recharts.org/) |
 | Maps | [MapLibre GL](https://maplibre.org/) + [MapTiler](https://www.maptiler.com/) |
