@@ -1,6 +1,6 @@
 name: Sync Garmin Activities
-# The app's Sync button reads this name back to tell which profile a run syncs (src/lib/syncLimits.ts).
-run-name: Sync Garmin Activities (${{ inputs.profile || 'all' }})
+# The app's Sync button reads the trailing (profile) back to tell which profile a run syncs (src/lib/syncLimits.ts).
+run-name: ${{ inputs.quick && 'Quick sync' || 'Sync' }} Garmin Activities (${{ inputs.profile || 'all' }})
 
 on:
   schedule:
@@ -29,6 +29,10 @@ on:
         type: choice
         options: [all, adam, lamiaa]
         default: all
+      quick:
+        description: "Quick: only the new runs, through the Personal API key (no WARP, no Garmin Connect)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -93,6 +97,7 @@ jobs:
           RUNOMICS_DATA_REPO_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
           GARMIN_PERSONAL_API_KEY: ${{ secrets.GARMIN_PERSONAL_API_KEY }}
           GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          QUICK: ${{ inputs.quick }}
         run: |
           if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
             echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}')."
@@ -117,6 +122,14 @@ jobs:
             echo "personal_api=false" >> "$GITHUB_OUTPUT"
           else
             echo "personal_api=true" >> "$GITHUB_OUTPUT"
+          fi
+          if [ "$QUICK" != "true" ]; then
+            echo "quick=false" >> "$GITHUB_OUTPUT"
+          elif [ -n "$GARMIN_PERSONAL_API_KEY" ]; then
+            echo "quick=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::A quick sync needs GARMIN_PERSONAL_API_KEY: this one runs as a full sync."
+            echo "quick=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up Node
@@ -152,6 +165,7 @@ jobs:
       # WARP's package pulls ~120 MB of desktop dependencies from a mirror that can crawl; the
       # downloaded .debs are cached, so a run downloads only what changed since the last one.
       - name: Restore WARP packages
+        if: steps.config.outputs.quick != 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/warp-apt
@@ -162,6 +176,7 @@ jobs:
       # failed install or connect is a partial night (no gear, calendar or Connect metrics).
       - name: Install Cloudflare WARP
         id: warp_install
+        if: steps.config.outputs.quick != 'true'
         timeout-minutes: 10
         continue-on-error: ${{ steps.config.outputs.personal_api == 'true' }}
         run: |
@@ -221,7 +236,7 @@ jobs:
           exit 1
 
       - name: Note WARP unavailable
-        if: steps.warp.outcome != 'success'
+        if: steps.config.outputs.quick != 'true' && steps.warp.outcome != 'success'
         run: echo "::warning::WARP is unavailable, so runs come through the Personal API alone; garth (gear, calendar, Connect metrics) will likely fail from GitHub's network and the night counts as partial."
 
       # Dispatch inputs arrive through `env:`, never interpolated into `run:`:
@@ -236,6 +251,7 @@ jobs:
           SYNC_LIMIT: ${{ inputs.limit }}
           SYNC_DRY_RUN: ${{ inputs.dry_run }}
           SYNC_FORCE: ${{ inputs.force }}
+          SYNC_QUICK: ${{ steps.config.outputs.quick }}
         run: |
           set -eo pipefail
           ARGS=()
@@ -254,6 +270,9 @@ jobs:
           if [ "${SYNC_FORCE:-}" = "true" ]; then
             ARGS+=(--force)
           fi
+          if [ "${SYNC_QUICK:-}" = "true" ]; then
+            ARGS+=(--quick)
+          fi
 
           # Exit 3 is "some activities or steps failed, everything else is on
           # disk". Failing the step here would skip the commit below and
@@ -271,12 +290,12 @@ jobs:
           fi
 
       - name: Disconnect Cloudflare WARP
-        if: always()
+        if: always() && steps.warp_install.outcome == 'success'
         run: warp-cli --accept-tos disconnect || true
 
       # Rebuilds stored runs from the FIT files cached above, asking Garmin for nothing.
       - name: Reprocess cached runs
-        if: inputs.reprocess == true && inputs.dry_run != true
+        if: inputs.reprocess == true && inputs.dry_run != true && steps.config.outputs.quick != 'true'
         run: python scripts/reprocess.py
 
       - name: Backfill missing weather
