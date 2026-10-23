@@ -77,17 +77,6 @@ export function Sentence({ children, className, testId }: { children: ReactNode;
   )
 }
 
-/** A sentence written as [before, bold, after]. */
-export function BoldSentence({ parts, className, boldColor }: { parts: readonly [string, string, string]; className?: string; boldColor?: string }) {
-  return (
-    <Sentence className={className}>
-      {parts[0]}
-      <b style={boldColor ? { color: boldColor } : undefined}>{parts[1]}</b>
-      {parts[2]}
-    </Sentence>
-  )
-}
-
 /**
  * A card's one number (v4.17 stat value): 26 px at 600, its unit inline at
  * 13 px muted, and a note beside it - 12 px, muted unless it says something.

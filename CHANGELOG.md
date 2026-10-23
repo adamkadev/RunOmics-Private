@@ -6,11 +6,13 @@ All notable changes to this project are documented in this file.
 
 - VO2max keeps moving on a night without Garmin Connect (no `GARMIN_SECRET`,
   or a garth token past saving): each run's FIT file carries Garmin's own
-  reading, within 0.1 of Connect's daily value, so the VO2max history is
-  carried on from the runs after Connect's last sample, and the athlete's
-  VO2max and VMA from the newest run, in Connect's whole points. With
-  Connect, nothing changes; checked against Lamiaa's data, which the
-  fallback leaves exactly as Connect wrote it.
+  reading, within 0.1 of Connect's daily value. The runs after Connect's
+  last sample carry the VO2max history on, marked as carried, and the
+  athlete's VO2max and VMA follow the newest of them in Connect's whole
+  points; without such a run, Connect's values stay. When Connect answers
+  again, its series replaces every carried sample. With Connect, nothing
+  changes: Lamiaa's data comes through the fallback exactly as Connect
+  wrote it.
 
 - The sync reads activities through Garmin's Personal API when the profile's
   GitHub Environment has a `GARMIN_PERSONAL_API_KEY`: the activity list, each

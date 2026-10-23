@@ -5,6 +5,7 @@ which steps run, and the exit code the workflow acts on - 0 clean, 3 partial
 ("commit what succeeded, then fail"), anything else a stop before the commit.
 """
 
+import copy
 import json
 import sys
 from datetime import date
@@ -41,7 +42,7 @@ _STEP_RESULTS = {
 # Run only with a Personal API key.
 _PERSONAL_STEP_RESULTS = {"fetch_personal_athlete_metrics": {}, "sync_vo2max_from_runs": 0}
 _PERSONAL_ONLY_STEPS = [
-    "fetch_personal_athlete_metrics", "record_athlete_history", "sync_recovery_history", "sync_vo2max_from_runs",
+    "sync_vo2max_from_runs", "fetch_personal_athlete_metrics", "record_athlete_history", "sync_recovery_history",
 ]
 
 
@@ -116,7 +117,9 @@ def steps(monkeypatch) -> list[str]:
     def recorder(name, result):
         def step(*_args, **_kwargs):
             ran.append(name)
-            return result
+            # A copy: main() may add to what a step returns, and the table is
+            # shared by every test.
+            return copy.deepcopy(result)
 
         return step
 
@@ -484,3 +487,43 @@ class TestEitherClientCarriesTheNight:
         assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
 
         assert json.loads((workspace / "athlete.json").read_text())["lthrBpm"] == 172
+
+
+class TestVo2maxWithoutConnect:
+    """The athlete's VO2max follows the series the runs carry on - only once a
+    run newer than Connect's last sample has moved it."""
+
+    @pytest.fixture
+    def history(self, workspace, monkeypatch):
+        from garmin import vo2max_history
+
+        path = workspace / "vo2max_history.json"
+        monkeypatch.setattr(vo2max_history, "_OUT_PATH", path)
+        monkeypatch.setattr(sync, "sync_vo2max_from_runs", vo2max_history.sync_vo2max_from_runs)
+        (workspace / "athlete.json").write_text(json.dumps({"vo2maxMlKgMin": 38.0, "vmaKmh": 10.9}))
+        return path
+
+    def _store_run(self, workspace, activity_factory, day, vo2max):
+        run = activity_factory("090", day)
+        run.vo2max_garmin = vo2max
+        store = JsonActivityStore(workspace / "activities")
+        store.upsert(run)
+        store.save()
+
+    def test_a_run_after_connects_last_sample_moves_it(self, workspace, personal, steps, monkeypatch, activity_factory, history):
+        history.write_text(json.dumps({"months": {"2026-09": {"date": "2026-09-15", "vo2max": 37.6}}, "days": {}}))
+        self._store_run(workspace, activity_factory, "2026-09-25", 37.3)
+
+        assert _run(monkeypatch) == 0
+
+        athlete = json.loads((workspace / "athlete.json").read_text())
+        assert (athlete["vo2maxMlKgMin"], athlete["vmaKmh"]) == (37.0, 10.6)
+
+    def test_without_a_newer_run_connects_value_stays(self, workspace, personal, steps, monkeypatch, activity_factory, history):
+        history.write_text(json.dumps({"months": {"2026-09": {"date": "2026-09-30", "vo2max": 37.6}}, "days": {}}))
+        self._store_run(workspace, activity_factory, "2026-09-25", 37.3)
+
+        assert _run(monkeypatch) == 0
+
+        athlete = json.loads((workspace / "athlete.json").read_text())
+        assert (athlete["vo2maxMlKgMin"], athlete["vmaKmh"]) == (38.0, 10.9)

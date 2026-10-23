@@ -81,8 +81,9 @@ zones, it never reaches Vercel, and a new one replaces it when it expires.
 Nobody's password leaves their hands.
 
 `GARMIN_SECRET`, garth's token, is optional on top of it: gear, the Garmin
-calendar, training status, race predictions and VO2max history come only from
-Connect's private API. `python scripts/get_secret.py` mints it from the
+calendar, training status and race predictions come only from Connect's
+private API, and VO2max from it at its most precise (without it, the sync carries
+VO2max on from the runs' FIT readings). `python scripts/get_secret.py` mints it from the
 athlete's login - when it works: Garmin's March 2026 login change broke it, so a
 new athlete may have to go without. See the README's note on `garth`.
 

@@ -139,7 +139,12 @@ def sync_vo2max_history(client: GarminClient, start: date, today: date | None = 
     today = today or date.today()
     print("Syncing VO2max history…")
 
-    stored = _load_stored()
+    # Connect's series replaces whatever was carried on from the runs while
+    # it was away.
+    stored = {
+        name: {key: sample for key, sample in (series or {}).items() if sample.get("source") != _CARRIED}
+        for name, series in _load_stored().items()
+    }
     months = {**(stored.get("months") or {}), **_fetch_months(client, start, today)}
     days = {**(stored.get("days") or {}), **_fetch_days(client, today)}
 
@@ -157,45 +162,75 @@ def sync_vo2max_history(client: GarminClient, start: date, today: date | None = 
     return len(months)
 
 
+# Marks a sample carried on from a run's FIT file, so Connect's own samples
+# can be told apart: they set where carrying starts, and replace every carried
+# one the next time Connect answers.
+_CARRIED = "fit"
+
+
+def _is_run(activity: dict[str, Any]) -> bool:
+    """Running of any kind (trail, track, treadmill); a record from before the
+    sport was stored came from the running-only sync."""
+    sport = activity.get("sport")
+    return sport is None or "running" in str(sport)
+
+
+def _run_order(activity: dict[str, Any]) -> tuple[str, int]:
+    # Stored dates carry no time; Garmin's ids grow, so the later of two runs
+    # on a day has the larger one.
+    activity_id = str(activity.get("id") or "")
+    return str(activity.get("date") or "")[:10], int(activity_id) if activity_id.isdigit() else 0
+
+
 def samples_from_runs(activities: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
-    """Each day's last FIT VO2max reading, keyed by date."""
+    """Each day's last FIT VO2max reading among the runs, keyed by date."""
     days: dict[str, dict[str, Any]] = {}
-    for activity in sorted(activities, key=lambda a: str(a.get("date") or "")):
-        day = str(activity.get("date") or "")[:10]
+    for activity in sorted((a for a in activities if _is_run(a)), key=_run_order):
+        day = _run_order(activity)[0]
         value = activity.get("vo2maxGarmin")
         if day and isinstance(value, (int, float)) and value > 0:
-            days[day] = {"date": day, "vo2max": round(value, 1)}
+            days[day] = {"date": day, "vo2max": round(value, 1), "source": _CARRIED}
     return days
 
 
 def sync_vo2max_from_runs(activities: Iterable[dict[str, Any]], today: date | None = None) -> int:
     """Carry the stored series on from the runs' readings; returns the month count.
 
-    Connect's series stands up to its last sample: on the days before it,
+    Connect's series stands up to its last own sample: on the days before it,
     Connect was answering, and a run it left unsampled had not moved VO2max.
-    Only the runs after it are carried on - a day each, and the month they
-    fall in.
+    Every run after it is carried - its day, and its month (keeping the
+    month's fitness age, which only Connect knows).
     """
     today = today or date.today()
     stored = _load_stored()
     months: dict[str, Any] = dict(stored.get("months") or {})
     days: dict[str, Any] = dict(stored.get("days") or {})
-    last_sampled = max((str(s.get("date") or "") for s in (*months.values(), *days.values())), default="")
+    connects = [s for s in (*months.values(), *days.values()) if isinstance(s, dict) and s.get("source") != _CARRIED]
+    last_connect = max((str(s.get("date") or "") for s in connects), default="")
     since = (today - timedelta(days=_DAILY_WINDOW_DAYS)).isoformat()
 
     carried = 0
     for day, sample in samples_from_runs(activities).items():
-        if day <= last_sampled:
+        if day <= last_connect:
             continue
-        months[day[:7]] = sample
+        month = months.get(day[:7]) or {}
+        months[day[:7]] = {**sample, **({"fitnessAge": month["fitnessAge"]} if "fitnessAge" in month else {})}
         if day >= since:
             days[day] = sample
         carried += 1
 
-    if not months:
-        print("  No VO2max readings in the runs.")
-        return 0
     if carried:
         write_history(_OUT_PATH, {"months": dict(sorted(months.items())), "days": dict(sorted(days.items()))})
-    print(f"VO2max carried on from {carried} run day(s) after Connect's last sample, latest {months[max(months)]['vo2max']}.")
+    print(f"VO2max carried on from {carried} run day(s) after Connect's last sample.")
     return len(months)
+
+
+def newest_carried_vo2max() -> float | None:
+    """The newest VO2max in the stored series when a run's FIT reading holds
+    it - None when Connect's own sample is the newest, which stays as it is."""
+    stored = _load_stored()
+    samples = [s for s in (*(stored.get("months") or {}).values(), *(stored.get("days") or {}).values()) if isinstance(s, dict)]
+    if not samples:
+        return None
+    newest = max(samples, key=lambda s: (str(s.get("date") or ""), s.get("source") != _CARRIED))
+    return newest.get("vo2max") if newest.get("source") == _CARRIED else None

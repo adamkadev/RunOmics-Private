@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
@@ -307,8 +306,9 @@ def fetch_personal_athlete_metrics(client: PersonalApiClient, today: date | None
     are built on, fitness age and age, and the latest weigh-in.
 
     Sex, height, threshold pace, VO2max and the watch come from Connect's user
-    settings and device info alone (fetch_athlete_metrics): without garth they
-    keep the values last stored.
+    settings and device info (fetch_athlete_metrics). Without garth they keep
+    the values last stored - but VO2max, which the sync carries on from the
+    runs' FIT readings (vo2max_metrics).
     """
     today = today or date.today()
     zone_config = _fetch_zone_config(client)
@@ -338,15 +338,10 @@ def fetch_personal_athlete_metrics(client: PersonalApiClient, today: date | None
     return metrics
 
 
-def vo2max_from_runs(activities: Iterable[dict[str, Any]]) -> dict[str, Any]:
-    """VO2max and VMA from the newest run's FIT reading, for a night without
-    Connect's user settings. Rounded to the whole point Connect reports: the
-    reading is within 0.1 of Connect's precise value, so 37.3 is the 37 it
-    shows."""
-    readings = [a for a in activities if isinstance(a.get("vo2maxGarmin"), (int, float)) and a["vo2maxGarmin"] > 0]
-    if not readings:
-        return {}
-    latest = max(readings, key=lambda a: str(a.get("date") or ""))
-    # Half up, as Garmin rounds - round() would take 36.5 to 36.
-    vo2max = float(int(latest["vo2maxGarmin"] + 0.5))
-    return {"vo2maxMlKgMin": vo2max, "vmaKmh": round(vo2max / _VO2_PER_KMH, 1)}
+
+def vo2max_metrics(vo2max: float) -> dict[str, Any]:
+    """VO2max and VMA from a run's FIT reading, in the whole points Connect
+    reports. Half up: a reading runs about 0.1 under Connect's precise value,
+    so a stored x.5 is likelier Connect's x+1 than its x."""
+    whole = float(int(vo2max + 0.5))
+    return {"vo2maxMlKgMin": whole, "vmaKmh": round(whole / _VO2_PER_KMH, 1)}

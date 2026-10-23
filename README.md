@@ -89,7 +89,8 @@ python scripts/get_secret.py
 ```
 
 It prompts for your Garmin Connect email and password and prints the string.
-Without it the sync still reads every run through the key; those pages keep
+Without it the sync still reads every run through the key, and carries VO2max
+on from each run's FIT reading (within 0.1 of Connect's); the other pages keep
 what they last showed. With it, a failed garth sign-in no longer stops the
 night - the runs sync and the night is reported as a partial one.
 
