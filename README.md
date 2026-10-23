@@ -378,9 +378,6 @@ run `next build`. The production build is exercised by the E2E workflow
 runs `e2e:build` (`next build`) and serves it with `e2e:start`. So a change that only
 breaks the build fails E2E, not CI.
 
-The improvement backlog lives in
-[`docs/product-improvement-todolist.md`](docs/product-improvement-todolist.md).
-
 ### End-to-end tests
 
 Playwright drives a real production build (`next build && next start`). No Firebase
@@ -480,8 +477,7 @@ above, and `INTERNAL_NOTIFY_SECRET` must match on both sides.
 
 That indirection is what lets one repository drive several deployments - one per
 athlete, each with its own data repository, Firebase project, domain and UI
-language. See [Running more than one deployment](docs/personal-deployments.md);
-with a single profile it is just a place to keep the secrets.
+language; with a single profile it is just a place to keep the secrets.
 
 ### 4. Sync and deploy
 
@@ -499,8 +495,7 @@ node scripts/push_private_data.mjs data
 The source passed to `push_private_data.mjs` must be a complete hydrated dataset;
 the command refuses a workspace that could erase existing coaching state. The
 fetch is what makes the push safe: it records the commit the workspace came
-from, and the push refuses if the data repository has moved on since - see
-[Concurrent writes](docs/personal-deployments.md#concurrent-writes-to-a-data-repository).
+from, and the push refuses if the data repository has moved on since.
 
 Vercel picks up the redeploy within ~30 seconds. Nothing real is ever committed to
 this repository.

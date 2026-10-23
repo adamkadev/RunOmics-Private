@@ -74,7 +74,6 @@ jobs:
 
     # Per-profile secrets live in a GitHub Environment of the same name, so every
     # `secrets.*` below resolves to that profile's own value with no renaming.
-    # See docs/personal-deployments.md.
     environment: ${{ matrix.profile }}
 
     # A manual run must never overlap the nightly one for the same profile: both
@@ -118,7 +117,7 @@ jobs:
           if [ "$DECLARED_PROFILE" != "${{ matrix.profile }}" ]; then
             echo "::error::Environment '${{ matrix.profile }}' does not declare PROFILE=${{ matrix.profile }} (got '${DECLARED_PROFILE:-unset}')."
             echo "Its secrets are unset or inherited from the repository, which would sync"
-            echo "the wrong athlete. See docs/personal-deployments.md."
+            echo "the wrong athlete."
             exit 1
           fi
 
@@ -129,7 +128,7 @@ jobs:
           if [ -n "$MISSING" ]; then
             echo "::error::Environment '${{ matrix.profile }}' is missing secret(s):$MISSING"
             echo "Every profile syncs into its own private data repository and never"
-            echo "commits anything back here. See docs/personal-deployments.md."
+            echo "commits anything back here."
             exit 1
           fi
 
@@ -293,8 +292,8 @@ jobs:
           python -c "import json; print('last_synced_at=' + json.load(open('data/sync_meta.json'))['lastSyncedAt'])" >> "$GITHUB_OUTPUT"
 
           # A refusal here means the data repository was committed to while this
-          # run was syncing (see docs/personal-deployments.md > Concurrent
-          # writes). Failing is the point: the next run starts from fresh data.
+          # run was syncing. Failing is the point: the next run starts from fresh
+          # data.
           if ! OUTPUT=$(node scripts/push_private_data.mjs data); then
             echo "::error::Refused to push: the private data repository changed during this run. Re-run the sync to start from fresh data."
             exit 1
@@ -373,7 +372,7 @@ jobs:
             | curl -fsS --max-time 20 "$APP_URL/api/internal/health" -H @- \
             | python -c "import json,sys; i=json.load(sys.stdin).get('integrations') or {}; print(' '.join(k for k in ('firebaseAdmin', 'gemini') if i.get(k) is False))" 2>/dev/null || true)
           if [ -n "$MISSING" ]; then
-            echo "::warning::This deployment has no credentials for: $MISSING. See docs/personal-deployments.md."
+            echo "::warning::This deployment has no credentials for: $MISSING."
           fi
 
           # No check may take another one down with it. They are independent, and
