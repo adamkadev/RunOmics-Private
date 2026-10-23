@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The sync reads activities through Garmin's Personal API when the profile's
+  GitHub Environment has a `GARMIN_PERSONAL_API_KEY`: the activity list, each
+  run's detail and original FIT file, its time in HR zones, the daily resting
+  HR, and the athlete's zones, LTHR, age, fitness age and weight. The key is
+  official and replaceable - create it in Garmin Connect, a year at most -
+  where garth's token, the one credential everything hung on, cannot be
+  minted again since Garmin's March 2026 login change. `GARMIN_SECRET` stays
+  optional for what only Connect's private API serves: each run's shoe, the
+  calendar, training status, race predictions, VO2max and threshold history.
+  When its sign-in fails the runs still sync, and the night is reported as a
+  partial one. Without a key the sync reads everything through garth, as
+  before. Checked against both athletes' accounts: Lamiaa's 37 runs, fetched
+  again through the key alone, match what the garth sync stored, field for
+  field.
+
 - HRV is gone from the app and the sync: neither athlete sleeps with the
   watch on, so Garmin recorded it a handful of nights a year. The coach
   read's recovery row and the Form card read resting HR alone, against the

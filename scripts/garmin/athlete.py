@@ -5,7 +5,10 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from data_directory import get_data_dir
-from .client import GarminAPIError, GarminClient
+from .client import GarminClient
+from .errors import GarminAPIError
+from .personal_api import PersonalApiClient
+from .shared import running_zone_config
 from repository.history_file import read_history_section, write_history
 
 _HISTORY_PATH = get_data_dir() / "athlete_history.json"
@@ -27,15 +30,38 @@ def _age_from_birthdate(birth_date: date) -> int:
     return today.year - birth_date.year - (0 if had_birthday_this_year else 1)
 
 
-def _fetch_zone_config(client: GarminClient) -> dict[str, Any] | None:
+def _fetch_zone_config(client: GarminClient | PersonalApiClient) -> dict[str, Any] | None:
     """Garmin's heart rate zone config for running, falling back to the all-sport default."""
     try:
-        zones = client.get_heart_rate_zones()
+        return running_zone_config(client.get_heart_rate_zones())
     except GarminAPIError:
         return None
 
-    by_sport = {zone.get("sport"): zone for zone in zones}
-    return by_sport.get("RUNNING") or by_sport.get("DEFAULT")
+
+def zone_metrics(zone_config: dict[str, Any] | None, lthr: float | None) -> dict[str, Any]:
+    """Zone floors, max and resting HR from Garmin's zone config; floors from
+    LTHR percentages when there is no config to read them from."""
+    metrics: dict[str, Any] = {}
+    if zone_config:
+        floors = [zone_config.get(f"zone{n}Floor") for n in range(1, 6)]
+        # `all()` would discard the whole set over a zone 1 floor of 0, which
+        # Garmin reports for %maxHR-based profiles, and fall back to zones
+        # derived from LTHR percentages. Latent rather than observed: this
+        # athlete is on %LTHR, where the fallback happens to agree.
+        if all(floor is not None for floor in floors):
+            metrics["hrZoneBoundsBpm"] = [round(floor) for floor in floors]
+
+        max_hr = zone_config.get("maxHeartRateUsed")
+        if max_hr:
+            metrics["maxHrBpm"] = round(max_hr)
+
+        resting_hr = zone_config.get("restingHeartRateUsed")
+        if resting_hr:
+            metrics["restingHrBpm"] = round(resting_hr)
+
+    if lthr and "hrZoneBoundsBpm" not in metrics:
+        metrics["hrZoneBoundsBpm"] = [round(lthr * p) for p in _ZONE_PERCENTS]
+    return metrics
 
 
 def extract_fitness_age(days: list[dict[str, Any]]) -> dict[str, Any]:
@@ -225,26 +251,7 @@ def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:
     if lthr:
         metrics["lthrBpm"] = round(lthr)
 
-    zone_config = _fetch_zone_config(client)
-    if zone_config:
-        floors = [zone_config.get(f"zone{n}Floor") for n in range(1, 6)]
-        # `all()` would discard the whole set over a zone 1 floor of 0, which
-        # Garmin reports for %maxHR-based profiles, and fall back to zones
-        # derived from LTHR percentages. Latent rather than observed: this
-        # athlete is on %LTHR, where the fallback happens to agree.
-        if all(floor is not None for floor in floors):
-            metrics["hrZoneBoundsBpm"] = [round(floor) for floor in floors]
-
-        max_hr = zone_config.get("maxHeartRateUsed")
-        if max_hr:
-            metrics["maxHrBpm"] = round(max_hr)
-
-        resting_hr = zone_config.get("restingHeartRateUsed")
-        if resting_hr:
-            metrics["restingHrBpm"] = round(resting_hr)
-
-    if lthr and "hrZoneBoundsBpm" not in metrics:
-        metrics["hrZoneBoundsBpm"] = [round(lthr * p) for p in _ZONE_PERCENTS]
+    metrics.update(zone_metrics(_fetch_zone_config(client), lthr))
 
     birth_date = user_data.get("birthDate")
     if birth_date:
@@ -277,4 +284,54 @@ def fetch_athlete_metrics(client: GarminClient) -> dict[str, Any]:
     if metrics:
         metrics["lastUpdate"] = datetime.now(timezone.utc).isoformat()
 
+    return metrics
+
+
+def latest_weight_kg(payload: Any) -> float | None:
+    """The most recent weigh-in of a weight-service range, in kg (Garmin sends grams)."""
+    summaries = payload.get("dailyWeightSummaries") if isinstance(payload, dict) else None
+    weighed: list[tuple[str, float]] = []
+    for summary in summaries if isinstance(summaries, list) else []:
+        if not isinstance(summary, dict):
+            continue
+        grams = (summary.get("latestWeight") or {}).get("weight")
+        day = summary.get("summaryDate")
+        if isinstance(day, str) and isinstance(grams, (int, float)) and grams > 0:
+            weighed.append((day, grams))
+    return round(max(weighed)[1] / 1000, 1) if weighed else None
+
+
+def fetch_personal_athlete_metrics(client: PersonalApiClient, today: date | None = None) -> dict[str, Any]:
+    """What the Personal API knows of the athlete: the zones and the LTHR they
+    are built on, fitness age and age, and the latest weigh-in.
+
+    Sex, height, threshold pace, VO2max and the watch come from Connect's user
+    settings and device info alone (fetch_athlete_metrics): without garth they
+    keep the values last stored.
+    """
+    today = today or date.today()
+    zone_config = _fetch_zone_config(client)
+    lthr = (zone_config or {}).get("lactateThresholdHeartRateUsed")
+    metrics = zone_metrics(zone_config, lthr)
+    if lthr:
+        metrics["lthrBpm"] = round(lthr)
+
+    try:
+        fitness = client.get_current_fitness_age(today.isoformat())
+    except GarminAPIError:
+        fitness = {}
+    metrics.update(extract_current_fitness_age(fitness))
+    age = fitness.get("chronologicalAge")
+    if isinstance(age, int) and not isinstance(age, bool) and age > 0:
+        metrics["age"] = age
+
+    try:
+        weight = latest_weight_kg(client.get_weight_range((today - timedelta(days=365)).isoformat(), today.isoformat()))
+    except GarminAPIError:
+        weight = None
+    if weight:
+        metrics["weightKg"] = weight
+
+    if metrics:
+        metrics["lastUpdate"] = datetime.now(timezone.utc).isoformat()
     return metrics

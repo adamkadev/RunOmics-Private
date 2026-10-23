@@ -1,13 +1,14 @@
 from __future__ import annotations
 
-import io
 import os
-import zipfile
 from datetime import datetime, timezone
 from typing import Any
 
 import garth
 import httpx
+
+from .errors import GarminAPIError, GarminAuthError
+from .shared import collect_activity_ids, fit_from_archive
 
 os.environ.setdefault("GARTH_TELEMETRY_ENABLED", "false")
 
@@ -17,14 +18,7 @@ _TIMEOUT = httpx.Timeout(120.0, connect=30.0)
 _USER_AGENT = "Mozilla/5.0 (RunOmics/1.0)"
 
 
-class GarminAuthError(Exception):
-    pass
-
-
-class GarminAPIError(Exception):
-    def __init__(self, status_code: int, url: str) -> None:
-        super().__init__(f"HTTP {status_code} from {url}")
-        self.status_code = status_code
+__all__ = ["GarminAPIError", "GarminAuthError", "GarminClient"]
 
 
 def _json_or_empty(resp: httpx.Response) -> dict[str, Any]:
@@ -183,22 +177,7 @@ class GarminClient:
         ).json()
 
     def get_all_activity_ids(self, *, running_only: bool = True) -> list[str]:
-        ids: list[str] = []
-        start = 0
-        limit = 100
-
-        while True:
-            batch = self.get_activities(start=start, limit=limit, running_only=running_only)
-            if not batch:
-                break
-            ids.extend(str(a["activityId"]) for a in batch)
-            print(f"  Fetched {len(ids)} activity IDs...", end="\r", flush=True)
-            if len(batch) < limit:
-                break
-            start += limit
-
-        print(f"  Found {len(ids)} total activities on Garmin.       ")
-        return ids
+        return collect_activity_ids(self.get_activities, running_only=running_only)
 
     def get_activity_detail(self, activity_id: str) -> dict[str, Any]:
         return self._get(
@@ -264,12 +243,7 @@ class GarminClient:
         )
         if resp is None or not resp.content:
             return None
-
-        with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
-            for name in zf.namelist():
-                if name.lower().endswith(".fit"):
-                    return zf.read(name)
-        return None
+        return fit_from_archive(resp.content)
 
     def get_user_settings(self) -> dict[str, Any]:
         return self._get(f"{self._base}/userprofile-service/userprofile/user-settings").json()
@@ -356,20 +330,8 @@ class GarminClient:
             },
         ).json()
 
-    # Garmin Connect's HRV status view reads the range endpoint; the per-night
-    # one is the fallback when a range is refused.
-    #
-    # Both answer a period without data - before the watch recorded HRV, or a
-    # night it was not worn - with 204 and no body, which .json() cannot read.
-    # That JSONDecodeError failed the whole recovery step on every run, so
-    # recovery_history.json was never written at all.
-    def get_hrv_range(self, start: str, end: str) -> dict[str, Any]:
-        return _json_or_empty(self._get(f"{self._base}/hrv-service/hrv/daily/{start}/{end}"))
-
-    def get_hrv_night(self, day: str) -> dict[str, Any]:
-        return _json_or_empty(self._get(f"{self._base}/hrv-service/hrv/{day}"))
-
-    # Metric 60 is the daily resting heart rate, over any date range.
+    # Metric 60 is the daily resting heart rate, over any date range. A period
+    # without data answers 204 and no body, which .json() cannot read.
     def get_resting_hr_range(self, start: str, end: str) -> dict[str, Any]:
         return _json_or_empty(
             self._get(

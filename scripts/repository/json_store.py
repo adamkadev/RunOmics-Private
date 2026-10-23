@@ -15,6 +15,10 @@ def _year_of(date: str) -> str | None:
     return date[:4] if len(date) >= 4 else None
 
 
+def _zone_seconds(zones: Any) -> list[Any] | None:
+    return [zone.get("seconds") for zone in zones if isinstance(zone, dict)] if isinstance(zones, list) else None
+
+
 def _month_of(date: str) -> str | None:
     return date[:7] if len(date) >= 7 else None
 
@@ -82,7 +86,17 @@ class JsonActivityStore:
         self.touch(activity_id)
         return True
 
-    def upsert(self, activity: ActivityData, *, replace: bool = False) -> bool:
+    def upsert(
+        self, activity: ActivityData, *, replace: bool = False, keep_gear: bool = False, keep_zone_bounds: bool = False
+    ) -> bool:
+        """Store one activity; True when it is new.
+
+        keep_gear: nothing asked for the gear (only Connect's private API
+        knows it), so the shoe on file stays.
+        keep_zone_bounds: the zones' bpm are the athlete's current ones (the
+        Personal API's), not those the activity was recorded with; where the
+        time in each zone is the same, the stored zones stay.
+        """
         new_dict = activity.to_dict()
         existing = self._by_id.get(activity.id)
         if existing is not None:
@@ -91,6 +105,10 @@ class JsonActivityStore:
             new_dict["comment"] = existing.get("comment", "")
             if existing.get("rpe") is not None:
                 new_dict["rpe"] = existing["rpe"]
+            if keep_gear:
+                new_dict["gearId"] = existing.get("gearId")
+            if keep_zone_bounds and _zone_seconds(existing.get("hrZones")) == _zone_seconds(new_dict.get("hrZones")):
+                new_dict["hrZones"] = existing.get("hrZones")
             # Weather can be re-derived (backfill_weather.py), so replace
             # starts it over with everything else Garmin sends.
             if not replace and new_dict.get("weather") is None:

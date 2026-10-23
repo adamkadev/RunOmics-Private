@@ -160,6 +160,41 @@ class TestJsonActivityStoreSmoke:
 
         assert store.all_activities()[0]["rpe"] == 5
 
+    def test_keep_gear_leaves_the_shoe_on_file_when_nothing_asked_for_it(self, tmp_path, activity_factory):
+        store = JsonActivityStore(tmp_path)
+        stored = activity_factory("1", "2026-07-18")
+        stored.gear_id = "shoe1"
+        store.upsert(stored)
+
+        store.upsert(activity_factory("1", "2026-07-18"), replace=True, keep_gear=True)
+
+        assert store.all_activities()[0]["gearId"] == "shoe1"
+
+    def test_keep_zone_bounds_keeps_the_recorded_bpm_for_the_same_time_in_zones(self, tmp_path, activity_factory):
+        # The Personal API sends the athlete's current zones: Lamiaa's runs of
+        # Sep 2025 came back with 124 and 165 bpm floors where Connect had
+        # stored the 123 and 164 they were recorded with.
+        from processing.mapper import HrZone
+
+        def zones(floors, seconds=(30, 360)):
+            pairs = enumerate(zip(floors, seconds, strict=True), 1)
+            return [HrZone(zone=n, seconds=s, percent=0.0, min_bpm=f, max_bpm=None) for n, (f, s) in pairs]
+
+        store = JsonActivityStore(tmp_path)
+        stored = activity_factory("1", "2026-07-18")
+        stored.hr_zones = zones((103, 123))
+        store.upsert(stored)
+
+        fetched = activity_factory("1", "2026-07-18")
+        fetched.hr_zones = zones((103, 124))
+        store.upsert(fetched, replace=True, keep_zone_bounds=True)
+        assert [z["minBpm"] for z in store.all_activities()[0]["hrZones"]] == [103, 123]
+
+        # Different times are a different reading: they are taken whole.
+        fetched.hr_zones = zones((103, 124), seconds=(31, 360))
+        store.upsert(fetched, replace=True, keep_zone_bounds=True)
+        assert [z["minBpm"] for z in store.all_activities()[0]["hrZones"]] == [103, 124]
+
     def test_save_only_rewrites_dirty_months(self, tmp_path, activity_factory):
         store = JsonActivityStore(tmp_path)
         store.upsert(activity_factory("1", "2026-06-10"))

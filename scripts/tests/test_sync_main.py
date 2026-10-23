@@ -14,7 +14,7 @@ import httpx
 import pytest
 
 import sync
-from garmin.client import GarminAPIError, GarminClient
+from garmin.client import GarminAPIError, GarminAuthError, GarminClient
 from repository.json_store import JsonActivityStore
 
 # Every step main() runs besides the activities themselves, as the names it
@@ -38,6 +38,9 @@ _STEP_RESULTS = {
     "sync_load_balance": False,
     "sync_training_plan": False,
 }
+# Run only with a Personal API key.
+_PERSONAL_STEP_RESULTS = {"fetch_personal_athlete_metrics": {}}
+_PERSONAL_ONLY_STEPS = ["fetch_personal_athlete_metrics", "record_athlete_history", "sync_recovery_history"]
 
 
 class FakeGarmin:
@@ -115,7 +118,7 @@ def steps(monkeypatch) -> list[str]:
 
         return step
 
-    for name, result in _STEP_RESULTS.items():
+    for name, result in {**_STEP_RESULTS, **_PERSONAL_STEP_RESULTS}.items():
         monkeypatch.setattr(sync, name, recorder(name, result))
     return ran
 
@@ -143,6 +146,7 @@ def workspace(tmp_path, monkeypatch):
     """A data workspace of its own, and none of the pauses a real run takes."""
     monkeypatch.setenv("RUNOMICS_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+    monkeypatch.delenv("GARMIN_PERSONAL_API_KEY", raising=False)
     # Resolved when sync.py was imported, so re-pointed by hand.
     monkeypatch.setattr(sync, "_FIT_DIR", tmp_path / "fit-cache")
     monkeypatch.setattr(sync, "_SYNC_META_PATH", tmp_path / "sync_meta.json")
@@ -159,6 +163,18 @@ def _run(monkeypatch, *args: str) -> int:
 
 def _refuse_garmin(_secret):
     raise AssertionError("the sync reached Garmin")
+
+
+@pytest.fixture
+def personal(workspace, monkeypatch) -> FakeGarmin:
+    """A Personal API key and no GARMIN_SECRET: the same two activities,
+    read through the Personal API."""
+    monkeypatch.delenv("GARMIN_SECRET")
+    monkeypatch.setenv("GARMIN_PERSONAL_API_KEY", "GCDC_fictional-key")
+    fake = FakeGarmin()
+    monkeypatch.setattr(sync, "PersonalApiClient", fake)
+    monkeypatch.setattr(sync, "GarminClient", _refuse_garmin)
+    return fake
 
 
 class TestUnreadableStore:
@@ -336,3 +352,64 @@ def _garmin_whose_gear_request_fails(monkeypatch, error) -> GarminClient:
     client.get_all_activity_ids = lambda *, running_only=True: []
     monkeypatch.setattr(sync, "GarminClient", lambda _secret: client)
     return client
+
+
+class TestPersonalApi:
+    """With a Personal API key the activities, resting HR and the athlete's
+    zones come from it; GARMIN_SECRET, when set, adds what only Connect
+    serves, and a dead garth token costs only that."""
+
+    def test_alone_it_syncs_the_activities_resting_hr_and_the_athlete(self, workspace, personal, steps, monkeypatch):
+        assert _run(monkeypatch) == 0
+
+        assert _stored_ids(workspace) == {"101", "102"}
+        assert steps == _PERSONAL_ONLY_STEPS
+        assert "lastSyncedAt" in json.loads((workspace / "sync_meta.json").read_text())
+
+    def test_with_connect_the_activities_still_come_from_the_key_and_the_gear_from_connect(
+        self, workspace, personal, garmin, steps, monkeypatch
+    ):
+        monkeypatch.setenv("GARMIN_SECRET", "not-a-real-token")
+        garmin.details = {}  # read an activity from Connect, and it fails
+        garmin.gear = {"101": [{"uuid": "shoe1"}]}
+        recovery_sources = []
+        monkeypatch.setattr(sync, "sync_recovery_history", recovery_sources.append)
+
+        assert _run(monkeypatch) == 0
+
+        assert _stored_gear(workspace, "101") == "shoe1"
+        assert recovery_sources == [personal]
+        assert "fetch_personal_athlete_metrics" in steps and steps[-1] == "sync_training_plan"
+
+    def test_a_failed_connect_sign_in_keeps_the_activities_and_exits_3(self, workspace, personal, steps, monkeypatch, capsys):
+        def expired(_secret):
+            raise GarminAuthError("Token refresh failed")
+
+        monkeypatch.setenv("GARMIN_SECRET", "expired")
+        monkeypatch.setattr(sync, "GarminClient", expired)
+
+        assert _run(monkeypatch) == sync._EXIT_PARTIAL_FAILURE
+
+        assert _stored_ids(workspace) == {"101", "102"}
+        assert steps == _PERSONAL_ONLY_STEPS
+        assert "Garmin Connect sign-in" in capsys.readouterr().out
+
+    def test_without_connect_a_forced_refetch_keeps_the_shoe_on_file(
+        self, workspace, personal, steps, monkeypatch, activity_factory
+    ):
+        run = activity_factory("101", "2026-09-20")
+        run.gear_id = "shoe1"
+        store = JsonActivityStore(workspace / "activities")
+        store.upsert(run)
+        store.save()
+
+        assert _run(monkeypatch, "--force") == 0
+
+        assert _stored_gear(workspace, "101") == "shoe1"
+
+    def test_without_either_credential_nothing_reaches_garmin(self, workspace, monkeypatch):
+        monkeypatch.delenv("GARMIN_SECRET")
+        monkeypatch.setattr(sync, "GarminClient", _refuse_garmin)
+        monkeypatch.setattr(sync, "PersonalApiClient", _refuse_garmin)
+
+        assert _run(monkeypatch) == 1

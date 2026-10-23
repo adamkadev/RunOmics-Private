@@ -6,7 +6,7 @@ from typing import Any, TypeVar
 
 import httpx
 
-from .client import GarminAPIError
+from .errors import GarminAPIError
 
 T = TypeVar("T")
 

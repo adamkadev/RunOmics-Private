@@ -7,14 +7,17 @@ import os
 import sys
 import time
 from collections.abc import Callable
+from contextlib import ExitStack
 from datetime import date, datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from garmin.athlete import fetch_athlete_metrics, record_athlete_history
+from garmin.athlete import fetch_athlete_metrics, fetch_personal_athlete_metrics, record_athlete_history
 from data_directory import get_data_dir, get_fit_cache_dir
 from garmin.client import GarminClient
+from garmin.errors import GarminAuthError
+from garmin.personal_api import PersonalApiClient
 from garmin.fitness_age_history import sync_fitness_age_history
 from garmin.retry import retry_transient
 from garmin.race_predictions import sync_race_predictions
@@ -46,15 +49,21 @@ _REGEAR_WINDOW_DAYS = 10
 _EXIT_PARTIAL_FAILURE = 3
 
 Step = tuple[str, Callable[[], object]]
+ActivitySource = PersonalApiClient | GarminClient
 
 
 def main() -> int:
     args = _parse_args()
 
+    # The Personal API key reads the activities, resting HR and the athlete's
+    # zones. GARMIN_SECRET (garth) adds what only Connect's private API
+    # serves - gear, the calendar, training status, race predictions - and,
+    # alone, reads everything as it did before the key existed.
+    api_key = os.environ.get("GARMIN_PERSONAL_API_KEY", "").strip()
     secret = os.environ.get("GARMIN_SECRET", "").strip()
-    if not secret:
-        print("Error: GARMIN_SECRET environment variable is not set.", file=sys.stderr)
-        print("Run scripts/get_secret.py to generate it.", file=sys.stderr)
+    if not api_key and not secret:
+        print("Error: neither GARMIN_PERSONAL_API_KEY nor GARMIN_SECRET is set.", file=sys.stderr)
+        print("Create a Personal API key in Garmin Connect (Settings > Personal API); see README.md.", file=sys.stderr)
         return 1
 
     _FIT_DIR.mkdir(parents=True, exist_ok=True)
@@ -71,21 +80,37 @@ def main() -> int:
     weather_client = WeatherClient()
     failed_steps: list[str] = []
 
-    with GarminClient(secret) as client:
+    with ExitStack() as stack:
+        personal = stack.enter_context(PersonalApiClient(api_key)) if api_key else None
+        connect: GarminClient | None = None
+        if secret:
+            try:
+                connect = stack.enter_context(GarminClient(secret))
+            except GarminAuthError as exc:
+                if personal is None:
+                    raise
+                # The activities come from the Personal API: a dead garth token
+                # costs only what Connect alone serves, and says so every night.
+                print(f"Warning: Garmin Connect sign-in failed; gear and Connect's metrics are skipped.\n{exc}")
+                failed_steps.append("Garmin Connect sign-in")
+        # Never None: without a key, a failed Connect sign-in raised above.
+        client: ActivitySource = personal or connect
+
         # Fetched early (before the activity loop) so newly-synced activities can be
         # enriched against it below - but must not block the more important activity
         # sync if Garmin's calendar API hiccups, so it falls back to whatever's
         # already on disk rather than aborting the whole run. Like any other
         # step, a failure here still makes the night a partial one.
-        if not args.dry_run and not args.id:
+        if connect and not args.dry_run and not args.id:
             failed_steps += _run_isolated(
-                [("planned workouts", lambda: _sync_planned_workouts(client, planned_store))]
+                [("planned workouts", lambda: _sync_planned_workouts(connect, planned_store))]
             )
 
         if args.id:
             new_ids = [args.id]
         else:
-            print("Fetching activity list from Garmin Connect…")
+            source = "the Personal API" if personal else "Garmin Connect"
+            print(f"Fetching activity list from {source}…")
             all_ids = client.get_all_activity_ids(running_only=not args.all_types)
 
             if args.force:
@@ -115,7 +140,7 @@ def main() -> int:
                     detail = retry_transient(client.get_activity_detail, activity_id)
                     parsed, file_name = _fetch_track_file(client, activity_id, dry_run=args.dry_run)
                     hr_zones = parse_hr_zones(retry_transient(client.get_hr_zones, activity_id))
-                    gear = retry_transient(client.get_activity_gear, activity_id)
+                    gear = retry_transient(connect.get_activity_gear, activity_id) if connect else None
 
                     time.sleep(_RATE_LIMIT_PAUSE)
 
@@ -140,7 +165,9 @@ def main() -> int:
                     added += 1
                     continue
 
-                is_new = store.upsert(activity_data, replace=args.force)
+                is_new = store.upsert(
+                    activity_data, replace=args.force, keep_gear=connect is None, keep_zone_bounds=client is personal
+                )
                 if is_new:
                     added += 1
                     print(f"added   → {status}")
@@ -149,8 +176,8 @@ def main() -> int:
                     print(f"updated → {status}")
 
         regeared = 0
-        if not args.force and not args.id:
-            regeared = _refresh_recent_gear(client, store, skip=set(new_ids))
+        if connect and not args.force and not args.id:
+            regeared = _refresh_recent_gear(connect, store, skip=set(new_ids))
 
         if not args.dry_run:
             store.save()
@@ -160,7 +187,7 @@ def main() -> int:
             print(f"\nDry run: {added} would be added, {failed} would fail.")
 
         if not args.dry_run and not args.id:
-            failed_steps += _run_isolated(_post_save_steps(client, store))
+            failed_steps += _run_isolated(_post_save_steps(connect, personal, store))
 
         if not args.dry_run:
             _write_sync_meta()
@@ -220,10 +247,25 @@ def _run_isolated(steps: list[Step]) -> list[str]:
     return failed
 
 
-def _post_save_steps(client: GarminClient, store: JsonActivityStore) -> list[Step]:
+def _post_save_steps(
+    connect: GarminClient | None, personal: PersonalApiClient | None, store: JsonActivityStore
+) -> list[Step]:
+    """The steps after the activities, each from the API that serves it.
+
+    Athlete metrics read both; resting HR comes from the Personal API when
+    there is a key. Everything else is Connect's alone, and without a
+    Connect session keeps what it last wrote.
+    """
+    recovery_source: ActivitySource = personal or connect
+    athlete: list[Step] = [("athlete metrics", lambda: _sync_athlete_metrics(connect, personal))]
+    recovery: list[Step] = [("recovery history", lambda: sync_recovery_history(recovery_source))]
+    if connect is None:
+        return athlete + recovery
+
+    client = connect
     steps: list[Step] = [
         ("upcoming races", lambda: write_upcoming_races(fetch_upcoming_races(client))),
-        ("athlete metrics", lambda: _sync_athlete_metrics(client)),
+        *athlete,
         ("fitness age history", lambda: sync_fitness_age_history(client)),
         ("VO2max norms", lambda: write_vo2max_norms(fetch_vo2max_norms(client))),
     ]
@@ -238,7 +280,7 @@ def _post_save_steps(client: GarminClient, store: JsonActivityStore) -> list[Ste
 
     return steps + [
         ("race predictions", lambda: sync_race_predictions(client)),
-        ("recovery history", lambda: sync_recovery_history(client)),
+        *recovery,
         ("load balance", lambda: sync_load_balance(client)),
         ("training plan", lambda: sync_training_plan(client)),
     ]
@@ -249,9 +291,17 @@ def _sync_planned_workouts(client: GarminClient, planned_store: PlannedWorkoutSt
     write_planned_workouts(planned, store=planned_store, stale_candidates=stale_candidates)
 
 
-def _sync_athlete_metrics(client: GarminClient) -> None:
-    metrics = fetch_athlete_metrics(client)
-    if record_athlete_history(metrics):
+def _sync_athlete_metrics(connect: GarminClient | None, personal: PersonalApiClient | None) -> None:
+    # Connect's are the fuller set (sex, height, threshold pace, VO2max, the
+    # watch); where both have a value it is the same one.
+    metrics = fetch_personal_athlete_metrics(personal) if personal else {}
+    if connect:
+        metrics.update(fetch_athlete_metrics(connect))
+    # The history snapshots the athlete as now known: what this run fetched
+    # over what is on file, so a value only Connect serves is not dropped
+    # from the trend the first night without it.
+    known = {**read_history(_ATHLETE_PATH), **metrics}
+    if record_athlete_history(known):
         print("Athlete threshold metrics changed - recorded a history entry.")
     _merge_athlete_metrics(metrics)
 
@@ -285,7 +335,7 @@ def _merge_athlete_metrics(metrics: dict) -> None:
 
 
 def _fetch_track_file(
-    client: GarminClient, activity_id: str, *, dry_run: bool
+    client: ActivitySource, activity_id: str, *, dry_run: bool
 ) -> tuple[ParsedFit | None, str | None]:
     fit_path = _FIT_DIR / f"{activity_id}.fit"
     if fit_path.exists():
