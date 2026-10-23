@@ -101,10 +101,11 @@ function OwnerSyncLine({ user, lastSyncedAt, ago, children }: { user: User; last
   const [freshNote, setFreshNote] = useState(false)
   const { phase } = sync
 
-  // The new data is live: read it rather than leave yesterday's numbers up.
+  // Read the run once its data is live, then again for its verdict, rather than leave yesterday's numbers up.
+  const live = phase.kind === 'done' ? 'verdict' : phase.kind === 'waiting' && phase.synced ? 'data' : null
   useEffect(() => {
-    if (phase.kind === 'done') router.refresh()
-  }, [phase.kind, router])
+    if (live) router.refresh()
+  }, [live, router])
 
   const age = syncAgeMs(lastSyncedAt)
   const late = isSyncLate(lastSyncedAt)
