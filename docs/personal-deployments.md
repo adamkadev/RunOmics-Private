@@ -145,6 +145,7 @@ Vercel supports any number of projects per repository. Give it its own domain.
 | `GITHUB_SYNC_TOKEN`, `GITHUB_SYNC_REPO` | the Sync button's PAT (Actions: Read and write on this repository) and this repository - may be shared |
 | `GITHUB_SYNC_PROFILE` | her profile name, `lamiaa`: her Sync button then syncs her data only, and its limits (one run at a time, 10 min apart, 12 a day) count her runs only. Unset, a tap syncs both athletes |
 | `NEXT_PUBLIC_MAPTILER_TOKEN` | may be shared, subject to the plan's request quota |
+| `ORS_API_KEY` | optional, Explore's route generator: may be shared, but a shared key is a shared quota (2000 directions a day on the free plan, 5 per generated batch). Her data repo also needs `explore/` files built with `npm run explore:areas -- --data-dir ../runomics-data-lamiaa/data` |
 | `RUNOMICS_PRIVATE` | optional, `1` to make the deployment private - see [A private deployment](#a-private-deployment) |
 | `SESSION_SECRET` | with `RUNOMICS_PRIVATE`: a fresh random string of 32+ characters (`openssl rand -base64 32`), **not** another profile's |
 | `RUNOMICS_VIEWERS` | optional, with `RUNOMICS_PRIVATE`: Google accounts that may view without being the owner, comma-separated - yours, on her deployment |
