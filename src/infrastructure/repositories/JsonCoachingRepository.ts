@@ -68,7 +68,7 @@ export class JsonCoachingRepository implements CoachingRepository {
   getArchivedPlans(): CoachingPlan[] {
     const dir = path.join(this.coachingDir, 'superseded')
     if (!dataFs.existsSync(dir)) return []
-    return fs
+    return dataFs
       .readdirSync(dir)
       .filter((file) => file.endsWith('.json'))
       .map((file) => parseCoachingPlan(readJson(path.join(dir, file)), path.join(dir, file)))
