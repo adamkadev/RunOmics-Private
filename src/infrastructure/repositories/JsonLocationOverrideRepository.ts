@@ -1,13 +1,15 @@
 import { dataPath } from '../dataPath'
+import { dataGeneration } from '../dataFs'
 import { readJsonFile } from '../readJsonFile'
 
-let cache: Record<string, unknown> | null = null
+let cache: { generation: string; overrides: Record<string, unknown> } | null = null
 
 function load(): Record<string, unknown> {
-  if (cache) return cache
-
-  cache = readJsonFile<Record<string, unknown>>(dataPath('location-overrides.json'), {})
-  return cache
+  const generation = dataGeneration()
+  if (cache?.generation !== generation) {
+    cache = { generation, overrides: readJsonFile<Record<string, unknown>>(dataPath('location-overrides.json'), {}) }
+  }
+  return cache.overrides
 }
 
 export function getLocationOverride(name: string): string | null {

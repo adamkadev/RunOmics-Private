@@ -181,11 +181,13 @@ describe('getAllRoutes', () => {
     })
   })
 
-  it('clusters once and serves every later caller from the cache', async () => {
+  it('clusters once per activity list, and again when a sync brings a new one', async () => {
     const { getAllRoutes, getAllActivities } = await load(HISTORY)
+    const first = getAllRoutes()
 
-    expect(getAllRoutes()).toBe(getAllRoutes())
-    expect(getAllActivities).toHaveBeenCalledTimes(1)
+    expect(getAllRoutes()).toBe(first)
+    getAllActivities.mockReturnValue(HISTORY.slice(1))
+    expect(getAllRoutes().totalCount).toBe(2)
   })
 })
 

@@ -1,7 +1,7 @@
 import 'server-only'
-import fs from 'fs'
 import path from 'path'
 import { dataPath } from '../dataPath'
+import { dataFs, dataGeneration } from '../dataFs'
 import { readJsonFile } from '../readJsonFile'
 import { parseAreaFile, parseIndexFile } from '@/domain/explore/areaFile'
 import type { ExploreAreaRef, ExploreIndexFile } from '@/domain/explore/types'
@@ -24,8 +24,9 @@ const ETAG_SAFE = /^[A-Za-z0-9._-]{1,128}$/
 
 const isAbsent = (error: unknown) => (error as NodeJS.ErrnoException).code === 'ENOENT'
 
-// Keyed by directory, like the activity cache; the data only changes with a deployment, so each workspace is read once.
+// Keyed by generation, like the activity cache, so each commit or workspace is read once.
 let cache: {
+  generation: string
   dir: string
   areas: IndexedArea[]
   refs: ExploreAreaRef[]
@@ -55,11 +56,12 @@ function readIndex(dir: string): IndexedArea[] {
 
 function load() {
   const dir = dataPath('explore')
-  if (cache?.dir !== dir) {
+  const generation = dataGeneration()
+  if (cache?.generation !== generation) {
     const areas = readIndex(dir)
     // The file name stays here: the page needs the rest, never where it sits.
     const refs = areas.map(({ id, name, version, bbox }) => ({ id, name, version, bbox }))
-    cache = { dir, areas, refs, files: new Map() }
+    cache = { generation, dir, areas, refs, files: new Map() }
   }
   return cache
 }
@@ -97,7 +99,7 @@ function readAreaFile(dir: string, area: IndexedArea): ExploreAreaFileRead | nul
 
   let body: string
   try {
-    body = fs.readFileSync(filePath, 'utf-8')
+    body = dataFs.readFileSync(filePath, 'utf-8')
   } catch (error) {
     if (!isAbsent(error)) console.warn(`[explore] could not read ${filePath}:`, error)
     else console.warn(`[explore] the index lists ${area.file}, which is missing`)
