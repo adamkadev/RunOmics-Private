@@ -13,6 +13,8 @@ export interface DataSnapshot {
   blobs: ReadonlyMap<string, string>
 }
 
+export class DataNotLoadedError extends Error {}
+
 let live: DataSnapshot | null = null
 let checking: DataSnapshot | null = null
 
@@ -45,7 +47,7 @@ function source(): DataFiles {
     return view
   }
   // Never the copy bundled at build: an older snapshot would overwrite good pages and resend the new-run pushes.
-  if (readsFromGitHub()) throw new Error('Data read before loadData(): no commit of the data repository is loaded')
+  if (readsFromGitHub()) throw new DataNotLoadedError('Data read before loadData(): no commit of the data repository is loaded')
   return diskFiles
 }
 

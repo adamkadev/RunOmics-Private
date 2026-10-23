@@ -10,7 +10,13 @@ const STALE_AFTER_DAYS = 7
 
 export async function GET(req: NextRequest) {
   return handleInternalRoute('health', req, async () => {
-    await loadData()
+    try {
+      await loadData()
+    } catch (error) {
+      // Still answers, so the sync can name the commit it refused.
+      console.error('[internal:health]', error)
+      return NextResponse.json({ status: 'unloaded', ...dataVersion() }, { status: 503 })
+    }
     const activities = getAllActivities()
     const latest = activities[0] ?? null
 

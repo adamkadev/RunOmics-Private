@@ -1,6 +1,6 @@
 import 'server-only'
 import { checkDataDirectory } from './contracts/dataContract'
-import { dataFs, liveSnapshot, swapSnapshot, withSnapshot } from './dataFs'
+import { DataNotLoadedError, dataFs, liveSnapshot, swapSnapshot, withSnapshot } from './dataFs'
 import { readsFromGitHub } from './dataSource'
 import { dataPath } from './dataPath'
 import { headCommit, readSnapshot } from './githubData'
@@ -10,6 +10,7 @@ export interface RejectedData {
   errors: string[]
 }
 
+let latestHead: string | null = null
 let pending: { commit: string; done: Promise<void> } | null = null
 let rejected: RejectedData | null = null
 
@@ -20,19 +21,23 @@ export async function loadData(): Promise<void> {
   if (!readsFromGitHub()) return
   try {
     const commit = await headCommit()
-    if (liveSnapshot()?.commit === commit || rejected?.commit === commit) return
-    if (pending?.commit !== commit) pending = { commit, done: adopt(commit) }
-    await pending.done
+    latestHead = commit
+    if (liveSnapshot()?.commit !== commit && rejected?.commit !== commit) {
+      if (pending?.commit !== commit) pending = { commit, done: adopt(commit) }
+      await pending.done
+    }
   } catch (error) {
     if (!liveSnapshot()) throw error
-    console.error('[data] GitHub unreachable; still serving the commit already loaded:', error)
+    console.error('[data] could not load the HEAD commit; still serving the one already loaded:', error)
+  }
+  if (!liveSnapshot()) {
+    throw new DataNotLoadedError(`The data repository's HEAD ${rejected?.commit} was refused: ${rejected?.errors[0]}`)
   }
 }
 
 async function adopt(commit: string) {
   try {
-    const live = liveSnapshot()
-    const candidate = await readSnapshot(commit, live)
+    const candidate = await readSnapshot(commit, liveSnapshot())
     // No build stands between a push and the site, so a dataset that would crash a page is refused here.
     const errors = withSnapshot(candidate, () => checkDataDirectory(dataPath(), dataFs))
       .filter((problem) => problem.severity === 'error')
@@ -42,8 +47,8 @@ async function adopt(commit: string) {
       console.error(`[data] refused ${commit}: ${errors.length} error(s), first: ${errors[0]}`)
       return
     }
-    // Two loads can finish out of order; the older commit never replaces a newer one.
-    if (!live || candidate.committedAt >= live.committedAt) {
+    // Only the newest HEAD read goes live: a slower load never wins, and a rollback of the repository does.
+    if (commit === latestHead) {
       swapSnapshot(candidate)
       rejected = null
     }

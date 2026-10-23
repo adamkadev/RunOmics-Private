@@ -54,7 +54,7 @@ afterEach(() => {
 })
 
 describe('loadData from GitHub', () => {
-  it('serves the commit it loaded, and reads only what the next commit changed', async () => {
+  it('serves the commit it loaded, reads only what the next commit changed, and follows a rollback', async () => {
     const { loadData, getLastSyncedAt } = await load()
     expect(() => getLastSyncedAt()).toThrow(/before loadData/)
 
@@ -66,6 +66,10 @@ describe('loadData from GitHub', () => {
     await loadData()
     expect(getLastSyncedAt()).toBe('2026-10-21T10:00:00Z')
     expect(blobReads()).toEqual([`https://api.github.com${REPO}/git/blobs/${sha(syncMeta('2026-10-21T10:00:00Z'))}`])
+
+    head = 'c1'
+    await loadData()
+    expect(getLastSyncedAt()).toBe('2026-10-20T10:00:00Z')
   })
 
   it('refuses a commit whose data would crash a page, and keeps serving the one before', async () => {
@@ -77,5 +81,12 @@ describe('loadData from GitHub', () => {
 
     expect(getLastSyncedAt()).toBe('2026-10-20T10:00:00Z')
     expect(rejectedData()).toMatchObject({ commit: 'broken', errors: [expect.stringContaining('sync_meta.json')] })
+  })
+
+  it('fails loudly on a cold instance whose HEAD is refused, naming the commit', async () => {
+    head = 'broken'
+    const { loadData } = await load()
+
+    await expect(loadData()).rejects.toThrow(/HEAD broken was refused/)
   })
 })
