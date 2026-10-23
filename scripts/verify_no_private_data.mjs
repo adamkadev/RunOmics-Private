@@ -62,7 +62,7 @@ const servedDirsThatMustNotExist = [
   },
   {
     dir: 'public/fit',
-    detail: `Raw FIT holds the GPS the privacy zone hides. The cache lives in ${FIT_CACHE_DIR}/ - move it there and delete public/fit/.`,
+    detail: `Raw FIT holds every GPS sample of the run. The cache lives in ${FIT_CACHE_DIR}/ - move it there and delete public/fit/.`,
   },
 ]
 for (const { dir, detail } of servedDirsThatMustNotExist) {
@@ -76,8 +76,8 @@ for (const prefix of ['public/fit', FIT_CACHE_DIR]) {
 
 
 // Race-day photos are real people at real places, and a phone photo's EXIF can
-// carry the GPS the privacy zone exists to hide. Everything under public/
-// ships to every deployment.
+// carry the GPS position it was taken at. Everything under public/ ships to
+// every deployment.
 const eventFiles = trackedUnder(files, 'public/events')
 if (eventFiles.length) critical('public/events/ is tracked', `${eventFiles.length} file(s) - race-day photos belong in the data repository.`)
 
@@ -105,9 +105,6 @@ const secretChecks = [
   // a pasted one is a write credential for the only copy of the history.
   { name: 'GitHub token', pattern: /\b(gh[pousr]_[0-9A-Za-z]{36,}|github_pat_[0-9A-Za-z_]{50,})\b/ },
   { name: 'Vercel deploy hook URL', pattern: /api\.vercel\.com\/v1\/integrations\/deploy\/prj_[0-9A-Za-z]+\/[0-9A-Za-z]+/ },
-  // Real coordinates carry decimals; the placeholders in .env.example and the
-  // fictional zones in the tests do not reach three.
-  { name: 'PRIVACY_ZONES set to real-looking coordinates', pattern: /PRIVACY_ZONES\s*[=:]\s*['"]?\[\s*\[\s*-?\d+\.\d{3,}/ },
 ]
 for (const { name, pattern, exclude } of secretChecks) {
   const hits = grepTracked(files, pattern, { exclude: exclude ?? [] })
