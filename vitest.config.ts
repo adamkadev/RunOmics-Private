@@ -26,12 +26,18 @@ const isDomTest = (file: string) => file.endsWith('.test.tsx') || DOM_EXTRA.incl
 const SHARED_EXCLUDE = ['**/node_modules/**', '**/dist/**', 'e2e/**', 'screenshots/**', '.claude/**']
 
 /**
- * Most files share one environment and module registry per worker
- * (`isolate: false`): a fresh jsdom window and a fresh React import for every
- * file was two thirds of a run, about 90 s of it. A file that swaps a module
- * out - vi.mock, vi.doMock, vi.resetModules - would carry that swap into the
- * files after it in the same worker, so those still get a registry of their
- * own. They are found by reading the files, not from a list to keep.
+ * The component files share one jsdom window per worker (`isolate: false`):
+ * a fresh window and a fresh React import for every one of them was most of
+ * a run, about 60 s of 90. Each still gets its own copy of the app's modules
+ * (vitest.fresh-modules.ts), but not of the mocks: a file that swaps a module
+ * out with vi.mock or vi.doMock would carry the swap into the files after it,
+ * so it gets a window of its own. So does one that calls vi.resetModules: it
+ * re-imports under env vars or globals it stubbed, which would carry over
+ * just the same. They are found by reading the files, not from a list to keep.
+ *
+ * The logic files stay isolated: sharing saved them a few seconds, and cost
+ * order-dependent failures - a rate limiter's budget, a data workspace -
+ * once in a dozen runs.
  */
 const SWAPS_MODULES = /\bvi\.(mock|doMock|unmock|doUnmock|resetModules)\(/
 
@@ -47,13 +53,9 @@ function testFiles(dir: string): string[] {
 // character class.
 const asGlob = (file: string) => file.replace(/[[\](){}*?!]/g, '\\$&')
 
-// The tooling tests under scripts/ run against the real file system, child
-// processes and git; they stay isolated too, whatever they import.
-const ISOLATED = ['src', 'scripts']
-  .flatMap(testFiles)
-  .filter((file) => file.startsWith('scripts/') || SWAPS_MODULES.test(fs.readFileSync(file, 'utf8')))
-const ISOLATED_NODE = ISOLATED.filter((file) => !isDomTest(file)).map(asGlob)
-const ISOLATED_DOM = ISOLATED.filter(isDomTest).map(asGlob)
+const ISOLATED_DOM = testFiles('src')
+  .filter((file) => isDomTest(file) && SWAPS_MODULES.test(fs.readFileSync(file, 'utf8')))
+  .map(asGlob)
 
 // Each shared file still gets its own copy of the app's modules: see the file.
 const FRESH_MODULES = './vitest.fresh-modules.ts'
@@ -72,20 +74,13 @@ export default defineConfig({
     // per-file process spawn that `forks` pays is a large share of a run.
     pool: 'threads',
     projects: [
-      project({
-        ...node,
-        name: 'node',
-        isolate: false,
-        setupFiles: [FRESH_MODULES],
-        include: ['**/*.test.{ts,mts,js,mjs}'],
-        exclude: [...SHARED_EXCLUDE, ...DOM_TESTS, ...ISOLATED_NODE],
-      }),
-      project({ ...node, name: 'node:isolated', include: ISOLATED_NODE, exclude: SHARED_EXCLUDE }),
+      project({ ...node, name: 'node', include: ['**/*.test.{ts,mts,js,mjs}'], exclude: [...SHARED_EXCLUDE, ...DOM_TESTS] }),
       project({
         ...dom,
         name: 'dom',
         isolate: false,
-        setupFiles: [...dom.setupFiles, FRESH_MODULES],
+        // The reset first, so what vitest.setup.ts loads is what the file uses.
+        setupFiles: [FRESH_MODULES, ...dom.setupFiles],
         include: DOM_TESTS,
         exclude: [...SHARED_EXCLUDE, ...ISOLATED_DOM],
       }),

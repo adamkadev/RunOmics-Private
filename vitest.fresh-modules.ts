@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 
 /**
- * Run before every file of the shared projects (vitest.config.ts): files
+ * Run before every file of the shared component project (vitest.config.ts): files
  * there share a worker's environment, but each gets its own copy of the app's
  * modules. Module state - internalAuth's per-IP request budget, a cache, a
  * memoised read - would otherwise carry from one file into the next and fail
