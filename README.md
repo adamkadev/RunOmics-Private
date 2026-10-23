@@ -214,6 +214,7 @@ Options:
 npx dotenv -e .env.local -- python3 scripts/sync.py --limit 10
 npx dotenv -e .env.local -- python3 scripts/sync.py --force
 npx dotenv -e .env.local -- python3 scripts/sync.py --all-types
+npx dotenv -e .env.local -- python3 scripts/sync.py --quick
 ```
 
 ### 5. Start the dev server
@@ -504,8 +505,15 @@ language; with a single profile it is just a place to keep the secrets.
 
 The nightly `sync.yml` workflow does this on its own, once per profile in its
 matrix: it hydrates a runner workspace from that profile's data repository, syncs
-Garmin, pushes the changed files back and triggers the matching Vercel deploy hook. After a manual local sync, push the
-result the same way:
+Garmin, pushes the changed files back and triggers the matching Vercel deploy hook.
+
+The app's Sync button runs the same workflow with `quick`: the new runs come
+through the Personal API key alone, with no WARP and no garth sign-in, then the
+push, the deploy and the post-sync checks as usual. Their shoes, the calendar and
+Connect's metrics wait for the nightly sync, which asks Connect for every shoe it
+has not answered yet, however old the run. A profile without a key syncs in full.
+
+After a manual local sync, push the result the same way:
 
 ```bash
 node scripts/fetch_private_data.mjs data

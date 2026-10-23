@@ -4,6 +4,17 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The Sync button starts a quick sync: the new runs come through the
+  Personal API key alone, with no WARP install and no garth sign-in, while
+  the nightly sync keeps doing everything. A run synced this way has no shoe
+  until the next full sync, which now asks Connect for the shoe of every run
+  it has not answered yet, however old, rather than only the last ten days'
+  (a run read on a night Connect was down gets the same); until then its
+  page shows no prompt to add one. A profile without a key syncs in full,
+  and a quick sync whose key is refused fails rather than fall back to
+  garth. Runs for one profile now wait in turn: a newly queued one no longer
+  cancels the one already waiting.
+
 - The sync no longer stops when Cloudflare WARP will not install or
   connect, as long as the profile has a `GARMIN_PERSONAL_API_KEY`: the runs
   come through the Personal API, and only garth (gear, the calendar,
