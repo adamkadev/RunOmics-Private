@@ -26,8 +26,8 @@ describe('repSet', () => {
 
     expect(set?.reps).toHaveLength(2)
     expect(set?.reps[0]?.recovery).toMatchObject({ durationSec: 89, distanceM: 140, avgHr: 163 })
-    expect(set?.warmup?.distanceM).toBe(2520)
-    expect(set?.cooldown?.distanceM).toBe(1720)
+    expect(set?.warmups.map((s) => s.distanceM)).toEqual([2520])
+    expect(set?.cooldowns.map((s) => s.distanceM)).toEqual([1720])
   })
 
   it('leaves the last rep without a recovery when the set ends on the work', () => {
@@ -70,7 +70,13 @@ describe('repSet', () => {
     expect(set?.reps).toHaveLength(4)
     expect(set?.reps[0]?.number).toBe(1)
     expect(set?.reps[0]?.paceSecPerKm).toBe(240)
-    expect(set?.warmup?.durationSec).toBe(102)
+    expect(set?.warmups.map((s) => s.durationSec)).toEqual([102])
+  })
+
+  it('keeps every part of a warm-up, in order', () => {
+    const set = repSet([split('interval_warmup', 600, 1700), split('interval_warmup', 299, 1000), split('interval_warmup', 286, 1000), rep(60), rep(60)])
+
+    expect(set?.warmups.map((s) => s.distanceM)).toEqual([1700, 1000, 1000])
   })
 
   it('keeps a merely slower opener, which is still part of the work', () => {

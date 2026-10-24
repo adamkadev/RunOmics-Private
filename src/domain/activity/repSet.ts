@@ -33,8 +33,9 @@ export function recoveryAverage(reps: Rep[]): { paceSecPerKm: number | null; avg
 
 export interface RepSet {
   reps: Rep[]
-  warmup: ActivitySplit | null
-  cooldown: ActivitySplit | null
+  /** In order: a warm-up often comes in parts, easy then steady. */
+  warmups: ActivitySplit[]
+  cooldowns: ActivitySplit[]
   repDurationSec: number
   band: { min: number; max: number } | null
   inBand: number
@@ -73,16 +74,16 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
 
   const reps: Rep[] = []
   const repSplits: ActivitySplit[] = []
-  let warmup: ActivitySplit | null = null
-  let cooldown: ActivitySplit | null = null
+  const warmups: ActivitySplit[] = []
+  const cooldowns: ActivitySplit[] = []
 
   splits.forEach((split, i) => {
     if (split.type === 'interval_warmup') {
-      warmup ??= split
+      warmups.push(split)
       return
     }
     if (split.type === 'interval_cooldown') {
-      cooldown = split
+      cooldowns.push(split)
       return
     }
     if (split.type !== 'interval_active') return
@@ -110,8 +111,8 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
   })
 
   if (takeLeadIn(reps)) {
-    // The lap still happened, so it moves to the warm-up row rather than vanishing.
-    warmup ??= repSplits[0]!
+    // The lap still happened, so it moves to the warm-up rows rather than vanishing.
+    warmups.push(repSplits[0]!)
     reps.shift()
     reps.forEach((r, i) => (r.number = i + 1))
   }
@@ -130,8 +131,8 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
 
   return {
     reps,
-    warmup,
-    cooldown,
+    warmups,
+    cooldowns,
     repDurationSec: Math.round(median(reps.map((r) => r.durationSec))),
     band,
     inBand: band ? paces.filter((p) => p >= band.min && p <= band.max).length : 0,

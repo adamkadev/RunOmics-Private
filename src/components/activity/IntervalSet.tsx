@@ -120,7 +120,9 @@ export function IntervalSet({ set, bare = false }: Props) {
           <span className="text-right">{s.cols.hr}</span>
         </div>
 
-        {set.warmup && <QuietRow label={`${warmupLabel} ${km(set.warmup.distanceM)} ${t.units.km}`} pace={paceOf(set.warmup)} hr={set.warmup.avgHr} />}
+        {set.warmups.map((lap, i) => (
+          <QuietRow key={`w${i}`} label={`${warmupLabel} ${km(lap.distanceM)} ${t.units.km}`} pace={paceOf(lap)} hr={lap.avgHr} />
+        ))}
 
         {set.reps.map((rep) => {
           const standing = standingOf(rep.paceSecPerKm, band)
@@ -138,7 +140,9 @@ export function IntervalSet({ set, bare = false }: Props) {
 
         {recovery && <QuietRow label={s.recoveryAvg} pace={recovery.paceSecPerKm} hr={recovery.avgHr} />}
 
-        {set.cooldown && <QuietRow label={`${cooldownLabel} ${km(set.cooldown.distanceM)} ${t.units.km}`} pace={paceOf(set.cooldown)} hr={set.cooldown.avgHr} />}
+        {set.cooldowns.map((lap, i) => (
+          <QuietRow key={`c${i}`} label={`${cooldownLabel} ${km(lap.distanceM)} ${t.units.km}`} pace={paceOf(lap)} hr={lap.avgHr} />
+        ))}
       </div>
     </section>
   )
