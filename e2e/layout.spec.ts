@@ -13,7 +13,7 @@ async function overflows(page: Page): Promise<string[]> {
           return target instanceof Element && !target.checkVisibility({ contentVisibilityAuto: true })
         }),
       null,
-      { timeout: 10_000 },
+      { timeout: 3_000 },
     )
     .catch(() => {})
   return page.evaluate(() => {
