@@ -4,7 +4,7 @@ import { setDaySkipped, useSkippedDays } from '@/lib/skippedDays'
 import Link from 'next/link'
 import { Check, ChevronRight, MapPin } from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { ActivitySummary } from '@/domain/activity/types'
+import type { PlanRun } from './planRun'
 import { sessionZone } from '@/lib/colors'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
 import { sessionLabel } from '@/lib/activityTitle'
@@ -232,7 +232,7 @@ export function DoneDayCard({
   title: string
   /** "10 km · Easy run". */
   planned: string | null
-  acts: ActivitySummary[]
+  acts: PlanRun[]
   onPlan: boolean
 }) {
   const zone = sessionZone({ type: kind?.type })

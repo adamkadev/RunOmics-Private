@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
+import type { PlannedWorkout } from '@/domain/activity/types'
+import type { PlanRun } from './planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
@@ -16,7 +17,7 @@ import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { t } from '@/i18n'
 
 interface Props {
-  activities: ActivitySummary[]
+  activities: PlanRun[]
   plannedWorkouts: PlannedWorkout[]
   planPhaseRanges: PlanPhaseRange[]
   nextRace: UpcomingRace | null
@@ -65,7 +66,7 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
   }
 
   const byDate = useMemo(() => {
-    const map = new Map<string, ActivitySummary[]>()
+    const map = new Map<string, PlanRun[]>()
     for (const a of activities) {
       const list = map.get(a.date) ?? []
       list.push(a)

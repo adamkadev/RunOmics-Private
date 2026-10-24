@@ -7,6 +7,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getExploreHome } from '@/application/usecases/GetExploreAreas'
 import { PlanClient } from '@/components/plan/PlanClient'
+import { planRun } from '@/components/plan/planRun'
 import { planCoachingView } from '@/components/plan/planCoachingView'
 import { appTodayIso } from '@/lib/calendarDate'
 import { loadData } from '@/application/usecases/LoadData'
@@ -16,7 +17,7 @@ export const revalidate = 3600
 export default async function PlanPage() {
   await loadData()
   const today = appTodayIso()
-  const activities = getActivitySummaries()
+  const activities = getActivitySummaries().map(planRun)
   const plannedWorkouts = await getPlannedWorkouts()
   const nextRace = await getNextRace(today)
   const trainingZones = await getTrainingZones()

@@ -2,7 +2,8 @@
 
 import { useMemo, type CSSProperties, type MouseEvent } from 'react'
 import { ChevronRight } from 'lucide-react'
-import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { PlanRun } from './planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { isKeyPrescription, prescriptionDistanceMeters } from '@/components/coaching/presentation'
 import { cardClass } from '@/components/ui/Card'
@@ -22,7 +23,7 @@ import { formatWeekKm } from './weekPlanDays'
 interface Props {
   year: number
   month: number
-  byDate: Map<string, ActivitySummary[]>
+  byDate: Map<string, PlanRun[]>
   byDatePlanned: Map<string, PlannedWorkout>
   byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
   coaching?: PlanCoachingView | null
