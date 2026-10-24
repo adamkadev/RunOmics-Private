@@ -23,7 +23,7 @@ function signedIn(email: string, claims: Record<string, unknown>): MockUser {
 
 vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: true }))
 
-vi.mock('@/lib/firebase', () => ({
+vi.mock('@/lib/firebaseAuth', () => ({
   isClientFirebaseConfigured: true,
   getClientAuth: () => ({}),
 }))

@@ -1,4 +1,4 @@
-import { isClientFirebaseConfigured } from '@/lib/firebase'
+import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
 
 /**
  * A route is found by its shape, not an id the import carries, so a name is

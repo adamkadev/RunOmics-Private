@@ -21,7 +21,7 @@ const session = vi.hoisted(() => ({
 }))
 
 vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: true }))
-vi.mock('@/lib/firebase', () => ({ getClientAuth: () => ({}) }))
+vi.mock('@/lib/firebaseAuth', () => ({ getClientAuth: () => ({}) }))
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: (_auth: unknown, cb: (user: MockUser | null) => void) => {
     auth.listener = cb
