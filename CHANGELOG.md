@@ -34,6 +34,11 @@ All notable changes to this project are documented in this file.
   title: a year's range now reads by its months ("Oct 2025 – Oct 2026"),
   short enough to stay beside it.
 
+- An easy run with strides reads as one on its Laps view: the run's own
+  lap ("Run 8.00 km") instead of an 8 km "warm-up", and the strides listed
+  with their count, fastest and average rather than graded like threshold
+  reps (a band, a spread and a heart-rate drift mean nothing over 20 s).
+
 - A run's Laps view shows every warm-up lap: a warm-up of 1.7 km easy,
   1 km steady and 1 km a touch quicker showed its first lap only.
 

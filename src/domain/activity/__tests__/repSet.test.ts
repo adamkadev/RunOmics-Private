@@ -73,6 +73,17 @@ describe('repSet', () => {
     expect(set?.warmups.map((s) => s.durationSec)).toEqual([102])
   })
 
+  it('reads an easy run before its strides as the run and its strides, not a warm-up and a set', () => {
+    const strides = Array.from({ length: 6 }, () => [split('interval_active', 20, 95, 155), split('interval_recovery', 60, 160)]).flat()
+    const set = repSet([split('interval_active', 2900, 8000, 142), ...strides])
+
+    expect(set?.body?.distanceM).toBe(8000)
+    expect(set?.warmups).toEqual([])
+    expect(set?.reps).toHaveLength(6)
+    expect(set?.reps[0]?.number).toBe(1)
+    expect(set?.strides).toBe(true)
+  })
+
   it('keeps every part of a warm-up, in order', () => {
     const set = repSet([split('interval_warmup', 600, 1700), split('interval_warmup', 299, 1000), split('interval_warmup', 286, 1000), rep(60), rep(60)])
 

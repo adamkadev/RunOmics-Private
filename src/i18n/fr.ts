@@ -1561,6 +1561,9 @@ export const fr = {
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
       bandLabel: (range: string) => `plage ${range}`,
       recoveryAvg: 'Récup moyenne',
+      bodyLap: 'Course',
+      stridesLabel: 'Accélérations',
+      average: 'Moyenne',
       // The set's summary at the top of its card: three numbers, no sentence.
       inBandLabel: 'Dans la zone',
       spread: 'Écart',
