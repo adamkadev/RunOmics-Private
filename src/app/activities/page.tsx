@@ -16,7 +16,7 @@ export const revalidate = 3600
 
 export default async function ActivitiesPage() {
   await loadData()
-  const { items, total, nextOffset } = queryActivities({ limit: 9999 })
+  const { items, total } = queryActivities({ limit: 9999 })
   const records = await getRecords()
   const qualifiedEffortsByActivityId = getQualifiedEffortsByActivityId(records)
   const today = appTodayIso()
@@ -30,7 +30,6 @@ export default async function ActivitiesPage() {
   return (
     <ActivityListClient
       initialItems={items}
-      initialNextOffset={nextOffset}
       totalCount={total}
       qualifiedEffortsByActivityId={qualifiedEffortsByActivityId}
       today={today}
