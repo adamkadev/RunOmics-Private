@@ -44,15 +44,6 @@ function total(parts: readonly Activity[], value: (part: Activity) => number | n
   return known.length ? round(known.reduce((sum, v) => sum + v, 0), decimals) : null
 }
 
-function timeWeighted(parts: readonly Activity[], value: (part: Activity) => number | null, decimals: number): number | null {
-  const known = parts.flatMap((part) => {
-    const v = value(part)
-    return v === null || part.durationSeconds <= 0 ? [] : [{ v, seconds: part.durationSeconds }]
-  })
-  const seconds = known.reduce((sum, item) => sum + item.seconds, 0)
-  return seconds ? round(known.reduce((sum, item) => sum + item.v * item.seconds, 0) / seconds, decimals) : null
-}
-
 function mergedZones(parts: readonly Activity[]): HrZone[] {
   const byZone = new Map<number, HrZone>()
   for (const zone of parts.flatMap((part) => part.hrZones)) {
@@ -72,28 +63,18 @@ function fastestEfforts(parts: readonly Activity[]): Record<string, number> | nu
   return Object.keys(efforts).length ? efforts : null
 }
 
+/** The row reads as its main run, a race or test undiluted by its warm-up; zones and load count the whole session. */
 export function mergeSession(parts: readonly Activity[]): Activity {
   const main = mainPart(parts)
   if (parts.length === 1) return main
-  const durationSeconds = parts.reduce((sum, part) => sum + part.durationSeconds, 0)
-  const distanceKm = round(parts.reduce((sum, part) => sum + part.distanceKm, 0), 2)
   const rpes = parts.map((part) => part.rpe).filter((rpe): rpe is number => rpe !== null)
   return {
     ...main,
     startTimeLocal: parts[0]!.startTimeLocal,
-    durationSeconds,
-    distanceKm,
-    paceSecPerKm: distanceKm > 0 ? round(durationSeconds / distanceKm, 1) : null,
     hrZones: mergedZones(parts),
-    avgHeartRate: timeWeighted(parts, (part) => part.avgHeartRate, 0),
     rpe: rpes.length ? Math.max(...rpes) : null,
     elevationGain: total(parts, (part) => part.elevationGain, 1),
     calories: total(parts, (part) => part.calories, 0),
-    cadenceSpm: timeWeighted(parts, (part) => part.cadenceSpm, 1),
-    groundContactMs: timeWeighted(parts, (part) => part.groundContactMs, 1),
-    verticalOscillationMm: timeWeighted(parts, (part) => part.verticalOscillationMm, 1),
-    verticalRatioPct: timeWeighted(parts, (part) => part.verticalRatioPct, 2),
-    strideLengthM: timeWeighted(parts, (part) => part.strideLengthM, 2),
     bestEfforts: fastestEfforts(parts),
   }
 }
