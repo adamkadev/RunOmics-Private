@@ -66,8 +66,8 @@ class FakeGarmin:
             raise failure
         return value
 
-    def get_all_activity_ids(self, *, running_only: bool = True) -> list[str]:
-        return list(self.details)
+    def get_activity_starts(self, *, running_only: bool = True) -> dict[str, str | None]:
+        return {aid: detail.get("startTimeLocal") for aid, detail in self.details.items()}
 
     def get_activity_detail(self, activity_id: str) -> dict:
         return self._answer("get_activity_detail", activity_id, self.details[activity_id])
@@ -199,6 +199,19 @@ class TestCleanRun:
         assert _stored_ids(workspace) == {"101", "102"}
         assert steps == list(_STEP_RESULTS)
         assert "lastSyncedAt" in json.loads((workspace / "sync_meta.json").read_text())
+
+    def test_a_new_run_keeps_its_start_and_a_stored_one_gets_it_from_the_list(
+        self, workspace, garmin, steps, monkeypatch, activity_factory
+    ):
+        store = JsonActivityStore(workspace / "activities")
+        store.upsert(activity_factory("101", "2026-09-20"))
+        store.save()
+
+        assert _run(monkeypatch) == 0
+
+        stored = {a["id"]: a for a in JsonActivityStore(workspace / "activities").all_activities()}
+        assert stored["101"]["startTimeLocal"] == "2026-09-20T07:00:00"
+        assert stored["102"]["startTimeLocal"] == "2026-09-21T18:30:00"
 
     def test_one_failing_activity_is_left_out_the_rest_saved_and_it_exits_3(
         self, workspace, garmin, steps, monkeypatch
@@ -344,7 +357,7 @@ def _garmin_whose_gear_request_fails(monkeypatch, error) -> GarminClient:
         raise error
 
     client._get = get
-    client.get_all_activity_ids = lambda *, running_only=True: []
+    client.get_activity_starts = lambda *, running_only=True: {}
     monkeypatch.setattr(sync, "GarminClient", lambda _secret: client)
     return client
 

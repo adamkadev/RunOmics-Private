@@ -50,6 +50,8 @@ export interface Activity {
   week: number
   date: string
   dayOfWeek: string
+  /** Local wall-clock start, `YYYY-MM-DDTHH:MM:SS`; absent on runs synced before it was stored. */
+  startTimeLocal?: string
   type: ActivityType
   typeSource?: 'garmin' | 'runomics'
   description: string

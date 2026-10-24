@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs'
 import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
+import type { CoachingPlan } from '@/domain/coaching/types'
 import { buildActivitiesCsv, buildTrainingWorkbook, type TrainingWorkbookData } from '../GetTrainingWorkbook'
 
 function activity(overrides: Partial<Activity> = {}): Activity {
@@ -75,10 +76,12 @@ function data(): TrainingWorkbookData {
     notesAvailable: true,
     athlete: { displayName: 'Runner', age: 35, restingHrBpm: 45, maxHrBpm: 190 },
     athleteHistory: [{ date: '2026-01-01', weightKg: 70 }],
+    coachingPlans: [],
     goals: [{ year: 2026, annualDistanceKm: 1000, targets: [{ distance: '10K', targetSeconds: 2600 }] }],
     pbs: [{ year: 2026, entries: [{ distance: '10K', seconds: 2700, activityId: 'race-1' }] }],
     plannedWorkouts: [{ date: '2026-01-02', name: 'Recovery run', type: 'Base', durationSecs: 1800 }],
     racePredictions: [{ date: '2026-01-02', '5k': 1250, '10k': 2600, half: 5900, marathon: 12500 }],
+    raceResults: [],
     shoes: [{ gearId: 'shoe-1', brand: 'Example', model: 'Daily', maxKm: 800, retired: false, firstUseDate: '2025-12-01' }],
     thresholdHistory: [{ date: '2026-01-02', lthrBpm: 170, thresholdPaceSecPerKm: 270 }],
     trainingLoadBalance: { date: '2026-01-03', aerobicLow: 200, aerobicLowMin: 180, aerobicLowMax: 300 },
@@ -98,7 +101,7 @@ describe('buildTrainingWorkbook', () => {
     const workbook = buildTrainingWorkbook(data(), new Date('2026-01-03T12:00:00.000Z'))
 
     expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
-      'Guide', 'Athlete', 'Activities', 'Intervals', 'Daily Status', 'Records', 'Races', 'Training Plan',
+      'Guide', 'Athlete', 'Context', 'Activities', 'Intervals', 'Daily Status', 'Records', 'Races', 'Training Plan',
       'Fitness History', 'Race Predictions', 'Shoes', 'Goals', 'Load Balance',
     ])
     expect(workbook.worksheets.every((sheet) => sheet.getTables().length === 1)).toBe(true)
@@ -179,7 +182,7 @@ describe('buildTrainingWorkbook', () => {
     const sheet = workbook.getWorksheet('Daily Status')!
     const columns = headers(sheet)
     const dateIndex = columns.indexOf('date') + 1
-    const activityCountIndex = columns.indexOf('actual_activity_count') + 1
+    const activityCountIndex = columns.indexOf('actual_session_count') + 1
     const plannedIndex = columns.indexOf('planned_workout_count') + 1
     const januarySecond = [...Array(sheet.rowCount - 1)].map((_, index) => sheet.getRow(index + 2)).find((row) =>
       (row.getCell(dateIndex).value as Date).toISOString().startsWith('2026-01-02')
@@ -197,7 +200,7 @@ describe('buildTrainingWorkbook', () => {
 
     expect(reopened.getWorksheet('Records')?.rowCount).toBeGreaterThan(1)
     expect(reopened.getWorksheet('Races')?.getCell('A2').value).toBe('completed')
-    expect(reopened.getWorksheet('Guide')?.getCell('C2').value).toBe('1.1')
+    expect(reopened.getWorksheet('Guide')?.getCell('C2').value).toBe('1.2')
   })
 
   it('keeps every sheet usable before the first sync', async () => {
@@ -221,9 +224,117 @@ describe('buildTrainingWorkbook', () => {
     const reopened = new ExcelJS.Workbook()
     await reopened.xlsx.load(buffer)
 
-    expect(reopened.worksheets).toHaveLength(13)
+    expect(reopened.worksheets).toHaveLength(14)
     expect(reopened.getWorksheet('Activities')?.rowCount).toBe(1)
     expect(reopened.getWorksheet('Daily Status')?.rowCount).toBe(2)
+  })
+
+  describe('coaching context', () => {
+    const at = new Date('2026-01-03T12:00:00.000Z')
+    function rows(sheet: ExcelJS.Worksheet): Array<Record<string, unknown>> {
+      const keys = headers(sheet)
+      return [...Array(sheet.rowCount - 1)].map((_, index) => {
+        const row = sheet.getRow(index + 2)
+        return Object.fromEntries(keys.map((key, column) => [key, row.getCell(column + 1).value]))
+      })
+    }
+
+    it('merges runs saved back to back into one session and keeps a later run of the day apart', () => {
+      const input = data()
+      input.activities = [
+        activity({ id: 'warmup', startTimeLocal: '2026-01-01T08:00:00', durationSeconds: 1200, distanceKm: 3, type: 'Tempo', avgHeartRate: 150 }),
+        activity({ id: 'test', startTimeLocal: '2026-01-01T08:22:00', durationSeconds: 360, distanceKm: 1.5, type: 'Anaerobic', avgHeartRate: 185, description: 'Test VMA' }),
+        activity({ id: 'evening', startTimeLocal: '2026-01-01T19:00:00', durationSeconds: 1800, distanceKm: 5 }),
+      ]
+      input.activityNotes = new Map([['warmup', { note: 'Windy', tags: ['test'] }], ['test', { note: '1580 m', tags: ['test'] }]])
+
+      const workbook = buildTrainingWorkbook(input, at)
+      const sessions = rows(workbook.getWorksheet('Activities')!)
+      const daily = rows(workbook.getWorksheet('Daily Status')!).find((row) => (row.date as Date).toISOString().startsWith('2026-01-01'))
+
+      expect(sessions).toHaveLength(2)
+      expect(sessions[0]).toMatchObject({
+        activity_id: 'test',
+        merged_activity_ids: 'warmup',
+        start_time_local: '08:00',
+        type: 'Anaerobic',
+        description: 'Test VMA',
+        distance_km: 4.5,
+        duration_seconds: 1560,
+        avg_heart_rate_bpm: 158,
+        comment: 'Windy / 1580 m',
+        tags: 'test',
+      })
+      expect(sessions[1]).toMatchObject({ activity_id: 'evening', merged_activity_ids: null })
+      expect(daily?.actual_session_count).toBe(2)
+    })
+
+    it('puts the official result beside what the watch measured', () => {
+      const input = data()
+      input.raceResults = [{ activityId: 'race-1', eventName: 'Winter 10K', date: '2026-01-03', distanceMeters: 10000, chipTimeSeconds: 2690, overallPlace: 28, finisherCount: 188 }]
+
+      const workbook = buildTrainingWorkbook(input, at)
+      const race = rows(workbook.getWorksheet('Activities')!).find((row) => row.activity_id === 'race-1')
+      const result = rows(workbook.getWorksheet('Races')!).find((row) => row.activity_id === 'race-1')
+
+      expect(race).toMatchObject({ race_official_time_seconds: 2690, race_official_pace_sec_per_km: 269, race_overall_place: 28 })
+      expect(result).toMatchObject({ official_time_seconds: 2690, watch_time_seconds: 2700, finisher_count: 188 })
+    })
+
+    it('sets the coach\'s prescription beside the session it planned', () => {
+      const input = data()
+      const provenance = { source: 'manual', trigger: 'bootstrap', createdAt: '2025-12-20T00:00:00.000Z' } as const
+      const plan: CoachingPlan = {
+        schemaVersion: 1, id: 'plan', revision: 1, status: 'active', provenance,
+        goal: { kind: 'performance', description: 'Progress with no target race.' },
+        trainingPreferences: { availableWeekdays: [0, 2, 4], runsPerWeek: 3 },
+        block: { id: 'block', name: 'Threshold base', startDate: '2025-12-29', endDate: '2026-01-25', focus: 'Two threshold sessions a week.' },
+        weeks: [{ id: 'week', index: 1, startDate: '2025-12-29', endDate: '2026-01-04', focus: 'First week.', workouts: [{
+          id: 'workout', revision: 1, date: '2026-01-01', type: 'threshold', title: 'Threshold 3 × 8′', status: 'prescribed', provenance,
+          description: 'Held between the two thresholds by heart rate.',
+          blocks: [
+            { kind: 'warmup', target: { durationSeconds: 900 } },
+            { kind: 'repeat', repetitions: 3, steps: [
+              { kind: 'effort', target: { durationSeconds: 480, paceSecPerKm: { min: 272, max: 280 }, hrBpm: { min: 156, max: 173 } } },
+              { kind: 'recovery', target: { durationSeconds: 60 } },
+            ] },
+          ],
+        }] }],
+      }
+      input.coachingPlans = [plan]
+
+      const workbook = buildTrainingWorkbook(input, at)
+      const session = rows(workbook.getWorksheet('Activities')!).find((row) => row.activity_id === 'activity-1')
+      const context = rows(workbook.getWorksheet('Context')!)
+
+      expect(session).toMatchObject({
+        planned_workout_name: 'Threshold 3 × 8′',
+        planned_type: 'Threshold',
+        planned_effort_reps: 3,
+        planned_effort_seconds: 480,
+        planned_effort_pace_sec_per_km: '272-280',
+        planned_effort_hr_bpm: '156-173',
+      })
+      expect(context).toContainEqual({ section: 'Availability', item: 'running_days', value: 'Tuesday, Thursday, Sunday' })
+      expect(context).toContainEqual(expect.objectContaining({ section: 'Current block', item: 'Threshold base' }))
+    })
+
+    it('tells a coach about injuries and why training stopped', () => {
+      const input = data()
+      input.athlete = {
+        ...input.athlete,
+        injuryHistory: { reviewedOn: '2026-01-02', injuries: [{ site: 'right knee', year: 2025, date: '2025-12-12', weeksOut: 5, resolved: true }] },
+        trainingBreaks: [{ start: '2026-01-02', end: '2026-01-02', reason: 'heat', note: '39 °C' }],
+      }
+
+      const workbook = buildTrainingWorkbook(input, at)
+      const context = rows(workbook.getWorksheet('Context')!)
+      const daily = rows(workbook.getWorksheet('Daily Status')!)
+
+      expect(context).toContainEqual({ section: 'Injuries', item: '2025-12-12 right knee', value: '5 weeks out; resolved' })
+      expect(context).toContainEqual({ section: 'Training breaks', item: '2026-01-02 to 2026-01-02', value: 'heat: 39 °C' })
+      expect(daily.map((row) => row.training_break)).toContain('heat')
+    })
   })
 
   describe('notes and tags', () => {

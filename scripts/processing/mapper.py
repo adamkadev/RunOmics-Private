@@ -66,6 +66,7 @@ class ActivityData:
     weather: dict[str, Any] | None = None
     type_source: str = "runomics"
     sport: str | None = None
+    start_time_local: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -73,6 +74,7 @@ class ActivityData:
             "week": self.week,
             "date": self.date,
             "dayOfWeek": self.day_of_week,
+            **({"startTimeLocal": self.start_time_local} if self.start_time_local else {}),
             "type": self.type,
             "typeSource": self.type_source,
             **({"sport": self.sport} if self.sport is not None else {}),
@@ -269,7 +271,19 @@ def map_activity(
         gear_id=extract_gear_id(gear),
         weather=weather,
         type_source=type_inference.source,
+        start_time_local=dt.strftime(_LOCAL_START_FORMAT),
     )
+
+
+_LOCAL_START_FORMAT = "%Y-%m-%dT%H:%M:%S"
+
+
+def local_start_time(raw: str | None) -> str | None:
+    """A list row's startTimeLocal in the format stored on activities, or None when it does not parse."""
+    try:
+        return _parse_datetime(str(raw or "")).strftime(_LOCAL_START_FORMAT)
+    except ValueError:
+        return None
 
 
 def _parse_datetime(raw: str) -> datetime:
