@@ -7,6 +7,8 @@ import { ActivityListClient, activitiesView } from '../ActivityListClient'
 import type { MapShellData } from '@/application/usecases/GetAllRoutes'
 import { formatDate, formatDateRange, formatWeekday } from '@/lib/formatters'
 
+vi.mock('next/navigation', async (actual) => ({ ...(await actual<typeof import('next/navigation')>()), useRouter: () => ({ prefetch: () => {} }) }))
+
 // The map is loaded with next/dynamic; here it is a stand-in that says what it was handed.
 vi.mock('next/dynamic', () => ({
   default: () =>

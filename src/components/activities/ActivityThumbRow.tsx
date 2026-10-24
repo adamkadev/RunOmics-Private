@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { PrBadge } from './PrBadge'
 import { RouteThumb } from '@/components/ui/RouteThumb'
 import { TypeDot } from '@/components/ui/TypeDot'
@@ -37,10 +40,17 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.
   const title = sessionLabel(activityTitle(a))
   const meta = thumbRowMeta(a, variant)
   const inset = variant === 'inset'
+  const router = useRouter()
+  const href = `/activities/${a.id}`
+  const prefetch = () => router.prefetch(href)
 
   return (
+    // Not as it scrolls into view: a pass down the archive fetched every page in it. A touch starts the fetch instead.
     <Link
-      href={`/activities/${a.id}`}
+      href={href}
+      prefetch={false}
+      onPointerDown={prefetch}
+      onMouseEnter={prefetch}
       data-testid="thumb-row"
       // Starts its separator under the title (.inset-group).
       data-row-thumb
