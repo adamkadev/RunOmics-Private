@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseClientError } from '../clientError'
+import { errorsSince, parseClientError } from '../clientError'
 
 const AT = new Date('2026-10-24T19:33:00Z')
 
@@ -23,5 +23,19 @@ describe('parseClientError', () => {
     expect(parseClientError({ source: 'console', message: 'x' }, AT)).toBeNull()
     expect(parseClientError({ source: 'error', message: '   ' }, AT)).toBeNull()
     expect(parseClientError(null, AT)).toBeNull()
+  })
+})
+
+describe('errorsSince', () => {
+  const report = (at: string) => ({ at, source: 'error' as const, message: 'TypeError: x', page: '/', build: 'b', device: 'd' })
+  const recent = [report('2026-10-25T09:00:00.000Z'), report('2026-10-24T22:00:00.000Z'), report('2026-10-24T08:00:00.000Z')]
+
+  it('counts the errors after the last one announced', () => {
+    expect(errorsSince(recent, '2026-10-24T08:00:00.000Z')).toEqual(recent.slice(0, 2))
+    expect(errorsSince(recent, '2026-10-25T09:00:00.000Z')).toEqual([])
+  })
+
+  it('only takes note on the first check', () => {
+    expect(errorsSince(recent, null)).toEqual([])
   })
 })

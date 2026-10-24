@@ -9,6 +9,7 @@ import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { sessionTypes } from '@/components/activity/activityViews'
+import { getCompletedSince } from '@/application/usecases/GetExploreGains'
 import { explorePlansFrom } from '@/components/explore/explorePlan'
 import { loadData } from '@/application/usecases/LoadData'
 
@@ -37,6 +38,7 @@ export default async function ActivitiesPage() {
       mapData={getMapShellData()}
       exploreAreas={exploreAreas}
       explorePlans={explorePlans}
+      exploreCompletedSince={exploreAreas.length > 0 ? getCompletedSince() : undefined}
       sessionTypes={sessionTypes(coaching?.workouts ?? [], items)}
     />
   )

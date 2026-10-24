@@ -223,7 +223,7 @@ for (const theme of ['light', 'dark'] as const) {
       )
       .toBe('glass')
     await expect(tabs).toHaveClass(/\blg-stuck-in\b/)
-    const under = await page.evaluate(() => {
+    const under = () => page.evaluate(() => {
       const edge = document.querySelector<HTMLElement>('[data-testid="scroll-edge"]')!.getBoundingClientRect()
       const bar = document.querySelector<HTMLElement>('[data-testid="compact-title-bar"]')!.getBoundingClientRect()
       const list = document.querySelector<HTMLElement>('[data-testid="sticky-bar"] [role="tablist"]')!.getBoundingClientRect()
@@ -234,7 +234,6 @@ for (const theme of ['light', 'dark'] as const) {
         content: below.some((el) => el.closest('[data-testid="activity-panel"]') !== null),
       }
     })
-    // Dark takes light's edge while a glass strip is stuck: solid to the bar's foot, a 24 pt band.
-    expect(under).toEqual({ edgeFade: 24, stickyH: '', content: true })
+    await expect.poll(under).toEqual({ edgeFade: 24, stickyH: '', content: true })
   })
 }

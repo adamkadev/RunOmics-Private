@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { newlyComplete } from '../GetExploreGains'
 
-const BRAVO = { id: 'test-bravo', name: 'Bravo', pct: 92 }
-const ALPHA = { id: 'test-alpha', name: 'Alpha', pct: 90 }
+const BRAVO = { id: 'test-bravo', name: 'Bravo', pct: 92, since: '2026-08-09' }
+const ALPHA = { id: 'test-alpha', name: 'Alpha', pct: 90, since: '2026-10-21' }
 
 describe('newlyComplete', () => {
   it('announces nothing on the first check of an area, which only takes note', () => {

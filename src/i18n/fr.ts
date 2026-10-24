@@ -320,6 +320,7 @@ export const fr = {
           explored: (pct: string) => `${pct} exploré`,
           cells: (visited: number, total: number, n: (count: number) => string) => `${n(visited)} case${visited > 1 ? 's' : ''} sur ${n(total)}`,
           completeAt: (pct: string) => `Complet à ${pct}`,
+          completeSince: (date: string) => `Complet depuis le ${date}`,
           runHere: 'Courus ici',
           lastRun: 'Dernière sortie',
           fromHome: 'Depuis chez toi',
@@ -2053,6 +2054,10 @@ export const fr = {
     workflowFailed: {
       title: (workflow: string) => `Échec : ${workflow}`,
       body: (runUrl: string) => `Ouvre l’exécution : ${runUrl}`,
+    },
+    clientErrors: {
+      title: (count: number) => `${count} erreur${count > 1 ? 's' : ''} sur ton téléphone`,
+      body: (message: string) => `Dernière : ${message}. Tout est dans Réglages → Diagnostic.`,
     },
     exploreComplete: {
       title: (name: string) => `${name} exploré`,
