@@ -85,6 +85,14 @@ stays the only copy: every writer pushes to it as before.
   stay up.
 - **Local runs never read GitHub:** the mode needs `VERCEL=1`, and the build
   reads its clone, so dev, E2E and the CLIs work from files as before.
+- **Month files are written one key a line, with number arrays on one line**
+  (`dumps_readable` in `scripts/repository/json_store.py`): a diff still shows
+  which field moved, at 6.9 MB for the whole history instead of 16.9 MB, which
+  keeps each month far under the 2 MB a fetch may cache.
+- **A token is announced before it expires.** On scheduled runs the sync reads
+  GitHub's `github-authentication-token-expiration` header for each data token
+  and posts the dates to `POST /api/internal/token-expiry`, which pushes when one
+  has 14 days or fewer left.
 
 ## Garmin write path (coaching sync)
 

@@ -4,6 +4,37 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A race page: Progress's race card opens the next race, with Garmin's
+  prediction beside your target and best, how the prediction moved over
+  12 weeks, what each week has to give to reach the target, and the clock
+  at every 5 km at an even pace for both times.
+
+- On a reps day, the route generator ranks flat, traffic-free loops first
+  ("Flat for the reps", a toggle beside the other two).
+
+- A run's page shows the quartiers it pushed forward (Sablon 39% → 41%),
+  and a sync sends a push when a quartier passes 90%.
+
+- Back from the background after a deploy, the app reloads itself, so an
+  iPhone no longer runs last week's code until it is relaunched.
+
+- Errors on your phone are reported, every coordinate scrubbed, and
+  listed under Settings → Diagnostics.
+
+- The nightly sync pushes a warning two weeks before a GitHub data token
+  expires.
+
+- Every page is checked in Safari's engine at iPhone size for text that
+  runs past an edge, on each pull request.
+
+- Activities opens on its first months and renders the rest as you
+  scroll; on a bad network a page opens from its cache after 3 s instead
+  of waiting; Plan loads 18 KB of runs instead of 58 KB; and the month
+  files of the data repository are 6.9 MB instead of 16.9 MB.
+
+- The README keeps setup and an index; the implementation notes moved to
+  four documents under `docs/`.
+
 - Scrolling Activities no longer stutters. The compact title bar wrote a
   style on the whole page as month headers passed under it, and each write
   restyled every run in the list (60-90 ms on a long archive); it now

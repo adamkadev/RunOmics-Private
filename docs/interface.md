@@ -140,7 +140,17 @@ device). The key stays on the server; on a private site any signed-in session ma
 it, on a public one only the owner, 12 batches a minute per caller. Loops are ranked by
 `|d − target|/target + wNew·(1 − new share) + wBusy·busy share`, with `wNew` 0.6 ("New streets
 first") or 0.15 and `wBusy` 0.8 ("Avoid busy roads") or 0, where busy share counts state roads fully
-and other roads half. The GPX is GPX 1.1, the loop only, closed on its start.
+and other roads half. "Flat for the reps", on by default when the day's session is a quality one, adds
+`0.5·min(1, climb per km / 20 m) + 0.4·(1 − traffic-free share)`, traffic-free being paths, tracks,
+footways and cycleways; it re-ranks the loops already fetched, without a new request. The GPX is
+GPX 1.1, the loop only, closed on its start.
+
+**New ground:** the server replays the home area's runs oldest first (`src/domain/explore/gains.ts`,
+about 30 ms for 150 runs, cached until the runs or the area change), crediting each cell to the first
+run through it. A run's page lists up to three quartiers whose percentage it raised, before → after.
+After a sync with new data, `POST /api/internal/explore-check` pushes once per quartier newly past
+90 %; the ids already announced live in Firestore `notifications/lastExploreMilestones`, and the
+first check only takes note of the quartiers complete so far.
 
 **Credits:** OpenStreetMap (ODbL), the Metz quartiers and IGN ADMIN EXPRESS (Licence Ouverte 2.0),
 and openrouteservice (CC BY-SA) are listed in the map's ⓘ while Districts or the generator shows.
@@ -226,6 +236,9 @@ behaves as before until a token is added as a secret.
   mask live code changes. It also owns the update flow: a waiting version offers a banner, posts
   `SKIP_WAITING`, and reloads once the new worker takes control; otherwise users keep the old version
   until they close every tab.
+- **An iPhone PWA keeps its JavaScript until it is relaunched**, even across deploys. Back in the
+  foreground after a minute away, `UpdateOnResume` asks `GET /api/version` for the build commit and
+  reloads when it changed, unless a text field has focus.
 - **`color-mix` alpha variants** are used for token tints (Safari 16.2+). Plan cells are
   foreground-tinted rather than a fixed white wash, so they stay visible in light mode instead of going
   white-on-white.

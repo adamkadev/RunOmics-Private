@@ -135,6 +135,11 @@ Firestore-backed pages. `PORT` comes from `.env.e2e` (3100) so a personal dev se
 running on 3000 does not collide with the suite's own build; both Playwright configs read
 it, and the screenshot run can still be pointed elsewhere with `SCREENSHOT_BASE_URL`.
 
+The suite also has an `iphone` project: `e2e/layout.spec.ts` alone, in WebKit at iPhone 15 Pro
+size, walks every page, every tab of a run and every Analytics tab and period, and fails on a
+horizontal scroll or on text past its clipping box or the screen. It waits for animations to
+end first, and blocks the service worker, whose registration WebKit refuses on `localhost`.
+
 The screenshot audit has its own config so it never runs as part of the e2e suite, or vice
 versa. It captures through an iPhone 13 viewport (390×844 @3×) because the app is designed
 phone-first, driven by Chromium rather than the preset's default WebKit, and pins
@@ -163,6 +168,14 @@ keep in sync. Both themes and accents default to the shipped-out-of-the-box look
 full matrix is six times the work; `SCREENSHOT_THEMES` / `SCREENSHOT_ACCENTS` take `all` or
 a comma-separated list.
 
+## Client error reports
+
+A phone's uncaught errors, unhandled rejections and route generator failures are posted to
+`POST /api/client-errors` (at most 10 a page, deduplicated, 4 KB a report, 20 a minute per IP).
+The page is sent as a path only and every number with three or more decimals is replaced by `#`,
+so no coordinate leaves the device. Firestore `clientErrors` keeps the last 50; the owner reads
+them under Settings → Diagnostics (`GET`, owner only).
+
 ## Service worker
 
 `public/sw.js` provides the offline app shell and push notifications.
@@ -170,7 +183,8 @@ a comma-separated list.
 - Hashed build assets (`/_next/static`) and icons are **cache-first** — they are immutable.
 - Pages, RSC payloads and `/data` JSON are **network-first with cache fallback**, so the app
   opens with the last-seen content when offline; a failed navigation falls back to the
-  cached shell.
+  cached shell. A navigation waits 3 s for the network before it opens the cached page, and
+  navigation preload starts that request while the worker boots.
 - `/api` and cross-origin requests (map tiles, analytics) are **never cached**.
 
 Push events display FCM webpush payloads (`{ notification: { title, body } }`) directly, so

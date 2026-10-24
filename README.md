@@ -11,7 +11,8 @@ A personal running dashboard that pulls your data from Garmin Connect and turns 
 - **Goals & PBs** - annual distance goal, race targets, official personal bests
 - **All-time records** - best 1K/5K/10K/half/marathon detected from FIT files
 - **Race predictor** - Riegel formula projections from your best efforts
-- **Explore** - quartier coverage on the Activities map (Districts layer), a loop-route generator for unexplored quartiers, GPX export
+- **Race page** - the next race: Garmin's prediction against your target and best, its 12-week trend, and even splits at both times
+- **Explore** - quartier coverage on the Activities map (Districts layer), a loop-route generator for unexplored quartiers (flat and traffic-free on a reps day), GPX export, the quartiers each run pushed forward, and a push when one passes 90 %
 - **Dark mode** - system preference + manual toggle
 
 ## Architecture
@@ -438,6 +439,10 @@ one - point any uptime monitor at it to catch a silently broken Garmin sync.
 Its `integrations` field says which server integrations the deployment has
 credentials for (`firebaseAdmin`, `gemini`, `syncButton`), by name only, and
 the nightly sync warns when one the post-sync checks need is missing.
+
+Errors on a phone are reported to `/api/client-errors`, scrubbed of coordinates,
+and listed under Settings → Diagnostics; see
+[Client error reports](docs/security-and-build.md#client-error-reports).
 
 ---
 
