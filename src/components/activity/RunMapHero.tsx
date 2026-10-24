@@ -45,7 +45,7 @@ export function RunMapHero({
       data-testid="run-hero"
       // Marks the canvas and its glass controls while the map moves.
       data-map-root
-      className="relative -mx-4 h-[var(--run-hero-h)] overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-[24px]"
+      className="relative -mx-4 h-[330px] overflow-hidden sm:-mx-6 lg:mx-0 lg:rounded-[24px]"
     >
       {route ? (
         <ActivityMapClient

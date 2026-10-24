@@ -2,12 +2,14 @@
 
 import { usePathname } from 'next/navigation'
 import { useGlow } from '@/lib/glow'
+import { useUrlParam } from '@/lib/useUrlParam'
 
 /** CSS custom property names, one per glow. */
 type Palette = readonly [string, string, string]
 
 const TODAY: Palette = ['--accent', '--zone-2', '--zone-3']
 
+/** Pages with a map hero (an activity, the map, the share card) have none, and nor has Activities' Map view. */
 const PALETTES: Record<string, Palette> = {
   '/': TODAY,
   '/activities': ['--accent', '--zone-2', '--zone-1'],
@@ -26,21 +28,13 @@ const PALETTES: Record<string, Palette> = {
 }
 
 /** Pages whose children take their palette. */
-const FAMILIES = ['/activities', '/shoes']
+const FAMILIES = ['/shoes']
 
-function normalize(pathname: string): string {
-  return pathname.replace(/\/+$/, '') || '/'
-}
-
-export function auraPalette(pathname: string): Palette {
-  const path = normalize(pathname)
+export function auraPalette(pathname: string, view: string | null = null): Palette | null {
+  const path = pathname.replace(/\/+$/, '') || '/'
+  if (path.startsWith('/activities/') || (path === '/activities' && view === 'map')) return null
   const family = FAMILIES.find((root) => path.startsWith(`${root}/`))
   return PALETTES[path] ?? (family ? PALETTES[family] : undefined) ?? TODAY
-}
-
-/** An activity opens on a full-bleed map (RunMapHero), which would hide a glow at the top. */
-export function auraUnderHero(pathname: string): boolean {
-  return normalize(pathname).startsWith('/activities/')
 }
 
 /**
@@ -48,15 +42,15 @@ export function auraUnderHero(pathname: string): boolean {
  * Reduce Transparency and Increase Contrast hide it (globals.css).
  */
 export function Aura() {
-  const pathname = usePathname()
-  const [c1, c2, c3] = auraPalette(pathname)
+  const [view] = useUrlParam('view')
+  const palette = auraPalette(usePathname(), view)
   const glow = useGlow()
-  if (!glow) return null
+  if (!palette || !glow) return null
+  const [c1, c2, c3] = palette
   return (
     <div
       aria-hidden="true"
       data-testid="aura"
-      data-under-hero={auraUnderHero(pathname) || undefined}
       className="aura"
       style={{ '--aura-1': `var(${c1})`, '--aura-2': `var(${c2})`, '--aura-3': `var(${c3})` } as React.CSSProperties}
     />

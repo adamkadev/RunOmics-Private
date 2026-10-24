@@ -337,7 +337,6 @@ export const GEOMETRY_TOKENS: Record<string, string> = {
   '--sheet-inset': '8px',
   // 47 - 22 = 25: a 50 pt capsule CTA is concentric with the sheet.
   '--sheet-pad': '22px',
-  '--run-hero-h': '330px',
 }
 
 function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {

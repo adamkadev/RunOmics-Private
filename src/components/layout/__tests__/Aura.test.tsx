@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { Aura, auraPalette, auraUnderHero } from '../Aura'
+import { Aura, auraPalette } from '../Aura'
 
 const route = vi.hoisted(() => ({ pathname: '/' }))
 vi.mock('next/navigation', () => ({ usePathname: () => route.pathname }))
@@ -24,23 +24,22 @@ describe('the aura', () => {
     expect(screen.getByTestId('aura').style.getPropertyValue('--aura-1')).toBe('var(--warn)')
   })
 
-  it("takes Activities' palette on an activity, and starts under its map", () => {
-    expect(auraPalette('/activities/123')).toEqual(['--accent', '--zone-2', '--zone-1'])
-    expect(auraUnderHero('/activities')).toBe(false)
+  it('draws nothing on an activity, under its map hero', () => {
+    expect(auraPalette('/activities/123')).toBeNull()
+    expect(auraPalette('/activities/123/')).toBeNull()
     route.pathname = '/activities/123'
     render(<Aura />)
-    const aura = screen.getByTestId('aura')
-    expect(aura.style.getPropertyValue('--aura-3')).toBe('var(--zone-1)')
-    expect(aura).toHaveAttribute('data-under-hero')
-    const css = readFileSync(path.resolve(__dirname, '../../../app/globals.css'), 'utf8')
-    expect(css).toContain('.aura[data-under-hero] { top: calc(var(--top-scrim) + var(--run-hero-h)); }')
+    expect(screen.queryByTestId('aura')).toBeNull()
   })
 
-  it("glows on Activities' Map view", () => {
+  it("draws nothing on Activities' Map view", () => {
+    expect(auraPalette('/activities', 'map')).toBeNull()
+    expect(auraPalette('/activities', null)).toEqual(['--accent', '--zone-2', '--zone-1'])
+    expect(auraPalette('/plan', 'map')).toEqual(['--zone-4', '--zone-2', '--accent'])
     route.pathname = '/activities'
     window.history.replaceState(null, '', '/activities?view=map')
     render(<Aura />)
-    expect(screen.getByTestId('aura').style.getPropertyValue('--aura-1')).toBe('var(--accent)')
+    expect(screen.queryByTestId('aura')).toBeNull()
     window.history.replaceState(null, '', '/')
   })
 
@@ -56,7 +55,6 @@ describe('the aura', () => {
     render(<Aura />)
     const aura = screen.getByTestId('aura')
     expect(aura.className).toBe('aura')
-    expect(aura).not.toHaveAttribute('data-under-hero')
     expect(aura.style.getPropertyValue('--aura-1')).toBe('var(--zone-2)')
     expect(aura.children).toHaveLength(0)
   })

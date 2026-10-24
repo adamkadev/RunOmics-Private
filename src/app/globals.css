@@ -165,7 +165,6 @@
   --radius-sheet-large:    38px;
   --sheet-inset:           8px;
   --sheet-pad:             22px;
-  --run-hero-h:            330px;
 }
 
 /* ─── Light tokens - Teal (default) ───────────────── */
@@ -870,10 +869,6 @@
       radial-gradient(60% 46% at 16% 20%, color-mix(in srgb, var(--aura-1) 40%, transparent) 0%, transparent 70%),
       radial-gradient(55% 42% at 88% 14%, color-mix(in srgb, var(--aura-2) 32%, transparent) 0%, transparent 70%),
       radial-gradient(70% 42% at 55% 56%, color-mix(in srgb, var(--aura-3) 24%, transparent) 0%, transparent 75%);
-  }
-  /* On a wide screen the hero is a rounded card the glow frames. */
-  @media (max-width: 63.99rem) {
-    .aura[data-under-hero] { top: calc(var(--top-scrim) + var(--run-hero-h)); }
   }
   html[data-glow="off"] .aura { display: none; }
 

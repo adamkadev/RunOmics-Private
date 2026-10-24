@@ -4,10 +4,9 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-- The background glow is on every page: All time, Activities' Map view, an
-  activity (under its map), the sign-in and the not-found page now have it
-  too. A page with no palette of its own takes Today's. The Background glow
-  setting and iOS's Reduce Transparency still turn it off everywhere.
+- The background glow is on every page but the maps: All time, the sign-in
+  and the not-found page now have it too, and a page with no palette of its
+  own takes Today's. An activity and Activities' Map view still have none.
 
 - A deployment can read its data repository at run time
   (`RUNOMICS_DATA_SOURCE=github`), so a sync shows within seconds of the push
