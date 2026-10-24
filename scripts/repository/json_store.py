@@ -43,9 +43,32 @@ def _read_entries(path: Path, key: str, id_field: str) -> list[dict[str, Any]]:
     return entries
 
 
+def _is_leaf(value: Any) -> bool:
+    """A scalar, or a list of scalars such as a [lon, lat] pair."""
+    if isinstance(value, dict):
+        return False
+    if isinstance(value, list):
+        return all(not isinstance(item, (dict, list)) for item in value)
+    return True
+
+
+def dumps_readable(value: Any, indent: str = "") -> str:
+    """Objects one key a line so a diff names the field; number arrays and pairs on one line, 2.5x smaller than indent=2."""
+    if isinstance(value, dict):
+        if not value:
+            return "{}"
+        inner = indent + "  "
+        fields = [f"{inner}{json.dumps(key, ensure_ascii=False)}: {dumps_readable(item, inner)}" for key, item in value.items()]
+        return "{\n" + ",\n".join(fields) + "\n" + indent + "}"
+    if isinstance(value, list) and value and not all(_is_leaf(item) for item in value):
+        inner = indent + "  "
+        return "[\n" + ",\n".join(inner + dumps_readable(item, inner) for item in value) + "\n" + indent + "]"
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
 def _atomic_write_json(path: Path, data: dict[str, Any]) -> None:
     # No trailing newline: the bytes these files have always had.
-    write_text_atomic(path, json.dumps(data, indent=2, ensure_ascii=False))
+    write_text_atomic(path, dumps_readable(data))
 
 
 class JsonActivityStore:
