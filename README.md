@@ -1276,6 +1276,14 @@ zone with 4× the runs should look 4× the weight, not 4× the diameter. A floor
 zones tappable, and markers are added smallest-first so busier zones stack on top instead of being
 buried under one-off bubbles.
 
+**Loading:** `/api/map/routes?cluster=N&enc=p5` sends each track as a Google encoded polyline at
+1e-5° (about 1 m), so the home area travels as about 160 KB gzipped instead of 570 KB; without
+`enc` it still answers coordinate arrays. Each area's answer and ETag are built once per data
+generation. The page keeps the areas it fetched while it lives, so going back from List to Map
+fetches nothing, and MapLibre's workers stay warm between maps. The heat redraws only for a new view
+or new tracks, frames the area with the server's frame when no filter hides a run, and its basemap
+loads no sprite: no heat layer draws an icon.
+
 ### Explore
 
 Explore is a layer of the Activities map, not a tab: the layers button above the ⓘ switches Heat

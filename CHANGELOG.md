@@ -4,6 +4,32 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Scrolling Activities no longer stutters. The compact title bar wrote a
+  style on the whole page as month headers passed under it, and each write
+  restyled every run in the list (60-90 ms on a long archive); it now
+  writes only on the soft edge that reads it, and weeks off screen skip
+  style and layout altogether.
+
+- Filters, search and sort on Activities answer at once: they run on the
+  phone, over the archive the page already holds, instead of asking the
+  server each time (a type chip took about 200 ms).
+
+- Scrolling Activities no longer downloads every run's page as its row
+  passes by (3 MB for the whole list); a run's page loads when you touch
+  its row.
+
+- The map opens lighter: its tracks travel as encoded polylines (the home
+  area is about 160 KB instead of 570 KB), are fetched once per visit
+  rather than each time the Map tab opens, and the heat redraws once
+  instead of four or five times. Its basemap skips an image it never used.
+
+- Home, Records and every run's page no longer load the Firestore SDK just
+  to check who is signed in, and a run's page loads the similar runs chart
+  only when its card opens.
+
+- A run's Laps view shows every warm-up lap: a warm-up of 1.7 km easy,
+  1 km steady and 1 km a touch quicker showed its first lap only.
+
 - A planned session's warm-up on Plan now counts all its parts: a warm-up
   of 1.7 km easy, 1 km steady and 1 km a touch quicker read as its first
   10 minutes only; it now shows the whole time and each part's pace.
