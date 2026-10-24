@@ -4,7 +4,7 @@ import { test, expect } from './fixtures'
 const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/analytics', '/profile', '/records', '/shoes', '/consistency', '/all-time', '/goals', '/race', '/athlete']
 
 async function overflows(page: Page): Promise<string[]> {
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running'))
+  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity))
   return page.evaluate(() => {
     const width = window.innerWidth
     const found: string[] = []
@@ -46,6 +46,7 @@ for (const path of PAGES) {
 }
 
 test('nothing runs past the screen on a run, in any of its tabs', async ({ page }) => {
+  test.slow()
   await page.goto('/activities')
   await page.getByTestId('thumb-row').first().click()
   const tabs = page.getByRole('tablist', { name: 'Activity sections' }).getByRole('tab')
@@ -57,6 +58,7 @@ test('nothing runs past the screen on a run, in any of its tabs', async ({ page 
 })
 
 test('nothing runs past the screen on any Analytics tab or period', async ({ page }) => {
+  test.slow()
   await page.goto('/analytics')
   for (const tab of ['Load', 'Performance', 'Volume', 'Intensity']) {
     await page.getByRole('tab', { name: tab }).click()

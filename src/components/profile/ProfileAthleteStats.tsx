@@ -61,7 +61,8 @@ export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
           <div className="truncate text-xs text-muted-foreground">
             {cell.label}
           </div>
-          <div className="truncate text-[22px] font-semibold leading-tight tabular-nums text-foreground">
+          {/* The unit wraps under the number rather than be cut: "km/h" fills a third of a 393 pt screen. */}
+          <div className="break-words text-[22px] font-semibold leading-tight tabular-nums text-foreground">
             {cell.value}
             {cell.unit && <Unit>{cell.unit}</Unit>}
           </div>
