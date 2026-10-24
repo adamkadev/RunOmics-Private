@@ -24,13 +24,15 @@ All notable changes to this project are documented in this file.
 - The nightly sync pushes a warning two weeks before a GitHub data token
   expires.
 
-- Every page is checked in Safari's engine at iPhone size for text that
-  runs past an edge, on each pull request.
+- The main pages are checked in Safari's engine at the iPhone 16 Pro's
+  size for text that runs past an edge, after each merge to main and on
+  demand for a branch.
 
 - Activities opens on its first months and renders the rest as you
   scroll; on a bad network a page opens from its cache after 3 s instead
-  of waiting; Plan loads 18 KB of runs instead of 58 KB; and the month
-  files of the data repository are 6.9 MB instead of 16.9 MB.
+  of waiting; Plan loads 18 KB of runs instead of 58 KB; and each month
+  file of the data repository is written at about 40% of its size the
+  next time the sync rewrites it (the whole history: 6.9 MB, not 16.9).
 
 - The README keeps setup and an index; the implementation notes moved to
   four documents under `docs/`.
