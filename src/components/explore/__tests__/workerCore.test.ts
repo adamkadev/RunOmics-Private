@@ -469,7 +469,7 @@ describe('locateClusterTracks', () => {
   })
 })
 
-describe('scoreRoutes and routeStart', () => {
+describe('scoreRoutes, routeStart and routePlan', () => {
   const candidate = (seed: number, pointsM: [number, number][]): RouteCandidate => ({
     seed,
     coordinates: pointsM.map(([x, y]) => at(x, y)),
@@ -517,6 +517,17 @@ describe('scoreRoutes and routeStart', () => {
     expect(before).toEqual(routeStart(INDEX, 'test-delta'))
     expect(ok(await send({ type: 'routeStart', areaKey: KEY, unitId: 'test-delta' }))).toEqual(before)
     expect(ok(await send({ type: 'routeStart', areaKey: KEY, unitId: 'nope' }))).toBeNull()
+  })
+
+  it('guards the runs’ median start as home, or the origin itself before any run', async () => {
+    const { send } = await loaded()
+    const origin = at(1100, 500)
+    const ask = async () =>
+      ok(await send({ type: 'routePlan', areaKey: KEY, unitId: 'test-delta', origin, home: null, homeFromTracks: true, distanceM: 3000, seeds: [1] }))
+
+    expect(await ask()).toMatchObject({ kind: 'tour', guarded: true })
+    await send({ type: 'addTracks', areaKey: KEY, ...buffers(['r1', 'r2']) })
+    expect(await ask()).toMatchObject({ kind: 'tour', guarded: false, departure: origin })
   })
 })
 

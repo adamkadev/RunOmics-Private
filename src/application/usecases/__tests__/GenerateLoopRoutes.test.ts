@@ -132,6 +132,16 @@ describe('generateLoopRoutes', () => {
     expect(calls).toHaveLength(0)
   })
 
+  it('passes each seed its own vias and asks once, however far the tour misses', async () => {
+    const vias: [number, number][][] = [[[-150.01, 0]], [[-150, 0.01], [-150.01, 0.01]]]
+    const { gateway, calls } = fakeGateway((req) => found(req.seed, 12_000))
+
+    const result = await generateLoopRoutes(gateway, { ...REQUEST, seeds: [10, 11], vias })
+
+    expect(result.ok).toBe(true)
+    expect(calls.map((c) => [c.seed, c.vias])).toEqual([[10, vias[0]], [11, vias[1]]])
+  })
+
   it('reads a gateway that throws as a provider failure', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const gateway: RoutingGateway = { roundTrip: async () => Promise.reject(new Error('bug')) }
@@ -168,6 +178,21 @@ describe('parseLoopRequest', () => {
     ['a fractional seed', { ...valid, seeds: [1.5] }],
     ['seeds that are not an array', { ...valid, seeds: 4 }],
     ['avoidBusyRoads as a string', { ...valid, avoidBusyRoads: 'yes' }],
+  ])('refuses %s', (_label, body) => {
+    expect(parseLoopRequest(body)).toBeNull()
+  })
+
+  it('keeps each seed with its vias when it folds the seeds', () => {
+    const vias = [[[-150.01, 0]], [[-150, 0.01]], [[-150.01, 0.01]]]
+    expect(parseLoopRequest({ ...valid, seeds: [3, 3, 4], vias })).toMatchObject({ seeds: [3, 4], vias: [vias[0], vias[2]] })
+  })
+
+  it.each([
+    ['vias for fewer seeds', { ...valid, seeds: [1, 2], vias: [[[-150.01, 0]]] }],
+    ['an empty via list', { ...valid, seeds: [1], vias: [[]] }],
+    ['four vias', { ...valid, seeds: [1], vias: [[[-150.01, 0], [-150.02, 0], [-150.03, 0], [-150.04, 0]]] }],
+    ['a via past 90° of latitude', { ...valid, seeds: [1], vias: [[[-150, 91]]] }],
+    ['a tour longer than a marathon', { ...valid, seeds: [1], vias: [[[-150.2, 0]]] }],
   ])('refuses %s', (_label, body) => {
     expect(parseLoopRequest(body)).toBeNull()
   })

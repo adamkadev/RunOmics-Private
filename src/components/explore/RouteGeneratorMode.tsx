@@ -14,8 +14,10 @@ import { planRouteKm, type ExploreFrom } from './exploreHref'
 import { RouteGeneratorPanel } from './RouteGeneratorPanel'
 import { generatorBack, routeStats, type ExplorePlan } from './routeGenerator'
 import { routeGpxFile } from './routeGpx'
+import type { RouteStartMode, RouteStartState } from './routeStart'
 import { useFitsWhole } from './useFitsWhole'
 import { useRouteGenerator } from './useRouteGenerator'
+import type { LonLat } from './workerProtocol'
 
 /** The loops' credit, shown in the ⓘ while the generator is open (the routing proxy's own line). */
 export const ROUTE_CREDIT: MapCredit = { text: '© openrouteservice by HeiGIT' }
@@ -30,6 +32,10 @@ export interface RouteGeneratorModeProps {
   onDistanceChange: (km: number) => void
   prefs: RoutePreferences
   onPrefsChange: (prefs: RoutePreferences) => void
+  /** The parent owns it: the map draws the start and takes the tap that picks one. */
+  start: RouteStartState
+  onStartModeChange: (mode: RouteStartMode) => void
+  home: LonLat | null
   paceSecPerKm: number | null
   /** The session it plans for (the linked day's, or today's), or null. */
   plan: ExplorePlan | null
@@ -55,6 +61,9 @@ export function RouteGeneratorMode({
   onDistanceChange,
   prefs,
   onPrefsChange,
+  start,
+  onStartModeChange,
+  home,
   paceSecPerKm,
   plan,
   today,
@@ -77,6 +86,9 @@ export function RouteGeneratorMode({
     tracksReady,
     user: owner.isOwner ? owner.user : null,
     authReady: !owner.loading,
+    origin: start.origin,
+    waiting: start.waiting,
+    home,
   })
   const { route, drawn } = generator
 
@@ -136,10 +148,14 @@ export function RouteGeneratorMode({
           distanceKm={distanceKm}
           onDistanceChange={onDistanceChange}
           plan={plan ? { heading: !today || plan.date === today ? e.todaysPlan : e.planFor(formatWeekday(plan.date, true)), label: plan.label, km: planRouteKm(plan.distanceM) } : null}
+          start={start}
+          onStartModeChange={onStartModeChange}
           prefs={prefs}
           onPrefsChange={onPrefsChange}
           status={generator.status === 'idle' ? 'generating' : generator.status}
           failure={generator.failure}
+          minKm={generator.minKm}
+          guarded={generator.guarded}
           stats={stats}
           paceSecPerKm={paceSecPerKm}
           routeKey={generator.routeKey}

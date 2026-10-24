@@ -10,10 +10,14 @@ import { useDragToDismiss } from '@/lib/useDragToDismiss'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { GlassLayers, glassClass } from '@/components/ui/GlassSurface'
+import { SEGMENTED_FILL_SEGMENT_CLASS, SEGMENTED_IDLE_CLASS, SEGMENTED_THUMB_CLASS, SEGMENTED_TRACK_CLASS } from '@/components/ui/SegmentedTabs'
 import { SHEET_CONTROL } from '@/components/ui/Sheet'
 import { Toggle } from '@/components/ui/Toggle'
+import { ROUTE_KM_MAX } from './exploreHref'
 import type { RouteFailure } from './routeApi'
 import { canStepDown, canStepUp, stepRouteKm, type RouteStats } from './routeGenerator'
+import { ROUTE_START_MODES, type RouteStartMode, type RouteStartNote } from './routeStart'
+import type { GeneratorFailure } from './useRouteGenerator'
 
 /** For the camera to measure, as the quartier sheet's. */
 export const ROUTE_PANEL_TEST_ID = 'route-generator'
@@ -21,11 +25,13 @@ export const ROUTE_PANEL_TEST_ID = 'route-generator'
 export type RouteGeneratorStatus = 'generating' | 'ready' | 'error'
 
 /** Failures a second try can fix; the others need a change (distance) or can't be fixed here. */
-const RETRYABLE: ReadonlySet<RouteFailure> = new Set(['rateLimited', 'providerLimit', 'upstream', 'invalid'])
+const RETRYABLE: ReadonlySet<GeneratorFailure> = new Set<RouteFailure>(['rateLimited', 'providerLimit', 'upstream', 'invalid'])
 
-export function failureMessage(failure: RouteFailure): string {
+export function failureMessage(failure: GeneratorFailure): string {
   const errors = t.pages.map.explore.errors
   switch (failure) {
+    case 'tooFar':
+      return errors.tooFarToRun
     case 'notConfigured':
       return errors.notConfigured
     case 'auth':
@@ -44,6 +50,20 @@ export function failureMessage(failure: RouteFailure): string {
 }
 
 const km = (value: number) => `${formatDistance(value)} ${t.units.km}`
+
+function startNote(note: RouteStartNote): string {
+  const start = t.pages.map.explore.start
+  switch (note) {
+    case 'locating':
+      return start.locating
+    case 'denied':
+      return start.denied
+    case 'unavailable':
+      return start.unavailable
+    case 'pick':
+      return start.pickPrompt
+  }
+}
 const stepperKm = (value: number) => `${formatDecimal(value, 1)} ${t.units.km}`
 
 /** A grouped fill: no glass inside glass. */
@@ -60,10 +80,15 @@ export interface RouteGeneratorPanelProps {
   onDistanceChange: (km: number) => void
   /** The session it plans for; its km is what the check compares the distance with. */
   plan: { heading: string; label: string; km: number | null } | null
+  start: { mode: RouteStartMode; note: RouteStartNote | null }
+  onStartModeChange: (mode: RouteStartMode) => void
   prefs: RoutePreferences
   onPrefsChange: (prefs: RoutePreferences) => void
   status: RouteGeneratorStatus
-  failure: RouteFailure | null
+  failure: GeneratorFailure | null
+  /** With `tooFar`: the shortest distance that reaches the quartier. */
+  minKm: number | null
+  guarded: boolean
   stats: RouteStats | null
   /** The pace the time is worked out at. */
   paceSecPerKm: number | null
@@ -82,10 +107,14 @@ export function RouteGeneratorPanel({
   distanceKm,
   onDistanceChange,
   plan,
+  start,
+  onStartModeChange,
   prefs,
   onPrefsChange,
   status,
   failure,
+  minKm,
+  guarded,
   stats,
   paceSecPerKm,
   routeKey,
@@ -137,6 +166,9 @@ export function RouteGeneratorPanel({
 
   const options = [e.loop, ...(prefs.avoidBusyRoads ? [e.summary.avoidBusyRoads] : []), ...(prefs.newStreetsFirst ? [e.summary.newStreetsFirst] : [])].join(' · ')
   const onPlan = plan?.km != null && plan.km === distanceKm
+  const reachKm = failure === 'tooFar' && minKm != null && minKm <= ROUTE_KM_MAX ? minKm : null
+  const errorText = reachKm != null ? e.errors.tooFar(stepperKm(reachKm)) : failure ? failureMessage(failure) : null
+  const footnote = start.note ? startNote(start.note) : status === 'generating' ? e.generating : guarded ? e.start.guarded : e.footnote
   const dash = '—'
   const statCells = [
     { label: e.distanceStat, value: ready ? km(stats.distanceKm) : dash },
@@ -199,6 +231,25 @@ export function RouteGeneratorPanel({
               )}
             </button>
           )}
+
+          <div role="group" aria-label={e.start.label} data-testid="route-start" className={cn(SEGMENTED_TRACK_CLASS, 'w-full')}>
+            {ROUTE_START_MODES.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onStartModeChange(mode)}
+                aria-pressed={start.mode === mode}
+                aria-label={e.start.modesFull[mode]}
+                className={cn(
+                  SEGMENTED_FILL_SEGMENT_CLASS,
+                  'hit-44 flex h-8 items-center whitespace-nowrap px-2 text-[13px] transition-colors',
+                  start.mode === mode ? SEGMENTED_THUMB_CLASS : SEGMENTED_IDLE_CLASS,
+                )}
+              >
+                <span className="truncate">{e.start.modes[mode]}</span>
+              </button>
+            ))}
+          </div>
 
           <div className="flex items-center justify-between gap-3">
             <span className="text-[17px] leading-[22px] text-foreground">{e.distance}</span>
@@ -264,9 +315,9 @@ export function RouteGeneratorPanel({
             )}
           </div>
 
-          {status === 'error' && failure ? (
+          {status === 'error' && errorText ? (
             <p role="alert" data-testid="route-error" className="min-h-[46px] text-[15px] leading-5 text-foreground text-pretty">
-              {failureMessage(failure)}
+              {errorText}
             </p>
           ) : (
             // Fixed shares sized for the widest each takes ("30.0 km", "+148 m", "100%"), so nothing shifts as loops come and go.
@@ -295,7 +346,16 @@ export function RouteGeneratorPanel({
 
           {/* 1 : 1.4 shares of the room their labels leave, so a long French label takes what it needs first. */}
           <div className="flex gap-2.5">
-            {status === 'error' && failure && RETRYABLE.has(failure) ? (
+            {status === 'error' && reachKm != null ? (
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={() => onDistanceChange(reachKm)}
+                className={cn('flex-[1_1_auto] bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]', ROW_BUTTON)}
+              >
+                <span className="truncate">{e.useDistance(stepperKm(reachKm))}</span>
+              </Button>
+            ) : status === 'error' && failure && RETRYABLE.has(failure) ? (
               <Button size="lg" variant="secondary" onClick={onRetry} className={cn('flex-[1_1_auto] bg-[var(--sheet-fill)] shadow-[var(--sheet-fill-rim)]', ROW_BUTTON)}>
                 <span className="truncate">{e.retry}</span>
               </Button>
@@ -337,8 +397,8 @@ export function RouteGeneratorPanel({
             )}
           </div>
 
-          <p aria-live="polite" className="text-center text-footnote leading-[18px] text-muted-foreground">
-            {status === 'generating' ? e.generating : e.footnote}
+          <p aria-live="polite" data-testid="route-footnote" className="text-center text-footnote leading-[18px] text-muted-foreground">
+            {footnote}
           </p>
         </div>
       </div>

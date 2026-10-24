@@ -1,11 +1,10 @@
 import type { RouteCandidate } from '@/domain/explore/types'
 
 export interface RoundTripRequest {
-  /**
-   * [lon, lat] where the loop starts and ends: a public point inside the target quartier, never home -
-   * the provider's terms forbid personal data, and home is what these routes would give away.
-   */
+  /** [lon, lat] where the loop starts and ends, never near home: the provider's terms forbid personal data. */
   start: [number, number]
+  /** Points the loop passes through in order; with none the provider draws a loop of `lengthM` itself. */
+  vias?: [number, number][]
   /** A provider treats it as a wish, not a promise. */
   lengthM: number
   /** Same start, length and seed, same loop: the seed is the only way to ask for another. */

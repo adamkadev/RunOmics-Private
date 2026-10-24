@@ -6,7 +6,7 @@ import type { ExploreAreaRef, RouteCandidate, RoutePreferences, ScoredRoute } fr
 import { getExploreEngine, type ExploreEngine } from './exploreEngine'
 import { RouteRequestError, requestRouteBatch, type RouteFailure } from './routeApi'
 import { FIRST_SEED, ROUTE_BATCH, ROUTE_DEBOUNCE_MS, batchSeeds } from './routeGenerator'
-import { areaKey } from './workerProtocol'
+import { areaKey, type LonLat } from './workerProtocol'
 
 export interface RouteGeneratorInput {
   enabled: boolean
@@ -20,13 +20,26 @@ export interface RouteGeneratorInput {
   user: User | null
   /** False while the owner check is still running: a request then would go out without the token. */
   authReady: boolean
+  /** Where the runner sets off, or null to start inside the quartier. */
+  origin: LonLat | null
+  /** True while the position or the tap is still to come. */
+  waiting: boolean
+  /** On the device only: the worker's plan keeps every point it sends away from it. */
+  home: LonLat | null
 }
 
 export type RouteGeneratorStatus = 'idle' | 'generating' | 'ready' | 'error'
 
+/** The client's own failure: no loop of this distance reaches the quartier from the start. */
+export type GeneratorFailure = RouteFailure | 'tooFar'
+
 export interface RouteGenerator {
   status: RouteGeneratorStatus
-  failure: RouteFailure | null
+  failure: GeneratorFailure | null
+  /** With `tooFar`: the shortest distance whose loop reaches the quartier. */
+  minKm: number | null
+  /** The loop starts a walk away from the runner, past the guard around home. */
+  guarded: boolean
   /** The loop the panel's numbers are for. */
   route: ScoredRoute | null
   /** Also the last one for this quartier while the next is found. */
@@ -52,23 +65,30 @@ interface Cursor {
 interface Result {
   fetchKey: string
   unitKey: string
+  startKey: string
   candidates: RouteCandidate[]
   ranked: ScoredRoute[]
   /** The preferences the ranking was scored with. */
   prefsKey: string
   index: number
-  failure: RouteFailure | null
+  failure: GeneratorFailure | null
+  minKm: number | null
+  guarded: boolean
 }
+
+/** About a metre: GPS noise under it asks for no new batch. */
+const startKeyOf = (origin: LonLat | null) => (origin ? `${origin[0].toFixed(5)},${origin[1].toFixed(5)}` : 'quartier')
 
 const prefsKeyOf = (p: RoutePreferences) => `${p.avoidBusyRoads ? 1 : 0}${p.newStreetsFirst ? 1 : 0}`
 
 /** "Avoid busy roads" asks for a new batch: the provider routes around them. */
 export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGeneratorDeps = {}): RouteGenerator {
-  const { enabled, area, unitId, km, prefs, tracksReady, user, authReady } = input
+  const { enabled, area, unitId, km, prefs, tracksReady, user, authReady, origin, waiting, home } = input
   const { engineFor = getExploreEngine, request = requestRouteBatch, debounceMs = ROUTE_DEBOUNCE_MS } = deps
-  const active = enabled && !!area && !!unitId && tracksReady && authReady
+  const active = enabled && !!area && !!unitId && tracksReady && authReady && !waiting
   const unitKey = `${area ? areaKey(area) : ''}|${unitId ?? ''}`
-  const requestKey = `${unitKey}|${km}|${prefs.avoidBusyRoads ? 1 : 0}`
+  const startKey = waiting ? 'waiting' : startKeyOf(origin)
+  const requestKey = `${unitKey}|${startKey}|${km}|${prefs.avoidBusyRoads ? 1 : 0}`
   const prefsKey = prefsKeyOf(prefs)
 
   const [cursorState, setCursor] = useState<Cursor | null>(null)
@@ -77,9 +97,9 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
   const [result, setResult] = useState<Result | null>(null)
 
   // Read by the effects, which key on the strings built from them.
-  const inputs = useRef({ area, unitId, km, prefs, user, seedBase: cursor.seedBase, result, unitKey })
+  const inputs = useRef({ area, unitId, km, prefs, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home })
   useLayoutEffect(() => {
-    inputs.current = { area, unitId, km, prefs, user, seedBase: cursor.seedBase, result, unitKey }
+    inputs.current = { area, unitId, km, prefs, user, seedBase: cursor.seedBase, result, unitKey, startKey, origin, home }
   })
 
   // The quartier whose first batch has gone out: every request after it waits for the stepper to rest.
@@ -87,7 +107,8 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
 
   useEffect(() => {
     if (!active) return
-    const { area: ref, unitId: unit, km: distanceKm, prefs: wanted, user: owner, seedBase, result: shown, unitKey: forUnit } = inputs.current
+    const { area: ref, unitId: unit, km: distanceKm, prefs: wanted, user: owner, seedBase, result: shown, unitKey: forUnit, startKey: forStart, origin: from, home: homePoint } =
+      inputs.current
     if (!ref || !unit) return
     // Back on the question the batch in hand answers (the stepper went there and back): the loop shown stays.
     if (shown && shown.fetchKey === fetchKey && !shown.failure) return
@@ -100,23 +121,37 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
       void (async () => {
         const engine = engineFor()
         const targetM = distanceKm * 1000
+        const seeds = batchSeeds(seedBase)
+        const failed = (failure: GeneratorFailure, minKm: number | null = null) =>
+          setResult({ fetchKey, unitKey: forUnit, startKey: forStart, candidates: [], ranked: [], prefsKey: prefsKeyOf(wanted), index: 0, failure, minKm, guarded: false })
         try {
-          const start = await engine.routeStart(ref, { unitId: unit })
+          let start: LonLat | null
+          let vias: LonLat[][] | undefined
+          let guarded = false
+          if (from) {
+            const plan = await engine.routePlan(ref, { unitId: unit, origin: from, home: homePoint, homeFromTracks: true, distanceM: targetM, seeds })
+            if (controller.signal.aborted) return
+            if (plan?.kind === 'tooFar') return failed('tooFar', plan.minKm)
+            start = plan?.departure ?? null
+            vias = plan?.vias.some((list) => list.length > 0) ? plan.vias : undefined
+            guarded = plan?.guarded ?? false
+          } else {
+            start = await engine.routeStart(ref, { unitId: unit })
+          }
           if (!start) throw new RouteRequestError('noRoute')
           const batch = await request(
-            { start, distanceM: targetM, seeds: batchSeeds(seedBase), avoidBusyRoads: wanted.avoidBusyRoads },
+            { start, distanceM: targetM, seeds, avoidBusyRoads: wanted.avoidBusyRoads, ...(vias ? { vias } : {}) },
             { user: owner, signal: controller.signal },
           )
           if (controller.signal.aborted) return
           const ranked = await engine.scoreRoutes(ref, { candidates: batch.candidates, targetM, prefs: wanted })
           if (controller.signal.aborted) return
           if (ranked.length === 0) throw new RouteRequestError('noRoute')
-          setResult({ fetchKey, unitKey: forUnit, candidates: batch.candidates, ranked, prefsKey: prefsKeyOf(wanted), index: 0, failure: null })
+          setResult({ fetchKey, unitKey: forUnit, startKey: forStart, candidates: batch.candidates, ranked, prefsKey: prefsKeyOf(wanted), index: 0, failure: null, minKm: null, guarded })
         } catch (err) {
           if (controller.signal.aborted) return
           if (!(err instanceof RouteRequestError)) console.warn('Route generation failed', err)
-          const failure: RouteFailure = err instanceof RouteRequestError ? err.reason : 'upstream'
-          setResult({ fetchKey, unitKey: forUnit, candidates: [], ranked: [], prefsKey: prefsKeyOf(wanted), index: 0, failure })
+          failed(err instanceof RouteRequestError ? err.reason : 'upstream')
         }
       })()
     }, delay)
@@ -160,8 +195,8 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
         ? 'error'
         : 'ready'
   const route = status === 'ready' && current ? (current.ranked[current.index] ?? null) : null
-  // While the next loop is found, the last one of this quartier stays drawn; a failure clears it.
-  const last = result && !result.failure && result.unitKey === unitKey ? (result.ranked[result.index] ?? null) : null
+  // While the next loop is found, the last one of this quartier and start stays drawn; a failure clears it.
+  const last = result && !result.failure && result.unitKey === unitKey && result.startKey === startKey ? (result.ranked[result.index] ?? null) : null
   const drawn = route ?? (enabled && status === 'generating' ? last : null)
 
   const nextBatch = useCallback(() => {
@@ -186,6 +221,8 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
   return {
     status,
     failure: status === 'error' ? (current?.failure ?? null) : null,
+    minKm: status === 'error' ? (current?.minKm ?? null) : null,
+    guarded: status === 'ready' && !!current?.guarded,
     route,
     drawn,
     // The batch and the loop's own seed: a re-rank that brings another loop first is another key.

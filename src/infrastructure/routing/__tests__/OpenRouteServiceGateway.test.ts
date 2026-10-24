@@ -76,6 +76,17 @@ describe('OpenRouteServiceGateway', () => {
     })
   })
 
+  it('asks for a tour through the vias, back to the start, instead of a round trip', async () => {
+    fetchMock.mockResolvedValue(json(orsAnswer()))
+    const vias: [number, number][] = [[-150.01, 0], [-150.01, 0.01]]
+
+    await new OpenRouteServiceGateway('ors-test-key').roundTrip({ ...REQUEST, vias })
+
+    const body = JSON.parse(fetchMock.mock.calls[0]![1].body)
+    expect(body.coordinates).toEqual([START, ...vias, START])
+    expect(body.options).toEqual({ avoid_features: ['ferries', 'fords'] })
+  })
+
   it('reads the loop, its length, climb and way types', async () => {
     fetchMock.mockResolvedValue(json(orsAnswer()))
 

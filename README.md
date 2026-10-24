@@ -480,7 +480,7 @@ from your `.env.local` *except* `GARMIN_PERSONAL_API_KEY`, `GARMIN_SECRET` and `
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
 | `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](#date-handling) |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts |
-| `ORS_API_KEY` | Optional: Explore's route generator (OpenRouteService round trips) - see [Explore](#explore) |
+| `ORS_API_KEY` | Optional: Explore's route generator (OpenRouteService loops) - see [Explore](#explore) |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | The private data repository the build clones; a fine-grained token with Contents: Read only |
 | `RUNOMICS_DATA_SOURCE` | Optional: `github` reads that repository at run time, so a sync shows without a rebuild - see [Reading the data at run time](#reading-the-data-at-run-time) |
 
@@ -1300,10 +1300,24 @@ run's cells are cached in IndexedDB, keyed by area version and a fingerprint of 
 that minimises `pct/100 + km/6` (quartiers before neighbouring communes; ties go to the nearer,
 then by name). With none in range, the lowest score among every incomplete unit.
 
-**Routes:** `POST /api/explore/route` calls OpenRouteService (`foot-walking`, `round_trip` with 4
-points) once per seed, five seeds a batch, and re-asks once when a loop misses the distance by more
-than 15 %. The start is the centre of the quartier's runnable cell nearest its public label point -
-home is never sent. The key stays on the server; on a private site any signed-in session may call
+**Routes:** `POST /api/explore/route` calls OpenRouteService (`foot-walking`) once per seed, five
+seeds a batch. The panel's **Start** picks where the loop begins:
+
+- **My location** (the default) asks the browser once per opening, never watches it. The worker
+  plans the loop on the device: from the start, through two unexplored runnable cells of the
+  quartier (one may lie outside it when the quartier is too small for the distance), and back,
+  chosen per seed so the straight lines add up to the distance over a 1.3 street detour. Each seed
+  is one directions request through those points. When no loop of the distance reaches the
+  quartier, the panel names the shortest that does.
+- **Map point** does the same from a point tapped on the map.
+- **Quartier** starts at the centre of the quartier's runnable cell nearest its public label point,
+  with a `round_trip` of 4 points, re-asked once when it misses the distance by more than 15 %. A
+  start the browser cannot locate falls back to it.
+
+Home is never sent. Within 600 m of home (the median start of the runs, on the device; the start
+itself when there are none) the loop starts at a runnable cell 600-900 m out, one per compass
+sector toward the quartier, so it never follows the device's exact position; the map draws the
+walk there as a dashed line. No via is ever closer than 600 m to home. The key stays on the server; on a private site any signed-in session may call
 it, on a public one only the owner, 12 batches a minute per caller. Loops are ranked by
 `|d − target|/target + wNew·(1 − new share) + wBusy·busy share`, with `wNew` 0.6 ("New streets
 first") or 0.15 and `wBusy` 0.8 ("Avoid busy roads") or 0, where busy share counts state roads fully
@@ -1483,6 +1497,10 @@ comment-free header is easy to widen by accident — this is what each one is fo
 
 `object-src 'none'`, `base-uri 'self'`, `form-action 'self'` and `frame-ancestors 'none'`
 are lockdowns with no exceptions; keep them that way.
+
+`Permissions-Policy` denies the camera and the microphone everywhere, and allows geolocation
+for this site only (`geolocation=(self)`), for Explore's "My location" start. A run's place name
+asks Nominatim about its first point rounded to 0.01° (about a kilometre), never the point itself.
 
 ### Build configuration
 
