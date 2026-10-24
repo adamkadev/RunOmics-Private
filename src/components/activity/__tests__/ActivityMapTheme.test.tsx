@@ -2,9 +2,9 @@ import { render, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { maptilerStyle } from '@/lib/maptiler'
 
-// A map whose styles load when the test says: setStyle starts a load, and
-// `finish()` ends it, firing style.load.
-const maps = vi.hoisted(() => ({ built: [] as { styles: unknown[]; finish: () => void }[] }))
+// A map whose styles load when the test says: setStyle starts a load, `finish()` fires style.load, and the tiles load
+// after it, as MapLibre's do, until `tilesIn()`.
+const maps = vi.hoisted(() => ({ built: [] as { styles: unknown[]; finish: () => void; tilesIn: () => void }[] }))
 
 vi.mock('@/lib/maplibre', async (importOriginal) => {
   const real = await importOriginal<typeof import('@/lib/maplibre')>()
@@ -14,6 +14,7 @@ vi.mock('@/lib/maplibre', async (importOriginal) => {
     handlers: (() => void)[] = []
     styles: unknown[] = []
     loaded = false
+    tilesLoading = true
     constructor(options: { style: unknown }) {
       this.styles.push(options.style)
       maps.built.push(this)
@@ -22,15 +23,19 @@ vi.mock('@/lib/maplibre', async (importOriginal) => {
       this.loaded = true
       for (const cb of this.handlers) cb()
     }
+    tilesIn() {
+      this.tilesLoading = false
+    }
     addControl() {}
     once() {}
     on(event: string, cb: () => void) {
       if (event === 'style.load') this.handlers.push(cb)
     }
-    isStyleLoaded() { return this.loaded }
+    isStyleLoaded() { return this.loaded && !this.tilesLoading }
     setStyle(style: unknown) {
       this.styles.push(style)
       this.loaded = false
+      this.tilesLoading = true
       this.layers.splice(0, this.layers.length, { id: 'Town labels', type: 'symbol' })
       this.sources.clear()
     }
@@ -89,6 +94,7 @@ describe('the activity map across a theme that flips and flips back', () => {
     const map = maps.built[0]!
     expect(isDarkStyle(map.styles[0])).toBe(true)
     map.finish()
+    map.tilesIn()
 
     // The snapshot in light: the map starts loading its light style...
     document.documentElement.classList.remove('dark')
@@ -99,6 +105,24 @@ describe('the activity map across a theme that flips and flips back', () => {
     document.documentElement.classList.add('dark')
     await tick()
     map.finish()
+
+    expect(isDarkStyle(map.styles.at(-1))).toBe(true)
+  })
+
+  it('ends on the theme the page ends on, when the flip back came while the tiles loaded', async () => {
+    render(<ActivityMap route={[[7.7, 48.6], [7.72, 48.62]]} />)
+    await waitFor(() => expect(maps.built).toHaveLength(1))
+    const map = maps.built[0]!
+    map.finish()
+    map.tilesIn()
+
+    document.documentElement.classList.remove('dark')
+    await tick()
+    map.finish()
+    document.documentElement.classList.add('dark')
+    await tick()
+    map.tilesIn()
+    await tick()
 
     expect(isDarkStyle(map.styles.at(-1))).toBe(true)
   })

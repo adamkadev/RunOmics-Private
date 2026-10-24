@@ -253,9 +253,7 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
           drawnRef.current = 0
           animateRoute()
         }
-        // The theme again, now this style has loaded: iOS flips the theme and back
-        // for its app-switcher snapshots while the first swap loads, and the observer,
-        // which waits for a loaded style, misses the flip back.
+        // iOS flips the theme and back for its app-switcher snapshots: a flip back while this style loaded went unseen.
         if (styleChoiceRef.current === null && isDark() !== dark) applyStyleRef.current?.(themeStyle())
       })
 
@@ -270,8 +268,9 @@ export default function ActivityMap({ route, hoverFraction, className, fullscree
         map.setStyle(maptilerStyle(dark, token), { diff: false })
       }
       applyStyleRef.current = applyStyle
+      // Not map.isStyleLoaded(): it stays false while tiles load, long after style.load, and a flip then went unseen.
       const observer = new MutationObserver(() => {
-        if (cancelled || !map.isStyleLoaded()) return
+        if (cancelled || !layersReadyRef.current) return
         if (styleChoiceRef.current === null && isDark() !== dark) {
           applyStyle(themeStyle())
         } else if (readAccent() !== accent) {
