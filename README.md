@@ -465,6 +465,11 @@ git push
 
 Go to [vercel.com/new](https://vercel.com/new), import your GitHub repo, and keep the default Next.js settings.
 
+`vercel.json` runs the server functions in Paris (`cdg1`), next to the Firestore databases
+(`eur3`, Belgium and the Netherlands) and a few milliseconds from OpenRouteService (Heidelberg).
+Vercel's default, Washington (`iad1`), put about 150 ms on every request that is not a cached page.
+A deployment whose Firestore is elsewhere should pick the Vercel region nearest to it.
+
 ### 3. Set environment variables
 
 In your Vercel project → **Settings** → **Environment Variables**, add every variable
