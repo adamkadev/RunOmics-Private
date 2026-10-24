@@ -16,6 +16,7 @@ export const W = 300
 export const H = 375
 
 export interface SharePalette {
+  mode: ThemeMode
   /** --background */
   bg: string
   /** --line */
@@ -46,6 +47,7 @@ export const SHARE_MARKER_HEX = { light: null, dark: '#f2f4f3' } as const
 export function sharePalette(accent: AccentId, mode: ThemeMode): SharePalette {
   const s = SURFACES[mode]
   return {
+    mode,
     bg: s.background,
     line: s.line,
     tx: s.text,

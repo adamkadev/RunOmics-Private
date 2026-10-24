@@ -18,6 +18,7 @@ function recorder() {
     ...Object.fromEntries(['fillRect', 'fillText', 'strokeText', 'fill', 'stroke', 'arc', 'ellipse', 'drawImage', 'moveTo', 'lineTo', 'rect', 'roundRect'].map((k) => [k, log(k)])),
     beginPath() {}, clip() {}, closePath() {}, arcTo() {}, scale() {},
     createLinearGradient() { return { addColorStop() {} } },
+    createRadialGradient() { const stops: [number, string][] = []; return { stops, addColorStop(at: number, colour: string) { stops.push([at, colour]) } } },
     save() { stack.push({ ty, state: { ...state } }) },
     restore() { const s = stack.pop()!; ty = s.ty; Object.assign(state, s.state) },
     translate(_x: number, y: number) { ty += y },
@@ -58,6 +59,17 @@ const palette = sharePalette('violet', 'dark')
 const acc = curatedAccent('violet').dark.acc
 
 describe('drawShareCard', () => {
+  it('glows on the dark Stats card only, in the run\'s own colour', () => {
+    const radial = (ops: Op[]) => ops.filter((o) => o.op === 'fillRect' && (o.fill as unknown as { stops?: unknown }).stops) as unknown as { fill: { stops: [number, string][] } }[]
+    const glows = (mode: 'dark' | 'light') => radial(draw({ design: 'stats' }, mode))
+    const [glow] = glows('dark')
+    const zone2 = palette.zones[1]!
+    const rgb = [1, 3, 5].map((i) => Number.parseInt(zone2.slice(i, i + 2), 16)).join(', ')
+    expect(glow!.fill.stops[0]![1]).toBe(`rgba(${rgb}, 0.3)`)
+    expect(glows('light')).toHaveLength(0)
+    expect(radial(draw({ design: 'route' }))).toHaveLength(0)
+  })
+
   it('lays the whole card on the theme background, one solid fill', () => {
     for (const mode of ['dark', 'light'] as const) {
       const [first] = draw({ design: 'route' }, mode)

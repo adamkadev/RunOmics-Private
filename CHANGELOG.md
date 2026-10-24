@@ -34,6 +34,10 @@ All notable changes to this project are documented in this file.
   title: a year's range now reads by its months ("Oct 2025 – Oct 2026"),
   short enough to stay beside it.
 
+- The dark Stats share card has the app's glow, in the run's own colour,
+  so it reads as RunOmics rather than a flat black field; a faint grain
+  keeps it from banding once a social app recompresses the image.
+
 - On a laptop, Progress's Consistency card is as tall as Explored beside
   it, its week bars grown to fill it, instead of stopping short.
 

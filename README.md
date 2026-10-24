@@ -1345,6 +1345,10 @@ inks: the athlete's accent (passed as an r/g/b triple, since it can be a custom 
 never sees) plus `paper` and `ink` for the white and black washes that build the glass. Alphas stay
 inline at the call site — they are composition, not colour.
 
+The dark Stats card carries the app's glow, in the run's own zone colour, from its top corner, with a
+fixed faint grain over it: a smooth dark gradient bands into visible steps once Instagram or Strava
+recompress the image. The light card stays plain.
+
 - The start dot is always green; the finish dot is the accent, unless the accent sits within a
   distance of 90 in RGB space of the green start, where it flips to red — the start/finish convention
   Strava and Garmin use.
