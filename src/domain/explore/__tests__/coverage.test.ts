@@ -173,8 +173,7 @@ describe('aggregateCoverage', () => {
     const alpha = coverage.units.find((u) => u.id === 'test-alpha')!
 
     expect(alpha.distanceKm).toBeCloseTo(Math.hypot(300, 300) / 1000, 6)
-    // Delta at 10% and 0.98 km beats Alpha at 42% and 0.42 km.
-    expect(coverage.nextId).toBe('test-delta')
+    expect(coverage.nextId).toBe('test-alpha')
   })
 
   it('counts a cell visited by two runs once', () => {
@@ -189,8 +188,7 @@ describe('aggregateCoverage', () => {
 
     expect(coverage.units.map((u) => u.visited)).toEqual([0, 0, 1])
     expect(coverage.units.every((u) => u.distanceKm === null)).toBe(true)
-    // No home: the least explored incomplete unit.
-    expect(coverage.nextId).toBe('test-alpha')
+    expect(coverage.nextId).toBe('test-delta')
   })
 
   it('is all fog with no runs', () => {

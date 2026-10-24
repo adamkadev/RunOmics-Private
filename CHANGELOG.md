@@ -34,6 +34,11 @@ All notable changes to this project are documented in this file.
   title: a year's range now reads by its months ("Oct 2025 – Oct 2026"),
   short enough to stay beside it.
 
+- The next quartier is the nearest one not yet complete, so the quartiers
+  around home are finished first and the suggestion moves outward from
+  there; it used to favour the least explored, an untouched quartier
+  across town before a half-done one next door.
+
 - An easy run with strides reads as one on its Laps view: the run's own
   lap ("Run 8.00 km") instead of an 8 km "warm-up", and the strides listed
   with their count, fastest and average rather than graded like threshold

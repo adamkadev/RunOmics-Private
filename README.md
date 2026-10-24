@@ -1309,9 +1309,11 @@ and woods never count as unexplored. `pct = floor(100 · visited / runnable)`: c
 under 15 %. Km run are credited to the unit owning each step's midpoint. The area file and each
 run's cells are cached in IndexedDB, keyed by area version and a fingerprint of the track.
 
-**Next quartier:** the incomplete unit with at least 5 runnable cells and at most 5 km from home
-that minimises `pct/100 + km/6` (quartiers before neighbouring communes; ties go to the nearer,
-then by name). With none in range, the lowest score among every incomplete unit.
+**Next quartier:** the nearest incomplete unit with at least 5 runnable cells and at most 5 km from
+home, so the quartiers around home are finished before the next ring out: an untouched quartier
+beats a half-done one farther away. Quartiers go before neighbouring communes; labels within 100 m
+count as the same distance, and then the more explored goes first, then the name. With none in
+range, the nearest incomplete unit of all.
 
 **Routes:** `POST /api/explore/route` calls OpenRouteService (`foot-walking`) once per seed, five
 seeds a batch. The panel's **Start** picks where the loop begins:
