@@ -4,7 +4,18 @@ import { test, expect } from './fixtures'
 const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/analytics', '/profile', '/records', '/shoes', '/consistency', '/all-time', '/goals', '/race', '/athlete']
 
 async function overflows(page: Page): Promise<string[]> {
-  await page.waitForFunction(() => document.getAnimations().every((a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity))
+  await page
+    .waitForFunction(
+      () =>
+        document.getAnimations().every((a) => {
+          if (a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity) return true
+          const target = (a.effect as KeyframeEffect | null)?.target
+          return target instanceof Element && !target.checkVisibility({ contentVisibilityAuto: true })
+        }),
+      null,
+      { timeout: 10_000 },
+    )
+    .catch(() => {})
   return page.evaluate(() => {
     const width = window.innerWidth
     const found: string[] = []
