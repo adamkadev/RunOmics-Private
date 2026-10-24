@@ -90,4 +90,10 @@ describe('AppShell on the sign-in page', () => {
     expect(queryByTestId('edge-sampler')).toBeNull()
     expect(queryByTestId('scroll-edge')).toBeNull()
   })
+
+  it('glows', () => {
+    route.pathname = '/sign-in'
+    const { getByTestId } = render(<AppShell>sign in</AppShell>)
+    expect(getByTestId('aura')).toBeInTheDocument()
+  })
 })

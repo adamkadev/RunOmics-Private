@@ -2,12 +2,14 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { MAP_PADDING } from '@/lib/routeFrame'
+import { GEOMETRY_TOKENS } from '@/lib/themeTokens'
 
 const hero = readFileSync(path.resolve(__dirname, '../RunMapHero.tsx'), 'utf8')
 
 describe('the run map hero', () => {
   it("is 3.0's 330 pt tall and frames the route as 3.0 did", () => {
-    expect(hero).toContain('className="relative -mx-4 h-[330px] overflow-hidden')
+    expect(hero).toContain('className="relative -mx-4 h-[var(--run-hero-h)] overflow-hidden')
+    expect(GEOMETRY_TOKENS['--run-hero-h']).toBe('330px')
     expect(MAP_PADDING.hero).toEqual({ top: 32, right: 24, bottom: 36, left: 24 })
   })
 

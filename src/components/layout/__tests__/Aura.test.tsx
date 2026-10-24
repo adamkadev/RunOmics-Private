@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { Aura, auraPalette } from '../Aura'
+import { Aura, auraPalette, auraUnderHero } from '../Aura'
 
 const route = vi.hoisted(() => ({ pathname: '/' }))
 vi.mock('next/navigation', () => ({ usePathname: () => route.pathname }))
@@ -19,29 +19,36 @@ describe('the aura', () => {
     expect(auraPalette('/shoes')).toEqual(['--warn', '--accent', '--zone-3'])
     expect(auraPalette('/shoes/demo-shoe-0000000000000001')).toEqual(['--warn', '--accent', '--zone-3'])
     expect(auraPalette('/shoes/abc/')).toEqual(['--warn', '--accent', '--zone-3'])
-    expect(auraPalette('/shoesx')).toBeNull()
     route.pathname = '/shoes/abc'
     render(<Aura />)
     expect(screen.getByTestId('aura').style.getPropertyValue('--aura-1')).toBe('var(--warn)')
   })
 
-  it('draws nothing on a page with a map hero', () => {
-    expect(auraPalette('/activities/123')).toBeNull()
-    expect(auraPalette('/map')).toBeNull()
-    route.pathname = '/map'
+  it("takes Activities' palette on an activity, and starts under its map", () => {
+    expect(auraPalette('/activities/123')).toEqual(['--accent', '--zone-2', '--zone-1'])
+    expect(auraUnderHero('/activities')).toBe(false)
+    route.pathname = '/activities/123'
     render(<Aura />)
-    expect(screen.queryByTestId('aura')).toBeNull()
+    const aura = screen.getByTestId('aura')
+    expect(aura.style.getPropertyValue('--aura-3')).toBe('var(--zone-1)')
+    expect(aura).toHaveAttribute('data-under-hero')
+    const css = readFileSync(path.resolve(__dirname, '../../../app/globals.css'), 'utf8')
+    expect(css).toContain('.aura[data-under-hero] { top: calc(var(--top-scrim) + var(--run-hero-h)); }')
   })
 
-  it("draws nothing on Activities' Map view", () => {
-    expect(auraPalette('/activities', 'map')).toBeNull()
-    expect(auraPalette('/activities', null)).toEqual(['--accent', '--zone-2', '--zone-1'])
-    expect(auraPalette('/plan', 'map')).toEqual(['--zone-4', '--zone-2', '--accent'])
+  it("glows on Activities' Map view", () => {
     route.pathname = '/activities'
     window.history.replaceState(null, '', '/activities?view=map')
     render(<Aura />)
-    expect(screen.queryByTestId('aura')).toBeNull()
+    expect(screen.getByTestId('aura').style.getPropertyValue('--aura-1')).toBe('var(--accent)')
     window.history.replaceState(null, '', '/')
+  })
+
+  it("glows on All time, and on a page with no palette of its own in Today's", () => {
+    expect(auraPalette('/all-time')).toEqual(['--zone-3', '--accent', '--zone-2'])
+    expect(auraPalette('/sign-in')).toEqual(auraPalette('/'))
+    expect(auraPalette('/no-such-page')).toEqual(auraPalette('/'))
+    expect(auraPalette('/shoesx')).toEqual(auraPalette('/'))
   })
 
   it('is a sibling layer that takes no taps, its colours as custom properties', () => {
@@ -49,6 +56,7 @@ describe('the aura', () => {
     render(<Aura />)
     const aura = screen.getByTestId('aura')
     expect(aura.className).toBe('aura')
+    expect(aura).not.toHaveAttribute('data-under-hero')
     expect(aura.style.getPropertyValue('--aura-1')).toBe('var(--zone-2)')
     expect(aura.children).toHaveLength(0)
   })

@@ -2,20 +2,21 @@
 
 import { usePathname } from 'next/navigation'
 import { useGlow } from '@/lib/glow'
-import { useUrlParam } from '@/lib/useUrlParam'
 
 /** CSS custom property names, one per glow. */
 type Palette = readonly [string, string, string]
 
-/** Pages with a map hero (an activity, the map, the share card) have none, and nor has Activities' Map view. */
+const TODAY: Palette = ['--accent', '--zone-2', '--zone-3']
+
 const PALETTES: Record<string, Palette> = {
-  '/': ['--accent', '--zone-2', '--zone-3'],
+  '/': TODAY,
   '/activities': ['--accent', '--zone-2', '--zone-1'],
   '/plan': ['--zone-4', '--zone-2', '--accent'],
   '/analytics': ['--zone-2', '--zone-3', '--accent'],
   '/profile': ['--accent', '--zone-3', '--warn'],
   '/records': ['--warn', '--accent', '--zone-3'],
   '/consistency': ['--accent', '--zone-2', '--accent'],
+  '/all-time': ['--zone-3', '--accent', '--zone-2'],
   '/athlete': ['--zone-2', '--zone-4', '--accent'],
   '/athlete/vo2max': ['--accent', '--zone-3', '--zone-2'],
   '/goals': ['--accent', '--warn', '--zone-2'],
@@ -25,13 +26,21 @@ const PALETTES: Record<string, Palette> = {
 }
 
 /** Pages whose children take their palette. */
-const FAMILIES = ['/shoes']
+const FAMILIES = ['/activities', '/shoes']
 
-export function auraPalette(pathname: string, view: string | null = null): Palette | null {
-  const path = pathname.replace(/\/+$/, '') || '/'
-  if (path === '/activities' && view === 'map') return null
+function normalize(pathname: string): string {
+  return pathname.replace(/\/+$/, '') || '/'
+}
+
+export function auraPalette(pathname: string): Palette {
+  const path = normalize(pathname)
   const family = FAMILIES.find((root) => path.startsWith(`${root}/`))
-  return PALETTES[path] ?? (family ? PALETTES[family] : undefined) ?? null
+  return PALETTES[path] ?? (family ? PALETTES[family] : undefined) ?? TODAY
+}
+
+/** An activity opens on a full-bleed map (RunMapHero), which would hide a glow at the top. */
+export function auraUnderHero(pathname: string): boolean {
+  return normalize(pathname).startsWith('/activities/')
 }
 
 /**
@@ -39,15 +48,15 @@ export function auraPalette(pathname: string, view: string | null = null): Palet
  * Reduce Transparency and Increase Contrast hide it (globals.css).
  */
 export function Aura() {
-  const [view] = useUrlParam('view')
-  const palette = auraPalette(usePathname(), view)
+  const pathname = usePathname()
+  const [c1, c2, c3] = auraPalette(pathname)
   const glow = useGlow()
-  if (!palette || !glow) return null
-  const [c1, c2, c3] = palette
+  if (!glow) return null
   return (
     <div
       aria-hidden="true"
       data-testid="aura"
+      data-under-hero={auraUnderHero(pathname) || undefined}
       className="aura"
       style={{ '--aura-1': `var(${c1})`, '--aura-2': `var(${c2})`, '--aura-3': `var(${c3})` } as React.CSSProperties}
     />
