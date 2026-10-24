@@ -20,9 +20,6 @@ const SET: RepSet = {
   inBand: 3,
   spreadSecPerKm: 1,
   hrDriftBpm: 4,
-  meanRecoverySecPerKm: 438,
-  firstRecoverySecPerKm: 444,
-  lastRecoverySecPerKm: 429,
 }
 
 describe('IntervalSet', () => {

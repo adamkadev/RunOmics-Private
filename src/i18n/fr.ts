@@ -50,20 +50,6 @@ export const fr = {
     toggle: 'Changer de thème',
   },
 
-  chartWindow: {
-    // Semaines, mois, ans : S, M, A, en capitales comme 3M · 6M · 1A.
-    ranges: {
-      '4w': '4S',
-      '6m': '6M',
-      '1y': '1A',
-    },
-    previous: 'Période précédente',
-    next: 'Période suivante',
-    empty: 'Aucune donnée enregistrée sur cette période.',
-    notEnoughRuns: 'Pas assez de sorties sur cette période',
-    tooFewToPlot: 'Trop peu de points pour tracer une tendance',
-  },
-
   dates: {
     monthShortYear: (month: string, year2: string) => `${month} ${year2}`,
   },
@@ -117,7 +103,6 @@ export const fr = {
   },
   glossary: {
     about: (term: string) => `Définition : ${term}`,
-    aboutThese: 'Ce que signifient ces chiffres',
     form: {
       term: 'Forme',
       definition: (tired: number, fresh: number, veryFresh: number) =>
@@ -2139,12 +2124,6 @@ export const fr = {
     switcher: { week: 'Semaine', month: 'Mois' },
     planned: 'Prévu',
     easyEffortLabel: 'EF',
-    structure: {
-      warmup: 'Échauffement',
-      cooldown: 'Retour au calme',
-      min: (m: number) => `${m}'`,
-      strides: (reps: number, rep: string) => `${reps} accélérations de ${rep}`,
-    },
     openPlanner: 'Ouvrir le planificateur',
     type: 'Type',
     races: 'Courses',
@@ -2163,7 +2142,6 @@ export const fr = {
       hrCap: (bpm: number) => `≤ ${bpm}`,
       findRoute: 'Trouver un parcours',
     },
-    continuous: 'continu',
     restCard: {
       eyebrow: 'Repos',
       title: 'Jour de repos',

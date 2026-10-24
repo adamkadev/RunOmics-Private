@@ -1,5 +1,4 @@
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
-import type { ProfileData } from '@/application/usecases/GetProfileData'
 import { pickDefined } from '@/components/pickDefined'
 
 /**
@@ -18,18 +17,8 @@ const ATHLETE_PAGE_FIELDS = [
   'lastUpdate',
 ] as const satisfies readonly (keyof AthleteProfile)[]
 
-const PROFILE_ATHLETE_FIELDS = ['displayName', 'vmaKmh', 'lthrBpm'] as const satisfies readonly (keyof AthleteProfile)[]
-
 export type AthletePageView = Pick<AthleteProfile, (typeof ATHLETE_PAGE_FIELDS)[number]>
-
-export type ProfileAthleteView = Pick<AthleteProfile, (typeof PROFILE_ATHLETE_FIELDS)[number]>
-
-export type ProfileView = Omit<ProfileData, 'athlete'> & { athlete: ProfileAthleteView }
 
 export function athletePageView(profile: AthleteProfile): AthletePageView {
   return pickDefined(profile, ATHLETE_PAGE_FIELDS)
-}
-
-export function profileView(data: ProfileData): ProfileView {
-  return { ...data, athlete: pickDefined(data.athlete, PROFILE_ATHLETE_FIELDS) }
 }

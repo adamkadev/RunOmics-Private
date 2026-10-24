@@ -53,12 +53,6 @@ export async function getCachedInsight(surface: string): Promise<CachedInsight |
   return doc.exists ? (doc.data() as CachedInsight) : null
 }
 
-export function servableInsight(cached: CachedInsight | undefined, key: string | InsightKey, now = Date.now()): Insight | null {
-  if (!cached) return null
-  const wanted = typeof key === 'string' ? { hash: key } : key
-  return servable(cached, wanted, now) ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null
-}
-
 /** The whole stored document, so a caller needing *when* a surface was written need not read it twice. */
 export async function readVerifiedCachedInsight(
   surface: string,

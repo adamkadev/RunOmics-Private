@@ -346,7 +346,6 @@ function semanticTokens(mode: 'light' | 'dark'): Record<string, string> {
     '--good': 'var(--pos)',
     '--destructive': 'var(--neg)',
     // Form is drawn by its bands; fitness is the solid line, fatigue the dashed one.
-    '--metric-form': 'var(--foreground)',
     '--metric-fitness': 'var(--foreground)',
     '--metric-fatigue': 'var(--muted-foreground)',
     '--tone-go': 'var(--pos)',
@@ -418,9 +417,6 @@ export const TOKEN_BLOCKS: TokenBlock[] = [
       '--bar-fade': '18px',
       '--safe-bottom': 'env(safe-area-inset-bottom, 0px)',
       '--tap-min': '44px',
-      // Session state is drawn in shape, so colour is free to mean intensity.
-      '--state-line': '1.5px',
-      '--state-hatch': '40%',
       '--state-ring': '2px',
       '--scrim': ink(0.25),
       '--scrim-strong': ink(0.6),

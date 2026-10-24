@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import type { HrZone } from '../types'
-import { easyShare, easyShareOfZones } from '../easyShare'
+import { easyShare } from '../easyShare'
 
 function zones(...secondsByZone: number[]): { hrZones: HrZone[] } {
   return {
@@ -35,12 +35,5 @@ describe('easyShare', () => {
 
   it('weights by time, so a long month counts for more than a short one', () => {
     expect(easyShare([zones(9_000, 0, 1_000), zones(0, 0, 1_000)])).toEqual({ easy: 82, hard: 18 })
-  })
-})
-
-describe('easyShareOfZones', () => {
-  it('reads seconds already summed by zone', () => {
-    expect(easyShareOfZones({ 1: 600, 2: 600, 4: 800 })).toEqual({ easy: 60, hard: 40 })
-    expect(easyShareOfZones({})).toBeNull()
   })
 })

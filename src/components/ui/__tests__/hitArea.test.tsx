@@ -3,9 +3,7 @@ import path from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { Pill } from '@/components/ui/Pill'
-import { PeriodNav } from '@/components/ui/PeriodNav'
 import { ChartCardHead } from '@/components/ui/ChartCard'
-import { ChartRangeChips, ChartWindowPager } from '@/components/ui/ChartWindowNav'
 import { BackButton } from '@/components/ui/BackButton'
 import { SaveButton } from '@/components/ui/SaveButton'
 import { ShareButton } from '@/components/activity/ShareButton'
@@ -40,33 +38,6 @@ describe('the 44 pt hit area', () => {
     render(<ChartCardHead title="Load" footnote="How load is counted." />)
 
     expect(screen.getByRole('button', { name: t.analytics.aboutChart }).className).toContain('hit-44')
-  })
-
-  it('wraps the window chevrons and each range chip', () => {
-    render(
-      <>
-        <ChartWindowPager
-          bounds={{ from: '2026-09-01', to: '2026-09-28' }}
-          canGoBack
-          canGoForward
-          onBack={() => {}}
-          onForward={() => {}}
-        />
-        <ChartRangeChips value="4w" onChange={() => {}} />
-      </>,
-    )
-
-    for (const button of screen.getAllByRole('button')) {
-      expect(button.className).toContain('hit-44')
-    }
-  })
-
-  it('wraps the small period chevrons', () => {
-    render(<PeriodNav size="sm" label="2026" onPrev={() => {}} onNext={() => {}} />)
-
-    for (const button of screen.getAllByRole('button')) {
-      expect(button.className).toContain('hit-44')
-    }
   })
 
   it('wraps the back link, Share and Save', () => {

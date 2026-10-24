@@ -912,12 +912,6 @@ declined to rate are left out.
   what keeps Progress, Goals and Analytics from disagreeing by a kilometre.
 - **Easy/hard split** has one implementation, accepting anything carrying `hrZones`
   (`Activity` or the lighter `ActivitySummary`), so Today, Plan and Activities cannot diverge.
-- **Plan progress is counted the way Garmin Connect counts it**: whole calendar weeks over
-  the plan's own start-to-end span. It deliberately does not measure the phase ranges (Garmin
-  publishes phases only from BUILD onward, so the base weeks that open a plan are absent and
-  the count would start weeks late), and does not divide a day span by 7 (a plan starting
-  mid-week belongs to the week it falls in, so both ends snap to their Monday). Null when
-  there is no dated plan.
 - **Aerobic decoupling (Pa:HR)** returns null whenever the number would mislead: interval
   sessions where pace is meant to swing, runs too short to drift, or too few clean samples.
 - **Riegel predictions** are damped by VO₂max trend, but only *half* the VO₂max change is
@@ -934,9 +928,6 @@ declined to rate are left out.
   small ones flat; anchoring per gauge makes "inside the range" mean the same visual thing
   across all three. Outside the band the value compresses asymptotically, so an extreme
   reading pins near the end rather than running off it.
-- **Taper projections hold today's load flat.** That is an assumption, not a plan, and the
-  UI has to say so — the honest answer to "what will my form be" depends on training that
-  has not happened yet.
 - **`typePaceZone` omits Sprint, Anaerobic and Race** on purpose: those efforts are
   prescribed per-interval or by the race itself, and quoting a single steady range for them
   would be wrong rather than merely vague.
@@ -1199,49 +1190,16 @@ parser takes the first part that actually carries text.
 Run verdicts are gated by `deservesVerdict` — generating one for every run ever synced spends the
 day's quota on pages nobody opens. A run that already has a cached verdict keeps it either way.
 
-### Charts and windowing
+### Charts
 
-**Every windowed chart shares one point budget** — 12 points for a year, 6 for six months, one
-per week for four weeks — so they all read at the same density as the Fitness group's load chart.
-`sampleForRange` groups into equal index-buckets and averages each numeric field; non-numeric
-fields (date, label, status) come from the bucket's last point so ticks and tooltips stay
-meaningful. `decimals` defaults to 2 because the same series carry whole-number loads (CTL ~50)
-and small fractional ones (stride length ~1.2 m, efficiency ~0.95), and rounding everything to an
-integer would flatten the fractional ones. Charts that aggregate the whole window rather than
-plotting it (the zone donut) opt out with `sample={false}`.
-
-**Axis labels.** A phone-width chart card carries about six labels before they collide: the plot
-is ~270px inside the card and a short month label ("juil.") is ~30px at the 11px tick size. For
-wide windows, ticks are placed on **month starts** — spacing them evenly through the array lands
-them on whatever week happens to fall there, giving "4 Aug · 29 Sep · 24 Nov", dates that mark
-nothing and cannot be scanned as a calendar. `windowDateAxis` blanks the non-tick labels rather
-than letting Recharts thin the categories, which is why `interval={0}` is needed on the dense
-weekly chart: left to its own interval Recharts picks a subset of the 52 points first, and a year
-window can land on nothing but blanked ones.
-
-**Weeks with no running are absent from a weekly series**, so a categorical axis draws a
-three-week break as a single step and the curve joins across it as if training never stopped.
-`fillWeeklyGaps` inserts explicit blank weeks — for a volume chart a week at 0 km is a reading,
-not a missing value, and usually the most informative one on the chart. Only the interior is
-filled: before the first week there is no history to claim, and after the last there is nothing
-recorded yet.
+**Weeks with no running still get a row.** The weekly series holds only weeks with runs, so
+`weekRows` lays out every week of the window and gives a missing one 0 km — for a volume chart a
+week at 0 km is a reading, not a missing value, and usually the most informative one on the chart.
 
 Other chart decisions worth keeping:
 
-- The last point of a weekly volume curve is a week still being run, so the dip into it is not a
-  real drop and is marked as "so far" rather than left to imply a finished week.
-- The average line is deliberately unlabelled: an inline "avg 41 km" sits exactly where the most
-  recent weeks are and collides with the curve on a phone. The footnote names the line and the
-  reading gives the number.
-- `WeeklyVolumeChart` needs a wider right margin than its siblings — their ticks are three-letter
-  months, its are "27 juil." on the window's last point, half of which hangs off the card at 4w.
-- HR trend uses the easy/hard pair (`hrEasy` red300 / `hr` red500) rather than two reds, which
-  were indistinguishable in dark mode. Lower easy-run HR for the same effort reads as improving
-  fitness, so "down" is positive there.
-- The training-status ribbon gives segments narrower than a few percent a sliver of width, so a
-  one-day flip into overreaching stays visible instead of collapsing to nothing.
-- `trendDots` marks every point: at 4–12 values per window each reading is worth marking, and a
-  bare line hides where the actual measurements are.
+- The last week of the weekly distance chart is a week still being run, so its short bar is not a
+  real drop and is outlined and labelled "this week" rather than left to imply a finished week.
 - **`ChartFigure` is required for accessibility.** Recharts renders plain SVG with no semantics,
   so a screen reader announces nothing or reads scattered tick/tooltip nodes piecemeal. It exposes
   the chart as a single `img`-role element with one summarising sentence (the WCAG text-alternative
@@ -1331,7 +1289,7 @@ committed to this repo, and the median start is computed in memory and never sen
 
 **Coverage** runs in a Web Worker (`src/components/explore/explore.worker.ts` over the pure
 `src/domain/explore/*`). Each track is projected to metres about the area's public origin,
-interpolated so samples are at most 75 m apart (a step over 300 m is a dropout or a privacy cut and
+interpolated so samples are at most 75 m apart (a step over 300 m is a dropout and
 is left open), and binned into 150 m cells. A unit's denominator is its *runnable* cells - those
 holding an OpenStreetMap footway, path, track or street, precomputed by the build - so rivers, rail
 and woods never count as unexplored. `pct = floor(100 · visited / runnable)`: complete at 90 %, fog

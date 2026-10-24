@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { ShoeStats } from '@/application/usecases/GetShoeStats'
 import { t } from '@/i18n'
 import { yearOverYear } from '@/lib/yearOverYear'
-import { cumulativeYear, heatWeeks, progressHubView, raceGapView, type HubInput } from '../progressHubView'
+import { cumulativeYear, heatWeeks, progressHubView, type HubInput } from '../progressHubView'
 import { ProgressHub } from '../ProgressHub'
 
 function shoe(overrides: Partial<ShoeStats>): ShoeStats {
@@ -126,20 +126,6 @@ describe('the hub helpers', () => {
     const mid = { level: 2, today: false, future: false }
     expect(weeks.at(-1)).toEqual([rest, rest, mid, mid, rest, { level: 0, today: true, future: false }, { level: 0, today: false, future: true }])
   })
-
-  it('reads the race gap per km and how far the predicted pace gets by the target time', () => {
-    const race = { daysUntil: 201, distance: 'Half-Marathon', distanceKm: 21.0975, name: null, date: '2027-05-08', targetSeconds: 5700, predictedSeconds: 5746 }
-    const gap = raceGapView(race)!
-    expect(gap.gapSeconds).toBe(46)
-    expect(gap.perKmSeconds).toBe(2)
-    expect(gap.reached).toBeCloseTo(5700 / 5746)
-    expect(raceGapView({ ...race, predictedSeconds: 5600 })).toMatchObject({ gapSeconds: -100, perKmSeconds: 5, reached: 1 })
-    // Under half a second a km still reads as one; an unknown distance has none.
-    expect(raceGapView({ ...race, predictedSeconds: 5705 })!.perKmSeconds).toBe(1)
-    expect(raceGapView({ ...race, distanceKm: null })!.perKmSeconds).toBeNull()
-    expect(raceGapView({ ...race, targetSeconds: null })).toBeNull()
-  })
-
 })
 
 describe('ProgressHub (3.0)', () => {

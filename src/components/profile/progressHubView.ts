@@ -176,15 +176,6 @@ export function heatWeeks(days: HeatmapDay[], today: string): HeatCell[][] {
   )
 }
 
-/** `reached`: the share of the course the predicted pace covers when the target clock stops. */
-export function raceGapView(race: NonNullable<ProgressHubView['race']>): { gapSeconds: number; perKmSeconds: number | null; reached: number } | null {
-  if (race.predictedSeconds === null || !race.targetSeconds) return null
-  const gapSeconds = race.predictedSeconds - race.targetSeconds
-  // A gap under half a second a km still reads as one, never "0 s/km".
-  const perKmSeconds = race.distanceKm ? (gapSeconds === 0 ? 0 : Math.max(1, Math.round(Math.abs(gapSeconds) / race.distanceKm))) : null
-  return { gapSeconds, perKmSeconds, reached: Math.min(1, race.targetSeconds / race.predictedSeconds) }
-}
-
 export function progressHubView(input: HubInput): ProgressHubView {
   const year = Number(input.today.slice(0, 4))
   const today = dayOfYear(input.today)

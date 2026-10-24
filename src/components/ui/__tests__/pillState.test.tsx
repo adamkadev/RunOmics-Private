@@ -1,45 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { YearSelector } from '@/components/ui/YearSelector'
-import { SegmentedTabs, useSegmentedTabs } from '@/components/ui/SegmentedTabs'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 import { t } from '@/i18n'
 
 const CHIP_SELECTED = 'bg-foreground'
-const TAB_SELECTED = 'bg-[var(--segmented-pill)]'
-const ACCENT_FILL = 'bg-accent'
 
 const RETIRED_ACTIVE_TINT = 'bg-foreground/[0.14]'
 
 
 describe('the selected chip speaks one language', () => {
-  it('marks the selected year inverted, not in the accent', () => {
-    render(<YearSelector years={[2025, 2024]} selected={2025} onSelect={() => {}} />)
-
-    const chip = screen.getByRole('button', { name: '2025' })
-    expect(chip.className).toContain(CHIP_SELECTED)
-    expect(chip.className).toContain('text-background')
-    expect(chip.className).not.toContain(ACCENT_FILL)
-  })
-
-  it('lifts the selected segmented tab onto the card, not into the accent', () => {
-    function Tabs() {
-      const tabs = useSegmentedTabs({ ids: ['year', 'allTime'] as const, value: 'year', onChange: () => {} })
-      return <SegmentedTabs tabs={tabs} items={[{ id: 'year', label: 'This year' }, { id: 'allTime', label: 'All' }]} label="Period" />
-    }
-    render(<Tabs />)
-
-    const selected = screen.getByRole('tab', { name: 'This year' })
-    expect(selected.className).toContain(TAB_SELECTED)
-    expect(selected.className).toContain('text-foreground')
-    expect(selected.className).not.toContain(ACCENT_FILL)
-    expect(selected.className).not.toContain(RETIRED_ACTIVE_TINT)
-
-    const unselected = screen.getByRole('tab', { name: 'All' })
-    expect(unselected.className).not.toContain(TAB_SELECTED)
-  })
-
   it('marks the selected activity group inverted', async () => {
     window.history.replaceState(null, '', '/activities')
     render(<ActivityListClient initialItems={[]} initialNextOffset={null} totalCount={0} today="2026-09-24" mapData={{ routeMeta: [], clusters: [], defaultClusterIdx: 0, totalCount: 0, totalKm: 0, years: [] }} />)

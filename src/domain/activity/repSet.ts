@@ -40,9 +40,6 @@ export interface RepSet {
   inBand: number
   spreadSecPerKm: number | null
   hrDriftBpm: number | null
-  meanRecoverySecPerKm: number | null
-  firstRecoverySecPerKm: number | null
-  lastRecoverySecPerKm: number | null
 }
 
 const RECOVERY_TYPES = new Set(['interval_rest', 'interval_recovery'])
@@ -130,7 +127,6 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
       : null
 
   const hrs = reps.map((r) => r.avgHr).filter((hr): hr is number => hr !== null)
-  const recoveries = reps.map((r) => r.recovery?.paceSecPerKm ?? null).filter((p): p is number => p !== null)
 
   return {
     reps,
@@ -141,48 +137,7 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
     inBand: band ? paces.filter((p) => p >= band.min && p <= band.max).length : 0,
     spreadSecPerKm: paces.length >= 2 ? Math.max(...paces) - Math.min(...paces) : null,
     hrDriftBpm: hrs.length >= 2 ? hrs[hrs.length - 1]! - hrs[0]! : null,
-    meanRecoverySecPerKm:
-      recoveries.length > 0
-        ? Math.round(recoveries.reduce((sum, p) => sum + p, 0) / recoveries.length)
-        : null,
-    firstRecoverySecPerKm: recoveries[0] ?? null,
-    lastRecoverySecPerKm: recoveries.length >= 2 ? recoveries[recoveries.length - 1]! : null,
   }
-}
-
-export type SetVerdict = 'repsHeld' | 'repsHeldRecoveriesSlowed' | 'repsBuilt' | 'repsFaded'
-
-const IN_BAND_RATIO = 0.75
-const HR_DRIFT_LIMIT_BPM = 3
-const RECOVERY_SLOWED_SEC = 60
-const BUILD_SEC_PER_KM = 8
-
-/** Positive slowed, negative got faster. */
-export function repFadeSecPerKm(set: RepSet): number | null {
-  const paces = set.reps.map((r) => r.paceSecPerKm).filter((p): p is number => p !== null)
-  if (paces.length < 2) return null
-  return paces[paces.length - 1]! - paces[0]!
-}
-
-/**
- * The band and heart rate, not raw spread: one slow opener can widen the spread of an otherwise exact set.
- * A progression is not a consistency failure, so it is judged first.
- */
-export function setVerdict(set: RepSet): SetVerdict {
-  const fade = repFadeSecPerKm(set)
-  if (fade !== null && fade <= -BUILD_SEC_PER_KM) return 'repsBuilt'
-
-  const ratio = set.reps.length > 0 ? set.inBand / set.reps.length : 0
-  const held =
-    ratio >= IN_BAND_RATIO && (set.hrDriftBpm === null || set.hrDriftBpm <= HR_DRIFT_LIMIT_BPM)
-  if (!held) return 'repsFaded'
-
-  const slowed =
-    set.firstRecoverySecPerKm !== null &&
-    set.lastRecoverySecPerKm !== null &&
-    set.lastRecoverySecPerKm - set.firstRecoverySecPerKm >= RECOVERY_SLOWED_SEC
-
-  return slowed ? 'repsHeldRecoveriesSlowed' : 'repsHeld'
 }
 
 export interface Track {

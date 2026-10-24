@@ -1,4 +1,4 @@
-import { DAY_MS, addDays, isoDate } from '@/lib/calendarDate'
+import { DAY_MS } from '@/lib/calendarDate'
 import type { TrainingStatusType } from '@/domain/training/status'
 
 export interface TrainingStatusSegment {
@@ -32,21 +32,4 @@ export function buildSegments(
 function isNextDay(previous: string, current: string): boolean {
   const gap = new Date(current + 'T00:00:00').getTime() - new Date(previous + 'T00:00:00').getTime()
   return gap === DAY_MS
-}
-
-/**
- * Calendar days, not the last N records, which can span months when the watch
- * skips days. Today and Analytics both count from this.
- */
-export function trainingStatusDays<S extends string>(
-  points: ReadonlyArray<{ date: string; status: S | null }>,
-  endIso: string,
-  windowDays: number,
-): { date: string; status: S | null }[] {
-  const byDate = new Map(points.map((p) => [p.date.slice(0, 10), p.status]))
-  const end = new Date(endIso + 'T00:00:00')
-  return Array.from({ length: windowDays }, (_, i) => {
-    const date = isoDate(addDays(end, i - windowDays + 1))
-    return { date, status: byDate.get(date) ?? null }
-  })
 }

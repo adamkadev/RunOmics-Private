@@ -12,7 +12,7 @@ import {
 import { macrocyclePhases } from '@/domain/coaching/macrocycle'
 import { bookends } from '@/domain/training/workoutStructure'
 import type { SessionHrTarget } from '@/domain/training/hrTarget'
-import { formatClock, formatDurationWords } from '@/lib/formatters'
+import { formatClock } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 function utc(date: string): number {
@@ -100,28 +100,6 @@ function segmentMeters(target: WorkoutTarget): number {
     return (target.durationSeconds * 2_000) / (target.paceSecPerKm.min + target.paceSecPerKm.max)
   }
   return 0
-}
-
-export function prescriptionSize(workout: Segmented): string {
-  let meters = 0
-  let unpacedSeconds = 0
-  let estimated = false
-
-  eachSegment(workout, (target) => {
-    if (target.distanceMeters !== undefined) {
-      meters += target.distanceMeters
-    } else if (target.durationSeconds && target.paceSecPerKm) {
-      meters += segmentMeters(target)
-      estimated = true
-    } else {
-      unpacedSeconds += target.durationSeconds ?? 0
-    }
-  })
-
-  return [
-    meters ? `${estimated ? '~' : ''}${Number((meters / 1000).toFixed(1))} km` : '',
-    unpacedSeconds ? formatDurationWords(unpacedSeconds) : '',
-  ].filter(Boolean).join(' + ')
 }
 
 const STEP_KIND: Record<WorkoutSegmentKind, WorkoutStepKind> = {

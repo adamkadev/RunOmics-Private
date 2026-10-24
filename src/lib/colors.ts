@@ -80,20 +80,6 @@ export function sessionZone(session: { type?: string | null }): SessionZone {
   return runTypeZone(session.type)
 }
 
-export const ZONE_COLOR_CLASSES: Record<number, { bg: string; text: string }> = {
-  1: { bg: 'bg-[var(--zone-1)]', text: 'text-[var(--zone-1)]' },
-  2: { bg: 'bg-[var(--zone-2)]', text: 'text-[var(--zone-2)]' },
-  3: { bg: 'bg-[var(--zone-3)]', text: 'text-[var(--zone-3)]' },
-  4: { bg: 'bg-[var(--zone-4)]', text: 'text-[var(--zone-4)]' },
-  5: { bg: 'bg-[var(--zone-5)]', text: 'text-[var(--zone-5)]' },
-}
-
-export const TRAINING_METRIC_COLORS = {
-  form:    'var(--metric-form)',
-  fitness: 'var(--metric-fitness)',
-  fatigue: 'var(--metric-fatigue)',
-} as const
-
 // Tokens, so each theme takes its own text-grade step.
 export const READINESS_TONE_COLORS = {
   go:      'var(--tone-go)',
@@ -130,11 +116,6 @@ export const RUN_CHART_LINE = {
   // The blue every other pace series takes; a cyan would read as the cyan accent.
   pace: c.blue500,
   cadence: runTypeColor('Threshold'),
-} as const
-
-/** Only `effort` is drawn at full height, so it is the only segment tall enough to carry a duration label. */
-export const WORKOUT_SEGMENT_INK = {
-  effort: 'var(--zone-ink)',
 } as const
 
 export const CELEBRATION_COLORS = {

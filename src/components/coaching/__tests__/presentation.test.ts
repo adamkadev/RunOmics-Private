@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { prescriptionDistanceMeters, prescriptionSize } from '../presentation'
+import { prescriptionDistanceMeters } from '../presentation'
 import { workout } from '@/domain/coaching/__tests__/fixtures'
 
 const EASY = { min: 330, max: 384 }
@@ -30,11 +30,6 @@ describe('prescriptionDistanceMeters', () => {
 
     expect(meters).toBeGreaterThan(10_000)
     expect(meters).toBeLessThan(10_400)
-  })
-
-  it('agrees with the size label drawn from the same workout', () => {
-    const meters = prescriptionDistanceMeters(timedThreshold())!
-    expect(prescriptionSize(timedThreshold())).toBe(`~${Number((meters / 1000).toFixed(1))} km`)
   })
 
   it('prefers a stored total over recomputing one', () => {
