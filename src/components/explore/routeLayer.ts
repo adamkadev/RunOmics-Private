@@ -63,7 +63,7 @@ export interface RouteDrawing {
   coordinates: readonly (readonly number[])[]
   /** One per step (coordinates − 1): true where the step is new ground. */
   newSteps: readonly boolean[]
-  /** Where the dashed walk to the loop begins; with no loop yet, the start dot. */
+  /** Where the dashed line to the loop begins: home, or the tapped start; with no loop yet, the start dot. */
   from: [number, number] | null
 }
 

@@ -42,7 +42,7 @@ import {
   type GeneratorTarget,
 } from "@/components/explore/routeGenerator";
 import type { RouteDrawing } from "@/components/explore/routeLayer";
-import { routeStartState, useDeviceLocation, type RouteStartMode } from "@/components/explore/routeStart";
+import { routeStartState, type RouteStartMode } from "@/components/explore/routeStart";
 import { combineOverlays, useRouteOverlay, useRouteSync } from "@/components/explore/useRouteOverlay";
 import { quartierPadding, sheetBoxOf, unitBounds } from "@/components/explore/quartierCamera";
 import {
@@ -246,19 +246,9 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
   const onPlanRun = districtsArea ? planRun : undefined;
   const [routePrefs, setRoutePrefs] = useState({ avoidBusyRoads: true, newStreetsFirst: true });
   const [drawnRoute, setDrawnRoute] = useState<ScoredRoute | null>(null);
-  const [startMode, setStartMode] = useState<RouteStartMode>("here");
+  const [startMode, setStartMode] = useState<RouteStartMode>("pick");
   const [pickedStart, setPickedStart] = useState<[number, number] | null>(null);
-  // A new id asks the device again: each opening, and a return to "here" after a refusal.
-  const [locateId, setLocateId] = useState(0);
-  const location = useDeviceLocation(generatorOpen ? locateId : null);
-  const routeStart = useMemo(() => routeStartState(startMode, location, pickedStart), [startMode, location, pickedStart]);
-  const changeStartMode = useCallback(
-    (mode: RouteStartMode) => {
-      setStartMode(mode);
-      if (mode === "here" && (location?.status === "denied" || location?.status === "unavailable")) setLocateId((id) => id + 1);
-    },
-    [location],
-  );
+  const routeStart = useMemo(() => routeStartState(startMode, pickedStart), [startMode, pickedStart]);
   // The closed generator's opener, until the map it gives back has rendered.
   const closedOpener = useRef<GeneratorOpener | null>(null);
   const closeGenerator = useCallback(() => {
@@ -266,9 +256,8 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
     closedOpener.current = generator?.opener ?? null;
     setGenerator(null);
     setDrawnRoute(null);
-    setStartMode("here");
+    setStartMode("pick");
     setPickedStart(null);
-    setLocateId((id) => id + 1);
     if (back) {
       setExpanded(back.expanded);
       setOpenUnitId(back.unitId);
@@ -301,7 +290,7 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
   );
   const districtsOverlay = useDistrictsOverlay(districtsState, districtsOn);
 
-  // Home and the runner's own start are drawn here only: the worker's plan is what leaves the device.
+  // Home is drawn here only, never sent anywhere.
   const startPoint = routeStart.origin;
   const routeDrawing = useMemo<RouteDrawing | null>(() => {
     if (!generatorOpen) return null;
@@ -548,7 +537,7 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
             prefs={routePrefs}
             onPrefsChange={setRoutePrefs}
             start={routeStart}
-            onStartModeChange={changeStartMode}
+            onStartModeChange={setStartMode}
             home={districtsHome}
             paceSecPerKm={generator.pace}
             plan={generator.plan}

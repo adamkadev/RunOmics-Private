@@ -1,7 +1,7 @@
 import type { RouteCandidate } from '@/domain/explore/types'
 
 export interface RoundTripRequest {
-  /** [lon, lat] where the loop starts and ends, never near home: the provider's terms forbid personal data. */
+  /** [lon, lat] where the loop starts and ends: the quartier's public start, or the point the runner tapped. */
   start: [number, number]
   /** Points the loop passes through in order; with none the provider draws a loop of `lengthM` itself. */
   vias?: [number, number][]

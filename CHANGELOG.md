@@ -4,15 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-- Explore's route generator starts where you are: the panel's Start picks
-  your location (the default), a point you tap on the map, or the quartier
-  as before. The loop goes from there through unexplored streets of the
-  quartier and back, so there is no getting to a start across town first;
-  when the quartier is out of reach for the distance, the panel says the
-  shortest distance that gets there. Home stays private: within 600 m of it
-  the loop starts at a public point 600-900 m out, drawn as a dashed walk
-  from you, and no point closer to home is ever sent. The site may now ask
-  for your location, and only for itself.
+- Explore's route generator starts where you choose: tap the map where you
+  will set off (the default), or start in the quartier as before. The loop
+  starts exactly at the tapped point and goes through unexplored streets of
+  the quartier and back, so there is no getting to a start across town
+  first; when the quartier is out of reach for the distance, the panel says
+  the shortest distance that gets there. The app never reads your location,
+  and the points it routes through are never within 600 m of home.
 
 - A run's place name no longer sends its first point to OpenStreetMap's
   geocoder: the lookup gets a point rounded to about a kilometre.

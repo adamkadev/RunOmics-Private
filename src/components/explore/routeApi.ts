@@ -7,7 +7,7 @@ import { authorizedFetch } from '@/lib/ownerFetch'
 export const ROUTE_ENDPOINT = '/api/explore/route'
 
 export interface RouteBatchRequest {
-  /** [lon, lat], never home: the worker's plan moves a start near home out to a public point. */
+  /** [lon, lat]: the quartier's public start, or the point the runner tapped. */
   start: [number, number]
   distanceM: number
   seeds: number[]

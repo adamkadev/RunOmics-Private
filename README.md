@@ -1345,21 +1345,18 @@ then by name). With none in range, the lowest score among every incomplete unit.
 **Routes:** `POST /api/explore/route` calls OpenRouteService (`foot-walking`) once per seed, five
 seeds a batch. The panel's **Start** picks where the loop begins:
 
-- **My location** (the default) asks the browser once per opening, never watches it. The worker
-  plans the loop on the device: from the start, through two unexplored runnable cells of the
-  quartier (one may lie outside it when the quartier is too small for the distance), and back,
-  chosen per seed so the straight lines add up to the distance over a 1.3 street detour. Each seed
-  is one directions request through those points. When no loop of the distance reaches the
-  quartier, the panel names the shortest that does.
-- **Map point** does the same from a point tapped on the map.
+- **Map point** (the default) waits for a tap on the map. The worker plans the loop on the device:
+  from the tapped point, through two unexplored runnable cells of the quartier (one may lie outside
+  it when the quartier is too small for the distance), and back, chosen per seed so the straight
+  lines add up to the distance over a 1.3 street detour. Each seed is one directions request
+  through those points. When no loop of the distance reaches the quartier, the panel names the
+  shortest that does.
 - **Quartier** starts at the centre of the quartier's runnable cell nearest its public label point,
-  with a `round_trip` of 4 points, re-asked once when it misses the distance by more than 15 %. A
-  start the browser cannot locate falls back to it.
+  with a `round_trip` of 4 points, re-asked once when it misses the distance by more than 15 %.
 
-Home is never sent. Within 600 m of home (the median start of the runs, on the device; the start
-itself when there are none) the loop starts at a runnable cell 600-900 m out, one per compass
-sector toward the quartier, so it never follows the device's exact position; the map draws the
-walk there as a dashed line. No via is ever closer than 600 m to home. The key stays on the server; on a private site any signed-in session may call
+The device's position is never read: the loop starts exactly at the tapped point. The vias the
+worker picks are never closer than 600 m to home (the median start of the runs, kept on the
+device). The key stays on the server; on a private site any signed-in session may call
 it, on a public one only the owner, 12 batches a minute per caller. Loops are ranked by
 `|d − target|/target + wNew·(1 − new share) + wBusy·busy share`, with `wNew` 0.6 ("New streets
 first") or 0.15 and `wBusy` 0.8 ("Avoid busy roads") or 0, where busy share counts state roads fully
@@ -1540,9 +1537,8 @@ comment-free header is easy to widen by accident — this is what each one is fo
 `object-src 'none'`, `base-uri 'self'`, `form-action 'self'` and `frame-ancestors 'none'`
 are lockdowns with no exceptions; keep them that way.
 
-`Permissions-Policy` denies the camera and the microphone everywhere, and allows geolocation
-for this site only (`geolocation=(self)`), for Explore's "My location" start. A run's place name
-asks Nominatim about its first point rounded to 0.01° (about a kilometre), never the point itself.
+A run's place name asks Nominatim about its first point rounded to 0.01° (about a kilometre),
+never the point itself.
 
 ### Build configuration
 

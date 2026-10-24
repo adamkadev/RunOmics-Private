@@ -155,7 +155,6 @@ export function RouteGeneratorMode({
           status={generator.status === 'idle' ? 'generating' : generator.status}
           failure={generator.failure}
           minKm={generator.minKm}
-          guarded={generator.guarded}
           stats={stats}
           paceSecPerKm={paceSecPerKm}
           routeKey={generator.routeKey}

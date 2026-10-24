@@ -16,7 +16,7 @@ import { Toggle } from '@/components/ui/Toggle'
 import { ROUTE_KM_MAX } from './exploreHref'
 import type { RouteFailure } from './routeApi'
 import { canStepDown, canStepUp, stepRouteKm, type RouteStats } from './routeGenerator'
-import { ROUTE_START_MODES, type RouteStartMode, type RouteStartNote } from './routeStart'
+import { ROUTE_START_MODES, type RouteStartMode } from './routeStart'
 import type { GeneratorFailure } from './useRouteGenerator'
 
 /** For the camera to measure, as the quartier sheet's. */
@@ -51,19 +51,6 @@ export function failureMessage(failure: GeneratorFailure): string {
 
 const km = (value: number) => `${formatDistance(value)} ${t.units.km}`
 
-function startNote(note: RouteStartNote): string {
-  const start = t.pages.map.explore.start
-  switch (note) {
-    case 'locating':
-      return start.locating
-    case 'denied':
-      return start.denied
-    case 'unavailable':
-      return start.unavailable
-    case 'pick':
-      return start.pickPrompt
-  }
-}
 const stepperKm = (value: number) => `${formatDecimal(value, 1)} ${t.units.km}`
 
 /** A grouped fill: no glass inside glass. */
@@ -80,7 +67,7 @@ export interface RouteGeneratorPanelProps {
   onDistanceChange: (km: number) => void
   /** The session it plans for; its km is what the check compares the distance with. */
   plan: { heading: string; label: string; km: number | null } | null
-  start: { mode: RouteStartMode; note: RouteStartNote | null }
+  start: { mode: RouteStartMode; waiting: boolean }
   onStartModeChange: (mode: RouteStartMode) => void
   prefs: RoutePreferences
   onPrefsChange: (prefs: RoutePreferences) => void
@@ -88,7 +75,6 @@ export interface RouteGeneratorPanelProps {
   failure: GeneratorFailure | null
   /** With `tooFar`: the shortest distance that reaches the quartier. */
   minKm: number | null
-  guarded: boolean
   stats: RouteStats | null
   /** The pace the time is worked out at. */
   paceSecPerKm: number | null
@@ -114,7 +100,6 @@ export function RouteGeneratorPanel({
   status,
   failure,
   minKm,
-  guarded,
   stats,
   paceSecPerKm,
   routeKey,
@@ -168,7 +153,7 @@ export function RouteGeneratorPanel({
   const onPlan = plan?.km != null && plan.km === distanceKm
   const reachKm = failure === 'tooFar' && minKm != null && minKm <= ROUTE_KM_MAX ? minKm : null
   const errorText = reachKm != null ? e.errors.tooFar(stepperKm(reachKm)) : failure ? failureMessage(failure) : null
-  const footnote = start.note ? startNote(start.note) : status === 'generating' ? e.generating : guarded ? e.start.guarded : e.footnote
+  const footnote = start.waiting ? e.start.pickPrompt : status === 'generating' ? e.generating : e.footnote
   const dash = '—'
   const statCells = [
     { label: e.distanceStat, value: ready ? km(stats.distanceKm) : dash },
