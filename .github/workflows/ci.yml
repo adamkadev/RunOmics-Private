@@ -131,14 +131,46 @@ jobs:
       - name: Check import cycles
         run: npm run check:cycles
 
+  # Two shards beside verify: a private repository's runner has two cores, and vitest leaves one idle by default.
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON((github.event_name == 'push' || github.event_name == 'pull_request') && '[1, 2]' || '[1]') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: "npm"
+
+      # Shared with E2E under the same key: a hit skips `npm ci`.
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
       # Coverage doubles the suite's time, so only the weekly and manual runs collect it.
       - name: Test
         if: github.event_name == 'push' || github.event_name == 'pull_request'
-        run: npm test
+        run: npm test -- --shard=${{ matrix.shard }}/2 --maxWorkers=2
 
       - name: Test, with coverage
         if: github.event_name != 'push' && github.event_name != 'pull_request'
-        run: npx vitest run --coverage --coverage.reporter=text-summary --coverage.reporter=json-summary
+        run: npx vitest run --maxWorkers=2 --coverage --coverage.reporter=text-summary --coverage.reporter=json-summary
 
       - name: Coverage summary
         if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}
