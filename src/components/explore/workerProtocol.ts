@@ -1,3 +1,4 @@
+import type { RoutePlan } from '@/domain/explore/routePlan'
 import type {
   AreaCoverage,
   ExploreAreaFile,
@@ -60,6 +61,16 @@ export interface RouteStartRequest {
   unitId: string
 }
 
+/** Home comes in as for coverage: the plan keeps every point it sends out away from it. */
+export interface RoutePlanRequest {
+  unitId: string
+  origin: LonLat
+  home: LonLat | null
+  homeFromTracks?: boolean
+  distanceM: number
+  seeds: number[]
+}
+
 export type ExploreRequestBody =
   | { type: 'loadArea'; ref: ExploreAreaRef }
   | ({ type: 'addTracks'; areaKey: string } & TrackBuffers)
@@ -67,6 +78,7 @@ export type ExploreRequestBody =
   | ({ type: 'coverage'; areaKey: string } & CoverageOptions)
   | ({ type: 'scoreRoutes'; areaKey: string } & ScoreRoutesRequest)
   | ({ type: 'routeStart'; areaKey: string } & RouteStartRequest)
+  | ({ type: 'routePlan'; areaKey: string } & RoutePlanRequest)
 
 export type ExploreRequestType = ExploreRequestBody['type']
 
@@ -89,6 +101,7 @@ export interface ExploreResults {
   scoreRoutes: ScoredRoute[]
   /** A public point inside the unit, never home. */
   routeStart: LonLat | null
+  routePlan: RoutePlan | null
 }
 
 export type ExploreResponse =

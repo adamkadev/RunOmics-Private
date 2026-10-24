@@ -7,6 +7,7 @@ import {
   type AreaIndex,
 } from '@/domain/explore/coverage'
 import { medianStart } from '@/domain/explore/home'
+import { planRoute } from '@/domain/explore/routePlan'
 import { routeStart, scoreRoutes } from '@/domain/explore/routeScore'
 import type { ExploreAreaFile, ExploreAreaRef } from '@/domain/explore/types'
 import { areaCacheKey, trackCacheKey, type ExploreCache } from './idb'
@@ -315,6 +316,11 @@ function score(area: AreaState, msg: RequestOf<'scoreRoutes'>): ExploreResults['
   return scoreRoutes(area.index, visitedCells(area), msg.candidates, msg.targetM, msg.prefs)
 }
 
+function plan(area: AreaState, msg: RequestOf<'routePlan'>): ExploreResults['routePlan'] {
+  const { unitId, origin, distanceM, seeds } = msg
+  return planRoute(area.index, visitedCells(area), { unitId, origin, home: homeOf(area, msg.home, msg.homeFromTracks, undefined), distanceM, seeds })
+}
+
 function added(ids: string[]): AddedTracks {
   return { added: ids }
 }
@@ -339,6 +345,8 @@ function dispatch(
       return serial(state, msg.areaKey, async () => score(requireArea(state, msg.areaKey), msg))
     case 'routeStart':
       return serial(state, msg.areaKey, async () => routeStart(requireArea(state, msg.areaKey).index, msg.unitId))
+    case 'routePlan':
+      return serial(state, msg.areaKey, async () => plan(requireArea(state, msg.areaKey), msg))
     default:
       return Promise.reject(new Error(`Unknown request: ${String((msg as { type?: unknown }).type)}`))
   }

@@ -1,3 +1,4 @@
+import type { RoutePlan } from '@/domain/explore/routePlan'
 import type { AreaCoverage, ExploreAreaFile, ExploreAreaRef, ScoredRoute } from '@/domain/explore/types'
 import { selectTracks } from './trackBuffers'
 import {
@@ -10,6 +11,7 @@ import {
   type ExploreResults,
   type LonLat,
   type RequestOf,
+  type RoutePlanRequest,
   type RouteStartRequest,
   type ScoreRoutesRequest,
   type TrackBuffers,
@@ -34,6 +36,7 @@ export interface ExploreEngine {
   /** Best first; new ground is measured against every run sent, whatever the filters. */
   scoreRoutes(ref: ExploreAreaRef, request: ScoreRoutesRequest): Promise<ScoredRoute[]>
   routeStart(ref: ExploreAreaRef, request: RouteStartRequest): Promise<LonLat | null>
+  routePlan(ref: ExploreAreaRef, request: RoutePlanRequest): Promise<RoutePlan | null>
   /** The ids of `ids` not sent to the worker yet, so a caller can pack only those. */
   unsent(ref: ExploreAreaRef, ids: readonly string[]): string[]
   /** Stops the worker and rejects whatever is pending. */
@@ -205,6 +208,12 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
     return call<'routeStart'>({ type: 'routeStart', areaKey: areaKey(ref), unitId: request.unitId })
   }
 
+  async function routePlan(ref: ExploreAreaRef, request: RoutePlanRequest): Promise<RoutePlan | null> {
+    await loadArea(ref)
+    const { unitId, origin, home, homeFromTracks, distanceM, seeds } = request
+    return call<'routePlan'>({ type: 'routePlan', areaKey: areaKey(ref), unitId, origin, home, homeFromTracks, distanceM, seeds: [...seeds] })
+  }
+
   function unsent(ref: ExploreAreaRef, ids: readonly string[]): string[] {
     const known = sent.get(areaKey(ref))
     return known ? ids.filter((id) => !known.has(id)) : [...ids]
@@ -217,6 +226,7 @@ export function createExploreEngine(createWorker: () => Worker): ExploreEngine {
     coverage,
     scoreRoutes,
     routeStart,
+    routePlan,
     unsent,
     dispose: () => reset(new Error('The Explore engine was disposed')),
   }
