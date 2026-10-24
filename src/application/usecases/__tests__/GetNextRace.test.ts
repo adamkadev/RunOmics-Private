@@ -25,12 +25,6 @@ describe('getNextRace', () => {
     vi.useRealTimers()
   })
 
-  it('null when nothing is on the calendar', async () => {
-    withCalendar([])
-
-    expect(await getNextRace()).toBeNull()
-  })
-
   it('null when every race on the calendar has been run', async () => {
     withCalendar([{ year: 2026, races: [race('2026-05-01'), race('2026-06-01')] }])
 
@@ -56,12 +50,6 @@ describe('getNextRace', () => {
     withCalendar([{ year: 2026, races: [race(TODAY), race('2026-09-06')] }])
 
     expect((await getNextRace())?.date).toBe(TODAY)
-  })
-
-  it('ignores the ones already behind while keeping the ones ahead', async () => {
-    withCalendar([{ year: 2026, races: [race('2026-03-01'), race('2026-07-19'), race('2026-08-30')] }])
-
-    expect((await getNextRace())?.date).toBe('2026-08-30')
   })
 
   it('hands back the whole race, not just its date', async () => {

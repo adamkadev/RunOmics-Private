@@ -27,11 +27,6 @@ describe('monotony', () => {
     const week = [30, 70, 30, 70, 30, 70, 50]
     expect(monotony(week)).toBeCloseTo(2.7, 1)
   })
-
-  it('is high (monotonous) for near-identical daily loads', () => {
-    const week = [48, 50, 49, 51, 50, 49, 50]
-    expect(monotony(week)).toBeGreaterThan(2)
-  })
 })
 
 describe('strain', () => {

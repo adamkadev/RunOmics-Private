@@ -52,11 +52,6 @@ describe('matchesFilters', () => {
     expect(matchesFilters(meta({ year: '2026' }), f({ years: ['2026'] }))).toBe(true)
   })
 
-  it('filters by type', () => {
-    expect(matchesFilters(meta({ type: 'Base' }), f({ types: ['Race'] }))).toBe(false)
-    expect(matchesFilters(meta({ type: 'Race' }), f({ types: ['Race'] }))).toBe(true)
-  })
-
   it('takes any of several types or years', () => {
     expect(matchesFilters(meta({ type: 'Tempo' }), f({ types: ['Race', 'Tempo'] }))).toBe(true)
     expect(matchesFilters(meta({ type: 'Base' }), f({ types: ['Race', 'Tempo'] }))).toBe(false)

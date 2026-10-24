@@ -186,11 +186,10 @@ describe('the list at a phone', () => {
     expect(screen.getByRole('button', { name: t.activities.filter.title }).className).toContain('hit-44')
   })
 
-  it("writes a week's run as its day, time and heart rate", () => {
+  it("writes a week's run as its day, time and heart rate, its type shown only to VoiceOver", () => {
     renderList([{ ...run('a', '2026-09-20', 12), avgHeartRate: 145 }])
     const row = screen.getByTestId('thumb-row')
     expect(row.textContent).toContain(`${formatWeekday('2026-09-20', true)} · 1:00:00 · 145 ${t.units.bpm}`)
-    // On screen the type is the dot; only VoiceOver reads its name.
     const shown = row.cloneNode(true) as HTMLElement
     shown.querySelectorAll('.sr-only').forEach((el) => el.remove())
     expect(shown.textContent).not.toContain(t.activityTypes.Base)

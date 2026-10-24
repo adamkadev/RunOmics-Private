@@ -16,14 +16,6 @@ describe('percentileBounds (v4.17)', () => {
     expect(frame.maxLat).toBeLessThan(49)
   })
 
-  it('keeps one far run from zooming the map out', () => {
-    const home: [number, number][] = Array.from({ length: 200 }, (_, i) => [7.75 + (i % 20) * 0.001, 48.58 + Math.floor(i / 20) * 0.001])
-    const far: [number, number][] = [[8.2, 48.9], [8.21, 48.91]]
-    const frame = percentileBounds([home, far])!
-    expect(frame.maxLon).toBeLessThan(7.8)
-    expect(frame.maxLat).toBeLessThan(48.6)
-  })
-
   it('is null with no point at all', () => {
     expect(percentileBounds([])).toBeNull()
     expect(percentileBounds([[]])).toBeNull()

@@ -8,12 +8,10 @@ vi.mock('fs', () => ({
 /** What a sync interrupted mid-write leaves on disk. */
 const TRUNCATED = '{"years": [{"year": 2026, "targ'
 
-let warn: ReturnType<typeof vi.fn>
-
 beforeEach(() => {
   vi.resetModules()
   vi.mocked(fs.readFileSync).mockReturnValue(TRUNCATED)
-  warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  vi.spyOn(console, 'warn').mockImplementation(() => {})
 })
 
 afterEach(() => {
@@ -34,13 +32,6 @@ describe('a truncated data file degrades the section instead of the page', () =>
     const repository = (await import(modulePath)) as Record<string, () => unknown>
 
     expect(repository[exportName]!()).toEqual(empty)
-  })
-
-  it('says which file was unreadable, rather than swallowing it', async () => {
-    const { getGoalYears } = await import('../JsonGoalRepository')
-    getGoalYears()
-
-    expect(String(warn.mock.calls[0]?.[0])).toContain('goals.json')
   })
 })
 

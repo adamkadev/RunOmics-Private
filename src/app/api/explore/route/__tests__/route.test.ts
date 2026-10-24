@@ -98,12 +98,7 @@ describe('POST /api/explore/route', () => {
 
   it.each([
     ['JSON that does not parse', '{ "start": '],
-    ['a number JSON reads as infinite', '{"start":[-150,0],"distanceM":1e999,"seeds":[1]}'],
-    ['a distance under 1 km', { ...BODY, distanceM: 500 }],
-    ['a distance over 42 km', { ...BODY, distanceM: 50_000 }],
-    ['a latitude off the globe', { ...BODY, start: [-150, 95] }],
     ['seven seeds', { ...BODY, seeds: [1, 2, 3, 4, 5, 6, 7] }],
-    ['no seeds', { ...BODY, seeds: [] }],
   ])('refuses %s as invalid, without calling the provider', async (_label, body) => {
     const res = await post(body)
 

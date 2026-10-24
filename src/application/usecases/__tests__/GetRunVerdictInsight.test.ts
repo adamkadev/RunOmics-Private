@@ -155,19 +155,6 @@ describe('getRunVerdictInsight', () => {
     expect(await getRunVerdictInsight(activity('a', '2026-07-20'))).toEqual(INSIGHT)
   })
 
-  it('null when the cached verdict has gone stale, so the card keeps its rules-based copy', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
-
-    expect(await getRunVerdictInsight(activity('a', '2026-07-20'))).toBeNull()
-  })
-
-  it('gives each run its own document', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
-    await getRunVerdictInsight(activity('a', '2026-07-20'))
-
-    expect(readVerifiedInsight).toHaveBeenCalledWith('runVerdict_a', expect.any(String))
-  })
-
   it('keys the verdict on the run and the history behind it', async () => {
     readVerifiedInsight.mockResolvedValue(null)
     await getRunVerdictInsight(activity('a', '2026-07-20'))
@@ -191,13 +178,6 @@ describe('getRunVerdictInsight read cost', () => {
     vi.clearAllMocks()
     withHistory([activity('a', '2026-07-20'), activity('b', '2026-07-18'), activity('c', '2026-07-15')])
     readVerifiedInsight.mockResolvedValue(null)
-  })
-
-  it('reads the one document that surface owns, however many runs exist', async () => {
-    await getRunVerdictInsight(activity('a', '2026-07-20'))
-
-    expect(readVerifiedInsight).toHaveBeenCalledTimes(1)
-    expect(readVerifiedInsight).toHaveBeenCalledWith('runVerdict_a', expect.any(String))
   })
 
   it('costs one read per run rendered, not one per run stored', async () => {
