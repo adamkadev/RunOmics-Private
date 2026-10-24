@@ -1,13 +1,8 @@
 'use client'
 
 import { useEffect } from 'react'
-import { AWAY_BEFORE_CHECK_MS, shouldReload } from '@/lib/appUpdate'
+import { AWAY_BEFORE_CHECK_MS, editing, shouldReload } from '@/lib/appUpdate'
 import { BUILD_COMMIT } from '@/lib/version'
-
-function editing(): boolean {
-  const el = document.activeElement
-  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || (el instanceof HTMLElement && el.isContentEditable)
-}
 
 export function UpdateOnResume() {
   useEffect(() => {
@@ -24,7 +19,7 @@ export function UpdateOnResume() {
         .then((res) => (res.ok ? (res.json() as Promise<{ build?: unknown }>) : null))
         .then((body) => {
           const liveBuild = typeof body?.build === 'string' ? body.build : null
-          if (shouldReload({ awayMs, ownBuild: BUILD_COMMIT, liveBuild, editing: editing() })) window.location.reload()
+          if (shouldReload({ awayMs, ownBuild: BUILD_COMMIT, liveBuild, editing: editing(document) })) window.location.reload()
         })
         .catch(() => {})
     }

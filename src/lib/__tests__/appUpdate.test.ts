@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { shouldReload } from '../appUpdate'
+import { editing, shouldReload } from '../appUpdate'
 
 describe('shouldReload', () => {
   const back = { awayMs: 5 * 60_000, ownBuild: 'aaa1111', liveBuild: 'bbb2222', editing: false }
@@ -14,5 +14,16 @@ describe('shouldReload', () => {
     expect(shouldReload({ ...back, editing: true })).toBe(false)
     expect(shouldReload({ ...back, liveBuild: null })).toBe(false)
     expect(shouldReload({ ...back, ownBuild: 'local' })).toBe(false)
+  })
+})
+
+describe('editing', () => {
+  const page = (active: Partial<HTMLElement> | null, dialog: boolean) =>
+    ({ activeElement: active, querySelector: () => (dialog ? {} : null) }) as unknown as Pick<Document, 'activeElement' | 'querySelector'>
+
+  it('holds the reload while a field has focus or a sheet stays open with its draft', () => {
+    expect(editing(page({ tagName: 'TEXTAREA' }, false))).toBe(true)
+    expect(editing(page({ tagName: 'BODY' }, true))).toBe(true)
+    expect(editing(page({ tagName: 'BODY', isContentEditable: false }, false))).toBe(false)
   })
 })
