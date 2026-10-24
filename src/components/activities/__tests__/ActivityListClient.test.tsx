@@ -6,6 +6,7 @@ import { t } from '@/i18n'
 import { ActivityListClient, activitiesView } from '../ActivityListClient'
 import type { MapShellData } from '@/application/usecases/GetAllRoutes'
 import { formatDate, formatDateRange, formatWeekday } from '@/lib/formatters'
+import { notePopNavigation, popNavigationHandled } from '@/lib/popNavigation'
 
 vi.mock('next/navigation', async (actual) => ({ ...(await actual<typeof import('next/navigation')>()), useRouter: () => ({ prefetch: () => {} }) }))
 
@@ -127,16 +128,29 @@ describe('the archive under its months', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders its first months, and the rest as the end of the list comes near', async () => {
-    let reachEnd = () => {}
+  const monthly = Array.from({ length: 12 }, (_, k) => run(`m${k}`, new Date(Date.UTC(2026, 8 - k, 10)).toISOString().slice(0, 10), 8))
+
+  function observeEnd() {
+    const watching = new Map<Element, IntersectionObserverCallback>()
     vi.stubGlobal('IntersectionObserver', class {
-      constructor(callback: IntersectionObserverCallback) {
-        reachEnd = () => act(() => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver))
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(node: Element) {
+        watching.set(node, this.callback)
       }
-      observe() {}
-      disconnect() {}
+      disconnect() {
+        for (const [node, callback] of watching) if (callback === this.callback) watching.delete(node)
+      }
     })
-    const monthly = Array.from({ length: 12 }, (_, k) => run(`m${k}`, new Date(Date.UTC(2026, 8 - k, 10)).toISOString().slice(0, 10), 8))
+    return () =>
+      act(() => {
+        for (const [node, callback] of watching) {
+          if (node.isConnected) callback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver)
+        }
+      })
+  }
+
+  it('renders its first months, and the rest as the end of the list comes near', async () => {
+    const reachEnd = observeEnd()
     renderList(monthly)
 
     const firstMonths = screen.getAllByTestId('month').length
@@ -144,6 +158,29 @@ describe('the archive under its months', () => {
     expect(screen.queryByText(t.activities.endOfList)).toBeNull()
     await reachEnd()
     expect(screen.getAllByTestId('month').length).toBeGreaterThan(firstMonths)
+  })
+
+  it('keeps loading older months after a trip to the map and back', async () => {
+    const reachEnd = observeEnd()
+    const user = userEvent.setup()
+    renderList(monthly)
+    const firstMonths = screen.getAllByTestId('month').length
+
+    await user.click(screen.getByRole('tab', { name: t.activities.view.map }))
+    await user.click(screen.getByRole('tab', { name: t.activities.view.list }))
+    await reachEnd()
+
+    expect(screen.getAllByTestId('month').length).toBeGreaterThan(firstMonths)
+  })
+
+  it('opened by Back, renders as far as it had been read', () => {
+    observeEnd()
+    sessionStorage.setItem('activities-shown-blocks', 'Infinity')
+    notePopNavigation()
+    renderList(monthly)
+    popNavigationHandled()
+
+    expect(screen.getByText(t.activities.endOfList)).toBeInTheDocument()
   })
 
   it('heads the weeks with their month and its total', () => {
