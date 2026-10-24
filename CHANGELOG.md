@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The route generator times a loop at your own easy pace, the median of
+  your last eight weeks' easy runs, rather than the plan's prescription: a
+  threshold day read "At 5:10", the session's reps and warm-up averaged.
+
 - Explore's route generator starts where you choose: tap the map where you
   will set off (the default), or start in the quartier as before. The loop
   starts exactly at the tapped point and goes through unexplored streets of

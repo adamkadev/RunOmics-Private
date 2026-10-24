@@ -1,3 +1,4 @@
+import type { ActivityType } from '@/domain/activity/types'
 import type { ScoredRoute } from '@/domain/explore/types'
 import type { NavigationOrigin } from '@/lib/navigation'
 import type { LngLatBounds } from '@/lib/routeFrame'
@@ -8,6 +9,9 @@ export const ROUTE_BATCH = 5
 export const FIRST_SEED = 1
 export const ROUTE_DEBOUNCE_MS = 400
 export const FALLBACK_ROUTE_KM = 8
+const EASY_PACE_DAYS = 56
+const MIN_EASY_RUNS = 3
+const DAY_MS = 86_400_000
 
 export function batchSeeds(base: number): number[] {
   return Array.from({ length: ROUTE_BATCH }, (_, k) => base + k)
@@ -53,15 +57,16 @@ export function generatorTarget(
     unitId = null,
     plan,
     medianKm,
-    medianPace,
-  }: { unitId?: string | null; plan: ExplorePlan | null; medianKm: number | null; medianPace: number | null },
+    easyPace,
+  }: { unitId?: string | null; plan: ExplorePlan | null; medianKm: number | null; easyPace: number | null },
 ): GeneratorTarget {
   const planKm = plan?.distanceM ? plan.distanceM / 1000 : null
   const km = link?.km ?? planKm ?? medianKm ?? FALLBACK_ROUTE_KM
   return {
     unitId: link?.quartier ?? unitId,
     km: stepKm(km),
-    pace: link?.pace ?? plan?.paceSecPerKm ?? medianPace,
+    // A plan's pace is a prescription, a threshold day's averages its reps in: the loop is timed at how the athlete runs easy.
+    pace: easyPace ?? link?.pace ?? plan?.paceSecPerKm ?? null,
     from: link?.from ?? null,
   }
 }
@@ -73,6 +78,22 @@ export function medianOf<T>(rows: readonly (T | undefined)[], indices: readonly 
     return v != null && Number.isFinite(v) && v > 0 ? [v] : []
   })
   return values.length > 0 ? median(values) : null
+}
+
+interface PacedRun {
+  type: ActivityType
+  /** 'YYYY-MM-DD' */
+  date: string
+  paceSecPerKm: number | null
+}
+
+/** The median of the last eight weeks' easy runs; with fewer than three, every easy run, then every run. */
+export function easyPaceOf(rows: readonly (PacedRun | undefined)[], indices: readonly number[], today: string | null): number | null {
+  const easy = indices.filter((i) => rows[i]?.type === 'Base')
+  const since = today ? new Date(Date.parse(`${today}T00:00:00Z`) - EASY_PACE_DAYS * DAY_MS).toISOString().slice(0, 10) : null
+  const recent = since ? easy.filter((i) => rows[i]!.date >= since) : easy
+  const pool = recent.length >= MIN_EASY_RUNS ? recent : easy.length > 0 ? easy : indices
+  return medianOf(rows, pool, (run) => run.paceSecPerKm)
 }
 
 export function stepRouteKm(km: number, direction: -1 | 1): number {
