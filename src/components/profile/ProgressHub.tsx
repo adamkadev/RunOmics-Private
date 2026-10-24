@@ -61,7 +61,7 @@ function RaceCard({ race }: { race: ProgressHubView['race'] }) {
   const time = race ? (race.predictedSeconds ?? race.targetSeconds ?? null) : null
   return (
     <Link
-      href={race ? '/race' : '/goals'}
+      href={race?.hasPage ? '/race' : '/goals'}
       className={cardClass({ className: cn('flex items-center justify-between gap-3 px-4 py-3.5', LINK_CARD) })}
       style={{
         background: 'color-mix(in srgb, var(--accent) 12%, var(--card))',

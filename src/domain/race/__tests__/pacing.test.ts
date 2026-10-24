@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evenSplit, pacingCheckpoints, perWeekToClose, predictionChange } from '../pacing'
+import { closingPace, evenSplit, pacingCheckpoints, predictionChange } from '../pacing'
 
 describe('pacingCheckpoints', () => {
   it('splits a half every 5 km and ends on the line', () => {
@@ -26,8 +26,9 @@ describe('predictionChange', () => {
     { date: '2026-10-21', seconds: 5730 },
   ]
 
-  it('compares the latest with the first point inside the window', () => {
-    expect(predictionChange(points, 84)).toEqual({ seconds: -60, perWeek: -60 / (81 / 7) })
+  it('compares the latest with the first point inside the window, over the weeks it spans', () => {
+    expect(predictionChange(points, 84)).toEqual({ seconds: -60, perWeek: -60 / (81 / 7), weeks: 12 })
+    expect(predictionChange(points.slice(-2), 84)).toEqual({ seconds: -30, perWeek: -30 / 4, weeks: 4 })
   })
 
   it('is null without an earlier point in the window', () => {
@@ -36,14 +37,15 @@ describe('predictionChange', () => {
   })
 })
 
-describe('perWeekToClose', () => {
-  it('spreads the gap over the weeks left, rounded up', () => {
-    expect(perWeekToClose(100, 70)).toBe(10)
-    expect(perWeekToClose(101, 70)).toBe(11)
+describe('closingPace', () => {
+  it('spreads the gap over the weeks it prints, rounded up', () => {
+    expect(closingPace(100, 70)).toEqual({ perWeek: 10, weeks: 10 })
+    expect(closingPace(101, 70)).toEqual({ perWeek: 11, weeks: 10 })
+    expect(closingPace(30, 9)).toEqual({ perWeek: 30, weeks: 1 })
   })
 
-  it('is null inside the target or in race week', () => {
-    expect(perWeekToClose(-5, 70)).toBeNull()
-    expect(perWeekToClose(30, 6)).toBeNull()
+  it('is null inside the target or under half a week out', () => {
+    expect(closingPace(-5, 70)).toBeNull()
+    expect(closingPace(30, 3)).toBeNull()
   })
 })

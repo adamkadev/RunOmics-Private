@@ -17,22 +17,24 @@ export function evenSplit(totalSeconds: number, distanceKm: number, atKm: number
   return Math.round((totalSeconds * atKm) / distanceKm)
 }
 
-function daysBetween(from: string, to: string): number {
+export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS)
 }
 
-export function predictionChange(points: readonly PredictionPoint[], days: number): { seconds: number; perWeek: number } | null {
+/** `weeks` is the span the points cover, which a sparse history makes shorter than the window. */
+export function predictionChange(points: readonly PredictionPoint[], days: number): { seconds: number; perWeek: number; weeks: number } | null {
   const latest = points.at(-1)
   if (!latest) return null
   const from = points.find((p) => daysBetween(p.date, latest.date) <= days)
   if (!from || from === latest) return null
-  const weeks = daysBetween(from.date, latest.date) / 7
+  const span = daysBetween(from.date, latest.date) / 7
   const seconds = latest.seconds - from.seconds
-  return { seconds, perWeek: weeks > 0 ? seconds / weeks : 0 }
+  return { seconds, perWeek: span > 0 ? seconds / span : 0, weeks: Math.max(1, Math.round(span)) }
 }
 
-/** Under a week out there is no training left to close a gap with. */
-export function perWeekToClose(gapSeconds: number, daysUntil: number): number | null {
-  if (gapSeconds <= 0 || daysUntil < 7) return null
-  return Math.ceil(gapSeconds / (daysUntil / 7))
+/** The weeks printed are the weeks divided by, so rate × weeks covers the gap; under half a week there is none left. */
+export function closingPace(gapSeconds: number, daysUntil: number): { perWeek: number; weeks: number } | null {
+  const weeks = Math.round(daysUntil / 7)
+  if (gapSeconds <= 0 || weeks < 1) return null
+  return { perWeek: Math.ceil(gapSeconds / weeks), weeks }
 }

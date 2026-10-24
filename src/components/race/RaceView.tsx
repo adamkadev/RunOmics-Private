@@ -6,21 +6,26 @@ import { MINUS, formatClock, formatDate, formatDuration, formatPace } from '@/li
 import { deltaColor } from '@/lib/deltaTone'
 import { linePath } from '@/lib/linePath'
 import { cn } from '@/lib/utils'
-import { evenSplit, pacingCheckpoints, perWeekToClose, predictionChange, type PredictionPoint } from '@/domain/race/pacing'
+import { closingPace, daysBetween, evenSplit, pacingCheckpoints, predictionChange, type PredictionPoint } from '@/domain/race/pacing'
 import { RACE_TREND_DAYS, type RacePageData } from '@/application/usecases/GetRacePage'
 import { t } from '@/i18n'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
 function signed(seconds: number): string {
-  const abs = Math.abs(Math.round(seconds))
-  return `${seconds < 0 ? MINUS : '+'}${abs < 60 ? `${abs} s` : formatClock(abs)}`
+  const rounded = Math.round(seconds)
+  const abs = Math.abs(rounded)
+  return `${rounded < 0 ? MINUS : rounded > 0 ? '+' : ''}${abs < 60 ? `${abs} s` : formatClock(abs)}`
 }
 
 function TrendLine({ points, target }: { points: PredictionPoint[]; target: number | null }) {
   const values = points.map((p) => p.seconds)
   const lo = Math.min(...values, target ?? Infinity)
-  const hi = Math.max(...values)
+  const hi = Math.max(...values, target ?? -Infinity)
+  // By date, not by index: a gap in Garmin's series keeps its width.
+  const first = points[0]!.date
+  const byDay: (number | null)[] = Array.from({ length: daysBetween(first, points.at(-1)!.date) + 1 }, () => null)
+  for (const p of points) byDay[daysBetween(first, p.date)] = -p.seconds
   const pad = (hi - lo) * 0.15 || 5
   const W = 1000
   const H = 64
@@ -32,7 +37,7 @@ function TrendLine({ points, target }: { points: PredictionPoint[]; target: numb
         {target !== null && (
           <line x1={0} x2={W} y1={y(target)} y2={y(target)} stroke="var(--accent)" strokeWidth="1" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />
         )}
-        <path d={linePath(values.map((v) => -v), -(hi + pad), -(lo - pad), W, H)} fill="none" stroke="var(--foreground)" strokeWidth="1.75" vectorEffect="non-scaling-stroke" />
+        <path d={linePath(byDay, -(hi + pad), -(lo - pad), W, H)} fill="none" stroke="var(--foreground)" strokeWidth="1.75" vectorEffect="non-scaling-stroke" />
       </svg>
       <div className="flex justify-between text-[11px] text-muted-foreground">
         <span>{bare(points[0]!.date)}</span>
@@ -46,8 +51,9 @@ export function RaceView({ data }: { data: RacePageData }) {
   const r = t.race
   const { race, distanceKm, daysUntil, predictedSeconds, targetSeconds, pb, trend } = data
   const gap = predictedSeconds !== null && targetSeconds !== null ? predictedSeconds - targetSeconds : null
-  const perWeek = gap !== null ? perWeekToClose(gap, daysUntil) : null
+  const closing = gap !== null ? closingPace(gap, daysUntil) : null
   const change = predictionChange(trend, RACE_TREND_DAYS)
+  const changePerWeek = change && Math.round(change.perWeek) !== 0 ? signed(change.perWeek) : null
   const columns = [
     ...(targetSeconds !== null ? [{ label: r.target, seconds: targetSeconds }] : []),
     ...(predictedSeconds !== null ? [{ label: r.predicted, seconds: predictedSeconds }] : []),
@@ -74,7 +80,7 @@ export function RaceView({ data }: { data: RacePageData }) {
         {gap !== null && (
           <p className="text-sm text-pretty" data-testid="race-gap">
             <b style={{ color: gap > 0 ? 'var(--warn)' : 'var(--pos)' }}>{(gap > 0 ? r.toFind : r.inHand)(formatClock(Math.abs(gap)))}</b>
-            {perWeek !== null && <span className="text-muted-foreground"> {r.perWeek(perWeek, Math.round(daysUntil / 7))}</span>}
+            {closing && <span className="text-muted-foreground"> {r.perWeek(closing.perWeek, closing.weeks)}</span>}
           </p>
         )}
       </section>
@@ -85,7 +91,7 @@ export function RaceView({ data }: { data: RacePageData }) {
           <TrendLine points={trend} target={targetSeconds} />
           {change && (
             <p className="text-sm" style={{ color: deltaColor('race', change.seconds, { value: trend.at(-1)!.seconds }) }} data-testid="race-trend-change">
-              {Math.round(change.seconds) === 0 ? r.trendFlat : r.trendChange(signed(change.seconds), signed(change.perWeek))}
+              {Math.round(change.seconds) === 0 ? r.trendFlat(change.weeks) : r.trendChange(signed(change.seconds), change.weeks, changePerWeek)}
             </p>
           )}
         </section>

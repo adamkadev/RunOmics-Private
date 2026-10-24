@@ -100,6 +100,12 @@ describe('progressHubView', () => {
     expect(named.race!.name).toBe('Wintzenheim')
   })
 
+  it('gives the race a page only at a distance the race page reads', () => {
+    expect(view.race!.hasPage).toBe(true)
+    const trail = progressHubView({ ...INPUT, spotlight: { ...INPUT.spotlight!, race: { ...INPUT.spotlight!.race, distance: '15K' } } })
+    expect(trail.race!.hasPage).toBe(false)
+  })
+
   it('draws km by year from the first run to this year, and VO2 max over 12 weeks', () => {
     expect(view.allTime.years.map(({ year, km }) => ({ year, km }))).toEqual([
       { year: 2022, km: 95 }, { year: 2023, km: 0 }, { year: 2024, km: 0 }, { year: 2025, km: 640 }, { year: 2026, km: 1_394 },

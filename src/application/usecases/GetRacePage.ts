@@ -49,14 +49,17 @@ export async function getRacePageData(today: string = appTodayIso()): Promise<Ra
     return p.date >= from && seconds !== undefined ? [{ date: p.date, seconds }] : []
   })
 
+  // As the Progress card reads it: a best faster than Garmin's prediction is a time already run.
+  const latest = predictions?.latest[distance] ?? null
+  const best = record?.seconds ?? null
   return {
     race,
     distance,
     distanceKm: RACE_DISTANCE_KM[distance],
     daysUntil: Math.round((Date.parse(`${race.date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / DAY_MS),
-    predictedSeconds: predictions?.latest[distance] ?? null,
+    predictedSeconds: latest !== null && best !== null ? Math.min(latest, best) : latest,
     targetSeconds: raceTarget(race, getGoalYears()),
-    pb: record?.seconds ? { seconds: record.seconds, date: record.date } : null,
+    pb: best ? { seconds: best, date: record?.date ?? null } : null,
     trend,
   }
 }
