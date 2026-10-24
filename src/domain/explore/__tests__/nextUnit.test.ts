@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { NEXT_KM_PER_POINT, NEXT_MAX_KM, NEXT_MIN_CELLS, nextUnit, nextUnitScore } from '../nextUnit'
+import { NEXT_MAX_KM, NEXT_MIN_CELLS, nextUnit } from '../nextUnit'
 import { unitState } from '../coverage'
 import type { UnitCoverage } from '../types'
 
@@ -27,24 +27,10 @@ function unit(
   }
 }
 
-describe('nextUnitScore', () => {
-  it('is pct/100 + km/6', () => {
-    expect(nextUnitScore({ pct: 40, distanceKm: 3 })).toBeCloseTo(0.9, 12)
-    expect(nextUnitScore({ pct: 0, distanceKm: 0 })).toBe(0)
-    expect(NEXT_KM_PER_POINT).toBe(6)
-  })
-
-  it('scores an unknown distance on coverage alone', () => {
-    expect(nextUnitScore({ pct: 25, distanceKm: null })).toBe(0.25)
-  })
-})
-
 describe('nextUnit', () => {
-  it('picks the lowest score among nearby incomplete units', () => {
-    const units = [unit('far-fog', 0, 4.8), unit('near-half', 50, 0.5), unit('mid-low', 20, 1.5)]
-
-    // 0.8, 0.583, 0.45
-    expect(nextUnit(units)?.id).toBe('mid-low')
+  it('goes to the nearest unfinished quartier, an untouched one before a half-done one farther away', () => {
+    expect(nextUnit([unit('far-half', 50, 2.5), unit('near-fog', 0, 1)])?.id).toBe('near-fog')
+    expect(nextUnit([unit('far-fog', 0, 4.8), unit('near-half', 50, 0.5), unit('mid-low', 20, 1.5)])?.id).toBe('near-half')
   })
 
   it('skips complete units, small units and units beyond 5 km while a candidate is left', () => {
@@ -62,23 +48,21 @@ describe('nextUnit', () => {
     expect(nextUnit([unit('edge', 60, NEXT_MAX_KM, NEXT_MIN_CELLS), unit('far', 0, 6)])?.id).toBe('edge')
   })
 
-  it('breaks a tie on score by distance, then by name', () => {
-    // 0.4 + 0.6/6 and 0.3 + 1.2/6 are both 0.5, give or take a rounding.
-    expect(nextUnit([unit('b', 30, 1.2), unit('a', 40, 0.6)])?.id).toBe('a')
+  it('at the same distance takes the more explored, then the name', () => {
+    expect(nextUnit([unit('fog', 20, 1), unit('half', 60, 1.05)])?.id).toBe('half')
     expect(nextUnit([unit('x2', 30, 1, 20, 'Zeta'), unit('x1', 30, 1, 20, 'Alpha')])?.id).toBe('x1')
   })
 
-  it('falls back to the lowest score among every incomplete unit when none is near', () => {
+  it('falls back to the nearest unfinished unit when none is a candidate', () => {
     const units = [unit('far-low', 10, 9), unit('far-lower', 0, 12), unit('small', 0, 1, 3), unit('done', 100, 1)]
 
-    // 10/100 + 9/6 = 1.6, 0 + 12/6 = 2, the small one: 0 + 1/6.
     expect(nextUnit(units)?.id).toBe('small')
     expect(nextUnit(units.filter((u) => u.id !== 'small'))?.id).toBe('far-low')
   })
 
   it('only considers units with no known distance in the fallback', () => {
     expect(nextUnit([unit('unknown', 0, null), unit('known', 70, 2)])?.id).toBe('known')
-    expect(nextUnit([unit('u1', 40, null), unit('u2', 10, null)])?.id).toBe('u2')
+    expect(nextUnit([unit('u1', 40, null), unit('u2', 10, null)])?.id).toBe('u1')
   })
 
   it('suggests a nearby quartier before a nearby commune that scores better', () => {

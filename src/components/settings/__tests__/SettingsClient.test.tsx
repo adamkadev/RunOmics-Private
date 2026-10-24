@@ -37,6 +37,8 @@ vi.mock('@/lib/firebase', () => ({
   getClientAuth: () => ({}),
 }))
 
+vi.mock('@/lib/firebaseAuth', () => ({ getClientAuth: () => ({}) }))
+
 vi.mock('firebase/auth', () => ({
   onIdTokenChanged: (_auth: unknown, cb: (u: unknown) => void) => {
     cb(mockUser)

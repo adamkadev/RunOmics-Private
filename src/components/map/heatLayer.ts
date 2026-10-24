@@ -68,8 +68,11 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
       MAX_SIDE / width,
       MAX_SIDE / height,
     );
-    canvas.width = Math.max(1, Math.round(width * scale));
-    canvas.height = Math.max(1, Math.round(height * scale));
+    const pxWidth = Math.max(1, Math.round(width * scale));
+    const pxHeight = Math.max(1, Math.round(height * scale));
+    // Assigning a size clears and reallocates the canvas, even the same size.
+    if (canvas.width !== pxWidth) canvas.width = pxWidth;
+    if (canvas.height !== pxHeight) canvas.height = pxHeight;
 
     const corner = (x: number, y: number): [number, number] => map.unproject([x, y]).toArray() as [number, number];
     const topLeft = corner(-mx, -my);
@@ -233,8 +236,13 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     src.play();
   }
 
-  function redraw() {
+  // The map fires moveend and resize after every fit, often for a view already drawn: 13-35 ms a redraw on a phone.
+  let drawnKey = "";
+  function redraw(force = false) {
     layout();
+    const key = `${canvas.width}x${canvas.height}|${view.x0}|${view.y0}|${view.world}`;
+    if (!force && key === drawnKey) return;
+    drawnKey = key;
     ctx?.setTransform(1, 0, 0, 1, 0, 0);
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
     draw();
@@ -252,17 +260,19 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     },
     beforeId,
   );
-  map.on("moveend", redraw);
-  map.on("resize", redraw);
+  const onViewChange = () => redraw();
+  map.on("moveend", onViewChange);
+  map.on("resize", onViewChange);
 
   return {
     setTracks(next, reveal) {
+      const changed = next !== tracks;
       tracks = next;
       if (reveal && map.getLayer(HEAT_LAYER)) {
         // A fade, not a draw-in: the frequencies need every run at once.
         map.setPaintProperty(HEAT_LAYER, "raster-opacity-transition", { duration: 0, delay: 0 });
         map.setPaintProperty(HEAT_LAYER, "raster-opacity", 0);
-        redraw();
+        redraw(true);
         requestAnimationFrame(() => {
           if (!map.getLayer(HEAT_LAYER)) return;
           map.setPaintProperty(HEAT_LAYER, "raster-opacity-transition", { duration: REVEAL_MS, delay: 0 });
@@ -270,13 +280,13 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
         });
         return;
       }
-      redraw();
+      redraw(changed);
     },
     remove() {
       // Give the light layers' memory back: Safari counts every live canvas against one budget.
       for (const c of [...Object.values(layers), blurScratch]) if (c) { c.width = 0; c.height = 0; }
-      map.off("moveend", redraw);
-      map.off("resize", redraw);
+      map.off("moveend", onViewChange);
+      map.off("resize", onViewChange);
       map.off("render", onRender);
     },
   };

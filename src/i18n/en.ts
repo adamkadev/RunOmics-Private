@@ -1666,6 +1666,10 @@ export const en = {
       repSetLabel: (reps: number, duration: string) => `${reps} × ${duration}`,
       bandLabel: (range: string) => `band ${range}`,
       recoveryAvg: 'Recovery avg',
+      // The run's own lap, when the watch typed it as a rep: an easy run before its strides.
+      bodyLap: 'Run',
+      stridesLabel: 'Strides',
+      average: 'Average',
       // The set's summary at the top of its card: three numbers, no sentence.
       inBandLabel: 'In band',
       spread: 'Spread',

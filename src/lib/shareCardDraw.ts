@@ -441,6 +441,49 @@ function drawPlaceLabels(ctx: Ctx, { mapLabels, palette, fonts }: ShareCardScene
   ctx.restore()
 }
 
+const GLOW_GRAIN_PX = 96
+let grain: HTMLCanvasElement | null = null
+
+/** Faint noise, the same every time: a smooth dark gradient bands into steps once Instagram or Strava recompress it. */
+function grainTile(): HTMLCanvasElement | null {
+  if (grain || typeof document === 'undefined') return grain
+  const tile = document.createElement('canvas')
+  tile.width = tile.height = GLOW_GRAIN_PX
+  const g = tile.getContext('2d')
+  if (!g) return null
+  const image = g.createImageData(GLOW_GRAIN_PX, GLOW_GRAIN_PX)
+  let seed = 0x2545f491
+  for (let i = 0; i < image.data.length; i += 4) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
+    const v = seed >>> 24
+    image.data[i] = image.data[i + 1] = image.data[i + 2] = v
+    image.data[i + 3] = 6
+  }
+  g.putImageData(image, 0, 0)
+  return (grain = tile)
+}
+
+/** The app's glow, in the run's own colour, so the dark card reads as RunOmics; on white a tint only looks washed out. */
+function drawGlow(ctx: Ctx, { activity, palette }: ShareCardScene) {
+  if (palette.mode !== 'dark' || typeof ctx.createRadialGradient !== 'function') return
+  const colour = repColor(activity, palette)
+  const glow = ctx.createRadialGradient(W * 0.12, 0, 0, W * 0.12, 0, W * 1.05)
+  glow.addColorStop(0, withAlpha(colour, 0.3))
+  glow.addColorStop(0.5, withAlpha(colour, 0.09))
+  glow.addColorStop(1, withAlpha(colour, 0))
+  ctx.fillStyle = glow
+  ctx.fillRect(0, 0, W, H)
+  const tile = typeof ctx.createPattern === 'function' ? grainTile() : null
+  const pattern = tile ? ctx.createPattern(tile, 'repeat') : null
+  if (!pattern) return
+  // In device pixels: under the export's scale, one noise pixel would be four.
+  ctx.save()
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  ctx.fillStyle = pattern
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+  ctx.restore()
+}
+
 function withAlpha(hex: string, alpha: number): string {
   const n = Number.parseInt(hex.slice(1, 7), 16)
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
@@ -840,6 +883,7 @@ export function drawShareCard(ctx: Ctx, scene: ShareCardScene) {
     // Over the bands, so the stats' fade does not cover it.
     if (hasReps(scene)) drawRepsLegend(ctx, scene, layout.textTop)
   } else {
+    if (scene.design === 'stats') drawGlow(ctx, scene)
     ctx.save()
     ctx.translate(0, layout.middleTop)
     ctx.beginPath()

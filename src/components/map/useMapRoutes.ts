@@ -127,6 +127,8 @@ export function useMapRoutes(
 
   const frame = useMemo(() => {
     const loaded = visibleIndices.map((i) => routes[i]).filter((coords): coords is [number, number][] => !!coords);
+    // Every run of the area shown: the server's frame is the same one, already worked out.
+    if (selected && loaded.length === selected.routeIndices.length && visibleIndices.length === selected.routeIndices.length) return selected.frame;
     return (loaded.length ? percentileBounds(loaded) : null) ?? selected?.frame ?? null;
   }, [routes, visibleIndices, selected]);
   const frameKey = boundsKey(frame);

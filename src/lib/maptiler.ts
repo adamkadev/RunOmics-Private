@@ -48,11 +48,14 @@ function heatRole(id: string): Role | null {
 }
 
 export function heatBasemapStyle(style: StyleSpecification, isDark: boolean): StyleSpecification {
+  // No heat map layer draws a sprite icon: without the key, its 348 KB image is never fetched.
+  const base = { ...style }
+  delete base.sprite
   // Dark keeps its own basemap: the additive tracks read on it as they are.
-  if (isDark) return style
+  if (isDark) return base
   const colours = HEAT_BASEMAP.light
   return {
-    ...style,
+    ...base,
     layers: style.layers.map((layer) => {
       if (layer.type === 'symbol') {
         const paint = { ...(layer.paint ?? {}) } as Record<string, unknown>

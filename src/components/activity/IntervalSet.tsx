@@ -86,10 +86,21 @@ export function IntervalSet({ set, bare = false }: Props) {
   const recovery = recoveryAverage(set.reps)
   const warmupLabel = s.intervalTypes.interval_warmup ?? ''
   const cooldownLabel = s.intervalTypes.interval_cooldown ?? ''
+  const stridePaces = set.reps.map((r) => r.paceSecPerKm).filter((p): p is number => p !== null)
+  const strideMetres = set.reps.reduce((sum, r) => sum + r.distanceM, 0)
+  const strideAverage = strideMetres > 0 ? Math.round((set.reps.reduce((sum, r) => sum + r.durationSec, 0) / strideMetres) * 1000) : null
 
   return (
     <section className={bare ? 'flex flex-col gap-3' : cardClass({ className: 'flex flex-col gap-3' })} data-testid="interval-set">
       <div data-testid="set-summary">
+        {set.strides ? (
+          // 20 s accelerations: the heart rate lags them, so a band, a spread or a drift would grade noise.
+          <StatGrid columns={3}>
+            <Stat label={s.stridesLabel} value={set.reps.length} />
+            <Stat label={s.fastest} value={stridePaces.length ? formatClock(Math.min(...stridePaces)) : '—'} />
+            <Stat label={s.average} value={strideAverage ? formatClock(strideAverage) : '—'} />
+          </StatGrid>
+        ) : (
         <StatGrid columns={3}>
           {band ? (
             <Stat
@@ -106,6 +117,7 @@ export function IntervalSet({ set, bare = false }: Props) {
             unit={set.hrDriftBpm !== null ? t.units.bpm : undefined}
           />
         </StatGrid>
+        )}
       </div>
 
       <div className="h-px bg-[var(--border)]" />
@@ -114,20 +126,24 @@ export function IntervalSet({ set, bare = false }: Props) {
         <div className={cn(ROW, 'text-caption uppercase tracking-[0.06em] text-muted-foreground')}>
           <span>{s.cols.step}</span>
           <span className="truncate normal-case tracking-normal" data-testid="band-header">
-            {band ? s.bandLabel(`${formatClock(band.min)}–${formatClock(band.max)}`) : ''}
+            {band && !set.strides ? s.bandLabel(`${formatClock(band.min)}–${formatClock(band.max)}`) : ''}
           </span>
           <span className="text-right">{s.cols.pace}</span>
           <span className="text-right">{s.cols.hr}</span>
         </div>
 
-        {set.warmup && <QuietRow label={`${warmupLabel} ${km(set.warmup.distanceM)} ${t.units.km}`} pace={paceOf(set.warmup)} hr={set.warmup.avgHr} />}
+        {set.warmups.map((lap, i) => (
+          <QuietRow key={`w${i}`} label={`${warmupLabel} ${km(lap.distanceM)} ${t.units.km}`} pace={paceOf(lap)} hr={lap.avgHr} />
+        ))}
+
+        {set.body && <QuietRow label={`${s.bodyLap} ${km(set.body.distanceM)} ${t.units.km}`} pace={paceOf(set.body)} hr={set.body.avgHr} />}
 
         {set.reps.map((rep) => {
           const standing = standingOf(rep.paceSecPerKm, band)
           return (
             <div key={rep.number} className={cn(ROW, 'min-h-6 text-subhead')} data-testid="rep-row">
               <span className="tabular-nums text-foreground">{rep.number}</span>
-              {track ? <RepTrack pace={rep.paceSecPerKm} track={track} band={band} standing={standing} /> : <span />}
+              {track && !set.strides ? <RepTrack pace={rep.paceSecPerKm} track={track} band={band} standing={standing} /> : <span />}
               <span className={cn('text-right font-bold tabular-nums', standing === 'slower' ? 'text-muted-foreground' : 'text-foreground')}>
                 {rep.paceSecPerKm ? formatClock(rep.paceSecPerKm) : '–'}
               </span>
@@ -138,7 +154,9 @@ export function IntervalSet({ set, bare = false }: Props) {
 
         {recovery && <QuietRow label={s.recoveryAvg} pace={recovery.paceSecPerKm} hr={recovery.avgHr} />}
 
-        {set.cooldown && <QuietRow label={`${cooldownLabel} ${km(set.cooldown.distanceM)} ${t.units.km}`} pace={paceOf(set.cooldown)} hr={set.cooldown.avgHr} />}
+        {set.cooldowns.map((lap, i) => (
+          <QuietRow key={`c${i}`} label={`${cooldownLabel} ${km(lap.distanceM)} ${t.units.km}`} pace={paceOf(lap)} hr={lap.avgHr} />
+        ))}
       </div>
     </section>
   )

@@ -207,7 +207,8 @@ export function ProgressHub({ view, explored }: { view: ProgressHubView; explore
       <RaceCard race={view.race} />
       <YearCard view={view} />
 
-      <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2 sm:items-start" data-testid="progress-columns">
+      {/* Side by side, the two cards share a height: the streak strip grows into whatever Explored adds. */}
+      <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2" data-testid="progress-columns">
         <Tile href="/consistency" title={h.consistency} testId="consistency-tile">
           <div className="flex items-end justify-between gap-3">
             <p className="flex min-w-0 flex-wrap items-baseline gap-x-1">
@@ -220,7 +221,7 @@ export function ProgressHub({ view, explored }: { view: ProgressHubView; explore
               {h.runsThisWeek(consistency.thisWeek.runs, consistency.thisWeek.target)}
             </span>
           </div>
-          <div className="flex h-[30px] items-end gap-[3px]" aria-hidden="true" data-testid="streak-strip">
+          <div className="flex h-[30px] items-end gap-[3px] sm:h-auto sm:min-h-[30px] sm:flex-1" aria-hidden="true" data-testid="streak-strip">
             {consistency.strip.map((week) => (
               <span
                 key={week.monday}

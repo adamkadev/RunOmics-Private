@@ -12,7 +12,7 @@ const RETIRED_ACTIVE_TINT = 'bg-foreground/[0.14]'
 describe('the selected chip speaks one language', () => {
   it('marks the selected activity group inverted', async () => {
     window.history.replaceState(null, '', '/activities')
-    render(<ActivityListClient initialItems={[]} initialNextOffset={null} totalCount={0} today="2026-09-24" mapData={{ routeMeta: [], clusters: [], defaultClusterIdx: 0, totalCount: 0, totalKm: 0, years: [] }} />)
+    render(<ActivityListClient initialItems={[]} totalCount={0} today="2026-09-24" mapData={{ routeMeta: [], clusters: [], defaultClusterIdx: 0, totalCount: 0, totalKm: 0, years: [] }} />)
 
     const all = screen.getByRole('button', { name: t.activities.all })
     expect(all.className).toContain(CHIP_SELECTED)

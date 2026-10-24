@@ -144,7 +144,7 @@ for (const theme of ['light', 'dark'] as const) {
       const wrapper = document.querySelector<HTMLElement>('[data-testid="scroll-edge"]')!
       const layers = [...wrapper.querySelectorAll<HTMLElement>(':scope > i')]
       const bar = document.querySelector('[data-testid="compact-title-bar"]')!.getBoundingClientRect()
-      const stickyH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sticky-h')) || 0
+      const stickyH = parseFloat(getComputedStyle(wrapper).getPropertyValue('--sticky-h')) || 0
       return {
         blurs: layers.slice(0, count).map((i) => getComputedStyle(i).backdropFilter),
         shown: layers.map((i) => getComputedStyle(i).display),

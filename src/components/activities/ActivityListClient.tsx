@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Search, SearchX, SlidersHorizontal, X } from 'lucide-react'
 import { ActivityThumbRow } from './ActivityThumbRow'
@@ -17,10 +17,9 @@ import {
   sortQuery,
   typesLabel,
   type ActivityFilter,
-  type ActivitySort,
 } from './activityFilter'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
-import type { ActivityQueryResult } from '@/application/usecases/QueryActivities'
+import { queryRuns, type ActivityQueryKind } from '@/domain/activity/activityQuery'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
 import type { MapShellData } from '@/application/usecases/GetAllRoutes'
 import type { ExploreAreaRef } from '@/domain/explore/types'
@@ -47,7 +46,6 @@ export function activitiesView(param: string | null): ActivitiesView {
   return param === 'map' ? 'map' : 'list'
 }
 
-const PAGE_SIZE = 20
 const SEARCH_DEBOUNCE_MS = 300
 
 interface WeekRow extends WeekGroup<ActivitySummary> {
@@ -75,6 +73,10 @@ function PastWeekLine({ group, showEasy, weekTotal }: { group: WeekRow; showEasy
     </span>
   )
 }
+
+const WEEK_HEADER_PX = 42
+/** An inset row's min-h-16. */
+const ROW_PX = 64
 
 function InsetRows({ items, efforts, types }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]>; types: Record<string, ActivityType> }) {
   return (
@@ -137,36 +139,9 @@ function readStoredSearch(): string {
   }
 }
 
-interface QueryState {
-  /** Comma-joined types, empty for every run. */
-  types: string
-  gearId: string | null
-  search: string
-  sort: ActivitySort
-}
-
-/** The query the server render answered. */
-const INITIAL_QUERY = JSON.stringify({ types: '', gearId: null, search: '', sort: 'newest' } satisfies QueryState)
-
-async function fetchActivities(query: QueryState, offset: number): Promise<ActivityQueryResult> {
-  const { sortBy, sortOrder } = sortQuery(query.sort)
-  const qs = new URLSearchParams({
-    sortBy,
-    sortOrder,
-    offset: String(offset),
-    limit: String(PAGE_SIZE),
-  })
-  if (query.types) qs.set('types', query.types)
-  if (query.gearId) qs.set('gear', query.gearId)
-  if (query.search.trim()) qs.set('search', query.search.trim())
-
-  const res = await fetch(`/api/activities?${qs}`)
-  return res.json()
-}
-
 interface Props {
+  /** The whole archive: filters, search and sort run on it here. */
   initialItems: ActivitySummary[]
-  initialNextOffset: number | null
   totalCount: number
   qualifiedEffortsByActivityId?: Record<string, QualifiedEffort[]>
   /** The date the page was prerendered on; see useToday. */
@@ -182,7 +157,6 @@ interface Props {
 
 export function ActivityListClient({
   initialItems,
-  initialNextOffset,
   totalCount,
   qualifiedEffortsByActivityId = {},
   today: serverToday,
@@ -214,12 +188,6 @@ export function ActivityListClient({
     [setGroupParam, setTypesParam],
   )
 
-  const [items, setItems] = useState(initialItems)
-  // The query's own count: the list only holds a page of them.
-  const [matched, setMatched] = useState(totalCount)
-  const [nextOffset, setNextOffset] = useState(initialNextOffset)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [isPending, setIsPending] = useState(false)
 
   // Derived from the unfiltered set the page handed us, so the header and
   // the sheet's counts keep describing the archive rather than the filter.
@@ -261,36 +229,20 @@ export function ActivityListClient({
 
   const activeTypes = filterTypes(filter)
   const typesKey = activeTypes?.join(',') ?? ''
-  const query: QueryState = useMemo(
-    () => ({ types: typesKey, gearId, search: debouncedSearch, sort }),
-    [typesKey, gearId, debouncedSearch, sort],
+  const matches = useMemo(
+    () =>
+      queryRuns(initialItems, {
+        types: typesKey ? (typesKey.split(',') as ActivityQueryKind[]) : null,
+        gearId,
+        search: debouncedSearch,
+        ...sortQuery(sort),
+      }),
+    [initialItems, typesKey, gearId, debouncedSearch, sort],
   )
+  // The chip answers the tap at once; the list behind it renders just after.
+  const items = useDeferredValue(matches)
+  const matched = matches.length
 
-  // Compared with the query last shown, not skipped on first render: a URL
-  // filter reached by a client-side navigation is there from the first render.
-  const requestSeq = useRef(0)
-  const shownQuery = useRef(INITIAL_QUERY)
-  useEffect(() => {
-    const key = JSON.stringify(query)
-    if (key === shownQuery.current) return
-    shownQuery.current = key
-    const seq = ++requestSeq.current
-    setIsPending(true)
-    fetchActivities(query, 0)
-      .then((result) => {
-        if (seq !== requestSeq.current) return
-        setIsPending(false)
-        setItems(result.items)
-        setMatched(result.total)
-        setNextOffset(result.nextOffset)
-      })
-      .catch(() => {
-        if (seq !== requestSeq.current) return
-        setIsPending(false)
-      })
-  }, [query])
-
-  const hasMore = nextOffset !== null
   const hasActiveFilter = activeTypes !== null || gearId !== null || search.trim() !== ''
   const currentWeekStart = isoDate(startOfWeek(new Date(`${today}T00:00:00`)))
   const groups = useMemo(
@@ -307,35 +259,6 @@ export function ActivityListClient({
     const frame = requestAnimationFrame(() => document.getElementById(`week-${weekParam}`)?.scrollIntoView({ block: 'start' }))
     return () => cancelAnimationFrame(frame)
   }, [weekParam, blocks])
-
-  const loadMore = useCallback(() => {
-    if (nextOffset === null || loadingMore) return
-    setLoadingMore(true)
-    const seq = requestSeq.current
-    fetchActivities(query, nextOffset)
-      .then((result) => {
-        setLoadingMore(false)
-        if (seq !== requestSeq.current) return
-        setItems((prev) => [...prev, ...result.items])
-        setNextOffset(result.nextOffset)
-      })
-      .catch(() => setLoadingMore(false))
-  }, [nextOffset, loadingMore, query])
-
-  const sentinelRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!hasMore) return
-    const node = sentinelRef.current
-    if (!node) return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) loadMore()
-      },
-      { rootMargin: '200px' }
-    )
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [hasMore, loadMore])
 
   function resetFilters() {
     setFilter(ALL_RUNS)
@@ -479,11 +402,7 @@ export function ActivityListClient({
               </div>
             )}
 
-            {isPending ? (
-              <div className="flex justify-center py-10">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground border-t-accent" />
-              </div>
-            ) : items.length === 0 ? (
+            {items.length === 0 ? (
               <div className={cardClass({ padding: 'none', className: 'py-12 text-center' })}>
                 <SearchX size={24} className="mx-auto text-subtle" />
                 <p className="mt-3 text-sm text-muted-foreground">
@@ -533,7 +452,14 @@ export function ActivityListClient({
                       </div>
                       <div className="flex flex-col gap-3">
                         {block.weeks.map((g) => (
-                          <section key={g.key} id={`week-${g.key}`} className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24' })} data-testid="week">
+                          // Off screen, a week is skipped by style and layout: the whole archive is one page.
+                          <section
+                            key={g.key}
+                            id={`week-${g.key}`}
+                            className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24 [content-visibility:auto]' })}
+                            style={{ containIntrinsicSize: `auto ${WEEK_HEADER_PX + g.items.length * ROW_PX}px` }}
+                            data-testid="week"
+                          >
                             <div className="flex items-baseline justify-between gap-4 px-4 pb-1.5 pt-3.5">
                               <h3 className="whitespace-nowrap text-headline text-foreground">{g.label}</h3>
                               <PastWeekLine group={g} showEasy={!hasActiveFilter} weekTotal={hasActiveFilter ? (weekTotals?.get(g.key) ?? null) : null} />
@@ -555,8 +481,7 @@ export function ActivityListClient({
               </div>
             )}
 
-            {hasMore && <div ref={sentinelRef} aria-hidden="true" className="h-1" />}
-            {!hasMore && items.length > 0 && (
+            {items.length > 0 && (
               <p className="py-2 text-center text-xs text-subtle">{t.activities.endOfList}</p>
             )}
           </>

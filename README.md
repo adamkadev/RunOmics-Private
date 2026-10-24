@@ -1276,6 +1276,14 @@ zone with 4× the runs should look 4× the weight, not 4× the diameter. A floor
 zones tappable, and markers are added smallest-first so busier zones stack on top instead of being
 buried under one-off bubbles.
 
+**Loading:** `/api/map/routes?cluster=N&enc=p5` sends each track as a Google encoded polyline at
+1e-5° (about 1 m), so the home area travels as about 160 KB gzipped instead of 570 KB; without
+`enc` it still answers coordinate arrays. Each area's answer and ETag are built once per data
+generation. The page keeps the areas it fetched while it lives, so going back from List to Map
+fetches nothing, and MapLibre's workers stay warm between maps. The heat redraws only for a new view
+or new tracks, frames the area with the server's frame when no filter hides a run, and its basemap
+loads no sprite: no heat layer draws an icon.
+
 ### Explore
 
 Explore is a layer of the Activities map, not a tab: the layers button above the ⓘ switches Heat
@@ -1301,9 +1309,11 @@ and woods never count as unexplored. `pct = floor(100 · visited / runnable)`: c
 under 15 %. Km run are credited to the unit owning each step's midpoint. The area file and each
 run's cells are cached in IndexedDB, keyed by area version and a fingerprint of the track.
 
-**Next quartier:** the incomplete unit with at least 5 runnable cells and at most 5 km from home
-that minimises `pct/100 + km/6` (quartiers before neighbouring communes; ties go to the nearer,
-then by name). With none in range, the lowest score among every incomplete unit.
+**Next quartier:** the nearest incomplete unit with at least 5 runnable cells and at most 5 km from
+home, so the quartiers around home are finished before the next ring out: an untouched quartier
+beats a half-done one farther away. Quartiers go before neighbouring communes; labels within 100 m
+count as the same distance, and then the more explored goes first, then the name. With none in
+range, the nearest incomplete unit of all.
 
 **Routes:** `POST /api/explore/route` calls OpenRouteService (`foot-walking`) once per seed, five
 seeds a batch. The panel's **Start** picks where the loop begins:
@@ -1334,6 +1344,10 @@ The canvas cannot read CSS variables, so the card names its own surfaces. It is 
 inks: the athlete's accent (passed as an r/g/b triple, since it can be a custom colour the palette
 never sees) plus `paper` and `ink` for the white and black washes that build the glass. Alphas stay
 inline at the call site — they are composition, not colour.
+
+The dark Stats card carries the app's glow, in the run's own zone colour, from its top corner, with a
+fixed faint grain over it: a smooth dark gradient bands into visible steps once Instagram or Strava
+recompress the image. The light card stays plain.
 
 - The start dot is always green; the finish dot is the accent, unless the accent sits within a
   distance of 90 in RGB space of the green start, where it flips to red — the start/finish convention

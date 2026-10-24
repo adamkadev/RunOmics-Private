@@ -4,71 +4,21 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import dynamic from 'next/dynamic'
 import type { SimilarRun, SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
+import type { SimilarRunPoint } from './SimilarRunsChart'
 import { cardClass } from '@/components/ui/Card'
 import { ChartFigure } from '@/components/ui/ChartFigure'
-import { TooltipCard } from '@/components/ui/ChartTooltip'
-import { lineInterpolation } from '@/domain/timeWindow'
-import { CHART_COLORS } from '@/lib/colors'
 import { Medal } from 'lucide-react'
-import { paceAxis } from '@/lib/chartAxis'
-import { formatClock, formatDate, formatDuration, formatPace } from '@/lib/formatters'
+import { formatDate, formatDuration, formatPace } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
 const LIST_MAX_ROWS = 4
 
-/** The athlete's own runs, so the line is the accent; the record line stays neutral. */
-const ROUTE_LINE = 'var(--accent)'
-
-interface ChartPoint {
-  id: string
-  label: string
-  pace: number
-  isCurrent: boolean
-}
-
-interface TooltipProps {
-  active?: boolean
-  payload?: Array<{ payload: ChartPoint }>
-}
-
-function CustomTooltip({ active, payload }: TooltipProps) {
-  const p = payload?.[0]?.payload
-  if (!active || !p) return null
-  return (
-    <TooltipCard label={p.label}>
-      <p className="text-sm text-accent-text">
-        {formatPace(p.pace)}
-      </p>
-    </TooltipCard>
-  )
-}
-
-interface DotProps {
-  cx?: number
-  cy?: number
-  payload?: ChartPoint
-  onSelect?: (id: string) => void
-}
-
-function RunDot({ cx, cy, payload, onSelect }: DotProps) {
-  if (cx === undefined || cy === undefined || !payload) return null
-  const { isCurrent, id } = payload
-  return (
-    <circle
-      cx={cx}
-      cy={cy}
-      r={isCurrent ? 5.5 : 3.5}
-      fill={isCurrent ? ROUTE_LINE : 'var(--card)'}
-      stroke={ROUTE_LINE}
-      strokeWidth={2}
-      onClick={isCurrent ? undefined : () => onSelect?.(id)}
-      style={isCurrent ? undefined : { cursor: 'pointer' }}
-    />
-  )
-}
+const loadChart = () => import('./SimilarRunsChart')
+/** Recharts is 113 KB the card needs only once it opens; the empty box keeps the list from jumping. */
+const SimilarRunsChart = dynamic(() => loadChart().then((m) => m.SimilarRunsChart), { loading: () => <div className="h-[120px]" /> })
 
 // Ranked by pace, so the bold number is the pace; the total time is secondary.
 function RunRow({ run, bestPace }: { run: SimilarRun; bestPace: number }) {
@@ -113,11 +63,9 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
   const s = t.activity.similarRuns
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  // Faster is up, as on the app's other pace charts.
-  const pace = paceAxis()
   const bestPaceLabel = formatPace(data.bestPaceSecPerKm)
 
-  const chartData: ChartPoint[] = data.runs.map((run) => ({
+  const chartData: SimilarRunPoint[] = data.runs.map((run) => ({
     id: run.id,
     // An 11px axis tick has no room for a weekday.
     label: formatDate(run.date, { style: 'bare', year: 'always' }),
@@ -140,6 +88,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        onPointerDown={() => void loadChart()}
         aria-expanded={open}
         className="flex min-h-11 w-full items-center justify-between gap-3 px-5 py-3.5 text-left"
       >
@@ -161,36 +110,7 @@ export function SimilarRuns({ data }: { data: SimilarRunsData }) {
           <p className="mb-3 text-sm text-muted-foreground">{s.summary(data.count, data.currentRank)}</p>
 
           <ChartFigure summary={s.chartSummary(data.count, bestPaceLabel)}>
-            <ResponsiveContainer width="100%" height={120}>
-              <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: -4 }}>
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                  axisLine={false}
-                  tickLine={false}
-                  minTickGap={40}
-                />
-                <YAxis
-                  tick={{ fontSize: 11, fill: CHART_COLORS.axisTick }}
-                  axisLine={false}
-                  tickLine={false}
-                  domain={['dataMin - 5', 'dataMax + 5']}
-                  reversed={pace.reversed}
-                  tickFormatter={formatClock}
-                  width={46}
-                />
-                <Tooltip content={<CustomTooltip />} cursor={{ stroke: CHART_COLORS.tooltipCursor }} />
-                <Line
-                  type={lineInterpolation(chartData.length)}
-                  dataKey="pace"
-                  stroke={ROUTE_LINE}
-                  strokeWidth={2}
-                  dot={<RunDot onSelect={(id) => router.push(`/activities/${id}`)} />}
-                  isAnimationActive={false}
-                />
-                <ReferenceLine y={data.bestPaceSecPerKm} stroke={CHART_COLORS.referenceTarget} strokeDasharray="3 4" />
-              </LineChart>
-            </ResponsiveContainer>
+            <SimilarRunsChart data={chartData} bestPace={data.bestPaceSecPerKm} onSelect={(id) => router.push(`/activities/${id}`)} />
           </ChartFigure>
 
           <ul className="mt-3 space-y-0.5 border-t border-border pt-3">

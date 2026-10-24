@@ -33,8 +33,13 @@ export function recoveryAverage(reps: Rep[]): { paceSecPerKm: number | null; avg
 
 export interface RepSet {
   reps: Rep[]
-  warmup: ActivitySplit | null
-  cooldown: ActivitySplit | null
+  /** In order: a warm-up often comes in parts, easy then steady. */
+  warmups: ActivitySplit[]
+  cooldowns: ActivitySplit[]
+  /** The run itself when the watch typed it as a rep: the 8 km an easy run's strides follow. */
+  body: ActivitySplit | null
+  /** 30 s reps after a body: accelerations to list, not a set to grade against a band. */
+  strides: boolean
   repDurationSec: number
   band: { min: number; max: number } | null
   inBand: number
@@ -48,6 +53,10 @@ const MIN_REPS = 2
 /** A first rep this much slower than the rest is a lead-in: not every watch types its warm-up as one. */
 const LEAD_IN_RATIO = 1.15
 const MIN_REPS_TO_DROP_LEAD_IN = 3
+
+const STRIDE_MAX_SEC = 30
+/** A body is a run of its own; a shorter first lap before short reps is a warm-up jog the watch typed as work. */
+const BODY_MIN_SEC = 15 * 60
 
 /** Half-width, in seconds per km. */
 export const BAND_TOLERANCE_SEC = 10
@@ -73,16 +82,16 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
 
   const reps: Rep[] = []
   const repSplits: ActivitySplit[] = []
-  let warmup: ActivitySplit | null = null
-  let cooldown: ActivitySplit | null = null
+  const warmups: ActivitySplit[] = []
+  const cooldowns: ActivitySplit[] = []
 
   splits.forEach((split, i) => {
     if (split.type === 'interval_warmup') {
-      warmup ??= split
+      warmups.push(split)
       return
     }
     if (split.type === 'interval_cooldown') {
-      cooldown = split
+      cooldowns.push(split)
       return
     }
     if (split.type !== 'interval_active') return
@@ -109,9 +118,16 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
     repSplits.push(split)
   })
 
-  if (takeLeadIn(reps)) {
-    // The lap still happened, so it moves to the warm-up row rather than vanishing.
-    warmup ??= repSplits[0]!
+  let body: ActivitySplit | null = null
+  // Longer than every other rep together: the run the strides follow, not a lead-in before a set.
+  const first = reps[0]!.durationSec
+  if (reps.length > MIN_REPS && first >= BODY_MIN_SEC && first > reps.slice(1).reduce((sum, r) => sum + r.durationSec, 0)) {
+    body = repSplits.shift()!
+    reps.shift()
+    reps.forEach((r, i) => (r.number = i + 1))
+  } else if (takeLeadIn(reps)) {
+    // The lap still happened, so it moves to the warm-up rows rather than vanishing.
+    warmups.push(repSplits[0]!)
     reps.shift()
     reps.forEach((r, i) => (r.number = i + 1))
   }
@@ -130,8 +146,10 @@ export function repSet(splits: ActivitySplit[] | null): RepSet | null {
 
   return {
     reps,
-    warmup,
-    cooldown,
+    warmups,
+    cooldowns,
+    body,
+    strides: body !== null && median(reps.map((r) => r.durationSec)) <= STRIDE_MAX_SEC,
     repDurationSec: Math.round(median(reps.map((r) => r.durationSec))),
     band,
     inBand: band ? paces.filter((p) => p >= band.min && p <= band.max).length : 0,

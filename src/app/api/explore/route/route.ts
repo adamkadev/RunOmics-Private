@@ -36,6 +36,14 @@ const FAILURES: Record<RoutingErrorKind, { status: number; error: string; reason
   unauthorized: { status: 502, error: 'The route provider failed', reason: 'upstream' },
 }
 
+/** What was sent, never where: field names, counts and the distance, no coordinate. */
+function requestShape(body: unknown): string {
+  if (typeof body !== 'object' || body === null) return typeof body
+  const { distanceM, seeds, vias } = body as Record<string, unknown>
+  const lists = Array.isArray(vias) ? vias.map((list) => (Array.isArray(list) ? list.length : typeof list)).join(',') : typeof vias
+  return `keys=${Object.keys(body).join(',')} distanceM=${typeof distanceM === 'number' ? Math.round(distanceM) : typeof distanceM} seeds=${Array.isArray(seeds) ? seeds.length : typeof seeds} vias=${lists}`
+}
+
 function answer(body: object, status: number, retryAfter?: number): NextResponse {
   const headers = retryAfter === undefined ? NO_STORE : { ...NO_STORE, 'retry-after': String(retryAfter) }
   return NextResponse.json(retryAfter === undefined ? body : { ...body, retryAfter }, { status, headers })
@@ -52,8 +60,12 @@ export async function POST(req: NextRequest) {
       return answer({ error: 'Too many route requests', reason: 'rateLimited' }, 429, limit.retryAfterS)
     }
 
-    const request = parseLoopRequest(await req.json().catch(() => undefined))
-    if (!request) return answer({ error: 'Invalid route request', reason: 'invalid' }, 400)
+    const body: unknown = await req.json().catch(() => undefined)
+    const request = parseLoopRequest(body)
+    if (!request) {
+      console.warn('[explore:route] refused a request shaped', requestShape(body))
+      return answer({ error: 'Invalid route request', reason: 'invalid' }, 400)
+    }
 
     const config = routingConfig(process.env)
     if ('missing' in config) {

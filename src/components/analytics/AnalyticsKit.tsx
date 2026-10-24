@@ -370,10 +370,11 @@ export function ChartScrub({
       {active !== null && x !== null && (
         <>
           <span aria-hidden className="pointer-events-none absolute inset-y-0 w-px bg-foreground" style={{ left: `${x}%` }} data-testid="scrub-hairline" />
+          {/* Its own x% under the bar's x%: left-aligned at the first bar, right-aligned at the last, never past the card. */}
           <span
             role="status"
-            className="pointer-events-none absolute -top-2 z-10 -translate-y-full whitespace-nowrap rounded-full bg-foreground px-2.5 py-1 text-[12px] font-semibold tabular-nums text-background"
-            style={{ left: `clamp(0px, calc(${x}% - 60px), calc(100% - 120px))` }}
+            className="pointer-events-none absolute -top-2 z-10 max-w-full truncate rounded-full bg-foreground px-2.5 py-1 text-[12px] font-semibold tabular-nums text-background"
+            style={{ left: `${x}%`, translate: `-${x}% -100%` }}
           >
             {readout(active)}
           </span>

@@ -17,6 +17,7 @@ export function toActivitySummary(a: Activity): ActivitySummary {
     hrZones: a.hrZones,
     week: a.week,
     elevationGain: a.elevationGain,
+    gearId: a.gearId,
     routeThumb: activityRouteThumb(a),
   }
 }

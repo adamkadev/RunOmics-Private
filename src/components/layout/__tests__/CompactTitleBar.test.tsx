@@ -103,12 +103,16 @@ describe('CompactTitleBar', () => {
     strip.setAttribute('data-sticky-strip', '')
     document.querySelector('main')!.appendChild(strip)
     strip.getBoundingClientRect = () => ({ top: DIVIDER, bottom: DIVIDER + STATUS_BAR }) as DOMRect
+    const edge = document.createElement('div')
+    edge.className = 'scroll-edge'
+    document.body.appendChild(edge)
     await mount(60)
-    expect(document.documentElement.style.getPropertyValue('--sticky-h')).toBe(`${STATUS_BAR}px`)
+    expect(edge.style.getPropertyValue('--sticky-h')).toBe(`${STATUS_BAR}px`)
+    expect(document.documentElement.style.getPropertyValue('--sticky-h')).toBe('')
 
     strip.getBoundingClientRect = () => ({ top: DIVIDER + 200, bottom: DIVIDER + 200 + STATUS_BAR }) as DOMRect
     await scrollTo(61)
-    expect(document.documentElement.style.getPropertyValue('--sticky-h')).toBe('')
+    expect(edge.style.getPropertyValue('--sticky-h')).toBe('')
   })
 
   it("shows a page's short bar title where it has one (Goals & season)", async () => {

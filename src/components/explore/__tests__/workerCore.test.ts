@@ -373,7 +373,7 @@ describe('fetchClusterTracks', () => {
     expect(ok(await send({ type: 'fetchClusterTracks', areaKey: KEY, clusterId: '3', index }))).toEqual({
       added: ['r1', 'r2'],
     })
-    expect(fetch).toHaveBeenLastCalledWith('/api/map/routes?cluster=3')
+    expect(fetch).toHaveBeenLastCalledWith('/api/map/routes?cluster=3&enc=p5')
 
     const coverage = ok<{ units: { id: string; lastRunDate: string | null }[] }>(
       await send({ type: 'coverage', areaKey: KEY, home: null }),

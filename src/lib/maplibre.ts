@@ -256,11 +256,12 @@ export function firstSymbolLayerId(map: MapLibreMap): string | undefined {
 let workerConfigured = false
 
 export async function loadMapLibre(): Promise<MapLibre> {
-  const mgl = await import('maplibre-gl')
-  await import('maplibre-gl/dist/maplibre-gl.css')
+  const [mgl] = await Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css')])
 
   if (!workerConfigured) {
     mgl.setWorkerUrl(WORKER_URL)
+    // The pool outlives each map, so going back to the Map tab compiles no new workers.
+    mgl.prewarm()
     workerConfigured = true
   }
 

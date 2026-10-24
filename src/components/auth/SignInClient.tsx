@@ -20,7 +20,7 @@ type Phase =
   | { kind: 'failed' }
 
 async function loadAuth() {
-  const [authSdk, { getClientAuth }] = await Promise.all([import('firebase/auth'), import('@/lib/firebase')])
+  const [authSdk, { getClientAuth }] = await Promise.all([import('firebase/auth'), import('@/lib/firebaseAuth')])
   return { ...authSdk, auth: getClientAuth() }
 }
 

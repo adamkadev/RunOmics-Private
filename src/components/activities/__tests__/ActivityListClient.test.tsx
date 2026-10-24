@@ -7,6 +7,8 @@ import { ActivityListClient, activitiesView } from '../ActivityListClient'
 import type { MapShellData } from '@/application/usecases/GetAllRoutes'
 import { formatDate, formatDateRange, formatWeekday } from '@/lib/formatters'
 
+vi.mock('next/navigation', async (actual) => ({ ...(await actual<typeof import('next/navigation')>()), useRouter: () => ({ prefetch: () => {} }) }))
+
 // The map is loaded with next/dynamic; here it is a stand-in that says what it was handed.
 vi.mock('next/dynamic', () => ({
   default: () =>
@@ -44,7 +46,6 @@ function renderList(items: ActivitySummary[]) {
   return render(
     <ActivityListClient
       initialItems={items}
-      initialNextOffset={null}
       totalCount={items.length}
       today="2026-09-24"
       mapData={MAP_DATA}
@@ -213,17 +214,11 @@ describe('the list at a phone', () => {
 })
 
 describe('the filter sheet', () => {
-  const fetchMock = vi.fn()
-
   beforeEach(() => {
     freshPage()
-    fetchMock.mockReset()
-    fetchMock.mockResolvedValue({ json: async () => ({ items: [], total: 0, nextOffset: null }) })
-    vi.stubGlobal('fetch', fetchMock)
   })
   afterEach(() => {
     vi.useRealTimers()
-    vi.unstubAllGlobals()
   })
 
   const archive = (): ActivitySummary[] => [
@@ -269,7 +264,7 @@ describe('the filter sheet', () => {
     const chip = await screen.findByRole('button', { name: t.activities.filter.clearTypes(label) })
     expect(within(screen.getByTestId('type-chips')).getAllByRole('button')).toHaveLength(1)
     expect(new URLSearchParams(window.location.search).get('types')).toBe('Threshold,VO2Max')
-    await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain('types=Threshold%2CVO2Max'))
+    await waitFor(() => expect(screen.getAllByTestId('thumb-row')).toHaveLength(3))
 
     await user.click(chip)
     expect(window.location.search).toBe('')
@@ -305,16 +300,14 @@ describe('the filter sheet', () => {
 
   it('sorts by the longest run as a flat list', async () => {
     const user = sheetUser()
-    fetchMock.mockResolvedValue({ json: async () => ({ items: archive(), total: 4, nextOffset: null }) })
     renderList(archive())
     const sheet = await openSheet(user)
     await user.click(within(sheet).getByRole('tab', { name: t.activities.sort.longest }))
     await user.click(within(sheet).getByRole('button', { name: t.activities.filter.showAll(4) }))
 
-    await waitFor(() => expect(String(fetchMock.mock.lastCall?.[0])).toContain('sortBy=distance'))
     expect(new URLSearchParams(window.location.search).get('sort')).toBe('longest')
     await waitFor(() => expect(screen.queryAllByTestId('week')).toHaveLength(0))
-    expect(screen.getAllByTestId('thumb-row')).toHaveLength(4)
+    expect(screen.getAllByTestId('thumb-row').map((row) => row.getAttribute('href'))).toEqual(['/activities/t2', '/activities/t1', '/activities/b1', '/activities/v1'])
   })
 })
 

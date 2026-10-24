@@ -1,9 +1,11 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ActivitySummary } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import { formatDate } from '@/lib/formatters'
 import { ActivityThumbRow, thumbRowMeta } from '../ActivityThumbRow'
+
+vi.mock('next/navigation', async (actual) => ({ ...(await actual<typeof import('next/navigation')>()), useRouter: () => ({ prefetch: () => {} }) }))
 
 describe('thumbRowMeta', () => {
   const run = { date: '2026-10-20', durationSeconds: 3443, avgHeartRate: 139 }

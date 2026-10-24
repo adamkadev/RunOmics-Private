@@ -101,6 +101,8 @@ export type ActivitySummary = Pick<
   | 'week'
   | 'elevationGain'
 > & {
+  /** For the list's shoe filter, which runs on the phone. */
+  gearId?: string | null
   /** From routeThumbPath; null for a treadmill run. */
   routeThumb?: string | null
 }

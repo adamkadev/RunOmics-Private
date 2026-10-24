@@ -4,6 +4,56 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Scrolling Activities no longer stutters. The compact title bar wrote a
+  style on the whole page as month headers passed under it, and each write
+  restyled every run in the list (60-90 ms on a long archive); it now
+  writes only on the soft edge that reads it, and weeks off screen skip
+  style and layout altogether.
+
+- Filters, search and sort on Activities answer at once: they run on the
+  phone, over the archive the page already holds, instead of asking the
+  server each time (a type chip took about 200 ms).
+
+- Scrolling Activities no longer downloads every run's page as its row
+  passes by (3 MB for the whole list); a run's page loads when you touch
+  its row.
+
+- The map opens lighter: its tracks travel as encoded polylines (the home
+  area is about 160 KB instead of 570 KB), are fetched once per visit
+  rather than each time the Map tab opens, and the heat redraws once
+  instead of four or five times. Its basemap skips an image it never used.
+
+- Home, Records and every run's page no longer load the Firestore SDK just
+  to check who is signed in, and a run's page loads the similar runs chart
+  only when its card opens.
+
+- A chart's readout on Analytics stays on screen over the last weeks: a
+  long one ("Week of Oct 12 · 44.8 / 48 km") ran past the card's edge.
+
+- Picking 1Y on Analytics no longer moves the period control under the
+  title: a year's range now reads by its months ("Oct 2025 – Oct 2026"),
+  short enough to stay beside it.
+
+- The dark Stats share card has the app's glow, in the run's own colour,
+  so it reads as RunOmics rather than a flat black field; a faint grain
+  keeps it from banding once a social app recompresses the image.
+
+- On a laptop, Progress's Consistency card is as tall as Explored beside
+  it, its week bars grown to fill it, instead of stopping short.
+
+- The next quartier is the nearest one not yet complete, so the quartiers
+  around home are finished first and the suggestion moves outward from
+  there; it used to favour the least explored, an untouched quartier
+  across town before a half-done one next door.
+
+- An easy run with strides reads as one on its Laps view: the run's own
+  lap ("Run 8.00 km") instead of an 8 km "warm-up", and the strides listed
+  with their count, fastest and average rather than graded like threshold
+  reps (a band, a spread and a heart-rate drift mean nothing over 20 s).
+
+- A run's Laps view shows every warm-up lap: a warm-up of 1.7 km easy,
+  1 km steady and 1 km a touch quicker showed its first lap only.
+
 - A planned session's warm-up on Plan now counts all its parts: a warm-up
   of 1.7 km easy, 1 km steady and 1 km a touch quicker read as its first
   10 minutes only; it now shows the whole time and each part's pace.

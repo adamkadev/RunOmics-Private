@@ -30,9 +30,11 @@ export function exploredSummary(coverage: AreaCoverage): ExploredSummary {
 }
 
 const CACHE_PREFIX = 'runomics-explored:'
+/** Bump when the summary is worked out differently (2: nearest next quartier), or a saved one outlives the rule. */
+const SUMMARY_VERSION = 2
 
 export function exploredCacheKey(areaVersion: string, dataVersion: string): string {
-  return `${CACHE_PREFIX}${areaVersion}:${dataVersion}`
+  return `${CACHE_PREFIX}${SUMMARY_VERSION}:${areaVersion}:${dataVersion}`
 }
 
 const isPct = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100
