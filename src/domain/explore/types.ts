@@ -142,6 +142,8 @@ export interface RouteCandidate {
 export interface RoutePreferences {
   avoidBusyRoads: boolean
   newStreetsFirst: boolean
+  /** Reps want flat ground and no crossings: on by itself on a quality day. */
+  flatForReps: boolean
 }
 
 export interface ScoredRoute {

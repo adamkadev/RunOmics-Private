@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { startTransition, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Search, SearchX, SlidersHorizontal, X } from 'lucide-react'
 import { ActivityThumbRow } from './ActivityThumbRow'
@@ -32,6 +32,7 @@ import { groupByWeek, type WeekGroup } from '@/domain/activity/weekGroups'
 
 import { formatDate, formatDateRange, formatKm, formatRanKm } from '@/lib/formatters'
 import { useUrlParam } from '@/lib/useUrlParam'
+import { isPopNavigation } from '@/lib/popNavigation'
 import { isoDate, addDays, startOfWeek } from '@/lib/calendarDate'
 import { useToday } from '@/lib/useToday'
 import { t } from '@/i18n'
@@ -72,6 +73,21 @@ function PastWeekLine({ group, showEasy, weekTotal }: { group: WeekRow; showEasy
       {showEasy && group.easyPct !== null && ` · ${w.easy(group.easyPct)}`}
     </span>
   )
+}
+
+/** This week and about three months: a screen and a half on a phone, and what most visits read. */
+const FIRST_BLOCKS = 4
+const MORE_BLOCKS = 6
+const SHOWN_BLOCKS_KEY = 'activities-shown-blocks'
+
+/** Read only on Back, which never hydrates: the server render has no sessionStorage. */
+function savedShownBlocks(): number {
+  try {
+    const saved = Number(sessionStorage.getItem(SHOWN_BLOCKS_KEY))
+    return saved > FIRST_BLOCKS ? saved : FIRST_BLOCKS
+  } catch {
+    return FIRST_BLOCKS
+  }
 }
 
 const WEEK_HEADER_PX = 42
@@ -251,9 +267,38 @@ export function ActivityListClient({
     [items, sort, currentWeekStart],
   )
   const blocks = useMemo(() => (groups ? listBlocks(groups) : null), [groups])
+  const [weekParam] = useUrlParam('week')
+  // The archive renders a few months at a time: the whole of it at once was the slowest page to become usable.
+  // Back renders as far as the list was read, so the shell's scroll restore lands on the run just left.
+  const [shownBlocks, setShownBlocks] = useState(() => (isPopNavigation() ? savedShownBlocks() : FIRST_BLOCKS))
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SHOWN_BLOCKS_KEY, String(shownBlocks))
+    } catch {
+    }
+  }, [shownBlocks])
+  const shown = blocks && !weekParam ? blocks.slice(0, shownBlocks) : blocks
+  const moreToShow = !!blocks && !!shown && shown.length < blocks.length
+  // State, not a ref: the sentinel remounts when the map gives way to the list, and the observer must follow it.
+  const [moreNode, setMoreNode] = useState<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const node = moreNode
+    if (!moreToShow || !node) return
+    if (typeof IntersectionObserver === 'undefined') {
+      startTransition(() => setShownBlocks(Number.POSITIVE_INFINITY))
+      return
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) startTransition(() => setShownBlocks((n) => n + MORE_BLOCKS))
+      },
+      { rootMargin: '1500px 0px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [moreToShow, shownBlocks, moreNode])
 
   // ?week= (a Monday) scrolls that week's card into view once the list holding it has loaded.
-  const [weekParam] = useUrlParam('week')
   useEffect(() => {
     if (!weekParam || !blocks) return
     const frame = requestAnimationFrame(() => document.getElementById(`week-${weekParam}`)?.scrollIntoView({ block: 'start' }))
@@ -419,7 +464,7 @@ export function ActivityListClient({
               </div>
             ) : blocks ? (
               <div className="flex flex-col gap-3.5">
-                {blocks.map((block) =>
+                {shown!.map((block) =>
                   block.kind === 'current' ? (
                     // Its km and runs, not the plan: Today and Plan show the week against plan.
                     <section key={block.week.key} id={`week-${block.week.key}`} className="scroll-mt-24" data-testid="current-week">
@@ -481,7 +526,8 @@ export function ActivityListClient({
               </div>
             )}
 
-            {items.length > 0 && (
+            {moreToShow && <div ref={setMoreNode} aria-hidden="true" className="h-px" />}
+            {items.length > 0 && !moreToShow && (
               <p className="py-2 text-center text-xs text-subtle">{t.activities.endOfList}</p>
             )}
           </>

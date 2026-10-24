@@ -2,7 +2,8 @@
 
 import { useMemo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { ActivitySummary, ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
+import type { PlanRun } from './planRun'
 import { weekTarget } from '@/domain/training/weekTarget'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
@@ -87,7 +88,7 @@ function selectedWorkouts(
 function comingUpRows(
   dates: string[],
   today: string,
-  byDate: Map<string, ActivitySummary[]>,
+  byDate: Map<string, PlanRun[]>,
   byDatePlanned: Map<string, PlannedWorkout>,
   byDateCoach: ReadonlyMap<string, PlanPrescriptionView[]> | undefined,
   trainingZones: TrainingZonesData | null
@@ -112,7 +113,7 @@ interface Props {
   weekStart: Date
   selectedDate: string
   onSelectDate: (date: string) => void
-  byDate: Map<string, ActivitySummary[]>
+  byDate: Map<string, PlanRun[]>
   byDatePlanned: Map<string, PlannedWorkout>
   byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
   coaching?: PlanCoachingView | null
@@ -185,7 +186,7 @@ export function WeekView({
   const kind = dayKind(selected, acts, byDatePlanned, byDateCoach)
   const workouts = selectedWorkouts(selected, byDatePlanned, byDateCoach, trainingZones)
 
-  function activityTitle(a: ActivitySummary): string {
+  function activityTitle(a: PlanRun): string {
     if (a.description && a.description !== t.activityTypes[a.type]) return a.description
     return sessionTitle(byDatePlanned.get(a.date)?.name, a.type) ?? t.activityTypes[a.type]
   }

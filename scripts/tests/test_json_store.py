@@ -3,7 +3,7 @@ import json
 import pytest
 
 from repository.history_file import HistoryFileError
-from repository.json_store import JsonActivityStore, PlannedWorkoutStore
+from repository.json_store import JsonActivityStore, PlannedWorkoutStore, dumps_readable
 
 
 class TestPlannedWorkoutStore:
@@ -285,3 +285,13 @@ class TestUnreadableFilesStopTheStore:
     def test_an_absent_directory_is_an_empty_start(self, tmp_path):
         assert JsonActivityStore(tmp_path / "activities").count() == 0
         assert PlannedWorkoutStore(tmp_path / "planned_workouts").count() == 0
+
+
+def test_files_read_back_the_same_with_each_route_on_one_line():
+    run = {"id": "1", "route": [[6.1734, 49.1198], [6.1736, 49.1201]], "hr": [140, 142], "splits": [{"km": 1}], "note": "é"}
+    data = {"activities": [run]}
+    text = dumps_readable(data)
+
+    assert json.loads(text) == data
+    assert '"route": [[6.1734,49.1198],[6.1736,49.1201]]' in text
+    assert '"note": "é"' in text

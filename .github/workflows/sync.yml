@@ -434,6 +434,7 @@ jobs:
           if [ "$DATA_CHANGED" = "true" ]; then
             check pr-check
             check shoe-wear-check
+            check explore-check
             check overreaching-check
             check activity-sync-check
           fi
@@ -468,6 +469,23 @@ jobs:
             fi
             LAST_SPEND=$SPEND
           done
+
+      # Nightly only: a push each night for two weeks beats a sync that stops one morning. The app adds its own tokens.
+      - name: Warn before a token expires
+        if: github.event_name == 'schedule'
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+          DATA_TOKEN: ${{ secrets.RUNOMICS_DATA_REPO_TOKEN }}
+        run: |
+          EXPIRY=$(printf 'Authorization: Bearer %s\n' "$DATA_TOKEN" \
+            | curl -fsS --max-time 20 -o /dev/null -D - https://api.github.com/rate_limit -H @- \
+            | tr -d '\r' | sed -n 's/^github-authentication-token-expiration: //Ip')
+          jq -n --arg e "$EXPIRY" '{tokens: (if $e == "" then [] else [{name: "dataActions", expiresAt: $e}] end)}' > "$RUNNER_TEMP/token-expiry.json"
+          printf 'x-internal-secret: %s\ncontent-type: application/json\n' "$SECRET" \
+            | curl -fsS --max-time 60 -X POST "$APP_URL/api/internal/token-expiry" -H @- --data @"$RUNNER_TEMP/token-expiry.json" \
+            | jq -r '.tokens[] | "- \(.name) expires \(.expiresAt)"' >> "$GITHUB_STEP_SUMMARY"
 
       # Last, so a partial sync still reaches the data repository first.
       - name: Report a partial sync

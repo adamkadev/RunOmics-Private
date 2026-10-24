@@ -149,7 +149,12 @@ export function RouteGeneratorPanel({
     }
   }
 
-  const options = [e.loop, ...(prefs.avoidBusyRoads ? [e.summary.avoidBusyRoads] : []), ...(prefs.newStreetsFirst ? [e.summary.newStreetsFirst] : [])].join(' · ')
+  const options = [
+    e.loop,
+    ...(prefs.avoidBusyRoads ? [e.summary.avoidBusyRoads] : []),
+    ...(prefs.newStreetsFirst ? [e.summary.newStreetsFirst] : []),
+    ...(prefs.flatForReps ? [e.summary.flatForReps] : []),
+  ].join(' · ')
   const onPlan = plan?.km != null && plan.km === distanceKm
   const reachKm = failure === 'tooFar' && minKm != null && minKm <= ROUTE_KM_MAX ? minKm : null
   const errorText = reachKm != null ? e.errors.tooFar(stepperKm(reachKm)) : failure ? failureMessage(failure) : null
@@ -295,6 +300,11 @@ export function RouteGeneratorPanel({
                 <label className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
                   <span className="text-[15px] text-foreground">{e.newStreetsFirst}</span>
                   <Toggle checked={prefs.newStreetsFirst} onChange={(on) => onPrefsChange({ ...prefs, newStreetsFirst: on })} label={e.newStreetsFirst} />
+                </label>
+                <div aria-hidden="true" className="ml-4 h-px bg-[var(--row-separator)]" />
+                <label className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
+                  <span className="text-[15px] text-foreground">{e.flatForReps}</span>
+                  <Toggle checked={prefs.flatForReps} onChange={(on) => onPrefsChange({ ...prefs, flatForReps: on })} label={e.flatForReps} />
                 </label>
               </div>
             )}

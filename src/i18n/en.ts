@@ -366,8 +366,10 @@ export const en = {
         options: 'Route options',
         avoidBusyRoads: 'Avoid busy roads',
         newStreetsFirst: 'New streets first',
+        // On by itself on a reps or tempo day: flat ground, on paths and cycleways rather than across streets.
+        flatForReps: 'Flat for the reps',
         // The options row's summary, "Loop · Avoid busy roads · New streets first": one line on a 393 pt phone.
-        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first' },
+        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first', flatForReps: 'Flat' },
         distanceStat: 'Distance',
         timeStat: 'Time',
         // Under the time: the pace it is worked out at, "5:50".
@@ -438,6 +440,14 @@ export const en = {
       data: 'Data',
       account: 'Account',
       notifications: 'Notifications',
+      diagnostics: 'Diagnostics',
+    },
+    // What failed on a phone, sent by the app itself (never a location): the last fifty, newest first.
+    diagnostics: {
+      recentErrors: 'Recent errors',
+      loading: 'Loading…',
+      none: 'No errors recorded.',
+      loadFailed: 'The errors couldn’t be loaded.',
     },
     sync: {
       subtitle: 'Pull in today’s runs without waiting for tonight.',
@@ -631,10 +641,6 @@ export const en = {
       title: (hours: number) => `Watch data ${hours} h old`,
       line: (when: string) => `Last sync ${when} · a run may be missing`,
       sync: 'Sync',
-    },
-    trainingStatusDays: {
-      title: 'Training Status',
-      titleToday: (title: string) => `${title} · today`,
     },
     syncStatus: {
       tapToSync: 'tap to sync',
@@ -1478,6 +1484,12 @@ export const en = {
     achievements: {
       title: 'Achievements from this run',
     },
+    // The home area's quartiers this run reached into first.
+    newGround: {
+      title: 'New ground',
+      cells: (n: number) => `${n} new cell${n === 1 ? '' : 's'}`,
+      complete: 'Complete',
+    },
     officialResult: {
       title: 'Official result',
       chip: 'Chip',
@@ -2204,6 +2216,36 @@ export const en = {
       title: (workflow: string) => `${workflow} failed`,
       body: (runUrl: string) => `Open the run: ${runUrl}`,
     },
+    exploreComplete: {
+      title: (name: string) => `${name} explored`,
+      body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} quartiers complete.`,
+    },
+    tokenExpiring: {
+      names: { dataActions: 'the data token (GitHub Actions)', dataVercel: 'the data token (Vercel)', syncVercel: 'the Sync button token (Vercel)' },
+      title: (days: number) => (days <= 0 ? 'A GitHub token expires today' : `A GitHub token expires in ${days} day${days === 1 ? '' : 's'}`),
+      body: (names: string) => `Renew ${names} before the sync stops: GitHub → Settings → Developer settings → Fine-grained tokens.`,
+    },
+  },
+
+  race: {
+    back: 'Progress',
+    predicted: 'Predicted',
+    target: 'Target',
+    best: 'Best',
+    standTitle: 'Where you stand',
+    toFind: (gap: string) => `${gap} to find.`,
+    inHand: (gap: string) => `${gap} in hand.`,
+    perWeek: (seconds: number, weeks: number) => (weeks === 1 ? `About ${seconds} s in the week left.` : `About ${seconds} s a week over the ${weeks} weeks left.`),
+    trendTitle: 'Prediction, last 12 weeks',
+    trendChange: (change: string, weeks: number, perWeek: string | null) =>
+      `${change} in ${weeks} week${weeks === 1 ? '' : 's'}${perWeek ? `, ${perWeek} a week` : ''}.`,
+    trendFlat: (weeks: number) => `Unchanged in ${weeks} week${weeks === 1 ? '' : 's'}.`,
+    pacingTitle: 'Pacing',
+    pacingCaption: 'Even pace: the clock at each split if you hold one pace.',
+    split: 'Split',
+    pace: 'Pace',
+    finish: 'Finish',
+    none: 'No race coming up. Add one in Garmin Connect and it shows here after the next sync.',
   },
 
   nextRace: {

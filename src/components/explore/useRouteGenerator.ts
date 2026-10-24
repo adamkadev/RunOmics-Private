@@ -7,6 +7,7 @@ import { getExploreEngine, type ExploreEngine } from './exploreEngine'
 import { RouteRequestError, requestRouteBatch, type RouteFailure } from './routeApi'
 import { FIRST_SEED, ROUTE_BATCH, ROUTE_DEBOUNCE_MS, batchSeeds } from './routeGenerator'
 import { areaKey, type LonLat } from './workerProtocol'
+import { reportClientError } from '@/lib/reportClientError'
 
 export interface RouteGeneratorInput {
   enabled: boolean
@@ -76,7 +77,7 @@ interface Result {
 /** About a metre: GPS noise under it asks for no new batch. */
 const startKeyOf = (origin: LonLat | null) => (origin ? `${origin[0].toFixed(5)},${origin[1].toFixed(5)}` : 'quartier')
 
-const prefsKeyOf = (p: RoutePreferences) => `${p.avoidBusyRoads ? 1 : 0}${p.newStreetsFirst ? 1 : 0}`
+const prefsKeyOf = (p: RoutePreferences) => `${p.avoidBusyRoads ? 1 : 0}${p.newStreetsFirst ? 1 : 0}${p.flatForReps ? 1 : 0}`
 
 /** "Avoid busy roads" asks for a new batch: the provider routes around them. */
 export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGeneratorDeps = {}): RouteGenerator {
@@ -145,7 +146,10 @@ export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGenerat
           setResult({ fetchKey, unitKey: forUnit, startKey: forStart, candidates: batch.candidates, ranked, prefsKey: prefsKeyOf(wanted), index: 0, failure: null, minKm: null })
         } catch (err) {
           if (controller.signal.aborted) return
-          if (!(err instanceof RouteRequestError)) console.warn('Route generation failed', err)
+          if (!(err instanceof RouteRequestError)) {
+            console.warn('Route generation failed', err)
+            reportClientError('route', err)
+          }
           failed(err instanceof RouteRequestError ? err.reason : 'upstream')
         }
       })()

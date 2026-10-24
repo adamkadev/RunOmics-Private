@@ -9,6 +9,7 @@ import { NavigationHistoryProvider } from './NavigationHistory'
 import { CompactTitleBar } from './CompactTitleBar'
 import { Aura } from './Aura'
 import { SIGN_IN_PATH } from '@/lib/siteSession'
+import { isPopNavigation, notePopNavigation, popNavigationHandled } from '@/lib/popNavigation'
 
 const SCROLL_POSITIONS_KEY = 'scrollPositions'
 
@@ -22,21 +23,17 @@ function getScrollPositions(): Record<string, number> {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isPopNavigation = useRef(false)
 
   useLayoutEffect(() => {
-    const onPopState = () => {
-      isPopNavigation.current = true
-    }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
+    window.addEventListener('popstate', notePopNavigation)
+    return () => window.removeEventListener('popstate', notePopNavigation)
   }, [])
 
   useLayoutEffect(() => {
     const positions = getScrollPositions()
-    const top = isPopNavigation.current ? positions[pathname] ?? 0 : 0
+    const top = isPopNavigation() ? positions[pathname] ?? 0 : 0
     window.scrollTo({ top, left: 0, behavior: 'instant' })
-    isPopNavigation.current = false
+    popNavigationHandled()
   }, [pathname])
 
   // A scroll only notes the offset, written when the page is left: by the time a route change's cleanup

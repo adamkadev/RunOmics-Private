@@ -5,6 +5,7 @@ const PARENT_SECTION: Record<string, string> = {
   '/consistency': '/profile',
   '/all-time': '/profile',
   '/goals': '/profile',
+  '/race': '/profile',
   '/settings': '/profile',
   '/map': '/activities',
 }

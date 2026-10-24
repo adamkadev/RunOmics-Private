@@ -3,12 +3,8 @@ import { MAX_STEP_M, cellIndices, cellCentre, cellOf, cellOfXY, projectX, projec
 import type { RouteCandidate, RoutePreferences, ScoredRoute } from './types'
 
 /**
- *   score = |distance − target| / target
- *         + wNew · (1 − newShare)
- *         + wBusy · busyShare
- *
- * The toggles only move the weights, so every candidate stays comparable and
- * Regenerate can walk down the same ranking.
+ * score = |d − target|/target + wNew·(1 − new) + wBusy·busy, and with "Flat for the reps" + wClimb·hilly + wTraffic·(1 − trafficFree).
+ * The toggles only move weights, so every candidate stays comparable and Regenerate walks one ranking.
  */
 
 export const ROUTE_W_DISTANCE = 1
@@ -17,15 +13,23 @@ export const ROUTE_W_NEW_ON = 0.6
 export const ROUTE_W_NEW_OFF = 0.15
 /** Weight on busy roads with "Avoid busy roads" on; off, they are not scored at all. */
 export const ROUTE_W_BUSY_ON = 0.8
+/** With "Flat for the reps": weight on climb, full at this many metres a km, and on ground shared with traffic. */
+export const ROUTE_W_CLIMB = 0.5
+export const ROUTE_CLIMB_FULL_M_PER_KM = 20
+export const ROUTE_W_TRAFFIC = 0.4
 
 /** ORS waytypes: 1 state road, 2 road; streets (3) and everything quieter count nothing. */
 const BUSY_WEIGHT: Readonly<Record<number, number>> = { 1: 1, 2: 0.5 }
+/** ORS waytypes with no traffic to cross: path, track, cycleway, footway. */
+const TRAFFIC_FREE: Readonly<Record<number, number>> = { 4: 1, 5: 1, 6: 1, 7: 1 }
 
 export interface RouteMeasure {
   /** Measured on the area grid, which is what the shares are fractions of. */
   lengthM: number
   newShare: number
   busyShare: number
+  /** Share of the length on paths, tracks, cycleways and footways. */
+  trafficFreeShare: number
   newSteps: boolean[]
 }
 
@@ -33,10 +37,10 @@ export interface RouteMeasure {
  * Per-step busy weights from the ORS `waytype` ranges. A range
  * [from, to, value] covers coordinates from..to, so steps from..to−1.
  */
-function busyWeights(steps: number, waytypes: RouteCandidate['waytypes']): Float64Array {
+function stepWeights(steps: number, waytypes: RouteCandidate['waytypes'], weightOf: Readonly<Record<number, number>> = BUSY_WEIGHT): Float64Array {
   const weights = new Float64Array(steps)
   for (const [from, to, value] of waytypes) {
-    const w = BUSY_WEIGHT[value] ?? 0
+    const w = weightOf[value] ?? 0
     if (!w) continue
     const end = Math.min(steps, Math.floor(to))
     for (let s = Math.max(0, Math.floor(from)); s < end; s++) weights[s] = w
@@ -54,12 +58,14 @@ export function measureRoute(index: AreaIndex, visited: ReadonlySet<number>, can
   const cellM = proj.cellM
   const coords = candidate.coordinates
   const steps = Math.max(0, coords.length - 1)
-  const busy = busyWeights(steps, candidate.waytypes)
+  const busy = stepWeights(steps, candidate.waytypes)
+  const free = stepWeights(steps, candidate.waytypes, TRAFFIC_FREE)
   const newSteps = new Array<boolean>(steps).fill(false)
   const pair = new Float64Array(4)
   let lengthM = 0
   let newM = 0
   let busyM = 0
+  let freeM = 0
 
   for (let s = 0; s < steps; s++) {
     const a = coords[s]!
@@ -88,26 +94,33 @@ export function measureRoute(index: AreaIndex, visited: ReadonlySet<number>, can
     lengthM += stepM
     newM += stepNewM
     busyM += busy[s]! * stepM
+    freeM += free[s]! * stepM
   }
 
   return {
     lengthM,
     newShare: lengthM > 0 ? newM / lengthM : 0,
     busyShare: lengthM > 0 ? busyM / lengthM : 0,
+    trafficFreeShare: lengthM > 0 ? freeM / lengthM : 0,
     newSteps,
   }
 }
 
 export function routeScore(
-  measure: Pick<RouteMeasure, 'newShare' | 'busyShare'>,
+  measure: Pick<RouteMeasure, 'newShare' | 'busyShare' | 'trafficFreeShare'>,
   distanceM: number,
   targetM: number,
   prefs: RoutePreferences,
+  climbM: number | null = null,
 ): number {
   const wNew = prefs.newStreetsFirst ? ROUTE_W_NEW_ON : ROUTE_W_NEW_OFF
   const wBusy = prefs.avoidBusyRoads ? ROUTE_W_BUSY_ON : 0
   const off = targetM > 0 ? Math.abs(distanceM - targetM) / targetM : 0
-  return ROUTE_W_DISTANCE * off + wNew * (1 - measure.newShare) + wBusy * measure.busyShare
+  const base = ROUTE_W_DISTANCE * off + wNew * (1 - measure.newShare) + wBusy * measure.busyShare
+  if (!prefs.flatForReps) return base
+  const climbPerKm = climbM !== null && distanceM > 0 ? climbM / (distanceM / 1000) : 0
+  const hilly = Math.min(1, climbPerKm / ROUTE_CLIMB_FULL_M_PER_KM)
+  return base + ROUTE_W_CLIMB * hilly + ROUTE_W_TRAFFIC * (1 - measure.trafficFreeShare)
 }
 
 /**
@@ -131,7 +144,7 @@ export function scoreRoutes(
         Number.isFinite(candidate.distanceM) && candidate.distanceM > 0 ? candidate.distanceM : measure.lengthM
       return {
         candidate,
-        score: routeScore(measure, distanceM, targetM, prefs),
+        score: routeScore(measure, distanceM, targetM, prefs, candidate.ascentM),
         newShare: measure.newShare,
         busyShare: measure.busyShare,
         newSteps: measure.newSteps,

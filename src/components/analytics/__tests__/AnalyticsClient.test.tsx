@@ -452,7 +452,7 @@ describe('Analytics (v4.5)', () => {
 describe('the v4.5 colour rules', () => {
   const dir = path.join(__dirname, '..')
   const sources = readdirSync(dir)
-    .filter((f) => /\.(tsx|ts)$/.test(f) && f !== 'MonthlyVolumeChart.tsx')
+    .filter((f) => /\.(tsx|ts)$/.test(f))
     .map((f) => [f, readFileSync(path.join(dir, f), 'utf8')] as const)
 
   it('has no purple or rainbow series in the analytics components', () => {

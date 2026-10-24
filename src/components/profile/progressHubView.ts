@@ -7,6 +7,7 @@ import type { NextRaceSpotlight } from '@/application/usecases/GetGoalsData'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { activeDaysInYear, dayLevel, type DayLevel } from '@/components/consistency/consistencyRamp'
 import { isPlaceholderRaceName, raceDisplayName } from '@/components/goals/raceName'
+import { isRaceDistanceKey } from '@/domain/race/distances'
 import { wearStatus, type WearStatus } from '@/domain/shoe/wearStatus'
 import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 import { DISTANCE_KEY, EFFORTS } from '@/domain/activity/effort'
@@ -31,6 +32,8 @@ export interface ProgressHubView {
     date: string
     predictedSeconds: number | null
     targetSeconds: number | null
+    /** /race opens only the standard distances; another race's card opens Goals. */
+    hasPage: boolean
   } | null
   vo2max: {
     value: number
@@ -225,6 +228,7 @@ export function progressHubView(input: HubInput): ProgressHubView {
           date: spotlight.race.date,
           predictedSeconds: spotlight.predictedSeconds,
           targetSeconds: spotlight.race.targetSeconds ?? null,
+          hasPage: isRaceDistanceKey(DISTANCE_KEY[spotlight.race.distance] ?? ''),
         }
       : null,
     vo2max:

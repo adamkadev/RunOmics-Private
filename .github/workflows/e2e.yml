@@ -46,23 +46,21 @@ jobs:
         if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
-      # The headless shell only - the one browser the suite launches - and no
-      # --with-deps: the runner image ships Google Chrome, so Chromium's
-      # libraries are already there, and the fonts and xvfb that apt added
-      # took about 57s of this step's 69s. A library the image ever drops
-      # fails the launch loudly, by name.
-      # The browser is pinned by the lock file's Playwright version, so a hit
-      # skips the download.
-      - name: Restore Playwright's Chromium
+      # Chromium's headless shell needs no apt step: the runner image ships Chrome and its libraries.
+      - name: Restore Playwright's browsers
         id: playwright
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-shell-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: playwright-shell-webkit-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-      - name: Install Playwright's Chromium
+      - name: Install Playwright's browsers
         if: steps.playwright.outputs.cache-hit != 'true'
-        run: npx playwright install --only-shell chromium
+        run: npx playwright install --only-shell chromium && npx playwright install webkit
+
+      # The iPhone layout spec runs in WebKit, whose system libraries the runner image does not ship.
+      - name: Install WebKit's system libraries
+        run: npx playwright install-deps webkit
 
       # Turbopack's persistent cache: a build with unchanged dependencies took
       # 13s instead of 39s locally. Keyed per commit so every run saves its

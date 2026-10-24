@@ -347,7 +347,8 @@ export const fr = {
         options: 'Options du parcours',
         avoidBusyRoads: 'Éviter les grands axes',
         newStreetsFirst: 'Rues nouvelles d’abord',
-        summary: { avoidBusyRoads: 'Sans grands axes', newStreetsFirst: 'Rues inédites' },
+        flatForReps: 'Plat pour les fractions',
+        summary: { avoidBusyRoads: 'Sans grands axes', newStreetsFirst: 'Rues inédites', flatForReps: 'Plat' },
         distanceStat: 'Distance',
         timeStat: 'Durée',
         atPace: (pace: string) => `À ${pace}`,
@@ -416,6 +417,13 @@ export const fr = {
       data: 'Données',
       account: 'Compte',
       notifications: 'Notifications',
+      diagnostics: 'Diagnostic',
+    },
+    diagnostics: {
+      recentErrors: 'Erreurs récentes',
+      loading: 'Chargement…',
+      none: 'Aucune erreur enregistrée.',
+      loadFailed: 'Impossible de charger les erreurs.',
     },
     sync: {
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',
@@ -596,10 +604,6 @@ export const fr = {
       title: (hours: number) => `Données de la montre vieilles de ${hours} h`,
       line: (when: string) => `Dernière synchro ${when} · une sortie peut manquer`,
       sync: 'Synchroniser',
-    },
-    trainingStatusDays: {
-      title: 'Statut d’entraînement',
-      titleToday: (title: string) => `${title} · aujourd’hui`,
     },
     syncStatus: {
       tapToSync: 'actualiser',
@@ -1396,6 +1400,11 @@ export const fr = {
     achievements: {
       title: 'Exploits de cette sortie',
     },
+    newGround: {
+      title: 'Nouveau terrain',
+      cells: (n: number) => `${n} nouvelle${n > 1 ? 's' : ''} case${n > 1 ? 's' : ''}`,
+      complete: 'Complet',
+    },
     officialResult: {
       title: 'Résultat officiel',
       chip: 'Puce',
@@ -2045,6 +2054,37 @@ export const fr = {
       title: (workflow: string) => `Échec : ${workflow}`,
       body: (runUrl: string) => `Ouvre l’exécution : ${runUrl}`,
     },
+    exploreComplete: {
+      title: (name: string) => `${name} exploré`,
+      body: (pct: string, done: number, total: number) => `${pct} de ses rues parcourues. ${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}.`,
+    },
+    tokenExpiring: {
+      names: { dataActions: 'le jeton de données (GitHub Actions)', dataVercel: 'le jeton de données (Vercel)', syncVercel: 'le jeton du bouton Sync (Vercel)' },
+      title: (days: number) => (days <= 0 ? 'Un jeton GitHub expire aujourd’hui' : `Un jeton GitHub expire dans ${days} jour${days === 1 ? '' : 's'}`),
+      body: (names: string) => `Renouvelle ${names} avant que la synchro s’arrête : GitHub → Settings → Developer settings → Fine-grained tokens.`,
+    },
+  },
+
+  race: {
+    back: 'Progression',
+    predicted: 'Prédit',
+    target: 'Objectif',
+    best: 'Record',
+    standTitle: 'Où tu en es',
+    toFind: (gap: string) => `${gap} à trouver.`,
+    inHand: (gap: string) => `${gap} d’avance.`,
+    perWeek: (seconds: number, weeks: number) =>
+      weeks === 1 ? `Environ ${seconds} s sur la semaine restante.` : `Environ ${seconds} s par semaine sur les ${weeks} semaines restantes.`,
+    trendTitle: 'Prédiction, 12 dernières semaines',
+    trendChange: (change: string, weeks: number, perWeek: string | null) =>
+      `${change} en ${weeks} semaine${weeks > 1 ? 's' : ''}${perWeek ? `, ${perWeek} par semaine` : ''}.`,
+    trendFlat: (weeks: number) => `Inchangée en ${weeks} semaine${weeks > 1 ? 's' : ''}.`,
+    pacingTitle: 'Allure',
+    pacingCaption: 'Allure constante : le chrono à chaque passage si tu tiens une seule allure.',
+    split: 'Passage',
+    pace: 'Allure',
+    finish: 'Arrivée',
+    none: 'Aucune course à venir. Ajoute-en une dans Garmin Connect, elle s’affichera ici après la prochaine synchro.',
   },
 
   nextRace: {

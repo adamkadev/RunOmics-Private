@@ -49,12 +49,15 @@ describe('sync state location', () => {
   it('keeps Garmin ids only in that workspace', () => {
     const root = workspace()
     const store = new JsonGarminSyncStore(root)
+    const inRepo = path.join(process.cwd(), 'data', 'coaching', 'garmin-sync.json')
+    const stamp = () => (fs.existsSync(inRepo) ? fs.statSync(inRepo).mtimeMs : null)
+    const before = stamp()
 
     store.write(state())
 
     const written = fs.readFileSync(store.location, 'utf-8')
     expect(written).toContain('1688039319')
-    expect(fs.existsSync(path.join(process.cwd(), 'data', 'coaching', 'garmin-sync.json'))).toBe(false)
+    expect(stamp()).toBe(before)
   })
 })
 

@@ -1,6 +1,7 @@
 import type { User } from 'firebase/auth'
 import type { RouteCandidate } from '@/domain/explore/types'
 import { authorizedFetch } from '@/lib/ownerFetch'
+import { reportClientError } from '@/lib/reportClientError'
 
 // On a public site the route wants the owner's Firebase token; on a private site the session cookie is enough.
 
@@ -92,6 +93,8 @@ export async function requestRouteBatch(
     res = user ? await authorizedFetch(user, ROUTE_ENDPOINT, init) : await fetch(ROUTE_ENDPOINT, init)
   } catch (err) {
     if (signal?.aborted) throw err
+    // The request never reached the server, so no server log says why: the phone's own error is all there is.
+    reportClientError('route-fetch', err)
     throw new RouteRequestError('upstream')
   }
   const body: unknown = await res.json().catch(() => null)

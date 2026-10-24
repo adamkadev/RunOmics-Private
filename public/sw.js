@@ -40,6 +40,8 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) => Promise.all(keys.filter((k) => !CURRENT_CACHES.includes(k)).map((k) => caches.delete(k))))
+      // The page request starts while the worker boots, instead of after it.
+      .then(() => self.registration.navigationPreload?.enable())
       .then(() => self.clients.claim())
   )
 })
@@ -63,15 +65,31 @@ async function cacheFirst(request) {
   return response
 }
 
-async function networkFirst(request, { isNavigation }) {
+/** A page this slow on a bad connection opens from its cached copy; the network's answer still updates the cache. */
+const NAVIGATION_TIMEOUT_MS = 3000
+
+async function fromNetwork(event) {
+  const preloaded = event.request.mode === 'navigate' ? await event.preloadResponse : undefined
+  const response = preloaded || (await fetch(event.request))
+  // Never a redirected one: on a private site that is /sign-in, which must not be cached as the page.
+  if (response.ok && !response.redirected) {
+    const cache = await caches.open(PAGE_CACHE)
+    await cache.put(event.request, response.clone())
+  }
+  return response
+}
+
+function cachedAfter(request, ms) {
+  return new Promise((resolve) => setTimeout(() => caches.match(request).then(resolve, () => resolve(undefined)), ms))
+}
+
+async function networkFirst(event, { isNavigation }) {
+  const { request } = event
+  const network = fromNetwork(event)
   try {
-    const response = await fetch(request)
-    // Never a redirected one: on a private site that is /sign-in, which must not be cached as the page.
-    if (response.ok && !response.redirected) {
-      const cache = await caches.open(PAGE_CACHE)
-      cache.put(request, response.clone())
-    }
-    return response
+    if (!isNavigation) return await network
+    event.waitUntil(network.catch(() => undefined))
+    return (await Promise.race([network, cachedAfter(request, NAVIGATION_TIMEOUT_MS)])) || (await network)
   } catch (err) {
     const cached = await caches.match(request)
     if (cached) return cached
@@ -97,7 +115,7 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  event.respondWith(networkFirst(request, { isNavigation: request.mode === 'navigate' }))
+  event.respondWith(networkFirst(event, { isNavigation: request.mode === 'navigate' }))
 })
 
 self.addEventListener('push', (event) => {
