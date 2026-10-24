@@ -27,6 +27,9 @@ All notable changes to this project are documented in this file.
   to check who is signed in, and a run's page loads the similar runs chart
   only when its card opens.
 
+- A chart's readout on Analytics stays on screen over the last weeks: a
+  long one ("Week of Oct 12 · 44.8 / 48 km") ran past the card's edge.
+
 - A run's Laps view shows every warm-up lap: a warm-up of 1.7 km easy,
   1 km steady and 1 km a touch quicker showed its first lap only.
 
