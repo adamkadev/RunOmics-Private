@@ -9,6 +9,7 @@ import {
 import { medianStart } from '@/domain/explore/home'
 import { planRoute } from '@/domain/explore/routePlan'
 import { routeStart, scoreRoutes } from '@/domain/explore/routeScore'
+import { decodePolyline } from '@/lib/polyline'
 import type { ExploreAreaFile, ExploreAreaRef } from '@/domain/explore/types'
 import { areaCacheKey, trackCacheKey, type ExploreCache } from './idb'
 import { flattenRoute, isValidTrackBuffers } from './trackBuffers'
@@ -268,7 +269,7 @@ async function fetchClusterTracks(
   const wanted = msg.index.filter((ref) => !area.activities.has(ref.id))
   if (wanted.length === 0) return []
 
-  const res = await deps.fetch(`/api/map/routes?cluster=${encodeURIComponent(msg.clusterId)}`)
+  const res = await deps.fetch(`/api/map/routes?cluster=${encodeURIComponent(msg.clusterId)}&enc=p5`)
   if (!res.ok) throw new Error(`Cluster ${msg.clusterId}: HTTP ${res.status}`)
   const json: unknown = await res.json()
   const routes = isRecord(json) ? json.routes : undefined
@@ -279,7 +280,9 @@ async function fetchClusterTracks(
   const located = locateClusterTracks(wanted, ids)
   const tracks = wanted.flatMap((ref): IncomingTrack[] => {
     const at = located.get(ref.id)
-    return at === undefined ? [] : [{ id: ref.id, date: ref.date, coords: flattenRoute(routes[at]) }]
+    if (at === undefined) return []
+    const track = routes[at]
+    return [{ id: ref.id, date: ref.date, coords: flattenRoute(typeof track === 'string' ? decodePolyline(track) : track) }]
   })
   return addActivities(area, tracks, deps)
 }

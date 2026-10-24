@@ -21,6 +21,7 @@ import { HeatLegend } from "./HeatLegend";
 import { MapAttribution, type MapCredit } from "@/components/ui/MapAttribution";
 import { GlassLayers, GLASS_CIRCLE, glassClass } from "@/components/ui/GlassSurface";
 import { useMapRoutes, type HomeRing } from "./useMapRoutes";
+import { clusterTracks } from "./clusterTracks";
 import { LayersButton } from "@/components/explore/LayersButton";
 import { DistrictsLegend } from "@/components/explore/DistrictsLegend";
 import { useDistrictsCoverage } from "@/components/explore/useDistrictsCoverage";
@@ -146,26 +147,22 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
     if (!cluster || loadedClusterIds.current.has(cluster.id)) return;
     let cancelled = false;
 
-    fetch(`/api/map/routes?cluster=${encodeURIComponent(cluster.id)}`)
-      .then((res) => (res.ok ? (res.json() as Promise<{ routes: Record<string, [number, number][]> }>) : null))
-      .then((json) => {
-        if (cancelled || !json) return;
-        loadedClusterIds.current.add(cluster.id);
-        setRoutes((prev) => {
-          const next = [...prev];
-          for (const [idxStr, coords] of Object.entries(json.routes)) {
-            next[Number(idxStr)] = coords;
-          }
-          return next;
-        });
-      })
-      .catch(() => {
+    void clusterTracks(data, cluster.id).then((tracks) => {
+      if (cancelled || !tracks) return;
+      loadedClusterIds.current.add(cluster.id);
+      setRoutes((prev) => {
+        const next = [...prev];
+        for (const [idxStr, coords] of Object.entries(tracks)) {
+          next[Number(idxStr)] = coords;
+        }
+        return next;
       });
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [selectedIdx, clusters]);
+  }, [selectedIdx, clusters, data]);
 
   const availableTypes = useMemo(() => {
     const present = new Set(routeMeta.map((m) => m.type));
