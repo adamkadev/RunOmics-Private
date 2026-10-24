@@ -1484,6 +1484,12 @@ export const en = {
     achievements: {
       title: 'Achievements from this run',
     },
+    // The home area's quartiers this run reached into first.
+    newGround: {
+      title: 'New ground',
+      cells: (n: number) => `${n} new cell${n === 1 ? '' : 's'}`,
+      complete: 'Complete',
+    },
     officialResult: {
       title: 'Official result',
       chip: 'Chip',
@@ -2209,6 +2215,10 @@ export const en = {
     workflowFailed: {
       title: (workflow: string) => `${workflow} failed`,
       body: (runUrl: string) => `Open the run: ${runUrl}`,
+    },
+    exploreComplete: {
+      title: (name: string) => `${name} explored`,
+      body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} quartiers complete.`,
     },
     tokenExpiring: {
       names: { dataActions: 'the data token (GitHub Actions)', dataVercel: 'the data token (Vercel)', syncVercel: 'the Sync button token (Vercel)' },

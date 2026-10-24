@@ -1,0 +1,62 @@
+import { buildAreaIndex } from '@/domain/explore/coverage'
+import { parseAreaFile } from '@/domain/explore/areaFile'
+import { exploreGains, type CompleteUnit, type ExploreGains, type RunExploreGain } from '@/domain/explore/gains'
+import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import {
+  getLastExploreMilestoneState,
+  saveLastExploreMilestoneState,
+  type ExploreMilestoneState,
+} from '@/infrastructure/repositories/FirestoreConfigRepository'
+import { getAllRoutes } from './GetAllRoutes'
+import { getExploreAreaFile, getExploreHome } from './GetExploreAreas'
+
+let cache: { source: unknown; areaVersion: string; gains: ExploreGains } | null = null
+
+export function getExploreGains(): ExploreGains | null {
+  const home = getExploreHome()
+  if (!home) return null
+  const source = getAllActivities()
+  if (cache?.source === source && cache.areaVersion === home.area.version) return cache.gains
+
+  const read = getExploreAreaFile(home.area.id)
+  const file = read ? parseAreaFile(JSON.parse(read.body)) : null
+  if (!file) return null
+  const { routes } = getAllRoutes()
+  // Activities carry a date only; Garmin ids grow with time, so they order a day's runs.
+  const runs = [...home.runs]
+    .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id, undefined, { numeric: true }))
+    .map((run) => ({ id: run.id, coords: (routes[run.routeIdx] ?? []).flat() }))
+  const gains = exploreGains(buildAreaIndex(file), runs)
+  cache = { source, areaVersion: home.area.version, gains }
+  return gains
+}
+
+export function getRunExploreGain(activityId: string): RunExploreGain | null {
+  return getExploreGains()?.byRun.get(activityId) ?? null
+}
+
+/** With nothing stored yet, every quartier already complete is old news: the first check only takes note. */
+export function newlyComplete(complete: readonly CompleteUnit[], last: ExploreMilestoneState | null): CompleteUnit[] {
+  if (!last) return []
+  const announced = new Set(last.announced)
+  return complete.filter((unit) => !announced.has(unit.id))
+}
+
+/** Nothing is stored until `commit()`, so a failed push is offered again next run. */
+export async function getExploreMilestones(): Promise<{
+  newlyComplete: CompleteUnit[]
+  completeCount: number
+  unitCount: number
+  commit: () => Promise<void>
+}> {
+  const gains = getExploreGains()
+  if (!gains) return { newlyComplete: [], completeCount: 0, unitCount: 0, commit: async () => {} }
+  const last = await getLastExploreMilestoneState()
+  const announced = [...new Set([...(last?.announced ?? []), ...gains.complete.map((unit) => unit.id)])]
+  return {
+    newlyComplete: newlyComplete(gains.complete, last),
+    completeCount: gains.complete.length,
+    unitCount: gains.unitCount,
+    commit: () => saveLastExploreMilestoneState({ announced }),
+  }
+}

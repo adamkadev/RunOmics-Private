@@ -1400,6 +1400,11 @@ export const fr = {
     achievements: {
       title: 'Exploits de cette sortie',
     },
+    newGround: {
+      title: 'Nouveau terrain',
+      cells: (n: number) => `${n} nouvelle${n > 1 ? 's' : ''} case${n > 1 ? 's' : ''}`,
+      complete: 'Complet',
+    },
     officialResult: {
       title: 'Résultat officiel',
       chip: 'Puce',
@@ -2048,6 +2053,10 @@ export const fr = {
     workflowFailed: {
       title: (workflow: string) => `Échec : ${workflow}`,
       body: (runUrl: string) => `Ouvre l’exécution : ${runUrl}`,
+    },
+    exploreComplete: {
+      title: (name: string) => `${name} exploré`,
+      body: (pct: string, done: number, total: number) => `${pct} de ses rues parcourues. ${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}.`,
     },
     tokenExpiring: {
       names: { dataActions: 'le jeton de données (GitHub Actions)', dataVercel: 'le jeton de données (Vercel)', syncVercel: 'le jeton du bouton Sync (Vercel)' },

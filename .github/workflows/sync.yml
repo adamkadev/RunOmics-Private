@@ -434,6 +434,7 @@ jobs:
           if [ "$DATA_CHANGED" = "true" ]; then
             check pr-check
             check shoe-wear-check
+            check explore-check
             check overreaching-check
             check activity-sync-check
           fi

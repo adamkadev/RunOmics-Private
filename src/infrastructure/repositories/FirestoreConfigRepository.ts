@@ -27,6 +27,8 @@ export type StaleSyncState = { alerted: boolean }
 
 export type ActivitySyncState = { knownIds: string[] }
 
+export type ExploreMilestoneState = { announced: string[] }
+
 export const { read: getLastPrState, write: saveLastPrState } =
   notificationDocument<PrState>('lastPrs')
 
@@ -41,3 +43,6 @@ export const { read: getLastStaleSyncState, write: saveLastStaleSyncState } =
 
 export const { read: getLastActivitySyncState, write: saveLastActivitySyncState } =
   notificationDocument<ActivitySyncState>('lastActivitySync')
+
+export const { read: getLastExploreMilestoneState, write: saveLastExploreMilestoneState } =
+  notificationDocument<ExploreMilestoneState>('lastExploreMilestones')

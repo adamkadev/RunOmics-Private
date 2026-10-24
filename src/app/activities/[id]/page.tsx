@@ -12,6 +12,8 @@ import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
 import { OfficialResult } from '@/components/activity/OfficialResult'
+import { NewGround } from '@/components/activity/NewGround'
+import { getRunExploreGain } from '@/application/usecases/GetExploreGains'
 import { getSimilarRuns } from '@/application/usecases/GetSimilarRuns'
 import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
@@ -78,6 +80,7 @@ export default async function ActivityDetailPage({
   const officialResult = officialResultsByActivityId(getOfficialRaceResults()).get(id) ?? null
   const holdsOfficialRecord = records.some((record) => record.official && record.activityId === id)
   const registeredShoe = activity.gearId ? getShoeRegistry()[activity.gearId] : undefined
+  const newGround = getRunExploreGain(id)
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
   // The coach's session this run was, for its name in the header and on the share card, and its reps' target pace.
   const session = shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity)
@@ -110,7 +113,7 @@ export default async function ActivityDetailPage({
         shoe={shoe}
         similarRuns={similarRuns}
         extras={
-          officialResult || activity.bestEfforts ? (
+          officialResult || activity.bestEfforts || newGround ? (
             <>
               {officialResult && (
                 <OfficialResult
@@ -123,6 +126,7 @@ export default async function ActivityDetailPage({
               {activity.bestEfforts && (
                 <ActivityAchievements bestEfforts={activity.bestEfforts} qualifiedEfforts={qualifiedEfforts} />
               )}
+              {newGround && <NewGround gain={newGround} />}
             </>
           ) : null
         }
