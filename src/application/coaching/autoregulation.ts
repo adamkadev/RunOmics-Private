@@ -24,7 +24,7 @@ export function controlledStep(workout: WorkoutPrescription): { repetitions: num
 }
 
 /** Newest plan first, then the archived ones it replaced, so a session before a block boundary is still found. */
-function prescriptionsByDate(plans: CoachingPlan[]): Map<string, WorkoutPrescription[]> {
+export function prescriptionsByDate(plans: CoachingPlan[]): Map<string, WorkoutPrescription[]> {
   const byDate = new Map<string, WorkoutPrescription[]>()
   const claimed = new Set<string>()
   for (const plan of plans) {

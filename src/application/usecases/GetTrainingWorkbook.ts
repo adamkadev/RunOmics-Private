@@ -11,12 +11,19 @@ import type { TrainingLoadBalance } from '@/infrastructure/repositories/JsonTrai
 import type { TrainingPlanRaw } from '@/infrastructure/repositories/JsonTrainingPlanRepository'
 import type { TrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 import type { Vo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
+import type { CoachingPlan, WorkoutBlock, WorkoutPrescription } from '@/domain/coaching/types'
+import { COACHING_TO_ACTIVITY_TYPE } from '@/domain/coaching/types'
 import { aerobicDecoupling } from '@/domain/activity/decoupling'
+import { officialResultsByActivityId, type OfficialRaceResult } from '@/domain/activity/raceResult'
 import { MIN_REP_SECONDS, repStats, sessionExecution } from '@/domain/activity/sessionExecution'
+import { groupSessions, mainPart, mergeSession } from '@/domain/activity/sessions'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
 import { loadSeries } from '@/domain/training/loadSeries'
+import { prescriptionsByDate } from '@/application/coaching/autoregulation'
 import { round } from '@/lib/math'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
+import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
 import { getActivityNotes, type ActivityNote } from '@/infrastructure/repositories/FirestoreActivityNoteRepository'
 import { getAthleteHistory } from '@/infrastructure/repositories/JsonAthleteHistoryRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
@@ -35,7 +42,7 @@ import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistor
 export const TRAINING_WORKBOOK_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
-const SCHEMA_VERSION = '1.1'
+const SCHEMA_VERSION = '1.2'
 const HEADER_FILL = '17324D'
 const HEADER_TEXT = 'FFFFFF'
 const ACCENT = '37B6A5'
@@ -58,10 +65,13 @@ export interface TrainingWorkbookData {
   notesAvailable: boolean
   athlete: AthleteProfile
   athleteHistory: AthleteHistoryEntry[]
+  /** Newest first: the active plan, then those it replaced, so a session before a block boundary keeps its prescription. */
+  coachingPlans: CoachingPlan[]
   goals: GoalYear[]
   pbs: PbYear[]
   plannedWorkouts: PlannedWorkout[]
   racePredictions: RacePredictionDay[]
+  raceResults: OfficialRaceResult[]
   shoes: ShoeRecord[]
   thresholdHistory: ThresholdSample[]
   trainingLoadBalance: TrainingLoadBalance | null
@@ -195,14 +205,18 @@ function distanceForRecord(label: string): number | null {
   return DISTANCE_KM[label] ?? null
 }
 
-function currentPrediction(
+/** A past race is judged against what Garmin predicted then, not against today's fitness. */
+function predictionOn(
   predictions: RacePredictionDay[],
   distance: string | number,
+  date: string,
 ): number | null {
   const key = raceKeyForDistance(distance)
   if (!key) return null
   for (let index = predictions.length - 1; index >= 0; index--) {
-    const predictedSeconds = predictions[index]?.[key]
+    const prediction = predictions[index]
+    if (!prediction || prediction.date > date) continue
+    const predictedSeconds = prediction[key]
     if (predictedSeconds !== undefined) return predictedSeconds
   }
   return null
@@ -237,13 +251,18 @@ function guideRows(generatedAt: Date): RowData[] {
     { section: 'Notes', item: 'comment_and_tags', description: 'comment and tags are the notes and tags typed on each activity in the app. notes_status is "included" on every row of a complete export; "unavailable" means the notes store could not be read, so a blank comment does not mean there was no note: export again.' },
     { section: 'Caveat', item: 'daily_plan_completion', description: 'planned_day_completed only means at least one activity occurred on a planned date; it does not prove the prescribed workout was followed.' },
     { section: 'Caveat', item: 'hr_zones', description: 'Athlete HR zone columns are Garmin zone floors: a zone runs from its own lower bound up to one below the next zone\'s, and zone 5 up to max_hr_bpm.' },
+    { section: 'Caveat', item: 'sessions', description: 'A session the watch saved as several back-to-back runs (warm-up, test, cool-down) is one Activities row: activity_id is its main run, merged_activity_ids the others. The row reads as the main run (the race or the test itself): its distance, time, pace, heart rate, running dynamics, type, execution and weather. session_distance_km and session_duration_seconds add the runs saved apart, filled on merged rows only; zones, TRIMP, calories and elevation count the whole session. Runs synced before start times were stored stay one row each.' },
+    { section: 'Caveat', item: 'type', description: 'type is Garmin\'s label from training effect, or Runomics\' from the workout name when type_source is runomics; it often differs from the intent. description and planned_type say what the session was meant to be.' },
+    { section: 'Caveat', item: 'planned_columns', description: 'planned_* are the Runomics coach\'s prescription for that day when there is one (purpose, pace guide, heart-rate cap), else the workout on the Garmin calendar. They sit on the day\'s main session; compare them with the execution_* columns.' },
+    { section: 'Caveat', item: 'race_results', description: 'race_official_* are published results (chip time, certified distance). distance_km and pace_sec_per_km stay what the watch measured, which runs long on GPS.' },
     { section: 'Sheet', item: 'Athlete', description: 'Current athlete profile and physiological reference values.' },
-    { section: 'Sheet', item: 'Activities', description: 'One row per activity with conditions, intensity, execution, records, gear, and your notes and tags. The CSV export is this sheet alone.' },
+    { section: 'Sheet', item: 'Context', description: 'What the numbers cannot say: the training goal, available days, the current block and the focus of each week, upcoming races, injury history, and the reasons behind breaks in training.' },
+    { section: 'Sheet', item: 'Activities', description: 'One row per session with conditions, intensity, what was planned and how it was executed, official race results, records, gear, and your notes and tags. The CSV export is this sheet alone.' },
     { section: 'Sheet', item: 'Intervals', description: 'One row per segment of a workout with reps or strides - warm-up, each rep or stride, each recovery, cool-down - with its own pace and heart rate.' },
-    { section: 'Sheet', item: 'Daily Status', description: 'One row per calendar day, including rest days, with load, status, plan, and race context.' },
+    { section: 'Sheet', item: 'Daily Status', description: 'One row per calendar day, including rest days, with load, status, plan, and any training break.' },
     { section: 'Sheet', item: 'Records', description: 'Official yearly personal bests plus locally derived records when no official record exists.' },
-    { section: 'Sheet', item: 'Races', description: 'Completed race activities and calendar races, joined when date and distance match.' },
-    { section: 'Sheet', item: 'Training Plan', description: 'Current plan metadata and prescribed workouts.' },
+    { section: 'Sheet', item: 'Races', description: 'Completed races with their official result next to the watch\'s, and calendar races. predicted_time_seconds is Garmin\'s prediction on the race day.' },
+    { section: 'Sheet', item: 'Training Plan', description: 'Workouts on the Garmin calendar, with the coach\'s purpose and heart-rate cap where the Runomics coach prescribed them.' },
     { section: 'Sheet', item: 'Fitness History', description: 'VO2max, lactate-threshold, threshold-pace, fitness-age, and weight history.' },
     { section: 'Sheet', item: 'Race Predictions', description: 'Garmin race prediction history in seconds.' },
     { section: 'Sheet', item: 'Shoes', description: 'Shoe lifecycle and distance accumulated in exported activities.' },
@@ -280,18 +299,166 @@ function athleteRows(athlete: AthleteProfile): RowData[] {
   }]
 }
 
-function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds): RowData[] {
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+function clock(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.round(seconds % 60)
+  return `${h ? `${h}:${String(m).padStart(2, '0')}` : m}:${String(s).padStart(2, '0')}`
+}
+
+function contextRows(data: TrainingWorkbookData, generatedAt: Date): RowData[] {
+  const rows: RowData[] = []
+  const add = (section: string, item: string, value: string | number) => rows.push({ section, item, value })
+  const plan = data.coachingPlans.find((candidate) => candidate.status === 'active')
+
+  if (plan) {
+    add('Goal', plan.goal.kind, plan.goal.description)
+    if (plan.targetEvent) add('Goal', 'target_event', `${plan.targetEvent.name} on ${plan.targetEvent.date}`)
+    if (plan.trainingPreferences) {
+      // Weekday numbers count from Sunday; the athlete's week starts on Monday.
+      const mondayFirst = [...plan.trainingPreferences.availableWeekdays].sort((a, b) => (a + 6) % 7 - (b + 6) % 7)
+      add('Availability', 'running_days', mondayFirst.map((day) => WEEKDAYS[day]).join(', '))
+      if (plan.trainingPreferences.runsPerWeek) add('Availability', 'runs_per_week', plan.trainingPreferences.runsPerWeek)
+    }
+    add('Current block', plan.block.name, `${plan.block.startDate} to ${plan.block.endDate}. ${plan.block.focus}`)
+    for (const week of plan.weeks) add('Current block', `Week ${week.index}, ${week.startDate} to ${week.endDate}`, week.focus)
+  }
+
+  const today = utcDate(generatedAt)
+  for (const race of data.upcomingRaces.flatMap((year) => year.races).filter((race) => race.date >= today)) {
+    const target = race.targetSeconds ? `target ${clock(race.targetSeconds)}` : 'no target time set'
+    add('Upcoming race', `${race.date} ${race.name}`, `${race.distance}, ${target}`)
+  }
+
+  const history = data.athlete.injuryHistory
+  if (history) {
+    add('Injuries', 'reviewed_on', history.reviewedOn)
+    if (!history.injuries.length) add('Injuries', 'none', 'No running injury reported.')
+    for (const injury of history.injuries) {
+      const resolved = injury.resolved === undefined ? 'not known to be resolved' : injury.resolved ? 'resolved' : 'ongoing'
+      const facts = [
+        injury.weeksOut === undefined ? null : `${injury.weeksOut} week${injury.weeksOut === 1 ? '' : 's'} out`,
+        injury.recurrent ? 'recurrent' : null,
+        resolved,
+        injury.note ?? null,
+      ]
+      add('Injuries', `${injury.date ?? injury.year} ${injury.site}`, facts.filter(Boolean).join('; '))
+    }
+  }
+
+  for (const pause of data.athlete.trainingBreaks ?? []) {
+    add('Training breaks', `${pause.start} to ${pause.end}`, pause.note ? `${pause.reason}: ${pause.note}` : pause.reason)
+  }
+  return rows
+}
+
+interface PlannedEffort {
+  seconds?: number
+  distanceM?: number
+  pace?: [number, number]
+  hr?: [number, number]
+}
+
+interface PlannedSession {
+  name: string
+  type: string | null
+  purpose: string | null
+  efforts: PlannedEffort[]
+}
+
+function coachEfforts(blocks: WorkoutBlock[]): PlannedEffort[] {
+  return blocks
+    .flatMap((block) => block.kind === 'repeat' ? Array.from({ length: block.repetitions }, () => block.steps).flat() : [block])
+    .filter((segment) => segment.kind === 'effort')
+    .map(({ target }) => ({
+      seconds: target.durationSeconds,
+      distanceM: target.distanceMeters,
+      pace: target.paceSecPerKm && [target.paceSecPerKm.min, target.paceSecPerKm.max],
+      hr: target.hrBpm && [target.hrBpm.min, target.hrBpm.max],
+    }))
+}
+
+function plannedByDate(data: TrainingWorkbookData): Map<string, PlannedSession> {
+  const planned = new Map<string, PlannedSession>()
+  for (const workout of data.plannedWorkouts) {
+    if (planned.has(workout.date)) continue
+    planned.set(workout.date, {
+      name: workout.name,
+      type: workout.type ?? null,
+      purpose: null,
+      efforts: (workout.steps ?? [])
+        .filter((step) => step.kind === 'effort')
+        .map((step) => ({ seconds: step.seconds ?? step.minutes * 60, pace: step.paceSecPerKm })),
+    })
+  }
+  for (const [date, [prescription]] of prescriptionsByDate(data.coachingPlans)) {
+    if (!prescription) continue
+    planned.set(date, {
+      name: prescription.title,
+      type: COACHING_TO_ACTIVITY_TYPE[prescription.type],
+      purpose: prescription.description,
+      efforts: coachEfforts(prescription.blocks),
+    })
+  }
+  return planned
+}
+
+function distinct(values: Array<string | number | undefined>): string | number | null {
+  const unique = [...new Set(values.filter((value): value is string | number => value !== undefined))]
+  if (!unique.length) return null
+  return unique.length === 1 ? unique[0]! : unique.join(' | ')
+}
+
+const span = (range?: [number, number]): string | undefined => range && `${range[0]}-${range[1]}`
+
+function plannedColumns(planned: PlannedSession | undefined): RowData {
+  return {
+    planned_workout_name: planned?.name ?? null,
+    planned_type: planned?.type ?? null,
+    planned_purpose: planned?.purpose ?? null,
+    planned_effort_reps: planned?.efforts.length || null,
+    planned_effort_seconds: distinct(planned?.efforts.map((effort) => effort.seconds) ?? []),
+    planned_effort_distance_m: distinct(planned?.efforts.map((effort) => effort.distanceM) ?? []),
+    planned_effort_pace_sec_per_km: distinct(planned?.efforts.map((effort) => span(effort.pace)) ?? []),
+    planned_effort_hr_bpm: distinct(planned?.efforts.map((effort) => span(effort.hr)) ?? []),
+  }
+}
+
+interface Session {
+  parts: Activity[]
+  activity: Activity
+}
+
+function sessionsOf(activities: Activity[]): Session[] {
+  return groupSessions(activities).map((parts) => ({ parts, activity: mergeSession(parts) }))
+}
+
+function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds, sessions = sessionsOf(data.activities)): RowData[] {
   const shoes = new Map(data.shoes.map((shoe) => [shoe.gearId, shoe]))
-  return [...data.activities].sort((a, b) => a.date.localeCompare(b.date)).map((activity) => {
+  const officialById = officialResultsByActivityId(data.raceResults)
+  const planned = plannedByDate(data)
+  const mainOfDay = new Map<string, string>()
+  for (const [date, ofDay] of groupByDate(sessions.map((session) => session.activity))) mainOfDay.set(date, mainPart(ofDay).id)
+
+  return sessions.map(({ parts, activity }) => {
     const decoupling = aerobicDecoupling(activity)
     const execution = sessionExecution(activity)
     const reps = repStats(activity)
     const shoe = activity.gearId ? shoes.get(activity.gearId) : undefined
-    const note = data.activityNotes.get(activity.id)
+    const notes = parts.map((part) => data.activityNotes.get(part.id))
+    const comments = parts.map((part, index) => notes[index]?.note || part.comment).filter(Boolean)
+    const tags = [...new Set(notes.flatMap((note) => note?.tags ?? []))]
+    const official = parts.map((part) => officialById.get(part.id)).find(Boolean)
+    const officialKm = official ? official.distanceMeters / 1000 : null
+    const merged = parts.length > 1
     return {
       activity_id: activity.id,
+      merged_activity_ids: parts.filter((part) => part.id !== activity.id).map((part) => part.id).join(' | ') || null,
       date: excelDate(activity.date),
       day_of_week: activity.dayOfWeek,
+      start_time_local: activity.startTimeLocal?.slice(11, 16) ?? null,
       iso_week: activity.week,
       type: activity.type,
       type_source: activity.typeSource ?? null,
@@ -300,11 +467,13 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds): RowData[]
       distance_km: activity.distanceKm,
       pace_sec_per_km: activity.paceSecPerKm,
       avg_heart_rate_bpm: activity.avgHeartRate,
+      session_distance_km: merged ? round(parts.reduce((sum, part) => sum + part.distanceKm, 0), 2) : null,
+      session_duration_seconds: merged ? parts.reduce((sum, part) => sum + part.durationSeconds, 0) : null,
       rpe_1_10: activity.rpe,
       elevation_gain_m: activity.elevationGain,
       aerobic_training_effect: activity.aerTrainingEffect,
       anaerobic_training_effect: activity.anaTrainingEffect,
-      trimp: round(trimp(activity, hrBounds), 1),
+      trimp: round(parts.reduce((sum, part) => sum + trimp(part, hrBounds), 0), 1),
       calories_kcal: activity.calories,
       cadence_spm: activity.cadenceSpm,
       ground_contact_ms: activity.groundContactMs,
@@ -335,8 +504,16 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds): RowData[]
       best_effort_10k_seconds: activity.bestEfforts?.['10k'] ?? null,
       best_effort_half_marathon_seconds: activity.bestEfforts?.half ?? null,
       best_effort_marathon_seconds: activity.bestEfforts?.marathon ?? null,
+      race_official_name: official?.eventName ?? null,
+      race_official_distance_km: officialKm,
+      race_official_time_seconds: official?.chipTimeSeconds ?? null,
+      race_official_pace_sec_per_km: official && officialKm ? round(official.chipTimeSeconds / officialKm, 1) : null,
+      race_gun_time_seconds: official?.gunTimeSeconds ?? null,
+      race_overall_place: official?.overallPlace ?? null,
+      race_finisher_count: official?.finisherCount ?? null,
       aerobic_decoupling_pct: decoupling?.percent ?? null,
       aerobic_decoupling_status: decoupling?.drift ?? null,
+      ...plannedColumns(mainOfDay.get(activity.date) === activity.id ? planned.get(activity.date) : undefined),
       execution_kind: execution?.kind ?? null,
       execution_reps: execution?.kind === 'intervals' ? execution.reps : null,
       execution_fade_sec_per_km: execution?.kind === 'intervals' ? execution.fadeSecPerKm : null,
@@ -346,8 +523,8 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds): RowData[]
       execution_rep_avg_pace_sec_per_km: reps?.paceSecPerKm ?? null,
       execution_rep_avg_hr_bpm: reps?.avgHr ?? null,
       execution_rep_avg_seconds: reps?.secondsPerRep ?? null,
-      comment: note?.note || activity.comment || null,
-      tags: note && note.tags.length > 0 ? note.tags.join(' | ') : null,
+      comment: comments.join(' / ') || null,
+      tags: tags.length ? tags.join(' | ') : null,
       notes_status: data.notesAvailable ? 'included' : 'unavailable',
     }
   })
@@ -399,24 +576,23 @@ function intervalRows(data: TrainingWorkbookData): RowData[] {
   })
 }
 
-function dailyRows(data: TrainingWorkbookData, generatedAt: Date, hrBounds: HrBounds): RowData[] {
+function dailyRows(data: TrainingWorkbookData, generatedAt: Date, hrBounds: HrBounds, sessions: Session[]): RowData[] {
   const today = utcDate(generatedAt)
   const calendarRaces = data.upcomingRaces.flatMap((year) => year.races)
-  const candidateDates = [
+  const recordedDates = [
     ...data.activities.map((item) => item.date),
     ...data.trainingStatus.map((item) => item.date),
     ...data.plannedWorkouts.map((item) => item.date),
-    ...calendarRaces.map((item) => item.date),
-    data.trainingPlan?.startDate,
-    data.trainingPlan?.endDate,
   ]
-  const from = minDate(candidateDates, today)
-  const to = maxDate(candidateDates, today)
+  const from = minDate([...recordedDates, ...calendarRaces.map((item) => item.date), data.trainingPlan?.startDate], today)
+  const to = maxDate(recordedDates, today)
   const activitiesByDate = groupByDate(data.activities)
+  const sessionsByDate = groupByDate(sessions.map((session) => session.activity))
   const plannedByDate = groupByDate(data.plannedWorkouts)
   const racesByDate = groupByDate(calendarRaces)
   const statuses = new Map(data.trainingStatus.map((status) => [status.date, status]))
   const load = buildLoadSeries(data.activities, today, hrBounds)
+  const breaks = data.athlete.trainingBreaks ?? []
 
   return dateRange(from, to).map((date) => {
     const activities = activitiesByDate.get(date) ?? []
@@ -426,13 +602,14 @@ function dailyRows(data: TrainingWorkbookData, generatedAt: Date, hrBounds: HrBo
     const local = load.get(date)
     return {
       date: excelDate(date),
-      actual_activity_count: activities.length,
+      actual_session_count: sessionsByDate.get(date)?.length ?? 0,
       actual_distance_km: round(activities.reduce((sum, activity) => sum + activity.distanceKm, 0), 2),
       actual_duration_seconds: activities.reduce((sum, activity) => sum + activity.durationSeconds, 0),
       daily_trimp: local?.trimp ?? 0,
       fitness_ctl: local?.ctl ?? null,
       fatigue_atl: local?.atl ?? null,
       form_tsb_start_of_day: local?.tsb ?? null,
+      training_break: breaks.find((pause) => date >= pause.start && date <= pause.end)?.reason ?? null,
       garmin_training_status: status?.status ?? null,
       garmin_feedback: status?.feedback ?? null,
       garmin_fitness_trend: status?.fitnessTrend ?? null,
@@ -527,8 +704,21 @@ function recordRows(data: TrainingWorkbookData): RowData[] {
 function raceRows(data: TrainingWorkbookData, generatedAt: Date): RowData[] {
   const today = utcDate(generatedAt)
   const raceActivities = data.activities.filter((activity) => activity.type === 'Race')
+  const officialById = officialResultsByActivityId(data.raceResults)
   const matchedActivities = new Set<string>()
   const rows: RowData[] = []
+  const result = (activity: Activity | undefined) => {
+    const official = activity ? officialById.get(activity.id) : undefined
+    return {
+      official_time_seconds: official?.chipTimeSeconds ?? null,
+      gun_time_seconds: official?.gunTimeSeconds ?? null,
+      overall_place: official?.overallPlace ?? null,
+      finisher_count: official?.finisherCount ?? null,
+      watch_time_seconds: activity?.durationSeconds ?? null,
+      watch_distance_km: activity?.distanceKm ?? null,
+      activity_id: activity?.id ?? null,
+    }
+  }
 
   for (const race of data.upcomingRaces.flatMap((year) => year.races)) {
     const distanceKm = DISTANCE_KM[race.distance] ?? null
@@ -546,24 +736,24 @@ function raceRows(data: TrainingWorkbookData, generatedAt: Date): RowData[] {
       distance_km: distanceKm,
       location: race.location ?? null,
       target_time_seconds: race.targetSeconds ?? null,
-      predicted_time_seconds: currentPrediction(data.racePredictions, race.distance),
-      actual_time_seconds: match?.durationSeconds ?? null,
-      activity_id: match?.id ?? null,
+      predicted_time_seconds: predictionOn(data.racePredictions, race.distance, race.date),
+      ...result(match),
     })
   }
 
   for (const activity of raceActivities.filter((activity) => !matchedActivities.has(activity.id))) {
+    const official = officialById.get(activity.id)
+    const distanceKm = official ? official.distanceMeters / 1000 : activity.distanceKm
     rows.push({
       status: 'completed',
       date: excelDate(activity.date),
-      name: activity.description,
+      name: official?.eventName ?? activity.description,
       distance_label: null,
-      distance_km: activity.distanceKm,
+      distance_km: distanceKm,
       location: null,
       target_time_seconds: null,
-      predicted_time_seconds: currentPrediction(data.racePredictions, activity.distanceKm),
-      actual_time_seconds: activity.durationSeconds,
-      activity_id: activity.id,
+      predicted_time_seconds: predictionOn(data.racePredictions, distanceKm, activity.date),
+      ...result(activity),
     })
   }
 
@@ -573,6 +763,7 @@ function raceRows(data: TrainingWorkbookData, generatedAt: Date): RowData[] {
 function trainingPlanRows(data: TrainingWorkbookData): RowData[] {
   if (!data.trainingPlan && !data.plannedWorkouts.length) return []
   const workouts = data.plannedWorkouts.length ? data.plannedWorkouts : [null]
+  const prescriptions = prescriptionsByDate(data.coachingPlans)
   return workouts.map((workout) => ({
     plan_id: data.trainingPlan?.planId ?? null,
     plan_name: data.trainingPlan?.name ?? null,
@@ -588,7 +779,16 @@ function trainingPlanRows(data: TrainingWorkbookData): RowData[] {
     estimated_load: workout?.estimatedLoad ?? null,
     load_is_estimated: workout?.isEstimated ?? null,
     steps_json: workout?.steps ? JSON.stringify(workout.steps) : null,
+    ...coachColumns(workout ? prescriptions.get(workout.date)?.[0] : undefined),
   }))
+}
+
+function coachColumns(prescription: WorkoutPrescription | undefined): RowData {
+  const efforts = prescription ? coachEfforts(prescription.blocks) : []
+  return {
+    coach_purpose: prescription?.description ?? null,
+    effort_hr_bpm: distinct(efforts.map((effort) => span(effort.hr))),
+  }
 }
 
 function fitnessHistoryRows(data: TrainingWorkbookData): RowData[] {
@@ -705,9 +905,10 @@ const columns = (...keys: Array<string | ColumnDefinition>): ColumnDefinition[] 
 
 const ACTIVITY_COLUMNS = columns(
 
-    { key: 'activity_id', width: 24 }, { key: 'date', ...DATE_COLUMN }, 'day_of_week', 'iso_week', 'type', 'type_source',
+    { key: 'activity_id', width: 24 }, { key: 'merged_activity_ids', width: 24 }, { key: 'date', ...DATE_COLUMN },
+    'day_of_week', 'start_time_local', 'iso_week', 'type', 'type_source',
     { key: 'description', width: 28, wrap: true }, 'duration_seconds', 'distance_km', 'pace_sec_per_km',
-    'avg_heart_rate_bpm', 'rpe_1_10', 'elevation_gain_m', 'aerobic_training_effect', 'anaerobic_training_effect',
+    'avg_heart_rate_bpm', 'session_distance_km', 'session_duration_seconds', 'rpe_1_10', 'elevation_gain_m', 'aerobic_training_effect', 'anaerobic_training_effect',
     'trimp', 'calories_kcal', 'cadence_spm', 'ground_contact_ms', 'vertical_oscillation_mm', 'vertical_ratio_pct',
     'stride_length_m', 'vo2max', 'watch_temperature_c', 'hr_zone_1_seconds', 'hr_zone_2_seconds',
     'hr_zone_3_seconds', 'hr_zone_4_seconds', 'hr_zone_5_seconds', 'hard_minutes_z4_z5',
@@ -715,7 +916,11 @@ const ACTIVITY_COLUMNS = columns(
     'weather_wind_direction_deg', 'weather_precipitation_mm', 'weather_code_wmo', { key: 'gear_id', width: 22 },
     'shoe_brand', 'shoe_model', 'best_effort_1k_seconds', 'best_effort_1_mile_seconds', 'best_effort_5k_seconds',
     'best_effort_10k_seconds', 'best_effort_half_marathon_seconds', 'best_effort_marathon_seconds',
-    'aerobic_decoupling_pct', 'aerobic_decoupling_status', 'execution_kind', 'execution_reps',
+    { key: 'race_official_name', width: 26 }, 'race_official_distance_km', 'race_official_time_seconds',
+    'race_official_pace_sec_per_km', 'race_gun_time_seconds', 'race_overall_place', 'race_finisher_count',
+    'aerobic_decoupling_pct', 'aerobic_decoupling_status', { key: 'planned_workout_name', width: 28 }, 'planned_type',
+    { key: 'planned_purpose', width: 40, wrap: true }, 'planned_effort_reps', 'planned_effort_seconds',
+    'planned_effort_distance_m', 'planned_effort_pace_sec_per_km', 'planned_effort_hr_bpm', 'execution_kind', 'execution_reps',
     'execution_fade_sec_per_km', 'execution_spread_sec_per_km', 'execution_hr_drift_bpm',
     { key: 'execution_rep_paces_sec_per_km', width: 22 }, 'execution_rep_avg_pace_sec_per_km',
     'execution_rep_avg_hr_bpm', 'execution_rep_avg_seconds', { key: 'comment', width: 36, wrap: true }, { key: 'tags', width: 24, wrap: true }, 'notes_status',
@@ -747,7 +952,12 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
     { key: 'device_since', ...DATE_COLUMN }, { key: 'last_profile_update', ...DATE_COLUMN },
   ), athleteRows(data.athlete))
 
-  addDataSheet(workbook, 'Activities', ACTIVITY_COLUMNS, activityRows(data, athleteHrBounds))
+  addDataSheet(workbook, 'Context', columns(
+    { key: 'section', width: 16 }, { key: 'item', width: 36 }, { key: 'value', width: 90, wrap: true },
+  ), contextRows(data, generatedAt))
+
+  const sessions = sessionsOf(data.activities)
+  addDataSheet(workbook, 'Activities', ACTIVITY_COLUMNS, activityRows(data, athleteHrBounds, sessions))
 
   addDataSheet(workbook, 'Intervals', columns(
     { key: 'activity_id', width: 24 }, { key: 'date', ...DATE_COLUMN }, { key: 'description', width: 28, wrap: true },
@@ -755,13 +965,14 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
   ), intervalRows(data))
 
   addDataSheet(workbook, 'Daily Status', columns(
-    { key: 'date', ...DATE_COLUMN }, 'actual_activity_count', 'actual_distance_km', 'actual_duration_seconds',
-    'daily_trimp', 'fitness_ctl', 'fatigue_atl', 'form_tsb_start_of_day', 'garmin_training_status',
+    { key: 'date', ...DATE_COLUMN }, 'actual_session_count', 'actual_distance_km', 'actual_duration_seconds',
+    'daily_trimp', 'fitness_ctl', 'fatigue_atl', 'form_tsb_start_of_day', 'training_break',
+    'garmin_training_status',
     { key: 'garmin_feedback', width: 24, wrap: true }, 'garmin_fitness_trend', 'garmin_acute_load',
     'garmin_chronic_load', 'garmin_acwr', 'garmin_acwr_status', 'garmin_chronic_load_min',
     'garmin_chronic_load_max', 'planned_workout_count', { key: 'planned_workout_names', width: 32, wrap: true },
     'planned_day_completed', 'training_plan_phase', { key: 'race_names', width: 28, wrap: true },
-  ), dailyRows(data, generatedAt, athleteHrBounds))
+  ), dailyRows(data, generatedAt, athleteHrBounds, sessions))
 
   addDataSheet(workbook, 'Records', columns(
     'record_key', 'year', 'distance_label', 'distance_km', 'time_seconds', 'pace_sec_per_km',
@@ -771,7 +982,8 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
 
   addDataSheet(workbook, 'Races', columns(
     'status', { key: 'date', ...DATE_COLUMN }, { key: 'name', width: 30 }, 'distance_label', 'distance_km',
-    { key: 'location', width: 24 }, 'target_time_seconds', 'predicted_time_seconds', 'actual_time_seconds',
+    { key: 'location', width: 24 }, 'target_time_seconds', 'predicted_time_seconds', 'official_time_seconds',
+    'gun_time_seconds', 'overall_place', 'finisher_count', 'watch_time_seconds', 'watch_distance_km',
     { key: 'activity_id', width: 24 },
   ), raceRows(data, generatedAt))
 
@@ -780,6 +992,7 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
     { key: 'plan_end_date', ...DATE_COLUMN }, { key: 'workout_date', ...DATE_COLUMN }, 'phase',
     { key: 'workout_name', width: 32 }, 'workout_type', 'planned_distance_m', 'planned_duration_seconds',
     'scheduled_time_of_day', 'estimated_load', 'load_is_estimated', { key: 'steps_json', width: 50, wrap: true },
+    { key: 'coach_purpose', width: 40, wrap: true }, 'effort_hr_bpm',
   ), trainingPlanRows(data))
 
   addDataSheet(workbook, 'Fitness History', columns(
@@ -815,16 +1028,20 @@ export function buildTrainingWorkbook(data: TrainingWorkbookData, generatedAt = 
 
 export async function loadTrainingWorkbookData(): Promise<TrainingWorkbookData> {
   const notes = await getActivityNotes()
+  const coaching = new JsonCoachingRepository()
+  const currentPlan = coaching.getCurrentPlan()
   return {
     activities: getAllActivities(),
     activityNotes: notes.notes,
     notesAvailable: notes.available,
     athlete: getAthleteProfile(),
     athleteHistory: getAthleteHistory(),
+    coachingPlans: [...(currentPlan ? [currentPlan] : []), ...coaching.getArchivedPlans()],
     goals: getGoalYears(),
     pbs: getPbYears(),
     plannedWorkouts: getAllPlannedWorkouts(),
     racePredictions: getRacePredictionDays(),
+    raceResults: getOfficialRaceResults(),
     shoes: getShoeRecords(),
     thresholdHistory: getThresholdSamples(),
     trainingLoadBalance: getTrainingLoadBalance(),

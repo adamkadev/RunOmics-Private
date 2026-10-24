@@ -35,6 +35,14 @@ All notable changes to this project are documented in this file.
 - The README keeps setup and an index; the implementation notes moved to
   four documents under `docs/`.
 
+- The training export tells a coach what the numbers cannot: a Context
+  sheet (goal, running days, the current block and each week's focus,
+  upcoming races, injury history, why training stopped), the coach's
+  prescription beside each session (pace guide and heart-rate cap), and
+  official race results beside what the watch measured. A warm-up, test
+  and cool-down the watch saved apart are one row. The sync now stores each
+  run's start time, which that needs; older runs get theirs on the next sync.
+
 - Scrolling Activities no longer stutters. The compact title bar wrote a
   style on the whole page as month headers passed under it, and each write
   restyled every run in the list (60-90 ms on a long archive); it now

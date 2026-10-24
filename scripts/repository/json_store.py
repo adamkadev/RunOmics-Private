@@ -115,6 +115,14 @@ class JsonActivityStore:
             self.touch(activity_id)
         return changed
 
+    def set_start_time(self, activity_id: str, start: str) -> bool:
+        activity = self._by_id.get(activity_id)
+        if activity is None or activity.get("startTimeLocal") == start:
+            return False
+        activity["startTimeLocal"] = start
+        self.touch(activity_id)
+        return True
+
     def upsert(
         self,
         activity: ActivityData,

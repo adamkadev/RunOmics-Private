@@ -213,6 +213,11 @@ function checkAthlete(dir: string, problems: Problem[]) {
     if (injuries !== undefined && !(isObject(injuries) && Array.isArray(injuries.injuries))) {
       report.error('$.injuryHistory', 'expected { reviewedOn, injuries: [] }')
     }
+    const breaks = athlete.trainingBreaks
+    if (breaks !== undefined && !(Array.isArray(breaks) && breaks.every((item) =>
+      isObject(item) && isIsoDate(item.start) && isIsoDate(item.end) && typeof item.reason === 'string'))) {
+      report.error('$.trainingBreaks', 'expected [{ start, end, reason }] with YYYY-MM-DD dates')
+    }
   }
   problems.push(...report.problems)
 }

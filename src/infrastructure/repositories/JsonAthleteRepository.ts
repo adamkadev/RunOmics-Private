@@ -8,12 +8,25 @@ export interface RunningInjury {
   weeksOut?: number
   recurrent?: boolean
   resolved?: boolean
+  /** The day it was first noted, YYYY-MM-DD. */
+  date?: string
+  note?: string
 }
 
 /** `reviewedOn` tells "no injuries" from "never asked", and prior injury is the best-replicated predictor of the next. */
 export interface InjuryHistory {
   reviewedOn: string
   injuries: RunningInjury[]
+}
+
+export type TrainingBreakReason = 'injury' | 'illness' | 'heat' | 'travel' | 'personal'
+
+/** Typed into athlete.json: without it a coach reads a gap as lost fitness rather than a life event. */
+export interface TrainingBreak {
+  start: string
+  end: string
+  reason: TrainingBreakReason
+  note?: string
 }
 
 export interface AthleteProfile {
@@ -40,6 +53,7 @@ export interface AthleteProfile {
   deviceSince?: string
   lastUpdate?: string
   injuryHistory?: InjuryHistory
+  trainingBreaks?: TrainingBreak[]
 }
 
 export function getAthleteProfile(): AthleteProfile {
