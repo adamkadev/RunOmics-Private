@@ -53,6 +53,16 @@ describe('the steps list', () => {
     ])
   })
 
+  it('counts every part of a warm-up in steps, with each part’s pace', () => {
+    const warmups: WorkoutStep[] = [
+      { kind: 'warmup', minutes: 10, seconds: 607, paceSecPerKm: [330, 384] },
+      { kind: 'warmup', minutes: 5, seconds: 299, paceSecPerKm: [292, 305] },
+      { kind: 'warmup', minutes: 5, seconds: 286, paceSecPerKm: [280, 292] },
+    ]
+    const rows = stepRows({ steps: [...warmups, ...THRESHOLD.slice(1)], type: 'Threshold', kind: 'quality', color: COLOR, totalSeconds: 3_772 })
+    expect(rows[0]).toMatchObject({ title: t.plan.steps.warmup, detail: '5:30–6:24 → 4:52–5:05 → 4:40–4:52 /km', duration: '19:52' })
+  })
+
   it('reads an easy run with strides as its body and its strides', () => {
     const rows = stepRows({ steps: STRIDES, type: 'Base', kind: 'easy', color: 'var(--zone-2)', totalSeconds: 2_720 })
     expect(rows.map((r) => r.title)).toEqual([t.plan.kinds.easy, t.plan.steps.strides(4, '20s')])

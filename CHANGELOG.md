@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A planned session's warm-up on Plan now counts all its parts: a warm-up
+  of 1.7 km easy, 1 km steady and 1 km a touch quicker read as its first
+  10 minutes only; it now shows the whole time and each part's pace.
+
 - The server runs in Paris instead of Washington, next to the
   database and the route provider: every request that is not a cached
   page answers about 150 ms sooner (the sync, the map's tracks, new routes,

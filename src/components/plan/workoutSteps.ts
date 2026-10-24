@@ -30,9 +30,18 @@ export function stepLength(seconds: number): string {
   return seconds >= 60 && seconds % 60 === 0 ? t.plan.steps.minutes(seconds / 60) : stepClock(seconds)
 }
 
+const rangeText = ([low, high]: [number, number]) => `${formatClock(low)}–${formatClock(high)}`
+
 function paceText(step: WorkoutStep | undefined): string | null {
   const pace = step?.paceSecPerKm
-  return pace ? t.plan.row.pace(`${formatClock(pace[0])}–${formatClock(pace[1])}`) : null
+  return pace ? t.plan.row.pace(rangeText(pace)) : null
+}
+
+function easeRow(key: string, title: string, parts: WorkoutStep[]): StepRow {
+  const ranges = parts.flatMap((step) => (step.paceSecPerKm ? [rangeText(step.paceSecPerKm)] : []))
+  const seconds = parts.reduce((sum, step) => sum + stepSeconds(step), 0)
+  const detail = ranges.length > 0 ? t.plan.row.pace(ranges.join(' → ')) : t.plan.steps.easy
+  return { key, tone: 'ease', fill: EASE_FILL, title, detail, duration: stepLength(seconds) }
 }
 
 function setSpanSeconds(list: WorkoutStep[], reps: WorkoutStep[]): number {
@@ -86,13 +95,13 @@ export function stepRows({ steps, type, kind, color, totalSeconds, pace = null }
   }
 
   const rows: StepRow[] = []
-  const warmup = list.find((step) => step.kind === 'warmup')
-  const cooldown = list.find((step) => step.kind === 'cooldown')
+  const warmups = list.filter((step) => step.kind === 'warmup')
+  const cooldowns = list.filter((step) => step.kind === 'cooldown')
   const recovery = list.find((step) => step.kind === 'recovery')
   const { body, reps, strides } = sessionParts(list)
   const efforts = list.filter((step) => step.kind === 'effort')
 
-  if (warmup) rows.push({ key: 'warmup', tone: 'ease', fill: EASE_FILL, title: s.warmup, detail: paceText(warmup) ?? s.easy, duration: stepLength(stepSeconds(warmup)) })
+  if (warmups.length > 0) rows.push(easeRow('warmup', s.warmup, warmups))
   if (body) {
     rows.push({ key: 'body', tone: 'work', fill: color, title: label, detail: join(zone, paceText(body)), duration: stepLength(stepSeconds(body)) })
   } else if (efforts.length === 1) {
@@ -111,6 +120,6 @@ export function stepRows({ steps, type, kind, color, totalSeconds, pace = null }
       duration: setSeconds > 0 ? stepLength(setSeconds) : s.repsShort(reps.length, rep),
     })
   }
-  if (cooldown) rows.push({ key: 'cooldown', tone: 'ease', fill: EASE_FILL, title: s.cooldown, detail: paceText(cooldown) ?? s.easy, duration: stepLength(stepSeconds(cooldown)) })
+  if (cooldowns.length > 0) rows.push(easeRow('cooldown', s.cooldown, cooldowns))
   return rows
 }
