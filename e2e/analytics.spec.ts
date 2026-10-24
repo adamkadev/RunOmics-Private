@@ -24,3 +24,19 @@ test('a chart readout stays inside its card, even over the last bars', async ({ 
     expect(readout.x + readout.width).toBeLessThanOrEqual(box.x + box.width + 0.5)
   }
 })
+
+test('the period control keeps its place whichever period is picked', async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 852 })
+  await page.goto('/analytics')
+  const control = page.getByRole('radiogroup').first()
+  const places: ({ x: number; y: number } | null)[] = []
+  for (const name of ['4 weeks', '12 weeks', 'a year']) {
+    await page.getByRole('radio', { name }).click()
+    await expect(page.getByRole('radio', { name })).toHaveAttribute('aria-checked', 'true')
+    places.push(await control.boundingBox())
+  }
+  for (const place of places.slice(1)) {
+    expect(place!.y).toBe(places[0]!.y)
+    expect(Math.abs(place!.x - places[0]!.x)).toBeLessThan(1)
+  }
+})

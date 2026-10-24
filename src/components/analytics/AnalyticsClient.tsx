@@ -142,7 +142,8 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
 
   const rows = weeks ? weekRows(data.weeks, data.plan, weeks, today) : []
   const range = days ?? weeks!
-  const rangeLabel = formatDateRange(range.start, range.live ? today : range.end, { year: 'always' })
+  // A year by its months: its days made the line too wide to sit beside the period control on a phone.
+  const rangeLabel = formatDateRange(range.start, range.live ? today : range.end, { year: 'always', precision: current.period === '1y' ? 'month' : 'day' })
 
   // Each tab's own coach read over its own window, so a tab set to 4 weeks never reads "12 weeks".
   const coach = useMemo(() => {

@@ -177,8 +177,8 @@ describe('Analytics (v4.5)', () => {
     const s = t.analytics.cards.coachRead
     const words = t.analytics.cards.period.words
     const cases = [
-      { tab: 'fitness', card: 'form-card', ranges: ['Aug 30 – Sep 26, 2026', 'Jul 5 – Sep 26, 2026', 'Sep 27, 2025 – Sep 26, 2026'] },
-      { tab: 'volume', card: 'weekly-card', ranges: ['Aug 31 – Sep 26, 2026', 'Jul 6 – Sep 26, 2026', 'Sep 29, 2025 – Sep 26, 2026'] },
+      { tab: 'fitness', card: 'form-card', ranges: ['Aug 30 – Sep 26, 2026', 'Jul 5 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
+      { tab: 'volume', card: 'weekly-card', ranges: ['Aug 31 – Sep 26, 2026', 'Jul 6 – Sep 26, 2026', 'Sep 2025 – Sep 2026'] },
     ] as const
     for (const { tab, card, ranges } of cases) {
       await openTab(t.analytics.tabs[tab], card)

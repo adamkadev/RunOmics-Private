@@ -30,6 +30,10 @@ All notable changes to this project are documented in this file.
 - A chart's readout on Analytics stays on screen over the last weeks: a
   long one ("Week of Oct 12 · 44.8 / 48 km") ran past the card's edge.
 
+- Picking 1Y on Analytics no longer moves the period control under the
+  title: a year's range now reads by its months ("Oct 2025 – Oct 2026"),
+  short enough to stay beside it.
+
 - A run's Laps view shows every warm-up lap: a warm-up of 1.7 km easy,
   1 km steady and 1 km a touch quicker showed its first lap only.
 
