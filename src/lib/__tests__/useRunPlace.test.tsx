@@ -20,14 +20,14 @@ describe('RunPlace in the Activity header', () => {
   })
 
   // One place rule everywhere: the town, as the share card names it.
-  it('names the town the run started in, from one lookup, and keeps it', async () => {
+  it('names the town the run started in from a point a kilometre coarse, in one lookup, and keeps it', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ address: { suburb: 'Robertsau', city: 'Strasbourg' } })),
     )
-    render(<RunPlace activityId="a1" start={[7.78, 48.61]} />)
+    render(<RunPlace activityId="a1" start={[7.78342, 48.61273]} />)
     expect(await screen.findByTestId('run-place')).toHaveTextContent('Strasbourg')
     expect(fetchMock).toHaveBeenCalledTimes(1)
-    expect(String(fetchMock.mock.calls[0]![0])).toContain('zoom=16')
+    expect(String(fetchMock.mock.calls[0]![0])).toContain('lat=48.61&lon=7.78&')
     expect(JSON.parse(localStorage.getItem('ro_runplace_a1')!)).toEqual({ town: 'Strasbourg', quartier: 'Robertsau' })
   })
 

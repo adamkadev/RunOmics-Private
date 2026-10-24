@@ -44,7 +44,7 @@ function readCache(id: string): RunPlace | null {
   }
 }
 
-/** Geocoded at street grain (zoom=16) so the address carries the quartier as well as the town. */
+/** Rounded to about a kilometre: a run's first point is often home, and a town needs no more. */
 export function useRunPlace(activityId: string, start: [number, number] | null | undefined): RunPlace {
   // Read after mount: a cached name drawn on the first render would not match the server's HTML.
   const mounted = useMounted()
@@ -57,9 +57,9 @@ export function useRunPlace(activityId: string, start: [number, number] | null |
   useEffect(() => {
     if (!mounted || known) return
     if (!start) return
-    const [lng, lat] = start
+    const [lng, lat] = start.map((value) => value.toFixed(2))
     let alive = true
-    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=16`, {
+    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=10`, {
       headers: { 'Accept-Language': t.locale },
     })
       .then((res) => res.json() as Promise<{ address?: NominatimAddress }>)
