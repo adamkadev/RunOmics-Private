@@ -1,4 +1,4 @@
-import type { ClientErrorSource } from '@/domain/diagnostics/clientError'
+import { scrubText, type ClientErrorSource } from '@/domain/diagnostics/clientError'
 import { currentEnv, deviceSummary } from '@/lib/device'
 import { BUILD_COMMIT } from '@/lib/version'
 
@@ -9,7 +9,8 @@ const sent = new Set<string>()
 /** Never throws and never logs: a reporter that failed loudly would report itself. */
 export function reportClientError(source: ClientErrorSource, error: unknown): void {
   try {
-    const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+    // Scrubbed here too, so a coordinate in a message never leaves the phone.
+    const message = scrubText(error instanceof Error ? `${error.name}: ${error.message}` : String(error))
     const key = `${source}|${message}`
     if (sent.size >= MAX_PER_PAGE || sent.has(key)) return
     sent.add(key)
