@@ -21,15 +21,15 @@ export function daysBetween(from: string, to: string): number {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS)
 }
 
-/** `weeks` is the span the points cover, which a sparse history makes shorter than the window. */
+/** Over the weeks printed, as closingPace: a sparse history spans less than the window, and the rate must add up. */
 export function predictionChange(points: readonly PredictionPoint[], days: number): { seconds: number; perWeek: number; weeks: number } | null {
   const latest = points.at(-1)
   if (!latest) return null
   const from = points.find((p) => daysBetween(p.date, latest.date) <= days)
   if (!from || from === latest) return null
-  const span = daysBetween(from.date, latest.date) / 7
+  const weeks = Math.max(1, Math.round(daysBetween(from.date, latest.date) / 7))
   const seconds = latest.seconds - from.seconds
-  return { seconds, perWeek: span > 0 ? seconds / span : 0, weeks: Math.max(1, Math.round(span)) }
+  return { seconds, perWeek: seconds / weeks, weeks }
 }
 
 /** The weeks printed are the weeks divided by, so rate × weeks covers the gap; under half a week there is none left. */

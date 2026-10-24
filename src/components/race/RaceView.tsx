@@ -53,7 +53,7 @@ export function RaceView({ data }: { data: RacePageData }) {
   const gap = predictedSeconds !== null && targetSeconds !== null ? predictedSeconds - targetSeconds : null
   const closing = gap !== null ? closingPace(gap, daysUntil) : null
   const change = predictionChange(trend, RACE_TREND_DAYS)
-  const changePerWeek = change && Math.round(change.perWeek) !== 0 ? signed(change.perWeek) : null
+  const changePerWeek = change && change.weeks > 1 && Math.round(change.perWeek) !== 0 ? signed(change.perWeek) : null
   const columns = [
     ...(targetSeconds !== null ? [{ label: r.target, seconds: targetSeconds }] : []),
     ...(predictedSeconds !== null ? [{ label: r.predicted, seconds: predictedSeconds }] : []),

@@ -27,8 +27,9 @@ describe('predictionChange', () => {
   ]
 
   it('compares the latest with the first point inside the window, over the weeks it spans', () => {
-    expect(predictionChange(points, 84)).toEqual({ seconds: -60, perWeek: -60 / (81 / 7), weeks: 12 })
-    expect(predictionChange(points.slice(-2), 84)).toEqual({ seconds: -30, perWeek: -30 / 4, weeks: 4 })
+    expect(predictionChange(points, 84)).toEqual({ seconds: -60, perWeek: -5, weeks: 12 })
+    expect(predictionChange(points.slice(-2), 84)).toEqual({ seconds: -30, perWeek: -7.5, weeks: 4 })
+    expect(predictionChange([{ date: '2026-10-20', seconds: 5760 }, { date: '2026-10-24', seconds: 5748 }], 84)).toEqual({ seconds: -12, perWeek: -12, weeks: 1 })
   })
 
   it('is null without an earlier point in the window', () => {
