@@ -167,6 +167,8 @@ interface Props {
   mapData: MapShellData
   exploreAreas?: ExploreAreaRef[]
   explorePlans?: ExplorePlan[]
+  /** Unit id → the day it passed 90 %. */
+  exploreCompletedSince?: Record<string, string>
   /** Session types that override the watch's, by activity id. */
   sessionTypes?: Record<string, ActivityType>
 }
@@ -180,6 +182,7 @@ export function ActivityListClient({
   mapData,
   exploreAreas,
   explorePlans,
+  exploreCompletedSince,
   sessionTypes = {},
 }: Props) {
   const today = useToday(serverToday)
@@ -357,7 +360,7 @@ export function ActivityListClient({
       <div {...viewTabs.panelProps} className="flex flex-col gap-3 outline-none">
         {view === 'map' ? (
           // This device's today, so a page kept from another day still finds the right plan.
-          <GlobalMapWrapper data={mapData} exploreAreas={exploreAreas} explorePlans={explorePlans} today={today} />
+          <GlobalMapWrapper data={mapData} exploreAreas={exploreAreas} explorePlans={explorePlans} completedSince={exploreCompletedSince} today={today} />
         ) : (
           <>
 

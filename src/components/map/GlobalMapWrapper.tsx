@@ -25,11 +25,13 @@ export function GlobalMapWrapper({
   data,
   exploreAreas,
   explorePlans,
+  completedSince,
   today,
 }: {
   data: MapShellData
   exploreAreas?: ExploreAreaRef[]
   explorePlans?: readonly ExplorePlan[]
+  completedSince?: Record<string, string>
   /** 'YYYY-MM-DD', on this device's clock. */
   today?: string
 }) {
@@ -37,7 +39,7 @@ export function GlobalMapWrapper({
 
   return (
     <div className="flex flex-col gap-3.5">
-      <GlobalMapClient data={data} onContentChange={setContent} exploreAreas={exploreAreas} explorePlans={explorePlans} today={today} />
+      <GlobalMapClient data={data} onContentChange={setContent} exploreAreas={exploreAreas} explorePlans={explorePlans} completedSince={completedSince} today={today} />
       {content && <TerritoryBand {...content} />}
     </div>
   )

@@ -65,6 +65,8 @@ interface Props {
   /** Areas with Districts; none hides the layers button. */
   exploreAreas?: readonly ExploreAreaRef[];
   explorePlans?: readonly ExplorePlan[];
+  /** Unit id → the day it passed 90 %, worked out on the server. */
+  completedSince?: Readonly<Record<string, string>>;
   /** 'YYYY-MM-DD', on this device's clock. */
   today?: string | null;
 }
@@ -98,7 +100,7 @@ const samePadding = (a: CameraPadding | null, b: CameraPadding | null) =>
 
 const bboxBounds = ([minLon, minLat, maxLon, maxLat]: readonly [number, number, number, number]): LngLatBounds => ({ minLon, minLat, maxLon, maxLat });
 
-export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS, explorePlans = NO_PLANS, today = null }: Props) {
+export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS, explorePlans = NO_PLANS, completedSince, today = null }: Props) {
   const { clusters, routeMeta } = data;
   const [selectedIdx, setSelectedIdx] = useState(data.defaultClusterIdx);
   const [filters, setFilters] = useState<HeatFilters>(NO_HEAT_FILTERS);
@@ -500,7 +502,7 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
         />
       )}
 
-      {openUnit && <QuartierSheet unit={openUnit} onClose={closeQuartier} onPlanRun={onPlanRun} />}
+      {openUnit && <QuartierSheet unit={openUnit} completeSince={completedSince?.[openUnit.id] ?? null} onClose={closeQuartier} onPlanRun={onPlanRun} />}
 
       <div
         className={

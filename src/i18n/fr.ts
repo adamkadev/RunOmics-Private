@@ -320,6 +320,7 @@ export const fr = {
           explored: (pct: string) => `${pct} exploré`,
           cells: (visited: number, total: number, n: (count: number) => string) => `${n(visited)} case${visited > 1 ? 's' : ''} sur ${n(total)}`,
           completeAt: (pct: string) => `Complet à ${pct}`,
+          completeSince: (date: string) => `Complet depuis le ${date}`,
           runHere: 'Courus ici',
           lastRun: 'Dernière sortie',
           fromHome: 'Depuis chez toi',

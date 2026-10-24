@@ -146,8 +146,10 @@ footways and cycleways; it re-ranks the loops already fetched, without a new req
 GPX 1.1, the loop only, closed on its start.
 
 **New ground:** the server replays the home area's runs oldest first (`src/domain/explore/gains.ts`,
-about 30 ms for 150 runs, cached until the runs or the area change), crediting each cell to the first
-run through it. A run's page lists up to three quartiers whose percentage it raised, before → after.
+about 150 ms for 150 runs, cached until the runs or the area change), crediting each cell to the first
+run through it. The same pass gives Progress's Explored card its numbers (`src/domain/explore/summary.ts`,
+with home as the runs' median start, which stays on the server) and the day each quartier passed 90 %,
+which its sheet on the map shows. A run's page lists up to three quartiers whose percentage it raised, before → after.
 After a sync with new data, `POST /api/internal/explore-check` pushes once per quartier newly past
 90 %; the ids already announced live in Firestore `notifications/lastExploreMilestones`, and the
 first check only takes note of the quartiers complete so far.

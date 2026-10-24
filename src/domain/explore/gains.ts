@@ -1,4 +1,4 @@
-import { activityCells, type AreaIndex } from './coverage'
+import type { ActivityCoverageInput, AreaIndex } from './coverage'
 import { COMPLETE_PCT } from './types'
 
 export interface UnitGain {
@@ -19,6 +19,8 @@ export interface CompleteUnit {
   id: string
   name: string
   pct: number
+  /** The day of the run that took it past COMPLETE_PCT. */
+  since: string
 }
 
 export interface ExploreGains {
@@ -31,14 +33,16 @@ export interface ExploreGains {
 const pctOf = (count: number, total: number) => (total > 0 ? Math.floor((100 * count) / total) : 0)
 
 /** `runs` oldest first: a cell is new for the first run through it only. */
-export function exploreGains(index: AreaIndex, runs: readonly { id: string; coords: ArrayLike<number> }[]): ExploreGains {
+export function exploreGains(index: AreaIndex, runs: readonly ActivityCoverageInput[]): ExploreGains {
   const visited = new Set<number>()
   const counts = new Uint32Array(index.units.length)
   const byRun = new Map<string, RunExploreGain>()
+  const since = new Map<number, string>()
 
   for (const run of runs) {
     const gained = new Map<number, number>()
-    for (const cell of activityCells(index, run.coords).cells) {
+    for (let k = 0; k < run.cells.length; k++) {
+      const cell = run.cells[k]!
       const unit = index.runnableUnit.get(cell)
       if (unit === undefined || visited.has(cell)) continue
       visited.add(cell)
@@ -46,6 +50,9 @@ export function exploreGains(index: AreaIndex, runs: readonly { id: string; coor
       gained.set(unit, (gained.get(unit) ?? 0) + 1)
     }
     if (gained.size === 0) continue
+    for (const u of gained.keys()) {
+      if (!since.has(u) && pctOf(counts[u]!, index.units[u]!.runnable.size) >= COMPLETE_PCT) since.set(u, run.date.slice(0, 10))
+    }
     const units = [...gained].map(([u, cells]): UnitGain => {
       const unit = index.units[u]!
       const total = unit.runnable.size
@@ -57,7 +64,7 @@ export function exploreGains(index: AreaIndex, runs: readonly { id: string; coor
 
   const complete = index.units.flatMap((unit, u): CompleteUnit[] => {
     const pct = pctOf(counts[u]!, unit.runnable.size)
-    return pct >= COMPLETE_PCT ? [{ id: unit.id, name: unit.name, pct }] : []
+    return pct >= COMPLETE_PCT ? [{ id: unit.id, name: unit.name, pct, since: since.get(u) ?? '' }] : []
   })
   return { byRun, complete, unitCount: index.units.filter((unit) => unit.runnable.size > 0).length }
 }

@@ -1,6 +1,8 @@
-import { buildAreaIndex } from '@/domain/explore/coverage'
+import { activityCells, aggregateCoverage, buildAreaIndex } from '@/domain/explore/coverage'
 import { parseAreaFile } from '@/domain/explore/areaFile'
 import { exploreGains, type CompleteUnit, type ExploreGains, type RunExploreGain } from '@/domain/explore/gains'
+import { medianStart } from '@/domain/explore/home'
+import { exploredSummary, type ExploredSummary } from '@/domain/explore/summary'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { decodePolyline, encodePolyline } from '@/lib/polyline'
 import {
@@ -11,26 +13,48 @@ import {
 import { getAllRoutes } from './GetAllRoutes'
 import { getExploreAreaFile, getExploreHome } from './GetExploreAreas'
 
-let cache: { source: unknown; areaVersion: string; gains: ExploreGains } | null = null
+interface HomeArea {
+  gains: ExploreGains
+  summary: ExploredSummary
+}
 
-export function getExploreGains(): ExploreGains | null {
+let cache: { source: unknown; areaVersion: string; area: HomeArea } | null = null
+
+/** The home area's runs, replayed once per data version; home is worked out here and never leaves the server. */
+function homeArea(): HomeArea | null {
   const home = getExploreHome()
   if (!home) return null
   const source = getAllActivities()
-  if (cache?.source === source && cache.areaVersion === home.area.version) return cache.gains
+  if (cache?.source === source && cache.areaVersion === home.area.version) return cache.area
 
   const read = getExploreAreaFile(home.area.id)
   const file = read ? parseAreaFile(JSON.parse(read.body)) : null
   if (!file) return null
+  const index = buildAreaIndex(file)
   const { routes } = getAllRoutes()
   // Activities carry a date only; Garmin ids grow with time, so they order a day's runs.
-  // Rounded through the polyline the Explored card's worker decodes, or a cell on a boundary can count on one side only.
-  const runs = [...home.runs]
+  // Rounded through the polyline the map's worker decodes, or a cell on a boundary can count on one side only.
+  const tracks = [...home.runs]
     .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id, undefined, { numeric: true }))
-    .map((run) => ({ id: run.id, coords: decodePolyline(encodePolyline(routes[run.routeIdx] ?? [])).flat() }))
-  const gains = exploreGains(buildAreaIndex(file), runs)
-  cache = { source, areaVersion: home.area.version, gains }
-  return gains
+    .map((run) => ({ id: run.id, date: run.date, points: decodePolyline(encodePolyline(routes[run.routeIdx] ?? [])) }))
+  const inputs = tracks.map(({ id, date, points }) => ({ id, date, ...activityCells(index, points.flat()) }))
+  const start = medianStart(tracks.flatMap(({ points }) => (points[0] ? [points[0]] : [])))
+  const area = { gains: exploreGains(index, inputs), summary: exploredSummary(aggregateCoverage(index, inputs, start)) }
+  cache = { source, areaVersion: home.area.version, area }
+  return area
+}
+
+export function getExploreGains(): ExploreGains | null {
+  return homeArea()?.gains ?? null
+}
+
+export function getExploredSummary(): ExploredSummary | null {
+  return homeArea()?.summary ?? null
+}
+
+/** Unit id → the day it passed 90 %, for the quartier sheet. */
+export function getCompletedSince(): Record<string, string> {
+  return Object.fromEntries((getExploreGains()?.complete ?? []).map((unit) => [unit.id, unit.since]))
 }
 
 export function getRunExploreGain(activityId: string): RunExploreGain | null {

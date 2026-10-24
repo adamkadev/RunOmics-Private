@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Progress's Explored card opens with its numbers, worked out on the
+  server, instead of a skeleton while the phone fetched every track.
+
+- A complete quartier's sheet says since when ("Complete since May 12").
+
+- Each nightly sync pushes one digest of the errors your phone reported
+  since the last one.
+
 - A race page: Progress's race card opens the next race, with Garmin's
   prediction beside your target and best, how the prediction moved over
   12 weeks, what each week has to give to reach the target, and the clock

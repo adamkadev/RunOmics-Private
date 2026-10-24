@@ -26,10 +26,13 @@ export function lastRunLabel(date: string, now: Date = new Date()): string {
 
 export function QuartierSheet({
   unit,
+  completeSince = null,
   onClose,
   onPlanRun,
 }: {
   unit: UnitCoverage
+  /** The day it passed 90 %; shown only while this view counts it complete too. */
+  completeSince?: string | null
   onClose: () => void
   onPlanRun?: (unitId: string) => void
 }) {
@@ -89,7 +92,9 @@ export function QuartierSheet({
                 style={{ left: `${COMPLETE_PCT}%` }}
               />
             </div>
-            <p className="text-right text-footnote leading-4 text-muted-foreground">{s.completeAt(formatPercent(COMPLETE_PCT))}</p>
+            <p className="text-right text-footnote leading-4 text-muted-foreground" data-testid="quartier-complete-note">
+              {completeSince && unit.pct >= COMPLETE_PCT ? s.completeSince(formatDate(completeSince, { style: 'bare' })) : s.completeAt(formatPercent(COMPLETE_PCT))}
+            </p>
           </div>
 
           {/* 8 pt between the columns, not the grid's 16. */}
