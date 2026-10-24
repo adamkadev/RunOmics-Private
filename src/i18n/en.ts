@@ -2216,6 +2216,11 @@ export const en = {
       title: (workflow: string) => `${workflow} failed`,
       body: (runUrl: string) => `Open the run: ${runUrl}`,
     },
+    // The nightly digest of what failed on a phone, never one push per error: anyone may post an error.
+    clientErrors: {
+      title: (count: number) => `${count} error${count === 1 ? '' : 's'} on your phone`,
+      body: (message: string) => `Latest: ${message}. Settings → Diagnostics has them all.`,
+    },
     exploreComplete: {
       title: (name: string) => `${name} explored`,
       body: (pct: string, done: number, total: number) => `${pct} of its streets run. ${done} of ${total} quartiers complete.`,

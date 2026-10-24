@@ -29,6 +29,8 @@ export type ActivitySyncState = { knownIds: string[] }
 
 export type ExploreMilestoneState = { areaId: string; announced: string[] }
 
+export type ClientErrorAlertState = { lastAt: string }
+
 export const { read: getLastPrState, write: saveLastPrState } =
   notificationDocument<PrState>('lastPrs')
 
@@ -46,3 +48,6 @@ export const { read: getLastActivitySyncState, write: saveLastActivitySyncState 
 
 export const { read: getLastExploreMilestoneState, write: saveLastExploreMilestoneState } =
   notificationDocument<ExploreMilestoneState>('lastExploreMilestones')
+
+export const { read: getLastClientErrorAlertState, write: saveLastClientErrorAlertState } =
+  notificationDocument<ClientErrorAlertState>('lastClientErrors')

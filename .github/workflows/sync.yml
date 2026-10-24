@@ -438,6 +438,8 @@ jobs:
             check overreaching-check
             check activity-sync-check
           fi
+          # Errors come from the phones, with or without new data.
+          check client-error-check
 
           # Each pass regenerates a surface only if its facts moved (a Firestore
           # read, no spend) and backfills another batch of run verdicts, without

@@ -14,6 +14,11 @@ export interface ClientErrorReport {
   device: string
 }
 
+/** Errors newer than the last one announced; with none announced yet, the first check only takes note. */
+export function errorsSince(reports: readonly ClientErrorReport[], lastAt: string | null): ClientErrorReport[] {
+  return lastAt === null ? [] : reports.filter((report) => report.at > lastAt)
+}
+
 const MAX_MESSAGE = 300
 const MAX_FIELD = 80
 

@@ -174,7 +174,9 @@ A phone's uncaught errors, unhandled rejections and route generator failures are
 `POST /api/client-errors` (at most 10 a page, deduplicated, 4 KB a report, 20 a minute per IP).
 The page is sent as a path only and every number with three or more decimals is replaced by `#`,
 so no coordinate leaves the device. Firestore `clientErrors` keeps the last 50; the owner reads
-them under Settings → Diagnostics (`GET`, owner only).
+them under Settings → Diagnostics (`GET`, owner only). Each nightly sync calls
+`POST /api/internal/client-error-check`, which pushes one digest of the errors since the last one
+announced (Firestore `notifications/lastClientErrors`), never a push per error, since anyone may post one.
 
 ## Service worker
 

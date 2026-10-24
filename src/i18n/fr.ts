@@ -2054,6 +2054,10 @@ export const fr = {
       title: (workflow: string) => `Échec : ${workflow}`,
       body: (runUrl: string) => `Ouvre l’exécution : ${runUrl}`,
     },
+    clientErrors: {
+      title: (count: number) => `${count} erreur${count > 1 ? 's' : ''} sur ton téléphone`,
+      body: (message: string) => `Dernière : ${message}. Tout est dans Réglages → Diagnostic.`,
+    },
     exploreComplete: {
       title: (name: string) => `${name} exploré`,
       body: (pct: string, done: number, total: number) => `${pct} de ses rues parcourues. ${done} quartier${done > 1 ? 's' : ''} complet${done > 1 ? 's' : ''} sur ${total}.`,
