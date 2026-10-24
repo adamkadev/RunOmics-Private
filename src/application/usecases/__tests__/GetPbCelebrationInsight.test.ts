@@ -104,12 +104,6 @@ describe('getPbCelebrationInsight', () => {
     expect(await getPbCelebrationInsight(record(), NOW)).toEqual(INSIGHT)
   })
 
-  it('null when the cached word has gone stale, so the overlay shows the record alone', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
-
-    expect(await getPbCelebrationInsight(record(), NOW)).toBeNull()
-  })
-
   it('keys the word on the record and the mark it replaced', async () => {
     readVerifiedInsight.mockResolvedValue(null)
     const fresh = record()

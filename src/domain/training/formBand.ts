@@ -1,10 +1,4 @@
-/**
- * - tired: fatigue well ahead of fitness;
- * - neutral: the ordinary training range;
- * - fresh: rested and ready for quality or a race;
- * - very fresh: rested long enough that fitness starts to slip (the same
- *   ceiling the taper reads as over-rested).
- */
+/** Very fresh is past ready: rested long enough that fitness starts to slip. */
 export type FormBand = 'tired' | 'neutral' | 'fresh' | 'veryFresh'
 
 export const FORM_BAND_THRESHOLDS = { tiredBelow: -10, freshAbove: 5, veryFreshAbove: 25 } as const

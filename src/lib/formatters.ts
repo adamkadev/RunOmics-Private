@@ -52,13 +52,6 @@ export function formatDelta(value: number, unit?: string): string {
   return unit ? `${body} ${unit}` : body
 }
 
-export function formatSignedDuration(seconds: number, unit?: string): string {
-  const rounded = Math.round(seconds)
-  const sign = rounded > 0 ? '+' : rounded < 0 ? MINUS : ''
-  const body = `${sign}${formatDuration(Math.abs(rounded))}`
-  return unit ? `${body} ${unit}` : body
-}
-
 export function formatPaceRange([fast, slow]: [number, number]): string {
   return `${formatClock(fast)}-${formatClock(slow)} /km`
 }

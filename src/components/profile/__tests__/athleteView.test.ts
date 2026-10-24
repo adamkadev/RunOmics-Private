@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
-import type { ProfileData } from '@/application/usecases/GetProfileData'
-import { athletePageView, profileView } from '../athleteView'
+import { athletePageView } from '../athleteView'
 
 const PROFILE: AthleteProfile = {
   displayName: 'Demo Runner',
@@ -50,16 +49,5 @@ describe('athletePageView', () => {
 
   it('leaves out a field the file does not have, rather than sending it as undefined', () => {
     expect(athletePageView({ lthrBpm: 170 })).toEqual({ lthrBpm: 170 })
-  })
-})
-
-describe('profileView', () => {
-  it('keeps the athlete to the name and the two headline metrics', () => {
-    const data = { hero: { lifetimeActivities: 3 }, athlete: PROFILE } as unknown as ProfileData
-    const view = profileView(data)
-
-    expect(view.athlete).toEqual({ displayName: 'Demo Runner', vmaKmh: 17.5, lthrBpm: 172 })
-    expect(view.hero).toBe(data.hero)
-    expect(JSON.stringify(view)).not.toContain('injuryHistory')
   })
 })

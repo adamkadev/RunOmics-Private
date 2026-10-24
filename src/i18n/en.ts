@@ -50,20 +50,6 @@ export const en = {
     toggle: 'Toggle theme',
   },
 
-  chartWindow: {
-    // A figure and a capital, as Consistency's 3M · 6M · 1Y.
-    ranges: {
-      '4w': '4W',
-      '6m': '6M',
-      '1y': '1Y',
-    },
-    previous: 'Previous period',
-    next: 'Next period',
-    empty: 'No data recorded for this period.',
-    notEnoughRuns: 'Not enough runs in this window',
-    tooFewToPlot: 'Too few points to draw a trend',
-  },
-
   dates: {
     monthShortYear: (month: string, year2: string) => `${month} ’${year2}`,
   },
@@ -118,7 +104,6 @@ export const en = {
   },
   glossary: {
     about: (term: string) => `What is ${term}?`,
-    aboutThese: 'What these numbers mean',
     form: {
       term: 'Form',
       definition: (tired: number, fresh: number, veryFresh: number) =>
@@ -2299,13 +2284,6 @@ export const en = {
     switcher: { week: 'Week', month: 'Month' },
     planned: 'Planned',
     easyEffortLabel: 'Z2 easy',
-    structure: {
-      warmup: 'Warm-up',
-      cooldown: 'Cool-down',
-      min: (m: number) => `${m}'`,
-      // Under Today's session bar: "6 × 20s strides".
-      strides: (reps: number, rep: string) => `${reps} × ${rep} strides`,
-    },
     openPlanner: 'Open the weekly planner',
     type: 'Type',
     races: 'Races',
@@ -2328,7 +2306,6 @@ export const en = {
       // Opens the map's route generator with the session's distance.
       findRoute: 'Find a route',
     },
-    continuous: 'continuous',
     // The rest day on one line, then the week's sessions still to come.
     restCard: {
       eyebrow: 'Rest',

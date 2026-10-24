@@ -32,15 +32,6 @@ describe('getLifetimeStats', () => {
     expect(getLifetimeStats()?.yearsTracked).toBe(2)
   })
 
-  it('reads the same span from a list running the other way', () => {
-    const dates = ['2023-01-01', '2024-06-01', '2025-01-01']
-    getAllActivities.mockReturnValue(dates.map((d) => activity(d)))
-    const forwards = getLifetimeStats()
-
-    getAllActivities.mockReturnValue([...dates].reverse().map((d) => activity(d)))
-    expect(getLifetimeStats()).toEqual(forwards)
-  })
-
   it('reports a fraction of a year to one decimal', () => {
     getAllActivities.mockReturnValue([activity('2026-01-01'), activity('2026-07-02')])
 

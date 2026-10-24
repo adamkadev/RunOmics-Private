@@ -142,8 +142,6 @@
   --bar-fade:              18px;
   --safe-bottom:           env(safe-area-inset-bottom, 0px);
   --tap-min:               44px;
-  --state-line:            1.5px;
-  --state-hatch:           40%;
   --state-ring:            2px;
   --scrim:                 rgba(0, 0, 0, 0.25);
   --scrim-strong:          rgba(0, 0, 0, 0.6);
@@ -174,7 +172,6 @@
   --delta-warn:              var(--warn);
   --good:                    var(--pos);
   --destructive:             var(--neg);
-  --metric-form:             var(--foreground);
   --metric-fitness:          var(--foreground);
   --metric-fatigue:          var(--muted-foreground);
   --tone-go:                 var(--pos);
@@ -302,7 +299,6 @@
   --delta-warn:              var(--warn);
   --good:                    var(--pos);
   --destructive:             var(--neg);
-  --metric-form:             var(--foreground);
   --metric-fitness:          var(--foreground);
   --metric-fatigue:          var(--muted-foreground);
   --tone-go:                 var(--pos);
@@ -771,33 +767,6 @@
     .lg, .lg > .lg-tint { transition: opacity 150ms ease-out !important; }
     .lg:is(button, a):active, .lg[data-pressed], .lg:has(> .lg-press:active) { transform: none; }
   }
-}
-
-/* Shape carries the state; --state-color, set by the caller to the session's zone, carries its intensity. */
-@utility state-done {
-  background: var(--state-color);
-}
-
-@utility state-planned {
-  border: var(--state-line) dashed var(--state-color);
-}
-
-@utility state-missed {
-  border: var(--state-line) solid var(--state-color);
-  background: repeating-linear-gradient(
-    135deg,
-    color-mix(in oklch, var(--state-color) var(--state-hatch), transparent) 0 3px,
-    transparent 3px 7px
-  );
-}
-
-@utility state-rest {
-  background: var(--track);
-}
-
-@utility today-bar {
-  border: 2px solid var(--accent);
-  background: color-mix(in oklab, var(--accent) 15%, transparent);
 }
 
 /* An outline, so the gap is whatever is under it, where a shadow ring had to guess the ground's colour. */

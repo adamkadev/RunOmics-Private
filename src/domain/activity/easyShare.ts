@@ -32,10 +32,6 @@ export function easyTime(sources: Iterable<EasyTimeSource>): { easySeconds: numb
   return { easySeconds, totalSeconds }
 }
 
-export function easyShareOfZones(zoneSeconds: Readonly<Record<number, number>>): EasyHardSplit | null {
-  return easyShare([{ hrZones: Object.entries(zoneSeconds).map(([zone, seconds]) => ({ zone: Number(zone), seconds })) }])
-}
-
 export function easyShare(sources: Iterable<EasyTimeSource>): EasyHardSplit | null {
   const { easySeconds, totalSeconds } = easyTime(sources)
   if (totalSeconds <= 0) return null

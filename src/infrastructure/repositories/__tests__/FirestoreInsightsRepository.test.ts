@@ -20,7 +20,7 @@ const { get, set, doc, collectionGet, collection, orderBy, startAt, endAt, selec
 vi.mock('firebase-admin/firestore', () => ({ FieldPath: { documentId: () => '__name__' } }))
 vi.mock('@/lib/firebase-admin', () => ({ getAdminFirestore: () => ({ collection }) }))
 
-const { readVerifiedInsight, saveCachedInsight, listCachedKeys, servableInsight, readVerdictPhrasing, saveVerdictPhrasing } = await import(
+const { readVerifiedInsight, saveCachedInsight, listCachedKeys, readVerdictPhrasing, saveVerdictPhrasing } = await import(
   '../FirestoreInsightsRepository'
 )
 
@@ -192,25 +192,6 @@ describe('read amplification', () => {
 
     expect(get).toHaveBeenCalledTimes(4)
     expect(collectionGet).not.toHaveBeenCalled()
-  })
-})
-
-describe('servableInsight', () => {
-  it('null with nothing on record', () => {
-    expect(servableInsight(undefined, 'facts-as-of-today')).toBeNull()
-  })
-
-  it('the insight once the record matches the hash asked for', () => {
-    expect(servableInsight(stored(), 'facts-as-generated')).toEqual({
-      headline: 'Jambes fraiches',
-      body: 'La semaine est legere, le tempo peut etre honnete.',
-      bullets: undefined,
-    })
-  })
-
-  it('null once the record no longer matches and its grace window has passed', () => {
-    const now = new Date('2026-08-04T09:00:00Z').getTime()
-    expect(servableInsight(stored(), 'facts-as-of-today', now)).toBeNull()
   })
 })
 

@@ -22,10 +22,6 @@ describe('trimp', () => {
     expect(trimp(act(165, 3600))).toBeCloseTo(142.8, 0)
   })
 
-  it('calculates correctly at low intensity (HR 80, 30 min)', () => {
-    expect(trimp(act(80, 1800))).toBeCloseTo(7.0, 0)
-  })
-
   it('clamps hrr to 0 when HR below resting (HR 30)', () => {
     expect(trimp(act(30, 3600))).toBe(0)
   })

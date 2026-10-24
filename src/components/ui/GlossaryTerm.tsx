@@ -6,7 +6,7 @@ import { FORM_BAND_THRESHOLDS } from '@/domain/training/formBand'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-export type GlossaryKey = Exclude<keyof typeof t.glossary, 'about' | 'aboutThese'>
+export type GlossaryKey = Exclude<keyof typeof t.glossary, 'about'>
 
 export function glossaryDefinition(term: GlossaryKey): string {
   const entry = t.glossary[term]
@@ -99,25 +99,5 @@ export function GlossaryTerm({
         </span>
       )}
     </span>
-  )
-}
-
-export function GlossaryInfo({ terms, className }: { terms: GlossaryKey[]; className?: string }) {
-  const [open, setOpen] = useState(false)
-  const id = useId()
-  return (
-    <>
-      <InfoButton open={open} onToggle={() => setOpen((v) => !v)} label={t.glossary.aboutThese} controls={id} className={className} />
-      {open && (
-        <dl id={id} className="order-last mt-2 w-full basis-full space-y-1 text-xs leading-snug text-subtle">
-          {terms.map((term) => (
-            <div key={term}>
-              <dt className="inline font-semibold text-muted-foreground">{t.glossary[term].term}. </dt>
-              <dd className="inline">{glossaryDefinition(term)}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-    </>
   )
 }

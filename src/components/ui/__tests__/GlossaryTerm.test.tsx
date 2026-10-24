@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { FORM_BAND_THRESHOLDS } from '@/domain/training/formBand'
 import { t } from '@/i18n'
-import { GlossaryInfo, GlossaryTerm, glossaryDefinition, type GlossaryKey } from '../GlossaryTerm'
+import { GlossaryTerm, glossaryDefinition, type GlossaryKey } from '../GlossaryTerm'
 
 const TERMS: GlossaryKey[] = ['form', 'fitness', 'fatigue', 'vma', 'lthr', 'thresholdPace', 'rpe', 'aerobicEffect', 'anaerobicEffect']
 
@@ -30,16 +30,5 @@ describe('GlossaryTerm', () => {
     await userEvent.click(info)
     expect(info).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByRole('note')).toHaveTextContent(t.glossary.vma.definition)
-  })
-})
-
-describe('GlossaryInfo', () => {
-  it('opens every term it covers at once', async () => {
-    render(<GlossaryInfo terms={['form', 'fitness', 'fatigue']} />)
-    await userEvent.click(screen.getByRole('button', { name: t.glossary.aboutThese }))
-
-    expect(screen.getByText(t.glossary.fitness.definition)).toBeInTheDocument()
-    expect(screen.getByText(t.glossary.fatigue.definition)).toBeInTheDocument()
-    expect(screen.getByText(glossaryDefinition('form'))).toBeInTheDocument()
   })
 })

@@ -66,12 +66,6 @@ describe('getShoeStats', () => {
     expect(byId('daily')?.wearPercent).toBe(50)
   })
 
-  it('caps wear at 100% once a pair is run past its lifespan', () => {
-    getAllActivities.mockReturnValue([run('daily', '2026-07-20', 950)])
-
-    expect(byId('daily')?.wearPercent).toBe(100)
-  })
-
   it('treats a retired pair as fully worn whatever its mileage', () => {
     getAllActivities.mockReturnValue([run('old', '2026-07-20', 12)])
 

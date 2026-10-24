@@ -60,14 +60,6 @@ describe('SegmentedTabs sizes', () => {
     expect(list().querySelectorAll(':scope > i')).toHaveLength(0)
   })
 
-  it('stretches across the row when asked to fill', () => {
-    render(<Tabs size="md" />)
-
-    expect(screen.getByRole('tablist').className).toContain('w-full')
-    expect(screen.getAllByRole('tab')[0]!.className).toContain('flex-auto')
-    expect(screen.getAllByRole('tab')[0]!.className).toContain('px-3')
-  })
-
   // A snapshot, so a refactor can't drop fill mode unseen.
   it('keeps fill mode whole (snapshot)', () => {
     render(<Tabs size="md" />)

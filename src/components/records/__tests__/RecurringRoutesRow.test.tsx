@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen } from '@testing-library/react'
 import { RecurringRoutes } from '../RecurringRoutes'
-import { TRAIL_RUNS } from '../recordsView'
 import { routeKey } from '@/lib/routeNames'
 import type { RecurringRoute } from '@/application/usecases/GetRecurringRoutes'
 import { t } from '@/i18n'
@@ -34,12 +33,6 @@ afterEach(() => {
 })
 
 describe('RecurringRoutes row', () => {
-  it('caps the trail at the latest runs, one bar each', () => {
-    render(<RecurringRoutes routes={[route(60)]} thisYear={2026} />)
-
-    expect(screen.getByTestId('pace-trail').children).toHaveLength(TRAIL_RUNS)
-  })
-
   it('outlines the latest bar under the white accent, and fills it under every other', () => {
     const latest = () => [...screen.getByTestId('pace-trail').children].find((bar) => bar.getAttribute('data-tone') === 'latest')!
 
@@ -109,13 +102,6 @@ describe('RecurringRoutes row', () => {
 
     expect(screen.getByTestId('route-best').textContent).toBe(`${t.records.recurring.bestPace('4:43')} · ${t.records.recurring.newBest} Jan 1`)
     expect(screen.queryByTestId('route-gap')).toBeNull()
-  })
-
-  it('paints the best bar in the accent and the latest in ink', () => {
-    render(<RecurringRoutes routes={[route(5)]} thisYear={2026} />)
-
-    const tones = [...screen.getByTestId('pace-trail').children].map((bar) => bar.getAttribute('data-tone'))
-    expect(tones).toEqual(['best', 'other', 'other', 'other', 'latest'])
   })
 
   it('says what a bar is, keys its colours, and shows the last six runs with no dates', () => {

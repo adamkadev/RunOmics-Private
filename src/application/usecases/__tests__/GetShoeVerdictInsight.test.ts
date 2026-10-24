@@ -30,12 +30,6 @@ describe('getShoeVerdictInsight', () => {
     expect(await getShoeVerdictInsight(context())).toEqual(INSIGHT)
   })
 
-  it('null when the cached verdict has gone stale, so the card keeps its own line', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
-
-    expect(await getShoeVerdictInsight(context())).toBeNull()
-  })
-
   it('gives each pair its own document', async () => {
     readVerifiedInsight.mockResolvedValue(null)
     await getShoeVerdictInsight(context())

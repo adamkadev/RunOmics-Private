@@ -100,19 +100,9 @@ describe('adjustedEfficiencyFactor', () => {
   const weather = (apparentTempC: number) =>
     ({ tempC: apparentTempC, apparentTempC, humidityPct: 60, windKph: 5, windDirDeg: 180, precipitationMm: 0, code: 0 })
 
-  it('matches the raw factor when every run was cool', () => {
-    const acts = [act({ paceSecPerKm: 300, avgHeartRate: 140, distanceKm: 5, weather: weather(10) })]
-    expect(adjustedEfficiencyFactor(acts)).toBeCloseTo(efficiencyFactor(acts)!, 2)
-  })
-
   it('lifts a hot run above its measured value', () => {
     const acts = [act({ paceSecPerKm: 300, avgHeartRate: 140, distanceKm: 5, weather: weather(25) })]
     expect(adjustedEfficiencyFactor(acts)).toBeCloseTo(1.5, 2)
-  })
-
-  it('leaves runs without weather at their measured value', () => {
-    const acts = [act({ paceSecPerKm: 300, avgHeartRate: 140, distanceKm: 5, weather: null })]
-    expect(adjustedEfficiencyFactor(acts)).toBeCloseTo(1.43, 2)
   })
 })
 

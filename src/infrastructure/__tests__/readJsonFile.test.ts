@@ -63,19 +63,11 @@ describe('readJsonFile', () => {
 
   it('falls back when the file is valid JSON but not an object', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    // `null` parses as JSON, yet is no usable T.
-    const filePath = write('null.json', 'null')
 
-    expect(readJsonFile(filePath, { years: [] })).toEqual({ years: [] })
-    expect(warn).toHaveBeenCalledOnce()
-  })
-
-  it('falls back on a top-level array or scalar too', () => {
-    vi.spyOn(console, 'warn').mockImplementation(() => {})
-
+    expect(readJsonFile(write('null.json', 'null'), { years: [] })).toEqual({ years: [] })
     expect(readJsonFile(write('scalar.json', '42'), null)).toBeNull()
     expect(readJsonFile(write('string.json', '"nope"'), null)).toBeNull()
-    // An array is `typeof 'object'` too.
     expect(readJsonFile(write('array.json', '[1, 2]'), null)).toBeNull()
+    expect(warn).toHaveBeenCalledTimes(4)
   })
 })

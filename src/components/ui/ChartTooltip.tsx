@@ -11,25 +11,3 @@ export function TooltipCard({ label, children }: { label?: ReactNode; children: 
     </div>
   )
 }
-
-export function tooltipNumber(value: number | null | undefined, format: (v: number) => string): string {
-  return typeof value === 'number' && Number.isFinite(value) ? format(value) : '—'
-}
-
-export function TooltipRow({
-  color,
-  name,
-  value,
-}: {
-  color?: string
-  name: string
-  value: ReactNode
-}) {
-  return (
-    <p className="flex items-center gap-1.5 text-xs">
-      {color && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />}
-      <span className="text-muted-foreground">{name}:</span>
-      <span className="font-semibold text-foreground">{value}</span>
-    </p>
-  )
-}

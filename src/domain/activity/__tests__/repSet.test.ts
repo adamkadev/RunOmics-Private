@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { repSet, setVerdict, trackDomain, trackPosition } from '../repSet'
+import { recoveryAverage, repSet, trackDomain, trackPosition } from '../repSet'
 import type { ActivitySplit } from '../types'
 
 const split = (
@@ -48,13 +48,13 @@ describe('repSet', () => {
   it('averages the recoveries between reps and leaves the cooldown out of it', () => {
     const set = repSet([
       rep(60),
-      split('interval_recovery', 120, 250), // 8:00/km
+      split('interval_recovery', 120, 250),
       rep(60),
-      split('interval_recovery', 120, 300), // 6:40/km
-      split('interval_cooldown', 600, 2000), // 5:00/km, must not count
+      split('interval_recovery', 120, 300),
+      split('interval_cooldown', 600, 2000),
     ])
 
-    expect(set?.meanRecoverySecPerKm).toBe(440)
+    expect(recoveryAverage(set!.reps)?.paceSecPerKm).toBe(436)
   })
 
   it('reads heart-rate drift across the reps, first to last', () => {
@@ -82,49 +82,6 @@ describe('repSet', () => {
   it('is not a rep set below two work intervals', () => {
     expect(repSet([split('interval_warmup', 600, 2000), rep(60)])).toBeNull()
     expect(repSet(null)).toBeNull()
-  })
-})
-
-describe('setVerdict', () => {
-  const build = (splits: ActivitySplit[]) => {
-    const set = repSet(splits)
-    if (!set) throw new Error('expected a rep set')
-    return set
-  }
-
-  it('calls out recoveries that slowed while the reps held', () => {
-    const set = build([
-      rep(60, 174),
-      split('interval_recovery', 89, 145),
-      rep(60, 174),
-      split('interval_recovery', 89, 60),
-    ])
-
-    expect(setVerdict(set)).toBe('repsHeldRecoveriesSlowed')
-  })
-
-  it('calls the work faded once the reps stop landing in the band', () => {
-    expect(setVerdict(build([rep(60), rep(90)]))).toBe('repsFaded')
-  })
-
-  it('calls a tight set held', () => {
-    expect(setVerdict(build([rep(60), rep(61)]))).toBe('repsHeld')
-  })
-
-  it('calls a set that got faster built, not drifted', () => {
-    // 4:00 -> 3:59 -> 3:32 -> 3:33: a progression no band fits.
-    const set = build([rep(72, 168), rep(71, 172), rep(64, 178), rep(64, 181)])
-
-    expect(setVerdict(set)).toBe('repsBuilt')
-  })
-
-  it('holds the verdict when one slow rep widens the spread but heart rate came down', () => {
-    // Four in band, one adrift: a wide spread, but not a set that gave way.
-    const set = build([rep(60, 174), rep(60, 174), rep(60, 172), rep(60, 171), rep(72, 170)])
-
-    expect(set.inBand).toBe(4)
-    expect(set.hrDriftBpm).toBe(-4)
-    expect(setVerdict(set)).toBe('repsHeld')
   })
 })
 

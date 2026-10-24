@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CURATED_ACCENTS } from '@/lib/accentScale'
 import { TOKEN_BLOCKS, accentTokens } from '@/lib/themeTokens'
-import { TRAINING_METRIC_COLORS, ZONE_COLOR_CLASSES } from '@/lib/colors'
 import { STATUS } from '@/lib/statusColors'
 import { milestoneIcon } from '@/components/milestones/milestoneVisuals'
 
@@ -60,13 +59,6 @@ describe('markers that mean something do not move with the accent', () => {
     'medal gold': STATUS.gold.dot,
     'medal silver': STATUS.silver.dot,
     'medal bronze': STATUS.bronze.dot,
-    'milestone record trophy': milestoneIcon('record').className,
-    'Form': TRAINING_METRIC_COLORS.form,
-    'Fitness': TRAINING_METRIC_COLORS.fitness,
-    'Fatigue': TRAINING_METRIC_COLORS.fatigue,
-    ...Object.fromEntries(
-      Object.entries(ZONE_COLOR_CLASSES).map(([zone, classes]) => [`zone ${zone}`, classes.bg]),
-    ),
   }
 
   it.each(Object.entries(FIXED_MARKERS))('%s does not draw from the accent', (_name, value) => {

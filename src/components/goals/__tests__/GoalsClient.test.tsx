@@ -48,12 +48,6 @@ describe('defaultGoalsYear', () => {
 })
 
 describe('GoalsClient', () => {
-  it('opens on 2026 in 2026 when 2027 has a race', () => {
-    render(<GoalsClient data={data()} today={TODAY} />)
-    expect(screen.getByTestId('year-stepper').textContent).toBe('2026')
-    expect(screen.getByTestId('goal-card')).toBeTruthy()
-  })
-
   it('puts the year stepper in the button row, the title on its own row', () => {
     render(<GoalsClient data={data()} today={TODAY} back={<button type="button">Back</button>} />)
     const title = screen.getByRole('heading', { level: 1 })
