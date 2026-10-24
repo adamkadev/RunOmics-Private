@@ -129,10 +129,10 @@ describe('the hub helpers', () => {
 })
 
 describe('ProgressHub (3.0)', () => {
-  it('opens each sub-page: the race and the year Goals, the records, a tile per page, Settings from the gear', () => {
+  it('opens each sub-page: the race its page, the year Goals, the records, a tile per page, Settings from the gear', () => {
     render(<ProgressHub view={progressHubView(INPUT)} />)
 
-    expect(screen.getByTestId('race-tile').getAttribute('href')).toBe('/goals')
+    expect(screen.getByTestId('race-tile').getAttribute('href')).toBe('/race')
     expect(screen.getByTestId('year-hero').getAttribute('href')).toBe('/goals')
     expect(within(screen.getByTestId('records-tile')).getAllByRole('link')[0]!.getAttribute('href')).toBe('/records')
     expect(screen.getAllByTestId('record')).toHaveLength(3)

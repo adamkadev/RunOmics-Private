@@ -9,7 +9,8 @@ import { deltaColor, deltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { Stat, StatGrid } from '@/components/ui/Stat'
 import { t } from '@/i18n'
-import { AxisLabels, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, STAT_TONE, Sentence, linePath } from './AnalyticsKit'
+import { AxisLabels, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, STAT_TONE, Sentence } from './AnalyticsKit'
+import { linePath } from '@/lib/linePath'
 import {
   efficiencyView,
   heatView,

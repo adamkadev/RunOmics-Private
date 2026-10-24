@@ -2056,6 +2056,26 @@ export const fr = {
     },
   },
 
+  race: {
+    back: 'Progression',
+    predicted: 'Prédit',
+    target: 'Objectif',
+    best: 'Record',
+    standTitle: 'Où tu en es',
+    toFind: (gap: string) => `${gap} à trouver.`,
+    inHand: (gap: string) => `${gap} d’avance.`,
+    perWeek: (seconds: number, weeks: number) => `Environ ${seconds} s par semaine sur les ${weeks} semaines restantes.`,
+    trendTitle: 'Prédiction, 12 dernières semaines',
+    trendChange: (change: string, perWeek: string) => `${change} en 12 semaines, ${perWeek} par semaine.`,
+    trendFlat: 'Inchangée en 12 semaines.',
+    pacingTitle: 'Allure',
+    pacingCaption: 'Allure constante : le chrono à chaque passage si tu tiens une seule allure.',
+    split: 'Passage',
+    pace: 'Allure',
+    finish: 'Arrivée',
+    none: 'Aucune course à venir. Ajoute-en une dans Garmin Connect, elle s’affichera ici après la prochaine synchro.',
+  },
+
   nextRace: {
     countdown: (days: number) => `J-\u2060${days}`,
     today: 'Aujourd’hui',

@@ -2217,6 +2217,26 @@ export const en = {
     },
   },
 
+  race: {
+    back: 'Progress',
+    predicted: 'Predicted',
+    target: 'Target',
+    best: 'Best',
+    standTitle: 'Where you stand',
+    toFind: (gap: string) => `${gap} to find.`,
+    inHand: (gap: string) => `${gap} in hand.`,
+    perWeek: (seconds: number, weeks: number) => `About ${seconds} s a week over the ${weeks} weeks left.`,
+    trendTitle: 'Prediction, last 12 weeks',
+    trendChange: (change: string, perWeek: string) => `${change} in 12 weeks, ${perWeek} a week.`,
+    trendFlat: 'Unchanged in 12 weeks.',
+    pacingTitle: 'Pacing',
+    pacingCaption: 'Even pace: the clock at each split if you hold one pace.',
+    split: 'Split',
+    pace: 'Pace',
+    finish: 'Finish',
+    none: 'No race coming up. Add one in Garmin Connect and it shows here after the next sync.',
+  },
+
   nextRace: {
     // A word joiner after the hyphen keeps "D-64" on one line; the font has no
     // U+2011, which would draw from a fallback face.

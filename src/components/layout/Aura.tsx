@@ -22,6 +22,7 @@ const PALETTES: Record<string, Palette> = {
   '/athlete': ['--zone-2', '--zone-4', '--accent'],
   '/athlete/vo2max': ['--accent', '--zone-3', '--zone-2'],
   '/goals': ['--accent', '--warn', '--zone-2'],
+  '/race': ['--accent', '--warn', '--zone-2'],
   '/settings': ['--zone-1', '--accent', '--zone-3'],
   // A Progress page, as Records.
   '/shoes': ['--warn', '--accent', '--zone-3'],
