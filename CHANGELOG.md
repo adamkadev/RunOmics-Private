@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The maps stay dark on the dark page after you leave the app and come back.
+  iOS flips the page to light and back for its app-switcher snapshots; the
+  heatmap and the activity map ignored a flip back that came while the light
+  style's tiles were still loading, which on the way out of the app is most
+  of them, and stayed light. They now act on any theme change once the
+  style itself has loaded, tiles or not.
+
 - The background glow is on every page but the maps: All time, the sign-in
   and the not-found page now have it too, and a page with no palette of its
   own takes Today's. An activity and Activities' Map view still have none.

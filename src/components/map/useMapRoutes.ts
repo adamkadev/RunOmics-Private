@@ -257,8 +257,9 @@ export function useMapRoutes(
         if (isDark() !== dark) swapTheme();
       });
 
+      // Not map.isStyleLoaded(): it stays false while tiles load, long after style.load, and a flip then went unseen.
       const observer = new MutationObserver(() => {
-        if (cancelled || !map.isStyleLoaded()) return;
+        if (cancelled || !styleLoadedRef.current) return;
         if (isDark() !== dark) {
           swapTheme();
         } else if (readAccent() !== accent) {
