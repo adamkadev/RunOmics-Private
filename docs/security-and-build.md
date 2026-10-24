@@ -135,7 +135,7 @@ Firestore-backed pages. `PORT` comes from `.env.e2e` (3100) so a personal dev se
 running on 3000 does not collide with the suite's own build; both Playwright configs read
 it, and the screenshot run can still be pointed elsewhere with `SCREENSHOT_BASE_URL`.
 
-The suite also has an `iphone` project: `e2e/layout.spec.ts` alone, in WebKit at iPhone 15 Pro
+The suite also has an `iphone` project: `e2e/layout.spec.ts` alone, in WebKit at iPhone 16 Pro
 size, walks every page, every tab of a run and every Analytics tab and period, and fails on a
 horizontal scroll or on text past its clipping box or the screen. It waits for animations to
 end first, and blocks the service worker, whose registration WebKit refuses on `localhost`.

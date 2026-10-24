@@ -15,8 +15,8 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /layout\.spec\.ts/ },
-    // Safari's engine at an iPhone's size, where the app is used: text past an edge shows there first.
-    { name: 'iphone', use: { ...devices['iPhone 15 Pro'], serviceWorkers: 'block' }, testMatch: /layout\.spec\.ts/ },
+    // Safari's engine at the athlete's own phone, where the app is used: text past an edge shows there first.
+    { name: 'iphone', use: { ...devices['iPhone 16 Pro'], serviceWorkers: 'block' }, testMatch: /layout\.spec\.ts/ },
   ],
   webServer: {
     command: 'npm run e2e:build && npm run e2e:start',
