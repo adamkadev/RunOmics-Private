@@ -2,6 +2,7 @@ import { buildAreaIndex } from '@/domain/explore/coverage'
 import { parseAreaFile } from '@/domain/explore/areaFile'
 import { exploreGains, type CompleteUnit, type ExploreGains, type RunExploreGain } from '@/domain/explore/gains'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { decodePolyline, encodePolyline } from '@/lib/polyline'
 import {
   getLastExploreMilestoneState,
   saveLastExploreMilestoneState,
@@ -23,9 +24,10 @@ export function getExploreGains(): ExploreGains | null {
   if (!file) return null
   const { routes } = getAllRoutes()
   // Activities carry a date only; Garmin ids grow with time, so they order a day's runs.
+  // Rounded through the polyline the Explored card's worker decodes, or a cell on a boundary can count on one side only.
   const runs = [...home.runs]
     .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id, undefined, { numeric: true }))
-    .map((run) => ({ id: run.id, coords: (routes[run.routeIdx] ?? []).flat() }))
+    .map((run) => ({ id: run.id, coords: decodePolyline(encodePolyline(routes[run.routeIdx] ?? [])).flat() }))
   const gains = exploreGains(buildAreaIndex(file), runs)
   cache = { source, areaVersion: home.area.version, gains }
   return gains
@@ -35,9 +37,9 @@ export function getRunExploreGain(activityId: string): RunExploreGain | null {
   return getExploreGains()?.byRun.get(activityId) ?? null
 }
 
-/** With nothing stored yet, every quartier already complete is old news: the first check only takes note. */
-export function newlyComplete(complete: readonly CompleteUnit[], last: ExploreMilestoneState | null): CompleteUnit[] {
-  if (!last) return []
+/** With nothing stored for this area yet, a quartier already complete is old news: the first check only takes note. */
+export function newlyComplete(complete: readonly CompleteUnit[], last: ExploreMilestoneState | null, areaId: string): CompleteUnit[] {
+  if (!last || last.areaId !== areaId) return []
   const announced = new Set(last.announced)
   return complete.filter((unit) => !announced.has(unit.id))
 }
@@ -50,13 +52,15 @@ export async function getExploreMilestones(): Promise<{
   commit: () => Promise<void>
 }> {
   const gains = getExploreGains()
-  if (!gains) return { newlyComplete: [], completeCount: 0, unitCount: 0, commit: async () => {} }
+  const areaId = getExploreHome()?.area.id
+  if (!gains || !areaId) return { newlyComplete: [], completeCount: 0, unitCount: 0, commit: async () => {} }
   const last = await getLastExploreMilestoneState()
-  const announced = [...new Set([...(last?.announced ?? []), ...gains.complete.map((unit) => unit.id)])]
+  const kept = last?.areaId === areaId ? last.announced : []
+  const announced = [...new Set([...kept, ...gains.complete.map((unit) => unit.id)])]
   return {
-    newlyComplete: newlyComplete(gains.complete, last),
+    newlyComplete: newlyComplete(gains.complete, last, areaId),
     completeCount: gains.complete.length,
     unitCount: gains.unitCount,
-    commit: () => saveLastExploreMilestoneState({ announced }),
+    commit: () => saveLastExploreMilestoneState({ areaId, announced }),
   }
 }

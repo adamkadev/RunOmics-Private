@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     await sendPushesToAllDevices(newlyComplete.map((unit) => ({ title: n.title(unit.name), body: n.body(formatPercent(unit.pct), completeCount, unitCount) })))
     await commit()
 
-    return NextResponse.json({ newlyComplete: newlyComplete.map((unit) => unit.name) })
+    // A count, not the names: the sync prints this body into the Actions log.
+    return NextResponse.json({ newlyComplete: newlyComplete.length })
   })
 }
