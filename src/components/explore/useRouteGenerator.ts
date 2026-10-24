@@ -77,7 +77,7 @@ interface Result {
 /** About a metre: GPS noise under it asks for no new batch. */
 const startKeyOf = (origin: LonLat | null) => (origin ? `${origin[0].toFixed(5)},${origin[1].toFixed(5)}` : 'quartier')
 
-const prefsKeyOf = (p: RoutePreferences) => `${p.avoidBusyRoads ? 1 : 0}${p.newStreetsFirst ? 1 : 0}`
+const prefsKeyOf = (p: RoutePreferences) => `${p.avoidBusyRoads ? 1 : 0}${p.newStreetsFirst ? 1 : 0}${p.flatForReps ? 1 : 0}`
 
 /** "Avoid busy roads" asks for a new batch: the provider routes around them. */
 export function useRouteGenerator(input: RouteGeneratorInput, deps: RouteGeneratorDeps = {}): RouteGenerator {

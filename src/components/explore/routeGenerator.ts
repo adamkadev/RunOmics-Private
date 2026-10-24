@@ -26,6 +26,8 @@ export interface ExplorePlan {
   /** The whole session, strides and recoveries included. */
   distanceM: number | null
   paceSecPerKm: number | null
+  /** Reps or a tempo: the loop should be flat and clear of crossings. */
+  quality: boolean
 }
 
 /**

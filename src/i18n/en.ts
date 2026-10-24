@@ -366,8 +366,10 @@ export const en = {
         options: 'Route options',
         avoidBusyRoads: 'Avoid busy roads',
         newStreetsFirst: 'New streets first',
+        // On by itself on a reps or tempo day: flat ground, on paths and cycleways rather than across streets.
+        flatForReps: 'Flat for the reps',
         // The options row's summary, "Loop · Avoid busy roads · New streets first": one line on a 393 pt phone.
-        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first' },
+        summary: { avoidBusyRoads: 'Avoid busy roads', newStreetsFirst: 'New streets first', flatForReps: 'Flat' },
         distanceStat: 'Distance',
         timeStat: 'Time',
         // Under the time: the pace it is worked out at, "5:50".

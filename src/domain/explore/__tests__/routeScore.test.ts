@@ -16,7 +16,7 @@ const index = buildAreaIndex(testArea())
 /** Row 0 (y 0–150 m) has been run, from x 0 to 1200 m. */
 const visited: ReadonlySet<number> = new Set(cells(0, 7, 0, 0))
 
-const OFF: RoutePreferences = { avoidBusyRoads: false, newStreetsFirst: false }
+const OFF: RoutePreferences = { avoidBusyRoads: false, newStreetsFirst: false, flatForReps: false }
 
 function candidate(
   seed: number,
@@ -80,7 +80,7 @@ describe('measureRoute', () => {
   })
 
   it('measures an empty route as nothing', () => {
-    expect(measureRoute(index, visited, candidate(5, []))).toEqual({ lengthM: 0, newShare: 0, busyShare: 0, newSteps: [] })
+    expect(measureRoute(index, visited, candidate(5, []))).toEqual({ lengthM: 0, newShare: 0, busyShare: 0, trafficFreeShare: 0, newSteps: [] })
   })
 })
 
@@ -89,6 +89,7 @@ describe('scoreRoutes', () => {
     const [scored] = scoreRoutes(index, visited, [known(1, { distanceM: 5500, waytypes: [[0, 2, 1]] })], 5000, {
       avoidBusyRoads: true,
       newStreetsFirst: true,
+      flatForReps: false,
     })
 
     expect(scored!.score).toBeCloseTo(0.1 + ROUTE_W_NEW_ON * 1 + ROUTE_W_BUSY_ON * 1, 9)
@@ -116,10 +117,22 @@ describe('scoreRoutes', () => {
     const order = (prefs: RoutePreferences) =>
       scoreRoutes(index, visited, [newButBusy, knownAndQuiet], 1200, prefs).map((r) => r.candidate.seed)
 
-    expect(order({ avoidBusyRoads: true, newStreetsFirst: false })).toEqual([2, 1])
-    expect(order({ avoidBusyRoads: false, newStreetsFirst: true })).toEqual([1, 2])
-    expect(order({ avoidBusyRoads: false, newStreetsFirst: false })).toEqual([1, 2])
-    expect(order({ avoidBusyRoads: true, newStreetsFirst: true })).toEqual([2, 1])
+    expect(order({ avoidBusyRoads: true, newStreetsFirst: false, flatForReps: false })).toEqual([2, 1])
+    expect(order({ avoidBusyRoads: false, newStreetsFirst: true, flatForReps: false })).toEqual([1, 2])
+    expect(order({ avoidBusyRoads: false, newStreetsFirst: false, flatForReps: false })).toEqual([1, 2])
+    expect(order({ avoidBusyRoads: true, newStreetsFirst: true, flatForReps: false })).toEqual([2, 1])
+  })
+
+  it('with Flat for the reps, puts a flat loop on paths before a hilly one on streets', () => {
+    const hillyStreets = fresh(1, { distanceM: 1200, waytypes: [[0, 2, 3]] })
+    const flatPaths = known(2, { distanceM: 1200, waytypes: [[0, 2, 7]] })
+    hillyStreets.ascentM = 30
+    flatPaths.ascentM = 2
+    const order = (flatForReps: boolean) =>
+      scoreRoutes(index, visited, [hillyStreets, flatPaths], 1200, { avoidBusyRoads: false, newStreetsFirst: false, flatForReps }).map((r) => r.candidate.seed)
+
+    expect(order(false)).toEqual([1, 2])
+    expect(order(true)).toEqual([2, 1])
   })
 
   it('keeps the lower seed first on a tie', () => {

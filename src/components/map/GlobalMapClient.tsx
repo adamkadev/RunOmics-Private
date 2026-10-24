@@ -231,18 +231,19 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
 
   const nextCardRef = useRef<HTMLButtonElement>(null);
   const expandRef = useRef<HTMLButtonElement>(null);
+  const [routePrefs, setRoutePrefs] = useState(() => ({ avoidBusyRoads: true, newStreetsFirst: true, flatForReps: !!generator?.plan?.quality }));
   const planRun = useCallback(
     (unitId: string) => {
       const active = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
       const opener = { element: active, fromNextCard: !!active?.closest("[data-testid='next-quartier-card']") };
       const plan = generatorPlan(explorePlans, null, today);
       setGenerator({ ...generatorTarget(null, { unitId, plan, medianKm, easyPace }), plan, returnTo: { expanded, unitId: openUnitId }, opener });
+      setRoutePrefs((prefs) => ({ ...prefs, flatForReps: !!plan?.quality }));
       setOpenUnitId(null);
     },
     [explorePlans, today, medianKm, easyPace, expanded, openUnitId],
   );
   const onPlanRun = districtsArea ? planRun : undefined;
-  const [routePrefs, setRoutePrefs] = useState({ avoidBusyRoads: true, newStreetsFirst: true });
   const [drawnRoute, setDrawnRoute] = useState<ScoredRoute | null>(null);
   const [startMode, setStartMode] = useState<RouteStartMode>("pick");
   const [pickedStart, setPickedStart] = useState<[number, number] | null>(null);

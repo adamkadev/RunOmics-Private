@@ -46,6 +46,7 @@ export function explorePlanOn(
     label: planLabel(kind ? kindLabel(kind.type, kind.kind) : null, title),
     distanceM: workout.distanceM && workout.distanceM > 0 ? Math.round(workout.distanceM) : null,
     paceSecPerKm: planPaceSecPerKm(workout),
+    quality: kind?.kind === 'quality',
   }
 }
 
