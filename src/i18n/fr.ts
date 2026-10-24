@@ -416,6 +416,13 @@ export const fr = {
       data: 'Données',
       account: 'Compte',
       notifications: 'Notifications',
+      diagnostics: 'Diagnostic',
+    },
+    diagnostics: {
+      recentErrors: 'Erreurs récentes',
+      loading: 'Chargement…',
+      none: 'Aucune erreur enregistrée.',
+      loadFailed: 'Impossible de charger les erreurs.',
     },
     sync: {
       subtitle: 'Récupérer les sorties du jour sans attendre cette nuit.',

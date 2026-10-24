@@ -8,6 +8,7 @@ import { Providers } from './providers'
 import { AppShell } from '@/components/layout/AppShell'
 import { ServiceWorkerRegistration } from '@/components/layout/ServiceWorkerRegistration'
 import { NoPinchZoom } from '@/components/layout/NoPinchZoom'
+import { ClientErrorReporter } from '@/components/layout/ClientErrorReporter'
 import { t } from '@/i18n'
 import {
   ACCENT_IDS,
@@ -115,6 +116,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppShell>{children}</AppShell>
         </Providers>
         <NoPinchZoom />
+        <ClientErrorReporter />
         <ServiceWorkerRegistration />
         <Analytics />
         <SpeedInsights />

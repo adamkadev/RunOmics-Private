@@ -438,6 +438,14 @@ export const en = {
       data: 'Data',
       account: 'Account',
       notifications: 'Notifications',
+      diagnostics: 'Diagnostics',
+    },
+    // What failed on a phone, sent by the app itself (never a location): the last fifty, newest first.
+    diagnostics: {
+      recentErrors: 'Recent errors',
+      loading: 'Loading…',
+      none: 'No errors recorded.',
+      loadFailed: 'The errors couldn’t be loaded.',
     },
     sync: {
       subtitle: 'Pull in today’s runs without waiting for tonight.',
