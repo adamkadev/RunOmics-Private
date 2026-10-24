@@ -31,7 +31,7 @@ export function useUrlParam(name: string): [string | null, (value: string | null
       if (next === null) url.searchParams.delete(name)
       else url.searchParams.set(name, next)
       window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
-      window.dispatchEvent(new PopStateEvent('popstate'))
+      window.dispatchEvent(new Event(URL_PARAMS_EVENT))
     },
     [name],
   )
@@ -39,7 +39,7 @@ export function useUrlParam(name: string): [string | null, (value: string | null
   return [value, set]
 }
 
-/** No popstate, unlike the setter: the app shell hears nothing, so the page opened next is a push, at its top. */
+/** No popstate, as with the setter: the app shell hears nothing, so the page opened next is a push, at its top. */
 export function removeUrlParams(names: readonly string[]): void {
   const url = new URL(window.location.href)
   const present = names.filter((name) => url.searchParams.has(name))

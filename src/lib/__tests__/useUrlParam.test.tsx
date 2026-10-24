@@ -21,15 +21,20 @@ describe('useUrlParam', () => {
     expect(screen.getByRole('button')).toHaveTextContent('dynamics')
   })
 
-  it('writes it back without adding a history entry', () => {
+  it('writes it back without adding a history entry, or a popstate the app shell would take for Back', () => {
     window.history.replaceState(null, '', '/activities/a1')
     const before = window.history.length
+    let popped = 0
+    const onPop = () => popped++
+    window.addEventListener('popstate', onPop)
     render(<Probe />)
 
     act(() => screen.getByRole('button').click())
+    window.removeEventListener('popstate', onPop)
     expect(window.location.search).toBe('?tab=charts')
     expect(screen.getByRole('button')).toHaveTextContent('charts')
     expect(window.history.length).toBe(before)
+    expect(popped).toBe(0)
 
     act(() => screen.getByRole('button').click())
     expect(window.location.search).toBe('')
