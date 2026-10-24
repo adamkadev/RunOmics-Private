@@ -34,6 +34,9 @@ All notable changes to this project are documented in this file.
   title: a year's range now reads by its months ("Oct 2025 – Oct 2026"),
   short enough to stay beside it.
 
+- On a laptop, Progress's Consistency card is as tall as Explored beside
+  it, its week bars grown to fill it, instead of stopping short.
+
 - The next quartier is the nearest one not yet complete, so the quartiers
   around home are finished first and the suggestion moves outward from
   there; it used to favour the least explored, an untouched quartier
