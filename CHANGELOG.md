@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The server runs in Paris instead of Washington, next to the
+  database and the route provider: every request that is not a cached
+  page answers about 150 ms sooner (the sync, the map's tracks, new routes,
+  a page's first render after a sync).
+
 - The route generator times a loop at your own easy pace, the median of
   your last eight weeks' easy runs, rather than the plan's prescription: a
   threshold day read "At 5:10", the session's reps and warm-up averaged.
