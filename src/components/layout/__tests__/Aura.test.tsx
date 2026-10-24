@@ -19,16 +19,15 @@ describe('the aura', () => {
     expect(auraPalette('/shoes')).toEqual(['--warn', '--accent', '--zone-3'])
     expect(auraPalette('/shoes/demo-shoe-0000000000000001')).toEqual(['--warn', '--accent', '--zone-3'])
     expect(auraPalette('/shoes/abc/')).toEqual(['--warn', '--accent', '--zone-3'])
-    expect(auraPalette('/shoesx')).toBeNull()
     route.pathname = '/shoes/abc'
     render(<Aura />)
     expect(screen.getByTestId('aura').style.getPropertyValue('--aura-1')).toBe('var(--warn)')
   })
 
-  it('draws nothing on a page with a map hero', () => {
+  it('draws nothing on an activity, under its map hero', () => {
     expect(auraPalette('/activities/123')).toBeNull()
-    expect(auraPalette('/map')).toBeNull()
-    route.pathname = '/map'
+    expect(auraPalette('/activities/123/')).toBeNull()
+    route.pathname = '/activities/123'
     render(<Aura />)
     expect(screen.queryByTestId('aura')).toBeNull()
   })
@@ -42,6 +41,13 @@ describe('the aura', () => {
     render(<Aura />)
     expect(screen.queryByTestId('aura')).toBeNull()
     window.history.replaceState(null, '', '/')
+  })
+
+  it("glows on All time, and on a page with no palette of its own in Today's", () => {
+    expect(auraPalette('/all-time')).toEqual(['--zone-3', '--accent', '--zone-2'])
+    expect(auraPalette('/sign-in')).toEqual(auraPalette('/'))
+    expect(auraPalette('/no-such-page')).toEqual(auraPalette('/'))
+    expect(auraPalette('/shoesx')).toEqual(auraPalette('/'))
   })
 
   it('is a sibling layer that takes no taps, its colours as custom properties', () => {

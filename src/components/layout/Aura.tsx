@@ -7,15 +7,18 @@ import { useUrlParam } from '@/lib/useUrlParam'
 /** CSS custom property names, one per glow. */
 type Palette = readonly [string, string, string]
 
+const TODAY: Palette = ['--accent', '--zone-2', '--zone-3']
+
 /** Pages with a map hero (an activity, the map, the share card) have none, and nor has Activities' Map view. */
 const PALETTES: Record<string, Palette> = {
-  '/': ['--accent', '--zone-2', '--zone-3'],
+  '/': TODAY,
   '/activities': ['--accent', '--zone-2', '--zone-1'],
   '/plan': ['--zone-4', '--zone-2', '--accent'],
   '/analytics': ['--zone-2', '--zone-3', '--accent'],
   '/profile': ['--accent', '--zone-3', '--warn'],
   '/records': ['--warn', '--accent', '--zone-3'],
   '/consistency': ['--accent', '--zone-2', '--accent'],
+  '/all-time': ['--zone-3', '--accent', '--zone-2'],
   '/athlete': ['--zone-2', '--zone-4', '--accent'],
   '/athlete/vo2max': ['--accent', '--zone-3', '--zone-2'],
   '/goals': ['--accent', '--warn', '--zone-2'],
@@ -29,9 +32,9 @@ const FAMILIES = ['/shoes']
 
 export function auraPalette(pathname: string, view: string | null = null): Palette | null {
   const path = pathname.replace(/\/+$/, '') || '/'
-  if (path === '/activities' && view === 'map') return null
+  if (path.startsWith('/activities/') || (path === '/activities' && view === 'map')) return null
   const family = FAMILIES.find((root) => path.startsWith(`${root}/`))
-  return PALETTES[path] ?? (family ? PALETTES[family] : undefined) ?? null
+  return PALETTES[path] ?? (family ? PALETTES[family] : undefined) ?? TODAY
 }
 
 /**

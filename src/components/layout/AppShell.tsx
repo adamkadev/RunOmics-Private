@@ -69,7 +69,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen">
         <ThemeSync />
-        <main>{children}</main>
+        <main className="relative min-h-screen overflow-x-clip">
+          <Aura />
+          <div className="relative">{children}</div>
+        </main>
       </div>
     )
   }
