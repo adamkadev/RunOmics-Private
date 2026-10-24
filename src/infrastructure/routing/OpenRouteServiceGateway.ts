@@ -22,16 +22,17 @@ const LOG_BODY_LIMIT = 300
 const NO_ROUTE_CODES = new Set([2009, 2010])
 const NO_ROUTE_MESSAGE = /route could not be found|could not find routable point|unable to find a route/i
 
-function requestBody({ start, lengthM, seed }: RoundTripRequest) {
+function requestBody({ start, lengthM, seed, vias = [] }: RoundTripRequest) {
+  const tour = vias.length > 0
   return {
-    coordinates: [start],
+    coordinates: tour ? [start, ...vias, start] : [start],
     elevation: true,
     instructions: false,
     preference: 'recommended',
     units: 'm',
     extra_info: ['waytype', 'noise'],
     options: {
-      round_trip: { length: Math.round(lengthM), points: 4, seed },
+      ...(tour ? {} : { round_trip: { length: Math.round(lengthM), points: 4, seed } }),
       avoid_features: ['ferries', 'fords'],
     },
   }
