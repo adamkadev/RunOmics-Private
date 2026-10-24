@@ -48,4 +48,4 @@ console.log(`  They will keep working until Garmin expires the OAuth1 token, whi
 console.log(`  is not something this command - or garth - can see in advance.\n`)
 console.log(`  When it does expire the sync stops, and scripts/get_secret.py cannot`)
 console.log(`  mint a replacement: Garmin's March 2026 auth change is what broke it.`)
-console.log(`  See the Garmin credentials section of README.md.\n`)
+console.log(`  See "Optional: the garth token" under Setup in README.md.\n`)

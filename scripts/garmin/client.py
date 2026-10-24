@@ -74,9 +74,9 @@ _REFRESH_FAILED = (
     "Garmin changed the auth flow in March 2026, which is why garth was "
     "deprecated. scripts/get_secret.py will fail for the same reason.\n"
     "\n"
-    "Run npm run coach:garmin-auth to confirm, then see 'Generate your "
-    "Garmin secret' in README.md and the linked garth discussion for the "
-    "current workaround."
+    "Run npm run coach:garmin-auth to confirm, then see 'Optional: the "
+    "garth token' under Setup in README.md and the linked garth discussion "
+    "for the current workaround."
 )
 
 
