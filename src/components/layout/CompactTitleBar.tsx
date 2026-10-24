@@ -37,6 +37,9 @@ export const TITLE_FADE_MS = 150
 /** Where a sticky strip sits while the bar shows; unset, each strip keeps its own. */
 export const STICKY_TOP_VAR = '--sticky-top'
 
+/** Set on the edge, its only reader: on <html> every change restyled the whole page, 60-90 ms a time on a long list. */
+const scrollEdge = () => document.querySelector<HTMLElement>('.scroll-edge')
+
 /** A tab swap can leave a page 1-2 pt down, which is still its top. */
 export const SCROLL_TOP_TOLERANCE = 2
 
@@ -220,9 +223,10 @@ export function CompactTitleBar() {
           })
         : undefined
       const stickyH = stuck ? `${stuck.offsetHeight}px` : ''
-      if (document.documentElement.style.getPropertyValue(STICKY_H_VAR) !== stickyH) {
-        if (stickyH) document.documentElement.style.setProperty(STICKY_H_VAR, stickyH)
-        else document.documentElement.style.removeProperty(STICKY_H_VAR)
+      const edge = scrollEdge()
+      if (edge && edge.style.getPropertyValue(STICKY_H_VAR) !== stickyH) {
+        if (stickyH) edge.style.setProperty(STICKY_H_VAR, stickyH)
+        else edge.style.removeProperty(STICKY_H_VAR)
       }
 
       if (atTop) {
@@ -301,7 +305,7 @@ export function CompactTitleBar() {
       root.setAttribute('data-bar-shown', '')
     } else {
       root.style.removeProperty(STICKY_TOP_VAR)
-      root.style.removeProperty(STICKY_H_VAR)
+      scrollEdge()?.style.removeProperty(STICKY_H_VAR)
       root.removeAttribute('data-bar-shown')
     }
   }, [visible])
@@ -310,7 +314,7 @@ export function CompactTitleBar() {
   useEffect(() => () => {
     const root = document.documentElement
     root.style.removeProperty(STICKY_TOP_VAR)
-    root.style.removeProperty(STICKY_H_VAR)
+    scrollEdge()?.style.removeProperty(STICKY_H_VAR)
     root.removeAttribute('data-bar-shown')
   }, [])
 

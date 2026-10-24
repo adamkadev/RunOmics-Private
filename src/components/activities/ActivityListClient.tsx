@@ -76,6 +76,10 @@ function PastWeekLine({ group, showEasy, weekTotal }: { group: WeekRow; showEasy
   )
 }
 
+const WEEK_HEADER_PX = 42
+/** An inset row's min-h-16. */
+const ROW_PX = 64
+
 function InsetRows({ items, efforts, types }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]>; types: Record<string, ActivityType> }) {
   return (
     <div className="inset-group flex flex-col">
@@ -533,7 +537,14 @@ export function ActivityListClient({
                       </div>
                       <div className="flex flex-col gap-3">
                         {block.weeks.map((g) => (
-                          <section key={g.key} id={`week-${g.key}`} className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24' })} data-testid="week">
+                          // Off screen, a week is skipped by style and layout: the whole archive is one page.
+                          <section
+                            key={g.key}
+                            id={`week-${g.key}`}
+                            className={cardClass({ padding: 'none', overflow: true, className: 'scroll-mt-24 [content-visibility:auto]' })}
+                            style={{ containIntrinsicSize: `auto ${WEEK_HEADER_PX + g.items.length * ROW_PX}px` }}
+                            data-testid="week"
+                          >
                             <div className="flex items-baseline justify-between gap-4 px-4 pb-1.5 pt-3.5">
                               <h3 className="whitespace-nowrap text-headline text-foreground">{g.label}</h3>
                               <PastWeekLine group={g} showEasy={!hasActiveFilter} weekTotal={hasActiveFilter ? (weekTotals?.get(g.key) ?? null) : null} />
