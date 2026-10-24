@@ -84,15 +84,16 @@ describe('coaching CLI', () => {
     expect(fs.existsSync(output)).toBe(false)
   })
 
-  it('rejects a stale saved proposal before writing', () => {
+  it('rejects a stale saved proposal before writing, then applies the exact reviewed proposal in an explicit data workspace once its context is restored', () => {
     const root = workspace()
     const preview = writeKeepReview(root, path.join(root, 'previews'))
     const planBefore = fs.readFileSync(path.join(root, 'coaching/current_plan.json'), 'utf-8')
     const athletePath = path.join(root, 'athlete.json')
+    const athleteBytes = fs.readFileSync(athletePath)
     const athlete = JSON.parse(fs.readFileSync(athletePath, 'utf-8')) as Record<string, unknown>
     fs.writeFileSync(athletePath, JSON.stringify({ ...athlete, thresholdPaceSecPerKm: 999 }, null, 2))
 
-    const result = spawnSync(process.execPath, nodeArgs('--apply', preview, '--data-dir', root), {
+    let result = spawnSync(process.execPath, nodeArgs('--apply', preview, '--data-dir', root), {
       cwd: projectRoot,
       encoding: 'utf-8',
       env: { ...process.env, RUNOMICS_DATA_REPO_URL: '' },
@@ -102,13 +103,10 @@ describe('coaching CLI', () => {
     expect(result.stderr).toContain('context changed')
     expect(fs.readFileSync(path.join(root, 'coaching/current_plan.json'), 'utf-8')).toBe(planBefore)
     expect(new JsonCoachingRepository(root).getDecision('cli-1')).toBeNull()
-  })
 
-  it('applies the exact reviewed proposal in an explicit data workspace', () => {
-    const root = workspace()
-    const preview = writeKeepReview(root, path.join(root, 'previews'))
+    fs.writeFileSync(athletePath, athleteBytes)
 
-    const result = spawnSync(process.execPath, nodeArgs('--apply', preview, '--data-dir', root), {
+    result = spawnSync(process.execPath, nodeArgs('--apply', preview, '--data-dir', root), {
       cwd: projectRoot,
       encoding: 'utf-8',
       env: { ...process.env, RUNOMICS_DATA_REPO_URL: '' },

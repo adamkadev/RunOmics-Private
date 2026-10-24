@@ -83,7 +83,7 @@ afterEach(() => {
 })
 
 describe('private data optimistic concurrency', () => {
-  it('refuses to push a workspace whose base commit is no longer the remote head', () => {
+  it('refuses to push a workspace whose base commit is no longer the remote head, and preserves the concurrent commit once re-fetched', () => {
     const root = temporaryRoot()
     const remote = createRemote(root)
     process.env.RUNOMICS_DATA_REPO_URL = remote.url
@@ -103,40 +103,12 @@ describe('private data optimistic concurrency', () => {
     expect(() => pushPrivateData(workspace)).toThrow(
       new RegExp(`Expected base: ${fetched.commit}[\\s\\S]*Current remote: ${commitB}`)
     )
+    expect(() => pushPrivateData(workspace)).toThrow(/Refusing to overwrite newer data/)
 
     expect(remoteHead(remote)).toBe(commitB)
     expect(remoteFile(remote, 'data/coaching/garmin-sync.json')).toBe(mapping)
     expect(remoteFiles(remote)).not.toContain('data/sync_meta.json')
     expect(readBaseRevision(workspace)?.commit).toBe(fetched.commit)
-  })
-
-  it('pushes normally while the remote is still on the fetched base', () => {
-    const root = temporaryRoot()
-    const remote = createRemote(root)
-    process.env.RUNOMICS_DATA_REPO_URL = remote.url
-    const workspace = path.join(root, 'workspace', 'data')
-
-    const fetched = fetchPrivateData(workspace)
-    write(path.join(workspace, 'coaching', 'current_plan.json'), '{"revision":2}\n')
-
-    const result = pushPrivateData(workspace)
-
-    expect(result.pushed).toBe(true)
-    expect(remoteHead(remote)).not.toBe(fetched.commit)
-    expect(remoteFile(remote, 'data/coaching/current_plan.json')).toBe('{"revision":2}\n')
-    expect(readBaseRevision(workspace)?.commit).toBe(remoteHead(remote))
-  })
-
-  it('re-fetching after a refusal preserves the concurrent commit', () => {
-    const root = temporaryRoot()
-    const remote = createRemote(root)
-    process.env.RUNOMICS_DATA_REPO_URL = remote.url
-    const workspace = path.join(root, 'workspace', 'data')
-
-    fetchPrivateData(workspace)
-    const mapping = '{"workouts":{"2026-09-07":{"garminId":123}}}\n'
-    commitToRemote(remote, 'data/coaching/garmin-sync.json', mapping, 'Persist Garmin coaching sync state')
-    expect(() => pushPrivateData(workspace)).toThrow(/Refusing to overwrite newer data/)
 
     fetchPrivateData(workspace)
     write(path.join(workspace, 'sync_meta.json'), '{"lastSyncedAt":"2026-09-06T02:00:00Z"}\n')
@@ -170,22 +142,32 @@ describe('private data optimistic concurrency', () => {
     expect(remoteFile(remote, 'data/races/upcoming.json')).toBe('{"races":[{"id":"r1"}]}\n')
   })
 
-  it('keeps the base revision out of the athlete dataset', () => {
+  it('keeps the base revision out of the athlete dataset, refuses to push to a repository it was not fetched from, and pushes normally while the remote is still on the fetched base', () => {
     const root = temporaryRoot()
     const remote = createRemote(root)
     process.env.RUNOMICS_DATA_REPO_URL = remote.url
     const workspace = path.join(root, 'workspace', 'data')
 
-    fetchPrivateData(workspace)
+    const fetched = fetchPrivateData(workspace)
 
     expect(baseRevisionPath(workspace)).toBe(path.join(root, 'workspace', '.data.base-revision.json'))
     expect(fs.existsSync(baseRevisionPath(workspace))).toBe(true)
     const inside = fs.readdirSync(workspace).filter((entry) => entry.includes('base-revision'))
     expect(inside).toEqual([])
 
-    write(path.join(workspace, 'sync_meta.json'), '{"lastSyncedAt":"2026-09-06T02:00:00Z"}\n')
-    pushPrivateData(workspace)
+    expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, 'https://example.test/other.git', env())).toThrow(
+      /different private data repository/
+    )
+    expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, `${remote.url}/`, env())).not.toThrow()
 
+    write(path.join(workspace, 'coaching', 'current_plan.json'), '{"revision":2}\n')
+
+    const result = pushPrivateData(workspace)
+
+    expect(result.pushed).toBe(true)
+    expect(remoteHead(remote)).not.toBe(fetched.commit)
+    expect(remoteFile(remote, 'data/coaching/current_plan.json')).toBe('{"revision":2}\n')
+    expect(readBaseRevision(workspace)?.commit).toBe(remoteHead(remote))
     expect(remoteFiles(remote).filter((file) => file.includes('base-revision'))).toEqual([])
   })
 })
@@ -209,19 +191,6 @@ describe('assertBaseRevisionCurrent', () => {
     expect(() =>
       assertBaseRevisionCurrent(workspace, 'abc123', 'https://example.test/private.git', env({ RUNOMICS_DATA_BASE_REVISION: 'abc123' }))
     ).not.toThrow()
-  })
-
-  it('refuses to push a workspace at a repository it was not fetched from', () => {
-    const root = temporaryRoot()
-    const remote = createRemote(root)
-    process.env.RUNOMICS_DATA_REPO_URL = remote.url
-    const workspace = path.join(root, 'workspace', 'data')
-    const fetched = fetchPrivateData(workspace)
-
-    expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, 'https://example.test/other.git', env())).toThrow(
-      /different private data repository/
-    )
-    expect(() => assertBaseRevisionCurrent(workspace, fetched.commit, `${remote.url}/`, env())).not.toThrow()
   })
 
   it('treats cosmetic URL differences as the same repository', () => {
