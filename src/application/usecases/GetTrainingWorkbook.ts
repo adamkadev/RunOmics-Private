@@ -251,7 +251,7 @@ function guideRows(generatedAt: Date): RowData[] {
     { section: 'Notes', item: 'comment_and_tags', description: 'comment and tags are the notes and tags typed on each activity in the app. notes_status is "included" on every row of a complete export; "unavailable" means the notes store could not be read, so a blank comment does not mean there was no note: export again.' },
     { section: 'Caveat', item: 'daily_plan_completion', description: 'planned_day_completed only means at least one activity occurred on a planned date; it does not prove the prescribed workout was followed.' },
     { section: 'Caveat', item: 'hr_zones', description: 'Athlete HR zone columns are Garmin zone floors: a zone runs from its own lower bound up to one below the next zone\'s, and zone 5 up to max_hr_bpm.' },
-    { section: 'Caveat', item: 'sessions', description: 'A session the watch saved as several back-to-back runs (warm-up, test, cool-down) is one Activities row: activity_id is its main run, merged_activity_ids the others. Distance, time, zones, TRIMP and calories are summed, heart rate and running dynamics time-weighted; type, description, execution and weather are the main run\'s. main_run_* keep the main run\'s own distance, time, pace and heart rate (the race or the test itself), filled on merged rows only. Runs synced before start times were stored stay one row each.' },
+    { section: 'Caveat', item: 'sessions', description: 'A session the watch saved as several back-to-back runs (warm-up, test, cool-down) is one Activities row: activity_id is its main run, merged_activity_ids the others. The row reads as the main run (the race or the test itself): its distance, time, pace, heart rate, running dynamics, type, execution and weather. session_distance_km and session_duration_seconds add the runs saved apart, filled on merged rows only; zones, TRIMP, calories and elevation count the whole session. Runs synced before start times were stored stay one row each.' },
     { section: 'Caveat', item: 'type', description: 'type is Garmin\'s label from training effect, or Runomics\' from the workout name when type_source is runomics; it often differs from the intent. description and planned_type say what the session was meant to be.' },
     { section: 'Caveat', item: 'planned_columns', description: 'planned_* are the Runomics coach\'s prescription for that day when there is one (purpose, pace guide, heart-rate cap), else the workout on the Garmin calendar. They sit on the day\'s main session; compare them with the execution_* columns.' },
     { section: 'Caveat', item: 'race_results', description: 'race_official_* are published results (chip time, certified distance). distance_km and pace_sec_per_km stay what the watch measured, which runs long on GPS.' },
@@ -452,7 +452,7 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds, sessions =
     const tags = [...new Set(notes.flatMap((note) => note?.tags ?? []))]
     const official = parts.map((part) => officialById.get(part.id)).find(Boolean)
     const officialKm = official ? official.distanceMeters / 1000 : null
-    const main = parts.length > 1 ? mainPart(parts) : null
+    const merged = parts.length > 1
     return {
       activity_id: activity.id,
       merged_activity_ids: parts.filter((part) => part.id !== activity.id).map((part) => part.id).join(' | ') || null,
@@ -467,10 +467,8 @@ function activityRows(data: TrainingWorkbookData, hrBounds: HrBounds, sessions =
       distance_km: activity.distanceKm,
       pace_sec_per_km: activity.paceSecPerKm,
       avg_heart_rate_bpm: activity.avgHeartRate,
-      main_run_distance_km: main?.distanceKm ?? null,
-      main_run_duration_seconds: main?.durationSeconds ?? null,
-      main_run_pace_sec_per_km: main?.paceSecPerKm ?? null,
-      main_run_avg_heart_rate_bpm: main?.avgHeartRate ?? null,
+      session_distance_km: merged ? round(parts.reduce((sum, part) => sum + part.distanceKm, 0), 2) : null,
+      session_duration_seconds: merged ? parts.reduce((sum, part) => sum + part.durationSeconds, 0) : null,
       rpe_1_10: activity.rpe,
       elevation_gain_m: activity.elevationGain,
       aerobic_training_effect: activity.aerTrainingEffect,
@@ -910,8 +908,7 @@ const ACTIVITY_COLUMNS = columns(
     { key: 'activity_id', width: 24 }, { key: 'merged_activity_ids', width: 24 }, { key: 'date', ...DATE_COLUMN },
     'day_of_week', 'start_time_local', 'iso_week', 'type', 'type_source',
     { key: 'description', width: 28, wrap: true }, 'duration_seconds', 'distance_km', 'pace_sec_per_km',
-    'avg_heart_rate_bpm', 'main_run_distance_km', 'main_run_duration_seconds', 'main_run_pace_sec_per_km',
-    'main_run_avg_heart_rate_bpm', 'rpe_1_10', 'elevation_gain_m', 'aerobic_training_effect', 'anaerobic_training_effect',
+    'avg_heart_rate_bpm', 'session_distance_km', 'session_duration_seconds', 'rpe_1_10', 'elevation_gain_m', 'aerobic_training_effect', 'anaerobic_training_effect',
     'trimp', 'calories_kcal', 'cadence_spm', 'ground_contact_ms', 'vertical_oscillation_mm', 'vertical_ratio_pct',
     'stride_length_m', 'vo2max', 'watch_temperature_c', 'hr_zone_1_seconds', 'hr_zone_2_seconds',
     'hr_zone_3_seconds', 'hr_zone_4_seconds', 'hr_zone_5_seconds', 'hard_minutes_z4_z5',

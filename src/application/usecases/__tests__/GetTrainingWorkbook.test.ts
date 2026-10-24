@@ -259,16 +259,15 @@ describe('buildTrainingWorkbook', () => {
         start_time_local: '08:00',
         type: 'Anaerobic',
         description: 'Test VMA',
-        distance_km: 4.5,
-        duration_seconds: 1560,
-        avg_heart_rate_bpm: 158,
-        main_run_distance_km: 1.5,
-        main_run_duration_seconds: 360,
-        main_run_avg_heart_rate_bpm: 185,
+        distance_km: 1.5,
+        duration_seconds: 360,
+        avg_heart_rate_bpm: 185,
+        session_distance_km: 4.5,
+        session_duration_seconds: 1560,
         comment: 'Windy / 1580 m',
         tags: 'test',
       })
-      expect(sessions[1]).toMatchObject({ activity_id: 'evening', merged_activity_ids: null, main_run_distance_km: null })
+      expect(sessions[1]).toMatchObject({ activity_id: 'evening', merged_activity_ids: null, session_distance_km: null })
       expect(daily?.actual_session_count).toBe(2)
     })
 
