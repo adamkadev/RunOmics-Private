@@ -86,3 +86,28 @@ test('a loop from the routing proxy leaves as a closed GPX 1.1 track', async ({ 
 
   await expect(panel.getByTestId('route-saved')).toBeVisible()
 })
+
+test('a loop from my location goes through the quartier', async ({ page, context }) => {
+  await context.grantPermissions(['geolocation'])
+  await context.setGeolocation({ longitude: -149.9888, latitude: -0.0087 })
+  let request: { start: [number, number]; seeds: number[]; vias?: [number, number][][] } | null = null
+  await page.route('**/api/explore/route', async (route) => {
+    request = route.request().postDataJSON()
+    const [lon, lat] = request!.start
+    const ring = Array.from({ length: 60 }, (_, k) => [lon + 0.01 * Math.sin((2 * Math.PI * k) / 60), lat + 0.01 * (1 - Math.cos((2 * Math.PI * k) / 60))])
+    ring.push(ring[0]!)
+    await route.fulfill({
+      json: {
+        candidates: request!.seeds.map((seed) => ({ seed, coordinates: ring, distanceM: 8000, durationS: 2880, ascentM: 12, descentM: 12, waytypes: [] })),
+        attribution: '© openrouteservice by HeiGIT | © OpenStreetMap contributors',
+      },
+    })
+  })
+
+  await page.goto('/activities?view=map&explore=route&km=8')
+  const panel = page.getByTestId('route-generator')
+  await expect(panel.getByRole('button', { name: 'Start from my location' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(panel.getByTestId('route-stats')).toContainText('+12 m')
+  expect(request!.vias).toHaveLength(request!.seeds.length)
+  expect(request!.vias!.every((vias) => vias.length === 2)).toBe(true)
+})

@@ -25,10 +25,17 @@ const OPEN_POPOVER = '[aria-expanded="true"]'
  * A tap that only closes a popover over the map is that and nothing more. Listens once per map, not
  * per style: the layer comes and goes with the theme, the listener stays.
  */
-export function useDistrictsTap(mapRef: RefObject<MapLibreMap | null>, mapReady: boolean, onTap: (unitId: string) => void): void {
+export function useDistrictsTap(
+  mapRef: RefObject<MapLibreMap | null>,
+  mapReady: boolean,
+  onTap: (unitId: string) => void,
+  onPick: ((lngLat: [number, number]) => void) | null = null,
+): void {
   const onTapRef = useRef(onTap)
+  const onPickRef = useRef(onPick)
   useLayoutEffect(() => {
     onTapRef.current = onTap
+    onPickRef.current = onPick
   })
   useEffect(() => {
     const map = mapRef.current
@@ -51,16 +58,18 @@ export function useDistrictsTap(mapRef: RefObject<MapLibreMap | null>, mapReady:
       cancel()
       // The second click of a double-click: the map zooms on it.
       if (dismissing || (e.originalEvent?.detail ?? 1) > 1) return
-      const id = unitAt(map, e.point)
-      if (!id) return
+      const lngLat: [number, number] = [e.lngLat.lng, e.lngLat.lat]
+      const id = onPickRef.current ? null : unitAt(map, e.point)
+      if (!onPickRef.current && !id) return
       pending = setTimeout(() => {
         pending = undefined
-        onTapRef.current(id)
+        if (onPickRef.current) onPickRef.current(lngLat)
+        else if (id) onTapRef.current(id)
       }, TAP_OPEN_DELAY_MS)
     }
     const hover = (e: MapMouseEvent) => {
       const canvas = map.getCanvas()
-      const cursor = unitAt(map, e.point) ? 'pointer' : ''
+      const cursor = onPickRef.current ? 'crosshair' : unitAt(map, e.point) ? 'pointer' : ''
       if (canvas.style.cursor !== cursor) canvas.style.cursor = cursor
     }
     // A second press (of a double-tap or double-click, or a drag), a zoom:

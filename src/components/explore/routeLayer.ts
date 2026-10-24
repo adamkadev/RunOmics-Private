@@ -9,7 +9,7 @@ import { SURFACES } from '@/lib/themeTokens'
 /**
  * Colours are literal, resolved for the mode and accent they are drawn in: a theme or accent change
  * re-adds the whole layer. The lines go under every label so a quartier's name stays readable on its
- * own loop. Home is only ever drawn here, on the device: the GPX holds the loop alone.
+ * own loop. Home and the runner's start are only ever drawn here, on the device: the GPX holds the loop alone.
  */
 
 export const ROUTE_CONNECTOR_SOURCE = 'runomics-route-connector'
@@ -63,7 +63,8 @@ export interface RouteDrawing {
   coordinates: readonly (readonly number[])[]
   /** One per step (coordinates − 1): true where the step is new ground. */
   newSteps: readonly boolean[]
-  home: [number, number] | null
+  /** Where the dashed walk to the loop begins; with no loop yet, the start dot. */
+  from: [number, number] | null
 }
 
 export type RouteKind = 'loop' | 'new' | 'known'
@@ -84,7 +85,10 @@ export function routeGeoJson(drawing: RouteDrawing | null): RouteGeoJson {
   const route = empty<LineString, { kind: RouteKind }>()
   const start = empty<Point>()
   const coords = (drawing?.coordinates ?? []).filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]))
-  if (!drawing || coords.length < 2) return { connector, route, start }
+  if (!drawing || coords.length < 2) {
+    if (drawing?.from) start.features.push({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [...drawing.from] } })
+    return { connector, route, start }
+  }
 
   const line = (from: number, to: number): Position[] => coords.slice(from, to + 1).map(lonLat)
   route.features.push({ type: 'Feature', properties: { kind: 'loop' }, geometry: { type: 'LineString', coordinates: line(0, coords.length - 1) } })
@@ -103,8 +107,8 @@ export function routeGeoJson(drawing: RouteDrawing | null): RouteGeoJson {
 
   const first = lonLat(coords[0]!)
   start.features.push({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: first } })
-  if (drawing.home) {
-    connector.features.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[...drawing.home], first] } })
+  if (drawing.from) {
+    connector.features.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[...drawing.from], first] } })
   }
   return { connector, route, start }
 }

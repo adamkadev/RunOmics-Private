@@ -367,6 +367,18 @@ export const en = {
         planFor: (day: string) => `Plan for ${day}`,
         // The plan row as a button: back to the plan's distance. `km` is "9.5 km".
         usePlanDistance: (km: string) => `Use the plan’s distance, ${km}`,
+        start: {
+          label: 'Start',
+          modes: { here: 'My location', pick: 'Map point', quartier: 'Quartier' },
+          modesFull: { here: 'Start from my location', pick: 'Start from a point I tap on the map', quartier: 'Start inside the quartier' },
+          locating: 'Finding your location…',
+          denied: 'Location is off for this site, so the loop starts in the quartier.',
+          unavailable: 'Your location isn’t available, so the loop starts in the quartier.',
+          pickPrompt: 'Tap the map where you’ll start.',
+          guarded: 'Starts a short walk from home, so your address never leaves this device.',
+        },
+        // The button that takes the shortest distance reaching the quartier. `km` is "12.5 km".
+        useDistance: (km: string) => `Use ${km}`,
         distance: 'Distance',
         shorter: 'Shorter',
         longer: 'Longer',
@@ -395,6 +407,8 @@ export const en = {
           dailyQuota: 'Today’s route quota is used up.',
           noRoute: 'No loop found here. Try another distance.',
           upstream: 'The routing service didn’t answer. Try again.',
+          tooFar: (km: string) => `Too far for this distance: from here, a loop through this quartier needs ${km}.`,
+          tooFarToRun: 'Too far to run there and back. Start in the quartier instead.',
         },
         // The GPX's name and description. `km` is "8.1".
         gpxName: (name: string, km: string) => `RunOmics · ${name} · ${km} km`,
