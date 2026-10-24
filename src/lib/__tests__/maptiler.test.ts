@@ -59,10 +59,11 @@ describe('heatBasemapStyle (Wave 4, App Fixes 4d)', () => {
     }
   })
 
-  // The additive dark tracks read on the dark basemap as it is.
-  it('keeps the dark basemap as it is', () => {
+  it('keeps the dark basemap as it is, and drops the sprite no heat layer draws', () => {
     const dark = maptilerStyle(true, 'k')
-    expect(heatBasemapStyle(dark, true)).toBe(dark)
+    expect(heatBasemapStyle(dark, true).layers).toBe(dark.layers)
+    expect(heatBasemapStyle(dark, true).sprite).toBeUndefined()
+    expect(heatBasemapStyle(maptilerStyle(false, 'k'), false).sprite).toBeUndefined()
   })
 
   it('leaves the style it was given alone', () => {
