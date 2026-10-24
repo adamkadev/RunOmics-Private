@@ -604,10 +604,6 @@ export const fr = {
       line: (when: string) => `Dernière synchro ${when} · une sortie peut manquer`,
       sync: 'Synchroniser',
     },
-    trainingStatusDays: {
-      title: 'Statut d’entraînement',
-      titleToday: (title: string) => `${title} · aujourd’hui`,
-    },
     syncStatus: {
       tapToSync: 'actualiser',
       syncing: 'Synchronisation…',

@@ -640,10 +640,6 @@ export const en = {
       line: (when: string) => `Last sync ${when} · a run may be missing`,
       sync: 'Sync',
     },
-    trainingStatusDays: {
-      title: 'Training Status',
-      titleToday: (title: string) => `${title} · today`,
-    },
     syncStatus: {
       tapToSync: 'tap to sync',
       syncing: 'Syncing…',

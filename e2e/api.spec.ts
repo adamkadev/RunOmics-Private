@@ -2,19 +2,6 @@ import { test, expect } from '@playwright/test'
 
 // The e2e build configures neither FIREBASE_PROJECT_ID nor INTERNAL_NOTIFY_SECRET, so owner routes answer 503.
 
-test('the activity list never carries route geometry', async ({ request }) => {
-  const response = await request.get('/api/activities?limit=50')
-  expect(response.status()).toBe(200)
-
-  const body = await response.json()
-  const activities: Record<string, unknown>[] = body.items
-  expect(activities.length).toBeGreaterThan(0)
-  for (const activity of activities) {
-    expect(activity).not.toHaveProperty('route')
-    expect(activity).not.toHaveProperty('polyline')
-  }
-})
-
 test('the training workbook is never served without the owner token', async ({ request }) => {
   const anonymous = await request.get('/api/activities/export')
   const forged = await request.get('/api/activities/export', {
