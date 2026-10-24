@@ -354,13 +354,9 @@ export const en = {
         usePlanDistance: (km: string) => `Use the plan’s distance, ${km}`,
         start: {
           label: 'Start',
-          modes: { here: 'My location', pick: 'Map point', quartier: 'Quartier' },
-          modesFull: { here: 'Start from my location', pick: 'Start from a point I tap on the map', quartier: 'Start inside the quartier' },
-          locating: 'Finding your location…',
-          denied: 'Location is off for this site, so the loop starts in the quartier.',
-          unavailable: 'Your location isn’t available, so the loop starts in the quartier.',
+          modes: { pick: 'Map point', quartier: 'Quartier' },
+          modesFull: { pick: 'Start from a point I tap on the map', quartier: 'Start inside the quartier' },
           pickPrompt: 'Tap the map where you’ll start.',
-          guarded: 'Starts a short walk from home, so your address never leaves this device.',
         },
         // The button that takes the shortest distance reaching the quartier. `km` is "12.5 km".
         useDistance: (km: string) => `Use ${km}`,

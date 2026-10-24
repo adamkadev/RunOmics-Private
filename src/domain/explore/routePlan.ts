@@ -1,17 +1,13 @@
 import type { AreaIndex } from './coverage'
 import { cellIndices, projectX, projectY, unproject } from './grid'
-import { routeStart } from './routeScore'
 
 export type LonLat = [number, number]
 type Point = [number, number]
 
-/** No point closer to home than this is ever sent to the routing provider. */
+/** The planner never picks a via closer to home than this: the runner chose the start, not the vias. */
 export const HOME_GUARD_M = 600
 /** A run on streets is about this much longer than the straight lines between its points. */
 export const STREET_DETOUR = 1.3
-/** The guarded departure is a ring cell per compass sector, so it never follows the device's exact position. */
-const GUARD_RING_M = 300
-const SECTORS = 8
 const DRAWS = 96
 /** Two legs closer than this in bearing make an out-and-back. */
 const MIN_SPREAD_RAD = Math.PI / 6
@@ -20,17 +16,15 @@ const OUTSIDE_UNIT_COST = 0.1
 
 export interface RoutePlanRequest {
   unitId: string
-  /** Where the runner sets off: the device's position or a point tapped on the map. */
+  /** The point tapped on the map: the loop starts and ends there. */
   origin: LonLat
   home: LonLat | null
   distanceM: number
   seeds: number[]
 }
 
-/** `vias[k]` is for `seeds[k]`; an empty list asks for a plain round trip from the departure. */
-export type RoutePlan =
-  | { kind: 'tour'; departure: LonLat; guarded: boolean; vias: LonLat[][] }
-  | { kind: 'tooFar'; minKm: number }
+/** `vias[k]` is for `seeds[k]`; an empty list asks for a plain round trip from the origin. */
+export type RoutePlan = { kind: 'tour'; vias: LonLat[][] } | { kind: 'tooFar'; minKm: number }
 
 interface Cell {
   key: number
@@ -75,22 +69,11 @@ export function planRoute(index: AreaIndex, visited: ReadonlySet<number>, reques
   }
   const toLonLat = ([x, y]: Point): LonLat => unproject(proj, x, y)
 
-  const origin = xy(request.origin)
-  // With no runs to place home, the runner may be standing in it.
-  const home = request.home ? xy(request.home) : origin
-  const guarded = dist(origin, home) < HOME_GUARD_M
-  let departure = origin
-  if (guarded) {
-    const ring = guardedDeparture(index, home, xy(unit.label), cellAt)
-    const fallback = ring ? null : routeStart(index, unit.id)
-    if (!ring && !fallback) return null
-    departure = ring ?? xy(fallback!)
-  }
-  const departureLonLat = guarded ? toLonLat(departure) : request.origin
-
-  const awayFromHome = (cell: Cell) => dist(cell.at, home) >= HOME_GUARD_M
+  const departure = xy(request.origin)
+  const home = request.home ? xy(request.home) : null
+  const awayFromHome = (cell: Cell) => !home || dist(cell.at, home) >= HOME_GUARD_M
   const inUnit = [...unit.runnable].map(cellAt).filter(awayFromHome)
-  if (inUnit.length === 0) return { kind: 'tour', departure: departureLonLat, guarded, vias: request.seeds.map(() => []) }
+  if (inUnit.length === 0) return { kind: 'tour', vias: request.seeds.map(() => []) }
 
   const perimeter = request.distanceM / STREET_DETOUR
   const nearest = Math.min(...inUnit.map((cell) => dist(departure, cell.at)))
@@ -126,25 +109,5 @@ export function planRoute(index: AreaIndex, visited: ReadonlySet<number>, reques
     }
     return (best ?? [unitPool[0]!]).map((cell) => toLonLat(cell.at))
   })
-  return { kind: 'tour', departure: departureLonLat, guarded, vias }
-}
-
-function guardedDeparture(index: AreaIndex, home: Point, toward: Point, cellAt: (key: number) => Cell): Point | null {
-  const step = (2 * Math.PI) / SECTORS
-  const bearing = Math.round(Math.atan2(toward[1] - home[1], toward[0] - home[0]) / step) * step
-  const radius = HOME_GUARD_M + GUARD_RING_M / 2
-  const aim: Point = [home[0] + radius * Math.cos(bearing), home[1] + radius * Math.sin(bearing)]
-  let best: Cell | null = null
-  let bestD = Infinity
-  for (const key of index.runnableUnit.keys()) {
-    const cell = cellAt(key)
-    const fromHome = dist(cell.at, home)
-    if (fromHome < HOME_GUARD_M || fromHome > HOME_GUARD_M + GUARD_RING_M) continue
-    const d = dist(cell.at, aim)
-    if (d < bestD || (d === bestD && key < best!.key)) {
-      best = cell
-      bestD = d
-    }
-  }
-  return best?.at ?? null
+  return { kind: 'tour', vias }
 }

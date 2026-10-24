@@ -3,7 +3,8 @@ import { activityCells, aggregateCoverage, buildAreaIndex } from '@/domain/explo
 import { medianStart } from '@/domain/explore/home'
 import { routeStart } from '@/domain/explore/routeScore'
 import type { ExploreAreaRef, RouteCandidate } from '@/domain/explore/types'
-import { at, line, testArea, track } from '@/domain/explore/__tests__/areaFixture'
+import { PROJ, at, line, testArea, track } from '@/domain/explore/__tests__/areaFixture'
+import { projectX, projectY } from '@/domain/explore/grid'
 import type { ExploreCache, ExploreStore } from '../idb'
 import { flattenTracks } from '../trackBuffers'
 import {
@@ -519,15 +520,18 @@ describe('scoreRoutes, routeStart and routePlan', () => {
     expect(ok(await send({ type: 'routeStart', areaKey: KEY, unitId: 'nope' }))).toBeNull()
   })
 
-  it('guards the runs’ median start as home, or the origin itself before any run', async () => {
+  it('keeps the vias away from the runs’ median start', async () => {
     const { send } = await loaded()
-    const origin = at(1100, 500)
-    const ask = async () =>
-      ok(await send({ type: 'routePlan', areaKey: KEY, unitId: 'test-delta', origin, home: null, homeFromTracks: true, distanceM: 3000, seeds: [1] }))
-
-    expect(await ask()).toMatchObject({ kind: 'tour', guarded: true })
     await send({ type: 'addTracks', areaKey: KEY, ...buffers(['r1', 'r2']) })
-    expect(await ask()).toMatchObject({ kind: 'tour', guarded: false, departure: origin })
+
+    const plan = ok<{ kind: string; vias: [number, number][][] }>(
+      await send({ type: 'routePlan', areaKey: KEY, unitId: 'test-alpha', origin: at(1100, 500), home: null, homeFromTracks: true, distanceM: 3000, seeds: [1, 2] }),
+    )
+
+    expect(plan.kind).toBe('tour')
+    for (const [lon, lat] of plan.vias.flat()) {
+      expect(Math.hypot(projectX(PROJ, lon) - 52.5, projectY(PROJ, lat) - 52.5)).toBeGreaterThanOrEqual(600)
+    }
   })
 })
 

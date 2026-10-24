@@ -6,7 +6,7 @@ import { distanceKm } from '@/lib/math'
 /** Scoring stays on the client, where the coverage worker knows which streets are new: this side only fetches. */
 
 export interface LoopRequest {
-  /** [lon, lat], never home: the device plans a public point instead. */
+  /** [lon, lat]: the quartier's public start, or the point the runner tapped. */
   start: [number, number]
   distanceM: number
   /** One loop per seed. A new batch is new seeds. */

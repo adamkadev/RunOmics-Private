@@ -28,11 +28,9 @@ function tour(plan: RoutePlan | null) {
 }
 
 describe('planRoute', () => {
-  it('sets off from the exact origin far from home, through the quartier, about the distance asked', () => {
+  it('goes through the quartier and back to the origin, about the distance asked', () => {
     const origin = at(2250, 750)
     const plan = tour(planRoute(index, NONE, { unitId: 'test-far', origin, home: HOME, distanceM: 6000, seeds: SEEDS }))
-    expect(plan.departure).toEqual(origin)
-    expect(plan.guarded).toBe(false)
     for (const vias of plan.vias) {
       expect(vias).toHaveLength(2)
       expect(metres(vias[0]!)[0]).toBeGreaterThan(3000)
@@ -42,23 +40,6 @@ describe('planRoute', () => {
     }
     expect(new Set(plan.vias.map((v) => JSON.stringify(v))).size).toBeGreaterThan(1)
     expect(planRoute(index, NONE, { unitId: 'test-far', origin, home: HOME, distanceM: 6000, seeds: SEEDS })).toEqual(plan)
-  })
-
-  it('near home, sets off from a public point past the guard that two nearby origins share', () => {
-    const ask = (origin: LonLat) => tour(planRoute(index, NONE, { unitId: 'test-far', origin, home: HOME, distanceM: 8000, seeds: SEEDS }))
-    const first = ask(at(320, 280))
-    const second = ask(at(260, 350))
-    expect(first.guarded).toBe(true)
-    expect(between(first.departure, HOME)).toBeGreaterThanOrEqual(HOME_GUARD_M)
-    expect(metres(first.departure)[0]).toBeGreaterThan(300)
-    expect(second.departure).toEqual(first.departure)
-  })
-
-  it('takes the origin for home when home is unknown', () => {
-    const origin = at(2250, 750)
-    const plan = tour(planRoute(index, NONE, { unitId: 'test-far', origin, home: null, distanceM: 8000, seeds: SEEDS }))
-    expect(plan.guarded).toBe(true)
-    expect(between(plan.departure, origin)).toBeGreaterThanOrEqual(HOME_GUARD_M)
   })
 
   it('sends no via within the guard of home, even in the quartier home is in', () => {

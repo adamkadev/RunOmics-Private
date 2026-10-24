@@ -61,7 +61,7 @@ export interface RouteStartRequest {
   unitId: string
 }
 
-/** Home comes in as for coverage: the plan keeps every point it sends out away from it. */
+/** Home comes in as for coverage: the plan picks no via near it. */
 export interface RoutePlanRequest {
   unitId: string
   origin: LonLat
