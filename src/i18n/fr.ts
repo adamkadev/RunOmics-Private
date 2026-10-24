@@ -2052,6 +2052,11 @@ export const fr = {
       title: (workflow: string) => `Échec : ${workflow}`,
       body: (runUrl: string) => `Ouvre l’exécution : ${runUrl}`,
     },
+    tokenExpiring: {
+      names: { dataActions: 'le jeton de données (GitHub Actions)', dataVercel: 'le jeton de données (Vercel)', syncVercel: 'le jeton du bouton Sync (Vercel)' },
+      title: (days: number) => (days <= 0 ? 'Un jeton GitHub expire aujourd’hui' : `Un jeton GitHub expire dans ${days} jour${days === 1 ? '' : 's'}`),
+      body: (names: string) => `Renouvelle ${names} avant que la synchro s’arrête : GitHub → Settings → Developer settings → Fine-grained tokens.`,
+    },
   },
 
   nextRace: {

@@ -2212,6 +2212,11 @@ export const en = {
       title: (workflow: string) => `${workflow} failed`,
       body: (runUrl: string) => `Open the run: ${runUrl}`,
     },
+    tokenExpiring: {
+      names: { dataActions: 'the data token (GitHub Actions)', dataVercel: 'the data token (Vercel)', syncVercel: 'the Sync button token (Vercel)' },
+      title: (days: number) => (days <= 0 ? 'A GitHub token expires today' : `A GitHub token expires in ${days} day${days === 1 ? '' : 's'}`),
+      body: (names: string) => `Renew ${names} before the sync stops: GitHub → Settings → Developer settings → Fine-grained tokens.`,
+    },
   },
 
   nextRace: {
