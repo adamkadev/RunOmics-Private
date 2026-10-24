@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { startTransition, useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Search, SearchX, SlidersHorizontal, X } from 'lucide-react'
 import { ActivityThumbRow } from './ActivityThumbRow'
@@ -73,6 +73,10 @@ function PastWeekLine({ group, showEasy, weekTotal }: { group: WeekRow; showEasy
     </span>
   )
 }
+
+/** This week and about three months: a screen and a half on a phone, and what most visits read. */
+const FIRST_BLOCKS = 4
+const MORE_BLOCKS = 6
 
 const WEEK_HEADER_PX = 42
 /** An inset row's min-h-16. */
@@ -251,9 +255,30 @@ export function ActivityListClient({
     [items, sort, currentWeekStart],
   )
   const blocks = useMemo(() => (groups ? listBlocks(groups) : null), [groups])
+  const [weekParam] = useUrlParam('week')
+  // The archive renders a few months at a time: the whole of it at once was the slowest page to become usable.
+  const [shownBlocks, setShownBlocks] = useState(FIRST_BLOCKS)
+  const shown = blocks && !weekParam ? blocks.slice(0, shownBlocks) : blocks
+  const moreToShow = !!blocks && !!shown && shown.length < blocks.length
+  const moreRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const node = moreRef.current
+    if (!moreToShow || !node) return
+    if (typeof IntersectionObserver === 'undefined') {
+      startTransition(() => setShownBlocks(Number.POSITIVE_INFINITY))
+      return
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) startTransition(() => setShownBlocks((n) => n + MORE_BLOCKS))
+      },
+      { rootMargin: '1500px 0px' },
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [moreToShow, shownBlocks])
 
   // ?week= (a Monday) scrolls that week's card into view once the list holding it has loaded.
-  const [weekParam] = useUrlParam('week')
   useEffect(() => {
     if (!weekParam || !blocks) return
     const frame = requestAnimationFrame(() => document.getElementById(`week-${weekParam}`)?.scrollIntoView({ block: 'start' }))
@@ -419,7 +444,7 @@ export function ActivityListClient({
               </div>
             ) : blocks ? (
               <div className="flex flex-col gap-3.5">
-                {blocks.map((block) =>
+                {shown!.map((block) =>
                   block.kind === 'current' ? (
                     // Its km and runs, not the plan: Today and Plan show the week against plan.
                     <section key={block.week.key} id={`week-${block.week.key}`} className="scroll-mt-24" data-testid="current-week">
@@ -481,7 +506,8 @@ export function ActivityListClient({
               </div>
             )}
 
-            {items.length > 0 && (
+            {moreToShow && <div ref={moreRef} aria-hidden="true" className="h-px" />}
+            {items.length > 0 && !moreToShow && (
               <p className="py-2 text-center text-xs text-subtle">{t.activities.endOfList}</p>
             )}
           </>

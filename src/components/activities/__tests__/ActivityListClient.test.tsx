@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
@@ -122,7 +122,29 @@ describe('a type this build does not know', () => {
 
 describe('the archive under its months', () => {
   beforeEach(freshPage)
-  afterEach(() => vi.useRealTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('renders its first months, and the rest as the end of the list comes near', async () => {
+    let reachEnd = () => {}
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(callback: IntersectionObserverCallback) {
+        reachEnd = () => act(() => callback([{ isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver))
+      }
+      observe() {}
+      disconnect() {}
+    })
+    const monthly = Array.from({ length: 12 }, (_, k) => run(`m${k}`, new Date(Date.UTC(2026, 8 - k, 10)).toISOString().slice(0, 10), 8))
+    renderList(monthly)
+
+    const firstMonths = screen.getAllByTestId('month').length
+    expect(firstMonths).toBeLessThan(9)
+    expect(screen.queryByText(t.activities.endOfList)).toBeNull()
+    await reachEnd()
+    expect(screen.getAllByTestId('month').length).toBeGreaterThan(firstMonths)
+  })
 
   it('heads the weeks with their month and its total', () => {
     renderList([
