@@ -2085,6 +2085,8 @@ export const fr = {
   race: {
     back: 'Progression',
     predicted: 'Prédit',
+    estimated: 'Estimé',
+    estimatedBy: (effort: string, date: string) => `Estimé par VDOT à partir de ton ${effort} du ${date} : Garmin ne donne pas de prédiction à jour.`,
     target: 'Objectif',
     best: 'Record',
     standTitle: 'Où tu en es',
@@ -2093,6 +2095,7 @@ export const fr = {
     perWeek: (seconds: number, weeks: number) =>
       weeks === 1 ? `Environ ${seconds} s sur la semaine restante.` : `Environ ${seconds} s par semaine sur les ${weeks} semaines restantes.`,
     trendTitle: 'Prédiction, 12 dernières semaines',
+    trendTitleEstimated: 'Estimation, 12 dernières semaines',
     trendChange: (change: string, weeks: number, perWeek: string | null) =>
       `${change} en ${weeks} semaine${weeks > 1 ? 's' : ''}${perWeek ? `, ${perWeek} par semaine` : ''}.`,
     trendFlat: (weeks: number) => `Inchangée en ${weeks} semaine${weeks > 1 ? 's' : ''}.`,

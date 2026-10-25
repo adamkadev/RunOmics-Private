@@ -43,14 +43,16 @@ export interface ThresholdEstimate {
   activityId: string
 }
 
-/** For a watch that reports no threshold pace: the best recent effort from a mile up, by VDOT. */
-export function estimatedThreshold(
+export type RecentBestEffort = Omit<ThresholdEstimate, 'thresholdPaceSecPerKm'>
+
+/** The run of the last 120 days, from a mile up, whose effort implies the highest VDOT; the VDOT unrounded. */
+export function bestRecentEffort(
   activities: Activity[],
   officialByActivityId: Map<string, OfficialRaceResult>,
   today: string,
-): ThresholdEstimate | null {
+): RecentBestEffort | null {
   const since = new Date(Date.parse(`${today}T00:00:00Z`) - RECENT_DAYS * DAY_MS).toISOString().slice(0, 10)
-  let best: Omit<ThresholdEstimate, 'thresholdPaceSecPerKm'> | null = null
+  let best: RecentBestEffort | null = null
   for (const activity of activities) {
     const date = activity.date.slice(0, 10)
     if (date < since || date > today || !isRunningActivity(activity)) continue
@@ -62,5 +64,28 @@ export function estimatedThreshold(
       if (!best || vdot > best.vdot) best = { vdot, effort: key, seconds, date, activityId: activity.id }
     }
   }
+  return best
+}
+
+/** For a watch that reports no threshold pace: the best recent effort from a mile up, by VDOT. */
+export function estimatedThreshold(
+  activities: Activity[],
+  officialByActivityId: Map<string, OfficialRaceResult>,
+  today: string,
+): ThresholdEstimate | null {
+  const best = bestRecentEffort(activities, officialByActivityId, today)
   return best ? { ...best, vdot: Math.round(best.vdot * 10) / 10, thresholdPaceSecPerKm: thresholdPaceFromVdot(best.vdot) } : null
+}
+
+/** Daniels' equivalent performance: the time at which an effort over the distance implies the VDOT. */
+export function secondsForVdot(vdot: number, distanceKm: number): number {
+  // vdotFromEffort falls as the time grows, so halving the bracket converges on the one time.
+  let fast = distanceKm * 60
+  let slow = distanceKm * 1800
+  for (let i = 0; i < 60; i++) {
+    const mid = (fast + slow) / 2
+    if (vdotFromEffort(distanceKm, mid) > vdot) fast = mid
+    else slow = mid
+  }
+  return Math.round((fast + slow) / 2)
 }

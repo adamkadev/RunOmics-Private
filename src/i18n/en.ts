@@ -2248,6 +2248,8 @@ export const en = {
   race: {
     back: 'Progress',
     predicted: 'Predicted',
+    estimated: 'Estimated',
+    estimatedBy: (effort: string, date: string) => `Estimated by VDOT from your ${effort} on ${date}: Garmin gives no current prediction.`,
     target: 'Target',
     best: 'Best',
     standTitle: 'Where you stand',
@@ -2255,6 +2257,7 @@ export const en = {
     inHand: (gap: string) => `${gap} in hand.`,
     perWeek: (seconds: number, weeks: number) => (weeks === 1 ? `About ${seconds} s in the week left.` : `About ${seconds} s a week over the ${weeks} weeks left.`),
     trendTitle: 'Prediction, last 12 weeks',
+    trendTitleEstimated: 'Estimate, last 12 weeks',
     trendChange: (change: string, weeks: number, perWeek: string | null) =>
       `${change} in ${weeks} week${weeks === 1 ? '' : 's'}${perWeek ? `, ${perWeek} a week` : ''}.`,
     trendFlat: (weeks: number) => `Unchanged in ${weeks} week${weeks === 1 ? '' : 's'}.`,
