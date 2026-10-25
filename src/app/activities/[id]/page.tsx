@@ -24,9 +24,10 @@ import { getRunSessions } from '@/application/coaching/GetCoachingView'
 import { controlledRunView } from '@/application/coaching/GetCoachReadout'
 import { ControlledThresholdCard } from '@/components/activity/ControlledThresholdCard'
 import { sessionLabel } from '@/lib/activityTitle'
-import { paceZones } from '@/application/usecases/GetTrainingZones'
+import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { chartZones } from '@/components/activity/chartStackLanes'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
+import { appTodayIso } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 import { loadData } from '@/application/usecases/LoadData'
 
@@ -99,11 +100,8 @@ export default async function ActivityDetailPage({
 
   // Only the zone edges reach the page, not the athlete profile.
   const athlete = getAthleteProfile()
-  const zones = chartZones(
-    activity.hrZones,
-    athlete.hrZoneBoundsBpm,
-    athlete.thresholdPaceSecPerKm ? paceZones(athlete.thresholdPaceSecPerKm) : null,
-  )
+  const trainingZones = await getTrainingZones(appTodayIso())
+  const zones = chartZones(activity.hrZones, athlete.hrZoneBoundsBpm, trainingZones?.zones, { paceEstimated: !!trainingZones?.estimate })
 
   return (
     <div className="flex flex-col gap-3.5">

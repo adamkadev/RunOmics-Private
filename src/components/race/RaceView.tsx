@@ -49,14 +49,15 @@ function TrendLine({ points, target }: { points: PredictionPoint[]; target: numb
 
 export function RaceView({ data }: { data: RacePageData }) {
   const r = t.race
-  const { race, distanceKm, daysUntil, predictedSeconds, targetSeconds, pb, trend } = data
+  const { race, distanceKm, daysUntil, predictedSeconds, targetSeconds, pb, trend, estimate } = data
+  const predicted = estimate ? r.estimated : r.predicted
   const gap = predictedSeconds !== null && targetSeconds !== null ? predictedSeconds - targetSeconds : null
   const closing = gap !== null ? closingPace(gap, daysUntil) : null
   const change = predictionChange(trend, RACE_TREND_DAYS)
   const changePerWeek = change && change.weeks > 1 && Math.round(change.perWeek) !== 0 ? signed(change.perWeek) : null
   const columns = [
     ...(targetSeconds !== null ? [{ label: r.target, seconds: targetSeconds }] : []),
-    ...(predictedSeconds !== null ? [{ label: r.predicted, seconds: predictedSeconds }] : []),
+    ...(predictedSeconds !== null ? [{ label: predicted, seconds: predictedSeconds }] : []),
   ]
   const dash = '—'
 
@@ -73,7 +74,7 @@ export function RaceView({ data }: { data: RacePageData }) {
       <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="race-stand">
         <CardTitle as="h2">{r.standTitle}</CardTitle>
         <StatGrid columns={3}>
-          <Stat label={r.predicted} value={predictedSeconds !== null ? formatDuration(predictedSeconds) : dash} />
+          <Stat label={predicted} value={predictedSeconds !== null ? formatDuration(predictedSeconds) : dash} />
           <Stat label={r.target} value={targetSeconds !== null ? formatDuration(targetSeconds) : dash} />
           <Stat label={r.best} value={pb ? formatDuration(pb.seconds) : dash} meaning={pb?.date ? bare(pb.date) : undefined} />
         </StatGrid>
@@ -83,11 +84,16 @@ export function RaceView({ data }: { data: RacePageData }) {
             {closing && <span className="text-muted-foreground"> {r.perWeek(closing.perWeek, closing.weeks)}</span>}
           </p>
         )}
+        {estimate && (
+          <p className="text-[12px] text-muted-foreground text-pretty" data-testid="race-estimate">
+            {r.estimatedBy(t.records.distances[estimate.effort] ?? estimate.effort, formatDate(estimate.date))}
+          </p>
+        )}
       </section>
 
       {trend.length >= 2 && (
         <section className={cardClass({ className: 'flex flex-col gap-2' })} data-testid="race-trend">
-          <CardTitle as="h2">{r.trendTitle}</CardTitle>
+          <CardTitle as="h2">{estimate ? r.trendTitleEstimated : r.trendTitle}</CardTitle>
           <TrendLine points={trend} target={targetSeconds} />
           {change && (
             <p className="text-sm" style={{ color: deltaColor('race', change.seconds, { value: trend.at(-1)!.seconds }) }} data-testid="race-trend-change">

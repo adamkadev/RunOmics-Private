@@ -319,6 +319,9 @@ export function ChartStack({ onScrub, ...input }: Props) {
                       <Dot left={cursorX} top={pct(laneY(lane, value), LANE_HEIGHT)} color={LINE_COLOR[lane.key as keyof typeof LINE_COLOR]} />
                     )}
                   </div>
+                  {lane.key === 'pace' && lane.bands.length > 0 && zones?.paceEstimated && (
+                    <p className="text-[12px] text-muted-foreground text-pretty" data-testid="pace-zones-estimated">{c.paceZonesEstimated}</p>
+                  )}
                 </div>
               )
             })}

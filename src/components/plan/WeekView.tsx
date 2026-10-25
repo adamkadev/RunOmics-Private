@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import type { PlanRun } from './planRun'
+import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
+import { CrossTrainingList } from '@/components/crossTraining/CrossTraining'
 import { weekTarget } from '@/domain/training/weekTarget'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
@@ -125,6 +127,7 @@ interface Props {
   selectedDate: string
   onSelectDate: (date: string) => void
   byDate: Map<string, PlanRun[]>
+  byDateOther?: ReadonlyMap<string, CrossTrainingEntry[]>
   byDatePlanned: Map<string, PlannedWorkout>
   byDateCoach?: ReadonlyMap<string, PlanPrescriptionView[]>
   coaching?: PlanCoachingView | null
@@ -146,6 +149,7 @@ export function WeekView({
   selectedDate,
   onSelectDate,
   byDate,
+  byDateOther,
   byDatePlanned,
   byDateCoach,
   coaching = null,
@@ -182,9 +186,10 @@ export function WeekView({
           color: kind?.color ?? null,
           letter: kind && day.state !== 'rest' ? kindLetter(kind.type, kind.kind) : null,
           isToday: day.date === today,
+          other: (byDateOther?.get(day.date) ?? []).map((entry) => entry.kind),
         }
       }),
-    [target, byDate, byDatePlanned, byDateCoach, today]
+    [target, byDate, byDateOther, byDatePlanned, byDateCoach, today]
   )
 
   const phase = useMemo(() => phaseWeek(planPhaseSpans(coaching, planPhaseRanges), firstDay), [coaching, planPhaseRanges, firstDay])
@@ -194,6 +199,7 @@ export function WeekView({
   }, [coaching, nextRace, today])
 
   const acts = byDate.get(selected) ?? []
+  const others = byDateOther?.get(selected) ?? []
   const kind = dayKind(selected, acts, byDatePlanned, byDateCoach)
   const workouts = selectedWorkouts(selected, byDatePlanned, byDateCoach, trainingZones)
 
@@ -281,6 +287,13 @@ export function WeekView({
       <DaySelector days={selectorDays} selectedDate={selected} onSelect={onSelectDate} />
 
       {dayCard}
+
+      {others.length > 0 && (
+        <section className={cardClass({ className: 'flex flex-col gap-1 py-3' })} data-testid="plan-cross-training">
+          <h3 className="text-[13px] font-semibold text-muted-foreground">{t.crossTraining.title}</h3>
+          <CrossTrainingList entries={others} />
+        </section>
+      )}
 
       {nextKey && (
         <NextKeySessionCard weekday={nextKey.weekday} title={nextKey.title} color={nextKey.color} onSelect={() => onSelectDate(nextKey.date)} />

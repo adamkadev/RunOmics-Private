@@ -99,6 +99,8 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
   const pct = (units: number) => `${((units + PAD) / (CHART_W + 2 * PAD)) * 100}%`
   const streak = weeks.flatMap((week, i) => (week.inStreak ? [i] : []))
   const short = (week: ConsistencyWeek) => formatDate(week.start, { style: 'bare', year: 'never' })
+  // A row of its own under the runs: stacked on them, a session would read as a run toward the target.
+  const withOthers = weeks.some((week) => week.others > 0)
 
   return (
     <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="consistency-weeks">
@@ -129,7 +131,7 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
               key={week.start}
               role="button"
               tabIndex={0}
-              aria-label={c.weekLabel(short(week), week.runs)}
+              aria-label={week.others > 0 ? `${c.weekLabel(short(week), week.runs)}, ${t.crossTraining.count(week.others)}` : c.weekLabel(short(week), week.runs)}
               onClick={open}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return
@@ -176,6 +178,13 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
           )
         })}
       </svg>
+      {withOthers && (
+        <svg viewBox={`${-PAD} 0 ${CHART_W + 2 * PAD} ${dot}`} className="block h-auto w-full overflow-visible" aria-hidden data-testid="others-row">
+          {weeks.map((week, i) =>
+            week.others > 0 ? <circle key={week.start} cx={x(i) + dot / 2} cy={dot / 2} r={dot / 3} fill="var(--zone-1)" data-testid="other-mark" /> : null,
+          )}
+        </svg>
+      )}
       <div className="relative h-[3px]" aria-hidden>
         {streak.length > 0 && (
           <span
@@ -208,6 +217,12 @@ function RunsPerWeek({ view, selected, onSelect }: { view: ConsistencyView; sele
             <span aria-hidden className="box-border size-2 rounded-[2px] border border-dashed border-accent" />
             {c.legend.planned}
           </span>
+          {withOthers && (
+            <span className="flex items-center gap-1">
+              <span aria-hidden className="size-1.5 rounded-full bg-[var(--zone-1)]" />
+              {t.crossTraining.legend}
+            </span>
+          )}
         </span>
         <span className="text-accent-text">— {c.legend.streak}</span>
       </div>

@@ -187,6 +187,16 @@ export const en = {
     empty: 'No runs yet.',
   },
 
+  // Strength, cycling and every other non-running session: kept apart from the runs and their numbers.
+  crossTraining: {
+    title: 'Other training',
+    kinds: { strength: 'Strength', cycling: 'Cycling', swimming: 'Swimming', walking: 'Walking', cardio: 'Cardio', mobility: 'Mobility', other: 'Other' },
+    sets: (sets: number) => `${sets} set${sets === 1 ? '' : 's'}`,
+    legend: 'other training',
+    count: (sessions: number) => `${sessions} other training session${sessions === 1 ? '' : 's'}`,
+    weekTotal: (sessions: number, time: string) => `${sessions} session${sessions === 1 ? '' : 's'} · ${time}`,
+  },
+
   paceAxis: {
     caption: 'up = faster',
   },
@@ -1658,6 +1668,7 @@ export const en = {
       bestSmoothed: 'best 30 s',
       pace: 'Pace',
       paceUnitHint: '/km, up = faster',
+      paceZonesEstimated: 'Pace zones estimated by VDOT: the watch gives no threshold pace.',
       elevation: 'Elevation',
       cadence: 'Cadence',
       elevationGain: (m: string) => `+${m} m gain`,
@@ -2273,6 +2284,8 @@ export const en = {
   race: {
     back: 'Progress',
     predicted: 'Predicted',
+    estimated: 'Estimated',
+    estimatedBy: (effort: string, date: string) => `Estimated by VDOT from your ${effort} on ${date}: Garmin gives no current prediction.`,
     target: 'Target',
     best: 'Best',
     standTitle: 'Where you stand',
@@ -2280,6 +2293,7 @@ export const en = {
     inHand: (gap: string) => `${gap} in hand.`,
     perWeek: (seconds: number, weeks: number) => (weeks === 1 ? `About ${seconds} s in the week left.` : `About ${seconds} s a week over the ${weeks} weeks left.`),
     trendTitle: 'Prediction, last 12 weeks',
+    trendTitleEstimated: 'Estimate, last 12 weeks',
     trendChange: (change: string, weeks: number, perWeek: string | null) =>
       `${change} in ${weeks} week${weeks === 1 ? '' : 's'}${perWeek ? `, ${perWeek} a week` : ''}.`,
     trendFlat: (weeks: number) => `Unchanged in ${weeks} week${weeks === 1 ? '' : 's'}.`,

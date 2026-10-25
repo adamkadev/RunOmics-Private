@@ -1,0 +1,23 @@
+{
+  "sessions": [
+    {
+      "id": "434343",
+      "date": "2026-09-11",
+      "startTimeLocal": "2026-09-11T18:20:00",
+      "sport": "strength_training",
+      "durationSeconds": 2580,
+      "distanceKm": null,
+      "avgHeartRate": 102,
+      "trainingLoad": 28.4,
+      "sets": [
+        {
+          "category": "squat",
+          "exercise": "goblet_squat",
+          "reps": 12,
+          "weightKg": 16.0,
+          "durationSeconds": 45
+        }
+      ]
+    }
+  ]
+}

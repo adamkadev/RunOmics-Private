@@ -1,6 +1,8 @@
 'use client'
 
 import type { WeekDayState } from '@/domain/training/weekTarget'
+import type { CrossTrainingKind } from '@/domain/activity/crossTraining'
+import { CrossTrainingIcon } from '@/components/crossTraining/CrossTraining'
 import { formatDate } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
@@ -16,6 +18,8 @@ export interface SelectorDay {
   /** "E", "T", "Tm", "L"; null on a rest day. */
   letter: string | null
   isToday: boolean
+  /** Each other-training session's kind; none counts toward the day's state or km. */
+  other?: CrossTrainingKind[]
 }
 
 const PX_PER_KM = 5
@@ -34,7 +38,8 @@ export function barHeight(day: Pick<SelectorDay, 'state' | 'km'>): number {
 function dayName(day: SelectorDay): string {
   const state = [t.sessionState[day.state], day.isToday ? t.sessionState.today : null].filter(Boolean).join(' · ')
   const km = day.state !== 'rest' && day.km !== null ? `${formatWeekKm(day.km)} ${t.units.km}` : null
-  return [t.sessionState.dayLabel(formatDate(day.date, { style: 'full' }), state), km].filter(Boolean).join(' · ')
+  const other = (day.other ?? []).map((kind) => t.crossTraining.kinds[kind])
+  return [t.sessionState.dayLabel(formatDate(day.date, { style: 'full' }), state), km, ...other].filter(Boolean).join(' · ')
 }
 
 export function DaySelector({
@@ -46,11 +51,14 @@ export function DaySelector({
   selectedDate: string
   onSelect: (date: string) => void
 }) {
+  // Only a week with other training gives up the room its chips take.
+  const withOther = days.some((day) => (day.other?.length ?? 0) > 0)
 
   return (
     <div role="group" aria-label={t.plan.daySelector} className="grid grid-cols-7 gap-1" data-testid="day-selector">
       {days.map((day, i) => {
         const selected = day.date === selectedDate
+        const otherKind = day.other?.[0]
         return (
           <button
             key={day.date}
@@ -91,6 +99,19 @@ export function DaySelector({
             >
               {day.letter ?? '–'}
             </span>
+            {withOther && (
+              <span className="flex h-4 items-center" aria-hidden>
+                {otherKind && (
+                  <span
+                    className="flex h-4 items-center rounded-full px-1.5"
+                    style={{ background: 'color-mix(in srgb, var(--zone-1) 16%, transparent)' }}
+                    data-testid="day-cross-training"
+                  >
+                    <CrossTrainingIcon kind={otherKind} size={11} className="text-[var(--zone-1)]" />
+                  </span>
+                )}
+              </span>
+            )}
           </button>
         )
       })}

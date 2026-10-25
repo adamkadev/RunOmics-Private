@@ -16,11 +16,14 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from garmin.cross_training import summarize
 from processing.fit_parser import ActivitySplit, ParsedFit, SplitLap
 from processing.mapper import HrZone, map_activity
+from repository.cross_training_store import CrossTrainingStore
 from repository.json_store import JsonActivityStore
 
-_FIXTURE_DIR = Path(__file__).resolve().parents[2] / "fixtures" / "contract" / "activities"
+_FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "contract"
+_FIXTURE_DIR = _FIXTURES / "activities"
 
 # Fictional throughout: an activity id no Garmin account has, and a route
 # nowhere near anyone's.
@@ -66,18 +69,41 @@ def _write_through_the_store(root: Path) -> Path:
     return activities_dir
 
 
-def test_the_store_writes_the_contract_fixture(tmp_path):
-    written = _write_through_the_store(tmp_path)
+def _write_cross_training(root: Path) -> Path:
+    store = CrossTrainingStore(root / "cross_training")
+    row = {
+        "activityId": 434343,
+        "startTimeLocal": "2026-09-11 18:20:00",
+        "activityType": {"typeKey": "strength_training"},
+        "duration": 2580.4,
+        "averageHR": 102.0,
+        "activityTrainingLoad": 28.4,
+    }
+    sets = [{"category": "squat", "exercise": "goblet_squat", "reps": 12, "weightKg": 16.0, "durationSeconds": 45}]
+    store.upsert({**summarize(row), "sets": sets})
+    store.save()
+    return root / "cross_training"
+
+
+def _assert_matches_fixture(written: Path, fixture: Path) -> None:
     files = sorted(p.name for p in written.glob("*.json"))
 
     if os.environ.get("UPDATE_CONTRACT_FIXTURE") == "1":
-        _FIXTURE_DIR.mkdir(parents=True, exist_ok=True)
+        fixture.mkdir(parents=True, exist_ok=True)
         for name in files:
-            (_FIXTURE_DIR / name).write_bytes((written / name).read_bytes())
+            (fixture / name).write_bytes((written / name).read_bytes())
 
-    assert files == sorted(p.name for p in _FIXTURE_DIR.glob("*.json")), "fixture files differ - see the module docstring"
+    assert files == sorted(p.name for p in fixture.glob("*.json")), "fixture files differ - see the module docstring"
     for name in files:
-        assert (written / name).read_bytes() == (_FIXTURE_DIR / name).read_bytes(), (
-            f"{name} no longer matches fixtures/contract/activities/{name} - "
+        assert (written / name).read_bytes() == (fixture / name).read_bytes(), (
+            f"{name} no longer matches fixtures/contract/{fixture.name}/{name} - "
             "regenerate it if the change is intended (see the module docstring)"
         )
+
+
+def test_the_store_writes_the_contract_fixture(tmp_path):
+    _assert_matches_fixture(_write_through_the_store(tmp_path), _FIXTURE_DIR)
+
+
+def test_the_cross_training_store_writes_its_contract_fixture(tmp_path):
+    _assert_matches_fixture(_write_cross_training(tmp_path), _FIXTURES / "cross_training")

@@ -167,6 +167,21 @@ describe('Consistency', () => {
     expect(screen.getByTestId('week-selected')).toBeTruthy()
   })
 
+  it('marks other training on its own row and its own days, never as a run toward the target', async () => {
+    const strength = { id: 'x1', date: '2026-10-14', kind: 'strength' as const, durationSeconds: 2700, distanceKm: null, sets: null }
+    const view = consistencyView('6m', { ...INPUT, others: [strength] })
+    const plain = consistencyView('6m', INPUT)
+    render(<Consistency views={{ '3m': view, '6m': view, '1y': view }} today={TODAY} />)
+
+    expect(view.weeks.map((w) => [w.runs, w.onTarget, w.inStreak])).toEqual(plain.weeks.map((w) => [w.runs, w.onTarget, w.inStreak]))
+    expect(screen.getAllByTestId('other-mark')).toHaveLength(1)
+    expect(screen.getAllByTestId('run-dot')).toHaveLength(RUNS.length)
+    await userEvent.click(screen.getAllByTestId('week-column')[12]!)
+    const sheet = screen.getByTestId('week-sheet')
+    expect(sheet.querySelector('[data-others]')!.textContent).toBe('14')
+    expect(within(sheet).getByTestId('week-cross-training').textContent).toContain(t.crossTraining.kinds.strength)
+  })
+
   it('fits a year of weeks to the width', () => {
     const { dot, step } = dotGeometry(53)
     expect(dot).toBeLessThan(step)

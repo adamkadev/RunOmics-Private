@@ -6,9 +6,10 @@ import Link from 'next/link'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDate, formatDateRange, formatDistance, formatDurationWords } from '@/lib/formatters'
 import { Sheet as BottomSheet } from '@/components/ui/Sheet'
+import { CrossTrainingList } from '@/components/crossTraining/CrossTraining'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
-import { weekSheet, type ConsistencyView, type SheetDay, type SheetRow, type WeekSheet as Sheet } from './consistencyView'
+import { mondayOf, weekSheet, type ConsistencyView, type SheetDay, type SheetRow, type WeekSheet as Sheet } from './consistencyView'
 
 function dayStyle(day: SheetDay): CSSProperties {
   if (day.runs > 0) return { background: 'var(--accent)', color: 'var(--accent-foreground)' }
@@ -64,16 +65,24 @@ function Calendar({ sheet, target }: { sheet: Sheet; target: number }) {
             <span key={day.date} className={cn('flex items-center justify-center', !day.inMonth && 'opacity-50')}>
               <span
                 className={cn(
-                  'box-border flex size-[30px] items-center justify-center rounded-full text-[11.5px] tabular-nums',
-                  day.runs > 0 || day.today ? 'font-semibold' : 'text-muted-foreground',
+                  'relative box-border flex size-[30px] items-center justify-center rounded-full text-[11.5px] tabular-nums',
+                  day.runs > 0 || day.others > 0 || day.today ? 'font-semibold' : 'text-muted-foreground',
                   day.today && 'state-today',
                 )}
                 style={dayStyle(day)}
                 data-runs={day.runs || undefined}
+                data-others={day.others || undefined}
                 data-today={day.today || undefined}
                 data-planned={day.planned || undefined}
               >
                 {day.day}
+                {day.others > 0 && (
+                  <span
+                    aria-hidden
+                    className="absolute bottom-[3px] left-1/2 size-[5px] -translate-x-1/2 rounded-full"
+                    style={{ background: day.runs > 0 ? 'var(--accent-foreground)' : 'var(--zone-1)' }}
+                  />
+                )}
               </span>
             </span>
           ))}
@@ -92,6 +101,8 @@ export function WeekSheet({ view, weekStart, today, onClose }: { view: Consisten
   const { week } = sheet
   const title = s.title(formatDate(week.start, { style: 'bare' }))
   const hit = sheet.status === 'hit'
+  const others = view.others.filter((entry) => mondayOf(entry.date) === week.start)
+  const otherSeconds = others.reduce((sum, entry) => sum + entry.durationSeconds, 0)
 
   // It draws its own title block and Close; the sheet adds only the glass and the grabber.
   return (
@@ -114,6 +125,15 @@ export function WeekSheet({ view, weekStart, today, onClose }: { view: Consisten
           </span>
         </div>
         <Calendar sheet={sheet} target={view.target} />
+        {others.length > 0 && (
+          <div className="flex flex-col gap-0.5 px-1" data-testid="week-cross-training">
+            <p className="flex items-baseline justify-between gap-3 text-[13px]">
+              <span className="font-semibold text-foreground">{t.crossTraining.title}</span>
+              <span className="text-muted-foreground">{t.crossTraining.weekTotal(others.length, formatDurationWords(otherSeconds))}</span>
+            </p>
+            <CrossTrainingList entries={others} withWeekday />
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3 px-1 pb-1">
           {week.runs > 0 ? (
             <Link href={`/activities?week=${week.start}`} className="hit-44 text-[13px] font-semibold text-accent-text" data-testid="week-activities">

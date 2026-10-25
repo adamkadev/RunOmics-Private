@@ -189,6 +189,15 @@ export const fr = {
     empty: 'Aucune sortie pour l’instant.',
   },
 
+  crossTraining: {
+    title: 'Autres activités',
+    kinds: { strength: 'Renforcement', cycling: 'Vélo', swimming: 'Natation', walking: 'Marche', cardio: 'Cardio', mobility: 'Mobilité', other: 'Autre' },
+    sets: (sets: number) => `${sets} série${sets > 1 ? 's' : ''}`,
+    legend: 'autre activité',
+    count: (sessions: number) => `${sessions} autre${sessions > 1 ? 's' : ''} activité${sessions > 1 ? 's' : ''}`,
+    weekTotal: (sessions: number, time: string) => `${sessions} séance${sessions > 1 ? 's' : ''} · ${time}`,
+  },
+
   paceAxis: {
     caption: 'vers le haut = plus rapide',
   },
@@ -1569,6 +1578,7 @@ export const fr = {
       bestSmoothed: 'meilleure 30 s',
       pace: 'Allure',
       paceUnitHint: '/km, vers le haut = plus rapide',
+      paceZonesEstimated: 'Zones d’allure estimées par VDOT : la montre ne donne pas d’allure seuil.',
       elevation: 'Altitude',
       cadence: 'Cadence',
       elevationGain: (m: string) => `${m} m D+`,
@@ -2114,6 +2124,8 @@ export const fr = {
   race: {
     back: 'Progression',
     predicted: 'Prédit',
+    estimated: 'Estimé',
+    estimatedBy: (effort: string, date: string) => `Estimé par VDOT à partir de ton ${effort} du ${date} : Garmin ne donne pas de prédiction à jour.`,
     target: 'Objectif',
     best: 'Record',
     standTitle: 'Où tu en es',
@@ -2122,6 +2134,7 @@ export const fr = {
     perWeek: (seconds: number, weeks: number) =>
       weeks === 1 ? `Environ ${seconds} s sur la semaine restante.` : `Environ ${seconds} s par semaine sur les ${weeks} semaines restantes.`,
     trendTitle: 'Prédiction, 12 dernières semaines',
+    trendTitleEstimated: 'Estimation, 12 dernières semaines',
     trendChange: (change: string, weeks: number, perWeek: string | null) =>
       `${change} en ${weeks} semaine${weeks > 1 ? 's' : ''}${perWeek ? `, ${perWeek} par semaine` : ''}.`,
     trendFlat: (weeks: number) => `Inchangée en ${weeks} semaine${weeks > 1 ? 's' : ''}.`,
