@@ -2486,6 +2486,27 @@ export const en = {
       hr: (min: number, max: number) => `HR ${min}-${max} bpm`,
       hrZone: (zone: number) => `HR zone ${zone}`,
     },
+    controlledRun: {
+      title: 'Controlled threshold',
+      repClass: { long: 'Long reps', medium: 'Medium reps', short: 'Short reps' },
+      verdicts: {
+        under: 'Well under target',
+        on_target: 'On target',
+        over: 'Over target',
+        off_guide: 'Off the pace guide',
+        unreadable: 'Not read',
+      },
+      verdictDetail: {
+        under: 'Every rep settled well under target at the pace guide.',
+        on_target: 'Every rep settled at or under target, clear of the ceiling.',
+        over: 'A rep settled above target or touched the ceiling.',
+        off_guide: 'The reps ran away from the pace guide, so they say nothing about it.',
+        unreadable: 'No laps or heart rate to read the reps from.',
+      },
+      band: (target: number, ceiling: number) => `Target ${target} · ceiling ${ceiling}`,
+      cols: { rep: '#', pace: 'Pace', hr: 'HR', peak: 'Peak' },
+      footnote: (minute: number, guide: string) => `Heart rate lags, so each rep is read from minute ${minute}. Pace guide ${guide} /km.`,
+    },
   },
 
   activityTypes: {

@@ -20,6 +20,8 @@ import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsigh
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getRunSessions } from '@/application/coaching/GetCoachingView'
+import { controlledRunView } from '@/application/coaching/GetCoachReadout'
+import { ControlledThresholdCard } from '@/components/activity/ControlledThresholdCard'
 import { sessionLabel } from '@/lib/activityTitle'
 import { paceZones } from '@/application/usecases/GetTrainingZones'
 import { chartZones } from '@/components/activity/chartStackLanes'
@@ -83,6 +85,7 @@ export default async function ActivityDetailPage({
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
   // The coach's session this run was, for its name in the header and on the share card, and its reps' target pace.
   const session = shareSession(getRunSessions(), activity)
+  const controlledRun = controlledRunView(activity, session)
   // The watch's own plan for the day, for a rep target the coach never matched.
   const plannedForDay = (await getPlannedWorkouts()).find((w) => w.date === activity.date.slice(0, 10)) ?? null
 
@@ -112,8 +115,9 @@ export default async function ActivityDetailPage({
         shoe={shoe}
         similarRuns={similarRuns}
         extras={
-          officialResult || activity.bestEfforts || newGround ? (
+          officialResult || activity.bestEfforts || newGround || controlledRun ? (
             <>
+              {controlledRun && <ControlledThresholdCard view={controlledRun} />}
               {officialResult && (
                 <OfficialResult
                   result={officialResult}

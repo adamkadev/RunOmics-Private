@@ -2308,6 +2308,27 @@ export const fr = {
       hr: (min: number, max: number) => `FC ${min}-${max} bpm`,
       hrZone: (zone: number) => `Zone FC ${zone}`,
     },
+    controlledRun: {
+      title: 'Seuil contrôlé',
+      repClass: { long: 'Fractions longues', medium: 'Fractions moyennes', short: 'Fractions courtes' },
+      verdicts: {
+        under: 'Bien sous la cible',
+        on_target: 'Dans la cible',
+        over: 'Au-dessus de la cible',
+        off_guide: 'Hors du guide d’allure',
+        unreadable: 'Non lue',
+      },
+      verdictDetail: {
+        under: 'Chaque fraction s’est stabilisée bien sous la cible, à l’allure du guide.',
+        on_target: 'Chaque fraction s’est stabilisée à la cible ou en dessous, sans toucher le plafond.',
+        over: 'Une fraction s’est stabilisée au-dessus de la cible ou a touché le plafond.',
+        off_guide: 'Les fractions se sont éloignées du guide d’allure : elles ne disent rien de lui.',
+        unreadable: 'Ni tours ni fréquence cardiaque pour lire les fractions.',
+      },
+      band: (target: number, ceiling: number) => `Cible ${target} · plafond ${ceiling}`,
+      cols: { rep: 'n°', pace: 'Allure', hr: 'FC', peak: 'Pic' },
+      footnote: (minute: number, guide: string) => `La FC réagit en retard : chaque fraction est lue à partir de la ${minute}ᵉ minute. Guide d’allure ${guide} /km.`,
+    },
   },
 
   activityTypes: {
