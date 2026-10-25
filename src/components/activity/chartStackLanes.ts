@@ -28,6 +28,8 @@ export interface ZoneBand {
 export interface ChartZones {
   hrMinBpm: number[] | null
   pace: { zone: ZoneNumber; fastest: number; slowest: number }[] | null
+  /** The pace zones come from a VDOT estimate: the watch gives no threshold pace. */
+  paceEstimated?: boolean
 }
 
 /** The run's own heart-rate zones come first: they are the ones the watch scored it with. */
@@ -35,13 +37,15 @@ export function chartZones(
   runZones: readonly { zone: number; minBpm: number }[] | null | undefined,
   athleteBounds: readonly number[] | null | undefined,
   pace: readonly { hrZone: number; paceMinSecPerKm: number; paceMaxSecPerKm: number }[] | null | undefined,
+  { paceEstimated = false }: { paceEstimated?: boolean } = {},
 ): ChartZones | null {
   const own = [...(runZones ?? [])].sort((a, b) => a.zone - b.zone).map((z) => z.minBpm)
   const hrMinBpm = own.length >= 5 && own.every((v) => v > 0) ? own.slice(0, 5) : athleteBounds && athleteBounds.length >= 5 ? [...athleteBounds].slice(0, 5) : null
   const paceZones = pace && pace.length > 0
     ? pace.map((z) => ({ zone: Math.min(5, Math.max(1, z.hrZone)) as ZoneNumber, fastest: z.paceMinSecPerKm, slowest: z.paceMaxSecPerKm }))
     : null
-  return hrMinBpm || paceZones ? { hrMinBpm, pace: paceZones } : null
+  if (!hrMinBpm && !paceZones) return null
+  return paceZones && paceEstimated ? { hrMinBpm, pace: paceZones, paceEstimated } : { hrMinBpm, pace: paceZones }
 }
 
 export interface Lane {

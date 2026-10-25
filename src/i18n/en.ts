@@ -1632,6 +1632,7 @@ export const en = {
       bestSmoothed: 'best 30 s',
       pace: 'Pace',
       paceUnitHint: '/km, up = faster',
+      paceZonesEstimated: 'Pace zones estimated by VDOT: the watch gives no threshold pace.',
       elevation: 'Elevation',
       cadence: 'Cadence',
       elevationGain: (m: string) => `+${m} m gain`,

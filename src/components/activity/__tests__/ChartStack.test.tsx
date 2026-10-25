@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { RUN_CHART_LINE } from '@/lib/colors'
 import { t } from '@/i18n'
 import { ChartStack } from '../ChartStack'
+import { chartZones } from '../chartStackLanes'
 
 const streamCleanups = vi.hoisted(() => ({ count: 0 }))
 
@@ -110,5 +111,30 @@ describe('ChartStack scrub', () => {
     expect(screen.getByRole('tab', { name: t.activity.charts.raw })).toHaveAttribute('aria-selected', 'true')
     expect(line()).not.toBe(smoothed)
     expect(streamCleanups.count).toBe(2)
+  })
+})
+
+describe('ChartStack zones', () => {
+  it('marks pace zones estimated by VDOT under the pace lane', () => {
+    const pace = [
+      { hrZone: 4, paceMinSecPerKm: 280, paceMaxSecPerKm: 300 },
+      { hrZone: 2, paceMinSecPerKm: 301, paceMaxSecPerKm: 360 },
+    ]
+    render(
+      <ChartStack
+        distanceKm={10}
+        hrSamples={null}
+        avgHr={null}
+        paceSamples={SAMPLES.map((hr) => hr + 160)}
+        avgPaceSecPerKm={310}
+        cadenceSamples={null}
+        avgCadence={null}
+        elevationProfile={null}
+        elevationGain={null}
+        zones={chartZones([], null, pace, { paceEstimated: true })}
+      />
+    )
+
+    expect(screen.getByTestId('pace-zones-estimated')).toHaveTextContent(t.activity.charts.paceZonesEstimated)
   })
 })

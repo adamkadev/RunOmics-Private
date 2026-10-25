@@ -1539,6 +1539,7 @@ export const fr = {
       bestSmoothed: 'meilleure 30 s',
       pace: 'Allure',
       paceUnitHint: '/km, vers le haut = plus rapide',
+      paceZonesEstimated: 'Zones d’allure estimées par VDOT : la montre ne donne pas d’allure seuil.',
       elevation: 'Altitude',
       cadence: 'Cadence',
       elevationGain: (m: string) => `${m} m D+`,
