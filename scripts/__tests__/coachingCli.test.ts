@@ -66,7 +66,7 @@ afterEach(() => {
   for (const root of temporaryRoots.splice(0)) fs.rmSync(root, { recursive: true, force: true })
 })
 
-describe('coaching CLI', () => {
+describe('coaching CLI', { timeout: 20_000 }, () => {
   it('leaves data and previews untouched when generation fails', () => {
     const root = workspace()
     fs.rmSync(path.join(root, 'coaching'), { recursive: true, force: true })

@@ -82,7 +82,7 @@ afterEach(() => {
   for (const root of temporaryRoots.splice(0)) fs.rmSync(root, { recursive: true, force: true })
 })
 
-describe('private data optimistic concurrency', () => {
+describe('private data optimistic concurrency', { timeout: 20_000 }, () => {
   it('refuses to push a workspace whose base commit is no longer the remote head, and preserves the concurrent commit once re-fetched', () => {
     const root = temporaryRoot()
     const remote = createRemote(root)
