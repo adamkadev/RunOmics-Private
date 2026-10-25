@@ -42,11 +42,12 @@ interface Props {
   device?: SyncDevice
   body?: Body
   zones?: Zones
+  privateSite?: boolean
 }
 
 export const ATHLETE_HREF = '/athlete'
 
-export function SettingsClient({ lastSyncedAt, activityCount, device, body, zones }: Props) {
+export function SettingsClient({ lastSyncedAt, activityCount, device, body, zones, privateSite = false }: Props) {
   const { user, isOwner, loading } = useOwnerAuth()
   const router = useRouter()
   const [signingIn, setSigningIn] = useState(false)
@@ -55,6 +56,11 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
   async function handleSignIn() {
     if (!isClientFirebaseConfigured) {
       showToast(t.settings.auth.notConfigured, false)
+      return
+    }
+    if (privateSite) {
+      // Safari blocks a popup that waits on Google's iframe; a fresh /sign-in load readies it before the tap.
+      replacePage(`${SIGN_IN_PATH}?next=${encodeURIComponent('/settings')}`)
       return
     }
     setSigningIn(true)

@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { SettingsClient, zonesSummary } from '@/components/settings/SettingsClient'
 import { t } from '@/i18n'
 import { GARMIN_CONNECT_URL } from '@/lib/garminConnect'
+import { replacePage } from '@/lib/siteSession'
 
 const OWNER_EMAIL = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_OWNER_EMAIL = 'owner@test.dev'
@@ -30,6 +31,7 @@ function signedIn(email: string, claims: Record<string, unknown> = {}): MockUser
 }
 
 vi.mock('@/lib/firebaseConfig', () => ({ isClientFirebaseConfigured: true }))
+vi.mock('@/lib/siteSession', async (original) => ({ ...(await original<object>()), replacePage: vi.fn() }))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 
 vi.mock('@/lib/firebase', () => ({
@@ -78,6 +80,13 @@ describe('SettingsClient owner gate', () => {
 
     expect(await screen.findByText(t.settings.auth.signIn)).toBeInTheDocument()
     expect(screen.queryByTestId('notifications-form')).not.toBeInTheDocument()
+  })
+
+  it('signs in on a private site through the sign-in page, then comes back', async () => {
+    render(<SettingsClient lastSyncedAt={null} activityCount={0} privateSite />)
+    fireEvent.click(await screen.findByText(t.settings.auth.signIn))
+
+    expect(replacePage).toHaveBeenCalledWith('/sign-in?next=%2Fsettings')
   })
 
   it('groups the page into Appearance, Profile, Data and Notifications, even signed out', async () => {
