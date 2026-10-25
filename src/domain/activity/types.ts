@@ -76,8 +76,14 @@ export interface Activity {
   verticalRatioPct: number | null
   strideLengthM: number | null
   bestEfforts: Record<string, number> | null
+  /** Most metres covered in each duration, keyed by its seconds on the moving clock; absent until a reprocess. */
+  durationBests?: Record<string, number> | null
   splits: ActivitySplit[] | null
   paceSamples: number[] | null
+  /** Minetti's grade-adjusted pace; null without a barometric altitude, absent until a reprocess. */
+  gapSecPerKm?: number | null
+  /** Grade-adjusted pace sampled at the same points as paceSamples, in whole seconds. */
+  gapSamples?: number[] | null
   vo2maxGarmin: number | null
   avgTemperature: number | null
   cadenceSamples: number[] | null
