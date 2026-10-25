@@ -1,3 +1,5 @@
+import type { NumberRange } from '@/domain/coaching/types'
+
 /** Coaching rules of thumb, not measured limits, kept together to be tuned; the planner is told them as they stand. */
 export const CONTROLLED_THRESHOLD = {
   dose: {
@@ -6,6 +8,10 @@ export const CONTROLLED_THRESHOLD = {
     /** Ceiling on controlled threshold time as a share of the week's running time; around 20% is the aim. */
     maxShareOfRunningTime: 0.25,
   },
+  /** The week the dose stops growing at: two sessions, in about the volume sustained over four weeks. */
+  fullWeek: { sessions: 2, sessionMinutes: 30, kmEitherSide: 1 },
+  /** Short repetitions are guided in the band of this width that holds threshold pace. */
+  shortGuideBandSecPerKm: 5,
   /** The shortest repetition of each class, in seconds: 8-10 minutes is long, 5-6 medium, shorter is short. */
   repClassMinSeconds: { long: 450, medium: 240 },
   heartRate: {
@@ -73,4 +79,32 @@ export function repLengthClass(seconds: number): RepLengthClass {
   if (seconds >= CONTROLLED_THRESHOLD.repClassMinSeconds.long) return 'long'
   if (seconds >= CONTROLLED_THRESHOLD.repClassMinSeconds.medium) return 'medium'
   return 'short'
+}
+
+export interface ControlledThresholdFacts {
+  heartRate: ControlledThresholdHr & { lthrBpm: number }
+  fullWeek: { sessions: number; minutesPerSession: number; weekKm: NumberRange | null }
+  shortRepetitionGuideSecPerKm: NumberRange | null
+}
+
+/** This athlete's numbers for the planner, from their own data, so no athlete's prompt carries another's. */
+export function controlledThresholdFacts(
+  lthrBpm: number | null | undefined,
+  thresholdPaceSecPerKm: number | null | undefined,
+  best4WeekAverageKm: number,
+): ControlledThresholdFacts | null {
+  const heartRate = controlledThresholdHr(lthrBpm)
+  if (!heartRate) return null
+  const { fullWeek, shortGuideBandSecPerKm: band } = CONTROLLED_THRESHOLD
+  const km = Math.round(best4WeekAverageKm)
+  const fastest = thresholdPaceSecPerKm ? Math.floor(thresholdPaceSecPerKm / band) * band : null
+  return {
+    heartRate,
+    fullWeek: {
+      sessions: fullWeek.sessions,
+      minutesPerSession: fullWeek.sessionMinutes,
+      weekKm: km > fullWeek.kmEitherSide ? { min: km - fullWeek.kmEitherSide, max: km + fullWeek.kmEitherSide } : null,
+    },
+    shortRepetitionGuideSecPerKm: fastest === null ? null : { min: fastest, max: fastest + band },
+  }
 }

@@ -3,6 +3,7 @@ import 'server-only'
 import { trainingHistory, isRunningActivity, type TrainingHistory } from '@/domain/training/trainingHistory'
 import { createHash } from 'crypto'
 import { autoregulationReport, controlledStep, type AutoregulationReport } from './autoregulation'
+import { controlledThresholdFacts, type ControlledThresholdFacts } from './controlledThreshold'
 import type { Activity } from '@/domain/activity/types'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { raceExecution, type RaceExecution } from '@/domain/activity/raceExecution'
@@ -95,6 +96,8 @@ export interface CoachingContext {
   racePredictions: GarminRacePredictionsData['latest'] | null
   adherence: { prescribed: number; completed: number; percent: number } | null
   currentPlan: CoachingPlan | null
+  /** Null without an LTHR to set a ceiling by. */
+  controlledThreshold: ControlledThresholdFacts | null
   /** Proposals the athlete has not accepted; present only while the plan prescribes controlled threshold sessions. */
   autoregulation?: AutoregulationReport
 }
@@ -207,11 +210,12 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
   const last7 = within(7)
   const garmin = input.trainingStatus
   const officialResults = officialResultsByActivityId(input.officialResults)
+  const history = trainingHistory(input.activities, referenceDate)
 
   return {
     schemaVersion: 1,
     referenceDate,
-    trainingHistory: trainingHistory(input.activities, referenceDate),
+    trainingHistory: history,
     recentActivities: recent.map((activity) => ({
       id: activity.id,
       date: activity.date.slice(0, 10),
@@ -277,6 +281,11 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
     racePredictions: input.racePredictions?.latest ?? null,
     adherence: adherence(input.plan, input.activities, referenceDate),
     currentPlan: input.plan,
+    controlledThreshold: controlledThresholdFacts(
+      input.athlete.lthrBpm,
+      input.trainingZones?.thresholdPaceSecPerKm ?? input.athlete.thresholdPaceSecPerKm,
+      history.best4WeekAverageKm,
+    ),
     ...(input.plan?.weeks.some((week) => week.workouts.some((workout) => controlledStep(workout) !== null))
       ? { autoregulation: autoregulationReport(input.activities, [input.plan, ...(input.archivedPlans ?? [])], referenceDate, input.officialResults) }
       : {}),

@@ -148,6 +148,11 @@ describe('buildCoachingContext', () => {
     expect(context.athlete).not.toHaveProperty('maxHrBpm')
   })
 
+  it('tells the planner of no controlled threshold ceiling for an athlete without an LTHR, whatever her zones', () => {
+    const context = buildCoachingContext({ ...input([]), athlete: { maxHrBpm: 206, hrZoneBoundsBpm: [103, 124, 144, 165, 185] } }, '2026-10-25')
+    expect(context.controlledThreshold).toBeNull()
+  })
+
   it('carries the athlete facts a coach would ask for before prescribing', () => {
     const context = buildCoachingContext({
       ...input([]),

@@ -3,7 +3,7 @@ import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { CoachingPlan, NumberRange, WorkoutPrescription } from '@/domain/coaching/types'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
 import { assessFatigue, autoregulationReport, proposeGuideChanges, readControlledSession, type EasyRunReading } from '../autoregulation'
-import { controlledThresholdHr } from '../controlledThreshold'
+import { controlledThresholdFacts, controlledThresholdHr } from '../controlledThreshold'
 
 const LONG: NumberRange = { min: 272, max: 280 }
 
@@ -109,13 +109,20 @@ describe('reading a controlled threshold session from minute 3', () => {
   })
 })
 
-describe('the heart-rate targets a new block is given', () => {
+describe('what a new block is told', () => {
   it('sets an LTHR of 179 to a ceiling of 173 and targets of 169 long, 171 medium and short', () => {
     expect(controlledThresholdHr(179)).toEqual({ lthrBpm: 179, ceilingBpm: 173, targetBpm: { long: 169, medium: 171, short: 171 } })
   })
 
   it('sets none without an LTHR', () => {
     expect(controlledThresholdHr(undefined)).toBeNull()
+  })
+
+  it('gives the full week and the short-repetition guide from the athlete\'s own volume and threshold pace', () => {
+    expect(controlledThresholdFacts(179, 261, 57.35)).toMatchObject({
+      fullWeek: { sessions: 2, minutesPerSession: 30, weekKm: { min: 56, max: 58 } },
+      shortRepetitionGuideSecPerKm: { min: 260, max: 265 },
+    })
   })
 })
 
