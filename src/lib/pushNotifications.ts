@@ -30,7 +30,7 @@ async function saveDevice(token: string, categories: PushCategories): Promise<vo
 export async function enablePushNotifications(categories: PushCategories): Promise<string> {
   if (!(await isSupported())) throw new Error('unsupported')
   const registration = await navigator.serviceWorker.register('/sw.js')
-  if ((await Notification.requestPermission()) !== 'granted') throw new Error('permission-denied')
+  if (Notification.permission !== 'granted') throw new Error('permission-denied')
 
   const token = await deviceToken(registration)
   await saveDevice(token, categories)

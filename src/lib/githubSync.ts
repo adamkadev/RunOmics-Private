@@ -40,10 +40,7 @@ const GITHUB_HEADERS = (token: string) => ({
   'x-github-api-version': '2022-11-28',
 })
 
-/**
- * GitHub keeps the record of runs, so no store of our own can drift from it. A list that cannot be read lets the sync
- * through: the workflow's per-profile concurrency still keeps two runs from overlapping.
- */
+/** GitHub's run list is the record; an unreadable one lets the sync through, as the workflow's concurrency serializes. */
 export async function readSyncGate(config: SyncConfig, now = Date.now()): Promise<SyncGate> {
   const since = new Date(now - SYNC_LIMITS.dailyWindowMs).toISOString().replace(/\.\d{3}Z$/, 'Z')
   try {
