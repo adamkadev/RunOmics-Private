@@ -116,6 +116,15 @@ describe('useOwnerAuth', () => {
     await waitFor(() => expect(result.current.isOwner).toBe(true))
   })
 
+  it('shares one listener and one token read across every owner-only part of the page', async () => {
+    mockUser = signedIn('owner@example.com', { owner: true })
+    const { result } = renderHook(() => [useOwnerAuth(), useOwnerAuth(), useOwnerAuth()])
+
+    await waitFor(() => expect(result.current.every((auth) => auth.isOwner)).toBe(true))
+    expect(listeners).toHaveLength(1)
+    expect(forceRefreshCalls).toHaveLength(1)
+  })
+
   it('denies access when the token cannot be read', async () => {
     mockUser = {
       email: 'owner@example.com',

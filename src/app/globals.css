@@ -1164,12 +1164,6 @@ textarea,
   }
 }
 
-/* Under the sticky tabs (z-30), so a tooltip slides behind the bar. Unlayered, because Recharts writes its own
-   z-index inline. */
-.recharts-tooltip-wrapper {
-  z-index: 20 !important;
-}
-
 /* On a phone a sticky strip sticks only under the compact title bar: stuck alone at the top edge, iOS 26 takes it
    for the page's bar and leaves its blur over the large title. */
 @media (max-width: 63.99rem) {

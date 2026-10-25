@@ -1,9 +1,9 @@
 import { getFirestore } from 'firebase/firestore'
 
-import { getClientApp } from './firebaseAuth'
+import { getClientApp } from './firebaseApp'
 
 export { isClientFirebaseConfigured } from './firebaseConfig'
-export { getClientApp, getClientAuth } from './firebaseAuth'
+export { getClientApp }
 
 export function getClientFirestore() {
   return getFirestore(getClientApp())

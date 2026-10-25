@@ -30,6 +30,7 @@ vi.mock('firebase/auth', () => ({
   },
   signInWithPopup: auth.signInWithPopup,
   signOut: auth.signOut,
+  browserPopupRedirectResolver: 'popup-resolver',
   GoogleAuthProvider: class {
     setCustomParameters() {}
   },
@@ -93,6 +94,7 @@ describe('the sign-in page', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: t.settings.auth.signIn }))
     await vi.waitFor(() => expect(session.replacePage).toHaveBeenCalledWith('/plan?view=month'))
+    expect(auth.signInWithPopup).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'popup-resolver')
   })
 
   it('says when the deployment is not set up for it', async () => {

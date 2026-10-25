@@ -4,9 +4,9 @@ import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
-import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { SectionDivider } from '@/components/ui/SectionLabel'
-import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
+import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
+import { loadAuth } from '@/lib/loadAuth'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { SIGN_IN_PATH, endSiteSession, replacePage } from '@/lib/siteSession'
 import { formatRelativeAgo } from '@/lib/formatters'
@@ -59,11 +59,11 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
     }
     setSigningIn(true)
     try {
+      const { auth, GoogleAuthProvider, browserPopupRedirectResolver, signInWithPopup } = await loadAuth()
       const provider = new GoogleAuthProvider()
       provider.setCustomParameters({ prompt: 'select_account' })
-      const auth = getClientAuth()
       auth.languageCode = t.locale
-      await signInWithPopup(auth, provider)
+      await signInWithPopup(auth, provider, browserPopupRedirectResolver)
     } catch (err) {
       const code = (err as { code?: string }).code
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
@@ -78,7 +78,8 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
   async function handleSignOut() {
     // The private site's session first: it ends at /sign-in and clears this device's cached pages.
     const site = await endSiteSession()
-    await signOut(getClientAuth())
+    const { auth, signOut } = await loadAuth()
+    await signOut(auth)
     if (site.private) replacePage(SIGN_IN_PATH)
   }
 

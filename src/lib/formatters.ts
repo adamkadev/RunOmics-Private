@@ -41,13 +41,31 @@ export function formatPace(secPerKm: number): string {
   return `${formatClock(secPerKm)} /km`
 }
 
+/** A formatter costs ~40 format calls to build, and a list of runs formats hundreds of values. */
+const numberFormats = new Map<string, Intl.NumberFormat>()
+const dateFormats = new Map<string, Intl.DateTimeFormat>()
+
+function numberFormat(options: Intl.NumberFormatOptions): Intl.NumberFormat {
+  const key = `${t.locale}|${JSON.stringify(options)}`
+  let format = numberFormats.get(key)
+  if (!format) numberFormats.set(key, (format = new Intl.NumberFormat(t.locale, options)))
+  return format
+}
+
+function dateFormat(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const key = `${t.locale}|${JSON.stringify(options)}`
+  let format = dateFormats.get(key)
+  if (!format) dateFormats.set(key, (format = new Intl.DateTimeFormat(t.locale, options)))
+  return format
+}
+
 export const MINUS = '−'
 export const PLUS_MINUS = '±'
 
 /** A real minus, not a hyphen: a hyphen at 10px next to a digit reads as part of the number. */
 export function formatDelta(value: number, unit?: string): string {
   const rounded = Math.round(value * 100) / 100
-  const magnitude = stableSpaces(Math.abs(rounded).toLocaleString(t.locale, { maximumFractionDigits: 2 }))
+  const magnitude = stableSpaces(numberFormat({ maximumFractionDigits: 2 }).format(Math.abs(rounded)))
   const body = rounded === 0 ? `${PLUS_MINUS}0` : `${rounded > 0 ? '+' : MINUS}${magnitude}`
   return unit ? `${body} ${unit}` : body
 }
@@ -70,20 +88,17 @@ export function formatKm(km: number, decimals = 0): string {
 /** toFixed with the locale's decimal: toFixed always writes a point. */
 export function formatDecimal(value: number, decimals: number): string {
   return stableSpaces(
-    value.toLocaleString(t.locale, {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    })
+    numberFormat({ minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value)
   )
 }
 
 /** `percent` is already in per cent (45 for 45 %). */
 export function formatPercent(percent: number, maxDecimals = 0): string {
-  return stableSpaces((percent / 100).toLocaleString(t.locale, { style: 'percent', maximumFractionDigits: maxDecimals }))
+  return stableSpaces(numberFormat({ style: 'percent', maximumFractionDigits: maxDecimals }).format(percent / 100))
 }
 
 export function formatNumber(value: number, maxDecimals = 1): string {
-  return stableSpaces(value.toLocaleString(t.locale, { maximumFractionDigits: maxDecimals }))
+  return stableSpaces(numberFormat({ maximumFractionDigits: maxDecimals }).format(value))
 }
 
 /** Whole kilometres on every screen, so a prescription never rounds one way here and another there. */
@@ -92,7 +107,7 @@ export function formatPlannedKm(km: number): string {
 }
 
 export function formatRanKm(km: number): string {
-  return stableSpaces(km.toLocaleString(t.locale, { minimumFractionDigits: 0, maximumFractionDigits: km >= WHOLE_KM_FROM ? 0 : 1 }))
+  return stableSpaces(numberFormat({ minimumFractionDigits: 0, maximumFractionDigits: km >= WHOLE_KM_FROM ? 0 : 1 }).format(km))
 }
 
 /* Dates hand Intl an option set and let it place the fields: spelling out `day month` inverts the order in French. */
@@ -144,18 +159,18 @@ export function formatDate(isoDate: string, options: DateFormatOptions = {}): st
   const date = atMidnight(isoDate)
   const showYear =
     year === 'always' || (year === 'auto' && date.getFullYear() !== now.getFullYear())
-  return stableSpaces(date.toLocaleDateString(t.locale, dateFields(options, showYear)))
+  return stableSpaces(dateFormat(dateFields(options, showYear)).format(date))
 }
 
 export function formatWeekday(isoDate: string, withDay = false): string {
   const date = atMidnight(isoDate.slice(0, 10))
-  const weekday = date.toLocaleDateString(t.locale, { weekday: 'short' }).replace(/\.$/, '')
+  const weekday = dateFormat({ weekday: 'short' }).format(date).replace(/\.$/, '')
   return stableSpaces(withDay ? `${weekday} ${date.getDate()}` : weekday)
 }
 
 /** The sync stores the weekday as English text; this one follows the locale. */
 export function formatWeekdayLong(isoDate: string): string {
-  return atMidnight(isoDate.slice(0, 10)).toLocaleDateString(t.locale, { weekday: 'long' })
+  return dateFormat({ weekday: 'long' }).format(atMidnight(isoDate.slice(0, 10)))
 }
 
 export function formatMonthShortYear(isoDate: string, options: DateFormatOptions = {}): string {
@@ -182,14 +197,14 @@ export function formatDateRange(startIso: string, endIso: string, options: DateF
       (start.getFullYear() !== now.getFullYear() || end.getFullYear() !== now.getFullYear()))
   if (year === 'never' && start.getFullYear() !== end.getFullYear()) {
     // formatRange adds both years across new year, so format each end and join them as the locale does.
-    const format = new Intl.DateTimeFormat(t.locale, dateFields(options, false, true))
+    const format = dateFormat(dateFields(options, false, true))
     const join =
       format.formatRangeToParts(new Date(2000, 0, 31), new Date(2000, 1, 1)).find((p) => p.source === 'shared' && p.type === 'literal')?.value ??
       ' – '
     return stableSpaces(`${format.format(start)}${join}${format.format(end)}`)
   }
   return stableSpaces(
-    new Intl.DateTimeFormat(t.locale, dateFields(options, showYear, true)).formatRange(start, end)
+    dateFormat(dateFields(options, showYear, true)).formatRange(start, end)
   )
 }
 
@@ -223,8 +238,8 @@ export function relativeTimeParts(iso: string, now: Date = new Date()): { unit: 
 
 export function formatWeekdayTime(iso: string): string {
   const at = new Date(iso)
-  const weekday = stableSpaces(at.toLocaleDateString(t.locale, { weekday: 'short' }).replace(/\.$/, ''))
-  const time = stableSpaces(at.toLocaleTimeString(t.locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }))
+  const weekday = stableSpaces(dateFormat({ weekday: 'short' }).format(at).replace(/\.$/, ''))
+  const time = stableSpaces(dateFormat({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(at))
   return `${weekday} ${time}`
 }
 
