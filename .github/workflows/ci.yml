@@ -53,6 +53,7 @@ jobs:
         with:
           persist-credentials: false
 
+      # The npm cache stays here only: ~/.npm holds the firebase-tools that `npx -y` in test:rules would fetch again.
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -102,7 +103,6 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-          cache: "npm"
 
       # Shared with E2E under the same key: a hit skips `npm ci`.
       - name: Restore node_modules
@@ -166,7 +166,6 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-          cache: "npm"
 
       # Shared with E2E under the same key: a hit skips `npm ci`.
       - name: Restore node_modules
