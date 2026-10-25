@@ -394,9 +394,9 @@ verdict backfill can never starve the dashboard even when it is churning through
 the other ten, the one insight the athlete is waiting for is the first thing the quota or the
 clock drops. The rest is priority order, tail last, since what one run cuts off the next picks
 up. `?limit=0` reports the backlog without spending; an *absent* `?limit=` must not collapse
-into that, because the cron and every `workflow_dispatch` omit the param and `Number(null)` is
-0 — hence the explicit null check before any numeric conversion. `?all=1` lifts the recency
-horizon for a manual pass over the archive after a reprocess; the daily cron never sends it.
+into that, because the sync workflow omits the param and `Number(null)` is 0 — hence the
+explicit null check before any numeric conversion. `?all=1` lifts the recency horizon for a
+manual pass over the archive after a reprocess; the nightly sync never sends it.
 
 **Variety is a prompt problem, not a model problem.** A run verdict has several angles open to
 it — how the effort held together, the comparison against past runs of the same type, the
@@ -478,7 +478,7 @@ not — "seance"/"séance" cannot be told apart by regex — but French of any l
 always contains an accented letter, so a total absence past 40 characters is a strong signal
 the model dropped diacritics.
 
-Failures are reported, never swallowed: this runs unattended from a GitHub Actions cron, where
+Failures are reported, never swallowed: this runs unattended from the nightly sync workflow, where
 a silent null looks identical whether the quota ran out, the model was retired, or the copy came
 back too long. The same reasoning covers `/api/internal/*` generally — every throw is logged with
 the route name and returned as a 500 the workflow run can surface, and the guard rate-limits
