@@ -104,6 +104,17 @@ describe('the data contract', () => {
     expect(errors()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.hrZoneBoundsBpm' })])
   })
 
+  it('refuses a cross-training session the lists cannot key or place, and only warns on its figures', () => {
+    write('cross_training/2026.json', {
+      sessions: [
+        { id: '7', date: '2026-09-10', sport: 'strength_training', durationSeconds: 2400, distanceKm: null, avgHeartRate: '98', trainingLoad: null },
+        { id: '', date: '2025-12-31', sport: 'cycling', durationSeconds: 3600 },
+      ],
+    })
+    expect(errors().map((p) => p.path)).toEqual(['$.sessions[1].id', '$.sessions[1].date'])
+    expect(warnings().map((p) => p.path)).toEqual(['$.sessions[0].avgHeartRate'])
+  })
+
   it('checks every planned-workouts year file, and names it', () => {
     write('planned_workouts/2026.json', { planned: [{ date: '2026-09-10', name: 'Easy' }, { name: 'No date' }] })
     expect(errors()).toEqual([expect.objectContaining({ file: 'planned_workouts/2026.json', path: '$.planned[1].date' })])

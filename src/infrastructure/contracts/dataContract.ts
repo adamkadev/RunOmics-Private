@@ -259,6 +259,25 @@ function checkPlannedWorkouts(dir: string, problems: Problem[]) {
   }
 }
 
+function checkCrossTraining(dir: string, problems: Problem[]) {
+  const sessionsDir = path.join(dir, 'cross_training')
+  if (!files.existsSync(sessionsDir)) return
+  for (const name of files.readdirSync(sessionsDir).filter((f) => f.endsWith('.json') && f !== 'index.json')) {
+    const year = name.slice(0, -'.json'.length)
+    checkRecords(dir, `cross_training/${name}`, 'sessions', (session, at, report) => {
+      if (!isNonEmptyString(session.id)) report.error(`${at}.id`, 'expected a non-empty string')
+      if (!isIsoDate(session.date)) report.error(`${at}.date`, 'expected YYYY-MM-DD')
+      else if (!session.date.startsWith(year)) report.error(`${at}.date`, `${session.date} is filed under ${year}`)
+      if (typeof session.sport !== 'string') report.warn(`${at}.sport`, 'expected a string')
+      if (!isNumber(session.durationSeconds) || session.durationSeconds < 0) report.warn(`${at}.durationSeconds`, 'expected a number >= 0')
+      for (const key of ['distanceKm', 'avgHeartRate', 'trainingLoad']) {
+        if (session[key] !== null && session[key] !== undefined && !isNumber(session[key])) report.warn(`${at}.${key}`, 'expected a number or null')
+      }
+      if (session.sets !== undefined && !Array.isArray(session.sets)) report.warn(`${at}.sets`, 'expected an array')
+    }, problems)
+  }
+}
+
 export function checkDataDirectory(dir: string, using: DataFiles = diskFiles): Problem[] {
   files = using
   try {
@@ -306,6 +325,7 @@ function checkAll(dir: string): Problem[] {
   }, problems)
 
   checkPlannedWorkouts(dir, problems)
+  checkCrossTraining(dir, problems)
 
   const syncMeta = path.join(dir, 'sync_meta.json')
   if (files.existsSync(syncMeta)) {

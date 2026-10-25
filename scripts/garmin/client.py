@@ -167,10 +167,13 @@ class GarminClient:
         limit: int = 100,
         *,
         running_only: bool = True,
+        since: str | None = None,
     ) -> list[dict[str, Any]]:
         params: dict[str, Any] = {"start": start, "limit": limit}
         if running_only:
             params["activityType"] = "running"
+        if since:
+            params["startDate"] = since
         return self._get(
             f"{self._base}/activitylist-service/activities/search/activities",
             params=params,
