@@ -4,6 +4,87 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A 12-week checkpoint: Plan's "General preparation" card opens a page
+  that sets this cycle against the 12 weeks before it - km and runs a
+  week, controlled threshold time and pace guides, heat-adjusted
+  efficiency, easy-run heart rate at a set pace, the 5K check, VO2max,
+  threshold pace and heart rate, resting heart rate and fitness - each
+  marked better, worse or level. A Progress tile gives the cycle's week
+  and the tally. Without a coach plan it compares your last 12 full weeks
+  with the 12 before.
+
+- The coach in the app: a controlled-threshold run's page shows each
+  rep's heart rate from minute 3 against its target and ceiling, with the
+  verdict, and Plan has a Coach card with the latest decision, the last
+  controlled session, pace-guide proposals, the easy-run fatigue flag,
+  the 5K check and the next key session. Each session shows its state.
+
+- Controlled-threshold heart rates come from each athlete's LTHR, and the
+  planner reads the athlete's own numbers instead of rules written for
+  one runner. Without an LTHR, no controlled threshold session is
+  written. A run from an earlier block keeps its session name.
+
+- Without a threshold pace from the watch, pace zones (Athlete page and a
+  run's pace chart) are estimated by VDOT from your best recent effort,
+  and marked as estimated. The Race page does the same when Garmin's
+  predictions are missing or two weeks old.
+
+- A morning check-in on Today, for you alone: sleep, soreness, stress and
+  mood in one tap each, an optional niggle, and illness or travel. A poor
+  morning turns the readiness card amber or to rest and says why. The
+  Athlete page shows four weeks of mornings and twelve weeks of niggles,
+  and the coach reads them.
+
+- On a warm day, Today's session says what the forecast at your usual
+  hour will cost, from your own runs: "29 °C at 19:00 - your runs at this
+  heat cost about +14 s/km: run by heart rate".
+
+- Strength, cycling, swimming and other sessions are synced into their
+  own store, with a strength session's sets. They show on Plan and
+  Consistency and in the coach's context, never in running numbers.
+
+- Analytics: the Load tab ends with your watch's load focus, a Lactate
+  threshold card shows threshold heart rate beside threshold pace,
+  Running form is back (cadence, ground contact, vertical oscillation,
+  stride), and Intensity shows easy and workout heart rate by week. The
+  Athlete page has a fitness age card with a year of history.
+
+- A run's conditions name the sky, the feels-like temperature when it
+  differs and the humidity when the air is muggy.
+
+- The morning session push arrives between 08:00 and 09:00 Paris time,
+  summer and winter, instead of around lunchtime, and the nightly sync
+  starts on time: Vercel Cron runs them, not GitHub's late schedules.
+
+- A Monday push sums up last week: km and quality sessions against the
+  plan, your resting heart rate and this week's focus.
+
+- Settings' Training, Shoes and "Records and explored areas" switches now
+  decide which pushes each phone gets.
+
+- Each sync copies your run notes and morning check-ins into the data
+  repository and refreshes your shoe list from Garmin.
+
+- Faster on the iPhone: a page shows as it streams instead of after a
+  full download; owner-only parts no longer wait on a Google frame; the
+  Activities list and Plan send less than half the data; the map loads
+  its lines when opened, with a fifth of the points, and keeps them until
+  the next sync; the heat map draws only the runs in view; scrolling does
+  far less work per frame; dates and numbers format about 40 times
+  faster; the "Same route" chart drops a 100 KB library.
+
+- After a sync, the server renders Today, Activities, Plan, Analytics,
+  Profile and your newest run itself, so the first tap does not wait.
+
+- CI: npm audit fails a change only when it touches the lock file, and
+  Dependabot's security updates replace the weekly autofix; caches are
+  saved from main only and stay under GitHub's 10 GB; tests use every
+  core; ESLint keeps a cache; Node 24 is pinned in `.nvmrc`; the iPhone
+  layout check runs with reduced motion, split per tab.
+
+- `npm run export:demo` writes the public demo repository from any commit
+  and stops on anything personal.
+
 - Explore counts every area you run in, not only the busiest: a
   Strasbourg run shows the quartiers it pushed forward, a Strasbourg
   quartier passing 90% sends its push, and Progress's Explored card shows
