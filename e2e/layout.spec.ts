@@ -56,26 +56,25 @@ for (const path of PAGES) {
   })
 }
 
-test('nothing runs past the screen on a run, in any of its tabs', async ({ page }) => {
-  test.slow()
-  await page.goto('/activities')
-  await page.getByTestId('thumb-row').first().click()
-  const tabs = page.getByRole('tablist', { name: 'Activity sections' }).getByRole('tab')
-  await expect(tabs.first()).toBeVisible()
-  for (const name of await tabs.allTextContents()) {
+for (const name of ['Overview', 'Splits', 'Charts', 'Dynamics']) {
+  test(`nothing runs past the screen on a run's ${name} tab`, async ({ page }) => {
+    await page.goto('/activities')
+    await page.getByTestId('thumb-row').first().click()
+    const tabs = page.getByRole('tablist', { name: 'Activity sections' }).getByRole('tab')
+    await expect(tabs.first()).toBeVisible()
+    test.skip(!(await tabs.allTextContents()).includes(name), `the latest run has no ${name} tab`)
     await tabs.filter({ hasText: name }).click()
     expect(await overflows(page), name).toEqual([])
-  }
-})
+  })
+}
 
-test('nothing runs past the screen on any Analytics tab or period', async ({ page }) => {
-  test.slow()
-  await page.goto('/analytics')
-  for (const tab of ['Load', 'Performance', 'Volume', 'Intensity']) {
+for (const tab of ['Load', 'Performance', 'Volume', 'Intensity']) {
+  test(`nothing runs past the screen on Analytics' ${tab} tab, in any period`, async ({ page }) => {
+    await page.goto('/analytics')
     await page.getByRole('tab', { name: tab }).click()
     for (const period of ['4 weeks', '12 weeks', 'a year']) {
       await page.getByRole('radio', { name: period }).click()
       expect(await overflows(page), `${tab}, ${period}`).toEqual([])
     }
-  }
-})
+  })
+}
