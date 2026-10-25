@@ -14,6 +14,10 @@ describe('easyShare', () => {
     expect(easyShare([zones(600, 600), zones(0, 600, 900, 300)])).toEqual({ easy: 60, hard: 40 })
   })
 
+  it("reads a list row's seconds by zone as it reads the zones themselves", () => {
+    expect(easyShare([{ zones: [600, 600] }, { zones: [0, 600, 900, 300] }])).toEqual({ easy: 60, hard: 40 })
+  })
+
   it('always adds up to 100', () => {
     const split = easyShare([zones(1000, 1001, 999)])!
     expect(split.easy + split.hard).toBe(100)

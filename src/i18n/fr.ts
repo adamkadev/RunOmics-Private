@@ -272,6 +272,7 @@ export const fr = {
       less: 'Rare',
       more: 'Fréquent',
       noRoutes: 'Aucun parcours pour ce filtre',
+      loadFailed: 'La carte n’a pas pu se charger.',
       mapUnavailable: 'Carte indisponible - aucune clé de carte configurée',
       attribution: '© MapTiler · © les contributeurs d’OpenStreetMap',
       credits: 'Crédits de la carte',

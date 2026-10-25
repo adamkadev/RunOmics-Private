@@ -1,16 +1,14 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
+import type { PlannedWorkout } from '@/domain/activity/types'
+import type { PlanRun } from '../planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import { formatDate, formatWeekday } from '@/lib/formatters'
 import { t } from '@/i18n'
 import { MonthView } from '../MonthView'
 
-function run(id: string, date: string, distanceKm: number, type: ActivitySummary['type'] = 'Base'): ActivitySummary {
-  return {
-    id, date, dayOfWeek: 'Monday', type, description: '', comment: '', distanceKm, durationSeconds: 2_700,
-    paceSecPerKm: 320, avgHeartRate: 140, rpe: 3, hrZones: [], week: 202642, elevationGain: 10,
-  }
+function run(id: string, date: string, distanceKm: number, type: PlanRun['type'] = 'Base'): PlanRun {
+  return { id, date, type, description: '', distanceKm, durationSeconds: 2_700, paceSecPerKm: 320, avgHeartRate: 140, zonePercents: [] }
 }
 
 const TODAY = '2026-10-19'
@@ -28,7 +26,7 @@ const RANGES: PlanPhaseRange[] = [
 ]
 
 function renderMonth(onSelectDay = vi.fn()) {
-  const byDate = new Map<string, ActivitySummary[]>()
+  const byDate = new Map<string, PlanRun[]>()
   for (const a of RUNS) byDate.set(a.date, [a])
   render(
     <MonthView

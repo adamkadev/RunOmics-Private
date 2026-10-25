@@ -73,9 +73,9 @@ function signature(body: string, secret: string): Buffer {
   return createHmac('sha256', secret).update(body).digest()
 }
 
-export function signSession(who: SiteViewer & { sub: string }, secret: string, nowMs = Date.now()): string {
+export function signSession(who: SiteViewer & { sub: string }, secret: string, nowMs = Date.now(), maxAgeSec = SESSION_MAX_AGE_SEC): string {
   const iat = Math.floor(nowMs / 1000)
-  const session: SiteSession = { sub: who.sub, owner: who.owner, email: who.email, iat, exp: iat + SESSION_MAX_AGE_SEC }
+  const session: SiteSession = { sub: who.sub, owner: who.owner, email: who.email, iat, exp: iat + maxAgeSec }
   const body = `${TOKEN_VERSION}.${Buffer.from(JSON.stringify(session)).toString('base64url')}`
   return `${body}.${signature(body, secret).toString('base64url')}`
 }

@@ -3,10 +3,9 @@ import type { TrainingStatus } from '../GetTrainingStatus'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
 import { TODAY_SURFACE, todayInsightGuard, todayInsightHash } from '@/domain/ai/todayInsight'
 
-const { getActivitySummaries, readVerifiedInsight, readLatestInsight, getTodayPlannedWorkout, getTodayPrescription } = vi.hoisted(() => ({
+const { getActivitySummaries, readStoredInsight, getTodayPlannedWorkout, getTodayPrescription } = vi.hoisted(() => ({
   getActivitySummaries: vi.fn(),
-  readVerifiedInsight: vi.fn(),
-  readLatestInsight: vi.fn(),
+  readStoredInsight: vi.fn(),
   getTodayPlannedWorkout: vi.fn(),
   getTodayPrescription: vi.fn(),
 }))
@@ -14,12 +13,14 @@ const { getActivitySummaries, readVerifiedInsight, readLatestInsight, getTodayPl
 vi.mock('../GetActivities', () => ({ getActivitySummaries }))
 vi.mock('../GetPlannedWorkouts', () => ({ getTodayPlannedWorkout }))
 vi.mock('@/application/coaching/GetCoachingView', () => ({ getTodayPrescription }))
-vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', () => ({ readVerifiedInsight, readLatestInsight }))
+vi.mock('@/infrastructure/repositories/FirestoreInsightsRepository', () => ({ readStoredInsight }))
 
 const { buildTodayContext, getTodayInsight, todayInsightSession } = await import('../GetTodayInsight')
 
 const TODAY = '2026-07-20'
 const INSIGHT = { headline: 'Fresh legs today', body: 'Form is back above zero, so the tempo can be honest.' }
+const verified = { insight: INSIGHT, generatedAt: '2026-07-20T05:00:00.000Z', verified: true }
+const writtenAt = (generatedAt: string) => ({ insight: INSIGHT, generatedAt, verified: false })
 
 function status(overrides: Partial<TrainingStatus> = {}): TrainingStatus {
   return {
@@ -93,93 +94,90 @@ describe('getTodayInsight', () => {
 
   it('null without a status to write from, and asks for nothing', async () => {
     expect(await getTodayInsight(null, WORKOUT)).toBeNull()
-    expect(readVerifiedInsight).not.toHaveBeenCalled()
+    expect(readStoredInsight).not.toHaveBeenCalled()
   })
 
   it('hands back the cached verdict for today', async () => {
-    readVerifiedInsight.mockResolvedValue(INSIGHT)
+    readStoredInsight.mockResolvedValue(verified)
 
     expect(await getTodayInsight(status(), WORKOUT)).toEqual(INSIGHT)
   })
 
-  it('null when the cached verdict has gone stale, so the hero keeps its own copy', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
-    readLatestInsight.mockResolvedValue(null)
+  it('null when nothing is stored, so the hero keeps its own copy', async () => {
+    readStoredInsight.mockResolvedValue(null)
 
     expect(await getTodayInsight(status(), WORKOUT)).toBeNull()
   })
 
   it("shows yesterday's card, marked, until today's is written - and nothing older", async () => {
-    readVerifiedInsight.mockResolvedValue(null)
-    readLatestInsight.mockResolvedValue({ insight: INSIGHT, generatedAt: '2026-07-19T12:00:00.000Z' })
+    readStoredInsight.mockResolvedValue(writtenAt('2026-07-19T12:00:00.000Z'))
     expect(await getTodayInsight(status(), WORKOUT, TODAY)).toEqual({ ...INSIGHT, yesterday: true })
 
-    readLatestInsight.mockResolvedValue({ insight: INSIGHT, generatedAt: '2026-07-17T12:00:00.000Z' })
+    readStoredInsight.mockResolvedValue(writtenAt('2026-07-17T12:00:00.000Z'))
     expect(await getTodayInsight(status(), WORKOUT, TODAY)).toBeNull()
   })
 
-  it("never reaches for yesterday's card when today's is there", async () => {
-    readVerifiedInsight.mockResolvedValue(INSIGHT)
-    readLatestInsight.mockClear()
-    expect(await getTodayInsight(status(), WORKOUT, TODAY)).toEqual(INSIGHT)
-    expect(readLatestInsight).not.toHaveBeenCalled()
+  it('reads the stored card once, whether it is today\'s or yesterday\'s', async () => {
+    readStoredInsight.mockResolvedValue(writtenAt('2026-07-19T12:00:00.000Z'))
+    await getTodayInsight(status(), WORKOUT, TODAY)
+    expect(readStoredInsight).toHaveBeenCalledTimes(1)
   })
 
   it('keys the verdict on the facts it was written from', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
+    readStoredInsight.mockResolvedValue(null)
     await getTodayInsight(status(), WORKOUT)
 
     const context = buildTodayContext(status(), WORKOUT)
-    expect(readVerifiedInsight).toHaveBeenCalledWith(TODAY_SURFACE, {
+    expect(readStoredInsight).toHaveBeenCalledWith(TODAY_SURFACE, {
       hash: todayInsightHash(context),
       guard: todayInsightGuard(context),
     })
   })
 
   it('asks for a different verdict once the form moves', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
+    readStoredInsight.mockResolvedValue(null)
     await getTodayInsight(status(), WORKOUT)
     await getTodayInsight(status({ tsbNow: -22, status: 'overreaching', risk: 'high' }), WORKOUT)
 
-    const [first, second] = readVerifiedInsight.mock.calls
+    const [first, second] = readStoredInsight.mock.calls
     expect(first?.[1].hash).not.toBe(second?.[1].hash)
   })
 
   it('asks for a different verdict once the day plans a different session', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
+    readStoredInsight.mockResolvedValue(null)
     await getTodayInsight(status(), WORKOUT)
     await getTodayInsight(status(), null)
 
-    const [first, second] = readVerifiedInsight.mock.calls
+    const [first, second] = readStoredInsight.mock.calls
     expect(first?.[1].hash).not.toBe(second?.[1].hash)
   })
 
   it('holds the guard while the form only drifts, so overnight copy survives', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
+    readStoredInsight.mockResolvedValue(null)
     await getTodayInsight(status(), WORKOUT)
     await getTodayInsight(status({ tsbNow: 12, ctlDelta: 3.1 }), WORKOUT)
 
-    const [first, second] = readVerifiedInsight.mock.calls
+    const [first, second] = readStoredInsight.mock.calls
     expect(first?.[1].hash).not.toBe(second?.[1].hash)
     expect(first?.[1].guard).toBe(second?.[1].guard)
   })
 
   it('moves the guard once the tone badge would contradict the copy', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
+    readStoredInsight.mockResolvedValue(null)
     await getTodayInsight(status(), WORKOUT)
     await getTodayInsight(status({ status: 'overreaching', tsbNow: -22, risk: 'high' }), WORKOUT)
 
-    const [go, hold] = readVerifiedInsight.mock.calls
+    const [go, hold] = readStoredInsight.mock.calls
     expect(go?.[1].guard).not.toBe(hold?.[1].guard)
   })
 
   it('moves the guard once the session the copy was written for has been run', async () => {
-    readVerifiedInsight.mockResolvedValue(null)
+    readStoredInsight.mockResolvedValue(null)
     await getTodayInsight(status(), WORKOUT, TODAY)
     withHistory([summary(TODAY)])
     await getTodayInsight(status(), WORKOUT, TODAY)
 
-    const [upcoming, completed] = readVerifiedInsight.mock.calls
+    const [upcoming, completed] = readStoredInsight.mock.calls
     expect(upcoming?.[1].guard).not.toBe(completed?.[1].guard)
   })
 })
@@ -259,14 +257,14 @@ describe('todayInsightSession', () => {
   it('hashes the same context the generator wrote, so a prescribed day still resolves', async () => {
     getTodayPrescription.mockReturnValue(PRESCRIPTION)
     withHistory([summary('2026-07-18')])
-    readVerifiedInsight.mockResolvedValue(INSIGHT)
+    readStoredInsight.mockResolvedValue(verified)
 
     const session = await todayInsightSession(TODAY)
     expect(await getTodayInsight(status(), session)).toEqual(INSIGHT)
 
     // Both sides default `now`, exactly as the page and the generator do.
     const context = buildTodayContext(status(), session)
-    expect(readVerifiedInsight).toHaveBeenCalledWith(TODAY_SURFACE, {
+    expect(readStoredInsight).toHaveBeenCalledWith(TODAY_SURFACE, {
       hash: todayInsightHash(context),
       guard: todayInsightGuard(context),
     })

@@ -6,7 +6,6 @@ import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp
 import { ATL_DAYS, type LoadSnapshot } from '@/domain/training/taper'
 import { loadSeries } from '@/domain/training/loadSeries'
 import { appTodayIso } from '@/lib/calendarDate'
-import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 
 export { trimp, type HrBounds }
 export { ATL_DAYS, type LoadSnapshot }
@@ -15,7 +14,6 @@ const MAX_DAYS = 1095
 
 export interface TrainingLoadPoint {
   date: string
-  label: string
   ctl: number
   atl: number
   tsb: number
@@ -37,14 +35,26 @@ export function dailyTrimpByDate(activities: Activity[], hrBounds: HrBounds = DE
   return dailyLoad
 }
 
-export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, LoadSnapshot> {
-  const dailyLoad = dailyTrimpByDate(activities, hrBounds)
+// By the activity list, the same array until the data changes, then by bounds and day: a render reads it several times.
+const seriesCache = new WeakMap<Activity[], Map<string, Map<string, LoadSnapshot>>>()
 
+/** Shared between callers: read it, never change it. */
+export function buildTimeSeries(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, LoadSnapshot> {
+  const today = appTodayIso()
+  const key = `${hrBounds.maxHr}|${hrBounds.restingHr}|${today}`
+  let byKey = seriesCache.get(activities)
+  if (!byKey) seriesCache.set(activities, (byKey = new Map()))
+  let series = byKey.get(key)
+  if (!series) byKey.set(key, (series = timeSeries(activities, hrBounds, today)))
+  return series
+}
+
+function timeSeries(activities: Activity[], hrBounds: HrBounds, today: string): Map<string, LoadSnapshot> {
   const series = new Map<string, LoadSnapshot>()
   const first = activities.reduce<string | null>((min, a) => (min === null || a.date < min ? a.date : min), null)
   if (!first) return series
 
-  for (const [date, day] of loadSeries(dailyLoad, first, appTodayIso())) {
+  for (const [date, day] of loadSeries(dailyTrimpByDate(activities, hrBounds), first, today)) {
     series.set(date, { ctl: round(day.ctl), atl: round(day.atl), tsb: round(day.tsb) })
   }
   return series
@@ -64,11 +74,7 @@ export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
   const entries = Array.from(series.entries())
   const window = entries.slice(-MAX_DAYS)
 
-  const points: TrainingLoadPoint[] = window.map(([date, snap]) => ({
-    date,
-    label: formatDate(date, AXIS_TICK_DATE),
-    ...snap,
-  }))
+  const points: TrainingLoadPoint[] = window.map(([date, snap]) => ({ date, ...snap }))
 
   const last = points[points.length - 1]
   if (!last) return null

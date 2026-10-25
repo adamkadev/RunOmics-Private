@@ -39,8 +39,18 @@ function cellSetFor(activity: Activity): RouteCellSet {
   return cellSet
 }
 
+// By the activity list, the same array until the data changes: a run's group is worked out once per data, not per render.
+const groups = new WeakMap<Activity[], Map<string, SimilarRunsData | null>>()
+
 export function getSimilarRuns(activityId: string): SimilarRunsData | null {
   const activities = getAllActivities()
+  let byId = groups.get(activities)
+  if (!byId) groups.set(activities, (byId = new Map()))
+  if (!byId.has(activityId)) byId.set(activityId, similarRuns(activities, activityId))
+  return byId.get(activityId) ?? null
+}
+
+function similarRuns(activities: Activity[], activityId: string): SimilarRunsData | null {
   const current = activities.find((a) => a.id === activityId)
   if (!current?.route || current.route.length < 2 || current.paceSecPerKm == null) return null
 

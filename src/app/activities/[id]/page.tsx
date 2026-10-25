@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
 import { BackButton } from '@/components/ui/BackButton'
 import { getActivities } from '@/application/usecases/GetActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
@@ -30,13 +31,19 @@ import { loadData } from '@/application/usecases/LoadData'
 
 export const revalidate = 3600
 
+/** The newest runs, the ones opened most, are built ahead; the rest render on first visit and are kept as these are. */
+const PRERENDERED_RUNS = 20
+
+// The title and the page each name the coach's session: one read of the plan per request.
+const coachingOverview = cache((today: string) => getCoachingOverview(today))
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   await loadData()
   const { id } = await params
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) return { title: t.activity.metaFallbackTitle }
 
-  const name = runName(activity, shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity))
+  const name = runName(activity, shareSession(coachingOverview(appTodayIso())?.workouts ?? [], activity))
   const stats = [
     formatDistance(activity.distanceKm),
     formatDuration(activity.durationSeconds),
@@ -54,8 +61,9 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export async function generateStaticParams() {
   await loadData()
-  const activities = getActivities()
-  return activities.map((a) => ({ id: a.id }))
+  return getActivities()
+    .slice(0, PRERENDERED_RUNS)
+    .map((a) => ({ id: a.id }))
 }
 
 export default async function ActivityDetailPage({
@@ -83,7 +91,7 @@ export default async function ActivityDetailPage({
   const newGround = getRunExploreGain(id)
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
   // The coach's session this run was, for its name in the header and on the share card, and its reps' target pace.
-  const session = shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity)
+  const session = shareSession(coachingOverview(appTodayIso())?.workouts ?? [], activity)
   // The watch's own plan for the day, for a rep target the coach never matched.
   const plannedForDay = (await getPlannedWorkouts()).find((w) => w.date === activity.date.slice(0, 10)) ?? null
 

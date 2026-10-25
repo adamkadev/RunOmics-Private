@@ -7,26 +7,42 @@ import { plausibleBestEfforts } from '@/domain/activity/bestEfforts'
 
 let cache: { generation: string; activities: Activity[] } | null = null
 
+/** By file and blob, so a new commit rebuilds only the months it changed and the others keep their objects. */
+let monthCache = new Map<string, Activity[]>()
+
 /**
  * Not `readJsonFile`: the index IS the dataset, and an empty fallback would
  * publish a complete, confident, entirely wrong app.
  */
 function readJsonOrThrow<T>(filePath: string): T {
-  return JSON.parse(dataFs.readFileSync(filePath, 'utf-8')) as T
+  return dataFs.readJsonSync(filePath) as T
 }
 
-function readActivities(dirPath: string): Activity[] {
-  const { months } = readJsonOrThrow<{ months: string[] }>(path.join(dirPath, 'index.json'))
-
-  return months
-    .flatMap((month) => readJsonOrThrow<{ activities: Activity[] }>(path.join(dirPath, `${month}.json`)).activities)
+function readMonth(file: string): Activity[] {
+  return readJsonOrThrow<{ activities: Activity[] }>(file).activities
     // One title everywhere the run is named: "3 × 7:00", not "3 x 7:00".
     .map((a) => (a.description ? { ...a, description: displayTitle(a.description) } : a))
     .map((a) => {
       const bestEfforts = plausibleBestEfforts(a.bestEfforts, a.durationSeconds)
       return bestEfforts === a.bestEfforts ? a : { ...a, bestEfforts }
     })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+}
+
+const newestFirst = (a: Activity, b: Activity) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)
+
+function readActivities(dirPath: string): Activity[] {
+  const { months } = readJsonOrThrow<{ months: string[] }>(path.join(dirPath, 'index.json'))
+  const kept = new Map<string, Activity[]>()
+  const activities = months.flatMap((month) => {
+    const file = path.join(dirPath, `${month}.json`)
+    const sha = dataFs.blobSha(file)
+    const key = sha && `${file}@${sha}`
+    const read = (key && monthCache.get(key)) || readMonth(file)
+    if (key) kept.set(key, read)
+    return read
+  })
+  monthCache = kept
+  return activities.sort(newestFirst)
 }
 
 export function getAllActivities(dirPath?: string): Activity[] {

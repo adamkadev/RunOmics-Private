@@ -1,5 +1,11 @@
 import { activityRouteThumb } from './routeThumb'
-import type { Activity, ActivitySummary } from './types'
+import type { Activity, ActivitySummary, HrZone } from './types'
+
+export function zoneSeconds(hrZones: readonly Pick<HrZone, 'zone' | 'seconds'>[]): number[] {
+  const seconds: number[] = []
+  for (const { zone, seconds: s } of hrZones) seconds[zone - 1] = (seconds[zone - 1] ?? 0) + s
+  return Array.from(seconds, (s) => Math.round(s ?? 0))
+}
 
 export function toActivitySummary(a: Activity): ActivitySummary {
   return {
@@ -13,10 +19,7 @@ export function toActivitySummary(a: Activity): ActivitySummary {
     durationSeconds: a.durationSeconds,
     paceSecPerKm: a.paceSecPerKm,
     avgHeartRate: a.avgHeartRate,
-    rpe: a.rpe,
-    hrZones: a.hrZones,
-    week: a.week,
-    elevationGain: a.elevationGain,
+    zones: zoneSeconds(a.hrZones),
     gearId: a.gearId,
     routeThumb: activityRouteThumb(a),
   }

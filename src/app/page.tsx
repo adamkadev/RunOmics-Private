@@ -40,7 +40,7 @@ export default async function DashboardPage() {
   const records = await getRecords()
   const mostRecentRecord = getMostRecentRecord(records)
   const todayPlannedWorkout = await getTodayPlannedWorkout(today)
-  const recentLoad = await getRecentLoad(today)
+  const recentLoad = getRecentLoad(today, trainingStatus)
   const coaching = getCoachingOverview(today)
   const weekTarget = await loadWeekTarget(today, coaching)
 
@@ -52,9 +52,11 @@ export default async function DashboardPage() {
     : todayPlannedWorkout
       ? plannedWorkoutView(todayPlannedWorkout, trainingZones)
       : null
-  // A prescribed session goes into the insight rather than suppressing it: the card is already written and paid for.
-  const aiVerdict = await getTodayInsight(trainingStatus, await todayInsightSession(today), today)
-  const celebrationTake = await getPbCelebrationInsight(mostRecentRecord)
+  const [aiVerdict, celebrationTake] = await Promise.all([
+    // A prescribed session goes into the insight rather than suppressing it: the card is already written and paid for.
+    todayInsightSession(today).then((session) => getTodayInsight(trainingStatus, session, today)),
+    getPbCelebrationInsight(mostRecentRecord),
+  ])
   const plannedWorkouts = await getPlannedWorkouts()
   const coachWorkouts = coaching?.workouts ?? []
   const nextSession = findNextSession(today, coachWorkouts, plannedWorkouts, trainingZones)

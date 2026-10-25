@@ -13,7 +13,11 @@ export interface EasyHardSplit {
 }
 
 /** A session still to run has no heart rate yet, so it counts at its type's zone for its planned duration. */
-export type EasyTimeSource = { hrZones: ReadonlyArray<Pick<HrZone, 'zone' | 'seconds'>> } | { type: string | null | undefined; seconds: number }
+export type EasyTimeSource =
+  | { hrZones: ReadonlyArray<Pick<HrZone, 'zone' | 'seconds'>> }
+  /** Seconds by zone, zone 1 first, as a list row carries them. */
+  | { zones: readonly number[] }
+  | { type: string | null | undefined; seconds: number }
 
 export function easyTime(sources: Iterable<EasyTimeSource>): { easySeconds: number; totalSeconds: number } {
   let easySeconds = 0
@@ -24,6 +28,11 @@ export function easyTime(sources: Iterable<EasyTimeSource>): { easySeconds: numb
         totalSeconds += z.seconds
         if (z.zone <= 2) easySeconds += z.seconds
       }
+    } else if ('zones' in s) {
+      s.zones.forEach((seconds, i) => {
+        totalSeconds += seconds
+        if (i < 2) easySeconds += seconds
+      })
     } else if (s.seconds > 0) {
       totalSeconds += s.seconds
       if (runTypeZone(s.type) <= 2) easySeconds += s.seconds

@@ -248,7 +248,7 @@ export function DoneDayCard({
           <MissedLine date={date} />
         ) : (
           acts.map((a) => {
-            const share = a.hrZones.find((z) => z.zone === zone)?.percent
+            const share = a.zonePercents[zone - 1] ?? undefined
             return (
               <Line key={a.id} label={t.plan.dayCard.done} testId="done-line">
                 <span className="font-semibold">{`${formatRanKm(a.distanceKm)} ${t.units.km}`}</span>
