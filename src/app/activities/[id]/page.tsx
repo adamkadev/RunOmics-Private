@@ -19,9 +19,8 @@ import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
-import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getRunSessions } from '@/application/coaching/GetCoachingView'
 import { sessionLabel } from '@/lib/activityTitle'
-import { appTodayIso } from '@/lib/calendarDate'
 import { paceZones } from '@/application/usecases/GetTrainingZones'
 import { chartZones } from '@/components/activity/chartStackLanes'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
@@ -36,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) return { title: t.activity.metaFallbackTitle }
 
-  const name = runName(activity, shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity))
+  const name = runName(activity, shareSession(getRunSessions(), activity))
   const stats = [
     formatDistance(activity.distanceKm),
     formatDuration(activity.durationSeconds),
@@ -83,7 +82,7 @@ export default async function ActivityDetailPage({
   const newGround = getRunExploreGain(id)
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
   // The coach's session this run was, for its name in the header and on the share card, and its reps' target pace.
-  const session = shareSession(getCoachingOverview(appTodayIso())?.workouts ?? [], activity)
+  const session = shareSession(getRunSessions(), activity)
   // The watch's own plan for the day, for a rep target the coach never matched.
   const plannedForDay = (await getPlannedWorkouts()).find((w) => w.date === activity.date.slice(0, 10)) ?? null
 

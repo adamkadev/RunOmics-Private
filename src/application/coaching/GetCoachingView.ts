@@ -93,6 +93,42 @@ export function getCoachingOverview(
   )
 }
 
+export interface RunSession {
+  prescription: WorkoutPrescription
+  activityId: string | null
+}
+
+/** `plans` newest first; an older plan's session counts only on a day no newer plan's weeks cover. */
+export function sessionsAcrossPlans(plans: readonly CoachingPlan[], evaluations: WorkoutEvaluation[]): RunSession[] {
+  const matched = new Map(evaluations
+    .filter((evaluation) => evaluation.matchStatus === 'matched' && evaluation.prescriptionId !== null)
+    .map((evaluation) => [evaluation.prescriptionId!, evaluation.activityId]))
+  const covered: { startDate: string; endDate: string }[] = []
+  const sessions: RunSession[] = []
+  for (const plan of plans) {
+    for (const prescription of plan.weeks.flatMap((week) => week.workouts)) {
+      if (covered.some((week) => prescription.date >= week.startDate && prescription.date <= week.endDate)) continue
+      sessions.push({ prescription, activityId: matched.get(prescription.id) ?? null })
+    }
+    covered.push(...plan.weeks)
+  }
+  return sessions
+}
+
+/** A superseded block's runs keep their session; an archive that fails to parse costs only those. */
+export function getRunSessions(
+  repository: Pick<CoachingRepository, 'getCurrentPlan' | 'getEvaluations' | 'getArchivedPlans'> = new JsonCoachingRepository(),
+): RunSession[] {
+  const current = repository.getCurrentPlan()
+  let archived: CoachingPlan[] = []
+  try {
+    archived = repository.getArchivedPlans?.() ?? []
+  } catch (error) {
+    console.error('[coaching] archived plans unreadable', error)
+  }
+  return sessionsAcrossPlans([...(current ? [current] : []), ...archived], repository.getEvaluations())
+}
+
 /** Reads the plan alone: the overview walks every week against every evaluation, too much for one row. */
 export function getTodayPrescription(
   today = appTodayIso(),
