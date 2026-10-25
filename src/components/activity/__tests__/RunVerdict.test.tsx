@@ -20,7 +20,6 @@ describe('RunVerdict', () => {
     render(<RunVerdict activity={activity} aiVerdict={null} />)
 
     expect(screen.getByTestId('run-verdict').textContent).toContain(t.activityTypes.Threshold)
-    expect(screen.queryByText(t.activity.verdict.title)).toBeNull()
     // No AI verdict, no invented body.
     expect(screen.queryByTestId('run-verdict-body')).toBeNull()
   })
@@ -30,7 +29,6 @@ describe('RunVerdict', () => {
 
     expect(screen.getByText('Strong threshold')).toBeInTheDocument()
     expect(screen.getByText('Held the range.')).toBeInTheDocument()
-    expect(screen.queryByText(t.sessionCard.coachInsight)).toBeNull()
   })
 
   it('carries no coach evaluation, outcome or planned-versus-actual comparison', () => {

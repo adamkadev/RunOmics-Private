@@ -31,8 +31,6 @@ describe('i18n parity', () => {
 
 describe('French week streaks', () => {
   it('reads one week in the singular', () => {
-    expect(fr.dashboard.weeklyStreak.weeksInARow(1)).toBe('1 semaine d’affilée')
-    expect(fr.dashboard.weeklyStreak.weeksInARow(3)).toBe('3 semaines d’affilée')
     expect(fr.profile.milestones.streak(1)).toBe('1 semaine d’affilée')
   })
 })
@@ -69,8 +67,6 @@ describe('French design review copy', () => {
     expect(fr.plan.restCard.next('mar.')).toBe('Prochaine : mar.')
     expect(fr.profile.hub.inDays(1)).toBe('demain')
     expect(fr.profile.hub.inDays(155)).toBe('dans 155 jours')
-    expect(fr.profile.hub.reached(98)).toBe('98 % du parcours au temps visé')
-    expect(fr.profile.hub.needs('41', '35')).toBe('Il faut 41 km/sem., ta moyenne est de 35.')
   })
 
   it('writes the shoe projection on one line', () => {
@@ -82,9 +78,7 @@ describe('French design review copy', () => {
 describe('the readiness card, in plain words', () => {
   it('names the numbers without acronyms', () => {
     for (const r of [en.dashboard.readiness, fr.dashboard.readiness]) {
-      for (const label of [r.formLabel, r.ctl, r.atl, r.acwr]) expect(label).not.toMatch(/CTL|ATL|ACWR|TSB/)
+      for (const label of [r.formLabel, r.ctl, r.atl]) expect(label).not.toMatch(/CTL|ATL|ACWR|TSB/)
     }
-    expect(en.dashboard.readiness.acwrValue('0.90')).toBe('×0.90')
-    expect(fr.dashboard.readiness.acwrValue('1,79')).toBe('×1,79')
   })
 })
