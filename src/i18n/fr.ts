@@ -1374,6 +1374,7 @@ export const fr = {
       duration: 'Temps',
       pace: 'Allure moy.',
       avgHr: 'FC moy.',
+      gap: (pace: string, climb: string) => ['Ajustée à la pente : ', pace, ` sur ${climb} m de D+`] as [string, string, string],
     },
     verdict: {
       title: 'Verdict de la sortie',
@@ -1557,6 +1558,8 @@ export const fr = {
       max: 'max',
       bestSmoothed: 'meilleure 30 s',
       pace: 'Allure',
+      gap: 'Ajustée pente',
+      gapReading: (pace: string) => `ajustée ${pace}`,
       paceUnitHint: '/km, vers le haut = plus rapide',
       elevation: 'Altitude',
       cadence: 'Cadence',

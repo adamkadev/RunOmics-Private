@@ -1453,6 +1453,7 @@ export const en = {
       duration: 'Time',
       pace: 'Avg pace',
       avgHr: 'Avg HR',
+      gap: (pace: string, climb: string) => ['Grade-adjusted ', pace, ` over ${climb} m of climbing`] as [string, string, string],
     },
     verdict: {
       title: 'Run Verdict',
@@ -1650,6 +1651,8 @@ export const en = {
       max: 'max',
       bestSmoothed: 'best 30 s',
       pace: 'Pace',
+      gap: 'GAP',
+      gapReading: (pace: string) => `GAP ${pace}`,
       paceUnitHint: '/km, up = faster',
       elevation: 'Elevation',
       cadence: 'Cadence',

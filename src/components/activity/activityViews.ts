@@ -7,6 +7,7 @@ import { pickDefined } from '@/components/pickDefined'
 import { workoutSummary } from '@/components/plan/workoutSummary'
 import { prescriptionDistanceMeters, prescriptionDuration, prescriptionStructure } from '@/components/coaching/presentation'
 import { activityTitle, intendedType } from '@/lib/activityTitle'
+import { hillyGap } from '@/domain/activity/gradeAdjusted'
 
 /** Only the fields a client component reads: every field handed to it goes into the page payload, drawn or not. */
 const DETAIL_FIELDS = [
@@ -30,6 +31,8 @@ const DETAIL_FIELDS = [
   'elevationProfile',
   'hrSamples',
   'paceSamples',
+  'gapSecPerKm',
+  'gapSamples',
   'cadenceSamples',
   'cadenceSpm',
   'groundContactMs',
@@ -55,8 +58,14 @@ const SHARE_FIELDS = [
 
 export type ActivityDetailView = Pick<Activity, (typeof DETAIL_FIELDS)[number]>
 
+/** A flat run's grade-adjusted pace is its pace again, so it stays off the page. */
 export function activityDetailView(activity: Activity): ActivityDetailView {
-  return pickDefined(activity, DETAIL_FIELDS)
+  const view = pickDefined(activity, DETAIL_FIELDS)
+  if (hillyGap(activity) === null) {
+    delete view.gapSecPerKm
+    delete view.gapSamples
+  }
+  return view
 }
 
 /** The kinds of run whose laps are reps worth leading with; strides on an easy run are not. */

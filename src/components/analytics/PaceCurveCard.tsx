@@ -10,7 +10,7 @@ import type { DayWindow, LoadPeriod } from './analyticsView'
 
 const W = 1000
 const H = 140
-const LABELLED = [30, 60, 300, 1200, 3600, 7200]
+const LABELLED = [30, 120, 600, 3600, 7200]
 const LEVEL_SEC = 3
 
 const PACE_ROUND = 5
