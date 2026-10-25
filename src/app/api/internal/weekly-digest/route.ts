@@ -5,6 +5,7 @@ import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
+import { getCrossTrainingEntries } from '@/application/usecases/GetCrossTraining'
 import { sendOncePer } from '@/application/usecases/SendScheduledPush'
 import { appTodayIso } from '@/lib/calendarDate'
 import { loadData } from '@/application/usecases/LoadData'
@@ -20,6 +21,7 @@ export const { GET, POST } = scheduledRoute('weekly-digest', async () => {
       planned: await getPlannedWorkouts(),
       coaching: getCoachingOverview(today),
       recovery: getRecoveryHistory(),
+      crossTraining: getCrossTrainingEntries(),
     })
   )
   if (!push) return NextResponse.json({ sent: false })

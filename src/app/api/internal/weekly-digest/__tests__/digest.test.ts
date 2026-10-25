@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CoachingOverview } from '@/application/coaching/GetCoachingView'
 import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
+import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import { digestPush, weeklyDigest } from '../digest'
 
 const run = (date: string, type: ActivitySummary['type'], distanceKm: number) => ({ date, type, distanceKm }) as ActivitySummary
@@ -19,6 +20,12 @@ const recovery = [
   ...['10-12', '10-14', '10-16', '10-17'].map((d) => ({ date: `2026-${d}`, restingHr: 48 })),
 ]
 
+const crossTraining: CrossTrainingEntry[] = [
+  { id: 's1', date: '2026-10-14', kind: 'strength', durationSeconds: 2700, distanceKm: null, sets: 12 },
+  { id: 'c1', date: '2026-10-16', kind: 'cycling', durationSeconds: 2700, distanceKm: 20, sets: null },
+  { id: 'c2', date: '2026-10-19', kind: 'cycling', durationSeconds: 3600, distanceKm: 25, sets: null },
+]
+
 const coaching = {
   workouts: [],
   plan: { weeks: [{ startDate: '2026-10-19', endDate: '2026-10-25', focus: 'Aerobic base, one controlled threshold' }] },
@@ -26,19 +33,28 @@ const coaching = {
 
 describe('weekly digest', () => {
   it("reads Monday's look back at last week and the coach's focus for this one, in two lines", () => {
-    const digest = weeklyDigest({ today: '2026-10-19', activities, planned, coaching, recovery })
+    const digest = weeklyDigest({ today: '2026-10-19', activities, planned, coaching, recovery, crossTraining })
 
-    expect(digest).toEqual({ ranKm: 34, planKm: 42, qualityDone: 1, qualityPlanned: 2, restingHr: { bpm: 48, change: -2 }, focus: 'Aerobic base, one controlled threshold' })
+    expect(digest).toEqual({
+      ranKm: 34,
+      planKm: 42,
+      qualityDone: 1,
+      qualityPlanned: 2,
+      otherTrainingSeconds: 5400,
+      restingHr: { bpm: 48, change: -2 },
+      focus: 'Aerobic base, one controlled threshold',
+    })
     expect(digestPush(digest)).toEqual({
       title: 'Last week',
-      body: '34 of 42 km · 1 of 2 quality sessions\nResting HR 48 (−2) · This week: Aerobic base, one controlled threshold',
+      body: '34 of 42 km · 1 of 2 quality sessions · 1:30 h other training\nResting HR 48 (−2) · This week: Aerobic base, one controlled threshold',
     })
   })
 
   it('leaves out what it cannot say, and says nothing for an empty week', () => {
-    const bare = weeklyDigest({ today: '2026-10-19', activities: activities.slice(0, 1), planned: [], coaching: null, recovery: [] })
-    expect(digestPush(bare)?.body).toBe('8 km')
+    const empty = { today: '2026-10-19', planned: [], coaching: null, recovery: [], crossTraining: [] }
+    expect(digestPush(weeklyDigest({ ...empty, activities: activities.slice(0, 1) }))?.body).toBe('8 km')
 
-    expect(digestPush(weeklyDigest({ today: '2026-10-19', activities: [], planned: [], coaching: null, recovery: [] }))).toBeNull()
+    expect(digestPush(weeklyDigest({ ...empty, activities: [] }))).toBeNull()
+    expect(digestPush(weeklyDigest({ ...empty, activities: [], crossTraining: crossTraining.slice(0, 1) }))?.body).toBe('0 km · 45 min other training')
   })
 })

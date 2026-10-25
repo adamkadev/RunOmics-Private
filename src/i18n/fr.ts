@@ -2116,6 +2116,7 @@ export const fr = {
       kmOfPlan: (ran: string, plan: string) => `${ran} sur ${plan} km`,
       quality: (done: number) => `${done} séance${done > 1 ? 's' : ''} de qualité`,
       qualityOfPlan: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} de qualité sur ${planned}`,
+      otherTraining: (time: string) => `${time} d’autres activités`,
       restingHr: (bpm: number, change: string) => `FC repos ${bpm} (${change})`,
       focus: (focus: string) => `Cette semaine : ${focus}`,
     },
