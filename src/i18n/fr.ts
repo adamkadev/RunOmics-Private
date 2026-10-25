@@ -1,5 +1,6 @@
 import type { ActivityType } from '@/domain/activity/types'
 import type { Strings } from './en'
+import type { NiggleSide, NiggleSite } from '@/domain/wellness/checkIn'
 
 /**
  * « à » devant un nom de lieu : « à Metz », mais « au Ban-Saint-Martin » et
@@ -18,6 +19,32 @@ function moveWords(delta: string, up: string, down: string, level: string): stri
   if (sign === '+') return `${up} ${n}`
   if (sign === '−' || sign === '-') return `${down} ${n}`
   return n === '0' ? level : delta
+}
+
+const NIGGLE_SITE_NAMES: Record<NiggleSite, string> = {
+  foot: 'Pied',
+  ankle: 'Cheville',
+  achilles: 'Achille',
+  calf: 'Mollet',
+  shin: 'Tibia',
+  knee: 'Genou',
+  hamstring: 'Ischio',
+  quad: 'Quadriceps',
+  hip: 'Hanche',
+  back: 'Dos',
+  other: 'Autre',
+}
+
+const NIGGLE_SIDE_NAMES: Record<NiggleSide, string> = { left: 'Gauche', right: 'Droite' }
+
+const FEMININE_SITES: ReadonlySet<NiggleSite> = new Set(['ankle', 'hip'])
+
+/** « Mollet droit », « Cheville droite » : le côté s’accorde avec le site. */
+function niggleName(site: NiggleSite, side: NiggleSide | null): string {
+  if (!side) return NIGGLE_SITE_NAMES[site]
+  const right = FEMININE_SITES.has(site) ? 'droite' : 'droit'
+  if (site === 'other') return `Autre, côté ${side === 'left' ? 'gauche' : 'droit'}`
+  return `${NIGGLE_SITE_NAMES[site]} ${side === 'left' ? 'gauche' : right}`
 }
 
 export const fr = {
@@ -2426,6 +2453,75 @@ export const fr = {
       checkGuides: 'Les guides du prochain bloc en viennent.',
       nextKey: 'Prochaine clé',
     },
+  },
+
+  wellness: {
+    checkIn: {
+      eyebrow: 'Ressenti du matin',
+      scaleHint: '1 le pire · 5 le mieux',
+      dismiss: 'Masquer le ressenti pour aujourd’hui',
+      done: 'Terminé',
+      edit: 'Modifier',
+      scores: {
+        sleep: { label: 'Sommeil', words: ['Très mauvais', 'Mauvais', 'Moyen', 'Bon', 'Excellent'] },
+        soreness: { label: 'Courbatures', words: ['Très fortes', 'Fortes', 'Moyennes', 'Légères', 'Aucune'] },
+        stress: { label: 'Stress', words: ['Très élevé', 'Élevé', 'Moyen', 'Faible', 'Aucun'] },
+        mood: { label: 'Moral', words: ['Très bas', 'Bas', 'Moyen', 'Bon', 'Excellent'] },
+      },
+      scoreButton: (label: string, value: number, word: string) => `${label} ${value}, ${word}`,
+      flags: { niggle: 'Douleur', ill: 'Malade', travel: 'En voyage' },
+      where: 'Où',
+      pain: 'Douleur',
+      painHint: '0 aucune · 10 la pire',
+      painButton: (pain: number) => `Douleur ${pain} sur 10`,
+      changesRun: 'Change la sortie du jour',
+    },
+    sites: NIGGLE_SITE_NAMES,
+    sides: NIGGLE_SIDE_NAMES,
+    niggleName,
+    pain: (pain: number) => `${pain}/10`,
+    readiness: {
+      line: { caution: 'Ressenti : lever le pied', hold: 'Ressenti : repos aujourd’hui' },
+      ill: {
+        headline: 'Tu es malade : repos aujourd’hui.',
+        body: 'Ton ressenti du matin dit que tu es malade. Saute la séance du jour et reprends le plan une fois les symptômes passés.',
+      },
+      painHold: (niggle: string, pain: string) => ({
+        headline: `${niggle} à ${pain} : repos aujourd’hui.`,
+        body: 'Une douleur aussi forte change ta foulée. Saute la séance, et fais-la examiner si elle n’a pas passé dans quelques jours.',
+      }),
+      painEase: (niggle: string, pain: string) => ({
+        headline: `${niggle} à ${pain} : reste en facile.`,
+        body: 'Cours facile et plus court, et arrête-toi si ça empire en route. Rien d’intense tant que ça n’est pas passé.',
+      }),
+      sleepSoreness: {
+        headline: 'Peu de sommeil et des courbatures : reste en facile.',
+        body: 'Une mauvaise nuit sur des jambes lourdes. Cours facile aujourd’hui, ou décale la partie intense à un autre jour.',
+      },
+      why: 'D’après ton ressenti du matin. Forme, condition et fatigue viennent de ta charge, inchangées.',
+    },
+    history: {
+      title: 'Bien-être',
+      subtitle: (weeks: number) => `Ressentis du matin · ${weeks} semaines`,
+      empty: 'Aucun ressenti pour l’instant : réponds à celui d’Aujourd’hui le matin.',
+      niggleRow: 'Douleur',
+      flagsRow: 'Malade · voyage',
+      today: 'Aujourd’hui',
+      legend: { worst: 'le pire', best: 'le mieux', ill: 'malade', travel: 'en voyage' },
+      niggles: 'Douleurs',
+      noNiggles: (weeks: number) => `Aucune douleur en ${weeks} semaines.`,
+      days: (n: number) => `${n} jour${n > 1 ? 's' : ''}`,
+      peak: (pain: string) => `max ${pain}`,
+      changedRuns: (n: number) => `${n} sortie${n > 1 ? 's' : ''} changée${n > 1 ? 's' : ''}`,
+      ongoing: 'en cours',
+      stripLabel: (answered: number, days: number) => `Ressenti noté ${answered} matins sur les ${days} derniers`,
+    },
+  },
+
+  heatAhead: {
+    line: (temp: number, time: string, cost: number) =>
+      `${temp} °C à ${time} — par cette chaleur, tes sorties coûtent environ +${cost} s/km : cours au cardio`,
+    time: (hour: number) => `${hour} h`,
   },
 
   activityTypes: {

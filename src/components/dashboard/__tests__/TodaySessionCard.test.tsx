@@ -55,4 +55,12 @@ describe('TodaySessionCard', () => {
     render(<TodaySessionCard card={card({ title: "Répétitions allure d'objectif - 4x3'@4:24" })} />)
     expect(screen.getByText("Répétitions allure d'objectif - 4x3'@4:24").className).toContain('line-clamp-2')
   })
+
+  it('says what a warm forecast at the usual hour will cost, only when there is one', () => {
+    const { rerender } = render(<TodaySessionCard card={card({ heat: { apparentTempC: 28, hour: 18, costSecPerKm: 15 } })} />)
+    expect(screen.getByTestId('session-heat')).toHaveTextContent(t.heatAhead.line(28, t.heatAhead.time(18), 15))
+
+    rerender(<TodaySessionCard card={card()} />)
+    expect(screen.queryByTestId('session-heat')).toBeNull()
+  })
 })

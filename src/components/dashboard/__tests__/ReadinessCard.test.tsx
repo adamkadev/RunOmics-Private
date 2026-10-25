@@ -1,9 +1,12 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { formBand } from '@/domain/training/formBand'
 import { t } from '@/i18n'
 import { ReadinessCard } from '../ReadinessCard'
+
+const checkIn = vi.hoisted(() => ({ day: undefined as unknown }))
+vi.mock('@/lib/useCheckIn', () => ({ useTodayCheckIn: () => ({ date: '2026-10-25', isOwner: true, day: checkIn.day }) }))
 
 const STATUS = {
   status: 'productive', risk: 'low', loadTrend: 'building',
@@ -11,6 +14,10 @@ const STATUS = {
 } as unknown as TrainingStatus
 
 describe('ReadinessCard (App Fixes 1a)', () => {
+  beforeEach(() => {
+    checkIn.day = undefined
+  })
+
   it('reads Form, Fitness and Fatigue on three tiles, and no watch status', () => {
     render(<ReadinessCard status={STATUS} />)
 
@@ -97,5 +104,22 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(screen.getByTestId('verdict-yesterday')).toHaveTextContent(t.dashboard.readiness.yesterday)
     rerender(<ReadinessCard status={STATUS} verdict={{ headline: 'Long run day.', body: 'Keep it conversational.' }} />)
     expect(screen.queryByTestId('verdict-yesterday')).toBeNull()
+  })
+
+  it('lets a poor check-in lead the card and temper its tone, the load numbers untouched', () => {
+    checkIn.day = { status: 'ready', entry: { sleep: 4, niggle: { site: 'calf', side: 'left', pain: 5 } } }
+    const { rerender } = render(<ReadinessCard status={STATUS} verdict={{ headline: 'Go for it.', body: 'Run it in full.' }} />)
+    const line = screen.getByTestId('readiness-status')
+    expect(line.textContent).toBe(`${t.formBand.neutral} · ${t.wellness.readiness.line.caution}`)
+    expect(line.dataset.tone).toBe('caution')
+    expect(line.style.color).toBe('var(--warn)')
+    expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.wellness.readiness.painEase(t.wellness.niggleName('calf', 'left'), '5/10').headline)
+    expect(screen.getByTestId('readiness-verdict')).not.toHaveTextContent('Go for it.')
+    expect(screen.getByTestId('tile-form')).toHaveTextContent('−6')
+
+    checkIn.day = { status: 'ready', entry: { ill: true } }
+    rerender(<ReadinessCard status={STATUS} verdict={{ headline: 'Go for it.', body: 'Run it in full.' }} />)
+    expect(screen.getByTestId('readiness-status').dataset.tone).toBe('hold')
+    expect(screen.getByTestId('readiness-verdict')).toHaveTextContent(t.wellness.readiness.ill.headline)
   })
 })
