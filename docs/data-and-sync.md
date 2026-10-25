@@ -55,28 +55,31 @@ refusal leaves both the clone and the remote untouched.
 module it is asked to load must be alias-free (`./x`, never `@/x`), and dependencies
 must be listed before the modules that import them.
 
-The concurrency check runs *before* the workspace replaces the clone's `data/`, so a
-refusal leaves both the clone and the remote untouched.
-
-`scripts/loadPalette.mjs` stages `src/lib/<entry>.ts` for use from plain Node. Every
-module it is asked to load must be alias-free (`./x`, never `@/x`), and dependencies
-must be listed before the modules that import them.
-
 ## Reading the data at run time
 
 With `RUNOMICS_DATA_SOURCE=github` on Vercel, a deployment reads its data
 repository through GitHub's API instead of the copy its build cloned, so a sync
 shows in about the time the sync takes, with no rebuild. The data repository
-stays the only copy: every writer pushes to it as before.
+stays the only copy: every writer pushes to it as before. Both deployments run
+this way, and the sync fires no deploy hook: a deployment without the mode keeps
+the data of its last build, and `data-revalidate` answers it with a 409.
 
 - **Each page and route that reads data awaits `loadData()` first.** It asks
   GitHub for HEAD (cached ten minutes, tagged), and when HEAD moved it reads the
   commit's tree and the files that changed, then swaps the new commit in whole.
   `npm run check:cycles` fails on a page or route that reads data without it.
 - **The sync expires that cache** with `POST /api/internal/data-revalidate`
-  instead of firing the deploy hook, when its GitHub Environment sets
-  `DATA_SOURCE=github`, then waits a few seconds rather than minutes for health
-  to report the new sync.
+  after each push (the tag with `expire: 0`, and the root layout's path, since
+  pages prerendered at build never read the tagged pointer), then polls health
+  every 3 s until it reports the new sync, and pings once more for a page whose
+  render straddled the first ping.
+- **The pages a phone opens first are rendered right after.** Once the response
+  is sent, `warmPages` waits 2 s for the expiry to land, then fetches Today,
+  Activities, Plan, Analytics, Profile and the newest run's page, so the first
+  tap after a sync is served from cache rather than rendered. On a private site
+  it signs a two-minute owner session cookie for these requests with
+  `SESSION_SECRET`; without the secret there is no warm-up. Each failure is
+  logged by path, never thrown.
 - **A commit is checked before it goes live,** with the same data contract the
   build ran. A refused commit leaves the previous one serving, and health
   reports it as `rejectedData`, which fails the sync.
@@ -95,6 +98,82 @@ stays the only copy: every writer pushes to it as before.
   GitHub's `github-authentication-token-expiration` header for each data token
   and posts the dates to `POST /api/internal/token-expiry`, which pushes when one
   has 14 days or fewer left.
+
+## What a sync writes
+
+Beyond the month files of runs, a sync keeps these, each read by its own repository:
+
+- **Other training** (`cross_training/<year>.json` and an `index.json` of the years,
+  `scripts/garmin/cross_training.py`). Strength, cycling, swimming and every other
+  non-running activity, one compact summary each from Garmin's activity list: sport,
+  duration, distance, average HR and training load. A strength session also downloads its
+  FIT for the work sets (category, exercise, reps, weight, duration). They live apart from
+  `activities/` so that no running metric, load or record can ever read one; the app shows
+  them on Plan and Consistency, and the coach gets the last 28 days (`otherTraining`). The
+  first night reads 180 days back; after that each night re-reads from 14 days before the
+  newest stored session, which catches one the watch uploaded late. Breathwork and
+  meditation are skipped, an activity that became a run is dropped, and a session that
+  fails is retried the next night while the step reports a partial sync.
+- **Shoes** (`shoes.json`). The nightly workflow runs `scripts/sync_shoes.py` after the sync,
+  through WARP like every garth call, so a pair added or retired in Garmin Connect shows the
+  next morning. Without `GARMIN_SECRET`, or when Connect fails, the stored list is kept and a
+  failure counts the night as partial.
+- **Run notes and morning check-ins** (`activity_notes.json`, `wellness.json`). Both exist
+  only in Firestore otherwise. The workflow reads them through `GET /api/internal/activity-notes`
+  and `GET /api/internal/wellness`, sorted so the commit changes only where an entry did, and
+  logs a count, never an entry. The coach falls back to `wellness.json` when Firestore does
+  not answer; nothing reads the notes copy, which is a backup. Neither step can fail the sync.
+- **Duration bests** (`durationBests` on each run, `scripts/processing/pace_profile.py`): the
+  most metres covered in 30 s, 1, 2, 3, 5, 10, 20, 30, 60, 90 and 120 min, on the moving clock
+  and from the full-resolution records. A step faster than 8 m/s (2:05/km) is capped as a GPS
+  jump. The window is exact on a piecewise-linear track: the best one starts or ends on a
+  sample, so both anchorings are tried.
+- **Grade-adjusted pace** (`gapSecPerKm`, with a GAP pace series for the chart): each step
+  counted as the metres of flat running that would cost the same energy, by Minetti et al.
+  (2002)'s cost of running against gradient. See
+  [Pace curve and grade-adjusted pace](coaching-and-metrics.md#pace-curve-and-grade-adjusted-pace).
+
+**Existing runs get the new fields by reprocessing.** Dispatch *Sync Garmin Activities* with
+`reprocess` for the profile: `scripts/reprocess.py` rebuilds every stored run from the
+workflow's FIT cache with the current parser and calls Garmin for nothing. A run without a
+cached FIT keeps what it had, and the log counts them; when it reports any, dispatch once more
+with `force`, which downloads every FIT again.
+
+## Scheduled jobs and pushes
+
+**Vercel Cron runs the schedule** (`vercel.json`), because GitHub's scheduled workflows started
+hours late and the morning push arrived around lunchtime. Each deployment runs the crons for
+its own athlete:
+
+- `nightly-sync` at 01:00 UTC dispatches `sync.yml` with `nightly` (and the deployment's
+  `GITHUB_SYNC_PROFILE`), unless the sync gate says a run is already going. `nightly` is what
+  turns on the token-expiry warning, which a dispatch from the Sync button leaves off.
+- `daily-session` runs at 06:00 and 07:00 UTC. Paris is UTC+2 in summer and UTC+1 in winter,
+  so exactly one of the two falls in the 08:xx Paris hour (`isDailySessionHour`), and only that
+  one sends.
+- `stale-sync-check` daily at 06:00, `weekly-digest` Monday at 06:00 and `weekly-reminder`
+  Friday at 15:00.
+
+**Two secrets, two callers.** Vercel Cron can send nothing but `Authorization: Bearer
+$CRON_SECRET` on a `GET`; the workflow and a person send `x-internal-secret` on a `POST`.
+`scheduledRoute` gives each scheduled route both: `GET` checks `CRON_SECRET`, `POST` checks
+`INTERNAL_NOTIFY_SECRET`. Every other internal route takes the internal secret alone. The
+guard rate-limits before it checks either.
+
+**A scheduled push goes out once a day.** `sendOncePer` claims the day's key in Firestore before
+sending and releases it if the send throws, so a retry or the second `daily-session` call cannot
+repeat a push, and a failed one is tried again.
+
+**Each device chooses its pushes.** A `pushTokens` document carries `categories`, the three
+Settings switches; `sendPush` sends to the devices whose switch for the push's audience is not
+off. A device registered before categories existed has none stored and keeps getting everything.
+
+| Audience | Pushes |
+|----------|--------|
+| `training` | The morning session or rest day, the Monday digest, the Friday goal check-in, a new run, the AI verdict of a run that just landed, an overreaching alert |
+| `shoes` | Shoe wear |
+| `records` | A new record, a quartier past 90 % |
+| `always` | A failed workflow, a stale sync, a data token about to expire, the digest of phone errors: sent whatever the switches say |
 
 ## Garmin write path (coaching sync)
 
@@ -180,7 +259,10 @@ caveat worth knowing:
 - **Garmin Coach plans** publish no base phase, so the plan's own first day is earlier than
   its first phase (which starts at BUILD).
 - **Weather** on an activity is Open-Meteo conditions at the middle of the run, distinct from
-  `avgTemperature`, which is what the watch's wrist sensor read.
+  `avgTemperature`, which is what the watch's wrist sensor read. A run's conditions name the sky
+  from its WMO weather code, add the feels-like temperature only when it is 3 °C or more from
+  the air's, and the humidity only from a dew point of 16 °C, about where runners feel the air
+  as muggy.
 - **Planned-workout times of day are coarse only** — the exact scheduled minute of a future run
   is never persisted or served.
 - **Splits** come from two different FIT messages. A structured workout carries `split_mesgs`
