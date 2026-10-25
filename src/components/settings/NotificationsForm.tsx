@@ -59,6 +59,7 @@ export function NotificationsForm() {
   const reminderAt = mounted ? dailyReminderTime(new Date(), process.env.NEXT_PUBLIC_TIME_ZONE || undefined) : null
 
   async function handleToggle(category: PushCategory) {
+    if (status === 'busy') return
     if (status === 'enabled') {
       const next = { ...prefs, [category]: !prefs[category] }
       const allOff = PUSH_CATEGORIES.every((c) => !next[c])
@@ -80,29 +81,30 @@ export function NotificationsForm() {
 
     // Not enabled yet, whatever the reason: the tap is the permission request, and
     // the browser's own prompt is the only messaging needed.
+    const next = { ...prefs, [category]: true }
+    setPrefs(next)
     setStatus('busy')
     try {
       // Asked before the import: WebKit shows the prompt only while the tap's user activation lasts.
       if (canReceivePush() && (await Notification.requestPermission()) !== 'granted') throw new Error('permission-denied')
-      const next = { ...prefs, [category]: true }
       await (await loadPush()).enablePushNotifications(next)
-      setPrefs(next)
       savePrefs(next)
       setStatus('enabled')
     } catch {
+      setPrefs(prefs)
       setStatus(typeof Notification !== 'undefined' && Notification.permission === 'denied' ? 'denied' : 'idle')
       showToast(n.error, false)
     }
   }
 
-  const busy = status === 'loading' || status === 'busy'
 
   return (
     <>
     <section className={GROUP_CARD} data-testid="notifications-card">
       {PUSH_CATEGORIES.map((key) => {
         const title = n.types[key].title
-        const enabled = status === 'enabled' && prefs[key]
+        // While a tap saves, every switch keeps drawing its own state, the tapped one already at its new one.
+        const enabled = (status === 'enabled' || status === 'busy') && prefs[key]
         return (
           <div key={key} className={GROUP_ROW}>
             <p className="min-w-0 text-sm text-foreground">{title}</p>
@@ -112,7 +114,7 @@ export function NotificationsForm() {
                   {reminderAt}
                 </span>
               )}
-              <Toggle checked={enabled} disabled={busy} label={title} onChange={() => handleToggle(key)} />
+              <Toggle checked={enabled} disabled={status === 'loading'} label={title} onChange={() => handleToggle(key)} />
             </span>
           </div>
         )
