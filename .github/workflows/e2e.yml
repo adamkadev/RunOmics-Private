@@ -58,7 +58,12 @@ jobs:
 
       - name: Install Playwright's browsers
         if: steps.playwright.outputs.cache-hit != 'true'
-        run: npx playwright install --only-shell chromium && npx playwright install webkit
+        run: |
+          for try in 1 2 3; do
+            npx playwright install --only-shell chromium && npx playwright install webkit && exit 0
+            sleep 15
+          done
+          exit 1
 
       # The iPhone layout spec runs in WebKit, whose system libraries the runner image does not ship.
       - name: Install WebKit's system libraries
