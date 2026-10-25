@@ -2211,7 +2211,8 @@ export const fr = {
   },
 
   loadBalance: {
-    title: 'Équilibre des charges',
+    // The watch's own name for it.
+    title: 'Objectif de charge',
     window: '4 dernières semaines',
     buckets: {
       aerobicLow: 'Aérobie basse',
@@ -2224,16 +2225,16 @@ export const fr = {
       above: 'Au-dessus',
     },
     range: (min: number, max: number) => `Cible ${min}–${max}`,
+    // Keyed by Garmin's trainingBalanceFeedbackPhrase.
     feedback: {
+      BALANCED: 'Équilibre optimal',
       BELOW_TARGETS: 'Sous les cibles',
       ABOVE_TARGETS: 'Au-dessus des cibles',
-      ON_TARGET: 'Équilibre optimal',
-      LACKING_HIGH_AEROBIC: 'Manque d’aérobie haute',
-      LACKING_LOW_AEROBIC: 'Manque d’aérobie basse',
-      LACKING_ANAEROBIC: 'Manque d’anaérobie',
+      AEROBIC_LOW_SHORTAGE: 'Manque d’aérobie basse',
+      AEROBIC_HIGH_SHORTAGE: 'Manque d’aérobie haute',
       ANAEROBIC_SHORTAGE: 'Manque d’anaérobie',
-      NO_DATA: 'Pas assez de données',
-    } as Record<string, string | undefined>,
+      LOW_AEROBIC_OVERAGE: 'Trop d’aérobie basse',
+    } as Record<string, string>,
     footnote: 'Charge d’entraînement des 4 dernières semaines par intensité, face aux plages que ta montre personnalise à partir de ton historique. Le repère indique où tu te situes ; la zone verte est la cible.',
   },
 

@@ -7,6 +7,7 @@ import { getTrainingStatusHistory } from '@/application/usecases/GetTrainingStat
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
 import { getHeatImpact } from '@/application/usecases/GetHeatImpact'
+import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
 import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { getActivitySummaries } from '@/application/usecases/GetActivities'
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
@@ -55,6 +56,7 @@ export default async function AnalyticsPage() {
           }
         : null,
     heat: getHeatImpact(),
+    balance: getLoadBalance(),
     weeklyAvgKm: weeklyAverageKm(activities, today),
     // Goals' own figures: Volume summarises them and links there.
     ytd: {

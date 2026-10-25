@@ -2375,11 +2375,12 @@ export const en = {
   },
 
   loadBalance: {
-    title: 'Load Balance',
+    // The watch's own name for it.
+    title: 'Load focus',
     window: 'last 4 weeks',
     buckets: {
-      aerobicLow: 'Low Aerobic',
-      aerobicHigh: 'High Aerobic',
+      aerobicLow: 'Low aerobic',
+      aerobicHigh: 'High aerobic',
       anaerobic: 'Anaerobic',
     },
     verdict: {
@@ -2388,16 +2389,16 @@ export const en = {
       above: 'Above target',
     },
     range: (min: number, max: number) => `Target ${min}–${max}`,
+    // Keyed by Garmin's trainingBalanceFeedbackPhrase.
     feedback: {
+      BALANCED: 'Well balanced',
       BELOW_TARGETS: 'Below targets',
       ABOVE_TARGETS: 'Above targets',
-      ON_TARGET: 'Well balanced',
-      LACKING_HIGH_AEROBIC: 'Lacking high aerobic',
-      LACKING_LOW_AEROBIC: 'Lacking low aerobic',
-      LACKING_ANAEROBIC: 'Lacking anaerobic',
+      AEROBIC_LOW_SHORTAGE: 'Lacking low aerobic',
+      AEROBIC_HIGH_SHORTAGE: 'Lacking high aerobic',
       ANAEROBIC_SHORTAGE: 'Lacking anaerobic',
-      NO_DATA: 'Not enough data',
-    } as Record<string, string | undefined>,
+      LOW_AEROBIC_OVERAGE: 'Too much low aerobic',
+    } as Record<string, string>,
     footnote: 'Training load over the last 4 weeks split by intensity, against the ranges your watch personalises from your history. The marker is where you sit; the green zone is the target.',
   },
 

@@ -65,6 +65,7 @@ const data: AnalyticsBoardData = {
       { id: 'warm', label: '', runCount: 12, avgApparentTempC: 22, paceAtRefHr: 376, costSecPerKm: 17 },
     ],
   },
+  balance: null,
   weeklyAvgKm: 26.4,
   ytd: {
     km: 1394,
@@ -678,6 +679,21 @@ describe('Load trend and Recovery (v5.4)', () => {
     await renderWith({ recovery: steady })
     const ids = [...document.querySelectorAll('[data-testid$="-card"], [data-testid="coach-read"]')].map((el) => el.getAttribute('data-testid'))
     expect(ids).toEqual(['coach-read', 'load-card', 'form-card', 'status-card'])
+  })
+
+  it("ends the Load tab on the watch's load focus, today only", async () => {
+    const bucket = { id: 'aerobicHigh' as const, load: 609, targetMin: 652, targetMax: 1305, verdict: 'below' as const, position: 23.8, targetStart: 25, targetEnd: 75 }
+    await renderWith({ balance: { date: day(3), feedback: 'AEROBIC_HIGH_SHORTAGE', buckets: [bucket] } })
+    const ids = [...document.querySelectorAll('[data-testid$="-card"]')].map((el) => el.getAttribute('data-testid'))
+    expect(ids.at(-1)).toBe('load-focus-card')
+    expect(screen.getByTestId('load-focus-phrase').textContent).toBe(t.loadBalance.feedback.AEROBIC_HIGH_SHORTAGE)
+    expect(screen.getByTestId('focus-aerobicHigh').textContent).toContain('609')
+    act(() => {
+      fireEvent.pointerDown(screen.getByTestId('training-status-strip'), { clientX: 0, clientY: 0, pointerType: 'touch' })
+      fireEvent.pointerUp(screen.getByTestId('training-status-strip'), { clientX: 200, clientY: 0, pointerType: 'touch' })
+    })
+    expect(screen.getByTestId('status-card')).toBeInTheDocument()
+    expect(screen.queryByTestId('load-focus-card')).toBeNull()
   })
 
   it('draws the load line 72 pt tall, spread over its height', async () => {

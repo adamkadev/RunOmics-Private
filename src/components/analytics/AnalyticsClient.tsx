@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
+import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
 import type { LoadPair } from '@/domain/training/loadTrend'
 import type { RecoveryDay } from '@/domain/training/recovery'
@@ -71,6 +72,8 @@ export interface AnalyticsBoardData {
   predictions: PredictionDay[]
   race: GoalRaceInput | null
   heat: HeatImpactData | null
+  /** The watch's load focus, absent on a watch without it. */
+  balance: LoadBalanceData | null
   ytd: YtdInput | null
   /** The app's one weekly average: the last 12 complete weeks. */
   weeklyAvgKm: number | null

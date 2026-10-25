@@ -1,3 +1,4 @@
+import type { LoadBalanceBucket, LoadBalanceBucketId, LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import { loadRatio, safeRange, type LoadPair } from '@/domain/training/loadTrend'
 import type { RecoveryDay } from '@/domain/training/recovery'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
@@ -217,4 +218,44 @@ export function loadCoachHeadline(load: LoadTrendView | null, recovery: Recovery
   if (recovery?.out) return { kind: 'dip' }
   if (load?.state === 'in' && load.change && load.change.pct > 0) return { kind: 'building', change: load.change, recovery: recovery !== null }
   return null
+}
+
+// ─── Load focus ────────────────────────────────────────────────────────────
+
+/** Older than this, the watch has stopped syncing it and last month's balance would read as today's. */
+export const LOAD_FOCUS_STALE_DAYS = 7
+
+/** Garmin's phrases we word, as `t.loadBalance.feedback` keys. */
+export const LOAD_FOCUS_PHRASES = [
+  'BALANCED',
+  'BELOW_TARGETS',
+  'ABOVE_TARGETS',
+  'AEROBIC_LOW_SHORTAGE',
+  'AEROBIC_HIGH_SHORTAGE',
+  'ANAEROBIC_SHORTAGE',
+  'LOW_AEROBIC_OVERAGE',
+] as const
+
+export type LoadFocusPhrase = (typeof LOAD_FOCUS_PHRASES)[number]
+
+const SHORTAGE: Record<LoadBalanceBucketId, LoadFocusPhrase> = {
+  aerobicLow: 'AEROBIC_LOW_SHORTAGE',
+  aerobicHigh: 'AEROBIC_HIGH_SHORTAGE',
+  anaerobic: 'ANAEROBIC_SHORTAGE',
+}
+
+export interface LoadFocusView {
+  phrase: LoadFocusPhrase
+  buckets: LoadBalanceBucket[]
+}
+
+const isPhrase = (feedback: string | null): feedback is LoadFocusPhrase => LOAD_FOCUS_PHRASES.includes(feedback as LoadFocusPhrase)
+
+/** The watch's own verdict when we know its phrase; otherwise ours, read off the same gauges. */
+export function loadFocusView(balance: LoadBalanceData | null, today: string): LoadFocusView | null {
+  if (!balance?.date || !balance.buckets.length || balance.feedback === 'NO_DATA') return null
+  if (daysBetween(balance.date, today) > LOAD_FOCUS_STALE_DAYS) return null
+  const below = balance.buckets.find((b) => b.verdict === 'below')
+  const ours: LoadFocusPhrase = balance.buckets.every((b) => b.verdict === 'onTarget') ? 'BALANCED' : below ? SHORTAGE[below.id] : 'ABOVE_TARGETS'
+  return { phrase: isPhrase(balance.feedback) ? balance.feedback : ours, buckets: balance.buckets }
 }

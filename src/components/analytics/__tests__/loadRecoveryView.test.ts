@@ -6,12 +6,14 @@ import {
   loadChange,
   loadCoachHeadline,
   loadTrendView,
+  loadFocusView,
   loadTrendYMax,
   recoveryView,
   RECOVERY_MIN_DAYS,
   type LoadTrendView,
   type RecoveryView,
 } from '../loadRecoveryView'
+import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 
 const TODAY = '2026-09-26'
 const day = (i: number) => isoDate(addDays(new Date(`${TODAY}T00:00:00`), -i))
@@ -174,5 +176,31 @@ describe('loadCoachHeadline', () => {
     expect(loadCoachHeadline(load('in', -4), null)).toBeNull()
     expect(loadCoachHeadline(load('below', -30), recovery(false))).toBeNull()
     expect(loadCoachHeadline(null, null)).toBeNull()
+  })
+})
+
+describe('loadFocusView', () => {
+  const bucket = (id: 'aerobicLow' | 'aerobicHigh' | 'anaerobic', verdict: 'below' | 'onTarget' | 'above') =>
+    ({ id, load: 500, targetMin: 400, targetMax: 800, verdict, position: 50, targetStart: 25, targetEnd: 75 })
+  const balance = (over: Partial<LoadBalanceData> = {}): LoadBalanceData => ({
+    date: day(1),
+    feedback: 'AEROBIC_HIGH_SHORTAGE',
+    buckets: [bucket('aerobicLow', 'above'), bucket('aerobicHigh', 'below'), bucket('anaerobic', 'below')],
+    ...over,
+  })
+
+  it("takes the watch's phrase, and words an unknown one from the gauges", () => {
+    expect(loadFocusView(balance(), TODAY)?.phrase).toBe('AEROBIC_HIGH_SHORTAGE')
+    expect(loadFocusView(balance({ feedback: 'SOMETHING_NEW' }), TODAY)?.phrase).toBe('AEROBIC_HIGH_SHORTAGE')
+    expect(loadFocusView(balance({ feedback: null, buckets: [bucket('aerobicLow', 'onTarget')] }), TODAY)?.phrase).toBe('BALANCED')
+    expect(loadFocusView(balance({ feedback: null, buckets: [bucket('anaerobic', 'above')] }), TODAY)?.phrase).toBe('ABOVE_TARGETS')
+  })
+
+  it('hides a balance that is missing, empty or a week old', () => {
+    expect(loadFocusView(null, TODAY)).toBeNull()
+    expect(loadFocusView(balance({ feedback: 'NO_DATA' }), TODAY)).toBeNull()
+    expect(loadFocusView(balance({ buckets: [] }), TODAY)).toBeNull()
+    expect(loadFocusView(balance({ date: day(7) }), TODAY)).not.toBeNull()
+    expect(loadFocusView(balance({ date: day(8) }), TODAY)).toBeNull()
   })
 })

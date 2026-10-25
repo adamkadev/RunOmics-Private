@@ -11,6 +11,7 @@ import type { StatTone } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 import { Card, CardHead, ChartScrub, Legend, LegendItem, Sentence, windowLabels } from './AnalyticsKit'
 import { loadTrendView, loadTrendYMax, recoveryView } from './loadRecoveryView'
+import { LoadFocusCard } from './LoadFocusCard'
 import type { AnalyticsBoardData } from './AnalyticsClient'
 import { formView, statusView, type DayWindow, type LoadDay, type LoadPeriod, type StatusDay } from './analyticsView'
 
@@ -233,6 +234,8 @@ export function LoadTab({ window, period, onShift, today, data }: LoadTabProps) 
       <FormCard load={data.load} nights={data.recovery} window={window} period={period} />
       {/* The watch's own status as its chart, not a sentence in the coach card. */}
       <StatusCard days={data.status} window={window} period={period} onShift={onShift} />
+      {/* The sync keeps only the latest balance, so a window back in time has none. */}
+      {window.live && <LoadFocusCard balance={data.balance} today={today} />}
     </div>
   )
 }
