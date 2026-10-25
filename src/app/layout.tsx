@@ -68,8 +68,8 @@ export const metadata: Metadata = {
     description: t.meta.description,
   },
   robots: {
-    index: false,
-    follow: false,
+    index: process.env.NEXT_PUBLIC_ALLOW_INDEXING === 'true',
+    follow: process.env.NEXT_PUBLIC_ALLOW_INDEXING === 'true',
   },
 }
 
