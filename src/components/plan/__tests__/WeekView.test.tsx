@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { buildCoachingOverview, type CoachingOverview, type PrescriptionView } from '@/application/coaching/GetCoachingView'
-import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
+import type { PlannedWorkout } from '@/domain/activity/types'
+import type { PlanRun } from '../planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
@@ -15,19 +16,14 @@ import { WeekView } from '../WeekView'
 const TODAY = '2026-09-09'
 const WEEK_START = new Date(2026, 8, 7)
 
-function activity(overrides: Partial<ActivitySummary> & Pick<ActivitySummary, 'id' | 'date' | 'type'>): ActivitySummary {
+function activity(overrides: Partial<PlanRun> & Pick<PlanRun, 'id' | 'date' | 'type'>): PlanRun {
   return {
-    dayOfWeek: 'Monday',
     description: '',
-    comment: '',
     distanceKm: 5,
     durationSeconds: 1_500,
     paceSecPerKm: 300,
     avgHeartRate: 160,
-    rpe: 5,
-    hrZones: [],
-    week: 202637,
-    elevationGain: 12,
+    zonePercents: [],
     ...overrides,
   }
 }
@@ -65,7 +61,7 @@ const ZONES: TrainingZonesData = {
 interface Options {
   coaching?: CoachingOverview
   planned?: PlannedWorkout[]
-  activities?: ActivitySummary[]
+  activities?: PlanRun[]
   nextRace?: UpcomingRace | null
   planPhaseRanges?: PlanPhaseRange[]
   trainingZones?: TrainingZonesData | null
@@ -77,7 +73,7 @@ interface Options {
 function Harness(options: Options) {
   const [selected, setSelected] = useState(options.selected ?? TODAY)
   const activities = options.activities ?? []
-  const byDate = new Map<string, ActivitySummary[]>()
+  const byDate = new Map<string, PlanRun[]>()
   for (const a of activities) byDate.set(a.date, [...(byDate.get(a.date) ?? []), a])
   return (
     <WeekView
@@ -316,7 +312,7 @@ describe('a day that is over', () => {
   it('reads planned against done, with a way into the run', async () => {
     const user = userEvent.setup()
     renderWeek({
-      activities: [activity({ ...TEMPO, hrZones: [{ zone: 3, seconds: 1_200, percent: 68, minBpm: 150, maxBpm: 165 }] })],
+      activities: [activity({ ...TEMPO, zonePercents: [null, null, 68] })],
       planned: [{ date: '2026-09-07', name: 'Tempo', type: 'Tempo', distanceM: 5_000 }],
     })
 

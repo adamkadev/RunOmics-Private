@@ -1,4 +1,4 @@
-import { getActivitySummaries } from '@/application/usecases/GetActivities'
+import { getActivities } from '@/application/usecases/GetActivities'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getTrainingPlan } from '@/application/usecases/GetTrainingPlan'
 import { getNextRace } from '@/application/usecases/GetNextRace'
@@ -17,7 +17,7 @@ export const revalidate = 3600
 export default async function PlanPage() {
   await loadData()
   const today = appTodayIso()
-  const activities = getActivitySummaries().map(planRun)
+  const activities = getActivities().map(planRun)
   const plannedWorkouts = await getPlannedWorkouts()
   const nextRace = await getNextRace(today)
   const trainingZones = await getTrainingZones()
