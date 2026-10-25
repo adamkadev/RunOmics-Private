@@ -61,6 +61,74 @@ Garmin, so only a state the athlete must act on earns a line on the Plan page: t
 means Garmin holding a session that no longer matches the prescription. The full sync state
 is still kept for idempotency and diagnostics.
 
+## Controlled threshold
+
+**Heart-rate targets come from the athlete's own LTHR, never from rules written for one
+runner.** A repetition's ceiling is LTHR − 6 bpm, which keeps it under threshold; where its
+heart rate should settle is 4 bpm under the ceiling for a long repetition (7.5 min or more) and
+2 bpm under for a medium (4 min or more) or short one. Without an LTHR no controlled threshold
+session is written at all: a %HRmax zone floor is not a threshold, and a ceiling guessed from
+one would be the wrong number with the confidence of a right one. The offsets, the dose limits
+and the autoregulation settings are coaching conventions kept together in `CONTROLLED_THRESHOLD`
+(`src/application/coaching/controlledThreshold.ts`) and labelled as such in the coaching
+methodology.
+
+**The planner is told this athlete's numbers, not the rules' constants.** The context's
+`controlledThreshold` carries the heart rates above, the full week the dose stops growing at (two
+sessions of 30 minutes, in a week of the best 4-week average ± 1 km) and the guide for short
+repetitions: a 5 s/km band from threshold pace rounded down to the next 5 s. It is null without
+an LTHR, and the context then holds no controlled threshold facts for the planner to use.
+
+**A session is judged against the ceiling it prescribed,** which is what the watch held the
+athlete to, not today's LTHR. Heart rate lags a change of pace, so each repetition is read from
+minute 3 to its end. Over: a repetition past its target or touching the ceiling without having
+run faster than the guide (easing off on a hot day still reads as over). Under: every repetition
+5 bpm or more under its target at the guide. Off guide: run more than 3 s/km away from the guide,
+which says nothing about the guide. Two sessions of one class in a row that agree, both under or
+both over, propose a 3-5 s/km change to its guide. A run's page shows each
+repetition's heart rate against its target and ceiling with the verdict, and Plan's Coach card
+gathers the latest decision, the last controlled session, the proposals, the easy-run fatigue
+flag (an easy run 5 bpm over the recent normal at a similar pace, temperature and duration)
+and the 5K check.
+
+## The 12-week checkpoint
+
+**Cycles count in the Plan's Monday weeks from the coach's macrocycle start** (`macrocycleStartDate`,
+else the block's start), 12 weeks each, so "week 7 of 12" on the checkpoint is the week Plan
+shows. A cycle that has just ended stays under review through the first week of the next, so
+its result is there to read on the Monday it closes. With no coach plan, or a start still in
+the future, the page compares the last 12 complete weeks with the 12 before (`rolling`), with no
+week to mark. Plan names the stretch general preparation when the macrocycle has no race.
+
+**Each row compares the two cycles the same way, and says nothing it cannot measure.** A group
+is left out when the athlete's history has nothing to fill it, and a side with no reading says
+so rather than show a zero.
+
+- **Km and runs a week** count whole Monday-to-Sunday weeks only, from the week of the first run
+  on: a Monday morning never reads as a light week, and weeks before the watch was worn are not
+  zeros.
+- **Controlled threshold time a week** is the minutes of repetitions read from the sessions the
+  plans prescribed, per counted week; while the cycle runs, the time and sessions so far are
+  shown too. **Pace guides** are the latest guide run in each repetition class.
+- **Efficiency** is the heat-adjusted metres per heartbeat of the easy runs (Base, 3 km or more,
+  with pace and heart rate), three runs at least.
+- **Easy-run heart rate at a set pace**: the reference pace is the median easy pace of both
+  cycles together, to the nearest 5 s; each cycle's figure is the median heat-adjusted heart rate
+  of its easy runs within 10 s/km of it, three at least. A fit across all paces swung with every
+  hill.
+- **The 5K check** is the latest run of 4.9 to 5.3 km that was a race or prescribed as one, at its
+  chip time when an official 5 km result exists, with the VDOT it implies.
+- **VO₂max, threshold pace and LTHR** are Garmin's latest reading on or before each cycle's last
+  day: an estimate holds until the watch revises it. Garmin's monthly and daily VO₂max series
+  are merged, since the daily one alone starts too late for an older cycle.
+- **Resting heart rate** is the cycle's mean, seven days at least; **fitness** is CTL on each
+  cycle's last day (today while it runs).
+
+Better, worse and level come from the same `deltaTone` bands as every other delta in the app, so
+a change too small to mean anything reads level (for instance under 2% of km, under 3 s/km of
+pace, under 1 bpm of resting heart rate). Threshold heart rate has no better direction and is
+not counted in the tally.
+
 ## The Plan's single workout shape
 
 The Plan has exactly one workout presentation (`PlannedWorkoutRow` and
@@ -128,9 +196,94 @@ declined to rate are left out.
   paginated API response ever ships per-sample arrays to the client. `activitySummary()` drops
   the route, sample and split arrays that make up most of an activity's weight; anything
   crossing the server/client boundary for a list row or card should go through it first.
+- **Other training is never an `Activity`.** Strength, cycling and the rest are
+  `CrossTrainingSession`s in their own store, so no load, volume, record or running trend can
+  count one. The list and calendar get `CrossTrainingEntry` (kind, duration, distance, set count:
+  heart rate and load stay on the server); the coach gets `otherTraining`, the minutes of the
+  last 7 and 28 days and each session of the 28, which is null without one, so a context with
+  none reads and hashes as before. The Monday digest adds last week's time to its volume line.
 - **`raceDistances` lives in the domain**, not beside its use case, because the charts need
   the kilometre table at render time and importing it from the use case would drag the
   `fs`-backed repository into the client bundle.
+
+## Pace curve and grade-adjusted pace
+
+**The pace curve is the best of each duration, from the full recording.** Each run stores the
+most metres it covered in 30 s to 2 h (see [What a sync writes](data-and-sync.md#what-a-sync-writes));
+Analytics › Performance draws, for each duration, the fastest any run of the window held, against
+the window before.
+
+**Critical speed** is fitted to the window's 3, 5, 10 and 20 minute bests by least squares on
+distance = CS × time + D′, the two-parameter model of Monod & Scherrer (1965); Jones et al. (2010)
+and Poole et al. (2016) set out CS as the boundary between heavy and severe exercise, which is why
+it sits close to, usually a little faster than, threshold pace. Shorter bests lean on sprint
+speed and longer ones on a fatigue the model leaves out, so only 3-20 min are used. A fit is shown
+only when all four bests exist, D′ is between 0 and 600 m, CS is between 1.5 and 7 m/s, and the
+standard error of the slope is under 2% of CS: past that the bests mix all-out and easy efforts
+(a test run beside a jog fitted 5% on real data). The card sets CS against the watch's threshold
+pace on the window's last day; well slower means the bests were not all-out.
+
+**Grade-adjusted pace** counts each step as the metres of flat running that would cost the same
+energy, by the polynomial of Minetti et al. (2002) for the energy cost of running against gradient.
+The gradient is rise over run across the 60 m around each sample (no less than 20 m at the ends),
+clamped to ±25%: steeper is hiking, where Minetti's data thin out and a barometer step reads as a
+cliff. The cost curve is convex, so altitude noise would turn into speed: a run whose altitude
+wanders more than 1 m RMS about its own 100 m mean gets no GAP. That is what keeps GPS-only
+altitude (a Forerunner 55's jitters metres) out while a barometric one (under 0.6 m) passes; a
+run with under half its samples carrying altitude gets none either. The app shows GAP only on a
+run that climbed 5 m a km or more: below that it moved none of 192 runs by 3 s/km.
+
+## VDOT fallbacks
+
+**A watch with no threshold pace still gets pace zones.** The Athlete page and a run's pace
+chart then take threshold pace from the best recent effort: over the last 120 days, the
+best-effort distance from 1.5 km up (Daniels' tables start there; a shorter effort leans on
+anaerobic capacity) whose time implies the highest VDOT, credited at its chip time when an
+official result covers it. Threshold pace is Daniels' T, the speed whose oxygen cost is 88% of
+that VDOT. The zones are marked as estimated and name the effort they stand on.
+
+**The Race page does the same when Garmin's predictions are missing or two weeks old** (garth
+reads the series daily, so a fortnight without a day means it has stopped): the prediction is
+the time at the race distance that implies the same VDOT, and the 12-week trend is that estimate
+as it stood each week, so the line moves only when a better effort was run or one aged out.
+
+## Morning check-in
+
+**Four scores, one tap each, 5 always the best:** sleep, soreness, stress and mood on 1-5, after
+McLean et al.'s wellness questionnaire; then an optional niggle (site, side, pain 0-10, and
+whether it changes today's run) and illness or travel. Any answer may be left out. Firestore
+keeps one document per local date in `wellness`, and every read goes through `readCheckIn`, so a
+malformed field is dropped rather than shown or sent to the coach.
+
+**Only a recognised reason to ease off tempers the readiness card.** Illness or pain of 7 or more
+turns it to rest; pain of 4 to 6, a niggle the athlete says changes the run, or sleep 2 or less
+with soreness 2 or less turns it amber, and the card says why. A merely flat morning changes
+nothing. These cut-offs are a convention: 4-6 and 7-10 are the numeric pain scale's usual moderate
+and severe bands, not a validated running threshold.
+
+**Health data stays the owner's.** The check-in card and the Athlete page's four weeks of mornings
+and twelve weeks of niggles are read from Firestore by the owner's own browser after sign-in, under
+owner-only rules: no server render reads them, so a page's HTML, which every viewer gets, never
+carries one. The coach reads the last 28 days of check-ins and 84 days of niggle episodes (a gap
+of up to three unreported days is still the same niggle) through the Admin SDK, with the nightly
+`wellness.json` as its fallback.
+
+## The heat line
+
+On a warm day Today's session says what the forecast will cost: "29 °C at 19:00 - your runs at
+this heat cost about +14 s/km: run by heart rate". The line appears only when every link holds:
+
+- **A cost from the athlete's own runs.** The heat cost bands easy runs (Base, 3 km or more, with
+  weather) by feels-like temperature: under 5, 15, 20 and 25 °C, and hotter. Only the warm (20-25
+  °C) and hot bands count, each with eight runs at least and a cost of 5 s/km or more, which is
+  about an easy run's day-to-day spread.
+- **The usual hour.** The median start of the last 20 runs, within the part of the day Garmin's
+  calendar planned the session for when it names one (morning 5-12, afternoon 12-17, evening
+  17-22, night 22-05), else that part's default hour.
+- **The forecast there and then.** Open-Meteo's hourly feels-like temperature at the median start
+  of those runs, rounded to 0.1° as the sync rounds a run's weather, in the athlete's time zone;
+  2.5 s at most, cached for the page's hour, and no line rather than a slow page.
+- **A warm band at that hour.** The cost shown is that band's.
 
 ## AI insight generation
 
