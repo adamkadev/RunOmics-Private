@@ -27,12 +27,16 @@ export function encodePolyline(points: readonly (readonly [number, number])[]): 
   return out.join('')
 }
 
-export function decodePolyline(text: string): [number, number][] {
-  const points: [number, number][] = []
+/** Whole numbers in the format's characters, for a caller with its own steps or scale. */
+export function encodeIntegers(values: readonly number[]): string {
+  const out: string[] = []
+  for (const value of values) encodeValue(value, out)
+  return out.join('')
+}
+
+function readValues(text: string, take: (value: number) => void): void {
   let index = 0
-  let lat = 0
-  let lon = 0
-  const next = () => {
+  while (index < text.length) {
     let result = 0
     let shift = 0
     let byte: number
@@ -41,13 +45,29 @@ export function decodePolyline(text: string): [number, number][] {
       result |= (byte & 0x1f) << shift
       shift += 5
     } while (byte >= 0x20 && index < text.length)
-    return result & 1 ? ~(result >> 1) : result >> 1
+    take(result & 1 ? ~(result >> 1) : result >> 1)
   }
-  while (index < text.length) {
-    lat += next()
-    lon += next()
-    points.push([lon / FACTOR, lat / FACTOR])
-  }
+}
+
+export function decodeIntegers(text: string): number[] {
+  const values: number[] = []
+  readValues(text, (value) => values.push(value))
+  return values
+}
+
+export function decodePolyline(text: string): [number, number][] {
+  const points: [number, number][] = []
+  let lat = 0
+  let lon = 0
+  let latRead = false
+  readValues(text, (value) => {
+    if (!latRead) lat += value
+    else {
+      lon += value
+      points.push([lon / FACTOR, lat / FACTOR])
+    }
+    latRead = !latRead
+  })
   return points
 }
 

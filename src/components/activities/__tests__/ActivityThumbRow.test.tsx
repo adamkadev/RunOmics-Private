@@ -26,7 +26,7 @@ describe('thumbRowMeta', () => {
 describe('ActivityThumbRow', () => {
   const activity = {
     id: 'a1', date: '2026-10-20', dayOfWeek: 'Tuesday', type: 'Threshold', description: 'Threshold 2 × 7:00 - 2 × 7′', comment: '',
-    distanceKm: 10.2, durationSeconds: 3443, paceSecPerKm: 337, avgHeartRate: 139, rpe: null, hrZones: [], week: 0, elevationGain: null, routeThumb: null,
+    distanceKm: 10.2, durationSeconds: 3443, paceSecPerKm: 337, avgHeartRate: 139, zones: [], routeThumb: null,
   } as ActivitySummary
 
   it('names the session by its set, its type left to the dot and to VoiceOver', () => {

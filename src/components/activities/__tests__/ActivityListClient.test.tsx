@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import { ActivityListClient, activitiesView } from '../ActivityListClient'
+import { encodeRouteThumb } from '@/domain/activity/routeThumb'
 import type { MapShellData } from '@/application/usecases/GetAllRoutes'
 import { formatDate, formatDateRange, formatWeekday } from '@/lib/formatters'
 import { notePopNavigation, popNavigationHandled } from '@/lib/popNavigation'
@@ -35,11 +36,8 @@ function run(id: string, date: string, distanceKm: number): ActivitySummary {
     durationSeconds: 3600,
     paceSecPerKm: 360,
     avgHeartRate: null,
-    rpe: null,
-    hrZones: [],
-    week: 0,
-    elevationGain: null,
-    routeThumb: 'M10 10L40 40',
+    zones: [],
+    routeThumb: encodeRouteThumb([[6.1, 49.6], [6.11, 49.61]]),
   }
 }
 

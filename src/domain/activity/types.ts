@@ -98,14 +98,12 @@ export type ActivitySummary = Pick<
   | 'durationSeconds'
   | 'paceSecPerKm'
   | 'avgHeartRate'
-  | 'rpe'
-  | 'hrZones'
-  | 'week'
-  | 'elevationGain'
 > & {
+  /** Whole seconds in heart-rate zones 1 to 5, in order: the list reads only its easy share. */
+  zones: number[]
   /** For the list's shoe filter, which runs on the phone. */
   gearId?: string | null
-  /** From routeThumbPath; null for a treadmill run. */
+  /** From encodeRouteThumb; null for a treadmill run. */
   routeThumb?: string | null
 }
 
