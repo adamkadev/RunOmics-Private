@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
-import { sendPushToAllDevices } from '@/lib/sendPushNotification'
+import { sendPush } from '@/lib/sendPushNotification'
 import { t } from '@/i18n'
 
 const MAX_LENGTH = 200
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    await sendPushToAllDevices(t.notifications.workflowFailed.title(workflow), t.notifications.workflowFailed.body(runUrl))
+    await sendPush('always', t.notifications.workflowFailed.title(workflow), t.notifications.workflowFailed.body(runUrl))
     return NextResponse.json({ sent: true })
   })
 }

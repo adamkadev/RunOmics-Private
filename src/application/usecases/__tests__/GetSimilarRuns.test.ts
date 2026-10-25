@@ -162,4 +162,15 @@ describe('getSimilarRuns', () => {
     expect(data?.runs.map((r) => r.id)).toEqual(['a', 'c', 'd'])
     expect(data?.count).toBe(3)
   })
+
+  it('works a run out once per data, however often its page renders', async () => {
+    const three = [activity('a', '2026-01-01', 300), activity('b', '2026-02-01', 290), activity('c', '2026-03-01', 280)]
+    const first = await run(three, 'a')
+    const { routeSimilarity } = await import('@/lib/routeMatch')
+    const { getSimilarRuns } = await import('../GetSimilarRuns')
+    vi.mocked(routeSimilarity).mockClear()
+
+    expect(getSimilarRuns('a')).toBe(first)
+    expect(routeSimilarity).not.toHaveBeenCalled()
+  })
 })

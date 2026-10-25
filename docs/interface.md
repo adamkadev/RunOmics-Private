@@ -12,17 +12,19 @@ Other chart decisions worth keeping:
 
 - The last week of the weekly distance chart is a week still being run, so its short bar is not a
   real drop and is outlined and labelled "this week" rather than left to imply a finished week.
-- **`ChartFigure` is required for accessibility.** Recharts renders plain SVG with no semantics,
-  so a screen reader announces nothing or reads scattered tick/tooltip nodes piecemeal. It exposes
-  the chart as a single `img`-role element with one summarising sentence (the WCAG text-alternative
-  pattern) and hides the SVG itself from assistive tech.
+- **Every chart is hand-drawn SVG,** with no chart library: the last one, the similar runs'
+  line, dropped about 100 KB from a run's page. An SVG has no semantics of its own, so a screen
+  reader announces nothing or reads scattered tick and label nodes piecemeal. So the SVG is hidden
+  from assistive tech and the chart reaches it as text: `ChartFigure` (a run's charts, the similar
+  runs) makes it one `img`-role element with a summarising sentence, the WCAG text-alternative
+  pattern; an Analytics card's own written sentence says what its chart shows.
 
 ## Colour system
 
 `lib/palette` is the one place raw hex literals may exist. `lib/themeTokens` holds anything a
 stylesheet can reach, so it stays accent- and theme-aware; `lib/colors` holds the semantic sets
-CSS cannot reach — Recharts and inline SVG (which need real strings in attributes), MapLibre paint
-properties, and the share-card canvas.
+CSS cannot reach — inline SVG attributes that need real strings, MapLibre paint properties, and the
+share-card canvas.
 
 **What follows the accent picker and what does not.** Form (TSB), weekly volume and the long-run
 bar come from `useAccentUiColor()` — they are the "this is your headline number" marks. Everything
@@ -71,8 +73,8 @@ single-activity map. A route splits into a new feature only where it crosses int
 different count, so colour and width follow real density instead of alternating between overlapping
 "rare" and "frequent" copies of the same street. Counting dedups within a route first, so a slow,
 densely-sampled stretch of one run cannot inflate its own count. The grid is shared with route
-matching (similar runs, personal segments) so "same street" means the same thing everywhere — it
-only bins, and never moves a coordinate.
+matching (similar runs) so "same street" means the same thing everywhere — it only bins, and never
+moves a coordinate.
 
 Breakpoints are spaced **geometrically** (a log scale). Run frequency is heavily right-skewed — a
 handful of home streets are run 100+ times while most stretches are run once or twice — so a linear
@@ -83,13 +85,23 @@ zone with 4× the runs should look 4× the weight, not 4× the diameter. A floor
 zones tappable, and markers are added smallest-first so busier zones stack on top instead of being
 buried under one-off bubbles.
 
-**Loading:** `/api/map/routes?cluster=N&enc=p5` sends each track as a Google encoded polyline at
-1e-5° (about 1 m), so the home area travels as about 160 KB gzipped instead of 570 KB; without
-`enc` it still answers coordinate arrays. Each area's answer and ETag are built once per data
-generation. The page keeps the areas it fetched while it lives, so going back from List to Map
-fetches nothing, and MapLibre's workers stay warm between maps. The heat redraws only for a new view
-or new tracks, frames the area with the server's frame when no filter hides a run, and its basemap
-loads no sprite: no heat layer draws an icon.
+**Loading:** nothing of the map travels with the Activities list. When the map opens it fetches
+`/api/map/shell` (the runs and areas) and then each area's tracks from
+`/api/map/routes?cluster=N&enc=p5`, each track a Google encoded polyline at 1e-5° (about 1 m), so
+the home area travels as about 160 KB gzipped instead of 570 KB; without `enc` it still answers
+coordinate arrays. Both URLs carry the data version (`v=`, a hash of the routes): an answer to the
+current version is cached `private, immutable` for a year, anything else is revalidated, so the
+phone keeps its tracks until the next sync and never shares them with a CDN. Each answer and ETag
+are built once per data generation, and the page keeps what it fetched per data version, so
+going back from List to Map fetches nothing, and MapLibre's workers stay warm between maps.
+
+**The heat map draws simplified tracks; Districts counts the recorded ones.** With `draw=1` each
+track is simplified by Douglas-Peucker to within 3 m of the recording, about a fifth of its
+points, finer than a heat stroke shows. Coverage counts 150 m cells along the track, and a
+simplified line could cut a corner into the next cell, so Districts and the route generator fetch
+the full tracks. The heat redraws only for a new view or new tracks, strokes only the tracks whose
+bounds meet the view, frames the area with the server's frame when no filter hides a run, and its
+basemap loads no sprite: no heat layer draws an icon.
 
 ## Explore
 
@@ -179,10 +191,11 @@ that name against `import.meta.url`. Bundled into a Turbopack chunk, that resolv
 `/_next/static/` which the bundler never emits, Next answers with its HTML 404 page, and the worker
 dies on strict MIME checking - leaving a map container with no canvas and no error anyone would
 connect to the map. So `npm run maplibre:worker` copies `maplibre-gl-worker.mjs` and the
-`maplibre-gl-shared.mjs` it imports out of `node_modules` into `public/maplibre/` (a `prebuild`,
-`predev` and `e2e:build` step, so they cannot drift from the installed version, and gitignored
-because they are build output), and `loadMapLibre()` in `lib/maplibre` points `setWorkerUrl()` at
-them. Every map goes through that one loader so the worker URL is set exactly once, before the
+`maplibre-gl-shared.mjs` it imports out of `node_modules` into `public/maplibre/<version>/` (a
+`prebuild`, `predev` and `e2e:build` step, so they cannot drift from the installed version, and
+gitignored because they are build output), and `loadMapLibre()` in `lib/maplibre` points
+`setWorkerUrl()` at `workerUrl(version)`. The version in the path is what lets `next.config.ts`
+serve them `immutable` for a year: an upgrade is a new URL, never a stale copy. Every map goes through that one loader so the worker URL is set exactly once, before the
 first `Map` is constructed.
 
 The cost is a second copy of the shared module - the main thread has its own inside the bundle -

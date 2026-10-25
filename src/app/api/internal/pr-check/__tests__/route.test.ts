@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { getNewPrs, sendPushesToAllDevices } = vi.hoisted(() => ({
+const { getNewPrs, sendPushes } = vi.hoisted(() => ({
   getNewPrs: vi.fn(),
-  sendPushesToAllDevices: vi.fn(),
+  sendPushes: vi.fn(),
 }))
 
 vi.mock('@/application/usecases/GetNewPrs', () => ({ getNewPrs }))
-vi.mock('@/lib/sendPushNotification', () => ({ sendPushesToAllDevices, sendPushToAllDevices: vi.fn() }))
+vi.mock('@/lib/sendPushNotification', () => ({ sendPushes, sendPush: vi.fn() }))
 
 const { POST } = await import('../route')
 
@@ -38,25 +38,25 @@ describe('POST /api/internal/pr-check', () => {
   it('announces every new PR in one batch, and stores the marks only after it went out', async () => {
     const commit = vi.fn(async () => {})
     getNewPrs.mockResolvedValue({ newPrs: PRS, commit })
-    sendPushesToAllDevices.mockResolvedValue(undefined)
+    sendPushes.mockResolvedValue(undefined)
 
     const res = await POST(request())
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ newPrs: PRS })
-    expect(sendPushesToAllDevices).toHaveBeenCalledWith([
+    expect(sendPushes).toHaveBeenCalledWith('records', [
       { title: 'New PR: 5K', body: '19:10 - new personal best!' },
       { title: 'New PR: 10K', body: '40:00 - new personal best!' },
     ])
     expect(commit).toHaveBeenCalledTimes(1)
-    expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushesToAllDevices.mock.invocationCallOrder[0]!)
+    expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushes.mock.invocationCallOrder[0]!)
   })
 
   it('leaves the marks unstored when a push failed, so the next run offers the PRs again', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const commit = vi.fn(async () => {})
     getNewPrs.mockResolvedValue({ newPrs: PRS, commit })
-    sendPushesToAllDevices.mockRejectedValue(new AggregateError([new Error('FCM is down')], '1 of 2 pushes failed'))
+    sendPushes.mockRejectedValue(new AggregateError([new Error('FCM is down')], '1 of 2 pushes failed'))
 
     const res = await POST(request())
 
@@ -67,7 +67,7 @@ describe('POST /api/internal/pr-check', () => {
   it('still stores the marks when nothing was beaten, so the next run compares against them', async () => {
     const commit = vi.fn(async () => {})
     getNewPrs.mockResolvedValue({ newPrs: [], commit })
-    sendPushesToAllDevices.mockResolvedValue(undefined)
+    sendPushes.mockResolvedValue(undefined)
 
     expect((await POST(request())).status).toBe(200)
     expect(commit).toHaveBeenCalledTimes(1)

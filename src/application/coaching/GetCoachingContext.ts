@@ -7,12 +7,16 @@ import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
+import { getCrossTrainingSessions } from '@/infrastructure/repositories/JsonCrossTrainingRepository'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getLatestVO2max } from '@/application/usecases/GetVO2maxHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getActivityNotes } from '@/infrastructure/repositories/FirestoreActivityNoteRepository'
+import { getWellnessEntries } from '@/infrastructure/repositories/FirestoreWellnessRepository'
+import { getWellnessBackup } from '@/infrastructure/repositories/JsonWellnessRepository'
+import type { CheckIn } from '@/domain/wellness/checkIn'
 import { JsonCoachingRepository } from '@/infrastructure/repositories/JsonCoachingRepository'
 import { getThresholdSamples } from '@/infrastructure/repositories/JsonThresholdHistoryRepository'
 import { getVO2maxHistory } from '@/application/usecases/GetVO2maxHistory'
@@ -72,12 +76,26 @@ function buildTrajectories(
   }
 }
 
+/** Firestore first; the nightly backup in the data repository when it cannot answer, at worst a day old. */
+async function readWellness(): Promise<ReadonlyMap<string, CheckIn> | undefined> {
+  const live = await getWellnessEntries()
+  if (live.available) return live.entries
+  const backup = getWellnessBackup()
+  console.warn(
+    backup
+      ? '[coaching] wellness check-ins unavailable in Firestore - using the last nightly backup (wellness.json).'
+      : '[coaching] wellness check-ins unavailable - no Firestore and no backup. The plan will be built without them.'
+  )
+  return backup ?? undefined
+}
+
 export async function getCoachingContext(plan: CoachingPlan | null, referenceDate: string): Promise<CoachingContext> {
-  const [trainingStatus, trainingZones, activityNotes, records] = await Promise.all([
+  const [trainingStatus, trainingZones, activityNotes, records, wellness] = await Promise.all([
     getTrainingStatus(),
     getTrainingZones(),
     getActivityNotes(),
     getRecords(),
+    readWellness(),
   ])
   const activities = getAllActivities()
   const athlete = getAthleteProfile()
@@ -92,6 +110,7 @@ export async function getCoachingContext(plan: CoachingPlan | null, referenceDat
 
   return buildCoachingContext({
     activityNotes: activityNotes.notes,
+    wellness,
     archivedPlans: new JsonCoachingRepository(process.env.RUNOMICS_DATA_DIR).getArchivedPlans(),
     activities,
     plan,
@@ -106,5 +125,6 @@ export async function getCoachingContext(plan: CoachingPlan | null, referenceDat
     personalBests: getPbYears(),
     upcomingRaces: getUpcomingRaceYears().flatMap((year) => year.races),
     officialResults: getOfficialRaceResults(),
+    crossTraining: getCrossTrainingSessions(),
   }, referenceDate)
 }

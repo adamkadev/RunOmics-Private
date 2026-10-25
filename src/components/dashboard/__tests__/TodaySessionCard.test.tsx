@@ -29,7 +29,6 @@ describe('TodaySessionCard', () => {
     // No phase label and no "Open in Plan": the card is the tap target.
     expect(link).not.toHaveTextContent('Base')
     expect(screen.getByTestId('session-detail').textContent).toBe(`10 ${t.units.km} · 1:00 h · ≤ 158 bpm`)
-    expect(link).not.toHaveTextContent(t.dashboard.todayHero.openInPlan)
     expect(link.textContent).not.toMatch(/watch/i)
     expect(link.querySelector('button')).toBeNull()
     expect(screen.getAllByRole('link')).toHaveLength(1)
@@ -54,5 +53,13 @@ describe('TodaySessionCard', () => {
   it('keeps an older, longer name to two lines', () => {
     render(<TodaySessionCard card={card({ title: "Répétitions allure d'objectif - 4x3'@4:24" })} />)
     expect(screen.getByText("Répétitions allure d'objectif - 4x3'@4:24").className).toContain('line-clamp-2')
+  })
+
+  it('says what a warm forecast at the usual hour will cost, only when there is one', () => {
+    const { rerender } = render(<TodaySessionCard card={card({ heat: { apparentTempC: 28, hour: 18, costSecPerKm: 15 } })} />)
+    expect(screen.getByTestId('session-heat')).toHaveTextContent(t.heatAhead.line(28, t.heatAhead.time(18), 15))
+
+    rerender(<TodaySessionCard card={card()} />)
+    expect(screen.queryByTestId('session-heat')).toBeNull()
   })
 })

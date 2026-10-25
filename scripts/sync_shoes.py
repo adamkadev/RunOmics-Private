@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Not scheduled like sync.py: run it whenever a shoe is added or retired in Garmin Connect."""
+"""Nightly in sync.yml; by hand to see a shoe added or retired in Garmin Connect before the next night."""
 
 from __future__ import annotations
 

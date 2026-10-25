@@ -2,7 +2,8 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
-import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
+import type { PlannedWorkout } from '@/domain/activity/types'
+import type { PlanRun } from '../planRun'
 import { sessionZone, zoneColor } from '@/lib/colors'
 import { t } from '@/i18n'
 import { sessionTitle } from '../sessionTitle'
@@ -10,11 +11,8 @@ import { WeekView } from '../WeekView'
 
 const TODAY = '2026-09-09'
 
-function activity(overrides: Partial<ActivitySummary> & Pick<ActivitySummary, 'id' | 'date' | 'type'>): ActivitySummary {
-  return {
-    dayOfWeek: 'Monday', description: '', comment: '', distanceKm: 8, durationSeconds: 2_400, paceSecPerKm: 300,
-    avgHeartRate: 160, rpe: 5, hrZones: [], week: 202637, elevationGain: 12, ...overrides,
-  }
+function activity(overrides: Partial<PlanRun> & Pick<PlanRun, 'id' | 'date' | 'type'>): PlanRun {
+  return { description: '', distanceKm: 8, durationSeconds: 2_400, paceSecPerKm: 300, avgHeartRate: 160, zonePercents: [], ...overrides }
 }
 
 // A Garmin workout named after one type and typed as another.
@@ -25,7 +23,7 @@ const PLANNED: PlannedWorkout[] = [
 ]
 const RUNS = [activity({ id: 'a1', date: '2026-09-07', type: 'Tempo' }), activity({ id: 'a2', date: '2026-09-08', type: 'Threshold' })]
 
-function Week({ byDate }: { byDate: Map<string, ActivitySummary[]> }) {
+function Week({ byDate }: { byDate: Map<string, PlanRun[]> }) {
   const [selected, setSelected] = useState(TODAY)
   return (
     <WeekView
@@ -46,7 +44,7 @@ function Week({ byDate }: { byDate: Map<string, ActivitySummary[]> }) {
 }
 
 function renderWeek() {
-  const byDate = new Map<string, ActivitySummary[]>()
+  const byDate = new Map<string, PlanRun[]>()
   for (const a of RUNS) byDate.set(a.date, [a])
   return render(<Week byDate={byDate} />)
 }

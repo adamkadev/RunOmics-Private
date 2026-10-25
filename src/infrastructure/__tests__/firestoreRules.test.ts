@@ -40,7 +40,8 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       const db = context.firestore()
       await setDoc(doc(db, 'activityNotes', '101'), { note: 'Felt sick', tags: ['illness'] })
       await setDoc(doc(db, 'routeNames', 'route-1'), { name: 'Moselle riverside loop' })
-      await setDoc(doc(db, 'pushTokens', 'token-1'), { createdAt: 1 })
+      await setDoc(doc(db, 'wellness', '2026-10-24'), { sleep: 2, soreness: 4, ill: true })
+      await setDoc(doc(db, 'pushTokens', 'token-1'), { token: 'token-1', userAgent: 'iPhone' })
       await setDoc(doc(db, 'aiInsights', 'today'), { text: 'x' })
     })
   })
@@ -111,11 +112,55 @@ describe.skipIf(!emulator)('firestore.rules', () => {
     })
   })
 
+  describe('wellness', () => {
+    const checkIn = { sleep: 4, soreness: 2, stress: 3, mood: 5, travel: true, niggle: { site: 'calf', side: 'left', pain: 3, changesRun: false } }
+
+    it('lets only the owner read and list check-ins', async () => {
+      await assertFails(getDoc(doc(visitor(), 'wellness', '2026-10-24')))
+      await assertFails(getDoc(doc(stranger(), 'wellness', '2026-10-24')))
+      await assertFails(getDocs(collection(stranger(), 'wellness')))
+      await assertSucceeds(getDoc(doc(owner(), 'wellness', '2026-10-24')))
+      await assertSucceeds(getDocs(collection(owner(), 'wellness')))
+    })
+
+    it('only lets the owner write a day, and only a well-formed check-in', async () => {
+      await assertFails(setDoc(doc(visitor(), 'wellness', '2026-10-25'), checkIn))
+      await assertFails(setDoc(doc(stranger(), 'wellness', '2026-10-25'), checkIn))
+      await assertSucceeds(setDoc(doc(owner(), 'wellness', '2026-10-25'), checkIn))
+      await assertSucceeds(setDoc(doc(owner(), 'wellness', '2026-10-25'), { sleep: 1 }))
+      await assertSucceeds(deleteDoc(doc(owner(), 'wellness', '2026-10-25')))
+    })
+
+    it('rejects a check-in the client would never send', async () => {
+      const db = owner()
+      await assertFails(setDoc(doc(db, 'wellness', 'today'), { sleep: 3 }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { sleep: 6 }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { mood: 2.5 }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { ill: 'yes' }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { sleep: 3, note: 'free text' }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'elbow', pain: 3 } }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'knee', pain: 11 } }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'knee' } }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'knee', pain: 2, side: 'both' } }))
+    })
+  })
+
   describe('pushTokens', () => {
+    const device = { token: 'token-2', userAgent: 'iPhone', categories: { training: true, shoes: false, records: true } }
+
     it('lets only the owner register a device', async () => {
-      await assertFails(setDoc(doc(visitor(), 'pushTokens', 'token-2'), { createdAt: 2 }))
-      await assertFails(setDoc(doc(stranger(), 'pushTokens', 'token-2'), { createdAt: 2 }))
-      await assertSucceeds(setDoc(doc(owner(), 'pushTokens', 'token-2'), { createdAt: 2 }))
+      await assertFails(setDoc(doc(visitor(), 'pushTokens', 'token-2'), device))
+      await assertFails(setDoc(doc(stranger(), 'pushTokens', 'token-2'), device))
+      await assertSucceeds(setDoc(doc(owner(), 'pushTokens', 'token-2'), device))
+      await assertSucceeds(deleteDoc(doc(owner(), 'pushTokens', 'token-2')))
+    })
+
+    it('takes only on-off switches for the known categories, on the token they name', async () => {
+      await assertSucceeds(setDoc(doc(owner(), 'pushTokens', 'token-1'), { token: 'token-1', userAgent: 'iPhone' }))
+      await assertFails(setDoc(doc(owner(), 'pushTokens', 'token-2'), { ...device, token: 'token-3' }))
+      await assertFails(setDoc(doc(owner(), 'pushTokens', 'token-2'), { ...device, categories: { training: 'yes' } }))
+      await assertFails(setDoc(doc(owner(), 'pushTokens', 'token-2'), { ...device, categories: { ...device.categories, all: true } }))
+      await assertFails(setDoc(doc(owner(), 'pushTokens', 'token-2'), { ...device, admin: true }))
     })
 
     it('never lets a client read the device tokens back', async () => {

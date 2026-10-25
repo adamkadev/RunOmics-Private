@@ -7,7 +7,7 @@ import type { AthleteProfile } from '@/infrastructure/repositories/JsonAthleteRe
 import type { ZoneShare } from '@/application/usecases/GetAnalyticsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { intensityMix } from '@/domain/training/intensityMix'
-import { formatClock as fmt, formatPercent } from '@/lib/formatters'
+import { formatClock as fmt, formatDate, formatPercent } from '@/lib/formatters'
 import { t } from '@/i18n'
 
 type Bounds = [number, number, number, number, number]
@@ -192,6 +192,11 @@ export function ProfileHrZones({ athlete, weeklyZoneTime, recentZoneTime, paceZo
               </div>
             )
           })}
+          {paceZones?.estimate && (
+            <p className="border-t border-border pt-2 text-[12px] text-muted-foreground text-pretty" data-testid="pace-estimate">
+              {s.estimatedPaces(t.records.distances[paceZones.estimate.effort] ?? paceZones.estimate.effort, formatDate(paceZones.estimate.date))}
+            </p>
+          )}
         </div>
       </div>
     </section>

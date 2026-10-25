@@ -3,7 +3,7 @@
   "version": "3.2.1",
   "private": true,
   "engines": {
-    "node": ">=22"
+    "node": "24.x"
   },
   "scripts": {
     "prepare:data": "dotenv -e .env.local -- node scripts/prepare-data.mjs",
@@ -17,8 +17,9 @@
     "build": "next build",
     "start": "next start",
     "prelint": "npm run prepare:data",
-    "lint": "eslint",
+    "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
     "verify:private-data": "node scripts/verify_no_private_data.mjs",
+    "export:demo": "node scripts/export_public_demo.mjs",
     "pretypecheck": "npm run prepare:data",
     "typecheck": "tsc --noEmit",
     "verify": "npm run verify:private-data && npm run lint && npm run typecheck && npm run check:cycles && npm test",
@@ -60,7 +61,6 @@
     "next-themes": "^0.4.6",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "recharts": "^3.10.1",
     "server-only": "^0.0.1",
     "simple-icons": "^16.35.0",
     "tailwind-merge": "^3.7.0"

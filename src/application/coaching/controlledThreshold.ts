@@ -1,7 +1,6 @@
-/**
- * Coaching rules of thumb, not measured limits, kept together to be tuned; the planner is told
- * the dose limits as they stand. A controlled threshold repetition carries an hrBpm cap.
- */
+import type { NumberRange } from '@/domain/coaching/types'
+
+/** Coaching rules of thumb, not measured limits, kept together to be tuned; the planner is told them as they stand. */
 export const CONTROLLED_THRESHOLD = {
   dose: {
     /** The most a week's controlled threshold time may grow over the loading week before it. */
@@ -9,12 +8,19 @@ export const CONTROLLED_THRESHOLD = {
     /** Ceiling on controlled threshold time as a share of the week's running time; around 20% is the aim. */
     maxShareOfRunningTime: 0.25,
   },
+  /** The week the dose stops growing at: two sessions, in about the volume sustained over four weeks. */
+  fullWeek: { sessions: 2, sessionMinutes: 30, kmEitherSide: 1 },
+  /** Short repetitions are guided in the band of this width that holds threshold pace. */
+  shortGuideBandSecPerKm: 5,
   /** The shortest repetition of each class, in seconds: 8-10 minutes is long, 5-6 medium, shorter is short. */
   repClassMinSeconds: { long: 450, medium: 240 },
+  heartRate: {
+    /** A repetition's ceiling sits this far under the athlete's LTHR, which keeps it sub-threshold. */
+    ceilingBelowLthrBpm: 6,
+    /** Where a repetition's heart rate should settle, this far under the ceiling, per class. */
+    targetBelowCeilingBpm: { long: 4, medium: 2, short: 2 },
+  },
   autoregulation: {
-    /** Where a repetition's heart rate should settle, per class. */
-    targetHrBpm: { long: 169, medium: 171, short: 171 },
-    ceilingHrBpm: 173,
     /** Heart rate lags, so a repetition is read from here to its end. */
     windowStartSeconds: 180,
     /** "Well under target": this far below it in every repetition. */
@@ -49,8 +55,56 @@ export const CONTROLLED_THRESHOLD = {
 
 export type RepLengthClass = 'long' | 'medium' | 'short'
 
+export interface ControlledThresholdHr {
+  ceilingBpm: number
+  targetBpm: Record<RepLengthClass, number>
+}
+
+/** A session is judged against the ceiling it prescribed, which is what the watch held the athlete to. */
+export function heartRateUnder(ceilingBpm: number): ControlledThresholdHr {
+  const below = CONTROLLED_THRESHOLD.heartRate.targetBelowCeilingBpm
+  return {
+    ceilingBpm,
+    targetBpm: { long: ceilingBpm - below.long, medium: ceilingBpm - below.medium, short: ceilingBpm - below.short },
+  }
+}
+
+/** Null without an LTHR: a %HRmax zone floor is no threshold, so no ceiling is guessed from one. */
+export function controlledThresholdHr(lthrBpm: number | null | undefined): (ControlledThresholdHr & { lthrBpm: number }) | null {
+  if (!lthrBpm) return null
+  return { lthrBpm, ...heartRateUnder(lthrBpm - CONTROLLED_THRESHOLD.heartRate.ceilingBelowLthrBpm) }
+}
+
 export function repLengthClass(seconds: number): RepLengthClass {
   if (seconds >= CONTROLLED_THRESHOLD.repClassMinSeconds.long) return 'long'
   if (seconds >= CONTROLLED_THRESHOLD.repClassMinSeconds.medium) return 'medium'
   return 'short'
+}
+
+export interface ControlledThresholdFacts {
+  heartRate: ControlledThresholdHr & { lthrBpm: number }
+  fullWeek: { sessions: number; minutesPerSession: number; weekKm: NumberRange | null }
+  shortRepetitionGuideSecPerKm: NumberRange | null
+}
+
+/** This athlete's numbers for the planner, from their own data, so no athlete's prompt carries another's. */
+export function controlledThresholdFacts(
+  lthrBpm: number | null | undefined,
+  thresholdPaceSecPerKm: number | null | undefined,
+  best4WeekAverageKm: number,
+): ControlledThresholdFacts | null {
+  const heartRate = controlledThresholdHr(lthrBpm)
+  if (!heartRate) return null
+  const { fullWeek, shortGuideBandSecPerKm: band } = CONTROLLED_THRESHOLD
+  const km = Math.round(best4WeekAverageKm)
+  const fastest = thresholdPaceSecPerKm ? Math.floor(thresholdPaceSecPerKm / band) * band : null
+  return {
+    heartRate,
+    fullWeek: {
+      sessions: fullWeek.sessions,
+      minutesPerSession: fullWeek.sessionMinutes,
+      weekKm: km > fullWeek.kmEitherSide ? { min: km - fullWeek.kmEitherSide, max: km + fullWeek.kmEitherSide } : null,
+    },
+    shortRepetitionGuideSecPerKm: fastest === null ? null : { min: fastest, max: fastest + band },
+  }
 }

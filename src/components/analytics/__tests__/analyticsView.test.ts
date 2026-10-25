@@ -33,9 +33,7 @@ const TODAY = '2026-09-26' // a Saturday
 function week(date: string, over: Partial<WeeklyTrendPoint> = {}): WeeklyTrendPoint {
   return {
     date,
-    label: date,
     distanceKm: 0,
-    sessionCount: 0,
     easyPace: null,
     hardPace: null,
     ef: null,
@@ -49,12 +47,9 @@ function week(date: string, over: Partial<WeeklyTrendPoint> = {}): WeeklyTrendPo
     verticalRatioPct: null,
     strideLengthM: null,
     avgRpe: null,
-    aer: null,
-    ana: null,
     zoneSeconds: {},
     longestKm: 0,
     longestDate: null,
-    durationSeconds: 0,
     thresholdSessions: 0,
     intervalSessions: 0,
     ...over,

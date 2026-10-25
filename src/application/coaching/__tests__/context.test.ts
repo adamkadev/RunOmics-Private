@@ -52,6 +52,26 @@ describe('buildCoachingContext', () => {
     expect(context.gaps).toEqual({ daysSinceLastRun: 0, longestGap28Days: 5 })
   })
 
+  it('sums other training apart from the running figures, and leaves a context without any as it was', () => {
+    const runs = [activity('run', '2026-09-20', 10)]
+    const strength = { id: 's', date: '2026-09-19', sport: 'strength_training', durationSeconds: 2700, distanceKm: null, avgHeartRate: 104, trainingLoad: 31.3, sets: [{ reps: 12 }, { reps: 10 }] }
+    const ride = { id: 'b', date: '2026-09-01', sport: 'road_biking', durationSeconds: 5400, distanceKm: 40, avgHeartRate: 128, trainingLoad: null }
+    const without = buildCoachingContext(input(runs), '2026-09-20')
+
+    const context = buildCoachingContext({ ...input(runs), crossTraining: [strength, ride] }, '2026-09-20')
+
+    expect(context.otherTraining).toEqual({
+      minutes7Days: 45,
+      minutes28Days: 135,
+      sessions: [
+        { date: '2026-09-19', kind: 'strength', minutes: 45, trainingLoad: 31, sets: 2 },
+        { date: '2026-09-01', kind: 'cycling', minutes: 90 },
+      ],
+    })
+    expect(context.volume).toEqual(without.volume)
+    expect(coachingContextHash(buildCoachingContext({ ...input(runs), crossTraining: [] }, '2026-09-20'))).toBe(coachingContextHash(without))
+  })
+
   it('carries the note and tags the athlete wrote, and omits the fields otherwise', () => {
     const context = buildCoachingContext({
       ...input([activity('sick-day', '2026-09-23', 10), activity('quiet', '2026-09-22', 8)]),
@@ -146,6 +166,11 @@ describe('buildCoachingContext', () => {
     expect(context.athlete.lthrBpm).toBe(187)
     expect(context.athlete.hrZoneBoundsBpm).toEqual([125, 150, 168, 178, 188])
     expect(context.athlete).not.toHaveProperty('maxHrBpm')
+  })
+
+  it('tells the planner of no controlled threshold ceiling for an athlete without an LTHR, whatever her zones', () => {
+    const context = buildCoachingContext({ ...input([]), athlete: { maxHrBpm: 206, hrZoneBoundsBpm: [103, 124, 144, 165, 185] } }, '2026-10-25')
+    expect(context.controlledThreshold).toBeNull()
   })
 
   it('carries the athlete facts a coach would ask for before prescribing', () => {
@@ -289,5 +314,42 @@ describe('injury history', () => {
     const context = buildCoachingContext({ ...input([]), athlete: {} }, '2026-09-22')
 
     expect(context.athlete.injuryHistory).toBeNull()
+  })
+})
+
+describe('morning check-ins and training breaks', () => {
+  it('carries the last 28 mornings newest first, and the niggles of 12 weeks, never a later morning', () => {
+    const context = buildCoachingContext({
+      ...input([]),
+      wellness: new Map([
+        ['2026-07-01', { niggle: { site: 'hip' as const, pain: 3 } }],
+        ['2026-08-05', { niggle: { site: 'knee' as const, pain: 3 } }],
+        ['2026-09-01', { sleep: 1 }],
+        ['2026-10-20', { sleep: 4, soreness: 2, niggle: { site: 'calf' as const, side: 'left' as const, pain: 4, changesRun: true } }],
+        ['2026-10-22', { ill: true }],
+        ['2026-10-26', { sleep: 5 }],
+      ]),
+    }, '2026-10-25')
+
+    expect(context.wellness?.checkIns).toEqual([
+      { date: '2026-10-22', ill: true },
+      { date: '2026-10-20', sleep: 4, soreness: 2, niggle: { site: 'calf', side: 'left', pain: 4, changesRun: true } },
+    ])
+    expect(context.wellness?.niggles.map((n) => `${n.site} ${n.from}`)).toEqual(['calf 2026-10-20', 'knee 2026-08-05'])
+  })
+
+  it('says nothing of check-ins it could not read, and keeps the breaks of the last year', () => {
+    const context = buildCoachingContext({
+      ...input([]),
+      athlete: {
+        trainingBreaks: [
+          { start: '2025-06-01', end: '2025-06-20', reason: 'travel' },
+          { start: '2026-08-10', end: '2026-08-24', reason: 'heat' },
+        ],
+      },
+    }, '2026-10-25')
+
+    expect(context).not.toHaveProperty('wellness')
+    expect(context.athlete.trainingBreaks).toEqual([{ start: '2026-08-10', end: '2026-08-24', reason: 'heat' }])
   })
 })

@@ -52,3 +52,23 @@ export const { read: getLastExploreMilestoneState, write: saveLastExploreMilesto
 
 export const { read: getLastClientErrorAlertState, write: saveLastClientErrorAlertState } =
   notificationDocument<ClientErrorAlertState>('lastClientErrors')
+
+/** In a transaction, so two runs racing for the same key cannot both win it. */
+export async function claimNotificationKey(documentId: string, key: string): Promise<boolean> {
+  const db = getAdminFirestore()
+  const document = db.collection('notifications').doc(documentId)
+  return db.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(document)
+    if (snapshot.get('key') === key) return false
+    transaction.set(document, { key })
+    return true
+  })
+}
+
+export async function releaseNotificationKey(documentId: string, key: string): Promise<void> {
+  const db = getAdminFirestore()
+  const document = db.collection('notifications').doc(documentId)
+  await db.runTransaction(async (transaction) => {
+    if ((await transaction.get(document)).get('key') === key) transaction.delete(document)
+  })
+}

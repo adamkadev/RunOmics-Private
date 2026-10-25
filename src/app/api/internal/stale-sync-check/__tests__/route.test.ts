@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { getStaleSyncAlert, sendPushToAllDevices } = vi.hoisted(() => ({
+const { getStaleSyncAlert, sendPush } = vi.hoisted(() => ({
   getStaleSyncAlert: vi.fn(),
-  sendPushToAllDevices: vi.fn(),
+  sendPush: vi.fn(),
 }))
 
 vi.mock('@/application/usecases/GetStaleSyncAlert', () => ({ getStaleSyncAlert }))
-vi.mock('@/lib/sendPushNotification', () => ({ sendPushToAllDevices, sendPushesToAllDevices: vi.fn() }))
+vi.mock('@/lib/sendPushNotification', () => ({ sendPush, sendPushes: vi.fn() }))
 
 const { POST } = await import('../route')
 
@@ -34,23 +34,24 @@ describe('POST /api/internal/stale-sync-check', () => {
   it('sends the stale-sync warning, then records that it did', async () => {
     const commit = vi.fn(async () => {})
     getStaleSyncAlert.mockResolvedValue({ alert: { hoursSinceSync: 80 }, commit })
-    sendPushToAllDevices.mockResolvedValue(undefined)
+    sendPush.mockResolvedValue(undefined)
 
     const res = await POST(request())
 
     expect(await res.json()).toEqual({ alert: { hoursSinceSync: 80 } })
-    expect(sendPushToAllDevices).toHaveBeenCalledWith(
+    expect(sendPush).toHaveBeenCalledWith(
+      'always',
       'No data synced in a while',
       'Your last sync was 80h ago - check that sync is still running.'
     )
-    expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushToAllDevices.mock.invocationCallOrder[0]!)
+    expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPush.mock.invocationCallOrder[0]!)
   })
 
   it('stays armed when the warning did not go out, so the next check sends it', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const commit = vi.fn(async () => {})
     getStaleSyncAlert.mockResolvedValue({ alert: { hoursSinceSync: 80 }, commit })
-    sendPushToAllDevices.mockRejectedValue(new Error('FCM is down'))
+    sendPush.mockRejectedValue(new Error('FCM is down'))
 
     expect((await POST(request())).status).toBe(500)
     expect(commit).not.toHaveBeenCalled()
@@ -63,7 +64,7 @@ describe('POST /api/internal/stale-sync-check', () => {
     const res = await POST(request())
 
     expect(await res.json()).toEqual({ alert: null })
-    expect(sendPushToAllDevices).not.toHaveBeenCalled()
+    expect(sendPush).not.toHaveBeenCalled()
     expect(commit).toHaveBeenCalledTimes(1)
   })
 })

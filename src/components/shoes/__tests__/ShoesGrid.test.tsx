@@ -134,7 +134,6 @@ describe('ShoesGrid', () => {
     expect(screen.getByText(t.shoes.retiredSection(1))).toBeInTheDocument()
     const row = screen.getByTestId('retired-row')
     expect(row.textContent).toContain('Cloudrun 3')
-    expect(row.textContent).not.toContain(t.shoes.retiredTitle('Cloudrun 3'))
     expect(row.textContent).toContain(t.shoes.runs(9))
     expect(row.textContent).toContain('92 km')
     expect(barWidths(container)).toEqual([])

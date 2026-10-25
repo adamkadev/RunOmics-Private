@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { activityRouteThumb, routeThumbPath, ROUTE_THUMB_BOX } from '../routeThumb'
+import { activityRouteThumb, encodeRouteThumb, routeThumbPath, ROUTE_THUMB_BOX } from '../routeThumb'
 
 function loop(n: number): [number, number][] {
   return Array.from({ length: n }, (_, i) => {
@@ -12,9 +12,11 @@ function points(path: string): [number, number][] {
   return [...path.matchAll(/[ML](\d+) (\d+)/g)].map((m) => [Number(m[1]), Number(m[2])])
 }
 
+const thumb = (route: [number, number][] | null) => routeThumbPath(encodeRouteThumb(route))
+
 describe('routeThumbPath', () => {
   it('simplifies a long route to about 60 points inside the box', () => {
-    const pts = points(routeThumbPath(loop(3000))!)
+    const pts = points(thumb(loop(3000))!)
     expect(pts.length).toBeGreaterThan(30)
     expect(pts.length).toBeLessThanOrEqual(60)
     for (const [x, y] of pts) {
@@ -27,14 +29,19 @@ describe('routeThumbPath', () => {
   })
 
   it('draws north up', () => {
-    const pts = points(routeThumbPath([[6, 49], [6, 49.01]])!)
+    const pts = points(thumb([[6, 49], [6, 49.01]])!)
     expect(pts[1]![1]).toBeLessThan(pts[0]![1])
   })
 
   it('is null for a treadmill run or a fix that never moved', () => {
-    expect(routeThumbPath(null)).toBeNull()
-    expect(routeThumbPath([[6, 49]])).toBeNull()
-    expect(routeThumbPath([[6, 49], [6, 49]])).toBeNull()
+    expect(thumb(null)).toBeNull()
+    expect(thumb([[6, 49]])).toBeNull()
+    expect(thumb([[6, 49], [6, 49]])).toBeNull()
+  })
+
+  it('travels as well under half the length of the path it draws', () => {
+    const encoded = encodeRouteThumb(loop(3000))!
+    expect(encoded.length * 2).toBeLessThan(routeThumbPath(encoded)!.length)
   })
 })
 

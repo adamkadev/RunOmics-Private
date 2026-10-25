@@ -4,7 +4,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
+import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
+import type { RunBests } from '@/domain/activity/paceCurve'
 import type { LoadPair } from '@/domain/training/loadTrend'
 import type { RecoveryDay } from '@/domain/training/recovery'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
@@ -68,9 +70,15 @@ export interface AnalyticsBoardData {
   missed: string[]
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
   threshold: { date: string; pace: number }[]
+  /** The watch's threshold heart rate, revised with its threshold pace. */
+  lthr: { date: string; bpm: number }[]
   predictions: PredictionDay[]
   race: GoalRaceInput | null
   heat: HeatImpactData | null
+  /** The watch's load focus, absent on a watch without it. */
+  balance: LoadBalanceData | null
+  /** Each run's duration bests, oldest first; empty until the runs are reprocessed. */
+  paceBests: RunBests[]
   ytd: YtdInput | null
   /** The app's one weekly average: the last 12 complete weeks. */
   weeklyAvgKm: number | null
@@ -190,9 +198,11 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             weeks={data.weeks}
             vo2max={data.vo2max}
             threshold={data.threshold}
+            lthr={data.lthr}
             predictions={data.predictions}
             race={data.race}
             heat={data.heat}
+            paceBests={data.paceBests}
           />
         )}
         {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} weeklyAvgKm={data.weeklyAvgKm} />}

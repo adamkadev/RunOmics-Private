@@ -29,9 +29,9 @@ const KNOWN_ACTIVITY_TYPES = ['Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tem
 const NULLABLE_NUMBERS = [
   'paceSecPerKm', 'avgHeartRate', 'rpe', 'elevationGain', 'aerTrainingEffect', 'anaTrainingEffect',
   'calories', 'cadenceSpm', 'groundContactMs', 'verticalOscillationMm', 'verticalRatioPct',
-  'strideLengthM', 'vo2maxGarmin', 'avgTemperature',
+  'strideLengthM', 'vo2maxGarmin', 'avgTemperature', 'gapSecPerKm',
 ]
-const NULLABLE_NUMBER_ARRAYS = ['hrSamples', 'elevationProfile', 'paceSamples', 'cadenceSamples']
+const NULLABLE_NUMBER_ARRAYS = ['hrSamples', 'elevationProfile', 'paceSamples', 'cadenceSamples', 'gapSamples']
 
 const isObject = (value: unknown): value is JsonObject =>
   !!value && typeof value === 'object' && !Array.isArray(value)
@@ -65,7 +65,7 @@ class Report {
 
 function readJson(file: string, report: Report): unknown {
   try {
-    return JSON.parse(files.readFileSync(file, 'utf-8'))
+    return files.readJsonSync(file)
   } catch (error) {
     report.error('$', `unreadable: ${(error as Error).message}`)
     return undefined
@@ -124,12 +124,37 @@ function checkActivity(activity: unknown, at: string, month: string, report: Rep
   if (activity.splits !== null && activity.splits !== undefined && !Array.isArray(activity.splits)) {
     report.error(`${at}.splits`, 'expected an array or null')
   }
-  for (const key of ['bestEfforts', 'weather']) {
+  for (const key of ['bestEfforts', 'durationBests', 'weather']) {
     if (activity[key] !== null && activity[key] !== undefined && !isObject(activity[key])) report.error(`${at}.${key}`, 'expected an object or null')
   }
 
   return isNonEmptyString(activity.id) ? activity.id : null
 }
+
+interface MonthCheck {
+  problems: Problem[]
+  /** By position in the month, null where the id is unusable. */
+  ids: (string | null)[]
+}
+
+function checkMonth(dir: string, name: string, month: string): MonthCheck {
+  const report = new Report(name)
+  const file = path.join(dir, name)
+  const ids: (string | null)[] = []
+  if (!files.existsSync(file)) {
+    report.error('$', 'listed in index.json but missing')
+  } else {
+    const data = readJson(file, report)
+    if (data !== undefined) {
+      const activities = isObject(data) ? report.list(data, 'activities', '$') : (report.error('$', 'expected an object'), null)
+      activities?.forEach((activity, i) => ids.push(checkActivity(activity, `$.activities[${i}]`, month, report)))
+    }
+  }
+  return { problems: report.problems, ids }
+}
+
+/** By file and blob: a new commit re-checks only the months it changed. */
+let monthChecks = new Map<string, MonthCheck>()
 
 function checkActivities(dir: string, problems: Problem[]) {
   const indexFile = path.join(dir, 'activities', 'index.json')
@@ -145,28 +170,25 @@ function checkActivities(dir: string, problems: Problem[]) {
   problems.push(...indexReport.problems)
   if (!months) return
 
+  const checked = new Map<string, MonthCheck>()
   const seen = new Map<string, string>()
   for (const month of months) {
     if (typeof month !== 'string' || !ISO_MONTH.test(month)) continue
     const name = `activities/${month}.json`
+    const sha = files.blobSha(path.join(dir, name))
+    const key = sha && `${name}@${sha}`
+    const check = (key && monthChecks.get(key)) || checkMonth(dir, name, month)
+    if (key) checked.set(key, check)
+
     const report = new Report(name)
-    const file = path.join(dir, name)
-    if (!files.existsSync(file)) {
-      report.error('$', 'listed in index.json but missing')
-    } else {
-      const data = readJson(file, report)
-      if (data !== undefined) {
-        const activities = isObject(data) ? report.list(data, 'activities', '$') : (report.error('$', 'expected an object'), null)
-        activities?.forEach((activity, i) => {
-          const id = checkActivity(activity, `$.activities[${i}]`, month, report)
-          if (!id) return
-          if (seen.has(id)) report.error(`$.activities[${i}].id`, `duplicate id ${id}, also in ${seen.get(id)}`)
-          else seen.set(id, name)
-        })
-      }
-    }
-    problems.push(...report.problems)
+    check.ids.forEach((id, i) => {
+      if (!id) return
+      if (seen.has(id)) report.error(`$.activities[${i}].id`, `duplicate id ${id}, also in ${seen.get(id)}`)
+      else seen.set(id, name)
+    })
+    problems.push(...check.problems, ...report.problems)
   }
+  monthChecks = checked
 }
 
 function checkRecords(
@@ -237,6 +259,25 @@ function checkPlannedWorkouts(dir: string, problems: Problem[]) {
   }
 }
 
+function checkCrossTraining(dir: string, problems: Problem[]) {
+  const sessionsDir = path.join(dir, 'cross_training')
+  if (!files.existsSync(sessionsDir)) return
+  for (const name of files.readdirSync(sessionsDir).filter((f) => f.endsWith('.json') && f !== 'index.json')) {
+    const year = name.slice(0, -'.json'.length)
+    checkRecords(dir, `cross_training/${name}`, 'sessions', (session, at, report) => {
+      if (!isNonEmptyString(session.id)) report.error(`${at}.id`, 'expected a non-empty string')
+      if (!isIsoDate(session.date)) report.error(`${at}.date`, 'expected YYYY-MM-DD')
+      else if (!session.date.startsWith(year)) report.error(`${at}.date`, `${session.date} is filed under ${year}`)
+      if (typeof session.sport !== 'string') report.warn(`${at}.sport`, 'expected a string')
+      if (!isNumber(session.durationSeconds) || session.durationSeconds < 0) report.warn(`${at}.durationSeconds`, 'expected a number >= 0')
+      for (const key of ['distanceKm', 'avgHeartRate', 'trainingLoad']) {
+        if (session[key] !== null && session[key] !== undefined && !isNumber(session[key])) report.warn(`${at}.${key}`, 'expected a number or null')
+      }
+      if (session.sets !== undefined && !Array.isArray(session.sets)) report.warn(`${at}.sets`, 'expected an array')
+    }, problems)
+  }
+}
+
 export function checkDataDirectory(dir: string, using: DataFiles = diskFiles): Problem[] {
   files = using
   try {
@@ -284,6 +325,7 @@ function checkAll(dir: string): Problem[] {
   }, problems)
 
   checkPlannedWorkouts(dir, problems)
+  checkCrossTraining(dir, problems)
 
   const syncMeta = path.join(dir, 'sync_meta.json')
   if (files.existsSync(syncMeta)) {

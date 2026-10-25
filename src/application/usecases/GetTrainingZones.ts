@@ -1,4 +1,9 @@
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
+import { officialResultsByActivityId } from '@/domain/activity/raceResult'
+import { estimatedThreshold, type ThresholdEstimate } from '@/domain/training/vdot'
+import { appTodayIso } from '@/lib/calendarDate'
 import { t } from '@/i18n'
 
 export interface TrainingZone {
@@ -12,6 +17,8 @@ export interface TrainingZone {
 
 export interface TrainingZonesData {
   thresholdPaceSecPerKm: number
+  /** Set when the watch gives no threshold pace and it was estimated from a recent best effort instead. */
+  estimate?: Omit<ThresholdEstimate, 'thresholdPaceSecPerKm'>
   zones: TrainingZone[]
 }
 
@@ -36,14 +43,19 @@ export function paceZones(thresholdPaceSecPerKm: number): (Pick<TrainingZone, 'h
   }))
 }
 
-export async function getTrainingZones(): Promise<TrainingZonesData | null> {
-  const { thresholdPaceSecPerKm } = getAthleteProfile()
-  if (!thresholdPaceSecPerKm) return null
-
+function zonesAt(thresholdPaceSecPerKm: number): TrainingZone[] {
   // Easy first, as the table and the coach read them.
-  const zones: TrainingZone[] = paceZones(thresholdPaceSecPerKm)
+  return paceZones(thresholdPaceSecPerKm)
     .reverse()
     .map((zone) => ({ ...zone, ...t.trainingZones.zones[zone.key] }))
+}
 
-  return { thresholdPaceSecPerKm, zones }
+export async function getTrainingZones(today = appTodayIso()): Promise<TrainingZonesData | null> {
+  const { thresholdPaceSecPerKm } = getAthleteProfile()
+  if (thresholdPaceSecPerKm) return { thresholdPaceSecPerKm, zones: zonesAt(thresholdPaceSecPerKm) }
+
+  const estimate = estimatedThreshold(getAllActivities(), officialResultsByActivityId(getOfficialRaceResults()), today)
+  if (!estimate) return null
+  const { thresholdPaceSecPerKm: pace, ...basis } = estimate
+  return { thresholdPaceSecPerKm: pace, estimate: basis, zones: zonesAt(pace) }
 }

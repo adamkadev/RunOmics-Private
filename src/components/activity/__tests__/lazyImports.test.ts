@@ -11,16 +11,17 @@ const EAGER_MODULES = [
   'src/components/activity/ShareButton.tsx',
   'src/components/activity/ActivityDetailClient.tsx',
   'src/lib/useOwnerAuth.ts',
+  'src/components/settings/SettingsClient.tsx',
 ]
 
-const LAZY_ONLY = ['firebase/firestore', 'firebase/auth', '@/lib/firebase', './ShareCardModal', './ChartStack', './RunningDynamics', './ActivityNotesSheet']
+const LAZY_ONLY = ['firebase/firestore', 'firebase/auth', '@/lib/firebase', '@/lib/firebaseAuth', './ShareCardModal', './ChartStack', './RunningDynamics', './ActivityNotesSheet']
 
 // `import { x } from 'm'` and `import x from 'm'`, not `import type` and not `import('m')`.
 function staticValueImports(source: string): string[] {
   return [...source.matchAll(/^import\s+(?!type\b)[^'"]*?from\s+['"]([^'"]+)['"]/gm)].map((match) => match[1]!)
 }
 
-describe('the activity page loads its heavy modules on demand', () => {
+describe('the activity and Settings pages load their heavy modules on demand', () => {
   for (const file of EAGER_MODULES) {
     it(`${path.basename(file)} imports none of them statically`, () => {
       const source = fs.readFileSync(path.join(process.cwd(), file), 'utf-8')

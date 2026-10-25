@@ -103,10 +103,14 @@ class PersonalApiClient:
 
     # --- activities ------------------------------------------------------
 
-    def get_activities(self, start: int = 0, limit: int = 100, *, running_only: bool = True) -> list[dict[str, Any]]:
+    def get_activities(
+        self, start: int = 0, limit: int = 100, *, running_only: bool = True, since: str | None = None
+    ) -> list[dict[str, Any]]:
         params: dict[str, Any] = {"start": start, "limit": limit}
         if running_only:
             params["activityType"] = "running"
+        if since:
+            params["startDate"] = since
         rows = self._get_json(_LIST_PATH, **params) or []
         self._rows.update((str(row["activityId"]), row) for row in rows)
         return rows

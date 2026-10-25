@@ -4,7 +4,7 @@ import { DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { DAY_MS } from '@/lib/calendarDate'
 import { dailyTrimpByDate } from './GetTrainingLoad'
-import { getTrainingStatus } from './GetTrainingStatus'
+import type { TrainingStatus } from './GetTrainingStatus'
 import { getLoadPairs } from './GetLoadRecovery'
 import { latestLoadPair, loadRatio, safeRange } from '@/domain/training/loadTrend'
 
@@ -70,11 +70,10 @@ export function dayTypes(activities: readonly Pick<Activity, 'date' | 'type' | '
   return new Map([...longest].map(([date, { type }]) => [date, type]))
 }
 
-export async function getRecentLoad(today: string): Promise<RecentLoad | null> {
+export function getRecentLoad(today: string, status: TrainingStatus | null): RecentLoad | null {
   const activities = getAllActivities()
   if (!activities.length) return null
 
-  const status = await getTrainingStatus()
   if (!status || status.ctl <= 0) return null
 
   const athlete = getAthleteProfile()

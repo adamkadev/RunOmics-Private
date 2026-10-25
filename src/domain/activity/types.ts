@@ -76,8 +76,14 @@ export interface Activity {
   verticalRatioPct: number | null
   strideLengthM: number | null
   bestEfforts: Record<string, number> | null
+  /** Most metres covered in each duration, keyed by its seconds on the moving clock; absent until a reprocess. */
+  durationBests?: Record<string, number> | null
   splits: ActivitySplit[] | null
   paceSamples: number[] | null
+  /** Minetti's grade-adjusted pace; null without a barometric altitude, absent until a reprocess. */
+  gapSecPerKm?: number | null
+  /** Grade-adjusted pace sampled at the same points as paceSamples, in whole seconds. */
+  gapSamples?: number[] | null
   vo2maxGarmin: number | null
   avgTemperature: number | null
   cadenceSamples: number[] | null
@@ -98,14 +104,12 @@ export type ActivitySummary = Pick<
   | 'durationSeconds'
   | 'paceSecPerKm'
   | 'avgHeartRate'
-  | 'rpe'
-  | 'hrZones'
-  | 'week'
-  | 'elevationGain'
 > & {
+  /** Whole seconds in heart-rate zones 1 to 5, in order: the list reads only its easy share. */
+  zones: number[]
   /** For the list's shoe filter, which runs on the phone. */
   gearId?: string | null
-  /** From routeThumbPath; null for a treadmill run. */
+  /** From encodeRouteThumb; null for a treadmill run. */
   routeThumb?: string | null
 }
 

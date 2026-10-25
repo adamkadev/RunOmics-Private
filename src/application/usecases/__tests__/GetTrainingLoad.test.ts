@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { trimp } from '../GetTrainingLoad'
+import { buildTimeSeries, trimp } from '../GetTrainingLoad'
 import type { Activity } from '@/domain/activity/types'
 
 const act = (hr: number | null, durationSeconds: number): Activity =>
@@ -34,5 +34,16 @@ describe('trimp', () => {
     const half = trimp(act(120, 1800))
     const full = trimp(act(120, 3600))
     expect(full).toBeCloseTo(half * 2, 5)
+  })
+})
+
+describe('buildTimeSeries', () => {
+  it('is worked out once per activity list, bounds and day', () => {
+    const activities = [{ date: '2026-01-05', avgHeartRate: 150, durationSeconds: 3600 }] as Activity[]
+    const series = buildTimeSeries(activities)
+
+    expect(buildTimeSeries(activities)).toBe(series)
+    expect(buildTimeSeries(activities, { maxHr: 190, restingHr: 50 })).not.toBe(series)
+    expect(buildTimeSeries([...activities])).not.toBe(series)
   })
 })

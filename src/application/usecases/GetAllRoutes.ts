@@ -1,7 +1,9 @@
+import { createHash } from 'node:crypto'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import type { Activity, ActivityType } from '@/domain/activity/types'
 import { distanceKm } from '@/lib/math'
 import { percentileBounds, type LngLatBounds } from '@/lib/routeFrame'
+import { simplifyTrack } from '@/lib/simplifyTrack'
 
 export interface RouteMeta {
   id: string
@@ -167,3 +169,40 @@ export function getMapShellData(): MapShellData {
   const { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years } = getAllRoutes()
   return { routeMeta, clusters, defaultClusterIdx, totalCount, totalKm, years }
 }
+
+/** Finer than a heatmap stroke shows; Districts coverage reads the full tracks, which this would shift. */
+export const DRAWN_TOLERANCE_M = 3
+
+/** Bump when an answer's shape or the drawn tracks change: a browser keeps an answer by its version for good. */
+const MAP_FORMAT = 1
+
+const derived = new WeakMap<AllRoutesData, { version?: string; drawn: ([number, number][] | undefined)[] }>()
+
+function derivedOf(data: AllRoutesData) {
+  let entry = derived.get(data)
+  if (!entry) derived.set(data, (entry = { drawn: [] }))
+  return entry
+}
+
+/** Changes with any run or track the map serves, so a request naming it may be cached for good. */
+export function getMapVersion(): string {
+  const data = getAllRoutes()
+  const entry = derivedOf(data)
+  if (!entry.version) {
+    const { routes, ...shell } = data
+    const hash = createHash('sha256').update(JSON.stringify(shell))
+    for (const route of routes) hash.update(Float64Array.from(route.flat()))
+    entry.version = `${MAP_FORMAT}.${hash.digest('base64url').slice(0, 16)}`
+  }
+  return entry.version
+}
+
+/** What the map draws of a route: within DRAWN_TOLERANCE_M of the track recorded, about a fifth of its points. */
+export function getDrawnRoute(routeIdx: number): [number, number][] | undefined {
+  const data = getAllRoutes()
+  const { drawn } = derivedOf(data)
+  const route = data.routes[routeIdx]
+  if (route && !drawn[routeIdx]) drawn[routeIdx] = simplifyTrack(route, DRAWN_TOLERANCE_M)
+  return drawn[routeIdx]
+}
+

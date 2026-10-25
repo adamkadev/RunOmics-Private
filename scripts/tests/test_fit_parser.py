@@ -20,6 +20,7 @@ from processing.fit_parser import (
     _project_meters,
     parse_fit,
 )
+from processing.pace_profile import duration_bests, flat_equivalent, minetti_cost
 
 
 def constant_speed_samples(total_m: float, pace_sec_per_km: float, step_m: float = 10.0):
@@ -414,3 +415,62 @@ class TestMovingClock:
         effort = _best_efforts(dists, moving)["10k"]
         assert effort <= moving[-1] - moving[0] + 0.1
         assert abs(effort - 10_000 / 3) < 1
+
+
+class TestDurationBests:
+    def test_a_steady_run_covers_its_speed_times_each_duration_it_lasts(self):
+        dists, times = constant_speed_samples(6000.0, 300.0)
+
+        bests = duration_bests(dists, times)
+
+        assert bests == {str(s): round(s / 0.3, 1) for s in (30, 60, 120, 180, 300, 600, 1200, 1800)}
+
+    def test_the_best_window_is_the_fastest_stretch_even_between_samples(self):
+        dists = [0.0, 1000.0, 1400.0, 2400.0]
+        times = [0.0, 360.0, 420.0, 780.0]
+
+        bests = duration_bests(dists, times)
+
+        assert bests["60"] == 400.0
+        assert bests["120"] == pytest.approx(400.0 + 60 * 1000 / 360, abs=0.1)
+
+    def test_a_stop_on_the_moving_clock_is_not_slow_running(self):
+        dists = [float(d) for d in range(0, 1201, 10)] + [float(d) for d in range(1200, 2401, 10)]
+        times = [d / 4 for d in dists[:121]] + [d / 4 + 600 for d in dists[121:]]
+
+        bests = duration_bests(dists, _moving_clock(dists, times, []))
+
+        assert bests["600"] == 2400.0
+
+    def test_a_gps_jump_adds_no_more_than_the_fastest_plausible_step(self):
+        dists, times = constant_speed_samples(3000.0, 300.0, step_m=3.0)
+        dists = [d + (250.0 if i >= 300 else 0.0) for i, d in enumerate(dists)]
+
+        assert duration_bests(dists, times)["30"] <= 100.0 + 8.0
+
+
+class TestGradeAdjusted:
+    def test_minetti_costs_a_climb_more_and_a_gentle_descent_less_than_the_flat(self):
+        assert minetti_cost(0.0) == 3.6
+        assert minetti_cost(0.10) == pytest.approx(5.968, abs=1e-3)
+        assert minetti_cost(-0.10) == pytest.approx(2.152, abs=1e-3)
+        assert minetti_cost(0.6) == minetti_cost(0.25)
+
+    @pytest.mark.parametrize("grade", [0.0, 0.05, -0.05])
+    def test_a_constant_grade_scales_the_distance_by_its_cost(self, grade):
+        dists = [float(d) for d in range(0, 2001)]
+        alts = [100.0 + grade * d for d in dists]
+
+        flat = flat_equivalent(dists, alts)
+
+        assert flat[-1] / dists[-1] == pytest.approx(minetti_cost(grade) / 3.6, rel=1e-3)
+
+    def test_a_jittering_gps_altitude_gives_no_grade_adjusted_pace(self):
+        rng = random.Random(3)
+        dists = [float(d) for d in range(0, 2001)]
+        alts = [100.0 + rng.uniform(-3.0, 3.0) for _ in dists]
+
+        assert flat_equivalent(dists, alts) is None
+
+    def test_a_run_without_altitude_gives_no_grade_adjusted_pace(self):
+        assert flat_equivalent([0.0, 10.0, 20.0], [None, None, None]) is None

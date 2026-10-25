@@ -7,7 +7,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: process.env.CI ? '100%' : undefined,
   reporter: process.env.CI ? [['html', { open: 'never' }], ['github']] : 'list',
   use: {
     baseURL: `http://localhost:${PORT}`,
@@ -15,8 +15,12 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /layout\.spec\.ts/ },
-    // Safari's engine at the athlete's own phone, where the app is used: text past an edge shows there first.
-    { name: 'iphone', use: { ...devices['iPhone 16 Pro'], serviceWorkers: 'block' }, testMatch: /layout\.spec\.ts/ },
+    // Safari at the athlete's phone, where text past an edge shows first; reduced motion skips waiting for animations.
+    {
+      name: 'iphone',
+      use: { ...devices['iPhone 16 Pro'], serviceWorkers: 'block', reducedMotion: 'reduce' },
+      testMatch: /layout\.spec\.ts/,
+    },
   ],
   webServer: {
     command: 'npm run e2e:build && npm run e2e:start',

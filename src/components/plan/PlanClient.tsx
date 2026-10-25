@@ -3,12 +3,14 @@
 import { useMemo, useState } from 'react'
 import type { PlannedWorkout } from '@/domain/activity/types'
 import type { PlanRun } from './planRun'
+import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
+import { CoachReadoutCard } from './CoachReadoutCard'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
@@ -18,6 +20,7 @@ import { t } from '@/i18n'
 
 interface Props {
   activities: PlanRun[]
+  crossTraining?: CrossTrainingEntry[]
   plannedWorkouts: PlannedWorkout[]
   planPhaseRanges: PlanPhaseRange[]
   nextRace: UpcomingRace | null
@@ -41,7 +44,7 @@ export function planDateParam(value: string | null): string | null {
 const monthKeyOf = (date: string) => date.slice(0, 7)
 
 /** No `?date=` is today, following it over midnight; no `?view=` is the week. */
-export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, today: serverToday, exploreAvailable = false }: Props) {
+export function PlanClient({ activities, crossTraining = [], plannedWorkouts, planPhaseRanges, nextRace, trainingZones, hrZoneBoundsBpm, coaching, today: serverToday, exploreAvailable = false }: Props) {
   const today = useToday(serverToday)
   const [viewParam, setViewParam] = useUrlParam('view')
   const [dateParam, setDateParam] = useUrlParam('date')
@@ -74,6 +77,12 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
     }
     return map
   }, [activities])
+
+  const byDateOther = useMemo(() => {
+    const map = new Map<string, CrossTrainingEntry[]>()
+    for (const entry of crossTraining) map.set(entry.date, [...(map.get(entry.date) ?? []), entry])
+    return map
+  }, [crossTraining])
 
   const byDatePlanned = useMemo(() => {
     const map = new Map<string, PlannedWorkout>()
@@ -152,6 +161,7 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
             selectedDate={selectedDate}
             onSelectDate={selectDate}
             byDate={byDate}
+            byDateOther={byDateOther}
             byDatePlanned={byDatePlanned}
             byDateCoach={byDateCoach}
             today={today}
@@ -186,6 +196,8 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
           />
         )}
       </div>
+
+      {coaching?.readout && <CoachReadoutCard readout={coaching.readout} onSelectDate={openWeekAt} />}
     </div>
   )
 }

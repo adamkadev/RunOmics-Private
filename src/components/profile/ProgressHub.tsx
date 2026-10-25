@@ -181,8 +181,8 @@ function Records({ records, vo2max }: { records: ProgressHubView['records']; vo2
   )
 }
 
-/** `explored` is a slot because that card is a client island. */
-export function ProgressHub({ view, explored }: { view: ProgressHubView; explored?: ReactNode }) {
+/** Slots: `explored` is a client island, `checkpoint` comes from a use case of its own. */
+export function ProgressHub({ view, explored, checkpoint }: { view: ProgressHubView; explored?: ReactNode; checkpoint?: ReactNode }) {
   const h = t.profile.hub
   const { vo2max, consistency, shoes, allTime } = view
   const bestYearKm = Math.max(1, ...allTime.years.slice(-2).map((y) => y.km))
@@ -206,6 +206,7 @@ export function ProgressHub({ view, explored }: { view: ProgressHubView; explore
 
       <RaceCard race={view.race} />
       <YearCard view={view} />
+      {checkpoint}
 
       {/* Side by side, the two cards share a height: the streak strip grows into whatever Explored adds. */}
       <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2" data-testid="progress-columns">

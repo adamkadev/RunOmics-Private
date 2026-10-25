@@ -50,8 +50,11 @@ self.addEventListener('activate', (event) => {
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 const isLocalDev = LOCAL_HOSTS.includes(self.location.hostname)
 
+// MapLibre's worker sits under its version (scripts/copy-maplibre-worker.mjs), so a new one comes at a new path.
+const VERSIONED_MAPLIBRE = /^\/maplibre\/[^/]+\//
+
 function isImmutableAsset(url) {
-  return url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')
+  return url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/') || VERSIONED_MAPLIBRE.test(url.pathname)
 }
 
 async function cacheFirst(request) {
@@ -69,12 +72,14 @@ async function cacheFirst(request) {
 const NAVIGATION_TIMEOUT_MS = 3000
 
 async function fromNetwork(event) {
-  const preloaded = event.request.mode === 'navigate' ? await event.preloadResponse : undefined
-  const response = preloaded || (await fetch(event.request))
+  const { request } = event
+  const preloaded = request.mode === 'navigate' ? await event.preloadResponse : undefined
+  const response = preloaded || (await fetch(request))
   // Never a redirected one: on a private site that is /sign-in, which must not be cached as the page.
   if (response.ok && !response.redirected) {
-    const cache = await caches.open(PAGE_CACHE)
-    await cache.put(event.request, response.clone())
+    const copy = response.clone()
+    // Written while the page streams: awaited, the page would arrive only once its whole body reached the disk.
+    event.waitUntil(caches.open(PAGE_CACHE).then((cache) => cache.put(request, copy)).catch(() => undefined))
   }
   return response
 }
@@ -109,6 +114,8 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url)
   if (url.origin !== self.location.origin) return
   if (url.pathname.startsWith('/api/')) return
+  // A prefetch is a partial payload, no offline copy of a page: it goes straight to the network, uncached.
+  if (request.headers.has('Next-Router-Prefetch')) return
 
   if (isImmutableAsset(url)) {
     event.respondWith(cacheFirst(request))

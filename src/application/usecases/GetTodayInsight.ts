@@ -7,7 +7,7 @@ import { COACHING_TO_ACTIVITY_TYPE, type WorkoutPrescription } from '@/domain/co
 import { verdictTone } from '@/domain/training/readiness'
 import { recentTraining } from '@/domain/training/recentTraining'
 import { TODAY_SURFACE, todayInsightGuard, todayInsightHash, type TodayContext } from '@/domain/ai/todayInsight'
-import { readLatestInsight, readVerifiedInsight } from '@/infrastructure/repositories/FirestoreInsightsRepository'
+import { readStoredInsight } from '@/infrastructure/repositories/FirestoreInsightsRepository'
 import { addDays, appTodayIso, isoDate } from '@/lib/calendarDate'
 import type { Insight } from '@/lib/gemini'
 
@@ -68,14 +68,13 @@ export async function getTodayInsight(
   if (!status) return null
 
   const context = buildTodayContext(status, plannedWorkout, today)
-  const fresh = await readVerifiedInsight(TODAY_SURFACE, {
+  const stored = await readStoredInsight(TODAY_SURFACE, {
     hash: todayInsightHash(context),
     guard: todayInsightGuard(context),
   })
-  if (fresh) return fresh
+  if (!stored) return null
+  if (stored.verified) return stored.insight
 
-  const latest = await readLatestInsight(TODAY_SURFACE)
-  if (!latest) return null
   const yesterday = isoDate(addDays(new Date(`${today}T00:00:00`), -1))
-  return appTodayIso(new Date(latest.generatedAt)) === yesterday ? { ...latest.insight, yesterday: true } : null
+  return appTodayIso(new Date(stored.generatedAt)) === yesterday ? { ...stored.insight, yesterday: true } : null
 }

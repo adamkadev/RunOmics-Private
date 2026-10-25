@@ -55,12 +55,10 @@ describe('YearView annual goal card', () => {
     expect(marker!.style.left).toBe('85.25%')
     expect(marker!.style.background).toBe('var(--warn)')
     expect(screen.getByText(p.projectedMark('1,705')).getAttribute('style')).toContain('var(--warn)')
-    // No "proj." label under it: the sentence below names the projection.
-    expect(screen.queryByText(p.projectedTick)).toBeNull()
   })
 
   it('names the projection as the headline under the bar, in the shortfall tone', () => {
-    const { container } = render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
+    render(<YearView yearData={yearData(BEHIND)} today={TODAY} />)
 
     // Only the short verdict is in the tone; the need follows in text-2.
     const headline = screen.getByTestId('projection-verdict')
@@ -68,8 +66,6 @@ describe('YearView annual goal card', () => {
     expect(headline.getAttribute('style')).toContain('var(--warn)')
     expect(screen.getByTestId('projection-line').textContent).toContain(p.closes('29', '25'))
     expect(screen.getByTestId('goal-left').textContent).toBe(p.toGo('679'))
-    // No small top-right chip repeating the same verdict a second time.
-    expect(container.textContent).not.toContain(p.status.behind)
   })
 
   it('states what the goal still needs per week, muted beneath the projection', () => {

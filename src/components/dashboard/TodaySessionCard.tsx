@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Thermometer } from 'lucide-react'
 import { tileSegments } from '@/components/plan/WorkoutStructure'
 import { sessionZone } from '@/lib/colors'
 import { cardClass } from '@/components/ui/Card'
@@ -44,6 +44,12 @@ export function TodaySessionCard({ card }: { card: SessionCard }) {
         )}
       </span>
       {card.workout && isStructured(card.workout) && <IntensityBar workout={card.workout} />}
+      {card.heat && (
+        <span className="mt-1 flex items-start gap-1.5 text-footnote text-[var(--text-2)] [text-wrap:pretty]" data-testid="session-heat">
+          <Thermometer size={14} strokeWidth={2} aria-hidden className="mt-[2px] shrink-0 text-[var(--warn)]" />
+          <span>{t.heatAhead.line(card.heat.apparentTempC, t.heatAhead.time(card.heat.hour), card.heat.costSecPerKm)}</span>
+        </span>
+      )}
     </Link>
   )
 }

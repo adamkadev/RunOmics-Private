@@ -41,8 +41,56 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    function isScore(data, field) {
+      return !(field in data) || (data[field] is int && data[field] >= 1 && data[field] <= 5);
+    }
+
+    function isWellFormedNiggle(data) {
+      return !('niggle' in data) || (
+        data.niggle is map
+        && data.niggle.keys().hasAll(['site', 'pain'])
+        && data.niggle.keys().hasOnly(['site', 'side', 'pain', 'changesRun'])
+        && data.niggle.site in ['foot', 'ankle', 'achilles', 'calf', 'shin', 'knee', 'hamstring', 'quad', 'hip', 'back', 'other']
+        && data.niggle.pain is int && data.niggle.pain >= 0 && data.niggle.pain <= 10
+        && (!('side' in data.niggle) || data.niggle.side in ['left', 'right'])
+        && (!('changesRun' in data.niggle) || data.niggle.changesRun is bool)
+      );
+    }
+
+    function isWellFormedCheckIn(date) {
+      let data = request.resource.data;
+      return date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.keys().hasOnly(['sleep', 'soreness', 'stress', 'mood', 'ill', 'travel', 'niggle'])
+        && isScore(data, 'sleep') && isScore(data, 'soreness') && isScore(data, 'stress') && isScore(data, 'mood')
+        && (!('ill' in data) || data.ill is bool)
+        && (!('travel' in data) || data.travel is bool)
+        && isWellFormedNiggle(data);
+    }
+
+    // The morning check-in, one document per local date. Health data: the owner's alone, the server reads it as admin.
+    match /wellness/{date} {
+      allow get: if isOwner();
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && isWellFormedCheckIn(date);
+      allow delete: if isOwner();
+    }
+
+    // `categories` decides which pushes the server sends this device; without it, it gets every one.
+    function isWellFormedPushToken(token) {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['token', 'userAgent', 'updatedAt', 'categories'])
+        && data.token == token
+        && (!('categories' in data) || (
+          data.categories is map
+          && data.categories.keys().hasOnly(['training', 'shoes', 'records'])
+          && data.categories.values().hasOnly([true, false])
+        ));
+    }
+
     match /pushTokens/{token} {
-      allow write: if isOwner();
+      allow create, update: if isOwner() && isWellFormedPushToken(token);
+      allow delete: if isOwner();
     }
   }
 }

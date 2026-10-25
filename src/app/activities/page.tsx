@@ -1,6 +1,6 @@
 import { queryActivities } from '@/application/usecases/QueryActivities'
 import { getRecords, getQualifiedEffortsByActivityId } from '@/application/usecases/GetRecords'
-import { getMapShellData } from '@/application/usecases/GetAllRoutes'
+import { getMapShellData, getMapVersion } from '@/application/usecases/GetAllRoutes'
 import { getExploreAreas } from '@/application/usecases/GetExploreAreas'
 import { ActivityListClient } from '@/components/activities/ActivityListClient'
 import { appTodayIso } from '@/lib/calendarDate'
@@ -23,6 +23,8 @@ export default async function ActivitiesPage() {
   const today = appTodayIso()
   const coaching = getCoachingOverview(today)
   const exploreAreas = getExploreAreas()
+  const { clusters, defaultClusterIdx } = getMapShellData()
+  const defaultCluster = clusters[defaultClusterIdx]
   // Trimmed copies (name, distance, pace), never the coach's overview, and only where the map has Districts.
   const explorePlans = exploreAreas.length > 0
     ? explorePlansFrom(today, coaching?.workouts ?? [], await getPlannedWorkouts(), await getTrainingZones())
@@ -35,7 +37,7 @@ export default async function ActivitiesPage() {
       qualifiedEffortsByActivityId={qualifiedEffortsByActivityId}
       today={today}
       shoeNames={Object.fromEntries(getShoeStats().map((shoe) => [shoe.gearId, shoe.name]))}
-      mapData={getMapShellData()}
+      map={{ version: getMapVersion(), clusterId: defaultCluster?.id ?? null }}
       exploreAreas={exploreAreas}
       explorePlans={explorePlans}
       exploreCompletedSince={exploreAreas.length > 0 ? getCompletedSince() : undefined}

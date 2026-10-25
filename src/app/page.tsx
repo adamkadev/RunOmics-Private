@@ -26,6 +26,8 @@ import { findNextSession, sessionCard } from '@/components/dashboard/nextSession
 import { plannedSessionKinds } from '@/components/dashboard/weekStrip'
 import { sessionHrCapBpm } from '@/domain/training/hrTarget'
 import { loadData } from '@/application/usecases/LoadData'
+import { getHeatAhead } from '@/application/usecases/GetHeatAhead'
+import { CheckInCard } from '@/components/wellness/CheckInCard'
 
 export const revalidate = 3600
 
@@ -40,7 +42,7 @@ export default async function DashboardPage() {
   const records = await getRecords()
   const mostRecentRecord = getMostRecentRecord(records)
   const todayPlannedWorkout = await getTodayPlannedWorkout(today)
-  const recentLoad = await getRecentLoad(today)
+  const recentLoad = getRecentLoad(today, trainingStatus)
   const coaching = getCoachingOverview(today)
   const weekTarget = await loadWeekTarget(today, coaching)
 
@@ -52,9 +54,11 @@ export default async function DashboardPage() {
     : todayPlannedWorkout
       ? plannedWorkoutView(todayPlannedWorkout, trainingZones)
       : null
-  // A prescribed session goes into the insight rather than suppressing it: the card is already written and paid for.
-  const aiVerdict = await getTodayInsight(trainingStatus, await todayInsightSession(today), today)
-  const celebrationTake = await getPbCelebrationInsight(mostRecentRecord)
+  const [aiVerdict, celebrationTake] = await Promise.all([
+    // A prescribed session goes into the insight rather than suppressing it: the card is already written and paid for.
+    todayInsightSession(today).then((session) => getTodayInsight(trainingStatus, session, today)),
+    getPbCelebrationInsight(mostRecentRecord),
+  ])
   const plannedWorkouts = await getPlannedWorkouts()
   const coachWorkouts = coaching?.workouts ?? []
   const nextSession = findNextSession(today, coachWorkouts, plannedWorkouts, trainingZones)
@@ -66,6 +70,7 @@ export default async function DashboardPage() {
     phaseOn: (date) => planPhaseLine(coaching?.plan ?? null, phaseRanges, date)?.phase ?? null,
     hrCapOf: (workout) => sessionHrCapBpm(workout?.hr, athlete.hrZoneBoundsBpm),
   })
+  const heat = card?.date === today && card.workout ? await getHeatAhead(today, card.workout.scheduledTime) : null
 
   return (
     <div className="flex flex-col gap-3">
@@ -74,8 +79,9 @@ export default async function DashboardPage() {
       <DashboardGreeting name={athlete.displayName} lastSyncedAt={lastSyncedAt} today={today} />
       <StaleSyncBanner lastSyncedAt={lastSyncedAt} />
 
-      <ReadinessCard status={trainingStatus} verdict={aiVerdict} load={recentLoad?.reading ?? null} />
-      <TodayBoard session={card} />
+      <ReadinessCard status={trainingStatus} verdict={aiVerdict} load={recentLoad?.reading ?? null} today={today} />
+      <TodayBoard session={card && { ...card, heat }} />
+      <CheckInCard today={today} />
       <Vo2GradeTodayRow view={getVo2Grade(today)} />
 
       <ThisWeekCard target={weekTarget} today={today} sessionKinds={sessionKinds} load={recentLoad?.reading ?? null} />

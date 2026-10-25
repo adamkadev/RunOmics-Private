@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   pull_request:
-  # security-autofix dispatches this: runs started by GITHUB_TOKEN never trigger push or pull_request.
   workflow_dispatch:
   # Weekly, for the coverage figure and to re-check main against dependency drift.
   schedule:
@@ -54,10 +53,11 @@ jobs:
         with:
           persist-credentials: false
 
+      # The npm cache stays here only: ~/.npm holds the firebase-tools that `npx -y` in test:rules would fetch again.
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: "npm"
 
       # The Firestore emulator needs Java 21; the runner ships it, not as default.
@@ -72,7 +72,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+          key: node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
 
       - name: Install dependencies
         if: steps.node-modules.outputs.cache-hit != 'true'
@@ -97,12 +97,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          fetch-depth: 2
 
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
-          cache: "npm"
+          node-version-file: .nvmrc
 
       # Shared with E2E under the same key: a hit skips `npm ci`.
       - name: Restore node_modules
@@ -110,20 +110,54 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+          key: node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
 
       - name: Install dependencies
         if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
+      # HEAD^1 is the base of a PR's merge commit; a push to main of more than one commit is audited whatever it changed.
+      - name: Check whether the lock file changed
+        id: lockfile
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$BEFORE" != "$(git rev-parse HEAD^1)" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --quiet HEAD^1 HEAD -- package-lock.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # An advisory published against an untouched lock file is Dependabot's to raise, not a reason to fail this change.
       - name: Audit production dependencies
+        if: steps.lockfile.outputs.changed != 'false'
         run: npm audit --omit=dev --audit-level=high
 
       - name: Verify no private data is committed
         run: npm run verify:private-data
 
+      # Saved from main only: a PR's own entry would serve no other branch and take room under GitHub's 10 GB.
+      - name: Restore the ESLint cache
+        id: eslint-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.cache/eslint
+          key: eslint-${{ runner.os }}-${{ hashFiles('eslint.config.mjs', 'package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            eslint-${{ runner.os }}-${{ hashFiles('eslint.config.mjs', 'package-lock.json') }}-
+
       - name: Lint
         run: npm run lint
+
+      - name: Save the ESLint cache
+        if: github.ref == 'refs/heads/main' && steps.eslint-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.cache/eslint
+          key: ${{ steps.eslint-cache.outputs.cache-primary-key }}
 
       - name: Typecheck
         run: npm run typecheck
@@ -131,7 +165,7 @@ jobs:
       - name: Check import cycles
         run: npm run check:cycles
 
-  # Two shards beside verify: a private repository's runner has two cores, and vitest leaves one idle by default.
+  # Two shards beside verify, each with a worker per core: vitest's default leaves one core idle.
   unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -148,8 +182,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
-          cache: "npm"
+          node-version-file: .nvmrc
 
       # Shared with E2E under the same key: a hit skips `npm ci`.
       - name: Restore node_modules
@@ -157,7 +190,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+          key: node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
 
       - name: Install dependencies
         if: steps.node-modules.outputs.cache-hit != 'true'
@@ -166,11 +199,11 @@ jobs:
       # Coverage doubles the suite's time, so only the weekly and manual runs collect it.
       - name: Test
         if: github.event_name == 'push' || github.event_name == 'pull_request'
-        run: npm test -- --shard=${{ matrix.shard }}/2 --maxWorkers=2
+        run: npm test -- --shard=${{ matrix.shard }}/2 --maxWorkers=100%
 
       - name: Test, with coverage
         if: github.event_name != 'push' && github.event_name != 'pull_request'
-        run: npx vitest run --maxWorkers=2 --coverage --coverage.reporter=text-summary --coverage.reporter=json-summary
+        run: npx vitest run --maxWorkers=100% --coverage --coverage.reporter=text-summary --coverage.reporter=json-summary
 
       - name: Coverage summary
         if: ${{ !cancelled() && hashFiles('coverage/coverage-summary.json') != '' }}

@@ -28,6 +28,8 @@ export interface ZoneBand {
 export interface ChartZones {
   hrMinBpm: number[] | null
   pace: { zone: ZoneNumber; fastest: number; slowest: number }[] | null
+  /** The pace zones come from a VDOT estimate: the watch gives no threshold pace. */
+  paceEstimated?: boolean
 }
 
 /** The run's own heart-rate zones come first: they are the ones the watch scored it with. */
@@ -35,13 +37,15 @@ export function chartZones(
   runZones: readonly { zone: number; minBpm: number }[] | null | undefined,
   athleteBounds: readonly number[] | null | undefined,
   pace: readonly { hrZone: number; paceMinSecPerKm: number; paceMaxSecPerKm: number }[] | null | undefined,
+  { paceEstimated = false }: { paceEstimated?: boolean } = {},
 ): ChartZones | null {
   const own = [...(runZones ?? [])].sort((a, b) => a.zone - b.zone).map((z) => z.minBpm)
   const hrMinBpm = own.length >= 5 && own.every((v) => v > 0) ? own.slice(0, 5) : athleteBounds && athleteBounds.length >= 5 ? [...athleteBounds].slice(0, 5) : null
   const paceZones = pace && pace.length > 0
     ? pace.map((z) => ({ zone: Math.min(5, Math.max(1, z.hrZone)) as ZoneNumber, fastest: z.paceMinSecPerKm, slowest: z.paceMaxSecPerKm }))
     : null
-  return hrMinBpm || paceZones ? { hrMinBpm, pace: paceZones } : null
+  if (!hrMinBpm && !paceZones) return null
+  return paceZones && paceEstimated ? { hrMinBpm, pace: paceZones, paceEstimated } : { hrMinBpm, pace: paceZones }
 }
 
 export interface Lane {
@@ -63,6 +67,8 @@ export interface Lane {
   average: number | null
   format: (v: number) => string
   bands: ZoneBand[]
+  /** Pace's grade-adjusted line, on the lane's own scale. */
+  overlay?: { values: (number | null)[]; smoothed: (number | null)[] }
 }
 
 export interface ChartStackInput {
@@ -71,6 +77,8 @@ export interface ChartStackInput {
   avgHr: number | null
   paceSamples: number[] | null
   avgPaceSecPerKm: number | null
+  /** Only for a hilly run: on the flat it would trace the pace line again. */
+  gapSamples?: number[] | null
   cadenceSamples: number[] | null
   avgCadence: number | null
   elevationProfile: number[] | null
@@ -165,17 +173,20 @@ export function buildLanes(input: ChartStackInput): Lane[] {
   }
 
   if (paceSamples) {
+    const paceClean = { min: 150, max: 900, settleKm: 0.1, distanceKm, spikeFloor: 90 }
+    const gapValues = input.gapSamples ? cleanStream(input.gapSamples, paceClean) : null
+    const overlay = gapValues ? { values: gapValues, smoothed: smoothStream(gapValues, { despike: true }) } : undefined
     push({
       key: 'pace',
       label: c.pace,
       unit: c.paceUnitHint,
       valueUnit: t.units.perKm,
-      values: cleanStream(paceSamples, { min: 150, max: 900, settleKm: 0.1, distanceKm, spikeFloor: 90 }),
+      values: cleanStream(paceSamples, paceClean),
       // Faster is up, as on every pace axis.
       reversed: paceAxis().reversed,
       despike: true,
       format: (v) => formatClock(Math.round(v)),
-      domain: (s) => niceDomain(s, 20, 60),
+      domain: (s) => niceDomain(overlay ? [...s, ...overlay.smoothed] : s, 20, 60),
       // The watch already averages each sample over about 30 s, hence "best 30 s"; an even run's samples can
       // sit above its moving pace, and then the best is left out.
       summarize: ({ average, min }) =>
@@ -185,6 +196,7 @@ export function buildLanes(input: ChartStackInput): Lane[] {
       // The Overview's moving pace, which the samples' plain mean would not match.
       recordedAverage: input.avgPaceSecPerKm,
       bands: paceBands(zones?.pace),
+      overlay,
     })
   }
 

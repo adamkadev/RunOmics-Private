@@ -40,7 +40,7 @@ describe('findNextSession', () => {
 
 const run = (date: string, km: number): ActivitySummary => ({
   id: `a:${date}`, date, dayOfWeek: '', type: 'Base', description: 'Morning run', comment: '', distanceKm: km, durationSeconds: km * 360,
-  paceSecPerKm: 360, avgHeartRate: 140, rpe: null, hrZones: [], week: 0, elevationGain: null, routeThumb: 'M10 10L40 40',
+  paceSecPerKm: 360, avgHeartRate: 140, zones: [], routeThumb: null,
 })
 
 const EASY = { title: 'Easy run', type: 'Base' as const, duration: { seconds: 3_600, estimated: false }, distanceM: 10_000, activityId: null, target: null, structure: null, hr: null }

@@ -3,6 +3,7 @@ import 'server-only'
 import { trainingHistory, isRunningActivity, type TrainingHistory } from '@/domain/training/trainingHistory'
 import { createHash } from 'crypto'
 import { autoregulationReport, controlledStep, type AutoregulationReport } from './autoregulation'
+import { controlledThresholdFacts, type ControlledThresholdFacts } from './controlledThreshold'
 import type { Activity } from '@/domain/activity/types'
 import { sessionExecution, type SessionExecution } from '@/domain/activity/sessionExecution'
 import { raceExecution, type RaceExecution } from '@/domain/activity/raceExecution'
@@ -16,15 +17,19 @@ import {
 } from '@/domain/activity/raceResult'
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan } from '@/domain/coaching/types'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
-import type { AthleteProfile, InjuryHistory } from '@/infrastructure/repositories/JsonAthleteRepository'
+import type { AthleteProfile, InjuryHistory, TrainingBreak } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { niggleEpisodes, shiftDate, type CheckIn, type NiggleEpisode } from '@/domain/wellness/checkIn'
 import type { Trajectories } from '@/domain/training/trajectories'
 import type { GoalYear, PbYear, UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
+import { otherTrainingFacts, type CrossTrainingSession, type OtherTrainingFacts } from '@/domain/activity/crossTraining'
 
 const RECENT_DAYS = 28
+const NIGGLE_DAYS = 84
+const BREAK_DAYS = 365
 const RACE_DISTANCE_TOLERANCE = 0.1
 
 export interface CompactActivity {
@@ -63,6 +68,8 @@ export interface CoachingContext {
     runs28Days: number
   }
   gaps: { daysSinceLastRun: number | null; longestGap28Days: number }
+  /** Strength, cycling and the rest over 28 days, outside every running figure; absent without any. */
+  otherTraining?: OtherTrainingFacts
   load: {
     ctl: number | null
     atl: number | null
@@ -87,6 +94,13 @@ export interface CoachingContext {
     heightCm: number | null
     trainingZones: TrainingZonesData | null
     injuryHistory: InjuryHistory | null
+    /** Typed into athlete.json; absent when it has none. */
+    trainingBreaks?: TrainingBreak[]
+  }
+  /** The morning check-ins; absent when they could not be read, which is not the same as none written. */
+  wellness?: {
+    checkIns: ({ date: string } & CheckIn)[]
+    niggles: NiggleEpisode[]
   }
   trajectories: Trajectories | null
   goals: GoalYear[]
@@ -95,6 +109,8 @@ export interface CoachingContext {
   racePredictions: GarminRacePredictionsData['latest'] | null
   adherence: { prescribed: number; completed: number; percent: number } | null
   currentPlan: CoachingPlan | null
+  /** Null without an LTHR to set a ceiling by. */
+  controlledThreshold: ControlledThresholdFacts | null
   /** Proposals the athlete has not accepted; present only while the plan prescribes controlled threshold sessions. */
   autoregulation?: AutoregulationReport
 }
@@ -117,6 +133,9 @@ export interface CoachingContextInput {
   activityNotes?: Map<string, { note: string; tags: string[] }>
   /** The plans the current one replaced, newest first, so a session before a block boundary is still read. */
   archivedPlans?: CoachingPlan[]
+  /** Keyed by local date; absent when neither Firestore nor its backup could be read. */
+  wellness?: ReadonlyMap<string, CheckIn>
+  crossTraining?: CrossTrainingSession[]
 }
 
 function dayNumber(date: string): number {
@@ -189,6 +208,24 @@ function annotation(note: { note: string; tags: string[] } | undefined): Partial
   }
 }
 
+function recentBreaks(breaks: TrainingBreak[] | undefined, referenceDate: string): Partial<CoachingContext['athlete']> {
+  if (breaks === undefined) return {}
+  const since = shiftDate(referenceDate, -BREAK_DAYS)
+  return { trainingBreaks: breaks.filter((pause) => pause.end >= since && pause.start <= referenceDate) }
+}
+
+/** Ends on the reference date, so a block reproduced for an earlier day never reads a later morning. */
+function wellnessFacts(entries: ReadonlyMap<string, CheckIn> | undefined, referenceDate: string): Pick<CoachingContext, 'wellness'> {
+  if (entries === undefined) return {}
+  const within = (days: number) => [...entries].filter(([date]) => date <= referenceDate && date > shiftDate(referenceDate, -days))
+  return {
+    wellness: {
+      checkIns: within(RECENT_DAYS).sort(([a], [b]) => b.localeCompare(a)).map(([date, entry]) => ({ date, ...entry })),
+      niggles: niggleEpisodes(new Map(within(NIGGLE_DAYS))),
+    },
+  }
+}
+
 function raceFacts(activity: Activity, official: OfficialRaceResult | undefined): Partial<CompactActivity> {
   if (activity.type !== 'Race') return {}
   const performance = resolvePerformance(activity, official ?? null)
@@ -207,11 +244,13 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
   const last7 = within(7)
   const garmin = input.trainingStatus
   const officialResults = officialResultsByActivityId(input.officialResults)
+  const history = trainingHistory(input.activities, referenceDate)
+  const otherTraining = otherTrainingFacts(input.crossTraining ?? [], referenceDate)
 
   return {
     schemaVersion: 1,
     referenceDate,
-    trainingHistory: trainingHistory(input.activities, referenceDate),
+    trainingHistory: history,
     recentActivities: recent.map((activity) => ({
       id: activity.id,
       date: activity.date.slice(0, 10),
@@ -234,6 +273,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       runs28Days: recent.length,
     },
     gaps: gapSummary(recent, referenceDate),
+    ...(otherTraining ? { otherTraining } : {}),
     load: {
       ctl: garmin?.ctl ?? null,
       atl: garmin?.atl ?? null,
@@ -263,7 +303,9 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       trainingZones: input.trainingZones,
       // Null means nobody has asked, which is not the same as none.
       injuryHistory: input.athlete.injuryHistory ?? null,
+      ...recentBreaks(input.athlete.trainingBreaks, referenceDate),
     },
+    ...wellnessFacts(input.wellness, referenceDate),
     trajectories: input.trajectories,
     goals: input.goals,
     personalBests: input.personalBests,
@@ -277,6 +319,11 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
     racePredictions: input.racePredictions?.latest ?? null,
     adherence: adherence(input.plan, input.activities, referenceDate),
     currentPlan: input.plan,
+    controlledThreshold: controlledThresholdFacts(
+      input.athlete.lthrBpm,
+      input.trainingZones?.thresholdPaceSecPerKm ?? input.athlete.thresholdPaceSecPerKm,
+      history.best4WeekAverageKm,
+    ),
     ...(input.plan?.weeks.some((week) => week.workouts.some((workout) => controlledStep(workout) !== null))
       ? { autoregulation: autoregulationReport(input.activities, [input.plan, ...(input.archivedPlans ?? [])], referenceDate, input.officialResults) }
       : {}),

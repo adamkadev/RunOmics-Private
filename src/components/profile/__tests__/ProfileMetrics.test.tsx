@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AthleteStats } from '@/components/profile/ProfileAthleteStats'
+import { FitnessAgeCard } from '@/components/profile/FitnessAgeCard'
 import { ProfileHrZones, windowTotalLabel, zoneSegments } from '@/components/profile/ProfileHrZones'
 import { t } from '@/i18n'
 
@@ -40,48 +41,64 @@ describe('capability-driven athlete metrics', () => {
 
     expect(screen.getByText(a.vma)).toBeInTheDocument()
     expect(screen.queryByText(a.thresholdPace)).not.toBeInTheDocument()
-    expect(screen.queryByText(t.profile.athlete.notSet)).not.toBeInTheDocument()
   })
 
-  it('shows the heart row, then threshold pace, VMA and fitness age, in one card of three columns', () => {
-    render(
-      <AthleteStats
-        athlete={{ restingHrBpm: 45, lthrBpm: 179, maxHrBpm: 200, vmaKmh: 16.3, thresholdPaceSecPerKm: 261, fitnessAgeYrs: 18.2, age: 29 }}
-      />
-    )
+  it('shows the heart row, then threshold pace and VMA, in one card of three columns', () => {
+    render(<AthleteStats athlete={{ restingHrBpm: 45, lthrBpm: 179, maxHrBpm: 200, vmaKmh: 16.3, thresholdPaceSecPerKm: 261 }} />)
 
     const cells = screen.getAllByTestId('athlete-stat')
-    expect(cells.map((cell) => cell.firstElementChild?.textContent)).toEqual([
-      a.restingHr, a.thresholdHr, a.maxHr, a.thresholdPace, a.vma, a.fitnessAge,
-    ])
+    expect(cells.map((cell) => cell.firstElementChild?.textContent)).toEqual([a.restingHr, a.thresholdHr, a.maxHr, a.thresholdPace, a.vma])
     expect(cells.map((cell) => cell.lastElementChild?.textContent)).toEqual([
-      `45${t.units.bpm}`, `179${t.units.bpm}`, `200${t.units.bpm}`, `4:21${t.units.perKm}`, `16.3${t.units.kmh}`, `18${a.ofAge(29)}`,
+      `45${t.units.bpm}`, `179${t.units.bpm}`, `200${t.units.bpm}`, `4:21${t.units.perKm}`, `16.3${t.units.kmh}`,
     ])
-    expect(a.ofAge(29)).toBe('vs 29')
     const card = screen.getByTestId('athlete-stats')
     expect(card.className).toContain('grid-cols-3')
     expect(card.textContent).not.toMatch(/estimated|zones\)/i)
-    expect(screen.queryByText(a.vo2max)).not.toBeInTheDocument()
     expect(screen.queryByRole('button')).toBeNull()
   })
 
   it('draws a line between the rows and between the cells of each', () => {
-    render(<AthleteStats athlete={{ restingHrBpm: 45, lthrBpm: 179, maxHrBpm: 200, vmaKmh: 16.3, thresholdPaceSecPerKm: 261, fitnessAgeYrs: 18 }} />)
+    render(<AthleteStats athlete={{ restingHrBpm: 45, lthrBpm: 179, maxHrBpm: 200, vmaKmh: 16.3, thresholdPaceSecPerKm: 261 }} />)
     const cells = screen.getAllByTestId('athlete-stat')
-    expect(cells.map((cell) => cell.className.includes('border-l'))).toEqual([false, true, true, false, true, true])
-    expect(cells.map((cell) => cell.className.includes('border-t'))).toEqual([false, false, false, true, true, true])
+    expect(cells.map((cell) => cell.className.includes('border-l'))).toEqual([false, true, true, false, true])
+    expect(cells.map((cell) => cell.className.includes('border-t'))).toEqual([false, false, false, true, true])
   })
 
-  it('gives a tile alone on the last row the whole row', () => {
-    render(<AthleteStats athlete={{ restingHrBpm: 76, maxHrBpm: 206, vmaKmh: 10.6, fitnessAgeYrs: 22, age: 25 }} />)
-    const cells = screen.getAllByTestId('athlete-stat')
-    expect(cells).toHaveLength(4)
-    expect(cells.map((cell) => cell.className.includes('col-span-3'))).toEqual([false, false, false, true])
+  it('gives the last tile the rest of its row', () => {
+    const spans = () => screen.getAllByTestId('athlete-stat').map((cell) => cell.className.match(/col-span-\d/)?.[0] ?? null)
+    const { unmount } = render(<AthleteStats athlete={{ restingHrBpm: 45, lthrBpm: 179, maxHrBpm: 200, vmaKmh: 16.3, thresholdPaceSecPerKm: 261 }} />)
+    expect(spans()).toEqual([null, null, null, null, 'col-span-2'])
+    unmount()
+    render(<AthleteStats athlete={{ restingHrBpm: 76, lthrBpm: 165, maxHrBpm: 206, vmaKmh: 10.6 }} />)
+    expect(spans()).toEqual([null, null, null, 'col-span-3'])
   })
 
   it('leaves a full last row as thirds', () => {
-    render(<AthleteStats athlete={{ restingHrBpm: 45, lthrBpm: 179, maxHrBpm: 200, vmaKmh: 16.3, thresholdPaceSecPerKm: 261, fitnessAgeYrs: 18 }} />)
-    expect(screen.getAllByTestId('athlete-stat').some((cell) => cell.className.includes('col-span-3'))).toBe(false)
+    render(<AthleteStats athlete={{ restingHrBpm: 76, maxHrBpm: 206, vmaKmh: 10.6 }} />)
+    expect(screen.getAllByTestId('athlete-stat').some((cell) => /col-span/.test(cell.className))).toBe(false)
+  })
+})
+
+describe('FitnessAgeCard', () => {
+  const trend = [
+    { date: '2026-09-28', years: 19.6 },
+    { date: '2026-10-05', years: 18.6 },
+    { date: '2026-10-19', years: 18.2 },
+  ]
+
+  it('reads the fitness age against the real age, the potential beside it, and the year as a line', () => {
+    render(<FitnessAgeCard view={{ now: 21.6, age: 25, achievable: 18, trend }} />)
+    expect(screen.getByTestId('fitness-age-value').textContent).toBe(`22${a.ofAge(25)}`)
+    expect(screen.getByTestId('fitness-age-card').textContent).toContain(a.fitnessAgeBand.younger(3))
+    expect(screen.getByTestId('fitness-age-achievable').textContent).toBe(`${a.achievableFitnessAge} 18`)
+    expect(screen.getByTestId('fitness-age-real')).toBeInTheDocument()
+  })
+
+  it('says on par, and draws no line without a history', () => {
+    render(<FitnessAgeCard view={{ now: 21.6, age: 22, achievable: null, trend: [] }} />)
+    expect(screen.getByTestId('fitness-age-card').textContent).toContain(a.fitnessAgeBand.onPar)
+    expect(screen.queryByTestId('fitness-age-achievable')).toBeNull()
+    expect(screen.queryByTestId('fitness-age-trend')).toBeNull()
   })
 })
 

@@ -19,6 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from garmin.athlete import fetch_athlete_metrics, fetch_personal_athlete_metrics, record_athlete_history, vo2max_metrics
 from data_directory import get_data_dir, get_fit_cache_dir
 from garmin.client import GarminClient
+from garmin.cross_training import sync_cross_training
 from garmin.errors import GarminAPIError, GarminAuthError
 from garmin.personal_api import KEY_PAGE, PersonalApiClient
 from garmin.fitness_age_history import sync_fitness_age_history
@@ -181,7 +182,8 @@ def main() -> int:
                     continue
 
                 route_info = f"{len(activity_data.route)} pts" if activity_data.route else "no GPS"
-                hr_info = f"avg HR {activity_data.avg_heart_rate}" if activity_data.avg_heart_rate else "no HR"
+                # The Actions log is world-readable: whether HR was recorded, never its value.
+                hr_info = "HR" if activity_data.avg_heart_rate else "no HR"
                 status = f"{activity_data.type}, {activity_data.distance_km} km, {hr_info}, {route_info}"
 
                 if args.dry_run:
@@ -322,15 +324,17 @@ def _post_save_steps(
     own FIT readings carry on.
     """
     recovery_source: ActivitySource = personal or connect
+    cross: list[Step] = [("cross-training", lambda: sync_cross_training(recovery_source, store.get_existing_ids()))]
     athlete: list[Step] = [("athlete metrics", lambda: _sync_athlete_metrics(connect, personal))]
     recovery: list[Step] = [("recovery history", lambda: sync_recovery_history(recovery_source))]
     if connect is None:
         # The runs' own FIT readings keep VO2max current until Connect is back:
         # the series first, as the athlete's VO2max is read from it.
-        return [("VO2max history", lambda: sync_vo2max_from_runs(store.all_activities())), *athlete, *recovery]
+        return [*cross, ("VO2max history", lambda: sync_vo2max_from_runs(store.all_activities())), *athlete, *recovery]
 
     client = connect
     steps: list[Step] = [
+        *cross,
         ("upcoming races", lambda: write_upcoming_races(fetch_upcoming_races(client))),
         *athlete,
         ("fitness age history", lambda: sync_fitness_age_history(client)),

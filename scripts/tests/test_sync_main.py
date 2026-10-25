@@ -17,6 +17,7 @@ from repository.json_store import JsonActivityStore
 _STEP_RESULTS = {
     "fetch_planned_workouts": ([], set()),
     "write_planned_workouts": None,
+    "sync_cross_training": 0,
     "fetch_upcoming_races": [],
     "write_upcoming_races": None,
     "fetch_athlete_metrics": {},
@@ -35,7 +36,8 @@ _STEP_RESULTS = {
 # Run only with a Personal API key.
 _PERSONAL_STEP_RESULTS = {"fetch_personal_athlete_metrics": {}, "sync_vo2max_from_runs": 0}
 _PERSONAL_ONLY_STEPS = [
-    "sync_vo2max_from_runs", "fetch_personal_athlete_metrics", "record_athlete_history", "sync_recovery_history",
+    "sync_cross_training", "sync_vo2max_from_runs", "fetch_personal_athlete_metrics", "record_athlete_history",
+    "sync_recovery_history",
 ]
 
 

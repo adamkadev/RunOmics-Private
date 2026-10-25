@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { buildCoachingOverview, type CoachingOverview, type PrescriptionView } from '@/application/coaching/GetCoachingView'
-import type { ActivitySummary, PlannedWorkout } from '@/domain/activity/types'
+import type { PlannedWorkout } from '@/domain/activity/types'
+import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
+import type { PlanRun } from '../planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
@@ -15,19 +17,14 @@ import { WeekView } from '../WeekView'
 const TODAY = '2026-09-09'
 const WEEK_START = new Date(2026, 8, 7)
 
-function activity(overrides: Partial<ActivitySummary> & Pick<ActivitySummary, 'id' | 'date' | 'type'>): ActivitySummary {
+function activity(overrides: Partial<PlanRun> & Pick<PlanRun, 'id' | 'date' | 'type'>): PlanRun {
   return {
-    dayOfWeek: 'Monday',
     description: '',
-    comment: '',
     distanceKm: 5,
     durationSeconds: 1_500,
     paceSecPerKm: 300,
     avgHeartRate: 160,
-    rpe: 5,
-    hrZones: [],
-    week: 202637,
-    elevationGain: 12,
+    zonePercents: [],
     ...overrides,
   }
 }
@@ -65,19 +62,20 @@ const ZONES: TrainingZonesData = {
 interface Options {
   coaching?: CoachingOverview
   planned?: PlannedWorkout[]
-  activities?: ActivitySummary[]
+  activities?: PlanRun[]
   nextRace?: UpcomingRace | null
   planPhaseRanges?: PlanPhaseRange[]
   trainingZones?: TrainingZonesData | null
   selected?: string
   onSelectDate?: (date: string) => void
+  others?: CrossTrainingEntry[]
 }
 
 // The selected day lives in PlanClient's URL; a plain state stands in for it.
 function Harness(options: Options) {
   const [selected, setSelected] = useState(options.selected ?? TODAY)
   const activities = options.activities ?? []
-  const byDate = new Map<string, ActivitySummary[]>()
+  const byDate = new Map<string, PlanRun[]>()
   for (const a of activities) byDate.set(a.date, [...(byDate.get(a.date) ?? []), a])
   return (
     <WeekView
@@ -88,6 +86,7 @@ function Harness(options: Options) {
         options.onSelectDate?.(date)
       }}
       byDate={byDate}
+      byDateOther={new Map((options.others ?? []).map((entry) => [entry.date, [entry]]))}
       byDatePlanned={new Map((options.planned ?? []).map((p) => [p.date, p]))}
       byDateCoach={options.coaching ? byDateCoach(options.coaching) : undefined}
       coaching={options.coaching ?? null}
@@ -118,6 +117,7 @@ describe('the phase card', () => {
     expect(card.textContent).toContain(`${weekOf.before} 1 ${weekOf.after}`)
     // Sep 9 to Nov 29 is 81 days: 12 weeks.
     expect(card.textContent).toContain(t.plan.phase.raceInWeeks('10K', 12))
+    expect(card.getAttribute('href')).toBeNull()
   })
 
   it('draws a segment per week of the phase, the weeks so far in the accent', () => {
@@ -137,6 +137,7 @@ describe('the phase card', () => {
     // Aug 31 to the block's end on Oct 4: five weeks, this the second.
     const weekOf = t.plan.phase.weekOf(5)
     expect(card.textContent).toBe(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 2 ${weekOf.after}`)
+    expect(card.getAttribute('href')).toBe('/plan/checkpoint')
   })
 
   it("reads Garmin's phases and next race without coaching", () => {
@@ -237,6 +238,7 @@ describe('a session still to come', () => {
     expect(within(card).getByRole('heading').textContent).toBe('3 × 8 min threshold')
     expect(card.textContent).toContain(`1:00 ${t.units.hour}`)
     expect(card.textContent).toContain(t.plan.session.targetPace('4:25–4:30'))
+    expect(within(card).getByTestId('plan-status').textContent).toBe(t.coaching.states.prescribed)
   })
 
   it('titles it by its set under the naming rules, its type left to the eyebrow', () => {
@@ -316,7 +318,7 @@ describe('a day that is over', () => {
   it('reads planned against done, with a way into the run', async () => {
     const user = userEvent.setup()
     renderWeek({
-      activities: [activity({ ...TEMPO, hrZones: [{ zone: 3, seconds: 1_200, percent: 68, minBpm: 150, maxBpm: 165 }] })],
+      activities: [activity({ ...TEMPO, zonePercents: [null, null, 68] })],
       planned: [{ date: '2026-09-07', name: 'Tempo', type: 'Tempo', distanceM: 5_000 }],
     })
 
@@ -421,5 +423,19 @@ describe('a rest day', () => {
 
     expect(screen.getByTestId('plan-rest-day')).toBeInTheDocument()
     expect(screen.queryByTestId('coming-up')).toBeNull()
+  })
+})
+
+describe('other training', () => {
+  const strength: CrossTrainingEntry = { id: 'x1', date: '2026-09-08', kind: 'strength', durationSeconds: 2700, distanceKm: null, sets: 12 }
+
+  it('puts a chip on its day and lists it under the day, leaving the run and the week alone', () => {
+    renderWeek({ activities: [TEMPO, RACE], others: [strength], selected: '2026-09-08' })
+
+    expect(within(day('2026-09-08')).getByTestId('day-cross-training')).toBeTruthy()
+    expect(day('2026-09-08').getAttribute('aria-label')).toContain(t.crossTraining.kinds.strength)
+    expect(within(day('2026-09-07')).queryByTestId('day-cross-training')).toBeNull()
+    expect(bar('2026-09-08').dataset.barState).toBe('done')
+    expect(within(screen.getByTestId('plan-cross-training')).getByTestId('cross-training-row').textContent).toContain(t.crossTraining.sets(12))
   })
 })

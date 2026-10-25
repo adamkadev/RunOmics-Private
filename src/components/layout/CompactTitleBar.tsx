@@ -132,12 +132,34 @@ export function CompactTitleBar() {
 
   useEffect(() => {
     let frame = 0
+    // Set by a change in <main> or a resize: the page's elements are looked up again on the next frame, not every one.
+    let stale = true
     let heading: HTMLElement | null = null
     // The large title's top edge at rest, in page coordinates.
     let headingRest = 0
     // Each subtitle line with its top edge at rest, in page coordinates.
     let subtitles: { el: HTMLElement; restTop: number }[] = []
     const faded = new Set<HTMLElement>()
+    let backLink: HTMLElement | null = null
+    let pageActions: HTMLElement[] = []
+    let segmentsEl: HTMLElement | null = null
+    let inHeader = false
+    let segmentsRead: BarSegments | null = null
+    let strips: HTMLElement[] = []
+    let labels: HTMLElement[] = []
+    let edge: HTMLElement | null = null
+    let statusBar = 0
+    // What React last got, so a scroll frame that changes nothing renders nothing.
+    let lastShown: boolean | null = null
+    let lastSegments: BarSegments | null | undefined
+    const wideQuery = window.matchMedia(WIDE)
+    let wide = wideQuery.matches
+
+    const show = (next: boolean) => {
+      if (next === lastShown) return
+      lastShown = next
+      setShown(next)
+    }
 
     const clear = () => {
       if (heading) restTitle(heading)
@@ -146,21 +168,20 @@ export function CompactTitleBar() {
       faded.clear()
     }
 
-    const measure = () => {
-      frame = 0
+    const refresh = () => {
+      stale = false
       const current = document.querySelector<HTMLElement>('main h1')
       if (current !== heading) {
+        const rest = current ? current.getBoundingClientRect().top + window.scrollY : 0
+        const lines = current ? subtitleOf(current).map((el) => ({ el, restTop: el.getBoundingClientRect().top + window.scrollY })) : []
         clear()
         heading = current
-        subtitles = []
+        headingRest = rest
+        subtitles = lines
         setTitle(current?.dataset.barTitle || current?.textContent?.trim() || null)
-        if (current) {
-          headingRest = current.getBoundingClientRect().top + window.scrollY
-          subtitles = subtitleOf(current).map((el) => ({ el, restTop: el.getBoundingClientRect().top + window.scrollY }))
-        }
       }
-      const backLink = document.querySelector<HTMLElement>('main [data-bar-back]')
-      const pageActions = [...document.querySelectorAll<HTMLElement>('main [data-bar-action]')]
+      backLink = document.querySelector<HTMLElement>('main [data-bar-back]')
+      pageActions = [...document.querySelectorAll<HTMLElement>('main [data-bar-action]')]
       backRef.current = backLink
       actionsRef.current = pageActions
       setBack(backLink ? nameOf(backLink) : null)
@@ -171,18 +192,13 @@ export function CompactTitleBar() {
         busy: el.hasAttribute('data-bar-busy'),
         disabled: el.hasAttribute('disabled'),
       }))
-      // Only a change re-renders: this runs on every scroll frame.
       setActions((prev) => (JSON.stringify(prev) === JSON.stringify(read) ? prev : read))
-      const segmentsEl = document.querySelector<HTMLElement>('main [data-bar-segments]')
+      segmentsEl = document.querySelector<HTMLElement>('main [data-bar-segments]')
       const segmentButtons = segmentsEl ? [...segmentsEl.querySelectorAll<HTMLElement>('button')] : []
       segmentsRef.current = segmentButtons
-      // Mirrored before the soft edge blurs the control, never beside it; a control in the large title's
-      // header is the bar's from the moment the bar collapses in, as the title is.
-      const statusBarNow = probeRef.current?.offsetHeight ?? 0
-      const inHeader = !!segmentsEl && !!current?.closest('header')?.contains(segmentsEl)
-      const underBar = !!segmentsEl && (inHeader || segmentsEl.getBoundingClientRect().bottom <= statusBarNow + BAR_HEIGHT + MIRROR_LEAD)
+      inHeader = !!segmentsEl && !!heading?.closest('header')?.contains(segmentsEl)
       const stepper = segmentsEl?.dataset.barSegments === 'stepper'
-      const readSegments: BarSegments | null = segmentsEl && underBar
+      segmentsRead = segmentsEl
         ? {
             kind: stepper ? 'stepper' : 'segments',
             label: segmentsEl.getAttribute('aria-label') ?? '',
@@ -195,16 +211,32 @@ export function CompactTitleBar() {
             value: stepper ? (segmentsEl.querySelector<HTMLElement>('[data-bar-value]')?.textContent?.trim() ?? '') : '',
           }
         : null
-      setSegments((prev) => (JSON.stringify(prev) === JSON.stringify(readSegments) ? prev : readSegments))
-      if (!heading || window.matchMedia(WIDE).matches) {
+      strips = [...document.querySelectorAll<HTMLElement>('main [data-sticky-strip]')]
+      labels = [...document.querySelectorAll<HTMLElement>('main [data-bar-fade]')]
+      edge = scrollEdge()
+      statusBar = probeRef.current?.offsetHeight ?? 0
+    }
+
+    // Every read before the first write: a read after a style write makes WebKit lay the page out again, mid-frame.
+    const measure = () => {
+      frame = 0
+      if (stale) refresh()
+      const scroll = window.scrollY
+      const barBottom = statusBar + BAR_HEIGHT
+      // Mirrored before the soft edge blurs the control, never beside it; a control in the large title's
+      // header is the bar's from the moment the bar collapses in, as the title is.
+      const underBar = !!segmentsEl && (inHeader || segmentsEl.getBoundingClientRect().bottom <= barBottom + MIRROR_LEAD)
+      const mirrored = underBar ? segmentsRead : null
+      if (mirrored !== lastSegments) {
+        lastSegments = mirrored
+        setSegments((prev) => (JSON.stringify(prev) === JSON.stringify(mirrored) ? prev : mirrored))
+      }
+      if (!heading || wide) {
         clear()
-        setShown(false)
+        show(false)
         return
       }
 
-      const scroll = window.scrollY
-      const statusBar = probeRef.current?.offsetHeight ?? 0
-      const barBottom = statusBar + BAR_HEIGHT
       const atTop = scroll <= SCROLL_TOP_TOLERANCE
       // Sooner where the large title meets the status bar first. A title under a hero (`data-title-late`,
       // the activity's map) is on screen well past 24 pt, so the bar waits until the title reaches it.
@@ -212,18 +244,20 @@ export function CompactTitleBar() {
         ? Math.max(SCROLL_TOP_TOLERANCE + 1, headingRest - barBottom)
         : Math.max(SCROLL_TOP_TOLERANCE + 1, Math.min(COLLAPSE_SCROLL, headingRest - statusBar - SAMPLER))
       const collapsed = !atTop && scroll >= collapseAt
-      setShown(collapsed)
-
+      // At rest is where "at rest" is read, should the page above it move.
+      const restNow = atTop ? heading.getBoundingClientRect().top + scroll : headingRest
       // The scroll edge grows by the sticky strip stuck under the bar (its
       // own height, whichever it is), so the rows dissolve under it too.
       const stuck = collapsed
-        ? [...document.querySelectorAll<HTMLElement>('main [data-sticky-strip]')].find((el) => {
+        ? strips.find((el) => {
             const box = el.getBoundingClientRect()
             return box.top <= barBottom + 1 && box.bottom > barBottom
           })
         : undefined
       const stickyH = stuck ? `${stuck.offsetHeight}px` : ''
-      const edge = scrollEdge()
+      const labelOpacity = labels.map((el) => (collapsed ? (el.getBoundingClientRect().top - barBottom) / LABEL_FADE : 1))
+
+      show(collapsed)
       if (edge && edge.style.getPropertyValue(STICKY_H_VAR) !== stickyH) {
         if (stickyH) edge.style.setProperty(STICKY_H_VAR, stickyH)
         else edge.style.removeProperty(STICKY_H_VAR)
@@ -231,8 +265,7 @@ export function CompactTitleBar() {
 
       if (atTop) {
         restTitle(heading)
-        // At rest is where "at rest" is read, should the page above it move.
-        headingRest = heading.getBoundingClientRect().top + window.scrollY
+        headingRest = restNow
       } else {
         // Whole until the bar collapses in, then a cross-fade: a large title left half-faded reads as blurred.
         heading.style.transition = `opacity ${TITLE_FADE_MS}ms ease-out`
@@ -268,34 +301,62 @@ export function CompactTitleBar() {
         fadeTo(el, 1 - scroll / Math.max(restTop - barBottom, collapseAt))
       }
 
-      for (const el of document.querySelectorAll<HTMLElement>('main [data-bar-fade]')) {
-        const opacity = collapsed ? (el.getBoundingClientRect().top - barBottom) / LABEL_FADE : 1
-        if (opacity >= 1 && !faded.has(el)) continue
+      labels.forEach((el, i) => {
+        const opacity = labelOpacity[i]!
+        if (opacity >= 1 && !faded.has(el)) return
         faded.add(el)
         fadeTo(el, opacity)
-      }
+      })
     }
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure)
+    }
+    const restale = () => {
+      stale = true
+      schedule()
+    }
+    wideQuery.onchange = (event) => {
+      wide = event.matches
+      schedule()
     }
 
     // A client page swaps its content (a tab, a loaded list) without a route
     // change, so the heading is looked up again whenever <main> changes.
     const main = document.querySelector('main')
-    const observer = main ? new MutationObserver(schedule) : null
-    // The sync's busy and disabled states are attributes on its button.
-    if (main) observer!.observe(main, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['data-bar-busy', 'disabled', 'aria-selected', 'aria-checked'] })
+    const observer = main ? new MutationObserver(restale) : null
+    // The sync's busy and disabled states are attributes on its button; the rest are what the bar finds or reads.
+    if (main) {
+      observer!.observe(main, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: [
+          'data-bar-busy',
+          'disabled',
+          'aria-selected',
+          'aria-checked',
+          'aria-label',
+          'data-bar-back',
+          'data-bar-action',
+          'data-bar-segments',
+          'data-sticky-strip',
+          'data-bar-fade',
+        ],
+      })
+    }
     // Goals' year changes as text, not an attribute: characterData covers it.
 
     schedule()
     window.addEventListener('scroll', schedule, { passive: true })
-    window.addEventListener('resize', schedule)
+    window.addEventListener('resize', restale)
     return () => {
       if (frame) cancelAnimationFrame(frame)
       observer?.disconnect()
+      wideQuery.onchange = null
       clear()
       window.removeEventListener('scroll', schedule)
-      window.removeEventListener('resize', schedule)
+      window.removeEventListener('resize', restale)
     }
   }, [pathname])
 

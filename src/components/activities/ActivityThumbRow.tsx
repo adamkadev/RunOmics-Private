@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { PrBadge } from './PrBadge'
 import { RouteThumb } from '@/components/ui/RouteThumb'
+import { routeThumbPath } from '@/domain/activity/routeThumb'
 import { TypeDot } from '@/components/ui/TypeDot'
 import { Unit } from '@/components/ui/Stat'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
@@ -60,7 +61,7 @@ export function ActivityThumbRow({ activity: a, qualifiedEfforts = [], type = a.
         variant === 'card' ? 'gap-3.5 px-4 py-3 hover:bg-[var(--surface-2)]' : 'min-h-16 gap-3 px-4 py-2.5',
       )}
     >
-      <RouteThumb path={a.routeThumb} type={type} size={inset ? 44 : 48} />
+      <RouteThumb path={routeThumbPath(a.routeThumb)} type={type} size={inset ? 44 : 48} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.75">
         <span className="flex min-w-0 items-center gap-1.5">
           <span

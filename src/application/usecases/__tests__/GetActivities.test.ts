@@ -68,11 +68,8 @@ describe('getActivitySummaries', () => {
       durationSeconds: 3000,
       paceSecPerKm: 300,
       avgHeartRate: 150,
-      rpe: 4,
-      routeThumb: expect.stringMatching(/^M/),
-      hrZones: [{ zone: 2, seconds: 3000 }],
-      week: 202630,
-      elevationGain: 40,
+      routeThumb: expect.any(String),
+      zones: [0, 3000],
     })
   })
 

@@ -160,10 +160,14 @@ export const BOOTSTRAP_PLAN_RESPONSE_SCHEMA = {
   required: ['name', 'focus', 'weeks'],
 }
 
+/** Only with sessions to read, so the prompt of an athlete who does none stays as it was. */
+const OTHER_TRAINING_RULE = ' otherTraining lists the non-running sessions (strength, cycling, swimming…) of the last 28 days: they are in none of the running volume, load or gap figures. Read them as fatigue on the days they fall and as the athlete\'s own injury-prevention work, never as running volume.'
+
 export function contextPrompt(context: CoachingContext): string {
   return `When currentPlan.trainingPreferences is present, preserve its runsPerWeek as normal desired frequency and availableWeekdays as scheduling opportunities. Explain exceptional frequency reductions without resetting the normal preference. Historical capacity is previously tolerated training, not a mandatory next-week mileage. Weigh trainingHistory as a whole rather than the 28-day mean alone: a month interrupted by absence rather than by fatigue, illness or injury depresses recentWeeklyAverageKm without reducing what the athlete can hold, and recent7DaysKm then says more about today than the month does. Where load, gaps and adaptation look sound, start from the most recent sustained week and rebuild toward best4WeekAverageKm rather than anchoring on the depressed mean. Do not turn recent inconsistency into a volume or frequency ceiling: an athlete who sustained around 50–55 km/week on five runs need not be capped at 30–35 km/week on four runs. Equally, a single historical peak is not a prescription, and extra weekly volume belongs in easy aerobic running, never in longer threshold repetitions.
-When an activity carries a performance object, source precedence is already resolved: those figures are the race performance and garminMeasured holds the raw device reading, which must never be quoted as the race result. Structured coaching context:\n${JSON.stringify(context)}`
+When an activity carries a performance object, source precedence is already resolved: those figures are the race performance and garminMeasured holds the raw device reading, which must never be quoted as the race result.${context.otherTraining ? OTHER_TRAINING_RULE : ''} Structured coaching context:\n${JSON.stringify(context)}`
 }
+
 
 export function bootstrapEventPrompt(event: BootstrapRequest['tuneUpEvents'][number]): Record<string, unknown> {
   return { ...event, ...raceTargetFacts(event), ...(hasCoursePacing(event) ? { pacingMode: 'course_aware', goalPaceMeaning: 'average_over_entire_course_not_constant_pace' } : {}) }

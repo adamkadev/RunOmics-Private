@@ -4,6 +4,7 @@ import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepo
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { t } from '@/i18n'
 import { loadData } from '@/application/usecases/LoadData'
+import { isSitePrivate } from '@/lib/siteAccess'
 
 export const metadata = {
   title: t.pages.settings.title,
@@ -22,6 +23,7 @@ export default async function SettingsPage() {
       device={deviceName ? { name: deviceName } : undefined}
       body={{ heightCm, weightKg }}
       zones={{ lthrBpm, maxHrBpm }}
+      privateSite={isSitePrivate(process.env)}
     />
   )
 }

@@ -4,12 +4,13 @@ import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
-import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { SectionDivider } from '@/components/ui/SectionLabel'
-import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
+import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
+import { loadAuth } from '@/lib/loadAuth'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { SIGN_IN_PATH, endSiteSession, replacePage } from '@/lib/siteSession'
 import { formatRelativeAgo } from '@/lib/formatters'
+import { useMounted } from '@/lib/useMounted'
 import { t } from '@/i18n'
 import { BackButton } from '@/components/ui/BackButton'
 import { Button } from '@/components/ui/Button'
@@ -42,12 +43,15 @@ interface Props {
   device?: SyncDevice
   body?: Body
   zones?: Zones
+  privateSite?: boolean
 }
 
 export const ATHLETE_HREF = '/athlete'
 
-export function SettingsClient({ lastSyncedAt, activityCount, device, body, zones }: Props) {
+export function SettingsClient({ lastSyncedAt, activityCount, device, body, zones, privateSite = false }: Props) {
   const { user, isOwner, loading } = useOwnerAuth()
+  // Signed out from the first render (no Firebase), a page cached hours ago would not hydrate on a relative time.
+  const mounted = useMounted()
   const router = useRouter()
   const [signingIn, setSigningIn] = useState(false)
   const { toast, leaving, showToast } = useToast()
@@ -57,13 +61,18 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
       showToast(t.settings.auth.notConfigured, false)
       return
     }
+    if (privateSite) {
+      // Safari blocks a popup that waits on Google's iframe; a fresh /sign-in load readies it before the tap.
+      replacePage(`${SIGN_IN_PATH}?next=${encodeURIComponent('/settings')}`)
+      return
+    }
     setSigningIn(true)
     try {
+      const { auth, GoogleAuthProvider, browserPopupRedirectResolver, signInWithPopup } = await loadAuth()
       const provider = new GoogleAuthProvider()
       provider.setCustomParameters({ prompt: 'select_account' })
-      const auth = getClientAuth()
       auth.languageCode = t.locale
-      await signInWithPopup(auth, provider)
+      await signInWithPopup(auth, provider, browserPopupRedirectResolver)
     } catch (err) {
       const code = (err as { code?: string }).code
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
@@ -78,7 +87,8 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
   async function handleSignOut() {
     // The private site's session first: it ends at /sign-in and clears this device's cached pages.
     const site = await endSiteSession()
-    await signOut(getClientAuth())
+    const { auth, signOut } = await loadAuth()
+    await signOut(auth)
     if (site.private) replacePage(SIGN_IN_PATH)
   }
 
@@ -105,7 +115,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
                 <p className="truncate text-sm font-semibold text-foreground">{device?.name ?? t.settings.dataSource.garmin}</p>
                 <p className="mt-0.5 text-xs leading-snug text-muted-foreground">
                   {lastSyncedAt && <ConnectedMark />}
-                  {lastSyncedAt
+                  {lastSyncedAt && mounted
                     ? t.settings.dataSource.readOnlySynced(formatRelativeAgo(lastSyncedAt), t.common.runs(activityCount))
                     : t.settings.dataSource.readOnly}
                 </p>

@@ -21,7 +21,7 @@ import { HeatLegend } from "./HeatLegend";
 import { MapAttribution, type MapCredit } from "@/components/ui/MapAttribution";
 import { GlassLayers, GLASS_CIRCLE, glassClass } from "@/components/ui/GlassSurface";
 import { useMapRoutes, type HomeRing } from "./useMapRoutes";
-import { clusterTracks } from "./clusterTracks";
+import { clusterTracks, type ClusterTracks, type TrackDetail } from "./mapData";
 import { LayersButton } from "@/components/explore/LayersButton";
 import { DistrictsLegend } from "@/components/explore/DistrictsLegend";
 import { useDistrictsCoverage } from "@/components/explore/useDistrictsCoverage";
@@ -61,6 +61,8 @@ import {
 
 interface Props {
   data: MapShellData;
+  /** What `data` and the tracks are fetched under. */
+  version: string;
   onContentChange?: (content: TerritoryCardContent | null) => void;
   /** Areas with Districts; none hides the layers button. */
   exploreAreas?: readonly ExploreAreaRef[];
@@ -75,6 +77,7 @@ const NO_AREAS: readonly ExploreAreaRef[] = [];
 const NO_RUNS: readonly number[] = [];
 const NO_CREDITS: readonly MapCredit[] = [];
 const NO_PLANS: readonly ExplorePlan[] = [];
+const NO_TRACKS: [number, number][][] = [];
 
 const EXPLORE_PARAMS = ["explore", "quartier", "km", "pace", "date", "from"] as const;
 
@@ -100,7 +103,34 @@ const samePadding = (a: CameraPadding | null, b: CameraPadding | null) =>
 
 const bboxBounds = ([minLon, minLat, maxLon, maxLat]: readonly [number, number, number, number]): LngLatBounds => ({ minLon, minLat, maxLon, maxLat });
 
-export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS, explorePlans = NO_PLANS, completedSince, today = null }: Props) {
+/** A cluster's tracks at one level of detail, gathered by global route index as each cluster arrives. */
+function useClusterTracks(version: string, clusterId: string | null, detail: TrackDetail): [number, number][][] {
+  const [tracks, setTracks] = useState<{ version: string; detail: TrackDetail; routes: [number, number][][]; loaded: Set<string> }>(
+    () => ({ version, detail, routes: [], loaded: new Set() }),
+  );
+
+  useEffect(() => {
+    if (clusterId === null) return;
+    let cancelled = false;
+    void clusterTracks(version, clusterId, detail).then((answer: ClusterTracks | null) => {
+      if (cancelled || !answer) return;
+      setTracks((prev) => {
+        const same = prev.version === version && prev.detail === detail;
+        if (same && prev.loaded.has(clusterId)) return prev;
+        const routes = same ? [...prev.routes] : [];
+        for (const [idxStr, coords] of Object.entries(answer)) routes[Number(idxStr)] = coords;
+        return { version, detail, routes, loaded: new Set(same ? [...prev.loaded, clusterId] : [clusterId]) };
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [version, clusterId, detail]);
+
+  return tracks.version === version && tracks.detail === detail ? tracks.routes : NO_TRACKS;
+}
+
+export function GlobalMapClient({ data, version, onContentChange, exploreAreas = NO_AREAS, explorePlans = NO_PLANS, completedSince, today = null }: Props) {
   const { clusters, routeMeta } = data;
   // A link's area (the Explored card's other areas) opens its busiest cluster; the hand's choice drops it.
   const [areaParam, setAreaParam] = useUrlParam("area");
@@ -146,30 +176,7 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
   const [linkedQuartier, setLinkedQuartier] = useState<string | null>(() => (linkedGenerator ? null : quartierParam));
   const [openUnitId, setOpenUnitId] = useState<string | null>(null);
 
-  const [routes, setRoutes] = useState<[number, number][][]>([]);
-  const loadedClusterIds = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    const cluster = clusters[selectedIdx];
-    if (!cluster || loadedClusterIds.current.has(cluster.id)) return;
-    let cancelled = false;
-
-    void clusterTracks(data, cluster.id).then((tracks) => {
-      if (cancelled || !tracks) return;
-      loadedClusterIds.current.add(cluster.id);
-      setRoutes((prev) => {
-        const next = [...prev];
-        for (const [idxStr, coords] of Object.entries(tracks)) {
-          next[Number(idxStr)] = coords;
-        }
-        return next;
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedIdx, clusters, data]);
+  const routes = useClusterTracks(version, clusters[selectedIdx]?.id ?? null, "drawn");
 
   const availableTypes = useMemo(() => {
     const present = new Set(routeMeta.map((m) => m.type));
@@ -200,6 +207,8 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
   const generatorOpen = generator !== null && !!districtsArea;
   const isFullscreen = expanded || generatorOpen;
   const districtsOn = (layer === "districts" || generatorOpen) && !!districtsArea;
+  // Coverage counts cells along the tracks as recorded: simplified ones would move quartiers' percentages.
+  const coverageRoutes = useClusterTracks(version, districtsOn ? (clusters[selectedIdx]?.id ?? null) : null, "full");
   const toggleLayer = useCallback(() => {
     const next: MapLayer = layer === "districts" ? "heat" : "districts";
     setLayer(next);
@@ -215,13 +224,13 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
   const districtsHome = useMemo(() => {
     const cluster = clusters[selectedIdx];
     if (!districtsOn || !cluster) return null;
-    return medianStart(cluster.routeIndices.flatMap((i) => (routes[i]?.[0] ? [routes[i]![0]!] : [])));
-  }, [districtsOn, clusters, selectedIdx, routes]);
+    return medianStart(cluster.routeIndices.flatMap((i) => (coverageRoutes[i]?.[0] ? [coverageRoutes[i]![0]!] : [])));
+  }, [districtsOn, clusters, selectedIdx, coverageRoutes]);
 
   const districts = useDistrictsCoverage({
     enabled: districtsOn,
     area: districtsArea,
-    routes,
+    routes: coverageRoutes,
     clusterIndices: clusters[selectedIdx]?.routeIndices ?? NO_RUNS,
     visibleIndices,
     routeMeta,

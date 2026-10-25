@@ -1,6 +1,7 @@
 import type { Map as MapLibreMap } from 'maplibre-gl'
 
-const WORKER_URL = '/maplibre/maplibre-gl-worker.mjs'
+/** Where scripts/copy-maplibre-worker.mjs puts it: a path per version, so it is cached as immutable. */
+export const workerUrl = (version: string) => `/maplibre/${version}/maplibre-gl-worker.mjs`
 
 export type MapLibre = typeof import('maplibre-gl')
 
@@ -259,7 +260,7 @@ export async function loadMapLibre(): Promise<MapLibre> {
   const [mgl] = await Promise.all([import('maplibre-gl'), import('maplibre-gl/dist/maplibre-gl.css')])
 
   if (!workerConfigured) {
-    mgl.setWorkerUrl(WORKER_URL)
+    mgl.setWorkerUrl(workerUrl(mgl.getVersion()))
     // The pool outlives each map, so going back to the Map tab compiles no new workers.
     mgl.prewarm()
     workerConfigured = true

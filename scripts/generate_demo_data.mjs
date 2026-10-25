@@ -289,6 +289,34 @@ function buildActivities(rng, endDate) {
   return activities
 }
 
+const CURVE_SECONDS = [30, 60, 120, 180, 300, 600, 1200, 1800, 3600, 5400, 7200]
+/** How far a type's hardest stretch runs over its average pace, as critical speed and D'. */
+const CURVE_SHAPE = { Sprint: [1.0, 100], Anaerobic: [1.0, 100], VO2Max: [0.97, 90], Threshold: [0.99, 60], Tempo: [0.98, 50], Race: [1.0, 40], Base: [0.9, 20] }
+
+// Drawn from the run's own numbers, never the generator's random stream, so every other demo figure stays put.
+function addPaceProfile(activity) {
+  const avgSpeed = 1000 / activity.paceSecPerKm
+  const [csShare, dPrime] = CURVE_SHAPE[activity.type] ?? CURVE_SHAPE.Base
+  const bests = {}
+  for (const seconds of CURVE_SECONDS) {
+    if (seconds > activity.durationSeconds) break
+    const span = Math.max(seconds, 180)
+    const speed = ((avgSpeed * csShare * span + dPrime) / span) * (span / seconds) ** 0.1
+    const rest = 0.85 * avgSpeed * (activity.durationSeconds - seconds)
+    bests[String(seconds)] = round(Math.max(avgSpeed * seconds, Math.min(speed * seconds, activity.distanceKm * 1000 - rest)), 1)
+  }
+  activity.durationBests = Object.keys(bests).length ? bests : null
+  const climbPerKm = activity.elevationGain / activity.distanceKm
+  const profile = activity.elevationProfile
+  const stepM = (activity.distanceKm * 1000) / profile.length
+  const cost = profile.map((_, i) => {
+    const grade = (profile[Math.min(i + 1, profile.length - 1)] - profile[Math.max(i - 1, 0)]) / (2 * stepM)
+    return 1 + 0.002 * climbPerKm + 4 * grade
+  })
+  activity.gapSamples = activity.paceSamples.map((pace, i) => Math.round(pace / cost[Math.round((i / (activity.paceSamples.length - 1)) * (cost.length - 1))]))
+  activity.gapSecPerKm = round(activity.paceSecPerKm / (1 + 0.002 * climbPerKm), 1)
+}
+
 function buildHrZones(rng, durationSeconds, type) {
   const weights =
     type === 'Base'
@@ -440,6 +468,17 @@ function buildAthleteHistory(activities) {
   return { days }
 }
 
+// Garmin's series is daily, though the sync files it under "weeks"; the year eases down to today's reading.
+function buildFitnessAgeHistory(endDate) {
+  const weeks = {}
+  for (let back = 360; back >= 0; back -= 3) {
+    const p = 1 - back / 360
+    const years = ATHLETE.fitnessAgeYrs + (1 - p) * (3 + 0.8 * Math.sin(4 * Math.PI * p))
+    weeks[isoDate(addDays(endDate, -back))] = { fitnessAgeYrs: round(years, 1), bmi: ATHLETE.bmi }
+  }
+  return { weeks }
+}
+
 function buildGoals() {
   return {
     years: [
@@ -534,6 +573,120 @@ function buildPlannedWorkouts(rng, endDate) {
 
 const MACROCYCLE_DAYS = 84
 
+// The ceiling a planner writes from this athlete's LTHR, as controlledThresholdHr gives it.
+const CONTROLLED_CEILING_BPM = ATHLETE.lthrBpm - 6
+const CONTROLLED_REP = { count: 3, seconds: 480, recoverySeconds: 90, warmupSeconds: 600, hrBpm: 165 }
+const SAMPLE_SECONDS = 15
+
+// Garmin files a sub-threshold session as tempo, so two quality runs become one, keeping their distance and time.
+function shapeControlledRuns(activities, before) {
+  const since = isoDate(addDays(new Date(`${before}T00:00:00Z`), -35))
+  const runs = activities
+    .filter((a) => (a.type === 'Tempo' || a.type === 'Threshold') && a.date >= since && a.date < before && a.durationSeconds >= 2_600)
+    .slice(-2)
+  if (runs.length < 2) return null
+  const repPace = Math.round(Math.min(...runs.map((a) => a.paceSecPerKm))) - 4
+  for (const activity of runs) {
+    const { count, seconds, recoverySeconds, warmupSeconds, hrBpm } = CONTROLLED_REP
+    const repM = round((seconds / repPace) * 1_000, 1)
+    const recoveryM = round((recoverySeconds / (repPace + 70)) * 1_000, 1)
+    const cooldownSeconds = activity.durationSeconds - warmupSeconds - count * seconds - (count - 1) * recoverySeconds
+    const easyM = activity.distanceKm * 1_000 - count * repM - (count - 1) * recoveryM
+    const warmupM = round((easyM * warmupSeconds) / (warmupSeconds + cooldownSeconds), 1)
+    const segments = [{ type: 'interval_warmup', seconds: warmupSeconds, metres: warmupM, hr: 152 }]
+    for (let rep = 0; rep < count; rep++) {
+      segments.push({ type: 'interval_active', seconds, metres: repM, hr: hrBpm })
+      if (rep < count - 1) segments.push({ type: 'interval_recovery', seconds: recoverySeconds, metres: recoveryM, hr: 158 })
+    }
+    segments.push({ type: 'interval_cooldown', seconds: cooldownSeconds, metres: round(easyM - warmupM, 1), hr: 154 })
+
+    const samplesFor = (lift) => segments.flatMap((segment) => Array.from({ length: Math.round(segment.seconds / SAMPLE_SECONDS) }, (_, i) => {
+      if (segment.type === 'interval_active') return Math.min(segment.hr, 150 + Math.round((i * SAMPLE_SECONDS * (segment.hr - 150)) / 180))
+      return segment.type === 'interval_recovery' ? segment.hr : segment.hr + lift
+    }))
+    const mean = (values) => values.reduce((sum, v) => sum + v, 0) / values.length
+    // Tempo runs average in Z3, so the easy laps carry what the reps alone do not.
+    let lift = 0
+    while (mean(samplesFor(lift)) < ATHLETE.hrZoneBoundsBpm[2] + 0.6) lift++
+    const samples = samplesFor(lift)
+    activity.type = 'Tempo'
+    activity.hrSamples = samples
+    activity.avgHeartRate = Math.round(mean(samples))
+    activity.splits = segments.map((segment) => ({
+      type: segment.type,
+      durationSec: segment.seconds,
+      distanceM: segment.metres,
+      avgSpeedMs: round(segment.metres / segment.seconds, 3),
+      avgHr: segment.type === 'interval_active' || segment.type === 'interval_recovery' ? segment.hr : segment.hr + lift,
+      laps: [],
+    }))
+  }
+  return { runs, guide: { min: repPace - 4, max: repPace + 4 } }
+}
+
+function clockLabel(seconds) {
+  return `${Math.floor(seconds / 60)}:${pad(Math.round(seconds % 60), 2)}`
+}
+
+/** The block before the current one, kept under superseded/ as bootstrap --replace keeps it. */
+function buildPreviousPlan(controlled, start, provenance) {
+  const { runs, guide } = controlled
+  const middle = Math.round((guide.min + guide.max) / 2)
+  const sessions = runs.map((activity, index) => {
+    const { count, seconds, recoverySeconds, warmupSeconds } = CONTROLLED_REP
+    return {
+      id: `demo-previous-threshold-${index}`,
+      revision: 1,
+      date: activity.date,
+      type: 'threshold',
+      title: `Threshold · ${count} × ${seconds / 60}′ @ ${clockLabel(middle)}`,
+      shortName: `Threshold ${count}×${seconds / 60}′`,
+      structure: { reps: count, repMinutes: seconds / 60, targetPace: clockLabel(middle) },
+      description: 'Controlled threshold: run the pace guide, heart rate under the ceiling.',
+      status: 'prescribed',
+      blocks: [
+        { kind: 'warmup', target: { durationSeconds: warmupSeconds } },
+        {
+          kind: 'repeat',
+          repetitions: count,
+          steps: [
+            { kind: 'effort', target: { durationSeconds: seconds, paceSecPerKm: guide, hrBpm: { min: 150, max: CONTROLLED_CEILING_BPM } } },
+            { kind: 'recovery', target: { durationSeconds: recoverySeconds } },
+          ],
+        },
+        { kind: 'cooldown', target: { durationSeconds: 600 } },
+      ],
+      provenance,
+    }
+  })
+  const first = new Date(`${runs[0].date}T00:00:00Z`)
+  const monday = addDays(first, -((first.getUTCDay() + 6) % 7))
+  const lastDay = isoDate(addDays(new Date(`${start}T00:00:00Z`), -1))
+  const weeks = []
+  for (let weekStart = monday, index = 1; isoDate(weekStart) <= lastDay; weekStart = addDays(weekStart, 7), index++) {
+    const startDate = isoDate(weekStart)
+    const endDate = isoDate(addDays(weekStart, 6)) < lastDay ? isoDate(addDays(weekStart, 6)) : lastDay
+    weeks.push({
+      id: `demo-previous-week-${index}`,
+      index,
+      startDate,
+      endDate,
+      focus: 'Controlled threshold base',
+      workouts: sessions.filter((session) => session.date >= startDate && session.date <= endDate),
+    })
+  }
+  return {
+    schemaVersion: 1,
+    id: 'demo-previous-plan',
+    revision: 1,
+    status: 'superseded',
+    block: { id: 'demo-previous-block', name: 'Controlled threshold base', startDate: isoDate(monday), endDate: lastDay, focus: 'Controlled threshold base' },
+    goal: { kind: 'performance', description: 'General preparation.' },
+    weeks,
+    provenance,
+  }
+}
+
 function buildCoachingData(endDate, activities) {
   const latest = activities[activities.length - 1]
   const start = latest ? new Date(latest.date + 'T00:00:00Z') : endDate
@@ -542,6 +695,10 @@ function buildCoachingData(endDate, activities) {
   const evaluationCreatedAt = new Date(new Date(createdAt).getTime() + 60 * 60 * 1_000).toISOString()
   const planId = 'demo-coaching-plan'
   const provenance = { source: 'demo', trigger: 'bootstrap', createdAt }
+  const controlled = latest ? shapeControlledRuns(activities, latest.date) : null
+  const previousPlan = controlled
+    ? buildPreviousPlan(controlled, isoDate(start), { ...provenance, createdAt: new Date(new Date(createdAt).getTime() - 30 * 86_400_000).toISOString() })
+    : null
   const workout = (id, date, type, title, blocks, totalDurationSeconds, totalDistanceMeters) => ({
     id,
     revision: 1,
@@ -562,7 +719,7 @@ function buildCoachingData(endDate, activities) {
       kind: 'repeat',
       repetitions: 3,
       steps: [
-        { kind: 'effort', target: { durationSeconds: 480, paceSecPerKm: { min: 265, max: 270 } } },
+        { kind: 'effort', target: { durationSeconds: 480, paceSecPerKm: { min: 265, max: 270 }, hrBpm: { min: 150, max: CONTROLLED_CEILING_BPM } } },
         { kind: 'recovery', target: { durationSeconds: 120 } },
       ],
     },
@@ -677,6 +834,7 @@ function buildCoachingData(endDate, activities) {
   const month = latest?.date.slice(0, 7) ?? createdAt.slice(0, 7)
   return {
     'coaching/current_plan.json': plan,
+    ...(previousPlan ? { [`coaching/superseded/${previousPlan.id}.json`]: previousPlan } : {}),
     'coaching/coach_state.json': {
       schemaVersion: 1,
       activePlanId: planId,
@@ -714,6 +872,59 @@ function buildRecoveryHistory(endDate) {
     days[isoDate(d)] = { restingHr: Math.round(46 - season + between(rng, -1.5, 1.5)) }
   }
   return { days }
+}
+
+const STRENGTH_EXERCISES = [
+  ['squat', 'goblet_squat'],
+  ['lunge', 'dumbbell_lunge'],
+  ['hip_raise', 'single_leg_hip_raise'],
+  ['calf_raise', 'single_leg_bent_knee_calf_raise'],
+  ['plank', 'side_plank'],
+  ['core', 'side_abs_leg_lift'],
+]
+
+function buildCrossTraining(endDate) {
+  // Its own generator, so it moves no other demo number.
+  const rng = makeRng(SEED + 71)
+  const sessions = []
+  let id = 95000001
+  for (let i = 182; i >= 0; i--) {
+    const d = addDays(endDate, -i)
+    const weekday = d.getUTCDay()
+    const kind = weekday === 3 && rng() < 0.75 ? 'strength_training'
+      : weekday === 6 && rng() < 0.3 ? 'road_biking'
+      : weekday === 1 && rng() < 0.2 ? 'yoga'
+      : null
+    if (!kind) continue
+    const date = isoDate(d)
+    const durationSeconds = Math.round(kind === 'road_biking' ? between(rng, 3600, 6000) : between(rng, 1500, 2700))
+    const sets = kind === 'strength_training'
+      ? STRENGTH_EXERCISES.flatMap(([category, exercise]) => Array.from({ length: 2 }, () => ({
+          category,
+          exercise,
+          reps: Math.round(between(rng, 8, 15)),
+          ...(category === 'squat' || category === 'lunge' ? { weightKg: 12 } : {}),
+          durationSeconds: Math.round(between(rng, 30, 60)),
+        })))
+      : null
+    sessions.push({
+      id: String(id++),
+      date,
+      startTimeLocal: `${date}T18:30:00`,
+      sport: kind,
+      durationSeconds,
+      distanceKm: kind === 'road_biking' ? round(durationSeconds / 3600 * between(rng, 24, 28), 2) : null,
+      avgHeartRate: Math.round(kind === 'road_biking' ? between(rng, 118, 132) : between(rng, 92, 110)),
+      trainingLoad: round(kind === 'road_biking' ? between(rng, 60, 110) : between(rng, 15, 35), 1),
+      ...(sets ? { sets } : {}),
+    })
+  }
+  const byYear = {}
+  for (const session of sessions.reverse()) (byYear[session.date.slice(0, 4)] ??= []).push(session)
+  return {
+    'cross_training/index.json': { years: Object.keys(byYear).sort().reverse() },
+    ...Object.fromEntries(Object.entries(byYear).map(([year, entries]) => [`cross_training/${year}.json`, { sessions: entries }])),
+  }
 }
 
 // The demo runs circle a point in the Pacific where no real quartier exists, so the dataset brings a town of its own,
@@ -820,6 +1031,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
   const startDate = addDays(endDate, -totalDays)
 
   const activities = buildActivities(rng, endDate)
+  activities.forEach(addPaceProfile)
   const { trainingStatus, trainingLoadBalance } = buildTrainingStatusAndBalance(rng, activities, endDate)
   const { vo2maxHistory, thresholdHistory } = buildVo2maxAndThresholdHistory(activities)
 
@@ -838,6 +1050,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
     // Updated by the same sync as sync_meta.json below, as a real one is.
     'athlete.json': { ...ATHLETE, lastUpdate: endDate.toISOString() },
     'athlete_history.json': buildAthleteHistory(activities),
+    'fitness_age_history.json': buildFitnessAgeHistory(endDate),
     'goals.json': buildGoals(),
     'pbs.json': buildPbs(activities),
     'shoes.json': { shoes: SHOES },
@@ -856,6 +1069,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
     'planned_workouts/index.json': { years: plannedYears },
     ...buildCoachingData(endDate, activities),
     ...buildDemoExploreArea(),
+    ...buildCrossTraining(endDate),
   }
   for (const [month, acts] of Object.entries(months)) {
     files[`activities/${month}.json`] = { activities: acts.sort((a, b) => b.date.localeCompare(a.date)) }

@@ -53,37 +53,42 @@ export async function getCachedInsight(surface: string): Promise<CachedInsight |
   return doc.exists ? (doc.data() as CachedInsight) : null
 }
 
+async function readStored(surface: string): Promise<CachedInsight | null> {
+  if (!process.env.FIREBASE_PROJECT_ID) return null
+  try {
+    return await withTimeout(getCachedInsight(surface), READ_TIMEOUT_MS, null)
+  } catch {
+    return null
+  }
+}
+
+const insightOf = (cached: CachedInsight): Insight => ({ headline: cached.headline, body: cached.body, bullets: cached.bullets })
+const keyOf = (key: string | InsightKey): InsightKey => (typeof key === 'string' ? { hash: key } : key)
+
 /** The whole stored document, so a caller needing *when* a surface was written need not read it twice. */
 export async function readVerifiedCachedInsight(
   surface: string,
   key: string | InsightKey
 ): Promise<CachedInsight | null> {
-  if (!process.env.FIREBASE_PROJECT_ID) return null
-
-  try {
-    const cached = await withTimeout(getCachedInsight(surface), READ_TIMEOUT_MS, null)
-    if (!cached) return null
-    const wanted = typeof key === 'string' ? { hash: key } : key
-    return servable(cached, wanted, Date.now()) ? cached : null
-  } catch {
-    return null
-  }
+  const cached = await readStored(surface)
+  return cached && servable(cached, keyOf(key), Date.now()) ? cached : null
 }
 
-/** What Today shows, marked as yesterday's, between midnight and the night's sync. */
-export async function readLatestInsight(surface: string): Promise<{ insight: Insight; generatedAt: string } | null> {
-  if (!process.env.FIREBASE_PROJECT_ID) return null
-  try {
-    const cached = await withTimeout(getCachedInsight(surface), READ_TIMEOUT_MS, null)
-    return cached ? { insight: { headline: cached.headline, body: cached.body, bullets: cached.bullets }, generatedAt: cached.generatedAt } : null
-  } catch {
-    return null
-  }
+export interface StoredInsight {
+  insight: Insight
+  generatedAt: string
+  /** Whether it still answers the key asked with; Today shows an unverified one only as yesterday's. */
+  verified: boolean
+}
+
+export async function readStoredInsight(surface: string, key: string | InsightKey): Promise<StoredInsight | null> {
+  const cached = await readStored(surface)
+  return cached ? { insight: insightOf(cached), generatedAt: cached.generatedAt, verified: servable(cached, keyOf(key), Date.now()) } : null
 }
 
 export async function readVerifiedInsight(surface: string, key: string | InsightKey): Promise<Insight | null> {
   const cached = await readVerifiedCachedInsight(surface, key)
-  return cached ? { headline: cached.headline, body: cached.body, bullets: cached.bullets } : null
+  return cached ? insightOf(cached) : null
 }
 
 function surfaceRange(prefix: string) {

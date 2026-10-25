@@ -13,9 +13,7 @@ const day = (i: number) => isoDate(addDays(new Date(`${TODAY}T00:00:00`), -i))
 function week(date: string, i: number): WeeklyTrendPoint {
   return {
     date,
-    label: date,
     distanceKm: 40 + (i % 3),
-    sessionCount: 5,
     easyPace: 360 - i,
     hardPace: 290,
     ef: 1.1,
@@ -29,12 +27,9 @@ function week(date: string, i: number): WeeklyTrendPoint {
     verticalRatioPct: null,
     strideLengthM: null,
     avgRpe: 3.5,
-    aer: null,
-    ana: null,
     zoneSeconds: { 1: 1800, 2: 3 * 3600, 3: 600, 4: 1500, 5: 300 },
     longestKm: 16,
     longestDate: date,
-    durationSeconds: 4 * 3600,
     thresholdSessions: 1,
     intervalSessions: i % 2,
   }
@@ -54,6 +49,7 @@ const data: AnalyticsBoardData = {
   missed: [],
   vo2max: { value: 55, samples: [{ date: day(80), vo2max: 56 }, { date: day(2), vo2max: 55 }] },
   threshold: [{ date: day(300), pace: 254 }, { date: day(10), pace: 263 }],
+  lthr: [{ date: day(300), bpm: 176 }, { date: day(10), bpm: 179 }],
   predictions: Array.from({ length: 200 }, (_, i) => ({ date: day(199 - i), seconds: { '5k': 1150 + i * 0.4, '10k': 2440 + i } })),
   race: { distance: '10k', date: '2026-11-29', daysUntil: 64, targetSeconds: 2400 },
   heat: {
@@ -65,6 +61,11 @@ const data: AnalyticsBoardData = {
       { id: 'warm', label: '', runCount: 12, avgApparentTempC: 22, paceAtRefHr: 376, costSecPerKm: 17 },
     ],
   },
+  balance: null,
+  paceBests: [
+    { date: day(20), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, 3600, null, null].map((t) => (t === null ? null : Math.round(4 * t + 200))) },
+    { date: day(100), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, null, null, null].map((t) => (t === null ? null : Math.round(3.9 * t + 190))) },
+  ],
   weeklyAvgKm: 26.4,
   ytd: {
     km: 1394,
@@ -329,6 +330,15 @@ describe('Analytics (v4.5)', () => {
     expect(screen.getByTestId('pace-trend-card').textContent).toContain('higher is faster')
   })
 
+  it('fits critical speed to the 3-20 min bests and sets it against threshold pace and the weeks before', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.performance, 'pace-curve-card')
+    expect(screen.getByTestId('critical-speed').textContent).toBe(`4:10${t.units.perKm}`)
+    expect(screen.getByTestId('pace-curve-sentence').textContent).toBe(
+      [...t.analytics.cards.paceCurve.faster(13, '4:23'), ...t.analytics.cards.paceCurve.changed('6 s', true, '12 weeks')].join(''),
+    )
+  })
+
   it('draws the prediction sparklines faster up', async () => {
     await renderBoard()
     await openTab(t.analytics.tabs.performance, 'predictions-card')
@@ -449,6 +459,41 @@ describe('Analytics (v4.5)', () => {
   })
 })
 
+describe('the trends the watch syncs', () => {
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(`${TODAY}T12:00:00`))
+  })
+  afterAll(() => vi.useRealTimers())
+
+  it('puts threshold HR beside threshold pace, and running form with only what the watch measured', async () => {
+    render(<AnalyticsClient data={{ ...data, weeks: weeks.map((w, i) => ({ ...w, cadenceSpm: 170 + (i % 4) })) }} today={TODAY} />)
+    await screen.findByTestId('form-card')
+    await openTab(t.analytics.tabs.performance, 'threshold-card')
+    expect(within(screen.getByTestId('threshold-hr')).getByTestId('trend-change').textContent).toBe('+3')
+    expect(within(screen.getByTestId('threshold-pace')).getByTestId('trend-change').textContent).toBe('+9 s')
+    const rows = [...screen.getByTestId('running-form-card').querySelectorAll('[data-testid^="form-"]')].map((el) => el.getAttribute('data-testid'))
+    expect(rows).toEqual(['form-cadence'])
+  })
+
+  it('draws easy and workout heart rate on Intensity, the felt temperature under them', async () => {
+    const hr = weeks.map((w, i) => ({ ...w, easyAvgHr: i > 55 ? 146 : 150, hardAvgHr: 170, apparentTempC: 10 + (i % 10) }))
+    render(<AnalyticsClient data={{ ...data, weeks: hr }} today={TODAY} />)
+    await screen.findByTestId('form-card')
+    await openTab(t.analytics.tabs.health, 'heart-rate-card')
+    expect(screen.getByTestId('heart-rate-sentence').textContent).toBe(t.analytics.charts.hrTrend.reading.down(4))
+    expect(screen.getByTestId('felt-strip').children).toHaveLength(12)
+  })
+
+  it('leaves both out on a watch without them', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.performance, 'threshold-card')
+    expect(screen.queryByTestId('running-form-card')).toBeNull()
+    await openTab(t.analytics.tabs.health, 'easy-hard-card')
+    expect(screen.queryByTestId('heart-rate-card')).toBeNull()
+  })
+})
+
 describe('the v4.5 colour rules', () => {
   const dir = path.join(__dirname, '..')
   const sources = readdirSync(dir)
@@ -478,8 +523,6 @@ describe('the French tab names', () => {
   it('names the load tab Charge', async () => {
     const { fr } = await import('@/i18n/fr')
     expect(fr.analytics.tabs).toEqual({ fitness: 'Charge', performance: 'Performance', volume: 'Volume', health: 'Intensité' })
-    expect(fr.analytics.cards.risk.title).toBe('Risque de blessure')
-    expect(fr.analytics.cards.risk.loadRatio).toBe('Ratio de charge')
     expect(fr.analytics.cards.heatCost.title).toBe('Coût de la température')
   })
 })
@@ -678,6 +721,21 @@ describe('Load trend and Recovery (v5.4)', () => {
     await renderWith({ recovery: steady })
     const ids = [...document.querySelectorAll('[data-testid$="-card"], [data-testid="coach-read"]')].map((el) => el.getAttribute('data-testid'))
     expect(ids).toEqual(['coach-read', 'load-card', 'form-card', 'status-card'])
+  })
+
+  it("ends the Load tab on the watch's load focus, today only", async () => {
+    const bucket = { id: 'aerobicHigh' as const, load: 609, targetMin: 652, targetMax: 1305, verdict: 'below' as const, position: 23.8, targetStart: 25, targetEnd: 75 }
+    await renderWith({ balance: { date: day(3), feedback: 'AEROBIC_HIGH_SHORTAGE', buckets: [bucket] } })
+    const ids = [...document.querySelectorAll('[data-testid$="-card"]')].map((el) => el.getAttribute('data-testid'))
+    expect(ids.at(-1)).toBe('load-focus-card')
+    expect(screen.getByTestId('load-focus-phrase').textContent).toBe(t.loadBalance.feedback.AEROBIC_HIGH_SHORTAGE)
+    expect(screen.getByTestId('focus-aerobicHigh').textContent).toContain('609')
+    act(() => {
+      fireEvent.pointerDown(screen.getByTestId('training-status-strip'), { clientX: 0, clientY: 0, pointerType: 'touch' })
+      fireEvent.pointerUp(screen.getByTestId('training-status-strip'), { clientX: 200, clientY: 0, pointerType: 'touch' })
+    })
+    expect(screen.getByTestId('status-card')).toBeInTheDocument()
+    expect(screen.queryByTestId('load-focus-card')).toBeNull()
   })
 
   it('draws the load line 72 pt tall, spread over its height', async () => {

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { t } from '@/i18n'
 import { ActivityListClient, activitiesView } from '../ActivityListClient'
-import type { MapShellData } from '@/application/usecases/GetAllRoutes'
+import { encodeRouteThumb } from '@/domain/activity/routeThumb'
 import { formatDate, formatDateRange, formatWeekday } from '@/lib/formatters'
 import { notePopNavigation, popNavigationHandled } from '@/lib/popNavigation'
 
@@ -13,12 +13,12 @@ vi.mock('next/navigation', async (actual) => ({ ...(await actual<typeof import('
 // The map is loaded with next/dynamic; here it is a stand-in that says what it was handed.
 vi.mock('next/dynamic', () => ({
   default: () =>
-    function MapStandIn({ data }: { data: MapShellData }) {
-      return <div data-testid="global-map">{data.totalCount}</div>
+    function MapStandIn({ version }: { version: string }) {
+      return <div data-testid="global-map">{version}</div>
     },
 }))
 
-const MAP_DATA: MapShellData = { routeMeta: [], clusters: [], defaultClusterIdx: 0, totalCount: 7, totalKm: 70, years: ['2026'] }
+const MAP = { version: '1.abc', clusterId: '0' }
 
 // Thursday 24 September 2026, in the week of Monday the 21st.
 const NOW = new Date(2026, 8, 24, 12)
@@ -35,11 +35,8 @@ function run(id: string, date: string, distanceKm: number): ActivitySummary {
     durationSeconds: 3600,
     paceSecPerKm: 360,
     avgHeartRate: null,
-    rpe: null,
-    hrZones: [],
-    week: 0,
-    elevationGain: null,
-    routeThumb: 'M10 10L40 40',
+    zones: [],
+    routeThumb: encodeRouteThumb([[6.1, 49.6], [6.11, 49.61]]),
   }
 }
 
@@ -49,7 +46,7 @@ function renderList(items: ActivitySummary[]) {
       initialItems={items}
       totalCount={items.length}
       today="2026-09-24"
-      mapData={MAP_DATA}
+      map={MAP}
     />
   )
 }
@@ -158,6 +155,18 @@ describe('the archive under its months', () => {
     expect(screen.queryByText(t.activities.endOfList)).toBeNull()
     await reachEnd()
     expect(screen.getAllByTestId('month').length).toBeGreaterThan(firstMonths)
+  })
+
+  it('grows a list sorted by anything but date a few dozen runs at a time too', async () => {
+    const reachEnd = observeEnd()
+    window.history.replaceState(null, '', '/activities?sort=longest')
+    const many = Array.from({ length: 120 }, (_, k) => run(`r${k}`, new Date(Date.UTC(2026, 8, 10) - k * 86_400_000).toISOString().slice(0, 10), 5 + k / 10))
+    renderList(many)
+
+    const first = screen.getAllByTestId('thumb-row').length
+    expect(first).toBeLessThan(many.length)
+    await reachEnd()
+    expect(screen.getAllByTestId('thumb-row').length).toBeGreaterThan(first)
   })
 
   it('keeps loading older months after a trip to the map and back', async () => {
@@ -392,7 +401,7 @@ describe('List and Map', () => {
 
     await user.click(screen.getByRole('tab', { name: t.activities.view.map }))
     expect(window.location.search).toBe('?view=map')
-    expect(screen.getByTestId('global-map').textContent).toBe('7')
+    expect(screen.getByTestId('global-map').textContent).toBe(MAP.version)
     // The list's controls give way to the map.
     expect(screen.queryByPlaceholderText(t.activities.searchPlaceholder)).toBeNull()
     expect(screen.queryByRole('button', { name: t.activities.filter.title })).toBeNull()

@@ -30,21 +30,23 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
-          cache: "npm"
+          node-version-file: .nvmrc
 
-      # node_modules itself, keyed on the lock file: a hit skips `npm ci`
-      # (about 30s) entirely.
+      # Shared with CI under the same key: a hit skips `npm ci`.
       - name: Restore node_modules
         id: node-modules
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('package-lock.json') }}
+          key: node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package-lock.json') }}
 
       - name: Install dependencies
         if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
+
+      - name: Read Playwright's version
+        id: playwright-version
+        run: echo "version=$(node -p 'require("@playwright/test/package.json").version')" >> "$GITHUB_OUTPUT"
 
       # Chromium's headless shell needs no apt step: the runner image ships Chrome and its libraries.
       - name: Restore Playwright's browsers
@@ -52,30 +54,44 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-shell-webkit-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          key: playwright-shell-webkit-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright's browsers
         if: steps.playwright.outputs.cache-hit != 'true'
-        run: npx playwright install --only-shell chromium && npx playwright install webkit
+        run: |
+          for try in 1 2 3; do
+            npx playwright install --only-shell chromium && npx playwright install webkit && exit 0
+            sleep 15
+          done
+          exit 1
 
       # The iPhone layout spec runs in WebKit, whose system libraries the runner image does not ship.
       - name: Install WebKit's system libraries
         run: npx playwright install-deps webkit
 
-      # Turbopack's persistent cache: a build with unchanged dependencies took
-      # 13s instead of 39s locally. Keyed per commit so every run saves its
-      # own, restored from the newest one built on the same lock file (new
-      # dependencies invalidate it anyway).
+      - name: Name the week
+        id: week
+        run: echo "week=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+
+      # Turbopack's cache cut a build from 39 s to 13 s; one entry a week, saved from main, keeps it under GitHub's 10 GB.
       - name: Restore the Next.js build cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: next-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ steps.week.outputs.week }}
           restore-keys: |
             nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
 
       - name: Run Playwright tests
         run: npm run test:e2e
+
+      - name: Save the Next.js build cache
+        if: github.ref == 'refs/heads/main' && steps.next-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .next/cache
+          key: ${{ steps.next-cache.outputs.cache-primary-key }}
 
       - name: Upload Playwright report
         if: always()
