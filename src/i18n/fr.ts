@@ -1111,7 +1111,8 @@ export const fr = {
       },
       hrTrend: {
         title: 'FC moyenne',
-        footnote: 'FC moyenne pondérée par la durée, sorties faciles vs séances de qualité.',
+        footnote: 'FC moyenne pondérée par la durée, sorties faciles vs séances de qualité. Les barres sous les courbes sont la température ressentie des sorties faciles : la chaleur seule fait monter la FC.',
+        felt: (range: string) => `Ressenti ${range}`,
         reading: {
           down: (bpm: number) => `La FC en sortie facile baisse - environ ${bpm} bpm de moins pour le même effort, signe d’une forme qui progresse.`,
           up: (bpm: number) => `La FC en sortie facile augmente - environ ${bpm} bpm de plus pour le même effort, à surveiller.`,
@@ -1192,13 +1193,13 @@ export const fr = {
           `${Math.abs(deltaPct)} % ${deltaPct >= 0 ? 'd’avance sur' : 'de retard sur'} la même date l’an dernier : ${current} km contre ${previous} km${cutoff ? ` au ${cutoff}` : ''}.`,
       },
       threshold: {
-        title: 'Seuil lactique de course',
+        title: 'Seuil lactique',
         pace: 'Allure au seuil',
         lthr: 'FC au seuil',
         footnote: 'L’effort tenable avant l’accumulation de lactate, tel que mesuré par la montre. Elle le révise à quelques semaines d’intervalle : la courbe avance donc par paliers.',
         reading: {
-          change: (delta: string, since: string) => `L’allure au seuil a évolué de ${delta} depuis ${since}.`,
-          flat: (since: string) => `L’allure au seuil est stable depuis ${since}.`,
+          change: (delta: string, since: string) => `Allure au seuil ${delta} depuis le ${since}.`,
+          flat: (since: string) => `L’allure au seuil est stable depuis le ${since}.`,
         },
       },
       racePredictor: {

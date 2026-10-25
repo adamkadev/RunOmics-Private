@@ -33,6 +33,7 @@ export default async function AnalyticsPage() {
   const spotlight = goals.nextRace
   const goalKm = yearData?.goals && yearData.goals.annualDistanceKm > 0 ? yearData.goals.annualDistanceKm : null
 
+  const threshold = getThresholdHistory()?.points ?? []
   const board: AnalyticsBoardData = {
     load: trainingLoad?.points.map(({ date, ctl, atl }) => ({ date, ctl, atl })) ?? [],
     status: getTrainingStatusHistory()?.points.map(({ date, status }) => ({ date, status })) ?? [],
@@ -43,8 +44,8 @@ export default async function AnalyticsPage() {
     plan: plan.weeks,
     missed: plan.missed,
     vo2max: getVO2maxReadings(),
-    threshold:
-      getThresholdHistory()?.points.flatMap((p) => (p.thresholdPaceSecPerKm !== null ? [{ date: p.date, pace: p.thresholdPaceSecPerKm }] : [])) ?? [],
+    threshold: threshold.flatMap((p) => (p.thresholdPaceSecPerKm !== null ? [{ date: p.date, pace: p.thresholdPaceSecPerKm }] : [])),
+    lthr: threshold.flatMap((p) => (p.lthrBpm !== null ? [{ date: p.date, bpm: p.lthrBpm }] : [])),
     predictions: getGarminRacePredictions()?.points.map(({ date, seconds }) => ({ date, seconds })) ?? [],
     race:
       spotlight && isRaceDistanceKey(spotlight.race.distance.toLowerCase())

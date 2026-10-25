@@ -190,7 +190,7 @@ describe('buildWeeklyTrends', () => {
     expect(points[0]?.hardPace).toBe(270)
   })
 
-  it('sums the distance and session count of the week', () => {
+  it('sums the distance of the week', () => {
     const points = buildWeeklyTrends([
       act({ date: '2024-06-03', distanceKm: 10.4 }),
       act({ date: '2024-06-06', distanceKm: 8.2 }),
@@ -198,9 +198,7 @@ describe('buildWeeklyTrends', () => {
     ])
 
     expect(points[0]?.distanceKm).toBe(18.6)
-    expect(points[0]?.sessionCount).toBe(2)
     expect(points[1]?.distanceKm).toBe(5)
-    expect(points[1]?.sessionCount).toBe(1)
   })
 
   it("keeps the week's long run and its quality sessions (D3, D4)", () => {

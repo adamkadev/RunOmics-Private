@@ -69,6 +69,8 @@ export interface AnalyticsBoardData {
   missed: string[]
   vo2max: { value: number | null; samples: { date: string; vo2max: number }[] }
   threshold: { date: string; pace: number }[]
+  /** The watch's threshold heart rate, revised with its threshold pace. */
+  lthr: { date: string; bpm: number }[]
   predictions: PredictionDay[]
   race: GoalRaceInput | null
   heat: HeatImpactData | null
@@ -193,6 +195,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             weeks={data.weeks}
             vo2max={data.vo2max}
             threshold={data.threshold}
+            lthr={data.lthr}
             predictions={data.predictions}
             race={data.race}
             heat={data.heat}

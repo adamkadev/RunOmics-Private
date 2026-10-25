@@ -1183,8 +1183,9 @@ export const en = {
         reading: (pct: number, zoneLabel: string) => `Most time (${pct}%) sits in ${zoneLabel} - your training skews toward this intensity.`,
       },
       hrTrend: {
-        title: 'Avg Heart Rate',
-        footnote: 'Duration-weighted average HR, easy vs workout runs.',
+        title: 'Average heart rate',
+        footnote: 'Duration-weighted average HR, easy vs workout runs. The bars under the lines are the felt temperature of the easy runs: heat alone raises heart rate.',
+        felt: (range: string) => `Felt ${range}`,
         reading: {
           down: (bpm: number) => `Easy-run heart rate is dropping - down ~${bpm} bpm, same effort for less strain, a sign of improving fitness.`,
           up: (bpm: number) => `Easy-run heart rate is rising - up ~${bpm} bpm for the same effort, worth watching.`,
@@ -1192,13 +1193,13 @@ export const en = {
         },
       },
       runningForm: {
-        title: 'Running Form',
+        title: 'Running form',
         metrics: {
           cadence: 'Cadence',
-          groundContact: 'Ground Contact',
-          verticalOscillation: 'Vertical Osc.',
-          verticalRatio: 'Vertical Ratio',
-          strideLength: 'Stride Length',
+          groundContact: 'Ground contact',
+          verticalOscillation: 'Vertical osc.',
+          verticalRatio: 'Vertical ratio',
+          strideLength: 'Stride length',
         } as Record<string, string>,
         unit: {
           cadence: 'spm',
@@ -1265,7 +1266,7 @@ export const en = {
           `${Math.abs(deltaPct)}% ${deltaPct >= 0 ? 'ahead of' : 'behind'} the same date last year: ${current} km against ${previous} km${cutoff ? ` to ${cutoff}` : ''}.`,
       },
       threshold: {
-        title: 'Running Lactate Threshold',
+        title: 'Lactate threshold',
         pace: 'Threshold pace',
         lthr: 'Threshold HR',
         footnote: 'The effort you can hold before lactate builds up, as the watch measures it. The watch revises it every few weeks, so the line steps rather than drifts.',

@@ -13,9 +13,7 @@ const day = (i: number) => isoDate(addDays(new Date(`${TODAY}T00:00:00`), -i))
 function week(date: string, i: number): WeeklyTrendPoint {
   return {
     date,
-    label: date,
     distanceKm: 40 + (i % 3),
-    sessionCount: 5,
     easyPace: 360 - i,
     hardPace: 290,
     ef: 1.1,
@@ -29,12 +27,9 @@ function week(date: string, i: number): WeeklyTrendPoint {
     verticalRatioPct: null,
     strideLengthM: null,
     avgRpe: 3.5,
-    aer: null,
-    ana: null,
     zoneSeconds: { 1: 1800, 2: 3 * 3600, 3: 600, 4: 1500, 5: 300 },
     longestKm: 16,
     longestDate: date,
-    durationSeconds: 4 * 3600,
     thresholdSessions: 1,
     intervalSessions: i % 2,
   }
@@ -54,6 +49,7 @@ const data: AnalyticsBoardData = {
   missed: [],
   vo2max: { value: 55, samples: [{ date: day(80), vo2max: 56 }, { date: day(2), vo2max: 55 }] },
   threshold: [{ date: day(300), pace: 254 }, { date: day(10), pace: 263 }],
+  lthr: [{ date: day(300), bpm: 176 }, { date: day(10), bpm: 179 }],
   predictions: Array.from({ length: 200 }, (_, i) => ({ date: day(199 - i), seconds: { '5k': 1150 + i * 0.4, '10k': 2440 + i } })),
   race: { distance: '10k', date: '2026-11-29', daysUntil: 64, targetSeconds: 2400 },
   heat: {
@@ -447,6 +443,41 @@ describe('Analytics (v4.5)', () => {
     // A year's hours, as distances: a decimal under 100 and none above.
     fireEvent.click(screen.getByRole('radio', { name: 'a year' }))
     expect(figures().slice(0, 2)).toEqual([['Z1', '26.0 h'], ['Z2', '156 h']])
+  })
+})
+
+describe('the trends the watch syncs', () => {
+  beforeAll(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(`${TODAY}T12:00:00`))
+  })
+  afterAll(() => vi.useRealTimers())
+
+  it('puts threshold HR beside threshold pace, and running form with only what the watch measured', async () => {
+    render(<AnalyticsClient data={{ ...data, weeks: weeks.map((w, i) => ({ ...w, cadenceSpm: 170 + (i % 4) })) }} today={TODAY} />)
+    await screen.findByTestId('form-card')
+    await openTab(t.analytics.tabs.performance, 'threshold-card')
+    expect(within(screen.getByTestId('threshold-hr')).getByTestId('trend-change').textContent).toBe('+3')
+    expect(within(screen.getByTestId('threshold-pace')).getByTestId('trend-change').textContent).toBe('+9 s')
+    const rows = [...screen.getByTestId('running-form-card').querySelectorAll('[data-testid^="form-"]')].map((el) => el.getAttribute('data-testid'))
+    expect(rows).toEqual(['form-cadence'])
+  })
+
+  it('draws easy and workout heart rate on Intensity, the felt temperature under them', async () => {
+    const hr = weeks.map((w, i) => ({ ...w, easyAvgHr: i > 55 ? 146 : 150, hardAvgHr: 170, apparentTempC: 10 + (i % 10) }))
+    render(<AnalyticsClient data={{ ...data, weeks: hr }} today={TODAY} />)
+    await screen.findByTestId('form-card')
+    await openTab(t.analytics.tabs.health, 'heart-rate-card')
+    expect(screen.getByTestId('heart-rate-sentence').textContent).toBe(t.analytics.charts.hrTrend.reading.down(4))
+    expect(screen.getByTestId('felt-strip').children).toHaveLength(12)
+  })
+
+  it('leaves both out on a watch without them', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.performance, 'threshold-card')
+    expect(screen.queryByTestId('running-form-card')).toBeNull()
+    await openTab(t.analytics.tabs.health, 'easy-hard-card')
+    expect(screen.queryByTestId('heart-rate-card')).toBeNull()
   })
 })
 
