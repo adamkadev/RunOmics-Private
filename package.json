@@ -19,6 +19,7 @@
     "prelint": "npm run prepare:data",
     "lint": "eslint",
     "verify:private-data": "node scripts/verify_no_private_data.mjs",
+    "export:demo": "node scripts/export_public_demo.mjs",
     "pretypecheck": "npm run prepare:data",
     "typecheck": "tsc --noEmit",
     "verify": "npm run verify:private-data && npm run lint && npm run typecheck && npm run check:cycles && npm test",
