@@ -1,5 +1,5 @@
 import { afterEach, describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { NotificationsForm } from '@/components/settings/NotificationsForm'
 import { t } from '@/i18n'
@@ -53,6 +53,25 @@ describe('NotificationsForm (v4.17; 3.0 1i)', () => {
 
       expect(savePushCategories).toHaveBeenCalledWith({ training: true, shoes: true, records: false })
       expect(localStorage.getItem('notif_shoes')).toBe('true')
+    })
+
+    it('keeps every other switch as it is while a tap saves', async () => {
+      vi.stubGlobal('Notification', { permission: 'granted' })
+      vi.stubGlobal('PushManager', class {})
+      Object.defineProperty(navigator, 'serviceWorker', { value: {}, configurable: true })
+      localStorage.setItem('notif_training', 'true')
+      localStorage.setItem('notif_races', 'true')
+      let finishSave = () => {}
+      savePushCategories.mockReturnValue(new Promise<void>((resolve) => { finishSave = resolve }))
+      const n = t.settings.notifications.types
+      const checked = () => [n.training, n.shoes, n.records].map((type) => screen.getByRole('switch', { name: type.title }).getAttribute('aria-checked'))
+
+      render(<NotificationsForm />)
+      await userEvent.click(await screen.findByRole('switch', { name: n.shoes.title }))
+
+      expect(checked()).toEqual(['true', 'true', 'true'])
+      await act(async () => finishSave())
+      expect(checked()).toEqual(['true', 'true', 'true'])
     })
   })
 })
