@@ -4,9 +4,10 @@ import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ChevronRight } from 'lucide-react'
-import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
+import { browserPopupRedirectResolver, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { SectionDivider } from '@/components/ui/SectionLabel'
-import { getClientAuth, isClientFirebaseConfigured } from '@/lib/firebase'
+import { getClientAuth } from '@/lib/firebaseAuth'
+import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { SIGN_IN_PATH, endSiteSession, replacePage } from '@/lib/siteSession'
 import { formatRelativeAgo } from '@/lib/formatters'
@@ -63,7 +64,7 @@ export function SettingsClient({ lastSyncedAt, activityCount, device, body, zone
       provider.setCustomParameters({ prompt: 'select_account' })
       const auth = getClientAuth()
       auth.languageCode = t.locale
-      await signInWithPopup(auth, provider)
+      await signInWithPopup(auth, provider, browserPopupRedirectResolver)
     } catch (err) {
       const code = (err as { code?: string }).code
       if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {

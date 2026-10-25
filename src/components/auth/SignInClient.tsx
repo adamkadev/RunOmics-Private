@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { User } from 'firebase/auth'
 import { isClientFirebaseConfigured } from '@/lib/firebaseConfig'
+import { loadAuth } from '@/lib/loadAuth'
 import { openSiteSession, replacePage, safeNextPath } from '@/lib/siteSession'
 import { HeaderMark } from '@/components/layout/HeaderMark'
 import { Button } from '@/components/ui/Button'
@@ -18,11 +19,6 @@ type Phase =
   | { kind: 'notInvited'; email: string | null }
   | { kind: 'unavailable' }
   | { kind: 'failed' }
-
-async function loadAuth() {
-  const [authSdk, { getClientAuth }] = await Promise.all([import('firebase/auth'), import('@/lib/firebaseAuth')])
-  return { ...authSdk, auth: getClientAuth() }
-}
 
 async function openSite(account: User, setPhase: (phase: Phase) => void) {
   setPhase({ kind: 'opening' })
@@ -52,7 +48,7 @@ export function SignInClient() {
     if (!isClientFirebaseConfigured) return
     let cancelled = false
     let unsubscribe: (() => void) | undefined
-    loadAuth()
+    loadAuth({ forSignIn: true })
       .then(({ onAuthStateChanged, auth }) => {
         if (cancelled) return
         unsubscribe = onAuthStateChanged(auth, (account) => {
@@ -73,12 +69,12 @@ export function SignInClient() {
   async function signIn() {
     setPhase({ kind: 'signingIn' })
     try {
-      const { auth, GoogleAuthProvider, signInWithPopup } = await loadAuth()
+      const { auth, GoogleAuthProvider, browserPopupRedirectResolver, signInWithPopup } = await loadAuth({ forSignIn: true })
       const provider = new GoogleAuthProvider()
       provider.setCustomParameters({ prompt: 'select_account' })
       auth.languageCode = t.locale
       // The account arrives through onAuthStateChanged, which opens the site.
-      await signInWithPopup(auth, provider)
+      await signInWithPopup(auth, provider, browserPopupRedirectResolver)
     } catch (err) {
       const code = (err as { code?: string }).code
       if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') setPhase({ kind: 'signedOut' })
