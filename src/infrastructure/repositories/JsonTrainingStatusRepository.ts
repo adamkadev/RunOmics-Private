@@ -1,4 +1,5 @@
 import { dataPath } from '../dataPath'
+import { dataGeneration } from '../dataFs'
 import { readJsonFile } from '../readJsonFile'
 
 export interface TrainingStatusDay {
@@ -17,6 +18,8 @@ export interface TrainingStatusDay {
 type StoredDays = Record<string, Omit<TrainingStatusDay, 'date'>>
 type StoredFile = { days?: StoredDays }
 
+let cache: { generation: string; days: TrainingStatusDay[] } | null = null
+
 function readFile(): StoredFile {
   return readJsonFile<StoredFile>(dataPath('training_status.json'), {})
 }
@@ -28,7 +31,9 @@ function toSeries(stored: StoredDays | undefined): TrainingStatusDay[] {
 }
 
 export function getTrainingStatusDays(): TrainingStatusDay[] {
-  return toSeries(readFile().days)
+  const generation = dataGeneration()
+  if (cache?.generation !== generation) cache = { generation, days: toSeries(readFile().days) }
+  return cache.days
 }
 
 export function getLatestTrainingStatusDay(): TrainingStatusDay | null {

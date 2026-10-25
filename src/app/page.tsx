@@ -40,7 +40,7 @@ export default async function DashboardPage() {
   const records = await getRecords()
   const mostRecentRecord = getMostRecentRecord(records)
   const todayPlannedWorkout = await getTodayPlannedWorkout(today)
-  const recentLoad = await getRecentLoad(today)
+  const recentLoad = getRecentLoad(today, trainingStatus)
   const coaching = getCoachingOverview(today)
   const weekTarget = await loadWeekTarget(today, coaching)
 
