@@ -182,7 +182,8 @@ def main() -> int:
                     continue
 
                 route_info = f"{len(activity_data.route)} pts" if activity_data.route else "no GPS"
-                hr_info = f"avg HR {activity_data.avg_heart_rate}" if activity_data.avg_heart_rate else "no HR"
+                # The Actions log is world-readable: whether HR was recorded, never its value.
+                hr_info = "HR" if activity_data.avg_heart_rate else "no HR"
                 status = f"{activity_data.type}, {activity_data.distance_km} km, {hr_info}, {route_info}"
 
                 if args.dry_run:
