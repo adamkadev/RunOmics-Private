@@ -523,8 +523,6 @@ describe('the French tab names', () => {
   it('names the load tab Charge', async () => {
     const { fr } = await import('@/i18n/fr')
     expect(fr.analytics.tabs).toEqual({ fitness: 'Charge', performance: 'Performance', volume: 'Volume', health: 'Intensité' })
-    expect(fr.analytics.cards.risk.title).toBe('Risque de blessure')
-    expect(fr.analytics.cards.risk.loadRatio).toBe('Ratio de charge')
     expect(fr.analytics.cards.heatCost.title).toBe('Coût de la température')
   })
 })

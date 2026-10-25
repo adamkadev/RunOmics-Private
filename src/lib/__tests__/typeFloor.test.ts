@@ -2,7 +2,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-/** No readable text below 11 px; text-micro (10 px) is kept for chart ticks, set through Recharts' tick props. */
 function sources(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name)

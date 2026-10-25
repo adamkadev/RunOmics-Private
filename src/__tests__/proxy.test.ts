@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server'
 import { config, proxy } from '../proxy'
 import { SESSION_COOKIE, signSession } from '@/lib/siteAccess'
+import { workerUrl } from '@/lib/maplibre'
 
 const SECRET = 'a-test-secret-that-is-long-enough-1234567890'
 
@@ -73,7 +74,7 @@ describe('the proxy', () => {
         '/_next/image?url=%2Ficons%2Fweb-192.png&w=64&q=75',
         '/icons/apple-touch-icon.png',
         '/icons/splash/iphone-16-portrait.png',
-        '/maplibre/maplibre-gl-worker.mjs',
+        workerUrl('6.15.0'),
         '/manifest.json',
         '/sw.js',
         '/firebase-messaging-sw.js',

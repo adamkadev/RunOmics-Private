@@ -29,7 +29,6 @@ describe('TodaySessionCard', () => {
     // No phase label and no "Open in Plan": the card is the tap target.
     expect(link).not.toHaveTextContent('Base')
     expect(screen.getByTestId('session-detail').textContent).toBe(`10 ${t.units.km} · 1:00 h · ≤ 158 bpm`)
-    expect(link).not.toHaveTextContent(t.dashboard.todayHero.openInPlan)
     expect(link.textContent).not.toMatch(/watch/i)
     expect(link.querySelector('button')).toBeNull()
     expect(screen.getAllByRole('link')).toHaveLength(1)

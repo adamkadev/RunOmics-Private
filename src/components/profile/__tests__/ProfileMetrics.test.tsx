@@ -41,7 +41,6 @@ describe('capability-driven athlete metrics', () => {
 
     expect(screen.getByText(a.vma)).toBeInTheDocument()
     expect(screen.queryByText(a.thresholdPace)).not.toBeInTheDocument()
-    expect(screen.queryByText(t.profile.athlete.notSet)).not.toBeInTheDocument()
   })
 
   it('shows the heart row, then threshold pace and VMA, in one card of three columns', () => {
@@ -55,7 +54,6 @@ describe('capability-driven athlete metrics', () => {
     const card = screen.getByTestId('athlete-stats')
     expect(card.className).toContain('grid-cols-3')
     expect(card.textContent).not.toMatch(/estimated|zones\)/i)
-    expect(screen.queryByText(a.vo2max)).not.toBeInTheDocument()
     expect(screen.queryByRole('button')).toBeNull()
   })
 

@@ -21,7 +21,6 @@ describe('RunEffortCard', () => {
     expect(card.textContent).toContain('3.1')
     expect(card.textContent).toContain(t.activity.trainingEffect.levels.improving)
     expect(card.textContent).toContain(t.activity.decoupling.held)
-    expect(card.textContent).not.toContain(t.activity.decoupling.reading.stable)
     expect(card.textContent).not.toContain(t.activity.trainingEffect.anaerobic)
   })
 

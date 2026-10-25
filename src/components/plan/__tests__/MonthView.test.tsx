@@ -165,7 +165,6 @@ describe('the legend and the summary', () => {
 
     const summary = screen.getByTestId('month-summary')
     expect(summary.textContent).toContain(t.plan.month.kmOf('18', '53'))
-    expect(summary.textContent).not.toContain(t.plan.month.phaseWeek(t.plan.weekPurpose.planPhase.build, 2, 6))
   })
 
   it('compares the plan’s own days, and says the month’s total beside them', () => {
