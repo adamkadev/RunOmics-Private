@@ -3,7 +3,7 @@ import type { OfficialRaceResult } from '@/domain/activity/raceResult'
 import type { CoachingPlan, NumberRange, WorkoutPrescription, WorkoutSegment } from '@/domain/coaching/types'
 import { DAY_MS } from '@/lib/calendarDate'
 import { thresholdPaceFromVdot, vdotFromEffort } from '@/domain/training/vdot'
-import { CONTROLLED_THRESHOLD, repLengthClass, type RepLengthClass } from './controlledThreshold'
+import { CONTROLLED_THRESHOLD, heartRateUnder, repLengthClass, type RepLengthClass } from './controlledThreshold'
 
 /**
  * Proposes - never applies - the changes the athlete's rules call for.
@@ -107,9 +107,9 @@ function readReps(activity: Activity, repSeconds: number): RepReading[] {
   return reps
 }
 
-function verdictOf(reps: RepReading[], guide: NumberRange, targetHr: number): SessionVerdict {
+function verdictOf(reps: RepReading[], guide: NumberRange, targetHr: number, ceiling: number): SessionVerdict {
   if (reps.length === 0) return 'unreadable'
-  const { guideToleranceSecPerKm: tolerance, ceilingHrBpm: ceiling, wellUnderBpm } = CONTROLLED_THRESHOLD.autoregulation
+  const { guideToleranceSecPerKm: tolerance, wellUnderBpm } = CONTROLLED_THRESHOLD.autoregulation
   const fast = reps.some((rep) => rep.paceSecPerKm < guide.min - tolerance)
   const slow = reps.some((rep) => rep.paceSecPerKm > guide.max + tolerance)
   const over = reps.some((rep) => rep.windowHr > targetHr || rep.windowMaxHr >= ceiling)
@@ -121,9 +121,10 @@ function verdictOf(reps: RepReading[], guide: NumberRange, targetHr: number): Se
 export function readControlledSession(activity: Activity, prescription: WorkoutPrescription): ControlledSessionReading | null {
   const controlled = controlledStep(prescription)
   if (!controlled) return null
-  const { durationSeconds, paceSecPerKm } = controlled.step.target
+  const { durationSeconds, paceSecPerKm, hrBpm } = controlled.step.target
   const repClass = repLengthClass(durationSeconds!)
-  const targetHr = CONTROLLED_THRESHOLD.autoregulation.targetHrBpm[repClass]
+  const { ceilingBpm, targetBpm } = heartRateUnder(hrBpm!.max)
+  const targetHr = targetBpm[repClass]
   const reps = readReps(activity, durationSeconds!)
   return {
     date: dayOf(activity),
@@ -132,10 +133,10 @@ export function readControlledSession(activity: Activity, prescription: WorkoutP
     repClass,
     guide: paceSecPerKm!,
     targetHr,
-    ceilingHr: CONTROLLED_THRESHOLD.autoregulation.ceilingHrBpm,
+    ceilingHr: ceilingBpm,
     tempC: activity.weather?.tempC ?? null,
     reps,
-    verdict: verdictOf(reps, paceSecPerKm!, targetHr),
+    verdict: verdictOf(reps, paceSecPerKm!, targetHr, ceilingBpm),
   }
 }
 

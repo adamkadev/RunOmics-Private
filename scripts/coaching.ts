@@ -194,7 +194,8 @@ async function autoregulate(args: string[]): Promise<void> {
   const { getCoachingContext } = await interopImport(import('@/application/coaching/GetCoachingContext'))
   const { autoregulationReport } = await interopImport(import('@/application/coaching/autoregulation'))
   const { createAutoregulationProposal } = await interopImport(import('@/application/coaching/workflows'))
-  const { CONTROLLED_THRESHOLD } = await interopImport(import('@/application/coaching/controlledThreshold'))
+  const { CONTROLLED_THRESHOLD, controlledThresholdHr } = await interopImport(import('@/application/coaching/controlledThreshold'))
+  const { getAthleteProfile } = await interopImport(import('@/infrastructure/repositories/JsonAthleteRepository'))
   const { getOfficialRaceResults } = await interopImport(import('@/infrastructure/repositories/JsonRaceResultRepository'))
 
   const repository = new JsonCoachingRepository(process.env.RUNOMICS_DATA_DIR)
@@ -203,12 +204,16 @@ async function autoregulate(args: string[]): Promise<void> {
   const referenceDate = option(args, '--reference-date') ?? new Date().toISOString().slice(0, 10)
   const report = autoregulationReport(getAllActivities(), [plan, ...repository.getArchivedPlans()], referenceDate, getOfficialRaceResults())
 
-  console.log(`\nControlled threshold sessions in the last ${CONTROLLED_THRESHOLD.fatigue.lookbackDays} days (heart rate from minute 3 / target / ceiling ${CONTROLLED_THRESHOLD.autoregulation.ceilingHrBpm}):`)
+  const hr = controlledThresholdHr(getAthleteProfile().lthrBpm)
+  console.log(hr
+    ? `\nFrom LTHR ${hr.lthrBpm}: ceiling ${hr.ceilingBpm}, target ${hr.targetBpm.long} long / ${hr.targetBpm.medium} medium / ${hr.targetBpm.short} short.`
+    : '\nNo lactate threshold heart rate in the athlete data, so a new block gets no controlled threshold sessions.')
+  console.log(`\nControlled threshold sessions in the last ${CONTROLLED_THRESHOLD.fatigue.lookbackDays} days (heart rate from minute 3, against the ceiling each prescribed):`)
   if (report.controlledSessions.length === 0) console.log('  none read yet')
   for (const session of report.controlledSessions) {
     const reps = session.reps.map((rep) => `${rep.windowHr} @ ${pace(rep.paceSecPerKm)}`).join(', ')
     const temperature = session.tempC === null ? '' : `, ${session.tempC} °C`
-    console.log(`  ${session.date} ${session.repClass.padEnd(6)} guide ${pace(session.guide.min)}-${pace(session.guide.max)}  ${reps || 'no repetitions read'}${temperature}  target ${session.targetHr}: ${session.verdict}`)
+    console.log(`  ${session.date} ${session.repClass.padEnd(6)} guide ${pace(session.guide.min)}-${pace(session.guide.max)}  ${reps || 'no repetitions read'}${temperature}  target ${session.targetHr} / ceiling ${session.ceilingHr}: ${session.verdict}`)
   }
 
   const fatigue = report.fatigue

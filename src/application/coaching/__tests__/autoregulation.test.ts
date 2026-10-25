@@ -3,10 +3,11 @@ import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { CoachingPlan, NumberRange, WorkoutPrescription } from '@/domain/coaching/types'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
 import { assessFatigue, autoregulationReport, proposeGuideChanges, readControlledSession, type EasyRunReading } from '../autoregulation'
+import { controlledThresholdHr } from '../controlledThreshold'
 
 const LONG: NumberRange = { min: 272, max: 280 }
 
-function controlledPrescription(date: string, reps = 3, minutes = 10, guide: NumberRange = LONG): WorkoutPrescription {
+function controlledPrescription(date: string, reps = 3, minutes = 10, guide: NumberRange = LONG, ceiling = 173): WorkoutPrescription {
   return workout({
     id: `threshold-${date}`,
     date,
@@ -16,7 +17,7 @@ function controlledPrescription(date: string, reps = 3, minutes = 10, guide: Num
         kind: 'repeat',
         repetitions: reps,
         steps: [
-          { kind: 'effort', target: { durationSeconds: minutes * 60, paceSecPerKm: guide, hrBpm: { min: 156, max: 173 } } },
+          { kind: 'effort', target: { durationSeconds: minutes * 60, paceSecPerKm: guide, hrBpm: { min: 156, max: ceiling } } },
           { kind: 'recovery', target: { durationSeconds: 90 } },
         ],
       },
@@ -97,9 +98,24 @@ describe('reading a controlled threshold session from minute 3', () => {
     expect(reading).toMatchObject({ repClass: 'medium', targetHr: 171, verdict: 'on_target' })
   })
 
+  it('reads a session against the ceiling it prescribed, not a fixed one', () => {
+    const reading = readControlledSession(controlledRun('2026-10-28', even(158)), controlledPrescription('2026-10-28', 3, 10, LONG, 160))!
+    expect(reading).toMatchObject({ targetHr: 156, ceilingHr: 160, verdict: 'over' })
+  })
+
   it('says nothing for a run without heart-rate samples', () => {
     const run = { ...controlledRun('2026-10-28', even(168)), hrSamples: null }
     expect(readControlledSession(run, controlledPrescription('2026-10-28'))!.verdict).toBe('unreadable')
+  })
+})
+
+describe('the heart-rate targets a new block is given', () => {
+  it('sets an LTHR of 179 to a ceiling of 173 and targets of 169 long, 171 medium and short', () => {
+    expect(controlledThresholdHr(179)).toEqual({ lthrBpm: 179, ceilingBpm: 173, targetBpm: { long: 169, medium: 171, short: 171 } })
+  })
+
+  it('sets none without an LTHR', () => {
+    expect(controlledThresholdHr(undefined)).toBeNull()
   })
 })
 

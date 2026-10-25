@@ -1,7 +1,4 @@
-/**
- * Coaching rules of thumb, not measured limits, kept together to be tuned; the planner is told
- * the dose limits as they stand. A controlled threshold repetition carries an hrBpm cap.
- */
+/** Coaching rules of thumb, not measured limits, kept together to be tuned; the planner is told them as they stand. */
 export const CONTROLLED_THRESHOLD = {
   dose: {
     /** The most a week's controlled threshold time may grow over the loading week before it. */
@@ -11,10 +8,13 @@ export const CONTROLLED_THRESHOLD = {
   },
   /** The shortest repetition of each class, in seconds: 8-10 minutes is long, 5-6 medium, shorter is short. */
   repClassMinSeconds: { long: 450, medium: 240 },
+  heartRate: {
+    /** A repetition's ceiling sits this far under the athlete's LTHR, which keeps it sub-threshold. */
+    ceilingBelowLthrBpm: 6,
+    /** Where a repetition's heart rate should settle, this far under the ceiling, per class. */
+    targetBelowCeilingBpm: { long: 4, medium: 2, short: 2 },
+  },
   autoregulation: {
-    /** Where a repetition's heart rate should settle, per class. */
-    targetHrBpm: { long: 169, medium: 171, short: 171 },
-    ceilingHrBpm: 173,
     /** Heart rate lags, so a repetition is read from here to its end. */
     windowStartSeconds: 180,
     /** "Well under target": this far below it in every repetition. */
@@ -48,6 +48,26 @@ export const CONTROLLED_THRESHOLD = {
 } as const
 
 export type RepLengthClass = 'long' | 'medium' | 'short'
+
+export interface ControlledThresholdHr {
+  ceilingBpm: number
+  targetBpm: Record<RepLengthClass, number>
+}
+
+/** A session is judged against the ceiling it prescribed, which is what the watch held the athlete to. */
+export function heartRateUnder(ceilingBpm: number): ControlledThresholdHr {
+  const below = CONTROLLED_THRESHOLD.heartRate.targetBelowCeilingBpm
+  return {
+    ceilingBpm,
+    targetBpm: { long: ceilingBpm - below.long, medium: ceilingBpm - below.medium, short: ceilingBpm - below.short },
+  }
+}
+
+/** Null without an LTHR: a %HRmax zone floor is no threshold, so no ceiling is guessed from one. */
+export function controlledThresholdHr(lthrBpm: number | null | undefined): (ControlledThresholdHr & { lthrBpm: number }) | null {
+  if (!lthrBpm) return null
+  return { lthrBpm, ...heartRateUnder(lthrBpm - CONTROLLED_THRESHOLD.heartRate.ceilingBelowLthrBpm) }
+}
 
 export function repLengthClass(seconds: number): RepLengthClass {
   if (seconds >= CONTROLLED_THRESHOLD.repClassMinSeconds.long) return 'long'
