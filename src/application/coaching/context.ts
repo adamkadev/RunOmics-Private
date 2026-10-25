@@ -24,6 +24,7 @@ import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import type { LoadBalanceData } from '@/application/usecases/GetLoadBalance'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
+import { otherTrainingFacts, type CrossTrainingSession, type OtherTrainingFacts } from '@/domain/activity/crossTraining'
 
 const RECENT_DAYS = 28
 const RACE_DISTANCE_TOLERANCE = 0.1
@@ -64,6 +65,8 @@ export interface CoachingContext {
     runs28Days: number
   }
   gaps: { daysSinceLastRun: number | null; longestGap28Days: number }
+  /** Strength, cycling and the rest over 28 days, outside every running figure; absent without any. */
+  otherTraining?: OtherTrainingFacts
   load: {
     ctl: number | null
     atl: number | null
@@ -120,6 +123,7 @@ export interface CoachingContextInput {
   activityNotes?: Map<string, { note: string; tags: string[] }>
   /** The plans the current one replaced, newest first, so a session before a block boundary is still read. */
   archivedPlans?: CoachingPlan[]
+  crossTraining?: CrossTrainingSession[]
 }
 
 function dayNumber(date: string): number {
@@ -211,6 +215,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
   const garmin = input.trainingStatus
   const officialResults = officialResultsByActivityId(input.officialResults)
   const history = trainingHistory(input.activities, referenceDate)
+  const otherTraining = otherTrainingFacts(input.crossTraining ?? [], referenceDate)
 
   return {
     schemaVersion: 1,
@@ -238,6 +243,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       runs28Days: recent.length,
     },
     gaps: gapSummary(recent, referenceDate),
+    ...(otherTraining ? { otherTraining } : {}),
     load: {
       ctl: garmin?.ctl ?? null,
       atl: garmin?.atl ?? null,

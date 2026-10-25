@@ -7,6 +7,7 @@ import { getGoalYears } from '@/infrastructure/repositories/JsonGoalRepository'
 import { getPbYears } from '@/infrastructure/repositories/JsonPbRepository'
 import { getUpcomingRaceYears } from '@/infrastructure/repositories/JsonUpcomingRaceRepository'
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
+import { getCrossTrainingSessions } from '@/infrastructure/repositories/JsonCrossTrainingRepository'
 import { getTrainingStatus } from '@/application/usecases/GetTrainingStatus'
 import { getLoadBalance } from '@/application/usecases/GetLoadBalance'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
@@ -106,5 +107,6 @@ export async function getCoachingContext(plan: CoachingPlan | null, referenceDat
     personalBests: getPbYears(),
     upcomingRaces: getUpcomingRaceYears().flatMap((year) => year.races),
     officialResults: getOfficialRaceResults(),
+    crossTraining: getCrossTrainingSessions(),
   }, referenceDate)
 }
