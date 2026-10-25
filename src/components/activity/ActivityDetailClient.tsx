@@ -26,7 +26,7 @@ import { cn } from '@/lib/utils'
 import type { SimilarRunsData } from '@/application/usecases/GetSimilarRuns'
 import { SimilarRuns } from './SimilarRuns'
 import { ActivityNotes } from './ActivityNotes'
-import { conditionsText, garminActivityUrl } from './runConditions'
+import { conditionsChips, garminActivityUrl } from './runConditions'
 import { isWatchId } from '@/lib/garminConnect'
 import type { ShoeTag } from '@/domain/shoe/types'
 import type { Insight } from '@/lib/gemini'
@@ -237,9 +237,12 @@ export function ActivityDetailClient({
         <span className={RUN_CHIP_CLASS} data-testid="run-effort">
           {activity.rpe !== null ? t.activities.row.rpeValue(activity.rpe) : `${e.label} ${e.notLogged}`}
         </span>
-        {activity.weather && (
-          <span className={RUN_CHIP_CLASS} data-testid="run-conditions">{conditionsText(activity.weather)}</span>
-        )}
+        {activity.weather &&
+          conditionsChips(activity.weather).map((text) => (
+            <span key={text} className={RUN_CHIP_CLASS} data-testid="run-conditions">
+              {text}
+            </span>
+          ))}
         {/* The pair is set on the watch, so the chip opens Garmin Connect, but only
             for a run with a watch id: otherwise there is nothing at the other end. */}
         {isWatchId(activity.id) && !activity.gearPending ? (

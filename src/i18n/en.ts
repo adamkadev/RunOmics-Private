@@ -1574,6 +1574,8 @@ export const en = {
     },
     conditions: {
       wind: (reading: string) => `wind ${reading}`,
+      feels: (temp: string) => `feels ${temp}`,
+      humidity: (pct: number) => `${pct}% humidity`,
     },
     shoe: {
       add: 'Add shoe',

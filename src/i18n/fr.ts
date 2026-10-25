@@ -1485,6 +1485,8 @@ export const fr = {
     },
     conditions: {
       wind: (reading: string) => `vent ${reading}`,
+      feels: (temp: string) => `ressenti ${temp}`,
+      humidity: (pct: number) => `${pct} % d’humidité`,
     },
     shoe: {
       add: 'Ajouter la chaussure',
