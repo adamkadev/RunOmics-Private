@@ -20,9 +20,10 @@ import { getDynamicsBaseline } from '@/application/usecases/GetDynamicsBaseline'
 import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsight'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
-import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { getRunSessions } from '@/application/coaching/GetCoachingView'
+import { controlledRunView } from '@/application/coaching/GetCoachReadout'
+import { ControlledThresholdCard } from '@/components/activity/ControlledThresholdCard'
 import { sessionLabel } from '@/lib/activityTitle'
-import { appTodayIso } from '@/lib/calendarDate'
 import { paceZones } from '@/application/usecases/GetTrainingZones'
 import { chartZones } from '@/components/activity/chartStackLanes'
 import { formatDate, formatDistance, formatDuration, formatPace } from '@/lib/formatters'
@@ -34,8 +35,8 @@ export const revalidate = 3600
 /** The newest runs, the ones opened most, are built ahead; the rest render on first visit and are kept as these are. */
 const PRERENDERED_RUNS = 20
 
-// The title and the page each name the coach's session: one read of the plan per request.
-const coachingOverview = cache((today: string) => getCoachingOverview(today))
+// The title and the page each name the coach's session: one read of the plans per request.
+const runSessions = cache(() => getRunSessions())
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   await loadData()
@@ -43,7 +44,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) return { title: t.activity.metaFallbackTitle }
 
-  const name = runName(activity, shareSession(coachingOverview(appTodayIso())?.workouts ?? [], activity))
+  const name = runName(activity, shareSession(runSessions(), activity))
   const stats = [
     formatDistance(activity.distanceKm),
     formatDuration(activity.durationSeconds),
@@ -91,7 +92,8 @@ export default async function ActivityDetailPage({
   const newGround = getRunExploreGain(id)
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
   // The coach's session this run was, for its name in the header and on the share card, and its reps' target pace.
-  const session = shareSession(coachingOverview(appTodayIso())?.workouts ?? [], activity)
+  const session = shareSession(runSessions(), activity)
+  const controlledRun = controlledRunView(activity, session)
   // The watch's own plan for the day, for a rep target the coach never matched.
   const plannedForDay = (await getPlannedWorkouts()).find((w) => w.date === activity.date.slice(0, 10)) ?? null
 
@@ -121,8 +123,9 @@ export default async function ActivityDetailPage({
         shoe={shoe}
         similarRuns={similarRuns}
         extras={
-          officialResult || activity.bestEfforts || newGround ? (
+          officialResult || activity.bestEfforts || newGround || controlledRun ? (
             <>
+              {controlledRun && <ControlledThresholdCard view={controlledRun} />}
               {officialResult && (
                 <OfficialResult
                   result={officialResult}

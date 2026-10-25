@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildCoachingOverview } from '@/application/coaching/GetCoachingView'
+import { coachReadout } from '@/application/coaching/GetCoachReadout'
+import type { AutoregulationReport } from '@/application/coaching/autoregulation'
 import type { Activity } from '@/domain/activity/types'
 import { COACHING_SCHEMA_VERSION, type WorkoutEvaluation } from '@/domain/coaching/types'
 import { keepDecision, plan, workout } from '@/domain/coaching/__tests__/fixtures'
@@ -88,6 +90,31 @@ describe('planCoachingView', () => {
     const trimmed = coachWorkoutView(view.workouts[0]!)
 
     expect({ ...trimmed, description: full.description, notes: full.notes }).toEqual(full)
+  })
+})
+
+describe('the coach readout', () => {
+  const report = {
+    referenceDate: '2026-09-09',
+    controlledSessions: [],
+    guideProposals: [{ repClass: 'long', direction: 'faster', guide: { min: 272, max: 280 }, proposedGuide: { min: 268, max: 276 }, stepSecPerKm: 4, sessions: [] }],
+    fatigue: { run: { activityId: 'easy', date: '2026-09-08', hr: 152, paceSecPerKm: 345, tempC: 14, durationSeconds: 3_300 }, normalHr: 146, comparables: 3, flagged: true },
+    fitnessCheck: null,
+  } as AutoregulationReport
+
+  it('carries what the coach decided and autoregulate proposes as facts, never their written summaries', () => {
+    const readout = coachReadout(overview, report)
+    const payload = JSON.stringify(planCoachingView(overview, readout))
+
+    expect(readout).toMatchObject({
+      decision: { outcome: 'KEEP', trigger: 'post_activity', date: '2026-09-05' },
+      guideProposals: [{ repClass: 'long', direction: 'faster', proposedGuide: { min: 268, max: 276 } }],
+      fatigue: { date: '2026-09-08', aboveNormalBpm: 6 },
+      nextKey: null,
+    })
+    for (const text of ['Session completed as intended.', 'PACE_IN_RANGE', 'tagged the run sick']) {
+      expect(payload).not.toContain(text)
+    }
   })
 })
 

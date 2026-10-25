@@ -534,6 +534,120 @@ function buildPlannedWorkouts(rng, endDate) {
 
 const MACROCYCLE_DAYS = 84
 
+// The ceiling a planner writes from this athlete's LTHR, as controlledThresholdHr gives it.
+const CONTROLLED_CEILING_BPM = ATHLETE.lthrBpm - 6
+const CONTROLLED_REP = { count: 3, seconds: 480, recoverySeconds: 90, warmupSeconds: 600, hrBpm: 165 }
+const SAMPLE_SECONDS = 15
+
+// Garmin files a sub-threshold session as tempo, so two quality runs become one, keeping their distance and time.
+function shapeControlledRuns(activities, before) {
+  const since = isoDate(addDays(new Date(`${before}T00:00:00Z`), -35))
+  const runs = activities
+    .filter((a) => (a.type === 'Tempo' || a.type === 'Threshold') && a.date >= since && a.date < before && a.durationSeconds >= 2_600)
+    .slice(-2)
+  if (runs.length < 2) return null
+  const repPace = Math.round(Math.min(...runs.map((a) => a.paceSecPerKm))) - 4
+  for (const activity of runs) {
+    const { count, seconds, recoverySeconds, warmupSeconds, hrBpm } = CONTROLLED_REP
+    const repM = round((seconds / repPace) * 1_000, 1)
+    const recoveryM = round((recoverySeconds / (repPace + 70)) * 1_000, 1)
+    const cooldownSeconds = activity.durationSeconds - warmupSeconds - count * seconds - (count - 1) * recoverySeconds
+    const easyM = activity.distanceKm * 1_000 - count * repM - (count - 1) * recoveryM
+    const warmupM = round((easyM * warmupSeconds) / (warmupSeconds + cooldownSeconds), 1)
+    const segments = [{ type: 'interval_warmup', seconds: warmupSeconds, metres: warmupM, hr: 152 }]
+    for (let rep = 0; rep < count; rep++) {
+      segments.push({ type: 'interval_active', seconds, metres: repM, hr: hrBpm })
+      if (rep < count - 1) segments.push({ type: 'interval_recovery', seconds: recoverySeconds, metres: recoveryM, hr: 158 })
+    }
+    segments.push({ type: 'interval_cooldown', seconds: cooldownSeconds, metres: round(easyM - warmupM, 1), hr: 154 })
+
+    const samplesFor = (lift) => segments.flatMap((segment) => Array.from({ length: Math.round(segment.seconds / SAMPLE_SECONDS) }, (_, i) => {
+      if (segment.type === 'interval_active') return Math.min(segment.hr, 150 + Math.round((i * SAMPLE_SECONDS * (segment.hr - 150)) / 180))
+      return segment.type === 'interval_recovery' ? segment.hr : segment.hr + lift
+    }))
+    const mean = (values) => values.reduce((sum, v) => sum + v, 0) / values.length
+    // Tempo runs average in Z3, so the easy laps carry what the reps alone do not.
+    let lift = 0
+    while (mean(samplesFor(lift)) < ATHLETE.hrZoneBoundsBpm[2] + 0.6) lift++
+    const samples = samplesFor(lift)
+    activity.type = 'Tempo'
+    activity.hrSamples = samples
+    activity.avgHeartRate = Math.round(mean(samples))
+    activity.splits = segments.map((segment) => ({
+      type: segment.type,
+      durationSec: segment.seconds,
+      distanceM: segment.metres,
+      avgSpeedMs: round(segment.metres / segment.seconds, 3),
+      avgHr: segment.type === 'interval_active' || segment.type === 'interval_recovery' ? segment.hr : segment.hr + lift,
+      laps: [],
+    }))
+  }
+  return { runs, guide: { min: repPace - 4, max: repPace + 4 } }
+}
+
+function clockLabel(seconds) {
+  return `${Math.floor(seconds / 60)}:${pad(Math.round(seconds % 60), 2)}`
+}
+
+/** The block before the current one, kept under superseded/ as bootstrap --replace keeps it. */
+function buildPreviousPlan(controlled, start, provenance) {
+  const { runs, guide } = controlled
+  const middle = Math.round((guide.min + guide.max) / 2)
+  const sessions = runs.map((activity, index) => {
+    const { count, seconds, recoverySeconds, warmupSeconds } = CONTROLLED_REP
+    return {
+      id: `demo-previous-threshold-${index}`,
+      revision: 1,
+      date: activity.date,
+      type: 'threshold',
+      title: `Threshold · ${count} × ${seconds / 60}′ @ ${clockLabel(middle)}`,
+      shortName: `Threshold ${count}×${seconds / 60}′`,
+      structure: { reps: count, repMinutes: seconds / 60, targetPace: clockLabel(middle) },
+      description: 'Controlled threshold: run the pace guide, heart rate under the ceiling.',
+      status: 'prescribed',
+      blocks: [
+        { kind: 'warmup', target: { durationSeconds: warmupSeconds } },
+        {
+          kind: 'repeat',
+          repetitions: count,
+          steps: [
+            { kind: 'effort', target: { durationSeconds: seconds, paceSecPerKm: guide, hrBpm: { min: 150, max: CONTROLLED_CEILING_BPM } } },
+            { kind: 'recovery', target: { durationSeconds: recoverySeconds } },
+          ],
+        },
+        { kind: 'cooldown', target: { durationSeconds: 600 } },
+      ],
+      provenance,
+    }
+  })
+  const first = new Date(`${runs[0].date}T00:00:00Z`)
+  const monday = addDays(first, -((first.getUTCDay() + 6) % 7))
+  const lastDay = isoDate(addDays(new Date(`${start}T00:00:00Z`), -1))
+  const weeks = []
+  for (let weekStart = monday, index = 1; isoDate(weekStart) <= lastDay; weekStart = addDays(weekStart, 7), index++) {
+    const startDate = isoDate(weekStart)
+    const endDate = isoDate(addDays(weekStart, 6)) < lastDay ? isoDate(addDays(weekStart, 6)) : lastDay
+    weeks.push({
+      id: `demo-previous-week-${index}`,
+      index,
+      startDate,
+      endDate,
+      focus: 'Controlled threshold base',
+      workouts: sessions.filter((session) => session.date >= startDate && session.date <= endDate),
+    })
+  }
+  return {
+    schemaVersion: 1,
+    id: 'demo-previous-plan',
+    revision: 1,
+    status: 'superseded',
+    block: { id: 'demo-previous-block', name: 'Controlled threshold base', startDate: isoDate(monday), endDate: lastDay, focus: 'Controlled threshold base' },
+    goal: { kind: 'performance', description: 'General preparation.' },
+    weeks,
+    provenance,
+  }
+}
+
 function buildCoachingData(endDate, activities) {
   const latest = activities[activities.length - 1]
   const start = latest ? new Date(latest.date + 'T00:00:00Z') : endDate
@@ -542,6 +656,10 @@ function buildCoachingData(endDate, activities) {
   const evaluationCreatedAt = new Date(new Date(createdAt).getTime() + 60 * 60 * 1_000).toISOString()
   const planId = 'demo-coaching-plan'
   const provenance = { source: 'demo', trigger: 'bootstrap', createdAt }
+  const controlled = latest ? shapeControlledRuns(activities, latest.date) : null
+  const previousPlan = controlled
+    ? buildPreviousPlan(controlled, isoDate(start), { ...provenance, createdAt: new Date(new Date(createdAt).getTime() - 30 * 86_400_000).toISOString() })
+    : null
   const workout = (id, date, type, title, blocks, totalDurationSeconds, totalDistanceMeters) => ({
     id,
     revision: 1,
@@ -562,7 +680,7 @@ function buildCoachingData(endDate, activities) {
       kind: 'repeat',
       repetitions: 3,
       steps: [
-        { kind: 'effort', target: { durationSeconds: 480, paceSecPerKm: { min: 265, max: 270 } } },
+        { kind: 'effort', target: { durationSeconds: 480, paceSecPerKm: { min: 265, max: 270 }, hrBpm: { min: 150, max: CONTROLLED_CEILING_BPM } } },
         { kind: 'recovery', target: { durationSeconds: 120 } },
       ],
     },
@@ -677,6 +795,7 @@ function buildCoachingData(endDate, activities) {
   const month = latest?.date.slice(0, 7) ?? createdAt.slice(0, 7)
   return {
     'coaching/current_plan.json': plan,
+    ...(previousPlan ? { [`coaching/superseded/${previousPlan.id}.json`]: previousPlan } : {}),
     'coaching/coach_state.json': {
       schemaVersion: 1,
       activePlanId: planId,

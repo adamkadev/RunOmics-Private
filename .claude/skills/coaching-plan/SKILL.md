@@ -50,6 +50,16 @@ recent normal at similar pace and temperature, and the latest 5K check. It
 writes previews and applies nothing. Every threshold it and the controlled threshold dose
 checks use is in `src/application/coaching/controlledThreshold.ts`.
 
+A session is read against targets set under the ceiling it prescribed (4 bpm
+for long repetitions, 2 for shorter ones), since that is what the watch held
+the athlete to. What a new block is told comes from the athlete's own data, in
+`context.controlledThreshold`: the ceiling 6 bpm under the LTHR, the full week
+at about the best four-week average, and the short-repetition guide in the
+5 s/km band that holds threshold pace. The rules carry no athlete's numbers.
+An athlete without an LTHR - a Forerunner 55 has no lactate threshold
+detection, and %HRmax zones are no threshold - gets no controlled threshold
+sessions: the context says null and the rules keep threshold work pace-led.
+
 Bootstrap refuses while a plan is active. Add `--replace` to supersede it; the
 outgoing plan is kept under `coaching/superseded/<id>.json`, so rewriting a
 block is reversible.

@@ -1,7 +1,8 @@
 import { execFileSync } from 'child_process'
 import { describe, expect, it } from 'vitest'
-import { plan } from '@/domain/coaching/__tests__/fixtures'
-import { getCoachingOverview, getTodayPrescription } from '../GetCoachingView'
+import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
+import type { WorkoutEvaluation } from '@/domain/coaching/types'
+import { getCoachingOverview, getTodayPrescription, sessionsAcrossPlans } from '../GetCoachingView'
 
 const repository = { getCurrentPlan: () => plan(), getDecisions: () => [], getEvaluations: () => [] }
 
@@ -16,6 +17,22 @@ describe('reading the coaching plan', () => {
 
     expect(getCoachingOverview('2026-09-15', empty)).toBeNull()
     expect(getTodayPrescription('2026-09-15', empty)).toBeNull()
+  })
+
+  it('keeps a superseded block\'s sessions on the days the current plan does not cover, with the run each was matched to', () => {
+    const archived = plan({ id: 'old', weeks: [{ id: 'old:w', index: 1, startDate: '2026-09-07', endDate: '2026-09-13', focus: 'f', workouts: [
+      workout({ id: 'old-tuesday', date: '2026-09-08' }),
+      workout({ id: 'old-saturday', date: '2026-09-12' }),
+    ] }] })
+    const current = plan({ id: 'new', weeks: [{ id: 'new:w', index: 1, startDate: '2026-09-10', endDate: '2026-09-13', focus: 'f', workouts: [
+      workout({ id: 'new-saturday', date: '2026-09-12' }),
+    ] }] })
+    const evaluation = { prescriptionId: 'old-tuesday', activityId: 'run-tuesday', matchStatus: 'matched' } as WorkoutEvaluation
+
+    expect(sessionsAcrossPlans([current, archived], [evaluation]).map(({ prescription, activityId }) => [prescription.id, activityId])).toEqual([
+      ['new-saturday', null],
+      ['old-tuesday', 'run-tuesday'],
+    ])
   })
 
   // In a child process because the time zone is process-wide; 20:00 UTC on Sunday is already Monday in Auckland.
