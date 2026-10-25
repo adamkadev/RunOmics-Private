@@ -7,8 +7,9 @@ import { formatDate, formatKm } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { zoneColor, type SessionZone } from '@/lib/colors'
 import { t } from '@/i18n'
-import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, THIS_WEEK_BORDER } from './AnalyticsKit'
-import { easyHardView, qualityView, zonesView, type PlanWeekInput, type QualityDot, type WeekRow } from './analyticsView'
+import { AxisLabels, Card, CardHead, ChartScrub, EmptyWeek, Headline, Legend, LegendItem, Sentence, THIS_WEEK_BORDER } from './AnalyticsKit'
+import { easyHardView, qualityView, smooth, zonesView, type PlanWeekInput, type QualityDot, type WeekRow } from './analyticsView'
+import { heartRateView } from './trendView'
 import { weekLabels } from './VolumeTab'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
@@ -135,6 +136,108 @@ function ZonesCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; on
   )
 }
 
+/** Each week in its slot, as the bars beside it: a missing week is stepped over. */
+function slotPath(values: (number | null)[], lo: number, hi: number, w: number, h: number): string {
+  let d = ''
+  values.forEach((v, i) => {
+    if (v === null) return
+    d += `${d ? 'L' : 'M'}${(((i + 0.5) / values.length) * w).toFixed(1)},${(h - ((v - lo) / (hi - lo)) * h).toFixed(1)}`
+  })
+  return d
+}
+
+const BPM_STEP = 5
+const FELT_H = 20
+const FELT_FILL = 'color-mix(in srgb, var(--band) 45%, transparent)'
+
+function HeartRateCard({ rows, live, onShift }: { rows: WeekRow[]; live: boolean; onShift: (step: 1 | -1) => void }) {
+  const s = t.analytics.charts.hrTrend
+  const names = t.analytics.charts.paceTrend
+  const view = heartRateView(rows)
+  if (!view) return null
+  const W = 1000
+  const H = 96
+  // The lines as drawn, so the scale fits what is on the chart; the readout keeps each week's own figure.
+  const easyLine = smooth(view.easy)
+  const hardLine = smooth(view.hard)
+  const bpm = [...easyLine, ...hardLine].filter((v): v is number => v !== null)
+  const lo = Math.floor((Math.min(...bpm) - 2) / BPM_STEP) * BPM_STEP
+  // An even number of steps, so the middle line is a round figure too.
+  const hi = lo + Math.max(2, Math.ceil((Math.max(...bpm) + 2 - lo) / (2 * BPM_STEP)) * 2) * BPM_STEP
+  const ticks = [lo, (lo + hi) / 2, hi]
+  const felt = view.felt.filter((v): v is number => v !== null)
+  const feltLo = Math.min(...felt)
+  const feltHi = Math.max(...felt)
+  // From 0 °C, so a bar's height reads as warmth, not as its place between the window's extremes.
+  const feltBase = Math.min(0, feltLo)
+  const reading = view.trend === 'flat' ? s.reading.flat : s.reading[view.trend](Math.round(Math.abs(view.easyShift!.delta!)))
+  const easyNow = view.easyShift ? Math.round(view.easyShift.now) : null
+  return (
+    <Card testId="heart-rate-card">
+      <CardHead title={s.title} caption={t.units.bpm} about={s.footnote} />
+      <Sentence testId="heart-rate-sentence">{reading}</Sentence>
+      <div className="flex gap-2 py-1.5">
+        <div className="relative w-8 shrink-0 text-[11px] leading-none text-muted-foreground" style={{ height: H }} aria-hidden>
+          {ticks.map((v) => (
+            <span key={v} className="absolute right-0 -translate-y-1/2" style={{ top: `${100 - ((v - lo) / (hi - lo)) * 100}%` }}>
+              {v}
+            </span>
+          ))}
+        </div>
+        <ChartScrub
+          className="min-w-0 flex-1"
+          count={rows.length}
+          onShift={onShift}
+          readout={(i) =>
+            [
+              t.analytics.cards.scrubWeek(bare(rows[i]!.week)),
+              view.easy[i] != null && `${names.easy} ${Math.round(view.easy[i]!)}`,
+              view.hard[i] != null && `${names.workout} ${Math.round(view.hard[i]!)}`,
+              view.felt[i] != null && t.analytics.charts.efficiency.felt(Math.round(view.felt[i]!)),
+            ]
+              .filter(Boolean)
+              .join(' · ')
+          }
+        >
+          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block overflow-visible" aria-hidden data-testid="heart-rate-lines">
+            {ticks.map((v) => (
+              <line key={v} x1="0" x2={W} y1={H - ((v - lo) / (hi - lo)) * H} y2={H - ((v - lo) / (hi - lo)) * H} stroke="var(--line-2)" vectorEffect="non-scaling-stroke" />
+            ))}
+            <path d={slotPath(hardLine, lo, hi, W, H)} fill="none" stroke="var(--zone-4)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+            <path d={slotPath(easyLine, lo, hi, W, H)} fill="none" stroke="var(--zone-2)" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+          </svg>
+          {felt.length > 0 && (
+            // Under the lines, on its own scale: the warm weeks a higher heart rate may owe to the weather.
+            <div className="mt-2 grid items-end" style={{ height: FELT_H, gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))`, gap: rows.length > 20 ? 1 : 4 }} data-testid="felt-strip">
+              {view.felt.map((c, i) => (
+                <span key={rows[i]!.week} className="rounded-[2px]" style={{ height: c === null ? 0 : Math.max(2, ((c - feltBase) / Math.max(1, feltHi - feltBase)) * FELT_H), background: FELT_FILL }} />
+              ))}
+            </div>
+          )}
+        </ChartScrub>
+      </div>
+      <AxisLabels className="ml-10" labels={weekLabels(rows.map((r) => r.week), live)} />
+      <Legend className="gap-x-4">
+        {easyNow !== null && (
+          <LegendItem swatch="dot" color="var(--zone-2)">
+            {names.easy} <b className="font-semibold text-foreground">{easyNow}</b>
+          </LegendItem>
+        )}
+        {view.hardNow !== null && (
+          <LegendItem swatch="dot" color="var(--zone-4)">
+            {names.workout} <b className="font-semibold text-foreground">{Math.round(view.hardNow)}</b>
+          </LegendItem>
+        )}
+        {felt.length > 0 && (
+          <LegendItem swatch="square" color={FELT_FILL}>
+            {s.felt(`${Math.round(feltLo)}–${Math.round(feltHi)}${t.units.celsius}`)}
+          </LegendItem>
+        )}
+      </Legend>
+    </Card>
+  )
+}
+
 function weekSquare(dots: QualityDot[]): { state: 'done' | 'missed' | 'planned' | 'none'; count: number; style: React.CSSProperties } {
   const done = dots.filter((d) => d === 'done').length
   if (done > 0) return { state: 'done', count: done, style: { background: 'var(--zone-4)' } }
@@ -222,6 +325,7 @@ export function IntensityTab({ rows, live, onShift, plan }: IntensityTabProps) {
     <div className="flex flex-col gap-3.5">
       <EasyHardCard rows={rows} />
       <ZonesCard rows={rows} live={live} onShift={onShift} />
+      <HeartRateCard rows={rows} live={live} onShift={onShift} />
       <QualityCard rows={rows} live={live} plan={plan} />
       <Link
         href="/athlete"

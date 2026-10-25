@@ -124,7 +124,7 @@ describe('ActivityDetailClient', () => {
     renderDetail({ activity: { ...ACTIVITY, rpe: 1, weather } as ActivityDetailView, shoe: { name: 'Vomero Plus', dotColor: '#fff' } })
     const chips = within(screen.getByTestId('run-chips'))
     expect(chips.getByTestId('run-effort').textContent).toBe(t.activities.row.rpeValue(1))
-    expect(chips.getByTestId('run-conditions').textContent).toBe('18°C · wind 2 km/h N')
+    expect(chips.getAllByTestId('run-conditions').map((chip) => chip.textContent)).toEqual(['Clear sky · 18°C', 'wind 2 km/h N'])
     expect(chips.getByTestId('run-shoe').textContent).toBe('Vomero Plus')
     expect(chips.getByTestId('note-row')).toBeInTheDocument()
   })

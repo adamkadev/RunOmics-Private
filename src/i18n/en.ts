@@ -1206,8 +1206,9 @@ export const en = {
         reading: (pct: number, zoneLabel: string) => `Most time (${pct}%) sits in ${zoneLabel} - your training skews toward this intensity.`,
       },
       hrTrend: {
-        title: 'Avg Heart Rate',
-        footnote: 'Duration-weighted average HR, easy vs workout runs.',
+        title: 'Average heart rate',
+        footnote: 'Duration-weighted average HR, easy vs workout runs. The bars under the lines are the felt temperature of the easy runs: heat alone raises heart rate.',
+        felt: (range: string) => `Felt ${range}`,
         reading: {
           down: (bpm: number) => `Easy-run heart rate is dropping - down ~${bpm} bpm, same effort for less strain, a sign of improving fitness.`,
           up: (bpm: number) => `Easy-run heart rate is rising - up ~${bpm} bpm for the same effort, worth watching.`,
@@ -1215,13 +1216,13 @@ export const en = {
         },
       },
       runningForm: {
-        title: 'Running Form',
+        title: 'Running form',
         metrics: {
           cadence: 'Cadence',
-          groundContact: 'Ground Contact',
-          verticalOscillation: 'Vertical Osc.',
-          verticalRatio: 'Vertical Ratio',
-          strideLength: 'Stride Length',
+          groundContact: 'Ground contact',
+          verticalOscillation: 'Vertical osc.',
+          verticalRatio: 'Vertical ratio',
+          strideLength: 'Stride length',
         } as Record<string, string>,
         unit: {
           cadence: 'spm',
@@ -1288,7 +1289,7 @@ export const en = {
           `${Math.abs(deltaPct)}% ${deltaPct >= 0 ? 'ahead of' : 'behind'} the same date last year: ${current} km against ${previous} km${cutoff ? ` to ${cutoff}` : ''}.`,
       },
       threshold: {
-        title: 'Running Lactate Threshold',
+        title: 'Lactate threshold',
         pace: 'Threshold pace',
         lthr: 'Threshold HR',
         footnote: 'The effort you can hold before lactate builds up, as the watch measures it. The watch revises it every few weeks, so the line steps rather than drifts.',
@@ -1596,6 +1597,8 @@ export const en = {
     },
     conditions: {
       wind: (reading: string) => `wind ${reading}`,
+      feels: (temp: string) => `feels ${temp}`,
+      humidity: (pct: number) => `${pct}% humidity`,
     },
     shoe: {
       add: 'Add shoe',
@@ -2398,11 +2401,12 @@ export const en = {
   },
 
   loadBalance: {
-    title: 'Load Balance',
+    // The watch's own name for it.
+    title: 'Load focus',
     window: 'last 4 weeks',
     buckets: {
-      aerobicLow: 'Low Aerobic',
-      aerobicHigh: 'High Aerobic',
+      aerobicLow: 'Low aerobic',
+      aerobicHigh: 'High aerobic',
       anaerobic: 'Anaerobic',
     },
     verdict: {
@@ -2411,16 +2415,16 @@ export const en = {
       above: 'Above target',
     },
     range: (min: number, max: number) => `Target ${min}–${max}`,
+    // Keyed by Garmin's trainingBalanceFeedbackPhrase.
     feedback: {
+      BALANCED: 'Well balanced',
       BELOW_TARGETS: 'Below targets',
       ABOVE_TARGETS: 'Above targets',
-      ON_TARGET: 'Well balanced',
-      LACKING_HIGH_AEROBIC: 'Lacking high aerobic',
-      LACKING_LOW_AEROBIC: 'Lacking low aerobic',
-      LACKING_ANAEROBIC: 'Lacking anaerobic',
+      AEROBIC_LOW_SHORTAGE: 'Lacking low aerobic',
+      AEROBIC_HIGH_SHORTAGE: 'Lacking high aerobic',
       ANAEROBIC_SHORTAGE: 'Lacking anaerobic',
-      NO_DATA: 'Not enough data',
-    } as Record<string, string | undefined>,
+      LOW_AEROBIC_OVERAGE: 'Too much low aerobic',
+    } as Record<string, string>,
     footnote: 'Training load over the last 4 weeks split by intensity, against the ranges your watch personalises from your history. The marker is where you sit; the green zone is the target.',
   },
 

@@ -8,6 +8,7 @@ import { useScrollLock } from '@/lib/useScrollLock'
 import { GlassLayers } from '@/components/ui/GlassSurface'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/formatters'
+import { linePath } from '@/lib/linePath'
 import type { DeltaTone } from '@/lib/deltaTone'
 import { cardClass } from '@/components/ui/Card'
 import { EYEBROW_CLASS } from '@/components/ui/SectionLabel'
@@ -109,6 +110,20 @@ export function windowLabels(dates: string[], live: boolean): string[] {
   const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
   const mid = dates[Math.floor((dates.length - 1) / 2)]!
   return [bare(dates[0]!), bare(mid), live ? t.analytics.cards.today : bare(dates[dates.length - 1]!)]
+}
+
+/** A row's trend line, 24 pt tall and muted; `lowerUp` for a time, where faster is a smaller number. */
+export function Spark({ values, lowerUp = false }: { values: number[]; lowerUp?: boolean }) {
+  if (values.length < 2) return <span />
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const pad = (max - min) * 0.3 || 1
+  const d = lowerUp ? linePath(values.map((v) => -v), -(max + pad), -(min - pad), 1000, 24) : linePath(values, min - pad, max + pad, 1000, 24)
+  return (
+    <svg width="100%" height="24" viewBox="0 0 1000 24" preserveAspectRatio="none" className="block" aria-hidden data-testid="spark">
+      <path d={d} fill="none" stroke="var(--muted-foreground)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
 }
 
 /** Axis labels under a chart, spread end to end: 11 px muted. */

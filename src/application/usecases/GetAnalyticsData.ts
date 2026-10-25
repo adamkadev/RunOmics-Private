@@ -3,7 +3,6 @@ import type { Activity, ActivityType, ActivityWeather } from '@/domain/activity/
 import { heatAdjustedEf } from '@/domain/activity/heat'
 import { easyHardShare } from '@/domain/training/easyHard'
 import { sumDistanceKm } from '@/domain/activity/distance'
-import { AXIS_TICK_DATE, formatDate } from '@/lib/formatters'
 import { round } from '@/lib/math'
 import { DAY_MS, isoDate } from '@/lib/calendarDate'
 import { qualityKind } from '@/domain/training/qualitySession'
@@ -20,11 +19,10 @@ export interface ZoneShare {
   percent: number
 }
 
+/** What the Analytics cards draw, a week at a time: it crosses to the browser, so a field nothing draws is not here. */
 export interface WeeklyTrendPoint {
   date: string
-  label: string
   distanceKm: number
-  sessionCount: number
   easyPace: number | null
   hardPace: number | null
   ef: number | null
@@ -38,13 +36,9 @@ export interface WeeklyTrendPoint {
   verticalRatioPct: number | null
   strideLengthM: number | null
   avgRpe: number | null
-  aer: number | null
-  ana: number | null
   zoneSeconds: Record<number, number>
   longestKm: number
   longestDate: string | null
-  /** Moving time over every run of the week. */
-  durationSeconds: number
   thresholdSessions: number
   intervalSessions: number
 }
@@ -190,10 +184,8 @@ export function buildWeeklyTrends(all: Activity[], z4FloorBpm = DEFAULT_Z4_FLOOR
 
       return {
         date: monday,
-        label: formatDate(monday, AXIS_TICK_DATE),
         // One decimal: the week under way reads "27.3 of 48", as Today's ring does.
         distanceKm: round(acts.reduce((s, a) => s + a.distanceKm, 0)),
-        sessionCount: acts.length,
         easyPace: weightedPace(easy),
         hardPace: repPaceSecPerKm(hard, z4FloorBpm),
         ef: efficiencyFactor(easy),
@@ -207,12 +199,9 @@ export function buildWeeklyTrends(all: Activity[], z4FloorBpm = DEFAULT_Z4_FLOOR
         verticalRatioPct: weightedVerticalRatio(acts),
         strideLengthM: weightedStrideLength(acts),
         avgRpe: avgField(acts, (a) => a.rpe),
-        aer: avgField(acts, (a) => a.aerTrainingEffect),
-        ana: avgField(acts, (a) => a.anaTrainingEffect),
         zoneSeconds,
         longestKm: longest ? round(longest.distanceKm) : 0,
         longestDate: longest?.date.slice(0, 10) ?? null,
-        durationSeconds: acts.reduce((s, a) => s + a.durationSeconds, 0),
         thresholdSessions: acts.filter((a) => qualityKind(a.type) === 'threshold').length,
         intervalSessions: acts.filter((a) => qualityKind(a.type) === 'intervals').length,
       }

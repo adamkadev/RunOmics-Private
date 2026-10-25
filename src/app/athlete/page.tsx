@@ -2,6 +2,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { zoneDistribution, recentZoneDistribution } from '@/application/usecases/GetAnalyticsData'
 import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
+import { getFitnessAge } from '@/application/usecases/GetFitnessAge'
 import { getTrainingZones } from '@/application/usecases/GetTrainingZones'
 import { getLastSyncedAt } from '@/application/usecases/GetSyncStatus'
 import { appTodayIso, isoWeekNumber } from '@/lib/calendarDate'
@@ -16,7 +17,8 @@ export default async function AthletePage() {
   const athlete = getAthleteProfile()
   const activities = getAllActivities()
 
-  const currentWeek = isoWeekNumber(new Date(`${appTodayIso()}T00:00:00`))
+  const today = appTodayIso()
+  const currentWeek = isoWeekNumber(new Date(`${today}T00:00:00`))
   const weeklyZoneTime = zoneDistribution(activities.filter((a) => a.week === currentWeek))
 
   const recentZoneTime = recentZoneDistribution(activities, 28)
@@ -25,6 +27,7 @@ export default async function AthletePage() {
     <AthleteClient
       athlete={athletePageView(athlete)}
       vo2Grade={getVo2Grade()}
+      fitnessAge={getFitnessAge(today)}
       weeklyZoneTime={weeklyZoneTime}
       recentZoneTime={recentZoneTime}
       paceZones={await getTrainingZones()}

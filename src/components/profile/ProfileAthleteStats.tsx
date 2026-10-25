@@ -32,11 +32,6 @@ export function athleteStats(athlete: AthletePageView): AvailableMetric[] {
       value: athlete.thresholdPaceSecPerKm ? formatDuration(athlete.thresholdPaceSecPerKm) : undefined,
     },
     { label: a.vma, unit: t.units.kmh, value: athlete.vmaKmh },
-    {
-      label: a.fitnessAge,
-      unit: athlete.age !== undefined ? a.ofAge(athlete.age) : '',
-      value: athlete.fitnessAgeYrs !== undefined ? Math.round(athlete.fitnessAgeYrs) : undefined,
-    },
   ])
 }
 
@@ -54,8 +49,8 @@ export function AthleteStats({ athlete }: { athlete: AthletePageView }) {
             'flex min-w-0 flex-col gap-1 px-4 py-3.5',
             i % 3 > 0 && 'border-l border-border',
             i >= 3 && 'border-t border-border',
-            // A tile alone on the last row spans it: French fitness age overflows a third.
-            i === cells.length - 1 && i % 3 === 0 && 'col-span-3',
+            // The last tile takes the rest of its row rather than leave an empty cell beside it.
+            i === cells.length - 1 && (i % 3 === 0 ? 'col-span-3' : i % 3 === 1 && 'col-span-2'),
           )}
         >
           <div className="truncate text-xs text-muted-foreground">

@@ -47,8 +47,18 @@ export function computeBestEfforts(
   return best
 }
 
+// By the activity list, the same array until the data changes: the records are worked out once per data, not per render.
+const recordsCache = new WeakMap<Activity[], RecordEntry[]>()
+
+/** Shared between callers: read it, never change it. */
 export async function getRecords(): Promise<RecordEntry[]> {
   const activities = getAllActivities()
+  let records = recordsCache.get(activities)
+  if (!records) recordsCache.set(activities, (records = computeRecords(activities)))
+  return records
+}
+
+function computeRecords(activities: Activity[]): RecordEntry[] {
   const pbYears = getPbYears()
   const activityMap = new Map(activities.map((a) => [a.id, a]))
   const computed = computeBestEfforts(activities)

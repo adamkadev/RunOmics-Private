@@ -1138,7 +1138,8 @@ export const fr = {
       },
       hrTrend: {
         title: 'FC moyenne',
-        footnote: 'FC moyenne pondérée par la durée, sorties faciles vs séances de qualité.',
+        footnote: 'FC moyenne pondérée par la durée, sorties faciles vs séances de qualité. Les barres sous les courbes sont la température ressentie des sorties faciles : la chaleur seule fait monter la FC.',
+        felt: (range: string) => `Ressenti ${range}`,
         reading: {
           down: (bpm: number) => `La FC en sortie facile baisse - environ ${bpm} bpm de moins pour le même effort, signe d’une forme qui progresse.`,
           up: (bpm: number) => `La FC en sortie facile augmente - environ ${bpm} bpm de plus pour le même effort, à surveiller.`,
@@ -1219,13 +1220,13 @@ export const fr = {
           `${Math.abs(deltaPct)} % ${deltaPct >= 0 ? 'd’avance sur' : 'de retard sur'} la même date l’an dernier : ${current} km contre ${previous} km${cutoff ? ` au ${cutoff}` : ''}.`,
       },
       threshold: {
-        title: 'Seuil lactique de course',
+        title: 'Seuil lactique',
         pace: 'Allure au seuil',
         lthr: 'FC au seuil',
         footnote: 'L’effort tenable avant l’accumulation de lactate, tel que mesuré par la montre. Elle le révise à quelques semaines d’intervalle : la courbe avance donc par paliers.',
         reading: {
-          change: (delta: string, since: string) => `L’allure au seuil a évolué de ${delta} depuis ${since}.`,
-          flat: (since: string) => `L’allure au seuil est stable depuis ${since}.`,
+          change: (delta: string, since: string) => `Allure au seuil ${delta} depuis le ${since}.`,
+          flat: (since: string) => `L’allure au seuil est stable depuis le ${since}.`,
         },
       },
       racePredictor: {
@@ -1511,6 +1512,8 @@ export const fr = {
     },
     conditions: {
       wind: (reading: string) => `vent ${reading}`,
+      feels: (temp: string) => `ressenti ${temp}`,
+      humidity: (pct: number) => `${pct} % d’humidité`,
     },
     shoe: {
       add: 'Ajouter la chaussure',
@@ -2238,7 +2241,8 @@ export const fr = {
   },
 
   loadBalance: {
-    title: 'Équilibre des charges',
+    // The watch's own name for it.
+    title: 'Objectif de charge',
     window: '4 dernières semaines',
     buckets: {
       aerobicLow: 'Aérobie basse',
@@ -2251,16 +2255,16 @@ export const fr = {
       above: 'Au-dessus',
     },
     range: (min: number, max: number) => `Cible ${min}–${max}`,
+    // Keyed by Garmin's trainingBalanceFeedbackPhrase.
     feedback: {
+      BALANCED: 'Équilibre optimal',
       BELOW_TARGETS: 'Sous les cibles',
       ABOVE_TARGETS: 'Au-dessus des cibles',
-      ON_TARGET: 'Équilibre optimal',
-      LACKING_HIGH_AEROBIC: 'Manque d’aérobie haute',
-      LACKING_LOW_AEROBIC: 'Manque d’aérobie basse',
-      LACKING_ANAEROBIC: 'Manque d’anaérobie',
+      AEROBIC_LOW_SHORTAGE: 'Manque d’aérobie basse',
+      AEROBIC_HIGH_SHORTAGE: 'Manque d’aérobie haute',
       ANAEROBIC_SHORTAGE: 'Manque d’anaérobie',
-      NO_DATA: 'Pas assez de données',
-    } as Record<string, string | undefined>,
+      LOW_AEROBIC_OVERAGE: 'Trop d’aérobie basse',
+    } as Record<string, string>,
     footnote: 'Charge d’entraînement des 4 dernières semaines par intensité, face aux plages que ta montre personnalise à partir de ton historique. Le repère indique où tu te situes ; la zone verte est la cible.',
   },
 

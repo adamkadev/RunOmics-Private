@@ -440,6 +440,17 @@ function buildAthleteHistory(activities) {
   return { days }
 }
 
+// Garmin's series is daily, though the sync files it under "weeks"; the year eases down to today's reading.
+function buildFitnessAgeHistory(endDate) {
+  const weeks = {}
+  for (let back = 360; back >= 0; back -= 3) {
+    const p = 1 - back / 360
+    const years = ATHLETE.fitnessAgeYrs + (1 - p) * (3 + 0.8 * Math.sin(4 * Math.PI * p))
+    weeks[isoDate(addDays(endDate, -back))] = { fitnessAgeYrs: round(years, 1), bmi: ATHLETE.bmi }
+  }
+  return { weeks }
+}
+
 function buildGoals() {
   return {
     years: [
@@ -957,6 +968,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
     // Updated by the same sync as sync_meta.json below, as a real one is.
     'athlete.json': { ...ATHLETE, lastUpdate: endDate.toISOString() },
     'athlete_history.json': buildAthleteHistory(activities),
+    'fitness_age_history.json': buildFitnessAgeHistory(endDate),
     'goals.json': buildGoals(),
     'pbs.json': buildPbs(activities),
     'shoes.json': { shoes: SHOES },
