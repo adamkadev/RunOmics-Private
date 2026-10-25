@@ -1949,6 +1949,7 @@ export const fr = {
       verdict: { inRange: 'dans la cible', tooModerate: 'trop de modéré', tooHard: 'trop d’intense' },
       totalLine: (duration: string) => `${duration} au total · objectif 80 / 20`,
       soFar: 'semaine en cours',
+      estimatedPaces: (effort: string, date: string) => `Allures estimées par VDOT à partir de ton ${effort} du ${date} : la montre ne donne pas d’allure seuil.`,
     },
     athlete: {
       title: 'Athlète',

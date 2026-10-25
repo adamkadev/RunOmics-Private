@@ -2103,6 +2103,7 @@ export const en = {
       // The verdict's own target, Analytics' 80/20 (see intensityMix).
       totalLine: (duration: string) => `${duration} total · aim for 80 / 20`,
       soFar: 'this week so far',
+      estimatedPaces: (effort: string, date: string) => `Paces estimated by VDOT from your ${effort} on ${date}: the watch gives no threshold pace.`,
     },
     athlete: {
       title: 'Athlete',
