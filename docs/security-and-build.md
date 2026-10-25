@@ -23,6 +23,27 @@ matched but whose token carried no claim was shown the editor and then refused b
 with a 403. An email is also not something the rules can read, and a claim survives an email
 change, so the claim is the side that wins.
 
+## Firestore rules
+
+`firestore.rules` gives every collection the phone touches to the owner alone (the server reads
+and writes as admin, which the rules do not govern), and checks the shape of every write:
+
+- `activityNotes` and `routeNames`: a note of 500 characters and 10 tags at most; a route name
+  of 1 to 80 characters.
+- `wellness/{date}`: one document per `YYYY-MM-DD`, with only `sleep`, `soreness`, `stress` and
+  `mood` (integers 1-5), `ill` and `travel` (booleans) and a `niggle` (a known site, an optional
+  side, pain 0-10, an optional `changesRun`). Read by the owner only: health data never reaches
+  another viewer, and pages never server-render it.
+- `pushTokens/{token}`: the document's id is its token, with a `userAgent`, an `updatedAt` and
+  optional `categories`, a map of `training`, `shoes` and `records` to booleans. Create, update
+  and delete only; nothing on a phone reads the list.
+
+**The rules are deployed by hand,** never with the app: after any change, run
+`firebase deploy --only firestore:rules --project <id>` once per Firebase project (each
+deployment has its own). Until then the old rules refuse the new writes: a check-in, or a phone
+saving its push categories. `npm run test:rules` runs `src/infrastructure/__tests__/firestoreRules.test.ts`
+against the Firestore emulator (Java 21), and CI runs it on every push and pull request.
+
 ## Content Security Policy
 
 `next.config.ts` sets the CSP for every route. Each allowance is deliberate, and the
@@ -49,7 +70,8 @@ comment-free header is easy to widen by accident — this is what each one is fo
 are lockdowns with no exceptions; keep them that way.
 
 A run's place name asks Nominatim about its first point rounded to 0.01° (about a kilometre),
-never the point itself.
+never the point itself. Today's forecast is fetched by the server from Open-Meteo, at the runs'
+median start rounded to 0.1°, so it needs no browser allowance, and its URL is never logged.
 
 ## Build configuration
 
@@ -61,8 +83,16 @@ directory is read from the filesystem at request time (ISR revalidation, the API
 but its paths are built at runtime, so nothing links it into the traced module graph and
 the deployment would otherwise ship without it.
 
-`npm run analyze` opens a per-bundle treemap — worth checking when Recharts or MapLibre
-creep upward.
+`npm run analyze` opens a per-bundle treemap — worth checking when MapLibre or the Firebase
+SDK creep upward.
+
+**The build prerenders the newest 20 runs** (`generateStaticParams` in
+`src/app/activities/[id]/page.tsx`), the ones opened most. Any other run renders on its first
+visit and is then cached like them (ISR, an hour), and after a sync the server renders the newest
+one itself (see [Reading the data at run time](data-and-sync.md#reading-the-data-at-run-time)).
+
+Node is pinned to 24 in `.nvmrc`, which every workflow reads, and Vercel installs with `npm ci`
+(`vercel.json`), from the lock file exactly.
 
 ESLint's config re-declares `eslint-config-next`'s default ignores because overriding them
 replaces the list wholesale. Beyond the defaults it skips `scripts/**` (Node utilities, not
@@ -136,9 +166,11 @@ running on 3000 does not collide with the suite's own build; both Playwright con
 it, and the screenshot run can still be pointed elsewhere with `SCREENSHOT_BASE_URL`.
 
 The suite also has an `iphone` project: `e2e/layout.spec.ts` alone, in WebKit at iPhone 16 Pro
-size, walks every page, every tab of a run and every Analytics tab and period, and fails on a
-horizontal scroll or on text past its clipping box or the screen. It waits for animations to
-end first, and blocks the service worker, whose registration WebKit refuses on `localhost`.
+size, walks every page, every tab of a run and every Analytics tab and period (a test per page
+and per tab), and fails on a horizontal scroll or on text past its clipping box or the screen.
+It runs with reduced motion, waits at most 3 s for the animations it can see to end (WebKit
+stalls fades in rows it skips rendering), and blocks the service worker, whose registration
+WebKit refuses on `localhost`.
 
 The screenshot audit has its own config so it never runs as part of the e2e suite, or vice
 versa. It captures through an iPhone 13 viewport (390×844 @3×) because the app is designed
