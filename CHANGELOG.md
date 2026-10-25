@@ -63,7 +63,8 @@ All notable changes to this project are documented in this file.
   starts on time: Vercel Cron runs them, not GitHub's late schedules.
 
 - A Monday push sums up last week: km and quality sessions against the
-  plan, your resting heart rate and this week's focus.
+  plan, the time of your other training, your resting heart rate and this
+  week's focus.
 
 - Settings' Training, Shoes and "Records and explored areas" switches now
   decide which pushes each phone gets.
