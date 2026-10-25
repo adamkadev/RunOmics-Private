@@ -20,8 +20,13 @@ let checking: DataSnapshot | null = null
 
 export const liveSnapshot = () => live
 
+/** By blob SHA, so the check before a commit goes live and the repositories after it share one parse. */
+let parsed = new Map<string, unknown>()
+
 export function swapSnapshot(next: DataSnapshot) {
   live = next
+  const kept = new Set(next.blobs.values())
+  parsed = new Map([...parsed].filter(([sha]) => kept.has(sha)))
 }
 
 /** What module caches key on: the live commit, or the directory, which the CLIs choose at run time. */
@@ -55,11 +60,13 @@ export const dataFs: DataFiles = {
   readFileSync: (file, encoding) => source().readFileSync(file, encoding),
   existsSync: (file) => source().existsSync(file),
   readdirSync: (dir) => source().readdirSync(dir),
+  readJsonSync: (file) => source().readJsonSync(file),
+  blobSha: (file) => source().blobSha(file),
 }
 
 const absent = (message: string) => Object.assign(new Error(message), { code: 'ENOENT' })
 
-function snapshotView({ files }: DataSnapshot): DataFiles {
+function snapshotView({ files, blobs }: DataSnapshot): DataFiles {
   const dirs = new Map<string, Set<string>>()
   for (const file of files.keys()) {
     const parts = file.split('/')
@@ -75,12 +82,21 @@ function snapshotView({ files }: DataSnapshot): DataFiles {
     return rel
   }
 
+  const readFileSync = (file: string) => {
+    const text = files.get(relative(file))
+    if (text === undefined) throw absent(`ENOENT: not in the data snapshot, open '${file}'`)
+    return text
+  }
+
   return {
-    readFileSync(file) {
-      const text = files.get(relative(file))
-      if (text === undefined) throw absent(`ENOENT: not in the data snapshot, open '${file}'`)
-      return text
+    readFileSync,
+    readJsonSync(file) {
+      const sha = blobs.get(relative(file))
+      if (sha === undefined) return JSON.parse(readFileSync(file))
+      if (!parsed.has(sha)) parsed.set(sha, JSON.parse(readFileSync(file)))
+      return parsed.get(sha)
     },
+    blobSha: (file) => blobs.get(relative(file)),
     existsSync: (file) => {
       const rel = relative(file)
       return files.has(rel) || dirs.has(rel)
