@@ -23,7 +23,7 @@ const AXIS_W = 42
 const RIGHT = 8
 const VIEW_W = 100
 /** Five ticks at most, at a step a pace is read in. */
-const PACE_STEPS = [5, 10, 15, 20, 30, 60, 120, 300, 600]
+const PACE_STEPS = [5, 10, 15, 20, 30, 45, 60, 90, 120, 180, 300, 600]
 const MAX_INTERVALS = 4
 /** About a fingertip, so a 9 px dot opens its run without a pixel-perfect tap. */
 const HIT_RADIUS = 16
