@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test'
 import { test, expect } from './fixtures'
 
-const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/analytics', '/profile', '/records', '/shoes', '/consistency', '/all-time', '/goals', '/race', '/athlete']
+const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/plan/checkpoint', '/analytics', '/profile', '/records', '/shoes', '/consistency', '/all-time', '/goals', '/race', '/athlete']
 
 async function overflows(page: Page): Promise<string[]> {
   await page
