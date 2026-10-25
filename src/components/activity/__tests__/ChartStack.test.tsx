@@ -65,7 +65,7 @@ describe('ChartStack scrub', () => {
     fireEvent.pointerMove(area, { clientX: 175, pointerId: 1, pointerType: 'mouse' })
     await waitFor(() => expect(screen.getByTestId('lane-hr').textContent).toMatch(/\d+ bpm/))
     expect(screen.getByTestId('lane-pace').textContent).toMatch(/\d:\d\d \/km/)
-    expect(onScrub).toHaveBeenLastCalledWith(Math.round(0.5 * 199) / 199)
+    await waitFor(() => expect(onScrub).toHaveBeenLastCalledWith(Math.round(0.5 * 199) / 199))
 
     // A mouse that leaves lets go; leaving the tab takes the marker off the map.
     fireEvent.pointerLeave(area, { pointerId: 1, pointerType: 'mouse' })
