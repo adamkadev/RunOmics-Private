@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Explore counts every area you run in, not only the busiest: a
+  Strasbourg run shows the quartiers it pushed forward, a Strasbourg
+  quartier passing 90% sends its push, and Progress's Explored card shows
+  the area you ran in last, with a row that opens each other area's map.
+
 - Progress's Explored card opens with its numbers, worked out on the
   server, instead of a skeleton while the phone fetched every track.
 

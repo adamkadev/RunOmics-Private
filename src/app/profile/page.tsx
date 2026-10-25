@@ -5,8 +5,7 @@ import { getVo2Grade } from '@/application/usecases/GetVo2Grade'
 import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { getWeeklyStreakData } from '@/application/usecases/GetMilestones'
 import { getRecords } from '@/application/usecases/GetRecords'
-import { getExploreHome } from '@/application/usecases/GetExploreAreas'
-import { getExploredSummary } from '@/application/usecases/GetExploreGains'
+import { getExploredAreas } from '@/application/usecases/GetExploreGains'
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getVo2maxSamples } from '@/infrastructure/repositories/JsonVo2maxHistoryRepository'
 import { ProgressHub } from '@/components/profile/ProgressHub'
@@ -42,10 +41,16 @@ export default async function ProfilePage() {
     shoes: data.shoes,
   })
 
-  // Only the summary reaches the page: no home, no tracks.
-  const explore = getExploreHome()
-  const summary = explore ? getExploredSummary() : null
-  const explored = explore && summary ? <ExploredCard areaName={explore.area.name} summary={summary} /> : undefined
+  // Only the summaries reach the page: no home, no tracks. The area run in last leads.
+  const [latest, ...others] = [...getExploredAreas()].sort((a, b) => b.lastRunDate.localeCompare(a.lastRunDate))
+  const explored = latest ? (
+    <ExploredCard
+      areaId={latest.area.id}
+      areaName={latest.area.name}
+      summary={latest.summary}
+      others={others.map(({ area, summary }) => ({ id: area.id, name: area.name, summary }))}
+    />
+  ) : undefined
 
   return <ProgressHub view={view} explored={explored} />
 }

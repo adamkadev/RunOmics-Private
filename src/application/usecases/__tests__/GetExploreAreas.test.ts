@@ -13,7 +13,7 @@ vi.mock('@/infrastructure/repositories/JsonExploreAreaRepository', () => ({
 }))
 vi.mock('../GetAllRoutes', () => ({ getMapShellData: mocks.getMapShellData }))
 
-const { getExploreAreaFile, getExploreAreas, getExploreHome } = await import('../GetExploreAreas')
+const { getExploreAreaFile, getExploreAreas, getExploreHome, getExploreHomes } = await import('../GetExploreAreas')
 
 // Fictional places around the demo dataset's mid-Pacific home.
 const HOME: [number, number] = [-150, 0]
@@ -85,6 +85,17 @@ describe('GetExploreAreas', () => {
       clusters: [cluster('1', HOME, [0, 1, 2])],
     })
     expect(getExploreHome()!.dataVersion).not.toBe(before)
+  })
+
+  it('gives each area its busiest cluster, busiest first, and skips a second cluster in the same area', () => {
+    const away: ExploreAreaRef = { id: 'away', name: 'Away', version: 'away-20261022-0123abcd', bbox: [-149.05, 2.95, -148.95, 3.05] }
+    mocks.listExploreAreas.mockReturnValue([town, away])
+    withMap({ clusters: [cluster('1', HOME, [0]), cluster('0', AWAY, [1]), cluster('2', HOME, [2])] })
+
+    expect(getExploreHomes().map((home) => [home.area.id, home.clusterId, home.runs.map((run) => run.id)])).toEqual([
+      ['town', '1', ['a3']],
+      ['away', '0', ['b1']],
+    ])
   })
 
   it('has no Explore home without areas, or for a cluster no area covers', () => {

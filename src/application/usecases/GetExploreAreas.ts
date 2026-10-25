@@ -37,21 +37,32 @@ function runsVersion(ids: string[]): string {
   return createHash('sha256').update([...ids].sort().join('\n')).digest('hex').slice(0, 12)
 }
 
-export function getExploreHome(): ExploreHome | null {
+/**
+ * One per area the runs fall in, from the busiest cluster in it, as the map opens it: a second
+ * cluster in the same area is left out there too. Busiest first, so the first is the home.
+ */
+export function getExploreHomes(): ExploreHome[] {
   const areas = listExploreAreas()
-  if (areas.length === 0) return null
+  if (areas.length === 0) return []
 
-  const { clusters, defaultClusterIdx, routeMeta } = getMapShellData()
-  const cluster = clusters[defaultClusterIdx]
-  if (!cluster) return null
+  const { clusters, routeMeta } = getMapShellData()
+  const homes: ExploreHome[] = []
+  for (const cluster of clusters) {
+    const area = areaForCluster(areas, cluster)
+    if (!area || homes.some((home) => home.area.id === area.id)) continue
+    const runs = cluster.routeIndices.flatMap((routeIdx) => {
+      const meta = routeMeta[routeIdx]
+      return meta ? [{ routeIdx, id: meta.id, date: meta.date.slice(0, 10) }] : []
+    })
+    homes.push({ area, clusterId: cluster.id, runs, dataVersion: runsVersion(runs.map((run) => run.id)) })
+  }
+  return homes
+}
 
-  const area = areaForCluster(areas, cluster)
-  if (!area) return null
-
-  const runs = cluster.routeIndices.flatMap((routeIdx) => {
-    const meta = routeMeta[routeIdx]
-    return meta ? [{ routeIdx, id: meta.id, date: meta.date.slice(0, 10) }] : []
-  })
-
-  return { area, clusterId: cluster.id, runs, dataVersion: runsVersion(runs.map((run) => run.id)) }
+/** The busiest cluster's area, if it has one: the map opens there. */
+export function getExploreHome(): ExploreHome | null {
+  const home = getExploreHomes()[0]
+  if (!home) return null
+  const { clusters, defaultClusterIdx } = getMapShellData()
+  return home.clusterId === clusters[defaultClusterIdx]?.id ? home : null
 }

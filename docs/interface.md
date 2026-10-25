@@ -145,14 +145,16 @@ and other roads half. "Flat for the reps", on by default when the day's session 
 footways and cycleways; it re-ranks the loops already fetched, without a new request. The GPX is
 GPX 1.1, the loop only, closed on its start.
 
-**New ground:** the server replays the home area's runs oldest first (`src/domain/explore/gains.ts`,
+**New ground:** the server replays each area's runs oldest first, from the busiest cluster in it as the map
+opens it (`src/domain/explore/gains.ts`,
 about 150 ms for 150 runs, cached until the runs or the area change), crediting each cell to the first
-run through it. The same pass gives Progress's Explored card its numbers (`src/domain/explore/summary.ts`,
+run through it. The same pass gives Progress's Explored card its numbers (the area run in last, a row for each other area,
+whose link adds `area=` so the map opens on it) (`src/domain/explore/summary.ts`,
 with home as the runs' median start, which stays on the server) and the day each quartier passed 90 %,
 which its sheet on the map shows. A run's page lists up to three quartiers whose percentage it raised, before → after.
 After a sync with new data, `POST /api/internal/explore-check` pushes once per quartier newly past
-90 %; the ids already announced live in Firestore `notifications/lastExploreMilestones`, and the
-first check only takes note of the quartiers complete so far.
+90 %, in any area; the ids already announced live in Firestore `notifications/lastExploreMilestones`,
+one list per area, and the first check of an area only takes note of the quartiers complete so far.
 
 **Credits:** OpenStreetMap (ODbL), the Metz quartiers and IGN ADMIN EXPRESS (Licence Ouverte 2.0),
 and openrouteservice (CC BY-SA) are listed in the map's ⓘ while Districts or the generator shows.

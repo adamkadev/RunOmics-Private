@@ -27,7 +27,8 @@ export type StaleSyncState = { alerted: boolean }
 
 export type ActivitySyncState = { knownIds: string[] }
 
-export type ExploreMilestoneState = { areaId: string; announced: string[] }
+/** `areaId` and `announced`: the one-area shape written before, read until the next save replaces it. */
+export type ExploreMilestoneState = { areas?: Record<string, string[]>; areaId?: string; announced?: string[] }
 
 export type ClientErrorAlertState = { lastAt: string }
 
