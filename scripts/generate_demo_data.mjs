@@ -835,6 +835,59 @@ function buildRecoveryHistory(endDate) {
   return { days }
 }
 
+const STRENGTH_EXERCISES = [
+  ['squat', 'goblet_squat'],
+  ['lunge', 'dumbbell_lunge'],
+  ['hip_raise', 'single_leg_hip_raise'],
+  ['calf_raise', 'single_leg_bent_knee_calf_raise'],
+  ['plank', 'side_plank'],
+  ['core', 'side_abs_leg_lift'],
+]
+
+function buildCrossTraining(endDate) {
+  // Its own generator, so it moves no other demo number.
+  const rng = makeRng(SEED + 71)
+  const sessions = []
+  let id = 95000001
+  for (let i = 182; i >= 0; i--) {
+    const d = addDays(endDate, -i)
+    const weekday = d.getUTCDay()
+    const kind = weekday === 3 && rng() < 0.75 ? 'strength_training'
+      : weekday === 6 && rng() < 0.3 ? 'road_biking'
+      : weekday === 1 && rng() < 0.2 ? 'yoga'
+      : null
+    if (!kind) continue
+    const date = isoDate(d)
+    const durationSeconds = Math.round(kind === 'road_biking' ? between(rng, 3600, 6000) : between(rng, 1500, 2700))
+    const sets = kind === 'strength_training'
+      ? STRENGTH_EXERCISES.flatMap(([category, exercise]) => Array.from({ length: 2 }, () => ({
+          category,
+          exercise,
+          reps: Math.round(between(rng, 8, 15)),
+          ...(category === 'squat' || category === 'lunge' ? { weightKg: 12 } : {}),
+          durationSeconds: Math.round(between(rng, 30, 60)),
+        })))
+      : null
+    sessions.push({
+      id: String(id++),
+      date,
+      startTimeLocal: `${date}T18:30:00`,
+      sport: kind,
+      durationSeconds,
+      distanceKm: kind === 'road_biking' ? round(durationSeconds / 3600 * between(rng, 24, 28), 2) : null,
+      avgHeartRate: Math.round(kind === 'road_biking' ? between(rng, 118, 132) : between(rng, 92, 110)),
+      trainingLoad: round(kind === 'road_biking' ? between(rng, 60, 110) : between(rng, 15, 35), 1),
+      ...(sets ? { sets } : {}),
+    })
+  }
+  const byYear = {}
+  for (const session of sessions.reverse()) (byYear[session.date.slice(0, 4)] ??= []).push(session)
+  return {
+    'cross_training/index.json': { years: Object.keys(byYear).sort().reverse() },
+    ...Object.fromEntries(Object.entries(byYear).map(([year, entries]) => [`cross_training/${year}.json`, { sessions: entries }])),
+  }
+}
+
 // The demo runs circle a point in the Pacific where no real quartier exists, so the dataset brings a town of its own,
 // in the shape scripts/build-explore-areas.ts writes. Its shapes are fitted to the home runs so that some quartiers
 // are complete, some partly explored and Millbrook is fog (scripts/__tests__/demoExploreArea.test.ts).
@@ -975,6 +1028,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
     'planned_workouts/index.json': { years: plannedYears },
     ...buildCoachingData(endDate, activities),
     ...buildDemoExploreArea(),
+    ...buildCrossTraining(endDate),
   }
   for (const [month, acts] of Object.entries(months)) {
     files[`activities/${month}.json`] = { activities: acts.sort((a, b) => b.date.localeCompare(a.date)) }

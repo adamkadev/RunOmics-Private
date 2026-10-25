@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { buildCoachingOverview, type CoachingOverview, type PrescriptionView } from '@/application/coaching/GetCoachingView'
 import type { PlannedWorkout } from '@/domain/activity/types'
+import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import type { PlanRun } from '../planRun'
 import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
@@ -67,6 +68,7 @@ interface Options {
   trainingZones?: TrainingZonesData | null
   selected?: string
   onSelectDate?: (date: string) => void
+  others?: CrossTrainingEntry[]
 }
 
 // The selected day lives in PlanClient's URL; a plain state stands in for it.
@@ -84,6 +86,7 @@ function Harness(options: Options) {
         options.onSelectDate?.(date)
       }}
       byDate={byDate}
+      byDateOther={new Map((options.others ?? []).map((entry) => [entry.date, [entry]]))}
       byDatePlanned={new Map((options.planned ?? []).map((p) => [p.date, p]))}
       byDateCoach={options.coaching ? byDateCoach(options.coaching) : undefined}
       coaching={options.coaching ?? null}
@@ -420,5 +423,19 @@ describe('a rest day', () => {
 
     expect(screen.getByTestId('plan-rest-day')).toBeInTheDocument()
     expect(screen.queryByTestId('coming-up')).toBeNull()
+  })
+})
+
+describe('other training', () => {
+  const strength: CrossTrainingEntry = { id: 'x1', date: '2026-09-08', kind: 'strength', durationSeconds: 2700, distanceKm: null, sets: 12 }
+
+  it('puts a chip on its day and lists it under the day, leaving the run and the week alone', () => {
+    renderWeek({ activities: [TEMPO, RACE], others: [strength], selected: '2026-09-08' })
+
+    expect(within(day('2026-09-08')).getByTestId('day-cross-training')).toBeTruthy()
+    expect(day('2026-09-08').getAttribute('aria-label')).toContain(t.crossTraining.kinds.strength)
+    expect(within(day('2026-09-07')).queryByTestId('day-cross-training')).toBeNull()
+    expect(bar('2026-09-08').dataset.barState).toBe('done')
+    expect(within(screen.getByTestId('plan-cross-training')).getByTestId('cross-training-row').textContent).toContain(t.crossTraining.sets(12))
   })
 })

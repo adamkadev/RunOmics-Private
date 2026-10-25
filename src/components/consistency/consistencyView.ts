@@ -1,4 +1,5 @@
 import type { ConsistencyRun } from '@/application/usecases/GetConsistencyData'
+import type { CrossTrainingEntry } from '@/domain/activity/crossTraining'
 import { WEEKLY_RUN_TARGET } from '@/domain/training/weeklyRunTarget'
 
 /** In the URL as ?range=. */
@@ -22,6 +23,8 @@ export interface ConsistencyWeek {
   seconds: number
   /** Sessions still to come in the week under way; 0 for a week done. */
   planned: number
+  /** Other-training sessions, beside the runs and never counted as one. */
+  others: number
   current: boolean
   onTarget: boolean
   inStreak: boolean
@@ -53,10 +56,13 @@ export interface ConsistencyView {
   runDays: Record<string, number>
   /** Days with a session still to come, from today. */
   plannedDates: string[]
+  /** Other-training sessions from the first day a tapped week's month can show to today, oldest first. */
+  others: CrossTrainingEntry[]
 }
 
 export interface ConsistencyInput {
   runs: readonly ConsistencyRun[]
+  others?: readonly CrossTrainingEntry[]
   today: string
   streakWeeks: number
   bestStreakWeeks: number
@@ -102,7 +108,7 @@ export function consistencyView(range: ConsistencyRange, input: ConsistencyInput
 
   const empty: ConsistencyView = {
     range, target, weeks: [], weeksCounted: 0, weeksOnTarget: 0, runs: 0, runsPerWeek: 0, streakWeeks, bestStreakWeeks,
-    thisWeek: { runs: 0, planned: 0 }, weekdays: [0, 0, 0, 0, 0, 0, 0], anchor: null, restDay: null, runDays: {}, plannedDates: [],
+    thisWeek: { runs: 0, planned: 0 }, weekdays: [0, 0, 0, 0, 0, 0, 0], anchor: null, restDay: null, runDays: {}, plannedDates: [], others: [],
   }
   if (!first) return empty
 
@@ -124,6 +130,10 @@ export function consistencyView(range: ConsistencyRange, input: ConsistencyInput
     byWeek.set(week, entry)
   }
 
+  const others = (input.others ?? []).filter((entry) => entry.date >= daysFrom && entry.date <= today).sort((a, b) => a.date.localeCompare(b.date))
+  const othersByWeek = new Map<string, number>()
+  for (const entry of others) othersByWeek.set(mondayOf(entry.date), (othersByWeek.get(mondayOf(entry.date)) ?? 0) + 1)
+
   const plannedDates = (input.plannedDates ?? []).filter((date) => date >= today)
   const weeks: ConsistencyWeek[] = []
   // A year names every other month: twelve labels crowd 52 narrow columns.
@@ -141,6 +151,7 @@ export function consistencyView(range: ConsistencyRange, input: ConsistencyInput
       km: Math.round((entry?.km ?? 0) * 10) / 10,
       seconds: entry?.seconds ?? 0,
       planned: isCurrent ? plannedDates.filter((date) => date <= end).length : 0,
+      others: othersByWeek.get(start) ?? 0,
       current: isCurrent,
       onTarget: (entry?.runs ?? 0) >= target,
       inStreak: false,
@@ -179,6 +190,7 @@ export function consistencyView(range: ConsistencyRange, input: ConsistencyInput
     restDay,
     runDays,
     plannedDates,
+    others,
   }
 }
 
@@ -197,6 +209,8 @@ export interface SheetDay {
   /** In the month the sheet shows; the days either side are dimmed. */
   inMonth: boolean
   runs: number
+  /** Other-training sessions: an active day of their own. */
+  others: number
   today: boolean
   /** A session still to come. */
   planned: boolean
@@ -223,6 +237,8 @@ export function weekSheet(view: ConsistencyView, weekStart: string, today: strin
   if (!week) return null
   const current = mondayOf(today)
   const planned = new Set(view.plannedDates)
+  const othersByDay = new Map<string, number>()
+  for (const entry of view.others) othersByDay.set(entry.date, (othersByDay.get(entry.date) ?? 0) + 1)
   const month = weekStart.slice(0, 7)
   const last = plusDays(monthStart(plusDays(`${month}-28`, 4)), -1)
 
@@ -235,6 +251,7 @@ export function weekSheet(view: ConsistencyView, weekStart: string, today: strin
         day: Number(date.slice(8, 10)),
         inMonth: date.startsWith(month),
         runs: date <= today ? (view.runDays[date] ?? 0) : 0,
+        others: othersByDay.get(date) ?? 0,
         today: date === today,
         planned: date >= today && planned.has(date),
       }

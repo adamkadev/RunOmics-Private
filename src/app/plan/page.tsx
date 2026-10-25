@@ -7,6 +7,7 @@ import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepo
 import { getCoachingOverview } from '@/application/coaching/GetCoachingView'
 import { getCoachReadout } from '@/application/coaching/GetCoachReadout'
 import { getExploreHome } from '@/application/usecases/GetExploreAreas'
+import { getCrossTrainingEntries } from '@/application/usecases/GetCrossTraining'
 import { PlanClient } from '@/components/plan/PlanClient'
 import { planRun } from '@/components/plan/planRun'
 import { planCoachingView } from '@/components/plan/planCoachingView'
@@ -29,6 +30,7 @@ export default async function PlanPage() {
   return (
     <PlanClient
       activities={activities}
+      crossTraining={getCrossTrainingEntries()}
       plannedWorkouts={plannedWorkouts}
       planPhaseRanges={trainingPlan?.ranges ?? []}
       nextRace={nextRace}

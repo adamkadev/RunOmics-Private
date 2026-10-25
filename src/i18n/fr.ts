@@ -162,6 +162,15 @@ export const fr = {
     empty: 'Aucune sortie pour l’instant.',
   },
 
+  crossTraining: {
+    title: 'Autres activités',
+    kinds: { strength: 'Renforcement', cycling: 'Vélo', swimming: 'Natation', walking: 'Marche', cardio: 'Cardio', mobility: 'Mobilité', other: 'Autre' },
+    sets: (sets: number) => `${sets} série${sets > 1 ? 's' : ''}`,
+    legend: 'autre activité',
+    count: (sessions: number) => `${sessions} autre${sessions > 1 ? 's' : ''} activité${sessions > 1 ? 's' : ''}`,
+    weekTotal: (sessions: number, time: string) => `${sessions} séance${sessions > 1 ? 's' : ''} · ${time}`,
+  },
+
   paceAxis: {
     caption: 'vers le haut = plus rapide',
   },

@@ -164,6 +164,16 @@ export const en = {
     empty: 'No runs yet.',
   },
 
+  // Strength, cycling and every other non-running session: kept apart from the runs and their numbers.
+  crossTraining: {
+    title: 'Other training',
+    kinds: { strength: 'Strength', cycling: 'Cycling', swimming: 'Swimming', walking: 'Walking', cardio: 'Cardio', mobility: 'Mobility', other: 'Other' },
+    sets: (sets: number) => `${sets} set${sets === 1 ? '' : 's'}`,
+    legend: 'other training',
+    count: (sessions: number) => `${sessions} other training session${sessions === 1 ? '' : 's'}`,
+    weekTotal: (sessions: number, time: string) => `${sessions} session${sessions === 1 ? '' : 's'} · ${time}`,
+  },
+
   paceAxis: {
     caption: 'up = faster',
   },
