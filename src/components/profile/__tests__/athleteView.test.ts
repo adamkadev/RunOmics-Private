@@ -34,8 +34,6 @@ describe('athletePageView', () => {
   it('carries exactly the fields /athlete draws', () => {
     expect(Object.keys(athletePageView(PROFILE)).sort()).toEqual(
       [
-        'age',
-        'fitnessAgeYrs',
         'hrZoneBoundsBpm',
         'lastUpdate',
         'lthrBpm',

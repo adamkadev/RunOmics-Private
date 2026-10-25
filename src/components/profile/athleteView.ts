@@ -10,8 +10,6 @@ const ATHLETE_PAGE_FIELDS = [
   'lthrBpm',
   'maxHrBpm',
   'hrZoneBoundsBpm',
-  'age',
-  'fitnessAgeYrs',
   'vmaKmh',
   'thresholdPaceSecPerKm',
   'lastUpdate',

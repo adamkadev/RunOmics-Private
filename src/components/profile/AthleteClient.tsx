@@ -7,7 +7,9 @@ import { BackButton } from '@/components/ui/BackButton'
 import { AthleteStats } from './ProfileAthleteStats'
 import { ProfileHrZones } from './ProfileHrZones'
 import { Vo2GradeCard } from './Vo2GradeCard'
+import { FitnessAgeCard } from './FitnessAgeCard'
 import type { Vo2GradeView } from '@/application/usecases/GetVo2Grade'
+import type { FitnessAgeView } from '@/application/usecases/GetFitnessAge'
 import { formatRelativeAgo } from '@/lib/formatters'
 import { useMounted } from '@/lib/useMounted'
 import { t } from '@/i18n'
@@ -15,13 +17,14 @@ import { t } from '@/i18n'
 interface Props {
   athlete: AthletePageView
   vo2Grade: Vo2GradeView | null
+  fitnessAge: FitnessAgeView | null
   weeklyZoneTime: ZoneShare[]
   recentZoneTime: ZoneShare[]
   paceZones: TrainingZonesData | null
   lastSyncedAt?: string | null
 }
 
-export function AthleteClient({ athlete, vo2Grade, weeklyZoneTime, recentZoneTime, paceZones, lastSyncedAt = null }: Props) {
+export function AthleteClient({ athlete, vo2Grade, fitnessAge, weeklyZoneTime, recentZoneTime, paceZones, lastSyncedAt = null }: Props) {
   const p = t.pages.athlete
   // Relative time only after mount: on the server it is as old as the cached
   // page, and the mismatch is React error #418.
@@ -39,6 +42,7 @@ export function AthleteClient({ athlete, vo2Grade, weeklyZoneTime, recentZoneTim
       </header>
 
       {vo2Grade && <Vo2GradeCard view={vo2Grade} />}
+      {fitnessAge && <FitnessAgeCard view={fitnessAge} />}
       <AthleteStats athlete={athlete} />
       <ProfileHrZones
         athlete={athlete}
