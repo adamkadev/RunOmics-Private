@@ -17,6 +17,7 @@ export type DeltaMetric =
   | 'pace'
   | 'race'
   | 'efficiency'
+  | 'heartRate'
   | 'distance'
   | 'loadRatio'
   | 'rampRate'
@@ -83,6 +84,9 @@ export function deltaTone(metric: DeltaMetric, delta: number | null | undefined,
     // agrees with the number beside it.
     case 'efficiency':
       return Math.round(Math.abs(delta) * 100) <= 2 ? 'flat' : delta > 0 ? 'good' : 'worse'
+    // bpm for the same work: lower is fitter. A 12-week mean of resting HR moves less than one easy run does.
+    case 'heartRate':
+      return Math.abs(delta) < (ctx.flatBelow ?? 2) ? 'flat' : delta < 0 ? 'good' : 'worse'
     // Against last year's figure: under 2% of it is the same year.
     case 'distance': {
       const base = value !== undefined ? value - delta : null

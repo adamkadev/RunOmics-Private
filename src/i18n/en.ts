@@ -2262,6 +2262,78 @@ export const en = {
     tomorrow: 'Tomorrow',
   },
 
+  // The 12-week checkpoint: one cycle set against the 12 weeks before it.
+  checkpoint: {
+    title: '12-week checkpoint',
+    cycle: (n: number) => `Cycle ${n}`,
+    lastWeeks: 'Last 12 weeks',
+    against: (current: string, previous: string) => `${current} vs ${previous}`,
+    weekOf: (week: number) => `Week ${week} of 12`,
+    complete: (n: number) => `Cycle ${n} complete`,
+    dueIn: (date: string, days: number) =>
+      days <= 0 ? 'Checkpoint today' : days === 1 ? 'Checkpoint tomorrow' : days < 14 ? `Checkpoint ${date} · in ${days} days` : `Checkpoint ${date} · in ${Math.round(days / 7)} weeks`,
+    reached: (date: string) => `Checkpoint ${date}`,
+    nextBegan: (n: number, date: string) => `Cycle ${n} began ${date}; it takes over here next week.`,
+    rolling: 'No coach plan to count cycles from, so this sets your last 12 full weeks against the 12 before them.',
+    tooEarly: 'No week of this cycle is over yet: the weekly figures start on Monday.',
+    better: (n: number) => `${n} better`,
+    worse: (n: number) => `${n} worse`,
+    level: (n: number) => `${n} level`,
+    perWeekSoFar: (weeks: number) => (weeks === 1 ? 'per week · 1 full week so far' : `per week · ${weeks} full weeks so far`),
+    perWeek: 'per week',
+    vs: (value: string) => `vs ${value}`,
+    notEnough: 'Not enough data',
+    nothingBefore: 'None before',
+    lastReading: (date: string) => `Last reading ${date}`,
+    soFar: (minutes: number, sessions: number) => `${minutes} min in ${sessions} session${sessions === 1 ? '' : 's'} so far`,
+    noCheck: 'No check this cycle',
+    vdot: (value: string) => `VDOT ${value}`,
+    sections: {
+      volume: {
+        title: 'Volume',
+        about: 'Kilometres and runs a week. While a cycle runs, only its weeks already over count, so a week under way never reads as a light one.',
+      },
+      threshold: {
+        title: 'Controlled threshold',
+        about: 'Time in the repetitions of your controlled threshold sessions, read from each run’s laps, and the pace guide each repetition length was run to. The heart-rate ceiling stays put, so a faster guide under it is the progress.',
+      },
+      efficiency: {
+        title: 'Aerobic efficiency',
+        about: 'Efficiency is the distance you cover per heartbeat on easy runs. Easy HR is the median heart rate of easy runs within 10 s/km of the pace named. Both take the heat cost of warm days back out, as Analytics does: lower heart rate, higher efficiency is fitter.',
+      },
+      markers: {
+        title: 'Fitness markers',
+        about: 'The latest 5K check of each cycle, a 5K race or a time trial, with the VDOT it implies, and Garmin’s VO₂max and threshold estimates as they stood at the end of each cycle. Threshold HR has no better direction, so it is shown but not scored.',
+      },
+      recovery: {
+        title: 'Recovery and load',
+        about: 'Resting HR is the mean of the cycle’s daily readings, leaving out days the watch was only worn to run. Fitness is your 42-day training load at the end of the cycle, or today while it runs.',
+      },
+    },
+    metrics: {
+      distance: 'Distance per week',
+      runs: 'Runs per week',
+      thresholdTime: 'Time in reps per week',
+      guide: { long: 'Pace guide · long reps', medium: 'Pace guide · medium reps', short: 'Pace guide · short reps' },
+      efficiency: 'Efficiency, heat-adjusted',
+      easyHr: (pace: string) => `Easy HR at ${pace} /km`,
+      easyHrNoPace: 'Easy HR at a set pace',
+      fiveK: '5K check',
+      vo2max: 'VO₂max',
+      thresholdPace: 'Threshold pace',
+      lthr: 'Threshold HR',
+      restingHr: 'Resting HR',
+      fitnessEnd: 'Fitness at cycle end',
+      fitnessToday: 'Fitness today',
+    },
+    units: { runs: 'runs', perBeat: 'm/beat' },
+    tile: {
+      inProgress: (week: number, date: string) => `Week ${week} of 12 · checkpoint ${date}`,
+      complete: (n: number) => `Cycle ${n} complete: time to review it`,
+      rolling: 'Your last 12 weeks against the 12 before',
+    },
+  },
+
   trainingZones: {
     title: 'Pace zones',
     zoneNumber: (n: number) => `Z${n}`,

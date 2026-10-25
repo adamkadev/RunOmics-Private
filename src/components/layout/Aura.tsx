@@ -29,7 +29,7 @@ const PALETTES: Record<string, Palette> = {
 }
 
 /** Pages whose children take their palette. */
-const FAMILIES = ['/shoes']
+const FAMILIES = ['/shoes', '/plan']
 
 export function auraPalette(pathname: string, view: string | null = null): Palette | null {
   const path = pathname.replace(/\/+$/, '') || '/'

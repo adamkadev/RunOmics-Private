@@ -2098,6 +2098,78 @@ export const fr = {
     tomorrow: 'Demain',
   },
 
+  // Le bilan des 12 semaines : un cycle face aux 12 semaines d’avant.
+  checkpoint: {
+    title: 'Bilan 12 semaines',
+    cycle: (n: number) => `Cycle ${n}`,
+    lastWeeks: '12 dernières semaines',
+    against: (current: string, previous: string) => `${current} contre ${previous}`,
+    weekOf: (week: number) => `Semaine ${week} sur 12`,
+    complete: (n: number) => `Cycle ${n} terminé`,
+    dueIn: (date: string, days: number) =>
+      days <= 0 ? 'Bilan aujourd’hui' : days === 1 ? 'Bilan demain' : days < 14 ? `Bilan ${date} · dans ${days} jours` : `Bilan ${date} · dans ${Math.round(days / 7)} semaines`,
+    reached: (date: string) => `Bilan ${date}`,
+    nextBegan: (n: number, date: string) => `Le cycle ${n} a commencé ${date} ; il prend la place de celui-ci la semaine prochaine.`,
+    rolling: 'Aucun plan du coach pour compter les cycles : tes 12 dernières semaines complètes face aux 12 d’avant.',
+    tooEarly: 'Aucune semaine de ce cycle n’est encore terminée : les chiffres par semaine arrivent lundi.',
+    better: (n: number) => `${n} en progrès`,
+    worse: (n: number) => `${n} en recul`,
+    level: (n: number) => `${n} ${n > 1 ? 'stables' : 'stable'}`,
+    perWeekSoFar: (weeks: number) => (weeks > 1 ? `par semaine · ${weeks} semaines complètes` : `par semaine · ${weeks} semaine complète`),
+    perWeek: 'par semaine',
+    vs: (value: string) => `contre ${value}`,
+    notEnough: 'Pas assez de données',
+    nothingBefore: 'Rien avant',
+    lastReading: (date: string) => `Dernière mesure ${date}`,
+    soFar: (minutes: number, sessions: number) => `${minutes} min en ${sessions} séance${sessions > 1 ? 's' : ''} pour l’instant`,
+    noCheck: 'Pas de test ce cycle',
+    vdot: (value: string) => `VDOT ${value}`,
+    sections: {
+      volume: {
+        title: 'Volume',
+        about: 'Kilomètres et sorties par semaine. Tant qu’un cycle est en cours, seules ses semaines terminées comptent : une semaine entamée ne passe jamais pour une semaine légère.',
+      },
+      threshold: {
+        title: 'Seuil contrôlé',
+        about: 'Le temps passé dans les fractions de tes séances au seuil contrôlé, lu dans les tours de chaque sortie, et l’allure repère de chaque longueur de fraction. Le plafond de fréquence cardiaque ne bouge pas : un repère plus rapide sous ce plafond, c’est le progrès.',
+      },
+      efficiency: {
+        title: 'Efficacité aérobie',
+        about: 'L’efficacité est la distance parcourue par battement de cœur en footing. La FC en footing est la fréquence médiane des footings à 10 s/km près de l’allure indiquée. Les deux retirent le coût des jours chauds, comme dans Analyses : une FC plus basse, une efficacité plus haute, c’est mieux.',
+      },
+      markers: {
+        title: 'Marqueurs de forme',
+        about: 'Le dernier test 5 km de chaque cycle, course ou contre-la-montre, avec la VDOT qu’il donne, et les estimations Garmin de VO₂max et de seuil à la fin de chaque cycle. La FC seuil n’a pas de bon sens de variation : elle est affichée, pas notée.',
+      },
+      recovery: {
+        title: 'Récupération et charge',
+        about: 'La FC repos est la moyenne des mesures quotidiennes du cycle, sans les jours où la montre n’a été portée que pour courir. La condition est ta charge moyenne sur 42 jours à la fin du cycle, ou aujourd’hui s’il est en cours.',
+      },
+    },
+    metrics: {
+      distance: 'Distance par semaine',
+      runs: 'Sorties par semaine',
+      thresholdTime: 'Temps en fractions par semaine',
+      guide: { long: 'Allure repère · fractions longues', medium: 'Allure repère · fractions moyennes', short: 'Allure repère · fractions courtes' },
+      efficiency: 'Efficacité, corrigée de la chaleur',
+      easyHr: (pace: string) => `FC en footing à ${pace} /km`,
+      easyHrNoPace: 'FC en footing à allure fixe',
+      fiveK: 'Test 5 km',
+      vo2max: 'VO₂max',
+      thresholdPace: 'Allure seuil',
+      lthr: 'FC seuil',
+      restingHr: 'FC repos',
+      fitnessEnd: 'Condition en fin de cycle',
+      fitnessToday: 'Condition aujourd’hui',
+    },
+    units: { runs: 'sorties', perBeat: 'm/batt.' },
+    tile: {
+      inProgress: (week: number, date: string) => `Semaine ${week} sur 12 · bilan ${date}`,
+      complete: (n: number) => `Cycle ${n} terminé : place au bilan`,
+      rolling: 'Tes 12 dernières semaines face aux 12 d’avant',
+    },
+  },
+
   trainingZones: {
     title: 'Zones d’allure',
     zoneNumber: (n: number) => `Z${n}`,
