@@ -2329,6 +2329,21 @@ export const fr = {
       cols: { rep: 'n°', pace: 'Allure', hr: 'FC', peak: 'Pic' },
       footnote: (minute: number, guide: string) => `La FC réagit en retard : chaque fraction est lue à partir de la ${minute}ᵉ minute. Guide d’allure ${guide} /km.`,
     },
+    readout: {
+      title: 'Coach',
+      triggers: { bootstrap: 'nouveau bloc', post_activity: 'après une sortie', weekly_review: 'bilan de la semaine', autoregulation: 'autorégulation' },
+      lastRun: 'Dernière sortie',
+      threshold: 'Seuil',
+      paceGuide: 'Guide d’allure',
+      guideChange: (from: string, to: string) => `${from} → ${to} /km`,
+      proposed: (reps: string) => `${reps} · proposé, pas appliqué.`,
+      easyRuns: 'Footings',
+      fatigue: (bpm: number) => `FC ${bpm} bpm au-dessus de ta normale : une semaine plus légère est proposée.`,
+      fitnessCheck: 'Test 5 km',
+      check: (date: string, pace: string, threshold: string) => `${date} · ${pace} · seuil ${threshold}`,
+      checkGuides: 'Les guides du prochain bloc en viennent.',
+      nextKey: 'Prochaine clé',
+    },
   },
 
   activityTypes: {

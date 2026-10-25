@@ -6,7 +6,7 @@ import { formatClock } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
-const VERDICT_TONE: Record<SessionVerdict, StatusTone> = {
+export const VERDICT_TONE: Record<SessionVerdict, StatusTone> = {
   under: 'accent',
   on_target: 'good',
   over: 'warn',

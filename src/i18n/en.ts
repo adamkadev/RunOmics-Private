@@ -2507,6 +2507,21 @@ export const en = {
       cols: { rep: '#', pace: 'Pace', hr: 'HR', peak: 'Peak' },
       footnote: (minute: number, guide: string) => `Heart rate lags, so each rep is read from minute ${minute}. Pace guide ${guide} /km.`,
     },
+    readout: {
+      title: 'Coach',
+      triggers: { bootstrap: 'new block', post_activity: 'after a run', weekly_review: 'weekly review', autoregulation: 'autoregulation' },
+      lastRun: 'Last run',
+      threshold: 'Threshold',
+      paceGuide: 'Pace guide',
+      guideChange: (from: string, to: string) => `${from} → ${to} /km`,
+      proposed: (reps: string) => `${reps} · proposed, not applied.`,
+      easyRuns: 'Easy runs',
+      fatigue: (bpm: number) => `Heart rate ${bpm} bpm above your normal: a lighter week is proposed.`,
+      fitnessCheck: '5K check',
+      check: (date: string, pace: string, threshold: string) => `${date} · ${pace} · threshold ${threshold}`,
+      checkGuides: 'The next block’s guides come from it.',
+      nextKey: 'Next key',
+    },
   },
 
   activityTypes: {

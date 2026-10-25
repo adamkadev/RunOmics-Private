@@ -1,10 +1,11 @@
 import type { Activity } from '@/domain/activity/types'
-import type {
-  CoachDecision,
-  CoachingPlan,
-  GarminScheduleStatus,
-  WorkoutEvaluation,
-  WorkoutPrescription,
+import {
+  COACHING_TO_ACTIVITY_TYPE,
+  type CoachDecision,
+  type CoachingPlan,
+  type GarminScheduleStatus,
+  type WorkoutEvaluation,
+  type WorkoutPrescription,
 } from '@/domain/coaching/types'
 import { garminScheduleStatus } from '@/domain/coaching/matching'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
@@ -67,10 +68,12 @@ export function buildCoachingOverview(
   const currentWeek = plan.weeks.find((week) => today >= week.startDate && today <= week.endDate) ?? null
   const latestDecision = decisions[0] ?? null
   const latestEvaluation = evaluations[0] ?? null
+  // Key as the week view's quality days are: a long run is easy running, and a session already run is behind.
   const nextKeyWorkout = views.find((view) =>
     view.prescription.date >= today &&
-    view.prescription.status !== 'cancelled' &&
-    !['easy', 'recovery'].includes(view.prescription.type)
+    view.state !== 'cancelled' &&
+    view.state !== 'completed' &&
+    COACHING_TO_ACTIVITY_TYPE[view.prescription.type] !== 'Base'
   ) ?? null
 
   return { plan, currentWeekId: currentWeek?.id ?? null, workouts: views, latestDecision, latestEvaluation, nextKeyWorkout }
@@ -115,18 +118,21 @@ export function sessionsAcrossPlans(plans: readonly CoachingPlan[], evaluations:
   return sessions
 }
 
-/** A superseded block's runs keep their session; an archive that fails to parse costs only those. */
+/** An archive that fails to parse costs only the superseded blocks, never the page. */
+export function archivedPlans(repository: Pick<CoachingRepository, 'getArchivedPlans'> = new JsonCoachingRepository()): CoachingPlan[] {
+  try {
+    return repository.getArchivedPlans?.() ?? []
+  } catch (error) {
+    console.error('[coaching] archived plans unreadable', error)
+    return []
+  }
+}
+
 export function getRunSessions(
   repository: Pick<CoachingRepository, 'getCurrentPlan' | 'getEvaluations' | 'getArchivedPlans'> = new JsonCoachingRepository(),
 ): RunSession[] {
   const current = repository.getCurrentPlan()
-  let archived: CoachingPlan[] = []
-  try {
-    archived = repository.getArchivedPlans?.() ?? []
-  } catch (error) {
-    console.error('[coaching] archived plans unreadable', error)
-  }
-  return sessionsAcrossPlans([...(current ? [current] : []), ...archived], repository.getEvaluations())
+  return sessionsAcrossPlans([...(current ? [current] : []), ...archivedPlans(repository)], repository.getEvaluations())
 }
 
 /** Reads the plan alone: the overview walks every week against every evaluation, too much for one row. */

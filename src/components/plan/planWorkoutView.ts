@@ -1,5 +1,6 @@
 import type { WorkoutPrescription } from '@/domain/coaching/types'
 import type { PlanPrescriptionView } from './planCoachingView'
+import type { PrescriptionDisplayState } from '@/application/coaching/GetCoachingView'
 import type { TrainingZone, TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type {
   ActivityType,
@@ -42,6 +43,8 @@ export interface PlanWorkoutView {
   structure: WorkoutStep[] | null
   hr: SessionHrTarget | null
   statusLabel: string
+  /** The coach's state; absent for a session only the watch planned. */
+  state?: PrescriptionDisplayState
   alert: string | null
   activityId: string | null
   isKey: boolean
@@ -137,6 +140,7 @@ export function coachWorkoutView(
     structure: prescriptionStructure(workout),
     hr: prescriptionHr(workout),
     statusLabel: t.coaching.states[view.state],
+    state: view.state,
     alert: garminAlert(view),
     activityId: view.activityId,
     isKey: isKeyPrescription(workout),

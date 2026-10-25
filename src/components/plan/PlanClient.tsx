@@ -9,6 +9,7 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { PlanCoachingView, PlanPrescriptionView } from './planCoachingView'
 import { WeekView } from './WeekView'
 import { MonthView } from './MonthView'
+import { CoachReadoutCard } from './CoachReadoutCard'
 import { addDays, isoDate, startOfWeek } from '@/lib/calendarDate'
 import { useSwipeNavigation } from '@/lib/useSwipeNavigation'
 import { useToday } from '@/lib/useToday'
@@ -186,6 +187,8 @@ export function PlanClient({ activities, plannedWorkouts, planPhaseRanges, nextR
           />
         )}
       </div>
+
+      {coaching?.readout && <CoachReadoutCard readout={coaching.readout} onSelectDate={openWeekAt} />}
     </div>
   )
 }

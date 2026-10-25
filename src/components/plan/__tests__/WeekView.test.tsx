@@ -237,6 +237,7 @@ describe('a session still to come', () => {
     expect(within(card).getByRole('heading').textContent).toBe('3 × 8 min threshold')
     expect(card.textContent).toContain(`1:00 ${t.units.hour}`)
     expect(card.textContent).toContain(t.plan.session.targetPace('4:25–4:30'))
+    expect(within(card).getByTestId('plan-status').textContent).toBe(t.coaching.states.prescribed)
   })
 
   it('titles it by its set under the naming rules, its type left to the eyebrow', () => {
