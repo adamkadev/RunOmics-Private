@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
-import { sendPushToAllDevices } from '@/lib/sendPushNotification'
+import { sendPush } from '@/lib/sendPushNotification'
 import { getGoalsPageData } from '@/application/usecases/GetGoalsData'
 import { appTodayIso } from '@/lib/calendarDate'
 import { formatNumber } from '@/lib/formatters'
@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
     }
 
     const n = t.notifications.weeklyGoal
-    await sendPushToAllDevices(
+    await sendPush(
+      'training',
       n.title,
       n.body(n.status[projection.status], formatNumber(projection.weeklyRate), formatNumber(projection.weeklyNeeded))
     )

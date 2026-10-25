@@ -541,12 +541,12 @@ export const fr = {
     notifications: {
       title: 'Notifications',
       error: 'Impossible de mettre à jour les réglages de notification, réessaie.',
-      // « 8 h 11 », the French way of writing a time.
+      // « 8 h 00 », the French way of writing a time.
       at: (hour: number, minute: string) => `${hour} h ${minute}`,
       types: {
         training: { title: 'Rappels d’entraînement' },
         shoes: { title: 'Alertes d’usure des chaussures' },
-        races: { title: 'Records et prédictions' },
+        records: { title: 'Records et quartiers explorés' },
       },
     },
   },

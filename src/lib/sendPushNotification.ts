@@ -1,13 +1,14 @@
 import 'server-only'
 import { getMessaging } from 'firebase-admin/messaging'
 import { getAdminApp, getAdminFirestore } from '@/lib/firebase-admin'
+import { wantsPush, type PushAudience } from '@/lib/pushCategories'
 
 const PUSH_TOKENS_COLLECTION = 'pushTokens'
 
-export async function sendPushToAllDevices(title: string, body: string): Promise<void> {
+export async function sendPush(audience: PushAudience, title: string, body: string): Promise<void> {
   const db = getAdminFirestore()
   const snapshot = await db.collection(PUSH_TOKENS_COLLECTION).get()
-  const tokens = snapshot.docs.map((d) => d.id)
+  const tokens = snapshot.docs.filter((d) => wantsPush(d.get('categories'), audience)).map((d) => d.id)
   if (tokens.length === 0) return
 
   const response = await getMessaging(getAdminApp()).sendEachForMulticast({
@@ -27,17 +28,13 @@ export interface Push {
   body: string
 }
 
-/**
- * Throws only once every push has been tried: a transient FCM error on the
- * first alert must not cost the others. A caller commits its dedup state after
- * this returns, so a failure offers the whole batch again next run.
- */
-export async function sendPushesToAllDevices(pushes: Push[]): Promise<void> {
+/** Throws only once every push was tried: one transient FCM error must not cost the alerts queued behind it. */
+export async function sendPushes(audience: PushAudience, pushes: Push[]): Promise<void> {
   const failures: unknown[] = []
 
   for (const { title, body } of pushes) {
     try {
-      await sendPushToAllDevices(title, body)
+      await sendPush(audience, title, body)
     } catch (error) {
       failures.push(error)
     }

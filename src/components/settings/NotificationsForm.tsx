@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { disablePushNotifications, enablePushNotifications, isPushSupported } from '@/lib/pushNotifications'
+import { useState } from 'react'
 import { t } from '@/i18n'
+import { PUSH_CATEGORIES, type PushCategories, type PushCategory } from '@/lib/pushCategories'
 import { Toast, useToast } from '@/components/ui/Toast'
 import { Toggle } from '@/components/ui/Toggle'
 import { useMounted } from '@/lib/useMounted'
@@ -10,75 +10,70 @@ import { dailyReminderTime } from './reminderTime'
 import { GROUP_CARD, GROUP_ROW } from './settingsGroup'
 
 type PushStatus = 'loading' | 'unsupported' | 'idle' | 'busy' | 'enabled' | 'denied'
-type NotifType = 'training' | 'shoes' | 'races'
 
-const STORAGE_KEYS: Record<NotifType, string> = {
+// The records key keeps its old name, so a phone that already chose keeps its switch.
+const STORAGE_KEYS: Record<PushCategory, string> = {
   training: 'notif_training',
   shoes:    'notif_shoes',
-  races:    'notif_races',
+  records:  'notif_races',
 }
 
-function loadPrefs(): Record<NotifType, boolean> {
-  if (typeof window === 'undefined') return { training: false, shoes: false, races: false }
-  return {
-    training: localStorage.getItem(STORAGE_KEYS.training) === 'true',
-    shoes:    localStorage.getItem(STORAGE_KEYS.shoes)    === 'true',
-    races:    localStorage.getItem(STORAGE_KEYS.races)    === 'true',
-  }
+const ALL_OFF: PushCategories = { training: false, shoes: false, records: false }
+
+/** A mirror for drawing the switches: the server reads the copy on the device's token, which a client cannot read back. */
+function loadPrefs(): PushCategories {
+  if (typeof window === 'undefined') return ALL_OFF
+  return { training: stored('training'), shoes: stored('shoes'), records: stored('records') }
 }
 
-function savePrefs(prefs: Record<NotifType, boolean>) {
-  for (const [key, val] of Object.entries(prefs)) {
-    localStorage.setItem(STORAGE_KEYS[key as NotifType], String(val))
-  }
+function stored(category: PushCategory): boolean {
+  return localStorage.getItem(STORAGE_KEYS[category]) === 'true'
 }
 
-const NOTIF_TYPES: { key: NotifType }[] = [
-  { key: 'training' },
-  { key: 'shoes' },
-  { key: 'races' },
-]
+function savePrefs(prefs: PushCategories) {
+  for (const category of PUSH_CATEGORIES) localStorage.setItem(STORAGE_KEYS[category], String(prefs[category]))
+}
+
+function canReceivePush(): boolean {
+  return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+}
+
+function deviceStatus(): PushStatus {
+  if (!canReceivePush()) return 'unsupported'
+  const permission = Notification.permission
+  return permission === 'granted' ? 'enabled' : permission === 'denied' ? 'denied' : 'idle'
+}
+
+const loadPush = () => import('@/lib/pushNotifications')
 
 export function NotificationsForm() {
-  const [status, setStatus] = useState<PushStatus>('loading')
-  const [prefs, setPrefs] = useState<Record<NotifType, boolean>>({ training: false, shoes: false, races: false })
+  // After mount: the server has no permission or storage to read, nor the athlete's time zone.
+  const mounted = useMounted()
+  const [changedStatus, setStatus] = useState<PushStatus | null>(null)
+  const [chosenPrefs, setPrefs] = useState<PushCategories | null>(null)
+  const status = changedStatus ?? (mounted ? deviceStatus() : 'loading')
+  const prefs = chosenPrefs ?? (mounted && deviceStatus() === 'enabled' ? loadPrefs() : ALL_OFF)
   const { toast, leaving, showToast } = useToast()
   const n = t.settings.notifications
 
-  // After mount: on the server it would read the server's time zone.
-  const reminderAt = useMounted() ? dailyReminderTime(new Date(), process.env.NEXT_PUBLIC_TIME_ZONE || undefined) : null
+  const reminderAt = mounted ? dailyReminderTime(new Date(), process.env.NEXT_PUBLIC_TIME_ZONE || undefined) : null
 
-  useEffect(() => {
-    isPushSupported().then((supported) => {
-      if (!supported) { setStatus('unsupported'); return }
-      const perm = Notification.permission
-      if (perm === 'granted') {
-        setStatus('enabled')
-        setPrefs(loadPrefs())
-      } else if (perm === 'denied') {
-        setStatus('denied')
-      } else {
-        setStatus('idle')
-      }
-    })
-  }, [])
-
-  async function handleToggle(type: NotifType) {
+  async function handleToggle(category: PushCategory) {
     if (status === 'enabled') {
-      const next = { ...prefs, [type]: !prefs[type] }
+      const next = { ...prefs, [category]: !prefs[category] }
+      const allOff = PUSH_CATEGORIES.every((c) => !next[c])
       setPrefs(next)
-      savePrefs(next)
-      const allOff = Object.values(next).every((v) => !v)
-      if (allOff) {
-        setStatus('busy')
-        try {
-          await disablePushNotifications()
-          setStatus('idle')
-        } catch {
-          setStatus('enabled')
-          setPrefs(prefs)
-          showToast(n.error, false)
-        }
+      setStatus('busy')
+      try {
+        const push = await loadPush()
+        if (allOff) await push.disablePushNotifications()
+        else await push.savePushCategories(next)
+        savePrefs(next)
+        setStatus(allOff ? 'idle' : 'enabled')
+      } catch {
+        setStatus('enabled')
+        setPrefs(prefs)
+        showToast(n.error, false)
       }
       return
     }
@@ -87,8 +82,10 @@ export function NotificationsForm() {
     // the browser's own prompt is the only messaging needed.
     setStatus('busy')
     try {
-      await enablePushNotifications()
-      const next = { ...prefs, [type]: true }
+      // Asked before the import: WebKit shows the prompt only while the tap's user activation lasts.
+      if (canReceivePush() && (await Notification.requestPermission()) !== 'granted') throw new Error('permission-denied')
+      const next = { ...prefs, [category]: true }
+      await (await loadPush()).enablePushNotifications(next)
       setPrefs(next)
       savePrefs(next)
       setStatus('enabled')
@@ -100,11 +97,10 @@ export function NotificationsForm() {
 
   const busy = status === 'loading' || status === 'busy'
 
-  // The reminder's time is read-only: the workflow's cron sets it.
   return (
     <>
     <section className={GROUP_CARD} data-testid="notifications-card">
-      {NOTIF_TYPES.map(({ key }) => {
+      {PUSH_CATEGORIES.map((key) => {
         const title = n.types[key].title
         const enabled = status === 'enabled' && prefs[key]
         return (

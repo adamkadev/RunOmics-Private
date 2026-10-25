@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { handleInternalRoute } from '@/lib/internalRoute'
-import { sendPushToAllDevices } from '@/lib/sendPushNotification'
+import { sendPush } from '@/lib/sendPushNotification'
 import { getTodayPlannedWorkout } from '@/application/usecases/GetPlannedWorkouts'
 import { formatDurationWords, formatKm } from '@/lib/formatters'
 import { t } from '@/i18n'
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const workout = await getTodayPlannedWorkout()
 
     if (!workout) {
-      await sendPushToAllDevices(t.notifications.restDay.title, t.notifications.restDay.body)
+      await sendPush('training', t.notifications.restDay.title, t.notifications.restDay.body)
       return NextResponse.json({ sent: true, restDay: true })
     }
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     if (workout.durationSecs) parts.push(formatDurationWords(workout.durationSecs))
     const detail = parts.length ? parts.join(' · ') : null
 
-    await sendPushToAllDevices(t.notifications.todaySession.title, t.notifications.todaySession.body(workout.name, detail))
+    await sendPush('training', t.notifications.todaySession.title, t.notifications.todaySession.body(workout.name, detail))
     return NextResponse.json({ sent: true, restDay: false })
   })
 }

@@ -3,13 +3,13 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { getTodayPlannedWorkout, sendPushToAllDevices } = vi.hoisted(() => ({
+const { getTodayPlannedWorkout, sendPush } = vi.hoisted(() => ({
   getTodayPlannedWorkout: vi.fn(),
-  sendPushToAllDevices: vi.fn(),
+  sendPush: vi.fn(),
 }))
 
 vi.mock('@/application/usecases/GetPlannedWorkouts', () => ({ getTodayPlannedWorkout }))
-vi.mock('@/lib/sendPushNotification', () => ({ sendPushToAllDevices, sendPushesToAllDevices: vi.fn() }))
+vi.mock('@/lib/sendPushNotification', () => ({ sendPush, sendPushes: vi.fn() }))
 
 const SECRET = 'test-secret'
 
@@ -31,7 +31,7 @@ describe('POST /api/internal/daily-session', () => {
   beforeEach(() => {
     vi.stubEnv('INTERNAL_NOTIFY_SECRET', SECRET)
     vi.clearAllMocks()
-    sendPushToAllDevices.mockResolvedValue(undefined)
+    sendPush.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -43,7 +43,7 @@ describe('POST /api/internal/daily-session', () => {
     const { POST } = await routeIn('en')
 
     expect(await (await POST(request())).json()).toEqual({ sent: true, restDay: true })
-    expect(sendPushToAllDevices).toHaveBeenCalledWith('Rest day', 'No session scheduled today - recovery day.')
+    expect(sendPush).toHaveBeenCalledWith('training', 'Rest day', 'No session scheduled today - recovery day.')
   })
 
   it('names the session, its distance and its duration', async () => {
@@ -51,19 +51,19 @@ describe('POST /api/internal/daily-session', () => {
     const { POST } = await routeIn('en')
 
     await POST(request())
-    expect(sendPushToAllDevices).toHaveBeenCalledWith("Today's session", 'Strides 6 x 20s (8.0 km · 45 min)')
+    expect(sendPush).toHaveBeenCalledWith('training', "Today's session", 'Strides 6 x 20s (8.0 km · 45 min)')
   })
 
   it('speaks the deployment’s language', async () => {
     getTodayPlannedWorkout.mockResolvedValue(null)
     const { POST: restDay } = await routeIn('fr')
     await restDay(request())
-    expect(sendPushToAllDevices).toHaveBeenLastCalledWith('Jour de repos', 'Aucune séance prévue aujourd’hui : place à la récupération.')
+    expect(sendPush).toHaveBeenLastCalledWith('training', 'Jour de repos', 'Aucune séance prévue aujourd’hui : place à la récupération.')
 
     getTodayPlannedWorkout.mockResolvedValue({ date: '2026-10-02', name: 'Footing', distanceM: 8000, durationSecs: 2700 })
     const { POST: session } = await routeIn('fr')
     await session(request())
-    expect(sendPushToAllDevices).toHaveBeenLastCalledWith('Séance du jour', 'Footing (8,0 km · 45 min)')
+    expect(sendPush).toHaveBeenLastCalledWith('training', 'Séance du jour', 'Footing (8,0 km · 45 min)')
   })
 })
 
@@ -76,9 +76,9 @@ describe('every push', () => {
       const file = path.join(routes, dir, 'route.ts')
       if (!fs.existsSync(file)) continue
       const source = fs.readFileSync(file, 'utf-8')
-      if (!/sendPush(?:es)?ToAllDevices\(/.test(source)) continue
+      if (!/sendPush(?:es)?\(/.test(source)) continue
       // A push's title or body written as a string literal, rather than read from t.notifications.
-      if (/sendPushToAllDevices\(\s*['"`]|title:\s*['"`]|body:\s*['"`]/.test(source)) offenders.push(dir)
+      if (/sendPush\([^,]+,\s*['"`]|title:\s*['"`]|body:\s*['"`]/.test(source)) offenders.push(dir)
     }
     expect(offenders).toEqual([])
   })

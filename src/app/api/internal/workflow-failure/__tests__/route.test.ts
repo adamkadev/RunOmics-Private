@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { sendPushToAllDevices } = vi.hoisted(() => ({ sendPushToAllDevices: vi.fn() }))
-vi.mock('@/lib/sendPushNotification', () => ({ sendPushToAllDevices }))
+const { sendPush } = vi.hoisted(() => ({ sendPush: vi.fn() }))
+vi.mock('@/lib/sendPushNotification', () => ({ sendPush }))
 
 const { POST } = await import('../route')
 
@@ -34,8 +34,8 @@ async function rejects(body: unknown): Promise<string> {
 describe('POST /api/internal/workflow-failure', () => {
   beforeEach(() => {
     vi.stubEnv('INTERNAL_NOTIFY_SECRET', SECRET)
-    sendPushToAllDevices.mockReset()
-    sendPushToAllDevices.mockResolvedValue(undefined)
+    sendPush.mockReset()
+    sendPush.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -48,13 +48,13 @@ describe('POST /api/internal/workflow-failure', () => {
 
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ sent: true })
-    expect(sendPushToAllDevices).toHaveBeenCalledWith('Daily Session Reminder failed', `Open the run: ${RUN_URL}`)
+    expect(sendPush).toHaveBeenCalledWith('always', 'Daily Session Reminder failed', `Open the run: ${RUN_URL}`)
   })
 
   it('takes a workflow name in any script', async () => {
     await POST(request({ workflow: 'Synchronisation nocturne · données', runUrl: RUN_URL }))
 
-    expect(sendPushToAllDevices).toHaveBeenCalledWith('Synchronisation nocturne · données failed', expect.any(String))
+    expect(sendPush).toHaveBeenCalledWith('always', 'Synchronisation nocturne · données failed', expect.any(String))
   })
 
   it('refuses a caller without the internal secret before reading the body', async () => {
@@ -63,14 +63,14 @@ describe('POST /api/internal/workflow-failure', () => {
     const res = await POST(request({ workflow: 'Sync', runUrl: RUN_URL }, { secret: null }))
 
     expect(res.status).toBe(401)
-    expect(sendPushToAllDevices).not.toHaveBeenCalled()
+    expect(sendPush).not.toHaveBeenCalled()
   })
 
   it('rejects a body that is not a JSON object', async () => {
     expect(await rejects('not json')).toBe('body must be a JSON object')
     expect(await rejects([{ workflow: 'Sync', runUrl: RUN_URL }])).toBe('body must be a JSON object')
     expect(await rejects(null)).toBe('body must be a JSON object')
-    expect(sendPushToAllDevices).not.toHaveBeenCalled()
+    expect(sendPush).not.toHaveBeenCalled()
   })
 
   it.each([
@@ -84,7 +84,7 @@ describe('POST /api/internal/workflow-failure', () => {
     ['a bidi override that could disguise it', 'Sync ‮deliaf'],
   ])('rejects a workflow name that is %s', async (_, workflow) => {
     expect(await rejects({ workflow, runUrl: RUN_URL })).toMatch(/^workflow must be/)
-    expect(sendPushToAllDevices).not.toHaveBeenCalled()
+    expect(sendPush).not.toHaveBeenCalled()
   })
 
   it('accepts a workflow name of exactly 200 characters', async () => {
@@ -103,7 +103,7 @@ describe('POST /api/internal/workflow-failure', () => {
     ['a line break', 'https://github.com/adamkadev/RunOmics-Private/actions/runs/1\nmore'],
   ])('rejects a run URL that is %s', async (_, runUrl) => {
     expect(await rejects({ workflow: 'Sync', runUrl })).toMatch(/^runUrl must/)
-    expect(sendPushToAllDevices).not.toHaveBeenCalled()
+    expect(sendPush).not.toHaveBeenCalled()
   })
 
   it('accepts a run URL of exactly 200 characters', async () => {
@@ -115,7 +115,7 @@ describe('POST /api/internal/workflow-failure', () => {
 
   it('answers 500 when the push itself fails, so the workflow step shows it', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
-    sendPushToAllDevices.mockRejectedValue(new Error('FCM is down'))
+    sendPush.mockRejectedValue(new Error('FCM is down'))
 
     expect((await POST(request({ workflow: 'Sync', runUrl: RUN_URL }))).status).toBe(500)
   })

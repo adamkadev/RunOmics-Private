@@ -572,13 +572,12 @@ export const en = {
     notifications: {
       title: 'Notifications',
       error: 'Could not update notification settings, please retry.',
-      // The daily reminder's time beside its switch: "08:11".
+      // The daily reminder's time beside its switch: "08:00".
       at: (hour: number, minute: string) => `${String(hour).padStart(2, '0')}:${minute}`,
       types: {
         training: { title: 'Training reminders' },
         shoes: { title: 'Shoe wear alerts' },
-        // The title says what the toggle does: the PR alert.
-        races: { title: 'PRs and predictions' },
+        records: { title: 'Records and explored areas' },
       },
     },
   },
