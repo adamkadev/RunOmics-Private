@@ -29,9 +29,9 @@ const KNOWN_ACTIVITY_TYPES = ['Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tem
 const NULLABLE_NUMBERS = [
   'paceSecPerKm', 'avgHeartRate', 'rpe', 'elevationGain', 'aerTrainingEffect', 'anaTrainingEffect',
   'calories', 'cadenceSpm', 'groundContactMs', 'verticalOscillationMm', 'verticalRatioPct',
-  'strideLengthM', 'vo2maxGarmin', 'avgTemperature',
+  'strideLengthM', 'vo2maxGarmin', 'avgTemperature', 'gapSecPerKm',
 ]
-const NULLABLE_NUMBER_ARRAYS = ['hrSamples', 'elevationProfile', 'paceSamples', 'cadenceSamples']
+const NULLABLE_NUMBER_ARRAYS = ['hrSamples', 'elevationProfile', 'paceSamples', 'cadenceSamples', 'gapSamples']
 
 const isObject = (value: unknown): value is JsonObject =>
   !!value && typeof value === 'object' && !Array.isArray(value)
@@ -124,7 +124,7 @@ function checkActivity(activity: unknown, at: string, month: string, report: Rep
   if (activity.splits !== null && activity.splits !== undefined && !Array.isArray(activity.splits)) {
     report.error(`${at}.splits`, 'expected an array or null')
   }
-  for (const key of ['bestEfforts', 'weather']) {
+  for (const key of ['bestEfforts', 'durationBests', 'weather']) {
     if (activity[key] !== null && activity[key] !== undefined && !isObject(activity[key])) report.error(`${at}.${key}`, 'expected an object or null')
   }
 

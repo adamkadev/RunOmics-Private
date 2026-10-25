@@ -12,6 +12,8 @@ import { Stat, StatGrid } from '@/components/ui/Stat'
 import { t } from '@/i18n'
 import { AxisLabels, Card, CardHead, ChartScrub, Headline, Legend, LegendItem, STAT_TONE, Sentence, Spark } from './AnalyticsKit'
 import { linePath } from '@/lib/linePath'
+import type { RunBests } from '@/domain/activity/paceCurve'
+import { PaceCurveCard } from './PaceCurveCard'
 import {
   efficiencyView,
   heatView,
@@ -645,9 +647,10 @@ export interface PerformanceTabProps {
   predictions: PredictionDay[]
   race: GoalRaceInput | null
   heat: HeatImpactData | null
+  paceBests: RunBests[]
 }
 
-export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, lthr, predictions, race, heat }: PerformanceTabProps) {
+export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, lthr, predictions, race, heat, paceBests }: PerformanceTabProps) {
   const inWindow = weeksIn(weeks, window)
   const easy = paceShift(inWindow, (w) => w.easyPace)
   const workout = paceShift(inWindow, (w) => w.hardPace)
@@ -656,6 +659,7 @@ export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, 
       <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} />
       <PredictionsCard days={predictions} window={window} period={period} race={window.live ? race : null} />
       <ThresholdCard pace={threshold.map((p) => ({ date: p.date, value: p.pace }))} lthr={lthr.map((p) => ({ date: p.date, value: p.bpm }))} window={window} />
+      <PaceCurveCard runs={paceBests} window={window} period={period} threshold={threshold} onShift={onShift} />
       <PaceTrendCard weeks={inWindow} easy={easy} workout={workout} onShift={onShift} />
       <EfficiencyCard allWeeks={weeks} weeks={inWindow} end={window.end} onShift={onShift} />
       <RunningFormCard weeks={inWindow} period={period} />

@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 
 from garmin_fit_sdk import Decoder, Stream
 
+from processing.pace_profile import duration_bests, flat_equivalent
+
 _SEMICIRCLE_TO_DEG = 180.0 / 2**31
 _MAX_ROUTE_POINTS = 2000
 _FIT_EPOCH = datetime(1989, 12, 31)
@@ -90,7 +92,10 @@ class ParsedFit:
     vertical_ratio_pct: float | None = None
     stride_length_m: float | None = None
     best_efforts: dict[str, float] = field(default_factory=dict)
+    duration_bests: dict[str, float] = field(default_factory=dict)
     pace_samples: list[float] = field(default_factory=list)
+    gap_factor: float | None = None
+    gap_samples: list[float] = field(default_factory=list)
     vo2max_garmin: float | None = None
     avg_temperature: int | None = None
     cadence_samples: list[float] = field(default_factory=list)
@@ -245,6 +250,7 @@ def parse_fit(content: bytes) -> ParsedFit:
         result.start_time_local = _local_start_time(session, activities)
 
     result.splits = _extract_splits(messages)
+    _add_pace_profile(result, records, messages.get("event_mesgs", []))
 
     return result
 
@@ -487,6 +493,29 @@ def _best_efforts(dists: list[float], times: list[float]) -> dict[str, float]:
             out[key] = round(best, 1)
 
     return out
+
+
+def _add_pace_profile(result: ParsedFit, records: list[dict], events: list[dict]) -> None:
+    """Duration bests and grade-adjusted pace, over the same records as pace_samples so the two streams line up."""
+    dists: list[float] = []
+    times: list[float] = []
+    alts: list[float | None] = []
+    for rec in records:
+        dist = rec.get("distance")
+        ts = rec.get("timestamp")
+        if dist is not None and isinstance(ts, datetime):
+            dists.append(float(dist))
+            times.append(ts.timestamp())
+            alt = rec.get("enhanced_altitude")
+            if alt is None:
+                alt = rec.get("altitude")
+            alts.append(float(alt) if alt is not None else None)
+    result.duration_bests = duration_bests(dists, _moving_clock(dists, times, _timer_pauses(events)))
+    flat = flat_equivalent(dists, alts)
+    if flat is None or dists[-1] - dists[0] <= 0:
+        return
+    result.gap_factor = round(flat[-1] / (dists[-1] - dists[0]), 4)
+    result.gap_samples = _pace_samples(flat, times)
 
 
 _ROUTE_EPSILON_M = 0.5

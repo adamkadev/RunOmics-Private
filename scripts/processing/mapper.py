@@ -67,6 +67,9 @@ class ActivityData:
     type_source: str = "runomics"
     sport: str | None = None
     start_time_local: str | None = None
+    duration_bests: dict[str, float] | None = None
+    gap_sec_per_km: float | None = None
+    gap_samples: list[int] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -100,7 +103,10 @@ class ActivityData:
             "verticalRatioPct": self.vertical_ratio_pct,
             "strideLengthM": self.stride_length_m,
             "bestEfforts": self.best_efforts,
+            "durationBests": self.duration_bests,
             "paceSamples": self.pace_samples,
+            "gapSecPerKm": self.gap_sec_per_km,
+            "gapSamples": self.gap_samples,
             "vo2maxGarmin": self.vo2max_garmin,
             "avgTemperature": self.avg_temperature,
             "cadenceSamples": self.cadence_samples,
@@ -135,6 +141,14 @@ def parse_hr_zones(raw_zones: list[dict[str, Any]]) -> list[HrZone]:
         ))
 
     return result
+
+
+def grade_adjusted(parsed: ParsedFit | None, pace_sec_per_km: float | None) -> tuple[float | None, list[int] | None]:
+    """The run's grade-adjusted pace, and its stream picked from the same records as paceSamples, in whole seconds."""
+    if not parsed or not parsed.gap_factor or not pace_sec_per_km:
+        return None, None
+    samples = [round(v) for v in _decimate_list(parsed.gap_samples, _MAX_CHART_POINTS)] if parsed.gap_samples else None
+    return round(pace_sec_per_km / parsed.gap_factor, 1), samples
 
 
 def extract_gear_id(gear_list: list[dict[str, Any]] | None) -> str | None:
@@ -234,6 +248,8 @@ def map_activity(
         if parsed.cadence_samples:
             cadence_samples = _decimate_list(parsed.cadence_samples, _MAX_CHART_POINTS)
 
+    gap_sec_per_km, gap_samples = grade_adjusted(parsed, pace_sec_per_km)
+
     return ActivityData(
         sport=(api("activityType", "activityTypeDTO") or {}).get("typeKey"),
         id=activity_id,
@@ -272,6 +288,9 @@ def map_activity(
         weather=weather,
         type_source=type_inference.source,
         start_time_local=dt.strftime(_LOCAL_START_FORMAT),
+        duration_bests=(parsed.duration_bests or None) if parsed else None,
+        gap_sec_per_km=gap_sec_per_km,
+        gap_samples=gap_samples,
     )
 
 

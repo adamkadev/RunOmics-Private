@@ -45,7 +45,7 @@ const AXIS_LABEL = 'text-caption leading-none'
  * Nothing in it moves: the stack draws the scrub cursor and dot over it, so a
  * pointer move never redraws a path.
  */
-const LanePlot = memo(function LanePlot({ lane, series, distanceKm, color }: { lane: Lane; series: (number | null)[]; distanceKm: number; color: string }) {
+const LanePlot = memo(function LanePlot({ lane, series, overlay, distanceKm, color }: { lane: Lane; series: (number | null)[]; overlay?: (number | null)[]; distanceKm: number; color: string }) {
   const y = (v: number) => laneY(lane, v)
   const [lo, hi] = lane.domain
   const top = lane.reversed ? lo : hi
@@ -89,6 +89,18 @@ const LanePlot = memo(function LanePlot({ lane, series, distanceKm, color }: { l
             strokeWidth={1}
             strokeDasharray="3 4"
             vectorEffect="non-scaling-stroke"
+          />
+        )}
+        {overlay && (
+          <path
+            d={linePath(overlay, y)}
+            fill="none"
+            stroke="var(--foreground)"
+            strokeWidth={1.3}
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+            opacity={0.55}
+            data-testid="gap-line"
           />
         )}
         <path
@@ -146,6 +158,7 @@ export function ChartStack({ onScrub, ...input }: Props) {
     avgHr,
     paceSamples,
     avgPaceSecPerKm,
+    gapSamples,
     cadenceSamples,
     avgCadence,
     elevationProfile,
@@ -173,13 +186,14 @@ export function ChartStack({ onScrub, ...input }: Props) {
         avgHr,
         paceSamples,
         avgPaceSecPerKm,
+        gapSamples,
         cadenceSamples,
         avgCadence,
         elevationProfile,
         elevationGain,
         zones,
       }),
-    [distanceKm, hrSamples, avgHr, paceSamples, avgPaceSecPerKm, cadenceSamples, avgCadence, elevationProfile, elevationGain, zones],
+    [distanceKm, hrSamples, avgHr, paceSamples, avgPaceSecPerKm, gapSamples, cadenceSamples, avgCadence, elevationProfile, elevationGain, zones],
   )
 
   // The scrub snaps to the longest stream's samples, so the cursor, every
@@ -295,13 +309,21 @@ export function ChartStack({ onScrub, ...input }: Props) {
           >
             {plotted.map((lane) => {
               const series = mode === 'smoothed' ? lane.smoothed : lane.values
+              const overlay = lane.overlay && (mode === 'smoothed' ? lane.overlay.smoothed : lane.overlay.values)
               const value = reading(series)
+              const overlayValue = overlay ? reading(overlay) : null
               return (
                 <div key={lane.key} className="flex flex-col gap-1.5" data-testid={`lane-${lane.key}`}>
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-[13px]">
                     <span>
                       <b className="font-semibold text-foreground">{lane.label}</b>{' '}
                       <span className="text-muted-foreground">{lane.unit}</span>
+                      {overlay && (
+                        <span className="ml-2 text-muted-foreground" data-testid="gap-key">
+                          <span aria-hidden className="mr-1 inline-block w-3 border-t-[1.5px] border-foreground align-middle opacity-55" />
+                          {c.gap}
+                        </span>
+                      )}
                     </span>
                     <span className="ml-auto text-right">
                       {value !== null && (
@@ -309,11 +331,12 @@ export function ChartStack({ onScrub, ...input }: Props) {
                           <b className="font-semibold text-foreground">{`${lane.format(value)} ${lane.valueUnit}`}</b>{' '}
                         </>
                       )}
+                      {overlayValue !== null && <span className="text-foreground">{`${c.gapReading(lane.format(overlayValue))} · `}</span>}
                       <span className="text-muted-foreground">{lane.summary}</span>
                     </span>
                   </div>
                   <div className="relative overflow-hidden rounded-lg bg-card" style={{ height: LANE_HEIGHT }}>
-                    <LanePlot lane={lane} series={series} distanceKm={distanceKm} color={LINE_COLOR[lane.key as keyof typeof LINE_COLOR]} />
+                    <LanePlot lane={lane} series={series} overlay={overlay} distanceKm={distanceKm} color={LINE_COLOR[lane.key as keyof typeof LINE_COLOR]} />
                     {on && <Cursor left={cursorX} />}
                     {value !== null && (
                       <Dot left={cursorX} top={pct(laneY(lane, value), LANE_HEIGHT)} color={LINE_COLOR[lane.key as keyof typeof LINE_COLOR]} />

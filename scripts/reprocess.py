@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from data_directory import get_fit_cache_dir
 from processing.fit_parser import parse_fit
 from processing.activity_type import infer_type_with_source
-from processing.mapper import _decimate_list, _MAX_CHART_POINTS
+from processing.mapper import _decimate_list, _MAX_CHART_POINTS, grade_adjusted
 from repository.json_store import JsonActivityStore
 
 _FIT_DIR = get_fit_cache_dir()
@@ -26,10 +26,11 @@ def main() -> int:
 
     store = JsonActivityStore()
 
-    updated = 0
+    updated = uncached = 0
     for a in store.all_activities():
         fit_path = _FIT_DIR / f"{a['id']}.fit"
         if not fit_path.exists():
+            uncached += 1
             continue
 
         parsed = parse_fit(fit_path.read_bytes())
@@ -57,7 +58,9 @@ def main() -> int:
         a["verticalRatioPct"] = parsed.vertical_ratio_pct
         a["strideLengthM"] = parsed.stride_length_m
         a["bestEfforts"] = parsed.best_efforts or None
+        a["durationBests"] = parsed.duration_bests or None
         a["paceSamples"] = _decimate_list(parsed.pace_samples, _MAX_CHART_POINTS) if parsed.pace_samples else None
+        a["gapSecPerKm"], a["gapSamples"] = grade_adjusted(parsed, a.get("paceSecPerKm"))
         a["vo2maxGarmin"] = parsed.vo2max_garmin
         a["avgTemperature"] = parsed.avg_temperature
         a["cadenceSamples"] = _decimate_list(parsed.cadence_samples, _MAX_CHART_POINTS) if parsed.cadence_samples else None
@@ -67,6 +70,8 @@ def main() -> int:
         store.touch(a["id"])
         updated += 1
 
+    if uncached:
+        print(f"{uncached} activities have no cached FIT file and keep what they had: a forced sync downloads them.")
     if args.dry_run:
         print(f"Dry run: {updated} activities would be reprocessed (nothing written).")
         return 0

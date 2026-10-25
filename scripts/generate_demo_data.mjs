@@ -289,6 +289,34 @@ function buildActivities(rng, endDate) {
   return activities
 }
 
+const CURVE_SECONDS = [30, 60, 120, 180, 300, 600, 1200, 1800, 3600, 5400, 7200]
+/** How far a type's hardest stretch runs over its average pace, as critical speed and D'. */
+const CURVE_SHAPE = { Sprint: [1.0, 100], Anaerobic: [1.0, 100], VO2Max: [0.97, 90], Threshold: [0.99, 60], Tempo: [0.98, 50], Race: [1.0, 40], Base: [0.9, 20] }
+
+// Drawn from the run's own numbers, never the generator's random stream, so every other demo figure stays put.
+function addPaceProfile(activity) {
+  const avgSpeed = 1000 / activity.paceSecPerKm
+  const [csShare, dPrime] = CURVE_SHAPE[activity.type] ?? CURVE_SHAPE.Base
+  const bests = {}
+  for (const seconds of CURVE_SECONDS) {
+    if (seconds > activity.durationSeconds) break
+    const span = Math.max(seconds, 180)
+    const speed = ((avgSpeed * csShare * span + dPrime) / span) * (span / seconds) ** 0.1
+    const rest = 0.85 * avgSpeed * (activity.durationSeconds - seconds)
+    bests[String(seconds)] = round(Math.max(avgSpeed * seconds, Math.min(speed * seconds, activity.distanceKm * 1000 - rest)), 1)
+  }
+  activity.durationBests = Object.keys(bests).length ? bests : null
+  const climbPerKm = activity.elevationGain / activity.distanceKm
+  const profile = activity.elevationProfile
+  const stepM = (activity.distanceKm * 1000) / profile.length
+  const cost = profile.map((_, i) => {
+    const grade = (profile[Math.min(i + 1, profile.length - 1)] - profile[Math.max(i - 1, 0)]) / (2 * stepM)
+    return 1 + 0.002 * climbPerKm + 4 * grade
+  })
+  activity.gapSamples = activity.paceSamples.map((pace, i) => Math.round(pace / cost[Math.round((i / (activity.paceSamples.length - 1)) * (cost.length - 1))]))
+  activity.gapSecPerKm = round(activity.paceSecPerKm / (1 + 0.002 * climbPerKm), 1)
+}
+
 function buildHrZones(rng, durationSeconds, type) {
   const weights =
     type === 'Base'
@@ -1003,6 +1031,7 @@ export function generateDemoDataset({ now = new Date() } = {}) {
   const startDate = addDays(endDate, -totalDays)
 
   const activities = buildActivities(rng, endDate)
+  activities.forEach(addPaceProfile)
   const { trainingStatus, trainingLoadBalance } = buildTrainingStatusAndBalance(rng, activities, endDate)
   const { vo2maxHistory, thresholdHistory } = buildVo2maxAndThresholdHistory(activities)
 

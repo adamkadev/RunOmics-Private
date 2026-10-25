@@ -54,7 +54,10 @@ def _parsed() -> ParsedFit:
         calories=512,
         cadence_spm=172.0,
         best_efforts={"1k": 318.0, "5k": 1712.0},
+        duration_bests={"30": 96.1, "60": 189.4, "120": 371.0},
         pace_samples=[372.0, 366.0, 361.0],
+        gap_factor=1.0123,
+        gap_samples=[365.4, 361.2, 358.9],
         cadence_samples=[170.0, 172.0, 174.0],
         splits=[ActivitySplit("lap", 1832, 5000.0, 2.73, 147, [SplitLap(366, 1000.0, 2.73, 145)])],
     )
