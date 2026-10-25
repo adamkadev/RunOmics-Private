@@ -40,6 +40,7 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       const db = context.firestore()
       await setDoc(doc(db, 'activityNotes', '101'), { note: 'Felt sick', tags: ['illness'] })
       await setDoc(doc(db, 'routeNames', 'route-1'), { name: 'Moselle riverside loop' })
+      await setDoc(doc(db, 'wellness', '2026-10-24'), { sleep: 2, soreness: 4, ill: true })
       await setDoc(doc(db, 'pushTokens', 'token-1'), { token: 'token-1', userAgent: 'iPhone' })
       await setDoc(doc(db, 'aiInsights', 'today'), { text: 'x' })
     })
@@ -108,6 +109,39 @@ describe.skipIf(!emulator)('firestore.rules', () => {
     it('only lets the owner clear one', async () => {
       await assertFails(deleteDoc(doc(stranger(), 'routeNames', 'route-1')))
       await assertSucceeds(deleteDoc(doc(owner(), 'routeNames', 'route-1')))
+    })
+  })
+
+  describe('wellness', () => {
+    const checkIn = { sleep: 4, soreness: 2, stress: 3, mood: 5, travel: true, niggle: { site: 'calf', side: 'left', pain: 3, changesRun: false } }
+
+    it('lets only the owner read and list check-ins', async () => {
+      await assertFails(getDoc(doc(visitor(), 'wellness', '2026-10-24')))
+      await assertFails(getDoc(doc(stranger(), 'wellness', '2026-10-24')))
+      await assertFails(getDocs(collection(stranger(), 'wellness')))
+      await assertSucceeds(getDoc(doc(owner(), 'wellness', '2026-10-24')))
+      await assertSucceeds(getDocs(collection(owner(), 'wellness')))
+    })
+
+    it('only lets the owner write a day, and only a well-formed check-in', async () => {
+      await assertFails(setDoc(doc(visitor(), 'wellness', '2026-10-25'), checkIn))
+      await assertFails(setDoc(doc(stranger(), 'wellness', '2026-10-25'), checkIn))
+      await assertSucceeds(setDoc(doc(owner(), 'wellness', '2026-10-25'), checkIn))
+      await assertSucceeds(setDoc(doc(owner(), 'wellness', '2026-10-25'), { sleep: 1 }))
+      await assertSucceeds(deleteDoc(doc(owner(), 'wellness', '2026-10-25')))
+    })
+
+    it('rejects a check-in the client would never send', async () => {
+      const db = owner()
+      await assertFails(setDoc(doc(db, 'wellness', 'today'), { sleep: 3 }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { sleep: 6 }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { mood: 2.5 }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { ill: 'yes' }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { sleep: 3, note: 'free text' }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'elbow', pain: 3 } }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'knee', pain: 11 } }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'knee' } }))
+      await assertFails(setDoc(doc(db, 'wellness', '2026-10-25'), { niggle: { site: 'knee', pain: 2, side: 'both' } }))
     })
   })
 

@@ -345,6 +345,22 @@ jobs:
           mv "$RUNNER_TEMP/activity_notes.json" data/activity_notes.json
           echo "Backed up the notes of $(jq '.notes | length' data/activity_notes.json) run(s)."
 
+      # Health data that exists only in Firestore otherwise; the coach falls back to this copy. The log gets a count only.
+      - name: Back up wellness check-ins
+        if: inputs.dry_run != true
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          set -euo pipefail
+          printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 30 "$APP_URL/api/internal/wellness" -H @- \
+            | jq -S --indent 2 '.' > "$RUNNER_TEMP/wellness.json"
+          jq -e '.entries | type == "object"' "$RUNNER_TEMP/wellness.json" > /dev/null
+          mv "$RUNNER_TEMP/wellness.json" data/wellness.json
+          echo "Backed up $(jq '.entries | length' data/wellness.json) check-in(s)."
+
       - name: Commit updated data
         id: commit
         env:
