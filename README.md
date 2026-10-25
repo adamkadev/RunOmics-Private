@@ -4,15 +4,18 @@ A personal running dashboard that pulls your data from Garmin Connect and turns 
 
 ## Features
 
-- **Dashboard** - weekly volume, training load (CTL/ATL/TSB), streak, estimated VO₂max
-- **Activity detail** - GPS route map with live-sync to HR, pace, and elevation charts
-- **Analytics** - monthly trends: cadence, long runs, 80/20 easy–hard split, pace, HR
-- **Calendar** - monthly grid view of all activities
+- **Today** - the day's session, readiness from training load (CTL/ATL/TSB) tempered by a one-tap morning check-in, this week's volume and streak, and on a warm day what the forecast at your usual hour will cost ("29 °C at 19:00 - your runs at this heat cost about +14 s/km")
+- **Activity detail** - GPS route map with live-sync to HR, pace and elevation charts; the run's conditions (sky, feels-like, humidity when muggy); grade-adjusted pace on a hilly run; on a controlled-threshold run, each rep's heart rate from minute 3 against its target and ceiling
+- **Plan** - week and month views of the coach's (or Garmin's) sessions, other training as a chip on its day, and a Coach card: the latest decision, the last controlled session, pace-guide proposals, the easy-run fatigue flag, the 5K check and the next key session
+- **12-week checkpoint** - opened from Plan's "General preparation" card: this cycle against the 12 weeks before it (km and runs a week, controlled threshold time and pace guides, heat-adjusted efficiency, easy-run heart rate at a set pace, the 5K check, VO₂max, threshold pace and heart rate, resting heart rate, fitness), each marked better, worse or level
+- **Analytics** - Load (fitness, fatigue, form, training status, the watch's load focus), Performance (best pace for every duration from 30 s to 2 h with a critical speed, a Lactate threshold card with threshold heart rate beside threshold pace, running form, pace trend, efficiency, heat cost, race predictions), Volume (weekly distance, long run) and Intensity (80/20 split, time in zones, easy and workout heart rate by week, quality sessions)
+- **Athlete** - zones (pace zones estimated by VDOT from a recent best effort when the watch has no threshold pace), VO₂max grade, a fitness age card with a year of history, four weeks of morning check-ins and twelve weeks of niggles
+- **Consistency** - a year of weeks, runs and other training (strength, cycling, swimming…) side by side
 - **Goals & PBs** - annual distance goal, race targets, official personal bests
 - **All-time records** - best 1K/5K/10K/half/marathon detected from FIT files
-- **Race predictor** - Riegel formula projections from your best efforts
-- **Race page** - the next race: Garmin's prediction against your target and best, its 12-week trend, and even splits at both times
+- **Race page** - the next race: Garmin's prediction against your target and best, its 12-week trend, and even splits at both times; a VDOT estimate from your best recent effort when Garmin's predictions are missing or two weeks old
 - **Explore** - quartier coverage on the Activities map (Districts layer), a loop-route generator for unexplored quartiers (flat and traffic-free on a reps day), GPX export, the quartiers each run pushed forward, and a push when one passes 90 %
+- **Pushes** - the morning session, Monday's digest, Friday's goal check-in, new runs and their verdict, records, shoe wear, quartiers past 90 %, and sync failures; each phone picks Training, Shoes and "Records and explored areas" in Settings
 - **Dark mode** - system preference + manual toggle
 
 ## Architecture
@@ -45,8 +48,8 @@ deterministic demo dataset in an unconfigured clone. Both locations sit outside
 
 ### Prerequisites
 
-- Node.js ≥ 20
-- Python ≥ 3.11
+- Node.js 24 (pinned in `.nvmrc`; `nvm use` picks it up)
+- Python 3.12, what CI and the sync workflow run
 - A [MapTiler](https://www.maptiler.com/) account (free tier works)
 - A Garmin Connect account
 
@@ -145,7 +148,7 @@ NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
 # `firebase deploy --only firestore:rules`.
 NEXT_PUBLIC_OWNER_EMAIL=you@example.com
 
-# Shared secret for the internal cron endpoints (PR/shoe-wear/overreaching checks, weekly reminder)
+# Shared secret for /api/internal/*: the sync workflow's calls and a scheduled route run by hand
 INTERNAL_NOTIFY_SECRET=any-random-string
 
 # UI language: 'en' (default) or 'fr'. Picked at build time.
@@ -217,6 +220,14 @@ npx dotenv -e .env.local -- python3 scripts/sync.py --force
 npx dotenv -e .env.local -- python3 scripts/sync.py --all-types
 npx dotenv -e .env.local -- python3 scripts/sync.py --quick
 ```
+
+Besides the runs, a sync writes strength, cycling, swimming and every other non-running
+session to `data/cross_training/<year>.json`, apart from the runs so that no running number
+reads one. Each run stores its most metres in 30 s to 2 h (`durationBests`) and, on a
+barometric altitude, a grade-adjusted pace (`gapSecPerKm`). The nightly workflow also
+refreshes `shoes.json` with `scripts/sync_shoes.py` and copies the run notes and morning
+check-ins from Firestore into `activity_notes.json` and `wellness.json`. See
+[What a sync writes](docs/data-and-sync.md#what-a-sync-writes).
 
 ### 5. Start the dev server
 
@@ -337,8 +348,9 @@ npm run coach -- --apply .coach-previews/<proposal>.json
 ```
 
 The coach reads the notes and tags written in the app from Firestore `activityNotes`, live,
-at the moment it builds its context - there is no sync step and nothing lands on disk. That
-read needs the Firebase **Admin** credentials, and `.env.local` points at the dev project,
+at the moment it builds its context; the nightly copy in `activity_notes.json` is a backup and
+nothing reads it. Morning check-ins come the same way from Firestore `wellness`, with the
+nightly `wellness.json` as the fallback when Firestore does not answer. That read needs the Firebase **Admin** credentials, and `.env.local` points at the dev project,
 where those notes are not. Put the production admin trio (`FIREBASE_PROJECT_ID`,
 `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`) in a gitignored `.env.prod`; `npm run coach`
 layers it over `.env.local`, and dotenv gives the first `-e` file precedence for a key it
@@ -391,9 +403,16 @@ Each of these populates `data/` first through `npm run prepare:data` (an npm lif
 hook, and a no-op once the directory exists), so a fresh clone can lint, typecheck and
 test straight after `npm ci` with no private-data configuration.
 
-CI (`.github/workflows/ci.yml`) runs a production-dependency audit
-(`npm audit --omit=dev --audit-level=high`), lint, typecheck and the Vitest suite on every
-push/PR, plus the Python suite (`pytest scripts/tests/`) as a separate job. It does **not**
+CI (`.github/workflows/ci.yml`) runs lint, typecheck, the import-cycle check and the Vitest
+suite on every push/PR, plus the Python suite (`pytest scripts/tests/`) and the Firestore
+rules against the emulator as separate jobs. The tests run in two shards beside lint, each
+with a worker per core (`--maxWorkers=100%`). The production-dependency audit
+(`npm audit --omit=dev --audit-level=high`) fails only a change that touches
+`package-lock.json`, so an advisory published overnight does not turn every unrelated PR red;
+Dependabot's security updates (enabled in the repository's settings) open the fix instead, and
+its weekly version updates stay grouped. ESLint keeps a cache (`npm run lint` writes it under
+`node_modules/.cache/eslint`), which CI restores on every run and saves from `main` only, so
+branch runs do not fill GitHub's 10 GB of caches. It does **not**
 run `next build`. The production build is exercised by the E2E workflow
 (`.github/workflows/e2e.yml`), which runs `npm run test:e2e` — Playwright's `webServer`
 runs `e2e:build` (`next build`) and serves it with `e2e:start`. So a change that only
@@ -405,8 +424,10 @@ before merging a change that could break the build.
 
 Playwright drives a real production build (`next build && next start`). No Firebase
 project or secrets are needed: every page the current specs cover (dashboard,
-activities list → detail, analytics, calendar, records, goals, map, shoes, plan) is
-built from the generated demo dataset. Read-only, no risk of touching anything.
+activities list → detail, analytics, records, goals, map, shoes, plan, progress) is
+built from the generated demo dataset. Read-only, no risk of touching anything. The
+`iphone` project walks every page in WebKit at the iPhone 16 Pro's size, with reduced
+motion, for text that runs past an edge.
 
 **Running:**
 
@@ -437,7 +458,7 @@ Playwright can drive without a test-only auth bypass, which is its own follow-up
 last synced activity date and flags the data as `stale` after 7 days without
 one - point any uptime monitor at it to catch a silently broken Garmin sync.
 Its `integrations` field says which server integrations the deployment has
-credentials for (`firebaseAdmin`, `gemini`, `syncButton`), by name only, and
+credentials for (`firebaseAdmin`, `gemini`, `syncButton`) and whether it is private (`privateSite`), by name only, and
 the nightly sync warns when one the post-sync checks need is missing.
 
 Errors on a phone are reported to `/api/client-errors`, scrubbed of coordinates,
@@ -453,6 +474,12 @@ If you update the FIT parser (e.g. after adding new metrics), reprocess all acti
 ```bash
 python scripts/reprocess.py
 ```
+
+For a deployment, run *Sync Garmin Activities* from Actions with `reprocess` ticked and the
+profile picked: it rebuilds the stored runs from the workflow's FIT cache and makes no Garmin
+call. A run whose FIT file is not in that cache keeps what it had, and the log says how many;
+when it reports any, run the workflow once more with `force` ticked, which downloads them
+again. Existing runs get their duration bests and grade-adjusted pace this way.
 
 ---
 
@@ -486,13 +513,17 @@ from your `.env.local` *except* `GARMIN_PERSONAL_API_KEY`, `GARMIN_SECRET` and `
 | `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` | Server-side notification dedup state and push notifications |
 | `NEXT_PUBLIC_FIREBASE_*` | Client-side auth, activity notes, push notification tokens |
 | `NEXT_PUBLIC_OWNER_EMAIL` | Which account `npm run set-owner-claim` grants the `owner` claim to - not itself an authorization check |
-| `INTERNAL_NOTIFY_SECRET` | Authenticates the GitHub Actions cron calls to `/api/internal/*` |
+| `INTERNAL_NOTIFY_SECRET` | Authenticates the sync workflow's calls to `/api/internal/*`, and a scheduled route run by hand |
+| `CRON_SECRET` | Authenticates Vercel Cron's calls to the scheduled routes (see [Scheduled jobs](#scheduled-jobs)); set it on each Vercel project |
+| `GITHUB_SYNC_TOKEN`, `GITHUB_SYNC_REPO`, `GITHUB_SYNC_PROFILE` | The Sync button and the nightly cron dispatch `sync.yml` with them: a token that may run that workflow, `owner/repo`, and this deployment's profile (`GITHUB_SYNC_WORKFLOW` and `GITHUB_SYNC_REF` default to `sync.yml` and `main`) |
+| `RUNOMICS_PRIVATE`, `SESSION_SECRET`, `RUNOMICS_VIEWERS` | `RUNOMICS_PRIVATE=1` puts every page behind sign-in; `SESSION_SECRET` (32 characters or more) signs the session cookie; `RUNOMICS_VIEWERS` lists the Google accounts invited to view, comma-separated |
 | `NEXT_PUBLIC_LOCALE` | UI language, `en` (default) or `fr` — applied at build time |
 | `NEXT_PUBLIC_TIME_ZONE` | Optional: the athlete's IANA time zone (e.g. `Europe/Luxembourg`), so a page prerendered on Vercel's UTC clock and the browser agree on which day it is - see [Date handling](docs/interface.md#date-handling) |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | Optional: the AI-written verdicts and insight cards - Today, run verdicts, PB celebration, shoe verdicts |
 | `ORS_API_KEY` | Optional: Explore's route generator (OpenRouteService loops) - see [Explore](docs/interface.md#explore) |
 | `RUNOMICS_DATA_REPO_URL`, `RUNOMICS_DATA_REPO_TOKEN` | The private data repository the build clones; a fine-grained token with Contents: Read only |
-| `RUNOMICS_DATA_SOURCE` | Optional: `github` reads that repository at run time, so a sync shows without a rebuild - see [Reading the data at run time](docs/data-and-sync.md#reading-the-data-at-run-time) |
+| `RUNOMICS_DATA_SOURCE` | `github`: reads that repository at run time. The sync never rebuilds a deployment, so without it a deployment keeps the data of its last build - see [Reading the data at run time](docs/data-and-sync.md#reading-the-data-at-run-time) |
+| `NEXT_PUBLIC_ALLOW_INDEXING` | Optional: `true` lets search engines index the site (the public demo); anything else answers `noindex` |
 
 > `GARMIN_PERSONAL_API_KEY` and `GARMIN_SECRET` are only used by the sync script - neither runs on Vercel.
 > `GEMINI_COACH_API_KEY` / `GEMINI_COACH_MODEL` are the same: the adaptive coach is a local
@@ -501,28 +532,43 @@ from your `.env.local` *except* `GARMIN_PERSONAL_API_KEY`, `GARMIN_SECRET` and `
 > they belong in no GitHub Environment yet. See
 > [AI insight generation](docs/coaching-and-metrics.md#ai-insight-generation) for the full split.
 
-The scheduled workflows read their secrets from a **GitHub Environment** named
+The sync workflow reads its secrets from a **GitHub Environment** named
 after the deployment's profile (GitHub → Settings → Environments), not from
 repository secrets: `GARMIN_PERSONAL_API_KEY` (and optionally `GARMIN_SECRET`), `RUNOMICS_DATA_REPO_URL`,
-`RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash),
-`INTERNAL_NOTIFY_SECRET` and `VERCEL_DEPLOY_HOOK_URL`, plus an environment
-*variable* `PROFILE` holding the environment's own name, and `DATA_SOURCE=github`
-once that deployment reads its data at run time. These are separate from the Vercel env vars
-above, and `INTERNAL_NOTIFY_SECRET` must match on both sides.
+`RUNOMICS_DATA_REPO_TOKEN`, `APP_URL` (your deployed domain, no trailing slash) and
+`INTERNAL_NOTIFY_SECRET`, plus an environment *variable* `PROFILE` holding the environment's
+own name. These are separate from the Vercel env vars above, and `INTERNAL_NOTIFY_SECRET`
+must match on both sides.
 
 That indirection is what lets one repository drive several deployments - one per
 athlete, each with its own data repository, Firebase project, domain and UI
 language; with a single profile it is just a place to keep the secrets.
 
-### 4. Sync and deploy
+### 4. Deploy the Firestore rules
 
-The nightly `sync.yml` workflow does this on its own, once per profile in its
-matrix: it hydrates a runner workspace from that profile's data repository, syncs
-Garmin, pushes the changed files back and triggers the matching Vercel deploy hook.
+`firestore.rules` is not deployed with the app. After a change to it (the `wellness`
+collection and the push-token `categories` are the latest), deploy it by hand to each Firebase
+project, or the phones' writes are refused:
+
+```bash
+firebase deploy --only firestore:rules --project <firebase-project-id>
+```
+
+`npm run test:rules` checks the rules against the emulator first.
+
+### 5. Sync and deploy
+
+Each deployment's Vercel Cron starts its own nightly `sync.yml` run (see
+[Scheduled jobs](#scheduled-jobs)): it hydrates a runner workspace from that profile's data
+repository, syncs Garmin, pushes the changed files back and expires the deployment's data
+cache (`POST /api/internal/data-revalidate`), so the app serves the new commit within
+seconds, with no rebuild; it then renders the main pages once so the first visit does not
+wait. The post-sync checks (records, shoe wear, explored quartiers, overreaching, new runs,
+phone errors, the AI texts) follow.
 
 The app's Sync button runs the same workflow with `quick`: the new runs come
 through the Personal API key alone, with no WARP and no garth sign-in, then the
-push, the deploy and the post-sync checks as usual. Their shoes, the calendar and
+push and the post-sync checks as usual. Their shoes, the calendar and
 Connect's metrics wait for the nightly sync, which asks Connect for every shoe it
 has not answered yet, however old the run. A profile without a key syncs in full.
 
@@ -539,8 +585,34 @@ the command refuses a workspace that could erase existing coaching state. The
 fetch is what makes the push safe: it records the commit the workspace came
 from, and the push refuses if the data repository has moved on since.
 
-Vercel picks up the redeploy within ~30 seconds. Nothing real is ever committed to
-this repository.
+A push by hand is picked up within ten minutes, when the deployment's cached HEAD expires;
+`POST /api/internal/data-revalidate` with the internal secret makes it immediate. Nothing real
+is ever committed to this repository.
+
+### Scheduled jobs
+
+`vercel.json` schedules the routes below with Vercel Cron, in UTC; GitHub's own schedules
+landed hours late. Each Vercel project runs them for its own athlete, and `CRON_SECRET` must
+be set on each project, or every call is refused.
+
+| Route | When (UTC) | What it does |
+|-------|------------|--------------|
+| `/api/internal/nightly-sync` | 01:00 daily | Dispatches this deployment's full `sync.yml` run (`nightly`), unless one is already running |
+| `/api/internal/daily-session` | 06:00 and 07:00 daily | The morning session push; only the call in the 08:xx Paris hour sends, so it arrives between 08:00 and 09:00 summer and winter, once a day |
+| `/api/internal/stale-sync-check` | 06:00 daily | Pushes once when no sync has landed for 72 hours |
+| `/api/internal/weekly-digest` | 06:00 Monday | Last week's km and quality sessions against the plan, other training, resting heart rate and this week's focus |
+| `/api/internal/weekly-reminder` | 15:00 Friday | The annual distance goal: ahead, on track or behind |
+
+A scheduled push is sent once per day (Firestore remembers the day it went). To run a route
+by hand, `POST` it with the internal secret, or `GET` it the way Vercel Cron does:
+
+```bash
+curl -X POST "$APP_URL/api/internal/weekly-digest" -H "x-internal-secret: $INTERNAL_NOTIFY_SECRET"
+curl "$APP_URL/api/internal/weekly-digest" -H "Authorization: Bearer $CRON_SECRET"
+```
+
+A `GET` of `daily-session` outside the 08:xx Paris hour is skipped; a `POST` skips that check
+but still sends once a day.
 
 ---
 
@@ -551,7 +623,7 @@ this repository.
 | Framework | [Next.js 16](https://nextjs.org/) (App Router, SSG) |
 | Language | TypeScript 7 (`tsc`), with the TypeScript 6 API for typescript-eslint and Next until 7.1 ships one |
 | Styling | Tailwind CSS v4 |
-| Charts | [Recharts](https://recharts.org/) |
+| Charts | Hand-drawn SVG, no chart library |
 | Maps | [MapLibre GL](https://maplibre.org/) + [MapTiler](https://www.maptiler.com/) |
 | Icons | [Lucide](https://lucide.dev/) |
 | Dark mode | [next-themes](https://github.com/pacocoursey/next-themes) |
@@ -573,6 +645,26 @@ MAPTILER_KEY=your_maptiler_key npm run map:styles
 The script matches layers by pattern, fails if a colour with a hue is left in a visible layer, and
 writes `{key}` in place of the key; `maptilerStyle()` in `src/lib/maptiler.ts` fills it in at run time
 and names places in the app's language.
+
+### Public demo
+
+The public repository is written from this one, never edited apart from its README,
+CHANGELOG and screenshots:
+
+```bash
+npm run export:demo -- --to ../RunOmics [--ref <commit or tag>] [--check]
+```
+
+It extracts the tree at `--ref` (default `HEAD`) and drops what
+`scripts/export_public_demo.config.json` denies: the agent tooling, the sync and capability
+workflows that need the athletes' secrets, this README, the CHANGELOG and `docs/`, the
+athletes' Garmin snapshots, and the tests that carry their numbers, races or places. It keeps
+the public repository's own README, CHANGELOG, LICENSE, screenshots and link-preview images,
+blanks the private Firebase project in `.env.e2e`, drops the crons from `vercel.json` and the
+athlete-specific npm scripts. Then it runs `verify_no_private_data` and scans every exported
+file for the athletes' names, addresses, places, races, tokens and Garmin ids; any finding
+stops it with the clone untouched. A clean export is staged in the clone, never committed:
+review it, commit and push by hand. `--check` runs everything and writes nothing.
 
 ### Coaching frequency and training history
 
@@ -632,7 +724,7 @@ carry *what* the code does. This section is where the *why* lives — the constr
 external-API quirks, and deliberate decisions that the code cannot state about itself.
 Read it before changing behaviour in the areas it covers.
 
-- [Data and sync](docs/data-and-sync.md): Private data and the sync pipeline, Reading the data at run time, Garmin write path (coaching sync), Garmin-sourced series, Official race results.
-- [Coaching and metrics](docs/coaching-and-metrics.md): Coaching model, The Plan's single workout shape, Training metrics, AI insight generation.
+- [Data and sync](docs/data-and-sync.md): Private data and the sync pipeline, Reading the data at run time, What a sync writes, Scheduled jobs and pushes, Garmin write path (coaching sync), Garmin-sourced series, Official race results.
+- [Coaching and metrics](docs/coaching-and-metrics.md): Coaching model, Controlled threshold, The 12-week checkpoint, The Plan's single workout shape, Training metrics, Pace curve and grade-adjusted pace, VDOT fallbacks, Morning check-in, The heat line, AI insight generation.
 - [Interface](docs/interface.md): Charts, Colour system, Maps, Explore, Share card, Platform and browser workarounds, Internationalisation, Date handling.
-- [Security, build and tests](docs/security-and-build.md): Owner authorization, Content Security Policy, Build configuration, Test configuration, End-to-end and screenshot runs, Service worker.
+- [Security, build and tests](docs/security-and-build.md): Owner authorization, Firestore rules, Content Security Policy, Build configuration, Test configuration, End-to-end and screenshot runs, Client error reports, Service worker.
