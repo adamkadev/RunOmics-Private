@@ -45,14 +45,21 @@ function SegmentBar({ summary }: { summary: ExploredSummary }) {
 }
 
 /** Two sibling links, never one inside the other. Worked out on the server, so it paints whole at once. */
-export function ExploredCard({ areaName, summary }: { areaName: string; summary: ExploredSummary }) {
+export interface OtherArea {
+  id: string
+  name: string
+  summary: ExploredSummary
+}
+
+/** The area run in last; the others each a row that opens its map. */
+export function ExploredCard({ areaId, areaName, summary, others = [] }: { areaId: string; areaName: string; summary: ExploredSummary; others?: readonly OtherArea[] }) {
   const h = t.profile.hub
   const next = summary.next
   const nextParts = next ? h.exploredNext(next.name, formatPercent(next.pct)) : null
 
   return (
     <section className={cardClass({ className: 'flex flex-col gap-3' })} data-testid="explored-card">
-      <Link href={districtsHref()} prefetch={false} className={cn('flex flex-col gap-3', LINK_CARD)} data-testid="explored-open">
+      <Link href={districtsHref(null, areaId)} prefetch={false} className={cn('flex flex-col gap-3', LINK_CARD)} data-testid="explored-open">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-headline text-foreground">{h.explored}</span>
           <span className="min-w-0 truncate text-sm text-muted-foreground">{areaName}</span>
@@ -68,7 +75,7 @@ export function ExploredCard({ areaName, summary }: { areaName: string; summary:
         <SegmentBar summary={summary} />
       </Link>
       <Link
-        href={districtsHref(next?.id)}
+        href={districtsHref(next?.id, areaId)}
         prefetch={false}
         className={cn('flex items-center justify-between gap-3 border-t border-border pt-2.5 text-[15px] leading-[22px]', LINK_CARD)}
         data-testid="explored-next"
@@ -86,6 +93,20 @@ export function ExploredCard({ areaName, summary }: { areaName: string; summary:
         </span>
         <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
       </Link>
+      {others.map((other) => (
+        <Link
+          key={other.id}
+          href={districtsHref(null, other.id)}
+          prefetch={false}
+          className={cn('flex items-center justify-between gap-3 border-t border-border pt-2.5 text-[15px] leading-[22px]', LINK_CARD)}
+          data-testid="explored-other"
+        >
+          <span className="min-w-0 truncate text-muted-foreground">
+            <b className="font-semibold text-foreground">{other.name}</b> · {t.pages.map.districts.sheet.explored(formatPercent(other.summary.pct))}
+          </span>
+          <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />
+        </Link>
+      ))}
     </section>
   )
 }

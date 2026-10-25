@@ -102,7 +102,12 @@ const bboxBounds = ([minLon, minLat, maxLon, maxLat]: readonly [number, number, 
 
 export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS, explorePlans = NO_PLANS, completedSince, today = null }: Props) {
   const { clusters, routeMeta } = data;
-  const [selectedIdx, setSelectedIdx] = useState(data.defaultClusterIdx);
+  // A link's area (the Explored card's other areas) opens its busiest cluster; the hand's choice drops it.
+  const [areaParam, setAreaParam] = useUrlParam("area");
+  const [selectedIdx, setSelectedIdx] = useState(() => {
+    const linked = areaParam ? clusters.findIndex((cluster) => areaForCluster(exploreAreas, cluster)?.id === areaParam) : -1;
+    return linked >= 0 ? linked : data.defaultClusterIdx;
+  });
   const [filters, setFilters] = useState<HeatFilters>(NO_HEAT_FILTERS);
   const [filtersOpen, setFiltersOpen] = useState(false);
   // By hand only; the generator expands the map too (isFullscreen).
@@ -180,7 +185,13 @@ export function GlobalMapClient({ data, onContentChange, exploreAreas = NO_AREAS
   );
   const visibleIndices = useMemo(() => areaRuns(filters), [areaRuns, filters]);
 
-  const handleSelectCluster = useCallback((idx: number) => setSelectedIdx(idx), []);
+  const handleSelectCluster = useCallback(
+    (idx: number) => {
+      setSelectedIdx(idx);
+      if (areaParam !== null) setAreaParam(null);
+    },
+    [areaParam, setAreaParam],
+  );
 
   const districtsArea = useMemo(() => {
     const cluster = clusters[selectedIdx];

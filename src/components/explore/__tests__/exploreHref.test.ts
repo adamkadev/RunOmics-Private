@@ -42,6 +42,11 @@ describe('districtsHref', () => {
   it('drops an id that is not a unit id', () => {
     expect(districtsHref('../etc')).toBe('/activities?view=map&layer=districts')
   })
+
+  it('names the area to open when given', () => {
+    expect(districtsHref(null, 'strasbourg')).toBe('/activities?view=map&layer=districts&area=strasbourg')
+    expect(districtsHref('strasbourg-1', '../x')).toBe('/activities?view=map&layer=districts&quartier=strasbourg-1')
+  })
 })
 
 describe('exploreRouteHref', () => {

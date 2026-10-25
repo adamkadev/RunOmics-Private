@@ -38,10 +38,13 @@ function validDate(date: string | null | undefined): string | null {
   return date && ISO_DATE.test(date) ? date : null
 }
 
-export function districtsHref(quartier?: string | null): string {
+/** `area` opens the map on that area's cluster rather than the busiest one. */
+export function districtsHref(quartier?: string | null, area?: string | null): string {
   const params = new URLSearchParams({ view: 'map', layer: 'districts' })
   const unit = validUnit(quartier)
   if (unit) params.set('quartier', unit)
+  const areaId = validUnit(area)
+  if (areaId) params.set('area', areaId)
   return `/activities?${params.toString()}`
 }
 
