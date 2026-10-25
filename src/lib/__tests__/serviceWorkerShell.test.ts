@@ -17,7 +17,7 @@ describe('the service worker shell', () => {
 })
 
 describe('the service worker on a slow network', () => {
-  function worker() {
+  function worker({ network = () => new Promise<Response>(() => {}), put = async () => {} } = {}) {
     const listeners: Record<string, (event: unknown) => void> = {}
     const cached = new Response('cached page')
     const scope = {
@@ -26,22 +26,40 @@ describe('the service worker on a slow network', () => {
       registration: {},
       clients: {},
     }
-    const caches = { match: async () => cached, open: async () => ({ put: async () => {} }) }
-    new Function('self', 'caches', 'fetch', readFileSync(join(PUBLIC, 'sw.js'), 'utf8'))(scope, caches, () => new Promise(() => {}))
+    const caches = { match: async () => cached, open: async () => ({ put }) }
+    new Function('self', 'caches', 'fetch', readFileSync(join(PUBLIC, 'sw.js'), 'utf8'))(scope, caches, network)
     return listeners
+  }
+
+  function visit(path: string, { mode = 'cors', headers = {} }: { mode?: string; headers?: Record<string, string> } = {}) {
+    const event = {
+      request: { method: 'GET', url: `https://runomics.example${path}`, mode, headers: new Headers(headers) },
+      preloadResponse: Promise.resolve(undefined),
+      answer: undefined as Promise<Response> | undefined,
+      respondWith: (response: Promise<Response>) => (event.answer = response),
+      waitUntil: () => {},
+    }
+    return event
   }
 
   it('opens a page from its cached copy when the network has not answered in 3 s', async () => {
     vi.useFakeTimers()
-    let answer: Promise<Response> | undefined
-    worker().fetch!({
-      request: { method: 'GET', url: 'https://runomics.example/plan', mode: 'navigate' },
-      preloadResponse: Promise.resolve(undefined),
-      respondWith: (response: Promise<Response>) => (answer = response),
-      waitUntil: () => {},
-    })
+    const event = visit('/plan', { mode: 'navigate' })
+    worker().fetch!(event)
     await vi.advanceTimersByTimeAsync(3000)
-    expect(await (await answer!).text()).toBe('cached page')
+    expect(await (await event.answer!).text()).toBe('cached page')
     vi.useRealTimers()
+  })
+
+  it('hands a page over before its copy reaches the cache', async () => {
+    const event = visit('/plan?_rsc=1')
+    worker({ network: async () => new Response('fresh page'), put: () => new Promise(() => {}) }).fetch!(event)
+    expect(await (await event.answer!).text()).toBe('fresh page')
+  })
+
+  it('leaves a prefetch to the network', () => {
+    const event = visit('/plan?_rsc=2', { headers: { 'Next-Router-Prefetch': '1' } })
+    worker().fetch!(event)
+    expect(event.answer).toBeUndefined()
   })
 })
