@@ -1,4 +1,5 @@
 import type { ActivityType } from '@/domain/activity/types'
+import type { NiggleSide, NiggleSite } from '@/domain/wellness/checkIn'
 
 function ordinal(n: number): string {
   const rem10 = n % 10
@@ -16,6 +17,28 @@ function moveWords(delta: string, up: string, down: string, level: string): stri
   if (sign === '+') return `${up} ${n}`
   if (sign === '−' || sign === '-') return `${down} ${n}`
   return n === '0' ? level : delta
+}
+
+const NIGGLE_SITE_NAMES: Record<NiggleSite, string> = {
+  foot: 'Foot',
+  ankle: 'Ankle',
+  achilles: 'Achilles',
+  calf: 'Calf',
+  shin: 'Shin',
+  knee: 'Knee',
+  hamstring: 'Hamstring',
+  quad: 'Quad',
+  hip: 'Hip',
+  back: 'Back',
+  other: 'Other',
+}
+
+const NIGGLE_SIDE_NAMES: Record<NiggleSide, string> = { left: 'Left', right: 'Right' }
+
+function niggleName(site: NiggleSite, side: NiggleSide | null): string {
+  if (!side) return NIGGLE_SITE_NAMES[site]
+  if (site === 'other') return `Other, ${side} side`
+  return `${NIGGLE_SIDE_NAMES[side]} ${NIGGLE_SITE_NAMES[site].toLowerCase()}`
 }
 
 export const en = {
@@ -2604,6 +2627,81 @@ export const en = {
       checkGuides: 'The next block’s guides come from it.',
       nextKey: 'Next key',
     },
+  },
+
+  // The owner's morning check-in on Today and its history on Athlete.
+  wellness: {
+    checkIn: {
+      eyebrow: 'Morning check-in',
+      // Every score runs the same way, whatever the question.
+      scaleHint: '1 worst · 5 best',
+      dismiss: 'Hide the check-in for today',
+      done: 'Done',
+      edit: 'Edit',
+      scores: {
+        sleep: { label: 'Sleep', words: ['Very poor', 'Poor', 'OK', 'Good', 'Great'] },
+        soreness: { label: 'Soreness', words: ['Very sore', 'Sore', 'Some', 'Slight', 'None'] },
+        stress: { label: 'Stress', words: ['Very high', 'High', 'Some', 'Low', 'None'] },
+        mood: { label: 'Mood', words: ['Very low', 'Low', 'OK', 'Good', 'Great'] },
+      },
+      // A score button's accessible name: "Sleep 4, Good".
+      scoreButton: (label: string, value: number, word: string) => `${label} ${value}, ${word}`,
+      flags: { niggle: 'Niggle', ill: 'Ill', travel: 'Travelling' },
+      where: 'Where',
+      pain: 'Pain',
+      painHint: '0 none · 10 worst',
+      painButton: (pain: number) => `Pain ${pain} out of 10`,
+      changesRun: 'Changes today’s run',
+    },
+    sites: NIGGLE_SITE_NAMES,
+    sides: NIGGLE_SIDE_NAMES,
+    // "Left calf"; a site with no side is the site alone.
+    niggleName,
+    pain: (pain: number) => `${pain}/10`,
+    // Today's readiness card when the check-in gives a reason to ease off; the load numbers stay as they are.
+    readiness: {
+      line: { caution: 'Check-in: ease off', hold: 'Check-in: rest today' },
+      ill: {
+        headline: 'You’re unwell: rest today.',
+        body: 'Your check-in says you’re ill. Skip today’s session and pick the plan back up once the symptoms have gone.',
+      },
+      painHold: (niggle: string, pain: string) => ({
+        headline: `${niggle} at ${pain}: rest it today.`,
+        body: 'Pain that high changes how you run. Skip the session, and have it looked at if it hasn’t settled in a few days.',
+      }),
+      painEase: (niggle: string, pain: string) => ({
+        headline: `${niggle} at ${pain}: keep it easy.`,
+        body: 'Run easy and shorter, and stop if it gets worse as you go. Nothing hard until it has settled.',
+      }),
+      sleepSoreness: {
+        headline: 'Short on sleep and sore: keep it easy.',
+        body: 'A poor night on sore legs. Run today easy, or move the hard part to another day.',
+      },
+      why: 'From this morning’s check-in. Form, fitness and fatigue are your load, unchanged.',
+    },
+    history: {
+      title: 'Wellness',
+      subtitle: (weeks: number) => `Morning check-ins · ${weeks} weeks`,
+      empty: 'No check-in yet: answer the one on Today in the morning.',
+      niggleRow: 'Niggle',
+      flagsRow: 'Ill · away',
+      today: 'Today',
+      legend: { worst: 'worst', best: 'best', ill: 'ill', travel: 'travelling' },
+      niggles: 'Niggles',
+      noNiggles: (weeks: number) => `No niggle in ${weeks} weeks.`,
+      days: (n: number) => `${n} day${n !== 1 ? 's' : ''}`,
+      peak: (pain: string) => `peak ${pain}`,
+      changedRuns: (n: number) => `changed ${n} run${n !== 1 ? 's' : ''}`,
+      ongoing: 'ongoing',
+      stripLabel: (answered: number, days: number) => `Check-ins on ${answered} of the last ${days} mornings`,
+    },
+  },
+
+  // Today's session card, when the forecast at the usual running hour is warm.
+  heatAhead: {
+    line: (temp: number, time: string, cost: number) =>
+      `${temp} °C at ${time} — your runs at this heat cost about +${cost} s/km: run by heart rate`,
+    time: (hour: number) => `${String(hour).padStart(2, '0')}:00`,
   },
 
   activityTypes: {

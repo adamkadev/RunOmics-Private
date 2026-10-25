@@ -7,6 +7,7 @@ import { BackButton } from '@/components/ui/BackButton'
 import { AthleteStats } from './ProfileAthleteStats'
 import { ProfileHrZones } from './ProfileHrZones'
 import { Vo2GradeCard } from './Vo2GradeCard'
+import { WellnessHistory } from '@/components/wellness/WellnessHistory'
 import type { Vo2GradeView } from '@/application/usecases/GetVo2Grade'
 import { formatRelativeAgo } from '@/lib/formatters'
 import { useMounted } from '@/lib/useMounted'
@@ -46,6 +47,7 @@ export function AthleteClient({ athlete, vo2Grade, weeklyZoneTime, recentZoneTim
         recentZoneTime={recentZoneTime}
         paceZones={paceZones}
       />
+      <WellnessHistory />
     </div>
   )
 }

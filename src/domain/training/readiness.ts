@@ -28,3 +28,9 @@ export function verdictTone(status: TrainingStatus): ReadinessTone {
   if (status.tsbNow < FORM_DEEP || climbing || status.risk === 'moderate' || status.status === 'unproductive') return 'caution'
   return status.tsbNow > FORM_FRESH ? 'go' : 'build'
 }
+
+const TONE_ORDER: ReadinessTone[] = ['go', 'build', 'caution', 'hold']
+
+export function worseTone(a: ReadinessTone, b: ReadinessTone): ReadinessTone {
+  return TONE_ORDER.indexOf(a) >= TONE_ORDER.indexOf(b) ? a : b
+}

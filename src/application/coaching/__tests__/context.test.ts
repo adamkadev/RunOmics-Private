@@ -296,3 +296,40 @@ describe('injury history', () => {
     expect(context.athlete.injuryHistory).toBeNull()
   })
 })
+
+describe('morning check-ins and training breaks', () => {
+  it('carries the last 28 mornings newest first, and the niggles of 12 weeks, never a later morning', () => {
+    const context = buildCoachingContext({
+      ...input([]),
+      wellness: new Map([
+        ['2026-07-01', { niggle: { site: 'hip' as const, pain: 3 } }],
+        ['2026-08-05', { niggle: { site: 'knee' as const, pain: 3 } }],
+        ['2026-09-01', { sleep: 1 }],
+        ['2026-10-20', { sleep: 4, soreness: 2, niggle: { site: 'calf' as const, side: 'left' as const, pain: 4, changesRun: true } }],
+        ['2026-10-22', { ill: true }],
+        ['2026-10-26', { sleep: 5 }],
+      ]),
+    }, '2026-10-25')
+
+    expect(context.wellness?.checkIns).toEqual([
+      { date: '2026-10-22', ill: true },
+      { date: '2026-10-20', sleep: 4, soreness: 2, niggle: { site: 'calf', side: 'left', pain: 4, changesRun: true } },
+    ])
+    expect(context.wellness?.niggles.map((n) => `${n.site} ${n.from}`)).toEqual(['calf 2026-10-20', 'knee 2026-08-05'])
+  })
+
+  it('says nothing of check-ins it could not read, and keeps the breaks of the last year', () => {
+    const context = buildCoachingContext({
+      ...input([]),
+      athlete: {
+        trainingBreaks: [
+          { start: '2025-06-01', end: '2025-06-20', reason: 'travel' },
+          { start: '2026-08-10', end: '2026-08-24', reason: 'heat' },
+        ],
+      },
+    }, '2026-10-25')
+
+    expect(context).not.toHaveProperty('wellness')
+    expect(context.athlete.trainingBreaks).toEqual([{ start: '2026-08-10', end: '2026-08-24', reason: 'heat' }])
+  })
+})

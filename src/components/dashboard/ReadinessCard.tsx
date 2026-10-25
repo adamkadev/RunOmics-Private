@@ -10,6 +10,8 @@ import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-react'
 import type { TodayVerdict } from '@/application/usecases/GetTodayInsight'
 import type { LoadReading } from '@/application/usecases/GetRecentLoad'
 import { cardClass, insetTileClass, tileLabelClass } from '@/components/ui/Card'
+import { CheckInReadiness } from '@/components/wellness/CheckInReadiness'
+import { appTodayIso } from '@/lib/calendarDate'
 import { cn } from '@/lib/utils'
 import { t } from '@/i18n'
 
@@ -51,11 +53,13 @@ export function ReadinessCard({
   status,
   verdict = null,
   load = null,
+  today = appTodayIso(),
 }: {
   status: TrainingStatus | null
   verdict?: TodayVerdict | null
   /** The seven-day load reading Analytics prints, where the watch has one. */
   load?: LoadReading | null
+  today?: string
 }) {
   if (!status) return null
 
@@ -75,23 +79,10 @@ export function ReadinessCard({
   return (
     <Link href="/analytics" aria-label={s.open} className="block transition-transform duration-100 ease-out active:scale-[0.98]" data-testid="readiness-card-link">
       <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="readiness-card">
-        <p className="flex items-center gap-1.5 text-eyebrow uppercase" style={{ color }} data-testid="readiness-status" data-tone={tone}>
-          <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ background: color }} />
-          <span>
-            {t.formBand[band]} · {line}
-          </span>
-        </p>
-        {headline && (
-          <div className="flex flex-col gap-2.5" data-testid="readiness-verdict">
-            {verdict?.yesterday && (
-              <p className="-mb-1.5 text-eyebrow uppercase text-muted-foreground" data-testid="verdict-yesterday">
-                {s.yesterday}
-              </p>
-            )}
-            <p className="text-title-3 text-foreground [text-wrap:pretty]">{headline}</p>
-            {body && <p className="text-[15px] leading-5 tracking-[-0.015rem] text-[var(--text-2)] [text-wrap:pretty]">{body}</p>}
-          </div>
-        )}
+        <CheckInReadiness
+          today={today}
+          words={{ tone, color, band: t.formBand[band], line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
+        />
 
         <div className="-mx-1 -mb-1 grid grid-cols-3 gap-1.5">
           <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} sub={t.formBand[band].toLocaleLowerCase(t.locale)} />

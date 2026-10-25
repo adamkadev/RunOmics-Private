@@ -17,7 +17,8 @@ import {
 } from '@/domain/activity/raceResult'
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan } from '@/domain/coaching/types'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
-import type { AthleteProfile, InjuryHistory } from '@/infrastructure/repositories/JsonAthleteRepository'
+import type { AthleteProfile, InjuryHistory, TrainingBreak } from '@/infrastructure/repositories/JsonAthleteRepository'
+import { niggleEpisodes, shiftDate, type CheckIn, type NiggleEpisode } from '@/domain/wellness/checkIn'
 import type { Trajectories } from '@/domain/training/trajectories'
 import type { GoalYear, PbYear, UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingStatus } from '@/application/usecases/GetTrainingStatus'
@@ -26,6 +27,8 @@ import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import type { GarminRacePredictionsData } from '@/application/usecases/GetGarminRacePredictions'
 
 const RECENT_DAYS = 28
+const NIGGLE_DAYS = 84
+const BREAK_DAYS = 365
 const RACE_DISTANCE_TOLERANCE = 0.1
 
 export interface CompactActivity {
@@ -88,6 +91,13 @@ export interface CoachingContext {
     heightCm: number | null
     trainingZones: TrainingZonesData | null
     injuryHistory: InjuryHistory | null
+    /** Typed into athlete.json; absent when it has none. */
+    trainingBreaks?: TrainingBreak[]
+  }
+  /** The morning check-ins; absent when they could not be read, which is not the same as none written. */
+  wellness?: {
+    checkIns: ({ date: string } & CheckIn)[]
+    niggles: NiggleEpisode[]
   }
   trajectories: Trajectories | null
   goals: GoalYear[]
@@ -120,6 +130,8 @@ export interface CoachingContextInput {
   activityNotes?: Map<string, { note: string; tags: string[] }>
   /** The plans the current one replaced, newest first, so a session before a block boundary is still read. */
   archivedPlans?: CoachingPlan[]
+  /** Keyed by local date; absent when neither Firestore nor its backup could be read. */
+  wellness?: ReadonlyMap<string, CheckIn>
 }
 
 function dayNumber(date: string): number {
@@ -189,6 +201,24 @@ function annotation(note: { note: string; tags: string[] } | undefined): Partial
   return {
     ...(note.note === '' ? {} : { note: note.note }),
     ...(note.tags.length === 0 ? {} : { tags: note.tags }),
+  }
+}
+
+function recentBreaks(breaks: TrainingBreak[] | undefined, referenceDate: string): Partial<CoachingContext['athlete']> {
+  if (breaks === undefined) return {}
+  const since = shiftDate(referenceDate, -BREAK_DAYS)
+  return { trainingBreaks: breaks.filter((pause) => pause.end >= since && pause.start <= referenceDate) }
+}
+
+/** Ends on the reference date, so a block reproduced for an earlier day never reads a later morning. */
+function wellnessFacts(entries: ReadonlyMap<string, CheckIn> | undefined, referenceDate: string): Pick<CoachingContext, 'wellness'> {
+  if (entries === undefined) return {}
+  const within = (days: number) => [...entries].filter(([date]) => date <= referenceDate && date > shiftDate(referenceDate, -days))
+  return {
+    wellness: {
+      checkIns: within(RECENT_DAYS).sort(([a], [b]) => b.localeCompare(a)).map(([date, entry]) => ({ date, ...entry })),
+      niggles: niggleEpisodes(new Map(within(NIGGLE_DAYS))),
+    },
   }
 }
 
@@ -267,7 +297,9 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       trainingZones: input.trainingZones,
       // Null means nobody has asked, which is not the same as none.
       injuryHistory: input.athlete.injuryHistory ?? null,
+      ...recentBreaks(input.athlete.trainingBreaks, referenceDate),
     },
+    ...wellnessFacts(input.wellness, referenceDate),
     trajectories: input.trajectories,
     goals: input.goals,
     personalBests: input.personalBests,
