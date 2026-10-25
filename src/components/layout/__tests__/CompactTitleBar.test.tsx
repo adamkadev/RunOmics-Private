@@ -397,6 +397,18 @@ describe('CompactTitleBar', () => {
     expect(label.getAttribute('style') ?? '').toBe('')
   })
 
+  it('looks the page up when it changes, not on every scroll frame', async () => {
+    pushedPage()
+    await mount(0)
+    const lookups = vi.spyOn(document, 'querySelectorAll')
+    for (const y of [10, 20, 30, 40]) await scrollTo(y)
+    expect(lookups).not.toHaveBeenCalled()
+
+    document.querySelector('main')!.insertAdjacentHTML('beforeend', '<h2 data-bar-fade>Splits</h2>')
+    await scrollTo(41)
+    expect(lookups).toHaveBeenCalled()
+  })
+
   it('leaves the page alone on a wide screen', async () => {
     vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => ({ matches: query === '(min-width: 64rem)' }) as MediaQueryList)
     pushedPage()
