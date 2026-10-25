@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { ActivityType, PlannedWorkout } from '@/domain/activity/types'
 import type { PlanRun } from './planRun'
@@ -9,6 +10,7 @@ import type { PlanPhaseRange } from '@/application/usecases/GetTrainingPlan'
 import type { UpcomingRace } from '@/application/usecases/GetGoalsData'
 import type { TrainingZonesData } from '@/application/usecases/GetTrainingZones'
 import { cardClass } from '@/components/ui/Card'
+import { CHECKPOINT_HREF } from '@/components/checkpoint/checkpointHref'
 import { addDays, isoDate } from '@/lib/calendarDate'
 import { formatDateRange, formatDurationWords, formatPlannedKm, formatRanKm, formatWeekday } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
@@ -28,13 +30,17 @@ import { ComingUpCard, DoneDayCard, NextKeySessionCard, PlannedWorkoutCard, Rest
 const NAV_BUTTON =
   'hit-44 flex size-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground active:scale-95 disabled:cursor-not-allowed disabled:opacity-40'
 
-function PhaseCard({ name, week, total, race }: { name: string; week: number; total: number; race: string | null }) {
+function PhaseCard({ name, week, total, race, href }: { name: string; week: number; total: number; race: string | null; href?: string }) {
   const p = t.plan.phase
   const weekOf = p.weekOf(total)
-  return (
-    <section className={cardClass({ padding: 'none', className: 'flex flex-col gap-2.5 px-3.5 py-3' })} data-testid="phase-line">
+  const className = cardClass({ padding: 'none', clickable: !!href, className: 'flex flex-col gap-2.5 px-3.5 py-3' })
+  const body = (
+    <>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
-        <h2 className="text-headline text-foreground">{name}</h2>
+        <h2 className="flex items-center gap-1 text-headline text-foreground">
+          {name}
+          {href && <ChevronRight size={16} aria-hidden="true" className="shrink-0 text-muted-foreground" />}
+        </h2>
         <p className="text-xs text-muted-foreground">
           {weekOf.before} {week} {weekOf.after}
           {race && ` · ${race}`}
@@ -45,7 +51,12 @@ function PhaseCard({ name, week, total, race }: { name: string; week: number; to
           <span key={i} data-done={i < week || undefined} className={cn('h-[5px] flex-1 rounded-full', i < week ? 'bg-accent' : 'bg-[var(--line-2)]')} />
         ))}
       </div>
-    </section>
+    </>
+  )
+  return href ? (
+    <Link href={href} className={className} data-testid="phase-line">{body}</Link>
+  ) : (
+    <section className={className} data-testid="phase-line">{body}</section>
   )
 }
 
@@ -239,7 +250,7 @@ export function WeekView({
 
   return (
     <div className="flex flex-col gap-3.5">
-      {phase && <PhaseCard name={phase.span.name} week={phase.week} total={phase.total} race={race} />}
+      {phase && <PhaseCard name={phase.span.name} week={phase.week} total={phase.total} race={race} href={phase.span.key === 'general' ? CHECKPOINT_HREF : undefined} />}
 
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1" data-testid="week-row">
         <div className="flex min-w-0 items-center gap-0.5">

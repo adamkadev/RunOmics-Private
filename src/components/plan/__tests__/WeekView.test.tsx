@@ -118,6 +118,7 @@ describe('the phase card', () => {
     expect(card.textContent).toContain(`${weekOf.before} 1 ${weekOf.after}`)
     // Sep 9 to Nov 29 is 81 days: 12 weeks.
     expect(card.textContent).toContain(t.plan.phase.raceInWeeks('10K', 12))
+    expect(card.getAttribute('href')).toBeNull()
   })
 
   it('draws a segment per week of the phase, the weeks so far in the accent', () => {
@@ -137,6 +138,7 @@ describe('the phase card', () => {
     // Aug 31 to the block's end on Oct 4: five weeks, this the second.
     const weekOf = t.plan.phase.weekOf(5)
     expect(card.textContent).toBe(`${t.plan.weekPurpose.generalPreparation}${weekOf.before} 2 ${weekOf.after}`)
+    expect(card.getAttribute('href')).toBe('/plan/checkpoint')
   })
 
   it("reads Garmin's phases and next race without coaching", () => {
