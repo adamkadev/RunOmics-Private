@@ -3,20 +3,36 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { getTodayPlannedWorkout, sendPush } = vi.hoisted(() => ({
+const { getTodayPlannedWorkout, sendPush, sent } = vi.hoisted(() => ({
   getTodayPlannedWorkout: vi.fn(),
   sendPush: vi.fn(),
+  sent: new Set<string>(),
 }))
 
 vi.mock('@/application/usecases/GetPlannedWorkouts', () => ({ getTodayPlannedWorkout }))
 vi.mock('@/lib/sendPushNotification', () => ({ sendPush, sendPushes: vi.fn() }))
+vi.mock('@/application/usecases/SendScheduledPush', () => ({
+  sendOncePer: async (_push: string, key: string, send: () => Promise<void>) => {
+    if (sent.has(key)) return false
+    sent.add(key)
+    await send()
+    return true
+  },
+}))
 
 const SECRET = 'test-secret'
+const CRON_SECRET = 'cron-secret'
 
 function request() {
   return new NextRequest('https://example.com/api/internal/daily-session', {
     method: 'POST',
     headers: { 'x-internal-secret': SECRET },
+  })
+}
+
+function cronRequest() {
+  return new NextRequest('https://example.com/api/internal/daily-session', {
+    headers: { authorization: `Bearer ${CRON_SECRET}` },
   })
 }
 
@@ -30,12 +46,15 @@ async function routeIn(locale: 'en' | 'fr') {
 describe('POST /api/internal/daily-session', () => {
   beforeEach(() => {
     vi.stubEnv('INTERNAL_NOTIFY_SECRET', SECRET)
+    vi.stubEnv('CRON_SECRET', CRON_SECRET)
     vi.clearAllMocks()
+    sent.clear()
     sendPush.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
     vi.unstubAllEnvs()
+    vi.useRealTimers()
   })
 
   it('announces a rest day', async () => {
@@ -54,6 +73,19 @@ describe('POST /api/internal/daily-session', () => {
     expect(sendPush).toHaveBeenCalledWith('training', "Today's session", 'Strides 6 x 20s (8.0 km · 45 min)')
   })
 
+  it('sends from the cron in the 08:xx Paris hour only, once a day', async () => {
+    getTodayPlannedWorkout.mockResolvedValue(null)
+    const { GET, POST } = await routeIn('en')
+
+    vi.useFakeTimers({ now: new Date('2026-01-15T06:20:00Z'), toFake: ['Date'] })
+    expect(await (await GET(cronRequest())).json()).toEqual({ skipped: 'not 08:xx in Paris' })
+
+    vi.setSystemTime(new Date('2026-01-15T07:20:00Z'))
+    expect(await (await GET(cronRequest())).json()).toEqual({ sent: true, restDay: true })
+    expect(await (await POST(request())).json()).toEqual({ skipped: 'already sent today' })
+    expect(sendPush).toHaveBeenCalledTimes(1)
+  })
+
   it('speaks the deployment’s language', async () => {
     getTodayPlannedWorkout.mockResolvedValue(null)
     const { POST: restDay } = await routeIn('fr')
@@ -61,6 +93,7 @@ describe('POST /api/internal/daily-session', () => {
     expect(sendPush).toHaveBeenLastCalledWith('training', 'Jour de repos', 'Aucune séance prévue aujourd’hui : place à la récupération.')
 
     getTodayPlannedWorkout.mockResolvedValue({ date: '2026-10-02', name: 'Footing', distanceM: 8000, durationSecs: 2700 })
+    sent.clear()
     const { POST: session } = await routeIn('fr')
     await session(request())
     expect(sendPush).toHaveBeenLastCalledWith('training', 'Séance du jour', 'Footing (8,0 km · 45 min)')

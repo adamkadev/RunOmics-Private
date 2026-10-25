@@ -1,11 +1,9 @@
 name: Sync Garmin Activities
 # The app's Sync button reads the trailing (profile) back to tell which profile a run syncs (src/lib/syncLimits.ts).
-run-name: ${{ inputs.quick && 'Quick sync' || 'Sync' }} Garmin Activities (${{ inputs.profile || 'all' }})
+run-name: ${{ inputs.nightly && 'Nightly sync' || inputs.quick && 'Quick sync' || 'Sync' }} Garmin Activities (${{ inputs.profile || 'all' }})
 
+# Each deployment's Vercel Cron dispatches its nightly run (/api/internal/nightly-sync): GitHub's cron lands hours late.
 on:
-  schedule:
-    # Off the hour on purpose: scheduled runs on the hour are the ones GitHub delays most.
-    - cron: "23 1 * * *"
   workflow_dispatch:
     inputs:
       limit:
@@ -31,6 +29,10 @@ on:
         default: all
       quick:
         description: "Quick: only the new runs, through the Personal API key (no WARP, no Garmin Connect)"
+        type: boolean
+        default: false
+      nightly:
+        description: "Nightly: a full sync that also warns before a token expires"
         type: boolean
         default: false
 
@@ -474,7 +476,7 @@ jobs:
 
       # Nightly only: a push each night for two weeks beats a sync that stops one morning. The app adds its own tokens.
       - name: Warn before a token expires
-        if: github.event_name == 'schedule'
+        if: inputs.nightly == true
         continue-on-error: true
         env:
           APP_URL: ${{ secrets.APP_URL }}
