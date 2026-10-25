@@ -157,6 +157,18 @@ describe('the archive under its months', () => {
     expect(screen.getAllByTestId('month').length).toBeGreaterThan(firstMonths)
   })
 
+  it('grows a list sorted by anything but date a few dozen runs at a time too', async () => {
+    const reachEnd = observeEnd()
+    window.history.replaceState(null, '', '/activities?sort=longest')
+    const many = Array.from({ length: 120 }, (_, k) => run(`r${k}`, new Date(Date.UTC(2026, 8, 10) - k * 86_400_000).toISOString().slice(0, 10), 5 + k / 10))
+    renderList(many)
+
+    const first = screen.getAllByTestId('thumb-row').length
+    expect(first).toBeLessThan(many.length)
+    await reachEnd()
+    expect(screen.getAllByTestId('thumb-row').length).toBeGreaterThan(first)
+  })
+
   it('keeps loading older months after a trip to the map and back', async () => {
     const reachEnd = observeEnd()
     const user = userEvent.setup()

@@ -92,6 +92,8 @@ function savedShownBlocks(): number {
 const WEEK_HEADER_PX = 42
 /** An inset row's min-h-16. */
 const ROW_PX = 64
+/** A sorted list has no months: it grows by about a month's runs per block. */
+const ROWS_PER_BLOCK = 12
 
 function InsetRows({ items, efforts, types }: { items: ActivitySummary[]; efforts: Record<string, QualifiedEffort[]>; types: Record<string, ActivityType> }) {
   return (
@@ -281,7 +283,8 @@ export function ActivityListClient({
     }
   }, [shownBlocks])
   const shown = blocks && !weekParam ? blocks.slice(0, shownBlocks) : blocks
-  const moreToShow = !!blocks && !!shown && shown.length < blocks.length
+  const shownRows = blocks ? null : items.slice(0, shownBlocks * ROWS_PER_BLOCK)
+  const moreToShow = blocks ? !!shown && shown.length < blocks.length : shownRows!.length < items.length
   // State, not a ref: the sentinel remounts when the map gives way to the list, and the observer must follow it.
   const [moreNode, setMoreNode] = useState<HTMLDivElement | null>(null)
   useEffect(() => {
@@ -522,8 +525,9 @@ export function ActivityListClient({
               </div>
             ) : (
               // Separators start under the titles, past the 48 pt thumbs.
-              <div className={cardClass({ padding: 'none', overflow: true, className: 'inset-group [--row-thumb-inset:78px]' })}>
-                {items.map((a) => (
+              // Off screen, a row is skipped by style and layout, as a week is under the months.
+              <div className={cardClass({ padding: 'none', overflow: true, className: 'inset-group [--row-thumb-inset:78px] *:[content-visibility:auto] *:[contain-intrinsic-size:auto_72px]' })}>
+                {shownRows!.map((a) => (
                   <ActivityThumbRow key={a.id} activity={a} qualifiedEfforts={qualifiedEffortsByActivityId[a.id]} type={sessionTypes[a.id]} />
                 ))}
               </div>
