@@ -49,6 +49,12 @@ All notable changes to this project are documented in this file.
   stride), and Intensity shows easy and workout heart rate by week. The
   Athlete page has a fitness age card with a year of history.
 
+- Analytics › Performance draws your best pace for every duration from
+  30 s to 2 h, this window against the one before, with a critical speed
+  fitted to your 3-20 min bests and set against your threshold pace. A
+  hilly run shows its grade-adjusted pace (Minetti) under its stats and
+  as a line in the pace lane. Existing runs get both after a reprocess.
+
 - A run's conditions name the sky, the feels-like temperature when it
   differs and the humidity when the air is muggy.
 
