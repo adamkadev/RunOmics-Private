@@ -83,7 +83,7 @@ export interface SessionCard {
   /** The phase of the plan the day falls in ("Base"), or null outside one. */
   phase: string | null
   href: string
-  /** Today's session only, when the forecast at the usual running hour is warm for this athlete. */
+  /** Today's session only, when the forecast at the usual running hour falls in a band that slows the athlete. */
   heat?: HeatAhead | null
 }
 
