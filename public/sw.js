@@ -50,8 +50,11 @@ self.addEventListener('activate', (event) => {
 const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]']
 const isLocalDev = LOCAL_HOSTS.includes(self.location.hostname)
 
+// MapLibre's worker sits under its version (scripts/copy-maplibre-worker.mjs), so a new one comes at a new path.
+const VERSIONED_MAPLIBRE = /^\/maplibre\/[^/]+\//
+
 function isImmutableAsset(url) {
-  return url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')
+  return url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/') || VERSIONED_MAPLIBRE.test(url.pathname)
 }
 
 async function cacheFirst(request) {

@@ -51,6 +51,11 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
+      // The path carries MapLibre's version (scripts/copy-maplibre-worker.mjs), so a copy never goes stale.
+      {
+        source: "/maplibre/:version/:file",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
     ];
   },
 };

@@ -57,6 +57,12 @@ describe('the service worker on a slow network', () => {
     expect(await (await event.answer!).text()).toBe('fresh page')
   })
 
+  it("keeps MapLibre's versioned worker from the cache, with no trip to the network", async () => {
+    const event = visit('/maplibre/6.15.0/maplibre-gl-worker.mjs')
+    worker().fetch!(event)
+    expect(await (await event.answer!).text()).toBe('cached page')
+  })
+
   it('leaves a prefetch to the network', () => {
     const event = visit('/plan?_rsc=2', { headers: { 'Next-Router-Prefetch': '1' } })
     worker().fetch!(event)
