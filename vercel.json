@@ -6,6 +6,7 @@
     { "path": "/api/internal/daily-session", "schedule": "0 6 * * *" },
     { "path": "/api/internal/daily-session", "schedule": "0 7 * * *" },
     { "path": "/api/internal/stale-sync-check", "schedule": "0 6 * * *" },
+    { "path": "/api/internal/weekly-digest", "schedule": "0 6 * * 1" },
     { "path": "/api/internal/weekly-reminder", "schedule": "0 15 * * 5" }
   ]
 }

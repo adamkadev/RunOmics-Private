@@ -2046,6 +2046,15 @@ export const fr = {
       body: (hours: number) => `Ta dernière synchro date d’il y a ${hours} h : vérifie qu’elle tourne toujours.`,
     },
     newActivity: { title: (name: string) => `Nouvelle activité : ${name}` },
+    weeklyDigest: {
+      title: 'La semaine passée',
+      km: (ran: string) => `${ran} km`,
+      kmOfPlan: (ran: string, plan: string) => `${ran} sur ${plan} km`,
+      quality: (done: number) => `${done} séance${done > 1 ? 's' : ''} de qualité`,
+      qualityOfPlan: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} de qualité sur ${planned}`,
+      restingHr: (bpm: number, change: string) => `FC repos ${bpm} (${change})`,
+      focus: (focus: string) => `Cette semaine : ${focus}`,
+    },
     weeklyGoal: {
       title: 'Point hebdo sur ton objectif',
       status: { ahead: 'en avance', on_track: 'dans les temps', behind: 'en retard' },

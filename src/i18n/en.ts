@@ -2207,6 +2207,16 @@ export const en = {
       body: (hours: number) => `Your last sync was ${hours}h ago - check that sync is still running.`,
     },
     newActivity: { title: (name: string) => `New activity: ${name}` },
+    // Monday's look back, two short lines: what fits an iPhone notification unexpanded.
+    weeklyDigest: {
+      title: 'Last week',
+      km: (ran: string) => `${ran} km`,
+      kmOfPlan: (ran: string, plan: string) => `${ran} of ${plan} km`,
+      quality: (done: number) => `${done} quality session${done === 1 ? '' : 's'}`,
+      qualityOfPlan: (done: number, planned: number) => `${done} of ${planned} quality sessions`,
+      restingHr: (bpm: number, change: string) => `Resting HR ${bpm} (${change})`,
+      focus: (focus: string) => `This week: ${focus}`,
+    },
     weeklyGoal: {
       title: 'Weekly goal check-in',
       status: { ahead: 'ahead of pace', on_track: 'on track', behind: 'behind pace' },
