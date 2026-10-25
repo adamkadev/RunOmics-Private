@@ -293,6 +293,24 @@ jobs:
             exit "$STATUS"
           fi
 
+      # Through WARP, like every garth call; a failure keeps the stored shoe list and counts the night as partial.
+      - name: Sync shoes
+        id: shoes
+        if: steps.config.outputs.quick != 'true' && inputs.dry_run != true && steps.warp.outcome == 'success'
+        env:
+          GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
+          GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
+        run: |
+          if [ -z "$GARMIN_SECRET" ]; then
+            echo "No GARMIN_SECRET in this environment: the shoe list stays as stored."
+            exit 0
+          fi
+          if ! python scripts/sync_shoes.py > /dev/null; then
+            echo "partial_failure=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::The shoe list could not be read from Garmin Connect; the stored one is kept."
+          fi
+
       - name: Disconnect Cloudflare WARP
         if: always() && steps.warp_install.outcome == 'success'
         run: warp-cli --accept-tos disconnect || true
@@ -509,9 +527,9 @@ jobs:
 
       # Last, so a partial sync still reaches the data repository first.
       - name: Report a partial sync
-        if: always() && steps.sync.outputs.partial_failure == 'true'
+        if: always() && (steps.sync.outputs.partial_failure == 'true' || steps.shoes.outputs.partial_failure == 'true')
         run: |
-          echo "::error::sync.py reported failed activities or steps. Whatever synced successfully was committed and deployed; see the 'Run sync' log for what failed."
+          echo "::error::Some activities or steps failed. Whatever synced successfully was committed and deployed; see the 'Run sync' and 'Sync shoes' logs for what failed."
           exit 1
 
       # Best effort: if the app itself is what broke, this fails too.
