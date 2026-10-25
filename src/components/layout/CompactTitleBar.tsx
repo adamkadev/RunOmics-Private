@@ -251,10 +251,14 @@ export function CompactTitleBar() {
         fadeTo(el, collapsed ? 0 : 1)
       }
       // Over the title's fade, so a header control and its copy in the bar are never seen at once.
+      // At rest no inline style, as the title: written before the page hydrates, it would not match the server's HTML.
       if (segmentsEl && inHeader) {
         faded.add(segmentsEl)
-        segmentsEl.style.transition = `opacity ${TITLE_FADE_MS}ms ease-out`
-        fadeTo(segmentsEl, collapsed ? 0 : 1)
+        if (atTop) unfade(segmentsEl)
+        else {
+          segmentsEl.style.transition = `opacity ${TITLE_FADE_MS}ms ease-out`
+          fadeTo(segmentsEl, collapsed ? 0 : 1)
+        }
       }
 
       // The subtitle fades with the scroll and is gone by the time its top

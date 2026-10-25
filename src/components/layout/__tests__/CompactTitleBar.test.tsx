@@ -277,7 +277,7 @@ describe('CompactTitleBar', () => {
     place(document.querySelector('p')!, STATUS_BAR + 48, 20)
     const group = document.querySelector<HTMLElement>('[data-bar-segments]')!
     await mount(0)
-    expect(group.style.opacity).toBe('')
+    expect(group.getAttribute('style')).toBeNull()
 
     await scrollTo(60)
     expect(shown()).toBe(true)
@@ -287,8 +287,7 @@ describe('CompactTitleBar', () => {
     expect(document.querySelector<HTMLElement>('p')!.style.opacity).toBe('0')
 
     await scrollTo(0)
-    expect(group.style.opacity).toBe('')
-    expect(group.style.pointerEvents).toBe('')
+    expect(group.style.cssText).toBe('')
   })
 
   it("carries Goals' year stepper, and Shoes' add, in the bar", async () => {
