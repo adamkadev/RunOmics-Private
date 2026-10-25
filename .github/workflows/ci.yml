@@ -139,8 +139,25 @@ jobs:
       - name: Verify no private data is committed
         run: npm run verify:private-data
 
+      # Saved from main only: a PR's own entry would serve no other branch and take room under GitHub's 10 GB.
+      - name: Restore the ESLint cache
+        id: eslint-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.cache/eslint
+          key: eslint-${{ runner.os }}-${{ hashFiles('eslint.config.mjs', 'package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            eslint-${{ runner.os }}-${{ hashFiles('eslint.config.mjs', 'package-lock.json') }}-
+
       - name: Lint
         run: npm run lint
+
+      - name: Save the ESLint cache
+        if: github.ref == 'refs/heads/main' && steps.eslint-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: node_modules/.cache/eslint
+          key: ${{ steps.eslint-cache.outputs.cache-primary-key }}
 
       - name: Typecheck
         run: npm run typecheck

@@ -17,7 +17,7 @@
     "build": "next build",
     "start": "next start",
     "prelint": "npm run prepare:data",
-    "lint": "eslint",
+    "lint": "eslint --cache --cache-strategy content --cache-location node_modules/.cache/eslint/",
     "verify:private-data": "node scripts/verify_no_private_data.mjs",
     "pretypecheck": "npm run prepare:data",
     "typecheck": "tsc --noEmit",
