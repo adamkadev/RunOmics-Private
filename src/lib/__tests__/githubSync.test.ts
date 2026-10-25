@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { dispatchBody, readSyncGate, syncConfig } from '../route'
+import { dispatchBody, readSyncGate, syncConfig } from '../githubSync'
 
 const CONFIGURED = {
   GITHUB_SYNC_TOKEN: 'ghp_test',
@@ -43,8 +43,13 @@ describe('syncConfig', () => {
 describe('dispatchBody', () => {
   it('asks for a quick sync, of the deployment’s profile when it has one', () => {
     const config = { repo: 'adamkadev/RunOmics-Private', workflow: 'sync.yml', ref: 'main', token: 'ghp_test', profile: 'adam' }
-    expect(dispatchBody(config)).toEqual({ ref: 'main', inputs: { quick: 'true', profile: 'adam' } })
-    expect(dispatchBody({ ...config, profile: null })).toEqual({ ref: 'main', inputs: { quick: 'true' } })
+    expect(dispatchBody(config, 'quick')).toEqual({ ref: 'main', inputs: { quick: 'true', profile: 'adam' } })
+    expect(dispatchBody({ ...config, profile: null }, 'quick')).toEqual({ ref: 'main', inputs: { quick: 'true' } })
+  })
+
+  it('asks the nightly run for a full sync of the deployment’s profile', () => {
+    const config = { repo: 'adamkadev/RunOmics-Private', workflow: 'sync.yml', ref: 'main', token: 'ghp_test', profile: 'lamiaa' }
+    expect(dispatchBody(config, 'nightly')).toEqual({ ref: 'main', inputs: { nightly: 'true', profile: 'lamiaa' } })
   })
 })
 

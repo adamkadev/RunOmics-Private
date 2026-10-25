@@ -572,13 +572,12 @@ export const en = {
     notifications: {
       title: 'Notifications',
       error: 'Could not update notification settings, please retry.',
-      // The daily reminder's time beside its switch: "08:11".
+      // The daily reminder's time beside its switch: "08:00".
       at: (hour: number, minute: string) => `${String(hour).padStart(2, '0')}:${minute}`,
       types: {
         training: { title: 'Training reminders' },
         shoes: { title: 'Shoe wear alerts' },
-        // The title says what the toggle does: the PR alert.
-        races: { title: 'PRs and predictions' },
+        records: { title: 'Records and explored areas' },
       },
     },
   },
@@ -2208,6 +2207,16 @@ export const en = {
       body: (hours: number) => `Your last sync was ${hours}h ago - check that sync is still running.`,
     },
     newActivity: { title: (name: string) => `New activity: ${name}` },
+    // Monday's look back, two short lines: what fits an iPhone notification unexpanded.
+    weeklyDigest: {
+      title: 'Last week',
+      km: (ran: string) => `${ran} km`,
+      kmOfPlan: (ran: string, plan: string) => `${ran} of ${plan} km`,
+      quality: (done: number) => `${done} quality session${done === 1 ? '' : 's'}`,
+      qualityOfPlan: (done: number, planned: number) => `${done} of ${planned} quality sessions`,
+      restingHr: (bpm: number, change: string) => `Resting HR ${bpm} (${change})`,
+      focus: (focus: string) => `This week: ${focus}`,
+    },
     weeklyGoal: {
       title: 'Weekly goal check-in',
       status: { ahead: 'ahead of pace', on_track: 'on track', behind: 'behind pace' },

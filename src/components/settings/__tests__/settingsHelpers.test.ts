@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { formatCacheSize, offlineCacheBytes } from '../offlineCache'
-import { DAILY_REMINDER_UTC, dailyReminderTime } from '../reminderTime'
+import { dailyReminderTime } from '../reminderTime'
 import { en } from '@/i18n/en'
 import { fr } from '@/i18n/fr'
 import { t } from '@/i18n'
@@ -34,11 +34,11 @@ describe('formatCacheSize', () => {
 })
 
 describe('dailyReminderTime', () => {
-  it('reads the workflow cron (06:11 UTC) in the athlete zone, summer time included', () => {
-    expect(DAILY_REMINDER_UTC).toEqual({ hour: 6, minute: 11 })
-    expect(dailyReminderTime(new Date('2026-07-01T12:00:00Z'), 'Europe/Paris')).toBe('08:11')
-    expect(dailyReminderTime(new Date('2026-12-01T12:00:00Z'), 'Europe/Paris')).toBe('07:11')
-    expect(dailyReminderTime(new Date('2026-12-01T12:00:00Z'), 'UTC')).toBe('06:11')
+  it('reads 08:00 Paris time in the athlete zone, summer time included', () => {
+    expect(dailyReminderTime(new Date('2026-07-01T12:00:00Z'), 'Europe/Paris')).toBe('08:00')
+    expect(dailyReminderTime(new Date('2026-12-01T12:00:00Z'), 'Europe/Paris')).toBe('08:00')
+    expect(dailyReminderTime(new Date('2026-07-01T12:00:00Z'), 'UTC')).toBe('06:00')
+    expect(dailyReminderTime(new Date('2026-12-01T12:00:00Z'), 'UTC')).toBe('07:00')
   })
 
   it('writes the time the French way in French', () => {

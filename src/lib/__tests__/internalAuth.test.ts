@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { NextRequest } from 'next/server'
-import { guardInternalRequest, isAuthorizedInternalRequest } from '@/lib/internalAuth'
+import { guardInternalRequest, isAuthorizedCronRequest, isAuthorizedInternalRequest } from '@/lib/internalAuth'
 
 const SECRET = 'test-secret'
 
@@ -32,6 +32,28 @@ describe('internalAuth', () => {
     it('rejects everything when the env secret is unset', () => {
       delete process.env.INTERNAL_NOTIFY_SECRET
       expect(isAuthorizedInternalRequest(makeRequest({ secret: SECRET }))).toBe(false)
+    })
+  })
+
+  describe('isAuthorizedCronRequest', () => {
+    afterEach(() => {
+      delete process.env.CRON_SECRET
+    })
+
+    const cron = (authorization?: string) =>
+      new NextRequest('http://localhost/api/internal/test', { headers: authorization ? { authorization } : {} })
+
+    it("accepts Vercel Cron's bearer secret, and neither the internal secret nor a wrong bearer", () => {
+      process.env.CRON_SECRET = 'cron-secret'
+      expect(isAuthorizedCronRequest(cron('Bearer cron-secret'))).toBe(true)
+      expect(isAuthorizedCronRequest(cron('Bearer nope'))).toBe(false)
+      expect(isAuthorizedCronRequest(cron(`Bearer ${SECRET}`))).toBe(false)
+      expect(isAuthorizedCronRequest(cron())).toBe(false)
+    })
+
+    it('rejects everything when CRON_SECRET is unset', () => {
+      expect(isAuthorizedCronRequest(cron('Bearer '))).toBe(false)
+      expect(isAuthorizedCronRequest(cron('Bearer undefined'))).toBe(false)
     })
   })
 

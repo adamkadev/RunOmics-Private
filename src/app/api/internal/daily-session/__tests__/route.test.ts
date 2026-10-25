@@ -3,20 +3,36 @@ import path from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
-const { getTodayPlannedWorkout, sendPushToAllDevices } = vi.hoisted(() => ({
+const { getTodayPlannedWorkout, sendPush, sent } = vi.hoisted(() => ({
   getTodayPlannedWorkout: vi.fn(),
-  sendPushToAllDevices: vi.fn(),
+  sendPush: vi.fn(),
+  sent: new Set<string>(),
 }))
 
 vi.mock('@/application/usecases/GetPlannedWorkouts', () => ({ getTodayPlannedWorkout }))
-vi.mock('@/lib/sendPushNotification', () => ({ sendPushToAllDevices, sendPushesToAllDevices: vi.fn() }))
+vi.mock('@/lib/sendPushNotification', () => ({ sendPush, sendPushes: vi.fn() }))
+vi.mock('@/application/usecases/SendScheduledPush', () => ({
+  sendOncePer: async (_push: string, key: string, send: () => Promise<void>) => {
+    if (sent.has(key)) return false
+    sent.add(key)
+    await send()
+    return true
+  },
+}))
 
 const SECRET = 'test-secret'
+const CRON_SECRET = 'cron-secret'
 
 function request() {
   return new NextRequest('https://example.com/api/internal/daily-session', {
     method: 'POST',
     headers: { 'x-internal-secret': SECRET },
+  })
+}
+
+function cronRequest() {
+  return new NextRequest('https://example.com/api/internal/daily-session', {
+    headers: { authorization: `Bearer ${CRON_SECRET}` },
   })
 }
 
@@ -30,12 +46,15 @@ async function routeIn(locale: 'en' | 'fr') {
 describe('POST /api/internal/daily-session', () => {
   beforeEach(() => {
     vi.stubEnv('INTERNAL_NOTIFY_SECRET', SECRET)
+    vi.stubEnv('CRON_SECRET', CRON_SECRET)
     vi.clearAllMocks()
-    sendPushToAllDevices.mockResolvedValue(undefined)
+    sent.clear()
+    sendPush.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
     vi.unstubAllEnvs()
+    vi.useRealTimers()
   })
 
   it('announces a rest day', async () => {
@@ -43,7 +62,7 @@ describe('POST /api/internal/daily-session', () => {
     const { POST } = await routeIn('en')
 
     expect(await (await POST(request())).json()).toEqual({ sent: true, restDay: true })
-    expect(sendPushToAllDevices).toHaveBeenCalledWith('Rest day', 'No session scheduled today - recovery day.')
+    expect(sendPush).toHaveBeenCalledWith('training', 'Rest day', 'No session scheduled today - recovery day.')
   })
 
   it('names the session, its distance and its duration', async () => {
@@ -51,19 +70,33 @@ describe('POST /api/internal/daily-session', () => {
     const { POST } = await routeIn('en')
 
     await POST(request())
-    expect(sendPushToAllDevices).toHaveBeenCalledWith("Today's session", 'Strides 6 x 20s (8.0 km · 45 min)')
+    expect(sendPush).toHaveBeenCalledWith('training', "Today's session", 'Strides 6 x 20s (8.0 km · 45 min)')
+  })
+
+  it('sends from the cron in the 08:xx Paris hour only, once a day', async () => {
+    getTodayPlannedWorkout.mockResolvedValue(null)
+    const { GET, POST } = await routeIn('en')
+
+    vi.useFakeTimers({ now: new Date('2026-01-15T06:20:00Z'), toFake: ['Date'] })
+    expect(await (await GET(cronRequest())).json()).toEqual({ skipped: 'not 08:xx in Paris' })
+
+    vi.setSystemTime(new Date('2026-01-15T07:20:00Z'))
+    expect(await (await GET(cronRequest())).json()).toEqual({ sent: true, restDay: true })
+    expect(await (await POST(request())).json()).toEqual({ skipped: 'already sent today' })
+    expect(sendPush).toHaveBeenCalledTimes(1)
   })
 
   it('speaks the deployment’s language', async () => {
     getTodayPlannedWorkout.mockResolvedValue(null)
     const { POST: restDay } = await routeIn('fr')
     await restDay(request())
-    expect(sendPushToAllDevices).toHaveBeenLastCalledWith('Jour de repos', 'Aucune séance prévue aujourd’hui : place à la récupération.')
+    expect(sendPush).toHaveBeenLastCalledWith('training', 'Jour de repos', 'Aucune séance prévue aujourd’hui : place à la récupération.')
 
     getTodayPlannedWorkout.mockResolvedValue({ date: '2026-10-02', name: 'Footing', distanceM: 8000, durationSecs: 2700 })
+    sent.clear()
     const { POST: session } = await routeIn('fr')
     await session(request())
-    expect(sendPushToAllDevices).toHaveBeenLastCalledWith('Séance du jour', 'Footing (8,0 km · 45 min)')
+    expect(sendPush).toHaveBeenLastCalledWith('training', 'Séance du jour', 'Footing (8,0 km · 45 min)')
   })
 })
 
@@ -76,9 +109,9 @@ describe('every push', () => {
       const file = path.join(routes, dir, 'route.ts')
       if (!fs.existsSync(file)) continue
       const source = fs.readFileSync(file, 'utf-8')
-      if (!/sendPush(?:es)?ToAllDevices\(/.test(source)) continue
+      if (!/sendPush(?:es)?\(/.test(source)) continue
       // A push's title or body written as a string literal, rather than read from t.notifications.
-      if (/sendPushToAllDevices\(\s*['"`]|title:\s*['"`]|body:\s*['"`]/.test(source)) offenders.push(dir)
+      if (/sendPush\([^,]+,\s*['"`]|title:\s*['"`]|body:\s*['"`]/.test(source)) offenders.push(dir)
     }
     expect(offenders).toEqual([])
   })

@@ -1,11 +1,9 @@
 name: Sync Garmin Activities
 # The app's Sync button reads the trailing (profile) back to tell which profile a run syncs (src/lib/syncLimits.ts).
-run-name: ${{ inputs.quick && 'Quick sync' || 'Sync' }} Garmin Activities (${{ inputs.profile || 'all' }})
+run-name: ${{ inputs.nightly && 'Nightly sync' || inputs.quick && 'Quick sync' || 'Sync' }} Garmin Activities (${{ inputs.profile || 'all' }})
 
+# Each deployment's Vercel Cron dispatches its nightly run (/api/internal/nightly-sync): GitHub's cron lands hours late.
 on:
-  schedule:
-    # Off the hour on purpose: scheduled runs on the hour are the ones GitHub delays most.
-    - cron: "23 1 * * *"
   workflow_dispatch:
     inputs:
       limit:
@@ -31,6 +29,10 @@ on:
         default: all
       quick:
         description: "Quick: only the new runs, through the Personal API key (no WARP, no Garmin Connect)"
+        type: boolean
+        default: false
+      nightly:
+        description: "Nightly: a full sync that also warns before a token expires"
         type: boolean
         default: false
 
@@ -137,7 +139,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version-file: .nvmrc
 
       - name: Fetch current private data
         env:
@@ -164,14 +166,18 @@ jobs:
       - name: Install Python dependencies
         run: pip install --require-hashes -r scripts/requirements.txt
 
-      # WARP's package pulls ~120 MB of desktop dependencies from a mirror that can crawl; the
-      # downloaded .debs are cached, so a run downloads only what changed since the last one.
+      - name: Name the ISO week
+        id: week
+        if: steps.config.outputs.quick != 'true'
+        run: echo "iso=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+
+      # WARP's ~120 MB of .debs come from a mirror that can crawl. Saved once a week, not each night: a save is 117 MB.
       - name: Restore WARP packages
         if: steps.config.outputs.quick != 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/warp-apt
-          key: warp-apt-${{ runner.os }}-${{ github.run_id }}
+          key: warp-apt-${{ runner.os }}-${{ steps.week.outputs.iso }}
           restore-keys: warp-apt-${{ runner.os }}-
 
       # Only garth needs WARP: with a Personal API key the runs still sync without it, so a
@@ -291,6 +297,24 @@ jobs:
             exit "$STATUS"
           fi
 
+      # Through WARP, like every garth call; a failure keeps the stored shoe list and counts the night as partial.
+      - name: Sync shoes
+        id: shoes
+        if: steps.config.outputs.quick != 'true' && inputs.dry_run != true && steps.warp.outcome == 'success'
+        env:
+          GARMIN_SECRET: ${{ secrets.GARMIN_SECRET }}
+          GARMIN_OAUTH_CONSUMER_KEY: ${{ vars.GARMIN_OAUTH_CONSUMER_KEY }}
+          GARMIN_OAUTH_CONSUMER_SECRET: ${{ vars.GARMIN_OAUTH_CONSUMER_SECRET }}
+        run: |
+          if [ -z "$GARMIN_SECRET" ]; then
+            echo "No GARMIN_SECRET in this environment: the shoe list stays as stored."
+            exit 0
+          fi
+          if ! python scripts/sync_shoes.py > /dev/null; then
+            echo "partial_failure=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::The shoe list could not be read from Garmin Connect; the stored one is kept."
+          fi
+
       - name: Disconnect Cloudflare WARP
         if: always() && steps.warp_install.outcome == 'success'
         run: warp-cli --accept-tos disconnect || true
@@ -304,6 +328,22 @@ jobs:
         if: inputs.dry_run != true
         continue-on-error: true
         run: python scripts/backfill_weather.py
+
+      # Notes and tags exist only in Firestore otherwise; the coach reads this copy. The log gets a count, never a note.
+      - name: Back up run notes
+        if: inputs.dry_run != true
+        continue-on-error: true
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
+        run: |
+          set -euo pipefail
+          printf 'x-internal-secret: %s\n' "$SECRET" \
+            | curl -fsS --max-time 30 "$APP_URL/api/internal/activity-notes" -H @- \
+            | jq -S --indent 2 '.' > "$RUNNER_TEMP/activity_notes.json"
+          jq -e '.notes | type == "object"' "$RUNNER_TEMP/activity_notes.json" > /dev/null
+          mv "$RUNNER_TEMP/activity_notes.json" data/activity_notes.json
+          echo "Backed up the notes of $(jq '.notes | length' data/activity_notes.json) run(s)."
 
       - name: Commit updated data
         id: commit
@@ -339,18 +379,9 @@ jobs:
             fi
           fi
 
-      - name: Trigger Vercel redeploy
-        if: steps.commit.outputs.committed == 'true' && vars.DATA_SOURCE != 'github'
-        continue-on-error: true
-        env:
-          VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
-        run: |
-          curl -fsS -X POST "$VERCEL_DEPLOY_HOOK_URL"
-          date +%s > "$RUNNER_TEMP/deploy_hook_at"
-
-      # A deployment that reads the data repository itself needs no rebuild, only its cached commit expired.
+      # Both deployments read the data repository at run time: no rebuild, only their cached commit expired.
       - name: Expire the app's data cache
-        if: steps.commit.outputs.committed == 'true' && vars.DATA_SOURCE == 'github'
+        if: steps.commit.outputs.committed == 'true'
         continue-on-error: true
         env:
           APP_URL: ${{ secrets.APP_URL }}
@@ -367,36 +398,32 @@ jobs:
           SECRET: ${{ secrets.INTERNAL_NOTIFY_SECRET }}
           EXPECTED_SYNC: ${{ steps.commit.outputs.last_synced_at }}
           DATA_CHANGED: ${{ steps.commit.outputs.data_changed }}
-          DATA_SOURCE: ${{ vars.DATA_SOURCE }}
         run: |
           # The checks read what the app serves: before it serves this sync, they would judge the data before it.
-          if [ "$DATA_CHANGED" = "true" ] || [ "$DATA_SOURCE" = "github" ]; then
-            INTERVAL=15
-            [ "$DATA_SOURCE" = "github" ] && INTERVAL=3
-            DEPLOYED=false
-            for i in $(seq 1 $((360 / INTERVAL))); do
-              HEALTH=$(printf 'x-internal-secret: %s\n' "$SECRET" | curl -sS --max-time 20 "$APP_URL/api/internal/health" -H @- || true)
-              LIVE=$(printf '%s' "$HEALTH" | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
-              REFUSED=$(printf '%s' "$HEALTH" | python -c "import json,sys; r=json.load(sys.stdin).get('rejectedData'); print(r['commit'] + ': ' + '; '.join(r['errors'][:3]) if r else '')" 2>/dev/null || true)
-              if [ -n "$REFUSED" ]; then
-                echo "::error::The app refused the data repository's commit $REFUSED"
-                exit 1
-              fi
-              if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
-                DEPLOYED=true
-                date +%s > "$RUNNER_TEMP/live_at"
-                echo "The app serves $EXPECTED_SYNC after $(((i - 1) * INTERVAL))s."
-                break
-              fi
-              sleep "$INTERVAL"
-            done
-            if [ "$DEPLOYED" != "true" ]; then
-              echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
-            elif [ "$DATA_SOURCE" = "github" ]; then
-              # Again, for a page whose render began before the first ping and ended after it, with the old commit.
-              printf 'x-internal-secret: %s\n' "$SECRET" | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/data-revalidate" -H @- || true
-              echo
+          INTERVAL=3
+          DEPLOYED=false
+          for i in $(seq 1 $((360 / INTERVAL))); do
+            HEALTH=$(printf 'x-internal-secret: %s\n' "$SECRET" | curl -sS --max-time 20 "$APP_URL/api/internal/health" -H @- || true)
+            LIVE=$(printf '%s' "$HEALTH" | python -c "import json,sys; print(json.load(sys.stdin).get('lastSyncedAt') or '')" 2>/dev/null || true)
+            REFUSED=$(printf '%s' "$HEALTH" | python -c "import json,sys; r=json.load(sys.stdin).get('rejectedData'); print(r['commit'] + ': ' + '; '.join(r['errors'][:3]) if r else '')" 2>/dev/null || true)
+            if [ -n "$REFUSED" ]; then
+              echo "::error::The app refused the data repository's commit $REFUSED"
+              exit 1
             fi
+            if [ -n "$EXPECTED_SYNC" ] && [ "$LIVE" = "$EXPECTED_SYNC" ]; then
+              DEPLOYED=true
+              date +%s > "$RUNNER_TEMP/live_at"
+              echo "The app serves $EXPECTED_SYNC after $(((i - 1) * INTERVAL))s."
+              break
+            fi
+            sleep "$INTERVAL"
+          done
+          if [ "$DEPLOYED" != "true" ]; then
+            echo "::warning::App still serving pre-sync data after 6 min (live: ${LIVE:-none}, expected: $EXPECTED_SYNC). Running the checks anyway."
+          else
+            # Again, for a page whose render began before the first ping and ended after it, with the old commit.
+            printf 'x-internal-secret: %s\n' "$SECRET" | curl -fsS --max-time 20 -X POST "$APP_URL/api/internal/data-revalidate" -H @- || true
+            echo
           fi
 
           # The checks below need Firebase Admin (Firestore and every push) and
@@ -474,7 +501,7 @@ jobs:
 
       # Nightly only: a push each night for two weeks beats a sync that stops one morning. The app adds its own tokens.
       - name: Warn before a token expires
-        if: github.event_name == 'schedule'
+        if: inputs.nightly == true
         continue-on-error: true
         env:
           APP_URL: ${{ secrets.APP_URL }}
@@ -491,9 +518,9 @@ jobs:
 
       # Last, so a partial sync still reaches the data repository first.
       - name: Report a partial sync
-        if: always() && steps.sync.outputs.partial_failure == 'true'
+        if: always() && (steps.sync.outputs.partial_failure == 'true' || steps.shoes.outputs.partial_failure == 'true')
         run: |
-          echo "::error::sync.py reported failed activities or steps. Whatever synced successfully was committed and deployed; see the 'Run sync' log for what failed."
+          echo "::error::Some activities or steps failed. Whatever synced successfully was committed and deployed; see the 'Run sync' and 'Sync shoes' logs for what failed."
           exit 1
 
       # Best effort: if the app itself is what broke, this fails too.

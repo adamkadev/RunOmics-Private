@@ -541,12 +541,12 @@ export const fr = {
     notifications: {
       title: 'Notifications',
       error: 'Impossible de mettre à jour les réglages de notification, réessaie.',
-      // « 8 h 11 », the French way of writing a time.
+      // « 8 h 00 », the French way of writing a time.
       at: (hour: number, minute: string) => `${hour} h ${minute}`,
       types: {
         training: { title: 'Rappels d’entraînement' },
         shoes: { title: 'Alertes d’usure des chaussures' },
-        races: { title: 'Records et prédictions' },
+        records: { title: 'Records et quartiers explorés' },
       },
     },
   },
@@ -2046,6 +2046,15 @@ export const fr = {
       body: (hours: number) => `Ta dernière synchro date d’il y a ${hours} h : vérifie qu’elle tourne toujours.`,
     },
     newActivity: { title: (name: string) => `Nouvelle activité : ${name}` },
+    weeklyDigest: {
+      title: 'La semaine passée',
+      km: (ran: string) => `${ran} km`,
+      kmOfPlan: (ran: string, plan: string) => `${ran} sur ${plan} km`,
+      quality: (done: number) => `${done} séance${done > 1 ? 's' : ''} de qualité`,
+      qualityOfPlan: (done: number, planned: number) => `${done} séance${done > 1 ? 's' : ''} de qualité sur ${planned}`,
+      restingHr: (bpm: number, change: string) => `FC repos ${bpm} (${change})`,
+      focus: (focus: string) => `Cette semaine : ${focus}`,
+    },
     weeklyGoal: {
       title: 'Point hebdo sur ton objectif',
       status: { ahead: 'en avance', on_track: 'dans les temps', behind: 'en retard' },

@@ -2,13 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 import type { Activity } from '@/domain/activity/types'
 
-const { getNewActivities, sendPushesToAllDevices } = vi.hoisted(() => ({
+const { getNewActivities, sendPushes } = vi.hoisted(() => ({
   getNewActivities: vi.fn(),
-  sendPushesToAllDevices: vi.fn(),
+  sendPushes: vi.fn(),
 }))
 
 vi.mock('@/application/usecases/GetNewActivities', () => ({ getNewActivities }))
-vi.mock('@/lib/sendPushNotification', () => ({ sendPushesToAllDevices, sendPushToAllDevices: vi.fn() }))
+vi.mock('@/lib/sendPushNotification', () => ({ sendPushes, sendPush: vi.fn() }))
 
 const { POST } = await import('../route')
 
@@ -39,23 +39,23 @@ describe('POST /api/internal/activity-sync-check', () => {
   it('announces every new run in one batch, then records them as seen', async () => {
     const commit = vi.fn(async () => {})
     getNewActivities.mockResolvedValue({ newActivities: RUNS, commit })
-    sendPushesToAllDevices.mockResolvedValue(undefined)
+    sendPushes.mockResolvedValue(undefined)
 
     const res = await POST(request())
 
     expect(await res.json()).toEqual({ newActivities: ['r2', 'r1'] })
-    expect(sendPushesToAllDevices).toHaveBeenCalledWith([
+    expect(sendPushes).toHaveBeenCalledWith('training', [
       expect.objectContaining({ title: 'New activity: Evening tempo' }),
       expect.objectContaining({ title: 'New activity: Morning easy' }),
     ])
-    expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushesToAllDevices.mock.invocationCallOrder[0]!)
+    expect(commit.mock.invocationCallOrder[0]).toBeGreaterThan(sendPushes.mock.invocationCallOrder[0]!)
   })
 
   it('does not record the runs as seen when a push failed, so the next check announces them', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const commit = vi.fn(async () => {})
     getNewActivities.mockResolvedValue({ newActivities: RUNS, commit })
-    sendPushesToAllDevices.mockRejectedValue(new Error('FCM is down'))
+    sendPushes.mockRejectedValue(new Error('FCM is down'))
 
     expect((await POST(request())).status).toBe(500)
     expect(commit).not.toHaveBeenCalled()
