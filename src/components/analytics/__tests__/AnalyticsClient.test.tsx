@@ -65,6 +65,10 @@ const data: AnalyticsBoardData = {
       { id: 'warm', label: '', runCount: 12, avgApparentTempC: 22, paceAtRefHr: 376, costSecPerKm: 17 },
     ],
   },
+  paceBests: [
+    { date: day(20), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, 3600, null, null].map((t) => (t === null ? null : Math.round(4 * t + 200))) },
+    { date: day(100), metres: [30, 60, 120, 180, 300, 600, 1200, 1800, null, null, null].map((t) => (t === null ? null : Math.round(3.9 * t + 190))) },
+  ],
   weeklyAvgKm: 26.4,
   ytd: {
     km: 1394,
@@ -327,6 +331,15 @@ describe('Analytics (v4.5)', () => {
     for (const label of labels) expect(label).toMatch(/^\d{1,2}:\d\d$/)
     expect(screen.getByTestId('pace-trend-card').querySelectorAll('[data-testid="pace-gridline"]')).toHaveLength(3)
     expect(screen.getByTestId('pace-trend-card').textContent).toContain('higher is faster')
+  })
+
+  it('fits critical speed to the 3-20 min bests and sets it against threshold pace and the weeks before', async () => {
+    await renderBoard()
+    await openTab(t.analytics.tabs.performance, 'pace-curve-card')
+    expect(screen.getByTestId('critical-speed').textContent).toBe(`4:10${t.units.perKm}`)
+    expect(screen.getByTestId('pace-curve-sentence').textContent).toBe(
+      [...t.analytics.cards.paceCurve.faster(13, '4:23'), ...t.analytics.cards.paceCurve.changed('6 s', true, '12 weeks')].join(''),
+    )
   })
 
   it('draws the prediction sparklines faster up', async () => {

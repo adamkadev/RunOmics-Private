@@ -17,6 +17,7 @@ import { yearOverYear } from '@/lib/yearOverYear'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
 import { getLoadPairs, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
 import { loadData } from '@/application/usecases/LoadData'
+import { getPaceBests } from '@/application/usecases/GetPaceCurve'
 
 export const revalidate = 3600
 
@@ -55,6 +56,7 @@ export default async function AnalyticsPage() {
           }
         : null,
     heat: getHeatImpact(),
+    paceBests: getPaceBests(),
     weeklyAvgKm: weeklyAverageKm(activities, today),
     // Goals' own figures: Volume summarises them and links there.
     ytd: {

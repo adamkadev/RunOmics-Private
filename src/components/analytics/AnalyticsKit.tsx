@@ -255,6 +255,7 @@ export function ChartScrub({
   readout,
   onShift,
   onActive,
+  positions,
   children,
   className,
 }: {
@@ -266,6 +267,8 @@ export function ChartScrub({
   onShift?: (step: 1 | -1) => void
   /** The slot under the finger, null once it lifts: a card's legend can follow it. */
   onActive?: (index: number | null) => void
+  /** A line's points at these shares of the width instead of evenly, as on a log scale. */
+  positions?: readonly number[]
   children: ReactNode
   className?: string
 }) {
@@ -286,6 +289,7 @@ export function ChartScrub({
     const rect = ref.current?.getBoundingClientRect()
     if (!rect || rect.width === 0 || count === 0) return null
     const frac = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    if (positions) return positions.reduce((best, at, i) => (Math.abs(at - frac) < Math.abs(positions[best]! - frac) ? i : best), 0)
     return mode === 'bar' ? Math.min(count - 1, Math.floor(frac * count)) : Math.round(frac * (count - 1))
   }
 
@@ -294,7 +298,7 @@ export function ChartScrub({
     gesture.current = null
   }
 
-  const x = active === null ? null : mode === 'bar' ? ((active + 0.5) / count) * 100 : count <= 1 ? 50 : (active / (count - 1)) * 100
+  const x = active === null ? null : positions ? positions[active]! * 100 : mode === 'bar' ? ((active + 0.5) / count) * 100 : count <= 1 ? 50 : (active / (count - 1)) * 100
 
   return (
     <div

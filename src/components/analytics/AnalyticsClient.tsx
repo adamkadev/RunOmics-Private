@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import type { WeeklyTrendPoint } from '@/application/usecases/GetAnalyticsData'
 import type { LoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
 import type { HeatImpactData } from '@/application/usecases/GetHeatImpact'
+import type { RunBests } from '@/domain/activity/paceCurve'
 import type { LoadPair } from '@/domain/training/loadTrend'
 import type { RecoveryDay } from '@/domain/training/recovery'
 import { ChartCardSkeleton } from '@/components/ui/Skeleton'
@@ -71,6 +72,8 @@ export interface AnalyticsBoardData {
   predictions: PredictionDay[]
   race: GoalRaceInput | null
   heat: HeatImpactData | null
+  /** Each run's duration bests, oldest first; empty until the runs are reprocessed. */
+  paceBests: RunBests[]
   ytd: YtdInput | null
   /** The app's one weekly average: the last 12 complete weeks. */
   weeklyAvgKm: number | null
@@ -193,6 +196,7 @@ export function AnalyticsClient({ data, today: serverToday }: { data: AnalyticsB
             predictions={data.predictions}
             race={data.race}
             heat={data.heat}
+            paceBests={data.paceBests}
           />
         )}
         {tab === 'volume' && weeks && <VolumeTab rows={rows} live={weeks.live} onShift={shift} ytd={data.ytd} weeklyAvgKm={data.weeklyAvgKm} />}
