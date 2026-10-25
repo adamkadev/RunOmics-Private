@@ -277,6 +277,7 @@ export const en = {
       less: 'Rare',
       more: 'Frequent',
       noRoutes: 'No routes for this filter',
+      loadFailed: 'The map couldn’t load.',
       mapUnavailable: 'Map unavailable - no map token configured',
       attribution: '© MapTiler · © OpenStreetMap contributors',
       // The ⓘ that opens the credits on every map.

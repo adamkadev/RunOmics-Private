@@ -21,7 +21,6 @@ import {
 import type { ActivitySummary, ActivityType } from '@/domain/activity/types'
 import { queryRuns, type ActivityQueryKind } from '@/domain/activity/activityQuery'
 import type { QualifiedEffort } from '@/application/usecases/GetRecords'
-import type { MapShellData } from '@/application/usecases/GetAllRoutes'
 import type { ExploreAreaRef } from '@/domain/explore/types'
 import type { ExplorePlan } from '@/components/explore/routeGenerator'
 import { cardClass } from '@/components/ui/Card'
@@ -164,7 +163,8 @@ interface Props {
   today: string
   /** By gear id. */
   shoeNames?: Record<string, string>
-  mapData: MapShellData
+  /** The map's data version and the cluster it opens on: the map's data is fetched only once the map is opened. */
+  map: { version: string; clusterId: string | null }
   exploreAreas?: ExploreAreaRef[]
   explorePlans?: ExplorePlan[]
   /** Unit id → the day it passed 90 %. */
@@ -179,7 +179,7 @@ export function ActivityListClient({
   qualifiedEffortsByActivityId = {},
   today: serverToday,
   shoeNames = {},
-  mapData,
+  map,
   exploreAreas,
   explorePlans,
   exploreCompletedSince,
@@ -360,7 +360,7 @@ export function ActivityListClient({
       <div {...viewTabs.panelProps} className="flex flex-col gap-3 outline-none">
         {view === 'map' ? (
           // This device's today, so a page kept from another day still finds the right plan.
-          <GlobalMapWrapper data={mapData} exploreAreas={exploreAreas} explorePlans={explorePlans} completedSince={exploreCompletedSince} today={today} />
+          <GlobalMapWrapper version={map.version} clusterId={map.clusterId} exploreAreas={exploreAreas} explorePlans={explorePlans} completedSince={exploreCompletedSince} today={today} />
         ) : (
           <>
 
