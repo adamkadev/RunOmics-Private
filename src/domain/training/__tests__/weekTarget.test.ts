@@ -29,6 +29,12 @@ describe('weekTarget', () => {
     expect(target.planSessions).toBe(5)
   })
 
+  it('gives no plan km when every session is timed, not 0', () => {
+    const timed = WEEK.map((d) => ({ ...d, plannedKm: null }))
+    expect(weekTarget(timed, TODAY, null).planKm).toBeNull()
+    expect(weekTarget(timed, TODAY, null).planSessions).toBe(5)
+  })
+
   it('keeps the volume goal a number of its own', () => {
     expect(weekTarget(WEEK, TODAY, 23).goalKm).toBe(23)
     expect(weekTarget(WEEK, TODAY, null).goalKm).toBeNull()
