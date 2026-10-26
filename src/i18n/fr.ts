@@ -2151,7 +2151,7 @@ export const fr = {
         sleep: { label: 'Sommeil', words: ['Très mauvais', 'Mauvais', 'Moyen', 'Bon', 'Excellent'] },
         soreness: { label: 'Courbatures', words: ['Très fortes', 'Fortes', 'Moyennes', 'Légères', 'Aucune'] },
         stress: { label: 'Stress', words: ['Très élevé', 'Élevé', 'Moyen', 'Faible', 'Aucun'] },
-        mood: { label: 'Moral', words: ['Très bas', 'Bas', 'Moyen', 'Bon', 'Excellent'] },
+        mood: { label: 'Humeur', words: ['Très mauvaise', 'Mauvaise', 'Moyenne', 'Bonne', 'Excellente'] },
       },
       scoreButton: (label: string, value: number, word: string) => `${label} ${value}, ${word}`,
       flags: { niggle: 'Douleur', ill: 'Malade', travel: 'En voyage' },
