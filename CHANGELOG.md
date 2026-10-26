@@ -4,6 +4,18 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A push that no device accepted now counts as failed, so the scheduled pushes
+  and alerts retry it instead of recording it as sent. Tokens FCM calls invalid
+  are deleted along with unregistered ones, and refusal codes are logged.
+
+- A Vercel build of a data repository fails unless the site is private with a
+  32-character `SESSION_SECRET`.
+
+- The unused `/firebase-messaging-sw.js` route is gone, and so is
+  `https://www.gstatic.com` from the CSP's `script-src`.
+
+- The French check-in's mood words are masculine: "Excellent", "Mauvais".
+
 - One rule now pairs a run with its coach session everywhere: the coach's
   adherence and run evaluation, Plan's done marks, a run's name and share
   card, and the guessed types Analytics reads. It takes the session the coach
