@@ -110,7 +110,7 @@ export function validateBootstrapDraft(draft: CoachingPlanDraft, rules: Bootstra
     validateWorkoutDraft(workout, `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`)
   ))
   validateDraftFrequency(draft, rules.runsPerWeek)
-  validateDraftVolume(draft, volumeBand(rules.context.trainingHistory), rules.availableWeekdays)
+  validateDraftVolume(draft, volumeBand(rules.context.trainingHistory), rules.availableWeekdays, undefined, rules.context.returnToRunning !== undefined)
   validateDraftIntensity(draft, intensityBand(rules.context.athlete.thresholdPaceSecPerKm), rules.availableWeekdays)
   validateBootstrapDraftSemantics(draft, rules.events, rules.context)
   validateAvailableWeekdays(draft.weeks.flatMap((week) => week.workouts), rules.availableWeekdays)
