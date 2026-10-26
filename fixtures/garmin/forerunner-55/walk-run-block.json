@@ -1,0 +1,602 @@
+{
+ "runs": [
+  {
+   "id": "walk-run-1",
+   "date": "2026-10-16",
+   "startTimeLocal": "2026-10-16T11:00:26",
+   "type": "VO2Max",
+   "typeSource": "runomics",
+   "sport": "running",
+   "description": "Footing · 6 × 3'",
+   "durationSeconds": 1751,
+   "distanceKm": 3.0,
+   "paceSecPerKm": 583.7,
+   "avgHeartRate": 159,
+   "rpe": 6,
+   "aerTrainingEffect": null,
+   "anaTrainingEffect": null,
+   "splits": [
+    {
+     "type": "interval_warmup",
+     "durationSec": 236,
+     "distanceM": 400.0,
+     "avgSpeedMs": 1.692,
+     "avgHr": 146
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 140,
+     "distanceM": 171.5,
+     "avgSpeedMs": 1.221,
+     "avgHr": 129
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 78.0,
+     "avgSpeedMs": 1.301,
+     "avgHr": 113
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 347.5,
+     "avgSpeedMs": 1.931,
+     "avgHr": 161
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 1,
+     "distanceM": 1.8,
+     "avgSpeedMs": 1.673,
+     "avgHr": 168
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 5,
+     "distanceM": 6.6,
+     "avgSpeedMs": 1.375,
+     "avgHr": 169
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 3,
+     "distanceM": 1.0,
+     "avgSpeedMs": 0.4,
+     "avgHr": 171
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 9,
+     "distanceM": 0.9,
+     "avgSpeedMs": 0.103,
+     "avgHr": 169
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 29,
+     "distanceM": 18.3,
+     "avgSpeedMs": 0.64,
+     "avgHr": 144
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 317.7,
+     "avgSpeedMs": 1.765,
+     "avgHr": 151
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 66.4,
+     "avgSpeedMs": 1.107,
+     "avgHr": 156
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 357.6,
+     "avgSpeedMs": 1.987,
+     "avgHr": 170
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 1,
+     "distanceM": 4.1,
+     "avgSpeedMs": 2.721,
+     "avgHr": 183
+    },
+    {
+     "type": "interval_cooldown",
+     "durationSec": 666,
+     "distanceM": 1231.9,
+     "avgSpeedMs": 1.848,
+     "avgHr": 173
+    }
+   ]
+  },
+  {
+   "id": "walk-run-2",
+   "date": "2026-10-18",
+   "startTimeLocal": "2026-10-18T13:41:16",
+   "type": "VO2Max",
+   "typeSource": "runomics",
+   "sport": "running",
+   "description": "Footing · 6 × 3'",
+   "durationSeconds": 1985,
+   "distanceKm": 3.75,
+   "paceSecPerKm": 529.3,
+   "avgHeartRate": 167,
+   "rpe": 3,
+   "aerTrainingEffect": null,
+   "anaTrainingEffect": null,
+   "splits": [
+    {
+     "type": "interval_warmup",
+     "durationSec": 212,
+     "distanceM": 400.0,
+     "avgSpeedMs": 1.889,
+     "avgHr": 150
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 357.3,
+     "avgSpeedMs": 1.985,
+     "avgHr": 174
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 72.2,
+     "avgSpeedMs": 1.204,
+     "avgHr": 157
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 372.7,
+     "avgSpeedMs": 2.07,
+     "avgHr": 170
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 85.3,
+     "avgSpeedMs": 1.423,
+     "avgHr": 166
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 342.5,
+     "avgSpeedMs": 1.903,
+     "avgHr": 167
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 82.6,
+     "avgSpeedMs": 1.376,
+     "avgHr": 163
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 353.9,
+     "avgSpeedMs": 1.966,
+     "avgHr": 169
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 82.4,
+     "avgSpeedMs": 1.374,
+     "avgHr": 164
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 348.7,
+     "avgSpeedMs": 1.937,
+     "avgHr": 165
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 82.0,
+     "avgSpeedMs": 1.366,
+     "avgHr": 160
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 374.8,
+     "avgSpeedMs": 2.082,
+     "avgHr": 173
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 82.1,
+     "avgSpeedMs": 1.368,
+     "avgHr": 164
+    },
+    {
+     "type": "interval_cooldown",
+     "durationSec": 334,
+     "distanceM": 717.3,
+     "avgSpeedMs": 2.15,
+     "avgHr": 174
+    }
+   ]
+  },
+  {
+   "id": "walk-run-3",
+   "date": "2026-10-21",
+   "startTimeLocal": "2026-10-21T12:19:29",
+   "type": "VO2Max",
+   "typeSource": "runomics",
+   "sport": "running",
+   "description": "Footing · 6 × 3'",
+   "durationSeconds": 2001,
+   "distanceKm": 3.66,
+   "paceSecPerKm": 546.7,
+   "avgHeartRate": 173,
+   "rpe": 7,
+   "aerTrainingEffect": null,
+   "anaTrainingEffect": null,
+   "splits": [
+    {
+     "type": "interval_warmup",
+     "durationSec": 212,
+     "distanceM": 400.0,
+     "avgSpeedMs": 1.889,
+     "avgHr": 161
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 377.3,
+     "avgSpeedMs": 2.096,
+     "avgHr": 185
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 74.3,
+     "avgSpeedMs": 1.239,
+     "avgHr": 172
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 357.3,
+     "avgSpeedMs": 1.985,
+     "avgHr": 179
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 79.0,
+     "avgSpeedMs": 1.317,
+     "avgHr": 169
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 340.4,
+     "avgSpeedMs": 1.891,
+     "avgHr": 172
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 82.1,
+     "avgSpeedMs": 1.368,
+     "avgHr": 164
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 368.3,
+     "avgSpeedMs": 2.046,
+     "avgHr": 177
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 70.9,
+     "avgSpeedMs": 1.182,
+     "avgHr": 172
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 350.3,
+     "avgSpeedMs": 1.946,
+     "avgHr": 177
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 83.0,
+     "avgSpeedMs": 1.384,
+     "avgHr": 172
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 319.6,
+     "avgSpeedMs": 1.776,
+     "avgHr": 167
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 77.9,
+     "avgSpeedMs": 1.298,
+     "avgHr": 172
+    },
+    {
+     "type": "interval_cooldown",
+     "durationSec": 349,
+     "distanceM": 680.4,
+     "avgSpeedMs": 1.949,
+     "avgHr": 176
+    }
+   ]
+  },
+  {
+   "id": "walk-run-4",
+   "date": "2026-10-23",
+   "startTimeLocal": "2026-10-23T12:27:40",
+   "type": "VO2Max",
+   "typeSource": "runomics",
+   "sport": "running",
+   "description": "Footing · 6 × 3'",
+   "durationSeconds": 1911,
+   "distanceKm": 3.21,
+   "paceSecPerKm": 595.3,
+   "avgHeartRate": 161,
+   "rpe": 2,
+   "aerTrainingEffect": null,
+   "anaTrainingEffect": null,
+   "splits": [
+    {
+     "type": "interval_warmup",
+     "durationSec": 257,
+     "distanceM": 400.0,
+     "avgSpeedMs": 1.559,
+     "avgHr": 146
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 326.4,
+     "avgSpeedMs": 1.813,
+     "avgHr": 171
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 75.4,
+     "avgSpeedMs": 1.256,
+     "avgHr": 158
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 300.9,
+     "avgSpeedMs": 1.672,
+     "avgHr": 156
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 94.0,
+     "avgSpeedMs": 1.567,
+     "avgHr": 152
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 325.9,
+     "avgSpeedMs": 1.811,
+     "avgHr": 163
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 74.5,
+     "avgSpeedMs": 1.242,
+     "avgHr": 158
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 320.1,
+     "avgSpeedMs": 1.778,
+     "avgHr": 161
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 85.7,
+     "avgSpeedMs": 1.428,
+     "avgHr": 160
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 299.2,
+     "avgSpeedMs": 1.662,
+     "avgHr": 161
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 84.8,
+     "avgSpeedMs": 1.413,
+     "avgHr": 162
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 180,
+     "distanceM": 327.5,
+     "avgSpeedMs": 1.82,
+     "avgHr": 170
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 84.5,
+     "avgSpeedMs": 1.408,
+     "avgHr": 174
+    },
+    {
+     "type": "interval_cooldown",
+     "durationSec": 215,
+     "distanceM": 412.8,
+     "avgSpeedMs": 1.923,
+     "avgHr": 167
+    }
+   ]
+  },
+  {
+   "id": "walk-run-5",
+   "date": "2026-10-25",
+   "startTimeLocal": "2026-10-25T11:31:39",
+   "type": "VO2Max",
+   "typeSource": "runomics",
+   "sport": "running",
+   "description": "Footing · 5 × 4'",
+   "durationSeconds": 1911,
+   "distanceKm": 3.67,
+   "paceSecPerKm": 520.7,
+   "avgHeartRate": 172,
+   "rpe": 5,
+   "aerTrainingEffect": null,
+   "anaTrainingEffect": null,
+   "splits": [
+    {
+     "type": "interval_warmup",
+     "durationSec": 208,
+     "distanceM": 400.0,
+     "avgSpeedMs": 1.922,
+     "avgHr": 157
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 240,
+     "distanceM": 485.1,
+     "avgSpeedMs": 2.021,
+     "avgHr": 182
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 77.9,
+     "avgSpeedMs": 1.298,
+     "avgHr": 169
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 240,
+     "distanceM": 494.5,
+     "avgSpeedMs": 2.06,
+     "avgHr": 174
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 79.8,
+     "avgSpeedMs": 1.33,
+     "avgHr": 170
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 240,
+     "distanceM": 488.5,
+     "avgSpeedMs": 2.035,
+     "avgHr": 171
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 82.0,
+     "avgSpeedMs": 1.367,
+     "avgHr": 170
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 240,
+     "distanceM": 491.3,
+     "avgSpeedMs": 2.047,
+     "avgHr": 174
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 85.9,
+     "avgSpeedMs": 1.432,
+     "avgHr": 173
+    },
+    {
+     "type": "interval_active",
+     "durationSec": 240,
+     "distanceM": 497.8,
+     "avgSpeedMs": 2.074,
+     "avgHr": 174
+    },
+    {
+     "type": "interval_recovery",
+     "durationSec": 60,
+     "distanceM": 83.9,
+     "avgSpeedMs": 1.398,
+     "avgHr": 163
+    },
+    {
+     "type": "interval_cooldown",
+     "durationSec": 203,
+     "distanceM": 408.5,
+     "avgSpeedMs": 2.012,
+     "avgHr": 172
+    }
+   ]
+  }
+ ],
+ "sessions": [
+  {
+   "id": "session-1",
+   "date": "2026-10-16",
+   "type": "easy",
+   "title": "Footing · 6 × 3′"
+  },
+  {
+   "id": "session-2",
+   "date": "2026-10-18",
+   "type": "easy",
+   "title": "Footing · 6 × 3′"
+  },
+  {
+   "id": "session-3",
+   "date": "2026-10-21",
+   "type": "easy",
+   "title": "Footing · 6 × 3′"
+  },
+  {
+   "id": "session-4",
+   "date": "2026-10-23",
+   "type": "easy",
+   "title": "Footing · 6 × 3′"
+  },
+  {
+   "id": "session-5",
+   "date": "2026-10-25",
+   "type": "easy",
+   "title": "Footing · 5 × 4′"
+  }
+ ]
+}

@@ -4,7 +4,6 @@ import { validateAdaptation, validateBootstrapDraft } from './draftRules'
 import type { Activity } from '@/domain/activity/types'
 import {
   COACHING_SCHEMA_VERSION,
-  COACHING_TO_ACTIVITY_TYPE,
   type CoachDecision,
   type CoachPlanChange,
   type CoachState,
@@ -21,6 +20,7 @@ import {
   type WorkoutPrescription,
 } from '@/domain/coaching/types'
 import { applyCoachDecision, getFutureSnapshot } from '@/domain/coaching/lifecycle'
+import { sessionForRun } from '@/domain/coaching/sessionForRun'
 import { isoWeekWindows, weekWindowIndex } from '@/domain/coaching/weekWindows'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
 import { GENERAL_PREPARATION, macrocycleOf, resolveMacrocycleStart } from '@/domain/coaching/macrocycle'
@@ -420,10 +420,11 @@ function firstIntensityTarget(blocks: WorkoutBlock[]): Pick<AggregateWorkoutComp
 }
 
 function matchPrescription(plan: CoachingPlan, activity: Activity): { prescription: WorkoutPrescription | null; status: WorkoutEvaluation['matchStatus'] } {
-  const sameDate = plan.weeks.flatMap((week) => week.workouts).filter((workout) => workout.status !== 'cancelled' && workout.date === activity.date.slice(0, 10))
-  const matched = sameDate.find((workout) => COACHING_TO_ACTIVITY_TYPE[workout.type] === activity.type)
+  const workouts = plan.weeks.flatMap((week) => week.workouts)
+  const matched = sessionForRun(activity, workouts.map((prescription) => ({ prescription, activityId: null })))
   if (matched) return { prescription: matched, status: 'matched' }
-  return sameDate[0] ? { prescription: sameDate[0], status: 'date_only' } : { prescription: null, status: 'unmatched' }
+  const sameDate = workouts.find((workout) => workout.status !== 'cancelled' && workout.date === activity.date.slice(0, 10))
+  return sameDate ? { prescription: sameDate, status: 'date_only' } : { prescription: null, status: 'unmatched' }
 }
 
 function evaluationFor(

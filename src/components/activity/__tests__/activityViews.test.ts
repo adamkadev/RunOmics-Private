@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Activity, ActivitySplit } from '@/domain/activity/types'
 import type { WorkoutPrescription } from '@/domain/coaching/types'
-import { activityDetailView, runName, sessionTypes, shareActivity, shareSession, shownType } from '../activityViews'
+import { activityDetailView, runName, sessionTypes, shareActivity, shownType } from '../activityViews'
 
 const ACTIVITY = {
   id: '90000273',
@@ -169,36 +169,6 @@ describe('the share card of an interval session (design review, Oct 2026)', () =
   it('has no reps for an easy run, nor for one the watch kept no rep laps for', () => {
     expect(shareActivity({ ...run, type: 'Base' }).reps).toBeNull()
     expect(shareActivity({ ...run, splits: null }, SESSION).reps).toBeNull()
-  })
-})
-
-describe('shareSession', () => {
-  const at = (date: string, type: string, extra: object = {}) =>
-    ({ prescription: { id: `${date}-${type}`, date, type, status: 'planned', ...extra } as unknown as WorkoutPrescription, activityId: null as string | null })
-  const run = { id: 'run-1', date: '2026-10-06T07:00:00', type: 'Tempo' as const }
-
-  it('takes the session the coach matched the run to', () => {
-    const matched = { ...at('2026-10-01', 'tempo'), activityId: 'run-1' }
-    expect(shareSession([at('2026-10-06', 'threshold'), matched], run)).toBe(matched.prescription)
-  })
-
-  // The coach matches on kind, so a threshold session the watch filed as tempo matches nothing.
-  it('else takes the one quality session set for a quality run\'s day', () => {
-    const day = at('2026-10-06', 'threshold')
-    expect(shareSession([at('2026-10-05', 'easy'), day], run)).toBe(day.prescription)
-  })
-
-  // As Today pairs them: the strides day's easy run is that session.
-  it('takes the day\'s easy session for an easy run', () => {
-    const day = at('2026-10-06', 'easy')
-    expect(shareSession([day], { ...run, type: 'Base' })).toBe(day.prescription)
-  })
-
-  it('takes none for an easy run on a hard day, a cancelled session, or a day of two', () => {
-    expect(shareSession([at('2026-10-06', 'threshold')], { ...run, type: 'Base' })).toBeNull()
-    expect(shareSession([at('2026-10-06', 'threshold', { status: 'cancelled' })], run)).toBeNull()
-    expect(shareSession([at('2026-10-06', 'easy')], run)).toBeNull()
-    expect(shareSession([at('2026-10-06', 'threshold'), at('2026-10-06', 'tempo')], run)).toBeNull()
   })
 })
 

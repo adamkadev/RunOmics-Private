@@ -8,6 +8,7 @@ import { workoutSummary } from '@/components/plan/workoutSummary'
 import { prescriptionDistanceMeters, prescriptionDuration, prescriptionStructure } from '@/components/coaching/presentation'
 import { activityTitle, intendedType } from '@/lib/activityTitle'
 import { hillyGap } from '@/domain/activity/gradeAdjusted'
+import { sessionForRun } from '@/domain/coaching/sessionForRun'
 
 /** Only the fields a client component reads: every field handed to it goes into the page payload, drawn or not. */
 const DETAIL_FIELDS = [
@@ -125,31 +126,6 @@ export function shareReps(
   }
 }
 
-function family(type: ActivityType): 'easy' | 'quality' | null {
-  if (type === 'Base') return 'easy'
-  return isIntervalType(type) ? 'quality' : null
-}
-
-/**
- * Falls back to the day's one session of the run's kind, as Today pairs them: the coach matches on exact kind, so a
- * threshold session the watch filed as tempo matches nothing.
- */
-export function shareSession(
-  workouts: readonly { prescription: WorkoutPrescription; activityId: string | null }[],
-  activity: Pick<Activity, 'id' | 'date' | 'type'>,
-): WorkoutPrescription | null {
-  const matched = workouts.find((w) => w.activityId === activity.id)
-  if (matched) return matched.prescription
-  const kind = family(activity.type)
-  if (!kind) return null
-  const day = workouts.filter((w) =>
-    w.activityId === null &&
-    w.prescription.status !== 'cancelled' &&
-    w.prescription.date === activity.date.slice(0, 10) &&
-    family(COACHING_TO_ACTIVITY_TYPE[w.prescription.type]) === kind)
-  return day.length === 1 ? day[0]!.prescription : null
-}
-
 /**
  * A threshold session the watch filed as tempo, its heart rate too low by Garmin's reading, is still shown as a
  * threshold session; the run itself keeps the watch's type, which analytics and filters read.
@@ -164,7 +140,7 @@ export function sessionTypes(
 ): Record<string, ActivityType> {
   const types: Record<string, ActivityType> = {}
   for (const activity of activities) {
-    const type = shownType(activity, shareSession(workouts, activity))
+    const type = shownType(activity, sessionForRun(activity, workouts))
     if (type !== activity.type) types[activity.id] = type
   }
   return types

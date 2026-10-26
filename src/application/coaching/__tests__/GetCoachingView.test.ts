@@ -2,7 +2,8 @@ import { execFileSync } from 'child_process'
 import { describe, expect, it } from 'vitest'
 import { plan, workout } from '@/domain/coaching/__tests__/fixtures'
 import type { WorkoutEvaluation } from '@/domain/coaching/types'
-import { getCoachingOverview, getTodayPrescription, sessionsAcrossPlans } from '../GetCoachingView'
+import { sessionsAcrossPlans } from '@/domain/coaching/sessionForRun'
+import { getCoachingOverview, getTodayPrescription } from '../GetCoachingView'
 
 const repository = { getCurrentPlan: () => plan(), getDecisions: () => [], getEvaluations: () => [] }
 

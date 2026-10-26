@@ -1,5 +1,6 @@
 import type { Activity } from '@/domain/activity/types'
 import { withEffectiveTypes } from '@/domain/activity/effectiveType'
+import { sessionForRun, sessionsAcrossPlans, type RunSession } from '@/domain/coaching/sessionForRun'
 import type { CoachingPlan, WorkoutEvaluation, WorkoutPrescription } from '@/domain/coaching/types'
 import type { CoachingRepository } from '@/application/ports/CoachingRepository'
 import { appTodayIso } from '@/lib/calendarDate'
@@ -20,10 +21,14 @@ export interface CoachingOverview {
   workouts: PrescriptionView[]
 }
 
-function findCompletedActivity(prescription: WorkoutPrescription, evaluations: WorkoutEvaluation[], activities: Activity[]): Activity | null {
-  const evaluation = evaluations.find((candidate) => candidate.prescriptionId === prescription.id && candidate.matchStatus === 'matched')
-  if (evaluation) return activities.find((activity) => activity.id === evaluation.activityId) ?? null
-  return null
+function completedRuns(plan: CoachingPlan, evaluations: WorkoutEvaluation[], activities: Activity[]): Map<string, Activity> {
+  const sessions = sessionsAcrossPlans([plan], evaluations)
+  const runs = new Map<string, Activity>()
+  for (const activity of activities) {
+    const session = sessionForRun(activity, sessions)
+    if (session && !runs.has(session.id)) runs.set(session.id, activity)
+  }
+  return runs
 }
 
 export function buildCoachingOverview(
@@ -32,8 +37,9 @@ export function buildCoachingOverview(
   activities: Activity[],
   today: string,
 ): CoachingOverview {
+  const runs = completedRuns(plan, evaluations, activities)
   const views = plan.weeks.flatMap((week) => week.workouts).map((prescription): PrescriptionView => {
-    const activity = findCompletedActivity(prescription, evaluations, activities)
+    const activity = runs.get(prescription.id) ?? null
     const state: PrescriptionDisplayState = prescription.status === 'cancelled'
       ? 'cancelled'
       : activity
@@ -58,28 +64,6 @@ export function getCoachingOverview(
   const plan = repository.getCurrentPlan()
   if (!plan) return null
   return buildCoachingOverview(plan, repository.getEvaluations(), getAllActivities(), today)
-}
-
-export interface RunSession {
-  prescription: WorkoutPrescription
-  activityId: string | null
-}
-
-/** `plans` newest first; an older plan's session counts only on a day no newer plan's weeks cover. */
-export function sessionsAcrossPlans(plans: readonly CoachingPlan[], evaluations: WorkoutEvaluation[]): RunSession[] {
-  const matched = new Map(evaluations
-    .filter((evaluation) => evaluation.matchStatus === 'matched' && evaluation.prescriptionId !== null)
-    .map((evaluation) => [evaluation.prescriptionId!, evaluation.activityId]))
-  const covered: { startDate: string; endDate: string }[] = []
-  const sessions: RunSession[] = []
-  for (const plan of plans) {
-    for (const prescription of plan.weeks.flatMap((week) => week.workouts)) {
-      if (covered.some((week) => prescription.date >= week.startDate && prescription.date <= week.endDate)) continue
-      sessions.push({ prescription, activityId: matched.get(prescription.id) ?? null })
-    }
-    covered.push(...plan.weeks)
-  }
-  return sessions
 }
 
 /** An archive that fails to parse costs only the superseded blocks, never the page. */
