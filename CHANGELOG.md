@@ -4,6 +4,9 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The heat map looks as it did before: full tracks at the phone's full
+  resolution again, after a speed-up had thinned its glow.
+
 - A 12-week checkpoint: Plan's "General preparation" card opens a page
   that sets this cycle against the 12 weeks before it - km and runs a
   week, controlled threshold time and pace guides, heat-adjusted
@@ -75,8 +78,7 @@ All notable changes to this project are documented in this file.
 - Faster on the iPhone: a page shows as it streams instead of after a
   full download; owner-only parts no longer wait on a Google frame; the
   Activities list and Plan send less than half the data; the map loads
-  its lines when opened, with a fifth of the points, and keeps them until
-  the next sync; the heat map draws only the runs in view; scrolling does
+  its lines when opened and keeps them until the next sync; scrolling does
   far less work per frame; dates and numbers format about 40 times
   faster; the "Same route" chart drops a 100 KB library.
 

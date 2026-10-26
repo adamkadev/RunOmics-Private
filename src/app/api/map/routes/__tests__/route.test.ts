@@ -3,7 +3,6 @@ import { NextRequest } from 'next/server'
 
 vi.mock('@/application/usecases/GetAllRoutes', () => ({
   getAllRoutes: () => DATA,
-  getDrawnRoute: (i: number) => DATA.routes[i]?.slice(0, 1),
   getMapVersion: () => '1.current',
 }))
 
@@ -39,10 +38,6 @@ describe('GET /api/map/routes', () => {
   it('keeps an answer for good when it names the current data version, and never one for an older version', async () => {
     expect((await GET(request('cluster=home&v=1.current'))).headers.get('cache-control')).toBe('private, max-age=31536000, immutable')
     expect((await GET(request('cluster=home&v=1.older'))).headers.get('cache-control')).toBe('private, no-cache')
-  })
-
-  it('draws from the simplified tracks only when asked to', async () => {
-    expect((await (await GET(request('cluster=home&draw=1'))).json()).routes).toEqual({ 0: [[49.61, 6.13]], 2: [[49.6, 6.1]] })
   })
 
   it('does not cache an unknown cluster, which a later deployment may add', async () => {

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { getAllRoutes, getDrawnRoute, getMapVersion } from '@/application/usecases/GetAllRoutes'
+import { getAllRoutes, getMapVersion } from '@/application/usecases/GetAllRoutes'
 import { loadData } from '@/application/usecases/LoadData'
 import { encodePolyline } from '@/lib/polyline'
 import { build, versionedAnswer, type Built } from '../versionedAnswer'
@@ -11,7 +11,6 @@ export async function GET(req: NextRequest) {
   await loadData()
   const clusterId = req.nextUrl.searchParams.get('cluster')
   const encoded = req.nextUrl.searchParams.get('enc') === 'p5'
-  const drawn = req.nextUrl.searchParams.get('draw') === '1'
   const data = getAllRoutes()
   const cluster = data.clusters.find((c) => c.id === clusterId)
 
@@ -21,7 +20,7 @@ export async function GET(req: NextRequest) {
 
   let byKey = built.get(data)
   if (!byKey) built.set(data, (byKey = new Map()))
-  const key = `${cluster.id}|${encoded ? 'p5' : 'json'}|${drawn ? 'drawn' : 'full'}`
+  const key = `${cluster.id}|${encoded ? 'p5' : 'json'}`
   let answer = byKey.get(key)
   if (!answer) {
     // A page built before this deployment holds route indices a newer run may have shifted, and the Explore worker
@@ -29,7 +28,7 @@ export async function GET(req: NextRequest) {
     const routes: Record<number, [number, number][] | string> = {}
     const ids: Record<number, string> = {}
     for (const i of cluster.routeIndices) {
-      const coords = drawn ? getDrawnRoute(i) : data.routes[i]
+      const coords = data.routes[i]
       const id = data.routeMeta[i]?.id
       if (!coords) continue
       routes[i] = encoded ? encodePolyline(coords) : coords
