@@ -1,6 +1,6 @@
 import { getShoeStats } from '@/application/usecases/GetShoeStats'
 import { getShoeComparison } from '@/application/usecases/GetShoeComparison'
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoachingView'
 import { ShoesGrid, pickHeroShoe } from '@/components/shoes/ShoesGrid'
 import { ShoeComparison } from '@/components/shoes/ShoeComparison'
 import { BackButton } from '@/components/ui/BackButton'
@@ -22,7 +22,7 @@ export default async function ShoesPage() {
   const hero = pickHeroShoe(shoes)
   const insights: Record<string, string> = {}
   if (hero) {
-    const qualityRuns = getAllActivities()
+    const qualityRuns = getActivitiesWithEffectiveTypes()
       .filter((a) => a.type === 'Tempo' || a.type === 'Threshold')
       .slice(0, QUALITY_RUNS_WINDOW)
     const usedCount = qualityRuns.filter((a) => a.gearId === hero.gearId).length

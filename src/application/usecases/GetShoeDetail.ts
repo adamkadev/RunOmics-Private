@@ -1,4 +1,4 @@
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoachingView'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import type { ActivityType } from '@/domain/activity/types'
 import { kmPerWeek as computeKmPerWeek, wearPercent } from '@/domain/shoe/wearStatus'
@@ -25,7 +25,7 @@ export function getShoeDetail(gearId: string): ShoeDetail | null {
   const registered = getShoeRegistry()[gearId]
   if (!registered) return null
 
-  const activities = getAllActivities()
+  const activities = getActivitiesWithEffectiveTypes()
     .filter((a) => a.gearId === gearId)
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 

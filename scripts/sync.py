@@ -35,6 +35,7 @@ from sync_workouts import enrich_description_from_plan, fetch_planned_workouts, 
 from sync_upcoming_races import fetch_upcoming_races, write_upcoming_races
 from processing.fit_parser import ParsedFit, parse_fit
 from processing.mapper import extract_gear_id, local_start_time, map_activity, parse_hr_zones
+from processing.type_context import load_type_context
 from processing.weather import WeatherClient, weather_for_activity
 from repository.json_store import JsonActivityStore, PlannedWorkoutStore
 from repository.history_file import HistoryFileError, read_history, write_history
@@ -86,6 +87,7 @@ def main() -> int:
     existing_ids = store.get_existing_ids()
     print(f"activities.json: {store.count()} existing activities")
     weather_client = WeatherClient()
+    type_context = load_type_context(_DATA_DIR)
     failed_steps: list[str] = []
 
     with ExitStack() as stack:
@@ -173,7 +175,7 @@ def main() -> int:
 
                     activity_data = map_activity(
                         detail, parsed, hr_zones=hr_zones, file_name=file_name, gear=gear,
-                        weather=weather,
+                        weather=weather, type_context=type_context,
                     )
                     enrich_description_from_plan(activity_data, planned_store)
                 except Exception as exc:

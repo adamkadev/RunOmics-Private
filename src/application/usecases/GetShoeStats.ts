@@ -1,5 +1,5 @@
 import type { ActivityType } from '@/domain/activity/types'
-import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
+import { getActivitiesWithEffectiveTypes } from '@/application/coaching/GetCoachingView'
 import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepository'
 import { kmPerWeek, wearPercent } from '@/domain/shoe/wearStatus'
 import { round } from '@/lib/math'
@@ -23,7 +23,7 @@ export interface ShoeStats {
 }
 
 export function getShoeStats(): ShoeStats[] {
-  const activities = getAllActivities()
+  const activities = getActivitiesWithEffectiveTypes()
 
   const byGear = new Map<string, number>()
   const sessionsByGear = new Map<string, number>()
@@ -36,7 +36,7 @@ export function getShoeStats(): ShoeStats[] {
     byGear.set(a.gearId, (byGear.get(a.gearId) ?? 0) + a.distanceKm)
     sessionsByGear.set(a.gearId, (sessionsByGear.get(a.gearId) ?? 0) + 1)
     if (!lastUsedByGear.has(a.gearId)) lastUsedByGear.set(a.gearId, a.date)
-    // getAllActivities is newest-first: the first date seen per gear is its last use.
+    // Runs come newest-first: the first date seen per gear is its last use.
     const earliest = firstUsedByGear.get(a.gearId)
     if (!earliest || a.date < earliest) firstUsedByGear.set(a.gearId, a.date)
     const types = typesByGear.get(a.gearId) ?? new Map<ActivityType, number>()
