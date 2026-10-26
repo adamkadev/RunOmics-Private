@@ -32,6 +32,17 @@ export function sessionSecret(env: Env): string | null {
   return secret && secret.length >= MIN_SECRET_LENGTH ? secret : null
 }
 
+/** The build's check, because isSitePrivate defaults to off: a Vercel deployment of the athlete's repo must be gated. */
+export function publicRealDataError(env: Env): string | null {
+  if (env.VERCEL !== '1' || !env.RUNOMICS_DATA_REPO_URL?.trim()) return null
+  const missing = [
+    !isSitePrivate(env) && 'RUNOMICS_PRIVATE=1',
+    !sessionSecret(env) && `SESSION_SECRET (${MIN_SECRET_LENGTH}+ characters)`,
+  ].filter(Boolean)
+  if (!missing.length) return null
+  return `This Vercel build serves the data repository's real data without ${missing.join(' and ')}: it would be public.`
+}
+
 export function viewerEmails(env: Env): string[] {
   return (env.RUNOMICS_VIEWERS ?? '')
     .split(/[\s,;]+/)

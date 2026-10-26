@@ -23,6 +23,23 @@ matched but whose token carried no claim was shown the editor and then refused b
 with a 403. An email is also not something the rules can read, and a claim survives an email
 change, so the claim is the side that wins.
 
+## Private site
+
+With `RUNOMICS_PRIVATE=1`, `src/proxy.ts` puts every page and API route behind Google
+sign-in (`src/lib/siteAccess.ts`). Only `/sign-in`, `/api/session` and `/api/internal/*` stay
+open, and each internal route checks its own secret. `/api/session` verifies the Firebase ID
+token once and sets a cookie signed with `SESSION_SECRET` (32 characters or more), valid for
+30 days. After that, the proxy checks only the signature. The owner and the Google accounts
+in `RUNOMICS_VIEWERS` (verified emails only) get in. If the site is private but has no usable
+secret, nobody gets in.
+
+`isSitePrivate()` defaults to off, so the demo builds without any setup. To make sure a real
+athlete's site is never public by mistake, `npm run validate:data` (run by `prebuild`) fails
+any Vercel build (`VERCEL=1`) that has `RUNOMICS_DATA_REPO_URL` set but is missing
+`RUNOMICS_PRIVATE=1` or a 32-character `SESSION_SECRET`. On both athlete projects the three
+variables are scoped to Production only, so Preview builds use the demo data. If you give
+Preview the repository URL, give it the other two as well, or the build will fail.
+
 ## Firestore rules
 
 `firestore.rules` gives every collection the phone touches to the owner alone (the server reads
