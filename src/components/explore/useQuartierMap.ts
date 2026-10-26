@@ -20,6 +20,8 @@ export const TAP_OPEN_DELAY_MS = 300
 
 /** A popover open over the map (the place menu, the credits) says so on its trigger. */
 const OPEN_POPOVER = '[aria-expanded="true"]'
+/** A panel's own disclosure (the route panel's options) opens in place, not over the map. */
+const PANEL = '[role="dialog"]'
 
 /**
  * A tap that only closes a popover over the map is that and nothing more. Listens once per map, not
@@ -52,7 +54,7 @@ export function useDistrictsTap(
     const container = map.getContainer()
     const root = container.closest('[data-map-root]') ?? container
     const press = () => {
-      dismissing = root.querySelector(OPEN_POPOVER) !== null
+      dismissing = [...root.querySelectorAll(OPEN_POPOVER)].some((trigger) => !trigger.closest(PANEL))
     }
     const click = (e: MapMouseEvent) => {
       cancel()
