@@ -105,14 +105,31 @@ export interface BootstrapRules {
   events: BootstrapEvents
 }
 
+/** The watch executes one target a step and pace wins, so a zone beside a pace never reaches it. */
+function validateReturnTargets(draft: CoachingPlanDraft): void {
+  draft.weeks.forEach((week, weekIndex) => week.workouts.forEach((workout, workoutIndex) => {
+    const label = `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`
+    for (const step of workout.blocks.flatMap((block) => block.kind === 'repeat' ? block.steps : [block])) {
+      const { paceSecPerKm, hrBpm, hrZone } = step.target
+      if (step.kind === 'recovery' && (paceSecPerKm || hrBpm || hrZone !== undefined)) {
+        throw new Error(`${label}.blocks: a walk break in a return carries no pace or heart-rate target`)
+      }
+      if (paceSecPerKm && (hrBpm || hrZone !== undefined)) {
+        throw new Error(`${label}.blocks: give a running interval its heart-rate zone or its pace range, not both; the watch executes the pace`)
+      }
+    }
+  }))
+}
+
 export function validateBootstrapDraft(draft: CoachingPlanDraft, rules: BootstrapRules): void {
   draft.weeks.forEach((week, weekIndex) => week.workouts.forEach((workout, workoutIndex) =>
     validateWorkoutDraft(workout, `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`)
   ))
   validateDraftFrequency(draft, rules.runsPerWeek)
-  validateDraftVolume(draft, volumeBand(rules.context.trainingHistory), rules.availableWeekdays)
+  validateDraftVolume(draft, volumeBand(rules.context.trainingHistory), rules.availableWeekdays, undefined, rules.context.returnToRunning !== undefined)
   validateDraftIntensity(draft, intensityBand(rules.context.athlete.thresholdPaceSecPerKm), rules.availableWeekdays)
   validateBootstrapDraftSemantics(draft, rules.events, rules.context)
+  if (rules.context.returnToRunning) validateReturnTargets(draft)
   validateAvailableWeekdays(draft.weeks.flatMap((week) => week.workouts), rules.availableWeekdays)
   // Last: a name is the cheapest thing to put right, so the substance is
   // judged first and a repair is asked for it first.

@@ -25,6 +25,8 @@ const ISO_MONTH = /^\d{4}-\d{2}$/
 // Kept beside the check rather than imported from the domain, so the contract
 // is readable in one place and cannot drift silently with a UI-only change.
 const KNOWN_ACTIVITY_TYPES = ['Sprint', 'Anaerobic', 'VO2Max', 'Threshold', 'Tempo', 'Base', 'Race']
+// The coach branches on the reason, so a misspelt one would silently skip a return to running.
+const KNOWN_BREAK_REASONS = ['injury', 'illness', 'pregnancy', 'heat', 'travel', 'personal']
 
 const NULLABLE_NUMBERS = [
   'paceSecPerKm', 'avgHeartRate', 'rpe', 'elevationGain', 'aerTrainingEffect', 'anaTrainingEffect',
@@ -239,6 +241,12 @@ function checkAthlete(dir: string, problems: Problem[]) {
     if (breaks !== undefined && !(Array.isArray(breaks) && breaks.every((item) =>
       isObject(item) && isIsoDate(item.start) && isIsoDate(item.end) && typeof item.reason === 'string'))) {
       report.error('$.trainingBreaks', 'expected [{ start, end, reason }] with YYYY-MM-DD dates')
+    } else {
+      breaks?.forEach((item, index) => {
+        if (!KNOWN_BREAK_REASONS.includes(item.reason as string)) {
+          report.warn(`$.trainingBreaks[${index}].reason`, `unknown reason "${String(item.reason)}"; expected ${KNOWN_BREAK_REASONS.join(', ')}`)
+        }
+      })
     }
   }
   problems.push(...report.problems)

@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { DAY_MS } from '@/lib/calendarDate'
 import { validateTrainingFrequency } from './frequency'
 import { validateAdaptation, validateBootstrapDraft } from './draftRules'
@@ -63,6 +64,8 @@ function provenance(source: Source, trigger: CoachingProvenance['trigger'], crea
     ...(decisionId ? { decisionId } : {}),
   }
 }
+
+const guidanceHash = (guidance: string) => createHash('sha256').update(guidance).digest('hex').slice(0, 24)
 
 function raceIdentity(race: CoachingContext['upcomingRaces'][number]): string {
   return race.garminEventUuid
@@ -554,7 +557,10 @@ export async function createBootstrapProposal(
       : 'Created a general preparation block with no target race.',
     evidence: [],
     changes: [{ kind: 'replace_future', effectiveDate: strategy.planningStartDate, beforeWeeks: [], afterWeeks: proposedPlan.weeks }],
-    provenance: provenance(sourceOf(services), 'bootstrap', createdAt),
+    provenance: {
+      ...provenance(sourceOf(services), 'bootstrap', createdAt),
+      ...(guidance ? { guidanceHash: guidanceHash(guidance) } : {}),
+    },
   })
   return {
     schemaVersion: 1,

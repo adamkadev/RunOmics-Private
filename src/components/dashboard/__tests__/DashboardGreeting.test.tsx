@@ -22,6 +22,7 @@ describe('DashboardGreeting', () => {
   afterEach(() => {
     owner.signedIn = false
     owner.phase = { kind: 'idle' }
+    owner.handleSync.mockClear()
   })
 
   it('heads the page with its title', () => {
@@ -64,15 +65,13 @@ describe('DashboardGreeting', () => {
     expect(button.className).toContain('size-11')
     expect(button.className).toContain('rounded-full')
     expect(button.textContent).toBe('')
-    expect(screen.getByTestId('sync-note').textContent).toBe('')
-    // One 44 pt glass capsule with the avatar, the sync's words outside it.
+    expect(screen.queryByRole('status')).toBeNull()
     const capsule = screen.getByTestId('today-capsule')
     expect(capsule.className).toMatch(/(^|\s)lg(\s|$)/)
     // The glass layers first, then the ↻.
     expect([...capsule.children].filter((c) => c.tagName === 'I').map((i) => i.className)).toEqual(['lg-blur', 'lg-edge', 'lg-tint'])
     expect([...capsule.children].find((c) => c.tagName !== 'I')).toBe(button)
     expect(capsule.contains(screen.getByRole('link', { name: t.nav.items.profile }))).toBe(true)
-    expect(capsule.contains(screen.getByTestId('sync-note'))).toBe(false)
 
     // Signed out: the tap goes to Settings, where signing in lives.
     await userEvent.click(button)
@@ -92,13 +91,12 @@ describe('DashboardGreeting', () => {
     expect(late.getAttribute('style')).toContain('--tone-caution')
   })
 
-  it('shows the sync’s words beside the button once pressed, and turns the arrows while it runs', async () => {
+  it('turns the arrows while the sync runs, and says what it answered in a toast over the page, never beside the button', async () => {
     owner.signedIn = true
     const s = t.dashboard.syncStatus
     const lastSyncedAt = new Date(Date.now() - 14 * 3600_000).toISOString()
     const { rerender } = render(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
     const button = await screen.findByRole('button', { name: `${s.synced(s.hoursAgo(14))} · ${s.tapToSync}` })
-    expect(screen.getByTestId('sync-note').textContent).toBe('')
     await userEvent.click(button)
     expect(owner.handleSync).toHaveBeenCalled()
 
@@ -108,12 +106,26 @@ describe('DashboardGreeting', () => {
     expect(running).toBeDisabled()
     expect(running.getAttribute('aria-label')).toBe(s.syncing)
     expect(running.querySelector('svg')!.getAttribute('class')).toContain('animate-spin')
-    expect(screen.getByRole('status').textContent).toBe(s.syncing)
+    expect(screen.queryByRole('status')).toBeNull()
 
     owner.phase = { kind: 'failed' }
     rerender(<DashboardGreeting name="Adam" lastSyncedAt={lastSyncedAt} />)
-    expect(screen.getByTestId('sync-note').textContent).toBe(s.failed)
+    const toast = screen.getByRole('status')
+    expect(toast.textContent).toBe(s.failed)
+    expect(toast.className).toContain('fixed')
+    expect(screen.getByTestId('today-capsule').contains(toast)).toBe(false)
     expect(screen.getByTestId('sync-line').dataset.tone).toBe('caution')
+  })
+
+  it('answers a tap just after a sync with when the next one can run, and asks GitHub for nothing', async () => {
+    owner.signedIn = true
+    const s = t.dashboard.syncStatus
+    render(<DashboardGreeting name="Adam" lastSyncedAt={new Date(Date.now() - 4 * 60_000).toISOString()} />)
+
+    await userEvent.click(await screen.findByTestId('sync-line'))
+
+    expect(owner.handleSync).not.toHaveBeenCalled()
+    expect(screen.getByRole('status').textContent).toBe(s.nextIn(6))
   })
 
   it('reads the run as soon as its data is live, and again once its verdict lands', () => {

@@ -75,6 +75,13 @@ export class JsonCoachingRepository implements CoachingRepository {
       .sort((a, b) => b.provenance.createdAt.localeCompare(a.provenance.createdAt))
   }
 
+  getGuidance(): string | null {
+    const filePath = path.join(this.coachingDir, 'guidance.md')
+    if (!dataFs.existsSync(filePath)) return null
+    const guidance = dataFs.readFileSync(filePath, 'utf-8').trim()
+    return guidance === '' ? null : guidance
+  }
+
   getState(): CoachState | null {
     const filePath = path.join(this.coachingDir, 'coach_state.json')
     return dataFs.existsSync(filePath) ? parseCoachState(readJson(filePath), filePath) : null

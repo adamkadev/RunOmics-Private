@@ -2,8 +2,8 @@
  "runs": [
   {
    "id": "walk-run-1",
-   "date": "2026-10-16",
-   "startTimeLocal": "2026-10-16T11:00:26",
+   "date": "2026-04-17",
+   "startTimeLocal": "2026-04-17T10:00:00",
    "type": "VO2Max",
    "typeSource": "runomics",
    "sport": "running",
@@ -118,8 +118,8 @@
   },
   {
    "id": "walk-run-2",
-   "date": "2026-10-18",
-   "startTimeLocal": "2026-10-18T13:41:16",
+   "date": "2026-04-19",
+   "startTimeLocal": "2026-04-19T10:00:00",
    "type": "VO2Max",
    "typeSource": "runomics",
    "sport": "running",
@@ -234,8 +234,8 @@
   },
   {
    "id": "walk-run-3",
-   "date": "2026-10-21",
-   "startTimeLocal": "2026-10-21T12:19:29",
+   "date": "2026-04-22",
+   "startTimeLocal": "2026-04-22T10:00:00",
    "type": "VO2Max",
    "typeSource": "runomics",
    "sport": "running",
@@ -350,8 +350,8 @@
   },
   {
    "id": "walk-run-4",
-   "date": "2026-10-23",
-   "startTimeLocal": "2026-10-23T12:27:40",
+   "date": "2026-04-24",
+   "startTimeLocal": "2026-04-24T10:00:00",
    "type": "VO2Max",
    "typeSource": "runomics",
    "sport": "running",
@@ -466,8 +466,8 @@
   },
   {
    "id": "walk-run-5",
-   "date": "2026-10-25",
-   "startTimeLocal": "2026-10-25T11:31:39",
+   "date": "2026-04-26",
+   "startTimeLocal": "2026-04-26T10:00:00",
    "type": "VO2Max",
    "typeSource": "runomics",
    "sport": "running",
@@ -570,31 +570,31 @@
  "sessions": [
   {
    "id": "session-1",
-   "date": "2026-10-16",
+   "date": "2026-04-17",
    "type": "easy",
    "title": "Footing · 6 × 3′"
   },
   {
    "id": "session-2",
-   "date": "2026-10-18",
+   "date": "2026-04-19",
    "type": "easy",
    "title": "Footing · 6 × 3′"
   },
   {
    "id": "session-3",
-   "date": "2026-10-21",
+   "date": "2026-04-22",
    "type": "easy",
    "title": "Footing · 6 × 3′"
   },
   {
    "id": "session-4",
-   "date": "2026-10-23",
+   "date": "2026-04-24",
    "type": "easy",
    "title": "Footing · 6 × 3′"
   },
   {
    "id": "session-5",
-   "date": "2026-10-25",
+   "date": "2026-04-26",
    "type": "easy",
    "title": "Footing · 5 × 4′"
   }

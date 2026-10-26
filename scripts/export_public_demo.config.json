@@ -7,6 +7,8 @@
     {"path": "README.md", "reason": "Private setup guide with an athlete's real zones; the public repo keeps its portfolio README"},
     {"path": "docs/", "reason": "Implementation notes written around the athletes' own deployments, races and data"},
     {"path": "fixtures/garmin/", "reason": "Capability snapshots of the two athletes' own watches"},
+    {"path": "src/application/coaching/__tests__/walkRunBlock.test.ts", "reason": "Reads the second athlete's walk/run block from fixtures/garmin/"},
+    {"path": "src/application/coaching/__tests__/returnToRunning.test.ts", "reason": "Reads the second athlete's walk/run block from fixtures/garmin/"},
     {"path": "scripts/diagnostics/compare_reports.py", "reason": "Compares the two named athletes' Garmin capability reports"},
     {"path": "scripts/tests/test_capability_reports.py", "reason": "Tests the two-athlete comparison against their watches' snapshots"},
     {"path": "scripts/export_public_demo.mjs", "reason": "This export, private-only tooling"},

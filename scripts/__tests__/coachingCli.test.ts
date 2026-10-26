@@ -84,6 +84,21 @@ describe('coaching CLI', { timeout: 20_000 }, () => {
     expect(fs.existsSync(output)).toBe(false)
   })
 
+  it('tells bootstrap the guidance kept in the data workspace when no guidance file is given', () => {
+    const root = workspace()
+    fs.writeFileSync(path.join(root, 'coaching/guidance.md'), 'Walk breaks by time only; stop on any pain.\n')
+    const prompt = path.join(root, 'prompt.md')
+
+    const result = spawnSync(process.execPath, nodeArgs('bootstrap', '--days', 'tue,thu,sat,sun', '--runs-per-week', '4', '--replace', '--data-dir', root, '--prompt-out', prompt), {
+      cwd: projectRoot,
+      encoding: 'utf-8',
+      env: { ...process.env, RUNOMICS_DATA_REPO_URL: '' },
+    })
+
+    expect(result.stdout).toContain('Guidance: coaching/guidance.md')
+    expect(fs.readFileSync(prompt, 'utf-8')).toContain('Additional athlete guidance (volume ranges are guidance, not mandatory quotas): Walk breaks by time only; stop on any pain.')
+  })
+
   it('rejects a stale saved proposal before writing, then applies the exact reviewed proposal in an explicit data workspace once its context is restored', () => {
     const root = workspace()
     const preview = writeKeepReview(root, path.join(root, 'previews'))
