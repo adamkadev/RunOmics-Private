@@ -9,7 +9,7 @@ import { concernCopy } from './checkInWords'
 export interface ReadinessWords {
   tone: ReadinessTone
   color: string
-  band: string
+  band: string | null
   line: string
   headline: string | null
   body: string | null
@@ -35,7 +35,7 @@ export function CheckInReadiness({ today, words }: { today: string; words: Readi
       <p className="flex items-center gap-1.5 text-eyebrow uppercase" style={{ color }} data-testid="readiness-status" data-tone={tone}>
         <span aria-hidden className="size-1.5 shrink-0 rounded-full" style={{ background: color }} />
         <span>
-          {words.band} · {line}
+          {words.band ? `${words.band} · ${line}` : line}
         </span>
       </p>
       {headline && (

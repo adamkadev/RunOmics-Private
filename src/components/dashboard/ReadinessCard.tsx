@@ -26,7 +26,7 @@ const STATUS_COLOR: Record<ReadinessTone, string> = {
 const FRESH_WORDS = /\b(fresh|rested|frais|fraîche|reposée?)\b/i
 const TIRED_WORDS = /\b(tired|fatigued|fatiguée?)\b/i
 
-function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; sub: ReactNode; testId: string }) {
+function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; sub?: ReactNode; testId: string }) {
   return (
     <div data-testid={testId} className={cn('flex min-w-0 flex-col gap-1', insetTileClass)}>
       <span className={tileLabelClass}>{label}</span>
@@ -68,6 +68,8 @@ export function ReadinessCard({
   const tone = verdictTone(status)
   const color = load && load.state !== 'in' ? 'var(--warn)' : STATUS_COLOR[tone]
   const band = formBand(status.tsbNow)
+  // After a long break form is the break itself, so it gets no word and no number until there is a reading.
+  const bandWord = status.buildingBack ? null : t.formBand[band]
   // Building back there is no reading at all, so no load line and none of the tone's own either.
   const line = status.buildingBack ? s.buildingBack : load ? s.loadLine(s.loadState[load.state], load.estimated) : s.lineByTone[tone]
   const fresh = band === 'fresh' || band === 'veryFresh'
@@ -82,11 +84,11 @@ export function ReadinessCard({
       <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="readiness-card">
         <CheckInReadiness
           today={today}
-          words={{ tone, color, band: t.formBand[band], line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
+          words={{ tone, color, band: bandWord, line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
         />
 
         <div className="-mx-1 -mb-1 grid grid-cols-3 gap-1.5">
-          <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} sub={t.formBand[band].toLocaleLowerCase(t.locale)} />
+          <Tile testId="tile-form" label={s.formLabel} value={bandWord ? formatDelta(form) : '–'} sub={bandWord?.toLocaleLowerCase(t.locale)} />
           <Tile
             testId="tile-fitness"
             label={s.ctl}
