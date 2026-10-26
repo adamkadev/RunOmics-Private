@@ -4,6 +4,20 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Explore's loops keep to runnable ground: mud, dirt, grass, steps and
+  forest paths cost more than new streets can earn, steep climbs count on
+  every loop, and each session has a climb budget (flat for reps, 12 m/km
+  the day before them and on a recovery run, 15 on a long run, 20 on an
+  easy one). A loop that would finish after dusk keeps to streets, and
+  the panel names the sunset. "Trails OK" opens the trails in daylight.
+  The panel shows the budget, each loop's climb against it and its share
+  on trails. The owner can mark spots to avoid (a fallen tree, a flooded
+  path), which every loop goes around. The GPX file name is lowercase.
+
+- A run's verdict reads a hilly run's halves by grade-adjusted pace, and
+  takes a problem the note reports (terrain, route, safety, pain) at its
+  word instead of turning it into a success.
+
 - A 12-week checkpoint: Plan's "General preparation" card opens a page
   that sets this cycle against the 12 weeks before it - km and runs a
   week, controlled threshold time and pace guides, heat-adjusted
