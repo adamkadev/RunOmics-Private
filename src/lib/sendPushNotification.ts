@@ -5,22 +5,37 @@ import { wantsPush, type PushAudience } from '@/lib/pushCategories'
 
 const PUSH_TOKENS_COLLECTION = 'pushTokens'
 
-export async function sendPush(audience: PushAudience, title: string, body: string): Promise<void> {
+const DEAD_TOKEN_CODES = new Set(['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'])
+
+export interface PushResult {
+  sent: number
+  failed: number
+}
+
+/** Throws when no device took the push: FCM resolves on per-token failures, and callers record a resolved push as sent. */
+export async function sendPush(audience: PushAudience, title: string, body: string): Promise<PushResult> {
   const db = getAdminFirestore()
   const snapshot = await db.collection(PUSH_TOKENS_COLLECTION).get()
   const tokens = snapshot.docs.filter((d) => wantsPush(d.get('categories'), audience)).map((d) => d.id)
-  if (tokens.length === 0) return
+  if (tokens.length === 0) return { sent: 0, failed: 0 }
 
-  const response = await getMessaging(getAdminApp()).sendEachForMulticast({
+  const { responses } = await getMessaging(getAdminApp()).sendEachForMulticast({
     tokens,
     notification: { title, body },
   })
 
-  const staleTokens = tokens.filter((_, i) => {
-    const res = response.responses[i]
-    return res && !res.success && res.error?.code === 'messaging/registration-token-not-registered'
-  })
-  await Promise.all(staleTokens.map((token) => db.collection(PUSH_TOKENS_COLLECTION).doc(token).delete()))
+  const failures = tokens.flatMap((token, i) =>
+    responses[i]?.success ? [] : [{ token, code: responses[i]?.error?.code ?? 'unknown' }]
+  )
+  const sent = tokens.length - failures.length
+  const codes = failures.map(({ code }) => code).join(', ')
+  if (failures.length) console.warn(`[push] ${failures.length} of ${tokens.length} devices refused "${title}": ${codes}`)
+
+  const deadTokens = failures.filter(({ code }) => DEAD_TOKEN_CODES.has(code)).map(({ token }) => token)
+  await Promise.all(deadTokens.map((token) => db.collection(PUSH_TOKENS_COLLECTION).doc(token).delete()))
+
+  if (sent === 0) throw new Error(`Push "${title}" reached none of ${tokens.length} devices: ${codes}`)
+  return { sent, failed: failures.length }
 }
 
 export interface Push {

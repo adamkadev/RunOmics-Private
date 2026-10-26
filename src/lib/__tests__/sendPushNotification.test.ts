@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { sendEachForMulticast, devices } = vi.hoisted(() => ({
+const { sendEachForMulticast, deleted, devices } = vi.hoisted(() => ({
   sendEachForMulticast: vi.fn(),
+  deleted: [] as string[],
   devices: { list: [{ id: 'phone-token', categories: undefined as unknown }] },
 }))
 
@@ -11,7 +12,7 @@ vi.mock('@/lib/firebase-admin', () => ({
   getAdminFirestore: () => ({
     collection: () => ({
       get: async () => ({ docs: devices.list.map(({ id, categories }) => ({ id, get: () => categories })) }),
-      doc: () => ({ delete: async () => {} }),
+      doc: (id: string) => ({ delete: async () => void deleted.push(id) }),
     }),
   }),
 }))
@@ -58,10 +59,15 @@ describe('sendPushes', () => {
   })
 })
 
+const refused = (code: string) => ({ success: false, error: { code } })
+
 describe('sendPush', () => {
   beforeEach(() => {
     sendEachForMulticast.mockReset()
-    sendEachForMulticast.mockResolvedValue({ responses: [] })
+    sendEachForMulticast.mockImplementation(async ({ tokens }: { tokens: string[] }) => ({
+      responses: tokens.map(() => ({ success: true })),
+    }))
+    deleted.length = 0
   })
 
   it('reaches only the devices that kept the category on, and every device for a failure', async () => {
@@ -80,5 +86,32 @@ describe('sendPush', () => {
 
     await sendPush('always', 'Sync failed', 'Open the run')
     expect(tokens()).toEqual(['registered-before-categories', 'shoes-off', 'training-only'])
+  })
+
+  it('counts what was delivered and forgets the tokens FCM will never deliver to', async () => {
+    devices.list = [
+      { id: 'phone', categories: undefined },
+      { id: 'uninstalled', categories: undefined },
+      { id: 'garbled', categories: undefined },
+      { id: 'throttled', categories: undefined },
+    ]
+    sendEachForMulticast.mockResolvedValue({
+      responses: [
+        { success: true },
+        refused('messaging/registration-token-not-registered'),
+        refused('messaging/invalid-registration-token'),
+        refused('messaging/message-rate-exceeded'),
+      ],
+    })
+
+    await expect(sendPush('always', 'Sync failed', 'Open the run')).resolves.toEqual({ sent: 1, failed: 3 })
+    expect(deleted).toEqual(['uninstalled', 'garbled'])
+  })
+
+  it('throws when every device refused, so the push is not recorded as sent', async () => {
+    devices.list = [{ id: 'phone', categories: undefined }]
+    sendEachForMulticast.mockResolvedValue({ responses: [refused('messaging/third-party-auth-error')] })
+
+    await expect(sendPush('always', 'Sync failed', 'Open the run')).rejects.toThrow('messaging/third-party-auth-error')
   })
 })
