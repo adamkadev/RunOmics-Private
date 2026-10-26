@@ -190,6 +190,18 @@ It runs with reduced motion, waits at most 3 s for the animations it can see to 
 stalls fades in rows it skips rendering), and blocks the service worker, whose registration
 WebKit refuses on `localhost`.
 
+A third project, `sparse-fr`, is the second athlete's deployment in miniature. Playwright
+starts a second server on `PORT + 1` from `generate_demo_data.mjs --profile sparse`, written
+to `.e2e-data-sparse/` and built with `NEXT_PUBLIC_LOCALE=fr` into `.next-e2e-sparse/`, so it
+never overwrites the first build while that one serves. The profile is made up and shaped like
+a Forerunner 55: no Training Effect, training status, LTHR or running dynamics; no races,
+goals, PBs or explore area; a long break, then a run/walk return block planned in French with
+notes on every step, one missed session, and its first runs carrying a wrong VO2 max guess.
+On her phone's WebKit it runs `layout`, `dashboard`, `plan` and `analytics` (whose names
+come from the active locale's strings through the `t` fixture), `sparse.spec.ts` for the
+second athlete's own fixes, and `a11y.spec.ts`, an axe pass (WCAG 2.1 A and AA, serious and
+critical) over seven pages. A change that only breaks the sparse French deployment fails here.
+
 The screenshot audit has its own config so it never runs as part of the e2e suite, or vice
 versa. It captures through an iPhone 13 viewport (390×844 @3×) because the app is designed
 phone-first, driven by Chromium rather than the preset's default WebKit, and pins

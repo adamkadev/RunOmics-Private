@@ -428,7 +428,9 @@ project or secrets are needed: every page the current specs cover (dashboard,
 activities list → detail, analytics, records, goals, map, shoes, plan, progress) is
 built from the generated demo dataset. Read-only, no risk of touching anything. The
 `iphone` project walks every page in WebKit at the iPhone 16 Pro's size, with reduced
-motion, for text that runs past an edge.
+motion, for text that runs past an edge. The `sparse-fr` project builds a second app,
+French and from a sparse Forerunner 55 profile (`npm run demo:generate -- --profile sparse`),
+and runs the layout, Today, Plan and Analytics specs plus an axe pass against it.
 
 **Running:**
 
