@@ -19,7 +19,9 @@ All notable changes to this project are documented in this file.
   controlled threshold rules (speed weeks, fitness checks, lighter weeks)
   state their condition, so they reach no other block. `trainingBreaks`
   accepts `pregnancy` as a reason, and `validate:data` warns on a reason
-  the coach does not know.
+  the coach does not know. A heart-rate zone in the athlete's guidance becomes
+  the target of the running steps in a return, never beside a pace, which the
+  watch would execute instead; walk breaks carry no target.
 
 - Bootstrap reads `coaching/guidance.md` from the data workspace unless
   `--guidance-file` is given, and the decision records the guidance's hash.

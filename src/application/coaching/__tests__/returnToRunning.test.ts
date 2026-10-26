@@ -6,6 +6,8 @@ import { contextPrompt } from '@/infrastructure/ai/coachingPrompt'
 import { buildCoachingContext } from '../context'
 import { validateBootstrapDraft } from '../draftRules'
 import { returnToRunning } from '../returnToRunning'
+import { toGarminWorkoutPayload } from '../garminWorkoutMapping'
+import type { WorkoutPrescription, WorkoutTarget } from '@/domain/coaching/types'
 import block from '../../../../fixtures/garmin/forerunner-55/walk-run-block.json'
 
 const walkRuns = block.runs as unknown as Activity[]
@@ -34,7 +36,10 @@ function context(athlete: AthleteProfile) {
   }, '2026-04-27')
 }
 
-function walkRun(date: string, reps: number, minutes: number): BootstrapWorkoutDraft {
+const PACE: WorkoutTarget = { paceSecPerKm: { min: 480, max: 600 } }
+const ZONE_2: WorkoutTarget = { hrBpm: { min: 124, max: 144 } }
+
+function walkRun(date: string, reps: number, minutes: number, run = PACE, walk: WorkoutTarget = {}): BootstrapWorkoutDraft {
   return {
     date,
     type: 'easy',
@@ -48,8 +53,8 @@ function walkRun(date: string, reps: number, minutes: number): BootstrapWorkoutD
         kind: 'repeat',
         repetitions: reps,
         steps: [
-          { kind: 'effort', target: { durationSeconds: minutes * 60, paceSecPerKm: { min: 480, max: 600 } } },
-          { kind: 'recovery', target: { durationSeconds: 60 } },
+          { kind: 'effort', target: { durationSeconds: minutes * 60, ...run }, notes: ['Above 165, walk until back under 145.'] },
+          { kind: 'recovery', target: { durationSeconds: 60, ...walk } },
         ],
       },
       { kind: 'cooldown', target: { durationSeconds: 300 } },
@@ -58,18 +63,18 @@ function walkRun(date: string, reps: number, minutes: number): BootstrapWorkoutD
   }
 }
 
-const returnBlock: CoachingPlanDraft = {
+const returnBlock = (run = PACE, walk: WorkoutTarget = {}): CoachingPlanDraft => ({
   name: 'Gentle return',
   focus: 'Run/walk by time, lengthening the running a step at a time.',
   weeks: [
-    { startDate: '2026-04-27', endDate: '2026-05-03', focus: 'Four-minute runs.', workouts: [walkRun('2026-04-29', 5, 4), walkRun('2026-05-01', 5, 4), walkRun('2026-05-03', 4, 6)] },
-    { startDate: '2026-05-04', endDate: '2026-05-10', focus: 'Six-minute runs.', workouts: [walkRun('2026-05-06', 4, 6), walkRun('2026-05-08', 4, 6), walkRun('2026-05-10', 3, 8)] },
-    { startDate: '2026-05-11', endDate: '2026-05-17', focus: 'Eight-minute runs.', workouts: [walkRun('2026-05-13', 3, 8), walkRun('2026-05-15', 3, 8), walkRun('2026-05-17', 2, 12)] },
-    { startDate: '2026-05-18', endDate: '2026-05-24', focus: 'Ten-minute runs.', workouts: [walkRun('2026-05-20', 3, 10), walkRun('2026-05-22', 3, 10), walkRun('2026-05-24', 2, 12)] },
+    { startDate: '2026-04-27', endDate: '2026-05-03', focus: 'Four-minute runs.', workouts: [walkRun('2026-04-29', 5, 4, run, walk), walkRun('2026-05-01', 5, 4, run, walk), walkRun('2026-05-03', 4, 6, run, walk)] },
+    { startDate: '2026-05-04', endDate: '2026-05-10', focus: 'Six-minute runs.', workouts: [walkRun('2026-05-06', 4, 6, run, walk), walkRun('2026-05-08', 4, 6, run, walk), walkRun('2026-05-10', 3, 8, run, walk)] },
+    { startDate: '2026-05-11', endDate: '2026-05-17', focus: 'Eight-minute runs.', workouts: [walkRun('2026-05-13', 3, 8, run, walk), walkRun('2026-05-15', 3, 8, run, walk), walkRun('2026-05-17', 2, 12, run, walk)] },
+    { startDate: '2026-05-18', endDate: '2026-05-24', focus: 'Ten-minute runs.', workouts: [walkRun('2026-05-20', 3, 10, run, walk), walkRun('2026-05-22', 3, 10, run, walk), walkRun('2026-05-24', 2, 12, run, walk)] },
   ],
-}
+})
 
-const validate = (athlete: AthleteProfile) => () => validateBootstrapDraft(structuredClone(returnBlock), {
+const validate = (athlete: AthleteProfile, draft = returnBlock()) => () => validateBootstrapDraft(draft, {
   availableWeekdays: [3, 5, 0],
   runsPerWeek: 3,
   context: context(athlete),
@@ -108,5 +113,26 @@ describe('a return to running', () => {
     expect(athlete).not.toHaveProperty('autoregulation')
     expect(validate({ trainingBreaks: [injury] })).not.toThrow()
     expect(validate({})).toThrow(/against a recent/)
+  })
+
+  const watchTargets = (draft: CoachingPlanDraft) => {
+    const payload = toGarminWorkoutPayload(draft.weeks[0]!.workouts[0] as unknown as WorkoutPrescription) as unknown as {
+      workoutSegments: { workoutSteps: { workoutSteps?: { targetType: { workoutTargetTypeKey: string } }[] }[] }[]
+    }
+    return payload.workoutSegments[0]!.workoutSteps.flatMap((step) => step.workoutSteps ?? []).map((step) => step.targetType.workoutTargetTypeKey)
+  }
+
+  it('runs to the heart-rate zone the guidance gives, and walks with no target', () => {
+    const zoned = returnBlock(ZONE_2)
+
+    expect(validate({ trainingBreaks: [injury] }, zoned)).not.toThrow()
+    expect(watchTargets(zoned)).toEqual(['heart.rate.zone', 'no.target'])
+  })
+
+  it('runs to an easy pace with no zone in the guidance, and refuses a walk with a target or a run with both', () => {
+    expect(validate({ trainingBreaks: [injury] })).not.toThrow()
+    expect(watchTargets(returnBlock())).toEqual(['pace.zone', 'no.target'])
+    expect(validate({ trainingBreaks: [injury] }, returnBlock(PACE, PACE))).toThrow(/walk break in a return carries no pace/)
+    expect(validate({ trainingBreaks: [injury] }, returnBlock({ ...PACE, ...ZONE_2 }))).toThrow(/heart-rate zone or its pace range, not both/)
   })
 })
