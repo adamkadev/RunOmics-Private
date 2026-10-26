@@ -3,11 +3,6 @@
     {"path": ".claude/", "reason": "Agent tooling: the coaching skill and its methodology are written for the two athletes"},
     {"path": ".github/workflows/sync.yml", "reason": "Needs each athlete's Garmin and data-repository secrets in a GitHub Environment"},
     {"path": ".github/workflows/capability-audit.yml", "reason": "Probes each athlete's Garmin account from a GitHub Environment"},
-    {"path": ".github/workflows/internal-notify.yml", "reason": "Calls the private deployments with APP_URL and INTERNAL_NOTIFY_SECRET"},
-    {"path": ".github/workflows/daily-session-reminder.yml", "reason": "Scheduled push to the private deployments; fails without their secrets"},
-    {"path": ".github/workflows/weekly-reminder.yml", "reason": "Scheduled push to the private deployments; fails without their secrets"},
-    {"path": ".github/workflows/stale-sync-check.yml", "reason": "Scheduled health check of the private deployments; fails without their secrets"},
-    {"path": ".github/workflows/security-autofix.yml", "reason": "Out of the public repo since August: a weekly write-token PR job, Dependabot covers it"},
     {"path": "CHANGELOG.md", "reason": "Names the athletes' quartiers, cities and races; the public repo keeps its own changelog"},
     {"path": "README.md", "reason": "Private setup guide with an athlete's real zones; the public repo keeps its portfolio README"},
     {"path": "docs/", "reason": "Implementation notes written around the athletes' own deployments, races and data"},
@@ -127,8 +122,6 @@
     {"path": ".env.example", "from": "GITHUB_SYNC_PROFILE=adam", "to": "GITHUB_SYNC_PROFILE=you", "reason": "The owner's sync profile"},
     {"path": "scripts/__tests__/e2eDataWorkspace.test.ts", "from": "runomics-data-adam", "to": "runomics-data-you", "reason": "The owner's private data repository"},
     {"path": "scripts/garmin/vo2max_history.py", "from": " (Lamiaa, Oct 2026: 37.1/37.1, 37.1/37.2, 37.4/37.4, 37.3/37.4)", "to": "", "reason": "The second athlete's VO2max readings"},
-    {"path": ".claude/skills/coaching-plan/rules.md", "from": " - for this athlete two sessions of about 30 minutes each in about 56 to 58 km - ", "to": ", ", "reason": "The owner's threshold dose and weekly volume"},
-    {"path": "src/infrastructure/ai/coachingRules.generated.ts", "from": " - for this athlete two sessions of about 30 minutes each in about 56 to 58 km - ", "to": ", ", "reason": "Generated from rules.md, which loses the same words"},
     {"path": "src/lib/__tests__/siteAccess.test.ts", "from": "lamiaa", "to": "viewer", "reason": "The second athlete's name as the invited viewer"},
     {"path": "src/lib/__tests__/siteAccess.test.ts", "from": "Lamiaa", "to": "Viewer", "reason": "The second athlete's name as the invited viewer"},
     {"path": "src/app/api/session/__tests__/route.test.ts", "from": "lamiaa", "to": "viewer", "reason": "The second athlete's name as the invited viewer"},
@@ -137,15 +130,12 @@
     {"path": "src/domain/training/recovery.ts", "from": " (the second athlete's, 59 to 70), the run one part of", "to": ", the run one part of", "reason": "The second athlete's resting HR"},
     {"path": "src/domain/training/recovery.ts", "from": "Any other run day is a watch put on to run (the owner's, a Fitbit at\n * night), and its value is a warm-up's: 50 to 60 against a true 45, 142 on a\n * hard day.", "to": "Any other run day is a watch put on to run, and its value is a warm-up's.", "reason": "The owner's resting HR and sleep tracker"},
     {"path": "src/i18n/en.ts", "from": "\"NOV 29 · IN 62 DAYS\", \"Target 40:00 · plan week 4 of 12\"", "to": "\"NOV 15 · IN 21 DAYS\", \"Target 40:30 · plan week 9 of 12\"", "reason": "The owner's target race date and time"},
-    {"path": ".claude/skills/coaching-plan/rules.md", "from": "guided at about 4:20-4:25 for now and", "to": "guided by the threshold pace guide and", "reason": "The owner's threshold pace"},
-    {"path": "src/infrastructure/ai/coachingRules.generated.ts", "from": "guided at about 4:20-4:25 for now and", "to": "guided by the threshold pace guide and", "reason": "Generated from rules.md, which loses the same words"},
     {"path": ".claude/skills/coaching-plan/rules.md", "from": "600 m meant to be four minutes ran 3:59, 4:28 and 4:42 across one session", "to": "a 600 m float meant to take four minutes runs longer as the session goes on", "reason": "One of the owner's sessions"},
     {"path": "src/infrastructure/ai/coachingRules.generated.ts", "from": "600 m meant to be four minutes ran 3:59, 4:28 and 4:42 across one session", "to": "a 600 m float meant to take four minutes runs longer as the session goes on", "reason": "Generated from rules.md, which loses the same words"},
     {"path": "src/i18n/fr.ts", "from": "« au Ban-Saint-Martin »", "to": "« au Mans »", "reason": "A commune next to the athletes' home area"},
     {"path": "src/domain/explore/types.ts", "from": "'metz-5746332', 'insee-57049'", "to": "'metz-1000001', 'insee-57463'", "reason": "A quartier and a commune of the athletes' home area"},
     {"path": "src/domain/explore/types.ts", "from": "\"Nouvelle Ville\", \"Le Ban-Saint-Martin\"", "to": "\"Centre-Ville\", \"Le Petit-Quevilly\"", "reason": "A quartier and a commune of the athletes' home area"},
     {"path": "scripts/explore/area.ts", "from": "'Le Ban-Saint-Martin' -> 'le-ban-saint-martin'", "to": "'Le Petit-Quevilly' -> 'le-petit-quevilly'", "reason": "A commune next to the athletes' home area"},
-    {"path": "src/domain/explore/gpx.ts", "from": "'Nouvelle Ville', 8.4 → 'RunOmics-NouvelleVille-8km.gpx'", "to": "'Centre-Ville', 8.4 → 'RunOmics-CentreVille-8km.gpx'", "reason": "A quartier of the athletes' home area"},
     {"path": "src/lib/__tests__/githubSync.test.ts", "from": "lamiaa", "to": "viewer", "reason": "The second athlete's sync profile, once the dispatch test moves here"}
   ],
   "scan": {
@@ -196,7 +186,6 @@
       {"path": "src/lib/__tests__/siteAccess.test.ts", "pattern": "athlete-name", "match": "adam@example.com", "reason": "The owner's public first name as a fixture identity"},
       {"path": "src/app/api/session/__tests__/route.test.ts", "pattern": "athlete-name", "match": "adam@example.com", "reason": "The owner's public first name as a fixture identity"},
       {"path": "src/lib/__tests__/ownerRoute.test.ts", "pattern": "athlete-name", "match": "profile=adam", "reason": "The owner's public first name as a sync profile"},
-      {"path": "src/app/api/sync/dispatch/__tests__/route.test.ts", "pattern": "athlete-name", "reason": "The owner's public first name as a sync profile and repo owner"},
       {"path": "src/lib/__tests__/syncLimits.test.ts", "pattern": "athlete-name", "reason": "The owner's public first name as a sync profile"},
       {"path": "src/lib/syncLimits.ts", "pattern": "athlete-name", "reason": "The owner's public first name as a sync profile example"},
       {"path": "src/lib/__tests__/syncLimits.test.ts", "pattern": "athlete-detail", "reason": "A test name, no figure"},
@@ -209,7 +198,7 @@
       {"path": "src/lib/__tests__/ownerRoute.test.ts", "pattern": "secret", "match": "a-real-looking-token", "reason": "A fake token"},
       {"path": "scripts/tests/test_capability_probe.py", "pattern": "account-id", "match": "999999", "reason": "A made-up device id"},
       {"path": "src/lib/__tests__/githubSync.test.ts", "pattern": "athlete-name", "reason": "The owner's public first name as a sync profile and repo owner"},
-      {"path": "src/lib/__tests__/simplifyTrack.test.ts", "pattern": "home-coordinates", "reason": "Round coordinates"}
+      {"path": "README.md", "pattern": "athlete-name", "match": "runomics-demo.adamelkadaoui.com", "reason": "The public demo's own address, in the portfolio README kept from the public repo"}
     ]
   }
 }
