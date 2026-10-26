@@ -1937,6 +1937,15 @@ export const en = {
       status: { ahead: 'ahead of pace', on_track: 'on track', behind: 'behind pace' },
       body: (status: string, rate: string, needed: string) => `You're ${status} at ${rate} km/week (need ${needed} km/week).`,
     },
+    // An alert another deployment raised, named by its athlete so two deployments never read alike.
+    forwarded: (from: string, title: string) => `${from} · ${title}`,
+    coachBlock: {
+      title: 'Coaching block',
+      endsIn: (days: number) => (days === 0 ? 'the block ends today' : days === 1 ? 'the block ends tomorrow' : `the block ends in ${days} days`),
+      reviewAge: (days: number) => `no weekly review for ${days} days`,
+      reviewNever: 'no weekly review yet',
+      body: (reasons: string) => `${reasons.charAt(0).toUpperCase()}${reasons.slice(1)}. Plan the next block and sync it to the watch.`,
+    },
     workflowFailed: {
       title: (workflow: string) => `${workflow} failed`,
       body: (runUrl: string) => `Open the run: ${runUrl}`,

@@ -117,9 +117,9 @@ describe('every push', () => {
       const file = path.join(routes, dir, 'route.ts')
       if (!fs.existsSync(file)) continue
       const source = fs.readFileSync(file, 'utf-8')
-      if (!/sendPush(?:es)?\(/.test(source)) continue
-      // A push's title or body written as a string literal, rather than read from t.notifications.
-      if (/sendPush\([^,]+,\s*['"`]|title:\s*['"`]|body:\s*['"`]/.test(source)) offenders.push(dir)
+      if (!/send(?:Ops)?Push(?:es)?\(/.test(source)) continue
+      // A push's title or body written as a string literal, rather than read from the locale.
+      if (/sendPush\([^,]+,\s*['"`]|sendOpsPush\(\s*['"`]|title:\s*['"`]|body:\s*['"`]/.test(source)) offenders.push(dir)
     }
     expect(offenders).toEqual([])
   })

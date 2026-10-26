@@ -4,6 +4,21 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- An operator channel. A second athlete's deployment registers her devices, so
+  until now every operator alert it raised - a failed workflow, a data token
+  about to expire, the nightly digest of phone errors - woke her phone and
+  never the person who could act on it. Those three, and a new weekly
+  coaching-block reminder, now go through `sendOpsPush`: with `OPS_PUSH_URL`
+  and `OPS_PUSH_SECRET` set they are forwarded to the operator's own
+  deployment at `/api/internal/ops-push`, titled with the sending
+  deployment's sync profile and written in English whatever that deployment
+  speaks. That route is guarded by `OPS_PUSH_SECRET` alone, so the second
+  deployment holds a secret that opens nothing else, and a refusal or a
+  timeout throws rather than record an alert nobody read. Unset, the alerts
+  go to the local devices as before. A stale sync stays with the athlete: she
+  can act on it. The weekly reminder fires when a block ends within seven
+  days or no weekly review has run for more than seven.
+
 - After a break of four weeks or more, Today holds its load reading for the
   first four weeks of running back: the status line reads "Building back - no
   reading yet" instead of a form band and a load state, the overreaching push
