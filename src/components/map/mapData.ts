@@ -3,9 +3,6 @@ import { decodeTracks } from '@/lib/polyline'
 
 export type ClusterTracks = Record<string, [number, number][]>
 
-/** `drawn` for the map's lines; Districts coverage counts cells along the tracks as recorded. */
-export type TrackDetail = 'drawn' | 'full'
-
 /** Per data version, not per mount: the Map tab unmounts on List, and coming back refetched and reparsed it all. */
 const pending = new Map<string, Promise<unknown>>()
 
@@ -27,9 +24,9 @@ export function mapShell(version: string): Promise<MapShellData | null> {
   return once(`shell|${version}`, () => json<MapShellData>(`/api/map/shell?v=${encodeURIComponent(version)}`))
 }
 
-export function clusterTracks(version: string, clusterId: string, detail: TrackDetail): Promise<ClusterTracks | null> {
-  const query = `cluster=${encodeURIComponent(clusterId)}&enc=p5${detail === 'drawn' ? '&draw=1' : ''}&v=${encodeURIComponent(version)}`
-  return once(`tracks|${version}|${clusterId}|${detail}`, async () => {
+export function clusterTracks(version: string, clusterId: string): Promise<ClusterTracks | null> {
+  const query = `cluster=${encodeURIComponent(clusterId)}&enc=p5&v=${encodeURIComponent(version)}`
+  return once(`tracks|${version}|${clusterId}`, async () => {
     const body = await json<{ routes: Record<string, string | [number, number][]> }>(`/api/map/routes?${query}`)
     return body ? decodeTracks(body.routes) : null
   })

@@ -22,7 +22,7 @@ import { HeatLegend } from "./HeatLegend";
 import { MapAttribution, type MapCredit } from "@/components/ui/MapAttribution";
 import { GlassLayers, GLASS_CIRCLE, glassClass } from "@/components/ui/GlassSurface";
 import { useMapRoutes, type HomeRing } from "./useMapRoutes";
-import { clusterTracks, type ClusterTracks, type TrackDetail } from "./mapData";
+import { clusterTracks, type ClusterTracks } from "./mapData";
 import { LayersButton } from "@/components/explore/LayersButton";
 import { DistrictsLegend } from "@/components/explore/DistrictsLegend";
 import { useDistrictsCoverage } from "@/components/explore/useDistrictsCoverage";
@@ -106,31 +106,31 @@ const samePadding = (a: CameraPadding | null, b: CameraPadding | null) =>
 
 const bboxBounds = ([minLon, minLat, maxLon, maxLat]: readonly [number, number, number, number]): LngLatBounds => ({ minLon, minLat, maxLon, maxLat });
 
-/** A cluster's tracks at one level of detail, gathered by global route index as each cluster arrives. */
-function useClusterTracks(version: string, clusterId: string | null, detail: TrackDetail): [number, number][][] {
-  const [tracks, setTracks] = useState<{ version: string; detail: TrackDetail; routes: [number, number][][]; loaded: Set<string> }>(
-    () => ({ version, detail, routes: [], loaded: new Set() }),
+/** A cluster's tracks, gathered by global route index as each cluster arrives. */
+function useClusterTracks(version: string, clusterId: string | null): [number, number][][] {
+  const [tracks, setTracks] = useState<{ version: string; routes: [number, number][][]; loaded: Set<string> }>(
+    () => ({ version, routes: [], loaded: new Set() }),
   );
 
   useEffect(() => {
     if (clusterId === null) return;
     let cancelled = false;
-    void clusterTracks(version, clusterId, detail).then((answer: ClusterTracks | null) => {
+    void clusterTracks(version, clusterId).then((answer: ClusterTracks | null) => {
       if (cancelled || !answer) return;
       setTracks((prev) => {
-        const same = prev.version === version && prev.detail === detail;
+        const same = prev.version === version;
         if (same && prev.loaded.has(clusterId)) return prev;
         const routes = same ? [...prev.routes] : [];
         for (const [idxStr, coords] of Object.entries(answer)) routes[Number(idxStr)] = coords;
-        return { version, detail, routes, loaded: new Set(same ? [...prev.loaded, clusterId] : [clusterId]) };
+        return { version, routes, loaded: new Set(same ? [...prev.loaded, clusterId] : [clusterId]) };
       });
     });
     return () => {
       cancelled = true;
     };
-  }, [version, clusterId, detail]);
+  }, [version, clusterId]);
 
-  return tracks.version === version && tracks.detail === detail ? tracks.routes : NO_TRACKS;
+  return tracks.version === version ? tracks.routes : NO_TRACKS;
 }
 
 export function GlobalMapClient({ data, version, onContentChange, exploreAreas = NO_AREAS, explorePlans = NO_PLANS, completedSince, today = null }: Props) {
@@ -179,7 +179,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   const [linkedQuartier, setLinkedQuartier] = useState<string | null>(() => (linkedGenerator ? null : quartierParam));
   const [openUnitId, setOpenUnitId] = useState<string | null>(null);
 
-  const routes = useClusterTracks(version, clusters[selectedIdx]?.id ?? null, "drawn");
+  const routes = useClusterTracks(version, clusters[selectedIdx]?.id ?? null);
 
   const availableTypes = useMemo(() => {
     const present = new Set(routeMeta.map((m) => m.type));
@@ -210,8 +210,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   const generatorOpen = generator !== null && !!districtsArea;
   const isFullscreen = expanded || generatorOpen;
   const districtsOn = (layer === "districts" || generatorOpen) && !!districtsArea;
-  // Coverage counts cells along the tracks as recorded: simplified ones would move quartiers' percentages.
-  const coverageRoutes = useClusterTracks(version, districtsOn ? (clusters[selectedIdx]?.id ?? null) : null, "full");
+  const coverageRoutes = districtsOn ? routes : NO_TRACKS;
   const toggleLayer = useCallback(() => {
     const next: MapLayer = layer === "districts" ? "heat" : "districts";
     setLayer(next);

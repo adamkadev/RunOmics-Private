@@ -95,12 +95,10 @@ phone keeps its tracks until the next sync and never shares them with a CDN. Eac
 are built once per data generation, and the page keeps what it fetched per data version, so
 going back from List to Map fetches nothing, and MapLibre's workers stay warm between maps.
 
-**The heat map draws simplified tracks; Districts counts the recorded ones.** With `draw=1` each
-track is simplified by Douglas-Peucker to within 3 m of the recording, about a fifth of its
-points, finer than a heat stroke shows. Coverage counts 150 m cells along the track, and a
-simplified line could cut a corner into the next cell, so Districts and the route generator fetch
-the full tracks. The heat redraws only for a new view or new tracks, strokes only the tracks whose
-bounds meet the view, frames the area with the server's frame when no filter hides a run, and its
+**The heat map and Districts draw the same recorded tracks.** The heat canvas renders at the
+device's full pixel ratio and strokes every track of the area: simplified tracks and a 2x cap were
+tried and dropped, as both visibly thinned the glow on an iPhone. The heat redraws only for a new
+view or new tracks, frames the area with the server's frame when no filter hides a run, and its
 basemap loads no sprite: no heat layer draws an icon.
 
 ## Explore

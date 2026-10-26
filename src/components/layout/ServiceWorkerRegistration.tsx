@@ -4,9 +4,13 @@ import { useEffect, useState } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { t } from '@/i18n'
 import { SIGN_IN_PATH } from '@/lib/siteSession'
+import { APP_VERSION, BUILD_COMMIT } from '@/lib/version'
+
+/** Per deploy, not per package version: the worker's caches are named after it, so a deploy drops the last one's pages. */
+export const SERVICE_WORKER_URL = `/sw.js?v=${encodeURIComponent(`${APP_VERSION}-${BUILD_COMMIT}`)}`
 
 export function ServiceWorkerRegistration() {
-  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null)
+  const [updateReady, setUpdateReady] = useState(false)
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production') return
@@ -18,17 +22,15 @@ export function ServiceWorkerRegistration() {
     let cancelled = false
 
     navigator.serviceWorker
-      .register(`/sw.js?v=${encodeURIComponent(process.env.NEXT_PUBLIC_APP_VERSION ?? 'dev')}`)
+      .register(SERVICE_WORKER_URL)
       .then((reg) => {
         if (cancelled) return
-        if (reg.waiting) setWaitingWorker(reg.waiting)
+        if (reg.waiting) setUpdateReady(true)
         reg.addEventListener('updatefound', () => {
           const installing = reg.installing
           if (!installing) return
           installing.addEventListener('statechange', () => {
-            if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-              setWaitingWorker(reg.waiting)
-            }
+            if (installing.state === 'installed' && navigator.serviceWorker.controller) setUpdateReady(true)
           })
         })
       })
@@ -40,16 +42,19 @@ export function ServiceWorkerRegistration() {
     }
   }, [])
 
-  function refresh() {
-    if (!waitingWorker) return
-    navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), {
-      once: true,
-    })
-    waitingWorker.postMessage({ type: 'SKIP_WAITING' })
-    setWaitingWorker(null)
+  async function refresh() {
+    setUpdateReady(false)
+    const waiting = (await navigator.serviceWorker.getRegistration())?.waiting
+    // The worker skips waiting on install, so by the tap it has usually taken over already: then only a reload is left.
+    if (!waiting) {
+      window.location.reload()
+      return
+    }
+    navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload(), { once: true })
+    waiting.postMessage({ type: 'SKIP_WAITING' })
   }
 
-  if (!waitingWorker) return null
+  if (!updateReady) return null
 
   return (
     <div

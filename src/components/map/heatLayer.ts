@@ -14,8 +14,6 @@ const MARGIN = 0.25;
 /** The canvas is uploaded as a texture on every redraw. */
 const MAX_PIXELS = 8_000_000;
 const MAX_SIDE = 4096;
-/** The glow is blurred anyway: at 3x each of the light mode's canvases holds 2.25 times the pixels for no visible gain. */
-const MAX_SCALE = 2;
 /** MapLibre's zoom 0 is one 512 px tile. */
 const TILE_SIZE = 512;
 
@@ -29,41 +27,6 @@ const HEAT_LIGHT = {
   mint: { width: 1, alpha: 0.1, minM: 10 },
   deep: { width: 1.2, alpha: 0.022, minM: 10 },
 } as const;
-
-const WIDEST = Math.max(...HEAT_DARK.passes.map((p) => p.width), ...Object.values(HEAT_LIGHT).map((l) => l.width));
-
-export function heatScale(width: number, height: number, devicePixelRatio: number): number {
-  return Math.min(devicePixelRatio || 1, MAX_SCALE, Math.sqrt(MAX_PIXELS / (width * height)), MAX_SIDE / width, MAX_SIDE / height);
-}
-
-type Bounds = readonly [minX: number, minY: number, maxX: number, maxY: number];
-const trackBounds = new WeakMap<Float64Array, Bounds>();
-
-function boundsOf(track: Float64Array): Bounds {
-  let bounds = trackBounds.get(track);
-  if (bounds) return bounds;
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (let p = 0; p < track.length; p += 2) {
-    const x = track[p]!;
-    if (Number.isNaN(x)) continue;
-    const y = track[p + 1]!;
-    if (x < minX) minX = x;
-    if (x > maxX) maxX = x;
-    if (y < minY) minY = y;
-    if (y > maxY) maxY = y;
-  }
-  bounds = [minX, minY, maxX, maxY];
-  trackBounds.set(track, bounds);
-  return bounds;
-}
-
-/** In the tracks' own mercator units; a track wholly outside the box draws nothing on the canvas. */
-export function tracksWithin(tracks: Float64Array[], x0: number, y0: number, x1: number, y1: number): Float64Array[] {
-  return tracks.filter((track) => {
-    const [minX, minY, maxX, maxY] = boundsOf(track);
-    return maxX >= x0 && minX <= x1 && maxY >= y0 && minY <= y1;
-  });
-}
 
 /** ctx.filter exists and takes a blur: Safari before 18 has neither. */
 const hasFilter = typeof document !== "undefined" && (() => {
@@ -88,7 +51,6 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
   const ctx = canvas.getContext("2d");
 
   let tracks: Float64Array[] = [];
-  let visible: Float64Array[] = [];
   let view = { x0: 0, y0: 0, world: 1, scale: 1, width: 1, height: 1 };
   let coordinates: Coordinates = [[0, 0], [0, 0], [0, 0], [0, 0]];
 
@@ -100,7 +62,12 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     const my = h * MARGIN;
     const width = w + 2 * mx;
     const height = h + 2 * my;
-    const scale = heatScale(width, height, window.devicePixelRatio);
+    const scale = Math.min(
+      window.devicePixelRatio || 1,
+      Math.sqrt(MAX_PIXELS / (width * height)),
+      MAX_SIDE / width,
+      MAX_SIDE / height,
+    );
     const pxWidth = Math.max(1, Math.round(width * scale));
     const pxHeight = Math.max(1, Math.round(height * scale));
     // Assigning a size clears and reallocates the canvas, even the same size.
@@ -153,7 +120,7 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     for (const pass of HEAT_DARK.passes) {
       ctx.lineWidth = lineWidth * pass.width;
       ctx.strokeStyle = rgbCss(hexToRgb(accent), pass.alpha);
-      for (const track of visible) {
+      for (const track of tracks) {
         trace(track);
         ctx.stroke();
       }
@@ -186,7 +153,7 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     g.lineCap = "round";
     g.lineWidth = Math.max(heatLineWidth(map.getZoom()) * widthMul, metresToPx(minM));
     g.strokeStyle = `rgba(255,255,255,${alpha})`;
-    for (const track of visible) { traceOn(g, track); g.stroke(); }
+    for (const track of tracks) { traceOn(g, track); g.stroke(); }
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = "source-in";
     g.fillStyle = tint;
@@ -276,9 +243,6 @@ export function addHeatLayer(map: MapLibreMap, mode: "dark" | "light", accent: s
     const key = `${canvas.width}x${canvas.height}|${view.x0}|${view.y0}|${view.world}`;
     if (!force && key === drawnKey) return;
     drawnKey = key;
-    // Past the canvas edge a track still reaches in by its widest stroke and the glow's blur.
-    const reach = (heatLineWidth(map.getZoom()) * WIDEST + metresToPx(HEAT_LIGHT.deep.minM) + 3 * HEAT_LIGHT.glow.sigmaPx) / view.world;
-    visible = tracksWithin(tracks, view.x0 - reach, view.y0 - reach, view.x0 + view.width / view.world + reach, view.y0 + view.height / view.world + reach);
     ctx?.setTransform(1, 0, 0, 1, 0, 0);
     ctx?.clearRect(0, 0, canvas.width, canvas.height);
     draw();
