@@ -89,7 +89,7 @@ export function buildGpx({ name, description, time, points }: GpxInput): string 
 /** Letters a decomposition leaves whole, spelled out so they survive the ASCII filter. */
 const LIGATURES: Readonly<Record<string, string>> = { œ: 'oe', Œ: 'oe', æ: 'ae', Æ: 'ae', ß: 'ss' }
 
-/** 'Nouvelle Ville', 8.4 → 'runomics-nouvelle-ville-8km.gpx': lowercase ASCII survives every share sheet and watch. */
+/** 'Old Town', 8.4 → 'runomics-old-town-8km.gpx': lowercase ASCII survives every share sheet and watch. */
 export function gpxFileName(unitName: string, km: number): string {
   const words = unitName
     .replace(/[œŒæÆß]/g, (c) => LIGATURES[c]!)

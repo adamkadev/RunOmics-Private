@@ -139,6 +139,12 @@ jobs:
       - name: Verify no private data is committed
         run: npm run verify:private-data
 
+      # The public repo is cloned for the files it keeps of its own; nothing is written to it.
+      - name: Check the public demo export
+        run: |
+          git clone --quiet --depth 1 https://github.com/adamkadev/RunOmics.git "$RUNNER_TEMP/public"
+          node scripts/export_public_demo.mjs --to "$RUNNER_TEMP/public" --check --strict
+
       # Saved from main only: a PR's own entry would serve no other branch and take room under GitHub's 10 GB.
       - name: Restore the ESLint cache
         id: eslint-cache

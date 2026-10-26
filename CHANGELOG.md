@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- `export:demo --check` passes again, and CI runs it with a new `--strict`
+  flag, which also fails on a stale config entry. The daylight test uses a
+  made-up point, the GPX file name example a made-up quartier, and twelve
+  config entries that matched nothing are gone.
+
 - Today's header no longer writes the sync's words beside its button, where
   they squeezed the title. A small toast at the top says what a tap did,
   including when the next sync can run.
