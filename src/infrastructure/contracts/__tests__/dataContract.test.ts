@@ -104,7 +104,7 @@ describe('the data contract', () => {
     expect(errors()).toEqual([expect.objectContaining({ file: 'athlete.json', path: '$.hrZoneBoundsBpm' })])
   })
 
-  it('accepts every break reason the coach reads, pregnancy included, and only warns on another', () => {
+  it('accepts every break reason the coach reads, and only warns on another', () => {
     const pause = (reason: string) => ({ start: '2026-02-02', end: '2026-03-15', reason })
     write('athlete.json', { trainingBreaks: ['injury', 'illness', 'pregnancy', 'heat', 'travel', 'personal'].map(pause) })
     expect(checkDataDirectory(dir)).toEqual([])

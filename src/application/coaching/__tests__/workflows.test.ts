@@ -1276,8 +1276,8 @@ describe('provenance', () => {
       repository: new MemoryRepository(), advisor: targetAdvisor([]), id: ids(), now: () => new Date('2026-09-04T08:00:00Z'),
     }, undefined, undefined, guidance)
 
-    const guided = await bootstrap('Run/walk by time; stop on pelvic symptoms.')
-    const again = await bootstrap('Run/walk by time; stop on pelvic symptoms.')
+    const guided = await bootstrap('Run/walk by time; stop on any pain.')
+    const again = await bootstrap('Run/walk by time; stop on any pain.')
     const unguided = await bootstrap()
 
     expect(guided.decision.provenance.guidanceHash).toMatch(/^[0-9a-f]{24}$/)

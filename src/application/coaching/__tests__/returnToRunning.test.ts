@@ -9,7 +9,7 @@ import { returnToRunning } from '../returnToRunning'
 import block from '../../../../fixtures/garmin/forerunner-55/walk-run-block.json'
 
 const walkRuns = block.runs as unknown as Activity[]
-const pregnancy: TrainingBreak = { start: '2025-10-06', end: '2026-04-14', reason: 'pregnancy' }
+const injury: TrainingBreak = { start: '2025-10-06', end: '2026-04-14', reason: 'injury' }
 
 function continuousRun(date: string, minutes: number): Activity {
   const lap = { type: 'lap' as const, durationSec: 300, distanceM: 750, avgSpeedMs: 2.5, avgHr: 150, laps: [] }
@@ -54,7 +54,7 @@ function walkRun(date: string, reps: number, minutes: number): BootstrapWorkoutD
       },
       { kind: 'cooldown', target: { durationSeconds: 300 } },
     ],
-    notes: ['Stop and see the midwife on any leaking, heaviness or pelvic pain.'],
+    notes: ['Stop and see the physio on any pain at the injured site.'],
   }
 }
 
@@ -77,21 +77,23 @@ const validate = (athlete: AthleteProfile) => () => validateBootstrapDraft(struc
 })
 
 describe('a return to running', () => {
-  it('holds after a long pregnancy break while every run since still walks', () => {
-    expect(returnToRunning([pregnancy], walkRuns, '2026-04-27')).toEqual({
-      reason: 'pregnancy', breakStart: '2025-10-06', breakEnd: '2026-04-14', longestContinuousMinutesSince: 4,
+  it('holds after a long injury, illness or pregnancy break while every run since still walks', () => {
+    expect(returnToRunning([{ ...injury, reason: 'illness' }], [], '2026-04-27')).not.toBeNull()
+    expect(returnToRunning([{ ...injury, reason: 'pregnancy' }], [], '2026-04-27')).not.toBeNull()
+    expect(returnToRunning([injury], walkRuns, '2026-04-27')).toEqual({
+      reason: 'injury', breakStart: '2025-10-06', breakEnd: '2026-04-14', longestContinuousMinutesSince: 4,
     })
   })
 
   it('ends with a run of 30 minutes without a walk, and never starts after a short stop or a travel break', () => {
-    expect(returnToRunning([pregnancy], [...walkRuns, continuousRun('2026-04-25', 30)], '2026-04-27')).toBeNull()
-    expect(returnToRunning([pregnancy], [...walkRuns, continuousRun('2026-04-25', 25)], '2026-04-27')).not.toBeNull()
+    expect(returnToRunning([injury], [...walkRuns, continuousRun('2026-04-25', 30)], '2026-04-27')).toBeNull()
+    expect(returnToRunning([injury], [...walkRuns, continuousRun('2026-04-25', 25)], '2026-04-27')).not.toBeNull()
     expect(returnToRunning([{ start: '2026-03-30', end: '2026-04-14', reason: 'illness' }], walkRuns, '2026-04-27')).toBeNull()
-    expect(returnToRunning([{ ...pregnancy, reason: 'travel' }], walkRuns, '2026-04-27')).toBeNull()
+    expect(returnToRunning([{ ...injury, reason: 'travel' }], walkRuns, '2026-04-27')).toBeNull()
   })
 
   it('takes the rebuild toward the best four-week average out of the prompt', () => {
-    const returning = contextPrompt(context({ trainingBreaks: [pregnancy] }))
+    const returning = contextPrompt(context({ trainingBreaks: [injury] }))
     const resuming = contextPrompt(context({}))
 
     expect(returning).not.toContain('rebuild toward best4WeekAverageKm')
@@ -100,11 +102,11 @@ describe('a return to running', () => {
   })
 
   it('accepts a run/walk block for an athlete with no LTHR, whom no controlled threshold rule reaches', () => {
-    const athlete = context({ trainingBreaks: [pregnancy] })
+    const athlete = context({ trainingBreaks: [injury] })
 
     expect(athlete.controlledThreshold).toBeNull()
     expect(athlete).not.toHaveProperty('autoregulation')
-    expect(validate({ trainingBreaks: [pregnancy] })).not.toThrow()
+    expect(validate({ trainingBreaks: [injury] })).not.toThrow()
     expect(validate({})).toThrow(/against a recent/)
   })
 })
