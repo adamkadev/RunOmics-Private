@@ -1,4 +1,5 @@
 import type { RoundTripResult, RoutingErrorKind, RoutingGateway } from '@/application/ports/RoutingGateway'
+import { AVOID_LIMITS, isAvoidCircle, type AvoidCircle } from '@/domain/explore/avoidSpots'
 import type { RouteCandidate } from '@/domain/explore/types'
 import { OpenRouteServiceGateway } from '@/infrastructure/routing/OpenRouteServiceGateway'
 import { distanceKm } from '@/lib/math'
@@ -14,6 +15,7 @@ export interface LoopRequest {
   avoidBusyRoads: boolean
   /** `vias[k]` is the way through the quartier for `seeds[k]`. */
   vias?: [number, number][][]
+  avoid?: AvoidCircle[]
 }
 
 export type LoopRoutesResult =
@@ -68,7 +70,7 @@ function parseVias(value: unknown, start: [number, number], seedCount: number): 
 /** Repeated seeds are folded together rather than refused: each would spend a request on a loop already in the batch. */
 export function parseLoopRequest(body: unknown): LoopRequest | null {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return null
-  const { start: rawStart, distanceM, seeds, avoidBusyRoads, vias: rawVias } = body as Record<string, unknown>
+  const { start: rawStart, distanceM, seeds, avoidBusyRoads, vias: rawVias, avoid } = body as Record<string, unknown>
 
   const start = lonLat(rawStart)
   if (!start) return null
@@ -83,6 +85,8 @@ export function parseLoopRequest(body: unknown): LoopRequest | null {
   const vias = rawVias === undefined ? undefined : parseVias(rawVias, start, seeds.length)
   if (vias === null) return null
 
+  if (avoid !== undefined && (!Array.isArray(avoid) || avoid.length > AVOID_LIMITS.perRequest || !avoid.every(isAvoidCircle))) return null
+
   const first = (seeds as number[]).flatMap((seed, k) => (seeds.indexOf(seed) === k ? [k] : []))
   return {
     start,
@@ -90,6 +94,7 @@ export function parseLoopRequest(body: unknown): LoopRequest | null {
     seeds: first.map((k) => seeds[k] as number),
     avoidBusyRoads: avoidBusyRoads ?? false,
     ...(vias ? { vias: first.map((k) => vias[k]!) } : {}),
+    ...(avoid?.length ? { avoid: avoid.map(([lon, lat, radiusM]): AvoidCircle => [lon, lat, radiusM]) } : {}),
   }
 }
 
@@ -125,14 +130,14 @@ async function loopFor(
   vias: [number, number][] | undefined,
   signal: AbortSignal | undefined,
 ): Promise<RoundTripResult> {
-  const { start, distanceM: target, avoidBusyRoads } = request
+  const { start, distanceM: target, avoidBusyRoads, avoid } = request
   if (signal?.aborted) return { ok: false, kind: 'upstream' }
-  const first = await gateway.roundTrip({ start, lengthM: target, seed, avoidBusyRoads, signal, ...(vias ? { vias } : {}) })
+  const first = await gateway.roundTrip({ start, lengthM: target, seed, avoidBusyRoads, avoid, signal, ...(vias ? { vias } : {}) })
   // A tour's length is set by its vias: asking again would bring the same loop.
   if (vias || !first.ok || drift(first.candidate.distanceM, target) <= MAX_DRIFT || signal?.aborted) return first
 
   const correction = Math.min(MAX_CORRECTION, Math.max(1 / MAX_CORRECTION, target / first.candidate.distanceM))
-  const second = await gateway.roundTrip({ start, lengthM: target * correction, seed, avoidBusyRoads, signal })
+  const second = await gateway.roundTrip({ start, lengthM: target * correction, seed, avoidBusyRoads, avoid, signal })
   if (!second.ok) return first
   return drift(second.candidate.distanceM, target) < drift(first.candidate.distanceM, target) ? second : first
 }

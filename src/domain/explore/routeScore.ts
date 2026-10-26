@@ -1,11 +1,9 @@
+import { climbBudget, climbPerKm, NO_SESSION, type SessionDay } from './climbBudget'
 import type { AreaIndex } from './coverage'
 import { MAX_STEP_M, cellIndices, cellCentre, cellOf, cellOfXY, projectX, projectY, sampleLine } from './grid'
 import type { RouteCandidate, RoutePreferences, ScoredRoute } from './types'
 
-/**
- * score = |d − target|/target + wNew·(1 − new) + wBusy·busy, and with "Flat for the reps" + wClimb·hilly + wTraffic·(1 − trafficFree).
- * The toggles only move weights, so every candidate stays comparable and Regenerate walks one ranking.
- */
+/** The terms are in docs/interface.md; the toggles only move weights, so Regenerate walks one ranking. */
 
 export const ROUTE_W_DISTANCE = 1
 /** Weight on known ground with "New streets first" on, and with it off. */
@@ -13,39 +11,68 @@ export const ROUTE_W_NEW_ON = 0.6
 export const ROUTE_W_NEW_OFF = 0.15
 /** Weight on busy roads with "Avoid busy roads" on; off, they are not scored at all. */
 export const ROUTE_W_BUSY_ON = 0.8
-/** With "Flat for the reps": weight on climb, full at this many metres a km, and on ground shared with traffic. */
-export const ROUTE_W_CLIMB = 0.5
+/** Over 2.5 × wNew: a kilometre of mud or forest path costs more than any new ground it reaches. */
+export const ROUTE_W_TRAIL = 1.5
+/** Added to the trail weight when the run starts or ends in the dark; "Trails OK" never lifts it. */
+export const ROUTE_W_TRAIL_DARK = 6
+/** On the share at 7 % or steeper, counted half below 10 %; descents too on a long run. */
+export const ROUTE_W_STEEP = 1
+/** Climb, full at ROUTE_CLIMB_FULL_M_PER_KM: light on every loop, heavier with "Flat for the reps". */
+export const ROUTE_W_CLIMB = 0.25
+export const ROUTE_W_CLIMB_FLAT = 0.5
 export const ROUTE_CLIMB_FULL_M_PER_KM = 20
+/** Per m/km over the day's budget: 3 m/km over outweighs all the new ground a loop can bring. */
+export const ROUTE_W_OVER_BUDGET = 0.2
 export const ROUTE_W_TRAFFIC = 0.4
+
+const WAY_PATH = 4
+const WAY_TRACK = 5
+const WAY_STEPS = 8
+const SURFACE_UNKNOWN = 0
+/** ORS surfaces that turn to mud or give underfoot: unpaved, dirt, ground, ice, sand, woodchips, grass. */
+const SOFT_SURFACES: ReadonlySet<number> = new Set([2, 11, 12, 13, 15, 16, 17])
+/** Compacted and loose gravel: firm, but a forest track all the same. */
+const FIRM_UNPAVED: ReadonlySet<number> = new Set([8, 10])
 
 /** ORS waytypes: 1 state road, 2 road; streets (3) and everything quieter count nothing. */
 const BUSY_WEIGHT: Readonly<Record<number, number>> = { 1: 1, 2: 0.5 }
 /** ORS waytypes with no traffic to cross: path, track, cycleway, footway. */
 const TRAFFIC_FREE: Readonly<Record<number, number>> = { 4: 1, 5: 1, 6: 1, 7: 1 }
 
+/** Path or track with no surface tag counts as trail: a paved one is tagged, a forest one rarely is. */
+export function trailWeight(waytype: number, surface: number): number {
+  if (waytype === WAY_STEPS || SOFT_SURFACES.has(surface)) return 1
+  if (waytype !== WAY_PATH && waytype !== WAY_TRACK) return 0
+  if (surface === SURFACE_UNKNOWN) return 1
+  return FIRM_UNPAVED.has(surface) ? 0.5 : 0
+}
+
+function steepWeight(grade: number): number {
+  return grade >= 4 ? 1 : grade === 3 ? 0.5 : 0
+}
+
 export interface RouteMeasure {
   /** Measured on the area grid, which is what the shares are fractions of. */
   lengthM: number
   newShare: number
   busyShare: number
-  /** Share of the length on paths, tracks, cycleways and footways. */
+  /** Share of the length on paths, tracks, cycleways and footways that are not trail. */
   trafficFreeShare: number
+  trailShare: number
+  steepUpShare: number
+  steepDownShare: number
+  steepClimbM: number
   newSteps: boolean[]
 }
 
-/**
- * Per-step busy weights from the ORS `waytype` ranges. A range
- * [from, to, value] covers coordinates from..to, so steps from..to−1.
- */
-function stepWeights(steps: number, waytypes: RouteCandidate['waytypes'], weightOf: Readonly<Record<number, number>> = BUSY_WEIGHT): Float64Array {
-  const weights = new Float64Array(steps)
-  for (const [from, to, value] of waytypes) {
-    const w = weightOf[value] ?? 0
-    if (!w) continue
+/** One value per step from ORS ranges: [from, to, value] covers coordinates from..to, so steps from..to−1. */
+function stepValues(steps: number, ranges: readonly (readonly [number, number, number])[] = []): Int8Array {
+  const values = new Int8Array(steps)
+  for (const [from, to, value] of ranges) {
     const end = Math.min(steps, Math.floor(to))
-    for (let s = Math.max(0, Math.floor(from)); s < end; s++) weights[s] = w
+    for (let s = Math.max(0, Math.floor(from)); s < end; s++) values[s] = value
   }
-  return weights
+  return values
 }
 
 /**
@@ -58,14 +85,19 @@ export function measureRoute(index: AreaIndex, visited: ReadonlySet<number>, can
   const cellM = proj.cellM
   const coords = candidate.coordinates
   const steps = Math.max(0, coords.length - 1)
-  const busy = stepWeights(steps, candidate.waytypes)
-  const free = stepWeights(steps, candidate.waytypes, TRAFFIC_FREE)
+  const ways = stepValues(steps, candidate.waytypes)
+  const surfaces = stepValues(steps, candidate.surfaces)
+  const grades = stepValues(steps, candidate.steepness)
   const newSteps = new Array<boolean>(steps).fill(false)
   const pair = new Float64Array(4)
   let lengthM = 0
   let newM = 0
   let busyM = 0
   let freeM = 0
+  let trailM = 0
+  let upM = 0
+  let downM = 0
+  let steepClimbM = 0
 
   for (let s = 0; s < steps; s++) {
     const a = coords[s]!
@@ -91,36 +123,65 @@ export function measureRoute(index: AreaIndex, visited: ReadonlySet<number>, can
 
     // A zero-length step (a repeated vertex) takes the flag of where it stands.
     newSteps[s] = stepM > 0 ? stepNewM >= stepM / 2 : !visited.has(cellOf(proj, pair[0]!, pair[1]!))
+    const way = ways[s]!
+    const trail = trailWeight(way, surfaces[s]!)
     lengthM += stepM
     newM += stepNewM
-    busyM += busy[s]! * stepM
-    freeM += free[s]! * stepM
+    busyM += (BUSY_WEIGHT[way] ?? 0) * stepM
+    freeM += (TRAFFIC_FREE[way] ?? 0) * (1 - trail) * stepM
+    trailM += trail * stepM
+    upM += steepWeight(grades[s]!) * stepM
+    downM += steepWeight(-grades[s]!) * stepM
+    if (grades[s]! >= 4) steepClimbM += stepM
   }
 
+  const share = (metres: number) => (lengthM > 0 ? metres / lengthM : 0)
   return {
     lengthM,
-    newShare: lengthM > 0 ? newM / lengthM : 0,
-    busyShare: lengthM > 0 ? busyM / lengthM : 0,
-    trafficFreeShare: lengthM > 0 ? freeM / lengthM : 0,
+    newShare: share(newM),
+    busyShare: share(busyM),
+    trafficFreeShare: share(freeM),
+    trailShare: share(trailM),
+    steepUpShare: share(upM),
+    steepDownShare: share(downM),
+    steepClimbM,
     newSteps,
   }
 }
 
+export interface RouteContext {
+  day: SessionDay
+  dark: boolean
+}
+
+export const NO_ROUTE_CONTEXT: RouteContext = { day: NO_SESSION, dark: false }
+
 export function routeScore(
-  measure: Pick<RouteMeasure, 'newShare' | 'busyShare' | 'trafficFreeShare'>,
+  measure: Pick<RouteMeasure, 'newShare' | 'busyShare' | 'trafficFreeShare' | 'trailShare' | 'steepUpShare' | 'steepDownShare'>,
   distanceM: number,
   targetM: number,
   prefs: RoutePreferences,
   climbM: number | null = null,
+  context: RouteContext = NO_ROUTE_CONTEXT,
 ): number {
+  const budget = climbBudget(context.day, prefs.trailsOk)
   const wNew = prefs.newStreetsFirst ? ROUTE_W_NEW_ON : ROUTE_W_NEW_OFF
   const wBusy = prefs.avoidBusyRoads ? ROUTE_W_BUSY_ON : 0
+  const wTrail = (budget.trailsOk ? 0 : ROUTE_W_TRAIL) + (context.dark ? ROUTE_W_TRAIL_DARK : 0)
   const off = targetM > 0 ? Math.abs(distanceM - targetM) / targetM : 0
-  const base = ROUTE_W_DISTANCE * off + wNew * (1 - measure.newShare) + wBusy * measure.busyShare
-  if (!prefs.flatForReps) return base
-  const climbPerKm = climbM !== null && distanceM > 0 ? climbM / (distanceM / 1000) : 0
-  const hilly = Math.min(1, climbPerKm / ROUTE_CLIMB_FULL_M_PER_KM)
-  return base + ROUTE_W_CLIMB * hilly + ROUTE_W_TRAFFIC * (1 - measure.trafficFreeShare)
+  const perKm = climbPerKm(climbM, distanceM)
+  const hilly = Math.min(1, perKm / ROUTE_CLIMB_FULL_M_PER_KM)
+  const over = budget.maxMPerKm === null ? 0 : Math.max(0, perKm - budget.maxMPerKm)
+  const steep = measure.steepUpShare + (budget.steepDescents ? measure.steepDownShare : 0)
+  const base =
+    ROUTE_W_DISTANCE * off +
+    wNew * (1 - measure.newShare) +
+    wBusy * measure.busyShare +
+    wTrail * measure.trailShare +
+    ROUTE_W_STEEP * steep +
+    ROUTE_W_OVER_BUDGET * over
+  if (!prefs.flatForReps) return base + ROUTE_W_CLIMB * hilly
+  return base + ROUTE_W_CLIMB_FLAT * hilly + ROUTE_W_TRAFFIC * (1 - measure.trafficFreeShare)
 }
 
 /**
@@ -134,6 +195,7 @@ export function scoreRoutes(
   candidates: readonly RouteCandidate[],
   targetM: number,
   prefs: RoutePreferences,
+  context: RouteContext = NO_ROUTE_CONTEXT,
 ): ScoredRoute[] {
   return candidates
     .map((candidate): ScoredRoute => {
@@ -144,9 +206,11 @@ export function scoreRoutes(
         Number.isFinite(candidate.distanceM) && candidate.distanceM > 0 ? candidate.distanceM : measure.lengthM
       return {
         candidate,
-        score: routeScore(measure, distanceM, targetM, prefs, candidate.ascentM),
+        score: routeScore(measure, distanceM, targetM, prefs, candidate.ascentM, context),
         newShare: measure.newShare,
         busyShare: measure.busyShare,
+        trailShare: measure.trailShare,
+        steepClimbM: measure.steepClimbM,
         newSteps: measure.newSteps,
       }
     })

@@ -1,10 +1,11 @@
-import type { Feature, FeatureCollection, LineString, Point, Position } from 'geojson'
+import type { Feature, FeatureCollection, LineString, Point, Polygon, Position } from 'geojson'
 import type { FilterSpecification, GeoJSONSource, LayerSpecification, Map as MapLibreMap } from 'maplibre-gl'
+import { avoidRing, type AvoidCircle } from '@/domain/explore/avoidSpots'
 import { accentColor, type AccentId } from '@/lib/accent'
 import { firstSymbolLayerId } from '@/lib/maplibre'
 import { ink, paper, rgbTriplet, white, withAlpha } from '@/lib/palette'
 import { EDGE_FENCE_LAYER } from '@/lib/runMapLayers'
-import { SURFACES } from '@/lib/themeTokens'
+import { STATUS_HEX, SURFACES } from '@/lib/themeTokens'
 
 /**
  * Colours are literal, resolved for the mode and accent they are drawn in: a theme or accent change
@@ -15,7 +16,10 @@ import { SURFACES } from '@/lib/themeTokens'
 export const ROUTE_CONNECTOR_SOURCE = 'runomics-route-connector'
 export const ROUTE_SOURCE = 'runomics-route'
 export const ROUTE_START_SOURCE = 'runomics-route-start'
+export const ROUTE_AVOID_SOURCE = 'runomics-route-avoid'
 
+export const ROUTE_AVOID_FILL_LAYER = 'runomics-route-avoid-fill'
+export const ROUTE_AVOID_LINE_LAYER = 'runomics-route-avoid-line'
 export const ROUTE_CONNECTOR_LAYER = 'runomics-route-connector'
 export const ROUTE_CASING_LAYER = 'runomics-route-casing'
 export const ROUTE_NEW_LAYER = 'runomics-route-new'
@@ -24,8 +28,16 @@ export const ROUTE_START_LAYER = 'runomics-route-start'
 export const ROUTE_START_IMAGE = 'runomics-route-start'
 
 /** Bottom to top. */
-export const ROUTE_LAYERS = [ROUTE_CONNECTOR_LAYER, ROUTE_CASING_LAYER, ROUTE_NEW_LAYER, ROUTE_KNOWN_LAYER, ROUTE_START_LAYER] as const
-export const ROUTE_SOURCES = [ROUTE_CONNECTOR_SOURCE, ROUTE_SOURCE, ROUTE_START_SOURCE] as const
+export const ROUTE_LAYERS = [
+  ROUTE_AVOID_FILL_LAYER,
+  ROUTE_AVOID_LINE_LAYER,
+  ROUTE_CONNECTOR_LAYER,
+  ROUTE_CASING_LAYER,
+  ROUTE_NEW_LAYER,
+  ROUTE_KNOWN_LAYER,
+  ROUTE_START_LAYER,
+] as const
+export const ROUTE_SOURCES = [ROUTE_AVOID_SOURCE, ROUTE_CONNECTOR_SOURCE, ROUTE_SOURCE, ROUTE_START_SOURCE] as const
 
 const LINE_WIDTH = 4.5
 const CASING_WIDTH = 9
@@ -46,6 +58,7 @@ export interface RouteColors {
   known: string
   startFill: string
   startStroke: string
+  avoid: string
 }
 
 /** Mono's accent is the foreground colour, so its known streets step back to the secondary text colour. */
@@ -53,9 +66,10 @@ export function routeColors(mode: RouteMode, accent: AccentId): RouteColors {
   const acc = accentColor(accent, mode)
   const s = SURFACES[mode]
   const known = accent === 'mono' ? s.text2 : s.text
+  const avoid = STATUS_HEX[mode].neg
   return mode === 'dark'
-    ? { connector: withAlpha(s.text, 0.5), casing: ink(0.6), new: acc, known, startFill: s.text, startStroke: acc }
-    : { connector: withAlpha(s.text, 0.45), casing: paper(0.9), new: acc, known, startFill: white, startStroke: acc }
+    ? { connector: withAlpha(s.text, 0.5), casing: ink(0.6), new: acc, known, startFill: s.text, startStroke: acc, avoid }
+    : { connector: withAlpha(s.text, 0.45), casing: paper(0.9), new: acc, known, startFill: white, startStroke: acc, avoid }
 }
 
 export interface RouteDrawing {
@@ -65,6 +79,8 @@ export interface RouteDrawing {
   newSteps: readonly boolean[]
   /** Where the dashed line to the loop begins: home, or the tapped start; with no loop yet, the start dot. */
   from: [number, number] | null
+  /** The spots marked to avoid, drawn whether or not a loop is. */
+  avoid?: readonly AvoidCircle[]
 }
 
 export type RouteKind = 'loop' | 'new' | 'known'
@@ -73,6 +89,7 @@ export interface RouteGeoJson {
   connector: FeatureCollection<LineString>
   route: FeatureCollection<LineString, { kind: RouteKind }>
   start: FeatureCollection<Point>
+  avoid: FeatureCollection<Polygon>
 }
 
 const empty = <G extends LineString | Point, P = Record<string, never>>(): FeatureCollection<G, P> => ({ type: 'FeatureCollection', features: [] })
@@ -84,10 +101,14 @@ export function routeGeoJson(drawing: RouteDrawing | null): RouteGeoJson {
   const connector = empty<LineString>()
   const route = empty<LineString, { kind: RouteKind }>()
   const start = empty<Point>()
+  const avoid: FeatureCollection<Polygon> = {
+    type: 'FeatureCollection',
+    features: (drawing?.avoid ?? []).map((circle) => ({ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [avoidRing(circle)] } })),
+  }
   const coords = (drawing?.coordinates ?? []).filter((p) => Number.isFinite(p[0]) && Number.isFinite(p[1]))
   if (!drawing || coords.length < 2) {
     if (drawing?.from) start.features.push({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [...drawing.from] } })
-    return { connector, route, start }
+    return { connector, route, start, avoid }
   }
 
   const line = (from: number, to: number): Position[] => coords.slice(from, to + 1).map(lonLat)
@@ -110,7 +131,7 @@ export function routeGeoJson(drawing: RouteDrawing | null): RouteGeoJson {
   if (drawing.from) {
     connector.features.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[...drawing.from], first] } })
   }
-  return { connector, route, start }
+  return { connector, route, start, avoid }
 }
 
 const drawings = new WeakMap<MapLibreMap, RouteGeoJson>()
@@ -151,6 +172,13 @@ export function startDotImage(fill: string, stroke: string, pixelRatio = START_P
 function routeLayers(c: RouteColors): LayerSpecification[] {
   const round = { 'line-join': 'round', 'line-cap': 'round' } as const
   return [
+    { id: ROUTE_AVOID_FILL_LAYER, type: 'fill', source: ROUTE_AVOID_SOURCE, paint: { 'fill-color': c.avoid, 'fill-opacity': 0.18 } },
+    {
+      id: ROUTE_AVOID_LINE_LAYER,
+      type: 'line',
+      source: ROUTE_AVOID_SOURCE,
+      paint: { 'line-color': c.avoid, 'line-width': 1.5, 'line-dasharray': [2, 1.5] },
+    },
     {
       id: ROUTE_CONNECTOR_LAYER,
       type: 'line',
@@ -200,6 +228,7 @@ export interface RouteLayerOptions {
 export function addRouteLayers(map: MapLibreMap, { mode, accent }: RouteLayerOptions): void {
   removeRouteLayers(map)
   const data = dataOf(map)
+  map.addSource(ROUTE_AVOID_SOURCE, { type: 'geojson', data: data.avoid })
   map.addSource(ROUTE_CONNECTOR_SOURCE, { type: 'geojson', data: data.connector })
   map.addSource(ROUTE_SOURCE, { type: 'geojson', data: data.route })
   map.addSource(ROUTE_START_SOURCE, { type: 'geojson', data: data.start })
@@ -216,6 +245,7 @@ export function setRouteData(map: MapLibreMap, drawing: RouteDrawing | null): vo
   ;(map.getSource(ROUTE_CONNECTOR_SOURCE) as GeoJSONSource | undefined)?.setData(data.connector)
   ;(map.getSource(ROUTE_SOURCE) as GeoJSONSource | undefined)?.setData(data.route)
   ;(map.getSource(ROUTE_START_SOURCE) as GeoJSONSource | undefined)?.setData(data.start)
+  ;(map.getSource(ROUTE_AVOID_SOURCE) as GeoJSONSource | undefined)?.setData(data.avoid)
 }
 
 /** The drawing is kept for the next add. */

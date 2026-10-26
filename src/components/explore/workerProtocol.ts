@@ -1,4 +1,5 @@
 import type { RoutePlan } from '@/domain/explore/routePlan'
+import type { RouteContext } from '@/domain/explore/routeScore'
 import type {
   AreaCoverage,
   ExploreAreaFile,
@@ -54,6 +55,7 @@ export interface ScoreRoutesRequest {
   candidates: RouteCandidate[]
   targetM: number
   prefs: RoutePreferences
+  context?: RouteContext
 }
 
 /** No home: the start is worked out from the area file alone. */

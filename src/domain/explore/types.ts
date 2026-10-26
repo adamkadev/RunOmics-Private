@@ -137,6 +137,10 @@ export interface RouteCandidate {
    * 8 steps, 0 unknown.
    */
   waytypes: [number, number, number][]
+  /** ORS `surface` ranges, as `waytypes`: 0 unknown, 2 unpaved, 3 asphalt, 11 dirt, 12 ground or mud, 17 grass. */
+  surfaces?: [number, number, number][]
+  /** ORS `steepness` ranges, as `waytypes`: −5 to 5, where 3 is a 7-10 % climb, 4 a 10-16 % one and 5 steeper. */
+  steepness?: [number, number, number][]
 }
 
 export interface RoutePreferences {
@@ -144,6 +148,8 @@ export interface RoutePreferences {
   newStreetsFirst: boolean
   /** Reps want flat ground and no crossings: on by itself on a quality day. */
   flatForReps: boolean
+  /** Lifts the trail penalty in daylight, never on a quality day or the day before one. */
+  trailsOk: boolean
 }
 
 export interface ScoredRoute {
@@ -153,6 +159,10 @@ export interface ScoredRoute {
   newShare: number
   /** Share of the route's length on state roads and roads, 0–1. */
   busyShare: number
+  /** Share of the route's length on trails, soft ground or steps, 0–1. */
+  trailShare: number
+  /** Metres of the route climbing at 10 % or more. */
+  steepClimbM: number
   /**
    * One flag per coordinate step (length coordinates - 1): true when the
    * step lies in new ground, for drawing new (accent) vs known streets.

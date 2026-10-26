@@ -41,6 +41,26 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    function isWellFormedAvoidSpot() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['lon', 'lat', 'radiusM', 'createdAt'])
+        && data.keys().hasOnly(['lon', 'lat', 'radiusM', 'createdAt', 'reason'])
+        && data.lon is number && data.lon >= -180 && data.lon <= 180
+        && data.lat is number && data.lat >= -90 && data.lat <= 90
+        && data.radiusM is int && data.radiusM >= 20 && data.radiusM <= 250
+        && data.createdAt is string && data.createdAt.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && (!('reason' in data) || data.reason in ['blocked', 'mud', 'unsafe']);
+    }
+
+    // Places the athlete marked for Explore's loops to go around: where they run is the owner's alone.
+    match /avoidSpots/{spotId} {
+      allow get: if isOwner();
+      allow list: if isOwner();
+
+      allow create, update: if isOwner() && isWellFormedAvoidSpot();
+      allow delete: if isOwner();
+    }
+
     function isScore(data, field) {
       return !(field in data) || (data[field] is int && data[field] >= 1 && data[field] <= 5);
     }

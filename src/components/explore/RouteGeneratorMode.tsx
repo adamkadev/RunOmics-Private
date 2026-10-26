@@ -1,10 +1,13 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, type Ref } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type Ref } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { t } from '@/i18n'
+import type { SessionDay } from '@/domain/explore/climbBudget'
+import { runDarkness } from '@/domain/explore/daylight'
 import type { ExploreAreaRef, RoutePreferences, ScoredRoute } from '@/domain/explore/types'
+import { appTodayIso } from '@/lib/calendarDate'
 import { formatPercent, formatWeekday } from '@/lib/formatters'
 import { useOwnerAuth } from '@/lib/useOwnerAuth'
 import { useNavigationOrigin } from '@/components/layout/NavigationHistory'
@@ -15,9 +18,25 @@ import { RouteGeneratorPanel } from './RouteGeneratorPanel'
 import { generatorBack, routeStats, type ExplorePlan } from './routeGenerator'
 import { routeGpxFile } from './routeGpx'
 import type { RouteStartMode, RouteStartState } from './routeStart'
+import type { AvoidSpots } from './useAvoidSpots'
 import { useFitsWhole } from './useFitsWhole'
 import { useRouteGenerator } from './useRouteGenerator'
 import type { LonLat } from './workerProtocol'
+
+/** The ending time is a guess without a pace: 6:00/km is a typical easy pace. */
+const FALLBACK_PACE_SEC_PER_KM = 360
+
+const NOW_TICK_MS = 60_000
+
+/** A clock read once a minute, so the daylight rule follows the time while the panel stays open. */
+function useNow(): number {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), NOW_TICK_MS)
+    return () => clearInterval(id)
+  }, [])
+  return now
+}
 
 /** The loops' credit, shown in the ⓘ while the generator is open (the routing proxy's own line). */
 export const ROUTE_CREDIT: MapCredit = { text: '© openrouteservice by HeiGIT' }
@@ -35,6 +54,9 @@ export interface RouteGeneratorModeProps {
   /** The parent owns it: the map draws the start and takes the tap that picks one. */
   start: RouteStartState
   onStartModeChange: (mode: RouteStartMode) => void
+  /** The session the loop is for and whether a quality one follows it. */
+  day: SessionDay
+  avoid: AvoidSpots
   home: LonLat | null
   paceSecPerKm: number | null
   /** The session it plans for (the linked day's, or today's), or null. */
@@ -63,6 +85,8 @@ export function RouteGeneratorMode({
   onPrefsChange,
   start,
   onStartModeChange,
+  day,
+  avoid,
   home,
   paceSecPerKm,
   plan,
@@ -77,6 +101,21 @@ export function RouteGeneratorMode({
   const router = useRouter()
   const origin = useNavigationOrigin()
   const owner = useOwnerAuth()
+  const now = useNow()
+  const [west, south, east, north] = area.bbox
+  const [sunLon, sunLat] = start.origin ?? [(west + east) / 2, (south + north) / 2]
+  const darkness = useMemo(
+    () =>
+      runDarkness({
+        date: today ?? appTodayIso(new Date(now)),
+        lat: sunLat,
+        lon: sunLon,
+        now,
+        durationS: distanceKm * (paceSecPerKm ?? FALLBACK_PACE_SEC_PER_KM),
+      }),
+    [today, now, sunLat, sunLon, distanceKm, paceSecPerKm],
+  )
+  const context = useMemo(() => ({ day, dark: darkness !== null }), [day, darkness])
   const generator = useRouteGenerator({
     enabled: true,
     area,
@@ -89,6 +128,8 @@ export function RouteGeneratorMode({
     origin: start.origin,
     waiting: start.waiting,
     home,
+    context,
+    avoidSpots: avoid.spots,
   })
   const { route, drawn } = generator
 
@@ -150,6 +191,9 @@ export function RouteGeneratorMode({
           plan={plan ? { heading: !today || plan.date === today ? e.todaysPlan : e.planFor(formatWeekday(plan.date, true)), label: plan.label, km: planRouteKm(plan.distanceM) } : null}
           start={start}
           onStartModeChange={onStartModeChange}
+          day={day}
+          darkness={darkness}
+          avoid={avoid}
           prefs={prefs}
           onPrefsChange={onPrefsChange}
           status={generator.status === 'idle' ? 'generating' : generator.status}

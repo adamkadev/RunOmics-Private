@@ -40,6 +40,7 @@ describe.skipIf(!emulator)('firestore.rules', () => {
       const db = context.firestore()
       await setDoc(doc(db, 'activityNotes', '101'), { note: 'Felt sick', tags: ['illness'] })
       await setDoc(doc(db, 'routeNames', 'route-1'), { name: 'Moselle riverside loop' })
+      await setDoc(doc(db, 'avoidSpots', 'spot-1'), { lon: -150, lat: 0, radiusM: 80, createdAt: '2026-10-25' })
       await setDoc(doc(db, 'wellness', '2026-10-24'), { sleep: 2, soreness: 4, ill: true })
       await setDoc(doc(db, 'pushTokens', 'token-1'), { token: 'token-1', userAgent: 'iPhone' })
       await setDoc(doc(db, 'aiInsights', 'today'), { text: 'x' })
@@ -109,6 +110,37 @@ describe.skipIf(!emulator)('firestore.rules', () => {
     it('only lets the owner clear one', async () => {
       await assertFails(deleteDoc(doc(stranger(), 'routeNames', 'route-1')))
       await assertSucceeds(deleteDoc(doc(owner(), 'routeNames', 'route-1')))
+    })
+  })
+
+  describe('avoidSpots', () => {
+    const spot = { lon: -150.01, lat: 0.01, radiusM: 80, createdAt: '2026-10-26', reason: 'blocked' }
+
+    it('lets only the owner read and list them', async () => {
+      await assertFails(getDoc(doc(visitor(), 'avoidSpots', 'spot-1')))
+      await assertFails(getDocs(collection(stranger(), 'avoidSpots')))
+      await assertSucceeds(getDoc(doc(owner(), 'avoidSpots', 'spot-1')))
+      await assertSucceeds(getDocs(collection(owner(), 'avoidSpots')))
+    })
+
+    it('only lets the owner write, and only a well-formed spot', async () => {
+      await assertFails(setDoc(doc(visitor(), 'avoidSpots', 'spot-2'), spot))
+      await assertFails(setDoc(doc(stranger(), 'avoidSpots', 'spot-2'), spot))
+      await assertSucceeds(setDoc(doc(owner(), 'avoidSpots', 'spot-2'), spot))
+
+      const db = owner()
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { ...spot, radiusM: 5000 }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { ...spot, radiusM: 80.5 }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { ...spot, lat: 91 }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { ...spot, reason: 'free text' }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { ...spot, createdAt: 'yesterday' }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { ...spot, note: 'x' }))
+      await assertFails(setDoc(doc(db, 'avoidSpots', 'spot-3'), { lon: -150, lat: 0, radiusM: 80 }))
+    })
+
+    it('only lets the owner delete one', async () => {
+      await assertFails(deleteDoc(doc(stranger(), 'avoidSpots', 'spot-1')))
+      await assertSucceeds(deleteDoc(doc(owner(), 'avoidSpots', 'spot-1')))
     })
   })
 
