@@ -202,6 +202,16 @@ athlete's private workspace (`RUNOMICS_DATA_DIR`), never in this repository.
 - `GarminWorkoutGateway` deliberately exposes no bulk or list-wide operation — every
   mutation names exactly one workout or one calendar entry.
 
+**The mapping travels like the plan.** `coach:sync-garmin` takes its data workspace
+the way `coach --apply` does: an explicit `--data-dir` or `RUNOMICS_DATA_DIR` is the
+operator's checkout, read and written in place, and the CLI reminds them to commit the
+mapping. Otherwise, with `RUNOMICS_DATA_REPO_URL` set, it fetches the private data, and
+`--apply` pushes the mapping back through the same base-revision guard once Garmin has
+been written, including after a partial failure, since every operation's state is
+persisted. A push refused after Garmin writes would lose the only record of those
+workouts with the temporary workspace, so the mapping is first saved under
+`.coach-previews/` to commit by hand.
+
 **Payload mapping quirks.** Garmin stores a pace target as speed in m/s, so the conversion
 inverts: the *faster* bound of a `paceSecPerKm` range (the smaller number of seconds)
 becomes the *higher* speed. Garmin orders the pair low-to-high, so the slower pace lands

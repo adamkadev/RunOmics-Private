@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import fs from 'fs'
 import path from 'path'
+import { dataWorkspace, pushWorkspace, removeWorkspace, type DataWorkspace } from './coachingWorkspace'
 import { interopImport } from './interopImport'
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
@@ -24,7 +26,9 @@ function usage(): string {
     '                       course-aware race still goes out with its race effort',
     '                       unpaced, so PacePro keeps the pacing.',
     '  --print-payload <YYYY-MM-DD>   Print the Garmin JSON for that date and exit.',
-    '  --data-dir <path>    Data workspace to use (default: RUNOMICS_DATA_DIR).',
+    '  --data-dir <path>    Read/write an existing workspace without fetching or pushing',
+    '                       it (default: RUNOMICS_DATA_DIR). Without one, the private data',
+    '                       repository is fetched, and --apply pushes the mapping back.',
     '',
     'Requires GARMIN_SECRET in the environment for --apply. It is read only by the',
     'Python bridge and never printed.',
@@ -43,9 +47,21 @@ function isoDate(args: string[], name: string): string | undefined {
   return value
 }
 
-function dataRoot(args: string[]): string {
-  const explicit = option(args, '--data-dir') ?? process.env.RUNOMICS_DATA_DIR?.trim()
-  return explicit ? path.resolve(explicit) : path.join(process.cwd(), 'data')
+/** The mapping alone records what is on Garmin, so one the push could not deliver is saved outside the workspace. */
+async function pushMapping(workspace: DataWorkspace, mappingPath: string): Promise<void> {
+  try {
+    await pushWorkspace(workspace)
+    console.log('Garmin mapping pushed to the private data repository.')
+  } catch (error) {
+    process.exitCode = 1
+    console.error(`Could not push the Garmin mapping: ${error instanceof Error ? error.message : String(error)}`)
+    if (!fs.existsSync(mappingPath)) return
+    const saved = path.resolve('.coach-previews', `garmin-sync-${new Date().toISOString().replace(/[:.]/g, '-')}.json`)
+    fs.mkdirSync(path.dirname(saved), { recursive: true })
+    fs.copyFileSync(mappingPath, saved)
+    fs.chmodSync(saved, 0o600)
+    console.error(`Saved it to ${saved}: commit it as data/coaching/garmin-sync.json before the next sync.`)
+  }
 }
 
 async function main(): Promise<void> {
@@ -55,7 +71,16 @@ async function main(): Promise<void> {
     return
   }
 
-  const root = dataRoot(args)
+  const workspace = await dataWorkspace(option(args, '--data-dir'), args.includes('--apply'))
+  try {
+    await sync(args, workspace)
+  } finally {
+    removeWorkspace(workspace)
+  }
+}
+
+async function sync(args: string[], workspace: DataWorkspace): Promise<void> {
+  const root = workspace.root
   process.env.RUNOMICS_DATA_DIR = root
 
   const { JsonCoachingRepository } = await interopImport(import('@/infrastructure/repositories/JsonCoachingRepository'))
@@ -130,6 +155,8 @@ async function main(): Promise<void> {
     if (verified.results.some((result) => result.outcome === 'failed')) process.exitCode = 1
   } finally {
     gateway.close()
+    if (workspace.shouldPush) await pushMapping(workspace, store.location)
+    else console.log(`Commit ${store.location} to the data repository: it is the only record of these Garmin workouts.`)
   }
 }
 

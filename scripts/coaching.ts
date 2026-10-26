@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import fs from 'fs'
-import os from 'os'
 import path from 'path'
 import { readProposalPreview, writeProposalPreview } from '@/application/coaching/preview'
+import { dataWorkspace, pushWorkspace, removeWorkspace } from './coachingWorkspace'
 import { interopImport } from './interopImport'
 
 const WEEKDAY: Record<string, number> = {
@@ -92,28 +92,6 @@ function manualPaths(args: string[]): ManualPaths | undefined {
   return { promptPath, answerPath: answer ? path.resolve(answer) : undefined }
 }
 
-interface DataWorkspace {
-  root: string
-  temporaryRoot?: string
-  shouldPush: boolean
-}
-
-async function dataWorkspace(args: string[], applying: boolean): Promise<DataWorkspace> {
-  const explicit = option(args, '--data-dir') ?? process.env.RUNOMICS_DATA_DIR?.trim()
-  if (explicit) return { root: path.resolve(explicit), shouldPush: false }
-
-  if (process.env.RUNOMICS_DATA_REPO_URL) {
-    const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'runomics-coach-'))
-    const root = path.join(temporaryRoot, 'data')
-    const { fetchPrivateData } = await interopImport(import('./fetch_private_data.mjs'))
-    fetchPrivateData(root)
-    return { root, temporaryRoot, shouldPush: applying }
-  }
-
-  if (applying) throw new Error('--apply requires private data repository credentials or an explicit --data-dir workspace')
-  return { root: path.join(process.cwd(), 'data'), shouldPush: false }
-}
-
 /** guidance.md keeps what a hand-guided block was told, so the next renewal is told it too. */
 function bootstrapGuidance(args: string[], stored: string | null): string | undefined {
   const given = fileOption(args, '--guidance-file')
@@ -174,7 +152,7 @@ async function createProposal(command: string, args: string[]) {
 }
 
 async function applyPreview(args: string[], proposalPath: string): Promise<void> {
-  const workspace = await dataWorkspace(args, true)
+  const workspace = await dataWorkspace(option(args, '--data-dir'), true)
   try {
     process.env.RUNOMICS_DATA_DIR = workspace.root
     const { JsonCoachingRepository } = await interopImport(import('@/infrastructure/repositories/JsonCoachingRepository'))
@@ -186,14 +164,11 @@ async function applyPreview(args: string[], proposalPath: string): Promise<void>
     const context = await getCoachingContext(repository.getCurrentPlan(), proposal.referenceDate)
     const plan = applyCoachingProposal(proposal, repository, coachingContextHash(context))
 
-    if (workspace.shouldPush) {
-      const { pushPrivateData } = await interopImport(import('./push_private_data.mjs'))
-      pushPrivateData(workspace.root)
-    }
+    if (workspace.shouldPush) await pushWorkspace(workspace)
     console.log(`Applied ${proposal.decision.outcome}; coaching plan is now revision ${plan.revision}.`)
     if (workspace.shouldPush) console.log('Private coaching data pushed. Deployment was not triggered.')
   } finally {
-    if (workspace.temporaryRoot) fs.rmSync(workspace.temporaryRoot, { recursive: true, force: true })
+    removeWorkspace(workspace)
   }
 }
 
@@ -299,7 +274,7 @@ async function main(): Promise<void> {
     return
   }
 
-  const workspace = await dataWorkspace(args, false)
+  const workspace = await dataWorkspace(option(args, '--data-dir'), false)
   try {
     process.env.RUNOMICS_DATA_DIR = workspace.root
     if (args[0] === 'autoregulate') {
@@ -313,7 +288,7 @@ async function main(): Promise<void> {
     if (!isPromptWritten(error)) throw error
     printPasteInstructions(error.promptPath, option(args, '--from-answer'))
   } finally {
-    if (workspace.temporaryRoot) fs.rmSync(workspace.temporaryRoot, { recursive: true, force: true })
+    removeWorkspace(workspace)
   }
 }
 
