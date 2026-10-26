@@ -38,7 +38,7 @@ export function RecordsClient({ records, topEfforts, predictions, pbAlerts, mile
   const s = t.records.segmented
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <StickyBar top="var(--sticky-top, var(--sticky-alone, max(var(--safe-top), 8px)))" className="-my-2">
         <SegmentedTabs
           tabs={recordTabs}
