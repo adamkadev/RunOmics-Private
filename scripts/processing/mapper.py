@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from processing.activity_type import infer_type_with_source
+from processing.activity_type import TypeContext, infer_type_with_source
 from processing.fit_parser import ActivitySplit, ParsedFit, SplitLap  # noqa: F401
 
 _MAX_CHART_POINTS = 150
@@ -165,6 +165,7 @@ def map_activity(
     file_name: str | None = None,
     gear: list[dict[str, Any]] | None = None,
     weather: dict[str, Any] | None = None,
+    type_context: TypeContext | None = None,
 ) -> ActivityData:
     summary: dict[str, Any] = garmin_activity.get("summaryDTO") or {}
 
@@ -212,6 +213,8 @@ def map_activity(
         parsed,
         hr_zones=hr_zones or [],
         duration_seconds=duration_seconds,
+        date=date_str,
+        context=type_context,
     )
 
     avg_hr_raw = (parsed.avg_heart_rate if parsed else None) or api("averageHR", "avgHr")

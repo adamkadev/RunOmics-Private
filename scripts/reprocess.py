@@ -8,10 +8,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from data_directory import get_fit_cache_dir
+from data_directory import get_data_dir, get_fit_cache_dir
 from processing.fit_parser import parse_fit
 from processing.activity_type import infer_type_with_source
 from processing.mapper import _decimate_list, _MAX_CHART_POINTS, grade_adjusted
+from processing.type_context import load_type_context
 from repository.json_store import JsonActivityStore
 
 _FIT_DIR = get_fit_cache_dir()
@@ -25,6 +26,7 @@ def main() -> int:
     args = parser.parse_args()
 
     store = JsonActivityStore()
+    type_context = load_type_context(get_data_dir())
 
     updated = uncached = 0
     for a in store.all_activities():
@@ -42,6 +44,8 @@ def main() -> int:
             parsed,
             hr_zones=a.get("hrZones") or [],
             duration_seconds=a.get("durationSeconds"),
+            date=a.get("date"),
+            context=type_context,
         )
         a["type"] = type_inference.activity_type
         a["typeSource"] = type_inference.source

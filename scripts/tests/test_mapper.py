@@ -1,9 +1,18 @@
+import json
 from datetime import datetime
 
 import pytest
 
-from processing.activity_type import TypeInference, infer_type, infer_type_with_source
+from processing.activity_type import (
+    PlannedRep,
+    PlannedSession,
+    TypeContext,
+    TypeInference,
+    infer_type,
+    infer_type_with_source,
+)
 from processing.fit_parser import ActivitySplit, ParsedFit, SplitLap
+from processing.type_context import load_type_context
 from processing.mapper import (
     HrZone,
     _decimate_list,
@@ -49,6 +58,7 @@ class TestInferType:
             "",
             ParsedFit(duration_seconds=2_700),
             hr_zones=_zones(z1=10, z2=25, z3=50, z4=12, z5=3),
+            context=TypeContext(lthr_bpm=179, z4_floor_bpm=170),
         )
 
         assert result == type_inference("Tempo", "runomics")
@@ -87,6 +97,74 @@ class TestInferType:
         )
 
         assert result == type_inference("Base", "runomics")
+
+    @pytest.mark.parametrize(
+        ("segments", "planned_reps", "rep_seconds"),
+        [
+            ([(240, 2.05, 174, 5)], 5, 240),
+            ([(180, 1.93, 161, 2), (5, 1.38, 169, 1), (9, 0.1, 169, 1), (180, 1.99, 170, 2)], 6, 180),
+        ],
+    )
+    def test_walk_run_matching_the_planned_easy_session_takes_the_plan_type(self, segments, planned_reps, rep_seconds):
+        splits = [split for segment in segments for split in _walk_run(*segment)]
+        planned = (PlannedRep(seconds=rep_seconds),) * planned_reps
+        context = TypeContext(sessions_by_date={"2026-10-25": (PlannedSession("Base", planned),)})
+
+        result = infer_type_with_source("", ParsedFit(splits=splits), date="2026-10-25T09:12:00", context=context)
+
+        assert result == type_inference("Base", "runomics")
+
+    def test_planned_type_needs_the_runs_reps_to_match(self):
+        context = TypeContext(sessions_by_date={"2026-10-25": (PlannedSession("Base", (PlannedRep(seconds=720),) * 2),)})
+
+        result = infer_type_with_source("", ParsedFit(splits=_walk_run(240, 2.05, 174, 5)), date="2026-10-25", context=context)
+
+        assert result == type_inference("VO2Max", "runomics")
+
+    def test_slow_reps_without_an_lthr_stay_base_whatever_the_zones(self):
+        result = infer_type_with_source(
+            "",
+            ParsedFit(duration_seconds=2_529, splits=_walk_run(505, 1.97, 177, 4)),
+            hr_zones=_zones(z3=11, z4=71, z5=18),
+            context=_beginner(),
+        )
+
+        assert result == type_inference("Base", "runomics")
+
+    def test_fast_strides_stay_sprint_for_a_beginner(self):
+        result = infer_type_with_source(
+            "", ParsedFit(splits=_walk_run(20, 2.9, 170, 10, recovery_seconds=45)), context=_beginner()
+        )
+
+        assert result == type_inference("Sprint", "runomics")
+
+    def test_slow_reps_at_threshold_heart_rate_count_when_the_lthr_is_known(self):
+        context = TypeContext(threshold_speed_ms=3.83, lthr_bpm=179, z4_floor_bpm=170)
+
+        result = infer_type_with_source("", ParsedFit(splits=_walk_run(240, 2.9, 176, 5)), context=context)
+
+        assert result == type_inference("VO2Max", "runomics")
+
+    def test_load_type_context_reads_threshold_from_vma_and_newest_plan_per_week(self, tmp_path):
+        coaching = tmp_path / "coaching"
+        (coaching / "superseded").mkdir(parents=True)
+        (tmp_path / "athlete.json").write_text(json.dumps({"vmaKmh": 10.8, "hrZoneBoundsBpm": [103, 124, 144, 165, 185]}))
+        (coaching / "current_plan.json").write_text(json.dumps(_plan("2026-10-20", "easy", "2026-10-21", 6, 180)))
+        (coaching / "superseded" / "old.json").write_text(json.dumps(
+            {**_plan("2026-10-13", "vo2max", "2026-10-21", 5, 240), "weeks": [
+                _plan("2026-10-13", "vo2max", "2026-10-14", 5, 240)["weeks"][0],
+                _plan("2026-10-20", "vo2max", "2026-10-21", 5, 240)["weeks"][0],
+            ]}
+        ))
+
+        context = load_type_context(tmp_path)
+
+        assert context.threshold_speed_ms == pytest.approx(2.55)
+        assert (context.lthr_bpm, context.z4_floor_bpm) == (None, None)
+        assert context.sessions_by_date == {
+            "2026-10-21": (PlannedSession("Base", (PlannedRep(seconds=180),) * 6),),
+            "2026-10-14": (PlannedSession("VO2Max", (PlannedRep(seconds=240),) * 5),),
+        }
 
     def test_race_remains_highest_priority_and_reports_garmin_source(self):
         parsed = ParsedFit(is_race=True, primary_benefit=1, splits=_intervals(30, 45, 8))
@@ -286,6 +364,34 @@ def _intervals(effort_seconds, recovery_seconds, repetitions):
             130,
         ),
     ]
+
+
+def _walk_run(effort_seconds, speed_ms, heart_rate, repetitions, *, recovery_seconds=60):
+    splits = []
+    for _ in range(repetitions):
+        splits.append(ActivitySplit("interval_active", effort_seconds, effort_seconds * speed_ms, speed_ms, heart_rate))
+        splits.append(ActivitySplit("interval_recovery", recovery_seconds, recovery_seconds * 1.2, 1.2, heart_rate - 10))
+    return splits
+
+
+def _beginner():
+    return TypeContext(threshold_speed_ms=2.57)
+
+
+def _plan(week_start, coaching_type, date, reps, rep_seconds):
+    effort = {"kind": "effort", "target": {"durationSeconds": rep_seconds}}
+    workout = {
+        "date": date,
+        "type": coaching_type,
+        "status": "prescribed",
+        "blocks": [
+            {"kind": "warmup", "target": {"distanceMeters": 400}},
+            {"kind": "repeat", "repetitions": reps, "steps": [effort, {"kind": "recovery", "target": {"durationSeconds": 60}}]},
+        ],
+    }
+    return {"provenance": {"createdAt": f"{week_start}T00:00:00Z"}, "weeks": [
+        {"startDate": week_start, "endDate": week_start[:8] + f"{int(week_start[8:]) + 6:02d}", "workouts": [workout]},
+    ]}
 
 
 def _laps(duration_seconds, distance_m, count):
