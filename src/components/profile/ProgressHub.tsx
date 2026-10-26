@@ -272,33 +272,36 @@ export function ProgressHub({ view, explored, checkpoint }: { view: ProgressHubV
         </section>
       )}
 
-      <Link href="/all-time" aria-label={h.openYears} className={cardClass({ className: cn('flex flex-col gap-3.5', LINK_CARD) })} data-testid="all-time">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className={TITLE}>{h.allTime}</span>
-          {allTime.since && <Caption>{h.since(formatDate(allTime.since, { precision: 'month', year: 'always' }))}</Caption>}
+      <section className={cardClass({ className: cn('relative', LINK_CARD) })} data-testid="all-time-card">
+        <Link href="/all-time" aria-label={h.openYears} className="absolute inset-0 rounded-[24px]" data-testid="all-time" />
+        <div className="pointer-events-none relative flex flex-col gap-3.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className={TITLE}>{h.allTime}</span>
+            {allTime.since && <Caption>{h.since(formatDate(allTime.since, { precision: 'month', year: 'always' }))}</Caption>}
+          </div>
+          <StatGrid columns={3}>
+            <Stat label={h.distance} value={formatKm(allTime.km)} unit={t.units.km} valueStyle={{ fontSize: 24 }} />
+            <Stat label={h.runsLabel} value={allTime.runs} valueStyle={{ fontSize: 24 }} />
+            <Stat label={h.time} value={formatKm(allTime.hours)} unit={h.hours} valueStyle={{ fontSize: 24 }} />
+          </StatGrid>
+          <ul className="flex flex-col gap-3 border-t border-border pt-3 text-[13px]" data-testid="year-rows">
+            {[...allTime.years.slice(-2)].reverse().map((y) => {
+              const current = y.year === view.year
+              return (
+                <li key={y.year} className="grid grid-cols-[44px_minmax(0,1fr)_150px] items-center gap-3" data-testid="year-row">
+                  <span className={cn(current ? 'font-semibold text-foreground' : 'text-muted-foreground')}>{y.year}</span>
+                  <span aria-hidden className="block h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                    <span className="block h-full rounded-full" data-testid="year-bar" style={{ width: `${(y.km / bestYearKm) * 100}%`, background: current ? 'var(--accent)' : 'var(--series-2)' }} />
+                  </span>
+                  <span className="text-right text-muted-foreground">
+                    <b className="font-semibold text-foreground">{formatKm(y.km)} {t.units.km}</b> · {t.common.runs(y.runs)}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
         </div>
-        <StatGrid columns={3}>
-          <Stat label={h.distance} value={formatKm(allTime.km)} unit={t.units.km} valueStyle={{ fontSize: 24 }} />
-          <Stat label={h.runsLabel} value={allTime.runs} valueStyle={{ fontSize: 24 }} />
-          <Stat label={h.time} value={formatKm(allTime.hours)} unit={h.hours} valueStyle={{ fontSize: 24 }} />
-        </StatGrid>
-        <ul className="flex flex-col gap-3 border-t border-border pt-3 text-[13px]" data-testid="year-rows">
-          {[...allTime.years.slice(-2)].reverse().map((y) => {
-            const current = y.year === view.year
-            return (
-              <li key={y.year} className="grid grid-cols-[44px_minmax(0,1fr)_150px] items-center gap-3" data-testid="year-row">
-                <span className={cn(current ? 'font-semibold text-foreground' : 'text-muted-foreground')}>{y.year}</span>
-                <span aria-hidden className="block h-1.5 overflow-hidden rounded-full bg-[var(--surface-2)]">
-                  <span className="block h-full rounded-full" data-testid="year-bar" style={{ width: `${(y.km / bestYearKm) * 100}%`, background: current ? 'var(--accent)' : 'var(--series-2)' }} />
-                </span>
-                <span className="text-right text-muted-foreground">
-                  <b className="font-semibold text-foreground">{formatKm(y.km)} {t.units.km}</b> · {t.common.runs(y.runs)}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
-      </Link>
+      </section>
     </div>
   )
 }

@@ -4,6 +4,30 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The second athlete's deployment has a test of its own (E1). The demo
+  generator takes `--profile sparse`: a made-up runner on a Forerunner 55, with
+  no Training Effect, training status, races, goals or PBs, a long break and a
+  French run/walk return block. A third Playwright project, `sparse-fr`, builds
+  it in French and runs the layout, Today, Plan and Analytics specs on the
+  iPhone, checks that her fixes hold, and runs an axe pass over seven pages;
+  only Plan's day buttons, which speak the whole date, are exempt from its
+  label-in-name rule.
+
+- The readiness card on Today and the all-time card on Profile lay their
+  link over the card instead of around it, so a screen reader reads the
+  card's own words, not only "Open load in Analytics" (F10, in part).
+
+- While building back after a break, Today no longer names a form band:
+  the status line reads "Building back - no reading yet" alone, as intended,
+  and the Form tile shows a dash instead of the break's deep negative number.
+
+- A week of timed sessions with no distance (a run/walk return) no longer
+  reads "7 / 0 km" on Plan and Today; it gives the km run alone.
+
+- A run's verdict names the session it was planned as when RunOmics guessed
+  its type, so a run/walk the old sync filed as VO2 max reads as easy there
+  too, and its effort is judged against an easy run's.
+
 - An operator channel. A second athlete's deployment registers her devices, so
   until now every operator alert it raised - a failed workflow, a data token
   about to expire, the nightly digest of phone errors - woke her phone and

@@ -29,6 +29,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
+    ".next-e2e-sparse/types/**/*.ts",
+    ".next-e2e-sparse/dev/types/**/*.ts",
     "**/*.mts"
   ],
   "exclude": ["node_modules"]

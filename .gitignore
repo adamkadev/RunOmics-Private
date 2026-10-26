@@ -26,6 +26,7 @@
 
 # next.js
 /.next/
+/.next-e2e-sparse/
 /out/
 
 # production
@@ -62,6 +63,7 @@
 # the throwaway demo workspace `npm run e2e:data` regenerates before every
 # Playwright build - never a real dataset, never worth committing.
 /.e2e-data/
+/.e2e-data-sparse/
 
 # the optimistic-concurrency marker fetch_private_data.mjs writes beside a data
 # workspace (see scripts/private_data_revision.mjs) - workspace state, never

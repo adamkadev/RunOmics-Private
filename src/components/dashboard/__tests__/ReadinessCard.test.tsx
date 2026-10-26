@@ -41,6 +41,13 @@ describe('ReadinessCard (App Fixes 1a)', () => {
     expect(screen.getByTestId('readiness-status').textContent).toBe(`${t.formBand.neutral} · ${t.dashboard.readiness.lineByTone.build}`)
   })
 
+  it('names no form band and shows no form number while building back after a break', () => {
+    render(<ReadinessCard status={{ ...STATUS, tsbNow: -11, buildingBack: true }} />)
+    expect(screen.getByTestId('readiness-status').textContent).toBe(t.dashboard.readiness.buildingBack)
+    expect(screen.getByTestId('tile-form')).toHaveTextContent(`${t.dashboard.readiness.formLabel}–`)
+    expect(screen.getByTestId('readiness-card')).not.toHaveTextContent(t.formBand[formBand(-11)])
+  })
+
   // The arrow follows the number, the colour what it means.
   it('colours each delta by what it means', () => {
     render(<ReadinessCard status={STATUS} />)

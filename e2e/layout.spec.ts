@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import { test, expect } from './fixtures'
+import { en } from '../src/i18n/en'
 
 const PAGES = ['/', '/activities', '/activities?view=map', '/plan', '/plan/checkpoint', '/analytics', '/profile', '/records', '/shoes', '/consistency', '/all-time', '/goals', '/race', '/athlete']
 
@@ -56,11 +57,12 @@ for (const path of PAGES) {
   })
 }
 
-for (const name of ['Overview', 'Splits', 'Charts', 'Dynamics']) {
-  test(`nothing runs past the screen on a run's ${name} tab`, async ({ page }) => {
+for (const key of ['overview', 'intervals', 'charts', 'dynamics'] as const) {
+  test(`nothing runs past the screen on a run's ${en.activity.tabs[key]} tab`, async ({ page, t }) => {
+    const name = t.activity.tabs[key]
     await page.goto('/activities')
     await page.getByTestId('thumb-row').first().click()
-    const tabs = page.getByRole('tablist', { name: 'Activity sections' }).getByRole('tab')
+    const tabs = page.getByRole('tablist', { name: t.activity.tabs.groupLabel }).getByRole('tab')
     await expect(tabs.first()).toBeVisible()
     test.skip(!(await tabs.allTextContents()).includes(name), `the latest run has no ${name} tab`)
     await tabs.filter({ hasText: name }).click()
@@ -68,13 +70,13 @@ for (const name of ['Overview', 'Splits', 'Charts', 'Dynamics']) {
   })
 }
 
-for (const tab of ['Load', 'Performance', 'Volume', 'Intensity']) {
-  test(`nothing runs past the screen on Analytics' ${tab} tab, in any period`, async ({ page }) => {
+for (const key of ['fitness', 'performance', 'volume', 'health'] as const) {
+  test(`nothing runs past the screen on Analytics' ${en.analytics.tabs[key]} tab, in any period`, async ({ page, t }) => {
     await page.goto('/analytics')
-    await page.getByRole('tab', { name: tab }).click()
-    for (const period of ['4 weeks', '12 weeks', 'a year']) {
-      await page.getByRole('radio', { name: period }).click()
-      expect(await overflows(page), `${tab}, ${period}`).toEqual([])
+    await page.getByRole('tab', { name: t.analytics.tabs[key] }).click()
+    for (const period of ['4w', '12w', '1y']) {
+      await page.getByRole('radio', { name: t.analytics.cards.period.words[period]!, exact: true }).click()
+      expect(await overflows(page), `${key}, ${period}`).toEqual([])
     }
   })
 }

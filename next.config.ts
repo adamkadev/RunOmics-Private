@@ -27,6 +27,8 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  // The sparse e2e build sits beside the default one, which keeps serving while it builds.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
     NEXT_PUBLIC_BUILD_COMMIT: (process.env.VERCEL_GIT_COMMIT_SHA ?? "").slice(0, 7) || "local",

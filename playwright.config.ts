@@ -1,8 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
+import type { AppOptions } from './e2e/fixtures'
 
 const PORT = process.env.PORT ?? '3000'
+const SPARSE_PORT = String(Number(PORT) + 1)
+const iphone = { ...devices['iPhone 16 Pro'], serviceWorkers: 'block' as const, reducedMotion: 'reduce' as const }
 
-export default defineConfig({
+export default defineConfig<AppOptions>({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -14,18 +17,35 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /layout\.spec\.ts/ },
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] }, testIgnore: /(layout|sparse|a11y)\.spec\.ts/ },
     // Safari at the athlete's phone, where text past an edge shows first; reduced motion skips waiting for animations.
+    { name: 'iphone', use: iphone, testMatch: /layout\.spec\.ts/ },
+    // The second athlete's deployment: French, a Forerunner 55's sparse data and a run/walk return, on her phone.
     {
-      name: 'iphone',
-      use: { ...devices['iPhone 16 Pro'], serviceWorkers: 'block', reducedMotion: 'reduce' },
-      testMatch: /layout\.spec\.ts/,
+      name: 'sparse-fr',
+      use: { ...iphone, baseURL: `http://localhost:${SPARSE_PORT}`, locale: 'fr-FR', appLocale: 'fr' },
+      testMatch: /(layout|dashboard|plan|analytics|sparse|a11y)\.spec\.ts/,
     },
   ],
-  webServer: {
-    command: 'npm run e2e:build && npm run e2e:start',
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-  },
+  webServer: [
+    {
+      command: 'npm run e2e:build && npm run e2e:start',
+      url: `http://localhost:${PORT}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+    {
+      command: 'npm run e2e:build && npm run e2e:start',
+      url: `http://localhost:${SPARSE_PORT}`,
+      env: {
+        RUNOMICS_E2E_PROFILE: 'sparse',
+        RUNOMICS_DATA_DIR: '.e2e-data-sparse',
+        NEXT_DIST_DIR: '.next-e2e-sparse',
+        NEXT_PUBLIC_LOCALE: 'fr',
+        PORT: SPARSE_PORT,
+      },
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+    },
+  ],
 })

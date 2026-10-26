@@ -26,7 +26,7 @@ const STATUS_COLOR: Record<ReadinessTone, string> = {
 const FRESH_WORDS = /\b(fresh|rested|frais|fraîche|reposée?)\b/i
 const TIRED_WORDS = /\b(tired|fatigued|fatiguée?)\b/i
 
-function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; sub: ReactNode; testId: string }) {
+function Tile({ label, value, sub, testId }: { label: string; value: ReactNode; sub?: ReactNode; testId: string }) {
   return (
     <div data-testid={testId} className={cn('flex min-w-0 flex-col gap-1', insetTileClass)}>
       <span className={tileLabelClass}>{label}</span>
@@ -68,6 +68,8 @@ export function ReadinessCard({
   const tone = verdictTone(status)
   const color = load && load.state !== 'in' ? 'var(--warn)' : STATUS_COLOR[tone]
   const band = formBand(status.tsbNow)
+  // After a long break form is the break itself, so it gets no word and no number until there is a reading.
+  const bandWord = status.buildingBack ? null : t.formBand[band]
   // Building back there is no reading at all, so no load line and none of the tone's own either.
   const line = status.buildingBack ? s.buildingBack : load ? s.loadLine(s.loadState[load.state], load.estimated) : s.lineByTone[tone]
   const fresh = band === 'fresh' || band === 'veryFresh'
@@ -78,15 +80,20 @@ export function ReadinessCard({
   const body = verdict ? verdict.body : (fallback?.body ?? null)
 
   return (
-    <Link href="/analytics" aria-label={s.open} className="block transition-transform duration-100 ease-out active:scale-[0.98]" data-testid="readiness-card-link">
-      <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="readiness-card">
+    <section
+      className={cardClass({ className: 'relative transition-transform duration-100 ease-out active:scale-[0.98]' })}
+      data-testid="readiness-card"
+    >
+      {/* Over the card, not around it, so a screen reader reads the card's words and not the link's name alone. */}
+      <Link href="/analytics" aria-label={s.open} className="absolute inset-0 rounded-[24px]" data-testid="readiness-card-link" />
+      <div className="pointer-events-none relative flex flex-col gap-2.5">
         <CheckInReadiness
           today={today}
-          words={{ tone, color, band: t.formBand[band], line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
+          words={{ tone, color, band: bandWord, line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
         />
 
         <div className="-mx-1 -mb-1 grid grid-cols-3 gap-1.5">
-          <Tile testId="tile-form" label={s.formLabel} value={formatDelta(form)} sub={t.formBand[band].toLocaleLowerCase(t.locale)} />
+          <Tile testId="tile-form" label={s.formLabel} value={bandWord ? formatDelta(form) : '–'} sub={bandWord?.toLocaleLowerCase(t.locale)} />
           <Tile
             testId="tile-fitness"
             label={s.ctl}
@@ -100,7 +107,7 @@ export function ReadinessCard({
             sub={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
         </div>
-      </section>
-    </Link>
+      </div>
+    </section>
   )
 }

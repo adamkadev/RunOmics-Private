@@ -24,6 +24,13 @@ describe('RunVerdict', () => {
     expect(screen.queryByTestId('run-verdict-body')).toBeNull()
   })
 
+  it('names the session the run was planned as, not the type guessed for it', () => {
+    render(<RunVerdict activity={{ ...activity, type: 'VO2Max', rpe: 3 }} type="Base" aiVerdict={null} />)
+
+    expect(screen.getByTestId('run-verdict').textContent).toContain(t.activity.verdict.headline.positive(t.activityTypes.Base))
+    expect(screen.getByTestId('run-verdict').textContent).not.toContain(t.activityTypes.VO2Max)
+  })
+
   it('shows the AI headline and body', () => {
     render(<RunVerdict activity={activity} aiVerdict={{ headline: 'Strong threshold', body: 'Held the range.' }} />)
 
