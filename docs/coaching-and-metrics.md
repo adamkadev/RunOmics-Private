@@ -88,8 +88,9 @@ which says nothing about the guide. Two sessions of one class in a row that agre
 both over, propose a 3-5 s/km change to its guide. A run's page shows each
 repetition's heart rate against its target and ceiling with the verdict, and Plan's Coach card
 gathers the latest decision, the last controlled session, the proposals, the easy-run fatigue
-flag (an easy run 5 bpm over the recent normal at a similar pace, temperature and duration)
-and the 5K check.
+flag (an easy run 5 bpm over the recent normal at a similar pace, temperature and duration;
+pace is grade-adjusted where both runs carry it, and a run climbing 15 m/km or more without it
+is left out, since walked climbs slow its pace more than its effort) and the 5K check.
 
 ## The 12-week checkpoint
 
