@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- A return block runs to the athlete's own pace. With no heart-rate zone in
+  the guidance, each running interval now takes the pace range the guidance
+  gives, rather than a wide easy range the planner picks, which could sit
+  slower than the athlete runs; the wide range stays for guidance without
+  one. The talk test written into the notes is the guidance's, full sentences
+  by default, and no heart-rate ceiling to walk under is written when the
+  guidance makes heart rate information only.
 - The second athlete's deployment has a test of its own (E1). The demo
   generator takes `--profile sparse`: a made-up runner on a Forerunner 55, with
   no Training Effect, training status, races, goals or PBs, a long break and a
