@@ -179,6 +179,19 @@ export function RouteGeneratorPanel({
     [ref],
   )
   const [optionsOpen, setOptionsOpen] = useState(false)
+  const listRef = useRef<HTMLDivElement | null>(null)
+  const markRef = useRef<HTMLButtonElement | null>(null)
+  const wasMarking = useRef(avoid.marking)
+  // Back from the marking bar, its row is scrolled to the top so the new spot's row, and its reason, are in view.
+  useEffect(() => {
+    const back = wasMarking.current && !avoid.marking
+    wasMarking.current = avoid.marking
+    const list = listRef.current
+    const mark = markRef.current
+    if (!back || !list || !mark) return
+    list.scrollTop += mark.getBoundingClientRect().top - list.getBoundingClientRect().top
+    mark.focus({ preventScroll: true })
+  }, [avoid.marking])
   // The file saved, and for which loop: a new loop is a new file to save.
   const [saved, setSaved] = useState<{ key: string; file: File; canShare: boolean } | null>(null)
   const isSaved = saved !== null && saved.key === routeKey
@@ -216,7 +229,7 @@ export function RouteGeneratorPanel({
   const onPlan = plan?.km != null && plan.km === distanceKm
   const reachKm = failure === 'tooFar' && minKm != null && minKm <= ROUTE_KM_MAX ? minKm : null
   const errorText = reachKm != null ? e.errors.tooFar(stepperKm(reachKm)) : failure ? failureMessage(failure) : null
-  const footnote = avoid.marking ? e.avoid.markPrompt : start.waiting ? e.start.pickPrompt : status === 'generating' ? e.generating : e.footnote
+  const footnote = start.waiting ? e.start.pickPrompt : status === 'generating' ? e.generating : e.footnote
   const dash = '—'
   const statCells = [
     { label: e.distanceStat, value: ready ? km(stats.distanceKm) : dash },
@@ -243,7 +256,8 @@ export function RouteGeneratorPanel({
       style={sheetStyle}
     >
       <GlassLayers />
-      <div className="flex min-h-0 flex-1 flex-col px-[var(--sheet-pad)] pb-[var(--sheet-pad)] pt-1.5">
+      {avoid.marking && <MarkingBar onCancel={() => avoid.setMarking(false)} />}
+      <div hidden={avoid.marking} className="flex min-h-0 flex-1 flex-col px-[var(--sheet-pad)] pb-[var(--sheet-pad)] pt-1.5">
         <div className="-mx-[var(--sheet-pad)] flex justify-center pb-2.5" {...handleProps}>
           <span aria-hidden="true" className="h-[5px] w-9 rounded-[2.5px] bg-[rgb(127_127_127/0.45)]" />
         </div>
@@ -258,7 +272,7 @@ export function RouteGeneratorPanel({
           <span aria-hidden="true" />
         </div>
 
-        <div className="-mx-[var(--sheet-pad)] mt-3.5 flex min-h-0 flex-col gap-3.5 overflow-y-auto px-[var(--sheet-pad)]" style={{ touchAction: 'pan-y' }}>
+        <div ref={listRef} className="-mx-[var(--sheet-pad)] mt-3.5 flex min-h-0 flex-col gap-3.5 overflow-y-auto px-[var(--sheet-pad)]" style={{ touchAction: 'pan-y' }}>
           {plan && (
             <button
               type="button"
@@ -377,7 +391,7 @@ export function RouteGeneratorPanel({
                     label={e.trailsOk}
                   />
                 </label>
-                {avoid.enabled && <AvoidSpotsRows avoid={avoid} />}
+                {avoid.enabled && <AvoidSpotsRows avoid={avoid} markRef={markRef} />}
               </div>
             )}
           </div>
@@ -483,15 +497,43 @@ export function RouteGeneratorPanel({
   )
 }
 
-function AvoidSpotsRows({ avoid }: { avoid: AvoidSpots }) {
+/** Concentric with the sheet's corner, which a 74 pt bar rounds to 37 (12 + 25). */
+function MarkingBar({ onCancel }: { onCancel: () => void }) {
+  const a = t.pages.map.explore.avoid
+  const promptId = useId()
+  const cancelRef = useRef<HTMLButtonElement | null>(null)
+  // The button that opened the bar is hidden with the panel's rows.
+  useEffect(() => {
+    cancelRef.current?.focus({ preventScroll: true })
+  }, [])
+  return (
+    <div data-testid="route-avoid-marking" className="flex min-h-[74px] items-center gap-3 py-3 pl-[var(--sheet-pad)] pr-3">
+      <p id={promptId} className="min-w-0 flex-1 text-[15px] leading-5 text-foreground text-pretty max-[359px]:text-[14px]">
+        {a.markPrompt}
+      </p>
+      <Button
+        ref={cancelRef}
+        size="lg"
+        variant="secondary"
+        onClick={onCancel}
+        aria-describedby={promptId}
+        className="shrink-0 bg-[var(--sheet-fill)] px-5 shadow-[var(--sheet-fill-rim)]"
+      >
+        {a.cancel}
+      </Button>
+    </div>
+  )
+}
+
+function AvoidSpotsRows({ avoid, markRef }: { avoid: AvoidSpots; markRef: Ref<HTMLButtonElement> }) {
   const a = t.pages.map.explore.avoid
   return (
     <>
       <div aria-hidden="true" className="ml-4 h-px bg-[var(--row-separator)]" />
       <div className="flex min-h-[50px] items-center justify-between gap-3 pl-4 pr-2.5">
         <span className="text-[15px] text-foreground">{a.title}</span>
-        <Button size="sm" variant="secondary" onClick={() => avoid.setMarking(!avoid.marking)} aria-pressed={avoid.marking} data-testid="route-avoid-mark">
-          {avoid.marking ? a.cancel : a.mark}
+        <Button ref={markRef} size="sm" variant="secondary" onClick={() => avoid.setMarking(true)} data-testid="route-avoid-mark">
+          {a.mark}
         </Button>
       </div>
       {avoid.spots.map((spot) => (
