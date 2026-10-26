@@ -2128,7 +2128,8 @@ export const fr = {
       guideChange: (from: string, to: string) => `${from} → ${to} /km`,
       proposed: (reps: string) => `${reps} · proposé, pas appliqué.`,
       easyRuns: 'Footings',
-      fatigue: (bpm: number) => `FC ${bpm} bpm au-dessus de ta normale : une semaine plus légère est proposée.`,
+      fatigue: (bpm: number, gradeAdjusted: boolean) =>
+        `FC ${bpm} bpm au-dessus de ta normale${gradeAdjusted ? ' à allure similaire ajustée à la pente' : ''} : une semaine plus légère est proposée.`,
       fitnessCheck: 'Test 5 km',
       check: (date: string, pace: string, threshold: string) => `${date} · ${pace} · seuil ${threshold}`,
       checkGuides: 'Les guides du prochain bloc en viennent.',

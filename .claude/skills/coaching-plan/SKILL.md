@@ -46,7 +46,8 @@ the current plan's sessions until then exactly as written.
 After each controlled threshold session, `npm run coach -- autoregulate` reads the runs against the
 heart-rate targets: a pace-guide change when two sessions of one repetition
 length agree, a lighter week when easy-run heart rate sits 5+ bpm above the
-recent normal at similar pace and temperature, and the latest 5K check. It
+recent normal at similar pace (grade-adjusted where the runs carry it) and
+temperature, and the latest 5K check. It
 writes previews and applies nothing. Every threshold it and the controlled threshold dose
 checks use is in `src/application/coaching/controlledThreshold.ts`.
 

@@ -163,7 +163,7 @@ describe('proposing a pace-guide change', () => {
 
 describe('the fatigue flag', () => {
   const easyRun = (date: string, hr: number, overrides: Partial<EasyRunReading> = {}): EasyRunReading => ({
-    activityId: `easy-${date}`, date, hr, paceSecPerKm: 345, tempC: 14, durationSeconds: 3_300, ...overrides,
+    activityId: `easy-${date}`, date, hr, paceSecPerKm: 345, gapSecPerKm: 344, climbMPerKm: 2, tempC: 14, durationSeconds: 3_300, ...overrides,
   })
   const normal = [easyRun('2026-10-20', 145), easyRun('2026-10-22', 146), easyRun('2026-10-27', 147)]
 
@@ -181,6 +181,16 @@ describe('the fatigue flag', () => {
 
   it('compares a long run only with runs of similar length', () => {
     expect(assessFatigue([...normal, easyRun('2026-11-01', 152, { durationSeconds: 5_000 })])).toMatchObject({ normalHr: null, flagged: false })
+  })
+
+  it('compares a hilly run by its grade-adjusted pace, not the pace its walked climbs slowed', () => {
+    const hilly = easyRun('2026-10-29', 151, { paceSecPerKm: 405, gapSecPerKm: 350, climbMPerKm: 20 })
+    expect(assessFatigue([...normal, hilly])).toMatchObject({ normalHr: 146, comparables: 3, gradeAdjusted: 3, flagged: true })
+  })
+
+  it('leaves out a hilly run with no grade-adjusted pace and judges the latest run it can', () => {
+    const hilly = easyRun('2026-10-29', 160, { gapSecPerKm: null, climbMPerKm: 20 })
+    expect(assessFatigue([...normal, hilly])).toMatchObject({ run: { date: '2026-10-27' }, leftOut: [hilly], flagged: false })
   })
 })
 

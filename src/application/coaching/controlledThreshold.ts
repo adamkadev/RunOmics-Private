@@ -36,6 +36,8 @@ export const CONTROLLED_THRESHOLD = {
     /** An easy run this far above the recent normal at similar pace and temperature is flagged. */
     hrAboveNormalBpm: 5,
     similarPaceSecPerKm: 10,
+    /** Raw pace here reads ~8 s/km slower than grade-adjusted, most of similarPaceSecPerKm: it says little of effort. */
+    hillyClimbMPerKm: 15,
     similarTempC: 4,
     /** Duration within this fraction, so a long run is compared with long runs. */
     similarDurationShare: 0.3,

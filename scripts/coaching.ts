@@ -192,7 +192,7 @@ async function autoregulate(args: string[]): Promise<void> {
   const { JsonCoachingRepository } = await interopImport(import('@/infrastructure/repositories/JsonCoachingRepository'))
   const { getAllActivities } = await interopImport(import('@/infrastructure/repositories/JsonActivityRepository'))
   const { getCoachingContext } = await interopImport(import('@/application/coaching/GetCoachingContext'))
-  const { autoregulationReport } = await interopImport(import('@/application/coaching/autoregulation'))
+  const { autoregulationReport, fatigueBasis } = await interopImport(import('@/application/coaching/autoregulation'))
   const { createAutoregulationProposal } = await interopImport(import('@/application/coaching/workflows'))
   const { CONTROLLED_THRESHOLD, controlledThresholdHr } = await interopImport(import('@/application/coaching/controlledThreshold'))
   const { getAthleteProfile } = await interopImport(import('@/infrastructure/repositories/JsonAthleteRepository'))
@@ -218,10 +218,14 @@ async function autoregulate(args: string[]): Promise<void> {
 
   const fatigue = report.fatigue
   if (fatigue) {
-    const run = `${fatigue.run.date} easy run ${fatigue.run.hr} bpm at ${pace(fatigue.run.paceSecPerKm)}${fatigue.run.tempC === null ? '' : `, ${fatigue.run.tempC} °C`}`
+    const gap = fatigue.run.gapSecPerKm === null ? '' : ` (${pace(fatigue.run.gapSecPerKm)} grade-adjusted)`
+    const run = `${fatigue.run.date} easy run ${fatigue.run.hr} bpm at ${pace(fatigue.run.paceSecPerKm)}${gap}${fatigue.run.tempC === null ? '' : `, ${fatigue.run.tempC} °C`}`
     console.log(fatigue.normalHr === null
       ? `\nFatigue: ${run} - ${fatigue.comparables} similar run(s), ${CONTROLLED_THRESHOLD.fatigue.minComparables} needed to judge`
-      : `\nFatigue: ${run} against a normal of ${fatigue.normalHr} over ${fatigue.comparables} similar runs - ${fatigue.flagged ? 'FLAGGED' : 'fine'}`)
+      : `\nFatigue: ${run} against a normal of ${fatigue.normalHr} over ${fatigue.comparables} runs at similar ${fatigueBasis(fatigue)} - ${fatigue.flagged ? 'FLAGGED' : 'fine'}`)
+    for (const left of fatigue.leftOut) {
+      console.log(`  ${left.date}: climbed ${Math.round(left.climbMPerKm ?? 0)} m/km with no grade-adjusted pace, so its pace says little about effort - left out`)
+    }
   }
 
   const check = report.fitnessCheck
