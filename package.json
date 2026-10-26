@@ -80,7 +80,7 @@
     "@types/react-dom": "^19",
     "@typescript/native": "npm:typescript@^7.0.2",
     "@vitejs/plugin-react": "^6.1.2",
-    "@vitest/coverage-v8": "^4.1.11",
+    "@vitest/coverage-v8": "^5.0.5",
     "axe-core": "^4.14.0",
     "dotenv-cli": "^11.0.0",
     "eslint": "^10.13.0",
@@ -89,7 +89,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "npm:@typescript/typescript6@^6.0.2",
-    "vitest": "^4.1.11"
+    "vitest": "^5.0.5"
   },
   "overrides": {
     "sharp": ">=0.35.4",
