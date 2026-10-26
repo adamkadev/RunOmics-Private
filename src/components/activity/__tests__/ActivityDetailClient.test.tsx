@@ -178,6 +178,14 @@ describe('ActivityDetailClient', () => {
     expect(screen.getByRole('tab', { name: t.activity.tabs.charts })).toHaveAttribute('aria-selected', 'true')
   })
 
+  it("ends every tab's panel with the footer, so a short tab's height falls below it", () => {
+    renderDetail({ footer: <nav data-testid="footer" /> })
+    for (const name of [t.activity.tabs.overview, t.activity.tabs.charts]) {
+      act(() => screen.getByRole('tab', { name }).click())
+      expect(screen.getByTestId('activity-panel').lastElementChild).toBe(screen.getByTestId('footer'))
+    }
+  })
+
   it('opens on the tab the URL names', () => {
     window.history.replaceState(null, '', '/activities/a1?tab=intervals')
     renderDetail()
