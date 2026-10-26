@@ -19,7 +19,7 @@ export interface InjuryHistory {
   injuries: RunningInjury[]
 }
 
-export type TrainingBreakReason = 'injury' | 'illness' | 'heat' | 'travel' | 'personal'
+export type TrainingBreakReason = 'injury' | 'illness' | 'pregnancy' | 'heat' | 'travel' | 'personal'
 
 /** Typed into athlete.json: without it a coach reads a gap as lost fitness rather than a life event. */
 export interface TrainingBreak {
