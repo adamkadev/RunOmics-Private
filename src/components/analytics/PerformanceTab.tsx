@@ -32,7 +32,7 @@ import {
   type PaceShift,
   type PredictionDay,
 } from './analyticsView'
-import { FORM_DECIMALS, formLead, formRows, stepView, type StepPoint } from './trendView'
+import { FORM_DECIMALS, formLead, formRows } from './trendView'
 
 const bare = (iso: string) => formatDate(iso, { style: 'bare', year: 'never' })
 
@@ -249,29 +249,6 @@ function PredictionsCard({ days, window, period, race }: { days: PredictionDay[]
   )
 }
 
-const time = (iso: string) => new Date(`${iso}T00:00:00`).getTime()
-
-/** Placed by date, not by index: the watch revises its threshold at uneven intervals. */
-function StepSpark({ points, start, end, lowerUp = false }: { points: StepPoint[]; start: string; end: string; lowerUp?: boolean }) {
-  if (!points.length) return <span />
-  const values = points.map((p) => p.value)
-  const min = Math.min(...values)
-  const max = Math.max(...values)
-  const pad = (max - min) * 0.3 || 1
-  const span = Math.max(1, time(end) - time(start))
-  const x = (iso: string) => Math.min(1000, Math.max(0, ((time(iso) - time(start)) / span) * 1000)).toFixed(1)
-  const y = (v: number) => {
-    const share = (v - min + pad) / (max - min + 2 * pad)
-    return ((lowerUp ? share : 1 - share) * 24).toFixed(1)
-  }
-  const d = points.reduce((path, p, i) => (i === 0 ? `M${x(p.date)},${y(p.value)}` : `${path}H${x(p.date)}V${y(p.value)}`), '') + 'H1000'
-  return (
-    <svg width="100%" height="24" viewBox="0 0 1000 24" preserveAspectRatio="none" className="block" aria-hidden data-testid="step-spark">
-      <path d={d} fill="none" stroke="var(--muted-foreground)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-    </svg>
-  )
-}
-
 /** A trend row as Race predictions draws one: the name, its line, the value now and its change. */
 function TrendRow({ label, line, value, unit, change, changeColor, testId }: { label: string; line: ReactNode; value: string; unit: string; change: string; changeColor: string; testId: string }) {
   return (
@@ -292,52 +269,6 @@ function TrendRow({ label, line, value, unit, change, changeColor, testId }: { l
 }
 
 const TREND_GRID = 'grid grid-cols-[minmax(0,104px)_minmax(0,1fr)_auto] gap-x-3'
-
-function ThresholdCard({ pace, lthr, window }: { pace: StepPoint[]; lthr: StepPoint[]; window: DayWindow }) {
-  const s = t.analytics.charts.threshold
-  const paceView = stepView(pace, window)
-  const hrView = stepView(lthr, window)
-  if (!paceView && !hrView) return null
-  const since = (iso: string) => formatDate(iso, { style: 'bare' })
-  const paceDelta = paceView?.delta ?? null
-  const paceFlat = paceDelta === null || Math.abs(Math.round(paceDelta)) < THRESHOLD_FLAT_SEC
-  const paceColor = paceFlat ? 'var(--muted-foreground)' : deltaColor('pace', paceDelta)
-  return (
-    <Card className="gap-2" testId="threshold-card">
-      <CardHead title={s.title} caption={t.analytics.model.garmin} about={s.footnote} />
-      {paceView && (
-        <Sentence className="mb-1.5" testId="threshold-sentence">
-          {paceDelta === null || Math.round(paceDelta) === 0 ? s.reading.flat(since(paceView.since)) : s.reading.change(shiftWords(paceDelta)!, since(paceView.since))}
-        </Sentence>
-      )}
-      <div className={TREND_GRID}>
-        {paceView && (
-          <TrendRow
-            testId="threshold-pace"
-            label={s.pace}
-            line={<StepSpark points={paceView.points} start={window.start} end={window.end} lowerUp />}
-            value={formatClock(paceView.now)}
-            unit={t.units.perKm}
-            change={signedChange(paceDelta) ?? ''}
-            changeColor={paceColor}
-          />
-        )}
-        {hrView && (
-          // Threshold HR has no better direction: shown, never toned.
-          <TrendRow
-            testId="threshold-hr"
-            label={s.lthr}
-            line={<StepSpark points={hrView.points} start={window.start} end={window.end} />}
-            value={String(Math.round(hrView.now))}
-            unit={t.units.bpm}
-            change={hrView.delta === null ? '' : formatDeltaFixed(hrView.delta, 0)}
-            changeColor="var(--muted-foreground)"
-          />
-        )}
-      </div>
-    </Card>
-  )
-}
 
 function RunningFormCard({ weeks, period }: { weeks: WeeklyTrendPoint[]; period: LoadPeriod }) {
   const s = t.analytics.charts.runningForm
@@ -650,7 +581,7 @@ export interface PerformanceTabProps {
   paceBests: RunBests[]
 }
 
-export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, lthr, predictions, race, heat, paceBests }: PerformanceTabProps) {
+export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, threshold, predictions, race, heat, paceBests }: PerformanceTabProps) {
   const inWindow = weeksIn(weeks, window)
   const easy = paceShift(inWindow, (w) => w.easyPace)
   const workout = paceShift(inWindow, (w) => w.hardPace)
@@ -658,7 +589,6 @@ export function PerformanceTab({ window, period, onShift, today, weeks, vo2max, 
     <div className="flex flex-col gap-3.5">
       <SummaryStrip vo2={vo2View(window.live ? vo2max.value : null, vo2max.samples, window.live ? today : window.end)} threshold={thresholdShift(threshold, window)} easy={easy} />
       <PredictionsCard days={predictions} window={window} period={period} race={window.live ? race : null} />
-      <ThresholdCard pace={threshold.map((p) => ({ date: p.date, value: p.pace }))} lthr={lthr.map((p) => ({ date: p.date, value: p.bpm }))} window={window} />
       <PaceCurveCard runs={paceBests} window={window} period={period} threshold={threshold} onShift={onShift} />
       <PaceTrendCard weeks={inWindow} easy={easy} workout={workout} onShift={onShift} />
       <EfficiencyCard allWeeks={weeks} weeks={inWindow} end={window.end} onShift={onShift} />

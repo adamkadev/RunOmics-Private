@@ -466,12 +466,10 @@ describe('the trends the watch syncs', () => {
   })
   afterAll(() => vi.useRealTimers())
 
-  it('puts threshold HR beside threshold pace, and running form with only what the watch measured', async () => {
+  it('shows running form with only what the watch measured', async () => {
     render(<AnalyticsClient data={{ ...data, weeks: weeks.map((w, i) => ({ ...w, cadenceSpm: 170 + (i % 4) })) }} today={TODAY} />)
     await screen.findByTestId('form-card')
-    await openTab(t.analytics.tabs.performance, 'threshold-card')
-    expect(within(screen.getByTestId('threshold-hr')).getByTestId('trend-change').textContent).toBe('+3')
-    expect(within(screen.getByTestId('threshold-pace')).getByTestId('trend-change').textContent).toBe('+9 s')
+    await openTab(t.analytics.tabs.performance, 'pace-trend-card')
     const rows = [...screen.getByTestId('running-form-card').querySelectorAll('[data-testid^="form-"]')].map((el) => el.getAttribute('data-testid'))
     expect(rows).toEqual(['form-cadence'])
   })
@@ -487,7 +485,7 @@ describe('the trends the watch syncs', () => {
 
   it('leaves both out on a watch without them', async () => {
     await renderBoard()
-    await openTab(t.analytics.tabs.performance, 'threshold-card')
+    await openTab(t.analytics.tabs.performance, 'pace-trend-card')
     expect(screen.queryByTestId('running-form-card')).toBeNull()
     await openTab(t.analytics.tabs.health, 'easy-hard-card')
     expect(screen.queryByTestId('heart-rate-card')).toBeNull()
