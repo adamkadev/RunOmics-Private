@@ -98,13 +98,14 @@ function git(args, cwd, options = {}) {
 }
 
 function parseArgs(argv) {
-  const args = { ref: 'HEAD', to: null, check: false }
+  const args = { ref: 'HEAD', to: null, check: false, strict: false }
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === '--to') args.to = argv[++i]
     else if (arg === '--ref') args.ref = argv[++i]
     else if (arg === '--check') args.check = true
-    else throw new Error(`Unknown argument ${arg}. Usage: export_public_demo.mjs --to <public clone> [--ref <ref>] [--check]`)
+    else if (arg === '--strict') args.strict = true
+    else throw new Error(`Unknown argument ${arg}. Usage: export_public_demo.mjs --to <public clone> [--ref <ref>] [--check] [--strict]`)
   }
   if (!args.to) throw new Error('--to <public clone> is required')
   return args
@@ -290,7 +291,8 @@ function main() {
       findings.map((f) => `${f.file}:${f.line} [${f.pattern}] ${f.match}  |  ${f.text}`)
     )
   }
-  if (!verify.ok || findings.length) {
+  // Strict: a stale entry stops the export too, so the config is pruned when the code moves, not years later.
+  if (!verify.ok || findings.length || (args.strict && warnings.length)) {
     console.log(`\nExport stopped: ${target} is untouched. Staging left at ${staging}`)
     process.exit(1)
   }
