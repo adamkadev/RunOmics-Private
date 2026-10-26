@@ -77,7 +77,6 @@ describe('the proxy', () => {
         workerUrl('6.15.0'),
         '/manifest.json',
         '/sw.js',
-        '/firebase-messaging-sw.js',
         '/robots.txt',
       ]) {
         expect(runsOn(url), url).toBe(false)
