@@ -80,8 +80,13 @@ export function ReadinessCard({
   const body = verdict ? verdict.body : (fallback?.body ?? null)
 
   return (
-    <Link href="/analytics" aria-label={s.open} className="block transition-transform duration-100 ease-out active:scale-[0.98]" data-testid="readiness-card-link">
-      <section className={cardClass({ className: 'flex flex-col gap-2.5' })} data-testid="readiness-card">
+    <section
+      className={cardClass({ className: 'relative transition-transform duration-100 ease-out active:scale-[0.98]' })}
+      data-testid="readiness-card"
+    >
+      {/* Over the card, not around it, so a screen reader reads the card's words and not the link's name alone. */}
+      <Link href="/analytics" aria-label={s.open} className="absolute inset-0 rounded-[24px]" data-testid="readiness-card-link" />
+      <div className="pointer-events-none relative flex flex-col gap-2.5">
         <CheckInReadiness
           today={today}
           words={{ tone, color, band: bandWord, line, headline, body, yesterday: Boolean(verdict?.yesterday) }}
@@ -102,7 +107,7 @@ export function ReadinessCard({
             sub={<Delta metric="fatigue" delta={status.atlDelta} current={status.atl} days={STATUS_DELTA_DAYS.fatigue} />}
           />
         </div>
-      </section>
-    </Link>
+      </div>
+    </section>
   )
 }
