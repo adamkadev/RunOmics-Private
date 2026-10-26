@@ -623,7 +623,7 @@ but still sends once a day.
 | Framework | [Next.js 16](https://nextjs.org/) (App Router, SSG) |
 | Language | TypeScript 7 (`tsc`), with the TypeScript 6 API for typescript-eslint and Next until 7.1 ships one |
 | Styling | Tailwind CSS v4 |
-| Charts | Hand-drawn SVG, no chart library |
+| Charts | Hand-drawn SVG; [Recharts](https://recharts.org/) for the similar runs' line |
 | Maps | [MapLibre GL](https://maplibre.org/) + [MapTiler](https://www.maptiler.com/) |
 | Icons | [Lucide](https://lucide.dev/) |
 | Dark mode | [next-themes](https://github.com/pacocoursey/next-themes) |

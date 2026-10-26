@@ -17,7 +17,7 @@ import { t } from '@/i18n'
 const LIST_MAX_ROWS = 4
 
 const loadChart = () => import('./SimilarRunsChart')
-/** The chart's code waits for the card to open; the empty box keeps the list from jumping. */
+/** Recharts is 113 KB the card needs only once it opens; the empty box keeps the list from jumping. */
 const SimilarRunsChart = dynamic(() => loadChart().then((m) => m.SimilarRunsChart), { loading: () => <div className="h-[120px]" /> })
 
 // Ranked by pace, so the bold number is the pace; the total time is secondary.
