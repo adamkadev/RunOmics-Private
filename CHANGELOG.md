@@ -4,6 +4,19 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- Analytics' Charge tab draws its Load and Training status cards on a watch
+  that sends neither, like the Forerunner 55: from the app's own heart-rate
+  load, marked "Estimated". Load focus still needs Garmin's own figures.
+
+- Today's morning check-in folds below This week once answered, and is
+  edited there.
+
+- A run's page keeps its previous/next run card right under the last card,
+  the tab's empty height below it.
+
+- Monday's digest sends the coach's focus whole, on its own line, instead
+  of cutting it at 60 characters.
+
 - Explore's loops keep to runnable ground: mud, dirt, grass, steps and
   forest paths cost more than new streets can earn, steep climbs count on
   every loop, and each session has a climb budget (flat for reps, 12 m/km
