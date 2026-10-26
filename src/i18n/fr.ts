@@ -826,6 +826,7 @@ export const fr = {
         check: 'À surveiller',
       },
       loadTrend: {
+        aboutEstimated: "Ta charge aiguë : les 7 derniers jours de charge, calculée par l’app à partir de la fréquence cardiaque et de la durée de chaque sortie puisque ta montre n’en envoie pas, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
         about: "Ta charge aiguë : les 7 derniers jours de charge mesurée par ta montre, jour par jour (moyennes hebdomadaires sur un an). La bande est ta zone sûre, 0,8–1,3 × ta charge chronique sur 28 jours ; les jours hors zone sont marqués. Le ratio de charge sous Risque de blessure est le dernier point divisé par sa charge chronique.",
         ratioSafe: (lo: number, hi: number) => `ratio · sûr ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 jour' : `${days} jours`) : Math.round(days / 7) === 1 ? '1 semaine' : `${Math.round(days / 7)} semaines`),
@@ -844,9 +845,11 @@ export const fr = {
       status: {
         title: "Statut d’entraînement",
         caption: (span: string) => `Ta montre · ${span}`,
+        captionEstimated: (span: string) => `Estimé · ${span}`,
         span: { days28: '28 jours', weeks12: '12 semaines', months12: '12 mois' },
         spanLive: { days28: '28 derniers jours', weeks12: '12 dernières semaines', months12: '12 derniers mois' },
         about: "Le statut d’entraînement de ta montre : ta charge récente face à ce dont ton corps a l’habitude. Chaque case est un jour (une semaine sur les périodes longues).",
+        aboutEstimated: "Ta montre ne donne pas de statut d’entraînement, alors l’app en estime un à partir de ta charge cardiaque : ta charge récente face à ce dont ton corps a l’habitude. Chaque case est un jour (une semaine sur les périodes longues).",
         sentenceToday: (count: number, days: number) => ` aujourd’hui, et sur ${count} des ${days} derniers jours.`,
         sentenceOn: (date: string, count: number, days: number) => ` le ${date}, et sur ${count} de ces ${days} jours.`,
         days: (n: number) => `${n} j`,
@@ -2148,7 +2151,7 @@ export const fr = {
         sleep: { label: 'Sommeil', words: ['Très mauvais', 'Mauvais', 'Moyen', 'Bon', 'Excellent'] },
         soreness: { label: 'Courbatures', words: ['Très fortes', 'Fortes', 'Moyennes', 'Légères', 'Aucune'] },
         stress: { label: 'Stress', words: ['Très élevé', 'Élevé', 'Moyen', 'Faible', 'Aucun'] },
-        mood: { label: 'Moral', words: ['Très bas', 'Bas', 'Moyen', 'Bon', 'Excellent'] },
+        mood: { label: 'Humeur', words: ['Très mauvaise', 'Mauvaise', 'Moyenne', 'Bonne', 'Excellente'] },
       },
       scoreButton: (label: string, value: number, word: string) => `${label} ${value}, ${word}`,
       flags: { niggle: 'Douleur', ill: 'Malade', travel: 'En voyage' },

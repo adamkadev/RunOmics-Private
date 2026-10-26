@@ -52,6 +52,8 @@ interface Props {
   shoe?: ShoeTag | null
   similarRuns?: SimilarRunsData | null
   extras?: ReactNode
+  /** Inside the panel, so a short tab's height falls below it, not between it and the content. */
+  footer?: ReactNode
   back?: ReactNode
   share?: ReactNode
   chartZones?: ChartZones | null
@@ -139,6 +141,7 @@ export function ActivityDetailClient({
   shoe = null,
   similarRuns = null,
   extras,
+  footer,
   back,
   share,
   chartZones = null,
@@ -340,6 +343,8 @@ export function ActivityDetailClient({
         )}
 
         {tab === 'dynamics' && <RunningDynamics activity={activity} baseline={dynamicsBaseline} />}
+
+        {footer}
       </div>
     </>
   )

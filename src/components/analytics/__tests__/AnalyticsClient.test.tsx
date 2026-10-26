@@ -42,6 +42,7 @@ const data: AnalyticsBoardData = {
   status: Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), status: 'productive' as const })),
   // Flat at the risk card's pair: the load headline stays out of the way.
   loads: Array.from({ length: 60 }, (_, i) => ({ date: day(59 - i), acute: 412, chronic: 365 })),
+  estimated: { loads: false, status: false },
   recovery: [],
   risk: { acwr: 1.13, acute: 412, chronic: 365, acwrZone: 'safe', acwrSource: 'garmin', monotony: 1.5, monotonyZone: 'safe', strain: null, strainZone: null, rampRate: 2.4, rampRateZone: 'safe', daysOfHistory: 400 },
   weeks,
@@ -719,6 +720,14 @@ describe('Load trend and Recovery (v5.4)', () => {
     await renderWith({ recovery: steady })
     const ids = [...document.querySelectorAll('[data-testid$="-card"], [data-testid="coach-read"]')].map((el) => el.getAttribute('data-testid'))
     expect(ids).toEqual(['coach-read', 'load-card', 'form-card', 'status-card'])
+  })
+
+  it("says the status is the app's estimate where the watch rates none", async () => {
+    await renderWith({ estimated: { loads: true, status: true } })
+    const caption = screen.getByTestId('status-card').textContent
+
+    expect(caption).toContain(t.analytics.cards.status.captionEstimated(''))
+    expect(caption).not.toContain(t.analytics.cards.status.caption(''))
   })
 
   it("ends the Load tab on the watch's load focus, today only", async () => {

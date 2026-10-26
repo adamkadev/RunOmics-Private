@@ -249,20 +249,31 @@ export function CheckInSummary({ entry, onEdit, onHide }: { entry: CheckIn; onEd
   )
 }
 
-/** Today's morning check-in: the owner's alone, read and written straight to Firestore under the owner-only rules. */
-export function CheckInCard({ today }: { today: string }) {
+/**
+ * Today's morning check-in: the owner's alone, read and written straight to Firestore under the owner-only rules.
+ * Above `children` while it waits for answers, folded below them once answered.
+ */
+export function CheckInCard({ today, children }: { today: string; children?: ReactNode }) {
   const { date, isOwner, day } = useTodayCheckIn(today)
   const mounted = useMounted()
   const [hiddenOn, setHiddenOn] = useState<string | null>(null)
-  // Null until the athlete opens or closes it; a complete morning starts folded.
-  const [open, setOpen] = useState<{ date: string; open: boolean } | null>(null)
+  // Null until the athlete opens or closes it; a complete morning starts folded. Opened from the summary, it stays below.
+  const [open, setOpen] = useState<{ date: string; open: boolean; below?: boolean } | null>(null)
   const { toast, leaving, showToast } = useToast()
+  const toastNode = <Toast toast={toast} leaving={leaving} />
 
-  if (!mounted || !isOwner || day?.status !== 'ready') return <Toast toast={toast} leaving={leaving} />
-  if (hiddenOn === date || hiddenFor(date)) return <Toast toast={toast} leaving={leaving} />
+  if (!mounted || !isOwner || day?.status !== 'ready' || hiddenOn === date || hiddenFor(date)) {
+    return (
+      <>
+        {children}
+        {toastNode}
+      </>
+    )
+  }
 
   const entry = day.entry
   const showForm = open?.date === date ? open.open : !isCompleteCheckIn(entry)
+  const below = !showForm || (open?.date === date && open.below === true)
 
   function hide() {
     try {
@@ -272,18 +283,23 @@ export function CheckInCard({ today }: { today: string }) {
   }
 
   function change(next: CheckIn) {
-    setOpen({ date, open: true })
+    setOpen({ date, open: true, below })
     saveCheckIn(date, isEmptyCheckIn(next) ? null : next).catch(() => showToast(t.settings.actions.error, false))
   }
 
+  const card =
+    showForm || !entry ? (
+      <CheckInForm entry={entry ?? {}} onChange={change} onDone={() => setOpen({ date, open: false })} onHide={hide} />
+    ) : (
+      <CheckInSummary entry={entry} onEdit={() => setOpen({ date, open: true, below: true })} onHide={hide} />
+    )
+
   return (
     <>
-      {showForm || !entry ? (
-        <CheckInForm entry={entry ?? {}} onChange={change} onDone={() => setOpen({ date, open: false })} onHide={hide} />
-      ) : (
-        <CheckInSummary entry={entry} onEdit={() => setOpen({ date, open: true })} onHide={hide} />
-      )}
-      <Toast toast={toast} leaving={leaving} />
+      {!below && card}
+      {children}
+      {below && card}
+      {toastNode}
     </>
   )
 }

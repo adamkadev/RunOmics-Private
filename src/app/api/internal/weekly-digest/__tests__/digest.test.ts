@@ -32,7 +32,7 @@ const coaching = {
 } as unknown as CoachingOverview
 
 describe('weekly digest', () => {
-  it("reads Monday's look back at last week and the coach's focus for this one, in two lines", () => {
+  it("reads Monday's look back at last week and the coach's focus for this one, one line each", () => {
     const digest = weeklyDigest({ today: '2026-10-19', activities, planned, coaching, recovery, crossTraining })
 
     expect(digest).toEqual({
@@ -46,8 +46,14 @@ describe('weekly digest', () => {
     })
     expect(digestPush(digest)).toEqual({
       title: 'Last week',
-      body: '34 of 42 km · 1 of 2 quality sessions · 1:30 h other training\nResting HR 48 (−2) · This week: Aerobic base, one controlled threshold',
+      body: '34 of 42 km · 1 of 2 quality sessions · 1:30 h other training\nResting HR 48 (−2)\nThis week: Aerobic base, one controlled threshold',
     })
+  })
+
+  it("sends the coach's focus whole, however long", () => {
+    const focus = 'Same week, one slider moved: each threshold session gains a rep, everything else stays exactly as it was.'
+    const digest = weeklyDigest({ today: '2026-10-19', activities, planned, coaching, recovery, crossTraining })
+    expect(digestPush({ ...digest, focus })?.body.split('\n').at(-1)).toBe(`This week: ${focus}`)
   })
 
   it('leaves out what it cannot say, and says nothing for an empty week', () => {

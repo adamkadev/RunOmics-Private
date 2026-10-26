@@ -243,7 +243,9 @@ caveat worth knowing:
   a daily reading. Same for **threshold history**, where either field can be absent from a day.
 - **Training status**: days before the watch had enough history come back as `no_status` with
   no ratio. They are not a reading, and returning one would make the app show a status Garmin
-  itself declined to give.
+  itself declined to give. A watch that sends no loads or status at all (a Forerunner 55) gets
+  both from the app's own TRIMP load instead: acute the last 7 days, chronic the 28-day weekly
+  average, and the status Today already estimates, replayed day by day and marked "Estimated".
 - **VO₂max history** is Garmin's own series and keeps the decimal the per-activity readings
   round away — the difference between a trend line and a staircase. The per-activity readings
   are the fallback until `vo2max_history.json` has been synced. The four-week daily view is

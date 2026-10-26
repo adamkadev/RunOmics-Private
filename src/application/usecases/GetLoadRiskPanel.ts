@@ -1,7 +1,7 @@
 import { getAllActivities } from '@/infrastructure/repositories/JsonActivityRepository'
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { latestLoadPair, loadRatio } from '@/domain/training/loadTrend'
-import { getLoadPairs } from './GetLoadRecovery'
+import { getLoadSeries } from './GetLoadRecovery'
 import { buildTimeSeries, dailyTrimpByDate, type HrBounds } from './GetTrainingLoad'
 import { acwr } from './GetTrainingStatus'
 import { DAY_MS, addDays, isoDate } from '@/lib/calendarDate'
@@ -102,12 +102,13 @@ export async function getLoadRiskPanel(): Promise<LoadRiskPanel | null> {
 
   // From the pair Load trend plots: Garmin's own acwr field disagrees with its
   // loads (0.8 beside 412 and 295).
-  const pair = latestLoadPair(getLoadPairs())
+  const loads = getLoadSeries()
+  const pair = latestLoadPair(loads.pairs)
   const pairAcwr = pair ? loadRatio(pair) : null
   const localAcwr = acwr(activities, refDate)
   const acwrValue = pairAcwr ?? localAcwr
   const acwrZoneValue = acwrZone(acwrValue)
-  const acwrSource = acwrValue === null ? null : pairAcwr !== null ? 'garmin' : 'local'
+  const acwrSource = acwrValue === null ? null : pairAcwr !== null ? loads.source : 'local'
 
   let monotonyValue: number | null = null
   let strainValue: number | null = null

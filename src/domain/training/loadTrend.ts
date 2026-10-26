@@ -29,6 +29,13 @@ export function loadPairs(days: StatusLoads[]): LoadPair[] {
     .sort((a, b) => a.date.localeCompare(b.date))
 }
 
+/** For a watch that sends no loads: acute the last 7 days of the app's own load, chronic its 28-day weekly average. */
+export function localLoadPairs(days: ReadonlyMap<string, { load: number }>): LoadPair[] {
+  const loads = [...days.values()].map((d) => d.load)
+  const sum = (end: number, n: number) => loads.slice(Math.max(0, end - n + 1), end + 1).reduce((s, v) => s + v, 0)
+  return loadPairs([...days.keys()].map((date, i) => ({ date, acuteLoad: sum(i, 7), chronicLoad: sum(i, 28) / 4 })))
+}
+
 export function latestLoadPair(pairs: LoadPair[]): LoadPair | null {
   return pairs.at(-1) ?? null
 }

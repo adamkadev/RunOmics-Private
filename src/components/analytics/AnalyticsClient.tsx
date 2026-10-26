@@ -60,8 +60,10 @@ export interface AnalyticsBoardData {
   load: LoadDay[]
   status: StatusDay[]
   risk: LoadRiskPanel | null
-  /** Garmin's acute/chronic pair per day. */
+  /** Garmin's acute/chronic pair per day, or the app's own where the watch sends none. */
   loads: LoadPair[]
+  /** Which of the two the app worked out itself, the watch rating neither. */
+  estimated: { loads: boolean; status: boolean }
   /** Daily resting HR; empty until the recovery sync has run. */
   recovery: RecoveryDay[]
   weeks: WeeklyTrendPoint[]

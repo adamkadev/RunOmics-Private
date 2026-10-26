@@ -3,7 +3,7 @@ import { appTodayIso } from '@/lib/calendarDate'
 import { getVO2maxReadings } from '@/application/usecases/GetVO2maxHistory'
 import { getTrainingLoad } from '@/application/usecases/GetTrainingLoad'
 import { getLoadRiskPanel } from '@/application/usecases/GetLoadRiskPanel'
-import { getTrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
+import { getLocalTrainingStatusHistory, getTrainingStatusHistory } from '@/application/usecases/GetTrainingStatusHistory'
 import { getGarminRacePredictions } from '@/application/usecases/GetGarminRacePredictions'
 import { getThresholdHistory } from '@/application/usecases/GetThresholdHistory'
 import { getHeatImpact } from '@/application/usecases/GetHeatImpact'
@@ -16,7 +16,7 @@ import { weeklyAverageKm } from '@/domain/training/weeklyAverage'
 import { AnalyticsClient, type AnalyticsBoardData } from '@/components/analytics/AnalyticsClient'
 import { yearOverYear } from '@/lib/yearOverYear'
 import { loadPlanWeeks } from '../_data/loadPlanWeeks'
-import { getLoadPairs, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
+import { getLoadSeries, getRecoveryHistory } from '@/application/usecases/GetLoadRecovery'
 import { loadData } from '@/application/usecases/LoadData'
 import { getPaceBests } from '@/application/usecases/GetPaceCurve'
 
@@ -35,11 +35,14 @@ export default async function AnalyticsPage() {
   const goalKm = yearData?.goals && yearData.goals.annualDistanceKm > 0 ? yearData.goals.annualDistanceKm : null
 
   const threshold = getThresholdHistory()?.points ?? []
+  const loads = getLoadSeries()
+  const status = getTrainingStatusHistory() ?? getLocalTrainingStatusHistory()
   const board: AnalyticsBoardData = {
     load: trainingLoad?.points.map(({ date, ctl, atl }) => ({ date, ctl, atl })) ?? [],
-    status: getTrainingStatusHistory()?.points.map(({ date, status }) => ({ date, status })) ?? [],
+    status: status?.points.map(({ date, status }) => ({ date, status })) ?? [],
     risk,
-    loads: getLoadPairs(),
+    loads: loads.pairs,
+    estimated: { loads: loads.source === 'local', status: status?.source === 'local' },
     recovery: getRecoveryHistory(),
     weeks: data.weeklyTrends,
     plan: plan.weeks,

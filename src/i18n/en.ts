@@ -881,6 +881,7 @@ export const en = {
         check: 'Check',
       },
       loadTrend: {
+        aboutEstimated: 'Your acute load: the last 7 days of training load, which the app works out from each run’s heart rate and time as your watch sends none, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
         about: 'Your acute load: the last 7 days of training load from your watch, day by day (weekly averages on a year). The band is your safe range, 0.8–1.3 × your chronic 28-day load; days outside it are marked. The Load ratio under Injury risk is the last point divided by its chronic load.',
         ratioSafe: (lo: number, hi: number) => `ratio · safe ${lo}–${hi}`,
         span: (days: number) => (days < 14 ? (days === 1 ? '1 day' : `${days} days`) : Math.round(days / 7) === 1 ? '1 week' : `${Math.round(days / 7)} weeks`),
@@ -901,9 +902,11 @@ export const en = {
       status: {
         title: 'Training status',
         caption: (span: string) => `Your watch · ${span}`,
+        captionEstimated: (span: string) => `Estimated · ${span}`,
         span: { days28: '28 days', weeks12: '12 weeks', months12: '12 months' },
         spanLive: { days28: 'last 28 days', weeks12: 'last 12 weeks', months12: 'last 12 months' },
         about: "Your watch's training status: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
+        aboutEstimated: "Your watch rates no training status, so the app estimates one from your heart-rate load: how your recent load compares with what your body is used to. Each cell is one day (one week on longer periods).",
         sentenceToday: (count: number, days: number) => ` today, and on ${count} of the last ${days} days.`,
         sentenceOn: (date: string, count: number, days: number) => ` on ${date}, and on ${count} of those ${days} days.`,
         days: (n: number) => `${n} d`,
@@ -1927,7 +1930,7 @@ export const en = {
       body: (hours: number) => `Your last sync was ${hours}h ago - check that sync is still running.`,
     },
     newActivity: { title: (name: string) => `New activity: ${name}` },
-    // Monday's look back, two short lines: what fits an iPhone notification unexpanded.
+    // The focus is never cut: iOS truncates the unexpanded notification, and expanding it must show the whole sentence.
     weeklyDigest: {
       title: 'Last week',
       km: (ran: string) => `${ran} km`,

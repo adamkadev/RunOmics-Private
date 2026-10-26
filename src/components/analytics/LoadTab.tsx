@@ -46,7 +46,19 @@ export function statusTint(status: keyof typeof STATUS_COLOR): string {
 /** The status card's span, as its caption names it. */
 const STATUS_SPAN: Record<LoadPeriod, 'days28' | 'weeks12' | 'months12'> = { '4w': 'days28', '12w': 'weeks12', '1y': 'months12' }
 
-function StatusCard({ days, window, period, onShift }: { days: StatusDay[]; window: DayWindow; period: LoadPeriod; onShift: (step: 1 | -1) => void }) {
+function StatusCard({
+  days,
+  window,
+  period,
+  onShift,
+  estimated,
+}: {
+  days: StatusDay[]
+  window: DayWindow
+  period: LoadPeriod
+  onShift: (step: 1 | -1) => void
+  estimated: boolean
+}) {
   const s = t.analytics.cards.status
   const names = t.trainingStatus.status
   const view = statusView(days, window)
@@ -54,7 +66,11 @@ function StatusCard({ days, window, period, onShift }: { days: StatusDay[]; wind
   const cells = view.cells
   return (
     <Card testId="status-card">
-      <CardHead title={s.title} caption={s.caption((window.live ? s.spanLive : s.span)[STATUS_SPAN[period]])} about={s.about} />
+      <CardHead
+        title={s.title}
+        caption={(estimated ? s.captionEstimated : s.caption)((window.live ? s.spanLive : s.span)[STATUS_SPAN[period]])}
+        about={estimated ? s.aboutEstimated : s.about}
+      />
       <Sentence>
         <b>{names[view.current]}</b>
         {window.live ? s.sentenceToday(view.count, view.days) : s.sentenceOn(bare(window.end), view.count, view.days)}
@@ -112,7 +128,19 @@ function Move({ delta, metric, decimals = 0 }: { delta: number; metric: 'fitness
   )
 }
 
-function LoadCard({ pairs, load, window, yMax }: { pairs: AnalyticsBoardData['loads']; load: LoadDay[]; window: DayWindow; yMax: number }) {
+function LoadCard({
+  pairs,
+  load,
+  window,
+  yMax,
+  estimated,
+}: {
+  pairs: AnalyticsBoardData['loads']
+  load: LoadDay[]
+  window: DayWindow
+  yMax: number
+  estimated: boolean
+}) {
   const s = t.analytics.cards.loadCompact
   const view = loadTrendView(pairs, window, yMax)
   if (!view) return null
@@ -133,7 +161,7 @@ function LoadCard({ pairs, load, window, yMax }: { pairs: AnalyticsBoardData['lo
   const band = `${pts.map((p, i) => `${x(i)},${y(p.hi)}`).join(' ')} ${[...pts].reverse().map((p, i) => `${x(pts.length - 1 - i)},${y(p.lo)}`).join(' ')}`
   return (
     <Card testId="load-card">
-      <CardHead title={s.title} caption={s.caption} about={t.analytics.cards.loadTrend.about} />
+      <CardHead title={s.title} caption={s.caption} about={estimated ? t.analytics.cards.loadTrend.aboutEstimated : t.analytics.cards.loadTrend.about} />
       <div className="grid grid-cols-3 gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="text-[22px] font-bold leading-tight tabular-nums" style={{ color: out ? WARN : undefined }} data-testid="load-trend-value" data-state={view.state}>
@@ -230,10 +258,10 @@ export function LoadTab({ window, period, onShift, today, data }: LoadTabProps) 
   const yMax = loadTrendYMax(data.loads, today)
   return (
     <div className="flex flex-col gap-3.5">
-      <LoadCard pairs={data.loads} load={data.load} window={window} yMax={yMax} />
+      <LoadCard pairs={data.loads} load={data.load} window={window} yMax={yMax} estimated={data.estimated.loads} />
       <FormCard load={data.load} nights={data.recovery} window={window} period={period} />
       {/* The watch's own status as its chart, not a sentence in the coach card. */}
-      <StatusCard days={data.status} window={window} period={period} onShift={onShift} />
+      <StatusCard days={data.status} window={window} period={period} onShift={onShift} estimated={data.estimated.status} />
       {/* The sync keeps only the latest balance, so a window back in time has none. */}
       {window.live && <LoadFocusCard balance={data.balance} today={today} />}
     </div>

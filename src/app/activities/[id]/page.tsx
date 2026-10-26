@@ -139,9 +139,8 @@ export default async function ActivityDetailPage({
             </>
           ) : null
         }
+        footer={<ActivityNav prev={prevActivity} next={nextActivity} />}
       />
-
-      <ActivityNav prev={prevActivity} next={nextActivity} />
     </div>
   )
 }
