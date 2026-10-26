@@ -62,6 +62,7 @@ The reasoning behind these rules, and the training science they came from, is in
 - trajectories.ctl.weeks lists every week including those with no running, which show zero kilometres. A gap there explains a depressed 28-day mean and must never be read as reduced capacity: it is training not done, not training the athlete cannot do.
 - Read repeated gaps as the constraint they are. Where the series shows more than one interruption, the block's job is to be completed rather than to be ambitious, and week.focus should say so.
 - trajectories.bestEfforts includes efforts set in ordinary training runs, not only official races. Treat the best effort at the target distance as evidence of capacity whatever its source, and do not describe an athlete as never having run a distance they have covered in training.
+- A recentActivities entry's type is how the watch, or RunOmics without a watch label, filed the run, and a watch that sends no Training Effect guesses it. Where intendedType is present it names the session the run was set as: read the run as that session, and never count an easy walk/run filed as VO2Max as quality work.
 
 ## Where the block sits in the season
 

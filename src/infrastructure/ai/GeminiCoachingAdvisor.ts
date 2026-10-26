@@ -87,6 +87,7 @@ export function completedActivityPrompt(context: CoachingContext, activity: Acti
     id: activity.id,
     date: activity.date,
     type: activity.type,
+    ...(compact?.intendedType ? { intendedType: compact.intendedType } : {}),
     distanceKm: activity.distanceKm,
     durationSeconds: activity.durationSeconds,
     paceSecPerKm: activity.paceSecPerKm,

@@ -17,6 +17,8 @@ import {
 } from '@/domain/activity/raceResult'
 import { COACHING_TO_ACTIVITY_TYPE, type CoachingPlan } from '@/domain/coaching/types'
 import { raceDistanceMeters } from '@/domain/coaching/raceTarget'
+import { sessionForRun, sessionsAcrossPlans, type RunSession } from '@/domain/coaching/sessionForRun'
+import { intendedType } from '@/lib/activityTitle'
 import type { AthleteProfile, InjuryHistory, TrainingBreak } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { niggleEpisodes, shiftDate, type CheckIn, type NiggleEpisode } from '@/domain/wellness/checkIn'
 import type { Trajectories } from '@/domain/training/trajectories'
@@ -36,6 +38,8 @@ export interface CompactActivity {
   id: string
   date: string
   type: Activity['type']
+  /** The type of the session the run was set as, where it differs from the type the watch or RunOmics filed. */
+  intendedType?: Activity['type']
   distanceKm: number
   durationSeconds: number
   paceSecPerKm: number | null
@@ -191,12 +195,16 @@ function adherence(plan: CoachingPlan | null, activities: Activity[], referenceD
       return age >= 0 && age < RECENT_DAYS
     })
   if (prescribed.length === 0) return null
-  const completed = prescribed.filter((workout) =>
-    activities.some((activity) =>
-      activity.date.slice(0, 10) === workout.date && activity.type === COACHING_TO_ACTIVITY_TYPE[workout.type]
-    )
-  ).length
+  const sessions = prescribed.map((prescription) => ({ prescription, activityId: null }))
+  const done = new Set(activities.map((activity) => sessionForRun(activity, sessions)?.id))
+  const completed = prescribed.filter((workout) => done.has(workout.id)).length
   return { prescribed: prescribed.length, completed, percent: Math.round((completed / prescribed.length) * 100) }
+}
+
+function intent(activity: Activity, sessions: readonly RunSession[]): Partial<CompactActivity> {
+  const session = sessionForRun(activity, sessions)
+  const intended = session ? COACHING_TO_ACTIVITY_TYPE[session.type] : intendedType(activity)
+  return intended === activity.type ? {} : { intendedType: intended }
 }
 
 /** Omitted rather than emitted empty: a `note: ""` on every run is prompt noise. */
@@ -246,6 +254,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
   const officialResults = officialResultsByActivityId(input.officialResults)
   const history = trainingHistory(input.activities, referenceDate)
   const otherTraining = otherTrainingFacts(input.crossTraining ?? [], referenceDate)
+  const sessions = input.plan ? sessionsAcrossPlans([input.plan, ...(input.archivedPlans ?? [])], []) : []
 
   return {
     schemaVersion: 1,
@@ -255,6 +264,7 @@ export function buildCoachingContext(input: CoachingContextInput, referenceDate:
       id: activity.id,
       date: activity.date.slice(0, 10),
       type: activity.type,
+      ...intent(activity, sessions),
       distanceKm: rounded(activity.distanceKm),
       durationSeconds: activity.durationSeconds,
       paceSecPerKm: activity.paceSecPerKm === null ? null : Math.round(activity.paceSecPerKm),

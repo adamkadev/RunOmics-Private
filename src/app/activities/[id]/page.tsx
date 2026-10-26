@@ -8,7 +8,7 @@ import { getShoeRegistry } from '@/infrastructure/repositories/JsonShoeRepositor
 import { getOfficialRaceResults } from '@/infrastructure/repositories/JsonRaceResultRepository'
 import { officialResultsByActivityId } from '@/domain/activity/raceResult'
 import { ActivityDetailClient } from '@/components/activity/ActivityDetailClient'
-import { activityDetailView, runName, shareActivity, shareSession, shownType } from '@/components/activity/activityViews'
+import { activityDetailView, runName, shareActivity, shownType } from '@/components/activity/activityViews'
 import { ActivityNav } from '@/components/activity/ActivityNav'
 import { ShareButton } from '@/components/activity/ShareButton'
 import { ActivityAchievements } from '@/components/activity/ActivityAchievements'
@@ -21,6 +21,7 @@ import { getRunVerdictInsight } from '@/application/usecases/GetRunVerdictInsigh
 import { getAthleteProfile } from '@/infrastructure/repositories/JsonAthleteRepository'
 import { getPlannedWorkouts } from '@/application/usecases/GetPlannedWorkouts'
 import { getRunSessions } from '@/application/coaching/GetCoachingView'
+import { sessionForRun } from '@/domain/coaching/sessionForRun'
 import { controlledRunView } from '@/application/coaching/controlledRunView'
 import { ControlledThresholdCard } from '@/components/activity/ControlledThresholdCard'
 import { sessionLabel } from '@/lib/activityTitle'
@@ -45,7 +46,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const activity = getActivities().find((a) => a.id === id)
   if (!activity) return { title: t.activity.metaFallbackTitle }
 
-  const name = runName(activity, shareSession(runSessions(), activity))
+  const name = runName(activity, sessionForRun(activity, runSessions()))
   const stats = [
     formatDistance(activity.distanceKm),
     formatDuration(activity.durationSeconds),
@@ -93,7 +94,7 @@ export default async function ActivityDetailPage({
   const newGround = getRunExploreGain(id)
   const shoe = registeredShoe ? { name: registeredShoe.name, dotColor: registeredShoe.dotColor } : null
   // The coach's session this run was, for its name in the header and on the share card, and its reps' target pace.
-  const session = shareSession(runSessions(), activity)
+  const session = sessionForRun(activity, runSessions())
   const controlledRun = controlledRunView(activity, session)
   // The watch's own plan for the day, for a rep target the coach never matched.
   const plannedForDay = (await getPlannedWorkouts()).find((w) => w.date === activity.date.slice(0, 10)) ?? null

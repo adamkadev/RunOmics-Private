@@ -4,6 +4,14 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- One rule now pairs a run with its coach session everywhere: the coach's
+  adherence and run evaluation, Plan's done marks, a run's name and share
+  card, and the guessed types Analytics reads. It takes the session the coach
+  matched, else that day's one session the run is named after, then of its
+  intended type, then of its kind. A walk/run block the watch filed as VO2
+  max no longer reads 0/5 done, and the coach sees each run's intended type
+  beside the watch's.
+
 - A run whose watch sends no Training Effect (the Forerunner 55) is no
   longer filed as VO2 max or threshold for its laps alone. A run that
   follows its coach session's reps takes the session's type. Otherwise
