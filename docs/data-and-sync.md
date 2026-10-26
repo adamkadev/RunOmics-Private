@@ -121,8 +121,8 @@ Beyond the month files of runs, a sync keeps these, each read by its own reposit
 - **Run notes and morning check-ins** (`activity_notes.json`, `wellness.json`). Both exist
   only in Firestore otherwise. The workflow reads them through `GET /api/internal/activity-notes`
   and `GET /api/internal/wellness`, sorted so the commit changes only where an entry did, and
-  logs a count, never an entry. The coach falls back to `wellness.json` when Firestore does
-  not answer; nothing reads the notes copy, which is a backup. Neither step can fail the sync.
+  logs a count, never an entry. The coach falls back to both when Firestore does not answer.
+  Neither step can fail the sync.
 - **Duration bests** (`durationBests` on each run, `scripts/processing/pace_profile.py`): the
   most metres covered in 30 s, 1, 2, 3, 5, 10, 20, 30, 60, 90 and 120 min, on the moving clock
   and from the full-resolution records. A step faster than 8 m/s (2:05/km) is capped as a GPS
