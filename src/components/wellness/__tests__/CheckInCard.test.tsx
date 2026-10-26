@@ -65,4 +65,36 @@ describe('CheckInCard', () => {
     await waitFor(() => expect(screen.queryByTestId('checkin-summary')).toBeNull())
     expect(window.localStorage.getItem('ro-checkin-hidden:2026-10-22')).toBe('1')
   })
+
+  it('sits above what it wraps until answered, then folds below it, and edits there', async () => {
+    const user = userEvent.setup()
+    render(
+      <CheckInCard today="2026-10-23">
+        <div data-testid="this-week" />
+      </CheckInCard>,
+    )
+    const form = await screen.findByTestId('checkin-card')
+    const week = screen.getByTestId('this-week')
+    const after = (a: Element, b: Element) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+    expect(after(form, week)).toBe(true)
+
+    for (const field of ['sleep', 'soreness', 'stress', 'mood'] as const) await user.click(score(field, 3))
+    expect(after(screen.getByTestId('checkin-card'), week)).toBe(true)
+    await user.click(screen.getByTestId('checkin-done'))
+    expect(after(week, screen.getByTestId('checkin-summary'))).toBe(true)
+
+    await user.click(screen.getByTestId('checkin-edit'))
+    await user.click(score('mood', 4))
+    expect(after(week, screen.getByTestId('checkin-card'))).toBe(true)
+  })
+
+  it('keeps what it wraps for anyone but the owner', async () => {
+    auth.isOwner = false
+    render(
+      <CheckInCard today="2026-10-20">
+        <div data-testid="this-week" />
+      </CheckInCard>,
+    )
+    expect(screen.getByTestId('this-week')).toBeInTheDocument()
+  })
 })

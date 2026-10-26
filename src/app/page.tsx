@@ -81,10 +81,11 @@ export default async function DashboardPage() {
 
       <ReadinessCard status={trainingStatus} verdict={aiVerdict} load={recentLoad?.reading ?? null} today={today} />
       <TodayBoard session={card && { ...card, heat }} />
-      <CheckInCard today={today} />
-      <Vo2GradeTodayRow view={getVo2Grade(today)} />
+      <CheckInCard today={today}>
+        <Vo2GradeTodayRow view={getVo2Grade(today)} />
 
-      <ThisWeekCard target={weekTarget} today={today} sessionKinds={sessionKinds} load={recentLoad?.reading ?? null} />
+        <ThisWeekCard target={weekTarget} today={today} sessionKinds={sessionKinds} load={recentLoad?.reading ?? null} />
+      </CheckInCard>
     </div>
   )
 }
