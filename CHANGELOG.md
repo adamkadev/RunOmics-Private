@@ -4,6 +4,26 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+- The coach has rules for a return to running after an injury, illness or
+  pregnancy break: sessions by time, walk breaks with no pace, effort and
+  the talk test as the guide, progress only on comfortable sessions, no
+  quality work, and stop rules that defer to the clinician. A rebuild toward
+  the best four-week average no longer applies during a return. The
+  controlled threshold rules (speed weeks, fitness checks, lighter weeks)
+  state their condition, so they reach no other block. `trainingBreaks`
+  accepts `pregnancy` as a reason.
+
+- Bootstrap reads `coaching/guidance.md` from the data workspace unless
+  `--guidance-file` is given, and the decision records the guidance's hash.
+
+- `coach:sync-garmin` uses the same data workspace as `coach --apply`: with
+  the private repository configured and no data directory, it fetches the
+  data, and `--apply` pushes the Garmin mapping back. A mapping it cannot
+  push is saved under `.coach-previews/`.
+
+- When Firestore cannot answer, the coach reads the run notes from the
+  nightly `activity_notes.json`, as it already did for check-ins.
+
 - A push that no device accepted now counts as failed, so the scheduled pushes
   and alerts retry it instead of recording it as sent. Tokens FCM calls invalid
   are deleted along with unregistered ones, and refusal codes are logged.
