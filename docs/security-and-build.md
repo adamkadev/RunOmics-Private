@@ -23,6 +23,23 @@ matched but whose token carried no claim was shown the editor and then refused b
 with a 403. An email is also not something the rules can read, and a claim survives an email
 change, so the claim is the side that wins.
 
+## Private site
+
+With `RUNOMICS_PRIVATE=1`, `src/proxy.ts` puts every page and API route behind Google
+sign-in (`src/lib/siteAccess.ts`). Only `/sign-in`, `/api/session` and `/api/internal/*` stay
+open, and each internal route checks its own secret. `/api/session` verifies the Firebase ID
+token once and sets a cookie signed with `SESSION_SECRET` (32 characters or more), valid for
+30 days. After that, the proxy checks only the signature. The owner and the Google accounts
+in `RUNOMICS_VIEWERS` (verified emails only) get in. If the site is private but has no usable
+secret, nobody gets in.
+
+`isSitePrivate()` defaults to off, so the demo builds without any setup. To make sure a real
+athlete's site is never public by mistake, `npm run validate:data` (run by `prebuild`) fails
+any Vercel build (`VERCEL=1`) that has `RUNOMICS_DATA_REPO_URL` set but is missing
+`RUNOMICS_PRIVATE=1` or a 32-character `SESSION_SECRET`. On both athlete projects the three
+variables are scoped to Production only, so Preview builds use the demo data. If you give
+Preview the repository URL, give it the other two as well, or the build will fail.
+
 ## Firestore rules
 
 `firestore.rules` gives every collection the phone touches to the owner alone (the server reads
@@ -55,11 +72,9 @@ comment-free header is easy to widen by accident — this is what each one is fo
 - **`script-src 'unsafe-inline'`** — Next.js needs it for its bootstrap scripts on SSG
   pages, which have no per-request nonce. `'unsafe-eval'` is added **in development
   only**, for react-refresh.
-- **`script-src https://www.gstatic.com`** — `firebase-messaging-sw.js` `importScripts`.
 - **`script-src https://apis.google.com`** — the gapi loader (`api.js`) that
   `signInWithPopup` needs for its `postMessage` relay. Without it the popup opens but the
-  sign-in promise never resolves. This header is also served on the service-worker route,
-  so both origins must be allowed there too.
+  sign-in promise never resolves.
 - **`img-src https://api.maptiler.com`** — map sprites and raster images. `data:`/`blob:`
   are for MapLibre and the share-card canvas.
 - **`connect-src`** — `*.googleapis.com` for Firestore/Auth/FCM, `api.maptiler.com` for
@@ -224,8 +239,8 @@ announced (Firestore `notifications/lastClientErrors`), never a push per error, 
   navigation preload starts that request while the worker boots.
 - `/api` and cross-origin requests (map tiles, analytics) are **never cached**.
 
-Push events display FCM webpush payloads (`{ notification: { title, body } }`) directly, so
-no separate `firebase-messaging-sw.js` is needed. A non-JSON push falls through to the
+Push events display FCM webpush payloads (`{ notification: { title, body } }`) directly in
+`sw.js`. A non-JSON push falls through to the
 generic notification.
 
 Bump `VERSION` to invalidate every cache on deploy of a breaking change.

@@ -9,7 +9,7 @@ const DOCUMENT: Record<ScheduledPush, string> = {
 }
 
 /** Once per key: Vercel Cron may deliver a run twice, and a run by hand may follow the cron's. False when already sent. */
-export async function sendOncePer(push: ScheduledPush, key: string, send: () => Promise<void>): Promise<boolean> {
+export async function sendOncePer(push: ScheduledPush, key: string, send: () => Promise<unknown>): Promise<boolean> {
   if (!(await claimNotificationKey(DOCUMENT[push], key))) return false
   try {
     await send()

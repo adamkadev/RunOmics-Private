@@ -5,6 +5,7 @@ import {
   isPublicPath,
   isSitePrivate,
   mayView,
+  publicRealDataError,
   returnPath,
   sessionSecret,
   signSession,
@@ -48,6 +49,24 @@ describe('the private-site settings', () => {
     expect(isPublicPath('/sign-in-elsewhere')).toBe(false)
     expect(isPublicPath('/api/internal')).toBe(false)
     expect(isPublicPath('/api/activities/export')).toBe(false)
+  })
+})
+
+describe('the build’s privacy check', () => {
+  const REAL_ON_VERCEL = { VERCEL: '1', RUNOMICS_DATA_REPO_URL: 'https://github.com/owner/data' }
+
+  it('fails a Vercel build of real data that is not private with a usable secret', () => {
+    expect(publicRealDataError(REAL_ON_VERCEL)).toMatch(/RUNOMICS_PRIVATE=1 and SESSION_SECRET/)
+    expect(publicRealDataError({ ...REAL_ON_VERCEL, RUNOMICS_PRIVATE: '1', SESSION_SECRET: 'changeme' })).toMatch(
+      /SESSION_SECRET \(32\+ characters\)/
+    )
+    expect(publicRealDataError({ ...REAL_ON_VERCEL, SESSION_SECRET: SECRET })).toMatch(/RUNOMICS_PRIVATE=1:/)
+  })
+
+  it('passes a private Vercel build, the demo, and a local build', () => {
+    expect(publicRealDataError({ ...REAL_ON_VERCEL, ...PRIVATE })).toBeNull()
+    expect(publicRealDataError({ VERCEL: '1' })).toBeNull()
+    expect(publicRealDataError({ RUNOMICS_DATA_REPO_URL: 'https://github.com/owner/data' })).toBeNull()
   })
 })
 

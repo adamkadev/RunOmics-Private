@@ -1,8 +1,15 @@
 // Runs before every build: a dataset that would crash a page fails the build, so the live deployment keeps serving.
 import path from 'node:path'
 import { checkDataDirectory, type Problem } from '@/infrastructure/contracts/dataContract'
+import { publicRealDataError } from '@/lib/siteAccess'
 
 const SHOWN_PER_SEVERITY = 25
+
+const privacyError = publicRealDataError(process.env)
+if (privacyError) {
+  console.error(`[validate-data] ${privacyError}`)
+  process.exit(1)
+}
 
 const dir = path.resolve(process.argv[2] ?? process.env.RUNOMICS_DATA_DIR ?? path.join(process.cwd(), 'data'))
 const problems = checkDataDirectory(dir)

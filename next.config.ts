@@ -11,7 +11,7 @@ const authEmulator = process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST
 
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com${
+  `script-src 'self' 'unsafe-inline' https://apis.google.com${
     process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""
   }`,
   "style-src 'self' 'unsafe-inline'",

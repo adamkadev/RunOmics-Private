@@ -28,7 +28,7 @@ export interface InsightPassDeps {
   >
   generate: (request: InsightRequest) => Promise<InsightResult>
   revalidate: (path: string) => void
-  notify: (insight: Insight) => Promise<void>
+  notify: (insight: Insight) => Promise<unknown>
   now: () => Date
 }
 
