@@ -4,7 +4,7 @@ import { round } from '@/lib/math'
 import type { Activity } from '@/domain/activity/types'
 import { trimp, DEFAULT_HR_BOUNDS, type HrBounds } from '@/domain/training/trimp'
 import { ATL_DAYS, type LoadSnapshot } from '@/domain/training/taper'
-import { loadSeries } from '@/domain/training/loadSeries'
+import { loadSeries, type LoadDay } from '@/domain/training/loadSeries'
 import { appTodayIso } from '@/lib/calendarDate'
 
 export { trimp, type HrBounds }
@@ -25,6 +25,17 @@ export interface TrainingLoadData {
   atl: number
   tsb: number
   tsbNow: number
+}
+
+export function athleteHrBounds(): HrBounds {
+  const athlete = getAthleteProfile()
+  return { maxHr: athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr, restingHr: athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr }
+}
+
+/** Each day's load from the first run to today, unrounded. */
+export function ownLoadDays(activities: Activity[]): Map<string, LoadDay> {
+  const first = activities.reduce<string | null>((min, a) => (min === null || a.date < min ? a.date : min), null)
+  return first ? loadSeries(dailyTrimpByDate(activities, athleteHrBounds()), first, appTodayIso()) : new Map()
 }
 
 export function dailyTrimpByDate(activities: Activity[], hrBounds: HrBounds = DEFAULT_HR_BOUNDS): Map<string, number> {
@@ -64,13 +75,7 @@ export async function getTrainingLoad(): Promise<TrainingLoadData | null> {
   const activities = getAllActivities()
   if (!activities.length) return null
 
-  const athlete = getAthleteProfile()
-  const hrBounds: HrBounds = {
-    maxHr: athlete.maxHrBpm ?? DEFAULT_HR_BOUNDS.maxHr,
-    restingHr: athlete.restingHrBpm ?? DEFAULT_HR_BOUNDS.restingHr,
-  }
-
-  const series = buildTimeSeries(activities, hrBounds)
+  const series = buildTimeSeries(activities, athleteHrBounds())
   const entries = Array.from(series.entries())
   const window = entries.slice(-MAX_DAYS)
 

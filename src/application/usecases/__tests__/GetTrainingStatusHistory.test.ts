@@ -1,9 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { Activity } from '@/domain/activity/types'
 import type { TrainingStatusDay } from '@/infrastructure/repositories/JsonTrainingStatusRepository'
 
 vi.mock('@/infrastructure/repositories/JsonTrainingStatusRepository', () => ({
   getTrainingStatusDays: vi.fn(),
+  getLatestTrainingStatusDay: () => null,
 }))
+vi.mock('@/infrastructure/repositories/JsonActivityRepository', () => ({ getAllActivities: vi.fn() }))
+vi.mock('@/infrastructure/repositories/JsonAthleteRepository', () => ({ getAthleteProfile: () => ({ maxHrBpm: 200, restingHrBpm: 55 }) }))
 
 async function run(days: TrainingStatusDay[]) {
   const { getTrainingStatusDays } = await import('@/infrastructure/repositories/JsonTrainingStatusRepository')
@@ -85,5 +89,47 @@ describe('getTrainingStatusHistory', () => {
 
     expect(data?.points).toHaveLength(1095)
     expect(data?.points.at(-1)?.date).toBe(series(1200).at(-1)?.date)
+  })
+})
+
+describe('getLocalTrainingStatusHistory', () => {
+  const TODAY = '2026-10-26'
+  const runs = (from: number, to: number) =>
+    Array.from({ length: to - from + 1 }, (_, i) => ({ date: dayAt(from + i), avgHeartRate: 160, durationSeconds: 3000, distanceKm: 9 }))
+      .filter((_, i) => i % 2 === 0)
+      .reverse() as unknown as Activity[]
+
+  async function local(activities: Activity[]) {
+    const { getAllActivities } = await import('@/infrastructure/repositories/JsonActivityRepository')
+    vi.mocked(getAllActivities).mockReturnValue(activities)
+    return (await import('../GetTrainingStatusHistory')).getLocalTrainingStatusHistory()
+  }
+
+  beforeEach(() => {
+    vi.resetModules()
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(`${TODAY}T12:00:00`))
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it("ends on the status Today reads, for a watch that rates none", async () => {
+    const days = (Date.parse(TODAY) - Date.parse(dayAt(0))) / 86_400_000
+    const data = await local(runs(days - 60, days))
+    const { getTrainingStatus } = await import('../GetTrainingStatus')
+
+    expect(data?.source).toBe('local')
+    expect(data?.points.at(-1)).toMatchObject({ date: TODAY, status: (await getTrainingStatus())?.status })
+  })
+
+  it('rates no day four weeks or more after the last run', async () => {
+    const days = (Date.parse(TODAY) - Date.parse(dayAt(0))) / 86_400_000
+    const data = await local(runs(days - 120, days - 60))
+
+    expect(data?.points.find((p) => p.date === dayAt(days - 60 + 27))?.status).not.toBeNull()
+    expect(data?.points.filter((p) => p.date >= dayAt(days - 60 + 28)).every((p) => p.status === null)).toBe(true)
+  })
+
+  it('null without a run', async () => {
+    expect(await local([])).toBeNull()
   })
 })
