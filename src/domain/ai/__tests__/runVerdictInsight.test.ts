@@ -404,6 +404,20 @@ describe('judged by the plan and the athlete, not the watch (v4.16.5)', () => {
     expect(prompt).not.toContain('between the fastest and slowest kilometre')
   })
 
+  it('splits a hilly run by grade-adjusted pace, where raw pace credits the half with less climbing', () => {
+    const paceSamples = [...Array(50).fill(420), ...Array(50).fill(340)]
+    const gapSamples = [...Array(50).fill(360), ...Array(50).fill(350)]
+    const hilly = run({ id: 'h', date: '2026-10-25', distanceKm: 13.3, elevationGain: 258, splits: steady as never, paceSamples, gapSamples })
+
+    expect(runVerdictInsightPrompt(context(hilly), [])).toContain(
+      '- How it held: by grade-adjusted pace (the run climbed 19 m a km), the second half 9s/km quicker than the first',
+    )
+  })
+
+  it('acknowledges a problem the note reports instead of reframing it as a success', () => {
+    expect(RUN_VERDICT_SYSTEM_INSTRUCTION).toContain('acknowledge it plainly as what happened; never reframe it as a success')
+  })
+
   it('reads reps on target at a lower effort than expected as good news', () => {
     const rep = { type: 'interval_active', durationSec: 420, distanceM: 1585, avgSpeedMs: 0, avgHr: 176, laps: [] }
     const threshold = run({ id: 't', date: '2026-09-17', type: 'Threshold', rpe: 4, splits: [rep, rep, rep] as never })
