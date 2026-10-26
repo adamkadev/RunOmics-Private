@@ -279,6 +279,7 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
   const routeStart = useMemo(() => routeStartState(startMode, pickedStart), [startMode, pickedStart]);
   const avoid = useAvoidSpots(generatorOpen);
   const setAvoidMarking = avoid.setMarking;
+  const avoidMarking = avoid.marking;
   const generatorPlanDay = generator?.plan ?? null;
   const sessionDay = useMemo(() => generatorDay(explorePlans, generatorPlanDay, today), [explorePlans, generatorPlanDay, today]);
   // The closed generator's opener, until the map it gives back has rendered.
@@ -477,12 +478,13 @@ export function GlobalMapClient({ data, version, onContentChange, exploreAreas =
     if (!isFullscreen || sheetOpen) return;
     function onKey(e: KeyboardEvent) {
       if (e.key !== "Escape") return;
-      if (generatorOpen) closeGenerator();
+      if (avoidMarking) setAvoidMarking(false);
+      else if (generatorOpen) closeGenerator();
       else setExpanded(false);
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [isFullscreen, sheetOpen, generatorOpen, closeGenerator]);
+  }, [isFullscreen, sheetOpen, avoidMarking, setAvoidMarking, generatorOpen, closeGenerator]);
 
   useEffect(() => {
     const token = process.env.NEXT_PUBLIC_MAPTILER_TOKEN;

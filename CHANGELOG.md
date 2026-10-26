@@ -12,7 +12,9 @@ All notable changes to this project are documented in this file.
   the panel names the sunset. "Trails OK" opens the trails in daylight.
   The panel shows the budget, each loop's climb against it and its share
   on trails. The owner can mark spots to avoid (a fallen tree, a flooded
-  path), which every loop goes around. The GPX file name is lowercase.
+  path), which every loop goes around: while a spot is being marked, the
+  panel steps down to a one-line bar so the map is free to tap. The GPX
+  file name is lowercase.
 
 - A run's verdict reads a hilly run's halves by grade-adjusted pace, and
   takes a problem the note reports (terrain, route, safety, pain) at its

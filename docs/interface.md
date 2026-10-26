@@ -169,11 +169,13 @@ to walk steep climbs when they are notable. The GPX is GPX 1.1, the loop only, c
 named `runomics-<quartier>-<km>km.gpx`.
 
 **Spots to avoid:** the owner marks a spot (Route options › Spots to avoid › Mark a spot, then a tap on
-the map) where a fallen tree, a flooded path or an unsafe corner should keep loops away. Each is an
-80 m circle in Firestore `avoidSpots` (owner-only rules), with an optional reason, listed and removed
-in the same place and drawn on the map. A batch sends the nearest 20 a loop could reach to ORS as
-`options.avoid_polygons` (octagons around the circles), leaving out any within 50 m of the start or a
-via, where it would leave ORS no routable point and fail every loop.
+the map) where a fallen tree, a flooded path or an unsafe corner should keep loops away. Until the tap,
+the panel steps down to a one-line bar, the prompt and Cancel (Escape too), so the map is free to tap
+and the camera fits the larger view; it comes back with the new spot's row in view, to pick its
+reason. Each is an 80 m circle in Firestore `avoidSpots` (owner-only rules), with an optional reason,
+listed and removed in the same place and drawn on the map. A batch sends the nearest 20 a loop could
+reach to ORS as `options.avoid_polygons` (octagons around the circles), leaving out any within 50 m of
+the start or a via, where it would leave ORS no routable point and fail every loop.
 
 **New ground:** the server replays each area's runs oldest first, from the busiest cluster in it as the map
 opens it (`src/domain/explore/gains.ts`,
