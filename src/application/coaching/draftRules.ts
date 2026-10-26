@@ -105,11 +105,17 @@ export interface BootstrapRules {
   events: BootstrapEvents
 }
 
-/** The watch executes one target a step and pace wins, so a zone beside a pace never reaches it. */
+/** The watch executes one target a step and pace wins over a zone; notes on a step are unreadable mid-run. */
 function validateReturnTargets(draft: CoachingPlanDraft): void {
   draft.weeks.forEach((week, weekIndex) => week.workouts.forEach((workout, workoutIndex) => {
     const label = `plan.weeks[${weekIndex}].workouts[${workoutIndex}]`
+    if (workout.notes?.length) {
+      throw new Error(`${label}.notes: a return keeps the watch to its one-line description; put the guide in week.focus`)
+    }
     for (const step of workout.blocks.flatMap((block) => block.kind === 'repeat' ? block.steps : [block])) {
+      if (step.notes?.length) {
+        throw new Error(`${label}.blocks: a step in a return carries no notes, so the watch screen stays readable; put the guide in week.focus`)
+      }
       const { paceSecPerKm, hrBpm, hrZone } = step.target
       if (step.kind === 'recovery' && (paceSecPerKm || hrBpm || hrZone !== undefined)) {
         throw new Error(`${label}.blocks: a walk break in a return carries no pace or heart-rate target`)

@@ -46,20 +46,19 @@ function walkRun(date: string, reps: number, minutes: number, run = PACE, walk: 
     title: `Easy · ${reps} × ${minutes}′`,
     shortName: `Easy ${reps}×${minutes}′`,
     structure: { reps, repMinutes: minutes },
-    description: 'Run and walk by time, at a pace that leaves breath to talk.',
+    description: 'Stop and see the physio on any pain at the injured site.',
     blocks: [
       { kind: 'warmup', target: { durationSeconds: 300 } },
       {
         kind: 'repeat',
         repetitions: reps,
         steps: [
-          { kind: 'effort', target: { durationSeconds: minutes * 60, ...run }, notes: ['Above 165, walk until back under 145.'] },
+          { kind: 'effort', target: { durationSeconds: minutes * 60, ...run } },
           { kind: 'recovery', target: { durationSeconds: 60, ...walk } },
         ],
       },
       { kind: 'cooldown', target: { durationSeconds: 300 } },
     ],
-    notes: ['Stop and see the physio on any pain at the injured site.'],
   }
 }
 
@@ -134,5 +133,15 @@ describe('a return to running', () => {
     expect(watchTargets(returnBlock())).toEqual(['pace.zone', 'no.target'])
     expect(validate({ trainingBreaks: [injury] }, returnBlock(PACE, PACE))).toThrow(/walk break in a return carries no pace/)
     expect(validate({ trainingBreaks: [injury] }, returnBlock({ ...PACE, ...ZONE_2 }))).toThrow(/heart-rate zone or its pace range, not both/)
+  })
+
+  it('keeps notes off the steps and the workout, so the watch shows one line', () => {
+    const noted = (change: (workout: BootstrapWorkoutDraft) => BootstrapWorkoutDraft): CoachingPlanDraft => {
+      const draft = returnBlock()
+      return { ...draft, weeks: draft.weeks.map((week) => ({ ...week, workouts: week.workouts.map(change) })) }
+    }
+
+    expect(validate({ trainingBreaks: [injury] }, noted((workout) => ({ ...workout, notes: ['Talk in full sentences.'] })))).toThrow(/one-line description/)
+    expect(validate({ trainingBreaks: [injury] }, noted((workout) => ({ ...workout, blocks: [{ kind: 'warmup', target: { durationSeconds: 300 }, notes: ['Brisk walk.'] }, ...workout.blocks.slice(1)] })))).toThrow(/step in a return carries no notes/)
   })
 })
